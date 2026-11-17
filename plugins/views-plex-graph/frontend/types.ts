@@ -20,13 +20,6 @@ import type {
 /** What a note is: a note, or a type a plugin declares. */
 export type NoteType = string
 
-/** One heading inside a note. */
-export interface NoteHeading {
-  readonly text: string
-  readonly level: number
-  readonly line: number
-}
-
 /** Focus of a note graph. */
 export interface Focus {
   readonly path: string
@@ -127,14 +120,14 @@ export interface PlexWindowDeps {
   readOpeningPath(): Promise<string>
 }
 
-/** A view a plugin places over or under the nodes, drawn with each node and given the path of its note. */
+/** A view a plugin places over, under or across the nodes, drawn with each node and given the path of its note. */
 export interface PlexWidget {
   readonly key: string
   readonly component: Component
 }
 
-/** The side of a node a slot of widgets is drawn on. */
-export type PlexWidgetSide = 'above' | 'below'
+/** The place of a node a slot of widgets is drawn in: over it, under it, or across the whole of it. */
+export type PlexWidgetSide = 'above' | 'below' | 'over'
 
 /** What a plex tab requests for its menu. */
 export interface PlexMenuDeps {
@@ -154,11 +147,8 @@ export interface PlexMenuDeps {
   ): Promise<string>
 }
 
-/** What a plex tab reads of the notes: their headings and names, and whether it nests the headings. */
+/** What a plex tab reads of the notes: their names. */
 export interface PlexNotesDeps {
-  readonly isNesting: Readonly<Ref<boolean>>
-  readonly headings: Readonly<Ref<number>>
-  readHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
 }
 
@@ -213,18 +203,12 @@ export interface PlexMenuState {
   chooseMenuItem(id: string): void
 }
 
-/** The widgets drawn over and under each node, and the path of the note of a node. */
+/** The widgets drawn over, under and across each node, and the path of the note of a node. */
 export interface PlexWidgetsState {
   readonly above: Readonly<Ref<readonly PlexWidget[]>>
   readonly below: Readonly<Ref<readonly PlexWidget[]>>
+  readonly over: Readonly<Ref<readonly PlexWidget[]>>
   getPath(node: string): string
-}
-
-export interface PlexHeadingsState {
-  readonly maxHeadings: Readonly<Ref<number>>
-  getType(node: string): NoteType
-  getHeadings(node: string): readonly PlexHeading[]
-  readHeadings(): Promise<void>
 }
 
 /** Shows the failure of an operation that runs in the background. */
@@ -238,7 +222,6 @@ export interface PlexNodeActions {
   joinNodes(from: string, to: string, relation: PlexRelation): Promise<void>
   dropNodes(dragged: readonly string[], relation: PlexRelation): Promise<void>
   openNode(node: string, showing?: PlexDestination): void
-  openHeading(node: string, heading: string): void
   followMoves(renamed: readonly PathRename[]): void
   getName(path: string): string
 }
@@ -265,7 +248,6 @@ export interface PlexTabState {
   readonly canvas: PlexViewState
   readonly look: PlexLook
   readonly menu: PlexMenuState
-  readonly headings: PlexHeadingsState
   readonly nodes: PlexNodeActions
   readonly quickLink: PlexQuickLinkState
   readonly inspector: PlexLinkInspectorState
@@ -327,14 +309,4 @@ export interface PlexEdge {
 export interface PlexGraph {
   readonly nodes: readonly PlexNode[]
   readonly edges: readonly PlexEdge[]
-}
-
-/**
- * One heading of a node, as the caller describes it. The identifier is opaque:
- * the plex has no way to ask what it addresses.
- */
-export interface PlexHeading {
-  readonly id: string
-  readonly text: string
-  readonly level: number
 }

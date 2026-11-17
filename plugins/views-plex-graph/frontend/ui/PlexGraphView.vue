@@ -23,12 +23,11 @@ const { dragged, picture: graph } = props.state.canvas
 const { request: menu, menuItems: items, getMenuIcon, getNodeIcon } = props.state.menu
 const { quickLink } = props.state.quickLink
 const { linkInspector } = props.state.inspector
-const { maxHeadings } = props.state.headings
 const { look } = props.state
 
 const type = useTypeSize()
 const input = getInputStrategies(hasTouchPointer())
-const options = computed(() => getPlexOptions(look, type.value, maxHeadings.value))
+const options = computed(() => getPlexOptions(look, type.value))
 
 const { rootElement, picture, lastPointer, onPointerUp, onContextMenu, onEdgeMenu, closeMenu } =
   usePlexCanvas({ state: props.state })
@@ -62,10 +61,6 @@ function onOpenMenu(node: string, position: { x: number; y: number }, opening: M
 
 function onShowNode(node: string, how: PlexDestination) {
   props.state.nodes.openNode(node, how)
-}
-
-function onEnterHeading(node: string, heading: string) {
-  props.state.nodes.openHeading(node, heading)
 }
 
 function onDismissImage() {
@@ -132,9 +127,9 @@ function onDismissLinkInspector() {
       :pending="pending"
       :dragged="dragged"
       :drop-name="words.dropName"
-      :headings="props.state.headings.getHeadings"
       :widgets-above="props.state.canvas.widgets.above.value"
       :widgets-below="props.state.canvas.widgets.below.value"
+      :widgets-over="props.state.canvas.widgets.over.value"
       :get-path="props.state.canvas.widgets.getPath"
       @activate="onActivateNode"
       @create="onCreateNode"
@@ -142,7 +137,6 @@ function onDismissLinkInspector() {
       @bring="onBringNodes"
       @menu="onOpenMenu"
       @show="onShowNode"
-      @enter="onEnterHeading"
       @edge-menu="onEdgeMenu"
       @dismiss="onDismissImage"
     >

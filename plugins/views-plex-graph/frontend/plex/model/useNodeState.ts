@@ -1,6 +1,5 @@
 /** What a node is drawn as, from the node, its role in a gesture and whether it is attended to. */
 import { computed, type Ref } from 'vue'
-import type { NodeHeadings } from '../lib/inside'
 import type { GestureRole, PlacedNode } from '../lib/node'
 import type { PlexBehavior } from './behavior'
 import type { ExpandedBox } from './sizing/expansion'
@@ -9,7 +8,6 @@ export interface NodeStateProps {
   readonly node: PlacedNode
   readonly gestureRole: GestureRole
   readonly expanded: ExpandedBox | null
-  readonly placedHeadings: NodeHeadings | null
   readonly behavior: Pick<PlexBehavior, 'reaching'>
 }
 
@@ -36,7 +34,7 @@ export function useNodeState(
 
   /** The position of the node while it is attended to and can open; null in every other state. */
   const openPosition = computed(() =>
-    (props.expanded || props.placedHeadings) &&
+    props.expanded &&
     props.node.opacity >= 1 &&
     props.gestureRole === 'open' &&
     isOn.value

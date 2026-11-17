@@ -182,37 +182,13 @@ describe('view-plex-graph plugin', () => {
     const kind = ctx.getRegisteredTabKinds()[0]!
     kind.open!('One.md', 'plex:1') as PlexTabState
     await settle()
-    requested.headings.length = 0
+    requested.related.length = 0
 
     services.events.emitVaultChange({ paths: ['One.md'] })
     await settle()
     await settle()
 
-    expect(requested.headings.length).toBeGreaterThan(0)
-  })
-
-  it('reads no headings while its nestHeadings setting is off, and reads them once it is on', async () => {
-    const { host, requested } = createHost({ opening: 'Root.md' })
-    const ctx = createMockPluginContext({
-      pluginId: 'md.numen.views.plex.graph',
-      initialSettings: { nestHeadings: false },
-    })
-    const services = createMockHostServices({
-      workspace: host.workspace,
-      notes: host.notes,
-      relations: host.relations,
-    })
-    activate(ctx, services)
-    const state = ctx.getRegisteredTabKinds()[0]!.open!('One.md', 'plex:1') as PlexTabState
-    await settle()
-    expect(requested.headings).toStrictEqual([])
-
-    ctx.setSetting('nestHeadings', true)
-    ctx.setSetting('headingLimit', 3)
-    await settle()
-
-    expect(requested.headings.length).toBeGreaterThan(0)
-    expect(state.headings.maxHeadings.value).toBe(3)
+    expect(requested.related.length).toBeGreaterThan(0)
   })
 
   it('refuses to activate in a window that offers no workspace, notes or relationships', () => {
@@ -372,15 +348,6 @@ describe('the look of an open plex', () => {
     await nextTick()
 
     expect(getPlex().props('duration')).toBe(0)
-  })
-
-  it('keeps the heading settings next to the look settings', async () => {
-    const { ctx, state } = await openPlex({ showPills: false })
-
-    ctx.setSetting('headingLimit', 3)
-    await nextTick()
-
-    expect(state.headings.maxHeadings.value).toBe(3)
   })
 })
 

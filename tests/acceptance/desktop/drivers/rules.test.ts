@@ -488,8 +488,8 @@ describe('parseArrow', () => {
 })
 
 describe('the wait before the headings of a note open', () => {
-  it('is the wait of the plex', () => {
-    const source = fs.readFileSync(new URL('../../../../plugins/views-plex-graph/frontend/plex/model/sizing/expansion.ts', import.meta.url), 'utf8')
-    expect(Number(/export const EXPANSION_DELAY = (\d+)/.exec(source)?.[1])).toBe(HEADINGS_OPEN_WAIT_MS)
+  it('is the wait of the plex headings plugin', () => {
+    const source = fs.readFileSync(new URL('../../../../plugins/views-plex-headings/frontend/model/useHeadings.ts', import.meta.url), 'utf8')
+    expect(Number(/export const HOVER_WAIT = (\d+)/.exec(source)?.[1])).toBe(HEADINGS_OPEN_WAIT_MS)
   })
 })

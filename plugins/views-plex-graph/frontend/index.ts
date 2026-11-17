@@ -2,7 +2,6 @@ import { definePlugin, type HostServices, type PluginContext } from '@numen/plug
 import PlexGraphView from './ui/PlexGraphView.vue'
 import { createPlexKind, PLEX } from './model/kind'
 import { usePlexView } from './model/usePlexView'
-import { readNesting } from './model/nesting'
 import { readLook } from './model/look'
 
 export { PlexGraphView, PlexGraphView as PlexTab }
@@ -27,7 +26,6 @@ export function activate(plugin: PluginContext, host: HostServices): void {
       slots: host.ui.slots,
       notes,
       relations,
-      nesting: readNesting(plugin),
       look: readLook(plugin),
     },
     () => usePlexView({ listRelatedNotes: (paths, depth) => notes.listRelatedNotes(paths, depth) }),

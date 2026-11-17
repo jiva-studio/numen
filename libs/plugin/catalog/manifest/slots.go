@@ -35,6 +35,9 @@ const SlotPlexGraphNodeAbove = "plexGraph.nodeAbove"
 // SlotPlexGraphNodeBelow is the views under a node of the plex graph, each given the path of its note, drawn by the plugin of the plex graph.
 const SlotPlexGraphNodeBelow = "plexGraph.nodeBelow"
 
+// SlotPlexGraphNode is the views over the whole of a node of the plex graph, above the nodes, each given the path of its note and the size, position and scale of the node; a view that does not let clicks and drags through takes them from the node, drawn by the plugin of the plex graph.
+const SlotPlexGraphNode = "plexGraph.node"
+
 // SlotPaletteSearchResult is the actions of a search result that is a note, over that note, drawn by the palette.
 const SlotPaletteSearchResult = "palette.searchResult"
 
@@ -42,12 +45,12 @@ const SlotPaletteSearchResult = "palette.searchResult"
 const SlotPaletteNote = "palette.note"
 
 // Slots are the slots of a window, in the order slots.json lists them.
-var Slots = []string{SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPlexGraphContext, SlotPlexGraphNodeAbove, SlotPlexGraphNodeBelow, SlotPaletteSearchResult, SlotPaletteNote}
+var Slots = []string{SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPlexGraphContext, SlotPlexGraphNodeAbove, SlotPlexGraphNodeBelow, SlotPlexGraphNode, SlotPaletteSearchResult, SlotPaletteNote}
 
 // IsSlot reports whether the name is a slot of a window.
 func IsSlot(name string) bool {
 	switch name {
-	case SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPlexGraphContext, SlotPlexGraphNodeAbove, SlotPlexGraphNodeBelow, SlotPaletteSearchResult, SlotPaletteNote:
+	case SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPlexGraphContext, SlotPlexGraphNodeAbove, SlotPlexGraphNodeBelow, SlotPlexGraphNode, SlotPaletteSearchResult, SlotPaletteNote:
 		return true
 	}
 	return false

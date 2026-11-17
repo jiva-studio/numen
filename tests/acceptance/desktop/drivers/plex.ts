@@ -55,12 +55,14 @@ export class PlexDriver {
   }
 
   private async getPart(title: string, selector: string): Promise<Locator> {
-    // The part is in the node, or in the layer over the notes once the note is open.
+    // The part is in the node, in the layer over the notes once the note is open, or across the node in the layer above that.
     const graph = await this.getGraph()
     const lifted = graph
       .locator('.plex__lifted')
       .filter({ has: this.scenario.page.locator('.plex__title-text').filter({ hasText: getWholeText(title) }) })
-    return (await this.getNode(title)).locator(selector).or(lifted.locator(selector))
+    const node = await this.getNode(title)
+    const across = graph.locator(`.plex__over-node[data-node=${JSON.stringify(await node.getAttribute('data-node'))}]`)
+    return node.locator(selector).or(lifted.locator(selector)).or(across.locator(selector))
   }
 
   private async hoverNote(title: string): Promise<void> {
@@ -74,7 +76,7 @@ export class PlexDriver {
   }
 
   async expectShowsHeading(heading: string, title: string, has: boolean): Promise<void> {
-    const headings = (await this.getPart(title, '.plex__heading-text')).filter({ hasText: getWholeText(heading) })
+    const headings = (await this.getPart(title, '.headings__text')).filter({ hasText: getWholeText(heading) })
     if (has) {
       await expect(headings).toHaveCount(1)
       return
@@ -93,7 +95,7 @@ export class PlexDriver {
 
   async enterHeading(heading: string, title: string): Promise<void> {
     await this.hoverNote(title)
-    await (await this.getPart(title, '.plex__heading')).filter({ hasText: getWholeText(heading) }).click()
+    await (await this.getPart(title, '.headings__row')).filter({ hasText: getWholeText(heading) }).click()
   }
 
   async choose(reference: string, name: string): Promise<void> {

@@ -7,7 +7,7 @@
  */
 import { Comment, computed, Fragment, Text, useSlots, type VNode } from 'vue'
 import type { ExpandedBox } from '../../model/sizing/expansion'
-import type { PlacedNode } from '../../lib/node'
+import { getScale, type PlacedNode } from '../../lib/node'
 
 const props = withDefaults(
   defineProps<{
@@ -45,7 +45,7 @@ const startsDown = computed(() => -props.node.height / 2)
  * The title is laid out in a box that many times smaller and enlarged, so text, icon, gap and padding grow together.
  */
 const scale = computed(() =>
-  props.restHeight > 0 && !props.isGhost ? Math.max(1, props.node.height / props.restHeight) : 1,
+  props.isGhost ? 1 : getScale(props.node.height, props.restHeight),
 )
 
 /**
@@ -56,8 +56,7 @@ const scale = computed(() =>
 const titleRoom = computed(() => {
   const { node, box, restHeight, isGhost } = props
   if (!node.settled || box.width > node.width) return box.width / scale.value
-  const settledScale =
-    restHeight > 0 && !isGhost ? Math.max(1, node.settled.height / restHeight) : 1
+  const settledScale = isGhost ? 1 : getScale(node.settled.height, restHeight)
   return node.settled.width / settledScale
 })
 

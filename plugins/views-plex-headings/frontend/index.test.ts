@@ -1,0 +1,442 @@
+/**
+ * The view of the plugin as the plex draws it over a node: the headings of one note, read when the pointer rests
+ * on the node, listed under it, scrolled with the wheel and chosen to open the note at their line.
+ */
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { mount, type VueWrapper } from '@vue/test-utils'
+import { nextTick, type Component } from 'vue'
+import type {
+  JsonValue,
+  NoteHeading,
+  VaultNotes,
+  WorkspaceHost,
+} from '@numen/plugin-sdk'
+import {
+  createMockHostServices,
+  createMockNoticeHost,
+  createMockPluginContext,
+} from '@numen/plugin-sdk/testing'
+import { activate } from './index'
+import { HOVER_WAIT } from './model/useHeadings'
+
+const HEAT = 'physics/Heat.md'
+const WORK = 'physics/Work.md'
+const VIEWPORT = { width: 1200, height: 800 }
+
+const sections = (count: number): NoteHeading[] =>
+  Array.from({ length: count }, (_, index) => ({
+    text: `Section ${index + 1}`,
+    level: 1,
+    line: 10 * (index + 1),
+  }))
+
+const wrappers: VueWrapper[] = []
+
+const setup = (
+  headings: Readonly<Record<string, readonly NoteHeading[]>> = { [HEAT]: sections(3) },
+  initialSettings: Record<string, JsonValue> = {},
+) => {
+  const requested: (readonly string[])[] = []
+  const answers = new Map<string, Promise<NoteHeading[]> | NoteHeading[]>()
+  const notes = {
+    getHeadings: async (paths: readonly string[]) => {
+      requested.push(paths)
+      return new Map(
+        await Promise.all(
+          paths.map(async (path) => [path, await (answers.get(path) ?? headings[path] ?? [])] as const),
+        ),
+      )
+    },
+  } as unknown as VaultNotes
+  const opened: [string, number | undefined][] = []
+  const workspace = {
+    files: { open: (path: string, options?: { line?: number }) => opened.push([path, options?.line]) },
+  } as unknown as WorkspaceHost
+  const context = createMockPluginContext({
+    pluginId: 'md.numen.views.plex.headings',
+    initialSettings,
+  })
+  const notices = createMockNoticeHost()
+  const host = createMockHostServices({ notes, workspace, notices })
+  activate(context, host)
+  const view = context.getRegisteredSlotViews().find((one) => one.id === 'headings')!
+    .component as Component
+  const show = (path: string, y = 0) => {
+    const wrapper = mount(view, {
+      props: { path, x: 0, y, width: 144, height: 36, scale: 1, viewport: VIEWPORT },
+      attachTo: document.body,
+    })
+    wrappers.push(wrapper)
+    return wrapper
+  }
+  return { context, host, notices, show, requested, answers, opened }
+}
+
+/** Lets what is waiting on a timer or an answer go on, and the drawing follow. */
+const settle = async (wait = 0) => {
+  await vi.advanceTimersByTimeAsync(wait)
+  await nextTick()
+}
+
+const rest = async (wrapper: VueWrapper, wait = HOVER_WAIT) => {
+  await wrapper.get('.headings').trigger('pointerenter')
+  await settle(wait)
+}
+
+const getTexts = (wrapper: VueWrapper) => wrapper.findAll('.headings__row').map((one) => one.text())
+
+afterEach(() => {
+  vi.useRealTimers()
+  while (wrappers.length > 0) wrappers.pop()?.unmount()
+  document.body.replaceChildren()
+})
+
+describe('the plugin', () => {
+  it('registers the view its manifest places across the nodes of the plex', () => {
+    const { context } = setup()
+
+    expect(context.getRegisteredSlotViews().map((one) => one.id)).toStrictEqual(['headings'])
+  })
+
+  it('refuses to activate without the notes of the vault or the window', () => {
+    const context = createMockPluginContext({ pluginId: 'md.numen.views.plex.headings' })
+
+    expect(() => activate(context, createMockHostServices())).toThrow(/need the notes/)
+  })
+})
+
+describe('a node the pointer rests on', () => {
+  it('lists the headings of its note in the order they stand in it, once the pointer has rested', async () => {
+    vi.useFakeTimers()
+    const { show } = setup()
+    const wrapper = show(HEAT)
+
+    await rest(wrapper)
+
+    expect(getTexts(wrapper)).toStrictEqual(['Section 1', 'Section 2', 'Section 3'])
+  })
+
+  it('lists nothing before the pointer has rested for the wait', async () => {
+    vi.useFakeTimers()
+    const { show } = setup()
+    const wrapper = show(HEAT)
+
+    await rest(wrapper, HOVER_WAIT - 1)
+
+    expect(getTexts(wrapper)).toStrictEqual([])
+  })
+
+  it('reads the headings of that one note and no other', async () => {
+    vi.useFakeTimers()
+    const { show, requested } = setup({ [HEAT]: sections(3), [WORK]: sections(2) })
+    show(WORK)
+    const wrapper = show(HEAT)
+
+    expect(requested).toStrictEqual([])
+    await rest(wrapper)
+
+    expect(requested).toStrictEqual([[HEAT]])
+  })
+
+  it('draws nothing for a note with no heading', async () => {
+    vi.useFakeTimers()
+    const { show } = setup({})
+    const wrapper = show(HEAT)
+
+    await rest(wrapper)
+
+    expect(wrapper.find('.headings__list').exists()).toBe(false)
+  })
+
+  it('hangs the list from the view, so a pointer on the list is still on the node', async () => {
+    vi.useFakeTimers()
+    const { show } = setup()
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+
+    expect(wrapper.get('.headings').element.contains(wrapper.get('.headings__list').element)).toBe(true)
+  })
+
+  it('sets a heading in by its level', async () => {
+    vi.useFakeTimers()
+    const { show } = setup({
+      [HEAT]: [
+        { text: 'Laws', level: 1, line: 1 },
+        { text: 'First law', level: 2, line: 5 },
+      ],
+    })
+    const wrapper = show(HEAT)
+
+    await rest(wrapper)
+    const [outer, inner] = wrapper.findAll('.headings__row').map((one) => one.attributes('style'))
+
+    expect(outer).toContain('--row-indent: 0px')
+    expect(inner).toContain('--row-indent: 12px')
+  })
+
+  it('stops at the number of headings the setting allows, and marks that there is more', async () => {
+    vi.useFakeTimers()
+    const { show } = setup({ [HEAT]: sections(9) }, { headingLimit: 4 })
+    const wrapper = show(HEAT)
+
+    await rest(wrapper)
+
+    expect(getTexts(wrapper)).toHaveLength(4)
+    expect(wrapper.findAll('.headings__more')).toHaveLength(1)
+  })
+
+  it('stops at the number of headings the room under the node holds', async () => {
+    vi.useFakeTimers()
+    const { show } = setup({ [HEAT]: sections(9) })
+    const wrapper = show(HEAT, 330)
+
+    await rest(wrapper)
+
+    expect(getTexts(wrapper)).toHaveLength(1)
+  })
+
+  it('draws no list where there is no room under the node for one row', async () => {
+    vi.useFakeTimers()
+    const { show } = setup({ [HEAT]: sections(9) })
+    const wrapper = show(HEAT, 390)
+
+    await rest(wrapper)
+
+    expect(wrapper.find('.headings__list').exists()).toBe(false)
+  })
+})
+
+describe('a pointer that leaves', () => {
+  it('puts the list away', async () => {
+    vi.useFakeTimers()
+    const { show } = setup()
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+
+    await wrapper.get('.headings').trigger('pointerleave')
+
+    expect(getTexts(wrapper)).toStrictEqual([])
+  })
+
+  it('lists nothing for an answer that comes after it left', async () => {
+    vi.useFakeTimers()
+    const { show, answers } = setup()
+    let answer: (headings: NoteHeading[]) => void = () => undefined
+    answers.set(HEAT, new Promise<NoteHeading[]>((resolve) => (answer = resolve)))
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+
+    await wrapper.get('.headings').trigger('pointerleave')
+    answer(sections(3))
+    await settle()
+
+    expect(getTexts(wrapper)).toStrictEqual([])
+  })
+
+  it('lists nothing for an answer that comes after the pointer came back and was answered', async () => {
+    vi.useFakeTimers()
+    const { show, answers } = setup()
+    let late: (headings: NoteHeading[]) => void = () => undefined
+    answers.set(HEAT, new Promise<NoteHeading[]>((resolve) => (late = resolve)))
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+    await wrapper.get('.headings').trigger('pointerleave')
+    answers.set(HEAT, [{ text: 'Fresh', level: 1, line: 2 }])
+
+    await rest(wrapper)
+    late(sections(3))
+    await settle()
+
+    expect(getTexts(wrapper)).toStrictEqual(['Fresh'])
+  })
+
+  it('reads the note again when it comes back, for it may have changed', async () => {
+    vi.useFakeTimers()
+    const { show, requested } = setup()
+    const wrapper = show(HEAT)
+
+    await rest(wrapper)
+    await wrapper.get('.headings').trigger('pointerleave')
+    await rest(wrapper)
+
+    expect(requested).toStrictEqual([[HEAT], [HEAT]])
+  })
+})
+
+describe('the setting that turns the headings off', () => {
+  it('reads nothing while it is off', async () => {
+    vi.useFakeTimers()
+    const { show, requested } = setup(undefined, { nestHeadings: false })
+    const wrapper = show(HEAT)
+
+    await rest(wrapper)
+
+    expect(requested).toStrictEqual([])
+    expect(getTexts(wrapper)).toStrictEqual([])
+  })
+
+  it('puts a list that is out away when it is turned off, and lists again when it is turned on', async () => {
+    vi.useFakeTimers()
+    const { show, context } = setup()
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+
+    context.setSetting('nestHeadings', false)
+    await settle()
+    expect(getTexts(wrapper)).toStrictEqual([])
+
+    context.setSetting('nestHeadings', true)
+    await wrapper.get('.headings').trigger('pointerleave')
+    await rest(wrapper)
+    expect(getTexts(wrapper)).toHaveLength(3)
+  })
+
+  it('follows the limit as the person changes it', async () => {
+    vi.useFakeTimers()
+    const { show, context } = setup({ [HEAT]: sections(9) })
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+
+    context.setSetting('headingLimit', 2)
+    await settle()
+
+    expect(getTexts(wrapper)).toHaveLength(2)
+  })
+})
+
+describe('a heading chosen', () => {
+  it('opens the note at the line of the heading, in the current pane', async () => {
+    vi.useFakeTimers()
+    const { show, opened } = setup()
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+
+    await wrapper.findAll('.headings__row')[1]!.trigger('click')
+
+    expect(opened).toStrictEqual([[HEAT, 20]])
+  })
+
+  it('is not a click on the node', async () => {
+    vi.useFakeTimers()
+    const { show } = setup()
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+    const reached = vi.fn()
+    document.body.addEventListener('click', reached)
+
+    await wrapper.findAll('.headings__row')[0]!.trigger('click')
+
+    expect(reached).not.toHaveBeenCalled()
+    document.body.removeEventListener('click', reached)
+  })
+
+  it('is not a double click on the node either', async () => {
+    vi.useFakeTimers()
+    const { show } = setup()
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+    const reached = vi.fn()
+    document.body.addEventListener('dblclick', reached)
+
+    await wrapper.findAll('.headings__row')[0]!.trigger('dblclick')
+
+    expect(reached).not.toHaveBeenCalled()
+    document.body.removeEventListener('dblclick', reached)
+  })
+
+  it('is not the only click the node hears: a click on the rest of the view reaches it', async () => {
+    vi.useFakeTimers()
+    const { show } = setup()
+    const wrapper = show(HEAT)
+    const reached = vi.fn()
+    document.body.addEventListener('click', reached)
+
+    await wrapper.get('.headings').trigger('click')
+
+    expect(reached).toHaveBeenCalledTimes(1)
+    document.body.removeEventListener('click', reached)
+  })
+})
+
+describe('the wheel on the list', () => {
+  const wheel = (wrapper: VueWrapper, deltaY: number) =>
+    wrapper.get('.headings__list').trigger('wheel', { deltaY, deltaMode: 1 })
+
+  const setupMany = async () => {
+    vi.useFakeTimers()
+    const { show } = setup({ [HEAT]: sections(9) })
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+    return wrapper
+  }
+
+  it('scrolls the window down a heading at a time, and back up again', async () => {
+    const wrapper = await setupMany()
+
+    await wheel(wrapper, 1)
+    expect(getTexts(wrapper)[0]).toBe('Section 2')
+    expect(wrapper.findAll('.headings__more')).toHaveLength(2)
+
+    await wheel(wrapper, -1)
+    expect(getTexts(wrapper)[0]).toBe('Section 1')
+  })
+
+  it('scrolls no further than either end of the headings', async () => {
+    const wrapper = await setupMany()
+
+    await wheel(wrapper, -1)
+    expect(getTexts(wrapper)[0]).toBe('Section 1')
+
+    for (let step = 0; step < 8; step++) await wheel(wrapper, 1)
+    expect(getTexts(wrapper).at(-1)).toBe('Section 9')
+    expect(wrapper.findAll('.headings__more')).toHaveLength(1)
+  })
+
+  it('keeps the wheel from the plex while it scrolls, and lets it through at either end', async () => {
+    const wrapper = await setupMany()
+    const down = new WheelEvent('wheel', { deltaY: 1, deltaMode: 1, bubbles: true, cancelable: true })
+    const up = new WheelEvent('wheel', { deltaY: -1, deltaMode: 1, bubbles: true, cancelable: true })
+
+    wrapper.get('.headings__list').element.dispatchEvent(up)
+    wrapper.get('.headings__list').element.dispatchEvent(down)
+
+    expect(up.defaultPrevented).toBe(false)
+    expect(down.defaultPrevented).toBe(true)
+  })
+
+  it('scrolls nothing where every heading stands at once', async () => {
+    vi.useFakeTimers()
+    const { show } = setup()
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+
+    await wheel(wrapper, 1)
+
+    expect(getTexts(wrapper)[0]).toBe('Section 1')
+    expect(wrapper.findAll('.headings__more')).toHaveLength(0)
+  })
+
+  it('opens at the top each time the list comes out', async () => {
+    const wrapper = await setupMany()
+    await wheel(wrapper, 1)
+
+    await wrapper.get('.headings').trigger('pointerleave')
+    await rest(wrapper)
+
+    expect(getTexts(wrapper)[0]).toBe('Section 1')
+  })
+})
+
+describe('a failure to read the headings', () => {
+  it('is shown to the person as an error, and no list comes out', async () => {
+    vi.useFakeTimers()
+    const { show, notices, answers } = setup()
+    answers.set(HEAT, Promise.reject(new Error('the vault is closed')))
+    const wrapper = show(HEAT)
+
+    await rest(wrapper)
+
+    expect(notices.getShown()).toStrictEqual([{ text: 'the vault is closed', severity: 'error' }])
+    expect(getTexts(wrapper)).toStrictEqual([])
+  })
+})
