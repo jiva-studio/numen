@@ -9,6 +9,7 @@ import {
   assertSingleTab,
   getAddressTitle,
   getPluginRowPattern,
+  getTroubleMessage,
   getPluginSwitchPattern,
   getLinkNotePath,
   getAncestors,
@@ -521,5 +522,13 @@ describe('getPluginSwitchPattern', () => {
   it('matches the switch of the plugin only', () => {
     expect(getPluginSwitchPattern('PDF Reader').test('Enabled PDF Reader')).toBe(true)
     expect(getPluginSwitchPattern('PDF Reader').test('Enabled PDF Reader Pro')).toBe(false)
+  })
+})
+
+describe('getTroubleMessage', () => {
+  it('names the plugin and the text the window shows of it', () => {
+    expect(getTroubleMessage('PDF Reader', 'The engine did not start')).toBe(
+      'the plugin "PDF Reader" is in trouble: The engine did not start',
+    )
   })
 })

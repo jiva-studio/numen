@@ -458,3 +458,6 @@ export const parseArrow = (text: string): string | undefined => {
   if (!match) throw new Error(`"${text}" does not name an arrow: write with an arrow to "Title" or without an arrow`)
   return match[1]
 }
+
+/** What a step says of a plugin that is in trouble: the plugin and the text the window shows of it. */
+export const getTroubleMessage = (plugin: string, text: string): string => `the plugin "${plugin}" is in trouble: ${text}`

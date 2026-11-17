@@ -92,6 +92,11 @@ export class SettingsPage {
   }
 
   /** The alarm card of a plugin in trouble: the name of the plugin and the reason. */
+  /** The bar of the page of a plugin that tells of an error of the plugin. */
+  getPluginErrorNotice(panel: Locator): Locator {
+    return panel.locator('.plugin-notice--error')
+  }
+
   getPluginAlarm(panel: Locator, plugin: string): Locator {
     const name = this.page.locator('.plugins-list__alarm-name', { hasText: getPluginNamePattern(plugin) })
     return panel.locator(ALARM).filter({ has: name })

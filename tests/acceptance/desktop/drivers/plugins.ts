@@ -1,5 +1,6 @@
 /** The person at the settings of the plugins: turning one off and, when the scenario ends, on again. */
 import { expect, type Locator } from 'playwright/test'
+import { getTroubleMessage } from './rules.js'
 import { SettingsPage } from './components/SettingsPage.js'
 import type { Scenario } from './scenario.js'
 
@@ -27,8 +28,16 @@ export class PluginDriver {
   }
 
   async enableDisabled(): Promise<void> {
-    for (const name of this.disabled) await this.setEnabled(name, true)
-    this.disabled.clear()
+    const failures: unknown[] = []
+    for (const name of [...this.disabled]) {
+      try {
+        await this.setEnabled(name, true)
+        this.disabled.delete(name)
+      } catch (error) {
+        failures.push(error)
+      }
+    }
+    if (failures.length > 0) throw new AggregateError(failures, `${failures.length} plugins could not be enabled again`)
   }
 
   private async setEnabled(name: string, isEnabled: boolean): Promise<void> {
@@ -58,9 +67,11 @@ export class PluginDriver {
       await settingsPage.getBackButton().click()
       await expect(toggle.or(plugin).or(alarm).first()).toBeVisible()
     }
-    if (await alarm.isVisible()) throw new Error(`the plugin "${name}" is in trouble: ${await alarm.innerText()}`)
+    if (await alarm.isVisible()) throw new Error(getTroubleMessage(name, await alarm.innerText()))
     if (!(await toggle.isVisible())) await plugin.click()
     await expect(toggle).toBeVisible()
+    const notice = settingsPage.getPluginErrorNotice(settings)
+    if (await notice.isVisible()) throw new Error(getTroubleMessage(name, await notice.innerText()))
     return toggle
   }
 }
