@@ -49,6 +49,57 @@ func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, paths []s
 		return []domain.NoteGraph{}, nil
 	}
 	cache := &linkCache{queries: u.links, vault: v}
+	related, err := u.getRelatedOfEach(ctx, cache, paths)
+	if err != nil {
+		return nil, err
+	}
+	relatedToRelated := make([][]domain.RelatedNote, len(paths))
+	if depth == domain.DepthFar {
+		relatedToRelated, err = u.getRelatedToRelatedOfEach(ctx, cache, paths, related)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var wanted []string
+	for i, path := range paths {
+		wanted = append(wanted, getPaths(path, related[i], relatedToRelated[i])...)
+	}
+	notes, err := u.notes.GetNotes(ctx, v.ID, uniquePaths(wanted))
+	if err != nil {
+		return nil, err
+	}
+
+	return createGraphs(ctx, cache, paths, notes, related, relatedToRelated)
+}
+
+func createGraphs(
+	ctx context.Context, cache *linkCache, paths []string, notes map[string]domain.NoteRef,
+	related, relatedToRelated [][]domain.RelatedNote,
+) ([]domain.NoteGraph, error) {
+	out := make([]domain.NoteGraph, len(paths))
+	visible := make([][]string, len(paths))
+	var drawn []string
+	for i, path := range paths {
+		out[i], visible[i] = createGraph(notes, path, related[i], relatedToRelated[i])
+		drawn = append(drawn, visible[i]...)
+	}
+	if err := cache.loadLinks(ctx, drawn); err != nil {
+		return nil, err
+	}
+	for i := range paths {
+		if len(visible[i]) == 0 {
+			continue
+		}
+		var err error
+		if out[i].Connections, err = getConnections(ctx, cache, visible[i]); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+func (u ListRelatedNotes) getRelatedOfEach(ctx context.Context, cache *linkCache, paths []string) ([][]domain.RelatedNote, error) {
 	if err := cache.loadBoth(ctx, paths); err != nil {
 		return nil, err
 	}
@@ -70,55 +121,30 @@ func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, paths []s
 		return nil, err
 	}
 	related := make([][]domain.RelatedNote, len(paths))
-	var reached []string
 	for i, path := range paths {
 		if err := u.addSiblings(ctx, cache, centers[i]); err != nil {
 			return nil, err
 		}
 		centers[i].remove(path)
 		related[i] = centers[i].getAll()
+	}
+	return related, nil
+}
+
+func (u ListRelatedNotes) getRelatedToRelatedOfEach(
+	ctx context.Context, cache *linkCache, paths []string, related [][]domain.RelatedNote,
+) ([][]domain.RelatedNote, error) {
+	var reached []string
+	for i, path := range paths {
 		reached = append(reached, getPaths(path, related[i], nil)...)
 	}
-
-	relatedToRelated := make([][]domain.RelatedNote, len(paths))
-	if depth == domain.DepthFar {
-		if err := cache.loadBoth(ctx, reached); err != nil {
-			return nil, err
-		}
-		for i, path := range paths {
-			var err error
-			relatedToRelated[i], err = u.getRelatedToRelated(ctx, cache, path, related[i])
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	var wanted []string
-	for i, path := range paths {
-		wanted = append(wanted, getPaths(path, related[i], relatedToRelated[i])...)
-	}
-	notes, err := u.notes.GetNotes(ctx, v.ID, uniquePaths(wanted))
-	if err != nil {
+	if err := cache.loadBoth(ctx, reached); err != nil {
 		return nil, err
 	}
-
-	out := make([]domain.NoteGraph, len(paths))
-	visible := make([][]string, len(paths))
-	var drawn []string
+	out := make([][]domain.RelatedNote, len(paths))
 	for i, path := range paths {
-		out[i], visible[i] = createGraph(notes, path, related[i], relatedToRelated[i])
-		drawn = append(drawn, visible[i]...)
-	}
-	if err := cache.loadLinks(ctx, drawn); err != nil {
-		return nil, err
-	}
-	for i := range paths {
-		if len(visible[i]) == 0 {
-			continue
-		}
-		out[i].Connections, err = getConnections(ctx, cache, visible[i])
-		if err != nil {
+		var err error
+		if out[i], err = u.getRelatedToRelated(ctx, cache, path, related[i]); err != nil {
 			return nil, err
 		}
 	}
