@@ -75,7 +75,7 @@ func TestPluginIsolationRule_RejectsForeignPackagesInTheClosure(t *testing.T) {
 		"the core through the sdk":             {map[string]*packages.Package{"a": viaSDK}, []string{core.PkgPath}},
 		"notes through the sdk":                {map[string]*packages.Package{"a": notesViaSDK}, nil},
 		"a shared library":                     {map[string]*packages.Package{"a": sharedLib}, nil},
-		"the atomic file library":              {map[string]*packages.Package{"a": atomicfile}, []string{atomicfile.PkgPath}},
+		"the atomic file library":              {map[string]*packages.Package{"a": atomicfile}, nil},
 		"a library named like the shared ones": {map[string]*packages.Package{"a": sharedLookalike}, []string{sharedLookalike.PkgPath}},
 	} {
 		root := &packages.Package{ID: "root", PkgPath: load.PluginsPrefix + "sample/backend", Imports: one.imports}

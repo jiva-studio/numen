@@ -136,7 +136,8 @@ test("each shared library is a family of its own, with no library above it", () 
 test("the shared libraries depend on no library of this repository", () => {
   assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/onnx"], []);
   assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/tokenizer"], []);
-  const alone = [library("libs/shared/onnx"), library("libs/shared/tokenizer")];
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/atomicfile"], []);
+  const alone = [library("libs/shared/onnx"), library("libs/shared/tokenizer"), library("libs/shared/atomicfile")];
   assert.deepEqual(findLibraryViolations(alone, LIBRARY_DEPENDENCIES), []);
 });
 
@@ -152,9 +153,11 @@ test("a shared library that reaches the plugin SDK is reported", () => {
   assert.match(found[1].symbol, /family libs\/shared\/tokenizer reaches libs\/plugin\/sdk-go/);
 });
 
-test("no library row lists a shared library", () => {
-  for (const [family, allowed] of Object.entries(LIBRARY_DEPENDENCIES)) {
-    assert.ok(!allowed.some((one) => one.startsWith("libs/shared/")), `${family} may reach a shared library`);
+test("every shared library row is a leaf", () => {
+  const shared = Object.entries(LIBRARY_DEPENDENCIES).filter(([family]) => family.startsWith("libs/shared/"));
+  assert.ok(shared.length > 0);
+  for (const [family, allowed] of shared) {
+    assert.deepEqual(allowed, [], `${family} may reach a library of this repository`);
   }
 });
 

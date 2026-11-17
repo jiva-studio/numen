@@ -14,7 +14,7 @@ import (
 func TestWhatThePluginGoModRulesReject(t *testing.T) {
 	const head = "module " + load.PluginsPrefix + "sample\n\ngo 1.26\n\n"
 	const sharedLibraries = head + "require (\n\t" + load.SdkModule + " v0.0.0\n\t" +
-		load.NumenRoot + "libs/shared/onnx v0.0.0\n\t" + load.NumenRoot + "libs/shared/tokenizer v0.0.0\n)\n"
+		load.NumenRoot + "libs/shared/atomicfile v0.0.0\n\t" + load.NumenRoot + "libs/shared/onnx v0.0.0\n\t" + load.NumenRoot + "libs/shared/tokenizer v0.0.0\n)\n"
 	for _, one := range []struct {
 		name, text string
 		rejected   int
@@ -29,7 +29,6 @@ func TestWhatThePluginGoModRulesReject(t *testing.T) {
 		{"a direct requirement of another plugin", head + "require " + load.PluginsPrefix + "other v0.0.0\n", 1},
 		{"a direct requirement of the core", head + "require " + load.Module + "port v0.0.0\n", 1},
 		{"a direct requirement of a shared library", sharedLibraries, 0},
-		{"a direct requirement of the atomic file library", head + "require " + load.NumenRoot + "libs/shared/atomicfile v0.0.0\n", 1},
 		{"a direct requirement of a library named like the shared ones", head + "require " + load.NumenRoot + "libs/sharedx v0.0.0\n", 1},
 		{"a shared library built from a folder", head + "require " + load.NumenRoot + "libs/shared/onnx v0.0.0\nreplace " + load.NumenRoot + "libs/shared/onnx => ../../libs/shared/onnx\n", 1},
 		{"a module built from a folder", head + "require example.com/x v1.0.0\nreplace example.com/x => ../x\n", 1},
