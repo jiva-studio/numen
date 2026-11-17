@@ -29,6 +29,9 @@ const MANY: readonly NoteHeading[] = Array.from({ length: 30 }, (_, index) => ({
   line: index * 3,
 }))
 
+/** The most headings the setting allows by default. */
+const LIMIT = 6
+
 const WIDTH = 144
 const HEIGHT = 36
 const NODE = { x: 0, y: -120, width: WIDTH, height: HEIGHT }
@@ -82,17 +85,18 @@ const getView = (canvasElement: HTMLElement) => canvasElement.querySelector<HTML
 
 const getRows = (canvasElement: HTMLElement) => [...canvasElement.querySelectorAll('.headings__row')]
 
-/** The pointer resting on the node brings its headings out under the box, and leaving puts them away. */
+/** The pointer resting on the node brings the first six of its headings out under the box, and leaving puts them away. */
 export const Nesting: Story = {
   play: async ({ canvasElement }) => {
     const view = getView(canvasElement)
     await expect(getRows(canvasElement)).toHaveLength(0)
 
     await userEvent.hover(view)
-    await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(SECTIONS.length), {
+    await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(LIMIT), {
       timeout: HOVER_WAIT * 6,
     })
     await expect(within(canvasElement).getByText('The arrow of time')).toBeInTheDocument()
+    await expect(within(canvasElement).queryByText('The demon, and its bookkeeping')).toBeNull()
 
     await userEvent.unhover(view)
     await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(0))
@@ -103,7 +107,7 @@ export const Nesting: Story = {
 export const ChoosesAHeading: Story = {
   play: async ({ args, canvasElement }) => {
     await userEvent.hover(getView(canvasElement))
-    await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(SECTIONS.length), {
+    await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(LIMIT), {
       timeout: HOVER_WAIT * 6,
     })
 
@@ -118,7 +122,7 @@ export const ScrollsWithTheWheel: Story = {
   args: { headings: MANY },
   play: async ({ canvasElement }) => {
     await userEvent.hover(getView(canvasElement))
-    await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(6), {
+    await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(LIMIT), {
       timeout: HOVER_WAIT * 6,
     })
     await expect(canvasElement.querySelectorAll('.headings__more')).toHaveLength(1)
@@ -150,8 +154,12 @@ export const LongHeading: Story = {
       timeout: HOVER_WAIT * 6,
     })
 
-    const list = canvasElement.querySelector('.headings__list')!.getBoundingClientRect()
-    const el = canvasElement.querySelector('.headings__list') as HTMLElement
-    await expect(el.getAttribute('style')).toBe('')
+    const list = canvasElement.querySelector<HTMLElement>('.headings__list')!
+    await waitFor(async () => {
+      const box = list.getBoundingClientRect()
+      await expect(getComputedStyle(list).visibility).toBe('visible')
+      await expect(box.left).toBeGreaterThanOrEqual(0)
+      await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
+    })
   },
 }
