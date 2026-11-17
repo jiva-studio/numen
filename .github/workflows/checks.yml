@@ -213,7 +213,7 @@ jobs:
           go-version-file: tools/checks/style/comments/go.mod
           cache: false
 
-      # The lint of each package and the Go tests of libs/core/kernel and libs/note run in their own jobs,
+      # The lint of each package and the Go tests of libs/core/kernel and libs/shared/note run in their own jobs,
       # and the Go checks of tools/checks/structure/go in the job Structure Checks of go.yml.
       - name: Run the structural, style and documentation checks
         run: make checks EXCLUDE=go CHANGED="$CHANGED"

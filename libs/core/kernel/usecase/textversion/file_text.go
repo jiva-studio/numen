@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // FileText is the live text of a vault file and the user's edits of it, for the

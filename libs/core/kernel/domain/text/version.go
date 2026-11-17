@@ -3,7 +3,7 @@ package text
 import (
 	"time"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ContentHash is the hash of a vault file's bytes, recorded with the file's stat at

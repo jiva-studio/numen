@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
-	notesmarkdown "github.com/jiva-studio/numen/libs/note/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	notesdomain "github.com/jiva-studio/numen/libs/shared/note/domain"
+	notesmarkdown "github.com/jiva-studio/numen/libs/shared/note/markdown"
 )
 
 // AddLinks writes the links into the frontmatter of their notes, as the host does: the links of one
@@ -114,7 +114,11 @@ func (v *Vault) editLinks(
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	if !baseline.IsZero() && !now.IsUnchanged(baseline) {
+	stale, err := v.isStale(now, baseline)
+	if err != nil {
+		return domain.FileStat{}, err
+	}
+	if stale {
 		return domain.FileStat{}, notesdomain.NewDetailError(fmt.Sprintf("%s changed since it was read", from), host.ErrStale)
 	}
 	raw, err := v.files.read(from)
@@ -128,7 +132,7 @@ func (v *Vault) editLinks(
 	if err := change(doc); err != nil {
 		return domain.FileStat{}, err
 	}
-	stat, err := v.files.write(from, doc.Bytes())
+	stat, err := v.put(from, doc.Bytes())
 	if err != nil {
 		return domain.FileStat{}, err
 	}

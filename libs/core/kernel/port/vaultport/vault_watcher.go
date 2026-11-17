@@ -3,7 +3,7 @@ package vaultport
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // VaultWatcher follows one vault for changes the application did not make. The

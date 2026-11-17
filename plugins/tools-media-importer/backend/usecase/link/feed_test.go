@@ -4,6 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
 
@@ -118,9 +121,10 @@ func TestARestartReadsOnlyTheChangesSinceTheCursor(t *testing.T) {
 	}
 	w.addLinkNote(t, "links/video.md", "---\ntype: link\nurl: "+videoAddress+"\n---\n")
 
-	restarted := link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(w.vault), Store: foldersOf(w.vault), Texts: textsOf(w.texts), Queue: w.queue, Clock: newFakeClock(time.Unix(1_700_000_000, 0))},
-		func() link.Fetcher { return w.sites },
-		func() link.Settings { return link.Settings{IsTextDownloadAutomatic: true} })
+	restarted := link.New(link.Host{PluginID: pluginID, Vaults: vaultsOf(w.vault), Store: foldersOf(w.vault), Texts: textsOf(w.texts), Queue: w.queue,
+		Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{}},
+		func() ports.Fetcher { return w.sites },
+		func() fetch.Settings { return fetch.Settings{IsTextDownloadAutomatic: true} })
 	t.Cleanup(restarted.Close)
 	if err := restarted.FetchMissingTexts(t.Context()); err != nil {
 		t.Fatal(err)

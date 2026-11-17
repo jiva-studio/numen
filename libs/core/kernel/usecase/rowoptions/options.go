@@ -150,7 +150,14 @@ func (o *Options) RefreshRunning(connectionID string) {
 		defer o.deps.Lists.end(connectionID)
 		ctx, cancel := context.WithTimeout(plugin.WithBackground(context.Background(), plugin.WhoConnections), RefreshLimit)
 		defer cancel()
-		o.refreshKept(ctx, connectionID, o.openRunningProvider, false)
+		openRunning := func(ctx context.Context, pluginID string) (connectionport.Provider, func(), error) {
+			provider, release, isRunning := o.deps.Running.OpenRunningProvider(ctx, pluginID)
+			if !isRunning {
+				return nil, nil, errNotRunning
+			}
+			return provider, release, nil
+		}
+		o.refreshKept(ctx, connectionID, openRunning, false)
 	}()
 }
 
@@ -262,14 +269,6 @@ func (o *Options) askProvider(
 		o.deps.Lists.put(resolved.PluginID, kept)
 	}
 	return listed.Options, nil
-}
-
-func (o *Options) openRunningProvider(ctx context.Context, pluginID string) (connectionport.Provider, func(), error) {
-	provider, release, isRunning := o.deps.Running.OpenRunningProvider(ctx, pluginID)
-	if !isRunning {
-		return nil, nil, errNotRunning
-	}
-	return provider, release, nil
 }
 
 func failed(ctx context.Context, reason connection.FailureReason) error {

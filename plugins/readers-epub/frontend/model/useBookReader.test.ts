@@ -40,7 +40,7 @@ const BOOK: Book = {
   printedPages: [],
   pages: 3,
   pageBytes: 3_000,
-  stat: '20480 1700000000000000000 mahabharata.epub',
+  stat: '20480:0: 1700000000000000000 mahabharata.epub',
 }
 
 const UNNAMED: Book = { ...BOOK, parts: [] }
@@ -183,7 +183,7 @@ describe('a book opened', () => {
     expect(readItem.progress.page.value).toBe(1)
     expect(readItem.bookDocument.documentSpan.value).toStrictEqual({ start: 0, end: 3_000 })
     expect(markupCalls).toStrictEqual([
-      'library/Mahabharata.epub text/part0001.xhtml 20480 1700000000000000000 mahabharata.epub',
+      'library/Mahabharata.epub text/part0001.xhtml 20480:0: 1700000000000000000 mahabharata.epub',
     ])
   })
 

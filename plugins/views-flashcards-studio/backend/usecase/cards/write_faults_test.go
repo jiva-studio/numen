@@ -3,12 +3,14 @@ package cards_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
@@ -22,10 +24,10 @@ func TestADeckOverTheBoundIsNotSaved(t *testing.T) {
 	before := read(t, vs.first, "decks/Wrens.md")
 	w := cards.NewWrite(
 		vs.ports.Readers, shut{t: t, isWatched: true, hold: errOutOfReach},
-		unanswered{}, indexNothing, vaulttest.NewClock())
+		unanswered{}, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 
 	_, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md",
-		wrenDeck+strings.Repeat("a", cards.MaxBytes), domain.FileStat{})
+		wrenDeck+strings.Repeat("a", format.MaxDeckBytes), domain.FileStat{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("write = %v, want too large", err)
 	}
@@ -38,7 +40,7 @@ func TestACardModelOverTheBoundOfANoteIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
 		vs.ports.Readers, shut{t: t, isWatched: true, hold: errOutOfReach},
-		vs.queries, indexNothing, vaulttest.NewClock())
+		vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 	before := read(t, vs.first, "Animal.md")
 
 	_, err := w.CardModel(t.Context(), vs.first, "Animal.md",
@@ -58,7 +60,7 @@ func TestADeckWhoseLinksCannotBeResolvedIsNotSaved(t *testing.T) {
 	newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
 	before := read(t, vs.first, "decks/Wrens.md")
 	w := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, unanswered{}, indexNothing, vaulttest.NewClock())
+		vs.ports.Readers, vs.ports.Writers, unanswered{}, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 
 	_, err := w.Deck(t.Context(), vs.first, "decks/Wrens.md", wrenDeck+"\n## Crow\n\n[[Animal]]\n", domain.FileStat{})
 	if !errors.Is(err, errOutOfReach) {
@@ -114,7 +116,7 @@ func TestADeckSavedAndNotIndexedPassesBackWhatItExistsAt(t *testing.T) {
 func TestACardModelBodyOpeningWithFrontmatterIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 	before := read(t, vs.first, "Animal.md")
 
 	_, err := w.CardModel(t.Context(), vs.first, "Animal.md", "---\ntype: deck\n---\n", []string{"Name"}, domain.FileStat{})
@@ -133,7 +135,7 @@ func TestACardModelWhoseFrontmatterIsNeverClosedIsNotSaved(t *testing.T) {
 	write(t, vs.first, "Open.md", "---\ntype: card-model\nfields:\n  - Name\n\n## Recognize\n")
 	before := read(t, vs.first, "Open.md")
 	w := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 
 	_, err := w.CardModel(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Sample"}, domain.FileStat{})
 	if !errors.Is(err, markdown.ErrUnterminated) {
@@ -150,7 +152,7 @@ func TestWriteCardModel_ErrorsOnUnterminatedFrontmatter(t *testing.T) {
 	write(t, vs.first, "Open.md", "---\ntype: card-model\nfields:\n  - Name\n\n## Recognize\n")
 	before := read(t, vs.first, "Open.md")
 	w := cards.NewWrite(
-		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock())
+		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, vaulttest.NewClock(), machineclock.Entropy{})
 
 	_, err := w.CardModel(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Name"}, domain.FileStat{})
 	if !errors.Is(err, markdown.ErrUnterminated) {

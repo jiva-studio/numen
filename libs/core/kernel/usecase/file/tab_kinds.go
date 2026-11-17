@@ -3,7 +3,7 @@ package file
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // TabKindChooser gives a note the kind of tab it opens in, or an empty kind where none applies.
