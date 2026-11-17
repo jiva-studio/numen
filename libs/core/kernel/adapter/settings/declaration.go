@@ -25,6 +25,12 @@ const (
 	keyTextScale      = "appearance.textScale"
 	keySyncNaming     = "naming.syncTitleAndFilename"
 	keyProfile        = "performance.profile"
+
+	keyEditorFontSize    = "editor.fontSize"
+	keyEditorFontFamily  = "editor.fontFamily"
+	keyEditorLineHeight  = "editor.lineHeight"
+	keyEditorLineNumbers = "editor.lineNumbers"
+	keyEditorSoftWrap    = "editor.softWrap"
 )
 
 func listDetectedConnectionIDs(detected connectionport.Detected) []string {
