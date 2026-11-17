@@ -454,7 +454,8 @@ func TestAPassageThatIsNotUTF8FailsTheRerankWithoutACall(t *testing.T) {
 
 	_, err := w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide").rerank()`})
 
-	if _, ok := errors.AsType[*searchquerydomain.RerankError](err); !ok {
+	rerankError, ok := errors.AsType[*searchquerydomain.RerankError](err)
+	if !ok || rerankError == nil {
 		t.Fatalf("the query answered %v, want a RerankError", err)
 	}
 	if calls := len(s.world.Provider.CallsTo(firstAddress)) + len(s.world.Provider.CallsTo(secondAddress)); calls != 0 {

@@ -50,8 +50,8 @@ test("a library that reaches an application or a plugin is reported", () => {
   assert.match(found[0].symbol, /outside libs/);
 });
 
-test("the plugin SDK family may reach the atomic file library, the notes library and the protocol", () => {
-  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/plugin/sdk-go"], ["libs/atomicfile", "libs/note", "libs/core/protocol"]);
+test("the plugin SDK family may reach the atomic file library, the notes library, the protocol and the rerank messages", () => {
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/plugin/sdk-go"], ["libs/atomicfile", "libs/note", "libs/core/protocol", "libs/shared/rerank"]);
   const libraries = [
     library("libs/note"),
     library("libs/core/protocol"),
@@ -106,10 +106,10 @@ test("the packages of this repository are read, the plugin manager among them", 
   assert.deepEqual(findPackageViolations(packages, PACKAGE_DEPENDENCIES), []);
 });
 
-test("the rows allow the plugin manager the UI library, the plugin host the SDK and the core client, the SDK the schema and the UI build helpers, and the core client the schema", () => {
+test("the rows allow the plugin manager the UI library, the plugin host the SDK and the core client, the SDK the schema, the rerank messages and the UI build helpers, and the core client the schema", () => {
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-manager"], ["@numen/ui"]);
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-loader"], ["@numen/plugin-sdk", "@numen/core-client"]);
-  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-sdk"], ["@numen/protocol", "@numen/ui"]);
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-sdk"], ["@numen/protocol", "@numen/rerank", "@numen/ui"]);
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/core-client"], ["@numen/protocol"]);
 });
 
