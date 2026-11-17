@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/apierror"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/filewire"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/presetwire"
@@ -17,13 +16,13 @@ import (
 type presetsHandler struct {
 	*vaultSession
 	create cards.Create
-	flash  func() *flashcards.UseCases
+	flash  func() *flashReview
 }
 
 func (b *Backend) newPresetsHandler() *presetsHandler {
 	return &presetsHandler{
 		vaultSession: b.vaultSession,
-		create:       cards.NewCreate(b.ports.Writers, b.updateIndex, b.now),
+		create:       cards.NewCreate(b.ports.Writers, b.updateIndex, b.now, b.entropy),
 		flash:        b.flash.Get,
 	}
 }

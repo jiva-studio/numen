@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // reading reads a vault into the index of its own that a test holds.

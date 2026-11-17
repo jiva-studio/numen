@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/ports"
 )
 
 // Files reads files from the vaults known to the host.
@@ -30,26 +31,5 @@ type Vault interface {
 	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 }
 
-// Audio is one stretch of a recording that carries words, as the 16 kHz mono samples a model is
-// given, and the milliseconds it spans.
-type Audio struct {
-	Samples []float32
-	From    int
-	To      int
-}
-
-// Recording is a file opened for listening.
-type Recording interface {
-	GetDuration() int
-	GetSegments(ctx context.Context, from, count int) ([]Audio, error)
-	Close() error
-}
-
-// Recognizer turns the speech of a recording into words.
-type Recognizer interface {
-	Open(ctx context.Context, raw []byte) (Recording, error)
-	Transcribe(ctx context.Context, audio Audio) (string, error)
-}
-
 // Engines opens the model that transcribes a recording. The model is opened once and reused.
-type Engines func(ctx context.Context) (Recognizer, error)
+type Engines func(ctx context.Context) (ports.Recognizer, error)

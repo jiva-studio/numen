@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	notesdomain "github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // SetMissing marks the vault as one whose folder is gone, as the list of vaults reports it. A vault

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from './results'
+import { asFailure, asValue } from '@/testing/results'
 import type { Event } from './tab'
 import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 import { createNoteQueue, convertErrorCode } from './queue'

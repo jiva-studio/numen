@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Walks is the vaults being walked, a turn each.
