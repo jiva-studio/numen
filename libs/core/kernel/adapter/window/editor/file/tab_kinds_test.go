@@ -1,6 +1,7 @@
 package file_test
 
 import (
+	"context"
 	"maps"
 	"strings"
 	"testing"
@@ -9,9 +10,11 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
 	pluginentries "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
@@ -51,7 +54,7 @@ func newHandler(t *testing.T, notes map[string]string, kinds tabKinds) *filewind
 	return filewindow.NewHandler(
 		filewindow.NewFolders(
 			open,
-			file.NewListFolder(file.NewGetFolderEntries(readers, nil), file.NewListTabKinds(fileKinds, choose)),
+			file.NewListFolder(file.NewGetFolderEntries(readers, nil), file.NewListTabKinds(parsedHeads(notes), choose)),
 			file.NewListFileKinds(fileKinds, choose), nil,
 		),
 		filewindow.NewChanges(open, open, nil, nil, nil),
@@ -111,4 +114,18 @@ func TestAListingOfAFolderNamesTheKindOfTabEachNoteOpensIn(t *testing.T) {
 	if want := map[string]string{"links/tide.md": "media", "links/plain.md": "", "links/map.png": ""}; !maps.Equal(got, want) {
 		t.Errorf("tab kinds %v, want %v", got, want)
 	}
+}
+
+// parsedHeads is an index that holds each note as the indexer would store it.
+type parsedHeads map[string]string
+
+func (h parsedHeads) GetHeads(_ context.Context, _ domain.VaultID, paths []string) (map[string]frontmatter.Head, error) {
+	out := map[string]frontmatter.Head{}
+	for _, path := range paths {
+		if raw, isHeld := h[path]; isHeld && strings.HasSuffix(path, ".md") {
+			parsed := markdown.Parse(domain.FileStat{Path: path, Kind: domain.KindNote}, []byte(raw))
+			out[path] = frontmatter.Head{Type: parsed.Type, Values: parsed.Frontmatter}
+		}
+	}
+	return out, nil
 }
