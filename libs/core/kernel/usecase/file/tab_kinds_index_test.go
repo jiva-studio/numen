@@ -139,7 +139,6 @@ func newTabKindWorld(t *testing.T, notes map[string]string) tabKindWorld {
 	}
 }
 
-// fromFiles is what the tab kinds were before the index gave them: each note read and parsed.
 func (w tabKindWorld) fromFiles(t *testing.T, paths []string) map[string]string {
 	t.Helper()
 	reader, err := vaultreader.Readers{}.Open(w.vault)

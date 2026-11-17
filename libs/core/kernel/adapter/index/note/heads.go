@@ -14,7 +14,8 @@ import (
 )
 
 // GetHeads returns the type and the stored frontmatter of the notes at the paths, in one question.
-// A path with no indexed note is absent from the result.
+// A path with no indexed note is absent from the result. Whole numbers of the frontmatter come back as int
+// and the others as float64, the way the YAML of the file gives them.
 func (q *Queries) GetHeads(ctx context.Context, vaultID domain.VaultID, paths []string) (_ map[string]frontmatter.Head, err error) {
 	out := map[string]frontmatter.Head{}
 	if len(paths) == 0 {
@@ -51,8 +52,6 @@ func (q *Queries) GetHeads(ctx context.Context, vaultID domain.VaultID, paths []
 	return out, rows.Err()
 }
 
-// readHeadValues decodes stored frontmatter with whole numbers as int and the others as float64,
-// the way the YAML of the file gives them.
 func readHeadValues(stored sql.NullString) (map[string]any, error) {
 	if !stored.Valid {
 		return nil, nil
