@@ -21,7 +21,6 @@ const props = withDefaults(
     side: 'above' | 'below'
     entries: readonly PlexWidget[]
     path: string
-    /** The width the views wrap at: the width the arrangement reserves for them, whatever width it gives the node. */
     width: number
     clock?: Clock | undefined
   }>(),
