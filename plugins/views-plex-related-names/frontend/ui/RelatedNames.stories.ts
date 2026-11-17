@@ -10,7 +10,8 @@ import RelatedNames from './RelatedNames.vue'
 const toName = (title: string): RelatedName => ({
   path: `notes/${title}.md`,
   title,
-  label: `${title}, name under Pear rows`,
+  relation: 'child',
+  label: `${title}, child of Pear rows`,
 })
 
 const meta = {
@@ -39,7 +40,7 @@ export const ChoosesAName: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(
-      await canvas.findByRole('button', { name: 'Grafting, name under Pear rows' }),
+      await canvas.findByRole('button', { name: 'Grafting, child of Pear rows' }),
     )
     await expect(args.onChoose).toHaveBeenCalledWith('notes/Grafting.md')
     await expect(args.onChoose).toHaveBeenCalledTimes(1)

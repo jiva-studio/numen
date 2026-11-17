@@ -10,6 +10,7 @@ interface Setting {
   readonly key: string
   readonly type: string
   readonly title: string
+  readonly description?: string
   readonly default: unknown
   readonly min?: number
   readonly max?: number
@@ -72,8 +73,11 @@ describe('the manifest', () => {
 describe('the settings of the names', () => {
   const find = (key: string) => (manifest.settings ?? []).find((one) => one.key === key)
 
-  it('are namesPerNote only, since the names are shown while the plugin is enabled', () => {
-    expect((manifest.settings ?? []).map((one) => one.key)).toStrictEqual(['namesPerNote'])
+  it('are namesPerNote and showRelationArrows, since the names are shown while the plugin is enabled', () => {
+    expect((manifest.settings ?? []).map((one) => one.key).sort()).toStrictEqual([
+      'namesPerNote',
+      'showRelationArrows',
+    ])
   })
 
   it('offers Names per note from 1 to 12, six by default', () => {
@@ -85,5 +89,14 @@ describe('the settings of the names', () => {
       max: 12,
       step: 1,
     })
+  })
+
+  it('offers Show the relation arrows, on by default, with a description of the arrows', () => {
+    expect(find('showRelationArrows')).toMatchObject({
+      type: 'boolean',
+      title: 'Show the relation arrows',
+      default: true,
+    })
+    expect(find('showRelationArrows')?.description).toMatch(/arrow/i)
   })
 })
