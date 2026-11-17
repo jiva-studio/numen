@@ -51,7 +51,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   const settings = readSettings(plugin)
   const reportFailure = (error: Caught) =>
     notices.show(error instanceof Error ? error.message : String(error), 'error')
-  const reader = createNotesReader({ notes, events: host.events, settings, reportFailure })
+  const reader = createNotesReader({ notes, events: host.events, reportFailure })
   plugin.identity.subscriptions.push({ dispose: reader.dispose })
   const source: NamesSource = { reader, commands, settings, reportFailure }
   plugin.register.slotView({ id: PARENTS_VIEW, component: createNamesView(source, 'above') })

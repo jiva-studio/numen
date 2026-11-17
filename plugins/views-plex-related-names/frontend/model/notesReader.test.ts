@@ -4,7 +4,6 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { shallowRef } from 'vue'
 import type { Disposable, NoteGraph, VaultChangeEvent } from '@numen/plugin-sdk'
 import { createNotesReader, type NoteLease } from './notesReader'
 
@@ -45,11 +44,10 @@ interface Pending {
   reject(error: unknown): void
 }
 
-const createRig = (showNames = true) => {
+const createRig = () => {
   const pending: Pending[] = []
   const handlers = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
   const reported: unknown[] = []
-  const settings = { showNames: shallowRef(showNames) }
   const reader = createNotesReader({
     notes: {
       listRelatedNotes: (paths: readonly string[], depth?: 1 | 2) =>
@@ -72,7 +70,6 @@ const createRig = (showNames = true) => {
         }
       },
     },
-    settings,
     reportFailure: (error) => reported.push(error),
   })
   const getReads = (path?: string) =>
@@ -99,7 +96,7 @@ const createRig = (showNames = true) => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS)
     await flushPromises()
   }
-  return { reader, settings, getReads, answer, emit, settle, reported, handlers }
+  return { reader, getReads, answer, emit, settle, reported, handlers }
 }
 
 const getRelatedPaths = (lease: NoteLease) => lease.noteGraph.value?.related.map((one) => one.path)

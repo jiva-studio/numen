@@ -1,5 +1,5 @@
 /** The notes related to the notes the plex shows, read once for every view that shows a note. */
-import { computed, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
+import { shallowRef, type Ref, type ShallowRef } from 'vue'
 import type {
   Caught,
   NoteGraph,
@@ -7,17 +7,15 @@ import type {
   VaultChangeEvent,
   VaultNotes,
 } from '@numen/plugin-sdk'
-import type { NamesSettings } from './settings'
 
 /** What the notes are read with and kept up to date through. */
 export interface NotesReaderSource {
   readonly notes: Pick<VaultNotes, 'listRelatedNotes'>
   readonly events: Pick<PluginEvents, 'onVaultChange'>
-  readonly settings: Pick<NamesSettings, 'showNames'>
   readonly reportFailure: (error: Caught) => void
 }
 
-/** The use of one note by one view: the notes related to it, `null` until they are read, while they are hidden and after a failed read, whether the first read has ended (answered or failed, and also when the names are hidden or the path is empty; it never goes back to `false`), and the end of the use. */
+/** The use of one note by one view: the notes related to it, `null` until they are read and after a failed read, whether the first read has ended (answered or failed, and also when the path is empty; it never goes back to `false`), and the end of the use. */
 export interface NoteLease {
   readonly noteGraph: Readonly<Ref<NoteGraph | null>>
   readonly isLoaded: Readonly<Ref<boolean>>
@@ -87,10 +85,6 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
     isFlushScheduled = false
     const toRead = [...queued].filter((entry) => entries.get(entry.path) === entry)
     queued.clear()
-    if (!source.settings.showNames.value) {
-      for (const entry of toRead) entry.isReading = false
-      return
-    }
     for (let start = 0; start < toRead.length; start += MAX_PATHS_PER_CALL) {
       readChunk(toRead.slice(start, start + MAX_PATHS_PER_CALL)).catch(source.reportFailure)
     }
@@ -113,7 +107,6 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
     )
 
   const subscription = source.events.onVaultChange((event) => {
-    if (!source.settings.showNames.value) return
     for (const entry of entries.values()) {
       if (isAffected(entry, event)) changed.add(entry.path)
     }
@@ -123,24 +116,11 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
       pending = undefined
       const paths = [...changed]
       changed.clear()
-      if (!source.settings.showNames.value) return
       for (const path of paths) {
         const entry = entries.get(path)
         if (entry) read(entry)
       }
     }, REFRESH_DELAY_MS)
-  })
-
-  const stopWatching = watch(source.settings.showNames, (isShown) => {
-    for (const entry of entries.values()) {
-      if (isShown) {
-        read(entry)
-        continue
-      }
-      entry.latest += 1
-      entry.isReading = false
-      entry.noteGraph.value = null
-    }
   })
 
   return {
@@ -165,15 +145,12 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
         entries.set(path, entry)
       }
       entry.leases += 1
-      if (source.settings.showNames.value && !entry.isReading && !entry.noteGraph.value) {
-        read(entry)
-      }
+      if (!entry.isReading && !entry.noteGraph.value) read(entry)
       const held = entry
-      const isLoaded = computed(() => !source.settings.showNames.value || held.isReadEnded.value)
       let isHeld = true
       return {
         noteGraph: held.noteGraph,
-        isLoaded,
+        isLoaded: held.isReadEnded,
         release: () => {
           if (!isHeld) return
           isHeld = false
@@ -190,7 +167,6 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
       pending = undefined
       changed.clear()
       queued.clear()
-      stopWatching()
       subscription.dispose()
     },
   }
