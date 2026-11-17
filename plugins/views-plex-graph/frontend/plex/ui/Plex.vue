@@ -71,7 +71,10 @@ const { room, isMeasured, options, measures, widen, placedHeadings } = useFreeSp
 /** How the nodes behave, handed down as one. */
 const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
-const rooms = useWidgetRooms(options)
+const rooms = useWidgetRooms(
+  options,
+  (side) => !!(side === 'above' ? props.widgetsAbove : props.widgetsBelow)?.length,
+)
 
 const hasWidgets = () => !!(props.widgetsAbove?.length || props.widgetsBelow?.length)
 
