@@ -152,6 +152,6 @@ export const LongHeading: Story = {
 
     const list = canvasElement.querySelector('.headings__list')!.getBoundingClientRect()
     const el = canvasElement.querySelector('.headings__list') as HTMLElement
-    await expect(JSON.stringify({ l: list.left, r: list.right, w: list.width, iw: window.innerWidth, style: el.getAttribute('style'), cw: getComputedStyle(el).maxWidth })).toBe('')
+    await expect(el.getAttribute('style')).toBe('')
   },
 }
