@@ -21,10 +21,10 @@ type RerankRows interface {
 	ListRows(owner, operation string) ([]modelcall.Row, error)
 }
 
-// RerankCodec writes the request of llm.rerank and reads its result. A result that cannot be read is an
-// error.
+// RerankCodec writes the request of llm.rerank and reads its result. A request that cannot be written and a
+// result that cannot be read are errors.
 type RerankCodec interface {
-	EncodeRequest(query, instruction string, documents []string) []byte
+	EncodeRequest(query, instruction string, documents []string) ([]byte, error)
 	DecodeResult(payload []byte) ([]float64, error)
 }
 
@@ -154,8 +154,12 @@ func (rr reranker) callBatch(ctx context.Context, row modelcall.Row, in rerankIn
 	for j, i := range missing {
 		documents[j] = in.texts[i]
 	}
+	payload, err := rr.codec.EncodeRequest(in.query, in.instruction, documents)
+	if err != nil {
+		return err
+	}
 	done, err := rr.calls.Call(ctx, settingsdomain.AppOwner, modelcall.Request{
-		Operation: operationresult.OperationRerank, Payload: rr.codec.EncodeRequest(in.query, in.instruction, documents),
+		Operation: operationresult.OperationRerank, Payload: payload,
 		Priority:  in.priority,
 		Preferred: &modelcall.PreferredRow{ConnectionID: row.ConnectionID, Options: row.Options, IsExclusive: true},
 	}, func([]byte) error { return nil })

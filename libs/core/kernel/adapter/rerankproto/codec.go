@@ -1,21 +1,14 @@
-// Package rerankproto encodes the request and decodes the result of the operation llm.rerank in the protobuf
-// wire format of its contract, which the core does not import.
+// Package rerankproto encodes the request and decodes the result of the operation llm.rerank with the generated
+// messages of the core protocol.
 package rerankproto
 
 import (
 	"errors"
-	"math"
+	"fmt"
 
-	"google.golang.org/protobuf/encoding/protowire"
-)
+	"google.golang.org/protobuf/proto"
 
-// The fields of RerankRequest{query 1, instruction 2, repeated documents 3} and RerankResult{repeated float
-// scores 1}.
-const (
-	fieldQuery       protowire.Number = 1
-	fieldInstruction protowire.Number = 2
-	fieldDocuments   protowire.Number = 3
-	fieldScores      protowire.Number = 1
+	numenv1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
 var errRerankResult = errors.New("the answer of the reranking service is not a RerankResult")
@@ -23,73 +16,25 @@ var errRerankResult = errors.New("the answer of the reranking service is not a R
 // Codec is the wire format of llm.rerank.
 type Codec struct{}
 
-// EncodeRequest leaves out an empty instruction.
-func (Codec) EncodeRequest(query, instruction string, documents []string) []byte {
-	var out []byte
-	out = protowire.AppendTag(out, fieldQuery, protowire.BytesType)
-	out = protowire.AppendString(out, query)
-	if instruction != "" {
-		out = protowire.AppendTag(out, fieldInstruction, protowire.BytesType)
-		out = protowire.AppendString(out, instruction)
+// EncodeRequest leaves out an empty instruction. A text that is not UTF-8 cannot be sent, because the message
+// holds strings.
+func (Codec) EncodeRequest(query, instruction string, documents []string) ([]byte, error) {
+	payload, err := proto.Marshal(&numenv1.RerankRequest{Query: query, Instruction: instruction, Documents: documents})
+	if err != nil {
+		return nil, fmt.Errorf("the request of the reranking service cannot be written: %w", err)
 	}
-	for _, d := range documents {
-		out = protowire.AppendTag(out, fieldDocuments, protowire.BytesType)
-		out = protowire.AppendString(out, d)
-	}
-	return out
+	return payload, nil
 }
 
 // DecodeResult reads the scores packed or one field each.
 func (Codec) DecodeResult(payload []byte) ([]float64, error) {
-	var scores []float64
-	for len(payload) > 0 {
-		number, kind, n := protowire.ConsumeTag(payload)
-		if n < 0 {
-			return nil, errRerankResult
-		}
-		payload = payload[n:]
-		var err error
-		switch {
-		case number == fieldScores && kind == protowire.BytesType:
-			scores, payload, err = consumePackedScores(scores, payload)
-		case number == fieldScores && kind == protowire.Fixed32Type:
-			scores, payload, err = consumeScore(scores, payload)
-		default:
-			payload, err = skipField(number, kind, payload)
-		}
-		if err != nil {
-			return nil, err
-		}
+	var result numenv1.RerankResult
+	if err := proto.Unmarshal(payload, &result); err != nil {
+		return nil, fmt.Errorf("%w: %w", errRerankResult, err)
+	}
+	scores := make([]float64, len(result.GetScores()))
+	for i, score := range result.GetScores() {
+		scores[i] = float64(score)
 	}
 	return scores, nil
-}
-
-func consumePackedScores(scores []float64, payload []byte) ([]float64, []byte, error) {
-	packed, n := protowire.ConsumeBytes(payload)
-	if n < 0 || len(packed)%4 != 0 {
-		return nil, nil, errRerankResult
-	}
-	for len(packed) > 0 {
-		var err error
-		if scores, packed, err = consumeScore(scores, packed); err != nil {
-			return nil, nil, err
-		}
-	}
-	return scores, payload[n:], nil
-}
-
-func consumeScore(scores []float64, payload []byte) ([]float64, []byte, error) {
-	bits, n := protowire.ConsumeFixed32(payload)
-	if n < 0 {
-		return nil, nil, errRerankResult
-	}
-	return append(scores, float64(math.Float32frombits(bits))), payload[n:], nil
-}
-
-func skipField(number protowire.Number, kind protowire.Type, payload []byte) ([]byte, error) {
-	n := protowire.ConsumeFieldValue(number, kind, payload)
-	if n < 0 {
-		return nil, errRerankResult
-	}
-	return payload[n:], nil
 }

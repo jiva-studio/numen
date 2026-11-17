@@ -446,3 +446,18 @@ func TestAWaitingInteractiveRerankGoesBeforeTheNextBatchOfABackgroundRerank(t *t
 		t.Errorf("the background rerank answered %v", err)
 	}
 }
+
+func TestAPassageThatIsNotUTF8FailsTheRerankWithoutACall(t *testing.T) {
+	w := newWorld(t, map[string]string{"a.md": "The tide comes over the sand \xff at night."})
+	w.cutBySize(t, "a.md", 400)
+	s := newServices(t)
+
+	_, err := w.newRerankingFind(s, searchquerydomain.StageLimits{}).Execute(t.Context(), w.v, searchquerydomain.Request{Text: `words("tide").rerank()`})
+
+	if _, ok := errors.AsType[*searchquerydomain.RerankError](err); !ok {
+		t.Fatalf("the query answered %v, want a RerankError", err)
+	}
+	if calls := len(s.world.Provider.CallsTo(firstAddress)) + len(s.world.Provider.CallsTo(secondAddress)); calls != 0 {
+		t.Errorf("%d calls were made, want none for a request that cannot be written", calls)
+	}
+}
