@@ -37,10 +37,14 @@ export const LabelInTheDarkTheme: Story = {
   },
 }
 
-/** A label of far too many words stays whole. */
+/** A label of far too many words wraps inside the viewport. */
 export const FarTooManyWords: Story = {
   args: { text: Array.from({ length: 60 }, (_, index) => `Tag ${index + 1}`).join(', ') },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('tooltip')).toBeVisible()
+    const tooltip = within(canvasElement).getByRole('tooltip')
+    await expect(tooltip).toBeVisible()
+    const box = tooltip.getBoundingClientRect()
+    await expect(box.left).toBeGreaterThanOrEqual(0)
+    await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
   },
 }

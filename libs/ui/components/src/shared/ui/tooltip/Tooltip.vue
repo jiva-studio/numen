@@ -60,6 +60,7 @@ const tooltipPosition = computed(() => ({
 }))
 
 const tooltipStyle = computed(() => ({
+  maxInlineSize: `${Math.max(0, room.value.width - 2 * props.margin)}px`,
   insetInlineStart: `${tooltipPosition.value.x}px`,
   insetBlockStart: `${tooltipPosition.value.y}px`,
 }))
@@ -87,8 +88,8 @@ function measure(): void {
 .tooltip {
   position: fixed;
   z-index: var(--numen-lift-tooltip);
-  /* As wide as its content, whatever space remains beside it at its current position. */
   inline-size: max-content;
+  overflow-wrap: anywhere;
   padding: var(--numen-inset);
   border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius);

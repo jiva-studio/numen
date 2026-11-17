@@ -22,6 +22,10 @@
       "reason": "the active option of a long list is scrolled into view inside the list"
     },
     {
+      "file": "libs/ui/components/src/shared/ui/tooltip/Tooltip.stories.ts",
+      "reason": "a tooltip with a very long label wraps and stays inside the viewport"
+    },
+    {
       "file": "libs/ui/workbench/src/features/palette/ui/Palette.stories.ts",
       "reason": "the last row of a far too long list is reachable inside the list"
     },
