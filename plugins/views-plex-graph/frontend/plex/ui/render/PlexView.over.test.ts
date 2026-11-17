@@ -88,7 +88,7 @@ describe('the views across a node', () => {
     expect(getViews(view)).toHaveLength(2)
   })
 
-  it('are drawn in a layer after the one open notes are drawn in, which comes after every note', async () => {
+  it('are drawn in a layer after the one open notes are drawn in, which is after every note', async () => {
     const view = await mountView()
     const layer = view.get('.plex__over-layer').element
     const lift = view.get('.plex__lift').element

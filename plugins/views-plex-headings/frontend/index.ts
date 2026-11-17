@@ -5,7 +5,7 @@
 import { defineComponent, h, ref, type ComponentPublicInstance } from 'vue'
 import { definePlugin, type Caught, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { readSettings } from './model/settings'
-import { sleep, type HeadingsSource } from './model/useHeadings'
+import { HOVER_WAIT, LEAVE_GRACE, sleep, type HeadingsSource } from './model/useHeadings'
 import { useHeadingsView } from './model/useHeadingsView'
 import PlexHeadings from './ui/PlexHeadings.vue'
 
@@ -56,6 +56,8 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     reportFailure: (error: Caught) =>
       notices.show(error instanceof Error ? error.message : String(error), 'error'),
     wait: sleep,
+    hoverWait: HOVER_WAIT,
+    leaveGrace: LEAVE_GRACE,
   }
   plugin.register.slotView({ id: HEADINGS_VIEW, component: createHeadingsView(source) })
 }

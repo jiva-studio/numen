@@ -1,4 +1,4 @@
-/** The headings of the note of a node, read when the pointer comes onto the node and put away when it leaves. */
+/** The headings of the note of a node, read once the pointer rests on the node and put away once the pointer is off it. */
 import { getCurrentScope, onScopeDispose, shallowRef, watch } from 'vue'
 import { createRequestGuard } from '@numen/ui'
 import type { Caught, NoteHeading, VaultNotes } from '@numen/plugin-sdk'
@@ -7,7 +7,7 @@ import type { HeadingsSettings } from './settings'
 /** How long the pointer rests on a node before its headings come out, in milliseconds. */
 export const HOVER_WAIT = 500
 
-/** How long the pointer may be off the node and its list before the list goes, so it can cross from one to the other. */
+/** How long the pointer may be off the node and its list before the list is put away, so it can cross from one to the other, in milliseconds. */
 export const LEAVE_GRACE = 150
 
 type Wait = (ms: number) => Promise<void>
@@ -21,6 +21,8 @@ export interface HeadingsSource {
   readonly open: (path: string, line: number) => void
   readonly reportFailure: (error: Caught) => void
   readonly wait: Wait
+  readonly hoverWait: number
+  readonly leaveGrace: number
 }
 
 /**
@@ -45,7 +47,7 @@ export function useHeadings(source: HeadingsSource, getPath: () => string) {
 
   const leave = async () => {
     const mine = ++departures
-    await source.wait(LEAVE_GRACE)
+    await source.wait(source.leaveGrace)
     if (mine === departures) close()
   }
 
@@ -56,7 +58,7 @@ export function useHeadings(source: HeadingsSource, getPath: () => string) {
     const path = getPath()
     isReading = true
     try {
-      const [found] = await Promise.all([source.notes.getHeadings([path]), source.wait(HOVER_WAIT)])
+      const [found] = await Promise.all([source.notes.getHeadings([path]), source.wait(source.hoverWait)])
       if (mine.isCurrent) headings.value = found.get(path) ?? []
     } catch (error) {
       if (mine.isCurrent) source.reportFailure(error)

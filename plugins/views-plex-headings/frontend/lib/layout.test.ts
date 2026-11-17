@@ -66,7 +66,7 @@ describe('the furthest the window on the rows scrolls', () => {
     expect(getFurthestOffset(10, layoutOf())).toBe(4)
   })
 
-  it('is none where every row stands', () => {
+  it('is none where every row is shown', () => {
     expect(getFurthestOffset(4, layoutOf({ count: 4 }))).toBe(0)
   })
 })

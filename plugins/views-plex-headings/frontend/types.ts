@@ -20,7 +20,7 @@ export interface NodeView {
   readonly scale: number
 }
 
-/** One line of the list: the line of the note its heading stands on, its words and how far in it is set. */
+/** One line of the list: the line of the note its heading is on, its words and how far in it is set. */
 export interface HeadingRow {
   readonly line: number
   readonly text: string

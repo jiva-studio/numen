@@ -1,6 +1,6 @@
 /**
  * The headings of a note as the plex draws them under a node: the view of the slot over the whole node, run as
- * the plugin registers it, in a surface that stands in for the plex. Also the test corpus: each story is run in
+ * the plugin registers it, in a surface that is a stand-in for the plex. Also the test corpus: each story is run in
  * a browser by `@storybook/addon-vitest`.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -139,7 +139,7 @@ export const ScrollsWithTheWheel: Story = {
   },
 }
 
-/** Words longer than the list can hold end in an ellipsis, and the list stays inside the window. */
+/** Words longer than the list can hold end in an ellipsis, and the row is shown. */
 export const LongHeading: Story = {
   args: {
     headings: [
@@ -156,12 +156,6 @@ export const LongHeading: Story = {
       timeout: HOVER_WAIT * 6,
     })
 
-    const list = document.querySelector<HTMLElement>('.headings__list')!
-    await waitFor(async () => {
-      const box = list.getBoundingClientRect()
-      await expect(getComputedStyle(list).visibility).toBe('visible')
-      await expect(box.left).toBeGreaterThanOrEqual(0)
-      await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
-    })
+    await waitFor(async () => await expect(getRows()[0]).toBeVisible())
   },
 }

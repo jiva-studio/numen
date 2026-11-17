@@ -259,7 +259,7 @@ describe('a pointer that leaves', () => {
     expect(getTexts(wrapper)).toStrictEqual([])
   })
 
-  it('lists nothing for an answer that comes after it left', async () => {
+  it('lists nothing for an answer that arrives after the pointer left', async () => {
     vi.useFakeTimers()
     const { show, answers } = setup()
     let answer: (headings: NoteHeading[]) => void = () => undefined
@@ -274,7 +274,7 @@ describe('a pointer that leaves', () => {
     expect(getTexts(wrapper)).toStrictEqual([])
   })
 
-  it('lists nothing for an answer that comes after the pointer came back and was answered', async () => {
+  it('lists nothing for a stale answer that arrives after the list was read again', async () => {
     vi.useFakeTimers()
     const { show, answers } = setup()
     let late: (headings: NoteHeading[]) => void = () => undefined
@@ -291,7 +291,7 @@ describe('a pointer that leaves', () => {
     expect(getTexts(wrapper)).toStrictEqual(['Fresh'])
   })
 
-  it('reads the note again when it comes back, for it may have changed', async () => {
+  it('reads the note again when the pointer returns, for it may have changed', async () => {
     vi.useFakeTimers()
     const { show, requested } = setup()
     const wrapper = show(HEAT)
@@ -385,7 +385,7 @@ describe('a heading chosen', () => {
     document.body.removeEventListener('dblclick', reached)
   })
 
-  it('is not the only click the node hears: a click on the rest of the view reaches it', async () => {
+  it('is not the only click the node receives: a click on the rest of the view reaches it', async () => {
     vi.useFakeTimers()
     const { show } = setup()
     const wrapper = show(HEAT)
@@ -459,7 +459,7 @@ describe('the wheel on the list', () => {
     expect(down.defaultPrevented).toBe(true)
   })
 
-  it('scrolls nothing where every heading stands at once', async () => {
+  it('scrolls nothing where every heading is shown at once', async () => {
     vi.useFakeTimers()
     const { show } = setup()
     const wrapper = show(HEAT)
@@ -471,7 +471,7 @@ describe('the wheel on the list', () => {
     expect(document.querySelectorAll('.headings__more')).toHaveLength(0)
   })
 
-  it('opens at the top each time the list comes out', async () => {
+  it('opens at the top each time the list is shown', async () => {
     const wrapper = await setupMany()
     await wheel(wrapper, 1)
 
@@ -483,7 +483,7 @@ describe('the wheel on the list', () => {
 })
 
 describe('a failure to read the headings', () => {
-  it('is shown to the person as an error, and no list comes out', async () => {
+  it('is shown to the person as an error, and no list is shown', async () => {
     vi.useFakeTimers()
     const { show, notices, answers } = setup()
     answers.set(HEAT, Promise.reject(new Error('the vault is closed')))
