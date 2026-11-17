@@ -1,7 +1,7 @@
 /**
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
-import { computed, getCurrentScope, onScopeDispose, shallowRef, watch, type Component } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, shallowRef, type Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
 import {
   formatErrorMessage,
@@ -48,19 +48,6 @@ function usePlexPicture(
     if (!deps.window.isReady.value || !noteGraph) return null
     return convertNoteGraph(noteGraph, map.getNodeId, deps.look.references.value)
   })
-
-  // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
-  let lastDrawnIds: readonly string[] = []
-  watch(
-    picture,
-    (rendered) => {
-      // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
-      const drawnIds = rendered?.nodes.map((node) => node.id) ?? []
-      map.retainNodeIds([...drawnIds, ...lastDrawnIds])
-      lastDrawnIds = drawnIds
-    },
-    { immediate: true },
-  )
 
   const empty = computed(
     () =>

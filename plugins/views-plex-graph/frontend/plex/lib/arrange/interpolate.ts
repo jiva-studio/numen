@@ -7,7 +7,7 @@
  */
 import { edgeKey, type PlacedEdge } from '../edge'
 import type { PlexFrame } from '../frame'
-import type { PlacedNode, Position } from '../node'
+import type { PlacedNode } from '../node'
 import { clamp01, lerp, lerpExtent } from './math'
 import { resolveOptions, type PlexOptionsInput } from './options'
 import { createRouting, type Routing } from './edges/routing'
@@ -18,12 +18,6 @@ import type { PlexEdge } from '../../../types'
 type Title = Pick<PlacedEdge, 'titles'>
 
 const getTitles = (edge: PlacedEdge): Title => ({ titles: edge.titles })
-
-function getOrigin(to: PlexFrame, was: ReadonlyMap<string, PlacedNode>): Position {
-  const newFocus = to.nodes.find((node) => node.relation === 'focus')
-  const cameFrom = newFocus ? was.get(newFocus.id) : undefined
-  return { x: cameFrom?.x ?? 0, y: cameFrom?.y ?? 0 }
-}
 
 function tweenNode(start: PlacedNode, target: PlacedNode, t: number): PlacedNode {
   return {
@@ -36,40 +30,21 @@ function tweenNode(start: PlacedNode, target: PlacedNode, t: number): PlacedNode
   }
 }
 
-interface NodeTweenOptions {
-  readonly t: number
-  readonly opacity: number
-}
-
-function openNode(target: PlacedNode, origin: Position, options: NodeTweenOptions): PlacedNode {
-  return {
-    ...target,
-    x: lerp(origin.x, target.x, options.t),
-    y: lerp(origin.y, target.y, options.t),
-    opacity: options.opacity,
-  }
-}
-
 interface NodeTiming {
   readonly t: number
-  readonly entry: number
   readonly exit: number
 }
 
 function tweenNodes(from: PlexFrame, to: PlexFrame, timing: NodeTiming): PlacedNode[] {
   const was = new Map(from.nodes.map((node) => [node.id, node]))
   const will = new Set(to.nodes.map((node) => node.id))
-  const origin = getOrigin(to, was)
 
   const nodes: PlacedNode[] = []
 
   for (const target of to.nodes) {
     const start = was.get(target.id)
-    nodes.push(
-      start
-        ? tweenNode(start, target, timing.t)
-        : openNode(target, origin, { t: timing.t, opacity: timing.entry }),
-    )
+    // A node that was not there comes in at the place it ends at, with everything it carries, so the reader sees it whole from the first frame.
+    nodes.push(start ? tweenNode(start, target, timing.t) : target)
   }
 
   // Departures stay put and fade; moving them too would be a third thing
@@ -140,7 +115,7 @@ export function interpolatePlex(
   const incoming = clamp01((t - arriveAfter) / (1 - arriveAfter))
   const leaving = 1 - clamp01(t / leaveBefore)
 
-  const nodes = tweenNodes(from, to, { t, entry: incoming, exit: leaving })
+  const nodes = tweenNodes(from, to, { t, exit: leaving })
   const byId = new Map(nodes.map((node) => [node.id, node]))
 
   return {
