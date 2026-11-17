@@ -89,7 +89,7 @@ function onLeave() {
   block-size: var(--dot);
   border-radius: 50%;
   background: var(--tag);
-  box-shadow: 0 0 0 var(--ring) var(--tree-row-bg);
+  box-shadow: 0 0 0 var(--ring) var(--tree-row-ring, var(--tree-row-bg));
 }
 
 .file-tags__dot + .file-tags__dot {

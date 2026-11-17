@@ -80,20 +80,24 @@ useRenameFocus(() => props.isRenaming, field)
   user-select: none;
   touch-action: none;
   --tree-row-bg: var(--numen-surface);
+  --tree-row-ring: var(--tree-row-bg);
   background: var(--tree-row-bg);
 }
 
 .tree__row:hover {
   --tree-row-bg: var(--numen-bubble-bg);
+  --tree-row-ring: var(--numen-bubble-bg);
 }
 
 .tree__row[data-renaming] {
   --tree-row-bg: var(--numen-bubble-bg);
+  --tree-row-ring: var(--numen-bubble-bg);
 }
 
 .tree__row[data-selected],
 .tree__row[data-selected]:hover {
   --tree-row-bg: var(--numen-accent);
+  --tree-row-ring: var(--numen-accent-ink);
   color: var(--numen-accent-ink);
 }
 
