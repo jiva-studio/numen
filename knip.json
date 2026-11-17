@@ -53,6 +53,21 @@
         "@bufbuild/protoc-gen-es"
       ]
     },
+    "libs/shared/rerank": {
+      "entry": [
+        "index.ts!",
+        "src/*_pb.ts!"
+      ],
+      "project": [
+        "**/*.ts!"
+      ],
+      "ignoreBinaries": [
+        "buf"
+      ],
+      "ignoreDependencies": [
+        "@bufbuild/protoc-gen-es"
+      ]
+    },
     "libs/core/client": {
       "entry": [
         "src/**/*.test.ts"
