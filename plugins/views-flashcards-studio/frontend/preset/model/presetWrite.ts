@@ -42,15 +42,14 @@ export function createWriteQueue(): WriteQueue {
   }
 }
 
-/** Takes the answer of a read or write at a version unless an answer of a newer one was taken; returns whether it was taken. */
-export const takeVersion = (queue: WriteQueue, version: bigint, revision: string): boolean => {
+const takeVersion = (queue: WriteQueue, version: bigint, revision: string): boolean => {
   if (version < queue.unsaved.version) return false
   queue.unsaved.version = version
   queue.unsaved.revision = revision
   return true
 }
 
-/** Takes the answer of a read: a missing file stands for no version, so it is taken at any version. */
+/** Takes the answer of a read unless an answer of a newer version was taken; a missing file has no version, so its answer is taken always. */
 export const takeRead = (
   queue: WriteQueue,
   read: Extract<PresetReadResult, { ok: true }>['value'],
