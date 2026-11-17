@@ -13,6 +13,7 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/shared/rerank"
 )
 
 // RerankRows lists the rows of the Reranking setting of the core in the order of use, each with the name of
@@ -21,18 +22,10 @@ type RerankRows interface {
 	ListRows(owner, operation string) ([]modelcall.Row, error)
 }
 
-// RerankCodec writes the request of llm.rerank and reads its result. A request that cannot be written and a
-// result that cannot be read are errors.
-type RerankCodec interface {
-	EncodeRequest(query, instruction string, documents []string) ([]byte, error)
-	DecodeResult(payload []byte) ([]float64, error)
-}
-
 // reranker is what a rerank stage calls: the rows of the setting, the connections they name, the calls of
 // the operation and the stored scores.
 type reranker struct {
 	calls   connectionport.ModelCalls
-	codec   RerankCodec
 	rows    RerankRows
 	resolve connectionport.ResolveConnection
 	results OperationResults
@@ -154,7 +147,7 @@ func (rr reranker) callBatch(ctx context.Context, row modelcall.Row, in rerankIn
 	for j, i := range missing {
 		documents[j] = in.texts[i]
 	}
-	payload, err := rr.codec.EncodeRequest(in.query, in.instruction, documents)
+	payload, err := rerank.EncodeRequest(in.query, in.instruction, documents)
 	if err != nil {
 		return err
 	}
@@ -166,7 +159,7 @@ func (rr reranker) callBatch(ctx context.Context, row modelcall.Row, in rerankIn
 	if err != nil {
 		return err
 	}
-	got, err := rr.codec.DecodeResult(done)
+	got, err := rerank.DecodeResult(done)
 	if err != nil {
 		return err
 	}

@@ -13,7 +13,6 @@ import (
 
 	"google.golang.org/protobuf/encoding/protowire"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
@@ -76,7 +75,6 @@ func (s *services) sentTexts(address string) [][]string {
 func (w world) newRerankingFind(s *services, limits searchquerydomain.StageLimits) *searchquery.FindSearchResults {
 	deps := w.newDeps(nil)
 	world := s.world
-	deps.Stages.Codec = rerankproto.Codec{}
 	deps.Stages.Calls = modelcall.NewCalls(
 		modelcall.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows},
 		world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside,

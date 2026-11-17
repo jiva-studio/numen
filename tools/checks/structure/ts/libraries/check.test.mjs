@@ -152,10 +152,14 @@ test("a shared library that reaches the plugin SDK is reported", () => {
   assert.match(found[1].symbol, /family libs\/shared\/tokenizer reaches libs\/plugin\/sdk-go/);
 });
 
-test("a library row lists no shared library but the messages of llm.rerank", () => {
+test("only the core and the plugin SDK list shared libraries, which are leaves", () => {
   for (const [family, allowed] of Object.entries(LIBRARY_DEPENDENCIES)) {
     const shared = allowed.filter((one) => one.startsWith("libs/shared/"));
-    assert.ok(shared.every((one) => one === "libs/shared/rerank"), `${family} may reach a shared library: ${shared}`);
+    if (family === "libs/core/kernel" || family === "libs/plugin/sdk-go") continue;
+    assert.deepEqual(shared, [], `${family} may reach a shared library`);
+  }
+  for (const family of Object.keys(LIBRARY_DEPENDENCIES).filter((one) => one.startsWith("libs/shared/"))) {
+    assert.deepEqual(LIBRARY_DEPENDENCIES[family], [], `${family} may reach a library`);
   }
 });
 
