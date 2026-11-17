@@ -168,7 +168,7 @@ interface Seen {
   readonly widgetOpacity: readonly string[]
 }
 
-const getSeen = (plex: ReturnType<typeof mountPlex>): Map<string, Seen> => {
+const readVisibleNodes = (plex: ReturnType<typeof mountPlex>): Map<string, Seen> => {
   const seen = new Map<string, Seen>()
   for (const stack of plex.findAll('.plex__stack')) {
     if (stack.classes('plex__stack--waiting')) continue
@@ -201,7 +201,6 @@ const mountPlex = (arrivals: Arrivals) =>
     attachTo: document.body,
   })
 
-/** The plex that shows `BEFORE`, whose widgets are all there, and `AFTER` given while the widgets of the entering nodes are still to arrive. */
 const mountBeforeClick = async () => {
   const arrivals: Arrivals = ref(new Set())
   const plex = mountPlex(arrivals)
@@ -210,12 +209,12 @@ const mountBeforeClick = async () => {
     BEFORE.nodes.map((node) => node.id),
   )
   await passFrames(30)
-  const resting = getSeen(plex)
+  const resting = readVisibleNodes(plex)
   await plex.setProps({ graph: AFTER })
   return { arrivals, plex, resting }
 }
 
-const getMoved = (resting: Map<string, Seen>, seen: Map<string, Seen>) =>
+const hasMoved = (resting: Map<string, Seen>, seen: Map<string, Seen>) =>
   [...seen].some(([id, one]) => resting.has(id) && resting.get(id)?.at !== one.at)
 
 describe('the plex between a click and the frame of the new graph', () => {
@@ -224,7 +223,7 @@ describe('the plex between a click and the frame of the new graph', () => {
 
     await passFrames(30)
 
-    expect(getSeen(plex)).toStrictEqual(resting)
+    expect(readVisibleNodes(plex)).toStrictEqual(resting)
     expect([...resting.keys()].sort()).toStrictEqual([...STAYING, ...LEAVING].sort())
     expect(resting.get('child-0')?.widgets).toStrictEqual([getWidgetText('child-0')])
   })
@@ -246,9 +245,9 @@ describe('the first frame of the movement to the new graph', () => {
     const frames: Map<string, Seen>[] = []
     for (let frame = 0; frame < 40; frame += 1) {
       await passFrames(1)
-      frames.push(getSeen(plex))
+      frames.push(readVisibleNodes(plex))
     }
-    const first = frames.findIndex((seen) => getMoved(resting, seen))
+    const first = frames.findIndex((seen) => hasMoved(resting, seen))
     return { frames, first, resting }
   }
 
@@ -264,7 +263,7 @@ describe('the first frame of the movement to the new graph', () => {
     }
   })
 
-  it('keeps the title and the widgets of every node that was there until it leaves', async () => {
+  it('keeps the title and the widgets of every node that was there for as long as it stays', async () => {
     const { frames, resting } = await run()
 
     for (const seen of frames) {
