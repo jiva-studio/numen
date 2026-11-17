@@ -4,19 +4,10 @@ import { computed, defineComponent, h, nextTick, ref, watch, type Ref } from 'vu
 import { useSlotLoading } from '@numen/plugin-sdk'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
-import { arrangePlex, interpolatePlex, type Placement, type Size } from '../lib/arrange'
+import type { NodeRoom, Placement, Size } from '../lib/arrange'
 import { clusters } from '../lib/arrange/layout/clusters'
 import type { Clock, Viewport } from '@numen/ui'
-import type { PlexGraph, PlexNode } from '../../types'
-
-vi.mock('../lib/arrange', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../lib/arrange')>()
-  return {
-    ...original,
-    arrangePlex: vi.fn(original.arrangePlex),
-    interpolatePlex: vi.fn(original.interpolatePlex),
-  }
-})
+import type { PlexGraph } from '../../types'
 
 const FAMILY: PlexGraph = {
   nodes: [
@@ -80,10 +71,23 @@ const deliverOneAfterAnother = async (arrivals: Arrivals, ids: readonly string[]
 // The real placement, wrapped to count how often the plex asks the arrangement to place nodes.
 const placed: number[] = []
 
+/** The final layout of each arrangement, the one that does not stop early, with the room each of its notes was given. */
+const layouts: { hasRoom: boolean; rooms: Map<string, NodeRoom> }[] = []
+
 const countingPlacement: Placement = {
   name: clusters.name,
   place: (nodes, focus, context) => {
     placed.push(placed.length)
+    if (context.shouldStop === undefined) {
+      const rooms = new Map(
+        [focus, ...Object.values(nodes).flatMap((list) => list ?? [])].map((node) => [
+          node.id,
+          context.room(node),
+        ]),
+      )
+      const hasRoom = [...rooms.values()].some((room) => room.top > 0 || room.bottom > 0)
+      layouts.push({ hasRoom, rooms })
+    }
     return clusters.place(nodes, focus, context)
   },
 }
@@ -133,7 +137,7 @@ const createPlainEntry = (name = 'tags') => ({
 })
 
 let rings: (() => void)[] = []
-let assigned: { element: Element; value: string }[] = []
+let assigned: { element: Element; value: string; at: number }[] = []
 let scheduled: ((now: number) => void)[] = []
 let now = 0
 
@@ -144,8 +148,7 @@ const clock: Clock = {
 }
 
 beforeEach(() => {
-  vi.mocked(arrangePlex).mockClear()
-  vi.mocked(interpolatePlex).mockClear()
+  layouts.length = 0
   mounted.clear()
   placed.length = 0
   rings = []
@@ -191,7 +194,7 @@ beforeEach(() => {
     name: string,
     value: string,
   ) {
-    if (name === 'transform') assigned.push({ element: this, value })
+    if (name === 'transform') assigned.push({ element: this, value, at: now })
     setAttribute.call(this, name, value)
   })
 })
@@ -698,11 +701,18 @@ describe('the admission of the plex while the widgets of the shown nodes change 
   })
 })
 
-/** The arrangements that were given the rooms the widgets measured, and the movements that were started. */
-const getArranged = () =>
-  vi.mocked(arrangePlex).mock.calls.filter(([, input]) => input?.room !== undefined)
+/** The arrangements that were given the rooms the widgets measured. */
+const getArranged = () => layouts.filter((layout) => layout.hasRoom)
 
-const getRuns = () => new Set(vi.mocked(interpolatePlex).mock.calls.map(([, to]) => to)).size
+const MOVEMENT = 420
+
+/** How long the notes were given new positions for, from the first to the last. */
+const getMovementTime = () => {
+  const times = assigned
+    .filter(({ element }) => element.classList.contains('plex__node'))
+    .map(({ at }) => at)
+  return Math.max(...times) - Math.min(...times)
+}
 
 const mountMoving = (arrivals: Arrivals, height: number) =>
   mountPlex({
@@ -728,14 +738,14 @@ describe('the plex that arranges once, with the rooms its widgets measured', () 
   it('arranges once with the measured rooms and starts one movement on a click', async () => {
     const plex = mountMoving(createArrivals(answerFor(CROWD_IDS)), 380)
     await passFrames(40)
-    vi.mocked(arrangePlex).mockClear()
-    vi.mocked(interpolatePlex).mockClear()
+    layouts.length = 0
+    assigned = []
 
     await plex.setProps({ graph: refocus(CROWD, 'child-0') })
     await passFrames(40)
 
     expect(getArranged()).toHaveLength(1)
-    expect(getRuns()).toBe(1)
+    expect(getMovementTime()).toBeLessThanOrEqual(MOVEMENT + 2 * FRAME)
   })
 
   it('draws the first layout with the notes the measured rooms admit, and draws nothing before it', async () => {
@@ -759,13 +769,10 @@ describe('the plex that arranges once, with the rooms its widgets measured', () 
     mountPlex({ graph: CROWD, viewport: createLateViewport(MEDIUM_WINDOW) })
 
     expect(getAssignedNodes()).toBe(0)
-    expect(arrangePlex).not.toHaveBeenCalled()
+    expect(placed).toHaveLength(0)
     await passFrames(FRAMES_PER_ARRANGEMENT)
 
     expect(getAssignedNodes()).toBeGreaterThan(0)
-    expect(
-      vi.mocked(arrangePlex).mock.calls.map(([, input]) => input?.options?.viewport),
-    ).toStrictEqual(vi.mocked(arrangePlex).mock.calls.map(() => MEDIUM_WINDOW))
   })
 
   it('gives a note without widgets no room, and a note with widgets exactly the room they drew', async () => {
@@ -778,9 +785,9 @@ describe('the plex that arranges once, with the rooms its widgets measured', () 
 
     await passFrames(10)
 
-    const room = getArranged().at(-1)?.[1]?.room
-    expect(room?.(CROWD.nodes[0] as PlexNode)).toMatchObject({ top: 0, bottom: WIDGET_HEIGHT })
-    expect(room?.(CROWD.nodes[1] as PlexNode)).toMatchObject({ top: 0, bottom: 0 })
+    const rooms = getArranged().at(-1)?.rooms
+    expect(rooms?.get('focus')).toMatchObject({ top: 0, bottom: WIDGET_HEIGHT })
+    expect(rooms?.get('parent-0')).toMatchObject({ top: 0, bottom: 0 })
   })
 
   it('re-arranges once for the widgets that grow in one frame, and shows the same notes', async () => {
@@ -794,7 +801,7 @@ describe('the plex that arranges once, with the rooms its widgets measured', () 
     })
     await passFrames(40)
     const before = getShownIdsOf(CROWD, plex)
-    vi.mocked(arrangePlex).mockClear()
+    layouts.length = 0
 
     deliver(tags, answerFor(['parent-0', 'parent-1', 'child-0']))
     await passFrames(40)

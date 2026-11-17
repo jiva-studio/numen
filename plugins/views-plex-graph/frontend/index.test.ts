@@ -263,7 +263,7 @@ describe('the look of an open plex', () => {
           const contentRect = { width: 1200, height: 800 } as DOMRectReadOnly
           this.took([{ contentRect } as ResizeObserverEntry], this as unknown as ResizeObserver)
         }
-        disconnect() {}
+        disconnect = () => undefined
       },
     )
   })
