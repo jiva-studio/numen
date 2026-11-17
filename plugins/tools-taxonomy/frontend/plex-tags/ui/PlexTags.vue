@@ -70,18 +70,6 @@ function onLeave() {
   line-height: 1.2;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .plex-tags {
-    animation: plex-tags-fade-in var(--numen-motion) var(--numen-easing);
-  }
-}
-
-@keyframes plex-tags-fade-in {
-  from {
-    opacity: 0.2;
-  }
-}
-
 .plex-tags__chip {
   display: inline-flex;
   align-items: center;
