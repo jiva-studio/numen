@@ -65,6 +65,7 @@ function onLeave() {
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--numen-node-gap);
+  margin-block-start: var(--numen-node-gap);
   max-inline-size: 100%;
   font-size: var(--numen-text-1);
   line-height: 1.2;
