@@ -46,7 +46,7 @@ protocol_lib: &protocol_lib
 atomicfile_lib: &atomicfile_lib
   - libs/shared/atomicfile/**
 notes_lib: &notes_lib
-  - libs/note/**
+  - libs/shared/note/**
 core_lib: &core_lib
   - libs/core/kernel/**
   - libs/plugin/catalog/**

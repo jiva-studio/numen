@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // vaultSession starts and stops the passes behind the vault of a window.

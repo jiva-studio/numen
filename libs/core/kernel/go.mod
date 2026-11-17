@@ -38,10 +38,10 @@ require (
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/google/uuid v1.6.0
 	github.com/jiva-studio/numen/libs/core/protocol v0.0.0
-	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0
-	github.com/jiva-studio/numen/libs/note v0.0.0
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0
+	github.com/jiva-studio/numen/libs/shared/note v0.0.0
+	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.1.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
@@ -55,7 +55,7 @@ replace github.com/jiva-studio/numen/libs/core/protocol => ../protocol
 
 replace github.com/jiva-studio/numen/libs/shared/rerank => ../../shared/rerank
 
-replace github.com/jiva-studio/numen/libs/note => ../../note
+replace github.com/jiva-studio/numen/libs/shared/note => ../../shared/note
 
 replace github.com/jiva-studio/numen/libs/plugin/catalog => ../../plugin/catalog
 

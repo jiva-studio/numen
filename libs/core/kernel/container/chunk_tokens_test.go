@@ -24,8 +24,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 const chunkEmbeddingPluginID = "md.numen.embeddings"

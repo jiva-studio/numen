@@ -3,7 +3,7 @@ package hostendpoint
 import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func writeSegments(segments []domain.TextSegment) []*v1.TextSegment {

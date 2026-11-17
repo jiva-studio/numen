@@ -91,6 +91,7 @@ linters:
           allow: ["` + load.SdkModule + `"]
           deny:
             - pkg: "` + load.NumenRoot + `libs"
+            - pkg: "` + load.NotesModule + `"
             - pkg: "` + load.NumenRoot + `apps"
             - pkg: "connectrpc.com/connect"
             - pkg: "google.golang.org/protobuf"
@@ -105,6 +106,7 @@ linters:
 	}
 	missingRule := strings.Replace(complete, "$all", "**/other/**", 1)
 	missingDeny := strings.Replace(complete, "connectrpc.com/connect", "example.com/other", 1)
+	missingNotesDeny := strings.Replace(complete, "            - pkg: \""+load.NotesModule+"\"\n", "", 1)
 	extraAllow := strings.Replace(complete, `allow: ["`+load.SdkModule+`"]`, `allow: ["`+load.NotesModule+`"]`, 1)
 	extraPrefix := strings.Replace(complete, `allow: ["`+load.SdkModule+`"]`, `allow: ["`+load.SdkModule+`", "`+load.NumenRoot+`libs/sharedx"]`, 1)
 	// depguard matches an allow by prefix, so libs/shared without the slash would also allow libs/sharedx.
@@ -112,6 +114,7 @@ linters:
 	for name, config := range map[string]string{
 		"a configuration without a rule over $all":                missingRule,
 		"a rule that leaves a boundary out":                       missingDeny,
+		"a rule that lets a plugin name the notes library":        missingNotesDeny,
 		"a rule that allows another library":                      extraAllow,
 		"a rule that allows a library named like the shared ones": extraPrefix,
 		"a rule that allows libs/shared without the slash":        slashless,

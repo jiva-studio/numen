@@ -3,7 +3,7 @@ package text
 import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func readSegments(segments []*v1.TextSegment) []domain.TextSegment {

@@ -357,7 +357,7 @@
       "paths": [
         "libs/core/kernel/domain/**",
         "libs/core/kernel/port/**",
-        "libs/note/domain/**",
+        "libs/shared/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -391,7 +391,7 @@
       "paths": [
         "libs/core/kernel/domain/**",
         "libs/core/kernel/port/**",
-        "libs/note/domain/**",
+        "libs/shared/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -547,7 +547,7 @@
     {
       "name": "go/note-library",
       "paths": [
-        "libs/note/**",
+        "libs/shared/note/**",
         "go.work"
       ],
       "tags": [
@@ -792,7 +792,7 @@
       "name": "go/serialization",
       "paths": [
         "libs/core/kernel/**/*.go",
-        "libs/note/**/*.go",
+        "libs/shared/note/**/*.go",
         "go.work"
       ],
       "tags": [
@@ -850,7 +850,7 @@
       "name": "go/struct-context",
       "paths": [
         "libs/core/kernel/**/*.go",
-        "libs/note/**/*.go",
+        "libs/shared/note/**/*.go",
         "libs/plugin/sdk-go/**/*.go",
         "plugins/**/*.go",
         "apps/desktop/**/*.go",
@@ -903,7 +903,7 @@
       "name": "go/transports",
       "paths": [
         "libs/core/kernel/**",
-        "libs/note/domain/**",
+        "libs/shared/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -920,7 +920,7 @@
       "name": "go/use-case-fields",
       "paths": [
         "libs/core/kernel/**",
-        "libs/note/**",
+        "libs/shared/note/**",
         "plugins/**/*.go",
         "go.work"
       ],

@@ -17,7 +17,7 @@ Gemini, or any other) must follow them.
 
 Before adding or moving code, or writing a story, load the skill of the area. Each says which layer, slice or package the code goes to and how it is shaped; the rules it rests on are in `.agents/rules/`.
 
-- [`nm-place-core`](.agents/skills/nm-place-core/SKILL.md): `libs/core/kernel`, `libs/note`, the Go side of `apps/desktop`. Layers of the hexagon, ports, use cases, adapters, container.
+- [`nm-place-core`](.agents/skills/nm-place-core/SKILL.md): `libs/core/kernel`, `libs/shared/note`, the Go side of `apps/desktop`. Layers of the hexagon, ports, use cases, adapters, container.
 - [`nm-place-window`](.agents/skills/nm-place-window/SKILL.md): `apps/desktop/editor`, `apps/desktop/flashcards` and the other windows under `apps/`. FSD layers, slices, segments.
 - [`nm-place-plugin`](.agents/skills/nm-place-plugin/SKILL.md): `plugins/`, `libs/plugin/sdk-go`, `libs/plugin/sdk-ts`, `libs/plugin/loader`. Manifest, backend packages, frontend slices, what is copied and what is in the SDK.
 - [`nm-place-library`](.agents/skills/nm-place-library/SKILL.md): `libs/ui`, `libs/core/client`, `libs/core/protocol`, `libs/plugin/manager`, `libs/plugin/loader`. Which library shared code belongs to, or whether it stays in a window or a plugin.

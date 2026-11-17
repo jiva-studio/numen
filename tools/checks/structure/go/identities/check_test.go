@@ -48,7 +48,7 @@ func getNumberedIdentities(t *testing.T, roots []load.Root) (wrong []string, rea
 	return wrong, read
 }
 
-// The walk once read libs/note/domain in place of the kernel's domain, and an
+// The walk once read libs/shared/note/domain in place of the kernel's domain, and an
 // integer identity there passed.
 func TestCoreIdentities_ReadKernelDomain(t *testing.T) {
 	dir, err := filepath.Abs(getKernelDomain(t).Dir)

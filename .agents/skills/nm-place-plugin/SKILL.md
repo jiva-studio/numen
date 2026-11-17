@@ -11,7 +11,7 @@ paths:
 
 # Placing code in a plugin (`/nm-place-plugin`)
 
-A plugin is a folder under `plugins/` that reaches the rest of the repository only through the plugin SDK. It does not move to a repository of its own yet: the Go SDK requires `libs/core/protocol` and `libs/note` through `replace` lines to folders, which the build of a consumer ignores, so a plugin outside this repository builds only after the SDK is published. It depends on the plugin SDK (`libs/plugin/sdk-go`, `@numen/plugin-sdk`), on the shared Go libraries `libs/shared/<name>`, on `@numen/ui` in its frontend, and on third-party code. Its backend and its frontend do not import each other. Its tooling configuration files are its own copies of `plugins/.example/`. Code that two plugins need is written in both, unless it does not depend on numen and lives in `libs/shared`.
+A plugin is a folder under `plugins/` that reaches the rest of the repository only through the plugin SDK. It does not move to a repository of its own yet: the Go SDK requires `libs/core/protocol` and `libs/shared/note` through `replace` lines to folders, which the build of a consumer ignores, so a plugin outside this repository builds only after the SDK is published. It depends on the plugin SDK (`libs/plugin/sdk-go`, `@numen/plugin-sdk`), on the shared Go libraries `libs/shared/<name>`, on `@numen/ui` in its frontend, and on third-party code. Its backend and its frontend do not import each other. Its tooling configuration files are its own copies of `plugins/.example/`. Code that two plugins need is written in both, unless it does not depend on numen and lives in `libs/shared`.
 
 This skill covers what the checks cannot decide: how a plugin is cut, where a piece of code goes, what is copied. The rules the checks enforce are in `.agents/rules/architecture.md` §10 and §11 and are listed by effect in [`checks.md`](checks.md). The manifest fields, the host calls and the SDK calls are described in `docs/plugins/README.md`; this skill points to them and does not repeat them. Worked examples are in [`examples.md`](examples.md). Where the code in `plugins/` differs from what is written here, this skill is the target and the code is brought to it.
 
@@ -47,7 +47,7 @@ A plugin has a backend, a frontend or both. A frontend-only plugin (`plugins/not
 - Go: `libs/plugin/sdk-go` and its packages (`host`, `connection`, `searchsource`, `health`, `tools`, `wasm`) and the contracts (`contracts/llm`, `contracts/acp`), the shared libraries `libs/shared/<name>` (`onnx`, `tokenizer`), the standard library, third-party modules. The note types come from `plugin/sdk-go/host/domain`, `host/markdown`, `host/edit` and `host/ulid`. `go.mod` requires nothing else directly and has no `replace` to a folder; `go.work` resolves the SDK and the shared libraries in this repository.
 - TypeScript: `@numen/plugin-sdk` and `@numen/ui` through their main entries (and the entries their `exports` declare: `@numen/plugin-sdk/testing`, `/vite`, `/host-modules`, `/contracts/llm`, `/contracts/acp`), `vue`, third-party packages, and files of the plugin by relative path.
 - A frontend file imports nothing from `backend/`, and a backend file imports nothing from `frontend/`. The two sides meet only in the JSON fixtures of `testdata/api/`.
-- The rest of the repository stays out of a plugin: `libs/note`, `libs/core/protocol`, `@numen/core-client`, `@numen/plugin-loader`, `@numen/workbench`, `@connectrpc/*`, `@bufbuild/*`, another plugin, the core, an application, the `@/` and `@plugins/` aliases, and any `.proto` file.
+- The rest of the repository stays out of a plugin: `libs/shared/note`, `libs/core/protocol`, `@numen/core-client`, `@numen/plugin-loader`, `@numen/workbench`, `@connectrpc/*`, `@bufbuild/*`, another plugin, the core, an application, the `@/` and `@plugins/` aliases, and any `.proto` file.
 
 ## Where X goes
 
@@ -191,7 +191,7 @@ A structure is judged by what one object does, not by the interfaces it is cut i
 
 The complete list, with the verifier of each, is in [`checks.md`](checks.md). In short:
 
-- A plugin's `go.mod` requires only the SDK modules, the shared libraries and third-party code; its `package.json` names only `@numen/plugin-sdk` and `@numen/ui` among the packages of the repository; the import graph of every plugin, on fourteen platform targets, reaches no other plugin, no core, no application, no `libs/note` and no `libs/core/protocol`.
+- A plugin's `go.mod` requires only the SDK modules, the shared libraries and third-party code; its `package.json` names only `@numen/plugin-sdk` and `@numen/ui` among the packages of the repository; the import graph of every plugin, on fourteen platform targets, reaches no other plugin, no core, no application, no `libs/shared/note` and no `libs/core/protocol`.
 - No plugin holds a `.proto` file, a `@/` or `@plugins/` import, or an import past the main entry of the SDK or the UI library.
 - The tooling configuration of a plugin is byte-identical to `plugins/.example/`.
 - Inside a Go backend an inner package does not import `service` or `engine`. Inside a frontend `lib/` imports no `ui`, `model` or `api`, no Vue and no browser global; a component stays within the size limits; no component lies in `lib`, `api` or `model`.

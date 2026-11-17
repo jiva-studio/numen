@@ -27,7 +27,7 @@ const (
 
 // Stat is the size, the modification time and the content hash of the file that Replace wrote.
 // Hash is the SHA-256 of the bytes copied from the reader, in lowercase hex, taken while they are
-// written. It is the same value as HashContent of libs/note/domain for the same bytes, so the two
+// written. It is the same value as HashContent of libs/shared/note/domain for the same bytes, so the two
 // can be compared.
 type Stat struct {
 	Size    int64
