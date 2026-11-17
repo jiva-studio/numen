@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
@@ -150,10 +151,50 @@ func (h *Outline) ListRelatedNotes(
 	if err != nil {
 		return nil, err
 	}
-	if _, err := h.getRelatedNotes.Execute(ctx, showing, r.Msg.GetPaths(), domain.DepthNear); err != nil {
+	depth, err := domain.ParseRelationDepth(r.Msg.GetDepth())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	paths := r.Msg.GetPaths()
+	if len(paths) > domain.MaxRelatedNotePaths {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("at most %d notes at once, not %d", domain.MaxRelatedNotePaths, len(paths)))
+	}
+	views, err := h.getRelatedNotes.Execute(ctx, showing, paths, depth)
+	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.ListRelatedNotesResponse{}), nil
+	out := &v1.ListRelatedNotesResponse{Graphs: make([]*v1.NoteGraph, 0, len(views))}
+	for _, found := range views {
+		out.Graphs = append(out.Graphs, convertRelatedNotesToWire(found))
+	}
+	return connect.NewResponse(out), nil
+}
+
+func convertRelatedNotesToWire(found query.RelatedNotesView) *v1.NoteGraph {
+	if found.Focus.Path == "" {
+		return &v1.NoteGraph{}
+	}
+	types, tabKinds := found.Types, found.TabKinds
+	out := &v1.NoteGraph{
+		Focus:        convertNoteToWire(found.Focus),
+		FocusType:    convertNoteTypeToWire(types[found.Focus.Path]),
+		FocusTabKind: tabKinds[found.Focus.Path],
+	}
+	for _, related := range found.Related {
+		out.Related = append(out.Related, &v1.RelatedNote{
+			Note:      convertNoteToWire(related.NoteRef),
+			Relation:  convertRelationToWire(related.Relation),
+			Direction: convertDirectionToWire(related.Direction),
+			RelatedTo: related.RelatedTo,
+			Type:      convertNoteTypeToWire(types[related.Path]),
+			TabKind:   tabKinds[related.Path],
+		})
+	}
+	for _, connection := range found.Connections {
+		out.Connections = append(out.Connections, wire.ConvertConnectionToWire(connection))
+	}
+	return out
 }
 
 // ResolveAddresses answers where addresses written in one note land, and where

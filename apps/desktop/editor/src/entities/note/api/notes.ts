@@ -16,7 +16,7 @@ import type {
   RenameResult,
   WriteResult,
 } from '../lib/note'
-import { mapBaseline, mapNoteResult, mapWriteResult, writes } from './noteWords'
+import { mapBaseline, mapNoteGraph, mapNoteResult, mapWriteResult, writes } from './noteWords'
 
 /**
  * The wikilinks of a text over `notes`, parsed by the core, and the path a `name://` address
@@ -63,11 +63,9 @@ export const createNoteApi = (notes: WindowClients['notes']) => {
   return {
     watchEdits,
 
-    /** The notes joined to a note, and how. Depth 2 adds the notes joined to each of those. */
-    listRelatedNotes: async (
-      _paths: readonly string[],
-      _depth: 1 | 2 = 1,
-    ): Promise<NoteGraph[]> => [],
+    /** The notes joined to each note, and how, one graph for each path in the order of the paths. Depth 2 adds the notes joined to each of those. */
+    listRelatedNotes: async (paths: readonly string[], depth: 1 | 2 = 1): Promise<NoteGraph[]> =>
+      (await notes.listRelatedNotes({ paths: [...paths], depth })).graphs.map(mapNoteGraph),
 
     /** The note the vault opens first, and null where it names none. */
     getInitialOpenPath: async (): Promise<{ path: string } | null> => {

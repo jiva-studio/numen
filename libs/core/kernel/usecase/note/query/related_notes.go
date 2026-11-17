@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
-// ListRelatedNotes gathers the notes related to one note, and the note itself.
+// ListRelatedNotes gathers the notes related to each of several notes, and the notes themselves.
 //
 // A link is written at one end and answered at both, so a note's parents are
 // found partly in what it points at and partly in what points at it. Siblings
@@ -37,7 +37,7 @@ func NewListRelatedNotes(links noteport.LinkBatches, notes RefQueries) ListRelat
 	return ListRelatedNotes{links: links, notes: notes}
 }
 
-// Execute gathers the notes related to the note at the path. At DepthFar it also gathers,
+// Execute gathers the notes related to each of the notes at the paths, one graph for each path in the order of the paths; the graph of a note the index does not know is empty. The links of all the paths are read together. At DepthFar it also gathers,
 // for each related note (a sibling included), every note that one is related to, the focus
 // and the owner itself excepted: a note already related to the focus is a name under the
 // owner too, and a note may be a name under several owners. The names come in the order of
@@ -45,42 +45,96 @@ func NewListRelatedNotes(links noteport.LinkBatches, notes RefQueries) ListRelat
 // may not know a note a link resolved to. The notes are queried once for every path, the
 // focus first and each path once.
 func (u ListRelatedNotes) Execute(ctx context.Context, v domain.Vault, paths []string, depth domain.RelationDepth) ([]domain.NoteGraph, error) {
-	return []domain.NoteGraph{}, nil
-}
-
-func (u ListRelatedNotes) executeOne(ctx context.Context, v domain.Vault, path string, depth domain.RelationDepth) (domain.NoteGraph, error) {
+	if len(paths) == 0 {
+		return []domain.NoteGraph{}, nil
+	}
 	cache := &linkCache{queries: u.links, vault: v}
-	center, err := u.getRelatedNotes(ctx, cache, path)
-	if err != nil {
-		return domain.NoteGraph{}, err
+	if err := cache.loadBoth(ctx, paths); err != nil {
+		return nil, err
 	}
-	if err := u.addSiblings(ctx, cache, center); err != nil {
-		return domain.NoteGraph{}, err
-	}
-	center.remove(path)
-
-	related := center.getAll()
-	var relatedToRelated []domain.RelatedNote
-	if depth == domain.DepthFar {
-		relatedToRelated, err = u.getRelatedToRelated(ctx, cache, path, related)
+	centers := make([]*relatedNoteSet, len(paths))
+	var parents []string
+	for i, path := range paths {
+		center, err := u.getRelatedNotes(ctx, cache, path)
 		if err != nil {
-			return domain.NoteGraph{}, err
+			return nil, err
+		}
+		centers[i] = center
+		for _, n := range center.getAll() {
+			if n.Relation == domain.RelationParent {
+				parents = append(parents, n.Path)
+			}
+		}
+	}
+	if err := cache.loadBoth(ctx, parents); err != nil {
+		return nil, err
+	}
+	related := make([][]domain.RelatedNote, len(paths))
+	var reached []string
+	for i, path := range paths {
+		if err := u.addSiblings(ctx, cache, centers[i]); err != nil {
+			return nil, err
+		}
+		centers[i].remove(path)
+		related[i] = centers[i].getAll()
+		reached = append(reached, getPaths(path, related[i], nil)...)
+	}
+
+	relatedToRelated := make([][]domain.RelatedNote, len(paths))
+	if depth == domain.DepthFar {
+		if err := cache.loadBoth(ctx, reached); err != nil {
+			return nil, err
+		}
+		for i, path := range paths {
+			var err error
+			relatedToRelated[i], err = u.getRelatedToRelated(ctx, cache, path, related[i])
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
-	notes, err := u.notes.GetNotes(ctx, v.ID, getPaths(path, related, relatedToRelated))
-	if err != nil {
-		return domain.NoteGraph{}, err
+	var wanted []string
+	for i, path := range paths {
+		wanted = append(wanted, getPaths(path, related[i], relatedToRelated[i])...)
 	}
-	out, visible := createGraph(notes, path, related, relatedToRelated)
-	if len(visible) == 0 {
-		return out, nil
-	}
-	out.Connections, err = getConnections(ctx, cache, visible)
+	notes, err := u.notes.GetNotes(ctx, v.ID, uniquePaths(wanted))
 	if err != nil {
-		return domain.NoteGraph{}, err
+		return nil, err
+	}
+
+	out := make([]domain.NoteGraph, len(paths))
+	visible := make([][]string, len(paths))
+	var drawn []string
+	for i, path := range paths {
+		out[i], visible[i] = createGraph(notes, path, related[i], relatedToRelated[i])
+		drawn = append(drawn, visible[i]...)
+	}
+	if err := cache.loadLinks(ctx, drawn); err != nil {
+		return nil, err
+	}
+	for i := range paths {
+		if len(visible[i]) == 0 {
+			continue
+		}
+		out[i].Connections, err = getConnections(ctx, cache, visible[i])
+		if err != nil {
+			return nil, err
+		}
 	}
 	return out, nil
+}
+
+func uniquePaths(paths []string) []string {
+	seen := make(map[string]bool, len(paths))
+	out := make([]string, 0, len(paths))
+	for _, p := range paths {
+		if !seen[p] {
+			seen[p] = true
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 func getPaths(focus string, related, relatedToRelated []domain.RelatedNote) []string {
