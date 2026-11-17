@@ -18,8 +18,8 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
 var checksumPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
