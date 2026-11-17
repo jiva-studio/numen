@@ -82,13 +82,19 @@ const countingPlacement: Placement = {
 
 const mounted = new Map<string, number>()
 
-const countMount = (path: string) => mounted.set(path, (mounted.get(path) ?? 0) + 1)
+const countMount = (name: string, path: string) =>
+  mounted.set(`${path}|${name}`, (mounted.get(`${path}|${name}`) ?? 0) + 1)
+
+const getMountedPaths = () => new Set([...mounted.keys()].map((key) => key.split('|')[0]))
+
+const getEntryMounts = (id: string) =>
+  [...mounted].filter(([key]) => key.startsWith(`${getPathOf(id)}|`)).map(([, count]) => count)
 
 const createWidget = (name: string, arrivals: Arrivals) =>
   defineComponent({
     props: { path: { type: String, required: true } },
     setup(props) {
-      countMount(props.path)
+      countMount(name, props.path)
       const finish = useSlotLoading()
       const draws = computed(() => arrivals.value.get(props.path))
       watch(
@@ -558,7 +564,7 @@ describe('the plex that waits for the widgets of many nodes', () => {
     await passFrames(FRAMES_PER_ARRANGEMENT)
 
     expect(shownBare).toBeLessThan(CROWD.nodes.length)
-    expect(mounted.size).toBeLessThanOrEqual(shownBare)
+    expect(getMountedPaths().size).toBeLessThanOrEqual(shownBare)
   })
 
   it('mounts the widgets of a node once while it stays on screen through two arrangements', async () => {
@@ -582,7 +588,11 @@ describe('the plex that waits for the widgets of many nodes', () => {
     const staying = before.filter((id) => getShownIds(plex).includes(id))
 
     expect(staying).toContain('focus')
-    expect(staying.filter((id) => mounted.get(getPathOf(id)) !== 1)).toStrictEqual([])
+    expect(
+      staying.filter(
+        (id) => getEntryMounts(id).length === 0 || getEntryMounts(id).some((count) => count !== 1),
+      ),
+    ).toStrictEqual([])
   })
 })
 
@@ -624,14 +634,14 @@ describe('the admission of the plex while the widgets of the shown nodes change 
 
       const settled = shown.slice(2).map((ids) => ids.join())
       expect(new Set(settled).size).toBe(1)
-      expect([...mounted.values()].filter((count) => count > 1)).toStrictEqual([])
+      expect([...mounted].filter(([, count]) => count > 1)).toStrictEqual([])
     },
   )
 
   it('keeps every node it showed when the rooms of late widgets arrive after the emergency cap', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     const arrivals = createArrivals()
-    const plex = mountCrowd(arrivals, 300)
+    const plex = mountCrowd(arrivals, 520)
     await passFrames(5, EMERGENCY_CAP / 4)
     const first = getShownIdsOf(CROWD, plex)
 
@@ -649,7 +659,7 @@ describe('the admission of the plex while the widgets of the shown nodes change 
     await passFrames(10)
 
     expect(getShownCount(plex)).toBeLessThan(CROWD.nodes.length)
-    expect(mounted.size).toBeLessThanOrEqual(getShownCount(plex))
+    expect(getMountedPaths().size).toBeLessThanOrEqual(getShownCount(plex))
   })
 
   it('arranges at most three times on a click and mounts each shown node once', async () => {
@@ -665,7 +675,7 @@ describe('the admission of the plex while the widgets of the shown nodes change 
     await passFrames(10)
 
     expect(getPlacedCount()).toBeLessThanOrEqual(forOpen * 2)
-    expect([...mounted.values()].filter((count) => count > 1)).toStrictEqual([])
+    expect([...mounted].filter(([, count]) => count > 1)).toStrictEqual([])
     const given = new Map<Element, string[]>()
     for (const { element, value } of assigned) {
       if (!element.classList.contains('plex__node')) continue
