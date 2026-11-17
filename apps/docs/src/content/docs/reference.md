@@ -263,7 +263,6 @@ The settings of the plugin Plex Related Names.
 
 | | | |
 | --- | --- | --- |
-| `showNames` | yes or no | under each related note, the names of the notes related to it. |
 | `namesPerNote` | a number | most names shown under and over a related note. From 1 to 12. |
 
 ### `md.numen.views.titleBar`
