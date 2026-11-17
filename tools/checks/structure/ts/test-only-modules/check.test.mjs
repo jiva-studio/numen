@@ -61,15 +61,29 @@ describe('the test-only modules check', () => {
     assert.doesNotMatch(result.details, /stories/)
   })
 
-  it('does not report test support that only tests import', async () => {
+  it('does not report a module that matches an entry of knip.json without the production mark', async () => {
     const repo = createRepo({
-      'src/fixtures/sample.ts': 'export const sample = 1\n',
+      'knip.json': JSON.stringify({
+        entry: ['src/index.ts!', 'src/**/*.test.ts', 'src/testing/**/*.ts'],
+        project: ['src/**/*.ts!'],
+      }),
       'src/testing/mount.ts': 'export const mount = 1\n',
       'src/words.test.ts':
-        "import { formatWords } from './words'\nimport { sample } from './fixtures/sample'\nimport { mount } from './testing/mount'\n\nexport const text = [formatWords(1), sample, mount]\n",
+        "import { formatWords } from './words'\nimport { mount } from './testing/mount'\n\nexport const text = [formatWords(1), mount]\n",
     })
     const result = await runTestOnlyModulesCheck({ repoRoot: repo })
     assert.equal(result.pass, true, result.details)
+  })
+
+  it('reports a module in a directory named testing that no entry of knip.json declares', async () => {
+    const repo = createRepo({
+      'src/testing/mount.ts': 'export const mount = 1\n',
+      'src/words.test.ts':
+        "import { formatWords } from './words'\nimport { mount } from './testing/mount'\n\nexport const text = [formatWords(1), mount]\n",
+    })
+    const result = await runTestOnlyModulesCheck({ repoRoot: repo })
+    assert.equal(result.pass, false)
+    assert.match(result.details, /src\/testing\/mount\.ts/)
   })
 
   it('passes when every module has a shipped importer', async () => {

@@ -52,21 +52,6 @@ function listUnusedFiles(repoRoot, production) {
   })
 }
 
-/** The names of the directories (and of a file) that hold test support, as in `ts/frontend-layout`. */
-const SUPPORT = ['testing', 'fixtures', 'testdata']
-
-/**
- * Checks that a file is test support: under a directory named as test support, or a file named so.
- *
- * @param {string} file
- * @returns {boolean}
- */
-export function isTestSupport(file) {
-  const parts = file.split('/')
-  const name = parts[parts.length - 1].replace(/\.[^.]+$/, '')
-  return parts.slice(0, -1).some((part) => SUPPORT.includes(part)) || SUPPORT.includes(name)
-}
-
 /**
  * Lists the glob of every entry of knip.json that is not marked with `!`: these are the entries that
  * only the full run reads (tests, stories, tool configuration), relative to the repository root.
@@ -107,7 +92,6 @@ export async function runTestOnlyModulesCheck({ repoRoot, warnOnly = false }) {
   const unusedAnywhere = new Set(everything.files)
   const found = shipped.files
     .filter((file) => !unusedAnywhere.has(file))
-    .filter((file) => !isTestSupport(file))
     .filter((file) => !entries.some((glob) => path.matchesGlob(file, glob)))
     .sort()
   const issues = error
