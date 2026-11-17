@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
-	"github.com/jiva-studio/numen/libs/shared/rerank"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/servicetype"
 )
 
@@ -32,20 +31,19 @@ type rerankAnswer struct {
 // and a line break go before the query. OpenAI has no rerank endpoint. An answer with another number of
 // results than documents, an index that is missing, out of range or repeated, or a missing score is an
 // unavailable service.
-func (g *Gateway) Rerank(ctx context.Context, call connection.Call, limit time.Duration, request *rerank.RerankRequest) ([]float32, error) {
+func (g *Gateway) Rerank(ctx context.Context, call connection.Call, limit time.Duration, query, instruction string, documents []string) ([]float32, error) {
 	if call.Type == servicetype.OpenAI {
 		return nil, connection.NewStopError(connection.ReasonInvalidRequest)
 	}
-	query := request.GetQuery()
-	if instruction := request.GetInstruction(); instruction != "" {
+	if instruction != "" {
 		query = instruction + "\n" + query
 	}
-	body := rerankBody{Model: call.Options[llm.OptionModel], Query: query, Documents: request.GetDocuments(), TopN: len(request.GetDocuments())}
+	body := rerankBody{Model: call.Options[llm.OptionModel], Query: query, Documents: documents, TopN: len(documents)}
 	var answer rerankAnswer
 	if err := g.send(ctx, call, limit, endpoint{http.MethodPost, "/rerank"}, body, &answer); err != nil {
 		return nil, err
 	}
-	return orderScores(answer, len(request.GetDocuments()))
+	return orderScores(answer, len(documents))
 }
 
 func orderScores(answer rerankAnswer, count int) ([]float32, error) {

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"io/fs"
 	"path/filepath"
 	"slices"
@@ -11,6 +12,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm/llmtest"
 	"github.com/jiva-studio/numen/libs/shared/rerank"
+	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/domain/profile"
+	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/internal/adapter/console"
+	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/internal/adapter/profilefiles"
+	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/ports"
+	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/usecase/reranking"
 )
 
 func newTestProvider(t *testing.T) connection.Provider {
@@ -72,5 +78,48 @@ func TestRerankOfflineWithoutTheModelIsTryNext(t *testing.T) {
 	}
 	if len(written) != 0 {
 		t.Errorf("an offline call wrote %v", written)
+	}
+}
+
+type recordingScorer struct {
+	queries []string
+}
+
+func (s *recordingScorer) ScorePairs(_ context.Context, query string, documents []string) ([]float32, error) {
+	s.queries = append(s.queries, query)
+	scores := make([]float32, len(documents))
+	for i, document := range documents {
+		scores[i] = float32(len(document))
+	}
+	return scores, nil
+}
+
+func (s *recordingScorer) Close() error { return nil }
+
+func TestRerankScoresTheDocumentsAndLeavesTheInstructionOut(t *testing.T) {
+	t.Setenv("NUMEN_PLUGIN_DATA_DIR", t.TempDir())
+	scorer := &recordingScorer{}
+	open := func(context.Context, profile.Profile) (ports.Scorer, error) { return scorer, nil }
+	use, err := reranking.New(profilefiles.GetDefaultDirectory(), open, console.Report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := use.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	result, err := llmtest.Rerank(t.Context(), newProvider(use), connection.Call{ConnectionID: "local-reranker:Local reranker", Type: "local-reranker"},
+		&rerank.RerankRequest{Query: "when does the ferry leave", Instruction: "Find the notes that answer the question", Documents: []string{"ferry", "basil likes"}})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []float32{5, 11}; !slices.Equal(result.GetScores(), want) {
+		t.Errorf("scores = %v, want %v", result.GetScores(), want)
+	}
+	if want := []string{"when does the ferry leave"}; !slices.Equal(scorer.queries, want) {
+		t.Errorf("the model scored the queries %q, want %q", scorer.queries, want)
 	}
 }

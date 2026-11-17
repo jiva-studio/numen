@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
-	"github.com/jiva-studio/numen/libs/shared/rerank"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/operation"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/servicetype"
@@ -29,19 +28,19 @@ func New(gateway ports.Gateway, requestLimits *limits.Limits) (*Reranking, error
 }
 
 // Rerank asks the service for one score for each document. No document is no request.
-func (r *Reranking) Rerank(ctx context.Context, call connection.Call, request *rerank.RerankRequest) (*rerank.RerankResult, error) {
-	if len(request.GetDocuments()) == 0 {
+func (r *Reranking) Rerank(ctx context.Context, call connection.Call, query, instruction string, documents []string) ([]float32, error) {
+	if len(documents) == 0 {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		return &rerank.RerankResult{}, nil
+		return nil, nil
 	}
 	model := call.Options[llm.OptionModel]
 	address := call.Fields[servicetype.FieldBaseURL]
-	scores, err := r.gateway.Rerank(ctx, call, r.limits.Get(call.Type, address, model, operation.Rerank), request)
+	scores, err := r.gateway.Rerank(ctx, call, r.limits.Get(call.Type, address, model, operation.Rerank), query, instruction, documents)
 	if err != nil {
 		return nil, err
 	}
 	r.limits.MarkServed(address, model)
-	return &rerank.RerankResult{Scores: scores}, nil
+	return scores, nil
 }
