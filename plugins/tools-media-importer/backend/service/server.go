@@ -12,10 +12,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/environment"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/process"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/tempfiles"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/fetchers"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
@@ -38,10 +41,11 @@ func openHostAt(endpoint hostcall.Endpoint) link.Host {
 			on := store.With(id)
 			return link.Folder{Files: on, Writer: on}
 		},
-		Texts:  func(id domain.VaultID) link.Texts { return texts.With(id) },
-		Queue:  host.NewQueueClient(endpoint),
-		Clock:  clock.System{},
-		Report: process.Runner{}.ReportError,
+		Texts:   func(id domain.VaultID) link.Texts { return texts.With(id) },
+		Queue:   host.NewQueueClient(endpoint),
+		Clock:   clock.System{},
+		Entropy: random.Entropy{},
+		Report:  process.Runner{}.ReportError,
 	}
 }
 
@@ -66,7 +70,8 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 // given. A video site is fetched through the mock downloader when isMock is set. The fetches end
 // with s.
 func (a *App) Mount(s *server.Server, hosted link.Host, isMock bool) error {
-	f := fetchers.New(isMock, download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()})
+	tools := download.Tools{Runner: process.Runner{}, Files: tempfiles.Files{}, Paths: tempfiles.Files{}, Web: webpage.New()}
+	f := fetchers.New(func(programs fetch.Config) ports.Fetcher { return download.Open(isMock, tools, programs) })
 	links := link.New(hosted, f.GetFetcher, f.GetSettings)
 	a.links = links
 	commands, err := newCommands(links)

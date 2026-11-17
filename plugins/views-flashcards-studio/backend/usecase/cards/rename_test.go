@@ -3,7 +3,6 @@ package cards_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"os"
 	"path/filepath"
 	"slices"
@@ -13,6 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
@@ -29,7 +30,7 @@ func newRenameFieldOver(
 	t.Helper()
 	return cards.NewRenameField(cards.Config{
 		Readers: vs.ports.Readers, Writers: writers, Notes: notes, CardModels: nil, Links: vs.queries,
-		Index: vs.index(t), Now: vaulttest.NewClock(),
+		Index: vs.index(t), Now: vaulttest.NewClock(), Entropy: machineclock.Entropy{},
 	}, maxDecks)
 }
 
@@ -39,7 +40,7 @@ func renameOf(
 ) cards.RenameField {
 	return cards.NewRenameField(cards.Config{
 		Readers: readers, Writers: writers, Notes: notes, CardModels: nil, Links: links,
-		Index: index, Now: vaulttest.NewClock(),
+		Index: index, Now: vaulttest.NewClock(), Entropy: machineclock.Entropy{},
 	}, cards.UnboundedDecks)
 }
 
@@ -271,7 +272,7 @@ func TestARenameTheCardModelRefusedReachesNoDeck(t *testing.T) {
 // reports that.
 func TestADeckOverTheBoundIsNotRenamed(t *testing.T) {
 	vs := newVaults(t)
-	if err := os.Truncate(filepath.Join(vs.first.Path, "decks", "Birds.md"), cards.MaxBytes+1); err != nil {
+	if err := os.Truncate(filepath.Join(vs.first.Path, "decks", "Birds.md"), format.MaxDeckBytes+1); err != nil {
 		t.Fatal(err)
 	}
 
@@ -666,7 +667,7 @@ func TestADeckAtTheBoundIsRenamed(t *testing.T) {
 	vs := newVaults(t)
 	head := "---\ntype: deck\n---\n\n"
 	card := "\n\n## Wren\n\n[[Animal]]\n\n### Name\n\nWren\n\n### Height\n\nabout 4\"\n"
-	write(t, vs.first, "decks/Large.md", head+strings.Repeat("x", cards.MaxBytes-len(head)-len(card))+card)
+	write(t, vs.first, "decks/Large.md", head+strings.Repeat("x", format.MaxDeckBytes-len(head)-len(card))+card)
 	u := newRenameFieldOver(t, vs, vs.ports.Writers, decksOf{paths: []string{"decks/Large.md"}}, cards.UnboundedDecks)
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{

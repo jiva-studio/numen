@@ -23,16 +23,16 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	day := review.Day{Starts: 4 * time.Hour, In: time.UTC}
 	errBoom := errors.New("boom")
 
-	p0 := NewOpenReads(Config{Now: newFakeClock(now)}).Execute()
-	if p0.day.Starts != 0 || p0.day.In != nil {
-		t.Fatalf("expected zero day on NewOpenReads, got %+v", p0.day)
+	p0, isReads := NewOpenReads(Config{Now: newFakeClock(now)}).Execute().(*Reads)
+	if !isReads || p0.day.Starts != 0 || p0.day.In != nil {
+		t.Fatalf("expected zero day on NewOpenReads, got %+v", p0)
 	}
-	pDay := NewOpenReads(Config{Now: newFakeClock(now), Day: day}).Execute()
-	if pDay.day.Starts != 4*time.Hour {
-		t.Fatalf("expected NewOpenReads to set day, got %+v", pDay.day)
+	pDay, isReads := NewOpenReads(Config{Now: newFakeClock(now), Day: day}).Execute().(*Reads)
+	if !isReads || pDay.day.Starts != 4*time.Hour {
+		t.Fatalf("expected NewOpenReads to set day, got %+v", pDay)
 	}
 
-	def := CreateDefault()
+	def := review.CreateDefaultPresetNote()
 	if def.FileStat.Size != 0 {
 		t.Fatalf("expected zero FileStat.Size on CreateDefault, got %d", def.FileStat.Size)
 	}
@@ -86,8 +86,8 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	twoDangling := stubLinkQueries{
 		links: map[string][]domain.ResolvedLink{
 			"decks/A.md": {
-				{Link: domain.Link{Type: LinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "Missing1"}}, To: ""},
-				{Link: domain.Link{Type: LinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "Missing2"}}, To: ""},
+				{Link: domain.Link{Type: review.PresetLinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "Missing1"}}, To: ""},
+				{Link: domain.Link{Type: review.PresetLinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "Missing2"}}, To: ""},
 			},
 		},
 	}
@@ -99,8 +99,8 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	twoResolved := stubLinkQueries{
 		links: map[string][]domain.ResolvedLink{
 			"decks/A.md": {
-				{Link: domain.Link{Type: LinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "P"}}, To: "presets/P.md"},
-				{Link: domain.Link{Type: LinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "Q"}}, To: "presets/Q.md"},
+				{Link: domain.Link{Type: review.PresetLinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "P"}}, To: "presets/P.md"},
+				{Link: domain.Link{Type: review.PresetLinkType, Target: domain.Address{Scheme: domain.SchemeName, Value: "Q"}}, To: "presets/Q.md"},
 			},
 		},
 	}
@@ -196,11 +196,11 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	if err != nil || gotGhost.Outcome != note.NotANote {
 		t.Fatalf("expected NotANote when StatFile says not exist but Read succeeds, got %+v, %v", gotGhost, err)
 	}
-	gotNotText, err := parsePresetBytes(Contents{Path: "P.md"}, domain.FileStat{}, []byte{0xff, 0xfe})
+	gotNotText, err := parsePresetBytes(review.PresetNote{Path: "P.md"}, domain.FileStat{}, []byte{0xff, 0xfe})
 	if err != nil || gotNotText.Outcome != note.NotText {
 		t.Fatalf("expected NotText for invalid UTF-8, got %+v, %v", gotNotText, err)
 	}
-	gotUnreadable, err := parsePresetBytes(Contents{Path: "P.md"}, domain.FileStat{}, []byte("---\n: : bad yaml\n---\n"))
+	gotUnreadable, err := parsePresetBytes(review.PresetNote{Path: "P.md"}, domain.FileStat{}, []byte("---\n: : bad yaml\n---\n"))
 	if err != nil || gotUnreadable.Outcome != note.Unreadable {
 		t.Fatalf("expected Unreadable for broken frontmatter, got %+v, %v", gotUnreadable, err)
 	}
@@ -311,13 +311,13 @@ func TestPresetsInternalsAndErrors(t *testing.T) {
 	// Test checkBounds / checkLoad with invalid Counts and out-of-range time.Weekday keys (< Sunday, > Saturday).
 	badCounts := review.Defaults()
 	badCounts.Counts = "invalid"
-	if err := checkBounds(badCounts); !errors.Is(err, ErrOutOfBounds) {
+	if err := checkBounds(badCounts); !errors.Is(err, review.ErrOutOfBounds) {
 		t.Fatalf("expected ErrOutOfBounds for invalid Counts, got %v", err)
 	}
-	if err := checkLoad(map[time.Weekday]int{time.Weekday(-1): 100}); !errors.Is(err, ErrOutOfBounds) {
+	if err := checkLoad(map[time.Weekday]int{time.Weekday(-1): 100}); !errors.Is(err, review.ErrOutOfBounds) {
 		t.Fatalf("expected ErrOutOfBounds for weekday < Sunday, got %v", err)
 	}
-	if err := checkLoad(map[time.Weekday]int{time.Weekday(7): 100}); !errors.Is(err, ErrOutOfBounds) {
+	if err := checkLoad(map[time.Weekday]int{time.Weekday(7): 100}); !errors.Is(err, review.ErrOutOfBounds) {
 		t.Fatalf("expected ErrOutOfBounds for weekday > Saturday, got %v", err)
 	}
 }
