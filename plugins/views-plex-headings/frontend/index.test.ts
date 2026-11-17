@@ -439,7 +439,7 @@ describe('the wheel on the list', () => {
   })
 
   it('keeps the wheel from the plex while it scrolls, and lets it through at either end', async () => {
-    const wrapper = await setupMany()
+    await setupMany()
     const down = new WheelEvent('wheel', {
       deltaY: 1,
       deltaMode: 1,
