@@ -17,7 +17,7 @@ import { WORDS as words } from '../lib/words'
 import { applyGoal, applyTypedSetting, findGridIndex, reconcileSettings } from '../lib/settings'
 import { updateCurves } from './curves'
 import { createCurveState, type CurveState } from './curveState'
-import { createWriteQueue, takeVersion, type WriteQueue } from './presetWrite'
+import { createWriteQueue, takeRead, type WriteQueue } from './presetWrite'
 import { canCloseTab, requestWrite } from './writeQueue'
 import type { PresetTabState } from './types'
 import type { Field } from '../lib/field'
@@ -64,12 +64,7 @@ export const readPreset = async (one: OpenPreset, context: ReadPresetContext): P
     one.curves.current.isWaiting.value = false
     return
   }
-  if (answer.ok && answer.value.preset) {
-    if (!takeVersion(queue, answer.value.version, answer.value.at)) return
-  } else if (answer.ok) {
-    queue.unsaved.revision = answer.value.at
-    queue.unsaved.version = 0n
-  }
+  if (answer.ok && !takeRead(queue, answer.value)) return
   one.writeQueue.status.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
   one.writeQueue.status.hasExternalChange.value = false
   one.curves.requests.answers.clear()

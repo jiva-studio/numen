@@ -49,6 +49,17 @@ export const takeVersion = (queue: WriteQueue, version: bigint, revision: string
   return true
 }
 
+/** Takes the answer of a read: a missing file stands for no version, so it is taken at any version. */
+export const takeRead = (
+  queue: WriteQueue,
+  read: { readonly preset: unknown; readonly version: bigint; readonly at: string },
+): boolean => {
+  if (read.preset) return takeVersion(queue, read.version, read.at)
+  queue.unsaved.revision = read.at
+  queue.unsaved.version = 0n
+  return true
+}
+
 export interface WriteOptions {
   path: string
   settings: Settings
