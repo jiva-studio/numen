@@ -73,7 +73,7 @@ function onLeave() {
 <style scoped>
 .file-tags {
   --ring: 0.125rem;
-  --dot: 1.125rem;
+  --dot: 0.75rem;
 
   display: inline-flex;
   align-items: center;
@@ -93,7 +93,7 @@ function onLeave() {
 }
 
 .file-tags__dot + .file-tags__dot {
-  margin-inline-start: calc(var(--dot) * -0.2);
+  margin-inline-start: calc(var(--dot) * -0.25);
 }
 
 .file-tags__more {
@@ -102,18 +102,19 @@ function onLeave() {
   justify-content: center;
   overflow: hidden;
   padding: 0;
+  --dot: 0.875rem;
   background: var(--numen-rule);
   color: var(--numen-ink);
-  font-size: var(--numen-text-1);
+  font-size: 0.5625rem;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
 .file-tags__more--wide {
-  font-size: calc(var(--numen-text-1) * 0.8);
+  font-size: 0.5rem;
 }
 
 .file-tags__more--wider {
-  font-size: calc(var(--numen-text-1) * 0.65);
+  font-size: 0.4375rem;
 }
 </style>
