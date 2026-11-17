@@ -73,8 +73,8 @@ const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
 const rooms = useWidgetRooms(options)
 
-/** Without widgets there is nothing to wait for. */
 const isLoaded = (ids: readonly string[]) =>
+  // Without widgets there is nothing to wait for.
   !(props.widgetsAbove?.length || props.widgetsBelow?.length) || rooms.isSettled(ids)
 
 const { frame, waiting, isMoving } = usePlexTransition(
