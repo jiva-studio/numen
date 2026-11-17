@@ -701,12 +701,10 @@ describe('the admission of the plex while the widgets of the shown nodes change 
   })
 })
 
-/** The arrangements that were given the rooms the widgets measured. */
-const getArranged = () => layouts.filter((layout) => layout.hasRoom)
+const getLayoutsWithRoom = () => layouts.filter((layout) => layout.hasRoom)
 
 const MOVEMENT = 420
 
-/** How long the notes were given new positions for, from the first to the last. */
 const getMovementTime = () => {
   const times = assigned
     .filter(({ element }) => element.classList.contains('plex__node'))
@@ -714,7 +712,7 @@ const getMovementTime = () => {
   return Math.max(...times) - Math.min(...times)
 }
 
-const mountMoving = (arrivals: Arrivals, height: number) =>
+const mountForMovement = (arrivals: Arrivals, height: number) =>
   mountPlex({
     graph: CROWD,
     widgetsBelow: [createEntry(arrivals, 'names'), createEntry(arrivals, 'tags')],
@@ -724,7 +722,7 @@ const mountMoving = (arrivals: Arrivals, height: number) =>
 
 describe('the plex that arranges once, with the rooms its widgets measured', () => {
   it('mounts the widgets of no node a second time on a click, while the nodes walk to their places', async () => {
-    const plex = mountMoving(createArrivals(answerFor(CROWD_IDS)), 380)
+    const plex = mountForMovement(createArrivals(answerFor(CROWD_IDS)), 380)
     await passFrames(40)
     mounted.clear()
 
@@ -736,7 +734,7 @@ describe('the plex that arranges once, with the rooms its widgets measured', () 
   })
 
   it('arranges once with the measured rooms and starts one movement on a click', async () => {
-    const plex = mountMoving(createArrivals(answerFor(CROWD_IDS)), 380)
+    const plex = mountForMovement(createArrivals(answerFor(CROWD_IDS)), 380)
     await passFrames(40)
     layouts.length = 0
     assigned = []
@@ -744,13 +742,13 @@ describe('the plex that arranges once, with the rooms its widgets measured', () 
     await plex.setProps({ graph: refocus(CROWD, 'child-0') })
     await passFrames(40)
 
-    expect(getArranged()).toHaveLength(1)
+    expect(getLayoutsWithRoom()).toHaveLength(1)
     expect(getMovementTime()).toBeLessThanOrEqual(MOVEMENT + 2 * FRAME)
   })
 
   it('draws the first layout with the notes the measured rooms admit, and draws nothing before it', async () => {
     const arrivals = createArrivals()
-    const plex = mountMoving(arrivals, 380)
+    const plex = mountForMovement(arrivals, 380)
     const drawn: string[][] = []
 
     await deliverOneAfterAnother(arrivals, CROWD_IDS)
@@ -762,7 +760,7 @@ describe('the plex that arranges once, with the rooms its widgets measured', () 
     const first = drawn.find((ids) => ids.length > 0)
     expect(first).toStrictEqual(drawn.at(-1))
     expect(first?.length).toBeLessThan(CROWD.nodes.length)
-    expect(getArranged()).toHaveLength(1)
+    expect(getLayoutsWithRoom()).toHaveLength(1)
   })
 
   it('draws no note before the window has reported its size, for a plex without widgets as well', async () => {
@@ -785,7 +783,7 @@ describe('the plex that arranges once, with the rooms its widgets measured', () 
 
     await passFrames(10)
 
-    const rooms = getArranged().at(-1)?.rooms
+    const rooms = getLayoutsWithRoom().at(-1)?.rooms
     expect(rooms?.get('focus')).toMatchObject({ top: 0, bottom: WIDGET_HEIGHT })
     expect(rooms?.get('parent-0')).toMatchObject({ top: 0, bottom: 0 })
   })
@@ -806,7 +804,7 @@ describe('the plex that arranges once, with the rooms its widgets measured', () 
     deliver(tags, answerFor(['parent-0', 'parent-1', 'child-0']))
     await passFrames(40)
 
-    expect(getArranged()).toHaveLength(1)
+    expect(getLayoutsWithRoom()).toHaveLength(1)
     expect(getShownIdsOf(CROWD, plex)).toStrictEqual(before)
   })
 })

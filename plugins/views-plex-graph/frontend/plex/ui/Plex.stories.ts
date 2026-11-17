@@ -382,7 +382,7 @@ export const MakingOne: Story = {
   render: invented.render,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
     const box = focus.getBoundingClientRect()
 
     await expect(canvasElement.querySelector('.plex__handle')).toBeNull()
@@ -425,7 +425,7 @@ export const DraggingThemIn: Story = {
   render: invented.render,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
     const box = focus.getBoundingClientRect()
     const middle = box.x + box.width / 2
 
@@ -467,6 +467,7 @@ export const OneHandleAtATime: Story = {
   render: invented.render,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await canvas.findByLabelText(/, focus$/)
     const getHandles = () => canvasElement.querySelectorAll('.plex__handle')
     const boxes = [
       canvas.getByLabelText(/, focus$/),
@@ -503,7 +504,7 @@ export const AskingForAMenu: Story = {
   render: invented.render,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
 
     let isPrevented: boolean | null = null
     const watch = (event: Event) => {
@@ -535,7 +536,7 @@ export const AskingForANode: Story = {
   render: invented.render,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
 
     const hand = userEvent.setup()
 
@@ -761,6 +762,7 @@ export const RestingOnATitle: Story = {
   args: { graph: graphs.awkwardLabels },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await canvas.findByLabelText(/, focus$/)
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
     const adjacentNode = canvas.getByLabelText('日本語のノート, child')
 
@@ -805,6 +807,7 @@ export const Walk: Story = {
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
+    await canvas.findByLabelText(/, focus$/)
 
     /** The node is in the focus and has stopped moving. */
     const waitForNode = async (label: string) =>
@@ -893,7 +896,7 @@ export const HeadingsInside: Story = {
   render: invented.render,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
     const getOpenBox = (id: string) =>
       canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
     const getHeadings = (id: string) => [
@@ -967,7 +970,7 @@ export const HeadingsOverLiftedLines: Story = {
   render: invented.render,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
 
     await userEvent.hover(focus)
     const backdrop = await waitFor(async () => {
@@ -1001,7 +1004,7 @@ export const OneOpenNote: Story = {
   render: invented.render,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
     const other = canvas.getByLabelText(/, jump$/)
     const getOpenBox = (id: string) =>
       canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
@@ -1051,7 +1054,7 @@ export const TabOrderOfAnOpenNote: Story = {
     if (!browser) return
     const keys = browser.userEvent
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
     const parent = canvas.getByLabelText(/, parent$/)
     const document = canvasElement.ownerDocument
     const getOpenBox = () => canvasElement.querySelector('.plex__lifted[data-node="focus"]')

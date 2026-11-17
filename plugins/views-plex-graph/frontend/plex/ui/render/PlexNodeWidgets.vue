@@ -4,7 +4,8 @@
  * then the plugin id), each in its own centered row and given the path of the note. The rows are one column,
  * the group; its element is emitted so its height can be measured, and only while a widget draws something:
  * a side whose widgets draw nothing keeps no room. The plex adds no gap around the widgets: a view that has
- * content keeps its own gap to the node. The side is ready once the views have loaded and
+ * content keeps its own gap to the node. The views wrap at `width`, the width the arrangement reserves for them,
+ * whatever width it gives the node. The side is ready once the views have loaded and
  * what they drew is measured.
  */
 import { ref } from 'vue'
@@ -21,7 +22,6 @@ const props = withDefaults(
     side: 'above' | 'below'
     entries: readonly PlexWidget[]
     path: string
-    /** The width the views wrap at: the width the arrangement reserves for them, whatever width it gives the node. */
     width: number
     clock?: Clock | undefined
   }>(),

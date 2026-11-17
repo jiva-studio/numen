@@ -220,7 +220,6 @@ function requestKept(
   )
 }
 
-/** The notes admitted, and the notes of `keep` that were cut, in the order they arrived. */
 function addKept(
   admitted: NodesByRelation,
   requested: NodesByRelation,
