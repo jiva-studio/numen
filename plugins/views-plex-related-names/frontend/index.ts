@@ -3,7 +3,7 @@
  * drawn in the slots over and under each of its nodes.
  */
 import { defineComponent, h } from 'vue'
-import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type Caught, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { readSettings } from './model/settings'
 import { createNotesReader } from './model/notesReader'
 import { useNames, type NamesSource } from './model/useNames'
@@ -34,7 +34,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     )
   }
   const settings = readSettings(plugin)
-  const reportFailure = (error: unknown) =>
+  const reportFailure = (error: Caught) =>
     notices.show(error instanceof Error ? error.message : String(error), 'error')
   const reader = createNotesReader({ notes, events: host.events, settings, reportFailure })
   plugin.identity.subscriptions.push({ dispose: reader.dispose })
