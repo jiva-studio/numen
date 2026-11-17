@@ -44,6 +44,12 @@ const passTime = (ms: number) => {
   for (const run of waiting) run(now)
 }
 
+const FRAME = 16
+
+const runFrames = (ms: number) => {
+  for (let passed = 0; passed < ms; passed += FRAME) passTime(FRAME)
+}
+
 afterEach(() => {
   scheduled = []
   now = 0
@@ -194,12 +200,12 @@ describe('the loading of a slot', () => {
   it('releases a view that has not finished once the emergency cap has passed, and reports it by name', async () => {
     const { loading, reportIssue } = mountSlot([{ entry: LEDGER, view: createLoadingView([]) }])
 
-    passTime(SLOT_LOADING_CAP_MS - 1)
+    runFrames(SLOT_LOADING_CAP_MS - FRAME * 2)
     await nextTick()
     expect(loading.isReady.value).toBe(false)
     expect(reportIssue).not.toHaveBeenCalled()
 
-    passTime(2)
+    runFrames(FRAME * 4)
     await nextTick()
 
     expect(loading.isReady.value).toBe(true)
@@ -209,6 +215,21 @@ describe('the loading of a slot', () => {
       expect.stringContaining('did not report ready'),
     )
     expect(reportIssue.mock.calls[0]?.[1]).toContain(LEDGER.key)
+  })
+
+  it('does not count the time the page did not run: a gap between two frames longer than the cap releases nothing', async () => {
+    const { loading, reportIssue } = mountSlot([{ entry: LEDGER, view: createLoadingView([]) }])
+    runFrames(FRAME * 3)
+
+    passTime(SLOT_LOADING_CAP_MS * 5)
+    await nextTick()
+
+    expect(loading.isReady.value).toBe(false)
+    expect(reportIssue).not.toHaveBeenCalled()
+    runFrames(SLOT_LOADING_CAP_MS + FRAME * 4)
+    await nextTick()
+    expect(loading.isReady.value).toBe(true)
+    expect(reportIssue).toHaveBeenCalledTimes(1)
   })
 
   it('reports nothing for a view that finishes in time', async () => {

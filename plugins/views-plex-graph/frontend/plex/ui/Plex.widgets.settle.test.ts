@@ -4,9 +4,15 @@ import { computed, defineComponent, h, nextTick, ref, watch, type Ref } from 'vu
 import { useSlotLoading } from '@numen/plugin-sdk'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
-import type { Size } from '../lib/arrange'
+import { arrangePlex, type Size } from '../lib/arrange'
 import type { Clock, Viewport } from '@numen/ui'
 import type { PlexGraph } from '../../types'
+
+// The arrangement is the real one; it is wrapped only to count how often the plex asks for it.
+vi.mock('../lib/arrange', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/arrange')>()
+  return { ...actual, arrangePlex: vi.fn(actual.arrangePlex) }
+})
 
 const FAMILY: PlexGraph = {
   nodes: [
@@ -68,10 +74,15 @@ const deliverOneAfterAnother = async (arrivals: Arrivals, ids: readonly string[]
   }
 }
 
+const mounted = new Map<string, number>()
+
+const countMount = (path: string) => mounted.set(path, (mounted.get(path) ?? 0) + 1)
+
 const createWidget = (name: string, arrivals: Arrivals) =>
   defineComponent({
     props: { path: { type: String, required: true } },
     setup(props) {
+      countMount(props.path)
       const finish = useSlotLoading()
       const draws = computed(() => arrivals.value.get(props.path))
       watch(
@@ -113,6 +124,8 @@ const clock: Clock = {
 }
 
 beforeEach(() => {
+  mounted.clear()
+  vi.mocked(arrangePlex).mockClear()
   rings = []
   assigned = []
   scheduled = []
@@ -424,5 +437,124 @@ describe('the plex whose widget never reports ready', () => {
     expect(getDrawnTitles(plex)).toStrictEqual(FAMILY.nodes.map((node) => node.title))
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('did not report ready'))
     expect(warn.mock.calls.flat().join(' ')).toContain('org.example.hung/view/hung')
+  })
+})
+
+/** A window whose size is known a tick after the plex is mounted, as the size of a real element is. */
+const createLateViewport = (size: Size): Viewport => {
+  const deliver = (took: (size: Size) => void) => {
+    let isLive = true
+    void Promise.resolve().then(() => {
+      if (isLive) took(size)
+    })
+    return () => {
+      isLive = false
+    }
+  }
+  return {
+    watch: (_of, took) => deliver(took),
+    watchFreeSpace: deliver,
+    watchWhole: () => () => undefined,
+  }
+}
+
+const CROWD: PlexGraph = {
+  nodes: [
+    { id: 'focus', title: 'Watershed', relation: 'focus' },
+    ...Array.from({ length: 3 }, (_, index) => ({
+      id: `parent-${index}`,
+      title: `Basin ${index}`,
+      relation: 'parent' as const,
+    })),
+    ...Array.from({ length: 24 }, (_, index) => ({
+      id: `child-${index}`,
+      title: `Tributary ${index}`,
+      relation: 'child' as const,
+    })),
+  ],
+  edges: [
+    ...Array.from({ length: 3 }, (_, index) => ({ from: `parent-${index}`, to: 'focus' })),
+    ...Array.from({ length: 24 }, (_, index) => ({ from: 'focus', to: `child-${index}` })),
+  ],
+}
+
+const CROWD_IDS = CROWD.nodes.map((node) => node.id)
+const MEDIUM_WINDOW = { width: 1200, height: 520 }
+
+const countShown = (plex: Mounted) => plex.findAll('.plex__node[aria-label]').length
+
+const countArranged = () => vi.mocked(arrangePlex).mock.calls.length
+
+describe('the plex that waits for the widgets of many nodes', () => {
+  it('arranges once for all the widget sizes of an open, not once for each measured height', async () => {
+    const arrivals = createArrivals()
+    mountPlex({ widgetsBelow: [createEntry(arrivals)] })
+
+    await deliverOneAfterAnother(arrivals, ALL)
+    await passFrames(FRAMES_PER_SETTLE)
+
+    expect(countArranged()).toBeLessThanOrEqual(2)
+  })
+
+  it('arranges nothing more while a widget still loads, however the sizes of the others change', async () => {
+    const arrivals = createArrivals()
+    mountPlex({ widgetsBelow: [createEntry(arrivals)] })
+    await passFrames(1)
+    const roomless = countArranged()
+
+    for (const id of ['focus', 'parent-0', 'parent-1', 'child-0']) {
+      deliver(arrivals, { [id]: true })
+      await passFrames(1)
+    }
+
+    expect(countArranged()).toBe(roomless)
+  })
+
+  it('arranges once for the widgets that change size in one frame after the plex has settled', async () => {
+    const arrivals = createArrivals(answerFor(ALL, false))
+    mountPlex({ widgetsBelow: [createEntry(arrivals)] })
+    await passFrames(FRAMES_PER_SETTLE)
+    vi.mocked(arrangePlex).mockClear()
+
+    await deliverOneAfterAnother(arrivals, ['parent-0', 'parent-1', 'child-0'])
+    await passFrames(FRAMES_PER_SETTLE)
+
+    expect(countArranged()).toBe(1)
+  })
+
+  it('mounts the widgets of the nodes the window shows, and of no node that only the first pass offered', async () => {
+    const bare = mountPlex({ graph: CROWD, viewport: createLateViewport(MEDIUM_WINDOW) })
+    await passFrames(FRAMES_PER_SETTLE)
+    const shownBare = countShown(bare)
+    bare.unmount()
+    mounted.clear()
+
+    const arrivals = createArrivals(answerFor(CROWD_IDS))
+    mountPlex({
+      graph: CROWD,
+      widgetsBelow: [createEntry(arrivals)],
+      viewport: createLateViewport(MEDIUM_WINDOW),
+    })
+    await passFrames(FRAMES_PER_SETTLE)
+
+    expect(shownBare).toBeLessThan(CROWD.nodes.length)
+    expect(mounted.size).toBeLessThanOrEqual(shownBare)
+  })
+
+  it('mounts the widgets of a node once, however often the plex is arranged while it stays on screen', async () => {
+    const arrivals = createArrivals(answerFor(CROWD_IDS, false))
+    const plex = mountPlex({
+      graph: CROWD,
+      widgetsBelow: [createEntry(arrivals)],
+      viewport: createLateViewport(MEDIUM_WINDOW),
+    })
+    await passFrames(FRAMES_PER_SETTLE)
+
+    deliver(arrivals, { 'parent-0': true })
+    await passFrames(FRAMES_PER_SETTLE)
+    await plex.setProps({ graph: { ...CROWD, nodes: [...CROWD.nodes].reverse() } })
+    await passFrames(FRAMES_PER_SETTLE)
+
+    expect([...mounted.values()].filter((count) => count > 1)).toStrictEqual([])
   })
 })
