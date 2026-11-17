@@ -229,16 +229,16 @@ describe('the plex whose widgets draw after the nodes do', () => {
   })
 
   it('arranges once for widgets that start drawing later in the nodes on screen, with no position between', async () => {
-    const withParents = ['focus', 'parent-0', 'parent-1']
-    const settledBefore = await getSettledLayout(withParents)
+    const onlyFocus = ['focus']
+    const settledBefore = await getSettledLayout(onlyFocus)
     const settledAfter = await getSettledLayout(ALL)
-    const drawing = ref(getPaths(withParents))
+    const drawing = ref(getPaths(onlyFocus))
     const plex = mountPlex({ widgetsBelow: [createEntry(drawing)] })
     await passFrames(FRAMES_PER_SETTLE)
     expect(getLayout(plex)).toStrictEqual(settledBefore)
     assigned = []
 
-    await drawOneAfterAnother(drawing, ['child-0', 'child-1'])
+    await drawOneAfterAnother(drawing, ['parent-0', 'parent-1'])
     await passFrames(FRAMES_PER_SETTLE)
 
     expect(settledAfter).not.toStrictEqual(settledBefore)
