@@ -1,5 +1,7 @@
 <script setup lang="ts">
 /** The names set in one row group beside a node, in small faint text with no pill. Choosing one is the caller's. */
+import { createNamedIcon } from '@numen/ui'
+import { getRelationIcon } from '../lib/relationIcon'
 import type { RelatedName } from '../types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -22,6 +24,11 @@ const emit = defineEmits<{
       :aria-label="name.label"
       @click="emit('choose', name.path)"
     >
+      <component
+        :is="createNamedIcon(getRelationIcon(name.relation, name.direction))"
+        v-if="showArrows"
+        class="related-names__arrow"
+      />
       {{ name.title }}
     </button>
   </div>
@@ -49,5 +56,13 @@ const emit = defineEmits<{
 
 .related-names__name:hover {
   color: var(--numen-ink);
+}
+
+.related-names__arrow {
+  width: 0.7em;
+  height: 0.7em;
+  margin-right: 0.25em;
+  vertical-align: -0.05em;
+  color: inherit;
 }
 </style>

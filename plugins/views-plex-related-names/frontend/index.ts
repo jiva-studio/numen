@@ -19,7 +19,12 @@ function createNamesView(source: NamesSource, side: NamesSide) {
     props: { path: { type: String, required: true } },
     setup: (props) => {
       const { names, choose } = useNames(source, side, () => props.path)
-      return () => h(RelatedNames, { names: names.value, onChoose: choose })
+      return () =>
+        h(RelatedNames, {
+          names: names.value,
+          showArrows: source.settings.showRelationArrows.value,
+          onChoose: choose,
+        })
     },
   })
 }
