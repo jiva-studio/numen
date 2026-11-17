@@ -1,6 +1,6 @@
 /** The views plugins place on one side of a node are drawn at the node in the order of the manifest, each given the path of the note. */
-import { mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick, ref, type Ref } from 'vue'
+import { flushPromises, mount } from '@vue/test-utils'
+import { defineComponent, h, ref, type Ref } from 'vue'
 import { afterEach, describe, expect, it } from 'vitest'
 import PlexNodeWidgets from './PlexNodeWidgets.vue'
 import type { PlacedNode } from '../../lib/node'
@@ -87,8 +87,9 @@ describe('the widgets of a side of a node', () => {
     expect(widgets.find('foreignObject').exists()).toBe(false)
     expect(widgets.find('[data-widget]').exists()).toBe(false)
   })
-  it('share one element for measuring', () => {
+  it('share one element for measuring', async () => {
     const widgets = mountWidgets({ entries: entries('parents', 'tags') })
+    await flushPromises()
 
     const [group] = widgets.emitted('widgets')?.at(-1) ?? []
 
@@ -130,11 +131,11 @@ describe('the group of the widgets of a side of a node', () => {
     })
 
     drawing.value = true
-    await nextTick()
+    await flushPromises()
     expect(widgets.emitted('widgets')?.at(-1)?.[0]).toBeInstanceOf(Element)
 
     drawing.value = false
-    await nextTick()
+    await flushPromises()
     expect(widgets.emitted('widgets')?.at(-1)).toStrictEqual([null])
   })
 })
