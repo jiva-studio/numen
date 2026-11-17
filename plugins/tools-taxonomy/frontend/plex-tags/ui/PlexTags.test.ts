@@ -185,4 +185,44 @@ describe('the tags of a note in the plex', () => {
 
     expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
   })
+
+  it('hide the tooltip of a chip that goes while the pointer is over it', async () => {
+    const wrapper = mountTags(['Port', 'Sea'])
+    await getChips(wrapper)[1]?.trigger('mouseenter')
+
+    await wrapper.setProps({ tags: ['Port'] })
+
+    expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
+  })
+
+  it('hide the tooltip once the note has no tags', async () => {
+    const wrapper = mountTags(['Port'])
+    await getChips(wrapper)[0]?.trigger('mouseenter')
+    await wrapper.setProps({ tags: [] })
+
+    await wrapper.setProps({ tags: ['Sea'] })
+
+    expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
+  })
+
+  it('list the names of the tags beyond the chips in a tooltip while the pointer is over the +N chip', async () => {
+    const wrapper = mountTags(TAGS.slice(0, 7))
+
+    await getMore(wrapper).trigger('mouseenter')
+
+    const tooltips = document.body.querySelectorAll('[role="tooltip"]')
+    expect(tooltips).toHaveLength(1)
+    expect(tooltips[0]?.textContent?.trim()).toBe('Jetty, Wharf, Berth')
+  })
+
+  it('list the names of the tags beyond the chips while the +N chip has the focus', async () => {
+    const wrapper = mountTags(TAGS.slice(0, 5))
+
+    expect(getMore(wrapper).attributes('tabindex')).toBe('0')
+    await getMore(wrapper).trigger('focus')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe('Harbour')
+
+    await getMore(wrapper).trigger('blur')
+    expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
+  })
 })

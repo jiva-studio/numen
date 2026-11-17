@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** The tags of a note under its node in the plex: the first four as chips with their names and the count of the rest. */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { measureRect, Tooltip, type Box } from '@numen/ui'
 import { getTagColor } from '../../lib/color'
 import { getRestText } from '../../words'
@@ -11,7 +11,9 @@ const props = defineProps<{ tags: readonly string[] }>()
 /* --------------------------------- State ---------------------------------- */
 const CHIP_LIMIT = 4
 
-const hovered = ref<{ tag: string; at: Box } | null>(null)
+const REST = Symbol('rest')
+
+const hovered = ref<{ source: string | typeof REST; at: Box } | null>(null)
 
 const chips = computed(() =>
   props.tags.slice(0, CHIP_LIMIT).map((tag) => ({
@@ -20,12 +22,27 @@ const chips = computed(() =>
   })),
 )
 const rest = computed(() => props.tags.length - CHIP_LIMIT)
+const hiddenTags = computed(() => props.tags.slice(CHIP_LIMIT))
+const hoveredText = computed(() =>
+  hovered.value?.source === REST ? hiddenTags.value.join(', ') : (hovered.value?.source as string),
+)
+
+watch(
+  () => props.tags,
+  (tags) => {
+    const source = hovered.value?.source
+    if (source === undefined) return
+    const present =
+      source === REST ? tags.length > CHIP_LIMIT : tags.slice(0, CHIP_LIMIT).includes(source)
+    if (!present) hovered.value = null
+  },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onEnter(tag: string, event: Event) {
+function onEnter(source: string | typeof REST, event: Event) {
   const rect = measureRect(event.currentTarget as HTMLElement)
   hovered.value = rect
-    ? { tag, at: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } }
+    ? { source, at: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } }
     : null
 }
 
@@ -50,11 +67,20 @@ function onLeave() {
     >
       <span class="plex-tags__name">{{ chip.tag }}</span>
     </span>
-    <span v-if="rest > 0" class="plex-tags__chip plex-tags__chip--more" data-plex-tag-more>
+    <span
+      v-if="rest > 0"
+      class="plex-tags__chip plex-tags__chip--more"
+      data-plex-tag-more
+      tabindex="0"
+      @mouseenter="onEnter(REST, $event)"
+      @mouseleave="onLeave"
+      @focus="onEnter(REST, $event)"
+      @blur="onLeave"
+    >
       {{ getRestText(rest) }}
     </span>
     <Teleport to="body">
-      <Tooltip v-if="hovered" :at="hovered.at">{{ hovered.tag }}</Tooltip>
+      <Tooltip v-if="hovered" :at="hovered.at">{{ hoveredText }}</Tooltip>
     </Teleport>
   </span>
 </template>
