@@ -7,7 +7,7 @@
  * compute who is related to whom. The caller answers `activate` with the next
  * graph, and the plex transitions to it.
  */
-import { computed, onMounted, ref, useSlots, useTemplateRef, watch } from 'vue'
+import { computed, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
 import { DEFAULT_BEHAVIOR, getBehavior, type PlexBehavior } from '../model/behavior'
@@ -62,7 +62,7 @@ const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
 
 const slots = useSlots()
 
-const { room, options, measures, widen, placedHeadings } = useFreeSpace(
+const { room, isMeasured, options, measures, widen, placedHeadings } = useFreeSpace(
   frameElement,
   props,
   () => !!slots.icon,
@@ -74,12 +74,6 @@ const behavior = computed<PlexBehavior>(() => getBehavior(props))
 const rooms = useWidgetRooms(options)
 
 const hasWidgets = () => !!(props.widgetsAbove?.length || props.widgetsBelow?.length)
-
-// The window reports after the first drawing; a node waiting with its widgets mounted before that would be chosen by the assumed size.
-const isMounted = ref(false)
-onMounted(() => {
-  isMounted.value = true
-})
 
 const isLoaded = (ids: readonly string[]) =>
   // Without widgets there is nothing to wait for.
@@ -99,7 +93,8 @@ const { frame, waiting, isMoving } = usePlexTransition(
     duration: () => props.duration,
     clock: props.clock,
     isReady: isLoaded,
-    isActive: () => isMounted.value || !hasWidgets(),
+    // The size of the window decides which nodes are shown, so no widget mounts before it is reported.
+    isActive: () => isMeasured.value || !hasWidgets(),
   },
 )
 

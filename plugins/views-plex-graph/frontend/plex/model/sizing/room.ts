@@ -48,6 +48,8 @@ export function useFreeSpace(
 ) {
   /** The available size of the plex, as last measured. */
   const room = ref<Size>(DEFAULT_VIEWPORT)
+  /** Whether `room` is a size the window reported, not the assumed one. */
+  const isMeasured = ref(false)
 
   onMounted(() => {
     const found = element.value
@@ -56,6 +58,7 @@ export function useFreeSpace(
     onScopeDispose(
       props.viewport.watch(found, (size) => {
         room.value = size
+        isMeasured.value = true
       }),
     )
   })
@@ -115,5 +118,5 @@ export function useFreeSpace(
       getNodeHeadings(node, getHeadings(node.id), { options: options.value, deps })
   })
 
-  return { room, options, measures, widen: expandWidth, placedHeadings }
+  return { room, isMeasured, options, measures, widen: expandWidth, placedHeadings }
 }
