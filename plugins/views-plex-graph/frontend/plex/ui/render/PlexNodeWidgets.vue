@@ -3,6 +3,7 @@
  * The views of one side of a node, drawn at the node in the order the loader sorts them (the slot `order`,
  * then the plugin id), each in its own centered row and given the path of the note. The rows are one column,
  * the group; its element is emitted so its height can be measured.
+ * `inset` moves the box from the pill edge by the room the names of the node take on that side.
  * The group holds the `--numen-node-gap` against the node as padding, so the measured height includes it.
  */
 import type { ComponentPublicInstance } from 'vue'
@@ -14,6 +15,7 @@ const props = defineProps<{
   side: 'above' | 'below'
   entries: readonly PlexWidget[]
   path: string
+  inset?: number
 }>()
 
 const emit = defineEmits<{
@@ -28,8 +30,8 @@ const onWidgetsChange = (element: Element | ComponentPublicInstance | null) =>
 
 const getTop = () =>
   props.side === 'above'
-    ? props.node.y - props.node.height / 2 - EXTENT
-    : props.node.y + props.node.height / 2
+    ? props.node.y - props.node.height / 2 - (props.inset ?? 0) - EXTENT
+    : props.node.y + props.node.height / 2 + (props.inset ?? 0)
 </script>
 
 <template>

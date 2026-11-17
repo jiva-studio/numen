@@ -201,6 +201,7 @@ const getRole = (node: PlacedNode): GestureRole => {
         :side="side"
         :entries="(side === 'above' ? widgetsAbove : widgetsBelow) ?? []"
         :path="getPath?.(node.id) ?? ''"
+        :inset="(side === 'above' ? roomOf?.(node.id)?.top : roomOf?.(node.id)?.bottom) ?? 0"
         @widgets="setWidgets?.(node.id, side, $event)"
       />
     </g>

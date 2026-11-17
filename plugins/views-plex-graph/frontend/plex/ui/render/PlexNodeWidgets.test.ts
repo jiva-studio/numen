@@ -81,6 +81,16 @@ describe('the widgets of a side of a node', () => {
     expect(Number(box.attributes('x'))).toBe(node.x - node.width / 2)
   })
 
+  it('start beyond the room of the names on the side of the node they are drawn on', () => {
+    const below = mountWidgets({ side: 'below', inset: 30 }).get('foreignObject')
+    const above = mountWidgets({ side: 'above', inset: 30 }).get('foreignObject')
+
+    expect(Number(below.attributes('y'))).toBe(node.y + node.height / 2 + 30)
+    expect(Number(above.attributes('y')) + Number(above.attributes('height'))).toBe(
+      node.y - node.height / 2 - 30,
+    )
+  })
+
   it('are not drawn when no plugin places a view on the side', () => {
     const widgets = mountWidgets({ entries: [] })
 
