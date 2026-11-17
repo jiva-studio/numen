@@ -11,7 +11,8 @@ const hasDrawing = (rows: Element): boolean =>
 /**
  * `change` is given `rows` once a widget draws and `null` when none does or the rows are gone; `isDrawing` follows it.
  * `rows` is given after the document has drawn the group the widgets sit in, so what `change` measures includes it,
- * and `isMeasured` holds from then on. `refresh` reads the document at once, where the observer would after the change.
+ * and `isMeasured` holds from then on. `refresh` reads the document at once, where the observer would after the change,
+ * and gives the group to `change` again when it draws, so a size it has grown to is measured without waiting for the window.
  */
 export function useDrawnWidgets(
   rows: Readonly<Ref<HTMLElement | null>>,
@@ -29,6 +30,11 @@ export function useDrawnWidgets(
     drawn.value = next
     isMeasured.value = next === null
     if (next === null) change(null)
+  }
+
+  const refresh = () => {
+    update()
+    if (drawn.value && isMeasured.value) change(drawn.value)
   }
 
   watch(
@@ -56,5 +62,5 @@ export function useDrawnWidgets(
 
   onScopeDispose(() => observer.disconnect())
 
-  return { isDrawing, isMeasured, refresh: update }
+  return { isDrawing, isMeasured, refresh }
 }
