@@ -17,10 +17,9 @@ export interface NotesReaderSource {
   readonly reportFailure: (error: Caught) => void
 }
 
-/** The use of one note by one view: the notes related to it, `null` until they are read, while they are hidden and after a failed read, and the end of the use. */
+/** The use of one note by one view: the notes related to it, `null` until they are read, while they are hidden and after a failed read, whether the first read has ended (answered or failed, and also when the names are hidden or the path is empty; it never goes back to `false`), and the end of the use. */
 export interface NoteLease {
   readonly noteGraph: Readonly<Ref<NoteGraph | null>>
-  /** Whether the first read of the note has ended, answered or failed, or there is nothing to read: the names are hidden or the path is empty. Once `true`, it stays so. */
   readonly isSettled: Readonly<Ref<boolean>>
   /** Ends the use. A note that no lease uses is forgotten. */
   release(): void
