@@ -16,11 +16,15 @@ export interface PlexTransition {
   readonly isMoving: Ref<boolean>
 }
 
-/** The plex is arranged only when `isReady` holds for the nodes it would show. */
+/**
+ * The plex is arranged only when `isReady` holds for the nodes it would show.
+ * `isActive` holds once the plex may be arranged at all: a plex whose widgets mount for the waiting nodes is not active before its window is measured.
+ */
 export interface PlexTransitionOptions {
   readonly duration: () => number
   readonly clock?: Clock | undefined
   readonly isReady?: ((ids: readonly string[]) => boolean) | undefined
+  readonly isActive?: (() => boolean) | undefined
 }
 
 const EMPTY_FRAME: PlexFrame = {
@@ -33,15 +37,18 @@ const EMPTY_FRAME: PlexFrame = {
 /**
  * Hold a frame that moves towards each new graph. One arriving
  * mid-movement re-aims from wherever the plex has got to.
- * The plex is arranged once the widgets of every node it would show have settled; until then the
+ * The plex is arranged once the widgets of every node it would show are loaded; until then the
  * frame stays as it is, and the first one is empty, so no node is placed by a layout that the widgets change.
+ * While it waits, the nodes it would show are chosen once for each new graph or input, and a change in the
+ * room of the widgets arranges nothing; once the widgets are loaded it arranges once, and then once for each frame
+ * in which the room of the widgets changed.
  */
 export function usePlexTransition(
   graph: () => PlexGraph,
   input: () => ArrangeInput | undefined,
   options: PlexTransitionOptions,
 ): PlexTransition {
-  const { duration, clock = browserClock, isReady = () => true } = options
+  const { duration, clock = browserClock, isReady = () => true, isActive = () => true } = options
   const target = () => arrangePlex(graph(), input())
 
   const frame = shallowRef<PlexFrame>(EMPTY_FRAME)
@@ -49,6 +56,14 @@ export function usePlexTransition(
   const held = shallowRef<readonly string[]>([])
   const isMoving = ref(false)
   let handle: number | null = null
+  let isFramePending = false
+  let frameId = 0
+  let arrangedRoom: unknown
+
+  const cancelFrame = () => {
+    frameId += 1
+    isFramePending = false
+  }
 
   const stop = () => {
     if (handle !== null) clock.cancel(handle)
@@ -84,7 +99,10 @@ export function usePlexTransition(
     })
   }
 
-  const settle = () => {
+  const arrangeWhenReady = () => {
+    cancelFrame()
+    if (!isActive()) return
+    arrangedRoom = input()?.room
     const to = target()
     held.value = to.nodes.map((node) => node.id)
     if (!isReady(held.value)) {
@@ -96,10 +114,30 @@ export function usePlexTransition(
     run(to)
   }
 
-  settle()
-  // One watcher for the graph, the input and the widgets, so a change of them in one tick arranges once.
-  watch([() => graph(), ...getInputSources(input), () => isReady(held.value)], settle)
-  onScopeDispose(stop)
+  const arrangeInFrame = () => {
+    if (isFramePending || input()?.room === arrangedRoom || !isReady(held.value)) return
+    isFramePending = true
+    const id = frameId
+    clock.schedule(() => {
+      if (id === frameId) arrangeWhenReady()
+    })
+  }
+
+  arrangeWhenReady()
+  // One watcher for the graph and the input, so a change of them in one tick arranges once.
+  watch([() => graph(), isActive, ...getInputSources(input)], arrangeWhenReady)
+  // The widgets settling is what arranges the plex that waited for them.
+  watch(
+    () => isReady(held.value),
+    (isOpen) => {
+      if (isOpen) arrangeWhenReady()
+    },
+  )
+  watch(() => input()?.room, arrangeInFrame)
+  onScopeDispose(() => {
+    cancelFrame()
+    stop()
+  })
 
   return { frame, waiting, isMoving }
 }
@@ -160,6 +198,5 @@ function getInputSources(input: () => ArrangeInput | undefined) {
     () => input()?.measure,
     () => input()?.measureLabel,
     () => input()?.labelType,
-    () => input()?.room,
   ]
 }

@@ -64,19 +64,25 @@ export function useSlotLoading(): () => void {
 
 interface Token {
   readonly entry: SlotLoadingEntry
-  readonly startedAt: number
+  startedAt: number
 }
 
 export function createSlotLoading({ clock, reportIssue }: SlotLoadingDeps): SlotLoading {
   const tokens = shallowReactive(new Set<Token>())
   let isWatching = false
+  let lastFrameAt = 0
 
   // A view that hangs is released and reported: the cap is a safety net, not a way to finish.
+  // A gap between two frames longer than the cap means the page was blocked, not the views slow: the wait starts again.
   const watchCap = () => {
     if (isWatching || tokens.size === 0) return
     isWatching = true
     clock.schedule((now) => {
       isWatching = false
+      if (now - lastFrameAt > SLOT_LOADING_CAP_MS) {
+        for (const token of tokens) token.startedAt = now
+      }
+      lastFrameAt = now
       for (const token of [...tokens]) {
         if (now - token.startedAt < SLOT_LOADING_CAP_MS) continue
         tokens.delete(token)
@@ -90,6 +96,7 @@ export function createSlotLoading({ clock, reportIssue }: SlotLoadingDeps): Slot
     isReady: computed(() => tokens.size === 0),
     begin: (entry) => {
       const token: Token = { entry, startedAt: clock.now() }
+      if (!isWatching) lastFrameAt = token.startedAt
       tokens.add(token)
       watchCap()
       return () => tokens.delete(token)

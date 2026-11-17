@@ -17,13 +17,13 @@ const getKey = (id: string, side: WidgetSide): string => `${side}:${id}`
  * The widgets of each side of a node are measured whenever `setWidgets` is given their element, and again when it resizes;
  * `null` takes them away. `getNodeRoom` is what the arrangement is given: a new function whenever a measured height
  * changes, and absent while nothing is measured. `setReady` takes whether the views of a side have loaded and
- * `null` when the side is removed; `isSettled` holds when every side of every given node has reported.
+ * `null` when the side is removed; `areLoaded` holds when every side of every given node has reported.
  */
 export function useWidgetRooms(options: Readonly<Ref<PlexOptions>>): {
   setWidgets: (id: string, side: WidgetSide, element: Element | null) => void
   getNodeRoom: ComputedRef<((node: PlexNode) => NodeRoom) | undefined>
   setReady: (id: string, side: WidgetSide, isReady: boolean | null) => void
-  isSettled: (ids: readonly string[]) => boolean
+  areLoaded: (ids: readonly string[]) => boolean
 } {
   const heights = shallowRef<ReadonlyMap<string, number>>(new Map())
   const measured = new Map<string, Measured>()
@@ -66,7 +66,7 @@ export function useWidgetRooms(options: Readonly<Ref<PlexOptions>>): {
     loaded.value = next
   }
 
-  const isSettled = (ids: readonly string[]) =>
+  const areLoaded = (ids: readonly string[]) =>
     ids.every(
       (id) => loaded.value.get(getKey(id, 'above')) && loaded.value.get(getKey(id, 'below')),
     )
@@ -89,5 +89,5 @@ export function useWidgetRooms(options: Readonly<Ref<PlexOptions>>): {
     }
   })
 
-  return { setWidgets, getNodeRoom, setReady, isSettled }
+  return { setWidgets, getNodeRoom, setReady, areLoaded }
 }

@@ -7,7 +7,7 @@
  * compute who is related to whom. The caller answers `activate` with the next
  * graph, and the plex transitions to it.
  */
-import { computed, useSlots, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, ref, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
 import { DEFAULT_BEHAVIOR, getBehavior, type PlexBehavior } from '../model/behavior'
@@ -73,9 +73,17 @@ const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
 const rooms = useWidgetRooms(options)
 
+const hasWidgets = () => !!(props.widgetsAbove?.length || props.widgetsBelow?.length)
+
+// The window reports after the first drawing; a node waiting with its widgets mounted before that would be chosen by the assumed size.
+const isMounted = ref(false)
+onMounted(() => {
+  isMounted.value = true
+})
+
 const isLoaded = (ids: readonly string[]) =>
   // Without widgets there is nothing to wait for.
-  !(props.widgetsAbove?.length || props.widgetsBelow?.length) || rooms.isSettled(ids)
+  !hasWidgets() || rooms.areLoaded(ids)
 
 const { frame, waiting, isMoving } = usePlexTransition(
   () => props.graph,
@@ -87,7 +95,12 @@ const { frame, waiting, isMoving } = usePlexTransition(
     labelType: measures.value?.labelType,
     room: rooms.getNodeRoom.value,
   }),
-  { duration: () => props.duration, clock: props.clock, isReady: isLoaded },
+  {
+    duration: () => props.duration,
+    clock: props.clock,
+    isReady: isLoaded,
+    isActive: () => isMounted.value || !hasWidgets(),
+  },
 )
 
 /**
