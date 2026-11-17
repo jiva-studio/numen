@@ -45,6 +45,8 @@ export interface LabelType {
 
 /** One label of an edge as it is drawn. */
 export interface EdgeTitle {
+  /** Which label of the edge the title is, counting every label as it was written. It names the title on its line for as long as the label is there. */
+  readonly record: number
   readonly anchor: number
   readonly heading: EdgeHeading
   readonly side: EdgeSide

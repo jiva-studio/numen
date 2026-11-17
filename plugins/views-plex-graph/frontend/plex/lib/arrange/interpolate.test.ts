@@ -339,6 +339,7 @@ describe('the title a line carries while the picture moves', () => {
               ...edge,
               titles: [
                 {
+                  record: 0,
                   anchor: 0.5,
                   heading: 'against' as const,
                   side: 0,
