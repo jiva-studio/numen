@@ -1,6 +1,7 @@
 import { ref, type Ref } from 'vue'
 import type { MessageWriter } from '@numen/plugin-sdk'
 import type { Presets, Settings } from '../../lib/presets'
+import type { PresetReadResult } from '../../lib/presetResults'
 import { WORDS as words } from '../lib/words'
 
 /** The pending write and the unwritten fields of one preset file. */
@@ -52,7 +53,7 @@ export const takeVersion = (queue: WriteQueue, version: bigint, revision: string
 /** Takes the answer of a read: a missing file stands for no version, so it is taken at any version. */
 export const takeRead = (
   queue: WriteQueue,
-  read: { readonly preset: unknown; readonly version: bigint; readonly at: string },
+  read: Extract<PresetReadResult, { ok: true }>['value'],
 ): boolean => {
   if (read.preset) return takeVersion(queue, read.version, read.at)
   queue.unsaved.revision = read.at
