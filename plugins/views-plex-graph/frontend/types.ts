@@ -175,7 +175,10 @@ export interface PlexTabDeps {
     handler: (entries: readonly SlotItem[]) => void,
   ) => Disposable
   /** Finds notes by name. */
-  readonly searchNames?: (query: string, limit?: number) => Promise<readonly { path: string; title: string }[]>
+  readonly searchNames?: (
+    query: string,
+    limit?: number,
+  ) => Promise<readonly { path: string; title: string }[]>
   readonly look: PlexLook
 }
 

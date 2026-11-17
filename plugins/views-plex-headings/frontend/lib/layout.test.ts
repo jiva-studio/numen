@@ -12,7 +12,9 @@ const layoutOf = (overrides: Partial<Parameters<typeof getListLayout>[0]> = {}):
 
 describe('the layout of the list', () => {
   it('is none for a note with no headings', () => {
-    expect(getListLayout({ count: 0, limit: 6, node: NODE, room: ROOM, measures: MEASURES })).toBeNull()
+    expect(
+      getListLayout({ count: 0, limit: 6, node: NODE, room: ROOM, measures: MEASURES }),
+    ).toBeNull()
   })
 
   it('holds the most rows the limit allows, where there is room below the node', () => {

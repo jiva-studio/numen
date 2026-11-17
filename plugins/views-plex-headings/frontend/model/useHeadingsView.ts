@@ -38,11 +38,9 @@ export function useHeadingsView(
     anchor.measure()
     return read()
   }
-  watch(
-    () => [view().x, view().y, view().width, view().height, view().scale],
-    anchor.measure,
-    { flush: 'post' },
-  )
+  watch(() => [view().x, view().y, view().width, view().height, view().scale], anchor.measure, {
+    flush: 'post',
+  })
 
   return { rows, layout, enter, leave, choose }
 }

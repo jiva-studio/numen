@@ -134,9 +134,7 @@ export const ScrollsWithTheWheel: Story = {
       new WheelEvent('wheel', { deltaY: 1, deltaMode: 1, bubbles: true, cancelable: true }),
     )
 
-    await waitFor(
-      async () => await expect(getRows()[0]!.textContent?.trim()).toBe('Section 2'),
-    )
+    await waitFor(async () => await expect(getRows()[0]!.textContent?.trim()).toBe('Section 2'))
     await expect(document.querySelectorAll('.headings__more')).toHaveLength(2)
   },
 }
