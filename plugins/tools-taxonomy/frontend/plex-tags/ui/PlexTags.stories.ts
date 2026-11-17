@@ -79,9 +79,14 @@ export const InTheDarkTheme: Story = {
 }
 
 const getLineCount = (element: Element): number => {
-  const range = document.createRange()
-  range.selectNodeContents(element)
-  return new Set(Array.from(range.getClientRects(), (rect) => Math.round(rect.top))).size
+  const tops = new Set<number>()
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
+  for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+    const range = document.createRange()
+    range.selectNodeContents(node)
+    for (const rect of Array.from(range.getClientRects())) tops.add(Math.round(rect.top))
+  }
+  return tops.size
 }
 
 const NARROW_TAGS = ['Port', 'Container terminal operations', 'Port/Cargo/Harbour/Quay/Terminal']
