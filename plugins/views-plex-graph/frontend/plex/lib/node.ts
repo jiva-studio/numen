@@ -12,6 +12,8 @@ export interface PlacedNode extends PlexNode {
   readonly height: number
   readonly order: number
   readonly opacity: number
+  /** The size the node has when the movement it is in ends, or the size it leaves with. The title is laid out in it, so the words do not change while the box does. */
+  readonly settled?: Size
 }
 
 /**

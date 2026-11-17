@@ -41,9 +41,9 @@ export interface RoutingOptions {
 }
 
 /**
- * The shape of a movement, as fractions of it. The two directions are
- * deliberately asymmetric: the departing element moves early, so the layout is
- * never at its most crowded halfway through.
+ * The shape of a movement, as fractions of it, for the lines of nodes that enter and leave.
+ * The two directions are deliberately asymmetric: the line of a departing node fades early,
+ * so the layout is never at its most crowded halfway through.
  */
 interface MotionOptions {
   readonly arriveAfter: number

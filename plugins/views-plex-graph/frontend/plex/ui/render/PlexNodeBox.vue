@@ -48,6 +48,19 @@ const scale = computed(() =>
   props.restHeight > 0 && !props.isGhost ? Math.max(1, props.node.height / props.restHeight) : 1,
 )
 
+/**
+ * The room the title is laid out in, in the units the title is drawn in. A node in a movement lays its
+ * title out in the size it settles with, so the box changing size does not cut the title again.
+ * A box opened wider than the node takes the whole of it.
+ */
+const titleRoom = computed(() => {
+  const { node, box, restHeight, isGhost } = props
+  if (!node.settled || box.width > node.width) return box.width / scale.value
+  const settledScale =
+    restHeight > 0 && !isGhost ? Math.max(1, node.settled.height / restHeight) : 1
+  return node.settled.width / settledScale
+})
+
 /** A ghost keeps its dashed outline whether or not the other nodes have pills. */
 const hasPill = computed(() => props.showPills || props.isGhost)
 
@@ -92,9 +105,9 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
     />
   </template>
   <foreignObject
-    :x="startsAt / scale"
+    :x="box.offset / scale - titleRoom / 2"
     :y="startsDown / scale"
-    :width="box.width / scale"
+    :width="titleRoom"
     :height="node.height / scale"
     :transform="scale === 1 ? undefined : `scale(${scale})`"
   >
