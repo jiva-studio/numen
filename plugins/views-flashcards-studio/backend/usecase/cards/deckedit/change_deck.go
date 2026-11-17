@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
 // deckChange is what a change wrote: the deck as it became and the card ids given to cards that carried none.
@@ -17,8 +18,8 @@ type deckChange struct {
 }
 
 func changeDeck(
-	ctx context.Context, read Read, write Write, v domain.Vault, pos DeckVersion,
-	change func(contents DeckContents, file *format.DeckFile) error,
+	ctx context.Context, read ports.DeckReader, write ports.DeckWriter, v domain.Vault, pos DeckVersion,
+	change func(contents format.DeckContents, file *format.DeckFile) error,
 ) (deckChange, error) {
 	contents, err := readExistingDeck(ctx, read, v, pos.Path)
 	if err != nil {
@@ -29,7 +30,7 @@ func changeDeck(
 		return deckChange{}, err
 	}
 	wrote, err := write.Deck(ctx, v, pos.Path, file.Body(), pos.FileStat)
-	if err != nil && !errors.Is(err, note.ErrIndexOutdated) {
+	if err != nil && !errors.Is(err, edit.ErrIndexOutdated) {
 		return deckChange{}, err
 	}
 	return deckChange{

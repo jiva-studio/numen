@@ -28,7 +28,6 @@ const createFrame = (nodes: PlacedNode[]): PlexFrame => ({
   overflow: {},
 })
 
-/** The room the title text is laid out in, in the units the text is drawn in. */
 const readTitleRoom = (node: PlacedNode): number => {
   const view = mount(PlexNodeView, { props: { node, restHeight: REST_HEIGHT } })
   return Number(view.get('foreignObject').attributes('width'))
@@ -81,7 +80,9 @@ describe('the room of a title while its note moves', () => {
       createNode({ id: 'chosen', width: 60 }),
       createNode({ id: 'gone', width: 144, y: 80 }),
     ])
-    const to = createFrame([createNode({ id: 'chosen', relation: 'focus', width: 150, height: 44 })])
+    const to = createFrame([
+      createNode({ id: 'chosen', relation: 'focus', width: 150, height: 44 }),
+    ])
     const settled = readTitleRoom(find(from, 'gone'))
 
     for (const t of MOMENTS) {

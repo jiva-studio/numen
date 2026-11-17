@@ -36,7 +36,7 @@ export function readLibraryMatrix(file = LIBRARY_MATRIX_FILE) {
  *
  * A library is a directory under `libs/` that holds a `go.mod`. Its family is the directory of the
  * outermost library that contains it: `libs/plugin/sdk-go/host` is of the family `libs/plugin/sdk-go` because
- * `libs/plugin/sdk-go` holds a `go.mod` too, and `libs/note` is of the family `libs/note`. The
+ * `libs/plugin/sdk-go` holds a `go.mod` too, and `libs/shared/note` is of the family `libs/shared/note`. The
  * modules of one family may depend on each other. A dependency between two families is allowed only
  * where the matrix lists it, and a family the matrix does not list fails: a new library states its
  * place before it builds.

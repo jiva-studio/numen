@@ -3,7 +3,7 @@ package host_test
 import (
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func handler(a numenv1connect.HostVaultServiceHandler) http.Handler {

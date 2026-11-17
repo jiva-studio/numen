@@ -8,36 +8,30 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
 // Point puts a deck on a preset.
 type Point struct {
-	readers ports.VaultReaders
-	writers ports.VaultWriters
-	notes   presetNotes
-	index   note.IndexUpdater
-	now     ports.Clock
-	read    Read
+	notes      presetNotes
+	read       Read
+	linkWriter ports.LinkWriter
 }
 
 // NewPoint creates the use case that puts a deck on a preset.
 func NewPoint(cfg Config) Point {
-	return Point{
-		readers: cfg.Readers, writers: cfg.Writers, notes: cfg.Notes, index: cfg.Index, now: cfg.Now,
-		read: NewRead(cfg),
-	}
+	return Point{notes: cfg.Notes, read: NewRead(cfg), linkWriter: cfg.LinkWriter}
 }
 
 // Execute puts the deck at path on a preset, by writing the entry of its `links:` block that
 // carries `type: preset`. An empty preset takes that entry out, and the deck is scheduled by the
 // defaults. A deck changed since stat was read is left alone and port.ErrStale is returned. A
 // landed write answers with the new file stat; an index that could not be updated is
-// note.ErrIndexOutdated beside it.
+// edit.ErrIndexOutdated beside it.
 func (u Point) Execute(
 	ctx context.Context, v domain.Vault, deck, preset string, stat domain.FileStat,
 ) (domain.FileStat, error) {
@@ -45,8 +39,7 @@ func (u Point) Execute(
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	linking := note.NewEditLinks(u.readers, u.writers, u.index, u.now)
-	return linking.PointAt(ctx, v, deck, note.LinkEntry{Type: LinkType, To: to, Role: domain.RoleRef}, stat)
+	return u.linkWriter.PointAt(ctx, v, deck, ports.LinkEntry{Type: review.PresetLinkType, To: to, Role: domain.RoleRef}, stat)
 }
 
 func (u Point) getPresetAddress(ctx context.Context, v domain.Vault, preset string) (domain.Address, error) {
@@ -65,21 +58,21 @@ func (u Point) getPresetAddress(ctx context.Context, v domain.Vault, preset stri
 		return to, err
 	}
 	switch {
-	case pos.Outcome == note.Missing:
+	case pos.Outcome == edit.Missing:
 		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
-		return to, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
-	case pos.Outcome != note.Ok || pos.Type != format.TypePreset:
+		return to, fmt.Errorf("%w: %s", edit.ErrNoNote, preset)
+	case pos.Outcome != edit.Ok || pos.Type != format.TypePreset:
 		// gomutants:disable-next-line RETURN_ZERO reason="Address variable to is already the zero value at this return."
 		return to, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
 	}
-	return note.GetAddress(ctx, u.notes, v.ID, preset)
+	return edit.GetAddress(ctx, u.notes, v.ID, preset)
 }
 
 // Save writes the settings into a preset.
 type Save struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
-	index   note.IndexUpdater
+	index   edit.IndexUpdater
 }
 
 // NewSave creates the use case that writes the settings into a preset.
@@ -91,7 +84,7 @@ func NewSave(cfg Config) Save {
 // Each key the application owns is replaced on its own; every other key, its order, its
 // formatting and the body are left as they arrived. A note changed since stat was read is left
 // alone and port.ErrStale is returned. A landed write answers with the new file stat; an index
-// that could not be updated is note.ErrIndexOutdated beside it.
+// that could not be updated is edit.ErrIndexOutdated beside it.
 func (u Save) Execute(
 	ctx context.Context, v domain.Vault, path string, settings review.Preset,
 	stat domain.FileStat,
@@ -104,7 +97,7 @@ func (u Save) Execute(
 		// gomutants:disable-next-line RETURN_ZERO reason="Save helper returns a zero FileStat alongside any error."
 		return pos, err
 	}
-	return pos, note.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
+	return pos, edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }
 
 func (u Save) save(
@@ -126,9 +119,9 @@ func (u Save) save(
 		return domain.FileStat{}, fmt.Errorf("look at %s: %w", path, mapMissingNote(err))
 	}
 	// The bound a note is written under is the bound it is read under.
-	if on.Size > note.MaxBytes {
+	if on.Size > edit.MaxBytes {
 		return domain.FileStat{}, fmt.Errorf("%w: %s is %d bytes, and %d is the most",
-			note.ErrTooLarge, path, on.Size, note.MaxBytes)
+			edit.ErrTooLarge, path, on.Size, edit.MaxBytes)
 	}
 	expectedFp := stat
 	if expectedFp.IsZero() {
@@ -175,11 +168,11 @@ func writeSettings(doc *markdown.Document, p, was review.Preset) error {
 		{goalKey, string(p.Goal), string(was.Goal)},
 		{countsKey, string(p.Counts), string(was.Counts)},
 		{learnedKey, string(p.Rule), string(was.Rule)},
-		{MinutesADayKey, p.MinutesADay, was.MinutesADay},
+		{review.MinutesADayKey, p.MinutesADay, was.MinutesADay},
 		{newADayKey, p.NewADay, was.NewADay},
 		{reviewsADayKey, p.ReviewsADay, was.ReviewsADay},
 		{backlogKey, p.Backlog, was.Backlog},
-		{RetentionKey, p.Retention, was.Retention},
+		{review.RetentionKey, p.Retention, was.Retention},
 		{intervalKey, p.Interval, was.Interval},
 		{evenLoadKey, p.IsEvenLoad, was.IsEvenLoad},
 	} {
@@ -263,34 +256,34 @@ func getWeek() []time.Weekday {
 func checkBounds(p review.Preset) error {
 	if !review.IsKnownGoal(p.Goal) {
 		return fmt.Errorf("%w: goal %s is not %s, %s or %s",
-			ErrOutOfBounds, p.Goal, review.GoalMinutes, review.GoalRetention, review.GoalDate)
+			review.ErrOutOfBounds, p.Goal, review.GoalMinutes, review.GoalRetention, review.GoalDate)
 	}
 	if p.Goal == review.GoalDate && p.By.IsZero() {
-		return fmt.Errorf("%w: a preset targeting a day requires the day", ErrOutOfBounds)
+		return fmt.Errorf("%w: a preset targeting a day requires the day", review.ErrOutOfBounds)
 	}
 	if !review.IsKnownRule(p.Rule) {
 		return fmt.Errorf("%w: learned %s is not %s or %s",
-			ErrOutOfBounds, p.Rule, review.RuleInterval, review.RuleRetention)
+			review.ErrOutOfBounds, p.Rule, review.RuleInterval, review.RuleRetention)
 	}
 	if !review.IsKnownBudgetUnit(p.Counts) {
 		return fmt.Errorf("%w: counts %s is not %s or %s",
-			ErrOutOfBounds, p.Counts, review.BudgetUnitCards, review.BudgetUnitShows)
+			review.ErrOutOfBounds, p.Counts, review.BudgetUnitCards, review.BudgetUnitShows)
 	}
 	for _, one := range []struct {
 		key    string
 		value  float64
 		bounds review.Bounds
 	}{
-		{MinutesADayKey, float64(p.MinutesADay), review.GetMinutesADayBounds()},
+		{review.MinutesADayKey, float64(p.MinutesADay), review.GetMinutesADayBounds()},
 		{newADayKey, float64(p.NewADay), review.GetNewADayBounds()},
 		{reviewsADayKey, float64(p.ReviewsADay), review.GetReviewsADayBounds()},
-		{RetentionKey, p.Retention, review.GetRetentionBounds()},
+		{review.RetentionKey, p.Retention, review.GetRetentionBounds()},
 		{intervalKey, float64(p.Interval), review.GetIntervalBounds()},
 		{backlogKey, float64(p.Backlog), review.GetBacklogBounds()},
 	} {
 		if !one.bounds.Contains(one.value) {
 			return fmt.Errorf("%w: %s %g is outside %g to %g",
-				ErrOutOfBounds, one.key, one.value, one.bounds.Min, one.bounds.Max)
+				review.ErrOutOfBounds, one.key, one.value, one.bounds.Min, one.bounds.Max)
 		}
 	}
 	return checkLoad(p.Load)
@@ -301,21 +294,21 @@ func checkLoad(load map[time.Weekday]int) error {
 		share, named := load[weekday]
 		if named && !review.GetLoadBounds().Contains(float64(share)) {
 			return fmt.Errorf("%w: the load of %s, %d, is outside %g to %g",
-				ErrOutOfBounds, review.DayName(weekday), share,
+				review.ErrOutOfBounds, review.DayName(weekday), share,
 				review.GetLoadBounds().Min, review.GetLoadBounds().Max)
 		}
 	}
 	for weekday := range load {
 		if weekday < time.Sunday || weekday > time.Saturday {
-			return fmt.Errorf("%w: a load is kept on a day of the week", ErrOutOfBounds)
+			return fmt.Errorf("%w: a load is kept on a day of the week", review.ErrOutOfBounds)
 		}
 	}
 	return nil
 }
 
 func mapMissingNote(err error) error {
-	if ports.IsNotExist(err) {
-		return note.ErrNoNote
+	if errors.Is(err, ports.ErrNotExist) {
+		return edit.ErrNoNote
 	}
 	return err
 }

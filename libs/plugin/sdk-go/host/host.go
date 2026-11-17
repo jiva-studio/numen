@@ -14,8 +14,8 @@ import (
 	"errors"
 	"io/fs"
 
-	notesedit "github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	notesedit "github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 var (

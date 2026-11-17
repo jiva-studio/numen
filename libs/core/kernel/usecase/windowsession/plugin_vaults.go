@@ -3,7 +3,7 @@ package windowsession
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // VaultAdd adds the folder at the absolute root to the vaults; an empty name means the folder's name.

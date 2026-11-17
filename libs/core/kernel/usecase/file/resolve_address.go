@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ResolveAddress finds the file an address names: plugin://<plugin id>/<path>, a file of that

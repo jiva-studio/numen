@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/ports"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/textplace"
 )
@@ -22,6 +21,54 @@ const (
 
 var errNoQueries = errors.New("the plugin was given no search index")
 
+// StartRequest is a query in the search language and how many seconds to wait for its results; a nil wait is the longest.
+type StartRequest struct {
+	Query string
+	Wait  *float64
+}
+
+// ResultsRequest names a query started before, how many seconds to wait for it, and the page to read.
+type ResultsRequest struct {
+	ID        string
+	Wait      *float64
+	PageToken string
+}
+
+// Result is a passage or a whole file a query found.
+type Result struct {
+	Path        string
+	Kind        string
+	Title       string
+	Place       string
+	Text        string
+	URI         string
+	Score       *float64
+	IsWholeFile bool
+}
+
+// Problem is an error of a query.
+type Problem struct {
+	Line       int
+	Column     int
+	Message    string
+	Suggestion string
+}
+
+// Output is the state of a query and one page of its results.
+type Output struct {
+	ID            string
+	IsRunning     bool
+	IsPartial     bool
+	IsStale       bool
+	Step          string
+	Results       []Result
+	Errors        []Problem
+	Warnings      []string
+	NextPageToken string
+	TotalResults  int
+	Message       string
+}
+
 // UseCase runs the queries of one vault. The runner is nil when the plugin was given none.
 type UseCase struct {
 	runner ports.QueryRunner
@@ -34,32 +81,32 @@ func New(runner ports.QueryRunner) *UseCase {
 
 // Start starts a query and returns its first page, or its state when it runs longer than the wait. A
 // call canceled during the wait removes the query.
-func (u *UseCase) Start(ctx context.Context, in api.QueryInput) (api.QueryOutput, error) {
+func (u *UseCase) Start(ctx context.Context, in StartRequest) (Output, error) {
 	if u.runner == nil {
-		return api.QueryOutput{}, errNoQueries
+		return Output{}, errNoQueries
 	}
 	id, err := u.runner.StartSearch(ctx, host.SearchStart{Query: in.Query, Priority: host.SearchPriorityInteractive})
 	if err != nil {
-		return api.QueryOutput{}, fmt.Errorf("start the query: %w", err)
+		return Output{}, fmt.Errorf("start the query: %w", err)
 	}
 	state, err := u.runner.GetSearch(ctx, id, host.SearchRead{Wait: getWait(in.Wait), PageSize: pageSize})
 	if err != nil && ctx.Err() != nil {
-		return api.QueryOutput{}, errors.Join(ctx.Err(), u.remove(ctx, id))
+		return Output{}, errors.Join(ctx.Err(), u.remove(ctx, id))
 	}
 	if err != nil {
-		return api.QueryOutput{}, readError(id, err)
+		return Output{}, readError(id, err)
 	}
 	return writeOutput(state), nil
 }
 
 // Results returns the state of a query and one page of its results, waiting for a running query.
-func (u *UseCase) Results(ctx context.Context, in api.QueryResultsInput) (api.QueryOutput, error) {
+func (u *UseCase) Results(ctx context.Context, in ResultsRequest) (Output, error) {
 	if u.runner == nil {
-		return api.QueryOutput{}, errNoQueries
+		return Output{}, errNoQueries
 	}
 	state, err := u.runner.GetSearch(ctx, in.ID, host.SearchRead{Wait: getWait(in.Wait), PageSize: pageSize, PageToken: in.PageToken})
 	if err != nil {
-		return api.QueryOutput{}, readError(in.ID, err)
+		return Output{}, readError(in.ID, err)
 	}
 	return writeOutput(state), nil
 }
@@ -85,18 +132,18 @@ func readError(id string, err error) error {
 	return fmt.Errorf("read the query %s: %w", id, err)
 }
 
-func writeOutput(state host.SearchState) api.QueryOutput {
-	out := api.QueryOutput{
+func writeOutput(state host.SearchState) Output {
+	out := Output{
 		ID: state.ID, IsRunning: state.IsRunning, IsPartial: state.IsPartial, IsStale: state.IsStale,
-		Progress: api.QueryProgress{Step: state.Step}, Results: make([]api.QueryResult, len(state.Results)),
-		Errors: make([]api.QueryProblem, len(state.Errors)), Warnings: append([]string{}, state.Warnings...),
+		Step: state.Step, Results: make([]Result, len(state.Results)),
+		Errors: make([]Problem, len(state.Errors)), Warnings: append([]string{}, state.Warnings...),
 		NextPageToken: state.NextPageToken, TotalResults: state.TotalResults, Message: "",
 	}
 	for i, r := range state.Results {
 		out.Results[i] = writeResult(r)
 	}
 	for i, p := range state.Errors {
-		out.Errors[i] = api.QueryProblem{Line: p.Line, Column: p.Column, Message: p.Message, Suggestion: p.Suggestion}
+		out.Errors[i] = Problem{Line: p.Line, Column: p.Column, Message: p.Message, Suggestion: p.Suggestion}
 	}
 	if state.IsRunning {
 		out.Message = runningMsg
@@ -104,12 +151,12 @@ func writeOutput(state host.SearchState) api.QueryOutput {
 	return out
 }
 
-func writeResult(r host.SearchResult) api.QueryResult {
+func writeResult(r host.SearchResult) Result {
 	uri := textplace.FormatFileAddress(r.Path)
 	if !r.IsWholeFile {
 		uri = textplace.FormatAddress(r.Path, r.Start, r.Length)
 	}
-	return api.QueryResult{
+	return Result{
 		Path: r.Path, Kind: r.Kind, Title: r.Title, Place: r.PlaceLabel, Text: r.Text, URI: uri,
 		Score: r.Score, IsWholeFile: r.IsWholeFile,
 	}

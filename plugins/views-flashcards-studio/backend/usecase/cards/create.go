@@ -2,18 +2,17 @@ package cards
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	pathpkg "path"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
 // The two frontmatter keys written when a deck or a card model is created: the
@@ -30,15 +29,16 @@ const (
 // any card is written into it.
 type Create struct {
 	writers ports.VaultWriters
-	index   note.IndexUpdater
+	index   edit.IndexUpdater
 	now     ports.Clock
+	entropy ports.Entropy
 }
 
-// NewCreate is what a deck, a card model or a preset is made through: the vault it
-// is written into, what updates the index for the new file, and what time
-// it is.
-func NewCreate(writers ports.VaultWriters, index note.IndexUpdater, now ports.Clock) Create {
-	return Create{writers: writers, index: index, now: now}
+// NewCreate is what a deck, a card model or a preset is made through: the vault it is written
+// into, what updates the index for the new file, what time it is, and the entropy of its
+// identifier.
+func NewCreate(writers ports.VaultWriters, index edit.IndexUpdater, now ports.Clock, entropy ports.Entropy) Create {
+	return Create{writers: writers, index: index, now: now, entropy: entropy}
 }
 
 // New is what to make.
@@ -79,9 +79,9 @@ func (u Create) CardModel(ctx context.Context, v domain.Vault, in New) (CreateNo
 		if err != nil {
 			return CreateNoteResult{}, err
 		}
-		if len(body) > note.MaxBytes {
+		if len(body) > edit.MaxBytes {
 			return CreateNoteResult{}, fmt.Errorf(
-				"a card model of %d bytes is more than this writes at once, which is %d", len(body), note.MaxBytes)
+				"a card model of %d bytes is more than this writes at once, which is %d", len(body), edit.MaxBytes)
 		}
 		in.Body = body
 	}
@@ -103,8 +103,8 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	}
 	path := pathpkg.Join(in.Path, name+domain.NoteExtension)
 
-	identifier, err := ulid.NewGenerator(rand.Reader).NewID(u.now.Now())
-	// gomutants:disable-next-line BRANCH_IF reason="crypto/rand.Reader does not fail in normal execution."
+	identifier, err := ulid.NewGenerator(format.NewEntropyReader(u.entropy)).NewID(u.now.Now())
+	// gomutants:disable-next-line BRANCH_IF reason="The entropy of the machine does not fail."
 	if err != nil {
 		return CreateNoteResult{}, err
 	}
@@ -146,5 +146,5 @@ func (u Create) make(ctx context.Context, v domain.Vault, kind domain.NoteType, 
 	if u.index == nil {
 		return made, nil
 	}
-	return made, note.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
+	return made, edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }

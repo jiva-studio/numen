@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // An UnavailableError is ErrUnavailable regardless of its reason, keeps its

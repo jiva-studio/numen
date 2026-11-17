@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
-// vectors are libs/core/protocol/when.json, which the TypeScript evaluator of the plugin host runs as well.
+// vectors are libs/shared/protocol/when.json, which the TypeScript evaluator of the plugin host runs as well.
 type vectors struct {
 	Variables []struct {
 		Name string `json:"name"`
@@ -30,7 +30,7 @@ type vectors struct {
 
 func readVectors(t *testing.T) vectors {
 	t.Helper()
-	text, err := os.ReadFile("../../../core/protocol/when.json")
+	text, err := os.ReadFile("../../../shared/protocol/when.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func TestAConditionIsCompiledOnceForItsText(t *testing.T) {
 	}
 }
 
-// partialVectors are the partial section of libs/core/protocol/when.json: values true, false or unknown
+// partialVectors are the partial section of libs/shared/protocol/when.json: values true, false or unknown
 // where the context leaves variables out.
 type partialVectors struct {
 	Partial []struct {
@@ -167,7 +167,7 @@ type partialVectors struct {
 }
 
 func TestThePartialExamplesHaveTheirValues(t *testing.T) {
-	text, err := os.ReadFile("../../../core/protocol/when.json")
+	text, err := os.ReadFile("../../../shared/protocol/when.json")
 	if err != nil {
 		t.Fatal(err)
 	}

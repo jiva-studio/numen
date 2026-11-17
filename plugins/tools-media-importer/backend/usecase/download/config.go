@@ -5,22 +5,11 @@ package download
 import (
 	"maps"
 	"slices"
+
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
 )
 
-// Config lists the programs that this machine uses to access a video site.
-type Config struct {
-	Video Tool
-	Sound Tool
-}
-
-// Tool is a program this machine holds.
-type Tool struct {
-	Command     []string
-	Arguments   []string
-	Environment map[string]string
-}
-
-func (t Tool) getEnvironment(base []string) []string {
+func getEnvironment(t fetch.Tool, base []string) []string {
 	if len(t.Environment) == 0 {
 		return nil
 	}
@@ -29,13 +18,4 @@ func (t Tool) getEnvironment(base []string) []string {
 		out = append(out, name+"="+t.Environment[name])
 	}
 	return out
-}
-
-// Defaults is the programs PATH and the host name.
-func Defaults() Config {
-	// gomutants:disable-next-line RETURN_ZERO reason="explicit nil fields equal zero Config"
-	return Config{
-		Video: Tool{Command: nil, Arguments: nil, Environment: nil},
-		Sound: Tool{Command: nil, Arguments: nil, Environment: nil},
-	}
 }

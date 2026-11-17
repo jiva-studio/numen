@@ -84,7 +84,7 @@ export const modules = [
  * package no one notices is uncovered.
  */
 export const elsewhere = {
-  'libs/core/protocol': 'the schema, generated from the .proto and hand-written nowhere',
+  'libs/shared/protocol': 'the schema, generated from the .proto and hand-written nowhere',
   'apps/docs': 'an Astro site: pages and prose, and no application of ours',
   'apps/landing': 'the same',
 }

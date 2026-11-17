@@ -3,7 +3,7 @@ package testsupport
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/protocol/schematest"
+	"github.com/jiva-studio/numen/libs/shared/protocol/schematest"
 )
 
 // The protocol module's schematest checks, for the core and the plugins alike,

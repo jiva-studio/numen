@@ -4,7 +4,7 @@ import (
 	"context"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
