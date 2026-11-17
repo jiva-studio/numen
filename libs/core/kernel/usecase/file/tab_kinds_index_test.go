@@ -267,7 +267,7 @@ func TestFiftyPathsAreOneQuestionToTheIndex(t *testing.T) {
 	}
 }
 
-func TestAConditionOnThePropertiesSeesThePropertiesTheIndexHolds(t *testing.T) {
+func TestPropertyConditionsUseTheIndexedProperties(t *testing.T) {
 	w := newTabKindWorld(t, getTabKindNotes())
 
 	got := w.listTabKinds(t, []string{"rated.md", "low.md", "folder/inner.md"})
