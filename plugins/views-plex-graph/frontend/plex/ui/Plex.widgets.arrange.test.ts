@@ -4,10 +4,19 @@ import { computed, defineComponent, h, nextTick, ref, watch, type Ref } from 'vu
 import { useSlotLoading } from '@numen/plugin-sdk'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
-import type { Placement, Size } from '../lib/arrange'
+import { arrangePlex, interpolatePlex, type Placement, type Size } from '../lib/arrange'
 import { clusters } from '../lib/arrange/layout/clusters'
 import type { Clock, Viewport } from '@numen/ui'
-import type { PlexGraph } from '../../types'
+import type { PlexGraph, PlexNode } from '../../types'
+
+vi.mock('../lib/arrange', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../lib/arrange')>()
+  return {
+    ...original,
+    arrangePlex: vi.fn(original.arrangePlex),
+    interpolatePlex: vi.fn(original.interpolatePlex),
+  }
+})
 
 const FAMILY: PlexGraph = {
   nodes: [
@@ -26,7 +35,6 @@ const FAMILY: PlexGraph = {
 }
 
 const WIDGET_HEIGHT = 40
-const NODE_GAP = 8
 const FRAME = 16
 const FRAMES_PER_ARRANGEMENT = 3
 
@@ -136,6 +144,8 @@ const clock: Clock = {
 }
 
 beforeEach(() => {
+  vi.mocked(arrangePlex).mockClear()
+  vi.mocked(interpolatePlex).mockClear()
   mounted.clear()
   placed.length = 0
   rings = []
@@ -154,12 +164,12 @@ beforeEach(() => {
     },
   )
   // A document without a layout engine: a widget is as tall as WIDGET_HEIGHT, and the group of widgets
-  // is as tall as its widgets and the node gap it carries as padding.
+  // is as tall as its widgets, the plex adding nothing to it.
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
     const drawn =
       this.querySelectorAll('[data-widget]').length + (this.matches('[data-widget]') ? 1 : 0)
     const height = this.matches('.plex__widgets-group')
-      ? NODE_GAP + drawn * WIDGET_HEIGHT
+      ? drawn * WIDGET_HEIGHT
       : drawn > 0
         ? WIDGET_HEIGHT
         : 0
@@ -685,5 +695,111 @@ describe('the admission of the plex while the widgets of the shown nodes change 
     }
     expect(given.size).toBeGreaterThan(0)
     expect([...given.values()].filter((values) => values.length > 3)).toStrictEqual([])
+  })
+})
+
+/** The arrangements that were given the rooms the widgets measured, and the movements that were started. */
+const getArranged = () =>
+  vi.mocked(arrangePlex).mock.calls.filter(([, input]) => input?.room !== undefined)
+
+const getRuns = () => new Set(vi.mocked(interpolatePlex).mock.calls.map(([, to]) => to)).size
+
+const mountMoving = (arrivals: Arrivals, height: number) =>
+  mountPlex({
+    graph: CROWD,
+    widgetsBelow: [createEntry(arrivals, 'names'), createEntry(arrivals, 'tags')],
+    viewport: createLateViewport({ width: 600, height }),
+    duration: 420,
+  })
+
+describe('the plex that arranges once, with the rooms its widgets measured', () => {
+  it('mounts the widgets of no node a second time on a click, while the nodes walk to their places', async () => {
+    const plex = mountMoving(createArrivals(answerFor(CROWD_IDS)), 380)
+    await passFrames(40)
+    mounted.clear()
+
+    await plex.setProps({ graph: refocus(CROWD, 'child-0') })
+    await passFrames(40)
+
+    expect(mounted.size).toBeGreaterThan(0)
+    expect([...mounted].filter(([, count]) => count > 1)).toStrictEqual([])
+  })
+
+  it('arranges once with the measured rooms and starts one movement on a click', async () => {
+    const plex = mountMoving(createArrivals(answerFor(CROWD_IDS)), 380)
+    await passFrames(40)
+    vi.mocked(arrangePlex).mockClear()
+    vi.mocked(interpolatePlex).mockClear()
+
+    await plex.setProps({ graph: refocus(CROWD, 'child-0') })
+    await passFrames(40)
+
+    expect(getArranged()).toHaveLength(1)
+    expect(getRuns()).toBe(1)
+  })
+
+  it('draws the first layout with the notes the measured rooms admit, and draws nothing before it', async () => {
+    const arrivals = createArrivals()
+    const plex = mountMoving(arrivals, 380)
+    const drawn: string[][] = []
+
+    await deliverOneAfterAnother(arrivals, CROWD_IDS)
+    for (let frame = 0; frame < 12; frame += 1) {
+      await passFrames(1)
+      drawn.push(getShownIdsOf(CROWD, plex))
+    }
+
+    const first = drawn.find((ids) => ids.length > 0)
+    expect(first).toStrictEqual(drawn.at(-1))
+    expect(first?.length).toBeLessThan(CROWD.nodes.length)
+    expect(getArranged()).toHaveLength(1)
+  })
+
+  it('draws no note before the window has reported its size, for a plex without widgets as well', async () => {
+    mountPlex({ graph: CROWD, viewport: createLateViewport(MEDIUM_WINDOW) })
+
+    expect(getAssignedNodes()).toBe(0)
+    expect(arrangePlex).not.toHaveBeenCalled()
+    await passFrames(FRAMES_PER_ARRANGEMENT)
+
+    expect(getAssignedNodes()).toBeGreaterThan(0)
+    expect(
+      vi.mocked(arrangePlex).mock.calls.map(([, input]) => input?.options?.viewport),
+    ).toStrictEqual(vi.mocked(arrangePlex).mock.calls.map(() => MEDIUM_WINDOW))
+  })
+
+  it('gives a note without widgets no room, and a note with widgets exactly the room they drew', async () => {
+    const arrivals = createArrivals({ ...answerFor(CROWD_IDS, false), focus: true })
+    mountPlex({
+      graph: CROWD,
+      widgetsBelow: [createEntry(arrivals)],
+      viewport: createLateViewport({ width: 600, height: 380 }),
+    })
+
+    await passFrames(10)
+
+    const room = getArranged().at(-1)?.[1]?.room
+    expect(room?.(CROWD.nodes[0] as PlexNode)).toMatchObject({ top: 0, bottom: WIDGET_HEIGHT })
+    expect(room?.(CROWD.nodes[1] as PlexNode)).toMatchObject({ top: 0, bottom: 0 })
+  })
+
+  it('re-arranges once for the widgets that grow in one frame, and shows the same notes', async () => {
+    const names = createArrivals(answerFor(CROWD_IDS))
+    const tags = createArrivals(answerFor(CROWD_IDS, false))
+    const plex = mountPlex({
+      graph: CROWD,
+      widgetsBelow: [createEntry(names, 'names'), createEntry(tags, 'tags')],
+      viewport: createLateViewport({ width: 600, height: 380 }),
+      duration: 420,
+    })
+    await passFrames(40)
+    const before = getShownIdsOf(CROWD, plex)
+    vi.mocked(arrangePlex).mockClear()
+
+    deliver(tags, answerFor(['parent-0', 'parent-1', 'child-0']))
+    await passFrames(40)
+
+    expect(getArranged()).toHaveLength(1)
+    expect(getShownIdsOf(CROWD, plex)).toStrictEqual(before)
   })
 })

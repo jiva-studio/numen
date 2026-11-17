@@ -414,3 +414,45 @@ describe('a movement that was not requested', () => {
     expect(world.cancelled).toEqual([])
   })
 })
+
+describe('a change of the rooms that moves no node', () => {
+  it('starts no movement and leaves the frame as it is', async () => {
+    const world = stubClock()
+    const room = ref<ArrangeInput['room']>(undefined)
+    const { frame, isMoving } = inScope(() =>
+      usePlexTransition(
+        () => graphs.typical,
+        () => ({ room: room.value }),
+        () => 400,
+        world.clock,
+      ),
+    )
+    const arranged = frame.value
+
+    room.value = () => ({ ...NO_ROOM })
+    await Promise.resolve()
+    world.tick(0)
+
+    expect(isMoving.value).toBe(false)
+    expect(frame.value).toBe(arranged)
+  })
+
+  it('starts a movement when a node moves by more than a pixel', async () => {
+    const world = stubClock()
+    const room = ref<ArrangeInput['room']>(undefined)
+    const { isMoving } = inScope(() =>
+      usePlexTransition(
+        () => graphs.typical,
+        () => ({ room: room.value }),
+        () => 400,
+        world.clock,
+      ),
+    )
+
+    room.value = () => ({ ...NO_ROOM, bottom: 60 })
+    await Promise.resolve()
+    world.tick(0)
+
+    expect(isMoving.value).toBe(true)
+  })
+})
