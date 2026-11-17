@@ -93,10 +93,7 @@ describe('useSlotLoading', () => {
     const begin = vi.fn(() => release)
     const finishes: (() => void)[] = []
 
-    mount(createLoadingView(finishes), {
-      { [SLOT_LOADING_KEY as symbol]: { begin } },
-    })
-
+    mount(createLoadingView(finishes), { [SLOT_LOADING_KEY as symbol]: { begin } })
     expect(begin).toHaveBeenCalledTimes(1)
     expect(release).not.toHaveBeenCalled()
     finishes[0]?.()
