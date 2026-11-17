@@ -1,4 +1,4 @@
-/** The room each node keeps over and under its pill for the widgets of plugins, as their measured height. */
+/** The room each node keeps over and under its pill for the widgets of plugins, as their measured height, and whether their views have loaded. */
 import { computed, onScopeDispose, shallowRef, type ComputedRef, type Ref } from 'vue'
 import { measureRect } from '@numen/ui'
 import { NO_ROOM, type NodeRoom, type PlexOptions } from '../lib/arrange'
@@ -16,14 +16,18 @@ const getKey = (id: string, side: WidgetSide): string => `${side}:${id}`
 /**
  * The widgets of each side of a node are measured when `setWidgets` is given their element and again when it resizes;
  * `null` takes them away. `getNodeRoom` is what the arrangement is given: a new function whenever a measured height
- * changes, and absent while nothing is measured.
+ * changes, and absent while nothing is measured. `setReady` is told whether the views of a side have loaded and
+ * `null` when the side is gone; `isSettled` holds when every side of every given node has said so.
  */
 export function useWidgetRooms(options: Readonly<Ref<PlexOptions>>): {
   setWidgets: (id: string, side: WidgetSide, element: Element | null) => void
   getNodeRoom: ComputedRef<((node: PlexNode) => NodeRoom) | undefined>
+  setReady: (id: string, side: WidgetSide, isReady: boolean | null) => void
+  isSettled: (ids: readonly string[]) => boolean
 } {
   const heights = shallowRef<ReadonlyMap<string, number>>(new Map())
   const measured = new Map<string, Measured>()
+  const loaded = shallowRef<ReadonlyMap<string, boolean>>(new Map())
 
   const setHeight = (key: string, height: number | undefined) => {
     if (heights.value.get(key) === height) return
@@ -50,6 +54,20 @@ export function useWidgetRooms(options: Readonly<Ref<PlexOptions>>): {
     setHeight(key, measureRect(element).height)
   }
 
+  const setReady = (id: string, side: WidgetSide, isReady: boolean | null) => {
+    const key = getKey(id, side)
+    if ((loaded.value.get(key) ?? null) === isReady) return
+    const next = new Map(loaded.value)
+    if (isReady === null) next.delete(key)
+    else next.set(key, isReady)
+    loaded.value = next
+  }
+
+  const isSettled = (ids: readonly string[]) =>
+    ids.every(
+      (id) => loaded.value.get(getKey(id, 'above')) && loaded.value.get(getKey(id, 'below')),
+    )
+
   onScopeDispose(() => {
     for (const { observer } of measured.values()) observer.disconnect()
     measured.clear()
@@ -68,5 +86,5 @@ export function useWidgetRooms(options: Readonly<Ref<PlexOptions>>): {
     }
   })
 
-  return { setWidgets, getNodeRoom }
+  return { setWidgets, getNodeRoom, setReady, isSettled }
 }

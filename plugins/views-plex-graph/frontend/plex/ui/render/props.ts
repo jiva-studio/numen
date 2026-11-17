@@ -3,7 +3,7 @@
  * node.
  */
 import type { VNode } from 'vue'
-import type { MenuTrigger } from '@numen/ui'
+import type { Clock, MenuTrigger } from '@numen/ui'
 import type { PlexFrame } from '../../lib/frame'
 import type { NodeHeadings } from '../../lib/inside'
 import type { NamesRoom } from '../../lib/names'
@@ -41,6 +41,10 @@ export interface PlexViewProps {
   widgetsBelow?: readonly PlexWidget[] | undefined
   getPath?: ((id: string) => string) | undefined
   setWidgets?: ((id: string, side: WidgetSide, element: Element | null) => void) | undefined
+  setReady?: ((id: string, side: WidgetSide, isReady: boolean | null) => void) | undefined
+  /** The nodes whose widgets are drawn, unseen, until the layout of their notes is settled. */
+  waiting?: readonly PlacedNode[] | undefined
+  clock?: Clock | undefined
   behavior?: PlexBehavior
   gesture?: Gesture | undefined
   dragging?: PlexDragState | undefined

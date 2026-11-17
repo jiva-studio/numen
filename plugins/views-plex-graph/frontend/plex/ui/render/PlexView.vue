@@ -77,6 +77,9 @@ const getNodeHandlers = useNodeHandlers(
 
 const namedNodes = computed(() => listNamedNodes(props.frame.nodes, props.roomOf))
 
+const stacked = computed(() => [...props.frame.nodes, ...(props.waiting ?? [])])
+const waitingIds = computed(() => new Set(props.waiting?.map((node) => node.id)))
+
 const sizes = useNodeSizes(() => ({
   nodes: props.frame.nodes,
   widen: props.widen,
@@ -180,8 +183,14 @@ const getRole = (node: PlacedNode): GestureRole => {
       :show-edge-labels="showEdgeLabels"
     />
 
-    <g v-for="node in frame.nodes" :key="node.id" class="plex__stack">
+    <g
+      v-for="node in stacked"
+      :key="node.id"
+      class="plex__stack"
+      :class="{ 'plex__stack--waiting': waitingIds.has(node.id) }"
+    >
       <PlexNodeView
+        v-if="!waitingIds.has(node.id)"
         :ref="holdNode(node.id)"
         :node="node"
         :gesture-role="roles.get(node.id) ?? 'closed'"
@@ -201,7 +210,9 @@ const getRole = (node: PlacedNode): GestureRole => {
         :side="side"
         :entries="(side === 'above' ? widgetsAbove : widgetsBelow) ?? []"
         :path="getPath?.(node.id) ?? ''"
+        :clock="clock"
         @widgets="setWidgets?.(node.id, side, $event)"
+        @ready="setReady?.(node.id, side, $event)"
       />
     </g>
 
@@ -234,6 +245,10 @@ const getRole = (node: PlacedNode): GestureRole => {
   -webkit-user-select: none;
   touch-action: none;
   -webkit-touch-callout: none;
+}
+
+.plex__stack--waiting {
+  visibility: hidden;
 }
 
 .plex__edge-hit {

@@ -4,29 +4,39 @@
  * then the plugin id), each in its own centered row and given the path of the note. The rows are one column,
  * the group; its element is emitted so its height can be measured, and only while a widget draws something:
  * a side whose widgets draw nothing keeps no room, and the group holds the `--numen-node-gap` against the node
- * as padding only then, so the measured height includes it.
+ * as padding only then, so the measured height includes it. The side is ready once the views have loaded and
+ * what they drew is measured.
  */
 import { ref } from 'vue'
+import { browserClock, type Clock } from '@numen/ui'
+import PlexWidgetEntry from './PlexWidgetEntry.vue'
 import { useDrawnWidgets } from '../../model/useDrawnWidgets'
+import { useWidgetsLoading } from '../../model/useWidgetsLoading'
 import type { PlacedNode } from '../../lib/node'
 import type { PlexWidget } from '../../../types'
 
-const props = defineProps<{
-  node: PlacedNode
-  side: 'above' | 'below'
-  entries: readonly PlexWidget[]
-  path: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    node: PlacedNode
+    side: 'above' | 'below'
+    entries: readonly PlexWidget[]
+    path: string
+    clock?: Clock
+  }>(),
+  { clock: () => browserClock },
+)
 
 const emit = defineEmits<{
   (event: 'widgets', element: Element | null): void
+  (event: 'ready', isReady: boolean | null): void
 }>()
 
 /** How far from the node the box reaches; the group sits against the node inside it. */
 const EXTENT = 480
 
 const rows = ref<HTMLElement | null>(null)
-const { isDrawing } = useDrawnWidgets(rows, (element) => emit('widgets', element))
+const { isDrawing, refresh } = useDrawnWidgets(rows, (element) => emit('widgets', element))
+const loading = useWidgetsLoading(props.clock, refresh, (isReady) => emit('ready', isReady))
 
 const getTop = () =>
   props.side === 'above'
@@ -53,7 +63,7 @@ const getTop = () =>
           class="plex__widget"
           :data-plex-widget="entry.key"
         >
-          <component :is="entry.component" :path="path" />
+          <PlexWidgetEntry :entry="entry" :loading="loading" :path="path" />
         </div>
       </div>
     </div>

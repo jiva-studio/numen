@@ -15,9 +15,11 @@ export function useRooms(
   getRoomOf: (id: string) => NamesRoom | undefined
   setWidgets: (id: string, side: WidgetSide, element: Element | null) => void
   getNodeRoom: ComputedRef<((node: PlexNode) => NodeRoom) | undefined>
+  setReady: (id: string, side: WidgetSide, isReady: boolean | null) => void
+  isSettled: (ids: readonly string[]) => boolean
 } {
   const { getRoomOf, getNodeRoom: getNamesRoom } = useNamesRooms(props, measures, options)
-  const { setWidgets, getNodeRoom: getWidgetsRoom } = useWidgetRooms(options)
+  const { setWidgets, getNodeRoom: getWidgetsRoom, setReady, isSettled } = useWidgetRooms(options)
 
   const getNodeRoom = computed(() => {
     const ofNames = getNamesRoom.value
@@ -35,5 +37,5 @@ export function useRooms(
     }
   })
 
-  return { getRoomOf, setWidgets, getNodeRoom }
+  return { getRoomOf, setWidgets, getNodeRoom, setReady, isSettled }
 }

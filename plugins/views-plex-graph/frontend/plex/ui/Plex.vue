@@ -75,9 +75,13 @@ const { room, options, measures, widen, placedHeadings } = useFreeSpace(
 /** How the nodes behave, handed down as one. */
 const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
-const { getRoomOf, setWidgets, getNodeRoom } = useRooms(props, measures, options)
+const { getRoomOf, setWidgets, getNodeRoom, setReady, isSettled } = useRooms(
+  props,
+  measures,
+  options,
+)
 
-const { frame, isMoving } = usePlexTransition(
+const { frame, waiting, isMoving } = usePlexTransition(
   () => props.graph,
   () => ({
     options: options.value,
@@ -90,6 +94,7 @@ const { frame, isMoving } = usePlexTransition(
   {
     duration: () => props.duration,
     clock: props.clock,
+    isReady: (ids) => !(props.widgetsAbove?.length || props.widgetsBelow?.length) || isSettled(ids),
   },
 )
 
@@ -186,6 +191,9 @@ watch(
       :widgets-below="widgetsBelow"
       :get-path="getPath"
       :set-widgets="setWidgets"
+      :set-ready="setReady"
+      :waiting="waiting"
+      :clock="clock"
       :behavior="behavior"
       :gesture="gesture"
       :dragging="dragging"

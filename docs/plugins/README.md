@@ -254,6 +254,10 @@ export default definePlugin({
 
 `plugin.register.slotView({ id, component })` registers the Vue component of a view the manifest places with an entry `{ "slot", "view" }` of `contributes.slots` under the same id; it is drawn in every slot the manifest places it in, and an id the manifest places nowhere throws, so the activation fails. The window passes a slot view no props; it reads what it draws from the host services of its plugin. `createMockPluginContext` records registrations for `getRegisteredSlotViews()`.
 
+#### Telling the host a view has loaded
+
+A slot view that fetches its data before it draws calls `useSlotLoading()` in `setup` and calls the `finish` it returns once the data has arrived, in a `finally` so a failed fetch still ends the wait. A view that draws at once never calls it, and outside a host that waits the call does nothing. A host decides whether to wait: only the plex graph does for now, and it lays its nodes out once, after every view of every node has finished. A view that has not finished after one second is let go and reported with a warning that names the view and says it did not report ready, so the call is a promise to finish and not a way to hold the window.
+
 ### The Title Bar
 
 The title bar of a window is a view a plugin draws in the slot `titleBar`. The manifest places it with an entry `{ "slot": "titleBar", "view" }` of `contributes.slots`, and the frontend registers the component under the same id with `plugin.register.slotView({ id, component })`; an id the manifest places nowhere throws, and the activation fails. The Title bar plugin (`plugins/views-title-bar`, `md.numen.views.titleBar`) draws the bar of the application this way, in the editor and in the flashcards window.

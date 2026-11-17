@@ -10,11 +10,12 @@ const hasDrawing = (rows: Element): boolean =>
 
 /**
  * `change` is given `rows` once a widget draws and `null` when none does or the rows are gone; `isDrawing` follows it.
+ * `refresh` reads the document at once, where the observer would after the change.
  */
 export function useDrawnWidgets(
   rows: Readonly<Ref<HTMLElement | null>>,
   change: (element: HTMLElement | null) => void,
-): { isDrawing: Readonly<Ref<boolean>> } {
+): { isDrawing: Readonly<Ref<boolean>>; refresh: () => void } {
   const isDrawing = ref(false)
   let given: HTMLElement | null = null
 
@@ -42,5 +43,5 @@ export function useDrawnWidgets(
 
   onScopeDispose(() => observer.disconnect())
 
-  return { isDrawing }
+  return { isDrawing, refresh: update }
 }
