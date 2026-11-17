@@ -1,3 +1,5 @@
+// Package rerank holds the messages of the operation llm.rerank and the functions that write and read them, for
+// the core and the reranking plugins, which import nothing of each other.
 package rerank
 
 import (
