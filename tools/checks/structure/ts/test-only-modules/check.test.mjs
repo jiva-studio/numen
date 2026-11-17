@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { after, describe, it } from 'node:test'
+import { readRegistry, selectChecks } from '../../../run.mjs'
 import { runTestOnlyModulesCheck } from './check.mjs'
 
 const REPO = path.resolve(import.meta.dirname, '../../../../..')
@@ -74,5 +75,32 @@ describe('the test-only modules check', () => {
   it('passes when every module has a shipped importer', async () => {
     const result = await runTestOnlyModulesCheck({ repoRoot: createRepo({}) })
     assert.equal(result.pass, true, result.details)
+  })
+
+  it('reports a startup failure of the knip executable with its cause and does not terminate', async () => {
+    const repo = createRepo({})
+    fs.rmSync(path.join(repo, 'node_modules'))
+    fs.mkdirSync(path.join(repo, 'node_modules/.bin'), { recursive: true })
+    fs.writeFileSync(path.join(repo, 'node_modules/.bin/knip'), 'not a program\n', { mode: 0o644 })
+    const result = await runTestOnlyModulesCheck({ repoRoot: repo })
+    assert.equal(result.pass, false)
+    assert.match(result.details, /EACCES/)
+  })
+
+  it('is selected when only an Astro file changed', () => {
+    const options = {
+      tags: '',
+      exclude: '',
+      only: '',
+      changed: true,
+      list: false,
+      selftest: false,
+      withoutLint: false,
+      withoutGoTests: false,
+    }
+    const selected = selectChecks(readRegistry(), options, [
+      'apps/landing/src/components/page/DownloadBand.astro',
+    ])
+    assert.equal(selected.find((one) => one.entry.name === 'ts/test-only-modules').run, true)
   })
 })

@@ -32,6 +32,9 @@ function listUnusedFiles(repoRoot, production) {
     let err = ''
     child.stdout.on('data', (d) => (out += d.toString()))
     child.stderr.on('data', (d) => (err += d.toString()))
+    child.on('error', (cause) => {
+      resolve({ files: [], error: `knip did not start: ${cause.message}` })
+    })
     child.on('close', (code) => {
       try {
         const report = JSON.parse(out)

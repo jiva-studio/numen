@@ -1490,9 +1490,9 @@
     {
       "name": "ts/test-only-modules",
       "paths": [
-        "libs/**/*.{ts,vue}",
-        "apps/**/*.{ts,vue}",
-        "plugins/**/*.{ts,vue}",
+        "libs/**/*.{ts,vue,astro}",
+        "apps/**/*.{ts,vue,astro}",
+        "plugins/**/*.{ts,vue,astro}",
         "libs/**/package.json",
         "apps/**/package.json",
         "plugins/**/package.json",
