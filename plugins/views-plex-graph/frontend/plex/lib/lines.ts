@@ -21,7 +21,6 @@ interface TitleLine {
   readonly across: number
 }
 
-/** What names an element in the document: the notes a line joins in the direction it runs, with every mark a document would not read as part of a name set aside. */
 const getName = (edge: PlacedEdge): string =>
   `${edge.from}->${edge.to}`.replace(
     /[^A-Za-z0-9_-]/g,

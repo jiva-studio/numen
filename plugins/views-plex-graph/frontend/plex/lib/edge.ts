@@ -43,9 +43,8 @@ export interface LabelType {
   readonly xHeight: number
 }
 
-/** One label of an edge as it is drawn. */
+/** One label of an edge as it is drawn. `record` counts the labels of the edge as they were written, so it names a title on its line for as long as its label is there. */
 export interface EdgeTitle {
-  /** Which label of the edge the title is, counting every label as it was written. It names the title on its line for as long as the label is there. */
   readonly record: number
   readonly anchor: number
   readonly heading: EdgeHeading
