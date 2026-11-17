@@ -30,6 +30,7 @@ export function listNames(noteGraph: NoteGraph, side: NamesSide, limit: number):
     .map((item) => ({
       path: item.path,
       title: item.title,
+      relation: 'child',
       label: WORDS.nameLabel(item.title || WORDS.untitled, owner),
     }))
 }

@@ -3,7 +3,7 @@
 import type { RelatedName } from '../types'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{ names: readonly RelatedName[] }>()
+defineProps<{ names: readonly RelatedName[]; showArrows?: boolean }>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{

@@ -11,6 +11,7 @@ const NAMES_PER_NOTE_MAX = 12
 export interface NamesSettings {
   readonly showNames: Readonly<Ref<boolean>>
   readonly namesPerNote: Readonly<Ref<number>>
+  readonly showRelationArrows: Readonly<Ref<boolean>>
 }
 
 const parseShowNames = (value: Unvalidated): boolean =>
@@ -38,5 +39,6 @@ export function readSettings(context: Pick<PluginContext, 'settings'>): NamesSet
   return {
     showNames: follow(context, 'showNames', parseShowNames),
     namesPerNote: follow(context, 'namesPerNote', parseNamesPerNote),
+    showRelationArrows: shallowRef(false),
   }
 }
