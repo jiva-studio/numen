@@ -96,6 +96,7 @@ func (s *connectionSource) SearchChunks(
 }
 
 func launchSleepProcesses(t *testing.T, port int) func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+	t.Helper()
 	var mu sync.Mutex
 	var started []*os.Process
 	var inputs []io.Closer
@@ -113,7 +114,7 @@ func launchSleepProcesses(t *testing.T, port int) func(context.Context, manifest
 		}
 	})
 	return func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
-		cmd := exec.CommandContext(t.Context(), "/bin/sh", "-c", "read -r line")
+		cmd := exec.Command("/bin/sh", "-c", "read -r line")
 		input, err := cmd.StdinPipe()
 		if err != nil {
 			return nil, nil, err
