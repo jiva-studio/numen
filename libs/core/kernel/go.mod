@@ -38,6 +38,7 @@ require (
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/google/uuid v1.6.0
 	github.com/jiva-studio/numen/libs/core/protocol v0.0.0
+	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0
 	github.com/jiva-studio/numen/libs/note v0.0.0
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0
@@ -51,6 +52,8 @@ require (
 )
 
 replace github.com/jiva-studio/numen/libs/core/protocol => ../protocol
+
+replace github.com/jiva-studio/numen/libs/shared/rerank => ../../shared/rerank
 
 replace github.com/jiva-studio/numen/libs/note => ../../note
 

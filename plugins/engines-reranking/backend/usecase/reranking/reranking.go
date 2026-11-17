@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
+	"github.com/jiva-studio/numen/libs/shared/rerank"
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/domain/profile"
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/ports"
 )
@@ -35,13 +36,13 @@ func New(source ports.ProfileSource, open ports.OpenScorer, report func(what str
 
 // Rerank scores each document against the query with the model the row names. No document is no load. The
 // instruction of the request is not passed to the model.
-func (r *Reranking) Rerank(ctx context.Context, call connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
+func (r *Reranking) Rerank(ctx context.Context, call connection.Call, request *rerank.RerankRequest) (*rerank.RerankResult, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	documents := request.GetDocuments()
 	if len(documents) == 0 {
-		return &llm.RerankResult{}, nil
+		return &rerank.RerankResult{}, nil
 	}
 	p, err := r.getProfile(call.Options[llm.OptionModel])
 	if err != nil {
@@ -63,7 +64,7 @@ func (r *Reranking) Rerank(ctx context.Context, call connection.Call, request *l
 		r.report(p.ID, err)
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
-	return &llm.RerankResult{Scores: scores}, nil
+	return &rerank.RerankResult{Scores: scores}, nil
 }
 
 func (r *Reranking) getProfile(model string) (profile.Profile, error) {

@@ -1,0 +1,14 @@
+version: v2
+
+# Generated code is committed, as for libs/core/protocol: the Go messages next to the .proto file and the
+# TypeScript ones in src.
+plugins:
+  - local: protoc-gen-go
+    out: .
+    opt: paths=source_relative
+
+  - local: ../../../node_modules/.bin/protoc-gen-es
+    out: src
+    opt:
+      - target=ts
+      - import_extension=js

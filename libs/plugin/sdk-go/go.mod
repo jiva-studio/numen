@@ -7,9 +7,12 @@ require (
 	github.com/google/jsonschema-go v0.4.3
 	github.com/jiva-studio/numen/libs/core/protocol v0.0.0
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0
+	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0
 	google.golang.org/protobuf v1.36.12
 )
 
 replace github.com/jiva-studio/numen/libs/core/protocol => ../../core/protocol
+
+replace github.com/jiva-studio/numen/libs/shared/rerank => ../../shared/rerank
 
 replace github.com/jiva-studio/numen/libs/shared/atomicfile => ../../../libs/shared/atomicfile

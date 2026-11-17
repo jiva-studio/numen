@@ -247,8 +247,6 @@ linters:
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/index"

@@ -29,6 +29,7 @@ require (
 	github.com/godbus/dbus/v5 v5.2.4
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jiva-studio/numen/libs/core/protocol v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.1.0 // indirect
@@ -45,6 +46,8 @@ require (
 )
 
 replace github.com/jiva-studio/numen/libs/core/protocol => ../../libs/core/protocol
+
+replace github.com/jiva-studio/numen/libs/shared/rerank => ../../libs/shared/rerank
 
 require (
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0

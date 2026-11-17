@@ -10,6 +10,7 @@ use (
 	./libs/note
 	./libs/plugin/catalog
 	./libs/shared/onnx
+	./libs/shared/rerank
 	./libs/shared/tokenizer
 	./libs/plugin/sdk-go
 	./libs/plugin/sdk-go/host
@@ -48,6 +49,7 @@ replace (
 	github.com/jiva-studio/numen/libs/note v0.0.0 => ./libs/note
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0 => ./libs/plugin/catalog
 	github.com/jiva-studio/numen/libs/shared/onnx v0.0.0 => ./libs/shared/onnx
+	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0 => ./libs/shared/rerank
 	github.com/jiva-studio/numen/libs/shared/tokenizer v0.0.0 => ./libs/shared/tokenizer
 	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0 => ./libs/plugin/sdk-go
 	github.com/jiva-studio/numen/libs/plugin/sdk-go/host v0.0.0 => ./libs/plugin/sdk-go/host

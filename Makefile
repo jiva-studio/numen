@@ -13,6 +13,7 @@ CORE_CLIENT := libs/core/client
 PLUGIN_LOADER := libs/plugin/loader
 PLUGIN_MANAGER := libs/plugin/manager
 PROTOCOL := libs/core/protocol
+RERANK := libs/shared/rerank
 PLUGIN_SDK := libs/plugin/sdk-ts
 PLUGIN_SDK_GO := libs/plugin/sdk-go
 # The base module of the Go plugin SDK and each feature module under it.
@@ -249,8 +250,9 @@ lib_plugin_catalog_lint: ## run linters for the plugin catalog
 
 # ------------------------------- Lib: Protocol --------------------------------
 .PHONY: lib_protocol_generate protocol_gen
-lib_protocol_generate: ## generate protocol code and the lists of slots, when variables, shared commands and events
+lib_protocol_generate: ## generate protocol and rerank message code and the lists of slots, when variables, shared commands and events
 	cd $(PROTOCOL) && buf generate
+	cd $(RERANK) && buf generate
 	node $(PROTOCOL)/tools/slots.mjs
 	node $(PROTOCOL)/tools/when.mjs
 	node $(PROTOCOL)/tools/commands.mjs
@@ -260,8 +262,8 @@ protocol_gen: lib_protocol_generate ## alias for lib_protocol_generate
 
 .PHONY: lib_protocol_generate_check
 lib_protocol_generate_check: lib_protocol_generate ## verify protocol schema is up to date
-	git add -AN -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go libs/plugin/sdk-go/host/events.go
-	git diff --exit-code -- $(PROTOCOL)/gen $(PROTOCOL)/src libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go libs/plugin/sdk-go/host/events.go
+	git add -AN -- $(PROTOCOL)/gen $(PROTOCOL)/src $(RERANK)/rerank.pb.go $(RERANK)/src libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go libs/plugin/sdk-go/host/events.go
+	git diff --exit-code -- $(PROTOCOL)/gen $(PROTOCOL)/src $(RERANK)/rerank.pb.go $(RERANK)/src libs/plugin/catalog/manifest/slots.go libs/plugin/sdk-ts/src/slots/slotNames.ts libs/plugin/catalog/when/variables.go libs/plugin/sdk-ts/src/slots/whenVariables.ts libs/plugin/catalog/manifest/shared_commands.go libs/plugin/sdk-go/command/shared_commands.go libs/plugin/sdk-ts/src/commands/sharedCommands.ts libs/plugin/catalog/manifest/events.go libs/plugin/sdk-go/host/events.go
 
 .PHONY: lib_protocol_compile
 lib_protocol_compile: ## compile protocol Go packages
@@ -273,6 +275,7 @@ lib_protocol_test: lib_protocol_compile
 .PHONY: lib_protocol_lint
 lib_protocol_lint: ## lint protocol definitions
 	cd $(PROTOCOL) && buf lint
+	cd $(RERANK) && buf lint
 	cd $(PROTOCOL) && golangci-lint run ./... && golangci-lint run -c $(CURDIR)/.golangci-structure.yml ./...
 
 .PHONY: lib_protocol_vulncheck
