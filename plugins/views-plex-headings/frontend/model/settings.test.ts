@@ -30,7 +30,9 @@ describe('the settings of the headings', () => {
     const { settings } = read()
 
     expect([settings.isNesting.value, settings.headingLimit.value]).toStrictEqual(
-      ['nestHeadings', 'headingLimit'].map((key) => declared.find((one) => one.key === key)?.default),
+      ['nestHeadings', 'headingLimit'].map(
+        (key) => declared.find((one) => one.key === key)?.default,
+      ),
     )
   })
 

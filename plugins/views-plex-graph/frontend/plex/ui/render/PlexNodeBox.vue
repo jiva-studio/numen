@@ -44,9 +44,7 @@ const startsDown = computed(() => -props.node.height / 2)
  * its box in every mode, and through the move to focus it keeps the same room in the box.
  * The title is laid out in a box that many times smaller and enlarged, so text, icon, gap and padding grow together.
  */
-const scale = computed(() =>
-  props.isGhost ? 1 : getScale(props.node.height, props.restHeight),
-)
+const scale = computed(() => (props.isGhost ? 1 : getScale(props.node.height, props.restHeight)))
 
 /**
  * The room the title is laid out in, in the units the title is drawn in. A node in a movement lays its

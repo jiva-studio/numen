@@ -5,12 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick, type Component } from 'vue'
-import type {
-  JsonValue,
-  NoteHeading,
-  VaultNotes,
-  WorkspaceHost,
-} from '@numen/plugin-sdk'
+import type { JsonValue, NoteHeading, VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
 import {
   createMockHostServices,
   createMockNoticeHost,
@@ -43,14 +38,18 @@ const setup = (
       requested.push(paths)
       return new Map(
         await Promise.all(
-          paths.map(async (path) => [path, await (answers.get(path) ?? headings[path] ?? [])] as const),
+          paths.map(
+            async (path) => [path, await (answers.get(path) ?? headings[path] ?? [])] as const,
+          ),
         ),
       )
     },
   } as unknown as VaultNotes
   const opened: [string, number | undefined][] = []
   const workspace = {
-    files: { open: (path: string, options?: { line?: number }) => opened.push([path, options?.line]) },
+    files: {
+      open: (path: string, options?: { line?: number }) => opened.push([path, options?.line]),
+    },
   } as unknown as WorkspaceHost
   const context = createMockPluginContext({
     pluginId: 'md.numen.views.plex.headings',
@@ -154,7 +153,9 @@ describe('a node the pointer rests on', () => {
     const wrapper = show(HEAT)
     await rest(wrapper)
 
-    expect(wrapper.get('.headings').element.contains(wrapper.get('.headings__list').element)).toBe(true)
+    expect(wrapper.get('.headings').element.contains(wrapper.get('.headings__list').element)).toBe(
+      true,
+    )
   })
 
   it('sets a heading in by its level', async () => {
@@ -394,8 +395,18 @@ describe('the wheel on the list', () => {
 
   it('keeps the wheel from the plex while it scrolls, and lets it through at either end', async () => {
     const wrapper = await setupMany()
-    const down = new WheelEvent('wheel', { deltaY: 1, deltaMode: 1, bubbles: true, cancelable: true })
-    const up = new WheelEvent('wheel', { deltaY: -1, deltaMode: 1, bubbles: true, cancelable: true })
+    const down = new WheelEvent('wheel', {
+      deltaY: 1,
+      deltaMode: 1,
+      bubbles: true,
+      cancelable: true,
+    })
+    const up = new WheelEvent('wheel', {
+      deltaY: -1,
+      deltaMode: 1,
+      bubbles: true,
+      cancelable: true,
+    })
 
     wrapper.get('.headings__list').element.dispatchEvent(up)
     wrapper.get('.headings__list').element.dispatchEvent(down)

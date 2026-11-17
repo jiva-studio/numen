@@ -34,10 +34,7 @@ export function useNodeState(
 
   /** The position of the node while it is attended to and can open; null in every other state. */
   const openPosition = computed(() =>
-    props.expanded &&
-    props.node.opacity >= 1 &&
-    props.gestureRole === 'open' &&
-    isOn.value
+    props.expanded && props.node.opacity >= 1 && props.gestureRole === 'open' && isOn.value
       ? `${props.node.x} ${props.node.y}`
       : null,
   )

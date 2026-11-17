@@ -43,7 +43,9 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   const { notes } = host.vault
   const { workspace, notices } = host.ui
   if (!notes || !workspace) {
-    throw new Error('the headings of a note need the notes of the vault and the window they open in')
+    throw new Error(
+      'the headings of a note need the notes of the vault and the window they open in',
+    )
   }
   const source: HeadingsSource = {
     notes,

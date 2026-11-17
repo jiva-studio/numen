@@ -34,23 +34,25 @@ afterEach(() => {
 })
 
 const createView = (stopsClicks = false): Component =>
-  markRaw(defineComponent({
-    props: {
-      path: { type: String, required: true },
-      x: { type: Number, required: true },
-      y: { type: Number, required: true },
-      width: { type: Number, required: true },
-      height: { type: Number, required: true },
-      scale: { type: Number, required: true },
-      viewport: { type: Object, required: true },
-    },
-    render() {
-      return h('div', {
-        'data-over-view': this.path,
-        onClick: stopsClicks ? (event: Event) => event.stopPropagation() : undefined,
-      })
-    },
-  }))
+  markRaw(
+    defineComponent({
+      props: {
+        path: { type: String, required: true },
+        x: { type: Number, required: true },
+        y: { type: Number, required: true },
+        width: { type: Number, required: true },
+        height: { type: Number, required: true },
+        scale: { type: Number, required: true },
+        viewport: { type: Object, required: true },
+      },
+      render() {
+        return h('div', {
+          'data-over-view': this.path,
+          onClick: stopsClicks ? (event: Event) => event.stopPropagation() : undefined,
+        })
+      },
+    }),
+  )
 
 const mountView = async (overrides: Record<string, unknown> = {}) => {
   const view = mount(PlexView, {

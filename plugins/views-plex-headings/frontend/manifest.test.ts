@@ -54,9 +54,7 @@ describe('the manifest', () => {
   })
 
   it('places its list across the whole of a node of the plex', () => {
-    expect(manifest.contributes.slots).toStrictEqual([
-      { slot: 'plexGraph.node', view: 'headings' },
-    ])
+    expect(manifest.contributes.slots).toStrictEqual([{ slot: 'plexGraph.node', view: 'headings' }])
   })
 
   it('declares no command, since choosing a heading opens a note through the window', () => {

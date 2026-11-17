@@ -65,9 +65,7 @@ describe('a label half again as large', () => {
           name === 'routing' ? Object.entries(value as object) : [[name, value] as const],
         )
         .filter(([name, value]) => typeof value === 'number' && name !== 'curvature')
-        .filter(
-          ([name]) => !['maxPerCluster', 'squeeze', 'focusScale'].includes(name),
-        )
+        .filter(([name]) => !['maxPerCluster', 'squeeze', 'focusScale'].includes(name))
         .map(([, value]) => value as number)
         .concat([options.nodeSize, options.focusSize].flatMap((size) => [size.width, size.height]))
         .concat([options.padding.inline, options.padding.block])

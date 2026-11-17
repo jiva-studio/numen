@@ -47,7 +47,9 @@ const createView = (args: Knobs): Component => {
     getHeadings: async () => new Map([[PATH, args.headings]]),
   } as unknown as VaultNotes
   const workspace = {
-    files: { open: (path: string, options?: { line?: number }) => args.onOpen(path, options?.line ?? -1) },
+    files: {
+      open: (path: string, options?: { line?: number }) => args.onOpen(path, options?.line ?? -1),
+    },
   } as unknown as WorkspaceHost
   activate(context, createMockHostServices({ notes, workspace }))
   return context.getRegisteredSlotViews()[0]!.component as Component
@@ -81,9 +83,12 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-const getView = (canvasElement: HTMLElement) => canvasElement.querySelector<HTMLElement>('.headings')!
+const getView = (canvasElement: HTMLElement) =>
+  canvasElement.querySelector<HTMLElement>('.headings')!
 
-const getRows = (canvasElement: HTMLElement) => [...canvasElement.querySelectorAll('.headings__row')]
+const getRows = (canvasElement: HTMLElement) => [
+  ...canvasElement.querySelectorAll('.headings__row'),
+]
 
 /** The pointer resting on the node brings the first six of its headings out under the box, and leaving puts them away. */
 export const Nesting: Story = {
@@ -128,7 +133,9 @@ export const ScrollsWithTheWheel: Story = {
     await expect(canvasElement.querySelectorAll('.headings__more')).toHaveLength(1)
 
     const list = canvasElement.querySelector('.headings__list')!
-    list.dispatchEvent(new WheelEvent('wheel', { deltaY: 1, deltaMode: 1, bubbles: true, cancelable: true }))
+    list.dispatchEvent(
+      new WheelEvent('wheel', { deltaY: 1, deltaMode: 1, bubbles: true, cancelable: true }),
+    )
 
     await waitFor(
       async () => await expect(getRows(canvasElement)[0]!.textContent?.trim()).toBe('Section 2'),

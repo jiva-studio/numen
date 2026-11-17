@@ -46,7 +46,11 @@ const style = computed(() => ({
 
 /* -------------------------------- Handlers -------------------------------- */
 const onWheel = (event: WheelEvent) => {
-  const { by, left } = scrollBy(props.layout, { delta: event.deltaY, mode: event.deltaMode }, carried)
+  const { by, left } = scrollBy(
+    props.layout,
+    { delta: event.deltaY, mode: event.deltaMode },
+    carried,
+  )
   const direction = by !== 0 ? by : left
   if (direction === 0) return
   if (direction < 0 ? !isAbove.value : !isBelow.value) {

@@ -213,7 +213,9 @@ describe('the settings the plex left to the plugin Plex Headings', () => {
 
   it('are no longer declared by the plex', () => {
     expect(
-      settings.map((one) => one.key).filter((key) => ['nestHeadings', 'headingLimit'].includes(key)),
+      settings
+        .map((one) => one.key)
+        .filter((key) => ['nestHeadings', 'headingLimit'].includes(key)),
     ).toStrictEqual([])
   })
 })

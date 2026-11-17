@@ -38,7 +38,9 @@ describe('the layout of the list', () => {
   })
 
   it('is none where not one row fits under the node', () => {
-    expect(getListLayout({ count: 3, limit: 6, node: { ...NODE, y: 270 }, measures: MEASURES })).toBeNull()
+    expect(
+      getListLayout({ count: 3, limit: 6, node: { ...NODE, y: 270 }, measures: MEASURES }),
+    ).toBeNull()
   })
 
   it('takes its lengths from the type: a larger type, larger rows', () => {

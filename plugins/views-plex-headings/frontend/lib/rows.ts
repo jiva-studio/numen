@@ -10,7 +10,9 @@ const DEEPEST = 3
  */
 export function getRows(headings: readonly NoteHeading[], indentStep: number): HeadingRow[] {
   const levels = [...new Set(headings.map((heading) => heading.level))].sort((a, b) => a - b)
-  const indents = new Map(levels.map((level, rank) => [level, Math.min(rank, DEEPEST) * indentStep]))
+  const indents = new Map(
+    levels.map((level, rank) => [level, Math.min(rank, DEEPEST) * indentStep]),
+  )
   return headings.map((heading) => ({
     line: heading.line,
     text: heading.text,
