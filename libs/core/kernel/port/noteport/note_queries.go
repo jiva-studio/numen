@@ -3,7 +3,7 @@ package noteport
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // FileStats reads what the index recorded of each file of a vault, keyed by

@@ -5,9 +5,10 @@ import { findExtractableViolations, findSharedLeafViolations } from "./check.mjs
 const pkg = (file, name, fields = {}) => ({ file, manifest: { name, ...fields } });
 
 const TREE = [
-  pkg("libs/core/protocol/package.json", "@numen/protocol"),
+  pkg("libs/shared/protocol/package.json", "@numen/protocol"),
   pkg("libs/core/client/package.json", "@numen/core-client"),
-  pkg("libs/plugin/sdk-ts/package.json", "@numen/plugin-sdk", { dependencies: { "@numen/ui": "*" } }),
+  pkg("libs/core/store/package.json", "@numen/core-store"),
+  pkg("libs/plugin/sdk-ts/package.json", "@numen/plugin-sdk", { dependencies: { "@numen/ui": "*" }, devDependencies: { "@numen/protocol": "*" } }),
   pkg("libs/ui/components/package.json", "@numen/ui", { dependencies: { vue: "^3" } }),
   pkg("libs/ui/workbench/package.json", "@numen/workbench", { dependencies: { "@numen/ui": "*" } }),
   pkg("libs/shared/text/package.json", "@numen/text"),
@@ -22,42 +23,42 @@ test("a tree whose packages stay inside the set reports nothing", () => {
   assert.deepEqual(findExtractableViolations(TREE), []);
 });
 
-test("a shared package that declares the SDK, the protocol or a UI package is reported in every field", () => {
+test("a shared package that declares the SDK, a UI package or a core package is reported in every field", () => {
   const found = findSharedLeafViolations([
     ...TREE,
     pkg("libs/shared/bad/package.json", "@numen/bad", {
       dependencies: { "@numen/plugin-sdk": "*" },
-      devDependencies: { "@numen/protocol": "*" },
+      devDependencies: { "@numen/core-store": "*" },
       peerDependencies: { "@numen/ui": "*" },
       optionalDependencies: { "@numen/core-client": "*" },
     }),
   ]);
   assert.equal(found.length, 4);
   assert.match(found[0].symbol, /@numen\/bad declares @numen\/plugin-sdk in dependencies \(libs\/plugin\/sdk-ts\)/);
-  assert.match(found[1].symbol, /in devDependencies \(libs\/core\/protocol\)/);
+  assert.match(found[1].symbol, /in devDependencies \(libs\/core\/store\)/);
   assert.match(found[2].symbol, /in peerDependencies/);
   assert.match(found[3].symbol, /in optionalDependencies/);
 });
 
 test("the leaf rule reads only libs/shared", () => {
-  const loose = pkg("libs/plugin/sdk-ts/package.json", "@numen/plugin-sdk", { dependencies: { "@numen/protocol": "*" } });
-  assert.deepEqual(findSharedLeafViolations([...TREE.slice(0, 2), loose]), []);
+  const loose = pkg("libs/plugin/sdk-ts/package.json", "@numen/plugin-sdk", { dependencies: { "@numen/core-store": "*" } });
+  assert.deepEqual(findSharedLeafViolations([...TREE.slice(0, 3), loose]), []);
 });
 
 test("the SDK, a UI package and a plugin that declare a package outside the set are reported", () => {
   const found = findExtractableViolations([
     ...TREE,
-    pkg("libs/plugin/sdk-ts/package.json", "@numen/plugin-sdk", { devDependencies: { "@numen/protocol": "*" }, peerDependencies: { "@numen/ui": "*" } }),
+    pkg("libs/plugin/sdk-ts/package.json", "@numen/plugin-sdk", { devDependencies: { "@numen/core-store": "*" }, peerDependencies: { "@numen/ui": "*" } }),
     pkg("libs/ui/workbench/package.json", "@numen/workbench", { dependencies: { "@numen/core-client": "*" } }),
-    pkg("plugins/b/package.json", "@numen/b", { dependencies: { "@numen/a": "*", "@numen/protocol": "*" } }),
+    pkg("plugins/b/package.json", "@numen/b", { dependencies: { "@numen/a": "*", "@numen/core-store": "*" } }),
   ]);
   assert.deepEqual(
     symbols(found).map((line) => line.replace(/: an extractable.*/, "")),
     [
-      "libs/plugin/sdk-ts/package.json: @numen/plugin-sdk declares @numen/protocol in devDependencies (libs/core/protocol)",
+      "libs/plugin/sdk-ts/package.json: @numen/plugin-sdk declares @numen/core-store in devDependencies (libs/core/store)",
       "libs/ui/workbench/package.json: @numen/workbench declares @numen/core-client in dependencies (libs/core/client)",
       "plugins/b/package.json: @numen/b declares @numen/a in dependencies (plugins/a)",
-      "plugins/b/package.json: @numen/b declares @numen/protocol in dependencies (libs/core/protocol)",
+      "plugins/b/package.json: @numen/b declares @numen/core-store in dependencies (libs/core/store)",
     ],
   );
 });

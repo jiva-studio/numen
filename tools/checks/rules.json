@@ -375,7 +375,7 @@
       "paths": [
         "libs/core/kernel/domain/**",
         "libs/core/kernel/port/**",
-        "libs/note/domain/**",
+        "libs/shared/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -409,7 +409,7 @@
       "paths": [
         "libs/core/kernel/domain/**",
         "libs/core/kernel/port/**",
-        "libs/note/domain/**",
+        "libs/shared/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -565,7 +565,7 @@
     {
       "name": "go/note-library",
       "paths": [
-        "libs/note/**",
+        "libs/shared/note/**",
         "go.work"
       ],
       "tags": [
@@ -828,7 +828,7 @@
       "name": "go/serialization",
       "paths": [
         "libs/core/kernel/**/*.go",
-        "libs/note/**/*.go",
+        "libs/shared/note/**/*.go",
         "go.work"
       ],
       "tags": [
@@ -849,7 +849,7 @@
         "go.work",
         ".gitattributes",
         "**/buf.gen.yaml",
-        "libs/core/protocol/tools/*.mjs"
+        "libs/shared/protocol/tools/*.mjs"
       ],
       "tags": [
         "structure",
@@ -886,7 +886,7 @@
       "name": "go/struct-context",
       "paths": [
         "libs/core/kernel/**/*.go",
-        "libs/note/**/*.go",
+        "libs/shared/note/**/*.go",
         "libs/plugin/sdk-go/**/*.go",
         "plugins/**/*.go",
         "apps/desktop/**/*.go",
@@ -939,7 +939,7 @@
       "name": "go/transports",
       "paths": [
         "libs/core/kernel/**",
-        "libs/note/domain/**",
+        "libs/shared/note/domain/**",
         "go.work"
       ],
       "tags": [
@@ -956,7 +956,7 @@
       "name": "go/use-case-fields",
       "paths": [
         "libs/core/kernel/**",
-        "libs/note/**",
+        "libs/shared/note/**",
         "plugins/**/*.go",
         "go.work"
       ],
@@ -1539,6 +1539,33 @@
         "node",
         "tools/lint-quality/check.mjs",
         "--check=test-only-exports"
+      ]
+    },
+    {
+      "name": "ts/test-only-modules",
+      "paths": [
+        "libs/**/*.{ts,vue,astro}",
+        "apps/**/*.{ts,vue,astro}",
+        "plugins/**/*.{ts,vue,astro}",
+        "libs/**/package.json",
+        "apps/**/package.json",
+        "plugins/**/package.json",
+        "knip.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "plugin",
+        "window",
+        "slow"
+      ],
+      "selftest": "structure/ts/test-only-modules/check.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "tools/lint-quality/check.mjs",
+        "--check=test-only-modules"
       ]
     },
     {

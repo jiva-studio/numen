@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/progress"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/scan"
 )
 
 func readRecord(ctx context.Context, store Folder, path string) (*progress.Record, error) {
@@ -40,7 +41,7 @@ func writeRecord(ctx context.Context, store Folder, rec *progress.Record) error 
 // blockGap ends every block of a page.
 const blockGap = "\n\n"
 
-func newPage(bounds image.Rectangle, blocks []Block) []progress.Part {
+func newPage(bounds image.Rectangle, blocks []scan.Block) []progress.Part {
 	var out []progress.Part
 	for _, block := range blocks {
 		if block.Text == "" {
@@ -56,8 +57,8 @@ func newPage(bounds image.Rectangle, blocks []Block) []progress.Part {
 	return out
 }
 
-func newBlockParts(bounds image.Rectangle, block Block) []progress.Part {
-	boxes := append([]Box(nil), block.Boxes...)
+func newBlockParts(bounds image.Rectangle, block scan.Block) []progress.Part {
+	boxes := append([]scan.Box(nil), block.Boxes...)
 	sort.SliceStable(boxes, func(i, j int) bool { return boxes[i].Range.Start < boxes[j].Range.Start })
 	var out []progress.Part
 	for i, box := range boxes {

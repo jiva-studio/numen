@@ -4,12 +4,7 @@
 import { sendWrite, type WriteOptions, type WriteQueue } from './presetWrite'
 
 const runWrite = async (queue: WriteQueue, options: WriteOptions): Promise<void> => {
-  const settle = queue.inflight.order.beginWrite()
-  try {
-    await sendWrite(queue, options)
-  } finally {
-    settle()
-  }
+  await sendWrite(queue, options)
   queue.inflight.isWriting = false
   const again = queue.inflight.isWriteQueued && !queue.status.hasExternalChange.value
   const next = queue.inflight.queuedOptions ?? options

@@ -76,7 +76,7 @@ export const nameTargets = (found) => {
 
 /**
  * Folders outside `at` that the tests read, from the relative specifiers in
- * their source: `../../core/protocol/testdata/templates.json` from a test in `at`
+ * their source: `../../shared/protocol/testdata/templates.json` from a test in `at`
  * keeps `…/protocol/testdata`, and a specifier naming one of `folders` keeps
  * that folder.
  */

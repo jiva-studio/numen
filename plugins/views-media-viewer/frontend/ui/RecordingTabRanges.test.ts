@@ -7,7 +7,7 @@ import { mount } from '@vue/test-utils'
 import { defineComponent, h, reactive } from 'vue'
 import { formatErrorMessage, type Selector } from '@numen/plugin-sdk'
 import RecordingTab from './RecordingTab.vue'
-import { createPlayer, createRecordings, flush } from '../model/fakes'
+import { createPlayer, createRecordings, flush } from '../testing/fakes'
 import type { TextRange } from '../types'
 
 vi.mock('@numen/ui', async (original) => ({

@@ -1,7 +1,7 @@
 // Package contenttypeport declares what the core needs to know the content type of a file.
 package contenttypeport
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 // ContentTypeTable gives a file its content type by its name.
 type ContentTypeTable interface {

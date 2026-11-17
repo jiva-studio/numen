@@ -3,7 +3,7 @@ package container
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func TestMediaImporterFeedTypes(t *testing.T) {

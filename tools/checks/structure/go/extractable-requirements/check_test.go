@@ -22,7 +22,7 @@ func TestWhatTheExtractableRequirementsRuleRejects(t *testing.T) {
 		{"a direct requirement of the notes library", head + "require " + load.NotesModule + " v0.0.0\n", 1},
 		{"an indirect requirement of the notes library", head + "require " + load.NotesModule + " v0.0.0 // indirect\n", 1},
 		{"an indirect requirement of the protocol", head + "require " + load.Wire + " v0.0.0 // indirect\n", 1},
-		{"a direct requirement of the atomic file library", head + "require " + load.NumenRoot + "libs/atomicfile v0.0.0\n", 1},
+		{"a direct requirement of the atomic file library", head + "require " + load.NumenRoot + "libs/shared/atomicfile v0.0.0\n", 1},
 		{"a direct requirement of the plugin catalog", head + "require " + load.NumenRoot + "libs/plugin/catalog v0.0.0\n", 1},
 		{"a direct requirement of the core", head + "require " + load.Module + "port v0.0.0\n", 1},
 		{"a direct requirement of a plugin", head + "require " + load.PluginsPrefix + "other v0.0.0\n", 1},

@@ -23,9 +23,15 @@ type DependencyRegistry interface {
 	// Resolve returns where the dependency is or will be and whether it is ready, without the network, a lock wait or a download.
 	Resolve(req manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error)
 	SetObserver(observer func(manifest.DependencyRequirement, plugin.DependencyStatus))
+	// Cancel stops the download of the requirement and reports whether one was in progress.
+	Cancel(req manifest.DependencyRequirement) bool
 }
 
 // DependencyReporter receives the function that observes each change of the state of a dependency.
 type DependencyReporter interface {
 	ObserveDependencies(observer func(manifest.DependencyRequirement, plugin.DependencyStatus))
+	// CancelDependency stops the download of the requirement, if one runs.
+	CancelDependency(req manifest.DependencyRequirement)
+	// CancelDependencies stops every download in progress.
+	CancelDependencies()
 }

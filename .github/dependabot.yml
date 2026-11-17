@@ -17,11 +17,12 @@ updates:
   - package-ecosystem: gomod
     directories:
       - /libs/core/kernel
-      - /libs/core/protocol
+      - /libs/shared/protocol
       - /libs/plugin/sdk-go
       - /libs/plugin/sdk-go/wasm
       - /libs/plugin/sdk-go/models
       - /libs/shared/onnx
+      - /libs/shared/rerank
       - /libs/shared/tokenizer
       - /apps/desktop
       - /apps/mobile

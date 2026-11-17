@@ -1,6 +1,6 @@
 # mobile
 
-A phone showing one vault. The core is the one the window uses: `gomobile` binds it as an Android library, the application starts it on the loopback address, and the page calls it using the schema in `libs/core/protocol`.
+A phone showing one vault. The core is the one the window uses: `gomobile` binds it as an Android library, the application starts it on the loopback address, and the page calls it using the schema in `libs/shared/protocol`.
 
 ## What is here
 

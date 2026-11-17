@@ -8,9 +8,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	notesdomain "github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // SearchText answers from the results SetIndexedResults set, in their order: those whose text contains every

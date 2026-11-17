@@ -13,13 +13,13 @@ const library = (dir, references = []) => ({
   references: references.map((value, index) => ({ file: `${dir}/a.go`, line: index + 1, value: ROOT + value })),
 });
 
-const MATRIX = { "libs/note": [], "libs/core/protocol": [], "libs/catalog": ["libs/note", "libs/core/protocol"], "libs/sdk": ["libs/core/protocol"] };
+const MATRIX = { "libs/shared/note": [], "libs/shared/protocol": [], "libs/catalog": ["libs/shared/note", "libs/shared/protocol"], "libs/sdk": ["libs/shared/protocol"] };
 
 test("a library that reaches a family its row lists is clean", () => {
   const libraries = [
-    library("libs/note"),
-    library("libs/core/protocol"),
-    library("libs/catalog", ["libs/note/domain", "libs/core/protocol/gen/numen/v1"]),
+    library("libs/shared/note"),
+    library("libs/shared/protocol"),
+    library("libs/catalog", ["libs/shared/note/domain", "libs/shared/protocol/gen/numen/v1"]),
   ];
   assert.deepEqual(findLibraryViolations(libraries, MATRIX), []);
 });
@@ -50,13 +50,13 @@ test("a library that reaches an application or a plugin is reported", () => {
   assert.match(found[0].symbol, /outside libs/);
 });
 
-test("the plugin SDK family may reach the atomic file library, the notes library and the protocol", () => {
-  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/plugin/sdk-go"], ["libs/atomicfile", "libs/note", "libs/core/protocol"]);
+test("the plugin SDK family may reach the atomic file library, the notes library, the protocol and the rerank messages", () => {
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/plugin/sdk-go"], ["libs/shared/atomicfile", "libs/shared/note", "libs/shared/protocol", "libs/shared/rerank"]);
   const libraries = [
-    library("libs/note"),
-    library("libs/core/protocol"),
+    library("libs/shared/note"),
+    library("libs/shared/protocol"),
     library("libs/plugin/sdk-go"),
-    library("libs/plugin/sdk-go/host", ["libs/note", "libs/note/domain", "libs/core/protocol/gen/numen/v1"]),
+    library("libs/plugin/sdk-go/host", ["libs/shared/note", "libs/shared/note/domain", "libs/shared/protocol/gen/numen/v1"]),
   ];
   assert.deepEqual(findLibraryViolations(libraries, LIBRARY_DEPENDENCIES), []);
 });
@@ -106,10 +106,10 @@ test("the packages of this repository are read, the plugin manager among them", 
   assert.deepEqual(findPackageViolations(packages, PACKAGE_DEPENDENCIES), []);
 });
 
-test("the rows allow the plugin manager the UI library, the plugin host the SDK and the core client, the SDK the schema and the UI build helpers, and the core client the schema", () => {
+test("the rows allow the plugin manager the UI library, the plugin host the SDK and the core client, the SDK the schema, the rerank messages and the UI build helpers, and the core client the schema", () => {
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-manager"], ["@numen/ui"]);
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-loader"], ["@numen/plugin-sdk", "@numen/core-client"]);
-  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-sdk"], ["@numen/protocol", "@numen/ui"]);
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-sdk"], ["@numen/protocol", "@numen/rerank", "@numen/ui"]);
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/core-client"], ["@numen/protocol"]);
 });
 
@@ -121,8 +121,8 @@ test("a plugin host that declares the schema is reported", () => {
 });
 
 test("the family of a library is the path of its outermost library, read from where the go.mod files are", () => {
-  const dirs = ["libs/note", "libs/plugin/sdk-go", "libs/plugin/sdk-go/host", "libs/core/kernel"];
-  assert.equal(getFamily("libs/note", dirs), "libs/note");
+  const dirs = ["libs/shared/note", "libs/plugin/sdk-go", "libs/plugin/sdk-go/host", "libs/core/kernel"];
+  assert.equal(getFamily("libs/shared/note", dirs), "libs/shared/note");
   assert.equal(getFamily("libs/plugin/sdk-go/host", dirs), "libs/plugin/sdk-go");
   assert.equal(getFamily("libs/core/kernel", dirs), "libs/core/kernel");
 });
@@ -136,7 +136,10 @@ test("each shared library is a family of its own, with no library above it", () 
 test("the shared libraries depend on no library of this repository", () => {
   assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/onnx"], []);
   assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/tokenizer"], []);
-  const alone = [library("libs/shared/onnx"), library("libs/shared/tokenizer")];
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/atomicfile"], []);
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/note"], []);
+  assert.deepEqual(LIBRARY_DEPENDENCIES["libs/shared/protocol"], []);
+  const alone = [library("libs/shared/onnx"), library("libs/shared/tokenizer"), library("libs/shared/atomicfile"), library("libs/shared/note"), library("libs/shared/protocol")];
   assert.deepEqual(findLibraryViolations(alone, LIBRARY_DEPENDENCIES), []);
 });
 
@@ -152,15 +155,18 @@ test("a shared library that reaches the plugin SDK is reported", () => {
   assert.match(found[1].symbol, /family libs\/shared\/tokenizer reaches libs\/plugin\/sdk-go/);
 });
 
-test("no library row lists a shared library", () => {
-  for (const [family, allowed] of Object.entries(LIBRARY_DEPENDENCIES)) {
-    assert.ok(!allowed.some((one) => one.startsWith("libs/shared/")), `${family} may reach a shared library`);
+test("every shared library row is a leaf", () => {
+  const shared = Object.entries(LIBRARY_DEPENDENCIES).filter(([family]) => family.startsWith("libs/shared/"));
+  assert.ok(shared.length > 0);
+  for (const [family, allowed] of shared) {
+    assert.deepEqual(allowed, [], `${family} may reach a library of this repository`);
   }
 });
 
 test("the shared libraries of this repository are read", () => {
   const dirs = readLibraries().map((one) => one.dir);
   assert.ok(dirs.includes("libs/shared/onnx"));
+  assert.ok(dirs.includes("libs/shared/rerank"));
   assert.ok(dirs.includes("libs/shared/tokenizer"));
 });
 
