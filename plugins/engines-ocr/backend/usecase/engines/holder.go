@@ -7,12 +7,12 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/ports"
 )
 
 // Recognizer is the recognizer of a page and its contents.
 type Recognizer interface {
-	recognition.Recognizer
+	ports.Recognizer
 	Close() error
 }
 
@@ -51,7 +51,7 @@ func (h *Holder) UpdateSettings(values map[string]string) {
 }
 
 // GetEngine returns the open recognizer and opens it first when there is none.
-func (h *Holder) GetEngine(ctx context.Context) (recognition.Recognizer, error) {
+func (h *Holder) GetEngine(ctx context.Context) (ports.Recognizer, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.engine != nil {

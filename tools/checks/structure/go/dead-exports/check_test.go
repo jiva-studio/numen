@@ -22,7 +22,7 @@ func TestEveryProtocolAndSDKItemHasAConsumer(t *testing.T) {
 
 func listPlantedFiles() map[string]string {
 	return map[string]string{
-		"libs/core/protocol/gen/numen/v1/numenv1connect/note.connect.go": `package numenv1connect
+		"libs/shared/protocol/gen/numen/v1/numenv1connect/note.connect.go": `package numenv1connect
 
 import "context"
 
@@ -52,7 +52,7 @@ func (noteServiceClient) ReadNote(context.Context) error { return nil }
 import (
 	"context"
 
-	"fixture/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"fixture/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 type Client struct{ rpc numenv1connect.NoteServiceClient }
@@ -102,7 +102,7 @@ func Idle() { host.Hidden() }
 import (
 	"context"
 
-	"fixture/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"fixture/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func Save(ctx context.Context) error { return numenv1connect.NewNoteServiceClient().WriteNote(ctx) }
@@ -113,7 +113,7 @@ import (
 	"context"
 	"testing"
 
-	"fixture/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"fixture/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func TestHeadings(t *testing.T) { _ = numenv1connect.NewNoteServiceClient().ListHeadings(context.Background()) }
@@ -199,17 +199,17 @@ export declare function createClient<S extends { method: object }>(service: S): 
     "moduleResolution": "bundler",
     "noEmit": true,
     "paths": {
-      "@numen/protocol": ["./libs/core/protocol/index.ts"],
+      "@numen/protocol": ["./libs/shared/protocol/index.ts"],
       "@numen/core-client": ["./libs/core/client/src/index.ts"],
       "@numen/plugin-sdk": ["./libs/plugin/sdk-ts/src/index.ts"]
     }
   }
 }`,
-		"libs/core/protocol/package.json":   `{ "name": "@numen/protocol", "main": "./index.ts" }`,
-		"libs/core/protocol/tsconfig.json":  `{ "compilerOptions": { "strict": true }, "include": ["**/*.ts"] }`,
-		"libs/core/protocol/index.ts":       "export * from './src/note_pb'\n",
-		"libs/core/protocol/src/codegen.ts": "export type GenService<T> = { method: { [K in keyof T]: T[K] } }\n",
-		"libs/core/protocol/src/note_pb.ts": `import type { GenService } from './codegen'
+		"libs/shared/protocol/package.json":   `{ "name": "@numen/protocol", "main": "./index.ts" }`,
+		"libs/shared/protocol/tsconfig.json":  `{ "compilerOptions": { "strict": true }, "include": ["**/*.ts"] }`,
+		"libs/shared/protocol/index.ts":       "export * from './src/note_pb'\n",
+		"libs/shared/protocol/src/codegen.ts": "export type GenService<T> = { method: { [K in keyof T]: T[K] } }\n",
+		"libs/shared/protocol/src/note_pb.ts": `import type { GenService } from './codegen'
 
 export declare const NoteService: GenService<{
   readNote: { methodKind: 'unary' }
@@ -333,10 +333,10 @@ func newPlantedLayout(t *testing.T, dir string) layout {
 	return layout{
 		root:        getRealDir(t, dir),
 		modulePath:  "fixture/",
-		connectPath: "fixture/libs/core/protocol/gen/numen/v1/numenv1connect",
+		connectPath: "fixture/libs/shared/protocol/gen/numen/v1/numenv1connect",
 		sdkGoPath:   "fixture/libs/plugin/sdk-go",
 		sdkGoDir:    "libs/plugin/sdk-go",
-		protocolDir: "libs/core/protocol",
+		protocolDir: "libs/shared/protocol",
 		sdkTSDir:    "libs/plugin/sdk-ts",
 		libraryDirs: []string{"libs/plugin/sdk-go", "libs/plugin/sdk-ts", "libs/core/client"},
 	}

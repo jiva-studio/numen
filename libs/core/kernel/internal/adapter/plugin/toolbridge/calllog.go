@@ -7,7 +7,7 @@ import (
 	"slices"
 	"time"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 // maxLoggedArguments is how many argument names the line of a call lists, in name order. The values are never

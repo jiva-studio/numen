@@ -16,8 +16,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/adapter/webpage"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/internal/queuetest"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/link"
 )
@@ -34,7 +37,7 @@ type revisedSites struct {
 	fetchErr error
 }
 
-func (s *revisedSites) GetText(ctx context.Context, address string, want download.PreferredCaptions) (download.Text, error) {
+func (s *revisedSites) GetText(ctx context.Context, address string, want fetch.PreferredCaptions) (fetch.Text, error) {
 	text, err := s.fakeSites.GetText(ctx, address, want)
 	if err != nil || address != articleAddress {
 		return text, err
@@ -43,7 +46,7 @@ func (s *revisedSites) GetText(ctx context.Context, address string, want downloa
 	defer s.mu.Unlock()
 	s.fetches++
 	if s.fetches > 1 && s.fetchErr != nil {
-		return download.Text{}, s.fetchErr
+		return fetch.Text{}, s.fetchErr
 	}
 	if s.fetches > 1 {
 		text.Prose = revisedProse
@@ -69,11 +72,12 @@ func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
 	hosted := link.Host{
 		Vaults: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
 		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: tasks,
-		Clock: newFakeClock(time.Unix(1_700_000_000, 0)),
+		Clock:   newFakeClock(time.Unix(1_700_000_000, 0)),
+		Entropy: random.Entropy{},
 	}
 	links := link.New(hosted,
-		func() link.Fetcher { return sites },
-		func() link.Settings { return link.Settings{IsAutomatic: true} })
+		func() ports.Fetcher { return sites },
+		func() fetch.Settings { return fetch.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
 	registry, err := NewTools(links).Registry()
 	if err != nil {

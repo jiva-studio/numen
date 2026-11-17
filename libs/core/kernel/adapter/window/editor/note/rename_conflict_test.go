@@ -8,15 +8,17 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	notecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 type staleNoteWriters struct{ vaultwriter.VaultWriters }
@@ -31,8 +33,8 @@ func (o staleNoteWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, 
 
 type staleNoteWriter struct{ vaultport.NoteWriter }
 
-func (staleNoteWriter) Write(context.Context, string, []byte, domain.FileStat) (domain.FileStat, error) {
-	return domain.FileStat{}, edit.ErrStale
+func (staleNoteWriter) Write(context.Context, string, []byte, domain.FileStat) (vault.WriteResult, error) {
+	return vault.WriteResult{}, edit.ErrStale
 }
 
 type openSession struct{ vault domain.Vault }

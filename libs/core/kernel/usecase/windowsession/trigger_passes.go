@@ -6,7 +6,7 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // triggerPasses is the passes of the triggers asked for and not run yet: one over the whole vault, or

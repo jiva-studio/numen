@@ -20,15 +20,15 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 const (

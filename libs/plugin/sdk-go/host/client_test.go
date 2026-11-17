@@ -10,11 +10,11 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // answering is a host that serves a few calls and records the callers.
@@ -32,7 +32,7 @@ func (a *answering) StatFile(_ context.Context, req *connect.Request[v1.StatFile
 	a.authHeader = req.Header().Get("Authorization")
 	return connect.NewResponse(&v1.StatFileResponse{
 		Error: a.code,
-		Stat:  &v1.HostFileStat{Path: req.Msg.GetPath(), Size: 7, ModTime: 1_700_000_000_123_456_789},
+		Stat:  &v1.HostFileStat{Path: req.Msg.GetPath(), Size: 7, ModTime: 1_700_000_000_123_456_789, Hash: "ab12", Version: 9},
 	}), nil
 }
 
@@ -97,7 +97,7 @@ func TestTheClientPresentsItsTokenAndReadsTheFingerprint(t *testing.T) {
 
 	fp, err := clientTo(t, a).StatFile(t.Context(), "n.md")
 
-	want := domain.FileStat{Path: "n.md", Kind: domain.KindFile, Size: 7, ModTime: time.Unix(0, 1_700_000_000_123_456_789)}
+	want := domain.FileStat{Path: "n.md", Kind: domain.KindFile, Size: 7, ModTime: time.Unix(0, 1_700_000_000_123_456_789), Hash: "ab12", Version: 9}
 	if err != nil || fp != want || a.authHeader != "Bearer tok" {
 		t.Errorf("got %+v (%v) authHeader as %q", fp, err, a.authHeader)
 	}
@@ -128,6 +128,17 @@ func TestAWriteSendsTheBaselineAndReportsStale(t *testing.T) {
 	_, err := clientTo(t, a).Write(t.Context(), "n.md", []byte("abc"), baseline)
 
 	if !errors.Is(err, host.ErrStale) || len(a.baselines) != 1 || a.baselines[0].GetModTime() != baseline.ModTime.UnixNano() {
+		t.Errorf("got %v and %v", err, a.baselines)
+	}
+}
+
+func TestAWriteSendsTheHashOfTheBaseline(t *testing.T) {
+	a := &answering{}
+	baseline := domain.FileStat{Path: "n.md", Size: 3, ModTime: time.Unix(5, 6), Hash: "cd34", Version: 4}
+
+	_, err := clientTo(t, a).Write(t.Context(), "n.md", []byte("abc"), baseline)
+
+	if err != nil || len(a.baselines) != 1 || a.baselines[0].GetHash() != "cd34" || a.baselines[0].GetVersion() != 4 {
 		t.Errorf("got %v and %v", err, a.baselines)
 	}
 }

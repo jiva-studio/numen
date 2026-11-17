@@ -97,9 +97,13 @@ describe('the connections in the settings tab', () => {
   })
 
   it('reloads appearance only when a settingbatch includes an app setting', async () => {
-    vi.spyOn(api.configuration.settings, 'updateSettings').mockResolvedValue(undefined)
+    vi.spyOn(api.configuration.settings, 'updateSettings').mockResolvedValue({
+      written: '{}',
+      version: 1n,
+    })
     vi.spyOn(api.configuration.settings, 'getSettings').mockResolvedValue({
       written: '{}',
+      version: 1n,
       path: '/numen.json',
       plugins: [],
       app: [],
@@ -142,6 +146,7 @@ describe('the connections in the settings tab', () => {
 
     const getSettings = vi.spyOn(api.configuration.settings, 'getSettings').mockResolvedValue({
       written: '{}',
+      version: 1n,
       path: '/numen.json',
       plugins: [],
       app: [],

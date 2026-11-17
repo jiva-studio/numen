@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func TestAMarkedNameIsReadBackAsTheNameAndTheRunsInIt(t *testing.T) {

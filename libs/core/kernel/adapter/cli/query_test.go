@@ -21,7 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 type fixedQueryFloor struct{}

@@ -4,7 +4,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Document is one source of a vault as the planner and a result see it. ChunkCount is the count of its small

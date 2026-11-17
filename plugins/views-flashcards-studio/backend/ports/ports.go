@@ -27,17 +27,20 @@ var (
 	ErrAlreadyExists = errors.New("a file is already there")
 	// ErrLockedByAnother is what a name gets when a program outside this one has the file.
 	ErrLockedByAnother = errors.New("the file is held by another program")
+	// ErrNotExist is what a file that is not there gets.
+	ErrNotExist = fs.ErrNotExist
+	// ErrPermission is what a file the host refuses access to gets.
+	ErrPermission = fs.ErrPermission
 )
-
-// IsNotExist reports whether err says that a file is not there.
-func IsNotExist(err error) bool { return errors.Is(err, fs.ErrNotExist) }
-
-// IsPermission reports whether err says that the host refuses access to a file.
-func IsPermission(err error) bool { return errors.Is(err, fs.ErrPermission) }
 
 // Clock gets what time it is. A use case that takes none has none.
 type Clock interface {
 	Now() time.Time
+}
+
+// Entropy fills the random bits of the identifiers a use case mints.
+type Entropy interface {
+	Fill(b []byte)
 }
 
 // VaultReader is what a use case reads of one vault's files.
@@ -157,4 +160,30 @@ type ScheduleAlgorithm interface {
 type CardModel struct {
 	Path  string
 	Title string
+}
+
+// PresetReads is a run of reads over the presets of one vault, each preset note read once for the
+// run.
+type PresetReads interface {
+	// HasLinks reports whether the links of a deck can be resolved. Without them every deck is
+	// scheduled by the defaults.
+	HasLinks() bool
+	// GetBacklinks returns the links that point at the note at path.
+	GetBacklinks(ctx context.Context, vault domain.VaultID, path string) ([]domain.ResolvedLink, error)
+	// GetForDeck returns the preset the deck at path is scheduled by.
+	GetForDeck(ctx context.Context, v domain.Vault, deck string) (review.PresetNote, error)
+	// GetPreset returns the preset at path.
+	GetPreset(ctx context.Context, v domain.Vault, path string) (review.PresetNote, error)
+}
+
+// Ticker fires on its channel after each interval until it is stopped.
+type Ticker interface {
+	GetChannel() <-chan time.Time
+	Reset(d time.Duration)
+	Stop()
+}
+
+// Tickers creates the tickers a stream marks its idle intervals by.
+type Tickers interface {
+	CreateTicker(d time.Duration) Ticker
 }

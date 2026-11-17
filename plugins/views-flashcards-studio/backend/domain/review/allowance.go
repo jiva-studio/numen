@@ -2,7 +2,6 @@ package review
 
 import (
 	"math"
-	"slices"
 	"time"
 )
 
@@ -50,35 +49,6 @@ const (
 	// ClosedPaused is a preset scheduling nothing at all.
 	ClosedPaused BudgetName = "paused"
 )
-
-// BudgetNames is every budget that closed one day of review.
-//
-// A goal of retention holds a day to both card counts, and a day that exhausted
-// both new cards and reviews names both: raising one of them changes nothing when
-// the other also closed the day.
-type BudgetNames []BudgetName
-
-func getClosers() []BudgetName {
-	return []BudgetName{ClosedPaused, ClosedMinutes, ClosedNew, ClosedReviews, ClosedDate}
-}
-
-// Has reports whether this budget is one of those that closed the day.
-func (c BudgetNames) Has(one BudgetName) bool { return slices.Contains(c, one) }
-
-// Add is this closing and one budget more, named once and in the order closers
-func (c BudgetNames) Add(one BudgetName) BudgetNames {
-	closers := getClosers()
-	if !slices.Contains(closers, one) || c.Has(one) {
-		return c
-	}
-	out := make(BudgetNames, 0, len(c)+1)
-	for _, each := range closers {
-		if each == one || c.Has(each) {
-			out = append(out, each)
-		}
-	}
-	return out
-}
 
 // Limits is which key caps each budget under the goal in force, each written as
 // the preset writes the key, and empty where it takes no part.

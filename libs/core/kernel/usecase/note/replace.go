@@ -8,9 +8,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
-	"github.com/jiva-studio/numen/libs/note/markdown"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"

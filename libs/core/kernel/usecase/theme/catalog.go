@@ -12,14 +12,13 @@ import (
 	"strings"
 
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/themeport"
 )
 
 // Sources is where the themes are read from. Plugins may be nil, for a build with no plugin host.
 type Sources struct {
-	Presets themeport.PresetThemes
-	Own     themeport.OwnThemes
-	Plugins themeport.PluginThemes
+	Presets PresetThemes
+	Own     OwnThemes
+	Plugins PluginThemes
 }
 
 // catalog is every theme this installation offers. A folder that could not be read still leaves the

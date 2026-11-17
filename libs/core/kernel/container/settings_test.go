@@ -36,7 +36,7 @@ func writeSettings(t *testing.T, output string) (Config, string) {
 func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 	cfg, path := writeSettings(t, `{"app": {"appearance": {"theme": "mine:sea"}}}`)
 
-	content, response, err := readSettings(settingsOf(cfg))()
+	content, response, _, err := readSettings(settingsOf(cfg))()
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,8 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/markdown"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 )
 
 // A note is cut into one large chunk over the whole of it, tiled into the small
