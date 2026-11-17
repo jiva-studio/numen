@@ -49,7 +49,9 @@ export function usePlexTransition(
   options: PlexTransitionOptions,
 ): PlexTransition {
   const { duration, clock = browserClock, isReady = () => true, isActive = () => true } = options
-  const target = () => arrangePlex(graph(), input())
+  /** The notes the last arrangement of the current graph and input admitted: they stay the ones shown while the widgets change their rooms. */
+  let kept: ReadonlySet<string> | undefined
+  const target = () => arrangePlex(graph(), { ...input(), keep: kept })
 
   const frame = shallowRef<PlexFrame>(EMPTY_FRAME)
   const waiting = shallowRef<readonly PlacedNode[]>([])
@@ -111,7 +113,13 @@ export function usePlexTransition(
       return
     }
     waiting.value = []
+    kept = new Set(held.value)
     run(to)
+  }
+
+  const arrangeAgain = () => {
+    kept = undefined
+    arrangeWhenReady()
   }
 
   const arrangeInFrame = () => {
@@ -123,9 +131,9 @@ export function usePlexTransition(
     })
   }
 
-  arrangeWhenReady()
+  arrangeAgain()
   // One watcher for the graph and the input, so a change of them in one tick arranges once.
-  watch([() => graph(), isActive, ...getInputSources(input)], arrangeWhenReady)
+  watch([() => graph(), isActive, ...getInputSources(input)], arrangeAgain)
   // The widgets being loaded is what arranges the plex that waited for them.
   watch(
     () => isReady(held.value),

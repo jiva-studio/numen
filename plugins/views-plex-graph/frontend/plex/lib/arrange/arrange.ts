@@ -30,7 +30,11 @@ import { routeEdges } from './edges/routeEdges'
 import { separateTitles } from './edges/titles'
 import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
 
-/** `room` is the space a note keeps over and under its pill; a note without one keeps none. */
+/**
+ * `room` is the space a note keeps over and under its pill; a note without one keeps none.
+ * `keep` is the set of notes a former arrangement admitted: only they are placed, none of them is cut again,
+ * so a change of the rooms moves the notes and never changes which are shown.
+ */
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
   readonly placement?: Placement | undefined
@@ -38,15 +42,24 @@ export interface ArrangeInput {
   readonly measureLabel?: ((label: string) => number) | undefined
   readonly labelType?: LabelType | undefined
   readonly room?: Rooms | undefined
+  readonly keep?: ReadonlySet<string> | undefined
 }
 
 export function arrangePlex(
   graph: PlexGraph,
-  { options, placement = clusters, measure, measureLabel, labelType, room }: ArrangeInput = {},
+  {
+    options,
+    placement = clusters,
+    measure,
+    measureLabel,
+    labelType,
+    room,
+    keep,
+  }: ArrangeInput = {},
 ): PlexFrame {
   const request = applyRoom(resolveOptions(options))
   const focusNode = assertGraph(graph)
-  const requested = requestNodes(graph.nodes, request)
+  const requested = requestKept(requestNodes(graph.nodes, request), keep)
   const rooms = createRoomLookup(graph.nodes, room)
 
   // Lays the nodes out at the given options, each keeping the room it is given: the focus, then the placement.
@@ -140,9 +153,11 @@ export function arrangePlex(
     }
   }
   // The placement keeps its usual shape, and leaves it only when another shape holds more notes.
-  const inShape = admitInWindow(false)
+  const inShape = keep
+    ? { packing: crowded, admitted: requested, isFitFirst: false }
+    : admitInWindow(false)
   const fitFirst =
-    countNodes(inShape.admitted) < countNodes(requested)
+    !keep && countNodes(inShape.admitted) < countNodes(requested)
       ? admitInWindow(true, inShape.admitted)
       : inShape
   const chosen = countNodes(fitFirst.admitted) > countNodes(inShape.admitted) ? fitFirst : inShape
@@ -153,9 +168,10 @@ export function arrangePlex(
   const fit: Fit = { margin, rooms }
   const finalLayout = lay(resolved, admitted, rooms, { isFitFirst })
   const { focus } = finalLayout
-  const placed = viewport
-    ? finalLayout.placed.filter((node) => isInside(node, viewport, fit))
-    : finalLayout.placed
+  const placed =
+    viewport && !keep
+      ? finalLayout.placed.filter((node) => isInside(node, viewport, fit))
+      : finalLayout.placed
   const overflow = addDropped(admittedOverflow, finalLayout.placed, placed)
   const nodes = [focus, ...placed]
 
@@ -183,6 +199,19 @@ function createWidthLookup(
     const box = Math.max(options.minWidth, measured)
     return Math.min(widest, isFocus ? box * options.focusScale : box)
   }
+}
+
+function requestKept(
+  requested: NodesByRelation,
+  keep: ReadonlySet<string> | undefined,
+): NodesByRelation {
+  if (!keep) return requested
+  return Object.fromEntries(
+    Object.entries(requested).map(([relation, nodes]) => [
+      relation,
+      nodes.filter((node) => keep.has(node.id)),
+    ]),
+  )
 }
 
 function countNodes(nodesByRelation: NodesByRelation): number {
