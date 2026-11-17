@@ -65,7 +65,7 @@ jobs:
         if: ${{ !cancelled() && inputs.core }}
         run: |
           set -euo pipefail
-          for module in libs/core/kernel libs/atomicfile libs/note libs/plugin/catalog libs/core/protocol tools/checks/structure/go; do
+          for module in libs/core/kernel libs/shared/atomicfile libs/note libs/plugin/catalog libs/core/protocol tools/checks/structure/go; do
             echo "::group::$module"
             (
               cd "$module"
@@ -250,7 +250,7 @@ jobs:
           RACE: ${{ matrix.race && '-race' || '' }}
         run: |
           set -euo pipefail
-          for module in libs/core/kernel libs/atomicfile libs/note libs/plugin/catalog; do
+          for module in libs/core/kernel libs/shared/atomicfile libs/note libs/plugin/catalog; do
             echo "::group::$module"
             (cd "$module" && go test ${RACE:+"$RACE"} ./...)
             echo "::endgroup::"
@@ -261,7 +261,7 @@ jobs:
         with:
           cache-key: ${{ steps.go.outputs.cache-key }}
 
-  # libs/atomicfile replaces files with a different call on Windows, and the platforms of core-test run there only on request.
+  # libs/shared/atomicfile replaces files with a different call on Windows, and the platforms of core-test run there only on request.
   atomicfile-windows:
     name: Atomic File (Windows)
     if: inputs.atomicfile
@@ -270,7 +270,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: libs/atomicfile
+        working-directory: libs/shared/atomicfile
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -279,7 +279,7 @@ jobs:
       - id: go
         uses: ./.github/actions/setup-go
         with:
-          go-version-file: libs/atomicfile/go.mod
+          go-version-file: libs/shared/atomicfile/go.mod
           cache-key: atomicfile-windows
 
       # A Windows runner checks the repository out on another drive than its temporary folder.

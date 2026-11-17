@@ -14,7 +14,7 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 

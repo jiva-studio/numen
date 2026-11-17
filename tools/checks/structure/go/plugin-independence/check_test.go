@@ -45,7 +45,7 @@ func TestPluginDependencyRule_RejectsForeignDependencies(t *testing.T) {
 		{load.NumenRoot + "libs/shared/tokenizer/x", false},
 		{load.NumenRoot + "libs/sharedx", true},
 		{load.NumenRoot + "libs/sharedx/onnx", true},
-		{load.NumenRoot + "libs/atomicfile", true},
+		{load.NumenRoot + "libs/shared/atomicfile", true},
 		{load.NumenRoot + "libs/plugin/catalog", true},
 		{load.NumenRoot + "libs/core/protocol/gen/numen/v1", true},
 		{"golang.org/x/net/html", false},

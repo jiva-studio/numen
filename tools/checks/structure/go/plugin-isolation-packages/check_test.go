@@ -62,7 +62,7 @@ func TestPluginIsolationRule_RejectsForeignPackagesInTheClosure(t *testing.T) {
 	viaSDK := &packages.Package{ID: "via", PkgPath: load.SdkModule + "/via", Imports: map[string]*packages.Package{"x": core}}
 	notesViaSDK := &packages.Package{ID: "notesvia", PkgPath: load.SdkModule + "/notesvia", Imports: map[string]*packages.Package{"x": notes}}
 	sharedLib := &packages.Package{ID: "shared", PkgPath: load.NumenRoot + "libs/shared/tokenizer", Imports: map[string]*packages.Package{"x": {ID: "uniseg", PkgPath: "github.com/rivo/uniseg"}}}
-	atomicfile := &packages.Package{ID: "atomicfile", PkgPath: load.NumenRoot + "libs/atomicfile"}
+	atomicfile := &packages.Package{ID: "atomicfile", PkgPath: load.NumenRoot + "libs/shared/atomicfile"}
 	sharedLookalike := &packages.Package{ID: "lookalike", PkgPath: load.NumenRoot + "libs/sharedx/onnx"}
 	for name, one := range map[string]struct {
 		imports map[string]*packages.Package
