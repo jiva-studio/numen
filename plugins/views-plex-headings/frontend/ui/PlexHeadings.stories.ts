@@ -151,7 +151,7 @@ export const LongHeading: Story = {
     })
 
     const list = canvasElement.querySelector('.headings__list')!.getBoundingClientRect()
-    await expect(list.left).toBeGreaterThanOrEqual(0)
-    await expect(list.right).toBeLessThanOrEqual(window.innerWidth)
+    const el = canvasElement.querySelector('.headings__list') as HTMLElement
+    await expect(JSON.stringify({ l: list.left, r: list.right, w: list.width, iw: window.innerWidth, style: el.getAttribute('style'), cw: getComputedStyle(el).maxWidth })).toBe('')
   },
 }
