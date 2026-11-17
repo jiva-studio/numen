@@ -232,3 +232,27 @@ func TestASubscriberThatReadsNothingDoesNotHoldUpTheUpdates(t *testing.T) {
 		t.Errorf("map = %v, want the last tags of a.md", got)
 	}
 }
+
+func TestAWatchSendsNoChangeThatIsInTheMapItStartedWith(t *testing.T) {
+	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
+	s.getMap(t)
+	s.vault.File("a.md", "---\ntags: [lake]\n---\n")
+
+	got, changes, cancel, err := s.cache.Watch(t.Context(), "garden")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cancel()
+	s.vault.File("b.md", "---\ntags: delta\n---\n")
+	s.update(t)
+
+	want := map[string][]string{"a.md": {"lake"}}
+	if !maps.EqualFunc(got, want, slices.Equal) {
+		t.Errorf("map = %v, want %v", got, want)
+	}
+	change, ok := receive(t, changes)
+	wantChange := map[string][]string{"b.md": {"delta"}}
+	if !ok || !maps.EqualFunc(change.Changed, wantChange, slices.Equal) {
+		t.Errorf("change = %v, want %v", change.Changed, wantChange)
+	}
+}

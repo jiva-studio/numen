@@ -147,3 +147,17 @@ func (l *listener) run() {
 		}
 	}
 }
+
+// Watch returns the tags of the notes of the vault as GetMap does and the changes after them as Subscribe
+// does, and the function that ends the subscription. The changes start at the returned map: none of them
+// was made before it.
+func (c *Caches) Watch(ctx context.Context, id domain.VaultID) (map[string][]string, <-chan Change, func(), error) {
+	one := c.getVault(id)
+	one.mu.Lock()
+	defer one.mu.Unlock()
+	if err := c.update(ctx, id, one); err != nil {
+		return nil, nil, nil, err
+	}
+	changes, cancel := one.follow.add()
+	return one.getTagsByPath(), changes, cancel, nil
+}
