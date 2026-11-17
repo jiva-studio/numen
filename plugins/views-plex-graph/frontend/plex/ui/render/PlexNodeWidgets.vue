@@ -2,10 +2,12 @@
 /**
  * The views of one side of a node, drawn at the node in the order the loader sorts them (the slot `order`,
  * then the plugin id), each in its own centered row and given the path of the note. The rows are one column,
- * the group; its element is emitted so its height can be measured.
- * The group holds the `--numen-node-gap` against the node as padding, so the measured height includes it.
+ * the group; its element is emitted so its height can be measured, and only while a widget draws something:
+ * a side whose widgets draw nothing keeps no room, and the group holds the `--numen-node-gap` against the node
+ * as padding only then, so the measured height includes it.
  */
-import type { ComponentPublicInstance } from 'vue'
+import { ref } from 'vue'
+import { useDrawnWidgets } from '../../model/useDrawnWidgets'
 import type { PlacedNode } from '../../lib/node'
 import type { PlexWidget } from '../../../types'
 
@@ -23,8 +25,8 @@ const emit = defineEmits<{
 /** How far from the node the box reaches; the group sits against the node inside it. */
 const EXTENT = 480
 
-const onWidgetsChange = (element: Element | ComponentPublicInstance | null) =>
-  emit('widgets', element instanceof Element ? element : null)
+const rows = ref<HTMLElement | null>(null)
+const { isDrawing } = useDrawnWidgets(rows, (element) => emit('widgets', element))
 
 const getTop = () =>
   props.side === 'above'
@@ -44,7 +46,7 @@ const getTop = () =>
     :height="EXTENT"
   >
     <div class="plex__widgets-box">
-      <div :ref="onWidgetsChange" class="plex__widgets-group">
+      <div ref="rows" class="plex__widgets-rows" :class="{ 'plex__widgets-group': isDrawing }">
         <div
           v-for="entry in entries"
           :key="entry.key"
@@ -75,12 +77,19 @@ const getTop = () =>
   justify-content: flex-end;
 }
 
-.plex__widgets-group {
+.plex__widgets-rows {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--widgets-gap);
+}
+
+.plex__widgets-group {
   pointer-events: auto;
+}
+
+.plex__widget:empty {
+  display: none;
 }
 
 .plex__widget {
