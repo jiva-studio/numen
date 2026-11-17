@@ -1,6 +1,5 @@
 /** A view of a slot says when its data has arrived, and the owner of the slot waits for every view it drew. */
-import { mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick, ref, type Component } from 'vue'
+import { createApp, defineComponent, h, nextTick, ref, type Component } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   SLOT_LOADING_CAP_MS,
@@ -19,6 +18,13 @@ const LEDGER: SlotLoadingEntry = {
 const HARBOR: SlotLoadingEntry = {
   key: 'org.example.harbor/view/tags',
   pluginId: 'org.example.harbor',
+}
+
+const mount = (root: Component, provided?: Record<symbol, unknown>) => {
+  const app = createApp(root)
+  for (const key of Object.getOwnPropertySymbols(provided ?? {})) app.provide(key, provided?.[key])
+  app.mount(document.createElement('div'))
+  return app
 }
 
 let scheduled: ((now: number) => void)[] = []
@@ -88,7 +94,7 @@ describe('useSlotLoading', () => {
     const finishes: (() => void)[] = []
 
     mount(createLoadingView(finishes), {
-      global: { provide: { [SLOT_LOADING_KEY as symbol]: { begin } } },
+      { [SLOT_LOADING_KEY as symbol]: { begin } },
     })
 
     expect(begin).toHaveBeenCalledTimes(1)
@@ -106,7 +112,7 @@ describe('the loading of a slot', () => {
   ) => {
     const loading = createSlotLoading({ clock, reportIssue })
     const shown = ref(entries)
-    const wrapper = mount(
+    mount(
       defineComponent({
         setup: () => () =>
           shown.value.map((one) =>
@@ -114,7 +120,7 @@ describe('the loading of a slot', () => {
           ),
       }),
     )
-    return { loading, wrapper, shown, reportIssue }
+    return { loading, shown, reportIssue }
   }
 
   it('is ready with no view', () => {
