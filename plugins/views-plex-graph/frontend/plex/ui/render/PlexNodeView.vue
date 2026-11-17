@@ -18,7 +18,7 @@ import { useHoverFocus } from '../../model/interaction/hoverFocus'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useOpenBox } from '../../model/sizing/expansion'
 import { useLift } from '../../model/useLift'
-import { useNodeFace } from '../../model/useNodeFace'
+import { useNodeClasses, useNodeFace } from '../../model/useNodeFace'
 import { useNodeState } from '../../model/useNodeState'
 import { getNodeEvents } from '../../model/interaction/nodeEvents'
 import { useNodePress } from '../../model/interaction/press'
@@ -96,17 +96,13 @@ const { isLifted, liftTarget, onLiftKeyDown } = useLift({
 })
 
 const face = useNodeFace(props, { box, isGhost, isHandleVisible, handle })
+const nodeClasses = useNodeClasses(props, hoverFocus.isPointerOver)
 
 const events = getNodeEvents(press, hoverFocus)
 
 const overTarget = computed(() =>
   props.overlay.length === 0 || isGhost.value ? null : (overLayer?.value ?? null),
 )
-const nodeClasses = computed(() => [
-  `plex__node--${props.node.relation}`,
-  `plex__node--${props.gestureRole}`,
-  { 'plex__node--pointer': hoverFocus.isPointerOver.value },
-])
 
 /* --------------------------------- Hooks ---------------------------------- */
 // A box that has begun to open is already over its neighbors.
