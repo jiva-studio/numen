@@ -371,7 +371,7 @@ test('the docs say how the title bar draws an entry', () => {
 })
 
 test('the plex graph owns a slot over its nodes and a slot under them', () => {
-  const listed = JSON.parse(readFileSync(join(ROOT, 'libs/core/protocol/slots.json'), 'utf8')).slots
+  const listed = JSON.parse(readFileSync(join(ROOT, 'libs/shared/protocol/slots.json'), 'utf8')).slots
   for (const name of ['plexGraph.nodeAbove', 'plexGraph.nodeBelow']) {
     const slot = listed.find((one) => one.name === name)
     assert.ok(slot, `${name} is not in slots.json`)
