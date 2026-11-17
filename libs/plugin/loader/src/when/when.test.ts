@@ -1,4 +1,4 @@
-/** The when conditions against libs/core/protocol/when.json, the examples the Go evaluator runs as well. */
+/** The when conditions against libs/shared/protocol/when.json, the examples the Go evaluator runs as well. */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -38,7 +38,7 @@ interface Vectors {
 }
 
 const VECTORS = JSON.parse(
-  readFileSync(resolve(import.meta.dirname, '../../../../core/protocol/when.json'), 'utf8'),
+  readFileSync(resolve(import.meta.dirname, '../../../../shared/protocol/when.json'), 'utf8'),
 ) as Vectors
 
 const read = (text: string) => {

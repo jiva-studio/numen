@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
@@ -116,7 +117,7 @@ func openTalliedVault(t *testing.T, notes map[string]string) (vaulted, flashcard
 	t.Helper()
 	s := openVault(t, notes)
 	reads := &readTally{inner: s.env.Ports.Readers}
-	reviewCards := flashcards.NewListReviewCards(reads, s.notes, s.links)
+	reviewCards := flashcards.NewListReviewCards(reads, s.notes, cards.NewRead(reads, s.links))
 	reviewCards.Cores = 4
 	if _, err := reviewCards.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -294,7 +295,7 @@ func TestAMarkSavedThroughTheAppIsActiveInTheNextRequest(t *testing.T) {
 			"\n## Leaf mold\n\n[[Term]]\n\n### Word\n\nLeaf mold\n\n### Meaning\n\nCompost\n",
 	}
 	s := openVault(t, notes)
-	reviewCards := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
+	reviewCards := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, cards.NewRead(s.env.Ports.Readers, s.links))
 	assigning := s.newAssignCardIDs(func(ctx context.Context, v domain.Vault, paths []string) error {
 		reviewCards.Invalidate(v.ID, paths...)
 		return s.scan(ctx, v, paths)
@@ -330,14 +331,14 @@ func TestTheCardsAreReturnedInTheOrderOfThePathsWhateverParsesFirst(t *testing.T
 	}
 	s := openVault(t, notes)
 
-	one := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
+	one := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, cards.NewRead(s.env.Ports.Readers, s.links))
 	want := ids(one.GetReviewCards(t.Context(), s.vault, paths))
 	if len(want) != len(paths) {
 		t.Fatalf("%d decks stand as %d review cards", len(paths), len(want))
 	}
 
 	for range 10 {
-		many := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
+		many := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, cards.NewRead(s.env.Ports.Readers, s.links))
 		many.Cores = 64
 		if got := ids(many.GetReviewCards(t.Context(), s.vault, paths)); !reflect.DeepEqual(got, want) {
 			t.Fatalf("the order moved:\n got %v\nwant %v", got, want)
@@ -383,12 +384,12 @@ func TestAPoolOfOneAndAPoolOfManyGiveTheSameCardsEveryTime(t *testing.T) {
 		notes[path] = fmt.Sprintf("---\ntype: deck\n---\n\n## Card ^q%02dwxyzpqr\n\n[[Term]]\n\n### Word\n\nw%d\n\n### Meaning\n\nm%d\n", i, i, i)
 	}
 	s := openVault(t, notes)
-	one := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
+	one := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, cards.NewRead(s.env.Ports.Readers, s.links))
 	one.Cores = 1
 	want := ids(one.GetReviewCards(t.Context(), s.vault, paths))
 
 	for _, cores := range []int{2, 3, 16, 64} {
-		many := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
+		many := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, cards.NewRead(s.env.Ports.Readers, s.links))
 		many.Cores = cores
 		for range 3 {
 			if got := ids(many.GetReviewCards(t.Context(), s.vault, paths)); !reflect.DeepEqual(got, want) {
@@ -402,7 +403,7 @@ func TestADeckPastTheCardBoundIsParsedAgainWhileTheOthersStay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, getVault())
 	reads := &readTally{inner: s.env.Ports.Readers}
-	reviewCards := flashcards.NewListReviewCards(reads, s.notes, s.links)
+	reviewCards := flashcards.NewListReviewCards(reads, s.notes, cards.NewRead(reads, s.links))
 	// Mammals yields four review cards and Words yields one.
 	reviewCards.MaxCards = 3
 	for range 2 {
@@ -456,7 +457,7 @@ func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []flashcards.PresetCardsDue{
+	want := []review.PresetCardsDue{
 		{
 			Preset: "", Decks: 1, Cards: 1, Due: 1,
 			Answered: 1, ReviewedNew: 1, Took: 4 * time.Second,
@@ -499,7 +500,7 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := flashcards.PresetCardsDue{
+	want := review.PresetCardsDue{
 		Preset: "", Decks: 2, Cards: 40, New: 40,
 		Budget: review.Defaults().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Keeps,
 		Limits: review.Defaults().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Limits,
@@ -527,7 +528,7 @@ func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var target *flashcards.PresetCardsDue
+	var target *review.PresetCardsDue
 	for item, one := range counts.Presets {
 		if one.Preset == "Empty.md" {
 			target = &counts.Presets[item]
@@ -536,7 +537,7 @@ func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	if target == nil {
 		t.Fatalf("the preset nothing points at is not in the count: %+v", counts.Presets)
 	}
-	if *target != (flashcards.PresetCardsDue{Preset: "Empty.md"}) {
+	if *target != (review.PresetCardsDue{Preset: "Empty.md"}) {
 		t.Errorf("it came to %+v, want a preset nothing is under", *target)
 	}
 }
@@ -768,7 +769,7 @@ func TestADecksLearnedCardsAreCountedByItsOwnPresetsRule(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := map[string]flashcards.DeckCardsDue{
+	want := map[string]review.DeckCardsDue{
 		// The rule is a chance of recall, and a card answered a minute ago is
 		// as likely to be recalled as a card gets.
 		"decks/One.md": {Deck: "decks/One.md", ReviewCards: 3, Learned: 1},

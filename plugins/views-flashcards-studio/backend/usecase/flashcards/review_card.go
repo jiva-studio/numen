@@ -9,11 +9,10 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
 // ReviewCard is one review card as the vault holds it: a card, shown through one
@@ -48,7 +47,7 @@ type reviewCardNotes interface {
 type ListReviewCards struct {
 	readers  ports.VaultReaders
 	notes    reviewCardNotes
-	links    ports.LinkQueries
+	read     ports.CardNoteReader
 	cache    *reviewCardCache
 	Cores    int
 	MaxCards int
@@ -56,12 +55,11 @@ type ListReviewCards struct {
 
 // NewListReviewCards returns a ListReviewCards that reads review cards through
 // the vault holding the decks and the card models, the query that identifies
-// which notes are decks, and the resolver for the wikilink by which a card names
-// its card model.
+// which notes are decks, and the reader of a deck and of a card model.
 func NewListReviewCards(
-	readers ports.VaultReaders, notes reviewCardNotes, links ports.LinkQueries,
+	readers ports.VaultReaders, notes reviewCardNotes, read ports.CardNoteReader,
 ) ListReviewCards {
-	return ListReviewCards{readers: readers, notes: notes, links: links, cache: newCardCache(), Cores: 0, MaxCards: 0}
+	return ListReviewCards{readers: readers, notes: notes, read: read, cache: newCardCache(), Cores: 0, MaxCards: 0}
 }
 
 // ErrNotCarried is what a vault the index does not carry gets. It is the signal
@@ -117,7 +115,7 @@ func (u ListReviewCards) GetReviewCards(ctx context.Context, v domain.Vault, pat
 		misses = append(misses, item)
 	}
 
-	cardModels := &cardModelMemo{read: cards.NewRead(u.readers, u.links), mu: sync.Mutex{}, cardModels: make(map[string]cardModelRead)}
+	cardModels := &cardModelMemo{read: u.read, mu: sync.Mutex{}, cardModels: make(map[string]cardModelRead)}
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="Minimum worker count affects concurrency bound only."
 	places := min(max(1, u.Cores), len(misses))
 	var running sync.WaitGroup
@@ -184,7 +182,7 @@ func (u ListReviewCards) parseDeck(
 	ctx context.Context, v domain.Vault, path string, epoch uint64, cardModels *cardModelMemo,
 ) []ReviewCard {
 	deck, err := cardModels.read.Deck(ctx, v, path)
-	if err != nil || deck.Outcome != note.Ok {
+	if err != nil || deck.Outcome != edit.Ok {
 		return nil
 	}
 	reviewCards, used, isWhole := u.getDeckCards(ctx, v, deck, cardModels)
@@ -199,7 +197,7 @@ func (u ListReviewCards) parseDeck(
 // cardModelMemo is the card models one request has read, shared by the places
 // parsing it.
 type cardModelMemo struct {
-	read       cards.Read
+	read       ports.CardNoteReader
 	mu         sync.Mutex
 	cardModels map[string]cardModelRead
 }
@@ -225,7 +223,7 @@ func (m *cardModelMemo) get(ctx context.Context, v domain.Vault, path string) ca
 		stat:      domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}, isWhole: false,
 	}
 	one, err := m.read.CardModel(ctx, v, path)
-	if err == nil && one.Outcome == note.Ok && one.Type == format.TypeCardModel {
+	if err == nil && one.Outcome == edit.Ok && one.Type == format.TypeCardModel {
 		out = cardModelRead{cardModel: one.Body, stat: one.FileStat, isWhole: true}
 	}
 	m.cardModels[path] = out
@@ -233,7 +231,7 @@ func (m *cardModelMemo) get(ctx context.Context, v domain.Vault, path string) ca
 }
 
 func (u ListReviewCards) getDeckCards(
-	ctx context.Context, v domain.Vault, deck cards.DeckContents, cardModels *cardModelMemo,
+	ctx context.Context, v domain.Vault, deck format.DeckContents, cardModels *cardModelMemo,
 ) (out []ReviewCard, used map[string]domain.FileStat, isWhole bool) {
 	used = make(map[string]domain.FileStat)
 	isWhole = true

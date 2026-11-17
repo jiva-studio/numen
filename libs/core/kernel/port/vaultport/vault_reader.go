@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // VaultReader is one vault as seen from outside: something that can be walked

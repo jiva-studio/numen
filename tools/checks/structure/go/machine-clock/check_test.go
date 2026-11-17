@@ -109,9 +109,9 @@ func run(origin time.Time) {
 	}
 }
 
-// TestNothingOutsideAdaptersReadsTheMachineClock verifies this across libs/note, plugins, and apps/desktop.
+// TestNothingOutsideAdaptersReadsTheMachineClock verifies this across libs/shared/note, plugins, and apps/desktop.
 func TestNothingOutsideAdaptersReadsTheMachineClock(t *testing.T) {
-	roots := []string{"../../../note", "../../../../plugins", "../../../../apps/desktop"}
+	roots := []string{"../../../shared/note", "../../../../plugins", "../../../../apps/desktop"}
 	for _, root := range roots {
 		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 			if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {

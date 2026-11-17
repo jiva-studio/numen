@@ -3,7 +3,7 @@ package note
 import (
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // The two characters the index wraps around a matched run. They are control

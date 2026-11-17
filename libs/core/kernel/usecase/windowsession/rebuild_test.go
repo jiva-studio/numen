@@ -3,7 +3,7 @@ package windowsession
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // announcing is an embedder that records the model it is read under and says when it changes.

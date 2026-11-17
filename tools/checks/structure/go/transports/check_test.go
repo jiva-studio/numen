@@ -20,7 +20,7 @@ import (
 // database driver or schema generator.
 func TestInnerLayersDoNotImportTransports(t *testing.T) {
 	var wrong []string
-	for _, root := range []string{"..", "../../../note/domain"} {
+	for _, root := range []string{"..", "../../../shared/note/domain"} {
 		found, err := findTransportImports(root, "..")
 		if err != nil {
 			t.Fatal(err)
@@ -97,8 +97,8 @@ func TestTransportRule_RejectsTransportImports(t *testing.T) {
 		"database/sql/driver",
 		"net/http",
 		"net/http/httptest",
-		"github.com/jiva-studio/numen/libs/core/protocol",
-		"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1",
+		"github.com/jiva-studio/numen/libs/shared/protocol",
+		"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1",
 		"fmt",
 		"context",
 		load.Module + "port",
@@ -113,8 +113,8 @@ func TestTransportRule_RejectsTransportImports(t *testing.T) {
 		"database/sql/driver",
 		"net/http",
 		"net/http/httptest",
-		"github.com/jiva-studio/numen/libs/core/protocol",
-		"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1",
+		"github.com/jiva-studio/numen/libs/shared/protocol",
+		"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1",
 	}
 	if !slices.Equal(rejected, want) {
 		t.Errorf("the rule rejected %v, want %v", rejected, want)

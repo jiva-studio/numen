@@ -6,6 +6,7 @@ import type { Preset, SettingsBounds } from './presets'
 interface ReadPreset {
   readonly preset: Preset | null
   readonly at: string
+  readonly version: bigint
   readonly bounds: SettingsBounds
 }
 
@@ -13,4 +14,7 @@ interface ReadPreset {
 export type PresetReadResult = Result<ReadPreset, ErrorCode>
 
 /** What writing a preset returned. */
-export type PresetWriteResult = Result<{ readonly at: string }, CardsFailure>
+export type PresetWriteResult = Result<
+  { readonly at: string; readonly version: bigint },
+  CardsFailure
+>

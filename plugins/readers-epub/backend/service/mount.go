@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/adapter/hostclient"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/books"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/texts"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/wire/bookwire"
 )
 
 // ShownVault returns the vault the host shows, whose feed the plugin follows when it starts.
@@ -45,6 +46,7 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 
 func mount(s *server.Server, connected *hostclient.Host) (*texts.Follower, error) {
 	reader := books.NewReader(connected.OpenFiles)
+	methods := bookwire.NewMethods(reader)
 	writer := texts.NewWriter(connected.OpenVault, connected.OpenTexts, connected.OpenStore, connected.GetQueue(), connected.ReportError)
 	follower := texts.NewFollower(writer, connected.OpenFeed, connected.ReportError)
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server close hook releases cached books"
@@ -59,10 +61,10 @@ func mount(s *server.Server, connected *hostclient.Host) (*texts.Follower, error
 		return nil
 	})
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="mount propagates any API registration failure"
-	if err := mountMethods(s, reader); err != nil {
+	if err := mountMethods(s, methods); err != nil {
 		return nil, err
 	}
-	s.RegisterRoute(entriesPattern, NewEntryServer(reader, connected.ReportError))
+	s.RegisterRoute(entriesPattern, NewEntryServer(methods, connected.ReportError))
 	commands, err := newCommands(writer)
 	// gomutants:disable-next-line BRANCH_IF reason="registering one static command id on a new registry cannot fail"
 	if err != nil {

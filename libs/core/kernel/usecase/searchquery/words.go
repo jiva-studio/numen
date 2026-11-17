@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 const messageInvalidWords = "words takes an FTS5 expression, and this one is not valid"

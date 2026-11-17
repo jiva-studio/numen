@@ -303,7 +303,7 @@ describe('the stamp of a file an answer is about', () => {
 
     const answer = await presets.write('Daily.md', DEFAULTS, '')
 
-    expect(answer).toEqual({ ok: true, value: { at: '12:7:ab 34 Daily.md' } })
+    expect(answer).toEqual({ ok: true, value: { at: '12:7:ab 34 Daily.md', version: 7n } })
   })
 })
 

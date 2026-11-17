@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { formatErrorMessage } from '@numen/plugin-sdk'
 import { useTranscript } from './transcript'
-import { CUES, TALK_URL, createPlayer, createRecordings, flush } from './fakes'
+import { CUES, TALK_URL, createPlayer, createRecordings, flush } from '../testing/fakes'
 import { WORDS } from '../words'
 
 const open = (setup = createRecordings()) => {

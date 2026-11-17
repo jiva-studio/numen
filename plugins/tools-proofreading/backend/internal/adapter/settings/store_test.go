@@ -3,13 +3,13 @@ package settings
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/usecase/proofread"
+	domainsettings "github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/settings"
 )
 
 func TestStoreReturnsDefaultAndUpdatedConfig(t *testing.T) {
 	store := NewStore()
-	if got := store.GetRunConfig(); got != proofread.DefaultConfig() {
-		t.Fatalf("initial config = %+v, want %+v", got, proofread.DefaultConfig())
+	if got := store.GetRunConfig(); got != domainsettings.DefaultConfig() {
+		t.Fatalf("initial config = %+v, want %+v", got, domainsettings.DefaultConfig())
 	}
 
 	store.Update(map[string]string{
@@ -18,7 +18,7 @@ func TestStoreReturnsDefaultAndUpdatedConfig(t *testing.T) {
 		"inFlight":        "2",
 		"maxEditDistance": "0.25",
 	})
-	want := proofread.Config{
+	want := domainsettings.Config{
 		BatchSize:       12,
 		Overlap:         3,
 		InFlight:        2,

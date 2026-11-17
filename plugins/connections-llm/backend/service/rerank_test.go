@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
+	"github.com/jiva-studio/numen/libs/shared/rerank"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/fakeopenai"
 )
 
@@ -73,7 +73,7 @@ func TestRerankReturnsScoresInDocumentOrder(t *testing.T) {
 	query := "when does the ferry leave?"
 
 	result, err := newTestService(t).Rerank(newContext(t), newCall("openrouter", address, testKey, "cohere/rerank-v3.5"),
-		&llm.RerankRequest{Query: query, Documents: documents})
+		&rerank.RerankRequest{Query: query, Documents: documents})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestRerankPostsModelQueryDocumentsAndTopNWithTheKey(t *testing.T) {
 	documents := []string{"Tide tables", "Ferry times", "Harbor map"}
 
 	if _, err := newTestService(t).Rerank(newContext(t), newCall("openrouter", address, testKey, "cohere/rerank-v3.5"),
-		&llm.RerankRequest{Query: "ferry", Documents: documents}); err != nil {
+		&rerank.RerankRequest{Query: "ferry", Documents: documents}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -122,7 +122,7 @@ func TestRerankPlacesEachScoreAtTheIndexOfItsDocument(t *testing.T) {
 	_, address := startRecorder(t, answer)
 
 	result, err := newTestService(t).Rerank(newContext(t), newCall("openai-compatible", address, "", "bge-reranker-v2-m3"),
-		&llm.RerankRequest{Query: "ferry", Documents: []string{"a", "b", "c"}})
+		&rerank.RerankRequest{Query: "ferry", Documents: []string{"a", "b", "c"}})
 
 	if err != nil || !slices.Equal(result.GetScores(), []float32{0.5, 0.1, 0.9}) {
 		t.Errorf("Rerank = %v, %v, want the scores in the order of the documents", result, err)
@@ -135,7 +135,7 @@ func TestRerankPostsToTheRerankPathOfTheAddress(t *testing.T) {
 		got, address := startRecorder(t, answer)
 
 		_, err := newTestService(t).Rerank(newContext(t), newCall(typeID, address+path, testKey, "m"),
-			&llm.RerankRequest{Query: "ferry", Documents: []string{"a"}})
+			&rerank.RerankRequest{Query: "ferry", Documents: []string{"a"}})
 
 		if err != nil || !slices.Equal(got.getPaths(), []string{path + "/rerank"}) {
 			t.Errorf("%s: err = %v, paths = %v, want %s/rerank", typeID, err, got.getPaths(), path)
@@ -149,12 +149,12 @@ func TestRerankSendsTheInstructionBeforeTheQuery(t *testing.T) {
 	svc := newTestService(t)
 	call := newCall("openai-compatible", address+"/v1", "", "m")
 
-	if _, err := svc.Rerank(newContext(t), call, &llm.RerankRequest{
+	if _, err := svc.Rerank(newContext(t), call, &rerank.RerankRequest{
 		Instruction: "Find the notes that answer the question", Query: "when does the ferry leave?", Documents: []string{"a"},
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := svc.Rerank(newContext(t), call, &llm.RerankRequest{Query: " when does the ferry leave? ", Documents: []string{"a"}}); err != nil {
+	if _, err := svc.Rerank(newContext(t), call, &rerank.RerankRequest{Query: " when does the ferry leave? ", Documents: []string{"a"}}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -169,7 +169,7 @@ func TestRerankSendsTheInstructionBeforeTheQuery(t *testing.T) {
 func TestRerankWithNoDocumentsSendsNothing(t *testing.T) {
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 
-	result, err := newTestService(t).Rerank(newContext(t), newCall("openai-compatible", address, "", "m"), &llm.RerankRequest{Query: "ferry"})
+	result, err := newTestService(t).Rerank(newContext(t), newCall("openai-compatible", address, "", "m"), &rerank.RerankRequest{Query: "ferry"})
 
 	if err != nil || len(result.GetScores()) != 0 {
 		t.Errorf("Rerank = %v, %v", result, err)
@@ -194,7 +194,7 @@ func TestRerankStopsOnAnAnswerThatDoesNotMatchTheDocuments(t *testing.T) {
 		_, address := startRecorder(t, body)
 
 		_, err := newTestService(t).Rerank(newContext(t), newCall("openai-compatible", address, "", "m"),
-			&llm.RerankRequest{Query: "ferry", Documents: []string{"a", "b"}})
+			&rerank.RerankRequest{Query: "ferry", Documents: []string{"a", "b"}})
 
 		if !connection.IsStop(err) || err.Error() != connection.ReasonUnavailable.String() {
 			t.Errorf("%s: err = %v, want a stop of an unavailable service", name, err)
@@ -206,7 +206,7 @@ func TestRerankWithARejectedKeyIsTryNext(t *testing.T) {
 	_, address := startFakeServer(t, fakeopenai.Config{APIKey: testKey})
 
 	_, err := newTestService(t).Rerank(newContext(t), newCall("openrouter", address, "sk-other-key-9999", "m"),
-		&llm.RerankRequest{Query: "ferry", Documents: []string{"a"}})
+		&rerank.RerankRequest{Query: "ferry", Documents: []string{"a"}})
 
 	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonRejectedKey})
 }
@@ -216,7 +216,7 @@ func TestRerankOnAServerWithoutRerankStopsWithAnInvalidRequest(t *testing.T) {
 	t.Cleanup(ts.Close)
 
 	_, err := newTestService(t).Rerank(newContext(t), newCall("openai-compatible", ts.URL+"/v1", "", "m"),
-		&llm.RerankRequest{Query: "ferry", Documents: []string{"a"}})
+		&rerank.RerankRequest{Query: "ferry", Documents: []string{"a"}})
 
 	checkFailure(t, err, failureWant{reason: connection.ReasonInvalidRequest})
 }
@@ -225,7 +225,7 @@ func TestRerankOfAnOpenAIConnectionStopsWithAnInvalidRequestAndSendsNothing(t *t
 	fake, address := startFakeServer(t, fakeopenai.Config{})
 
 	_, err := newTestService(t).Rerank(newContext(t), newCall("openai", address, testKey, "m"),
-		&llm.RerankRequest{Query: "ferry", Documents: []string{"a"}})
+		&rerank.RerankRequest{Query: "ferry", Documents: []string{"a"}})
 
 	checkFailure(t, err, failureWant{reason: connection.ReasonInvalidRequest})
 	if len(fake.Requests()) != 0 {
@@ -239,7 +239,7 @@ func TestTheFirstRerankOfAnOpenAICompatibleModelOutlastsTheSettingAndTheNextOneD
 	svc := newTestService(t)
 	svc.Configure(map[string]string{"requestTimeout": "0.1"})
 	call := newCall("openai-compatible", address, "", "bge-reranker-v2-m3")
-	request := &llm.RerankRequest{Query: "ferry", Documents: []string{"a"}}
+	request := &rerank.RerankRequest{Query: "ferry", Documents: []string{"a"}}
 
 	if _, err := svc.Rerank(newContext(t), call, request); err != nil {
 		t.Fatalf("the first request: %v", err)

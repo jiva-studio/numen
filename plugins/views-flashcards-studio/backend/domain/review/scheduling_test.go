@@ -144,16 +144,16 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 }
 
 func getSchedulingFunctions() []string {
-	return []string{"History.Replay", "Simulation.step"}
+	return []string{"History.Replay", "projectionLoad.PlaceCard"}
 }
 
 // A day is chosen in one function, and a caller wanting one evaluates to it. The
-// walk is over this package and the projection, because AssignDueDay is where a day is
+// walk is over this package and the use case that adapts it to the projection, because AssignDueDay is where a day is
 // decided and the deciding is all there.
 func TestTheSessionAndTheProjectionAreWhatScheduleADay(t *testing.T) {
 	var calls []string
 	read, declared := 0, 0
-	for _, dir := range []string{".", "../../usecase/projection"} {
+	for _, dir := range []string{".", "../../usecase/flashcards"} {
 		target, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
