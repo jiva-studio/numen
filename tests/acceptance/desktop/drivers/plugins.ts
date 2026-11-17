@@ -28,16 +28,16 @@ export class PluginDriver {
   }
 
   async enableDisabled(): Promise<void> {
-    const failures: unknown[] = []
+    const failures: string[] = []
     for (const name of [...this.disabled]) {
       try {
         await this.setEnabled(name, true)
         this.disabled.delete(name)
       } catch (error) {
-        failures.push(error)
+        failures.push(`${name}: ${error instanceof Error ? error.message : String(error)}`)
       }
     }
-    if (failures.length > 0) throw new AggregateError(failures, `${failures.length} plugins could not be enabled again`)
+    if (failures.length > 0) throw new Error(`could not enable again:\n${failures.join('\n')}`)
   }
 
   private async setEnabled(name: string, isEnabled: boolean): Promise<void> {
