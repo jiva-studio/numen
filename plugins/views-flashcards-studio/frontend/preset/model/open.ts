@@ -64,7 +64,12 @@ export const readPreset = async (one: OpenPreset, context: ReadPresetContext): P
     one.curves.current.isWaiting.value = false
     return
   }
-  if (answer.ok && !takeVersion(queue, answer.value.version, answer.value.at)) return
+  if (answer.ok && answer.value.preset) {
+    if (!takeVersion(queue, answer.value.version, answer.value.at)) return
+  } else if (answer.ok) {
+    queue.unsaved.revision = answer.value.at
+    queue.unsaved.version = 0n
+  }
   one.writeQueue.status.errorMessage.value = answer.ok ? '' : words.notRead(answer.error)
   one.writeQueue.status.hasExternalChange.value = false
   one.curves.requests.answers.clear()

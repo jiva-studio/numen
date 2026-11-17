@@ -179,6 +179,28 @@ describe('a read that began before a write', () => {
   })
 })
 
+describe('a read of a file that no longer exists', () => {
+  it('is taken at any version, and the next read of the file is taken again', async () => {
+    const one = createOpenPreset('presets/Daily.md', '2026-11-17', {})
+    one.writeQueue.unsaved.version = 5n
+    one.writeQueue.unsaved.revision = 'v5'
+    const core = {
+      read: async () => asValue({ preset: null, at: '', version: 0n, bounds: {} }),
+    } as unknown as Presets
+    const context = {
+      core,
+      bounds: ref({}),
+      titles: new Map<string, string>(),
+      today: '2026-11-17',
+    }
+
+    await readPreset(one, context)
+
+    expect(one.writeQueue.unsaved.revision).toBe('')
+    expect(one.writeQueue.unsaved.version).toBe(0n)
+  })
+})
+
 describe('flushing a preset', () => {
   it('writes what the person changed', async () => {
     const queue = createWriteQueue()
