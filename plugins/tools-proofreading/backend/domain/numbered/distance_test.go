@@ -16,7 +16,7 @@ func oneLine(text string) Batch {
 
 // right.
 func TestGetFixedLines_ZeroLimitAcceptsAnyDistance(t *testing.T) {
-	if apart := EditDistance(asHeard, asCorrected); apart <= MaxEditDistance {
+	if apart := EditDistance(asHeard, asCorrected); apart <= maxEditDistance {
 		t.Fatalf("the two stand %.2f apart, which the recognition's own limit allows", apart)
 	}
 
@@ -31,7 +31,7 @@ func TestGetFixedLines_ZeroLimitAcceptsAnyDistance(t *testing.T) {
 
 // The recognition's own limit still holds where it is given.
 func TestACorrectionBeyondTheLimitGivenIsDropped(t *testing.T) {
-	placed, _, ok := GetFixedLines(oneLine(asHeard), "7 | "+asCorrected, MaxEditDistance)
+	placed, _, ok := GetFixedLines(oneLine(asHeard), "7 | "+asCorrected, maxEditDistance)
 	if !ok {
 		t.Fatal("the batch failed")
 	}

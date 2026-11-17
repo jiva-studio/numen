@@ -1,6 +1,6 @@
 package manifestjson
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 func newContentTypes(texts []string) []domain.ContentType {
 	var out []domain.ContentType

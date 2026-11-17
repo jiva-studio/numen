@@ -8,11 +8,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// ApplyStagesDeps is what ApplyStages reads. Calls, Codec, Rows, Resolve and Results serve the rerank stage,
+// ApplyStagesDeps is what ApplyStages reads. Calls, Rows, Resolve and Results serve the rerank stage,
 // Clock times its calls, and a nil Texts reads the text of notes only. A zero Limits takes the defaults.
 type ApplyStagesDeps struct {
 	Calls   connectionport.ModelCalls
-	Codec   RerankCodec
 	Rows    RerankRows
 	Resolve connectionport.ResolveConnection
 	Results OperationResults
@@ -37,7 +36,7 @@ func NewApplyStages(deps ApplyStagesDeps) *ApplyStages {
 	}
 	return &ApplyStages{
 		reranker: reranker{
-			calls: deps.Calls, codec: deps.Codec, rows: deps.Rows, resolve: deps.Resolve, results: deps.Results, clock: deps.Clock, limits: limits,
+			calls: deps.Calls, rows: deps.Rows, resolve: deps.Resolve, results: deps.Results, clock: deps.Clock, limits: limits,
 		},
 		readers: deps.Readers, texts: deps.Texts,
 	}

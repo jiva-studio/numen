@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/neighborhood"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/reloads"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/sessions"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/vaultcount"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/apierror"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/wire/presetwire"
@@ -168,7 +167,7 @@ func ParseRating(r api.Rating) review.Rating {
 
 // NewRecordError is why an answer could not be written down, as an API error.
 func NewRecordError(err error) error {
-	if errors.Is(err, sessions.ErrNoRun) {
+	if errors.Is(err, flashcards.ErrNoRun) {
 		return NewRunError(err)
 	}
 	if errors.Is(err, flashcards.ErrNoRating) {
@@ -179,7 +178,7 @@ func NewRecordError(err error) error {
 
 // NewUndoError is why an answer could not be taken back, as an API error.
 func NewUndoError(err error) error {
-	if errors.Is(err, sessions.ErrNoRun) {
+	if errors.Is(err, flashcards.ErrNoRun) {
 		return NewRunError(err)
 	}
 	if errors.Is(err, flashcards.ErrNoAnswer) {
@@ -276,4 +275,10 @@ func NewVaultsResponse(vaults []domain.Vault, day string) *api.WatchCardsDueResp
 		items = append(items, NewVaultHeader(one))
 	}
 	return &api.WatchCardsDueResponse{Vaults: items, Day: day, Counted: nil}
+}
+
+// NewCountedResponse is the count of one vault as the stream of counts sends it. The title gives
+// the name of a preset by its path.
+func NewCountedResponse(counted vaultcount.Result, title func(path string) string) *api.WatchCardsDueResponse {
+	return &api.WatchCardsDueResponse{Vaults: nil, Day: "", Counted: NewVaultCardsDue(counted, title)}
 }

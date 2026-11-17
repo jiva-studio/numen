@@ -1,7 +1,7 @@
 package load
 
 // Wire is the module the schema is generated into.
-const Wire = "github.com/jiva-studio/numen/libs/core/protocol"
+const Wire = "github.com/jiva-studio/numen/libs/shared/protocol"
 
 // Platform is an operating system and an architecture the application ships for.
 type Platform struct{ GOOS, GOARCH string }
