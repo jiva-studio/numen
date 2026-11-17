@@ -13,6 +13,7 @@ import type {
   PluginSettingOption,
   SettingEdit,
 } from '@/entities/settings'
+import type { JsonValue } from '@/shared/api/json'
 import type { Result } from '@/shared/lib/result'
 
 /** Every setting in effect, as a test core answers them. */
@@ -135,17 +136,50 @@ export interface SettingsCore {
 
 type Answers = Record<string, (request: never, context: never) => object | AsyncIterable<object>>
 
+const applyEdits = (text: string, edits: readonly SettingEdit[]): string => {
+  const file: Record<string, JsonValue> = JSON.parse(text || '{}')
+  for (const edit of edits) {
+    let at = file
+    for (const step of edit.at.slice(0, -1)) {
+      const next = at[step]
+      at[step] = typeof next === 'object' && next !== null ? next : {}
+      at = at[step] as Record<string, JsonValue>
+    }
+    at[edit.at[edit.at.length - 1] ?? ''] = JSON.parse(edit.value)
+  }
+  return JSON.stringify(file)
+}
+
 const answerSettings = (core: Partial<SettingsCore>): Answers => {
+  // The core versions its state: a read answers with the version it began at, and a write answers
+  // with the file after it and the version it made.
   const { getSettings, updateSettings, watchSettings } = core
+  let version = 1n
+  let written = '{}'
+  let writtenAt = 0n
   return {
-    ...(getSettings ? { getSettings: async () => toWireConfiguration(await getSettings()) } : {}),
+    ...(getSettings
+      ? {
+          getSettings: async () => {
+            const readAt = version
+            const answer = await getSettings()
+            if (readAt >= writtenAt) {
+              written = answer.written
+              writtenAt = readAt
+            }
+            return { ...toWireConfiguration(answer), version: readAt }
+          },
+        }
+      : {}),
     ...(updateSettings
       ? {
           writeSettings: async (request: { settings: readonly SettingEdit[] }) => {
-            await updateSettings(
-              request.settings.map((one) => ({ at: [...one.at], value: one.value })),
-            )
-            return {}
+            const edits = request.settings.map((one) => ({ at: [...one.at], value: one.value }))
+            await updateSettings(edits)
+            version += 1n
+            written = applyEdits(written, edits)
+            writtenAt = version
+            return { written, version }
           },
         }
       : {}),

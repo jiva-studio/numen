@@ -7,7 +7,7 @@ import (
 	"errors"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // GetNotes returns the data needed to display each of the given paths. An empty

@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
-	notesmarkdown "github.com/jiva-studio/numen/libs/note/markdown"
-	"github.com/jiva-studio/numen/libs/note/textfile"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	notesdomain "github.com/jiva-studio/numen/libs/shared/note/domain"
+	notesmarkdown "github.com/jiva-studio/numen/libs/shared/note/markdown"
+	"github.com/jiva-studio/numen/libs/shared/note/textfile"
 )
 
 // Texts is the text versions of a vault in memory, used as a plugin uses them through the

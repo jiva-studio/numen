@@ -625,11 +625,11 @@ describe('a page holding text the vault would not take', () => {
     const files = new Map<string, string>([['Tides.md', 'high tide at six']])
     notesApi = answerNotes({
       read: async (path): Promise<NoteAnswer> =>
-        asValue({ body: files.get(path) ?? '', at: `1 1 at:${files.get(path) ?? ''}` }),
+        asValue({ body: files.get(path) ?? '', at: `1:0: 1 at:${files.get(path) ?? ''}` }),
       write: async (path, body): Promise<NoteAnswer> => {
         if (refusing.code !== null) return asFailure(refusing.code)
         files.set(path, body)
-        return asValue({ body: '', at: `1 1 at:${body}` })
+        return asValue({ body: '', at: `1:0: 1 at:${body}` })
       },
     })
     return files

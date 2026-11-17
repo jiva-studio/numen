@@ -9,8 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // PathDialog is the native dialog the application gives the window to choose a file or a folder. It
@@ -31,11 +31,6 @@ type Shower interface {
 	Execute(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error
 }
 
-// PluginOpener switches the window to a vault on behalf of a plugin.
-type PluginOpener interface {
-	Execute(ctx context.Context, v domain.Vault) error
-}
-
 // Flusher has every page write what only it holds, and reports whether none holds work that needs
 // user confirmation.
 type Flusher interface {
@@ -54,11 +49,10 @@ type Importer interface {
 
 // Lifecycle is what runs the window from its start to its close.
 type Lifecycle struct {
-	Start      Starter
-	Show       Shower
-	OpenPlugin PluginOpener
-	Flush      Flusher
-	Close      Closer
+	Start Starter
+	Show  Shower
+	Flush Flusher
+	Close Closer
 }
 
 // Installation is a window put together and running: the pieces the services
@@ -147,11 +141,6 @@ func (o *Installation) Close() error { return o.lifecycle.Close.Execute(context.
 // open whose lock the switch shares, nil for a user switch.
 func (o *Installation) Show(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
 	return o.lifecycle.Show.Execute(ctx, v, open)
-}
-
-// OpenPluginVault switches the window to the vault on behalf of a plugin.
-func (o *Installation) OpenPluginVault(ctx context.Context, v domain.Vault) error {
-	return o.lifecycle.OpenPlugin.Execute(ctx, v)
 }
 
 // FlushPending has every page write what only it holds, then waits for the

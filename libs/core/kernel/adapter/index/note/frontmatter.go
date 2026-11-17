@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/filechange"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ListFrontmatter returns the stored frontmatter of the notes the query names, in path order. A note

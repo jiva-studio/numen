@@ -7,3 +7,6 @@ import "errors"
 // is not JSON, one of the wrong shape, or a number past what its setting goes
 // to. Nothing is written, and the value is the caller's to correct.
 var ErrNotASetting = errors.New("the settings cannot be read out of that value")
+
+// ErrWrittenNotAnswered is the error of a write that is persisted and whose answer cannot be made.
+var ErrWrittenNotAnswered = errors.New("the settings are written and cannot be answered")

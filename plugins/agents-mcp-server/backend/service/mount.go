@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/usecase/exposetools"
-	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/usecase/hostserver"
 )
 
 // Mount registers the plugin's services and handlers on the plugin server.
@@ -33,7 +32,7 @@ func Mount(s *server.Server) error {
 			}
 		}
 
-		srv.SetToken(hostserver.ParseSettings(values).Token)
+		srv.SetToken(exposetools.ParseSettings(values).Token)
 		srv.host.Sync(ctx)
 		return nil
 	})

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
-	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 func TestAVaultIsFoundByNameFolderOrIdentity(t *testing.T) {

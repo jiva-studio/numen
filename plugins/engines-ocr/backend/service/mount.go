@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/engines"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/feed"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/launch"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/usecase/recognition"
 )
 
@@ -77,7 +76,7 @@ func mount(s *server.Server, h recognition.Host, feeds func(domain.VaultID) feed
 	if err != nil {
 		return nil, err
 	}
-	launcher := launch.New(recognitions, PluginID)
+	launcher := recognition.NewLauncher(recognitions, PluginID)
 	commands, err := newCommands(launcher)
 	if err != nil {
 		return nil, err
@@ -101,7 +100,7 @@ func mount(s *server.Server, h recognition.Host, feeds func(domain.VaultID) feed
 	return auto, nil
 }
 
-func newFollower(launcher *launch.Launcher, feeds func(domain.VaultID) feed.Vault, report func(string, error)) *feed.Follower {
+func newFollower(launcher *recognition.Launcher, feeds func(domain.VaultID) feed.Vault, report func(string, error)) *feed.Follower {
 	return feed.New(feeds, launchRuns{launcher: launcher}, getReport(report))
 }
 
@@ -112,12 +111,12 @@ func getReport(report func(string, error)) func(string, error) {
 	return report
 }
 
-func newCommands(launcher *launch.Launcher) (*command.Registry, error) {
+func newCommands(launcher *recognition.Launcher) (*command.Registry, error) {
 	commands := command.New()
 	return commands, commands.Add(command.CreateText, newRecognizeCommand(launcher))
 }
 
-func newRecognizeCommand(launcher *launch.Launcher) command.Run {
+func newRecognizeCommand(launcher *recognition.Launcher) command.Run {
 	return func(ctx context.Context, req command.Request) (command.Result, error) {
 		if err := launcher.StartFile(ctx, req.Path); err != nil {
 			return command.Result{}, err
@@ -128,7 +127,7 @@ func newRecognizeCommand(launcher *launch.Launcher) command.Run {
 
 // launchRuns starts the recognitions the follower asks for through the launcher.
 type launchRuns struct {
-	launcher *launch.Launcher
+	launcher *recognition.Launcher
 }
 
 func (r launchRuns) Start(ctx context.Context, vault domain.VaultID, path string) (feed.State, error) {
@@ -137,9 +136,9 @@ func (r launchRuns) Start(ctx context.Context, vault domain.VaultID, path string
 		return 0, err
 	}
 	switch out.State {
-	case launch.StateDone:
+	case recognition.StateDone:
 		return feed.StateDone, nil
-	case launch.StateRunning:
+	case recognition.StateRunning:
 		return feed.StateRunning, nil
 	}
 	return feed.StateStarted, nil

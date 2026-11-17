@@ -6,7 +6,7 @@ import (
 	"errors"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {

@@ -8,17 +8,47 @@
  */
 import { Code, type ConnectError } from '@connectrpc/connect'
 
-/** The file an answer came out of, as the one string the window carries. */
-export const formatFingerprint = (at?: {
+/**
+ * The file an answer came out of: where it is, how large it was, when it changed and, where the answer
+ * read the content, its hash and the version of the vault.
+ */
+type FileStat = {
   path: string
   size: bigint
   mtime: bigint
-}): string | undefined => at && `${at.size} ${at.mtime} ${at.path}`
+  hash?: string
+  version?: bigint
+}
+
+/**
+ * The file an answer came out of, as the one string the window carries: `<size>:<version>:<hash>
+ * <mtime> <path>`. The hash is empty where the answer read no content and the version is 0 where it
+ * does not say.
+ */
+export const formatFingerprint = (at?: FileStat): string | undefined => {
+  if (!at) return undefined
+  return `${at.size}:${at.version ?? 0n}:${at.hash ?? ''} ${at.mtime} ${at.path}`
+}
 
 const parseFingerprint = (stat: string) => {
-  // Stryker disable next-line StringLiteral: BigInt evaluates empty string and '0' both to 0n.
-  const [size = '0', mtime = '0', ...rest] = stat.split(' ')
-  return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
+  const [head = '', mtime, ...rest] = stat.split(' ')
+  const [size, version, hash, ...extra] = head.split(':')
+  if (
+    size === undefined ||
+    version === undefined ||
+    hash === undefined ||
+    extra.length > 0 ||
+    mtime === undefined ||
+    rest.join(' ') === ''
+  )
+    throw new Error(`not the fingerprint of a file: ${stat}`)
+  return {
+    path: rest.join(' '),
+    size: BigInt(size),
+    mtime: BigInt(mtime),
+    hash,
+    version: BigInt(version),
+  }
 }
 
 /**

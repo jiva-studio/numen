@@ -17,6 +17,7 @@
         "src/index.ts!",
         "src/**/*.stories.ts",
         "src/**/*.test.ts",
+        "src/**/fixtures/**/*.{ts,vue}",
         ".storybook/**/*.{ts,js}"
       ],
       "project": [
@@ -29,6 +30,7 @@
         "src/index.ts!",
         "src/**/*.stories.ts",
         "src/**/*.test.ts",
+        "src/**/fixtures/**/*.{ts,vue}",
         ".storybook/**/*.{ts,js}"
       ],
       "project": [
@@ -36,7 +38,7 @@
         ".storybook/**/*.{ts,js}"
       ]
     },
-    "libs/core/protocol": {
+    "libs/shared/protocol": {
       "entry": [
         "index.ts!",
         "capabilities.ts!",
@@ -45,6 +47,21 @@
       ],
       "project": [
         "**/*.{ts,mjs}!"
+      ],
+      "ignoreBinaries": [
+        "buf"
+      ],
+      "ignoreDependencies": [
+        "@bufbuild/protoc-gen-es"
+      ]
+    },
+    "libs/shared/rerank": {
+      "entry": [
+        "index.ts!",
+        "src/*_pb.ts!"
+      ],
+      "project": [
+        "**/*.ts!"
       ],
       "ignoreBinaries": [
         "buf"
@@ -63,7 +80,8 @@
     },
     "libs/plugin/loader": {
       "entry": [
-        "src/**/*.test.ts"
+        "src/**/*.test.ts",
+        "src/testing/**/*.ts"
       ],
       "project": [
         "src/**/*.ts!"
@@ -71,7 +89,8 @@
     },
     "libs/plugin/manager": {
       "entry": [
-        "src/**/*.test.ts"
+        "src/**/*.test.ts",
+        "src/testing/**/*.ts"
       ],
       "project": [
         "src/**/*.{ts,vue}!"
@@ -94,6 +113,7 @@
       "entry": [
         "src/**/*.stories.ts",
         "src/**/*.test.ts",
+        "src/**/testing/**/*.ts",
         ".storybook/**/*.{ts,js}",
         "src/main.ts!"
       ],
@@ -189,7 +209,10 @@
       "entry": [
         "frontend/index.ts!",
         "frontend/**/*.stories.ts",
-        "frontend/**/*.test.ts"
+        "frontend/**/*.test.ts",
+        "frontend/**/testing/**/*.ts",
+        "frontend/**/fixtures/**/*.{ts,vue}",
+        "frontend/**/fixtures.ts"
       ],
       "project": [
         "frontend/**/*.{ts,vue}!"

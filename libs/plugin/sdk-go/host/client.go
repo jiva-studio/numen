@@ -9,10 +9,10 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // Client calls HostVaultService for the vault and HostWindowService for its window.
@@ -108,6 +108,7 @@ func readFileStat(f *v1.HostFileStat) domain.FileStat {
 	}
 	return domain.FileStat{
 		Path: f.GetPath(), Kind: readKind(f), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
+		Hash: f.GetHash(), Version: f.GetVersion(),
 	}
 }
 
@@ -126,7 +127,10 @@ func writeFileStat(f domain.FileStat) *v1.HostFileStat {
 	if f.IsZero() {
 		return nil
 	}
-	return &v1.HostFileStat{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
+	return &v1.HostFileStat{
+		Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote,
+		Hash: f.Hash, Version: f.Version,
+	}
 }
 
 func readLink(l *v1.HostLink) domain.ResolvedLink {

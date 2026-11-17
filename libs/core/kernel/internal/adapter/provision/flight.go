@@ -2,20 +2,10 @@ package provision
 
 import (
 	"context"
-	"runtime"
-	"strings"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
-
-func getFlightKey(req manifest.DependencyRequirement) string {
-	source, _ := req.GetSource(runtime.GOOS, runtime.GOARCH)
-	return strings.Join([]string{
-		string(req.Kind), req.ID, req.Version, source.SourceURL, source.ChecksumSHA256, source.ArchiveMember, source.MemberSHA256, req.PluginDir,
-	}, "\x00")
-}
 
 // flightGroup runs one call per key at a time. A caller that arrives while a
 // call runs joins it and receives the last reported status and every later
@@ -25,10 +15,17 @@ type flightGroup struct {
 	flights map[string]*flight
 }
 
+// subscriber delivers statuses to one caller one at a time, so that a replay completes before any later status.
+type subscriber struct {
+	mu      sync.Mutex
+	deliver func(plugin.DependencyStatus)
+}
+
 type flight struct {
 	cancel      context.CancelFunc
+	canceled    bool
 	completion  chan struct{}
-	subscribers map[int]func(plugin.DependencyStatus)
+	subscribers map[int]*subscriber
 	next        int
 	last        *plugin.DependencyStatus
 	resolved    plugin.ResolvedDependency
@@ -46,21 +43,38 @@ func (g *flightGroup) do(
 		g.flights = make(map[string]*flight)
 	}
 	current, joined := g.flights[key]
+	if joined && current.canceled {
+		g.mu.Unlock()
+		select {
+		case <-current.completion:
+			return g.do(ctx, key, onProgress, run)
+		case <-ctx.Done():
+			return plugin.ResolvedDependency{}, ctx.Err()
+		}
+	}
 	if !joined {
 		runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-		current = &flight{cancel: cancel, completion: make(chan struct{}), subscribers: make(map[int]func(plugin.DependencyStatus))}
+		current = &flight{cancel: cancel, completion: make(chan struct{}), subscribers: make(map[int]*subscriber)}
 		g.flights[key] = current
 		go g.execute(runCtx, key, current, run)
 	}
 	id := current.next
 	current.next++
+	var joiner *subscriber
+	var replay *plugin.DependencyStatus
 	if onProgress != nil {
-		current.subscribers[id] = onProgress
-		if current.last != nil {
-			onProgress(*current.last)
-		}
+		joiner = &subscriber{deliver: onProgress}
+		joiner.mu.Lock()
+		current.subscribers[id] = joiner
+		replay = current.last
 	}
 	g.mu.Unlock()
+	if joiner != nil {
+		if replay != nil {
+			joiner.deliver(*replay)
+		}
+		joiner.mu.Unlock()
+	}
 
 	select {
 	case <-current.completion:
@@ -73,6 +87,33 @@ func (g *flightGroup) do(
 	}
 }
 
+func (g *flightGroup) cancel(key string) bool {
+	g.mu.Lock()
+	current, ok := g.flights[key]
+	ok = ok && !current.canceled
+	if ok {
+		current.canceled = true
+	}
+	g.mu.Unlock()
+	if ok {
+		current.cancel()
+	}
+	return ok
+}
+
+func (g *flightGroup) cancelAll() {
+	g.mu.Lock()
+	running := make([]*flight, 0, len(g.flights))
+	for _, current := range g.flights {
+		current.canceled = true
+		running = append(running, current)
+	}
+	g.mu.Unlock()
+	for _, current := range running {
+		current.cancel()
+	}
+}
+
 func (g *flightGroup) execute(
 	ctx context.Context,
 	key string,
@@ -82,13 +123,15 @@ func (g *flightGroup) execute(
 	report := func(status plugin.DependencyStatus) {
 		g.mu.Lock()
 		current.last = &status
-		listeners := make([]func(plugin.DependencyStatus), 0, len(current.subscribers))
+		listeners := make([]*subscriber, 0, len(current.subscribers))
 		for _, listener := range current.subscribers {
 			listeners = append(listeners, listener)
 		}
 		g.mu.Unlock()
 		for _, listener := range listeners {
-			listener(status)
+			listener.mu.Lock()
+			listener.deliver(status)
+			listener.mu.Unlock()
 		}
 	}
 	current.resolved, current.err = run(ctx, report)

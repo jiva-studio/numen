@@ -91,9 +91,15 @@ function createLayoutStarter(deps: LayoutStarterDeps) {
   })
 }
 
+/** What the start of the window reads of the foundation. */
+type StartFoundation = Pick<
+  WindowBase['foundation'],
+  'api' | 'log' | 'rest' | 'frame' | 'connections' | 'settingsRequests'
+>
+
 /** What the start of the window reads of the base, the plugins and the palettes. */
 export interface WindowStartDeps {
-  readonly foundation: WindowBase['foundation']
+  readonly foundation: StartFoundation
   readonly tabs: WindowBase['tabs']
   readonly tabParts: WindowBase['tabParts']
   readonly vault: WindowBase['vault']

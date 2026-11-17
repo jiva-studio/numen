@@ -8,6 +8,7 @@ import (
 // settings that go with the settings.
 type Current struct {
 	Written string
+	Version uint64
 	Path    string
 	Plugins []plugin.Info
 	App     []plugin.Setting
@@ -15,13 +16,13 @@ type Current struct {
 
 // Get reads every setting, the plugins and the settings the app declares.
 type Get struct {
-	read    func() (content, path string, err error)
+	read    func() (content, path string, version uint64, err error)
 	plugins func() []plugin.Info
 	app     func() []plugin.Setting
 }
 
 func NewGet(
-	read func() (content, path string, err error),
+	read func() (content, path string, version uint64, err error),
 	plugins func() []plugin.Info,
 	app func() []plugin.Setting,
 ) *Get {
@@ -39,7 +40,7 @@ func NewGet(
 }
 
 func (u *Get) Execute() (Current, error) {
-	content, path, err := u.read()
+	content, path, version, err := u.read()
 	if err != nil {
 		return Current{}, err
 	}
@@ -47,6 +48,7 @@ func (u *Get) Execute() (Current, error) {
 	app := u.app()
 	return Current{
 		Written: content,
+		Version: version,
 		Path:    path,
 		Plugins: pluginInfos,
 		App:     app,

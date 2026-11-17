@@ -3,7 +3,7 @@ package vault
 import (
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // DefaultMaxNoteBytes is the maximum size at which a note is read whole. It

@@ -3,7 +3,7 @@ package source
 import (
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // FindRemoved returns the sources other than notes that getUnder reports at and under the paths,

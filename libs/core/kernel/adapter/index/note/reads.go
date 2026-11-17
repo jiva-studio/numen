@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // statementCache runs the queries of one read through the pool. Each statement is

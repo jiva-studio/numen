@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+message FloatVector {
+  repeated float values = 1;
+}
