@@ -59,7 +59,8 @@ export function usePlexTransition(
     hasWidgets = () => false,
   } = options
   /** The nodes the window holds without any widget, whose widgets are measured, for the current graph and input. */
-  let candidates: { readonly nodes: readonly PlacedNode[]; readonly ids: ReadonlySet<string> } | undefined
+  let candidates:
+    { readonly nodes: readonly PlacedNode[]; readonly ids: ReadonlySet<string> } | undefined
   /** The nodes the current graph and input are shown with, once they are arranged. */
   let shown: ReadonlySet<string> | undefined
   /** The room the nodes that are not shown had when the shown nodes were chosen: their widgets are gone, and the others are laid out as they were. */
@@ -68,6 +69,14 @@ export function usePlexTransition(
 
   const getRoom = (room: ArrangeInput['room']): ArrangeInput['room'] =>
     room && ((node) => leftOut.get(node.id) ?? room(node))
+
+  const getRooms = (room: ArrangeInput['room']) =>
+    shown &&
+    JSON.stringify(
+      graph()
+        .nodes.filter((node) => shown?.has(node.id))
+        .map((node) => room?.(node)),
+    )
 
   const getCandidates = (given: ArrangeInput) => {
     const { nodes } = arrangePlex(graph(), { ...given, room: undefined })
@@ -81,7 +90,8 @@ export function usePlexTransition(
   let handle: number | null = null
   let isFramePending = false
   let frameId = 0
-  let arrangedRoom: ArrangeInput['room']
+  /** The room of the shown nodes when they were arranged, to see whether a new room changes any of them. */
+  let arrangedRooms: string | undefined
 
   const cancelFrame = () => {
     frameId += 1
@@ -94,10 +104,13 @@ export function usePlexTransition(
     isMoving.value = false
   }
 
-  /** The frame holds the nodes of the next arrangement from here on, so none of them is mounted twice. */
+  /** A node leaves `waiting` once the frame holds it, not before, so its widgets are not mounted twice. */
   const setFrame = (next: PlexFrame) => {
     frame.value = next
-    if (waiting.value.length > 0) waiting.value = []
+    if (waiting.value.length === 0) return
+    const held = new Set(next.nodes.map((node) => node.id))
+    const rest = waiting.value.filter((node) => !held.has(node.id))
+    if (rest.length < waiting.value.length) waiting.value = rest
   }
 
   const run = (to: PlexFrame) => {
@@ -144,7 +157,6 @@ export function usePlexTransition(
     cancelFrame()
     if (!isActive()) return
     const given = input() ?? {}
-    arrangedRoom = given.room
     if (!shown && !holdCandidates(given)) return
     const to = arrangePlex(graph(), {
       ...given,
@@ -160,6 +172,7 @@ export function usePlexTransition(
     }
     const isFrozen = shown !== undefined
     shown = ids
+    arrangedRooms = getRooms(given.room)
     held.value = [...ids]
     waiting.value = getNotInFrame(to.nodes)
     if (isFrozen && target && !isFrameMoved(target, to)) return
@@ -169,12 +182,13 @@ export function usePlexTransition(
   const arrangeAgain = () => {
     candidates = undefined
     shown = undefined
+    arrangedRooms = undefined
     leftOut.clear()
     arrangeWhenReady()
   }
 
   const arrangeInFrame = () => {
-    if (isFramePending || input()?.room === arrangedRoom || !isReady(held.value)) return
+    if (isFramePending || !isReady(held.value) || getRooms(input()?.room) === arrangedRooms) return
     isFramePending = true
     const id = frameId
     clock.schedule(() => {

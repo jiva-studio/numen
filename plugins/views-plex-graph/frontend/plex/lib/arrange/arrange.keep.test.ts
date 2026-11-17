@@ -31,7 +31,9 @@ const getPositions = (frame: ReturnType<typeof arrangePlex>) =>
 describe.each(WINDOWS)('a window of $width by $height', (viewport) => {
   const graph = createGraph()
   const given = { options: { viewport }, measure: byTitle, room: roomOf }
-  const candidates = new Set(arrangePlex(graph, { ...given, room: undefined }).nodes.map((n) => n.id))
+  const candidates = new Set(
+    arrangePlex(graph, { ...given, room: undefined }).nodes.map((n) => n.id),
+  )
   const first = arrangePlex(graph, { ...given, only: candidates })
   const shown = new Set(first.nodes.map((node) => node.id))
 

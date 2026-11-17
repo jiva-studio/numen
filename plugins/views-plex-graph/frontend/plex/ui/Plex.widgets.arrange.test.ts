@@ -662,14 +662,14 @@ describe('the admission of the plex while the widgets of the shown nodes change 
     expect(first.filter((id) => !getShownIdsOf(CROWD, plex).includes(id))).toStrictEqual([])
   })
 
-  it('mounts the widgets of no more nodes than the plex ends up showing', async () => {
+  it('keeps the widgets of no more nodes in the document than the plex ends up showing', async () => {
     const arrivals = createArrivals(answerFor(CROWD_IDS))
     const plex = mountCrowd(arrivals, 380)
 
     await passFrames(10)
 
     expect(getShownCount(plex)).toBeLessThan(CROWD.nodes.length)
-    expect(getMountedPaths().size).toBeLessThanOrEqual(getShownCount(plex))
+    expect(plex.findAll('.plex__widgets--below')).toHaveLength(getShownCount(plex))
   })
 
   it('arranges at most three times on a click and mounts each shown node once', async () => {
