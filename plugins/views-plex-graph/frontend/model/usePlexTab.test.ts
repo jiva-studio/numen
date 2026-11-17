@@ -86,7 +86,7 @@ const createDeps = (editor: PlexTabDeps['editor'], overrides: DepsOverrides = {}
     runCommand: async () => '',
     ...overrides.menu,
   },
-  searchNames: overrides.searchNames,
+  ...(overrides.searchNames ? { searchNames: overrides.searchNames } : {}),
 })
 
 const tab = (

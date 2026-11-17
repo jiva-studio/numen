@@ -1,5 +1,6 @@
 /** What a view of the slot `plexGraph.node` draws and does: the list of the headings under its node, and what the pointer does to it. */
 import { computed, watch, type Ref } from 'vue'
+import { useFreeSpace } from '@numen/ui'
 import { getListLayout } from '../lib/layout'
 import { getMeasures } from '../lib/measures'
 import { getRows } from '../lib/rows'
@@ -18,6 +19,7 @@ export function useHeadingsView(
   const type = useTypeSize()
   const measures = computed(() => getMeasures(type.value))
   const anchor = useAnchorBox(trigger)
+  const { room } = useFreeSpace()
 
   const rows = computed(() => getRows(headings.value, measures.value.indentStep))
   const layout = computed(() =>
@@ -26,7 +28,7 @@ export function useHeadingsView(
           count: rows.value.length,
           limit: source.settings.headingLimit.value,
           node: anchor.box.value,
-          room: anchor.room.value,
+          room: room.value,
           measures: measures.value,
         })
       : null,

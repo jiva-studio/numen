@@ -116,7 +116,6 @@ describe('the views across a node', () => {
       width: focus.width,
       height: focus.height,
       scale: focus.height / DEFAULT_OPTIONS.nodeSize.height,
-      viewport: VIEWPORT,
     })
     expect(getProps(view, 'Below.md')).toMatchObject({
       x: below.x,

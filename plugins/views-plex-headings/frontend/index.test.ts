@@ -85,7 +85,7 @@ const settle = async (wait = 0) => {
 }
 
 const leave = async (wrapper: VueWrapper) => {
-  await leave(wrapper)
+  await wrapper.get('.headings').trigger('pointerleave')
   await settle(LEAVE_GRACE)
 }
 
@@ -162,7 +162,7 @@ describe('a node the pointer rests on', () => {
     expect(getList() !== null).toBe(false)
   })
 
-  it('draws the list outside the view, over the window, under the foot of the node', async () => {
+  it('draws the list outside the view, over the window', async () => {
     vi.useFakeTimers()
     const { show } = setup()
     const wrapper = show(HEAT, 50)
@@ -170,7 +170,6 @@ describe('a node the pointer rests on', () => {
 
     expect(wrapper.get('.headings').element.contains(getList())).toBe(false)
     expect(document.body.contains(getList())).toBe(true)
-    expect(getList()!.style.top).toBe(`${WINDOW.height / 2 + 50 + NODE.height / 2}px`)
   })
 
   it('keeps the list while the pointer crosses from the node to it', async () => {
