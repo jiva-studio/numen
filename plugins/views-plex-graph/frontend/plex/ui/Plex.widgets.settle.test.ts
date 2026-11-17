@@ -79,7 +79,7 @@ const createWidget = (name: string, arrivals: Arrivals) =>
       watch(
         draws,
         (answered) => {
-          if (answered !== undefined) void nextTick(finish)
+          if (answered !== undefined) nextTick(finish).catch(() => undefined)
         },
         { immediate: true },
       )

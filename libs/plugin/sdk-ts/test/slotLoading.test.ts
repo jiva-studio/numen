@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /** A view of a slot says when its data has arrived, and the owner of the slot waits for every view it drew. */
 import { createApp, defineComponent, h, nextTick, ref, type Component } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
