@@ -53,7 +53,7 @@ export function findExtractableViolations(manifests) {
     manifests,
     [...EXTRACTABLE_DIRS, PLUGINS_DIR],
     EXTRACTABLE_DIRS,
-    "an extractable package requires only third-party packages, the plugin SDK, @numen/ui, @numen/workbench and libs/shared",
+    "an extractable package requires only third-party packages, the plugin SDK, libs/ui and libs/shared",
   );
 }
 
