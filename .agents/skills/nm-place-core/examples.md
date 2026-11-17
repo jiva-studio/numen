@@ -25,7 +25,7 @@ Where the next change goes: a new source of floors is a new case in `FloorPolicy
 
 The need: a connection between two notes must have a valid shape and must not make a note its own ancestor.
 
-- The rule is the domain's because it follows from the connection and the parents of a note: `Connection.Validate` at `libs/note/domain/connection.go:104-134` and `Connection.CheckAcyclic` at `libs/note/domain/connection.go:159-190`. `CheckAcyclic` takes a function that answers the parents of a note, so the domain reads nothing.
+- The rule is the domain's because it follows from the connection and the parents of a note: `Connection.Validate` at `libs/shared/note/domain/connection.go:104-134` and `Connection.CheckAcyclic` at `libs/shared/note/domain/connection.go:159-190`. `CheckAcyclic` takes a function that answers the parents of a note, so the domain reads nothing.
 - The use case supplies the data from a port and calls the rule: `connectionEditor.check` at `libs/core/kernel/usecase/note/connection.go:91-96` calls `Validate`, then `CheckAcyclic` with a function over `getParents`, which reads links through `noteport.LinkQueries` (`libs/core/kernel/usecase/note/connection.go:68-89`).
 - The use case then writes the notes and updates the index; none of that is in the domain, and none of the rule is in the use case.
 
@@ -51,7 +51,7 @@ The need: the window creates an empty folder in a vault.
 
 ## A new capability end to end: "export a note as PDF text"
 
-1. The rule about what is exported (which parts of a note, in which order) is a function over `domain` values in `libs/note`, or in `markdown` when it reads the text of the file.
+1. The rule about what is exported (which parts of a note, in which order) is a function over `domain` values in `libs/shared/note`, or in `markdown` when it reads the text of the file.
 2. The scenario is `usecase/note/export_note.go`: `ExportNote` with `Execute(ctx, v, path) (Export, error)`. It reads the note through the existing note reader port, calls the rule and writes the result through a writer port declared for this use case.
 3. The writer port is declared next to the use case (one consumer) with one method, `WriteExport`. The adapter that writes the file implements it in the filesystem adapter.
 4. `container` creates `ExportNote` with the two ports and adds it to the group of note use cases.

@@ -23,7 +23,7 @@ test('getTitleType reads the type of a title with or without a scope', () => {
 
 test('isTestMaterial accepts tests, test support and mutation config', () => {
   for (const file of [
-    'libs/note/domain/match_test.go',
+    'libs/shared/note/domain/match_test.go',
     'apps/desktop/editor/src/entities/note/model/buffer/notes.test.ts',
     'tests/e2e/desktop/tests/open.spec.ts',
     'libs/ui/components/src/button/Button.stories.ts',

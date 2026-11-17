@@ -51,9 +51,9 @@ replace github.com/jiva-studio/numen/libs/shared/rerank => ../../libs/shared/rer
 
 require (
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0
-	github.com/jiva-studio/numen/libs/note v0.0.0
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0
+	github.com/jiva-studio/numen/libs/shared/note v0.0.0
 	github.com/zalando/go-keyring v0.2.8
 )
 
@@ -61,6 +61,6 @@ replace github.com/jiva-studio/numen/libs/plugin/catalog => ../../libs/plugin/ca
 
 replace github.com/jiva-studio/numen/libs/core/kernel => ../../libs/core/kernel
 
-replace github.com/jiva-studio/numen/libs/note => ../../libs/note
+replace github.com/jiva-studio/numen/libs/shared/note => ../../libs/shared/note
 
 replace github.com/jiva-studio/numen/libs/shared/atomicfile => ../../libs/shared/atomicfile

@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ErrNoLinks is a query with a link function in an installation that reads no links.

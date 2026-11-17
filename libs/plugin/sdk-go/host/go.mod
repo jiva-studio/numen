@@ -5,9 +5,9 @@ go 1.26.11
 require (
 	connectrpc.com/connect v1.21.1
 	github.com/jiva-studio/numen/libs/core/protocol v0.0.0
-	github.com/jiva-studio/numen/libs/note v0.0.0
 	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0
+	github.com/jiva-studio/numen/libs/shared/note v0.0.0
 	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0 // indirect
 )
 
@@ -19,8 +19,8 @@ require (
 
 replace (
 	github.com/jiva-studio/numen/libs/core/protocol => ../../../core/protocol
-	github.com/jiva-studio/numen/libs/note => ../../../note
 	github.com/jiva-studio/numen/libs/plugin/sdk-go => ../
+	github.com/jiva-studio/numen/libs/shared/note => ../../../shared/note
 	github.com/jiva-studio/numen/libs/shared/rerank => ../../../shared/rerank
 )
 

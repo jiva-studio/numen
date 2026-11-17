@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
-	"github.com/jiva-studio/numen/libs/note/ulid"
+	"github.com/jiva-studio/numen/libs/shared/note/ulid"
 )
 
 const (

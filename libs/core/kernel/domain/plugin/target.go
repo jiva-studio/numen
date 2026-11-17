@@ -5,7 +5,7 @@ import (
 	pathpkg "path"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // TargetVersion is one text version of a target as target.versions holds it. A valid version still

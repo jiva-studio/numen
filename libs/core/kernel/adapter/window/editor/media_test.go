@@ -20,7 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func newMediaClient(t *testing.T) numenv1connect.MediaServiceClient {

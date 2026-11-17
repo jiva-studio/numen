@@ -15,7 +15,7 @@ import (
 const NumenRoot = "github.com/jiva-studio/numen/"
 
 // NotesModule is the module of the note model, which plugins do not name.
-const NotesModule = NumenRoot + "libs/note"
+const NotesModule = NumenRoot + "libs/shared/note"
 
 // SharedLibraries holds the Go libraries a plugin may import beside the SDK: code two or more
 // plugins need that does not depend on numen. Each folder below it is a module of its own.

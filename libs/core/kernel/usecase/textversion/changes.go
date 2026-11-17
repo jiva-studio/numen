@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 )

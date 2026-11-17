@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // TestFlushClearsTheBackingArray: a flushed group must not keep referencing the

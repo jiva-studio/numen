@@ -141,7 +141,7 @@ linters:
           list-mode: lax
           files:
             - "**/libs/core/kernel/**"
-            - "**/libs/note/**"
+            - "**/libs/shared/note/**"
             - "**/libs/core/protocol/**"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/plugin/sdk-go"

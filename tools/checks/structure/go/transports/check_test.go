@@ -20,7 +20,7 @@ import (
 // database driver or schema generator.
 func TestInnerLayersDoNotImportTransports(t *testing.T) {
 	var wrong []string
-	for _, root := range []string{"..", "../../../note/domain"} {
+	for _, root := range []string{"..", "../../../shared/note/domain"} {
 		found, err := findTransportImports(root, "..")
 		if err != nil {
 			t.Fatal(err)
