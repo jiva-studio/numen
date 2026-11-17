@@ -109,51 +109,14 @@ describe('a node that is in both pictures travels between its relations', () => 
 })
 
 describe('a node that is only in one picture', () => {
-  it('unfolds a new node out of where the chosen one started', () => {
-    const source = node(from, 'a')
-    const early = node(interpolatePlex(from, to, 0.1), 'a1')
+  it('draws a new node at the place it ends at from the first frame', () => {
     const end = node(to, 'a1')
 
-    // A tenth in, still near where the new focus set off.
-    expect(Math.hypot(early.x - source.x, early.y - source.y)).toBeLessThan(
-      Math.hypot(early.x - end.x, early.y - end.y),
-    )
-  })
-
-  it('puts a new node halfway between the chosen node and its own relation', () => {
-    const source = node(from, 'a')
-    const end = node(to, 'a1')
-    const middle = node(interpolatePlex(from, to, 0.5), 'a1')
-
-    expect(source.x).not.toBe(0)
-    expect(source.y).not.toBe(0)
-    expect(middle.x).toBeCloseTo((source.x + end.x) / 2)
-    expect(middle.y).toBeCloseTo((source.y + end.y) / 2)
-  })
-
-  it('finds the chosen node wherever it remains in the new picture', () => {
-    const reordered: PlexFrame = { ...to, nodes: [...to.nodes].reverse() }
-    const source = node(from, 'a')
-    const end = node(to, 'a1')
-    const middle = node(interpolatePlex(from, reordered, 0.5), 'a1')
-
-    expect(middle.x).toBeCloseTo((source.x + end.x) / 2)
-    expect(middle.y).toBeCloseTo((source.y + end.y) / 2)
-  })
-
-  it('unfolds a new node out of the middle when the chosen node was not in the old picture', () => {
-    const stranger = arrangePlex({
-      nodes: [
-        { id: 'elsewhere', title: 'Elsewhere', relation: 'focus' },
-        { id: 'e1', title: 'E one', relation: 'child' },
-      ],
-      edges: [],
-    })
-    const arrival = node(stranger, 'e1')
-    const middle = node(interpolatePlex(from, stranger, 0.5), 'e1')
-
-    expect(middle.x).toBeCloseTo(arrival.x / 2)
-    expect(middle.y).toBeCloseTo(arrival.y / 2)
+    for (const progress of [0.01, 0.1, 0.5, 0.9]) {
+      const drawn = node(interpolatePlex(from, to, progress), 'a1')
+      expect(drawn.x).toBe(end.x)
+      expect(drawn.y).toBe(end.y)
+    }
   })
 
   it('shows every node of either picture once', () => {
@@ -161,10 +124,9 @@ describe('a node that is only in one picture', () => {
     expect([...ids].sort()).toStrictEqual(['a', 'a1', 'a2', 'a3', 'b', 'c', 'focus', 'up'])
   })
 
-  it('holds a new node invisible until the picture has begun to settle', () => {
-    expect(node(interpolatePlex(from, to, 0.1), 'a1').opacity).toBe(0)
-    expect(node(interpolatePlex(from, to, 0.9), 'a1').opacity).toBeGreaterThan(0.5)
-    expect(node(to, 'a1').opacity).toBe(1)
+  it('draws a new node fully opaque from the first frame', () => {
+    expect(node(interpolatePlex(from, to, 0.01), 'a1').opacity).toBe(1)
+    expect(node(interpolatePlex(from, to, 0.5), 'a1').opacity).toBe(1)
   })
 
   it('keeps a departing node where it was and fades it out early', () => {
@@ -412,12 +374,14 @@ describe('a frame is decided by its inputs and nothing else', () => {
 })
 
 describe('the shape of the movement is a setting', () => {
-  it('lets a caller say when an arrival starts to show', () => {
+  it('lets a caller say when the line of an arrival starts to show', () => {
     const early = interpolatePlex(from, to, { progress: 0.2, motion: { arriveAfter: 0 } })
     const late = interpolatePlex(from, to, { progress: 0.2, motion: { arriveAfter: 0.9 } })
 
-    expect(node(early, 'a1').opacity).toBeGreaterThan(0)
-    expect(node(late, 'a1').opacity).toBe(0)
+    const lineTo = (frame: PlexFrame) => frame.edges.find((edge) => edge.to === 'a1')
+
+    expect(lineTo(early)?.opacity).toBeGreaterThan(0)
+    expect(lineTo(late)?.opacity).toBe(0)
   })
 
   it('lets a caller say when a departure has finished going', () => {

@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// PluginToolService is what a plugin that declares the tools capability serves.
+// The host serves it too: it lists the tools of every running plugin that
+// declares it and hands a call to the plugin that listed the tool. The host
+// holds a tool to the permission its effect needs, so a tool of a plugin that
+// lacks it is listed nowhere.
+service PluginToolService {
+  // ListTools lists the tools the plugin offers. A tool is named by the plugin
+  // alone; a name another plugin or the host already serves is not offered.
+  rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
+
+  // CallTool runs one tool the plugin listed.
+  rpc CallTool(CallToolRequest) returns (CallToolResponse);
+}
+
+message ListToolsRequest {}
+
+message ListToolsResponse {
+  // The host returns the tools of the plugins it lists grouped by plugin, in
+  // the order of plugin ids.
+  repeated PluginTool tools = 1;
+}
+
+// PluginTool is one tool as an agent receives it.
+message PluginTool {
+  // The name an agent calls the tool by.
+  string name = 1;
+
+  // What a person reads the tool as.
+  string title = 2;
+
+  // What the tool is for and when an agent reaches for it.
+  string description = 3;
+
+  // The JSON schema of the arguments, as a JSON object.
+  bytes input_schema = 4;
+
+  // The JSON schema of the structured result, as a JSON object. Empty where the
+  // tool answers with text alone.
+  bytes output_schema = 5;
+
+  // What the tool does to the vault. It decides the permission the plugin must
+  // hold and whether the tool is offered where nothing may be changed.
+  ToolEffect effect = 6;
+
+  // The instructions about this tool, each one sentence of plain English. A
+  // sentence about several tools is attached to each of them with identical
+  // text. Whoever offers the tools to an agent sends it the distinct sentences
+  // of the tools it offers, in listing order.
+  repeated string instructions = 7;
+
+  // The permissions the caller must have besides the one of the effect, such
+  // as vault:manage. The host lists and runs the tool only for a caller that
+  // has all of them.
+  repeated string requires = 8;
+}
+
+// ToolEffect is what a tool does to the vault. The zero value means no effect
+// was named, and a tool of it is not offered.
+enum ToolEffect {
+  TOOL_EFFECT_UNSPECIFIED = 0;
+
+  // The tool reads and changes nothing. The plugin needs vault:read.
+  TOOL_EFFECT_READ_ONLY = 1;
+
+  // The tool changes the vault. The plugin needs vault:write.
+  TOOL_EFFECT_READ_WRITE = 2;
+}
+
+message CallToolRequest {
+  // The name the plugin listed the tool under.
+  string name = 1;
+
+  // The arguments, as a JSON object that meets the tool's input schema.
+  bytes arguments = 2;
+
+  // The tool context of the task the call was made under: what the asking
+  // view shows, under keys that start with the id of the plugin that wrote them
+  // and a slash. It is data about the call and no part of the arguments, and it
+  // is empty for a task given none.
+  map<string, string> context = 3;
+
+  // The vault the call works, by identity: the one the task was started on.
+  // Empty on a call to the host is the vault the Numen-Vault header names, else
+  // the one the host shows.
+  string vault_id = 4;
+
+  // The connection whose agent asks for the call, by id. Empty where the
+  // caller asks for itself.
+  string connection_id = 5;
+}
+
+message CallToolResponse {
+  // Set when the call could not be served: the tool is not one the plugin
+  // lists, or its arguments are not a JSON object. The result is then unset.
+  ToolErrorCode error = 1;
+
+  // What the tool answered, for an agent to read.
+  ToolResult result = 2;
+}
+
+// ToolResult is what a tool answered.
+message ToolResult {
+  // The words an agent reads.
+  string text = 1;
+
+  // The structured result as JSON, meeting the output schema. Empty where the
+  // tool listed none.
+  bytes structured = 2;
+
+  // Set when the tool ran and returned an error; text then contains the
+  // error message.
+  bool is_error = 3;
+}
+
+// ToolErrorCode is why a call was served and not run.
+enum ToolErrorCode {
+  TOOL_ERROR_CODE_UNSPECIFIED = 0;
+
+  // The plugin lists no tool of that name.
+  TOOL_ERROR_CODE_UNKNOWN_TOOL = 1;
+
+  // The arguments are not a JSON object.
+  TOOL_ERROR_CODE_BAD_ARGUMENTS = 2;
+}

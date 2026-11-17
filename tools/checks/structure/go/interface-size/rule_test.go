@@ -104,7 +104,7 @@ func getBloatedInterfaces(pkgs []*packages.Package, limit int) ([]load.Finding, 
 }
 
 func isInterfaceSizeScope(rel string) bool {
-	return slices.ContainsFunc([]string{"libs/core/kernel", "libs/note", "libs/plugin/sdk-go", "apps", "plugins"}, func(root string) bool {
+	return slices.ContainsFunc([]string{"libs/core/kernel", "libs/shared/note", "libs/plugin/sdk-go", "apps", "plugins"}, func(root string) bool {
 		return load.IsWithin(filepath.ToSlash(rel), root)
 	})
 }

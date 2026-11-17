@@ -38,6 +38,8 @@ func (f *fakeCatalog) CanProvision(req manifest.DependencyRequirement) bool {
 	return ok
 }
 
+func (f *fakeCatalog) Cancel(manifest.DependencyRequirement) bool { return false }
+
 func (f *fakeCatalog) SetObserver(func(manifest.DependencyRequirement, plugindomain.DependencyStatus)) {
 }
 

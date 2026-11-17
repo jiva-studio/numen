@@ -4,16 +4,18 @@ import (
 	"image"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/scan"
 )
 
 func TestNewPageSplitsBlocksByBox(t *testing.T) {
 	bounds := image.Rect(0, 0, 100, 200)
-	blocks := []Block{
-		{Text: "Chapter One", IsHeading: true, Boxes: []Box{{Rect: image.Rect(10, 0, 90, 20), Range: ByteRange{End: 11}}}},
+	blocks := []scan.Block{
+		{Text: "Chapter One", IsHeading: true, Boxes: []scan.Box{{Rect: image.Rect(10, 0, 90, 20), Range: scan.ByteRange{End: 11}}}},
 		{Text: ""},
-		{Text: "first line second line", Boxes: []Box{
-			{Rect: image.Rect(0, 100, 100, 150), Range: ByteRange{Start: 11, End: 22}},
-			{Rect: image.Rect(0, 50, 100, 100), Range: ByteRange{Start: 0, End: 10}},
+		{Text: "first line second line", Boxes: []scan.Box{
+			{Rect: image.Rect(0, 100, 100, 150), Range: scan.ByteRange{Start: 11, End: 22}},
+			{Rect: image.Rect(0, 50, 100, 100), Range: scan.ByteRange{Start: 0, End: 10}},
 		}},
 		{Text: "a caption nothing placed"},
 	}

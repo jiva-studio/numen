@@ -4,7 +4,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/wordmatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/searchfunctionbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
@@ -40,7 +39,6 @@ func newFindSearchResults(
 	})
 	stages := searchqueryusecase.NewApplyStages(searchqueryusecase.ApplyStagesDeps{
 		Calls:   rerank.calls,
-		Codec:   rerankproto.Codec{},
 		Rows:    rerank.rows,
 		Resolve: rerank.resolve,
 		Results: db.OperationResults(operationResultRows),

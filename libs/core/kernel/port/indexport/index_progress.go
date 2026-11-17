@@ -3,7 +3,7 @@ package indexport
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // IndexProgress is how far indexing a vault for meaning has got.

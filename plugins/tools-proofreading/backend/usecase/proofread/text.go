@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/settings"
 )
 
 // textResult is what proofreading a request came to.
@@ -17,7 +18,7 @@ type textResult struct {
 
 func getScanDistance(maxDistance float64) float64 {
 	if maxDistance <= 0 {
-		return numbered.MaxEditDistance
+		return settings.DefaultMaxEditDistance
 	}
 	return maxDistance
 }

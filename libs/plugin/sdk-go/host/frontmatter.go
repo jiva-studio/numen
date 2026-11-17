@@ -8,7 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 // ErrInvalidFrontmatterQuery is a read of frontmatter over its limits: more than 1000 paths, more than

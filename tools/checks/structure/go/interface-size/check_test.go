@@ -72,7 +72,7 @@ func TestInterfaceSizeRule_CountsNoToolAndNoOtherLibrary(t *testing.T) {
 		isCounted bool
 	}{
 		{"libs/core/kernel", true},
-		{"libs/note", true},
+		{"libs/shared/note", true},
 		{"libs/plugin/sdk-go", true},
 		{"libs/plugin/sdk-go/host", true},
 		{"apps/desktop", true},
@@ -80,7 +80,7 @@ func TestInterfaceSizeRule_CountsNoToolAndNoOtherLibrary(t *testing.T) {
 		{"apps/mobile", true},
 		{"tools/lint-comments", false},
 		{"libs/plugin/catalog", false},
-		{"libs/core/protocol", false},
+		{"libs/shared/protocol", false},
 		{"plugins/agents-acp", true},
 		{"plugins/views-flashcards-studio", true},
 		{"libs/plugin/sdk-golang", false},

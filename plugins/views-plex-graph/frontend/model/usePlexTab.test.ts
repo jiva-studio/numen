@@ -441,6 +441,21 @@ describe('the picture', () => {
   })
 })
 
+describe('a node of an earlier picture that is still on the screen', () => {
+  it('answers the note it was drawn for after the plex has moved on twice', async () => {
+    const plex = tab('Root.md', ['Heat.md'])
+    const heat = plex.node('Heat.md')
+
+    await plex.state.canvas.view.go('Other.md')
+    await settle()
+    await plex.state.canvas.view.go('Another.md')
+    await settle()
+
+    expect(heat).not.toBe('')
+    expect(plex.state.canvas.widgets.getPath(heat)).toBe('Heat.md')
+  })
+})
+
 describe('notes dragged in and dropped over the picture', () => {
   it('writes the link into the note the plex relies on, naming the dragged one second', async () => {
     const one = tab('Root.md', ['Child.md'])
@@ -1036,12 +1051,6 @@ describe('a plex that travelled', () => {
     const nextNodeIds = one.picture()?.nodes.map((node) => node.id) ?? []
     expect(nextNodeIds).toHaveLength(2)
     expect(nextNodeIds.filter((id) => initialNodeIds.includes(id))).toStrictEqual([])
-
-    // A node is invalid after two navigations, so a drag on it issues no vault
-    // query.
-    await one.goToNote('Warm.md', ['Fire.md', 'child'])
-    for (const node of initialNodeIds) one.state.nodes.activate(node)
-    expect(one.requested.at(-1)).toBe('Warm.md')
   })
 
   it('calls a note that arrives back the navigation right after leaving what it always called it', async () => {
@@ -1057,7 +1066,7 @@ describe('a plex that travelled', () => {
     expect(one.node('Root')).toBe(root)
   })
 
-  it('calls a note that stayed away two navigations something other than what it called it', async () => {
+  it('calls a note that stayed away two navigations what it called it, so a node still on the screen keeps its note', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     const before = one.node('Heat')
 
@@ -1065,7 +1074,7 @@ describe('a plex that travelled', () => {
     await one.goToNote('Cold.md', ['Ice.md', 'child'])
     await one.goToNote('Root.md', ['Heat.md', 'child'])
 
-    expect(one.node('Heat')).not.toBe(before)
+    expect(one.node('Heat')).toBe(before)
   })
 
   it('does not cross a note that moved with an answer already on its way', async () => {
