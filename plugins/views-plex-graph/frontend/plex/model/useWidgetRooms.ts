@@ -2,7 +2,7 @@
 import { computed, onScopeDispose, shallowRef, type ComputedRef, type Ref } from 'vue'
 import { measureRect } from '@numen/ui'
 import { NO_ROOM, type NodeRoom, type PlexOptions } from '../lib/arrange'
-import type { PlexNode } from '../../types'
+import type { PlexNode, PlexWidget } from '../../types'
 
 export type WidgetSide = 'above' | 'below'
 
@@ -19,8 +19,8 @@ const RESERVED_WIDGETS_HEIGHT = 88
 
 /** The views a plugin places over and under the nodes. */
 interface PlexWidgetLists {
-  readonly widgetsAbove?: readonly unknown[] | undefined
-  readonly widgetsBelow?: readonly unknown[] | undefined
+  readonly widgetsAbove?: readonly PlexWidget[] | undefined
+  readonly widgetsBelow?: readonly PlexWidget[] | undefined
 }
 
 const getKey = (id: string, side: WidgetSide): string => `${side}:${id}`
