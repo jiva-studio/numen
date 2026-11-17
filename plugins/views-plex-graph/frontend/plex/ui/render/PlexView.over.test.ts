@@ -36,6 +36,7 @@ afterEach(() => {
 const createView = (stopsClicks = false): Component =>
   markRaw(
     defineComponent({
+      name: 'OverView',
       props: {
         path: { type: String, required: true },
         x: { type: Number, required: true },
@@ -43,7 +44,6 @@ const createView = (stopsClicks = false): Component =>
         width: { type: Number, required: true },
         height: { type: Number, required: true },
         scale: { type: Number, required: true },
-        viewport: { type: Object, required: true },
       },
       render() {
         return h('div', {
@@ -73,7 +73,10 @@ const mountView = async (overrides: Record<string, unknown> = {}) => {
 const getViews = (view: VueWrapper) => view.findAll('[data-over-view]')
 
 const getProps = (view: VueWrapper, path: string) =>
-  view.findComponent(`[data-over-view="${path}"]`).vm.$props as Record<string, unknown>
+  view
+    .findAllComponents({ name: 'OverView' })
+    .find((one) => one.props('path') === path)!
+    .props() as Record<string, unknown>
 
 describe('the views across a node', () => {
   it('are drawn once for each note, each given the path of its note', async () => {

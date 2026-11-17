@@ -3,7 +3,7 @@
  * on the node, listed under it, scrolled with the wheel and chosen to open the note at their line.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { mount, type VueWrapper } from '@vue/test-utils'
+import { DOMWrapper, mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick, type Component } from 'vue'
 import type { JsonValue, NoteHeading, VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
 import {
@@ -12,11 +12,12 @@ import {
   createMockPluginContext,
 } from '@numen/plugin-sdk/testing'
 import { activate } from './index'
-import { HOVER_WAIT } from './model/useHeadings'
+import { HOVER_WAIT, LEAVE_GRACE } from './model/useHeadings'
 
 const HEAT = 'physics/Heat.md'
 const WORK = 'physics/Work.md'
-const VIEWPORT = { width: 1200, height: 800 }
+const WINDOW = { width: 1200, height: 800 }
+const NODE = { width: 144, height: 36 }
 
 const sections = (count: number): NoteHeading[] =>
   Array.from({ length: count }, (_, index) => ({
@@ -31,6 +32,7 @@ const setup = (
   headings: Readonly<Record<string, readonly NoteHeading[]>> = { [HEAT]: sections(3) },
   initialSettings: Record<string, JsonValue> = {},
 ) => {
+  Object.assign(window, { innerWidth: WINDOW.width, innerHeight: WINDOW.height })
   const requested: (readonly string[])[] = []
   const answers = new Map<string, Promise<NoteHeading[]> | NoteHeading[]>()
   const notes = {
@@ -62,9 +64,14 @@ const setup = (
     .component as Component
   const show = (path: string, y = 0) => {
     const wrapper = mount(view, {
-      props: { path, x: 0, y, width: 144, height: 36, scale: 1, viewport: VIEWPORT },
+      props: { path, x: 0, y, ...NODE, scale: 1 },
       attachTo: document.body,
     })
+    const left = WINDOW.width / 2 - NODE.width / 2
+    const top = WINDOW.height / 2 + y - NODE.height / 2
+    vi.spyOn(wrapper.get('.headings').element, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(left, top, NODE.width, NODE.height),
+    )
     wrappers.push(wrapper)
     return wrapper
   }
@@ -77,12 +84,20 @@ const settle = async (wait = 0) => {
   await nextTick()
 }
 
+const leave = async (wrapper: VueWrapper) => {
+  await leave(wrapper)
+  await settle(LEAVE_GRACE)
+}
+
 const rest = async (wrapper: VueWrapper, wait = HOVER_WAIT) => {
   await wrapper.get('.headings').trigger('pointerenter')
   await settle(wait)
 }
 
-const getTexts = (wrapper: VueWrapper) => wrapper.findAll('.headings__row').map((one) => one.text())
+const getRows = () =>
+  Array.from(document.querySelectorAll('.headings__row')).map((one) => new DOMWrapper(one))
+const getList = () => document.querySelector<HTMLElement>('.headings__list')
+const getTexts = (_wrapper?: VueWrapper) => getRows().map((one) => one.text())
 
 afterEach(() => {
   vi.useRealTimers()
@@ -144,18 +159,45 @@ describe('a node the pointer rests on', () => {
 
     await rest(wrapper)
 
-    expect(wrapper.find('.headings__list').exists()).toBe(false)
+    expect(getList() !== null).toBe(false)
   })
 
-  it('hangs the list from the view, so a pointer on the list is still on the node', async () => {
+  it('draws the list outside the view, over the window, under the foot of the node', async () => {
+    vi.useFakeTimers()
+    const { show } = setup()
+    const wrapper = show(HEAT, 50)
+    await rest(wrapper)
+
+    expect(wrapper.get('.headings').element.contains(getList())).toBe(false)
+    expect(document.body.contains(getList())).toBe(true)
+    expect(getList()!.style.top).toBe(`${WINDOW.height / 2 + 50 + NODE.height / 2}px`)
+  })
+
+  it('keeps the list while the pointer crosses from the node to it', async () => {
     vi.useFakeTimers()
     const { show } = setup()
     const wrapper = show(HEAT)
     await rest(wrapper)
 
-    expect(wrapper.get('.headings').element.contains(wrapper.get('.headings__list').element)).toBe(
-      true,
-    )
+    await wrapper.get('.headings').trigger('pointerleave')
+    await settle(LEAVE_GRACE - 1)
+    getList()!.dispatchEvent(new Event('pointerenter'))
+    await settle(LEAVE_GRACE)
+
+    expect(getTexts()).toHaveLength(3)
+  })
+
+  it('puts the list away once the pointer has left the list too', async () => {
+    vi.useFakeTimers()
+    const { show } = setup()
+    const wrapper = show(HEAT)
+    await rest(wrapper)
+    getList()!.dispatchEvent(new Event('pointerenter'))
+
+    getList()!.dispatchEvent(new Event('pointerleave'))
+    await settle(LEAVE_GRACE)
+
+    expect(getList()).toBeNull()
   })
 
   it('sets a heading in by its level', async () => {
@@ -169,7 +211,7 @@ describe('a node the pointer rests on', () => {
     const wrapper = show(HEAT)
 
     await rest(wrapper)
-    const [outer, inner] = wrapper.findAll('.headings__row').map((one) => one.attributes('style'))
+    const [outer, inner] = getRows().map((one) => one.attributes('style'))
 
     expect(outer).toContain('--row-indent: 0px')
     expect(inner).toContain('--row-indent: 12px')
@@ -183,7 +225,7 @@ describe('a node the pointer rests on', () => {
     await rest(wrapper)
 
     expect(getTexts(wrapper)).toHaveLength(4)
-    expect(wrapper.findAll('.headings__more')).toHaveLength(1)
+    expect(document.querySelectorAll('.headings__more')).toHaveLength(1)
   })
 
   it('stops at the number of headings the room under the node holds', async () => {
@@ -203,7 +245,7 @@ describe('a node the pointer rests on', () => {
 
     await rest(wrapper)
 
-    expect(wrapper.find('.headings__list').exists()).toBe(false)
+    expect(getList() !== null).toBe(false)
   })
 })
 
@@ -214,7 +256,7 @@ describe('a pointer that leaves', () => {
     const wrapper = show(HEAT)
     await rest(wrapper)
 
-    await wrapper.get('.headings').trigger('pointerleave')
+    await leave(wrapper)
 
     expect(getTexts(wrapper)).toStrictEqual([])
   })
@@ -227,7 +269,7 @@ describe('a pointer that leaves', () => {
     const wrapper = show(HEAT)
     await rest(wrapper)
 
-    await wrapper.get('.headings').trigger('pointerleave')
+    await leave(wrapper)
     answer(sections(3))
     await settle()
 
@@ -241,7 +283,7 @@ describe('a pointer that leaves', () => {
     answers.set(HEAT, new Promise<NoteHeading[]>((resolve) => (late = resolve)))
     const wrapper = show(HEAT)
     await rest(wrapper)
-    await wrapper.get('.headings').trigger('pointerleave')
+    await leave(wrapper)
     answers.set(HEAT, [{ text: 'Fresh', level: 1, line: 2 }])
 
     await rest(wrapper)
@@ -257,7 +299,7 @@ describe('a pointer that leaves', () => {
     const wrapper = show(HEAT)
 
     await rest(wrapper)
-    await wrapper.get('.headings').trigger('pointerleave')
+    await leave(wrapper)
     await rest(wrapper)
 
     expect(requested).toStrictEqual([[HEAT], [HEAT]])
@@ -287,7 +329,7 @@ describe('the setting that turns the headings off', () => {
     expect(getTexts(wrapper)).toStrictEqual([])
 
     context.setSetting('nestHeadings', true)
-    await wrapper.get('.headings').trigger('pointerleave')
+    await leave(wrapper)
     await rest(wrapper)
     expect(getTexts(wrapper)).toHaveLength(3)
   })
@@ -312,7 +354,7 @@ describe('a heading chosen', () => {
     const wrapper = show(HEAT)
     await rest(wrapper)
 
-    await wrapper.findAll('.headings__row')[1]!.trigger('click')
+    await getRows()[1]!.trigger('click')
 
     expect(opened).toStrictEqual([[HEAT, 20]])
   })
@@ -325,7 +367,7 @@ describe('a heading chosen', () => {
     const reached = vi.fn()
     document.body.addEventListener('click', reached)
 
-    await wrapper.findAll('.headings__row')[0]!.trigger('click')
+    await getRows()[0]!.trigger('click')
 
     expect(reached).not.toHaveBeenCalled()
     document.body.removeEventListener('click', reached)
@@ -339,7 +381,7 @@ describe('a heading chosen', () => {
     const reached = vi.fn()
     document.body.addEventListener('dblclick', reached)
 
-    await wrapper.findAll('.headings__row')[0]!.trigger('dblclick')
+    await getRows()[0]!.trigger('dblclick')
 
     expect(reached).not.toHaveBeenCalled()
     document.body.removeEventListener('dblclick', reached)
@@ -361,7 +403,7 @@ describe('a heading chosen', () => {
 
 describe('the wheel on the list', () => {
   const wheel = (wrapper: VueWrapper, deltaY: number) =>
-    wrapper.get('.headings__list').trigger('wheel', { deltaY, deltaMode: 1 })
+    getList()!.dispatchEvent(new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }))
 
   const setupMany = async () => {
     vi.useFakeTimers()
@@ -376,7 +418,7 @@ describe('the wheel on the list', () => {
 
     await wheel(wrapper, 1)
     expect(getTexts(wrapper)[0]).toBe('Section 2')
-    expect(wrapper.findAll('.headings__more')).toHaveLength(2)
+    expect(document.querySelectorAll('.headings__more')).toHaveLength(2)
 
     await wheel(wrapper, -1)
     expect(getTexts(wrapper)[0]).toBe('Section 1')
@@ -390,7 +432,7 @@ describe('the wheel on the list', () => {
 
     for (let step = 0; step < 8; step++) await wheel(wrapper, 1)
     expect(getTexts(wrapper).at(-1)).toBe('Section 9')
-    expect(wrapper.findAll('.headings__more')).toHaveLength(1)
+    expect(document.querySelectorAll('.headings__more')).toHaveLength(1)
   })
 
   it('keeps the wheel from the plex while it scrolls, and lets it through at either end', async () => {
@@ -408,8 +450,8 @@ describe('the wheel on the list', () => {
       cancelable: true,
     })
 
-    wrapper.get('.headings__list').element.dispatchEvent(up)
-    wrapper.get('.headings__list').element.dispatchEvent(down)
+    getList()!.dispatchEvent(up)
+    getList()!.dispatchEvent(down)
 
     expect(up.defaultPrevented).toBe(false)
     expect(down.defaultPrevented).toBe(true)
@@ -424,14 +466,14 @@ describe('the wheel on the list', () => {
     await wheel(wrapper, 1)
 
     expect(getTexts(wrapper)[0]).toBe('Section 1')
-    expect(wrapper.findAll('.headings__more')).toHaveLength(0)
+    expect(document.querySelectorAll('.headings__more')).toHaveLength(0)
   })
 
   it('opens at the top each time the list comes out', async () => {
     const wrapper = await setupMany()
     await wheel(wrapper, 1)
 
-    await wrapper.get('.headings').trigger('pointerleave')
+    await leave(wrapper)
     await rest(wrapper)
 
     expect(getTexts(wrapper)[0]).toBe('Section 1')

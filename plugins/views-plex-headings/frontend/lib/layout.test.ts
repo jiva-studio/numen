@@ -4,15 +4,15 @@ import { getFurthestOffset, getListLayout, getListStart, scrollBy, type ListLayo
 import { getMeasures } from './measures'
 
 const MEASURES = { rowHeight: 20, indentStep: 10, margin: 20, pad: 5 }
-const VIEWPORT = { width: 1000, height: 600 }
-const NODE = { x: 0, y: 0, width: 100, height: 40, viewport: VIEWPORT }
+const ROOM = { width: 1000, height: 600 }
+const NODE = { x: 450, y: 280, width: 100, height: 40 }
 
 const layoutOf = (overrides: Partial<Parameters<typeof getListLayout>[0]> = {}): ListLayout =>
-  getListLayout({ count: 10, limit: 6, node: NODE, measures: MEASURES, ...overrides })!
+  getListLayout({ count: 10, limit: 6, node: NODE, room: ROOM, measures: MEASURES, ...overrides })!
 
 describe('the layout of the list', () => {
   it('is none for a note with no headings', () => {
-    expect(getListLayout({ count: 0, limit: 6, node: NODE, measures: MEASURES })).toBeNull()
+    expect(getListLayout({ count: 0, limit: 6, node: NODE, room: ROOM, measures: MEASURES })).toBeNull()
   })
 
   it('holds the most rows the limit allows, where there is room below the node', () => {
@@ -29,8 +29,8 @@ describe('the layout of the list', () => {
   })
 
   it('holds only the rows the depth below the node holds, inside the margin of the window', () => {
-    const lower = { ...NODE, y: 160 }
-    const depth = 300 - MEASURES.margin - (lower.y + lower.height / 2)
+    const lower = { ...NODE, y: 440 }
+    const depth = ROOM.height - MEASURES.margin - (lower.y + lower.height)
 
     expect(layoutOf({ node: lower, limit: 12 }).visibleCount).toBe(
       Math.floor((depth - 2 * MEASURES.pad) / MEASURES.rowHeight),
@@ -39,7 +39,13 @@ describe('the layout of the list', () => {
 
   it('is none where not one row fits under the node', () => {
     expect(
-      getListLayout({ count: 3, limit: 6, node: { ...NODE, y: 270 }, measures: MEASURES }),
+      getListLayout({
+        count: 3,
+        limit: 6,
+        node: { ...NODE, y: 550 },
+        room: ROOM,
+        measures: MEASURES,
+      }),
     ).toBeNull()
   })
 
@@ -65,18 +71,18 @@ describe('the furthest the window on the rows scrolls', () => {
 
 describe('where the list begins', () => {
   it('centers it on the node', () => {
-    expect(getListStart(layoutOf(), 200)).toBe(-50)
+    expect(getListStart(layoutOf(), 200)).toBe(400)
   })
 
   it('moves it back inside the window where centered it would leave', () => {
-    const near = layoutOf({ node: { ...NODE, x: 450 } })
-    // A list of 200 keeps the margin of 20 from the edge of the window at 500, so its middle goes no further than 380.
-    expect(getListStart(near, 200)).toBe(-50 - 70)
+    const near = layoutOf({ node: { ...NODE, x: 900 } })
+    // A list of 200 keeps the margin of 20 from the right edge of the window, so it begins no further than 780.
+    expect(getListStart(near, 200)).toBe(780)
   })
 
   it('moves it the other way at the other edge of the window', () => {
-    const near = layoutOf({ node: { ...NODE, x: -450 } })
-    expect(getListStart(near, 200)).toBe(-50 + 70)
+    const near = layoutOf({ node: { ...NODE, x: 0 } })
+    expect(getListStart(near, 200)).toBe(MEASURES.margin)
   })
 })
 

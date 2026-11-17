@@ -62,7 +62,7 @@ const NODE_MENU: readonly SlotItem[] = [
 interface DepsOverrides {
   readonly window?: Partial<PlexTabDeps['window']>
   readonly menu?: Partial<PlexTabDeps['menu']>
-  readonly notes?: Partial<PlexTabDeps['notes']>
+  readonly searchNames?: PlexTabDeps['searchNames']
 }
 
 const createDeps = (editor: PlexTabDeps['editor'], overrides: DepsOverrides = {}): PlexTabDeps => ({

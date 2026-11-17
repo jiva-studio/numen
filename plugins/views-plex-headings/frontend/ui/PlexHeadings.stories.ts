@@ -62,18 +62,17 @@ const meta = {
   render: (args) => ({
     setup: () => {
       const view = createView(args)
-      const viewport = { width: window.innerWidth, height: window.innerHeight }
       const box = {
-        left: `${viewport.width / 2 + NODE.x - WIDTH / 2}px`,
-        top: `${viewport.height / 2 + NODE.y - HEIGHT / 2}px`,
+        left: `${window.innerWidth / 2 + NODE.x - WIDTH / 2}px`,
+        top: `${window.innerHeight / 2 + NODE.y - HEIGHT / 2}px`,
       }
-      return { view, box, path: PATH, node: NODE, viewport }
+      return { view, box, path: PATH, node: NODE }
     },
     template: `
       <div class="numen" style="position:relative;block-size:100vh;background:var(--numen-surface)">
         <div class="node" :style="{ position:'absolute', inlineSize:'144px', blockSize:'36px', boxSizing:'border-box', left: box.left, top: box.top, border:'var(--numen-stroke) solid var(--numen-rule)', borderRadius:'0.375rem', background:'var(--numen-raised)', color:'var(--numen-ink)', fontFamily:'var(--numen-font-sans)', fontSize:'var(--numen-font-size)', display:'grid', placeItems:'center' }">
           Entropy
-          <component :is="view" :path="path" :x="node.x" :y="node.y" :width="node.width" :height="node.height" :scale="1" :viewport="viewport" />
+          <component :is="view" :path="path" :x="node.x" :y="node.y" :width="node.width" :height="node.height" :scale="1" />
         </div>
       </div>
     `,
@@ -86,25 +85,23 @@ type Story = StoryObj<typeof meta>
 const getView = (canvasElement: HTMLElement) =>
   canvasElement.querySelector<HTMLElement>('.headings')!
 
-const getRows = (canvasElement: HTMLElement) => [
-  ...canvasElement.querySelectorAll('.headings__row'),
-]
+const getRows = () => [...document.querySelectorAll('.headings__row')]
 
-/** The pointer resting on the node brings the first six of its headings out under the box, and leaving puts them away. */
+/** The pointer resting on the node brings the first six of its headings out under the box, over the window, and leaving puts them away. */
 export const Nesting: Story = {
   play: async ({ canvasElement }) => {
     const view = getView(canvasElement)
-    await expect(getRows(canvasElement)).toHaveLength(0)
+    await expect(getRows()).toHaveLength(0)
 
     await userEvent.hover(view)
-    await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(LIMIT), {
+    await waitFor(async () => await expect(getRows()).toHaveLength(LIMIT), {
       timeout: HOVER_WAIT * 6,
     })
-    await expect(within(canvasElement).getByText('The arrow of time')).toBeInTheDocument()
-    await expect(within(canvasElement).queryByText('The demon, and its bookkeeping')).toBeNull()
+    await expect(within(document.body).getByText('The arrow of time')).toBeInTheDocument()
+    await expect(within(document.body).queryByText('The demon, and its bookkeeping')).toBeNull()
 
     await userEvent.unhover(view)
-    await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(0))
+    await waitFor(async () => await expect(getRows()).toHaveLength(0))
   },
 }
 
@@ -112,11 +109,11 @@ export const Nesting: Story = {
 export const ChoosesAHeading: Story = {
   play: async ({ args, canvasElement }) => {
     await userEvent.hover(getView(canvasElement))
-    await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(LIMIT), {
+    await waitFor(async () => await expect(getRows()).toHaveLength(LIMIT), {
       timeout: HOVER_WAIT * 6,
     })
 
-    await userEvent.click(within(canvasElement).getByText('Missing information'))
+    await userEvent.click(within(document.body).getByText('Missing information'))
 
     await expect(args.onOpen).toHaveBeenCalledWith(PATH, 76)
   },
@@ -127,20 +124,20 @@ export const ScrollsWithTheWheel: Story = {
   args: { headings: MANY },
   play: async ({ canvasElement }) => {
     await userEvent.hover(getView(canvasElement))
-    await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(LIMIT), {
+    await waitFor(async () => await expect(getRows()).toHaveLength(LIMIT), {
       timeout: HOVER_WAIT * 6,
     })
-    await expect(canvasElement.querySelectorAll('.headings__more')).toHaveLength(1)
+    await expect(document.querySelectorAll('.headings__more')).toHaveLength(1)
 
-    const list = canvasElement.querySelector('.headings__list')!
+    const list = document.querySelector('.headings__list')!
     list.dispatchEvent(
       new WheelEvent('wheel', { deltaY: 1, deltaMode: 1, bubbles: true, cancelable: true }),
     )
 
     await waitFor(
-      async () => await expect(getRows(canvasElement)[0]!.textContent?.trim()).toBe('Section 2'),
+      async () => await expect(getRows()[0]!.textContent?.trim()).toBe('Section 2'),
     )
-    await expect(canvasElement.querySelectorAll('.headings__more')).toHaveLength(2)
+    await expect(document.querySelectorAll('.headings__more')).toHaveLength(2)
   },
 }
 
@@ -157,11 +154,11 @@ export const LongHeading: Story = {
   },
   play: async ({ canvasElement }) => {
     await userEvent.hover(getView(canvasElement))
-    await waitFor(async () => await expect(getRows(canvasElement)).toHaveLength(1), {
+    await waitFor(async () => await expect(getRows()).toHaveLength(1), {
       timeout: HOVER_WAIT * 6,
     })
 
-    const list = canvasElement.querySelector<HTMLElement>('.headings__list')!
+    const list = document.querySelector<HTMLElement>('.headings__list')!
     await waitFor(async () => {
       const box = list.getBoundingClientRect()
       await expect(getComputedStyle(list).visibility).toBe('visible')

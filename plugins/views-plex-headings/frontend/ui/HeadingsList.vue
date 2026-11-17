@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The headings of a note hung from the foot of its node: the first rows that fit, with a mark at the edge the
+ * The headings of a note hung from the foot of its node, drawn over the window: the first rows that fit, with a mark at the edge the
  * rest is on, and the mouse wheel scrolling through them a row at a time. What choosing one does is the caller's.
  */
 import { computed, ref, useTemplateRef } from 'vue'
@@ -14,6 +14,10 @@ const props = defineProps<{ rows: readonly HeadingRow[]; layout: ListLayout }>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
+  /** The pointer came onto the list. */
+  (event: 'enter'): void
+  /** The pointer left the list. */
+  (event: 'leave'): void
   /** A heading was chosen, with the line of its note. */
   (event: 'choose', line: number): void
 }>()
@@ -35,9 +39,10 @@ const isBelow = computed(() => first.value < furthest.value)
 
 const style = computed(() => ({
   left: `${getListStart(props.layout, width.value)}px`,
+  top: `${props.layout.top}px`,
   height: `${props.layout.height}px`,
   minWidth: `${props.layout.nodeWidth}px`,
-  maxWidth: `${props.layout.viewportWidth - 2 * props.layout.margin}px`,
+  maxWidth: `${props.layout.roomWidth - 2 * props.layout.margin}px`,
   paddingTop: `${props.layout.pad}px`,
   paddingBottom: `${props.layout.pad}px`,
   '--headings-arrow-inset': `${props.layout.pad / 2}px`,
@@ -65,7 +70,15 @@ const onWheel = (event: WheelEvent) => {
 </script>
 
 <template>
-  <div ref="list" class="headings__list" :style="style" aria-hidden="true" @wheel="onWheel">
+  <div
+    ref="list"
+    class="headings__list numen"
+    :style="style"
+    aria-hidden="true"
+    @pointerenter="emit('enter')"
+    @pointerleave="emit('leave')"
+    @wheel="onWheel"
+  >
     <HeadingEntry
       v-for="row in shown"
       :key="row.line"
@@ -88,8 +101,8 @@ const onWheel = (event: WheelEvent) => {
   --list-radius: 0.25rem;
   --more-width: 0.5rem;
   --more-height: 0.3125rem;
-  position: absolute;
-  inset-block-start: 100%;
+  position: fixed;
+  z-index: var(--numen-lift-menu);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;

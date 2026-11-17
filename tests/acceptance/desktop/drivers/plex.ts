@@ -75,8 +75,8 @@ export class PlexDriver {
     await this.hoverNote(title)
   }
 
-  async expectShowsHeading(heading: string, title: string, has: boolean): Promise<void> {
-    const headings = (await this.getPart(title, '.headings__text')).filter({ hasText: getWholeText(heading) })
+  async expectShowsHeading(heading: string, has: boolean): Promise<void> {
+    const headings = this.scenario.page.locator('.headings__text').filter({ hasText: getWholeText(heading) })
     if (has) {
       await expect(headings).toHaveCount(1)
       return
@@ -95,7 +95,7 @@ export class PlexDriver {
 
   async enterHeading(heading: string, title: string): Promise<void> {
     await this.hoverNote(title)
-    await (await this.getPart(title, '.headings__row')).filter({ hasText: getWholeText(heading) }).click()
+    await this.scenario.page.locator('.headings__row').filter({ hasText: getWholeText(heading) }).click()
   }
 
   async choose(reference: string, name: string): Promise<void> {

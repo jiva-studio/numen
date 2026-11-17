@@ -1,13 +1,12 @@
 /**
  * Frontend entrypoint for the Plex Headings plugin: the headings of a note, listed under its node in the plex
- * while the pointer rests on it, drawn in the slot over the whole node.
+ * while the pointer rests on it, drawn above everything else, beside the slot over the whole node that the pointer is read on.
  */
-import { defineComponent, h, type PropType } from 'vue'
+import { defineComponent, h, ref, type ComponentPublicInstance } from 'vue'
 import { definePlugin, type Caught, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { readSettings } from './model/settings'
 import { sleep, type HeadingsSource } from './model/useHeadings'
 import { useHeadingsView } from './model/useHeadingsView'
-import type { Size } from './types'
 import PlexHeadings from './ui/PlexHeadings.vue'
 
 /** The id the manifest declares the view under. */
@@ -23,12 +22,15 @@ function createHeadingsView(source: HeadingsSource) {
       width: { type: Number, required: true },
       height: { type: Number, required: true },
       scale: { type: Number, required: true },
-      viewport: { type: Object as PropType<Size>, required: true },
     },
     setup: (props) => {
-      const { rows, layout, enter, leave, choose } = useHeadingsView(source, () => props)
+      const trigger = ref<HTMLElement | null>(null)
+      const { rows, layout, enter, leave, choose } = useHeadingsView(source, () => props, trigger)
       return () =>
         h(PlexHeadings, {
+          ref: (instance) => {
+            trigger.value = (instance as ComponentPublicInstance | null)?.$el ?? null
+          },
           rows: rows.value,
           layout: layout.value,
           onEnter: enter,

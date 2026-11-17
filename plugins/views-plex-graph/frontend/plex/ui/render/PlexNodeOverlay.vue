@@ -2,8 +2,8 @@
 /**
  * The views of the slot across a node, each drawn over the whole box of the node and free to reach beyond it:
  * the box they are drawn in is the whole surface. Each view is given the path of the note, the middle of the
- * node (`x`, `y`), its size, how many times larger than a note at rest it is drawn (`scale`) and the surface
- * (`viewport`), all in the units of the surface, and follows the node as it moves. The surface takes no
+ * node (`x`, `y`), its size and how many times larger than a note at rest it is drawn (`scale`), in the units
+ * of the surface, and follows the node as it moves. The surface takes no
  * pointer events: a view takes those of the elements it sets `pointer-events` on.
  */
 import { computed } from 'vue'
@@ -51,7 +51,6 @@ const boxStyle = computed(() => ({
           :width="node.width"
           :height="node.height"
           :scale="scale"
-          :viewport="viewport"
         />
       </div>
     </div>

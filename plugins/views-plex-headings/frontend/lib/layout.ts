@@ -1,35 +1,37 @@
 import type { Measures } from './measures'
-import type { NodeView } from '../types'
+import type { Box, Size } from '../types'
 
-/** What the list needs to be drawn under a node: how many rows stand at once and where the node is. */
+/** What the list needs to be drawn under a node: how many rows stand at once and where the node is on the screen. */
 export interface ListLayout {
   readonly rowHeight: number
   readonly pad: number
   readonly margin: number
   readonly visibleCount: number
   readonly height: number
-  readonly nodeX: number
+  readonly top: number
+  readonly nodeLeft: number
   readonly nodeWidth: number
-  readonly viewportWidth: number
+  readonly roomWidth: number
 }
 
 export interface ListLayoutRequest {
   readonly count: number
   readonly limit: number
-  readonly node: Pick<NodeView, 'x' | 'y' | 'width' | 'height' | 'viewport'>
+  readonly node: Box
+  readonly room: Size
   readonly measures: Measures
 }
 
 /**
  * The layout of a list of `count` rows hung from the foot of a node, of which at most `limit` stand at once and
- * only as many as the depth below the node holds. None for a list with no rows or where no row fits.
+ * only as many as the depth below the node holds in the `room` of the window. The node is the box it is drawn in on the screen. None for a list with no rows or where no row fits.
  */
 export function getListLayout(request: ListLayoutRequest): ListLayout | null {
-  const { count, limit, node, measures } = request
+  const { count, limit, node, room, measures } = request
   const { rowHeight, pad, margin } = measures
   if (count === 0) return null
 
-  const depth = node.viewport.height / 2 - margin - (node.y + node.height / 2)
+  const depth = room.height - margin - (node.y + node.height)
   const rows = Math.min(limit, Math.floor((depth - 2 * pad) / rowHeight))
   if (rows < 1) return null
 
@@ -40,9 +42,10 @@ export function getListLayout(request: ListLayoutRequest): ListLayout | null {
     margin,
     visibleCount,
     height: visibleCount * rowHeight + 2 * pad,
-    nodeX: node.x,
+    top: node.y + node.height,
+    nodeLeft: node.x,
     nodeWidth: node.width,
-    viewportWidth: node.viewport.width,
+    roomWidth: room.width,
   }
 }
 
@@ -50,11 +53,10 @@ export function getListLayout(request: ListLayoutRequest): ListLayout | null {
 export const getFurthestOffset = (count: number, layout: ListLayout): number =>
   Math.max(0, count - layout.visibleCount)
 
-/** Where the list begins, counted from the start of the node and in the units of the surface: centered on the node, and kept inside the window. */
+/** Where the list begins, counted from the left of the window: centered on the node, and kept inside the margins of the window. */
 export function getListStart(layout: ListLayout, width: number): number {
-  const furthest = layout.viewportWidth / 2 - layout.margin - width / 2
-  const middle = Math.min(Math.max(layout.nodeX, -furthest), furthest)
-  return (layout.nodeWidth - width) / 2 + (middle - layout.nodeX)
+  const centered = layout.nodeLeft + (layout.nodeWidth - width) / 2
+  return Math.max(layout.margin, Math.min(centered, layout.roomWidth - layout.margin - width))
 }
 
 /** The wheel delta units, numbered as the browser's `deltaMode` numbers them. */
