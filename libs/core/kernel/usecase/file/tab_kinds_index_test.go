@@ -83,7 +83,7 @@ func (markdownTypes) GetContentType(path string) domain.ContentType {
 func (markdownTypes) ListExtensions(domain.ContentType) []string { return []string{"md"} }
 
 func newShippedChoice() *tabkind.Choose {
-	entry := func(plugin, kind, when string, rank domain.ContentRank) pluginentries.TabKindEntry {
+	entry := func(plugin, kind, when string, rank domain.HandlerRank) pluginentries.TabKindEntry {
 		return pluginentries.TabKindEntry{PluginID: plugin, TabKind: manifest.TabKind{Kind: kind, Title: kind, When: when, Rank: rank}}
 	}
 	return tabkind.NewChoose(shipped{
