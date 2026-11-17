@@ -42,7 +42,6 @@ const createViewport = (size: Size): Viewport => ({
 
 const getPathOf = (id: string) => `notes/${id}.md`
 
-/** Draws its span for the notes in `drawing` and nothing for the others, like tags that arrive from a store. */
 const createWidget = (name: string, drawing: Readonly<Ref<ReadonlySet<string>>>) =>
   defineComponent({
     props: { path: { type: String, required: true } },
@@ -59,7 +58,6 @@ const getPaths = (ids: readonly string[]): ReadonlySet<string> => new Set(ids.ma
 
 const ALL = FAMILY.nodes.map((node) => node.id)
 
-/** The notes start drawing one tick after another, as the tags of each note arrive from its own request. */
 const drawOneAfterAnother = async (
   drawing: Ref<ReadonlySet<string>>,
   ids: readonly string[],
@@ -136,7 +134,6 @@ afterEach(() => {
   document.body.replaceChildren()
 })
 
-/** A frame passes: what waits for the next one runs, and the measurements that came with the drawing arrive. */
 const passFrames = async (count: number) => {
   for (let frame = 0; frame < count; frame += 1) {
     await flushPromises()
@@ -169,7 +166,6 @@ const mountPlex = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) =>
 const getTitleOf = (element: Element): string | undefined =>
   FAMILY.nodes.find((node) => element.getAttribute('aria-label')?.startsWith(node.title))?.title
 
-/** What each node was given, in order and without repeats, for each node's title. */
 const getPositions = (): Map<string, string[]> => {
   const found = new Map<string, string[]>()
   for (const { element, value } of assigned) {
@@ -187,7 +183,6 @@ const getLayout = (plex: Mounted) =>
     (node) => plex.get(`[aria-label^="${node.title}"]`).attributes('transform') ?? '',
   )
 
-/** Where the nodes are with the widgets of `ids` drawing from the start: the layout any arrangement of those settled widgets ends in. */
 const getSettledLayout = async (ids: readonly string[]): Promise<string[]> => {
   const plex = mountPlex({ widgetsBelow: [createEntry(ref(getPaths(ids)))] })
   await passFrames(FRAMES_PER_SETTLE)
