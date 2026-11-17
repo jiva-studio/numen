@@ -174,7 +174,7 @@ describe('the filters of the changed areas', () => {
   })
 
   it('runs every Go module, every frontend and every plugin for a change to the protocol', () => {
-    const areas = getAreas('libs/core/protocol/numen/v1/manifest.proto')
+    const areas = getAreas('libs/shared/protocol/numen/v1/manifest.proto')
     for (const area of ['protocol', 'core', 'desktop', 'mobile', 'sdk_go', 'desktop_fe', 'mobile_fe', 'plugins_all']) {
       assert.ok(areas.includes(area), area)
     }

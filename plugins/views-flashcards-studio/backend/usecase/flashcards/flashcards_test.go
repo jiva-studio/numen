@@ -13,8 +13,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
@@ -63,7 +65,7 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 	}
 
 	logs := env.Ports.Logs
-	standings := flashcards.NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
+	standings := flashcards.NewListReviewCards(env.Ports.Readers, env.Queries, cards.NewRead(env.Ports.Readers, env.Queries))
 	presetsConfig := presets.Config{
 		Readers:  env.Ports.Readers,
 		Writers:  env.Ports.Writers,
@@ -90,9 +92,8 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 		readPreset:    presets.NewRead(presetsConfig),
 		savePreset:    presets.NewSave(presetsConfig),
 		getDeckPreset: presets.NewGetForDeck(presetsConfig),
-		assigning: flashcards.NewAssignCardIDs(
-			env.Ports.Readers, env.Ports.Writers,
-			env.Queries, env.Queries, scanned, vaulttest.NewClock()),
+		assigning: flashcards.NewAssignCardIDs(env.Queries, cards.NewRead(env.Ports.Readers, env.Queries),
+			cards.NewWrite(env.Ports.Readers, env.Ports.Writers, env.Queries, scanned, vaulttest.NewClock(), machineclock.Entropy{})),
 		schedules: schedules,
 		counted:   counted,
 		logs:      logs,
@@ -139,7 +140,7 @@ type timedRun struct {
 }
 
 func newTimedRun(run *flashcards.LogWriter, now ports.Clock) timedRun {
-	return timedRun{run: run, record: flashcards.NewRecord(now)}
+	return timedRun{run: run, record: flashcards.NewRecord(now, machineclock.Entropy{})}
 }
 
 func (s timedRun) Answer(
@@ -154,7 +155,7 @@ func (s timedRun) TakeBack(ctx context.Context, id string) (review.Answer, error
 
 func (s vaulted) run(t *testing.T, pos time.Time) timedRun {
 	t.Helper()
-	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, pos)
+	run, err := flashcards.Log{Stores: s.logs, Entropy: machineclock.Entropy{}}.Open(t.Context(), s.vault, pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +164,7 @@ func (s vaulted) run(t *testing.T, pos time.Time) timedRun {
 
 func (s vaulted) runNamedReview(t *testing.T, named, reviewedAt time.Time) timedRun {
 	t.Helper()
-	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, named)
+	run, err := flashcards.Log{Stores: s.logs, Entropy: machineclock.Entropy{}}.Open(t.Context(), s.vault, named)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -937,8 +938,8 @@ type named struct {
 func (n named) GetName() string { return n.name }
 
 func (s vaulted) newAssignCardIDs(index func(ctx context.Context, v domain.Vault, paths []string) error) flashcards.AssignCardIDs {
-	return flashcards.NewAssignCardIDs(
-		s.env.Ports.Readers, s.env.Ports.Writers, s.env.Queries, s.env.Queries, index, vaulttest.NewClock())
+	return flashcards.NewAssignCardIDs(s.env.Queries, cards.NewRead(s.env.Ports.Readers, s.env.Queries),
+		cards.NewWrite(s.env.Ports.Readers, s.env.Ports.Writers, s.env.Queries, index, vaulttest.NewClock(), machineclock.Entropy{}))
 }
 
 type failOnceLinks struct {
@@ -1027,7 +1028,7 @@ func TestReviewsBudgetDividesAcrossDecksAndColdCacheSkipsExtraStat(t *testing.T)
 
 	// Cold cache miss in GetReviewCards does not call StatFile inside getCachedCards before parseDeck.
 	counting := &statCountReaders{inner: s.env.Ports.Readers, target: "decks/A.md"}
-	coldList := flashcards.NewListReviewCards(counting, s.notes, s.links)
+	coldList := flashcards.NewListReviewCards(counting, s.notes, cards.NewRead(counting, s.links))
 	if got := coldList.GetReviewCards(t.Context(), s.vault, []string{"decks/A.md"}); len(got) != 2 {
 		t.Fatalf("GetReviewCards = %d, want 2", len(got))
 	}

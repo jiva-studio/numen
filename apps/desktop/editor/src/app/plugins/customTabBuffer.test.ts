@@ -5,7 +5,7 @@ import { createCustomTabKind, pickCustomTabParts } from '@numen/plugin-loader'
 import { blank } from '@/testing/stubs'
 import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 
-const statFile = (body: string): string => `1 1 at:${body}`
+const statFile = (body: string): string => `1:0: 1 at:${body}`
 
 const openNotes = (core: Notes, how: Parameters<typeof useOpenNotes>[1]) => {
   return flattenOpenNotes(useOpenNotes(answerNotes(core), how))

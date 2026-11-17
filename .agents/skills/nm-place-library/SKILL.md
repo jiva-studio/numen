@@ -4,7 +4,7 @@ description: Decides which library a piece of shared frontend or protocol code b
 paths:
   - libs/ui/**
   - libs/core/client/**
-  - libs/core/protocol/**
+  - libs/shared/protocol/**
   - libs/plugin/manager/**
   - libs/plugin/loader/**
   - libs/plugin/sdk-ts/**
@@ -45,7 +45,7 @@ An arrow is a permitted import; the package matrix (`packages` in `tools/checks/
 | `@numen/ui` (`libs/ui/components`) | Pure components of general purpose, the design tokens, and the helpers beneath them (clock types, geometry, text, and the browser access in `shared/api`). No domain, no wire types, no application code. |
 | `@numen/workbench` (`libs/ui/workbench`) | The chrome every desktop window shares: the panes and tabs, the command palette, the notices, the window frame. Built from `@numen/ui` alone; it may hold domain words that every desktop window shares (the welcome page and its vault rows), and the Wails runtime stays in each window: the frame takes a loader of the runtime as a parameter. |
 | `@numen/core-client` (`libs/core/client`) | The first-party client of the core: service clients, transport, enum codes, error words, the manifest reader, the catalog client. Private. |
-| `@numen/protocol` (`libs/core/protocol`) | The `.proto` schema, and the Go and TypeScript generated from it. |
+| `@numen/protocol` (`libs/shared/protocol`) | The `.proto` schema, and the Go and TypeScript generated from it. |
 | `@numen/plugin-manager` (`libs/plugin/manager`) | The plugin list and the plugin page, over view-model types it defines; data in by props, answers out by events. |
 | `@numen/plugin-loader` (`libs/plugin/loader`) | The loader of plugin frontends and the host side of the plugin contract, over the core client. |
 | `@numen/plugin-sdk` (`libs/plugin/sdk-ts`) | What a plugin frontend is built from. Holds only what at least one plugin imports. |
@@ -56,7 +56,7 @@ A plugin imports `@numen/plugin-sdk` and `@numen/ui` and nothing else of this re
 
 Ask in this order. The first question answered yes names the home.
 
-- Does it describe data that crosses the wire between Go and TypeScript? It is a message in a `.proto` file of `libs/core/protocol`, generated, never written by hand.
+- Does it describe data that crosses the wire between Go and TypeScript? It is a message in a `.proto` file of `libs/shared/protocol`, generated, never written by hand.
 - Does it call the core, or read what the core returns (service client, enum code, error sentence, manifest, catalog)? It belongs to `@numen/core-client`.
 - Is it drawn, and could any application draw it without knowing a domain term or a wire type? It belongs to `@numen/ui`.
 - Is it window chrome that every desktop window draws the same way? It belongs to `@numen/workbench`.
@@ -71,7 +71,7 @@ Ask in this order. The first question answered yes names the home.
 | A general component (switch, slider, menu, tree, dialog, list) | `@numen/ui`, `shared/ui/<name>/`; a component with its own model and several parts is a slice in `features/<name>/` |
 | A component that names a domain term (note, vault, card, plugin) | Not `@numen/ui`. Its general part takes a drawing vocabulary of general words in `@numen/ui`, and the window maps its domain onto that; the domain-named screen stays in the window or its plugin |
 | A style token (colour, size, space, motion) | `@numen/ui`, `shared/tokens/tokens.css`, with the Tailwind name in `theme.css`; the window frame's own sizes are in `@numen/workbench` `features/window-frame/tokens/` |
-| A wire type or an enum of the protocol | `libs/core/protocol/proto/`, then generate; a window names it through `@numen/core-client` |
+| A wire type or an enum of the protocol | `libs/shared/protocol/proto/`, then generate; a window names it through `@numen/core-client` |
 | A service client, a transport, an error sentence | `@numen/core-client` |
 | A mapping from a wire message to a type a component takes | The window, in its `api` segment or `shared` layer; the component library never sees the message |
 | A view-model for the plugin list (filter, query, state) | `@numen/plugin-manager` |
@@ -156,11 +156,11 @@ Behavior that depends on layout, paint order, focus-visible or pointer geometry 
 
 ## Which domain does it know
 
-Ask of every new package, type, RPC or export of the core, the core protocol (`libs/core/protocol`) or the shared SDK (`libs/plugin/sdk-go`, `libs/plugin/sdk-ts` outside `contracts/`): "Which product domain does this know, and why is it not in a plugin or a contract?" The core holds notes, vaults, the index and its storage, search, text versions, windows, settings, the plugin host and the generic connection mechanism; an agent, a model, an engine or the feature of one plugin is a plugin or a contract ([`architecture.md`](../../rules/architecture.md) §11 (l)). Examples from the microkernel change:
+Ask of every new package, type, RPC or export of the core, the core protocol (`libs/shared/protocol`) or the shared SDK (`libs/plugin/sdk-go`, `libs/plugin/sdk-ts` outside `contracts/`): "Which product domain does this know, and why is it not in a plugin or a contract?" The core holds notes, vaults, the index and its storage, search, text versions, windows, settings, the plugin host and the generic connection mechanism; an agent, a model, an engine or the feature of one plugin is a plugin or a contract ([`architecture.md`](../../rules/architecture.md) §11 (l)). Examples from the microkernel change:
 
 - The list of agent programs was cached in the settings adapter of the core. An agent program is a connection type that serves `acp.task`, of the plugin that runs it (agents-claude, agents-codex, agents-antigravity, agents-acp); the core keeps the connection rows only.
 - The core held the model fields of a search source (pooling, handling, the model it came from, the token limit). A source now describes itself by an opaque recipe, a vector width and a chunk size; the model stays in engines-embeddings.
-- The shared command catalog `libs/core/protocol/commands.json` held the `app:link.*` commands of the media importer. They are commands of that plugin's manifest now.
+- The shared command catalog `libs/shared/protocol/commands.json` held the `app:link.*` commands of the media importer. They are commands of that plugin's manifest now.
 
 `go/dead-exports` fails on an RPC or an SDK export that nothing outside tests uses, and `ts/contracts-imports` fails on a library outside `contracts/` that imports a contract.
 

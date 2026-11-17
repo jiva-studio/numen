@@ -12,14 +12,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
 func newStudiedNotes(cards int) map[string]string {
@@ -145,7 +144,7 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 			got.Suggested, want)
 	}
 	// And the place before it is one the minutes closed.
-	if before := got.Points[want.Index-1]; !before.Closed.Has(review.ClosedMinutes) {
+	if before := got.Points[want.Index-1]; !before.Closed.Has(projection.ClosedMinutes) {
 		t.Errorf("the place under the one suggested was closed by %v", before.Closed)
 	}
 }
@@ -476,7 +475,7 @@ func inRange(t *testing.T, c flashcards.Curve, names ...string) {
 			t.Errorf("the %s mark is at %v and the place it names is %v",
 				name, mark.Value, c.Grid[mark.Index])
 		}
-		if c.Goal == review.GoalDate && !strings.Contains(mark.Day, "-") {
+		if c.Goal == projection.GoalDate && !strings.Contains(mark.Day, "-") {
 			t.Errorf("the %s mark names no day: %q", name, mark.Day)
 		}
 	}
@@ -1145,7 +1144,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 		}},
 	} {
 		_, err := s.curves(getNoon()).Execute(t.Context(), s.vault, "Sanskrit.md", one.preset)
-		if !errors.Is(err, presets.ErrOutOfBounds) {
+		if !errors.Is(err, review.ErrOutOfBounds) {
 			t.Errorf("%s draws a curve, and answered %v", one.named, err)
 		}
 	}
@@ -1155,7 +1154,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := newReviewedVault(t, 4)
-	noIndex := flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil)
+	noIndex := flashcards.NewListReviewCards(s.env.Ports.Readers, nil, cards.NewRead(s.env.Ports.Readers, nil))
 	u := flashcards.NewProjectCurve(noIndex, s.schedules, s.presets, getToday(), newFakeClock(getNoon()))
 
 	p := review.Preset{
@@ -1221,7 +1220,7 @@ func atOnceGoals() []struct {
 	}
 }
 
-func describeCurve(c projection.Curve) string {
+func describeCurve(c flashcards.Curve) string {
 	return fmt.Sprintf("%v", c)
 }
 
@@ -1350,7 +1349,7 @@ func TestProjectCurve_ErrorsOnCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
 
-	customCards := flashcards.NewListReviewCards(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, s.links)
+	customCards := flashcards.NewListReviewCards(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, cards.NewRead(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.links))
 	curves := flashcards.NewProjectCurve(customCards, s.schedules, s.presets, getToday(), newFakeClock(getNoon()))
 
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
@@ -1486,7 +1485,7 @@ func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					for _, one := range []projection.Curve{got, want} {
+					for _, one := range []flashcards.Curve{got, want} {
 						if one.Decks != len(decks) || one.Cards != reviewCards {
 							t.Errorf("the curve carries %d decks and %d review cards, and %d decks "+
 								"point at %s with %d review cards in them",
@@ -1503,7 +1502,7 @@ func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 	}
 }
 
-func curveOf(c projection.Curve) string {
+func curveOf(c flashcards.Curve) string {
 	return fmt.Sprintf("%d decks, %d review cards, %d overdue, %d unbegun\ngrid %v\nnow %+v"+
 		"\nsuggested %+v\nat %+v", c.Decks, c.Cards, c.Overdue, c.Unbegun, c.Grid,
 		c.Now, c.Suggested, c.Points)

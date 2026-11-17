@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 import { watch } from 'vue'
-import { runInBackground } from '@numen/ui'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createSettingsStore } from './store'
@@ -11,11 +10,11 @@ const createAnsweredSettings = (answers: CoreAnswers) =>
 /** The settings calls of the core the test answered last. */
 let settings = createAnsweredSettings({})
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const AT = ['p', 'enabled'] as const
 
-const answerWith = (written: string) => ({
+const answerWith = (written: string, version = 0n) => ({
   written,
+  version,
   path: '/f',
   plugins: [],
   app: [],
@@ -27,15 +26,24 @@ const answerWith = (written: string) => ({
 describe('settings store', () => {
   it('shows a written value without reverting while the vault applies it', async () => {
     const file: Record<string, unknown> = { p: { enabled: true } }
+    let version = 1n
+    let applied = false
+    let release: () => void = () => undefined
+    const released = new Promise<void>((resolve) => {
+      release = resolve
+    })
     settings = createAnsweredSettings({
       settingsService: {
-        getSettings: () => answerWith(JSON.stringify(file)),
+        getSettings: () => answerWith(JSON.stringify(file), version),
         writeSettings: async (request) => {
           for (const e of request.settings) {
             ;(file as { p: { enabled: boolean } }).p.enabled = JSON.parse(e.value)
           }
-          await sleep(100) // the plugin host applies the change
-          return {}
+          version += 1n
+          const written = { written: JSON.stringify(file), version }
+          applied = true
+          await released // the plugin host applies the change
+          return written
         },
       },
     })
@@ -47,16 +55,14 @@ describe('settings store', () => {
       (v) => values.push(v),
       { flush: 'sync' },
     )
-    const failures: unknown[] = []
-    const poll = setInterval(
-      () => runInBackground(store.start(), (error) => failures.push(error)),
-      20,
-    )
-    await store.write.writeSetting(AT, false)
-    await sleep(300)
-    clearInterval(poll)
+    const write = store.write.writeSetting(AT, false)
+    await vi.waitFor(() => expect(applied).toBe(true))
+    await store.start()
+    await store.start()
+    release()
+    await write
+    await store.start()
     expect(values).toEqual([false])
-    expect(failures).toEqual([])
   })
 })
 
@@ -67,35 +73,33 @@ interface HeldCall {
 }
 
 const createHeldVault = (isEnabled: boolean) => {
+  // A read answers with the state and the version it had when it began; a write changes both when
+  // it is let through.
   const file = { p: { enabled: isEnabled } }
-  let isActive = isEnabled
+  let version = 1n
   const reads: HeldCall[] = []
   const writes: HeldCall[] = []
   settings = createAnsweredSettings({
     settingsService: {
       getSettings: () =>
         new Promise<ReturnType<typeof answerWith>>((resolve, reject) => {
-          const settingsText = JSON.stringify(file)
-          reads.push({ resolve: () => resolve(answerWith(settingsText)), reject })
+          const answer = answerWith(JSON.stringify(file), version)
+          reads.push({ resolve: () => resolve(answer), reject })
         }),
       writeSettings: (request) =>
-        new Promise<Record<string, never>>((resolve, reject) => {
-          const previous = file.p.enabled
-          for (const e of request.settings) file.p.enabled = JSON.parse(e.value) as boolean
+        new Promise<{ written: string; version: bigint }>((resolve, reject) => {
           writes.push({
             resolve: () => {
-              isActive = file.p.enabled
-              resolve({})
+              for (const e of request.settings) file.p.enabled = JSON.parse(e.value) as boolean
+              version += 1n
+              resolve({ written: JSON.stringify(file), version })
             },
-            reject: (error) => {
-              file.p.enabled = previous
-              reject(error)
-            },
+            reject,
           })
         }),
     },
   })
-  return { reads, writes, isActive: () => isActive }
+  return { reads, writes }
 }
 
 const startRead = async (
@@ -109,7 +113,7 @@ const startRead = async (
 }
 
 describe('the enabled switch of a plugin', () => {
-  it('shows each requested value from the click on, with reads out of order and a failed read-back', async () => {
+  it('shows each requested value from the click on, whatever order the reads answer in', async () => {
     const vault = createHeldVault(false)
     const store = createSettingsStore(settings, { unturned: 'u', unreadSettings: 'r' }, vi.fn())
     const first = await startRead(store, vault)
@@ -123,26 +127,19 @@ describe('the enabled switch of a plugin', () => {
     )
 
     for (const [index, isEnabled] of [true, false].entries()) {
-      // A refresh that began before the click answers after the write's own read-back.
+      // A refresh that began before the click answers after the write.
       const refresh = await startRead(store, vault)
-      const before = refresh.call
       const write = store.write.writeSetting(AT, isEnabled)
       await vi.waitFor(() => expect(vault.writes).toHaveLength(index + 1))
-      // The vault answers the write once the plugin has started or stopped.
       vault.writes.at(-1)?.resolve()
-      await vi.waitFor(() => expect(vault.reads.at(-1)).not.toBe(before))
-      // The read-back fails while the host still lists the plugin as starting or stopping.
-      vault.reads.at(-1)?.reject(new Error('busy'))
       await write
-      before?.resolve()
+      refresh.call?.resolve()
       await refresh.read
-      const later = await startRead(store, vault)
-      later.call?.resolve()
-      await later.read
-      expect(vault.isActive()).toBe(isEnabled)
+      expect(store.read.getSetting(AT)).toBe(isEnabled)
     }
 
     expect(history).toEqual([false, true, false])
+    expect(vault.reads).toHaveLength(3)
   })
 })
 
@@ -171,14 +168,14 @@ describe('the enabled switch waits for the answer of the vault', () => {
     expect(store.read.getCommittedSetting(AT)).toBe(true)
 
     vault.writes[0]?.resolve()
-    await vi.waitFor(() => expect(store.read.isPending(AT)).toBe(false))
+    await write
+    expect(store.read.isPending(AT)).toBe(false)
     expect(store.read.getCommittedSetting(AT)).toBe(false)
-    await vi.waitFor(() => expect(vault.reads.length).toBeGreaterThan(3))
-    vault.reads.at(-1)?.resolve()
     during.call?.resolve()
     early.call?.resolve()
-    await Promise.all([write, during.read, early.read])
+    await Promise.all([during.read, early.read])
     expect(history).toEqual([true, false])
+    expect(vault.reads).toHaveLength(3)
   })
 
   it('keeps the old value, stops waiting and says why where the write fails', async () => {
@@ -198,9 +195,6 @@ describe('the enabled switch waits for the answer of the vault', () => {
     const write = store.write.writeSetting(AT, false)
     await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
     vault.writes[0]?.reject(new Error('refused'))
-    await vi.waitFor(() => expect(vault.reads.length).toBeGreaterThan(1))
-    // The file holds the old value again, as the vault failed before it wrote.
-    vault.reads.at(-1)?.resolve()
     await write
     expect(store.read.isPending(AT)).toBe(false)
     expect(say).toHaveBeenCalledWith(expect.stringMatching(/^u /), 'error')

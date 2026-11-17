@@ -3,7 +3,7 @@ package searchquery
 import (
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Scope is the document predicate every candidate of one condition satisfies, and its superset for the

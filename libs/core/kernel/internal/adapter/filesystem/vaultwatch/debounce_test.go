@@ -169,3 +169,47 @@ func TestAListenerThatDoesNotAcceptDoesNotStopTheReading(t *testing.T) {
 		}
 	}
 }
+
+// TestAFileAddedWhileAFolderIsPlacedIsReported. A file written before the watch on a new
+// folder is in place raises no event. The folder is read only after the watch call
+// returns, and the stand-in for that call writes the file, so only a read made after
+// it finds the file.
+func TestAFileAddedWhileAFolderIsPlacedIsReported(t *testing.T) {
+	root, reader := makeVaultOfNotes(t, 1)
+	ctx, stop := context.WithCancel(t.Context())
+	defer stop()
+
+	shape := shapeOf(t, reader)
+	folder := filepath.Join(root, "later")
+	if err := os.Mkdir(folder, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	shape.SetBeforeRead(func(dir string) error {
+		if dir != folder {
+			return nil
+		}
+		return os.WriteFile(filepath.Join(dir, "Added.md"), []byte("# Added\n"), 0o644)
+	})
+
+	raw := make(chan notify.EventInfo, 4)
+	queue := newQueue(64)
+	go forwardEvents(ctx, raw, queue)
+
+	changes := make(chan []string)
+	missing := make(chan struct{}, 1)
+	go debounce(ctx, shape, vaultconfig.Options{DebounceDelay: 10 * time.Millisecond}, queue, changes, missing)
+
+	raw <- event{path: folder}
+
+	deadline := time.After(10 * time.Second)
+	for {
+		select {
+		case paths := <-changes:
+			if slices.Contains(paths, "later/Added.md") {
+				return
+			}
+		case <-deadline:
+			t.Fatal("a file written while the folder was placed was never reported")
+		}
+	}
+}

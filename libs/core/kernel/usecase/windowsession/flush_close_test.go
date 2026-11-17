@@ -40,7 +40,7 @@ type closing struct {
 	err  error
 }
 
-func (c closing) Close(context.Context) error {
+func (c closing) close(context.Context) error {
 	c.log.add("closed " + c.name)
 	return c.err
 }
@@ -48,7 +48,7 @@ func (c closing) Close(context.Context) error {
 func TestClosingShutsTheDoorFirstThenStopsThePassesThenClosesResourcesInOrder(t *testing.T) {
 	log := &eventLog{}
 	w := newLoggedWindow(t, log, func(deps *Deps) {
-		deps.Shutdown.Closers = []Closer{closing{log: log, name: "socket"}, closing{log: log, name: "index"}}
+		deps.Shutdown.Closers = []CloseFunc{closing{log: log, name: "socket"}.close, closing{log: log, name: "index"}.close}
 	})
 	w.open(t, garden())
 
@@ -66,7 +66,7 @@ func TestClosingReportsEveryResourceThatFailedToClose(t *testing.T) {
 	socket, index := errors.New("the socket stays"), errors.New("the index is locked")
 	log := &eventLog{}
 	w := newLoggedWindow(t, log, func(deps *Deps) {
-		deps.Shutdown.Closers = []Closer{closing{log: log, name: "socket", err: socket}, closing{log: log, name: "index", err: index}}
+		deps.Shutdown.Closers = []CloseFunc{closing{log: log, name: "socket", err: socket}.close, closing{log: log, name: "index", err: index}.close}
 	})
 	w.open(t, garden())
 

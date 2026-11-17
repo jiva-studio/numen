@@ -1,5 +1,6 @@
 /** The person at the settings of the plugins: turning one off and, when the scenario ends, on again. */
 import { expect, type Locator } from 'playwright/test'
+import { getTroubleMessage } from './rules.js'
 import { SettingsPage } from './components/SettingsPage.js'
 import type { Scenario } from './scenario.js'
 
@@ -27,8 +28,16 @@ export class PluginDriver {
   }
 
   async enableDisabled(): Promise<void> {
-    for (const name of this.disabled) await this.setEnabled(name, true)
-    this.disabled.clear()
+    const failures: string[] = []
+    for (const name of [...this.disabled]) {
+      try {
+        await this.setEnabled(name, true)
+        this.disabled.delete(name)
+      } catch (error) {
+        failures.push(`${name}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    if (failures.length > 0) throw new Error(`could not enable again:\n${failures.join('\n')}`)
   }
 
   private async setEnabled(name: string, isEnabled: boolean): Promise<void> {
@@ -50,14 +59,19 @@ export class PluginDriver {
     const settings = settingsPage.getPanel()
     const toggle = settingsPage.getPluginSwitch(settings, name)
     const plugin = settingsPage.getPluginButton(settings, name)
+    const alarm = settingsPage.getPluginAlarm(settings, name)
     // The settings open on the page of the plugin shown last, which may be another plugin.
     await expect(settings).toBeVisible()
-    await expect(toggle.or(plugin).or(settingsPage.getBackButton()).first()).toBeVisible()
-    if (!(await toggle.isVisible()) && !(await plugin.isVisible())) {
+    await expect(toggle.or(plugin).or(alarm).or(settingsPage.getBackButton()).first()).toBeVisible()
+    if (!(await toggle.isVisible()) && !(await plugin.isVisible()) && !(await alarm.isVisible())) {
       await settingsPage.getBackButton().click()
+      await expect(toggle.or(plugin).or(alarm).first()).toBeVisible()
     }
+    if (await alarm.isVisible()) throw new Error(getTroubleMessage(name, await alarm.innerText()))
     if (!(await toggle.isVisible())) await plugin.click()
     await expect(toggle).toBeVisible()
+    const notice = settingsPage.getPluginErrorNotice(settings)
+    if (await notice.isVisible()) throw new Error(getTroubleMessage(name, await notice.innerText()))
     return toggle
   }
 }

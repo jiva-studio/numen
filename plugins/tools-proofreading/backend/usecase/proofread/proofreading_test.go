@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/settings"
 )
 
 const (
@@ -34,7 +35,7 @@ type scene struct {
 	queue  *hosttest.Queue
 	store  *hosttest.Store
 	model  *model
-	config Config
+	config settings.Config
 	run    *Proofreading
 }
 
@@ -47,7 +48,7 @@ func newScene(t *testing.T) *scene {
 		queue:  hosttest.NewQueue(),
 		store:  vault.Store(),
 		model:  newReplyModel(""),
-		config: DefaultConfig(),
+		config: settings.DefaultConfig(),
 	}
 	s.texts.File(scanPath, []byte("the scan"))
 	s.texts.File(talkPath, []byte("the recording"))
@@ -56,7 +57,7 @@ func newScene(t *testing.T) *scene {
 		Store: func(id domain.VaultID) host.StoreWriter { return s.store.With(id) },
 		Texts: func(id domain.VaultID) Texts { return s.texts.With(id) },
 		Queue: s.queue,
-	}, GetProofreadKinds(), s.model.ask, func() Config { return s.config })
+	}, GetProofreadKinds(), s.model.ask, func() settings.Config { return s.config })
 	return s
 }
 
@@ -189,7 +190,7 @@ func TestProofreadJoinsARunOfCues(t *testing.T) {
 
 func TestProofread_PromptsLongTranscriptByWindow(t *testing.T) {
 	s := newScene(t)
-	s.config = Config{BatchSize: 2, Overlap: 1, InFlight: 1, MaxEditDistance: s.config.MaxEditDistance}
+	s.config = settings.Config{BatchSize: 2, Overlap: 1, InFlight: 1, MaxEditDistance: s.config.MaxEditDistance}
 	talk := s.holdTalk(t, "one", "two", "three", "four", "five")
 	s.model.script = func(prompt string) string {
 		return getRows(prompt, func(_, text string) string { return text + "!" })
@@ -515,7 +516,7 @@ func TestReadPartsPaginationAndCorrectWindows(t *testing.T) {
 		t.Errorf("scan task reports = %+v", qProgress.reported)
 	}
 
-	s.config = Config{BatchSize: 2, Overlap: 1, InFlight: 2, MaxEditDistance: s.config.MaxEditDistance}
+	s.config = settings.Config{BatchSize: 2, Overlap: 1, InFlight: 2, MaxEditDistance: s.config.MaxEditDistance}
 	talk := s.holdTalk(t, "one", "two", "three", "four", "five")
 	qSpeech := &stubQueue{}
 	s.run.host.Queue = qSpeech
@@ -530,7 +531,7 @@ func TestReadPartsPaginationAndCorrectWindows(t *testing.T) {
 	}
 
 	// A joined run reaching the end of the first window advances next past its last line.
-	s.config = Config{BatchSize: 2, Overlap: 1, InFlight: 1, MaxEditDistance: s.config.MaxEditDistance}
+	s.config = settings.Config{BatchSize: 2, Overlap: 1, InFlight: 1, MaxEditDistance: s.config.MaxEditDistance}
 	s.model.prompts = nil
 	s.model.script = func(prompt string) string {
 		if strings.Contains(prompt, numbered.Opens+"1"+numbered.Closes) {

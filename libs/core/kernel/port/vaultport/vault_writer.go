@@ -4,11 +4,13 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
 
 type NoteWriter interface {
-	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error)
+	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (vault.WriteResult, error)
 	Create(ctx context.Context, path string, content []byte) error
 }
 
@@ -57,4 +59,12 @@ type TrashEmptiers interface {
 type VaultLocks interface {
 	// Lock waits while another holder has the lock and returns what releases it.
 	Lock(ctx context.Context, v domain.Vault) (release func(), err error)
+}
+
+// VaultVersions counts the writes a vault has taken, so a caller can tell which of two answers about its
+// files is the newer.
+type VaultVersions interface {
+	// GetVersion returns the number of writes the vault has taken since the core started. A write raises
+	// it only when it succeeds.
+	GetVersion(v domain.Vault) uint64
 }

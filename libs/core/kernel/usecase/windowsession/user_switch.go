@@ -3,7 +3,7 @@ package windowsession
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // UserSwitch shows a vault as a person asks for it, through the switch it is given. No plugin open is

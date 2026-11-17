@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"runtime"
 	"slices"
+	"strings"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // DependencyKind is what a dependency is.
@@ -73,6 +75,15 @@ func (req DependencyRequirement) GetSource(goos, goarch string) (DependencySourc
 		return DependencySource{}, false
 	}
 	return DependencySource{SourceURL: req.SourceURL, ChecksumSHA256: req.ChecksumSHA256}, true
+}
+
+// GetIdentity returns the string that tells one download from another: the kind, id, version, source on this platform and plugin
+// directory. Requirements with the same identity are one download.
+func (req DependencyRequirement) GetIdentity() string {
+	source, _ := req.GetSource(runtime.GOOS, runtime.GOARCH)
+	return strings.Join([]string{
+		string(req.Kind), req.ID, req.Version, source.SourceURL, source.ChecksumSHA256, source.ArchiveMember, source.MemberSHA256, req.PluginDir,
+	}, "\x00")
 }
 
 // GetDependencyKinds is every kind a manifest may declare.

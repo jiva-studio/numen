@@ -12,9 +12,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/core/protocol/schematest"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/shared/protocol/schematest"
 )
 
 var errPlain = errors.New("HTTP 500 from the service: Authorization: Bearer sk-live-123")

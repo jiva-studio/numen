@@ -7,8 +7,8 @@ import (
 
 	"google.golang.org/protobuf/types/known/structpb"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/themeport"
 )
 
 // AsDesigned is the multiplier that draws everything the size it was drawn at.
@@ -25,8 +24,8 @@ type Themes struct {
 // GetThemes lists the themes with the stored appearance and the theme it applies.
 type GetThemes struct {
 	catalog                               catalog
-	reader                                themeport.AppearanceReader
-	warnings                              themeport.ThemeWarnings
+	reader                                AppearanceReader
+	warnings                              ThemeWarnings
 	scales                                *Scales
 	interfaceScaleBounds, textScaleBounds Bounds
 }
@@ -34,8 +33,8 @@ type GetThemes struct {
 // NewGetThemes makes the listing over the sources, the stored appearance, and the bounds of the two scales.
 func NewGetThemes(
 	sources Sources,
-	reader themeport.AppearanceReader,
-	warnings themeport.ThemeWarnings,
+	reader AppearanceReader,
+	warnings ThemeWarnings,
 	scales *Scales,
 	interfaceScaleBounds, textScaleBounds Bounds,
 ) *GetThemes {

@@ -3,8 +3,8 @@ module github.com/jiva-studio/numen/plugins/engines-ocr
 go 1.26.11
 
 require (
-	github.com/getcharzp/go-ocr v0.0.0-20260818071741-a892e438f08d
 	github.com/ebitengine/purego v0.11.2 // indirect
+	github.com/getcharzp/go-ocr v0.0.0-20260818071741-a892e438f08d
 	github.com/getcharzp/onnxruntime_purego v1.25.0
 	github.com/jiva-studio/numen/libs/plugin/sdk-go v0.0.0
 	github.com/jiva-studio/numen/libs/plugin/sdk-go/host v0.0.0
