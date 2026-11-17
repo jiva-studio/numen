@@ -10,7 +10,7 @@ import (
 
 var errRead = errors.New("the file cannot be read")
 
-func read() (string, string, error) { return `{"v":1}`, "/home/settings.json", nil }
+func read() (string, string, uint64, error) { return `{"v":1}`, "/home/settings.json", 3, nil }
 
 func TestGetAnswersTheSettingsAndThePlugins(t *testing.T) {
 	t.Parallel()
@@ -32,6 +32,9 @@ func TestGetAnswersTheSettingsAndThePlugins(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if got.Version != 3 {
+		t.Errorf("the version is %d, want 3", got.Version)
+	}
 	if got.Written != `{"v":1}` || got.Path != "/home/settings.json" {
 		t.Errorf("the settings stand as %q at %q", got.Written, got.Path)
 	}
@@ -56,7 +59,7 @@ func TestGetAnswersNoPluginsWhereNoneAreBound(t *testing.T) {
 func TestGet_ErrorWhenFileUnreadable(t *testing.T) {
 	t.Parallel()
 	get := settings.NewGet(
-		func() (string, string, error) { return "", "", errRead },
+		func() (string, string, uint64, error) { return "", "", 0, errRead },
 		nil, nil,
 	)
 

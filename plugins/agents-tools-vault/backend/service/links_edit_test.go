@@ -152,7 +152,7 @@ func TestLinkAddSendsTwoFingerprintsOfOneNoteToTheHost(t *testing.T) {
 			v, calls, registry := newLinkHostVault(t)
 			current := readFingerprint(t, registry, "Rocks/Basalt.md")
 			minerals := readFingerprint(t, registry, "Minerals.md")
-			first, second := current, "1-1"
+			first, second := current, strings.Repeat("0", 64)
 			if isOtherFirst {
 				first, second = second, current
 			}

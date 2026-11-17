@@ -37,7 +37,7 @@ describe("plugin isolation over the captured plugin", () => {
 
 describe("the schemas of plugins", () => {
   it("finds a protobuf schema under a plugin and none elsewhere", () => {
-    const files = ["plugins/alpha/proto/alpha.proto", "plugins/alpha/backend/a.go", "libs/core/protocol/proto/numen/v1/a.proto"];
+    const files = ["plugins/alpha/proto/alpha.proto", "plugins/alpha/backend/a.go", "libs/shared/protocol/proto/numen/v1/a.proto"];
     assert.deepEqual(findPluginSchemas(files).map((one) => one.file), ["plugins/alpha/proto/alpha.proto"]);
   });
 });
@@ -117,7 +117,7 @@ describe("the suppressions", () => {
     assert.deepEqual(data('["apps/desktop/a.ts", "libs/x/b.go"]'), ["file list (root)"]);
     assert.deepEqual(data('[{ "file": "plugins/p/frontend/A.stories.ts", "reason": "it is drawn" }]'), ["file list (root)"]);
     assert.deepEqual(data('{ "exempt": { "files": ["libs/x/b.go"] } }'), ["file list exempt.files"]);
-    assert.deepEqual(data('{ "go": { "libs/note": ["libs/atomicfile"] }, "words": ["get", "set"] }'), []);
+    assert.deepEqual(data('{ "go": { "libs/shared/note": ["libs/shared/atomicfile"] }, "words": ["get", "set"] }'), []);
     assert.deepEqual(found("tools/checks/rules.json", '[{ "paths": ["tools/lint-layers/layers.mjs"] }]'), []);
   });
   it("keeps a list of JSON data whose keptBy names an issue and a reason, and fails one without", () => {

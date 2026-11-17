@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	machineclock "github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/cards"
@@ -20,7 +21,7 @@ import (
 func TestATitleNoFileCanBeNamedAfterIsRefused(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
 	for name, title := range map[string]string{
 		"empty":     "  ",
@@ -46,7 +47,7 @@ func TestATitleNoFileCanBeNamedAfterIsRefused(t *testing.T) {
 func TestATitleIsSavedOnlyWhereTheFilenameCannotCarryIt(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
 	plain, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"})
 	if err != nil {
@@ -71,7 +72,7 @@ func TestATitleIsSavedOnlyWhereTheFilenameCannotCarryIt(t *testing.T) {
 func TestACardModelOfOneFieldDeclaresIt(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
 	made, err := u.CardModel(t.Context(), v, cards.New{Title: "Word", Fields: []string{"Meaning"}})
 	if err != nil {
@@ -86,7 +87,7 @@ func TestACardModelOfOneFieldDeclaresIt(t *testing.T) {
 func TestANoteIsMadeWithNoIndexToBringLevel(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
 	made, err := u.Deck(t.Context(), v, cards.New{Title: "Birds", Body: "About birds."})
 	if err != nil {
@@ -104,7 +105,7 @@ func TestANoteIsMadeWithNoIndexToBringLevel(t *testing.T) {
 func TestANoteIsNotMadeOverOneThatIsThere(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 	if err := os.WriteFile(filepath.Join(v.Path, "Birds.md"), []byte("mine"), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +128,7 @@ func (unopenable) Open(domain.Vault) (ports.VaultWriter, error) { return nil, er
 func TestANoteIsNotMadeInAVaultThatCannotBeSaved(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(unopenable{}, nil, vaulttest.NewClock())
+	u := cards.NewCreate(unopenable{}, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
 	if _, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"}); !errors.Is(err, errUnopenable) {
 		t.Errorf("make a deck = %v, want %v", err, errUnopenable)
@@ -142,7 +143,7 @@ func TestANewNoteIsBroughtLevelInTheIndexItWasGiven(t *testing.T) {
 	u := cards.NewCreate(env.Ports.Writers, func(_ context.Context, _ domain.Vault, paths []string) error {
 		updated = append(updated, paths...)
 		return nil
-	}, vaulttest.NewClock())
+	}, vaulttest.NewClock(), machineclock.Entropy{})
 
 	made, err := u.Deck(t.Context(), v, cards.New{Title: "Birds"})
 	if err != nil {
@@ -156,7 +157,7 @@ func TestANewNoteIsBroughtLevelInTheIndexItWasGiven(t *testing.T) {
 func TestACardModelAtTheNoteBoundIsMadeAndOverTheBoundIsRefused(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
-	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock())
+	u := cards.NewCreate(env.Ports.Writers, nil, vaulttest.NewClock(), machineclock.Entropy{})
 
 	baseBody, err := format.CardModelBody("", []format.CardTemplate{{Name: "Recognize", Front: "a", Back: "b"}}, "")
 	if err != nil {

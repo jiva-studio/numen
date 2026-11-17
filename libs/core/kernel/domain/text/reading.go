@@ -3,7 +3,7 @@ package text
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Texts is the text of one vault's files, as the index, the search and the

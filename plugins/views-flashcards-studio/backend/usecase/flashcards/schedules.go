@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
 )
 
 // keptVersion is the shape of the cache file. A cache of another shape is
@@ -30,7 +29,7 @@ type Schedules struct {
 	scheduler   review.Scheduler
 	day         review.Day
 	reviewCards ListReviewCards
-	presets     presets.OpenReads
+	presets     OpenPresetReads
 	At          func(retention float64) review.Scheduler
 }
 
@@ -43,7 +42,7 @@ func NewSchedules(
 	scheduler review.Scheduler,
 	day review.Day,
 	reviewCards ListReviewCards,
-	presets presets.OpenReads,
+	presets OpenPresetReads,
 ) Schedules {
 	return Schedules{
 		logs: logs, Cache: nil, Report: nil, scheduler: scheduler,
@@ -100,7 +99,7 @@ func (u Schedules) getAssignment(ctx context.Context, v domain.Vault) (assignmen
 }
 
 func (u Schedules) getAssignmentFrom(
-	ctx context.Context, v domain.Vault, reads *presets.Reads, reviewCards []ReviewCard,
+	ctx context.Context, v domain.Vault, reads ports.PresetReads, reviewCards []ReviewCard,
 ) (assignment, error) {
 	out := u.createPlainAssignment()
 	if reads == nil || !reads.HasLinks() {
@@ -163,7 +162,7 @@ func (u Schedules) getScheduler(retention float64) review.Scheduler {
 func (u Schedules) Execute(
 	ctx context.Context, v domain.Vault,
 ) (map[review.CardID]review.Schedule, error) {
-	log := Log{Stores: u.logs}
+	log := Log{Stores: u.logs, Entropy: nil}
 
 	// The listing comes first, and the files are read only when the cache does
 	// not answer: reading the folder is what a launch does anyway, and reading

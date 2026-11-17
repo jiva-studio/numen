@@ -16,14 +16,14 @@ import (
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
-// notesModule is what the packages of libs/note are named under.
-const notesModule = "github.com/jiva-studio/numen/libs/note/"
+// notesModule is what the packages of libs/shared/note are named under.
+const notesModule = "github.com/jiva-studio/numen/libs/shared/note/"
 
 // rootPackage names the files of the module folder itself.
 const rootPackage = "."
 
 func getInternalEdges() map[string][]string {
-	// A package of libs/note that is not listed fails the check.
+	// A package of libs/shared/note that is not listed fails the check.
 	return map[string][]string{
 		rootPackage: nil,
 		"domain":    nil,
@@ -60,7 +60,7 @@ func listThirdParty() []string {
 // performs no I/O and no wire serialization outside the packages that are allowed one, and its
 // packages import each other along edit -> markdown -> {domain, ulid}.
 func TestNoteLibraryKeepsItsLayersAndItsPurity(t *testing.T) {
-	found, err := findNoteLibraryViolations(filepath.Join(load.RepoRootDir, "libs", "note"))
+	found, err := findNoteLibraryViolations(filepath.Join(load.RepoRootDir, "libs", "shared", "note"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,8 +91,8 @@ func TestNoteLibraryWalk_FindsThePlantedViolations(t *testing.T) {
 		got = append(got, strings.TrimPrefix(one, root+"/"))
 	}
 	want := []string{
-		"domain/note.go imports os: libs/note performs no I/O or wire serialization",
-		"edit/edit.go names github.com/google/uuid: libs/note reaches only itself, the standard library and the listed third-party packages",
+		"domain/note.go imports os: libs/shared/note performs no I/O or wire serialization",
+		"edit/edit.go names github.com/google/uuid: libs/shared/note reaches only itself, the standard library and the listed third-party packages",
 		"markdown/markdown.go (markdown) imports " + notesModule + "edit (edit): violates the layer hierarchy edit -> markdown -> {domain, ulid}",
 		"newpackage/package.go: the package newpackage is not listed in getInternalEdges",
 	}
@@ -167,13 +167,13 @@ func getImportViolations(path, pkg string, edges []string, to string) []string {
 		if slices.Contains(getAllowedInfra()[pkg], to) {
 			return nil
 		}
-		return []string{fmt.Sprintf("%s imports %s: libs/note performs no I/O or wire serialization", path, to)}
+		return []string{fmt.Sprintf("%s imports %s: libs/shared/note performs no I/O or wire serialization", path, to)}
 	}
 	if !strings.Contains(strings.Split(to, "/")[0], ".") ||
 		slices.ContainsFunc(listThirdParty(), func(allowed string) bool { return to == allowed || strings.HasPrefix(to, allowed) }) {
 		return nil
 	}
-	return []string{fmt.Sprintf("%s names %s: libs/note reaches only itself, the standard library and the listed third-party packages", path, to)}
+	return []string{fmt.Sprintf("%s names %s: libs/shared/note reaches only itself, the standard library and the listed third-party packages", path, to)}
 }
 
 func TestMain(m *testing.M) {

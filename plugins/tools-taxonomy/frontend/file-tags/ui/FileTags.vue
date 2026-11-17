@@ -26,6 +26,9 @@ const dots = computed(() =>
   })),
 )
 const more = computed(() => props.tags.length - DOTS_BEFORE_MORE)
+const moreSize = computed(() =>
+  more.value >= 100 ? 'file-tags__more--wider' : more.value >= 10 ? 'file-tags__more--wide' : '',
+)
 const label = computed(() => props.tags.join(', '))
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -57,7 +60,9 @@ function onLeave() {
         data-tag-dot
         :style="dot.style"
       />
-      <span v-if="hasMore" class="file-tags__dot file-tags__more" data-tag-more>+{{ more }}</span>
+      <span v-if="hasMore" class="file-tags__dot file-tags__more" :class="moreSize" data-tag-more>
+        +{{ more }}
+      </span>
     </span>
     <Teleport to="body">
       <Tooltip v-if="at" :at="at">{{ label }}</Tooltip>
@@ -67,7 +72,7 @@ function onLeave() {
 
 <style scoped>
 .file-tags {
-  --ring: 0.125rem;
+  --ring: 0.0625rem;
   --dot: 0.625rem;
 
   display: inline-flex;
@@ -84,24 +89,32 @@ function onLeave() {
   block-size: var(--dot);
   border-radius: 50%;
   background: var(--tag);
-  box-shadow: 0 0 0 var(--ring) var(--tree-row-bg);
+  box-shadow: 0 0 0 var(--ring) var(--tree-row-ring, var(--tree-row-bg));
 }
 
 .file-tags__dot + .file-tags__dot {
-  margin-inline-start: calc(var(--dot) / -2);
+  margin-inline-start: calc(var(--dot) * -0.3);
 }
 
 .file-tags__more {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: auto;
-  block-size: auto;
-  min-inline-size: var(--dot);
-  min-block-size: var(--dot);
-  padding-inline: 0.125rem;
+  overflow: hidden;
+  padding: 0;
+  --dot: 0.875rem;
   background: var(--numen-rule);
   color: var(--numen-ink);
-  font-size: var(--numen-text-1);
+  font-size: 0.5625rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.file-tags__more--wide {
+  font-size: 0.5rem;
+}
+
+.file-tags__more--wider {
+  font-size: 0.4375rem;
 }
 </style>

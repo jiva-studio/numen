@@ -1,6 +1,6 @@
 package plugin
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 // TextPut is what a plugin reports of one of its text versions. File is
 // the name of the version's file in the plugin's folder.

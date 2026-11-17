@@ -5,21 +5,24 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/format"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
 // EditCard writes values into the card of a card id, and cuts it by card model from then on when that is not empty.
 type EditCard struct {
-	read  Read
-	write Write
+	read  ports.DeckReader
+	write ports.DeckWriter
 }
 
-func NewEditCard(read Read, write Write) EditCard { return EditCard{read: read, write: write} }
+func NewEditCard(read ports.DeckReader, write ports.DeckWriter) EditCard {
+	return EditCard{read: read, write: write}
+}
 
 // Execute replaces the values of a card.
 func (u EditCard) Execute(
 	ctx context.Context, v domain.Vault, version DeckVersion, cardID, cardModel string, values []format.Value,
 ) (EditResult, error) {
-	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(contents DeckContents, file *format.DeckFile) error {
+	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(contents format.DeckContents, file *format.DeckFile) error {
 		card := format.ID(cardID)
 		if _, err := findCard(contents.Body.Cards, cardID); err != nil {
 			return err

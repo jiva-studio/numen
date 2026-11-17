@@ -81,15 +81,16 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
           stopsOn: StopReason.NOTHING,
         },
         at: 'one',
+        version: 1n,
         bounds: BOUNDS,
       }),
-    getDeckPreset: async () => asValue({ preset: null, at: '', bounds: NO_BOUNDS }),
+    getDeckPreset: async () => asValue({ preset: null, at: '', version: 0n, bounds: NO_BOUNDS }),
     list: async () => [],
     createPreset: async () => asValue({ path: '' }),
-    scheduleDeck: async () => asValue({ at: '' }),
+    scheduleDeck: async () => asValue({ at: '', version: 1n }),
     write: async (_path, payload) => {
       content.push(payload)
-      return asValue({ at: 'two' })
+      return asValue({ at: 'two', version: 2n })
     },
     // A curve that is never answered keeps the local estimate, which is what the
     // arithmetic here is read from.

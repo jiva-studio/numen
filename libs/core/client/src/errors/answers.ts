@@ -9,11 +9,29 @@
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import type { ErrorCode } from './errorCode'
 
-/** The two numbers first: a path holds spaces, and everything after them is it. */
+/**
+ * The two first parts are the file as `<size>:<version>:<hash> <mtime>`: a path holds spaces, and everything
+ * after them is it.
+ */
 export const parseFingerprint = (stat: string) => {
-  // Stryker disable next-line StringLiteral: BigInt evaluates empty string and '0' both to 0n.
-  const [size = '0', mtime = '0', ...rest] = stat.split(' ')
-  return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
+  const [head = '', mtime, ...rest] = stat.split(' ')
+  const [size, version, hash, ...extra] = head.split(':')
+  if (
+    size === undefined ||
+    version === undefined ||
+    hash === undefined ||
+    extra.length > 0 ||
+    mtime === undefined ||
+    rest.join(' ') === ''
+  )
+    throw new Error(`not the fingerprint of a file: ${stat}`)
+  return {
+    path: rest.join(' '),
+    size: BigInt(size),
+    mtime: BigInt(mtime),
+    hash,
+    version: BigInt(version),
+  }
 }
 
 /**

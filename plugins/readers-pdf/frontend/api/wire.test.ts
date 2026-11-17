@@ -45,7 +45,7 @@ describe('getDocumentLayout', () => {
         { width: 612, height: 792 },
         { width: 595.5, height: 842 },
       ],
-      stat: '12 1700000000 Books/Book.pdf',
+      stat: '12:0: 1700000000 Books/Book.pdf',
     })
     expect(call).toHaveBeenCalledWith('GetDocument', getDocumentRequest)
   })
@@ -90,16 +90,16 @@ describe('getPageUrl', () => {
   it('names the width and the bytes of the file', () => {
     const { api } = createApiOf({})
 
-    expect(createDocuments(api).getPageUrl('Books/Book.pdf', 3, 1200, '12 34 Books/Book.pdf')).toBe(
-      '/plugin/md.numen.readers.pdf/pages/3?path=Books%2FBook.pdf&wide=1200&size=12&mtime=34',
-    )
+    expect(
+      createDocuments(api).getPageUrl('Books/Book.pdf', 3, 1200, '12:0: 34 Books/Book.pdf'),
+    ).toBe('/plugin/md.numen.readers.pdf/pages/3?path=Books%2FBook.pdf&wide=1200&size=12&mtime=34')
   })
 
-  it('names zero bytes where the caller has no fingerprint', () => {
+  it('names no bytes where the caller has no fingerprint', () => {
     const { api } = createApiOf({})
 
     expect(createDocuments(api).getPageUrl('Book.pdf', 1, 800)).toBe(
-      '/plugin/md.numen.readers.pdf/pages/1?path=Book.pdf&wide=800&size=0&mtime=0',
+      '/plugin/md.numen.readers.pdf/pages/1?path=Book.pdf&wide=800',
     )
   })
 })

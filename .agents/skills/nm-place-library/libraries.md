@@ -30,7 +30,7 @@ Imports `@numen/protocol` and `@connectrpc`. Imported by the windows and `@numen
 
 Test: it calls the core, or words what the core returned. A function that does not touch the wire or the schema belongs elsewhere. A client takes its transport as a parameter with the shared transport as default, so a test passes its own.
 
-## `@numen/protocol` (`libs/core/protocol`)
+## `@numen/protocol` (`libs/shared/protocol`)
 
 Holds the `.proto` files, the committed generated Go (`*.pb.go`) and TypeScript (`*_pb.ts`), and the JSON declarations the generators read (`commands.json`, `events.json`, `slots.json`, `when.json`).
 
@@ -58,7 +58,7 @@ Test: it makes a plugin frontend load, start, register what it contributes, or c
 
 Holds what a plugin frontend is built from: the plugin entry, `createApi` for the plugin's own backend, views, slots, commands, notices, tasks, texts, the `testing` entry, the host-modules entry and the Vite helpers.
 
-Imports `@numen/protocol` and `@numen/ui`; none of its exported declarations reaches a declaration of `libs/core/protocol`. Imported by plugins and `@numen/plugin-loader`.
+Imports `@numen/protocol` and `@numen/ui`; none of its exported declarations reaches a declaration of `libs/shared/protocol`. Imported by plugins and `@numen/plugin-loader`.
 
 Test: at least one plugin imports it, or it is the contract of a capability (agent provider, embedding). It holds no concrete agent, engine or runtime, and no application-side API. A call or field added here is added to `libs/plugin/sdk-go` in the same change.
 

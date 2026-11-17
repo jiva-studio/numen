@@ -5,15 +5,15 @@ package textfake
 import (
 	"bytes"
 	"context"
-	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 	"io"
 	"slices"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/textfile"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/textfile"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"

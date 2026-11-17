@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // PlaceFront asks the clients to show a place.

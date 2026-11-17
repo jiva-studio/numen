@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/usecase/books"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/wire/bookwire"
 )
 
 // entriesPattern is where the entries of a book's archive are served below the plugin route. The
@@ -14,13 +15,13 @@ const entriesPattern = "entries/{entry...}"
 
 // EntryServer serves the entries of the books of a vault, such as the pictures a book carries.
 type EntryServer struct {
-	reader *books.Reader
-	report func(what string, err error)
+	methods *bookwire.Methods
+	report  func(what string, err error)
 }
 
-// NewEntryServer serves the entries the book reader reads. A failure to write a response goes to report.
-func NewEntryServer(reader *books.Reader, report func(what string, err error)) *EntryServer {
-	return &EntryServer{reader: reader, report: report}
+// NewEntryServer serves the entries the book methods read. A failure to write a response goes to report.
+func NewEntryServer(methods *bookwire.Methods, report func(what string, err error)) *EntryServer {
+	return &EntryServer{methods: methods, report: report}
 }
 
 // ServeHTTP answers a request for one entry: the entry is the path value "entry", the book is the
@@ -31,9 +32,9 @@ func (s *EntryServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req := api.ReadBookEntryRequest{
 		Path:     query.Get("path"),
 		Entry:    r.PathValue("entry"),
-		Baseline: books.ParseBaseline(query.Get("size"), query.Get("mtime")),
+		Baseline: bookwire.ParseBaseline(query.Get("size"), query.Get("mtime")),
 	}
-	res, err := s.reader.ReadBookEntry(books.WithVault(r.Context(), host.GetRequestVault(r.Header)), req)
+	res, err := s.methods.ReadBookEntry(books.WithVault(r.Context(), host.GetRequestVault(r.Header)), req)
 	if err != nil {
 		failure := toAPIError(err)
 		http.Error(w, failure.Error(), getStatus(failure.Code))

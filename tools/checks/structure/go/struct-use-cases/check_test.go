@@ -12,7 +12,7 @@ import (
 // The rule counts value, pointer and embedded fields of use case types, and not a field of another type.
 func TestStructUseCaseRule_RejectsAStructOfMoreThanTheLimit(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
-		"usecase/find/find.go":   "package find\n\ntype Find struct{}\n",
+		"usecase/find/find.go":   "package find\n\ntype Find struct{}\n\ntype Source interface{ Read() }\n",
 		"usecase/store/store.go": "package store\n\ntype Store struct{}\n",
 		"adapter/window/window.go": `package window
 
@@ -36,6 +36,7 @@ type Full struct {
 	third  *store.Store
 	fourth *store.Store
 	fifth  *store.Store
+	source find.Source
 	name   string
 	names  []string
 }
