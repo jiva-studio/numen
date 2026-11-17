@@ -13,7 +13,10 @@ export function useWidgetsLoading(
 ): SlotLoading {
   const loading = createSlotLoading({
     clock,
-    reportIssue: (_pluginId, message) => console.warn(message),
+    reportIssue: (_pluginId, message) => {
+      const { warn } = console
+      warn(message)
+    },
   })
 
   watchPostEffect(() => {

@@ -21,7 +21,7 @@ const props = withDefaults(
     side: 'above' | 'below'
     entries: readonly PlexWidget[]
     path: string
-    clock?: Clock
+    clock?: Clock | undefined
   }>(),
   { clock: () => browserClock },
 )

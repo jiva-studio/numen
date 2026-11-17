@@ -75,11 +75,7 @@ const { room, options, measures, widen, placedHeadings } = useFreeSpace(
 /** How the nodes behave, handed down as one. */
 const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
-const { getRoomOf, setWidgets, getNodeRoom, setReady, isSettled } = useRooms(
-  props,
-  measures,
-  options,
-)
+const rooms = useRooms(props, measures, options)
 
 const { frame, waiting, isMoving } = usePlexTransition(
   () => props.graph,
@@ -89,12 +85,12 @@ const { frame, waiting, isMoving } = usePlexTransition(
     measure: measures.value?.node,
     measureLabel: measures.value?.label,
     labelType: measures.value?.labelType,
-    room: getNodeRoom.value,
+    room: rooms.getNodeRoom.value,
   }),
   {
     duration: () => props.duration,
     clock: props.clock,
-    isReady: (ids) => !(props.widgetsAbove?.length || props.widgetsBelow?.length) || isSettled(ids),
+    isReady: rooms.isSettled,
   },
 )
 
@@ -186,12 +182,12 @@ watch(
       :relation-name="relationName"
       :widen="widen"
       :placed-headings="placedHeadings"
-      :room-of="getRoomOf"
+      :room-of="rooms.getRoomOf"
       :widgets-above="widgetsAbove"
       :widgets-below="widgetsBelow"
       :get-path="getPath"
-      :set-widgets="setWidgets"
-      :set-ready="setReady"
+      :set-widgets="rooms.setWidgets"
+      :set-ready="rooms.setReady"
       :waiting="waiting"
       :clock="clock"
       :behavior="behavior"

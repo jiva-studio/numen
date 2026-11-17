@@ -5,10 +5,15 @@ import type { NamesRoom } from '../lib/names'
 import type { PlexMetrics } from './sizing/measure'
 import { useNamesRooms, type NamesRoomsProps } from './useNamesRooms'
 import { useWidgetRooms, type WidgetSide } from './useWidgetRooms'
-import type { PlexNode } from '../../types'
+import type { PlexNode, PlexWidget } from '../../types'
+
+export interface WidgetRoomsProps extends NamesRoomsProps {
+  readonly widgetsAbove?: readonly PlexWidget[] | undefined
+  readonly widgetsBelow?: readonly PlexWidget[] | undefined
+}
 
 export function useRooms(
-  props: NamesRoomsProps,
+  props: WidgetRoomsProps,
   measures: Readonly<Ref<PlexMetrics | undefined>>,
   options: Readonly<Ref<PlexOptions>>,
 ): {
@@ -20,6 +25,10 @@ export function useRooms(
 } {
   const { getRoomOf, getNodeRoom: getNamesRoom } = useNamesRooms(props, measures, options)
   const { setWidgets, getNodeRoom: getWidgetsRoom, setReady, isSettled } = useWidgetRooms(options)
+
+  // Without widgets there is nothing to wait for.
+  const isWaitedFor = (ids: readonly string[]) =>
+    !(props.widgetsAbove?.length || props.widgetsBelow?.length) || isSettled(ids)
 
   const getNodeRoom = computed(() => {
     const ofNames = getNamesRoom.value
@@ -37,5 +46,5 @@ export function useRooms(
     }
   })
 
-  return { getRoomOf, setWidgets, getNodeRoom, setReady, isSettled }
+  return { getRoomOf, setWidgets, getNodeRoom, setReady, isSettled: isWaitedFor }
 }
