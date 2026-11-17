@@ -32,7 +32,7 @@ func TestAWriteOverTheHashOfTheContentReturnsTheHashOfTheNewContent(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if second.Stat.Hash != domain.HashContent([]byte("next")) || second.Version <= first.Version {
+	if second.Stat.Hash != domain.HashContent([]byte("next")) || second.Version <= first.Version || second.Stat.Version != second.Version {
 		t.Errorf("the second write returned %+v after version %d", second, first.Version)
 	}
 	if got := writers.GetVersion(vault); got != second.Version {

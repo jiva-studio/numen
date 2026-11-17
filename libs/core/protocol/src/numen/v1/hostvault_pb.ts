@@ -21,7 +21,7 @@ export const file_numen_v1_hostvault: GenFile = /*@__PURE__*/
 /**
  * HostFileStat is what a file was at a moment: at its current position, how large it
  * was, when it last changed and what it held. As a baseline, a hash is compared with the content
- * of the file at the write; without one, the size and the time are.
+ * of the file at the write; a baseline without a hash matches no file, so the write is stale.
  *
  * @generated from message numen.v1.HostFileStat
  */

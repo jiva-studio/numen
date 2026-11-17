@@ -41,6 +41,7 @@ describe('the file an answer came out of', () => {
   it('is an error where the string is not a fingerprint', () => {
     expect(() => parseFingerprint('')).toThrow()
     expect(() => parseFingerprint('1234 1700000000 physics/Entropy.md')).toThrow()
+    expect(() => parseFingerprint('1234:0: 1700000000 ')).toThrow()
   })
 })
 

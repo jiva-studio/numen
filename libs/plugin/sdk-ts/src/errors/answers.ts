@@ -38,7 +38,8 @@ const parseFingerprint = (stat: string) => {
     version === undefined ||
     hash === undefined ||
     extra.length > 0 ||
-    mtime === undefined
+    mtime === undefined ||
+    rest.join(' ') === ''
   )
     throw new Error(`not the fingerprint of a file: ${stat}`)
   return {

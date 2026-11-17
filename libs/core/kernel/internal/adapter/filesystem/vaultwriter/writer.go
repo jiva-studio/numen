@@ -93,7 +93,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 		return vault.WriteResult{}, err
 	}
 	version := w.lock.version.Add(1)
-	replaced := domain.FileStat{Path: path, Size: written.Size, ModTime: written.ModTime, Hash: written.Hash}
+	replaced := domain.FileStat{Path: path, Size: written.Size, ModTime: written.ModTime, Hash: written.Hash, Version: version}
 	return vault.WriteResult{Stat: replaced, Version: version}, nil
 }
 
