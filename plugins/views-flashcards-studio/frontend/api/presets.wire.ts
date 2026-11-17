@@ -71,7 +71,6 @@ export const presets: Presets = {
   },
 }
 
-/** The version of the store a response stands for; an answer that names none stands for the oldest. */
 const parseVersion = (at?: FileStat): bigint => (at ? BigInt(at.version) : 0n)
 
 const parseRead = (answer: ReadPresetResponse | GetDeckPresetResponse): PresetReadResult => {
