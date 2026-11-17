@@ -26,6 +26,15 @@ const mountTags = (count: number) =>
 const getDots = (wrapper: ReturnType<typeof mountTags>) => wrapper.findAll('[data-tag-dot]')
 
 describe('the tag dots of a file', () => {
+  it('hold the exact list of the tags as data, whatever characters a tag holds', () => {
+    const tags = ['Port, Sea', 'Quay', 'Dock', 'Pier', 'Mole', 'Slip']
+    const wrapper = mount(FileTags, { props: { tags }, attachTo: document.body })
+
+    expect(
+      JSON.parse(wrapper.get('[data-tag-dots]').attributes('data-tags') ?? 'null'),
+    ).toStrictEqual(tags)
+  })
+
   it('draw nothing for a file without tags', () => {
     const wrapper = mountTags(0)
 

@@ -1,15 +1,16 @@
 /** The tags of a note as its frontmatter holds them: the key `tags:` with one list item for each tag. */
 
-const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---/
+const FRONTMATTER = /^---\r?\n(?:([\s\S]*?)\r?\n)?---/
 
 /** The text of a note with the key `tags` in its frontmatter, which is made when the note has none. */
 export const addTags = (text: string, tags: readonly string[]): string => {
   const block = `tags:\n${tags.map((tag) => `  - ${JSON.stringify(tag)}`).join('\n')}`
   const found = FRONTMATTER.exec(text)
   if (!found) return `---\n${block}\n---\n\n${text}`
-  if (/^tags:/m.test(found[1]))
+  const held = found[1] ?? ''
+  if (/^tags:/m.test(held))
     throw new Error('the note has the tags key already: write every tag of the note in the table')
-  return `---\n${block}\n${found[1]}\n---${text.slice(found[0].length)}`
+  return `---\n${block}${held === '' ? '' : `\n${held}`}\n---${text.slice(found[0].length)}`
 }
 
 /** The tags the table names for each note, in the order of the rows: a note may be named once for each tag. */
