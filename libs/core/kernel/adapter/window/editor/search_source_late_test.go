@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"sync"
@@ -94,6 +95,43 @@ func (s *connectionSource) SearchChunks(
 	return connect.NewResponse(&v1.SearchSourceServiceSearchChunksResponse{Matches: matches}), nil
 }
 
+// launchSleepProcesses starts a process of its own for each start of the plugin. The host forgets a plugin when
+// its process exits, and the host stops an idle plugin, so one process handed to two starts ends the second
+// start as soon as the stop of the first is noticed.
+func launchSleepProcesses(t *testing.T, port int) func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+	var mu sync.Mutex
+	var started []*os.Process
+	var inputs []io.Closer
+	t.Cleanup(func() {
+		mu.Lock()
+		defer mu.Unlock()
+		for _, p := range started {
+			wiretest.KillProcess(t, p)
+			wiretest.ReapProcess(t, p)
+		}
+		for _, input := range inputs {
+			if err := input.Close(); err != nil {
+				t.Error(err)
+			}
+		}
+	})
+	return func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+		cmd := exec.CommandContext(t.Context(), "/bin/sh", "-c", "read -r line")
+		input, err := cmd.StdinPipe()
+		if err != nil {
+			return nil, nil, err
+		}
+		if err := cmd.Start(); err != nil {
+			return nil, nil, err
+		}
+		mu.Lock()
+		started = append(started, cmd.Process)
+		inputs = append(inputs, input)
+		mu.Unlock()
+		return cmd.Process, wiretest.GetReadyOutput(port), nil
+	}
+}
+
 func startConnectionSource(t *testing.T, plugin *connectionSource) *container.PluginRoles {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -117,10 +155,7 @@ func startConnectionSource(t *testing.T, plugin *connectionSource) *container.Pl
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	cmd := wiretest.StartSleepProcess(t)
-	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
-		return cmd.Process, wiretest.GetReadyOutput(port), nil
-	})
+	host.Processes.SetLauncher(launchSleepProcesses(t, port))
 	return host
 }
 
