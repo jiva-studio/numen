@@ -2,7 +2,7 @@
 package domain
 
 import (
-	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
+	notesdomain "github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 type Vault = notesdomain.Vault

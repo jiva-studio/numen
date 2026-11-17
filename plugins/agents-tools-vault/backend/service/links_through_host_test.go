@@ -101,7 +101,7 @@ func statOf(t *testing.T, v *hosttest.Vault, notePath string) domain.FileStat {
 }
 
 func isSameBaseline(got, want domain.FileStat) bool {
-	return got.Size == want.Size && got.ModTime.Equal(want.ModTime)
+	return got.Hash == want.Hash
 }
 
 func getErrorText(t *testing.T, registry *tools.Registry, name, arguments string) string {

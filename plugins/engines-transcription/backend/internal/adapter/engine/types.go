@@ -3,15 +3,16 @@ package engine
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/transcribe"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/speech"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/ports"
 )
 
 // Audio is one stretch of a recording that carries words, as the samples a
 // model is given, and the milliseconds it spans. The samples are 16 kHz mono.
-type Audio = transcribe.Audio
+type Audio = speech.Audio
 
 // A Recording is a file opened for listening.
-type Recording = transcribe.Recording
+type Recording = ports.Recording
 
 // TranscriberPort is the port interface for speech recognition and segmentation.
 type TranscriberPort interface {

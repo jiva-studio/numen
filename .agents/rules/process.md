@@ -110,6 +110,7 @@ An agent keeps the status of its issue true:
 2. **Opens the pull request** (step 1 of the pipeline): when the issue has no milestone, sets the current milestone on it (a merged pull request gets it from the workflow). **Marks it ready** (step 3): sets Status to In review.
 3. **Merge or close**: Done, set by the built-in project workflows (a closed issue and a merged pull request set it). An agent does not set Done by hand.
 4. **Files a new issue**: sets its Type, adds it to the project with its Area, and leaves Status at Backlog; Priority and Effort stay with the owner. The labels of an issue only name what those fields do not: `perf`, `epic`, `needs-decision` and the area labels of [`CONTRIBUTING.md`](../../CONTRIBUTING.md), which are finer than the project field Area and are set beside it. Type is never a label.
+5. **Changes the decision**: updates the issue at once (Problem, Cause, Change, Acceptance, and the title when it names the old design), notes in its Notes why the earlier plan was dropped, and updates the pull request body. The review workflow and CodeRabbit (`Linked Issues`, `Out of Scope`) compare the pull request with the issue text and report a deviation from an outdated issue as a defect.
 
 The commands:
 

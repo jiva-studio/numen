@@ -14,10 +14,13 @@ import (
 )
 
 type gateway struct {
-	limit   time.Duration
-	err     error
-	scores  []float32
-	request *llm.RerankRequest
+	limit       time.Duration
+	err         error
+	scores      []float32
+	isAsked     bool
+	query       string
+	instruction string
+	documents   []string
 }
 
 func (g *gateway) Complete(context.Context, connection.Call, time.Duration, *llm.CompleteRequest) (*llm.CompleteResult, error) {
@@ -32,8 +35,8 @@ func (g *gateway) Embed(context.Context, connection.Call, time.Duration, []strin
 	return nil, nil
 }
 
-func (g *gateway) Rerank(_ context.Context, _ connection.Call, limit time.Duration, request *llm.RerankRequest) ([]float32, error) {
-	g.limit, g.request = limit, request
+func (g *gateway) Rerank(_ context.Context, _ connection.Call, limit time.Duration, query, instruction string, documents []string) ([]float32, error) {
+	g.limit, g.isAsked, g.query, g.instruction, g.documents = limit, true, query, instruction, documents
 	return g.scores, g.err
 }
 
@@ -56,15 +59,15 @@ func call(typeID, model, address string) connection.Call {
 
 func TestDocumentsAreRerankedWithTheLimitOfTheOperation(t *testing.T) {
 	g := &gateway{scores: []float32{0.2, 0.9}}
-	request := &llm.RerankRequest{Query: "ferry", Documents: []string{"Tide tables", "Ferry times"}}
+	documents := []string{"Tide tables", "Ferry times"}
 
-	result, err := newSubject(t, g).Rerank(t.Context(), call("openrouter", "cohere/rerank-v3.5", "https://openrouter.ai/api/v1"), request)
+	scores, err := newSubject(t, g).Rerank(t.Context(), call("openrouter", "cohere/rerank-v3.5", "https://openrouter.ai/api/v1"), "ferry", "Find the notes that answer the question", documents)
 
-	if err != nil || !slices.Equal(result.GetScores(), []float32{0.2, 0.9}) || g.limit != limits.DefaultOtherLimit {
-		t.Errorf("result = %v, err = %v, limit = %v", result, err, g.limit)
+	if err != nil || !slices.Equal(scores, []float32{0.2, 0.9}) || g.limit != limits.DefaultOtherLimit {
+		t.Errorf("scores = %v, err = %v, limit = %v", scores, err, g.limit)
 	}
-	if g.request.GetQuery() != "ferry" || !slices.Equal(g.request.GetDocuments(), request.GetDocuments()) {
-		t.Errorf("the gateway was asked %v", g.request)
+	if g.query != "ferry" || g.instruction != "Find the notes that answer the question" || !slices.Equal(g.documents, documents) {
+		t.Errorf("the gateway was asked %q, %q, %q", g.query, g.instruction, g.documents)
 	}
 }
 
@@ -72,15 +75,15 @@ func TestNoDocumentIsNoRequest(t *testing.T) {
 	g := &gateway{err: errors.New("should not be called")}
 	subject := newSubject(t, g)
 
-	result, err := subject.Rerank(t.Context(), call("openrouter", "m", "https://openrouter.ai/api/v1"), &llm.RerankRequest{Query: "ferry"})
+	scores, err := subject.Rerank(t.Context(), call("openrouter", "m", "https://openrouter.ai/api/v1"), "ferry", "", nil)
 
-	if err != nil || len(result.GetScores()) != 0 || g.request != nil {
-		t.Errorf("result = %v, err = %v, request = %v", result, err, g.request)
+	if err != nil || len(scores) != 0 || g.isAsked {
+		t.Errorf("scores = %v, err = %v, asked = %v", scores, err, g.isAsked)
 	}
 
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := subject.Rerank(canceled, call("openrouter", "m", "https://openrouter.ai/api/v1"), &llm.RerankRequest{Query: "ferry"}); !errors.Is(err, context.Canceled) {
+	if _, err := subject.Rerank(canceled, call("openrouter", "m", "https://openrouter.ai/api/v1"), "ferry", "", nil); !errors.Is(err, context.Canceled) {
 		t.Errorf("Rerank with canceled context and no document = %v, want context.Canceled", err)
 	}
 }
@@ -98,12 +101,12 @@ func TestTheFirstRerankOfACompatibleModelHasALongLimitThatEndsOnceItAnswered(t *
 	g := &gateway{scores: []float32{1}}
 	subject := newSubject(t, g)
 	local := call("openai-compatible", "bge-reranker-v2-m3", "http://127.0.0.1:8080/v1")
-	request := &llm.RerankRequest{Query: "ferry", Documents: []string{"Ferry times"}}
+	documents := []string{"Ferry times"}
 
-	if _, err := subject.Rerank(t.Context(), local, request); err != nil || g.limit != limits.FirstRequestLimit {
+	if _, err := subject.Rerank(t.Context(), local, "ferry", "", documents); err != nil || g.limit != limits.FirstRequestLimit {
 		t.Fatalf("first limit = %v, err = %v", g.limit, err)
 	}
-	if _, err := subject.Rerank(t.Context(), local, request); err != nil || g.limit != limits.DefaultOtherLimit {
+	if _, err := subject.Rerank(t.Context(), local, "ferry", "", documents); err != nil || g.limit != limits.DefaultOtherLimit {
 		t.Errorf("second limit = %v, err = %v", g.limit, err)
 	}
 }
@@ -114,7 +117,7 @@ func TestAFailedRerankDoesNotEndTheLongFirstLimit(t *testing.T) {
 	local := call("openai-compatible", "bge-reranker-v2-m3", "http://127.0.0.1:8080/v1")
 
 	for range 2 {
-		if _, err := subject.Rerank(t.Context(), local, &llm.RerankRequest{Query: "ferry", Documents: []string{"a"}}); err == nil {
+		if _, err := subject.Rerank(t.Context(), local, "ferry", "", []string{"a"}); err == nil {
 			t.Fatal("a failed request returned no error")
 		}
 	}

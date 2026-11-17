@@ -8,7 +8,6 @@ import (
 	"google.golang.org/protobuf/encoding/protowire"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
@@ -39,7 +38,6 @@ func newRerankingQuery(t *testing.T) stubSession {
 	w.Rows.Set(settingsdomain.AppOwner, modelcalltest.RerankOperation, connection.Row{ConnectionID: reranker.ID, Options: map[string]string{"model": "rerank-small"}})
 	w.Provider.Answer(rerankAddress, answerEachPassage)
 	return newQuerySession(t, func(db *index.DB, deps *searchquerytest.Deps) {
-		deps.Stages.Codec = rerankproto.Codec{}
 		deps.Stages.Calls = modelcall.NewCalls(
 			modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows},
 			w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside,

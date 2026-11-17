@@ -141,8 +141,8 @@ linters:
           list-mode: lax
           files:
             - "**/libs/core/kernel/**"
-            - "**/libs/note/**"
-            - "**/libs/core/protocol/**"
+            - "**/libs/shared/note/**"
+            - "**/libs/shared/protocol/**"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/plugin/sdk-go"
               desc: "only plugins and applications may import the plugin SDK"
@@ -246,8 +246,6 @@ linters:
             - "!$test"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/celquery"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/rerankproto"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
@@ -463,7 +461,8 @@ linters:
         # A plugin reaches the host through the plugin SDK and may import the shared
         # libraries under libs/shared. The rule covers every file outside libs/, apps/
         # and tools/, which includes a plugin checked out alone.
-        # The longer match wins, so the SDK and libs/shared/ are allowed under the denied libs/.
+        # The longer match wins, so the SDK and libs/shared/ are allowed under the denied libs/,
+        # and libs/shared/protocol under libs/shared/ is denied again.
         plugin-isolation:
           list-mode: lax
           files:
@@ -477,6 +476,10 @@ linters:
           deny:
             - pkg: "github.com/jiva-studio/numen/libs"
               desc: "a plugin depends on the plugin SDK, on the shared libraries and on no other library of this repository"
+            - pkg: "github.com/jiva-studio/numen/libs/shared/note"
+              desc: "a plugin reaches notes through the plugin SDK"
+            - pkg: "github.com/jiva-studio/numen/libs/shared/protocol"
+              desc: "the protocol is the wire between the core and the plugin SDK; a plugin names no wire type"
             - pkg: "github.com/jiva-studio/numen/apps"
               desc: "a plugin reaches no application"
             - pkg: "connectrpc.com/connect"
@@ -497,7 +500,7 @@ linters:
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/plugin/catalog"
               desc: "the manifest model depends on no other package of the catalog"
-            - pkg: "github.com/jiva-studio/numen/libs/core/protocol"
+            - pkg: "github.com/jiva-studio/numen/libs/shared/protocol"
               desc: "the manifest model knows no wire format"
             - pkg: "google.golang.org/protobuf"
               desc: "the manifest model knows no wire format"
@@ -594,7 +597,7 @@ linters:
     importas:
       no-unaliased: true
       alias:
-        - pkg: github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1
+        - pkg: github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1
           alias: v1
         - pkg: github.com/modelcontextprotocol/go-sdk/mcp
           alias: sdk

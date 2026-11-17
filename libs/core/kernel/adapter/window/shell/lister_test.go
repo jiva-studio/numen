@@ -2,7 +2,7 @@ package shell
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // vaultLister is the list of vaults an installation keeps, read through a function.

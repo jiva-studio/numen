@@ -13,13 +13,13 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
@@ -33,7 +33,7 @@ func newPluginVaultList(f *showing) vaultapi.List {
 		Edit:    windowsession.VaultEdits{Add: vaults.Change.Add, Rename: vaults.Change.Rename, Remove: vaults.Change.Remove},
 		Find:    listing.Find,
 		Missing: listing.FolderCheck,
-		Open:    f.installation,
+		Open:    f.cases.OpenPlugin,
 	})
 }
 

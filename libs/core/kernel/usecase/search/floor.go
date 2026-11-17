@@ -7,8 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchpolicyport"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Progress reads how far a vault is embedded.
@@ -50,14 +49,14 @@ type FloorHint func(ctx context.Context) float64
 // names none. The first source with an answer wins: the floor stored for the
 // vault under the recipe, then the hint of the embedding model, then DefaultFloor.
 type FloorPolicy struct {
-	store        searchpolicyport.FloorStore
+	store        FloorStore
 	hint         FloorHint
 	errorHandler func(error)
 }
 
 // NewFloorPolicy returns the policy over a store of floors. A nil store holds no floors, a nil hint
 // reports none, and a nil errorHandler ignores the errors of the store.
-func NewFloorPolicy(store searchpolicyport.FloorStore, hint FloorHint, errorHandler func(error)) FloorPolicy {
+func NewFloorPolicy(store FloorStore, hint FloorHint, errorHandler func(error)) FloorPolicy {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}

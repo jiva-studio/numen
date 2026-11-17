@@ -22,12 +22,30 @@ describe('the file an answer came out of', () => {
     expect(getBytesQuery(formatFingerprint(stat) as string)).toBe('size=7&mtime=9')
   })
 
+  it('has an empty hash and version 0 where the answer read no content', () => {
+    const stat = { path: 'physics/Entropy.md', size: 1234n, mtime: 1_700_000_000n }
+    expect(formatFingerprint(stat)).toBe('1234:0: 1700000000 physics/Entropy.md')
+  })
+
+  it('names the hash and the version of the vault where the answer carried them', () => {
+    const stat = {
+      path: 'heat/Maxwell’s demon.md',
+      size: 7n,
+      mtime: 9n,
+      hash: 'b'.repeat(64),
+      version: 12n,
+    }
+    expect(formatFingerprint(stat)).toBe(`7:12:${'b'.repeat(64)} 9 heat/Maxwell’s demon.md`)
+    expect(getBytesQuery(formatFingerprint(stat) as string)).toBe('size=7&mtime=9')
+  })
+
   it('is nothing where the answer named no file', () => {
     expect(formatFingerprint(undefined)).toBeUndefined()
   })
 
-  it('is nothing at all where there is nothing to read', () => {
-    expect(getBytesQuery('')).toBe('size=0&mtime=0')
+  it('is an error where the string is not a fingerprint', () => {
+    expect(() => getBytesQuery('')).toThrow()
+    expect(() => getBytesQuery('1234 1700000000 physics/Entropy.md')).toThrow()
   })
 })
 
@@ -41,7 +59,7 @@ describe('the address a file is requested about at', () => {
 
 describe('how an address names the bytes of a file', () => {
   it('encodes the size and modification time', () => {
-    expect(getBytesQuery('1024 1700000000000000000 notes/Doc.pdf')).toBe(
+    expect(getBytesQuery('1024:0: 1700000000000000000 notes/Doc.pdf')).toBe(
       'size=1024&mtime=1700000000000000000',
     )
   })

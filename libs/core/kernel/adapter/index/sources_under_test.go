@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func getPathsUnder(t *testing.T, db *DB, vault domain.Vault, path string) []string {

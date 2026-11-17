@@ -17,7 +17,7 @@ func TestNoInnerLayerImportsSerializationOrUsesFormatTags(t *testing.T) {
 		{dir: "../domain", isImportAllowed: true},
 		{dir: "../port", isImportAllowed: false},
 		{dir: "../usecase", isImportAllowed: false},
-		{dir: "../../../note/domain", isImportAllowed: false},
+		{dir: "../../../shared/note/domain", isImportAllowed: false},
 	})
 	if err != nil {
 		t.Fatal(err)
