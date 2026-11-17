@@ -3,8 +3,8 @@ package pluginmanifest
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )

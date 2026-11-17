@@ -9,8 +9,8 @@ const json = (value) => JSON.stringify(value);
 
 /** A repository in the layout of this one: libraries, a window and two plugins, with one violation of each rule. */
 const FILES = {
-  "libs/core/protocol/package.json": json({ name: "@numen/protocol" }),
-  "libs/core/protocol/src/index.ts": "export const message = 1\n",
+  "libs/shared/protocol/package.json": json({ name: "@numen/protocol" }),
+  "libs/shared/protocol/src/index.ts": "export const message = 1\n",
   "libs/plugin/sdk-ts/package.json": json({ name: "@numen/plugin-sdk" }),
   "libs/plugin/sdk-ts/src/index.ts": [
     "import { slots } from './slots'",
@@ -107,7 +107,7 @@ describe("the dependency graph over a repository with a violation of each rule",
 
 describe("the packages a package may depend on", () => {
   const packages = [
-    { dir: "libs/core/protocol", name: "@numen/protocol", kind: "library" },
+    { dir: "libs/shared/protocol", name: "@numen/protocol", kind: "library" },
     { dir: "libs/plugin/sdk-ts", name: "@numen/plugin-sdk", kind: "library" },
     { dir: "libs/core/client", name: "@numen/core-client", kind: "library" },
     { dir: "apps/window", name: "@numen/window", kind: "application" },

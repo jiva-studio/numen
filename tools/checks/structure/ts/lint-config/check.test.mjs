@@ -73,7 +73,7 @@ test("packages are derived from eslint configs and package.json files", () => {
     "apps/landing/eslint.config.js",
     "apps/landing/package.json",
     "libs/ui/components/eslint.config.js",
-    "libs/core/protocol/package.json",
+    "libs/shared/protocol/package.json",
     "plugins/notes/eslint.config.js",
     "plugins/notes/package.json",
     "plugins/readers-pdf/package.json",
@@ -86,7 +86,7 @@ test("packages are derived from eslint configs and package.json files", () => {
   assert.deepEqual(listLintedPackages(tracked), [
     { dir: "apps/landing", hasConfig: true },
     { dir: "apps/mobile", hasConfig: true },
-    { dir: "libs/core/protocol", hasConfig: false },
+    { dir: "libs/shared/protocol", hasConfig: false },
     { dir: "libs/ui/components", hasConfig: true },
     { dir: "plugins/.example", hasConfig: true },
     { dir: "plugins/notes", hasConfig: true },

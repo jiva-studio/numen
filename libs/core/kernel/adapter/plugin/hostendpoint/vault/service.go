@@ -7,8 +7,8 @@ import (
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // The calls of HostVaultService are answered by the groups below, each with its own state, and

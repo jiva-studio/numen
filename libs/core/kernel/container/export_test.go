@@ -23,8 +23,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
-	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 // Settings reads the settings file; an unconfigured installation returns the default settings.

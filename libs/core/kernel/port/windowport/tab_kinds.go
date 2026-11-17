@@ -3,7 +3,7 @@ package windowport
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // TabKinds finds the kind of tab each of the notes at some paths opens in.

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/domain/settings"
 )
 
 // model is a model whose reply is computed from the prompt by its script, and
@@ -95,7 +96,7 @@ func TestAScanFailureEndsTheRun(t *testing.T) {
 }
 
 func TestProofreadScan_AppliesEditLimit(t *testing.T) {
-	if getScanDistance(0) != numbered.MaxEditDistance || getScanDistance(-1) != numbered.MaxEditDistance || getScanDistance(0.45) != 0.45 {
+	if getScanDistance(0) != settings.DefaultMaxEditDistance || getScanDistance(-1) != settings.DefaultMaxEditDistance || getScanDistance(0.45) != 0.45 {
 		t.Fatal("getScanDistance unexpected value")
 	}
 	pages := []numbered.Batch{{Number: 1, Lines: []numbered.Line{{Number: 1, Text: "abcdefghij"}}}}

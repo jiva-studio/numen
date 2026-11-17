@@ -6,14 +6,16 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
 )
 
-// Curve is the simulated progression of a preset across its target range.
-type Curve = projection.Curve
+// Curve is the simulated progression of a preset across its target range, and why the preset schedules nothing.
+type Curve struct {
+	projection.Curve
+	Stops review.StopReason
+}
 
 type CurvePoint = projection.CurvePoint
 
@@ -36,7 +38,7 @@ const MostAhead = projection.MostAhead
 type ProjectCurve struct {
 	reviewCards ListReviewCards
 	schedules   Schedules
-	presets     presets.OpenReads
+	presets     OpenPresetReads
 	day         review.Day
 	now         ports.Clock
 	By          func(retention float64) review.Scheduler
@@ -47,7 +49,7 @@ type ProjectCurve struct {
 // each deck is scheduled by, where one day of review gives way to the next, and
 // what time it is.
 func NewProjectCurve(
-	reviewCards ListReviewCards, schedules Schedules, presets presets.OpenReads,
+	reviewCards ListReviewCards, schedules Schedules, presets OpenPresetReads,
 	day review.Day, now ports.Clock,
 ) ProjectCurve {
 	return ProjectCurve{
@@ -63,9 +65,9 @@ func checkGoal(p review.Preset) error {
 	var key string
 	switch p.Goal {
 	case review.GoalMinutes:
-		value, bounds, key = float64(p.MinutesADay), review.GetMinutesADayBounds(), presets.MinutesADayKey
+		value, bounds, key = float64(p.MinutesADay), review.GetMinutesADayBounds(), review.MinutesADayKey
 	case review.GoalRetention:
-		value, bounds, key = p.Retention, review.GetRetentionBounds(), presets.RetentionKey
+		value, bounds, key = p.Retention, review.GetRetentionBounds(), review.RetentionKey
 	case review.GoalDate:
 		// gomutants:disable-next-line BRANCH_CASE reason="Zero value and zero bounds satisfy Contains when GoalDate exits the switch."
 		return nil
@@ -76,7 +78,7 @@ func checkGoal(p review.Preset) error {
 		return nil
 	}
 	return fmt.Errorf("%w: %s %g is outside %g to %g",
-		presets.ErrOutOfBounds, key, value, bounds.Min, bounds.Max)
+		review.ErrOutOfBounds, key, value, bounds.Min, bounds.Max)
 }
 
 // Execute is the curve of the goal this preset steers.
@@ -97,7 +99,7 @@ func (u ProjectCurve) Execute(
 		return Curve{}, err
 	}
 	reviewCards := u.reviewCards.GetReviewCards(ctx, v, scheduled)
-	target, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
+	target, err := Log{Stores: u.schedules.logs, Entropy: nil}.Read(ctx, v)
 	if err != nil {
 		return Curve{}, err
 	}
@@ -132,25 +134,29 @@ func (u ProjectCurve) Execute(
 	// The projection runs with the scheduler this preset requests, which is the one
 	// that schedules its cards, and it starts on the current day with the answers
 	// already given.
+	by := NewProjectionScheduler(u.getScheduler(p.Retention), u.day)
 	run := projection.Simulation{
-		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
+		By: by, Rules: by, Day: u.day, Cost: ConvertCostToProjection(cost),
 		// gomutants:disable-next-line INTEGER_DECREMENT reason="Non-positive simulation Days defaults to HorizonDays."
 		Days:    0,
 		Retains: nil,
 		Recalls: nil,
-		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
-			map[string]review.BudgetUnit{path: p.Counts})[path],
+		Spent: ConvertSpentToProjection(review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
+			map[string]review.BudgetUnit{path: p.Counts})[path]),
 	}
-	out, err := run.Curve(ctx, now, p, projection.CurveInputs{
-		Schedules: pos, UnbegunCount: unbegunCount, Scheduler: u.getScheduler, Places: u.computePlaces,
+	cards := ConvertSchedulesToCards(pos)
+	bounds := review.GetRetentionBounds()
+	drawn, err := run.Curve(ctx, now, ConvertPresetToSettings(p), projection.CurveInputs{
+		Cards: cards, UnbegunCount: unbegunCount, Scheduler: u.getProjectionScheduler, Places: u.computePlaces,
+		RetentionBounds: projection.Bounds{Min: bounds.Min, Max: bounds.Max},
 	})
 	if err != nil {
 		return Curve{}, err
 	}
-	out.Stops = p.GetOverallStopReason(u.day, now)
+	out := Curve{Curve: drawn, Stops: p.GetOverallStopReason(u.day, now)}
 	out.Decks = pointing
 	out.Cards = len(presets)
-	out.Overdue = projection.CountOverdue(u.day, pos, now)
+	out.Overdue = projection.CountOverdue(u.day, cards, now)
 	out.Unbegun = unbegunCount
 	return out, nil
 }
@@ -164,7 +170,7 @@ type scheduledCards struct {
 }
 
 func (u ProjectCurve) readScheduledCards(
-	ctx context.Context, v domain.Vault, reads *presets.Reads, path string,
+	ctx context.Context, v domain.Vault, reads ports.PresetReads, path string,
 	reviewCards []ReviewCard, schedules map[review.CardID]review.Schedule,
 ) (scheduledCards, error) {
 	out := scheduledCards{
@@ -210,7 +216,7 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 	}
 	naming := make(map[string]bool, len(pos))
 	for _, link := range pos {
-		if link.Type == presets.LinkType {
+		if link.Type == review.PresetLinkType {
 			naming[link.From] = true
 		}
 	}
@@ -225,7 +231,7 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 }
 
 func (u ProjectCurve) countPointingDecks(
-	ctx context.Context, v domain.Vault, reads *presets.Reads, path string,
+	ctx context.Context, v domain.Vault, reads ports.PresetReads, path string,
 	decks []string, requested map[string]bool,
 ) (int, error) {
 	out := 0
@@ -272,4 +278,8 @@ func (u ProjectCurve) getScheduler(retention float64) review.Scheduler {
 		return u.By(retention)
 	}
 	return review.NewFSRSAt(retention)
+}
+
+func (u ProjectCurve) getProjectionScheduler(retention float64) projection.Scheduler {
+	return NewProjectionScheduler(u.getScheduler(retention), u.day)
 }

@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // FloorStore keeps the effective similarity floor of each vault under each recipe.

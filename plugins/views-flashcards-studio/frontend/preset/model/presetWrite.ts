@@ -1,7 +1,7 @@
 import { ref, type Ref } from 'vue'
-import { createWriteOrder, type WriteOrder } from '@numen/ui'
 import type { MessageWriter } from '@numen/plugin-sdk'
 import type { Presets, Settings } from '../../lib/presets'
+import type { PresetReadResult } from '../../lib/presetResults'
 import { WORDS as words } from '../lib/words'
 
 /** The pending write and the unwritten fields of one preset file. */
@@ -11,10 +11,10 @@ export interface WriteQueue {
     isWriteQueued: boolean
     queuedOptions: WriteOptions | null
     activeWrite: Promise<void> | null
-    readonly order: WriteOrder
   }
   readonly unsaved: {
     revision: string
+    version: bigint
     hasWarned: boolean
     readonly dirtyFields: Set<keyof Settings>
   }
@@ -31,11 +31,33 @@ export function createWriteQueue(): WriteQueue {
       isWriteQueued: false,
       queuedOptions: null,
       activeWrite: null,
-      order: createWriteOrder(),
     },
-    unsaved: { revision: '', hasWarned: false, dirtyFields: new Set<keyof Settings>() },
+    unsaved: {
+      revision: '',
+      version: 0n,
+      hasWarned: false,
+      dirtyFields: new Set<keyof Settings>(),
+    },
     status: { hasExternalChange: ref(false), errorMessage: ref('') },
   }
+}
+
+const takeVersion = (queue: WriteQueue, version: bigint, revision: string): boolean => {
+  if (version < queue.unsaved.version) return false
+  queue.unsaved.version = version
+  queue.unsaved.revision = revision
+  return true
+}
+
+/** Takes the answer of a read unless an answer of a newer version was taken; a missing file has no version, so its answer is taken always. */
+export const takeRead = (
+  queue: WriteQueue,
+  read: Extract<PresetReadResult, { ok: true }>['value'],
+): boolean => {
+  if (read.preset) return takeVersion(queue, read.version, read.at)
+  queue.unsaved.revision = read.at
+  queue.unsaved.version = 0n
+  return true
 }
 
 export interface WriteOptions {
@@ -67,7 +89,7 @@ export const sendWrite = async (queue: WriteQueue, options: WriteOptions): Promi
     return
   }
   queue.status.errorMessage.value = ''
-  queue.unsaved.revision = answer.value.at
+  if (!takeVersion(queue, answer.value.version, answer.value.at)) return
   queue.unsaved.dirtyFields.clear()
   queue.unsaved.hasWarned = false
 }

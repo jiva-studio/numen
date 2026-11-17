@@ -1,6 +1,6 @@
 // Package editor serves the vault queries and commands of the editor window.
 //
-// The request and response types are defined in libs/core/protocol. The client
+// The request and response types are defined in libs/shared/protocol. The client
 // connects to the handlers over HTTP in both the desktop window and a browser
 // during development.
 package editor
@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // State is what the handlers of the window share: the vault shown and how far it is read, the door on

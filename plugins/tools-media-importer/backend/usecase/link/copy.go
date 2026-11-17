@@ -10,7 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/domain/fetch"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/ports"
 )
 
 const copyChunk = 1 << 20
@@ -19,7 +20,7 @@ const copyChunk = 1 << 20
 // folder, through the core's queue, writes its address into the note under media, and returns its
 // size. A copy of the same media already stored is shared and not downloaded again; a copy no link
 // note refers to any more is deleted.
-func (l *Links) Copy(ctx context.Context, link Link, media download.Media) (int64, error) {
+func (l *Links) Copy(ctx context.Context, link Link, media fetch.Media) (int64, error) {
 	task, size, err := l.beginCopy(ctx, link, media)
 	if err != nil || task == nil {
 		return size, err
@@ -31,7 +32,7 @@ func (l *Links) Copy(ctx context.Context, link Link, media download.Media) (int6
 // background. Where the requested media are already stored it starts nothing and returns their size
 // and false. It returns ErrBeingFetched where another run copies the media, and ErrNotCopyable where
 // nothing copies what the address publishes. A failure of the copy is current as the error of the task.
-func (l *Links) StartMediaCopy(ctx context.Context, link Link, media download.Media) (int64, bool, error) {
+func (l *Links) StartMediaCopy(ctx context.Context, link Link, media fetch.Media) (int64, bool, error) {
 	task, size, err := l.beginCopy(ctx, link, media)
 	if err != nil || task == nil {
 		return size, false, err
@@ -45,7 +46,7 @@ func (l *Links) StartMediaCopy(ctx context.Context, link Link, media download.Me
 	return 0, true, nil
 }
 
-func (l *Links) beginCopy(ctx context.Context, link Link, media download.Media) (*host.Task, int64, error) {
+func (l *Links) beginCopy(ctx context.Context, link Link, media fetch.Media) (*host.Task, int64, error) {
 	if !l.claim("copy", link, link.Key) {
 		return nil, 0, ErrBeingFetched
 	}
@@ -56,7 +57,7 @@ func (l *Links) beginCopy(ctx context.Context, link Link, media download.Media) 
 	return task, size, err
 }
 
-func (l *Links) prepareCopy(ctx context.Context, link Link, media download.Media) (*host.Task, int64, error) {
+func (l *Links) prepareCopy(ctx context.Context, link Link, media fetch.Media) (*host.Task, int64, error) {
 	kept, isKept, err := folder{store: l.getStore(link)}.findCopy(ctx, link.Key, media)
 	if err != nil {
 		return nil, 0, err
@@ -77,14 +78,14 @@ func (l *Links) prepareCopy(ctx context.Context, link Link, media download.Media
 	return &task, 0, nil
 }
 
-func (l *Links) endCopy(ctx context.Context, link Link, media download.Media, task host.Task) (int64, error) {
+func (l *Links) endCopy(ctx context.Context, link Link, media fetch.Media, task host.Task) (int64, error) {
 	defer l.release("copy", link, link.Key)
 	size, err := l.copy(ctx, l.fetcher(), l.settings(), link, media, task)
 	l.endTask(ctx, task, err)
 	return size, err
 }
 
-func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, link Link, media download.Media, task host.Task) (size int64, err error) {
+func (l *Links) copy(ctx context.Context, fetcher ports.Fetcher, settings fetch.Settings, link Link, media fetch.Media, task host.Task) (size int64, err error) {
 	meta, err := fetcher.GetMetadata(ctx, string(link.Address))
 	if err != nil {
 		return 0, err

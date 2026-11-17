@@ -20,7 +20,7 @@ test("a declaration of the schema by a package other than the two clients is rep
 
 const CLIENT = manifest("libs/core/client/package.json", "@numen/core-client", { private: true, dependencies: { "@numen/protocol": "*" } });
 const SDK = manifest("libs/plugin/sdk-ts/package.json", "@numen/plugin-sdk", { dependencies: { "@numen/protocol": "*" }, devDependencies: { "@numen/core-client": "*" } });
-const PROTOCOL = manifest("libs/core/protocol/package.json", "@numen/protocol");
+const PROTOCOL = manifest("libs/shared/protocol/package.json", "@numen/protocol");
 const PLUGIN = manifest("plugins/a/package.json", "@numen/a", { dependencies: { "@numen/plugin-sdk": "*" } });
 
 test("the packages plugins rely on are what they declare and what that brings when installed", () => {

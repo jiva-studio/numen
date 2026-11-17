@@ -36,7 +36,7 @@ func NewListResponse(found []cards.CardModelSummary, total int, err error) (*api
 // NewReadCardModelResponse answers the read of a card model. The title is looked up only for a card
 // model that was read.
 func NewReadCardModelResponse(
-	found cards.CardModelContents, err error, title func(path string) string,
+	found format.CardModelContents, err error, title func(path string) string,
 ) (*api.ReadCardModelResponse, error) {
 	if err != nil {
 		return nil, apierror.NewFailure(err)
@@ -55,7 +55,7 @@ func NewReadCardModelResponse(
 
 // NewReadDeckResponse answers the read of a deck. The title is looked up only for a deck that was
 // read.
-func NewReadDeckResponse(found cards.DeckContents, err error, title func(path string) string) (*api.ReadDeckResponse, error) {
+func NewReadDeckResponse(found format.DeckContents, err error, title func(path string) string) (*api.ReadDeckResponse, error) {
 	if err != nil {
 		return nil, apierror.NewFailure(err)
 	}
@@ -65,7 +65,7 @@ func NewReadDeckResponse(found cards.DeckContents, err error, title func(path st
 		// The bound is sent with the error code, so the interface names it
 		// without storing a number of its own.
 		if code == api.ErrorCodeDeckTooLarge {
-			out.Bound = cards.MaxBytes
+			out.Bound = format.MaxDeckBytes
 		}
 		return out, nil
 	}
@@ -82,7 +82,7 @@ func NewWriteDeckResponse(pos domain.FileStat, err error) (*api.WriteDeckRespons
 	}
 	res := &api.WriteDeckResponse{Error: out.Error, At: out.At, Bound: 0, IsIndexOutdated: out.IsIndexOutdated}
 	if out.Error == api.ErrorCodeDeckTooLarge {
-		res.Bound = cards.MaxBytes
+		res.Bound = format.MaxDeckBytes
 	}
 	return res, nil
 }

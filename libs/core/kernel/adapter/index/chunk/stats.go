@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/index"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // GetIndexCounts returns the chunks, vectors and sources of a vault, and the sources by extension.

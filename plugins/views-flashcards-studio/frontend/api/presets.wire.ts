@@ -26,6 +26,7 @@ import {
   type SettingsBounds,
 } from '../lib/presets'
 import type { PresetReadResult } from '../lib/presetResults'
+import type { FileStat } from '../lib/wire/notes'
 
 /** The same requests, in the shape the window uses. */
 export const presets: Presets = {
@@ -49,7 +50,7 @@ export const presets: Presets = {
     })
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
     if (code) return asFailure(code)
-    return asValue({ at: formatFingerprint(answer.at) ?? '' })
+    return asValue({ at: formatFingerprint(answer.at) ?? '', version: parseVersion(answer.at) })
   },
   write: async (path, settings, observed) => {
     const answer = await presetsService.writePreset({
@@ -59,7 +60,7 @@ export const presets: Presets = {
     })
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
     if (code) return asFailure(code)
-    return asValue({ at: formatFingerprint(answer.at) ?? '' })
+    return asValue({ at: formatFingerprint(answer.at) ?? '', version: parseVersion(answer.at) })
   },
   curve: async (path, settings) => {
     const answer = await presetsService.computeCurve({
@@ -70,12 +71,15 @@ export const presets: Presets = {
   },
 }
 
+const parseVersion = (at?: FileStat): bigint => (at ? BigInt(at.version) : 0n)
+
 const parseRead = (answer: ReadPresetResponse | GetDeckPresetResponse): PresetReadResult => {
   const error = findErrorCode(answer)
   if (error) return asFailure(error)
   return asValue({
     preset: answer.preset ? parsePreset(answer.preset) : null,
     at: formatFingerprint(answer.at) ?? '',
+    version: parseVersion(answer.at),
     bounds: parseSettingsBounds(answer.bounds),
   })
 }

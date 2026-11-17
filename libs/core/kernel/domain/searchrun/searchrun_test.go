@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func getEpoch() time.Time { return time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC) }

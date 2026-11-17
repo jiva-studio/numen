@@ -1,6 +1,6 @@
 package vaultport
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 // VaultList lists the vaults the user has added. The list is application state:
 // not derivable from any vault, and not stored in one.
