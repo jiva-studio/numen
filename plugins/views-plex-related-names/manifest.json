@@ -39,7 +39,7 @@
       "key": "showRelationArrows",
       "type": "boolean",
       "title": "Show the relation arrows",
-      "description": "Before each related name, an arrow that shows how the note is related",
+      "description": "An arrow before each name shows how its note is related",
       "default": true
     }
   ],
