@@ -82,10 +82,13 @@ export function createUiServiceBridge(
         : Promise.reject(new ReportedError('This window cannot open web links')),
     getWorkspace: () => window.getWorkspace?.(),
     getCommands: () => window.getCommands?.(),
-    isCommandListed: (command) => isListedIn(readSlotEntries() ?? [], command),
-    getCommandPermission: (command) => findCommandPermission(commands, manifests, command),
+    commandAccess: {
+      isListed: (command) => isListedIn(readSlotEntries() ?? [], command),
+      getPermission: (command) => findCommandPermission(commands, manifests, command),
+    },
     getWindow: () => window.getWindow?.(),
     getNotices: (pluginId) => window.getNotices?.(pluginId) ?? DISCARDING_NOTICES,
+    getPicker: () => window.getPicker?.(),
     getSlots: () => slots,
   }
 }

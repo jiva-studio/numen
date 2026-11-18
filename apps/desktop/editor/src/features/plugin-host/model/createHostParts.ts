@@ -8,6 +8,7 @@ import {
   createPluginTasks,
   type HostKinds,
   type HostTabs,
+  type PickerHost,
   type PluginHostDeps,
   type ProcessHost,
 } from '@numen/plugin-loader'
@@ -124,11 +125,15 @@ export function createTaskServiceParts(deps: {
   }
 }
 
-/** The notices a plugin raises, held per plugin by the queue of the window. */
-export function createNoticeParts(deps: { readonly queue: NoticeQueue }): HostParts {
+/** The notices a plugin raises, held per plugin by the queue of the window, and the list a plugin opens. */
+export function createNoticeParts(deps: {
+  readonly queue: NoticeQueue
+  readonly picker?: PickerHost | undefined
+}): HostParts {
   const { queue } = deps
   return {
     window: {
+      getPicker: () => deps.picker,
       getNotices: (pluginId) => createPluginNotices(queue, pluginId),
       clearNotices: (pluginId) => queue.clear(pluginId),
     },

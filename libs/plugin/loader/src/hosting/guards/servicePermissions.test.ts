@@ -94,9 +94,10 @@ function createHost(
       getWorkspace: () => ui.workspace,
       getWindow: () => ui.window,
       getCommands: () => ui.commands,
-      isCommandListed: () => true,
+      commandAccess: { isListed: () => true },
       getSlots: () => ui.slots as never,
       getNotices: () => ui.notices as never,
+      getPicker: () => ui.picker as never,
       ...overrides.ui,
     },
     work: {
