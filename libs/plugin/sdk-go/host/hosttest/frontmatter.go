@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	notesmarkdown "github.com/jiva-studio/numen/libs/shared/note/markdown"
 )
 
 // The limits of one read of frontmatter, as the host has them.
@@ -69,4 +71,55 @@ func pickValues(frontmatter map[string]any, keys []string) (map[string]any, erro
 	}
 	out := map[string]any{}
 	return out, json.Unmarshal(raw, &out)
+}
+
+// WriteFrontmatter sets, replaces and removes top-level keys of the notes, as the host does: a list of
+// text is written as a list, a nil value removes the key, a stale note fails alone with host.ErrStale.
+func (v *Vault) WriteFrontmatter(ctx context.Context, writes []host.FrontmatterWrite) ([]host.FrontmatterWritten, error) {
+	v.world.mu.Lock()
+	defer v.world.mu.Unlock()
+	out := make([]host.FrontmatterWritten, len(writes))
+	for i, one := range writes {
+		stat, err := v.editLinks(ctx, one.Path, one.Baseline, func(doc *notesmarkdown.Document) error {
+			return setKeys(doc, one.Values)
+		})
+		out[i] = host.FrontmatterWritten{Stat: stat, Err: err}
+	}
+	return out, nil
+}
+
+func setKeys(doc *notesmarkdown.Document, values map[string]any) error {
+	for _, key := range slices.Sorted(maps.Keys(values)) {
+		var err error
+		switch value := values[key].(type) {
+		case nil:
+			err = doc.Remove(key)
+		case []string:
+			err = doc.SetList(key, value)
+		case []any:
+			if names, isText := asNames(value); isText {
+				err = doc.SetList(key, names)
+			} else {
+				err = doc.SetValue(key, value)
+			}
+		default:
+			err = doc.SetValue(key, value)
+		}
+		if err != nil {
+			return fmt.Errorf("write %q: %w", key, err)
+		}
+	}
+	return nil
+}
+
+func asNames(items []any) ([]string, bool) {
+	names := make([]string, len(items))
+	for i, item := range items {
+		name, isText := item.(string)
+		if !isText {
+			return nil, false
+		}
+		names[i] = name
+	}
+	return names, true
 }

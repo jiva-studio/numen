@@ -31,6 +31,7 @@ type Arranger struct {
 	WindowVault func() (domain.Vault, bool)
 	Checks      func(ctx context.Context, v domain.Vault, named ...domain.Check) (ran []domain.Check, found []domain.VaultProblem, err error)
 	Problems    *vaults.GetParseProblems
+	Frontmatter note.WriteFrontmatter
 
 	session sessionAccess
 }
@@ -148,4 +149,33 @@ func (a Arranger) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, 
 		return nil, err
 	}
 	return a.Problems.Execute(ctx, v)
+}
+
+// LinkEditor is the Arranger that also writes the frontmatter keys of the notes.
+type LinkEditor struct{ Arranger }
+
+// WriteFrontmatter writes the keys of the notes through the use case of the vault the call works on.
+func (a LinkEditor) WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error) {
+	v, err := a.session.open()
+	if err != nil {
+		return nil, err
+	}
+	in := make([]note.FrontmatterWrite, len(writes))
+	for i, one := range writes {
+		in[i] = note.FrontmatterWrite{Path: one.Path, FileStat: one.Baseline, Values: one.Values}
+	}
+	written, err := a.Frontmatter.Execute(ctx, v, in)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]plugin.FrontmatterWritten, len(written))
+	isWritten := false
+	for i, one := range written {
+		out[i] = plugin.FrontmatterWritten{Stat: one.FileStat, Err: one.Error}
+		isWritten = isWritten || one.Error == nil || errors.Is(one.Error, edit.ErrIndexOutdated)
+	}
+	if isWritten {
+		a.session.notifyFileWritten()
+	}
+	return out, nil
 }

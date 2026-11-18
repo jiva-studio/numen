@@ -6,9 +6,10 @@ import "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 // use case on its own. The window and the agent tools use the same set, so both enforce the same
 // rules and a dependency is configured once for both.
 type NoteUseCases struct {
-	Edit    NoteEditing
-	Place   NotePlacing
-	Connect NoteConnecting
+	Edit       NoteEditing
+	Properties NoteProperties
+	Place      NotePlacing
+	Connect    NoteConnecting
 }
 
 // NoteEditing reads and changes the text of a note.
@@ -36,4 +37,9 @@ type NoteConnecting struct {
 	RemoveConnection note.RemoveConnection
 	Join             note.Join
 	CreateInRelation note.CreateInRelation
+}
+
+// NoteProperties changes the frontmatter keys of notes.
+type NoteProperties struct {
+	Frontmatter note.WriteFrontmatter
 }

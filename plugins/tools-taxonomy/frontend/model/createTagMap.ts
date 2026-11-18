@@ -11,6 +11,8 @@ export interface TagMapApi {
 export interface TagMap {
   /** The tags of the note at the path in the order the note holds them; none for a path without tags. */
   getTags(path: string): readonly string[]
+  /** Resolves once the first message of the stream was read, or the stream ended without one. */
+  whenLoaded(): Promise<void>
   /** Ends the read of the stream. */
   stop(): void
 }
@@ -25,6 +27,10 @@ const NO_TAGS: readonly string[] = []
 export function createTagMap({ api }: { api: TagMapApi }): TagMap {
   const tags = shallowReactive(new Map<string, readonly string[]>())
   const controller = new AbortController()
+  let markLoaded: () => void = () => undefined
+  const loaded = new Promise<void>((resolve) => {
+    markLoaded = resolve
+  })
 
   const replace = (whole: TagsByPath): void => {
     tags.clear()
@@ -45,12 +51,16 @@ export function createTagMap({ api }: { api: TagMapApi }): TagMap {
       if (next.done) return
       if (next.value.tags) replace(next.value.tags)
       if (next.value.changed) change(next.value.changed)
+      markLoaded()
     }
   }
-  read().catch(() => undefined)
+  read()
+    .catch(() => undefined)
+    .finally(markLoaded)
 
   return {
     getTags: (path) => tags.get(path) ?? NO_TAGS,
+    whenLoaded: () => loaded,
     stop: () => controller.abort(),
   }
 }

@@ -51,6 +51,6 @@ Given('the notes have the following links:', ({ person }, links: DataTable) => {
   person.vault.addLinks(links.raw())
 })
 
-Given('the notes have the following tags:', ({ person }, tags: DataTable) => {
-  person.vault.addTags(tags.raw())
+Given('the notes have the following tags:', async ({ person }, tags: DataTable) => {
+  await person.vault.ensureTags(tags.raw())
 })

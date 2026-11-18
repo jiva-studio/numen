@@ -92,6 +92,7 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 			Replace: note.NewReplace(readers, writers, index, now),
 			Linking: linking,
 		},
+		Properties: NoteProperties{Frontmatter: note.NewWriteFrontmatter(readers, writers, index, now)},
 		Place: NotePlacing{
 			Move:       mover,
 			Rename:     note.NewRename(moveDeps, mover, views.Writes),

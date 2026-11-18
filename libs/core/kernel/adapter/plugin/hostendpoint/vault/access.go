@@ -74,7 +74,7 @@ type Arranger interface {
 	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 }
 
-// LinkEditor edits the frontmatter links of the notes of the vault.
+// LinkEditor edits the frontmatter of the notes of the vault: its links, and its other keys.
 type LinkEditor interface {
 	// AddLinks writes links into the frontmatter links of notes, grouped by note: the links of one
 	// note are one write against one file stat. The result has one entry per addition, in order.
@@ -85,6 +85,10 @@ type LinkEditor interface {
 	// RemoveLinks removes the frontmatter links the note at from has to the target, of every role, or
 	// only those of the role when one is given.
 	RemoveLinks(ctx context.Context, from string, to domain.Address, role domain.LinkRole, baseline domain.FileStat) (domain.FileStat, error)
+	// WriteFrontmatter sets, replaces and removes top-level frontmatter keys of notes, one result per
+	// write in order. A note that fails costs the others nothing; the notes of a canceled call get
+	// plugin.ErrNotAttempted.
+	WriteFrontmatter(ctx context.Context, writes []plugin.FrontmatterWrite) ([]plugin.FrontmatterWritten, error)
 }
 
 // Watch tells of the moves in the vaults of the installation.

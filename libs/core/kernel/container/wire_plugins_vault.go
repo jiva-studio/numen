@@ -104,9 +104,10 @@ func newArranger(
 	useCases NoteUseCases, db *Index, window *hostvault.NoteChanges, current func() (domain.Vault, bool),
 ) hostvault.Arranger {
 	arranger := hostvault.Arranger{
-		Notes:    getNoteChanges(useCases),
-		Checks:   getProblemChecks(getProblems(vaultWiring{}, db.NoteProblems())),
-		Problems: vault.NewGetParseProblems(db.NoteProblems()),
+		Notes:       getNoteChanges(useCases),
+		Frontmatter: useCases.Properties.Frontmatter,
+		Checks:      getProblemChecks(getProblems(vaultWiring{}, db.NoteProblems())),
+		Problems:    vault.NewGetParseProblems(db.NoteProblems()),
 	}
 	if window != nil {
 		arranger.Window, arranger.WindowVault = *window, current

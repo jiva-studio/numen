@@ -47,3 +47,17 @@ type LinkAdded struct {
 	Stat domain.FileStat
 	Err  error
 }
+
+// FrontmatterWrite is the keys to set on the note at Path, which the caller read as Baseline. A nil
+// value removes the key.
+type FrontmatterWrite struct {
+	Path     string
+	Baseline domain.FileStat
+	Values   map[string]any
+}
+
+// FrontmatterWritten is the outcome of one write: the note after it, or the error of a note not written.
+type FrontmatterWritten struct {
+	Stat domain.FileStat
+	Err  error
+}

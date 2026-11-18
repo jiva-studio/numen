@@ -45,9 +45,18 @@ export class Palette {
     return this.host.page.getByRole('option', { name })
   }
 
-  /** The titles of the groups the palette lists. */
+  /** The list of several items the palette asks for, which checks its rows. */
+  multipleList(): Locator {
+    return this.host.page.locator(
+      '[data-palette="panel"] [role="listbox"][aria-multiselectable="true"]',
+    )
+  }
+
+  /** The titles of the groups the palette lists, and the title of the list of several items. */
   async readGroupTitles(): Promise<string[]> {
-    const titles = await this.host.page.locator('[data-palette="panel"] [role="group"] [data-palette="title"]').allTextContents()
+    const titles = await this.host.page
+      .locator('[data-palette="panel"] [data-palette="title"]')
+      .allTextContents()
     return titles.map((one) => one.trim())
   }
 

@@ -39,11 +39,17 @@ type Store interface {
 	Write(ctx context.Context, name string, content []byte) error
 }
 
+// Properties writes the frontmatter of the notes of a vault.
+type Properties interface {
+	WriteFrontmatter(ctx context.Context, writes []host.FrontmatterWrite) ([]host.FrontmatterWritten, error)
+}
+
 // Vault is what the cache of one vault reads and writes.
 type Vault struct {
 	Frontmatter Frontmatter
 	Feed        host.FileChangeLister
 	Store       Store
+	Properties  Properties
 }
 
 // Caches holds the tags of each vault the plugin was asked about. Open gives the vault of an id.
