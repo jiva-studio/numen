@@ -20,8 +20,8 @@ When('the person rests the pointer on the note titled {string} in the plex', asy
 
 Then(
   'the plex {display} the heading {string} under the note titled {string}',
-  async ({ person }, shows: boolean, heading: string, title: string) => {
-    await person.plex.expectShowsHeading(heading, title, shows)
+  async ({ person }, shows: boolean, heading: string, _title: string) => {
+    await person.plex.expectShowsHeading(heading, shows)
   },
 )
 

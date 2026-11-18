@@ -185,7 +185,6 @@ describe('the padding of a title and the widths drawn before it', () => {
     stubStyles()
     setTheme()
     expect(widths({ padding: 4, beside: [] })!.node(node('abcd'))).toBe(4 * PER_CHARACTER + 8)
-    expect(widths({ padding: 4, beside: [] })!.heading('abc')).toBe(3 * PER_CHARACTER + 8)
   })
 
   it('keeps a gap after each thing drawn before the title', () => {
@@ -410,35 +409,6 @@ describe('the box a plex measures its type against', () => {
     widths()
 
     expect(warn).not.toHaveBeenCalled()
-  })
-})
-
-describe('what a heading needs', () => {
-  it('is its words with the padding on both sides', () => {
-    stubCanvas()
-    stubStyles()
-    setTheme()
-
-    expect(widths()!.heading('abc')).toBe(3 * PER_CHARACTER + 20)
-  })
-
-  it('is measured in the size a title is set at, in whole pixels', () => {
-    const { context } = stubCanvas()
-    stubStyles()
-    setTheme()
-    context.measureText = (text: string) => ({ width: text.length * 6.4 }) as TextMetrics
-    const measures = widths()!
-
-    expect(measures.heading('abc')).toBe(Math.ceil(3 * 6.4 + 20))
-    expect(context.font).toBe('13px Test Sans, sans-serif')
-  })
-
-  it('follows the title size and not the size of a label', () => {
-    const { context } = stubCanvas()
-    stubStyles()
-    setTheme({ '--numen-edge-label-size': '20px', '--numen-font-size': '26px' })
-    widths()!.heading('abc')
-    expect(context.font).toBe('26px Test Sans, sans-serif')
   })
 })
 

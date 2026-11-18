@@ -19,8 +19,6 @@ interface BoxOptions {
   readonly room: number
   readonly minWidth: number
   readonly iconWidth: number
-  readonly headingHeight: number
-  readonly headingIndent: number
   readonly gap: number
   readonly lineGap: number
   readonly focusGap: number
@@ -30,7 +28,6 @@ interface BoxOptions {
 
 interface LimitOptions {
   readonly maxPerCluster: number
-  readonly maxHeadings: number
 }
 
 export interface RoutingOptions {
@@ -78,15 +75,12 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   room: 0,
   minWidth: 72,
   iconWidth: 16,
-  headingHeight: 22,
-  headingIndent: 12,
   gap: 16,
   lineGap: 20,
   focusGap: 56,
   margin: 16,
   squeeze: 0.35,
   maxPerCluster: 20,
-  maxHeadings: 6,
   routing: { curvature: 0.55, minReach: 22, arrowClearance: 20, minRun: 52 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },
   gesture: { verticalBias: 4 },
