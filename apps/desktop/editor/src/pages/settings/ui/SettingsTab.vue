@@ -48,7 +48,8 @@ function onOpenCategory(category: string): void {
           v-if="
             selectedPluginId === 'system' ||
             selectedPluginId === 'appearance' ||
-            selectedPluginId === 'editor'
+            selectedPluginId === 'editor' ||
+            selectedPluginId === 'search'
           "
           :key="selectedPluginId"
           :section="selectedPluginId"
