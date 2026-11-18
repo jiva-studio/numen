@@ -39,6 +39,15 @@ func TestTheSlotsAreTheOnesSlotsJSONLists(t *testing.T) {
 	}
 }
 
+func TestTheFileTreeRowEndIsAnInnerSlot(t *testing.T) {
+	if !manifest.IsSlot("fileTree.rowEnd") {
+		t.Error("fileTree.rowEnd is not a slot")
+	}
+	if manifest.IsWindowSlot("fileTree.rowEnd") {
+		t.Error("fileTree.rowEnd is a slot of the window")
+	}
+}
+
 func TestThePlexGraphHasASlotAboveAndASlotBelowItsNodes(t *testing.T) {
 	for _, name := range []string{"plexGraph.nodeAbove", "plexGraph.nodeBelow"} {
 		if !manifest.IsSlot(name) {

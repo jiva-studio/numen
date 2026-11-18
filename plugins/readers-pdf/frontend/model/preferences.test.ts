@@ -23,6 +23,8 @@ describe('the PDF reader settings', () => {
     bindPDFReaderPreferences({
       settings: {
         get: <T>() => '100%' as T,
+        getEditor: () => undefined,
+        onEditorChange: () => ({ dispose: () => undefined }),
         onChange: <T>(key: string, handler: (value: T) => void) => {
           handlers.set(key, handler as (value: unknown) => void)
           return { dispose: () => handlers.delete(key) }

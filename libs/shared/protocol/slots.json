@@ -39,6 +39,11 @@
       "about": "the menu of a row of the file tree, over its file or folder"
     },
     {
+      "name": "fileTree.rowEnd",
+      "owner": "the plugin of the file tree",
+      "about": "the views at the right end of a row of the file tree, each given the path of the row"
+    },
+    {
       "name": "tabStrip.context",
       "owner": "the tab strip of the window",
       "about": "the menu of a tab, over the file of the tab"

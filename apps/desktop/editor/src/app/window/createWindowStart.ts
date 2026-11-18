@@ -5,6 +5,7 @@ import type { PluginLoader } from '@numen/plugin-loader'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import type { useVaults } from '@/entities/vault'
+import { createEditorTokens } from '@/features/editor-tokens'
 import { createLayoutStart, createPluginStart, createWindowBootstrap } from '@/features/app-start'
 import type { createWindowPalette } from '@/features/command-palette'
 import { createAppKeyRunner, createKeyHandler, useAppHotkeys } from '@/features/hotkeys'
@@ -140,7 +141,11 @@ export function createWindowStart(deps: WindowStartDeps) {
     }),
     bootstrap: createWindowBootstrap({
       vaults,
-      settings: windowSettings,
+      settings: {
+        start: () => windowSettings.start(),
+        close: () => windowSettings.close(),
+        editorTokens: createEditorTokens(rest),
+      },
       window,
       editing,
       tabLinkSession: tabs.linkSession,

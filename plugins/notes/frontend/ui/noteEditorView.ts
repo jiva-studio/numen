@@ -9,13 +9,9 @@ import {
   type ViewRegistration,
 } from '@numen/plugin-sdk'
 import MarkdownNoteEditor from './MarkdownNoteEditor.vue'
-import { editorPreferences, type MarkdownEditorPreferences } from '../model/preferences'
 import { useNoteFile } from '../model/useNoteFile'
 
-export function createNoteEditorView(
-  notes: Pick<VaultNotes, 'read' | 'write'>,
-  preferences: MarkdownEditorPreferences = editorPreferences,
-): ViewRegistration {
+export function createNoteEditorView(notes: Pick<VaultNotes, 'read' | 'write'>): ViewRegistration {
   return {
     capability: NOTE_EDITOR,
     component: defineComponent({
@@ -23,12 +19,7 @@ export function createNoteEditorView(
       props: { context: { type: Object as PropType<NoteEditorContext>, required: true } },
       setup(props) {
         const state = useNoteFile(props.context.path, notes)
-        return () =>
-          h(MarkdownNoteEditor, {
-            state,
-            softWrap: preferences.softWrap,
-            lineNumbers: preferences.lineNumbers,
-          })
+        return () => h(MarkdownNoteEditor, { state })
       },
     }),
   }

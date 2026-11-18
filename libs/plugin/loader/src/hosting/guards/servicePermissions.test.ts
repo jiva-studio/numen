@@ -187,6 +187,8 @@ describe('the services of a plugin context', () => {
     expect(needs('vault.vaults.switchTo')).toStrictEqual(['vault:manage'])
     expect(needs('ui.commands.run')).toStrictEqual(['vault:write'])
     expect(SERVICE_RULES.tabs.close.permissions).toStrictEqual(['vault:write'])
+    expect(SERVICE_RULES.settings.getEditor.permissions).toStrictEqual([])
+    expect(SERVICE_RULES.settings.onEditorChange.permissions).toStrictEqual([])
     expect(SERVICE_RULES.events.emitFileSelect.permissions).toStrictEqual(
       SERVICE_RULES.events.emitVaultChange.permissions,
     )
@@ -374,7 +376,7 @@ describe('running a command of the application', () => {
 
   const setUp = (permissions: readonly string[], isListed = true) => {
     const fakes = createFakes()
-    const host = createHost(fakes, { ui: { isCommandListed: () => isListed } })
+    const host = createHost(fakes, { ui: { commandAccess: { isListed: () => isListed } } })
     const { host: services } = createPluginParts('md.numen.sample', host, MANIFEST(permissions))
     const run = (command: string) =>
       Promise.resolve()
