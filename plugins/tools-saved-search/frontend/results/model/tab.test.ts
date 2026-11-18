@@ -402,7 +402,7 @@ describe('editing the query of a saved search', () => {
     expect(state.functions.value.map((fn) => fn.name)).toStrictEqual([
       'words',
       'meaning',
-      'tags',
+      'hasTag',
       'top',
       'rerank',
     ])

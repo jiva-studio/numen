@@ -65,6 +65,7 @@ A change to a wire message affects both the Go side and the generated TypeScript
 
 - Two actions fired in quick succession where the first resolves last and overwrites the second's result — missing cancellation or sequencing.
 - A stream or subscription whose events can arrive interleaved with a refetch.
+- A subscription opened before or after an initial snapshot read without a single lock or version covering both, where two updates before the snapshot completes let the stream replay the older update over the newer snapshot.
 - Optimistic state written before the call it depends on has succeeded, leaving the interface inconsistent when the call rejects.
 
 ### 5. Boundaries and indexes
@@ -83,6 +84,8 @@ A change to a wire message affects both the Go side and the generated TypeScript
 ### 7. A failure stays a failure
 
 - Follow every error, cancellation and missing value to the place that decides what to do with it. No path on the way may turn it into something the caller takes for success: a default value, a partial result, or a fallback to other data than the caller asked for. It is worst when a write follows a failed read.
+- A failed refresh or read that clears the tracked dependency set, leaving subsequent change filters deaf to the paths that would trigger recovery.
+- A change filter that checks only the paths in the last completed state and drops an event where a previously unrelated item enters the set.
 - What the caller gave is what the work uses, and what the work opens it closes, on every path including an exception.
 
 ### 8. Conditions

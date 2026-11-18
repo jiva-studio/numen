@@ -29,11 +29,11 @@ const CATALOG: readonly QueryFunction[] = [
     example: 'words("seed tray")',
   },
   {
-    name: 'tags',
+    name: 'hasTag',
     kind: 'function',
     summary: 'notes with this tag',
     description: 'Finds notes that carry the tag you give.',
-    example: 'tags("garden")',
+    example: 'hasTag("garden")',
   },
 ]
 
@@ -86,7 +86,7 @@ describe('the completion list', () => {
         row.querySelector('.cm-completionDetail')?.textContent,
       ]),
     ).toStrictEqual([
-      ['tags', 'notes with this tag'],
+      ['hasTag', 'notes with this tag'],
       ['words', 'passages with these words'],
     ])
   })
