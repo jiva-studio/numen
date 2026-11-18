@@ -29,6 +29,10 @@ if [ $# -eq 0 ]; then
   exit 2
 fi
 
+if [ -f /etc/apt/apt-mirrors.txt ] && grep -q 'ec2\.archive\.ubuntu\.com' /etc/apt/apt-mirrors.txt 2>/dev/null; then
+  sudo sed -i 's|http://[^/]*\.ec2\.archive\.ubuntu\.com/ubuntu|http://azure.archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt || true
+fi
+
 options='Acquire::Retries "1"; Acquire::http::Timeout "30"; Acquire::https::Timeout "30";'
 if [ -w "$(dirname "$conf")" ]; then
   echo "$options" > "$conf"

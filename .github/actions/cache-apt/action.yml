@@ -29,6 +29,7 @@ runs:
         sudo chown _apt:root "$HOME/.cache/apt-archives/partial" || true
         echo "Dir::Cache::archives \"$HOME/.cache/apt-archives\";" | sudo tee /etc/apt/apt.conf.d/99-numen-archives > /dev/null
         echo "prefix=$PREFIX-${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"
+        echo "legacy=$PREFIX-2" >> "$GITHUB_OUTPUT"
         echo "key=$PREFIX-${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
 
     - id: cache
@@ -36,4 +37,6 @@ runs:
       with:
         path: ~/.cache/apt-archives/*.deb
         key: ${{ steps.key.outputs.key }}
-        restore-keys: ${{ steps.key.outputs.prefix }}-
+        restore-keys: |
+          ${{ steps.key.outputs.prefix }}-
+          ${{ env.ImageOS == 'ubuntu26' && steps.key.outputs.legacy || '' }}
