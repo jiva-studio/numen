@@ -43,6 +43,7 @@ func (c changeFixture) statOf(t *testing.T, path string) domain.FileStat {
 	if err != nil {
 		t.Fatal(err)
 	}
+	stat.Hash = domain.HashContent([]byte(c.read(t, path)))
 	return stat
 }
 
