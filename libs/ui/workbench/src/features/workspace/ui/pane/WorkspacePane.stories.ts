@@ -89,7 +89,7 @@ export const ShownAgain: Story = {
   },
 }
 
-/** The pointer over a tab, and the keyboard on it: the shared tooltip names the tab, the browser draws none of its own. */
+/** A tab shows no tooltip for its title; hovering its mark shows the mark tooltip. */
 export const TabNamedByTooltip: Story = {
   args: { pane: pane('main', [NOTE_TAB, BESIDE], NOTE_TAB) },
   render: (args) => ({
@@ -100,7 +100,9 @@ export const TabNamedByTooltip: Story = {
         WORKSPACE_CONTEXT,
         computed<WorkspaceContext>(() => ({
           findTab: (id: TabId): Tab | undefined =>
-            titles[id] === undefined ? undefined : { id, title: titles[id] },
+            titles[id] === undefined
+              ? undefined
+              : { id, title: titles[id], ...(id === BESIDE ? { mark: 'unsaved' } : {}) },
           focus: 'main',
           minimum: 220,
           getStripEdge: () => NO_STRIP_EDGE,
@@ -123,24 +125,28 @@ export const TabNamedByTooltip: Story = {
   play: async ({ canvasElement }) => {
     const getTab = (id: TabId) =>
       canvasElement.querySelector(`[data-workspace-tab="${id}"]`) as HTMLElement
-    // The tooltip a tab points at, so one that another story left in the body does not count.
-    const getTooltip = (tab: HTMLElement) => {
-      const id = tab.getAttribute('aria-describedby')
+    // The tooltip an element points at, so one that another story left in the body does not count.
+    const getTooltip = (element: HTMLElement) => {
+      const id = element.getAttribute('aria-describedby')
       return id ? document.getElementById(id) : null
     }
     const tab = getTab(BESIDE)
+    const mark = tab.querySelector('.tab__mark') as HTMLElement
 
     await userEvent.unhover(tab)
     await expect(tab.querySelector('[title]')).toBeNull()
     await expect(getTooltip(tab)).toBeNull()
 
     await userEvent.hover(tab)
-    await expect(getTooltip(tab)).toHaveTextContent('Beside')
-
-    await userEvent.unhover(tab)
     await expect(getTooltip(tab)).toBeNull()
 
+    await userEvent.hover(mark)
+    await expect(getTooltip(mark)).toHaveTextContent('unsaved')
+
+    await userEvent.unhover(mark)
+    await expect(getTooltip(mark)).toBeNull()
+
     await userEvent.keyboard('{Tab}')
-    await expect(getTooltip(getTab(NOTE_TAB))).toHaveTextContent('Note')
+    await expect(getTooltip(getTab(NOTE_TAB))).toBeNull()
   },
 }

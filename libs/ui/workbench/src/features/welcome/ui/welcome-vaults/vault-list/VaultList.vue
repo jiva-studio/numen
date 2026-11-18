@@ -39,7 +39,6 @@ const getVaultKeys = (pos: number, vault: VaultRow): Keystroke | undefined => {
         :icon="FolderRoot"
         :text="one.name"
         :aside="one.path"
-        :whole="one.path"
         :keys="getVaultKeys(at, one)"
         :is-disabled="one.isWorking"
         @click="$emit('open', one.id)"

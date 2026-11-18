@@ -183,7 +183,11 @@ describe('PlexLinkInspectorPopover component', () => {
     const button = directionButtons(wrapper)[0]!
 
     expect(button.attributes('aria-label')).toBe('No arrow. Click for: Arrow to Lighthouse')
-    expect(button.attributes('title')).toBe(button.attributes('aria-label'))
+    expect(button.attributes('title')).toBeUndefined()
+    await button.trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
+      button.attributes('aria-label'),
+    )
     await button.trigger('click')
     expect(button.attributes('aria-label')).toBe('Arrow to Lighthouse. Click for: Arrow to Harbour')
     await button.trigger('click')

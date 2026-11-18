@@ -80,7 +80,7 @@ function seek(ms: number): void {
       :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--held': isHeld }"
       :style="frameStyle"
       :src="props.copy"
-      :title="props.words.playing"
+      :aria-label="props.words.playing"
       controls
       preload="metadata"
       @contextmenu.prevent
@@ -95,7 +95,7 @@ function seek(ms: number): void {
       :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--held': isHeld }"
       :style="frameStyle"
       :src="props.embed"
-      :title="props.words.playing"
+      :aria-label="props.words.playing"
       scrolling="no"
       sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
       allow="fullscreen; picture-in-picture; encrypted-media"
@@ -113,7 +113,6 @@ function seek(ms: number): void {
       :aria-valuemax="tallest"
       :aria-valuenow="handleValue"
       :data-state="isHeld ? 'drag' : undefined"
-      :title="props.words.taller"
       @pointerdown="onPointerDown"
       @keydown="onHandleKeydown"
     ></div>

@@ -65,12 +65,11 @@ describe('the title', () => {
     expect(mountBar({ vaultName: '' }).find('[data-title]').text()).toBe('numen')
   })
 
-  it('carries the whole title as its tooltip for when the name is cut', () => {
+  it('carries no native title attribute on the title', () => {
     const wrapper = mountBar({ vaultName: 'A very long name of a vault' })
 
-    expect(wrapper.find('[data-title]').attributes('title')).toBe(
-      'numen — A very long name of a vault',
-    )
+    expect(wrapper.find('[data-title]').text()).toBe('numen — A very long name of a vault')
+    expect(wrapper.find('[data-title]').attributes('title')).toBeUndefined()
   })
 })
 

@@ -6,6 +6,7 @@
  * It has no background or shape of its own, and takes the colour of the
  * element it is placed on while it is hovered or focused.
  */
+import { Tooltip, useTooltip } from '@numen/ui'
 import { Icon } from '../icon'
 
 defineProps<{
@@ -13,6 +14,8 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ (event: 'press'): void }>()
+
+const tip = useTooltip()
 </script>
 
 <template>
@@ -21,10 +24,17 @@ const emit = defineEmits<{ (event: 'press'): void }>()
     class="remove-button"
     draggable="false"
     :aria-label="label"
-    :title="label"
+    :aria-describedby="tip.describedBy.value"
+    @mouseenter="tip.open"
+    @mouseleave="tip.close"
+    @focus="tip.open"
+    @blur="tip.close"
     @click="emit('press')"
   >
     <Icon name="bin" />
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value" :id="tip.id" :at="tip.at.value">{{ label }}</Tooltip>
+    </Teleport>
   </button>
 </template>
 

@@ -40,7 +40,7 @@ const recordPage = async (page: Page, pluginName: string): Promise<void> => {
     delete window.firstRenderMs
     const record = () => {
       for (const one of document.querySelectorAll('[data-testid="setting-path"]')) {
-        window.shownPaths?.push(one.getAttribute('title') ?? '')
+        window.shownPaths?.push(one.textContent?.trim() ?? '')
       }
       const titles = Array.from(document.querySelectorAll('h2'), (one) => one.textContent ?? '')
       if (window.firstRenderMs === undefined && titles.includes(name)) {
@@ -51,8 +51,6 @@ const recordPage = async (page: Page, pluginName: string): Promise<void> => {
       subtree: true,
       childList: true,
       characterData: true,
-      attributes: true,
-      attributeFilter: ['title'],
     })
   }, pluginName)
 }
@@ -72,7 +70,7 @@ test.describe('The page of a plugin', () => {
     const settings = page.getByRole('tabpanel', { name: /^(Linked tab )?Settings Close Settings$/ })
 
     await settings.getByRole('button', { name: new RegExp(FIRST.name) }).click()
-    await expect(settings.getByTestId('setting-path')).toHaveAttribute('title', firstPath)
+    await expect(settings.getByTestId('setting-path')).toHaveText('…/ocr/recognition.onnx')
     await settings.getByRole('button', { name: 'Back', exact: true }).click()
 
     await recordPage(page, SECOND.name)

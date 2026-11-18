@@ -58,7 +58,7 @@ function onSeek(ms: number) {
         v-if="pageUrl"
         class="recording__page"
         :src="pageUrl"
-        :title="words.page"
+        :aria-label="words.page"
         allow="fullscreen; picture-in-picture; encrypted-media"
         sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
       />

@@ -24,9 +24,13 @@ const pressOn = async (strip: ReturnType<typeof mountHeader>, selector: string) 
 }
 
 describe('the strip itself', () => {
-  it('says to a pointer what taking hold of it does', () => {
+  it('says to a pointer on the handle what taking hold of it does', async () => {
     mountedHeader = mountHeader()
-    expect(header(mountedHeader).attributes('title')).toBe('Drag this block')
+    expect(header(mountedHeader).attributes('title')).toBeUndefined()
+    await grip(mountedHeader).trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
+      'Drag this block',
+    )
   })
 
   // The header holds a name input and buttons, so it is a container and not a

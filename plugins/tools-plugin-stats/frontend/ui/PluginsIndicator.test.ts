@@ -65,8 +65,14 @@ describe('the running plugins indicator', () => {
     await wrapper.setProps({ now: NOW + 5_000 })
 
     expect(countdown().text()).toBe('1m 50s')
-    expect(countdown().attributes('title')).toBe('Stops in 1m 50s; idle for 1m 10s')
-    expect(row().attributes('title')).toBe('org.example.atlas\nRunning for 10m 05s')
+    await countdown().trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
+      'Stops in 1m 50s; idle for 1m 10s',
+    )
+    await row().trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
+      'org.example.atlas\nRunning for 10m 05s',
+    )
     wrapper.unmount()
   })
 
@@ -98,7 +104,7 @@ describe('the running plugins indicator', () => {
     expect(atlas?.find('.plugin-popover__health').exists()).toBe(false)
     const health = maps?.find('.plugin-popover__health')
     expect(health?.text()).toBe('The map server does not answer')
-    expect(health?.attributes('title')).toBe('The map server does not answer')
+    expect(health?.attributes('title')).toBeUndefined()
     wrapper.unmount()
   })
 

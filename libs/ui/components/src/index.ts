@@ -98,7 +98,7 @@ export { stepTo } from './shared/lib/dom/roving'
 export { DragPreview, usePressDrag } from './shared/ui/drag-preview'
 
 /** A label for a hovered item, placed beside the box it describes. */
-export { Tooltip } from './shared/ui/tooltip'
+export { Tooltip, useTooltip } from './shared/ui/tooltip'
 export { isPageMove, useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
 
 export { Tree } from './features/tree'

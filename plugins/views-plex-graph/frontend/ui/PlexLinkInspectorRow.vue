@@ -5,6 +5,7 @@
  */
 import { computed, useId } from 'vue'
 import { ArrowLeft, ArrowRight, Minus, Trash2 } from '@lucide/vue'
+import { Tooltip, useTooltip } from '@numen/ui'
 import type { LinkDirection } from '../model/connectionDraft'
 import { WORDS as words } from '../words'
 
@@ -24,6 +25,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const tip = useTooltip()
 const labelFieldId = useId()
 const directionWords = computed(() => {
   const name = (direction: LinkDirection) =>
@@ -55,8 +57,11 @@ function onInputKeyDown(event: KeyboardEvent) {
       type="button"
       class="plex-link-row__dir-btn plex-link-popover__dir-btn"
       :data-direction="props.direction"
-      :title="directionWords"
       :aria-label="directionWords"
+      @mouseenter="tip.open($event, () => directionWords)"
+      @mouseleave="tip.close"
+      @focus="tip.open($event, () => directionWords)"
+      @blur="tip.close"
       @click="emit('cycle-direction')"
     >
       <ArrowRight
@@ -84,14 +89,22 @@ function onInputKeyDown(event: KeyboardEvent) {
     <button
       type="button"
       class="plex-link-row__delete-btn plex-link-popover__delete-btn"
-      :title="words.removeLink"
       :aria-label="words.removeLink"
+      @mouseenter="tip.open($event, words.removeLink)"
+      @mouseleave="tip.close"
+      @focus="tip.open($event, words.removeLink)"
+      @blur="tip.close"
       @click="emit('remove')"
     >
       <Trash2
         class="plex-link-row__icon plex-link-row__icon--trash plex-link-popover__icon plex-link-popover__icon--trash"
       />
     </button>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+        {{ tip.text.value }}
+      </Tooltip>
+    </Teleport>
   </div>
 </template>
 

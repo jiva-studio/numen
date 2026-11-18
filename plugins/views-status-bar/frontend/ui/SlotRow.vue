@@ -5,6 +5,7 @@
  */
 import type { Component } from 'vue'
 import type { CommandItem, SlotItem, Caught } from '@numen/plugin-sdk'
+import { Tooltip, useTooltip } from '@numen/ui'
 import { formatTooltip } from '../lib/entries'
 import SlotMenuButton from './SlotMenuButton.vue'
 
@@ -20,6 +21,9 @@ defineProps<{
 const emit = defineEmits<{
   (event: 'run', command: string, itemId?: string, values?: Readonly<Record<string, string>>): void
 }>()
+
+/* --------------------------------- State ---------------------------------- */
+const tip = useTooltip()
 
 /* -------------------------------- Handlers -------------------------------- */
 function onRun(command: string, itemId?: string, values?: Readonly<Record<string, string>>): void {
@@ -49,8 +53,11 @@ function onRun(command: string, itemId?: string, values?: Readonly<Record<string
         type="button"
         class="status-bar__entry"
         data-status-bar-entry
-        :title="formatTooltip(entry)"
         :aria-label="entry.title"
+        @mouseenter="tip.open($event, formatTooltip(entry))"
+        @mouseleave="tip.close"
+        @focus="tip.open($event, formatTooltip(entry))"
+        @blur="tip.close"
         @click="onRun(entry.command, undefined, entry.values)"
       >
         <component :is="entry.icon as Component" v-if="entry.icon" :size="14" aria-hidden="true" />
@@ -67,5 +74,10 @@ function onRun(command: string, itemId?: string, values?: Readonly<Record<string
         @run="onRun"
       />
     </template>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+        {{ tip.text.value }}
+      </Tooltip>
+    </Teleport>
   </div>
 </template>

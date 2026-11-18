@@ -159,7 +159,7 @@ describe('a command', () => {
     expect(notices.getShown()).toStrictEqual([{ text: 'the words are gone', severity: 'error' }])
   })
 
-  it('shows the icon of the command with its title and shortcut as the hover text', () => {
+  it('shows the icon of the command with its title and shortcut as the hover text', async () => {
     const { host, view } = activateBar()
     host.ui.slots.setEntries('statusBar.left', [
       createCommand('count', 'Count words', { icon, shortcut: 'mod+shift+w' }),
@@ -169,8 +169,12 @@ describe('a command', () => {
 
     const button = wrapper.find('button[data-status-bar-entry]')
     expect(button.find('[data-icon="words"]').exists()).toBe(true)
-    expect(button.attributes('title')).toBe('Count words (mod+shift+w)')
+    expect(button.attributes('title')).toBeUndefined()
     expect(button.attributes('aria-label')).toBe('Count words')
+    await button.trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
+      'Count words (mod+shift+w)',
+    )
   })
 })
 

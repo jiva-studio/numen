@@ -161,12 +161,12 @@ describe('the screen drawn narrow', () => {
     expect(screen.emitted('run')).toStrictEqual([['find']])
   })
 
-  it('marks what is returned under a name, and keeps the whole path on the row', () => {
+  it('marks what is returned under a name without a native title attribute', () => {
     const screen = drawWith(footer)
     const path = screen.get('.welcome-page__row--vault .welcome-page__aside')
 
     expect(path.text()).toBe('/vaults/physics')
-    expect(path.attributes('title')).toBe('/vaults/physics')
+    expect(path.attributes('title')).toBeUndefined()
   })
 })
 

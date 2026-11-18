@@ -37,16 +37,21 @@ describe('the index stats indicator', () => {
     expect(draw(STATS).find('.index-stats__trigger').attributes('tabindex')).toBe('-1')
   })
 
-  it('shows the vectors alone, with no end value, while chunks wait', () => {
+  it('shows the vectors alone, with no end value, while chunks wait', async () => {
     const wrapper = draw(STATS)
     const trigger = wrapper.find('.index-stats__trigger')
 
     expect(trigger.text()).toBe('⬡12,480')
     expect(trigger.text()).not.toContain('/')
     expect(trigger.attributes('aria-label')).toBe('12,480 vectors, indexing')
-    expect(trigger.attributes('title')).toBe('12,480 vectors, indexing')
+    expect(trigger.attributes('title')).toBeUndefined()
+    await trigger.trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
+      '12,480 vectors, indexing',
+    )
     expect(trigger.classes()).toStrictEqual(['index-stats__trigger'])
     expect(wrapper.find('.index-stats__icon').classes()).toStrictEqual(['index-stats__icon'])
+    wrapper.unmount()
   })
 
   it('shows the vectors alone and a still mark once the queue is empty', () => {

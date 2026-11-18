@@ -10,6 +10,7 @@
  * of is the handle at its start, as it is on every other row that is reordered
  * here: a control, named, and worked by the arrows along the order.
  */
+import { Tooltip, useTooltip } from '@numen/ui'
 import { useGripPress } from '../../../model/cards/useGripPress'
 import { CardRow } from '../card-row'
 import { Icon } from '../icon'
@@ -32,6 +33,7 @@ const emit = defineEmits<{
 
 /** It is taken hold of. A press on something worked lets that thing have it. */
 const { isDraggable, press: onPress } = useGripPress()
+const tip = useTooltip()
 
 const onStep = (event: KeyboardEvent): void => {
   const direction = parseStepKey(event.key)
@@ -46,7 +48,6 @@ const onStep = (event: KeyboardEvent): void => {
     class="card-header"
     data-grip
     :draggable="isDraggable"
-    :title="drag"
     @dragstart="emit('dragstart', $event)"
     @dragend="emit('dragend', $event)"
     @pointerdown="onPress"
@@ -58,7 +59,12 @@ const onStep = (event: KeyboardEvent): void => {
       role="button"
       tabindex="0"
       :aria-label="drag"
+      :aria-describedby="tip.describedBy.value"
       :aria-keyshortcuts="STEP_KEYS"
+      @mouseenter="tip.open"
+      @mouseleave="tip.close"
+      @focus="tip.open"
+      @blur="tip.close"
       @keydown="onStep"
     >
       <Icon name="grip" />
@@ -66,6 +72,9 @@ const onStep = (event: KeyboardEvent): void => {
 
     <span class="card-header__content min-w-0 flex-1"><slot /></span>
     <span class="card-header__actions flex shrink-0 items-center"><slot name="actions" /></span>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value" :id="tip.id" :at="tip.at.value">{{ drag }}</Tooltip>
+    </Teleport>
   </CardRow>
 </template>
 

@@ -119,12 +119,18 @@ describe('the updater frontend', () => {
     const { context } = setup(AVAILABLE)
     await flush()
 
-    const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never)
+    const wrapper = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
 
-    expect(wrapper.find('.update-indicator__trigger').attributes('tabindex')).toBe('-1')
-    expect(wrapper.find('.update-indicator__trigger').attributes('title')).toBe(
+    const trigger = wrapper.find('.update-indicator__trigger')
+    expect(trigger.attributes('tabindex')).toBe('-1')
+    expect(trigger.attributes('title')).toBeUndefined()
+    await trigger.trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
       'Update available: v2026.10.1. You run v2026.9.0. Click to download.',
     )
+    wrapper.unmount()
   })
 
   it('draws nothing again once the update is dismissed', async () => {

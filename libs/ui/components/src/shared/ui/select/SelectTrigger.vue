@@ -6,6 +6,7 @@
 import { useTemplateRef } from 'vue'
 import { ChevronDown } from '@lucide/vue'
 import { cn } from '@/shared/lib/dom/classes'
+import { Tooltip, useTooltip } from '../tooltip'
 import type { SelectTriggerProps } from './SelectTrigger.types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -20,6 +21,7 @@ defineExpose({
 
 /* ---------------------------------- State --------------------------------- */
 const element = useTemplateRef<HTMLButtonElement>('element')
+const problemTip = useTooltip()
 </script>
 
 <template>
@@ -30,7 +32,6 @@ const element = useTemplateRef<HTMLButtonElement>('element')
     :aria-haspopup="hasPopup"
     :aria-expanded="isExpanded"
     :disabled="isDisabled"
-    :title="problem || undefined"
     :aria-description="problem || undefined"
     :aria-invalid="problem ? true : undefined"
     :class="
@@ -46,11 +47,20 @@ const element = useTemplateRef<HTMLButtonElement>('element')
         props.class,
       )
     "
+    @mouseenter="problemTip.open($event, problem ?? '')"
+    @mouseleave="problemTip.close"
+    @focus="problemTip.open($event, problem ?? '')"
+    @blur="problemTip.close"
   >
-    <span class="select__reading min-w-0" :class="{ 'text-hushed': isHushed }" :title="text">
+    <span class="select__reading min-w-0" :class="{ 'text-hushed': isHushed }">
       {{ text }}
     </span>
     <ChevronDown class="select__mark shrink-0" aria-hidden="true" />
+    <Teleport to="body">
+      <Tooltip v-if="problemTip.at.value && problem" :id="problemTip.id" :at="problemTip.at.value">
+        {{ problem }}
+      </Tooltip>
+    </Teleport>
   </button>
 </template>
 

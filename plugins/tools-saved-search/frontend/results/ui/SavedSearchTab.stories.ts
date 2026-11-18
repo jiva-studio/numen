@@ -30,8 +30,6 @@ const meta: Meta<Knobs> = {
 export default meta
 type Story = StoryObj<Knobs>
 
-const FULL_TIME = /^14 Nov 2026, \d\d:\d\d$/
-
 /** The dot of fresh results, the edit button, two passages with their places and a whole file as a file row. */
 export const ShowsTheResults: Story = {
   play: async ({ canvasElement }) => {
@@ -52,8 +50,8 @@ export const ShowsTheResults: Story = {
 }
 
 /**
- * Hovering the dot shows the state as the title of a tooltip, and the time and the count of the results
- * with the full date on the time; leaving it hides it.
+ * Hovering the dot shows the state as the title of a tooltip, and the time and the count of the results;
+ * leaving it hides it.
  */
 export const ShowsTheTimeOfTheResultsOnHover: Story = {
   play: async ({ canvasElement }) => {
@@ -68,7 +66,6 @@ export const ShowsTheTimeOfTheResultsOnHover: Story = {
     await expect(within(tooltip).getByText('Computed').nextElementSibling).toHaveTextContent(
       '15 minutes ago',
     )
-    await expect(within(tooltip).getByTitle(FULL_TIME)).toHaveTextContent('15 minutes ago')
     await expect(within(tooltip).getByText('Results').nextElementSibling).toHaveTextContent('3')
     await expect(dot).toHaveAccessibleDescription(/Computed/)
 
@@ -90,7 +87,7 @@ export const ShowsTheTooltipOnFocus: Story = {
 
     const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
     await expect(tooltip).toHaveTextContent(/^Stale/)
-    await expect(within(tooltip).getByTitle(FULL_TIME)).toBeVisible()
+    await expect(within(tooltip).getByText('15 minutes ago')).toBeVisible()
 
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(canvas.queryByRole('tooltip')).toBeNull())
@@ -303,7 +300,9 @@ export const ShowsAFailedLastRun: Story = {
 
     const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
     await expect(tooltip).toHaveTextContent(/^Failed/)
-    await expect(within(tooltip).getAllByTitle(FULL_TIME)).toHaveLength(2)
+    await expect(within(tooltip).getByText('Computed').nextElementSibling).toHaveTextContent(
+      '15 minutes ago',
+    )
     await expect(
       within(tooltip).getAllByText('Failed').at(-1)?.nextElementSibling,
     ).toHaveTextContent('4 minutes ago')

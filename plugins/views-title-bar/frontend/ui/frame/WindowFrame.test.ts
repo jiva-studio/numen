@@ -22,10 +22,18 @@ describe('WindowControls', () => {
     expect(wrapper.emitted('close-window')).toHaveLength(1)
   })
 
-  it('names the maximize button Restore while the window is maximized', () => {
-    const wrapper = mountControls({ isMaximized: true })
+  it('names the maximize button Restore while the window is maximized', async () => {
+    const wrapper = mount(WindowControls, {
+      props: { look: 'windows', words: TITLE_BAR_WORDS, isMaximized: true },
+      attachTo: document.body,
+    })
 
-    expect(wrapper.find('[data-control="toggle-maximize"]').attributes('title')).toBe('Restore')
+    const button = wrapper.find('[data-control="toggle-maximize"]')
+    expect(button.attributes('aria-label')).toBe('Restore')
+    expect(button.attributes('title')).toBeUndefined()
+    await button.trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe('Restore')
+    wrapper.unmount()
   })
 })
 

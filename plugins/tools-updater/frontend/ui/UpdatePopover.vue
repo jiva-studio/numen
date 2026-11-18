@@ -3,7 +3,7 @@
  * The details of a new release and the actions on it.
  */
 import { computed } from 'vue'
-import { Button } from '@numen/ui'
+import { Button, Tooltip, useTooltip } from '@numen/ui'
 import type { Update } from '../api/updater'
 import type { Platform } from '../types'
 import { formatReleaseDate, getPlatformMessage } from '../lib/release'
@@ -24,6 +24,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const closeTip = useTooltip()
 const releaseDate = computed(() => formatReleaseDate(props.update.releasedAt))
 const platformMessage = computed(() => getPlatformMessage(props.platform))
 const hasNotes = computed(
@@ -56,14 +57,23 @@ function onDismiss() {
         variant="ghost"
         size="icon-small"
         class="update-popover__close-btn"
-        :title="words.close"
         :aria-label="words.close"
+        :aria-describedby="closeTip.describedBy.value"
+        @mouseenter="closeTip.open"
+        @mouseleave="closeTip.close"
+        @focus="closeTip.open"
+        @blur="closeTip.close"
         @click="onClose"
       >
         <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
           <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.5" fill="none" />
         </svg>
       </Button>
+      <Teleport to="body">
+        <Tooltip v-if="closeTip.at.value" :id="closeTip.id" :at="closeTip.at.value">
+          {{ words.close }}
+        </Tooltip>
+      </Teleport>
     </header>
 
     <div class="update-popover__body">

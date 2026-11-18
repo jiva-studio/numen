@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from 'vue'
 
-/** isHushed draws the text as a placeholder; problem marks the line and is its title. */
+/** isHushed draws the text as a placeholder; problem marks the line and shows in its tooltip. */
 export interface SelectTriggerProps {
   text: string
   isHushed: boolean
