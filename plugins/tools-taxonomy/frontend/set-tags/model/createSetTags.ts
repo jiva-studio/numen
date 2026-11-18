@@ -1,5 +1,5 @@
 import type { Api, CommandRegistration, PickerHost, PickerItem } from '@numen/plugin-sdk'
-import type { SetTagsRequest, SetTagsResult, TagList } from '../../types'
+import type { SetTagsRequest, SetTagsResult, TagList, TagsByPath } from '../../types'
 import { getCreateTagTitle, TAG_PLACEHOLDER, TAGS_TITLE } from '../../words'
 import { getPickerState, getTagKey } from '../lib/pickerState'
 import { getTagColor } from '../../lib/color'
@@ -9,6 +9,8 @@ export interface SetTagsDeps {
   readonly api: Api
   readonly picker: PickerHost
   readonly getTags: (path: string) => readonly string[]
+  readonly setTags?: (changed: TagsByPath) => void
+  readonly beginWrite?: () => (changed?: TagsByPath) => void
 }
 
 /**
@@ -25,13 +27,27 @@ export function createSetTags(deps: SetTagsDeps): CommandRegistration {
       const listed = await deps.api.call<Record<string, never>, TagList>('GetTags', {})
       if (!listed.ok) throw new Error(listed.error.message)
 
-      /** The tags of each selected note after toggling one tag: the notes it could not write keep their tags. */
+      let nextWrite = 0
+      let appliedWrite = 0
+
       const toggle = async (tag: string): Promise<readonly (readonly string[])[]> => {
+        const writeId = ++nextWrite
+        const finishWrite = deps.beginWrite?.()
         const written = await deps.api.call<SetTagsRequest, SetTagsResult>('SetTags', {
           paths,
           toggles: [tag],
         })
-        if (!written.ok) return paths.map(deps.getTags)
+        if (!written.ok || writeId < appliedWrite) {
+          finishWrite?.()
+          return paths.map(deps.getTags)
+        }
+        appliedWrite = writeId
+        const changed: Record<string, readonly string[]> = {}
+        for (const one of written.value.notes) {
+          if (!one.error) changed[one.path] = one.tags
+        }
+        if (finishWrite) finishWrite(changed)
+        else deps.setTags?.(changed)
         return written.value.notes.map((one) => (one.error ? deps.getTags(one.path) : one.tags))
       }
 

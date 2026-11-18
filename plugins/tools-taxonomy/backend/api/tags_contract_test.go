@@ -19,7 +19,7 @@ func TestTheTagsMessagesMatchTheirFixtures(t *testing.T) {
 }
 
 func TestTheTagsMethodNames(t *testing.T) {
-	if api.MethodGetTags != "GetTags" || api.MethodSetTags != "SetTags" {
-		t.Errorf("methods %q and %q, want GetTags and SetTags", api.MethodGetTags, api.MethodSetTags)
+	if api.MethodGetTagMap != "GetTagMap" || api.MethodGetTags != "GetTags" || api.MethodSetTags != "SetTags" {
+		t.Errorf("methods %q, %q and %q, want GetTagMap, GetTags and SetTags", api.MethodGetTagMap, api.MethodGetTags, api.MethodSetTags)
 	}
 }

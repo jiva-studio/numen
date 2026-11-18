@@ -3,14 +3,9 @@
 /** The tags of the notes by path; a note without tags has no entry. */
 export type TagsByPath = Readonly<Record<string, readonly string[]>>
 
-/**
- * One message of the stream WatchTagMap, as the Go message in backend/api encodes it: the first holds
- * the whole map in `tags`, each later one holds in `changed` the paths whose tags changed, with an
- * empty list for a path left with none.
- */
-export interface TagMapMessage {
-  readonly tags?: TagsByPath
-  readonly changed?: TagsByPath
+/** The answer of GetTagMap: the tags of the notes of the vault by path. */
+export interface TagMapResponse {
+  readonly tags: TagsByPath
 }
 
 /** A tag of the vault with the number of notes that have it, as the Go message TagCount encodes it. */

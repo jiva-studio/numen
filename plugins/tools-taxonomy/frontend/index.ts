@@ -17,13 +17,19 @@ const PLEX_TAGS_VIEW = 'plex-tags'
 
 export const activate = (plugin: PluginContext, host: HostServices): void => {
   const api = createApi(SERVICE)
-  const tagMap = createTagMap({ api: createTaxonomyApi(api) })
+  const tagMap = createTagMap({ api: createTaxonomyApi(api), events: host.events })
   plugin.register.slotView({ id: FILE_TAGS_VIEW, component: createFileTags(tagMap) })
   plugin.register.slotView({ id: PLEX_TAGS_VIEW, component: createPlexTags(tagMap) })
   plugin.identity.subscriptions.push({ dispose: () => tagMap.stop() })
   const { picker } = host.ui
   if (picker) {
-    const setTags = createSetTags({ api, picker, getTags: tagMap.getTags })
+    const setTags = createSetTags({
+      api,
+      picker,
+      getTags: tagMap.getTags,
+      setTags: tagMap.setTags,
+      beginWrite: tagMap.beginWrite,
+    })
     plugin.register.command({
       id: 'tags.set',
       handler: async (note) => {

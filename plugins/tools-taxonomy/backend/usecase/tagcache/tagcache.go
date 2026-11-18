@@ -66,7 +66,6 @@ type vaultTags struct {
 	mu       sync.Mutex
 	isLoaded bool
 	notes    map[int64]tagfile.Note
-	follow   follow
 }
 
 func New(open func(id domain.VaultID) Vault) *Caches {
@@ -78,10 +77,22 @@ func (c *Caches) getVault(id domain.VaultID) *vaultTags {
 	defer c.mu.Unlock()
 	one, ok := c.vaults[id]
 	if !ok {
-		one = &vaultTags{mu: sync.Mutex{}, isLoaded: false, notes: map[int64]tagfile.Note{}, follow: newFollow()}
+		one = &vaultTags{mu: sync.Mutex{}, isLoaded: false, notes: map[int64]tagfile.Note{}}
 		c.vaults[id] = one
 	}
 	return one
+}
+
+// GetMap returns the tags of the notes of the vault that have any, by path, after bringing the tags up
+// to date.
+func (c *Caches) GetMap(ctx context.Context, id domain.VaultID) (map[string][]string, error) {
+	one := c.getVault(id)
+	one.mu.Lock()
+	defer one.mu.Unlock()
+	if err := c.update(ctx, id, one); err != nil {
+		return nil, err
+	}
+	return one.getTagsByPath(), nil
 }
 
 // GetTree returns the tree of the tags of the vault, as tags.GetTree builds it, after bringing the
@@ -118,7 +129,6 @@ func (c *Caches) update(ctx context.Context, id domain.VaultID, one *vaultTags) 
 		one.isLoaded = false
 		return fmt.Errorf("update the tags: %w", err)
 	}
-	one.follow.publish(one.getTagsByPath())
 	return nil
 }
 

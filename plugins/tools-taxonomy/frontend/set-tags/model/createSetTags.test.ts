@@ -56,6 +56,7 @@ const answerJson = (value: unknown): Response =>
 interface Opened {
   readonly picker: MockPickerHost
   readonly sent: Sent[]
+  readonly writtenTags: Record<string, readonly string[]>[]
   readonly closed: Promise<void>
   readonly getState: (id: string) => string | undefined
 }
@@ -68,6 +69,7 @@ interface Start {
 
 const start = async ({ note, list, writes = [] }: Start): Promise<Opened> => {
   const sent: Sent[] = []
+  const writtenTags: Record<string, readonly string[]>[] = []
   const answers = [...writes]
   const api = createApi(SERVICE, {
     origin: 'http://window',
@@ -79,12 +81,20 @@ const start = async ({ note, list, writes = [] }: Start): Promise<Opened> => {
     },
   })
   const picker = createMockPickerHost()
-  const command = createSetTags({ api, picker, getTags: (path) => TAGS_BY_PATH[path] ?? [] })
+  const command = createSetTags({
+    api,
+    picker,
+    getTags: (path) => TAGS_BY_PATH[path] ?? [],
+    setTags: (changed) => {
+      writtenTags.push(changed)
+    },
+  })
   const closed = Promise.resolve(command.handler(note))
   await vi.waitFor(() => expect(picker.getOpened()).toBeDefined())
   return {
     picker,
     sent,
+    writtenTags,
     closed,
     getState: (id) => picker.getItems().find((one) => one.id === id)?.state,
   }
@@ -239,6 +249,7 @@ describe('a tag toggled in the list', () => {
     expect(getWrites(opened).map((one) => one.body)).toStrictEqual([
       { paths: [PIER], toggles: ['Port'] },
     ])
+    expect(opened.writtenTags).toStrictEqual([{ [PIER]: ['Port'] }])
     expect(opened.getState('Port')).toBe('set')
     await close(opened)
   })
