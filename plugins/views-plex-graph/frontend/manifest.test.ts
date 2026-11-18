@@ -212,11 +212,7 @@ describe('the settings the plex left to the plugin Plex Headings', () => {
   ) as { settings: readonly { key: string }[] }
 
   it('are no longer declared by the plex', () => {
-    expect(
-      settings
-        .map((one) => one.key)
-        .filter((key) => key === 'headingLimit'),
-    ).toStrictEqual([])
+    expect(settings.map((one) => one.key).filter((key) => key === 'headingLimit')).toStrictEqual([])
   })
 })
 

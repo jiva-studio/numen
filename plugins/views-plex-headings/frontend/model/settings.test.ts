@@ -29,7 +29,9 @@ describe('the setting of the headings', () => {
   it('start at the default the manifest declares', () => {
     const { settings } = read()
 
-    expect(settings.headingLimit.value).toBe(declared.find((one) => one.key === 'headingLimit')?.default)
+    expect(settings.headingLimit.value).toBe(
+      declared.find((one) => one.key === 'headingLimit')?.default,
+    )
   })
 
   it('are read under the keys the manifest declares and no other', () => {
