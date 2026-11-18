@@ -8,9 +8,11 @@ import type {
   DroppedData,
   PathRename,
   SlotItem,
+  SlotView,
   CommandTarget,
   VaultEntry,
   Caught,
+  Disposable,
 } from '@numen/plugin-sdk'
 
 /** One file or folder of the vault, as represented by a row of the tree. */
@@ -49,6 +51,8 @@ interface FilesTabWindowDeps {
   setDraggedPaths(paths: readonly string[]): void
   showError(text: string): void
   getEntryIcon(entry: Entry | null, isOpen: boolean): Component
+  /** Calls the handler with the views the plugins place at the end of a row, at once and again on each change. */
+  watchRowEntries?(handler: (entries: readonly SlotItem[]) => void): Disposable
 }
 
 /** What a files tab requests for its menu. */
@@ -169,6 +173,13 @@ export interface FilesTabMenu {
   getIcon(id: string): Component | null
 }
 
+/** The views the plugins place at the end of a row. */
+export interface FilesTabRowEnd {
+  readonly entries: Readonly<Ref<readonly SlotView[]>>
+  /** Stops following the slot. */
+  stop(): void
+}
+
 /** What one files tab holds. */
 export interface FilesTabState {
   readonly list: FileTree
@@ -176,6 +187,7 @@ export interface FilesTabState {
   readonly renaming: FilesTabRenaming
   readonly transfer: FilesTabTransfer
   readonly menu: FilesTabMenu
+  readonly rowEnd: FilesTabRowEnd
   /** Shows the failure of an operation that runs in the background. */
   reportFailure(error: Caught): void
 }

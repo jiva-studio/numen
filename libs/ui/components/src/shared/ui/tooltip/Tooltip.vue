@@ -9,9 +9,11 @@
  */
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 
-import { getAdjacentPlace, type Box, measureRect } from '@numen/ui'
-import type { Size } from '@numen/ui'
-import { browserViewport, useFreeSpace, type Viewport } from '@numen/ui'
+import { measureRect } from '@/shared/api/dom'
+import { browserViewport, type Viewport } from '@/shared/api/viewport'
+import { getAdjacentPlace, type Box } from '@/shared/lib/dom/place'
+import type { Size } from '@/shared/lib/math/geometry'
+import { useFreeSpace } from '@/shared/model/viewport'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(

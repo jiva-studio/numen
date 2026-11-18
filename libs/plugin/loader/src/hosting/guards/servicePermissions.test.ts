@@ -374,7 +374,7 @@ describe('running a command of the application', () => {
 
   const setUp = (permissions: readonly string[], isListed = true) => {
     const fakes = createFakes()
-    const host = createHost(fakes, { ui: { isCommandListed: () => isListed } })
+    const host = createHost(fakes, { ui: { commandAccess: { isListed: () => isListed } } })
     const { host: services } = createPluginParts('md.numen.sample', host, MANIFEST(permissions))
     const run = (command: string) =>
       Promise.resolve()

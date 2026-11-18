@@ -29,6 +29,17 @@
   --numen-relation-sibling: light-dark(#8a5a86, #c99bd4);
   --numen-relation-reference: light-dark(#2a7f7a, #6fc7bf);
 
+  /* Eight hues to tell labels apart, each readable on a row of a list and on the
+     ground of a map: red, orange, yellow, green, teal, blue, violet, pink. */
+  --numen-tag-1: light-dark(#c92a2a, #ff8787);
+  --numen-tag-2: light-dark(#d9480f, #ffa94d);
+  --numen-tag-3: light-dark(#a67c00, #ffd43b);
+  --numen-tag-4: light-dark(#2f9e44, #69db7c);
+  --numen-tag-5: light-dark(#0c8599, #3bc9db);
+  --numen-tag-6: light-dark(#1971c2, #74c0fc);
+  --numen-tag-7: light-dark(#6741d9, #b197fc);
+  --numen-tag-8: light-dark(#c2255c, #faa2c1);
+
   --numen-edge: light-dark(#d8ccb8, #423a31);
 
   --numen-edge-label: light-dark(#8a7f70, #a1968a);

@@ -1,9 +1,11 @@
-import { mount } from '@vue/test-utils'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { computed } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import WorkspacePane from './WorkspacePane.vue'
 import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { pane, type Tab } from '../../lib/node'
+
+enableAutoUnmount(afterEach)
 
 const three = () => pane('main', ['plex', 'chat', 'notes'], 'chat')
 
@@ -43,6 +45,34 @@ const panels = (wrapper: ReturnType<typeof mountPane>) => wrapper.findAll('[role
 const getFocusedTab = () => document.activeElement?.getAttribute('data-workspace-tab')
 
 describe('tab strip', () => {
+  it('draws no native title attribute on a tab or its mark', () => {
+    const target = mountPane({ marks: { chat: 'unsaved' } })
+
+    expect(target.find('[role="tablist"]').element.querySelectorAll('[title]')).toHaveLength(0)
+  })
+
+  it('shows the title the workspace holds for a tab in a tooltip while the pointer is over it', async () => {
+    const target = mountPane()
+    expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
+
+    await strip(target)[2]?.trigger('mouseenter')
+
+    const tooltips = document.body.querySelectorAll('[role="tooltip"]')
+    expect(tooltips).toHaveLength(1)
+    expect(tooltips[0]?.textContent?.trim()).toBe('Notes')
+  })
+
+  it('shows the mark of a tab in a tooltip while the pointer is over the mark', async () => {
+    const target = mountPane({ marks: { chat: 'unsaved' } })
+
+    await target.get('.tab__mark').trigger('mouseenter')
+
+    const texts = [...document.body.querySelectorAll('[role="tooltip"]')].map((one) =>
+      one.textContent?.trim(),
+    )
+    expect(texts).toContain('unsaved')
+  })
+
   it('renders a tablist and links each tab to its tabpanel', () => {
     const target = mountPane()
 

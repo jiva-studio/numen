@@ -115,6 +115,15 @@ function onDismissMenu() {
         <component :is="getRowIcon(id, isOpen)" class="files__icon" aria-hidden="true" />
       </template>
 
+      <template #end="{ id }">
+        <component
+          :is="entry.component"
+          v-for="entry in props.state.rowEnd.entries.value"
+          :key="entry.key"
+          :path="id"
+        />
+      </template>
+
       <template #silence>
         <template v-if="props.state.list.state.isLoaded.value">{{ words.empty }}</template>
       </template>
