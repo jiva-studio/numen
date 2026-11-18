@@ -102,7 +102,7 @@ func TestGetTagMapOfAVaultWithoutTagsAnswersAnEmptyMap(t *testing.T) {
 
 	got := readTagMap(t, web)
 
-	if len(got.Tags) != 0 {
+	if got.Tags == nil || len(got.Tags) != 0 {
 		t.Errorf("GetTagMap = %v, want an empty map", got.Tags)
 	}
 }

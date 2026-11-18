@@ -28,6 +28,7 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
       picker,
       getTags: tagMap.getTags,
       setTags: tagMap.setTags,
+      beginWrite: tagMap.beginWrite,
     })
     plugin.register.command({
       id: 'tags.set',

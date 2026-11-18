@@ -2,12 +2,10 @@ import { getCurrentScope, onScopeDispose, shallowReactive, type EffectScope } fr
 import type { ApiError, PluginEvents, Result } from '@numen/plugin-sdk'
 import type { TagMapResponse, TagsByPath } from '../types'
 
-/** What the tag map asks of the backend. */
 interface TagMapApi {
   getTagMap(options?: { signal?: AbortSignal }): Promise<Result<TagMapResponse, ApiError>>
 }
 
-/** What the tag map reads and listens to. */
 interface TagMapDeps {
   readonly api: TagMapApi
   readonly events?: Pick<PluginEvents, 'onVaultChange'>
@@ -15,13 +13,10 @@ interface TagMapDeps {
 
 /** The tags of the notes of the vault by path, read when asked and refreshed on vault changes while in use. */
 export interface TagMap {
-  /** The tags of the note at the path in the order the note holds them; none for a path without tags. */
   getTags(path: string): readonly string[]
-  /** Sets the tags of the paths in the map; a path with an empty list is dropped. */
   setTags(changed: TagsByPath): void
-  /** Resolves once the tags have been read, or the read ended without an answer. */
+  beginWrite(): (changed?: TagsByPath) => void
   whenLoaded(): Promise<void>
-  /** Ends any in-flight read and stops listening to vault changes. */
   stop(): void
 }
 
@@ -61,11 +56,11 @@ export function createTagMap({ api, events }: TagMapDeps): TagMap {
   const tags = shallowReactive(new Map<string, readonly string[]>())
   const scopes = new Set<EffectScope>()
   let controller: AbortController | undefined
-  let inFlight: Promise<void> | undefined
+  let currentRead: Promise<void> | undefined
   let isFresh = false
   let isStopped = false
   let needsReload = false
-  let waiters = 0
+  let version = 0
 
   const trackScope = (): void => {
     const scope = getCurrentScope()
@@ -86,42 +81,47 @@ export function createTagMap({ api, events }: TagMapDeps): TagMap {
         error: { code: 'unavailable', message: '' },
       }))
     if (isStopped || current.signal.aborted || !result.ok) return false
+    version += 1
     replaceTags(tags, result.value.tags)
     return true
   }
 
-  const shouldContinue = (): boolean =>
-    needsReload && !isStopped && (scopes.size > 0 || waiters > 0)
-
-  const load = (): Promise<void> => {
+  const startRead = (): Promise<void> => {
     if (isStopped) return Promise.resolve()
-    if (inFlight) return inFlight
-    const run = async (): Promise<void> => {
-      let didRead: boolean
-      do {
-        needsReload = false
-        didRead = await readOnce()
-      } while (shouldContinue())
+    if (currentRead) return currentRead
+    needsReload = false
+    const pass = readOnce().then((didRead) => {
+      currentRead = undefined
       isFresh = didRead && !needsReload && !isStopped
-      inFlight = undefined
-    }
-    inFlight = run()
-    return inFlight
+      if (needsReload && !isStopped && scopes.size > 0) requestLoad()
+    })
+    currentRead = pass
+    return pass
   }
 
-  const requestLoad = (): void => {
-    load().catch(() => undefined)
+  function requestLoad(): void {
+    startRead().catch(() => undefined)
   }
 
-  const subscription = events?.onVaultChange(() => {
+  const invalidate = (): void => {
     if (isStopped) return
-    if (inFlight) {
+    if (currentRead) {
       needsReload = true
       return
     }
     isFresh = false
     if (scopes.size > 0) requestLoad()
-  })
+  }
+
+  const applySetTags = (changed: TagsByPath): void => {
+    version += 1
+    for (const [path, found] of Object.entries(changed)) setPathTags(tags, path, found)
+    if (!currentRead) return
+    needsReload = true
+    controller?.abort()
+  }
+
+  const subscription = events?.onVaultChange(invalidate)
 
   return {
     getTags: (path) => {
@@ -129,21 +129,22 @@ export function createTagMap({ api, events }: TagMapDeps): TagMap {
       if (!isFresh) requestLoad()
       return tags.get(path) ?? NO_TAGS
     },
-    setTags: (changed) => {
-      for (const [path, found] of Object.entries(changed)) setPathTags(tags, path, found)
-      if (!inFlight) return
-      needsReload = true
-      controller?.abort()
-    },
-    whenLoaded: async () => {
-      if (isFresh) return
-      waiters += 1
-      try {
-        await load()
-      } finally {
-        waiters -= 1
+    setTags: applySetTags,
+    beginWrite: () => {
+      const startVersion = version
+      let isDone = false
+      return (changed) => {
+        if (isDone || isStopped) return
+        isDone = true
+        if (!changed) return
+        if (startVersion !== version) {
+          invalidate()
+          return
+        }
+        applySetTags(changed)
       }
     },
+    whenLoaded: () => (isFresh ? Promise.resolve() : startRead()),
     stop: () => {
       isStopped = true
       needsReload = false

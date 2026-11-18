@@ -185,6 +185,25 @@ describe('the tag map', () => {
     map.stop()
   })
 
+  it('keeps a snapshot applied during a pending write and refreshes', async () => {
+    const feed = createFeed()
+    const map = createTagMap({ api: feed.api, events: feed.events })
+    const scope = effectScope()
+    scope.run(() => watchEffect(() => map.getTags('notes/Quay.md')))
+    await flush()
+
+    const finishWrite = map.beginWrite()
+    await feed.changeVault({ 'notes/Quay.md': ['Port', 'Sea', 'Harbor'] })
+    expect(map.getTags('notes/Quay.md')).toStrictEqual(['Port', 'Sea', 'Harbor'])
+
+    finishWrite({ 'notes/Quay.md': ['Port'] })
+    expect(map.getTags('notes/Quay.md')).toStrictEqual(['Port', 'Sea', 'Harbor'])
+    await flush()
+    expect(feed.getTagMap).toHaveBeenCalledTimes(3)
+    scope.stop()
+    map.stop()
+  })
+
   it('aborts an in-flight read when it is stopped', async () => {
     const signals: (AbortSignal | undefined)[] = []
     const map = createTagMap({
