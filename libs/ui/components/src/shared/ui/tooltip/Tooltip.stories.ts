@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, within } from 'storybook/test'
+import { expect, waitFor, within } from 'storybook/test'
 import { Tooltip } from '.'
 import { DARK, expectDark } from '@/shared/fixtures/theme'
 
@@ -41,8 +41,8 @@ export const LabelInTheDarkTheme: Story = {
 export const FarTooManyWords: Story = {
   args: { text: Array.from({ length: 60 }, (_, index) => `Tag ${index + 1}`).join(', ') },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('tooltip')).toHaveTextContent(
-      'Tag 1, Tag 2, Tag 3',
-    )
+    const tooltip = within(canvasElement).getByRole('tooltip')
+    await waitFor(() => expect(tooltip).toBeVisible())
+    await expect(tooltip).toHaveTextContent('Tag 1, Tag 2, Tag 3')
   },
 }

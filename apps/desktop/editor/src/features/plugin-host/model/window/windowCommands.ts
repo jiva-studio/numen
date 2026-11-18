@@ -32,7 +32,7 @@ export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
 
   const getListTarget = (target: RunTarget | undefined): RunTarget => ({
     ...toRunTarget(getRunTarget(target)),
-    ...(target?.noteType ? { noteType: target.noteType } : {}),
+    ...(target?.noteType !== undefined ? { noteType: target.noteType } : {}),
     ...(target?.properties ? { properties: target.properties } : {}),
   })
 

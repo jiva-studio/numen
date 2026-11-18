@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** The tags of a note under its node in the plex: the first four as chips with their names and the count of the rest. */
-import { computed, ref, watch } from 'vue'
-import { measureRect, Tooltip, type Box } from '@numen/ui'
+import { computed, watch } from 'vue'
+import { Tooltip, useTooltip } from '@numen/ui'
 import { getTagColor } from '../../lib/color'
 import { getRestText } from '../../lib/words'
 
@@ -11,7 +11,7 @@ const props = defineProps<{ tags: readonly string[] }>()
 /* --------------------------------- State ---------------------------------- */
 const CHIP_LIMIT = 4
 
-const hoveredAt = ref<Box | null>(null)
+const tip = useTooltip()
 
 const chips = computed(() =>
   props.tags.slice(0, CHIP_LIMIT).map((tag) => ({
@@ -26,18 +26,17 @@ const hoveredText = computed(() => hiddenTags.value.join(', '))
 watch(
   () => props.tags,
   (tags) => {
-    if (tags.length <= CHIP_LIMIT) hoveredAt.value = null
+    if (tags.length <= CHIP_LIMIT) tip.close()
   },
 )
 
 /* -------------------------------- Handlers -------------------------------- */
 function onEnterMore(event: Event) {
-  const rect = measureRect(event.currentTarget as HTMLElement)
-  hoveredAt.value = rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null
+  tip.open(event)
 }
 
 function onLeaveMore() {
-  hoveredAt.value = null
+  tip.close()
 }
 </script>
 
@@ -57,6 +56,7 @@ function onLeaveMore() {
       class="plex-tags__chip plex-tags__chip--more"
       data-plex-tag-more
       tabindex="0"
+      :aria-describedby="tip.describedBy.value"
       @mouseenter="onEnterMore"
       @mouseleave="onLeaveMore"
       @focus="onEnterMore"
@@ -65,7 +65,9 @@ function onLeaveMore() {
       {{ getRestText(rest) }}
     </span>
     <Teleport to="body">
-      <Tooltip v-if="hoveredAt" :at="hoveredAt">{{ hoveredText }}</Tooltip>
+      <Tooltip v-if="tip.at.value && rest > 0" :id="tip.id" :at="tip.at.value">
+        {{ hoveredText }}
+      </Tooltip>
     </Teleport>
   </span>
 </template>
