@@ -3,6 +3,7 @@ import type { FileConflict } from './buffers'
 import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
+import type { PickerHost } from './picker'
 import type { TaskHost } from './tasks'
 import type { ProcessHost } from './processes'
 import type { BackgroundTaskHost } from './backgroundTasks'
@@ -284,13 +285,14 @@ export interface PluginVault {
   readonly vaults?: VaultsHost
 }
 
-// PluginUi is the window a plugin draws in.
+// PluginUi is the window a plugin draws in. The picker is left out where the window offers no list to pick from.
 export interface PluginUi {
   readonly workspace?: WorkspaceHost
   readonly window?: WindowHost
   readonly commands?: CommandsHost
   readonly slots: SlotHost
   readonly notices: NoticeHost
+  readonly picker?: PickerHost
   readonly drops?: DropHost
   // Draws the view a plugin declares for `capability` into `element`, passed `context`. While no
   // plugin declares one the element stays empty, and the view is drawn once one does.

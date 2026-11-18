@@ -57,10 +57,11 @@ const IDLE: PluginContextHost = {
     openExternal: () => Promise.resolve(),
     getWorkspace: () => undefined,
     getCommands: () => undefined,
-    isCommandListed: () => false,
+    commandAccess: { isListed: () => false },
     getWindow: () => undefined,
     getSlots: () => createMockSlotHost(),
     getNotices: () => createMockNoticeHost(),
+    getPicker: () => undefined,
   },
   work: {
     getTasks: () => undefined,

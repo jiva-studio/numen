@@ -138,13 +138,14 @@ function createUi(
       commands &&
       limitCommands(commands, {
         pluginId,
-        isListed: (one) => ui.isCommandListed(one),
-        getPermission: (one) => ui.getCommandPermission?.(one),
+        isListed: (one) => ui.commandAccess.isListed(one),
+        getPermission: (one) => ui.commandAccess.getPermission?.(one),
         checkPermission: check,
       }),
     drops: views.drops,
     slots: ui.getSlots(),
     notices: ui.getNotices(pluginId),
+    picker: ui.getPicker(),
   })
 }
 
@@ -163,6 +164,7 @@ function createUiService(
     drops: ui.drops,
     slots: ui.slots,
     notices: ui.notices,
+    picker: ui.picker,
     mountView: createMountView(host, guards.guard),
   })
 }

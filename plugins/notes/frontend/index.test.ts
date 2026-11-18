@@ -1,10 +1,60 @@
 import { describe, expect, it, vi } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { createNamedIcon } from '@numen/ui'
+import type { Component } from 'vue'
 import { NOTE_EDITOR, type HostServices } from '@numen/plugin-sdk'
 import { activate, deactivate } from './index'
 import { createEditorSettingsContext } from './testing/editorSettings'
 
 /** Host services whose vault offers no notes. */
 const NO_NOTES = { vault: {} } as unknown as HostServices
+
+const ICON_LOAD_TIMEOUT = 30_000
+
+const drawIcon = (icon: Component): Promise<string> => {
+  const wrapper = mount(icon)
+  return vi.waitFor(
+    () => {
+      const svg = wrapper.find('svg')
+      expect(svg.exists()).toBe(true)
+      return svg.element.innerHTML
+    },
+    { timeout: ICON_LOAD_TIMEOUT, interval: 50 },
+  )
+}
+
+describe('the icon of the notes in the tab strip', () => {
+  const activateRegistering = () => {
+    const { context } = createEditorSettingsContext()
+    activate(context, NO_NOTES)
+    return {
+      reader: vi.mocked(context.register.reader).mock.calls[0]?.[0],
+      tabKind: vi.mocked(context.register.tabKind).mock.calls[0]?.[0],
+    }
+  }
+
+  it(
+    'is drawn for the note tab kind as the file-text icon the manifest names',
+    async () => {
+      const { tabKind } = activateRegistering()
+
+      expect(tabKind.icon).toBeDefined()
+      expect(await drawIcon(tabKind.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
+    },
+    ICON_LOAD_TIMEOUT * 1.5,
+  )
+
+  it(
+    'is drawn for the markdown reader as the file-text icon the manifest names',
+    async () => {
+      const { reader } = activateRegistering()
+
+      expect(reader.icon).toBeDefined()
+      expect(await drawIcon(reader.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
+    },
+    ICON_LOAD_TIMEOUT * 1.5,
+  )
+})
 
 describe('notes plugin lifecycle', () => {
   it('registers markdown reader and note tab kind on activation', () => {

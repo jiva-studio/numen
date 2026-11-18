@@ -1,10 +1,8 @@
-import { computed } from 'vue'
 import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import PlexGraphView from './ui/PlexGraphView.vue'
 import { createPlexKind, PLEX } from './model/kind'
 import { usePlexView } from './model/usePlexView'
 import { readNesting } from './model/nesting'
-import { readNames } from './model/names'
 import { readLook } from './model/look'
 
 export { PlexGraphView, PlexGraphView as PlexTab }
@@ -22,8 +20,6 @@ export function activate(plugin: PluginContext, host: HostServices): void {
       'a plex needs the window it is drawn in, the notes of the vault and their relationships',
     )
   }
-  const names = readNames(plugin)
-  const depth = computed(() => (names.showNames.value ? 2 : 1))
   const plexes = createPlexKind(
     {
       workspace,
@@ -32,14 +28,9 @@ export function activate(plugin: PluginContext, host: HostServices): void {
       notes,
       relations,
       nesting: readNesting(plugin),
-      names,
       look: readLook(plugin),
     },
-    () =>
-      usePlexView(
-        { listRelatedNotes: (path, wanted) => notes.listRelatedNotes(path, wanted) },
-        depth,
-      ),
+    () => usePlexView({ listRelatedNotes: (path, depth) => notes.listRelatedNotes(path, depth) }),
     PlexGraphView,
   )
   plugin.register.tabKind(plexes.kind)

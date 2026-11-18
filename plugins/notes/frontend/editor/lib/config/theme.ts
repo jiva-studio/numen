@@ -123,11 +123,13 @@ export const theme = EditorView.theme({
   '.cm-widgetBuffer': { verticalAlign: 'baseline', height: '1em', marginTop: '-1em' },
   /* Selection, the one colour selected text is painted with anywhere. The base
      theme is told neither light nor dark, so it paints a light ground under
-     text this one keeps on either. */
-  '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+     text this one keeps on either, with a rule of the same weight as these; the
+     editor's own class in front makes these weigh more, whichever style sheet
+     comes last. */
+  '.cm-editor&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
     backgroundColor: 'var(--numen-selection)',
   },
-  '&:not(.cm-focused) > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+  '.cm-editor&:not(.cm-focused) > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
     backgroundColor: 'var(--numen-selection-away)',
   },
   '.cm-selectionBackground, .cm-content ::selection': {

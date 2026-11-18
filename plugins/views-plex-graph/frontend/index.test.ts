@@ -57,8 +57,8 @@ describe('view-plex-graph plugin', () => {
     const { ctx, services } = createContext()
     activate(ctx, services)
 
-    // The tab kind, the command, and one for each of the seventeen settings.
-    expect(ctx.identity.subscriptions).toHaveLength(19)
+    // The tab kind, the command, and one for each of the thirteen settings.
+    expect(ctx.identity.subscriptions).toHaveLength(15)
 
     ctx.dispose()
     expect(ctx.identity.subscriptions).toHaveLength(0)
@@ -367,15 +367,13 @@ describe('the look of an open plex', () => {
   })
 })
 
-describe('the names of the notes related to the related notes of an open plex', () => {
+describe('an open plex with notes related to its related notes', () => {
   const answerFor = (path: string, depth: number | undefined): NoteGraph => {
     const items =
       depth === 2 && path === 'One.md'
         ? [
             { path: 'Aunt.md', title: 'Aunt', relation: 'parent' as const, relatedTo: 'Kid.md' },
             { path: 'Leaf1.md', title: 'Leaf1', relation: 'child' as const, relatedTo: 'Kid.md' },
-            { path: 'Leaf2.md', title: 'Leaf2', relation: 'child' as const, relatedTo: 'Kid.md' },
-            { path: 'Leaf3.md', title: 'Leaf3', relation: 'child' as const, relatedTo: 'Kid.md' },
           ]
         : []
     return {
@@ -426,9 +424,7 @@ describe('the names of the notes related to the related notes of an open plex', 
     const tab = mount(PlexGraphView, { props: { state }, attachTo: document.body })
     await settle()
     await nextTick()
-    const getPlex = () => tab.findComponent(Plex)
-    const getNames = () => tab.findAll('.plex__name-text').map((name) => name.text())
-    return { ctx, state, tab, requests, getPlex, getNames }
+    return { ctx, state, tab, requests, getPlex: () => tab.findComponent(Plex) }
   }
 
   beforeEach(() => {
@@ -445,67 +441,37 @@ describe('the names of the notes related to the related notes of an open plex', 
     document.body.replaceChildren()
   })
 
-  it('asks for the notes related to related notes where nothing is set, and draws no node for them', async () => {
-    const { requests, state, getPlex, getNames } = await openPlex()
+  it('asks for the notes related to the focus only, whatever the old names settings hold', async () => {
+    const { requests } = await openPlex({ showNames: true, namesPerNote: 6 })
 
-    expect(requests.at(-1)).toEqual(['One.md', 2])
-    expect(getPlex().props('showNames')).toBe(true)
-    expect(getNames()).toEqual(['Aunt', 'Leaf1', 'Leaf2', 'Leaf3'])
+    expect(requests.length).toBeGreaterThan(0)
+    expect(requests.every(([, depth]) => depth === 1)).toBe(true)
+  })
+
+  it('draws no name of its own, whatever the old names settings hold', async () => {
+    const { tab } = await openPlex({ showNames: true })
+
+    expect(tab.findAll('.plex__name')).toHaveLength(0)
+    expect(tab.findAll('[aria-label*=", name under "]')).toHaveLength(0)
+  })
+
+  it('draws a node for the notes related to the focus and none for the ones beyond them', async () => {
+    const { state } = await openPlex()
+
     expect(state.canvas.picture.value!.nodes.map((node) => node.title)).toEqual(['One', 'Kid'])
   })
 
-  it('asks again for depth 1 and loses the names when the setting is turned off, and gets them back when it is turned on', async () => {
-    const { ctx, requests, getPlex, getNames } = await openPlex()
+  it('gives the drawing no names, no room for names and no opacity of names', async () => {
+    const { getPlex } = await openPlex()
 
-    ctx.setSetting('showNames', false)
-    await settle()
-    expect(requests.at(-1)).toEqual(['One.md', 1])
-    expect(getPlex().props('showNames')).toBe(false)
-    expect(getNames()).toEqual([])
-
-    ctx.setSetting('showNames', true)
-    await settle()
-    expect(requests.at(-1)).toEqual(['One.md', 2])
-    expect(getNames()).toEqual(['Aunt', 'Leaf1', 'Leaf2', 'Leaf3'])
+    expect(Object.keys(getPlex().props()).filter((key) => /names|roomOf/i.test(key))).toStrictEqual(
+      [],
+    )
   })
 
-  it('asks for depth 1 from the start when the setting is off', async () => {
-    const { requests, getNames } = await openPlex({ showNames: false })
+  it('holds no state of names in the tab', async () => {
+    const { state } = await openPlex()
 
-    expect(requests.every(([, depth]) => depth === 1)).toBe(true)
-    expect(getNames()).toEqual([])
-  })
-
-  it('cuts the names to Names per note without asking again', async () => {
-    const { ctx, requests, getNames } = await openPlex()
-    const before = requests.length
-
-    ctx.setSetting('namesPerNote', 2)
-    await settle()
-
-    expect(requests).toHaveLength(before)
-    expect(getNames()).toEqual(['Aunt', 'Leaf1'])
-  })
-
-  it('moves the focus to the note of a name that is clicked', async () => {
-    const { tab, state } = await openPlex()
-    const name = tab.get('[role="button"][aria-label^="Leaf1, name under "]')
-
-    await name.trigger('pointerenter')
-    await name.trigger('click')
-    await settle()
-
-    expect(state.canvas.view.here.value).toBe('Leaf1.md')
-  })
-
-  it('moves nothing when a name that sits back is clicked', async () => {
-    const { tab, state } = await openPlex()
-
-    tab
-      .get('[role="button"][aria-label^="Leaf1, name under "]')
-      .element.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
-    await settle()
-
-    expect(state.canvas.view.here.value).toBe('One.md')
+    expect(state.canvas).not.toHaveProperty('names')
   })
 })
