@@ -23,7 +23,7 @@
           "name": "hasTagExactly",
           "args": [{ "name": "tag", "type": "string" }],
           "level": "document",
-          "description": "notes with exactly this tag in the frontmatter key tags and no other tag under it, compared without case; a leading # is dropped",
+          "description": "notes with the tag itself in the frontmatter key tags, not only a tag nested under it, compared without case; a leading # is dropped",
           "example": "hasTagExactly(\"Projects\") && kind == \"note\""
         },
         {
