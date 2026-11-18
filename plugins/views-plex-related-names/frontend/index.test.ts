@@ -5,7 +5,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
-import type { JsonValue, NoteGraph, NoteRelation, RelatedNote, VaultNotes } from '@numen/plugin-sdk'
+import type {
+  JsonValue,
+  LinkDirection,
+  NoteGraph,
+  NoteRelation,
+  RelatedNote,
+  VaultNotes,
+} from '@numen/plugin-sdk'
 import {
   createMockHostServices,
   createMockPluginContext,
@@ -16,6 +23,7 @@ import { activate } from './index'
 interface Neighbor {
   readonly path: string
   readonly relation: NoteRelation
+  readonly direction?: LinkDirection
 }
 
 const getTitle = (path: string) => path.replace(/^.*\//, '').replace(/\.md$/, '')
@@ -28,6 +36,7 @@ const createVault = (initial: Readonly<Record<string, readonly Neighbor[]>>) => 
     path: one.path,
     title: getTitle(one.path),
     relation: one.relation,
+    ...(one.direction ? { direction: one.direction } : {}),
     type: 'note',
     ...(relatedTo ? { relatedTo } : {}),
   })
@@ -147,15 +156,15 @@ describe('the view above a node', () => {
     expect(getNames(await show('parents', PEAR))).toStrictEqual([])
   })
 
-  it('gives each name a label with its title and the title of the note', async () => {
+  it('gives each name a label with its title, its relation and the title of the note', async () => {
     const { show } = setup()
     const labels = (await show('parents', PEAR))
       .findAll('[role="button"], button')
       .map((one) => one.attributes('aria-label'))
 
     expect(labels).toStrictEqual([
-      'Orchard plan, name under Pear rows',
-      'Garden plan, name under Pear rows',
+      'Orchard plan, parent of Pear rows',
+      'Garden plan, parent of Pear rows',
     ])
   })
 })
@@ -222,16 +231,16 @@ describe('the view under a node', () => {
     expect(getNames(wrapper)).toStrictEqual(['Jam'])
   })
 
-  it('gives each name a button label with its title and the title of the note', async () => {
+  it('gives each name a button label with its title, its relation and the title of the note', async () => {
     const { show } = setup()
     const labels = (await show('related', PEAR))
       .findAll('[role="button"], button')
       .map((one) => one.attributes('aria-label'))
 
     expect(labels).toStrictEqual([
-      'Rootstock list, name under Pear rows',
-      'Grafting, name under Pear rows',
-      'Pollination, name under Pear rows',
+      'Rootstock list, child of Pear rows',
+      'Grafting, jump from Pear rows',
+      'Pollination, linked both ways with Pear rows',
     ])
   })
 })
@@ -241,7 +250,7 @@ describe('choosing a name', () => {
     const { show, getRuns } = setup()
     const wrapper = await show('related', PEAR)
 
-    await wrapper.get('[aria-label="Rootstock list, name under Pear rows"]').trigger('click')
+    await wrapper.get('[aria-label="Rootstock list, child of Pear rows"]').trigger('click')
 
     expect(getRuns()).toHaveLength(1)
     expect(getRuns()[0]).toMatchObject({
@@ -255,7 +264,7 @@ describe('choosing a name', () => {
     const { show, getRuns } = setup()
     const wrapper = await show('parents', PEAR)
 
-    await wrapper.get('[aria-label="Garden plan, name under Pear rows"]').trigger('click')
+    await wrapper.get('[aria-label="Garden plan, parent of Pear rows"]').trigger('click')
 
     expect(getRuns().map((one) => [one.command, one.target?.path])).toStrictEqual([
       ['app:file.reveal', 'notes/Garden plan.md'],
@@ -499,5 +508,71 @@ describe('the names while the vault changes', () => {
     await settle()
 
     expect(vault.requests.length).toBe(before)
+  })
+})
+
+/** The icons of the shared set load on first use, slowly on a busy machine. */
+const ICON_TIMEOUT_MS = 30_000
+
+const getArrowCount = (wrapper: VueWrapper) => wrapper.findAll('button svg').length
+
+describe('the setting Show the relation arrows', () => {
+  const REFERENCES: Record<string, readonly Neighbor[]> = {
+    [PEAR]: [
+      { path: 'notes/Rootstock list.md', relation: 'child' },
+      { path: 'notes/Grafting.md', relation: 'jump' },
+      { path: 'notes/Pollination.md', relation: 'reference', direction: 'outgoing' },
+    ],
+  }
+
+  it('draws an arrow before each name where nothing is set', async () => {
+    const { show } = setup(REFERENCES)
+    const wrapper = await show('related', PEAR)
+
+    await vi.waitFor(() => expect(getArrowCount(wrapper)).toBe(3), { timeout: ICON_TIMEOUT_MS })
+  })
+
+  it('draws an arrow before each parent above a node', async () => {
+    const { show } = setup()
+    const wrapper = await show('parents', PEAR)
+
+    await vi.waitFor(() => expect(getArrowCount(wrapper)).toBe(2), { timeout: ICON_TIMEOUT_MS })
+  })
+
+  it('draws no arrow while it is off, and still names each note', async () => {
+    const { show } = setup(REFERENCES, { showRelationArrows: false })
+    const wrapper = await show('related', PEAR)
+    await new Promise((resolve) => setTimeout(resolve, 200))
+
+    expect(getArrowCount(wrapper)).toBe(0)
+    expect(getNames(wrapper)).toStrictEqual(['Rootstock list', 'Grafting', 'Pollination'])
+  })
+
+  it('takes the arrows away when it is turned off, and brings them back when it is turned on', async () => {
+    const { context, show } = setup(REFERENCES)
+    const wrapper = await show('related', PEAR)
+    await vi.waitFor(() => expect(getArrowCount(wrapper)).toBe(3), { timeout: ICON_TIMEOUT_MS })
+
+    context.setSetting('showRelationArrows', false)
+    await flushPromises()
+    expect(getArrowCount(wrapper)).toBe(0)
+
+    context.setSetting('showRelationArrows', true)
+    await vi.waitFor(() => expect(getArrowCount(wrapper)).toBe(3), { timeout: ICON_TIMEOUT_MS })
+  })
+
+  it('shows the plex the note of a name that is chosen, with the arrows on or off', async () => {
+    const { context, show, getRuns } = setup(REFERENCES)
+    const wrapper = await show('related', PEAR)
+
+    await wrapper.get('[aria-label="Grafting, jump from Pear rows"]').trigger('click')
+    context.setSetting('showRelationArrows', false)
+    await flushPromises()
+    await wrapper.get('[aria-label="Grafting, jump from Pear rows"]').trigger('click')
+
+    expect(getRuns().map((one) => one.target?.path)).toStrictEqual([
+      'notes/Grafting.md',
+      'notes/Grafting.md',
+    ])
   })
 })
