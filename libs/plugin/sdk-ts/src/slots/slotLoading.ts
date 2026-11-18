@@ -64,7 +64,7 @@ export function useSlotLoading(): () => void {
 
 interface Token {
   readonly entry: SlotLoadingEntry
-  startedAt: number
+  waited: number
 }
 
 export function createSlotLoading({ clock, reportIssue }: SlotLoadingDeps): SlotLoading {
@@ -73,18 +73,17 @@ export function createSlotLoading({ clock, reportIssue }: SlotLoadingDeps): Slot
   let lastFrameAt = 0
 
   // A view that hangs is released and reported: the cap is a safety net, not a way to finish.
-  // A gap between two frames longer than the cap means the page was blocked, not the views slow: the wait starts again.
+  // A gap between two frames longer than the cap means the page was blocked, not the views slow: it adds nothing to the time a view has waited.
   const watchCap = () => {
     if (isWatching || tokens.size === 0) return
     isWatching = true
     clock.schedule((now) => {
       isWatching = false
-      if (now - lastFrameAt > SLOT_LOADING_CAP_MS) {
-        for (const token of tokens) token.startedAt = now
-      }
+      const gap = now - lastFrameAt
       lastFrameAt = now
       for (const token of [...tokens]) {
-        if (now - token.startedAt < SLOT_LOADING_CAP_MS) continue
+        if (gap <= SLOT_LOADING_CAP_MS) token.waited += gap
+        if (token.waited < SLOT_LOADING_CAP_MS) continue
         tokens.delete(token)
         reportIssue?.(token.entry.pluginId, `${token.entry.key} did not report ready`)
       }
@@ -95,8 +94,8 @@ export function createSlotLoading({ clock, reportIssue }: SlotLoadingDeps): Slot
   return {
     isReady: computed(() => tokens.size === 0),
     begin: (entry) => {
-      const token: Token = { entry, startedAt: clock.now() }
-      if (!isWatching) lastFrameAt = token.startedAt
+      const token: Token = { entry, waited: 0 }
+      if (!isWatching) lastFrameAt = clock.now()
       tokens.add(token)
       watchCap()
       return () => tokens.delete(token)
