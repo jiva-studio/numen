@@ -114,9 +114,11 @@ describe('a change to the vault', () => {
       fixture.host,
       () =>
         usePlexView({
-          listRelatedNotes: async (path) => {
+          listRelatedNotes: async ([path = '']) => {
             await new Promise<void>((resolve) => answers.push(resolve))
-            return { focus: { path, title: path }, focusType: 'note', related: [], connections: [] }
+            return [
+              { focus: { path, title: path }, focusType: 'note', related: [], connections: [] },
+            ]
           },
         }),
       PlexGraphView,
@@ -229,20 +231,6 @@ describe('a plex tab the person has closed', () => {
     one.closeTab(second.id)
 
     expect(one.closed).toStrictEqual([2])
-  })
-
-  it('asks the vault nothing when a setting it once answered turns', async () => {
-    const one = window()
-    const plex = await one.openTab('One.md')
-    one.isNesting.value = false
-    await settle()
-
-    one.closeTab(plex.id)
-    one.requested.headings.length = 0
-    one.isNesting.value = true
-    await settle()
-
-    expect(one.requested.headings).toStrictEqual([])
   })
 })
 

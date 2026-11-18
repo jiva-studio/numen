@@ -465,6 +465,7 @@ describe('a title set on a straight line', () => {
       opacity: 1,
       titles: [
         {
+          record: 0,
           anchor,
           heading: to.x < from.x ? 'against' : 'along',
           side: 0,

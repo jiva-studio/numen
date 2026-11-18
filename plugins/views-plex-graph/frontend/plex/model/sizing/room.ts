@@ -1,7 +1,6 @@
 /**
  * The space available to the plex, and everything measured against it: the
- * options the whole drawing uses, the width a box opens to, and the headings
- * of a node.
+ * options the whole drawing uses and the width a box opens to.
  *
  * Text is measured where the plex is drawn, so what the drawing is handed is
  * already worked out.
@@ -15,11 +14,9 @@ import {
   type Probe,
   type TitleRoom,
 } from './measure'
-import { getNodeHeadings } from '../../lib/inside'
 import { resolveOptions, type PlexOptionsInput, type Size } from '../../lib/arrange'
 import type { PlacedNode } from '../../lib/node'
 import type { Viewport } from '@numen/ui'
-import type { PlexHeading } from '../../../types'
 
 /** The assumed size of the plex until it has been measured. */
 const DEFAULT_VIEWPORT = { width: 1200, height: 800 }
@@ -28,7 +25,6 @@ const DEFAULT_VIEWPORT = { width: 1200, height: 800 }
 export interface PlexSizingProps {
   readonly options?: PlexOptionsInput | undefined
   readonly viewport: Viewport
-  readonly headings?: ((id: string) => readonly PlexHeading[]) | undefined
   readonly readType?: ((probe: Probe) => PlexType) | undefined
   readonly showPills?: boolean | undefined
 }
@@ -48,6 +44,8 @@ export function useFreeSpace(
 ) {
   /** The available size of the plex, as last measured. */
   const room = ref<Size>(DEFAULT_VIEWPORT)
+  /** Whether `room` is a size the window reported, not the assumed one. */
+  const isMeasured = ref(false)
 
   onMounted(() => {
     const found = element.value
@@ -56,6 +54,7 @@ export function useFreeSpace(
     onScopeDispose(
       props.viewport.watch(found, (size) => {
         room.value = size
+        isMeasured.value = true
       }),
     )
   })
@@ -101,19 +100,5 @@ export function useFreeSpace(
     return (node: PlacedNode) => getExpandedBox(node, measure(node), bounds)
   })
 
-  /**
-   * The headings placed under the box of each node. The sizes are the ones the whole
-   * picture is drawn to, so a plex set larger places them larger.
-   */
-  const placedHeadings = computed(() => {
-    const getHeadings = props.headings
-    if (!getHeadings) return undefined
-
-    const { margin } = options.value
-    const deps = { measure: measures.value?.heading, viewport: room.value, margin }
-    return (node: PlacedNode) =>
-      getNodeHeadings(node, getHeadings(node.id), { options: options.value, deps })
-  })
-
-  return { room, options, measures, widen: expandWidth, placedHeadings }
+  return { room, isMeasured, options, measures, widen: expandWidth }
 }

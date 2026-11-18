@@ -11,10 +11,9 @@ import PlexNodeView from './PlexNodeView.vue'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import type { ExpandedBox } from '../../model/sizing/expansion'
 import { EXPANSION_DURATION } from '../../model/sizing/expansionDuration'
-import { getNodeHeadings } from '../../lib/inside'
 import { stubClock } from '../../../fixtures/clock'
 import { HANDLE_RADIUS, type GestureRole, type PlacedNode } from '../../lib/node'
-import type { PlexHeading, PlexNodeRelation } from '../../../types'
+import type { PlexNodeRelation } from '../../../types'
 
 const createNode = (overrides: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
@@ -514,157 +513,6 @@ describe('a box with nothing more to show', () => {
       expanded: { width: 400, offset: 0 },
     })
     expect(Number(node.get('rect').attributes('width'))).toBe(144)
-  })
-})
-
-describe('the headings a node hangs', () => {
-  const WAIT = 500
-
-  /** How many headings stand in the window at once, as the options ask for. */
-  const MOST = 6
-  const SIZES = { headingHeight: 20, headingIndent: 10, maxHeadings: MOST }
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  const headings = (count: number): PlexHeading[] =>
-    Array.from({ length: count }, (_, index) => ({
-      id: `${index}`,
-      text: `Heading ${index}`,
-      level: 1,
-    }))
-
-  const mountInside = (items: readonly PlexHeading[], expanded: ExpandedBox | null = null) => {
-    vi.useFakeTimers()
-    const world = stubClock()
-    const node = mount(PlexNodeView, {
-      props: {
-        node: createNode(),
-        expanded,
-        placedHeadings: getNodeHeadings(createNode(), items, {
-          options: SIZES,
-          deps: {
-            viewport: { width: 1000, height: 600 },
-            margin: 20,
-          },
-        }),
-        behavior: { ...DEFAULT_BEHAVIOR, expansionDelay: WAIT, clock: world.clock },
-      },
-    })
-    return { node, world }
-  }
-
-  /** The pointer enters, rests, and the opening is drawn to its end. */
-  const rest = async (view: ReturnType<typeof mountInside>) => {
-    await view.node.trigger('pointerenter')
-    await vi.advanceTimersByTimeAsync(WAIT)
-    view.world.run()
-    await view.node.vm.$nextTick()
-    return view.node
-  }
-
-  it('hangs nothing for a node with none, however long the hand stays', async () => {
-    const node = await rest(mountInside([]))
-    expect(node.find('.plex__heading').exists()).toBe(false)
-    expect(node.emitted('settle')).toBeUndefined()
-  })
-
-  it('opens for them although the title already fits its box', async () => {
-    const node = await rest(mountInside(headings(2)))
-    expect(node.findAll('.plex__heading')).toHaveLength(2)
-    expect(node.emitted('settle')).toStrictEqual([[true]])
-  })
-
-  it('draws them in the order they were given', async () => {
-    const node = await rest(mountInside(headings(3)))
-    expect(node.findAll('.plex__heading').map((heading) => heading.text())).toStrictEqual([
-      'Heading 0',
-      'Heading 1',
-      'Heading 2',
-    ])
-  })
-
-  it('says which heading was chosen, and not that the node itself was', async () => {
-    const node = await rest(mountInside(headings(3)))
-    await node.findAll('.plex__heading')[1]!.trigger('click')
-    expect(node.emitted('enter')).toStrictEqual([['1']])
-    expect(node.emitted('activate')).toBeUndefined()
-  })
-
-  it('remains the ceiling of them, and marks that there is more to scroll to', async () => {
-    const node = await rest(mountInside(headings(MOST + 3)))
-    expect(node.findAll('.plex__heading')).toHaveLength(MOST)
-    expect(node.findAll('.plex__more')).toHaveLength(1)
-  })
-
-  it('scrolls the window down a heading at a time, and back up again', async () => {
-    const node = await rest(mountInside(headings(MOST + 3)))
-    const first = () => node.findAll('.plex__heading')[0]!.text()
-
-    await node.get('.plex__inside').trigger('wheel', { deltaY: 1, deltaMode: 1 })
-    expect(first()).toBe('Heading 1')
-
-    await node.get('.plex__inside').trigger('wheel', { deltaY: 1, deltaMode: 1 })
-    expect(first()).toBe('Heading 2')
-    expect(node.findAll('.plex__more')).toHaveLength(2)
-
-    await node.get('.plex__inside').trigger('wheel', { deltaY: -1, deltaMode: 1 })
-    expect(first()).toBe('Heading 1')
-  })
-
-  it('scrolls no further than either end of them', async () => {
-    const node = await rest(mountInside(headings(MOST + 1)))
-    const wheel = (deltaY: number) =>
-      node.get('.plex__inside').trigger('wheel', { deltaY, deltaMode: 1 })
-
-    await wheel(-1)
-    expect(node.findAll('.plex__heading')[0]!.text()).toBe('Heading 0')
-
-    for (let step = 0; step < 5; step++) await wheel(1)
-    expect(node.findAll('.plex__heading').at(-1)!.text()).toBe(`Heading ${MOST}`)
-  })
-
-  it('scrolls nothing where every one of them remains at once', async () => {
-    const node = await rest(mountInside(headings(3)))
-    expect(node.findAll('.plex__more')).toHaveLength(0)
-
-    await node.get('.plex__inside').trigger('wheel', { deltaY: 1, deltaMode: 1 })
-    expect(node.findAll('.plex__heading')[0]!.text()).toBe('Heading 0')
-  })
-
-  it('is put away once the hand has left', async () => {
-    const mounted = mountInside(headings(3))
-    await rest(mounted)
-
-    await mounted.node.trigger('pointerleave')
-    mounted.world.run()
-    await mounted.node.vm.$nextTick()
-    expect(mounted.node.find('.plex__heading').exists()).toBe(false)
-  })
-
-  it('is nothing a screen reader announces, the palette being the way there', async () => {
-    const node = await rest(mountInside(headings(2)))
-    expect(node.get('.plex__inside').attributes('aria-hidden')).toBe('true')
-  })
-
-  it('fades out from where it was scrolled, and opens at the top again', async () => {
-    const mounted = mountInside(headings(MOST + 3))
-    await rest(mounted)
-    const first = () => mounted.node.findAll('.plex__heading')[0]!.text()
-
-    await mounted.node.get('.plex__inside').trigger('wheel', { deltaY: 1, deltaMode: 1 })
-    expect(first()).toBe('Heading 1')
-
-    await mounted.node.trigger('pointerleave')
-    mounted.world.tick(0)
-    mounted.world.tick(EXPANSION_DURATION / 2)
-    await mounted.node.vm.$nextTick()
-    expect(first()).toBe('Heading 1')
-
-    mounted.world.run()
-    await rest(mounted)
-    expect(first()).toBe('Heading 0')
   })
 })
 

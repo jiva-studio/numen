@@ -244,12 +244,6 @@ The settings of the plugin Plex Graph.
 | | | |
 | --- | --- | --- |
 | `references` | text | show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none. One of `off`, `outgoing`, `incoming`, `both`. |
-| `nestHeadings` | yes or no | show the headings of a note under its node. |
-| `headingLimit` | a number | most headings shown under a node. From 1 to 12. |
-| `showNames` | yes or no | under each related note, the names of the notes related to it. |
-| `namesPerNote` | a number | most names shown under and over a related note. From 1 to 12. |
-| `namesOpacity` | a number | how visible the names under and over a note are while the note is not in focus. 0 hides them. From 0 to 1. |
-| `focusedNamesOpacity` | a number | how visible the names under and over a note are while the pointer is over the note or one of them. From 0.05 to 1. |
 | `showPills` | yes or no | draw a pill behind each title. Off: the title alone. |
 | `pillPaddingSides` | a number | space beside the title inside its pill. From 0 to 24. |
 | `pillPaddingEnds` | a number | space above and below the title inside its pill. From 0 to 16. |
@@ -260,6 +254,24 @@ The settings of the plugin Plex Graph.
 | `highlightLinks` | yes or no | highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted. |
 | `animationLength` | a number | time to move to another note, in ms; 0 is instant. From 0 to 2000. |
 | `noteRoom` | a number | empty space around every note. From 0 to 40. |
+
+### `md.numen.views.plex.headings`
+
+The settings of the plugin Plex Headings.
+
+| | | |
+| --- | --- | --- |
+| `nestHeadings` | yes or no | show the headings of a note under its node. |
+| `headingLimit` | a number | most headings shown under a node. From 1 to 12. |
+
+### `md.numen.views.plex.related.names`
+
+The settings of the plugin Plex Related Names.
+
+| | | |
+| --- | --- | --- |
+| `namesPerNote` | a number | most names shown under and over a related note. From 1 to 12. |
+| `showRelationArrows` | yes or no | an arrow before each name shows how its note is related. |
 
 ### `md.numen.views.titleBar`
 

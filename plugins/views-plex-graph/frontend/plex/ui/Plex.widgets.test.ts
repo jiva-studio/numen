@@ -173,3 +173,27 @@ describe('the widgets of the plex', () => {
     expect(gapWith).toBeGreaterThanOrEqual(gapWithout + WIDGET_HEIGHT)
   })
 })
+
+describe('the widgets of the focus', () => {
+  it('keep its children apart by the height they take under it', async () => {
+    const without = await mountPlex()
+    const gapWithout = getY(without, 'River delta') - getY(without, 'Watershed')
+    without.unmount()
+
+    const plex = await mountPlex({ widgetsBelow: [widget('tags')], getPath: getPathOf })
+    const gapWith = getY(plex, 'River delta') - getY(plex, 'Watershed')
+
+    expect(gapWith).toBeGreaterThanOrEqual(gapWithout + WIDGET_HEIGHT)
+  })
+
+  it('keep its parents apart by the height they take over it', async () => {
+    const without = await mountPlex()
+    const gapWithout = getY(without, 'Watershed') - getY(without, 'Hydrology')
+    without.unmount()
+
+    const plex = await mountPlex({ widgetsAbove: [widget('parents')], getPath: getPathOf })
+    const gapWith = getY(plex, 'Watershed') - getY(plex, 'Hydrology')
+
+    expect(gapWith).toBeGreaterThanOrEqual(gapWithout + WIDGET_HEIGHT)
+  })
+})
