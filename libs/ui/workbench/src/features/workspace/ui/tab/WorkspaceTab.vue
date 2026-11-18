@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useTemplateRef, type VNode } from 'vue'
+import { Tooltip } from '@numen/ui'
 import type { TabId } from '../../lib/node'
+import { useTooltip } from '../../model/useTooltip'
 /* --------------------------------- Props ---------------------------------- */
 withDefaults(
   defineProps<{
@@ -29,6 +31,8 @@ defineExpose({ focus: () => root.value?.focus() })
 
 /* ---------------------------------- State --------------------------------- */
 const root = useTemplateRef<HTMLElement>('root')
+const titleTip = useTooltip()
+const markTip = useTooltip()
 
 /* -------------------------------- Handlers -------------------------------- */
 const onPointerDown = (event: PointerEvent) => {
@@ -36,6 +40,10 @@ const onPointerDown = (event: PointerEvent) => {
   event.preventDefault()
   ;(event.currentTarget as HTMLElement).focus()
   emit('press', event)
+}
+
+function onKeyDown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') titleTip.close()
 }
 
 function onContextMenu(event: MouseEvent): void {
@@ -49,6 +57,7 @@ function onContextMenu(event: MouseEvent): void {
     class="tab numen text-small text-hushed flex min-w-0 shrink items-center font-sans"
     role="tab"
     :aria-selected="isShowing"
+    :aria-describedby="titleTip.describedBy.value"
     :tabindex="isShowing ? 0 : -1"
     :data-workspace-tab="tab"
     :data-showing="isShowing || undefined"
@@ -56,15 +65,27 @@ function onContextMenu(event: MouseEvent): void {
     style="--wails-draggable: no-drag"
     @pointerdown="onPointerDown"
     @contextmenu.prevent="onContextMenu"
+    @mouseenter="titleTip.open"
+    @mouseleave="titleTip.close"
+    @focus="titleTip.open"
+    @blur="titleTip.close"
+    @keydown="onKeyDown"
   >
     <span v-if="$slots.icon" class="tab__icon flex shrink-0 items-center">
       <slot name="icon" />
     </span>
 
-    <span class="min-w-0 truncate" :title="title">{{ title }}</span>
+    <span class="min-w-0 truncate">{{ title }}</span>
 
     <slot v-if="mark" name="mark" :mark="mark">
-      <span class="tab__mark shrink-0" role="img" :aria-label="mark" :title="mark" />
+      <span
+        class="tab__mark shrink-0"
+        role="img"
+        :aria-label="mark"
+        :aria-describedby="markTip.describedBy.value"
+        @mouseenter="markTip.open"
+        @mouseleave="markTip.close"
+      />
     </slot>
 
     <button
@@ -77,6 +98,15 @@ function onContextMenu(event: MouseEvent): void {
     >
       ×
     </button>
+
+    <Teleport to="body">
+      <Tooltip v-if="titleTip.at.value" :id="titleTip.id" :at="titleTip.at.value">
+        {{ title }}
+      </Tooltip>
+      <Tooltip v-if="markTip.at.value && mark" :id="markTip.id" :at="markTip.at.value">
+        {{ mark }}
+      </Tooltip>
+    </Teleport>
   </div>
 </template>
 
