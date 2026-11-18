@@ -100,6 +100,11 @@ describe('createPluginLoader', () => {
               getEditor: vi.fn(() => undefined),
               onEditorChange: vi.fn(() => ({ dispose: vi.fn() })),
             },
+            licenses: {
+              has: vi.fn(() => false),
+              getKey: vi.fn(() => undefined),
+              onChange: vi.fn(noop),
+            },
           },
           host: {
             events: {

@@ -150,6 +150,13 @@ export interface HostPlugins {
     pluginId: string,
     handler: (settings: EditorSettings) => void | Promise<void>,
   ) => () => void
+  readonly hasLicense?: (pluginId: string, licenseId: string) => boolean
+  readonly getLicenseKey?: (pluginId: string, licenseId: string) => string | undefined
+  readonly onLicenseChange?: (
+    pluginId: string,
+    licenseId: string,
+    handler: (isActive: boolean) => void | Promise<void>,
+  ) => () => void
 }
 
 /** The commands the plugins declare, the handlers their backends run, and what their conditions read. */
@@ -306,8 +313,18 @@ export interface ContextViewHost {
   readonly drops: DropHost
 }
 
-/** The settings a plugin reads and follows. */
-export interface ContextSettingHost {
+/** The settings and licenses a plugin reads and follows. */
+export interface ContextLicenseHost {
+  readonly hasLicense: (pluginId: string, licenseId: string) => boolean
+  readonly getLicenseKey: (pluginId: string, licenseId: string) => string | undefined
+  readonly onLicenseChange: (
+    pluginId: string,
+    licenseId: string,
+    handler: (isActive: boolean) => void | Promise<void>,
+  ) => Disposable
+}
+
+export interface ContextSettingHost extends ContextLicenseHost {
   readonly getSetting: <T extends JsonValue = JsonValue>(
     pluginId: string,
     key: string,

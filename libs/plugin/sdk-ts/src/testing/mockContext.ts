@@ -73,13 +73,17 @@ export interface MockPluginWork extends PluginWork {
 }
 
 // MockPluginContextInit is what a test gives a mock plugin context: who the plugin is and the
-// settings it starts with.
+// settings and licenses it starts with.
 export interface MockPluginContextInit {
   readonly pluginId?: string
   readonly target?: string
   readonly app?: AppInfo
   readonly initialSettings?: Record<string, JsonValue>
   readonly initialEditorSettings?: EditorSettings
+  readonly initialLicenses?: Record<
+    string,
+    boolean | { readonly isActive: boolean; readonly key?: string | undefined }
+  >
 }
 
 // MockHostServicesInit is the services a test hands the plugin through mock host services.
@@ -116,6 +120,7 @@ export interface MockPluginContext extends PluginContext {
   ): Promise<void>
   setSetting(key: string, value: JsonValue): void
   setEditorSettings(settings: EditorSettings): void
+  setLicense(licenseId: string, isActive: boolean, key?: string): void
   dispose(): void
 }
 
@@ -204,6 +209,12 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
   const drops: DropRegistration[] = []
   const settings = new Map<string, JsonValue>(Object.entries(init.initialSettings ?? {}))
   const settingListeners = new Map<string, Set<(val: JsonValue) => void>>()
+  const licenses = new Map<string, { isActive: boolean; key?: string | undefined }>(
+    Object.entries(init.initialLicenses ?? {}).map(([id, entry]) =>
+      typeof entry === 'boolean' ? [id, { isActive: entry }] : [id, { ...entry }],
+    ),
+  )
+  const licenseListeners = new Map<string, Set<(isActive: boolean) => void>>()
   const subscriptions: Disposable[] = []
   let editorSettings: EditorSettings | undefined = init.initialEditorSettings
   const editorListeners = new Set<(settings: EditorSettings) => void>()
@@ -234,6 +245,15 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
     return addSetListener(listeners, handler as (val: JsonValue) => void, subscriptions)
   }
 
+  const onLicenseChange = (licenseId: string, handler: (isActive: boolean) => void): Disposable => {
+    let listeners = licenseListeners.get(licenseId)
+    if (!listeners) {
+      listeners = new Set()
+      licenseListeners.set(licenseId, listeners)
+    }
+    return addSetListener(listeners, handler, subscriptions)
+  }
+
   return {
     identity: {
       id: init.pluginId ?? 'test.plugin',
@@ -253,6 +273,11 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
       getEditor: () => editorSettings,
       onEditorChange: (handler) => addSetListener(editorListeners, handler, subscriptions),
     },
+    licenses: {
+      has: (licenseId) => licenses.get(licenseId)?.isActive ?? false,
+      getKey: (licenseId) => licenses.get(licenseId)?.key,
+      onChange: onLicenseChange,
+    },
     health: createMockHealthHost(),
 
     setSetting(key: string, value: JsonValue): void {
@@ -268,6 +293,19 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
     setEditorSettings(next: EditorSettings): void {
       editorSettings = next
       for (const listener of editorListeners) listener(next)
+    },
+
+    setLicense(licenseId: string, isActive: boolean, key?: string): void {
+      const previous = licenses.get(licenseId)?.isActive ?? false
+      licenses.set(licenseId, { isActive, key })
+      if (previous !== isActive) {
+        const listeners = licenseListeners.get(licenseId)
+        if (listeners) {
+          for (const listener of listeners) {
+            listener(isActive)
+          }
+        }
+      }
     },
 
     getRegisteredReaders(): ReaderRegistration[] {
@@ -321,6 +359,7 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
         d?.dispose()
       }
       settingListeners.clear()
+      licenseListeners.clear()
       editorListeners.clear()
     },
   }

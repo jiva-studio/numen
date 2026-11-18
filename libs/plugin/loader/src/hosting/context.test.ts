@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { Manifest } from '@numen/core-client'
 import {
+  createLicenseServiceBridge,
   createUiServiceBridge,
   createVaultServiceBridge,
   createWorkServiceBridge,
@@ -348,6 +349,50 @@ describe('PluginContext', () => {
     expect(host.ui.openExternal).toHaveBeenCalledTimes(1)
     expect(host.ui.openExternal).toHaveBeenCalledWith('https://numen.md/')
   })
+
+  it('delegates license access and enforces declared license ids when contributes.licenses is present', () => {
+    const disposeLicense = vi.fn()
+    const host = createTestContextHost({
+      licenses: {
+        hasLicense: vi.fn((_pluginId, licenseId) => licenseId === 'supporter'),
+        getLicenseKey: vi.fn((_pluginId, licenseId) =>
+          licenseId === 'supporter' ? 'KEY-SUP' : undefined,
+        ),
+        onLicenseChange: vi.fn((_pluginId, _licenseId, _handler) => ({ dispose: disposeLicense })),
+      },
+    })
+
+    const ctxWithoutDeclaration = createPluginParts('test.plugin', host)
+    expect(ctxWithoutDeclaration.plugin.licenses.has('supporter')).toBe(true)
+    expect(ctxWithoutDeclaration.plugin.licenses.getKey('supporter')).toBe('KEY-SUP')
+    const sub1 = ctxWithoutDeclaration.plugin.licenses.onChange('supporter', vi.fn())
+    expect(ctxWithoutDeclaration.plugin.identity.subscriptions).toHaveLength(1)
+    sub1.dispose()
+    expect(disposeLicense).toHaveBeenCalledOnce()
+
+    const manifestWithLicenses = {
+      ...createMockManifest('test.plugin'),
+      contributes: {
+        ...createMockManifest('test.plugin').contributes,
+        licenses: [{ id: 'supporter' }],
+      },
+    } as unknown as Manifest
+    const ctxWithDeclaration = createPluginParts('test.plugin', host, manifestWithLicenses)
+    expect(ctxWithDeclaration.plugin.licenses.has('supporter')).toBe(true)
+    expect(ctxWithDeclaration.plugin.licenses.getKey('supporter')).toBe('KEY-SUP')
+    const sub2 = ctxWithDeclaration.plugin.licenses.onChange('supporter', vi.fn())
+    sub2.dispose()
+
+    expect(() => ctxWithDeclaration.plugin.licenses.has('pro')).toThrowError(
+      'Plugin "test.plugin" accesses the license "pro", which its manifest does not declare in contributes.licenses',
+    )
+    expect(() => ctxWithDeclaration.plugin.licenses.getKey('pro')).toThrowError(
+      'Plugin "test.plugin" accesses the license "pro", which its manifest does not declare in contributes.licenses',
+    )
+    expect(() => ctxWithDeclaration.plugin.licenses.onChange('pro', vi.fn())).toThrowError(
+      'Plugin "test.plugin" accesses the license "pro", which its manifest does not declare in contributes.licenses',
+    )
+  })
 })
 
 describe('host service bridges', () => {
@@ -359,6 +404,24 @@ describe('host service bridges', () => {
     expect(emptyVault.getTexts('p')).toBeUndefined()
     expect(emptyVault.getBuffers()).toBeUndefined()
     expect(emptyVault.getVaults()).toBeUndefined()
+
+    const emptyLicenses = createLicenseServiceBridge({})
+    expect(emptyLicenses.hasLicense('p', 'supporter')).toBe(false)
+    expect(emptyLicenses.getLicenseKey('p', 'supporter')).toBeUndefined()
+    expect(() => emptyLicenses.onLicenseChange('p', 'supporter', vi.fn()).dispose()).not.toThrow()
+
+    const unsubscribeLicense = vi.fn()
+    const fullLicenses = createLicenseServiceBridge({
+      plugins: {
+        hasLicense: (_p, id) => id === 'supporter',
+        getLicenseKey: (_p, id) => (id === 'supporter' ? 'K1' : undefined),
+        onLicenseChange: () => unsubscribeLicense,
+      },
+    })
+    expect(fullLicenses.hasLicense('p', 'supporter')).toBe(true)
+    expect(fullLicenses.getLicenseKey('p', 'supporter')).toBe('K1')
+    fullLicenses.onLicenseChange('p', 'supporter', vi.fn()).dispose()
+    expect(unsubscribeLicense).toHaveBeenCalledOnce()
 
     const emptyWork = createWorkServiceBridge({})
     expect(emptyWork.getTasks('p')).toBeUndefined()

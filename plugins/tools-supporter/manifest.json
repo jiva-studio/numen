@@ -1,0 +1,13 @@
+{
+  "id": "md.numen.tools.supporter",
+  "name": "Supporter",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Shows a badge in the title bar when the Supporter license is active",
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "tools",
+    "slots": [{ "slot": "titleBar.status", "view": "supporter", "order": 5 }]
+  },
+  "frontend": {}
+}

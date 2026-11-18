@@ -1,0 +1,30 @@
+/* Supporter plugin styles */
+.supporter-badge {
+  --chip-height: 1.25rem;
+  --chip-text: 0.75rem;
+  --chip-pad: 0.5rem;
+  --chip-mark: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--chip-pad) / 2);
+  box-sizing: border-box;
+  height: var(--chip-height);
+  margin-inline: calc(var(--numen-inset) / 4);
+  padding: 0 var(--chip-pad);
+  background: var(--numen-surface);
+  border-radius: var(--numen-radius);
+  color: var(--numen-ink);
+  font: inherit;
+  font-size: var(--chip-text);
+  line-height: 1;
+}
+
+.supporter-badge__heart {
+  flex: none;
+  color: var(--numen-positive);
+  font-size: var(--chip-mark);
+}
+
+.supporter-badge__label {
+  white-space: nowrap;
+}
