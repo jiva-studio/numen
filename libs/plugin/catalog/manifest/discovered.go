@@ -70,33 +70,11 @@ func ListContributionConflicts(plugins []Discovered, core CoreClaims) []Duplicat
 	licenseProviders := map[string]licenseProviderClaim{}
 	var conflicts []DuplicateContributionError
 	for _, p := range plugins {
-		pending := map[string]bool{}
-		hasConflict := false
-		claim := func(what, space, id string) {
-			key := space + "\x00" + id
-			if owner, isOwned := owners[key]; isOwned {
-				conflicts = append(conflicts, DuplicateContributionError{PluginID: p.Manifest.ID, OwnerID: owner, What: what, ID: id})
-				hasConflict = true
-				return
-			}
-			pending[key] = true
-		}
 		c := p.Manifest.Contributes
-		for _, kind := range c.TabKinds {
-			claim("tab kind", "tab", kind.Kind)
-		}
-		for _, reader := range c.Readers {
-			claim("reader", "tab", getReaderTabKind(reader.ID))
-		}
-		for _, f := range c.SearchFunctions.Functions {
-			claim("search function", searchFunctionSpace, f.Name)
-		}
-		licenseConflicts := listLicenseProviderConflicts(p.Manifest.ID, c.Licenses, licenseProviders)
-		if len(licenseConflicts) > 0 {
-			conflicts = append(conflicts, licenseConflicts...)
-			hasConflict = true
-		}
-		if hasConflict {
+		pending, pluginConflicts := collectPluginContributionClaims(p.Manifest.ID, c, owners)
+		pluginConflicts = append(pluginConflicts, listLicenseProviderConflicts(p.Manifest.ID, c.Licenses, licenseProviders)...)
+		if len(pluginConflicts) > 0 {
+			conflicts = append(conflicts, pluginConflicts...)
 			continue
 		}
 		for key := range pending {
@@ -105,6 +83,33 @@ func ListContributionConflicts(plugins []Discovered, core CoreClaims) []Duplicat
 		recordLicenseProviders(p.Manifest.ID, c.Licenses, licenseProviders)
 	}
 	return conflicts
+}
+
+func collectPluginContributionClaims(
+	pluginID string,
+	c Contributes,
+	owners map[string]string,
+) (map[string]bool, []DuplicateContributionError) {
+	pending := map[string]bool{}
+	var conflicts []DuplicateContributionError
+	claim := func(what, space, id string) {
+		key := space + "\x00" + id
+		if owner, isOwned := owners[key]; isOwned {
+			conflicts = append(conflicts, DuplicateContributionError{PluginID: pluginID, OwnerID: owner, What: what, ID: id})
+			return
+		}
+		pending[key] = true
+	}
+	for _, kind := range c.TabKinds {
+		claim("tab kind", "tab", kind.Kind)
+	}
+	for _, reader := range c.Readers {
+		claim("reader", "tab", getReaderTabKind(reader.ID))
+	}
+	for _, f := range c.SearchFunctions.Functions {
+		claim("search function", searchFunctionSpace, f.Name)
+	}
+	return pending, conflicts
 }
 
 type licenseProviderClaim struct {
