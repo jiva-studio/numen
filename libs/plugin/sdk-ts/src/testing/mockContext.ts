@@ -12,6 +12,7 @@ import type {
   PluginVault,
   PluginWork,
   ReaderRegistration,
+  EditorSettings,
   SettingsViewRegistration,
   SlotViewRegistration,
   TabKindRegistration,
@@ -77,6 +78,7 @@ export interface MockPluginContextInit {
   readonly target?: string
   readonly app?: AppInfo
   readonly initialSettings?: Record<string, JsonValue>
+  readonly initialEditorSettings?: EditorSettings
 }
 
 // MockHostServicesInit is the services a test hands the plugin through mock host services.
@@ -111,6 +113,7 @@ export interface MockPluginContext extends PluginContext {
     values?: Readonly<Record<string, string>>,
   ): Promise<void>
   setSetting(key: string, value: JsonValue): void
+  setEditorSettings(settings: EditorSettings): void
   dispose(): void
 }
 
@@ -200,6 +203,8 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
   const settings = new Map<string, JsonValue>(Object.entries(init.initialSettings ?? {}))
   const settingListeners = new Map<string, Set<(val: JsonValue) => void>>()
   const subscriptions: Disposable[] = []
+  let editorSettings: EditorSettings | undefined = init.initialEditorSettings
+  const editorListeners = new Set<(settings: EditorSettings) => void>()
 
   const register: PluginRegistrations = {
     reader: (registration) => registerInList(readers, registration, subscriptions),
@@ -240,7 +245,12 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
       },
     },
     register,
-    settings: { get: getSettingValue, onChange: onSettingChange },
+    settings: {
+      get: getSettingValue,
+      onChange: onSettingChange,
+      getEditor: () => editorSettings,
+      onEditorChange: (handler) => addSetListener(editorListeners, handler, subscriptions),
+    },
     health: createMockHealthHost(),
 
     setSetting(key: string, value: JsonValue): void {
@@ -251,6 +261,11 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
           listener(value)
         }
       }
+    },
+
+    setEditorSettings(next: EditorSettings): void {
+      editorSettings = next
+      for (const listener of editorListeners) listener(next)
     },
 
     getRegisteredReaders(): ReaderRegistration[] {
@@ -304,6 +319,7 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
         d?.dispose()
       }
       settingListeners.clear()
+      editorListeners.clear()
     },
   }
 }

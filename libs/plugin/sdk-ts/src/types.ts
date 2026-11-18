@@ -243,9 +243,19 @@ export interface PluginRegistrations {
   dropHandler?(registration: DropRegistration): Disposable
 }
 
+// EditorSettings are the settings every editor of a plugin follows. They belong to the application, not to the plugin.
+export interface EditorSettings {
+  readonly lineNumbers: boolean
+  readonly softWrap: boolean
+}
+
 export interface PluginSettings {
   get<T extends JsonValue = JsonValue>(key: string): T | undefined
   onChange<T extends JsonValue = JsonValue>(key: string, handler: (value: T) => void): Disposable
+  // The editor settings of the application, read-only; undefined until the window has loaded its settings.
+  getEditor(): EditorSettings | undefined
+  // Calls the handler when the settings arrive and whenever either value changes.
+  onEditorChange(handler: (settings: EditorSettings) => void): Disposable
 }
 
 // PluginEvents is what a plugin receives of the vault and says to the other plugins.

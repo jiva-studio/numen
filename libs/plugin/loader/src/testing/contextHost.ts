@@ -30,7 +30,12 @@ const IDLE: PluginContextHost = {
     registerSlotView: () => NOTHING,
     mountView: () => ({ focus: () => undefined, dispose: () => undefined }),
   },
-  settings: { getSetting: () => undefined, onSettingChange: () => NOTHING },
+  settings: {
+    getSetting: () => undefined,
+    onSettingChange: () => NOTHING,
+    getEditorSettings: () => undefined,
+    onEditorSettingsChange: () => NOTHING,
+  },
   events: {
     onVaultChange: () => NOTHING,
     onFileSelect: () => NOTHING,

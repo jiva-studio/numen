@@ -97,6 +97,8 @@ describe('createPluginLoader', () => {
               onChange: vi.fn((key: string, handler: (val: unknown) => void) =>
                 onSettingChange(pluginId, key, handler),
               ),
+              getEditor: vi.fn(() => undefined),
+              onEditorChange: vi.fn(() => ({ dispose: vi.fn() })),
             },
           },
           host: {
