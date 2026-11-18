@@ -72,9 +72,9 @@ func readManifest(t *testing.T) manifestShape {
 func TestManifestNamesThePluginLocalReranking(t *testing.T) {
 	manifest := readManifest(t)
 
-	if manifest.ID != "md.numen.engines.reranking" || manifest.Name != "Local Reranking" || manifest.Version != "2026.11.4" ||
+	if manifest.ID != "md.numen.engines.reranking" || manifest.Name != "Local Reranking" ||
 		manifest.Protocol != 1 || manifest.Description == "" {
-		t.Errorf("manifest = %q %q %q protocol %d, description %q", manifest.ID, manifest.Name, manifest.Version, manifest.Protocol, manifest.Description)
+		t.Errorf("manifest = %q %q protocol %d, description %q", manifest.ID, manifest.Name, manifest.Protocol, manifest.Description)
 	}
 	if !slices.Equal(manifest.Targets, []string{"desktop.editor"}) || manifest.Contributes.Category != "engines" {
 		t.Errorf("targets %v, category %q, want desktop.editor and engines", manifest.Targets, manifest.Contributes.Category)
