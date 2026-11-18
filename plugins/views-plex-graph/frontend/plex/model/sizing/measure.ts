@@ -17,7 +17,6 @@ type Measure = (node: PlexNode) => number
 export interface PlexMetrics {
   readonly node: Measure
   readonly label: (label: string) => number
-  readonly heading: (text: string) => number
   readonly labelType: LabelType
 }
 
@@ -155,7 +154,6 @@ function createMetrics(type: PlexType, { padding, beside }: TitleRoom): PlexMetr
   return {
     node: (node) => Math.ceil(title(node.title) + room),
     label: (words) => Math.ceil(label(words)),
-    heading: (text) => Math.ceil(title(text) + 2 * padding),
     labelType: getLabelType(context, type.labelFont),
   }
 }

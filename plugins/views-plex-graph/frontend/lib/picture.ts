@@ -8,7 +8,6 @@
 import type { Connection, ConnectionSide, LinkDirection } from '@numen/plugin-sdk'
 import type {
   NoteGraph,
-  NoteHeading,
   NoteType,
   RelatedNote,
   EdgeArrow,
@@ -16,7 +15,6 @@ import type {
   PlexEdge,
   PlexGraph,
   PlexNode,
-  PlexHeading,
   ReferenceMode,
 } from '../types'
 
@@ -141,20 +139,6 @@ export function convertNoteGraph(
   }
 
   return { nodes, edges }
-}
-
-/**
- * The headings of a note as the lines its node hangs.
- *
- * A heading is identified by the line it depends on: that is what navigating
- * to it needs, and it distinguishes two headings of the same wording.
- */
-export function convertHeadings(headings: readonly NoteHeading[]): PlexHeading[] {
-  return headings.map((heading) => ({
-    id: `${heading.line}`,
-    text: heading.text,
-    level: heading.level,
-  }))
 }
 
 const areSidesEqual = (one: ConnectionSide | null, other: ConnectionSide | null): boolean =>
