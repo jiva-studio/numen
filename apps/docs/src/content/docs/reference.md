@@ -261,7 +261,6 @@ The settings of the plugin Plex Headings.
 
 | | | |
 | --- | --- | --- |
-| `nestHeadings` | yes or no | show the headings of a note under its node. |
 | `headingLimit` | a number | most headings shown under a node. From 1 to 12. |
 
 ### `md.numen.views.plex.related.names`

@@ -1,5 +1,5 @@
 /** The headings of the note of a node, read once the pointer rests on the node and put away once the pointer is off it. */
-import { getCurrentScope, onScopeDispose, shallowRef, watch } from 'vue'
+import { getCurrentScope, onScopeDispose, shallowRef } from 'vue'
 import { createRequestGuard } from '@numen/ui'
 import type { Caught, NoteHeading, VaultNotes } from '@numen/plugin-sdk'
 import type { HeadingsSettings } from './settings'
@@ -53,7 +53,7 @@ export function useHeadings(source: HeadingsSource, getPath: () => string) {
 
   const enter = async () => {
     departures++
-    if (!source.settings.isNesting.value || isReading || headings.value.length > 0) return
+    if (isReading || headings.value.length > 0) return
     const mine = guard.acquireRequest()
     const path = getPath()
     isReading = true
@@ -71,10 +71,6 @@ export function useHeadings(source: HeadingsSource, getPath: () => string) {
   }
 
   const choose = (line: number) => source.open(getPath(), line)
-
-  watch(source.settings.isNesting, (isNesting) => {
-    if (!isNesting) close()
-  })
 
   return { headings, enter, leave, choose }
 }

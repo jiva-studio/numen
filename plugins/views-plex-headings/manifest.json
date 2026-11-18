@@ -14,15 +14,6 @@
   "permissions": ["vault:read"],
   "settings": [
     {
-      "key": "nestHeadings",
-      "type": "boolean",
-      "title": "Nest headings under notes",
-      "description": "Show the headings of a note under its node",
-      "default": true,
-      "palette": true,
-      "icon": "waypoints"
-    },
-    {
       "key": "headingLimit",
       "type": "range",
       "title": "Headings per note",

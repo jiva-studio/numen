@@ -1,4 +1,4 @@
-/** The two settings as the code reads them: the keys the manifest declares, their defaults and their range. */
+/** The setting as the code reads it: the keys the manifest declares, their defaults and their range. */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -25,21 +25,16 @@ const read = (initialSettings: Record<string, JsonValue> = {}) => {
   return { context, settings: readSettings(context) }
 }
 
-describe('the settings of the headings', () => {
+describe('the setting of the headings', () => {
   it('start at the default the manifest declares', () => {
     const { settings } = read()
 
-    expect([settings.isNesting.value, settings.headingLimit.value]).toStrictEqual(
-      ['nestHeadings', 'headingLimit'].map(
-        (key) => declared.find((one) => one.key === key)?.default,
-      ),
-    )
+    expect(settings.headingLimit.value).toBe(declared.find((one) => one.key === 'headingLimit')?.default)
   })
 
   it('are read under the keys the manifest declares and no other', () => {
-    const { settings } = read({ nest_headings: false, heading_limit: 3 })
+    const { settings } = read({ heading_limit: 3 })
 
-    expect(settings.isNesting.value).toBe(true)
     expect(settings.headingLimit.value).toBe(6)
   })
 
@@ -54,9 +49,8 @@ describe('the settings of the headings', () => {
   it('follow the person changing them', () => {
     const { context, settings } = read()
 
-    context.setSetting('nestHeadings', false)
     context.setSetting('headingLimit', 3)
 
-    expect([settings.isNesting.value, settings.headingLimit.value]).toStrictEqual([false, 3])
+    expect(settings.headingLimit.value).toBe(3)
   })
 })

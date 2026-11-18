@@ -304,34 +304,7 @@ describe('a pointer that leaves', () => {
   })
 })
 
-describe('the setting that turns the headings off', () => {
-  it('reads nothing while it is off', async () => {
-    vi.useFakeTimers()
-    const { show, requested } = setup(undefined, { nestHeadings: false })
-    const wrapper = show(HEAT)
-
-    await rest(wrapper)
-
-    expect(requested).toStrictEqual([])
-    expect(getTexts(wrapper)).toStrictEqual([])
-  })
-
-  it('puts a list that is out away when it is turned off, and lists again when it is turned on', async () => {
-    vi.useFakeTimers()
-    const { show, context } = setup()
-    const wrapper = show(HEAT)
-    await rest(wrapper)
-
-    context.setSetting('nestHeadings', false)
-    await settle()
-    expect(getTexts(wrapper)).toStrictEqual([])
-
-    context.setSetting('nestHeadings', true)
-    await leave(wrapper)
-    await rest(wrapper)
-    expect(getTexts(wrapper)).toHaveLength(3)
-  })
-
+describe('the limit of the headings', () => {
   it('follows the limit as the person changes it', async () => {
     vi.useFakeTimers()
     const { show, context } = setup({ [HEAT]: sections(9) })

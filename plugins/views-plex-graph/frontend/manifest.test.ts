@@ -215,7 +215,7 @@ describe('the settings the plex left to the plugin Plex Headings', () => {
     expect(
       settings
         .map((one) => one.key)
-        .filter((key) => ['nestHeadings', 'headingLimit'].includes(key)),
+        .filter((key) => key === 'headingLimit'),
     ).toStrictEqual([])
   })
 })

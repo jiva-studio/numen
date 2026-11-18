@@ -66,24 +66,11 @@ describe('the manifest', () => {
   })
 })
 
-describe('the settings of the headings', () => {
+describe('the setting of the headings', () => {
   const find = (key: string) => (manifest.settings ?? []).find((one) => one.key === key)
 
-  it('are nestHeadings and headingLimit, the keys the plex used', () => {
-    expect((manifest.settings ?? []).map((one) => one.key).sort()).toStrictEqual([
-      'headingLimit',
-      'nestHeadings',
-    ])
-  })
-
-  it('offers Nest headings under notes in the command palette, on by default', () => {
-    expect(find('nestHeadings')).toMatchObject({
-      type: 'boolean',
-      title: 'Nest headings under notes',
-      default: true,
-      palette: true,
-      icon: 'waypoints',
-    })
+  it('is headingLimit, the key the plex used', () => {
+    expect((manifest.settings ?? []).map((one) => one.key)).toStrictEqual(['headingLimit'])
   })
 
   it('offers Headings per note from 1 to 12, six by default', () => {
