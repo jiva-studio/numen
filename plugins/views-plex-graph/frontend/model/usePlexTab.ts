@@ -1,7 +1,7 @@
 /**
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
-import { computed, watch, type Component } from 'vue'
+import { computed, getCurrentScope, onScopeDispose, shallowRef, watch, type Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
 import {
   formatErrorMessage,
@@ -13,7 +13,6 @@ import {
   type Caught,
 } from '@numen/plugin-sdk'
 import { convertNoteGraph, getNoteTypes, getTabKinds } from '../lib/picture'
-import { getNamePath, getNames, getNameToken } from '../lib/names'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
 import { CREATE_NOTE } from '../lib/commands'
@@ -29,8 +28,9 @@ import type {
   PlexGraph,
   PlexRelation,
   PlexDestination,
-  PlexNames,
-  PlexNamesState,
+  PlexWidget,
+  PlexWidgetSide,
+  PlexWidgetsState,
 } from '../types'
 import { useLinkInspector } from './useLinkInspector'
 import { useQuickLink } from './useQuickLink'
@@ -42,7 +42,6 @@ function usePlexPicture(
   view: PlexView,
   deps: PlexTabDeps,
   map: ReturnType<typeof createNodeIdMap>,
-  getName: (path: string) => string,
 ) {
   const picture = computed<PlexGraph | null>(() => {
     const noteGraph = view.noteGraph.value
@@ -77,9 +76,9 @@ function usePlexPicture(
     return deps.window.dragged.value.filter((path) => path !== here)
   })
 
-  const names = usePlexNames({ view, deps, getName }, map)
+  const widgets = usePlexWidgets(deps, map)
 
-  return { view, picture, empty, dragged, creatable: deps.creatable, names }
+  return { view, picture, empty, dragged, creatable: deps.creatable, widgets }
 }
 
 function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap>) {
@@ -286,20 +285,21 @@ function usePlexMenu(options: {
   return { request, menuItems, getMenuIcon, getNodeIcon, openMenu, dismiss, chooseMenuItem }
 }
 
-const NO_NAMES: PlexNames = { above: [], below: [] }
-
-function usePlexNames(mover: FocusMover, map: ReturnType<typeof createNodeIdMap>): PlexNamesState {
-  const { view, deps } = mover
-  const { showNames, namesPerNote } = deps.names
-  const names = computed(() => {
-    const noteGraph = view.noteGraph.value
-    if (!noteGraph || !showNames.value) return new Map<string, PlexNames>()
-    return getNames(noteGraph, namesPerNote.value, getNameToken, deps.look.references.value)
-  })
-  const getNodeNames = (node: string): PlexNames =>
-    names.value.get(getNameToken(map.getNodePath(node))) ?? NO_NAMES
-  const choose = (name: string) => moveFocus(mover, getNamePath(name))
-  return { showNames, getNames: getNodeNames, choose }
+function usePlexWidgets(
+  deps: PlexTabDeps,
+  map: ReturnType<typeof createNodeIdMap>,
+): PlexWidgetsState {
+  const watching = (side: PlexWidgetSide) => {
+    const entries = shallowRef<readonly PlexWidget[]>([])
+    const handle = deps.watchWidgets?.(side, (items) => {
+      entries.value = items.flatMap((item) =>
+        item.kind === 'view' ? [{ key: item.key, component: item.component }] : [],
+      )
+    })
+    if (handle && getCurrentScope()) onScopeDispose(() => handle.dispose())
+    return entries
+  }
+  return { above: watching('above'), below: watching('below'), getPath: map.getNodePath }
 }
 
 function getPlexNodeName(noteGraph: PlexView['noteGraph']['value'], path: string): string {
@@ -311,7 +311,7 @@ function getPlexNodeName(noteGraph: PlexView['noteGraph']['value'], path: string
 export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
   const getName = (path: string): string => getPlexNodeName(view.noteGraph.value, path)
-  const canvas = usePlexPicture(view, deps, map, getName)
+  const canvas = usePlexPicture(view, deps, map)
   const { types, getType, getTabKind, shownPaths } = usePlexNoteKinds(view, map)
 
   const quickLink = useQuickLink(view, deps, map)

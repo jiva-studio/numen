@@ -1,0 +1,47 @@
+{
+  "id": "md.numen.views.plex.related.names",
+  "name": "Plex Related Names",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Names of the notes related to the notes of the plex",
+  "capabilities": [],
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "feature": "plex related names",
+    "category": "views",
+    "slots": [
+      { "slot": "plexGraph.nodeAbove", "view": "parents" },
+      { "slot": "plexGraph.nodeBelow", "view": "related" }
+    ]
+  },
+  "permissions": ["vault:read"],
+  "settings": [
+    {
+      "key": "showNames",
+      "type": "boolean",
+      "title": "Show notes related to related notes",
+      "description": "Under each related note, the names of the notes related to it",
+      "default": true,
+      "palette": true,
+      "icon": "waypoints"
+    },
+    {
+      "key": "namesPerNote",
+      "type": "range",
+      "title": "Names per note",
+      "description": "Most names shown under and over a related note",
+      "default": 6,
+      "min": 1,
+      "max": 12,
+      "step": 1
+    },
+    {
+      "key": "showRelationArrows",
+      "type": "boolean",
+      "title": "Show the relation arrows",
+      "description": "An arrow before each name shows how its note is related",
+      "default": true
+    }
+  ],
+  "frontend": {}
+}

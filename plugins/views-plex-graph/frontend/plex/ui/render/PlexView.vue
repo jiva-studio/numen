@@ -2,11 +2,10 @@
 import { computed, provide, useId, useTemplateRef } from 'vue'
 import PlexEdgeLayer from './PlexEdgeLayer.vue'
 import PlexNodeView from './PlexNodeView.vue'
-import PlexNodeNames from './PlexNodeNames.vue'
+import PlexNodeWidgets from './PlexNodeWidgets.vue'
 import PlexThreads from './PlexThreads.vue'
 import { LIFT_LAYER, NODE_SIZES } from './layer'
 import { useEdgeLines } from './lines'
-import { listNamedNodes } from './named'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { getRelationName } from '../../lib/relation'
@@ -69,12 +68,10 @@ const getNodeHandlers = useNodeHandlers(
     ask: (id) => emit('ask', id),
     menu: (id, at, trigger) => emit('menu', id, at, trigger),
     enter: (id, heading) => emit('enter', id, heading),
-    attend: (id, isAttended) => attend('node', id, isAttended),
+    attend,
   },
   () => props.frame.nodes.map((node) => node.id),
 )
-
-const namedNodes = computed(() => listNamedNodes(props.frame.nodes, props.roomOf))
 
 const sizes = useNodeSizes(() => ({
   nodes: props.frame.nodes,
@@ -92,12 +89,6 @@ const roles = computed<Map<string, GestureRole>>((previous) => {
     [...next].every(([id, role]) => previous.get(id) === role)
   return isSame ? previous : next
 })
-
-/* -------------------------------- Handlers -------------------------------- */
-const onChooseName = (id: string) => {
-  attention.names = null
-  emit('choose-name', id)
-}
 
 /* -------------------------------- Helpers --------------------------------- */
 const getRole = (node: PlacedNode): GestureRole => {
@@ -156,22 +147,7 @@ const getRole = (node: PlacedNode): GestureRole => {
       :show-edge-labels="showEdgeLabels"
     />
 
-    <!-- Under every node, so the headings that open under one are over the names of all. -->
-    <g v-if="roomOf">
-      <PlexNodeNames
-        v-for="named in namedNodes"
-        :key="`names:${named.node.id}`"
-        :node="named.node"
-        :room="named.room"
-        :attention="attention"
-        :resting-opacity="namesOpacity"
-        :focused-opacity="focusedNamesOpacity"
-        @attend="attend('names', named.node.id, $event)"
-        @choose="onChooseName"
-      />
-    </g>
-
-    <!-- Over the names and the other lines, and under every node, so the headings that open under a node cover them. -->
+    <!-- Over the other lines, and under every node, so the headings that open under a node cover them. -->
     <PlexEdgeLayer
       layer="raised"
       :lines="lines"
@@ -193,6 +169,15 @@ const getRole = (node: PlacedNode): GestureRole => {
       >
         <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
       </PlexNodeView>
+      <PlexNodeWidgets
+        v-for="side in ['above', 'below'] as const"
+        :key="side"
+        :node="node"
+        :side="side"
+        :entries="(side === 'above' ? widgetsAbove : widgetsBelow) ?? []"
+        :path="getPath?.(node.id) ?? ''"
+        @widgets="setWidgets?.(node.id, side, $event)"
+      />
     </g>
 
     <!-- Over every note, so a note that is open covers its neighbors without moving in the document. -->

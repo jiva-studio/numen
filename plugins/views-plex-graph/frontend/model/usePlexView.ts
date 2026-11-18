@@ -4,7 +4,7 @@
  * A plex tab holds one of these and nothing else: the vault is read once for
  * the whole window, and notifies every plex when to query again.
  */
-import { ref, watch, type Ref } from 'vue'
+import { ref } from 'vue'
 import { formatErrorMessage, getRenamedPath } from '@numen/plugin-sdk'
 import { createRequestGuard } from '@numen/ui'
 import { areNoteGraphsEqual } from '../lib/picture'
@@ -12,14 +12,10 @@ import type { NoteGraph, PathRename } from '../types'
 
 /** The one query a plex makes of the vault: the related notes of a note. */
 export interface RelatedNoteQueries {
-  listRelatedNotes(paths: readonly string[], depth?: 1 | 2): Promise<readonly NoteGraph[]>
+  listRelatedNotes(paths: readonly string[], depth: 1): Promise<readonly NoteGraph[]>
 }
 
-/**
- * `depth` is how far the notes are read: 2 also reads the notes related to each related note.
- * The plex reads again when it changes.
- */
-export function usePlexView(core: RelatedNoteQueries, depth: Readonly<Ref<1 | 2>> = ref(1)) {
+export function usePlexView(core: RelatedNoteQueries) {
   const noteGraph = ref<NoteGraph | null>(null)
   /** The note this plex shows, as requested. */
   const here = ref('')
@@ -45,7 +41,7 @@ export function usePlexView(core: RelatedNoteQueries, depth: Readonly<Ref<1 | 2>
     const mine = guard.acquireRequest()
     nextPath.value = path
     try {
-      const [answer] = await core.listRelatedNotes([path], depth.value)
+      const [answer] = await core.listRelatedNotes([path], 1)
       if (!mine.isCurrent) return
       if (!answer?.focus.path) {
         error.value = `${path} is not in the vault`
@@ -71,13 +67,7 @@ export function usePlexView(core: RelatedNoteQueries, depth: Readonly<Ref<1 | 2>
     guard.cancel()
   }
 
-  const stopWatchingDepth = watch(depth, () => {
-    const path = nextPath.value || here.value
-    if (path) go(path).catch(() => undefined)
-  })
-
   const close = () => {
-    stopWatchingDepth()
     guard.close()
   }
 
