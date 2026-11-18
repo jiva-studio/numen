@@ -127,12 +127,12 @@ The report is read on a GitHub pull request and in a terminal. The verdict and t
 4. **Lists, not tables.** Wide tables break on GitHub. Status is an emoji (✅ ❌), never a code span.
 5. **"No findings" is a real outcome.** Padding a review with cosmetic remarks wastes the time of everyone who reads it.
 
-Severity: 🔴 CRITICAL (data loss, crash, security), 🟠 HIGH (a broken behaviour or consumer), 🟡 MEDIUM (an edge case that misbehaves), ⚪ LOW (a minor risk, or a hypothesis no test confirmed).
+Severity: 🔴 CRITICAL (data loss, crash, security), 🟠 HIGH (a broken behaviour or consumer), 🟡 MEDIUM (an edge case that misbehaves), ⚪ LOW (a minor risk, or a hypothesis no test or complete code trace confirmed).
 
 What a finding is proven by depends on what it claims:
 
 - A written rule that the change breaks, two places that disagree, a claim of the pull request body that the diff does not contain, or a defect that the lines show (a dereference of nil, a skipped error): the proof is the lines, quoted. No test is written.
-- A behaviour that reading cannot settle (a race, an edge value, an order of responses): a CRITICAL, HIGH or MEDIUM finding needs a test from Stage 3 that fails against the change, with its name, its file and its failing output. Without such a test the hypothesis is reported as ⚪ LOW and marked unconfirmed, with the reason no test was written.
+- A behaviour that reading cannot settle (a race, an edge value, an order of responses): when tests run (a local run or `/nm-review full`), a CRITICAL, HIGH or MEDIUM finding needs a test from Stage 3 that fails against the change, with its name, its file and its failing output. When the caller forbade running tests (a quick CI run), a CRITICAL, HIGH or MEDIUM behaviour defect is proven by tracing the exact files, lines and state transitions (_Given → When → Then_) that produce the failure after checking that no guard, lock or caller invariant on that path prevents it. Without such a test or complete state trace, the hypothesis is reported as ⚪ LOW and marked unconfirmed, with the reason.
 - At most three tests are written in one run. The rest of the hypotheses are ordered by severity, and those without a test are reported as unconfirmed.
 
 A finding names only code that the diff changes or whose behaviour the diff changes.
@@ -158,7 +158,7 @@ Verdict: ❌ Rejected when a gate failed or a CRITICAL finding exists; ⚠️ Ch
 
 **Scenario:** <a behaviour defect: given, when, then in one sentence; a rule or an inconsistency: the two places that disagree>
 
-**Proof:** <a behaviour defect: the test name, its file, and its failing output; otherwise the quoted lines>
+**Proof:** <a behaviour defect: the test name, its file, and its failing output, or in a quick run the traced lines and state transitions; otherwise the quoted lines>
 **Rule:** <the AGENTS.md or rules statement it contradicts; omit the line when none applies>
 **Fix:** <a direction, not a patch>
 
