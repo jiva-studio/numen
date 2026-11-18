@@ -38,6 +38,16 @@ function onToggleHolders(id: string) {
   expandedIds.value = next
 }
 
+function onEnterRow(event: Event, id: string) {
+  if (
+    event.target instanceof Element &&
+    event.target.closest('.plugin-popover__countdown') !== null
+  ) {
+    return
+  }
+  tip.open(event, () => getRowTitle(id))
+}
+
 /* -------------------------------- Helpers --------------------------------- */
 function getRowTitle(id: string): string {
   return rows.value.find((one) => one.id === id)?.title ?? ''
@@ -75,9 +85,9 @@ function getCountdownHint(id: string): string {
         :aria-label="row.name"
         :aria-expanded="expandedIds.has(row.id)"
         tabindex="0"
-        @mouseenter="tip.open($event, () => getRowTitle(row.id))"
+        @mouseenter="onEnterRow($event, row.id)"
         @mouseleave="tip.close"
-        @focus="tip.open($event, () => getRowTitle(row.id))"
+        @focus="onEnterRow($event, row.id)"
         @blur="tip.close"
         @click="onToggleHolders(row.id)"
         @keydown.enter.space.prevent="onToggleHolders(row.id)"
