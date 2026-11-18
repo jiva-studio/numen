@@ -31,13 +31,21 @@ runs:
       with:
         key: playwright-${{ inputs.browsers }}-${{ inputs.packages }}-${{ hashFiles('package-lock.json') }}
 
+    # The restored .deb files are the packages the install needs, so dpkg installs them without
+    # asking the mirrors, whose newer versions have replaced the ones the cache holds. A failed
+    # attempt, or a miss, takes the apt path, which refreshes the package lists.
     - name: Install browser system dependencies
       shell: bash
       env:
+        DEBIAN_FRONTEND: noninteractive
         BROWSERS: ${{ inputs.browsers }}
         PACKAGES: ${{ inputs.packages }}
+        RESTORED: ${{ steps.apt.outputs.cache-matched-key != '' }}
       run: |
         sudo rm -f /var/lib/man-db/auto-update
+        if [ "$RESTORED" = true ] && sudo dpkg --force-unsafe-io --refuse-downgrade -i ~/.cache/apt-archives/*.deb; then
+          exit 0
+        fi
         .github/scripts/apt-retry.sh npx playwright install-deps $BROWSERS
         if [ -n "$PACKAGES" ]; then
           .github/scripts/apt-retry.sh sudo apt-get install -y --no-install-recommends \

@@ -123,7 +123,10 @@ export const renderComment = (fresh, link) =>
 
 /* ---------------------------------- Main ---------------------------------- */
 
-const gh = (args, input) => execTool('gh', args, { encoding: 'utf8', input })
+export const GH_MAX_BUFFER = 64 * 1024 * 1024
+
+export const gh = (args, input, exec = execTool) =>
+  exec('gh', args, { encoding: 'utf8', input, maxBuffer: GH_MAX_BUFFER })
 
 const main = () => {
   const target = getTarget(process.argv[2])

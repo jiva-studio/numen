@@ -96,6 +96,15 @@ describe('apt-retry.sh', () => {
     assert.match(result.stdout, /::error::apt did not finish within 2s/)
   })
 
+  it('stops at the deadline even when the command starts a background grandchild holding stdout', () => {
+    writeFileSync(join(dir, 'grandchild.sh'), '(sleep 30) &\necho started\nsleep 30\n')
+    const began = Date.now()
+    const result = run(['bash', join(dir, 'grandchild.sh')], { APT_RETRY_DEADLINE: '2' })
+    assert.equal(result.status, 124)
+    assert.ok(Date.now() - began < 15000)
+    assert.match(result.stdout, /::error::apt did not finish within 2s/)
+  })
+
   it('does not wait past the deadline between attempts', () => {
     const began = Date.now()
     const result = run(flaky(99), { APT_RETRY_DEADLINE: '3', APT_RETRY_DELAYS: '60 60 60' })

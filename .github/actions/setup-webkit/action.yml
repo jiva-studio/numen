@@ -15,7 +15,7 @@ runs:
       shell: bash
       env:
         DEBIAN_FRONTEND: noninteractive
-        RESTORED: ${{ steps.apt.outputs.cache-hit }}
+        RESTORED: ${{ steps.apt.outputs.cache-matched-key != '' }}
       run: |
         sudo rm -f /var/lib/man-db/auto-update
         if [ "$RESTORED" = true ] && sudo dpkg --force-unsafe-io --refuse-downgrade -i ~/.cache/apt-archives/*.deb; then

@@ -202,7 +202,7 @@ jobs:
   report:
     name: Report
     needs: [acceptance, acceptance-live]
-    if: ${{ !cancelled() && (needs.acceptance.result != 'skipped' || needs.acceptance-live.result != 'skipped') }}
+    if: ${{ !cancelled() && (needs.acceptance.result == 'success' || needs.acceptance-live.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

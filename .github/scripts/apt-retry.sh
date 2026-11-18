@@ -49,7 +49,7 @@ run_bounded() {
     timed_out=true
     return 124
   fi
-  timeout -k 5 "$left" "$@"
+  timeout -k 5 "$left" "$@" < /dev/null
 }
 for ((attempt = 1; attempt <= attempts; attempt++)); do
   if [ "$attempt" -gt 1 ]; then
