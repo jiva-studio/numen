@@ -1,4 +1,4 @@
-/** The group of widgets of a node is measured while a widget draws, and let go when the node goes. */
+/** The group of widgets of a node is measured while a widget draws, and released when the node is removed. */
 import { effectScope, nextTick, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { useDrawnWidgets } from './useDrawnWidgets'
@@ -12,7 +12,7 @@ const createRows = () => {
 }
 
 describe('the widgets of a node', () => {
-  it('are let go when the node goes', async () => {
+  it('are released when the node is removed', async () => {
     const change = vi.fn()
     const rows = ref<HTMLElement | null>(null)
     const scope = effectScope()
@@ -27,7 +27,7 @@ describe('the widgets of a node', () => {
     expect(change).toHaveBeenLastCalledWith(null)
   })
 
-  it('are not let go by a node that never drew them', () => {
+  it('are not released by a node that never drew them', () => {
     const change = vi.fn()
     const scope = effectScope()
     scope.run(() => useDrawnWidgets(ref<HTMLElement | null>(null), change))
