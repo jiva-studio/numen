@@ -28,7 +28,10 @@ func (u *Verify) Execute(ctx context.Context, licenseID string) (license.Info, e
 	if err != nil {
 		return license.Info{}, err
 	}
-	info, _ := res.(license.Info)
+	info, ok := res.(license.Info)
+	if !ok {
+		return license.Info{}, nil
+	}
 	return info, nil
 }
 
@@ -98,7 +101,10 @@ func (u *Verify) applyVerifiedStatus(
 		env.ExpiresAt = license.FormatTime(*expiresAt)
 	}
 	u.gate.Lock()
-	_ = u.writeEnvelope(ctx, decl.ID, env)
+	if writeErr := u.writeEnvelope(ctx, decl.ID, env); writeErr != nil {
+		u.gate.Unlock()
+		return license.Info{}, writeErr
+	}
 	info, _, err := u.buildInfo(ctx, decl)
 	u.gate.Unlock()
 	if prevStatus != status || markVerified {

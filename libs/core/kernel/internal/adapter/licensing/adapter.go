@@ -208,7 +208,10 @@ func readMachineID() string {
 			}
 		}
 	}
-	host, _ := os.Hostname()
+	host, err := os.Hostname()
+	if err != nil {
+		host = ""
+	}
 	return strings.TrimSpace(host) + ":" + runtime.GOOS + ":" + runtime.GOARCH
 }
 

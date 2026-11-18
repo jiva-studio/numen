@@ -44,9 +44,6 @@ func MergeDeclarations(plugins []PluginEntry) []Declaration {
 					decl.OfflineGraceDays = days
 				}
 			}
-			if decl.Title == "" {
-				decl.Title = lic.ID
-			}
 			decl.Contributors = append(decl.Contributors, Contributor{
 				PluginID:    plugin.ID,
 				PluginName:  plugin.Name,
@@ -57,7 +54,11 @@ func MergeDeclarations(plugins []PluginEntry) []Declaration {
 	}
 	result := make([]Declaration, 0, len(ids))
 	for _, id := range ids {
-		result = append(result, *byID[id])
+		decl := *byID[id]
+		if decl.Title == "" {
+			decl.Title = decl.ID
+		}
+		result = append(result, decl)
 	}
 	return result
 }

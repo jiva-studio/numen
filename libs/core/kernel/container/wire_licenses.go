@@ -13,7 +13,9 @@ func openLicenseUseCases(c pluginsWiring) *windowlicense.UseCases {
 		return nil
 	}
 	adapter := licensingadapter.NewAdapter(func(ctx context.Context) {
-		_ = c.PluginHost.Configuration.Refresh(ctx)
+		if err := c.PluginHost.Configuration.Refresh(ctx); err != nil {
+			return
+		}
 	})
 	deps := license.NewDeps(
 		c.PluginHost.Views.Declarations,

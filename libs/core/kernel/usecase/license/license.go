@@ -96,9 +96,9 @@ func (o operation) readEnvelope(ctx context.Context, licenseID string) (license.
 	if err != nil {
 		return license.Envelope{}, false, fmt.Errorf("%w: read %s: %w", license.ErrKeyStore, licenseID, err)
 	}
-	env, err := license.DecodeEnvelope(raw)
-	if err != nil {
-		return license.Envelope{}, false, nil
+	env, decodeErr := license.DecodeEnvelope(raw)
+	if decodeErr != nil {
+		return license.Envelope{}, false, nil //nolint:nilerr // Corrupted envelope is treated as absent so the user can reactivate.
 	}
 	return env, true, nil
 }
@@ -151,7 +151,9 @@ func (o operation) buildInfo(ctx context.Context, decl license.Declaration) (lic
 	now := o.clock.Now().UTC()
 	eval := license.EvaluateEnvelope(env, decl, fingerprint, now)
 	if eval.EnvelopeChanged && o.keys != nil {
-		_ = o.writeEnvelope(ctx, decl.ID, eval.UpdatedEnvelope)
+		if writeErr := o.writeEnvelope(ctx, decl.ID, eval.UpdatedEnvelope); writeErr != nil {
+			return info, false, writeErr
+		}
 	}
 	if !eval.HasKey {
 		return info, false, nil
