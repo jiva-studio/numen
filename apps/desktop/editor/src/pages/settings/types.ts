@@ -15,6 +15,7 @@ import type {
   OperationTitles,
   RowOption,
 } from '@/entities/connection'
+import type { LicenseInfo } from '@/entities/license'
 import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
 import type { Result } from '@/shared/lib/result'
@@ -25,6 +26,7 @@ export interface Installation {
   readonly settings: InstallationSettings
   readonly plugin: InstallationPlugin
   readonly connections: InstallationConnections
+  readonly licenses: InstallationLicenses
 }
 
 /**
@@ -124,6 +126,17 @@ export interface ConnectionEdits {
   readonly create: (draft: ConnectionDraft) => Promise<Result<ConnectionInfo, string>>
   readonly update: (change: ConnectionChange) => Promise<Result<ConnectionInfo, string>>
   readonly delete: (id: string) => Promise<Result<undefined, string>>
+}
+
+/**
+ * The licenses declared by the installed plugins, and their activation state on this machine.
+ */
+export interface InstallationLicenses {
+  readonly list: Readonly<Ref<readonly LicenseInfo[]>>
+  load(): Promise<void>
+  watch(signal: AbortSignal): Promise<void>
+  activate(licenseId: string, key: string): Promise<Result<LicenseInfo, string>>
+  deactivate(licenseId: string): Promise<Result<LicenseInfo, string>>
 }
 
 /** One of the choices a select offers. */

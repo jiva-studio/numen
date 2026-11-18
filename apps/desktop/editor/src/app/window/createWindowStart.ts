@@ -95,7 +95,7 @@ function createLayoutStarter(deps: LayoutStarterDeps) {
 /** What the start of the window reads of the foundation. */
 type StartFoundation = Pick<
   WindowBase['foundation'],
-  'api' | 'log' | 'rest' | 'frame' | 'connections' | 'settingsRequests'
+  'api' | 'log' | 'rest' | 'frame' | 'connections' | 'licenses' | 'settingsRequests'
 >
 
 /** What the start of the window reads of the base, the plugins and the palettes. */

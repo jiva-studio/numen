@@ -16,6 +16,7 @@ import (
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	windowhealth "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/health"
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
+	windowlicense "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/license"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
 	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
@@ -372,6 +373,12 @@ func mountConnection(w *windowWiring) {
 func mountConnectionCall(w *windowWiring) {
 	handler := connectioncall.NewService(openModelCalls(w.a), openRowLists(w.a))
 	path, served := connectioncall.NewRoute(handler, w.state.Gate.CountQuestions())
+	w.inst.Mount(editor.NewRoute(path, served, handler))
+}
+
+func mountLicense(w *windowWiring) {
+	handler := windowlicense.NewService(openLicenseUseCases(w.a))
+	path, served := windowlicense.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 

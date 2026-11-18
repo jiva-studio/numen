@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// LicenseService manages the license keys that plugins declare: listing their status, activating a
+// key on this machine, deactivating this machine to free its slot, and watching for changes. No raw
+// license key is returned to the window.
+service LicenseService {
+  // ListLicenses returns every license declared by the installed plugins, with its contributors,
+  // checkout providers and activation state on this machine.
+  rpc ListLicenses(ListLicensesRequest) returns (ListLicensesResponse);
+
+  // ActivateLicense activates a license key on this machine with one of the license's providers, or
+  // stores a custom key when the license declares no providers.
+  rpc ActivateLicense(ActivateLicenseRequest) returns (ActivateLicenseResponse);
+
+  // DeactivateLicense releases this machine's activation slot at the provider and removes the key
+  // from the key store once the provider confirms.
+  rpc DeactivateLicense(DeactivateLicenseRequest) returns (DeactivateLicenseResponse);
+
+  // WatchLicenses sends the full list of licenses when the stream opens and again whenever a license
+  // or the set of plugins changes.
+  rpc WatchLicenses(WatchLicensesRequest) returns (stream WatchLicensesResponse);
+}
+
+// LicenseStatus is the state of a license on this machine.
+enum LicenseStatus {
+  LICENSE_STATUS_UNSPECIFIED = 0;
+  // LICENSE_STATUS_INACTIVE is a license with no key activated on this machine.
+  LICENSE_STATUS_INACTIVE = 1;
+  // LICENSE_STATUS_ACTIVE is a license activated on this machine and verified within its grace window.
+  LICENSE_STATUS_ACTIVE = 2;
+  // LICENSE_STATUS_EXPIRED is a license whose subscription or validity period has ended.
+  LICENSE_STATUS_EXPIRED = 3;
+  // LICENSE_STATUS_UNVERIFIED is a stored key that could not be verified within the offline grace
+  // window or after a clock rollback, or whose provider disabled it.
+  LICENSE_STATUS_UNVERIFIED = 4;
+}
+
+// LicenseErrorCode is why an activation or deactivation call was refused. The zero value is a call
+// that succeeded.
+enum LicenseErrorCode {
+  LICENSE_ERROR_CODE_UNSPECIFIED = 0;
+  // LICENSE_ERROR_CODE_NOT_FOUND is a license id that no plugin declares, or a key that no provider
+  // recognizes.
+  LICENSE_ERROR_CODE_NOT_FOUND = 1;
+  // LICENSE_ERROR_CODE_INVALID_KEY is an empty or malformed license key.
+  LICENSE_ERROR_CODE_INVALID_KEY = 2;
+  // LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED is a key that has used all of its machine slots.
+  LICENSE_ERROR_CODE_ACTIVATION_LIMIT_REACHED = 3;
+  // LICENSE_ERROR_CODE_EXPIRED is a key whose subscription or validity period has expired.
+  LICENSE_ERROR_CODE_EXPIRED = 4;
+  // LICENSE_ERROR_CODE_DISABLED is a key that the provider has disabled or revoked.
+  LICENSE_ERROR_CODE_DISABLED = 5;
+  // LICENSE_ERROR_CODE_PRODUCT_MISMATCH is a key that belongs to another product.
+  LICENSE_ERROR_CODE_PRODUCT_MISMATCH = 6;
+  // LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE is a provider that could not be reached or returned a
+  // transient error.
+  LICENSE_ERROR_CODE_PROVIDER_UNAVAILABLE = 7;
+  // LICENSE_ERROR_CODE_KEY_STORE_FAILED is a key store that failed or is absent on this machine.
+  LICENSE_ERROR_CODE_KEY_STORE_FAILED = 8;
+}
+
+// LicenseContributor is one plugin that declares a license and what it unlocks when the license is
+// active.
+message LicenseContributor {
+  string plugin_id = 1;
+  string plugin_name = 2;
+  string description = 3;
+}
+
+// LicenseProviderOption is one service through which a person can buy a key for a license.
+message LicenseProviderOption {
+  // provider is the identifier of the provider, such as "creem" or "dodo".
+  string provider = 1;
+  // provider_name is the display name of the provider, such as "Creem" or "Dodo Payments".
+  string provider_name = 2;
+  string product_id = 3;
+  // checkout_url is the https address where a person buys the license from this provider.
+  string checkout_url = 4;
+  // payment_methods are the payment methods the provider supports, such as "Cards" or "Crypto (USDC)".
+  repeated string payment_methods = 5;
+}
+
+// LicenseInfo is one license declared by one or more plugins, together with its activation state on
+// this machine.
+message LicenseInfo {
+  string id = 1;
+  string title = 2;
+  repeated LicenseContributor contributors = 3;
+  repeated LicenseProviderOption providers = 4;
+  LicenseStatus status = 5;
+  bool is_active = 6;
+  bool has_key = 7;
+  // key_hint is the masked form of the stored key, such as "••••-814A". Empty when has_key is false.
+  string key_hint = 8;
+  // active_provider is the provider that activated the stored key, or "custom". Empty when has_key is
+  // false.
+  string active_provider = 9;
+  // instance_name is the machine name recorded when the key was activated.
+  string instance_name = 10;
+  // expires_at is the RFC 3339 UTC timestamp when the current period ends, or empty when the provider
+  // does not report one.
+  string expires_at = 11;
+  // verified_at is the RFC 3339 UTC timestamp when the key was last verified online.
+  string verified_at = 12;
+}
+
+message ListLicensesRequest {}
+
+message ListLicensesResponse {
+  repeated LicenseInfo licenses = 1;
+}
+
+message ActivateLicenseRequest {
+  string license_id = 1;
+  string key = 2 [debug_redact = true];
+}
+
+message ActivateLicenseResponse {
+  LicenseInfo license = 1;
+  LicenseErrorCode error = 2;
+  string detail = 3;
+}
+
+message DeactivateLicenseRequest {
+  string license_id = 1;
+}
+
+message DeactivateLicenseResponse {
+  LicenseInfo license = 1;
+  LicenseErrorCode error = 2;
+  string detail = 3;
+}
+
+message WatchLicensesRequest {}
+
+message WatchLicensesResponse {
+  repeated LicenseInfo licenses = 1;
+}

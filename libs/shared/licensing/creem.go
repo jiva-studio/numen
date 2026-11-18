@@ -14,35 +14,6 @@ const (
 	defaultCreemCheckoutBase = "https://creem.io/payment/"
 )
 
-// CreemOption configures a CreemProvider.
-type CreemOption func(*CreemProvider)
-
-// WithCreemBaseURL overrides the API base URL for Creem license requests.
-func WithCreemBaseURL(baseURL string) CreemOption {
-	return func(p *CreemProvider) {
-		trimmed := strings.TrimRight(strings.TrimSpace(baseURL), "/")
-		if trimmed != "" {
-			p.baseURL = trimmed
-		}
-	}
-}
-
-// WithCreemAPIKey sets the x-api-key header sent with Creem requests.
-func WithCreemAPIKey(apiKey string) CreemOption {
-	return func(p *CreemProvider) {
-		p.apiKey = strings.TrimSpace(apiKey)
-	}
-}
-
-// WithCreemHTTPClient overrides the HTTP client used by CreemProvider.
-func WithCreemHTTPClient(client HTTPDoer) CreemOption {
-	return func(p *CreemProvider) {
-		if client != nil {
-			p.client = client
-		}
-	}
-}
-
 // CreemProvider manages machine license activations through the Creem.io API or its proxy.
 type CreemProvider struct {
 	baseURL string
@@ -50,16 +21,27 @@ type CreemProvider struct {
 	client  HTTPDoer
 }
 
-// NewCreemProvider creates a Creem licensing provider.
-func NewCreemProvider(opts ...CreemOption) *CreemProvider {
-	p := &CreemProvider{
+// NewCreemProvider returns a CreemProvider configured with the default Creem API base URL.
+func NewCreemProvider() *CreemProvider {
+	return &CreemProvider{
 		baseURL: defaultCreemAPIBase,
 		client:  getDefaultHTTPClient(),
 	}
-	for _, opt := range opts {
-		opt(p)
+}
+
+// Configure overrides the API base URL, API key and HTTP client when non-empty.
+func (p *CreemProvider) Configure(baseURL, apiKey string, client HTTPDoer) {
+	trimmedURL := strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	if trimmedURL != "" {
+		p.baseURL = trimmedURL
 	}
-	return p
+	trimmedKey := strings.TrimSpace(apiKey)
+	if trimmedKey != "" {
+		p.apiKey = trimmedKey
+	}
+	if client != nil {
+		p.client = client
+	}
 }
 
 // GetInfo returns the display metadata and payment methods for Creem.
@@ -68,7 +50,6 @@ func (p *CreemProvider) GetInfo() ProviderInfo {
 	return info
 }
 
-// BuildCheckoutURL returns the explicit checkout URL or builds one from the Creem product ID.
 func (p *CreemProvider) BuildCheckoutURL(productID, rawURL string) (string, error) {
 	return buildCheckoutURLWithBase(defaultCreemCheckoutBase, productID, rawURL)
 }

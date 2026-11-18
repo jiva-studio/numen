@@ -5,6 +5,7 @@ import {
   ConnectionCallService,
   FileService,
   LogService,
+  LicenseService,
   NoteService,
   PluginHealthService,
   PluginService,
@@ -38,6 +39,7 @@ const SERVICES = {
   connections: ProviderConnectionService,
   connectionCalls: ConnectionCallService,
   logService: LogService,
+  licenses: LicenseService,
 } as const
 
 type ServiceName = keyof typeof SERVICES

@@ -64,10 +64,8 @@ func TestDodoActivateValidateAndDeactivate(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	p := licensing.NewDodoProvider(
-		licensing.WithDodoBaseURL(srv.URL),
-		licensing.WithDodoHTTPClient(srv.Client()),
-	)
+	p := licensing.NewDodoProvider()
+	p.Configure(srv.URL, srv.Client())
 
 	if info := p.GetInfo(); info.ID != licensing.ProviderIDDodo {
 		t.Fatalf("GetInfo().ID = %q, want %q", info.ID, licensing.ProviderIDDodo)
@@ -128,7 +126,8 @@ func TestDodoActivateRollsBackSlotOnProductMismatch(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	p := licensing.NewDodoProvider(licensing.WithDodoBaseURL(srv.URL))
+	p := licensing.NewDodoProvider()
+	p.Configure(srv.URL, nil)
 	_, err := p.Activate(t.Context(), licensing.ActivationRequest{
 		Key:          "DODO-KEY-OTHER",
 		InstanceName: "akd-workstation",
@@ -184,7 +183,8 @@ func TestDodoErrorClassification(t *testing.T) {
 			}))
 			defer srv.Close()
 
-			p := licensing.NewDodoProvider(licensing.WithDodoBaseURL(srv.URL))
+			p := licensing.NewDodoProvider()
+			p.Configure(srv.URL, nil)
 			_, err := p.Activate(t.Context(), licensing.ActivationRequest{
 				Key:          "KEY",
 				InstanceName: "machine",

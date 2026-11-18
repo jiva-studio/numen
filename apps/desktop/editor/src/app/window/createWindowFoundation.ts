@@ -4,6 +4,7 @@
  */
 import { useWindowFrame } from '@numen/workbench'
 import { createConnectionStore } from '@/entities/connection'
+import { createLicenseStore } from '@/entities/license'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { createWindowPluginStatus } from '@/features/plugin-host'
 import { loadFrameRuntime } from '@/shared/api/runtime'
@@ -25,6 +26,7 @@ export function createWindowFoundation(api: WindowApi) {
     log,
     rest,
     connections: createConnectionStore(configuration.connection, log.getWriter('connections')),
+    licenses: createLicenseStore(configuration.license, log.getWriter('licenses')),
     frame: useWindowFrame(loadFrameRuntime),
     status: createWindowPluginStatus(rest),
     registry: createCommandRegistry(),

@@ -1,0 +1,205 @@
+package license
+
+import (
+	"slices"
+	"strings"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+)
+
+// PluginEntry is the minimal plugin metadata needed to merge license declarations across manifests.
+type PluginEntry struct {
+	ID       string
+	Name     string
+	Licenses []manifest.License
+}
+
+// MergeDeclarations merges the license declarations of the plugins in plugin ID order. Each unique
+// license ID produces one Declaration with all contributing plugins, merged providers and the
+// shortest declared offlineGraceDays.
+func MergeDeclarations(plugins []PluginEntry) []Declaration {
+	ordered := slices.Clone(plugins)
+	slices.SortFunc(ordered, func(a, b PluginEntry) int {
+		return strings.Compare(a.ID, b.ID)
+	})
+	byID := make(map[string]*Declaration)
+	var ids []string
+	for _, plugin := range ordered {
+		for _, lic := range plugin.Licenses {
+			decl, exists := byID[lic.ID]
+			if !exists {
+				decl = &Declaration{
+					ID:               lic.ID,
+					Title:            lic.Title,
+					OfflineGraceDays: lic.GetOfflineGraceDays(),
+				}
+				byID[lic.ID] = decl
+				ids = append(ids, lic.ID)
+			} else {
+				if decl.Title == "" && lic.Title != "" {
+					decl.Title = lic.Title
+				}
+				if days := lic.GetOfflineGraceDays(); days < decl.OfflineGraceDays {
+					decl.OfflineGraceDays = days
+				}
+			}
+			if decl.Title == "" {
+				decl.Title = lic.ID
+			}
+			decl.Contributors = append(decl.Contributors, Contributor{
+				PluginID:    plugin.ID,
+				PluginName:  plugin.Name,
+				Description: lic.Description,
+			})
+			decl.Providers = mergeProviders(decl.Providers, lic.Providers)
+		}
+	}
+	result := make([]Declaration, 0, len(ids))
+	for _, id := range ids {
+		result = append(result, *byID[id])
+	}
+	return result
+}
+
+func mergeProviders(existing, added []manifest.LicenseProvider) []manifest.LicenseProvider {
+	out := slices.Clone(existing)
+	for _, prov := range added {
+		idx := slices.IndexFunc(out, func(p manifest.LicenseProvider) bool {
+			return p.Provider == prov.Provider
+		})
+		if idx < 0 {
+			out = append(out, prov)
+			continue
+		}
+		if out[idx].ProductID == "" && prov.ProductID != "" {
+			out[idx].ProductID = prov.ProductID
+		}
+		if out[idx].URL == "" && prov.URL != "" {
+			out[idx].URL = prov.URL
+		}
+	}
+	return out
+}
+
+// EvaluateEnvelope checks a stored Envelope against the current machine fingerprint, UTC clock and
+// offline grace period.
+func EvaluateEnvelope(
+	env Envelope,
+	decl Declaration,
+	currentFingerprint string,
+	now time.Time,
+) Evaluation {
+	nowUTC := now.UTC()
+	if NormalizeKey(env.Key) == "" {
+		return Evaluation{Status: StatusInactive, IsActive: false, HasKey: false, UpdatedEnvelope: env}
+	}
+	if env.MachineFingerprint == "" || env.MachineFingerprint != currentFingerprint {
+		return Evaluation{Status: StatusInactive, IsActive: false, HasKey: false, UpdatedEnvelope: env}
+	}
+	if decl.IsCustom() || env.Provider == ProviderCustom {
+		updated, changed := advanceLastSeen(env, nowUTC)
+		return Evaluation{
+			Status:          StatusActive,
+			IsActive:        true,
+			HasKey:          true,
+			UpdatedEnvelope: updated,
+			EnvelopeChanged: changed,
+		}
+	}
+	switch env.Status {
+	case StatusExpired:
+		return Evaluation{Status: StatusExpired, IsActive: false, HasKey: true, UpdatedEnvelope: env}
+	case StatusDisabled, StatusInactive, StatusUnverified:
+		return Evaluation{Status: StatusUnverified, IsActive: false, HasKey: true, NeedsValidation: true, UpdatedEnvelope: env}
+	case StatusActive:
+	}
+
+	verifiedAt, hasVerified := ParseTime(env.VerifiedAt)
+	lastSeenAt, hasLastSeen := ParseTime(env.LastSeenAt)
+	if !hasVerified {
+		return Evaluation{
+			Status:          StatusUnverified,
+			IsActive:        false,
+			HasKey:          true,
+			NeedsValidation: true,
+			UpdatedEnvelope: env,
+		}
+	}
+	if isClockRolledBack(nowUTC, verifiedAt, lastSeenAt, hasLastSeen) {
+		return Evaluation{
+			Status:          StatusUnverified,
+			IsActive:        false,
+			HasKey:          true,
+			NeedsValidation: true,
+			IsClockTampered: true,
+			UpdatedEnvelope: env,
+		}
+	}
+	updated, changed := advanceLastSeen(env, nowUTC)
+
+	graceDays := decl.OfflineGraceDays
+	if graceDays <= 0 {
+		graceDays = manifest.DefaultLicenseOfflineGraceDays
+	}
+	graceDeadline := verifiedAt.Add(time.Duration(graceDays) * 24 * time.Hour)
+	if !nowUTC.Before(graceDeadline) {
+		return Evaluation{
+			Status:          StatusUnverified,
+			IsActive:        false,
+			HasKey:          true,
+			NeedsValidation: true,
+			UpdatedEnvelope: updated,
+			EnvelopeChanged: changed,
+		}
+	}
+
+	needsValidation := !nowUTC.Before(verifiedAt.Add(FreshnessTTL))
+	if expiresAt, hasExpires := ParseTime(env.ExpiresAt); hasExpires {
+		if !nowUTC.Before(expiresAt) {
+			needsValidation = true
+			if !nowUTC.Before(expiresAt.Add(BillingDunningGrace)) {
+				return Evaluation{
+					Status:          StatusExpired,
+					IsActive:        false,
+					HasKey:          true,
+					NeedsValidation: true,
+					UpdatedEnvelope: updated,
+					EnvelopeChanged: changed,
+				}
+			}
+		}
+	}
+
+	return Evaluation{
+		Status:          StatusActive,
+		IsActive:        true,
+		HasKey:          true,
+		NeedsValidation: needsValidation,
+		UpdatedEnvelope: updated,
+		EnvelopeChanged: changed,
+	}
+}
+
+func isClockRolledBack(nowUTC, verifiedAt, lastSeenAt time.Time, hasLastSeen bool) bool {
+	toleratedNow := nowUTC.Add(ClockRollbackTolerance)
+	if toleratedNow.Before(verifiedAt) {
+		return true
+	}
+	if hasLastSeen && toleratedNow.Before(lastSeenAt) {
+		return true
+	}
+	return false
+}
+
+func advanceLastSeen(env Envelope, nowUTC time.Time) (Envelope, bool) {
+	formattedNow := FormatTime(nowUTC)
+	lastSeenAt, hasLastSeen := ParseTime(env.LastSeenAt)
+	if !hasLastSeen || nowUTC.After(lastSeenAt) {
+		if env.LastSeenAt != formattedNow {
+			env.LastSeenAt = formattedNow
+			return env, true
+		}
+	}
+	return env, false
+}

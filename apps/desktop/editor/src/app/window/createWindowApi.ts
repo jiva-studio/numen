@@ -5,6 +5,7 @@
  */
 import { createConnectionApi } from '@/entities/connection'
 import { createFileApi } from '@/entities/file'
+import { createLicenseApi } from '@/entities/license'
 import { createLinkApi, createNoteApi, createRelations } from '@/entities/note'
 import {
   createCatalogReader,
@@ -79,6 +80,7 @@ export function createWindowApi(transports: WindowTransports) {
     },
     configuration: {
       connection: createConnectionApi(settingsClients.connections),
+      license: createLicenseApi(settingsClients.licenses),
       settings: createSettingsApi(settingsClients.settingsService),
       themes: createThemes(settingsClients.theme),
     },

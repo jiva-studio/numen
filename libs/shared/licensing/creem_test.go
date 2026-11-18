@@ -100,11 +100,8 @@ func TestCreemActivateValidateAndDeactivate(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	p := licensing.NewCreemProvider(
-		licensing.WithCreemBaseURL(srv.URL),
-		licensing.WithCreemAPIKey("creem_test_secret"),
-		licensing.WithCreemHTTPClient(srv.Client()),
-	)
+	p := licensing.NewCreemProvider()
+	p.Configure(srv.URL, "creem_test_secret", srv.Client())
 
 	if info := p.GetInfo(); info.ID != licensing.ProviderIDCreem {
 		t.Fatalf("GetInfo().ID = %q, want %q", info.ID, licensing.ProviderIDCreem)
@@ -165,7 +162,8 @@ func TestCreemActivateRollsBackSlotOnProductMismatch(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	p := licensing.NewCreemProvider(licensing.WithCreemBaseURL(srv.URL))
+	p := licensing.NewCreemProvider()
+	p.Configure(srv.URL, "", nil)
 	_, err := p.Activate(t.Context(), licensing.ActivationRequest{
 		Key:          "CREEM-KEY-OTHER",
 		InstanceName: "akd-laptop",
@@ -227,7 +225,8 @@ func TestCreemErrorClassification(t *testing.T) {
 			}))
 			defer srv.Close()
 
-			p := licensing.NewCreemProvider(licensing.WithCreemBaseURL(srv.URL))
+			p := licensing.NewCreemProvider()
+			p.Configure(srv.URL, "", nil)
 			_, err := p.Activate(t.Context(), licensing.ActivationRequest{
 				Key:          "KEY",
 				InstanceName: "machine",

@@ -14,44 +14,29 @@ const (
 	defaultDodoCheckoutBase = "https://checkout.dodopayments.com/buy/"
 )
 
-// DodoOption configures a DodoProvider.
-type DodoOption func(*DodoProvider)
-
-// WithDodoBaseURL overrides the API base URL for Dodo Payments license requests.
-func WithDodoBaseURL(baseURL string) DodoOption {
-	return func(p *DodoProvider) {
-		trimmed := strings.TrimRight(strings.TrimSpace(baseURL), "/")
-		if trimmed != "" {
-			p.baseURL = trimmed
-		}
-	}
-}
-
-// WithDodoHTTPClient overrides the HTTP client used by DodoProvider.
-func WithDodoHTTPClient(client HTTPDoer) DodoOption {
-	return func(p *DodoProvider) {
-		if client != nil {
-			p.client = client
-		}
-	}
-}
-
 // DodoProvider manages machine license activations through Dodo Payments' public license endpoints.
 type DodoProvider struct {
 	baseURL string
 	client  HTTPDoer
 }
 
-// NewDodoProvider creates a Dodo Payments licensing provider.
-func NewDodoProvider(opts ...DodoOption) *DodoProvider {
-	p := &DodoProvider{
+// NewDodoProvider returns a DodoProvider configured with the default Dodo Payments API base URL.
+func NewDodoProvider() *DodoProvider {
+	return &DodoProvider{
 		baseURL: defaultDodoAPIBase,
 		client:  getDefaultHTTPClient(),
 	}
-	for _, opt := range opts {
-		opt(p)
+}
+
+// Configure overrides the API base URL and HTTP client when non-empty.
+func (p *DodoProvider) Configure(baseURL string, client HTTPDoer) {
+	trimmedURL := strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	if trimmedURL != "" {
+		p.baseURL = trimmedURL
 	}
-	return p
+	if client != nil {
+		p.client = client
+	}
 }
 
 // GetInfo returns the display metadata and payment methods for Dodo Payments.

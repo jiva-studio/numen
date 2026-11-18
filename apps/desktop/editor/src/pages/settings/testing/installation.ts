@@ -14,7 +14,9 @@ export type InstallationOverrides = Flat<
     Partial<Installation['plugin']['files']> &
     Partial<Installation['plugin']['health']> &
     Partial<Omit<Installation['connections'], 'edits'>> &
-    Partial<Installation['connections']['edits']>
+    Partial<Installation['connections']['edits']> & {
+      readonly licenses?: Installation['licenses']
+    }
 >
 
 const SETTINGS_KEYS = [
@@ -95,6 +97,13 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     listRowOptions: fn(() => Promise.resolve(asValue([]))),
     countNotes: fn(() => Promise.resolve(0)),
     ...pickOf(overrides, CONNECTIONS_KEYS),
+  },
+  licenses: overrides.licenses ?? {
+    list: ref([]),
+    load: fn(() => Promise.resolve()),
+    watch: fn(() => Promise.resolve()),
+    activate: fn(() => Promise.resolve(asFailure('Not activated.'))),
+    deactivate: fn(() => Promise.resolve(asFailure('Not deactivated.'))),
   },
 })
 

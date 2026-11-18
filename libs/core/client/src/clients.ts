@@ -11,6 +11,7 @@ import {
   ErrorCode as ProtoErrorCode,
   FileService,
   FlushResult,
+  LicenseService,
   LinkDirection,
   LogService,
   Marker,
@@ -62,6 +63,8 @@ export const createProviderConnectionClient = (transport: Transport) =>
 export const createConnectionCallServiceClient = (transport: Transport) =>
   createClient(ConnectionCallService, transport)
 export const createLogServiceClient = (transport: Transport) => createClient(LogService, transport)
+export const createLicenseServiceClient = (transport: Transport) =>
+  createClient(LicenseService, transport)
 
 export const NAME_SOURCE = NameSource
 export type NameSourceCode = NameSource

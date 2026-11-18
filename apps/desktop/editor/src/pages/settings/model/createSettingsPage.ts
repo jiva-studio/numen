@@ -11,6 +11,7 @@ import {
   type SettingsStore,
 } from '@/entities/settings'
 import type { ConnectionApi, ConnectionStore } from '@/entities/connection'
+import type { LicenseStore } from '@/entities/license'
 import { countNotes, type FileApi } from '@/entities/file'
 import {
   PLUGIN_FAILURE_WORDS,
@@ -53,6 +54,7 @@ export interface SettingsPageDeps {
   api: SettingsPageApi
   rest: SettingsStore
   connections: ConnectionStore
+  licenses: LicenseStore
   appearance: ReturnType<typeof createWindowAppearance>
   log: MessageLog
   windowTabs: WindowTabs
@@ -81,6 +83,7 @@ interface SettingsTabConfigDeps {
   settings: InstallationSettingsDeps
   plugin: InstallationPluginDeps
   connections: ConnectionStore
+  licenses: LicenseStore
   api: Pick<SettingsPageApi, 'listFiles' | 'listRowOptions'>
 }
 
@@ -188,11 +191,22 @@ function createInstallationConnections(
   }
 }
 
+function createInstallationLicenses(licenses: LicenseStore) {
+  return {
+    list: licenses.licenses,
+    load: () => licenses.load(),
+    watch: (signal: AbortSignal) => licenses.watch(signal),
+    activate: (licenseId: string, key: string) => licenses.activate(licenseId, key),
+    deactivate: (licenseId: string) => licenses.deactivate(licenseId),
+  }
+}
+
 function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
   return {
     settings: createInstallationSettings(deps.settings),
     plugin: createInstallationPlugin(deps.plugin),
     connections: createInstallationConnections(deps.connections, deps.api),
+    licenses: createInstallationLicenses(deps.licenses),
   }
 }
 
@@ -200,6 +214,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
 export function createSettingsPage({
   rest,
   connections,
+  licenses,
   appearance,
   log,
   windowTabs,
@@ -234,6 +249,7 @@ export function createSettingsPage({
         health: plugins.health,
       },
       connections,
+      licenses,
       api,
     }),
     reportError,
