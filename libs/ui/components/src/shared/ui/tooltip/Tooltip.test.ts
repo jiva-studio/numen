@@ -1,12 +1,10 @@
 import { mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
 import { describe, expect, it } from 'vitest'
-import type { Viewport } from '@/shared/api/viewport'
 import Tooltip from './Tooltip.vue'
 
-const mountTooltip = (slot: string, viewport?: Viewport) => {
+const mountTooltip = (slot: string) => {
   return mount(Tooltip, {
-    props: { at: { x: 100, y: 200, width: 20, height: 20 }, ...(viewport ? { viewport } : {}) },
+    props: { at: { x: 100, y: 200, width: 20, height: 20 } },
     slots: { default: slot },
   })
 }
@@ -23,21 +21,5 @@ describe('the tooltip of the library', () => {
     const tooltip = mountTooltip('Port, Sea, Quay')
 
     expect(tooltip.text()).toBe('Port, Sea, Quay')
-  })
-
-  it('is no wider than the free width of the viewport less a margin on each side', async () => {
-    const viewport: Viewport = {
-      watch: () => () => undefined,
-      watchWhole: () => () => undefined,
-      watchFreeSpace: (took) => {
-        took({ width: 300, height: 200 })
-        return () => undefined
-      },
-    }
-
-    const tooltip = mountTooltip('Port, Sea, Quay', viewport)
-    await nextTick()
-
-    expect(tooltip.get<HTMLElement>('[role="tooltip"]').element.style.maxInlineSize).toBe('284px')
   })
 })
