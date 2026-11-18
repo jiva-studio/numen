@@ -20,6 +20,7 @@ defineProps<{
   here: number
   uid: string
   name: string
+  isMultiple?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -54,6 +55,7 @@ function reveal(item: string): Promise<void> {
     class="palette__list min-h-0 flex-1"
     data-palette="list"
     role="listbox"
+    :aria-multiselectable="isMultiple || undefined"
     :aria-label="name"
   >
     <PaletteGroup

@@ -107,42 +107,14 @@ describe('a node ID returned', () => {
   })
 })
 
-describe('the notes one picture drew', () => {
-  it('are kept, and every other note is release', () => {
+describe('a note that left the picture', () => {
+  it('keeps its node ID and its path, so a node still on the screen shows the same note', () => {
     const map = createNodeIdMap()
-    const keptId = map.getNodeId('Root.md')
-    const removed = map.getNodeId('Heat.md')
+    const left = map.getNodeId('Heat.md')
 
-    map.retainNodeIds([keptId])
+    for (let step = 0; step < 5; step++) map.getNodeId(`Note${step}.md`)
 
-    expect(map.getNodePath(keptId)).toBe('Root.md')
-    expect(map.getNodePath(removed)).toBe('')
-  })
-
-  it('leave a note that arrives back holding an ID of its own', () => {
-    const map = createNodeIdMap()
-    const root = map.getNodeId('Root.md')
-    const before = map.getNodeId('Heat.md')
-    map.retainNodeIds([root])
-
-    const after = map.getNodeId('Heat.md')
-
-    expect(after).not.toBe(before)
-    expect(after).not.toBe(root)
-    expect(map.getNodePath(root)).toBe('Root.md')
-  })
-
-  it('are all a person travelling from note to note leaves retained', () => {
-    const map = createNodeIdMap()
-    const minted: string[] = []
-
-    for (let step = 0; step < 50; step++) {
-      const focus = map.getNodeId(`Note${step}.md`)
-      const siblingNodeId = map.getNodeId(`Beside${step}.md`)
-      map.retainNodeIds([focus, siblingNodeId])
-      minted.push(focus, siblingNodeId)
-    }
-
-    expect(minted.filter((id) => map.getNodePath(id))).toHaveLength(2)
+    expect(map.getNodePath(left)).toBe('Heat.md')
+    expect(map.getNodeId('Heat.md')).toBe(left)
   })
 })

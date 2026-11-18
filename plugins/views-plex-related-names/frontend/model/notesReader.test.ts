@@ -4,7 +4,6 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { shallowRef } from 'vue'
 import type { Disposable, NoteGraph, VaultChangeEvent } from '@numen/plugin-sdk'
 import { createNotesReader, type NoteLease } from './notesReader'
 
@@ -45,11 +44,10 @@ interface Pending {
   reject(error: unknown): void
 }
 
-const createRig = (showNames = true) => {
+const createRig = () => {
   const pending: Pending[] = []
   const handlers = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
   const reported: unknown[] = []
-  const settings = { showNames: shallowRef(showNames) }
   const reader = createNotesReader({
     notes: {
       listRelatedNotes: (paths: readonly string[], depth?: 1 | 2) =>
@@ -72,7 +70,6 @@ const createRig = (showNames = true) => {
         }
       },
     },
-    settings,
     reportFailure: (error) => reported.push(error),
   })
   const getReads = (path?: string) =>
@@ -99,7 +96,7 @@ const createRig = (showNames = true) => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS)
     await flushPromises()
   }
-  return { reader, settings, getReads, answer, emit, settle, reported, handlers }
+  return { reader, getReads, answer, emit, settle, reported, handlers }
 }
 
 const getRelatedPaths = (lease: NoteLease) => lease.noteGraph.value?.related.map((one) => one.path)
@@ -379,55 +376,6 @@ describe('the reader while the vault changes', () => {
 
     expect(handlers.size).toBe(0)
     expect(getReads()).toHaveLength(2)
-  })
-})
-
-describe('the reader while the names are hidden', () => {
-  it('reads nothing for a view that asks', () => {
-    const { reader, getReads } = createRig(false)
-
-    const lease = reader.acquire(PEAR)
-
-    expect(getReads()).toHaveLength(0)
-    expect(lease.noteGraph.value).toBeNull()
-  })
-
-  it('reads each note in use once when the names are shown', async () => {
-    const { reader, settings, getReads } = createRig(false)
-    reader.acquire(PEAR)
-    reader.acquire(PEAR)
-    reader.acquire(QUINCE)
-
-    settings.showNames.value = true
-    await flushPromises()
-
-    expect(getReads(PEAR)).toHaveLength(1)
-    expect(getReads(QUINCE)).toHaveLength(1)
-  })
-
-  it('takes the answer away when the names are hidden', async () => {
-    const { reader, settings, answer } = createRig()
-    const lease = reader.acquire(PEAR)
-    await answer(PEAR, ['notes/Rootstock list.md'])
-
-    settings.showNames.value = false
-    await flushPromises()
-
-    expect(lease.noteGraph.value).toBeNull()
-  })
-
-  it('reads nothing on a change of the vault', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-    const { reader, settings, answer, emit, settle, getReads } = createRig()
-    reader.acquire(PEAR)
-    await answer(PEAR, [])
-    settings.showNames.value = false
-    await flushPromises()
-
-    await emit({ paths: [PEAR] })
-    await settle()
-
-    expect(getReads()).toHaveLength(1)
   })
 })
 

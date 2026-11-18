@@ -45,9 +45,9 @@ export const theme = EditorView.theme({
 
     color: 'var(--numen-ink)',
     backgroundColor: 'transparent',
-    fontFamily: 'var(--numen-font-sans)',
-    fontSize: 'var(--numen-reading-size)',
-    lineHeight: '1.6',
+    fontFamily: 'var(--numen-editor-font-family, var(--numen-font-sans))',
+    fontSize: 'var(--numen-editor-font-size)',
+    lineHeight: 'var(--numen-editor-line-height)',
     height: '100%',
   },
   '&.cm-focused': { outline: 'none' },
@@ -82,7 +82,7 @@ export const theme = EditorView.theme({
   '.cm-lineNumbers .cm-gutterElement': {
     padding: '0 0.5rem 0 0.75rem',
     fontSize: '0.8em',
-    lineHeight: '2',
+    lineHeight: 'calc(var(--numen-editor-line-height) / 0.8)',
     userSelect: 'none',
   },
   '.cm-lineNumbers .cm-gutterElement.cm-gutter-gap': {
@@ -123,11 +123,13 @@ export const theme = EditorView.theme({
   '.cm-widgetBuffer': { verticalAlign: 'baseline', height: '1em', marginTop: '-1em' },
   /* Selection, the one colour selected text is painted with anywhere. The base
      theme is told neither light nor dark, so it paints a light ground under
-     text this one keeps on either. */
-  '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+     text this one keeps on either, with a rule of the same weight as these; the
+     editor's own class in front makes these weigh more, whichever style sheet
+     comes last. */
+  '.cm-editor&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
     backgroundColor: 'var(--numen-selection)',
   },
-  '&:not(.cm-focused) > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
+  '.cm-editor&:not(.cm-focused) > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
     backgroundColor: 'var(--numen-selection-away)',
   },
   '.cm-selectionBackground, .cm-content ::selection': {
@@ -263,7 +265,7 @@ export const theme = EditorView.theme({
   '.cm-rule': {
     display: 'flex',
     alignItems: 'center',
-    minHeight: '1.6em',
+    minHeight: 'calc(var(--numen-editor-line-height) * 1em)',
     padding: '0',
   },
   '.cm-rule hr': {

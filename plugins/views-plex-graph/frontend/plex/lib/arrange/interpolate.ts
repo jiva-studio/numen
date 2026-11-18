@@ -8,6 +8,7 @@
 import { edgeKey, type PlacedEdge } from '../edge'
 import type { PlexFrame } from '../frame'
 import type { PlacedNode, Position } from '../node'
+import type { Size } from './options'
 import { clamp01, lerp, lerpExtent } from './math'
 import { resolveOptions, type PlexOptionsInput } from './options'
 import { createRouting, type Routing } from './edges/routing'
@@ -19,10 +20,29 @@ type Title = Pick<PlacedEdge, 'titles'>
 
 const getTitles = (edge: PlacedEdge): Title => ({ titles: edge.titles })
 
-function getOrigin(to: PlexFrame, was: ReadonlyMap<string, PlacedNode>): Position {
+interface Origin extends Position {
+  readonly width?: number | undefined
+  readonly height?: number | undefined
+}
+
+function getOrigin(to: PlexFrame, was: ReadonlyMap<string, PlacedNode>): Origin {
   const newFocus = to.nodes.find((node) => node.relation === 'focus')
   const cameFrom = newFocus ? was.get(newFocus.id) : undefined
-  return { x: cameFrom?.x ?? 0, y: cameFrom?.y ?? 0 }
+  return {
+    x: cameFrom?.x ?? 0,
+    y: cameFrom?.y ?? 0,
+    width: cameFrom?.width,
+    height: cameFrom?.height,
+  }
+}
+
+function getSize(node: PlacedNode): Size {
+  return { width: node.width, height: node.height }
+}
+
+function getCentre(to: PlexFrame): Position {
+  const centre = to.nodes.find((node) => node.relation === 'focus')
+  return { x: centre?.x ?? 0, y: centre?.y ?? 0 }
 }
 
 function tweenNode(start: PlacedNode, target: PlacedNode, t: number): PlacedNode {
@@ -33,30 +53,32 @@ function tweenNode(start: PlacedNode, target: PlacedNode, t: number): PlacedNode
     width: lerp(start.width, target.width, t),
     height: lerp(start.height, target.height, t),
     opacity: lerp(start.opacity, target.opacity, t),
+    settled: getSize(target),
   }
 }
 
-interface NodeTweenOptions {
-  readonly t: number
-  readonly opacity: number
-}
-
-function openNode(target: PlacedNode, origin: Position, options: NodeTweenOptions): PlacedNode {
+function openNode(target: PlacedNode, origin: Origin, t: number): PlacedNode {
   return {
     ...target,
-    x: lerp(origin.x, target.x, options.t),
-    y: lerp(origin.y, target.y, options.t),
-    opacity: options.opacity,
+    x: lerp(origin.x, target.x, t),
+    y: lerp(origin.y, target.y, t),
+    width: lerp(origin.width ?? target.width, target.width, t),
+    height: lerp(origin.height ?? target.height, target.height, t),
+    settled: getSize(target),
   }
 }
 
-interface NodeTiming {
-  readonly t: number
-  readonly entry: number
-  readonly exit: number
+function closeNode(start: PlacedNode, origin: Origin, t: number): PlacedNode {
+  return {
+    ...start,
+    x: lerp(start.x, origin.x, t),
+    y: lerp(start.y, origin.y, t),
+    opacity: lerp(start.opacity, 0, t),
+    settled: start.settled ?? getSize(start),
+  }
 }
 
-function tweenNodes(from: PlexFrame, to: PlexFrame, timing: NodeTiming): PlacedNode[] {
+function tweenNodes(from: PlexFrame, to: PlexFrame, t: number): PlacedNode[] {
   const was = new Map(from.nodes.map((node) => [node.id, node]))
   const will = new Set(to.nodes.map((node) => node.id))
   const origin = getOrigin(to, was)
@@ -65,18 +87,11 @@ function tweenNodes(from: PlexFrame, to: PlexFrame, timing: NodeTiming): PlacedN
 
   for (const target of to.nodes) {
     const start = was.get(target.id)
-    nodes.push(
-      start
-        ? tweenNode(start, target, timing.t)
-        : openNode(target, origin, { t: timing.t, opacity: timing.entry }),
-    )
+    nodes.push(start ? tweenNode(start, target, t) : openNode(target, origin, t))
   }
 
-  // Departures stay put and fade; moving them too would be a third thing
-  // travelling in a picture meant to be followed by eye.
   for (const removed of from.nodes) {
-    if (will.has(removed.id)) continue
-    nodes.push({ ...removed, opacity: timing.exit })
+    if (!will.has(removed.id)) nodes.push(closeNode(removed, getCentre(to), t))
   }
 
   return nodes
@@ -140,7 +155,7 @@ export function interpolatePlex(
   const incoming = clamp01((t - arriveAfter) / (1 - arriveAfter))
   const leaving = 1 - clamp01(t / leaveBefore)
 
-  const nodes = tweenNodes(from, to, { t, entry: incoming, exit: leaving })
+  const nodes = tweenNodes(from, to, t)
   const byId = new Map(nodes.map((node) => [node.id, node]))
 
   return {

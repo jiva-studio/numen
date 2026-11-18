@@ -7,4 +7,5 @@ Under and over each note of the plex, small grey names show the notes it is rela
 ## What You Can Do
 
 - **Move the focus**: Click a name to show that note in the plex.
-- **Choose how many names show**: Turn the names off or set how many a note shows in the plugin settings.
+- **Wait for the names**: The plex lays its notes out once the names of all its notes have been read, so they do not jump when the names arrive.
+- **Choose how many names show**: Set how many names a note shows in the plugin settings. Disable the plugin to hide the names.

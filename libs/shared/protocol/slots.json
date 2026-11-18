@@ -39,6 +39,11 @@
       "about": "the menu of a row of the file tree, over its file or folder"
     },
     {
+      "name": "fileTree.rowEnd",
+      "owner": "the plugin of the file tree",
+      "about": "the views at the right end of a row of the file tree, each given the path of the row"
+    },
+    {
       "name": "tabStrip.context",
       "owner": "the tab strip of the window",
       "about": "the menu of a tab, over the file of the tab"
@@ -57,6 +62,11 @@
       "name": "plexGraph.nodeBelow",
       "owner": "the plugin of the plex graph",
       "about": "the views under a node of the plex graph, each given the path of its note"
+    },
+    {
+      "name": "plexGraph.node",
+      "owner": "the plugin of the plex graph",
+      "about": "the views over the whole of a node of the plex graph, above the nodes, each given the path of its note and the size, position and scale of the node; a view that does not let clicks and drags through takes them from the node"
     },
     {
       "name": "palette.searchResult",

@@ -60,6 +60,7 @@ type vaultTags struct {
 	mu       sync.Mutex
 	isLoaded bool
 	notes    map[int64]tagfile.Note
+	follow   follow
 }
 
 func New(open func(id domain.VaultID) Vault) *Caches {
@@ -71,7 +72,7 @@ func (c *Caches) getVault(id domain.VaultID) *vaultTags {
 	defer c.mu.Unlock()
 	one, ok := c.vaults[id]
 	if !ok {
-		one = &vaultTags{mu: sync.Mutex{}, isLoaded: false, notes: map[int64]tagfile.Note{}}
+		one = &vaultTags{mu: sync.Mutex{}, isLoaded: false, notes: map[int64]tagfile.Note{}, follow: newFollow()}
 		c.vaults[id] = one
 	}
 	return one
@@ -86,11 +87,7 @@ func (c *Caches) GetTree(ctx context.Context, id domain.VaultID, under string) (
 	if err := c.update(ctx, id, one); err != nil {
 		return nil, err
 	}
-	byPath := make(map[string][]string, len(one.notes))
-	for _, note := range one.notes {
-		byPath[note.Path] = note.Tags
-	}
-	return tags.GetTree(byPath, under), nil
+	return tags.GetTree(one.getTagsByPath(), under), nil
 }
 
 // UpdateVault brings the tags of the vault up to date with its file change feed.
@@ -115,7 +112,16 @@ func (c *Caches) update(ctx context.Context, id domain.VaultID, one *vaultTags) 
 		one.isLoaded = false
 		return fmt.Errorf("update the tags: %w", err)
 	}
+	one.follow.publish(one.getTagsByPath())
 	return nil
+}
+
+func (v *vaultTags) getTagsByPath() map[string][]string {
+	byPath := make(map[string][]string, len(v.notes))
+	for _, note := range v.notes {
+		byPath[note.Path] = slices.Clone(note.Tags)
+	}
+	return byPath
 }
 
 func (v *vaultTags) load(ctx context.Context, vault Vault, from changes.Source) error {
@@ -227,6 +233,18 @@ func write(ctx context.Context, store Store, notes map[int64]tagfile.Note) error
 // parent; an empty parent lists every note with a tag. When the tags cannot be brought up to date, it
 // answers from the tags it holds and isStale is true.
 func (c *Caches) ListTaggedPaths(ctx context.Context, id domain.VaultID, parent string) (paths []string, isStale bool, err error) {
+	return c.listPaths(ctx, id, func(tag string) bool { return tags.IsUnder(tag, parent) })
+}
+
+// ListExactlyTaggedPaths returns, in path order, the notes of the vault with the tag itself, compared
+// as tags.GetKey does; a note with only a tag nested under it is left out. Staleness is as for
+// ListTaggedPaths.
+func (c *Caches) ListExactlyTaggedPaths(ctx context.Context, id domain.VaultID, tag string) (paths []string, isStale bool, err error) {
+	key := tags.GetKey(tag)
+	return c.listPaths(ctx, id, func(have string) bool { return tags.GetKey(have) == key })
+}
+
+func (c *Caches) listPaths(ctx context.Context, id domain.VaultID, isMatch func(tag string) bool) (paths []string, isStale bool, err error) {
 	one := c.getVault(id)
 	one.mu.Lock()
 	defer one.mu.Unlock()
@@ -237,7 +255,7 @@ func (c *Caches) ListTaggedPaths(ctx context.Context, id domain.VaultID, parent 
 		isStale = true
 	}
 	for _, note := range one.notes {
-		if slices.ContainsFunc(note.Tags, func(tag string) bool { return tags.IsUnder(tag, parent) }) {
+		if slices.ContainsFunc(note.Tags, isMatch) {
 			paths = append(paths, note.Path)
 		}
 	}

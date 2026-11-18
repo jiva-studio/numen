@@ -6,8 +6,10 @@
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import Plex from './Plex.vue'
 import { build } from '../fixtures/build'
+import { fixedViewport } from '../fixtures/viewport'
 import { graphs } from '../fixtures/graphs'
 
 const GRAPH = build('A node', { parent: 1, child: 2, jump: 1 })
@@ -15,11 +17,14 @@ const A_CHILD = GRAPH.nodes.find((n) => n.relation === 'child')!.title
 
 type PlexProps = InstanceType<typeof Plex>['$props']
 
-const mountPlex = (props: Partial<PlexProps> = {}) =>
-  mount(Plex, {
-    props: { graph: GRAPH, duration: 0, ...props },
+const mountPlex = async (props: Partial<PlexProps> = {}) => {
+  const plex = mount(Plex, {
+    props: { graph: GRAPH, duration: 0, viewport: fixedViewport, ...props },
     attachTo: document.body,
   })
+  await nextTick()
+  return plex
+}
 
 const rightClick = (element: Element, pos = { x: 320, y: 240 }) => {
   const event = new MouseEvent('contextmenu', {
@@ -35,7 +40,7 @@ const rightClick = (element: Element, pos = { x: 320, y: 240 }) => {
 
 describe('a right-click on a node', () => {
   it('asks for a menu on the focus, which cannot be chosen at all', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     const focus = plex.get('[aria-label^="A node"]')
 
     rightClick(focus.element)
@@ -49,7 +54,7 @@ describe('a right-click on a node', () => {
   })
 
   it('asks for one on any other node too', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     rightClick(plex.get(`[aria-label^="${A_CHILD}"]`).element)
     await plex.vm.$nextTick()
 
@@ -57,17 +62,17 @@ describe('a right-click on a node', () => {
     expect(request?.[0]).not.toBe('focus')
   })
 
-  it('refuses the menu the webview would draw for itself', () => {
-    const plex = mountPlex()
+  it('refuses the menu the webview would draw for itself', async () => {
+    const plex = await mountPlex()
     const event = rightClick(plex.get('[aria-label^="A node"]').element)
     expect(event.defaultPrevented).toBe(true)
   })
 
-  it('leaves the webview its own menu everywhere else', () => {
+  it('leaves the webview its own menu everywhere else', async () => {
     // The suppression applies to the node only. Everywhere else, where the user
     // may copy or inspect what is under the pointer, the webview's own menu
     // opens.
-    const plex = mountPlex()
+    const plex = await mountPlex()
     const event = rightClick(plex.get('svg').element)
     expect(event.defaultPrevented).toBe(false)
     expect(plex.emitted('menu')).toBeUndefined()
@@ -95,7 +100,7 @@ describe('a right-click on a node’s handle', () => {
 
   /** Offer the handle, then press it with the button given. */
   const press = async (button: number) => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     stubMatrix(plex.find('svg').element as SVGSVGElement)
     const node = plex.get('[aria-label^="A node"]')
     await node.trigger('pointerenter')
@@ -138,7 +143,7 @@ describe('asking for a menu from the keyboard', () => {
   const press = (key: string, shiftKey = false) => ({ key, shiftKey })
 
   it('answers Shift+F10 and the menu key, on the focus as on any other', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     await plex.get('[aria-label^="A node"]').trigger('keydown', press('F10', true))
     await plex.get(`[aria-label^="${A_CHILD}"]`).trigger('keydown', press('ContextMenu'))
 
@@ -150,7 +155,7 @@ describe('asking for a menu from the keyboard', () => {
   // A keypress has nowhere of its own to point, so it points at the middle of
   // the box it was pressed on.
   it('points at the middle of the box it was requested from', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     const node = plex.get('[aria-label^="A node"]')
     node.element.getBoundingClientRect = () => new DOMRect(120, 40, 200, 80)
 
@@ -161,7 +166,7 @@ describe('asking for a menu from the keyboard', () => {
   })
 
   it('puts the keyboard back on the node it was requested from', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     const focus = plex.get('[aria-label^="A node"]')
     await focus.trigger('keydown', press('ContextMenu'))
 
@@ -171,7 +176,7 @@ describe('asking for a menu from the keyboard', () => {
   })
 
   it('says the keyboard opened it, which is what a menu starts on an item for', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     await plex.get('[aria-label^="A node"]').trigger('keydown', press('F10', true))
 
     const [request] = plex.emitted('menu') as [string, unknown, string][]
@@ -179,7 +184,7 @@ describe('asking for a menu from the keyboard', () => {
   })
 
   it('leaves F10 on its own, and Enter and the space bar to choosing', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     const child = plex.get(`[aria-label^="${A_CHILD}"]`)
     await child.trigger('keydown', press('F10'))
     await child.trigger('keydown', press('Enter'))
@@ -190,7 +195,7 @@ describe('asking for a menu from the keyboard', () => {
   })
 
   it('keeps Shift to itself only with F10, and not with a press', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     const child = plex.get(`[aria-label^="${A_CHILD}"]`)
     await child.trigger('keydown', press('Enter', true))
 
@@ -198,8 +203,8 @@ describe('asking for a menu from the keyboard', () => {
     expect(plex.emitted('show')).toHaveLength(1)
   })
 
-  it('is reachable, because every node is a tab stop', () => {
-    const plex = mountPlex()
+  it('is reachable, because every node is a tab stop', async () => {
+    const plex = await mountPlex()
     expect(plex.get('[aria-label^="A node"]').attributes('tabindex')).toBe('0')
   })
 })
@@ -208,13 +213,13 @@ describe('when the picture moves under a menu', () => {
   it('says a menu requested for on a node has nothing left to stand on', async () => {
     // The graph is re-fetched on every change and the nodes travel to
     // new relations; a menu is anchored where one of them was.
-    const plex = mountPlex()
+    const plex = await mountPlex()
     await plex.setProps({ graph: graphs.leaf })
     expect(plex.emitted('dismiss')).toHaveLength(1)
   })
 
   it('says nothing while the graph remains still', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     await plex.setProps({ duration: 200 })
     expect(plex.emitted('dismiss')).toBeUndefined()
   })

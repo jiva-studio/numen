@@ -1,7 +1,7 @@
 {
   "id": "md.numen.notes",
   "name": "Notes",
-  "version": "2026.11.14",
+  "version": "2026.11.18",
   "protocol": 1,
   "description": "Markdown note editor with live formatting and wikilinks",
   "capabilities": [],
@@ -35,21 +35,5 @@
     ]
   },
   "permissions": ["vault:read", "vault:write"],
-  "frontend": {},
-  "settings": [
-    {
-      "key": "softWrap",
-      "type": "boolean",
-      "title": "Soft Wrap",
-      "description": "Wrap long lines to fit the editor viewport",
-      "default": true
-    },
-    {
-      "key": "lineNumbers",
-      "type": "boolean",
-      "title": "Line Numbers",
-      "description": "Show line numbers in the editor margin",
-      "default": false
-    }
-  ]
+  "frontend": {}
 }

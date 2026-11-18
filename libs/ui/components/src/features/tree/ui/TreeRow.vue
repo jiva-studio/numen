@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef, type VNode } from 'vue'
 import { useRenameFocus } from '../model/useRenameFocus'
+import type { RowId } from '../lib/row'
 import type { TreeRowProps } from './TreeRow.types'
 import { TreeField } from './tree-field'
 
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 
 defineSlots<{
   default(): VNode[]
+  end(props: { id: RowId }): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -60,6 +62,12 @@ useRenameFocus(() => props.isRenaming, field)
       @blur="emit('blur')"
     />
     <span v-else class="tree__name min-w-0 truncate" :title="row.name">{{ row.name }}</span>
+
+    <span class="tree__end flex shrink-0 items-center">
+      <slot name="end" :id="row.id">
+        <component :is="end" v-if="end" :id="row.id" />
+      </slot>
+    </span>
   </div>
 </template>
 
@@ -71,19 +79,26 @@ useRenameFocus(() => props.isRenaming, field)
   cursor: default;
   user-select: none;
   touch-action: none;
+  --tree-row-bg: var(--numen-surface);
+  --tree-row-ring: var(--tree-row-bg);
+  background: var(--tree-row-bg);
 }
 
 .tree__row:hover {
-  background: var(--numen-bubble-bg);
-}
-
-.tree__row[data-selected] {
-  background: var(--numen-accent);
-  color: var(--numen-accent-ink);
+  --tree-row-bg: var(--numen-bubble-bg);
+  --tree-row-ring: var(--numen-bubble-bg);
 }
 
 .tree__row[data-renaming] {
-  background: var(--numen-bubble-bg);
+  --tree-row-bg: var(--numen-bubble-bg);
+  --tree-row-ring: var(--numen-bubble-bg);
+}
+
+.tree__row[data-selected],
+.tree__row[data-selected]:hover {
+  --tree-row-bg: var(--numen-accent);
+  --tree-row-ring: color-mix(in srgb, var(--numen-accent-ink) 55%, var(--numen-accent));
+  color: var(--numen-accent-ink);
 }
 
 .tree__row[data-dragged] {
@@ -112,5 +127,10 @@ useRenameFocus(() => props.isRenaming, field)
 
 .tree__icon {
   margin-inline-end: var(--gap);
+}
+
+.tree__end {
+  margin-inline-start: auto;
+  padding-inline-start: var(--gap);
 }
 </style>

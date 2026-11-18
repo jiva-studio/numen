@@ -12,6 +12,7 @@ export interface PlacedNode extends PlexNode {
   readonly height: number
   readonly order: number
   readonly opacity: number
+  readonly settled?: Size
 }
 
 /**
@@ -57,6 +58,10 @@ export const isStop = (node: PlacedNode): boolean => node.opacity >= 1
  * - `ghost` — not a node yet: the shape of what releasing here would create
  */
 export type GestureRole = 'open' | 'closed' | 'source' | 'target' | 'ghost'
+
+/** How many times taller than a note at rest a node of this height is drawn: one or more, and one where the height at rest is not known. */
+export const getScale = (height: number, restHeight: number): number =>
+  restHeight > 0 ? Math.max(1, height / restHeight) : 1
 
 /** A title may be empty; an accessible name may not. */
 export const createAriaLabel = (node: PlexNode): string =>
