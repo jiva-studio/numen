@@ -19,7 +19,12 @@ function createNamesView(source: NamesSource, side: NamesSide) {
     props: { path: { type: String, required: true } },
     setup: (props) => {
       const { names, choose } = useNames(source, side, () => props.path)
-      return () => h(RelatedNames, { names: names.value, onChoose: choose })
+      return () =>
+        h(RelatedNames, {
+          names: names.value,
+          showArrows: source.settings.showRelationArrows.value,
+          onChoose: choose,
+        })
     },
   })
 }
@@ -35,6 +40,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   const source: NamesSource = {
     notes,
     commands,
+    events: host.events,
     settings: readSettings(plugin),
     reportFailure: (error) =>
       notices.show(error instanceof Error ? error.message : String(error), 'error'),

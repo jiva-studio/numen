@@ -1,6 +1,6 @@
 /** The names one side of a node draws: the notes related to its note, read while the names are shown. */
-import { computed, shallowRef, watch, type ComputedRef } from 'vue'
-import type { Caught, CommandsHost, NoteGraph, VaultNotes } from '@numen/plugin-sdk'
+import { computed, onScopeDispose, shallowRef, watch, type ComputedRef } from 'vue'
+import type { Caught, CommandsHost, NoteGraph, PluginEvents, VaultNotes } from '@numen/plugin-sdk'
 import { listNames } from '../lib/names'
 import type { NamesSide, RelatedName } from '../types'
 import type { NamesSettings } from './settings'
@@ -9,10 +9,14 @@ import type { NamesSettings } from './settings'
 const REVEAL = 'app:file.reveal'
 const REVEAL_IN_PLEX = { kind: 'plex' }
 
+/** How long a burst of changes of the vault waits before the notes are read once. */
+const REFRESH_DELAY_MS = 500
+
 /** What the names are read with and chosen through. */
 export interface NamesSource {
   readonly notes: Pick<VaultNotes, 'listRelatedNotes'>
   readonly commands: Pick<CommandsHost, 'run'>
+  readonly events: Pick<PluginEvents, 'onVaultChange'>
   readonly settings: NamesSettings
   readonly reportFailure: (error: Caught) => void
 }
@@ -47,6 +51,24 @@ export function useNames(
   }
 
   watch(() => (source.settings.showNames.value ? path() : ''), read, { immediate: true })
+
+  let pending: ReturnType<typeof setTimeout> | undefined
+  const clearPending = () => {
+    if (pending !== undefined) clearTimeout(pending)
+    pending = undefined
+  }
+  const subscription = source.events.onVaultChange(() => {
+    if (!source.settings.showNames.value) return
+    clearPending()
+    pending = setTimeout(() => {
+      pending = undefined
+      if (source.settings.showNames.value) read(path()).catch(source.reportFailure)
+    }, REFRESH_DELAY_MS)
+  })
+  onScopeDispose(() => {
+    clearPending()
+    subscription.dispose()
+  })
 
   const names = computed(() =>
     noteGraph.value ? listNames(noteGraph.value, side, source.settings.namesPerNote.value) : [],

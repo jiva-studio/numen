@@ -3,18 +3,23 @@ import { shallowRef, type Ref } from 'vue'
 import type { JsonValue, PluginContext, Unvalidated } from '@numen/plugin-sdk'
 
 const SHOW_NAMES = true
+const SHOW_RELATION_ARROWS = true
 const NAMES_PER_NOTE = 6
 const NAMES_PER_NOTE_MIN = 1
 const NAMES_PER_NOTE_MAX = 12
 
-/** The two settings, kept in sync as the person changes them. */
+/** The settings, kept in sync as the person changes them. */
 export interface NamesSettings {
   readonly showNames: Readonly<Ref<boolean>>
   readonly namesPerNote: Readonly<Ref<number>>
+  readonly showRelationArrows: Readonly<Ref<boolean>>
 }
 
 const parseShowNames = (value: Unvalidated): boolean =>
   typeof value === 'boolean' ? value : SHOW_NAMES
+
+const parseShowRelationArrows = (value: Unvalidated): boolean =>
+  typeof value === 'boolean' ? value : SHOW_RELATION_ARROWS
 
 const parseNamesPerNote = (value: Unvalidated): number =>
   typeof value === 'number' && Number.isFinite(value)
@@ -38,5 +43,6 @@ export function readSettings(context: Pick<PluginContext, 'settings'>): NamesSet
   return {
     showNames: follow(context, 'showNames', parseShowNames),
     namesPerNote: follow(context, 'namesPerNote', parseNamesPerNote),
+    showRelationArrows: follow(context, 'showRelationArrows', parseShowRelationArrows),
   }
 }

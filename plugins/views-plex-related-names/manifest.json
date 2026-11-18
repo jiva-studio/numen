@@ -34,6 +34,13 @@
       "min": 1,
       "max": 12,
       "step": 1
+    },
+    {
+      "key": "showRelationArrows",
+      "type": "boolean",
+      "title": "Show the relation arrows",
+      "description": "An arrow before each name shows how its note is related",
+      "default": true
     }
   ],
   "frontend": {}
