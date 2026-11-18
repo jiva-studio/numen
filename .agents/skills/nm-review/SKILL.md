@@ -122,14 +122,14 @@ The four angles do not depend on each other's output, so they can run in paralle
 The report is read on a GitHub pull request and in a terminal. The verdict and the findings come first, and the report shows only what the review did.
 
 1. **Only the report.** No text before or after it.
-2. **Order:** verdict heading, summary, findings by severity, the feature conformance section, the gates that ran, the footer.
+2. **Order:** verdict heading, summary, findings by severity, the feature conformance section, the gates that ran, the list of checks found sound, the footer.
 3. **A check that did not run is left out** (the scenario list is always present). No "N/A" or "not run" rows. When the caller ran no gates, the gates line is omitted, and the footer says in one line what was not run and why.
 4. **Lists, not tables.** Wide tables break on GitHub. Status is an emoji (✅ ❌), never a code span.
 5. **"No findings" is a real outcome.** Padding a review with cosmetic remarks wastes the time of everyone who reads it.
 
-Severity: 🔴 CRITICAL (data loss, crash, security), 🟠 HIGH (a broken behaviour or consumer), 🟡 MEDIUM (an edge case that misbehaves), ⚪ LOW (a minor risk, or a hypothesis whose trigger cannot be traced in the code).
+Severity: 🔴 CRITICAL (data loss, crash, security), 🟠 HIGH (a broken behaviour or consumer), 🟡 MEDIUM (an edge case that misbehaves), ⚪ LOW (a minor risk, or a hypothesis no test or complete code trace confirmed).
 
-When tests run (a local run or `/nm-review full`), a CRITICAL, HIGH or MEDIUM behaviour defect is proven by a test from Stage 3 that fails against the change: its name, its file, and its failing output. When the caller forbade running tests (a quick CI run), a CRITICAL, HIGH or MEDIUM behaviour defect is proven by tracing the exact files, lines and state transitions (_Given → When → Then_) that produce the failure, and keeps its CRITICAL, HIGH or MEDIUM severity. A behaviour hypothesis without a failing test in a full run, or without a complete state trace in a quick run, is reported as ⚪ LOW and marked unconfirmed, with the reason. A finding that the change breaks a written rule quotes the rule and the lines that break it.
+When tests run (a local run or `/nm-review full`), a CRITICAL, HIGH or MEDIUM behaviour defect is proven by a test from Stage 3 that fails against the change: its name, its file, and its failing output. When the caller forbade running tests (a quick CI run), a CRITICAL, HIGH or MEDIUM behaviour defect is proven by tracing the exact files, lines and state transitions (_Given → When → Then_) that produce the failure after checking that no guard, lock or caller invariant on that path prevents it. If any step of the trace rests on an assumption the code does not establish, the finding is reported as ⚪ LOW and marked unconfirmed, with the reason. A finding that the change breaks a written rule quotes the rule and the lines that break it.
 
 Verdict: ❌ Rejected when a gate failed or a CRITICAL finding exists; ⚠️ Changes requested when a HIGH or MEDIUM finding exists; ✅ Approved otherwise.
 
@@ -150,7 +150,7 @@ Verdict: ❌ Rejected when a gate failed or a CRITICAL finding exists; ⚠️ Ch
 
 **Proof:** <the test name, its file, and its failing output; in a quick run, the traced lines and state transitions; for a rule finding, the lines that break the rule>
 **Rule:** <the AGENTS.md or rules statement it contradicts; omit the line when none applies>
-**Fix:** <a direction>
+**Fix:** <a direction, not a patch>
 
 ### 🟡 MEDIUM · <defect title>
 
@@ -168,7 +168,13 @@ Verdict: ❌ Rejected when a gate failed or a CRITICAL finding exists; ⚠️ Ch
 <the exact error output of a failed gate>
 ```
 
+<details><summary>Checked and found sound (<count>)</summary>
+
+- ✅ <what was checked>: <the test that passed, or the gate that covers it>
+
+</details>
+
 <sub>nm-review · <one line on what this run did not do and why></sub>
 ````
 
-The heading is `## ✅ Approved`, `## ⚠️ Changes requested` or `## ❌ Rejected`. With no findings, the summary is followed directly by the feature conformance section, the gates line and the footer. Tests written in Stage 3 and left in the tree are named in the finding that uses them.
+The heading is `## ✅ Approved`, `## ⚠️ Changes requested` or `## ❌ Rejected`. With no findings, the summary is followed directly by the gates line and the sound list. Tests written in Stage 3 and left in the tree are named in the finding that uses them.
