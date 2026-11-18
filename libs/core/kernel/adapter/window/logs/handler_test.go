@@ -48,7 +48,11 @@ func TestWriteLogAndWatchLogsStreamEntriesOverConnect(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = stream.Close() }()
+	defer func() {
+		if closeErr := stream.Close(); closeErr != nil {
+			t.Error(closeErr)
+		}
+	}()
 
 	if !stream.Receive() {
 		t.Fatalf("expected initial batch: %v", stream.Err())

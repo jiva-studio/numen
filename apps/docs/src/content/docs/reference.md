@@ -49,6 +49,12 @@ Two things are not settings and are not in here: which files count as notes, and
 | `lineNumbers` | yes or no | number the lines in editors. |
 | `softWrap` | yes or no | wrap long lines in editors instead of scrolling sideways. |
 
+### `app.logging`
+
+| | | |
+| --- | --- | --- |
+| `level` | text | which entries are written to the application log. One of `error`, `warning`, `info`, `debug`. |
+
 ### `app.search`
 
 | | | |

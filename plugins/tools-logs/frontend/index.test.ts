@@ -84,16 +84,18 @@ describe('the Logs plugin', () => {
 
     // Expand the SQL row and verify formatted SQL block
     await rows[2]?.find('.log-row__summary').trigger('click')
-    expect(rows[2]?.find('.log-row__code').text()).toContain('SELECT id, path\nFROM notes\nWHERE vault_id = ?\nORDER BY path')
+    expect(rows[2]?.find('.log-row__code').text()).toContain(
+      'SELECT id, path\nFROM notes\nWHERE vault_id = ?\nORDER BY path',
+    )
 
     // Expand the RPC row and verify formatted JSON block
     await rows[1]?.find('.log-row__summary').trigger('click')
-    expect(rows[1]?.find('.log-row__code').text()).toContain('{\n  "vaultId": "v1",\n  "title": "Welcome"\n}')
+    expect(rows[1]?.find('.log-row__code').text()).toContain(
+      '{\n  "vaultId": "v1",\n  "title": "Welcome"\n}',
+    )
 
     // Filter by Error level
-    const errorBtn = wrapper
-      .findAll('.logs-tab__level-btn')
-      .find((btn) => btn.text() === 'Error')
+    const errorBtn = wrapper.findAll('.logs-tab__level-btn').find((btn) => btn.text() === 'Error')
     await errorBtn?.trigger('click')
     expect(wrapper.findAll('.log-row')).toHaveLength(1)
     expect(wrapper.find('.log-row__message').text()).toBe('Recognition failed')

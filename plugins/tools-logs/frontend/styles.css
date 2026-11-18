@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--numen-canvas);
+  background: var(--numen-surface);
   color: var(--numen-ink);
   font-size: var(--numen-text-2);
   --toolbar-pad: 0.5rem;
@@ -63,7 +63,7 @@
   flex: 1 1 14rem;
   max-width: 22rem;
   padding: var(--pill-pad-block) var(--pill-pad-inline);
-  background: var(--numen-canvas);
+  background: var(--numen-field-bg);
   border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius);
   color: var(--numen-ink);
@@ -96,7 +96,10 @@
 
 .log-row__summary {
   display: grid;
-  grid-template-columns: var(--time-width) var(--level-width) var(--source-width) minmax(0, 1fr) auto;
+  grid-template-columns: var(--time-width) var(--level-width) var(--source-width) minmax(
+      0,
+      1fr
+    ) auto;
   column-gap: var(--row-gap);
   align-items: baseline;
   width: 100%;
@@ -226,7 +229,7 @@
 .log-row__code {
   margin: 0;
   padding: var(--row-pad-block) var(--row-pad-inline);
-  background: var(--numen-canvas);
+  background: var(--numen-code-bg);
   border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius);
   font-family: var(--numen-font-mono);

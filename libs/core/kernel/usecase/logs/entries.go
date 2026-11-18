@@ -82,7 +82,7 @@ func mergeInitial(disk, memory []logs.Entry) []logs.Entry {
 			prefix = append(prefix, cloneEntry(one))
 		}
 	}
-	merged := append(prefix, cloneEntries(memory)...)
+	merged := slices.Concat(prefix, cloneEntries(memory))
 	if len(merged) > MaxBufferedEntries {
 		merged = merged[len(merged)-MaxBufferedEntries:]
 	}

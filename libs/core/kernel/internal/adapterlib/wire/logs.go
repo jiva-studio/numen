@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 )
 
-// ReadLogEntry returns the entry a WriteLogRequest carries.
 func ReadLogEntry(in *v1.WriteLogRequest) logs.Entry {
 	return logs.Entry{
 		Level:      readLogLevel(in.GetLevel()),
@@ -18,7 +17,6 @@ func ReadLogEntry(in *v1.WriteLogRequest) logs.Entry {
 	}
 }
 
-// DescribeLogEntries returns the entries as the schema sends them.
 func DescribeLogEntries(entries []logs.Entry) []*v1.LogEntry {
 	out := make([]*v1.LogEntry, 0, len(entries))
 	for _, entry := range entries {

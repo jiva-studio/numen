@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	sqlite "modernc.org/sqlite"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 )
 
@@ -34,16 +36,8 @@ func openSQLitePool(dsn, pool string, pos settings) (*sql.DB, error) {
 	if pos.onQuery == nil || pos.clock == nil {
 		return sql.Open("sqlite", dsn)
 	}
-	probe, err := sql.Open("sqlite", "")
-	if err != nil {
-		return nil, err
-	}
-	baseDriver := probe.Driver()
-	if closeErr := probe.Close(); closeErr != nil {
-		return nil, closeErr
-	}
 	return sql.OpenDB(&tracedConnector{
-		base:    baseDriver,
+		base:    &sqlite.Driver{},
 		dsn:     dsn,
 		pool:    pool,
 		clock:   pos.clock,
@@ -102,13 +96,15 @@ func (c *tracedConn) PrepareContext(ctx context.Context, query string) (driver.S
 
 func (c *tracedConn) Close() error { return c.conn.Close() }
 
-func (c *tracedConn) Begin() (driver.Tx, error) { return c.conn.Begin() }
+func (c *tracedConn) Begin() (driver.Tx, error) {
+	return c.BeginTx(context.Background(), driver.TxOptions{})
+}
 
 func (c *tracedConn) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
 	if beginner, ok := c.conn.(driver.ConnBeginTx); ok {
 		return beginner.BeginTx(ctx, opts)
 	}
-	return c.conn.Begin()
+	return nil, driver.ErrSkip
 }
 
 func (c *tracedConn) CheckNamedValue(nv *driver.NamedValue) error {
@@ -187,39 +183,31 @@ func (s *tracedStmt) Close() error { return s.stmt.Close() }
 func (s *tracedStmt) NumInput() int { return s.stmt.NumInput() }
 
 func (s *tracedStmt) Exec(args []driver.Value) (driver.Result, error) {
-	start := s.conn.clock.Now()
-	res, err := s.stmt.Exec(args)
-	s.conn.record(start, s.query, toNamedValues(args), err)
-	return res, err
+	return s.ExecContext(context.Background(), toNamedValues(args))
 }
 
 func (s *tracedStmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driver.Result, error) {
-	start := s.conn.clock.Now()
-	if execer, ok := s.stmt.(driver.StmtExecContext); ok {
-		res, err := execer.ExecContext(ctx, args)
-		s.conn.record(start, s.query, args, err)
-		return res, err
+	execer, ok := s.stmt.(driver.StmtExecContext)
+	if !ok {
+		return nil, driver.ErrSkip
 	}
-	res, err := s.stmt.Exec(toValues(args))
+	start := s.conn.clock.Now()
+	res, err := execer.ExecContext(ctx, args)
 	s.conn.record(start, s.query, args, err)
 	return res, err
 }
 
 func (s *tracedStmt) Query(args []driver.Value) (driver.Rows, error) {
-	start := s.conn.clock.Now()
-	rows, err := s.stmt.Query(args)
-	s.conn.record(start, s.query, toNamedValues(args), err)
-	return rows, err
+	return s.QueryContext(context.Background(), toNamedValues(args))
 }
 
 func (s *tracedStmt) QueryContext(ctx context.Context, args []driver.NamedValue) (driver.Rows, error) {
-	start := s.conn.clock.Now()
-	if queryer, ok := s.stmt.(driver.StmtQueryContext); ok {
-		rows, err := queryer.QueryContext(ctx, args)
-		s.conn.record(start, s.query, args, err)
-		return rows, err
+	queryer, ok := s.stmt.(driver.StmtQueryContext)
+	if !ok {
+		return nil, driver.ErrSkip
 	}
-	rows, err := s.stmt.Query(toValues(args))
+	start := s.conn.clock.Now()
+	rows, err := queryer.QueryContext(ctx, args)
 	s.conn.record(start, s.query, args, err)
 	return rows, err
 }
@@ -228,14 +216,6 @@ func toNamedValues(args []driver.Value) []driver.NamedValue {
 	out := make([]driver.NamedValue, len(args))
 	for i, v := range args {
 		out[i] = driver.NamedValue{Ordinal: i + 1, Value: v}
-	}
-	return out
-}
-
-func toValues(args []driver.NamedValue) []driver.Value {
-	out := make([]driver.Value, len(args))
-	for i, v := range args {
-		out[i] = v.Value
 	}
 	return out
 }

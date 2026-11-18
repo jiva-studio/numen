@@ -126,10 +126,12 @@ func run(errOut io.Writer, mount func(*Server) error, opts ...Option) int {
 		return 0
 	}
 	if logClient, logErr := logs.NewClientFromEnv(); logErr == nil {
-		_ = logClient.Write(context.Background(), logs.Entry{
+		if writeLogErr := logClient.Write(context.Background(), logs.Entry{
 			Level:   logs.Error,
 			Message: err.Error(),
-		})
+		}); writeLogErr != nil {
+			err = errors.Join(err, writeLogErr)
+		}
 	}
 	if _, writeErr := fmt.Fprintf(errOut, "server error: %v\n", err); writeErr != nil {
 		return 2

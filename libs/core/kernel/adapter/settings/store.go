@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -43,7 +44,9 @@ func (s *Store) ReadCheckedFile() (File, error) {
 		return File{}, err
 	}
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
-		return DefaultFile(), nil
+		file := DefaultFile()
+		s.files.setLogLevel(logs.ResolveLevel(file.Logging.Level))
+		return file, nil
 	}
 	return s.ReadCheckedAt(path)
 }
@@ -93,6 +96,7 @@ func (s *Store) ReadCheckedAt(path string) (File, error) {
 	if s.declared != nil {
 		target.DropInvalid(s.declared, s.registries)
 	}
+	s.files.setLogLevel(logs.ResolveLevel(target.Logging.Level))
 	return target, nil
 }
 
@@ -129,6 +133,7 @@ func (s *Store) WriteJSON(entries []settingsdomain.Setting) (content string, ver
 	if s.declared != nil {
 		into.DropInvalid(s.declared, s.registries)
 	}
+	s.files.setLogLevel(logs.ResolveLevel(into.Logging.Level))
 	content, err = into.WriteJSON()
 	if err != nil {
 		return "", 0, fmt.Errorf("%w: %w", settingsdomain.ErrWrittenNotAnswered, err)
@@ -151,7 +156,11 @@ func (s *Store) Write(entries []settingsdomain.Setting) error {
 		return err
 	}
 	into := DefaultFile()
-	return s.files.Save(path, &into, toWrites(entries)...)
+	err = s.files.Save(path, &into, toWrites(entries)...)
+	if err == nil {
+		s.files.setLogLevel(logs.ResolveLevel(into.Logging.Level))
+	}
+	return err
 }
 
 // Defaults are the settings of an unconfigured installation.

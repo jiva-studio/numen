@@ -169,13 +169,7 @@ func syncSetting(c settingsWiring) naming.SyncSetting {
 }
 
 func logLevelSetting(c settingsWiring) func() domainlogs.Level {
-	return func() domainlogs.Level {
-		target, err := settingsSettings(c)
-		if err != nil {
-			return domainlogs.LevelInfo
-		}
-		return domainlogs.ResolveLevel(target.Logging.Level)
-	}
+	return c.SettingsFiles.GetLogLevel
 }
 
 func readSettings(c settingsWiring) func() (string, string, uint64, error) {
