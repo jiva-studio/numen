@@ -14,12 +14,11 @@ import { DEFAULT_BEHAVIOR, getBehavior, type PlexBehavior } from '../model/behav
 import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
-import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../model/namesOpacity'
 import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
 import { getFrameStyle } from './frameStyle'
-import { useRooms } from '../model/useRooms'
+import { useWidgetRooms } from '../model/useWidgetRooms'
 import type { PlexRelation } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -41,9 +40,6 @@ const props = withDefaults(defineProps<PlexProps>(), {
   pending: null,
   dragged: () => [],
   dropName: getRelationName,
-  showNames: false,
-  namesOpacity: DEFAULT_NAMES_OPACITY,
-  focusedNamesOpacity: DEFAULT_FOCUSED_NAMES_OPACITY,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -66,7 +62,7 @@ const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
 
 const slots = useSlots()
 
-const { room, options, measures, widen, placedHeadings } = useFreeSpace(
+const { room, isMeasured, options, measures, widen } = useFreeSpace(
   frameElement,
   props,
   () => !!slots.icon,
@@ -75,9 +71,9 @@ const { room, options, measures, widen, placedHeadings } = useFreeSpace(
 /** How the nodes behave, handed down as one. */
 const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
-const { getRoomOf, setWidgets, getNodeRoom } = useRooms(props, measures, options)
+const rooms = useWidgetRooms(options, props)
 
-const { frame, isMoving } = usePlexTransition(
+const { frame, waiting, isMoving } = usePlexTransition(
   () => props.graph,
   () => ({
     options: options.value,
@@ -85,11 +81,15 @@ const { frame, isMoving } = usePlexTransition(
     measure: measures.value?.node,
     measureLabel: measures.value?.label,
     labelType: measures.value?.labelType,
-    room: getNodeRoom.value,
+    room: rooms.getNodeRoom.value,
   }),
   {
     duration: () => props.duration,
     clock: props.clock,
+    isReady: rooms.areLoaded,
+    // The size of the window decides which nodes are shown, so nothing is arranged before it is reported.
+    isActive: () => isMeasured.value,
+    hasWidgets: () => rooms.hasWidgets(),
   },
 )
 
@@ -175,17 +175,17 @@ watch(
       :show-edge-labels="showEdgeLabels"
       :show-pills="showPills"
       :highlight-links="highlightLinks && !isMoving"
-      :names-opacity="namesOpacity"
-      :focused-names-opacity="focusedNamesOpacity"
       :can-reach="canReach"
       :relation-name="relationName"
       :widen="widen"
-      :placed-headings="placedHeadings"
-      :room-of="getRoomOf"
       :widgets-above="widgetsAbove"
       :widgets-below="widgetsBelow"
+      :widgets-over="widgetsOver"
       :get-path="getPath"
-      :set-widgets="setWidgets"
+      :set-widgets="rooms.setWidgets"
+      :set-ready="rooms.setReady"
+      :waiting="waiting"
+      :clock="clock"
       :behavior="behavior"
       :gesture="gesture"
       :dragging="dragging"
@@ -196,8 +196,6 @@ watch(
       @reach="gesture.begin"
       @ask="gesture.ask"
       @menu="(id, at, trigger) => emit('menu', id, at, trigger)"
-      @enter="(id, heading) => emit('enter', id, heading)"
-      @choose-name="emit('chooseName', $event)"
       @edge-menu="(pair, at) => emit('edge-menu', pair, at)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>

@@ -4,7 +4,7 @@ import { defineComponent, h, nextTick, ref, type Ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
 import type { Size } from '../lib/arrange'
-import type { Viewport } from '@numen/ui'
+import type { Clock, Viewport } from '@numen/ui'
 import type { PlexGraph } from '../../types'
 
 const FAMILY: PlexGraph = {
@@ -49,9 +49,19 @@ const createEntry = (name: string, drawing: Ref<boolean>) => ({
 })
 
 let rings: (() => void)[] = []
+let scheduled: ((now: number) => void)[] = []
+let now = 0
+
+const clock: Clock = {
+  now: () => now,
+  schedule: (run) => scheduled.push(run),
+  cancel: () => undefined,
+}
 
 beforeEach(() => {
   rings = []
+  scheduled = []
+  now = 0
   vi.stubGlobal(
     'ResizeObserver',
     class {
@@ -94,10 +104,19 @@ afterEach(() => {
 
 type Mounted = Awaited<ReturnType<typeof mountPlex>>
 
-const settle = async () => {
+const FRAME = 16
+
+const waitForFrames = async () => {
   await flushPromises()
-  for (const ring of rings) ring()
-  await flushPromises()
+  for (let pass = 0; pass < 4; pass += 1) {
+    for (const ring of rings) ring()
+    await flushPromises()
+    now += FRAME
+    const waiting = scheduled
+    scheduled = []
+    for (const run of waiting) run(now)
+    await flushPromises()
+  }
 }
 
 const mountPlex = async (props: Partial<InstanceType<typeof Plex>['$props']> = {}) => {
@@ -105,13 +124,14 @@ const mountPlex = async (props: Partial<InstanceType<typeof Plex>['$props']> = {
     props: {
       graph: FAMILY,
       duration: 0,
+      clock,
       viewport: createViewport({ width: 1200, height: 1200 }),
       getPath: (id: string) => `notes/${id}.md`,
       ...props,
     },
     attachTo: document.body,
   })
-  await settle()
+  await waitForFrames()
   return plex
 }
 
@@ -162,7 +182,7 @@ describe('the widgets of the plex that draw nothing', () => {
 
     drawing.value = true
     await nextTick()
-    await settle()
+    await waitForFrames()
 
     expect(before).toStrictEqual(bare)
     expect(getLayout(plex)).not.toStrictEqual(bare)
@@ -177,7 +197,7 @@ describe('the widgets of the plex that draw nothing', () => {
 
     drawing.value = false
     await nextTick()
-    await settle()
+    await waitForFrames()
 
     expect(getLayout(plex)).toStrictEqual(bare)
   })
@@ -193,7 +213,7 @@ describe('the widgets of the plex that draw nothing', () => {
 
     tags.value = false
     await nextTick()
-    await settle()
+    await waitForFrames()
 
     expect(getLayout(plex)).toStrictEqual(onlyRelated)
     expect(getLayout(plex)).not.toStrictEqual(both)

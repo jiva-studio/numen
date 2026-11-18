@@ -23,6 +23,9 @@ export function useHoverFocus(parts: () => readonly (Element | null)[] = () => [
     /** The pointer is over it, or keyboard focus is visibly on it. */
     isOn: computed(() => isHovered.value || isKeyboardFocused.value),
 
+    /** The pointer is over it, not counting keyboard focus. */
+    isPointerOver: computed(() => isHovered.value),
+
     /** Takes it off, whatever pointer or focus events were or were not delivered. */
     release: () => {
       isHovered.value = false

@@ -1,5 +1,5 @@
 /** Whether any widget in a group of widget rows draws an element or text, read from the document; a widget that renders nothing leaves a comment node. */
-import { onScopeDispose, ref, watch, type Ref } from 'vue'
+import { onScopeDispose, ref, shallowRef, watch, type Ref } from 'vue'
 
 const isDrawn = (node: Node): boolean =>
   node.nodeType === Node.ELEMENT_NODE ||
@@ -10,22 +10,42 @@ const hasDrawing = (rows: Element): boolean =>
 
 /**
  * `change` is given `rows` once a widget draws and `null` when none does or the rows are gone; `isDrawing` follows it.
+ * `rows` is given after the document has drawn the group the widgets sit in, so what `change` measures includes it,
+ * and `isMeasured` holds from then on. `refresh` reads the document at once, where the observer would after the change,
+ * and gives the group to `change` again when it draws, so a size it has grown to is measured without waiting for the window.
  */
 export function useDrawnWidgets(
   rows: Readonly<Ref<HTMLElement | null>>,
   change: (element: HTMLElement | null) => void,
-): { isDrawing: Readonly<Ref<boolean>> } {
+): { isDrawing: Readonly<Ref<boolean>>; isMeasured: Readonly<Ref<boolean>>; refresh: () => void } {
   const isDrawing = ref(false)
-  let given: HTMLElement | null = null
+  const isMeasured = ref(true)
+  const drawn = shallowRef<HTMLElement | null>(null)
 
   const update = () => {
     const element = rows.value
     const next = element && hasDrawing(element) ? element : null
     isDrawing.value = next !== null
-    if (next === given) return
-    given = next
-    change(next)
+    if (next === drawn.value) return
+    drawn.value = next
+    isMeasured.value = next === null
+    if (next === null) change(null)
   }
+
+  const refresh = () => {
+    update()
+    if (drawn.value && isMeasured.value) change(drawn.value)
+  }
+
+  watch(
+    drawn,
+    (element) => {
+      if (!element) return
+      change(element)
+      isMeasured.value = true
+    },
+    { flush: 'post' },
+  )
 
   const observer = new MutationObserver(update)
 
@@ -40,7 +60,10 @@ export function useDrawnWidgets(
     { flush: 'sync' },
   )
 
-  onScopeDispose(() => observer.disconnect())
+  onScopeDispose(() => {
+    observer.disconnect()
+    if (drawn.value) change(null)
+  })
 
-  return { isDrawing }
+  return { isDrawing, isMeasured, refresh }
 }

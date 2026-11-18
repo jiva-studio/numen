@@ -1,5 +1,5 @@
 import { RELATION_NAMES } from '../lib/relation'
-import { createName } from './names'
+import { createName } from './titles'
 import type { PlexEdge, PlexGraph, PlexNode, PlexRelation } from '../../types'
 
 export type RelationCounts = Readonly<Partial<Record<PlexRelation, number>>>

@@ -12,6 +12,7 @@ export interface PlacedNode extends PlexNode {
   readonly height: number
   readonly order: number
   readonly opacity: number
+  readonly settled?: Size
 }
 
 /**
@@ -58,13 +59,13 @@ export const isStop = (node: PlacedNode): boolean => node.opacity >= 1
  */
 export type GestureRole = 'open' | 'closed' | 'source' | 'target' | 'ghost'
 
+/** How many times taller than a note at rest a node of this height is drawn: one or more, and one where the height at rest is not known. */
+export const getScale = (height: number, restHeight: number): number =>
+  restHeight > 0 ? Math.max(1, height / restHeight) : 1
+
 /** A title may be empty; an accessible name may not. */
 export const createAriaLabel = (node: PlexNode): string =>
   `${node.title || 'Untitled'}, ${node.relation}`
-
-/** What a name set under a note is, and whose it is: "Rootstock list, name under Pear rows". */
-export const createNameLabel = (title: string, owner: PlexNode): string =>
-  `${title || 'Untitled'}, name under ${owner.title || 'Untitled'}`
 
 /** The radius of the handle's disc, in the plex's own pixels. */
 export const HANDLE_RADIUS = 9
