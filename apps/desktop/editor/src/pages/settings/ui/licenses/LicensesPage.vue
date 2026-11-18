@@ -4,10 +4,9 @@
  * share it, the providers where a key can be purchased, and the controls to activate or deactivate
  * this machine.
  */
-import { onBeforeUnmount, onMounted } from 'vue'
 import { SettingsPage } from '@numen/plugin-manager'
-import { runInBackground } from '@numen/ui'
 import type { InstallationLicenses } from '../../types'
+import { useLicensesPage } from '../../model/useLicensesPage'
 import { WORDS as words } from '../../words'
 import LicenseCard from './LicenseCard.vue'
 
@@ -19,17 +18,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const watchAbort = new AbortController()
-
-/* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => {
-  runInBackground(props.licenses.load(), () => undefined)
-  runInBackground(props.licenses.watch(watchAbort.signal), () => undefined)
-})
-
-onBeforeUnmount(() => {
-  watchAbort.abort()
-})
+const page = useLicensesPage(() => props.licenses)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
@@ -40,17 +29,17 @@ function onBack(): void {
 <template>
   <SettingsPage :path="[words.settings, words.licenses]" @back="onBack" @open="onBack">
     <div class="licenses-page">
-      <div v-if="licenses.list.value.length === 0" class="licenses-page__empty">
+      <div v-if="page.licenses.value.length === 0" class="licenses-page__empty">
         <p class="licenses-page__empty-title">{{ words.licensesEmpty }}</p>
         <p class="licenses-page__empty-detail">{{ words.licensesEmptyDetail }}</p>
       </div>
 
       <LicenseCard
-        v-for="license in licenses.list.value"
+        v-for="license in page.licenses.value"
         :key="license.id"
         :license="license"
-        :activate="licenses.activate"
-        :deactivate="licenses.deactivate"
+        :activate="page.activate"
+        :deactivate="page.deactivate"
       />
     </div>
   </SettingsPage>

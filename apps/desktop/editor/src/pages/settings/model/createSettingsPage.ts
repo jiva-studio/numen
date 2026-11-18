@@ -11,7 +11,7 @@ import {
   type SettingsStore,
 } from '@/entities/settings'
 import type { ConnectionApi, ConnectionStore } from '@/entities/connection'
-import type { LicenseStore } from '@/entities/license'
+import { createLicenseStore, type LicenseApi, type LicenseStore } from '@/entities/license'
 import { countNotes, type FileApi } from '@/entities/file'
 import {
   PLUGIN_FAILURE_WORDS,
@@ -39,6 +39,7 @@ interface SettingsPageApi {
     SettingsApi,
     'choosePluginPath' | 'getPluginData' | 'deletePluginData' | 'retryPlugin'
   >
+  readonly license: LicenseApi
   readonly listFiles: FileApi['listFiles']
   readonly listCatalog: CatalogReader
   readonly listRowOptions: ConnectionApi['listRowOptions']
@@ -54,7 +55,6 @@ export interface SettingsPageDeps {
   api: SettingsPageApi
   rest: SettingsStore
   connections: ConnectionStore
-  licenses: LicenseStore
   appearance: ReturnType<typeof createWindowAppearance>
   log: MessageLog
   windowTabs: WindowTabs
@@ -214,7 +214,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
 export function createSettingsPage({
   rest,
   connections,
-  licenses,
   appearance,
   log,
   windowTabs,
@@ -225,6 +224,7 @@ export function createSettingsPage({
   const getPluginName = (pluginId: string): string =>
     rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const reportError = (error: Caught) => log.getWriter('configured')(formatError(error), 'error')
+  const licenses = createLicenseStore(api.license, log.getWriter('licenses'))
   const retry = createPluginRetry({
     askPluginRetry: api.settings.retryPlugin,
     words: { stopped: PLUGIN_FAILURE_WORDS.stopped, retryFailed: PLUGIN_FAILURE_WORDS.retryFailed },

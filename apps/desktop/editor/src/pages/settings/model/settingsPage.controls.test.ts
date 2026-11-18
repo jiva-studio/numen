@@ -22,7 +22,6 @@ import { createSettingsCoreApi, type SettingsCore } from '@/testing/settingsWire
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { WORDS } from '@/shared/ui/words'
 import { createConnectionStore } from '@/entities/connection'
-import { createLicenseStore } from '@/entities/license'
 import { createWindowSettings } from '@/features/settings-commands'
 import { createSettingsPage } from './createSettingsPage'
 
@@ -189,7 +188,6 @@ const create = (timing: Timing, shown: 'system' | 'appearance') => {
     log.getWriter('configured'),
   )
   const connections = createConnectionStore(configuration.connection, log.getWriter('connections'))
-  const licenses = createLicenseStore(configuration.license, log.getWriter('licenses'))
   const windowSettings = createWindowSettings({
     themes: configuration.themes,
     watchSettings: configuration.settings.watchSettings,
@@ -205,13 +203,13 @@ const create = (timing: Timing, shown: 'system' | 'appearance') => {
     ...createSettingsPage({
       api: {
         settings: configuration.settings,
+        license: configuration.license,
         listFiles: api.vault.file.listFiles,
         listCatalog: api.plugins.listCatalog,
         listRowOptions: configuration.connection.listRowOptions,
       },
       rest,
       connections,
-      licenses,
       appearance: windowSettings.appearance,
       log,
       windowTabs: createTestTabs(),

@@ -3,13 +3,11 @@ package license_test
 import (
 	"context"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/license"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 

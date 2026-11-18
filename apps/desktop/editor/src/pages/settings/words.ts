@@ -85,7 +85,7 @@ export const WORDS = {
   /** The page of licenses. */
   licensesEmpty: 'No licenses declared.',
   licensesEmptyDetail:
-    'Installed plugins that unlock features with a supporter key or subscription list their licenses here.',
+    'Add a plugin with a supporter key or subscription to manage its license here.',
   licenseKeyPlaceholder: 'Enter license key…',
   licenseKeyLabel: (title: string) => `License key for ${title}`,
   licenseActivate: 'Activate',

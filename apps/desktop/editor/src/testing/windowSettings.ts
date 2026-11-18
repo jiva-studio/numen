@@ -5,7 +5,6 @@
 import { shallowRef } from 'vue'
 import type { WindowApi } from '@/app/window/createWindowApi'
 import { createConnectionStore, type ConnectionStore } from '@/entities/connection'
-import { createLicenseStore, type LicenseStore } from '@/entities/license'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import { createWindowSettings } from '@/features/settings-commands'
@@ -18,7 +17,6 @@ export interface WindowSettingsDeps {
   readonly api: WindowApi
   readonly rest: SettingsStore
   readonly connections?: ConnectionStore
-  readonly licenses?: LicenseStore
   readonly words: Parameters<typeof createWindowSettings>[0]['words']
   readonly log: MessageLog
   readonly windowTabs: WindowTabs
@@ -34,8 +32,6 @@ export function createWindowSettingsPart(deps: WindowSettingsDeps) {
   const connections =
     deps.connections ??
     createConnectionStore(configuration.connection, log.getWriter('connections'))
-  const licenses =
-    deps.licenses ?? createLicenseStore(configuration.license, log.getWriter('licenses'))
   const windowSettings = createWindowSettings({
     themes: configuration.themes,
     watchSettings: configuration.settings.watchSettings,
@@ -48,13 +44,13 @@ export function createWindowSettingsPart(deps: WindowSettingsDeps) {
   const page = createSettingsPage({
     api: {
       settings: configuration.settings,
+      license: configuration.license,
       listFiles: api.vault.file.listFiles,
       listCatalog: api.plugins.listCatalog,
       listRowOptions: configuration.connection.listRowOptions,
     },
     rest,
     connections,
-    licenses,
     appearance: windowSettings.appearance,
     log,
     windowTabs: deps.windowTabs,

@@ -12,7 +12,7 @@ import type { createWindowFoundation } from './createWindowFoundation'
 /** What the settings page reads of the foundation. */
 type SettingsPageFoundation = Pick<
   ReturnType<typeof createWindowFoundation>,
-  'api' | 'rest' | 'connections' | 'licenses' | 'log' | 'frame' | 'settingsRequests'
+  'api' | 'rest' | 'connections' | 'log' | 'frame' | 'settingsRequests'
 >
 
 /** What the settings page of the window is made from. */
@@ -37,13 +37,13 @@ export function registerSettingsPage(deps: SettingsPageDeps): void {
   const settingsPage = createSettingsPage({
     api: {
       settings: api.configuration.settings,
+      license: api.configuration.license,
       listFiles: api.vault.file.listFiles,
       listCatalog: api.plugins.listCatalog,
       listRowOptions: api.configuration.connection.listRowOptions,
     },
     rest: foundation.rest,
     connections: foundation.connections,
-    licenses: foundation.licenses,
     appearance: deps.windowSettings.appearance,
     log: foundation.log,
     windowTabs,

@@ -157,7 +157,7 @@ type Evaluation struct {
 	EnvelopeChanged bool
 }
 
-// GetEntryName returns the key store entry name for a license ID.
+// GetEntryName prefixes a license ID with "license/" for the key store.
 func GetEntryName(licenseID string) string {
 	return keyStorePrefix + licenseID
 }
