@@ -52,6 +52,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		ConnectionTypes:  connectionTypes,
 		Operations:       newOperations(wire.GetOperations()),
 		SearchFunctions:  newSearchFunctions(wire.GetSearchFunctions()),
+		Licenses:         newLicenses(wire.GetLicenses()),
 	}, nil
 }
 
@@ -225,6 +226,33 @@ func newSearchFunctions(wire *v1.ManifestSearchFunctions) manifest.SearchFunctio
 		out.Functions = append(out.Functions, manifest.SearchFunction{
 			Name: one.GetName(), Args: args, Level: manifest.SearchFunctionLevel(one.GetLevel()),
 			Description: one.GetDescription(), Example: one.GetExample(),
+		})
+	}
+	return out
+}
+
+func newLicenses(wire []*v1.ManifestLicense) []manifest.License {
+	var out []manifest.License
+	for _, one := range wire {
+		var providers []manifest.LicenseProvider
+		for _, p := range one.GetProviders() {
+			providers = append(providers, manifest.LicenseProvider{
+				Provider:  p.GetProvider(),
+				ProductID: p.GetProductId(),
+				URL:       p.GetUrl(),
+			})
+		}
+		var graceDays *int
+		if one.OfflineGraceDays != nil {
+			value := int(one.GetOfflineGraceDays())
+			graceDays = &value
+		}
+		out = append(out, manifest.License{
+			ID:               one.GetId(),
+			Title:            one.GetTitle(),
+			Description:      one.GetDescription(),
+			Providers:        providers,
+			OfflineGraceDays: graceDays,
 		})
 	}
 	return out

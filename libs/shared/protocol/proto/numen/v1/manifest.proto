@@ -89,6 +89,32 @@ message ManifestContributes {
   repeated ManifestDropHandler drop_handlers = 21;
   // search_functions are the functions of the query language the plugin's backend answers.
   ManifestSearchFunctions search_functions = 24;
+  // licenses are the licenses the plugin declares and the features it unlocks for each.
+  repeated ManifestLicense licenses = 25;
+}
+
+// ManifestLicenseProvider is a service through which a license is bought and verified.
+message ManifestLicenseProvider {
+  // provider is the identifier of the licensing service, such as "creem" or "dodo".
+  string provider = 1;
+  // product_id is the identifier of the product in the provider's store, such as "prod_..." or "pdt_...".
+  string product_id = 2;
+  // url is the https checkout link for buying the license. Optional when product_id is set.
+  string url = 3;
+}
+
+// ManifestLicense is one license a plugin contributes to. Several plugins may contribute to the same id.
+message ManifestLicense {
+  // id is the identifier of the license; lowercase words joined by hyphens.
+  string id = 1;
+  // title is the human-readable name of the license. Optional.
+  string title = 2;
+  // description states the features this plugin provides when the license is active.
+  string description = 3;
+  // providers are the services through which a license key is bought and verified. An empty list is a custom key the plugin validates itself.
+  repeated ManifestLicenseProvider providers = 4;
+  // offline_grace_days is how many days the license stays active without reaching the provider after the last verification, from 1 to 365. Absent is 30.
+  optional int32 offline_grace_days = 5;
 }
 
 // ManifestSearchFunctions are the query functions of a plugin under a version of their schema.

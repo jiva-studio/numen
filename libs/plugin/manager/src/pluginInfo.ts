@@ -117,6 +117,7 @@ export type PluginContributionKind =
   | 'frameOrigins'
   | 'connectionTypes'
   | 'operations'
+  | 'licenses'
   | 'permissions'
   | 'dependencies'
   | 'services'

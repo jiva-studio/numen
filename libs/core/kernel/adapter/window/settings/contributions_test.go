@@ -27,6 +27,7 @@ func TestEveryContributionKindIsSavedFromOne(t *testing.T) {
 		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_FRAME_ORIGINS:     plugin.ContributionFrameOrigins,
 		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_CONNECTION_TYPES:  plugin.ContributionConnectionTypes,
 		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_OPERATIONS:        plugin.ContributionOperations,
+		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_LICENSES:          plugin.ContributionLicenses,
 		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_PERMISSIONS:       plugin.ContributionPermissions,
 		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_DEPENDENCIES:      plugin.ContributionDependencies,
 		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SERVICES:          plugin.ContributionServices,

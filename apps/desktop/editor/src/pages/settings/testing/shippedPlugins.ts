@@ -111,6 +111,7 @@ const CONTRIBUTION_KINDS: readonly (readonly [PluginContributionKind, ToItem])[]
   ['frameOrigins', fromText],
   ['connectionTypes', fromEntry((one) => titled(one.title, one.id))],
   ['operations', fromEntry((one) => titled(one.title, one.name))],
+  ['licenses', fromEntry((one) => titled(one.title, one.id))],
 ]
 
 /** The lists at the top of a manifest that a page shows with the contributions. */
