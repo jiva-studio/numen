@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace, runCommand } from '../../support/workspace.js'
-import { getFirstLine, getRow, readHeight, showInFiles } from '../../support/layout.js'
+import { getRow, readHeight, showInFiles } from '../../support/layout.js'
 import { readOwner, writeSetting } from '../../support/vault.js'
 
 const openAppearanceSettings = async (page: Page) => {
@@ -22,11 +22,13 @@ test.describe('Theming and Display Scaling', () => {
     { tag: '@smoke' },
     async ({ page, request }) => {
       await openWorkspace(page)
-      await showInFiles(page, ['notes'])
-      await getRow(page, 'notes/Entropy.md').press('Enter')
-      const editor = page.getByRole('tabpanel', { name: /Entropy/ }).locator('.cm-editor')
-      await expect(editor).toBeVisible()
-      const editorBefore = await readHeight(getFirstLine(editor))
+      await showInFiles(page, ['assets'])
+      await getRow(page, 'assets/ledger.epub').press('Enter')
+      const heading = page
+        .getByRole('tabpanel', { name: /ledger/i })
+        .getByRole('heading', { name: 'Sluice 1' })
+      await expect(heading).toBeVisible()
+      const headingBefore = await readHeight(heading)
 
       const settings = await openAppearanceSettings(page)
       const interfaceSize = settings.getByRole('slider', { name: 'Interface size' })
@@ -43,12 +45,14 @@ test.describe('Theming and Display Scaling', () => {
 
       await page.reload()
 
-      const reloaded = page.getByRole('tabpanel', { name: /Entropy/ }).locator('.cm-editor')
-      await page.getByRole('tab', { name: /^Entropy/ }).click()
+      const reloaded = page
+        .getByRole('tabpanel', { name: /ledger/i })
+        .getByRole('heading', { name: 'Sluice 1' })
+      await page.getByRole('tab', { name: /ledger/i }).click()
       await expect(reloaded).toBeVisible()
       await expect
-        .poll(async () => readHeight(getFirstLine(reloaded)))
-        .toBeCloseTo(editorBefore * 1.2 * 1.5, 0)
+        .poll(async () => readHeight(reloaded))
+        .toBeCloseTo(headingBefore * 1.2 * 1.5, 0)
     },
   )
 })

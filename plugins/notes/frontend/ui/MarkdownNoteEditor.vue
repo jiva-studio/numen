@@ -24,8 +24,6 @@ interface Props {
   readonly isReadOnly?: boolean
   readonly extensions?: Extension | readonly Extension[] | undefined
   readonly state?: NoteTabState | undefined
-  readonly softWrap?: boolean | undefined
-  readonly lineNumbers?: boolean | undefined
   readonly tabSize?: number | undefined
 }
 
@@ -35,8 +33,6 @@ const props = withDefaults(defineProps<Props>(), {
   filePath: '',
   errorMessage: '',
   isReadOnly: false,
-  softWrap: undefined,
-  lineNumbers: undefined,
   tabSize: undefined,
   extensions: undefined,
   state: undefined,
@@ -85,8 +81,6 @@ const editorLanguage = computed(() => getEditorLanguage(props))
 const fileConflict = computed(() => props.state?.fileConflict?.value ?? null)
 
 const DEFAULT_TAB_SIZE = 2
-const softWrap = computed(() => props.softWrap ?? editorPreferences.softWrap)
-const lineNumbers = computed(() => props.lineNumbers ?? editorPreferences.lineNumbers)
 const tabSize = computed(() => props.tabSize ?? DEFAULT_TAB_SIZE)
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -131,13 +125,14 @@ function onOpen(url: string) {
       </button>
     </div>
     <Editor
+      v-if="editorPreferences"
       ref="editorRef"
       :model-value="docContent"
       :language="editorLanguage"
       is-live
       :is-readonly="isReadOnly || isLoading"
-      :soft-wrap="softWrap"
-      :line-numbers="lineNumbers"
+      :soft-wrap="editorPreferences.softWrap"
+      :line-numbers="editorPreferences.lineNumbers"
       :tab-size="tabSize"
       v-bind="editorExtensions ? { extensions: editorExtensions } : {}"
       class="markdown-note-editor__pane note__text"

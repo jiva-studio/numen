@@ -28,6 +28,79 @@ describe('mock plugin context', () => {
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
   })
 
+  it('holds no editor settings until a test gives them', () => {
+    const ctx = createMockPluginContext()
+
+    expect(ctx.settings.getEditor()).toBeUndefined()
+  })
+
+  it('starts with the editor settings a test gives it', () => {
+    const ctx = createMockPluginContext({
+      initialEditorSettings: { lineNumbers: true, softWrap: false },
+    })
+
+    expect(ctx.settings.getEditor()).toStrictEqual({ lineNumbers: true, softWrap: false })
+  })
+
+  it('returns the editor settings a test sets and calls the handlers when they arrive', () => {
+    const ctx = createMockPluginContext()
+    const handler = vi.fn()
+    ctx.settings.onEditorChange(handler)
+
+    ctx.setEditorSettings({ lineNumbers: false, softWrap: true })
+
+    expect(ctx.settings.getEditor()).toStrictEqual({ lineNumbers: false, softWrap: true })
+    expect(handler).toHaveBeenCalledExactlyOnceWith({ lineNumbers: false, softWrap: true })
+  })
+
+  it('calls the handlers on each change of the editor settings', () => {
+    const ctx = createMockPluginContext({
+      initialEditorSettings: { lineNumbers: false, softWrap: true },
+    })
+    const handler = vi.fn()
+    ctx.settings.onEditorChange(handler)
+
+    ctx.setEditorSettings({ lineNumbers: true, softWrap: true })
+    ctx.setEditorSettings({ lineNumbers: true, softWrap: false })
+
+    expect(handler.mock.calls).toStrictEqual([
+      [{ lineNumbers: true, softWrap: true }],
+      [{ lineNumbers: true, softWrap: false }],
+    ])
+  })
+
+  it('does not call a handler on the subscription itself when the settings already exist', () => {
+    const ctx = createMockPluginContext({
+      initialEditorSettings: { lineNumbers: false, softWrap: true },
+    })
+    const handler = vi.fn()
+
+    ctx.settings.onEditorChange(handler)
+
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('stops calling a handler whose subscription was disposed', () => {
+    const ctx = createMockPluginContext()
+    const handler = vi.fn()
+    ctx.settings.onEditorChange(handler).dispose()
+
+    ctx.setEditorSettings({ lineNumbers: true, softWrap: true })
+
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('stops calling the handlers of the editor settings when the context is disposed', () => {
+    const ctx = createMockPluginContext()
+    const handler = vi.fn()
+    ctx.settings.onEditorChange(handler)
+
+    ctx.dispose()
+    ctx.setEditorSettings({ lineNumbers: true, softWrap: true })
+
+    expect(handler).not.toHaveBeenCalled()
+  })
+
   it('manages settings view registrations', () => {
     const ctx = createMockPluginContext({ pluginId: 'settings-plugin' })
     const d = ctx.register.settingsView({ id: 'floor', component: {} })

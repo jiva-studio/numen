@@ -55,6 +55,7 @@ export function createFilesKind(
     },
     getTitle: () => words.files,
     onClose: (state, id) => {
+      state.rowEnd.stop()
       state.list.close()
       tabs.delete(id)
       if (menuTab === state) menuTab = null

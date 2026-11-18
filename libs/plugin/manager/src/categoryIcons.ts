@@ -2,6 +2,8 @@ import {
   Bot,
   BookOpen,
   Cpu,
+  PenLine,
+  Search,
   LayoutPanelLeft,
   Palette,
   Plug,
@@ -22,7 +24,9 @@ const ICONS: Readonly<Record<string, Component>> = {
   views: LayoutPanelLeft,
   system: Settings,
   appearance: SunMoon,
+  editor: PenLine,
+  search: Search,
 }
 
-/** The icon a row of the category, or of the System and Appearance pages, is drawn with. */
+/** The icon a row of the category, or of the System, Appearance, Editor and Search pages, is drawn with. */
 export const getCategoryIcon = (category: string): Component => ICONS[category] ?? Puzzle

@@ -4,6 +4,7 @@ import {
   DEFAULT_PLUGIN_ENABLED,
   createPluginStatus,
   isPluginEnabledValue,
+  type EditorSettings,
   type JsonValue,
   type PluginStatus,
 } from '@numen/plugin-loader'
@@ -64,5 +65,26 @@ export function createPluginSettingsAccessor(
       },
     )
 
-  return { getSetting, onSettingChange }
+  const getFlag = (key: string, fallback: boolean): boolean => {
+    const value = rest.read.getCommittedSetting(['app', 'editor', key])
+    return typeof value === 'boolean' ? value : fallback
+  }
+  const hasLoaded = (): boolean => rest.state.app.value.length > 0
+
+  const getEditorSettings = (): EditorSettings | undefined =>
+    hasLoaded()
+      ? { lineNumbers: getFlag('lineNumbers', false), softWrap: getFlag('softWrap', true) }
+      : undefined
+
+  const onEditorSettingsChange = (
+    pluginId: string,
+    handler: (settings: EditorSettings) => void | Promise<void>,
+  ): (() => void) =>
+    watch([hasLoaded, () => getFlag('lineNumbers', false), () => getFlag('softWrap', true)], () => {
+      const settings = getEditorSettings()
+      if (!settings) return
+      runInBackground(Promise.resolve(handler(settings)), (error) => reportError(pluginId, error))
+    })
+
+  return { getSetting, onSettingChange, getEditorSettings, onEditorSettingsChange }
 }

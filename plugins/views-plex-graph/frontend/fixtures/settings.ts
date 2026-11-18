@@ -4,7 +4,12 @@ import type { PlexLook } from '../types'
 
 /** The settings of a context that holds none, so every one is at its default. */
 const NO_SETTINGS: Pick<PluginContext, 'settings'> = {
-  settings: { get: () => undefined, onChange: () => ({ dispose: () => undefined }) },
+  settings: {
+    get: () => undefined,
+    onChange: () => ({ dispose: () => undefined }),
+    getEditor: () => undefined,
+    onEditorChange: () => ({ dispose: () => undefined }),
+  },
 }
 
 export const getDefaultLook = (): PlexLook => readLook(NO_SETTINGS)

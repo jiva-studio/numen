@@ -20,6 +20,8 @@ describe('the keys of the PDF reader settings', () => {
     bindPDFReaderPreferences({
       settings: {
         get: <T>() => undefined as T,
+        getEditor: () => undefined,
+        onEditorChange: () => ({ dispose: vi.fn() }),
         onChange: <T>(key: string, _handler: (value: T) => void) => {
           watchedKeys.push(key)
           return { dispose: vi.fn() }

@@ -20,6 +20,7 @@ type File struct {
 	Version     int
 	Appearance  Appearance  `json:"appearance"`
 	Titles      Titles      `json:"naming"`
+	Editor      Editor      `json:"editor"`
 	Performance Performance `json:"performance"`
 	Search      Search      `json:"search"`
 	Plugins     map[string]map[string]any
@@ -31,6 +32,7 @@ type File struct {
 type appObject struct {
 	Appearance  Appearance  `json:"appearance"`
 	Titles      Titles      `json:"naming"`
+	Editor      Editor      `json:"editor"`
 	Performance Performance `json:"performance"`
 	Search      *Search     `json:"search"`
 }
@@ -40,6 +42,7 @@ type appObject struct {
 type appSections struct {
 	Appearance  *Appearance  `json:"appearance"`
 	Titles      *Titles      `json:"naming"`
+	Editor      *Editor      `json:"editor"`
 	Performance *Performance `json:"performance"`
 	Search      *Search      `json:"search"`
 }
@@ -76,7 +79,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Version},
-		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Performance, &f.Search}},
+		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search}},
 	}
 	if len(f.Connections) > 0 {
 		members = append(members, struct {
@@ -170,7 +173,7 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	sections := appSections{&f.Appearance, &f.Titles, &f.Performance, &f.Search}
+	sections := appSections{&f.Appearance, &f.Titles, &f.Editor, &f.Performance, &f.Search}
 	return hasInterfaceScale, json.Unmarshal(content, &sections)
 }
 
@@ -265,6 +268,7 @@ func DefaultFile() File {
 		Version:     DefaultVersion,
 		Appearance:  DefaultAppearance(),
 		Titles:      DefaultTitles(),
+		Editor:      DefaultEditor(),
 		Performance: DefaultPerformance(),
 		Search:      DefaultSearch(),
 		Plugins:     map[string]map[string]any{},
