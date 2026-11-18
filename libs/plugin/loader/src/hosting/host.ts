@@ -133,6 +133,11 @@ function createSettingBridge({
         ),
       }
     },
+    getEditorSettings: () => plugins.getEditorSettings?.(),
+    onEditorSettingsChange: (pluginId, handler) => {
+      if (!plugins.onEditorSettingsChange) return { dispose: () => undefined }
+      return { dispose: plugins.onEditorSettingsChange(pluginId, handler) }
+    },
   }
 }
 

@@ -1,8 +1,17 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref, type Ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
-import type { FileConflict, NoteTabState } from '@numen/plugin-sdk'
+import type { FileConflict, HostServices, NoteTabState } from '@numen/plugin-sdk'
 import MarkdownNoteEditor from './MarkdownNoteEditor.vue'
+import { activate } from '../index'
+import { createEditorSettingsContext } from '../testing/editorSettings'
+
+const loadEditorSettings = () =>
+  activate(createEditorSettingsContext({ lineNumbers: false, softWrap: true }).context, {
+    vault: {},
+  } as unknown as HostServices)
+
+beforeEach(loadEditorSettings)
 
 const createState = (overrides: Partial<NoteTabState> = {}): NoteTabState => ({
   path: 'test.md',

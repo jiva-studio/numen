@@ -15,7 +15,7 @@ import {
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { PlexHost } from '../model/tabDeps'
-import { getDefaultLook, getDefaultNames } from './settings'
+import { getDefaultLook } from './settings'
 
 export interface HostOptions {
   readonly opening?: string
@@ -25,8 +25,7 @@ export interface HostOptions {
 /** A window and a vault that serve a plex, and the requests the plex made of them. */
 export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions = {}) {
   const openingPath = ref(opening)
-  const isNesting = ref(true)
-  const request = { opening: [] as string[], headings: [] as (readonly string[])[] }
+  const request = { opening: [] as string[], related: [] as (readonly string[])[] }
   const recorded = {
     synced: [] as [string, string, string | undefined][],
     opened: [] as [string, OpenFileOptions | undefined][],
@@ -69,16 +68,16 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
   }
 
   const notes: VaultNotes = {
-    listRelatedNotes: async (path) => ({
-      focus: { path, title: path.replace(/\.md$/, '') },
-      focusType: NOTE_TYPE,
-      related: [],
-      connections: [],
-    }),
-    getHeadings: async (paths) => {
-      request.headings.push(paths)
-      return new Map()
+    listRelatedNotes: async (paths) => {
+      request.related.push(paths)
+      return paths.map((path) => ({
+        focus: { path, title: path.replace(/\.md$/, '') },
+        focusType: NOTE_TYPE,
+        related: [],
+        connections: [],
+      }))
     },
+    getHeadings: async () => new Map(),
     findNotes: async () => [],
     createUntitledNote: async () => 'Untitled.md',
     read: async () => ({ body: '' }),
@@ -129,9 +128,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     slots,
     notes,
     relations,
-    nesting: { isNesting, headings: ref(6) },
-    names: getDefaultNames(),
     look: getDefaultLook(),
   }
-  return { host, openingPath, isNesting, requested: request, requestLog: request, recorded }
+  return { host, openingPath, requested: request, requestLog: request, recorded }
 }

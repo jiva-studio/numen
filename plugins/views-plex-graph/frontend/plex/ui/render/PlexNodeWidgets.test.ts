@@ -1,6 +1,6 @@
 /** The views plugins place on one side of a node are drawn at the node in the order of the manifest, each given the path of the note. */
-import { mount } from '@vue/test-utils'
-import { defineComponent, h } from 'vue'
+import { flushPromises, mount } from '@vue/test-utils'
+import { defineComponent, h, ref, type Ref } from 'vue'
 import { afterEach, describe, expect, it } from 'vitest'
 import PlexNodeWidgets from './PlexNodeWidgets.vue'
 import type { PlacedNode } from '../../lib/node'
@@ -36,6 +36,7 @@ const mountWidgets = (props: Partial<InstanceType<typeof PlexNodeWidgets>['$prop
       side: 'above',
       entries: entries('tags', 'parents'),
       path: 'notes/Entropy.md',
+      width: node.width,
       ...props,
     },
   })
@@ -81,24 +82,15 @@ describe('the widgets of a side of a node', () => {
     expect(Number(box.attributes('x'))).toBe(node.x - node.width / 2)
   })
 
-  it('start beyond the room of the names on the side of the node they are drawn on', () => {
-    const below = mountWidgets({ side: 'below', inset: 30 }).get('foreignObject')
-    const above = mountWidgets({ side: 'above', inset: 30 }).get('foreignObject')
-
-    expect(Number(below.attributes('y'))).toBe(node.y + node.height / 2 + 30)
-    expect(Number(above.attributes('y')) + Number(above.attributes('height'))).toBe(
-      node.y - node.height / 2 - 30,
-    )
-  })
-
   it('are not drawn when no plugin places a view on the side', () => {
     const widgets = mountWidgets({ entries: [] })
 
     expect(widgets.find('foreignObject').exists()).toBe(false)
     expect(widgets.find('[data-widget]').exists()).toBe(false)
   })
-  it('share one element for measuring', () => {
+  it('share one element for measuring', async () => {
     const widgets = mountWidgets({ entries: entries('parents', 'tags') })
+    await flushPromises()
 
     const [group] = widgets.emitted('widgets')?.at(-1) ?? []
 
@@ -111,6 +103,40 @@ describe('the widgets of a side of a node', () => {
 
     await widgets.setProps({ entries: [] })
 
+    expect(widgets.emitted('widgets')?.at(-1)).toStrictEqual([null])
+  })
+})
+
+describe('the group of the widgets of a side of a node', () => {
+  const createOptional = (drawing: Ref<boolean>) =>
+    defineComponent({
+      props: { path: { type: String, required: true } },
+      render() {
+        return drawing.value ? h('span', { 'data-widget': 'tags' }, this.path) : null
+      },
+    })
+
+  it('is not given to be measured while none of the widgets draws anything', () => {
+    const widgets = mountWidgets({
+      entries: [{ key: 'org.example.tags/view/tags', component: createOptional(ref(false)) }],
+    })
+
+    expect(widgets.emitted('widgets')?.at(-1) ?? [null]).toStrictEqual([null])
+    expect(widgets.find('.plex__widgets-group').exists()).toBe(false)
+  })
+
+  it('is given to be measured once a widget starts drawing, and taken away when the last one stops', async () => {
+    const drawing = ref(false)
+    const widgets = mountWidgets({
+      entries: [{ key: 'org.example.tags/view/tags', component: createOptional(drawing) }],
+    })
+
+    drawing.value = true
+    await flushPromises()
+    expect(widgets.emitted('widgets')?.at(-1)?.[0]).toBeInstanceOf(Element)
+
+    drawing.value = false
+    await flushPromises()
     expect(widgets.emitted('widgets')?.at(-1)).toStrictEqual([null])
   })
 })

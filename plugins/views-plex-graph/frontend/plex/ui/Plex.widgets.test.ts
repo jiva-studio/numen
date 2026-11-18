@@ -172,32 +172,28 @@ describe('the widgets of the plex', () => {
 
     expect(gapWith).toBeGreaterThanOrEqual(gapWithout + WIDGET_HEIGHT)
   })
+})
 
-  it('start beyond the names of a node on the same side', async () => {
-    vi.stubGlobal('CanvasRenderingContext2D', class {})
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
-      font: '',
-      measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
-    } as unknown as CanvasRenderingContext2D)
-    const plex = await mountPlex({
-      showNames: true,
-      names: (id) =>
-        id === 'child-0'
-          ? { above: [], below: [{ id: 'name:Heat', title: 'Heat' }] }
-          : { above: [], below: [] },
-      readType: () => ({ font: '13px Test Sans', labelFont: '10px Test Sans', gap: 6 }),
-      widgetsBelow: [widget('tags')],
-      getPath: getPathOf,
-    })
+describe('the widgets of the focus', () => {
+  it('keep its children apart by the height they take under it', async () => {
+    const without = await mountPlex()
+    const gapWithout = getY(without, 'River delta') - getY(without, 'Watershed')
+    without.unmount()
 
-    const name = plex.get('[role="button"][aria-label^="Heat, name under "]')
-    const [, nameY] =
-      /translate\(-?[\d.]+ (-?[\d.]+)\)/.exec(name.attributes('transform') ?? '') ?? []
-    const nameEdge = Number(nameY) + Number(name.get('rect').attributes('height')) / 2
-    const box = readWidgets(plex, 'tags', getPathOf('child-0'))[0]!.element.closest(
-      'foreignObject',
-    )!
+    const plex = await mountPlex({ widgetsBelow: [widget('tags')], getPath: getPathOf })
+    const gapWith = getY(plex, 'River delta') - getY(plex, 'Watershed')
 
-    expect(Number(box.getAttribute('y'))).toBeGreaterThanOrEqual(nameEdge)
+    expect(gapWith).toBeGreaterThanOrEqual(gapWithout + WIDGET_HEIGHT)
+  })
+
+  it('keep its parents apart by the height they take over it', async () => {
+    const without = await mountPlex()
+    const gapWithout = getY(without, 'Watershed') - getY(without, 'Hydrology')
+    without.unmount()
+
+    const plex = await mountPlex({ widgetsAbove: [widget('parents')], getPath: getPathOf })
+    const gapWith = getY(plex, 'Watershed') - getY(plex, 'Hydrology')
+
+    expect(gapWith).toBeGreaterThanOrEqual(gapWithout + WIDGET_HEIGHT)
   })
 })

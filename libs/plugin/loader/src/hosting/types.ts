@@ -21,6 +21,7 @@ import type {
   PickerHost,
   ProcessHost,
   ReaderRegistration,
+  EditorSettings,
   SettingsViewRegistration,
   SlotViewRegistration,
   SlotHost,
@@ -143,6 +144,11 @@ export interface HostPlugins {
     pluginId: string,
     key: string,
     handler: (value: JsonValue | undefined) => void | Promise<void>,
+  ) => () => void
+  readonly getEditorSettings?: () => EditorSettings | undefined
+  readonly onEditorSettingsChange?: (
+    pluginId: string,
+    handler: (settings: EditorSettings) => void | Promise<void>,
   ) => () => void
 }
 
@@ -310,6 +316,11 @@ export interface ContextSettingHost {
     pluginId: string,
     key: string,
     handler: (value: T) => void | Promise<void>,
+  ) => Disposable
+  readonly getEditorSettings: () => EditorSettings | undefined
+  readonly onEditorSettingsChange: (
+    pluginId: string,
+    handler: (settings: EditorSettings) => void | Promise<void>,
   ) => Disposable
 }
 

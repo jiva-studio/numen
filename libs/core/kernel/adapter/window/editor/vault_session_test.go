@@ -1000,7 +1000,7 @@ func TestVaultService_RejectsCallsWithoutActiveVault(t *testing.T) {
 		},
 		"show what a note is joined to": func() error {
 			_, err := f.vault.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{
-				Path: "One.md",
+				Paths: []string{"One.md"},
 			}))
 			return err
 		},

@@ -9,6 +9,7 @@ import type { RequirePermission } from './permission'
 const RUNNABLE_APP_COMMANDS: ReadonlySet<string> = new Set([
   'app:vault.create',
   'app:settings.open',
+  'app:file.reveal',
 ])
 
 /** What decides whether a plugin runs a command it does not own. */
