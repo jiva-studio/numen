@@ -27,9 +27,10 @@ beforeEach(() => {
 
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
-const run = (args, extra = {}) =>
+const run = (args, extra = {}, options = {}) =>
   spawnSync('bash', [SCRIPT, ...args], {
     encoding: 'utf8',
+    ...options,
     env: {
       ...process.env,
       APT_RETRY_DELAYS: '0 0 0',
@@ -103,6 +104,12 @@ describe('apt-retry.sh', () => {
     assert.equal(result.status, 124)
     assert.ok(Date.now() - began < 15000)
     assert.match(result.stdout, /::error::apt did not finish within 2s/)
+  })
+
+  it('closes stdin for the command it runs', () => {
+    const result = run(['cat'], {}, { input: 'unexpected stdin\n' })
+    assert.equal(result.status, 0)
+    assert.equal(result.stdout, '')
   })
 
   it('does not wait past the deadline between attempts', () => {

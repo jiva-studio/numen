@@ -43,7 +43,7 @@ runs:
         RESTORED: ${{ steps.apt.outputs.cache-matched-key != '' }}
       run: |
         sudo rm -f /var/lib/man-db/auto-update
-        if [ "$RESTORED" = true ] && sudo dpkg --force-unsafe-io --refuse-downgrade -i ~/.cache/apt-archives/*.deb; then
+        if [ "$RESTORED" = true ] && sudo dpkg --force-unsafe-io --refuse-downgrade -i ~/.cache/apt-archives/*.deb && { [ -z "$PACKAGES" ] || dpkg -s $PACKAGES > /dev/null 2>&1; }; then
           exit 0
         fi
         .github/scripts/apt-retry.sh npx playwright install-deps $BROWSERS
