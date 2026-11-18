@@ -130,6 +130,26 @@ describe('the commands of the window', () => {
     })
   })
 
+  it('keep the note type and the properties a target carries when listing items over it', async () => {
+    const { commands, listItems } = setup()
+    const target: RunTarget = {
+      path: 'links/Clip.md',
+      title: 'Clip',
+      isFolder: false,
+      others: [],
+      tab: '',
+      noteType: 'link',
+      properties: { media: 'a' },
+    }
+
+    await commands.listItems('org.example.tide:chart.move', target)
+
+    expect(listItems).toHaveBeenCalledWith('org.example.tide:chart.move', {
+      ...target,
+      tab: 'plex:1',
+    })
+  })
+
   it('resolve with the path of the note the run made, and with an empty path for a run with an item', async () => {
     const { commands, runCommandToEnd } = setup()
     runCommandToEnd.mockResolvedValueOnce('Untitled note 1.md')

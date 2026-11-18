@@ -43,6 +43,7 @@ export const activate = (
   plugin.register.command({
     id: 'link.downloadMedia',
     listItems: async (target) => {
+      if (target.noteType !== undefined && target.noteType !== 'link') return []
       const facts = await links.getLink(target.path)
       return facts.ok && facts.value.isCopyable ? MEDIA.map((id) => ({ id, title: words[id] })) : []
     },

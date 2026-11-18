@@ -11,9 +11,7 @@ const props = defineProps<{ tags: readonly string[] }>()
 /* --------------------------------- State ---------------------------------- */
 const CHIP_LIMIT = 4
 
-const REST = Symbol('rest')
-
-const hovered = ref<{ source: string | typeof REST; at: Box } | null>(null)
+const hoveredAt = ref<Box | null>(null)
 
 const chips = computed(() =>
   props.tags.slice(0, CHIP_LIMIT).map((tag) => ({
@@ -23,31 +21,23 @@ const chips = computed(() =>
 )
 const rest = computed(() => props.tags.length - CHIP_LIMIT)
 const hiddenTags = computed(() => props.tags.slice(CHIP_LIMIT))
-const hoveredText = computed(() =>
-  hovered.value?.source === REST ? hiddenTags.value.join(', ') : (hovered.value?.source as string),
-)
+const hoveredText = computed(() => hiddenTags.value.join(', '))
 
 watch(
   () => props.tags,
   (tags) => {
-    const source = hovered.value?.source
-    if (source === undefined) return
-    const present =
-      source === REST ? tags.length > CHIP_LIMIT : tags.slice(0, CHIP_LIMIT).includes(source)
-    if (!present) hovered.value = null
+    if (tags.length <= CHIP_LIMIT) hoveredAt.value = null
   },
 )
 
 /* -------------------------------- Handlers -------------------------------- */
-function onEnter(source: string | typeof REST, event: Event) {
+function onEnterMore(event: Event) {
   const rect = measureRect(event.currentTarget as HTMLElement)
-  hovered.value = rect
-    ? { source, at: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } }
-    : null
+  hoveredAt.value = rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null
 }
 
-function onLeave() {
-  hovered.value = null
+function onLeaveMore() {
+  hoveredAt.value = null
 }
 </script>
 
@@ -58,12 +48,7 @@ function onLeave() {
       :key="chip.tag"
       class="plex-tags__chip"
       data-plex-tag
-      tabindex="0"
       :style="chip.style"
-      @mouseenter="onEnter(chip.tag, $event)"
-      @mouseleave="onLeave"
-      @focus="onEnter(chip.tag, $event)"
-      @blur="onLeave"
     >
       <span class="plex-tags__name">{{ chip.tag }}</span>
     </span>
@@ -72,15 +57,15 @@ function onLeave() {
       class="plex-tags__chip plex-tags__chip--more"
       data-plex-tag-more
       tabindex="0"
-      @mouseenter="onEnter(REST, $event)"
-      @mouseleave="onLeave"
-      @focus="onEnter(REST, $event)"
-      @blur="onLeave"
+      @mouseenter="onEnterMore"
+      @mouseleave="onLeaveMore"
+      @focus="onEnterMore"
+      @blur="onLeaveMore"
     >
       {{ getRestText(rest) }}
     </span>
     <Teleport to="body">
-      <Tooltip v-if="hovered" :at="hovered.at">{{ hoveredText }}</Tooltip>
+      <Tooltip v-if="hoveredAt" :at="hoveredAt">{{ hoveredText }}</Tooltip>
     </Teleport>
   </span>
 </template>

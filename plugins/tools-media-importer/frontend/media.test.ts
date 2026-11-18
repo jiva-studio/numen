@@ -53,4 +53,21 @@ describe('the handler of link.downloadMedia', () => {
 
     expect(await getHandler(ctx)?.listItems?.(CLIP)).toStrictEqual([])
   })
+
+  it('offers nothing and does not call the backend over a note of another type', async () => {
+    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
+    const host = createMockHostServices()
+    let calls = 0
+    const links: Links = {
+      getLink: async () => {
+        calls += 1
+        return { ok: true, value: { url: 'https://videos.example/clip', isCopyable: true } }
+      },
+      copyMedia: async () => ({ ok: true, value: null }),
+    }
+    activate(ctx, host, undefined, links)
+
+    expect(await getHandler(ctx)?.listItems?.({ ...CLIP, noteType: 'note' })).toStrictEqual([])
+    expect(calls).toBe(0)
+  })
 })

@@ -61,7 +61,7 @@ export const ShowsTheTimeOfTheResultsOnHover: Story = {
     await userEvent.hover(dot)
 
     const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
-    await expect(tooltip).toBeVisible()
+    await waitFor(() => expect(tooltip).toBeVisible())
     await expect(tooltip).toHaveTextContent(/^Up to date/)
     await expect(within(tooltip).getByText('Computed').nextElementSibling).toHaveTextContent(
       '15 minutes ago',
@@ -87,7 +87,7 @@ export const ShowsTheTooltipOnFocus: Story = {
 
     const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
     await expect(tooltip).toHaveTextContent(/^Stale/)
-    await expect(within(tooltip).getByText('15 minutes ago')).toBeVisible()
+    await waitFor(() => expect(within(tooltip).getByText('15 minutes ago')).toBeVisible())
 
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(canvas.queryByRole('tooltip')).toBeNull())
@@ -279,7 +279,9 @@ export const ShowsAWarning: Story = {
     await expect(canvas.queryByText(WARNING)).toBeNull()
     await userEvent.hover(dot)
     const tooltip = await waitFor(() => canvas.getByRole('tooltip'))
-    await expect(within(tooltip).getByRole('heading', { name: 'Warning' })).toBeVisible()
+    await waitFor(() =>
+      expect(within(tooltip).getByRole('heading', { name: 'Warning' })).toBeVisible(),
+    )
     await expect(tooltip).toHaveTextContent(WARNING)
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
   },
@@ -306,7 +308,9 @@ export const ShowsAFailedLastRun: Story = {
     await expect(
       within(tooltip).getAllByText('Failed').at(-1)?.nextElementSibling,
     ).toHaveTextContent('4 minutes ago')
-    await expect(within(tooltip).getByRole('heading', { name: 'Error' })).toBeVisible()
+    await waitFor(() =>
+      expect(within(tooltip).getByRole('heading', { name: 'Error' })).toBeVisible(),
+    )
     await expect(tooltip).toHaveTextContent(FAILURE_REASON)
     await expect(canvas.getByRole('button', { name: /1911/ })).toBeVisible()
     await expect(canvas.getByRole('button', { name: /Pier plan/ })).toBeVisible()

@@ -221,11 +221,14 @@ function usePlexMenu(options: {
   const request = computed(() => nodeMenu.target.value?.request ?? null)
   const menuItems = computed<readonly MenuItem[]>(() => nodeMenu.menu.value?.items ?? [])
 
-  const getNodeTarget = (node: string, path: string): CommandTarget => {
-    const type = getType(node)
-    const target = { path, title: getName(path), isFolder: false, others: [], tab: '' }
-    return type === NOTE_TYPE ? target : { ...target, noteType: type }
-  }
+  const getNodeTarget = (node: string, path: string): CommandTarget => ({
+    path,
+    title: getName(path),
+    isFolder: false,
+    others: [],
+    tab: '',
+    noteType: getType(node),
+  })
 
   /** The vault root over this tab: the target of a place where there is no node. */
   const getCanvasTarget = (): CommandTarget => ({

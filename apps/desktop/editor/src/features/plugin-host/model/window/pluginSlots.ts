@@ -73,13 +73,25 @@ export function createSlotCommandFinder(
     }
   }
 
+  const isPossibleWithItems = (
+    when: string | undefined,
+    target: CommandTarget | undefined,
+  ): boolean => {
+    if (!isOverFile(target)) return false
+    const condition = deps.whenReader.getCondition(when)
+    if (!condition) return false
+    return condition.evaluatePartial(getKnownValues(target)) !== 'false'
+  }
+
   const findPluginLook = (command: string, target: CommandTarget | undefined) => {
     const hostCommand = deps.getPluginCommands().find((one) => one.id === command)
     const declared = deps.getDeclaredCommands()?.find((one) => getPaletteId(one) === command)
     const look = hostCommand ?? declared
     const hasItems = deps.hasPluginItems?.(command) ?? false
     // The versions a command with items runs over are the core's to list, over any file.
-    const isAvailable = hasItems ? isOverFile(target) : isAvailableOver(look?.when, target)
+    const isAvailable = hasItems
+      ? isPossibleWithItems(look?.when, target)
+      : isAvailableOver(look?.when, target)
     if (!look || !isAvailable) return undefined
     return {
       title: look.title,

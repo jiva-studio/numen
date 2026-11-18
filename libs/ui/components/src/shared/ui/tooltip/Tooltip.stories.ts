@@ -41,6 +41,8 @@ export const LabelInTheDarkTheme: Story = {
 export const FarTooManyWords: Story = {
   args: { text: Array.from({ length: 60 }, (_, index) => `Tag ${index + 1}`).join(', ') },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByRole('tooltip')).toBeVisible()
+    await expect(within(canvasElement).getByRole('tooltip')).toHaveTextContent(
+      'Tag 1, Tag 2, Tag 3',
+    )
   },
 }

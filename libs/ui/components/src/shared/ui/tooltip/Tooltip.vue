@@ -99,5 +99,13 @@ function measure(): void {
   box-shadow: var(--numen-shadow-card);
   font-size: var(--numen-text-1);
   pointer-events: none;
+  animation: tooltip-show var(--numen-motion-hover) var(--numen-easing) var(--numen-wait-tooltip)
+    backwards;
+}
+
+@keyframes tooltip-show {
+  from {
+    opacity: 0;
+  }
 }
 </style>

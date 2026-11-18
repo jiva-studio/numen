@@ -30,10 +30,16 @@ export function createWindowCommands(deps: WindowCommandsDeps): CommandsHost {
   const getRunTarget = (target: RunTarget | undefined): CommandTarget =>
     getNamedTarget(deps.getTarget(), target)
 
+  const getListTarget = (target: RunTarget | undefined): RunTarget => ({
+    ...toRunTarget(getRunTarget(target)),
+    ...(target?.noteType ? { noteType: target.noteType } : {}),
+    ...(target?.properties ? { properties: target.properties } : {}),
+  })
+
   return {
     getIds: () => ids.value,
     watch: (handler) => ({ dispose: watch(ids, handler, { immediate: true }) }),
-    listItems: (id, target) => deps.listItems(id, toRunTarget(getRunTarget(target))),
+    listItems: (id, target) => deps.listItems(id, getListTarget(target)),
     run: async (id, target, itemId, values) => {
       const runTarget = getRunTarget(target)
       const extra = values === undefined ? [] : [values]
