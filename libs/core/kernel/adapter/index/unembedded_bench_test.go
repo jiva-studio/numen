@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // The embedding walk requests a page of chunks, reads the text of each and

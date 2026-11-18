@@ -3,14 +3,17 @@
  * services a plugin is given, made without the host: the services reach the commands through the
  * port, which the palettes connect once they are made.
  */
-import { createNoticeQueue } from '@numen/workbench'
 import { createCommandTitleReader } from '@/entities/command'
 import { useDeclaredCommands } from '@/features/plugin-commands'
 import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
 import { syncKeybindings } from '@/features/hotkeys'
 import type { createWindowBase } from './createWindowBase'
 import { createPluginDeclarations } from './createPluginDeclarations'
-import { createPluginHostSupport, createServiceParts } from './createPluginHost'
+import {
+  createPluginHostSupport,
+  createPluginSurfaces,
+  createServiceParts,
+} from './createPluginHost'
 import {
   createPluginAccess,
   createPluginBackgroundTasks,
@@ -19,10 +22,17 @@ import {
 } from './createPluginServices'
 
 type WindowBase = ReturnType<typeof createWindowBase>
+type WindowFoundation = WindowBase['foundation']
+
+/** What the plugins of the window read of the foundation. */
+type PluginsFoundation = Pick<
+  WindowFoundation,
+  'api' | 'log' | 'rest' | 'frame' | 'status' | 'registry'
+>
 
 /** What the plugins of the window read of the base. */
 export interface WindowPluginsDeps {
-  readonly foundation: WindowBase['foundation']
+  readonly foundation: PluginsFoundation
   readonly tabs: WindowBase['tabs']
   readonly vault: WindowBase['vault']
   readonly windowSettings: WindowBase['windowSettings']
@@ -36,7 +46,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
   const { note } = api.vault
   const { editing, window, vaults, itemLists } = vault
   const hostPort = createHostPort()
-  const notices = createNoticeQueue()
+  const { notices, picker } = createPluginSurfaces()
   const pluginNotes = createPluginNotes({ read: note.readNote, write: note.writeNote })
   const declarations = createPluginDeclarations({
     api: api.plugins.declaredCommands,
@@ -90,6 +100,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       notices,
       pluginNotes,
       hostParts: declarations.hostParts,
+      picker,
     }),
   })
   vault.vaultChanges.subscribe((event) => pluginHost.notifyVaultChange(event))
@@ -107,5 +118,5 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     declaredCommands.contributions.keybindings,
     rest.state.plugins,
   )
-  return { hostPort, pluginHost, pluginLoader, declaredCommands }
+  return { hostPort, pluginHost, pluginLoader, declaredCommands, picker }
 }

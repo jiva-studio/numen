@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/calibration"
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/usecase/relevance"
 )
 
@@ -16,7 +15,7 @@ var errNotMounted = server.NewAPIError(server.CodeUnavailable, "the plugin is no
 
 func convertError(err error) error {
 	switch {
-	case errors.Is(err, calibration.ErrNotStarted):
+	case errors.Is(err, relevance.ErrNotStarted):
 		return errNotMounted
 	case errors.Is(err, host.ErrInvalidFloor):
 		return server.NewAPIError(server.CodeInvalidArgument, err.Error())

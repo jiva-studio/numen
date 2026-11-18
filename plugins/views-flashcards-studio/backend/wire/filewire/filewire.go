@@ -30,7 +30,7 @@ func NewStat(ref domain.FileStat) *api.FileStat {
 	if ref.IsZero() {
 		return nil
 	}
-	return &api.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
+	return &api.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime), Hash: ref.Hash, Version: ref.Version}
 }
 
 // GetStat is the file stat a client presented.
@@ -39,7 +39,7 @@ func GetStat(pos *api.FileStat) domain.FileStat {
 		// gomutants:disable-next-line RETURN_ZERO reason="Explicit zero-field struct literal equals the zero value."
 		return domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}
 	}
-	return domain.FileStat{Path: pos.Path, Kind: "", Size: pos.Size, ModTime: instant(pos.Mtime)}
+	return domain.FileStat{Path: pos.Path, Kind: "", Size: pos.Size, ModTime: instant(pos.Mtime), Hash: pos.Hash, Version: pos.Version}
 }
 
 // Reason is a failure particular to one write, and the ErrorCode it is answered with.

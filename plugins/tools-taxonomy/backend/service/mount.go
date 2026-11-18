@@ -1,6 +1,6 @@
 // Package service is the backend of the tags plugin: it builds the host clients and the cache of the
-// tags, registers the tool tag_list and the query functions hasTag, hasTagExactly and hasAnyTag, and brings the tags up to
-// date on each onFilesChanged event.
+// tags, registers the tool tag_list, the query functions hasTag, hasTagExactly and hasAnyTag and the service of its
+// frontend, and brings the tags up to date on each onFilesChanged event.
 package service
 
 import (
@@ -66,10 +66,11 @@ func Run() {
 	}, server.WithEventHandler(func(ctx context.Context, event string) error { return app.HandleEvent(ctx, event) }))
 }
 
-// Mount registers the tool and the query functions on s.
+// Mount registers the tool, the query functions and the service of the frontend on s.
 func (a *App) Mount(s *server.Server) {
 	a.Tools().Mount(s)
 	a.Functions().Mount(s)
+	mountAPI(s, a.cache)
 }
 
 // Tools is the registry of the tool tag_list.

@@ -8,7 +8,7 @@ import (
 
 func newProvider(r *reranking.Reranking) connection.Provider {
 	provider := llm.Provide(nil, llm.Roles{
-		Completer: nil, Chatter: nil, Embedder: nil, Reranker: r, Profiler: nil, Models: r, Reasoning: nil,
+		Completer: nil, Chatter: nil, Embedder: nil, Reranker: reranker{reranking: r}, Profiler: nil, Models: r, Reasoning: nil,
 	})
 	provider[connection.OperationDetected] = connection.ServeDetected(r.DetectConnections)
 	return provider

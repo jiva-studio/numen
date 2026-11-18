@@ -47,9 +47,18 @@ function createPaletteBase(deps: PaletteBaseDeps) {
 type WindowBase = ReturnType<typeof createWindowBase>
 type WindowPlugins = ReturnType<typeof createWindowPlugins>
 
+/** What the palettes of the window read of the foundation. */
+interface PalettesFoundation extends Pick<
+  WindowBase['foundation'],
+  'log' | 'rest' | 'registry'
+> {
+  readonly api: Pick<WindowBase['foundation']['api'], 'vault'>
+  readonly settingsRequests: Pick<WindowBase['foundation']['settingsRequests'], 'emit'>
+}
+
 /** What the palettes of the window read of the base and the plugins. */
 export interface WindowPalettesDeps {
-  readonly foundation: WindowBase['foundation']
+  readonly foundation: PalettesFoundation
   readonly tabs: WindowBase['tabs']
   readonly vault: WindowBase['vault']
   readonly windowSettings: WindowBase['windowSettings']
@@ -104,6 +113,7 @@ export function createWindowPalettes(deps: WindowPalettesDeps) {
   vault.renames.subscribe((renamed) => palette.commands.navigation.applyRenames(renamed))
   return {
     palette,
+    picker: plugins.picker,
     commandDeps,
     pluginPalette,
     windowCommands: createHostConnection({

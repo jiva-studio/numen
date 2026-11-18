@@ -1,4 +1,5 @@
-import type { ShownRow } from '../lib/row'
+import type { VNode } from 'vue'
+import type { RowId, ShownRow } from '../lib/row'
 
 /** Props for a single tree row component. */
 export interface TreeRowProps {
@@ -11,4 +12,5 @@ export interface TreeRowProps {
   isTabStop: boolean
   isRenaming: boolean
   mark: Record<string, string>
+  end?: ((props: { id: RowId }) => VNode[]) | undefined
 }

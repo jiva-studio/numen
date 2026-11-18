@@ -5,7 +5,6 @@
 import type { Ref } from 'vue'
 import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
 import { followSetting } from './followSetting'
-import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../plex'
 import type { PlexLook, ReferenceMode } from '../types'
 
 /** The key the manifest declares Pill background under. */
@@ -34,8 +33,6 @@ const LOOK_NUMBERS = [
   ['outlineThickness', { fallback: 1, min: 0.5, max: 4 }],
   ['lineCurvature', { fallback: 0.55, min: 0, max: 1 }],
   ['noteRoom', { fallback: 0, min: 0, max: 40 }],
-  ['namesOpacity', { fallback: DEFAULT_NAMES_OPACITY, min: 0, max: 1 }],
-  ['focusedNamesOpacity', { fallback: DEFAULT_FOCUSED_NAMES_OPACITY, min: 0.05, max: 1 }],
 ] as const satisfies readonly (readonly [string, NumberRange])[]
 
 type LookNumber = (typeof LOOK_NUMBERS)[number][0]

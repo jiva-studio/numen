@@ -1,30 +1,74 @@
 import { describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
-import { EditorView } from '@codemirror/view'
-import { NOTE_EDITOR, type HostServices, type PluginContext } from '@numen/plugin-sdk'
-import { activate, deactivate, MarkdownNoteEditor, readMarkdownEditorPreferences } from './index'
+import { mount } from '@vue/test-utils'
+import { createNamedIcon } from '@numen/ui'
+import type { Component } from 'vue'
+import { NOTE_EDITOR, type HostServices } from '@numen/plugin-sdk'
+import { activate, deactivate } from './index'
+import { createEditorSettingsContext } from './testing/editorSettings'
 
 /** Host services whose vault offers no notes. */
 const NO_NOTES = { vault: {} } as unknown as HostServices
 
+const ICON_LOAD_TIMEOUT = 30_000
+
+const drawIcon = (icon: Component): Promise<string> => {
+  const wrapper = mount(icon)
+  return vi.waitFor(
+    () => {
+      const svg = wrapper.find('svg')
+      expect(svg.exists()).toBe(true)
+      return svg.element.innerHTML
+    },
+    { timeout: ICON_LOAD_TIMEOUT, interval: 50 },
+  )
+}
+
+describe('the icon of the notes in the tab strip', () => {
+  const getRegisteredIcons = (): { reader: Component; tabKind: Component } => {
+    const { context } = createEditorSettingsContext()
+    activate(context, NO_NOTES)
+    const reader = vi.mocked(context.register.reader).mock.calls[0]?.[0].icon
+    const tabKind = vi.mocked(context.register.tabKind).mock.calls[0]?.[0].icon
+    if (!reader || !tabKind)
+      throw new Error('the plugin registered a reader or a tab kind without an icon')
+    return { reader, tabKind }
+  }
+
+  it(
+    'is drawn for the note tab kind as the file-text icon the manifest names',
+    async () => {
+      const { tabKind } = getRegisteredIcons()
+
+      expect(await drawIcon(tabKind)).toBe(await drawIcon(createNamedIcon('file-text')))
+    },
+    ICON_LOAD_TIMEOUT * 1.5,
+  )
+
+  it(
+    'is drawn for the markdown reader as the file-text icon the manifest names',
+    async () => {
+      const { reader } = getRegisteredIcons()
+
+      expect(await drawIcon(reader)).toBe(await drawIcon(createNamedIcon('file-text')))
+    },
+    ICON_LOAD_TIMEOUT * 1.5,
+  )
+})
+
 describe('notes plugin lifecycle', () => {
   it('registers markdown reader and note tab kind on activation', () => {
-    const registerReader = vi.fn()
-    const registerTabKind = vi.fn()
-    const context = {
-      register: { reader: registerReader, tabKind: registerTabKind },
-    } as unknown as PluginContext
+    const { context } = createEditorSettingsContext({ lineNumbers: false, softWrap: true })
 
     activate(context, NO_NOTES)
 
-    expect(registerReader).toHaveBeenCalledWith(
+    expect(context.register.reader).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'markdown',
         title: 'Markdown Note Editor',
       }),
     )
 
-    expect(registerTabKind).toHaveBeenCalledWith(
+    expect(context.register.tabKind).toHaveBeenCalledWith(
       expect.objectContaining({
         kind: 'note',
         title: 'Note',
@@ -32,91 +76,32 @@ describe('notes plugin lifecycle', () => {
     )
   })
 
-  it('registers no command, since creating a note is a command of the editor', () => {
-    const registerCommand = vi.fn()
-    const context = {
-      register: { reader: vi.fn(), tabKind: vi.fn(), command: registerCommand },
-    } as unknown as PluginContext
+  it('registers markdown reader and note tab kind before the editor settings have arrived', () => {
+    const { context } = createEditorSettingsContext(undefined)
 
     activate(context, NO_NOTES)
 
-    expect(registerCommand).not.toHaveBeenCalled()
+    expect(context.register.reader).toHaveBeenCalledOnce()
+    expect(context.register.tabKind).toHaveBeenCalledOnce()
+  })
+
+  it('registers no command, since creating a note is a command of the editor', () => {
+    const { context } = createEditorSettingsContext({ lineNumbers: false, softWrap: true })
+
+    activate(context, NO_NOTES)
+
+    expect(context.register.command).not.toHaveBeenCalled()
   })
 
   it('registers the note-editor view where the host offers the notes of the vault', () => {
-    const registerView = vi.fn()
-    const context = {
-      register: { reader: vi.fn(), tabKind: vi.fn(), view: registerView },
-    } as unknown as PluginContext
+    const { context } = createEditorSettingsContext({ lineNumbers: false, softWrap: true })
     const host = { vault: { notes: { read: vi.fn(), write: vi.fn() } } } as unknown as HostServices
 
     activate(context, host)
 
-    expect(registerView).toHaveBeenCalledWith(expect.objectContaining({ capability: NOTE_EDITOR }))
-  })
-
-  it('defaults softWrap to true and lineNumbers to false when no settings are stored', () => {
-    expect(readMarkdownEditorPreferences()).toStrictEqual({
-      softWrap: true,
-      lineNumbers: false,
-    })
-  })
-
-  it('wires plugin settings into open note editors and updates them when settings change', async () => {
-    const settings: Record<string, unknown> = {
-      softWrap: false,
-      lineNumbers: true,
-    }
-    const listeners = new Map<string, (value: unknown) => void>()
-    const context = {
-      register: { reader: vi.fn(), tabKind: vi.fn() },
-      settings: {
-        get: (key: string) => settings[key],
-        onChange: (key: string, handler: (value: unknown) => void) => {
-          listeners.set(key, handler)
-          return { dispose: () => listeners.delete(key) }
-        },
-      },
-    } as unknown as PluginContext
-
-    expect(readMarkdownEditorPreferences(context.settings.get)).toStrictEqual({
-      softWrap: false,
-      lineNumbers: true,
-    })
-
-    activate(context, NO_NOTES)
-
-    const wrapper = mount(MarkdownNoteEditor, {
-      props: { modelValue: 'hello', filePath: 'test.md' },
-      attachTo: document.body,
-    })
-    await flushPromises()
-
-    const view = EditorView.findFromDOM(wrapper.element.querySelector('.cm-editor') as HTMLElement)
-    expect(view).not.toBeNull()
-    expect(view!.contentDOM.classList.contains('cm-lineWrapping')).toBe(false)
-    expect(view!.dom.querySelector('.cm-lineNumbers')).not.toBeNull()
-    expect(view!.state.tabSize).toBe(2)
-
-    settings.softWrap = true
-    settings.lineNumbers = false
-    listeners.get('softWrap')?.(true)
-    listeners.get('lineNumbers')?.(false)
-    await flushPromises()
-
-    expect(view!.contentDOM.classList.contains('cm-lineWrapping')).toBe(true)
-    expect(view!.dom.querySelector('.cm-lineNumbers')).toBeNull()
-    expect(view!.state.tabSize).toBe(2)
-
-    wrapper.unmount()
-  })
-
-  it('does not read a tab size from the settings', () => {
-    const lookup = (key: string) => (key === 'tab_size' || key === 'tabSize' ? 8 : undefined)
-    expect(readMarkdownEditorPreferences(lookup)).toStrictEqual({
-      softWrap: true,
-      lineNumbers: false,
-    })
+    expect(context.register.view).toHaveBeenCalledWith(
+      expect.objectContaining({ capability: NOTE_EDITOR }),
+    )
   })
 
   it('runs deactivation hook cleanly', () => {

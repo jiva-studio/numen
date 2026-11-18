@@ -402,20 +402,20 @@ describe('host service bridges', () => {
     )
     expect(uiNoCommands.getNotices('p').show('info')).toBeUndefined()
     expect(uiNoCommands.getNotices('p').setTasks([])).toBeUndefined()
-    expect(uiNoCommands.isCommandListed('md.tree:open')).toBe(false)
+    expect(uiNoCommands.commandAccess.isListed('md.tree:open')).toBe(false)
 
     slotState.entries = [
       { pluginId: 'md.tree', slot: 'titleBar', kind: 'view' },
       { pluginId: 'md.tree', slot: 'titleBar', kind: 'command', command: 'open' },
       { pluginId: 'md.tree', slot: 'titleBar', kind: 'command', command: 'app:file.createText' },
     ]
-    expect(uiNoCommands.isCommandListed('md.tree:open')).toBe(true)
-    expect(uiNoCommands.isCommandListed('app:file.createText')).toBe(true)
-    expect(uiNoCommands.isCommandListed('md.tree:close')).toBe(false)
+    expect(uiNoCommands.commandAccess.isListed('md.tree:open')).toBe(true)
+    expect(uiNoCommands.commandAccess.isListed('app:file.createText')).toBe(true)
+    expect(uiNoCommands.commandAccess.isListed('md.tree:close')).toBe(false)
 
-    expect(uiNoCommands.getCommandPermission?.('md.tree:open')).toBe('vault:write')
-    expect(uiNoCommands.getCommandPermission?.('md.tree:free')).toBeUndefined()
-    expect(uiNoCommands.getCommandPermission?.('md.other:open')).toBeUndefined()
+    expect(uiNoCommands.commandAccess.getPermission?.('md.tree:open')).toBe('vault:write')
+    expect(uiNoCommands.commandAccess.getPermission?.('md.tree:free')).toBeUndefined()
+    expect(uiNoCommands.commandAccess.getPermission?.('md.other:open')).toBeUndefined()
 
     const uiWithCommands = createUiServiceBridge(
       {
@@ -429,8 +429,8 @@ describe('host service bridges', () => {
       },
       { slots, manifests, readSlotEntries: () => undefined },
     )
-    expect(uiWithCommands.getCommandPermission?.('md.decl:run')).toBe('vault:read')
-    expect(uiWithCommands.getCommandPermission?.('md.tree:open')).toBe('vault:write')
-    expect(uiWithCommands.getCommandPermission?.('md.other:noop')).toBeUndefined()
+    expect(uiWithCommands.commandAccess.getPermission?.('md.decl:run')).toBe('vault:read')
+    expect(uiWithCommands.commandAccess.getPermission?.('md.tree:open')).toBe('vault:write')
+    expect(uiWithCommands.commandAccess.getPermission?.('md.other:noop')).toBeUndefined()
   })
 })

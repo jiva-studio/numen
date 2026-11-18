@@ -84,6 +84,7 @@ const { onRename, onAbandon, onFieldBlur } = renaming
         :is-tab-stop="row.id === tabbed"
         :is-renaming="renamingPath === row.id"
         :mark="getMarkOf(marking, row.id)"
+        :end="$slots.end"
         @focus="onRowFocus(row.id)"
         @pointerdown="onRowPointerDown(row.id, $event)"
         @click="onRowClick(row)"

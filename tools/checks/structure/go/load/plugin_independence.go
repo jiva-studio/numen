@@ -15,7 +15,7 @@ import (
 const NumenRoot = "github.com/jiva-studio/numen/"
 
 // NotesModule is the module of the note model, which plugins do not name.
-const NotesModule = NumenRoot + "libs/note"
+const NotesModule = NumenRoot + "libs/shared/note"
 
 // SharedLibraries holds the Go libraries a plugin may import beside the SDK: code two or more
 // plugins need that does not depend on numen. Each folder below it is a module of its own.
@@ -34,14 +34,18 @@ func IsWithin(path, root string) bool {
 
 func GetPluginDependencyRefusal(mod, dep string) string {
 	switch {
-	case IsWithin(dep, mod), IsSDK(dep), IsSharedLibrary(dep):
+	case IsWithin(dep, mod), IsSDK(dep):
+		return ""
+	case IsWithin(dep, NotesModule):
+		return "a plugin names no package of the notes library; it reaches notes through the plugin SDK"
+	case IsWithin(dep, Wire):
+		return "a plugin names no wire type; the protocol is the wire between the core and the plugin SDK"
+	case IsSharedLibrary(dep):
 		return ""
 	case IsWithin(dep, "connectrpc.com/connect"), IsWithin(dep, "google.golang.org/protobuf"):
 		return "a plugin calls and answers the core through the plugin SDK, not through the RPC library"
 	case !strings.HasPrefix(dep, NumenRoot):
 		return ""
-	case IsWithin(dep, NotesModule):
-		return "a plugin names no package of the notes library; it reaches notes through the plugin SDK"
 	case IsPlugin(dep):
 		return "a plugin names no other plugin"
 	case IsWithin(dep, strings.TrimSuffix(Module, "/")):

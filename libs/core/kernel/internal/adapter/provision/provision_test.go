@@ -113,7 +113,7 @@ func TestRegistry_ConcurrentRequestsShareOneRun(t *testing.T) {
 		}()
 	}
 	started.Wait()
-	for !registry.flights.isRunning(getFlightKey(req)) {
+	for !registry.flights.isRunning(req.GetIdentity()) {
 		time.Sleep(time.Millisecond)
 	}
 	time.Sleep(50 * time.Millisecond)
@@ -347,19 +347,19 @@ func TestARunContinuesWhenEveryCallerStopsWaiting(t *testing.T) {
 		_, err := registry.Provision(ctx, req, nil)
 		errs <- err
 	}()
-	for !registry.flights.isRunning(getFlightKey(req)) {
+	for !registry.flights.isRunning(req.GetIdentity()) {
 		time.Sleep(time.Millisecond)
 	}
 	cancel()
 	if err := <-errs; !errors.Is(err, context.Canceled) {
 		t.Fatalf("err = %v, want canceled", err)
 	}
-	if !registry.flights.isRunning(getFlightKey(req)) {
+	if !registry.flights.isRunning(req.GetIdentity()) {
 		t.Fatal("the run ended when its only caller left")
 	}
 
 	close(provisioner.gate)
-	for registry.flights.isRunning(getFlightKey(req)) {
+	for registry.flights.isRunning(req.GetIdentity()) {
 		time.Sleep(time.Millisecond)
 	}
 	if got := provisioner.calls.Load(); got != 1 {

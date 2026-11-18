@@ -8,7 +8,6 @@ import (
 	"time"
 
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/themeport"
 )
 
 // ErrWatchUnavailable is the failure to start watching the user's folder.
@@ -20,13 +19,13 @@ const pluginPollInterval = time.Second
 // WatchThemes reports when the user's folder or the set of plugin themes changes.
 type WatchThemes struct {
 	catalog catalog
-	watch   themeport.OwnThemeWatch
+	watch   OwnThemeWatch
 	hold    time.Duration
 }
 
 // NewWatchThemes makes the watch over the sources. The hold is how long changes are kept before
 // they are reported; zero takes the default of the watch.
-func NewWatchThemes(sources Sources, watch themeport.OwnThemeWatch, hold time.Duration) *WatchThemes {
+func NewWatchThemes(sources Sources, watch OwnThemeWatch, hold time.Duration) *WatchThemes {
 	return &WatchThemes{catalog: catalog{sources: sources}, watch: watch, hold: hold}
 }
 

@@ -6,9 +6,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Factory returns a source that lists exactly the entries given. An entry in the state

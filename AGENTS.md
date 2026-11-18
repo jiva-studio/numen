@@ -10,17 +10,17 @@ Gemini, or any other) must follow them.
 - **Frontend coding style (Vue / TypeScript)**: [`.agents/rules/coding-style-frontend.md`](.agents/rules/coding-style-frontend.md)
 - **Pull requests, commits and issues**: [`.agents/rules/writing-changes.md`](.agents/rules/writing-changes.md)
 - **Unified review skill (`/nm-review`)**: [`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md)
-- **Per-module conventions**: `AGENTS.md` inside `libs/core/kernel`, `libs/core/protocol`, `libs/plugin/catalog`, `apps/desktop`.
+- **Per-module conventions**: `AGENTS.md` inside `libs/core/kernel`, `libs/shared/protocol`, `libs/plugin/catalog`, `apps/desktop`.
 - **Placement and story skills**: the next section.
 
 ## Placement skills
 
 Before adding or moving code, or writing a story, load the skill of the area. Each says which layer, slice or package the code goes to and how it is shaped; the rules it rests on are in `.agents/rules/`.
 
-- [`nm-place-core`](.agents/skills/nm-place-core/SKILL.md): `libs/core/kernel`, `libs/note`, the Go side of `apps/desktop`. Layers of the hexagon, ports, use cases, adapters, container.
+- [`nm-place-core`](.agents/skills/nm-place-core/SKILL.md): `libs/core/kernel`, `libs/shared/note`, the Go side of `apps/desktop`. Layers of the hexagon, ports, use cases, adapters, container.
 - [`nm-place-window`](.agents/skills/nm-place-window/SKILL.md): `apps/desktop/editor`, `apps/desktop/flashcards` and the other windows under `apps/`. FSD layers, slices, segments.
 - [`nm-place-plugin`](.agents/skills/nm-place-plugin/SKILL.md): `plugins/`, `libs/plugin/sdk-go`, `libs/plugin/sdk-ts`, `libs/plugin/loader`. Manifest, backend packages, frontend slices, what is copied and what is in the SDK.
-- [`nm-place-library`](.agents/skills/nm-place-library/SKILL.md): `libs/ui`, `libs/core/client`, `libs/core/protocol`, `libs/plugin/manager`, `libs/plugin/loader`. Which library shared code belongs to, or whether it stays in a window or a plugin.
+- [`nm-place-library`](.agents/skills/nm-place-library/SKILL.md): `libs/ui`, `libs/core/client`, `libs/shared/protocol`, `libs/plugin/manager`, `libs/plugin/loader`. Which library shared code belongs to, or whether it stays in a window or a plugin.
 - [`nm-write-stories`](.agents/skills/nm-write-stories/SKILL.md): `libs/ui/components` and `libs/ui/workbench`. What a Storybook story shows, how a `play` function and its fixtures are written, how a component takes its clock and viewport, and how it uses design tokens.
 
 A red check is fixed in the code. Never loosen the check, add an exclusion or move code to a place the check does not look at (rule 11 of section 15, and §9 and §10 of the architecture rules).
@@ -29,12 +29,12 @@ A red check is fixed in the code. Never loosen the check, add an exclusion or mo
 
 A review is the 3-stage pipeline of [`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md): gatekeeper ([`stages/1-gatekeeper.md`](.agents/skills/nm-review/stages/1-gatekeeper.md)), bug hunter ([`stages/2-bughunter.md`](.agents/skills/nm-review/stages/2-bughunter.md)), adversary ([`stages/3-adversary.md`](.agents/skills/nm-review/stages/3-adversary.md)), and the report templated in the skill. A failing gate stops the pipeline. Go tests run without `-race` locally; the race detector runs in CI only (`GO_RACE=1` turns it on for a make target). One pipeline covers Go and Vue. A reviewer reports findings and does not fix them.
 
-Every pull request follows the draft-first pipeline in [`.agents/rules/process.md`](.agents/rules/process.md): open the pull request as a draft (`gh pr create --draft`), bring CI to green (`gh pr checks --watch`), mark the pull request ready for review (`gh pr ready`), which starts the Claude review workflow, fix any findings and comment `/nm-review` to review again until the workflow approves, then the session that coordinates the pull requests requests a CodeRabbit review (`gh pr comment --body "@coderabbitai review"`) and, after its findings are fixed, CI is green and the workflow has approved the new commits, once more. The merge is by hand (`gh pr merge --squash`), never automatic and never `--admin`.
+Every pull request follows the draft-first pipeline in [`.agents/rules/process.md`](.agents/rules/process.md): open the pull request as a draft (`gh pr create --draft`), bring CI to green (`gh pr checks --watch`), mark the pull request ready for review (`gh pr ready`), which starts the Claude review workflow, fix any findings and comment `/nm-review` to review again until the workflow approves, then the session that coordinates the pull requests requests a CodeRabbit review (`gh pr comment --body "@coderabbitai review"`) and, after its findings are fixed, CI is green and the workflow has approved the new commits, once more. Once CodeRabbit has approved, the same session enables auto-merge (`gh pr merge --squash --auto`); `--admin` is never used.
 
 ## How we work
 
-- Pull requests: draft, green CI, ready, github-actions review, `/nm-review` until approved, CodeRabbit once (again only after its findings are fixed), merge by hand: [`process.md` §4](.agents/rules/process.md).
-- No auto-merge, no `--admin`; an agent reports once and does not merge: [`process.md` §4](.agents/rules/process.md).
+- Pull requests: draft, green CI, ready, claude review, `/nm-review` until approved, CodeRabbit once (again only after its findings are fixed), auto-merge after it: [`process.md` §4](.agents/rules/process.md).
+- Auto-merge only once CodeRabbit has approved, no `--admin`; an implementation agent reports once and does not merge: [`process.md` §4](.agents/rules/process.md).
 - CodeRabbit runs only on request, about five reviews an hour, so one request per round: [`process.md` §4](.agents/rules/process.md).
 - A flaky test is never rerun and a timeout never raised; the cause is fixed: [`process.md` §3](.agents/rules/process.md).
 - A check is never weakened and has no exclusion list: rule 11 of section 15 below.
@@ -42,6 +42,7 @@ Every pull request follows the draft-first pipeline in [`.agents/rules/process.m
 - Heavy runs go to the build host, not the laptop: [`process.md` §3](.agents/rules/process.md).
 - Every issue has a Type (Bug, Feature, Task, Tech debt, never a label), Priority (the owner's), Area and Status, and a Milestone (the month of its planned release, set by the owner or, when missing, by the agent that opens the pull request; the workflow moves it to the merge month when the merge is in a later month); several pull requests mean sub-issues, each closed by its own `Closes #N`: [`process.md` §7](.agents/rules/process.md).
 - Status is In Progress when taken and In review when the pull request is ready; Done is set by the project workflows: [`process.md` §7](.agents/rules/process.md).
+- When the decision changes, the issue and the pull request body are updated at once, because the reviewers compare the pull request with the issue: [`process.md` §7](.agents/rules/process.md).
 - A title is Conventional Commits; a body is Problem, Cause, Change and `Closes #N`: [`writing-changes.md`](.agents/rules/writing-changes.md).
 - Permissions, migrations, the wire contract and dependencies are the owner's decision: [`process.md` §6](.agents/rules/process.md).
 

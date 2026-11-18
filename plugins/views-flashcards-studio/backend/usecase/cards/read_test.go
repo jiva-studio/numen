@@ -354,7 +354,7 @@ func TestADeckWhoseFrontmatterCannotBeReadIsUnreadable(t *testing.T) {
 // A deck over the bound reports how large it is.
 func TestADeckOverTheBoundReturnsItsSize(t *testing.T) {
 	vs := newVaults(t)
-	if err := os.Truncate(filepath.Join(vs.first.Path, "decks", "Mammals.md"), cards.MaxBytes+1); err != nil {
+	if err := os.Truncate(filepath.Join(vs.first.Path, "decks", "Mammals.md"), format.MaxDeckBytes+1); err != nil {
 		t.Fatal(err)
 	}
 
@@ -362,10 +362,10 @@ func TestADeckOverTheBoundReturnsItsSize(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
-	if got.FileStat.Size != cards.MaxBytes+1 {
+	if got.FileStat.Size != format.MaxDeckBytes+1 {
 		t.Errorf("fingerprint = %+v, want the deck's size", got.FileStat)
 	}
-	if len(got.Body.Problems) != 1 || !strings.Contains(got.Body.Problems[0].Detail, strconv.Itoa(cards.MaxBytes+1)) {
+	if len(got.Body.Problems) != 1 || !strings.Contains(got.Body.Problems[0].Detail, strconv.Itoa(format.MaxDeckBytes+1)) {
 		t.Errorf("problems = %+v, want the size said", got.Body.Problems)
 	}
 }

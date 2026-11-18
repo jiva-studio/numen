@@ -45,10 +45,8 @@ const mergeHostParts = (parts: readonly HostParts[]): HostParts =>
 
 export function createPluginSupport(deps: PluginSupportDeps) {
   const { rest, catalog, status } = deps
-  const { getSetting, onSettingChange } = createPluginSettingsAccessor(
-    rest,
-    deps.reports.reportError,
-  )
+  const { getSetting, onSettingChange, getEditorSettings, onEditorSettingsChange } =
+    createPluginSettingsAccessor(rest, deps.reports.reportError)
   const parts = mergeHostParts(deps.parts)
   const pluginHost = createPluginHost({
     window: {
@@ -72,6 +70,8 @@ export function createPluginSupport(deps: PluginSupportDeps) {
       findPluginsOf: status.findPluginsOf,
       getSetting,
       onSettingChange,
+      getEditorSettings,
+      onEditorSettingsChange,
     },
     commands: { ...parts.commands },
     slots: { ...parts.slots },

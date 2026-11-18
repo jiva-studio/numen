@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ErrInvalidFrame is a frame origin that is not an https origin.

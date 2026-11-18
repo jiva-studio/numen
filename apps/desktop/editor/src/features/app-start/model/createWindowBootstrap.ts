@@ -12,7 +12,11 @@ import type { createPluginStart } from './createPluginStart'
 
 export interface WindowBootstrapDeps {
   readonly vaults: Pick<ReturnType<typeof useVaults>, 'loadVaults'>
-  readonly settings: { start(): Promise<void>; close(): void }
+  readonly settings: {
+    start(): Promise<void>
+    close(): void
+    readonly editorTokens: { start(): () => void }
+  }
   readonly window: { start(): Promise<void>; close(): void }
   readonly editing: { readonly fileFlush: { start(): Promise<void> }; close(): void }
   readonly tabLinkSession: { start(): Promise<void>; close(): void }
@@ -26,9 +30,14 @@ export function createWindowBootstrap(deps: WindowBootstrapDeps) {
   const reportError = (error: Caught) =>
     writeMessage(`The window did not start cleanly: ${formatError(error)}`, 'error')
 
+  let stopEditorTokens = (): void => undefined
   const started = createAppStart({
     loadVaults: () => vaults.loadVaults(),
-    startSettings: () => settings.start(),
+    startSettings: async () => {
+      await settings.start()
+      stopEditorTokens()
+      stopEditorTokens = settings.editorTokens.start()
+    },
     startLayout: layout.start,
     startPlugins: plugins.start,
     waitForInterfacePlugins: plugins.waitForInterface,
@@ -51,7 +60,10 @@ export function createWindowBootstrap(deps: WindowBootstrapDeps) {
     },
     closeEditing: () => editing.close(),
     closeTabs: layout.close,
-    closeSettings: () => settings.close(),
+    closeSettings: () => {
+      stopEditorTokens()
+      settings.close()
+    },
     closePlugins: plugins.close,
     reportError,
   })

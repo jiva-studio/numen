@@ -18,8 +18,10 @@ import type {
   JsonValue,
   MountedView,
   NoticeHost,
+  PickerHost,
   ProcessHost,
   ReaderRegistration,
+  EditorSettings,
   SettingsViewRegistration,
   SlotViewRegistration,
   SlotHost,
@@ -110,7 +112,7 @@ export interface EditorPlacement {
 /**
  * The window the plugins run in: its target, which the plugins it activates read as theirs, its
  * application, how it opens web links and reports the failure of a plugin, and its workspace,
- * commands, frame and notices.
+ * commands, frame, notices and picker.
  */
 export interface HostWindow {
   readonly target: string
@@ -121,6 +123,7 @@ export interface HostWindow {
   readonly getCommands?: () => CommandsHost | undefined
   readonly getWindow?: () => WindowHost | undefined
   readonly getNotices?: (pluginId: string) => NoticeHost
+  readonly getPicker?: () => PickerHost | undefined
   readonly clearNotices?: (pluginId: string) => void
 }
 
@@ -141,6 +144,11 @@ export interface HostPlugins {
     pluginId: string,
     key: string,
     handler: (value: JsonValue | undefined) => void | Promise<void>,
+  ) => () => void
+  readonly getEditorSettings?: () => EditorSettings | undefined
+  readonly onEditorSettingsChange?: (
+    pluginId: string,
+    handler: (settings: EditorSettings) => void | Promise<void>,
   ) => () => void
 }
 
@@ -309,6 +317,11 @@ export interface ContextSettingHost {
     key: string,
     handler: (value: T) => void | Promise<void>,
   ) => Disposable
+  readonly getEditorSettings: () => EditorSettings | undefined
+  readonly onEditorSettingsChange: (
+    pluginId: string,
+    handler: (settings: EditorSettings) => void | Promise<void>,
+  ) => Disposable
 }
 
 /** The events of the vault and of the selection that plugins listen to and emit. */
@@ -352,10 +365,13 @@ export interface ContextUiHost {
   readonly openExternal: (url: string) => Promise<void>
   readonly getWorkspace: () => WorkspaceHost | undefined
   readonly getCommands: () => CommandsHost | undefined
-  readonly isCommandListed: (command: string) => boolean
-  readonly getCommandPermission?: (command: string) => string | undefined
+  readonly commandAccess: {
+    readonly isListed: (command: string) => boolean
+    readonly getPermission?: (command: string) => string | undefined
+  }
   readonly getWindow: () => WindowHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
+  readonly getPicker: () => PickerHost | undefined
   readonly getSlots: () => SlotHost
 }
 

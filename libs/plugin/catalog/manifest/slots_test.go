@@ -10,7 +10,7 @@ import (
 )
 
 func TestTheSlotsAreTheOnesSlotsJSONLists(t *testing.T) {
-	text, err := os.ReadFile("../../../core/protocol/slots.json")
+	text, err := os.ReadFile("../../../shared/protocol/slots.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,5 +36,25 @@ func TestTheSlotsAreTheOnesSlotsJSONLists(t *testing.T) {
 	}
 	if manifest.IsSlot("sideBar") || manifest.IsWindowSlot("titleBar.commands") {
 		t.Error("a name outside the list, or an inner slot, is taken for a slot of the window")
+	}
+}
+
+func TestTheFileTreeRowEndIsAnInnerSlot(t *testing.T) {
+	if !manifest.IsSlot("fileTree.rowEnd") {
+		t.Error("fileTree.rowEnd is not a slot")
+	}
+	if manifest.IsWindowSlot("fileTree.rowEnd") {
+		t.Error("fileTree.rowEnd is a slot of the window")
+	}
+}
+
+func TestThePlexGraphHasASlotAboveAndASlotBelowItsNodes(t *testing.T) {
+	for _, name := range []string{"plexGraph.nodeAbove", "plexGraph.nodeBelow"} {
+		if !manifest.IsSlot(name) {
+			t.Errorf("IsSlot(%q) = false, want true", name)
+		}
+		if manifest.IsWindowSlot(name) {
+			t.Errorf("IsWindowSlot(%q) = true, want false: the plex draws it, not the window", name)
+		}
 	}
 }

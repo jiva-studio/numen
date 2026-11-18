@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/projection"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/domain/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/presets"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/projection"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/flashcards"
 )
 
 // Settings that name no rule count by the default rule at its default value.
@@ -49,21 +49,21 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 // A place with no day to name carries none, and a place whose horizon ended
 // first carries the day it never reached.
 func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
-	got := ConvertCurveToWire(projection.Curve{
-		Goal: review.GoalRetention,
+	got := ConvertCurveToWire(flashcards.Curve{Curve: projection.Curve{
+		Goal: projection.GoalRetention,
 		Grid: []float64{0.9},
 		Points: []projection.Point{
-			{Learns: review.LearnsUnasked},
-			{Learns: review.NeverLearns},
+			{Learns: projection.LearnsUnasked},
+			{Learns: projection.NeverLearns},
 			{Learns: 12},
 		},
 		Now: projection.GetOutsideGrid(), Suggested: projection.GetOutsideGrid(),
-	})
+	}})
 
 	if pos := got.At[0]; pos.Learns != nil {
 		t.Errorf("a place with no day to name carries %d", *pos.Learns)
 	}
-	if offset := got.At[1]; offset.Learns == nil || *offset.Learns != review.NeverLearns {
+	if offset := got.At[1]; offset.Learns == nil || *offset.Learns != projection.NeverLearns {
 		t.Errorf("a place whose horizon ended first carries %+v", offset.Learns)
 	}
 	if index := got.At[2]; index.Learns == nil || *index.Learns != 12 {
@@ -75,11 +75,11 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 }
 
 func TestConvertCurveToWireCopiesBacklogAndConvertSettingsFromWireHandlesNil(t *testing.T) {
-	got := ConvertCurveToWire(projection.Curve{
+	got := ConvertCurveToWire(flashcards.Curve{Curve: projection.Curve{
 		Points: []projection.Point{
 			{Backlog: []int{3, 7}},
 		},
-	})
+	}})
 	if len(got.At) != 1 || !reflect.DeepEqual(got.At[0].Backlog, []int32{3, 7}) {
 		t.Errorf("got backlog %v, want [3 7]", got.At[0].Backlog)
 	}
@@ -96,7 +96,7 @@ func TestConvertCurveToWireCopiesBacklogAndConvertSettingsFromWireHandlesNil(t *
 	if bounds == nil || bounds.MinutesADay == nil || bounds.NewADay == nil {
 		t.Fatalf("got bounds %+v, want non-nil bounds", bounds)
 	}
-	wirePreset := ConvertPresetToWire(presets.Contents{Path: "Preset.md"}, "My Preset")
+	wirePreset := ConvertPresetToWire(review.PresetNote{Path: "Preset.md"}, "My Preset")
 	if wirePreset == nil || wirePreset.Title != "My Preset" {
 		t.Fatalf("got preset %+v, want My Preset", wirePreset)
 	}

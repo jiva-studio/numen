@@ -20,7 +20,7 @@ func TestTechnologyImportRule_NamesWhatReachesOutsideTheProcess(t *testing.T) {
 		"os": true, "os/exec": true, "io/fs": true, "net/http": true, "net": true, "database/sql": true,
 		"golang.org/x/sys/unix": true, "github.com/rjeczalik/notify": true, "modernc.org/sqlite": true,
 		"time": false, "io": false, "context": false, "sync": false, "encoding/json": false, "path/filepath": false,
-		"golang.org/x/sync/errgroup": false, "github.com/jiva-studio/numen/libs/note/domain": false,
+		"golang.org/x/sync/errgroup": false, "github.com/jiva-studio/numen/libs/shared/note/domain": false,
 	} {
 		if got := load.IsTechnologyImport(path); got != want {
 			t.Errorf("%s is a technology: %v, want %v", path, got, want)

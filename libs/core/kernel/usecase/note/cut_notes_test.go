@@ -7,7 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // A note is cut at the sizes given, and the chunk that carries a vector stays

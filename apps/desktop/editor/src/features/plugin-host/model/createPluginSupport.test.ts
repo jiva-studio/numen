@@ -15,6 +15,27 @@ import { createMockManifest } from '@numen/core-client/testing'
 import { createTestPluginSupport, type TestPluginSupportDeps } from '@/testing/pluginSupport'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { getNoteIcon } from '@/entities/note'
+import { createSettingsCoreApi } from '@/testing/settingsWire'
+import type { PluginSettingInfo } from '@/entities/settings'
+
+const EDITOR_DECLARATION: readonly PluginSettingInfo[] = [
+  {
+    key: 'editor.lineNumbers',
+    type: 'boolean',
+    title: 'Line numbers',
+    description: '',
+    default: false,
+    isShown: true,
+  },
+  {
+    key: 'editor.softWrap',
+    type: 'boolean',
+    title: 'Soft wrap',
+    description: '',
+    default: true,
+    isShown: true,
+  },
+]
 
 const createSupport = () => {
   const windowTabs = createTestTabs()
@@ -190,6 +211,34 @@ describe('the settings and notices a plugin is given', () => {
     const ctx = pluginHost.lifecycle.createContext('md.numen.a')
 
     expect(ctx.plugin.settings.get('enabled')).toBe(false)
+  })
+
+  it('reads the editor settings of the application once the window has loaded them, with no permission', async () => {
+    const rest = createSettingsStore(
+      createSettingsCoreApi({
+        getSettings: () =>
+          Promise.resolve({
+            written: JSON.stringify({ app: { editor: { softWrap: false } } }),
+            path: '/numen.json',
+            app: EDITOR_DECLARATION,
+          }),
+        updateSettings: () => Promise.resolve(),
+      }).configuration.settings,
+      SETTINGS_WORDS,
+      vi.fn(),
+    )
+    const { pluginHost } = createWith({ rest })
+    const settings = pluginHost.lifecycle.createContext('md.numen.a').plugin.settings
+    const handler = vi.fn()
+    settings.onEditorChange(handler)
+    expect(settings.getEditor()).toBeUndefined()
+
+    await rest.start()
+
+    expect(settings.getEditor()).toStrictEqual({ lineNumbers: false, softWrap: false })
+    await vi.waitFor(() =>
+      expect(handler).toHaveBeenCalledExactlyOnceWith({ lineNumbers: false, softWrap: false }),
+    )
   })
 
   it('registers the extensions declared for a reader in the plugin settings', () => {

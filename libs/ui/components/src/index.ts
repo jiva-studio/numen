@@ -43,9 +43,6 @@ export {
   type RequestGuard,
 } from './shared/lib/async/requestGuard'
 
-/** The order of the reads and writes of a store held by another process. */
-export { createWriteOrder, type WriteOrder } from './shared/lib/async/remoteValues'
-
 /** Runs a promise without awaiting it and passes its rejection to a callback. */
 export { runInBackground } from './shared/lib/async/background'
 
@@ -99,6 +96,9 @@ export { stepTo } from './shared/lib/dom/roving'
 
 /** A thing carried under the pointer, and a menu put away by a press outside it or Escape. */
 export { DragPreview, usePressDrag } from './shared/ui/drag-preview'
+
+/** A label for a hovered item, placed beside the box it describes. */
+export { Tooltip } from './shared/ui/tooltip'
 export { isPageMove, useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
 
 export { Tree } from './features/tree'

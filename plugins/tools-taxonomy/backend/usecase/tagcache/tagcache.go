@@ -60,6 +60,7 @@ type vaultTags struct {
 	mu       sync.Mutex
 	isLoaded bool
 	notes    map[int64]tagfile.Note
+	follow   follow
 }
 
 func New(open func(id domain.VaultID) Vault) *Caches {
@@ -71,7 +72,7 @@ func (c *Caches) getVault(id domain.VaultID) *vaultTags {
 	defer c.mu.Unlock()
 	one, ok := c.vaults[id]
 	if !ok {
-		one = &vaultTags{mu: sync.Mutex{}, isLoaded: false, notes: map[int64]tagfile.Note{}}
+		one = &vaultTags{mu: sync.Mutex{}, isLoaded: false, notes: map[int64]tagfile.Note{}, follow: newFollow()}
 		c.vaults[id] = one
 	}
 	return one
@@ -86,11 +87,7 @@ func (c *Caches) GetTree(ctx context.Context, id domain.VaultID, under string) (
 	if err := c.update(ctx, id, one); err != nil {
 		return nil, err
 	}
-	byPath := make(map[string][]string, len(one.notes))
-	for _, note := range one.notes {
-		byPath[note.Path] = note.Tags
-	}
-	return tags.GetTree(byPath, under), nil
+	return tags.GetTree(one.getTagsByPath(), under), nil
 }
 
 // UpdateVault brings the tags of the vault up to date with its file change feed.
@@ -115,7 +112,16 @@ func (c *Caches) update(ctx context.Context, id domain.VaultID, one *vaultTags) 
 		one.isLoaded = false
 		return fmt.Errorf("update the tags: %w", err)
 	}
+	one.follow.publish(one.getTagsByPath())
 	return nil
+}
+
+func (v *vaultTags) getTagsByPath() map[string][]string {
+	byPath := make(map[string][]string, len(v.notes))
+	for _, note := range v.notes {
+		byPath[note.Path] = slices.Clone(note.Tags)
+	}
+	return byPath
 }
 
 func (v *vaultTags) load(ctx context.Context, vault Vault, from changes.Source) error {

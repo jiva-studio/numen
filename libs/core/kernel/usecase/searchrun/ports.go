@@ -7,7 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // IndexGenerations gives the generation of the index of a vault: a text that changes whenever indexing

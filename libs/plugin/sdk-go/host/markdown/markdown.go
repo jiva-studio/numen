@@ -2,8 +2,8 @@
 package markdown
 
 import (
-	notesdomain "github.com/jiva-studio/numen/libs/note/domain"
-	notesmarkdown "github.com/jiva-studio/numen/libs/note/markdown"
+	notesdomain "github.com/jiva-studio/numen/libs/shared/note/domain"
+	notesmarkdown "github.com/jiva-studio/numen/libs/shared/note/markdown"
 )
 
 type Document = notesmarkdown.Document

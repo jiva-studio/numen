@@ -365,7 +365,7 @@ describe('the settings that change', () => {
       yield {
         changed: [
           { at: ['app', 'appearance', 'mode'], value: '"dark"' },
-          { at: ['md.numen.notes', 'softWrap'], value: 'false' },
+          { at: ['md.numen.sample', 'indent'], value: 'false' },
         ],
       }
     })
@@ -379,7 +379,7 @@ describe('the settings that change', () => {
       [],
       [
         { at: ['app', 'appearance', 'mode'], value: '"dark"' },
-        { at: ['md.numen.notes', 'softWrap'], value: 'false' },
+        { at: ['md.numen.sample', 'indent'], value: 'false' },
       ],
     ])
   })

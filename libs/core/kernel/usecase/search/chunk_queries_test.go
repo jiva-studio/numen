@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // chunkQueries is the groups of chunk queries of an index, asked through one value.

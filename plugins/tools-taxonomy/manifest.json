@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.taxonomy",
   "name": "Taxonomy",
-  "version": "2026.11.6",
+  "version": "2026.11.18",
   "protocol": 1,
   "description": "Reads the tags of notes from their frontmatter, finds notes by tag in queries and lists the tags for agents",
   "capabilities": ["tools"],
@@ -9,6 +9,7 @@
   "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools",
+    "slots": [{ "slot": "fileTree.rowEnd", "view": "file-tags" }],
     "searchFunctions": {
       "version": 1,
       "functions": [
@@ -37,5 +38,7 @@
     }
   },
   "permissions": ["vault:read"],
-  "backend": { "entrypoint": "bin/tools-taxonomy" }
+  "services": ["md.numen.tools.taxonomy"],
+  "backend": { "entrypoint": "bin/tools-taxonomy" },
+  "frontend": {}
 }

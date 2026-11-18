@@ -13,13 +13,19 @@ Then('{vault} contains the following:', async ({ person }, vault: string, files:
   await person.vault.expectContainsFiles(vault, files.raw())
 })
 
-Then('{vault} contains the {entry} at {string}', async ({ person }, vault: string, entry: string, entryPath: string) => {
-  await person.vault.expectContains(vault, entry, entryPath)
-})
+Then(
+  '{vault} contains the {entry} at {string}',
+  async ({ person }, vault: string, entry: string, entryPath: string) => {
+    await person.vault.expectContains(vault, entry, entryPath)
+  },
+)
 
-Then('{vault} does not contain the file at {string}', async ({ person }, vault: string, file: string) => {
-  await person.vault.expectDoesNotContain(vault, file)
-})
+Then(
+  '{vault} does not contain the file at {string}',
+  async ({ person }, vault: string, file: string) => {
+    await person.vault.expectDoesNotContain(vault, file)
+  },
+)
 
 When('the person switches to the vault {string}', async ({ person }, name: string) => {
   await person.vault.switchTo(name)
@@ -43,4 +49,8 @@ Then('{vault} has the following links:', async ({ person }, vault: string, links
 
 Given('the notes have the following links:', ({ person }, links: DataTable) => {
   person.vault.addLinks(links.raw())
+})
+
+Given('the notes have the following tags:', ({ person }, tags: DataTable) => {
+  person.vault.addTags(tags.raw())
 })

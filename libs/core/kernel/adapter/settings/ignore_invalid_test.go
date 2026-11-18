@@ -177,3 +177,55 @@ func TestAnObjectOfAnUnknownOwnerIsIgnoredWithANotice(t *testing.T) {
 		t.Errorf("the notices are %q", cfg.Notices)
 	}
 }
+
+func TestAnEditorValueOutsideItsBoundsIsReadAndIgnoredWithANoticeThatNamesTheBound(t *testing.T) {
+	for _, body := range []string{
+		`{"app":{"editor":{"fontSize":33}}}`,
+		`{"app":{"editor":{"fontSize":9}}}`,
+		`{"app":{"editor":{"lineHeight":1.1}}}`,
+		`{"app":{"editor":{"lineHeight":2.5}}}`,
+	} {
+		cfg, err := openAt(write(t, body))
+		if err != nil {
+			t.Fatalf("%s: the file was refused: %v", body, err)
+		}
+		if len(cfg.Notices) != 1 || strings.Contains(cfg.Notices[0], "no such setting") || !strings.Contains(cfg.Notices[0], "editor.") {
+			t.Errorf("%s: the notices are %q, want one about the value out of range", body, cfg.Notices)
+		}
+	}
+}
+
+func TestTheDefaultOfAnEditorSettingStaysInForceWhenItsValueIsIgnored(t *testing.T) {
+	cfg, err := openAt(write(t, `{"app":{"editor":{"fontSize":99,"lineHeight":"tall","softWrap":"yes","lineNumbers":1,"fontFamily":"cursive"}}}`))
+	if err != nil {
+		t.Fatalf("the file was refused: %v", err)
+	}
+	cfg.DropInvalid(declaredSettings, installedThemes)
+	for key, want := range map[string]any{
+		"fontSize":    14.0,
+		"lineHeight":  1.6,
+		"softWrap":    true,
+		"lineNumbers": false,
+		"fontFamily":  "",
+	} {
+		if got, _ := cfg.GetValue("app", "editor", key); got != want {
+			t.Errorf("editor.%s in force is %#v, want the default %#v", key, got, want)
+		}
+	}
+	for _, key := range []string{"fontSize", "lineHeight", "softWrap", "lineNumbers", "fontFamily"} {
+		if !hasNotice(cfg.Notices, "editor."+key) || hasNotice(cfg.Notices, "editor."+key, "no such setting") {
+			t.Errorf("editor.%s has no notice about its value: %q", key, cfg.Notices)
+		}
+	}
+}
+
+func TestAValidFileOfTheEditorGroupProducesNoNotice(t *testing.T) {
+	cfg, err := openAt(write(t, `{"v":1,"app":{"editor":{"fontSize":20,"fontFamily":"serif","lineHeight":1.8,"lineNumbers":true,"softWrap":false}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.DropInvalid(declaredSettings, installedThemes)
+	if len(cfg.Notices) != 0 {
+		t.Errorf("the notices are %q", cfg.Notices)
+	}
+}

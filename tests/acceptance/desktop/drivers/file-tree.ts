@@ -3,7 +3,7 @@ import { expect, type Locator } from 'playwright/test'
 import { dragRowOnto } from '../../../e2e/desktop/tests/support/layout.js'
 import { listFiles } from '../../../e2e/desktop/tests/support/vault.js'
 import { FileTree } from './components/FileTree.js'
-import { assertEntry, getAncestors } from './rules.js'
+import { assertEntry, getAncestors, getTableBody } from './rules.js'
 import type { Scenario } from './scenario.js'
 
 export class FileTreeDriver {
@@ -26,7 +26,9 @@ export class FileTreeDriver {
   private async getEntryRow(entry: string, entryPath: string): Promise<Locator> {
     const row = await this.getRow(entryPath)
     const parent = entryPath.split('/').slice(0, -1).join('/')
-    const found = (await listFiles(this.scenario.page.request, parent)).find((one) => one.path === entryPath)
+    const found = (await listFiles(this.scenario.page.request, parent)).find(
+      (one) => one.path === entryPath,
+    )
     if (!found) throw new Error(`the vault has no file or folder at "${entryPath}"`)
     assertEntry(entry, entryPath, found.isFolder)
     return row
@@ -42,6 +44,23 @@ export class FileTreeDriver {
     const file = await this.getEntryRow('file', filePath)
     const folder = await this.getEntryRow('folder', folderPath)
     await dragRowOnto(this.scenario.page, file, folder)
+  }
+
+  /** Each file of the table shows its tags and no other: a file with an empty tag shows none. */
+  async expectShowsFiles(rows: readonly (readonly string[])[]): Promise<void> {
+    const wanted = new Map<string, string[]>()
+    for (const [file = '', tag = ''] of getTableBody(rows, ['file', 'tag'])) {
+      wanted.set(file, [...(wanted.get(file) ?? []), ...(tag === '' ? [] : [tag])])
+    }
+    const files = [...wanted].sort((a, b) => Number(b[1].length > 0) - Number(a[1].length > 0))
+    for (const [file, tags] of files) {
+      const row = await this.getEntryRow('file', file)
+      await expect
+        .poll(() => this.tree.readTags(row), {
+          message: `the tags the file tree shows for "${file}"`,
+        })
+        .toStrictEqual([...tags].sort())
+    }
   }
 
   async runCommandOn(label: string, entry: string, entryPath: string): Promise<void> {
