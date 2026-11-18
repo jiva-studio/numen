@@ -10,11 +10,11 @@ import type { ReachStrategy } from '../model/interaction/reachStrategy'
 import type { ShowStrategy } from '../model/interaction/destination'
 import type { Clock } from '../model/transition'
 import type { PlexType, Probe } from '../model/sizing/measure'
-import type { PlexHeading, PlexGraph, PlexRelation, PlexDestination, PlexWidget } from '../../types'
+import type { PlexGraph, PlexRelation, PlexDestination, PlexWidget } from '../../types'
 
 /**
  * With `showPills` off each title is drawn without its pill. `lineWidth` and `outlineWidth` are in pixels. `widgetsAbove` and `widgetsBelow` are the views drawn over and
- * under every node, each given the path `getPath` answers for the node.
+ * under every node, and `widgetsOver` the views drawn across the whole of every node in the layer above the nodes, each given the path `getPath` answers for the node.
  */
 export interface PlexProps {
   graph: PlexGraph
@@ -33,7 +33,6 @@ export interface PlexProps {
   expansionDelay?: number
   reaching?: ReachStrategy
   showing?: ShowStrategy
-  headings?: (id: string) => readonly PlexHeading[]
   relationName?: (relation: PlexRelation) => string
   pending?: PlexPending | null
   dragged?: readonly string[]
@@ -41,6 +40,7 @@ export interface PlexProps {
   readType?: (probe: Probe) => PlexType
   widgetsAbove?: readonly PlexWidget[]
   widgetsBelow?: readonly PlexWidget[]
+  widgetsOver?: readonly PlexWidget[]
   getPath?: (id: string) => string
 }
 
@@ -73,11 +73,6 @@ export interface PlexEvents {
   (event: 'menu', id: string, point: Position, trigger: MenuTrigger): void
   /** The menu requested on a node is closed. */
   (event: 'dismiss'): void
-  /**
-   * A heading of a node was chosen. Both identifiers are the caller's, handed
-   * back as given.
-   */
-  (event: 'enter', id: string, heading: string): void
   /** A menu or inspector was requested on an edge between two nodes. */
   (event: 'edge-menu', pair: string, point: Position): void
 }

@@ -39,8 +39,8 @@ func TestTheSlotsAreTheOnesSlotsJSONLists(t *testing.T) {
 	}
 }
 
-func TestThePlexGraphHasASlotAboveAndASlotBelowItsNodes(t *testing.T) {
-	for _, name := range []string{"plexGraph.nodeAbove", "plexGraph.nodeBelow"} {
+func TestThePlexGraphHasSlotsAboveBelowAndOverItsNodes(t *testing.T) {
+	for _, name := range []string{"plexGraph.nodeAbove", "plexGraph.nodeBelow", "plexGraph.node"} {
 		if !manifest.IsSlot(name) {
 			t.Errorf("IsSlot(%q) = false, want true", name)
 		}

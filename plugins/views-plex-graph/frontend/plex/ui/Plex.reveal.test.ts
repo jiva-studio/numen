@@ -326,7 +326,7 @@ describe('the elements of the nodes through a click', () => {
     }
   })
 
-  it('draws an entering node only at the place it ends at', async () => {
+  it('moves an entering node from the clicked node to the place it ends at', async () => {
     const { arrivals, plex } = await mountBeforeClick()
     const tracked = trackElements(plex)
     deliver(arrivals, ENTERING)
@@ -339,6 +339,6 @@ describe('the elements of the nodes through a click', () => {
       ENTERING.some((id) => (element.textContent ?? '').includes(TITLES.get(id) ?? '')),
     )
     expect(entering).toHaveLength(ENTERING.length)
-    expect(entering.filter(([, places]) => places.length > 1)).toStrictEqual([])
+    expect(entering.some(([, places]) => places.length > 1)).toBe(true)
   })
 })

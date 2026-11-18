@@ -302,7 +302,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: A picture of one note in the middle (the focus) and the notes joined to it, as boxes (nodes) and lines (edges). Tab kind `plex`, tab title "Plex", plugin "Plex Graph".
 - States: "Loading…".
 - Actions: `graph.open` "Open plex graph"; `graph.showNote` "Show in plex"; click a node to move the focus; drag a line to link.
-- Texts: settings "Nest headings under notes", "Headings per note" (plugins/views-plex-graph/frontend/words.ts).
+- Texts: settings "Nest headings under notes", "Headings per note" of the plugin "Plex Headings" (plugins/views-plex-headings/manifest.json).
 - Not: "graph" and "map". A node is a note in the plex.
 
 ### reference note

@@ -232,20 +232,6 @@ describe('a plex tab the person has closed', () => {
 
     expect(one.closed).toStrictEqual([2])
   })
-
-  it('asks the vault nothing when a setting it once answered turns', async () => {
-    const one = window()
-    const plex = await one.openTab('One.md')
-    one.isNesting.value = false
-    await settle()
-
-    one.closeTab(plex.id)
-    one.requested.headings.length = 0
-    one.isNesting.value = true
-    await settle()
-
-    expect(one.requested.headings).toStrictEqual([])
-  })
 })
 
 describe('plex tab notifications', () => {

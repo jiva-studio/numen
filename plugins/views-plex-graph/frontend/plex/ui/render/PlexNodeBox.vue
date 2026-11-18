@@ -7,7 +7,7 @@
  */
 import { Comment, computed, Fragment, Text, useSlots, type VNode } from 'vue'
 import type { ExpandedBox } from '../../model/sizing/expansion'
-import type { PlacedNode } from '../../lib/node'
+import { getScale, type PlacedNode } from '../../lib/node'
 
 const props = withDefaults(
   defineProps<{
@@ -44,9 +44,19 @@ const startsDown = computed(() => -props.node.height / 2)
  * its box in every mode, and through the move to focus it keeps the same room in the box.
  * The title is laid out in a box that many times smaller and enlarged, so text, icon, gap and padding grow together.
  */
-const scale = computed(() =>
-  props.restHeight > 0 && !props.isGhost ? Math.max(1, props.node.height / props.restHeight) : 1,
-)
+const scale = computed(() => (props.isGhost ? 1 : getScale(props.node.height, props.restHeight)))
+
+/**
+ * The room the title is laid out in, in the units the title is drawn in. A node in a movement lays its
+ * title out in the size it settles with, so the box changing size does not cut the title again.
+ * A box opened wider than the node takes the whole of it.
+ */
+const titleRoom = computed(() => {
+  const { node, box, restHeight, isGhost } = props
+  if (!node.settled || box.width > node.width) return box.width / scale.value
+  const settledScale = isGhost ? 1 : getScale(node.settled.height, restHeight)
+  return node.settled.width / settledScale
+})
 
 /** A ghost keeps its dashed outline whether or not the other nodes have pills. */
 const hasPill = computed(() => props.showPills || props.isGhost)
@@ -92,9 +102,9 @@ function hasAnything(vnodes: readonly VNode[] | undefined): boolean {
     />
   </template>
   <foreignObject
-    :x="startsAt / scale"
+    :x="box.offset / scale - titleRoom / 2"
     :y="startsDown / scale"
-    :width="box.width / scale"
+    :width="titleRoom"
     :height="node.height / scale"
     :transform="scale === 1 ? undefined : `scale(${scale})`"
   >
