@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The list of plugins: the System, Appearance and Connections pages as three tiles, a card for each plugin with
+ * The list of plugins: the System, Appearance, Editor, Search and Connections pages as five tiles, a card for each plugin with
  * a health item (its failed start first, else its worst item), then the search field and the plugin
  * rows that match it.
  */
@@ -45,6 +45,8 @@ const troubledPlugins = computed(() =>
 const TILES = [
   { page: 'system', name: words.systemSettings, detail: words.systemSettingsDetail },
   { page: 'appearance', name: words.appearanceSettings, detail: words.appearanceSettingsDetail },
+  { page: 'editor', name: words.editorSettings, detail: words.editorSettingsDetail },
+  { page: 'search', name: words.searchSettings, detail: words.searchSettingsDetail },
   { page: 'connections', name: words.connections, detail: words.connectionsDetail },
 ]
 

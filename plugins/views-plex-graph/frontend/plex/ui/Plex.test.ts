@@ -10,31 +10,35 @@ import { DEFAULT_OPTIONS, type Size } from '../lib/arrange'
 import { optionsForType } from '../model/sizing/plexScale'
 import type { Viewport } from '@numen/ui'
 import { build } from '../fixtures/build'
+import { fixedViewport } from '../fixtures/viewport'
 import { graphs } from '../fixtures/graphs'
 import { stubClock } from '../../fixtures/clock'
 import type { PlexGraph } from '../../types'
 
-const mountPlex = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) =>
-  mount(Plex, {
-    props: { graph: graphs.typical, duration: 0, ...props },
+const mountPlex = async (props: Partial<InstanceType<typeof Plex>['$props']> = {}) => {
+  const plex = mount(Plex, {
+    props: { graph: graphs.typical, duration: 0, viewport: fixedViewport, ...props },
     attachTo: document.body,
   })
+  await nextTick()
+  return plex
+}
 
 describe('choosing a node', () => {
   it('returns the identifier it was given, untouched', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     await plex.get('[aria-label^="Domain"]').trigger('click')
     expect(plex.emitted('activate')).toStrictEqual([['child-0']])
   })
 
   it('says nothing when the focus itself is clicked', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     await plex.get('[aria-label^="Hexagonal architecture"]').trigger('click')
     expect(plex.emitted('activate')).toBeUndefined()
   })
 
   it('answers Enter and Space, and nothing else', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     const node = plex.get('[aria-label^="Domain"]')
 
     await node.trigger('keydown', { key: 'Enter' })
@@ -48,19 +52,19 @@ describe('choosing a node', () => {
 
 describe('asking for a node on its own', () => {
   it('returns the identifier and where it is to be drawn', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     await plex.get('[aria-label^="Domain"]').trigger('dblclick')
     expect(plex.emitted('show')).toStrictEqual([['child-0', 'current']])
   })
 
   it('says alongside when the modifier was retained, which is read at the node', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     await plex.get('[aria-label^="Domain"]').trigger('dblclick', { altKey: true })
     expect(plex.emitted('show')).toStrictEqual([['child-0', 'split']])
   })
 
   it('is answered by the focus, which cannot be travelled to at all', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     await plex.get('[aria-label^="Hexagonal architecture"]').trigger('dblclick')
 
     const request = plex.emitted('show') as [string, string][]
@@ -69,7 +73,7 @@ describe('asking for a node on its own', () => {
   })
 
   it('travels there as well, because a double click is two clicks', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     const node = plex.get('[aria-label^="Domain"]')
 
     await node.trigger('click')
@@ -81,7 +85,7 @@ describe('asking for a node on its own', () => {
   })
 
   it('answers Shift and a press, and leaves a press on its own to travelling', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     const node = plex.get('[aria-label^="Domain"]')
 
     await node.trigger('keydown', { key: 'Enter', shiftKey: true })
@@ -97,29 +101,29 @@ describe('asking for a node on its own', () => {
 })
 
 describe('what a screen reader and a keyboard are given', () => {
-  it('makes every node reachable by tab, the focus included', () => {
+  it('makes every node reachable by tab, the focus included', async () => {
     // The focus cannot be chosen but is still a stop: a menu is requested from
     // wherever the keyboard is.
-    const plex = mountPlex()
+    const plex = await mountPlex()
     expect(plex.findAll('.plex__node[tabindex="0"]')).toHaveLength(graphs.typical.nodes.length)
     expect(plex.findAll('.plex__node[tabindex="-1"]')).toHaveLength(0)
   })
 
-  it('names a node by its title and its relation', () => {
-    const plex = mountPlex()
+  it('names a node by its title and its relation', async () => {
+    const plex = await mountPlex()
     expect(plex.find('[aria-label="Domain, child"]').exists()).toBe(true)
     expect(plex.find('[aria-label="Software architecture, parent"]').exists()).toBe(true)
     expect(plex.find('[aria-label="Onion architecture, jump"]').exists()).toBe(true)
   })
 
-  it('still names a node whose title is empty', () => {
-    const plex = mountPlex({ graph: graphs.awkwardLabels })
+  it('still names a node whose title is empty', async () => {
+    const plex = await mountPlex({ graph: graphs.awkwardLabels })
     expect(plex.find('[aria-label="Untitled, child"]').exists()).toBe(true)
   })
 
-  it('keeps the full title in the accessible name when the box truncates it', () => {
+  it('keeps the full title in the accessible name when the box truncates it', async () => {
     const long = 'Supercalifragilisticexpialidociousandthensomemore'
-    const plex = mountPlex({ graph: graphs.awkwardLabels })
+    const plex = await mountPlex({ graph: graphs.awkwardLabels })
     expect(plex.find(`[aria-label="${long}, child"]`).exists()).toBe(true)
   })
 })
@@ -128,8 +132,8 @@ describe('what did not fit', () => {
   // More of two relations than any window holds.
   const many = build('A node', { child: 300, jump: 300 })
 
-  it('says so and not hiding it', () => {
-    const plex = mountPlex({ graph: many })
+  it('says so and not hiding it', async () => {
+    const plex = await mountPlex({ graph: many })
     const status = plex.get('[role="status"]').text()
 
     // How much fits depends on the window, so the sentence is checked against what
@@ -144,32 +148,34 @@ describe('what did not fit', () => {
     expect(status).toContain('not shown')
   })
 
-  it('says nothing when everything fits', () => {
-    expect(mountPlex().find('[role="status"]').exists()).toBe(false)
+  it('says nothing when everything fits', async () => {
+    expect((await mountPlex()).find('[role="status"]').exists()).toBe(false)
   })
 
-  it('passes the counts over, so the words are not the plex to choose', () => {
+  it('passes the counts over, so the words are not the plex to choose', async () => {
     // Knowing English is the same mistake as knowing the domain, one step down.
     const plex = mount(Plex, {
-      props: { graph: many, duration: 0 },
+      props: { graph: many, duration: 0, viewport: fixedViewport },
       slots: {
         overflow: `<template #default="{ overflow }">спрятано: {{ overflow.length }}</template>`,
       },
     })
+    await nextTick()
     expect(plex.get('[role="status"]').text()).toBe('спрятано: 2')
   })
 
-  it('can be kept quiet by a slot that draws nothing', () => {
+  it('can be kept quiet by a slot that draws nothing', async () => {
     const plex = mount(Plex, {
-      props: { graph: graphs.overcrowded, duration: 0 },
+      props: { graph: graphs.overcrowded, duration: 0, viewport: fixedViewport },
       slots: { overflow: '<span class="hushed" />' },
     })
+    await nextTick()
     expect(plex.get('[role="status"]').text()).toBe('')
   })
 })
 
 describe('how wide a box is drawn', () => {
-  const boxes = (plex: ReturnType<typeof mountPlex>) =>
+  const boxes = (plex: Awaited<ReturnType<typeof mountPlex>>) =>
     plex.findAll('.plex__node--child .plex__box').map((box) => box.attributes('width'))
 
   /** The type the page is set in, which a theme may rewrite at any moment. */
@@ -224,9 +230,9 @@ describe('how wide a box is drawn', () => {
     document.body.replaceChildren()
   })
 
-  it('is the widest a box gets where there is nothing to measure with', () => {
+  it('is the widest a box gets where there is nothing to measure with', async () => {
     // jsdom has no canvas, as a page rendered on a server has none.
-    for (const width of boxes(mountPlex())) {
+    for (const width of boxes(await mountPlex())) {
       expect(width).toBe(String(DEFAULT_OPTIONS.nodeSize.width))
     }
   })
@@ -236,7 +242,7 @@ describe('how wide a box is drawn', () => {
     // then has to leave: the reader is never shown a box shrinking into place.
     stubCanvas()
 
-    const plex = mountPlex({ duration: 400, readType: readThemeType })
+    const plex = await mountPlex({ duration: 400, readType: readThemeType })
     const painted = boxes(plex)
 
     expect(new Set(painted).size).toBeGreaterThan(1)
@@ -253,7 +259,7 @@ describe('how wide a box is drawn', () => {
     stubCanvas()
     const rings = stubObserver()
 
-    const plex = mountPlex({ duration: 400, readType: readThemeType })
+    const plex = await mountPlex({ duration: 400, readType: readThemeType })
     const painted = boxes(plex)
 
     for (const ring of rings) ring()
@@ -269,7 +275,7 @@ describe('how wide a box is drawn', () => {
     stubCanvas()
     const rings = stubObserver()
 
-    const plex = mountPlex({ readType: readThemeType })
+    const plex = await mountPlex({ readType: readThemeType })
     const painted = boxes(plex)
 
     theme = { ...theme, size: 26 }
@@ -286,7 +292,7 @@ describe('how wide a box is drawn', () => {
 
 describe('being given the next graph', () => {
   it('arrives at once when there is no movement to make', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(true)
 
     await plex.setProps({ graph: graphs.leaf })
@@ -295,7 +301,7 @@ describe('being given the next graph', () => {
   })
 
   it('sets off and not jumping when it has time to move', async () => {
-    const plex = mountPlex({ duration: 400 })
+    const plex = await mountPlex({ duration: 400 })
     await plex.setProps({ graph: graphs.leaf })
 
     // Still showing the old picture: on its way, not replaced.
@@ -304,13 +310,13 @@ describe('being given the next graph', () => {
   })
 
   it('remains still when it has nowhere left to go', async () => {
-    const plex = mountPlex()
+    const plex = await mountPlex()
     await plex.setProps({ graph: graphs.leaf })
     expect(plex.vm.isMoving).toBe(false)
   })
 
   it('re-aims at the newest graph and not queueing them', async () => {
-    const plex = mountPlex({ duration: 400 })
+    const plex = await mountPlex({ duration: 400 })
     await plex.setProps({ graph: graphs.leaf })
     await plex.setProps({ graph: graphs.root })
     await plex.setProps({ graph: graphs.diamond, duration: 0 })
@@ -336,13 +342,13 @@ describe('how much room the plex has', () => {
   })
 
   it('draws to the size it is handed', async () => {
-    const plex = mountPlex({ viewport: createViewport({ width: 900, height: 700 }) })
+    const plex = await mountPlex({ viewport: createViewport({ width: 900, height: 700 }) })
     await nextTick()
     expect(plex.get('svg').attributes('viewBox')).toBe('-450 -350 900 700')
   })
 
   it('draws the focus at the middle of a tall window at a larger interface size and hides nothing that fits', async () => {
-    const plex = mountPlex({
+    const plex = await mountPlex({
       graph: build('Thermodynamics', { parent: 2, child: 8, jump: 5, sibling: 4 }),
       options: optionsForType(15.6),
       viewport: createViewport({ width: 1570, height: 1440 }),
@@ -355,9 +361,9 @@ describe('how much room the plex has', () => {
     expect(plex.find('[role="status"]').exists()).toBe(false)
   })
 
-  it('releases the watching when it is taken down', () => {
+  it('releases the watching when it is taken down', async () => {
     const stop = vi.fn()
-    const plex = mountPlex({
+    const plex = await mountPlex({
       viewport: {
         watch: () => stop,
         watchFreeSpace: () => () => undefined,
@@ -383,15 +389,15 @@ const FAMILY: PlexGraph = {
 }
 
 describe('Pill background', () => {
-  it('draws no pill on any node when it is off, the focus included', () => {
-    const plex = mountPlex({ graph: FAMILY, showPills: false })
+  it('draws no pill on any node when it is off, the focus included', async () => {
+    const plex = await mountPlex({ graph: FAMILY, showPills: false })
 
     expect(plex.findAll('.plex__node')).toHaveLength(3)
     expect(plex.findAll('.plex__box')).toHaveLength(0)
   })
 
-  it('draws every node as its title alone when it is off', () => {
-    const plex = mountPlex({ graph: FAMILY, showPills: false })
+  it('draws every node as its title alone when it is off', async () => {
+    const plex = await mountPlex({ graph: FAMILY, showPills: false })
 
     for (const node of plex.findAll('.plex__node')) {
       expect(node.findAll('.plex__dot')).toHaveLength(0)
@@ -403,7 +409,7 @@ describe('Pill background', () => {
   })
 
   it('draws the pills again once it is switched back on', async () => {
-    const plex = mountPlex({ graph: FAMILY, showPills: false })
+    const plex = await mountPlex({ graph: FAMILY, showPills: false })
 
     await plex.setProps({ showPills: true })
 
@@ -412,15 +418,15 @@ describe('Pill background', () => {
   })
 
   it('still travels to a note pressed on its title when it is off', async () => {
-    const plex = mountPlex({ graph: FAMILY, showPills: false })
+    const plex = await mountPlex({ graph: FAMILY, showPills: false })
 
     await plex.get('[aria-label^="River delta"] .plex__title-text').trigger('click')
 
     expect(plex.emitted('activate')).toStrictEqual([['child-0']])
   })
 
-  it('still asks for the menu of a note right-clicked on its title when it is off', () => {
-    const plex = mountPlex({ graph: FAMILY, showPills: false })
+  it('still asks for the menu of a note right-clicked on its title when it is off', async () => {
+    const plex = await mountPlex({ graph: FAMILY, showPills: false })
     const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 })
 
     plex.get('[aria-label^="Hydrology"] .plex__title-text').element.dispatchEvent(event)
@@ -432,10 +438,11 @@ describe('Pill background', () => {
 })
 
 describe('Highlight links of a hovered note', () => {
-  const raised = (plex: ReturnType<typeof mountPlex>) => plex.findAll('.plex__raised .plex__edge')
+  const raised = (plex: Awaited<ReturnType<typeof mountPlex>>) =>
+    plex.findAll('.plex__raised .plex__edge')
 
   it('lifts the edges of the note the pointer is over when it is on', async () => {
-    const plex = mountPlex({ graph: FAMILY, highlightLinks: true })
+    const plex = await mountPlex({ graph: FAMILY, highlightLinks: true })
 
     await plex.get('[aria-label^="Hydrology"]').trigger('pointerenter')
 
@@ -443,7 +450,7 @@ describe('Highlight links of a hovered note', () => {
   })
 
   it('lifts nothing when it is off', async () => {
-    const plex = mountPlex({ graph: FAMILY, highlightLinks: false })
+    const plex = await mountPlex({ graph: FAMILY, highlightLinks: false })
 
     await plex.get('[aria-label^="Hydrology"]').trigger('pointerenter')
 
@@ -476,14 +483,14 @@ describe('the pill padding and the focus size, measured', () => {
     } as unknown as CanvasRenderingContext2D)
   }
 
-  const getWidth = (plex: ReturnType<typeof mountPlex>, relation: string) =>
+  const getWidth = (plex: Awaited<ReturnType<typeof mountPlex>>, relation: string) =>
     Number(plex.get(`.plex__node--${relation} .plex__box`).attributes('width'))
 
-  const getHeight = (plex: ReturnType<typeof mountPlex>, relation: string) =>
+  const getHeight = (plex: Awaited<ReturnType<typeof mountPlex>>, relation: string) =>
     Number(plex.get(`.plex__node--${relation} .plex__box`).attributes('height'))
 
-  const mountWithMeasure = (options: Record<string, unknown>) =>
-    mountPlex({ graph: ONE_CHILD, readType: readThemeType, options })
+  const mountWithMeasure = async (options: Record<string, unknown>) =>
+    await mountPlex({ graph: ONE_CHILD, readType: readThemeType, options })
 
   afterEach(() => {
     vi.restoreAllMocks()
@@ -491,18 +498,21 @@ describe('the pill padding and the focus size, measured', () => {
     document.body.replaceChildren()
   })
 
-  it('widens a box by twice the difference in Pill padding, sides', () => {
+  it('widens a box by twice the difference in Pill padding, sides', async () => {
     stubCanvas()
-    const narrow = getWidth(mountWithMeasure({ padding: { inline: 4, block: 9.25 } }), 'child')
-    const wide = getWidth(mountWithMeasure({ padding: { inline: 20, block: 9.25 } }), 'child')
+    const narrow = getWidth(
+      await mountWithMeasure({ padding: { inline: 4, block: 9.25 } }),
+      'child',
+    )
+    const wide = getWidth(await mountWithMeasure({ padding: { inline: 20, block: 9.25 } }), 'child')
 
     expect(wide - narrow).toBeCloseTo(32, 6)
   })
 
-  it('grows a short focus title in width and height, and leaves the neighbor as it was', () => {
+  it('grows a short focus title in width and height, and leaves the neighbor as it was', async () => {
     stubCanvas()
-    const small = mountWithMeasure({ focusScale: 1 })
-    const large = mountWithMeasure({ focusScale: 2 })
+    const small = await mountWithMeasure({ focusScale: 1 })
+    const large = await mountWithMeasure({ focusScale: 2 })
 
     expect(getWidth(large, 'focus')).toBeCloseTo(2 * getWidth(small, 'focus'), 6)
     expect(getHeight(large, 'focus')).toBeCloseTo(2 * getHeight(small, 'focus'), 6)
@@ -514,7 +524,7 @@ describe('the pill padding and the focus size, measured', () => {
 describe('Animation', () => {
   it('is moving just before the length it is given and has stopped at that length', async () => {
     const time = stubClock()
-    const plex = mountPlex({ duration: 1000, clock: time.clock })
+    const plex = await mountPlex({ duration: 1000, clock: time.clock })
 
     await plex.setProps({ graph: graphs.leaf })
     time.tick(0)
@@ -528,92 +538,12 @@ describe('Animation', () => {
 
   it('jumps to the next note with no movement at 0', async () => {
     const time = stubClock()
-    const plex = mountPlex({ duration: 0, clock: time.clock })
+    const plex = await mountPlex({ duration: 0, clock: time.clock })
 
     await plex.setProps({ graph: graphs.leaf })
 
     expect(plex.vm.isMoving).toBe(false)
     expect(plex.find('[aria-label="Inbox, parent"]').exists()).toBe(true)
     expect(plex.find('[aria-label^="Domain"]').exists()).toBe(false)
-  })
-})
-
-describe('the names of a note', () => {
-  const NAMES_OF_DOMAIN = {
-    above: [{ id: 'name:Boundary', title: 'Boundary' }],
-    below: [{ id: 'name:Heat', title: 'Heat' }],
-  }
-
-  const stubCanvas = () => {
-    vi.stubGlobal('CanvasRenderingContext2D', class {})
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
-      font: '',
-      measureText: (text: string) => ({ width: text.length * 7 }) as TextMetrics,
-    } as unknown as CanvasRenderingContext2D)
-  }
-
-  const mountWithNames = (props: Partial<InstanceType<typeof Plex>['$props']> = {}) => {
-    stubCanvas()
-    return mountPlex({
-      showNames: true,
-      namesOpacity: 0.3,
-      focusedNamesOpacity: 0.9,
-      names: (id) => (id === 'child-0' ? NAMES_OF_DOMAIN : { above: [], below: [] }),
-      readType: () => ({ font: '13px Test Sans', labelFont: '10px Test Sans', gap: 6 }),
-      ...props,
-    })
-  }
-
-  const getOpacities = (plex: ReturnType<typeof mountWithNames>) =>
-    plex.findAll('.plex__name').map((name) => Number(name.attributes('opacity')))
-
-  const getName = (plex: ReturnType<typeof mountWithNames>, title: string) =>
-    plex.get(`[role="button"][aria-label^="${title}, name under "]`)
-
-  afterEach(() => {
-    vi.restoreAllMocks()
-    vi.unstubAllGlobals()
-    document.body.replaceChildren()
-  })
-
-  it('come forward while the pointer is over one of them', async () => {
-    const plex = mountWithNames({ namesOpacity: 0 })
-
-    await getName(plex, 'Heat').trigger('pointerenter')
-
-    expect(getOpacities(plex)).toEqual([0.9, 0.9])
-  })
-
-  it('cannot be chosen while they sit back, and can once the pointer brought them forward', async () => {
-    const plex = mountWithNames({ namesOpacity: 0 })
-
-    getName(plex, 'Heat').element.dispatchEvent(
-      new MouseEvent('click', { bubbles: true, detail: 1 }),
-    )
-    expect(plex.emitted('chooseName')).toBeUndefined()
-
-    await getName(plex, 'Heat').trigger('pointerenter')
-    await getName(plex, 'Heat').trigger('click')
-    expect(plex.emitted('chooseName')).toStrictEqual([['name:Heat']])
-    expect(plex.emitted('activate')).toBeUndefined()
-  })
-
-  it('stay until the pill of their note is removed from the frame, and are removed with it', async () => {
-    const time = stubClock()
-    const plex = mountWithNames({ duration: 1000, clock: time.clock })
-
-    await plex.setProps({ graph: graphs.leaf })
-    time.tick(0)
-    time.tick(500)
-    await nextTick()
-    expect(plex.findAll('.plex__name')).toHaveLength(2)
-
-    time.tick(1000)
-    await nextTick()
-    expect(plex.findAll('.plex__name')).toHaveLength(0)
-  })
-
-  it('are not drawn with the names off', () => {
-    expect(mountWithNames({ showNames: false }).findAll('.plex__name')).toHaveLength(0)
   })
 })

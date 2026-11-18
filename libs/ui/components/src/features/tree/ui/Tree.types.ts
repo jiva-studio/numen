@@ -33,5 +33,6 @@ export interface TreeEvents {
 /** Slots for the tree component. */
 export interface TreeSlots {
   icon(props: { id: RowId; hasChildren: boolean; isOpen: boolean }): VNode[]
+  end(props: { id: RowId }): VNode[]
   silence(): VNode[]
 }

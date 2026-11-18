@@ -21,13 +21,6 @@ export function createNodeIdMap() {
     return ''
   }
 
-  const retainNodeIds = (ids: readonly string[]): void => {
-    const activeIds = new Set(ids)
-    for (const [path, id] of nodeIdsByPath) {
-      if (!activeIds.has(id)) nodeIdsByPath.delete(path)
-    }
-  }
-
   const updateRenamedNodes = (renames: readonly PathRename[]): void => {
     const updatedMap = new Map<string, string>()
     for (const [path, id] of nodeIdsByPath) {
@@ -39,7 +32,6 @@ export function createNodeIdMap() {
   return {
     getNodeId,
     getNodePath,
-    retainNodeIds,
     updateRenamedNodes,
   }
 }

@@ -1025,12 +1025,12 @@ func TestANoteIsMadeBelowTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 	}
 
 	center, err := f.client.ListRelatedNotes(t.Context(),
-		connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "physics/Ontology.md"}))
+		connect.NewRequest(&v1.ListRelatedNotesRequest{Paths: []string{"physics/Ontology.md"}}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	var children []string
-	for _, related := range center.Msg.GetRelated() {
+	for _, related := range graphOf(t, center.Msg).GetRelated() {
 		if related.GetRelation() == v1.Relation_RELATION_CHILD {
 			children = append(children, related.GetNote().GetPath())
 		}
@@ -1249,12 +1249,12 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 	}
 
 	center, err := f.client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{
-		Path: "Heat.md",
+		Paths: []string{"Heat.md"},
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	related := center.Msg.GetRelated()
+	related := graphOf(t, center.Msg).GetRelated()
 	if len(related) != 1 {
 		t.Fatalf("want the one note the link reaches, got %+v", related)
 	}

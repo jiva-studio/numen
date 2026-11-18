@@ -44,7 +44,7 @@
       "key": "appearance.textScale",
       "type": "range",
       "title": "Reading size",
-      "description": "Scale of note and book text. 1 is the default.",
+      "description": "Scale of book and document text. 1 is the default.",
       "default": 1,
       "min": 0.8,
       "max": 1.75,
@@ -52,6 +52,63 @@
       "preview": true,
       "palette": true,
       "icon": "a-large-small"
+    },
+    {
+      "key": "editor.fontSize",
+      "type": "range",
+      "title": "Font size",
+      "description": "Size of editor text in px, whatever the interface size.",
+      "default": 14,
+      "min": 10,
+      "max": 32,
+      "step": 1,
+      "palette": true,
+      "icon": "type"
+    },
+    {
+      "key": "editor.fontFamily",
+      "type": "enum",
+      "title": "Font family",
+      "description": "The typeface of editor text.",
+      "default": "",
+      "options": [
+        { "value": "", "title": "As in the theme" },
+        { "value": "sans", "title": "Sans" },
+        { "value": "serif", "title": "Serif" },
+        { "value": "mono", "title": "Mono" }
+      ],
+      "palette": true,
+      "icon": "case-sensitive"
+    },
+    {
+      "key": "editor.lineHeight",
+      "type": "range",
+      "title": "Line height",
+      "description": "Height of a line of editor text as a multiple of the font size.",
+      "default": 1.6,
+      "min": 1.2,
+      "max": 2.4,
+      "step": 0.1,
+      "palette": true,
+      "icon": "line-height"
+    },
+    {
+      "key": "editor.lineNumbers",
+      "type": "boolean",
+      "title": "Line numbers",
+      "description": "Number the lines in editors.",
+      "default": false,
+      "palette": true,
+      "icon": "list-ordered"
+    },
+    {
+      "key": "editor.softWrap",
+      "type": "boolean",
+      "title": "Soft wrap",
+      "description": "Wrap long lines in editors instead of scrolling sideways.",
+      "default": true,
+      "palette": true,
+      "icon": "text-wrap"
     },
     {
       "key": "naming.syncTitleAndFilename",

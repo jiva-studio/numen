@@ -202,3 +202,45 @@ describe('data dropped from outside the window', () => {
     ).toEqual([])
   })
 })
+
+describe('the views at the end of the rows', () => {
+  const view = {
+    kind: 'view',
+    key: 'md.numen.test/view/tags',
+    pluginId: 'md.numen.test',
+    view: 'tags',
+    component: () => null,
+  } as const
+
+  it('are the entries of the slot fileTree.rowEnd, given at once and again for each change', () => {
+    const { host, slots } = createHost()
+    const seen: (readonly unknown[])[] = []
+
+    createFilesTabDeps(host, 'files').window.watchRowEntries?.((entries) => seen.push(entries))
+    slots.setEntries('fileTree.rowEnd' as never, [view])
+
+    expect(seen).toStrictEqual([[], [view]])
+  })
+
+  it('are not those of the menu of a row', () => {
+    const { host } = createHost()
+    const seen: (readonly unknown[])[] = []
+
+    createFilesTabDeps(host, 'files').window.watchRowEntries?.((entries) => seen.push(entries))
+
+    expect(seen).toStrictEqual([[]])
+  })
+
+  it('stop being given when the watch is disposed', () => {
+    const { host, slots } = createHost()
+    const seen: (readonly unknown[])[] = []
+
+    const watch = createFilesTabDeps(host, 'files').window.watchRowEntries?.((entries) =>
+      seen.push(entries),
+    )
+    watch?.dispose()
+    slots.setEntries('fileTree.rowEnd' as never, [view])
+
+    expect(seen).toStrictEqual([[]])
+  })
+})

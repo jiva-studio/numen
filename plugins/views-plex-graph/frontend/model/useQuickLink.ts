@@ -22,8 +22,8 @@ export function useQuickLink(view: PlexView, deps: PlexTabDeps, map: NodeIdMap) 
   const searchNotes = async (
     query: string,
   ): Promise<readonly { path: string; title: string }[]> => {
-    if (!deps.notes.searchNames) return []
-    const results = await deps.notes.searchNames(query)
+    if (!deps.searchNames) return []
+    const results = await deps.searchNames(query)
     return results.map((item) => ({ path: item.path, title: item.title }))
   }
 

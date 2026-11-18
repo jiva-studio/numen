@@ -42,6 +42,7 @@ const MEMBERS: GroupMembers = {
     getCommands: true,
     getWindow: true,
     getNotices: true,
+    getPicker: true,
     clearNotices: true,
   },
   plugins: {
@@ -53,6 +54,8 @@ const MEMBERS: GroupMembers = {
     findPluginsOf: true,
     getSetting: true,
     onSettingChange: true,
+    getEditorSettings: true,
+    onEditorSettingsChange: true,
   },
   commands: {
     getCommandDeclarations: true,

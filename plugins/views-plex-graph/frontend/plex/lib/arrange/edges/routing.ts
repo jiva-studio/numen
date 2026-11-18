@@ -166,18 +166,22 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
 }
 
 function createTitles(edge: PlexEdge, curve: EdgeCurve, routing: Routing): EdgeTitle[] {
-  const labels = (edge.labels ?? []).filter((label) => label.text)
+  const written = (edge.labels ?? []).map((label, record) => ({ label, record }))
+  const kept = written.filter(({ label }) => label.text)
+  const labels = kept.map(({ label }) => label)
   const clearance = edge.arrows?.length ? 2 * routing.tuning.arrowClearance : 0
   const room = (getLength(curve) - clearance) / labels.length
   const { labelWidth } = routing
   const places = getLabelPlaces(labels)
   return labels.map((label, index) => {
     const { position, side, heading } = places[index]!
+    const { record } = kept[index]!
     return createTitle(
       curve,
       position,
       labelWidth ? cutToFit(label.text, room, labelWidth) : label.text,
       {
+        record,
         side,
         shift: getShift(side, routing.labelType),
         rise: getRise(side, routing.labelType),

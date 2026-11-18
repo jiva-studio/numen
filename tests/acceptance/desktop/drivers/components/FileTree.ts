@@ -12,6 +12,14 @@ export class FileTree {
     return this.page.locator(`[data-tree-row="${entryPath}"]`)
   }
 
+  /** The tags a row shows, read from the accessible name of its tag dots; none when the row has no dots. */
+  async readTags(row: Locator): Promise<string[]> {
+    const dots = row.locator('[data-tag-dots]')
+    if ((await dots.count()) === 0) return []
+    const label = (await dots.first().getAttribute('aria-label')) ?? ''
+    return label === '' ? [] : label.split(', ').sort()
+  }
+
   /** Unfolds the folder row, which Enter folds when it is open already. */
   async expand(row: Locator): Promise<void> {
     if ((await row.getAttribute('aria-expanded')) !== 'true') await row.press('Enter')

@@ -9,7 +9,6 @@ const createReports = () =>
     reach: vi.fn(),
     ask: vi.fn(),
     menu: vi.fn(),
-    enter: vi.fn(),
     attend: vi.fn(),
   }) satisfies NodeReports
 
@@ -26,11 +25,9 @@ describe('the listeners of a note', () => {
     const getListeners = useNodeHandlers(reports)
 
     getListeners('a').activate()
-    getListeners('b').enter('Setup')
     getListeners('b').attend(true)
 
     expect(reports.activate).toHaveBeenCalledWith('a')
-    expect(reports.enter).toHaveBeenCalledWith('b', 'Setup')
     expect(reports.attend).toHaveBeenCalledWith('b', true)
   })
 })

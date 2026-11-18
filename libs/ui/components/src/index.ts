@@ -96,6 +96,9 @@ export { stepTo } from './shared/lib/dom/roving'
 
 /** A thing carried under the pointer, and a menu put away by a press outside it or Escape. */
 export { DragPreview, usePressDrag } from './shared/ui/drag-preview'
+
+/** A label for a hovered item, placed beside the box it describes. */
+export { Tooltip } from './shared/ui/tooltip'
 export { isPageMove, useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
 
 export { Tree } from './features/tree'

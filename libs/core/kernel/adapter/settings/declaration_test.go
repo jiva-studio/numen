@@ -170,3 +170,90 @@ func TestEverySettingFlaggedForThePaletteIsABooleanAnEnumOrARange(t *testing.T) 
 		}
 	}
 }
+
+func TestTheEditorSettingsAreDeclaredWithTheirTypeBoundsAndDefaults(t *testing.T) {
+	type bounds struct {
+		min, max, step float64
+	}
+	for key, want := range map[string]struct {
+		kind         string
+		defaultValue any
+		bounds       *bounds
+	}{
+		"editor.fontSize":    {"range", 14.0, &bounds{10, 32, 1}},
+		"editor.lineHeight":  {"range", 1.6, &bounds{1.2, 2.4, 0.1}},
+		"editor.lineNumbers": {"boolean", false, nil},
+		"editor.softWrap":    {"boolean", true, nil},
+		"editor.fontFamily":  {"enum", "", nil},
+	} {
+		declared := findDeclaredSetting(t, key)
+		if declared.Type != want.kind {
+			t.Errorf("%s is %s, want %s", key, declared.Type, want.kind)
+		}
+		if declared.Default != want.defaultValue {
+			t.Errorf("%s defaults to %#v, want %#v", key, declared.Default, want.defaultValue)
+		}
+		if declared.Title == "" {
+			t.Errorf("%s has no title", key)
+		}
+		if want.bounds == nil {
+			continue
+		}
+		if declared.Min == nil || *declared.Min != want.bounds.min || declared.Max == nil || *declared.Max != want.bounds.max || declared.Step == nil || *declared.Step != want.bounds.step {
+			t.Errorf("%s goes %v to %v by %v, want %v", key, declared.Min, declared.Max, declared.Step, *want.bounds)
+		}
+	}
+}
+
+func TestTheFontFamilyOffersTheFaceOfTheThemeFirstThenSansSerifAndMono(t *testing.T) {
+	declared := findDeclaredSetting(t, "editor.fontFamily")
+	var values, titles []string
+	for _, option := range declared.Options {
+		values = append(values, option.Value)
+		titles = append(titles, option.Title)
+	}
+	if want := []string{"", "sans", "serif", "mono"}; !slices.Equal(values, want) {
+		t.Errorf("the font family offers the values %q, want %q", values, want)
+	}
+	if want := []string{"As in the theme", "Sans", "Serif", "Mono"}; !slices.Equal(titles, want) {
+		t.Errorf("the font family offers the titles %q, want %q", titles, want)
+	}
+}
+
+func TestTheEditorSettingsAreDeclaredInTheOrderOfTheEditorGroup(t *testing.T) {
+	var got []string
+	for _, declared := range settings.GetAppDeclaration() {
+		if strings.HasPrefix(declared.Key, "editor.") {
+			got = append(got, declared.Key)
+		}
+	}
+	want := []string{"editor.fontSize", "editor.fontFamily", "editor.lineHeight", "editor.lineNumbers", "editor.softWrap"}
+	if !slices.Equal(got, want) {
+		t.Errorf("the editor group declares %q, want %q", got, want)
+	}
+}
+
+func TestTheEditorSettingsAreDeclaredForThePaletteWithTheirIconAndNoPreview(t *testing.T) {
+	for _, key := range []string{"editor.fontSize", "editor.fontFamily", "editor.lineHeight", "editor.lineNumbers", "editor.softWrap"} {
+		declared := findDeclaredSetting(t, key)
+		if !declared.Palette {
+			t.Errorf("%s is not flagged for the palette", key)
+		}
+		if declared.Icon == "" {
+			t.Errorf("%s declares no icon", key)
+		}
+		if declared.Preview {
+			t.Errorf("%s is previewed while focused", key)
+		}
+	}
+}
+
+func TestTheReadingSizeKeepsItsKeyAndBoundsAndNamesBooksAndDocuments(t *testing.T) {
+	declared := findDeclaredSetting(t, "appearance.textScale")
+	if declared.Title != "Reading size" {
+		t.Errorf("the scale of the text is titled %q", declared.Title)
+	}
+	if !strings.Contains(declared.Description, "book") || strings.Contains(declared.Description, "note") {
+		t.Errorf("the scale of the text is described as %q, want a scale of books and documents", declared.Description)
+	}
+}

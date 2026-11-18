@@ -5,6 +5,7 @@ import type {
   BufferHost,
   ConnectionHost,
   Disposable,
+  EditorSettings,
   FileBuffers,
   FileSelectEvent,
   HostServices,
@@ -76,6 +77,9 @@ function createSettings(pluginId: string, host: PluginContextHost, add: Track): 
       host.settings.getSetting<T>(pluginId, key),
     onChange: <T extends JsonValue = JsonValue>(key: string, h: (v: T) => void) =>
       add(host.settings.onSettingChange<T>(pluginId, key, h)),
+    getEditor: () => host.settings.getEditorSettings(),
+    onEditorChange: (h: (settings: EditorSettings) => void) =>
+      add(host.settings.onEditorSettingsChange(pluginId, h)),
   }
 }
 
@@ -134,13 +138,14 @@ function createUi(
       commands &&
       limitCommands(commands, {
         pluginId,
-        isListed: (one) => ui.isCommandListed(one),
-        getPermission: (one) => ui.getCommandPermission?.(one),
+        isListed: (one) => ui.commandAccess.isListed(one),
+        getPermission: (one) => ui.commandAccess.getPermission?.(one),
         checkPermission: check,
       }),
     drops: views.drops,
     slots: ui.getSlots(),
     notices: ui.getNotices(pluginId),
+    picker: ui.getPicker(),
   })
 }
 
@@ -159,6 +164,7 @@ function createUiService(
     drops: ui.drops,
     slots: ui.slots,
     notices: ui.notices,
+    picker: ui.picker,
     mountView: createMountView(host, guards.guard),
   })
 }

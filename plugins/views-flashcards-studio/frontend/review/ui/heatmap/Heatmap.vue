@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getCurrentDate, measureRect } from '@numen/ui'
+import { getCurrentDate, measureRect, Tooltip } from '@numen/ui'
 /**
  * Per-day review activity and the cards due on coming days, as a grid of weeks.
  *
@@ -11,7 +11,6 @@ import { getCurrentDate, measureRect } from '@numen/ui'
  */
 import { computed, ref, useTemplateRef } from 'vue'
 
-import { Tooltip } from './tooltip'
 import type { Box } from '@numen/ui'
 import { DaySummary } from './day-summary'
 import { measureGrid } from '../../lib/heatmap/grid'

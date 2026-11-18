@@ -120,8 +120,10 @@ func TestStartAnswers(t *testing.T) {
 	for ctx.Err() == nil {
 		relations = map[string]int{}
 		var around []any
-		if related, hasRelated := ask("NoteService", "ListRelatedNotes", map[string]any{"path": graphCenter})["related"]; hasRelated && related != nil {
-			around = asList(t, related)
+		if graphs, hasGraphs := ask("NoteService", "ListRelatedNotes", map[string]any{"paths": []string{graphCenter}})["graphs"]; hasGraphs && graphs != nil {
+			if related, hasRelated := asMap(t, asList(t, graphs)[0])["related"]; hasRelated && related != nil {
+				around = asList(t, related)
+			}
 		}
 		for _, one := range around {
 			relations[asString(t, asMap(t, one)["relation"])]++

@@ -16,10 +16,18 @@ export const SLOT = {
   statusBarRight: 'statusBar.right',
   // The menu of a row of the file tree, over its file or folder, drawn by the plugin of the file tree.
   fileTreeContext: 'fileTree.context',
+  // The views at the right end of a row of the file tree, each given the path of the row, drawn by the plugin of the file tree.
+  fileTreeRowEnd: 'fileTree.rowEnd',
   // The menu of a tab, over the file of the tab, drawn by the tab strip of the window.
   tabStripContext: 'tabStrip.context',
   // The menu of a node of the plex graph, over its note, drawn by the plugin of the plex graph.
   plexGraphContext: 'plexGraph.context',
+  // The views over a node of the plex graph, each given the path of its note, drawn by the plugin of the plex graph.
+  plexGraphNodeAbove: 'plexGraph.nodeAbove',
+  // The views under a node of the plex graph, each given the path of its note, drawn by the plugin of the plex graph.
+  plexGraphNodeBelow: 'plexGraph.nodeBelow',
+  // The views over the whole of a node of the plex graph, above the nodes, each given the path of its note and the size, position and scale of the node; a view that does not let clicks and drags through takes them from the node, drawn by the plugin of the plex graph.
+  plexGraphNode: 'plexGraph.node',
   // The actions of a search result that is a note, over that note, drawn by the palette.
   paletteSearchResult: 'palette.searchResult',
   // The commands of the palette over the note in front, drawn by the palette.

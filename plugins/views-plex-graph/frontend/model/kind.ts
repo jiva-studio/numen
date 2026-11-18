@@ -80,7 +80,6 @@ async function refreshTabs(
         state.canvas.view.here.value ||
         host.workspace.window.openingPath.value
       if (path) await state.canvas.view.go(path)
-      await state.headings.readHeadings()
     }),
   )
 }

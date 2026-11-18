@@ -21,9 +21,15 @@ interface TitleLine {
   readonly across: number
 }
 
+const getName = (edge: PlacedEdge): string =>
+  `${edge.from}->${edge.to}`.replace(
+    /[^A-Za-z0-9_-]/g,
+    (mark) => `_${mark.codePointAt(0)!.toString(16)}_`,
+  )
+
 /** Builds the rendered edge lines for the given placed edges. */
 export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly EdgeLine[] =>
-  edges.map((edge, index) => ({
+  edges.map((edge) => ({
     edge,
     key: `${edge.from}->${edge.to}`,
     pair: edgeKey(edge),
@@ -32,9 +38,9 @@ export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly Ed
       end: head.end,
       transform: createArrowTransform(head),
     })),
-    titles: edge.titles.map((title, slot) => ({
+    titles: edge.titles.map((title) => ({
       words: title.words,
-      path: `${uid}-title-${index}-${slot}`,
+      path: `${uid}-title-${getName(edge)}-${title.record}`,
       line: createReadingPath(edge, title.heading),
       at: `${100 * title.wordsAt}%`,
       across: (title.heading === 'against' ? -title.shift : title.shift) + title.rise,

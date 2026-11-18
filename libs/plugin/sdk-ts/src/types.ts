@@ -3,6 +3,7 @@ import type { FileConflict } from './buffers'
 import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
+import type { PickerHost } from './picker'
 import type { TaskHost } from './tasks'
 import type { ProcessHost } from './processes'
 import type { BackgroundTaskHost } from './backgroundTasks'
@@ -243,9 +244,19 @@ export interface PluginRegistrations {
   dropHandler?(registration: DropRegistration): Disposable
 }
 
+// EditorSettings are the settings every editor of a plugin follows. They belong to the application, not to the plugin.
+export interface EditorSettings {
+  readonly lineNumbers: boolean
+  readonly softWrap: boolean
+}
+
 export interface PluginSettings {
   get<T extends JsonValue = JsonValue>(key: string): T | undefined
   onChange<T extends JsonValue = JsonValue>(key: string, handler: (value: T) => void): Disposable
+  // The editor settings of the application, read-only; undefined until the window has loaded its settings.
+  getEditor(): EditorSettings | undefined
+  // Calls the handler when the settings arrive and whenever either value changes.
+  onEditorChange(handler: (settings: EditorSettings) => void): Disposable
 }
 
 // PluginEvents is what a plugin receives of the vault and says to the other plugins.
@@ -274,13 +285,14 @@ export interface PluginVault {
   readonly vaults?: VaultsHost
 }
 
-// PluginUi is the window a plugin draws in.
+// PluginUi is the window a plugin draws in. The picker is left out where the window offers no list to pick from.
 export interface PluginUi {
   readonly workspace?: WorkspaceHost
   readonly window?: WindowHost
   readonly commands?: CommandsHost
   readonly slots: SlotHost
   readonly notices: NoticeHost
+  readonly picker?: PickerHost
   readonly drops?: DropHost
   // Draws the view a plugin declares for `capability` into `element`, passed `context`. While no
   // plugin declares one the element stays empty, and the view is drawn once one does.
