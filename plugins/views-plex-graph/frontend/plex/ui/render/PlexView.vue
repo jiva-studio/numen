@@ -4,11 +4,12 @@ import PlexEdgeLayer from './PlexEdgeLayer.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import PlexNodeWidgets from './PlexNodeWidgets.vue'
 import PlexThreads from './PlexThreads.vue'
-import { LIFT_LAYER, NODE_SIZES } from './layer'
+import { LIFT_LAYER, NODE_SIZES, OVER_LAYER } from './layer'
 import { useEdgeLines } from './lines'
 import type { PlexDrawnSlots, PlexViewEvents, PlexViewProps } from './props'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import { getRelationName } from '../../lib/relation'
+import type { PlexWidget } from '../../../types'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useAttention } from '../../model/useAttention'
 import { useNodeHandlers } from '../../model/useNodeHandlers'
@@ -48,6 +49,8 @@ const { holdNode, focusNode } = useNodeViews()
 
 const lift = useTemplateRef<SVGGElement>('lift')
 provide(LIFT_LAYER, lift)
+const over = useTemplateRef<SVGGElement>('over')
+provide(OVER_LAYER, over)
 
 const viewBox = computed(() => {
   const { width, height } = props.viewport
@@ -67,11 +70,13 @@ const getNodeHandlers = useNodeHandlers(
     reach: (id, pointer) => emit('reach', id, pointer),
     ask: (id) => emit('ask', id),
     menu: (id, at, trigger) => emit('menu', id, at, trigger),
-    enter: (id, heading) => emit('enter', id, heading),
     attend,
   },
   () => props.frame.nodes.map((node) => node.id),
 )
+
+const NO_WIDGETS: readonly PlexWidget[] = []
+const overlayEntries = computed(() => props.widgetsOver ?? NO_WIDGETS)
 
 const stacked = computed(() => [...props.frame.nodes, ...(props.waiting ?? [])])
 const waitingIds = computed(() => new Set(props.waiting?.map((node) => node.id)))
@@ -79,7 +84,6 @@ const waitingIds = computed(() => new Set(props.waiting?.map((node) => node.id))
 const sizes = useNodeSizes(() => ({
   nodes: props.frame.nodes,
   widen: props.widen,
-  placedHeadings: props.placedHeadings,
 }))
 provide(NODE_SIZES, sizes)
 
@@ -150,7 +154,7 @@ const getRole = (node: PlacedNode): GestureRole => {
       :show-edge-labels="showEdgeLabels"
     />
 
-    <!-- Over the other lines, and under every node, so the headings that open under a node cover them. -->
+    <!-- Over the other lines, and under every node. -->
     <PlexEdgeLayer
       layer="raised"
       :lines="lines"
@@ -174,6 +178,9 @@ const getRole = (node: PlacedNode): GestureRole => {
         :rest-height="nodeSize.height"
         :viewport-width="viewport.width"
         :attention="attention"
+        :overlay="overlayEntries"
+        :path="getPath?.(node.id) ?? ''"
+        :viewport="viewport"
         v-on="getNodeHandlers(node.id)"
       >
         <template v-if="$slots.icon" #icon><slot name="icon" :node="node" /></template>
@@ -194,6 +201,9 @@ const getRole = (node: PlacedNode): GestureRole => {
 
     <!-- Over every note, so a note that is open covers its neighbors without moving in the document. -->
     <g ref="lift" class="plex__lift" />
+
+    <!-- Over every note and every open note, so a view across a note may reach over its neighbors. -->
+    <g ref="over" class="plex__over-layer" />
 
     <PlexThreads
       :frame="frame"

@@ -9,7 +9,6 @@ const createReports = (): NodeReports => ({
   reach: vi.fn(),
   ask: vi.fn(),
   menu: vi.fn(),
-  enter: vi.fn(),
   attend: vi.fn(),
 })
 

@@ -1,10 +1,9 @@
 /**
- * The plex of a note on entropy: the map, the menu on a node, and the
- * headings of a note shown under its box. The manual and the landing page take
- * their plex images from these stories.
+ * The plex of a note on entropy: the map and the menu on a node. The manual and
+ * the landing page take their plex images from these stories.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent, waitFor, within } from 'storybook/test'
+import { expect, waitFor, within } from 'storybook/test'
 import {
   ArrowRightLeft,
   Bot,
@@ -21,7 +20,7 @@ import { ref } from 'vue'
 import { Menu, type MenuItem } from '@numen/ui'
 import Plex from './Plex.vue'
 import { RELATION_NAMES } from '../lib/relation'
-import type { PlexRelation, PlexEdge, PlexHeading, PlexGraph, PlexNode } from '../../types'
+import type { PlexRelation, PlexEdge, PlexGraph, PlexNode } from '../../types'
 
 const node = (id: string, title: string, relation: PlexNode['relation']): PlexNode => ({
   id,
@@ -88,27 +87,6 @@ const WIDE = createGraph([
 ])
 
 /**
- * The headings of two notes. The focus note has more headings than fit at once,
- * so the overflow mark is drawn as well.
- */
-const HEADINGS: Readonly<Record<string, readonly PlexHeading[]>> = {
-  focus: [
-    { id: '4', text: 'What it measures', level: 2 },
-    { id: '19', text: "Boltzmann's formula", level: 3 },
-    { id: '38', text: 'Gibbs and the ensemble', level: 3 },
-    { id: '57', text: 'The arrow of time', level: 2 },
-    { id: '76', text: 'Missing information', level: 2 },
-    { id: '94', text: "Shannon's H", level: 3 },
-    { id: '118', text: 'The demon, and its bookkeeping', level: 2 },
-  ],
-  'second-law': [
-    { id: '3', text: 'As Clausius put it', level: 2 },
-    { id: '21', text: 'As Kelvin put it', level: 2 },
-    { id: '44', text: 'Why the two are one', level: 2 },
-  ],
-}
-
-/**
  * The menu items of a node, in display groups: open the note, file actions,
  * create from it in the plex, agent actions, and removal from the vault.
  */
@@ -141,16 +119,15 @@ const MENU_ICONS: Readonly<Record<string, typeof Waypoints>> = {
 const menuIcon = (id: string) => MENU_ICONS[id]
 
 interface MapScreen {
-  readonly headings?: (id: string) => readonly PlexHeading[]
   readonly creatable?: readonly PlexRelation[]
   readonly menu?: { x: number; y: number } | null
 }
 
-const map = ({ headings = () => [], creatable = [], menu = null }: MapScreen) => ({
+const map = ({ creatable = [], menu = null }: MapScreen) => ({
   components: { Plex, Menu },
   setup() {
     const graph = ref<PlexGraph>(WIDE)
-    return { graph, headings, creatable, menu, MENU, menuIcon }
+    return { graph, creatable, menu, MENU, menuIcon }
   },
   template: `
     <div style="height: 100vh">
@@ -158,7 +135,6 @@ const map = ({ headings = () => [], creatable = [], menu = null }: MapScreen) =>
         :graph="graph"
         :creatable="creatable"
         :duration="420"
-        :headings="headings"
       />
       <Menu v-if="menu" :items="MENU" :at="menu" is-open name="What can be done to this note">
         <template #icon="{ id }">
@@ -185,10 +161,8 @@ type Story = StoryObj<typeof meta>
 export const Mapping: Story = {
   render: () =>
     map({
-      headings: (id: string) => HEADINGS[id] ?? [],
       creatable: RELATION_NAMES,
-      // Position of a node at the trailing side, clear of the map and of the
-      // headings shown under a node.
+      // Position of a node at the trailing side, clear of the map.
       menu: { x: 902, y: 396 },
     }),
   play: async ({ canvasElement }) => {
@@ -204,26 +178,6 @@ export const Mapping: Story = {
     await expect(box.top).toBeGreaterThanOrEqual(0)
     await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
     await expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0)
-  },
-}
-
-/** The pointer on the focus node brings the headings of its note out under the box. */
-export const Nesting: Story = {
-  render: () =>
-    map({
-      headings: (id: string) => HEADINGS[id] ?? [],
-      creatable: RELATION_NAMES,
-    }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const focus = await waitFor(() => canvas.getByLabelText(/, focus$/))
-
-    const titles = (HEADINGS['focus'] ?? []).map((heading) => heading.text)
-    await userEvent.hover(focus)
-
-    await waitFor(() =>
-      expect(titles.filter((words) => canvas.queryByText(words)).length).toBeGreaterThan(0),
-    )
   },
 }
 

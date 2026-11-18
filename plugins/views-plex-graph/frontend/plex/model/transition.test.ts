@@ -456,3 +456,47 @@ describe('a change of the rooms that moves no node', () => {
     expect(isMoving.value).toBe(true)
   })
 })
+
+describe('widgets that grow after the notes were shown', () => {
+  const children = Array.from({ length: 20 }, (_, index) => ({
+    id: `child-${index}`,
+    title: `Gear ${index}`,
+    relation: 'child' as const,
+  }))
+  const graph: PlexGraph = {
+    nodes: [{ id: 'focus', title: 'Gears case 15', relation: 'focus' }, ...children],
+    edges: children.map((node) => ({ from: 'focus', to: node.id })),
+  }
+  const roomOf =
+    (top: number, bottom: number): NonNullable<ArrangeInput['room']> =>
+    (node) =>
+      node.relation === 'focus' ? NO_ROOM : { top, bottom, width: 120 }
+
+  const measure = () => 120
+
+  it('keeps every shown note inside the window and counts the notes left out', async () => {
+    const world = stubClock()
+    const viewport = { width: 1000, height: 600 }
+    const room = ref(roomOf(0, 24))
+    const { frame } = inScope(() =>
+      usePlexTransition(
+        () => graph,
+        () => ({ options: { viewport }, measure, room: room.value }),
+        () => 0,
+        world.clock,
+      ),
+    )
+
+    room.value = roomOf(36, 48)
+    await Promise.resolve()
+    world.tick(0)
+
+    const shown = frame.value.nodes.filter((node) => node.relation === 'child')
+
+    const outside = shown.filter(
+      (node) => Math.abs(node.y) + node.height / 2 + 48 > viewport.height / 2,
+    )
+    expect(outside).toStrictEqual([])
+    expect(frame.value.overflow.child).toBe(20 - shown.length)
+  })
+})

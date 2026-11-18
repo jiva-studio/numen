@@ -35,7 +35,6 @@ import type {
 } from '../types'
 import { useLinkInspector } from './useLinkInspector'
 import { useQuickLink } from './useQuickLink'
-import { usePlexHeadings } from './usePlexHeadings'
 
 export type { PlexTabDeps, PlexTabState }
 
@@ -76,11 +75,6 @@ interface KnownKind {
 }
 
 function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap>) {
-  const types = computed<ReadonlyMap<string, NoteType>>(() => {
-    const noteGraph = view.noteGraph.value
-    return noteGraph ? getNoteTypes(noteGraph) : new Map()
-  })
-
   const known = shallowRef<ReadonlyMap<string, KnownKind>>(new Map())
 
   watch(
@@ -109,17 +103,7 @@ function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap
   const getTabKind = (node: string): string | undefined =>
     known.value.get(map.getNodePath(node))?.tabKind
 
-  const shownPaths = computed<readonly string[]>(() => {
-    const noteGraph = view.noteGraph.value
-    if (!noteGraph) return []
-    const paths = [noteGraph.focus.path]
-    for (const related of noteGraph.related) {
-      if (!related.relatedTo) paths.push(related.path)
-    }
-    return paths.filter(Boolean)
-  })
-
-  return { types, getType, getTabKind, shownPaths, followMoves }
+  return { getType, getTabKind, followMoves }
 }
 
 /** What moving the focus to a note needs. */
@@ -198,19 +182,12 @@ function createPlexNodeActions(options: {
     followKindMoves(renames)
   }
 
-  const openHeading = (node: string, heading: string) => {
-    const path = map.getNodePath(node)
-    if (!path || !/^\d+$/.test(heading)) return
-    deps.window.openNote(path, { title: getName(path), showing: 'current', line: Number(heading) })
-  }
-
   return {
     activate,
     addNode,
     joinNodes,
     dropNodes,
     openNode,
-    openHeading,
     followMoves,
     getName,
   }
@@ -314,7 +291,12 @@ function usePlexWidgets(
     if (handle && getCurrentScope()) onScopeDispose(() => handle.dispose())
     return entries
   }
-  return { above: watching('above'), below: watching('below'), getPath: map.getNodePath }
+  return {
+    above: watching('above'),
+    below: watching('below'),
+    over: watching('over'),
+    getPath: map.getNodePath,
+  }
 }
 
 function getPlexNodeName(noteGraph: PlexView['noteGraph']['value'], path: string): string {
@@ -327,10 +309,9 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
   const getName = (path: string): string => getPlexNodeName(view.noteGraph.value, path)
   const canvas = usePlexPicture(view, deps, map)
-  const { types, getType, getTabKind, shownPaths, followMoves } = usePlexNoteKinds(view, map)
+  const { getType, getTabKind, followMoves } = usePlexNoteKinds(view, map)
 
   const quickLink = useQuickLink(view, deps, map)
-  const headings = usePlexHeadings(shownPaths, types, deps, map)
   const inspector = useLinkInspector(
     view,
     { editor: deps.editor, showMessage: deps.window.showMessage },
@@ -365,7 +346,6 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     reportFailure,
     canvas,
     menu,
-    headings,
     nodes,
     quickLink,
     inspector,

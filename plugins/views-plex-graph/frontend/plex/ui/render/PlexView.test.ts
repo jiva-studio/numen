@@ -1,11 +1,8 @@
 import { mount } from '@vue/test-utils'
-import { nextTick, ref } from 'vue'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
+import { describe, expect, it } from 'vitest'
 import PlexView from './PlexView.vue'
 import { arrangePlex, createPath, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
-import { getNodeHeadings } from '../../lib/inside'
-import { DEFAULT_BEHAVIOR } from '../../model/behavior'
-import { stubClock } from '../../../fixtures/clock'
 import type { Drop } from '../../lib/arrange'
 import type { Position } from '../../lib/node'
 import type { PlexGraph } from '../../../types'
@@ -64,54 +61,6 @@ const mountView = () =>
       nodeSize: DEFAULT_OPTIONS.nodeSize,
     },
   })
-
-describe('the headings under a note', () => {
-  const mountWithHeadings = () => {
-    const frames = stubClock()
-    const view = mount(PlexView, {
-      attachTo: document.body,
-      props: {
-        frame: arrangePlex(before),
-        viewport: VIEWPORT,
-        nodeSize: DEFAULT_OPTIONS.nodeSize,
-        behavior: { ...DEFAULT_BEHAVIOR, clock: frames.clock },
-        placedHeadings: (node) =>
-          getNodeHeadings(
-            node,
-            [
-              { id: 'one', text: 'First heading', level: 1 },
-              { id: 'two', text: 'Second heading', level: 1 },
-            ],
-            {
-              options: DEFAULT_OPTIONS,
-              deps: { viewport: VIEWPORT, margin: DEFAULT_OPTIONS.margin },
-            },
-          ),
-      },
-    })
-    const wait = async () => {
-      await nextTick()
-      vi.advanceTimersByTime(DEFAULT_BEHAVIOR.expansionDelay * 2)
-      frames.run()
-      await nextTick()
-    }
-    return { view, wait }
-  }
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  it('open under a note once the pointer has stayed on it for the wait', async () => {
-    vi.useFakeTimers()
-    const { view, wait } = mountWithHeadings()
-
-    await view.get('[aria-label^="Going"]').trigger('pointerenter')
-    await wait()
-
-    expect(view.findAll('.plex__inside')).toHaveLength(1)
-  })
-})
 
 describe('node activation', () => {
   it('emits activate with the clicked node id', async () => {
