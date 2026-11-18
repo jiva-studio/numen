@@ -35,6 +35,7 @@ const run = (args, extra = {}, options = {}) =>
       ...process.env,
       APT_RETRY_DELAYS: '0 0 0',
       APT_RETRY_CONF: join(dir, 'apt.conf'),
+      APT_RETRY_MIRRORS: join(dir, 'apt-mirrors.txt'),
       APT_RETRY_UPDATE: `bash ${join(dir, 'refresh.sh')}`,
       ...extra,
     },
@@ -87,6 +88,13 @@ describe('apt-retry.sh', () => {
     assert.match(conf, /Acquire::Retries "1"/)
     assert.match(conf, /Acquire::http::Timeout "30"/)
     assert.match(conf, /Acquire::https::Timeout "30"/)
+  })
+
+  it('rewrites throttled EC2 archive mirrors to Azure', () => {
+    const mirrors = join(dir, 'apt-mirrors.txt')
+    writeFileSync(mirrors, 'http://us-east-2.ec2.archive.ubuntu.com/ubuntu\n')
+    run(flaky(1))
+    assert.equal(readFileSync(mirrors, 'utf8'), 'http://azure.archive.ubuntu.com/ubuntu\n')
   })
   it('stops at the deadline when the command hangs', () => {
     writeFileSync(join(dir, 'hang.sh'), 'echo started; sleep 30\n')

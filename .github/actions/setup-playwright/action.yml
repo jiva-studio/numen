@@ -43,8 +43,17 @@ runs:
         RESTORED: ${{ steps.apt.outputs.cache-matched-key != '' }}
       run: |
         sudo rm -f /var/lib/man-db/auto-update
-        if [ "$RESTORED" = true ] && sudo dpkg --force-unsafe-io --refuse-downgrade -i ~/.cache/apt-archives/*.deb && { [ -z "$PACKAGES" ] || dpkg -s $PACKAGES > /dev/null 2>&1; }; then
-          exit 0
+        if [ "$RESTORED" = true ] && sudo dpkg --force-unsafe-io --refuse-downgrade -i ~/.cache/apt-archives/*.deb; then
+          installed=true
+          for pkg in $PACKAGES; do
+            if [ "$(dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null)" != "install ok installed" ]; then
+              installed=false
+              break
+            fi
+          done
+          if [ "$installed" = true ]; then
+            exit 0
+          fi
         fi
         .github/scripts/apt-retry.sh npx playwright install-deps $BROWSERS
         if [ -n "$PACKAGES" ]; then
