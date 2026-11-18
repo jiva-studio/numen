@@ -24,22 +24,22 @@ const drawIcon = (icon: Component): Promise<string> => {
 }
 
 describe('the icon of the notes in the tab strip', () => {
-  const activateRegistering = () => {
+  const getRegisteredIcons = (): { reader: Component; tabKind: Component } => {
     const { context } = createEditorSettingsContext()
     activate(context, NO_NOTES)
-    return {
-      reader: vi.mocked(context.register.reader).mock.calls[0]?.[0],
-      tabKind: vi.mocked(context.register.tabKind).mock.calls[0]?.[0],
-    }
+    const reader = vi.mocked(context.register.reader).mock.calls[0]?.[0].icon
+    const tabKind = vi.mocked(context.register.tabKind).mock.calls[0]?.[0].icon
+    if (!reader || !tabKind)
+      throw new Error('the plugin registered a reader or a tab kind without an icon')
+    return { reader, tabKind }
   }
 
   it(
     'is drawn for the note tab kind as the file-text icon the manifest names',
     async () => {
-      const { tabKind } = activateRegistering()
+      const { tabKind } = getRegisteredIcons()
 
-      expect(tabKind.icon).toBeDefined()
-      expect(await drawIcon(tabKind.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
+      expect(await drawIcon(tabKind)).toBe(await drawIcon(createNamedIcon('file-text')))
     },
     ICON_LOAD_TIMEOUT * 1.5,
   )
@@ -47,10 +47,9 @@ describe('the icon of the notes in the tab strip', () => {
   it(
     'is drawn for the markdown reader as the file-text icon the manifest names',
     async () => {
-      const { reader } = activateRegistering()
+      const { reader } = getRegisteredIcons()
 
-      expect(reader.icon).toBeDefined()
-      expect(await drawIcon(reader.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
+      expect(await drawIcon(reader)).toBe(await drawIcon(createNamedIcon('file-text')))
     },
     ICON_LOAD_TIMEOUT * 1.5,
   )
