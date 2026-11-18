@@ -5,6 +5,7 @@ import type { SlotCommand } from '@numen/plugin-loader'
 import { WORDS as windowWords } from '@/shared/ui/words'
 import { PALETTE_WORDS } from '../words'
 import { createAppCommands } from '@/testing/appCommands'
+import { createPickerSession } from '../model/picker/createPickerSession'
 import { runSupport } from '../model/palette/runSupport'
 import { createCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type SearchDeps } from '../model/search/search'
@@ -121,6 +122,7 @@ async function mountField(
       getTarget: () => inFront,
       places: {},
       runChoice,
+      picker: createPickerSession(),
     },
     global: {
       stubs: { Palette: showSilence ? { template: '<div><slot name="silence" /></div>' } : true },
@@ -291,6 +293,7 @@ describe('the highlight of the search menu as groups answer', () => {
         getTarget: () => inFront,
         places: {},
         runChoice: vi.fn(),
+        picker: createPickerSession(),
       },
       global: { stubs: { teleport: true } },
     })
@@ -390,6 +393,7 @@ describe('the spinner of the search field', () => {
         getTarget: () => inFront,
         places: {},
         runChoice: vi.fn(),
+        picker: createPickerSession(),
       },
       global: { stubs: { Palette: true } },
     })

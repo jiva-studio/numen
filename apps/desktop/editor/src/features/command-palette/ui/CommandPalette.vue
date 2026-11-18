@@ -7,25 +7,16 @@
  * and what a keystroke in it means. The keys of the window open and close each.
  */
 import { Search } from '@lucide/vue'
+import { reportFailure, runInBackground } from '@numen/ui'
 import { Palette, type ActionWords } from '@numen/workbench'
-import type { CommandDeps } from '@/shared/model/command'
-import type { CommandTarget } from '@/shared/model/command'
-import type { Commands } from '../model/palette/palette'
-import type { ResultChoice, SearchState } from '../model/search/search'
-import { findRowIcon, type FileIcons } from '../model/rowIcons'
+import { findRowIcon } from '../model/rowIcons'
 import { usePaletteInput } from '../model/usePaletteInput'
 import { WORDS as windowWords } from '@/shared/ui/words'
 import { PALETTE_WORDS } from '../words'
+import type { CommandPaletteProps } from './CommandPalette.types'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{
-  commands: Commands
-  search: SearchState
-  doing: CommandDeps
-  getTarget: () => CommandTarget
-  places: FileIcons
-  runChoice: (choice: ResultChoice) => void
-}>()
+const props = defineProps<CommandPaletteProps>()
 
 const words = { ...windowWords, ...PALETTE_WORDS }
 
@@ -44,6 +35,12 @@ const { field, type, choose, dismiss, goBack } = usePaletteInput({
   findPlaceholder: () => words.find,
 })
 
+/* -------------------------------- Handlers -------------------------------- */
+function onDismiss(): void {
+  if (props.picker.multi.value) props.picker.dismiss()
+  else dismiss()
+}
+
 /* -------------------------------- Helpers --------------------------------- */
 function getRowIcon(id: string) {
   return findRowIcon(id, props.commands, props.search, props.places.findFileIcon)
@@ -54,7 +51,8 @@ function getRowIcon(id: string) {
   <Palette
     :model-value="field.typed"
     :groups="field.groups"
-    :is-open="field.open"
+    :is-open="field.open || picker.multi.value !== undefined"
+    :multi="picker.multi.value"
     :is-busy="field.isBusy"
     :placeholder="field.placeholder"
     :crumb="field.crumb"
@@ -66,7 +64,9 @@ function getRowIcon(id: string) {
     @choose="choose"
     @light="commands.palette.previewItem"
     @back="goBack"
-    @dismiss="dismiss"
+    @toggle="runInBackground(picker.toggle($event), reportFailure)"
+    @create="runInBackground(picker.create($event), reportFailure)"
+    @dismiss="onDismiss"
   >
     <template #icon="{ id }">
       <component :is="getRowIcon(id)" v-if="getRowIcon(id)" class="command-icon" />

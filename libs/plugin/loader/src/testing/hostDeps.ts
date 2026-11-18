@@ -42,6 +42,7 @@ const MEMBERS: GroupMembers = {
     getCommands: true,
     getWindow: true,
     getNotices: true,
+    getPicker: true,
     clearNotices: true,
   },
   plugins: {
