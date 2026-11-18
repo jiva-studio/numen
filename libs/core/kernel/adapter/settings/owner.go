@@ -102,6 +102,7 @@ func (f *File) resetApp(declared manifest.Setting) {
 	case keyProfile:
 		f.Performance = DefaultPerformance()
 	default:
+		f.Editor.reset(declared.Key)
 		f.Search.reset(declared.Key)
 	}
 }

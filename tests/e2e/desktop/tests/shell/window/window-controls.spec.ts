@@ -18,10 +18,10 @@ const chooseValue = async (page: Page, value: string): Promise<void> => {
 
 test.describe('Window Controls and Display Preferences', () => {
   test.afterEach(async ({ request }) => {
-    await writeSetting(request, ['app', 'appearance', 'textScale'], 1)
+    await writeSetting(request, ['app', 'editor', 'fontSize'], 14)
   })
 
-  test('draws note text at the reading font size chosen in the palette, also after a reload', async ({
+  test('draws note text at the font size chosen in the palette, also after a reload', async ({
     page,
     request,
   }) => {
@@ -32,13 +32,13 @@ test.describe('Window Controls and Display Preferences', () => {
     await expect(editor).toBeVisible()
     const before = await readHeight(getFirstLine(editor))
 
-    await runPaletteCommand(page, 'Reading size', 'Reading size')
-    await chooseValue(page, '1.5')
+    await runPaletteCommand(page, 'Font size', 'Font size')
+    await chooseValue(page, '21')
 
     await expect.poll(async () => readHeight(getFirstLine(editor))).toBeCloseTo(before * 1.5, 0)
     await expect
-      .poll(async () => (await readOwner(request, 'app'))['appearance'])
-      .toMatchObject({ textScale: 1.5 })
+      .poll(async () => (await readOwner(request, 'app'))['editor'])
+      .toMatchObject({ fontSize: 21 })
 
     await page.reload()
 

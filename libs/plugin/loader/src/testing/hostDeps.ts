@@ -54,6 +54,8 @@ const MEMBERS: GroupMembers = {
     findPluginsOf: true,
     getSetting: true,
     onSettingChange: true,
+    getEditorSettings: true,
+    onEditorSettingsChange: true,
   },
   commands: {
     getCommandDeclarations: true,

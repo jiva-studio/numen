@@ -43,6 +43,7 @@ export type {
   ConnectionRole,
   ConnectionSide,
   Disposable,
+  EditorSettings,
   ErrorCode,
   FileBuffers,
   FileSelectEvent,

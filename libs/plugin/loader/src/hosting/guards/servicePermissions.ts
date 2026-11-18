@@ -145,6 +145,8 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
   settings: {
     get: requireNothing('it reads the settings of the plugin itself'),
     onChange: requireNothing('it listens to the settings of the plugin itself'),
+    getEditor: requireNothing('it reads the editor settings of the application, read-only'),
+    onEditorChange: requireNothing('it listens to the editor settings of the application'),
   },
   events: {
     onVaultChange: requirePermissions(READ),
