@@ -88,3 +88,6 @@ var allHeadingsSQL string
 
 //go:embed sql/count_frontmatter_errors.sql
 var countFrontmatterErrorsSQL string
+
+//go:embed sql/heads_at.sql
+var headsAtSQL string
