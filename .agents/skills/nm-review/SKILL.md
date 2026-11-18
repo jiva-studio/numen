@@ -24,7 +24,7 @@ flowchart LR
 
 ## Where the rules are
 
-**The architecture is documented in files.** Every `AGENTS.md` along the path from the repository root to each changed file's directory contains the naming and placement conventions, and the summarized rules are in [`../../rules/`](../../rules/). If a rule matters, it is written in one of them; if it is not written there it is not yet a rule. When a change appears to contradict one, quote it.
+**The architecture is documented in files, not kept in memory.** `AGENTS.md` at the root and in the touched module contains the naming and placement conventions, and the summarized rules are in [`../../rules/`](../../rules/). If a rule matters, it is written in one of them; if it is not written there it is not yet a rule. When a change appears to contradict one, quote it.
 
 If a change is right and the rule is wrong, say so. The finding is then "this contradicts `<file>`, and the rule looks outdated" — not silence.
 
