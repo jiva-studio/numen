@@ -99,8 +99,13 @@ export class PlexDriver {
   }
 
   async choose(reference: string, name: string): Promise<void> {
-    const title = escapeRegExp(this.getTitle(reference, name))
-    await (await this.getGraph()).getByRole('button', { name: new RegExp(`^${title}, (focus|parent|child|jump|reference|sibling)$`) }).click()
+    await this.clickNote(this.getTitle(reference, name), 'left')
+  }
+
+  private async clickNote(title: string, button: 'left' | 'right'): Promise<void> {
+    await this.findNode(title)
+    const at = await getMiddle(await this.getPart(title, '.plex__box'))
+    await this.scenario.page.mouse.click(at.x, at.y, { button })
   }
 
   async expectShowsNotes(rows: readonly (readonly string[])[], has: boolean): Promise<void> {
@@ -338,7 +343,7 @@ export class PlexDriver {
   }
 
   async openMenu(title: string): Promise<void> {
-    await (await this.findNode(title)).click({ button: 'right' })
+    await this.clickNote(title, 'right')
     await expect(this.scenario.page.getByRole('menu').getByRole('menuitem').first()).toBeVisible()
   }
 
