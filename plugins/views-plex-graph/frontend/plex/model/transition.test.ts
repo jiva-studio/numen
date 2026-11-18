@@ -144,7 +144,7 @@ describe('a graph and an input that change together', () => {
       ),
     )
     counter.placed = 0
-    return { current, room, counter }
+    return { current, room, counter, world }
   }
 
   it('are arranged once', async () => {
@@ -159,12 +159,13 @@ describe('a graph and an input that change together', () => {
   })
 
   it('are arranged once for the graph alone, and once for the input alone', async () => {
-    const { current, room, counter } = setUp()
+    const { current, room, counter, world } = setUp()
 
     current.value = graphs.leaf
     await Promise.resolve()
     room.value = () => NO_ROOM
     await Promise.resolve()
+    world.tick(0)
 
     expect(counter.placed).toBe(2 * PLACED_FOR_ONE_ARRANGEMENT)
   })
@@ -411,5 +412,91 @@ describe('a movement that was not requested', () => {
     scope.stop()
 
     expect(world.cancelled).toEqual([])
+  })
+})
+
+describe('a change of the rooms that moves no node', () => {
+  it('starts no movement and leaves the frame as it is', async () => {
+    const world = stubClock()
+    const room = ref<ArrangeInput['room']>(undefined)
+    const { frame, isMoving } = inScope(() =>
+      usePlexTransition(
+        () => graphs.typical,
+        () => ({ room: room.value }),
+        () => 400,
+        world.clock,
+      ),
+    )
+    const arranged = frame.value
+
+    room.value = () => ({ ...NO_ROOM })
+    await Promise.resolve()
+    world.tick(0)
+
+    expect(isMoving.value).toBe(false)
+    expect(frame.value).toBe(arranged)
+  })
+
+  it('starts a movement when a node moves by more than a pixel', async () => {
+    const world = stubClock()
+    const room = ref<ArrangeInput['room']>(undefined)
+    const { isMoving } = inScope(() =>
+      usePlexTransition(
+        () => graphs.typical,
+        () => ({ room: room.value }),
+        () => 400,
+        world.clock,
+      ),
+    )
+
+    room.value = () => ({ ...NO_ROOM, bottom: 60 })
+    await Promise.resolve()
+    world.tick(0)
+
+    expect(isMoving.value).toBe(true)
+  })
+})
+
+describe('widgets that grow after the notes were shown', () => {
+  const children = Array.from({ length: 20 }, (_, index) => ({
+    id: `child-${index}`,
+    title: `Gear ${index}`,
+    relation: 'child' as const,
+  }))
+  const graph: PlexGraph = {
+    nodes: [{ id: 'focus', title: 'Gears case 15', relation: 'focus' }, ...children],
+    edges: children.map((node) => ({ from: 'focus', to: node.id })),
+  }
+  const roomOf =
+    (top: number, bottom: number): NonNullable<ArrangeInput['room']> =>
+    (node) =>
+      node.relation === 'focus' ? NO_ROOM : { top, bottom, width: 120 }
+
+  const measure = () => 120
+
+  it('keeps every shown note inside the window and counts the notes left out', async () => {
+    const world = stubClock()
+    const viewport = { width: 1000, height: 600 }
+    const room = ref(roomOf(0, 24))
+    const { frame } = inScope(() =>
+      usePlexTransition(
+        () => graph,
+        () => ({ options: { viewport }, measure, room: room.value }),
+        () => 0,
+        world.clock,
+      ),
+    )
+
+    room.value = roomOf(36, 48)
+    await Promise.resolve()
+    world.tick(0)
+
+    const shown = frame.value.nodes.filter((node) => node.relation === 'child')
+
+    const outside = shown.filter(
+      (node) => Math.abs(node.y) + node.height / 2 + 48 > viewport.height / 2,
+    )
+    expect(outside).toStrictEqual([])
+    expect(frame.value.overflow.child).toBe(20 - shown.length)
   })
 })

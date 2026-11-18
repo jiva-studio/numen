@@ -26,8 +26,6 @@ export const scaleOptions = (options: PlexOptions, delta: number): PlexOptions =
   room: options.room * delta,
   minWidth: options.minWidth * delta,
   iconWidth: options.iconWidth * delta,
-  headingHeight: options.headingHeight * delta,
-  headingIndent: options.headingIndent * delta,
   gap: options.gap * delta,
   lineGap: options.lineGap * delta,
   focusGap: options.focusGap * delta,

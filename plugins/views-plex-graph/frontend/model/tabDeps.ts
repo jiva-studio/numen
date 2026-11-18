@@ -11,7 +11,12 @@ import {
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { PlexLook, PlexTabDeps } from '../types'
-import type { Nesting } from './nesting'
+
+const WIDGET_SLOTS = {
+  above: SLOT.plexGraphNodeAbove,
+  below: SLOT.plexGraphNodeBelow,
+  over: SLOT.plexGraphNode,
+} as const
 
 /** The host services a plex tab is made from, and the plugin's settings. */
 export interface PlexHost {
@@ -20,13 +25,12 @@ export interface PlexHost {
   readonly slots?: SlotHost
   readonly notes: VaultNotes
   readonly relations: VaultRelations
-  readonly nesting: Nesting
   readonly look: PlexLook
 }
 
 /** What the plex tab `id` requests of the window. A note it opens goes to its linked tabs first. */
 export function createPlexTabDeps(
-  { workspace, commands, slots, notes, relations, nesting, look }: PlexHost,
+  { workspace, commands, slots, notes, relations, look }: PlexHost,
   id: string,
 ): PlexTabDeps {
   return {
@@ -71,15 +75,7 @@ export function createPlexTabDeps(
         commands?.run(command, target, itemId, values) ?? Promise.resolve(''),
     },
     watchWidgets: (side, handler) =>
-      slots?.watchEntries(
-        side === 'above' ? SLOT.plexGraphNodeAbove : SLOT.plexGraphNodeBelow,
-        handler,
-      ) ?? { dispose: () => undefined },
-    notes: {
-      isNesting: nesting.isNesting,
-      headings: nesting.headings,
-      readHeadings: (paths) => notes.getHeadings(paths),
-      searchNames: (query, limit) => notes.findNotes(query, limit),
-    },
+      slots?.watchEntries(WIDGET_SLOTS[side], handler) ?? { dispose: () => undefined },
+    searchNames: (query, limit) => notes.findNotes(query, limit),
   }
 }

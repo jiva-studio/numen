@@ -269,53 +269,99 @@ describe('the edits made to notes', () => {
   })
 })
 
+const readGraph = async (paths: readonly string[], depth?: 1 | 2) => {
+  const graphs = await api.listRelatedNotes(paths, depth)
+  expect(graphs).toHaveLength(paths.length)
+  return graphs[0]!
+}
+
 describe('a noteGraph', () => {
-  it('has its noteGraph requested of its path', async () => {
+  it('asks for all paths in one request and maps each graph', async () => {
+    request.listRelatedNotes.mockClear()
     request.listRelatedNotes.mockResolvedValue({
-      focus: { path: 'a.md', title: 'A' },
-      related: [],
-      connections: [],
+      graphs: [
+        { focus: { path: 'b.md', title: 'B' }, related: [] },
+        { focus: { path: 'a.md', title: 'A' }, related: [] },
+      ],
     })
 
-    const noteGraph = await api.listRelatedNotes('a.md')
+    const graphs = await api.listRelatedNotes(['b.md', 'a.md'])
+
+    expect(request.listRelatedNotes).toHaveBeenCalledTimes(1)
+    expect(request.listRelatedNotes.mock.calls[0]?.[0]).toMatchObject({ paths: ['b.md', 'a.md'] })
+    expect(graphs.map((graph) => graph.focus.path)).toEqual(['b.md', 'a.md'])
+  })
+
+  it('maps a graph whose focus is unset to an empty path and leaves the others whole', async () => {
+    request.listRelatedNotes.mockResolvedValue({
+      graphs: [
+        { focus: { path: 'a.md', title: 'A' }, related: [] },
+        { related: [] },
+        { focus: { path: 'c.md', title: 'C' }, related: [] },
+      ],
+    })
+
+    const graphs = await api.listRelatedNotes(['a.md', 'gone.md', 'c.md'])
+
+    expect(graphs.map((graph) => graph.focus.path)).toEqual(['a.md', '', 'c.md'])
+  })
+
+  it('has its noteGraph requested of its path', async () => {
+    request.listRelatedNotes.mockResolvedValue({
+      graphs: [
+        {
+          focus: { path: 'a.md', title: 'A' },
+          related: [],
+          connections: [],
+        },
+      ],
+    })
+
+    const noteGraph = await readGraph(['a.md'])
 
     expect(noteGraph.focus.path).toBe('a.md')
-    expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md' })
+    expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({ paths: ['a.md'] })
   })
 
   it('asks for depth 1 unless a depth is given, and for depth 2 when it is given', async () => {
-    request.listRelatedNotes.mockResolvedValue({ focus: { path: 'a.md', title: 'A' } })
+    request.listRelatedNotes.mockResolvedValue({
+      graphs: [{ focus: { path: 'a.md', title: 'A' } }],
+    })
 
-    await api.listRelatedNotes('a.md')
+    await api.listRelatedNotes(['a.md'])
     expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({
-      path: 'a.md',
+      paths: ['a.md'],
       depth: 1,
     })
-    await api.listRelatedNotes('a.md', 2)
+    await api.listRelatedNotes(['a.md'], 2)
     expect(request.listRelatedNotes.mock.calls.at(-1)?.[0]).toMatchObject({
-      path: 'a.md',
+      paths: ['a.md'],
       depth: 2,
     })
   })
 
   it('names the note an item of depth 2 belongs to, and omits it for a note related to the focus', async () => {
     request.listRelatedNotes.mockResolvedValue({
-      focus: { path: 'Rota.md', title: 'The rota' },
-      related: [
+      graphs: [
         {
-          note: { path: 'Plots.md', title: 'Plots' },
-          relation: NOTE_RELATION.CHILD,
-          relatedTo: '',
-        },
-        {
-          note: { path: 'Beans.md', title: 'Beans' },
-          relation: NOTE_RELATION.CHILD,
-          relatedTo: 'Plots.md',
+          focus: { path: 'Rota.md', title: 'The rota' },
+          related: [
+            {
+              note: { path: 'Plots.md', title: 'Plots' },
+              relation: NOTE_RELATION.CHILD,
+              relatedTo: '',
+            },
+            {
+              note: { path: 'Beans.md', title: 'Beans' },
+              relation: NOTE_RELATION.CHILD,
+              relatedTo: 'Plots.md',
+            },
+          ],
         },
       ],
     })
 
-    const noteGraph = await api.listRelatedNotes('Rota.md', 2)
+    const noteGraph = await readGraph(['Rota.md'], 2)
 
     expect(noteGraph.related.map((one) => one.relatedTo)).toEqual([undefined, 'Plots.md'])
     expect('relatedTo' in noteGraph.related[0]!).toBe(false)
@@ -323,26 +369,34 @@ describe('a noteGraph', () => {
 
   it('is drawn around the note in focus, with each note in the relation it holds', async () => {
     request.listRelatedNotes.mockResolvedValue({
-      focus: { path: 'Rota.md', title: 'The rota' },
-      focusType: 'sample',
-      related: [
+      graphs: [
         {
-          note: { path: 'Allotments.md', title: 'Allotments' },
-          relation: NOTE_RELATION.PARENT,
-        },
-      ],
-      connections: [
-        {
-          first: 'Allotments.md',
-          second: 'Rota.md',
-          role: NOTE_ROLE.CHILD,
-          firstSide: { role: NOTE_ROLE.CHILD, label: 'contains rota', marker: NOTE_MARKER.ARROW },
-          secondSide: { role: NOTE_ROLE.PARENT, label: 'part of' },
+          focus: { path: 'Rota.md', title: 'The rota' },
+          focusType: 'sample',
+          related: [
+            {
+              note: { path: 'Allotments.md', title: 'Allotments' },
+              relation: NOTE_RELATION.PARENT,
+            },
+          ],
+          connections: [
+            {
+              first: 'Allotments.md',
+              second: 'Rota.md',
+              role: NOTE_ROLE.CHILD,
+              firstSide: {
+                role: NOTE_ROLE.CHILD,
+                label: 'contains rota',
+                marker: NOTE_MARKER.ARROW,
+              },
+              secondSide: { role: NOTE_ROLE.PARENT, label: 'part of' },
+            },
+          ],
         },
       ],
     })
 
-    const noteGraph = await api.listRelatedNotes('Rota.md')
+    const noteGraph = await readGraph(['Rota.md'])
 
     expect(noteGraph.focus).toEqual({ path: 'Rota.md', title: 'The rota' })
     expect(noteGraph.focusType).toBe('sample')
@@ -363,19 +417,23 @@ describe('a noteGraph', () => {
 
   it('leaves out a note it has no relation for, and one the answer names no note at', async () => {
     request.listRelatedNotes.mockResolvedValue({
-      focus: { path: 'Rota.md', title: 'The rota' },
-      related: [
-        { note: { path: 'Odd.md', title: 'Odd' }, relation: NOTE_RELATION.UNSPECIFIED },
-        { relation: NOTE_RELATION.CHILD },
+      graphs: [
+        {
+          focus: { path: 'Rota.md', title: 'The rota' },
+          related: [
+            { note: { path: 'Odd.md', title: 'Odd' }, relation: NOTE_RELATION.UNSPECIFIED },
+            { relation: NOTE_RELATION.CHILD },
+          ],
+        },
       ],
     })
 
-    expect((await api.listRelatedNotes('Rota.md')).related).toEqual([])
+    expect((await api.listRelatedNotes(['Rota.md']))[0]!.related).toEqual([])
   })
 
   it('relies on nothing where the vault no longer holds the note', async () => {
-    request.listRelatedNotes.mockResolvedValue({ related: [] })
+    request.listRelatedNotes.mockResolvedValue({ graphs: [{ related: [] }] })
 
-    expect((await api.listRelatedNotes('Gone.md')).focus.path).toBe('')
+    expect((await api.listRelatedNotes(['Gone.md']))[0]!.focus.path).toBe('')
   })
 })

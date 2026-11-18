@@ -39,7 +39,7 @@ const createServices = () => {
     messages: { showError: vi.fn() },
   } as unknown as WorkspaceHost
   const notes = {
-    listRelatedNotes: vi.fn(() => Promise.resolve({ path: 'Notes/Example.md' })),
+    listRelatedNotes: vi.fn(() => Promise.resolve([])),
     getHeadings: vi.fn(() => Promise.resolve(new Map())),
     findNotes: vi.fn(() => Promise.resolve([])),
     read: vi.fn(() => Promise.resolve({ body: 'Example prose.' })),
@@ -107,7 +107,7 @@ const NOTE_WRITES: Record<string, Call> = {
 }
 
 const NOTE_READS: Record<string, Call> = {
-  listRelatedNotes: (c) => c.vault.notes!.listRelatedNotes('Notes/Example.md'),
+  listRelatedNotes: (c) => c.vault.notes!.listRelatedNotes(['Notes/Example.md']),
   getHeadings: (c) => c.vault.notes!.getHeadings(['Notes/Example.md']),
   findNotes: (c) => c.vault.notes!.findNotes('Example', 5),
   read: (c) => c.vault.notes!.read('Notes/Example.md'),
@@ -236,14 +236,18 @@ describe('a note a plugin reads and writes', () => {
     expect(notes[name as keyof VaultNotes]).toHaveBeenCalledOnce()
   })
 
-  it('a related-notes read sends its depth to the editor service unchanged', async () => {
+  it('a related-notes read sends its paths and depth to the editor service unchanged', async () => {
     const { context, notes } = createContext(['vault:read'])
 
-    await context.host.vault.notes!.listRelatedNotes('Notes/Example.md', 2)
-    await context.host.vault.notes!.listRelatedNotes('Notes/Example.md')
+    await context.host.vault.notes!.listRelatedNotes(['Notes/Example.md', 'Notes/Other.md'], 2)
+    await context.host.vault.notes!.listRelatedNotes(['Notes/Example.md'])
 
-    expect(notes.listRelatedNotes).toHaveBeenNthCalledWith(1, 'Notes/Example.md', 2)
-    expect(notes.listRelatedNotes).toHaveBeenNthCalledWith(2, 'Notes/Example.md')
+    expect(notes.listRelatedNotes).toHaveBeenNthCalledWith(
+      1,
+      ['Notes/Example.md', 'Notes/Other.md'],
+      2,
+    )
+    expect(notes.listRelatedNotes).toHaveBeenNthCalledWith(2, ['Notes/Example.md'])
   })
 
   it('is read with vault:read and without vault:write', async () => {

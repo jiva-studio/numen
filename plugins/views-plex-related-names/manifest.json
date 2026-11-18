@@ -17,15 +17,6 @@
   "permissions": ["vault:read"],
   "settings": [
     {
-      "key": "showNames",
-      "type": "boolean",
-      "title": "Show notes related to related notes",
-      "description": "Under each related note, the names of the notes related to it",
-      "default": true,
-      "palette": true,
-      "icon": "waypoints"
-    },
-    {
       "key": "namesPerNote",
       "type": "range",
       "title": "Names per note",

@@ -2,8 +2,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createSlotRegistry, type DeclaredSlotEntry } from './slotRegistry'
 
-const LEDGER = 'org.example.ledger'
-const HARBOR = 'org.example.harbor'
+const RELATED = 'org.example.related'
+const LABELS = 'org.example.labels'
 
 const setup = (entries: readonly DeclaredSlotEntry[]) => {
   const reportIssue = vi.fn()
@@ -21,9 +21,9 @@ const readViews = (items: readonly { kind: string; view?: string }[]) =>
 
 describe('the slots over and under a node of the plex graph', () => {
   const entries: readonly DeclaredSlotEntry[] = [
-    { pluginId: LEDGER, slot: 'plexGraph.nodeAbove', view: 'parents', order: 2 },
-    { pluginId: HARBOR, slot: 'plexGraph.nodeAbove', view: 'tags', order: 1 },
-    { pluginId: LEDGER, slot: 'plexGraph.nodeBelow', view: 'related' },
+    { pluginId: RELATED, slot: 'plexGraph.nodeAbove', view: 'parents', order: 2 },
+    { pluginId: LABELS, slot: 'plexGraph.nodeAbove', view: 'tags', order: 1 },
+    { pluginId: RELATED, slot: 'plexGraph.nodeBelow', view: 'related' },
   ]
 
   it('hand the owner the views of the plugins, in order', () => {
