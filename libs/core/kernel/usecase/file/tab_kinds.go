@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
 // TabKindChooser gives a note the kind of tab it opens in, or an empty kind where none applies.
@@ -21,26 +23,34 @@ func chooseTabKinds(folder Folder, chooser TabKindChooser) map[string]string {
 	return kinds
 }
 
-// ListTabKinds finds the kind of tab each of the files at some paths opens in.
+// ListTabKinds finds the kind of tab each of the notes at some paths opens in, from the type and the
+// frontmatter the index holds, in one question and without touching a file. A path the index holds no
+// note at has no kind of tab, as a note whose file cannot be read has none.
 type ListTabKinds struct {
-	kinds   *GetFileKinds
+	heads   noteport.NoteHeads
 	chooser TabKindChooser
 }
 
-func NewListTabKinds(kinds *GetFileKinds, chooser TabKindChooser) *ListTabKinds {
-	return &ListTabKinds{kinds: kinds, chooser: chooser}
+func NewListTabKinds(heads noteport.NoteHeads, chooser TabKindChooser) *ListTabKinds {
+	return &ListTabKinds{heads: heads, chooser: chooser}
 }
 
 // Execute answers by path, and leaves out a path with no kind of tab.
 func (u *ListTabKinds) Execute(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
-	if len(paths) == 0 {
-		return map[string]string{}, nil
+	kinds := map[string]string{}
+	if len(paths) == 0 || u.heads == nil {
+		return kinds, nil
 	}
-	listing, err := u.kinds.Execute(ctx, v, paths)
+	heads, err := u.heads.GetHeads(ctx, v.ID, paths)
 	if err != nil {
 		return nil, err
 	}
-	return chooseTabKinds(listing, u.chooser), nil
+	for path, head := range heads {
+		if kind := u.chooser.Execute(path, head.Type, head.Values); kind != "" {
+			kinds[path] = kind
+		}
+	}
+	return kinds, nil
 }
 
 // FolderListing is what a folder holds and the kind of tab each of its notes opens in.

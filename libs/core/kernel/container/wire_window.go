@@ -208,7 +208,7 @@ func newWindowUseCases(
 func newTabKinds(a pluginsWiring, db *Index) tabKinds {
 	files := file.NewGetFileKinds(vaultReaders(a.vault), db.NoteQueries())
 	chooser := getTabKindChooser(a)
-	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(files, chooser)}
+	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
 
 func newFileServer(a pluginsWiring, state *editor.State, cases WindowUseCases) *editor.FileServer {
