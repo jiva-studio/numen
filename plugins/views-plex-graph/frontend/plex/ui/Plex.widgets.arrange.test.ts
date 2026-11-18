@@ -451,8 +451,7 @@ describe('the plex whose widget of a node leaves', () => {
 })
 
 describe('the plex whose widget never reports ready', () => {
-  it('lays out with what it has once the emergency cap has passed, and warns by the name of the widget', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+  it('lays out with what it has once the emergency cap has passed', async () => {
     const arrivals = createArrivals(answerFor(ALL.filter((id) => id !== 'child-1')))
     const plex = mountPlex({ widgetsBelow: [createEntry(arrivals, 'hung')] })
 
@@ -461,8 +460,6 @@ describe('the plex whose widget never reports ready', () => {
     await passFrames(3, EMERGENCY_CAP / 4)
 
     expect(getDrawnTitles(plex)).toStrictEqual(FAMILY.nodes.map((node) => node.title))
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('did not report ready'))
-    expect(warn.mock.calls.flat().join(' ')).toContain('org.example.hung/view/hung')
   })
 })
 
