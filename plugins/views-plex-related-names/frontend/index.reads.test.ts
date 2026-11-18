@@ -17,17 +17,29 @@ const SETTLE_MS = 5000
 
 const getTitle = (path: string) => path.replace(/^.*\//, '').replace(/\.md$/, '')
 
-const createGraph = (path: string, links: Readonly<Record<string, NoteRelation>>): NoteGraph => ({
-  focus: { path, title: getTitle(path) },
-  focusType: 'note',
-  related: Object.entries(links).map(([one, relation]) => ({
+const createGraph = (
+  path: string,
+  links: Readonly<Record<string, NoteRelation>>,
+  depth: number | undefined,
+): NoteGraph => {
+  const own = Object.entries(links).map(([one, relation]) => ({
     path: one,
     title: getTitle(one),
     relation,
     type: 'note',
-  })),
-  connections: [],
-})
+  }))
+  const first = own[0]
+  const beyond =
+    depth === 2 && first
+      ? [{ ...first, path: 'notes/Beyond.md', title: 'Beyond', relatedTo: first.path }]
+      : []
+  return {
+    focus: { path, title: getTitle(path) },
+    focusType: 'note',
+    related: [...own, ...beyond],
+    connections: [],
+  }
+}
 
 const LEAVES = Array.from({ length: 5 }, (_, index) => `notes/Leaf ${index + 1}.md`)
 
@@ -36,11 +48,12 @@ const setup = (initialSettings: Record<string, JsonValue> = {}) => {
   const links: Record<string, Record<string, NoteRelation>> = {}
   let failure: Error | undefined
   const notes = {
-    listRelatedNotes: async (path: string, depth?: 1 | 2): Promise<NoteGraph> => {
-      requests.push([path, depth])
-      if (failure) throw failure
-      return createGraph(path, links[path] ?? {})
-    },
+    listRelatedNotes: async (paths: readonly string[], depth?: 1 | 2): Promise<NoteGraph[]> =>
+      paths.map((path) => {
+        requests.push([path, depth])
+        if (failure) throw failure
+        return createGraph(path, links[path] ?? {}, depth)
+      }),
   } as unknown as VaultNotes
   const notices = createMockNoticeHost()
   const context = createMockPluginContext({
@@ -100,23 +113,24 @@ describe('the views of the nodes of a plex that opens', () => {
     expect(getReads().map(([path]) => path)).toStrictEqual(LEAVES)
   })
 
-  it('reads the notes related to the related notes of each node, with depth 2', async () => {
+  it('reads the notes related to each node with depth 1', async () => {
     const { show, getReads } = setupRig()
 
     show('parents', LEAVES[0]!)
     show('related', LEAVES[0]!)
     await flushPromises()
 
-    expect(getReads()).toStrictEqual([[LEAVES[0], 2]])
+    expect(getReads()).toStrictEqual([[LEAVES[0], 1]])
   })
 
-  it('starts the reads of the five nodes in the tick they mount in', () => {
+  it('starts the reads of the five nodes in the tick they mount in', async () => {
     const { show, getReads } = setupRig()
 
     LEAVES.forEach((one) => {
       show('parents', one)
       show('related', one)
     })
+    await flushPromises()
 
     expect(getReads()).toHaveLength(5)
   })
@@ -273,33 +287,6 @@ describe('the views of a node while the vault changes', () => {
   })
 })
 
-describe('the views while the setting Show notes related to related notes is off', () => {
-  it('reads nothing for any node', async () => {
-    const { show, getReads } = setupRig({ showNames: false })
-
-    LEAVES.forEach((one) => {
-      show('parents', one)
-      show('related', one)
-    })
-    await flushPromises()
-
-    expect(getReads()).toHaveLength(0)
-  })
-
-  it('reads each node once when the setting is turned on', async () => {
-    const { context, show, getReads } = setupRig({ showNames: false })
-    LEAVES.forEach((one) => {
-      show('parents', one)
-      show('related', one)
-    })
-
-    context.setSetting('showNames', true)
-    await flushPromises()
-
-    expect(getReads()).toHaveLength(5)
-  })
-})
-
 describe('the views when the read of a note fails', () => {
   it('shows one error for the two views of the node', async () => {
     const { show, fail, notices } = setupRig()
@@ -312,7 +299,7 @@ describe('the views when the read of a note fails', () => {
     expect(notices.getShown()).toStrictEqual([{ text: 'the vault is closed', severity: 'error' }])
   })
 
-  it('shows one error per node for the nodes of the plex', async () => {
+  it('shows one error for the nodes of the plex', async () => {
     const { show, fail, notices } = setupRig()
     fail(new Error('the vault is closed'))
 
@@ -322,7 +309,7 @@ describe('the views when the read of a note fails', () => {
     })
     await flushPromises()
 
-    expect(notices.getShown()).toHaveLength(5)
+    expect(notices.getShown()).toHaveLength(1)
   })
 
   it('reads the note again for a view that mounts after the failure', async () => {

@@ -244,8 +244,6 @@ The settings of the plugin Plex Graph.
 | | | |
 | --- | --- | --- |
 | `references` | text | show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none. One of `off`, `outgoing`, `incoming`, `both`. |
-| `nestHeadings` | yes or no | show the headings of a note under its node. |
-| `headingLimit` | a number | most headings shown under a node. From 1 to 12. |
 | `showPills` | yes or no | draw a pill behind each title. Off: the title alone. |
 | `pillPaddingSides` | a number | space beside the title inside its pill. From 0 to 24. |
 | `pillPaddingEnds` | a number | space above and below the title inside its pill. From 0 to 16. |
@@ -257,14 +255,23 @@ The settings of the plugin Plex Graph.
 | `animationLength` | a number | time to move to another note, in ms; 0 is instant. From 0 to 2000. |
 | `noteRoom` | a number | empty space around every note. From 0 to 40. |
 
+### `md.numen.views.plex.headings`
+
+The settings of the plugin Plex Headings.
+
+| | | |
+| --- | --- | --- |
+| `nestHeadings` | yes or no | show the headings of a note under its node. |
+| `headingLimit` | a number | most headings shown under a node. From 1 to 12. |
+
 ### `md.numen.views.plex.related.names`
 
 The settings of the plugin Plex Related Names.
 
 | | | |
 | --- | --- | --- |
-| `showNames` | yes or no | under each related note, the names of the notes related to it. |
 | `namesPerNote` | a number | most names shown under and over a related note. From 1 to 12. |
+| `showRelationArrows` | yes or no | an arrow before each name shows how its note is related. |
 
 ### `md.numen.views.titleBar`
 

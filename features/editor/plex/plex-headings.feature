@@ -37,6 +37,6 @@ Feature: Plex headings
   Scenario: Headings are hidden
     Given the person rests the pointer on the note titled "Heat" in the plex
     And the plex shows the heading "First law" under the note titled "Heat"
-    When the person sets the setting "Nest headings under notes" of the plugin "Plex Graph" to "Off"
+    When the person sets the setting "Nest headings under notes" of the plugin "Plex Headings" to "Off"
     And the person rests the pointer on the note titled "Heat" in the plex
     Then the plex does not show the heading "First law" under the note titled "Heat"

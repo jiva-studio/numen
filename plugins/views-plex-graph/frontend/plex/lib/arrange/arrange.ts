@@ -32,9 +32,11 @@ import type { PlexGraph, PlexNode, PlexRelation } from '../../../types'
 
 /**
  * `room` is the space a note keeps over and under its pill; a note without one keeps none.
- * `keep` is the set of notes a former arrangement admitted: only they are placed, none of them is cut again,
- * so a change of the rooms moves the notes and never changes which are shown.
  * `only` limits the notes that may be admitted to a set a former arrangement chose; the window still cuts them.
+ * `keep` is the set of notes a former arrangement showed: exactly they are placed, so a change of the rooms moves
+ * the notes and adds none. The packing and the shape are chosen as for the arrangement that showed them, so the same
+ * inputs give the same positions. When the rooms have grown so that a kept note lies outside the window,
+ * the notes are admitted again among the kept ones, and the others are counted as not shown.
  */
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined
@@ -62,7 +64,7 @@ export function arrangePlex(
 ): PlexFrame {
   const request = applyRoom(resolveOptions(options))
   const focusNode = assertGraph(graph)
-  const requested = requestKept(requestNodes(graph.nodes, request), keep ?? only)
+  const requested = requestKept(requestNodes(graph.nodes, request), only)
   const rooms = createRoomLookup(graph.nodes, room)
 
   // Lays the nodes out at the given options, each keeping the room it is given: the focus, then the placement.
@@ -156,26 +158,39 @@ export function arrangePlex(
     }
   }
   // The placement keeps its usual shape, and leaves it only when another shape holds more notes.
-  const inShape = keep
-    ? { packing: crowded, admitted: requested, isFitFirst: false }
-    : admitInWindow(false)
+  const inShape = admitInWindow(false)
   const fitFirst =
-    !keep && countNodes(inShape.admitted) < countNodes(requested)
+    countNodes(inShape.admitted) < countNodes(requested)
       ? admitInWindow(true, inShape.admitted)
       : inShape
   const chosen = countNodes(fitFirst.admitted) > countNodes(inShape.admitted) ? fitFirst : inShape
   const { packing: resolved, admitted, isFitFirst } = chosen
-  const admittedOverflow = countOverflow(graph.nodes, admitted)
 
   // The gaps stay as packed: they close in a crowded window and never open to fill a roomy one.
   const fit: Fit = { margin, rooms }
-  const finalLayout = lay(resolved, admitted, rooms, { isFitFirst })
+  const finalLayout = lay(resolved, keep ? addKept(admitted, requested, keep) : admitted, rooms, {
+    isFitFirst,
+  })
   const { focus } = finalLayout
-  const placed =
-    viewport && !keep
+  if (isKeptOutside(finalLayout.placed, keep, viewport, fit)) {
+    return arrangePlex(graph, {
+      options,
+      placement,
+      measure,
+      measureLabel,
+      labelType,
+      room,
+      only: keep,
+    })
+  }
+  const placed = keep
+    ? finalLayout.placed.filter((node) => keep.has(node.id))
+    : viewport
       ? finalLayout.placed.filter((node) => isInside(node, viewport, fit))
       : finalLayout.placed
-  const overflow = addDropped(admittedOverflow, finalLayout.placed, placed)
+  const overflow = keep
+    ? countOverflow(graph.nodes, requestKept(requested, keep))
+    : addDropped(countOverflow(graph.nodes, admitted), finalLayout.placed, placed)
   const nodes = [focus, ...placed]
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
@@ -214,6 +229,19 @@ function requestKept(
       relation,
       nodes.filter((node) => keep.has(node.id)),
     ]),
+  )
+}
+
+function addKept(
+  admitted: NodesByRelation,
+  requested: NodesByRelation,
+  keep: ReadonlySet<string>,
+): NodesByRelation {
+  return Object.fromEntries(
+    Object.entries(requested).map(([relation, nodes]) => {
+      const admittedIds = new Set(admitted[relation as PlexRelation]?.map((node) => node.id))
+      return [relation, nodes.filter((node) => keep.has(node.id) || admittedIds.has(node.id))]
+    }),
   )
 }
 
@@ -275,6 +303,19 @@ function stopAtOutside(
   rooms: Fit['rooms'],
 ): PlacementContext['shouldStop'] {
   return viewport ? (node) => !isInside(node, viewport, { margin, rooms }) : undefined
+}
+
+function isKeptOutside(
+  nodes: readonly PlacedNode[],
+  keep: ReadonlySet<string> | undefined,
+  viewport: Size | undefined,
+  fit: Fit,
+): boolean {
+  return (
+    keep !== undefined &&
+    viewport !== undefined &&
+    nodes.some((node) => keep.has(node.id) && !isInside(node, viewport, fit))
+  )
 }
 
 function isInsideWindow(

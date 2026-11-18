@@ -4,7 +4,7 @@ import { computed, defineComponent, h, nextTick, ref, watch, type Ref } from 'vu
 import { useSlotLoading } from '@numen/plugin-sdk'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
-import type { Placement, Size } from '../lib/arrange'
+import type { NodeRoom, Placement, Size } from '../lib/arrange'
 import { clusters } from '../lib/arrange/layout/clusters'
 import type { Clock, Viewport } from '@numen/ui'
 import type { PlexGraph } from '../../types'
@@ -26,7 +26,6 @@ const FAMILY: PlexGraph = {
 }
 
 const WIDGET_HEIGHT = 40
-const NODE_GAP = 8
 const FRAME = 16
 const FRAMES_PER_ARRANGEMENT = 3
 
@@ -72,10 +71,23 @@ const deliverOneAfterAnother = async (arrivals: Arrivals, ids: readonly string[]
 // The real placement, wrapped to count how often the plex asks the arrangement to place nodes.
 const placed: number[] = []
 
+/** The final layout of each arrangement, the one that does not stop early, with the room each of its notes was given. */
+const layouts: { hasRoom: boolean; rooms: Map<string, NodeRoom> }[] = []
+
 const countingPlacement: Placement = {
   name: clusters.name,
   place: (nodes, focus, context) => {
     placed.push(placed.length)
+    if (context.shouldStop === undefined) {
+      const rooms = new Map(
+        [focus, ...Object.values(nodes).flatMap((list) => list ?? [])].map((node) => [
+          node.id,
+          context.room(node),
+        ]),
+      )
+      const hasRoom = [...rooms.values()].some((room) => room.top > 0 || room.bottom > 0)
+      layouts.push({ hasRoom, rooms })
+    }
     return clusters.place(nodes, focus, context)
   },
 }
@@ -125,7 +137,7 @@ const createPlainEntry = (name = 'tags') => ({
 })
 
 let rings: (() => void)[] = []
-let assigned: { element: Element; value: string }[] = []
+let assigned: { element: Element; value: string; at: number }[] = []
 let scheduled: ((now: number) => void)[] = []
 let now = 0
 
@@ -136,6 +148,7 @@ const clock: Clock = {
 }
 
 beforeEach(() => {
+  layouts.length = 0
   mounted.clear()
   placed.length = 0
   rings = []
@@ -154,12 +167,12 @@ beforeEach(() => {
     },
   )
   // A document without a layout engine: a widget is as tall as WIDGET_HEIGHT, and the group of widgets
-  // is as tall as its widgets and the node gap it carries as padding.
+  // is as tall as its widgets, the plex adding nothing to it.
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
     const drawn =
       this.querySelectorAll('[data-widget]').length + (this.matches('[data-widget]') ? 1 : 0)
     const height = this.matches('.plex__widgets-group')
-      ? NODE_GAP + drawn * WIDGET_HEIGHT
+      ? drawn * WIDGET_HEIGHT
       : drawn > 0
         ? WIDGET_HEIGHT
         : 0
@@ -181,7 +194,7 @@ beforeEach(() => {
     name: string,
     value: string,
   ) {
-    if (name === 'transform') assigned.push({ element: this, value })
+    if (name === 'transform') assigned.push({ element: this, value, at: now })
     setAttribute.call(this, name, value)
   })
 })
@@ -638,7 +651,7 @@ describe('the admission of the plex while the widgets of the shown nodes change 
     },
   )
 
-  it('keeps every node it showed when the rooms of late widgets arrive after the emergency cap', async () => {
+  it('shows no node it had not shown when the rooms of late widgets arrive after the emergency cap', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     const arrivals = createArrivals()
     const plex = mountCrowd(arrivals, 520)
@@ -649,17 +662,17 @@ describe('the admission of the plex while the widgets of the shown nodes change 
     await passFrames(6)
 
     expect(first.length).toBeGreaterThan(1)
-    expect(first.filter((id) => !getShownIdsOf(CROWD, plex).includes(id))).toStrictEqual([])
+    expect(getShownIdsOf(CROWD, plex).filter((id) => !first.includes(id))).toStrictEqual([])
   })
 
-  it('mounts the widgets of no more nodes than the plex ends up showing', async () => {
+  it('keeps the widgets of no more nodes in the document than the plex ends up showing', async () => {
     const arrivals = createArrivals(answerFor(CROWD_IDS))
     const plex = mountCrowd(arrivals, 380)
 
     await passFrames(10)
 
     expect(getShownCount(plex)).toBeLessThan(CROWD.nodes.length)
-    expect(getMountedPaths().size).toBeLessThanOrEqual(getShownCount(plex))
+    expect(plex.findAll('.plex__widgets--below')).toHaveLength(getShownCount(plex))
   })
 
   it('arranges at most three times on a click and mounts each shown node once', async () => {
@@ -685,5 +698,113 @@ describe('the admission of the plex while the widgets of the shown nodes change 
     }
     expect(given.size).toBeGreaterThan(0)
     expect([...given.values()].filter((values) => values.length > 3)).toStrictEqual([])
+  })
+})
+
+const getLayoutsWithRoom = () => layouts.filter((layout) => layout.hasRoom)
+
+const MOVEMENT = 420
+
+const getMovementTime = () => {
+  const times = assigned
+    .filter(({ element }) => element.classList.contains('plex__node'))
+    .map(({ at }) => at)
+  return Math.max(...times) - Math.min(...times)
+}
+
+const mountForMovement = (arrivals: Arrivals, height: number) =>
+  mountPlex({
+    graph: CROWD,
+    widgetsBelow: [createEntry(arrivals, 'names'), createEntry(arrivals, 'tags')],
+    viewport: createLateViewport({ width: 600, height }),
+    duration: 420,
+  })
+
+describe('the plex that arranges once, with the rooms its widgets measured', () => {
+  it('mounts the widgets of no node a second time on a click, while the nodes walk to their places', async () => {
+    const plex = mountForMovement(createArrivals(answerFor(CROWD_IDS)), 380)
+    await passFrames(40)
+    mounted.clear()
+
+    await plex.setProps({ graph: refocus(CROWD, 'child-0') })
+    await passFrames(40)
+
+    expect(mounted.size).toBeGreaterThan(0)
+    expect([...mounted].filter(([, count]) => count > 1)).toStrictEqual([])
+  })
+
+  it('arranges once with the measured rooms and starts one movement on a click', async () => {
+    const plex = mountForMovement(createArrivals(answerFor(CROWD_IDS)), 380)
+    await passFrames(40)
+    layouts.length = 0
+    assigned = []
+
+    await plex.setProps({ graph: refocus(CROWD, 'child-0') })
+    await passFrames(40)
+
+    expect(getLayoutsWithRoom()).toHaveLength(1)
+    expect(getMovementTime()).toBeLessThanOrEqual(MOVEMENT + 2 * FRAME)
+  })
+
+  it('draws the first layout with the notes the measured rooms admit, and draws nothing before it', async () => {
+    const arrivals = createArrivals()
+    const plex = mountForMovement(arrivals, 380)
+    const drawn: string[][] = []
+
+    await deliverOneAfterAnother(arrivals, CROWD_IDS)
+    for (let frame = 0; frame < 12; frame += 1) {
+      await passFrames(1)
+      drawn.push(getShownIdsOf(CROWD, plex))
+    }
+
+    const first = drawn.find((ids) => ids.length > 0)
+    expect(first).toStrictEqual(drawn.at(-1))
+    expect(first?.length).toBeLessThan(CROWD.nodes.length)
+    expect(getLayoutsWithRoom()).toHaveLength(1)
+  })
+
+  it('draws no note before the window has reported its size, for a plex without widgets as well', async () => {
+    mountPlex({ graph: CROWD, viewport: createLateViewport(MEDIUM_WINDOW) })
+
+    expect(getAssignedNodes()).toBe(0)
+    expect(placed).toHaveLength(0)
+    await passFrames(FRAMES_PER_ARRANGEMENT)
+
+    expect(getAssignedNodes()).toBeGreaterThan(0)
+  })
+
+  it('gives a note without widgets no room, and a note with widgets exactly the room they drew', async () => {
+    const arrivals = createArrivals({ ...answerFor(CROWD_IDS, false), focus: true })
+    mountPlex({
+      graph: CROWD,
+      widgetsBelow: [createEntry(arrivals)],
+      viewport: createLateViewport({ width: 600, height: 380 }),
+    })
+
+    await passFrames(10)
+
+    const rooms = getLayoutsWithRoom().at(-1)?.rooms
+    expect(rooms?.get('focus')).toMatchObject({ top: 0, bottom: WIDGET_HEIGHT })
+    expect(rooms?.get('parent-0')).toMatchObject({ top: 0, bottom: 0 })
+  })
+
+  it('re-arranges for the widgets that grow in one frame, and shows no note it had not shown', async () => {
+    const names = createArrivals(answerFor(CROWD_IDS))
+    const tags = createArrivals(answerFor(CROWD_IDS, false))
+    const plex = mountPlex({
+      graph: CROWD,
+      widgetsBelow: [createEntry(names, 'names'), createEntry(tags, 'tags')],
+      viewport: createLateViewport({ width: 600, height: 380 }),
+      duration: 420,
+    })
+    await passFrames(40)
+    const before = getShownIdsOf(CROWD, plex)
+    layouts.length = 0
+
+    deliver(tags, answerFor(['parent-0', 'parent-1', 'child-0']))
+    await passFrames(40)
+
+    expect(getLayoutsWithRoom().length).toBeLessThanOrEqual(2)
+    expect(getShownIdsOf(CROWD, plex).filter((id) => !before.includes(id))).toStrictEqual([])
   })
 })

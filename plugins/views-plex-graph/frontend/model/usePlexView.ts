@@ -12,7 +12,7 @@ import type { NoteGraph, PathRename } from '../types'
 
 /** The one query a plex makes of the vault: the related notes of a note. */
 export interface RelatedNoteQueries {
-  listRelatedNotes(path: string, depth: 1): Promise<NoteGraph>
+  listRelatedNotes(paths: readonly string[], depth: 1): Promise<readonly NoteGraph[]>
 }
 
 export function usePlexView(core: RelatedNoteQueries) {
@@ -41,9 +41,9 @@ export function usePlexView(core: RelatedNoteQueries) {
     const mine = guard.acquireRequest()
     nextPath.value = path
     try {
-      const answer = await core.listRelatedNotes(path, 1)
+      const [answer] = await core.listRelatedNotes([path], 1)
       if (!mine.isCurrent) return
-      if (!answer.focus.path) {
+      if (!answer?.focus.path) {
         error.value = `${path} is not in the vault`
         return
       }

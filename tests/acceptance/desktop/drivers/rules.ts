@@ -444,7 +444,7 @@ export const isArrow = (buttonName: string, arrow: string): boolean => buttonNam
 /** The most clicks the arrow button of a row needs to show any arrow: none, one way, the other way. */
 export const MAX_ARROW_CLICKS = 3
 
-/** The wait of the pointer on a note before its headings open: the EXPANSION_DELAY of the plex, which rules.test.ts reads from the plugin. */
+/** The wait of the pointer on a note before its headings open: the HOVER_WAIT of the plex headings plugin, which rules.test.ts reads from the plugin. */
 export const HEADINGS_OPEN_WAIT_MS = 500
 
 /** What the arrow of a line is when the line has none. */

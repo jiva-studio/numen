@@ -34,6 +34,12 @@ interface Pending {
   reject(error: Error): void
 }
 
+interface Call {
+  readonly paths: readonly string[]
+  resolve(graphs: NoteGraph[]): void
+  reject(error: Error): void
+}
+
 const createGraph = (path: string): NoteGraph => ({
   focus: { path, title: path },
   focusType: 'note',
@@ -46,9 +52,16 @@ const createGraph = (path: string): NoteGraph => ({
 const setup = (initialSettings: Record<string, JsonValue> = {}) => {
   const pending: Pending[] = []
   const notes = {
-    listRelatedNotes: (path: string) =>
-      new Promise<NoteGraph>((resolve, reject) => {
-        pending.push({ path, resolve: () => resolve(createGraph(path)), reject })
+    listRelatedNotes: (paths: readonly string[]) =>
+      new Promise<NoteGraph[]>((resolve, reject) => {
+        const call: Call = { paths, resolve, reject }
+        for (const path of paths) {
+          pending.push({
+            path,
+            resolve: () => call.resolve(call.paths.map(createGraph)),
+            reject: call.reject,
+          })
+        }
       }),
   } as unknown as VaultNotes
   const notices = createMockNoticeHost()
@@ -89,6 +102,7 @@ const setup = (initialSettings: Record<string, JsonValue> = {}) => {
   const getReads = (path?: string) =>
     path === undefined ? pending : pending.filter((one) => one.path === path)
   const answer = async (path: string) => {
+    await flushPromises()
     getReads(path).forEach((one) => one.resolve())
     await flushPromises()
   }
@@ -146,15 +160,16 @@ describe('the views while the notes of their node are read', () => {
     expect(loading.isReady.value).toBe(true)
   })
 
-  it('waits for the notes of every node that is drawn', async () => {
-    const { show, loading, answer } = setupRig()
+  it('waits for the notes of every node that is drawn, which are read in one call', async () => {
+    const { show, loading, answer, getReads } = setupRig()
     show('related', PEAR)
     show('related', QUINCE)
+    await flushPromises()
+
+    expect(loading.isReady.value).toBe(false)
+    expect(getReads().map((one) => one.path)).toStrictEqual([PEAR, QUINCE])
 
     await answer(PEAR)
-    expect(loading.isReady.value).toBe(false)
-
-    await answer(QUINCE)
     expect(loading.isReady.value).toBe(true)
   })
 
@@ -187,6 +202,7 @@ describe('the views when the read of the notes fails', () => {
     const { show, loading, getReads } = setupRig()
     show('related', PEAR)
 
+    await flushPromises()
     getReads(PEAR)[0]?.reject(new Error('the vault is closed'))
     await flushPromises()
 
@@ -198,6 +214,7 @@ describe('the views when the read of the notes fails', () => {
     show('parents', PEAR)
     show('related', PEAR)
 
+    await flushPromises()
     getReads(PEAR)[0]?.reject(new Error('the vault is closed'))
     await flushPromises()
 
@@ -209,6 +226,7 @@ describe('the views when the read of the notes fails', () => {
     show('parents', PEAR)
     show('related', PEAR)
 
+    await flushPromises()
     getReads(PEAR)[0]?.reject(new Error('the vault is closed'))
     await flushPromises()
 
@@ -216,34 +234,13 @@ describe('the views when the read of the notes fails', () => {
   })
 })
 
-describe('the views while the setting Show notes related to related notes is off', () => {
-  it('finishes at once, with nothing to wait for', () => {
-    const { show, loading, getReads } = setupRig({ showNames: false })
-
-    show('parents', PEAR)
-    show('related', PEAR)
-
-    expect(loading.isReady.value).toBe(true)
-    expect(getReads()).toHaveLength(0)
-  })
-
-  it('does not wait again when the setting is turned on', async () => {
-    const { context, show, loading } = setupRig({ showNames: false })
-    show('related', PEAR)
-
-    context.setSetting('showNames', true)
-    await flushPromises()
-
-    expect(loading.isReady.value).toBe(true)
-  })
-})
-
 describe('the two views of one node', () => {
-  it('read the notes once and begin one token each', () => {
+  it('read the notes once and begin one token each', async () => {
     const { show, tokens, getReads } = setupRig()
 
     show('parents', PEAR)
     show('related', PEAR)
+    await flushPromises()
 
     expect(getReads(PEAR)).toHaveLength(1)
     expect(tokens.begun).toBe(2)

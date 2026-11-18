@@ -3,8 +3,9 @@
  * The views of one side of a node, drawn at the node in the order the loader sorts them (the slot `order`,
  * then the plugin id), each in its own centered row and given the path of the note. The rows are one column,
  * the group; its element is emitted so its height can be measured, and only while a widget draws something:
- * a side whose widgets draw nothing keeps no room, and the group holds the `--numen-node-gap` against the node
- * as padding only then, so the measured height includes it. The side is ready once the views have loaded and
+ * a side whose widgets draw nothing keeps no room. The plex adds no gap around the widgets: a view that has
+ * content keeps its own gap to the node. The views wrap at `width`, the width the arrangement reserves for them,
+ * whatever width it gives the node. The side is ready once the views have loaded and
  * what they drew is measured.
  */
 import { ref } from 'vue'
@@ -108,13 +109,5 @@ const getTop = () =>
   display: flex;
   justify-content: center;
   max-inline-size: 100%;
-}
-
-.plex__widgets--above .plex__widgets-group {
-  padding-block-end: var(--numen-node-gap);
-}
-
-.plex__widgets--below .plex__widgets-group {
-  padding-block-start: var(--numen-node-gap);
 }
 </style>

@@ -62,7 +62,7 @@ const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
 
 const slots = useSlots()
 
-const { room, isMeasured, options, measures, widen, placedHeadings } = useFreeSpace(
+const { room, isMeasured, options, measures, widen } = useFreeSpace(
   frameElement,
   props,
   () => !!slots.icon,
@@ -82,14 +82,14 @@ const { frame, waiting, isMoving } = usePlexTransition(
     measureLabel: measures.value?.label,
     labelType: measures.value?.labelType,
     room: rooms.getNodeRoom.value,
-    draftRoom: rooms.getDraftRoom.value,
   }),
   {
     duration: () => props.duration,
     clock: props.clock,
     isReady: rooms.areLoaded,
-    // The size of the window decides which nodes are shown, so no widget mounts before it is reported.
-    isActive: () => isMeasured.value || !rooms.hasWidgets(),
+    // The size of the window decides which nodes are shown, so nothing is arranged before it is reported.
+    isActive: () => isMeasured.value,
+    hasWidgets: () => rooms.hasWidgets(),
   },
 )
 
@@ -178,9 +178,9 @@ watch(
       :can-reach="canReach"
       :relation-name="relationName"
       :widen="widen"
-      :placed-headings="placedHeadings"
       :widgets-above="widgetsAbove"
       :widgets-below="widgetsBelow"
+      :widgets-over="widgetsOver"
       :get-path="getPath"
       :set-widgets="rooms.setWidgets"
       :set-ready="rooms.setReady"
@@ -196,7 +196,6 @@ watch(
       @reach="gesture.begin"
       @ask="gesture.ask"
       @menu="(id, at, trigger) => emit('menu', id, at, trigger)"
-      @enter="(id, heading) => emit('enter', id, heading)"
       @edge-menu="(pair, at) => emit('edge-menu', pair, at)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>

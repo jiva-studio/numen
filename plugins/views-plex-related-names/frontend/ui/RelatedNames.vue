@@ -1,9 +1,16 @@
 <script setup lang="ts">
-/** The names set in one row group beside a node, in small faint text with no pill. Choosing one is the caller's. */
-import type { RelatedName } from '../types'
+/** The names set in one row group beside a node, in small faint text with no pill, with the gap to the node on the side of it. Choosing one is the caller's. */
+import { createNamedIcon } from '@numen/ui'
+import { getRelationIcon } from '../lib/relationIcon'
+import type { NamesSide, RelatedName } from '../types'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{ names: readonly RelatedName[] }>()
+withDefaults(
+  defineProps<{ names: readonly RelatedName[]; showArrows?: boolean; side?: NamesSide }>(),
+  {
+    side: 'below',
+  },
+)
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
@@ -13,7 +20,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div v-if="names.length > 0" class="related-names">
+  <div v-if="names.length > 0" class="related-names" :class="`related-names--${side}`">
     <button
       v-for="name in names"
       :key="name.path"
@@ -22,6 +29,11 @@ const emit = defineEmits<{
       :aria-label="name.label"
       @click="emit('choose', name.path)"
     >
+      <component
+        :is="createNamedIcon(getRelationIcon(name.relation, name.direction))"
+        v-if="showArrows"
+        class="related-names__arrow"
+      />
       {{ name.title }}
     </button>
   </div>
@@ -38,7 +50,18 @@ const emit = defineEmits<{
   line-height: 1.3;
 }
 
+.related-names--above {
+  margin-block-end: var(--numen-node-gap);
+}
+
+.related-names--below {
+  margin-block-start: var(--numen-node-gap);
+}
+
 .related-names__name {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.3em;
   padding: 0;
   border: 0;
   background: transparent;
@@ -49,5 +72,13 @@ const emit = defineEmits<{
 
 .related-names__name:hover {
   color: var(--numen-ink);
+}
+
+.related-names__arrow {
+  width: 0.7em;
+  height: 0.7em;
+  flex: none;
+  margin-block-start: 0.3em;
+  color: inherit;
 }
 </style>

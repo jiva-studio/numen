@@ -14,14 +14,7 @@ import { ring } from '../fixtures/ring'
 import type { Position } from '../lib/node'
 import type { Clock } from '../model/transition'
 import type { MenuTrigger } from '@numen/ui'
-import type {
-  PlexHeading,
-  PlexEdge,
-  PlexGraph,
-  PlexNode,
-  PlexRelation,
-  PlexDestination,
-} from '../../types'
+import type { PlexEdge, PlexGraph, PlexNode, PlexRelation, PlexDestination } from '../../types'
 
 interface Knobs {
   graph: PlexGraph
@@ -37,8 +30,6 @@ interface Knobs {
   onBring: (dragged: readonly string[], relation: PlexRelation) => void
   onMenu: (id: string, point: Position, trigger: MenuTrigger) => void
   onDismiss: () => void
-  headings: (id: string) => readonly PlexHeading[]
-  onEnter: (id: string, heading: string) => void
 
   focusWidth: number
   focusHeight: number
@@ -50,7 +41,6 @@ interface Knobs {
   margin: number
   squeeze: number
   maxPerCluster: number
-  maxHeadings: number
   orientation: 'parents above' | 'parents below'
 
   curvature: number
@@ -85,7 +75,6 @@ const getOptions = (a: Knobs): PlexOptionsInput => ({
   margin: a.margin,
   squeeze: a.squeeze,
   maxPerCluster: a.maxPerCluster,
-  maxHeadings: a.maxHeadings,
   routing: {
     curvature: a.curvature,
     minReach: a.minReach,
@@ -199,8 +188,6 @@ const createNavigableStory = (start: (args: Knobs) => PlexGraph) => (args: Knobs
         :expansion-delay="args.expansionDelay"
         :dragged="args.dragged"
         :drop-name="args.dropName"
-        :headings="args.headings"
-        @enter="(id, heading) => args.onEnter(id, heading)"
         @activate="onActivate($event); args.onActivate($event)"
         @show="(id, showing) => args.onShow(id, showing)"
         @create="(from, relation) => { create(from, relation); args.onCreate(from, relation) }"
@@ -264,7 +251,6 @@ const meta = {
     margin: range(0, 160, 4),
     squeeze: range(0.2, 1, 0.05),
     maxPerCluster: range(1, 40),
-    maxHeadings: range(1, 12),
     orientation: {
       control: 'inline-radio',
       options: ['parents above', 'parents below'],
@@ -313,8 +299,6 @@ const meta = {
     onBring: { table: { disable: true } },
     onMenu: { table: { disable: true } },
     onDismiss: { table: { disable: true } },
-    headings: { table: { disable: true } },
-    onEnter: { table: { disable: true } },
   },
 
   args: {
@@ -330,8 +314,6 @@ const meta = {
     onBring: fn(),
     onMenu: fn(),
     onDismiss: fn(),
-    headings: () => [],
-    onEnter: fn(),
     naming: nameNow,
     dragged: [],
     dropName: (relation: PlexRelation) => `as ${relation}`,
@@ -346,7 +328,6 @@ const meta = {
     margin: 16,
     squeeze: 0.35,
     maxPerCluster: 20,
-    maxHeadings: 6,
     orientation: 'parents above',
 
     curvature: 0.55,
@@ -382,7 +363,7 @@ export const MakingOne: Story = {
   render: invented.render,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
     const box = focus.getBoundingClientRect()
 
     await expect(canvasElement.querySelector('.plex__handle')).toBeNull()
@@ -425,7 +406,7 @@ export const DraggingThemIn: Story = {
   render: invented.render,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
     const box = focus.getBoundingClientRect()
     const middle = box.x + box.width / 2
 
@@ -467,6 +448,7 @@ export const OneHandleAtATime: Story = {
   render: invented.render,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await canvas.findByLabelText(/, focus$/)
     const getHandles = () => canvasElement.querySelectorAll('.plex__handle')
     const boxes = [
       canvas.getByLabelText(/, focus$/),
@@ -503,7 +485,7 @@ export const AskingForAMenu: Story = {
   render: invented.render,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
 
     let isPrevented: boolean | null = null
     const watch = (event: Event) => {
@@ -535,7 +517,7 @@ export const AskingForANode: Story = {
   render: invented.render,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
 
     const hand = userEvent.setup()
 
@@ -761,6 +743,7 @@ export const RestingOnATitle: Story = {
   args: { graph: graphs.awkwardLabels },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    await canvas.findByLabelText(/, focus$/)
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
     const adjacentNode = canvas.getByLabelText('日本語のノート, child')
 
@@ -805,6 +788,7 @@ export const Walk: Story = {
   },
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
+    await canvas.findByLabelText(/, focus$/)
 
     /** The node is in the focus and has stopped moving. */
     const waitForNode = async (label: string) =>
@@ -850,187 +834,31 @@ export const Walk: Story = {
   },
 }
 
-const INSIDE: Record<string, readonly PlexHeading[]> = {
-  focus: [
-    { id: '0', text: 'What it is', level: 1 },
-    { id: '4', text: 'Where it came from', level: 2 },
-    { id: '9', text: 'The first account', level: 3 },
-    { id: '14', text: 'The second', level: 3 },
-    { id: '20', text: 'What follows from it', level: 2 },
-    { id: '31', text: 'Notes', level: 1 },
-  ],
-  'focus/child-0': [{ id: '2', text: 'The only heading in it', level: 1 }],
-  'focus/child-1': [
-    {
-      id: '3',
-      text: 'A heading that runs on well past anything the box it hangs from could hold',
-      level: 1,
-    },
-  ],
-  'focus/child-2': [{ id: '5', text: '', level: 1 }],
-  'focus/parent-0': [
-    { id: '1', text: 'Что в сарае', level: 1 },
-    { id: '6', text: '日本語の見出し', level: 2 },
-    { id: '11', text: 'مدخل بالعربية', level: 2 },
-  ],
-  'focus/jump-0': Array.from({ length: 30 }, (_, index) => ({
-    id: `${index}`,
-    text: `Section ${index + 1}`,
-    level: 1,
-  })),
-}
-
-/** Shows and scrolls note headings on hover. */
-export const HeadingsInside: Story = {
-  args: {
-    ...invented.args,
-    parents: 1,
-    children: 4,
-    jumps: 1,
-    siblings: 0,
-    headings: (id: string) => INSIDE[id] ?? [],
-  },
-  render: invented.render,
-  play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
-    const getOpenBox = (id: string) =>
-      canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
-    const getHeadings = (id: string) => [
-      ...(getOpenBox(id)?.querySelectorAll('.plex__heading') ?? []),
-    ]
-
-    const most = args.maxHeadings
-
-    await expect(getHeadings('focus')).toHaveLength(0)
-
-    await userEvent.hover(focus)
-    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(most), {
-      timeout: 3000,
-    })
-
-    await userEvent.unhover(focus)
-    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(0))
-
-    await userEvent.hover(focus)
-    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(most), {
-      timeout: 3000,
-    })
-    await userEvent.click(getHeadings('focus')[1]!)
-    await expect(args.onEnter).toHaveBeenCalledWith('focus', '4')
-
-    const many = canvas.getByLabelText(/, jump$/)
-    await userEvent.hover(many)
-    await waitFor(async () => await expect(getHeadings('focus/jump-0')).toHaveLength(most), {
-      timeout: 3000,
-    })
-
-    const arrows = () => [...(getOpenBox('focus/jump-0')?.querySelectorAll('.plex__more') ?? [])]
-    await expect(arrows()).toHaveLength(1)
-
-    const wheel = (deltaY: number) =>
-      getOpenBox('focus/jump-0')!
-        .querySelector('.plex__inside')!
-        .dispatchEvent(
-          new WheelEvent('wheel', { deltaY, deltaMode: 1, bubbles: true, cancelable: true }),
-        )
-    wheel(1)
-    await waitFor(
-      async () =>
-        await expect(getHeadings('focus/jump-0')[0]!.textContent?.trim()).toBe('Section 2'),
-    )
-    await expect(arrows()).toHaveLength(2)
-
-    wheel(-1)
-    await waitFor(
-      async () =>
-        await expect(getHeadings('focus/jump-0')[0]!.textContent?.trim()).toBe('Section 1'),
-    )
-
-    await userEvent.click(getHeadings('focus/jump-0')[0]!)
-    await expect(args.onEnter).toHaveBeenCalledWith('focus/jump-0', '0')
-    await expect(args.onActivate).not.toHaveBeenCalled()
-  },
-}
-
-/** Draws the lines lifted by the highlight setting under the headings that open under a note. */
-export const HeadingsOverLiftedLines: Story = {
-  args: {
-    ...invented.args,
-    parents: 1,
-    children: 4,
-    jumps: 1,
-    siblings: 0,
-    highlightLinks: true,
-    headings: (id: string) => INSIDE[id] ?? [],
-  },
-  render: invented.render,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
-
-    await userEvent.hover(focus)
-    const backdrop = await waitFor(async () => {
-      const found = canvasElement.querySelector('.plex__backdrop')
-      if (found === null) throw new Error('the headings are not open')
-      return found
-    })
-    const raised = await waitFor(async () => {
-      const found = canvasElement.querySelector('.plex__raised')
-      if (found === null) throw new Error('no line is lifted')
-      return found
-    })
-
-    await expect(raised.querySelectorAll('.plex__edge-line').length).toBeGreaterThan(0)
-    await expect(raised.compareDocumentPosition(backdrop) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    )
-  },
-}
-
 /** Closes the note that was attended to as soon as another note is, whichever pointer events came. */
 export const OneOpenNote: Story = {
-  args: {
-    ...invented.args,
-    parents: 1,
-    children: 4,
-    jumps: 1,
-    siblings: 0,
-    headings: (id: string) => INSIDE[id] ?? [],
-  },
-  render: invented.render,
-  play: async ({ args, canvasElement }) => {
+  args: { graph: graphs.awkwardLabels },
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
-    const other = canvas.getByLabelText(/, jump$/)
-    const getOpenBox = (id: string) =>
-      canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`)
-    const getHeadings = (id: string) => [
-      ...(getOpenBox(id)?.querySelectorAll('.plex__heading') ?? []),
-    ]
+    const focus = await canvas.findByLabelText(/, focus$/)
+    const other = canvas.getByLabelText(/^Supercalifragilistic/)
+    const isOpen = (id: string) =>
+      canvasElement.querySelector(`.plex__lifted[data-node="${id}"]`) !== null
     const getHandles = () => canvasElement.querySelectorAll('.plex__handle')
 
     await userEvent.hover(focus)
-    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(args.maxHeadings), {
-      timeout: 3000,
-    })
+    await waitFor(async () => await expect(isOpen('focus')).toBe(true), { timeout: 3000 })
     await expect(getHandles()).toHaveLength(1)
 
     // The pointer reaches the other note without the first one hearing it leave.
     other.dispatchEvent(new PointerEvent('pointerenter'))
 
-    await waitFor(async () => await expect(getHeadings('focus')).toHaveLength(0))
+    await waitFor(async () => await expect(isOpen('focus')).toBe(false))
     await expect(getHandles()).toHaveLength(1)
     await expect(focus.querySelector('.plex__handle')).toBeNull()
     await expect(other.querySelector('.plex__handle')).not.toBeNull()
 
-    await waitFor(
-      async () => await expect(getHeadings('focus/jump-0')).toHaveLength(args.maxHeadings),
-      {
-        timeout: 3000,
-      },
-    )
-    await expect(getHeadings('focus')).toHaveLength(0)
+    await waitFor(async () => await expect(isOpen('child-1')).toBe(true), { timeout: 3000 })
+    await expect(isOpen('focus')).toBe(false)
   },
 }
 
@@ -1038,11 +866,11 @@ export const OneOpenNote: Story = {
 export const TabOrderOfAnOpenNote: Story = {
   args: {
     ...invented.args,
+    title: 'A note in the middle whose title is far too long for its box to hold at once',
     parents: 1,
     children: 4,
     jumps: 1,
     siblings: 0,
-    headings: (id: string) => INSIDE[id] ?? [],
   },
   render: invented.render,
   play: async ({ canvasElement }) => {
@@ -1051,7 +879,7 @@ export const TabOrderOfAnOpenNote: Story = {
     if (!browser) return
     const keys = browser.userEvent
     const canvas = within(canvasElement)
-    const focus = canvas.getByLabelText(/, focus$/)
+    const focus = await canvas.findByLabelText(/, focus$/)
     const parent = canvas.getByLabelText(/, parent$/)
     const document = canvasElement.ownerDocument
     const getOpenBox = () => canvasElement.querySelector('.plex__lifted[data-node="focus"]')

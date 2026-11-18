@@ -7,8 +7,8 @@ export { create } from '@bufbuild/protobuf'
 export {
   FindCatalogEntryByTabKindResponseSchema,
   GetCatalogEntryResponseSchema,
-  ListRelatedNotesResponseSchema,
   ListCatalogResponseSchema,
+  NoteGraphSchema,
   type Entry,
   type MoveResult,
   type PluginCommand,

@@ -5,7 +5,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { Component } from 'vue'
-import type { JsonValue, NoteGraph, NoteRelation, RelatedNote, VaultNotes } from '@numen/plugin-sdk'
+import type {
+  JsonValue,
+  LinkDirection,
+  NoteGraph,
+  NoteRelation,
+  RelatedNote,
+  VaultNotes,
+} from '@numen/plugin-sdk'
 import {
   createMockHostServices,
   createMockPluginContext,
@@ -16,44 +23,53 @@ import { activate } from './index'
 interface Neighbor {
   readonly path: string
   readonly relation: NoteRelation
+  readonly direction?: LinkDirection
 }
 
 const getTitle = (path: string) => path.replace(/^.*\//, '').replace(/\.md$/, '')
 
 const createVault = (initial: Readonly<Record<string, readonly Neighbor[]>>) => {
   let neighbors = initial
+  let failing = false
   const requests: [string, number | undefined][] = []
   const toRelated = (one: Neighbor, relatedTo?: string): RelatedNote => ({
     path: one.path,
     title: getTitle(one.path),
     relation: one.relation,
+    ...(one.direction ? { direction: one.direction } : {}),
     type: 'note',
     ...(relatedTo ? { relatedTo } : {}),
   })
   const notes = {
-    listRelatedNotes: async (path: string, depth?: 1 | 2): Promise<NoteGraph> => {
-      requests.push([path, depth])
-      const own = neighbors[path] ?? []
-      const beyond =
-        depth === 2
-          ? own.flatMap((near) =>
-              (neighbors[near.path] ?? [])
-                .filter((far) => far.path !== path)
-                .map((far) => toRelated(far, near.path)),
-            )
-          : []
-      return {
-        focus: { path, title: getTitle(path) },
-        focusType: 'note',
-        related: [...own.map((one) => toRelated(one)), ...beyond],
-        connections: [],
-      }
+    listRelatedNotes: async (paths: readonly string[], depth?: 1 | 2): Promise<NoteGraph[]> => {
+      if (failing) throw new Error('the vault is not answering')
+      return paths.map((path) => {
+        requests.push([path, depth])
+        const own = neighbors[path] ?? []
+        const beyond =
+          depth === 2
+            ? own.flatMap((near) =>
+                (neighbors[near.path] ?? [])
+                  .filter((far) => far.path !== path)
+                  .map((far) => toRelated(far, near.path)),
+              )
+            : []
+        return {
+          focus: { path, title: getTitle(path) },
+          focusType: 'note',
+          related: [...own.map((one) => toRelated(one)), ...beyond],
+          connections: [],
+        }
+      })
     },
   } as unknown as VaultNotes
   const change = (path: string, next: readonly Neighbor[]) => {
     neighbors = { ...neighbors, [path]: next }
   }
-  return { notes, requests, change }
+  const setFailing = (value: boolean) => {
+    failing = value
+  }
+  return { notes, requests, change, setFailing }
 }
 
 const PEAR = 'notes/Pear rows.md'
@@ -142,15 +158,15 @@ describe('the view above a node', () => {
     expect(getNames(await show('parents', PEAR))).toStrictEqual([])
   })
 
-  it('gives each name a label with its title and the title of the note', async () => {
+  it('gives each name a label with its title, its relation and the title of the note', async () => {
     const { show } = setup()
     const labels = (await show('parents', PEAR))
       .findAll('[role="button"], button')
       .map((one) => one.attributes('aria-label'))
 
     expect(labels).toStrictEqual([
-      'Orchard plan, name under Pear rows',
-      'Garden plan, name under Pear rows',
+      'Orchard plan, parent of Pear rows',
+      'Garden plan, parent of Pear rows',
     ])
   })
 })
@@ -195,12 +211,12 @@ describe('the view under a node', () => {
     expect(getNames(await show('related', PEAR))).not.toContain('Clones')
   })
 
-  it('reads the notes related to the note with depth 2', async () => {
+  it('reads the notes related to the note with depth 1', async () => {
     const { show, vault } = setup()
 
     await show('related', PEAR)
 
-    expect(vault.requests).toContainEqual([PEAR, 2])
+    expect(vault.requests).toContainEqual([PEAR, 1])
     expect(vault.requests.every(([path]) => path === PEAR)).toBe(true)
   })
 
@@ -217,16 +233,16 @@ describe('the view under a node', () => {
     expect(getNames(wrapper)).toStrictEqual(['Jam'])
   })
 
-  it('gives each name a button label with its title and the title of the note', async () => {
+  it('gives each name a button label with its title, its relation and the title of the note', async () => {
     const { show } = setup()
     const labels = (await show('related', PEAR))
       .findAll('[role="button"], button')
       .map((one) => one.attributes('aria-label'))
 
     expect(labels).toStrictEqual([
-      'Rootstock list, name under Pear rows',
-      'Grafting, name under Pear rows',
-      'Pollination, name under Pear rows',
+      'Rootstock list, child of Pear rows',
+      'Grafting, jump from Pear rows',
+      'Pollination, linked both ways with Pear rows',
     ])
   })
 })
@@ -236,7 +252,7 @@ describe('choosing a name', () => {
     const { show, getRuns } = setup()
     const wrapper = await show('related', PEAR)
 
-    await wrapper.get('[aria-label="Rootstock list, name under Pear rows"]').trigger('click')
+    await wrapper.get('[aria-label="Rootstock list, child of Pear rows"]').trigger('click')
 
     expect(getRuns()).toHaveLength(1)
     expect(getRuns()[0]).toMatchObject({
@@ -250,7 +266,7 @@ describe('choosing a name', () => {
     const { show, getRuns } = setup()
     const wrapper = await show('parents', PEAR)
 
-    await wrapper.get('[aria-label="Garden plan, name under Pear rows"]').trigger('click')
+    await wrapper.get('[aria-label="Garden plan, parent of Pear rows"]').trigger('click')
 
     expect(getRuns().map((one) => [one.command, one.target?.path])).toStrictEqual([
       ['app:file.reveal', 'notes/Garden plan.md'],
@@ -263,28 +279,6 @@ describe('choosing a name', () => {
     await show('related', PEAR)
 
     expect(getRuns()).toStrictEqual([])
-  })
-})
-
-describe('the setting Show notes related to related notes', () => {
-  it('draws no name in either view while it is off', async () => {
-    const { show } = setup(ORCHARD, { showNames: false })
-
-    expect(getNames(await show('parents', PEAR))).toStrictEqual([])
-    expect(getNames(await show('related', PEAR))).toStrictEqual([])
-  })
-
-  it('takes the names away when it is turned off, and brings them back when it is turned on', async () => {
-    const { context, show } = setup()
-    const wrapper = await show('related', PEAR)
-
-    context.setSetting('showNames', false)
-    await flushPromises()
-    expect(getNames(wrapper)).toStrictEqual([])
-
-    context.setSetting('showNames', true)
-    await flushPromises()
-    expect(getNames(wrapper)).toStrictEqual(['Rootstock list', 'Grafting', 'Pollination'])
   })
 })
 
@@ -410,14 +404,29 @@ describe('the names while the vault changes', () => {
     expect(getNames(wrapper)).toContain('Compost')
   })
 
-  it('reads nothing again for a change of a note unrelated to the node', async () => {
-    const { host, vault } = await setupDrawn()
-    const before = vault.requests.length
+  it('adds the name of a note that starts to link to the note, though it was not related before', async () => {
+    const { host, vault, wrapper } = await setupDrawn()
 
+    vault.change(PEAR, [...ORCHARD[PEAR]!, { path: 'notes/Beehives.md', relation: 'reference' }])
     host.events.emitVaultChange({ paths: ['notes/Beehives.md'] })
     await settle()
 
-    expect(vault.requests.length).toBe(before)
+    expect(getNames(wrapper)).toContain('Beehives')
+  })
+
+  it('names the notes again after a read failed, when a related note changes next', async () => {
+    const { host, vault, wrapper } = await setupDrawn()
+
+    vault.setFailing(true)
+    host.events.emitVaultChange({ paths: ['notes/Rootstock list.md'] })
+    await settle()
+    expect(getNames(wrapper)).toStrictEqual([])
+
+    vault.setFailing(false)
+    host.events.emitVaultChange({ paths: ['notes/Grafting.md'] })
+    await settle()
+
+    expect(getNames(wrapper)).toStrictEqual(['Rootstock list', 'Grafting', 'Pollination'])
   })
 
   it('reads again for a change that does not say which notes changed', async () => {
@@ -430,7 +439,7 @@ describe('the names while the vault changes', () => {
     expect(vault.requests.length - before).toBe(1)
   })
 
-  it('leaves the names of another node as they are when only the first node changed', async () => {
+  it('keeps the names of another node as they are when only the first node changed', async () => {
     const { host, vault, show } = setup({
       ...ORCHARD,
       'notes/Quince.md': [{ path: 'notes/Jam.md', relation: 'child' }],
@@ -445,7 +454,6 @@ describe('the names while the vault changes', () => {
 
     expect(getNames(pear)).toContain('Compost')
     expect(getNames(quince)).toStrictEqual(['Jam'])
-    expect(vault.requests.filter(([path]) => path === 'notes/Quince.md')).toHaveLength(1)
   })
 
   it('stops reading when the view of the node is unmounted', async () => {
@@ -469,16 +477,70 @@ describe('the names while the vault changes', () => {
 
     expect(vault.requests.length).toBe(before)
   })
+})
 
-  it('reads nothing on a change while the setting hides the names', async () => {
-    const { context, host, vault } = await setupDrawn()
-    context.setSetting('showNames', false)
+/** The icons of the shared set load on first use, slowly on a busy machine. */
+const ICON_TIMEOUT_MS = 30_000
+
+const getArrowCount = (wrapper: VueWrapper) => wrapper.findAll('button svg').length
+
+describe('the setting Show the relation arrows', () => {
+  const REFERENCES: Record<string, readonly Neighbor[]> = {
+    [PEAR]: [
+      { path: 'notes/Rootstock list.md', relation: 'child' },
+      { path: 'notes/Grafting.md', relation: 'jump' },
+      { path: 'notes/Pollination.md', relation: 'reference', direction: 'outgoing' },
+    ],
+  }
+
+  it('draws an arrow before each name where nothing is set', async () => {
+    const { show } = setup(REFERENCES)
+    const wrapper = await show('related', PEAR)
+
+    await vi.waitFor(() => expect(getArrowCount(wrapper)).toBe(3), { timeout: ICON_TIMEOUT_MS })
+  })
+
+  it('draws an arrow before each parent above a node', async () => {
+    const { show } = setup()
+    const wrapper = await show('parents', PEAR)
+
+    await vi.waitFor(() => expect(getArrowCount(wrapper)).toBe(2), { timeout: ICON_TIMEOUT_MS })
+  })
+
+  it('draws no arrow while it is off, and still names each note', async () => {
+    const { show } = setup(REFERENCES, { showRelationArrows: false })
+    const wrapper = await show('related', PEAR)
+    await new Promise((resolve) => setTimeout(resolve, 200))
+
+    expect(getArrowCount(wrapper)).toBe(0)
+    expect(getNames(wrapper)).toStrictEqual(['Rootstock list', 'Grafting', 'Pollination'])
+  })
+
+  it('takes the arrows away when it is turned off, and brings them back when it is turned on', async () => {
+    const { context, show } = setup(REFERENCES)
+    const wrapper = await show('related', PEAR)
+    await vi.waitFor(() => expect(getArrowCount(wrapper)).toBe(3), { timeout: ICON_TIMEOUT_MS })
+
+    context.setSetting('showRelationArrows', false)
     await flushPromises()
-    const before = vault.requests.length
+    expect(getArrowCount(wrapper)).toBe(0)
 
-    host.events.emitVaultChange({ paths: [PEAR] })
-    await settle()
+    context.setSetting('showRelationArrows', true)
+    await vi.waitFor(() => expect(getArrowCount(wrapper)).toBe(3), { timeout: ICON_TIMEOUT_MS })
+  })
 
-    expect(vault.requests.length).toBe(before)
+  it('shows the plex the note of a name that is chosen, with the arrows on or off', async () => {
+    const { context, show, getRuns } = setup(REFERENCES)
+    const wrapper = await show('related', PEAR)
+
+    await wrapper.get('[aria-label="Grafting, jump from Pear rows"]').trigger('click')
+    context.setSetting('showRelationArrows', false)
+    await flushPromises()
+    await wrapper.get('[aria-label="Grafting, jump from Pear rows"]').trigger('click')
+
+    expect(getRuns().map((one) => one.target?.path)).toStrictEqual([
+      'notes/Grafting.md',
+      'notes/Grafting.md',
+    ])
   })
 })
