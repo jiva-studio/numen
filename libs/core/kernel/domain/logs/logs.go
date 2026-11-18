@@ -54,7 +54,7 @@ func (l Level) String() string {
 	case LevelError:
 		return "error"
 	default:
-		return "info"
+		return DefaultLevel.String()
 	}
 }
 

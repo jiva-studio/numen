@@ -96,10 +96,9 @@
 
 .log-row__summary {
   display: grid;
-  grid-template-columns: var(--time-width) var(--level-width) var(--source-width) minmax(
-      0,
-      1fr
-    ) auto;
+  grid-template-columns:
+    var(--time-width) var(--level-width) var(--source-width) minmax(0, 1fr)
+    auto;
   column-gap: var(--row-gap);
   align-items: baseline;
   width: 100%;

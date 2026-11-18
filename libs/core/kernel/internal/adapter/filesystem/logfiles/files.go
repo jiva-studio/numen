@@ -157,33 +157,35 @@ func parseFileNameDate(name string) (time.Time, bool) {
 }
 
 func encodeLine(entry logs.Entry) ([]byte, error) {
-	var props map[string]json.RawMessage
-	if len(entry.Properties) > 0 {
-		props = make(map[string]json.RawMessage, len(entry.Properties))
-		for k, v := range entry.Properties {
-			if json.Valid([]byte(v)) {
-				props[k] = json.RawMessage(v)
-			} else {
-				quoted, err := json.Marshal(v)
-				if err != nil {
-					continue
-				}
-				props[k] = quoted
-			}
-		}
-	}
 	rec := recordLine{
 		Time:       entry.Time.UTC().Format(time.RFC3339Nano),
 		Level:      entry.Level.String(),
 		Source:     entry.Source,
 		Message:    entry.Message,
-		Properties: props,
+		Properties: encodeProperties(entry.Properties),
 	}
 	encoded, err := json.Marshal(rec)
 	if err != nil {
 		return nil, err
 	}
 	return append(encoded, '\n'), nil
+}
+
+func encodeProperties(in map[string]string) map[string]json.RawMessage {
+	if len(in) == 0 {
+		return nil
+	}
+	props := make(map[string]json.RawMessage, len(in))
+	for k, v := range in {
+		if json.Valid([]byte(v)) {
+			props[k] = json.RawMessage(v)
+			continue
+		}
+		if quoted, err := json.Marshal(v); err == nil {
+			props[k] = quoted
+		}
+	}
+	return props
 }
 
 func decodeRecentLines(raw []byte, limit int) []logs.Entry {
