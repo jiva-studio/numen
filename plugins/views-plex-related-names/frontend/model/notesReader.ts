@@ -1,12 +1,6 @@
 /** The notes related to the notes the plex shows, read once for every view that shows a note. */
 import { shallowRef, type Ref, type ShallowRef } from 'vue'
-import type {
-  Caught,
-  NoteGraph,
-  PluginEvents,
-  VaultChangeEvent,
-  VaultNotes,
-} from '@numen/plugin-sdk'
+import type { Caught, NoteGraph, PluginEvents, VaultNotes } from '@numen/plugin-sdk'
 
 /** What the notes are read with and kept up to date through. */
 export interface NotesReaderSource {
@@ -98,17 +92,9 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
     queueMicrotask(flush)
   }
 
-  const isAffected = (entry: Entry, event: VaultChangeEvent) =>
-    !event.paths ||
-    event.paths.length === 0 ||
-    event.paths.some(
-      (path) =>
-        path === entry.path || entry.noteGraph.value?.related.some((item) => item.path === path),
-    )
-
-  const subscription = source.events.onVaultChange((event) => {
+  const subscription = source.events.onVaultChange(() => {
     for (const entry of entries.values()) {
-      if (isAffected(entry, event)) changed.add(entry.path)
+      changed.add(entry.path)
     }
     if (changed.size === 0) return
     if (pending !== undefined) clearTimeout(pending)
