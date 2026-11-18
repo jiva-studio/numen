@@ -5,7 +5,6 @@
 import type { VNode } from 'vue'
 import type { Clock, MenuTrigger } from '@numen/ui'
 import type { PlexFrame } from '../../lib/frame'
-import type { NodeHeadings } from '../../lib/inside'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
 import type { ExpandedBox } from '../../model/sizing/expansion'
 import type { Attention } from '../../model/useAttention'
@@ -32,9 +31,9 @@ export interface PlexViewProps {
   canReach?: boolean
   relationName?: (relation: PlexRelation) => string
   widen?: ((node: PlacedNode) => ExpandedBox | null) | undefined
-  placedHeadings?: ((node: PlacedNode) => NodeHeadings | null) | undefined
   widgetsAbove?: readonly PlexWidget[] | undefined
   widgetsBelow?: readonly PlexWidget[] | undefined
+  widgetsOver?: readonly PlexWidget[] | undefined
   getPath?: ((id: string) => string) | undefined
   setWidgets?: ((id: string, side: WidgetSide, element: Element | null) => void) | undefined
   setReady?: ((id: string, side: WidgetSide, isReady: boolean | null) => void) | undefined
@@ -59,8 +58,6 @@ export interface PlexViewEvents {
   (event: 'ask', id: string): void
   /** A menu was requested on a node, with its position and trigger. */
   (event: 'menu', id: string, point: Position, trigger: MenuTrigger): void
-  /** A heading of a node was chosen. Both identifiers are the caller's. */
-  (event: 'enter', id: string, heading: string): void
   /** A menu or inspector was requested on an edge. */
   (event: 'edge-menu', pair: string, point: Position): void
 }
@@ -70,12 +67,14 @@ export interface PlexNodeProps {
   node: PlacedNode
   gestureRole?: GestureRole
   expanded?: ExpandedBox | null
-  placedHeadings?: NodeHeadings | null
   behavior?: PlexBehavior
   showPills?: boolean
   restHeight?: number
   viewportWidth?: number | undefined
   attention?: Attention
+  overlay?: readonly PlexWidget[]
+  path?: string
+  viewport?: { width: number; height: number } | undefined
 }
 
 /** What a node draws, in its place or in the layer over the others. */
@@ -86,8 +85,6 @@ export interface PlexNodeFaceProps {
   isTarget: boolean
   showPills: boolean
   restHeight: number
-  placedHeadings: NodeHeadings | null
-  open: number
   isHandleVisible: boolean
   handle: Position
   isLifted?: boolean
@@ -115,8 +112,6 @@ export interface PlexNodeEvents {
   (event: 'settle', resting: boolean): void
   /** The pointer or keyboard focus came onto the node, or left it. */
   (event: 'attend', isAttended: boolean): void
-  /** A heading of this node was chosen. The identifier is the caller's. */
-  (event: 'enter', heading: string): void
 }
 
 export interface PlexDrawnSlots {

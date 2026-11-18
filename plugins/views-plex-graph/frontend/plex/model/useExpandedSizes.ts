@@ -1,6 +1,5 @@
-/** The expanded box and the headings of a note, worked out only while it is expanded: on, or open. */
+/** The expanded box of a note, worked out only while it is expanded: on, or open. */
 import { computed } from 'vue'
-import type { NodeHeadings } from '../lib/inside'
 import type { GestureRole, PlacedNode } from '../lib/node'
 import type { PlexBehavior } from './behavior'
 import type { ExpandedBox } from './sizing/expansion'
@@ -11,7 +10,6 @@ export interface ExpandedSizesProps {
   readonly node: PlacedNode
   readonly gestureRole: GestureRole
   readonly expanded: ExpandedBox | null
-  readonly placedHeadings: NodeHeadings | null
   readonly behavior: Pick<PlexBehavior, 'reaching'>
 }
 
@@ -24,11 +22,6 @@ export function useExpandedSizes(
   const expanded = computed(
     () => props.expanded ?? (isExpanded() ? (sizes?.getExpandedBoxOf(props.node) ?? null) : null),
   )
-  const placedHeadings = computed(
-    () =>
-      props.placedHeadings ??
-      (isExpanded() ? (sizes?.getPlacedHeadingsOf(props.node) ?? null) : null),
-  )
 
   const state: NodeStateProps = {
     get node() {
@@ -40,13 +33,10 @@ export function useExpandedSizes(
     get expanded() {
       return expanded.value
     },
-    get placedHeadings() {
-      return placedHeadings.value
-    },
     get behavior() {
       return props.behavior
     },
   }
 
-  return { expanded, placedHeadings, state }
+  return { expanded, state }
 }

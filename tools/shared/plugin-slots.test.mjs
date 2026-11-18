@@ -370,9 +370,9 @@ test('the docs say how the title bar draws an entry', () => {
   assert.match(titleBar, /hover text.*\bkey\b/i, 'the section does not say the key is in the hover text')
 })
 
-test('the plex graph owns a slot over its nodes and a slot under them', () => {
+test('the plex graph owns a slot over its nodes, a slot under them and a slot over the whole of each', () => {
   const listed = JSON.parse(readFileSync(join(ROOT, 'libs/shared/protocol/slots.json'), 'utf8')).slots
-  for (const name of ['plexGraph.nodeAbove', 'plexGraph.nodeBelow']) {
+  for (const name of ['plexGraph.nodeAbove', 'plexGraph.nodeBelow', 'plexGraph.node']) {
     const slot = listed.find((one) => one.name === name)
     assert.ok(slot, `${name} is not in slots.json`)
     assert.equal(slot.owner, 'the plugin of the plex graph')
@@ -388,4 +388,15 @@ test('the docs say each view of a node of the plex graph is given the path of th
     const line = section.split('\n').filter((one) => one.includes(name)).join('\n')
     assert.match(line, /\bpath\b/i, `the section does not say ${name} gives its views the path`)
   }
+})
+
+test('the docs say a view over the whole of a node is given its size, position and scale and takes the clicks it does not let through', () => {
+  const readme = readFileSync(join(ROOT, 'docs/plugins/README.md'), 'utf8')
+  const slots = readme.slice(readme.indexOf('\n## Slots'))
+  const section = slots.slice(0, slots.indexOf('\n## ', 4))
+  const owner = section.split('\n').filter((one) => one.includes('The owner of `plexGraph.node`')).join('\n')
+  for (const prop of ['path', 'x', 'y', 'width', 'height', 'scale']) {
+    assert.match(owner, new RegExp(`\\\`${prop}\\\``), `the section does not name the prop ${prop}`)
+  }
+  assert.match(owner, /does not let clicks and drags through takes them from the node/i)
 })

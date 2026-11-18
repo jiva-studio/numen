@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
-import { readNesting } from './nesting'
 import { readLook } from './look'
 
 const readLookFrom = (settings: Record<string, unknown>) =>
@@ -31,17 +30,5 @@ describe('the keys of the plex look settings', () => {
     expect(look.outlineThickness.value).toBe(1)
     expect(look.lineCurvature.value).toBe(0.55)
     expect(look.noteRoom.value).toBe(0)
-  })
-})
-
-describe('the keys of the plex graph settings', () => {
-  it('ignores the snake_case keys of the same settings', () => {
-    const settings: Record<string, unknown> = { nest_headings: false, heading_limit: 3 }
-    const nesting = readNesting({
-      settings: { get: (key: string) => settings[key], onChange: () => ({ dispose: vi.fn() }) },
-    } as unknown as Pick<PluginContext, 'settings'>)
-
-    expect(nesting.isNesting.value).toBe(true)
-    expect(nesting.headings.value).toBe(6)
   })
 })

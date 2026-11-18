@@ -109,14 +109,51 @@ describe('a node that is in both pictures travels between its relations', () => 
 })
 
 describe('a node that is only in one picture', () => {
-  it('draws a new node at the place it ends at from the first frame', () => {
+  it('unfolds a new node out of where the chosen one started', () => {
+    const source = node(from, 'a')
+    const early = node(interpolatePlex(from, to, 0.1), 'a1')
     const end = node(to, 'a1')
 
-    for (const progress of [0.01, 0.1, 0.5, 0.9]) {
-      const drawn = node(interpolatePlex(from, to, progress), 'a1')
-      expect(drawn.x).toBe(end.x)
-      expect(drawn.y).toBe(end.y)
-    }
+    // A tenth in, still near where the new focus set off.
+    expect(Math.hypot(early.x - source.x, early.y - source.y)).toBeLessThan(
+      Math.hypot(early.x - end.x, early.y - end.y),
+    )
+  })
+
+  it('puts a new node halfway between the chosen node and its own relation', () => {
+    const source = node(from, 'a')
+    const end = node(to, 'a1')
+    const middle = node(interpolatePlex(from, to, 0.5), 'a1')
+
+    expect(source.x).not.toBe(0)
+    expect(source.y).not.toBe(0)
+    expect(middle.x).toBeCloseTo((source.x + end.x) / 2)
+    expect(middle.y).toBeCloseTo((source.y + end.y) / 2)
+  })
+
+  it('finds the chosen node wherever it remains in the new picture', () => {
+    const reordered: PlexFrame = { ...to, nodes: [...to.nodes].reverse() }
+    const source = node(from, 'a')
+    const end = node(to, 'a1')
+    const middle = node(interpolatePlex(from, reordered, 0.5), 'a1')
+
+    expect(middle.x).toBeCloseTo((source.x + end.x) / 2)
+    expect(middle.y).toBeCloseTo((source.y + end.y) / 2)
+  })
+
+  it('unfolds a new node out of the middle when the chosen node was not in the old picture', () => {
+    const stranger = arrangePlex({
+      nodes: [
+        { id: 'elsewhere', title: 'Elsewhere', relation: 'focus' },
+        { id: 'e1', title: 'E one', relation: 'child' },
+      ],
+      edges: [],
+    })
+    const arrival = node(stranger, 'e1')
+    const middle = node(interpolatePlex(from, stranger, 0.5), 'e1')
+
+    expect(middle.x).toBeCloseTo(arrival.x / 2)
+    expect(middle.y).toBeCloseTo(arrival.y / 2)
   })
 
   it('shows every node of either picture once', () => {
@@ -124,20 +161,47 @@ describe('a node that is only in one picture', () => {
     expect([...ids].sort()).toStrictEqual(['a', 'a1', 'a2', 'a3', 'b', 'c', 'focus', 'up'])
   })
 
-  it('draws a new node fully opaque from the first frame', () => {
+  it('shows a new node fully opaque from the first frame', () => {
     expect(node(interpolatePlex(from, to, 0.01), 'a1').opacity).toBe(1)
     expect(node(interpolatePlex(from, to, 0.5), 'a1').opacity).toBe(1)
   })
 
-  it('keeps a departing node where it was and fades it out early', () => {
-    const early = node(interpolatePlex(from, to, 0.1), 'b')
-    const late = node(interpolatePlex(from, to, 0.6), 'b')
-    const original = node(from, 'b')
+  it('starts a new node at the size of the chosen node and grows it to its own', () => {
+    const wide: PlexFrame = {
+      ...from,
+      nodes: from.nodes.map((n) => (n.id === 'a' ? { ...n, width: 300, height: 60 } : n)),
+    }
+    const source = node(wide, 'a')
+    const end = node(to, 'a1')
+    const early = node(interpolatePlex(wide, to, 0.001), 'a1')
+    const middle = node(interpolatePlex(wide, to, 0.5), 'a1')
 
-    expect(early.x).toBe(original.x)
-    expect(early.y).toBe(original.y)
-    expect(early.opacity).toBeGreaterThan(0)
-    expect(late.opacity).toBe(0)
+    expect(early.width).toBeCloseTo(source.width, 0)
+    expect(early.height).toBeCloseTo(source.height, 0)
+    expect(middle.width).toBeCloseTo((source.width + end.width) / 2)
+    expect(middle.height).toBeCloseTo((source.height + end.height) / 2)
+  })
+
+  it('travels a departing node towards the new centre and fades it out on the way', () => {
+    const original = node(from, 'b')
+    const centre = node(to, 'a')
+    const middle = node(interpolatePlex(from, to, 0.5), 'b')
+
+    expect(middle.x).toBeCloseTo((original.x + centre.x) / 2)
+    expect(middle.y).toBeCloseTo((original.y + centre.y) / 2)
+    expect(middle.opacity).toBeGreaterThan(0)
+    expect(middle.opacity).toBeLessThan(1)
+    expect(node(interpolatePlex(from, to, 0.001), 'b').opacity).toBeCloseTo(1, 1)
+    expect(node(interpolatePlex(from, to, 0.999), 'b').opacity).toBeCloseTo(0, 1)
+  })
+
+  it('takes a departing node to the middle when the new picture has no centre', () => {
+    const headless: PlexFrame = { ...to, nodes: to.nodes.filter((n) => n.relation !== 'focus') }
+    const original = node(from, 'b')
+    const middle = node(interpolatePlex(from, headless, 0.5), 'b')
+
+    expect(middle.x).toBeCloseTo(original.x / 2)
+    expect(middle.y).toBeCloseTo(original.y / 2)
   })
 
   it('releases a departing node once the movement is over', () => {
@@ -378,18 +442,16 @@ describe('the shape of the movement is a setting', () => {
     const early = interpolatePlex(from, to, { progress: 0.2, motion: { arriveAfter: 0 } })
     const late = interpolatePlex(from, to, { progress: 0.2, motion: { arriveAfter: 0.9 } })
 
-    const lineTo = (frame: PlexFrame) => frame.edges.find((edge) => edge.to === 'a1')
-
-    expect(lineTo(early)?.opacity).toBeGreaterThan(0)
-    expect(lineTo(late)?.opacity).toBe(0)
+    expect(early.edges.find((e) => e.to === 'a1')!.opacity).toBeGreaterThan(0)
+    expect(late.edges.find((e) => e.to === 'a1')!.opacity).toBe(0)
   })
 
-  it('lets a caller say when a departure has finished going', () => {
+  it('lets a caller say when the line of a departure has finished going', () => {
     const brief = interpolatePlex(from, to, { progress: 0.3, motion: { leaveBefore: 0.2 } })
     const lingering = interpolatePlex(from, to, { progress: 0.3, motion: { leaveBefore: 0.9 } })
 
-    expect(node(brief, 'b').opacity).toBe(0)
-    expect(node(lingering, 'b').opacity).toBeGreaterThan(0)
+    expect(brief.edges.find((e) => e.to === 'b')!.opacity).toBe(0)
+    expect(lingering.edges.find((e) => e.to === 'b')!.opacity).toBeGreaterThan(0)
   })
 })
 
