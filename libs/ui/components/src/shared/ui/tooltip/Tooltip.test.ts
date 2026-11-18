@@ -38,6 +38,6 @@ describe('the tooltip of the library', () => {
     const tooltip = mountTooltip('Port, Sea, Quay', viewport)
     await nextTick()
 
-    expect(tooltip.get('[role="tooltip"]').element.style.maxInlineSize).toBe('284px')
+    expect(tooltip.get<HTMLElement>('[role="tooltip"]').element.style.maxInlineSize).toBe('284px')
   })
 })
