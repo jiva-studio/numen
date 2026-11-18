@@ -4,7 +4,6 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { shallowRef } from 'vue'
 import type { Disposable, NoteGraph, VaultChangeEvent } from '@numen/plugin-sdk'
 import { createNotesReader, type NoteLease } from './notesReader'
 
@@ -45,11 +44,10 @@ interface Pending {
   reject(error: unknown): void
 }
 
-const createRig = (showNames = true) => {
+const createRig = () => {
   const pending: Pending[] = []
   const handlers = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
   const reported: unknown[] = []
-  const settings = { showNames: shallowRef(showNames) }
   const reader = createNotesReader({
     notes: {
       listRelatedNotes: (paths: readonly string[], depth?: 1 | 2) =>
@@ -72,7 +70,6 @@ const createRig = (showNames = true) => {
         }
       },
     },
-    settings,
     reportFailure: (error) => reported.push(error),
   })
   const getReads = (path?: string) =>
@@ -99,7 +96,7 @@ const createRig = (showNames = true) => {
     await vi.advanceTimersByTimeAsync(SETTLE_MS)
     await flushPromises()
   }
-  return { reader, settings, getReads, answer, emit, settle, reported, handlers }
+  return { reader, getReads, answer, emit, settle, reported, handlers }
 }
 
 const getRelatedPaths = (lease: NoteLease) => lease.noteGraph.value?.related.map((one) => one.path)
@@ -298,15 +295,6 @@ describe('the reader while the vault changes', () => {
     expect(getRelatedPaths(below)).toStrictEqual(['notes/Rootstock list.md', 'notes/Compost.md'])
   })
 
-  it('reads nothing again for a change of a note that is related only to a related note', async () => {
-    const { emit, settle, getReads } = await setupRead()
-
-    await emit({ paths: [BEYOND] })
-    await settle()
-
-    expect(getReads(PEAR)).toHaveLength(1)
-  })
-
   it('reads the note again when a note related directly to it is the one that changed', async () => {
     const { emit, settle, getReads } = await setupRead()
 
@@ -325,13 +313,13 @@ describe('the reader while the vault changes', () => {
     expect(getReads(PEAR)).toHaveLength(2)
   })
 
-  it('reads nothing again for a change of a note unrelated to the note', async () => {
+  it('reads the note again when a note that was not related to it is the one that changed, as it may link to it now', async () => {
     const { emit, settle, getReads } = await setupRead()
 
     await emit({ paths: ['notes/Beehives.md'] })
     await settle()
 
-    expect(getReads()).toHaveLength(1)
+    expect(getReads(PEAR)).toHaveLength(2)
   })
 
   it('reads every note in use once for a change that does not say which notes changed', async () => {
@@ -346,7 +334,7 @@ describe('the reader while the vault changes', () => {
     expect(getReads(QUINCE)).toHaveLength(2)
   })
 
-  it('reads again only the note that changed, not the other notes in use', async () => {
+  it('reads every note in use again for a change of any note', async () => {
     const { reader, answer, emit, settle, getReads } = await setupRead()
     reader.acquire(QUINCE)
     await answer(QUINCE, ['notes/Jam.md'])
@@ -355,7 +343,7 @@ describe('the reader while the vault changes', () => {
     await settle()
 
     expect(getReads(PEAR)).toHaveLength(2)
-    expect(getReads(QUINCE)).toHaveLength(1)
+    expect(getReads(QUINCE)).toHaveLength(2)
   })
 
   it('leaves the old answer in place while the new read is open', async () => {
@@ -388,55 +376,6 @@ describe('the reader while the vault changes', () => {
 
     expect(handlers.size).toBe(0)
     expect(getReads()).toHaveLength(2)
-  })
-})
-
-describe('the reader while the names are hidden', () => {
-  it('reads nothing for a view that asks', () => {
-    const { reader, getReads } = createRig(false)
-
-    const lease = reader.acquire(PEAR)
-
-    expect(getReads()).toHaveLength(0)
-    expect(lease.noteGraph.value).toBeNull()
-  })
-
-  it('reads each note in use once when the names are shown', async () => {
-    const { reader, settings, getReads } = createRig(false)
-    reader.acquire(PEAR)
-    reader.acquire(PEAR)
-    reader.acquire(QUINCE)
-
-    settings.showNames.value = true
-    await flushPromises()
-
-    expect(getReads(PEAR)).toHaveLength(1)
-    expect(getReads(QUINCE)).toHaveLength(1)
-  })
-
-  it('takes the answer away when the names are hidden', async () => {
-    const { reader, settings, answer } = createRig()
-    const lease = reader.acquire(PEAR)
-    await answer(PEAR, ['notes/Rootstock list.md'])
-
-    settings.showNames.value = false
-    await flushPromises()
-
-    expect(lease.noteGraph.value).toBeNull()
-  })
-
-  it('reads nothing on a change of the vault', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-    const { reader, settings, answer, emit, settle, getReads } = createRig()
-    reader.acquire(PEAR)
-    await answer(PEAR, [])
-    settings.showNames.value = false
-    await flushPromises()
-
-    await emit({ paths: [PEAR] })
-    await settle()
-
-    expect(getReads()).toHaveLength(1)
   })
 })
 
@@ -491,6 +430,24 @@ describe('the reader when a read fails', () => {
 
     expect(reported).toHaveLength(1)
     expect(lease.noteGraph.value).toBeNull()
+  })
+
+  it('reads the note again for the next change of a related note after the read of a change failed', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const { reader, answer, emit, settle, getReads } = createRig()
+    const lease = reader.acquire(PEAR)
+    await answer(PEAR, ['notes/Rootstock list.md'])
+    await emit({ paths: [PEAR] })
+    await settle()
+    getReads(PEAR)[1]?.reject(new Error('the vault is closed'))
+    await flushPromises()
+
+    await emit({ paths: ['notes/Rootstock list.md'] })
+    await settle()
+    await answer(PEAR, ['notes/Rootstock list.md'])
+
+    expect(getReads(PEAR)).toHaveLength(3)
+    expect(getRelatedPaths(lease)).toStrictEqual(['notes/Rootstock list.md'])
   })
 })
 

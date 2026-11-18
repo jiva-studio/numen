@@ -17,6 +17,9 @@ import {
 } from './rules.js'
 import type { Scenario } from './scenario.js'
 
+/** How the label of a name says the name is related to the note it is under. */
+const NAME_RELATIONS = '(?:parent of|child of|jump from|referenced by|reference to|linked both ways with)'
+
 export class PlexDriver {
   constructor(private readonly scenario: Scenario) {}
 
@@ -216,7 +219,7 @@ export class PlexDriver {
   }
 
   private async getName(name: string, title: string): Promise<Locator> {
-    return (await this.getGraph()).getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}, name under ${escapeRegExp(title)}$`) })
+    return (await this.getGraph()).getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}, ${NAME_RELATIONS} ${escapeRegExp(title)}$`) })
   }
 
   async expectShowsNames(rows: readonly (readonly string[])[]): Promise<void> {
@@ -224,7 +227,7 @@ export class PlexDriver {
   }
 
   async expectShowsNoNames(title: string): Promise<void> {
-    const nameButtons = (await this.getGraph()).getByRole('button', { name: new RegExp(`, name under ${escapeRegExp(title)}$`) })
+    const nameButtons = (await this.getGraph()).getByRole('button', { name: new RegExp(`, ${NAME_RELATIONS} ${escapeRegExp(title)}$`) })
     await expect(nameButtons).toHaveCount(0)
   }
 

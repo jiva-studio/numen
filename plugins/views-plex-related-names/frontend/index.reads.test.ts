@@ -287,33 +287,6 @@ describe('the views of a node while the vault changes', () => {
   })
 })
 
-describe('the views while the setting Show notes related to related notes is off', () => {
-  it('reads nothing for any node', async () => {
-    const { show, getReads } = setupRig({ showNames: false })
-
-    LEAVES.forEach((one) => {
-      show('parents', one)
-      show('related', one)
-    })
-    await flushPromises()
-
-    expect(getReads()).toHaveLength(0)
-  })
-
-  it('reads each node once when the setting is turned on', async () => {
-    const { context, show, getReads } = setupRig({ showNames: false })
-    LEAVES.forEach((one) => {
-      show('parents', one)
-      show('related', one)
-    })
-
-    context.setSetting('showNames', true)
-    await flushPromises()
-
-    expect(getReads()).toHaveLength(5)
-  })
-})
-
 describe('the views when the read of a note fails', () => {
   it('shows one error for the two views of the node', async () => {
     const { show, fail, notices } = setupRig()
