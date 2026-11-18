@@ -3,7 +3,7 @@
 import { computed, ref, watch } from 'vue'
 import { measureRect, Tooltip, type Box } from '@numen/ui'
 import { getTagColor } from '../../lib/color'
-import { getRestText } from '../../words'
+import { getRestText } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ tags: readonly string[] }>()
