@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/usecase/note"
 )
 
 // CardModelSummary is one card model as presented for choosing between them: the
@@ -63,7 +63,7 @@ func (u List) Execute(
 		if err != nil {
 			return nil, 0, err
 		}
-		if cardModel.Outcome == note.Ok {
+		if cardModel.Outcome == edit.Ok {
 			items.Fields = cardModel.Body.Fields
 		}
 		out = append(out, items)

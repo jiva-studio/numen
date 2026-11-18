@@ -95,10 +95,13 @@ export class Person {
   async removeNotes(): Promise<void> {
     this.services.stopAll()
     if (this.scenario.hasWorld) return this.scenario.removeWorld()
-    await this.plugin.enableDisabled()
-    await this.scenario.removeVersions()
-    this.web.removePageTexts()
-    await this.review.takeBackAnswer()
-    await this.scenario.removeNotes()
+    try {
+      await this.plugin.enableDisabled()
+    } finally {
+      await this.scenario.removeVersions()
+      this.web.removePageTexts()
+      await this.review.takeBackAnswer()
+      await this.scenario.removeNotes()
+    }
   }
 }

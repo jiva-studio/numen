@@ -17,8 +17,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
@@ -28,7 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	noteusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // The two vaults a swap targets, and one note in each.
@@ -1000,7 +1000,7 @@ func TestVaultService_RejectsCallsWithoutActiveVault(t *testing.T) {
 		},
 		"show what a note is joined to": func() error {
 			_, err := f.vault.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{
-				Path: "One.md",
+				Paths: []string{"One.md"},
 			}))
 			return err
 		},

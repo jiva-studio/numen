@@ -7,7 +7,7 @@ import (
 	"maps"
 	"slices"
 
-	notesmarkdown "github.com/jiva-studio/numen/libs/note/markdown"
+	notesmarkdown "github.com/jiva-studio/numen/libs/shared/note/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 )
 

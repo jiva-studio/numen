@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func relationsOf(n domain.NoteGraph) []string {
@@ -22,12 +22,20 @@ func relationsOf(n domain.NoteGraph) []string {
 func relatedNotesOf(t *testing.T, files map[string]string, path string) domain.NoteGraph {
 	t.Helper()
 	db, v := newIndexedVault(t, files)
-	n, err := query.NewListRelatedNotes(db.NoteQueryReads(), db.NoteQueries()).
-		Execute(t.Context(), v, path, 1)
+	graphs, err := query.NewListRelatedNotes(db.NoteQueryReads(), db.NoteQueries()).
+		Execute(t.Context(), v, []string{path}, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return n
+	return onlyGraph(t, graphs)
+}
+
+func onlyGraph(t *testing.T, graphs []domain.NoteGraph) domain.NoteGraph {
+	t.Helper()
+	if len(graphs) != 1 {
+		t.Fatalf("%d graphs for one path, want 1", len(graphs))
+	}
+	return graphs[0]
 }
 
 // TestBothEndsOfAnEdgeAreOneRelationship. `parent: B` in A and `child: A` in B
@@ -304,12 +312,12 @@ func TestRelatedNotesStayInsideTheirVault(t *testing.T) {
 		shared: "---\ntitle: Entropy elsewhere\nid: 01M02ACGM0FYMSXNDP29C90JN2\n---\n\n# Entropy elsewhere\n",
 	}))
 
-	n, err := query.NewListRelatedNotes(db.NoteQueryReads(), db.NoteQueries()).
-		Execute(t.Context(), here, "Area.md", 1)
+	graphs, err := query.NewListRelatedNotes(db.NoteQueryReads(), db.NoteQueries()).
+		Execute(t.Context(), here, []string{"Area.md"}, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := relationsOf(n); len(got) != 0 {
+	if got := relationsOf(onlyGraph(t, graphs)); len(got) != 0 {
 		t.Errorf("got %v — the note that identifier names is in another vault", got)
 	}
 }

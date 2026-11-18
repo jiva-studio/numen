@@ -17,7 +17,12 @@ const plugins = [
     },
   ),
   createManagedPlugin('sample.tree', 'File Tree', {}, { category: 'views', feature: 'file tree' }),
-  createManagedPlugin('sample.agent', 'Agent Chat', {}, { category: 'views', feature: 'agent chat' }),
+  createManagedPlugin(
+    'sample.agent',
+    'Agent Chat',
+    {},
+    { category: 'views', feature: 'agent chat' },
+  ),
   createAvailablePlugin('sample.offer', 'Offered Reader'),
 ]
 
@@ -110,11 +115,40 @@ describe('PluginsList', () => {
     ])
   })
 
+  it('draws the tiles System, Appearance, Editor, Search and Connections in that order, each with its detail', () => {
+    const wrapper = mountList()
+
+    const tiles = wrapper
+      .findAll('button[aria-label]')
+      .filter((one) =>
+        ['System', 'Appearance', 'Editor', 'Search', 'Connections'].includes(
+          one.attributes('aria-label') ?? '',
+        ),
+      )
+    expect(tiles.map((one) => one.attributes('aria-label'))).toStrictEqual([
+      'System',
+      'Appearance',
+      'Editor',
+      'Search',
+      'Connections',
+    ])
+    expect(tiles[3]?.text()).toContain('Reranking, limits and results')
+  })
+
+  it('emits the page search from the Search tile', async () => {
+    const wrapper = mountList()
+
+    await wrapper.get('button[aria-label="Search"]').trigger('click')
+
+    expect(wrapper.emitted('select-plugin')).toStrictEqual([['search']])
+  })
+
   it('keeps both tiles while the query matches no plugin', () => {
     const wrapper = mountList({ query: 'zzz' })
 
     expect(wrapper.find('button[aria-label="System"]').exists()).toBe(true)
     expect(wrapper.find('button[aria-label="Connections"]').exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Search"]').exists()).toBe(true)
   })
 
   it('draws a stopped plugin as a button named for it and described by the reason', async () => {

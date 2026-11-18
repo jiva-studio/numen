@@ -1,6 +1,6 @@
 package plugin
 
-import "github.com/jiva-studio/numen/libs/note/domain"
+import "github.com/jiva-studio/numen/libs/shared/note/domain"
 
 // StoreFile is a file of a plugin's folder: its name, and how many bytes it holds.
 type StoreFile struct {

@@ -3,11 +3,12 @@ package note_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
@@ -79,8 +80,15 @@ func showGraph(g graph, refs *pathLookup, focus string) (domain.NoteGraph, error
 }
 
 func queryRelated(g graph, refs *pathLookup, focus string, depth domain.RelationDepth) (domain.NoteGraph, error) {
-	return query.NewListRelatedNotes(g, refs).Execute(
-		context.Background(), domain.Vault{ID: graphVault}, focus, depth)
+	graphs, err := query.NewListRelatedNotes(g, refs).Execute(
+		context.Background(), domain.Vault{ID: graphVault}, []string{focus}, depth)
+	if err != nil {
+		return domain.NoteGraph{}, err
+	}
+	if len(graphs) != 1 {
+		return domain.NoteGraph{}, fmt.Errorf("%d graphs for one path, want 1", len(graphs))
+	}
+	return graphs[0], nil
 }
 
 // Siblings are the other children of a parent, and only of a parent. A child's

@@ -6,7 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 const (
@@ -52,13 +52,13 @@ func TestAConnectionIsSavedWithAnArrowAndNoLabelAndReadBack(t *testing.T) {
 	}
 
 	related, err := f.client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{
-		Path: "Heat.md",
+		Paths: []string{"Heat.md"},
 	}))
-	if err != nil || len(related.Msg.GetRelated()) != 1 || len(related.Msg.GetConnections()) != 1 {
+	if err != nil || len(graphOf(t, related.Msg).GetRelated()) != 1 || len(graphOf(t, related.Msg).GetConnections()) != 1 {
 		t.Fatalf("related %v (%v)", related.Msg, err)
 	}
 	// A line of jumps runs from the note drawn later (Entropy) to the focus.
-	line := related.Msg.GetConnections()[0]
+	line := graphOf(t, related.Msg).GetConnections()[0]
 	if line.GetFirst() != "Entropy.md" || line.GetSecond() != "Heat.md" ||
 		line.GetFirstSide().GetLabel() != "back" || line.GetFirstSide().GetMarker() != v1.Marker_MARKER_UNSPECIFIED ||
 		line.GetSecondSide().GetMarker() != v1.Marker_MARKER_ARROW || line.GetSecondSide().GetLabel() != "" {

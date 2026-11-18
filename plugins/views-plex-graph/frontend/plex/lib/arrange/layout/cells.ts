@@ -5,6 +5,7 @@
 import type { PlacedNode, Position } from '../../node'
 import type { Lean } from '../../relation'
 import type { Direction, PlexOptions, Size } from '../options'
+import type { NodeRoom } from './placement'
 import type { PlexNode } from '../../../../types'
 
 /** The notes of one side, or of its upper or lower half, in the order they fill the cells, and the size of every cell. */
@@ -24,13 +25,14 @@ export interface BlockShape {
 }
 
 /**
- * The gaps, the distance from the center of the focus to the near edge of a side block (`reach.x`) and of a block over
- * or under it (`reach.y`), and how far from the center a cell may reach and stay inside the window.
+ * The gaps, the distance from the center of the focus to the near edge of a side block (`reach.x`), of a block over
+ * it (`reach.top`) and of a block under it (`reach.bottom`), both past the room the focus keeps, and how far from the
+ * center a cell may reach and stay inside the window.
  */
 export interface Grid {
   readonly gap: number
   readonly lineGap: number
-  readonly reach: { readonly x: number; readonly y: number }
+  readonly reach: { readonly x: number; readonly top: number; readonly bottom: number }
   readonly window: { readonly x: number; readonly y: number }
 }
 
@@ -155,12 +157,16 @@ export function listColumnCounts(block: Block, grid: Grid): number[] {
   return Array.from({ length: getMaxColumns(block, grid) }, (_, index) => index + 1)
 }
 
-export function createGrid(focus: PlacedNode, options: PlexOptions): Grid {
+export function createGrid(focus: PlacedNode, room: NodeRoom, options: PlexOptions): Grid {
   const { gap, lineGap, focusGap, viewport, margin } = options
   return {
     gap: Math.max(gap, LEAST_GAP),
     lineGap: Math.max(lineGap, LEAST_GAP),
-    reach: { x: focus.width / 2 + focusGap, y: focus.height / 2 + focusGap },
+    reach: {
+      x: focus.width / 2 + focusGap,
+      top: focus.height / 2 + room.top + focusGap,
+      bottom: focus.height / 2 + room.bottom + focusGap,
+    },
     window: viewport
       ? { x: viewport.width / 2 - margin, y: viewport.height / 2 - margin }
       : { x: Infinity, y: Infinity },

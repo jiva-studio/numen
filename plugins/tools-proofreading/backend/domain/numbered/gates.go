@@ -8,9 +8,6 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// MaxEditDistance is the maximum normalized edit distance allowed for a correction.
-const MaxEditDistance = 0.30
-
 // GetFixedLines parses and validates correction lines from a model reply against a batch.
 // Returns validated lines, hasOverflow if a line range extends beyond the batch, and ok indicating overall validity.
 func GetFixedLines(batch Batch, reply string, maxDistance float64) (lines []Line, hasOverflow, ok bool) {

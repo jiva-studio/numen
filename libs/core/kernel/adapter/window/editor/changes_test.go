@@ -18,19 +18,20 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -141,11 +142,11 @@ func TestAnEditReachesAListener(t *testing.T) {
 
 	// And the index matches the disk by the time it is announced.
 	displayed, err := client.ListRelatedNotes(t.Context(),
-		connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "Note.md"}))
+		connect.NewRequest(&v1.ListRelatedNotesRequest{Paths: []string{"Note.md"}}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if title := displayed.Msg.GetFocus().GetTitle(); title != "Renamed" {
+	if title := graphOf(t, displayed.Msg).GetFocus().GetTitle(); title != "Renamed" {
 		t.Errorf("the index still says %q", title)
 	}
 }
@@ -409,7 +410,7 @@ type records struct {
 
 func (w records) Write(
 	ctx context.Context, path string, content []byte, ref domain.FileStat,
-) (domain.FileStat, error) {
+) (vault.WriteResult, error) {
 	if w.hold != nil {
 		select {
 		case w.hold.begun <- struct{}{}:
@@ -418,7 +419,7 @@ func (w records) Write(
 		select {
 		case <-w.hold.until:
 		case <-ctx.Done():
-			return domain.FileStat{}, ctx.Err()
+			return vault.WriteResult{}, ctx.Err()
 		}
 	}
 	contentVal, err := w.NoteWriter.Write(ctx, path, content, ref)
@@ -1384,16 +1385,16 @@ func TestRelatedNotesReturnWhichOfThreeEachNoteIs(t *testing.T) {
 	})
 
 	center, err := client.ListRelatedNotes(t.Context(),
-		connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "Ontology.md"}))
+		connect.NewRequest(&v1.ListRelatedNotesRequest{Paths: []string{"Ontology.md"}}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if is := center.Msg.GetFocusType(); is != "" {
+	if is := graphOf(t, center.Msg).GetFocusType(); is != "" {
 		t.Errorf("the note in focus is drawn as %v", is)
 	}
 	types := map[string]string{}
-	for _, one := range center.Msg.GetRelated() {
+	for _, one := range graphOf(t, center.Msg).GetRelated() {
 		types[one.GetNote().GetPath()] = one.GetType()
 	}
 	want := map[string]string{
@@ -1409,11 +1410,11 @@ func TestRelatedNotesReturnWhichOfThreeEachNoteIs(t *testing.T) {
 	// The focused note carries its type in the same way, when the graph is
 	// centered on a typed note.
 	item, err := client.ListRelatedNotes(t.Context(),
-		connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "Animals.md"}))
+		connect.NewRequest(&v1.ListRelatedNotesRequest{Paths: []string{"Animals.md"}}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if is := item.Msg.GetFocusType(); is != "sample" {
+	if is := graphOf(t, item.Msg).GetFocusType(); is != "sample" {
 		t.Errorf("the sample in focus is drawn as %v", is)
 	}
 }

@@ -97,8 +97,8 @@ function shapeAcrossBlock(block: Block, columns: number, grid: Grid): BlockShape
   const { width, height } = getBlockSize(block, columns, grid)
   const [minY, maxY] =
     block.side === 'down'
-      ? [grid.reach.y, grid.reach.y + height]
-      : [-grid.reach.y - height, -grid.reach.y]
+      ? [grid.reach.bottom, grid.reach.bottom + height]
+      : [-grid.reach.top - height, -grid.reach.top]
   return { columns, minX: -width / 2, maxX: width / 2, minY, maxY }
 }
 
@@ -115,7 +115,8 @@ interface Span {
 
 function getSideSpan(block: Block, columns: number, standing: Standing, grid: Grid): Span {
   const { width, height } = getBlockSize(block, columns, grid)
-  const edge = grid.reach.y - grid.lineGap
+  const edgeBelow = grid.reach.bottom - grid.lineGap
+  const edgeAbove = grid.reach.top - grid.lineGap
   const focusRow = block.cell.height / 2
   const [minY, maxY] =
     block.half === 'up'
@@ -123,9 +124,9 @@ function getSideSpan(block: Block, columns: number, standing: Standing, grid: Gr
       : block.half === 'down'
         ? [focusRow + grid.lineGap, focusRow + grid.lineGap + height]
         : standing === 'up'
-          ? [edge - height, edge]
+          ? [edgeBelow - height, edgeBelow]
           : standing === 'down'
-            ? [-edge, -edge + height]
+            ? [-edgeAbove, -edgeAbove + height]
             : [-height / 2, height / 2]
   return { width, minY, maxY }
 }
@@ -193,7 +194,7 @@ function createPart(
   { grid, cache }: { readonly grid: Grid; readonly cache: ScoreCache },
 ): SidePart {
   const { side, half, members, cell } = block
-  const key = `${side}/${half}/${members.length}/${cell.width}/${cell.height}/${columns}/${standing}/${grid.reach.x}/${grid.reach.y}`
+  const key = `${side}/${half}/${members.length}/${cell.width}/${cell.height}/${columns}/${standing}/${grid.reach.x}/${grid.reach.top}/${grid.reach.bottom}`
   let scores = cache.get(key)
   if (!scores) {
     scores = new Map()
@@ -338,7 +339,7 @@ function placeGrid(
     )
   const blocks = createBlocks(nodesByRelation, context.options, getSize)
   if (blocks.length === 0) return []
-  const grid = createGrid(focus, context.options)
+  const grid = createGrid(focus, context.room(focus), context.options)
   const orders = new Map(
     RELATION_NAMES.flatMap((relation) =>
       (nodesByRelation[relation] ?? []).map((node, order) => [node.id, order] as const),

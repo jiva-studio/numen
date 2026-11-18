@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
+	"github.com/jiva-studio/numen/libs/shared/rerank"
 )
 
 // Complete asks the llm.complete operation of provider to complete the messages of request.
@@ -54,8 +55,8 @@ func Embed(ctx context.Context, provider connection.Provider, call connection.Ca
 }
 
 // Rerank asks the llm.rerank operation of provider for the scores of the documents of request.
-func Rerank(ctx context.Context, provider connection.Provider, call connection.Call, request *llm.RerankRequest) (*llm.RerankResult, error) {
-	result := &llm.RerankResult{}
+func Rerank(ctx context.Context, provider connection.Provider, call connection.Call, request *rerank.RerankRequest) (*rerank.RerankResult, error) {
+	result := &rerank.RerankResult{}
 	if err := serveInto(ctx, provider, llm.OperationRerank, call, request, result); err != nil {
 		return nil, err
 	}

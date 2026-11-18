@@ -3,7 +3,7 @@ package note
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // GetLinksOf runs the GetLinks queries of every path with one set of prepared statements.

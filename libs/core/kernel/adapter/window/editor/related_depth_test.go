@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/proto"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 func noteWith(title string, links ...string) string {
@@ -40,16 +42,24 @@ func relatedVault() map[string]string {
 	}
 }
 
-func askRelated(t *testing.T, client questions, path string, depth uint32) (*v1.ListRelatedNotesResponse, error) {
+func askRelated(t *testing.T, client questions, path string, depth uint32) (*v1.NoteGraph, error) {
 	t.Helper()
-	got, err := client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{Path: path, Depth: depth}))
+	got, err := client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{Paths: []string{path}, Depth: depth}))
 	if err != nil {
 		return nil, err
 	}
-	return got.Msg, nil
+	return graphOf(t, got.Msg), nil
 }
 
-func mustAskRelated(t *testing.T, client questions, path string, depth uint32) *v1.ListRelatedNotesResponse {
+func graphOf(t *testing.T, msg *v1.ListRelatedNotesResponse) *v1.NoteGraph {
+	t.Helper()
+	if len(msg.GetGraphs()) != 1 {
+		t.Fatalf("%d graphs for one path, want 1", len(msg.GetGraphs()))
+	}
+	return msg.GetGraphs()[0]
+}
+
+func mustAskRelated(t *testing.T, client questions, path string, depth uint32) *v1.NoteGraph {
 	t.Helper()
 	got, err := askRelated(t, client, path, depth)
 	if err != nil {
@@ -58,7 +68,7 @@ func mustAskRelated(t *testing.T, client questions, path string, depth uint32) *
 	return got
 }
 
-func itemsRelatedTo(msg *v1.ListRelatedNotesResponse, relatedTo string) []string {
+func itemsRelatedTo(msg *v1.NoteGraph, relatedTo string) []string {
 	var out []string
 	for _, r := range msg.GetRelated() {
 		if r.GetRelatedTo() == relatedTo {
@@ -75,7 +85,7 @@ func TestDepthZeroAndOneAnswerAlikeWithNoItemOfDepthTwo(t *testing.T) {
 	none := mustAskRelated(t, client, "Entropy.md", 0)
 	one := mustAskRelated(t, client, "Entropy.md", 1)
 
-	for name, got := range map[string]*v1.ListRelatedNotesResponse{"depth 0": none, "depth 1": one} {
+	for name, got := range map[string]*v1.NoteGraph{"depth 0": none, "depth 1": one} {
 		if len(got.GetRelated()) != 6 {
 			t.Errorf("%s: %d related notes, want 6", name, len(got.GetRelated()))
 		}
@@ -240,5 +250,99 @@ func TestADepthBeyondTwoIsAnError(t *testing.T) {
 		if _, err := askRelated(t, client, "Entropy.md", depth); err != nil {
 			t.Errorf("depth %d: %v", depth, err)
 		}
+	}
+}
+
+func askManyRelated(t *testing.T, client questions, paths []string, depth uint32) (*v1.ListRelatedNotesResponse, error) {
+	t.Helper()
+	got, err := client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{Paths: paths, Depth: depth}))
+	if err != nil {
+		return nil, err
+	}
+	return got.Msg, nil
+}
+
+func TestEachPathAnswersWithItsOwnGraphInTheOrderOfTheRequest(t *testing.T) {
+	client, _ := openVault(t, relatedVault())
+	paths := []string{"Heat.md", "Physics.md", "Entropy.md"}
+
+	got, err := askManyRelated(t, client, paths, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got.GetGraphs()) != len(paths) {
+		t.Fatalf("%d graphs for %d paths", len(got.GetGraphs()), len(paths))
+	}
+	for i, path := range paths {
+		alone := mustAskRelated(t, client, path, 1)
+		if got.GetGraphs()[i].GetFocus().GetPath() != path {
+			t.Errorf("graph %d is the graph of %q, want %q", i, got.GetGraphs()[i].GetFocus().GetPath(), path)
+		}
+		if !proto.Equal(got.GetGraphs()[i], alone) {
+			t.Errorf("the graph of %s differs from the one asked alone", path)
+		}
+	}
+}
+
+func TestAnUnknownPathHasAnEmptyGraphAndTheOtherGraphsAreWhole(t *testing.T) {
+	client, _ := openVault(t, relatedVault())
+
+	got, err := askManyRelated(t, client, []string{"Entropy.md", "Nowhere.md", "Heat.md"}, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got.GetGraphs()) != 3 {
+		t.Fatalf("%d graphs for 3 paths", len(got.GetGraphs()))
+	}
+	if gone := got.GetGraphs()[1]; gone.GetFocus().GetPath() != "" || len(gone.GetRelated()) != 0 {
+		t.Errorf("the graph of an unknown note is %v, want an empty graph", gone)
+	}
+	if got.GetGraphs()[0].GetFocus().GetPath() != "Entropy.md" || got.GetGraphs()[2].GetFocus().GetPath() != "Heat.md" {
+		t.Errorf("the other graphs are %v and %v", got.GetGraphs()[0], got.GetGraphs()[2])
+	}
+}
+
+func TestNoPathsAnswerNoGraphs(t *testing.T) {
+	client, _ := openVault(t, relatedVault())
+
+	got, err := askManyRelated(t, client, nil, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got.GetGraphs()) != 0 {
+		t.Errorf("%d graphs for no path", len(got.GetGraphs()))
+	}
+}
+
+func TestMoreThanTheMostPathsFailTheCall(t *testing.T) {
+	client, _ := openVault(t, relatedVault())
+	paths := func(n int) []string {
+		out := make([]string, n)
+		for i := range out {
+			out[i] = "Heat.md"
+		}
+		return out
+	}
+
+	got, err := askManyRelated(t, client, paths(domain.MaxRelatedNotePaths), 1)
+	if err != nil || len(got.GetGraphs()) != domain.MaxRelatedNotePaths {
+		t.Errorf("the most paths: %d graphs (%v), want %d", len(got.GetGraphs()), err, domain.MaxRelatedNotePaths)
+	}
+	_, err = askManyRelated(t, client, paths(domain.MaxRelatedNotePaths+1), 1)
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("one path more than the most: %v, want invalid argument", err)
+	}
+}
+
+func TestAnInvalidDepthFailsTheCallForEveryPath(t *testing.T) {
+	client, _ := openVault(t, relatedVault())
+
+	_, err := askManyRelated(t, client, []string{"Entropy.md", "Heat.md"}, 3)
+
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("depth 3: %v, want invalid argument", err)
 	}
 }

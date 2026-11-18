@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"syscall"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func getFileID(info fs.FileInfo) domain.FileID {

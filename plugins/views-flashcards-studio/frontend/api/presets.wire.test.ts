@@ -50,7 +50,7 @@ describe('the settings of a preset', () => {
           load: { mon: 50 },
         },
       },
-      at: { path: 'Daily.md', size: 12, mtime: '34' },
+      at: { path: 'Daily.md', size: 12, mtime: '34', hash: 'ab', version: '7' },
     })
 
     const answer = await presets.read('Daily.md')
@@ -63,7 +63,7 @@ describe('the settings of a preset', () => {
       learned: 'retention',
       load: { mon: 50 },
     })
-    expect(answer.value.at).toBe('12 34 Daily.md')
+    expect(answer.value.at).toBe('12:7:ab 34 Daily.md')
   })
 
   it('take the default for a rule the file leaves unnamed', async () => {
@@ -127,12 +127,18 @@ describe('making a preset', () => {
 
 describe('putting a deck on a preset', () => {
   it('names the file the window read', async () => {
-    replyWith({ at: { path: 'Deck.md', size: 12, mtime: '34' } })
+    replyWith({ at: { path: 'Deck.md', size: 12, mtime: '34', hash: 'ab', version: '7' } })
 
-    const answer = await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
+    const answer = await presets.scheduleDeck('Deck.md', 'Daily.md', '12:7:ab 34 Deck.md')
 
-    expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: 12, mtime: '34' })
-    expect(answer.ok && answer.value.at).toBe('12 34 Deck.md')
+    expect(request[0]?.baseline).toEqual({
+      path: 'Deck.md',
+      size: 12,
+      mtime: '34',
+      hash: 'ab',
+      version: '7',
+    })
+    expect(answer.ok && answer.value.at).toBe('12:7:ab 34 Deck.md')
   })
 
   it('names no file where the window read none', async () => {
@@ -146,7 +152,7 @@ describe('putting a deck on a preset', () => {
   it('says the file moved past what the window read', async () => {
     replyWith({ error: 'conflict' })
 
-    expect(await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')).toEqual(
+    expect(await presets.scheduleDeck('Deck.md', 'Daily.md', '12:7:ab 34 Deck.md')).toEqual(
       asFailure('changed'),
     )
   })
@@ -164,7 +170,7 @@ describe('the preset a deck is scheduled by', () => {
 
 describe('writing settings into a preset', () => {
   it('sends the rule and the unit as the schema names them', async () => {
-    replyWith({ at: { path: 'Daily.md', size: 12, mtime: '34' } })
+    replyWith({ at: { path: 'Daily.md', size: 12, mtime: '34', hash: 'ab', version: '7' } })
 
     await presets.write(
       'Daily.md',
@@ -253,7 +259,7 @@ describe('what the requests of a preset name', () => {
   it('names the deck, the preset and the file the window read when scheduling', async () => {
     replyWith({})
 
-    await presets.scheduleDeck('Deck.md', 'Daily.md', '12 34 Deck.md')
+    await presets.scheduleDeck('Deck.md', 'Daily.md', '12:7:ab 34 Deck.md')
 
     expect(request[0]).toMatchObject({ deck: 'Deck.md', preset: 'Daily.md' })
   })
@@ -293,23 +299,23 @@ describe('the stamp of a file an answer is about', () => {
   })
 
   it('is the file a write came to', async () => {
-    replyWith({ at: { path: 'Daily.md', size: 12, mtime: '34' } })
+    replyWith({ at: { path: 'Daily.md', size: 12, mtime: '34', hash: 'ab', version: '7' } })
 
     const answer = await presets.write('Daily.md', DEFAULTS, '')
 
-    expect(answer).toEqual({ ok: true, value: { at: '12 34 Daily.md' } })
+    expect(answer).toEqual({ ok: true, value: { at: '12:7:ab 34 Daily.md', version: 7n } })
   })
 })
 
 describe('writing into a preset the window read', () => {
   it('names the file the window read', async () => {
-    replyWith({ at: { path: 'Daily.md', size: 12, mtime: '34' } })
+    replyWith({ at: { path: 'Daily.md', size: 12, mtime: '34', hash: 'ab', version: '7' } })
 
-    await presets.write('Daily.md', DEFAULTS, '12 34 Daily.md')
+    await presets.write('Daily.md', DEFAULTS, '12:7:ab 34 Daily.md')
 
     expect(request[0]).toMatchObject({
       path: 'Daily.md',
-      baseline: { path: 'Daily.md', size: 12, mtime: '34' },
+      baseline: { path: 'Daily.md', size: 12, mtime: '34', hash: 'ab', version: '7' },
     })
   })
 
@@ -324,7 +330,7 @@ describe('writing into a preset the window read', () => {
   it('says the file moved past what the window read', async () => {
     replyWith({ error: 'conflict' })
 
-    expect(await presets.write('Daily.md', DEFAULTS, '12 34 Daily.md')).toEqual(
+    expect(await presets.write('Daily.md', DEFAULTS, '12:7:ab 34 Daily.md')).toEqual(
       asFailure('changed'),
     )
   })

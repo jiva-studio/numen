@@ -13,9 +13,9 @@ require (
 	cel.dev/cel-go v0.32.0 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
-	github.com/jiva-studio/numen/libs/atomicfile v0.0.0 // indirect
-	github.com/jiva-studio/numen/libs/core/protocol v0.0.0 // indirect
-	github.com/jiva-studio/numen/libs/note v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/shared/note v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/shared/protocol v0.0.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
 	golang.org/x/sync v0.24.0 // indirect
@@ -26,9 +26,9 @@ require (
 )
 
 replace (
-	github.com/jiva-studio/numen/libs/core/protocol => ../../../../libs/core/protocol
-	github.com/jiva-studio/numen/libs/note => ../../../../libs/note
 	github.com/jiva-studio/numen/libs/plugin/catalog => ../../../../libs/plugin/catalog
+	github.com/jiva-studio/numen/libs/shared/note => ../../../../libs/shared/note
+	github.com/jiva-studio/numen/libs/shared/protocol => ../../../../libs/shared/protocol
 )
 
-replace github.com/jiva-studio/numen/libs/atomicfile => ../../../../libs/atomicfile
+replace github.com/jiva-studio/numen/libs/shared/atomicfile => ../../../../libs/shared/atomicfile

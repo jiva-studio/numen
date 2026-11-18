@@ -33,10 +33,3 @@ Feature: Plex headings
     When the person enters the heading "Joule" under the note titled "Work" in the plex
     Then the note tab at "notes/Work.md" is active
     And the cursor of the note tab titled "Work" is on the line "## Joule"
-
-  Scenario: Headings are hidden
-    Given the person rests the pointer on the note titled "Heat" in the plex
-    And the plex shows the heading "First law" under the note titled "Heat"
-    When the person sets the setting "Nest headings under notes" of the plugin "Plex Graph" to "Off"
-    And the person rests the pointer on the note titled "Heat" in the plex
-    Then the plex does not show the heading "First law" under the note titled "Heat"

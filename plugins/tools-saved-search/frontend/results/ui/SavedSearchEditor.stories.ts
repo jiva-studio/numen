@@ -129,11 +129,11 @@ export const CompletesTheNamesOfTheCatalog: Story = {
     )
     await expect(canvasElement.querySelector('.saved-search')?.contains(list)).toBe(false)
     await expect(within(list).getByText(/Finds notes that carry the tag you give\./)).toBeVisible()
-    await expect(within(list).getByText(/tags\("harbor"\)/)).toBeVisible()
+    await expect(within(list).getByText(/hasTag\("harbor"\)/)).toBeVisible()
     await expect(document.querySelector('.cm-completionInfo')).toBeNull()
 
     await browser.userEvent.click(within(list).getByRole('option'))
-    await waitFor(() => expect(editor).toHaveTextContent('words("gale") && tags'))
+    await waitFor(() => expect(editor).toHaveTextContent('words("gale") && hasTag'))
 
     await browser.userEvent.keyboard('("harbor").r')
     const stages = await waitFor(() => page.getByRole('listbox'))
@@ -224,11 +224,11 @@ export const InsertsIndentationAtTheCursor: Story = {
     const browser = await import('vitest/browser')
     const editor = await openEditor(canvasElement)
 
-    await fillEditor(editor, 'words("gale") && tags("sea")')
-    await browser.userEvent.keyboard('{ArrowLeft}'.repeat('tags("sea")'.length))
+    await fillEditor(editor, 'words("gale") && hasTag("sea")')
+    await browser.userEvent.keyboard('{ArrowLeft}'.repeat('hasTag("sea")'.length))
     await browser.userEvent.keyboard('{Tab}')
 
-    await waitFor(() => expect(editor.textContent).toBe('words("gale") &&   tags("sea")'))
+    await waitFor(() => expect(editor.textContent).toBe('words("gale") &&   hasTag("sea")'))
     await expect(editor).toHaveFocus()
   },
 }

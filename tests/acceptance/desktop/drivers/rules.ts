@@ -20,6 +20,15 @@ export const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|
 
 export const getTitlePattern = (title: string): RegExp => new RegExp(`^(Linked tab )?${escapeRegExp(title)}( Close |$)`)
 
+/** The text of a name alone. */
+export const getPluginNamePattern = (plugin: string): RegExp => new RegExp(`^${escapeRegExp(plugin)}$`)
+
+/** The accessible name of the row of a plugin: its name, then its state after a comma where it is not running. */
+export const getPluginRowPattern = (plugin: string): RegExp => new RegExp(`^${escapeRegExp(plugin)}(, (Off|Stopped|Error|Warning|Not installed))?$`)
+
+/** The accessible name of the switch of a plugin. */
+export const getPluginSwitchPattern = (plugin: string): RegExp => new RegExp(`^Enabled ${escapeRegExp(plugin)}$`)
+
 /** The title the product gives the tab of a web address: the characters a file name cannot have become "-". */
 export const getAddressTitle = (address: string): string => address.replace(/[/\\:*?"<>|#]/g, '-')
 
@@ -423,9 +432,11 @@ export const isOnSides = (sides: readonly Side[], note: { x: number; y: number }
     return note.x > focus.x
   })
 
-/** The rows under the header of a table, which must name these columns. */
-export const getTableBody = (rows: readonly (readonly string[])[], columns: readonly string[]): readonly (readonly string[])[] => {
-  if (rows[0]?.join('|') !== columns.join('|')) throw new Error(`the table must start with the header "| ${columns.join(' | ')} |"`)
+/** The rows under the header of a table, which must name these columns and may end with some of the optional ones. */
+export const getTableBody = (rows: readonly (readonly string[])[], columns: readonly string[], optional: readonly string[] = []): readonly (readonly string[])[] => {
+  const header = rows[0] ?? []
+  const named = columns.every((column, index) => header[index] === column)
+  if (!named || !header.slice(columns.length).every((column) => optional.includes(column))) throw new Error(`the table must start with the header "| ${columns.join(' | ')} |"`)
   return rows.slice(1)
 }
 
@@ -435,7 +446,7 @@ export const isArrow = (buttonName: string, arrow: string): boolean => buttonNam
 /** The most clicks the arrow button of a row needs to show any arrow: none, one way, the other way. */
 export const MAX_ARROW_CLICKS = 3
 
-/** The wait of the pointer on a note before its headings open: the EXPANSION_DELAY of the plex, which rules.test.ts reads from the plugin. */
+/** The wait of the pointer on a note before its headings open: the HOVER_WAIT of the plex headings plugin, which rules.test.ts reads from the plugin. */
 export const HEADINGS_OPEN_WAIT_MS = 500
 
 /** What the arrow of a line is when the line has none. */
@@ -449,3 +460,6 @@ export const parseArrow = (text: string): string | undefined => {
   if (!match) throw new Error(`"${text}" does not name an arrow: write with an arrow to "Title" or without an arrow`)
   return match[1]
 }
+
+/** What a step says of a plugin that is in trouble: the plugin and the text the window shows of it. */
+export const getTroubleMessage = (plugin: string, text: string): string => `the plugin "${plugin}" is in trouble: ${text}`

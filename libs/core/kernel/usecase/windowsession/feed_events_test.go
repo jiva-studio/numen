@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/filechange"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // feedStub is a feed whose head the test moves, and the writes and plugin changes it reports.

@@ -7,7 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func windowOn(t *testing.T) (*container.OpenedWindow, container.Config) {

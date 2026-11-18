@@ -2,9 +2,10 @@
  * One pane of the workspace holding a scrolled text among its tabs.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, userEvent } from 'storybook/test'
-import { ref } from 'vue'
-import { pane } from '../../lib/node'
+import { expect, fn, userEvent } from 'storybook/test'
+import { computed, provide, ref } from 'vue'
+import { pane, type Tab, type TabId } from '../../lib/node'
+import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import WorkspacePane from './WorkspacePane.vue'
 import { RUSSIAN } from '@/shared/fixtures/prose'
 
@@ -85,5 +86,61 @@ export const ShownAgain: Story = {
     await expect(shownLog.textContent?.split(' ').at(-1)).toBe(NOTE_TAB)
     await expect(note.isConnected).toBe(true)
     await expect(note.value).toContain('Kept.')
+  },
+}
+
+/** The pointer over a tab, and the keyboard on it: the shared tooltip names the tab, the browser draws none of its own. */
+export const TabNamedByTooltip: Story = {
+  args: { pane: pane('main', [NOTE_TAB, BESIDE], NOTE_TAB) },
+  render: (args) => ({
+    components: { WorkspacePane },
+    setup: () => {
+      const titles: Readonly<Record<string, string>> = { [NOTE_TAB]: 'Note', [BESIDE]: 'Beside' }
+      provide(
+        WORKSPACE_CONTEXT,
+        computed<WorkspaceContext>(() => ({
+          findTab: (id: TabId): Tab | undefined =>
+            titles[id] === undefined ? undefined : { id, title: titles[id] },
+          focus: 'main',
+          minimum: 220,
+          getStripEdge: () => NO_STRIP_EDGE,
+          choose: fn(),
+          close: fn(),
+          startTabPress: fn(),
+          menu: fn(),
+          claim: fn(),
+          resize: fn(),
+          show: fn(),
+        })),
+      )
+      return { args }
+    },
+    template: `
+      <div class="numen h-screen bg-surface">
+        <WorkspacePane :pane="args.pane" />
+      </div>`,
+  }),
+  play: async ({ canvasElement }) => {
+    const getTab = (id: TabId) =>
+      canvasElement.querySelector(`[data-workspace-tab="${id}"]`) as HTMLElement
+    // The tooltip a tab points at, so one that another story left in the body does not count.
+    const getTooltip = (tab: HTMLElement) => {
+      const id = tab.getAttribute('aria-describedby')
+      return id ? document.getElementById(id) : null
+    }
+    const tab = getTab(BESIDE)
+
+    await userEvent.unhover(tab)
+    await expect(tab.querySelector('[title]')).toBeNull()
+    await expect(getTooltip(tab)).toBeNull()
+
+    await userEvent.hover(tab)
+    await expect(getTooltip(tab)).toHaveTextContent('Beside')
+
+    await userEvent.unhover(tab)
+    await expect(getTooltip(tab)).toBeNull()
+
+    await userEvent.keyboard('{Tab}')
+    await expect(getTooltip(getTab(NOTE_TAB))).toHaveTextContent('Note')
   },
 }

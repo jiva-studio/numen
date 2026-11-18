@@ -23,6 +23,7 @@ const getCore = () =>
 const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
   path: '/vault/.numen/settings.json',
+  version: 7n,
   plugins: [],
   app: [],
   ...overrides,
@@ -32,7 +33,7 @@ const writtenLast = () => request.writeSettings.mock.calls.at(-1)?.[0]
 
 beforeEach(() => {
   request.getSettings.mockReset()
-  request.writeSettings.mockReset().mockResolvedValue({})
+  request.writeSettings.mockReset().mockResolvedValue({ written: '{}', version: 1n })
   request.choosePluginPath.mockReset()
 })
 
@@ -189,6 +190,19 @@ describe('every setting', () => {
     expect(writtenLast()).toMatchObject({
       settings: [{ at: ['app', 'performance', 'profile'], value: '"eco"' }],
     })
+  })
+})
+
+describe('the version of the settings', () => {
+  it('arrives with every read', async () => {
+    request.getSettings.mockResolvedValue(answer({}))
+    expect((await getCore().getSettings()).version).toBe(7n)
+  })
+
+  it('arrives with the state a write left', async () => {
+    request.writeSettings.mockResolvedValue({ written: '{"a":1}', version: 8n })
+    const written = await getCore().updateSettings([{ at: ['a'], value: '1' }])
+    expect(written).toStrictEqual({ written: '{"a":1}', version: 8n })
   })
 })
 
@@ -351,7 +365,7 @@ describe('the settings that change', () => {
       yield {
         changed: [
           { at: ['app', 'appearance', 'mode'], value: '"dark"' },
-          { at: ['md.numen.notes', 'softWrap'], value: 'false' },
+          { at: ['md.numen.sample', 'indent'], value: 'false' },
         ],
       }
     })
@@ -365,7 +379,7 @@ describe('the settings that change', () => {
       [],
       [
         { at: ['app', 'appearance', 'mode'], value: '"dark"' },
-        { at: ['md.numen.notes', 'softWrap'], value: 'false' },
+        { at: ['md.numen.sample', 'indent'], value: 'false' },
       ],
     ])
   })

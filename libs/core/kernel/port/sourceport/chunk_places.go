@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ChunkPlaces reads the large chunk that encloses a chunk, the small chunks inside it and their vectors.

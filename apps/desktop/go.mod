@@ -28,7 +28,8 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.2.4
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/jiva-studio/numen/libs/core/protocol v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/shared/protocol v0.0.0 // indirect
+	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.1.0 // indirect
@@ -44,13 +45,15 @@ require (
 	modernc.org/memory v1.12.1 // indirect
 )
 
-replace github.com/jiva-studio/numen/libs/core/protocol => ../../libs/core/protocol
+replace github.com/jiva-studio/numen/libs/shared/protocol => ../../libs/shared/protocol
+
+replace github.com/jiva-studio/numen/libs/shared/rerank => ../../libs/shared/rerank
 
 require (
-	github.com/jiva-studio/numen/libs/atomicfile v0.0.0
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0
-	github.com/jiva-studio/numen/libs/note v0.0.0
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0
+	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0
+	github.com/jiva-studio/numen/libs/shared/note v0.0.0
 	github.com/zalando/go-keyring v0.2.8
 )
 
@@ -58,6 +61,6 @@ replace github.com/jiva-studio/numen/libs/plugin/catalog => ../../libs/plugin/ca
 
 replace github.com/jiva-studio/numen/libs/core/kernel => ../../libs/core/kernel
 
-replace github.com/jiva-studio/numen/libs/note => ../../libs/note
+replace github.com/jiva-studio/numen/libs/shared/note => ../../libs/shared/note
 
-replace github.com/jiva-studio/numen/libs/atomicfile => ../../libs/atomicfile
+replace github.com/jiva-studio/numen/libs/shared/atomicfile => ../../libs/shared/atomicfile

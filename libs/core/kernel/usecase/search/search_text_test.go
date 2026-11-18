@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // recordingFinder returns a search with fixed search results and records the requests.

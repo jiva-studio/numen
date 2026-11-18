@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 const contributesHead = `{"id":"a.b","name":"A","version":"1.0.0","frontend":{}`

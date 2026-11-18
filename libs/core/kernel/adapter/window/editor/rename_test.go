@@ -15,7 +15,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -24,7 +24,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
@@ -1025,12 +1025,12 @@ func TestANoteIsMadeBelowTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 	}
 
 	center, err := f.client.ListRelatedNotes(t.Context(),
-		connect.NewRequest(&v1.ListRelatedNotesRequest{Path: "physics/Ontology.md"}))
+		connect.NewRequest(&v1.ListRelatedNotesRequest{Paths: []string{"physics/Ontology.md"}}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	var children []string
-	for _, related := range center.Msg.GetRelated() {
+	for _, related := range graphOf(t, center.Msg).GetRelated() {
 		if related.GetRelation() == v1.Relation_RELATION_CHILD {
 			children = append(children, related.GetNote().GetPath())
 		}
@@ -1249,12 +1249,12 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 	}
 
 	center, err := f.client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{
-		Path: "Heat.md",
+		Paths: []string{"Heat.md"},
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	related := center.Msg.GetRelated()
+	related := graphOf(t, center.Msg).GetRelated()
 	if len(related) != 1 {
 		t.Fatalf("want the one note the link reaches, got %+v", related)
 	}

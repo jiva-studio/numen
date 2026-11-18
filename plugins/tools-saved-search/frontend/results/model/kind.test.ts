@@ -33,6 +33,12 @@ const openTab = (kind: ReturnType<typeof setup>['kind']) => {
 }
 
 describe('the saved search tab kind', () => {
+  it('declares an icon, so that its tab shows one in the tab strip', () => {
+    const { kind } = setup()
+
+    expect(kind.icon).toBeDefined()
+  })
+
   it('registers the saved-search kind', () => {
     const { kind } = setup()
 

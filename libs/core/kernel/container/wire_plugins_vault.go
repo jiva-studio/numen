@@ -22,7 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/hold"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // PluginVaultHooks is what a window adds to the vault it lets the plugins work.
@@ -76,8 +76,8 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			Written:    hooks.Written,
 		},
 		hostvault.Files{
-			Stat:        file.NewStatFile(vaultReaders(c.vault)),
-			ReadFile:    file.NewReadFile(vaultReaders(c.vault)),
+			Stat:        file.NewHashFile(vaultReaders(c.vault), vaultVersions(c.vault)),
+			ReadFile:    file.NewReadFile(vaultReaders(c.vault), vaultVersions(c.vault)),
 			RangeReader: file.Read{Readers: vaultReaders(c.vault)},
 		},
 		hostvault.Writer{

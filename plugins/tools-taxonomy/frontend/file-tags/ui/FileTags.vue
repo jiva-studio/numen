@@ -25,6 +25,7 @@ const dots = computed(() =>
 )
 const rest = computed(() => props.tags.length - DOT_LIMIT)
 const label = computed(() => props.tags.join(', '))
+const data = computed(() => JSON.stringify(props.tags))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onEnter() {
@@ -43,6 +44,7 @@ function onLeave() {
       ref="root"
       class="file-tags"
       data-tag-dots
+      :data-tags="data"
       role="img"
       :aria-label="label"
       @mouseenter="onEnter"

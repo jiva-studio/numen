@@ -152,12 +152,21 @@ func TestSuperviseAndWaitForExitKillProcessGroup(t *testing.T) {
 	if stopErr != nil {
 		t.Errorf("first Cancel = %v, want nil", stopErr)
 	}
-	// On Linux the killed child stays a zombie in the process group until its new parent reaps it, and
-	// the group answers signals until then.
+	// A killed child stays a zombie until its new parent reaps it, and a zombie still answers signal 0.
 	waitUntil(t, func() bool { return errors.Is(cmd.Cancel(), os.ErrProcessDone) })
-	if err := syscall.Kill(childPID, 0); !errors.Is(err, syscall.ESRCH) {
-		t.Errorf("expected background child in process group to be killed, Kill(0) = %v", err)
+	waitUntil(t, func() bool { return !isRunning(t, childPID) })
+}
+
+func isRunning(t *testing.T, pid int) bool {
+	t.Helper()
+	out, err := exec.CommandContext(t.Context(), "ps", "-o", "stat=", "-p", strconv.Itoa(pid)).Output()
+	if exitErr := (*exec.ExitError)(nil); errors.As(err, &exitErr) {
+		return false
+	} else if err != nil {
+		t.Fatal(err)
 	}
+	state := strings.TrimSpace(string(out))
+	return state != "" && !strings.HasPrefix(state, "Z")
 }
 
 func waitUntil(t *testing.T, isDone func() bool) {

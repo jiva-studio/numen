@@ -10,8 +10,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jiva-studio/numen/libs/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
 // The fallback file is a flat JSON object keyed by the same entry names as the keychain.

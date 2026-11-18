@@ -12,12 +12,12 @@ export class FileTree {
     return this.page.locator(`[data-tree-row="${entryPath}"]`)
   }
 
-  /** The tags a row shows, read from the accessible name of its tag dots; none when the row has no dots. */
+  /** The tags a row shows, read from the list its tag dots hold; none when the row has no dots. */
   async readTags(row: Locator): Promise<string[]> {
     const dots = row.locator('[data-tag-dots]')
     if ((await dots.count()) === 0) return []
-    const label = (await dots.first().getAttribute('aria-label')) ?? ''
-    return label === '' ? [] : label.split(', ').sort()
+    const held = (await dots.first().getAttribute('data-tags')) ?? '[]'
+    return (JSON.parse(held) as string[]).sort()
   }
 
   /** Unfolds the folder row, which Enter folds when it is open already. */

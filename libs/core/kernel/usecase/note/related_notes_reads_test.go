@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // countingLinks counts the calls to the link batches and the paths requested in them.
@@ -44,7 +44,7 @@ func TestEachListOfLinksIsReadOnceAtDepthTwo(t *testing.T) {
 	counted := newCountingLinks(depthGraph())
 
 	_, err := query.NewListRelatedNotes(counted, &pathLookup{}).Execute(
-		t.Context(), domain.Vault{ID: graphVault}, "F.md", domain.DepthFar)
+		t.Context(), domain.Vault{ID: graphVault}, []string{"F.md"}, domain.DepthFar)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestTheCallsToTheLinksDoNotGrowWithTheNotesRelatedToTheFocus(t *testing.T) 
 	calls := func(owners int) (links, backlinks int) {
 		counted := newCountingLinks(fanGraph(owners))
 		_, err := query.NewListRelatedNotes(counted, &pathLookup{}).Execute(
-			t.Context(), domain.Vault{ID: graphVault}, "F.md", domain.DepthFar)
+			t.Context(), domain.Vault{ID: graphVault}, []string{"F.md"}, domain.DepthFar)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -5,6 +5,7 @@ import type { PluginLoader } from '@numen/plugin-loader'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import type { useVaults } from '@/entities/vault'
+import { createEditorTokens } from '@/features/editor-tokens'
 import { createLayoutStart, createPluginStart, createWindowBootstrap } from '@/features/app-start'
 import type { createWindowPalette } from '@/features/command-palette'
 import { createAppKeyRunner, createKeyHandler, useAppHotkeys } from '@/features/hotkeys'
@@ -91,9 +92,15 @@ function createLayoutStarter(deps: LayoutStarterDeps) {
   })
 }
 
+/** What the start of the window reads of the foundation. */
+type StartFoundation = Pick<
+  WindowBase['foundation'],
+  'api' | 'log' | 'rest' | 'frame' | 'connections' | 'settingsRequests'
+>
+
 /** What the start of the window reads of the base, the plugins and the palettes. */
 export interface WindowStartDeps {
-  readonly foundation: WindowBase['foundation']
+  readonly foundation: StartFoundation
   readonly tabs: WindowBase['tabs']
   readonly tabParts: WindowBase['tabParts']
   readonly vault: WindowBase['vault']
@@ -134,7 +141,11 @@ export function createWindowStart(deps: WindowStartDeps) {
     }),
     bootstrap: createWindowBootstrap({
       vaults,
-      settings: windowSettings,
+      settings: {
+        start: () => windowSettings.start(),
+        close: () => windowSettings.close(),
+        editorTokens: createEditorTokens(rest),
+      },
       window,
       editing,
       tabLinkSession: tabs.linkSession,

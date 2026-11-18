@@ -13,10 +13,12 @@ export const noteAnswers = {
       ...(mockVaultState.opening ? { note: { path: mockVaultState.opening, title: '' } } : {}),
     }),
     listRelatedNotes: (request) => ({
-      focus: { path: request.path, title: request.path.replace(/\.md$/, '') },
-      focusType: 'note',
-      related: [],
-      connections: [],
+      graphs: request.paths.map((path) => ({
+        focus: { path, title: path.replace(/\.md$/, '') },
+        focusType: 'note',
+        related: [],
+        connections: [],
+      })),
     }),
     readNote: (request) => ({
       body: 'what is written',

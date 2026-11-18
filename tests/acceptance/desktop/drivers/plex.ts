@@ -17,6 +17,9 @@ import {
 } from './rules.js'
 import type { Scenario } from './scenario.js'
 
+/** How the label of a name says the name is related to the note it is under. */
+const NAME_RELATIONS = '(?:parent of|child of|jump from|referenced by|reference to|linked both ways with)'
+
 export class PlexDriver {
   constructor(private readonly scenario: Scenario) {}
 
@@ -55,12 +58,14 @@ export class PlexDriver {
   }
 
   private async getPart(title: string, selector: string): Promise<Locator> {
-    // The part is in the node, or in the layer over the notes once the note is open.
+    // The part is in the node, in the layer over the notes once the note is open, or across the node in the layer above that.
     const graph = await this.getGraph()
     const lifted = graph
       .locator('.plex__lifted')
       .filter({ has: this.scenario.page.locator('.plex__title-text').filter({ hasText: getWholeText(title) }) })
-    return (await this.getNode(title)).locator(selector).or(lifted.locator(selector))
+    const node = await this.getNode(title)
+    const across = graph.locator(`.plex__over-node[data-node=${JSON.stringify(await node.getAttribute('data-node'))}]`)
+    return node.locator(selector).or(lifted.locator(selector)).or(across.locator(selector))
   }
 
   private async hoverNote(title: string): Promise<void> {
@@ -73,8 +78,8 @@ export class PlexDriver {
     await this.hoverNote(title)
   }
 
-  async expectShowsHeading(heading: string, title: string, has: boolean): Promise<void> {
-    const headings = (await this.getPart(title, '.plex__heading-text')).filter({ hasText: getWholeText(heading) })
+  async expectShowsHeading(heading: string, has: boolean): Promise<void> {
+    const headings = this.scenario.page.locator('.headings__text').filter({ hasText: getWholeText(heading) })
     if (has) {
       await expect(headings).toHaveCount(1)
       return
@@ -93,16 +98,31 @@ export class PlexDriver {
 
   async enterHeading(heading: string, title: string): Promise<void> {
     await this.hoverNote(title)
-    await (await this.getPart(title, '.plex__heading')).filter({ hasText: getWholeText(heading) }).click()
+    await this.scenario.page.locator('.headings__row').filter({ hasText: getWholeText(heading) }).click()
   }
 
   async choose(reference: string, name: string): Promise<void> {
-    const title = escapeRegExp(this.getTitle(reference, name))
-    await (await this.getGraph()).getByRole('button', { name: new RegExp(`^${title}, (focus|parent|child|jump|reference|sibling)$`) }).click()
+    await this.clickNote(this.getTitle(reference, name), 'left')
+  }
+
+  private async clickNote(title: string, button: 'left' | 'right'): Promise<void> {
+    await this.findNode(title)
+    const at = await getMiddle(await this.getPart(title, '.plex__box'))
+    await this.scenario.page.mouse.click(at.x, at.y, { button })
   }
 
   async expectShowsNotes(rows: readonly (readonly string[])[], has: boolean): Promise<void> {
-    for (const [relation, title] of getTableBody(rows, ['relation', 'title'])) await this.expectShowsNote(title, relation, has)
+    for (const [relation = '', title = '', tag = ''] of getTableBody(rows, ['relation', 'title'], ['tag'])) {
+      await this.expectShowsNote(title, relation, has)
+      if (tag !== '') await this.expectShowsTag(title, tag, has)
+    }
+  }
+
+  private async expectShowsTag(title: string, tag: string, has: boolean): Promise<void> {
+    const { page } = this.scenario
+    const node = page.locator('.plex__node').and(page.getByLabel(new RegExp(`^${escapeRegExp(title)}, `)))
+    const stack = (await this.getGraph()).locator('.plex__stack').filter({ has: node })
+    await expect(stack.locator('[data-plex-tag]').filter({ hasText: getWholeText(tag) }), `the plex shows the tag "${tag}" of the note titled "${title}"`).toHaveCount(has ? 1 : 0)
   }
 
   /** The note is on every side of the focus note that the table names: the middle of its box is compared with the middle of the box of the focus. */
@@ -209,7 +229,7 @@ export class PlexDriver {
   }
 
   private async getName(name: string, title: string): Promise<Locator> {
-    return (await this.getGraph()).getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}, name under ${escapeRegExp(title)}$`) })
+    return (await this.getGraph()).getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}, ${NAME_RELATIONS} ${escapeRegExp(title)}$`) })
   }
 
   async expectShowsNames(rows: readonly (readonly string[])[]): Promise<void> {
@@ -217,7 +237,7 @@ export class PlexDriver {
   }
 
   async expectShowsNoNames(title: string): Promise<void> {
-    const nameButtons = (await this.getGraph()).getByRole('button', { name: new RegExp(`, name under ${escapeRegExp(title)}$`) })
+    const nameButtons = (await this.getGraph()).getByRole('button', { name: new RegExp(`, ${NAME_RELATIONS} ${escapeRegExp(title)}$`) })
     await expect(nameButtons).toHaveCount(0)
   }
 
@@ -336,7 +356,7 @@ export class PlexDriver {
   }
 
   async openMenu(title: string): Promise<void> {
-    await (await this.findNode(title)).click({ button: 'right' })
+    await this.clickNote(title, 'right')
     await expect(this.scenario.page.getByRole('menu').getByRole('menuitem').first()).toBeVisible()
   }
 

@@ -3,7 +3,7 @@ package hostvault
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -12,7 +12,7 @@ import (
 
 // Files reads the files of the vault.
 type Files struct {
-	Stat        *file.StatFile
+	Stat        *file.HashFile
 	ReadFile    *file.ReadFile
 	RangeReader file.Read
 

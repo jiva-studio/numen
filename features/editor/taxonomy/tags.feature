@@ -80,3 +80,12 @@ Feature: Tags
         | notes/Dock.md | Sea  |
         | notes/Dock.md | Quay |
         | notes/Pier.md |      |
+
+    Scenario: The plex shows the tags of a note
+      Given the person opens the note titled "Dock"
+      When the person runs the command "Show in plex" on the note tab titled "Dock"
+      Then the plex shows the following notes:
+        | relation | title | tag  |
+        | focus    | Dock  | Port |
+        | focus    | Dock  | Sea  |
+        | focus    | Dock  | Quay |

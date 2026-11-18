@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.taxonomy",
   "name": "Taxonomy",
-  "version": "2026.11.6",
+  "version": "2026.11.9",
   "protocol": 1,
   "description": "Reads and sets the tags of notes in their frontmatter, finds notes by tag in queries and lists the tags for agents",
   "capabilities": ["tools"],
@@ -12,6 +12,7 @@
     "commands": [{ "id": "tags.set", "title": "Set tags", "icon": "tag", "when": "target.isNote" }],
     "slots": [
       { "slot": "fileTree.rowEnd", "view": "file-tags" },
+      { "slot": "plexGraph.nodeBelow", "view": "plex-tags", "order": 20 },
       {
         "slot": "fileTree.context",
         "command": "tags.set",
@@ -25,18 +26,25 @@
       "version": 1,
       "functions": [
         {
-          "name": "tags",
+          "name": "hasTag",
           "args": [{ "name": "tag", "type": "string" }],
           "level": "document",
           "description": "notes with the tag or a tag nested under it in the frontmatter key tags, compared without case; a leading # is dropped",
-          "example": "tags(\"Projects\") && meaning(\"deadline\")"
+          "example": "hasTag(\"Projects\") && meaning(\"deadline\")"
         },
         {
-          "name": "isTagged",
+          "name": "hasTagExactly",
+          "args": [{ "name": "tag", "type": "string" }],
+          "level": "document",
+          "description": "notes with the tag itself in the frontmatter key tags, not only a tag nested under it, compared without case; a leading # is dropped",
+          "example": "hasTagExactly(\"Projects\") && kind == \"note\""
+        },
+        {
+          "name": "hasAnyTag",
           "args": [],
           "level": "document",
           "description": "notes with at least one tag in the frontmatter key tags",
-          "example": "!isTagged() && kind == \"note\""
+          "example": "!hasAnyTag() && kind == \"note\""
         }
       ]
     }

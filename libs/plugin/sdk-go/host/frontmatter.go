@@ -8,8 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 // ErrInvalidFrontmatterQuery is a read of frontmatter over its limits: more than 1000 paths, more than
@@ -65,55 +64,4 @@ func (c *Client) ReadFrontmatter(ctx context.Context, q FrontmatterQuery) (Front
 		page.Notes = append(page.Notes, NoteFrontmatter{SourceID: one.GetSourceId(), Path: one.GetPath(), Values: values})
 	}
 	return page, nil
-}
-
-// FrontmatterWrite sets the keys of Values on the note at Path; a nil value removes the key.
-// Baseline is the file state the caller read, the zero value writes over any state.
-type FrontmatterWrite struct {
-	Path     string
-	Values   map[string]any
-	Baseline domain.FileStat
-}
-
-// FrontmatterWritten is one outcome of a write: Stat is the note after it.
-type FrontmatterWritten struct {
-	Stat domain.FileStat
-	Err  error
-}
-
-// WriteFrontmatter sets, replaces and removes top-level frontmatter keys of notes in one call, and
-// returns one result per write, in order. A stale or failed note costs the others nothing. It needs
-// vault:write, accepts at most 1000 notes, and returns ErrNoVault while the host shows no vault.
-func (c *Client) WriteFrontmatter(ctx context.Context, writes []FrontmatterWrite) ([]FrontmatterWritten, error) {
-	notes := make([]*v1.NoteFrontmatterWrite, len(writes))
-	for i, one := range writes {
-		values := one.Values
-		if values == nil {
-			values = map[string]any{}
-		}
-		raw, err := json.Marshal(values)
-		if err != nil {
-			return nil, fmt.Errorf("write the frontmatter of %s: %w", one.Path, err)
-		}
-		notes[i] = &v1.NoteFrontmatterWrite{Path: one.Path, Values: raw, Baseline: writeFileStat(one.Baseline)}
-	}
-	res, err := c.rpc.WriteFrontmatter(ctx, request(c, &v1.WriteFrontmatterRequest{Notes: notes}))
-	if err != nil {
-		if connect.CodeOf(err) == connect.CodePermissionDenied {
-			return nil, fmt.Errorf("%w: %w", ErrPermissionDenied, err)
-		}
-		return nil, readError(err)
-	}
-	if err := fail(res.Msg.GetError()); err != nil {
-		return nil, err
-	}
-	out := make([]FrontmatterWritten, 0, len(res.Msg.GetResults()))
-	for _, one := range res.Msg.GetResults() {
-		written := FrontmatterWritten{Err: getNoteError(one.GetError(), one.GetDetail())}
-		if written.Err == nil {
-			written.Stat = readFileStat(one.GetStat())
-		}
-		out = append(out, written)
-	}
-	return out, nil
 }

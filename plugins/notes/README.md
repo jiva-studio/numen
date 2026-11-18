@@ -14,5 +14,3 @@ Write and organize Markdown notes with live formatting, `[[wikilinks]]`, tables,
 ## Settings
 
 - **Live Preview**: Format Markdown cleanly as you type, or turn off to view raw Markdown everywhere.
-- **Line Numbers**: Show or hide line numbers along the left margin of your notes.
-- **Soft Wrap**: Wrap long lines to fit the window width, or scroll horizontally.
