@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { createApi } from '@numen/plugin-sdk'
+import { createApi, type JsonValue } from '@numen/plugin-sdk'
 import { createTaxonomyApi, SERVICE } from './createTaxonomyApi'
 
-const answerJson = (value: unknown): Response =>
+const answerJson = (value: JsonValue): Response =>
   new Response(JSON.stringify(value), { headers: { 'Content-Type': 'application/json' } })
 
-const callWithBody = (body: unknown) => {
+const callWithBody = (body: JsonValue) => {
   const api = createApi(SERVICE, {
     origin: 'http://window',
     fetch: async () => answerJson(body),
