@@ -7,8 +7,8 @@ import (
 	"maps"
 	"slices"
 
-	notesmarkdown "github.com/jiva-studio/numen/libs/shared/note/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	notesmarkdown "github.com/jiva-studio/numen/libs/shared/note/markdown"
 )
 
 // The limits of one read of frontmatter, as the host has them.

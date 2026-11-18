@@ -11,9 +11,9 @@ import (
 	"connectrpc.com/connect"
 
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
