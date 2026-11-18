@@ -20,11 +20,11 @@ const FeedQuietPeriod = 500 * time.Millisecond
 // ReadHead returns the head of the feed, ListPaths the paths of the files of the changes after one number
 // and up to another, and GetContentType the type of a file by its path. Emit sends the event of the vault
 // with the types of the files the event covers. Writes closer together than Quiet are one event. The watch
-// starts before the passes of the vault write anything, and the event is sent once for a feed that holds
-// changes when the vault opens, with the types of every file of the feed, once after each burst of writes
-// that moved the head of the feed, with the types of the files those writes changed, and once after each
-// change of the plugins, with the types of every file of the feed. A read of the feed that failed is tried
-// again once, after the next quiet period. A window without plugins sends none.
+// starts from the head the feed holds when the vault opens, before the passes of the vault write anything,
+// and the event is sent once after each burst of writes that moved the head of the feed, with the types of
+// the files those writes changed, and once after each change of the plugins, with the types of every file
+// of the feed. A read of the feed that failed is tried again once, after the next quiet period. A window
+// without plugins sends none.
 type FeedEvents struct {
 	WatchWrites    func(id domain.VaultID, report func()) func()
 	WatchPlugins   func() (<-chan struct{}, func())
@@ -42,9 +42,12 @@ func (f FeedEvents) Start(ctx context.Context, v domain.Vault) func() {
 	if f.WatchWrites == nil || f.ReadHead == nil || f.ListPaths == nil || f.GetContentType == nil || f.Emit == nil {
 		return nil
 	}
-	loop := &feedLoop{events: f, vault: v, wake: make(chan struct{}, 1), plugins: nil, sent: filechange.Cursor{}}
+	var initial filechange.Cursor
+	if head, err := f.ReadHead(ctx, v.ID); err == nil {
+		initial = head.Cursor
+	}
+	loop := &feedLoop{events: f, vault: v, wake: make(chan struct{}, 1), plugins: nil, sent: initial}
 	stopWrites := f.WatchWrites(v.ID, func() { signal(loop.wake) })
-	signal(loop.wake)
 	return func() {
 		defer stopWrites()
 		if f.WatchPlugins != nil {

@@ -24,6 +24,7 @@ type feedStub struct {
 	emitted chan domain.VaultID
 	types   chan []domain.ContentType
 	failing int
+	headErr int
 }
 
 func newFeedStub() *feedStub {
@@ -45,6 +46,10 @@ func (s *feedStub) events() FeedEvents {
 		ReadHead: func(context.Context, domain.VaultID) (filechange.Head, error) {
 			s.mu.Lock()
 			defer s.mu.Unlock()
+			if s.headErr > 0 {
+				s.headErr--
+				return filechange.Head{}, errors.New("the index is busy")
+			}
 			return s.head, nil
 		},
 		ListPaths: func(_ context.Context, _ domain.VaultID, after, upTo int64) ([]string, error) {
@@ -79,6 +84,13 @@ func (s *feedStub) write(seq int64) {
 	report := s.report
 	s.mu.Unlock()
 	report()
+}
+
+func (s *feedStub) record(seq int64, path string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.head = filechange.Head{Cursor: filechange.Cursor{FeedID: "feed-1", Seq: seq}}
+	s.paths[seq] = path
 }
 
 func (s *feedStub) passQuiet(t *testing.T) {
@@ -139,14 +151,13 @@ func startFeedEvents(t *testing.T, stub *feedStub) {
 func TestAVaultWithAnEmptyFeedSendsNoEventWhenItOpens(t *testing.T) {
 	stub := newFeedStub()
 	startFeedEvents(t, stub)
-	stub.passQuiet(t)
+	stub.settle(t)
 	stub.requireEmitted(t, 0)
 }
 
 func TestAWriteThatStoredChangesSendsOneEventAfterTheQuietPeriod(t *testing.T) {
 	stub := newFeedStub()
 	startFeedEvents(t, stub)
-	stub.passQuiet(t)
 
 	stub.write(1)
 	stub.write(2)
@@ -161,7 +172,6 @@ func TestAWriteThatStoredChangesSendsOneEventAfterTheQuietPeriod(t *testing.T) {
 func TestAWriteThatStoredNoChangeSendsNoEvent(t *testing.T) {
 	stub := newFeedStub()
 	startFeedEvents(t, stub)
-	stub.passQuiet(t)
 	stub.write(4)
 	stub.passQuiet(t)
 	stub.requireEmitted(t, 1)
@@ -171,35 +181,50 @@ func TestAWriteThatStoredNoChangeSendsNoEvent(t *testing.T) {
 	stub.requireEmitted(t, 0)
 }
 
-func TestOpenVaultWithFeedChangesEmitsOneEvent(t *testing.T) {
+func TestOpenVaultWithUnchangedFeedSendsNoEvent(t *testing.T) {
 	stub := newFeedStub()
-	stub.head = filechange.Head{Cursor: filechange.Cursor{FeedID: "feed-1", Seq: 9}}
+	stub.record(1, "books/river.pdf")
 	startFeedEvents(t, stub)
+	stub.settle(t)
+	stub.requireEmitted(t, 0)
+
+	stub.writeFile(2, "books/lake.epub")
 	stub.passQuiet(t)
-	stub.requireEmitted(t, 1)
+	stub.requireTypes(t, "test/epub")
 }
 
 func TestAFailedReadOfTheFeedIsRetriedOnceAfterTheQuietPeriod(t *testing.T) {
 	stub := newFeedStub()
-	stub.head = filechange.Head{Cursor: filechange.Cursor{FeedID: "feed-1", Seq: 9}}
 	stub.failing = 1
 	startFeedEvents(t, stub)
+	stub.write(9)
 	stub.passQuiet(t)
 	stub.requireEmitted(t, 0)
 	stub.passQuiet(t)
 	stub.requireEmitted(t, 1)
 }
 
-func TestAChangeOfThePluginsSendsTheEventAgain(t *testing.T) {
+func TestAFailedInitialHeadReadRecoversOnNextWrite(t *testing.T) {
 	stub := newFeedStub()
-	stub.head = filechange.Head{Cursor: filechange.Cursor{FeedID: "feed-1", Seq: 9}}
+	stub.headErr = 1
 	startFeedEvents(t, stub)
+
+	stub.writeFile(1, "books/river.pdf")
 	stub.passQuiet(t)
-	stub.requireEmitted(t, 1)
+	stub.requireTypes(t, "test/pdf")
+}
+
+func TestAChangeOfThePluginsSendsTheEventOverTheFeed(t *testing.T) {
+	stub := newFeedStub()
+	stub.record(1, "books/river.pdf")
+	stub.record(2, "books/lake.epub")
+	startFeedEvents(t, stub)
+	stub.settle(t)
+	stub.requireEmitted(t, 0)
 
 	stub.plugins <- struct{}{}
 	stub.passQuiet(t)
-	stub.requireEmitted(t, 1)
+	stub.requireTypes(t, "test/epub", "test/pdf")
 }
 
 func TestAWindowWithoutPluginsWatchesNoFeed(t *testing.T) {
@@ -230,7 +255,6 @@ func (s *feedStub) requireTypes(t *testing.T, want ...domain.ContentType) {
 func TestAnEventCoversTheTypesOfTheFilesItsWritesChanged(t *testing.T) {
 	stub := newFeedStub()
 	startFeedEvents(t, stub)
-	stub.passQuiet(t)
 
 	stub.writeFile(1, "books/river.pdf")
 	stub.writeFile(2, "books/lake.epub")
