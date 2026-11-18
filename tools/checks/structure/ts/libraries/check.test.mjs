@@ -165,6 +165,7 @@ test("every shared library row is a leaf", () => {
 
 test("the shared libraries of this repository are read", () => {
   const dirs = readLibraries().map((one) => one.dir);
+  assert.ok(dirs.includes("libs/shared/licensing"));
   assert.ok(dirs.includes("libs/shared/onnx"));
   assert.ok(dirs.includes("libs/shared/rerank"));
   assert.ok(dirs.includes("libs/shared/tokenizer"));
