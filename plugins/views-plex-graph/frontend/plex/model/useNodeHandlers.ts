@@ -11,7 +11,6 @@ export interface NodeReports {
   readonly reach: (id: string, pointer: PointerEvent) => void
   readonly ask: (id: string) => void
   readonly menu: (id: string, at: Position, trigger: MenuTrigger) => void
-  readonly enter: (id: string, heading: string) => void
   readonly attend: (id: string, isAttended: boolean) => void
 }
 
@@ -21,7 +20,6 @@ export interface NodeListeners {
   readonly reach: (pointer: PointerEvent) => void
   readonly ask: () => void
   readonly menu: (at: Position, trigger: MenuTrigger) => void
-  readonly enter: (heading: string) => void
   readonly attend: (isAttended: boolean) => void
 }
 
@@ -48,7 +46,6 @@ export function useNodeHandlers(
         reach: (pointer) => reports.reach(id, pointer),
         ask: () => reports.ask(id),
         menu: (at, trigger) => reports.menu(id, at, trigger),
-        enter: (heading) => reports.enter(id, heading),
         attend: (isAttended) => reports.attend(id, isAttended),
       }
       listenersById.set(id, listeners)

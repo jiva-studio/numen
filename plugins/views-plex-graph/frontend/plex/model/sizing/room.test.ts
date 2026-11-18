@@ -1,6 +1,6 @@
 /**
  * The space a plex has and what is measured against it: the viewport it
- * observes, the space reserved for an icon, and the widths and headings passed
+ * observes, the space reserved for an icon, and the widths passed
  * to the drawing. Text measurement is covered by `measure.test.ts`; here it is a stub.
  */
 import { mount } from '@vue/test-utils'
@@ -25,13 +25,10 @@ const measureTitles = (room: () => TitleRoom) => {
 const METRICS: PlexMetrics = {
   node: () => 1000,
   label: () => 0,
-  heading: () => 300,
-  name: () => 0,
-  nameSize: 10,
   labelType: { ascent: 8, descent: 2, xHeight: 5 },
 }
 
-const OPTIONS = { iconWidth: 20, margin: 10, headingHeight: 20 }
+const OPTIONS = { iconWidth: 20, margin: 10 }
 
 const NODE: PlacedNode = {
   id: 'one',
@@ -148,42 +145,5 @@ describe('how wide a box opens', () => {
     stand.metrics = { ...METRICS, node: () => 300 }
     const { room } = mountFreeSpace()
     expect(room.widen.value?.(NODE)).toStrictEqual({ width: 300, offset: 0 })
-  })
-})
-
-describe('the headings placed under a node', () => {
-  const HEADINGS = [{ id: 'a', text: 'A heading', level: 1 }]
-
-  it('are none where the caller gives no headings', () => {
-    const { room } = mountFreeSpace()
-    expect(room.placedHeadings.value).toBeUndefined()
-  })
-
-  it('are requested by the node they are placed under', () => {
-    const headings = vi.fn<(id: string) => typeof HEADINGS>(() => HEADINGS)
-    const { room } = mountFreeSpace({ headings })
-    const placed = room.placedHeadings.value?.(NODE)
-    expect(headings).toHaveBeenCalledWith('one')
-    expect(placed?.headings.map((heading) => heading.id)).toStrictEqual(['a'])
-    expect(placed?.headingHeight).toBe(OPTIONS.headingHeight)
-  })
-
-  it('are as wide as the measuring says their words are', () => {
-    stand.metrics = METRICS
-    const { room } = mountFreeSpace({ headings: () => HEADINGS })
-    // The 300 the words ask for, and a padding of a quarter of a heading's height on each side.
-    expect(room.placedHeadings.value?.(NODE)?.width).toBe(300 + 2 * 5)
-  })
-
-  it('are retained inside the window the plex is in', () => {
-    stand.metrics = METRICS
-    const { room, tell } = mountFreeSpace({ headings: () => HEADINGS })
-    tell({ width: 200, height: 400 })
-    expect(room.placedHeadings.value?.(NODE)?.width).toBe(200 - 2 * OPTIONS.margin)
-  })
-
-  it('take the node box where nothing measures their words', () => {
-    const { room } = mountFreeSpace({ headings: () => HEADINGS })
-    expect(room.placedHeadings.value?.(NODE)?.width).toBe(NODE.width)
   })
 })

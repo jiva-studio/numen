@@ -206,14 +206,16 @@ describe('the notes of the vault a plugin is handed', () => {
           properties: { media: 'plugin://org.example.links/tide.mp4' },
         })),
     }))
-    const listRelatedNotes = vi.fn((request: { path: string; depth: number }) => ({
-      focus: { path: request.path, title: 'Root' },
-      focusType: 'note',
-      related: [
-        { note: { path: 'Child.md', title: 'Child' }, relation: 2, relatedTo: '' },
-        { note: { path: 'Leaf.md', title: 'Leaf' }, relation: 2, relatedTo: 'Child.md' },
-      ],
-      connections: [],
+    const listRelatedNotes = vi.fn((request: { paths: string[]; depth: number }) => ({
+      graphs: request.paths.map((path) => ({
+        focus: { path, title: 'Root' },
+        focusType: 'note',
+        related: [
+          { note: { path: 'Child.md', title: 'Child' }, relation: 2, relatedTo: '' },
+          { note: { path: 'Leaf.md', title: 'Leaf' }, relation: 2, relatedTo: 'Child.md' },
+        ],
+        connections: [],
+      })),
     }))
     const api = createAnsweredApi({
       notes: {
@@ -263,7 +265,7 @@ describe('the notes of the vault a plugin is handed', () => {
   it('reads what is around a note and the headings of notes', async () => {
     const { notes, listHeadings } = createNotes()
 
-    expect((await notes.listRelatedNotes('Root.md')).focus).toStrictEqual({
+    expect((await notes.listRelatedNotes(['Root.md']))[0]?.focus).toStrictEqual({
       path: 'Root.md',
       title: 'Root',
     })
@@ -274,12 +276,25 @@ describe('the notes of the vault a plugin is handed', () => {
   it('asks the core for depth 1 unless the plugin says 2, and maps the note an item belongs to', async () => {
     const { notes, listRelatedNotes } = createNotes()
 
-    const one = await notes.listRelatedNotes('Root.md')
-    const two = await notes.listRelatedNotes('Root.md', 2)
+    const [one] = await notes.listRelatedNotes(['Root.md'])
+    const [two] = await notes.listRelatedNotes(['Root.md'], 2)
 
     expect(listRelatedNotes.mock.calls.map((call) => call[0].depth)).toEqual([1, 2])
-    expect(one.related.map((item) => item.relatedTo)).toEqual([undefined, 'Child.md'])
-    expect(two.related.map((item) => item.relatedTo)).toEqual([undefined, 'Child.md'])
+    expect(one?.related.map((item) => item.relatedTo)).toEqual([undefined, 'Child.md'])
+    expect(two?.related.map((item) => item.relatedTo)).toEqual([undefined, 'Child.md'])
+  })
+
+  it('passes the paths and the depth to the notes api in one request', async () => {
+    const { notes, listRelatedNotes } = createNotes()
+
+    const graphs = await notes.listRelatedNotes(['Root.md', 'Other.md'], 2)
+
+    expect(listRelatedNotes).toHaveBeenCalledTimes(1)
+    expect(listRelatedNotes.mock.calls[0]?.[0]).toMatchObject({
+      paths: ['Root.md', 'Other.md'],
+      depth: 2,
+    })
+    expect(graphs.map((graph) => graph.focus.path)).toEqual(['Root.md', 'Other.md'])
   })
 
   it('finds notes by name, twenty unless told how many', async () => {

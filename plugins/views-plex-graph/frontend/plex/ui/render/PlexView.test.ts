@@ -1,12 +1,8 @@
 import { mount } from '@vue/test-utils'
-import { nextTick, ref } from 'vue'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
+import { describe, expect, it } from 'vitest'
 import PlexView from './PlexView.vue'
 import { arrangePlex, createPath, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
-import { getNodeHeadings } from '../../lib/inside'
-import { getNamesRoom } from '../../lib/names'
-import { DEFAULT_BEHAVIOR } from '../../model/behavior'
-import { stubClock } from '../../../fixtures/clock'
 import type { Drop } from '../../lib/arrange'
 import type { Position } from '../../lib/node'
 import type { PlexGraph } from '../../../types'
@@ -57,166 +53,14 @@ const midMove = interpolatePlex(arrangePlex(before), arrangePlex(after), 0.3)
 
 const VIEWPORT = { width: 1200, height: 800 }
 
-const NAMES_OPACITY = { namesOpacity: 0.3, focusedNamesOpacity: 0.9 }
-
 const mountView = () =>
   mount(PlexView, {
     props: {
-      ...NAMES_OPACITY,
       frame: midMove,
       viewport: VIEWPORT,
       nodeSize: DEFAULT_OPTIONS.nodeSize,
     },
   })
-
-describe('the order things are drawn in', () => {
-  it('draws every node, and so the headings that open under it, over the names of all of them', () => {
-    const room = getNamesRoom(
-      { above: [{ id: 'a', title: 'Heat' }], below: [{ id: 'b', title: 'Work' }] },
-      { fontSize: 10, width: 144, measure: (title) => title.length * 6 },
-    )
-    const view = mount(PlexView, {
-      attachTo: document.body,
-      props: {
-        ...NAMES_OPACITY,
-        frame: arrangePlex(before),
-        viewport: VIEWPORT,
-        nodeSize: DEFAULT_OPTIONS.nodeSize,
-        roomOf: () => room,
-      },
-    })
-
-    const lastNames = view.findAll('.plex__names').at(-1)!.element
-    const firstNode = view.get('.plex__node').element
-    expect(view.findAll('.plex__names').length).toBeGreaterThan(0)
-    expect(
-      lastNames.compareDocumentPosition(firstNode) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
-  })
-})
-
-describe('the attention of the pointer', () => {
-  const room = getNamesRoom(
-    { above: [], below: [{ id: 'a', title: 'Heat' }] },
-    { fontSize: 10, width: 144, measure: (title) => title.length * 6 },
-  )
-  const alone: PlexGraph = {
-    nodes: [
-      { id: 'focus', title: 'Start', relation: 'focus' },
-      { id: 'staying', title: 'Staying', relation: 'child' },
-    ],
-    edges: [{ from: 'focus', to: 'staying' }],
-  }
-  const mountWithNames = () =>
-    mount(PlexView, {
-      attachTo: document.body,
-      props: {
-        ...NAMES_OPACITY,
-        frame: arrangePlex(before),
-        viewport: VIEWPORT,
-        nodeSize: DEFAULT_OPTIONS.nodeSize,
-        roomOf: () => room,
-      },
-    })
-  const opacities = (view: ReturnType<typeof mountWithNames>) =>
-    view.findAll('.plex__name').map((name) => Number(name.attributes('opacity')))
-
-  it('brings the names of a node forward while the pointer is over it', async () => {
-    const view = mountWithNames()
-    expect(new Set(opacities(view))).toEqual(new Set([0.3]))
-
-    await view.get('[aria-label^="Going"]').trigger('pointerenter')
-    await nextTick()
-
-    expect(opacities(view).filter((opacity) => opacity === 0.9)).toHaveLength(1)
-  })
-
-  it('shows the names of a node at rest when it is added again after it was removed', async () => {
-    const view = mountWithNames()
-    await view.get('[aria-label^="Going"]').trigger('pointerenter')
-    await nextTick()
-
-    await view.setProps({ frame: arrangePlex(alone) })
-    await view.setProps({ frame: arrangePlex(before) })
-
-    expect(new Set(opacities(view))).toEqual(new Set([0.3]))
-  })
-
-  it('puts the names of a note back to rest once one of them is chosen', async () => {
-    const view = mountWithNames()
-    await view.findAll('.plex__name')[0]!.trigger('pointerenter')
-    expect(opacities(view).filter((opacity) => opacity === 0.9)).toHaveLength(1)
-
-    await view.findAll('.plex__name')[0]!.trigger('click')
-
-    expect(view.emitted('choose-name')).toEqual([['a']])
-    expect(new Set(opacities(view))).toEqual(new Set([0.3]))
-  })
-})
-
-describe('the headings under a note', () => {
-  const room = getNamesRoom(
-    { above: [], below: [{ id: 'a', title: 'Heat' }] },
-    { fontSize: 10, width: 144, measure: (title) => title.length * 6 },
-  )
-  const mountWithHeadings = () => {
-    const frames = stubClock()
-    const view = mount(PlexView, {
-      attachTo: document.body,
-      props: {
-        ...NAMES_OPACITY,
-        frame: arrangePlex(before),
-        viewport: VIEWPORT,
-        nodeSize: DEFAULT_OPTIONS.nodeSize,
-        roomOf: () => room,
-        behavior: { ...DEFAULT_BEHAVIOR, clock: frames.clock },
-        placedHeadings: (node) =>
-          getNodeHeadings(
-            node,
-            [
-              { id: 'one', text: 'First heading', level: 1 },
-              { id: 'two', text: 'Second heading', level: 1 },
-            ],
-            {
-              options: DEFAULT_OPTIONS,
-              deps: { viewport: VIEWPORT, margin: DEFAULT_OPTIONS.margin },
-            },
-          ),
-      },
-    })
-    const wait = async () => {
-      await nextTick()
-      vi.advanceTimersByTime(DEFAULT_BEHAVIOR.expansionDelay * 2)
-      frames.run()
-      await nextTick()
-    }
-    return { view, wait }
-  }
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  it('open under a note once the pointer has stayed on it for the wait', async () => {
-    vi.useFakeTimers()
-    const { view, wait } = mountWithHeadings()
-
-    await view.get('[aria-label^="Going"]').trigger('pointerenter')
-    await wait()
-
-    expect(view.findAll('.plex__inside')).toHaveLength(1)
-  })
-
-  it('do not open for the pointer on a name set around the note', async () => {
-    vi.useFakeTimers()
-    const { view, wait } = mountWithHeadings()
-
-    await view.findAll('.plex__name')[0]!.trigger('pointerenter')
-    await wait()
-
-    expect(view.findAll('.plex__inside')).toHaveLength(0)
-  })
-})
 
 describe('node activation', () => {
   it('emits activate with the clicked node id', async () => {
@@ -230,7 +74,6 @@ describe('gesture roles and ghost', () => {
   const mountPlexViewDuring = (props: Record<string, unknown>) =>
     mount(PlexView, {
       props: {
-        ...NAMES_OPACITY,
         frame: arrangePlex(before),
         viewport: VIEWPORT,
         nodeSize: DEFAULT_OPTIONS.nodeSize,
@@ -274,7 +117,7 @@ describe('gesture roles and ghost', () => {
 describe('viewport viewBox', () => {
   const getBox = (frame = arrangePlex(before)) => {
     const view = mount(PlexView, {
-      props: { ...NAMES_OPACITY, frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
+      props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
     const [x, y, w, h] = view.get('svg').attributes('viewBox')!.split(' ').map(Number)
     return { x: x!, y: y!, w: w!, h: h! }
@@ -319,7 +162,6 @@ describe('the links of a hovered note', () => {
     mount(PlexView, {
       attachTo: document.body,
       props: {
-        ...NAMES_OPACITY,
         frame,
         viewport: VIEWPORT,
         nodeSize: DEFAULT_OPTIONS.nodeSize,
@@ -410,7 +252,6 @@ describe('hovered edge line', () => {
   const mountTitledPlexView = () =>
     mount(PlexView, {
       props: {
-        ...NAMES_OPACITY,
         frame: titledFrame,
         viewport: VIEWPORT,
         nodeSize: DEFAULT_OPTIONS.nodeSize,
@@ -493,7 +334,6 @@ describe('hovered edge line', () => {
     const arrangedPlex = arrangePlex(titled, { measureLabel: (label) => 30 * label.length })
     const view = mount(PlexView, {
       props: {
-        ...NAMES_OPACITY,
         frame: arrangedPlex,
         viewport: VIEWPORT,
         nodeSize: DEFAULT_OPTIONS.nodeSize,
@@ -538,7 +378,6 @@ describe('bidirectional edge pair', () => {
   it('raises both edges of a pair on pointerenter', async () => {
     const view = mount(PlexView, {
       props: {
-        ...NAMES_OPACITY,
         frame: paired,
         viewport: VIEWPORT,
         nodeSize: DEFAULT_OPTIONS.nodeSize,
@@ -574,7 +413,7 @@ describe('edge arrowheads', () => {
 
   const mountWithNamesPlexView = () =>
     mount(PlexView, {
-      props: { ...NAMES_OPACITY, frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
+      props: { frame, viewport: VIEWPORT, nodeSize: DEFAULT_OPTIONS.nodeSize },
     })
 
   const parseTransform = (transform: string) => {

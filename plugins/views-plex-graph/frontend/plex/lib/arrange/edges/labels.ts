@@ -63,6 +63,7 @@ export function createTitle(
   const { anchor = position, side, shift, rise } = title
   const heading = title.heading ?? getHeading(curve, position)
   return {
+    record: title.record ?? 0,
     anchor,
     heading,
     side,
@@ -75,6 +76,7 @@ export function createTitle(
 
 /** What a title keeps wherever it is moved to along its line. */
 export interface TitleSetting {
+  readonly record?: number
   readonly anchor?: number
   readonly heading?: EdgeHeading
   readonly side: EdgeSide

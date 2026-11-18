@@ -37,3 +37,19 @@ export function getExtent(nodes: readonly PlacedNode[]): Extent {
 
   return { minX, minY, maxX, maxY }
 }
+
+/** Whether a frame holds other nodes than another, or any node of it lies more than a pixel from where the other has it, in place or in size. */
+export function isFrameMoved(from: PlexFrame, to: PlexFrame): boolean {
+  if (from.nodes.length !== to.nodes.length) return true
+  const before = new Map(from.nodes.map((node) => [node.id, node]))
+  return to.nodes.some((node) => {
+    const was = before.get(node.id)
+    return (
+      !was ||
+      Math.abs(was.x - node.x) > 1 ||
+      Math.abs(was.y - node.y) > 1 ||
+      Math.abs(was.width - node.width) > 1 ||
+      Math.abs(was.height - node.height) > 1
+    )
+  })
+}

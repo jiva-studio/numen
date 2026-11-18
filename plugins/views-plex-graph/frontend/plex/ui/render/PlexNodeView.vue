@@ -6,16 +6,19 @@ import { measureRect } from '@numen/ui'
  * gesture, which arrives as its role in one.
  *
  * While it is open it draws its parts in the layer over the notes, and stays
- * where it is in the document.
+ * where it is in the document. The views of the slot across the node are drawn in the layer above
+ * that; a pointer on them is a pointer on the node.
  */
 import { computed, inject, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import PlexNodeFace from './PlexNodeFace.vue'
-import { LIFT_LAYER, NODE_SIZES } from './layer'
+import PlexNodeOverlay from './PlexNodeOverlay.vue'
+import { LIFT_LAYER, NODE_SIZES, OVER_LAYER } from './layer'
 import type { PlexDrawnSlots, PlexNodeEvents, PlexNodeProps } from './props'
 import { useHoverFocus } from '../../model/interaction/hoverFocus'
 import { DEFAULT_BEHAVIOR } from '../../model/behavior'
 import { useOpenBox } from '../../model/sizing/expansion'
 import { useLift } from '../../model/useLift'
+import { useNodeClasses, useNodeFace } from '../../model/useNodeFace'
 import { useNodeState } from '../../model/useNodeState'
 import { getNodeEvents } from '../../model/interaction/nodeEvents'
 import { useNodePress } from '../../model/interaction/press'
@@ -26,11 +29,13 @@ import { createAriaLabel, type Position } from '../../lib/node'
 const props = withDefaults(defineProps<PlexNodeProps>(), {
   gestureRole: 'open',
   expanded: null,
-  placedHeadings: null,
   behavior: () => DEFAULT_BEHAVIOR,
   showPills: true,
   restHeight: 0,
   viewportWidth: undefined,
+  overlay: () => [],
+  path: '',
+  viewport: () => ({ width: 0, height: 0 }),
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -44,13 +49,15 @@ defineExpose({ focus: () => group.value?.focus() })
 /* --------------------------------- State ---------------------------------- */
 const group = useTemplateRef<SVGGElement>('group')
 const lifted = useTemplateRef<SVGGElement>('lifted')
+const over = useTemplateRef<SVGGElement>('over')
 const layer = inject(LIFT_LAYER, null)
+const overLayer = inject(OVER_LAYER, null)
 const sizes = inject(NODE_SIZES, null)
 
 /** Whether the box has begun to open and not yet closed. */
 const hasOpened = ref(false)
 
-const hoverFocus = useHoverFocus(() => [group.value, lifted.value])
+const hoverFocus = useHoverFocus(() => [group.value, lifted.value, over.value])
 
 const press = useNodePress(props, getMiddle, {
   activate: () => emit('activate'),
@@ -61,9 +68,9 @@ const press = useNodePress(props, getMiddle, {
 
 const { isGhost, canStop, isAnnounced } = press.role
 
-// A note works out its expanded box and its headings only while it is on or open.
+// A note works out its expanded box only while it is on or open.
 const isExpanded = computed(() => hoverFocus.isOn.value || hasOpened.value)
-const { expanded, placedHeadings, state } = useExpandedSizes(props, sizes, () => isExpanded.value)
+const { expanded, state } = useExpandedSizes(props, sizes, () => isExpanded.value)
 
 const { isHandleVisible, role, openPosition, hue } = useNodeState(state, {
   isGhost,
@@ -88,20 +95,14 @@ const { isLifted, liftTarget, onLiftKeyDown } = useLift({
   focus: hoverFocus,
 })
 
-const face = computed(() => ({
-  node: props.node,
-  box: box.value,
-  isGhost: isGhost.value,
-  isTarget: props.gestureRole === 'target',
-  showPills: props.showPills,
-  restHeight: props.restHeight,
-  placedHeadings: placedHeadings.value,
-  open: open.value,
-  isHandleVisible: isHandleVisible.value,
-  handle: handle.value,
-}))
+const face = useNodeFace(props, { box, isGhost, isHandleVisible, handle })
+const nodeClasses = useNodeClasses(props, hoverFocus.isPointerOver)
 
 const events = getNodeEvents(press, hoverFocus)
+
+const overTarget = computed(() =>
+  props.overlay.length === 0 || isGhost.value ? null : (overLayer?.value ?? null),
+)
 
 /* --------------------------------- Hooks ---------------------------------- */
 // A box that has begun to open is already over its neighbors.
@@ -138,13 +139,14 @@ function getMiddle(): Position | null {
   <g
     ref="group"
     class="plex__node"
+    :data-node="node.id"
     :style="hue"
     :transform="`translate(${node.x} ${node.y})`"
     :opacity="node.opacity"
     :tabindex="canStop ? 0 : -1"
     :aria-hidden="isAnnounced ? undefined : 'true'"
     :role="role"
-    :class="[`plex__node--${node.relation}`, `plex__node--${gestureRole}`]"
+    :class="nodeClasses"
     :aria-label="isGhost ? undefined : createAriaLabel(node)"
     @keydown="(press.handlers.onKeyDown($event), onLiftKeyDown($event))"
     @focusin="hoverFocus.onFocusIn"
@@ -154,7 +156,6 @@ function getMiddle(): Position | null {
     <PlexNodeFace
       v-if="!isLifted"
       v-bind="face"
-      @enter="(heading) => emit('enter', heading)"
       @reach="(pointer) => emit('reach', pointer)"
       @ask="emit('ask')"
     >
@@ -173,14 +174,13 @@ function getMiddle(): Position | null {
         :transform="`translate(${node.x} ${node.y})`"
         :opacity="node.opacity"
         aria-hidden="true"
-        :class="[`plex__node--${node.relation}`, `plex__node--${gestureRole}`]"
+        :class="nodeClasses"
         @keydown="onLiftKeyDown"
         v-on="events"
       >
         <PlexNodeFace
           v-bind="face"
           is-lifted
-          @enter="(heading) => emit('enter', heading)"
           @reach="(pointer) => emit('reach', pointer)"
           @ask="emit('ask')"
         >
@@ -188,6 +188,26 @@ function getMiddle(): Position | null {
             <slot name="icon" :node="drawn" />
           </template>
         </PlexNodeFace>
+      </g>
+    </Teleport>
+
+    <!-- Across the whole of the node, over the neighbors; what a pointer does there is done to this node. -->
+    <Teleport v-if="overTarget" :to="overTarget">
+      <g
+        ref="over"
+        class="plex__over-node"
+        :data-node="node.id"
+        :opacity="node.opacity"
+        :class="nodeClasses"
+        v-on="events"
+      >
+        <PlexNodeOverlay
+          :node="node"
+          :entries="overlay"
+          :path="path"
+          :rest-height="restHeight"
+          :viewport="viewport"
+        />
       </g>
     </Teleport>
   </g>
@@ -207,15 +227,21 @@ function getMiddle(): Position | null {
   cursor: pointer;
 }
 
+.plex__over-node {
+  cursor: pointer;
+}
+
 /* Hover mixes a fraction of the node's text color into its fill, which darkens
    a light node and lightens a dark one. The outline keeps the relation's hue,
    and the focused node is painted from the pair it uses. */
 .plex__node:hover :deep(.plex__box),
-.plex__lifted:hover :deep(.plex__box) {
+.plex__lifted:hover :deep(.plex__box),
+.plex__node--pointer :deep(.plex__box) {
   fill: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 8%);
 }
 
-.plex__node--focus:hover :deep(.plex__box) {
+.plex__node--focus:hover :deep(.plex__box),
+.plex__node--focus.plex__node--pointer :deep(.plex__box) {
   fill: color-mix(in oklab, var(--numen-accent), var(--numen-accent-ink) 8%);
 }
 
@@ -224,7 +250,8 @@ function getMiddle(): Position | null {
   fill: color-mix(in oklab, var(--numen-raised), var(--relation-hue) 12%);
 }
 
-.plex__node--reference:hover :deep(.plex__box) {
+.plex__node--reference:hover :deep(.plex__box),
+.plex__node--reference.plex__node--pointer :deep(.plex__box) {
   fill: color-mix(
     in oklab,
     color-mix(in oklab, var(--numen-raised), var(--relation-hue) 12%),

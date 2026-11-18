@@ -59,6 +59,11 @@
       "about": "the views under a node of the plex graph, each given the path of its note"
     },
     {
+      "name": "plexGraph.node",
+      "owner": "the plugin of the plex graph",
+      "about": "the views over the whole of a node of the plex graph, above the nodes, each given the path of its note and the size, position and scale of the node; a view that does not let clicks and drags through takes them from the node"
+    },
+    {
       "name": "palette.searchResult",
       "owner": "the palette",
       "about": "the actions of a search result that is a note, over that note"
