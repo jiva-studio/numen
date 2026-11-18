@@ -30,6 +30,7 @@ const getTitle = (path: string) => path.replace(/^.*\//, '').replace(/\.md$/, ''
 
 const createVault = (initial: Readonly<Record<string, readonly Neighbor[]>>) => {
   let neighbors = initial
+  let failing = false
   const requests: [string, number | undefined][] = []
   const toRelated = (one: Neighbor, relatedTo?: string): RelatedNote => ({
     path: one.path,
@@ -40,8 +41,9 @@ const createVault = (initial: Readonly<Record<string, readonly Neighbor[]>>) => 
     ...(relatedTo ? { relatedTo } : {}),
   })
   const notes = {
-    listRelatedNotes: async (paths: readonly string[], depth?: 1 | 2): Promise<NoteGraph[]> =>
-      paths.map((path) => {
+    listRelatedNotes: async (paths: readonly string[], depth?: 1 | 2): Promise<NoteGraph[]> => {
+      if (failing) throw new Error('the vault is not answering')
+      return paths.map((path) => {
         requests.push([path, depth])
         const own = neighbors[path] ?? []
         const beyond =
@@ -58,12 +60,16 @@ const createVault = (initial: Readonly<Record<string, readonly Neighbor[]>>) => 
           related: [...own.map((one) => toRelated(one)), ...beyond],
           connections: [],
         }
-      }),
+      })
+    },
   } as unknown as VaultNotes
   const change = (path: string, next: readonly Neighbor[]) => {
     neighbors = { ...neighbors, [path]: next }
   }
-  return { notes, requests, change }
+  const setFailing = (value: boolean) => {
+    failing = value
+  }
+  return { notes, requests, change, setFailing }
 }
 
 const PEAR = 'notes/Pear rows.md'
@@ -420,14 +426,29 @@ describe('the names while the vault changes', () => {
     expect(getNames(wrapper)).toContain('Compost')
   })
 
-  it('reads nothing again for a change of a note unrelated to the node', async () => {
-    const { host, vault } = await setupDrawn()
-    const before = vault.requests.length
+  it('adds the name of a note that starts to link to the note, though it was not related before', async () => {
+    const { host, vault, wrapper } = await setupDrawn()
 
+    vault.change(PEAR, [...ORCHARD[PEAR]!, { path: 'notes/Beehives.md', relation: 'reference' }])
     host.events.emitVaultChange({ paths: ['notes/Beehives.md'] })
     await settle()
 
-    expect(vault.requests.length).toBe(before)
+    expect(getNames(wrapper)).toContain('Beehives')
+  })
+
+  it('names the notes again after a read failed, when a related note changes next', async () => {
+    const { host, vault, wrapper } = await setupDrawn()
+
+    vault.setFailing(true)
+    host.events.emitVaultChange({ paths: ['notes/Rootstock list.md'] })
+    await settle()
+    expect(getNames(wrapper)).toStrictEqual([])
+
+    vault.setFailing(false)
+    host.events.emitVaultChange({ paths: ['notes/Grafting.md'] })
+    await settle()
+
+    expect(getNames(wrapper)).toStrictEqual(['Rootstock list', 'Grafting', 'Pollination'])
   })
 
   it('reads again for a change that does not say which notes changed', async () => {
@@ -440,7 +461,7 @@ describe('the names while the vault changes', () => {
     expect(vault.requests.length - before).toBe(1)
   })
 
-  it('leaves the names of another node as they are when only the first node changed', async () => {
+  it('keeps the names of another node as they are when only the first node changed', async () => {
     const { host, vault, show } = setup({
       ...ORCHARD,
       'notes/Quince.md': [{ path: 'notes/Jam.md', relation: 'child' }],
@@ -455,7 +476,6 @@ describe('the names while the vault changes', () => {
 
     expect(getNames(pear)).toContain('Compost')
     expect(getNames(quince)).toStrictEqual(['Jam'])
-    expect(vault.requests.filter(([path]) => path === 'notes/Quince.md')).toHaveLength(1)
   })
 
   it('stops reading when the view of the node is unmounted', async () => {
