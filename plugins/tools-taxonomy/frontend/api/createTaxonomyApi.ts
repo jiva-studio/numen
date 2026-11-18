@@ -4,6 +4,7 @@ import {
   createApi,
   type Api,
   type ApiError,
+  type JsonValue,
   type Result,
   type Unvalidated,
 } from '@numen/plugin-sdk'
@@ -12,16 +13,16 @@ import type { TagMapResponse } from '../types'
 /** The service name the manifest declares. */
 export const SERVICE = 'md.numen.tools.taxonomy'
 
-const isStringArray = (value: Unvalidated): value is readonly string[] =>
+const isStringArray = (value: JsonValue | undefined): value is readonly string[] =>
   Array.isArray(value) && value.every((entry): entry is string => typeof entry === 'string')
 
-const isRecord = (value: Unvalidated): value is { readonly [key: string]: Unvalidated } =>
+const isJsonObject = (value: Unvalidated): value is { readonly [key: string]: JsonValue } =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const parseTagMap = (reply: Unvalidated): TagMapResponse | null => {
-  if (!isRecord(reply)) return null
+  if (!isJsonObject(reply)) return null
   const rawTags = reply['tags']
-  if (!isRecord(rawTags)) return null
+  if (!isJsonObject(rawTags)) return null
   const tags: Record<string, readonly string[]> = {}
   for (const [path, found] of Object.entries(rawTags)) {
     if (!isStringArray(found)) return null
