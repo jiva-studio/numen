@@ -65,7 +65,9 @@ describe('the running plugins indicator', () => {
     await wrapper.setProps({ now: NOW + 5_000 })
 
     expect(countdown().text()).toBe('1m 50s')
-    await countdown().trigger('mouseenter')
+    countdown().element.dispatchEvent(new MouseEvent('mouseenter'))
+    row().element.dispatchEvent(new MouseEvent('mouseenter'))
+    await wrapper.vm.$nextTick()
     expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
       'Stops in 1m 50s; idle for 1m 10s',
     )

@@ -26,6 +26,7 @@ const emit = defineEmits<{
 const tip = useTooltip()
 const rows = computed(() => getRows(props.processes, props.now))
 const expandedIds = ref<ReadonlySet<string>>(new Set())
+let isEnteringCountdown = false
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClose() {
@@ -39,13 +40,16 @@ function onToggleHolders(id: string) {
 }
 
 function onEnterRow(event: Event, id: string) {
-  if (
-    event.target instanceof Element &&
-    event.target.closest('.plugin-popover__countdown') !== null
-  ) {
-    return
-  }
+  if (isEnteringCountdown) return
   tip.open(event, () => getRowTitle(id))
+}
+
+function onEnterCountdown(event: Event, id: string) {
+  isEnteringCountdown = true
+  queueMicrotask(() => {
+    isEnteringCountdown = false
+  })
+  tip.open(event, () => getCountdownHint(id))
 }
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -113,7 +117,7 @@ function getCountdownHint(id: string): string {
         </span>
         <span
           class="plugin-popover__countdown"
-          @mouseenter="tip.open($event, () => getCountdownHint(row.id))"
+          @mouseenter="onEnterCountdown($event, row.id)"
           @mouseleave="tip.close"
         >
           {{ row.countdown }}
