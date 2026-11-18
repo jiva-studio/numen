@@ -8,6 +8,7 @@ import { build } from '../fixtures/build'
 const edges = arrangePlex(build('A node', { parent: 1, child: 2, jump: 1 })).edges
 
 const title = (words: string, more: Partial<EdgeTitle> = {}): EdgeTitle => ({
+  record: 0,
   anchor: 0.5,
   heading: 'along',
   side: 0,
@@ -38,18 +39,23 @@ describe('the line of an edge', () => {
     ])
   })
 
-  it('names the path a title is set along by the plex, the place of the edge and of the title', () => {
+  it('names the path a title is set along by the plex, the notes of the edge and the label of the title', () => {
     const [edge] = edges
     const lines = getLines(
       [
-        { ...edge!, titles: [title('Words'), title('More')] },
-        { ...edge!, titles: [title('Other')] },
+        {
+          ...edge!,
+          from: 'one',
+          to: 'two',
+          titles: [title('Words'), title('More', { record: 1 })],
+        },
+        { ...edge!, from: 'one', to: 'three', titles: [title('Other', { record: 1 })] },
       ],
       'plex',
     )
     expect(lines.map((line) => line.titles.map((one) => one.path))).toStrictEqual([
-      ['plex-title-0-0', 'plex-title-0-1'],
-      ['plex-title-1-0'],
+      ['plex-title-one-_3e_two-0', 'plex-title-one-_3e_two-1'],
+      ['plex-title-one-_3e_three-1'],
     ])
   })
 

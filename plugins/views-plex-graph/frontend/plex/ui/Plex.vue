@@ -62,7 +62,7 @@ const view = useTemplateRef<InstanceType<typeof PlexView>>('view')
 
 const slots = useSlots()
 
-const { room, options, measures, widen, placedHeadings } = useFreeSpace(
+const { room, isMeasured, options, measures, widen } = useFreeSpace(
   frameElement,
   props,
   () => !!slots.icon,
@@ -71,9 +71,9 @@ const { room, options, measures, widen, placedHeadings } = useFreeSpace(
 /** How the nodes behave, handed down as one. */
 const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
-const { setWidgets, getNodeRoom } = useWidgetRooms(options)
+const rooms = useWidgetRooms(options, props)
 
-const { frame, isMoving } = usePlexTransition(
+const { frame, waiting, isMoving } = usePlexTransition(
   () => props.graph,
   () => ({
     options: options.value,
@@ -81,11 +81,15 @@ const { frame, isMoving } = usePlexTransition(
     measure: measures.value?.node,
     measureLabel: measures.value?.label,
     labelType: measures.value?.labelType,
-    room: getNodeRoom.value,
+    room: rooms.getNodeRoom.value,
   }),
   {
     duration: () => props.duration,
     clock: props.clock,
+    isReady: rooms.areLoaded,
+    // The size of the window decides which nodes are shown, so nothing is arranged before it is reported.
+    isActive: () => isMeasured.value,
+    hasWidgets: () => rooms.hasWidgets(),
   },
 )
 
@@ -174,11 +178,14 @@ watch(
       :can-reach="canReach"
       :relation-name="relationName"
       :widen="widen"
-      :placed-headings="placedHeadings"
       :widgets-above="widgetsAbove"
       :widgets-below="widgetsBelow"
+      :widgets-over="widgetsOver"
       :get-path="getPath"
-      :set-widgets="setWidgets"
+      :set-widgets="rooms.setWidgets"
+      :set-ready="rooms.setReady"
+      :waiting="waiting"
+      :clock="clock"
       :behavior="behavior"
       :gesture="gesture"
       :dragging="dragging"
@@ -189,7 +196,6 @@ watch(
       @reach="gesture.begin"
       @ask="gesture.ask"
       @menu="(id, at, trigger) => emit('menu', id, at, trigger)"
-      @enter="(id, heading) => emit('enter', id, heading)"
       @edge-menu="(pair, at) => emit('edge-menu', pair, at)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>

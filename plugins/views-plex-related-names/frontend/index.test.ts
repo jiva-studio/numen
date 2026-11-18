@@ -41,24 +41,26 @@ const createVault = (initial: Readonly<Record<string, readonly Neighbor[]>>) => 
     ...(relatedTo ? { relatedTo } : {}),
   })
   const notes = {
-    listRelatedNotes: async (path: string, depth?: 1 | 2): Promise<NoteGraph> => {
-      requests.push([path, depth])
+    listRelatedNotes: async (paths: readonly string[], depth?: 1 | 2): Promise<NoteGraph[]> => {
       if (failing) throw new Error('the vault is not answering')
-      const own = neighbors[path] ?? []
-      const beyond =
-        depth === 2
-          ? own.flatMap((near) =>
-              (neighbors[near.path] ?? [])
-                .filter((far) => far.path !== path)
-                .map((far) => toRelated(far, near.path)),
-            )
-          : []
-      return {
-        focus: { path, title: getTitle(path) },
-        focusType: 'note',
-        related: [...own.map((one) => toRelated(one)), ...beyond],
-        connections: [],
-      }
+      return paths.map((path) => {
+        requests.push([path, depth])
+        const own = neighbors[path] ?? []
+        const beyond =
+          depth === 2
+            ? own.flatMap((near) =>
+                (neighbors[near.path] ?? [])
+                  .filter((far) => far.path !== path)
+                  .map((far) => toRelated(far, near.path)),
+              )
+            : []
+        return {
+          focus: { path, title: getTitle(path) },
+          focusType: 'note',
+          related: [...own.map((one) => toRelated(one)), ...beyond],
+          connections: [],
+        }
+      })
     },
   } as unknown as VaultNotes
   const change = (path: string, next: readonly Neighbor[]) => {
@@ -209,12 +211,12 @@ describe('the view under a node', () => {
     expect(getNames(await show('related', PEAR))).not.toContain('Clones')
   })
 
-  it('reads the notes related to the note with depth 2', async () => {
+  it('reads the notes related to the note with depth 1', async () => {
     const { show, vault } = setup()
 
     await show('related', PEAR)
 
-    expect(vault.requests).toContainEqual([PEAR, 2])
+    expect(vault.requests).toContainEqual([PEAR, 1])
     expect(vault.requests.every(([path]) => path === PEAR)).toBe(true)
   })
 
@@ -277,28 +279,6 @@ describe('choosing a name', () => {
     await show('related', PEAR)
 
     expect(getRuns()).toStrictEqual([])
-  })
-})
-
-describe('the setting Show notes related to related notes', () => {
-  it('draws no name in either view while it is off', async () => {
-    const { show } = setup(ORCHARD, { showNames: false })
-
-    expect(getNames(await show('parents', PEAR))).toStrictEqual([])
-    expect(getNames(await show('related', PEAR))).toStrictEqual([])
-  })
-
-  it('takes the names away when it is turned off, and brings them back when it is turned on', async () => {
-    const { context, show } = setup()
-    const wrapper = await show('related', PEAR)
-
-    context.setSetting('showNames', false)
-    await flushPromises()
-    expect(getNames(wrapper)).toStrictEqual([])
-
-    context.setSetting('showNames', true)
-    await flushPromises()
-    expect(getNames(wrapper)).toStrictEqual(['Rootstock list', 'Grafting', 'Pollination'])
   })
 })
 
@@ -493,18 +473,6 @@ describe('the names while the vault changes', () => {
 
     host.events.emitVaultChange({ paths: [PEAR] })
     wrapper.unmount()
-    await settle()
-
-    expect(vault.requests.length).toBe(before)
-  })
-
-  it('reads nothing on a change while the setting hides the names', async () => {
-    const { context, host, vault } = await setupDrawn()
-    context.setSetting('showNames', false)
-    await flushPromises()
-    const before = vault.requests.length
-
-    host.events.emitVaultChange({ paths: [PEAR] })
     await settle()
 
     expect(vault.requests.length).toBe(before)

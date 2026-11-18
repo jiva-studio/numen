@@ -17,7 +17,8 @@ const NAMES: NodeRoom = { top: 16, bottom: 60, width: 140 }
 const PARENT_NAMES: NodeRoom = { top: 16, bottom: 45, width: 124 }
 const NO_ROOM: NodeRoom = { top: 0, bottom: 0, width: 0 }
 
-const getRoom = (node: PlexNode): NodeRoom => (node.relation === 'parent' ? PARENT_NAMES : NAMES)
+const getRoom = (node: PlexNode): NodeRoom =>
+  node.relation === 'focus' ? NO_ROOM : node.relation === 'parent' ? PARENT_NAMES : NAMES
 
 interface Box {
   readonly id: string
@@ -28,7 +29,7 @@ interface Box {
 }
 
 const getBox = (node: PlacedNode): Box => {
-  const room = node.relation === 'focus' ? NO_ROOM : getRoom(node)
+  const room = getRoom(node)
   const { width, height } = getFootprint(node, room)
   const y = getFootprintCenterY(node.y, room)
   return {

@@ -6,7 +6,7 @@ import {
   NOTE_MARKER,
   NOTE_RELATION,
   NOTE_ROLE,
-  ListRelatedNotesResponseSchema,
+  NoteGraphSchema,
   asFailure,
   asValue,
 } from '@numen/core-client'
@@ -47,7 +47,7 @@ describe('mapWriteResult', () => {
 
 describe('mapNoteGraph', () => {
   it('names an absent focus with empty strings', () => {
-    expect(mapNoteGraph(create(ListRelatedNotesResponseSchema, {}))).toEqual({
+    expect(mapNoteGraph(create(NoteGraphSchema, {}))).toEqual({
       focus: { path: '', title: '' },
       focusType: 'note',
       related: [],
@@ -56,7 +56,7 @@ describe('mapNoteGraph', () => {
   })
 
   it('carries the focus, and every related note that has a relation and a note, with their tab kinds', () => {
-    const answer = create(ListRelatedNotesResponseSchema, {
+    const answer = create(NoteGraphSchema, {
       focus: { path: 'Here.md', title: 'Here' },
       focusType: 'sample',
       focusTabKind: 'samples',
@@ -114,7 +114,7 @@ describe('mapNoteGraph', () => {
 describe('mapNoteGraph references', () => {
   const map = (direction: number | undefined) =>
     mapNoteGraph(
-      create(ListRelatedNotesResponseSchema, {
+      create(NoteGraphSchema, {
         focus: { path: 'Here.md', title: 'Here' },
         related: [
           {
@@ -146,7 +146,7 @@ describe('mapNoteGraph references', () => {
 
   it('carries no direction on a note that is not a reference', () => {
     const [note] = mapNoteGraph(
-      create(ListRelatedNotesResponseSchema, {
+      create(NoteGraphSchema, {
         focus: { path: 'Here.md', title: 'Here' },
         related: [
           {

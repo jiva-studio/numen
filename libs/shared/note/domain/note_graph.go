@@ -66,6 +66,9 @@ const (
 	DepthFar RelationDepth = 2
 )
 
+// MaxRelatedNotePaths is the most notes one call gathers the related notes of.
+const MaxRelatedNotePaths = 64
+
 // ErrInvalidRelationDepth is a depth that is none of the two.
 var ErrInvalidRelationDepth = errors.New("the depth of related notes is 1 or 2")
 

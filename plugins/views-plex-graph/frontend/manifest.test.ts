@@ -8,7 +8,6 @@ import { describe, expect, it } from 'vitest'
 import type { JsonValue } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
 import { readLook } from './model/look'
-import { readNesting } from './model/nesting'
 
 const manifest = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
@@ -207,6 +206,16 @@ describe('the settings the plex left to the plugin Plex Related Names', () => {
   })
 })
 
+describe('the settings the plex left to the plugin Plex Headings', () => {
+  const { settings } = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
+  ) as { settings: readonly { key: string }[] }
+
+  it('are no longer declared by the plex', () => {
+    expect(settings.map((one) => one.key).filter((key) => key === 'headingLimit')).toStrictEqual([])
+  })
+})
+
 describe('the settings the code reads', () => {
   interface Setting {
     key: string
@@ -227,11 +236,8 @@ describe('the settings the code reads', () => {
   const readValues = (initialSettings: Record<string, JsonValue>): Record<string, unknown> => {
     const context = createContext(initialSettings)
     const look = readLook(context)
-    const nesting = readNesting(context)
     return {
       ...Object.fromEntries(Object.entries(look).map(([key, ref]) => [key, ref.value])),
-      nestHeadings: nesting.isNesting.value,
-      headingLimit: nesting.headings.value,
     }
   }
 

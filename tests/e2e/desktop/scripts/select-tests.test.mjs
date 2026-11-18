@@ -173,3 +173,9 @@ await test('a change to the plex related names plugin selects the acceptance sce
     getScope(['plugins/views-plex-related-names/frontend/index.ts']).split(' ').includes('acceptance'),
   )
 })
+
+await test('a change to the plex headings plugin selects the acceptance scenarios that guard the headings of the plex', () => {
+  assert.ok(
+    getScope(['plugins/views-plex-headings/frontend/index.ts']).split(' ').includes('acceptance'),
+  )
+})

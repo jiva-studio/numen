@@ -121,21 +121,26 @@ export const TabNamedByTooltip: Story = {
       </div>`,
   }),
   play: async ({ canvasElement }) => {
-    const tab = canvasElement.querySelector(`[data-workspace-tab="${BESIDE}"]`) as HTMLElement
-    const getTooltip = () => document.body.querySelector('[role="tooltip"]')
+    const getTab = (id: TabId) =>
+      canvasElement.querySelector(`[data-workspace-tab="${id}"]`) as HTMLElement
+    // The tooltip a tab points at, so one that another story left in the body does not count.
+    const getTooltip = (tab: HTMLElement) => {
+      const id = tab.getAttribute('aria-describedby')
+      return id ? document.getElementById(id) : null
+    }
+    const tab = getTab(BESIDE)
 
     await userEvent.unhover(tab)
     await expect(tab.querySelector('[title]')).toBeNull()
-    await expect(getTooltip()).toBeNull()
+    await expect(getTooltip(tab)).toBeNull()
 
     await userEvent.hover(tab)
-    await expect(getTooltip()).toHaveTextContent('Beside')
-    await expect(tab).toHaveAttribute('aria-describedby', getTooltip()?.id ?? '')
+    await expect(getTooltip(tab)).toHaveTextContent('Beside')
 
     await userEvent.unhover(tab)
-    await expect(getTooltip()).toBeNull()
+    await expect(getTooltip(tab)).toBeNull()
 
     await userEvent.keyboard('{Tab}')
-    await expect(getTooltip()).toHaveTextContent('Note')
+    await expect(getTooltip(getTab(NOTE_TAB))).toHaveTextContent('Note')
   },
 }

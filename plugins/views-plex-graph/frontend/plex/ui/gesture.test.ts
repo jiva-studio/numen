@@ -8,8 +8,10 @@
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import Plex from './Plex.vue'
 import { build } from '../fixtures/build'
+import { fixedViewport } from '../fixtures/viewport'
 import type { PlexRelation } from '../../types'
 
 const GRAPH = build('A node', { parent: 1, child: 2, jump: 1 })
@@ -35,11 +37,12 @@ function stubMatrix(element: SVGSVGElement) {
 
 type PlexProps = InstanceType<typeof Plex>['$props']
 
-const mountPlex = (props: Partial<PlexProps> = {}) => {
+const mountPlex = async (props: Partial<PlexProps> = {}) => {
   const plex = mount(Plex, {
-    props: { graph: GRAPH, duration: 0, ...props },
+    props: { graph: GRAPH, duration: 0, viewport: fixedViewport, ...props },
     attachTo: document.body,
   })
+  await nextTick()
   const svg = plex.find('svg').element as SVGSVGElement
   stubMatrix(svg)
   return { plex, svg }
@@ -48,7 +51,7 @@ const mountPlex = (props: Partial<PlexProps> = {}) => {
 const pointer = (type: string, x: number, y: number) =>
   new PointerEvent(type, { clientX: x, clientY: y, pointerId: 1, bubbles: true })
 
-async function takeHold(plex: ReturnType<typeof mountPlex>['plex'], title: string) {
+async function takeHold(plex: Awaited<ReturnType<typeof mountPlex>>['plex'], title: string) {
   const node = plex.get(`[aria-label^="${title}"]`)
   await node.trigger('pointerenter')
   node.get('.plex__handle').element.dispatchEvent(pointer('pointerdown', 600, 400))
@@ -58,7 +61,7 @@ async function takeHold(plex: ReturnType<typeof mountPlex>['plex'], title: strin
 
 describe('the handle', () => {
   it('is not there until a pointer is over the node', async () => {
-    const { plex } = mountPlex()
+    const { plex } = await mountPlex()
     expect(plex.find('.plex__handle').exists()).toBe(false)
 
     await plex.get('[aria-label^="A node"]').trigger('pointerenter')
@@ -70,7 +73,7 @@ describe('the handle', () => {
 
   it('does not navigate when it is used', async () => {
     // click has to stop there or reaching out would also walk away.
-    const { plex } = mountPlex()
+    const { plex } = await mountPlex()
     const node = plex.get(`[aria-label^="${A_CHILD}"]`)
     await node.trigger('pointerenter')
 
@@ -83,7 +86,7 @@ describe('the handle', () => {
   })
 
   it('is not offered when the caller allows no relation at all', async () => {
-    const { plex } = mountPlex({ creatable: [] })
+    const { plex } = await mountPlex({ creatable: [] })
     await plex.get('[aria-label^="A node"]').trigger('pointerenter')
     expect(plex.find('.plex__handle').exists()).toBe(false)
   })
@@ -91,7 +94,7 @@ describe('the handle', () => {
 
 describe('releasing', () => {
   it('asks for a node in the relation the gesture went towards', async () => {
-    const { plex, svg } = mountPlex()
+    const { plex, svg } = await mountPlex()
     await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointermove', 600, 40))
@@ -103,7 +106,7 @@ describe('releasing', () => {
   })
 
   it('asks for a link when it lands on another node', async () => {
-    const { plex, svg } = mountPlex()
+    const { plex, svg } = await mountPlex()
     const child = plex.get('[aria-label$=", child"]')
     const coord = child
       .attributes('transform')!
@@ -124,7 +127,7 @@ describe('releasing', () => {
   it('asks for a child when the handle is only clicked', async () => {
     // The most common intent is one more child, and requiring a drag would put
     // it out of reach of a trackpad.
-    const { plex, svg } = mountPlex()
+    const { plex, svg } = await mountPlex()
     await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointerup', 600, 400))
@@ -136,7 +139,7 @@ describe('releasing', () => {
   it('asks for the first relation there is when a child is not one of them', async () => {
     // A click has no direction to read, so it falls back on what the caller
     // does allow and not inventing a relation they ruled out.
-    const { plex, svg } = mountPlex({ creatable: ['jump', 'parent'] })
+    const { plex, svg } = await mountPlex({ creatable: ['jump', 'parent'] })
     await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointerup', 600, 400))
@@ -146,7 +149,7 @@ describe('releasing', () => {
   })
 
   it('asks for nothing towards a relation the caller left out', async () => {
-    const { plex, svg } = mountPlex()
+    const { plex, svg } = await mountPlex()
     await takeHold(plex, 'A node')
 
     // Rightwards is where siblings sit, and a sibling is not made directly.
@@ -161,7 +164,7 @@ describe('releasing', () => {
 
 describe('giving up', () => {
   it('asks for nothing when Escape is pressed mid-gesture', async () => {
-    const { plex, svg } = mountPlex()
+    const { plex, svg } = await mountPlex()
     await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointermove', 600, 40))
@@ -177,7 +180,7 @@ describe('giving up', () => {
     // Escape and nothing else. Cancelling on whatever was pressed would make
     // the gesture impossible to hold while typing, and looks the same in a
     // test that only ever presses Escape.
-    const { plex, svg } = mountPlex()
+    const { plex, svg } = await mountPlex()
     await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointermove', 600, 40))
@@ -193,7 +196,7 @@ describe('giving up', () => {
 
 describe('while a gesture is under way', () => {
   it('draws the thread it is dragging behind it', async () => {
-    const { plex, svg } = mountPlex()
+    const { plex, svg } = await mountPlex()
     await takeHold(plex, 'A node')
     expect(plex.find('.plex__thread').exists()).toBe(true)
 
@@ -203,7 +206,7 @@ describe('while a gesture is under way', () => {
   })
 
   it('shows where a new node would go, and says which relation', async () => {
-    const { plex, svg } = mountPlex()
+    const { plex, svg } = await mountPlex()
     await takeHold(plex, 'A node')
 
     svg.dispatchEvent(pointer('pointermove', 600, 40))
@@ -216,7 +219,7 @@ describe('while a gesture is under way', () => {
   it('says it in the words it was given, not in its own', async () => {
     // The one relation the plex has to write into the graph, and the label for
     // it is the caller's, as it is for the overflow line.
-    const { plex, svg } = mountPlex({
+    const { plex, svg } = await mountPlex({
       relationName: (relation: PlexRelation) => `→ ${relation.toUpperCase()}`,
     })
     await takeHold(plex, 'A node')
@@ -228,7 +231,7 @@ describe('while a gesture is under way', () => {
   })
 
   it('marks the node a link would be made to instead', async () => {
-    const { plex, svg } = mountPlex()
+    const { plex, svg } = await mountPlex()
     const child = plex.get('[aria-label$=", child"]')
     const coord = child
       .attributes('transform')!
@@ -246,7 +249,7 @@ describe('while a gesture is under way', () => {
 
 describe('releasing towards the left when the focus has references', () => {
   it('asks for a jump, never a reference', async () => {
-    const { plex, svg } = mountPlex({
+    const { plex, svg } = await mountPlex({
       graph: build('A node', { parent: 1, child: 2, jump: 1, reference: 2 }),
     })
     await takeHold(plex, 'A node')

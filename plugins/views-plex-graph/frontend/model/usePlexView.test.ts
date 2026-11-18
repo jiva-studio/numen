@@ -22,8 +22,8 @@ const createEmptyNoteGraph = (): NoteGraph => ({
   connections: [],
 })
 
-const fake = (listRelatedNotes: RelatedNoteQueries['listRelatedNotes']): RelatedNoteQueries => ({
-  listRelatedNotes,
+const fake = (read: (path: string) => Promise<NoteGraph>): RelatedNoteQueries => ({
+  listRelatedNotes: async ([path]) => [await read(path!)],
 })
 
 describe('a plex still being read', () => {
@@ -316,5 +316,21 @@ describe('a note the vault does not hold yet', () => {
 
     expect(plex.nextPath.value).toBe('')
     expect(plex.here.value).toBe('Quantum.md')
+  })
+})
+
+describe('a plex reading its focus', () => {
+  it('loads the focus with one path and the depth it shows', async () => {
+    const asked: { paths: readonly string[]; depth: 1 | 2 | undefined }[] = []
+    const plex = usePlexView({
+      listRelatedNotes: async (paths, depth) => {
+        asked.push({ paths, depth })
+        return paths.map(answer)
+      },
+    })
+
+    await plex.go('Root.md')
+
+    expect(asked).toEqual([{ paths: ['Root.md'], depth: 1 }])
   })
 })

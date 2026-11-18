@@ -74,6 +74,7 @@ export function separateTitles(
     })
     // A title of a pair keeps the reading of its record; the one title of a line reads the readable way along the line, wherever it is set.
     const setting: TitleSetting = {
+      record: title.record,
       anchor: title.anchor,
       side: title.side,
       shift: title.shift,
