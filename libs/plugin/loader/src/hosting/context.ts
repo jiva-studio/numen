@@ -10,6 +10,7 @@ import type {
   FileSelectEvent,
   HostServices,
   JsonValue,
+  LogHost,
   PluginContext,
   PluginEvents,
   PluginSettings,
@@ -178,12 +179,18 @@ function trackConnections(
   return { ...connections, onChange: (handler) => add(onChange(handler)) }
 }
 
+function trackLogs(logs: LogHost | undefined, add: Track): LogHost | undefined {
+  if (!logs) return undefined
+  return { ...logs, watch: (handler) => add(logs.watch(handler)) }
+}
+
 function createWork(pluginId: string, host: PluginContextHost, add: Track): PluginWork {
   const { work } = host
   return pickDefinedParts<PluginWork>({
     tasks: work.getTasks(pluginId),
     backgroundTasks: work.getBackgroundTasks(),
     processes: work.getProcesses(),
+    logs: trackLogs(work.getLogs(pluginId), add),
     connections: trackConnections(work.getConnections(pluginId), add),
   })
 }

@@ -46,7 +46,9 @@ const isRule = (value: Rule | Tree): value is Rule => Array.isArray((value as Ru
 function createFakeServices(rules: Tree): Record<string, unknown> {
   const fake: Record<string, unknown> = {}
   for (const [key, rule] of Object.entries(rules)) {
-    fake[key] = isRule(rule) ? vi.fn(() => Promise.resolve([])) : createFakeServices(rule)
+    fake[key] = isRule(rule)
+      ? vi.fn(() => (rule.isAsync ? Promise.resolve([]) : { dispose: vi.fn() }))
+      : createFakeServices(rule)
   }
   return fake
 }
@@ -104,6 +106,7 @@ function createHost(
       getTasks: () => work.tasks,
       getBackgroundTasks: () => work.backgroundTasks,
       getProcesses: () => work.processes,
+      getLogs: () => work.logs,
       ...overrides.work,
     },
   })

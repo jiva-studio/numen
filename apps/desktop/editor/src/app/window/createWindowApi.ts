@@ -10,6 +10,7 @@ import {
   createCatalogReader,
   createDeclaredCommandsApi,
   createHealthApi,
+  createLogHost,
   createPluginHostApi,
   createProcessHost,
 } from '@/entities/plugin'
@@ -72,6 +73,7 @@ export function createWindowApi(transports: WindowTransports) {
       }),
       health: createHealthApi(pluginClients.pluginHealth),
       processes: createProcessHost(pluginClients.pluginService),
+      logs: createLogHost(pluginClients.logService),
       listCatalog: createCatalogReader(pluginClients.pluginCatalog),
       findTabKindPlugin: createTabKindPluginFinder(pluginClients.pluginCatalog),
     },

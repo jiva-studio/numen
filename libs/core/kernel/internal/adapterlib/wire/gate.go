@@ -2,16 +2,40 @@ package wire
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"strconv"
+	"strings"
 	"sync/atomic"
+	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
 )
 
 // ErrShut is returned for a request to a window that has been shut; the window answers no further requests.
 var ErrShut = errors.New("this window is shut")
+
+// CallClock provides the current instant for measuring RPC duration.
+type CallClock interface {
+	Now() time.Time
+}
+
+// CallTrace records structured log entries for unary RPC calls passing through a Gate.
+type CallTrace struct {
+	clock  CallClock
+	record func(logs.Entry)
+}
+
+// NewCallTrace returns a call tracer using clock and reporting entries to record.
+func NewCallTrace(clock CallClock, record func(logs.Entry)) *CallTrace {
+	return &CallTrace{clock: clock, record: record}
+}
 
 type inflight struct {
 	in broadcast.Inflight
@@ -26,6 +50,11 @@ func (w *inflight) seal() <-chan struct{} { return w.in.Seal() }
 type Gate struct {
 	closed    atomic.Bool
 	questions inflight
+	trace     atomic.Pointer[CallTrace]
+}
+
+func (g *Gate) SetCallTrace(trace *CallTrace) {
+	g.trace.Store(trace)
 }
 
 // Close rejects all new requests permanently. It returns after the requests
@@ -46,7 +75,8 @@ func (g *Gate) BeginQuestion() bool { return g.questions.begin() }
 func (g *Gate) FinishQuestion() { g.questions.finish() }
 
 // CountQuestions counts each call to a service among the questions the window
-// is answering, and refuses it once the window is shut.
+// is answering, refuses it once the window is shut, and records a structured log entry when a
+// CallTrace is attached.
 func (g *Gate) CountQuestions() connect.HandlerOption {
 	return connect.WithInterceptors(connect.UnaryInterceptorFunc(
 		func(next connect.UnaryFunc) connect.UnaryFunc {
@@ -55,8 +85,98 @@ func (g *Gate) CountQuestions() connect.HandlerOption {
 					return nil, connect.NewError(connect.CodeUnavailable, ErrShut)
 				}
 				defer g.questions.finish()
-				return next(ctx, r)
+
+				trace := g.trace.Load()
+				if trace == nil || trace.clock == nil || trace.record == nil || isLogProcedure(r.Spec().Procedure) {
+					return next(ctx, r)
+				}
+				start := trace.clock.Now()
+				resp, err := next(ctx, r)
+				trace.recordCall(ctx, start, r, resp, err)
+				return resp, err
 			}
 		},
 	))
+}
+
+func isLogProcedure(procedure string) bool {
+	return strings.HasPrefix(procedure, "/numen.v1.LogService/")
+}
+
+func (t *CallTrace) recordCall(
+	ctx context.Context, start time.Time, req connect.AnyRequest, resp connect.AnyResponse, err error,
+) {
+	duration := t.clock.Now().Sub(start)
+	service, method := splitProcedure(req.Spec().Procedure)
+	level := getProcedureLevel(method, err)
+	props := map[string]string{
+		"service":    strconv.Quote(service),
+		"method":     strconv.Quote(method),
+		"request":    encodeMessageJSON(req.Any()),
+		"durationMs": strconv.FormatFloat(float64(duration.Microseconds())/1000.0, 'f', -1, 64),
+	}
+	if caller := describeCaller(plugindomain.GetCaller(ctx)); caller != "" {
+		props["caller"] = strconv.Quote(caller)
+	}
+	if err != nil {
+		props["error"] = strconv.Quote(err.Error())
+	} else if resp != nil {
+		props["response"] = encodeMessageJSON(resp.Any())
+	}
+	t.record(logs.Entry{
+		Time:       start,
+		Level:      level,
+		Source:     logs.SourceRPC,
+		Message:    service + "/" + method,
+		Properties: props,
+	})
+}
+
+func splitProcedure(procedure string) (service, method string) {
+	trimmed := strings.TrimPrefix(procedure, "/")
+	fullService, methodName, ok := strings.Cut(trimmed, "/")
+	if !ok {
+		return trimmed, ""
+	}
+	if idx := strings.LastIndex(fullService, "."); idx >= 0 {
+		fullService = fullService[idx+1:]
+	}
+	return fullService, methodName
+}
+
+func getProcedureLevel(method string, err error) logs.Level {
+	if err != nil {
+		return logs.LevelError
+	}
+	for _, prefix := range []string{"Create", "Rename", "Remove", "Delete", "Execute", "Add", "Open", "Move", "Empty", "Update", "Retry", "Install", "Uninstall"} {
+		if strings.HasPrefix(method, prefix) {
+			return logs.LevelInfo
+		}
+	}
+	return logs.LevelDebug
+}
+
+func describeCaller(caller plugindomain.Caller, ok bool) string {
+	if !ok {
+		return ""
+	}
+	if caller.PluginID != "" {
+		return caller.PluginID
+	}
+	return caller.Who
+}
+
+func encodeMessageJSON(msg any) string {
+	if msg == nil {
+		return "{}"
+	}
+	if pb, ok := msg.(proto.Message); ok {
+		if raw, err := protojson.Marshal(pb); err == nil {
+			return string(raw)
+		}
+	}
+	if raw, err := json.Marshal(msg); err == nil {
+		return string(raw)
+	}
+	return "{}"
 }

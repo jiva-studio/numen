@@ -101,6 +101,8 @@ func (f *File) resetApp(declared manifest.Setting) {
 		f.Titles = DefaultTitles()
 	case keyProfile:
 		f.Performance = DefaultPerformance()
+	case keyLogLevel:
+		f.Logging = DefaultLogging()
 	default:
 		f.Editor.reset(declared.Key)
 		f.Search.reset(declared.Key)

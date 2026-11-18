@@ -11,6 +11,7 @@ import {
   createConnectionCallServiceClient,
   createConnectionClient,
   createFileClient,
+  createLogServiceClient,
   createNoteClient,
   createPluginCatalog,
   createPluginClient,
@@ -75,6 +76,7 @@ export const createPluginHostClients = (transport: Transport) => {
     pluginHealth: createPluginHealthClient(plugins),
     pluginCatalog: createPluginCatalog(createCatalogClient(transport)),
     connectionCalls: createConnectionCallClient(createConnectionCallServiceClient(transport)),
+    logService: createLogServiceClient(plugins),
   }
 }
 

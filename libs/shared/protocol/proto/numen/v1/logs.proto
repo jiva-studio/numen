@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// LogService records and streams the structured log entries of the application,
+// the database, the windows and the plugins.
+//
+// A plugin backend calls WriteLog through the host endpoint, which names the
+// plugin by its token. A window calls WriteLog for itself or for a plugin
+// frontend, and WatchLogs to follow the log stream.
+service LogService {
+  // WriteLog appends one structured entry to the log. An entry without a
+  // message answers INVALID_ARGUMENT.
+  rpc WriteLog(WriteLogRequest) returns (WriteLogResponse);
+
+  // WatchLogs sends the recent entries at once and each new batch as entries
+  // arrive, for as long as the caller listens.
+  rpc WatchLogs(WatchLogsRequest) returns (stream WatchLogsResponse);
+}
+
+// LogLevel is the severity of a log entry. The zero value means nothing.
+enum LogLevel {
+  LOG_LEVEL_UNSPECIFIED = 0;
+
+  // Detailed trace entries, including SQL queries and RPC calls.
+  LOG_LEVEL_DEBUG = 1;
+
+  // Normal work of the application and its plugins.
+  LOG_LEVEL_INFO = 2;
+
+  // Unexpected conditions that do not stop the operation.
+  LOG_LEVEL_WARNING = 3;
+
+  // Failures of an operation, a query, a call or a plugin.
+  LOG_LEVEL_ERROR = 4;
+}
+
+// LogEntry is one structured record in the application log.
+message LogEntry {
+  // When the entry was recorded, in milliseconds since the Unix epoch.
+  int64 time_unix_ms = 1;
+
+  LogLevel level = 2;
+
+  // Who wrote the entry: "core", "sql", "rpc", "window", or the id of a plugin.
+  string source = 3;
+
+  // The summary line of the entry.
+  string message = 4;
+
+  // The structured properties of the entry, each value encoded as JSON.
+  map<string, string> properties_json = 5;
+}
+
+message WriteLogRequest {
+  LogLevel level = 1;
+
+  // Who wrote the entry when a window calls ("window" or a plugin id). The host
+  // endpoint sets the source from the plugin token.
+  string source = 2;
+
+  string message = 3;
+
+  // The structured properties of the entry, each value encoded as JSON.
+  map<string, string> properties_json = 4;
+}
+
+message WriteLogResponse {}
+
+message WatchLogsRequest {}
+
+message WatchLogsResponse {
+  // The entries in the order they were recorded.
+  repeated LogEntry entries = 1;
+}

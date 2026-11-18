@@ -32,6 +32,8 @@ const MANAGE = 'vault:manage'
 const LINK_OPEN = 'link:open'
 /** Reading which plugins run; nothing of a vault. */
 const PLUGINS_READ = 'plugins:read'
+/** Reading the structured application logs of the installation. */
+const LOGS_READ = 'logs:read'
 /** A model call uses the connections the plugin names in its own settings; the person granted them there. */
 const CONNECTION_GRANT = `the rows of the plugin's own settings are the grant`
 
@@ -294,6 +296,10 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     },
     processes: {
       watch: requirePermissions(PLUGINS_READ),
+    },
+    logs: {
+      watch: requirePermissions(LOGS_READ),
+      write: requireNothing('the entry is filed under the id of the plugin'),
     },
   },
   health: {

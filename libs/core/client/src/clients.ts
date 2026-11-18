@@ -12,6 +12,7 @@ import {
   FileService,
   FlushResult,
   LinkDirection,
+  LogService,
   Marker,
   Mode,
   NameSource,
@@ -60,6 +61,7 @@ export const createProviderConnectionClient = (transport: Transport) =>
   createClient(ProviderConnectionService, transport)
 export const createConnectionCallServiceClient = (transport: Transport) =>
   createClient(ConnectionCallService, transport)
+export const createLogServiceClient = (transport: Transport) => createClient(LogService, transport)
 
 export const NAME_SOURCE = NameSource
 export type NameSourceCode = NameSource

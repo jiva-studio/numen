@@ -1,0 +1,85 @@
+// Package logs serves LogService to the windows: streaming structured log entries and recording
+// entries reported by a window or a plugin frontend.
+package logs
+
+import (
+	"context"
+	"errors"
+	"net/http"
+
+	"connectrpc.com/connect"
+
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
+
+	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+)
+
+// Watcher streams the recent and incoming log entries until ctx ends.
+type Watcher interface {
+	Execute(ctx context.Context) <-chan []domainlogs.Entry
+}
+
+// Recorder validates and appends a structured log entry.
+type Recorder interface {
+	Execute(entry domainlogs.Entry) error
+}
+
+// Handler answers LogService to a window.
+type Handler struct {
+	watcher  Watcher
+	recorder Recorder
+}
+
+var _ numenv1connect.LogServiceHandler = (*Handler)(nil)
+
+// NewHandler returns the handler over the log watcher and the recorder.
+func NewHandler(watcher Watcher, recorder Recorder) *Handler {
+	return &Handler{watcher: watcher, recorder: recorder}
+}
+
+// NewRoute returns the path and the HTTP handler of LogService.
+func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewLogServiceHandler(handler, counted)
+}
+
+// WriteLog appends an entry reported by a window or a plugin frontend.
+func (h *Handler) WriteLog(
+	_ context.Context, req *connect.Request[v1.WriteLogRequest],
+) (*connect.Response[v1.WriteLogResponse], error) {
+	entry := wire.ReadLogEntry(req.Msg)
+	if entry.Source == "" {
+		entry.Source = domainlogs.SourceWindow
+	}
+	if err := h.recorder.Execute(entry); err != nil {
+		if errors.Is(err, domainlogs.ErrEmptyMessage) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&v1.WriteLogResponse{}), nil
+}
+
+// WatchLogs sends the recent log entries at once and each new batch as entries arrive, until the
+// caller disconnects.
+func (h *Handler) WatchLogs(
+	ctx context.Context, _ *connect.Request[v1.WatchLogsRequest], out *connect.ServerStream[v1.WatchLogsResponse],
+) error {
+	watching, stop := context.WithCancel(ctx)
+	defer stop()
+	watch := h.watcher.Execute(watching)
+	for {
+		select {
+		case batch, isOpen := <-watch:
+			if !isOpen {
+				return nil
+			}
+			if err := out.Send(&v1.WatchLogsResponse{Entries: wire.DescribeLogEntries(batch)}); err != nil {
+				return err
+			}
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}

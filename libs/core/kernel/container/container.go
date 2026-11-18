@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -84,6 +85,7 @@ type Resources struct {
 	settingEvents   *settingevents.Events
 	pluginChanges   *settingsusecase.PluginChanges
 	subscribedHosts settingsusecase.HostSubscriptions
+	logEntries      *logsusecase.Entries
 }
 
 func NewResources() *Resources {
@@ -94,6 +96,7 @@ func NewResources() *Resources {
 		settingsFiles: settingsadapter.NewFiles(),
 		settingEvents: settingevents.New(),
 		pluginChanges: &settingsusecase.PluginChanges{},
+		logEntries:    logsusecase.NewEntries(),
 	}
 }
 
@@ -193,10 +196,11 @@ func vaultBase(c Config, texts *TextVersions) vaultWiring {
 	}
 }
 
-func vaultWith(base vaultWiring, settings settingsWiring, search searchWiring) vaultWiring {
+func vaultWith(c Config, base vaultWiring, settings settingsWiring, search searchWiring) vaultWiring {
 	base.SyncSetting = syncSetting(settings)
 	base.CutNotes = cutNotes(search)
 	base.SetNoteCut = func(scan *vault.Scan) { setNoteCut(search, scan) }
+	base.RecordLog = openRecordLogFunc(c)
 	return base
 }
 
@@ -216,7 +220,7 @@ func assemble(c Config, texts *TextVersions) pluginsWiring {
 		},
 		settings: settings,
 		search:   search,
-		vault:    vaultWith(base, settings, search),
+		vault:    vaultWith(c, base, settings, search),
 	}
 }
 

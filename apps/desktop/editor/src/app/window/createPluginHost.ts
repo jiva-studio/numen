@@ -51,6 +51,7 @@ export function createServiceParts(deps: ServicePartsDeps): readonly HostParts[]
     createTaskServiceParts({
       services,
       processes: plugins.processes,
+      getLogs: plugins.logs,
       healthReports: plugins.health.healthReports,
       api: plugins.pluginHost,
       rest: deps.rest,

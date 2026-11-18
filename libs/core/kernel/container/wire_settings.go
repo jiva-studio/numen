@@ -7,6 +7,7 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
+	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -164,6 +165,16 @@ func syncSetting(c settingsWiring) naming.SyncSetting {
 			c.ErrorHandler(fmt.Errorf("read settings: %w", err))
 		}
 		return naming.SyncTitleAndFilename(target.Sync())
+	}
+}
+
+func logLevelSetting(c settingsWiring) func() domainlogs.Level {
+	return func() domainlogs.Level {
+		target, err := settingsSettings(c)
+		if err != nil {
+			return domainlogs.LevelInfo
+		}
+		return domainlogs.ResolveLevel(target.Logging.Level)
 	}
 }
 

@@ -69,6 +69,10 @@ func DefaultPerformance() Performance {
 	return Performance{Profile: getAppString(keyProfile)}
 }
 
+func DefaultLogging() Logging {
+	return Logging{Level: getAppString(keyLogLevel)}
+}
+
 // Path is where the settings live.
 func Path() (string, error) {
 	dir, err := os.UserConfigDir()

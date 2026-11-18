@@ -5,6 +5,7 @@ import (
 	"io"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
@@ -14,6 +15,7 @@ import (
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	windowhealth "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/health"
+	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
 	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
@@ -22,12 +24,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vaults"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/windowstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
+	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/logfiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -208,6 +213,47 @@ func mountHealth(w *windowWiring) {
 		host.Health, pluginhealth.NewReport(host.Health, host.Runtime.PluginResolver), pluginhealth.NewClear(host.Health),
 	)
 	path, served := windowhealth.NewRoute(handler, w.state.Gate.CountQuestions())
+	w.inst.Mount(editor.NewRoute(path, served, handler))
+}
+
+func openLogEntries(c Config) *logsusecase.Entries {
+	if c.Resources != nil && c.Resources.logEntries != nil {
+		return c.Resources.logEntries
+	}
+	return logsusecase.NewEntries()
+}
+
+func openRecordLog(c Config) *logsusecase.Record {
+	return logsusecase.NewRecord(
+		openLogEntries(c),
+		logfiles.NewBesideIndex(c.IndexPath),
+		logLevelSetting(settingsOf(c)),
+		c.Clock(),
+	)
+}
+
+func openRecordLogFunc(c Config) func(domainlogs.Entry) {
+	record := openRecordLog(c)
+	return func(entry domainlogs.Entry) {
+		if err := record.Execute(entry); err != nil {
+			handleError(c, err)
+		}
+	}
+}
+
+func mountLogs(w *windowWiring) {
+	record := openRecordLog(w.cfg)
+	watch := logsusecase.NewWatch(openLogEntries(w.cfg), logfiles.NewBesideIndex(w.cfg.IndexPath), w.cfg.Clock())
+	w.state.SetCallTrace(w.cfg.Clock(), func(entry domainlogs.Entry) {
+		if err := record.Execute(entry); err != nil {
+			handleError(w.cfg, err)
+		}
+	})
+	w.a.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
+		l.Logs = record
+	})
+	handler := windowlogs.NewHandler(watch, record)
+	path, served := windowlogs.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 

@@ -9,6 +9,7 @@ import type { VaultsHost, VaultsState, WindowHost, WindowState } from '../window
 import type { BackgroundTask, BackgroundTaskHost } from '../backgroundTasks'
 import type { HealthHost, HealthItem } from '../health'
 import type { PluginProcess, ProcessHost } from '../processes'
+import type { LogEntry, LogHost, LogWrite } from '../logs'
 
 function notifyAll<T>(handlers: Set<(value: T) => void>, value: T): void {
   for (const handler of handlers) handler(value)
@@ -236,6 +237,32 @@ export function createMockProcessHost(
       list = { processes, time }
       notifyAll(watchers, list)
     },
+    countWatchers: () => watchers.size,
+  }
+}
+
+// MockLogHost is a LogHost whose entries a test pushes and whose written entries and watcher count it reads back.
+export interface MockLogHost extends LogHost {
+  pushEntries(entries: readonly LogEntry[]): void
+  getWritten(): readonly LogWrite[]
+  countWatchers(): number
+}
+
+export function createMockLogHost(initial: readonly LogEntry[] = []): MockLogHost {
+  let history: readonly LogEntry[] = [...initial]
+  const watchers = new Set<(value: readonly LogEntry[]) => void>()
+  const written: LogWrite[] = []
+  return {
+    watch: (handler) => watchWith(watchers, handler, history),
+    write: (entry) => {
+      written.push(entry)
+      return Promise.resolve()
+    },
+    pushEntries: (entries) => {
+      history = [...history, ...entries]
+      notifyAll(watchers, entries)
+    },
+    getWritten: () => [...written],
     countWatchers: () => watchers.size,
   }
 }

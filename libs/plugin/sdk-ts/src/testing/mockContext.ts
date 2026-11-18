@@ -34,6 +34,7 @@ import {
   createMockBackgroundTaskHost,
   createMockCommandsHost,
   createMockHealthHost,
+  createMockLogHost,
   createMockProcessHost,
   createMockSlotHost,
   createMockVaultsHost,
@@ -41,6 +42,7 @@ import {
   type MockBackgroundTaskHost,
   type MockCommandsHost,
   type MockHealthHost,
+  type MockLogHost,
   type MockProcessHost,
   type MockSlotHost,
   type MockVaultsHost,
@@ -70,6 +72,7 @@ export interface MockPluginVault extends PluginVault {
 export interface MockPluginWork extends PluginWork {
   readonly backgroundTasks: MockBackgroundTaskHost
   readonly processes: MockProcessHost
+  readonly logs: MockLogHost
 }
 
 // MockPluginContextInit is what a test gives a mock plugin context: who the plugin is and the
@@ -411,6 +414,7 @@ export function createMockHostServices(initialValues?: MockHostServicesInit): Mo
     work: {
       backgroundTasks: createMockBackgroundTaskHost(),
       processes: createMockProcessHost(),
+      logs: createMockLogHost(),
     },
     events,
 

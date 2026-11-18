@@ -26,6 +26,7 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"naming":{"syncTitleAndFilename":false},
 		"editor":{"fontSize":19,"fontFamily":"serif","lineHeight":2,"lineNumbers":true,"softWrap":false},
 		"performance":{"profile":"eco"},
+		"logging":{"level":"debug"},
 		"search":{"rerankWindow":70,"maxReranked":200,"maxRerankedBytes":2048,"defaultLimit":30,"maxLimit":90,
 			"candidatesPerCondition":250,"maxCandidates":900,"maxPathPrefixes":4,"mergeGapBytes":100,"maxQueryBytes":8192}}}`)
 	want := map[string]any{
@@ -40,6 +41,7 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"editor.lineNumbers":            true,
 		"editor.softWrap":               false,
 		"performance.profile":           "eco",
+		"logging.level":                 "debug",
 		"search.rerankWindow":           70.0,
 		"search.maxReranked":            200.0,
 		"search.maxRerankedBytes":       2048.0,
