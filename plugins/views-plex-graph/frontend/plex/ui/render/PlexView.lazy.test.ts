@@ -21,8 +21,6 @@ const mountView = () => {
   const view = mount(PlexView, {
     attachTo: document.body,
     props: {
-      namesOpacity: 0.3,
-      focusedNamesOpacity: 0.9,
       frame: from,
       viewport: { width: 1200, height: 800 },
       nodeSize: DEFAULT_OPTIONS.nodeSize,

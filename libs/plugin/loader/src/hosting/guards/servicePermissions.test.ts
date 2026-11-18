@@ -368,3 +368,96 @@ describe('the subscriptions of a plugin', () => {
     expect(() => disposeSubscriptions([] as never)).not.toThrow()
   })
 })
+
+describe('running a command of the application', () => {
+  const target = { path: 'notes/Pear rows.md', title: 'Pear rows', type: 'note' }
+
+  const setUp = (permissions: readonly string[], isListed = true) => {
+    const fakes = createFakes()
+    const host = createHost(fakes, { ui: { isCommandListed: () => isListed } })
+    const { host: services } = createPluginParts('md.numen.sample', host, MANIFEST(permissions))
+    const run = (command: string) =>
+      Promise.resolve()
+        .then(() =>
+          services.ui.commands!.run(command, target as never, undefined, { kind: 'plex' }),
+        )
+        .then(() => undefined)
+        .catch((error: unknown) => String(error))
+    const getReachedCommands = () =>
+      (fakes.ui as { commands: { run: ReturnType<typeof vi.fn> } }).commands.run.mock.calls.map(
+        (one) => one[0],
+      )
+    return { run, getReachedCommands }
+  }
+
+  it('lets a plugin that may only read show a note in the plex', async () => {
+    const { run, getReachedCommands } = setUp(['vault:read'])
+
+    const refusal = await run('app:file.reveal')
+
+    expect(refusal).toBeUndefined()
+    expect(getReachedCommands()).toStrictEqual(['app:file.reveal'])
+  })
+
+  it('lets a plugin that may only read open the settings, which moves a view', async () => {
+    const { run, getReachedCommands } = setUp(['vault:read'])
+
+    const refusal = await run('app:settings.open')
+
+    expect(refusal).toBeUndefined()
+    expect(getReachedCommands()).toStrictEqual(['app:settings.open'])
+  })
+
+  it('refuses a plugin that may only read a command of the application that changes the vault', async () => {
+    const { run, getReachedCommands } = setUp(['vault:read'])
+
+    const refusal = await run('app:vault.create')
+
+    expect(refusal).toContain('lacks required permission "vault:write"')
+    expect(getReachedCommands()).toStrictEqual([])
+  })
+
+  it('refuses a plugin that may only read a command that a slot lists and that changes notes', async () => {
+    const { run, getReachedCommands } = setUp(['vault:read'])
+
+    const refusal = await run('app:note.rename')
+
+    expect(refusal).toContain('lacks required permission "vault:write"')
+    expect(getReachedCommands()).toStrictEqual([])
+  })
+
+  it('refuses a plugin that may only read a command no slot lists and the short list lacks, whatever it does', async () => {
+    const { run, getReachedCommands } = setUp(['vault:read'], false)
+
+    const refusal = await run('app:note.rename')
+
+    expect(refusal).toContain('Error:')
+    expect(getReachedCommands()).toStrictEqual([])
+  })
+
+  it('still lets a plugin that may write run a command that changes notes', async () => {
+    const { run, getReachedCommands } = setUp(['vault:read', 'vault:write'])
+
+    const refusal = await run('app:note.rename')
+
+    expect(refusal).toBeUndefined()
+    expect(getReachedCommands()).toStrictEqual(['app:note.rename'])
+  })
+
+  it('refuses a plugin with no vault permission a command that only shows a note', async () => {
+    const { run, getReachedCommands } = setUp([])
+
+    const refusal = await run('app:file.reveal')
+
+    expect(refusal).toContain('lacks required permission')
+    expect(getReachedCommands()).toStrictEqual([])
+  })
+
+  it('names the commands that need only reading in the explanation of the permission', () => {
+    const { reason } = SERVICE_RULES.ui.commands.run
+
+    expect(reason).toContain('vault:read')
+    expect(reason).toContain('app:file.reveal')
+    expect(reason).toContain('app:settings.open')
+  })
+})

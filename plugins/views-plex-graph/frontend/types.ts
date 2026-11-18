@@ -7,6 +7,7 @@ import type {
   CommandItem,
   CommandTarget,
   SlotItem,
+  Disposable,
   Connection,
   ConnectionRole,
   RelatedNote,
@@ -126,6 +127,15 @@ export interface PlexWindowDeps {
   readOpeningPath(): Promise<string>
 }
 
+/** A view a plugin places over or under the nodes, drawn with each node and given the path of its note. */
+export interface PlexWidget {
+  readonly key: string
+  readonly component: Component
+}
+
+/** The side of a node a slot of widgets is drawn on. */
+export type PlexWidgetSide = 'above' | 'below'
+
 /** What a plex tab requests for its menu. */
 export interface PlexMenuDeps {
   /** The entries of the slot `plexGraph.context` over the note of a node, or over the canvas. */
@@ -152,12 +162,6 @@ export interface PlexNotesDeps {
   searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
 }
 
-/** Whether names are shown and how many a note shows, as the plugin settings hold them. */
-export interface PlexNamesSettings {
-  readonly showNames: Readonly<Ref<boolean>>
-  readonly namesPerNote: Readonly<Ref<number>>
-}
-
 /** How the plex is drawn, as the plugin settings hold it, followed as they change. */
 export interface PlexLook {
   readonly references: Readonly<Ref<ReferenceMode>>
@@ -171,8 +175,6 @@ export interface PlexLook {
   readonly outlineThickness: Readonly<Ref<number>>
   readonly lineCurvature: Readonly<Ref<number>>
   readonly noteRoom: Readonly<Ref<number>>
-  readonly namesOpacity: Readonly<Ref<number>>
-  readonly focusedNamesOpacity: Readonly<Ref<number>>
 }
 
 /** Dependencies for plex tab state. */
@@ -183,8 +185,11 @@ export interface PlexTabDeps {
   readonly isNavigatingOnCreate?: Readonly<Ref<boolean>>
   readonly window: PlexWindowDeps
   readonly menu: PlexMenuDeps
+  readonly watchWidgets?: (
+    side: PlexWidgetSide,
+    handler: (entries: readonly SlotItem[]) => void,
+  ) => Disposable
   readonly notes: PlexNotesDeps
-  readonly names: PlexNamesSettings
   readonly look: PlexLook
 }
 
@@ -194,7 +199,7 @@ export interface PlexViewState {
   readonly empty: ComputedRef<boolean>
   readonly dragged: ComputedRef<readonly string[]>
   readonly creatable: readonly PlexRelation[]
-  readonly names: PlexNamesState
+  readonly widgets: PlexWidgetsState
 }
 
 export interface PlexMenuState {
@@ -208,14 +213,11 @@ export interface PlexMenuState {
   chooseMenuItem(id: string): void
 }
 
-/**
- * The names of the notes related to the drawn notes. A node with none, and every node while names are off, has none;
- * choosing a name moves the focus to the note it stands for.
- */
-export interface PlexNamesState {
-  readonly showNames: Readonly<Ref<boolean>>
-  getNames(node: string): PlexNames
-  choose(name: string): void
+/** The widgets drawn over and under each node, and the path of the note of a node. */
+export interface PlexWidgetsState {
+  readonly above: Readonly<Ref<readonly PlexWidget[]>>
+  readonly below: Readonly<Ref<readonly PlexWidget[]>>
+  getPath(node: string): string
 }
 
 export interface PlexHeadingsState {
@@ -335,16 +337,4 @@ export interface PlexHeading {
   readonly id: string
   readonly text: string
   readonly level: number
-}
-
-/** The name of a note shown beside a related note. The id is the caller's, returned unchanged when the name is chosen. */
-export interface PlexName {
-  readonly id: string
-  readonly title: string
-}
-
-/** The names set over a related note, and those set under it. */
-export interface PlexNames {
-  readonly above: PlexName[]
-  readonly below: PlexName[]
 }

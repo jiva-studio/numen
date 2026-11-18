@@ -1,11 +1,64 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { EditorView } from '@codemirror/view'
+import { createNamedIcon } from '@numen/ui'
+import type { Component } from 'vue'
 import { NOTE_EDITOR, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { activate, deactivate, MarkdownNoteEditor, readMarkdownEditorPreferences } from './index'
 
 /** Host services whose vault offers no notes. */
 const NO_NOTES = { vault: {} } as unknown as HostServices
+
+const ICON_LOAD_TIMEOUT = 30_000
+
+const drawIcon = (icon: Component): Promise<string> => {
+  const wrapper = mount(icon)
+  return vi.waitFor(
+    () => {
+      const svg = wrapper.find('svg')
+      expect(svg.exists()).toBe(true)
+      return svg.element.innerHTML
+    },
+    { timeout: ICON_LOAD_TIMEOUT, interval: 50 },
+  )
+}
+
+describe('the icon of the notes in the tab strip', () => {
+  const activateRegistering = () => {
+    const registerReader = vi.fn()
+    const registerTabKind = vi.fn()
+    const context = {
+      register: { reader: registerReader, tabKind: registerTabKind },
+    } as unknown as PluginContext
+    activate(context, NO_NOTES)
+    return {
+      reader: registerReader.mock.calls[0]?.[0],
+      tabKind: registerTabKind.mock.calls[0]?.[0],
+    }
+  }
+
+  it(
+    'is drawn for the note tab kind as the file-text icon the manifest names',
+    async () => {
+      const { tabKind } = activateRegistering()
+
+      expect(tabKind.icon).toBeDefined()
+      expect(await drawIcon(tabKind.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
+    },
+    ICON_LOAD_TIMEOUT * 1.5,
+  )
+
+  it(
+    'is drawn for the markdown reader as the file-text icon the manifest names',
+    async () => {
+      const { reader } = activateRegistering()
+
+      expect(reader.icon).toBeDefined()
+      expect(await drawIcon(reader.icon)).toBe(await drawIcon(createNamedIcon('file-text')))
+    },
+    ICON_LOAD_TIMEOUT * 1.5,
+  )
+})
 
 describe('notes plugin lifecycle', () => {
   it('registers markdown reader and note tab kind on activation', () => {

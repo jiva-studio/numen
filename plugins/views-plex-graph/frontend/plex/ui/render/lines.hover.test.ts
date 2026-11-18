@@ -10,7 +10,7 @@ const narrow = arrangePlex(build('Hub', { child: 1 }))
 
 const setUp = () => {
   const props = reactive({ frame: hubFrame, highlightLinks: false })
-  const lines = effectScope().run(() => useEdgeLines(props, 'u', { node: null, names: null }))!
+  const lines = effectScope().run(() => useEdgeLines(props, 'u', { node: null }))!
   return { props, lines }
 }
 

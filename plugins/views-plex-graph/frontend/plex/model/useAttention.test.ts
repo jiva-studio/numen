@@ -1,4 +1,4 @@
-/** What the drawing attends to: set by a note or its names, and cleared when that note leaves the frame. */
+/** What the drawing attends to: set by a note, and cleared when that note leaves the frame. */
 import { nextTick, ref } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { useAttention } from './useAttention'
@@ -12,42 +12,32 @@ const [first, second] = whole.nodes
 const without = (id: string) => ({ ...whole, nodes: whole.nodes.filter((node) => node.id !== id) })
 
 describe('the attention of the drawing', () => {
-  it('rests on the note that took it, and on the names of another at once', () => {
-    const { attention, attend } = useAttention(() => whole)
-
-    attend('node', first, true)
-    attend('names', second, true)
-
-    expect({ ...attention }).toStrictEqual({ node: first, names: second })
-  })
-
   it('is released by the note that took it, and not by another', () => {
     const { attention, attend } = useAttention(() => whole)
-    attend('node', first, true)
+    attend(first, true)
 
-    attend('node', second, false)
+    attend(second, false)
     expect(attention.node).toBe(first)
 
-    attend('node', first, false)
+    attend(first, false)
     expect(attention.node).toBeNull()
   })
 
   it('is cleared when the note it rests on leaves the frame', async () => {
     const frame = ref(whole)
     const { attention, attend } = useAttention(() => frame.value)
-    attend('node', first, true)
-    attend('names', first, true)
+    attend(first, true)
 
     frame.value = without(first)
     await nextTick()
 
-    expect({ ...attention }).toStrictEqual({ node: null, names: null })
+    expect(attention.node).toBeNull()
   })
 
   it('stays on a note that is still in the frame', async () => {
     const frame = ref(whole)
     const { attention, attend } = useAttention(() => frame.value)
-    attend('node', second, true)
+    attend(second, true)
 
     frame.value = without(first)
     await nextTick()
