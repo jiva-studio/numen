@@ -53,7 +53,7 @@ describe('the titles on the lines of a plex', () => {
     await view.setProps({ frame: frameOf(second) })
 
     for (const [element, text] of before) {
-      if (!element.isConnected) continue
+      if (!view.element.contains(element)) continue
       expect(element.textContent?.trim()).toBe(text)
     }
   })
