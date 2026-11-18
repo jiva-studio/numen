@@ -137,18 +137,18 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
       if (source.settings.showNames.value && !entry.isReading && !entry.noteGraph.value) {
         read(entry)
       }
-      const held = entry
-      let isHeld = true
+      const leased = entry
+      let isActive = true
       return {
-        noteGraph: held.noteGraph,
+        noteGraph: leased.noteGraph,
         release: () => {
-          if (!isHeld) return
-          isHeld = false
-          held.leases -= 1
-          if (held.leases > 0) return
-          entries.delete(held.path)
-          changed.delete(held.path)
-          queued.delete(held)
+          if (!isActive) return
+          isActive = false
+          leased.leases -= 1
+          if (leased.leases > 0) return
+          entries.delete(leased.path)
+          changed.delete(leased.path)
+          queued.delete(leased)
         },
       }
     },
