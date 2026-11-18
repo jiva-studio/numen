@@ -140,6 +140,11 @@ describe('a command of a slot entry', () => {
         title: 'Tide items',
       }),
       declared({
+        id: 'tide.linkItems',
+        title: 'Link items',
+        when: "target.noteType == 'link'",
+      }),
+      declared({
         id: 'tide.invalid',
         title: 'Invalid when',
         when: 'target.isRemote',
@@ -150,8 +155,9 @@ describe('a command of a slot entry', () => {
       { id: 'app:file.open', text: 'Open file' },
       { id: 'app:custom.none', text: 'Custom command' },
     ],
-    hasPluginItems: (id) => id === `${TIDE}:tide.items`,
-    getWhenValues: (target) => getTargetValues(target, { csv: 'text/csv', md: 'text/markdown' }),
+    hasPluginItems: (id) => id === `${TIDE}:tide.items` || id === `${TIDE}:tide.linkItems`,
+    getWhenValues: (target) =>
+      getTargetValues(target, { csv: 'text/csv', md: 'text/markdown' }, { type: target?.noteType }),
   })
 
   it('is drawn with the title and icon of the command', () => {
@@ -188,12 +194,17 @@ describe('a command of a slot entry', () => {
     expect(find(`${TIDE}:tide.invalid`, NOTE)).toBeUndefined()
   })
 
-  it('with items is available only over a non-folder file with a path', () => {
+  it('with items is available only over a non-folder file with a path where its condition is not false', () => {
     expect(find(`${TIDE}:tide.items`, undefined)).toBeUndefined()
     expect(find(`${TIDE}:tide.items`, FOLDER)).toBeUndefined()
     expect(find(`${TIDE}:tide.items`, { ...NOTE, path: '' })).toBeUndefined()
     expect(find(`${TIDE}:tide.items`, NOTE)).toStrictEqual({
       title: 'Tide items',
+      hasItems: true,
+    })
+    expect(find(`${TIDE}:tide.linkItems`, { ...NOTE, noteType: 'note' })).toBeUndefined()
+    expect(find(`${TIDE}:tide.linkItems`, { ...NOTE, noteType: 'link' })).toStrictEqual({
+      title: 'Link items',
       hasItems: true,
     })
   })

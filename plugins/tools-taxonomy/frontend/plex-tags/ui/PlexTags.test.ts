@@ -166,41 +166,50 @@ describe('the tags of a note in the plex', () => {
     expect(wrapper.text()).not.toContain('Sea')
   })
 
-  it('show the whole name of a tag in a tooltip while the pointer is over its chip', async () => {
+  it('show no tooltip while the pointer is over a tag chip', async () => {
     const wrapper = mountTags(['Port', 'Container terminal operations'])
     expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
 
-    await getChips(wrapper)[1]?.trigger('mouseenter')
-
-    const tooltips = document.body.querySelectorAll('[role="tooltip"]')
-    expect(tooltips).toHaveLength(1)
-    expect(tooltips[0]?.textContent?.trim()).toBe('Container terminal operations')
-  })
-
-  it('hide the tooltip of a chip when the pointer leaves it', async () => {
-    const wrapper = mountTags(['Port', 'Sea'])
-    await getChips(wrapper)[0]?.trigger('mouseenter')
-
-    await getChips(wrapper)[0]?.trigger('mouseleave')
+    const chips = getChips(wrapper)
+    expect(chips).toHaveLength(2)
+    await chips[1]!.trigger('mouseenter')
 
     expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
   })
 
-  it('hide the tooltip of a chip that goes while the pointer is over it', async () => {
-    const wrapper = mountTags(['Port', 'Sea'])
-    await getChips(wrapper)[1]?.trigger('mouseenter')
+  it('hide the tooltip of the +N chip when the pointer leaves it', async () => {
+    const wrapper = mountTags(TAGS.slice(0, 7))
+    await getMore(wrapper).trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
+      'Pier, Harbour, Jetty',
+    )
 
-    await wrapper.setProps({ tags: ['Port'] })
+    await getMore(wrapper).trigger('mouseleave')
+
+    expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
+  })
+
+  it('hide the tooltip of the +N chip when the note no longer has hidden tags', async () => {
+    const wrapper = mountTags(TAGS.slice(0, 7))
+    await getMore(wrapper).trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
+      'Pier, Harbour, Jetty',
+    )
+
+    await wrapper.setProps({ tags: TAGS.slice(0, 4) })
 
     expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
   })
 
   it('hide the tooltip once the note has no tags', async () => {
-    const wrapper = mountTags(['Port'])
-    await getChips(wrapper)[0]?.trigger('mouseenter')
+    const wrapper = mountTags(TAGS.slice(0, 7))
+    await getMore(wrapper).trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
+      'Pier, Harbour, Jetty',
+    )
     await wrapper.setProps({ tags: [] })
 
-    await wrapper.setProps({ tags: ['Sea'] })
+    await wrapper.setProps({ tags: TAGS.slice(0, 7) })
 
     expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
   })

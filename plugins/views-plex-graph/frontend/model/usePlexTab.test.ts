@@ -230,7 +230,7 @@ describe('the menu on a node', () => {
       ['org.example.sample/command/app:file.remove', '2'],
     ])
     expect(one.menuTargets).toStrictEqual([
-      { path: 'Child.md', title: 'Child', isFolder: false, others: [], tab: '' },
+      { path: 'Child.md', title: 'Child', isFolder: false, others: [], tab: '', noteType: 'note' },
     ])
     one.state.menu.chooseMenuItem('constructor')
     one.state.menu.openMenu(createMenuRequest(one.node('Child.md')))
@@ -884,7 +884,7 @@ describe('what a node remains for', () => {
 
     expect(getTarget('Sample.md')?.noteType).toBe('sample')
     expect(getTarget('Form.md')?.noteType).toBe('form')
-    expect(getTarget('Root.md')?.noteType).toBeUndefined()
+    expect(getTarget('Root.md')?.noteType).toBe('note')
   })
 
   it('is drawn with the icon of the tab kind the core chose for it, and a note it reports none for with none', () => {

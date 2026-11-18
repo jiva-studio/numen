@@ -246,6 +246,7 @@
   --numen-wait-shimmer: 1600ms;
   --numen-wait-spin: 800ms;
   --numen-wait-dots: 1200ms;
+  --numen-wait-tooltip: 500ms;
   /* A pointer answers now; it is not waiting on a navigation. */
   --numen-motion-hover: 110ms;
   --numen-easing: cubic-bezier(0.32, 0.72, 0, 1);
