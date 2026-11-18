@@ -263,7 +263,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Not: not a parent, child or jump; those come from the `links` of the frontmatter.
 
 ### name under a note
-- Is: The title of a note that a related note is related to, written in small text under (or over) that related note. A name is a button, read as "<name>, name under <title>"; a click on it moves the focus to that note. It is mouse-only: no key reaches it. The setting "Show notes related to related notes" shows or hides them; "Names per note" limits them.
+- Is: The title of a note that a related note is related to, written in small text under (or over) that related note. A name is a button, read as "<name>, <relation> <title>", for example "Rootstock list, child of Pear rows"; an arrow before the name shows the relation, and the setting "Show the relation arrows" shows or hides it. A click on it moves the focus to that note. It is mouse-only: no key reaches it. The setting "Show notes related to related notes" shows or hides them; "Names per note" limits them.
 - Not: not a node of the plex.
 
 ### relation

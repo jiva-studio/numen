@@ -86,6 +86,10 @@
       "reason": "the menu of the map opens inside the view and the suspended words keep their order"
     },
     {
+      "file": "plugins/views-plex-graph/frontend/plex/ui/PlexWidgets.stories.ts",
+      "reason": "the widgets of a slot sit over or under their node, a pair shares one line, and the group is centered on the node"
+    },
+    {
       "file": "plugins/views-title-bar/frontend/ui/TitleBar.stories.ts",
       "reason": "the window controls stay inside the bar for a long vault name and the popover opens under the bar"
     }
