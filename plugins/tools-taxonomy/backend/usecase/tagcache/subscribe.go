@@ -27,13 +27,6 @@ func (c *Caches) GetMap(ctx context.Context, id domain.VaultID) (map[string][]st
 	return one.getTagsByPath(), nil
 }
 
-// Subscribe returns the changes of the tags of the vault, one for each update that changed any, and the
-// function that ends the subscription and closes the channel. A subscriber that reads slowly is sent the
-// changes it missed as one, so it never holds up an update.
-func (c *Caches) Subscribe(id domain.VaultID) (<-chan Change, func()) {
-	return c.getVault(id).follow.add()
-}
-
 // follow is the subscribers to the changes of the tags of one vault and the tags last published to them;
 // the first tags published are the baseline and change nothing.
 type follow struct {
@@ -146,4 +139,19 @@ func (l *listener) run() {
 		case l.out <- Change{Changed: taken}:
 		}
 	}
+}
+
+// Watch returns the tags of the notes of the vault as GetMap does, the changes of the tags after them, one
+// for each update that changed any, and the function that ends the subscription and closes the channel. A
+// subscriber that reads slowly is sent the changes it missed as one, so it never holds up an update. The
+// changes start at the returned map: none of them was made before it.
+func (c *Caches) Watch(ctx context.Context, id domain.VaultID) (map[string][]string, <-chan Change, func(), error) {
+	one := c.getVault(id)
+	one.mu.Lock()
+	defer one.mu.Unlock()
+	if err := c.update(ctx, id, one); err != nil {
+		return nil, nil, nil, err
+	}
+	changes, cancel := one.follow.add()
+	return one.getTagsByPath(), changes, cancel, nil
 }

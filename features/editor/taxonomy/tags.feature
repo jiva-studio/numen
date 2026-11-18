@@ -30,3 +30,26 @@ Feature: Tags
         | notes/Dock.md | Sea  |
         | notes/Dock.md | Quay |
         | notes/Pier.md |      |
+
+    Scenario: The plex shows the tags of a note
+      Given the empty vault "Test"
+      And the vault has the following:
+        | path          | text      |
+        | notes/Quay.md | The quay. |
+        | notes/Pier.md | The pier. |
+        | notes/Dock.md | The dock. |
+      And the notes have the following tags:
+        | note | tag  |
+        | Quay | Port |
+        | Quay | Sea  |
+        | Dock | Port |
+        | Dock | Sea  |
+        | Dock | Quay |
+      And the application "editor" starts
+      And the person opens the note titled "Dock"
+      When the person runs the command "Show in plex" on the note tab titled "Dock"
+      Then the plex shows the following notes:
+        | relation | title | tag  |
+        | focus    | Dock  | Port |
+        | focus    | Dock  | Sea  |
+        | focus    | Dock  | Quay |

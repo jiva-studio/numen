@@ -20,6 +20,15 @@ func (s *scene) getMap(t *testing.T) map[string][]string {
 	return got
 }
 
+func (s *scene) subscribe(t *testing.T) (<-chan tagcache.Change, func()) {
+	t.Helper()
+	_, changes, cancel, err := s.cache.Watch(t.Context(), "garden")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return changes, cancel
+}
+
 func receive(t *testing.T, changes <-chan tagcache.Change) (tagcache.Change, bool) {
 	t.Helper()
 	select {
@@ -73,7 +82,7 @@ func TestTheMapReadsTheNotesOnceForAnyNumberOfAnswers(t *testing.T) {
 func TestAChangedNoteIsSentToTheSubscriberWithItsTags(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: lake\n---\n"})
 	s.getMap(t)
-	changes, cancel := s.cache.Subscribe("garden")
+	changes, cancel := s.subscribe(t)
 	defer cancel()
 
 	s.vault.File("a.md", "---\ntags: [river, delta]\n---\n")
@@ -89,7 +98,7 @@ func TestAChangedNoteIsSentToTheSubscriberWithItsTags(t *testing.T) {
 func TestANoteThatLostItsTagsIsSentWithAnEmptyList(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
 	s.getMap(t)
-	changes, cancel := s.cache.Subscribe("garden")
+	changes, cancel := s.subscribe(t)
 	defer cancel()
 
 	s.vault.File("a.md", "# no tags\n")
@@ -107,7 +116,7 @@ func TestANoteThatLostItsTagsIsSentWithAnEmptyList(t *testing.T) {
 func TestARemovedNoteIsSentWithAnEmptyListAndDroppedFromTheMap(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n", "b.md": "---\ntags: lake\n---\n"})
 	s.getMap(t)
-	changes, cancel := s.cache.Subscribe("garden")
+	changes, cancel := s.subscribe(t)
 	defer cancel()
 
 	s.vault.Remove("a.md")
@@ -126,7 +135,7 @@ func TestARemovedNoteIsSentWithAnEmptyListAndDroppedFromTheMap(t *testing.T) {
 func TestAMovedNoteIsSentAtItsNewPathAndEmptyAtTheOldPath(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
 	s.getMap(t)
-	changes, cancel := s.cache.Subscribe("garden")
+	changes, cancel := s.subscribe(t)
 	defer cancel()
 
 	if _, err := s.vault.MoveNotes(t.Context(), []string{"a.md"}, "rivers"); err != nil {
@@ -148,7 +157,7 @@ func TestAMovedNoteIsSentAtItsNewPathAndEmptyAtTheOldPath(t *testing.T) {
 func TestAnUpdateThatChangesNoTagsSendsNothing(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
 	s.getMap(t)
-	changes, cancel := s.cache.Subscribe("garden")
+	changes, cancel := s.subscribe(t)
 	defer cancel()
 
 	s.vault.File("a.md", "---\ntags: river\n---\nA new body.\n")
@@ -164,9 +173,9 @@ func TestAnUpdateThatChangesNoTagsSendsNothing(t *testing.T) {
 func TestEverySubscriberGetsTheChange(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
 	s.getMap(t)
-	first, cancelFirst := s.cache.Subscribe("garden")
+	first, cancelFirst := s.subscribe(t)
 	defer cancelFirst()
-	second, cancelSecond := s.cache.Subscribe("garden")
+	second, cancelSecond := s.subscribe(t)
 	defer cancelSecond()
 
 	s.vault.File("a.md", "---\ntags: lake\n---\n")
@@ -183,9 +192,9 @@ func TestEverySubscriberGetsTheChange(t *testing.T) {
 func TestACanceledSubscriberIsClosedAndDoesNotHoldUpTheUpdates(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
 	s.getMap(t)
-	changes, cancel := s.cache.Subscribe("garden")
+	changes, cancel := s.subscribe(t)
 	if changes == nil {
-		t.Fatal("Subscribe gave no channel")
+		t.Fatal("Watch gave no channel")
 	}
 
 	cancel()
@@ -205,10 +214,10 @@ func TestACanceledSubscriberIsClosedAndDoesNotHoldUpTheUpdates(t *testing.T) {
 func TestASubscriberThatReadsNothingDoesNotHoldUpTheUpdates(t *testing.T) {
 	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
 	s.getMap(t)
-	changes, cancel := s.cache.Subscribe("garden")
+	changes, cancel := s.subscribe(t)
 	defer cancel()
 	if changes == nil {
-		t.Fatal("Subscribe gave no channel")
+		t.Fatal("Watch gave no channel")
 	}
 
 	done := make(chan struct{})
@@ -230,5 +239,29 @@ func TestASubscriberThatReadsNothingDoesNotHoldUpTheUpdates(t *testing.T) {
 	}
 	if got := s.getMap(t); len(got["a.md"]) != 1 {
 		t.Errorf("map = %v, want the last tags of a.md", got)
+	}
+}
+
+func TestAWatchSendsNoChangeThatIsInTheMapItStartedWith(t *testing.T) {
+	s := newScene(map[string]string{"a.md": "---\ntags: river\n---\n"})
+	s.getMap(t)
+	s.vault.File("a.md", "---\ntags: [lake]\n---\n")
+
+	got, changes, cancel, err := s.cache.Watch(t.Context(), "garden")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cancel()
+	s.vault.File("b.md", "---\ntags: delta\n---\n")
+	s.update(t)
+
+	want := map[string][]string{"a.md": {"lake"}}
+	if !maps.EqualFunc(got, want, slices.Equal) {
+		t.Errorf("map = %v, want %v", got, want)
+	}
+	change, ok := receive(t, changes)
+	wantChange := map[string][]string{"b.md": {"delta"}}
+	if !ok || !maps.EqualFunc(change.Changed, wantChange, slices.Equal) {
+		t.Errorf("change = %v, want %v", change.Changed, wantChange)
 	}
 }

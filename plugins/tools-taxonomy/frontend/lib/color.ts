@@ -16,7 +16,7 @@ function getKey(tag: string): string {
 function getHash(text: string): number {
   let hash = 0x811c9dc5
   for (const unit of text) {
-    hash = Math.imul(hash ^ unit.charCodeAt(0), 0x01000193)
+    hash = Math.imul(hash ^ (unit.codePointAt(0) ?? 0), 0x01000193)
   }
   hash ^= hash >>> 16
   hash = Math.imul(hash, 0x85ebca6b)

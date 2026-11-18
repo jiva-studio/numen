@@ -36,6 +36,12 @@ describe('the color of a tag', () => {
     expect(getTagColor('Порт')).toBe(getTagColor('порт'))
   })
 
+  it('is not one color for tags that differ only in characters outside the basic plane', () => {
+    const emoji = ['🔥', '🚀', '🐟', '😀', '👍', '💡', '🔔', '📌']
+
+    expect(new Set(emoji.map(getTagColor)).size).toBeGreaterThan(1)
+  })
+
   it('uses every color of the palette for a long list of different tags', () => {
     const used = new Set(WORDS.map(getTagColor))
 

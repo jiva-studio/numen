@@ -37,7 +37,7 @@ export const LabelInTheDarkTheme: Story = {
   },
 }
 
-/** A label of far too many words stays whole. */
+/** A label of far too many words is still shown. */
 export const FarTooManyWords: Story = {
   args: { text: Array.from({ length: 60 }, (_, index) => `Tag ${index + 1}`).join(', ') },
   play: async ({ canvasElement }) => {

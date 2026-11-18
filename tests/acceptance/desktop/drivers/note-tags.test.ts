@@ -14,6 +14,10 @@ describe('addTags', () => {
     )
   })
 
+  it('adds the tags to an empty frontmatter block and leaves the text as it is', () => {
+    expect(addTags('---\n---\nThe quay.', ['Port'])).toBe('---\ntags:\n  - "Port"\n---\nThe quay.')
+  })
+
   it('reports an error for a note that has tags already', () => {
     expect(() => addTags('---\ntags: [Port]\n---\n', ['Sea'])).toThrow('tags key')
   })

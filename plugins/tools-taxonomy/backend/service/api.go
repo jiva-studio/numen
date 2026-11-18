@@ -58,12 +58,11 @@ func watchTagMap(ctx context.Context, cache *tagcache.Caches, send func(api.TagM
 	if err != nil {
 		return err
 	}
-	changes, cancel := cache.Subscribe(id)
-	defer cancel()
-	found, err := cache.GetMap(ctx, id)
+	found, changes, cancel, err := cache.Watch(ctx, id)
 	if err != nil {
-		return convertError(fmt.Errorf("get the tag map: %w", err))
+		return convertError(fmt.Errorf("watch the tag map: %w", err))
 	}
+	defer cancel()
 	if err := send(api.TagMapMessage{Tags: found, Changed: nil}); err != nil {
 		return err
 	}

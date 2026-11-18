@@ -112,7 +112,17 @@ export class PlexDriver {
   }
 
   async expectShowsNotes(rows: readonly (readonly string[])[], has: boolean): Promise<void> {
-    for (const [relation, title] of getTableBody(rows, ['relation', 'title'])) await this.expectShowsNote(title, relation, has)
+    for (const [relation = '', title = '', tag = ''] of getTableBody(rows, ['relation', 'title'], ['tag'])) {
+      await this.expectShowsNote(title, relation, has)
+      if (tag !== '') await this.expectShowsTag(title, tag, has)
+    }
+  }
+
+  private async expectShowsTag(title: string, tag: string, has: boolean): Promise<void> {
+    const { page } = this.scenario
+    const node = page.locator('.plex__node').and(page.getByLabel(new RegExp(`^${escapeRegExp(title)}, `)))
+    const stack = (await this.getGraph()).locator('.plex__stack').filter({ has: node })
+    await expect(stack.locator('[data-plex-tag]').filter({ hasText: getWholeText(tag) }), `the plex shows the tag "${tag}" of the note titled "${title}"`).toHaveCount(has ? 1 : 0)
   }
 
   /** The note is on every side of the focus note that the table names: the middle of its box is compared with the middle of the box of the focus. */

@@ -60,6 +60,7 @@ const tooltipPosition = computed(() => ({
 }))
 
 const tooltipStyle = computed(() => ({
+  maxInlineSize: `${Math.max(0, room.value.width - 2 * props.margin)}px`,
   insetInlineStart: `${tooltipPosition.value.x}px`,
   insetBlockStart: `${tooltipPosition.value.y}px`,
 }))
@@ -68,7 +69,7 @@ const tooltipStyle = computed(() => ({
 onMounted(measure)
 
 // Measured again once the drawing has caught up with the thing it is about.
-watch(() => props.at, measure, { flush: 'post' })
+watch([() => props.at, room], measure, { flush: 'post' })
 
 /* --------------------------------- Helpers -------------------------------- */
 function measure(): void {
@@ -86,9 +87,10 @@ function measure(): void {
 <style scoped>
 .tooltip {
   position: fixed;
+  box-sizing: border-box;
   z-index: var(--numen-lift-tooltip);
-  /* As wide as its content, whatever space remains beside it at its current position. */
   inline-size: max-content;
+  overflow-wrap: anywhere;
   padding: var(--numen-inset);
   border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius);

@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.taxonomy",
   "name": "Taxonomy",
-  "version": "2026.11.7",
+  "version": "2026.11.8",
   "protocol": 1,
   "description": "Reads the tags of notes from their frontmatter, finds notes by tag in queries and lists the tags for agents",
   "capabilities": ["tools"],
@@ -9,7 +9,10 @@
   "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools",
-    "slots": [{ "slot": "fileTree.rowEnd", "view": "file-tags" }],
+    "slots": [
+      { "slot": "fileTree.rowEnd", "view": "file-tags" },
+      { "slot": "plexGraph.nodeBelow", "view": "plex-tags", "order": 20 }
+    ],
     "searchFunctions": {
       "version": 1,
       "functions": [
