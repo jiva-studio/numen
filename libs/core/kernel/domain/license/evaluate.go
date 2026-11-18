@@ -27,29 +27,7 @@ func MergeDeclarations(plugins []PluginEntry) []Declaration {
 	var ids []string
 	for _, plugin := range ordered {
 		for _, lic := range plugin.Licenses {
-			decl, exists := byID[lic.ID]
-			if !exists {
-				decl = &Declaration{
-					ID:               lic.ID,
-					Title:            lic.Title,
-					OfflineGraceDays: lic.GetOfflineGraceDays(),
-				}
-				byID[lic.ID] = decl
-				ids = append(ids, lic.ID)
-			} else {
-				if decl.Title == "" && lic.Title != "" {
-					decl.Title = lic.Title
-				}
-				if days := lic.GetOfflineGraceDays(); days < decl.OfflineGraceDays {
-					decl.OfflineGraceDays = days
-				}
-			}
-			decl.Contributors = append(decl.Contributors, Contributor{
-				PluginID:    plugin.ID,
-				PluginName:  plugin.Name,
-				Description: lic.Description,
-			})
-			decl.Providers = mergeProviders(decl.Providers, lic.Providers)
+			ids = mergePluginLicense(byID, ids, plugin, lic)
 		}
 	}
 	result := make([]Declaration, 0, len(ids))
@@ -61,6 +39,42 @@ func MergeDeclarations(plugins []PluginEntry) []Declaration {
 		result = append(result, decl)
 	}
 	return result
+}
+
+func mergePluginLicense(
+	byID map[string]*Declaration,
+	ids []string,
+	plugin PluginEntry,
+	lic manifest.License,
+) []string {
+	decl, exists := byID[lic.ID]
+	if !exists {
+		decl = &Declaration{
+			ID:               lic.ID,
+			Title:            lic.Title,
+			OfflineGraceDays: lic.GetOfflineGraceDays(),
+		}
+		byID[lic.ID] = decl
+		ids = append(ids, lic.ID)
+	} else {
+		applySecondaryLicenseFields(decl, lic)
+	}
+	decl.Contributors = append(decl.Contributors, Contributor{
+		PluginID:    plugin.ID,
+		PluginName:  plugin.Name,
+		Description: lic.Description,
+	})
+	decl.Providers = mergeProviders(decl.Providers, lic.Providers)
+	return ids
+}
+
+func applySecondaryLicenseFields(decl *Declaration, lic manifest.License) {
+	if decl.Title == "" && lic.Title != "" {
+		decl.Title = lic.Title
+	}
+	if days := lic.GetOfflineGraceDays(); days < decl.OfflineGraceDays {
+		decl.OfflineGraceDays = days
+	}
 }
 
 func mergeProviders(existing, added []manifest.LicenseProvider) []manifest.LicenseProvider {
@@ -92,10 +106,7 @@ func EvaluateEnvelope(
 	now time.Time,
 ) Evaluation {
 	nowUTC := now.UTC()
-	if NormalizeKey(env.Key) == "" {
-		return Evaluation{Status: StatusInactive, IsActive: false, HasKey: false, UpdatedEnvelope: env}
-	}
-	if env.MachineFingerprint == "" || env.MachineFingerprint != currentFingerprint {
+	if !hasMatchingMachineKey(env, currentFingerprint) {
 		return Evaluation{Status: StatusInactive, IsActive: false, HasKey: false, UpdatedEnvelope: env}
 	}
 	if decl.IsCustom() || env.Provider == ProviderCustom {
@@ -115,7 +126,16 @@ func EvaluateEnvelope(
 		return Evaluation{Status: StatusUnverified, IsActive: false, HasKey: true, NeedsValidation: true, UpdatedEnvelope: env}
 	case StatusActive:
 	}
+	return evaluateActiveProviderEnvelope(env, decl, nowUTC)
+}
 
+func hasMatchingMachineKey(env Envelope, currentFingerprint string) bool {
+	return NormalizeKey(env.Key) != "" &&
+		env.MachineFingerprint != "" &&
+		env.MachineFingerprint == currentFingerprint
+}
+
+func evaluateActiveProviderEnvelope(env Envelope, decl Declaration, nowUTC time.Time) Evaluation {
 	verifiedAt, hasVerified := ParseTime(env.VerifiedAt)
 	lastSeenAt, hasLastSeen := ParseTime(env.LastSeenAt)
 	if !hasVerified {
@@ -138,13 +158,7 @@ func EvaluateEnvelope(
 		}
 	}
 	updated, changed := advanceLastSeen(env, nowUTC)
-
-	graceDays := decl.OfflineGraceDays
-	if graceDays <= 0 {
-		graceDays = manifest.DefaultLicenseOfflineGraceDays
-	}
-	graceDeadline := verifiedAt.Add(time.Duration(graceDays) * 24 * time.Hour)
-	if !nowUTC.Before(graceDeadline) {
+	if isOfflineGraceElapsed(decl.OfflineGraceDays, verifiedAt, nowUTC) {
 		return Evaluation{
 			Status:          StatusUnverified,
 			IsActive:        false,
@@ -154,32 +168,41 @@ func EvaluateEnvelope(
 			EnvelopeChanged: changed,
 		}
 	}
-
-	needsValidation := !nowUTC.Before(verifiedAt.Add(FreshnessTTL))
-	if expiresAt, hasExpires := ParseTime(env.ExpiresAt); hasExpires {
-		if !nowUTC.Before(expiresAt) {
-			needsValidation = true
-			if !nowUTC.Before(expiresAt.Add(BillingDunningGrace)) {
-				return Evaluation{
-					Status:          StatusExpired,
-					IsActive:        false,
-					HasKey:          true,
-					NeedsValidation: true,
-					UpdatedEnvelope: updated,
-					EnvelopeChanged: changed,
-				}
-			}
+	isHardExpired, needsExpiryCheck := evaluateExpiration(env.ExpiresAt, nowUTC)
+	if isHardExpired {
+		return Evaluation{
+			Status:          StatusExpired,
+			IsActive:        false,
+			HasKey:          true,
+			NeedsValidation: true,
+			UpdatedEnvelope: updated,
+			EnvelopeChanged: changed,
 		}
 	}
-
 	return Evaluation{
 		Status:          StatusActive,
 		IsActive:        true,
 		HasKey:          true,
-		NeedsValidation: needsValidation,
+		NeedsValidation: !nowUTC.Before(verifiedAt.Add(FreshnessTTL)) || needsExpiryCheck,
 		UpdatedEnvelope: updated,
 		EnvelopeChanged: changed,
 	}
+}
+
+func isOfflineGraceElapsed(graceDays int, verifiedAt, nowUTC time.Time) bool {
+	if graceDays <= 0 {
+		graceDays = manifest.DefaultLicenseOfflineGraceDays
+	}
+	graceDeadline := verifiedAt.Add(time.Duration(graceDays) * 24 * time.Hour)
+	return !nowUTC.Before(graceDeadline)
+}
+
+func evaluateExpiration(expiresAtStr string, nowUTC time.Time) (bool, bool) {
+	expiresAt, hasExpires := ParseTime(expiresAtStr)
+	if !hasExpires || nowUTC.Before(expiresAt) {
+		return false, false
+	}
+	return !nowUTC.Before(expiresAt.Add(BillingDunningGrace)), true
 }
 
 func isClockRolledBack(nowUTC, verifiedAt, lastSeenAt time.Time, hasLastSeen bool) bool {

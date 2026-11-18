@@ -96,11 +96,13 @@ func (o operation) readEnvelope(ctx context.Context, licenseID string) (license.
 	if err != nil {
 		return license.Envelope{}, false, fmt.Errorf("%w: read %s: %w", license.ErrKeyStore, licenseID, err)
 	}
-	env, decodeErr := license.DecodeEnvelope(raw)
-	if decodeErr != nil {
-		return license.Envelope{}, false, nil //nolint:nilerr // Corrupted envelope is treated as absent so the user can reactivate.
-	}
-	return env, true, nil
+	env, ok := tryDecodeEnvelope(raw)
+	return env, ok, nil
+}
+
+func tryDecodeEnvelope(raw string) (license.Envelope, bool) {
+	env, err := license.DecodeEnvelope(raw)
+	return env, err == nil
 }
 
 func (o operation) writeEnvelope(ctx context.Context, licenseID string, env license.Envelope) error {

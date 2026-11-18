@@ -40,45 +40,63 @@ func (u *Verify) verifyOnce(ctx context.Context, licenseID string) (license.Info
 	if err != nil {
 		return license.Info{}, err
 	}
+	env, shouldVerify, info, err := u.prepareVerification(ctx, decl)
+	if err != nil || !shouldVerify {
+		return info, err
+	}
+	val, valErr := u.validator.Validate(ctx, env.Provider, env.Key, env.InstanceID)
+	if valErr != nil {
+		return u.handleValidationFailure(ctx, decl, env, valErr)
+	}
+	return u.applyVerifiedStatus(ctx, decl, env, val.Status, val.ExpiresAt, val.Status == license.StatusActive)
+}
+
+func (u *Verify) prepareVerification(
+	ctx context.Context,
+	decl license.Declaration,
+) (license.Envelope, bool, license.Info, error) {
 	u.gate.Lock()
+	defer u.gate.Unlock()
 	env, isFound, err := u.readEnvelope(ctx, decl.ID)
-	if err != nil || !isFound {
+	if err != nil {
+		return license.Envelope{}, false, license.Info{}, err
+	}
+	if !isFound {
 		info, _, buildErr := u.buildInfo(ctx, decl)
-		u.gate.Unlock()
-		if err != nil {
-			return license.Info{}, err
-		}
-		return info, buildErr
+		return license.Envelope{}, false, info, buildErr
 	}
 	fingerprint := ""
 	if u.machine != nil {
 		fingerprint = u.machine.GetMachineFingerprint()
 	}
-	now := u.clock.Now().UTC()
-	eval := license.EvaluateEnvelope(env, decl, fingerprint, now)
-	if !eval.HasKey || decl.IsCustom() || env.Provider == license.ProviderCustom || !eval.NeedsValidation || u.validator == nil {
+	eval := license.EvaluateEnvelope(env, decl, fingerprint, u.clock.Now().UTC())
+	if !canVerifyOnline(decl, env, eval) || u.validator == nil {
 		info, _, buildErr := u.buildInfo(ctx, decl)
-		u.gate.Unlock()
-		return info, buildErr
+		return license.Envelope{}, false, info, buildErr
 	}
+	return env, true, license.Info{}, nil
+}
+
+func canVerifyOnline(decl license.Declaration, env license.Envelope, eval license.Evaluation) bool {
+	return eval.HasKey && !decl.IsCustom() && env.Provider != license.ProviderCustom && eval.NeedsValidation
+}
+
+func (u *Verify) handleValidationFailure(
+	ctx context.Context,
+	decl license.Declaration,
+	env license.Envelope,
+	valErr error,
+) (license.Info, error) {
+	if errors.Is(valErr, license.ErrExpired) {
+		return u.applyVerifiedStatus(ctx, decl, env, license.StatusExpired, nil, false)
+	}
+	if errors.Is(valErr, license.ErrDisabled) || errors.Is(valErr, license.ErrNotFound) {
+		return u.applyVerifiedStatus(ctx, decl, env, license.StatusDisabled, nil, false)
+	}
+	u.gate.Lock()
+	info, _, buildErr := u.buildInfo(ctx, decl)
 	u.gate.Unlock()
-
-	val, valErr := u.validator.Validate(ctx, env.Provider, env.Key, env.InstanceID)
-	if valErr != nil {
-		if errors.Is(valErr, license.ErrExpired) {
-			return u.applyVerifiedStatus(ctx, decl, env, license.StatusExpired, nil, false)
-		}
-		if errors.Is(valErr, license.ErrDisabled) || errors.Is(valErr, license.ErrNotFound) {
-			return u.applyVerifiedStatus(ctx, decl, env, license.StatusDisabled, nil, false)
-		}
-		// Transient network or 5xx/429 failure leaves the local envelope untouched.
-		u.gate.Lock()
-		info, _, buildErr := u.buildInfo(ctx, decl)
-		u.gate.Unlock()
-		return info, buildErr
-	}
-
-	return u.applyVerifiedStatus(ctx, decl, env, val.Status, val.ExpiresAt, val.Status == license.StatusActive)
+	return info, buildErr
 }
 
 func (u *Verify) applyVerifiedStatus(

@@ -38,23 +38,43 @@ func (u *Deactivate) Execute(ctx context.Context, licenseID string) (license.Inf
 		u.gate.Unlock()
 		return info, buildErr
 	}
+	if err := u.deactivateRemoteIfNeeded(ctx, decl, env); err != nil {
+		return license.Info{}, err
+	}
+	return u.deleteAndBuild(ctx, decl)
+}
+
+func (u *Deactivate) deactivateRemoteIfNeeded(
+	ctx context.Context,
+	decl license.Declaration,
+	env license.Envelope,
+) error {
 	fingerprint := ""
 	if u.machine != nil {
 		fingerprint = u.machine.GetMachineFingerprint()
 	}
-	if env.MachineFingerprint == fingerprint &&
+	if !hasRemoteInstance(decl, env, fingerprint) {
+		return nil
+	}
+	if u.validator == nil {
+		return license.ErrProviderUnavailable
+	}
+	err := u.validator.Deactivate(ctx, env.Provider, env.Key, env.InstanceID)
+	if err != nil && !errors.Is(err, license.ErrNotFound) {
+		return err
+	}
+	return nil
+}
+
+func hasRemoteInstance(decl license.Declaration, env license.Envelope, fingerprint string) bool {
+	return env.MachineFingerprint == fingerprint &&
 		!decl.IsCustom() &&
 		env.Provider != "" &&
 		env.Provider != license.ProviderCustom &&
-		env.InstanceID != "" {
-		if u.validator == nil {
-			return license.Info{}, license.ErrProviderUnavailable
-		}
-		if err := u.validator.Deactivate(ctx, env.Provider, env.Key, env.InstanceID); err != nil && !errors.Is(err, license.ErrNotFound) {
-			return license.Info{}, err
-		}
-	}
+		env.InstanceID != ""
+}
 
+func (u *Deactivate) deleteAndBuild(ctx context.Context, decl license.Declaration) (license.Info, error) {
 	u.gate.Lock()
 	if err := u.deleteEnvelope(ctx, decl.ID); err != nil {
 		u.gate.Unlock()
