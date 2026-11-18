@@ -212,7 +212,7 @@ describe('the tags of a note in the plex', () => {
 
     const tooltips = document.body.querySelectorAll('[role="tooltip"]')
     expect(tooltips).toHaveLength(1)
-    expect(tooltips[0]?.textContent?.trim()).toBe('Jetty, Wharf, Berth')
+    expect(tooltips[0]?.textContent?.trim()).toBe('Pier, Harbour, Jetty')
   })
 
   it('list the names of the tags beyond the chips while the +N chip has the focus', async () => {
@@ -220,7 +220,7 @@ describe('the tags of a note in the plex', () => {
 
     expect(getMore(wrapper).attributes('tabindex')).toBe('0')
     await getMore(wrapper).trigger('focus')
-    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe('Harbour')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe('Pier')
 
     await getMore(wrapper).trigger('blur')
     expect(document.body.querySelector('[role="tooltip"]')).toBeNull()

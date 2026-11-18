@@ -69,7 +69,7 @@ const tooltipStyle = computed(() => ({
 onMounted(measure)
 
 // Measured again once the drawing has caught up with the thing it is about.
-watch(() => props.at, measure, { flush: 'post' })
+watch([() => props.at, room], measure, { flush: 'post' })
 
 /* --------------------------------- Helpers -------------------------------- */
 function measure(): void {
@@ -87,6 +87,7 @@ function measure(): void {
 <style scoped>
 .tooltip {
   position: fixed;
+  box-sizing: border-box;
   z-index: var(--numen-lift-tooltip);
   inline-size: max-content;
   overflow-wrap: anywhere;

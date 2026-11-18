@@ -7,7 +7,7 @@ export const addTags = (text: string, tags: readonly string[]): string => {
   const block = `tags:\n${tags.map((tag) => `  - ${JSON.stringify(tag)}`).join('\n')}`
   const found = FRONTMATTER.exec(text)
   if (!found) return `---\n${block}\n---\n\n${text}`
-  const held = found[1] ?? ''
+  const held = (found[1] as string | undefined) ?? ''
   if (/^tags:/m.test(held))
     throw new Error('the note has the tags key already: write every tag of the note in the table')
   return `---\n${block}${held === '' ? '' : `\n${held}`}\n---${text.slice(found[0].length)}`
