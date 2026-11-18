@@ -15,14 +15,15 @@ const FILE_TAGS_VIEW = 'file-tags'
 /** The id the manifest places in the slot plexGraph.nodeBelow. */
 const PLEX_TAGS_VIEW = 'plex-tags'
 
-export const activate = (plugin: PluginContext, host?: HostServices): void => {
+export const activate = (plugin: PluginContext, host: HostServices): void => {
   const api = createApi(SERVICE)
   const tagMap = createTagMap({ api: createTaxonomyApi(api) })
   plugin.register.slotView({ id: FILE_TAGS_VIEW, component: createFileTags(tagMap) })
   plugin.register.slotView({ id: PLEX_TAGS_VIEW, component: createPlexTags(tagMap) })
   plugin.identity.subscriptions.push({ dispose: () => tagMap.stop() })
-  if (host) {
-    const setTags = createSetTags(plugin, host, api, tagMap)
+  const { picker } = host.ui
+  if (picker) {
+    const setTags = createSetTags({ api, picker, getTags: tagMap.getTags })
     plugin.register.command({
       id: 'tags.set',
       handler: async (note) => {
