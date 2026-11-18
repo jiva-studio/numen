@@ -232,6 +232,20 @@ describe('the loading of a slot', () => {
     expect(reportIssue).toHaveBeenCalledTimes(1)
   })
 
+  it('keeps the time a view has waited across a pause of the page', async () => {
+    const { loading, reportIssue } = mountSlot([{ entry: RELATED, view: createLoadingView([]) }])
+    runFrames(SLOT_LOADING_CAP_MS - FRAME * 4)
+    await nextTick()
+    expect(loading.isReady.value).toBe(false)
+
+    passTime(SLOT_LOADING_CAP_MS * 5)
+    runFrames(FRAME * 8)
+    await nextTick()
+
+    expect(loading.isReady.value).toBe(true)
+    expect(reportIssue).toHaveBeenCalledTimes(1)
+  })
+
   it('reports nothing for a view that finishes in time', async () => {
     const finishes: (() => void)[] = []
     const { reportIssue } = mountSlot([{ entry: RELATED, view: createLoadingView(finishes) }])
