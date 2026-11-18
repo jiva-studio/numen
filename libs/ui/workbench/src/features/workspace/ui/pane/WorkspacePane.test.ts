@@ -51,15 +51,13 @@ describe('tab strip', () => {
     expect(target.find('[role="tablist"]').element.querySelectorAll('[title]')).toHaveLength(0)
   })
 
-  it('shows the title the workspace holds for a tab in a tooltip while the pointer is over it', async () => {
+  it('shows no tooltip for a tab title when the pointer is over it', async () => {
     const target = mountPane()
     expect(document.body.querySelector('[role="tooltip"]')).toBeNull()
 
     await strip(target)[2]?.trigger('mouseenter')
 
-    const tooltips = document.body.querySelectorAll('[role="tooltip"]')
-    expect(tooltips).toHaveLength(1)
-    expect(tooltips[0]?.textContent?.trim()).toBe('Notes')
+    expect(document.body.querySelectorAll('[role="tooltip"]')).toHaveLength(0)
   })
 
   it('shows the mark of a tab in a tooltip while the pointer is over the mark', async () => {

@@ -3,7 +3,7 @@ import { ErrorMessage } from '../../error-message'
 import { Icon } from '../../icon'
 import { NameBox } from '../../name-box'
 import { CardRow } from '../../card-row'
-import { Button } from '@numen/ui'
+import { Button, Tooltip, useTooltip } from '@numen/ui'
 import type { NameEntryState } from '../../../../model/cards/nameEntry'
 import { useObjection, useObjectionMessage } from '../../../../model/cards/useObjection'
 import {
@@ -39,6 +39,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const tip = useTooltip()
 const objections = useObjection(
   () => props.naming,
   () => props.row.field,
@@ -74,7 +75,10 @@ function onGripKey(event: KeyboardEvent): void {
         :aria-disabled="row.hasNames || undefined"
         :aria-label="row.hasNames ? words.pinned : `${words.drag}: ${row.field}`"
         :aria-keyshortcuts="row.hasNames ? undefined : STEP_KEYS"
-        :title="row.hasNames ? words.pinned : `${words.drag}: ${row.field}`"
+        @mouseenter="tip.open($event, row.hasNames ? words.pinned : `${words.drag}: ${row.field}`)"
+        @mouseleave="tip.close"
+        @focus="tip.open($event, row.hasNames ? words.pinned : `${words.drag}: ${row.field}`)"
+        @blur="tip.close"
         @dragstart="emit('drag-start', $event)"
         @dragend="emit('release')"
         @keydown="onGripKey"
@@ -95,12 +99,22 @@ function onGripKey(event: KeyboardEvent): void {
         size="icon-small"
         class="card-model__away size-6"
         :disabled="row.hasNames"
-        :title="row.hasNames ? words.pinned : undefined"
         :aria-label="`${words.remove}: ${row.field}`"
+        @mouseenter="
+          tip.open($event, row.hasNames ? words.pinned : `${words.remove}: ${row.field}`)
+        "
+        @mouseleave="tip.close"
+        @focus="tip.open($event, row.hasNames ? words.pinned : `${words.remove}: ${row.field}`)"
+        @blur="tip.close"
         @click="emit('remove')"
       >
         <Icon name="cross" />
       </Button>
+      <Teleport to="body">
+        <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+          {{ tip.text.value }}
+        </Tooltip>
+      </Teleport>
     </CardRow>
 
     <ErrorMessage

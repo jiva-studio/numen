@@ -5,7 +5,8 @@
  * run as label and value rows with the times as they read from now, and the error and the warnings
  * under a rule.
  */
-import { ref, useId } from 'vue'
+import { ref } from 'vue'
+import { Tooltip, useTooltip } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import { formatRelativeTime } from '../lib/time'
 import type { StatusFact, StatusView } from '../lib/view'
@@ -17,18 +18,17 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const isOpen = ref(false)
+const tip = useTooltip()
 const openedAt = ref(0)
-const tooltipId = useId()
 
 /* -------------------------------- Handlers -------------------------------- */
-function onShow() {
+function onShow(event: Event) {
   openedAt.value = props.getNow()
-  isOpen.value = true
+  tip.open(event)
 }
 
 function onHide() {
-  isOpen.value = false
+  tip.close()
 }
 
 /* --------------------------------- Helpers -------------------------------- */
@@ -39,26 +39,28 @@ function getValue(fact: StatusFact): string {
 </script>
 
 <template>
-  <div class="saved-search__status" @pointerenter="onShow" @pointerleave="onHide">
+  <div class="saved-search__status">
     <span
       role="img"
       tabindex="0"
       class="saved-search__dot"
       :class="`saved-search__dot--${status.state}`"
       :aria-label="status.label"
-      :aria-describedby="isOpen ? tooltipId : undefined"
+      :aria-describedby="tip.describedBy.value"
+      @mouseenter="onShow"
+      @mouseleave="onHide"
       @focus="onShow"
       @blur="onHide"
       @keydown.escape="onHide"
     />
-    <div v-if="isOpen" :id="tooltipId" role="tooltip" class="saved-search__tooltip">
+    <Tooltip v-if="tip.at.value" :id="tip.id" :at="tip.at.value" class="saved-search__tooltip">
       <p class="saved-search__tooltip-title">
         {{ status.label }}
       </p>
       <dl v-if="status.facts.length > 0" class="saved-search__tooltip-facts">
         <template v-for="fact in status.facts" :key="fact.label">
           <dt class="saved-search__tooltip-label">{{ fact.label }}</dt>
-          <dd class="saved-search__tooltip-value" :title="fact.at === '' ? undefined : fact.value">
+          <dd class="saved-search__tooltip-value">
             {{ getValue(fact) }}
           </dd>
         </template>
@@ -85,6 +87,6 @@ function getValue(fact: StatusFact): string {
         </ul>
         <p v-else class="saved-search__tooltip-message">{{ status.warnings[0] }}</p>
       </section>
-    </div>
+    </Tooltip>
   </div>
 </template>

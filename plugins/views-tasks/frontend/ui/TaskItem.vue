@@ -17,7 +17,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import { Info, RotateCw, X } from '@lucide/vue'
-import { Button } from '@numen/ui'
+import { Button, Tooltip, useTooltip } from '@numen/ui'
 import type { BackgroundTask } from '@numen/plugin-sdk'
 import { getProgress } from '../lib/summary'
 import { WORDS as words } from '../lib/words'
@@ -38,6 +38,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isHovered = ref(false)
+const tip = useTooltip()
 const lastAbout = ref(props.task.about)
 const isNotice = computed(() => props.task.state === 'notice')
 const isFailed = computed(() => props.task.state === 'failed')
@@ -106,7 +107,6 @@ function onRunAction() {
       <span
         class="task-item__label"
         :class="{ 'text-alarm task-item__label--wrapped': isErrorInLabel }"
-        :title="task.label"
       >
         {{ task.label }}
       </span>
@@ -117,7 +117,6 @@ function onRunAction() {
           'text-alarm': isFailed,
           'task-item__detail--wrapped': isFailed || isNotice,
         }"
-        :title="subtext"
       >
         {{ subtext }}
       </span>
@@ -144,8 +143,11 @@ function onRunAction() {
         size="icon-small"
         class="task-item__btn"
         :disabled="isCancelling"
-        :title="isCancelling ? words.cancelling : words.cancel"
         :aria-label="isCancelling ? words.cancelling : words.cancel"
+        @mouseenter="tip.open($event, () => (isCancelling ? words.cancelling : words.cancel))"
+        @mouseleave="tip.close"
+        @focus="tip.open($event, () => (isCancelling ? words.cancelling : words.cancel))"
+        @blur="tip.close"
         @click.stop="onCancel"
       >
         <X :size="12" aria-hidden="true" />
@@ -156,8 +158,11 @@ function onRunAction() {
         variant="ghost"
         size="icon-small"
         class="task-item__btn"
-        :title="words.retry"
         :aria-label="words.retry"
+        @mouseenter="tip.open($event, words.retry)"
+        @mouseleave="tip.close"
+        @focus="tip.open($event, words.retry)"
+        @blur="tip.close"
         @click.stop="onRetry"
       >
         <RotateCw :size="12" aria-hidden="true" />
@@ -169,12 +174,20 @@ function onRunAction() {
         size="icon-small"
         class="task-item__btn"
         :class="{ 'task-item__btn--visible': isNotice }"
-        :title="words.dismiss"
         :aria-label="words.dismiss"
+        @mouseenter="tip.open($event, words.dismiss)"
+        @mouseleave="tip.close"
+        @focus="tip.open($event, words.dismiss)"
+        @blur="tip.close"
         @click.stop="onDismiss"
       >
         <X :size="12" aria-hidden="true" />
       </Button>
     </div>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+        {{ tip.text.value }}
+      </Tooltip>
+    </Teleport>
   </div>
 </template>

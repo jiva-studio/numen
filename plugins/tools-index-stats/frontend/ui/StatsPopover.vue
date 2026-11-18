@@ -3,6 +3,7 @@
  * The details of the search index: the counts, the model, the profile, the speed and the sizes.
  */
 import { computed } from 'vue'
+import { Tooltip, useTooltip } from '@numen/ui'
 import type { Stats } from '../api/stats'
 import { getRows } from '../lib/rows'
 import { WORDS as words } from '../words'
@@ -19,6 +20,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const tip = useTooltip()
 const rows = computed(() => getRows(props.stats, props.locale))
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -34,8 +36,11 @@ function onClose() {
       <button
         type="button"
         class="index-popover__close-btn"
-        :title="words.close"
         :aria-label="words.close"
+        @mouseenter="tip.open($event, words.close)"
+        @mouseleave="tip.close"
+        @focus="tip.open($event, words.close)"
+        @blur="tip.close"
         @click="onClose"
       >
         ✕
@@ -48,11 +53,17 @@ function onClose() {
         :key="row.id"
         class="index-popover__row"
         :class="{ 'index-popover__row--nested': row.isNested }"
-        :title="row.hint || undefined"
+        @mouseenter="tip.open($event, row.hint)"
+        @mouseleave="tip.close"
       >
         <dt class="index-popover__label">{{ row.label }}</dt>
         <dd class="index-popover__value">{{ row.value }}</dd>
       </div>
     </dl>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+        {{ tip.text.value }}
+      </Tooltip>
+    </Teleport>
   </div>
 </template>

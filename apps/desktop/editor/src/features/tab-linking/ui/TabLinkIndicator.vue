@@ -4,6 +4,7 @@
  */
 import { computed } from 'vue'
 import { Link2 } from '@lucide/vue'
+import { Tooltip, useTooltip } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
@@ -15,6 +16,7 @@ const props = withDefaults(
 )
 
 /* --------------------------------- State ---------------------------------- */
+const tip = useTooltip()
 const LINK_COLORS: Readonly<Partial<Record<number, string>>> = {
   1: 'var(--numen-blue, #3b82f6)',
   2: 'var(--numen-leaf, #22c55e)',
@@ -30,9 +32,21 @@ const iconStyle = computed(() => ({
 </script>
 
 <template>
-  <span v-if="props.isLinked" class="tab-link-indicator" title="Linked tab" aria-label="Linked tab">
+  <span
+    v-if="props.isLinked"
+    class="tab-link-indicator"
+    aria-label="Linked tab"
+    :aria-describedby="tip.describedBy.value"
+    @mouseenter="tip.open"
+    @mouseleave="tip.close"
+  >
     <Link2 class="tab-link-indicator__icon" :style="iconStyle" aria-hidden="true" />
   </span>
+  <Teleport to="body">
+    <Tooltip v-if="tip.at.value && props.isLinked" :id="tip.id" :at="tip.at.value">
+      Linked tab
+    </Tooltip>
+  </Teleport>
 </template>
 
 <style scoped>

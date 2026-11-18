@@ -43,11 +43,12 @@ afterEach(() => {
 })
 
 describe('TreeRow attributes', () => {
-  it('renders a treeitem with level, title, and icon slot', () => {
+  it('renders a treeitem with level, name, and icon slot without a native title attribute', () => {
     const row = mountRow()
     expect(row.attributes('role')).toBe('treeitem')
     expect(row.attributes('aria-level')).toBe('2')
-    expect(row.get('.tree__name').attributes('title')).toBe('Plans')
+    expect(row.get('.tree__name').text()).toBe('Plans')
+    expect(row.get('.tree__name').attributes('title')).toBeUndefined()
     expect(row.find('.icon').exists()).toBe(true)
   })
 

@@ -5,6 +5,7 @@
  * the line. Clicking a line shows who started the plugin and who holds it now.
  */
 import { computed, ref } from 'vue'
+import { Tooltip, useTooltip } from '@numen/ui'
 import { ChevronIcon } from '../model/icons'
 import type { PluginProcess } from '../types'
 import { getRows } from '../lib/rows'
@@ -22,8 +23,10 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const tip = useTooltip()
 const rows = computed(() => getRows(props.processes, props.now))
 const expandedIds = ref<ReadonlySet<string>>(new Set())
+let isEnteringCountdown = false
 
 /* -------------------------------- Handlers -------------------------------- */
 function onClose() {
@@ -35,6 +38,28 @@ function onToggleHolders(id: string) {
   if (!next.delete(id)) next.add(id)
   expandedIds.value = next
 }
+
+function onEnterRow(event: Event, id: string) {
+  if (isEnteringCountdown) return
+  tip.open(event, () => getRowTitle(id))
+}
+
+function onEnterCountdown(event: Event, id: string) {
+  isEnteringCountdown = true
+  queueMicrotask(() => {
+    isEnteringCountdown = false
+  })
+  tip.open(event, () => getCountdownHint(id))
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+function getRowTitle(id: string): string {
+  return rows.value.find((one) => one.id === id)?.title ?? ''
+}
+
+function getCountdownHint(id: string): string {
+  return rows.value.find((one) => one.id === id)?.countdownHint ?? ''
+}
 </script>
 
 <template>
@@ -44,8 +69,11 @@ function onToggleHolders(id: string) {
       <button
         type="button"
         class="plugin-popover__close-btn"
-        :title="words.close"
         :aria-label="words.close"
+        @mouseenter="tip.open($event, words.close)"
+        @mouseleave="tip.close"
+        @focus="tip.open($event, words.close)"
+        @blur="tip.close"
         @click="onClose"
       >
         ✕
@@ -59,9 +87,12 @@ function onToggleHolders(id: string) {
         :key="row.id"
         class="plugin-popover__plugin"
         :aria-label="row.name"
-        :title="row.title"
         :aria-expanded="expandedIds.has(row.id)"
         tabindex="0"
+        @mouseenter="onEnterRow($event, row.id)"
+        @mouseleave="tip.close"
+        @focus="onEnterRow($event, row.id)"
+        @blur="tip.close"
         @click="onToggleHolders(row.id)"
         @keydown.enter.space.prevent="onToggleHolders(row.id)"
       >
@@ -70,23 +101,25 @@ function onToggleHolders(id: string) {
           :class="{ 'plugin-popover__status--in-use': row.isInUse }"
           role="img"
           :aria-label="row.status"
-          :title="row.status"
         ></span>
         <span class="plugin-popover__name-cell">
           <span class="plugin-popover__name">{{ row.name }}</span>
-          <span v-if="row.isInCore" class="plugin-popover__tag" :title="words.inCoreHint">
+          <span v-if="row.isInCore" class="plugin-popover__tag">
             {{ words.inCore }}
           </span>
           <span
             v-if="row.healthText"
             class="plugin-popover__health"
             :class="`plugin-popover__health--${row.health}`"
-            :title="row.healthText"
           >
             {{ row.healthText }}
           </span>
         </span>
-        <span class="plugin-popover__countdown" :title="row.countdownHint || undefined">
+        <span
+          class="plugin-popover__countdown"
+          @mouseenter="onEnterCountdown($event, row.id)"
+          @mouseleave="tip.close"
+        >
           {{ row.countdown }}
         </span>
         <ChevronIcon class="plugin-popover__chevron" aria-hidden="true" />
@@ -107,5 +140,10 @@ function onToggleHolders(id: string) {
         </dl>
       </li>
     </ul>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+        {{ tip.text.value }}
+      </Tooltip>
+    </Teleport>
   </div>
 </template>

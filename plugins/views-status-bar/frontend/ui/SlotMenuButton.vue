@@ -6,7 +6,7 @@
  */
 import { computed, onBeforeUnmount, ref, useTemplateRef, type Component } from 'vue'
 import { ChevronUp } from '@lucide/vue'
-import { Menu, measureRect, type MenuTrigger } from '@numen/ui'
+import { Menu, Tooltip, measureRect, useTooltip, type MenuTrigger } from '@numen/ui'
 import { WORDS } from '../lib/entries'
 import { BAR, useBarSlotMenu } from '../model/useBarSlotMenu'
 import type { SlotMenuButtonProps } from './SlotMenuButton.types'
@@ -21,6 +21,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const button = useTemplateRef<HTMLElement>('button')
+const tip = useTooltip()
 const trigger = ref<MenuTrigger>('pointer')
 const anchor = ref({ x: 0, y: 0 })
 const slotMenu = useBarSlotMenu({
@@ -77,13 +78,22 @@ function getIcon(id: string): Component | undefined {
     aria-haspopup="menu"
     :aria-expanded="isMenuOpen"
     :aria-label="label"
-    :title="tooltip ?? label"
+    :aria-describedby="tip.describedBy.value"
+    @mouseenter="tip.open"
+    @mouseleave="tip.close"
+    @focus="tip.open"
+    @blur="tip.close"
     @click="onToggle"
   >
     <component :is="icon" v-if="icon" :size="14" aria-hidden="true" />
     <template v-if="!icon || !isItemList">{{ label }}</template>
     <ChevronUp :size="12" aria-hidden="true" />
   </button>
+  <Teleport to="body">
+    <Tooltip v-if="tip.at.value && !isMenuOpen" :id="tip.id" :at="tip.at.value">
+      {{ tooltip ?? label }}
+    </Tooltip>
+  </Teleport>
   <Menu
     :items="rows"
     :at="anchor"

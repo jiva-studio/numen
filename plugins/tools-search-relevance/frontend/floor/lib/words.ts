@@ -26,7 +26,6 @@ export const WORDS = {
   pending: 'Calibration pending',
   sliderLabel: 'Manual threshold',
   sliderHint: 'Applies to the current model only. The marker shows the automatic value.',
-  automaticMarker: 'Automatic value',
   probeLabel: 'Check a query',
   probePlaceholder: 'Type a query',
   probeButton: 'Check',

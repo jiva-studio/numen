@@ -13,7 +13,6 @@ defineProps<{
   icon?: Component | undefined
   text: string
   aside?: string | undefined
-  whole?: string | undefined
   keys?: Keystroke | undefined
   isDisabled?: boolean | undefined
 }>()
@@ -29,7 +28,7 @@ defineSlots<{
     <component :is="icon" v-if="icon" class="welcome-page__icon" />
     <span v-if="aside" class="welcome-page__named">
       <span class="welcome-page__what">{{ text }}</span>
-      <span class="welcome-page__aside" :title="whole">{{ aside }}</span>
+      <span class="welcome-page__aside">{{ aside }}</span>
     </span>
     <span v-else class="welcome-page__what">{{ text }}</span>
     <slot />

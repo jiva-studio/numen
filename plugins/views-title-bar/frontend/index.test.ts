@@ -157,10 +157,17 @@ describe('the commands of the slots', () => {
     ])
     await nextTick()
 
-    expect(getButton(bar, 'org.example.tide:chart.open').attributes('title')).toBe(
+    const chart = getButton(bar, 'org.example.tide:chart.open')
+    const map = getButton(bar, 'org.example.tide:map.open')
+    expect(chart.attributes('title')).toBeUndefined()
+    await chart.trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
       'Open chart.open (⌘+Shift+E)',
     )
-    expect(getButton(bar, 'org.example.tide:map.open').attributes('title')).toBe('Open map.open')
+    await map.trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
+      'Open map.open',
+    )
   })
 
   it('runs the command of a button through the commands of the context, with no target', async () => {
@@ -406,13 +413,15 @@ describe('the window buttons', () => {
 
   it('draw the state of the window and follow its change', async () => {
     const { host, bar } = mountBar()
-    expect(getControl(bar, 'toggle-maximize').attributes('title')).toBe('Maximize')
+    const maximize = getControl(bar, 'toggle-maximize')
+    await maximize.trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe('Maximize')
 
     host.ui.window.setState({ isMaximized: true, isFullscreen: false })
     await nextTick()
 
-    expect(getControl(bar, 'toggle-maximize').attributes('title')).toBe('Restore')
-    expect(getControl(bar, 'toggle-maximize').attributes('data-maximized')).toBe('true')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe('Restore')
+    expect(maximize.attributes('data-maximized')).toBe('true')
   })
 
   it('keep room for the macOS buttons, and none in full screen', async () => {

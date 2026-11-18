@@ -3,7 +3,7 @@
  * `@storybook/addon-vitest`.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, within } from 'storybook/test'
+import { expect, userEvent, within } from 'storybook/test'
 import type { Update } from '../api/updater'
 import UpdateIndicator from './UpdateIndicator.vue'
 import '../styles.css'
@@ -41,6 +41,10 @@ export const Available: Story = {
   play: async ({ canvasElement }) => {
     const chip = within(canvasElement).getByRole('button')
     await expect(chip.textContent?.trim()).toBe('v2026.11.12')
-    await expect(chip.getAttribute('title')).toContain('Update available')
+    await expect(chip.getAttribute('title')).toBeNull()
+    await userEvent.hover(chip)
+    await expect(within(canvasElement.ownerDocument.body).getByRole('tooltip')).toHaveTextContent(
+      'Update available',
+    )
   },
 }

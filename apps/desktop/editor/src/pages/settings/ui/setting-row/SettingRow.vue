@@ -17,7 +17,7 @@
  */
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch, type VNode } from 'vue'
 import { Info, RotateCcw, TriangleAlert } from '@lucide/vue'
-import { runInBackground, isPageMove, useMenuDismissal } from '@numen/ui'
+import { Tooltip, runInBackground, isPageMove, useMenuDismissal, useTooltip } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import type { SettingRowProps } from './SettingRow.types'
 
@@ -45,6 +45,7 @@ const label = useTemplateRef<HTMLElement>('label')
 const infoButton = useTemplateRef<HTMLButtonElement>('infoButton')
 const popover = useTemplateRef<HTMLElement>('popover')
 const isInfoOpen = ref(false)
+const resetTip = useTooltip()
 const dismissal = useMenuDismissal(label, () => closeInfo(false), isPageMove)
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -123,13 +124,26 @@ function scrollIntoView(): void {
         type="button"
         class="settings__reset"
         :aria-label="words.resetSettingOf(props.name)"
-        :title="words.resetSettingOf(props.name)"
+        :aria-describedby="resetTip.describedBy.value"
+        @mouseenter="resetTip.open"
+        @mouseleave="resetTip.close"
+        @focus="resetTip.open"
+        @blur="resetTip.close"
         @click="onReset"
       >
         <RotateCcw :size="14" aria-hidden="true" />
       </button>
+      <Teleport to="body">
+        <Tooltip
+          v-if="resetTip.at.value && props.isChanged"
+          :id="resetTip.id"
+          :at="resetTip.at.value"
+        >
+          {{ words.resetSettingOf(props.name) }}
+        </Tooltip>
+      </Teleport>
       <slot name="action" />
-      <span v-if="trimmedDetail" :id="detailId" class="settings__detail" :title="trimmedDetail">
+      <span v-if="trimmedDetail" :id="detailId" class="settings__detail">
         {{ trimmedDetail }}
       </span>
       <div

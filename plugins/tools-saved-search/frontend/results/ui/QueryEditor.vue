@@ -7,7 +7,7 @@
  * query is saved once typing pauses.
  */
 import { computed, onMounted, useTemplateRef } from 'vue'
-import { Button } from '@numen/ui'
+import { Button, Tooltip, useTooltip } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import { FormatIcon } from '../model/icons'
 import type { QueryFunction, QueryProblem } from '../lib/queryLanguage'
@@ -30,6 +30,7 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const SHOWN_PROBLEMS = 10
 const host = useTemplateRef<HTMLDivElement>('host')
+const formatTip = useTooltip()
 const placedProblems = computed(() => props.problems.filter((problem) => problem.line >= 1))
 const shownProblems = computed(() => placedProblems.value.slice(0, SHOWN_PROBLEMS))
 const hiddenProblemCount = computed(() => placedProblems.value.length - shownProblems.value.length)
@@ -69,11 +70,20 @@ function onPickProblem(problem: QueryProblem) {
         size="icon-small"
         class="saved-search__query-format"
         :aria-label="words.formatQuery"
-        :title="words.formatQueryHint"
+        :aria-describedby="formatTip.describedBy.value"
+        @mouseenter="formatTip.open"
+        @mouseleave="formatTip.close"
+        @focus="formatTip.open"
+        @blur="formatTip.close"
         @click="onFormat"
       >
         <FormatIcon :size="14" aria-hidden="true" />
       </Button>
+      <Teleport to="body">
+        <Tooltip v-if="formatTip.at.value" :id="formatTip.id" :at="formatTip.at.value">
+          {{ words.formatQueryHint }}
+        </Tooltip>
+      </Teleport>
     </div>
     <div ref="host" class="saved-search__query-field" />
     <ul

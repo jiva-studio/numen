@@ -3,7 +3,7 @@
  * The title bar item that counts the vectors of the search index, and the popover with its details.
  */
 import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
-import { isPageMove, useMenuDismissal } from '@numen/ui'
+import { Tooltip, isPageMove, useMenuDismissal, useTooltip } from '@numen/ui'
 import type { Stats } from '../api/stats'
 import type { Phase } from '../model/stats'
 import { formatSummary, formatVectors, MARK } from '../lib/format'
@@ -25,6 +25,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
+const tip = useTooltip()
 const root = useTemplateRef<HTMLElement>('root')
 const dismissal = useMenuDismissal(root, onClose, isPageMove)
 
@@ -69,13 +70,20 @@ function onClose() {
       tabindex="-1"
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
-      :title="summary"
       :aria-label="summary"
+      :aria-describedby="tip.describedBy.value"
+      @mouseenter="tip.open"
+      @mouseleave="tip.close"
       @click="onToggle"
     >
       <span class="index-stats__icon" aria-hidden="true">{{ MARK }}</span>
       <span class="index-stats__figure">{{ figure }}</span>
     </button>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && !isOpen" :id="tip.id" :at="tip.at.value">
+        {{ summary }}
+      </Tooltip>
+    </Teleport>
 
     <StatsPopover v-if="isOpen && stats" :stats="stats" :locale="locale" @close="onClose" />
   </div>

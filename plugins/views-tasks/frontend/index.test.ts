@@ -105,11 +105,14 @@ describe('the summary', () => {
 
     host.work.backgroundTasks.setTasks([running('b'), running('c')])
     await settle(HOLD_MS)
+    const trigger = wrapper.find('.tasks-status__trigger')
     expect(wrapper.find('.tasks-status__summary').text()).toBe('1 of 3')
-    expect(wrapper.find('.tasks-status__trigger').attributes('aria-label')).toBe(
+    expect(trigger.attributes('aria-label')).toBe('1 of 3 tasks done')
+    expect(trigger.attributes('title')).toBeUndefined()
+    await trigger.trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
       '1 of 3 tasks done',
     )
-    expect(wrapper.find('.tasks-status__trigger').attributes('title')).toBe('1 of 3 tasks done')
 
     host.work.backgroundTasks.setTasks([running('c'), running('d')])
     await settle(HOLD_MS)

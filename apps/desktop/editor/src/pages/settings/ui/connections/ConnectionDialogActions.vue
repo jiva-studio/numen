@@ -27,7 +27,6 @@ const emit = defineEmits<{
       variant="outline"
       class="connection-actions__delete"
       :aria-label="words.connectionMenuDelete"
-      :title="words.connectionMenuDelete"
       @click="emit('delete')"
     >
       <Trash2 :size="14" aria-hidden="true" />

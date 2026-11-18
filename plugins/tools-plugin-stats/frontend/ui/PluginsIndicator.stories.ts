@@ -113,6 +113,7 @@ const getRowOf = (popover: HTMLElement, name: string) =>
 export const Open: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const page = within(canvasElement.ownerDocument.body)
     await userEvent.click(await canvas.findByRole('button', { name: '5 plugins running' }))
     const popover = await canvas.findByRole('dialog', { name: 'Running plugins' })
 
@@ -124,28 +125,29 @@ export const Open: Story = {
     await expect(gazette.getByRole('img', { name: 'Idle' })).toBeVisible()
     const countdown = gazette.getByText('2m 02s')
     await expect(countdown).toBeVisible()
-    await expect(countdown).toHaveAttribute('title', 'Stops in 2m 02s; idle for 57s')
+    await userEvent.hover(countdown)
+    await expect(page.getByRole('tooltip')).toHaveTextContent('Stops in 2m 02s; idle for 57s')
 
     const ledger = getRowOf(popover, 'Ledger')
     await expect(within(ledger).getByRole('img', { name: 'Idle' })).toBeVisible()
     await expect(within(ledger).getByText('stopping')).toBeVisible()
-    await expect(ledger).toHaveAttribute('title', 'org.example.ledger\nRunning for 3h 00m')
+    await userEvent.hover(ledger)
+    await expect(page.getByRole('tooltip')).toHaveTextContent(
+      'org.example.ledger Running for 3h 00m',
+    )
 
     const maps = within(getRowOf(popover, 'Maps'))
     const health = maps.getByText(
       'The map server does not answer since the last restart of the tile service',
     )
     await expect(health).toBeVisible()
-    await expect(health).toHaveAttribute(
-      'title',
-      'The map server does not answer since the last restart of the tile service',
-    )
+    await expect(health).not.toHaveAttribute('title')
 
     const words = getRowOf(popover, 'Words')
     await expect(within(words).getByText('in core')).toBeVisible()
-    await expect(words).toHaveAttribute(
-      'title',
-      'org.example.words\nRunning for 3h 00m\nRuns inside the core',
+    await userEvent.hover(words)
+    await expect(page.getByRole('tooltip')).toHaveTextContent(
+      'org.example.words Running for 3h 00m Runs inside the core',
     )
   },
 }

@@ -6,6 +6,7 @@
  */
 import { computed, useTemplateRef } from 'vue'
 import { ChevronRight, Search, TriangleAlert, X } from '@lucide/vue'
+import { Tooltip, useTooltip } from '@numen/ui'
 import NavigationRow from './NavigationRow.vue'
 import PluginRow from './PluginRow.vue'
 import { getFilteredPluginItems, parsePluginQuery, type PluginFilterContext } from './filter'
@@ -30,6 +31,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const searchInput = useTemplateRef<HTMLInputElement>('searchInput')
+const clearTip = useTooltip()
 const filterContext: PluginFilterContext = { isEnabled: isPluginEnabled }
 const parsedQuery = computed(() => parsePluginQuery(searchQuery.value))
 const filteredPlugins = computed(() =>
@@ -122,11 +124,24 @@ function getReasonId(pluginId: string): string {
         type="button"
         class="plugins-list__clear"
         :aria-label="words.clearSearch"
-        :title="words.clearSearch"
+        :aria-describedby="clearTip.describedBy.value"
+        @mouseenter="clearTip.open"
+        @mouseleave="clearTip.close"
+        @focus="clearTip.open"
+        @blur="clearTip.close"
         @click="onClearSearch"
       >
         <X :size="14" aria-hidden="true" />
       </button>
+      <Teleport to="body">
+        <Tooltip
+          v-if="clearTip.at.value && searchQuery !== ''"
+          :id="clearTip.id"
+          :at="clearTip.at.value"
+        >
+          {{ words.clearSearch }}
+        </Tooltip>
+      </Teleport>
     </span>
 
     <div v-if="filteredPlugins.length > 0" class="settings-card plugins-list__box">

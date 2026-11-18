@@ -3,7 +3,7 @@
  * The title bar indicator of a new release, and the popover with its details.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import { isPageMove, useMenuDismissal } from '@numen/ui'
+import { Tooltip, isPageMove, useMenuDismissal, useTooltip } from '@numen/ui'
 import type { Update } from '../api/updater'
 import { getTooltip } from '../model/tooltip'
 import type { Platform } from '../types'
@@ -25,6 +25,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
+const tip = useTooltip()
 const tooltip = computed(() => (props.update ? getTooltip(props.version, props.update) : ''))
 const root = useTemplateRef<HTMLElement>('root')
 const dismissal = useMenuDismissal(root, onClose, isPageMove)
@@ -66,11 +67,18 @@ function onDismiss() {
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
       :aria-label="tooltip"
-      :title="tooltip"
+      :aria-describedby="tip.describedBy.value"
+      @mouseenter="tip.open"
+      @mouseleave="tip.close"
       @click="onToggle"
     >
       <span class="update-indicator__label">v{{ update.version }}</span>
     </button>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && !isOpen" :id="tip.id" :at="tip.at.value">
+        {{ tooltip }}
+      </Tooltip>
+    </Teleport>
 
     <UpdatePopover
       v-if="isOpen && update"

@@ -180,13 +180,12 @@ function onRunCommand(
           data-title-bar-focusable
           aria-haspopup="dialog"
           :aria-expanded="isListOpen"
-          :title="fullTitle"
           style="--wails-draggable: no-drag"
           @click="toggle"
         >
           {{ fullTitle }}
         </button>
-        <span v-else class="title-bar__title" data-title :title="fullTitle">{{ fullTitle }}</span>
+        <span v-else class="title-bar__title" data-title>{{ fullTitle }}</span>
       </div>
 
       <div class="title-bar__trail" data-title-bar-trail>

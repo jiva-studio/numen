@@ -5,7 +5,7 @@
  * opens from it.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import { isPageMove, useMenuDismissal } from '@numen/ui'
+import { Tooltip, isPageMove, useMenuDismissal, useTooltip } from '@numen/ui'
 import type { BackgroundTask } from '@numen/plugin-sdk'
 import { summarizeBatch, summarizeTasks } from '../lib/summary'
 import { type ChipState } from '../model/chipDisplay'
@@ -29,6 +29,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
+const tip = useTooltip()
 const root = useTemplateRef<HTMLElement>('root')
 const dismissal = useMenuDismissal(root, onClose, isPageMove)
 
@@ -97,9 +98,11 @@ function onClose() {
       class="tasks-status__trigger"
       :class="{ 'tasks-status__trigger--failed': hasFailed }"
       :aria-label="label"
-      :title="label"
+      :aria-describedby="tip.describedBy.value"
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
+      @mouseenter="tip.open"
+      @mouseleave="tip.close"
       @click="onToggle"
     >
       <svg
@@ -130,6 +133,11 @@ function onClose() {
 
       <span class="tasks-status__summary">{{ summaryText }}</span>
     </button>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && !isOpen" :id="tip.id" :at="tip.at.value">
+        {{ label }}
+      </Tooltip>
+    </Teleport>
 
     <div v-if="isOpen" class="tasks-status__popover-container">
       <TaskPopover

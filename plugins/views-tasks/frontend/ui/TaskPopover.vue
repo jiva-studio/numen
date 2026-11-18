@@ -4,7 +4,7 @@
  */
 import { computed } from 'vue'
 import { X } from '@lucide/vue'
-import { Button } from '@numen/ui'
+import { Button, Tooltip, useTooltip } from '@numen/ui'
 import type { BackgroundTask } from '@numen/plugin-sdk'
 import { orderTasks } from '../lib/summary'
 import { WORDS as words } from '../lib/words'
@@ -25,6 +25,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const closeTip = useTooltip()
 const taskList = computed(() => orderTasks(props.tasks))
 </script>
 
@@ -36,12 +37,21 @@ const taskList = computed(() => orderTasks(props.tasks))
         variant="ghost"
         size="icon-small"
         class="task-popover__close-btn"
-        :title="words.close"
         :aria-label="words.close"
+        :aria-describedby="closeTip.describedBy.value"
+        @mouseenter="closeTip.open"
+        @mouseleave="closeTip.close"
+        @focus="closeTip.open"
+        @blur="closeTip.close"
         @click="emit('close')"
       >
         <X :size="12" aria-hidden="true" />
       </Button>
+      <Teleport to="body">
+        <Tooltip v-if="closeTip.at.value" :id="closeTip.id" :at="closeTip.at.value">
+          {{ words.close }}
+        </Tooltip>
+      </Teleport>
     </div>
 
     <div v-if="taskList.length === 0" class="task-popover__empty">

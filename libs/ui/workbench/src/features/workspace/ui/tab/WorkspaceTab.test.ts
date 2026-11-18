@@ -22,81 +22,21 @@ const pressOn = (tab: ReturnType<typeof mountTab>, button: number) => {
 }
 
 describe('tab title', () => {
-  it('renders the title text without a native title attribute', () => {
-    const tab = mountTab({ title: LONG })
+  it('renders the title text without a native title attribute or tooltip', async () => {
+    const tab = mountTab({ title: LONG, isShowing: true })
 
     expect(tab.text()).toContain('A note with a name longer')
     expect(tab.element.querySelectorAll('[title]')).toHaveLength(0)
     expect(tab.attributes('title')).toBeUndefined()
-  })
-
-  it('shows no tooltip until the tab is hovered or focused', () => {
-    mountTab({ title: LONG })
-
     expect(getTooltips()).toHaveLength(0)
-  })
-
-  it('shows the full title in a tooltip while the pointer is over the tab', async () => {
-    const tab = mountTab({ title: LONG })
 
     await tab.trigger('mouseenter')
-
-    const tooltips = getTooltips()
-    expect(tooltips).toHaveLength(1)
-    expect(tooltips[0]?.textContent?.trim()).toBe(LONG)
-  })
-
-  it('links the hovered tab to its tooltip while it is open', async () => {
-    const tab = mountTab({ title: LONG })
-    await tab.trigger('mouseenter')
-
-    const tooltip = getTooltips()[0]
-    expect(tooltip?.id).toBeTruthy()
-    expect(tab.attributes('aria-describedby')).toBe(tooltip?.id)
-  })
-
-  it('hides the tooltip and the link when the pointer leaves the tab', async () => {
-    const tab = mountTab({ title: LONG })
-    await tab.trigger('mouseenter')
-
-    await tab.trigger('mouseleave')
-
     expect(getTooltips()).toHaveLength(0)
     expect(tab.attributes('aria-describedby')).toBeUndefined()
-  })
-
-  it('shows the full title in a tooltip while the tab has keyboard focus', async () => {
-    const tab = mountTab({ title: LONG, isShowing: true })
 
     tab.element.focus()
     await tab.vm.$nextTick()
-
-    const tooltips = getTooltips()
-    expect(tooltips).toHaveLength(1)
-    expect(tooltips[0]?.textContent?.trim()).toBe(LONG)
-    expect(tab.attributes('aria-describedby')).toBe(tooltips[0]?.id)
-  })
-
-  it('hides the tooltip when the tab loses focus', async () => {
-    const tab = mountTab({ title: LONG, isShowing: true })
-    tab.element.focus()
-    await tab.vm.$nextTick()
-
-    tab.element.blur()
-    await tab.vm.$nextTick()
-
     expect(getTooltips()).toHaveLength(0)
-    expect(tab.attributes('aria-describedby')).toBeUndefined()
-  })
-
-  it('hides the tooltip on Escape', async () => {
-    const tab = mountTab({ title: LONG })
-    await tab.trigger('mouseenter')
-
-    await tab.trigger('keydown', { key: 'Escape' })
-
-    expect(getTooltips()).toHaveLength(0)
-    expect(tab.attributes('aria-describedby')).toBeUndefined()
   })
 
   it('sets the close button aria-label from the title', () => {

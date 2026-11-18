@@ -562,7 +562,12 @@ describe('PluginDetail with settings that follow one another', () => {
     const row = findRow(wrapper, 'dictionary')!
     const label = row.find('[data-testid="setting-path"]')
     expect(label.text()).toBe('…/ru/letters.txt')
-    expect(label.attributes('title')).toBe('/home/a/dicts/ru/letters.txt')
+    expect(label.attributes('title')).toBeUndefined()
+    await label.trigger('mouseenter')
+    expect(document.body.querySelector('[role="tooltip"]')?.textContent?.trim()).toBe(
+      '/home/a/dicts/ru/letters.txt',
+    )
+    await label.trigger('mouseleave')
 
     const [choose, clear] = row.find('.settings__value').findAll('button')
     await choose!.trigger('click')

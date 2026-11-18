@@ -5,7 +5,7 @@
  * commands of the menu are read as it opens. A pick emits the command of its row and the id of its item.
  */
 import { computed, onBeforeUnmount, ref, useTemplateRef, type Component } from 'vue'
-import { Menu, measureRect, type MenuTrigger } from '@numen/ui'
+import { Menu, Tooltip, measureRect, useTooltip, type MenuTrigger } from '@numen/ui'
 import { TITLE_BAR_WORDS } from '../lib/words'
 import { BAR, useBarSlotMenu } from '../model/useBarSlotMenu'
 import type { TitleBarMenuButtonProps } from './TitleBarMenuButton.types'
@@ -27,6 +27,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const button = useTemplateRef<HTMLElement>('button')
+const tip = useTooltip()
 const trigger = ref<MenuTrigger>('pointer')
 const anchor = ref({ x: 0, y: 0 })
 const width = ref(0)
@@ -87,13 +88,22 @@ function getIcon(id: string): Component | undefined {
     aria-haspopup="menu"
     :aria-expanded="isMenuOpen"
     :aria-label="label"
-    :title="tooltip ?? label"
+    :aria-describedby="tip.describedBy.value"
     style="--wails-draggable: no-drag"
+    @mouseenter="tip.open"
+    @mouseleave="tip.close"
+    @focus="tip.open"
+    @blur="tip.close"
     @click="onToggle"
   >
     <component :is="icon" v-if="icon !== undefined" :size="16" />
     <template v-else>{{ label }}</template>
   </button>
+  <Teleport to="body">
+    <Tooltip v-if="tip.at.value && !isMenuOpen" :id="tip.id" :at="tip.at.value">
+      {{ tooltip ?? label }}
+    </Tooltip>
+  </Teleport>
   <Menu
     :items="rows"
     :at="anchor"

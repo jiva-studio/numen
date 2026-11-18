@@ -251,15 +251,14 @@ describe('searching the choices', () => {
 })
 
 describe('the value written on the line', () => {
-  it('is kept to one line and read whole from its title', () => {
+  it('is kept to one line without a native title attribute', () => {
     const control = mountSelect({
       choices: [{ id: 'long', text: 'Helper of the panel (Grove Press) with a long tail' }],
       modelValue: 'long',
     })
     const readingElement = control.get('.select__reading')
-    expect(readingElement.attributes('title')).toBe(
-      'Helper of the panel (Grove Press) with a long tail',
-    )
+    expect(readingElement.text()).toBe('Helper of the panel (Grove Press) with a long tail')
+    expect(readingElement.attributes('title')).toBeUndefined()
   })
 })
 

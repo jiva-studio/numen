@@ -10,7 +10,7 @@
  */
 import { computed, nextTick, ref, useTemplateRef } from 'vue'
 import { GripVertical, X } from '@lucide/vue'
-import { Button, Select, runInBackground } from '@numen/ui'
+import { Button, Select, Tooltip, runInBackground, useTooltip } from '@numen/ui'
 import type { ConnectionInfo, StoredRow } from '@/entities/connection'
 import { WORDS as words } from '../../../words'
 import type { ConnectionRowEditorProps } from './ConnectionRowEditor.types'
@@ -41,6 +41,7 @@ const { fields } = useRowChoices({
 })
 
 const isAdding = ref(false)
+const removeTip = useTooltip()
 const fieldSelects = useTemplateRef<InstanceType<typeof Select>[]>('fieldSelects')
 const connectionChoices = computed<readonly SelectChoice[]>(() => [
   ...props.choices,
@@ -150,11 +151,20 @@ function onFieldChoose(index: number, value: string): void {
       size="icon"
       class="connection-rows__remove"
       :aria-label="words.connectionRowsRemove(position)"
-      :title="words.connectionRowsRemove(position)"
+      :aria-describedby="removeTip.describedBy.value"
+      @mouseenter="removeTip.open"
+      @mouseleave="removeTip.close"
+      @focus="removeTip.open"
+      @blur="removeTip.close"
       @click="emit('remove')"
     >
       <X :size="14" aria-hidden="true" />
     </Button>
+    <Teleport to="body">
+      <Tooltip v-if="removeTip.at.value && !isSingle" :id="removeTip.id" :at="removeTip.at.value">
+        {{ words.connectionRowsRemove(position) }}
+      </Tooltip>
+    </Teleport>
 
     <ConnectionDialog
       v-if="isAdding"

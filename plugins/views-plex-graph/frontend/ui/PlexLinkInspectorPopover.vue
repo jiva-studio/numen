@@ -5,7 +5,7 @@
  */
 import { computed, ref, useTemplateRef } from 'vue'
 import { ArrowLeftRight, X } from '@lucide/vue'
-import { useOutsidePress } from '@numen/ui'
+import { Tooltip, useOutsidePress, useTooltip } from '@numen/ui'
 import type { Connection } from '@numen/plugin-sdk'
 import type { LinkInspectorRequest } from '../types'
 import {
@@ -34,6 +34,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const popover = useTemplateRef<HTMLDivElement>('popover')
+const closeTip = useTooltip()
 const draft = ref<Connection>(props.request.connection)
 const rows = computed(() => getRows(draft.value))
 
@@ -102,12 +103,21 @@ function onDone() {
       <button
         type="button"
         class="plex-link-popover__close-btn"
-        :title="words.cancel"
         :aria-label="words.cancel"
+        :aria-describedby="closeTip.describedBy.value"
+        @mouseenter="closeTip.open"
+        @mouseleave="closeTip.close"
+        @focus="closeTip.open"
+        @blur="closeTip.close"
         @click="onCancel"
       >
         <X class="plex-link-popover__close-icon" />
       </button>
+      <Teleport to="body">
+        <Tooltip v-if="closeTip.at.value" :id="closeTip.id" :at="closeTip.at.value">
+          {{ words.cancel }}
+        </Tooltip>
+      </Teleport>
     </div>
 
     <div class="plex-link-popover__body">
@@ -138,7 +148,6 @@ function onDone() {
         v-if="rows.length < 2"
         type="button"
         class="plex-link-popover__btn plex-link-popover__btn--add"
-        :title="rows.length === 0 ? words.addLink : words.addReverseDirection"
         @click="onAddReverse"
       >
         <span>+ {{ rows.length === 0 ? words.addLink : words.addReverseDirection }}</span>

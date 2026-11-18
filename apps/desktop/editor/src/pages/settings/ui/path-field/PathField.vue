@@ -6,7 +6,7 @@
  */
 import { computed } from 'vue'
 import { Trash2 } from '@lucide/vue'
-import { Button } from '@numen/ui'
+import { Button, Tooltip, useTooltip } from '@numen/ui'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
@@ -28,6 +28,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const tip = useTooltip()
 const paths = computed(() => parsePaths(props.path))
 const hasMultipleRows = computed(() => Boolean(props.isMulti))
 const multiRowPaths = computed(() => (hasMultipleRows.value ? paths.value : []))
@@ -78,8 +79,9 @@ function formatPathLabel(rawPath: string): string {
       <span
         v-if="paths[0]"
         class="settings__path-label"
-        :title="paths[0]"
         data-testid="setting-path"
+        @mouseenter="tip.open($event, paths[0])"
+        @mouseleave="tip.close"
       >
         {{ formatPathLabel(paths[0]) }}
       </span>
@@ -91,7 +93,10 @@ function formatPathLabel(rawPath: string): string {
         variant="outline"
         size="icon-small"
         :aria-label="words.pathClear"
-        :title="words.pathClear"
+        @mouseenter="tip.open($event, words.pathClear)"
+        @mouseleave="tip.close"
+        @focus="tip.open($event, words.pathClear)"
+        @blur="tip.close"
         @click="onClear(paths[0])"
       >
         <Trash2 :size="14" aria-hidden="true" />
@@ -103,24 +108,28 @@ function formatPathLabel(rawPath: string): string {
       </Button>
     </span>
     <span v-for="item in multiRowPaths" :key="item" class="settings__path-item">
-      <span
-        class="settings__path-label settings__path-label--full"
-        :title="item"
-        data-testid="setting-path"
-      >
+      <span class="settings__path-label settings__path-label--full" data-testid="setting-path">
         {{ item }}
       </span>
       <Button
         variant="outline"
         size="icon-small"
         :aria-label="words.pathClear"
-        :title="words.pathClear"
+        @mouseenter="tip.open($event, words.pathClear)"
+        @mouseleave="tip.close"
+        @focus="tip.open($event, words.pathClear)"
+        @blur="tip.close"
         @click="onClear(item)"
       >
         <Trash2 :size="14" aria-hidden="true" />
       </Button>
     </span>
     <span v-if="problem !== ''" class="settings__path-problem" role="alert">{{ problem }}</span>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+        {{ tip.text.value }}
+      </Tooltip>
+    </Teleport>
   </span>
 </template>
 

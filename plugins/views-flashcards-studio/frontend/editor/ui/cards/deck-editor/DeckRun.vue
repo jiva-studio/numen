@@ -3,7 +3,7 @@ import { SectionHeading } from './section-heading'
 import { Card } from './card'
 import { CutChoice } from './card-model-choice'
 import { Icon } from '../icon'
-import { Button } from '@numen/ui'
+import { Button, Tooltip, useTooltip } from '@numen/ui'
 import { DECK_WORDS, getRunEndPoint } from '../../../../lib/cards'
 import { getSealedMap, type InsertionPoint, type StepDirection } from '../../../../lib/cards'
 import type { CardModel } from '../../../../lib/cards'
@@ -27,6 +27,7 @@ const emit = defineEmits<{
 }>()
 
 /* ---------------------------------- State --------------------------------- */
+const addTip = useTooltip()
 const NO_FIELDS: ReadonlyMap<string, readonly string[]> = getSealedMap()
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -105,7 +106,11 @@ const onRemoveSection = (): void => {
         variant="ghost"
         class="deck__ask"
         :aria-label="words.add"
-        :title="words.add"
+        :aria-describedby="addTip.describedBy.value"
+        @mouseenter="addTip.open"
+        @mouseleave="addTip.close"
+        @focus="addTip.open"
+        @blur="addTip.close"
         @click="emit('ask')"
       >
         <Icon name="plus" />
@@ -117,6 +122,11 @@ const onRemoveSection = (): void => {
         :words="words"
         @choose="(cardModel) => emit('add', cardModel)"
       />
+      <Teleport to="body">
+        <Tooltip v-if="addTip.at.value && !isAsking" :id="addTip.id" :at="addTip.at.value">
+          {{ words.add }}
+        </Tooltip>
+      </Teleport>
     </article>
   </div>
 </template>

@@ -6,6 +6,7 @@
  */
 import type { Component } from 'vue'
 import type { SlotCommand } from '@numen/plugin-sdk'
+import { Tooltip, useTooltip } from '@numen/ui'
 import { formatShortcut } from '../lib/shortcut'
 import { formatTooltip } from '../lib/title'
 import { useIsDrawn } from '../model/useIsDrawn'
@@ -26,6 +27,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const tip = useTooltip()
 const isDrawn = useIsDrawn(
   () => props.getKey,
   () => props.hidden,
@@ -82,8 +84,11 @@ function getTooltip(entry: SlotCommand): string {
           :data-title-bar-command="entry.command"
           data-title-bar-focusable
           :aria-label="entry.title"
-          :title="getTooltip(entry)"
           style="--wails-draggable: no-drag"
+          @mouseenter="tip.open($event, getTooltip(entry))"
+          @mouseleave="tip.close"
+          @focus="tip.open($event, getTooltip(entry))"
+          @blur="tip.close"
           @click="onRunCommand(entry.command, undefined, entry.values)"
         >
           <component :is="entry.icon as Component" v-if="entry.icon !== undefined" :size="16" />
@@ -111,5 +116,10 @@ function getTooltip(entry: SlotCommand): string {
         </div>
       </template>
     </template>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+        {{ tip.text.value }}
+      </Tooltip>
+    </Teleport>
   </div>
 </template>

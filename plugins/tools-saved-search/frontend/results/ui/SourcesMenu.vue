@@ -4,7 +4,14 @@
  * its results are shown; choosing a file shows or hides its results.
  */
 import { computed, ref, useTemplateRef } from 'vue'
-import { Button, SearchableListPopup, measureRect, type ListItem } from '@numen/ui'
+import {
+  Button,
+  SearchableListPopup,
+  Tooltip,
+  measureRect,
+  useTooltip,
+  type ListItem,
+} from '@numen/ui'
 import { WORDS as words } from '../../words'
 import type { SourceView } from '../lib/view'
 import { SourcesIcon } from '../model/icons'
@@ -22,6 +29,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const trigger = useTemplateRef<InstanceType<typeof Button>>('trigger')
+const tip = useTooltip()
 const anchor = ref<{ x: number; y: number; width: number } | null>(null)
 
 const items = computed<readonly ListItem[]>(() =>
@@ -56,13 +64,22 @@ function onSelect(path: string) {
     class="saved-search__sources"
     :class="{ 'saved-search__sources--filtered': isFiltered }"
     :aria-label="words.sources"
-    :title="words.sources"
+    :aria-describedby="tip.describedBy.value"
     aria-haspopup="listbox"
     :aria-expanded="anchor !== null"
+    @mouseenter="tip.open"
+    @mouseleave="tip.close"
+    @focus="tip.open"
+    @blur="tip.close"
     @click="onOpen"
   >
     <SourcesIcon :size="16" aria-hidden="true" />
   </Button>
+  <Teleport to="body">
+    <Tooltip v-if="tip.at.value && anchor === null" :id="tip.id" :at="tip.at.value">
+      {{ words.sources }}
+    </Tooltip>
+  </Teleport>
   <SearchableListPopup
     v-if="anchor"
     :items="items"

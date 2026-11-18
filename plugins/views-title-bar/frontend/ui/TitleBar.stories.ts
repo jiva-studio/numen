@@ -307,8 +307,12 @@ export const NativeMacControls: Story = {
 export const TooltipOfACommand: Story = {
   play: async ({ canvasElement }) => {
     const files = canvasElement.querySelector('[data-title-bar-command="org.example.tide:files"]')!
-    await expect(files.getAttribute('title')).toBe('Open file tree (Ctrl+Shift+E)')
+    await expect(files.getAttribute('title')).toBeNull()
     await expect(files.getAttribute('aria-label')).toBe('Open file tree')
+    await userEvent.hover(files)
+    await expect(getPage(canvasElement).getByRole('tooltip')).toHaveTextContent(
+      'Open file tree (Ctrl+Shift+E)',
+    )
   },
 }
 

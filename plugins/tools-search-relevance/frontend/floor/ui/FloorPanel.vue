@@ -165,7 +165,6 @@ function onCheck(query: string): void {
             v-if="isAutomaticInRange"
             class="bg-ink pointer-events-none absolute top-1/2 h-3 w-px -translate-y-1/2"
             :style="{ left: `${automaticPercent}%` }"
-            :title="WORDS.automaticMarker"
             data-testid="floor-automatic-marker"
           />
         </div>

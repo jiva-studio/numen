@@ -5,10 +5,11 @@
  * replaces, so the maximize button opens Snap Layouts.
  */
 import { Copy, Minus, Square, X } from '@lucide/vue'
+import { Tooltip, useTooltip } from '@numen/ui'
 import type { WindowControlsWords } from '../../lib/frame'
 
 /* --------------------------------- Props ---------------------------------- */
-withDefaults(
+const props = withDefaults(
   defineProps<{
     look: 'windows' | 'mac'
     isMaximized?: boolean
@@ -23,6 +24,9 @@ const emit = defineEmits<{
   (event: 'toggle-maximize-window'): void
   (event: 'close-window'): void
 }>()
+
+/* --------------------------------- State ---------------------------------- */
+const tip = useTooltip()
 </script>
 
 <template>
@@ -32,8 +36,10 @@ const emit = defineEmits<{
       class="window-controls__button window-controls__button--minimize"
       data-control="minimize"
       tabindex="-1"
-      :title="words.minimize"
+      :aria-label="words.minimize"
       style="--wails-draggable: no-drag; --wails-non-client-region: minimize"
+      @mouseenter="tip.open($event, () => props.words.minimize)"
+      @mouseleave="tip.close"
       @click="emit('minimize-window')"
     >
       <Minus v-if="look === 'windows'" :size="14" />
@@ -44,8 +50,12 @@ const emit = defineEmits<{
       data-control="toggle-maximize"
       tabindex="-1"
       :data-maximized="String(isMaximized)"
-      :title="isMaximized ? words.restore : words.maximize"
+      :aria-label="isMaximized ? words.restore : words.maximize"
       style="--wails-draggable: no-drag; --wails-non-client-region: maximize"
+      @mouseenter="
+        tip.open($event, () => (props.isMaximized ? props.words.restore : props.words.maximize))
+      "
+      @mouseleave="tip.close"
       @click="emit('toggle-maximize-window')"
     >
       <template v-if="look === 'windows'">
@@ -58,11 +68,18 @@ const emit = defineEmits<{
       class="window-controls__button window-controls__button--close"
       data-control="close"
       tabindex="-1"
-      :title="words.close"
+      :aria-label="words.close"
       style="--wails-draggable: no-drag; --wails-non-client-region: close"
+      @mouseenter="tip.open($event, () => props.words.close)"
+      @mouseleave="tip.close"
       @click="emit('close-window')"
     >
       <X v-if="look === 'windows'" :size="14" />
     </button>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+        {{ tip.text.value }}
+      </Tooltip>
+    </Teleport>
   </div>
 </template>
