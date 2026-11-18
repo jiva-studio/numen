@@ -60,7 +60,10 @@ export function useDrawnWidgets(
     { flush: 'sync' },
   )
 
-  onScopeDispose(() => observer.disconnect())
+  onScopeDispose(() => {
+    observer.disconnect()
+    if (drawn.value) change(null)
+  })
 
   return { isDrawing, isMeasured, refresh }
 }

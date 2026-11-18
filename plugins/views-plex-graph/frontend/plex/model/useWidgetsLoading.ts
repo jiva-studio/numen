@@ -11,13 +11,7 @@ export function useWidgetsLoading(
   drawn: { isMeasured: Readonly<Ref<boolean>>; refresh: () => void },
   report: (isReady: boolean | null) => void,
 ): SlotLoading {
-  const loading = createSlotLoading({
-    clock,
-    reportIssue: (_pluginId, message) => {
-      const { warn } = console
-      warn(message)
-    },
-  })
+  const loading = createSlotLoading({ clock })
 
   watchPostEffect(() => {
     const isLoaded = loading.isReady.value
