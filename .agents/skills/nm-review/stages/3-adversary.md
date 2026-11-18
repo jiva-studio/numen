@@ -76,4 +76,4 @@ Any claim about scoping is tested with two vaults whose notes share no words, as
 
 ## Output integration
 
-A failing test becomes the proof of its finding in the report in [`../SKILL.md`](../SKILL.md); a passing one goes into the list of checks found sound. Name any test file left in the tree in the finding that uses it. Do not output a standalone report.
+A failing test becomes the proof of its finding in the report in [`../SKILL.md`](../SKILL.md). Name any test file left in the tree in the finding that uses it. Do not output a standalone report.

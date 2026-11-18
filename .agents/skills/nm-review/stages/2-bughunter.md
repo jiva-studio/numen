@@ -20,7 +20,8 @@ A white-box audit looking only for **functional defects**: logic bugs, races, co
 ## Phase 1: Diff and blast radius
 
 1. Extract the change for the target resolved in [`../SKILL.md`](../SKILL.md): `git diff "$BASE_SHA...$HEAD_SHA"` for a pull request or commit range, `git diff HEAD` for an uncommitted working tree.
-2. Map the blast radius:
+2. Audit each touched package or slice on its own before moving to the next.
+3. Map the blast radius:
    - Every caller of a changed function, method or component.
    - Upstream sources of the state it reads: props, RPC responses, index rows, files on disk.
    - Downstream consumers: watchers, computed properties, event subscribers, renderers, background workers.
@@ -62,6 +63,7 @@ A change to a wire message affects both the Go side and the generated TypeScript
 
 - Two actions fired in quick succession where the first resolves last and overwrites the second's result — missing cancellation or sequencing.
 - A stream or subscription whose events can arrive interleaved with a refetch.
+- A subscription opened before or after an initial snapshot read without a single lock or version covering both, where two updates before the snapshot completes let the stream replay the older update over the newer snapshot.
 - Optimistic state written before the call it depends on has succeeded, leaving the interface inconsistent when the call rejects.
 
 ### 5. Boundaries and indexes
@@ -80,6 +82,8 @@ A change to a wire message affects both the Go side and the generated TypeScript
 ### 7. A failure stays a failure
 
 - Follow every error, cancellation and missing value to the place that decides what to do with it. No path on the way may turn it into something the caller takes for success: a default value, a partial result, or a fallback to other data than the caller asked for. It is worst when a write follows a failed read.
+- A failed refresh or read that clears the tracked dependency set, leaving subsequent change filters deaf to the paths that would trigger recovery.
+- A change filter that checks only the paths in the last completed state and drops an event where a previously unrelated item enters the set.
 - What the caller gave is what the work uses, and what the work opens it closes, on every path including an exception.
 
 ### 8. Conditions

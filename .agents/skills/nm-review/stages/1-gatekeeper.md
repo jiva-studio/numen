@@ -61,7 +61,7 @@ Never run blanket checks over untouched parts of the monorepo.
 
 ## Level 2: Architectural inspection
 
-Read `AGENTS.md` at the root and in the touched module, and the rules summarized in [`../../../rules/architecture.md`](../../../rules/architecture.md), [`../../../rules/coding-style-backend.md`](../../../rules/coding-style-backend.md) and [`../../../rules/coding-style-frontend.md`](../../../rules/coding-style-frontend.md). Quote the rule when a change contradicts it. What follows is the short form.
+Read every `AGENTS.md` along the path from the repository root to each changed file's directory, and the rules summarized in [`../../../rules/architecture.md`](../../../rules/architecture.md), [`../../../rules/coding-style-backend.md`](../../../rules/coding-style-backend.md) and [`../../../rules/coding-style-frontend.md`](../../../rules/coding-style-frontend.md). Quote the rule when a change contradicts it. What follows is the short form.
 
 ### Placement
 

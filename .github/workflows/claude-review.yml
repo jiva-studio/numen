@@ -153,7 +153,7 @@ jobs:
       - if: env.MODE == 'full'
         uses: ./.github/actions/build-ui
         with:
-          shell: "true"
+          shell: 'true'
 
       - name: Quick review
         if: env.MODE == 'quick'
@@ -163,7 +163,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             /nm-review ${{ env.BASE_SHA }}...${{ env.REVIEWED_SHA }}
-            This run is a quick review of pull request #${{ env.PR_NUMBER }} in CI. Base branch: `${{ env.BASE_REF }}` (${{ env.BASE_SHA }}). Head commit: ${{ env.REVIEWED_SHA }}. Review only the diff of the pull request (`git diff ${{ env.BASE_SHA }}...${{ env.REVIEWED_SHA }}`) and stop with an error if `git rev-parse HEAD` is not ${{ env.REVIEWED_SHA }}. Do not review uncommitted working-tree changes. The pull request's CI runs the linters and the test suites. Run no gates and no tests, and install nothing: judge every stage by reading the code, and mark each proof "by reading".
+            This run is a quick review of pull request #${{ env.PR_NUMBER }} in CI. Base branch: `${{ env.BASE_REF }}` (${{ env.BASE_SHA }}). Head commit: ${{ env.REVIEWED_SHA }}. Review only the diff of the pull request (`git diff ${{ env.BASE_SHA }}...${{ env.REVIEWED_SHA }}`) and stop with an error if `git rev-parse HEAD` is not ${{ env.REVIEWED_SHA }}. Do not review uncommitted working-tree changes. The pull request's CI runs the linters and the test suites. Run no gates and no tests, and install nothing: judge every stage by reading the code, and prove each behaviour defect by tracing its exact files, lines and state transitions (Given -> When -> Then). Keep CRITICAL, HIGH and MEDIUM severities for defects proven by a state trace.
             Write the report to review-report.md in the workspace root. Write one word to review-verdict.txt: APPROVED, CHANGES_REQUESTED or REJECTED.
           claude_args: >-
             --allowedTools "Read,Grep,Glob,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git merge-base:*),Bash(git rev-parse:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(node tools/checks/style/names/check.mjs:*),Bash(node tools/lint-narrative/scan.mjs:*)"
