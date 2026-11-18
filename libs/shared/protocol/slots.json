@@ -54,6 +54,16 @@
       "about": "the menu of a node of the plex graph, over its note"
     },
     {
+      "name": "plexGraph.nodeAbove",
+      "owner": "the plugin of the plex graph",
+      "about": "the views over a node of the plex graph, each given the path of its note"
+    },
+    {
+      "name": "plexGraph.nodeBelow",
+      "owner": "the plugin of the plex graph",
+      "about": "the views under a node of the plex graph, each given the path of its note"
+    },
+    {
       "name": "palette.searchResult",
       "owner": "the palette",
       "about": "the actions of a search result that is a note, over that note"

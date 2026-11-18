@@ -14,12 +14,11 @@ import { DEFAULT_BEHAVIOR, getBehavior, type PlexBehavior } from '../model/behav
 import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
-import { DEFAULT_FOCUSED_NAMES_OPACITY, DEFAULT_NAMES_OPACITY } from '../model/namesOpacity'
 import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
 import { getFrameStyle } from './frameStyle'
-import { useNamesRooms } from '../model/useNamesRooms'
+import { useWidgetRooms } from '../model/useWidgetRooms'
 import type { PlexRelation } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -41,9 +40,6 @@ const props = withDefaults(defineProps<PlexProps>(), {
   pending: null,
   dragged: () => [],
   dropName: getRelationName,
-  showNames: false,
-  namesOpacity: DEFAULT_NAMES_OPACITY,
-  focusedNamesOpacity: DEFAULT_FOCUSED_NAMES_OPACITY,
 })
 
 /* --------------------------------- Events --------------------------------- */
@@ -75,7 +71,7 @@ const { room, options, measures, widen, placedHeadings } = useFreeSpace(
 /** How the nodes behave, handed down as one. */
 const behavior = computed<PlexBehavior>(() => getBehavior(props))
 
-const { getRoomOf, getNodeRoom } = useNamesRooms(props, measures, options)
+const { setWidgets, getNodeRoom } = useWidgetRooms(options)
 
 const { frame, isMoving } = usePlexTransition(
   () => props.graph,
@@ -175,13 +171,14 @@ watch(
       :show-edge-labels="showEdgeLabels"
       :show-pills="showPills"
       :highlight-links="highlightLinks && !isMoving"
-      :names-opacity="namesOpacity"
-      :focused-names-opacity="focusedNamesOpacity"
       :can-reach="canReach"
       :relation-name="relationName"
       :widen="widen"
       :placed-headings="placedHeadings"
-      :room-of="getRoomOf"
+      :widgets-above="widgetsAbove"
+      :widgets-below="widgetsBelow"
+      :get-path="getPath"
+      :set-widgets="setWidgets"
       :behavior="behavior"
       :gesture="gesture"
       :dragging="dragging"
@@ -193,7 +190,6 @@ watch(
       @ask="gesture.ask"
       @menu="(id, at, trigger) => emit('menu', id, at, trigger)"
       @enter="(id, heading) => emit('enter', id, heading)"
-      @choose-name="emit('chooseName', $event)"
       @edge-menu="(pair, at) => emit('edge-menu', pair, at)"
     >
       <template v-if="$slots.icon" #icon="{ node }"><slot name="icon" :node="node" /></template>

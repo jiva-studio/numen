@@ -110,7 +110,7 @@ const arrowLine = (arrow: Arrow) =>
 </template>
 
 <style scoped>
-/* The backdrop behind the headings is nearly opaque, so the lines and names under
+/* The backdrop behind the headings is nearly opaque, so the lines under
    it do not show through the text. */
 .plex__backdrop {
   --backdrop-rx: 0.25rem;

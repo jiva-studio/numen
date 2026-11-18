@@ -46,7 +46,7 @@ const { isReady: isLayoutReady } = tabParts.layout
 const { openCurrentVault } = tabParts
 const { commands, search } = palettes.palette
 const { runCommand, runChoice } = palettes.palette.runs
-const { commandDeps } = palettes
+const { commandDeps, picker } = palettes
 const { pluginWays } = palettes.pluginPalette
 const { titleBarView, statusBarView, windowEdge } = views
 const { fileFlush, getTitle } = vault.editing
@@ -144,6 +144,7 @@ const { isStarted, failure: bootstrapFailure, retry: retryBootstrap } = bootstra
       :get-target="getTarget"
       :places="{ findFileIcon: tabOpeners.findFileIcon }"
       :run-choice="runChoice"
+      :picker="picker"
     />
   </main>
 </template>

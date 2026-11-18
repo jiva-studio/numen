@@ -47,3 +47,14 @@ func TestTheFileTreeRowEndIsAnInnerSlot(t *testing.T) {
 		t.Error("fileTree.rowEnd is a slot of the window")
 	}
 }
+
+func TestThePlexGraphHasASlotAboveAndASlotBelowItsNodes(t *testing.T) {
+	for _, name := range []string{"plexGraph.nodeAbove", "plexGraph.nodeBelow"} {
+		if !manifest.IsSlot(name) {
+			t.Errorf("IsSlot(%q) = false, want true", name)
+		}
+		if manifest.IsWindowSlot(name) {
+			t.Errorf("IsWindowSlot(%q) = true, want false: the plex draws it, not the window", name)
+		}
+	}
+}

@@ -167,3 +167,9 @@ await test('the inputs of the e2e tests leave out documentation, unit tests and 
     assert.equal(isE2eInput(file), false, file)
   }
 })
+
+await test('a change to the plex related names plugin selects the acceptance scenarios that guard the names of the plex', () => {
+  assert.ok(
+    getScope(['plugins/views-plex-related-names/frontend/index.ts']).split(' ').includes('acceptance'),
+  )
+})

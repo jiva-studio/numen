@@ -28,7 +28,7 @@ export type { AppearanceWords, Mode, WindowAppearance } from './features/appeara
 
 export { Palette } from './features/palette'
 export { commandKeyChord } from './features/palette'
-export type { ActionWords, PaletteItem, PaletteGroup } from './features/palette'
+export type { ActionWords, PaletteItem, PaletteGroup, PaletteMultiProps } from './features/palette'
 
 /** One list of notices for a window, given by the parts it hosts. */
 export { createNoticeQueue, type NoticeQueue } from './features/notices'

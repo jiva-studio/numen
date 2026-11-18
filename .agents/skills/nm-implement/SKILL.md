@@ -95,8 +95,8 @@ Read `git diff origin/main` once more before opening the pull request and before
 When local gates pass:
 
 1. If opening a pull request, create it as a draft (`gh pr create --draft`) and wait for CI checks to pass (`gh pr checks --watch`), fixing any CI failures while the pull request remains in draft.
-2. Mark the pull request ready for review (`gh pr ready`). Leaving draft starts the Claude review workflow, which runs the review pipeline (Gatekeeper, Bug Hunter, Adversary, and the feature conformance check) and approves or requests changes as github-actions[bot]. Fix any findings, push, and comment `/nm-review` to review again until it approves, with CI green.
-3. Once CI is green and the review workflow has approved, stop and report once. The session that coordinates the pull requests requests CodeRabbit (`gh pr comment --body "@coderabbitai review"`) and, after its findings are fixed, CI is green and the review workflow has approved the new commits, requests it once more. That session merges by hand (`gh pr merge --squash`) when github-actions and CodeRabbit have approved, never by auto-merge or `--admin`. An implementation agent does not request CodeRabbit and does not merge.
+2. Mark the pull request ready for review (`gh pr ready`). Leaving draft starts the Claude review workflow, which runs the review pipeline (Gatekeeper, Bug Hunter, Adversary, and the feature conformance check) and approves or requests changes as claude[bot]. Fix any findings, push, and comment `/nm-review` to review again until it approves, with CI green.
+3. Once CI is green and the review workflow has approved, stop and report once. The session that coordinates the pull requests requests CodeRabbit (`gh pr comment --body "@coderabbitai review"`) and, after its findings are fixed, CI is green and the review workflow has approved the new commits, requests it once more. That session enables auto-merge (`gh pr merge --squash --auto`) when claude and CodeRabbit have approved, never `--admin`. An implementation agent does not request CodeRabbit and does not enable auto-merge.
 
 Prompt the user clearly when all tests are green:
 
