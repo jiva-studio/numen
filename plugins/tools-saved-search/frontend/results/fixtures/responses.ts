@@ -129,12 +129,12 @@ export const FUNCTIONS: ListSearchFunctionsResponse = {
       signatures: ['meaning(text)'],
     },
     {
-      name: 'tags',
+      name: 'hasTag',
       kind: 'function',
       summary: 'notes with this tag',
       description: 'Finds notes that carry the tag you give.',
-      example: 'tags("harbor")',
-      signatures: ['tags(name)'],
+      example: 'hasTag("harbor")',
+      signatures: ['hasTag(name)'],
     },
     {
       name: 'top',
