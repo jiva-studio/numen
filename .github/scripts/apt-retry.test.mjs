@@ -106,7 +106,7 @@ describe('apt-retry.sh', () => {
   })
 
   it('stops at the deadline even when the command starts a background grandchild holding stdout', () => {
-    writeFileSync(join(dir, 'grandchild.sh'), '(sleep 30) &\necho started\nsleep 30\n')
+    writeFileSync(join(dir, 'grandchild.sh'), '(trap "" TERM; sleep 30) &\necho started\nsleep 30\n')
     const began = Date.now()
     const result = run(['bash', join(dir, 'grandchild.sh')], { APT_RETRY_DEADLINE: '2' })
     assert.equal(result.status, 124)

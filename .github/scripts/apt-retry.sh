@@ -73,10 +73,16 @@ for ((attempt = 1; attempt <= attempts; attempt++)); do
   fi
   if [ "$attempt" -gt 1 ] || [ "$update_first" = true ]; then
     # A failed refresh is not final: the command that follows fails or succeeds on its own.
-    run_bounded "${update[@]}" 2>&1 || true
+    run_bounded "${update[@]}" > /dev/null 2>&1 || true
   fi
-  run_bounded "$@" 2>&1 | tee "$log"
-  status=${PIPESTATUS[0]}
+  > "$log"
+  tail -n +1 -f "$log" --pid=$$ &
+  tail_pid=$!
+  run_bounded "$@" > "$log" 2>&1
+  status=$?
+  sleep 0.05
+  kill "$tail_pid" 2>/dev/null || true
+  wait "$tail_pid" 2>/dev/null || true
   if [ "$status" -eq 0 ]; then
     exit 0
   fi
