@@ -1,5 +1,5 @@
 import type { Api, CommandRegistration, PickerHost, PickerItem } from '@numen/plugin-sdk'
-import type { SetTagsRequest, SetTagsResult, TagList } from '../../types'
+import type { SetTagsRequest, SetTagsResult, TagList, TagsByPath } from '../../types'
 import { getCreateTagTitle, TAG_PLACEHOLDER, TAGS_TITLE } from '../../words'
 import { getPickerState, getTagKey } from '../lib/pickerState'
 import { getTagColor } from '../../lib/color'
@@ -9,6 +9,7 @@ export interface SetTagsDeps {
   readonly api: Api
   readonly picker: PickerHost
   readonly getTags: (path: string) => readonly string[]
+  readonly setTags?: (changed: TagsByPath) => void
 }
 
 /**
@@ -32,6 +33,11 @@ export function createSetTags(deps: SetTagsDeps): CommandRegistration {
           toggles: [tag],
         })
         if (!written.ok) return paths.map(deps.getTags)
+        const changed: Record<string, readonly string[]> = {}
+        for (const one of written.value.notes) {
+          if (!one.error) changed[one.path] = one.tags
+        }
+        deps.setTags?.(changed)
         return written.value.notes.map((one) => (one.error ? deps.getTags(one.path) : one.tags))
       }
 

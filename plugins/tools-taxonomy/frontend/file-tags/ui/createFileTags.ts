@@ -11,6 +11,9 @@ export function createFileTags(tagMap: TagSource) {
   return defineComponent({
     name: 'FileTagsView',
     props: { path: { type: String, required: true } },
-    setup: (props) => () => h(FileTags, { tags: tagMap.getTags(props.path) }),
+    setup: (props) => {
+      tagMap.getTags(props.path)
+      return () => h(FileTags, { tags: tagMap.getTags(props.path) })
+    },
   })
 }

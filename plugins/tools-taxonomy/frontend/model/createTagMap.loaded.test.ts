@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { ApiError } from '@numen/plugin-sdk'
-import type { TagMapMessage } from '../types'
+import type { ApiError, Result } from '@numen/plugin-sdk'
+import type { TagMapResponse } from '../types'
 import { createTagMap } from './createTagMap'
 
 const flush = async () => {
@@ -8,17 +8,16 @@ const flush = async () => {
 }
 
 describe('the tag map that is loaded', () => {
-  it('is loaded once the first message was read and not before', async () => {
+  it('is loaded once the response was read and not before', async () => {
     let release: () => void = () => undefined
     const gate = new Promise<void>((resolve) => {
       release = resolve
     })
     const map = createTagMap({
       api: {
-        watchTagMap: async function* (): AsyncGenerator<TagMapMessage, ApiError | null> {
+        getTagMap: async (): Promise<Result<TagMapResponse, ApiError>> => {
           await gate
-          yield { tags: { 'notes/Quay.md': ['Port'] } }
-          return new Promise<never>(() => undefined)
+          return { ok: true, value: { tags: { 'notes/Quay.md': ['Port'] } } }
         },
       },
     })
@@ -34,12 +33,13 @@ describe('the tag map that is loaded', () => {
     expect([before, isLoaded, map.getTags('notes/Quay.md')]).toStrictEqual([false, true, ['Port']])
   })
 
-  it('is loaded when the stream ends without a message', async () => {
+  it('is loaded when the request fails', async () => {
     const map = createTagMap({
       api: {
-        watchTagMap: async function* (): AsyncGenerator<TagMapMessage, ApiError | null> {
-          return { code: 'unavailable', message: 'down' }
-        },
+        getTagMap: async (): Promise<Result<TagMapResponse, ApiError>> => ({
+          ok: false,
+          error: { code: 'unavailable', message: 'down' },
+        }),
       },
     })
 

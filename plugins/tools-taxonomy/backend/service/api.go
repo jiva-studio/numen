@@ -26,9 +26,6 @@ func mountAPI(s *server.Server, cache *tagcache.Caches, setter *settags.UseCase)
 	server.Handle(a, api.MethodGetTagMap, func(ctx context.Context, _ api.GetTagMapRequest) (api.TagMap, error) {
 		return getTagMap(ctx, cache)
 	})
-	server.Stream(a, api.MethodWatchTagMap, func(ctx context.Context, _ api.WatchTagMapRequest, send func(api.TagMapMessage) error) error {
-		return watchTagMap(ctx, cache, send)
-	})
 }
 
 func getRequestVault(ctx context.Context) (domain.VaultID, error) {
@@ -59,34 +56,6 @@ func getTagMap(ctx context.Context, cache *tagcache.Caches) (api.TagMap, error) 
 		return api.TagMap{}, convertError(fmt.Errorf("get the tag map: %w", err))
 	}
 	return api.TagMap{Tags: found}, nil
-}
-
-func watchTagMap(ctx context.Context, cache *tagcache.Caches, send func(api.TagMapMessage) error) error {
-	id, err := getRequestVault(ctx)
-	if err != nil {
-		return err
-	}
-	found, changes, cancel, err := cache.Watch(ctx, id)
-	if err != nil {
-		return convertError(fmt.Errorf("watch the tag map: %w", err))
-	}
-	defer cancel()
-	if err := send(api.TagMapMessage{Tags: found, Changed: nil}); err != nil {
-		return err
-	}
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case change, isOpen := <-changes:
-			if !isOpen {
-				return nil
-			}
-			if err := send(api.TagMapMessage{Tags: nil, Changed: change.Changed}); err != nil {
-				return err
-			}
-		}
-	}
 }
 
 func getTags(ctx context.Context, cache *tagcache.Caches, setter *settags.UseCase) (api.TagList, error) {

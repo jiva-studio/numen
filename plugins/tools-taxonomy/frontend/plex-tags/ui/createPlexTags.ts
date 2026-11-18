@@ -11,6 +11,9 @@ export function createPlexTags(tagMap: TagSource) {
   return defineComponent({
     name: 'PlexTagsView',
     props: { path: { type: String, required: true } },
-    setup: (props) => () => h(PlexTags, { tags: tagMap.getTags(props.path) }),
+    setup: (props) => {
+      tagMap.getTags(props.path)
+      return () => h(PlexTags, { tags: tagMap.getTags(props.path) })
+    },
   })
 }

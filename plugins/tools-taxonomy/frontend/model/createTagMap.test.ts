@@ -1,54 +1,67 @@
 import { describe, expect, it, vi } from 'vitest'
 import { effectScope, watchEffect } from 'vue'
-import type { ApiError } from '@numen/plugin-sdk'
-import type { TagMapMessage } from '../types'
-import { createTagMap, type TagMapApi } from './createTagMap'
+import type { ApiError, Disposable, Result, VaultChangeEvent } from '@numen/plugin-sdk'
+import type { TagMapResponse, TagsByPath } from '../types'
+import { createTagMap } from './createTagMap'
 
 const flush = async () => {
   for (let i = 0; i < 10; i++) await Promise.resolve()
 }
 
-const createFeed = () => {
-  const queue: TagMapMessage[] = []
-  let wake: (() => void) | undefined
-  let isEnded = false
+const WHOLE: TagMapResponse = {
+  tags: { 'notes/Quay.md': ['Port', 'Sea'], 'notes/Dock.md': ['Port', 'Sea', 'Quay'] },
+}
+
+const createFeed = (initial: TagsByPath = WHOLE.tags) => {
+  let current: TagsByPath = initial
+  const listeners = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
   const signals: (AbortSignal | undefined)[] = []
-  const watchTagMap = vi.fn(async function* (options?: { signal?: AbortSignal }) {
-    signals.push(options?.signal)
-    while (!isEnded) {
-      const next = queue.shift()
-      if (next) yield next
-      else await new Promise<void>((resolve) => (wake = resolve))
-    }
-    return null as ApiError | null
-  })
-  const api: TagMapApi = { watchTagMap }
+  const getTagMap = vi.fn(
+    async (options?: { signal?: AbortSignal }): Promise<Result<TagMapResponse, ApiError>> => {
+      signals.push(options?.signal)
+      return { ok: true, value: { tags: current } }
+    },
+  )
+  const api = { getTagMap }
+  const events = {
+    onVaultChange: (handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable => {
+      listeners.add(handler)
+      return {
+        dispose: () => {
+          listeners.delete(handler)
+        },
+      }
+    },
+  }
   return {
     api,
-    watchTagMap,
+    events,
+    getTagMap,
     signals,
-    send: async (message: TagMapMessage) => {
-      queue.push(message)
-      wake?.()
+    changeVault: async (next: TagsByPath) => {
+      current = next
+      for (const listener of listeners) await listener({})
       await flush()
-    },
-    end: () => {
-      isEnded = true
-      wake?.()
     },
   }
 }
 
-const WHOLE: TagMapMessage = {
-  tags: { 'notes/Quay.md': ['Port', 'Sea'], 'notes/Dock.md': ['Port', 'Sea', 'Quay'] },
-}
-
 describe('the tag map', () => {
-  it('gives the tags of a path as the first message holds them, in order', async () => {
+  it('does not call getTagMap before getTags or whenLoaded', async () => {
+    const feed = createFeed()
+    const map = createTagMap({ api: feed.api, events: feed.events })
+
+    await feed.changeVault({ 'notes/Quay.md': ['Port'] })
+
+    expect(feed.getTagMap).not.toHaveBeenCalled()
+    map.stop()
+  })
+
+  it('gives the tags of a path as the backend holds them, in order', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
 
-    await feed.send(WHOLE)
+    await map.whenLoaded()
 
     expect(map.getTags('notes/Dock.md')).toStrictEqual(['Port', 'Sea', 'Quay'])
     expect(map.getTags('notes/Quay.md')).toStrictEqual(['Port', 'Sea'])
@@ -59,107 +72,134 @@ describe('the tag map', () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
 
-    await feed.send(WHOLE)
+    await map.whenLoaded()
 
     expect(map.getTags('notes/Pier.md')).toStrictEqual([])
     expect(map.getTags('notes')).toStrictEqual([])
     map.stop()
   })
 
-  it('gives no tags before the first message', () => {
-    const feed = createFeed()
-    const map = createTagMap({ api: feed.api })
+  it('gives no tags before the first answer', () => {
+    const map = createTagMap({
+      api: { getTagMap: () => new Promise<never>(() => undefined) },
+    })
 
     expect(map.getTags('notes/Quay.md')).toStrictEqual([])
     map.stop()
   })
 
-  it('opens one watch for any number of paths', async () => {
+  it('reads the map once for any number of paths', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await feed.send(WHOLE)
+    await map.whenLoaded()
 
     for (let i = 0; i < 100; i++) map.getTags(`notes/Note ${i}.md`)
     map.getTags('notes/Quay.md')
     map.getTags('notes/Quay.md')
 
-    expect(feed.watchTagMap).toHaveBeenCalledTimes(1)
+    expect(feed.getTagMap).toHaveBeenCalledTimes(1)
     map.stop()
   })
 
-  it('takes a change of one path without a request and keeps the other paths', async () => {
+  it('takes a change of one path from setTags without a request and keeps the other paths', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await feed.send(WHOLE)
+    await map.whenLoaded()
 
-    await feed.send({ changed: { 'notes/Quay.md': ['Port', 'Sea', 'Dock'] } })
+    map.setTags({ 'notes/Quay.md': ['Port', 'Sea', 'Dock'] })
 
     expect(map.getTags('notes/Quay.md')).toStrictEqual(['Port', 'Sea', 'Dock'])
     expect(map.getTags('notes/Dock.md')).toStrictEqual(['Port', 'Sea', 'Quay'])
-    expect(feed.watchTagMap).toHaveBeenCalledTimes(1)
+    expect(feed.getTagMap).toHaveBeenCalledTimes(1)
     map.stop()
   })
 
-  it('holds the tags of a path that had none when a change names it', async () => {
+  it('holds the tags of a path that had none when setTags names it', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await feed.send(WHOLE)
+    await map.whenLoaded()
 
-    await feed.send({ changed: { 'notes/Pier.md': ['Port'] } })
+    map.setTags({ 'notes/Pier.md': ['Port'] })
 
     expect(map.getTags('notes/Pier.md')).toStrictEqual(['Port'])
     map.stop()
   })
 
-  it('forgets the tags of a path a change names with an empty list', async () => {
+  it('forgets the tags of a path setTags names with an empty list', async () => {
     const feed = createFeed()
     const map = createTagMap({ api: feed.api })
-    await feed.send(WHOLE)
+    await map.whenLoaded()
 
-    await feed.send({ changed: { 'notes/Quay.md': [] } })
+    map.setTags({ 'notes/Quay.md': [] })
 
     expect(map.getTags('notes/Quay.md')).toStrictEqual([])
     expect(map.getTags('notes/Dock.md')).toStrictEqual(['Port', 'Sea', 'Quay'])
     map.stop()
   })
 
-  it('notifies a watcher of a path when the tags of that path change', async () => {
+  it('notifies a watcher of a path when a vault change changes the tags of that path', async () => {
     const feed = createFeed()
-    const map = createTagMap({ api: feed.api })
-    await feed.send(WHOLE)
+    const map = createTagMap({ api: feed.api, events: feed.events })
+    await map.whenLoaded()
     const seen: string[] = []
     const scope = effectScope()
     scope.run(() => watchEffect(() => seen.push(map.getTags('notes/Quay.md').join(', '))))
 
-    await feed.send({ changed: { 'notes/Quay.md': ['Sea'] } })
+    await feed.changeVault({ 'notes/Quay.md': ['Sea'], 'notes/Dock.md': ['Port', 'Sea', 'Quay'] })
 
     expect(seen).toStrictEqual(['Port, Sea', 'Sea'])
     scope.stop()
     map.stop()
   })
 
-  it('does not notify a watcher of a path about a change of another path', async () => {
+  it('does not notify a watcher of a path when a vault change changes only another path', async () => {
     const feed = createFeed()
-    const map = createTagMap({ api: feed.api })
-    await feed.send(WHOLE)
+    const map = createTagMap({ api: feed.api, events: feed.events })
+    await map.whenLoaded()
     const seen: string[] = []
     const scope = effectScope()
     scope.run(() => watchEffect(() => seen.push(map.getTags('notes/Quay.md').join(', '))))
 
-    await feed.send({ changed: { 'notes/Dock.md': ['Port'] } })
+    await feed.changeVault({ 'notes/Quay.md': ['Port', 'Sea'], 'notes/Dock.md': ['Port'] })
 
     expect(seen).toStrictEqual(['Port, Sea'])
     scope.stop()
     map.stop()
   })
 
-  it('ends the read when it is stopped', async () => {
+  it('reloads on the next read after a vault change when no watcher is active', async () => {
     const feed = createFeed()
-    const map = createTagMap({ api: feed.api })
-    await feed.send(WHOLE)
+    const map = createTagMap({ api: feed.api, events: feed.events })
+    const scope = effectScope()
+    scope.run(() => watchEffect(() => map.getTags('notes/Quay.md')))
+    await flush()
+    expect(feed.getTagMap).toHaveBeenCalledTimes(1)
+
+    scope.stop()
+    await feed.changeVault({ 'notes/Quay.md': ['Sea'] })
+    expect(feed.getTagMap).toHaveBeenCalledTimes(1)
+
+    await map.whenLoaded()
+    expect(feed.getTagMap).toHaveBeenCalledTimes(2)
+    expect(map.getTags('notes/Quay.md')).toStrictEqual(['Sea'])
+    map.stop()
+  })
+
+  it('aborts an in-flight read when it is stopped', async () => {
+    const signals: (AbortSignal | undefined)[] = []
+    const map = createTagMap({
+      api: {
+        getTagMap: (options) => {
+          signals.push(options?.signal)
+          return new Promise<never>(() => undefined)
+        },
+      },
+    })
+    map.getTags('notes/Quay.md')
+    await flush()
 
     map.stop()
 
-    expect(feed.signals[0]?.aborted).toBe(true)
+    expect(signals[0]?.aborted).toBe(true)
   })
 })
