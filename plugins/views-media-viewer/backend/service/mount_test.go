@@ -12,10 +12,6 @@ import (
 
 func readFixture[T any](t *testing.T, kind string) T {
 	t.Helper()
-	retried, err := saveRecording(t.Context(), vault, req)
-	if err != nil || retried != saved {
-		t.Fatalf("retry = %+v, %v, want %+v", retried, err, saved)
-	}
 	raw, err := os.ReadFile("../../testdata/api/SaveRecording." + kind + ".json")
 	if err != nil {
 		t.Fatal(err)
@@ -34,6 +30,10 @@ func TestSaveRecordingCreatesTheCapturedBytesInTheVault(t *testing.T) {
 	saved, err := saveRecording(t.Context(), vault, req)
 	if err != nil || saved != want {
 		t.Fatalf("save = %+v, %v, want %+v", saved, err, want)
+	}
+	retried, err := saveRecording(t.Context(), vault, req)
+	if err != nil || retried != saved {
+		t.Fatalf("retry = %+v, %v, want %+v", retried, err, saved)
 	}
 	raw, err := os.ReadFile(vault.Vault().Path + "/" + saved.Path)
 	if err != nil || !bytes.Equal(raw, req.Content) {
