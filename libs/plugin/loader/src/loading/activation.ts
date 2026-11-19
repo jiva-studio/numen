@@ -61,7 +61,7 @@ async function activateModule(
   start: EntryStart & { readonly resolved: PluginModule },
 ): Promise<StartOutcome> {
   const { host, activePlugins } = ctx
-  const isLatest = (): boolean => ctx.starts.get(pluginId) === start.number
+  const isLatest = (): boolean => !ctx.signal?.aborted && ctx.starts.get(pluginId) === start.number
   const { activate, deactivate } = parseLifecycleHooks(start.resolved)
   if (activate) {
     if (isLatest()) host.markPluginStarting?.(pluginId)
@@ -88,11 +88,12 @@ async function startEntry(
   try {
     const resolved = await resolveModule(pluginId, start.module, ctx)
     if (isExpired()) return 'expired'
-    if (!resolved) return false
+    if (!resolved || ctx.signal?.aborted) return false
     return await activateModule(ctx, pluginId, { ...start, resolved })
   } catch (error) {
     if (isExpired()) {
-      if (ctx.starts.get(pluginId) === start.number) discardEntry(ctx, pluginId)
+      if (!ctx.signal?.aborted && ctx.starts.get(pluginId) === start.number)
+        discardEntry(ctx, pluginId)
       return 'expired'
     }
     start.scope.cancel()
@@ -114,6 +115,10 @@ export async function activateEntry(
   pluginId: string,
   begun: { readonly module?: PluginModule | undefined; readonly limit?: StartLimit | undefined },
 ): Promise<boolean> {
+  if (ctx.signal?.aborted) {
+    begun.limit?.stop()
+    return false
+  }
   const limit = begun.limit ?? createStartLimit()
   if (ctx.activePlugins.value.has(pluginId)) {
     limit.stop()
