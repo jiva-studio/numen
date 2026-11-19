@@ -172,7 +172,8 @@ func TestTechnologyRule_ReadsAPortADeclaredByAUseCase(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
 		"usecase/find/find.go":       "package find\n\ntype Cache interface{ Get() string }\n\ntype Find struct{ cache Cache }\n\nfunc New(c Cache) *Find { return &Find{cache: c} }\n",
 		"adapter/blob/blob.go":       "package blob\n\ntype Blob struct{}\n\nfunc (Blob) Get() string { return \"\" }\n",
-		"internal/adapter/disk/d.go": "package disk\n\nimport (\n\t\"os\"\n\n\t\"fixture/usecase/find\"\n)\n\ntype Disk struct{}\n\nfunc (Disk) Get() string { _, _ = os.Getwd(); return \"\" }\n\nvar _ find.Cache = Disk{}\n",
+		"internal/adapter/disk/d.go": "package disk\n\nimport (\n\t\"os\"\n\n\t\"fixture/usecase/find\"\n)\n\ntype Disk struct{}\n\n" +
+			"func (Disk) Get() string { _, _ = os.Getwd(); return \"\" }\n\nvar _ find.Cache = Disk{}\n",
 	})
 	found, driven := getAdapterTechnologyFindings(load.LoadFixture(t, dir), "fixture", map[string]string{})
 	want := []string{"adapter/blob is a driven adapter that calls no technology: it holds callbacks or names types, it integrates nothing"}
