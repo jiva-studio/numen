@@ -8,9 +8,13 @@ import (
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
+	queryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchstore"
@@ -29,21 +33,28 @@ func emitIndexChanged(generations *indexgeneration.Generations, events *editor.E
 	}
 }
 
-func newSearchRuns(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, searchDeps textSearch, vaultDeps vaultWiring) *searchrunusecase.SearchRuns {
-	find := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, searchDeps, w.db, w.asking, w.state.ReportFloorError)
+type windowSearch struct {
+	index       *Index
+	source      searchsourceport.Source
+	tasks       *run.Tasks
+	generations *indexgeneration.Generations
+	kinds       *file.ListTabKinds
+}
+
+func newSearchRuns(w windowSearch, find *queryusecase.FindSearchResults, runtime PluginRuntime, clock machineport.Timer) *searchrunusecase.SearchRuns {
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
 		Store:       searchstore.New(),
-		Cancels:     searchcancel.NewSearches(vaultDeps.Clock),
+		Cancels:     searchcancel.NewSearches(clock),
 		Tasks:       w.tasks,
-		Timer:       vaultDeps.Clock,
+		Timer:       clock,
 		Policy:      searchrundomain.DefaultPolicy(),
 		Slots:       searchslot.New(searchrundomain.DefaultPolicy().MaxRunning),
 		Generations: w.generations,
 		Run:         find.Execute,
 		Names: func(pluginID string) string {
-			return pluginsGetPluginName(exec.Runtime.PluginResolver, pluginID)
+			return pluginsGetPluginName(runtime.PluginResolver, pluginID)
 		},
-		Catalog:    getSearchCatalog(getRuntimeManifests(exec.Runtime)),
+		Catalog:    getSearchCatalog(getRuntimeManifests(runtime)),
 		MaxResults: find.Limits.MaxLimit,
 	})
 	return &runs

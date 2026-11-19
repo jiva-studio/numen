@@ -109,7 +109,9 @@ func embedderReady(c sourcebridge.Binding) bool {
 	return err == nil
 }
 
-func notifyHost(c settingsWiring, batch []settingsdomain.Setting) { notifyPlugins(c).Execute(batch) }
+func notifyHost(c TestInstallation, batch []settingsdomain.Setting) {
+	notifyPlugins(c.buildSettingsWiring(), c.Preferences).Execute(batch)
+}
 
 func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File, error) {
 	return settingsStore(c).ReadUncheckedAt(path)
@@ -139,11 +141,7 @@ func GetSettingsWriter(c TestInstallation) func(entries []settingsdomain.Setting
 
 // UnsubscribeHost stops the settings subscription of the plugin host before a test ends.
 func UnsubscribeHost(c TestInstallation) {
-	wiring := c.buildSettingsWiring()
-	if wiring.SubscribedHosts == nil {
-		return
-	}
-	wiring.SubscribedHosts.Unsubscribe(wiring.Configuration)
+	c.Resources.subscribedHosts.Unsubscribe(c.Preferences.Configuration)
 }
 
 func VaultReaders(c TestInstallation) vaultport.VaultReaders {
@@ -209,7 +207,7 @@ func (c TestInstallation) buildSettingsWiring() settingsWiring {
 }
 
 func (c TestInstallation) buildPluginInstall() pluginInstall {
-	install := newPluginInstall(c.Config, c.Endpoints, c.Resources)
+	install := newPluginInstall(c.Config, c.Preferences, c.Endpoints, c.Resources)
 	return install
 }
 

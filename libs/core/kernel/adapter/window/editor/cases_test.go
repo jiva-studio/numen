@@ -7,12 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
-func openRegisteredWindow(cfg testInstallation, ctx context.Context, named string, out io.Writer) (*container.OpenedWindow, *container.WindowUseCases, error) {
-	installation, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, ctx, container.WindowOpening{Named: named, Out: out})
-	if err != nil {
-		return nil, nil, err
-	}
-	return installation, &installation.UseCases, nil
+func openRegisteredWindow(cfg testInstallation, ctx context.Context, named string, out io.Writer) (*container.OpenedWindow, error) {
+	return cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, ctx, container.WindowOpening{Named: named, Out: out})
 }
 
 type testInstallation struct {

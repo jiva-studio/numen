@@ -47,13 +47,22 @@ type showing struct {
 	client       questions
 	canvas       numenv1connect.WindowServiceClient
 	installation *container.OpenedWindow
-	cases        *container.WindowUseCases
 	cfg          testInstallation
 	first        domain.Vault
 	second       domain.Vault
 }
 
 func openTwoVaults(t *testing.T) *showing {
+	t.Helper()
+	return openTwoVaultsWith(t, container.Config.OpenWindow)
+}
+
+type openTestWindow func(
+	container.Config, *container.PluginExecution, *container.PluginPreferences, *container.PluginEndpoints,
+	*container.Resources, context.Context, container.WindowOpening,
+) (*container.OpenedWindow, error)
+
+func openTwoVaultsWith(t *testing.T, open openTestWindow) *showing {
 	t.Helper()
 
 	cfg := newTestInstallation(container.Config{
@@ -65,7 +74,7 @@ func openTwoVaults(t *testing.T) *showing {
 	first := newListedVault(t, cfg, "one", map[string]string{entropy: noteNamed("Entropy")})
 	second := newListedVault(t, cfg, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
 
-	installation, cases, err := openRegisteredWindow(cfg, t.Context(), "one", os.Stderr)
+	installation, err := open(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowOpening{Named: "one", Out: os.Stderr})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +94,6 @@ func openTwoVaults(t *testing.T) *showing {
 		client:       newQuestionsClient(server.Client(), server.URL),
 		canvas:       numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		installation: installation,
-		cases:        cases,
 		cfg:          cfg,
 		first:        first,
 		second:       second,
@@ -266,7 +274,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	again, _, err := openRegisteredWindow(f.cfg, t.Context(), "", os.Stderr)
+	again, err := openRegisteredWindow(f.cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -552,7 +560,7 @@ func unwritten(t *testing.T, notes map[string]string) *going {
 
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
-	f.cases.Notes.Edit.Write = noteusecase.NewWrite(vaultreader.Readers{}, newVaultWriters(), refuseToUpdate, testsupport.NewClock(), testsupport.OpenGate{})
+	*f.write = noteusecase.NewWrite(vaultreader.Readers{}, newVaultWriters(), refuseToUpdate, testsupport.NewClock(), testsupport.OpenGate{})
 	return f
 }
 
@@ -629,7 +637,7 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 	// The index stays behind until a later write updates it, and that write
 	// reports the state.
 	updated := func(context.Context, domain.Vault, []string) error { return nil }
-	f.cases.Notes.Edit.Write = noteusecase.NewWrite(vaultreader.Readers{}, newVaultWriters(), updated, testsupport.NewClock(), testsupport.OpenGate{})
+	*f.write = noteusecase.NewWrite(vaultreader.Readers{}, newVaultWriters(), updated, testsupport.NewClock(), testsupport.OpenGate{})
 	save()
 	if offset := findUpdateIndexTask(t, f); offset != nil {
 		t.Errorf("the index came level and the user is still shown %+v", offset)
@@ -664,7 +672,8 @@ func findUpdateIndexTask(t *testing.T, f *going) *v1.Task {
 func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
-	f.cases.Notes.Edit.Create = noteusecase.NewCreate(newVaultWriters(), f.index.NoteQueries(), refuseToUpdate, testsupport.NewClock(), testsupport.OpenGate{})
+	create := noteusecase.NewCreate(newVaultWriters(), f.index.NoteQueries(), refuseToUpdate, testsupport.NewClock(), testsupport.OpenGate{})
+	mountNoteEdit(f.mux, f.installation.State, numenv1connect.NoteServiceCreateNoteProcedure, nil, &create, nil)
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
@@ -690,7 +699,9 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 			"# Entropy\n",
 	})
 	waitForScan(t, f)
-	f.cases.Notes.Place.Remove = noteusecase.NewRemove(newVaultWriters(), f.index.NoteQueries(), f.index.Sources(), f.index.Sources(), refuseToUpdate, testsupport.OpenGate{})
+	remove := noteusecase.NewRemove(newVaultWriters(), f.index.NoteQueries(), f.index.Sources(), f.index.Sources(), refuseToUpdate, testsupport.OpenGate{})
+	removeFile := noteusecase.NewRemoveFile(&remove, f.installation.State.Writes)
+	mountFileEdit(f.mux, f.installation.State, numenv1connect.FileServiceRemoveFileProcedure, nil, &removeFile)
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Ontology.md",
@@ -726,12 +737,13 @@ func openInstallation(t *testing.T) (*container.OpenedWindow, *container.Index) 
 		t.Fatal(err)
 	}
 
+	index := openWindowIndex(t, cfg)
 	installation, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowOpening{Named: "one", Out: io.Discard})
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, installation)
-	return installation, installation.Index
+	return installation, index
 }
 
 // A note saved through the window is in the index when the save is answered.
@@ -790,7 +802,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 		},
 	})
-	installation, _, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
+	installation, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatalf("an installation holding no vault would not open: %v", err)
 	}

@@ -17,7 +17,6 @@ type NoteEditing struct {
 	Read    note.Read
 	Write   note.Write
 	Create  note.Create
-	Replace note.Replace
 	Linking note.EditLinks
 }
 

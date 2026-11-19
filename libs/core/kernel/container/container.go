@@ -149,25 +149,20 @@ func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *
 	runtime := getPluginExecution(exec).Runtime
 	prefs = getPluginPreferences(prefs)
 	return settingsWiring{
-		settingsPlaces: settingsPlaces{
-			SettingsPath:    c.SettingsPath,
-			ThemesPath:      c.ThemesPath,
-			RegistryPath:    c.RegistryPath,
-			ResolvedCompute: c.machine.ResolvedCompute,
-		},
-		settingsStores: settingsStores{
-			Watches:         res.watches,
-			SettingsFiles:   res.settingsFiles,
-			SettingEvents:   res.settingEvents,
-			PluginChanges:   res.pluginChanges,
-			SubscribedHosts: &res.subscribedHosts,
-		},
-		Infos:         runtime,
-		Configuration: prefs.Configuration,
-		Views:         prefs.Views,
-		ApplySetting:  prefs.ApplySetting,
-		Detection:     prefs.Detection,
-		ErrorHandler:  getErrorHandler(c.IndexPath, res),
+		SettingsPath:    c.SettingsPath,
+		ThemesPath:      c.ThemesPath,
+		RegistryPath:    c.RegistryPath,
+		Watches:         res.watches,
+		SettingsFiles:   res.settingsFiles,
+		SettingEvents:   res.settingEvents,
+		PluginChanges:   res.pluginChanges,
+		Infos:           runtime,
+		Declarations:    prefs.Configuration.PluginSettingDeclarer,
+		ConnectionTypes: prefs.Views.Types,
+		PluginInfos:     prefs.Views.Infos,
+		Checks:          prefs.Views.Checks,
+		Detection:       prefs.Detection,
+		ErrorHandler:    getErrorHandler(c.IndexPath, res),
 	}
 }
 
@@ -220,8 +215,10 @@ func newSourceBinding(exec *PluginExecution, safeMode bool, endpoints *PluginEnd
 	}
 }
 
-func newPluginInstall(c Config, endpoints *PluginEndpoints, res *Resources) pluginInstall {
+func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) pluginInstall {
+	prefs = getPluginPreferences(prefs)
 	return pluginInstall{
+		Licenses: prefs.Views.Declarations, Configuration: prefs.Configuration, OperationTitles: prefs.Views.Operations,
 		PluginCachePath: c.PluginCachePath,
 		ServiceDir:      c.ServiceDir,
 		SafeMode:        c.SafeMode,

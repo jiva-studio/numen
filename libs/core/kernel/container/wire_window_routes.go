@@ -41,145 +41,144 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vaultlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func mountCatalog(w *windowWiring, install pluginInstall, settingsDeps settingsWiring) {
+func mountCatalog(w *OpenedWindow, install pluginInstall, settingsDeps settingsWiring) {
 	if plugins := getPluginCatalog(install.PluginCatalog, settingsDeps.ErrorHandler); plugins != nil {
 		handler := windowcatalog.NewHandler(plugins)
-		path, served := windowcatalog.NewRoute(handler, w.state.Gate.CountQuestions())
-		w.inst.Mount(editor.NewRoute(path, served, handler))
+		path, served := windowcatalog.NewRoute(handler, w.State.Gate.CountQuestions())
+		w.Installation.Mount(editor.NewRoute(path, served, handler))
 	}
 }
 
-func mountMedia(w *windowWiring, vaultDeps vaultWiring) {
-	state := w.state
+func mountMedia(w *OpenedWindow, vaultDeps vaultWiring) {
+	state := w.State
 	resolve := file.NewResolveAddress(file.NewStatFile(vaultDeps.Readers), openPluginFile(vaultDeps.Options), getMediaType())
 	handler := mediawindow.NewHandler(state, state, resolve)
-	w.inst.Mount(editor.NewMediaRoute(state, handler))
+	w.Installation.Mount(editor.NewMediaRoute(state, handler))
 }
 
-func mountCommand(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+func mountCommand(w *OpenedWindow, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	var versions plugincommand.VersionItems
 	if menu := openVersionItems(install, exec, settingsDeps, vaultDeps); menu != nil {
 		versions = menu
 	}
 	commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.PluginLister), vaultDeps, exec, versions)
-	handler := command.NewHandler(w.state, commands.Listing, commands.RunCommand, commands.ListItems)
-	w.inst.Mount(editor.NewRoute(command.NewRoute(w.state.Gate.CountQuestions(), handler)))
+	handler := command.NewHandler(w.State, commands.Listing, commands.RunCommand, commands.ListItems)
+	w.Installation.Mount(editor.NewRoute(command.NewRoute(w.State.Gate.CountQuestions(), handler)))
 }
 
-func mountText(w *windowWiring, vaultDeps vaultWiring) {
-	handler := windowtext.NewHandler(w.state, nil)
+func mountText(w *OpenedWindow, vaultDeps vaultWiring) {
+	handler := windowtext.NewHandler(w.State, nil)
 	if text := openFileText(vaultDeps.TextVersions); text != nil {
-		handler = windowtext.NewHandler(w.state, text)
+		handler = windowtext.NewHandler(w.State, text)
 	}
-	path, served := windowtext.NewRoute(handler, w.state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
+	path, served := windowtext.NewRoute(handler, w.State.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountVaults(w *windowWiring) {
-	state := w.state
-	registry, change := w.cases.Listing, w.cases.Vaults.Change
+func mountVaults(w *OpenedWindow, listing *registry.Listing, change VaultChanging, switching windowsession.UserSwitch) {
+	state := w.State
 	handler := vaults.NewHandler(
 		state,
-		vaultlist.NewListVaults(registry.List, registry.FolderCheck),
-		vaultlist.NewAddVault(change.Add, registry.FolderCheck),
-		vaultlist.NewRenameVault(registry.Find, change.Rename, registry.FolderCheck),
-		vaultlist.NewOpenVault(registry.Find, w.switching),
+		vaultlist.NewListVaults(listing.List, listing.FolderCheck),
+		vaultlist.NewAddVault(change.Add, listing.FolderCheck),
+		vaultlist.NewRenameVault(listing.Find, change.Rename, listing.FolderCheck),
+		vaultlist.NewOpenVault(listing.Find, switching),
 		change.Remove,
 	)
-	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
+	w.Installation.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.SetFolderChooser(picker.NewChooseFolder(dialog))
 	})
 	path, served := vaults.NewRoute(handler, state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountSearch(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, searchDeps textSearch, vaultDeps vaultWiring) {
-	state := w.state
-	finds := newSearch(searchDeps, w.db, w.asking, state.ReportWordsAlone, state.ClearWordsAlone)
+func mountSearch(w *OpenedWindow, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock machineport.Timer, runs *searchrun.SearchRuns) {
+	state := w.State
+	finds := newSearch(searchDeps, session.index, session.source, state.ReportWordsAlone, state.ClearWordsAlone)
 	handler := windowsearch.NewHandler(
 		state,
-		search.NewFindNames(w.db.NoteQueries(), w.kinds.list),
-		search.NewFindText(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
-		searchcancel.NewSearches(vaultDeps.Clock),
+		search.NewFindNames(session.index.NoteQueries(), session.kinds),
+		search.NewFindText(finds, session.index.NoteQueries(), session.index.NoteQueries(), session.kinds),
+		searchcancel.NewSearches(clock),
 	)
-	runs := newSearchRuns(w, install, exec, settingsDeps, searchDeps, vaultDeps)
-	access := buildPluginSearch(searchDeps, w.db, w.embedder, state.ReportFloorError, vaultDeps.Clock).Access(runs)
-	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Search = access })
+	access := buildPluginSearch(searchDeps, session.index, session.source, state.ReportFloorError, clock).Access(runs)
+	lender.Update(func(l *hostendpoint.Lent) { l.Search = access })
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountFile(w *windowWiring, vaultDeps vaultWiring) {
-	state := w.state
+func mountFile(w *OpenedWindow, vaultDeps vaultWiring, db *Index, kinds tabKinds, moving *vault.Move, placing *NotePlacing) {
+	state := w.State
 	readers := vaultDeps.Readers
-	kinds := w.kinds
 	folders := filewindow.NewFolders(
 		state,
-		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), kinds.list),
+		file.NewListFolder(file.NewGetFolderEntries(readers, db.NoteQueries()), kinds.list),
 		file.NewListFileKinds(kinds.files, kinds.chooser),
 		file.NewCreateFolder(vaultDeps.Writers, state.Writes),
 	)
-	moveFile := vault.NewMoveFile(&w.cases.Vaults.Tree.Move, state.Writes, state.Writes)
-	removeFile := note.NewRemoveFile(&w.cases.Notes.Place.Remove, state.Writes)
-	changes := filewindow.NewChanges(state, state.Notices, &moveFile, &removeFile, &w.cases.Notes.Place.EmptyTrash)
+	moveFile := vault.NewMoveFile(moving, state.Writes, state.Writes)
+	removeFile := note.NewRemoveFile(&placing.Remove, state.Writes)
+	changes := filewindow.NewChanges(state, state.Notices, &moveFile, &removeFile, &placing.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
-	w.inst.Mount(editor.NewFileRoute(state, handler))
+	w.Installation.Mount(editor.NewFileRoute(state, handler))
 }
 
-func mountWindowState(w *windowWiring) {
-	state := w.state
+func mountWindowState(w *OpenedWindow) {
+	state := w.State
 	path, served := windowstate.NewRoute(state.Window, state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, state.Window))
+	w.Installation.Mount(editor.NewRoute(path, served, state.Window))
 }
 
-func mountWorkspace(w *windowWiring) {
-	state := w.state
+func mountWorkspace(w *OpenedWindow, db *Index) {
+	state := w.State
 	links := workspace.NewLinks()
-	store := w.db.OpenTabs()
+	store := db.OpenTabs()
 	handler := workspace.NewHandler(
 		state, state.Notices, state, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links,
 	)
 	path, served := workspace.NewRoute(handler, state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountNote(w *windowWiring) {
-	state := w.state
-	notes, queries := w.cases.Notes, w.cases.Queries
+func mountNote(w *OpenedWindow, notes *NoteUseCases, db *Index, kinds *file.ListTabKinds) {
+	state := w.State
+	queries := vaultQueries(db)
 	writes := state.Writes
 	prose := notewindow.NewProse(
 		state, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename, writes,
 	)
 	outlining := notewindow.NewOutline(
 		state,
-		query.NewGetOpeningNote(w.db.NoteQueries()),
-		query.NewGetRelatedNotesView(w.db.NoteQueryReads(), w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
-		query.NewListHeadings(w.db.NoteQueries()),
+		query.NewGetOpeningNote(db.NoteQueries()),
+		query.NewGetRelatedNotesView(db.NoteQueryReads(), db.NoteQueries(), db.NoteQueries(), kinds),
+		query.NewListHeadings(db.NoteQueries()),
 	)
 	links := notewindow.NewLinks(
-		state, query.NewResolveLinks(w.db.NoteQueries()), &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, writes,
+		state, query.NewResolveLinks(db.NoteQueries()), &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, writes,
 	)
 	connections := notewindow.NewConnections(
 		state, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
 	)
 	handler := notewindow.NewHandler(state.Notices, prose, outlining, links, connections)
-	w.inst.Mount(editor.NewNoteRoute(state, handler))
+	w.Installation.Mount(editor.NewNoteRoute(state, handler))
 }
 
 func openGetSettings(s settingsWiring) *settings.Get {
 	return settings.NewGet(readSettings(s), s.Infos.GetPluginInfos, func() []plugin.Setting { return listAppSettings(s) })
 }
 
-func mountSettings(w *windowWiring, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	state := w.state
+func mountSettings(w *OpenedWindow, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+	state := w.State
 	retry := settings.NewRetryPlugin(exec.Runtime.RetryPlugin)
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)
 	if data := openPluginData(vaultDeps.Options, vaultDeps.TextVersions); data != nil {
@@ -190,28 +189,28 @@ func mountSettings(w *windowWiring, exec *PluginExecution, settingsDeps settings
 		openWriteSettings(settingsDeps), openWatchSettings(settingsDeps), nil,
 	)
 	handler := windowsettings.NewHandler(values, folders)
-	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
+	w.Installation.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.SetPathChooser(openChoosePluginPath(settingsDeps, dialog))
 	})
 	path, served := windowsettings.NewRoute(handler, state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountPlugin(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	w.inst.SetPlugins(GetPluginServices(exec.Runtime), func(id string) (string, bool) { return GetPluginDir(exec.Runtime.PluginResolver, id) })
+func mountPlugin(w *OpenedWindow, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+	w.Installation.SetPlugins(GetPluginServices(exec.Runtime), func(id string) (string, bool) { return GetPluginDir(exec.Runtime.PluginResolver, id) })
 	host := exec
 	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.PluginResolver, getConnectionResolve(install, exec, settingsDeps, vaultDeps), vaultDeps.Clock)
 	handler := windowplugin.NewHandler(watch)
-	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.state.Gate.CountQuestions())))
+	w.Installation.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.State.Gate.CountQuestions())))
 }
 
-func mountHealth(w *windowWiring, exec *PluginExecution) {
+func mountHealth(w *OpenedWindow, exec *PluginExecution) {
 	host := exec
 	handler := windowhealth.NewHandler(
 		host.Health, pluginhealth.NewReport(host.Health, host.Runtime.PluginResolver), pluginhealth.NewClear(host.Health),
 	)
-	path, served := windowhealth.NewRoute(handler, w.state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
+	path, served := windowhealth.NewRoute(handler, w.State.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
 func openRecordLog(indexPath string, entries *logsusecase.Entries, getLevel func() domainlogs.Level, timer machineport.Timer) *logsusecase.Record {
@@ -234,47 +233,46 @@ func openOptionalRecordLog(indexPath string, res *Resources) func(domainlogs.Ent
 	return recordLogFunc(record, res.ErrorHandler)
 }
 
-func mountLogs(w *windowWiring, install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	record := openRecordLog(vaultDeps.IndexPath, w.logEntries, settingsDeps.SettingsFiles.GetLogLevel, vaultDeps.Clock)
-	watch := logsusecase.NewWatch(w.logEntries, logfiles.NewBesideIndex(vaultDeps.IndexPath), vaultDeps.Clock)
-	w.state.SetCallTrace(vaultDeps.Clock, vaultDeps.RecordLog)
+func mountLogs(w *OpenedWindow, entries *logsusecase.Entries, install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+	record := openRecordLog(vaultDeps.IndexPath, entries, settingsDeps.SettingsFiles.GetLogLevel, vaultDeps.Clock)
+	watch := logsusecase.NewWatch(entries, logfiles.NewBesideIndex(vaultDeps.IndexPath), vaultDeps.Clock)
+	w.State.SetCallTrace(vaultDeps.Clock, vaultDeps.RecordLog)
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) {
 		l.Logs = record
 	})
 	handler := windowlogs.NewHandler(watch, record, settingsDeps.SettingsFiles.GetLogLevel, writeLogLevel(settingsDeps))
-	path, served := windowlogs.NewRoute(handler, w.state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
+	path, served := windowlogs.NewRoute(handler, w.State.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func shareEditorWindow(db *Index, opened *windowWiring, install pluginInstall, vaultDeps vaultWiring) {
-	view := windowView(opened.state)
+func shareEditorWindow(db *Index, opened *OpenedWindow, showTab windowsession.ShowTab, install pluginInstall, vaultDeps vaultWiring) {
+	view := windowView(opened.State)
 	focusFile := file.NewFocusFile(vaultDeps.Readers, view)
 	setPluginWindow(install.Endpoints.Lender, windowsession.NewPluginWindow(
-		&opened.state.Runtime,
-		&opened.state.Tabs,
+		&opened.State.Runtime,
+		&opened.State.Tabs,
 		query.NewFocusNote(db.NoteQueries(), view),
 		windowsession.FileFocusFunc(func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error {
 			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
 		}),
-		opened.cases.ShowTab,
+		showTab,
 	))
 }
 
-func shareVaultList(opened *windowWiring, install pluginInstall) {
-	useCases := opened.cases.Vaults
-	setPluginVaultList(install.Endpoints.Lender, windowsession.NewPluginVaults(&opened.state.Runtime, windowsession.VaultOps{
-		Edit:    windowsession.VaultEdits{Add: useCases.Change.Add, Rename: useCases.Change.Rename, Remove: useCases.Change.Remove},
-		Find:    opened.cases.Listing.Find,
-		Missing: opened.cases.Listing.FolderCheck,
-		Open:    opened.cases.OpenPlugin,
-	}))
+func newPluginVaultList(state *editor.State, changes VaultChanging, listing registry.Listing, open windowsession.OpenPluginVault) windowsession.PluginVaults {
+	return windowsession.NewPluginVaults(&state.Runtime, windowsession.VaultOps{
+		Edit:    windowsession.VaultEdits{Add: changes.Add, Rename: changes.Rename, Remove: changes.Remove},
+		Find:    listing.Find,
+		Missing: listing.FolderCheck,
+		Open:    open,
+	})
 }
 
-func mountVault(w *windowWiring) {
-	state := w.state
+func mountVault(w *OpenedWindow) {
+	state := w.State
 	handler := windowvault.NewHandler(state, state.Notices)
 	path, served := windowvault.NewRoute(handler, state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
 func getReadVault(searchDeps vaultIndexPlan, vaultDeps vaultWiring, db *Index) indexing.OpenReading {
@@ -356,22 +354,22 @@ func startVault(vaultDeps vaultWiring, db *Index, current *vault.CurrentRefresh)
 	}
 }
 
-func mountConnection(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+func mountConnection(w *OpenedWindow, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	handler := windowconnection.NewService(openConnectionUseCases(install, exec, settingsDeps, vaultDeps))
-	path, served := windowconnection.NewRoute(handler, w.state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
+	path, served := windowconnection.NewRoute(handler, w.State.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountConnectionCall(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+func mountConnectionCall(w *OpenedWindow, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	handler := connectioncall.NewService(openModelCalls(install, settingsDeps), openRowLists(install, exec, settingsDeps, vaultDeps))
-	path, served := connectioncall.NewRoute(handler, w.state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
+	path, served := connectioncall.NewRoute(handler, w.State.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountLicense(w *windowWiring, install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+func mountLicense(w *OpenedWindow, install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	handler := windowlicense.NewService(openLicenseUseCases(install, settingsDeps, vaultDeps))
-	path, served := windowlicense.NewRoute(handler, w.state.Gate.CountQuestions())
-	w.inst.Mount(editor.NewRoute(path, served, handler))
+	path, served := windowlicense.NewRoute(handler, w.State.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
 func getConnectionResolve(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) connectionport.ResolveConnection {

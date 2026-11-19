@@ -71,7 +71,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		t.Fatal(err)
 	}
 
-	installation, _, err := openRegisteredWindow(settings, t.Context(), "", os.Stderr)
+	installation, err := openRegisteredWindow(settings, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,7 +245,8 @@ type going struct {
 	configuring  numenv1connect.SettingsServiceClient
 	canvas       numenv1connect.WindowServiceClient
 	installation *container.OpenedWindow
-	cases        *container.WindowUseCases
+	write        *note.Write
+	mux          *http.ServeMux
 	root         string
 	settings     string
 	order        *order
@@ -315,7 +316,8 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		t.Fatal(err)
 	}
 
-	installation, cases, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
+	index := openWindowIndex(t, cfg)
+	installation, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -335,12 +337,12 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		testsupport.NewClock(),
 		installation.State.Writes,
 	)
-	cases.Notes.Edit.Write = writing
 
 	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation.Installation))
 	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
 	mountQuestionsServices(mux, installation)
+	mountNoteEdit(mux, installation.State, numenv1connect.NoteServiceWriteNoteProcedure, &writing, nil, nil)
 	mux.Handle(turning, settings)
 	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)
@@ -354,12 +356,12 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		configuring:  numenv1connect.NewSettingsServiceClient(server.Client(), server.URL),
 		canvas:       numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		installation: installation,
-		cases:        cases,
 		root:         root,
 		settings:     cfg.RegistryPath,
 		order:        recorded,
 		cfg:          cfg,
-		index:        installation.Index,
+		index:        index,
+		write:        &writing, mux: mux,
 	}
 }
 
