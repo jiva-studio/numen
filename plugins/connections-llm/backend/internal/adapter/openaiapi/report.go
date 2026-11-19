@@ -11,3 +11,8 @@ func ReportListError(err error) {
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="a diagnostic line on stderr; the list kept before is still answered"
 	fmt.Fprintf(os.Stderr, "list models: %v\n", err)
 }
+
+// ReportLogError writes a failure to record a diagnostic to stderr.
+func ReportLogError() {
+	fmt.Fprintln(os.Stderr, "connection request log could not be written")
+}

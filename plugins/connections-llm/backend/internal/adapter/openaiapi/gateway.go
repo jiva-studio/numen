@@ -48,7 +48,7 @@ var _ ports.Gateway = (*Gateway)(nil)
 
 // New returns a Gateway that reads a date of the services against clock.
 func New(clock Clock) *Gateway {
-	return &Gateway{clients: newClients(), clock: clock}
+	return &Gateway{clients: newClients(), clock: clock, reportFailure: nil}
 }
 
 // Close closes the idle connections.

@@ -2,8 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
@@ -72,7 +70,7 @@ func Mount(srv *server.Server) error {
 				Level: logs.Warning, Message: "Connection request failed",
 				Properties: map[string]any{"operation": operation, "failure": failure, "status": status},
 			}); err != nil {
-				fmt.Fprintln(os.Stderr, "connection request log could not be written")
+				openaiapi.ReportLogError()
 			}
 		})
 	}
