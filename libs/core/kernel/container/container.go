@@ -210,7 +210,7 @@ func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, search
 	return base
 }
 
-func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) (pluginInstall, settingsWiring, searchWiring, vaultWiring) {
+func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) (settingsWiring, searchWiring, vaultWiring) {
 	// texts are the text versions the open made over its index, or nil where it makes none.
 	exec = getPluginExecution(exec)
 	running := getRunningExecution(exec, c.SafeMode)
@@ -218,24 +218,16 @@ func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoin
 	settings := settingsOf(c, exec, prefs, res)
 	base := vaultBase(c, running, endpoints, res, texts)
 	search := searchWith(c, exec, running, endpoints, res, base)
-	install := pluginInstall{
-		PluginCachePath: c.PluginCachePath,
-		ServiceDir:      c.ServiceDir,
-		Execution:       exec,
-		ActiveExecution: running,
-		Endpoints:       endpoints,
-		PluginCatalog:   res.PluginCatalog,
-		KeyStore:        res.KeyStore,
-	}
-	return install, settings, search, vaultWith(res, base, settings, search)
+
+	return settings, search, vaultWith(res, base, settings, search)
 }
 
-func plugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) (pluginInstall, settingsWiring, searchWiring, vaultWiring) {
-	return assemble(c, exec, prefs, endpoints, res, nil)
+func openVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) (settingsWiring, searchWiring, vaultWiring) {
+	return buildVaultSearch(c, exec, prefs, endpoints, res, nil)
 }
 
-func openIndexedPlugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, db *Index) (pluginInstall, settingsWiring, searchWiring, vaultWiring) {
-	return assemble(c, exec, prefs, endpoints, res, newTextVersions(vaultBase(c, getRunningExecution(exec, c.SafeMode), getPluginEndpoints(endpoints), res, nil), db))
+func openIndexedVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, db *Index) (settingsWiring, searchWiring, vaultWiring) {
+	return buildVaultSearch(c, exec, prefs, endpoints, res, newTextVersions(vaultBase(c, getRunningExecution(exec, c.SafeMode), getPluginEndpoints(endpoints), res, nil), db))
 }
 
 func setVaultSearch(v vaultWiring, search searchWiring) vaultWiring {
@@ -248,4 +240,16 @@ func openIndexedVault(search searchWiring, v vaultWiring, db *Index) (searchWiri
 	v.TextVersions = newTextVersions(v, db)
 	search.TextReaders = getTextReaders(v)
 	return search, setVaultSearch(v, search)
+}
+
+func newPluginInstall(c Config, exec *PluginExecution, endpoints *PluginEndpoints, res *Resources) pluginInstall {
+	return pluginInstall{
+		PluginCachePath: c.PluginCachePath,
+		ServiceDir:      c.ServiceDir,
+		Execution:       getPluginExecution(exec),
+		ActiveExecution: getRunningExecution(exec, c.SafeMode),
+		Endpoints:       getPluginEndpoints(endpoints),
+		PluginCatalog:   res.PluginCatalog,
+		KeyStore:        res.KeyStore,
+	}
 }

@@ -289,8 +289,8 @@ func getReadVault(searchDeps searchWiring, vaultDeps vaultWiring, db *Index) ind
 	}
 }
 
-func (s windowStartup) newIndexWorker(
-	searchDeps searchWiring, vaultDeps vaultWiring, state *editor.State, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault),
+func newIndexWorker(
+	s windowStartup, searchDeps searchWiring, vaultDeps vaultWiring, state *editor.State, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault),
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
 		Reading:      getReadVault(searchDeps, vaultDeps, s.db),

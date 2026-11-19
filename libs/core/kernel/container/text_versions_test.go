@@ -86,7 +86,7 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, db)
 	versions := newTextVersions(cfg.buildVaultWiring(), db)
-	_, _, s, _ := assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
+	_, s, _ := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 
 	readIntoIndex(t, s, db, v)
@@ -119,7 +119,7 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, db)
 	versions := newTextVersions(cfg.buildVaultWiring(), db)
-	_, _, s, _ := assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
+	_, s, _ := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	readIntoIndex(t, s, db, v)
 	if _, err := db.VectorIndex().DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
 		t.Fatal(err)
@@ -150,7 +150,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, db)
 	versions := newTextVersions(cfg.buildVaultWiring(), db)
-	_, _, s, vaultDeps := assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
+	_, s, vaultDeps := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, s, db, v)
 
@@ -186,7 +186,7 @@ func newTalkIndex(t *testing.T) (searchWiring, vaultWiring, *Index, domain.Vault
 	}
 	testsupport.CloseAfter(t, db)
 	versions := newTextVersions(cfg.buildVaultWiring(), db)
-	_, _, s, vaultDeps := assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
+	_, s, vaultDeps := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, s, db, v)
 	return s, vaultDeps, db, v, version
@@ -344,7 +344,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts := newTextVersions(cfg.buildVaultWiring(), db)
-	_, _, s, _ := assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, texts)
+	_, s, _ := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, texts)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, s, db, v)
 	if err := db.Close(); err != nil {
@@ -361,7 +361,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, db)
 	texts = newTextVersions(cfg.buildVaultWiring(), db)
-	_, _, s, vaultDeps := assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, texts)
+	_, s, vaultDeps := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, texts)
 	readIntoIndex(t, s, db, v)
 
 	raw, err := os.ReadFile(filepath.Join(v.Path, renamed))

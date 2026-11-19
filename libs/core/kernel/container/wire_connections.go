@@ -46,7 +46,8 @@ func openConnectionDeps(install pluginInstall, settingsDeps settingsWiring, vaul
 	if !hasPluginHost(settingsDeps) {
 		return connection.Deps{}, false
 	}
-	deps := connection.NewDeps(openConnectionRepository(settingsDeps), settingsDeps.Views.Types, install.KeyStore, openConnectionRows(install, settingsDeps, vaultDeps), openDetection(install, settingsDeps, vaultDeps))
+	deps := connection.NewDeps(openConnectionRepository(settingsDeps), settingsDeps.Views.Types, install.KeyStore,
+		openConnectionRows(install, settingsDeps, vaultDeps), openDetection(install, settingsDeps, vaultDeps))
 	if options := openRowOptions(install, settingsDeps, deps); options != nil {
 		deps = deps.AddOptionLists(options)
 	}
@@ -139,7 +140,8 @@ func openRowLists(install pluginInstall, settingsDeps settingsWiring, vaultDeps 
 // GetConnectionRows is the listing of the rows plugin views offer a choice of, for a window that serves
 // ConnectionCallService without the routes of the editor. It is nil where the installation runs no plugins.
 func GetConnectionRows(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) connectioncall.Rows {
-	install, settingsDeps, _, vaultDeps := plugins(c, exec, prefs, endpoints, res)
+	install := newPluginInstall(c, exec, endpoints, res)
+	settingsDeps, _, vaultDeps := openVaultSearch(c, exec, prefs, endpoints, res)
 	return openRowLists(install, settingsDeps, vaultDeps)
 }
 

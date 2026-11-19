@@ -174,7 +174,7 @@ func InstallPluginVault(c TestInstallation, db *Index, current func() (domain.Va
 }
 
 func searchOf(c TestInstallation) searchWiring {
-	_, _, search, _ := plugins(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources)
+	_, search, _ := openVaultSearch(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources)
 	return search
 }
 
@@ -203,12 +203,12 @@ func (c TestInstallation) buildSettingsWiring() settingsWiring {
 }
 
 func (c TestInstallation) buildPluginInstall() pluginInstall {
-	install, _, _, _ := plugins(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources)
+	install := newPluginInstall(c.Config, c.Execution, c.Endpoints, c.Resources)
 	return install
 }
 
 func (c TestInstallation) buildVaultWiring() vaultWiring {
-	_, _, _, vault := plugins(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources)
+	_, _, vault := openVaultSearch(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources)
 	return vault
 }
 

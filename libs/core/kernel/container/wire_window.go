@@ -54,13 +54,14 @@ func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	if err != nil {
 		return nil, err
 	}
-	install, settingsDeps, searchDeps, vaultDeps := plugins(c, exec, prefs, endpoints, res)
+	install := newPluginInstall(c, exec, endpoints, res)
+	settingsDeps, searchDeps, vaultDeps := openVaultSearch(c, exec, prefs, endpoints, res)
 	ports, err := vaultRegistry(vaultDeps.RegistryPath)
 	if err != nil {
 		return nil, errors.Join(err, db.Close())
 	}
 	startup := windowStartup{opening: opening, ports: ports, db: db, entries: getLogEntries(res)}
-	opened, err := startup.open(ctx, install, settingsDeps, searchDeps, vaultDeps)
+	opened, err := openWindowStartup(startup, ctx, install, settingsDeps, searchDeps, vaultDeps)
 	if err != nil {
 		return nil, err
 	}
@@ -112,23 +113,23 @@ type windowStartup struct {
 	entries *logsusecase.Entries
 }
 
-func (s windowStartup) open(
-	ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring,
+func openWindowStartup(
+	s windowStartup, ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring,
 ) (*windowWiring, error) {
 	db := s.db
 	first, err := registry.NewGetVaultToShow(s.ports.Lookup, s.ports.Vaults, s.ports.Last).Execute(s.opening.Named)
 	if err != nil {
 		return nil, errors.Join(err, db.Close())
 	}
-	window := s.build(ctx, install, settingsDeps, searchDeps, vaultDeps)
+	window := buildWindow(s, ctx, install, settingsDeps, searchDeps, vaultDeps)
 	if err := startWindow(ctx, window.wiring, first); err != nil {
 		return nil, errors.Join(err, window.closeEmbedder(), db.Close())
 	}
 	return window.wiring, nil
 }
 
-func (s windowStartup) build(
-	ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring,
+func buildWindow(
+	s windowStartup, ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring,
 ) windowBuilt {
 	db, opening, ports := s.db, s.opening, s.ports
 
@@ -150,7 +151,7 @@ func (s windowStartup) build(
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(install.Execution.Runtime.PluginEventEmitter, event) })
 	state.SetIndexing(embedding)
 	generations := newIndexGenerations(vaultDeps.Clock)
-	indexer := s.newIndexWorker(searchDeps, vaultDeps, state, embedding, emitIndexChanged(generations, state.Events))
+	indexer := newIndexWorker(s, searchDeps, vaultDeps, state, embedding, emitIndexChanged(generations, state.Events))
 	state.Writes.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
