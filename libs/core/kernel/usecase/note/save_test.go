@@ -103,16 +103,16 @@ func TestAConditionalSavePreservesAnExternalDeletion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", "Draft", baseline); !errors.Is(err, edit.ErrStale) {
+	if _, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", "Draft\n", baseline); !errors.Is(err, edit.ErrStale) {
 		t.Fatalf("save returned %v, want a conflict", err)
 	}
 	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("stat after save returned %v, want a missing file", err)
 	}
-	if _, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", "Draft", nil); err != nil {
+	if _, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", "Draft\n", nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := c.read(t, "Entropy.md"); got != "Draft" {
+	if got := c.read(t, "Entropy.md"); got != "Draft\n" {
 		t.Fatalf("explicit recreation wrote %q", got)
 	}
 }
