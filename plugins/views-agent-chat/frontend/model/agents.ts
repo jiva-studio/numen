@@ -186,7 +186,10 @@ export function createAgentList(
   }
 
   const listModels = async () => {
-    if (isModelsWanted && failedModels.size === 0) return
+    const hasEmptyCatalog = agents.value?.some(
+      ({ row }) => getField(row, MODELS) && listedModels.get(row.connectionId)?.length === 0,
+    )
+    if (isModelsWanted && failedModels.size === 0 && !hasEmptyCatalog) return
     failedModels.clear()
     isModelsWanted = true
     await reload()
@@ -213,7 +216,6 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
       if (
         !saved?.modelId ||
         agent.row.connectionId !== saved.agentId ||
-        agent.isListed ||
         agent.models.some((one) => one.modelId === saved.modelId)
       )
         return agent.models
@@ -239,30 +241,10 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
     agents.value.filter((agent) => agent.isFailed).map((agent) => agent.row.connectionId),
   )
 
-  /**
-   * Whether the agent of a choice offers its model, or is still being asked which models it has, or could
-   * not list them.
-   */
-  const isOffered = (choice: ModelChoice, listed: readonly Agent[]) => {
-    const agent = listed.find((one) => one.row.connectionId === choice.agentId)
-    return (
-      !!agent && (!agent.isListed || agent.models.some((one) => one.modelId === choice.modelId))
-    )
-  }
-  const isListed = (choice: ModelChoice) => isOffered(choice, agents.value)
-
-  watch(
-    () => [chosen.value, list.agents.value] as const,
-    ([choice, listed]) => {
-      if (!choice || !listed || isOffered(choice, listed)) return
-      if (list.lastChoice.value === choice) list.lastChoice.value = null
-      chosen.value = null
-      chosenReasoning.value = null
-    },
-  )
-
   const current = computed<ModelChoice | null>(() => {
-    if (chosen.value && isListed(chosen.value)) return chosen.value
+    const saved = chosen.value
+    if (saved && agents.value.some((agent) => agent.row.connectionId === saved.agentId))
+      return saved
     const first = options.value.find((option) => option.isAvailable) ?? options.value[0]
     return first ? { agentId: first.agentId, modelId: first.modelId } : null
   })

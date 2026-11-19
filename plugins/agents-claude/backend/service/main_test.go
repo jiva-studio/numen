@@ -22,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/acp/acptest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools/toolstest"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/hostenv"
@@ -230,9 +229,8 @@ func serveGardenHost(t *testing.T) (*gardenHost, tools.Client) {
 
 func newTestAgent(t *testing.T, host task.Tools) *agent {
 	t.Helper()
-	plugintest.GrantStorage(t)
 	t.Setenv("CLAUDE_CONFIG_DIR", t.TempDir())
-	built, err := newAgent(parts{environment: hostenv.Process{}, tools: host})
+	built, err := newAgent(parts{environment: hostenv.Process{}, tools: host, isAsync: false})
 	if err != nil {
 		t.Fatal(err)
 	}

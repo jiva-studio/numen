@@ -16,7 +16,7 @@ func Mount(s *server.Server) error {
 	if endpoint, err := hostcall.FromEnv(); err == nil {
 		host = tools.NewClient(endpoint)
 	}
-	built, err := newAgent(parts{environment: hostenv.Process{}, tools: host})
+	built, err := newAgent(parts{environment: hostenv.Process{}, tools: host, isAsync: true})
 	if err != nil {
 		return err
 	}

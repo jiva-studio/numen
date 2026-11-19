@@ -22,8 +22,9 @@ type Catalog struct {
 }
 
 // New creates a catalog that asks lister for the models and passes report the listing errors when
-// List falls back. The first request waits for the program when the cache is empty.
-func New(lister ports.ModelLister, report func(error)) (*Catalog, error) {
+// List falls back. An async catalog answers with no model while the first list loads, and the
+// fallback models once that load has failed.
+func New(lister ports.ModelLister, report func(error), isAsync bool, extra ...cache.Option) (*Catalog, error) {
 	if lister == nil {
 		return nil, errors.New("catalog: the model lister is required")
 	}
@@ -34,9 +35,11 @@ func New(lister ports.ModelLister, report func(error)) (*Catalog, error) {
 		lister: lister,
 		lists: cache.New[[]model.Model](
 			"models",
-			cache.WithTTL(model.Lifetime),
-			cache.WithTimeout(model.Timeout),
-			cache.WithDisk(true),
+			slices.Concat([]cache.Option{
+				cache.WithTTL(model.Lifetime),
+				cache.WithTimeout(model.Timeout),
+				cache.WithAsync(isAsync),
+			}, extra)...,
 		),
 		report: report,
 	}, nil
@@ -47,10 +50,16 @@ func (c *Catalog) Get(ctx context.Context, command, env []string) ([]model.Model
 	key := strings.Join(command, "\x00")
 	cmdCopy := slices.Clone(command)
 	envCopy := slices.Clone(env)
-	list, _, err := c.lists.Get(ctx, key, func(ctx context.Context) ([]model.Model, error) {
+	list, found, err := c.lists.Get(ctx, key, func(ctx context.Context) ([]model.Model, error) {
 		return c.lister.ListModels(ctx, cmdCopy, envCopy)
 	})
-	return list, err
+	if err != nil {
+		return nil, err
+	}
+	if !found && c.lists.HasFailed(key) {
+		return model.GetFallback(), nil
+	}
+	return list, nil
 }
 
 // List returns the models of the program. A program that is not installed, or does not answer, lists

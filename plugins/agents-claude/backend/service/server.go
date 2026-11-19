@@ -25,12 +25,13 @@ type agent struct {
 type parts struct {
 	environment ports.Environment
 	tools       task.Tools
+	isAsync     bool
 }
 
 func newAgent(p parts) (*agent, error) {
 	values := new(settings.Settings)
 	lister := process.Lister{}
-	models, err := catalog.New(lister, lister.ReportError)
+	models, err := catalog.New(lister, lister.ReportError, p.isAsync)
 	if err != nil {
 		return nil, err
 	}
