@@ -11,7 +11,6 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -25,7 +24,6 @@ import (
 // downEmbeddingHost resolves an embedding plugin whose process is not listening.
 type downEmbeddingHost struct {
 	pluginport.PluginResolver
-	pluginport.PluginLister
 	endpoint transport.Endpoint
 	released atomic.Int32
 	acquired atomic.Int32
@@ -71,11 +69,9 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 }
 
 func (h *downEmbeddingHost) lend() *container.TestPlugins {
-	execution := &container.PluginExecution{Health: pluginhealth.NewItems()}
+	execution, _, _ := container.PreparePluginHost(nil, nil, nil, false)
 	execution.Runtime.Resolver = h
-	execution.Runtime.Listing = h
 	execution.Runtime.Activator = h
-	execution.Runtime.PluginBinding = container.AbsentBinding()
 	execution.Runtime.ConfigWatcher = h
 	return &container.TestPlugins{Execution: execution}
 }

@@ -65,7 +65,7 @@ func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 			install := newPluginInstall(c, prefs, endpoints, res)
 			settingsDeps, plan, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
 			commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.Listing), vaultDeps, exec, nil)
-			plugins := getRunningExecution(exec, c.SafeMode).Runtime.TextPlugins
+			plugins := getRunningExecution(exec, c.SafeMode).Runtime.Listing
 			return getCLIPluginCommands(c, commands, newCLIPluginWork(install, exec, r), plugins, plan.ChunkPolicy, vaultDeps)
 		},
 		func() ([]string, error) { return closeCLI(r) },
@@ -124,7 +124,7 @@ type cliPreparations struct {
 }
 
 func newCLIPreparations(index cliIndex, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, plan vaultIndexPlan, vaultDeps vaultWiring) cliPreparations {
-	plugins := getRunningExecution(exec, install.SafeMode).Runtime.TextPlugins
+	plugins := getRunningExecution(exec, install.SafeMode).Runtime.Listing
 	db := index.db
 	prepareScan := func(ctx context.Context, v domain.Vault) (indexing.ReadWholeVault, error) {
 		ranking, storage := openIndexedVault(plan, vaultDeps, db, plugins)

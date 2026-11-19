@@ -33,6 +33,7 @@ func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *vault
 }
 
 type installedPlugins interface {
+	textport.TextPlugins
 	pluginport.PluginLister
 	pluginport.PluginManifests
 }
@@ -47,7 +48,6 @@ type pluginRuntime struct {
 	pluginport.PluginEventEmitter
 	pluginport.PluginBinding
 	transport.ClientLookup
-	textport.TextPlugins
 	pluginport.PluginFailures
 	pluginport.ConfigWatcher
 }
@@ -129,7 +129,6 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 			PluginEventEmitter: management.Events,
 			PluginBinding:      plugin.NewBinding(management.Teardown, management.Mode),
 			ClientLookup:       management.Activation.ClientLookup(),
-			TextPlugins:        management.Registry,
 			PluginFailures:     supervision.Failures,
 			ConfigWatcher:      management.Config,
 		},

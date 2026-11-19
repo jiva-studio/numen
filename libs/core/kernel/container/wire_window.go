@@ -78,7 +78,7 @@ func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup 
 		return nil
 	}
 	running := getRunningExecution(exec, c.SafeMode)
-	return newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, running.Runtime.TextPlugins, GetClock(res), startup.db)
+	return newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, running.Runtime.Listing, GetClock(res), startup.db)
 }
 
 // WindowOpening names the vault to show, the output and the optional editor frame.
