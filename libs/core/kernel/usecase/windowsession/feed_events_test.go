@@ -275,3 +275,28 @@ func TestAnEventCoversTheTypesOfTheFilesItsWritesChanged(t *testing.T) {
 	stub.passQuiet(t)
 	stub.requireTypes(t, "test/epub", "test/pdf", "test/png")
 }
+
+func TestFeedEventIncludesTheContentAndNoteTypesOfEachChange(t *testing.T) {
+	events := FeedEvents{
+		ListFiles: func(context.Context, domain.VaultID, int64, int64) ([]filechange.File, error) {
+			return []filechange.File{
+				{Path: "article.md", NoteType: "article"},
+				{Path: "old-name.md", NoteType: "article"},
+				{Path: "plain.md", NoteType: domain.TypeNote},
+			}, nil
+		},
+		GetContentType: func(string) domain.ContentType { return "text/markdown" },
+	}
+	loop := feedLoop{events: events, vault: garden()}
+	got, err := loop.listTypes(t.Context(), 0, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []domain.FileType{
+		{Content: "text/markdown", Note: "article"},
+		{Content: "text/markdown", Note: domain.TypeNote},
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("changed file types = %+v, want %+v", got, want)
+	}
+}
