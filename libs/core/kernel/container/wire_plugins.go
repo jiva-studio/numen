@@ -32,11 +32,16 @@ func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *vault
 	return installPluginVault(install, vaultDeps, registry, db, current, pluginVaultHooks{})
 }
 
+type installedPlugins interface {
+	pluginport.PluginLister
+	pluginport.PluginManifests
+}
+
 // pluginRuntime is what runs, finds and addresses the plugins.
 type pluginRuntime struct {
 	bridge.Activator
 	pluginport.PluginRetrier
-	Listing   pluginport.PluginLister
+	Listing   installedPlugins
 	Resolver  pluginport.PluginResolver
 	Manifests pluginmanifest.Manifests
 	pluginport.PluginEventEmitter

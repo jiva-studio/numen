@@ -35,7 +35,7 @@ func TestServeRouteForwardsBelowThePluginRoute(t *testing.T) {
 	req.Header.Set("Cookie", "session=1")
 	recorded := httptest.NewRecorder()
 
-	Open(host, host).ServeRoute(recorded, req)
+	Open(host, host, host).ServeRoute(recorded, req)
 
 	if recorded.Code != http.StatusOK || recorded.Body.String() != "page bytes" {
 		t.Fatalf("answered %d %q", recorded.Code, recorded.Body.String())
@@ -59,7 +59,7 @@ func TestServeRouteRejectsAPathOutsideTheRoute(t *testing.T) {
 	plugin := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { reached = true }))
 	t.Cleanup(plugin.Close)
 	host := newRouteHost(t, plugin)
-	proxy := Open(host, host)
+	proxy := Open(host, host, host)
 
 	for _, path := range []string{
 		"/plugin/org.example.reader/../secret",
@@ -88,7 +88,7 @@ func TestServeRouteAnswersNotFoundForAPluginThatIsNotEnabled(t *testing.T) {
 	recorded := httptest.NewRecorder()
 
 	host := &servingHost{}
-	Open(host, host).ServeRoute(recorded, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/plugin/org.example.reader/pages/1", nil))
+	Open(host, host, host).ServeRoute(recorded, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/plugin/org.example.reader/pages/1", nil))
 
 	if recorded.Code != http.StatusNotFound {
 		t.Errorf("answered %d", recorded.Code)
@@ -99,7 +99,7 @@ func TestServeRouteRejectsAMethodThatWrites(t *testing.T) {
 	recorded := httptest.NewRecorder()
 
 	host := &servingHost{}
-	Open(host, host).ServeRoute(recorded, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/plugin/org.example.reader/pages/1", nil))
+	Open(host, host, host).ServeRoute(recorded, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/plugin/org.example.reader/pages/1", nil))
 
 	if recorded.Code != http.StatusMethodNotAllowed {
 		t.Errorf("answered %d", recorded.Code)

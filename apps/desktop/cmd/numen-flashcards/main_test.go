@@ -4,17 +4,22 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
+	"connectrpc.com/connect"
+
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 func getNotes() map[string]string {
@@ -196,9 +201,32 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 // files of their frontends.
 func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
 	install, _ := makeConfigWithVaults(t)
+	const id = "md.numen.example"
+	root := t.TempDir()
+	dir := filepath.Join(root, id)
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifest := `{"id":"md.numen.example","name":"Example","version":"1.0.0","protocol":1,"targets":["desktop.flashcards"],"frontend":{},"contributes":{"feature":"Example","category":"views"}}`
+	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	management, supervision := container.NewPluginRoles(container.GetClock(install.services.Resources), platform.TargetFlashcards, root)
+	if err := management.Discovery.Discover(); err != nil {
+		t.Fatal(err)
+	}
+	install.services.Execution, install.services.Preferences, install.services.Endpoints = container.AdaptPluginHost(management, supervision)
 	api := openShell(t, install)
-
-	if api.GetFrontendPluginIDs == nil || api.GetPluginDir == nil {
-		t.Error("the page is not told the plugins it loads")
+	listed, err := api.Frontends.GetPlugins(t.Context(), connect.NewRequest(&v1.GetPluginsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plugins := listed.Msg.GetPlugins(); len(plugins) != 1 || plugins[0].GetId() != id {
+		t.Fatalf("listed plugins %v, want %s", plugins, id)
+	}
+	response := httptest.NewRecorder()
+	api.NewHandler(http.NotFoundHandler()).ServeHTTP(response, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/plugin/"+id+"/manifest.json", nil))
+	if response.Code != http.StatusOK || response.Body.String() != manifest {
+		t.Fatalf("plugin manifest response %d: %s", response.Code, response.Body.String())
 	}
 }

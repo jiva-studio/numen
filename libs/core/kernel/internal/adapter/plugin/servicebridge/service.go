@@ -18,9 +18,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// Plugins finds the plugin that serves a service to the windows, and lists the plugins installed.
+// Plugins lists the installed plugins and reads their manifests.
 type Plugins interface {
-	pluginport.ServiceResolver
 	GetPlugin(id string) (manifest.Discovered, bool)
 	GetPluginInfos() []plugin.Info
 }
@@ -31,6 +30,7 @@ type Plugins interface {
 type Proxy struct {
 	activator bridge.Activator
 	plugins   Plugins
+	services  pluginport.ServiceResolver
 	onError   func(error)
 }
 
@@ -59,8 +59,8 @@ func (p *Proxy) releasePlugin(lease *bridge.Lease) {
 }
 
 // Open makes the proxy for the plugins that activator starts. It starts none.
-func Open(activator bridge.Activator, plugins Plugins) *Proxy {
-	return &Proxy{activator: activator, plugins: plugins}
+func Open(activator bridge.Activator, services pluginport.ServiceResolver, plugins Plugins) *Proxy {
+	return &Proxy{activator: activator, services: services, plugins: plugins}
 }
 
 // GetService is the service a request path names: the first segment of /Service/Method.
@@ -75,7 +75,7 @@ func (p *Proxy) Serves(urlPath string) bool {
 	if svc == "" {
 		return false
 	}
-	_, found := p.plugins.ResolveService(svc)
+	_, found := p.services.ResolveService(svc)
 	return found
 }
 
@@ -88,7 +88,7 @@ func getHopHeaders() []string {
 
 // ServeHTTP forwards the call to the plugin that serves its service.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	found, serves := p.plugins.ResolveService(GetService(r.URL.Path))
+	found, serves := p.services.ResolveService(GetService(r.URL.Path))
 	if !serves {
 		p.reportError(writeConnectError(w, http.StatusNotFound, connect.CodeNotFound, "no plugin serves this service"))
 		return
