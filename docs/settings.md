@@ -68,6 +68,7 @@ How the text of every editor is drawn.
       "fontFamily": "",
       "lineHeight": 1.6,
       "lineNumbers": false,
+      "highlightActiveLine": false,
       "softWrap": true
     }
   }
@@ -77,9 +78,10 @@ How the text of every editor is drawn.
 |               |                                                                                                                         |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `fontSize`    | the size of editor text in pixels, from 10 to 32. It does not follow `interfaceScale` or `textScale`.                   |
-| `fontFamily`  | the typeface: empty for the face of the theme, or `sans`, `serif` or `mono`. Any other value is ignored, with a notice. |
+| `fontFamily`  | the theme default (empty), a preset (`sans`, `serif`, `mono`), or an installed font family such as `JetBrains Mono`. |
 | `lineHeight`  | the height of a line as a multiple of the font size, from 1.2 to 2.4.                                                   |
 | `lineNumbers` | whether editors number their lines.                                                                                     |
+| `highlightActiveLine` | whether editors highlight the line containing the caret. |
 | `softWrap`    | whether editors wrap long lines instead of scrolling sideways.                                                          |
 
 The window writes the size, the line height and the family as `--numen-editor-font-size`, `--numen-editor-line-height` and `--numen-editor-font-family`, and changing a setting changes them at once. An empty family writes no `--numen-editor-font-family`.

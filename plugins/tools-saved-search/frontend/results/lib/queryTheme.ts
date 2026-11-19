@@ -9,7 +9,7 @@ export const queryTheme = EditorView.theme({
   '&': {
     color: 'var(--numen-ink)',
     backgroundColor: 'var(--numen-code-bg)',
-    fontFamily: 'var(--numen-font-mono)',
+    fontFamily: 'var(--numen-editor-font-family, var(--numen-font-mono))',
     fontSize: 'var(--numen-reading-size)',
     lineHeight: '1.6',
   },
@@ -22,7 +22,7 @@ export const queryTheme = EditorView.theme({
   },
   '.cm-line': { padding: '0 8px' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--numen-ink)' },
-  '.cm-activeLine': { backgroundColor: 'transparent' },
+  '.cm-activeLine': { backgroundColor: 'var(--numen-editor-active-line, transparent)' },
   '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
     backgroundColor: 'var(--numen-selection)',
   },

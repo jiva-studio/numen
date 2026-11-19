@@ -10,7 +10,7 @@ import { defaultKeymap, history, historyKeymap, indentLess, indentMore } from '@
 import { getIndentUnit, indentString, syntaxHighlighting } from '@codemirror/language'
 import type { StateCommand } from '@codemirror/state'
 import { setDiagnostics } from '@codemirror/lint'
-import { EditorView, keymap, tooltips } from '@codemirror/view'
+import { EditorView, highlightActiveLine, keymap, tooltips } from '@codemirror/view'
 import { WORDS as words } from '../../words'
 import {
   createQueryCompletion,
@@ -93,6 +93,7 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
       doc: options.query,
       extensions: [
         history(),
+        highlightActiveLine(),
         queryLanguage,
         syntaxHighlighting(queryHighlighting),
         queryTheme,
