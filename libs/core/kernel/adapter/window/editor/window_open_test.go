@@ -52,7 +52,7 @@ func vaultConfig(t *testing.T) testInstallation {
 			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 		},
 	})
-	if _, err := cfg.AddVault(cfg.Resources, root, "alpha"); err != nil {
+	if _, err := cfg.EnsureVault(cfg.Resources, root, "alpha", false); err != nil {
 		t.Fatal(err)
 	}
 	return cfg

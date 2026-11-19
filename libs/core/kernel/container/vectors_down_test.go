@@ -25,6 +25,7 @@ import (
 // downEmbeddingHost resolves an embedding plugin whose process is not listening.
 type downEmbeddingHost struct {
 	pluginport.PluginResolver
+	pluginport.PluginLister
 	endpoint transport.Endpoint
 	released atomic.Int32
 	acquired atomic.Int32
@@ -70,10 +71,12 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 }
 
 func (h *downEmbeddingHost) lend() *container.TestPlugins {
-	runtime := container.PluginRuntime{
-		PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding(), ConfigWatcher: h,
-	}
-	return &container.TestPlugins{Execution: &container.PluginExecution{Runtime: runtime, Health: pluginhealth.NewItems()}}
+	execution := &container.PluginExecution{Health: pluginhealth.NewItems()}
+	execution.Runtime.Registry = h
+	execution.Runtime.Activator = h
+	execution.Runtime.PluginBinding = container.AbsentBinding()
+	execution.Runtime.ConfigWatcher = h
+	return &container.TestPlugins{Execution: execution}
 }
 
 // A plugin that does not answer names no model: the window opens its source undescribed, and a vault read

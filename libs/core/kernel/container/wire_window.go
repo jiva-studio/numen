@@ -34,7 +34,7 @@ type tabKinds struct {
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
 // them, and opens the vault named, or the one shown last when none is named.
 func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening) (*OpenedWindow, error) {
-	db, err := OpenIndex(c, res, ctx)
+	db, err := c.openIndex(res, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	search := newTextSearch(searchDeps, c.machine.ResolvedCompute.Workers)
 	session := windowSearch{index: db, source: launch.source, tasks: plugins.tasks, generations: launch.generations, kinds: plugins.kinds.list}
 	query := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, search, db, launch.source, opened.State.ReportFloorError)
-	runs := newSearchRuns(session, query, exec.Runtime, vaultDeps.Clock)
+	runs := newSearchRuns(session, query, exec.Runtime.Registry, exec.Runtime.Manifests, vaultDeps.Clock)
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
 	mountServices(opened, install, exec, settingsDeps, vaultDeps)
 	mountLogs(opened, getLogEntries(res), install, settingsDeps, vaultDeps)
@@ -71,7 +71,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	return connectWindow(install, exec, vaultDeps, opened, startup, launch.plugins)
 }
 
-func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup windowStartup) *TextVersions {
+func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup windowStartup) *textVersions {
 	if !startup.isEditor {
 		return nil
 	}
@@ -109,7 +109,7 @@ type windowStartup struct {
 	isEditor bool
 	opening  WindowOpening
 	ports    registry.Ports
-	db       *Index
+	db       *vaultIndex
 }
 
 type windowPlugins struct {
@@ -122,7 +122,7 @@ type windowPlugins struct {
 	kinds     tabKinds
 }
 
-func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index, source sourcebridge.Binding) windowPlugins {
+func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex, source sourcebridge.Binding) windowPlugins {
 	tasks := run.NewTasks()
 	exec.Runtime.SetOnFailureCleared(func(string) { settingsDeps.PluginChanges.Signal() })
 	reportDependencies(exec.Watch, tasks, vaultDeps.RecordLog)
@@ -191,7 +191,7 @@ func buildWindow(
 	}
 }
 
-func newWindowNotes(vaultDeps vaultWiring, db *Index, state *editor.State, current *vault.CurrentRefresh) (NoteUseCases, hostvault.NoteChanges) {
+func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.State, current *vault.CurrentRefresh) (noteUseCases, hostvault.NoteChanges) {
 	update := vault.NewUpdateIndex(current.Get).Execute
 	moves := note.NewTellMoveInShownVault(state.GetShownVault, windowView(state))
 	notes := vaultNotes(vaultDeps, db, update, noteViews{Moves: moves, Writes: state.Writes, Follow: state.Writes})
@@ -199,9 +199,9 @@ func newWindowNotes(vaultDeps vaultWiring, db *Index, state *editor.State, curre
 	return notes, getNoteChanges(pluginNotes)
 }
 
-func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) tabKinds {
+func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex) tabKinds {
 	files := file.NewGetFileKinds(vaultDeps.Readers, db.NoteQueries())
-	chooser := tabkind.NewChoose(getRuntimeManifests(exec.Runtime), exec.Watch, getWhenConfig(settingsDeps, exec.Runtime.PluginLister))
+	chooser := tabkind.NewChoose(exec.Runtime.Manifests, exec.Watch, getWhenConfig(settingsDeps, exec.Runtime.Registry))
 	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
 

@@ -27,7 +27,7 @@ func openWindowAt(t *testing.T, cfg container.Config, root string) *container.Op
 	t.Helper()
 	res := container.NewResources()
 	execution, preferences, endpoints := container.PreparePluginHost(nil, nil, nil, false)
-	if _, err := cfg.AddVault(res, root, "one"); err != nil {
+	if _, err := cfg.EnsureVault(res, root, "one", false); err != nil {
 		t.Fatal(err)
 	}
 

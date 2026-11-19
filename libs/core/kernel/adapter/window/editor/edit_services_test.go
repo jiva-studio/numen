@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -15,9 +16,9 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-func openWindowIndex(t *testing.T, cfg testInstallation) *container.Index {
+func openWindowIndex(t *testing.T, cfg testInstallation) *index.DB {
 	t.Helper()
-	db, err := container.OpenIndex(cfg.Config, cfg.Resources, t.Context())
+	db, err := index.Open(t.Context(), cfg.Config.IndexPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +26,7 @@ func openWindowIndex(t *testing.T, cfg testInstallation) *container.Index {
 	return db
 }
 
-func newNoteMover(db *container.Index) note.Move {
+func newNoteMover(db *index.DB) note.Move {
 	return note.NewMove(note.MoveDeps{Readers: vaultreader.Readers{}, Writers: newVaultWriters(),
 		Links: db.NoteQueries(), Names: db.NoteQueries(), Sources: db.Sources(), Now: testsupport.NewClock()})
 }

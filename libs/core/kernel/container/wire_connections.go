@@ -107,10 +107,10 @@ func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps se
 	})
 }
 
-// GetConnectionCalls is the calls plugin views make through their connections, for a window that serves
+// getConnectionCalls is the calls plugin views make through their connections, for a window that serves
 // ConnectionCallService without the routes of the editor. It is nil where the installation runs no
 // plugins.
-func GetConnectionCalls(prefs *PluginPreferences, endpoints *PluginEndpoints) connectionport.ModelCalls {
+func getConnectionCalls(prefs *PluginPreferences, endpoints *PluginEndpoints) connectionport.ModelCalls {
 	if prefs == nil || endpoints == nil {
 		return nil
 	}
@@ -135,15 +135,6 @@ func openRowLists(install pluginInstall, exec *PluginExecution, settingsDeps set
 		return nil
 	}
 	return modelcall.NewRows(resolve, connection.NewListRows(deps, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, options.ListOptions)
-}
-
-// GetConnectionRows is the listing of the rows plugin views offer a choice of, for a window that serves
-// ConnectionCallService without the routes of the editor. It is nil where the installation runs no plugins.
-func GetConnectionRows(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) connectioncall.Rows {
-	exec = getPluginExecution(exec)
-	install := newPluginInstall(c, prefs, endpoints, res)
-	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
-	return openRowLists(install, exec, settingsDeps, vaultDeps)
 }
 
 func openRowOptions(install pluginInstall, exec *PluginExecution, deps connection.Deps) *rowoptions.Options {

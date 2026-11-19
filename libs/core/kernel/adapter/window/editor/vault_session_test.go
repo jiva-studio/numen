@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
@@ -123,7 +125,7 @@ func newListedVault(
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	v, err := cfg.AddVault(cfg.Resources, root, name)
+	v, err := cfg.EnsureVault(cfg.Resources, root, name, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -720,7 +722,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	}
 }
 
-func openInstallation(t *testing.T) (*container.OpenedWindow, *container.Index) {
+func openInstallation(t *testing.T) (*container.OpenedWindow, *index.DB) {
 	t.Helper()
 
 	cfg := newTestInstallation(container.Config{
@@ -733,7 +735,7 @@ func openInstallation(t *testing.T) (*container.OpenedWindow, *container.Index) 
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := cfg.AddVault(cfg.Resources, root, "one"); err != nil {
+	if _, err := cfg.EnsureVault(cfg.Resources, root, "one", false); err != nil {
 		t.Fatal(err)
 	}
 

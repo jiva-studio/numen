@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
@@ -278,7 +277,7 @@ func (c *counting) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	return c.VaultReaders.Open(v)
 }
 
-func newWholeVaultRead(readers vaultport.VaultReaders, db *container.Index) indexing.ReadWholeVault {
+func newWholeVaultRead(readers vaultport.VaultReaders, db *scanIndex) indexing.ReadWholeVault {
 	return indexing.NewReadWholeVault(
 		scanner(readers, db),
 		filetext.NewIndex(filetext.IndexDeps{

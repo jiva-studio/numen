@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
@@ -34,13 +33,13 @@ func newOrchardVault(t *testing.T) domain.Vault {
 	})
 }
 
-func scanAt(db *container.Index, tokens int) vaults.Scan {
+func scanAt(db *scanIndex, tokens int) vaults.Scan {
 	return scanAtBacklog(db, tokens, db.Sources())
 }
 
-func scanAtBacklog(db *container.Index, tokens int, backlog sourceport.SourceBacklog) vaults.Scan {
+func scanAtBacklog(db *scanIndex, tokens int, backlog sourceport.SourceBacklog) vaults.Scan {
 	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), backlog)
-	scan.Walks = &db.Walks
+	scan.Walks = &db.walks
 	scan.Cut = chunking.NewCutNotes(tokens)
 	scan.ShouldRecut = tokens > 0
 	return scan
@@ -57,7 +56,7 @@ func (b forbiddenBacklog) GetSourcesWithOtherRecipe(context.Context, domain.Vaul
 	return nil, nil
 }
 
-func getNotesWithOtherChunking(t *testing.T, db *container.Index, v domain.Vault, tokens int) []string {
+func getNotesWithOtherChunking(t *testing.T, db *scanIndex, v domain.Vault, tokens int) []string {
 	t.Helper()
 	paths, err := db.Sources().GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{chunking.NewCutNotes(tokens).Recipe()}, 100)
 	if err != nil {
@@ -170,7 +169,7 @@ func TestNotesWithoutARecordedChunkingAreChunkedOnceWhenTheSizeIsKnown(t *testin
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
 	old := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), recipeless{db.Notes()}, db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
-	old.Walks = &db.Walks
+	old.Walks = &db.walks
 	old.Cut = chunking.NewCutNotes(512)
 	runScan(t, old, v)
 	if got := getNotesWithOtherChunking(t, db, v, 512); len(got) != 3 {
@@ -196,7 +195,7 @@ func TestRechunkedNotesAreCountedAndSavedInGroupsLikeChangedFiles(t *testing.T) 
 
 	content := &groupedWrites{}
 	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), db.Sources())
-	scan.Walks = &db.Walks
+	scan.Walks = &db.walks
 	scan.Cut = chunking.NewCutNotes(512)
 	scan.ShouldRecut = true
 	res := runScan(t, scan, v)

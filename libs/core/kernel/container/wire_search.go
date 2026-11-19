@@ -18,11 +18,11 @@ type textSearch struct {
 	Workers      int
 }
 
-func newSearch(c textSearch, db *Index, asking searchsourceport.Source, errorHandler func(error), reportAnswered func()) searchusecase.Search {
+func newSearch(c textSearch, db *vaultIndex, asking searchsourceport.Source, errorHandler func(error), reportAnswered func()) searchusecase.Search {
 	return newSearchOver(c, db.ChunkSearch(), getParticipants(db, asking), errorHandler, reportAnswered)
 }
 
-func getParticipants(db *Index, source searchsourceport.Source) []searchusecase.Participant {
+func getParticipants(db *vaultIndex, source searchsourceport.Source) []searchusecase.Participant {
 	if source == nil {
 		return nil
 	}
@@ -37,12 +37,12 @@ func newSearchOver(c textSearch, queries sourceport.LexicalQueries, sources []se
 	return searching
 }
 
-func newFloorPolicy(db *Index, source searchsourceport.Source, errorHandler func(error)) searchusecase.FloorPolicy {
+func newFloorPolicy(db *vaultIndex, source searchsourceport.Source, errorHandler func(error)) searchusecase.FloorPolicy {
 	return searchusecase.NewFloorPolicy(db.SearchFloors(), getFloorHint(source), errorHandler)
 }
 
 func buildPluginSearch(
-	c textSearch, db *Index, source searchsourceport.Source, errorHandler func(error), clock machineport.Clock,
+	c textSearch, db *vaultIndex, source searchsourceport.Source, errorHandler func(error), clock machineport.Clock,
 ) hostsearch.Search {
 	policy := newFloorPolicy(db, source, errorHandler)
 	return hostsearch.Search{

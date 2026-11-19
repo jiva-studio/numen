@@ -82,7 +82,7 @@ func TestListThemesListsPluginThemesBeforeAnyPluginIsActive(t *testing.T) {
 			t.Errorf("themes = %v, want %s among them", names, want)
 		}
 	}
-	for _, info := range cfg.Execution.Runtime.GetPluginInfos() {
+	for _, info := range cfg.Execution.Runtime.Registry.GetPluginInfos() {
 		if info.IsActive {
 			t.Errorf("plugin %s is active after listing themes", info.ID)
 		}

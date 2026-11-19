@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 
@@ -26,15 +27,15 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// PluginVaultHooks is what a window adds to the vault it lets the plugins work.
-type PluginVaultHooks struct {
+// pluginVaultHooks is what a window adds to the vault it lets the plugins work.
+type pluginVaultHooks struct {
 	Written    func()
 	IndexState func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
 	Notes      *hostvault.NoteChanges
 }
 
-func getNoteChanges(notes NoteUseCases) hostvault.NoteChanges {
+func getNoteChanges(notes noteUseCases) hostvault.NoteChanges {
 	return hostvault.NoteChanges{
 		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking,
 		AddLinks: note.NewAddLinks(notes.Edit.Linking),
@@ -42,7 +43,7 @@ func getNoteChanges(notes NoteUseCases) hostvault.NoteChanges {
 }
 
 func installPluginVault(install pluginInstall, vaultDeps vaultWiring,
-	registry vaultregistry.Ports, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+	registry vaultregistry.Ports, db *vaultIndex, current func() (domain.Vault, bool), hooks pluginVaultHooks,
 ) error {
 	opened, err := pluginsOpenPluginVault(install, vaultDeps, registry, db, current, completeHooks(vaultDeps, db, hooks))
 	if err != nil {
@@ -53,7 +54,7 @@ func installPluginVault(install pluginInstall, vaultDeps vaultWiring,
 }
 
 func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
-	registry vaultregistry.Ports, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+	registry vaultregistry.Ports, db *vaultIndex, current func() (domain.Vault, bool), hooks pluginVaultHooks,
 ) (*pluginvault.Access, error) {
 	cache, err := appstate.OpenPluginCachesIn(install.PluginCachePath)
 	if err != nil {
@@ -102,7 +103,7 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 }
 
 func newArranger(
-	useCases NoteUseCases, db *Index, window *hostvault.NoteChanges, current func() (domain.Vault, bool),
+	useCases noteUseCases, db *vaultIndex, window *hostvault.NoteChanges, current func() (domain.Vault, bool),
 ) hostvault.Arranger {
 	arranger := hostvault.Arranger{
 		Notes:       getNoteChanges(useCases),
@@ -116,7 +117,7 @@ func newArranger(
 	return arranger
 }
 
-func completeHooks(v vaultWiring, db *Index, hooks PluginVaultHooks) PluginVaultHooks {
+func completeHooks(v vaultWiring, db *vaultIndex, hooks pluginVaultHooks) pluginVaultHooks {
 	if hooks.IndexState == nil {
 		hooks.IndexState = query.NewGetIndexState(db.NoteQueries()).Execute
 	}
@@ -135,7 +136,7 @@ func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps
 		return nil
 	}
 	running := getRunningExecution(exec, install.SafeMode)
-	run := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.PluginLister), vaultDeps, running, nil).Run
+	run := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.Registry), vaultDeps, running, nil).Run
 	return textversion.NewVersionItems(vaultDeps.TextVersions.Texts, vaultDeps.TextVersions.Versions, run, running.Watch)
 }
 
@@ -144,9 +145,9 @@ func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps set
 		return nil
 	}
 	running := getRunningExecution(exec, install.SafeMode)
-	config := getWhenConfig(settingsDeps, exec.Runtime.PluginLister)
+	config := getWhenConfig(settingsDeps, exec.Runtime.Registry)
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: getRuntimeManifests(running.Runtime), Run: newPluginCommands(config, vaultDeps, running, nil).Run, Readers: vaultDeps.Readers,
+		Plugins: running.Runtime.Manifests, Run: newPluginCommands(config, vaultDeps, running, nil).Run, Readers: vaultDeps.Readers,
 		Notes: pluginsNewNoteReader(vaultDeps), Types: running.Watch, Versions: vaultDeps.TextVersions.Texts, Config: config,
 	})
 }
@@ -169,12 +170,8 @@ func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.V
 	}
 }
 
-func GetFrontendPluginIDs(runtime PluginRuntime) []string {
-	return getRuntimeManifests(runtime).ListFrontendPluginIDs()
-}
-
-// GetPluginDir returns the folder of a plugin and whether the plugin is installed.
-func GetPluginDir(resolver pluginport.PluginResolver, id string) (string, bool) {
+// getPluginDir returns the folder of a plugin and whether the plugin is installed.
+func getPluginDir(resolver pluginport.PluginResolver, id string) (string, bool) {
 	p, ok := resolver.GetPlugin(id)
 	return p.Dir, ok
 }

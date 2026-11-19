@@ -3,7 +3,6 @@ package vault_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"os"
 	"path/filepath"
 	"slices"
@@ -62,7 +61,7 @@ func (s *sometimes) Open(v domain.Vault) (vaultport.VaultReader, error) {
 // kept level with it, and what the following reported.
 type followed struct {
 	vault domain.Vault
-	index *container.Index
+	index *scanIndex
 	moved <-chan vaults.VaultChanges
 }
 

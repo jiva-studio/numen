@@ -20,7 +20,7 @@ func applyingHost(applied *[]string) settingsport.PluginSettingApplier {
 func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 	var applied []string
 	c := NewTestInstallation(Config{}, &TestPlugins{
-		Execution:   &PluginExecution{Runtime: PluginRuntime{PluginBinding: absent.Runtime{}}},
+		Execution:   &PluginExecution{Runtime: pluginRuntime{PluginBinding: absent.Runtime{}}},
 		Preferences: &PluginPreferences{ApplySetting: applyingHost(&applied)},
 	})
 	changes, stop := c.Resources.pluginChanges.Subscribe()
@@ -40,7 +40,7 @@ func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 
 func TestAPluginChangeIsNotReportedAfterTheWatchStops(t *testing.T) {
 	c := NewTestInstallation(Config{}, &TestPlugins{
-		Execution:   &PluginExecution{Runtime: PluginRuntime{PluginBinding: absent.Runtime{}}},
+		Execution:   &PluginExecution{Runtime: pluginRuntime{PluginBinding: absent.Runtime{}}},
 		Preferences: &PluginPreferences{ApplySetting: applyingHost(new([]string))},
 	})
 	changes, stop := c.Resources.pluginChanges.Subscribe()

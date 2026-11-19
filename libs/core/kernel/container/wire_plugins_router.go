@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"errors"
+
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
@@ -10,14 +11,13 @@ import (
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
@@ -98,12 +98,12 @@ func StopPlugins(watch PluginWatch, ctx context.Context) error {
 	return watch.TeardownAll(ctx, pluginGracePeriod)
 }
 
-func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host *PluginExecution, versions plugincommand.VersionItems) PluginCommandUseCases {
+func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host *PluginExecution, versions plugincommand.VersionItems) pluginCommandUseCases {
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
-	commands, conditions := getRuntimeManifests(host.Runtime), when.NewConditions()
+	commands, conditions := host.Runtime.Manifests, when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
 	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(vaultDeps), config, conditions)
-	return PluginCommandUseCases{
+	return pluginCommandUseCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, host.Watch),
 		Run:        run,
@@ -112,14 +112,9 @@ func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host
 	}
 }
 
-// GetPluginServices connects window calls to plugin services.
-func GetPluginServices(runtime PluginRuntime) editor.PluginServices {
-	return servicebridge.Open(runtime.Activator, runtime)
-}
-
 func pluginsOpenPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks, models *run.Lock) *run.PluginWork {
 	work := run.NewPluginWork(models, tasks, func(pluginID string) string {
-		return pluginsGetPluginName(exec.Runtime.PluginResolver, pluginID)
+		return pluginsGetPluginName(exec.Runtime.Registry, pluginID)
 	})
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Work = work })
 	return work

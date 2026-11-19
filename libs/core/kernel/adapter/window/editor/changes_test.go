@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
@@ -67,7 +69,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		},
 	})
 	settings.Resources.TextReaders = testsupport.Texts{Readers: vaultreader.Readers{}}
-	if _, err := settings.AddVault(settings.Resources, root, "watched"); err != nil {
+	if _, err := settings.EnsureVault(settings.Resources, root, "watched", false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -251,7 +253,7 @@ type going struct {
 	settings     string
 	order        *order
 	cfg          testInstallation
-	index        *container.Index
+	index        *index.DB
 }
 
 // order is a record of the moments a test is asking about the sequence of.
@@ -312,7 +314,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		},
 	})
 	writeNamingSettings(t, cfg.RegistryPath, sync)
-	if _, err := cfg.AddVault(cfg.Resources, root, "quitting"); err != nil {
+	if _, err := cfg.EnsureVault(cfg.Resources, root, "quitting", false); err != nil {
 		t.Fatal(err)
 	}
 

@@ -3,7 +3,6 @@ package vault_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"os"
 	"path/filepath"
 	"slices"
@@ -25,7 +24,7 @@ import (
 // filing is a scanned vault whose files can be moved about, with the index kept
 // up to date as a real caller keeps it.
 type filing struct {
-	db      *container.Index
+	db      *scanIndex
 	vault   domain.Vault
 	index   func(ctx context.Context, v domain.Vault, paths []string) error
 	readers *countingReaders

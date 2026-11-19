@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
@@ -231,6 +232,13 @@ func GetRefresh(c TestInstallation, db *Index) vault.Refresh {
 	return vaultMakeRefresh(c.buildVaultWiring(), db, db.Notes())
 }
 
-func (c TestInstallation) openTextVersions(db *Index) *TextVersions {
+func (c TestInstallation) openTextVersions(db *Index) *textVersions {
 	return newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, getRunningExecution(c.Execution, c.SafeMode).Runtime.TextPlugins, GetClock(c.Resources), db)
 }
+
+// These aliases let external container tests inspect the composition they exercise.
+type Index = vaultIndex
+type PluginVaultHooks = pluginVaultHooks
+type NoteUseCases = noteUseCases
+
+var OpenIndex = Config.openIndex

@@ -2,26 +2,26 @@ package container
 
 import "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
-// NoteUseCases is everything that changes the notes of a vault, grouped; the container builds each
+// noteUseCases is everything that changes the notes of a vault, grouped; the container builds each
 // use case on its own. The window and the agent tools use the same set, so both enforce the same
 // rules and a dependency is configured once for both.
-type NoteUseCases struct {
-	Edit       NoteEditing
-	Properties NoteProperties
-	Place      NotePlacing
-	Connect    NoteConnecting
+type noteUseCases struct {
+	Edit       noteEditing
+	Properties noteProperties
+	Place      notePlacing
+	Connect    noteConnecting
 }
 
-// NoteEditing reads and changes the text of a note.
-type NoteEditing struct {
+// noteEditing reads and changes the text of a note.
+type noteEditing struct {
 	Read    note.Read
 	Write   note.Write
 	Create  note.Create
 	Linking note.EditLinks
 }
 
-// NotePlacing moves, renames and removes notes.
-type NotePlacing struct {
+// notePlacing moves, renames and removes notes.
+type notePlacing struct {
 	Move       note.Move
 	Rename     note.Rename
 	Remove     note.Remove
@@ -29,8 +29,8 @@ type NotePlacing struct {
 	EmptyTrash note.EmptyTrash
 }
 
-// NoteConnecting changes the relationships between notes.
-type NoteConnecting struct {
+// noteConnecting changes the relationships between notes.
+type noteConnecting struct {
 	SaveConnection   note.SaveConnection
 	RemoveSide       note.RemoveSide
 	RemoveConnection note.RemoveConnection
@@ -38,7 +38,7 @@ type NoteConnecting struct {
 	CreateInRelation note.CreateInRelation
 }
 
-// NoteProperties changes the frontmatter keys of notes.
-type NoteProperties struct {
+// noteProperties changes the frontmatter keys of notes.
+type noteProperties struct {
 	Frontmatter note.WriteFrontmatter
 }

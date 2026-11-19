@@ -156,7 +156,7 @@ func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *
 		SettingsFiles:   res.settingsFiles,
 		SettingEvents:   res.settingEvents,
 		PluginChanges:   res.pluginChanges,
-		Infos:           runtime,
+		Infos:           runtime.Registry,
 		Declarations:    prefs.Configuration.PluginSettingDeclarer,
 		ConnectionTypes: prefs.Views.Types,
 		PluginInfos:     prefs.Views.Infos,
@@ -174,13 +174,13 @@ func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, chunks
 	return base
 }
 
-func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, texts *TextVersions) (settingsWiring, vaultIndexPlan, vaultWiring) {
+func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, texts *textVersions) (settingsWiring, vaultIndexPlan, vaultWiring) {
 	// texts are the text versions the open made over its index, or nil where it makes none.
 	exec = getPluginExecution(exec)
 	settings := settingsOf(c, exec, prefs, res)
 	base := openVaultAccess(c.Paths, GetClock(res), res.vaultLocks, res.watches, texts)
 	plan := vaultIndexPlan{
-		ChunkPolicy: noteChunkPolicy{Chunks: res.Chunks, Profiles: exec.Runtime.PluginResolver},
+		ChunkPolicy: noteChunkPolicy{Chunks: res.Chunks, Profiles: exec.Runtime.Registry},
 		ServiceDir:  c.ServiceDir, ShouldRebuildIndex: c.ShouldRebuildIndex,
 		VaultReaders: base.Readers, TextReaders: getTextReaders(res.TextReaders, texts), ErrorHandler: settings.ErrorHandler,
 	}
@@ -193,13 +193,13 @@ func setVaultSearch(v vaultWiring, chunks noteChunkPolicy) vaultWiring {
 	return v
 }
 
-func openIndexedVault(plan vaultIndexPlan, v vaultWiring, db *Index, plugins textport.TextPlugins) (vaultIndexPlan, vaultWiring) {
+func openIndexedVault(plan vaultIndexPlan, v vaultWiring, db *vaultIndex, plugins textport.TextPlugins) (vaultIndexPlan, vaultWiring) {
 	v = openVaultTextVersions(v, db, plugins, plan.ChunkPolicy)
 	plan.TextReaders = getTextReaders(plan.TextReaders, v.TextVersions)
 	return plan, v
 }
 
-func openVaultTextVersions(v vaultWiring, db *Index, plugins textport.TextPlugins, chunks noteChunkPolicy) vaultWiring {
+func openVaultTextVersions(v vaultWiring, db *vaultIndex, plugins textport.TextPlugins, chunks noteChunkPolicy) vaultWiring {
 	v.TextVersions = newTextVersions(v.Options, plugins, v.Clock, db)
 	return setVaultSearch(v, chunks)
 }
@@ -208,7 +208,7 @@ func newSourceBinding(exec *PluginExecution, safeMode bool, endpoints *PluginEnd
 	runtime := getRunningExecution(exec, safeMode).Runtime
 	return sourcebridge.Binding{
 		Activator:    runtime.Activator,
-		Plugins:      sourcebridge.PluginAccess{PluginResolver: runtime.PluginResolver, ConfigWatcher: runtime.ConfigWatcher},
+		Plugins:      sourcebridge.PluginAccess{PluginResolver: runtime.Registry, ConfigWatcher: runtime.ConfigWatcher},
 		Descriptions: getPluginEndpoints(endpoints).SourceDescriptions,
 		ReportRead:   pluginhealth.NewReportSearchSource(exec.Health).Execute,
 		Follow:       res.Chunks.Follow,

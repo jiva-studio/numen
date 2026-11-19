@@ -61,7 +61,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 	})
 
 	t.Run("plugin processes were never started", func(t *testing.T) {
-		for _, info := range cfg.Execution.Runtime.GetPluginInfos() {
+		for _, info := range cfg.Execution.Runtime.Registry.GetPluginInfos() {
 			if info.IsActive {
 				t.Fatalf("expected plugin %s to remain inactive in safe mode", info.ID)
 			}
@@ -71,7 +71,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	cfg := NewTestInstallation(Config{}, nil)
-	_, err := getRunningExecution(cfg.Execution, cfg.SafeMode).Runtime.ResolveCapability(bridge.CapabilitySearchSource)
+	_, err := getRunningExecution(cfg.Execution, cfg.SafeMode).Runtime.Registry.ResolveCapability(bridge.CapabilitySearchSource)
 	var missing *plugindomain.UnavailableError
 	if !errors.As(err, &missing) || missing.Reason != plugindomain.NotInstalled || missing.Capability != bridge.CapabilitySearchSource {
 		t.Fatalf("resolvePlugin = %v, want the embedding plugin not installed", err)
@@ -81,7 +81,7 @@ func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 		t.Fatalf("StopPlugins = %v, want nothing to stop", err)
 	}
 	safe := NewTestInstallation(Config{SafeMode: true}, nil)
-	_, err = getRunningExecution(safe.Execution, safe.SafeMode).Runtime.ResolveCapability(bridge.CapabilitySearchSource)
+	_, err = getRunningExecution(safe.Execution, safe.SafeMode).Runtime.Registry.ResolveCapability(bridge.CapabilitySearchSource)
 	if !errors.Is(err, errSafeMode) || !errors.As(err, &missing) || missing.Reason != plugindomain.Disabled {
 		t.Fatalf("resolvePlugin in safe mode = %v, want the embedding plugin disabled by safe mode", err)
 	}

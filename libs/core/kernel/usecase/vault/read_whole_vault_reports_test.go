@@ -121,7 +121,7 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	db := openIndex(t)
 	stopErr := errors.New("the notes cannot be taken out")
 	notes := vaults.NewScan(readers, db.Vaults(), notRemoving{NoteRepository: db.Notes(), err: stopErr}, db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
-	notes.Walks = &db.Walks
+	notes.Walks = &db.walks
 	making := indexing.NewReadWholeVault(
 		notes,
 		filetext.NewIndex(filetext.IndexDeps{

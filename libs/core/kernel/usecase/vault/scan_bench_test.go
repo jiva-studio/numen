@@ -10,7 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
@@ -25,19 +26,17 @@ import (
 //
 //	go test ./usecase/vault/ -run XXX -bench . -benchtime 1x
 
-func openIndexFor(b *testing.B) *container.Index {
+func openIndexFor(b *testing.B) *scanIndex {
 	b.Helper()
-	db, err := container.OpenIndex(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(b.TempDir(), "index.db")},
-	}, container.NewResources(), b.Context())
+	db, err := index.Open(b.Context(), filepath.Join(b.TempDir(), "index.db"))
 	if err != nil {
 		b.Fatal(err)
 	}
 	testsupport.CloseAfter(b, db)
-	return db
+	return &scanIndex{DB: db}
 }
 
-func scanFor(db *container.Index) vaults.Scan {
+func scanFor(db *scanIndex) vaults.Scan {
 	return vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 }
 

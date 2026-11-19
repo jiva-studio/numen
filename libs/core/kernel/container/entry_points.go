@@ -5,8 +5,10 @@ import (
 	"io"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connectioncall"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/connectionlog"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -26,12 +28,12 @@ func (c Config) OpenEditor(
 	return c.openWindow(exec, prefs, endpoints, res, ctx, windowStartup{opening: opening, ports: ports, db: db, isEditor: true})
 }
 
-func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultregistry.Ports, *Index, error) {
+func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultregistry.Ports, *vaultIndex, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return ports, nil, err
 	}
-	db, err := OpenIndex(c, res, ctx)
+	db, err := c.openIndex(res, ctx)
 	return ports, db, err
 }
 
@@ -41,7 +43,7 @@ func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vault
 	}
 	state := opened.State
 	exec.Runtime.PluginBinding.SetVaultPath(state.GetCurrentVault().Path)
-	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: &access.notes}
+	hooks := pluginVaultHooks{Written: state.Writes.NoteWritten, Notes: &access.notes}
 	if err := installPluginVault(install, vaultDeps, startup.ports, startup.db, state.GetShownVault, hooks); err != nil {
 		return nil, err
 	}
@@ -80,15 +82,19 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
 
 	api, log := opening.API, opening.Log
+	api.GetFrontendPluginIDs = exec.Runtime.Manifests.ListFrontendPluginIDs
+	api.GetPluginDir = func(id string) (string, bool) { return getPluginDir(exec.Runtime.Registry, id) }
+	api.PluginServices = servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Registry)
+	api.ConnectionCalls = connectioncall.NewService(getConnectionCalls(prefs, endpoints), openRowLists(install, exec, settingsDeps, vaultDeps))
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
 	vaults := openVaults(vaultDeps, db, log.Out, log.Label, api.ReportVaultRead)
 	closers := Shell{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
-	SetShellNotes(api, db)
+	setShellNotes(api, db)
 	vaultList := vaultregistry.NewList(ports.Vaults)
 	api.Vaults = &vaultList
 	api.ResolveLinks = query.NewResolveVaultLinks(ports.Vaults, query.NewResolveLinks(db.NoteQueries()))
 	api.SetVaultIndexer(ctx, vaults.IndexVault)
-	hooks := PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
+	hooks := pluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
 	if err := installPluginVault(install, vaultDeps, ports, db, getNoShownVault, hooks); err != nil {
 		return closers, err
 	}
