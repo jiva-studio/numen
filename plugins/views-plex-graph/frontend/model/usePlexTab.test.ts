@@ -290,8 +290,7 @@ describe('a plex drawing nothing', () => {
       here: ref(''),
       error: ref(''),
       go: async () => undefined,
-      followMoves: () => undefined,
-      close: () => undefined,
+      lifecycle: { followMoves: () => undefined, close: () => undefined },
     }
     return createPlexTab(view as unknown as PlexView, createDeps(createVault().editor, overrides))
   }

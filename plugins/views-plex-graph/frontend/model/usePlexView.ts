@@ -73,7 +73,7 @@ export function usePlexView(core: RelatedNoteQueries) {
 
   const warm = (path: string) => {
     if (!path || !guard.open()) return
-    void core
+    core
       .listRelatedNotes([path], 1)
       .then(([answer]) => {
         if (!answer?.related.length) return
@@ -91,5 +91,14 @@ export function usePlexView(core: RelatedNoteQueries) {
       .catch(() => undefined)
   }
 
-  return { noteGraph, here, error, nextPath, isLoading, go, warm, followMoves, close }
+  return {
+    noteGraph,
+    here,
+    error,
+    nextPath,
+    isLoading,
+    go,
+    warm,
+    lifecycle: { followMoves, close },
+  }
 }

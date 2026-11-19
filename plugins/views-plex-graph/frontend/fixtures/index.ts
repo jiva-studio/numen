@@ -106,11 +106,13 @@ export const viewOn = (
         path === initialPath ? lines : [],
       )
     },
-    followMoves: (renamed: readonly PathRename[]) => {
-      const one = renamed.find((item) => item.from === view.here.value)
-      if (one) view.here.value = one.to
+    lifecycle: {
+      followMoves: (renamed: readonly PathRename[]) => {
+        const one = renamed.find((item) => item.from === view.here.value)
+        if (one) view.here.value = one.to
+      },
+      close: () => undefined,
     },
-    close: () => undefined,
   }
   return { view, went }
 }

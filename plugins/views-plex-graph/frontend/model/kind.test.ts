@@ -18,7 +18,7 @@ const window = (options: HostOptions = {}) => {
   const createView = () => {
     const view = viewOn('')
     views.push(view)
-    ;(view.view as { close: () => void }).close = () => {
+    view.view.lifecycle.close = () => {
       closed.push(views.length)
     }
     return view.view

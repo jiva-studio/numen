@@ -40,8 +40,31 @@ export interface WindowPluginsDeps {
   readonly appCommands: WindowBase['appCommands']
 }
 
+interface BackgroundTaskHost {
+  readonly window: WindowBase['vault']['window']
+  readonly hostPort: ReturnType<typeof createHostPort>
+  readonly notices: ReturnType<typeof createPluginSurfaces>['notices']
+  readonly catalog: ReturnType<typeof createPluginDeclarations>['catalog']
+}
+
+function createBackgroundTasks(
+  deps: Pick<WindowPluginsDeps, 'foundation' | 'windowSettings' | 'appCommands'>,
+  host: BackgroundTaskHost,
+) {
+  return createPluginBackgroundTasks({
+    cancelTask: deps.foundation.api.window.tasks.cancelTask,
+    log: deps.foundation.log,
+    notices: host.notices,
+    window: host.window,
+    appearance: deps.windowSettings.appearance,
+    commands: host.hostPort.commands,
+    getCommandTitle: createCommandTitleReader(deps.appCommands),
+    getPluginName: host.catalog.getName,
+  })
+}
+
 export function createWindowPlugins(deps: WindowPluginsDeps) {
-  const { foundation, tabs, vault, windowSettings, getTarget, appCommands } = deps
+  const { foundation, tabs, vault, getTarget, appCommands } = deps
   const { api, log, rest, frame, status, registry } = foundation
   const { note } = api.vault
   const { editing, window, vaults, itemLists } = vault
@@ -74,15 +97,11 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       hostPort,
       frame,
       log,
-      backgroundTasks: createPluginBackgroundTasks({
-        cancelTask: api.window.tasks.cancelTask,
-        log,
-        notices,
+      backgroundTasks: createBackgroundTasks(deps, {
         window,
-        appearance: windowSettings.appearance,
-        commands: hostPort.commands,
-        getCommandTitle: createCommandTitleReader(appCommands),
-        getPluginName: declarations.catalog.getName,
+        hostPort,
+        notices,
+        catalog: declarations.catalog,
       }),
     }),
   }
