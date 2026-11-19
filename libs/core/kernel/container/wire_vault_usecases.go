@@ -171,7 +171,7 @@ func newTextVersions(c vaultWiring, db *Index) *TextVersions {
 	stores, readers := db.Versions, vaultReaders(c)
 	texts := textversion.NewTexts(stores, files, readers, note.NewReadFrontmatter(readers), c.Clock)
 	changes := textversion.NewChanges(texts)
-	versions := textversion.NewVersions(stores, files, c.RunningHost.Runtime, c.Clock, changes)
+	versions := textversion.NewVersions(stores, files, c.TextPlugins, c.Clock, changes)
 	return &TextVersions{Versions: versions, Texts: texts, Changes: changes}
 }
 
@@ -187,11 +187,11 @@ func getTextReaders(c vaultWiring) textdomain.Readers {
 
 func setPluginTexts(c vaultWiring) {
 	if c.TextVersions == nil {
-		c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.Texts = nil })
+		c.Lender.Update(func(l *hostendpoint.Lent) { l.Texts = nil })
 		return
 	}
 	texts := hosttext.NewTexts(c.TextVersions.Versions, c.TextVersions.Texts)
-	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.Texts = texts })
+	c.Lender.Update(func(l *hostendpoint.Lent) { l.Texts = texts })
 }
 
 func openPluginData(c vaultWiring) *textversion.PluginData {

@@ -7,7 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -36,19 +37,19 @@ func checkPrivateDir(t *testing.T, dir string) {
 	}
 }
 
-func newStorageHost(t *testing.T) (*container.PluginRoles, string, string) {
+func newStorageHost(t *testing.T) (*pluginhost.Host, string, string) {
 	t.Helper()
 	host := newDiscoveredHost(t)
 	cacheRoot, dataRoot := t.TempDir(), t.TempDir()
-	host.Storage.SetStorageRoots(cacheRoot, dataRoot)
-	setPlugin(host, "org.example.other", manifest.Discovered{Manifest: manifest.Manifest{ID: "org.example.other", Version: "2.0.0"}})
+	host.Supervision.Storage.SetStorageRoots(cacheRoot, dataRoot)
+	setPlugin(host.Management, "org.example.other", manifest.Discovered{Manifest: manifest.Manifest{ID: "org.example.other", Version: "2.0.0"}})
 	return host, cacheRoot, dataRoot
 }
 
 func TestThePluginEnvironmentNamesItsCacheAndDataDirectories(t *testing.T) {
 	host, cacheRoot, dataRoot := newStorageHost(t)
 
-	vars, err := host.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Mode.GetVaultPath(), 5, "t")
+	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,11 +70,11 @@ func TestThePluginEnvironmentNamesItsCacheAndDataDirectories(t *testing.T) {
 func TestTwoPluginsGetDifferentDirectories(t *testing.T) {
 	host, _, _ := newStorageHost(t)
 
-	first, err := host.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Mode.GetVaultPath(), 5, "t")
+	first, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := host.Processes.GetLaunchVars(t.Context(), "org.example.other", nil, host.Mode.GetVaultPath(), 6, "t")
+	second, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "org.example.other", nil, host.Management.Mode.GetVaultPath(), 6, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +89,7 @@ func TestTwoPluginsGetDifferentDirectories(t *testing.T) {
 func TestAHostWithoutStorageRootsGrantsNoDirectory(t *testing.T) {
 	host := newDiscoveredHost(t)
 
-	vars, err := host.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Mode.GetVaultPath(), 5, "t")
+	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +104,7 @@ func TestAHostWithoutStorageRootsGrantsNoDirectory(t *testing.T) {
 func TestTheCacheDirectoryIsEmptiedWhenThePluginVersionChanges(t *testing.T) {
 	host, _, _ := newStorageHost(t)
 	launch := func() (cacheDir, dataDir string) {
-		vars, err := host.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Mode.GetVaultPath(), 5, "t")
+		vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Management.Mode.GetVaultPath(), 5, "t")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -122,9 +123,9 @@ func TestTheCacheDirectoryIsEmptiedWhenThePluginVersionChanges(t *testing.T) {
 	if _, err := os.Stat(cached); err != nil {
 		t.Errorf("the cache of the same version was removed: %v", err)
 	}
-	p := getRawPlugin(host, "org.example.sample")
+	p := getRawPlugin(host.Management, "org.example.sample")
 	p.Manifest.Version = "1.1.0"
-	setPlugin(host, "org.example.sample", p)
+	setPlugin(host.Management, "org.example.sample", p)
 	launch()
 
 	if _, err := os.Stat(cached); !os.IsNotExist(err) {
@@ -138,18 +139,18 @@ func TestTheCacheDirectoryIsEmptiedWhenThePluginVersionChanges(t *testing.T) {
 
 func TestTheCacheDirectoryIsRemovedWhenThePluginIsRemovedFromTheDisk(t *testing.T) {
 	host, _, _ := newStorageHost(t)
-	vars, err := host.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Mode.GetVaultPath(), 5, "t")
+	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
 	cacheDir := getVar(t, vars, "NUMEN_PLUGIN_CACHE_DIR")
 	dataDir := getVar(t, vars, "NUMEN_PLUGIN_DATA_DIR")
-	pluginDir := getRawPlugin(host, "org.example.sample").Dir
+	pluginDir := getRawPlugin(host.Management, "org.example.sample").Dir
 	if err := os.RemoveAll(pluginDir); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := host.Discovery.Discover(); err != nil {
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -164,7 +165,7 @@ func TestTheCacheDirectoryIsRemovedWhenThePluginIsRemovedFromTheDisk(t *testing.
 func TestAPluginIdThatIsNotAFolderNameGetsNoDirectory(t *testing.T) {
 	host, cacheRoot, _ := newStorageHost(t)
 
-	vars, err := host.Storage.GetVars("../escape")
+	vars, err := host.Supervision.Storage.GetVars("../escape")
 	if err == nil || len(vars) != 0 {
 		t.Errorf("GetVars() = %v, %v, want an error", vars, err)
 	}
@@ -177,11 +178,11 @@ func TestAllPluginsAreGivenTheSameSharedDirectoriesThatSurviveAVersionChange(t *
 	t.Setenv("NUMEN_MODELS_DIR", "")
 	host, cacheRoot, dataRoot := newStorageHost(t)
 
-	first, err := host.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Mode.GetVaultPath(), 5, "t")
+	first, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := host.Processes.GetLaunchVars(t.Context(), "org.example.other", nil, host.Mode.GetVaultPath(), 6, "t")
+	second, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "org.example.other", nil, host.Management.Mode.GetVaultPath(), 6, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,15 +192,15 @@ func TestAllPluginsAreGivenTheSameSharedDirectoriesThatSurviveAVersionChange(t *
 	if sharedCache != getVar(t, second, "NUMEN_SHARED_CACHE_DIR") || sharedData != getVar(t, second, "NUMEN_SHARED_DATA_DIR") {
 		t.Errorf("the plugins got different shared directories")
 	}
-	if want := filepath.Join(cacheRoot, "shared"); sharedCache != want || host.Storage.GetSharedDir() != want {
-		t.Errorf("shared cache directory %s and %s, want %s", sharedCache, host.Storage.GetSharedDir(), want)
+	if want := filepath.Join(cacheRoot, "shared"); sharedCache != want || host.Supervision.Storage.GetSharedDir() != want {
+		t.Errorf("shared cache directory %s and %s, want %s", sharedCache, host.Supervision.Storage.GetSharedDir(), want)
 	}
-	if want := filepath.Join(dataRoot, "shared"); sharedData != want || host.Storage.GetSharedDataDir() != want {
-		t.Errorf("shared data directory %s and %s, want %s", sharedData, host.Storage.GetSharedDataDir(), want)
+	if want := filepath.Join(dataRoot, "shared"); sharedData != want || host.Supervision.Storage.GetSharedDataDir() != want {
+		t.Errorf("shared data directory %s and %s, want %s", sharedData, host.Supervision.Storage.GetSharedDataDir(), want)
 	}
 	models := filepath.Join(sharedData, "models")
-	if host.Storage.GetModelsDir() != models || getVar(t, first, "NUMEN_MODELS_DIR") != models {
-		t.Errorf("models directory %s and %s, want %s", host.Storage.GetModelsDir(), getVar(t, first, "NUMEN_MODELS_DIR"), models)
+	if host.Supervision.Storage.GetModelsDir() != models || getVar(t, first, "NUMEN_MODELS_DIR") != models {
+		t.Errorf("models directory %s and %s, want %s", host.Supervision.Storage.GetModelsDir(), getVar(t, first, "NUMEN_MODELS_DIR"), models)
 	}
 	checkPrivateDir(t, sharedCache)
 	checkPrivateDir(t, sharedData)
@@ -215,10 +216,10 @@ func TestAllPluginsAreGivenTheSameSharedDirectoriesThatSurviveAVersionChange(t *
 			t.Fatal(err)
 		}
 	}
-	p := getRawPlugin(host, "org.example.sample")
+	p := getRawPlugin(host.Management, "org.example.sample")
 	p.Manifest.Version = "9.0.0"
-	setPlugin(host, "org.example.sample", p)
-	if _, err := host.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Mode.GetVaultPath(), 5, "t"); err != nil {
+	setPlugin(host.Management, "org.example.sample", p)
+	if _, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Management.Mode.GetVaultPath(), 5, "t"); err != nil {
 		t.Fatal(err)
 	}
 	for _, blob := range blobs {
@@ -233,12 +234,12 @@ func TestTheUserCanMoveTheModelsFolder(t *testing.T) {
 	t.Setenv("NUMEN_MODELS_DIR", moved)
 	host, _, _ := newStorageHost(t)
 
-	vars, err := host.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Mode.GetVaultPath(), 5, "t")
+	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "org.example.sample", nil, host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if host.Storage.GetModelsDir() != moved || getVar(t, vars, "NUMEN_MODELS_DIR") != moved {
-		t.Errorf("models directory %s and %s, want %s", host.Storage.GetModelsDir(), getVar(t, vars, "NUMEN_MODELS_DIR"), moved)
+	if host.Supervision.Storage.GetModelsDir() != moved || getVar(t, vars, "NUMEN_MODELS_DIR") != moved {
+		t.Errorf("models directory %s and %s, want %s", host.Supervision.Storage.GetModelsDir(), getVar(t, vars, "NUMEN_MODELS_DIR"), moved)
 	}
 }

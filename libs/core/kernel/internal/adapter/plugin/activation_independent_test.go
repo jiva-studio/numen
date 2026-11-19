@@ -11,7 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -45,8 +46,8 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
 	writeSecondPlugin(t, tmp)
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
@@ -62,7 +63,7 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 		}
 	})
 	stuck := make(chan struct{})
-	host.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "org.example.sample" {
 			close(stuck)
 			return cmd.Process, silent, nil
@@ -74,7 +75,7 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	var stuckErr error
 	go func() {
 		defer close(stuckDone)
-		_, stuckErr = host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
+		_, stuckErr = host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 	}()
 	select {
 	case <-stuck:
@@ -84,9 +85,9 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 
 	reply := make(chan error, 1)
 	go func() {
-		_, err := host.Activation.EnsureActive(t.Context(), "org.example.second", getTestHolder())
-		host.Registry.GetPluginInfos()
-		host.Registry.GetPluginStatuses()
+		_, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.second", getTestHolder())
+		host.Management.Registry.GetPluginInfos()
+		host.Management.Registry.GetPluginStatuses()
 		reply <- err
 	}()
 	select {

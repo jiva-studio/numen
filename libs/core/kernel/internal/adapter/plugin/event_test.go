@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"net"
 	"net/http"
@@ -17,6 +15,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"connectrpc.com/connect"
 
@@ -83,19 +84,19 @@ func servePlugin(t *testing.T, recorder *eventRecorder) int {
 	return addr.Port
 }
 
-func newEventHost(t *testing.T, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *container.PluginRoles {
+func newEventHost(t *testing.T, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *pluginhost.Host {
 	t.Helper()
 	return newEventHostWithClock(t, testsupport.GetMachine(), manifests, ports)
 }
 
-func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *container.PluginRoles {
+func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *pluginhost.Host {
 	t.Helper()
-	host := container.NewPluginRoles(clock, "desktop.editor")
-	host.ContentTypes.SetContentTypeTable(contenttype.Open())
+	host := pluginhost.New(clock, "desktop.editor")
+	host.Management.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for id, manifest := range manifests {
 		manifest.ID = id
 		manifest.Backend.Entrypoint = "bin/plugin"
-		setPlugin(host, id, catalogmanifest.Discovered{Manifest: manifest})
+		setPlugin(host.Management, id, catalogmanifest.Discovered{Manifest: manifest})
 	}
 	var mu sync.Mutex
 	var procs []*os.Process
@@ -106,7 +107,7 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 			wiretest.KillProcess(t, proc)
 		}
 	})
-	host.Processes.SetLauncher(func(ctx context.Context, p catalogmanifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p catalogmanifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := wiretest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
@@ -118,7 +119,7 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 		return cmd.Process, io.NopCloser(strings.NewReader(handshake)), nil
 	})
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 50*time.Millisecond); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 50*time.Millisecond); err != nil {
 			t.Errorf("TeardownAll failed: %v", err)
 		}
 	})
@@ -141,7 +142,7 @@ func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
 		},
 	)
 
-	activated, err := host.Events.TriggerEvent(t.Context(), "onCommand:run")
+	activated, err := host.Management.Events.TriggerEvent(t.Context(), "onCommand:run")
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
@@ -149,7 +150,7 @@ func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
 		t.Fatalf("activated %v on undeclared event, want none", activated)
 	}
 
-	activated, err = host.Events.TriggerEvent(t.Context(), protocol.GetIndexChangedEvent("vault-1"))
+	activated, err = host.Management.Events.TriggerEvent(t.Context(), protocol.GetIndexChangedEvent("vault-1"))
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
@@ -179,7 +180,7 @@ func TestToolsSearchRelevanceRunsOnIndexChangedAndEvictsWhenIdle(t *testing.T) {
 	)
 
 	for _, event := range []string{"onCommand:run", catalogmanifest.ActivationEventIndexChanged + ":"} {
-		activated, triggerErr := host.Events.TriggerEvent(t.Context(), event)
+		activated, triggerErr := host.Management.Events.TriggerEvent(t.Context(), event)
 		if triggerErr != nil {
 			t.Fatalf("TriggerEvent(%q) failed: %v", event, triggerErr)
 		}
@@ -187,18 +188,18 @@ func TestToolsSearchRelevanceRunsOnIndexChangedAndEvictsWhenIdle(t *testing.T) {
 			t.Fatalf("TriggerEvent(%q) activated %v, want none", event, activated)
 		}
 	}
-	if status, ok := host.Registry.GetPluginStatus(parsed.ID); !ok || status.IsActive {
+	if status, ok := host.Management.Registry.GetPluginStatus(parsed.ID); !ok || status.IsActive {
 		t.Fatalf("status after the undeclared events = %+v (ok=%v), want inactive", status, ok)
 	}
 
-	activated, err := host.Events.TriggerEvent(t.Context(), indexChangedEvent)
+	activated, err := host.Management.Events.TriggerEvent(t.Context(), indexChangedEvent)
 	if err != nil {
 		t.Fatalf("TriggerEvent(%q) failed: %v", indexChangedEvent, err)
 	}
 	if !slices.Equal(activated, []string{parsed.ID}) {
 		t.Fatalf("activated %v, want [%s]", activated, parsed.ID)
 	}
-	if status, ok := host.Registry.GetPluginStatus(parsed.ID); !ok || !status.IsActive {
+	if status, ok := host.Management.Registry.GetPluginStatus(parsed.ID); !ok || !status.IsActive {
 		t.Fatalf("status after search source ready = %+v (ok=%v), want active", status, ok)
 	}
 	if got := recorder.getEvents(); !slices.Equal(got, []string{indexChangedEvent}) {
@@ -206,11 +207,11 @@ func TestToolsSearchRelevanceRunsOnIndexChangedAndEvictsWhenIdle(t *testing.T) {
 	}
 
 	clock.Advance(supervision.IdleThreshold + time.Second)
-	evicted := host.Teardown.EvictIdle(t.Context(), supervision.IdleThreshold, 50*time.Millisecond)
+	evicted := host.Management.Teardown.EvictIdle(t.Context(), supervision.IdleThreshold, 50*time.Millisecond)
 	if !slices.Equal(evicted, []string{parsed.ID}) {
 		t.Fatalf("evicted %v, want [%s]", evicted, parsed.ID)
 	}
-	if status, ok := host.Registry.GetPluginStatus(parsed.ID); !ok || status.IsActive {
+	if status, ok := host.Management.Registry.GetPluginStatus(parsed.ID); !ok || status.IsActive {
 		t.Fatalf("status after idle eviction = %+v (ok=%v), want inactive", status, ok)
 	}
 }
@@ -222,8 +223,8 @@ func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
 		map[string]int{"md.test.vectors": servePlugin(t, vectors)},
 	)
 
-	host.Events.EmitEvent(indexChangedEvent)
-	if err := host.Events.GetEventBus().Flush(t.Context()); err != nil {
+	host.Management.Events.EmitEvent(indexChangedEvent)
+	if err := host.Management.Events.GetEventBus().Flush(t.Context()); err != nil {
 		t.Fatalf("Flush failed: %v", err)
 	}
 
@@ -238,7 +239,7 @@ func TestAPluginThatConsumesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 		map[string]int{"md.test.silent": servePlugin(t, nil)},
 	)
 
-	activated, err := host.Events.TriggerEvent(t.Context(), indexChangedEvent)
+	activated, err := host.Management.Events.TriggerEvent(t.Context(), indexChangedEvent)
 	if err != nil {
 		t.Fatalf("TriggerEvent() = %v, want no error for a plugin that takes no events", err)
 	}
@@ -258,7 +259,7 @@ func TestTriggerEvent_PluginErrorDoesNotBlockOtherPlugins(t *testing.T) {
 		map[string]int{"a.refusing": servePlugin(t, refusing), "b.working": servePlugin(t, working)},
 	)
 
-	_, err := host.Events.TriggerEvent(t.Context(), indexChangedEvent)
+	_, err := host.Management.Events.TriggerEvent(t.Context(), indexChangedEvent)
 
 	if !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "deliver "+indexChangedEvent+" to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
 		t.Fatalf("TriggerEvent() = %v, want the rejection naming the event and the plugin", err)
@@ -275,7 +276,7 @@ func TestAPluginWhoseEventCallFailsIsReportedApartFromAError(t *testing.T) {
 		map[string]int{"md.test.failing": servePlugin(t, failing)},
 	)
 
-	_, err := host.Events.TriggerEvent(t.Context(), indexChangedEvent)
+	_, err := host.Management.Events.TriggerEvent(t.Context(), indexChangedEvent)
 
 	if err == nil || errors.Is(err, transport.ErrEventRefused) || connect.CodeOf(err) != connect.CodeInternal {
 		t.Fatalf("TriggerEvent() = %v, want the failed call reported as %v and not as an error", err, connect.CodeInternal)
@@ -302,15 +303,15 @@ func TestAFailedDeliveryOfAnEventIsReported(t *testing.T) {
 	failure := errors.New("the listener refused the event")
 	reported := make(chan struct{})
 	var once sync.Once
-	host.Failures.SetErrorHandler(func(err error) {
+	host.Supervision.Failures.SetErrorHandler(func(err error) {
 		if errors.Is(err, failure) {
 			once.Do(func() { close(reported) })
 		}
 	})
-	unsubscribe := host.Events.GetEventBus().Subscribe("onRefused", func(context.Context, string) error { return failure })
+	unsubscribe := host.Management.Events.GetEventBus().Subscribe("onRefused", func(context.Context, string) error { return failure })
 	defer unsubscribe()
 
-	host.Events.EmitEvent("onRefused")
+	host.Management.Events.EmitEvent("onRefused")
 
 	select {
 	case <-reported:

@@ -9,12 +9,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
@@ -79,7 +81,7 @@ func (c *configured) last(t *testing.T) *v1.ConfigureRequest {
 	return c.calls[len(c.calls)-1]
 }
 
-func newConfiguredHost(t *testing.T) (*container.PluginRoles, *configured) {
+func newConfiguredHost(t *testing.T) (*pluginhost.Host, *configured) {
 	t.Helper()
 	probe := &configured{}
 	mux := http.NewServeMux()
@@ -87,13 +89,13 @@ func newConfiguredHost(t *testing.T) (*container.PluginRoles, *configured) {
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
-	setPlugin(host, configuredPluginID, manifest.Discovered{Manifest: manifest.Manifest{
+	setPlugin(host.Management, configuredPluginID, manifest.Discovered{Manifest: manifest.Manifest{
 		ID: configuredPluginID,
 		Settings: []manifest.Setting{
 			{Key: "model", Type: "string", Title: "Model", Default: "sonnet"},
@@ -101,8 +103,8 @@ func newConfiguredHost(t *testing.T) (*container.PluginRoles, *configured) {
 	}})
 	sup := lifecycle.New(nil)
 	sup.ActivateInProcess(lifecycle.Lease{Kind: lifecycle.UseLease, Holder: getTestHolder()}, testsupport.GetMachine().Now())
-	putSupervisor(host, configuredPluginID, sup)
-	putEndpoint(host, configuredPluginID, transport.Endpoint{
+	putSupervisor(host.Management, configuredPluginID, sup)
+	putEndpoint(host.Management, configuredPluginID, transport.Endpoint{
 		Host: "127.0.0.1", Port: wiretest.GetPort(t, server), Token: "launch-name",
 	})
 	return host, probe
@@ -111,7 +113,7 @@ func newConfiguredHost(t *testing.T) (*container.PluginRoles, *configured) {
 func TestAPluginReceivesConfigureWithItsSettings(t *testing.T) {
 	host, probe := newConfiguredHost(t)
 
-	if err := host.Config.NotifyPluginConfig(t.Context(), configuredPluginID); err != nil {
+	if err := host.Management.Config.NotifyPluginConfig(t.Context(), configuredPluginID); err != nil {
 		t.Fatal(err)
 	}
 	if got := probe.last(t).GetValues()["model"]; got != "sonnet" {
@@ -121,19 +123,19 @@ func TestAPluginReceivesConfigureWithItsSettings(t *testing.T) {
 
 func TestARefreshConfiguresAPluginOnlyWhenForced(t *testing.T) {
 	host, probe := newConfiguredHost(t)
-	if err := host.Config.NotifyPluginConfig(t.Context(), configuredPluginID); err != nil {
+	if err := host.Management.Config.NotifyPluginConfig(t.Context(), configuredPluginID); err != nil {
 		t.Fatal(err)
 	}
 	calls := probe.count()
 
-	if err := host.Config.Refresh(t.Context()); err != nil {
+	if err := host.Management.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls {
 		t.Errorf("%d Configure calls after a plain refresh, want %d", probe.count(), calls)
 	}
 
-	if err := host.Config.Refresh(t.Context(), configuredPluginID); err != nil {
+	if err := host.Management.Config.Refresh(t.Context(), configuredPluginID); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+1 {
@@ -154,9 +156,9 @@ func TestAChangeOfASettingReachesAPlugin(t *testing.T) {
 
 func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
 	host, probe := newConfiguredHost(t)
-	plugin.GetDelivery(host.Config).AwaitFirstConfigure(configuredPluginID)
+	plugin.GetDelivery(host.Management.Config).AwaitFirstConfigure(configuredPluginID)
 
-	if err := host.Config.Refresh(t.Context(), configuredPluginID); err != nil {
+	if err := host.Management.Config.Refresh(t.Context(), configuredPluginID); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != 0 {
@@ -164,8 +166,8 @@ func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
 	}
 }
 
-func getHealthItem(host *container.PluginRoles, pluginID, key string) *plugindomain.HealthItem {
-	for _, item := range host.Health.List() {
+func getHealthItem(supervision *container.PluginSupervision, pluginID, key string) *plugindomain.HealthItem {
+	for _, item := range supervision.Health.List() {
 		if item.PluginID == pluginID && item.Key == key {
 			return &item
 		}
@@ -181,7 +183,7 @@ func TestARefusedConfigureIsTheConfigureItemUntilAConfigureIsTaken(t *testing.T)
 	if err := updateSetting(t.Context(), host, configuredPluginID, "model", refusedModel); err == nil {
 		t.Fatal("a refused Configure answered no error")
 	}
-	item := getHealthItem(host, configuredPluginID, plugindomain.HealthKeyConfigure)
+	item := getHealthItem(host.Supervision, configuredPluginID, plugindomain.HealthKeyConfigure)
 	if item == nil || item.Severity != plugindomain.HealthError || item.Text != refusalText {
 		t.Fatalf("configure item = %+v, want an error with the message of the plugin", item)
 	}
@@ -192,7 +194,7 @@ func TestARefusedConfigureIsTheConfigureItemUntilAConfigureIsTaken(t *testing.T)
 	if err := updateSetting(t.Context(), host, configuredPluginID, "model", "opus"); err != nil {
 		t.Fatal(err)
 	}
-	if item := getHealthItem(host, configuredPluginID, plugindomain.HealthKeyConfigure); item != nil {
+	if item := getHealthItem(host.Supervision, configuredPluginID, plugindomain.HealthKeyConfigure); item != nil {
 		t.Errorf("configure item after a taken Configure = %+v, want none", item)
 	}
 }
@@ -200,20 +202,20 @@ func TestARefusedConfigureIsTheConfigureItemUntilAConfigureIsTaken(t *testing.T)
 // The items a plugin reports stay while it is stopped as idle, and go once it is switched off.
 func TestTheItemsOfAPluginOutliveAnIdleStopAndGoWhenItIsSwitchedOff(t *testing.T) {
 	host, _ := newConfiguredHost(t)
-	report := pluginhealth.NewReport(host.Health, host.Registry)
+	report := pluginhealth.NewReport(host.Supervision.Health, host.Management.Registry)
 	if err := report.Execute(configuredPluginID, plugindomain.HealthItem{Key: "connection", Severity: plugindomain.HealthError, Text: "Choose a connection"}); err != nil {
 		t.Fatal(err)
 	}
 
-	host.Teardown.EvictIdle(t.Context(), 0, time.Millisecond)
-	if item := getHealthItem(host, configuredPluginID, "connection"); item == nil {
+	host.Management.Teardown.EvictIdle(t.Context(), 0, time.Millisecond)
+	if item := getHealthItem(host.Supervision, configuredPluginID, "connection"); item == nil {
 		t.Fatal("an idle stop took the item of the plugin out")
 	}
 
 	if err := setEnabled(t.Context(), host, configuredPluginID, false); err != nil {
 		t.Fatal(err)
 	}
-	if items := host.Health.List(); len(items) != 0 {
+	if items := host.Supervision.Health.List(); len(items) != 0 {
 		t.Errorf("items of a plugin switched off = %+v, want none", items)
 	}
 }
@@ -221,13 +223,13 @@ func TestTheItemsOfAPluginOutliveAnIdleStopAndGoWhenItIsSwitchedOff(t *testing.T
 func TestSafeModeRemovesTheItemsOfEveryPlugin(t *testing.T) {
 	host, _ := newConfiguredHost(t)
 	slow := plugindomain.HealthItem{Key: "connection", Severity: plugindomain.HealthWarning, Text: "The connection is slow"}
-	if err := pluginhealth.NewReport(host.Health, host.Registry).Execute(configuredPluginID, slow); err != nil {
+	if err := pluginhealth.NewReport(host.Supervision.Health, host.Management.Registry).Execute(configuredPluginID, slow); err != nil {
 		t.Fatal(err)
 	}
 
-	host.Teardown.SetSafeMode(true)
+	host.Management.Teardown.SetSafeMode(true)
 
-	if items := host.Health.List(); len(items) != 0 {
+	if items := host.Supervision.Health.List(); len(items) != 0 {
 		t.Errorf("items in safe mode = %+v, want none", items)
 	}
 }

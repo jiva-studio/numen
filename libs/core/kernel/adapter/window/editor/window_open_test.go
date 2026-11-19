@@ -15,6 +15,8 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
@@ -50,7 +52,7 @@ func vaultConfig(t *testing.T) testInstallation {
 			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 		},
 	})
-	if _, err := cfg.AddVault(cfg.PluginHost, cfg.Resources, root, "alpha"); err != nil {
+	if _, err := cfg.AddVault(cfg.Resources, root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
 	return cfg
@@ -87,8 +89,8 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	}
 	serverPort := serverAddress.Port
 
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -104,13 +106,13 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 		}
 	}()
 
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
 
 	cfg := vaultConfig(t)
-	cfg.PluginHost = container.AdaptPluginHost(host)
+	cfg.Execution, cfg.Preferences, cfg.Endpoints = container.AdaptPluginHost(host.Management, host.Supervision)
 
 	installation, _, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {

@@ -82,7 +82,7 @@ func TestListThemesListsPluginThemesBeforeAnyPluginIsActive(t *testing.T) {
 			t.Errorf("themes = %v, want %s among them", names, want)
 		}
 	}
-	for _, info := range cfg.PluginHost.Runtime.GetPluginInfos() {
+	for _, info := range cfg.Execution.Runtime.GetPluginInfos() {
 		if info.IsActive {
 			t.Errorf("plugin %s is active after listing themes", info.ID)
 		}
@@ -128,7 +128,7 @@ func TestListThemesListsNoThemeOfADisabledPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg.PluginHost.Configuration.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
+	cfg.Preferences.Configuration.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
 
 	if names := listThemeNames(t, cfg); slices.Contains(names, name) {
 		t.Errorf("themes = %v, want no %s", names, name)
@@ -158,7 +158,7 @@ func TestAStoredThemeOfADisabledPluginFallsBackToTheDefault(t *testing.T) {
 	if err != nil || written.Msg.GetError() != "" {
 		t.Fatalf("written: %v %v", written, err)
 	}
-	cfg.PluginHost.Configuration.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
+	cfg.Preferences.Configuration.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
 
 	answer, err := service.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 

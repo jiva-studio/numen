@@ -21,7 +21,7 @@ func writeAt(cfg TestInstallation, json string, path ...string) error {
 func TestAProfileThatIsNoOptionIsRefusedAndNotSent(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 	host := &profileHost{}
-	cfg.PluginHost = &PluginHost{Configuration: PluginConfiguration{PluginConfig: host}}
+	cfg.TestPlugins = &TestPlugins{Preferences: &PluginPreferences{Configuration: PluginConfiguration{PluginConfig: host}}}
 
 	err := writeAt(cfg, `"bogus"`, "app", "performance", "profile")
 	if !errors.Is(err, settings.ErrNotASetting) {
@@ -159,11 +159,11 @@ func TestSettingsWriteOfUsedPluginPortFailsAndKeepsTheFile(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 	host := newPluginHost(t, "desktop.editor", writeRelayPlugin(t, defaultPort))
 	t.Cleanup(func() {
-		if err := host.Watch.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Execution.Watch.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Errorf("TeardownAll: %v", err)
 		}
 	})
-	cfg.PluginHost = host
+	cfg.TestPlugins = host
 
 	err := writeAt(cfg, fmt.Sprint(takenPort), relayPlugin, "port")
 	if !errors.Is(err, settings.ErrNotASetting) {

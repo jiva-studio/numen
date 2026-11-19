@@ -1,9 +1,12 @@
 package cli
 
 import (
+	"cmp"
 	"fmt"
 	"io"
 	"sync"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 )
 
 // reporter writes to a stream and keeps the first write error. Once a write
@@ -50,4 +53,16 @@ func (r *reporter) Err() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return r.err
+}
+
+// FormatTaskFailures lists each failed task with its owner and title for the closing report.
+func FormatTaskFailures(tasks []work.Task) []string {
+	var failed []string
+	for _, task := range tasks {
+		if task.Error != "" {
+			owner := cmp.Or(task.PluginName, task.PluginID)
+			failed = append(failed, fmt.Sprintf("%s: %s: %s", owner, task.Title, task.Error))
+		}
+	}
+	return failed
 }

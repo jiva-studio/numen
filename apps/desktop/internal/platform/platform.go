@@ -44,17 +44,25 @@ func GetConfig() container.Config {
 	return cfg
 }
 
+// Installation holds the roles built when a desktop application starts.
+type Installation struct {
+	Execution   *container.PluginExecution
+	Preferences *container.PluginPreferences
+	Endpoints   *container.PluginEndpoints
+	Resources   *container.Resources
+}
+
 // NewPluginServices builds the plugin host and shared resources of a desktop window or command.
-func NewPluginServices(target string) (*container.PluginHost, *container.Resources) {
+func NewPluginServices(target string) Installation {
 	dirs := getPluginsDirs()
 	res := container.NewResources()
 	res.KeyStore = getKeyStore()
-	host, discoverErr := container.NewPluginHost(GetConfig().IndexPath, res, reportPluginHost, target, dirs...)
+	execution, preferences, endpoints, discoverErr := container.NewPluginHost(GetConfig().IndexPath, res, reportPluginHost, target, dirs...)
 	reportPluginFailure("discover plugins", discoverErr)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
-	host.SetStorage(cacheRoot, dataRoot)
-	res.PluginCatalog = getCatalogConfig(target, dirs, host)
-	return host, res
+	preferences.SetStorage(cacheRoot, dataRoot)
+	res.PluginCatalog = getCatalogConfig(target, dirs, execution.Runtime.IsPluginEnabled)
+	return Installation{Execution: execution, Preferences: preferences, Endpoints: endpoints, Resources: res}
 }
 
 func reportPluginHost(err error) {
@@ -77,8 +85,8 @@ func getKeyStore() *keychain.Store {
 
 func getDevPluginsDirs() []string { return []string{"plugins"} }
 
-func getCatalogConfig(target string, pluginDirs []string, host *container.PluginHost) catalog.Config {
-	local := localsource.New(slices.Clone(pluginDirs), localsource.SettingsFunc(host.Runtime.IsPluginEnabled))
+func getCatalogConfig(target string, pluginDirs []string, isEnabled localsource.SettingsFunc) catalog.Config {
+	local := localsource.New(slices.Clone(pluginDirs), isEnabled)
 	config := catalog.Config{Target: target, Sources: []catalog.Source{local, getIndexSource(pluginDirs)}, InstallDir: "", CacheDir: ""}
 	if configDir, err := os.UserConfigDir(); err == nil {
 		config.InstallDir = filepath.Join(configDir, "numen", "plugins")

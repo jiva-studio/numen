@@ -50,34 +50,30 @@ type tabKinds struct {
 
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
 // them, and opens the vault named, or the one shown last when none is named.
-func OpenWindow(c Config, host *PluginHost, res *Resources, ctx context.Context, named string, out io.Writer) (*OpenedWindow, error) {
+func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening) (*OpenedWindow, error) {
 	db, err := OpenIndex(c, res, ctx)
 	if err != nil {
 		return nil, err
 	}
-	return openWindowOver(c, host, res, ctx, WindowOpening{DB: db, Named: named, Out: out})
+	return openWindowOver(plugins(c, exec, prefs, endpoints, res), res, ctx, db, opening)
 }
 
-func openWindowOver(c Config, host *PluginHost, res *Resources, ctx context.Context, opening WindowOpening) (*OpenedWindow, error) {
-	ports, err := c.registry()
+func openWindowOver(a pluginsWiring, res *Resources, ctx context.Context, db *Index, opening WindowOpening) (*OpenedWindow, error) {
+	ports, err := vaultRegistry(a.vault.RegistryPath)
 	if err != nil {
-		return nil, errors.Join(err, opening.DB.Close())
+		return nil, errors.Join(err, db.Close())
 	}
-	opened, err := openWindowWith(ctx, plugins(c, host, res), getLogEntries(res), ports, opening)
+	opened, err := openWindowWith(ctx, a, getLogEntries(res), ports, db, opening)
 	if err != nil {
 		return nil, err
 	}
 	return getOpenedWindow(opened), nil
 }
 
-// WindowOpening is what a window is opened over: the cache already open, the vault to show and
-// where the window writes. Frame is the application window around the editor; none leaves the editor with no
-// window of its own to title or to open for a tab.
+// WindowOpening names the vault to show, the output and the optional editor frame.
 type WindowOpening struct {
-	DB    *Index
 	Named string
 	Out   io.Writer
-
 	Frame editor.Frame
 }
 
@@ -113,23 +109,22 @@ type windowBuilt struct {
 }
 
 func openWindowWith(
-	ctx context.Context, a pluginsWiring, entries *logsusecase.Entries, ports registry.Ports, opening WindowOpening,
+	ctx context.Context, a pluginsWiring, entries *logsusecase.Entries, ports registry.Ports, db *Index, opening WindowOpening,
 ) (*windowWiring, error) {
 	first, err := registry.NewGetVaultToShow(ports.Lookup, ports.Vaults, ports.Last).Execute(opening.Named)
 	if err != nil {
-		return nil, errors.Join(err, opening.DB.Close())
+		return nil, errors.Join(err, db.Close())
 	}
-	window := buildWindow(ctx, a, entries, ports, opening)
+	window := buildWindow(ctx, a, entries, ports, db, opening)
 	if err := startWindow(ctx, window.wiring, first); err != nil {
-		return nil, errors.Join(err, window.closeEmbedder(), opening.DB.Close())
+		return nil, errors.Join(err, window.closeEmbedder(), db.Close())
 	}
 	return window.wiring, nil
 }
 
 func buildWindow(
-	ctx context.Context, a pluginsWiring, entries *logsusecase.Entries, ports registry.Ports, opening WindowOpening,
+	ctx context.Context, a pluginsWiring, entries *logsusecase.Entries, ports registry.Ports, db *Index, opening WindowOpening,
 ) windowBuilt {
-	db := opening.DB
 
 	// One task list serves every operation and the window that displays it.
 	// A request is one task regardless of how it was issued. The list is created

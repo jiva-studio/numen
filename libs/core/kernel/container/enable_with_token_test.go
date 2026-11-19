@@ -41,19 +41,19 @@ func openDisabledCourier(t *testing.T) (container.TestInstallation, string, *rec
 		t.Fatal(err)
 	}
 	pluginHost := pluginhost.Open(t, "desktop.editor", root)
-	lent := container.AdaptPluginHost(pluginHost)
-	host := &recordingHost{apply: lent.ApplySetting, PluginConfig: lent.Configuration.PluginConfig}
-	lent.ApplySetting, lent.Configuration.PluginConfig = host.applySetting, host
+	lent := container.AdaptTestPlugins(pluginHost.Management, pluginHost.Supervision)
+	host := &recordingHost{apply: lent.Preferences.ApplySetting, PluginConfig: lent.Preferences.Configuration.PluginConfig}
+	lent.Preferences.ApplySetting, lent.Preferences.Configuration.PluginConfig = host.applySetting, host
 	cfg := container.NewTestInstallation(container.Config{Paths: container.Paths{SettingsPath: path}}, lent)
 	selected, err := cfg.Settings()
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfg = cfg.SetSettings(selected)
-	if token, ok := pluginHost.Settings.GetPluginSettings(courierPlugin)["token"]; ok {
+	if token, ok := pluginHost.Management.Settings.GetPluginSettings(courierPlugin)["token"]; ok {
 		t.Fatalf("the disabled plugin holds the token %v after load", token)
 	}
-	return cfg, path, host, pluginHost.Settings.GetPluginSettings
+	return cfg, path, host, pluginHost.Management.Settings.GetPluginSettings
 }
 
 func readCourierToken(t *testing.T, path string) any {

@@ -1,9 +1,11 @@
 package container
 
 import (
+	"cmp"
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
 
@@ -40,8 +42,12 @@ type searchWiring struct {
 	ShouldRebuildIndex bool
 	Chunks             *note.ChunkTokens
 	ResolvedCompute    machinedomain.ResolvedCompute
-	PluginHost         *PluginHost
-	RunningHost        *PluginHost
+	Runtime            PluginRuntime
+	Watch              PluginWatch
+	Health             *pluginhealth.Items
+	ActiveRuntime      PluginRuntime
+	Sources            *sourcebridge.Descriptions
+	Lender             *hostendpoint.Lender
 	Clock              machineport.Clock
 	VaultReaders       vaultport.VaultReaders
 	TextReaders        textdomain.Readers
@@ -50,7 +56,7 @@ type searchWiring struct {
 
 func cutNotes(c searchWiring) chunking.CutNotes {
 	cutter := chunking.NewCutNotes(c.Chunks.Get())
-	cutter.Profiles = func(t domain.NoteType) (domain.NoteProfile, bool) { return c.PluginHost.Runtime.ResolveNoteProfile(t) }
+	cutter.Profiles = func(t domain.NoteType) (domain.NoteProfile, bool) { return c.Runtime.ResolveNoteProfile(t) }
 	return cutter
 }
 
@@ -114,7 +120,7 @@ func searchEmbed(c searchWiring, db *Index, source searchsourceport.Source, v do
 		return vectorscase.Embed{}, err
 	}
 	return vectorscase.NewEmbed(
-		c.VaultReaders, db.Sources(), db.Sources(), store.NewIndexClaim(coreFolder+"/indexing"), c.TextReaders, getSearchSource(source),
+		c.VaultReaders, db.Sources(), db.Sources(), store.NewIndexClaim(coreFolder+"/indexing"), c.TextReaders, cmp.Or[searchsourceport.Source](source, none.SearchSource{}),
 	), nil
 }
 
@@ -170,13 +176,13 @@ func setPluginSearch(
 		Source:     source,
 		Queries:    newEmbedQueries(source),
 	}
-	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
+	c.Lender.Update(func(l *hostendpoint.Lent) {
 		l.Search = access.Access(runs)
 	})
 }
 
 func searchSources(c searchWiring, ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
-	report := pluginhealth.NewReportSearchSource(c.PluginHost.Health)
+	report := pluginhealth.NewReportSearchSource(c.Health)
 	source, closeSource, err := searchOpenSource(c, ctx, func(
 		ctx context.Context, activator bridge.Activator, plugins sourcebridge.Plugins, kept *sourcebridge.Descriptions,
 	) (*sourcebridge.Source, error) {
@@ -202,16 +208,16 @@ type sourceOpener func(
 ) (*sourcebridge.Source, error)
 
 func searchOpenSource(c searchWiring, ctx context.Context, open sourceOpener) (searchsourceport.WatchedSource, func() error, error) {
-	if _, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource); errors.Is(err, domain.ErrUnavailable) {
+	if _, err := c.ActiveRuntime.ResolveCapability(bridge.CapabilitySearchSource); errors.Is(err, domain.ErrUnavailable) {
 		return nil, func() error { return nil }, nil
 	} else if err != nil {
 		return nil, nil, err
 	}
-	return openSource(c, ctx, c.RunningHost, open)
+	return openSource(c, ctx, open)
 }
 
-func openSource(c searchWiring, ctx context.Context, host *PluginHost, open sourceOpener) (searchsourceport.WatchedSource, func() error, error) {
-	opened, err := open(ctx, host.Runtime, host.Runtime, host.SourceDescriptions)
+func openSource(c searchWiring, ctx context.Context, open sourceOpener) (searchsourceport.WatchedSource, func() error, error) {
+	opened, err := open(ctx, c.ActiveRuntime, c.ActiveRuntime, c.Sources)
 	if err != nil {
 		return nil, nil, err
 	}

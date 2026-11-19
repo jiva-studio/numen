@@ -11,6 +11,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
@@ -62,7 +64,7 @@ func (*chunkingPlugin) IndexTexts(
 	return connect.NewResponse(&v1.IndexTextsResponse{Vectors: vectors}), nil
 }
 
-func openChunkingConfig(t *testing.T, tokens int32) (container.TestInstallation, *container.PluginRoles, *chunkingPlugin) {
+func openChunkingConfig(t *testing.T, tokens int32) (container.TestInstallation, *pluginhost.Host, *chunkingPlugin) {
 	t.Helper()
 	reporter := &chunkingPlugin{}
 	reporter.tokens.Store(tokens)
@@ -83,17 +85,17 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.TestInstallation,
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(text), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", root)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	cmd := wiretest.StartSleepProcess(t)
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
 	return container.NewTestInstallation(container.Config{
 		Paths: container.Paths{ServiceDir: ".numen"},
-	}, container.AdaptPluginHost(host)), host, reporter
+	}, container.AdaptTestPlugins(host.Management, host.Supervision)), host, reporter
 }
 
 func openEmbedder(t *testing.T, cfg container.TestInstallation) {

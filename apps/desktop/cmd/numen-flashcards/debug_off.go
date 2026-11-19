@@ -15,7 +15,7 @@ type debugOptions struct{}
 
 func registerDebugFlags(*flag.FlagSet, *debugOptions) {}
 
-func (debugOptions) registerVault(container.Config, *container.PluginHost, *container.Resources) error {
+func (debugOptions) registerVault(container.Config, *container.Resources) error {
 	return nil
 }
 

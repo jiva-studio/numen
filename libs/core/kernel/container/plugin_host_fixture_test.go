@@ -6,13 +6,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/indexfolder"
 )
 
-func newPluginHost(t *testing.T, target string, dirs ...string) *PluginHost {
+func newPluginHost(t *testing.T, target string, dirs ...string) *TestPlugins {
 	t.Helper()
-	host, err := NewPluginHost("", NewResources(), func(error) {}, target, dirs...)
+	execution, preferences, endpoints, err := NewPluginHost("", NewResources(), func(error) {}, target, dirs...)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return host
+	return &TestPlugins{Execution: execution, Preferences: preferences, Endpoints: endpoints}
 }
 
 func prepareIndexPath(c vaultWiring) (string, error) { return indexfolder.Prepare(c.IndexPath) }

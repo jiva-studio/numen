@@ -22,16 +22,17 @@ import (
 )
 
 func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
-	host := NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := newTestPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
 	registry := provision.NewRegistry()
-	host.Dependencies.Replace(registry)
+	host.Supervision.Dependencies.Replace(registry)
 	tasks := run.NewTasks()
-	reportDependencies(plugins(Config{}, PreparePluginHost(AdaptPluginHost(host), false), NewResources()), tasks)
+	execution, preferences, endpoints := AdaptPluginHost(host.Management, host.Supervision)
+	reportDependencies(plugins(Config{}, execution, preferences, endpoints, NewResources()), tasks)
 	req := manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}
 
 	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateProvisioning, BytesDownloaded: 5, BytesTotal: 10})
@@ -127,16 +128,17 @@ func (p heldProvisioner) Provision(
 	return plugindomain.ResolvedDependency{}, ctx.Err()
 }
 
-func startHeldDownload(t *testing.T) (*PluginRoles, *run.Tasks, <-chan error) {
+func startHeldDownload(t *testing.T) (*testPluginRoles, *run.Tasks, <-chan error) {
 	t.Helper()
-	host := NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := newTestPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	provisioner := heldProvisioner{started: make(chan struct{})}
-	host.Dependencies.Replace(provision.NewRegistry(provisioner))
+	host.Supervision.Dependencies.Replace(provision.NewRegistry(provisioner))
 	tasks := run.NewTasks()
-	reportDependencies(plugins(Config{}, PreparePluginHost(AdaptPluginHost(host), false), NewResources()), tasks)
+	execution, preferences, endpoints := AdaptPluginHost(host.Management, host.Supervision)
+	reportDependencies(plugins(Config{}, execution, preferences, endpoints, NewResources()), tasks)
 	answer := make(chan error, 1)
 	go func() {
-		_, err := host.Services.GetDependencies().Provision(
+		_, err := host.Supervision.Services.GetDependencies().Provision(
 			t.Context(), manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}, nil)
 		answer <- err
 	}()
@@ -161,7 +163,7 @@ func TestTheCancelOfTheTaskOfADownloadStopsTheDownload(t *testing.T) {
 func TestStoppingThePluginsStopsTheDownloadsInProgress(t *testing.T) {
 	host, _, answer := startHeldDownload(t)
 
-	if err := stopPlugins(AdaptPluginHost(host), context.WithoutCancel(t.Context())); err != nil {
+	if err := StopPlugins(AdaptTestPlugins(host.Management, host.Supervision).Execution.Watch, context.WithoutCancel(t.Context())); err != nil {
 		t.Fatal(err)
 	}
 	if err := <-answer; !errors.Is(err, context.Canceled) {

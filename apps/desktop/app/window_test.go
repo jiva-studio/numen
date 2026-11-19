@@ -23,13 +23,13 @@ func windowWithCases(t *testing.T) (*container.OpenedWindow, container.Config, *
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	}
 	res := container.NewResources()
-	host := container.PreparePluginHost(nil, false)
+	execution, preferences, endpoints := container.PreparePluginHost(nil, nil, nil, false)
 	root := t.TempDir()
-	if _, err := cfg.AddVault(host, res, root, "one"); err != nil {
+	if _, err := cfg.AddVault(res, root, "one"); err != nil {
 		t.Fatal(err)
 	}
 
-	opened, err := container.OpenWindow(cfg, host, res, t.Context(), "one", io.Discard)
+	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, t.Context(), container.WindowOpening{Named: "one", Out: io.Discard})
 	if err != nil {
 		t.Fatal(err)
 	}

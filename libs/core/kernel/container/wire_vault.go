@@ -2,6 +2,8 @@ package container
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
@@ -30,23 +32,23 @@ func (c Config) registry() (vaultregistry.Ports, error) {
 }
 
 // AddVault registers a new vault in the registry with the given root path and name.
-func (c Config) AddVault(host *PluginHost, res *Resources, root, name string) (domain.Vault, error) {
+func (c Config) AddVault(res *Resources, root, name string) (domain.Vault, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	return addVault(vaultOf(c, host, res), ports, root, name)
+	return addVault(vaultWiring{ServiceDir: c.ServiceDir, Clock: GetClock(res)}, ports, root, name)
 }
 
 // EnsureVault has the folder at root on the list of vaults and returns its vault. A folder that is on the list is
 // returned as it is; otherwise it is added under name, and it is recorded as the vault opened last when
 // isRecordedOpened is set.
-func (c Config) EnsureVault(host *PluginHost, res *Resources, root, name string, isRecordedOpened bool) (domain.Vault, error) {
+func (c Config) EnsureVault(res *Resources, root, name string, isRecordedOpened bool) (domain.Vault, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	return ensureVault(vaultOf(c, host, res), ports, vaultregistry.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
+	return ensureVault(vaultWiring{ServiceDir: c.ServiceDir, Clock: GetClock(res)}, ports, vaultregistry.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
 }
 
 // OpenIndex opens the cache. The caller closes it.
@@ -67,8 +69,8 @@ type vaultWiring struct {
 	RegistryPath string
 	ServiceDir   string
 	Clock        machineport.Timer
-	PluginHost   *PluginHost
-	RunningHost  *PluginHost
+	Lender       *hostendpoint.Lender
+	TextPlugins  textport.TextPlugins
 	TextVersions *TextVersions
 	TextReaders  textdomain.Readers
 	VaultLocks   *vaultwriter.Locks

@@ -41,7 +41,7 @@ func newSearchRuns(w *windowWiring) *searchrunusecase.SearchRuns {
 		Generations: w.generations,
 		Run:         find.Execute,
 		Names:       func(pluginID string) string { return pluginsGetPluginName(w.a, pluginID) },
-		Catalog:     getSearchCatalog(getRuntimeManifests(w.a.search.PluginHost.Runtime)),
+		Catalog:     getSearchCatalog(getRuntimeManifests(w.a.search.Runtime)),
 		MaxResults:  find.Limits.MaxLimit,
 	})
 	return &runs

@@ -36,11 +36,11 @@ func loadTokenSettings(t *testing.T, cfg TestInstallation, plugins, path string)
 	t.Helper()
 	host := newPluginHost(t, "desktop.editor", plugins)
 	t.Cleanup(func() {
-		if err := host.Watch.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Execution.Watch.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Errorf("TeardownAll: %v", err)
 		}
 	})
-	cfg.PluginHost = host
+	cfg.TestPlugins = host
 	selected, err := cfg.Settings()
 	if err != nil {
 		t.Fatal(err)

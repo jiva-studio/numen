@@ -104,12 +104,12 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheAvailableOnes(
 	availableDir := t.TempDir()
 	writeCatalogPlugin(t, availableDir, "org.example.offered", `"desktop.editor"`)
 	host := newPluginHost(t, "desktop.editor", dir)
-	host.Configuration.SetSettings(map[string]map[string]any{"org.example.off": {"enabled": false}})
+	host.Preferences.Configuration.SetSettings(map[string]map[string]any{"org.example.off": {"enabled": false}})
 	cfg := NewTestInstallation(Config{}, host)
 	cfg.Resources.PluginCatalog = catalog.Config{
 		Target: "desktop.editor", InstallDir: "", CacheDir: "",
 		Sources: []catalog.Source{
-			localsource.New([]string{dir}, localsource.SettingsFunc(host.Runtime.IsPluginEnabled)),
+			localsource.New([]string{dir}, localsource.SettingsFunc(host.Execution.Runtime.IsPluginEnabled)),
 			indexsource.New(nil, []string{availableDir}),
 		},
 	}

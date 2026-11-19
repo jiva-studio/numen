@@ -1,9 +1,11 @@
 package container
 
 import (
+	"cmp"
 	"fmt"
 	"strconv"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
@@ -27,24 +29,24 @@ import (
 
 // ApplySettings reads the settings file and returns the configuration with its values applied, and
 // the notices that reading it raised. An unconfigured installation applies the default settings.
-func (c Config) ApplySettings(host *PluginHost, res *Resources) (Config, []string, error) {
-	selected, err := settingsSettings(settingsOf(c, host, res))
+func (c Config) ApplySettings(exec *PluginExecution, prefs *PluginPreferences, res *Resources) (Config, []string, error) {
+	selected, err := settingsSettings(settingsOf(c, exec, prefs, res))
 	if err != nil {
 		return c, nil, err
 	}
-	return applySettingsFile(c, host, res, selected), selected.Notices, nil
+	return applySettingsFile(c, exec, prefs, res, selected), selected.Notices, nil
 }
 
-func applySettingsFile(c Config, host *PluginHost, res *Resources, s settingsadapter.File) Config {
+func applySettingsFile(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, s settingsadapter.File) Config {
 	c.machine = Machine{ResolvedCompute: settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(s.Performance.Profile)}
-	configurePluginHost(settingsOf(c, host, res), s)
+	configurePluginHost(settingsOf(c, exec, prefs, res), s)
 	return c
 }
 
 // SetThemes gives the window the themes it can use: the catalog of themes, and the settings file that
 // stores the selection. The window keeps the themes the binary ships when the answer is a fault.
-func SetThemes(c Config, host *PluginHost, res *Resources, inst *editor.Installation, scales Scales, say func(string)) error {
-	service, err := settingsThemes(settingsOf(c, host, res), scales, say)
+func (c Config) SetThemes(exec *PluginExecution, prefs *PluginPreferences, res *Resources, inst *editor.Installation, scales Scales, say func(string)) error {
+	service, err := settingsThemes(settingsOf(c, exec, prefs, res), scales, say)
 	inst.SetThemes(service)
 	return err
 }
@@ -68,8 +70,12 @@ type settingsStores struct {
 type settingsWiring struct {
 	settingsPlaces
 	settingsStores
-	PluginHost   *PluginHost
-	ErrorHandler func(error)
+	Infos         themefiles.PluginHost
+	Configuration PluginConfiguration
+	Views         PluginViews
+	ApplySetting  settingsport.PluginSettingApplier
+	Detection     connectionport.Detected
+	ErrorHandler  func(error)
 }
 
 func settingsSettings(c settingsWiring) (settingsadapter.File, error) {
@@ -94,13 +100,13 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 		subscribe = feed(c).Subscribe
 	}
 	settingsusecase.NewApplyToPlugins(settingsusecase.ApplyToPluginsDeps{
-		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Configuration, Write: openWriteSettings(c), Notify: notifyPlugins(c),
-		Subscribe: c.PluginHost.Views.Follow(subscribe), Hosts: hosts,
+		Codec: settingsadapter.JSONCodec{}, Config: c.Configuration, Write: openWriteSettings(c), Notify: notifyPlugins(c),
+		Subscribe: c.Views.Follow(subscribe), Hosts: hosts,
 	}).Execute(s.Plugins, getPluginPerformance(c.ResolvedCompute))
 }
 
 func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
-	return c.PluginHost.Runtime.GetPluginInfos
+	return c.Infos.GetPluginInfos
 }
 
 func getDeclarations(c settingsWiring) settingsdomain.Declarations {
@@ -108,7 +114,7 @@ func getDeclarations(c settingsWiring) settingsdomain.Declarations {
 		if owner == settingsdomain.AppOwner {
 			return settingsadapter.GetAppDeclaration(), true
 		}
-		return c.PluginHost.Configuration.GetPluginSettingDeclarations(owner)
+		return c.Configuration.GetPluginSettingDeclarations(owner)
 	}
 }
 
@@ -119,7 +125,7 @@ func getRegistries(c settingsWiring) settingsdomain.Registries {
 			return listConnectionIDs(c)
 		}
 		return themes(name)
-	}, c.PluginHost.Views.Types, getHostDetection(c))
+	}, c.Views.Types, c.Detection)
 }
 
 func listConnectionIDs(c settingsWiring) ([]string, bool) {
@@ -196,7 +202,7 @@ func openChoosePluginPath(c settingsWiring, dialog machineport.PathDialog) *sett
 
 func settingsStore(c settingsWiring) *settingsadapter.Store {
 	var declared settingsdomain.Declarations
-	if c.PluginHost.Views.Infos != nil {
+	if c.Views.Infos != nil {
 		declared = getDeclarations(c)
 	}
 	return settingsadapter.NewStore(c.SettingsFiles, func() (string, error) { return settingsSettingsFile(c) }, declared, getRegistries(c))
@@ -209,7 +215,7 @@ func feed(c settingsWiring) settingevents.Feed {
 		GetPath: func() (string, error) { return settingsSettingsFile(c) },
 		Read: func() (settingsdomain.Values, error) {
 			values, err := list.Execute()
-			settingsadapter.AddDetectedConnectionIDs(values, getHostDetection(c))
+			settingsadapter.AddDetectedConnectionIDs(values, c.Detection)
 			return values, err
 		},
 		Initial: func() settingsdomain.Values {
@@ -226,13 +232,13 @@ func feed(c settingsWiring) settingevents.Feed {
 
 func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
 	return settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, getPluginInfos(c.PluginHost.Views),
+		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, cmp.Or[settingsport.PluginInfos](c.Views.Infos, none.PluginInfos{}),
 	)
 }
 
 func openWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.JSONCodec{}, getDeclarations(c), getRegistries(c), getPluginChecks(c.PluginHost.Views),
+		settingsadapter.JSONCodec{}, getDeclarations(c), getRegistries(c), cmp.Or[settingsport.PluginSettings](c.Views.Checks, none.PluginSettings{}),
 	)
 	return settingsusecase.NewWriteSettings(check, settingsStore(c), feed(c))
 }
@@ -240,7 +246,7 @@ func openWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
 func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
 	signal := c.PluginChanges.Signal
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
-		Codec: settingsadapter.JSONCodec{}, Apply: c.PluginHost.ApplySetting, Config: c.PluginHost.Configuration,
+		Codec: settingsadapter.JSONCodec{}, Apply: c.ApplySetting, Config: c.Configuration,
 		ResolveProfile: resolveProfile, Signal: signal,
 		Report: func(err error) { c.ErrorHandler(err) },
 	})
@@ -281,7 +287,7 @@ func CheckTextScale(name string, scale float64) error {
 }
 
 func getThemeSources(c settingsWiring, files themefiles.Files) themeusecase.Sources {
-	return themeusecase.Sources{Presets: files, Own: files, Plugins: themefiles.NewPluginThemes(c.PluginHost.Runtime)}
+	return themeusecase.Sources{Presets: files, Own: files, Plugins: themefiles.NewPluginThemes(c.Infos)}
 }
 
 func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
@@ -289,13 +295,6 @@ func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
 		return themefiles.OpenAt(folder, c.Watches.GetShared())
 	}
 	return themefiles.Open(c.Watches.GetShared())
-}
-
-func getHostDetection(c settingsWiring) connectionport.Detected {
-	if c.PluginHost.Detection == nil {
-		return nil
-	}
-	return c.PluginHost.Detection
 }
 
 func getPluginPerformance(compute machinedomain.ResolvedCompute) plugindomain.Performance {

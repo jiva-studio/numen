@@ -27,7 +27,7 @@ func RegisterDebugFlags(fs *flag.FlagSet, opts *Options) {
 		"use fast mock ML models, and an empty placeholder file for every dependency a plugin declares")
 }
 
-func (d *DebugOptions) apply(host *container.PluginHost, res *container.Resources) error {
+func (d *DebugOptions) apply(refreshDependencies func(), res *container.Resources) error {
 	if d.isServingHTTP() {
 		res.KeyStore = debugserve.NewKeyStore()
 	}
@@ -37,14 +37,12 @@ func (d *DebugOptions) apply(host *container.PluginHost, res *container.Resource
 	if err := os.Setenv("NUMEN_TEST_MOCK_ML", "true"); err != nil {
 		return err
 	}
-	if host != nil {
-		host.RefreshDependencies()
-	}
+	refreshDependencies()
 	return nil
 }
 
-func (d *DebugOptions) ensureVault(cfg container.Config, host *container.PluginHost, res *container.Resources, vaultPath string) error {
-	return debugserve.RegisterVault(cfg, host, res, vaultPath)
+func (d *DebugOptions) ensureVault(cfg container.Config, res *container.Resources, vaultPath string) error {
+	return debugserve.RegisterVault(cfg, res, vaultPath)
 }
 
 func (d *DebugOptions) isServingHTTP() bool {

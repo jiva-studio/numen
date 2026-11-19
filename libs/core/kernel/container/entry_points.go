@@ -5,7 +5,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/connectionlog"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -18,7 +17,7 @@ import (
 // the one shown last when none is named, and connects the plugins to the vault and the window. frame is the application
 // window around the editor, or nil.
 func (c Config) OpenEditor(
-	host *PluginHost, res *Resources, ctx context.Context, named string, out io.Writer, frame editor.Frame,
+	exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening,
 ) (*OpenedWindow, error) {
 	ports, err := c.registry()
 	if err != nil {
@@ -28,17 +27,16 @@ func (c Config) OpenEditor(
 	if err != nil {
 		return nil, err
 	}
-	opening := WindowOpening{DB: db, Named: named, Out: out, Frame: frame}
-	a := openIndexedPlugins(c, host, res, db)
-	return openEditorWindow(ctx, a, res, ports, opening)
+	a := openIndexedPlugins(c, exec, prefs, endpoints, res, db)
+	return openEditorWindow(ctx, a, res, ports, db, opening)
 }
 
-func openEditorWindow(ctx context.Context, a pluginsWiring, res *Resources, ports vaultregistry.Ports, opening WindowOpening) (*OpenedWindow, error) {
-	opened, err := openWindowWith(ctx, a, getLogEntries(res), ports, opening)
+func openEditorWindow(ctx context.Context, a pluginsWiring, res *Resources, ports vaultregistry.Ports, db *Index, opening WindowOpening) (*OpenedWindow, error) {
+	opened, err := openWindowWith(ctx, a, getLogEntries(res), ports, db, opening)
 	if err != nil {
 		return nil, err
 	}
-	return connectEditor(ports, opening.DB, opened)
+	return connectEditor(ports, db, opened)
 }
 
 func connectEditor(ports vaultregistry.Ports, db *Index, opened *windowWiring) (*OpenedWindow, error) {
@@ -63,10 +61,17 @@ type Shell struct {
 	Themes      error
 }
 
+// ShellOpening identifies the target window, its services and its output.
+type ShellOpening struct {
+	Target string
+	API    *shell.API
+	Log    ShellLog
+}
+
 // OpenShell opens the registry and the cache, gives api the window of target, binds the notes, the vault list,
 // the vault indexer, the plugin vault, the change feed and the themes of the shell window to api, and tells
 // log.Notify what it cannot follow.
-func (c Config) OpenShell(host *PluginHost, res *Resources, ctx context.Context, target string, api *shell.API, log ShellLog) (Shell, error) {
+func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening ShellOpening) (Shell, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return Shell{}, err
@@ -75,8 +80,8 @@ func (c Config) OpenShell(host *PluginHost, res *Resources, ctx context.Context,
 	if err != nil {
 		return Shell{}, err
 	}
-	api.Window = shell.NewWindow(target, nil)
-	return bindShell(plugins(c, host, res), ctx, ports, db, api, log)
+	opening.API.Window = shell.NewWindow(opening.Target, nil)
+	return bindShell(plugins(c, exec, prefs, endpoints, res), ctx, ports, db, opening.API, opening.Log)
 }
 
 // ShellLog is where a shell window writes what it reports: Out under Label, and Notify for what the user

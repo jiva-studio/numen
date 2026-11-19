@@ -67,7 +67,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		},
 	})
 	settings.Resources.TextReaders = testsupport.Texts{Readers: vaultreader.Readers{}}
-	if _, err := settings.AddVault(settings.PluginHost, settings.Resources, root, "watched"); err != nil {
+	if _, err := settings.AddVault(settings.Resources, root, "watched"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -311,7 +311,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		},
 	})
 	writeNamingSettings(t, cfg.RegistryPath, sync)
-	if _, err := cfg.AddVault(cfg.PluginHost, cfg.Resources, root, "quitting"); err != nil {
+	if _, err := cfg.AddVault(cfg.Resources, root, "quitting"); err != nil {
 		t.Fatal(err)
 	}
 

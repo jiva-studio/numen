@@ -1,13 +1,14 @@
 package plugin_test
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"os"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -18,7 +19,7 @@ const workingPlugin = "org.example.sample"
 // workingHost is a running host whose plugin has a task listed and holds the
 // lock.
 type workingHost struct {
-	host    *container.PluginRoles
+	host    *pluginhost.Host
 	process *os.Process
 	tasks   *run.Tasks
 	lease   *run.Lease
@@ -29,15 +30,15 @@ func newWorkingHost(t *testing.T) workingHost {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	var procs []*os.Process
-	host.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
+	host.Supervision.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
 	tasks := run.NewTasks()
 	work := run.NewPluginWork(&run.Lock{}, tasks, nil)
 	lender, _ := lendEndpoint(host, hostendpoint.Address)
 	lender.Update(func(l *hostendpoint.Lent) { l.Work = work })
-	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
 		t.Fatal(err)
 	}
-	host.Activation.Release(workingPlugin, endpointOf(host, workingPlugin).Token, getTestHolder())
+	host.Management.Activation.Release(workingPlugin, endpointOf(host.Management, workingPlugin).Token, getTestHolder())
 
 	work.ReportTask(workingPlugin, plugindomain.Task{ID: "scan.sample", Title: "Scanning"})
 	turn, err := work.EnqueueWork(t.Context(), workingPlugin, true, nil)
@@ -73,6 +74,6 @@ func TestCrashedPluginTasksAreCleared(t *testing.T) {
 	w := newWorkingHost(t)
 
 	wiretest.KillProcess(t, w.process)
-	waitForProcessExit(t, supervisorOf(w.host, workingPlugin).GetExitSignal())
+	waitForProcessExit(t, supervisorOf(w.host.Management, workingPlugin).GetExitSignal())
 	w.assertCleared(t)
 }

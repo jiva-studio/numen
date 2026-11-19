@@ -8,7 +8,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 )
@@ -27,18 +28,18 @@ const providerManifest = `{
 		"fields": [{"key": "baseUrl", "type": "string", "title": "Address", "isAddress": true}]}]}
 }`
 
-func newProviderHost(t *testing.T) (*container.PluginRoles, func() []error, string) {
+func newProviderHost(t *testing.T) (*pluginhost.Host, func() []error, string) {
 	t.Helper()
 	dir := t.TempDir()
 	host := newBuiltInHost(t, dir)
 	var mu sync.Mutex
 	var reported []error
-	host.Failures.SetErrorHandler(func(err error) {
+	host.Supervision.Failures.SetErrorHandler(func(err error) {
 		mu.Lock()
 		defer mu.Unlock()
 		reported = append(reported, err)
 	})
-	registerBuiltIn(t, host, []byte(providerManifest), newBuiltInBackend().serve("built-in provider"))
+	registerBuiltIn(t, host.Management, []byte(providerManifest), newBuiltInBackend().serve("built-in provider"))
 	return host, func() []error {
 		mu.Lock()
 		defer mu.Unlock()
@@ -62,11 +63,11 @@ func TestAPluginOnDiskDoesNotReplaceABuiltInProvider(t *testing.T) {
 	host, reported, dir := newProviderHost(t)
 	writeProviderOnDisk(t, dir, providerManifest)
 
-	if err := host.Discovery.Discover(); err != nil {
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
-	found, ok := host.Registry.GetPlugin("md.example.provider")
+	found, ok := host.Management.Registry.GetPlugin("md.example.provider")
 	if !ok || found.Dir != "" {
 		t.Fatalf("GetPlugin = %+v, %v, want the built-in provider", found, ok)
 	}
@@ -80,14 +81,14 @@ func TestAPluginOnDiskReplacesABuiltInThatProvidesNoConnectionType(t *testing.T)
 	host, _, dir := newProviderHost(t)
 	simple := `{"id": "md.example.plain", "name": "Plain", "version": "1.0.0", "targets": ["desktop.editor"],
 		"services": ["numen.v1.PluginToolService"], "backend": {"entrypoint": "bin/plain"}}`
-	registerBuiltIn(t, host, []byte(simple), newBuiltInBackend().serve("built-in plain"))
+	registerBuiltIn(t, host.Management, []byte(simple), newBuiltInBackend().serve("built-in plain"))
 	writeProviderOnDisk(t, dir, simple)
 
-	if err := host.Discovery.Discover(); err != nil {
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
-	if found, ok := host.Registry.GetPlugin("md.example.plain"); !ok || found.Dir == "" {
+	if found, ok := host.Management.Registry.GetPlugin("md.example.plain"); !ok || found.Dir == "" {
 		t.Errorf("GetPlugin = %+v, %v, want the plugin on disk", found, ok)
 	}
 }
