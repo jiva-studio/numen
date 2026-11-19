@@ -5,7 +5,8 @@
  * three it is: the mode, the theme's own file, and the two multipliers. The theme's
  * follows the mode's and the sizes follow both.
  */
-import type { Sizes } from '../lib/appearance'
+import { doc } from '@numen/ui'
+import { SCHEMES, type Mode, type Sizes } from '../lib/appearance'
 
 /** The elements the page carries: the mode's, the theme's, and the sizes'. */
 export interface StyleElements {
@@ -56,3 +57,25 @@ export const addAfter = (
 /** The two multipliers as the page carries them. */
 export const getSizesCss = (sizes: Sizes): string =>
   `:root { --numen-interface-scale: ${sizes.interfaceScale}; --numen-text-scale: ${sizes.textScale}; }`
+
+/** Applies theme colors, mode and sizes to the window's style elements. */
+export function createAppearanceOutput(sheet: Document = doc) {
+  const elements = getStyleElements(sheet)
+  let appliedSizesCss = ''
+  return {
+    servedTheme: elements.theme.textContent,
+    writeMode: (mode: Mode) => {
+      elements.mode.textContent = `:root { color-scheme: ${SCHEMES[mode]}; }`
+    },
+    writeTheme: (css: string) => {
+      elements.theme.textContent = css
+    },
+    writeSizes: (sizes: Sizes) => {
+      const css = getSizesCss(sizes)
+      if (css === appliedSizesCss) return
+      appliedSizesCss = css
+      elements.sizes ??= addAfter(elements.theme, IS_SIZES, sheet)
+      elements.sizes.textContent = css
+    },
+  }
+}

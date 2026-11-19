@@ -4,7 +4,7 @@
  * because an indexing begins without the page asking for one.
  */
 import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
-import { createFollower } from '@numen/ui'
+import { createFollower } from '@/shared/api/stream'
 import {
   createBackgroundTaskHost,
   getFailedTasks,

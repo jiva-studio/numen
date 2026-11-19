@@ -34,6 +34,13 @@ vi.mock('@numen/workbench', async (importOriginal) => {
           runtimeHooks.minimizeWindow ? runtimeHooks.minimizeWindow() : created.minimizeWindow(),
       }
     },
+  }
+})
+
+vi.mock('@numen/core-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@numen/core-client')>()
+  return {
+    ...actual,
     createWindowAppearance: (
       ...args: Parameters<typeof actual.createWindowAppearance>
     ): ReturnType<typeof actual.createWindowAppearance> => {

@@ -35,8 +35,6 @@ export { isTyping } from './shared/lib/dom/typing'
 export { KeyCap, keyChord } from './shared/ui/key-cap'
 export type { Keystroke } from './shared/ui/key-cap'
 
-/** A stream taken up again for as long as a window is open. */
-export { createFollower } from './shared/lib/async/stream'
 export {
   createRequestGuard,
   type InFlightRequest,

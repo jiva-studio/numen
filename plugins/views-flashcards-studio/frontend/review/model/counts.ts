@@ -8,8 +8,6 @@
  * tracked for as long, and handled by the refresh that the open review sets, or
  * by counting again where no review is open.
  */
-import { createFollower } from '@numen/ui'
-
 import { cards } from '../api/clients'
 import { useReviewCounter } from './vault/counts'
 import type { Caught } from '@numen/plugin-sdk'
@@ -18,43 +16,40 @@ export interface VaultCountsDeps {
   readonly reportError: (error: Caught) => void
 }
 
+async function followReloads(
+  signal: AbortSignal,
+  refresh: () => Promise<void>,
+  reportError: VaultCountsDeps['reportError'],
+) {
+  while (!signal.aborted) {
+    let isOpening = true
+    try {
+      for await (const response of cards.watchReloads({}, { signal })) {
+        if (signal.aborted) return
+        if (isOpening || response.reload) await refresh()
+        isOpening = false
+      }
+    } catch {
+      if (signal.aborted) return
+      reportError('lost touch with numen — the window keeps trying')
+    }
+    await new Promise<void>((resolve) => setTimeout(resolve, 1000))
+    if (!signal.aborted) reportError('')
+  }
+}
+
 export function createVaultCounts(deps: VaultCountsDeps) {
   const counter = useReviewCounter({ cards, reportError: deps.reportError })
   const abortController = new AbortController()
-  let isOpen = true
   let isStarted = false
   let refresh: () => Promise<void> = counter.count
 
-  const follow = createFollower({
-    isOpen: () => isOpen,
-    setLost: deps.reportError,
-    wait: (ms) => new Promise((then) => setTimeout(then, ms)),
-  })
-
   /** The counting and the following, begun once however many parts ask. */
   const start = () => {
-    if (isStarted || !isOpen) return
+    if (isStarted || abortController.signal.aborted) return
     isStarted = true
     counter.count().catch(deps.reportError)
-    let isOpening = true
-    follow(
-      () => {
-        isOpening = true
-        return cards.watchReloads({}, { signal: abortController.signal })
-      },
-      async (response) => {
-        // The first message of a stream says the watch is open. A vault indexed before it opened
-        // sends no reload, so the vaults are counted again then.
-        if (isOpening) {
-          isOpening = false
-          await refresh()
-          return
-        }
-        // A message carrying no reload keeps the stream open and moves nothing.
-        if (!response.reload) return
-        await refresh()
-      },
-    ).catch(deps.reportError)
+    followReloads(abortController.signal, () => refresh(), deps.reportError).catch(deps.reportError)
   }
 
   /** What a reload does while a review is open; nothing restores counting again. */
@@ -63,7 +58,6 @@ export function createVaultCounts(deps: VaultCountsDeps) {
   }
 
   const dispose = () => {
-    isOpen = false
     abortController.abort()
     counter.stop()
   }

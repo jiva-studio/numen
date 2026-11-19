@@ -9,7 +9,15 @@ export type {
 export { SETTINGS_WORDS } from './words'
 export { createSettingsStore } from './model/store'
 export type { SettingsStore } from './model/store'
-export { createThemes, type ThemeClient } from './api/theme'
+export {
+  createThemes,
+  createWindowAppearance,
+  type ThemeClient,
+  type WindowAppearance,
+  type AppearanceWords,
+  INTERFACE_SCALE,
+  TEXT_SCALE,
+} from './api/theme'
 export { createSettingFields } from './lib/fields'
 export { write } from './lib/write'
 export { createPluginRetry } from './model/retry'

@@ -2,7 +2,7 @@
  * Background streaming subscriptions for the window.
  */
 import type { ShallowRef } from 'vue'
-import type { createFollower } from '@numen/ui'
+import type { createFollower } from '@/shared/api/stream'
 import type { NoteApi, NoteEdit, useOpeningNote } from '@/entities/note'
 import type { FocusApi, Task, TaskApi } from '@/entities/window'
 import type { HealthApi, PluginHealthItem } from '@/entities/plugin'

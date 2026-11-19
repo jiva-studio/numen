@@ -4,11 +4,11 @@
  */
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { createWindowAppearance, useAppearancePalette, type NoticeQueue } from '@numen/workbench'
+import { createAppearanceOutput, useAppearancePalette, type NoticeQueue } from '@numen/workbench'
 import type { PluginLister } from '@/entities/plugin'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
-import type { ThemeClient } from '../api/theme'
+import { createWindowAppearance, type ThemeClient } from '../api/theme'
 import { WORDS } from '../words'
 
 /** The calls the appearance reads the themes and the names of the plugins through. */
@@ -21,7 +21,12 @@ export function useAppearance(api: AppearanceApi, notices: NoticeQueue) {
   const { themes, listPlugins } = api
   const showError = (text: string) => notices.show(WINDOW_SOURCE, text, 'error')
   const pluginNames = ref<ReadonlyMap<string, string>>(new Map())
-  const appearance = createWindowAppearance({ core: themes, words: WORDS, write: showError })
+  const appearance = createWindowAppearance({
+    core: themes,
+    output: createAppearanceOutput(),
+    words: WORDS,
+    write: showError,
+  })
   watch(appearance.state.lost, (text) => {
     if (text !== '') showError(text)
   })

@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
-import { TASK_UNIT } from '@numen/core-client'
+import { createFollower, TASK_UNIT } from '@numen/core-client'
 import { createAnsweredApi } from '@/testing/coreAnswers'
-import { createFollower } from '@numen/ui'
 import {
   createEditStream,
   createFocusStream,
@@ -189,11 +188,7 @@ describe('following the vault', () => {
   })
 
   it.each([
-    [
-      'a path',
-      { paths: ['a.md'], shouldReload: false, renamed: [] },
-      [['a.md'], [], []],
-    ],
+    ['a path', { paths: ['a.md'], shouldReload: false, renamed: [] }, [['a.md'], [], []]],
     [
       'a reload',
       {
