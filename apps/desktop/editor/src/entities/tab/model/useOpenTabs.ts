@@ -23,6 +23,22 @@ export interface OpenTabsDeps {
 export const formatSavedState = (saved: JsonValue | undefined): string =>
   saved === undefined ? '' : JSON.stringify(saved)
 
+const isSameTab = (a: Tab, b: Tab): boolean =>
+  a.id === b.id &&
+  a.kind === b.kind &&
+  a.title === b.title &&
+  a.path === b.path &&
+  a.state === b.state &&
+  a.place === b.place
+
+const isSameOpenTabs = (a: OpenTabs, b: OpenTabs): boolean =>
+  a.activeId === b.activeId &&
+  a.tabs.length === b.tabs.length &&
+  a.tabs.every((one, index) => {
+    const other = b.tabs[index]
+    return other !== undefined && isSameTab(one, other)
+  })
+
 function describeTab(windowTabs: WindowTabs, id: string, title: string): Tab {
   const one = windowTabs.tabs.getTab(id)
   if (!one) return { id, kind: '', title, path: '', state: '' }
@@ -37,6 +53,23 @@ function describeTab(windowTabs: WindowTabs, id: string, title: string): Tab {
   }
 }
 
+function findActiveTabId(windowTabs: WindowTabs): string {
+  const isTakingText = (id: string): boolean =>
+    windowTabs.tabs.getTab(id)?.kind.events?.receiveText !== undefined
+  const isTool = (id: string): boolean => windowTabs.tabs.getTab(id)?.kind.display?.isTool === true
+  const frontTab = windowTabs.handle.front()
+  if (frontTab && !isTakingText(frontTab.id)) {
+    if (!isTool(frontTab.id)) return frontTab.id
+    const shown = new Set(getPanes(windowTabs.panes.layout.value.root).map((one) => one.active))
+    const beside = [...windowTabs.tabs.tabs.value]
+      .reverse()
+      .find((one) => shown.has(one.id) && !isTool(one.id) && !isTakingText(one.id))
+    return beside?.id ?? frontTab.id
+  }
+  const nextTabs = [...windowTabs.tabs.tabs.value].reverse().find((one) => !isTakingText(one.id))
+  return nextTabs?.id ?? frontTab?.id ?? ''
+}
+
 export function useOpenTabs({
   windowTabs,
   isWriting = ref(true),
@@ -46,31 +79,12 @@ export function useOpenTabs({
   const reportError = (error: Caught) =>
     writeMessage(`The open tabs were not saved: ${formatError(error)}`, 'error')
 
-  /** Whether a tab is of a kind that takes text put to it: a conversation, with no file of its own. */
-  const isTakingText = (id: string): boolean =>
-    windowTabs.tabs.getTab(id)?.kind.events?.receiveText !== undefined
-
-  /** Whether a tab is of a kind that serves the other tabs, such as the files of the vault. */
-  const isTool = (id: string): boolean => windowTabs.tabs.getTab(id)?.kind.display?.isTool === true
-
   /**
    * The tab in front. Where that is a tool, the tab of another pane that shows and was shown last,
    * because the core keeps one active tab per window and a tool is only what the person worked
    * from. Where the tab in front takes text, the last tab that takes no text.
    */
-  const getActiveTabId = (): string => {
-    const frontTab = windowTabs.handle.front()
-    if (frontTab && !isTakingText(frontTab.id)) {
-      if (!isTool(frontTab.id)) return frontTab.id
-      const shown = new Set(getPanes(windowTabs.panes.layout.value.root).map((one) => one.active))
-      const beside = [...windowTabs.tabs.tabs.value]
-        .reverse()
-        .find((one) => shown.has(one.id) && !isTool(one.id) && !isTakingText(one.id))
-      return beside?.id ?? frontTab.id
-    }
-    const nextTabs = [...windowTabs.tabs.tabs.value].reverse().find((one) => !isTakingText(one.id))
-    return nextTabs?.id ?? frontTab?.id ?? ''
-  }
+  const getActiveTabId = (): string => findActiveTabId(windowTabs)
 
   const getOpenTabs = (): OpenTabs => ({
     activeId: getActiveTabId(),
@@ -79,13 +93,16 @@ export function useOpenTabs({
 
   const open = computed<OpenTabs>(() => getOpenTabs())
   let pendingWrite: OpenTabs | null = null
+  let lastWritten: OpenTabs | null = null
   let sending: Promise<void> | null = null
   const sendPending = async (): Promise<void> => {
     while (pendingWrite) {
       const current = pendingWrite
       pendingWrite = null
+      if (lastWritten && isSameOpenTabs(lastWritten, current)) continue
       try {
         await writeOpenTabs(current)
+        lastWritten = current
       } catch (error) {
         // The next tab opened, closed or moved writes the list again.
         reportError(error)
@@ -114,12 +131,14 @@ export function useOpenTabs({
    * later writes back. A write made after the core shows another vault would be kept for that vault.
    */
   const pause = async (): Promise<void> => {
+    lastWritten = null
     if (isWriting.value) await flushOpenTabs(open.value)
     isPaused.value = true
   }
 
   /** Lets the tabs be written again, where the vault was not left. */
   const resume = (): void => {
+    lastWritten = null
     isPaused.value = false
   }
 
