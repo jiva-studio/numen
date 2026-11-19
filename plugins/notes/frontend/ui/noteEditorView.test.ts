@@ -22,8 +22,10 @@ afterEach(() => {
 })
 
 const createNotes = (body = 'A bell over the door.\n') => ({
-  read: vi.fn(() => Promise.resolve({ body })),
-  write: vi.fn(() => Promise.resolve()),
+  read: vi.fn(() => Promise.resolve({ body, at: 'first' })),
+  writeIfUnchanged: vi.fn((_path: string, _text: string, _observed: { body: string; at: string }) =>
+    Promise.resolve('next'),
+  ),
 })
 
 const open = async (notes: ReturnType<typeof createNotes>, path = 'Shed.md') => {
@@ -59,7 +61,54 @@ describe('createNoteEditorView', () => {
     editor.dispatch({ changes: { from: 0, insert: 'Rain. ' } })
     await flushPromises()
 
-    expect(notes.write).toHaveBeenLastCalledWith('Shed.md', 'Rain. A bell over the door.\n')
+    expect(notes.writeIfUnchanged).toHaveBeenLastCalledWith(
+      'Shed.md',
+      'Rain. A bell over the door.\n',
+      { body: 'A bell over the door.\n', at: 'first' },
+    )
+  })
+
+  it('keeps an external edit on disk and shows the conflict alongside the local draft', async () => {
+    let disk = 'original'
+    const notes = {
+      ...createNotes(disk),
+      write: async (_path: string, text: string) => {
+        disk = text
+      },
+    }
+    notes.writeIfUnchanged.mockImplementation(async (_path, text, observed) => {
+      if (observed.body !== disk) throw new Error('The note changed on disk.')
+      disk = text
+      return 'next'
+    })
+    const editor = await open(notes)
+    disk = 'external edit'
+    editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: 'local draft' } })
+    await flushPromises()
+    expect(disk).toBe('external edit')
+    expect(editor.state.doc.toString()).toBe('local draft')
+    expect(wrapper!.get('[role="alert"]').text()).toContain('changed on disk')
+  })
+
+  it('uses the fingerprint returned by the preceding save for an edit typed in flight', async () => {
+    const notes = createNotes('a')
+    let finish!: (at: string) => void
+    notes.writeIfUnchanged.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    const editor = await open(notes)
+    editor.dispatch({ changes: { from: 1, insert: 'b' } })
+    editor.dispatch({ changes: { from: 2, insert: 'c' } })
+    expect(notes.writeIfUnchanged).toHaveBeenCalledTimes(1)
+    finish('second')
+    await flushPromises()
+    expect(notes.writeIfUnchanged).toHaveBeenLastCalledWith('Shed.md', 'abc', {
+      body: 'ab',
+      at: 'second',
+    })
   })
 
   it('shows why the note could not be read', async () => {

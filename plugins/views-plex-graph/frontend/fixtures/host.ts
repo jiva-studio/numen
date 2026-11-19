@@ -82,6 +82,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
     createUntitledNote: async () => 'Untitled.md',
     read: async () => ({ body: '' }),
     write: async () => undefined,
+    writeIfUnchanged: async () => 'next',
     readProperties: async () => ({}),
   }
 

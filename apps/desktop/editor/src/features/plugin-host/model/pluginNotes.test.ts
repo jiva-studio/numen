@@ -39,6 +39,19 @@ const createDeps = () => {
 const tick = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0))
 
 describe('createPluginNotes', () => {
+  it('passes the caller’s observed body and fingerprint to the vault and reports a conflicting external edit', async () => {
+    const deps = createDeps()
+    deps.read.mockResolvedValueOnce({ ok: true, value: { body: 'original', at: 'first' } })
+    deps.write.mockResolvedValueOnce({ ok: false, error: 'changed' })
+    const notes = createPluginNotes(deps)
+    const observed = await notes.readNote('a.md')
+    expect(observed).toEqual({ body: 'original', at: 'first' })
+    await expect(
+      notes.writeIfUnchanged('a.md', 'draft', { body: observed.body, at: observed.at! }),
+    ).rejects.toThrow('changed on disk')
+    expect(deps.write).toHaveBeenCalledWith('a.md', 'draft', { prose: 'original', stat: 'first' })
+  })
+
   it('has one write of a path in the air and writes only the newest body after it', async () => {
     const deps = createDeps()
     const notes = createPluginNotes(deps)

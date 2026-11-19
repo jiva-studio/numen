@@ -234,6 +234,7 @@ describe('the notes of the vault a plugin is handed', () => {
     const pluginNotes = {
       readNote: vi.fn(() => Promise.resolve({ body: 'Prose.' })),
       writeNote: vi.fn(() => Promise.resolve()),
+      writeIfUnchanged: vi.fn(() => Promise.resolve('next')),
     }
     return {
       making,
@@ -400,7 +401,11 @@ describe('createWorkspaceService, createVaultAccess and createWindowService', ()
       relations: { roles: [] } as never,
       search: { names: async () => [] },
       making: { createUntitledNote, createWithTitle: async () => null } as never,
-      pluginNotes: { readNote: async () => ({ body: '' }), writeNote: async () => undefined },
+      pluginNotes: {
+        readNote: async () => ({ body: '' }),
+        writeNote: async () => undefined,
+        writeIfUnchanged: async () => 'next',
+      },
       getTarget: () => ({}) as never,
       runInvocation: async () => undefined,
     })

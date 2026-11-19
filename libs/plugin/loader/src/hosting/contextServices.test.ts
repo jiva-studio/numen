@@ -46,6 +46,7 @@ const createServices = () => {
     readProperties: vi.fn(() => Promise.resolve({ title: 'Example' })),
     createUntitledNote: vi.fn(() => Promise.resolve('Untitled.md')),
     write: vi.fn(() => Promise.resolve()),
+    writeIfUnchanged: vi.fn(() => Promise.resolve('next')),
   } as unknown as VaultNotes
   const relations = {
     roles: ['parent', 'child', 'jump'],
@@ -104,6 +105,8 @@ type Call = (services: HostServices) => unknown
 const NOTE_WRITES: Record<string, Call> = {
   createUntitledNote: (c) => c.vault.notes!.createUntitledNote(),
   write: (c) => c.vault.notes!.write('a.md', 'Prose.'),
+  writeIfUnchanged: (c) =>
+    c.vault.notes!.writeIfUnchanged('a.md', 'Prose.', { body: '', at: 'original' }),
 }
 
 const NOTE_READS: Record<string, Call> = {

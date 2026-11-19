@@ -11,7 +11,9 @@ import {
 import MarkdownNoteEditor from './MarkdownNoteEditor.vue'
 import { useNoteFile } from '../model/useNoteFile'
 
-export function createNoteEditorView(notes: Pick<VaultNotes, 'read' | 'write'>): ViewRegistration {
+export function createNoteEditorView(
+  notes: Pick<VaultNotes, 'read' | 'writeIfUnchanged'>,
+): ViewRegistration {
   return {
     capability: NOTE_EDITOR,
     component: defineComponent({
