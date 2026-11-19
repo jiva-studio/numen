@@ -73,7 +73,22 @@ export function usePlexView(core: RelatedNoteQueries) {
 
   const warm = (path: string) => {
     if (!path || !guard.open()) return
-    void core.listRelatedNotes([path], 1).catch(() => undefined)
+    void core
+      .listRelatedNotes([path], 1)
+      .then(([answer]) => {
+        if (!answer?.related.length) return
+        const counts = new Map<string, number>()
+        const candidates: string[] = []
+        for (const related of answer.related) {
+          const count = counts.get(related.relation) ?? 0
+          if (count < 6) {
+            counts.set(related.relation, count + 1)
+            candidates.push(related.path)
+          }
+        }
+        if (candidates.length > 0) return core.listRelatedNotes(candidates, 1)
+      })
+      .catch(() => undefined)
   }
 
   return { noteGraph, here, error, nextPath, isLoading, go, warm, followMoves, close }
