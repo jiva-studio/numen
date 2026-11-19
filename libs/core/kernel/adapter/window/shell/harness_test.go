@@ -33,7 +33,7 @@ func newAPI(tb testing.TB, target ...domain.Vault) *API {
 		index.targetVault[v.ID] = true
 	}
 	api := &API{Window: NewWindow(testWindow, run.NewTasks())}
-	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, query.NewIsVaultIndexed(index), api.Window, api)
+	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, query.NewIsVaultIndexed(index), api.Window, &api.Changes)
 	return api
 }
 

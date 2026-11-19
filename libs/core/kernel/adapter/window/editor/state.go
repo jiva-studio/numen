@@ -118,15 +118,13 @@ func (s *State) GetVaultState() window.VaultState {
 // the application.
 func (s *State) ReportOpenTabs(open window.OpenTabs) {
 	s.Tabs.ReportOpenTabs(open)
-	if s.NotifyOpenTabs != nil {
-		s.NotifyOpenTabs(open)
-	}
+	s.ShowOpenTabs(open)
 }
 
-// ShowOpenTabs tells the application the tabs that are open now.
-func (s *State) ShowOpenTabs() {
+// ShowOpenTabs sends the supplied tab snapshot to the current window frame.
+func (s *State) ShowOpenTabs(open window.OpenTabs) {
 	if s.NotifyOpenTabs != nil {
-		s.NotifyOpenTabs(s.Tabs.GetOpenTabs())
+		s.NotifyOpenTabs(open)
 	}
 }
 

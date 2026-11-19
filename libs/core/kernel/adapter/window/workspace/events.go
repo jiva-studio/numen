@@ -10,21 +10,15 @@ import (
 // maxPendingEvents is the queue size of one watch.
 const maxPendingEvents = 1024
 
-// linkEvents delivers the events of the tab links to the windows that watch them. A watch keeps the latest
-// event of a topic, in order.
-type linkEvents struct {
-	*broadcast.Broadcaster[tablinks.Event]
-}
-
-func newLinkEvents() linkEvents {
-	return linkEvents{&broadcast.Broadcaster[tablinks.Event]{
+func newLinkEvents() *broadcast.Broadcaster[tablinks.Event] {
+	return &broadcast.Broadcaster[tablinks.Event]{
 		IsLatest:  true,
 		IsOrdered: true,
 		GetTopic:  getEventTopic,
 		// A subscriber queues at most one snapshot and one sync per group, so
 		// no event is dropped below this many groups.
 		Capacity: maxPendingEvents,
-	}}
+	}
 }
 
 func getEventTopic(e tablinks.Event) string {
