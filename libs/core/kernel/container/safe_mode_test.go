@@ -34,10 +34,10 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 	ctx := t.Context()
 
 	t.Run("embedder reports not ready", func(t *testing.T) {
-		if embedderReady(searchOf(cfg)) {
+		if embedderReady(sourceOf(cfg)) {
 			t.Fatal("expected EmbedderReady to report false in safe mode")
 		}
-		indexing, asking, closer, err := searchSources(searchOf(cfg), ctx)
+		indexing, asking, closer, err := cfg.Embedders(ctx)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedders in safe mode, got %v", err)
 		}
@@ -48,7 +48,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		embedder, closer, err := searchSource(searchOf(cfg), ctx)
+		embedder, closer, err := cfg.Embedder(ctx)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedder in safe mode, got %v", err)
 		}
@@ -106,14 +106,14 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if got := host.Management.Mode.GetVaultPath(); got != "vault" {
 		t.Errorf("the host holds the vault %q", got)
 	}
-	if !embedderReady(searchOf(cfg)) {
+	if !embedderReady(sourceOf(cfg)) {
 		t.Fatal("an installed plugin is not ready")
 	}
 	safe := NewTestInstallation(Config{SafeMode: true}, cfg.TestPlugins)
-	if embedderReady(searchOf(safe)) {
+	if embedderReady(sourceOf(safe)) {
 		t.Error("the host started a plugin in safe mode")
 	}
-	if !embedderReady(searchOf(NewTestInstallation(Config{}, cfg.TestPlugins))) {
+	if !embedderReady(sourceOf(NewTestInstallation(Config{}, cfg.TestPlugins))) {
 		t.Error("the host stayed in safe mode once it was left")
 	}
 }

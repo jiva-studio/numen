@@ -78,7 +78,7 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	}
 	opening.API.Window = shell.NewWindow(opening.Target, nil)
 	install := newPluginInstall(c, endpoints, res)
-	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, install.Endpoints, res, nil)
+	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
 
 	api, log := opening.API, opening.Log
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)

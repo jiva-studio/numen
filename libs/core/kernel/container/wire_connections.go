@@ -142,7 +142,7 @@ func openRowLists(install pluginInstall, exec *PluginExecution, settingsDeps set
 func GetConnectionRows(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) connectioncall.Rows {
 	exec = getPluginExecution(exec)
 	install := newPluginInstall(c, endpoints, res)
-	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, install.Endpoints, res, nil)
+	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
 	return openRowLists(install, exec, settingsDeps, vaultDeps)
 }
 
