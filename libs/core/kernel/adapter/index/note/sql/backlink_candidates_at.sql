@@ -8,7 +8,7 @@ SELECT s.path, l.scheme, l.target, l.role,
 FROM links l
 JOIN sources s ON s.id = l.note_id
 WHERE l.scheme = 'note' AND l.target IN (SELECT value FROM json_each(?)) AND s.vault_id = ?
-UNION
+UNION ALL
 SELECT s.path, l.scheme, l.target, l.role,
        COALESCE(l.type, ''), COALESCE(l.why, ''), COALESCE(l.label, ''), COALESCE(l.marker, ''), l.position
 FROM links l
