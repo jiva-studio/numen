@@ -79,17 +79,6 @@ const parseSettingsText = (text: string): JsonValue | undefined => {
   }
 }
 
-const readVault = async (api: SettingsStoreApi, words: Words, say: MessageWriter) => {
-  const answer = await askVault(api)
-  if (answer === undefined) return undefined
-  const file = parseSettingsText(answer.written)
-  if (file === undefined) {
-    say(words.unreadSettings, 'error')
-    return undefined
-  }
-  return { answer, file }
-}
-
 export function createSettingsStore(api: SettingsStoreApi, words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
   const target = shallowRef<JsonValue>({})
@@ -117,13 +106,9 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
     },
   )
 
-  /** The settings values, requested once the window is up and after a change by another writer. */
-  const start = async (): Promise<void> => {
-    const read = await readVault(api, words, say)
-    if (read === undefined) return
-    const { answer } = read
+  const applySettings = (answer: Configuration, file: JsonValue) => {
     const isTaken = requested.takeAnswer(answer.version, () => {
-      target.value = read.file
+      target.value = file
       path.value = answer.path
       plugins.value = answer.plugins ?? []
       app.value = answer.app ?? []
@@ -137,6 +122,21 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
     plugins.value = values.plugins
     app.value = values.app
     hasDeclarations = true
+  }
+
+  const start = async (): Promise<void> => {
+    const answer = await api.getSettings()
+    const file = parseSettingsText(answer.written)
+    if (file === undefined) throw new Error(words.unreadSettings)
+    applySettings(answer, file)
+  }
+
+  const refresh = async (): Promise<void> => {
+    const answer = await askVault(api)
+    if (answer === undefined) return
+    const file = parseSettingsText(answer.written)
+    if (file === undefined) say(words.unreadSettings, 'error')
+    else applySettings(answer, file)
   }
 
   const getSetting = (path: readonly string[]): JsonValue | undefined => {
@@ -178,6 +178,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
 
   return {
     start,
+    refresh,
     /** The batches of the stream of changes of the settings, emitted as the window follows them. */
     changes: createEmitter<readonly SettingEdit[]>(),
     state: { target, path, plugins, app },

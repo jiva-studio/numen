@@ -2,6 +2,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
+import { useVaults } from '@/entities/vault'
+import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
+import { createMessageLog } from '@/shared/model/notices/messages'
 import { createAppStart, type StartDeps } from './createAppStart'
 import { createAppStop, type StopDeps } from './createAppStop'
 
@@ -314,4 +317,48 @@ describe('a window mounting while the settings never answer', () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
     expect(calls).not.toContain('startWindow')
   })
+})
+
+describe('a window opening with its vault and settings stores', () => {
+  it.each(['vault', 'settings', 'malformed settings'])(
+    'stops at a failed %s read and opens after a successful retry',
+    async (failure) => {
+      let isAvailable = false
+      const log = createMessageLog()
+      const listVaults = vi.fn(async () => {
+        if (!isAvailable && failure === 'vault') throw new Error('vault offline')
+        return { vaults: [], showing: '' }
+      })
+      const vaults = useVaults({ listVaults, log })
+      const getSettings = vi.fn(async () => {
+        if (!isAvailable && failure === 'settings') throw new Error('settings offline')
+        const written = !isAvailable && failure === 'malformed settings' ? '{' : '{}'
+        return { written, path: '/numen.json', version: 1n }
+      })
+      const settings = createSettingsStore(
+        { getSettings, updateSettings: vi.fn() },
+        SETTINGS_WORDS,
+        log.getWriter('configured'),
+      )
+      const { bootstrap, calls, view } = setup({
+        loadVaults: vaults.loadVaults,
+        startSettings: settings.start,
+      })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+
+      const message =
+        failure === 'malformed settings' ? SETTINGS_WORDS.unreadSettings : `${failure} offline`
+      expect(bootstrap().failure.value).toBe(message)
+      expect(getSettings).toHaveBeenCalledTimes(failure === 'vault' ? 0 : 1)
+      expect(calls).toEqual([])
+
+      isAvailable = true
+      await bootstrap().retry()
+
+      expect(bootstrap().failure.value).toBe('')
+      expect(settings.state.path.value).toBe('/numen.json')
+      expect(calls).toEqual(['startPlugins', 'startLayout', 'startWindow', 'startEditing'])
+      view.unmount()
+    },
+  )
 })

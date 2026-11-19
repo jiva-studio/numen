@@ -5,5 +5,5 @@
 
 export const SETTINGS_WORDS = {
   unturned: 'Setting not saved:',
-  unreadSettings: 'Settings unreadable. Showing the last loaded values.',
+  unreadSettings: 'The settings file could not be read.',
 }
