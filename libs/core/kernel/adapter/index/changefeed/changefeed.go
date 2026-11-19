@@ -80,15 +80,21 @@ func Record(ctx context.Context, tx *sqlwrite.Transaction, vault, source int64, 
 
 // RecordNoteChange includes the previous note type among the types affected by the event.
 func RecordNoteChange(ctx context.Context, tx *sqlwrite.Transaction, vault, source int64, event string, previous domain.NoteType) error {
-	return record(ctx, tx, vault, source, event, previous, "{}")
+	return record(ctx, tx, vault, source, event, noteTypeHistory{previous: previous, sequences: "{}"})
 }
 
-func record(ctx context.Context, tx *sqlwrite.Transaction, vault, source int64, event string, previous domain.NoteType, history string) error {
+// noteTypeHistory holds the former type of a retyped note and the type sequences retained on removal.
+type noteTypeHistory struct {
+	previous  domain.NoteType
+	sequences string
+}
+
+func record(ctx context.Context, tx *sqlwrite.Transaction, vault, source int64, event string, history noteTypeHistory) error {
 	seq, err := getNextSeq(ctx, tx, vault)
 	if err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, getStatement("save_change"), vault, source, event, seq, string(previous), history); err != nil {
+	if _, err := tx.ExecContext(ctx, getStatement("save_change"), vault, source, event, seq, string(history.previous), history.sequences); err != nil {
 		return fmt.Errorf("record %s of source %d: %w", event, source, err)
 	}
 	return nil
@@ -103,7 +109,7 @@ func RecordRemoved(ctx context.Context, tx *sqlwrite.Transaction, vault, source 
 	if _, err := tx.ExecContext(ctx, getStatement("clear_changes"), vault, source); err != nil {
 		return fmt.Errorf("clear the changes of source %d: %w", source, err)
 	}
-	return record(ctx, tx, vault, source, manifest.EventFileRemoved, "", history)
+	return record(ctx, tx, vault, source, manifest.EventFileRemoved, noteTypeHistory{sequences: history})
 }
 
 func getNextSeq(ctx context.Context, tx *sqlwrite.Transaction, vault int64) (int64, error) {
