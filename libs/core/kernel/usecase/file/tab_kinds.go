@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
@@ -13,7 +14,18 @@ type TabKindChooser interface {
 	Execute(path string, noteType domain.NoteType, properties map[string]any) string
 }
 
+type batchTabKindChooser interface {
+	ChooseMany(heads map[string]frontmatter.Head) map[string]string
+}
+
 func chooseTabKinds(folder Folder, chooser TabKindChooser) map[string]string {
+	if batch, ok := chooser.(batchTabKindChooser); ok {
+		heads := make(map[string]frontmatter.Head, len(folder.Properties))
+		for path, properties := range folder.Properties {
+			heads[path] = frontmatter.Head{Type: folder.Types[path], Values: properties}
+		}
+		return batch.ChooseMany(heads)
+	}
 	kinds := map[string]string{}
 	for path, properties := range folder.Properties {
 		if kind := chooser.Execute(path, folder.Types[path], properties); kind != "" {
@@ -44,6 +56,9 @@ func (u *ListTabKinds) Execute(ctx context.Context, v domain.Vault, paths []stri
 	heads, err := u.heads.GetHeads(ctx, v.ID, paths)
 	if err != nil {
 		return nil, err
+	}
+	if batch, ok := u.chooser.(batchTabKindChooser); ok {
+		return batch.ChooseMany(heads), nil
 	}
 	for path, head := range heads {
 		if kind := u.chooser.Execute(path, head.Type, head.Values); kind != "" {
