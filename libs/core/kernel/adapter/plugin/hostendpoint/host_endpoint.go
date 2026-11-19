@@ -11,6 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
@@ -141,8 +143,8 @@ func (e *Endpoint) Authorize(header, permission string) (string, error) {
 }
 
 // IsTakingFile reports whether the plugin takes the file at the path, as the manifests of the plugins declare.
-func (e *Endpoint) IsTakingFile(pluginID, path string) bool {
-	return e.callers.Files == nil || e.callers.Files.IsTakingFile(pluginID, path)
+func (e *Endpoint) IsTakingFile(pluginID, path string, noteTypes []domain.NoteType) bool {
+	return e.callers.Files == nil || e.callers.Files.IsTakingFile(pluginID, path, noteTypes)
 }
 
 func checkLoopback(address string) error {

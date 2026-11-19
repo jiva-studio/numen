@@ -37,7 +37,7 @@ func (e *lookupsCalls) ListFileChanges(
 	}
 	changes := make([]*v1.FileChange, 0, len(page.Changes))
 	for _, one := range page.Changes {
-		if !e.auth.IsTakingFile(pluginID, one.Path) {
+		if !e.auth.IsTakingFile(pluginID, one.Path, one.NoteTypes) {
 			continue
 		}
 		changes = append(changes, &v1.FileChange{SourceId: int64(one.SourceID), Path: one.Path, Event: one.Event, Seq: one.Seq})

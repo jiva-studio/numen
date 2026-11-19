@@ -76,7 +76,7 @@ func (Runtime) IsEnabled(string) bool { return false }
 func (Runtime) EmitEvent(string) {}
 
 // EmitFilesChanged has no plugin to tell.
-func (Runtime) EmitFilesChanged(string, []domain.ContentType) {}
+func (Runtime) EmitFilesChanged(string, []domain.FileType) {}
 
 // SetOnFailureCleared is accepted and ignored: no failure is cleared.
 func (Runtime) SetOnFailureCleared(func(string)) {}

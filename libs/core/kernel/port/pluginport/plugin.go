@@ -69,7 +69,7 @@ type PluginEventEmitter interface {
 	EmitEvent(event string)
 	// EmitFilesChanged emits the onFilesChanged event of the vault to the plugins that take a file of one of
 	// the types.
-	EmitFilesChanged(vaultID string, types []domain.ContentType)
+	EmitFilesChanged(vaultID string, types []domain.FileType)
 }
 
 // PluginFailures tells the plugins whose start failed.

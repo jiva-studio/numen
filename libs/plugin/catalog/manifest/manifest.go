@@ -437,26 +437,34 @@ func isValidActivationEvent(event string) bool {
 	return isMasked
 }
 
-func getFilesChangedMask(event string) (domain.ContentType, bool) {
+func getFilesChangedMask(event string) (domain.FileType, bool) {
 	text, hasPrefix := strings.CutPrefix(event, ActivationEventFilesChanged+":")
 	if !hasPrefix {
-		return "", false
+		return domain.FileType{}, false
+	}
+	if note, ok := strings.CutPrefix(text, "note:"); ok {
+		return domain.FileType{Note: domain.NoteType(note)}, manifestNoteTypePattern.MatchString(note)
 	}
 	mask, err := domain.ParseContentType(text)
-	return mask, err == nil
+	return domain.FileType{Content: mask}, err == nil
 }
 
 // IsTakingFileTypes reports whether the plugin takes a file of one of the types: it declares onFilesChanged
 // without a mask, or with a mask one of the types matches, or declares no onFilesChanged event and so
 // filters nothing.
-func (m Manifest) IsTakingFileTypes(types []domain.ContentType) bool {
+func (m Manifest) IsTakingFileTypes(types []domain.FileType) bool {
 	isMasked := false
 	for _, declared := range m.ActivationEvents {
 		if declared == ActivationEventFilesChanged {
 			return true
 		}
 		mask, hasMask := getFilesChangedMask(declared)
-		if hasMask && slices.ContainsFunc(types, mask.Matches) {
+		if hasMask && slices.ContainsFunc(types, func(file domain.FileType) bool {
+			if mask.Note != "" {
+				return mask.Note == file.Note
+			}
+			return mask.Content.Matches(file.Content)
+		}) {
 			return true
 		}
 		isMasked = isMasked || hasMask

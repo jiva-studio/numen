@@ -28,7 +28,7 @@ func TestFilesChangedWakesOnlyThePluginsThatTakeTheChangedTypes(t *testing.T) {
 		},
 	)
 
-	host.Management.Events.EmitFilesChanged("vault-1", []domain.ContentType{host.Management.ContentTypes.GetContentType("books/river.pdf")})
+	host.Management.Events.EmitFilesChanged("vault-1", []domain.FileType{{Content: host.Management.ContentTypes.GetContentType("books/river.pdf")}})
 	if err := host.Management.Events.GetEventBus().Flush(t.Context()); err != nil {
 		t.Fatal(err)
 	}
@@ -61,8 +61,33 @@ func TestIsTakingFileMatchesTheMasksOfTheActivationEvent(t *testing.T) {
 		{"md.test.pdf", "books/lake.epub", false},
 		{"md.test.tags", "books/lake.epub", true},
 	} {
-		if got := host.Management.ContentTypes.IsTakingFile(tc.pluginID, tc.path); got != tc.want {
+		if got := host.Management.ContentTypes.IsTakingFile(tc.pluginID, tc.path, nil); got != tc.want {
 			t.Errorf("%s takes %s: %v, want %v", tc.pluginID, tc.path, got, tc.want)
 		}
+	}
+}
+
+func TestNoteTypeMaskSelectsEventsAndFeedRows(t *testing.T) {
+	const id = "md.test.articles"
+	recorder := &eventRecorder{}
+	host := newEventHost(t,
+		map[string]catalogmanifest.Manifest{id: {ActivationEvents: []string{"onFilesChanged:note:article"}}},
+		map[string]int{id: servePlugin(t, recorder)},
+	)
+	for _, kind := range []domain.NoteType{domain.TypeNote, "article"} {
+		host.Management.Events.EmitFilesChanged("vault-1", []domain.FileType{{Content: "text/markdown", Note: kind}})
+		if err := host.Management.Events.GetEventBus().Flush(t.Context()); err != nil {
+			t.Fatal(err)
+		}
+		if got := host.Management.ContentTypes.IsTakingFile(id, "paper.md", []domain.NoteType{kind}); got != (kind == "article") {
+			t.Errorf("matches feed row of type %q = %v", kind, got)
+		}
+	}
+	event := protocol.GetFilesChangedEvent("vault-1")
+	if _, err := host.Management.Events.TriggerEvent(t.Context(), event); err != nil {
+		t.Fatal(err)
+	}
+	if got := recorder.getEvents(); !slices.Equal(got, []string{event}) {
+		t.Errorf("events = %v, want a single article change", got)
 	}
 }

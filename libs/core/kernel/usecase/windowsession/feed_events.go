@@ -17,7 +17,7 @@ const FeedQuietPeriod = 500 * time.Millisecond
 // notified of. WatchWrites calls report after each committed write of the index that can change the feed
 // of the vault, until the function it returns is called. WatchPlugins reports each time the plugin host
 // applied settings or forgot the failure of a plugin, and the function it returns stops the reports.
-// ReadHead returns the head of the feed, ListPaths the paths of the files of the changes after one number
+// ReadHead returns the head of the feed, ListFiles the paths of the files of the changes after one number
 // and up to another, and GetContentType the type of a file by its path. Emit sends the event of the vault
 // with the types of the files the event covers. Writes closer together than Quiet are one event. The watch
 // starts from the head the feed holds when the vault opens, before the passes of the vault write anything,
@@ -29,9 +29,9 @@ type FeedEvents struct {
 	WatchWrites    func(id domain.VaultID, report func()) func()
 	WatchPlugins   func() (<-chan struct{}, func())
 	ReadHead       func(ctx context.Context, id domain.VaultID) (filechange.Head, error)
-	ListPaths      func(ctx context.Context, id domain.VaultID, after, upTo int64) ([]string, error)
+	ListFiles      func(ctx context.Context, id domain.VaultID, after, upTo int64) ([]filechange.File, error)
 	GetContentType func(path string) domain.ContentType
-	Emit           func(v domain.Vault, types []domain.ContentType)
+	Emit           func(v domain.Vault, types []domain.FileType)
 	Quiet          time.Duration
 	After          func(time.Duration) <-chan time.Time
 }
@@ -39,7 +39,7 @@ type FeedEvents struct {
 // Start begins the watch of the vault and returns the loop that sends its events until ctx ends, or nil
 // where a part is missing.
 func (f FeedEvents) Start(ctx context.Context, v domain.Vault) func() {
-	if f.WatchWrites == nil || f.ReadHead == nil || f.ListPaths == nil || f.GetContentType == nil || f.Emit == nil {
+	if f.WatchWrites == nil || f.ReadHead == nil || f.ListFiles == nil || f.GetContentType == nil || f.Emit == nil {
 		return nil
 	}
 	var initial filechange.Cursor
@@ -126,16 +126,16 @@ func (l *feedLoop) fail(retry retryState, isForced bool) retryState {
 	return retriedPlain
 }
 
-func (l *feedLoop) listTypes(ctx context.Context, after, upTo int64) ([]domain.ContentType, error) {
-	paths, err := l.events.ListPaths(ctx, l.vault.ID, after, upTo)
+func (l *feedLoop) listTypes(ctx context.Context, after, upTo int64) ([]domain.FileType, error) {
+	files, err := l.events.ListFiles(ctx, l.vault.ID, after, upTo)
 	if err != nil {
 		return nil, err
 	}
-	types := make([]domain.ContentType, 0, len(paths))
-	for _, path := range paths {
-		types = append(types, l.events.GetContentType(path))
+	types := make([]domain.FileType, 0, len(files))
+	for _, file := range files {
+		types = append(types, domain.FileType{Content: l.events.GetContentType(file.Path), Note: file.NoteType})
 	}
-	slices.Sort(types)
+	slices.SortFunc(types, domain.CompareFileTypes)
 	return slices.Compact(types), nil
 }
 

@@ -64,7 +64,7 @@ type LogWriter interface {
 
 // FileTypes tells which files a plugin takes, by the types its manifest declares.
 type FileTypes interface {
-	IsTakingFile(pluginID, path string) bool
+	IsTakingFile(pluginID, path string, noteTypes []domain.NoteType) bool
 }
 
 // ProcessRelease stops the process of a plugin that has finished its work: at once where it holds no

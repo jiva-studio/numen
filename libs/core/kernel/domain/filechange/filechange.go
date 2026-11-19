@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ErrInvalidQuery is a query over the limits of a read, or one naming an event the feed does not keep.
@@ -53,10 +54,17 @@ type SourceID int64
 // stays the same when the file moves, its path now, or where it was for a removal, and the number of the
 // change.
 type Change struct {
-	SourceID SourceID
+	NoteTypes []domain.NoteType
+	SourceID  SourceID
+	Path      string
+	Event     string
+	Seq       int64
+}
+
+// File identifies a changed file by its path and its indexed note type at the time of the event.
+type File struct {
 	Path     string
-	Event    string
-	Seq      int64
+	NoteType domain.NoteType
 }
 
 // Query names the changes a read returns: those after Since of the Events, at most Limit.

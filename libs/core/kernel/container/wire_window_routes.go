@@ -385,9 +385,9 @@ func getFeedStart(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps 
 		WatchWrites:    db.FeedChanges().Watch,
 		WatchPlugins:   settingsDeps.PluginChanges.Subscribe,
 		ReadHead:       db.FileChanges().GetHead,
-		ListPaths:      db.FileChanges().ListChangedPaths,
+		ListFiles:      db.FileChanges().ListChangedFiles,
 		GetContentType: exec.Watch.GetContentType,
-		Emit: func(v domain.Vault, types []domain.ContentType) {
+		Emit: func(v domain.Vault, types []domain.FileType) {
 			exec.Runtime.EmitFilesChanged(string(v.ID), types)
 		},
 		Quiet: windowsession.FeedQuietPeriod,

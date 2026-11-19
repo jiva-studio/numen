@@ -28,12 +28,12 @@ func checkFeedTypes(t *testing.T, id string, takes, ignores []domain.ContentType
 			}
 		}
 		for _, kind := range takes {
-			if !one.IsTakingFileTypes([]domain.ContentType{kind}) {
+			if !one.IsTakingFileTypes([]domain.FileType{{Content: kind}}) {
 				t.Errorf("%s ignores %s", id, kind)
 			}
 		}
 		for _, kind := range ignores {
-			if one.IsTakingFileTypes([]domain.ContentType{kind}) {
+			if one.IsTakingFileTypes([]domain.FileType{{Content: kind}}) {
 				t.Errorf("%s takes %s", id, kind)
 			}
 		}
