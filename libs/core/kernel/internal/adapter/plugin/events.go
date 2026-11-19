@@ -32,7 +32,7 @@ type Events struct {
 	bus       *eventbus.Bus
 
 	mu        sync.Mutex
-	fileTypes map[string][]domain.ContentType
+	fileTypes map[string][]domain.FileType
 }
 
 // EventsDeps are what Events reads and starts, the clock that times the event bus, and where the failures of the
@@ -48,7 +48,7 @@ type EventsDeps struct {
 
 // NewEvents creates the events and the bus that debounces and throttles them.
 func NewEvents(d EventsDeps) *Events {
-	e := &Events{set: d.Set, mode: d.Mode, sups: d.Supervisors, activator: d.Activation, fileTypes: map[string][]domain.ContentType{}}
+	e := &Events{set: d.Set, mode: d.Mode, sups: d.Supervisors, activator: d.Activation, fileTypes: map[string][]domain.FileType{}}
 	e.bus = eventbus.New(e, d.Clock, 50*time.Millisecond, 250*time.Millisecond, d.Report)
 	return e
 }
@@ -64,20 +64,20 @@ func (e *Events) EmitEvent(event string) {
 // EmitFilesChanged queues the onFilesChanged event of the vault for the plugins that take a file of one of the
 // types: a plugin whose manifest declares onFilesChanged with a mask takes the types the mask matches, and
 // one that declares it bare takes every type. Types emitted before the event is delivered are delivered with it.
-func (e *Events) EmitFilesChanged(vaultID string, types []domain.ContentType) {
+func (e *Events) EmitFilesChanged(vaultID string, types []domain.FileType) {
 	if e.mode.IsSafeMode() || e.bus == nil {
 		return
 	}
 	event := protocol.GetFilesChangedEvent(vaultID)
 	e.mu.Lock()
 	merged := slices.Concat(e.fileTypes[event], types)
-	slices.Sort(merged)
+	slices.SortFunc(merged, domain.CompareFileTypes)
 	e.fileTypes[event] = slices.Compact(merged)
 	e.mu.Unlock()
 	e.bus.Publish(event)
 }
 
-func (e *Events) takeFileTypes(event string) ([]domain.ContentType, bool) {
+func (e *Events) takeFileTypes(event string) ([]domain.FileType, bool) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	types, isFiltered := e.fileTypes[event]
@@ -99,6 +99,9 @@ func (e *Events) closeBus(ctx context.Context) error {
 
 func (e *Events) listActivatedBy(event string) []string {
 	types, isFiltered := e.takeFileTypes(event)
+	if _, isFilesChanged := protocol.ReadFilesChangedEvent(event); isFilesChanged && !isFiltered {
+		return nil
+	}
 	v, release := e.set.view()
 	defer release()
 	candidates := make([]string, 0)

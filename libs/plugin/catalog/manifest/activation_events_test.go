@@ -48,22 +48,39 @@ func TestFilesChangedMaskSelectsMatchingTypes(t *testing.T) {
 	if !m.IsActivatedBy("onFilesChanged:vault-1") {
 		t.Error("the masked event does not activate the plugin")
 	}
-	if !m.IsTakingFileTypes([]domain.ContentType{"text/markdown", "image/png"}) || !m.IsTakingFileTypes([]domain.ContentType{"application/pdf"}) {
+	if !m.IsTakingFileTypes([]domain.FileType{{Content: "text/markdown"}, {Content: "image/png"}}) || !m.IsTakingFileTypes([]domain.FileType{{Content: "application/pdf"}}) {
 		t.Error("the plugin ignores a type its masks match")
 	}
-	if m.IsTakingFileTypes([]domain.ContentType{"text/markdown", "audio/mpeg"}) {
+	if m.IsTakingFileTypes([]domain.FileType{{Content: "text/markdown"}, {Content: "audio/mpeg"}}) {
 		t.Error("the plugin takes types no mask matches")
 	}
-	if !(Manifest{ID: "a.b", ActivationEvents: []string{"onFilesChanged"}}).IsTakingFileTypes([]domain.ContentType{"text/markdown"}) {
+	if !(Manifest{ID: "a.b", ActivationEvents: []string{"onFilesChanged"}}).IsTakingFileTypes([]domain.FileType{{Content: "text/markdown"}}) {
 		t.Error("a bare event does not take every type")
 	}
-	if !(Manifest{ID: "a.b", ActivationEvents: []string{"onIndexChanged"}}).IsTakingFileTypes([]domain.ContentType{"text/markdown"}) {
+	if !(Manifest{ID: "a.b", ActivationEvents: []string{"onIndexChanged"}}).IsTakingFileTypes([]domain.FileType{{Content: "text/markdown"}}) {
 		t.Error("a plugin with no files event filters its feed")
 	}
-	for _, declared := range []string{"onFilesChanged:", "onFilesChanged:image", "onIndexChanged:image/*"} {
+	for _, declared := range []string{"onFilesChanged:", "onFilesChanged:image", "onFilesChanged:note:", "onFilesChanged:note:two words", "onIndexChanged:image/*"} {
 		issues := (Manifest{ID: "a.b", ActivationEvents: []string{declared}}).ListIssues()
 		if !slices.ContainsFunc(issues, func(issue error) bool { return errors.Is(issue, ErrInvalidActivationEvent) }) {
 			t.Errorf("%q is a valid activation event", declared)
+		}
+	}
+}
+
+func TestFilesChangedMasksSelectNoteTypesAndContentTypes(t *testing.T) {
+	m := Manifest{ID: "a.b", ActivationEvents: []string{"onFilesChanged:note:link", "onFilesChanged:image/png"}}
+	if !m.IsActivatedBy("onFilesChanged:vault-1") {
+		t.Fatal("masked event did not match the vault event")
+	}
+	for file, want := range map[domain.FileType]bool{
+		{Content: "text/markdown", Note: "link"}:          true,
+		{Content: "text/markdown", Note: domain.TypeNote}: false,
+		{Content: "image/png"}:                            true,
+		{Content: "image/jpeg"}:                           false,
+	} {
+		if got := m.IsTakingFileTypes([]domain.FileType{file}); got != want {
+			t.Errorf("takes %+v = %v, want %v", file, got, want)
 		}
 	}
 }

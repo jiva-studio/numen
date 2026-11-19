@@ -116,7 +116,7 @@ func saveNote(
 	}
 	isFrontmatterChanged = previous != stored
 	if isFrontmatterChanged {
-		if err := changefeed.Record(ctx, tx, vault, row, manifest.EventNoteFrontmatterChanged); err != nil {
+		if err := changefeed.RecordNoteChange(ctx, tx, vault, row, manifest.EventNoteFrontmatterChanged, before.NoteType); err != nil {
 			return false, err
 		}
 	}

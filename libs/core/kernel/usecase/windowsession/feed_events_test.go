@@ -22,7 +22,7 @@ type feedStub struct {
 	quiet   chan time.Time
 	paths   map[int64]string
 	emitted chan domain.VaultID
-	types   chan []domain.ContentType
+	types   chan []domain.FileType
 	failing int
 	headErr int
 }
@@ -30,7 +30,7 @@ type feedStub struct {
 func newFeedStub() *feedStub {
 	return &feedStub{
 		plugins: make(chan struct{}), quiet: make(chan time.Time), paths: map[int64]string{},
-		emitted: make(chan domain.VaultID, 8), types: make(chan []domain.ContentType, 8),
+		emitted: make(chan domain.VaultID, 8), types: make(chan []domain.FileType, 8),
 	}
 }
 
@@ -52,23 +52,23 @@ func (s *feedStub) events() FeedEvents {
 			}
 			return s.head, nil
 		},
-		ListPaths: func(_ context.Context, _ domain.VaultID, after, upTo int64) ([]string, error) {
+		ListFiles: func(_ context.Context, _ domain.VaultID, after, upTo int64) ([]filechange.File, error) {
 			s.mu.Lock()
 			defer s.mu.Unlock()
 			if s.failing > 0 {
 				s.failing--
 				return nil, errors.New("the index is busy")
 			}
-			var out []string
+			var out []filechange.File
 			for seq, path := range s.paths {
 				if seq > after && seq <= upTo {
-					out = append(out, path)
+					out = append(out, filechange.File{Path: path})
 				}
 			}
 			return out, nil
 		},
 		GetContentType: func(path string) domain.ContentType { return domain.ContentType("test/" + filepath.Ext(path)[1:]) },
-		Emit: func(v domain.Vault, types []domain.ContentType) {
+		Emit: func(v domain.Vault, types []domain.FileType) {
 			s.emitted <- v.ID
 			s.types <- types
 		},
@@ -247,7 +247,11 @@ func (s *feedStub) requireTypes(t *testing.T, want ...domain.ContentType) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("no event was emitted")
 	}
-	if got := <-s.types; !slices.Equal(got, want) {
+	content := make([]domain.ContentType, 0, len(want))
+	for _, file := range <-s.types {
+		content = append(content, file.Content)
+	}
+	if got := content; !slices.Equal(got, want) {
 		t.Errorf("the event covers the types %v, want %v", got, want)
 	}
 }
@@ -270,4 +274,29 @@ func TestAnEventCoversTheTypesOfTheFilesItsWritesChanged(t *testing.T) {
 	stub.plugins <- struct{}{}
 	stub.passQuiet(t)
 	stub.requireTypes(t, "test/epub", "test/pdf", "test/png")
+}
+
+func TestFeedEventIncludesTheContentAndNoteTypesOfEachChange(t *testing.T) {
+	events := FeedEvents{
+		ListFiles: func(context.Context, domain.VaultID, int64, int64) ([]filechange.File, error) {
+			return []filechange.File{
+				{Path: "article.md", NoteType: "article"},
+				{Path: "old-name.md", NoteType: "article"},
+				{Path: "plain.md", NoteType: domain.TypeNote},
+			}, nil
+		},
+		GetContentType: func(string) domain.ContentType { return "text/markdown" },
+	}
+	loop := feedLoop{events: events, vault: garden()}
+	got, err := loop.listTypes(t.Context(), 0, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []domain.FileType{
+		{Content: "text/markdown", Note: "article"},
+		{Content: "text/markdown", Note: domain.TypeNote},
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("changed file types = %+v, want %+v", got, want)
+	}
 }

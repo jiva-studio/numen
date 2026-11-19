@@ -1,12 +1,12 @@
 {
   "id": "md.numen.tools.media.importer",
   "name": "Media Importer",
-  "version": "2026.11.24",
+  "version": "2026.11.25",
   "protocol": 1,
   "description": "Saves web articles and downloads online videos for offline playback",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onFilesChanged:text/markdown"],
+  "activationEvents": ["onFilesChanged:note:link"],
   "contributes": {
     "textKinds": [
       { "kind": "article", "title": "Article" },

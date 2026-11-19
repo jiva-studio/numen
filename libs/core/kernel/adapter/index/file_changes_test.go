@@ -2,6 +2,7 @@ package index
 
 import (
 	"path/filepath"
+	"reflect"
 	"slices"
 	"testing"
 	"time"
@@ -118,8 +119,8 @@ func TestAMovedFileKeepsItsSourceAndHasOneMoveChange(t *testing.T) {
 	}
 
 	changes := listChanges(t, db, v, before)
-	want := []filechange.Change{{SourceID: id, Path: "science/Entropy.md", Event: manifest.EventFileMoved, Seq: before + 1}}
-	if !slices.Equal(changes, want) {
+	want := []filechange.Change{{SourceID: id, Path: "science/Entropy.md", Event: manifest.EventFileMoved, Seq: before + 1, NoteTypes: []domain.NoteType{domain.TypeNote}}}
+	if !reflect.DeepEqual(changes, want) {
 		t.Errorf("the move recorded %+v, want %+v", changes, want)
 	}
 }
@@ -230,5 +231,55 @@ func TestTheStartOfTheFeedReadsAfterTrimmedRemovals(t *testing.T) {
 	head := getFeedHead(t, db, v)
 	if start := (filechange.Cursor{FeedID: head.Cursor.FeedID, Seq: 0}); head.IsReset(start) {
 		t.Errorf("the start of the feed resets: head %+v", head)
+	}
+}
+
+func TestFeedKeepsChangedNoteTypesSinceTheCursor(t *testing.T) {
+	db := openDB(t)
+	v := getFirstVault()
+	const path = "source.md"
+	write := func(kind domain.NoteType, body string) {
+		t.Helper()
+		note := domain.Note{
+			FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: getWalkedTime()},
+			Type:     kind, Body: body, Frontmatter: map[string]any{"type": string(kind), "title": body},
+		}
+		if err := saveCut(t.Context(), db, v.ID, []domain.Note{note}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	check := func(after int64, kinds ...domain.NoteType) {
+		t.Helper()
+		files, err := db.FileChanges().ListChangedFiles(t.Context(), v.ID, after, getFeedHead(t, db, v).Cursor.Seq)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var got []domain.NoteType
+		for _, file := range files {
+			if file.Path != path {
+				t.Errorf("changed path = %q, want %q", file.Path, path)
+			}
+			got = append(got, file.NoteType)
+		}
+		slices.Sort(got)
+		if !slices.Equal(got, kinds) {
+			t.Errorf("changed note types = %v, want %v", got, kinds)
+		}
+	}
+	write("link", "one")
+	cursor := getFeedHead(t, db, v).Cursor.Seq
+	write(domain.TypeNote, "second")
+	changed := getFeedHead(t, db, v).Cursor.Seq
+	write(domain.TypeNote, "another title")
+	check(cursor, "link", domain.TypeNote)
+	check(changed, domain.TypeNote)
+	if err := db.Notes().Remove(t.Context(), v.ID, []string{path}); err != nil {
+		t.Fatal(err)
+	}
+	check(cursor, "link", domain.TypeNote)
+	check(changed, domain.TypeNote)
+	page := listChanges(t, db, v, changed)
+	if len(page) != 1 || !slices.Equal(page[0].NoteTypes, []domain.NoteType{domain.TypeNote}) {
+		t.Fatalf("changes since the note was retyped = %+v", page)
 	}
 }

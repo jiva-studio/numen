@@ -34,13 +34,14 @@ type State struct {
 	Size       int64
 	ModifiedAt int64
 	Hash       string
+	NoteType   domain.NoteType
 	IsFound    bool
 }
 
 // ReadState returns the source the vault holds at the path.
 func ReadState(ctx context.Context, tx *sqlwrite.Transaction, vault int64, path string) (State, error) {
 	var s State
-	err := tx.QueryRowContext(ctx, getStatement("source_state"), vault, path).Scan(&s.ID, &s.Size, &s.ModifiedAt, &s.Hash)
+	err := tx.QueryRowContext(ctx, getStatement("source_state"), vault, path).Scan(&s.ID, &s.Size, &s.ModifiedAt, &s.Hash, &s.NoteType)
 	if errors.Is(err, sql.ErrNoRows) {
 		return State{}, nil
 	}
@@ -63,7 +64,7 @@ func RecordSaved(ctx context.Context, tx *sqlwrite.Transaction, vault int64, pat
 	case !before.IsFound || before.ID != after.ID:
 		return Record(ctx, tx, vault, after.ID, manifest.EventFileAdded)
 	case before.Size != after.Size || before.ModifiedAt != after.ModifiedAt || isHashChanged(before.Hash, after.Hash):
-		return Record(ctx, tx, vault, after.ID, manifest.EventFileChanged)
+		return RecordNoteChange(ctx, tx, vault, after.ID, manifest.EventFileChanged, before.NoteType)
 	}
 	return nil
 }
@@ -74,11 +75,26 @@ func isHashChanged(before, after string) bool {
 
 // Record stores the event of the source as its latest, under the next number of the vault's feed.
 func Record(ctx context.Context, tx *sqlwrite.Transaction, vault, source int64, event string) error {
+	return RecordNoteChange(ctx, tx, vault, source, event, "")
+}
+
+// RecordNoteChange includes the previous note type among the types affected by the event.
+func RecordNoteChange(ctx context.Context, tx *sqlwrite.Transaction, vault, source int64, event string, previous domain.NoteType) error {
+	return record(ctx, tx, vault, source, event, noteTypeHistory{previous: previous, sequences: "{}"})
+}
+
+// noteTypeHistory holds the former type of a retyped note and the type sequences retained on removal.
+type noteTypeHistory struct {
+	previous  domain.NoteType
+	sequences string
+}
+
+func record(ctx context.Context, tx *sqlwrite.Transaction, vault, source int64, event string, history noteTypeHistory) error {
 	seq, err := getNextSeq(ctx, tx, vault)
 	if err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, getStatement("save_change"), vault, source, event, seq); err != nil {
+	if _, err := tx.ExecContext(ctx, getStatement("save_change"), vault, source, event, seq, string(history.previous), history.sequences); err != nil {
 		return fmt.Errorf("record %s of source %d: %w", event, source, err)
 	}
 	return nil
@@ -86,10 +102,14 @@ func Record(ctx context.Context, tx *sqlwrite.Transaction, vault, source int64, 
 
 // RecordRemoved replaces the events of the source with its removal.
 func RecordRemoved(ctx context.Context, tx *sqlwrite.Transaction, vault, source int64) error {
+	var history string
+	if err := tx.QueryRowContext(ctx, getStatement("note_type_history"), vault, source, manifest.EventFileRemoved).Scan(&history); err != nil {
+		return fmt.Errorf("read note type history of source %d: %w", source, err)
+	}
 	if _, err := tx.ExecContext(ctx, getStatement("clear_changes"), vault, source); err != nil {
 		return fmt.Errorf("clear the changes of source %d: %w", source, err)
 	}
-	return Record(ctx, tx, vault, source, manifest.EventFileRemoved)
+	return record(ctx, tx, vault, source, manifest.EventFileRemoved, noteTypeHistory{sequences: history})
 }
 
 func getNextSeq(ctx context.Context, tx *sqlwrite.Transaction, vault int64) (int64, error) {
@@ -163,7 +183,11 @@ func (f *Feed) ListFileChanges(
 	var out []filechange.Change
 	for rows.Next() {
 		var c filechange.Change
-		if err := rows.Scan(&c.SourceID, &c.Path, &c.Event, &c.Seq); err != nil {
+		var noteTypes []byte
+		if err := rows.Scan(&c.SourceID, &c.Path, &c.Event, &c.Seq, &noteTypes); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(noteTypes, &c.NoteTypes); err != nil {
 			return nil, err
 		}
 		out = append(out, c)
@@ -171,21 +195,21 @@ func (f *Feed) ListFileChanges(
 	return out, rows.Err()
 }
 
-// ListChangedPaths returns the paths of the files of the changes after the number after and up to the
-// number upTo, each once. A removed file has the path it had when it was removed.
-func (f *Feed) ListChangedPaths(ctx context.Context, vaultID domain.VaultID, after, upTo int64) (_ []string, err error) {
+// ListChangedFiles returns each affected path and note type once in the requested sequence range.
+// A removal retains the path of the removed file.
+func (f *Feed) ListChangedFiles(ctx context.Context, vaultID domain.VaultID, after, upTo int64) (_ []filechange.File, err error) {
 	rows, err := f.db.QueryContext(ctx, getStatement("changed_paths"), manifest.EventFileRemoved, string(vaultID), after, upTo)
 	if err != nil {
 		return nil, fmt.Errorf("list the changed files: %w", err)
 	}
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
-	var out []string
+	var out []filechange.File
 	for rows.Next() {
-		var path string
-		if err := rows.Scan(&path); err != nil {
+		var file filechange.File
+		if err := rows.Scan(&file.Path, &file.NoteType); err != nil {
 			return nil, err
 		}
-		out = append(out, path)
+		out = append(out, file)
 	}
 	return out, rows.Err()
 }
