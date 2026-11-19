@@ -202,3 +202,42 @@ it('keeps a module import from a closed window out of the restarted window', asy
   expect(activate).toHaveBeenCalledTimes(1)
   expect(loader.status.isPluginActive(BAR)).toBe(true)
 })
+
+it('keeps the last close in effect when it overtakes a restart', async () => {
+  const { loader, log } = createLoader()
+  await loader.trackPlugins([WORKER])
+  await loader.start()
+  await loader.close()
+  const restart = loader.start()
+  const close = loader.close()
+  await Promise.all([restart, close])
+  await loader.status.startPlugin(WORKER)
+  expect(log).toEqual([])
+})
+
+it('waits for the new window slots as soon as a restart is requested', async () => {
+  const loading = createSignal()
+  const finish = createSignal()
+  const loader = createTestPluginLoader({
+    host: createHost(),
+    fetch: async () => new Response(JSON.stringify(MANIFESTS[BAR])),
+    dynamicImport: async () => {
+      loading.settle()
+      await finish.promise
+      return {}
+    },
+  })
+  await loader.start()
+  await loader.close()
+  await loader.trackPlugins([BAR])
+  const restart = loader.start()
+  let isReady = false
+  const wait = loader.status.waitForInterface().then(() => {
+    isReady = true
+  })
+  await loading.promise
+  expect(isReady).toBe(false)
+  finish.settle()
+  await Promise.all([restart, wait])
+  expect(isReady).toBe(true)
+})

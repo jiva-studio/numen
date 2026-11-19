@@ -74,18 +74,26 @@ async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<
 
 interface ListenerDeps {
   readonly host: LoaderHost
-  readonly subscriptions: Map<string, Disposable>
   readonly activate: (id: string) => Promise<boolean>
   readonly deactivate: (id: string) => Promise<boolean>
 }
 
-function listenToPluginState(deps: ListenerDeps, pluginId: string) {
-  if (deps.subscriptions.has(pluginId) || !deps.host.onSettingChange) return
-  const sub = deps.host.onSettingChange<boolean>(pluginId, 'enabled', async (enabled) => {
-    if (isPluginEnabledValue(enabled)) await deps.activate(pluginId)
-    else await deps.deactivate(pluginId)
-  })
-  deps.subscriptions.set(pluginId, sub)
+function createSettingSubscriptions(deps: ListenerDeps) {
+  const subscriptions = new Map<string, Disposable>()
+  return {
+    listen: (id: string) => {
+      if (subscriptions.has(id) || !deps.host.onSettingChange) return
+      const sub = deps.host.onSettingChange<boolean>(id, 'enabled', async (enabled) => {
+        if (isPluginEnabledValue(enabled)) await deps.activate(id)
+        else await deps.deactivate(id)
+      })
+      subscriptions.set(id, sub)
+    },
+    close: () => {
+      for (const sub of subscriptions.values()) sub.dispose()
+      subscriptions.clear()
+    },
+  }
 }
 
 function resolveDefaultDeps(deps: PluginLoaderDeps) {
@@ -129,7 +137,13 @@ function createStartRuns(starting: LoaderState['starting']) {
   }
 }
 
-function createActivation(deps: PluginLoaderDeps, state: LoaderState, signal: AbortSignal) {
+interface LoaderLifetime {
+  readonly signal: AbortSignal
+  readonly previous: Promise<void> | undefined
+}
+
+function createActivation(deps: PluginLoaderDeps, state: LoaderState, lifetime: LoaderLifetime) {
+  const { signal } = lifetime
   const { host } = deps
   const defaults = resolveDefaultDeps(deps)
   const { activePlugins, failures, manifests, moduleLoaders } = state
@@ -137,7 +151,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState, signal: Ab
   const runs = createStartRuns(state.starting)
 
   const enqueue = <T>(id: string, task: () => Promise<T>): Promise<T> => {
-    const run = (queues.get(id) ?? Promise.resolve()).then(task)
+    const run = (queues.get(id) ?? lifetime.previous ?? Promise.resolve()).then(task)
     queues.set(
       id,
       run.then(
@@ -173,7 +187,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState, signal: Ab
   const deactivate = (id: string) => enqueue(id, () => deactivateEntry(activateContext, id))
 
   return {
-    signal,
+    lifetime,
     closePlugins: async () => {
       await Promise.all(queues.values())
       for (const id of activePlugins.value.keys()) await deactivate(id)
@@ -211,37 +225,40 @@ function createLoaderStatus(status: PluginStatus, waitForInterface: () => Promis
   }
 }
 
+function createInterfaceStarter(
+  activation: ReturnType<typeof createActivation>['activation'],
+  isEnabled: (id: string) => boolean,
+) {
+  return async (id: string): Promise<void> => {
+    if (!isEnabled(id) || !(await activation.isInterface(id).catch(() => false))) return
+    await activation.activatePlugin(id)
+  }
+}
+
 function createRuntime(
   deps: PluginLoaderDeps,
   status: PluginStatus,
   run: ReturnType<typeof createActivation>,
 ) {
   const { host } = deps
-  const { activation, signal } = run
+  const { activation, lifetime } = run
   const { activatePlugin, deactivatePlugin, loadModule } = activation
   const { moduleLoaders, tracked, isRunning, isEnabled, listPlugins } = status.state
-  const settingSubscriptions = new Map<string, Disposable>()
+  const settings = createSettingSubscriptions({
+    host,
+    activate: activatePlugin,
+    deactivate: deactivatePlugin,
+  })
   const interfaceStarted = createSignal()
 
-  const listenDeps = { host, subscriptions: settingSubscriptions }
-  const listen = (id: string) =>
-    listenToPluginState(
-      { ...listenDeps, activate: activatePlugin, deactivate: deactivatePlugin },
-      id,
-    )
-
-  /** A plugin listed while the window runs starts at once only where it fills a window slot. */
-  const startInterfacePlugin = async (id: string): Promise<void> => {
-    if (!isEnabled(id) || !(await activation.isInterface(id).catch(() => false))) return
-    await activatePlugin(id)
-  }
+  const startInterfacePlugin = createInterfaceStarter(activation, isEnabled)
 
   return {
     waitForInterface: () => interfaceStarted.promise,
     registerPluginModule: (id: string, loader: () => Promise<PluginModule>) => {
       moduleLoaders.set(id, loader)
       if (!isRunning.value) return
-      listen(id)
+      settings.listen(id)
       // Stryker disable next-line BlockStatement,CallExpression,OptionalChaining: activatePlugin handles its own errors inside activateEntry
       startInterfacePlugin(id).catch((error: Caught) => deps.onError?.(id, error))
     },
@@ -249,24 +266,32 @@ function createRuntime(
       for (const id of ids) {
         if (tracked.value.has(id)) continue
         tracked.value = new Set([...tracked.value, id])
-        if (!isRunning.value || signal.aborted) continue
-        listen(id)
+        if (!isRunning.value || lifetime.signal.aborted) continue
+        settings.listen(id)
         await startInterfacePlugin(id)
       }
     },
     start: async (): Promise<void> => {
+      if (lifetime.previous) await lifetime.previous
+      if (lifetime.signal.aborted) return
       isRunning.value = true
-      const pluginIds = listPlugins()
       const { settle: onInterfaceStarted } = interfaceStarted
-      const startDeps = { ...activation, load: loadModule, pluginIds, listen, isEnabled }
+      const startDeps = {
+        ...activation,
+        load: loadModule,
+        pluginIds: listPlugins(),
+        listen: settings.listen,
+        isEnabled,
+      }
       await startLoader({ ...startDeps, onInterfaceStarted }, activatePlugin).finally(
         onInterfaceStarted,
       )
     },
     close: async (): Promise<void> => {
+      interfaceStarted.settle()
+      if (lifetime.previous) await lifetime.previous
       isRunning.value = false
-      for (const sub of settingSubscriptions.values()) sub.dispose()
-      settingSubscriptions.clear()
+      settings.close()
       await run.closePlugins()
       for (const id of status.state.manifests.keys()) removePluginStyles(id)
       host.disposeAll()
@@ -274,9 +299,9 @@ function createRuntime(
   }
 }
 
-function createLoaderRun(deps: PluginLoaderDeps, status: PluginStatus) {
+function createLoaderRun(deps: PluginLoaderDeps, status: PluginStatus, previous?: Promise<void>) {
   const lifetime = new AbortController()
-  const run = createActivation(deps, status.state, lifetime.signal)
+  const run = createActivation(deps, status.state, { signal: lifetime.signal, previous })
   const { activation } = run
   status.state.starter.current = {
     start: activation.startPlugin,
@@ -312,10 +337,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
     trackPlugins: (ids: readonly string[]) => run.runtime.trackPlugins(ids),
     start: async () => {
       if (closing) {
-        const previous = run
-        await closing
-        if (previous !== run) return
-        run = createLoaderRun(deps, status)
+        run = createLoaderRun(deps, status, closing)
         closing = undefined
       }
       await run.runtime.start()
