@@ -94,7 +94,7 @@ func makeSampleVault(t *testing.T, cfg TestInstallation) string {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := vaultIdentity(cfg.buildVaultWiring()).EnsureIdentity(root, testsupport.GetEpoch()); err != nil {
+	if _, err := vaultIdentity(cfg.buildVaultWiring().Options).EnsureIdentity(root, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 	for name, body := range getOpenVaultsSamples() {
