@@ -28,24 +28,24 @@ import (
 
 // ApplySettings reads the settings file and returns the configuration with its values applied, and
 // the notices that reading it raised. An unconfigured installation applies the default settings.
-func (c Config) ApplySettings() (Config, []string, error) {
-	selected, err := settingsSettings(settingsOf(c))
+func (c Config) ApplySettings(host *PluginHost, res *Resources) (Config, []string, error) {
+	selected, err := settingsSettings(settingsOf(c, host, res))
 	if err != nil {
 		return c, nil, err
 	}
-	return applySettingsFile(c, selected), selected.Notices, nil
+	return applySettingsFile(c, host, res, selected), selected.Notices, nil
 }
 
-func applySettingsFile(c Config, s settingsadapter.File) Config {
+func applySettingsFile(c Config, host *PluginHost, res *Resources, s settingsadapter.File) Config {
 	c.machine = Machine{ResolvedCompute: settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(s.Performance.Profile)}
-	configurePluginHost(settingsOf(c), s)
+	configurePluginHost(settingsOf(c, host, res), s)
 	return c
 }
 
 // SetThemes gives the window the themes it can use: the catalog of themes, and the settings file that
 // stores the selection. The window keeps the themes the binary ships when the answer is a fault.
-func SetThemes(c Config, inst *editor.Installation, scales Scales, say func(string)) error {
-	service, err := settingsThemes(settingsOf(c), scales, say)
+func SetThemes(c Config, host *PluginHost, res *Resources, inst *editor.Installation, scales Scales, say func(string)) error {
+	service, err := settingsThemes(settingsOf(c, host, res), scales, say)
 	inst.SetThemes(service)
 	return err
 }

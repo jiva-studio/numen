@@ -14,7 +14,7 @@ import (
 // A container with no configuration builds no embedder, and the machine's own
 // settings are not read here.
 func TestAContainerWithoutSettingsEmbedsWithNothing(t *testing.T) {
-	cfg := container.NewConfig(container.Config{})
+	cfg := container.NewTestInstallation(container.Config{}, nil)
 	if cfg.EmbedderReady() {
 		t.Error("embedder is ready when no plugin host is configured")
 	}
@@ -45,7 +45,7 @@ func TestAContainerWithoutSettingsEmbedsWithNothing(t *testing.T) {
 }
 
 func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
-	cfg := container.NewConfig(container.Config{})
+	cfg := container.NewTestInstallation(container.Config{}, nil)
 	if cfg.EmbedderReady() {
 		t.Error("embedder is ready when no plugin host is configured")
 	}
@@ -80,15 +80,15 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 // When the embedding plugin is absent, search queries seamlessly fall back to
 // lexical full-text search without throwing errors.
 func TestSearchDegradesGracefullyWithoutPlugin(t *testing.T) {
-	db, err := container.OpenIndex(container.NewConfig(container.Config{
+	db, err := container.OpenIndex(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-	}), t.Context())
+	}, container.NewResources(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer testsupport.Close(t, db)
 
-	cfg := container.NewConfig(container.Config{})
+	cfg := container.NewTestInstallation(container.Config{}, nil)
 	var lastErr error
 	s := container.NewSearch(cfg, db, nil, func(err error) {
 		lastErr = err
@@ -133,7 +133,7 @@ func TestAPluginWithoutTheEmbeddingCapabilityIsNotTheProvider(t *testing.T) {
 		"targets": ["desktop.editor"],
 		"services": ["numen.v1.SearchSourceService"], "backend": {"entrypoint": "bin/vectors"}
 	}`)
-	cfg := container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)})
+	cfg := container.NewTestInstallation(container.Config{}, container.AdaptPluginHost(host))
 
 	if cfg.EmbedderReady() {
 		t.Error("a plugin without the embedding capability is the provider")

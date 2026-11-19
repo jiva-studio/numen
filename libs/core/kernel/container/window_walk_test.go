@@ -17,13 +17,16 @@ func TestAVaultReportsNoOperationsOnceItIsRead(t *testing.T) {
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
-	})
-	if _, err := cfg.AddVault(root, "alpha"); err != nil {
+	cfg := container.NewTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		},
+	}, nil)
+	if _, err := cfg.AddVault(cfg.PluginHost, cfg.Resources, root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
-	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
+	installation, err := container.OpenWindow(cfg.Config, cfg.PluginHost, cfg.Resources, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

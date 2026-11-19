@@ -12,11 +12,13 @@ import (
 // windowVaults is a configuration with the list of vaults and the cache a window works the vaults
 // of the plugins through.
 type windowVaults struct {
-	cfg container.Config
+	cfg container.TestInstallation
 	db  *container.Index
 }
 
-func (w windowVaults) GetRefresh() vault.Refresh { return container.GetRefresh(w.cfg, w.db) }
+func (w windowVaults) GetRefresh() vault.Refresh {
+	return container.GetRefresh(w.cfg, w.db)
+}
 
 func (w windowVaults) OpenNotes(index edit.IndexUpdater) container.NoteUseCases {
 	return container.Notes(w.cfg, w.db, index)

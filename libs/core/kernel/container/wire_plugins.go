@@ -28,16 +28,15 @@ import (
 )
 
 // StopPlugins stops every plugin the host runs.
-func (c Config) StopPlugins(ctx context.Context) error {
-	return stopPlugins(plugins(c), ctx)
+func StopPlugins(host *PluginHost, ctx context.Context) error {
+	return stopPlugins(getPluginHost(host), ctx)
 }
 
 func openPluginWork(
-	c Config, db *Index, v domain.Vault, tasks *run.Tasks, models *run.Lock,
+	a pluginsWiring, db *Index, v domain.Vault, tasks *run.Tasks, models *run.Lock,
 ) (pluginsWiring, *run.PluginWork, error) {
-	setPluginVaultPath(plugins(c), v.Path)
-	a := assemble(c, newTextVersions(vaultOf(c), db))
-	if err := installCurrentVault(a, c, db, v); err != nil {
+	setPluginVaultPath(a, v.Path)
+	if err := installCurrentVault(a, db, v); err != nil {
 		return pluginsWiring{}, nil, err
 	}
 	work := pluginsOpenPluginWork(a, tasks, models)
@@ -45,8 +44,8 @@ func openPluginWork(
 	return a, work, nil
 }
 
-func installCurrentVault(a pluginsWiring, c Config, db *Index, v domain.Vault) error {
-	registry, err := c.registry()
+func installCurrentVault(a pluginsWiring, db *Index, v domain.Vault) error {
+	registry, err := vaultRegistry(a.vault.RegistryPath)
 	if err != nil {
 		return err
 	}
@@ -55,8 +54,8 @@ func installCurrentVault(a pluginsWiring, c Config, db *Index, v domain.Vault) e
 }
 
 // GetPluginServices is the forwarding of the services plugins serve to the windows.
-func GetPluginServices(c Config) editor.PluginServices {
-	return getPluginServices(plugins(c))
+func GetPluginServices(c Config, host *PluginHost, res *Resources) editor.PluginServices {
+	return getPluginServices(plugins(c, host, res))
 }
 
 // PluginRuntime is what runs, finds and addresses the plugins.

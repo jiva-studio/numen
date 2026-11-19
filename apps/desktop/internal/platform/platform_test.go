@@ -120,28 +120,29 @@ func TestPluginDiscoveryDevMode(t *testing.T) {
 	}
 }
 
-func TestGetConfig(t *testing.T) {
+func TestNewPluginServices(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	cfg := GetConfig()
-	if cfg.PluginHost == nil {
+	host, res := NewPluginServices(TargetEditor)
+	if host == nil {
 		t.Fatal("expected configured plugin host")
 	}
-	if cfg.PluginCatalog.InstallDir == "" || cfg.PluginCatalog.CacheDir == "" {
-		t.Errorf("expected InstallDir and CacheDir to be set, got %+v", cfg.PluginCatalog)
+	if res.PluginCatalog.InstallDir == "" || res.PluginCatalog.CacheDir == "" {
+		t.Errorf("expected InstallDir and CacheDir to be set, got %+v", res.PluginCatalog)
 	}
 
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("XDG_CACHE_HOME", "")
 	t.Setenv("HOME", "")
-	cfgNoHome := GetConfig()
-	if cfgNoHome.PluginCatalog.InstallDir != "" || cfgNoHome.PluginCatalog.CacheDir != "" {
-		t.Errorf("expected empty InstallDir and CacheDir without HOME, got %+v", cfgNoHome.PluginCatalog)
+	_, noHome := NewPluginServices(TargetEditor)
+	if noHome.PluginCatalog.InstallDir != "" || noHome.PluginCatalog.CacheDir != "" {
+		t.Errorf("expected empty InstallDir and CacheDir without HOME, got %+v", noHome.PluginCatalog)
 	}
 }
 
-func TestGetConfigNamesTheSystemKeychain(t *testing.T) {
-	if GetConfigFor(TargetFlashcards).KeyStore == nil {
+func TestPluginServicesUseTheSystemKeychain(t *testing.T) {
+	_, res := NewPluginServices(TargetFlashcards)
+	if res.KeyStore == nil {
 		t.Error("the desktop configuration names no key store")
 	}
 
@@ -201,7 +202,8 @@ func TestGetConfigListsThePluginsOfTheIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sources := GetConfigFor(TargetEditor).PluginCatalog.Sources
+	_, res := NewPluginServices(TargetEditor)
+	sources := res.PluginCatalog.Sources
 
 	if len(sources) != 2 {
 		t.Fatalf("%d catalog sources, want the plugin folders and the plugin index", len(sources))

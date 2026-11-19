@@ -80,11 +80,10 @@ func (h *downEmbeddingHost) lend() *container.PluginHost {
 func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
 	host := newDownEmbeddingHost(t)
-	target := container.NewConfig(container.Config{
-		PluginHost:         host.lend(),
+	target := container.NewTestInstallation(container.Config{
 		ShouldRebuildIndex: true,
 		Paths:              container.Paths{ServiceDir: ".numen"},
-	})
+	}, host.lend())
 
 	indexed, _, closeSource, err := target.Embedders(t.Context())
 	if err != nil {

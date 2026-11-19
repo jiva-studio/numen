@@ -28,7 +28,8 @@ import (
 const appName = "numen-flashcards"
 
 func main() {
-	cfg := makeConfig(os.Stderr)
+	cfg := platform.GetConfig()
+	host, res := makeServices(os.Stderr)
 	var showVersion bool
 	var debug debugOptions
 	flag.StringVar(&cfg.IndexPath, "index", cfg.IndexPath, "path to the index database")
@@ -45,37 +46,37 @@ func main() {
 		return
 	}
 
-	if err := run(cfg, debug); err != nil {
+	if err := run(cfg, host, res, debug); err != nil {
 		fmt.Fprintln(os.Stderr, appName+":", err)
 		os.Exit(1)
 	}
 }
 
-func makeConfig(out io.Writer) container.Config {
-	cfg := platform.GetConfigFor(platform.TargetFlashcards)
-	cfg.ErrorHandler = func(err error) {
+func makeServices(out io.Writer) (*container.PluginHost, *container.Resources) {
+	host, res := platform.NewPluginServices(platform.TargetFlashcards)
+	res.ErrorHandler = func(err error) {
 		// gomutants:disable-next-line BRANCH_IF,CONDITIONALS_NEGATION reason="the branch returns where the function ends, so skipping it or inverting its condition ends the function at the same point"
 		if _, writeErr := fmt.Fprintln(out, appName+":", err); writeErr != nil {
 			return
 		}
 	}
-	return cfg
+	return container.PreparePluginHost(host, false), res
 }
 
-func run(cfg container.Config, debug debugOptions) error {
+func run(cfg container.Config, host *container.PluginHost, res *container.Resources, debug debugOptions) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
-	cfg, _, err := cfg.ApplySettings()
+	cfg, _, err := cfg.ApplySettings(host, res)
 	if err != nil {
 		return err
 	}
-	if err := debug.registerVault(cfg); err != nil {
+	if err := debug.registerVault(cfg, host, res); err != nil {
 		return err
 	}
 
-	api := makeWindowAPI(cfg)
-	started, err := container.OpenShell(cfg, ctx, platform.TargetFlashcards, api, container.ShellLog{Out: os.Stderr, Label: appName, Notify: notifyUser})
+	api := makeWindowAPI(cfg, host, res)
+	started, err := cfg.OpenShell(host, res, ctx, platform.TargetFlashcards, api, container.ShellLog{Out: os.Stderr, Label: appName, Notify: notifyUser})
 	if err != nil {
 		return err
 	}
@@ -83,7 +84,7 @@ func run(cfg container.Config, debug debugOptions) error {
 	target := shutdown.NewSequence(
 		stop,
 		shutdown.Report(appName, os.Stderr, "plugins", func() error {
-			return cfg.StopPlugins(context.Background())
+			return container.StopPlugins(host, context.Background())
 		}),
 		started.CloseVaults,
 		shutdown.Report(appName, os.Stderr, "", started.CloseIndex),
@@ -97,17 +98,17 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 	handler := api.NewHandler(pages)
 	if debug.isServingHTTP() {
-		return debug.serveHTTP(ctx, cfg, handler)
+		return debug.serveHTTP(ctx, res, handler)
 	}
 	return runApplication(handler, target)
 }
 
-func makeWindowAPI(cfg container.Config) *shell.API {
+func makeWindowAPI(cfg container.Config, host *container.PluginHost, res *container.Resources) *shell.API {
 	return &shell.API{
-		GetFrontendPluginIDs: func() []string { return container.GetFrontendPluginIDs(cfg) },
-		GetPluginDir:         func(id string) (string, bool) { return container.GetPluginDir(cfg, id) },
-		PluginServices:       container.GetPluginServices(cfg),
-		ConnectionCalls:      connectioncall.NewService(container.GetConnectionCalls(cfg), container.GetConnectionRows(cfg)),
+		GetFrontendPluginIDs: func() []string { return container.GetFrontendPluginIDs(cfg, host, res) },
+		GetPluginDir:         func(id string) (string, bool) { return container.GetPluginDir(cfg, host, res, id) },
+		PluginServices:       container.GetPluginServices(cfg, host, res),
+		ConnectionCalls:      connectioncall.NewService(container.GetConnectionCalls(cfg, host, res), container.GetConnectionRows(cfg, host, res)),
 	}
 }
 

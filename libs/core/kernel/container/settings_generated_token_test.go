@@ -32,7 +32,7 @@ func writeTokenPlugin(t *testing.T) string {
 	return root
 }
 
-func loadTokenSettings(t *testing.T, cfg Config, plugins, path string) any {
+func loadTokenSettings(t *testing.T, cfg TestInstallation, plugins, path string) any {
 	t.Helper()
 	host := newPluginHost(t, "desktop.editor", plugins)
 	t.Cleanup(func() {

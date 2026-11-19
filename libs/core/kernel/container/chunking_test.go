@@ -23,17 +23,15 @@ import (
 // The sizes are part of what a chunk is kept under, and the one thing that
 // assembles a cut carries them.
 func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
-	db, err := container.OpenIndex(container.NewConfig(container.Config{
+	db, err := container.OpenIndex(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-	}), t.Context())
+	}, container.NewResources(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
 
-	target := container.NewConfig(container.Config{
-		Paths: container.Paths{ServiceDir: ".numen"},
-	})
+	target := container.NewTestInstallation(container.Config{Paths: container.Paths{ServiceDir: ".numen"}}, nil)
 	target.Resources.Chunks.Set(512)
 
 	trimmed, err := container.IndexTexts(target, db, domain.Vault{ID: "v", Path: t.TempDir()})
@@ -46,13 +44,13 @@ func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 }
 
 func TestNoBoundSplitsAtTheDefaultBound(t *testing.T) {
-	if got := (container.NewConfig(container.Config{})).CutNotes().Sizes.Limit; got != chunking.DefaultLimit {
+	if got := (container.NewTestInstallation(container.Config{}, nil)).CutNotes().Sizes.Limit; got != chunking.DefaultLimit {
 		t.Errorf("got %+v", got)
 	}
 }
 
 func TestSplitNotes_LimitFollowsTheChunkTokens(t *testing.T) {
-	target := container.NewConfig(container.Config{})
+	target := container.NewTestInstallation(container.Config{}, nil)
 	target.Resources.Chunks.Set(512)
 	if got := target.CutNotes().Sizes.Limit; got != chunking.GetCharacterBound(512) {
 		t.Errorf("cut at %d, under %d", got, chunking.GetCharacterBound(512))
@@ -63,18 +61,16 @@ func TestSplitNotes_LimitFollowsTheChunkTokens(t *testing.T) {
 // vectors for are its small ones, and each is under the input limit of the
 // model that will embed it.
 func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
-	db, err := container.OpenIndex(container.NewConfig(container.Config{
+	db, err := container.OpenIndex(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-	}), t.Context())
+	}, container.NewResources(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
 
 	const maxTokens = 8
-	target := container.NewConfig(container.Config{
-		Paths: container.Paths{ServiceDir: ".numen"},
-	})
+	target := container.NewTestInstallation(container.Config{Paths: container.Paths{ServiceDir: ".numen"}}, nil)
 	target.Resources.Chunks.Set(maxTokens)
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
@@ -114,17 +110,15 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 // The vector index is built for one width, and the width is the model's.
 // Whichever entry point makes a vault searchable settles it.
 func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
-	db, err := container.OpenIndex(container.NewConfig(container.Config{
+	db, err := container.OpenIndex(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-	}), t.Context())
+	}, container.NewResources(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
 
-	target := container.NewConfig(container.Config{
-		Paths: container.Paths{ServiceDir: ".numen"},
-	})
+	target := container.NewTestInstallation(container.Config{Paths: container.Paths{ServiceDir: ".numen"}}, nil)
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
 	if _, err := container.ReadWholeVault(target, t.Context(), db, sourcefake.Wrap(wide{384}), v); err != nil {

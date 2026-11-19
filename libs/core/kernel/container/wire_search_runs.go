@@ -33,9 +33,9 @@ func newSearchRuns(w *windowWiring) *searchrunusecase.SearchRuns {
 	find := newFindSearchResults(w.a, w.db, w.asking, w.state.ReportFloorError)
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
 		Store:       searchstore.New(),
-		Cancels:     searchcancel.NewSearches(w.cfg.Clock()),
+		Cancels:     searchcancel.NewSearches(w.a.vault.Clock),
 		Tasks:       w.tasks,
-		Timer:       w.cfg.Clock(),
+		Timer:       w.a.vault.Clock,
 		Policy:      searchrundomain.DefaultPolicy(),
 		Slots:       searchslot.New(searchrundomain.DefaultPolicy().MaxRunning),
 		Generations: w.generations,

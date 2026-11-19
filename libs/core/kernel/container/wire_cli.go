@@ -31,35 +31,35 @@ type cliRun struct {
 
 // OpenCLI returns the session of one run of the command line over the installation c describes. It opens
 // nothing: each command opens what it works over, and Close closes it.
-func OpenCLI(c Config) cli.Session {
+func OpenCLI(c Config, host *PluginHost, res *Resources) cli.Session {
 	r := &cliRun{tasks: run.NewTasks(), models: &run.Lock{}}
 	return cli.NewSession(
-		func() (cli.Vaults, error) { return openCLIVaults(c) },
+		func() (cli.Vaults, error) { return openCLIVaults(c, host, res) },
 		func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
-			return openCLIIndexed(r, c, ctx, options)
+			return openCLIIndexed(r, c, host, res, ctx, options)
 		},
-		func() cli.PluginCommands { return getCLIPluginCommands(r, c) },
+		func() cli.PluginCommands { return getCLIPluginCommands(r, c, host, res) },
 		func() ([]string, error) { return closeCLI(r) },
 	)
 }
 
-func openCLIVaults(c Config) (cli.Vaults, error) {
-	a := plugins(c)
+func openCLIVaults(c Config, host *PluginHost, res *Resources) (cli.Vaults, error) {
+	a := plugins(c, host, res)
 	ports, err := c.registry()
 	if err != nil {
 		return cli.Vaults{}, err
 	}
 	find := registry.NewFind(ports.Lookup).Execute
 	return cli.Vaults{
-		Add:        vault.NewAdd(vaultIdentity(a.vault), ports.Vaults, ports.Lookup, ports.Saver, c.Clock()),
+		Add:        vault.NewAdd(vaultIdentity(a.vault), ports.Vaults, ports.Lookup, ports.Saver, GetClock(res)),
 		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, vaultReaders(a.vault)),
 		RecordOpen: vault.NewRecordOpenByName(find, vault.NewRecordOpen(ports.Recorder)),
 	}, nil
 }
 
-func openCLIIndexed(r *cliRun, c Config, ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
+func openCLIIndexed(r *cliRun, c Config, host *PluginHost, res *Resources, ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
 	c.ShouldRebuildIndex = options.Rebuild
-	a := plugins(c)
+	a := plugins(c, host, res)
 	ports, err := c.registry()
 	if err != nil {
 		return cli.Indexed{}, err
@@ -72,13 +72,13 @@ func openCLIIndexed(r *cliRun, c Config, ctx context.Context, options cli.IndexO
 	find := registry.NewFind(ports.Lookup).Execute
 	unregister := vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
 	prepareScan := func(ctx context.Context, v domain.Vault) (indexing.ReadWholeVault, error) {
-		return prepareCLIScan(r, c, db, ctx, v)
+		return prepareCLIScan(r, openIndexedPlugins(c, host, res, db), db, ctx, v)
 	}
 	prepareSearch := func(ctx context.Context, v domain.Vault) (searchusecase.Search, error) {
-		return prepareCLISearch(r, c, db, options.ErrorHandler, ctx, v)
+		return prepareCLISearch(r, openIndexedPlugins(c, host, res, db), db, options.ErrorHandler, ctx, v)
 	}
 	prepareQuery := func(ctx context.Context, v domain.Vault) (*searchqueryusecase.FindSearchResults, error) {
-		return prepareCLIQuery(r, c, db, options.ErrorHandler, ctx, v)
+		return prepareCLIQuery(r, openIndexedPlugins(c, host, res, db), db, options.ErrorHandler, ctx, v)
 	}
 	return cli.Indexed{
 		Changes: cli.VaultChanges{
@@ -88,7 +88,7 @@ func openCLIIndexed(r *cliRun, c Config, ctx context.Context, options cli.IndexO
 		},
 		Scan: cli.Scan{
 			Scan: indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, prepareScan), db.NoteQueries()),
-			Now:  c.Clock().Now,
+			Now:  GetClock(res).Now,
 		},
 		Search:           cli.Search{Search: searchusecase.NewByName(find, prepareSearch)},
 		Links:            query.NewShowLinksByName(find, Queries(db).Refer.Links),
@@ -99,9 +99,9 @@ func openCLIIndexed(r *cliRun, c Config, ctx context.Context, options cli.IndexO
 }
 
 func prepareCLIScan(
-	r *cliRun, c Config, db *Index, ctx context.Context, v domain.Vault,
+	r *cliRun, a pluginsWiring, db *Index, ctx context.Context, v domain.Vault,
 ) (indexing.ReadWholeVault, error) {
-	opened, _, err := openPluginWork(c, db, v, r.tasks, r.models)
+	opened, _, err := openPluginWork(a, db, v, r.tasks, r.models)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
@@ -115,9 +115,9 @@ func prepareCLIScan(
 }
 
 func prepareCLISearch(
-	r *cliRun, c Config, db *Index, errorHandler window.ErrorHandler, ctx context.Context, v domain.Vault,
+	r *cliRun, a pluginsWiring, db *Index, errorHandler window.ErrorHandler, ctx context.Context, v domain.Vault,
 ) (searchusecase.Search, error) {
-	asking, _, err := openPluginWork(c, db, v, r.tasks, r.models)
+	asking, _, err := openPluginWork(a, db, v, r.tasks, r.models)
 	if err != nil {
 		return searchusecase.Search{}, err
 	}
@@ -127,9 +127,9 @@ func prepareCLISearch(
 }
 
 func prepareCLIQuery(
-	r *cliRun, c Config, db *Index, errorHandler window.ErrorHandler, ctx context.Context, v domain.Vault,
+	r *cliRun, a pluginsWiring, db *Index, errorHandler window.ErrorHandler, ctx context.Context, v domain.Vault,
 ) (*searchqueryusecase.FindSearchResults, error) {
-	asking, _, err := openPluginWork(c, db, v, r.tasks, r.models)
+	asking, _, err := openPluginWork(a, db, v, r.tasks, r.models)
 	if err != nil {
 		return nil, err
 	}
@@ -153,13 +153,13 @@ func openCLIEmbedder(r *cliRun, a pluginsWiring, ctx context.Context) (searchsou
 	return embedder, why
 }
 
-func getCLIPluginCommands(r *cliRun, c Config) cli.PluginCommands {
+func getCLIPluginCommands(r *cliRun, c Config, host *PluginHost, res *Resources) cli.PluginCommands {
 	find := func(nameOrPath string) (domain.Vault, error) { return findCLIVault(c, nameOrPath) }
 	return cli.PluginCommands{
-		List:   getPluginCommands(plugins(c)).List,
+		List:   getPluginCommands(plugins(c, host, res)).List,
 		ByName: plugincommand.NewRunByName(find),
 		Open: func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-			return openCLIPluginCommands(r, c, ctx, v)
+			return openCLIPluginCommands(r, c, host, res, ctx, v)
 		},
 	}
 }
@@ -173,17 +173,17 @@ func findCLIVault(c Config, nameOrPath string) (domain.Vault, error) {
 }
 
 func openCLIPluginCommands(
-	r *cliRun, c Config, ctx context.Context, v domain.Vault,
+	r *cliRun, c Config, host *PluginHost, res *Resources, ctx context.Context, v domain.Vault,
 ) (plugincommand.Run, func() error, error) {
-	db, err := openIndex(vaultOf(c), ctx)
+	db, err := OpenIndex(c, res, ctx)
 	if err != nil {
 		return plugincommand.Run{}, nil, err
 	}
-	_, pluginWork, err := openPluginWork(c, db, v, r.tasks, r.models)
+	_, pluginWork, err := openPluginWork(openIndexedPlugins(c, host, res, db), db, v, r.tasks, r.models)
 	if err != nil {
 		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
 	}
-	return getPluginCommands(plugins(c)).Run, run.CloseAfterWork(ctx, pluginWork, db.Close), nil
+	return getPluginCommands(plugins(c, host, res)).Run, run.CloseAfterWork(ctx, pluginWork, db.Close), nil
 }
 
 func closeCLI(r *cliRun) ([]string, error) {

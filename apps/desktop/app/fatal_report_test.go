@@ -20,9 +20,9 @@ import (
 // installation it found.
 func TestError_MessageContainsFound(t *testing.T) {
 	pos := filepath.Join(t.TempDir(), "index.db")
-	cfg := container.NewConfig(container.Config{
+	cfg := container.Config{
 		Paths: container.Paths{IndexPath: pos},
-	})
+	}
 
 	page, err := fatalReport{}.page(cfg, container.CheckTextScale("appearance.textScale", 4))
 	if err != nil {
@@ -45,9 +45,9 @@ func TestError_MessageContainsFound(t *testing.T) {
 
 // An error this build has no further information about is still reported.
 func TestError_AdditionalDetails(t *testing.T) {
-	page, err := fatalReport{}.page(container.NewConfig(container.Config{
+	page, err := fatalReport{}.page(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "i.db")},
-	}),
+	},
 		errors.New("the settings could not be read"))
 	if err != nil {
 		t.Fatal(err)
@@ -59,9 +59,9 @@ func TestError_AdditionalDetails(t *testing.T) {
 
 // A message shown to the user must not render markup the user did not write.
 func TestError_StripsMarkup(t *testing.T) {
-	page, err := fatalReport{}.page(container.NewConfig(container.Config{
+	page, err := fatalReport{}.page(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "i.db")},
-	}),
+	},
 		errors.New(`<script>alert("x")</script>`))
 	if err != nil {
 		t.Fatal(err)
@@ -111,42 +111,42 @@ func getStoppings(t *testing.T) []stopping {
 	return []stopping{
 		{
 			name: "an index that is not a database",
-			cfg: container.NewConfig(container.Config{
+			cfg: container.Config{
 				Paths: container.Paths{IndexPath: corrupt},
-			}),
+			},
 			why: openIndex(t, corrupt),
 		},
 		{
 			name: "an index path that is a folder",
-			cfg: container.NewConfig(container.Config{
+			cfg: container.Config{
 				Paths: container.Paths{IndexPath: folder},
-			}),
+			},
 			why: openIndex(t, folder),
 		},
 		{
 			name: "an index folder nobody may write in",
-			cfg: container.NewConfig(container.Config{
+			cfg: container.Config{
 				Paths: container.Paths{IndexPath: filepath.Join(noWrite, "index.db")},
-			}),
+			},
 			why: openIndex(t, filepath.Join(noWrite, "index.db")),
 		},
 		{
 			name: "a settings file that is not JSON",
-			cfg: container.NewConfig(container.Config{
+			cfg: container.Config{
 				Paths: container.Paths{SettingsPath: unreadable},
-			}),
+			},
 			why: read(t, unreadable),
 		},
 		{
 			name: "a size the settings file does not take",
-			cfg: container.NewConfig(container.Config{
+			cfg: container.Config{
 				Paths: container.Paths{SettingsPath: unreadable},
-			}),
+			},
 			why: container.CheckTextScale("appearance.textScale", 4),
 		},
 		{
 			name: "a size the command line does not take",
-			cfg:  container.NewConfig(container.Config{}),
+			cfg:  container.Config{},
 			why:  container.CheckTextScale("-text-scale", 4),
 		},
 	}
@@ -295,12 +295,12 @@ func TestGetSettingsPathResolvesConfiguredAndDefaultPaths(t *testing.T) {
 // A number a size does not accept is answered where it was written: the field in
 // the file, or the flag on the command line.
 func TestSizeResponse_MatchingOffset(t *testing.T) {
-	file := getFatalReport(container.NewConfig(container.Config{}), container.CheckTextScale("appearance.textScale", 4))
+	file := getFatalReport(container.Config{}, container.CheckTextScale("appearance.textScale", 4))
 	if !strings.Contains(file.Remedy, "appearance.textScale") {
 		t.Errorf("a size in the file is answered with %q", file.Remedy)
 	}
 
-	line := getFatalReport(container.NewConfig(container.Config{}), container.CheckTextScale("-text-scale", 4))
+	line := getFatalReport(container.Config{}, container.CheckTextScale("-text-scale", 4))
 	if !strings.Contains(line.Remedy, "-text-scale") {
 		t.Errorf("a size on the command line is answered with %q", line.Remedy)
 	}
@@ -309,7 +309,7 @@ func TestSizeResponse_MatchingOffset(t *testing.T) {
 // A vault named on the command line that the registry does not hold is reported by its name, without the Go error chain.
 func TestFatalReport_UnknownVault(t *testing.T) {
 	why := fmt.Errorf("open vault: %w", &registry.UnknownError{Name: "/home/someone/Notes"})
-	response := getFatalReport(container.NewConfig(container.Config{}), why)
+	response := getFatalReport(container.Config{}, why)
 
 	if response.Heading != startingAtAll {
 		t.Errorf("heading = %q, want %q", response.Heading, startingAtAll)
@@ -327,7 +327,7 @@ func TestFatalReport_UnknownVault(t *testing.T) {
 
 // An error with no specific report keeps its text out of the sentence and in the details.
 func TestFatalReport_UnknownErrorGoesToDetails(t *testing.T) {
-	response := getFatalReport(container.NewConfig(container.Config{}), errors.New("open thing: broken pipe"))
+	response := getFatalReport(container.Config{}, errors.New("open thing: broken pipe"))
 
 	if strings.Contains(response.Sentence, "broken pipe") {
 		t.Errorf("sentence = %q, want no Go error text", response.Sentence)
@@ -340,7 +340,7 @@ func TestFatalReport_UnknownErrorGoesToDetails(t *testing.T) {
 // An index written by a newer Numen is reported with both versions and one instruction, and offers no rebuild.
 func TestFatalReport_NewerIndex(t *testing.T) {
 	why := fmt.Errorf("open vault: %w", &index.NewerIndexError{File: "/data/index.db", Found: 7, Supported: 3})
-	response := getFatalReport(container.NewConfig(container.Config{}), why)
+	response := getFatalReport(container.Config{}, why)
 
 	if response.Heading != openingTheIndex {
 		t.Errorf("heading = %q, want %q", response.Heading, openingTheIndex)

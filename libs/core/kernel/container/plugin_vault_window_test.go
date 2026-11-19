@@ -73,11 +73,14 @@ func TestTheWindowFollowsANoteAPluginRenamesOrMoves(t *testing.T) {
 
 func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (domain.Vault, bool), assembly windowVaults) {
 	t.Helper()
-	cfg := container.NewConfig(container.Config{
-		PluginHost: newExternalPluginHost(t, "md.numen.test", t.TempDir()),
-		Paths:      container.Paths{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
-	})
-	db, err := container.OpenIndex(cfg, t.Context())
+	cfg := container.NewTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:       indexfile.Path(t),
+			PluginCachePath: t.TempDir(),
+			RegistryPath:    filepath.Join(t.TempDir(), "vaults.json"),
+		},
+	}, newExternalPluginHost(t, "md.numen.test", t.TempDir()))
+	db, err := container.OpenIndex(cfg.Config, cfg.Resources, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,11 +140,14 @@ func (w *vaultMoveRecordingWindow) ShowMove(ctx context.Context, move domain.Mov
 }
 
 func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
-	cfg := container.NewConfig(container.Config{
-		PluginHost: newExternalPluginHost(t, "md.numen.test", t.TempDir()),
-		Paths:      container.Paths{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
-	})
-	db, err := container.OpenIndex(cfg, t.Context())
+	cfg := container.NewTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:       indexfile.Path(t),
+			PluginCachePath: t.TempDir(),
+			RegistryPath:    filepath.Join(t.TempDir(), "vaults.json"),
+		},
+	}, newExternalPluginHost(t, "md.numen.test", t.TempDir()))
+	db, err := container.OpenIndex(cfg.Config, cfg.Resources, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

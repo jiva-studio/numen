@@ -190,7 +190,11 @@ func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.V
 	}
 }
 
-func GetFrontendPluginIDs(c Config) []string { return getFrontendPluginIDs(plugins(c)) }
+func GetFrontendPluginIDs(c Config, host *PluginHost, res *Resources) []string {
+	return getFrontendPluginIDs(plugins(c, host, res))
+}
 
 // GetPluginDir returns the folder of a plugin and whether the plugin is installed.
-func GetPluginDir(c Config, id string) (string, bool) { return getPluginDir(plugins(c), id) }
+func GetPluginDir(c Config, host *PluginHost, res *Resources, id string) (string, bool) {
+	return getPluginDir(plugins(c, host, res), id)
+}

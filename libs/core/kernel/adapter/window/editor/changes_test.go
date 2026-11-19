@@ -60,11 +60,14 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		t.Fatal(err)
 	}
 
-	settings := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
+	settings := newTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		},
 	})
 	settings.Resources.TextReaders = testsupport.Texts{Readers: vaultreader.Readers{}}
-	if _, err := settings.AddVault(root, "watched"); err != nil {
+	if _, err := settings.AddVault(settings.PluginHost, settings.Resources, root, "watched"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -246,7 +249,7 @@ type going struct {
 	root         string
 	settings     string
 	order        *order
-	cfg          container.Config
+	cfg          testInstallation
 	index        *container.Index
 }
 
@@ -300,11 +303,15 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		t.Fatal(err)
 	}
 
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json"), PluginCachePath: filepath.Join(t.TempDir(), "plugins")},
+	cfg := newTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:       filepath.Join(t.TempDir(), "index.db"),
+			RegistryPath:    filepath.Join(t.TempDir(), "vaults.json"),
+			PluginCachePath: filepath.Join(t.TempDir(), "plugins"),
+		},
 	})
 	writeNamingSettings(t, cfg.RegistryPath, sync)
-	if _, err := cfg.AddVault(root, "quitting"); err != nil {
+	if _, err := cfg.AddVault(cfg.PluginHost, cfg.Resources, root, "quitting"); err != nil {
 		t.Fatal(err)
 	}
 

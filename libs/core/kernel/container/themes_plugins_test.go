@@ -40,16 +40,18 @@ func writeThemesPlugin(t *testing.T, root, id, targets string) string {
 	return dir
 }
 
-func openThemesConfig(t *testing.T, target string, pluginRoot string) Config {
+func openThemesConfig(t *testing.T, target string, pluginRoot string) TestInstallation {
 	t.Helper()
 	dir := t.TempDir()
-	return NewConfig(Config{
-		PluginHost: newPluginHost(t, target, pluginRoot),
-		Paths:      Paths{ThemesPath: filepath.Join(dir, "themes"), SettingsPath: filepath.Join(dir, "settings.json")},
-	})
+	return NewTestInstallation(Config{
+		Paths: Paths{
+			ThemesPath:   filepath.Join(dir, "themes"),
+			SettingsPath: filepath.Join(dir, "settings.json"),
+		},
+	}, newPluginHost(t, target, pluginRoot))
 }
 
-func listThemeNames(t *testing.T, cfg Config) []string {
+func listThemeNames(t *testing.T, cfg TestInstallation) []string {
 	t.Helper()
 	service, err := cfg.Themes(nil)
 	if err != nil {
@@ -199,9 +201,12 @@ func TestAPluginThemeLinkedOutOfThePluginFolderIsNotRead(t *testing.T) {
 // A config with no plugin host offers the default theme alone.
 func TestListThemesOfAConfigWithoutAPluginHostListsTheDefaultAlone(t *testing.T) {
 	dir := t.TempDir()
-	cfg := NewConfig(Config{
-		Paths: Paths{ThemesPath: filepath.Join(dir, "themes"), SettingsPath: filepath.Join(dir, "settings.json")},
-	})
+	cfg := NewTestInstallation(Config{
+		Paths: Paths{
+			ThemesPath:   filepath.Join(dir, "themes"),
+			SettingsPath: filepath.Join(dir, "settings.json"),
+		},
+	}, nil)
 
 	names := listThemeNames(t, cfg)
 

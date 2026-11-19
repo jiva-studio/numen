@@ -20,15 +20,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
-func writeSettings(t *testing.T, output string) (Config, string) {
+func writeSettings(t *testing.T, output string) (TestInstallation, string) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	return NewConfig(Config{
-		Paths: Paths{SettingsPath: path},
-	}), path
+	return NewTestInstallation(Config{Paths: Paths{SettingsPath: path}}, nil), path
 }
 
 // What the window is given is every setting, so a setting the file leaves out
@@ -36,7 +34,7 @@ func writeSettings(t *testing.T, output string) (Config, string) {
 func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 	cfg, path := writeSettings(t, `{"app": {"appearance": {"theme": "mine:sea"}}}`)
 
-	content, response, _, err := readSettings(settingsOf(cfg))()
+	content, response, _, err := readSettings(cfg.buildSettingsWiring())()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +62,7 @@ func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
   "something_this_build_knows_nothing_about": 7
 }`)
 
-	err := getSettingsWriter(settingsOf(cfg))([]settingsdomain.Setting{
+	err := getSettingsWriter(cfg.buildSettingsWiring())([]settingsdomain.Setting{
 		{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`},
 	})
 	if err != nil {
@@ -79,7 +77,7 @@ func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 		t.Errorf("the file came back as %s", after)
 	}
 
-	target, err := settingsGetSettingsAt(settingsOf(cfg), path)
+	target, err := settingsGetSettingsAt(cfg.buildSettingsWiring(), path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +93,7 @@ func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
-	err := getSettingsWriter(settingsOf(cfg))([]settingsdomain.Setting{
+	err := getSettingsWriter(cfg.buildSettingsWiring())([]settingsdomain.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 		{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`},
 	})
@@ -103,7 +101,7 @@ func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	target, err := settingsGetSettingsAt(settingsOf(cfg), path)
+	target, err := settingsGetSettingsAt(cfg.buildSettingsWiring(), path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +116,7 @@ func TestSettingsWithNowhereToLiveAreRefused(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 
-	target, why := NewConfig(Config{}).Settings()
+	target, why := NewTestInstallation(Config{}, nil).Settings()
 	if why == nil {
 		t.Fatal("no reason")
 	}
@@ -161,7 +159,7 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	response := DefaultSettings()
 	response.Performance = settings.Performance{Profile: machinedomain.ProfileEco}
 
-	got := NewConfig(Config{}).SetSettings(response)
+	got := NewTestInstallation(Config{}, nil).SetSettings(response)
 
 	if got.GetMachine().ResolvedCompute.Profile != machinedomain.ProfileEco || got.GetMachine().ResolvedCompute.Workers != 1 {
 		t.Errorf("the compute plan is %+v", got.GetMachine().ResolvedCompute)
@@ -193,7 +191,7 @@ func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	host := &profileHost{}
 	cfg.PluginHost = &PluginHost{Configuration: PluginConfiguration{PluginConfig: host}}
 
-	err := getSettingsWriter(settingsOf(cfg))([]settingsdomain.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
+	err := getSettingsWriter(cfg.buildSettingsWiring())([]settingsdomain.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,7 +204,7 @@ func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 func TestApplySettingsKeepsTheOriginalConfiguration(t *testing.T) {
 	response := DefaultSettings()
 	response.Performance = settings.Performance{Profile: machinedomain.ProfileEco}
-	before := NewConfig(Config{})
+	before := NewTestInstallation(Config{}, nil)
 
 	after := before.SetSettings(response)
 

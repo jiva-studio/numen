@@ -186,8 +186,11 @@ func (f *showing) hasSearchItem(text string) bool {
 func TestASourceThatDescribesItselfAfterASettingJoinsTheOpenWindow(t *testing.T) {
 	plugin := &connectionSource{}
 	host := startConnectionSource(t, plugin)
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
+	cfg := newTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		},
 	})
 	cfg.PluginHost = container.AdaptPluginHost(host)
 	newListedVault(t, cfg, "garden", map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})

@@ -48,7 +48,7 @@ type showing struct {
 	canvas       numenv1connect.WindowServiceClient
 	installation *container.OpenedWindow
 	cases        *container.WindowUseCases
-	cfg          container.Config
+	cfg          testInstallation
 	first        domain.Vault
 	second       domain.Vault
 }
@@ -56,8 +56,11 @@ type showing struct {
 func openTwoVaults(t *testing.T) *showing {
 	t.Helper()
 
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
+	cfg := newTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		},
 	})
 	first := newListedVault(t, cfg, "one", map[string]string{entropy: noteNamed("Entropy")})
 	second := newListedVault(t, cfg, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
@@ -93,7 +96,7 @@ func openTwoVaults(t *testing.T) *showing {
 
 func newListedVault(
 	t *testing.T,
-	cfg container.Config,
+	cfg testInstallation,
 	name string,
 	notes map[string]string,
 ) domain.Vault {
@@ -112,7 +115,7 @@ func newListedVault(
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	v, err := cfg.AddVault(root, name)
+	v, err := cfg.AddVault(cfg.PluginHost, cfg.Resources, root, name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -709,18 +712,21 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 func openInstallation(t *testing.T) (*container.OpenedWindow, *container.Index) {
 	t.Helper()
 
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
+	cfg := newTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		},
 	})
 	root := t.TempDir()
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := cfg.AddVault(root, "one"); err != nil {
+	if _, err := cfg.AddVault(cfg.PluginHost, cfg.Resources, root, "one"); err != nil {
 		t.Fatal(err)
 	}
 
-	installation, err := container.OpenWindow(cfg, t.Context(), "one", io.Discard)
+	installation, err := container.OpenWindow(cfg.Config, cfg.PluginHost, cfg.Resources, t.Context(), "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -767,7 +773,7 @@ type nothing struct {
 	canvas       numenv1connect.WindowServiceClient
 	holds        numenv1connect.VaultsServiceClient
 	server       *httptest.Server
-	cfg          container.Config
+	cfg          testInstallation
 	elsewhere    string
 }
 
@@ -778,8 +784,11 @@ func openEmptyWindow(t *testing.T) *nothing {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("XDG_DOCUMENTS_DIR", elsewhere)
 
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
+	cfg := newTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		},
 	})
 	installation, _, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
