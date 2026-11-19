@@ -13,24 +13,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-
 	"connectrpc.com/connect"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
-
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	noteusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // The two vaults a swap targets, and one note in each.
@@ -48,7 +45,7 @@ func noteNamed(title string) string {
 type showing struct {
 	client       questions
 	canvas       numenv1connect.WindowServiceClient
-	installation *container.OpenedWindow
+	installation *editor.Installation
 	cfg          testInstallation
 	first        domain.Vault
 	second       domain.Vault
@@ -62,7 +59,7 @@ func openTwoVaults(t *testing.T) *showing {
 type openTestWindow func(
 	container.Config, *container.PluginExecution, *container.PluginPreferences, *container.PluginEndpoints,
 	*container.Resources, context.Context, container.WindowOpening,
-) (*container.OpenedWindow, error)
+) (*editor.Installation, error)
 
 func openTwoVaultsWith(t *testing.T, open openTestWindow) *showing {
 	t.Helper()
@@ -82,7 +79,7 @@ func openTwoVaultsWith(t *testing.T, open openTestWindow) *showing {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	going, itself := numenv1connect.NewWindowServiceHandler(editor.PagesOf(installation.Installation).Window)
+	going, itself := numenv1connect.NewWindowServiceHandler(editor.PagesOf(installation).Window)
 	mux := http.NewServeMux()
 	mountQuestionsServices(mux, installation)
 	mux.Handle(going, itself)
@@ -675,7 +672,7 @@ func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
 	create := noteusecase.NewCreate(newVaultWriters(), f.index.NoteQueries(), refuseToUpdate, testsupport.NewClock(), testsupport.OpenGate{})
-	mountNoteEdit(t, f.mux, f.installation.Installation, numenv1connect.NoteServiceCreateNoteProcedure, nil, &create, nil)
+	mountNoteEdit(t, f.mux, f.installation, numenv1connect.NoteServiceCreateNoteProcedure, nil, &create, nil)
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
@@ -702,8 +699,8 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	})
 	waitForScan(t, f)
 	remove := noteusecase.NewRemove(newVaultWriters(), f.index.NoteQueries(), f.index.Sources(), f.index.Sources(), refuseToUpdate, testsupport.OpenGate{})
-	removeFile := noteusecase.NewRemoveFile(&remove, editor.PagesOf(f.installation.Installation).Writes)
-	mountFileEdit(t, f.mux, f.installation.Installation, numenv1connect.FileServiceRemoveFileProcedure, nil, &removeFile)
+	removeFile := noteusecase.NewRemoveFile(&remove, editor.PagesOf(f.installation).Writes)
+	mountFileEdit(t, f.mux, f.installation, numenv1connect.FileServiceRemoveFileProcedure, nil, &removeFile)
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Ontology.md",
@@ -722,7 +719,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	}
 }
 
-func openInstallation(t *testing.T) (*container.OpenedWindow, *index.DB) {
+func openInstallation(t *testing.T) (*editor.Installation, *index.DB) {
 	t.Helper()
 
 	cfg := newTestInstallation(container.Config{
@@ -753,7 +750,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	installation, db := openInstallation(t)
 
 	const body = "tetragrammaton is a word nothing else in this vault holds"
-	content, err := editor.ServicesOf(installation.Installation).Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+	content, err := editor.ServicesOf(installation).Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Kept.md",
 		Body: body,
 	}))
@@ -782,7 +779,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 // nothing is an installation holding no vault, the window it opens, and a
 // client asking about it the way the window does.
 type nothing struct {
-	installation *container.OpenedWindow
+	installation *editor.Installation
 	vault        questions
 	canvas       numenv1connect.WindowServiceClient
 	holds        numenv1connect.VaultsServiceClient
@@ -944,7 +941,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	// while the stream opens, until it arrives.
 	asking, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	view := editor.ViewOf(editor.SessionOf(t, f.installation.Installation).Notices)
+	view := editor.ViewOf(editor.SessionOf(t, f.installation).Notices)
 	go func() {
 		for {
 			select {

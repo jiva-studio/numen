@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -195,4 +196,9 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 }
 
 // GetCurrentVault returns the vault displayed in the window.
-func (o *Installation) GetCurrentVault() domain.Vault { return o.pages.window.vaults.GetCurrentVault() }
+func (o *Installation) GetCurrentVault() domain.Vault {
+	return o.pages.window.session.GetCurrentVault()
+}
+
+// GetOpenTabs returns the tabs reported by the displayed page.
+func (o *Installation) GetOpenTabs() window.OpenTabs { return o.pages.window.session.GetOpenTabs() }

@@ -16,7 +16,6 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -120,7 +119,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	name, _ := editor.SessionOf(t, installation.Installation).Runtime.GetModel()
+	name, _ := editor.SessionOf(t, installation).Runtime.GetModel()
 	if name == "" {
 		t.Fatal("the vault opened with no embedder on hand")
 	}
@@ -137,7 +136,7 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	if name, _ := editor.SessionOf(t, installation.Installation).Runtime.GetModel(); name != "" {
+	if name, _ := editor.SessionOf(t, installation).Runtime.GetModel(); name != "" {
 		t.Errorf("got an embedder: %v", name)
 	}
 }

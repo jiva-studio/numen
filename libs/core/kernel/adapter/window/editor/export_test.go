@@ -225,7 +225,7 @@ func PagesOf(o *Installation) *PageAccess { return o.pages.window }
 // SessionOf returns the editor session displayed by the running installation.
 func SessionOf(t *testing.T, o *Installation) *Session {
 	t.Helper()
-	session, ok := o.pages.window.vaults.(*Session)
+	session, ok := o.pages.window.session.(*Session)
 	if !ok {
 		t.Fatal("editor integration fixture needs a running session")
 	}

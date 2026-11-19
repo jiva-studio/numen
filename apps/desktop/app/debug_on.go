@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
@@ -52,7 +53,7 @@ func (d *DebugOptions) isServingHTTP() bool {
 func (d *DebugOptions) serveHTTP(
 	ctx context.Context,
 	res *container.Resources,
-	opened *container.OpenedWindow,
+	opened *editor.Installation,
 	pages http.Handler,
 ) error {
 	if d.FolderFile != "" {

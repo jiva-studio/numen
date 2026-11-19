@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	updater "github.com/jiva-studio/numen/plugins/tools-updater"
@@ -28,7 +29,7 @@ type linkedCore struct {
 	token  string
 	watch  container.PluginWatch
 	stop   context.CancelFunc
-	opened *container.OpenedWindow
+	opened *editor.Installation
 	server *http.Server
 }
 

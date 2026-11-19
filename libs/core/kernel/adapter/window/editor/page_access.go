@@ -4,25 +4,31 @@ import (
 	"context"
 	"sync/atomic"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
+type pageSession interface {
+	shownVault
+	GetOpenTabs() window.OpenTabs
+}
+
 // PageAccess controls requests, writes and media served over the window's HTTP endpoints.
 type PageAccess struct {
-	vaults shownVault
-	Gate   *wire.Gate
-	Writes *wire.Writes
-	Window *wire.Window
-	Media  Media
+	session pageSession
+	Gate    *wire.Gate
+	Writes  *wire.Writes
+	Window  *wire.Window
+	Media   Media
 }
 
 // NewPageAccess creates the request and write gates for one window.
-func NewPageAccess(tasks *run.Tasks, vaults shownVault) *PageAccess {
-	window := &wire.Window{Name: wire.Editor, Tasks: tasks, Vault: func() string { return string(vaults.GetCurrentVault().ID) }}
-	return &PageAccess{vaults: vaults, Gate: &wire.Gate{}, Writes: wire.NewWrites(window), Window: window}
+func NewPageAccess(tasks *run.Tasks, session pageSession) *PageAccess {
+	window := &wire.Window{Name: wire.Editor, Tasks: tasks, Vault: func() string { return string(session.GetCurrentVault().ID) }}
+	return &PageAccess{session: session, Gate: &wire.Gate{}, Writes: wire.NewWrites(window), Window: window}
 }
 
 // Media holds the loopback server that serves vault and plugin files.

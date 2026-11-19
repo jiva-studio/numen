@@ -4,10 +4,11 @@ import (
 	"context"
 	"io"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
-func openRegisteredWindow(cfg testInstallation, ctx context.Context, named string, out io.Writer) (*container.OpenedWindow, error) {
+func openRegisteredWindow(cfg testInstallation, ctx context.Context, named string, out io.Writer) (*editor.Installation, error) {
 	return cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, ctx, container.WindowOpening{Named: named, Out: out})
 }
 

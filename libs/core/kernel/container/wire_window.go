@@ -8,12 +8,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -35,7 +34,7 @@ type tabKinds struct {
 
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
 // them, and opens the vault named, or the one shown last when none is named.
-func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening) (*OpenedWindow, error) {
+func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening) (*editor.Installation, error) {
 	db, err := c.openIndex(res, ctx)
 	if err != nil {
 		return nil, err
@@ -47,7 +46,7 @@ func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	return c.openWindow(exec, prefs, endpoints, res, ctx, windowStartup{opening: opening, ports: ports, db: db})
 }
 
-func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, startup windowStartup) (*OpenedWindow, error) {
+func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, startup windowStartup) (*editor.Installation, error) {
 	exec = getPluginExecution(exec)
 	db := startup.db
 	install := newPluginInstall(c, prefs, endpoints, res)
@@ -71,10 +70,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	if err := opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out); err != nil {
 		return nil, errors.Join(err, launch.closeSource(), db.Close())
 	}
-	if err := connectWindow(install, exec, vaultDeps, opened, startup, launch.plugins); err != nil {
-		return nil, err
-	}
-	return &OpenedWindow{Installation: opened.Installation, tabs: &opened.session.Tabs}, nil
+	return connectWindow(install, exec, vaultDeps, opened, startup, launch.plugins)
 }
 
 func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup windowStartup) *textVersions {
@@ -91,15 +87,6 @@ type WindowOpening struct {
 	Out   io.Writer
 	Frame editor.Frame
 }
-
-// OpenedWindow serves one editor installation and exposes its active state to the application.
-type OpenedWindow struct {
-	*editor.Installation
-	tabs *windowsession.TabReports
-}
-
-// GetOpenTabs returns the last tab report from the window.
-func (w *OpenedWindow) GetOpenTabs() window.OpenTabs { return w.tabs.GetOpenTabs() }
 
 type windowRoutes struct {
 	*editor.Installation
@@ -178,7 +165,7 @@ func buildWindow(
 		v.CutNotes = cutNotes(searchDeps.ChunkPolicy)
 		return vaultMakeRefresh(v, db, db.Notes())
 	}}
-	notes, pluginNotes := newWindowNotes(vaultDeps, db, state, page.Writes, current)
+	notes, pluginNotes := newWindowNotes(vaultDeps, db, state, noteViews{Writes: page.Writes, Follow: page.Writes}, current)
 	moves := vaultVaults(vaultDeps, ports, db, notes.Place.Move)
 	listing := vaultListing(vaultDeps.Readers, ports)
 
@@ -189,7 +176,7 @@ func buildWindow(
 		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
 		startFeed: plugins.startFeed,
 	}
-	session := parts.newWindowSession(plugins.vault, plugins.triggers, vaultDeps, state, page, ctx)
+	session := newWindowSession(parts, plugins.vault, plugins.triggers, vaultDeps, state, page, ctx)
 	inst := editor.NewInstallation(page, editor.Lifecycle{
 		Show:  session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
@@ -211,10 +198,11 @@ func buildWindow(
 	}
 }
 
-func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session, writes *wire.Writes, current *vault.CurrentRefresh) (noteUseCases, hostvault.NoteChanges) {
+func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session, views noteViews, current *vault.CurrentRefresh) (noteUseCases, hostvault.NoteChanges) {
 	update := vault.NewUpdateIndex(current.Get).Execute
 	moves := note.NewTellMoveInShownVault(state.GetShownVault, windowView(state.Notices))
-	notes := vaultNotes(vaultDeps, db, update, noteViews{Moves: moves, Writes: writes, Follow: writes})
+	views.Moves = moves
+	notes := vaultNotes(vaultDeps, db, update, views)
 	pluginNotes := vaultNotes(vaultDeps, db, update, noteViews{Moves: moves, Writes: none.OpenGate{}})
 	return notes, getNoteChanges(pluginNotes)
 }
@@ -225,7 +213,7 @@ func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps v
 	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
 
-func newFileServer(vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks *wire.Window, find *registry.Find) *editor.FileServer {
+func newFileServer(vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks windowport.Tasks, find *registry.Find) *editor.FileServer {
 	return editor.NewFileServer(
 		runtime, tasks,
 		file.NewOpenVaultFile(

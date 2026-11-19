@@ -189,7 +189,7 @@ func (s pageSet) serveAsset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s pageSet) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescapedPath string) bool {
-	vault := s.window.vaults.GetCurrentVault()
+	vault := s.window.session.GetCurrentVault()
 	name := filepath.FromSlash(unescapedPath)
 	if vault.Path == "" || !filepath.IsLocal(name) {
 		return false
@@ -246,7 +246,7 @@ func (s pageSet) setRequestVault(r *http.Request) {
 	if r.Header.Get(requestVaultHeader) != "" {
 		return
 	}
-	if v := s.window.vaults.GetCurrentVault(); v.ID != "" {
+	if v := s.window.session.GetCurrentVault(); v.ID != "" {
 		r.Header.Set(requestVaultHeader, string(v.ID))
 	}
 }

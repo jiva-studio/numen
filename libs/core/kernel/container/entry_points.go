@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connectioncall"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/connectionlog"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
@@ -20,7 +21,7 @@ import (
 // window around the editor, or nil.
 func (c Config) OpenEditor(
 	exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening,
-) (*OpenedWindow, error) {
+) (*editor.Installation, error) {
 	ports, db, err := c.openRegistryIndex(res, ctx)
 	if err != nil {
 		return nil, err
@@ -37,20 +38,20 @@ func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultreg
 	return ports, db, err
 }
 
-func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, opened *windowRoutes, startup windowStartup, access windowPluginAccess) error {
+func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, opened *windowRoutes, startup windowStartup, access windowPluginAccess) (*editor.Installation, error) {
 	if !startup.isEditor {
-		return nil
+		return opened.Installation, nil
 	}
 	state := opened.session
 	exec.Runtime.PluginBinding.SetVaultPath(state.GetCurrentVault().Path)
 	hooks := pluginVaultHooks{Written: opened.page.Writes.NoteWritten, Notes: &access.notes}
 	if err := installPluginVault(install, vaultDeps, startup.ports, startup.db, state.GetShownVault, hooks); err != nil {
-		return err
+		return nil, err
 	}
 	setPluginVaultList(install.Endpoints.Lender, access.vaults)
 	setPluginTexts(install.Endpoints.Lender, vaultDeps.TextVersions)
 	shareEditorWindow(startup.db, opened, access.showTab, install, vaultDeps)
-	return nil
+	return opened.Installation, nil
 }
 
 // Shell is what a shell window closes when it ends: CloseVaults waits until nothing is still writing to the

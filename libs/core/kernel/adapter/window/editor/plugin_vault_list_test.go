@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
@@ -137,7 +136,7 @@ func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
 	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window shows %s after the plugin's open was rejected, want %s", got.Name, f.first.Name)
 	}
-	if !editor.PagesOf(f.installation.Installation).Window.IsQuestionOpen() {
+	if !editor.PagesOf(f.installation).Window.IsQuestionOpen() {
 		t.Error("the plugin's open ended the flush request in which the page prompts the user")
 	}
 	if got := page.getFlushCount(); got != 1 {
@@ -394,7 +393,7 @@ func expectOpenUnavailable(t *testing.T, openResult <-chan error) {
 	}
 }
 
-func closeAsDesktopApp(ctx context.Context, o *container.OpenedWindow) bool {
+func closeAsDesktopApp(ctx context.Context, o *editor.Installation) bool {
 	if o.FlushPending(ctx) {
 		return true
 	}

@@ -4,12 +4,11 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // windowParts are what the use cases of one window are built over besides its state.
@@ -50,7 +49,7 @@ type windowSession struct {
 	userSwitch windowsession.UserSwitch
 }
 
-func (parts windowParts) newWindowSession(
+func newWindowSession(parts windowParts,
 	pluginVault windowsession.PluginVaultPath, triggers windowsession.TriggerSource, vaultDeps vaultWiring, state *editor.Session, page *editor.PageAccess, ctx context.Context,
 ) windowSession {
 	diag := windowsession.NewDiagnostics(parts.out, page.Window)

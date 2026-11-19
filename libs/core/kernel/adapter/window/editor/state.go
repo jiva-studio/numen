@@ -68,3 +68,6 @@ func (s *Session) CanOpenTabWindow() bool { return s.frame != nil }
 func (s *Session) OpenTabWindow(ctx context.Context, tab window.DetachedTab) error {
 	return s.frame.DetachTab(ctx, tab)
 }
+
+// GetOpenTabs returns the last tab report from the window.
+func (s *Session) GetOpenTabs() window.OpenTabs { return s.Tabs.GetOpenTabs() }

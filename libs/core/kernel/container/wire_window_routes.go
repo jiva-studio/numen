@@ -2,9 +2,6 @@ package container
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
@@ -30,9 +27,11 @@ import (
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/logfiles"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -239,7 +238,7 @@ func openOptionalRecordLog(indexPath string, res *Resources) func(domainlogs.Ent
 func mountLogs(w *windowRoutes, entries *logsusecase.Entries, install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	record := openRecordLog(vaultDeps.IndexPath, entries, settingsDeps.SettingsFiles.GetLogLevel, vaultDeps.Clock)
 	watch := logsusecase.NewWatch(entries, logfiles.NewBesideIndex(vaultDeps.IndexPath), vaultDeps.Clock)
-	w.page.Gate.SetCallTrace(wire.NewCallTrace(vaultDeps.Clock, vaultDeps.RecordLog))
+	w.page.Gate.SetCallTrace(vaultDeps.Clock, vaultDeps.RecordLog)
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) {
 		l.Logs = record
 	})
@@ -289,7 +288,7 @@ func getReadVault(searchDeps vaultIndexPlan, vaultDeps vaultWiring, db *vaultInd
 }
 
 func (s windowStartup) newIndexWorker(
-	searchDeps vaultIndexPlan, vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks *wire.Window, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault),
+	searchDeps vaultIndexPlan, vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks windowport.Tasks, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault),
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
 		Reading:      getReadVault(searchDeps, vaultDeps, s.db),
