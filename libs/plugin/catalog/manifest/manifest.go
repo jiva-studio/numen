@@ -274,14 +274,6 @@ type Manifest struct {
 	Warnings         []string
 }
 
-// GetProtocol returns the plugin protocol the manifest declares. An absent protocol is 1.
-func (m Manifest) GetProtocol() int {
-	if m.Protocol == 0 {
-		return 1
-	}
-	return m.Protocol
-}
-
 // Validate checks the manifest and returns every violation joined into one error.
 func (m Manifest) Validate() error {
 	return errors.Join(m.ListIssues()...)
@@ -291,8 +283,8 @@ func (m Manifest) Validate() error {
 func (m Manifest) ListIssues() []error {
 	var issues []error
 	issues = append(issues, m.listIdentityIssues()...)
-	if m.Protocol < 0 || m.Protocol > ProtocolVersion {
-		issues = append(issues, fmt.Errorf("%w: %d, this host supports up to %d", ErrUnsupportedProtocol, m.Protocol, ProtocolVersion))
+	if !IsProtocolCompatible(m.Protocol, ProtocolVersion) {
+		issues = append(issues, fmt.Errorf("%w: %d, this host uses %d", ErrUnsupportedProtocol, m.GetProtocol(), ProtocolVersion))
 	}
 	issues = append(issues, m.listCapabilityIssues()...)
 	issues = append(issues, m.listActivationEventIssues()...)
