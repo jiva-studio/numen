@@ -170,11 +170,12 @@ func InstallPluginVault(c TestInstallation, db *Index, current func() (domain.Va
 	if err != nil {
 		return err
 	}
-	return installPluginVault(c.buildPluginWiring(), vaults, db, current, hooks)
+	return installPluginVault(c.buildPluginInstall(), c.buildVaultWiring(), vaults, db, current, hooks)
 }
 
 func searchOf(c TestInstallation) searchWiring {
-	return c.buildPluginWiring().search
+	_, search, _ := buildVaultSearch(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources, nil)
+	return search
 }
 
 func ReadWholeVault(c TestInstallation,
@@ -201,12 +202,14 @@ func (c TestInstallation) buildSettingsWiring() settingsWiring {
 	return settingsOf(c.Config, c.Execution, c.Preferences, c.Resources)
 }
 
-func (c TestInstallation) buildPluginWiring() pluginsWiring {
-	return plugins(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources)
+func (c TestInstallation) buildPluginInstall() pluginInstall {
+	install := newPluginInstall(c.Config, c.Endpoints, c.Resources)
+	return install
 }
 
 func (c TestInstallation) buildVaultWiring() vaultWiring {
-	return plugins(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources).vault
+	_, _, vault := buildVaultSearch(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources, nil)
+	return vault
 }
 
 type TestPlugins struct {
