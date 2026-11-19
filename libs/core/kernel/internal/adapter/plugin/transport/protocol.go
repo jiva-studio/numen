@@ -16,7 +16,7 @@ import (
 
 const pingTimeout = 3 * time.Second
 
-// CheckPluginProtocol pings a started plugin and returns port.ErrUnsupportedProtocol when the protocol
+// CheckPluginProtocol pings a started plugin and returns manifest.ErrUnsupportedProtocol when the protocol
 // it reports differs from the one its manifest declares or from manifest.ProtocolVersion.
 func CheckPluginProtocol(ctx context.Context, httpClient *http.Client, m manifest.Manifest, endpoint Endpoint) error {
 	client := numenv1connect.NewPluginLifecycleServiceClient(
@@ -35,7 +35,7 @@ func CheckPluginProtocol(ctx context.Context, httpClient *http.Client, m manifes
 		return fmt.Errorf("%w: plugin %s uses protocol %d, its manifest declares %d",
 			manifest.ErrUnsupportedProtocol, m.ID, reported, declared)
 	}
-	if reported != manifest.ProtocolVersion {
+	if !manifest.IsProtocolCompatible(m.Protocol, manifest.ProtocolVersion) {
 		return fmt.Errorf("%w: plugin %s uses protocol %d, this host uses %d",
 			manifest.ErrUnsupportedProtocol, m.ID, reported, manifest.ProtocolVersion)
 	}

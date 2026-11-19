@@ -274,3 +274,16 @@ func TestAnEntryCarriesTheWarningsOfItsManifest(t *testing.T) {
 		t.Errorf("warnings = %q, want the warning of the manifest", got.Warnings)
 	}
 }
+
+func TestTheCatalogRejectsAnInvalidDeclaredProtocol(t *testing.T) {
+	plugin := entry("org.example.invalid", "1.0.0", catalog.StateAvailable)
+	plugin.Requirements.Protocol = -1
+	service := newService(t, catalogtest.NewFakeSource("remote", plugin))
+
+	listed, _ := find(list(t, service), plugin.ID)
+	if listed.Incompatibility == nil || listed.Incompatibility.Reason != manifest.ReasonProtocol {
+		t.Errorf("listed plugin incompatibility = %v, want protocol", listed.Incompatibility)
+	}
+	_, err := service.PrepareInstall(t.Context(), plugin.ID)
+	assertRefusal(t, err, manifest.ReasonProtocol)
+}
