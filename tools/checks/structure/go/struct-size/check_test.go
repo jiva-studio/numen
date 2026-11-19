@@ -188,7 +188,9 @@ func (Hider) Serve() {}
 `,
 	})
 	getLimit := func(path string) (structLimit, bool) {
-		return structLimit{methods: 100, fields: 12}, strings.HasPrefix(path, "fixture/")
+		limit, ok := getStructLimit(strings.TrimPrefix(path, "fixture/"))
+		limit.fields = 12
+		return limit, ok
 	}
 	found, _ := getOversizedTypes(load.LoadFixture(t, dir), getLimit)
 	want := []string{
