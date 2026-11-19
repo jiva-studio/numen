@@ -43,6 +43,11 @@ func NewPluginWork(lock *Lock, tasks *Tasks, getName func(pluginID string) strin
 	return &PluginWork{lock: lock, tasks: tasks, getName: getName, plugins: map[string]*pluginState{}, changed: make(chan struct{})}
 }
 
+// CloseAfterWork waits for plugin work to finish before closing an index.
+func CloseAfterWork(ctx context.Context, work *PluginWork, closeIndex func() error) func() error {
+	return func() error { return errors.Join(work.WaitIdle(ctx), closeIndex()) }
+}
+
 // EnqueueWork waits at the lock for a lease for the plugin and returns it.
 func (w *PluginWork) EnqueueWork(
 	ctx context.Context, pluginID string, isUserStarted bool, onWaiting func(),

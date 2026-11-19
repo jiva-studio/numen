@@ -51,7 +51,7 @@ func (u *Activate) activateOnce(ctx context.Context, req ActivateRequest, cleane
 	if err != nil {
 		return license.Info{}, err
 	}
-	fingerprint, instanceName := u.getMachineTarget()
+	fingerprint, instanceName := getMachineTarget(u.machine)
 	now := u.clock.Now().UTC()
 	nowStr := license.FormatTime(now)
 
@@ -97,15 +97,15 @@ func (u *Activate) activateOnce(ctx context.Context, req ActivateRequest, cleane
 	return license.Info{}, writeErr
 }
 
-func (u *Activate) getMachineTarget() (string, string) {
-	if u.machine == nil {
+func getMachineTarget(machine licenseport.MachineIdentity) (string, string) {
+	if machine == nil {
 		return "", "numen"
 	}
-	instanceName := u.machine.GetInstanceName()
+	instanceName := machine.GetInstanceName()
 	if instanceName == "" {
 		instanceName = "numen"
 	}
-	return u.machine.GetMachineFingerprint(), instanceName
+	return machine.GetMachineFingerprint(), instanceName
 }
 
 func (u *Activate) tryRevalidateSameKey(

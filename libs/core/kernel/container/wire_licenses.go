@@ -17,18 +17,6 @@ func openLicenseUseCases(c pluginsWiring) *windowlicense.UseCases {
 			c.settings.ErrorHandler(err)
 		}
 	})
-	deps := license.NewDeps(
-		c.PluginHost.Views.Declarations,
-		c.KeyStore,
-		adapter,
-		adapter,
-		c.vault.Clock,
-		adapter,
-	).WithErrorReporter(c.settings.ErrorHandler)
-	return &windowlicense.UseCases{
-		List:       license.NewList(deps),
-		Activate:   license.NewActivate(deps),
-		Deactivate: license.NewDeactivate(deps),
-		Watch:      license.NewWatch(deps),
-	}
+	deps := license.NewDeps(c.PluginHost.Views.Declarations, c.KeyStore, adapter, adapter, c.vault.Clock, adapter).WithErrorReporter(c.settings.ErrorHandler)
+	return &windowlicense.UseCases{List: license.NewList(deps), Activate: license.NewActivate(deps), Deactivate: license.NewDeactivate(deps), Watch: license.NewWatch(deps)}
 }
