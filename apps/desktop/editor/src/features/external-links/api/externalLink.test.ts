@@ -3,7 +3,6 @@
  * address bar.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { isExternalLink } from '../lib/text/externalLink'
 import { interceptExternalLinks } from './externalLink'
 
 let stop: (() => void) | undefined
@@ -69,10 +68,10 @@ describe('a press on a link', () => {
     expect(openLink).not.toHaveBeenCalled()
   })
 
-  it('passes a letter to whatever writes one', () => {
-    const { openLink, prevented } = pressLink('mailto:someone@example.com')
+  it.each(['mailto:someone@example.com', 'tel:+12345678'])('opens %s externally', (href) => {
+    const { openLink, prevented } = pressLink(href)
     expect(prevented).toBe(true)
-    expect(openLink).toHaveBeenCalledWith('mailto:someone@example.com')
+    expect(openLink).toHaveBeenCalledWith(href)
   })
 
   it('takes the window nowhere and passes no caller an address it cannot open', () => {
@@ -163,19 +162,21 @@ describe('a press that is answered before the page sees it', () => {
   })
 })
 
-describe('whether an address leads out', () => {
-  const here = new URL('https://pages.example:8080/a')
+describe('which addresses leave the window', () => {
+  it.each(['protocol', 'hostname', 'port'] as const)('opens an address with another %s', (part) => {
+    const target = new URL(document.location.href)
+    if (part === 'protocol') target.protocol = target.protocol === 'https:' ? 'http:' : 'https:'
+    if (part === 'hostname') target.hostname = 'other.example'
+    if (part === 'port') target.port = target.port === '8080' ? '9090' : '8080'
 
-  it('does when the scheme differs and nothing else', () => {
-    expect(isExternalLink(new URL('http://pages.example:8080/a'), here)).toBe(true)
+    const { openLink, prevented } = pressLink(target.href)
+    expect(prevented).toBe(true)
+    expect(openLink).toHaveBeenCalledWith(target.href)
   })
 
-  it('does when the host differs and nothing else', () => {
-    expect(isExternalLink(new URL('https://other.example:8080/a'), here)).toBe(true)
-    expect(isExternalLink(new URL('https://pages.example:9090/a'), here)).toBe(true)
-  })
-
-  it('does not when scheme and host are the same', () => {
-    expect(isExternalLink(new URL('https://pages.example:8080/b?c#d'), here)).toBe(false)
+  it('leaves a link to another path on the same host in the window', () => {
+    const { openLink, prevented } = pressLink(new URL('/b?c#d', document.location.href).href)
+    expect(prevented).toBe(false)
+    expect(openLink).not.toHaveBeenCalled()
   })
 })

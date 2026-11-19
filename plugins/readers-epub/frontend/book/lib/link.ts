@@ -6,7 +6,7 @@
  * are relative to the window's own address, and the reader converts one into a
  * move within the book.
  */
-import { isExternalLink } from '@numen/ui'
+import { isExternalLink } from './externalLink'
 
 /** Where a link inside a book points. */
 export interface BookLink {
