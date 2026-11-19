@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -66,11 +67,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	exec = getPluginExecution(exec)
 	db := startup.db
 	install := newPluginInstall(c, endpoints, res)
-	var versions *TextVersions
-	if startup.isEditor {
-		base := vaultBase(c, getRunningExecution(exec, c.SafeMode), install.Endpoints, res, nil)
-		versions = newTextVersions(base, db)
-	}
+	versions := getWindowVersions(c, exec, install.Endpoints, res, startup)
 	settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, install.Endpoints, res, versions)
 	ports := startup.ports
 	first, err := registry.NewGetVaultToShow(ports.Lookup, ports.Vaults, ports.Last).Execute(startup.opening.Named)
@@ -84,10 +81,15 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 		return nil, errors.Join(err, closeEmbedder(), db.Close())
 	}
 
-	if startup.isEditor {
-		return connectEditor(install, exec, vaultDeps, startup.ports, db, opened)
+	return connectWindow(install, exec, vaultDeps, opened, startup.isEditor)
+}
+
+func getWindowVersions(c Config, exec *PluginExecution, endpoints *PluginEndpoints, res *Resources, startup windowStartup) *TextVersions {
+	if !startup.isEditor {
+		return nil
 	}
-	return getOpenedWindow(opened), nil
+	base := vaultBase(c, getRunningExecution(exec, c.SafeMode), endpoints, res, nil)
+	return newTextVersions(base, startup.db)
 }
 
 // WindowOpening names the vault to show, the output and the optional editor frame.
@@ -140,7 +142,7 @@ type windowPlugins struct {
 
 func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) windowPlugins {
 	tasks := run.NewTasks()
-	signalFailureClears(exec, settingsDeps)
+	exec.Runtime.SetOnFailureCleared(func(string) { settingsDeps.PluginChanges.Signal() })
 	reportDependencies(exec.Watch, tasks, vaultDeps.RecordLog)
 	pluginsOpenPluginWork(install, exec, tasks, &run.Lock{})
 	setModelCalls(install, exec, settingsDeps, vaultDeps, run.NewConnectionNoticeTasks(tasks).Execute)
@@ -225,7 +227,7 @@ func newWindowUseCases(
 
 func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) tabKinds {
 	files := file.NewGetFileKinds(vaultReaders(vaultDeps), db.NoteQueries())
-	chooser := openChooseTabKind(exec, settingsDeps)
+	chooser := tabkind.NewChoose(getRuntimeManifests(exec.Runtime), exec.Watch, getWhenConfig(settingsDeps))
 	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
 

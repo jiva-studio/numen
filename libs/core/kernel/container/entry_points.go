@@ -19,19 +19,27 @@ import (
 func (c Config) OpenEditor(
 	exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening,
 ) (*OpenedWindow, error) {
-	ports, err := c.registry()
-	if err != nil {
-		return nil, err
-	}
-	db, err := OpenIndex(c, res, ctx)
+	ports, db, err := c.openRegistryIndex(res, ctx)
 	if err != nil {
 		return nil, err
 	}
 	return c.openWindow(exec, prefs, endpoints, res, ctx, windowStartup{opening: opening, ports: ports, db: db, isEditor: true})
 }
 
-func connectEditor(install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, ports vaultregistry.Ports, db *Index, opened *windowWiring) (*OpenedWindow, error) {
-	state := opened.state
+func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultregistry.Ports, *Index, error) {
+	ports, err := c.registry()
+	if err != nil {
+		return ports, nil, err
+	}
+	db, err := OpenIndex(c, res, ctx)
+	return ports, db, err
+}
+
+func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, opened *windowWiring, isEditor bool) (*OpenedWindow, error) {
+	if !isEditor {
+		return getOpenedWindow(opened), nil
+	}
+	ports, db, state := opened.ports, opened.db, opened.state
 	exec.Runtime.PluginBinding.SetVaultPath(state.GetCurrentVault().Path)
 	pluginNotes := getNoteChanges(*opened.cases.PluginNotes)
 	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: &pluginNotes}
@@ -64,11 +72,7 @@ type ShellOpening struct {
 // log.Notify what it cannot follow.
 func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening ShellOpening) (Shell, error) {
 	exec = getPluginExecution(exec)
-	ports, err := c.registry()
-	if err != nil {
-		return Shell{}, err
-	}
-	db, err := OpenIndex(c, res, ctx)
+	ports, db, err := c.openRegistryIndex(res, ctx)
 	if err != nil {
 		return Shell{}, err
 	}

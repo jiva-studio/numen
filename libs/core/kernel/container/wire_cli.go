@@ -52,11 +52,7 @@ func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 			if err != nil {
 				return cli.Indexed{}, err
 			}
-			r.closers = append(r.closers, db.Close)
-			index := cliIndex{
-				db: db, ports: ports, report: options.ErrorHandler, openWork: newCLIPluginWork(install, exec, r),
-				closers: &r.closers, notices: run.NewConnectionNoticeTasks(r.tasks).Execute,
-			}
+			index := newCLIIndex(r, db, ports, options.ErrorHandler, newCLIPluginWork(install, exec, r))
 			return newCLIIndexed(index, install, exec, settingsDeps, searchDeps, vaultDeps), nil
 		},
 		func() cli.PluginCommands {
@@ -104,6 +100,14 @@ type cliIndex struct {
 	notices  connectionport.ReportSetAside
 	db       *Index
 	report   window.ErrorHandler
+}
+
+func newCLIIndex(r *cliRun, db *Index, ports registry.Ports, report window.ErrorHandler, openWork cliPluginWork) cliIndex {
+	r.closers = append(r.closers, db.Close)
+	return cliIndex{
+		db: db, ports: ports, report: report, openWork: openWork,
+		closers: &r.closers, notices: run.NewConnectionNoticeTasks(r.tasks).Execute,
+	}
 }
 
 func newCLIIndexed(index cliIndex, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring) cli.Indexed {

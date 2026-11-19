@@ -112,10 +112,6 @@ func GetPluginServices(runtime PluginRuntime) editor.PluginServices {
 	return servicebridge.Open(runtime.Activator, runtime)
 }
 
-func signalFailureClears(exec *PluginExecution, settingsDeps settingsWiring) {
-	exec.Runtime.SetOnFailureCleared(func(string) { settingsDeps.PluginChanges.Signal() })
-}
-
 func pluginsOpenPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks, models *run.Lock) *run.PluginWork {
 	work := run.NewPluginWork(models, tasks, func(pluginID string) string {
 		return pluginsGetPluginName(exec.Runtime.PluginResolver, pluginID)

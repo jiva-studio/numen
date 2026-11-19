@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -133,10 +132,6 @@ func setPluginWindow(lender *hostendpoint.Lender, window hostendpoint.WindowCont
 
 func emitPluginEvent(events pluginport.PluginEventEmitter, event string) {
 	events.EmitEvent(event)
-}
-
-func openChooseTabKind(exec *PluginExecution, settingsDeps settingsWiring) *tabkind.Choose {
-	return tabkind.NewChoose(getRuntimeManifests(exec.Runtime), exec.Watch, getWhenConfig(settingsDeps))
 }
 
 func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *textversion.VersionItems {
