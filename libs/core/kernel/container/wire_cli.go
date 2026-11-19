@@ -61,9 +61,10 @@ func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 		},
 		func() cli.PluginCommands {
 			install := newPluginInstall(c, endpoints, res)
-			settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
+			settingsDeps, plan, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
 			commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.PluginLister), vaultDeps, exec, nil)
-			return getCLIPluginCommands(c, commands, newCLIPluginWork(install, exec, r), getRunningExecution(exec, c.SafeMode).Runtime.TextPlugins, vaultDeps)
+			plugins := getRunningExecution(exec, c.SafeMode).Runtime.TextPlugins
+			return getCLIPluginCommands(c, commands, newCLIPluginWork(install, exec, r), plugins, plan.ChunkPolicy, vaultDeps)
 		},
 		func() ([]string, error) { return closeCLI(r) },
 	)
@@ -117,19 +118,20 @@ func newCLIIndex(r *cliRun, db *Index, ports registry.Ports, report window.Error
 }
 
 func newCLIIndexed(index cliIndex, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, plan vaultIndexPlan, vaultDeps vaultWiring) cli.Indexed {
+	plugins := getRunningExecution(exec, install.SafeMode).Runtime.TextPlugins
 	db, ports := index.db, index.ports
 	find := registry.NewFind(ports.Lookup).Execute
 	unregister := vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
 	prepareScan := func(ctx context.Context, v domain.Vault) (indexing.ReadWholeVault, error) {
-		ranking, storage := openIndexedVault(plan, vaultDeps, db, getRunningExecution(exec, install.SafeMode).Runtime.TextPlugins)
+		ranking, storage := openIndexedVault(plan, vaultDeps, db, plugins)
 		return prepareCLIScan(index, ctx, v, ranking, storage)
 	}
 	prepareSearch := func(ctx context.Context, v domain.Vault) (searchusecase.Search, error) {
-		ranking, storage := openIndexedVault(plan, vaultDeps, db, getRunningExecution(exec, install.SafeMode).Runtime.TextPlugins)
+		ranking, storage := openIndexedVault(plan, vaultDeps, db, plugins)
 		return prepareCLISearch(index, ctx, v, ranking, storage)
 	}
 	prepareQuery := func(ctx context.Context, v domain.Vault) (*searchqueryusecase.FindSearchResults, error) {
-		ranking, storage := openIndexedVault(plan, vaultDeps, db, getRunningExecution(exec, install.SafeMode).Runtime.TextPlugins)
+		ranking, storage := openIndexedVault(plan, vaultDeps, db, plugins)
 		_, err := index.openWork(storage, db, v)
 		if err != nil {
 			return nil, err
@@ -199,13 +201,13 @@ func openCLIEmbedder(closers *[]func() error, source sourcebridge.Binding, ctx c
 	return embedder, why
 }
 
-func getCLIPluginCommands(c Config, commands PluginCommandUseCases, openWork cliPluginWork, plugins textport.TextPlugins, vaultDeps vaultWiring) cli.PluginCommands {
+func getCLIPluginCommands(c Config, commands PluginCommandUseCases, openWork cliPluginWork, plugins textport.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) cli.PluginCommands {
 	find := func(nameOrPath string) (domain.Vault, error) { return findCLIVault(c, nameOrPath) }
 	return cli.PluginCommands{
 		List:   commands.List,
 		ByName: plugincommand.NewRunByName(find),
 		Open: func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-			closeWork, err := openCLIPluginWork(openWork, ctx, v, plugins, vaultDeps)
+			closeWork, err := openCLIPluginWork(openWork, ctx, v, plugins, chunks, vaultDeps)
 			if err != nil {
 				return plugincommand.Run{}, nil, err
 			}
@@ -222,13 +224,12 @@ func findCLIVault(c Config, nameOrPath string) (domain.Vault, error) {
 	return registry.NewFind(ports.Lookup).Execute(nameOrPath)
 }
 
-func openCLIPluginWork(openWork cliPluginWork, ctx context.Context, v domain.Vault, plugins textport.TextPlugins, vaultDeps vaultWiring) (func() error, error) {
+func openCLIPluginWork(openWork cliPluginWork, ctx context.Context, v domain.Vault, plugins textport.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) (func() error, error) {
 	db, err := openIndex(vaultDeps, ctx)
 	if err != nil {
 		return nil, err
 	}
-	storage := vaultDeps
-	storage.TextVersions = newTextVersions(storage.Options, plugins, storage.Clock, db)
+	storage := openVaultTextVersions(vaultDeps, db, plugins, chunks)
 	pluginWork, err := openWork(storage, db, v)
 	if err != nil {
 		return nil, errors.Join(err, db.Close())

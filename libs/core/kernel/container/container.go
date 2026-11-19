@@ -199,9 +199,14 @@ func setVaultSearch(v vaultWiring, chunks noteChunkPolicy) vaultWiring {
 }
 
 func openIndexedVault(plan vaultIndexPlan, v vaultWiring, db *Index, plugins textport.TextPlugins) (vaultIndexPlan, vaultWiring) {
-	v.TextVersions = newTextVersions(v.Options, plugins, v.Clock, db)
+	v = openVaultTextVersions(v, db, plugins, plan.ChunkPolicy)
 	plan.TextReaders = getTextReaders(plan.TextReaders, v.TextVersions)
 	return plan, v
+}
+
+func openVaultTextVersions(v vaultWiring, db *Index, plugins textport.TextPlugins, chunks noteChunkPolicy) vaultWiring {
+	v.TextVersions = newTextVersions(v.Options, plugins, v.Clock, db)
+	return setVaultSearch(v, chunks)
 }
 
 func newSourceBinding(exec *PluginExecution, safeMode bool, endpoints *PluginEndpoints, res *Resources) sourcebridge.Binding {
