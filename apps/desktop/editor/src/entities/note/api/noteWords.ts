@@ -63,10 +63,9 @@ const directionByWire: Record<NoteLinkDirectionCode, LinkDirection | null> = {
   [NOTE_LINK_DIRECTION.BOTH]: 'both',
 }
 
-export const mapBaseline = (baseline: { prose: string; stat: string; mustExist?: boolean }) => ({
+export const mapBaseline = (baseline: { prose: string; stat: string }) => ({
   prose: baseline.prose,
   at: parseFingerprint(baseline.stat),
-  ...(baseline.mustExist ? { mustExist: true } : {}),
 })
 
 export const mapNoteResult = (from: {

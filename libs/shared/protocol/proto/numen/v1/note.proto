@@ -308,9 +308,6 @@ message ReadBaseline {
 
   // The file the prose came out of.
   FileStat at = 2;
-
-  // A save of an existing note reports a conflict if the file has been removed.
-  bool must_exist = 3;
 }
 
 message WriteNoteRequest {

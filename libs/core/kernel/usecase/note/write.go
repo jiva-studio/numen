@@ -88,7 +88,7 @@ func (u Write) replace(
 	})
 }
 
-// Save writes body to the note at path, creating the note if it does not exist.
+// Save writes body to the note at path. A save without a baseline can create the note.
 // This is the user saving their own note. The body is written onto the
 // frontmatter the file holds when the write begins; a note without an
 // identifier keeps none, and a created note has no frontmatter.

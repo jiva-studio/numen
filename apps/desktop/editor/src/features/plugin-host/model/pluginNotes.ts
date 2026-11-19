@@ -14,13 +14,13 @@ export interface PluginNotesDeps {
   readonly write: (
     path: string,
     body: string,
-    baseline: { prose: string; stat: string; mustExist?: boolean } | null,
+    baseline: { prose: string; stat: string } | null,
   ) => Promise<WriteResult>
 }
 
 /** What a plugin's note tab is handed. */
 export interface PluginNotes {
-  readonly writeIfUnchanged: (
+  readonly write: (
     path: string,
     body: string,
     observed: { body: string; at: string },
@@ -87,13 +87,12 @@ export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
     return { body: '', error: ERROR_MESSAGES[convertErrorCode(reply.error)] || UNREADABLE }
   }
 
-  const writeIfUnchanged: PluginNotes['writeIfUnchanged'] = (path, body, observed) => {
+  const write: PluginNotes['write'] = (path, body, observed) => {
     queued.delete(path)
     return enqueue(path, async () => {
       const reply = await deps.write(path, body, {
         prose: observed.body,
         stat: observed.at,
-        mustExist: true,
       })
       if (!reply.ok && reply.error === 'changed')
         throw new Error('The note changed on disk. Reopen it before saving.')
@@ -102,5 +101,5 @@ export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
     })
   }
 
-  return { readNote, writeNote, writeIfUnchanged }
+  return { readNote, writeNote, write }
 }

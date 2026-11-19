@@ -94,29 +94,10 @@ func TestSavingANoteThatIsNotThereMakesIt(t *testing.T) {
 	}
 }
 
-// A note that is not there holds no prose anybody could have missed, so the
-// tab that was reading it puts it back where it opened it.
-func TestASaveRemakesANoteDeletedBelowIt(t *testing.T) {
-	t.Parallel()
-	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	baseline := c.openNote(t, "Entropy.md")
-	if err := os.Remove(filepath.Join(c.vault.Path, "Entropy.md")); err != nil {
-		t.Fatal(err)
-	}
-
-	if _, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", baseline); err != nil {
-		t.Fatalf("a note that is not there was not made: %v", err)
-	}
-	if body := c.read(t, "Entropy.md"); body != "# Entropy\n\nMine.\n" {
-		t.Errorf("a note made by a save carries the person's text and nothing else:\n%q", body)
-	}
-}
-
 func TestAConditionalSavePreservesAnExternalDeletion(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	baseline := c.openNote(t, "Entropy.md")
-	baseline.MustExist = true
 	path := filepath.Join(c.vault.Path, "Entropy.md")
 	if err := os.Remove(path); err != nil {
 		t.Fatal(err)
@@ -127,6 +108,12 @@ func TestAConditionalSavePreservesAnExternalDeletion(t *testing.T) {
 	}
 	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("stat after save returned %v, want a missing file", err)
+	}
+	if _, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", "Draft", nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := c.read(t, "Entropy.md"); got != "Draft" {
+		t.Fatalf("explicit recreation wrote %q", got)
 	}
 }
 

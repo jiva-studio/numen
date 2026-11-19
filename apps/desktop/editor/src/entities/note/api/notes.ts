@@ -86,7 +86,7 @@ export const createNoteApi = (notes: WindowClients['notes']) => {
     writeNote: async (
       path: string,
       body: string,
-      observed: { prose: string; stat: string; mustExist?: boolean } | null,
+      observed: { prose: string; stat: string } | null,
     ): Promise<WriteResult> =>
       mapWriteResult(
         await notes.writeNote({

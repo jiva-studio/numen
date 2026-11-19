@@ -33,9 +33,8 @@ type IndexUpdater func(ctx context.Context, v domain.Vault, paths []string) erro
 // FileStat answers for text that did move: a note with the hash of the last write is the note this
 // caller put there.
 type Baseline struct {
-	MustExist bool
-	Prose     string
-	FileStat  domain.FileStat
+	Prose    string
+	FileStat domain.FileStat
 }
 
 func (s *Baseline) isStale(on domain.FileStat, prose string) bool {
@@ -114,7 +113,6 @@ func (e Edit) splice(
 		return domain.FileStat{}, fmt.Errorf("%s: %w", path, err)
 	}
 
-	// A note that is not there cannot hold anything the caller has not read, so it is made.
 	if looked == nil && e.Baseline.isStale(on, markdown.Normalize(doc.Body())) {
 		return domain.FileStat{}, fmt.Errorf("write %s: %w", path, ErrStale)
 	}
@@ -155,7 +153,7 @@ func (e Edit) readNote(ctx context.Context, files Reader, path string) ([]byte, 
 }
 
 func (e Edit) getExpectedStat(path string, on domain.FileStat, looked error) (domain.FileStat, error) {
-	if e.Baseline != nil && e.Baseline.MustExist {
+	if e.Baseline != nil {
 		if errors.Is(looked, fs.ErrNotExist) {
 			return domain.FileStat{}, fmt.Errorf("write %s: %w", path, ErrStale)
 		}

@@ -47,12 +47,11 @@ describe('createPluginNotes', () => {
     const observed = await notes.readNote('a.md')
     expect(observed).toEqual({ body: 'original', at: 'first' })
     await expect(
-      notes.writeIfUnchanged('a.md', 'draft', { body: observed.body, at: observed.at! }),
+      notes.write('a.md', 'draft', { body: observed.body, at: observed.at! }),
     ).rejects.toThrow('changed on disk')
     expect(deps.write).toHaveBeenCalledWith('a.md', 'draft', {
       prose: 'original',
       stat: 'first',
-      mustExist: true,
     })
   })
 
