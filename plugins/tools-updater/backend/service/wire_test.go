@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process/processtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/api"
 	"github.com/jiva-studio/numen/plugins/tools-updater/backend/domain/release"
 )
@@ -173,19 +172,8 @@ func TestACheckReleasesTheProcessOnceItIsAnswered(t *testing.T) {
 func TestLinkedUpdaterReleasesThroughItsRegisteredHost(t *testing.T) {
 	t.Setenv(hostcall.HostPortEnv, "")
 	t.Setenv(hostcall.PluginTokenEnv, "")
-	callbacks := make(chan string, 1)
-	host := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != numenv1connect.PluginServiceReleaseProcessProcedure {
-			t.Errorf("unexpected callback %s", r.URL.Path)
-		}
-		callbacks <- r.Header.Get("Authorization")
-		w.Header().Set("Content-Type", "application/proto")
-	}))
-	defer host.Close()
-	handler, err := server.NewLinkedHandler(map[string]string{
-		hostcall.HostPortEnv:    strings.TrimPrefix(host.URL, "http://127.0.0.1:"),
-		hostcall.PluginTokenEnv: "plugin-token",
-	}, Mount)
+	host := processtest.NewHost(t)
+	handler, err := server.NewLinkedHandler(host.GetLaunchVars(), Mount)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,12 +182,7 @@ func TestLinkedUpdaterReleasesThroughItsRegisteredHost(t *testing.T) {
 	if status, body := post(t, web, "/"+api.Service+"/"+api.MethodCheck, "{}"); status != http.StatusPreconditionFailed {
 		t.Fatalf("check before configure = %d %s", status, body)
 	}
-	select {
-	case token := <-callbacks:
-		if token != "Bearer plugin-token" {
-			t.Errorf("callback authentication = %q", token)
-		}
-	default:
-		t.Fatal("the registered host received no release")
+	if got := host.CountReleases(); got != 1 {
+		t.Errorf("registered host received %d releases, want 1", got)
 	}
 }
