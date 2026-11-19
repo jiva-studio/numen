@@ -41,6 +41,7 @@ func (r *resolution) getLinksOf(ctx context.Context, from []string) (_ map[strin
 	if err != nil {
 		return nil, err
 	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	grouped := make(map[string][]domain.ResolvedLink, len(from))
 	var order []string
@@ -50,7 +51,7 @@ func (r *resolution) getLinksOf(ctx context.Context, from []string) (_ map[strin
 		var l domain.ResolvedLink
 		if err := rows.Scan(&path, &l.Target.Scheme, &l.Target.Value, &role,
 			&l.Type, &l.Why, &l.Label, &marker); err != nil {
-			return nil, sqlwrite.JoinClose(err, rows.Close())
+			return nil, err
 		}
 		l.From = path
 		l.Role = domain.LinkRole(role)
@@ -61,7 +62,7 @@ func (r *resolution) getLinksOf(ctx context.Context, from []string) (_ map[strin
 		grouped[path] = append(grouped[path], l)
 		allLinks = append(allLinks, l)
 	}
-	if err := sqlwrite.JoinClose(rows.Err(), rows.Close()); err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	if err := r.prefetchCandidates(ctx, allLinks); err != nil {
@@ -146,6 +147,7 @@ func (r *resolution) readAddressingAt(ctx context.Context, to []string) (wanted 
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	wanted = make(map[string]bool, len(to))
 	seenID := map[string]bool{}
@@ -153,7 +155,7 @@ func (r *resolution) readAddressingAt(ctx context.Context, to []string) (wanted 
 	for rows.Next() {
 		var path, id, base string
 		if err := rows.Scan(&path, &id, &base); err != nil {
-			return nil, nil, nil, sqlwrite.JoinClose(err, rows.Close())
+			return nil, nil, nil, err
 		}
 		wanted[path] = true
 		if id != "" && !seenID[id] {
@@ -165,7 +167,7 @@ func (r *resolution) readAddressingAt(ctx context.Context, to []string) (wanted 
 			bases = append(bases, base)
 		}
 	}
-	return wanted, identifiers, bases, sqlwrite.JoinClose(rows.Err(), rows.Close())
+	return wanted, identifiers, bases, rows.Err()
 }
 
 func (r *resolution) getBacklinkCandidatesAt(ctx context.Context, identifiers, bases []string) (_ []domain.ResolvedLink, err error) {
@@ -182,6 +184,7 @@ func (r *resolution) getBacklinkCandidatesAt(ctx context.Context, identifiers, b
 	if err != nil {
 		return nil, err
 	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
 	var candidates []domain.ResolvedLink
 	for rows.Next() {
@@ -190,11 +193,11 @@ func (r *resolution) getBacklinkCandidatesAt(ctx context.Context, identifiers, b
 		var position int
 		if err := rows.Scan(&l.From, &l.Target.Scheme, &l.Target.Value, &role,
 			&l.Type, &l.Why, &l.Label, &marker, &position); err != nil {
-			return nil, sqlwrite.JoinClose(err, rows.Close())
+			return nil, err
 		}
 		l.Role = domain.LinkRole(role)
 		l.Marker = domain.LinkMarker(marker)
 		candidates = append(candidates, l)
 	}
-	return candidates, sqlwrite.JoinClose(rows.Err(), rows.Close())
+	return candidates, rows.Err()
 }
