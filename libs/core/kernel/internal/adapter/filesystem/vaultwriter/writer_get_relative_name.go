@@ -61,9 +61,10 @@ func (w *VaultWriter) isReachable(path string) bool {
 
 func (w *VaultWriter) isWritableNote(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
-	if !w.opts.IsNote(pathpkg.Base(clean)) {
-		return false
-	}
+	return w.opts.IsNote(pathpkg.Base(clean)) && w.isWritableFile(clean)
+}
+
+func (w *VaultWriter) isWritableFile(clean string) bool {
 	if w.ignored.MatchesPath(clean) {
 		return false
 	}
@@ -139,6 +140,29 @@ func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) (
 	if err != nil {
 		return err
 	}
+	return w.createFile(path, target, content)
+}
+
+// CreateFile creates a visible vault file exclusively.
+func (w VaultWriters) CreateFile(ctx context.Context, v domain.Vault, path string, content []byte) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	writer, err := w.Open(v)
+	if err != nil {
+		return err
+	}
+	target, err := writer.getContainedPath(path)
+	if err != nil {
+		return err
+	}
+	if !writer.isWritableFile(pathpkg.Clean(filepath.ToSlash(path))) {
+		return fmt.Errorf("%s: %w", path, edit.ErrNotANote)
+	}
+	return writer.createFile(path, target, content)
+}
+
+func (w *VaultWriter) createFile(path, target string, content []byte) (err error) {
 	root, name, err := w.openRoot(target)
 	if err != nil {
 		return err

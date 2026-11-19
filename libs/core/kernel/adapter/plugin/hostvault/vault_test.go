@@ -137,16 +137,16 @@ func TestVaultAccess_CreateFileAndLockWriters(t *testing.T) {
 		},
 	})
 
-	if err := access.Writer.CreateFile(t.Context(), "samples/B.md", []byte("b")); err != nil {
+	if err := access.Writer.CreateFile(t.Context(), "samples/audio.m4a", []byte{0, 255, 128}); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(indexed, []string{"samples/B.md"}) {
+	if !slices.Equal(indexed, []string{"samples/audio.m4a"}) {
 		t.Errorf("a created file indexed %v", indexed)
 	}
-	if err := access.Writer.CreateFile(t.Context(), "samples/B.md", []byte("b")); !errors.Is(err, vaultdomain.ErrAlreadyExists) {
+	if err := access.Writer.CreateFile(t.Context(), "samples/audio.m4a", []byte{0, 255, 128}); !errors.Is(err, vaultdomain.ErrAlreadyExists) {
 		t.Errorf("a file made over one was %v", err)
 	}
-	if !slices.Equal(indexed, []string{"samples/B.md"}) {
+	if !slices.Equal(indexed, []string{"samples/audio.m4a"}) {
 		t.Errorf("a refused create indexed %v", indexed)
 	}
 }
