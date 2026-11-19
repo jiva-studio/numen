@@ -93,11 +93,11 @@ func StopPlugins(watch PluginWatch, ctx context.Context) error {
 	return watch.TeardownAll(ctx, pluginGracePeriod)
 }
 
-func newPluginCommands(settingsDeps settingsWiring, vaultDeps vaultWiring, host *PluginExecution, versions plugincommand.VersionItems) PluginCommandUseCases {
+func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host *PluginExecution, versions plugincommand.VersionItems) PluginCommandUseCases {
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := getRuntimeManifests(host.Runtime), when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
-	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(vaultDeps), getWhenConfig(settingsDeps), conditions)
+	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(vaultDeps), config, conditions)
 	return PluginCommandUseCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, host.Watch),

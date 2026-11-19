@@ -130,16 +130,12 @@ func setPluginWindow(lender *hostendpoint.Lender, window hostendpoint.WindowCont
 	lender.Update(func(l *hostendpoint.Lent) { l.Window = window })
 }
 
-func emitPluginEvent(events pluginport.PluginEventEmitter, event string) {
-	events.EmitEvent(event)
-}
-
 func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *textversion.VersionItems {
 	if vaultDeps.TextVersions == nil {
 		return nil
 	}
 	running := getRunningExecution(exec, install.SafeMode)
-	run := newPluginCommands(settingsDeps, vaultDeps, running, nil).Run
+	run := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.PluginLister), vaultDeps, running, nil).Run
 	return textversion.NewVersionItems(vaultDeps.TextVersions.Texts, vaultDeps.TextVersions.Versions, run, running.Watch)
 }
 
@@ -148,9 +144,10 @@ func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps set
 		return nil
 	}
 	running := getRunningExecution(exec, install.SafeMode)
+	config := getWhenConfig(settingsDeps, exec.Runtime.PluginLister)
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: getRuntimeManifests(running.Runtime), Run: newPluginCommands(settingsDeps, vaultDeps, running, nil).Run, Readers: vaultReaders(vaultDeps),
-		Notes: pluginsNewNoteReader(vaultDeps), Types: running.Watch, Versions: vaultDeps.TextVersions.Texts, Config: getWhenConfig(settingsDeps),
+		Plugins: getRuntimeManifests(running.Runtime), Run: newPluginCommands(config, vaultDeps, running, nil).Run, Readers: vaultReaders(vaultDeps),
+		Notes: pluginsNewNoteReader(vaultDeps), Types: running.Watch, Versions: vaultDeps.TextVersions.Texts, Config: config,
 	})
 }
 
@@ -158,10 +155,10 @@ func pluginsNewNoteReader(v vaultWiring) noteport.NoteReader {
 	return note.NewReadFrontmatter(vaultReaders(v))
 }
 
-func getWhenConfig(settingsDeps settingsWiring) pluginport.WhenConfig {
+func getWhenConfig(settingsDeps settingsWiring, plugins pluginport.PluginLister) pluginport.WhenConfig {
 	return settingsadapter.WhenConfig{
 		App:     func() []plugindomain.Setting { return listAppSettings(settingsDeps) },
-		Plugins: settingsDeps.Infos.GetPluginInfos,
+		Plugins: plugins.GetPluginInfos,
 	}
 }
 

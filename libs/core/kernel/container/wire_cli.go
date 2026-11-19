@@ -58,7 +58,7 @@ func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 		func() cli.PluginCommands {
 			install := newPluginInstall(c, endpoints, res)
 			settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, install.Endpoints, res, nil)
-			commands := newPluginCommands(settingsDeps, vaultDeps, exec, nil)
+			commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.PluginLister), vaultDeps, exec, nil)
 			return getCLIPluginCommands(c, commands, newCLIPluginWork(install, exec, r), searchDeps, vaultDeps)
 		},
 		func() ([]string, error) { return closeCLI(r) },

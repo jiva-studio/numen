@@ -164,7 +164,7 @@ func buildWindow(
 	// indexing once a configuration of its plugin lets it describe itself.
 	embedder, asking, closeEmbedder, why := searchSources(searchDeps, ctx)
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
-	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(plugins.events, event) })
+	state := editor.NewState(tasks, opening.Frame, func(event string) { plugins.events.EmitEvent(event) })
 	state.SetIndexing(embedding)
 	generations := newIndexGenerations(vaultDeps.Clock)
 	indexer := newIndexWorker(s, searchDeps, vaultDeps, state, embedding, emitIndexChanged(generations, state.Events))
@@ -179,9 +179,9 @@ func buildWindow(
 	}}
 	cases := newWindowUseCases(vaultDeps, ports, db, state, current)
 
-	session := newWindowSession(plugins.vault, vaultDeps, state, ctx, windowParts{
-		triggers: plugins.triggers, shouldRebuild: searchDeps.ShouldRebuildIndex,
-		indexer: indexer, embedding: embedding, passes: startVault(vaultDeps, db, current),
+	session := newWindowSession(plugins.vault, plugins.triggers, vaultDeps, state, ctx, windowParts{
+		shouldRebuild: searchDeps.ShouldRebuildIndex,
+		indexer:       indexer, embedding: embedding, passes: startVault(vaultDeps, db, current),
 		recordOpen: cases.Vaults.RecordOpen, importFiles: cases.Vaults.Tree.Import, out: opening.Out,
 		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
 		startFeed: plugins.startFeed,
@@ -227,7 +227,7 @@ func newWindowUseCases(
 
 func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) tabKinds {
 	files := file.NewGetFileKinds(vaultReaders(vaultDeps), db.NoteQueries())
-	chooser := tabkind.NewChoose(getRuntimeManifests(exec.Runtime), exec.Watch, getWhenConfig(settingsDeps))
+	chooser := tabkind.NewChoose(getRuntimeManifests(exec.Runtime), exec.Watch, getWhenConfig(settingsDeps, exec.Runtime.PluginLister))
 	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
 

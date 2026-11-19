@@ -69,7 +69,7 @@ func mountCommand(w *windowWiring, install pluginInstall, exec *PluginExecution,
 	if menu := openVersionItems(install, exec, settingsDeps, vaultDeps); menu != nil {
 		versions = menu
 	}
-	commands := newPluginCommands(settingsDeps, vaultDeps, exec, versions)
+	commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.PluginLister), vaultDeps, exec, versions)
 	handler := command.NewHandler(w.state, commands.Listing, commands.RunCommand, commands.ListItems)
 	w.inst.Mount(editor.NewRoute(command.NewRoute(w.state.Gate.CountQuestions(), handler)))
 }

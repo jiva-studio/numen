@@ -23,7 +23,6 @@ type windowParts struct {
 	embedderError error
 	closeEmbedder func() error
 	closeIndex    func() error
-	triggers      windowsession.TriggerSource
 	shouldRebuild bool
 	startFeed     func(ctx context.Context, v domain.Vault) func()
 }
@@ -51,12 +50,14 @@ type windowSession struct {
 	userSwitch windowsession.UserSwitch
 }
 
-func newWindowSession(pluginVault windowsession.PluginVaultPath, vaultDeps vaultWiring, state *editor.State, ctx context.Context, parts windowParts) windowSession {
+func newWindowSession(
+	pluginVault windowsession.PluginVaultPath, triggers windowsession.TriggerSource, vaultDeps vaultWiring, state *editor.State, ctx context.Context, parts windowParts,
+) windowSession {
 	diag := windowsession.NewDiagnostics(parts.out, state.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(vaultDeps), diag),
-		Passes:   parts.passes, Triggers: parts.triggers, StartFeed: parts.startFeed,
+		Passes:   parts.passes, Triggers: triggers, StartFeed: parts.startFeed,
 		Report: editor.ReportVault(vaultDeps.RecordLog),
 	})
 	identity := vault.NewCheckIdentity(vaultIdentity(vaultDeps))
