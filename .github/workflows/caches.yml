@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - .github/actions/cache-apt/**
+      - .github/actions/setup-playwright/**
       - .github/actions/setup-webkit/**
       - .github/workflows/caches.yml
   workflow_dispatch:
@@ -21,8 +22,12 @@ permissions:
 
 jobs:
   webkit:
-    name: WebKit packages
-    runs-on: ubuntu-latest
+    name: WebKit packages (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -30,3 +35,29 @@ jobs:
           persist-credentials: false
 
       - uses: ./.github/actions/setup-webkit
+
+  playwright:
+    name: Playwright packages (${{ matrix.browsers }})
+    strategy:
+      fail-fast: false
+      matrix:
+        browsers: ["chromium", "webkit", "chromium webkit"]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - uses: ./.github/actions/install-node-modules
+
+      - uses: ./.github/actions/setup-playwright
+        with:
+          browsers: ${{ matrix.browsers }}
+          packages: libgtk-4-1 libwebkitgtk-6.0-4

@@ -14,7 +14,16 @@ import {
   mergeStrykerReports,
   writeMergedCache,
 } from './cache.mjs'
-import { groupByLine, isTargetIssue, planIssue, readCount, readKeys, renderBody } from './issue.mjs'
+import {
+  GH_MAX_BUFFER,
+  gh,
+  groupByLine,
+  isTargetIssue,
+  planIssue,
+  readCount,
+  readKeys,
+  renderBody,
+} from './issue.mjs'
 import { findTarget, formatSurvivors, getRunName, renderVitestConfig } from './mutate.mjs'
 import { listShards } from './shards.mjs'
 import { getOriginalText, readMutants, summarize } from './report.mjs'
@@ -289,6 +298,20 @@ test('a survivor on a closed issue reopens it', () => {
     planIssue({ state: 'CLOSED', body: bodyWith([]) }, [survivor('aaaaaa1111')]).action,
     'reopen',
   )
+})
+
+test('gh passes a buffer large enough for every target issue body', () => {
+  let received = null
+  const out = gh(['issue', 'list'], 'input-body', (tool, args, options) => {
+    received = { tool, args, options }
+    return '[]'
+  })
+  assert.equal(out, '[]')
+  assert.equal(received.tool, 'gh')
+  assert.deepEqual(received.args, ['issue', 'list'])
+  assert.equal(received.options.input, 'input-body')
+  assert.equal(received.options.maxBuffer, GH_MAX_BUFFER)
+  assert.ok(GH_MAX_BUFFER > 10 * 1024 * 1024)
 })
 
 /* --------------------------------- Guards --------------------------------- */

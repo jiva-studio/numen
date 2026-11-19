@@ -27,13 +27,15 @@ beforeEach(() => {
 
 afterEach(() => rmSync(dir, { recursive: true, force: true }))
 
-const run = (args, extra = {}) =>
+const run = (args, extra = {}, options = {}) =>
   spawnSync('bash', [SCRIPT, ...args], {
     encoding: 'utf8',
+    ...options,
     env: {
       ...process.env,
       APT_RETRY_DELAYS: '0 0 0',
       APT_RETRY_CONF: join(dir, 'apt.conf'),
+      APT_RETRY_MIRRORS: join(dir, 'apt-mirrors.txt'),
       APT_RETRY_UPDATE: `bash ${join(dir, 'refresh.sh')}`,
       ...extra,
     },
@@ -87,6 +89,13 @@ describe('apt-retry.sh', () => {
     assert.match(conf, /Acquire::http::Timeout "30"/)
     assert.match(conf, /Acquire::https::Timeout "30"/)
   })
+
+  it('rewrites throttled EC2 archive mirrors to Azure', () => {
+    const mirrors = join(dir, 'apt-mirrors.txt')
+    writeFileSync(mirrors, 'http://us-east-2.ec2.archive.ubuntu.com/ubuntu\n')
+    run(flaky(1))
+    assert.equal(readFileSync(mirrors, 'utf8'), 'http://azure.archive.ubuntu.com/ubuntu\n')
+  })
   it('stops at the deadline when the command hangs', () => {
     writeFileSync(join(dir, 'hang.sh'), 'echo started; sleep 30\n')
     const began = Date.now()
@@ -94,6 +103,21 @@ describe('apt-retry.sh', () => {
     assert.equal(result.status, 124)
     assert.ok(Date.now() - began < 15000)
     assert.match(result.stdout, /::error::apt did not finish within 2s/)
+  })
+
+  it('stops at the deadline even when the command starts a background grandchild holding stdout', () => {
+    writeFileSync(join(dir, 'grandchild.sh'), '(trap "" TERM; sleep 30) &\necho started\nsleep 30\n')
+    const began = Date.now()
+    const result = run(['bash', join(dir, 'grandchild.sh')], { APT_RETRY_DEADLINE: '2' })
+    assert.equal(result.status, 124)
+    assert.ok(Date.now() - began < 15000)
+    assert.match(result.stdout, /::error::apt did not finish within 2s/)
+  })
+
+  it('closes stdin for the command it runs', () => {
+    const result = run(['cat'], {}, { input: 'unexpected stdin\n' })
+    assert.equal(result.status, 0)
+    assert.equal(result.stdout, '')
   })
 
   it('does not wait past the deadline between attempts', () => {

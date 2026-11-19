@@ -8,6 +8,9 @@ outputs:
   cache-hit:
     description: "true when the exact key was restored"
     value: ${{ steps.cache.outputs.cache-hit }}
+  cache-matched-key:
+    description: "The key of the cache that was restored, or empty on a miss"
+    value: ${{ steps.cache.outputs.cache-matched-key }}
   key:
     description: "The key to save the .deb files under"
     value: ${{ steps.key.outputs.key }}
@@ -22,11 +25,19 @@ runs:
         PREFIX: apt-${{ inputs.key }}-${{ runner.os }}
       run: |
         mkdir -p "$HOME/.cache/apt-archives/partial"
+        chmod 755 "$HOME" "$HOME/.cache" "$HOME/.cache/apt-archives"
+        sudo chown _apt:root "$HOME/.cache/apt-archives/partial" || true
         echo "Dir::Cache::archives \"$HOME/.cache/apt-archives\";" | sudo tee /etc/apt/apt.conf.d/99-numen-archives > /dev/null
-        echo "key=$PREFIX-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+        echo "prefix=$PREFIX-${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"
+        echo "legacy=$PREFIX-2" >> "$GITHUB_OUTPUT"
+        echo "image-os=${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"
+        echo "key=$PREFIX-${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
 
     - id: cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/apt-archives/*.deb
         key: ${{ steps.key.outputs.key }}
+        restore-keys: |
+          ${{ steps.key.outputs.prefix }}-
+          ${{ steps.key.outputs.image-os == 'ubuntu26' && steps.key.outputs.legacy || '' }}

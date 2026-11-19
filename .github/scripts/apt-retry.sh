@@ -11,12 +11,14 @@
 # APT_RETRY_DEADLINE seconds the whole run may take, refreshes and waits included (default 300)
 # APT_RETRY_DELAYS   seconds to wait before attempt 2, 3, 4 (default "10 20 40")
 # APT_RETRY_CONF     file the apt options are written to
+# APT_RETRY_MIRRORS  file whose EC2 archive hosts are rewritten (default /etc/apt/apt-mirrors.txt)
 # APT_RETRY_UPDATE   the command that refreshes the package lists
 set -u
 
 deadline=${APT_RETRY_DEADLINE:-300}
 delays=(${APT_RETRY_DELAYS:-10 20 40})
 conf=${APT_RETRY_CONF:-/etc/apt/apt.conf.d/99-numen-network}
+mirrors=${APT_RETRY_MIRRORS:-/etc/apt/apt-mirrors.txt}
 read -r -a update <<< "${APT_RETRY_UPDATE:-sudo apt-get update -qq}"
 
 update_first=false
@@ -27,6 +29,14 @@ fi
 if [ $# -eq 0 ]; then
   echo "usage: apt-retry.sh [--update] command [argument...]" >&2
   exit 2
+fi
+
+if [ -f "$mirrors" ] && grep -q 'ec2\.archive\.ubuntu\.com' "$mirrors" 2>/dev/null; then
+  if [ -w "$mirrors" ]; then
+    sed -i 's|http://[^/]*\.ec2\.archive\.ubuntu\.com/ubuntu|http://azure.archive.ubuntu.com/ubuntu|g' "$mirrors" || true
+  else
+    sudo sed -i 's|http://[^/]*\.ec2\.archive\.ubuntu\.com/ubuntu|http://azure.archive.ubuntu.com/ubuntu|g' "$mirrors" || true
+  fi
 fi
 
 options='Acquire::Retries "1"; Acquire::http::Timeout "30"; Acquire::https::Timeout "30";'
@@ -49,7 +59,7 @@ run_bounded() {
     timed_out=true
     return 124
   fi
-  timeout -k 5 "$left" "$@"
+  timeout -k 5 "$left" "$@" < /dev/null
 }
 for ((attempt = 1; attempt <= attempts; attempt++)); do
   if [ "$attempt" -gt 1 ]; then
@@ -63,10 +73,12 @@ for ((attempt = 1; attempt <= attempts; attempt++)); do
   fi
   if [ "$attempt" -gt 1 ] || [ "$update_first" = true ]; then
     # A failed refresh is not final: the command that follows fails or succeeds on its own.
-    run_bounded "${update[@]}" 2>&1 || true
+    run_bounded "${update[@]}" > /dev/null 2>&1 || true
   fi
-  run_bounded "$@" 2>&1 | tee "$log"
-  status=${PIPESTATUS[0]}
+  > "$log"
+  run_bounded "$@" > "$log" 2>&1
+  status=$?
+  cat "$log"
   if [ "$status" -eq 0 ]; then
     exit 0
   fi
