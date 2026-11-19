@@ -20,6 +20,12 @@ func NewWatch(deps Deps) *Watch {
 // Execute sends the current list of licenses immediately and again whenever a change signal
 // arrives, until ctx ends or send fails.
 func (u *Watch) Execute(ctx context.Context, send func([]license.Info) error) error {
+	var changes <-chan struct{}
+	if u.changes != nil {
+		var stop func()
+		changes, stop = u.changes.Subscribe()
+		defer stop()
+	}
 	list := NewList(Deps{base: u.operation})
 	entries, err := list.Execute(ctx)
 	if err != nil {
@@ -28,12 +34,10 @@ func (u *Watch) Execute(ctx context.Context, send func([]license.Info) error) er
 	if err := send(entries); err != nil {
 		return err
 	}
-	if u.changes == nil {
+	if changes == nil {
 		<-ctx.Done()
 		return nil
 	}
-	changes, stop := u.changes.Subscribe()
-	defer stop()
 	for {
 		select {
 		case <-ctx.Done():

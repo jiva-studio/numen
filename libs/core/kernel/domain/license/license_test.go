@@ -118,6 +118,20 @@ func TestEvaluateEnvelopeEnforcesMachineFingerprintClockAndGrace(t *testing.T) {
 	}
 }
 
+func TestEvaluateEnvelopeRequiresProviderValidationAfterCustomDeclarationChanges(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
+	decl := license.Declaration{ID: "sync", Providers: []manifest.LicenseProvider{{Provider: "creem"}}}
+	env := license.Envelope{
+		Key: "CUSTOM-KEY", Provider: license.ProviderCustom, MachineFingerprint: "fp-current",
+		Status: license.StatusActive, VerifiedAt: license.FormatTime(now), LastSeenAt: license.FormatTime(now),
+	}
+	eval := license.EvaluateEnvelope(env, decl, "fp-current", now)
+	if eval.IsActive || !eval.NeedsValidation || eval.Status != license.StatusUnverified {
+		t.Fatalf("EvaluateEnvelope() = %+v, want unverified provider activation", eval)
+	}
+}
+
 func TestEnvelopeEncodeDecodeRoundTrip(t *testing.T) {
 	t.Parallel()
 	env := license.Envelope{

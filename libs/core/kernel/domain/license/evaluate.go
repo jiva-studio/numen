@@ -109,7 +109,7 @@ func EvaluateEnvelope(
 	if !hasMatchingMachineKey(env, currentFingerprint) {
 		return Evaluation{Status: StatusInactive, IsActive: false, HasKey: false, UpdatedEnvelope: env}
 	}
-	if decl.IsCustom() || env.Provider == ProviderCustom {
+	if decl.IsCustom() {
 		updated, changed := advanceLastSeen(env, nowUTC)
 		return Evaluation{
 			Status:          StatusActive,
@@ -117,6 +117,15 @@ func EvaluateEnvelope(
 			HasKey:          true,
 			UpdatedEnvelope: updated,
 			EnvelopeChanged: changed,
+		}
+	}
+	if env.Provider == ProviderCustom {
+		return Evaluation{
+			Status:          StatusUnverified,
+			IsActive:        false,
+			HasKey:          true,
+			NeedsValidation: true,
+			UpdatedEnvelope: env,
 		}
 	}
 	switch env.Status {
@@ -158,9 +167,10 @@ func evaluateActiveProviderEnvelope(env Envelope, decl Declaration, nowUTC time.
 		}
 	}
 	updated, changed := advanceLastSeen(env, nowUTC)
-	if isOfflineGraceElapsed(decl.OfflineGraceDays, verifiedAt, nowUTC) {
+	isHardExpired, needsExpiryCheck := evaluateExpiration(env.ExpiresAt, nowUTC)
+	if isHardExpired {
 		return Evaluation{
-			Status:          StatusUnverified,
+			Status:          StatusExpired,
 			IsActive:        false,
 			HasKey:          true,
 			NeedsValidation: true,
@@ -168,10 +178,9 @@ func evaluateActiveProviderEnvelope(env Envelope, decl Declaration, nowUTC time.
 			EnvelopeChanged: changed,
 		}
 	}
-	isHardExpired, needsExpiryCheck := evaluateExpiration(env.ExpiresAt, nowUTC)
-	if isHardExpired {
+	if isOfflineGraceElapsed(decl.OfflineGraceDays, verifiedAt, nowUTC) {
 		return Evaluation{
-			Status:          StatusExpired,
+			Status:          StatusUnverified,
 			IsActive:        false,
 			HasKey:          true,
 			NeedsValidation: true,

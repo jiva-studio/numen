@@ -41,7 +41,7 @@ func (u *Deactivate) Execute(ctx context.Context, licenseID string) (license.Inf
 	if err := u.deactivateRemoteIfNeeded(ctx, decl, env); err != nil {
 		return license.Info{}, err
 	}
-	return u.deleteAndBuild(ctx, decl)
+	return u.deleteAndBuild(ctx, decl, env)
 }
 
 func (u *Deactivate) deactivateRemoteIfNeeded(
@@ -74,8 +74,18 @@ func hasRemoteInstance(decl license.Declaration, env license.Envelope, fingerpri
 		env.InstanceID != ""
 }
 
-func (u *Deactivate) deleteAndBuild(ctx context.Context, decl license.Declaration) (license.Info, error) {
+func (u *Deactivate) deleteAndBuild(ctx context.Context, decl license.Declaration, expected license.Envelope) (license.Info, error) {
 	u.gate.Lock()
+	current, found, err := u.readEnvelope(ctx, decl.ID)
+	if err != nil {
+		u.gate.Unlock()
+		return license.Info{}, err
+	}
+	if !found || !isSameActivation(current, expected) {
+		info, _, buildErr := u.buildInfo(ctx, decl)
+		u.gate.Unlock()
+		return info, buildErr
+	}
 	if err := u.deleteEnvelope(ctx, decl.ID); err != nil {
 		u.gate.Unlock()
 		return license.Info{}, err

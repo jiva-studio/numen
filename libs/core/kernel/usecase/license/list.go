@@ -38,8 +38,7 @@ func (u *List) Execute(ctx context.Context) ([]license.Info, error) {
 	u.gate.Unlock()
 
 	if len(staleIDs) > 0 && u.validator != nil {
-		bgCtx := context.WithoutCancel(ctx)
-		go u.revalidateInBackground(bgCtx, staleIDs)
+		go u.revalidateInBackground(ctx, staleIDs)
 	}
 	return infos, nil
 }
@@ -47,7 +46,13 @@ func (u *List) Execute(ctx context.Context) ([]license.Info, error) {
 func (u *List) revalidateInBackground(ctx context.Context, licenseIDs []string) {
 	verify := NewVerify(Deps{base: u.operation})
 	for _, id := range licenseIDs {
+		if ctx.Err() != nil {
+			return
+		}
 		if _, err := verify.Execute(ctx, id); err != nil {
+			if u.reportError != nil {
+				u.reportError(err)
+			}
 			continue
 		}
 	}

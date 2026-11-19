@@ -33,6 +33,16 @@ func (u *Activate) Execute(ctx context.Context, req ActivateRequest) (license.In
 	if cleanedKey == "" {
 		return license.Info{}, fmt.Errorf("%w: license key is required", license.ErrInvalidKey)
 	}
+	result, err, _ := u.flights.Do("activate:"+req.LicenseID+":"+cleanedKey, func() (any, error) {
+		return u.activateOnce(ctx, req, cleanedKey)
+	})
+	if err != nil {
+		return license.Info{}, err
+	}
+	return result.(license.Info), nil
+}
+
+func (u *Activate) activateOnce(ctx context.Context, req ActivateRequest, cleanedKey string) (license.Info, error) {
 	decl, err := u.findDeclaration(req.LicenseID)
 	if err != nil {
 		return license.Info{}, err
@@ -63,7 +73,24 @@ func (u *Activate) Execute(ctx context.Context, req ActivateRequest) (license.In
 	if err != nil {
 		return license.Info{}, err
 	}
-	return u.writeAndBuild(ctx, decl, buildActivatedEnvelope(cleanedKey, instanceName, fingerprint, nowStr, act))
+	if act.Status != license.StatusActive {
+		if act.Status == license.StatusExpired {
+			return license.Info{}, license.ErrExpired
+		}
+		return license.Info{}, license.ErrDisabled
+	}
+	env := buildActivatedEnvelope(cleanedKey, instanceName, fingerprint, nowStr, act)
+	info, writeErr := u.writeAndBuild(ctx, decl, env)
+	if writeErr == nil {
+		return info, nil
+	}
+	cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+	deactivateErr := u.validator.Deactivate(cleanupCtx, env.Provider, env.Key, env.InstanceID)
+	cancel()
+	if deactivateErr != nil && !errors.Is(deactivateErr, license.ErrNotFound) {
+		return license.Info{}, errors.Join(writeErr, deactivateErr)
+	}
+	return license.Info{}, writeErr
 }
 
 func (u *Activate) getMachineTarget() (string, string) {
@@ -130,10 +157,27 @@ func (u *Activate) revalidateExisting(
 	if val.ExpiresAt != nil {
 		existing.ExpiresAt = license.FormatTime(*val.ExpiresAt)
 	}
-	info, err := u.writeAndBuild(ctx, decl, existing)
-	if err != nil {
-		return license.Info{}, false, err
+	u.gate.Lock()
+	current, found, readErr := u.readEnvelope(ctx, decl.ID)
+	if readErr != nil {
+		u.gate.Unlock()
+		return license.Info{}, false, readErr
 	}
+	if !found || !isSameActivation(current, existing) {
+		info, _, buildErr := u.buildInfo(ctx, decl)
+		u.gate.Unlock()
+		return info, true, buildErr
+	}
+	if writeErr := u.writeEnvelope(ctx, decl.ID, existing); writeErr != nil {
+		u.gate.Unlock()
+		return license.Info{}, false, writeErr
+	}
+	info, _, buildErr := u.buildInfo(ctx, decl)
+	u.gate.Unlock()
+	if buildErr != nil {
+		return license.Info{}, false, buildErr
+	}
+	u.notifyChange(ctx)
 	return info, true, nil
 }
 
@@ -152,7 +196,7 @@ func buildActivatedEnvelope(
 		InstanceID:         act.InstanceID,
 		InstanceName:       instanceName,
 		MachineFingerprint: fingerprint,
-		Status:             license.StatusActive,
+		Status:             act.Status,
 		ExpiresAt:          expiresStr,
 		VerifiedAt:         nowStr,
 		LastSeenAt:         nowStr,

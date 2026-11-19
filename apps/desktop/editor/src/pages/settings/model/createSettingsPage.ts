@@ -225,7 +225,7 @@ export function createSettingsPage({
     rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const reportError = (error: Caught) => log.getWriter('configured')(formatError(error), 'error')
   const licenses = createLicenseStore(api.license, (text, level) =>
-    log.getWriter('configured')(text, level),
+    log.getWriter('licenses')(text, level),
   )
   const retry = createPluginRetry({
     askPluginRetry: api.settings.retryPlugin,

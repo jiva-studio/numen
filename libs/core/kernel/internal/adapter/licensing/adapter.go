@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 	"sync"
@@ -211,6 +212,15 @@ func resolveExpectedProductID(decl manifest.LicenseProvider) string {
 		}
 		return strings.TrimSpace(rest)
 	}
+	if decl.Provider == sharedlicensing.ProviderIDDodo {
+		if idx := strings.LastIndex(decl.URL, "/buy/"); idx >= 0 {
+			rest := decl.URL[idx+len("/buy/"):]
+			if qIdx := strings.IndexAny(rest, "?#/"); qIdx >= 0 {
+				rest = rest[:qIdx]
+			}
+			return strings.TrimSpace(rest)
+		}
+	}
 	return ""
 }
 
@@ -222,11 +232,43 @@ func readMachineID() string {
 			}
 		}
 	}
+	if machineID := readPlatformMachineID(); machineID != "" {
+		return machineID
+	}
 	host, err := os.Hostname()
 	if err != nil {
 		host = ""
 	}
 	return strings.TrimSpace(host) + ":" + runtime.GOOS + ":" + runtime.GOARCH
+}
+
+func readPlatformMachineID() string {
+	var command *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		command = exec.Command("ioreg", "-rd1", "-c", "IOPlatformExpertDevice")
+	case "windows":
+		command = exec.Command("wmic", "csproduct", "get", "uuid")
+	default:
+		return ""
+	}
+	output, err := command.Output()
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(output), "\n") {
+		trimmed := strings.TrimSpace(line)
+		if runtime.GOOS == "darwin" && strings.Contains(trimmed, "IOPlatformUUID") {
+			parts := strings.Split(trimmed, "=")
+			if len(parts) == 2 {
+				return strings.Trim(strings.TrimSpace(parts[1]), `"`)
+			}
+		}
+		if runtime.GOOS == "windows" && trimmed != "" && !strings.EqualFold(trimmed, "UUID") {
+			return trimmed
+		}
+	}
+	return ""
 }
 
 func mapSharedStatus(s sharedlicensing.Status) license.Status {

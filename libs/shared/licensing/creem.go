@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const (
@@ -120,7 +121,7 @@ func (p *CreemProvider) evaluateCreemActivation(
 	if expectedProductID != "" && parsed.ProductID != "" && parsed.ProductID != expectedProductID {
 		mismatchErr := fmt.Errorf("%w: got %q, want %q", ErrProductMismatch, parsed.ProductID, expectedProductID)
 		if instanceID != "" {
-			return ActivationResult{}, errors.Join(mismatchErr, p.Deactivate(ctx, key, instanceID))
+			return ActivationResult{}, errors.Join(mismatchErr, p.deactivateAfterMismatch(ctx, key, instanceID))
 		}
 		return ActivationResult{}, mismatchErr
 	}
@@ -141,6 +142,12 @@ func (p *CreemProvider) evaluateCreemActivation(
 		Status:     status,
 		ExpiresAt:  expiresAt,
 	}, nil
+}
+
+func (p *CreemProvider) deactivateAfterMismatch(ctx context.Context, key, instanceID string) error {
+	cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+	defer cancel()
+	return p.Deactivate(cleanupCtx, key, instanceID)
 }
 
 // Validate checks whether a license key and machine instance remain active in Creem.

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const (
@@ -113,7 +114,7 @@ func (p *DodoProvider) evaluateDodoActivation(
 	if expectedProductID != "" && actualProductID != "" && actualProductID != expectedProductID {
 		mismatchErr := fmt.Errorf("%w: got %q, want %q", ErrProductMismatch, actualProductID, expectedProductID)
 		if instanceID != "" {
-			return ActivationResult{}, errors.Join(mismatchErr, p.Deactivate(ctx, key, instanceID))
+			return ActivationResult{}, errors.Join(mismatchErr, p.deactivateAfterMismatch(ctx, key, instanceID))
 		}
 		return ActivationResult{}, mismatchErr
 	}
@@ -130,6 +131,12 @@ func (p *DodoProvider) evaluateDodoActivation(
 		Status:     StatusActive,
 		ExpiresAt:  expiresAt,
 	}, nil
+}
+
+func (p *DodoProvider) deactivateAfterMismatch(ctx context.Context, key, instanceID string) error {
+	cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+	defer cancel()
+	return p.Deactivate(cleanupCtx, key, instanceID)
 }
 
 // Validate checks whether a license key and machine instance remain valid in Dodo Payments.

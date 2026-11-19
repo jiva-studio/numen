@@ -14,7 +14,7 @@ func openLicenseUseCases(c pluginsWiring) *windowlicense.UseCases {
 	}
 	adapter := licensingadapter.NewAdapter(func(ctx context.Context) {
 		if err := c.PluginHost.Configuration.Refresh(ctx); err != nil {
-			return
+			c.settings.ErrorHandler(err)
 		}
 	})
 	deps := license.NewDeps(
@@ -24,7 +24,7 @@ func openLicenseUseCases(c pluginsWiring) *windowlicense.UseCases {
 		adapter,
 		c.vault.Clock,
 		adapter,
-	)
+	).WithErrorReporter(c.settings.ErrorHandler)
 	return &windowlicense.UseCases{
 		List:       license.NewList(deps),
 		Activate:   license.NewActivate(deps),

@@ -222,3 +222,22 @@ func TestVerifyDoesNotRestoreDeactivatedLicense(t *testing.T) {
 		t.Fatalf("license = %+v, want deactivated license", licenses[0])
 	}
 }
+
+func TestActivateRejectsNonActiveProviderStatus(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
+	validator := &fakeValidator{activateResult: licenseport.ActivationResult{
+		Provider: "creem", InstanceID: "li_101", Status: license.StatusExpired,
+	}}
+	deps := licenseusecase.NewDeps(
+		&fakeDeclarations{plugins: syncPlugins()}, newFakeKeyStore(), validator,
+		fakeMachine{fingerprint: "fp-local", instanceName: "akd-laptop"},
+		&fakeClock{now: now}, newFakeChangeHub(),
+	)
+	_, err := licenseusecase.NewActivate(deps).Execute(t.Context(), licenseusecase.ActivateRequest{
+		LicenseID: "sync", Key: "CREEM-ABCD-814A",
+	})
+	if !errors.Is(err, license.ErrExpired) {
+		t.Fatalf("Activate() error = %v, want ErrExpired", err)
+	}
+}

@@ -25,8 +25,15 @@ type operation struct {
 	machine      licenseport.MachineIdentity
 	clock        machineport.Clock
 	changes      licenseport.ChangeHub
+	reportError  func(error)
 	gate         *sync.Mutex
 	flights      *singleflight.Group
+}
+
+// WithErrorReporter assigns the handler for failures from background license work.
+func (d Deps) WithErrorReporter(report func(error)) Deps {
+	d.base.reportError = report
+	return d
 }
 
 // Deps groups the collaborators the license use cases share.
