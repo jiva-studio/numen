@@ -40,9 +40,19 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 				t.Fatal(err)
 			}
 			opened := openWindowAt(t, cfg, root)
+			server := httptest.NewServer(opened.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName, numenv1connect.NoteServiceName))
+			t.Cleanup(server.Close)
+			vaults := numenv1connect.NewVaultServiceClient(server.Client(), server.URL)
 			deadline := time.After(10 * time.Second)
-			for !opened.State.Runtime.IsReady() {
-				if reason := opened.State.Runtime.GetError(); reason != "" {
+			for {
+				state, err := vaults.GetVaultState(t.Context(), connect.NewRequest(&v1.GetVaultStateRequest{}))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if state.Msg.GetScan().GetIsReady() {
+					break
+				}
+				if reason := state.Msg.GetScan().GetError(); reason != "" {
 					t.Fatalf("initial scan failed: %s", reason)
 				}
 				select {
@@ -52,8 +62,6 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 				}
 			}
 
-			server := httptest.NewServer(opened.NewHandler(http.NotFoundHandler(), numenv1connect.NoteServiceName))
-			t.Cleanup(server.Close)
 			client := numenv1connect.NewNoteServiceClient(server.Client(), server.URL)
 			renamed, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{Path: path, Title: "Disorder"}))
 			if err != nil {

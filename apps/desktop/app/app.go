@@ -269,7 +269,7 @@ func makeWindow(app *application.App, opened *container.OpenedWindow) *applicati
 
 func getMainWindowOptions(opened *container.OpenedWindow) application.WebviewWindowOptions {
 	return frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Tabs.GetOpenTabs()),
+		Title:          getWindowTitle(opened.GetCurrentVault(), opened.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
 		URL:            "/",
@@ -299,7 +299,7 @@ const (
 
 func getSecondaryWindowOptions(opened *container.OpenedWindow, tab windowdomain.DetachedTab) application.WebviewWindowOptions {
 	opts := frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Tabs.GetOpenTabs()),
+		Title:          getWindowTitle(opened.GetCurrentVault(), opened.GetOpenTabs()),
 		Width:          secondaryWindowWidth,
 		Height:         secondaryWindowHeight,
 		URL:            getSecondaryWindowURL(tab),
@@ -334,7 +334,7 @@ type windowFrame struct {
 
 func (f *windowFrame) ShowOpenTabs(open windowdomain.OpenTabs) {
 	if f.window != nil {
-		f.window.SetTitle(getWindowTitle(f.opened.State.GetCurrentVault(), open))
+		f.window.SetTitle(getWindowTitle(f.opened.GetCurrentVault(), open))
 	}
 }
 
