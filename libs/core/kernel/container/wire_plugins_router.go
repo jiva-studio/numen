@@ -9,13 +9,14 @@ import (
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/logevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -29,7 +30,7 @@ func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 	show := run.NewDependencyTasks(tasks)
 	c.PluginHost.Watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
 		show.Execute(req.ID, status, func() { c.PluginHost.Watch.CancelDependency(req) })
-		logevents.RecordDependencyStatus(c.vault.RecordLog, req.ID, status)
+		supervision.RecordDependencyStatus(c.vault.RecordLog, req.ID, status)
 	})
 }
 
@@ -87,12 +88,12 @@ func NewPluginHost(c Config, report func(error), target string, dirs ...string) 
 func OpenPluginRoles(c Config, report func(error), target string, dirs ...string) (*PluginRoles, error) {
 	host := NewPluginRoles(c.Clock(), target, dirs...)
 	record := openOptionalRecordLog(c)
-	host.Failures.SetOnFailure(logevents.ReportPluginFailure(record))
-	host.Failures.SetErrorHandler(logevents.ReportError(record, report, "Plugin host failure"))
+	host.Failures.SetOnFailure(supervision.ReportPluginFailure(record))
+	host.Failures.SetErrorHandler(windowlogs.ReportError(record, report, "Plugin host failure"))
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	host.Dependencies.Replace(newDependencyRegistry(host.Clock, ""))
 	err := host.Discovery.Discover()
-	logevents.RecordError(record, "Plugin discovery failed", err)
+	windowlogs.RecordError(record, "Plugin discovery failed", err)
 	return host, err
 }
 

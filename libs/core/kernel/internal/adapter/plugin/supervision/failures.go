@@ -5,10 +5,10 @@ import (
 	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/failureevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/errsink"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/eventbus"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/failureevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 

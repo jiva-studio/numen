@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/logevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -58,7 +57,7 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a), diag),
 		Passes:   parts.passes, Triggers: getTriggerSource(a, parts.frontmatter), StartFeed: parts.startFeed,
-		Report: logevents.ReportVault(a.vault.RecordLog),
+		Report: editor.ReportVault(a.vault.RecordLog),
 	})
 	identity := vault.NewCheckIdentity(vaultIdentity(a.vault))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)
