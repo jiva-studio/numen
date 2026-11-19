@@ -1,13 +1,4 @@
-/**
- * The agents the chat can use and the one a conversation chose. The agents are the rows of acp.task of
- * the plugin, or the connections discovery finds where it has none. Until a picker opens, an agent offers
- * the model and the reasoning level its row holds; from then on, the models the type of its connection
- * lists in llm.models and the levels it lists in llm.reasoning. The turns of a conversation that chose an
- * agent go to it alone, with the model and the reasoning level chosen, and fail with its failure; a
- * conversation that chose none asks the rows in their order. A new conversation starts with the agent and the model chosen last. A choice
- * restored after a restart lists the models of the agents, and is dropped once its agent, or its model
- * among the listed models of its agent, is gone.
- */
+/** Model discovery and the selection of each chat tab. */
 import { computed, shallowRef, watch, type Ref } from 'vue'
 import type {
   ConnectionHost,
@@ -42,7 +33,7 @@ interface UnnamedModelTitles {
  * `isListed` is false until its connection answered which models it has. `isFailed` is true where its
  * connection could not list them; the next open of a picker asks again.
  */
-export interface Agent {
+interface Agent {
   readonly row: ConnectionRow
   readonly models: readonly AgentModelOption[]
   readonly isListed: boolean
@@ -88,6 +79,19 @@ async function listOptions(
   }
 }
 
+function listRowModels(
+  listed: readonly ConnectionRowOption[],
+  current: string,
+  createOption: (id: string, title: string) => AgentModelOption,
+) {
+  const models = listed
+    .filter((one) => one.value !== current)
+    .map((one) => createOption(one.value, one.title || one.value))
+  const own = createOption(current, listed.find((one) => one.value === current)?.title || current)
+  if (own.isAvailable || !models.length) models.unshift(own)
+  return models
+}
+
 function createAgent(
   row: ConnectionRow,
   listed: readonly ConnectionRowOption[] | undefined,
@@ -102,13 +106,12 @@ function createAgent(
     agentTitle: row.connectionName,
     modelId,
     modelTitle: modelTitle || unnamedTitle,
-    isAvailable: true,
+    isAvailable: !!modelId || !field?.isRequired,
   })
-  const models = (listed ?? []).map((one) => createOption(one.value, one.title || one.value))
-  const own = models.find((one) => one.modelId === current) ?? createOption(current, current)
+  const models = listRowModels(listed ?? [], current, createOption)
   return {
     row,
-    models: [own, ...models.filter((one) => one !== own)],
+    models,
     isListed: listed !== undefined,
     isFailed: listed === undefined && isFailed,
   }
@@ -162,13 +165,17 @@ export function createAgentList(
       )
     }
     update()
-    if (!isModelsWanted) return
     await Promise.all(
-      rows.map(async (row) => {
+      rows.map(async (row, index) => {
+        if (!isModelsWanted) {
+          const field = getField(row, MODELS)
+          if (index !== 0 || !field?.isRequired || row.options[field.key]) return
+        }
         try {
           const listed = await listModelOptions(connections, row)
           if (request !== latest) return
           listedModels.set(row.connectionId, listed)
+          failedModels.delete(row.connectionId)
         } catch {
           if (request !== latest) return
           failedModels.add(row.connectionId)
@@ -179,7 +186,10 @@ export function createAgentList(
   }
 
   const listModels = async () => {
-    if (isModelsWanted && failedModels.size === 0) return
+    const hasEmptyCatalog = agents.value?.some(
+      ({ row }) => getField(row, MODELS) && listedModels.get(row.connectionId)?.length === 0,
+    )
+    if (isModelsWanted && failedModels.size === 0 && !hasEmptyCatalog) return
     failedModels.clear()
     isModelsWanted = true
     await reload()
@@ -200,7 +210,27 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
   const isOptionsWanted = shallowRef(false)
 
   const agents = computed(() => list.agents.value ?? [])
-  const options = computed(() => agents.value.flatMap((agent) => agent.models))
+  const options = computed(() =>
+    agents.value.flatMap((agent) => {
+      const saved = chosen.value
+      if (
+        !saved?.modelId ||
+        agent.row.connectionId !== saved.agentId ||
+        agent.models.some((one) => one.modelId === saved.modelId)
+      )
+        return agent.models
+      return [
+        ...agent.models,
+        {
+          agentId: saved.agentId,
+          agentTitle: agent.row.connectionName,
+          modelId: saved.modelId,
+          modelTitle: saved.modelId,
+          isAvailable: true,
+        },
+      ]
+    }),
+  )
   const isAgentMissing = computed(() => list.agents.value?.length === 0)
   const pendingAgentIds = computed(() =>
     agents.value
@@ -211,31 +241,11 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
     agents.value.filter((agent) => agent.isFailed).map((agent) => agent.row.connectionId),
   )
 
-  /**
-   * Whether the agent of a choice offers its model, or is still being asked which models it has, or could
-   * not list them.
-   */
-  const isOffered = (choice: ModelChoice, listed: readonly Agent[]) => {
-    const agent = listed.find((one) => one.row.connectionId === choice.agentId)
-    return (
-      !!agent && (!agent.isListed || agent.models.some((one) => one.modelId === choice.modelId))
-    )
-  }
-  const isListed = (choice: ModelChoice) => isOffered(choice, agents.value)
-
-  watch(
-    () => [chosen.value, list.agents.value] as const,
-    ([choice, listed]) => {
-      if (!choice || !listed || isOffered(choice, listed)) return
-      if (list.lastChoice.value === choice) list.lastChoice.value = null
-      chosen.value = null
-      chosenReasoning.value = null
-    },
-  )
-
   const current = computed<ModelChoice | null>(() => {
-    if (chosen.value && isListed(chosen.value)) return chosen.value
-    const first = agents.value[0]?.models[0]
+    const saved = chosen.value
+    if (saved && agents.value.some((agent) => agent.row.connectionId === saved.agentId))
+      return saved
+    const first = options.value.find((option) => option.isAvailable) ?? options.value[0]
     return first ? { agentId: first.agentId, modelId: first.modelId } : null
   })
   const currentRow = computed(
@@ -322,14 +332,12 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
     chosenReasoning.value = id
   }
 
-  /**
-   * The row the next turn asks alone: none until the person chose, or after the chosen agent left the
-   * list.
-   */
+  /** Explicit selections and discovered defaults carry their model on the request. */
   const getPreferredRow = (): ConnectionPreferredRow | undefined => {
-    const choice = chosen.value
+    const choice = current.value
     const row = currentRow.value
-    if (!choice || !row || !isListed(choice)) return undefined
+    if (!chosen.value && isRowModel.value && row === agents.value[0]?.row) return undefined
+    if (!choice || !row) return undefined
     const options = getModelOptions(row, choice.modelId)
     const field = getFieldKey(row, REASONING)
     if (field && selectedReasoningId.value) options[field] = selectedReasoningId.value
@@ -343,6 +351,16 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
       agentId: computed(() => current.value?.agentId ?? ''),
       modelId: computed(() => current.value?.modelId ?? ''),
       reasoningId: selectedReasoningId,
+      canSubmit: computed(
+        () =>
+          !connections.listRows ||
+          options.value.some(
+            (one) =>
+              one.isAvailable &&
+              one.agentId === current.value?.agentId &&
+              one.modelId === current.value.modelId,
+          ),
+      ),
     },
     listChoices,
     selectModel,

@@ -3,6 +3,7 @@ import type { AgentModelOption, ReasoningLevelOption } from '../model/options'
 export interface MessageComposerProps {
   placeholder?: string
   isAnswerPending?: boolean
+  canSubmit?: boolean
   isDisabled?: boolean
   sendLabel?: string
   stopLabel?: string

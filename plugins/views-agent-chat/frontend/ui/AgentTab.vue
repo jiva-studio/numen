@@ -47,6 +47,7 @@ function onOpenChoices() {
     :model-value="props.state.draft.userQuestion.value"
     :turns="props.state.addresses.turns.value"
     :is-answer-pending="props.state.conversation.isAnswerPending.value"
+    :can-submit="props.state.agents?.selected.canSubmit.value ?? true"
     :placeholder="words.ask"
     :send-label="words.send"
     :stop-label="words.stop"

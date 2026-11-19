@@ -240,17 +240,25 @@ describe('the agents a chat offers', () => {
     ])
   })
 
-  it('ask to choose a model of an agent whose type requires one and whose row names none', async () => {
+  it('send through the first listed model when the first agent requires a model', async () => {
     const lantern: ConnectionRow = {
       connectionId: 'c-lantern',
       connectionName: 'Lantern agent',
       options: {},
       fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: true }],
     }
-    const { choice } = await createChat([lantern, row('c-orchard', 'Orchard agent')])
+    const { choice } = await createChat([lantern, row('c-orchard', 'Orchard agent')], {
+      isPickerOpened: false,
+    })
+
+    expect(choice.getPreferredRow()).toStrictEqual({
+      connectionId: 'c-lantern',
+      options: { model: 'c-meadow|clover' },
+      isExclusive: true,
+    })
+    await choice.listChoices()
 
     expect(readOptions(choice)).toStrictEqual([
-      `Lantern agent · ${WORDS.chooseModel}`,
       'Lantern agent · Meadow / Clover',
       `Orchard agent · ${WORDS.defaultModel}`,
       'Orchard agent · Pear Large',
@@ -498,30 +506,42 @@ describe('a choice saved before a restart', () => {
     })
   })
 
-  it('is dropped where its agent no longer lists the model, so the agent asks to choose one', async () => {
-    const saved = await saveWithLanternModel()
-
-    const after = startWindow(LANTERN_ROWS, (connectionId, field, options) =>
-      connectionId === 'c-lantern' ? [] : listOptions(connectionId, field, options),
+  it('keeps each tab selection across a restart with an empty catalog', async () => {
+    const before = startWindow(LANTERN_ROWS)
+    await before.list.reload()
+    const first = before.open('agent:1')
+    const second = before.open('agent:2')
+    await first.agents!.listChoices()
+    first.agents!.selectModel(
+      first.agents!.offered.options.value.find((one) => one.modelId === 'c-meadow|clover')!,
     )
+    second.agents!.selectModel(
+      second.agents!.offered.options.value.find((one) => one.modelId === 'pear-large')!,
+    )
+    const snapshots = [first, second].map((tab) =>
+      JSON.parse(JSON.stringify(before.kind.getState!(tab))),
+    )
+
+    let isCatalogReady = false
+    const after = startWindow(LANTERN_ROWS, (...args) =>
+      isCatalogReady ? listOptions(...args) : [],
+    )
+    const restored = snapshots.map((saved, index) => after.open(`agent:${index + 1}`, saved))
     await after.list.reload()
-    const restored = after.open('agent:1', JSON.parse(JSON.stringify(saved)))
-    await waitTask()
-    await waitTask()
-    const fresh = after.open('agent:2')
-    await restored.conversation.ask('How many clover fields?')
+    expect(restored.map((tab) => tab.agents!.selected.modelId.value)).toEqual([
+      'c-meadow|clover',
+      'pear-large',
+    ])
+    expect(restored.map((tab) => after.kind.getState!(tab))).toEqual(snapshots)
+    await restored[0]!.conversation.ask('Which model answers?')
+    expect(after.calls[0]?.options?.preferred?.options?.['model']).toBe('c-meadow|clover')
 
-    expect(restored.agents!.getChosen()).toBeNull()
-    expect(after.kind.getState!(restored)).toMatchObject({ model: null })
-    expect(fresh.agents!.getChosen()).toBeNull()
-    expect(after.calls[0]?.options?.preferred).toBeUndefined()
-    const lantern = restored.agents!.offered.options.value.find(
-      (one) => one.agentId === 'c-lantern',
-    )
-    expect(lantern?.modelTitle).toBe(WORDS.chooseModel)
+    isCatalogReady = true
+    await restored[0]!.agents!.listChoices()
+    expect(readOptions(restored[0]!.agents!)).toContain('Lantern agent · Meadow / Clover')
   })
 
-  it('is dropped where its agent is no longer listed', async () => {
+  it('uses an available agent while retaining the tab selection when its connection is missing', async () => {
     const saved = await saveWithLanternModel()
 
     const after = startWindow([row('c-orchard', 'Orchard agent', { model: 'pear-small' })])
@@ -529,7 +549,7 @@ describe('a choice saved before a restart', () => {
     const restored = after.open('agent:1', JSON.parse(JSON.stringify(saved)))
     await waitTask()
 
-    expect(restored.agents!.getChosen()).toBeNull()
+    expect(after.kind.getState!(restored)).toEqual(saved)
     expect(restored.agents!.selected.agentId.value).toBe('c-orchard')
   })
 })
@@ -559,6 +579,7 @@ describe('a model listing that fails', () => {
       agentId: 'c-lantern',
       modelId: 'c-meadow|clover',
     })
+    expect(readOptions(restored.agents!)).toContain('Lantern agent · c-meadow|clover')
     expect(restored.agents!.offered.failedAgentIds.value).toStrictEqual(['c-lantern'])
     expect(restored.agents!.offered.pendingAgentIds.value).toStrictEqual([])
   })

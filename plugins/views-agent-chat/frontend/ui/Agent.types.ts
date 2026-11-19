@@ -5,6 +5,7 @@ export interface AgentProps {
   turns: readonly Turn[]
   isAnswerPending?: boolean
   placeholder?: string
+  canSubmit?: boolean
   isDisabled?: boolean
   sendLabel?: string
   stopLabel?: string

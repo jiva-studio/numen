@@ -12,6 +12,7 @@ import type { MessageComposerProps } from './MessageComposer.types'
 const props = withDefaults(defineProps<MessageComposerProps>(), {
   placeholder: 'Write a message',
   isAnswerPending: false,
+  canSubmit: true,
   isDisabled: false,
   sendLabel: 'Send',
   stopLabel: 'Stop',
@@ -58,7 +59,13 @@ const state = computed(() => getComposerState(text.value, props.isAnswerPending)
 const descriptor = computed(() => COMPOSER_STATES[state.value])
 
 /** Nothing to say, or turned off. */
-const barred = computed(() => props.isDisabled || props.isAgentMissing || !descriptor.value.canAct)
+const barred = computed(
+  () =>
+    props.isDisabled ||
+    props.isAgentMissing ||
+    !descriptor.value.canAct ||
+    (descriptor.value.action === 'send' && !props.canSubmit),
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAct() {
@@ -83,7 +90,7 @@ function onSelectReasoning(id: string) {
 </script>
 
 <template>
-  <div class="composer numen text-ink flex flex-col font-sans transition-colors">
+  <div class="composer numen text-ink flex flex-col font-sans text-base transition-colors">
     <!-- Multi-line expanding text input -->
     <p v-if="isAgentMissing" class="composer__empty text-hushed">
       {{ noAgentMessage }}
@@ -164,7 +171,6 @@ function onSelectReasoning(id: string) {
   border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius-panel);
   box-shadow: none;
-  font-size: var(--numen-text-2);
 }
 
 .composer__empty {
@@ -186,6 +192,7 @@ function onSelectReasoning(id: string) {
 }
 
 .composer__grow {
+  font-size: var(--numen-prose-size);
   flex: 1;
   min-height: var(--line-min);
 }

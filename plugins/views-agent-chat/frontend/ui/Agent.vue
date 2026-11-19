@@ -10,6 +10,7 @@ import type { AgentProps } from './Agent.types'
 withDefaults(defineProps<AgentProps>(), {
   isAnswerPending: false,
   placeholder: 'Write a message',
+  canSubmit: true,
   isDisabled: false,
   sendLabel: 'Send',
   stopLabel: 'Stop',
@@ -104,6 +105,7 @@ function onSelectReasoning(id: string) {
       class="agent__composer"
       :is-answer-pending="isAnswerPending"
       :placeholder="placeholder"
+      :can-submit="canSubmit"
       :is-disabled="isDisabled"
       :send-label="sendLabel"
       :stop-label="stopLabel"
