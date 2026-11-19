@@ -31,11 +31,11 @@ func TestRankingReturnsHealthyParticipantsWhenASourceHangs(t *testing.T) {
 				}
 				return healthy, nil
 			}),
-			sources: []Participant{rankFunc(func(ctx context.Context) (Ranking, error) {
+			sources: newExternalSources([]Participant{rankFunc(func(ctx context.Context) (Ranking, error) {
 				sourceContext <- ctx
 				<-release
 				return Ranking{}, nil
-			})},
+			})}),
 			errorHandler:   func(err error) { diagnostics <- err },
 			reportAnswered: func() { answers <- struct{}{} },
 		}
@@ -77,10 +77,10 @@ func TestARequestDeadlineStopsSearchWhileAnExternalSourceIsBlocked(t *testing.T)
 		release := make(chan struct{})
 		defer close(release)
 		u := Search{
-			sources: []Participant{rankFunc(func(context.Context) (Ranking, error) {
+			sources: newExternalSources([]Participant{rankFunc(func(context.Context) (Ranking, error) {
 				<-release
 				return Ranking{}, nil
-			})},
+			})}),
 			errorHandler:   func(err error) { t.Errorf("source failure: %v", err) },
 			reportAnswered: func() { t.Error("source counted as answered") },
 		}
@@ -96,6 +96,42 @@ func TestARequestDeadlineStopsSearchWhileAnExternalSourceIsBlocked(t *testing.T)
 			}
 		case <-time.After(time.Second):
 			t.Fatal("search is still waiting after the request deadline")
+		}
+	})
+}
+
+func TestRepeatedSearchesBoundOutstandingCallsAndResumeWhenTheSourceRecovers(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		release := make(chan struct{})
+		started := make(chan struct{}, 12)
+		plugin := rankFunc(func(ctx context.Context) (Ranking, error) {
+			started <- struct{}{}
+			<-release
+			return Ranking{Results: []domain.SearchResult{{Path: "plugin.md"}}}, nil
+		})
+		diagnostics := make(chan error, 12)
+		u := New(nil, nil, nil, []Participant{plugin}, func(err error) { diagnostics <- err }, nil)
+		u.words = rankFunc(func(context.Context) (Ranking, error) {
+			return Ranking{Results: []domain.SearchResult{{Path: "healthy.md"}}}, nil
+		})
+		params := Parameters{Lexical: 1, Sources: 1}
+		for range 10 {
+			got, err := u.rankAll(t.Context(), domain.Vault{}, "word", params)
+			if err != nil || len(got) != 1 || got[0].Results[0].Path != "healthy.md" {
+				t.Errorf("healthy ranking while source is blocked: %v, %v", got, err)
+			}
+		}
+		close(release)
+		synctest.Wait()
+		if count := len(started); count > 4 {
+			t.Errorf("%d source calls still running after ten timed-out searches, want at most four", count)
+		}
+		if count := len(diagnostics); count != 10 {
+			t.Errorf("source failures reported = %d, want ten", count)
+		}
+		got, err := u.rankAll(t.Context(), domain.Vault{}, "word", params)
+		if err != nil || len(got) != 2 || got[1].Results[0].Path != "plugin.md" {
+			t.Fatalf("rankings after recovery: %v, %v", got, err)
 		}
 	})
 }
