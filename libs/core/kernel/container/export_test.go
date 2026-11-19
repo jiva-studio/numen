@@ -34,7 +34,7 @@ func (c TestInstallation) Settings() (settingsadapter.File, error) {
 
 // SetSettings returns the configuration with the values of a settings file applied.
 func (c TestInstallation) SetSettings(s settingsadapter.File) TestInstallation {
-	c.Config = applySettingsFile(c.Config, c.PluginHost, c.Resources, s)
+	c.Config = applySettingsFile(c.Config, c.Execution, c.Preferences, c.Resources, s)
 	return c
 }
 
@@ -98,7 +98,7 @@ func NotesShowingMoves(
 func GetNoteChanges(notes NoteUseCases) hostvault.NoteChanges { return getNoteChanges(notes) }
 
 func embedderReady(c searchWiring) bool {
-	_, err := c.RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
+	_, err := c.ActiveRuntime.ResolveCapability(bridge.CapabilitySearchSource)
 	return err == nil
 }
 
@@ -138,7 +138,7 @@ func UnsubscribeHost(c TestInstallation) {
 	if wiring.SubscribedHosts == nil {
 		return
 	}
-	wiring.SubscribedHosts.Unsubscribe(wiring.PluginHost.Configuration)
+	wiring.SubscribedHosts.Unsubscribe(wiring.Configuration)
 }
 
 func VaultReaders(c TestInstallation) vaultport.VaultReaders {
@@ -185,24 +185,39 @@ func ReadWholeVault(c TestInstallation,
 
 type TestInstallation struct {
 	Config
-	PluginHost *PluginHost
+	*TestPlugins
 	*Resources
 }
 
-func NewTestInstallation(c Config, host *PluginHost) TestInstallation {
-	return TestInstallation{Config: c, PluginHost: PreparePluginHost(host, c.SafeMode), Resources: NewResources()}
+func NewTestInstallation(c Config, host *TestPlugins) TestInstallation {
+	if host == nil {
+		host = &TestPlugins{}
+	}
+	execution, preferences, endpoints := PreparePluginHost(host.Execution, host.Preferences, host.Endpoints, c.SafeMode)
+	return TestInstallation{Config: c, TestPlugins: &TestPlugins{Execution: execution, Preferences: preferences, Endpoints: endpoints}, Resources: NewResources()}
 }
 
 func (c TestInstallation) buildSettingsWiring() settingsWiring {
-	return settingsOf(c.Config, c.PluginHost, c.Resources)
+	return settingsOf(c.Config, c.Execution, c.Preferences, c.Resources)
 }
 
 func (c TestInstallation) buildPluginWiring() pluginsWiring {
-	return plugins(c.Config, c.PluginHost, c.Resources)
+	return plugins(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources)
 }
 
 func (c TestInstallation) buildVaultWiring() vaultWiring {
-	return vaultOf(c.Config, c.PluginHost, c.Resources)
+	return plugins(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources).vault
+}
+
+type TestPlugins struct {
+	Execution   *PluginExecution
+	Preferences *PluginPreferences
+	Endpoints   *PluginEndpoints
+}
+
+func AdaptTestPlugins(management *PluginManagement, supervision *PluginSupervision) *TestPlugins {
+	execution, preferences, endpoints := AdaptPluginHost(management, supervision)
+	return &TestPlugins{Execution: execution, Preferences: preferences, Endpoints: endpoints}
 }
 
 func GetRefresh(c TestInstallation, db *Index) vault.Refresh {

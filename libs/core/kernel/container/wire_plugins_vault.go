@@ -125,21 +125,12 @@ func completeHooks(c pluginsWiring, db *Index, hooks PluginVaultHooks) PluginVau
 	return hooks
 }
 
-func getPluginDir(c pluginsWiring, id string) (string, bool) {
-	p, ok := c.PluginHost.Runtime.GetPlugin(id)
-	return p.Dir, ok
-}
-
-func getFrontendPluginIDs(c pluginsWiring) []string {
-	return getRuntimeManifests(c.PluginHost.Runtime).ListFrontendPluginIDs()
-}
-
 func setPluginWindow(c pluginsWiring, window hostendpoint.WindowControl) {
-	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) { l.Window = window })
+	c.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Window = window })
 }
 
 func emitPluginEvent(c pluginsWiring, event string) {
-	c.PluginHost.Runtime.EmitEvent(event)
+	c.Execution.Runtime.EmitEvent(event)
 }
 
 func signalPluginChanges(c pluginsWiring) {
@@ -151,15 +142,15 @@ func watchPluginChanges(c pluginsWiring) (<-chan struct{}, func()) {
 }
 
 func openChooseTabKind(c pluginsWiring) *tabkind.Choose {
-	return tabkind.NewChoose(getRuntimeManifests(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
+	return tabkind.NewChoose(getRuntimeManifests(c.Execution.Runtime), c.Execution.Watch, getWhenConfig(c))
 }
 
 func openVersionItems(c pluginsWiring) *textversion.VersionItems {
 	if c.vault.TextVersions == nil {
 		return nil
 	}
-	run := newPluginCommands(c, c.RunningHost, nil).Run
-	return textversion.NewVersionItems(c.vault.TextVersions.Texts, c.vault.TextVersions.Versions, run, c.RunningHost.Watch)
+	run := newPluginCommands(c, c.ActiveExecution, nil).Run
+	return textversion.NewVersionItems(c.vault.TextVersions.Texts, c.vault.TextVersions.Versions, run, c.ActiveExecution.Watch)
 }
 
 func openTriggers(c pluginsWiring) *trigger.Triggers {
@@ -167,8 +158,8 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: getRuntimeManifests(c.RunningHost.Runtime), Run: newPluginCommands(c, c.RunningHost, nil).Run, Readers: vaultReaders(c.vault),
-		Notes: pluginsNewNoteReader(c), Types: c.RunningHost.Watch, Versions: c.vault.TextVersions.Texts, Config: getWhenConfig(c),
+		Plugins: getRuntimeManifests(c.ActiveExecution.Runtime), Run: newPluginCommands(c, c.ActiveExecution, nil).Run, Readers: vaultReaders(c.vault),
+		Notes: pluginsNewNoteReader(c), Types: c.ActiveExecution.Watch, Versions: c.vault.TextVersions.Texts, Config: getWhenConfig(c),
 	})
 }
 
@@ -179,7 +170,7 @@ func pluginsNewNoteReader(c pluginsWiring) noteport.NoteReader {
 func getWhenConfig(c pluginsWiring) pluginport.WhenConfig {
 	return settingsadapter.WhenConfig{
 		App:     func() []plugindomain.Setting { return listAppSettings(c.settings) },
-		Plugins: c.PluginHost.Runtime.GetPluginInfos,
+		Plugins: c.Execution.Runtime.GetPluginInfos,
 	}
 }
 
@@ -190,11 +181,12 @@ func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.V
 	}
 }
 
-func GetFrontendPluginIDs(c Config, host *PluginHost, res *Resources) []string {
-	return getFrontendPluginIDs(plugins(c, host, res))
+func GetFrontendPluginIDs(runtime PluginRuntime) []string {
+	return getRuntimeManifests(runtime).ListFrontendPluginIDs()
 }
 
 // GetPluginDir returns the folder of a plugin and whether the plugin is installed.
-func GetPluginDir(c Config, host *PluginHost, res *Resources, id string) (string, bool) {
-	return getPluginDir(plugins(c, host, res), id)
+func GetPluginDir(resolver pluginport.PluginResolver, id string) (string, bool) {
+	p, ok := resolver.GetPlugin(id)
+	return p.Dir, ok
 }

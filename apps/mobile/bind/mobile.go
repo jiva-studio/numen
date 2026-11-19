@@ -67,17 +67,17 @@ func (c *Core) Start(dir string) (int, error) {
 
 	cfg := makeConfig(dir)
 	res := makeResources(os.Stderr)
-	host := container.PreparePluginHost(nil, cfg.SafeMode)
+	execution, preferences, endpoints := container.PreparePluginHost(nil, nil, nil, cfg.SafeMode)
 
 	// The list holds a folder under the name it resolves to, and that is the
 	// name the vault is opened by.
-	filed, err := registerVault(cfg, host, res, root)
+	filed, err := registerVault(cfg, res, root)
 	if err != nil {
 		return 0, err
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	opened, err := container.OpenWindow(cfg, host, res, ctx, filed, os.Stderr)
+	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, ctx, container.WindowOpening{Named: filed, Out: os.Stderr})
 	if err != nil {
 		stop()
 		return 0, err
@@ -88,7 +88,7 @@ func (c *Core) Start(dir string) (int, error) {
 	// folder cannot be created, only the default theme is loaded. A theme
 	// named in the settings that is missing from the catalog is reported on
 	// the platform log.
-	if wrong := container.SetThemes(cfg, host, res, opened.Installation, container.Scales{}, opened.RecordThemeWarning); wrong != nil {
+	if wrong := cfg.SetThemes(execution, preferences, res, opened.Installation, container.Scales{}, opened.RecordThemeWarning); wrong != nil {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
 	listener, err := listenLocal(ctx)
@@ -218,8 +218,8 @@ func makeResources(out io.Writer) *container.Resources {
 	return res
 }
 
-func registerVault(cfg container.Config, host *container.PluginHost, res *container.Resources, root string) (string, error) {
-	registered, err := cfg.EnsureVault(host, res, root, "numen", false)
+func registerVault(cfg container.Config, res *container.Resources, root string) (string, error) {
+	registered, err := cfg.EnsureVault(res, root, "numen", false)
 	if err != nil {
 		return "", err
 	}

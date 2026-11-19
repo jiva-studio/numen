@@ -118,7 +118,7 @@ func TestAPluginAsksTheRowsOfItsOwnSettingForAConnection(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
 	setModelCalls(cfg.buildPluginWiring(), noNotices{}.ReportSetAside)
 
-	_, err := cfg.PluginHost.Endpoint.GetModelCalls().Call(t.Context(), rowsPlugin, modelcall.Request{Operation: "llm.complete"}, func([]byte) error { return nil })
+	_, err := cfg.Endpoints.Endpoint.GetModelCalls().Call(t.Context(), rowsPlugin, modelcall.Request{Operation: "llm.complete"}, func([]byte) error { return nil })
 
 	var failed *connection.AllFailedError
 	if !errors.As(err, &failed) {
@@ -138,7 +138,7 @@ func TestAPluginWithoutRowsGetsNoConnection(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
 	setModelCalls(cfg.buildPluginWiring(), noNotices{}.ReportSetAside)
 
-	_, err := cfg.PluginHost.Endpoint.GetModelCalls().Call(t.Context(), "md.numen.sample.other", modelcall.Request{Operation: "llm.complete"}, func([]byte) error { return nil })
+	_, err := cfg.Endpoints.Endpoint.GetModelCalls().Call(t.Context(), "md.numen.sample.other", modelcall.Request{Operation: "llm.complete"}, func([]byte) error { return nil })
 
 	if !errors.Is(err, connection.ErrNoConnection) {
 		t.Errorf("err = %v, want ErrNoConnection", err)

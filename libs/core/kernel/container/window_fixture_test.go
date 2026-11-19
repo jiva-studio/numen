@@ -30,7 +30,7 @@ func (w windowVaults) OpenPluginVault(
 	if err := container.InstallPluginVault(w.cfg, w.db, current, hooks); err != nil {
 		return nil, err
 	}
-	return w.cfg.PluginHost.Endpoint.GetPluginVault(), nil
+	return w.cfg.Endpoints.Endpoint.GetPluginVault(), nil
 }
 
 func (w windowVaults) OpenNotesShowingMoves(

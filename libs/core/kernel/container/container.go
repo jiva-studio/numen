@@ -91,28 +91,42 @@ func getLogEntries(res *Resources) *logsusecase.Entries {
 	return logsusecase.NewEntries()
 }
 
-// PreparePluginHost selects the installation's host and applies its launch mode.
-func PreparePluginHost(host *PluginHost, safeMode bool) *PluginHost {
-	host = getPluginHost(host)
-	host.Runtime.SetSafeMode(safeMode)
-	return host
+// PreparePluginHost selects the installation's roles and applies its launch mode.
+func PreparePluginHost(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, safeMode bool) (*PluginExecution, *PluginPreferences, *PluginEndpoints) {
+	exec = getPluginExecution(exec)
+	exec.Runtime.SetSafeMode(safeMode)
+	return exec, getPluginPreferences(prefs), getPluginEndpoints(endpoints)
 }
 
-// GetMachine is what the hardware allows the installation to use, as the settings last resolved it.
+// GetMachine returns the machine plan resolved from the settings.
 func (c Config) GetMachine() Machine { return c.machine }
 
-func getPluginHost(host *PluginHost) *PluginHost {
-	if host == nil {
-		return newAbsentHost(plugindomain.NotInstalled, nil)
+func getPluginExecution(exec *PluginExecution) *PluginExecution {
+	if exec == nil {
+		return newAbsentExecution(plugindomain.NotInstalled, nil)
 	}
-	return host
+	return exec
 }
 
-func getRunningHost(host *PluginHost, safeMode bool) *PluginHost {
-	if safeMode {
-		return newAbsentHost(plugindomain.Disabled, errSafeMode)
+func getPluginPreferences(prefs *PluginPreferences) *PluginPreferences {
+	if prefs == nil {
+		return newAbsentPreferences()
 	}
-	return getPluginHost(host)
+	return prefs
+}
+
+func getPluginEndpoints(endpoints *PluginEndpoints) *PluginEndpoints {
+	if endpoints == nil {
+		return newAbsentEndpoints()
+	}
+	return endpoints
+}
+
+func getRunningExecution(exec *PluginExecution, safeMode bool) *PluginExecution {
+	if safeMode {
+		return newAbsentExecution(plugindomain.Disabled, errSafeMode)
+	}
+	return getPluginExecution(exec)
 }
 
 // GetClock returns the clock every use case assembled here is handed.
@@ -127,7 +141,9 @@ func getErrorHandler(indexPath string, res *Resources) window.ErrorHandler {
 	return windowlogs.ReportError(openOptionalRecordLog(indexPath, res), res.ErrorHandler, "Background operation failed")
 }
 
-func settingsOf(c Config, host *PluginHost, res *Resources) settingsWiring {
+func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources) settingsWiring {
+	runtime := getPluginExecution(exec).Runtime
+	prefs = getPluginPreferences(prefs)
 	return settingsWiring{
 		settingsPlaces: settingsPlaces{
 			SettingsPath:    c.SettingsPath,
@@ -142,19 +158,27 @@ func settingsOf(c Config, host *PluginHost, res *Resources) settingsWiring {
 			PluginChanges:   res.pluginChanges,
 			SubscribedHosts: &res.subscribedHosts,
 		},
-		PluginHost:   getPluginHost(host),
-		ErrorHandler: getErrorHandler(c.IndexPath, res),
+		Infos:         runtime,
+		Configuration: prefs.Configuration,
+		Views:         prefs.Views,
+		ApplySetting:  prefs.ApplySetting,
+		Detection:     prefs.Detection,
+		ErrorHandler:  getErrorHandler(c.IndexPath, res),
 	}
 }
 
-func searchWith(c Config, res *Resources, v vaultWiring) searchWiring {
+func searchWith(c Config, exec, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, v vaultWiring) searchWiring {
 	return searchWiring{
 		ServiceDir:         c.ServiceDir,
 		ShouldRebuildIndex: c.ShouldRebuildIndex,
 		Chunks:             res.Chunks,
 		ResolvedCompute:    c.machine.ResolvedCompute,
-		PluginHost:         v.PluginHost,
-		RunningHost:        v.RunningHost,
+		Runtime:            exec.Runtime,
+		Watch:              exec.Watch,
+		Health:             exec.Health,
+		ActiveRuntime:      running.Runtime,
+		Sources:            endpoints.SourceDescriptions,
+		Lender:             endpoints.Lender,
 		Clock:              GetClock(res),
 		VaultReaders:       vaultReaders(v),
 		TextReaders:        getTextReaders(v),
@@ -162,14 +186,14 @@ func searchWith(c Config, res *Resources, v vaultWiring) searchWiring {
 	}
 }
 
-func vaultBase(c Config, host *PluginHost, res *Resources, texts *TextVersions) vaultWiring {
+func vaultBase(c Config, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) vaultWiring {
 	return vaultWiring{
 		IndexPath:    c.IndexPath,
 		RegistryPath: c.RegistryPath,
 		ServiceDir:   c.ServiceDir,
 		Clock:        GetClock(res),
-		PluginHost:   getPluginHost(host),
-		RunningHost:  getRunningHost(host, c.SafeMode),
+		Lender:       endpoints.Lender,
+		TextPlugins:  running.Runtime.TextPlugins,
 		TextVersions: texts,
 		TextReaders:  res.TextReaders,
 		VaultLocks:   res.vaultLocks,
@@ -187,18 +211,21 @@ func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, search
 	return base
 }
 
-func assemble(c Config, host *PluginHost, res *Resources, texts *TextVersions) pluginsWiring {
+func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) pluginsWiring {
 	// texts are the text versions the open made over its index, or nil where it makes none.
-	host = getPluginHost(host)
-	settings := settingsOf(c, host, res)
-	base := vaultBase(c, host, res, texts)
-	search := searchWith(c, res, base)
+	exec = getPluginExecution(exec)
+	running := getRunningExecution(exec, c.SafeMode)
+	endpoints = getPluginEndpoints(endpoints)
+	settings := settingsOf(c, exec, prefs, res)
+	base := vaultBase(c, running, endpoints, res, texts)
+	search := searchWith(c, exec, running, endpoints, res, base)
 	return pluginsWiring{
 		pluginInstall: pluginInstall{
 			PluginCachePath: c.PluginCachePath,
 			ServiceDir:      c.ServiceDir,
-			PluginHost:      host,
-			RunningHost:     base.RunningHost,
+			Execution:       exec,
+			ActiveExecution: running,
+			Endpoints:       endpoints,
 			PluginCatalog:   res.PluginCatalog,
 			KeyStore:        res.KeyStore,
 		},
@@ -208,14 +235,10 @@ func assemble(c Config, host *PluginHost, res *Resources, texts *TextVersions) p
 	}
 }
 
-func plugins(c Config, host *PluginHost, res *Resources) pluginsWiring {
-	return assemble(c, host, res, nil)
+func plugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) pluginsWiring {
+	return assemble(c, exec, prefs, endpoints, res, nil)
 }
 
-func vaultOf(c Config, host *PluginHost, res *Resources) vaultWiring {
-	return plugins(c, host, res).vault
-}
-
-func openIndexedPlugins(c Config, host *PluginHost, res *Resources, db *Index) pluginsWiring {
-	return assemble(c, host, res, newTextVersions(vaultBase(c, host, res, nil), db))
+func openIndexedPlugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, db *Index) pluginsWiring {
+	return assemble(c, exec, prefs, endpoints, res, newTextVersions(vaultBase(c, getRunningExecution(exec, c.SafeMode), getPluginEndpoints(endpoints), res, nil), db))
 }

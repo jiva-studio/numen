@@ -12,27 +12,36 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 )
 
-func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHost {
-	runtime, settings := absent.Runtime{Reason: reason, Cause: cause}, absent.Settings{}
-	lender := hostendpoint.NewLender()
-	return &PluginHost{
+func newAbsentExecution(reason plugindomain.UnavailableReason, cause error) *PluginExecution {
+	runtime := absent.Runtime{Reason: reason, Cause: cause}
+	settings := absent.Settings{}
+	return &PluginExecution{
 		Runtime: PluginRuntime{
 			Activator: runtime, PluginRetrier: runtime, PluginLister: runtime,
 			PluginResolver: runtime, PluginEventEmitter: runtime, PluginBinding: runtime, TextPlugins: runtime,
 			PluginFailures: runtime, ConfigWatcher: runtime, ClientLookup: transport.NewClientLookup(nil),
 		},
+		Watch:     PluginWatch{PluginShutdown: settings, DependencyReporter: settings, ContentTypeTable: contenttype.Open()},
+		Health:    pluginhealth.NewItems(),
+		Processes: absent.Processes{},
+	}
+}
+
+func newAbsentPreferences() *PluginPreferences {
+	settings := absent.Settings{}
+	return &PluginPreferences{
 		Configuration: PluginConfiguration{
 			PluginSettingDeclarer: settings, ConfigRefresher: settings, PluginConfig: settings,
 			PluginSettings: settings,
 		},
-		Watch:               PluginWatch{PluginShutdown: settings, DependencyReporter: settings, ContentTypeTable: contenttype.Open()},
-		Endpoint:            hostendpoint.NewServices(lender.Get),
-		Lender:              lender,
 		ApplySetting:        func(context.Context, string, string, any) error { return nil },
 		Views:               PluginViews{Follow: func(settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return nil }},
 		SetStorage:          func(string, string) {},
 		RefreshDependencies: func() {},
-		Health:              pluginhealth.NewItems(),
-		Processes:           absent.Processes{},
 	}
+}
+
+func newAbsentEndpoints() *PluginEndpoints {
+	lender := hostendpoint.NewLender()
+	return &PluginEndpoints{Endpoint: hostendpoint.NewServices(lender.Get), Lender: lender}
 }

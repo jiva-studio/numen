@@ -64,10 +64,10 @@ func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	if _, response, _, err := readSettings(settingsOf(Config{}, nil, NewResources()))(); err == nil || response != "" {
+	if _, response, _, err := readSettings(settingsOf(Config{}, nil, nil, NewResources()))(); err == nil || response != "" {
 		t.Errorf("settings were read from %q: %v", response, err)
 	}
-	err := getSettingsWriter(settingsOf(Config{}, nil, NewResources()))([]settings.Setting{
+	err := getSettingsWriter(settingsOf(Config{}, nil, nil, NewResources()))([]settings.Setting{
 		{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`},
 	})
 	if err == nil {
@@ -83,7 +83,7 @@ func TestSettingsFile_DefaultsToUserConfigDir(t *testing.T) {
 	}
 	want = filepath.Join(want, "numen", "numen.json")
 
-	got, err := settingsSettingsFile(settingsOf(Config{}, nil, NewResources()))
+	got, err := settingsSettingsFile(settingsOf(Config{}, nil, nil, NewResources()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 
 	got, err := settingsSettingsFile(settingsOf(Config{
 		Paths: Paths{RegistryPath: registry},
-	}, nil, NewResources()))
+	}, nil, nil, NewResources()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func TestTheIndexIsWhereTheInstallationNamedItAndItsFolderIsMade(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "nested", "deeper", "index.db")
 
-	got, err := prepareIndexPath(vaultOf(Config{Paths: Paths{IndexPath: named}}, nil, NewResources()))
+	got, err := prepareIndexPath(plugins(Config{Paths: Paths{IndexPath: named}}, nil, nil, nil, NewResources()).vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,15 +149,15 @@ func TestAnIndexWhoseFolderCannotBeMadeIsAReason(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := prepareIndexPath(vaultOf(Config{
+	got, err := prepareIndexPath(plugins(Config{
 		Paths: Paths{IndexPath: filepath.Join(file, "index.db")},
-	}, nil, NewResources()))
+	}, nil, nil, nil, NewResources()).vault)
 	if err == nil || got != "" {
 		t.Errorf("the index is at %q: %v", got, err)
 	}
-	if _, err := openIndex(vaultOf(Config{
+	if _, err := openIndex(plugins(Config{
 		Paths: Paths{IndexPath: filepath.Join(file, "index.db")},
-	}, nil, NewResources()), t.Context()); err == nil {
+	}, nil, nil, nil, NewResources()).vault, t.Context()); err == nil {
 		t.Error("an index was opened where its folder cannot be made")
 	}
 }
@@ -178,7 +178,7 @@ func TestHandleError_CallsConfiguredHandler(t *testing.T) {
 func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	err := getSettingsWriter(settingsOf(Config{}, nil, NewResources()))([]settings.Setting{{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`}})
+	err := getSettingsWriter(settingsOf(Config{}, nil, nil, NewResources()))([]settings.Setting{{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`}})
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}
@@ -231,10 +231,10 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 
 func TestEveryFolderOfTheMachineIsGivenAnIdentityAndATrash(t *testing.T) {
 	isolate(t)
-	if vaultIdentity(vaultOf(Config{}, nil, NewResources())) == nil {
+	if vaultIdentity(plugins(Config{}, nil, nil, nil, NewResources()).vault) == nil {
 		t.Error("folders are given no identity")
 	}
-	if vaultTrash(vaultOf(Config{}, nil, NewResources())) == nil {
+	if vaultTrash(plugins(Config{}, nil, nil, nil, NewResources()).vault) == nil {
 		t.Error("what is deleted has nowhere to go")
 	}
 }
@@ -243,7 +243,7 @@ func TestTheVaultWaitsOnTheClockTheInstallationNamed(t *testing.T) {
 	named := testsupport.NewClock()
 	resources := NewResources()
 	resources.Now = named
-	quiet := vaultBase(Config{}, nil, resources, nil).Clock.After(indexing.QuietPeriod)
+	quiet := vaultBase(Config{}, getPluginExecution(nil), getPluginEndpoints(nil), resources, nil).Clock.After(indexing.QuietPeriod)
 	named.Advance(indexing.QuietPeriod)
 	select {
 	case <-quiet:

@@ -28,8 +28,8 @@ func TestFilesChangedWakesOnlyThePluginsThatTakeTheChangedTypes(t *testing.T) {
 		},
 	)
 
-	host.Events.EmitFilesChanged("vault-1", []domain.ContentType{host.ContentTypes.GetContentType("books/river.pdf")})
-	if err := host.Events.GetEventBus().Flush(t.Context()); err != nil {
+	host.Management.Events.EmitFilesChanged("vault-1", []domain.ContentType{host.Management.ContentTypes.GetContentType("books/river.pdf")})
+	if err := host.Management.Events.GetEventBus().Flush(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -61,7 +61,7 @@ func TestIsTakingFileMatchesTheMasksOfTheActivationEvent(t *testing.T) {
 		{"md.test.pdf", "books/lake.epub", false},
 		{"md.test.tags", "books/lake.epub", true},
 	} {
-		if got := host.ContentTypes.IsTakingFile(tc.pluginID, tc.path); got != tc.want {
+		if got := host.Management.ContentTypes.IsTakingFile(tc.pluginID, tc.path); got != tc.want {
 			t.Errorf("%s takes %s: %v, want %v", tc.pluginID, tc.path, got, tc.want)
 		}
 	}

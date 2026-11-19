@@ -9,16 +9,14 @@ import (
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
-// TestContainerDoesNotDowncastPluginHost ensures container code reaches the roles of the plugin host
-// solely through the capabilities of container.PluginHost and the fields of container.PluginRoles, never by an
-// assertion to a concrete role of package plugin (*plugin.Discovery, *plugin.Settings and the like).
+// The container receives concrete plugin capabilities during assembly.
 func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 	wrong, read, err := findPluginDowncasts(".")
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, one := range wrong {
-		t.Errorf("%s is forbidden; use the capabilities of container.PluginHost", one)
+		t.Errorf("%s requires a concrete plugin type assertion; pass the required role during assembly", one)
 	}
 	if read == 0 {
 		t.Fatal("no file of the container read: the rule is checked against nothing")

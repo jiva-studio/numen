@@ -86,7 +86,7 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, db)
 	versions := newTextVersions(cfg.buildVaultWiring(), db)
-	a := assemble(cfg.Config, cfg.PluginHost, cfg.Resources, versions)
+	a := assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 
 	readIntoIndex(t, a, db, v)
@@ -119,7 +119,7 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, db)
 	versions := newTextVersions(cfg.buildVaultWiring(), db)
-	a := assemble(cfg.Config, cfg.PluginHost, cfg.Resources, versions)
+	a := assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	readIntoIndex(t, a, db, v)
 	if _, err := db.VectorIndex().DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
 		t.Fatal(err)
@@ -150,7 +150,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, db)
 	versions := newTextVersions(cfg.buildVaultWiring(), db)
-	a := assemble(cfg.Config, cfg.PluginHost, cfg.Resources, versions)
+	a := assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, a, db, v)
 
@@ -186,7 +186,7 @@ func newTalkIndex(t *testing.T) (pluginsWiring, *Index, domain.Vault, domain.Tex
 	}
 	testsupport.CloseAfter(t, db)
 	versions := newTextVersions(cfg.buildVaultWiring(), db)
-	a := assemble(cfg.Config, cfg.PluginHost, cfg.Resources, versions)
+	a := assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, a, db, v)
 	return a, db, v, version
@@ -344,7 +344,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts := newTextVersions(cfg.buildVaultWiring(), db)
-	a := assemble(cfg.Config, cfg.PluginHost, cfg.Resources, texts)
+	a := assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, texts)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, a, db, v)
 	if err := db.Close(); err != nil {
@@ -361,7 +361,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, db)
 	texts = newTextVersions(cfg.buildVaultWiring(), db)
-	a = assemble(cfg.Config, cfg.PluginHost, cfg.Resources, texts)
+	a = assemble(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, texts)
 	readIntoIndex(t, a, db, v)
 
 	raw, err := os.ReadFile(filepath.Join(v.Path, renamed))

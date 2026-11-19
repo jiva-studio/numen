@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"net/http"
 	"slices"
 	"testing"
 	"time"
+
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"connectrpc.com/connect"
 
@@ -73,22 +75,22 @@ func newMCPCaller() testPlugin {
 	return newCaller("vault:read")
 }
 
-func openToolsOfHost(t *testing.T, host *container.PluginRoles) numenv1connect.PluginToolServiceClient {
+func openToolsOfHost(t *testing.T, host *pluginhost.Host) numenv1connect.PluginToolServiceClient {
 	t.Helper()
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
 	access := &vaultapi.Access{Switch: shownVault{
 		vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}, other: domain.Vault{ID: "v-garden", Name: "Garden"},
 	}}
-	container.AdaptPluginHost(host).Lender.Update(func(l *hostendpoint.Lent) { l.Vault = access })
-	port, err := host.Services.OpenHostEndpoint(t.Context())
+	container.AdaptTestPlugins(host.Management, host.Supervision).Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Vault = access })
+	port, err := host.Supervision.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	caller, err := host.Activation.EnsureActive(t.Context(), mcpPlugin, plugindomain.Holder{Who: plugindomain.WhoWindow})
+	caller, err := host.Management.Activation.EnsureActive(t.Context(), mcpPlugin, plugindomain.Holder{Who: plugindomain.WhoWindow})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,22 +5,24 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
-func newReaderHost(manifests ...catalogmanifest.Manifest) *container.PluginRoles {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
-	host.ContentTypes.SetContentTypeTable(contenttype.Open())
+func newReaderHost(manifests ...catalogmanifest.Manifest) *pluginhost.Host {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	host.Management.ContentTypes.SetContentTypeTable(contenttype.Open())
 	for _, manifest := range manifests {
 		manifest.Frontend = &catalogmanifest.Frontend{}
-		setPlugin(host, manifest.ID, catalogmanifest.Discovered{Manifest: manifest})
+		setPlugin(host.Management, manifest.ID, catalogmanifest.Discovered{Manifest: manifest})
 	}
 	return host
 }
@@ -31,9 +33,9 @@ func newReader(pluginID, readerID string, rank domain.HandlerRank, types ...doma
 	}}
 }
 
-func getReaders(host *container.PluginRoles) map[string][]plugindomain.ReaderInfo {
+func getReaders(management *container.PluginManagement) map[string][]plugindomain.ReaderInfo {
 	out := map[string][]plugindomain.ReaderInfo{}
-	for _, info := range host.Registry.GetPluginInfos() {
+	for _, info := range management.Registry.GetPluginInfos() {
 		out[info.ID] = info.Readers
 	}
 	return out
@@ -45,7 +47,7 @@ func TestGetReaders_AssignsDefaultTypeToLowerPluginID(t *testing.T) {
 		newReader("org.example.a", "pdf", domain.RankDefault, "application/pdf"),
 	)
 
-	got := getReaders(host)
+	got := getReaders(host.Management)
 	want := map[string][]plugindomain.ReaderInfo{
 		"org.example.a": {{ID: "pdf", Extensions: []string{"pdf"}}},
 		"org.example.b": {{ID: "pdf"}},
@@ -54,8 +56,8 @@ func TestGetReaders_AssignsDefaultTypeToLowerPluginID(t *testing.T) {
 		t.Fatalf("readers = %+v; want %+v", got, want)
 	}
 
-	host.Settings.SetSettings(map[string]map[string]any{"org.example.a": {plugin.SettingEnabled: false}})
-	if got := getReaders(host)["org.example.b"]; !reflect.DeepEqual(got, []plugindomain.ReaderInfo{{ID: "pdf", Extensions: []string{"pdf"}}}) {
+	host.Management.Settings.SetSettings(map[string]map[string]any{"org.example.a": {plugin.SettingEnabled: false}})
+	if got := getReaders(host.Management)["org.example.b"]; !reflect.DeepEqual(got, []plugindomain.ReaderInfo{{ID: "pdf", Extensions: []string{"pdf"}}}) {
 		t.Fatalf("with the lower id disabled, readers = %+v", got)
 	}
 }
@@ -67,7 +69,7 @@ func TestPluginInfosAssignAnExtensionToTheNarrowerType(t *testing.T) {
 		newReader("org.example.y", "raw", domain.RankAlternate, "audio/flac"),
 	)
 
-	got := getReaders(host)
+	got := getReaders(host.Management)
 	audio := got["org.example.a"][0].Extensions
 	if !slices.Contains(audio, "wav") || !slices.Contains(audio, "flac") || slices.Contains(audio, "mp3") {
 		t.Errorf("audio/* opens %v; want wav and flac and no mp3", audio)

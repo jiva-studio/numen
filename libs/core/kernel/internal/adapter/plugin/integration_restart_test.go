@@ -3,8 +3,6 @@ package plugin_test
 import (
 	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +13,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"connectrpc.com/connect"
 
@@ -123,12 +123,12 @@ func writeRestartedPlugin(t *testing.T) string {
 func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 	for _, tc := range getBridgeContracts() {
 		t.Run(tc.name, func(t *testing.T) {
-			host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", writeRestartedPlugin(t))
-			if err := host.Discovery.Discover(); err != nil {
+			host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", writeRestartedPlugin(t))
+			if err := host.Management.Discovery.Discover(); err != nil {
 				t.Fatal(err)
 			}
 			launcher := &restartingLauncher{t: t}
-			host.Processes.SetLauncher(launcher.launch)
+			host.Supervision.Processes.SetLauncher(launcher.launch)
 
 			bridge, call, err := tc.open(t.Context(), pluginhost.Join(host))
 			if err != nil {
@@ -145,7 +145,7 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			running, _, runningServer := launcher.get(started - 1)
 			wiretest.KillProcess(t, running)
 			wiretest.WaitUntil(t, "the stopped plugin to lose its endpoint", func() bool {
-				return !host.Activation.HasEndpoint(contractPluginID)
+				return !host.Management.Activation.HasEndpoint(contractPluginID)
 			})
 			runningServer.Close()
 
@@ -158,7 +158,7 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			if _, again, _ := launcher.get(started); again.requested.Load() != 1 {
 				t.Errorf("the plugin started again was asked %d times, want 1", again.requested.Load())
 			}
-			if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+			if err := host.Management.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 				t.Errorf("TeardownAll: %v", err)
 			}
 		})

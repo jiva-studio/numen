@@ -23,10 +23,10 @@ func TestAVaultReportsNoOperationsOnceItIsRead(t *testing.T) {
 			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 		},
 	}, nil)
-	if _, err := cfg.AddVault(cfg.PluginHost, cfg.Resources, root, "alpha"); err != nil {
+	if _, err := cfg.AddVault(cfg.Resources, root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
-	installation, err := container.OpenWindow(cfg.Config, cfg.PluginHost, cfg.Resources, t.Context(), "", os.Stderr)
+	installation, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowOpening{Named: "", Out: os.Stderr})
 	if err != nil {
 		t.Fatal(err)
 	}

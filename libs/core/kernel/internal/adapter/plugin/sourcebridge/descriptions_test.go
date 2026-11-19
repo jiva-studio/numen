@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -26,7 +25,7 @@ import (
 // keptSource is a search source plugin whose host keeps descriptions in a cache folder, and counts the times
 // it started the plugin.
 type keptSource struct {
-	host     *container.PluginRoles
+	host     *pluginhost.Host
 	mock     *mockSourceServer
 	launches *atomic.Int32
 }
@@ -52,20 +51,20 @@ func startKeptSource(t *testing.T) keptSource {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(text), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", root)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	host.Storage.SetStorageRoots(t.TempDir(), "")
+	host.Supervision.Storage.SetStorageRoots(t.TempDir(), "")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
 	// Each start takes the next of the processes started here.
 	processes := []*exec.Cmd{wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t)}
 	launches := &atomic.Int32{}
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		next := int(launches.Add(1)) - 1
 		if next >= len(processes) {
 			return nil, nil, errors.New("no process is left to start")
@@ -88,7 +87,7 @@ func (s keptSource) open(t *testing.T, kept *sourcebridge.Descriptions) *sourceb
 
 func (s keptSource) stop(t *testing.T) {
 	t.Helper()
-	if err := s.host.Teardown.StopPlugin(t.Context(), embeddingPluginID); err != nil {
+	if err := s.host.Management.Teardown.StopPlugin(t.Context(), embeddingPluginID); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -98,11 +97,11 @@ func (s keptSource) stop(t *testing.T) {
 func TestReopeningASourceWithTheSameConfigurationStartsNoPlugin(t *testing.T) {
 	source := startKeptSource(t)
 	source.mock.recipe.Store("orchard|small|384")
-	first := source.open(t, sourcebridge.NewDescriptions(source.host.Storage, source.host.Config)).Describe()
+	first := source.open(t, sourcebridge.NewDescriptions(source.host.Supervision.Storage, source.host.Management.Config)).Describe()
 	source.stop(t)
 	reads, launches := source.mock.describeCalls.Load(), source.launches.Load()
 
-	again := source.open(t, sourcebridge.NewDescriptions(source.host.Storage, source.host.Config)).Describe()
+	again := source.open(t, sourcebridge.NewDescriptions(source.host.Supervision.Storage, source.host.Management.Config)).Describe()
 
 	if got := source.launches.Load() - launches; got != 0 {
 		t.Errorf("opening the source again started the plugin %d times", got)
@@ -119,7 +118,7 @@ func TestReopeningASourceWithTheSameConfigurationStartsNoPlugin(t *testing.T) {
 // new model, and keeps it for the next opening.
 func TestASettingChangedWhileThePluginIsStoppedIsReadAgain(t *testing.T) {
 	source := startKeptSource(t)
-	kept := sourcebridge.NewDescriptions(source.host.Storage, source.host.Config)
+	kept := sourcebridge.NewDescriptions(source.host.Supervision.Storage, source.host.Management.Config)
 	bridge := source.open(t, kept)
 	var announced atomic.Int32
 	bridge.OnDescriptionChange(func() { announced.Add(1) })
@@ -140,7 +139,7 @@ func TestASettingChangedWhileThePluginIsStoppedIsReadAgain(t *testing.T) {
 	source.stop(t)
 	launches := source.launches.Load()
 
-	reopened := source.open(t, sourcebridge.NewDescriptions(source.host.Storage, source.host.Config))
+	reopened := source.open(t, sourcebridge.NewDescriptions(source.host.Supervision.Storage, source.host.Management.Config))
 	if got := reopened.Describe().Name; got != "large" {
 		t.Errorf("the source opened after the change as %q, want the new model", got)
 	}

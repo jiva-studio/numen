@@ -71,7 +71,7 @@ func mountCommand(w *windowWiring) {
 	if menu := openVersionItems(p); menu != nil {
 		versions = menu
 	}
-	commands := newPluginCommands(p, p.PluginHost, versions)
+	commands := newPluginCommands(p, p.Execution, versions)
 	handler := command.NewHandler(w.state, commands.Listing, commands.RunCommand, commands.ListItems)
 	w.inst.Mount(editor.NewRoute(command.NewRoute(w.state.Gate.CountQuestions(), handler)))
 }
@@ -184,7 +184,7 @@ func openGetSettings(s settingsWiring) *settings.Get {
 
 func mountSettings(w *windowWiring) {
 	state := w.state
-	retry := openRetryPlugin(w.a.settings, getPluginRetrier(w.a))
+	retry := settings.NewRetryPlugin(w.a.Execution.Runtime.RetryPlugin)
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)
 	if data := openPluginData(w.a.vault); data != nil {
 		folders = windowsettings.NewPluginFolders(retry, data, state)
@@ -202,15 +202,15 @@ func mountSettings(w *windowWiring) {
 }
 
 func mountPlugin(w *windowWiring) {
-	w.inst.SetPlugins(getPluginServices(w.a), func(id string) (string, bool) { return getPluginDir(w.a, id) })
-	host := w.a.PluginHost
+	w.inst.SetPlugins(GetPluginServices(w.a.Execution.Runtime), func(id string) (string, bool) { return GetPluginDir(w.a.Execution.Runtime.PluginResolver, id) })
+	host := w.a.Execution
 	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.PluginResolver, getConnectionResolve(w.a), w.a.vault.Clock)
 	handler := windowplugin.NewHandler(watch)
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.state.Gate.CountQuestions())))
 }
 
 func mountHealth(w *windowWiring) {
-	host := w.a.PluginHost
+	host := w.a.Execution
 	handler := windowhealth.NewHandler(
 		host.Health, pluginhealth.NewReport(host.Health, host.Runtime.PluginResolver), pluginhealth.NewClear(host.Health),
 	)
@@ -242,7 +242,7 @@ func mountLogs(w *windowWiring) {
 	record := openRecordLog(w.a.vault.IndexPath, w.logEntries, logLevelSetting(w.a.settings), w.a.vault.Clock)
 	watch := logsusecase.NewWatch(w.logEntries, logfiles.NewBesideIndex(w.a.vault.IndexPath), w.a.vault.Clock)
 	w.state.SetCallTrace(w.a.vault.Clock, w.a.vault.RecordLog)
-	w.a.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
+	w.a.Endpoints.Lender.Update(func(l *hostendpoint.Lent) {
 		l.Logs = record
 	})
 	handler := windowlogs.NewHandler(watch, record, logLevelSetting(w.a.settings), writeLogLevel(w.a.settings))
@@ -392,9 +392,9 @@ func getFeedStart(a pluginsWiring, db *Index) func(ctx context.Context, v domain
 		WatchPlugins:   func() (<-chan struct{}, func()) { return watchPluginChanges(a) },
 		ReadHead:       db.FileChanges().GetHead,
 		ListPaths:      db.FileChanges().ListChangedPaths,
-		GetContentType: a.PluginHost.Watch.GetContentType,
+		GetContentType: a.Execution.Watch.GetContentType,
 		Emit: func(v domain.Vault, types []domain.ContentType) {
-			a.PluginHost.Runtime.EmitFilesChanged(string(v.ID), types)
+			a.Execution.Runtime.EmitFilesChanged(string(v.ID), types)
 		},
 		Quiet: windowsession.FeedQuietPeriod,
 		After: a.vault.Clock.After,

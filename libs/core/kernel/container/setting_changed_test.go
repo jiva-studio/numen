@@ -92,8 +92,8 @@ func openInstallation(t *testing.T, body string) (container.TestInstallation, st
 		t.Fatal(err)
 	}
 	lent := newExternalPluginHost(t, "desktop.editor", writeEventfulPlugin(t))
-	host := &recordingHost{apply: lent.ApplySetting, PluginConfig: lent.Configuration.PluginConfig}
-	lent.ApplySetting, lent.Configuration.PluginConfig = host.applySetting, host
+	host := &recordingHost{apply: lent.Preferences.ApplySetting, PluginConfig: lent.Preferences.Configuration.PluginConfig}
+	lent.Preferences.ApplySetting, lent.Preferences.Configuration.PluginConfig = host.applySetting, host
 	cfg := container.NewTestInstallation(container.Config{Paths: container.Paths{SettingsPath: path}}, lent)
 	cfg = cfg.SetSettings(container.DefaultSettings())
 	t.Cleanup(func() { container.UnsubscribeHost(cfg) })

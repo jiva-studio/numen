@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -20,8 +21,8 @@ func failLaunching(_ context.Context, _ manifest.Discovered, _ int, _ string) (*
 	return nil, nil, errors.New("exec format error")
 }
 
-func getFailure(host *container.PluginRoles, id string) *plugindomain.HealthItem {
-	for _, item := range host.Health.List() {
+func getFailure(supervision *container.PluginSupervision, id string) *plugindomain.HealthItem {
+	for _, item := range supervision.Health.List() {
 		if item.PluginID == id && item.Key == plugindomain.HealthKeyStart {
 			return &item
 		}
@@ -32,16 +33,16 @@ func getFailure(host *container.PluginRoles, id string) *plugindomain.HealthItem
 func TestAPluginWhoseStartFailedIsListedWithItsReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
-	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion+1, &procs))
+	host.Supervision.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion+1, &procs))
 
-	if got := getFailure(host, failingPluginID); got != nil {
+	if got := getFailure(host.Supervision, failingPluginID); got != nil {
 		t.Fatalf("failure before any start = %+v, want none", got)
 	}
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
 		t.Fatalf("EnsureActive() = %v, want %v", err, manifest.ErrUnsupportedProtocol)
 	}
 
-	got := getFailure(host, failingPluginID)
+	got := getFailure(host.Supervision, failingPluginID)
 	if got == nil {
 		t.Fatal("a plugin on an unsupported protocol is listed without a failure")
 	}
@@ -59,23 +60,23 @@ func TestAPluginWhoseStartFailedIsListedWithItsReason(t *testing.T) {
 func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
-	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion+1, &procs))
+	host.Supervision.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion+1, &procs))
 	var recovered []string
-	host.Failures.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err == nil {
+	host.Supervision.Failures.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err == nil {
 		t.Fatal("expected the first start to fail")
 	}
 
-	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
-	failure, err := host.Retry.RetryPlugin(t.Context(), failingPluginID)
+	host.Supervision.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
+	failure, err := host.Management.Retry.RetryPlugin(t.Context(), failingPluginID)
 	if err != nil || failure != nil {
 		t.Fatalf("RetryPlugin() = %+v, %v, want the plugin started", failure, err)
 	}
 
-	if got := getFailure(host, failingPluginID); got != nil {
+	if got := getFailure(host.Supervision, failingPluginID); got != nil {
 		t.Fatalf("failure after a good retry = %+v, want none", got)
 	}
-	if status, _ := host.Registry.GetPluginStatus(failingPluginID); !status.IsActive {
+	if status, _ := host.Management.Registry.GetPluginStatus(failingPluginID); !status.IsActive {
 		t.Fatal("the retried plugin is not running")
 	}
 	if len(recovered) != 1 || recovered[0] != failingPluginID {
@@ -85,8 +86,8 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 
 func TestARetryThatFailsAgainAnswersTheReason(t *testing.T) {
 	host := newDiscoveredHost(t)
-	host.Processes.SetLauncher(failLaunching)
-	failure, err := host.Retry.RetryPlugin(t.Context(), failingPluginID)
+	host.Supervision.Processes.SetLauncher(failLaunching)
+	failure, err := host.Management.Retry.RetryPlugin(t.Context(), failingPluginID)
 	if err != nil {
 		t.Fatalf("RetryPlugin() error = %v", err)
 	}
@@ -96,10 +97,10 @@ func TestARetryThatFailsAgainAnswersTheReason(t *testing.T) {
 	if failure.Detail != "launch plugin org.example.sample: exec format error" {
 		t.Fatalf("failure detail = %q, want the launch error", failure.Detail)
 	}
-	if got := getFailure(host, failingPluginID); got == nil || got.Text != failure.Reason || got.Detail != failure.Detail {
+	if got := getFailure(host.Supervision, failingPluginID); got == nil || got.Text != failure.Reason || got.Detail != failure.Detail {
 		t.Fatalf("listed failure = %+v, want %+v", got, failure)
 	}
-	if items := host.Health.List(); len(items) != 1 {
+	if items := host.Supervision.Health.List(); len(items) != 1 {
 		t.Fatalf("health items = %+v, want the one start item", items)
 	}
 }
@@ -107,22 +108,22 @@ func TestARetryThatFailsAgainAnswersTheReason(t *testing.T) {
 func TestTheReasonOfAFailedStartIsListedUntilAStartSucceeds(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
-	host.Processes.SetLauncher(failLaunching)
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err == nil {
+	host.Supervision.Processes.SetLauncher(failLaunching)
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err == nil {
 		t.Fatal("expected the first start to fail")
 	}
-	if got := getFailure(host, failingPluginID); got == nil {
+	if got := getFailure(host.Supervision, failingPluginID); got == nil {
 		t.Fatal("the failed start is listed without its reason")
 	}
 	var recovered []string
-	host.Failures.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
+	host.Supervision.Failures.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
 
-	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
-	if _, err := host.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err != nil {
+	host.Supervision.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), failingPluginID, getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive() on the next use = %v, want the plugin started", err)
 	}
 
-	if got := getFailure(host, failingPluginID); got != nil {
+	if got := getFailure(host.Supervision, failingPluginID); got != nil {
 		t.Fatalf("failure after a start that succeeded = %+v, want none", got)
 	}
 	if len(recovered) != 1 || recovered[0] != failingPluginID {
@@ -133,7 +134,7 @@ func TestTheReasonOfAFailedStartIsListedUntilAStartSucceeds(t *testing.T) {
 func TestRetryOfAPluginTheHostDoesNotKnowIsNotInstalled(t *testing.T) {
 	host := newDiscoveredHost(t)
 
-	_, err := host.Retry.RetryPlugin(t.Context(), "md.numen.missing")
+	_, err := host.Management.Retry.RetryPlugin(t.Context(), "md.numen.missing")
 
 	var unavailable *plugindomain.UnavailableError
 	if !errors.As(err, &unavailable) || unavailable.Reason != plugindomain.NotInstalled {
@@ -143,12 +144,12 @@ func TestRetryOfAPluginTheHostDoesNotKnowIsNotInstalled(t *testing.T) {
 
 func TestEnablingAFailedPluginTellsItRecovered(t *testing.T) {
 	host := newDiscoveredHost(t)
-	host.Processes.SetLauncher(failLaunching)
-	if _, err := host.Retry.RetryPlugin(t.Context(), failingPluginID); err != nil {
+	host.Supervision.Processes.SetLauncher(failLaunching)
+	if _, err := host.Management.Retry.RetryPlugin(t.Context(), failingPluginID); err != nil {
 		t.Fatalf("RetryPlugin() error = %v", err)
 	}
 	var recovered []string
-	host.Failures.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
+	host.Supervision.Failures.SetOnFailureCleared(func(id string) { recovered = append(recovered, id) })
 
 	if err := setEnabled(t.Context(), host, failingPluginID, true); err != nil {
 		t.Fatalf("SetPluginEnabled() error = %v", err)
@@ -157,7 +158,7 @@ func TestEnablingAFailedPluginTellsItRecovered(t *testing.T) {
 	if len(recovered) != 1 || recovered[0] != failingPluginID {
 		t.Fatalf("recovered = %v, want one report of %s", recovered, failingPluginID)
 	}
-	if got := getFailure(host, failingPluginID); got != nil {
+	if got := getFailure(host.Supervision, failingPluginID); got != nil {
 		t.Fatalf("failure after enabling = %+v, want none", got)
 	}
 }
@@ -183,12 +184,12 @@ func TestAFailureIsDescribedInWordsAPersonReads(t *testing.T) {
 
 func TestDisablingAFailedPluginClearsItsFailure(t *testing.T) {
 	host := newDiscoveredHost(t)
-	host.Processes.SetLauncher(failLaunching)
-	if _, err := host.Retry.RetryPlugin(t.Context(), failingPluginID); err != nil {
+	host.Supervision.Processes.SetLauncher(failLaunching)
+	if _, err := host.Management.Retry.RetryPlugin(t.Context(), failingPluginID); err != nil {
 		t.Fatalf("RetryPlugin() error = %v", err)
 	}
 	var cleared []string
-	host.Failures.SetOnFailureCleared(func(id string) { cleared = append(cleared, id) })
+	host.Supervision.Failures.SetOnFailureCleared(func(id string) { cleared = append(cleared, id) })
 
 	if err := setEnabled(t.Context(), host, failingPluginID, false); err != nil {
 		t.Fatalf("SetPluginEnabled() error = %v", err)
@@ -197,7 +198,7 @@ func TestDisablingAFailedPluginClearsItsFailure(t *testing.T) {
 	if len(cleared) != 1 || cleared[0] != failingPluginID {
 		t.Fatalf("cleared = %v, want one report of %s", cleared, failingPluginID)
 	}
-	if got := getFailure(host, failingPluginID); got != nil {
+	if got := getFailure(host.Supervision, failingPluginID); got != nil {
 		t.Fatalf("failure after disabling = %+v, want none", got)
 	}
 }

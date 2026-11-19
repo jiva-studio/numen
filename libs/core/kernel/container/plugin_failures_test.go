@@ -33,29 +33,29 @@ func newFailingConfig(t *testing.T) TestInstallation {
 		t.Fatal(err)
 	}
 	host := openPluginRoles(t, "desktop.editor", root)
-	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("exec format error")
 	})
-	return NewTestInstallation(Config{}, AdaptPluginHost(host))
+	return NewTestInstallation(Config{}, AdaptTestPlugins(host.Management, host.Supervision))
 }
 
 func TestAFailedPluginIsItsStartItemUntilItIsEnabledAgain(t *testing.T) {
 	cfg := newFailingConfig(t)
 
-	failure, err := getPluginRetrier(cfg.buildPluginWiring())(t.Context(), "md.numen.sample")
+	failure, err := cfg.Execution.Runtime.RetryPlugin(t.Context(), "md.numen.sample")
 	if err != nil || failure == nil {
 		t.Fatalf("retry = %+v, %v, want the plugin to fail again", failure, err)
 	}
 
-	list := cfg.PluginHost.Health.List()
+	list := cfg.Execution.Health.List()
 	if len(list) != 1 || list[0].PluginID != "md.numen.sample" || list[0].Key != plugin.HealthKeyStart || list[0].Text != failure.Reason {
 		t.Fatalf("items = %+v, want the start item of md.numen.sample with %q", list, failure.Reason)
 	}
 
-	if err := cfg.PluginHost.ApplySetting(t.Context(), "md.numen.sample", "enabled", true); err != nil {
+	if err := cfg.Preferences.ApplySetting(t.Context(), "md.numen.sample", "enabled", true); err != nil {
 		t.Fatal(err)
 	}
-	if list := cfg.PluginHost.Health.List(); len(list) != 0 {
+	if list := cfg.Execution.Health.List(); len(list) != 0 {
 		t.Fatalf("items after recovery = %+v, want none", list)
 	}
 }
@@ -63,7 +63,7 @@ func TestAFailedPluginIsItsStartItemUntilItIsEnabledAgain(t *testing.T) {
 func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
 	cfg := NewTestInstallation(Config{}, nil)
 
-	_, err := getPluginRetrier(cfg.buildPluginWiring())(t.Context(), "md.numen.sample")
+	_, err := cfg.Execution.Runtime.RetryPlugin(t.Context(), "md.numen.sample")
 
 	var unavailable *plugin.UnavailableError
 	if !errors.As(err, &unavailable) || unavailable.Reason != plugin.NotInstalled {

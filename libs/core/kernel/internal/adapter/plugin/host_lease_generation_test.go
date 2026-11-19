@@ -19,25 +19,25 @@ func getLeaseCount(t *testing.T, sup *lifecycle.Supervisor) int {
 
 func TestAReleaseTakenOnAnEarlierProcessKeepsTheLeaseOfTheNewOne(t *testing.T) {
 	host := newAtlasHost(t, testsupport.NewClock(), 0)
-	startAtlas(t, host)
-	first := endpointOf(host, atlasPlugin).Token
-	host.Activation.Release(atlasPlugin, first, getTestHolder())
-	host.Teardown.ReleaseProcess(t.Context(), atlasPlugin)
-	if state := supervisorOf(host, atlasPlugin).GetState(); state != lifecycle.StateDormant {
+	startAtlas(t, host.Management)
+	first := endpointOf(host.Management, atlasPlugin).Token
+	host.Management.Activation.Release(atlasPlugin, first, getTestHolder())
+	host.Management.Teardown.ReleaseProcess(t.Context(), atlasPlugin)
+	if state := supervisorOf(host.Management, atlasPlugin).GetState(); state != lifecycle.StateDormant {
 		t.Fatalf("state after the release = %v, want dormant", state)
 	}
 
-	startAtlas(t, host)
-	host.Activation.Release(atlasPlugin, first, getTestHolder())
+	startAtlas(t, host.Management)
+	host.Management.Activation.Release(atlasPlugin, first, getTestHolder())
 
-	if count := getLeaseCount(t, supervisorOf(host, atlasPlugin)); count != 1 {
+	if count := getLeaseCount(t, supervisorOf(host.Management, atlasPlugin)); count != 1 {
 		t.Errorf("the new process holds %d leases after a release for the earlier one, want 1", count)
 	}
 }
 
 func TestAStartWhoseConfigureCannotBeSentReturnsItsLease(t *testing.T) {
 	host := newAtlasHost(t, testsupport.NewClock(), 0)
-	delivery := plugin.GetDelivery(host.Config)
+	delivery := plugin.GetDelivery(host.Management.Config)
 	if err := delivery.Lock(t.Context()); err != nil {
 		t.Fatal(err)
 	}
@@ -46,17 +46,17 @@ func TestAStartWhoseConfigureCannotBeSentReturnsItsLease(t *testing.T) {
 	defer cancel()
 	result := make(chan error, 1)
 	go func() {
-		_, err := host.Activation.EnsureActive(ctx, atlasPlugin, getTestHolder())
+		_, err := host.Management.Activation.EnsureActive(ctx, atlasPlugin, getTestHolder())
 		result <- err
 	}()
-	wiretest.WaitUntil(t, "the process to start", func() bool { return endpointOf(host, atlasPlugin).Token != "" })
+	wiretest.WaitUntil(t, "the process to start", func() bool { return endpointOf(host.Management, atlasPlugin).Token != "" })
 
 	cancel()
 
 	if err := <-result; !errors.Is(err, context.Canceled) {
 		t.Fatalf("EnsureActive = %v, want the end of the context", err)
 	}
-	if count := getLeaseCount(t, supervisorOf(host, atlasPlugin)); count != 0 {
+	if count := getLeaseCount(t, supervisorOf(host.Management, atlasPlugin)); count != 0 {
 		t.Errorf("the process holds %d leases after a start the caller gave up, want none", count)
 	}
 }

@@ -115,7 +115,7 @@ func newListedVault(
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	v, err := cfg.AddVault(cfg.PluginHost, cfg.Resources, root, name)
+	v, err := cfg.AddVault(cfg.Resources, root, name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -722,11 +722,11 @@ func openInstallation(t *testing.T) (*container.OpenedWindow, *container.Index) 
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := cfg.AddVault(cfg.PluginHost, cfg.Resources, root, "one"); err != nil {
+	if _, err := cfg.AddVault(cfg.Resources, root, "one"); err != nil {
 		t.Fatal(err)
 	}
 
-	installation, err := container.OpenWindow(cfg.Config, cfg.PluginHost, cfg.Resources, t.Context(), "one", io.Discard)
+	installation, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowOpening{Named: "one", Out: io.Discard})
 	if err != nil {
 		t.Fatal(err)
 	}

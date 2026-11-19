@@ -18,13 +18,14 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -104,7 +105,7 @@ type testPlugin struct {
 	mount        func(mux *http.ServeMux)
 }
 
-func hostOver(t *testing.T, plugins ...testPlugin) *container.PluginRoles {
+func hostOver(t *testing.T, plugins ...testPlugin) *pluginhost.Host {
 	t.Helper()
 	tmp := t.TempDir()
 	ports := map[string]int{}
@@ -142,11 +143,11 @@ func hostOver(t *testing.T, plugins ...testPlugin) *container.PluginRoles {
 		ports[one.id] = addr.Port
 	}
 
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	host.Processes.SetLauncher(func(ctx context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(ctx context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		port, isServed := ports[p.Manifest.ID]
 		if !isServed {
 			return nil, nil, errors.New("this plugin cannot be started")

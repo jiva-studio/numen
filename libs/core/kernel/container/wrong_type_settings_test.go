@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
@@ -40,8 +42,8 @@ func installationWith(t *testing.T, content string) (container.TestInstallation,
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(importerManifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", plugins)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", plugins)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "numen.json")
@@ -50,7 +52,7 @@ func installationWith(t *testing.T, content string) (container.TestInstallation,
 	}
 	return container.NewTestInstallation(container.Config{
 		Paths: container.Paths{SettingsPath: path},
-	}, container.AdaptPluginHost(host)), path
+	}, container.AdaptTestPlugins(host.Management, host.Supervision)), path
 }
 
 func countNotices(notices []string, words ...string) int {

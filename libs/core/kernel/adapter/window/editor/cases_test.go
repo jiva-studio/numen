@@ -8,7 +8,7 @@ import (
 )
 
 func openRegisteredWindow(cfg testInstallation, ctx context.Context, named string, out io.Writer) (*container.OpenedWindow, *container.WindowUseCases, error) {
-	installation, err := container.OpenWindow(cfg.Config, cfg.PluginHost, cfg.Resources, ctx, named, out)
+	installation, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, ctx, container.WindowOpening{Named: named, Out: out})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -17,10 +17,13 @@ func openRegisteredWindow(cfg testInstallation, ctx context.Context, named strin
 
 type testInstallation struct {
 	container.Config
-	PluginHost *container.PluginHost
+	Execution   *container.PluginExecution
+	Preferences *container.PluginPreferences
+	Endpoints   *container.PluginEndpoints
 	*container.Resources
 }
 
 func newTestInstallation(c container.Config) testInstallation {
-	return testInstallation{Config: c, PluginHost: container.PreparePluginHost(nil, c.SafeMode), Resources: container.NewResources()}
+	execution, prefs, endpoints := container.PreparePluginHost(nil, nil, nil, c.SafeMode)
+	return testInstallation{Config: c, Execution: execution, Preferences: prefs, Endpoints: endpoints, Resources: container.NewResources()}
 }

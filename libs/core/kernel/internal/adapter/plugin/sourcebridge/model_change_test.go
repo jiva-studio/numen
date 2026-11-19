@@ -2,8 +2,6 @@ package sourcebridge_test
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +10,8 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"connectrpc.com/connect"
 
@@ -40,7 +40,7 @@ func (configurable) Configure(
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 
-func openConfigurableEmbedder(t *testing.T) (*container.PluginRoles, *sourcebridge.Source, *mockSourceServer, *atomic.Int32) {
+func openConfigurableEmbedder(t *testing.T) (*pluginhost.Host, *sourcebridge.Source, *mockSourceServer, *atomic.Int32) {
 	t.Helper()
 	mock := &mockSourceServer{}
 	mock.chunkTokens.Store(256)
@@ -58,7 +58,7 @@ func openConfigurableEmbedder(t *testing.T) (*container.PluginRoles, *sourcebrid
 	return host, bridge, mock, &announced
 }
 
-func startConfigurableSource(t *testing.T, mock *mockSourceServer) *container.PluginRoles {
+func startConfigurableSource(t *testing.T, mock *mockSourceServer) *pluginhost.Host {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(configurable{}))
@@ -79,12 +79,12 @@ func startConfigurableSource(t *testing.T, mock *mockSourceServer) *container.Pl
 			t.Fatal(err)
 		}
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", root)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	cmd := wiretest.StartSleepProcess(t)
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
 	return host

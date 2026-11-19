@@ -123,26 +123,26 @@ func TestPluginDiscoveryDevMode(t *testing.T) {
 func TestNewPluginServices(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	host, res := NewPluginServices(TargetEditor)
-	if host == nil {
+	services := NewPluginServices(TargetEditor)
+	if services.Execution == nil || services.Preferences == nil || services.Endpoints == nil {
 		t.Fatal("expected configured plugin host")
 	}
-	if res.PluginCatalog.InstallDir == "" || res.PluginCatalog.CacheDir == "" {
-		t.Errorf("expected InstallDir and CacheDir to be set, got %+v", res.PluginCatalog)
+	if services.Resources.PluginCatalog.InstallDir == "" || services.Resources.PluginCatalog.CacheDir == "" {
+		t.Errorf("expected InstallDir and CacheDir to be set, got %+v", services.Resources.PluginCatalog)
 	}
 
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("XDG_CACHE_HOME", "")
 	t.Setenv("HOME", "")
-	_, noHome := NewPluginServices(TargetEditor)
-	if noHome.PluginCatalog.InstallDir != "" || noHome.PluginCatalog.CacheDir != "" {
-		t.Errorf("expected empty InstallDir and CacheDir without HOME, got %+v", noHome.PluginCatalog)
+	noHome := NewPluginServices(TargetEditor)
+	if noHome.Resources.PluginCatalog.InstallDir != "" || noHome.Resources.PluginCatalog.CacheDir != "" {
+		t.Errorf("expected empty InstallDir and CacheDir without HOME, got %+v", noHome.Resources.PluginCatalog)
 	}
 }
 
 func TestPluginServicesUseTheSystemKeychain(t *testing.T) {
-	_, res := NewPluginServices(TargetFlashcards)
-	if res.KeyStore == nil {
+	services := NewPluginServices(TargetFlashcards)
+	if services.Resources.KeyStore == nil {
 		t.Error("the desktop configuration names no key store")
 	}
 
@@ -202,8 +202,8 @@ func TestGetConfigListsThePluginsOfTheIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, res := NewPluginServices(TargetEditor)
-	sources := res.PluginCatalog.Sources
+	services := NewPluginServices(TargetEditor)
+	sources := services.Resources.PluginCatalog.Sources
 
 	if len(sources) != 2 {
 		t.Fatalf("%d catalog sources, want the plugin folders and the plugin index", len(sources))

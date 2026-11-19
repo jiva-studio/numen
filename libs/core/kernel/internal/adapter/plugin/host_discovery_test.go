@@ -2,7 +2,6 @@ package plugin_test
 
 import (
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -12,6 +11,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -27,22 +29,22 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(broken, "manifest.json"), []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	var reported []error
-	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
+	host.Supervision.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
-	if err := host.Discovery.Discover(); err != nil {
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if _, ok := host.Registry.GetPlugin("org.example.sample"); !ok {
+	if _, ok := host.Management.Registry.GetPlugin("org.example.sample"); !ok {
 		t.Fatal("the valid plugin was not registered")
 	}
 	if len(reported) != 1 {
 		t.Fatalf("expected one reported problem, got %v", reported)
 	}
 	var failed []plugin.PluginStatus
-	for _, status := range host.Registry.GetPluginStatuses() {
+	for _, status := range host.Management.Registry.GetPluginStatuses() {
 		if status.Failed {
 			failed = append(failed, status)
 		}
@@ -55,29 +57,29 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
-	host.Processes.SetLauncher(startSleepLauncher(t, &atomic.Int32{}, nil))
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
+	host.Supervision.Processes.SetLauncher(startSleepLauncher(t, &atomic.Int32{}, nil))
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
-	exited := supervisorOf(host, "org.example.sample").GetExitSignal()
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
+	exited := supervisorOf(host.Management, "org.example.sample").GetExitSignal()
 
 	if err := os.RemoveAll(filepath.Join(tmp, "sample")); err != nil {
 		t.Fatal(err)
 	}
-	if err := host.Discovery.Discover(); err != nil {
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if _, ok := host.Registry.GetPlugin("org.example.sample"); ok {
+	if _, ok := host.Management.Registry.GetPlugin("org.example.sample"); ok {
 		t.Fatal("a plugin removed from disk is still registered")
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); !errors.Is(err, plugin.ErrPluginNotFound) {
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); !errors.Is(err, plugin.ErrPluginNotFound) {
 		t.Fatalf("expected plugin.ErrPluginNotFound, got %v", err)
 	}
 }
@@ -85,17 +87,17 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 	var started atomic.Int32
-	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
+	host.Supervision.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
-	exited := supervisorOf(host, "org.example.sample").GetExitSignal()
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
+	exited := supervisorOf(host.Management, "org.example.sample").GetExitSignal()
 
 	manifestPath := filepath.Join(tmp, "sample", "manifest.json")
 	data, err := os.ReadFile(manifestPath)
@@ -106,23 +108,23 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 	if err := os.WriteFile(manifestPath, updated, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := host.Discovery.Discover(); err != nil {
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	p, ok := host.Registry.GetPlugin("org.example.sample")
+	p, ok := host.Management.Registry.GetPlugin("org.example.sample")
 	if !ok || p.Manifest.Description != "changed" {
 		t.Fatalf("expected the changed manifest to be registered, got %+v", p.Manifest)
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive after the manifest change failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
 	if started.Load() != 2 {
 		t.Fatalf("expected the plugin to be launched again, got %d launches", started.Load())
 	}
-	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := host.Management.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -130,8 +132,8 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	management, _ := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 	manifestPath := filepath.Join(tmp, "sample", "manifest.json")
@@ -139,15 +141,15 @@ func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := host.Discovery.Discover(); err != nil {
+	if err := management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if _, ok := host.Registry.GetPlugin("org.example.sample"); !ok {
+	if _, ok := management.Registry.GetPlugin("org.example.sample"); !ok {
 		t.Fatal("a plugin with a failed scan was unregistered")
 	}
 	failed := 0
-	for _, status := range host.Registry.GetPluginStatuses() {
+	for _, status := range management.Registry.GetPluginStatuses() {
 		if status.Failed {
 			failed++
 		}
@@ -160,19 +162,19 @@ func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 func TestConcurrentDiscoveriesLeaveTheRegistryConsistent(t *testing.T) {
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
+	management, _ := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
 
 	var wg sync.WaitGroup
 	for range 8 {
 		wg.Go(func() {
-			if err := host.Discovery.Discover(); err != nil {
+			if err := management.Discovery.Discover(); err != nil {
 				t.Errorf("Discover failed: %v", err)
 			}
 		})
 	}
 	wg.Wait()
 
-	if plugins := host.Registry.GetPlugins(); len(plugins) != 1 {
+	if plugins := management.Registry.GetPlugins(); len(plugins) != 1 {
 		t.Fatalf("expected one plugin, got %d", len(plugins))
 	}
 }
@@ -180,14 +182,14 @@ func TestConcurrentDiscoveriesLeaveTheRegistryConsistent(t *testing.T) {
 func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
-	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
-	plugin.HoldScan(host.Discovery)
+	host.Supervision.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
+	plugin.HoldScan(host.Management.Discovery)
 
 	reply := make(chan error, 1)
 	calling := make(chan struct{})
 	go func() {
 		close(calling)
-		_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
+		_, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 		reply <- err
 	}()
 	<-calling
@@ -198,11 +200,11 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 		t.Fatalf("EnsureActive answered while a discovery was in progress: %v", err)
 	default:
 	}
-	plugin.ReleaseScan(host.Discovery)
+	plugin.ReleaseScan(host.Management.Discovery)
 	if err := <-reply; err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := host.Management.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -222,18 +224,18 @@ func TestAPluginThatDeclaresATabKindOfAnotherPluginIsRefused(t *testing.T) {
 	}
 	write("first", "org.example.first")
 	write("second", "org.example.second")
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	var reported []error
-	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
+	host.Supervision.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
-	if err := host.Discovery.Discover(); err != nil {
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if _, ok := host.Registry.GetPlugin("org.example.first"); !ok {
+	if _, ok := host.Management.Registry.GetPlugin("org.example.first"); !ok {
 		t.Error("the plugin first in the order of ids was refused")
 	}
-	if _, ok := host.Registry.GetPlugin("org.example.second"); ok {
+	if _, ok := host.Management.Registry.GetPlugin("org.example.second"); ok {
 		t.Error("the plugin that declares the same tab kind was registered")
 	}
 	if len(reported) == 0 || !errors.Is(reported[0], manifest.ErrInvalidContribution) {
@@ -257,18 +259,18 @@ func TestDiscoveryRefusesAPluginThatDeclaresABuiltinSearchFunction(t *testing.T)
 	}
 	write("shelf", "org.example.shelf", "shelved")
 	write("words", "org.example.words", "words")
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
 	var reported []error
-	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
+	host.Supervision.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
-	if err := host.Discovery.Discover(); err != nil {
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if _, ok := host.Registry.GetPlugin("org.example.shelf"); !ok {
+	if _, ok := host.Management.Registry.GetPlugin("org.example.shelf"); !ok {
 		t.Error("the plugin with a function of its own was refused")
 	}
-	if _, ok := host.Registry.GetPlugin("org.example.words"); ok {
+	if _, ok := host.Management.Registry.GetPlugin("org.example.words"); ok {
 		t.Error("the plugin that declares words was registered")
 	}
 	var conflict manifest.DuplicateContributionError

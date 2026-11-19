@@ -2,9 +2,9 @@ package command_test
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 
@@ -21,16 +21,16 @@ const repositoryPlugins = "../../../../../../../plugins"
 
 func newRepositoryHandler(b *testing.B) *command.Handler {
 	b.Helper()
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", repositoryPlugins)
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", repositoryPlugins)
 	b.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(b.Context()), 0); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(b.Context()), 0); err != nil {
 			b.Error(err)
 		}
 	})
-	if err := host.Discovery.Discover(); err != nil {
+	if err := host.Management.Discovery.Discover(); err != nil {
 		b.Fatal(err)
 	}
-	commands := newUseCases(pluginmanifest.New(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), host.ContentTypes, nil, nil)
+	commands := newUseCases(pluginmanifest.New(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), host.Management.ContentTypes, nil, nil)
 	return newHandler(commands.withVersions(&versionItems{}))
 }
 
