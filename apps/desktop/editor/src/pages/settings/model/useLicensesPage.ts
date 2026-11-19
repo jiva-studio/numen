@@ -59,21 +59,6 @@ export interface LicenseCardInput {
   readonly deactivate: (licenseId: string) => Promise<Result<LicenseInfo, string>>
 }
 
-const DRAFT_STORAGE_PREFIX = 'numen:license-draft:'
-
-function readStoredDraftKey(licenseId: string): string {
-  return localStorage.getItem(`${DRAFT_STORAGE_PREFIX}${licenseId}`) ?? ''
-}
-
-function writeStoredDraftKey(licenseId: string, value: string): void {
-  const key = `${DRAFT_STORAGE_PREFIX}${licenseId}`
-  if (value.trim() === '') {
-    localStorage.removeItem(key)
-  } else {
-    localStorage.setItem(key, value)
-  }
-}
-
 export interface LicenseContributorRow {
   readonly pluginId: string
   readonly pluginName: string
@@ -90,13 +75,12 @@ function formatContributors(license: LicenseInfo): readonly LicenseContributorRo
 }
 
 export function useLicenseCard(input: LicenseCardInput) {
-  const draftKey = ref(readStoredDraftKey(input.getLicense().id))
+  const draftKey = ref('')
   const isBusy = ref(false)
   const problem = ref('')
 
   const setDraftKey = (value: string): void => {
     draftKey.value = value
-    writeStoredDraftKey(input.getLicense().id, value)
     if (problem.value !== '') problem.value = ''
   }
 
@@ -115,7 +99,6 @@ export function useLicenseCard(input: LicenseCardInput) {
             return
           }
           draftKey.value = ''
-          writeStoredDraftKey(license.id, '')
         })
         .finally(() => {
           isBusy.value = false
