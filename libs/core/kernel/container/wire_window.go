@@ -125,7 +125,7 @@ type windowPlugins struct {
 func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex, source sourcebridge.Binding) windowPlugins {
 	tasks := run.NewTasks()
 	exec.Runtime.SetOnFailureCleared(func(string) { settingsDeps.PluginChanges.Signal() })
-	reportDependencies(exec.Watch, tasks, vaultDeps.RecordLog)
+	reportDependencies(exec.Watch.DependencyReporter, tasks, vaultDeps.RecordLog)
 	pluginsOpenPluginWork(install, exec, tasks, &run.Lock{})
 	setModelCalls(install, exec, settingsDeps, vaultDeps, run.NewConnectionNoticeTasks(tasks).Execute)
 	return windowPlugins{
@@ -201,7 +201,7 @@ func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.State, 
 
 func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex) tabKinds {
 	files := file.NewGetFileKinds(vaultDeps.Readers, db.NoteQueries())
-	chooser := tabkind.NewChoose(exec.Runtime.Manifests, exec.Watch, getWhenConfig(settingsDeps, exec.Runtime.Registry))
+	chooser := tabkind.NewChoose(exec.Runtime.Manifests, exec.Watch.ContentTypeTable, getWhenConfig(settingsDeps, exec.Runtime.Registry))
 	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
 

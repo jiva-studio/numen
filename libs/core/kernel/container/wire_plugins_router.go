@@ -30,7 +30,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
-func reportDependencies(watch PluginWatch, tasks *run.Tasks, record func(domainlogs.Entry)) {
+func reportDependencies(watch pluginport.DependencyReporter, tasks *run.Tasks, record func(domainlogs.Entry)) {
 	show := run.NewDependencyTasks(tasks)
 	watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
 		show.Execute(req.ID, status, func() { watch.CancelDependency(req) })
@@ -102,10 +102,10 @@ func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := host.Runtime.Manifests, when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
-	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(vaultDeps), config, conditions)
+	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch.ContentTypeTable, pluginsNewNoteReader(vaultDeps), config, conditions)
 	return pluginCommandUseCases{
 		List:       list,
-		Listing:    plugincommand.NewListCommands(list, host.Watch),
+		Listing:    plugincommand.NewListCommands(list, host.Watch.ContentTypeTable),
 		Run:        run,
 		RunCommand: plugincommand.NewRunCommand(list, run, versions),
 		ListItems:  plugincommand.NewListItems(list, versions),

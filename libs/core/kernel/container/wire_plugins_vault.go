@@ -137,7 +137,7 @@ func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps
 	}
 	running := getRunningExecution(exec, install.SafeMode)
 	run := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.Registry), vaultDeps, running, nil).Run
-	return textversion.NewVersionItems(vaultDeps.TextVersions.Texts, vaultDeps.TextVersions.Versions, run, running.Watch)
+	return textversion.NewVersionItems(vaultDeps.TextVersions.Texts, vaultDeps.TextVersions.Versions, run, running.Watch.ContentTypeTable)
 }
 
 func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *trigger.Triggers {
@@ -148,7 +148,7 @@ func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps set
 	config := getWhenConfig(settingsDeps, exec.Runtime.Registry)
 	return trigger.NewTriggers(trigger.TriggersDeps{
 		Plugins: running.Runtime.Manifests, Run: newPluginCommands(config, vaultDeps, running, nil).Run, Readers: vaultDeps.Readers,
-		Notes: pluginsNewNoteReader(vaultDeps), Types: running.Watch, Versions: vaultDeps.TextVersions.Texts, Config: config,
+		Notes: pluginsNewNoteReader(vaultDeps), Types: running.Watch.ContentTypeTable, Versions: vaultDeps.TextVersions.Texts, Config: config,
 	})
 }
 
