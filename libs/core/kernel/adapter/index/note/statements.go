@@ -53,6 +53,9 @@ var namedSQL string
 //go:embed sql/note_by_identifier.sql
 var noteByIdentifierSQL string
 
+//go:embed sql/notes_by_identifier_at.sql
+var notesByIdentifierAtSQL string
+
 //go:embed sql/notes_at.sql
 var notesAtSQL string
 

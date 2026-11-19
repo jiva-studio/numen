@@ -68,6 +68,11 @@ func (r *statementCache) close() error {
 	return err
 }
 
+type identifiedNote struct {
+	vault domain.VaultID
+	path  string
+}
+
 // resolution resolves the links of one read in one vault. The candidates of a
 // name are asked once per read, because the backlinks of one note mostly write
 // the same name.
@@ -76,6 +81,7 @@ type resolution struct {
 	vault      int64
 	vaultID    domain.VaultID
 	named      map[string][]string
+	identified map[string]identifiedNote
 }
 
 func runResolution[T any](
@@ -92,5 +98,11 @@ func runResolution[T any](
 		var zero T
 		return zero, err
 	}
-	return read(&resolution{statements: statements, vault: vault, vaultID: vaultID, named: map[string][]string{}})
+	return read(&resolution{
+		statements: statements,
+		vault:      vault,
+		vaultID:    vaultID,
+		named:      map[string][]string{},
+		identified: map[string]identifiedNote{},
+	})
 }

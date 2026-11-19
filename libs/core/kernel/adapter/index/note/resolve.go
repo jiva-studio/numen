@@ -117,6 +117,10 @@ func (r *resolution) resolveLinks(ctx context.Context, from string, content []st
 func (r *resolution) resolve(ctx context.Context, from string, l *domain.ResolvedLink) error {
 	switch l.Target.Scheme {
 	case domain.SchemeNote:
+		if found, ok := r.identified[l.Target.Value]; ok {
+			l.ToVault, l.To = found.vault, found.path
+			return nil
+		}
 		// An identifier names one note globally, so this lookup is not scoped to a
 		// vault. It is the one deliberate exception to the rule that a query without a
 		// vault must not read another vault's notes.
@@ -127,7 +131,11 @@ func (r *resolution) resolve(ctx context.Context, from string, l *domain.Resolve
 			// index cannot distinguish a deleted note from one in a vault that is not
 			// connected, and reporting it as broken would be wrong on a machine where both
 			// vaults are open.
+			r.identified[l.Target.Value] = identifiedNote{}
 			return nil
+		}
+		if err == nil {
+			r.identified[l.Target.Value] = identifiedNote{vault: l.ToVault, path: l.To}
 		}
 		return err
 	case domain.SchemeName:
@@ -184,6 +192,9 @@ func (r *resolution) queryCandidates(ctx context.Context, name string) (_ []stri
 }
 
 func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.ResolvedLink) (err error) {
+	if err := r.prefetchIdentifiers(ctx, links); err != nil {
+		return err
+	}
 	var missing []string
 	seen := map[string]bool{}
 	for _, l := range links {
@@ -204,18 +215,23 @@ func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.Reso
 		return err
 	}
 
-	withExts := make([]string, len(missing))
-	bases := make([]string, len(missing))
-	for i, name := range missing {
+	paths := make([]string, 0, len(missing)*2)
+	bases := make([]string, 0, len(missing))
+	byPath := make(map[string][]string, len(missing)*2)
+	byBase := make(map[string][]string, len(missing))
+	for _, name := range missing {
 		r.named[name] = nil
-		withExts[i] = name + domain.NoteExtension
-		bases[i] = domain.FoldName(domain.LinkName(name))
+		withExt := name + domain.NoteExtension
+		base := domain.FoldName(domain.LinkName(name))
+		paths = append(paths, name, withExt)
+		byPath[name] = append(byPath[name], name)
+		byPath[withExt] = append(byPath[withExt], name)
+		if _, exists := byBase[base]; !exists {
+			bases = append(bases, base)
+		}
+		byBase[base] = append(byBase[base], name)
 	}
-	namesJSON, err := json.Marshal(missing)
-	if err != nil {
-		return err
-	}
-	extsJSON, err := json.Marshal(withExts)
+	pathsJSON, err := json.Marshal(paths)
 	if err != nil {
 		return err
 	}
@@ -225,7 +241,7 @@ func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.Reso
 	}
 
 	rows, err := r.statements.QueryContext(ctx, candidatesAtSQL,
-		r.vault, string(namesJSON), r.vault, string(extsJSON), r.vault, string(basesJSON))
+		r.vault, string(pathsJSON), r.vault, string(basesJSON))
 	if err != nil {
 		return err
 	}
@@ -236,10 +252,55 @@ func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.Reso
 		if err := rows.Scan(&path, &folded); err != nil {
 			return err
 		}
-		for i, name := range missing {
-			if path == name || path == withExts[i] || folded == bases[i] {
+		for _, name := range byPath[path] {
+			r.named[name] = append(r.named[name], path)
+		}
+		for _, name := range byBase[folded] {
+			if path != name && path != name+domain.NoteExtension {
 				r.named[name] = append(r.named[name], path)
 			}
+		}
+	}
+	return rows.Err()
+}
+
+func (r *resolution) prefetchIdentifiers(ctx context.Context, links []domain.ResolvedLink) (err error) {
+	var missing []string
+	seen := map[string]bool{}
+	for _, l := range links {
+		if l.Target.Scheme != domain.SchemeNote {
+			continue
+		}
+		id := l.Target.Value
+		if _, ok := r.identified[id]; !ok && !seen[id] {
+			seen[id] = true
+			missing = append(missing, id)
+		}
+	}
+	if len(missing) <= 1 {
+		return nil
+	}
+	for _, id := range missing {
+		r.identified[id] = identifiedNote{}
+	}
+	idsJSON, err := json.Marshal(missing)
+	if err != nil {
+		return err
+	}
+	rows, err := r.statements.QueryContext(ctx, notesByIdentifierAtSQL, string(idsJSON))
+	if err != nil {
+		return err
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+
+	for rows.Next() {
+		var id, path string
+		var vault domain.VaultID
+		if err := rows.Scan(&id, &vault, &path); err != nil {
+			return err
+		}
+		if r.identified[id].path == "" {
+			r.identified[id] = identifiedNote{vault: vault, path: path}
 		}
 	}
 	return rows.Err()

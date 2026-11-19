@@ -46,9 +46,10 @@ func getExpectedPlans(t *testing.T) []struct {
 		endPos     []string
 	}{
 		{notes, "candidates", []any{1, "a", 1, "b", 1, "c"}, []string{"notes_by_folded_name"}},
-		{notes, "candidates_at", []any{1, `["a"]`, 1, `["b"]`, 1, `["c"]`}, []string{"notes_by_folded_name"}},
+		{notes, "candidates_at", []any{1, `["a","a.md"]`, 1, `["c"]`}, []string{"notes_by_folded_name"}},
 		{notes, "backlink_candidates", []any{"id", 1, "base", 1}, []string{"links_by_target", "links_by_name"}},
 		{notes, "note_by_identifier", []any{"id"}, []string{"notes_by_identifier"}},
+		{notes, "notes_by_identifier_at", []any{`["id"]`}, []string{"notes_by_identifier"}},
 		{notes, "links_of", []any{1}, []string{"(note_id=?)"}},
 		{notes, "identify", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
 		{notes, "addressing", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
