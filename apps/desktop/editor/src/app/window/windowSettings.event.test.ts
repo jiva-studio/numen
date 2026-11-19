@@ -131,16 +131,23 @@ describe('a setting that changes', () => {
     vi.useRealTimers()
   })
 
-  it('keeps one settings stream after retrying a failed initial read', async () => {
+  it('recovers the saved appearance on retry and keeps one settings stream', async () => {
+    const themes = vi.spyOn(THEME, 'listThemes').mockImplementationOnce(() => {
+      throw createLostConnection('appearance offline')
+    })
     const { settings, core } = create()
     vi.mocked(core.getSettings).mockRejectedValueOnce(createLostConnection('settings offline'))
+    try {
+      await expect(settings.start()).rejects.toThrow('settings offline')
+      await settings.start()
+      await settle()
 
-    await expect(settings.start()).rejects.toThrow('settings offline')
-    await settings.start()
-
-    expect(core.watchSettings).toHaveBeenCalledTimes(1)
-    expect(settings.rest.read.getSetting(['app', 'appearance', 'mode'])).toBe('light')
-    settings.close()
+      expect(settings.appearance.state.mode.value).toBe('light')
+      expect(core.watchSettings).toHaveBeenCalledTimes(1)
+    } finally {
+      settings.close()
+      themes.mockRestore()
+    }
   })
 
   it('shows its new value in the settings of the window when the event arrives', async () => {

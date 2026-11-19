@@ -63,7 +63,9 @@ export function createWindowSettings({
     settingPalette,
     paletteLists: settingPalette.lists,
     start: async () => {
-      if (!isFollowing) {
+      if (isFollowing) {
+        runInBackground(appearance.reload(), reportError)
+      } else {
         isFollowing = true
         runInBackground(appearance.start(), reportError)
         runInBackground(changes.start(), reportError)
