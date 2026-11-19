@@ -25,8 +25,10 @@ A white-box audit looking only for **functional defects**: logic bugs, races, co
    - Upstream sources of the state it reads: props, RPC responses, index rows, files on disk.
    - Downstream consumers: watchers, computed properties, event subscribers, renderers, background workers.
 3. Read any file of the repository that the blast radius leads to, not only the files of the diff.
-4. Read the title and the body of the pull request and of the issue it closes (`pr-context.md` when the caller wrote it). A claim of the body that the diff does not contain is a finding.
+4. Read the title and the body of the pull request and of the issue it closes (`pr-context.md` when the caller wrote it). For a pull request, split its Change section into individual claims, including separate changes named in the same sentence. Match each claim to the hunk or changed call path in the full `BASE_SHA...HEAD_SHA` diff that delivers it. For each unmatched claim, quote its wording in a finding and identify the missing behaviour, file or section. A matching claim needs no finding.
 5. For every term, rule or number the diff changes, search the repository for its old form and for the other places that state the same. A place that now disagrees is a finding.
+
+For example, a body promises that section 3 of `process.md` documents flaky tests and section 7 lists the retained issue labels. A conflict resolution keeps the section 3 hunk and drops the section 7 hunk. The file still appears in the diff: report the claim about the labels. When the current diff delivers both edits, neither claim produces a finding.
 
 A change to a wire message affects both the Go side and the generated TypeScript client. A change to what the index stores affects every query over it and needs a numbered migration.
 

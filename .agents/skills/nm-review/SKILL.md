@@ -54,7 +54,7 @@ Resolve the repository root and determine the target:
    REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || readlink -f .agents/.. 2>/dev/null || echo "$PWD/../source/numen")
    ```
 2. **Pull request or commit range**:
-   - For a pull request (`/nm-review #123`, `/nm-review 123`, or a branch with an open pull request), read `baseRefName`, `baseRefOid` (`BASE_SHA`) and `headRefOid` (`HEAD_SHA`) with `gh pr view [<number>] --json number,baseRefName,baseRefOid,headRefOid`.
+   - For a pull request (`/nm-review #123`, `/nm-review 123`, or a branch with an open pull request), read the current body, `baseRefName`, `baseRefOid` (`BASE_SHA`) and `headRefOid` (`HEAD_SHA`) with `gh pr view [<number>] --json number,body,baseRefName,baseRefOid,headRefOid`. In CI, `pr-context.md` supplies the body.
    - For a commit range (`/nm-review <base>...<head>`), resolve `BASE_SHA=$(git -C "$REPO_ROOT" rev-parse "<base>^{commit}")` and `HEAD_SHA=$(git -C "$REPO_ROOT" rev-parse "<head>^{commit}")`.
    - Verify that the checkout is at the head of the target: `git -C "$REPO_ROOT" rev-parse HEAD` must equal `HEAD_SHA`. Stop with an error when the checkout is not at `HEAD_SHA`.
    - Diff against the base of the pull request or range:
@@ -135,11 +135,11 @@ What a finding is proven by depends on what it claims:
 - A behaviour that reading cannot settle (a race, an edge value, an order of responses): when tests run (a local run or `/nm-review full`), a CRITICAL, HIGH or MEDIUM finding needs a test from Stage 3 that fails against the change, with its name, its file and its failing output. When the caller forbade running tests (a quick CI run), a CRITICAL, HIGH or MEDIUM behaviour defect is proven by tracing the exact files, lines and state transitions (_Given → When → Then_) that produce the failure after checking that no guard, lock or caller invariant on that path prevents it. Without such a test or complete state trace, the hypothesis is reported as ⚪ LOW and marked unconfirmed, with the reason.
 - At most three tests are written in one run. The rest of the hypotheses are ordered by severity, and those without a test are reported as unconfirmed.
 
-A finding names only code that the diff changes or whose behaviour the diff changes.
+A code finding names code that the diff changes or whose behaviour it changes. A missing-change finding quotes the unmatched claim from the pull request body and identifies the expected change.
 
 ## A repeat review
 
-When the caller gives the previous review (`previous-review.md`) and the commit it covered, review the range from that commit to the head, and decide for each finding of the previous review whether it is fixed. A finding that is still open is repeated with its original wording. The verdict is Approved only when no finding is open. The rest of the pull request is not read again unless the range touches it.
+When the caller gives the previous review (`previous-review.md`) and the commit it covered, review the range from that commit to the head, and decide for each finding of the previous review whether it is fixed. A finding that is still open is repeated with its original wording. The verdict is Approved only when no finding is open. Always check the current pull request’s Change claims against the full `BASE_SHA...HEAD_SHA` diff as described in [Stage 2](stages/2-bughunter.md). This includes reviews after a rebase or conflict resolution. The remaining code audit covers the range since the previous review.
 
 Verdict: ❌ Rejected when a gate failed or a CRITICAL finding exists; ⚠️ Changes requested when a HIGH or MEDIUM finding exists; ✅ Approved otherwise.
 
