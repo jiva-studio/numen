@@ -68,7 +68,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
 	mountServices(opened, install, exec, settingsDeps, vaultDeps)
 	mountLogs(opened, getLogEntries(res), install, settingsDeps, vaultDeps)
-	if err := opened.Start(ctx, first, launch.server); err != nil {
+	if err := opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out); err != nil {
 		return nil, errors.Join(err, launch.closeSource(), db.Close())
 	}
 	if err := connectWindow(install, exec, vaultDeps, opened, startup, launch.plugins); err != nil {
@@ -114,6 +114,7 @@ type windowPluginAccess struct {
 }
 
 type windowLaunch struct {
+	start       windowsession.StartWindow
 	server      *editor.FileServer
 	closeSource func() error
 	plugins     windowPluginAccess
@@ -190,9 +191,9 @@ func buildWindow(
 	}
 	session := parts.newWindowSession(plugins.vault, plugins.triggers, vaultDeps, state, page, ctx)
 	inst := editor.NewInstallation(page, editor.Lifecycle{
-		Start: session.cases.start, Show: session.cases.show,
+		Show:  session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
-	}, session.tools.importFiles, getMediaType(), opening.Out)
+	}, session.tools.importFiles, getMediaType())
 
 	window := &windowRoutes{Installation: inst, session: state, page: page}
 	mountVault(window)
@@ -202,6 +203,7 @@ func buildWindow(
 	mountNote(window, &notes, db, plugins.kinds.list)
 	mountVaults(window, &listing, moves.Change, session.userSwitch)
 	return window, windowLaunch{
+		start:  session.cases.start,
 		server: newFileServer(vaultDeps, &state.Runtime, page.Window, &listing.Find), closeSource: closeEmbedder, source: embedder, generations: generations,
 		plugins: windowPluginAccess{
 			notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, listing, session.cases.openPlugin), showTab: session.tools.showTab,
