@@ -9,7 +9,7 @@
  */
 import { ref, shallowRef, watch, type Ref } from 'vue'
 import type { Caught } from '../errors'
-import { createFollower } from '../stream/stream'
+import { createFollower } from '../stream'
 import {
   getFailureText,
   type AppearanceOutput,

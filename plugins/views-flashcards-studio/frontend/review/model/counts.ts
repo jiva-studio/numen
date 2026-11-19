@@ -10,11 +10,9 @@
  */
 import { cards } from '../api/clients'
 import { useReviewCounter } from './vault/counts'
-import type { Caught } from '@numen/plugin-sdk'
+import type { ReviewNotices } from './notices'
 
-export interface VaultCountsDeps {
-  readonly reportError: (error: Caught) => void
-}
+type VaultCountsDeps = Pick<ReviewNotices, 'reportError' | 'setReloadLost'>
 
 async function readReloads(signal: AbortSignal, refresh: () => Promise<void>) {
   let isOpening = true
@@ -28,24 +26,17 @@ async function readReloads(signal: AbortSignal, refresh: () => Promise<void>) {
 async function followReloads(
   signal: AbortSignal,
   refresh: () => Promise<void>,
-  reportError: VaultCountsDeps['reportError'],
+  setReloadLost: VaultCountsDeps['setReloadLost'],
 ) {
-  let isLost = false
   const refreshCounts = async () => {
     await refresh()
-    if (isLost && !signal.aborted) {
-      isLost = false
-      reportError('')
-    }
+    if (!signal.aborted) setReloadLost(false)
   }
   while (!signal.aborted) {
     try {
       await readReloads(signal, refreshCounts)
     } catch {
-      if (!signal.aborted && !isLost) {
-        isLost = true
-        reportError('lost touch with numen — the window keeps trying')
-      }
+      if (!signal.aborted) setReloadLost(true)
     }
     if (signal.aborted) return
     await new Promise<void>((resolve) => setTimeout(resolve, 1000))
@@ -63,7 +54,9 @@ export function createVaultCounts(deps: VaultCountsDeps) {
     if (isStarted || abortController.signal.aborted) return
     isStarted = true
     counter.count().catch(deps.reportError)
-    followReloads(abortController.signal, () => refresh(), deps.reportError).catch(deps.reportError)
+    followReloads(abortController.signal, () => refresh(), deps.setReloadLost).catch(
+      deps.reportError,
+    )
   }
 
   /** What a reload does while a review is open; nothing restores counting again. */
@@ -73,6 +66,7 @@ export function createVaultCounts(deps: VaultCountsDeps) {
 
   const dispose = () => {
     abortController.abort()
+    deps.setReloadLost(false)
     counter.stop()
   }
 

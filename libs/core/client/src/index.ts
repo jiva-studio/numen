@@ -31,4 +31,4 @@ export {
   getKnownErrorCode,
 } from './errors'
 export { asFailure, asValue, type Result } from './result'
-export { createFollower } from './stream/stream'
+export { createFollower } from './stream'

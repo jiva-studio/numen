@@ -3,6 +3,7 @@
  * The review as the window shows it: the decks once the vault is counted, and
  * the letters a deck is picked by.
  */
+import { createNotices } from '../model/notices'
 import { flushPromises, mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { effectScope } from 'vue'
@@ -103,13 +104,13 @@ const connections: ConnectionHost = {
 }
 
 const mountReview = async (vault: string) => {
-  const counts = createVaultCounts({ reportError: vi.fn() })
+  const counts = createVaultCounts(createNotices(createMockNoticeHost()))
   const scope = effectScope()
   const state = scope.run(() =>
     useReview({
       vault,
       counts,
-      notices: createMockNoticeHost(),
+      notices: createNotices(createMockNoticeHost()),
       connections,
       relations: { resolveLinks: () => Promise.resolve([]) },
       mountView: mountEmptyView,

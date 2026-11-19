@@ -17,13 +17,12 @@ import { useVaultPresets } from './decks/presets'
 import { useReviewSession } from './session/session'
 import type {
   ConnectionHost,
-  NoticeHost,
   Severity,
   Caught,
   Unvalidated,
   VaultRelations,
 } from '@numen/plugin-sdk'
-import { createNotices } from './notices'
+import type { ReviewNotices } from './notices'
 import type { VaultCounts } from './counts'
 import { usePanels } from './usePanels'
 import { createReviewKeys, type ReviewScreen } from './reviewKeys'
@@ -37,7 +36,7 @@ import type { Report } from './session/session'
 export interface ReviewDeps {
   readonly vault: string
   readonly counts: VaultCounts
-  readonly notices: NoticeHost
+  readonly notices: ReviewNotices
   readonly connections: ConnectionHost
   readonly relations: Pick<VaultRelations, 'resolveLinks'>
   readonly mountView: MountView
@@ -154,7 +153,7 @@ function useChosenVault(deps: {
 }
 
 export const useReview = (deps: ReviewDeps) => {
-  const notices = createNotices(deps.notices)
+  const { notices } = deps
   const state = useReviewSession({ cards, reportError: notices.reportError })
   const reviewDays = useReviewDays({
     cards,

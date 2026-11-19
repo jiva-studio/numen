@@ -6,6 +6,8 @@
  * disposed without ending them leaves them running against a page that is no
  * longer displayed.
  */
+import { createNotices } from './notices'
+import { createMockNoticeHost } from '@numen/plugin-sdk/testing'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { createVaultCounts } from './counts'
@@ -74,7 +76,7 @@ afterEach(() => {
 
 describe('the counting of the vaults', () => {
   it('waits for the first part that asks for it', async () => {
-    createVaultCounts({ reportError: vi.fn() })
+    createVaultCounts(createNotices(createMockNoticeHost()))
     await settle()
 
     expect(wire.countsOpened).toBe(0)
@@ -82,7 +84,7 @@ describe('the counting of the vaults', () => {
   })
 
   it('starts once, however many parts ask', async () => {
-    const counts = createVaultCounts({ reportError: vi.fn() })
+    const counts = createVaultCounts(createNotices(createMockNoticeHost()))
 
     counts.start()
     counts.start()
@@ -95,7 +97,7 @@ describe('the counting of the vaults', () => {
   })
 
   it('starts nothing once the plugin is disposed', async () => {
-    const counts = createVaultCounts({ reportError: vi.fn() })
+    const counts = createVaultCounts(createNotices(createMockNoticeHost()))
 
     counts.dispose()
     counts.start()
@@ -108,7 +110,7 @@ describe('the counting of the vaults', () => {
 describe('what the counting follows', () => {
   it('is ended when the plugin is disposed', () => {
     wire.reloads = failsOnAbort
-    const counts = createVaultCounts({ reportError: vi.fn() })
+    const counts = createVaultCounts(createNotices(createMockNoticeHost()))
     counts.start()
     expect(wire.taken.some((one) => one.aborted)).toBe(false)
 
@@ -119,37 +121,58 @@ describe('what the counting follows', () => {
 
   it('says nothing about a stream it ended itself, and takes nothing up again', async () => {
     wire.reloads = failsOnAbort
-    const reportError = vi.fn()
-    const counts = createVaultCounts({ reportError })
+    const host = createMockNoticeHost()
+    const counts = createVaultCounts(createNotices(host))
     counts.start()
 
     counts.dispose()
     await settle()
 
-    expect(reportError).not.toHaveBeenCalled()
+    expect(host.getTasks()).toEqual([])
+    expect(host.getShown()).toEqual([])
     expect(wire.reloadsOpened).toBe(1)
   })
 
-  it('takes a stream that went up again after a wait', async () => {
+  it('keeps the reconnect warning beside other tasks until the first refresh succeeds', async () => {
     vi.useFakeTimers()
     wire.reloads = () => (wire.reloadsOpened > 2 ? sends({ reload: false }) : fails())
-    const reportError = vi.fn()
-    const counts = createVaultCounts({ reportError })
+    const host = createMockNoticeHost()
+    const notices = createNotices(host)
+    const counts = createVaultCounts(notices)
+    const indexing = { id: 'index', label: 'Indexing', done: 1 }
+    notices.setTasks([indexing])
+    let finishRefresh: (() => void) | undefined
+    counts.setRefresh(
+      () =>
+        new Promise((resolve) => {
+          finishRefresh = resolve
+        }),
+    )
     counts.start()
 
     await vi.advanceTimersByTimeAsync(AGAIN - 1)
     expect(wire.reloadsOpened).toBe(1)
-    expect(reportError.mock.calls).toEqual([['lost touch with numen — the window keeps trying']])
+    const warning = {
+      id: 'review-reload',
+      label: 'Reconnecting flashcard updates',
+      error: 'Lost touch with numen — the window keeps trying.',
+    }
+    expect(host.getTasks()).toEqual([indexing, warning])
 
     await vi.advanceTimersByTimeAsync(1)
     expect(wire.reloadsOpened).toBe(2)
-    expect(reportError.mock.calls).toEqual([['lost touch with numen — the window keeps trying']])
+    const progress = { ...indexing, done: 2 }
+    notices.setTasks([progress])
+    expect(host.getTasks()).toEqual([progress, warning])
+
     await vi.advanceTimersByTimeAsync(AGAIN)
     expect(wire.reloadsOpened).toBe(3)
-    expect(reportError.mock.calls).toEqual([
-      ['lost touch with numen — the window keeps trying'],
-      [''],
-    ])
+    expect(host.getTasks()).toEqual([progress, warning])
+    expect(finishRefresh).toBeTypeOf('function')
+    finishRefresh?.()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(host.getTasks()).toEqual([progress])
+    expect(host.getShown()).toEqual([])
     counts.dispose()
   })
 })
@@ -157,7 +180,7 @@ describe('what the counting follows', () => {
 describe('a deck written underneath the window', () => {
   it('counts the vaults again once the watch is open, and on a message that carries a reload', async () => {
     wire.reloads = () => sends({ reload: false }, { reload: true }, { reload: false })
-    const counts = createVaultCounts({ reportError: vi.fn() })
+    const counts = createVaultCounts(createNotices(createMockNoticeHost()))
 
     counts.start()
     await settle()
@@ -170,7 +193,7 @@ describe('a deck written underneath the window', () => {
 
   it('counts the vaults again when the watch opens, for a vault indexed before it did', async () => {
     wire.reloads = () => sends({ reload: false })
-    const counts = createVaultCounts({ reportError: vi.fn() })
+    const counts = createVaultCounts(createNotices(createMockNoticeHost()))
 
     counts.start()
     await settle()
@@ -185,7 +208,7 @@ describe('a deck written underneath the window', () => {
     wire.reloads = async function* () {
       for (;;) yield await new Promise((then) => (send = then))
     }
-    const counts = createVaultCounts({ reportError: vi.fn() })
+    const counts = createVaultCounts(createNotices(createMockNoticeHost()))
     const refresh = vi.fn(async () => undefined)
     counts.start()
     await settle()

@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 /** The summary a window mounts beside each vault, drawn from the one count of the review. */
+import { createNotices } from './model/notices'
+import { createMockNoticeHost } from '@numen/plugin-sdk/testing'
 import { flushPromises, mount } from '@vue/test-utils'
 import type { Component } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -51,7 +53,7 @@ const mountSummary = (counts: ReturnType<typeof createVaultCounts>, vault: strin
 
 describe('the summary of a vault', () => {
   it('is declared as the vault summary, and starts the count the review shares', async () => {
-    const counts = createVaultCounts({ reportError: vi.fn() })
+    const counts = createVaultCounts(createNotices(createMockNoticeHost()))
     disposers.push(counts.dispose)
 
     const { view, summary } = mountSummary(counts, 'roots')
