@@ -241,4 +241,6 @@ type Index = vaultIndex
 type PluginVaultHooks = pluginVaultHooks
 type NoteUseCases = noteUseCases
 
-var OpenIndex = Config.openIndex
+func OpenIndex(c Config, res *Resources, ctx context.Context) (*Index, error) {
+	return c.openIndex(res, ctx)
+}

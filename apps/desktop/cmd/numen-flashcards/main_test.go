@@ -44,8 +44,8 @@ func makeConfigWithVaults(t *testing.T) (testInstallation, []domain.Vault) {
 }
 
 func openShell(t *testing.T, install testInstallation) *shell.API {
-	api := &shell.API{}
 	t.Helper()
+	api := &shell.API{}
 
 	services := install.services
 	opening := container.ShellOpening{
