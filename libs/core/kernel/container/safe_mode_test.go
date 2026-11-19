@@ -71,17 +71,17 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	cfg := NewTestInstallation(Config{}, nil)
-	_, err := cfg.buildPluginWiring().ActiveExecution.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
+	_, err := getRunningExecution(cfg.Execution, cfg.SafeMode).Runtime.ResolveCapability(bridge.CapabilitySearchSource)
 	var missing *plugindomain.UnavailableError
 	if !errors.As(err, &missing) || missing.Reason != plugindomain.NotInstalled || missing.Capability != bridge.CapabilitySearchSource {
 		t.Fatalf("resolvePlugin = %v, want the embedding plugin not installed", err)
 	}
-	setPluginVaultPath(cfg.buildPluginWiring(), "vault")
+	cfg.Execution.Runtime.PluginBinding.SetVaultPath("vault")
 	if err := StopPlugins(cfg.Execution.Watch, t.Context()); err != nil {
 		t.Fatalf("StopPlugins = %v, want nothing to stop", err)
 	}
 	safe := NewTestInstallation(Config{SafeMode: true}, nil)
-	_, err = safe.buildPluginWiring().ActiveExecution.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
+	_, err = getRunningExecution(safe.Execution, safe.SafeMode).Runtime.ResolveCapability(bridge.CapabilitySearchSource)
 	if !errors.Is(err, errSafeMode) || !errors.As(err, &missing) || missing.Reason != plugindomain.Disabled {
 		t.Fatalf("resolvePlugin in safe mode = %v, want the embedding plugin disabled by safe mode", err)
 	}
@@ -102,7 +102,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	host := openPluginRoles(t, "desktop.editor", tmp)
 	cfg := NewTestInstallation(Config{}, AdaptTestPlugins(host.Management, host.Supervision))
 
-	setPluginVaultPath(cfg.buildPluginWiring(), "vault")
+	cfg.Execution.Runtime.PluginBinding.SetVaultPath("vault")
 	if got := host.Management.Mode.GetVaultPath(); got != "vault" {
 		t.Errorf("the host holds the vault %q", got)
 	}

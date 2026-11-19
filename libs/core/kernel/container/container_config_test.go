@@ -130,7 +130,7 @@ func TestTheIndexIsWhereTheInstallationNamedItAndItsFolderIsMade(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "nested", "deeper", "index.db")
 
-	got, err := prepareIndexPath(plugins(Config{Paths: Paths{IndexPath: named}}, nil, nil, nil, NewResources()).vault)
+	got, err := prepareIndexPath(NewTestInstallation(Config{Paths: Paths{IndexPath: named}}, nil).buildVaultWiring())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,15 +149,15 @@ func TestAnIndexWhoseFolderCannotBeMadeIsAReason(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := prepareIndexPath(plugins(Config{
+	got, err := prepareIndexPath(NewTestInstallation(Config{
 		Paths: Paths{IndexPath: filepath.Join(file, "index.db")},
-	}, nil, nil, nil, NewResources()).vault)
+	}, nil).buildVaultWiring())
 	if err == nil || got != "" {
 		t.Errorf("the index is at %q: %v", got, err)
 	}
-	if _, err := openIndex(plugins(Config{
+	if _, err := openIndex(NewTestInstallation(Config{
 		Paths: Paths{IndexPath: filepath.Join(file, "index.db")},
-	}, nil, nil, nil, NewResources()).vault, t.Context()); err == nil {
+	}, nil).buildVaultWiring(), t.Context()); err == nil {
 		t.Error("an index was opened where its folder cannot be made")
 	}
 }
@@ -231,10 +231,10 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 
 func TestEveryFolderOfTheMachineIsGivenAnIdentityAndATrash(t *testing.T) {
 	isolate(t)
-	if vaultIdentity(plugins(Config{}, nil, nil, nil, NewResources()).vault) == nil {
+	if vaultIdentity(NewTestInstallation(Config{}, nil).buildVaultWiring()) == nil {
 		t.Error("folders are given no identity")
 	}
-	if vaultTrash(plugins(Config{}, nil, nil, nil, NewResources()).vault) == nil {
+	if vaultTrash(NewTestInstallation(Config{}, nil).buildVaultWiring()) == nil {
 		t.Error("what is deleted has nowhere to go")
 	}
 }

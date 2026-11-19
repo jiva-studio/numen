@@ -105,10 +105,6 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 	}).Execute(s.Plugins, getPluginPerformance(c.ResolvedCompute))
 }
 
-func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
-	return c.Infos.GetPluginInfos
-}
-
 func getDeclarations(c settingsWiring) settingsdomain.Declarations {
 	return func(owner string) ([]manifest.Setting, bool) {
 		if owner == settingsdomain.AppOwner {
@@ -197,7 +193,7 @@ func openWatchSettings(c settingsWiring) *settingsusecase.WatchSettingChanges {
 }
 
 func openChoosePluginPath(c settingsWiring, dialog machineport.PathDialog) *settingsusecase.ChoosePluginPath {
-	return settingsusecase.NewChoosePluginPath(dialog, settingsPlugins(c), getSettingsWriter(c))
+	return settingsusecase.NewChoosePluginPath(dialog, c.Infos.GetPluginInfos, getSettingsWriter(c))
 }
 
 func settingsStore(c settingsWiring) *settingsadapter.Store {
