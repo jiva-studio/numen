@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
@@ -166,6 +168,8 @@ func TestABuiltInPluginIsFoundByItsCapability(t *testing.T) {
 // given names it to the host.
 func TestABuiltInPluginIsGivenItsOwnLaunchVariables(t *testing.T) {
 	host := newBuiltInHost(t)
+	lender, _ := lendEndpoint(host, hostendpoint.Address)
+	lender.Update(func(l *hostendpoint.Lent) { l.ModelCalls = noModelCalls{} })
 	host.Management.Mode.SetVaultPath("/vaults/example")
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host.Management, newBuiltInManifest(firstBuiltInID), backend.serve("first tools"))
@@ -175,6 +179,10 @@ func TestABuiltInPluginIsGivenItsOwnLaunchVariables(t *testing.T) {
 		t.Fatalf("EnsureActive: %v", err)
 	}
 	vars := backend.lastVars(t)
+	served, err := host.Supervision.Services.OpenHostEndpoint(t.Context())
+	if err != nil || served == 0 || vars["NUMEN_HOST_PORT"] != strconv.Itoa(served) {
+		t.Fatalf("registered host port %q, serving on %d: %v", vars["NUMEN_HOST_PORT"], served, err)
+	}
 	if vars["NUMEN_PLUGIN_ID"] != firstBuiltInID || vars["NUMEN_VAULT_PATH"] != "/vaults/example" {
 		t.Errorf("vars = %v", vars)
 	}
