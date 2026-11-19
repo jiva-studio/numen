@@ -18,39 +18,39 @@ import (
 const operationResultRows = 200_000
 
 func newFindSearchResults(
-	c pluginsWiring, db *Index, source searchsourceport.Source, errorHandler func(error),
+	install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring, db *Index, source searchsourceport.Source, errorHandler func(error),
 ) *searchqueryusecase.FindSearchResults {
-	limits, stageLimits := readSearchLimits(c, errorHandler)
+	limits, stageLimits := readSearchLimits(settingsDeps, errorHandler)
 	search := db.ChunkSearch()
-	rerank := openRerankDeps(c)
+	rerank := openRerankDeps(install, settingsDeps, vaultDeps)
 	evaluate := searchqueryusecase.NewEvaluateQuery(searchqueryusecase.EvaluateQueryDeps{
 		Documents:    search,
 		Vectors:      search,
 		Places:       search,
 		Contents:     db.NoteQueryReads(),
 		Links:        db.NoteQueryReads(),
-		Functions:    searchfunctionbridge.Open(c.search.Runtime.Activator),
+		Functions:    searchfunctionbridge.Open(searchDeps.Runtime.Activator),
 		Matcher:      wordmatch.NewMatcher(),
-		Readers:      c.search.VaultReaders,
-		Texts:        c.search.TextReaders,
+		Readers:      searchDeps.VaultReaders,
+		Texts:        searchDeps.TextReaders,
 		Source:       getQuerySource(source),
 		Floors:       newFloorPolicy(db, source, errorHandler),
-		ContentTypes: c.search.Watch,
+		ContentTypes: searchDeps.Watch,
 	})
 	stages := searchqueryusecase.NewApplyStages(searchqueryusecase.ApplyStagesDeps{
 		Calls:   rerank.calls,
 		Rows:    rerank.rows,
 		Resolve: rerank.resolve,
 		Results: db.OperationResults(operationResultRows),
-		Clock:   c.vault.Clock,
-		Readers: c.search.VaultReaders,
-		Texts:   c.search.TextReaders,
+		Clock:   vaultDeps.Clock,
+		Readers: searchDeps.VaultReaders,
+		Texts:   searchDeps.TextReaders,
 		Limits:  stageLimits,
 	})
 	return searchqueryusecase.NewFindSearchResults(searchqueryusecase.FindSearchResultsDeps{
 		Parser:        celquery.NewParser(limits),
-		Catalog:       getSearchCatalog(getRuntimeManifests(c.search.Runtime)),
-		Clock:         c.vault.Clock,
+		Catalog:       getSearchCatalog(getRuntimeManifests(searchDeps.Runtime)),
+		Clock:         vaultDeps.Clock,
 		Limits:        limits,
 		Evaluate:      evaluate.Execute,
 		FillDocuments: evaluate.FillDocuments,
@@ -58,8 +58,8 @@ func newFindSearchResults(
 	})
 }
 
-func readSearchLimits(c pluginsWiring, errorHandler func(error)) (searchquerydomain.Limits, searchquerydomain.StageLimits) {
-	file, err := readCheckedSettings(c.settings)
+func readSearchLimits(settingsDeps settingsWiring, errorHandler func(error)) (searchquerydomain.Limits, searchquerydomain.StageLimits) {
+	file, err := readCheckedSettings(settingsDeps)
 	if err != nil {
 		reportSearchFallback(errorHandler, err)
 		return searchquerydomain.DefaultLimits(), searchquerydomain.DefaultStageLimits()
@@ -77,16 +77,16 @@ type rerankDeps struct {
 	calls   connectionport.ModelCalls
 }
 
-func openRerankDeps(c pluginsWiring) rerankDeps {
-	connections, ok := openConnectionDeps(c)
+func openRerankDeps(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) rerankDeps {
+	connections, ok := openConnectionDeps(install, settingsDeps, vaultDeps)
 	if !ok {
 		return rerankDeps{rows: none.RerankRows{}}
 	}
 	resolve := connection.NewResolve(connections).Execute
 	return rerankDeps{
 		resolve: resolve,
-		rows:    modelcall.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(c)).Execute, nil),
-		calls:   openModelCalls(c),
+		rows:    modelcall.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(install, settingsDeps, vaultDeps)).Execute, nil),
+		calls:   openModelCalls(install, settingsDeps),
 	}
 }
 

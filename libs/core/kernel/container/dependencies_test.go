@@ -31,8 +31,8 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 	registry := provision.NewRegistry()
 	host.Supervision.Dependencies.Replace(registry)
 	tasks := run.NewTasks()
-	execution, preferences, endpoints := AdaptPluginHost(host.Management, host.Supervision)
-	reportDependencies(plugins(Config{}, execution, preferences, endpoints, NewResources()), tasks)
+	execution, _, _ := AdaptPluginHost(host.Management, host.Supervision)
+	reportDependencies(execution.Watch, tasks)
 	req := manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}
 
 	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateProvisioning, BytesDownloaded: 5, BytesTotal: 10})
@@ -134,8 +134,8 @@ func startHeldDownload(t *testing.T) (*testPluginRoles, *run.Tasks, <-chan error
 	provisioner := heldProvisioner{started: make(chan struct{})}
 	host.Supervision.Dependencies.Replace(provision.NewRegistry(provisioner))
 	tasks := run.NewTasks()
-	execution, preferences, endpoints := AdaptPluginHost(host.Management, host.Supervision)
-	reportDependencies(plugins(Config{}, execution, preferences, endpoints, NewResources()), tasks)
+	execution, _, _ := AdaptPluginHost(host.Management, host.Supervision)
+	reportDependencies(execution.Watch, tasks)
 	answer := make(chan error, 1)
 	go func() {
 		_, err := host.Supervision.Services.GetDependencies().Provision(

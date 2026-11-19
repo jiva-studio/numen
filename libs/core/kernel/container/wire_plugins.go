@@ -25,24 +25,24 @@ import (
 )
 
 func openPluginWork(
-	a pluginsWiring, db *Index, v domain.Vault, tasks *run.Tasks, models *run.Lock,
-) (pluginsWiring, *run.PluginWork, error) {
-	setPluginVaultPath(a, v.Path)
-	if err := installCurrentVault(a, db, v); err != nil {
-		return pluginsWiring{}, nil, err
+	install pluginInstall, vaultDeps vaultWiring, db *Index, v domain.Vault, tasks *run.Tasks, models *run.Lock,
+) (*run.PluginWork, error) {
+	setPluginVaultPath(install.Execution.Runtime.PluginBinding, v.Path)
+	if err := installCurrentVault(install, vaultDeps, db, v); err != nil {
+		return nil, err
 	}
-	work := pluginsOpenPluginWork(a, tasks, models)
-	setPluginTexts(a.vault)
-	return a, work, nil
+	work := pluginsOpenPluginWork(install, tasks, models)
+	setPluginTexts(vaultDeps)
+	return work, nil
 }
 
-func installCurrentVault(a pluginsWiring, db *Index, v domain.Vault) error {
-	registry, err := vaultRegistry(a.vault.RegistryPath)
+func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *Index, v domain.Vault) error {
+	registry, err := vaultRegistry(vaultDeps.RegistryPath)
 	if err != nil {
 		return err
 	}
 	current := func() (domain.Vault, bool) { return v, true }
-	return installPluginVault(a, registry, db, current, PluginVaultHooks{})
+	return installPluginVault(install, vaultDeps, registry, db, current, PluginVaultHooks{})
 }
 
 // PluginRuntime is what runs, finds and addresses the plugins.

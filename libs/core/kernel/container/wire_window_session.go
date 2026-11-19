@@ -51,25 +51,25 @@ type windowSession struct {
 	userSwitch windowsession.UserSwitch
 }
 
-func newWindowSession(a pluginsWiring, state *editor.State, ctx context.Context, parts windowParts) windowSession {
+func newWindowSession(install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring, state *editor.State, ctx context.Context, parts windowParts) windowSession {
 	diag := windowsession.NewDiagnostics(parts.out, state.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
-		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a), diag),
-		Passes:   parts.passes, Triggers: getTriggerSource(a, parts.frontmatter), StartFeed: parts.startFeed,
-		Report: editor.ReportVault(a.vault.RecordLog),
+		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(vaultDeps), diag),
+		Passes:   parts.passes, Triggers: getTriggerSource(install, settingsDeps, vaultDeps, parts.frontmatter), StartFeed: parts.startFeed,
+		Report: editor.ReportVault(vaultDeps.RecordLog),
 	})
-	identity := vault.NewCheckIdentity(vaultIdentity(a.vault))
+	identity := vault.NewCheckIdentity(vaultIdentity(vaultDeps))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)
 	guard := &windowsession.Guard{}
 	flush := windowsession.NewPageFlush(state.Window, state.Writes)
 	rebuild := windowsession.NewRebuildSession(guard, session)
 	show := windowsession.NewShowVault(guard, session, identity, flush, &state.Notices.ChangeEvents)
 	follow := windowsession.NewModelFollow(parts.embedding, parts.indexer, &state.Runtime, rebuild)
-	switching := windowsession.NewSwitchVault(show, a.Execution.Runtime, state)
+	switching := windowsession.NewSwitchVault(show, install.Execution.Runtime, state)
 	return windowSession{
 		cases: windowCases{
-			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, a.search.ShouldRebuildIndex),
+			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, searchDeps.ShouldRebuildIndex),
 			show:       show,
 			openPlugin: windowsession.NewOpenPluginVault(guard, identity, state.Window, switching),
 			flush:      windowsession.NewFlushPending(guard, flush),

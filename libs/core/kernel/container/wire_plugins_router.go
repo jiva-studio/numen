@@ -27,11 +27,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
-func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
+func reportDependencies(watch PluginWatch, tasks *run.Tasks) {
 	show := run.NewDependencyTasks(tasks)
-	c.Execution.Watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
-		show.Execute(req.ID, status, func() { c.Execution.Watch.CancelDependency(req) })
-		supervision.RecordDependencyStatus(c.vault.RecordLog, req.ID, status)
+	watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
+		show.Execute(req.ID, status, func() { watch.CancelDependency(req) })
+		supervision.RecordDependencyStatus(record, req.ID, status)
 	})
 }
 
@@ -47,22 +47,13 @@ type pluginInstall struct {
 	KeyStore        pluginport.KeyStore
 }
 
-// pluginsWiring wires the plugin catalog, plugin host and dependencies over the settings and
-// the vaults the plugins work with.
-type pluginsWiring struct {
-	pluginInstall
-	settings settingsWiring
-	search   searchWiring
-	vault    vaultWiring
-}
-
-func getPluginCatalog(c pluginsWiring) *catalog.Service {
-	if c.PluginCatalog.Target == "" {
+func getPluginCatalog(cfg catalog.Config, report func(error)) *catalog.Service {
+	if cfg.Target == "" {
 		return nil
 	}
-	service, err := catalog.NewService(c.PluginCatalog)
+	service, err := catalog.NewService(cfg)
 	if err != nil {
-		c.settings.ErrorHandler(err)
+		report(err)
 		return nil
 	}
 	return service
@@ -97,8 +88,8 @@ func InitializePluginRoles(indexPath string, res *Resources, management *PluginM
 	return err
 }
 
-func setPluginVaultPath(c pluginsWiring, path string) {
-	c.Execution.Runtime.SetVaultPath(path)
+func setPluginVaultPath(binding pluginport.PluginBinding, path string) {
+	binding.SetVaultPath(path)
 }
 
 // StopPlugins cancels pending dependencies before stopping plugin processes.
@@ -107,15 +98,15 @@ func StopPlugins(watch PluginWatch, ctx context.Context) error {
 	return watch.TeardownAll(ctx, pluginGracePeriod)
 }
 
-func getPluginCommands(c pluginsWiring) PluginCommandUseCases {
-	return newPluginCommands(c, c.Execution, nil)
+func getPluginCommands(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) PluginCommandUseCases {
+	return newPluginCommands(install, settingsDeps, vaultDeps, install.Execution, nil)
 }
 
-func newPluginCommands(c pluginsWiring, host *PluginExecution, versions plugincommand.VersionItems) PluginCommandUseCases {
+func newPluginCommands(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring, host *PluginExecution, versions plugincommand.VersionItems) PluginCommandUseCases {
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := getRuntimeManifests(host.Runtime), when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
-	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(c), getWhenConfig(c), conditions)
+	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(vaultDeps), getWhenConfig(install, settingsDeps), conditions)
 	return PluginCommandUseCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, host.Watch),
@@ -130,37 +121,43 @@ func GetPluginServices(runtime PluginRuntime) editor.PluginServices {
 	return servicebridge.Open(runtime.Activator, runtime)
 }
 
-func signalFailureClears(c pluginsWiring) {
-	c.Execution.Runtime.SetOnFailureCleared(func(string) { signalPluginChanges(c) })
+func getPluginRetrier(retry pluginport.PluginRetrier) func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
+	return retry.RetryPlugin
 }
 
-func setPluginWork(c pluginsWiring, tasks *run.Tasks, models *run.Lock) {
-	pluginsOpenPluginWork(c, tasks, models)
+func signalFailureClears(install pluginInstall, settingsDeps settingsWiring) {
+	install.Execution.Runtime.SetOnFailureCleared(func(string) { signalPluginChanges(settingsDeps.PluginChanges) })
 }
 
-func pluginsOpenPluginWork(c pluginsWiring, tasks *run.Tasks, models *run.Lock) *run.PluginWork {
-	work := run.NewPluginWork(models, tasks, func(pluginID string) string { return pluginsGetPluginName(c, pluginID) })
-	c.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Work = work })
+func setPluginWork(install pluginInstall, tasks *run.Tasks, models *run.Lock) {
+	pluginsOpenPluginWork(install, tasks, models)
+}
+
+func pluginsOpenPluginWork(install pluginInstall, tasks *run.Tasks, models *run.Lock) *run.PluginWork {
+	work := run.NewPluginWork(models, tasks, func(pluginID string) string {
+		return pluginsGetPluginName(install.Execution.Runtime.PluginResolver, pluginID)
+	})
+	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Work = work })
 	return work
 }
 
-func pluginsGetPluginName(c pluginsWiring, pluginID string) string {
-	if found, isKnown := c.Execution.Runtime.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
+func pluginsGetPluginName(resolver pluginport.PluginResolver, pluginID string) string {
+	if found, isKnown := resolver.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
 		return found.Manifest.Name
 	}
 	return pluginID
 }
 
-func setPluginVault(c pluginsWiring, v *pluginvault.Access) {
-	c.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Vault = v })
+func setPluginVault(lender *hostendpoint.Lender, v *pluginvault.Access) {
+	lender.Update(func(l *hostendpoint.Lent) { l.Vault = v })
 }
 
-func setPluginVaultList(c pluginsWiring, list pluginvault.List) {
-	c.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.VaultList = list })
+func setPluginVaultList(lender *hostendpoint.Lender, list pluginvault.List) {
+	lender.Update(func(l *hostendpoint.Lent) { l.VaultList = list })
 }
 
-func openPluginCache(c pluginsWiring) (*appstate.PluginCaches, error) {
-	return appstate.OpenPluginCachesIn(c.PluginCachePath)
+func openPluginCache(path string) (*appstate.PluginCaches, error) {
+	return appstate.OpenPluginCachesIn(path)
 }
 
 func newDependencyRegistry(clock machineport.Clock, defaultDir string) pluginport.DependencyRegistry {

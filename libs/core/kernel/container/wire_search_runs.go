@@ -29,20 +29,22 @@ func emitIndexChanged(generations *indexgeneration.Generations, events *editor.E
 	}
 }
 
-func newSearchRuns(w *windowWiring) *searchrunusecase.SearchRuns {
-	find := newFindSearchResults(w.a, w.db, w.asking, w.state.ReportFloorError)
+func newSearchRuns(w *windowWiring, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring) *searchrunusecase.SearchRuns {
+	find := newFindSearchResults(install, settingsDeps, searchDeps, vaultDeps, w.db, w.asking, w.state.ReportFloorError)
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
 		Store:       searchstore.New(),
-		Cancels:     searchcancel.NewSearches(w.a.vault.Clock),
+		Cancels:     searchcancel.NewSearches(vaultDeps.Clock),
 		Tasks:       w.tasks,
-		Timer:       w.a.vault.Clock,
+		Timer:       vaultDeps.Clock,
 		Policy:      searchrundomain.DefaultPolicy(),
 		Slots:       searchslot.New(searchrundomain.DefaultPolicy().MaxRunning),
 		Generations: w.generations,
 		Run:         find.Execute,
-		Names:       func(pluginID string) string { return pluginsGetPluginName(w.a, pluginID) },
-		Catalog:     getSearchCatalog(getRuntimeManifests(w.a.search.Runtime)),
-		MaxResults:  find.Limits.MaxLimit,
+		Names: func(pluginID string) string {
+			return pluginsGetPluginName(install.Execution.Runtime.PluginResolver, pluginID)
+		},
+		Catalog:    getSearchCatalog(getRuntimeManifests(searchDeps.Runtime)),
+		MaxResults: find.Limits.MaxLimit,
 	})
 	return &runs
 }

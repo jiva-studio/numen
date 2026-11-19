@@ -211,7 +211,7 @@ func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, search
 	return base
 }
 
-func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) pluginsWiring {
+func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) (pluginInstall, settingsWiring, searchWiring, vaultWiring) {
 	// texts are the text versions the open made over its index, or nil where it makes none.
 	exec = getPluginExecution(exec)
 	running := getRunningExecution(exec, c.SafeMode)
@@ -219,26 +219,22 @@ func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoin
 	settings := settingsOf(c, exec, prefs, res)
 	base := vaultBase(c, running, endpoints, res, texts)
 	search := searchWith(c, exec, running, endpoints, res, base)
-	return pluginsWiring{
-		pluginInstall: pluginInstall{
-			PluginCachePath: c.PluginCachePath,
-			ServiceDir:      c.ServiceDir,
-			Execution:       exec,
-			ActiveExecution: running,
-			Endpoints:       endpoints,
-			PluginCatalog:   res.PluginCatalog,
-			KeyStore:        res.KeyStore,
-		},
-		settings: settings,
-		search:   search,
-		vault:    vaultWith(res, base, settings, search),
+	install := pluginInstall{
+		PluginCachePath: c.PluginCachePath,
+		ServiceDir:      c.ServiceDir,
+		Execution:       exec,
+		ActiveExecution: running,
+		Endpoints:       endpoints,
+		PluginCatalog:   res.PluginCatalog,
+		KeyStore:        res.KeyStore,
 	}
+	return install, settings, search, vaultWith(res, base, settings, search)
 }
 
-func plugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) pluginsWiring {
+func plugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) (pluginInstall, settingsWiring, searchWiring, vaultWiring) {
 	return assemble(c, exec, prefs, endpoints, res, nil)
 }
 
-func openIndexedPlugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, db *Index) pluginsWiring {
+func openIndexedPlugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, db *Index) (pluginInstall, settingsWiring, searchWiring, vaultWiring) {
 	return assemble(c, exec, prefs, endpoints, res, newTextVersions(vaultBase(c, getRunningExecution(exec, c.SafeMode), getPluginEndpoints(endpoints), res, nil), db))
 }

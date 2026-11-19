@@ -27,29 +27,29 @@ func (c Config) OpenEditor(
 	if err != nil {
 		return nil, err
 	}
-	a := openIndexedPlugins(c, exec, prefs, endpoints, res, db)
-	return openEditorWindow(ctx, a, res, ports, db, opening)
+	install, settingsDeps, searchDeps, vaultDeps := openIndexedPlugins(c, exec, prefs, endpoints, res, db)
+	return openEditorWindow(ctx, install, settingsDeps, searchDeps, vaultDeps, res, ports, db, opening)
 }
 
-func openEditorWindow(ctx context.Context, a pluginsWiring, res *Resources, ports vaultregistry.Ports, db *Index, opening WindowOpening) (*OpenedWindow, error) {
-	opened, err := openWindowWith(ctx, a, getLogEntries(res), ports, db, opening)
+func openEditorWindow(ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring, res *Resources, ports vaultregistry.Ports, db *Index, opening WindowOpening) (*OpenedWindow, error) {
+	opened, err := openWindowWith(ctx, install, settingsDeps, searchDeps, vaultDeps, getLogEntries(res), ports, db, opening)
 	if err != nil {
 		return nil, err
 	}
-	return connectEditor(ports, db, opened)
+	return connectEditor(install, vaultDeps, ports, db, opened)
 }
 
-func connectEditor(ports vaultregistry.Ports, db *Index, opened *windowWiring) (*OpenedWindow, error) {
-	state, a := opened.state, opened.a
-	setPluginVaultPath(a, state.GetCurrentVault().Path)
+func connectEditor(install pluginInstall, vaultDeps vaultWiring, ports vaultregistry.Ports, db *Index, opened *windowWiring) (*OpenedWindow, error) {
+	state := opened.state
+	setPluginVaultPath(install.Execution.Runtime.PluginBinding, state.GetCurrentVault().Path)
 	pluginNotes := getNoteChanges(*opened.cases.PluginNotes)
 	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: &pluginNotes}
-	if err := installPluginVault(a, ports, db, state.GetShownVault, hooks); err != nil {
+	if err := installPluginVault(install, vaultDeps, ports, db, state.GetShownVault, hooks); err != nil {
 		return nil, err
 	}
-	shareVaultList(opened)
-	setPluginTexts(a.vault)
-	shareEditorWindow(db, opened)
+	shareVaultList(opened, install)
+	setPluginTexts(vaultDeps)
+	shareEditorWindow(db, opened, install, vaultDeps)
 	return getOpenedWindow(opened), nil
 }
 
@@ -81,7 +81,8 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 		return Shell{}, err
 	}
 	opening.API.Window = shell.NewWindow(opening.Target, nil)
-	return bindShell(plugins(c, exec, prefs, endpoints, res), ctx, ports, db, opening.API, opening.Log)
+	install, settingsDeps, _, vaultDeps := plugins(c, exec, prefs, endpoints, res)
+	return bindShell(install, settingsDeps, vaultDeps, ctx, ports, db, opening.API, opening.Log)
 }
 
 // ShellLog is where a shell window writes what it reports: Out under Label, and Notify for what the user
@@ -93,10 +94,10 @@ type ShellLog struct {
 }
 
 func bindShell(
-	a pluginsWiring, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log ShellLog,
+	install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log ShellLog,
 ) (Shell, error) {
-	setModelCalls(a, connectionlog.NewLogNotices().ReportSetAside)
-	vaults := openVaults(a.vault, db, log.Out, log.Label, api.ReportVaultRead)
+	setModelCalls(install, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
+	vaults := openVaults(vaultDeps, db, log.Out, log.Label, api.ReportVaultRead)
 	closers := Shell{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
 	SetShellNotes(api, db)
 	vaultList := vaultregistry.NewList(ports.Vaults)
@@ -104,21 +105,21 @@ func bindShell(
 	api.ResolveLinks = query.NewResolveVaultLinks(ports.Vaults, query.NewResolveLinks(db.NoteQueries()))
 	api.SetVaultIndexer(ctx, vaults.IndexVault)
 	hooks := PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
-	if err := installPluginVault(a, ports, db, getNoShownVault, hooks); err != nil {
+	if err := installPluginVault(install, vaultDeps, ports, db, getNoShownVault, hooks); err != nil {
 		return closers, err
 	}
-	closers.Themes = followShell(a, ctx, api, log.Label, log.Notify)
+	closers.Themes = followShell(settingsDeps, vaultDeps, ctx, api, log.Label, log.Notify)
 	return closers, nil
 }
 
-func followShell(a pluginsWiring, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
-	changes, err := vaultMoves(a.vault, ctx)
+func followShell(settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
+	changes, err := vaultMoves(vaultDeps, ctx)
 	if err != nil {
 		notify(label + ": the index is not being followed: " + err.Error())
 	} else {
 		api.ReportChangesFrom(ctx, changes)
 	}
-	service, themesErr := settingsThemes(a.settings, Scales{}, func(response string) {
+	service, themesErr := settingsThemes(settingsDeps, Scales{}, func(response string) {
 		if response != "" {
 			notify("themes: " + response)
 		}
