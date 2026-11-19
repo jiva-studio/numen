@@ -103,8 +103,11 @@ export interface PlexView {
   readonly nextPath: Ref<string>
   readonly isLoading: Ref<boolean>
   go(path: string): Promise<void>
-  followMoves(renames: readonly PathRename[]): void
-  close(): void
+  warm?(path: string): void
+  readonly lifecycle: {
+    followMoves(renames: readonly PathRename[]): void
+    close(): void
+  }
 }
 
 /** What a plex tab requests of the window: the notes it opens, selects and drags, and the messages it shows. */
@@ -167,7 +170,6 @@ export interface PlexTabDeps {
   readonly tabId: string
   readonly editor: PlexEditor
   readonly creatable: readonly ConnectionRole[]
-  readonly isNavigatingOnCreate?: Readonly<Ref<boolean>>
   readonly window: PlexWindowDeps
   readonly menu: PlexMenuDeps
   readonly watchWidgets?: (

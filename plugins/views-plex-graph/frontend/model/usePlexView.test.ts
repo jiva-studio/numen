@@ -132,7 +132,7 @@ describe('a note that moved while a question was in flight', () => {
 
     pendingGate = new Promise<void>((resolve) => (release = resolve))
     const goPromise = plex.go('Note.md')
-    plex.followMoves([{ from: 'Note.md', to: 'moved/Note.md' }])
+    plex.lifecycle.followMoves([{ from: 'Note.md', to: 'moved/Note.md' }])
     release()
     await goPromise
 
@@ -152,7 +152,7 @@ describe('a note that moved while a question was in flight', () => {
 
     pendingGate = new Promise<void>((resolve) => (release = resolve))
     const goPromise = plex.go('Note.md')
-    plex.followMoves([{ from: 'Elsewhere.md', to: 'moved/Elsewhere.md' }])
+    plex.lifecycle.followMoves([{ from: 'Elsewhere.md', to: 'moved/Elsewhere.md' }])
     release()
     await goPromise
 
@@ -191,7 +191,7 @@ describe('a plex whose tab has closed', () => {
     )
 
     const going = plex.go('Gone.md')
-    plex.close()
+    plex.lifecycle.close()
     await going
 
     expect(plex.error.value).toBe('')
@@ -206,7 +206,7 @@ describe('a plex whose tab has closed', () => {
       }),
     )
 
-    plex.close()
+    plex.lifecycle.close()
     await plex.go('Note.md')
 
     expect(request).toStrictEqual([])

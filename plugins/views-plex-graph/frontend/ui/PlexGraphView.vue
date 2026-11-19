@@ -29,8 +29,16 @@ const type = useTypeSize()
 const input = getInputStrategies(hasTouchPointer())
 const options = computed(() => getPlexOptions(look, type.value))
 
-const { rootElement, picture, lastPointer, onPointerUp, onContextMenu, onEdgeMenu, closeMenu } =
-  usePlexCanvas({ state: props.state })
+const {
+  rootElement,
+  picture,
+  lastPointer,
+  onPointerDown,
+  onPointerUp,
+  onContextMenu,
+  onEdgeMenu,
+  closeMenu,
+} = usePlexCanvas({ state: props.state })
 
 const pending = computed(() =>
   quickLink.value ? { from: quickLink.value.from, at: quickLink.value.at } : null,
@@ -101,7 +109,13 @@ function onDismissLinkInspector() {
 </script>
 
 <template>
-  <div ref="rootElement" class="plex" @contextmenu="onContextMenu" @pointerup.capture="onPointerUp">
+  <div
+    ref="rootElement"
+    class="plex"
+    @contextmenu="onContextMenu"
+    @pointerdown.capture="onPointerDown"
+    @pointerup.capture="onPointerUp"
+  >
     <p v-if="props.state.canvas.view.error.value" class="caution">
       {{ props.state.canvas.view.error.value }}
     </p>

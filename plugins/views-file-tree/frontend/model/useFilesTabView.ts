@@ -1,11 +1,4 @@
-import {
-  computed,
-  onMounted,
-  onUnmounted,
-  type Component,
-  type ComputedRef,
-  type WritableComputedRef,
-} from 'vue'
+import { computed, type Component, type ComputedRef, type WritableComputedRef } from 'vue'
 import type { RowMarker } from '@numen/ui'
 import type { FilesTabState } from '../types'
 
@@ -21,7 +14,7 @@ export interface FilesTabView {
 
 /**
  * What the files tab shows of its state: the mark the window's drag and drop reads, the row being renamed, the
- * items of the open menu and the icons. The tree is refreshed whenever the window regains focus.
+ * items of the open menu and the icons.
  */
 export function useFilesTabView(getState: () => FilesTabState): FilesTabView {
   const dropTarget = computed<RowMarker>(() => ({
@@ -44,12 +37,6 @@ export function useFilesTabView(getState: () => FilesTabState): FilesTabView {
   }
 
   const getItemIcon = (id: string): Component | null => getState().menu.getIcon(id)
-
-  const refreshTree = () => {
-    getState().list.sync.refresh().catch(getState().reportFailure)
-  }
-  onMounted(() => globalThis.addEventListener('focus', refreshTree))
-  onUnmounted(() => globalThis.removeEventListener('focus', refreshTree))
 
   return { dropTarget, renamingPath, items, getRowIcon, getItemIcon }
 }

@@ -21,6 +21,7 @@ import {
   createWorkspaceFiles,
   createWorkspaceHost,
   createWorkspaceMessages,
+  type CachedVaultNotes,
   type PluginServices,
   type VaultNotesDeps,
   type WorkspaceFilesDeps,
@@ -79,7 +80,7 @@ export interface VaultAccessDeps {
 /** The notes, the links and the files of the vault. */
 export function createVaultAccess(
   deps: VaultAccessDeps,
-): Pick<PluginServices, 'notes' | 'relations' | 'files'> {
+): Pick<PluginServices, 'relations' | 'files'> & { readonly notes: CachedVaultNotes } {
   return {
     notes: createVaultNotes({
       notes: deps.notes,

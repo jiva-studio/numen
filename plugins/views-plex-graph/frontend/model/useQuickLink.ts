@@ -9,7 +9,7 @@ import type { PlexTabDeps, QuickLinkRequest, PlexView } from '../types'
 
 export function useQuickLink(view: PlexView, deps: PlexTabDeps, map: NodeIdMap) {
   const quickLink = ref<QuickLinkRequest | null>(null)
-  const isNavigatingOnCreate = (deps.isNavigatingOnCreate ?? ref(true)) as Ref<boolean>
+  const isNavigatingOnCreate = ref(true) as Ref<boolean>
 
   const openQuickLink = (request: QuickLinkRequest) => {
     quickLink.value = request

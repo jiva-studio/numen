@@ -177,7 +177,7 @@ function createPlexNodeActions(options: {
   }
 
   const followMoves = (renames: readonly PathRename[]) => {
-    view.followMoves(renames)
+    view.lifecycle.followMoves(renames)
     map.updateRenamedNodes(renames)
     followKindMoves(renames)
   }

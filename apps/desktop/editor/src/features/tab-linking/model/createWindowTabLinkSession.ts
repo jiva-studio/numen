@@ -36,7 +36,10 @@ export function createWindowTabLinkSession(deps: WindowTabLinkSessionDeps) {
     onError: (error) =>
       writeMessage(`The tab links were not written: ${formatError(error)}`, 'error'),
   })
-  watch(() => JSON.stringify(getWindowReport(deps.windowTabs, deps.isMain)), session.reportTabs)
+  watch(() => {
+    const report = getWindowReport(deps.windowTabs, deps.isMain)
+    return JSON.stringify({ tabs: report.tabs, tabCount: report.window.tabCount })
+  }, session.reportTabs)
   // Hiding the page cancels the watch in the core; a page restored from the back-forward cache
   // watches again.
   win.addEventListener('pagehide', session.close)

@@ -132,30 +132,6 @@ describe('the tree the tab draws', () => {
   })
 })
 
-describe('the window regaining focus', () => {
-  it('lists the open folders again', async () => {
-    const { listings, window } = await mountFiles(['physics'])
-    listings.length = 0
-
-    globalThis.dispatchEvent(new Event('focus'))
-    await settle()
-
-    expect([...listings].sort()).toStrictEqual([ROOT, 'physics'].sort())
-    window.unmount()
-  })
-
-  it('does not list them after the tab is unmounted', async () => {
-    const { listings, window } = await mountFiles(['physics'])
-    window.unmount()
-    listings.length = 0
-
-    globalThis.dispatchEvent(new Event('focus'))
-    await settle()
-
-    expect(listings).toStrictEqual([])
-  })
-})
-
 describe('a row the tree reports', () => {
   it('takes the person to the note it remains for', async () => {
     const { recorded, window } = await mountFiles()

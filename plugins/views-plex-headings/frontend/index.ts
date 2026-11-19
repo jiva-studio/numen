@@ -3,7 +3,13 @@
  * while the pointer rests on it, drawn above everything else, beside the slot over the whole node that the pointer is read on.
  */
 import { defineComponent, h, ref, type ComponentPublicInstance } from 'vue'
-import { definePlugin, type Caught, type HostServices, type PluginContext } from '@numen/plugin-sdk'
+import {
+  definePlugin,
+  type Caught,
+  type HostServices,
+  type NoteHeading,
+  type PluginContext,
+} from '@numen/plugin-sdk'
 import { readSettings } from './model/settings'
 import { HOVER_WAIT, LEAVE_GRACE, sleep, type HeadingsSource } from './model/useHeadings'
 import { useHeadingsView } from './model/useHeadingsView'
@@ -49,8 +55,22 @@ export function activate(plugin: PluginContext, host: HostServices): void {
       'the headings of a note need the notes of the vault and the window they open in',
     )
   }
+  const cache = new Map<string, readonly NoteHeading[]>()
+  const subscription = host.events.onVaultChange(() => cache.clear())
+  plugin.identity.subscriptions.push(subscription)
   const source: HeadingsSource = {
-    notes,
+    notes: {
+      getHeadings: async (paths) => {
+        const missing = paths.filter((path) => !cache.has(path))
+        if (missing.length > 0) {
+          const loaded = await notes.getHeadings(missing)
+          for (const path of missing) {
+            cache.set(path, loaded.get(path) ?? [])
+          }
+        }
+        return new Map(paths.map((path) => [path, cache.get(path) ?? []]))
+      },
+    },
     settings: readSettings(plugin),
     open: (path, line) => workspace.files.open(path, { placement: 'current', line }),
     reportFailure: (error: Caught) =>

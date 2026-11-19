@@ -5,28 +5,32 @@ import { getRenamedPath, type PathRename } from '@numen/plugin-sdk'
 
 export function createNodeIdMap() {
   let nodeIdsByPath = new Map<string, string>()
+  let pathsByNodeId = new Map<string, string>()
   let nextId = 0
 
   const getNodeId = (path: string): string => {
     if (!path) return ''
-    const id = nodeIdsByPath.get(path) ?? String(++nextId)
-    nodeIdsByPath.set(path, id)
+    let id = nodeIdsByPath.get(path)
+    if (!id) {
+      id = String(++nextId)
+      nodeIdsByPath.set(path, id)
+      pathsByNodeId.set(id, path)
+    }
     return id
   }
 
-  const getNodePath = (id: string): string => {
-    for (const [path, mappedId] of nodeIdsByPath) {
-      if (mappedId === id) return path
-    }
-    return ''
-  }
+  const getNodePath = (id: string): string => pathsByNodeId.get(id) ?? ''
 
   const updateRenamedNodes = (renames: readonly PathRename[]): void => {
-    const updatedMap = new Map<string, string>()
+    const updatedByPath = new Map<string, string>()
+    const updatedById = new Map<string, string>()
     for (const [path, id] of nodeIdsByPath) {
-      updatedMap.set(getRenamedPath(renames, path) || path, id)
+      const nextPath = getRenamedPath(renames, path) || path
+      updatedByPath.set(nextPath, id)
+      updatedById.set(id, nextPath)
     }
-    nodeIdsByPath = updatedMap
+    nodeIdsByPath = updatedByPath
+    pathsByNodeId = updatedById
   }
 
   return {

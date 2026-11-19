@@ -291,13 +291,19 @@ describe('a pointer that leaves', () => {
     expect(getTexts(wrapper)).toStrictEqual(['Fresh'])
   })
 
-  it('reads the note again when the pointer returns, for it may have changed', async () => {
+  it('reuses the headings when the pointer returns, and reads again after the vault changes', async () => {
     vi.useFakeTimers()
-    const { show, requested } = setup()
+    const { show, requested, host } = setup()
     const wrapper = show(HEAT)
 
     await rest(wrapper)
     await leave(wrapper)
+    await rest(wrapper)
+
+    expect(requested).toStrictEqual([[HEAT]])
+
+    await leave(wrapper)
+    host.events.emitVaultChange({ paths: [HEAT] })
     await rest(wrapper)
 
     expect(requested).toStrictEqual([[HEAT], [HEAT]])

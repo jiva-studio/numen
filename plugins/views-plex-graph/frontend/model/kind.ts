@@ -115,7 +115,7 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView, compo
     getTitle: (state) => getPlexTitle(state.canvas.view.noteGraph.value?.focus.title ?? ''),
     onShow: (_state, id) => tabs.show(id),
     onClose: (state, id) => {
-      state.canvas.view.close()
+      state.canvas.view.lifecycle.close()
       tabs.remove(id)
       return true
     },

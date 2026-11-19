@@ -37,6 +37,23 @@ function describeTab(windowTabs: WindowTabs, id: string, title: string): Tab {
   }
 }
 
+function findActiveTabId(windowTabs: WindowTabs): string {
+  const isTakingText = (id: string): boolean =>
+    windowTabs.tabs.getTab(id)?.kind.events?.receiveText !== undefined
+  const isTool = (id: string): boolean => windowTabs.tabs.getTab(id)?.kind.display?.isTool === true
+  const frontTab = windowTabs.handle.front()
+  if (frontTab && !isTakingText(frontTab.id)) {
+    if (!isTool(frontTab.id)) return frontTab.id
+    const shown = new Set(getPanes(windowTabs.panes.layout.value.root).map((one) => one.active))
+    const beside = [...windowTabs.tabs.tabs.value]
+      .reverse()
+      .find((one) => shown.has(one.id) && !isTool(one.id) && !isTakingText(one.id))
+    return beside?.id ?? frontTab.id
+  }
+  const nextTabs = [...windowTabs.tabs.tabs.value].reverse().find((one) => !isTakingText(one.id))
+  return nextTabs?.id ?? frontTab?.id ?? ''
+}
+
 export function useOpenTabs({
   windowTabs,
   isWriting = ref(true),
@@ -46,31 +63,12 @@ export function useOpenTabs({
   const reportError = (error: Caught) =>
     writeMessage(`The open tabs were not saved: ${formatError(error)}`, 'error')
 
-  /** Whether a tab is of a kind that takes text put to it: a conversation, with no file of its own. */
-  const isTakingText = (id: string): boolean =>
-    windowTabs.tabs.getTab(id)?.kind.events?.receiveText !== undefined
-
-  /** Whether a tab is of a kind that serves the other tabs, such as the files of the vault. */
-  const isTool = (id: string): boolean => windowTabs.tabs.getTab(id)?.kind.display?.isTool === true
-
   /**
    * The tab in front. Where that is a tool, the tab of another pane that shows and was shown last,
    * because the core keeps one active tab per window and a tool is only what the person worked
    * from. Where the tab in front takes text, the last tab that takes no text.
    */
-  const getActiveTabId = (): string => {
-    const frontTab = windowTabs.handle.front()
-    if (frontTab && !isTakingText(frontTab.id)) {
-      if (!isTool(frontTab.id)) return frontTab.id
-      const shown = new Set(getPanes(windowTabs.panes.layout.value.root).map((one) => one.active))
-      const beside = [...windowTabs.tabs.tabs.value]
-        .reverse()
-        .find((one) => shown.has(one.id) && !isTool(one.id) && !isTakingText(one.id))
-      return beside?.id ?? frontTab.id
-    }
-    const nextTabs = [...windowTabs.tabs.tabs.value].reverse().find((one) => !isTakingText(one.id))
-    return nextTabs?.id ?? frontTab?.id ?? ''
-  }
+  const getActiveTabId = (): string => findActiveTabId(windowTabs)
 
   const getOpenTabs = (): OpenTabs => ({
     activeId: getActiveTabId(),
