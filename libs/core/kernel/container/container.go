@@ -204,9 +204,8 @@ func vaultBase(c Config, running *PluginExecution, endpoints *PluginEndpoints, r
 
 func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, search searchWiring) vaultWiring {
 	base.SyncSetting = syncSetting(settings)
-	base.CutNotes = cutNotes(search)
-	base.SetNoteCut = func(scan *vault.Scan) { setNoteCut(search, scan) }
-	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
+	base = setVaultSearch(base, search)
+	record := openRecordLog(base.IndexPath, getLogEntries(res), logLevelSetting(settings), base.Clock)
 	base.RecordLog = recordLogFunc(record, res.ErrorHandler)
 	return base
 }
@@ -237,4 +236,16 @@ func plugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 
 func openIndexedPlugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, db *Index) (pluginInstall, settingsWiring, searchWiring, vaultWiring) {
 	return assemble(c, exec, prefs, endpoints, res, newTextVersions(vaultBase(c, getRunningExecution(exec, c.SafeMode), getPluginEndpoints(endpoints), res, nil), db))
+}
+
+func setVaultSearch(v vaultWiring, search searchWiring) vaultWiring {
+	v.CutNotes = cutNotes(search)
+	v.SetNoteCut = func(scan *vault.Scan) { setNoteCut(search, scan) }
+	return v
+}
+
+func openIndexedVault(search searchWiring, v vaultWiring, db *Index) (searchWiring, vaultWiring) {
+	v.TextVersions = newTextVersions(v, db)
+	search.TextReaders = getTextReaders(v)
+	return search, setVaultSearch(v, search)
 }

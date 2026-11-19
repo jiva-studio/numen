@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"io"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
@@ -290,15 +289,15 @@ func getReadVault(searchDeps searchWiring, vaultDeps vaultWiring, db *Index) ind
 	}
 }
 
-func newIndexWorker(
-	searchDeps searchWiring, vaultDeps vaultWiring, db *Index, state *editor.State, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault), out io.Writer,
+func (s windowStartup) newIndexWorker(
+	searchDeps searchWiring, vaultDeps vaultWiring, state *editor.State, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault),
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:      getReadVault(searchDeps, vaultDeps, db),
+		Reading:      getReadVault(searchDeps, vaultDeps, s.db),
 		Source:       embedding.GetSource(),
 		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
 		IndexChanged: indexChanged,
-		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out, vaultDeps.RecordLog),
+		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, s.opening.Out, vaultDeps.RecordLog),
 		Quiet:        indexing.QuietPeriod,
 		After:        vaultDeps.Clock.After,
 	})

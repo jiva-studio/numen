@@ -6,7 +6,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
-	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -24,7 +23,8 @@ type windowParts struct {
 	embedderError error
 	closeEmbedder func() error
 	closeIndex    func() error
-	frontmatter   *indexnote.FrontmatterChanges
+	triggers      windowsession.TriggerSource
+	shouldRebuild bool
 	startFeed     func(ctx context.Context, v domain.Vault) func()
 }
 
@@ -51,12 +51,12 @@ type windowSession struct {
 	userSwitch windowsession.UserSwitch
 }
 
-func newWindowSession(install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring, state *editor.State, ctx context.Context, parts windowParts) windowSession {
+func newWindowSession(runtime PluginRuntime, vaultDeps vaultWiring, state *editor.State, ctx context.Context, parts windowParts) windowSession {
 	diag := windowsession.NewDiagnostics(parts.out, state.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(vaultDeps), diag),
-		Passes:   parts.passes, Triggers: getTriggerSource(install, settingsDeps, vaultDeps, parts.frontmatter), StartFeed: parts.startFeed,
+		Passes:   parts.passes, Triggers: parts.triggers, StartFeed: parts.startFeed,
 		Report: editor.ReportVault(vaultDeps.RecordLog),
 	})
 	identity := vault.NewCheckIdentity(vaultIdentity(vaultDeps))
@@ -66,10 +66,10 @@ func newWindowSession(install pluginInstall, settingsDeps settingsWiring, search
 	rebuild := windowsession.NewRebuildSession(guard, session)
 	show := windowsession.NewShowVault(guard, session, identity, flush, &state.Notices.ChangeEvents)
 	follow := windowsession.NewModelFollow(parts.embedding, parts.indexer, &state.Runtime, rebuild)
-	switching := windowsession.NewSwitchVault(show, install.Execution.Runtime, state)
+	switching := windowsession.NewSwitchVault(show, runtime, state)
 	return windowSession{
 		cases: windowCases{
-			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, searchDeps.ShouldRebuildIndex),
+			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, parts.shouldRebuild),
 			show:       show,
 			openPlugin: windowsession.NewOpenPluginVault(guard, identity, state.Window, switching),
 			flush:      windowsession.NewFlushPending(guard, flush),

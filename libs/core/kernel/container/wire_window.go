@@ -55,15 +55,12 @@ func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 		return nil, err
 	}
 	install, settingsDeps, searchDeps, vaultDeps := plugins(c, exec, prefs, endpoints, res)
-	return openWindowOver(install, settingsDeps, searchDeps, vaultDeps, res, ctx, db, opening)
-}
-
-func openWindowOver(install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring, res *Resources, ctx context.Context, db *Index, opening WindowOpening) (*OpenedWindow, error) {
 	ports, err := vaultRegistry(vaultDeps.RegistryPath)
 	if err != nil {
 		return nil, errors.Join(err, db.Close())
 	}
-	opened, err := openWindowWith(ctx, install, settingsDeps, searchDeps, vaultDeps, getLogEntries(res), ports, db, opening)
+	startup := windowStartup{opening: opening, ports: ports, db: db, entries: getLogEntries(res)}
+	opened, err := startup.open(ctx, install, settingsDeps, searchDeps, vaultDeps)
 	if err != nil {
 		return nil, err
 	}
@@ -108,23 +105,32 @@ type windowBuilt struct {
 	closeEmbedder func() error
 }
 
-func openWindowWith(
-	ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring, entries *logsusecase.Entries, ports registry.Ports, db *Index, opening WindowOpening,
+type windowStartup struct {
+	opening WindowOpening
+	ports   registry.Ports
+	db      *Index
+	entries *logsusecase.Entries
+}
+
+func (s windowStartup) open(
+	ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring,
 ) (*windowWiring, error) {
-	first, err := registry.NewGetVaultToShow(ports.Lookup, ports.Vaults, ports.Last).Execute(opening.Named)
+	db := s.db
+	first, err := registry.NewGetVaultToShow(s.ports.Lookup, s.ports.Vaults, s.ports.Last).Execute(s.opening.Named)
 	if err != nil {
 		return nil, errors.Join(err, db.Close())
 	}
-	window := buildWindow(ctx, install, settingsDeps, searchDeps, vaultDeps, entries, ports, db, opening)
+	window := s.build(ctx, install, settingsDeps, searchDeps, vaultDeps)
 	if err := startWindow(ctx, window.wiring, first); err != nil {
 		return nil, errors.Join(err, window.closeEmbedder(), db.Close())
 	}
 	return window.wiring, nil
 }
 
-func buildWindow(
-	ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring, entries *logsusecase.Entries, ports registry.Ports, db *Index, opening WindowOpening,
+func (s windowStartup) build(
+	ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring,
 ) windowBuilt {
+	db, opening, ports := s.db, s.opening, s.ports
 
 	// One task list serves every operation and the window that displays it.
 	// A request is one task regardless of how it was issued. The list is created
@@ -144,7 +150,7 @@ func buildWindow(
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(install.Execution.Runtime.PluginEventEmitter, event) })
 	state.SetIndexing(embedding)
 	generations := newIndexGenerations(vaultDeps.Clock)
-	indexer := newIndexWorker(searchDeps, vaultDeps, db, state, embedding, emitIndexChanged(generations, state.Events), opening.Out)
+	indexer := s.newIndexWorker(searchDeps, vaultDeps, state, embedding, emitIndexChanged(generations, state.Events))
 	state.Writes.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
@@ -156,10 +162,11 @@ func buildWindow(
 	}}
 	cases := newWindowUseCases(vaultDeps, ports, db, state, current)
 
-	session := newWindowSession(install, settingsDeps, searchDeps, vaultDeps, state, ctx, windowParts{
+	session := newWindowSession(install.Execution.Runtime, vaultDeps, state, ctx, windowParts{
+		triggers: getTriggerSource(install, settingsDeps, vaultDeps, db.FrontmatterChanges()), shouldRebuild: searchDeps.ShouldRebuildIndex,
 		indexer: indexer, embedding: embedding, passes: startVault(vaultDeps, db, current),
 		recordOpen: cases.Vaults.RecordOpen, importFiles: cases.Vaults.Tree.Import, out: opening.Out,
-		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close, frontmatter: db.FrontmatterChanges(),
+		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
 		startFeed: getFeedStart(install, settingsDeps, vaultDeps, db),
 	})
 	cases.ShowTab = session.tools.showTab
@@ -171,7 +178,7 @@ func buildWindow(
 
 	kinds := newTabKinds(install, settingsDeps, vaultDeps, db)
 	window := &windowWiring{
-		logEntries: entries, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
+		logEntries: s.entries, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
 		kinds: kinds, server: newFileServer(vaultDeps, state, cases), switching: session.userSwitch, cases: cases,
 		tasks: tasks, generations: generations,
 	}

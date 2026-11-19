@@ -28,11 +28,8 @@ func (c Config) OpenEditor(
 		return nil, err
 	}
 	install, settingsDeps, searchDeps, vaultDeps := openIndexedPlugins(c, exec, prefs, endpoints, res, db)
-	return openEditorWindow(ctx, install, settingsDeps, searchDeps, vaultDeps, res, ports, db, opening)
-}
-
-func openEditorWindow(ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring, res *Resources, ports vaultregistry.Ports, db *Index, opening WindowOpening) (*OpenedWindow, error) {
-	opened, err := openWindowWith(ctx, install, settingsDeps, searchDeps, vaultDeps, getLogEntries(res), ports, db, opening)
+	startup := windowStartup{opening: opening, ports: ports, db: db, entries: getLogEntries(res)}
+	opened, err := startup.open(ctx, install, settingsDeps, searchDeps, vaultDeps)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +79,7 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	}
 	opening.API.Window = shell.NewWindow(opening.Target, nil)
 	install, settingsDeps, _, vaultDeps := plugins(c, exec, prefs, endpoints, res)
-	return bindShell(install, settingsDeps, vaultDeps, ctx, ports, db, opening.API, opening.Log)
+	return opening.bind(install, settingsDeps, vaultDeps, ctx, ports, db)
 }
 
 // ShellLog is where a shell window writes what it reports: Out under Label, and Notify for what the user
@@ -93,9 +90,10 @@ type ShellLog struct {
 	Notify func(message string)
 }
 
-func bindShell(
-	install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log ShellLog,
+func (opening ShellOpening) bind(
+	install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context.Context, ports vaultregistry.Ports, db *Index,
 ) (Shell, error) {
+	api, log := opening.API, opening.Log
 	setModelCalls(install, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
 	vaults := openVaults(vaultDeps, db, log.Out, log.Label, api.ReportVaultRead)
 	closers := Shell{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}

@@ -18,11 +18,10 @@ import (
 const operationResultRows = 200_000
 
 func newFindSearchResults(
-	install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring, db *Index, source searchsourceport.Source, errorHandler func(error),
+	rerank rerankDeps, settingsDeps settingsWiring, searchDeps searchWiring, db *Index, source searchsourceport.Source, errorHandler func(error),
 ) *searchqueryusecase.FindSearchResults {
 	limits, stageLimits := readSearchLimits(settingsDeps, errorHandler)
 	search := db.ChunkSearch()
-	rerank := openRerankDeps(install, settingsDeps, vaultDeps)
 	evaluate := searchqueryusecase.NewEvaluateQuery(searchqueryusecase.EvaluateQueryDeps{
 		Documents:    search,
 		Vectors:      search,
@@ -42,7 +41,7 @@ func newFindSearchResults(
 		Rows:    rerank.rows,
 		Resolve: rerank.resolve,
 		Results: db.OperationResults(operationResultRows),
-		Clock:   vaultDeps.Clock,
+		Clock:   searchDeps.Clock,
 		Readers: searchDeps.VaultReaders,
 		Texts:   searchDeps.TextReaders,
 		Limits:  stageLimits,
@@ -50,7 +49,7 @@ func newFindSearchResults(
 	return searchqueryusecase.NewFindSearchResults(searchqueryusecase.FindSearchResultsDeps{
 		Parser:        celquery.NewParser(limits),
 		Catalog:       getSearchCatalog(getRuntimeManifests(searchDeps.Runtime)),
-		Clock:         vaultDeps.Clock,
+		Clock:         searchDeps.Clock,
 		Limits:        limits,
 		Evaluate:      evaluate.Execute,
 		FillDocuments: evaluate.FillDocuments,
