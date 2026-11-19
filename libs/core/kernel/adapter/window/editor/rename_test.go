@@ -40,7 +40,7 @@ func isGone(t *testing.T, root, path string) bool {
 
 func waitForScan(t *testing.T, f *going) {
 	t.Helper()
-	testsupport.WaitFor(t, editor.SessionOf(f.installation.Installation).Runtime.IsReady)
+	testsupport.WaitFor(t, editor.SessionOf(t, f.installation.Installation).Runtime.IsReady)
 }
 
 // TestRenamingWritesTheNoteAndMovesTheFile. A note is shown by its title, so
@@ -620,7 +620,7 @@ func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 	)
 
 	moveFile := vaults.NewMoveFile(&move, editor.PagesOf(f.installation.Installation).Writes, editor.PagesOf(f.installation.Installation).Writes)
-	mountFileEdit(f.mux, f.installation.Installation, numenv1connect.FileServiceMoveFileProcedure, &moveFile, nil)
+	mountFileEdit(t, f.mux, f.installation.Installation, numenv1connect.FileServiceMoveFileProcedure, &moveFile, nil)
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 		From: "Entropy.md",
@@ -648,7 +648,7 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 		testsupport.OpenGate{},
 	)
 
-	mountNoteEdit(f.mux, f.installation.Installation, numenv1connect.NoteServiceRenameNoteProcedure, nil, nil, &rename)
+	mountNoteEdit(t, f.mux, f.installation.Installation, numenv1connect.NoteServiceRenameNoteProcedure, nil, nil, &rename)
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Entropy.md",

@@ -3,6 +3,7 @@ package editor
 import (
 	"context"
 	"net/http"
+	"testing"
 
 	"connectrpc.com/connect"
 
@@ -222,10 +223,11 @@ func (noContentTypes) ListExtensions(domain.ContentType) []string { return nil }
 func PagesOf(o *Installation) *PageAccess { return o.pages.window }
 
 // SessionOf returns the editor session displayed by the running installation.
-func SessionOf(o *Installation) *Session {
+func SessionOf(t *testing.T, o *Installation) *Session {
+	t.Helper()
 	session, ok := o.pages.window.vaults.(*Session)
 	if !ok {
-		panic("editor integration fixture needs a running session")
+		t.Fatal("editor integration fixture needs a running session")
 	}
 	return session
 }

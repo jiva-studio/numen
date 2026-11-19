@@ -344,7 +344,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 	rendered, itself := numenv1connect.NewWindowServiceHandler(editor.PagesOf(installation.Installation).Window)
 	mux := http.NewServeMux()
 	mountQuestionsServices(mux, installation)
-	mountNoteEdit(mux, installation.Installation, numenv1connect.NoteServiceWriteNoteProcedure, &writing, nil, nil)
+	mountNoteEdit(t, mux, installation.Installation, numenv1connect.NoteServiceWriteNoteProcedure, &writing, nil, nil)
 	mux.Handle(turning, settings)
 	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)
@@ -371,10 +371,10 @@ func (f *going) read(t *testing.T) {
 	t.Helper()
 
 	for range 500 {
-		if editor.SessionOf(f.installation.Installation).Runtime.IsReady() {
+		if editor.SessionOf(t, f.installation.Installation).Runtime.IsReady() {
 			return
 		}
-		if why := editor.SessionOf(f.installation.Installation).Runtime.GetError(); why != "" {
+		if why := editor.SessionOf(t, f.installation.Installation).Runtime.GetError(); why != "" {
 			t.Fatalf("the vault could not be read: %v", why)
 		}
 		time.Sleep(10 * time.Millisecond)

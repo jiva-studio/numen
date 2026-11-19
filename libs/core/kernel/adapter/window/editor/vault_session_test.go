@@ -675,7 +675,7 @@ func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
 	create := noteusecase.NewCreate(newVaultWriters(), f.index.NoteQueries(), refuseToUpdate, testsupport.NewClock(), testsupport.OpenGate{})
-	mountNoteEdit(f.mux, f.installation.Installation, numenv1connect.NoteServiceCreateNoteProcedure, nil, &create, nil)
+	mountNoteEdit(t, f.mux, f.installation.Installation, numenv1connect.NoteServiceCreateNoteProcedure, nil, &create, nil)
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
@@ -703,7 +703,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	waitForScan(t, f)
 	remove := noteusecase.NewRemove(newVaultWriters(), f.index.NoteQueries(), f.index.Sources(), f.index.Sources(), refuseToUpdate, testsupport.OpenGate{})
 	removeFile := noteusecase.NewRemoveFile(&remove, editor.PagesOf(f.installation.Installation).Writes)
-	mountFileEdit(f.mux, f.installation.Installation, numenv1connect.FileServiceRemoveFileProcedure, nil, &removeFile)
+	mountFileEdit(t, f.mux, f.installation.Installation, numenv1connect.FileServiceRemoveFileProcedure, nil, &removeFile)
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Ontology.md",
@@ -950,7 +950,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 			case <-asking.Done():
 				return
 			case <-time.After(20 * time.Millisecond):
-				if err := editor.ViewOf(editor.SessionOf(f.installation.Installation).Notices).FocusPlace(asking, domain.Place{Path: "Somewhere.md"}); err != nil && asking.Err() == nil {
+				if err := editor.ViewOf(editor.SessionOf(t, f.installation.Installation).Notices).FocusPlace(asking, domain.Place{Path: "Somewhere.md"}); err != nil && asking.Err() == nil {
 					t.Error(err)
 				}
 			}
