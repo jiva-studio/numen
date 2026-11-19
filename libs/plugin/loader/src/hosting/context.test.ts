@@ -354,18 +354,18 @@ describe('PluginContext', () => {
     const disposeLicense = vi.fn()
     const host = createTestContextHost({
       licenses: {
-        hasLicense: vi.fn((_pluginId, licenseId) => licenseId === 'supporter'),
+        hasLicense: vi.fn((_pluginId, licenseId) => licenseId === 'sync'),
         getLicenseKey: vi.fn((_pluginId, licenseId) =>
-          licenseId === 'supporter' ? 'KEY-SUP' : undefined,
+          licenseId === 'sync' ? 'KEY-SUP' : undefined,
         ),
         onLicenseChange: vi.fn((_pluginId, _licenseId, _handler) => ({ dispose: disposeLicense })),
       },
     })
 
     const ctxWithoutDeclaration = createPluginParts('test.plugin', host)
-    expect(ctxWithoutDeclaration.plugin.licenses.has('supporter')).toBe(true)
-    expect(ctxWithoutDeclaration.plugin.licenses.getKey('supporter')).toBe('KEY-SUP')
-    const sub1 = ctxWithoutDeclaration.plugin.licenses.onChange('supporter', vi.fn())
+    expect(ctxWithoutDeclaration.plugin.licenses.has('sync')).toBe(true)
+    expect(ctxWithoutDeclaration.plugin.licenses.getKey('sync')).toBe('KEY-SUP')
+    const sub1 = ctxWithoutDeclaration.plugin.licenses.onChange('sync', vi.fn())
     expect(ctxWithoutDeclaration.plugin.identity.subscriptions).toHaveLength(1)
     sub1.dispose()
     expect(disposeLicense).toHaveBeenCalledOnce()
@@ -374,13 +374,13 @@ describe('PluginContext', () => {
       ...createMockManifest('test.plugin'),
       contributes: {
         ...createMockManifest('test.plugin').contributes,
-        licenses: [{ id: 'supporter' }],
+        licenses: [{ id: 'sync' }],
       },
     } as unknown as Manifest
     const ctxWithDeclaration = createPluginParts('test.plugin', host, manifestWithLicenses)
-    expect(ctxWithDeclaration.plugin.licenses.has('supporter')).toBe(true)
-    expect(ctxWithDeclaration.plugin.licenses.getKey('supporter')).toBe('KEY-SUP')
-    const sub2 = ctxWithDeclaration.plugin.licenses.onChange('supporter', vi.fn())
+    expect(ctxWithDeclaration.plugin.licenses.has('sync')).toBe(true)
+    expect(ctxWithDeclaration.plugin.licenses.getKey('sync')).toBe('KEY-SUP')
+    const sub2 = ctxWithDeclaration.plugin.licenses.onChange('sync', vi.fn())
     sub2.dispose()
 
     expect(() => ctxWithDeclaration.plugin.licenses.has('pro')).toThrowError(
@@ -406,21 +406,21 @@ describe('host service bridges', () => {
     expect(emptyVault.getVaults()).toBeUndefined()
 
     const emptyLicenses = createLicenseServiceBridge({})
-    expect(emptyLicenses.hasLicense('p', 'supporter')).toBe(false)
-    expect(emptyLicenses.getLicenseKey('p', 'supporter')).toBeUndefined()
-    expect(() => emptyLicenses.onLicenseChange('p', 'supporter', vi.fn()).dispose()).not.toThrow()
+    expect(emptyLicenses.hasLicense('p', 'sync')).toBe(false)
+    expect(emptyLicenses.getLicenseKey('p', 'sync')).toBeUndefined()
+    expect(() => emptyLicenses.onLicenseChange('p', 'sync', vi.fn()).dispose()).not.toThrow()
 
     const unsubscribeLicense = vi.fn()
     const fullLicenses = createLicenseServiceBridge({
       plugins: {
-        hasLicense: (_p, id) => id === 'supporter',
-        getLicenseKey: (_p, id) => (id === 'supporter' ? 'K1' : undefined),
+        hasLicense: (_p, id) => id === 'sync',
+        getLicenseKey: (_p, id) => (id === 'sync' ? 'K1' : undefined),
         onLicenseChange: () => unsubscribeLicense,
       },
     })
-    expect(fullLicenses.hasLicense('p', 'supporter')).toBe(true)
-    expect(fullLicenses.getLicenseKey('p', 'supporter')).toBe('K1')
-    fullLicenses.onLicenseChange('p', 'supporter', vi.fn()).dispose()
+    expect(fullLicenses.hasLicense('p', 'sync')).toBe(true)
+    expect(fullLicenses.getLicenseKey('p', 'sync')).toBe('K1')
+    fullLicenses.onLicenseChange('p', 'sync', vi.fn()).dispose()
     expect(unsubscribeLicense).toHaveBeenCalledOnce()
 
     const emptyWork = createWorkServiceBridge({})
