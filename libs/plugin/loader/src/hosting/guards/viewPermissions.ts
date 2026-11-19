@@ -6,23 +6,26 @@ type ViewKind = typeof CONVERSATION | typeof NOTE_EDITOR | typeof VAULT_SUMMARY
 
 /** What a view kind needs of the plugin that mounts it and of the plugin that draws it. */
 interface ViewRule {
+  readonly owner: string
   readonly mounter: readonly string[]
   readonly registrant: readonly string[]
 }
 
-/**
- * The permissions of the two plugins of each view kind. The mounter hands the view a context and
- * the registrant receives it, so the registrant must hold everything the context lets a view do:
- * the conversation context carries the connections of the mounter and no vault access, the note
- * editor reads and writes the note at its path, and the vault summary receives the name of a vault. A new view kind states both lists here, an empty list when it needs none.
- */
+/** Each built-in view has one provider and separate permission requirements for registration and mounting. */
 const VIEW_RULES = new Map<string, ViewRule>([
-  [CONVERSATION, { mounter: [], registrant: [] }],
+  [CONVERSATION, { owner: 'md.numen.views.agent.chat', mounter: [], registrant: [] }],
   [
     NOTE_EDITOR,
-    { mounter: ['vault:read', 'vault:write'], registrant: ['vault:read', 'vault:write'] },
+    {
+      owner: 'md.numen.notes',
+      mounter: ['vault:read', 'vault:write'],
+      registrant: ['vault:read', 'vault:write'],
+    },
   ],
-  [VAULT_SUMMARY, { mounter: [], registrant: ['vault:read'] }],
+  [
+    VAULT_SUMMARY,
+    { owner: 'md.numen.views.flashcards.studio', mounter: [], registrant: ['vault:read'] },
+  ],
 ] satisfies [ViewKind, ViewRule][])
 
 /**
@@ -47,18 +50,20 @@ function getDeclaredViewCapabilities(caller: PermissionTarget): readonly string[
   return manifest && 'contributes' in manifest ? (manifest.contributes?.viewCapabilities ?? []) : []
 }
 
-/**
- * Checks that a plugin may draw a view of the kind for others: its manifest lists the kind under
- * `contributes.viewCapabilities`, and it holds the permissions the kind hands the view. A kind a
- * plugin defines itself needs no more than the listing.
- */
+/** Checks the manifest declaration and, for a built-in view, the provider identity and permissions. */
 export function requireViewRegistration(capability: string, caller: PermissionTarget): void {
   if (!getDeclaredViewCapabilities(caller).includes(capability)) {
     throw new Error(
       `Plugin "${caller.pluginId}" registers a view of "${capability}", which contributes.viewCapabilities does not list`,
     )
   }
-  for (const permission of VIEW_RULES.get(capability)?.registrant ?? []) {
+  const rule = VIEW_RULES.get(capability)
+  if (rule && caller.pluginId !== rule.owner) {
+    throw new Error(
+      `Plugin "${caller.pluginId}" cannot register "${capability}", owned by "${rule.owner}"`,
+    )
+  }
+  for (const permission of rule?.registrant ?? []) {
     checkPermission(caller, permission, 'register.view')
   }
 }
