@@ -107,9 +107,6 @@ func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps se
 	})
 }
 
-// getConnectionCalls is the calls plugin views make through their connections, for a window that serves
-// ConnectionCallService without the routes of the editor. It is nil where the installation runs no
-// plugins.
 func getConnectionCalls(prefs *PluginPreferences, endpoints *PluginEndpoints) connectionport.ModelCalls {
 	if prefs == nil || endpoints == nil {
 		return nil

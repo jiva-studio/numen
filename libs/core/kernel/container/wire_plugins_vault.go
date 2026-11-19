@@ -170,7 +170,6 @@ func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.V
 	}
 }
 
-// getPluginDir returns the folder of a plugin and whether the plugin is installed.
 func getPluginDir(resolver pluginport.PluginResolver, id string) (string, bool) {
 	p, ok := resolver.GetPlugin(id)
 	return p.Dir, ok

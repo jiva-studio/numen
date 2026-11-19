@@ -41,7 +41,6 @@ func (c Config) EnsureVault(res *Resources, root, name string, isRecordedOpened 
 	return ensure.Execute(vaultregistry.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
 }
 
-// openIndex opens the cache. The caller closes it.
 func (c Config) openIndex(res *Resources, ctx context.Context) (*vaultIndex, error) {
 	timer := GetClock(res)
 	record := openRecordLog(c.IndexPath, getLogEntries(res), res.settingsFiles.GetLogLevel, timer)

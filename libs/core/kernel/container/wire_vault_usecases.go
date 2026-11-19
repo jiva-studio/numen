@@ -221,7 +221,6 @@ func openVaults(c vaultWiring, db *vaultIndex, out io.Writer, label string, reco
 	}
 }
 
-// setShellNotes gives a shell the notes it answers about: whether a vault is indexed.
 func setShellNotes(api *shell.API, db *vaultIndex) {
 	queries := vaultQueries(db)
 	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, queries.Browse.IsVaultIndexed, api.Window, &api.Changes)
