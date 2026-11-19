@@ -16,9 +16,10 @@ func TestBackgroundErrorIsRecordedAndReported(t *testing.T) {
 	index := filepath.Join(t.TempDir(), "index.db")
 	problem := errors.New("watcher stopped")
 	var reported []error
-	c := NewConfig(Config{Paths: Paths{IndexPath: index}, ErrorHandler: func(err error) { reported = append(reported, err) }})
-	handleError(c, problem)
-	entries, err := logfiles.NewBesideIndex(index).ReadRecent(c.Clock().Now(), 10)
+	res := NewResources()
+	res.ErrorHandler = func(err error) { reported = append(reported, err) }
+	getErrorHandler(index, res)(problem)
+	entries, err := logfiles.NewBesideIndex(index).ReadRecent(GetClock(res).Now(), 10)
 	if err != nil || len(entries) != 1 {
 		t.Fatalf("read logs: %v, entries: %v", err, entries)
 	}
@@ -54,8 +55,9 @@ func TestBackgroundLogWriteFailureIsReportedWithoutRecursion(t *testing.T) {
 	}
 	problem := errors.New("watcher stopped")
 	var reported []error
-	c := NewConfig(Config{Paths: Paths{IndexPath: filepath.Join(parent, "index.db")}, ErrorHandler: func(err error) { reported = append(reported, err) }})
-	handleError(c, problem)
+	res := NewResources()
+	res.ErrorHandler = func(err error) { reported = append(reported, err) }
+	getErrorHandler(filepath.Join(parent, "index.db"), res)(problem)
 	if len(reported) != 2 || !errors.Is(reported[1], problem) {
 		t.Errorf("reported = %v", reported)
 	}

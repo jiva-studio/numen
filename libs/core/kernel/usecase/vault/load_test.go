@@ -45,9 +45,9 @@ func TestLoad(t *testing.T) {
 	v := vaulttest.GenerateVault(t, notes)
 	t.Logf("generated %d notes in %s", notes, getElapsedTime(generating))
 
-	db, err := container.OpenIndex(container.NewConfig(container.Config{
+	db, err := container.OpenIndex(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-	}), ctx)
+	}, container.NewResources(), ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

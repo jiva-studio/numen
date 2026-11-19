@@ -19,15 +19,17 @@ func windowOn(t *testing.T) (*container.OpenedWindow, container.Config) {
 func windowWithCases(t *testing.T) (*container.OpenedWindow, container.Config, *container.WindowUseCases) {
 	t.Helper()
 
-	cfg := container.NewConfig(container.Config{
+	cfg := container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
-	})
+	}
+	res := container.NewResources()
+	host := container.PreparePluginHost(nil, false)
 	root := t.TempDir()
-	if _, err := cfg.AddVault(root, "one"); err != nil {
+	if _, err := cfg.AddVault(host, res, root, "one"); err != nil {
 		t.Fatal(err)
 	}
 
-	opened, err := container.OpenWindow(cfg, t.Context(), "one", io.Discard)
+	opened, err := container.OpenWindow(cfg, host, res, t.Context(), "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}

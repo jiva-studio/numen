@@ -19,11 +19,11 @@ func applyingHost(applied *[]string) settingsport.PluginSettingApplier {
 
 func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 	var applied []string
-	c := NewConfig(Config{PluginHost: &PluginHost{Runtime: PluginRuntime{PluginBinding: absent.Runtime{}}, ApplySetting: applyingHost(&applied)}})
-	changes, stop := watchPluginChanges(plugins(c))
+	c := NewTestInstallation(Config{}, &PluginHost{Runtime: PluginRuntime{PluginBinding: absent.Runtime{}}, ApplySetting: applyingHost(&applied)})
+	changes, stop := watchPluginChanges(c.buildPluginWiring())
 	defer stop()
 
-	notifyHost(settingsOf(c), []settingsdomain.Setting{{Path: []string{"org.example.scans", "isAutomatic"}, JSON: "true"}})
+	notifyHost(c.buildSettingsWiring(), []settingsdomain.Setting{{Path: []string{"org.example.scans", "isAutomatic"}, JSON: "true"}})
 
 	select {
 	case <-changes:
@@ -36,11 +36,11 @@ func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 }
 
 func TestAPluginChangeIsNotReportedAfterTheWatchStops(t *testing.T) {
-	c := NewConfig(Config{PluginHost: &PluginHost{Runtime: PluginRuntime{PluginBinding: absent.Runtime{}}, ApplySetting: applyingHost(new([]string))}})
-	changes, stop := watchPluginChanges(plugins(c))
+	c := NewTestInstallation(Config{}, &PluginHost{Runtime: PluginRuntime{PluginBinding: absent.Runtime{}}, ApplySetting: applyingHost(new([]string))})
+	changes, stop := watchPluginChanges(c.buildPluginWiring())
 	stop()
 
-	notifyHost(settingsOf(c), nil)
+	notifyHost(c.buildSettingsWiring(), nil)
 
 	select {
 	case <-changes:

@@ -29,10 +29,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := NewConfig(Config{
-		SafeMode:   true,
-		PluginHost: newPluginHost(t, "desktop.editor", tmp),
-	})
+	cfg := NewTestInstallation(Config{SafeMode: true}, newPluginHost(t, "desktop.editor", tmp))
 
 	ctx := t.Context()
 
@@ -73,18 +70,18 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 }
 
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
-	cfg := NewConfig(Config{})
-	_, err := plugins(cfg).RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
+	cfg := NewTestInstallation(Config{}, nil)
+	_, err := cfg.buildPluginWiring().RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
 	var missing *plugindomain.UnavailableError
 	if !errors.As(err, &missing) || missing.Reason != plugindomain.NotInstalled || missing.Capability != bridge.CapabilitySearchSource {
 		t.Fatalf("resolvePlugin = %v, want the embedding plugin not installed", err)
 	}
-	setPluginVaultPath(plugins(cfg), "vault")
-	if err := cfg.StopPlugins(t.Context()); err != nil {
+	setPluginVaultPath(cfg.buildPluginWiring(), "vault")
+	if err := StopPlugins(cfg.PluginHost, t.Context()); err != nil {
 		t.Fatalf("StopPlugins = %v, want nothing to stop", err)
 	}
-	safe := NewConfig(Config{SafeMode: true})
-	_, err = plugins(safe).RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
+	safe := NewTestInstallation(Config{SafeMode: true}, nil)
+	_, err = safe.buildPluginWiring().RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
 	if !errors.Is(err, errSafeMode) || !errors.As(err, &missing) || missing.Reason != plugindomain.Disabled {
 		t.Fatalf("resolvePlugin in safe mode = %v, want the embedding plugin disabled by safe mode", err)
 	}
@@ -103,20 +100,20 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 		t.Fatal(err)
 	}
 	host := openPluginRoles(t, "desktop.editor", tmp)
-	cfg := NewConfig(Config{PluginHost: AdaptPluginHost(host)})
+	cfg := NewTestInstallation(Config{}, AdaptPluginHost(host))
 
-	setPluginVaultPath(plugins(cfg), "vault")
+	setPluginVaultPath(cfg.buildPluginWiring(), "vault")
 	if got := host.Mode.GetVaultPath(); got != "vault" {
 		t.Errorf("the host holds the vault %q", got)
 	}
 	if !embedderReady(searchOf(cfg)) {
 		t.Fatal("an installed plugin is not ready")
 	}
-	safe := NewConfig(Config{PluginHost: cfg.PluginHost, SafeMode: true})
+	safe := NewTestInstallation(Config{SafeMode: true}, cfg.PluginHost)
 	if embedderReady(searchOf(safe)) {
 		t.Error("the host started a plugin in safe mode")
 	}
-	if !embedderReady(searchOf(NewConfig(Config{PluginHost: cfg.PluginHost}))) {
+	if !embedderReady(searchOf(NewTestInstallation(Config{}, cfg.PluginHost))) {
 		t.Error("the host stayed in safe mode once it was left")
 	}
 }

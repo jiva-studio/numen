@@ -65,17 +65,19 @@ func (c *Core) Start(dir string) (int, error) {
 		return 0, err
 	}
 
-	cfg := makeConfig(dir, os.Stderr)
+	cfg := makeConfig(dir)
+	res := makeResources(os.Stderr)
+	host := container.PreparePluginHost(nil, cfg.SafeMode)
 
 	// The list holds a folder under the name it resolves to, and that is the
 	// name the vault is opened by.
-	filed, err := registerVault(cfg, root)
+	filed, err := registerVault(cfg, host, res, root)
 	if err != nil {
 		return 0, err
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	opened, err := container.OpenWindow(cfg, ctx, filed, os.Stderr)
+	opened, err := container.OpenWindow(cfg, host, res, ctx, filed, os.Stderr)
 	if err != nil {
 		stop()
 		return 0, err
@@ -86,7 +88,7 @@ func (c *Core) Start(dir string) (int, error) {
 	// folder cannot be created, only the default theme is loaded. A theme
 	// named in the settings that is missing from the catalog is reported on
 	// the platform log.
-	if wrong := container.SetThemes(cfg, opened.Installation, container.Scales{}, opened.RecordThemeWarning); wrong != nil {
+	if wrong := container.SetThemes(cfg, host, res, opened.Installation, container.Scales{}, opened.RecordThemeWarning); wrong != nil {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
 	listener, err := listenLocal(ctx)
@@ -130,7 +132,7 @@ func (c *Core) Start(dir string) (int, error) {
 			return
 		}
 		current.isDown.Store(true)
-		cfg.ErrorHandler(err)
+		res.ErrorHandler(err)
 	}()
 	return c.running.port, nil
 }
@@ -202,20 +204,22 @@ func (c *Core) Port() int {
 	return c.running.port
 }
 
-func makeConfig(dir string, out io.Writer) container.Config {
-	return container.NewConfig(container.Config{
-		Resources: container.NewResources(),
-		ErrorHandler: func(err error) {
-			if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
-				return
-			}
-		},
-		Paths: container.Paths{IndexPath: filepath.Join(dir, "index.db"), RegistryPath: filepath.Join(dir, "vaults.json"), ThemesPath: filepath.Join(dir, "themes")},
-	})
+func makeConfig(dir string) container.Config {
+	return container.Config{Paths: container.Paths{IndexPath: filepath.Join(dir, "index.db"), RegistryPath: filepath.Join(dir, "vaults.json"), ThemesPath: filepath.Join(dir, "themes")}}
 }
 
-func registerVault(cfg container.Config, root string) (string, error) {
-	registered, err := cfg.EnsureVault(root, "numen", false)
+func makeResources(out io.Writer) *container.Resources {
+	res := container.NewResources()
+	res.ErrorHandler = func(err error) {
+		if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
+			return
+		}
+	}
+	return res
+}
+
+func registerVault(cfg container.Config, host *container.PluginHost, res *container.Resources, root string) (string, error) {
+	registered, err := cfg.EnsureVault(host, res, root, "numen", false)
 	if err != nil {
 		return "", err
 	}

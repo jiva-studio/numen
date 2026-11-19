@@ -35,26 +35,26 @@ const (
 	TargetFlashcards = "desktop.flashcards"
 )
 
-// GetConfig returns the core's configuration with the values this machine
-// supplies. Values from a settings file are applied over it.
-func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
-
-// GetConfigFor is GetConfig for the window of a target, whose plugin host runs the plugins that name
-// that target.
-func GetConfigFor(target string) container.Config {
-	dirs := getPluginsDirs()
-	base := container.Config{KeyStore: getKeyStore(), Resources: container.NewResources()}
+// GetConfig returns the desktop launch paths.
+func GetConfig() container.Config {
+	var cfg container.Config
 	if path, err := GetIndexPath(); err == nil {
-		base.IndexPath = path
+		cfg.IndexPath = path
 	}
-	host, discoverErr := container.NewPluginHost(base, reportPluginHost, target, dirs...)
+	return cfg
+}
+
+// NewPluginServices builds the plugin host and shared resources of a desktop window or command.
+func NewPluginServices(target string) (*container.PluginHost, *container.Resources) {
+	dirs := getPluginsDirs()
+	res := container.NewResources()
+	res.KeyStore = getKeyStore()
+	host, discoverErr := container.NewPluginHost(GetConfig().IndexPath, res, reportPluginHost, target, dirs...)
 	reportPluginFailure("discover plugins", discoverErr)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
 	host.SetStorage(cacheRoot, dataRoot)
-	base.PluginHost, base.PluginCatalog = host, getCatalogConfig(target, dirs, host)
-	cfg := container.NewConfig(base)
-	// A machine with no data folder leaves the path empty, and the core fails to start.
-	return cfg
+	res.PluginCatalog = getCatalogConfig(target, dirs, host)
+	return host, res
 }
 
 func reportPluginHost(err error) {

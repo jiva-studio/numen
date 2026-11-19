@@ -22,7 +22,7 @@ const sampleManifest = `{
 	"services": ["md.numen.sample.SampleService"], "backend": {"entrypoint": "bin/sample"}
 }`
 
-func newFailingConfig(t *testing.T) Config {
+func newFailingConfig(t *testing.T) TestInstallation {
 	t.Helper()
 	root := t.TempDir()
 	dir := filepath.Join(root, "sample")
@@ -36,13 +36,13 @@ func newFailingConfig(t *testing.T) Config {
 	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("exec format error")
 	})
-	return NewConfig(Config{PluginHost: AdaptPluginHost(host)})
+	return NewTestInstallation(Config{}, AdaptPluginHost(host))
 }
 
 func TestAFailedPluginIsItsStartItemUntilItIsEnabledAgain(t *testing.T) {
 	cfg := newFailingConfig(t)
 
-	failure, err := getPluginRetrier(plugins(cfg))(t.Context(), "md.numen.sample")
+	failure, err := getPluginRetrier(cfg.buildPluginWiring())(t.Context(), "md.numen.sample")
 	if err != nil || failure == nil {
 		t.Fatalf("retry = %+v, %v, want the plugin to fail again", failure, err)
 	}
@@ -61,9 +61,9 @@ func TestAFailedPluginIsItsStartItemUntilItIsEnabledAgain(t *testing.T) {
 }
 
 func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
-	cfg := NewConfig(Config{})
+	cfg := NewTestInstallation(Config{}, nil)
 
-	_, err := getPluginRetrier(plugins(cfg))(t.Context(), "md.numen.sample")
+	_, err := getPluginRetrier(cfg.buildPluginWiring())(t.Context(), "md.numen.sample")
 
 	var unavailable *plugin.UnavailableError
 	if !errors.As(err, &unavailable) || unavailable.Reason != plugin.NotInstalled {
@@ -74,10 +74,10 @@ func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
 func TestGetPluginNameReadsTheManifest(t *testing.T) {
 	cfg := newFailingConfig(t)
 
-	if got := pluginsGetPluginName(plugins(cfg), "md.numen.sample"); got != "Sample" {
+	if got := pluginsGetPluginName(cfg.buildPluginWiring(), "md.numen.sample"); got != "Sample" {
 		t.Errorf("getPluginName(md.numen.sample) = %q, want Sample", got)
 	}
-	if got := pluginsGetPluginName(plugins(cfg), "md.numen.absent"); got != "md.numen.absent" {
+	if got := pluginsGetPluginName(cfg.buildPluginWiring(), "md.numen.absent"); got != "md.numen.absent" {
 		t.Errorf("getPluginName(md.numen.absent) = %q, want the id", got)
 	}
 }

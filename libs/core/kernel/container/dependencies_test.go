@@ -31,7 +31,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 	registry := provision.NewRegistry()
 	host.Dependencies.Replace(registry)
 	tasks := run.NewTasks()
-	reportDependencies(plugins(NewConfig(Config{PluginHost: AdaptPluginHost(host)})), tasks)
+	reportDependencies(plugins(Config{}, PreparePluginHost(AdaptPluginHost(host), false), NewResources()), tasks)
 	req := manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}
 
 	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateProvisioning, BytesDownloaded: 5, BytesTotal: 10})
@@ -54,7 +54,7 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 	t.Setenv(provision.EnvMockML, "true")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	registry := newDependencyRegistry(Config{}.Clock(), "")
+	registry := newDependencyRegistry(GetClock(NewResources()), "")
 
 	model := manifest.DependencyRequirement{
 		ID: "pp-ocr-det", Kind: manifest.DependencyKindModel,
@@ -100,7 +100,7 @@ func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
 		SourceURL: server.URL + "/model.onnx", ChecksumSHA256: hex.EncodeToString(sum[:]),
 	}
 
-	resolved, err := newDependencyRegistry(Config{}.Clock(), models).Provision(t.Context(), req, nil)
+	resolved, err := newDependencyRegistry(GetClock(NewResources()), models).Provision(t.Context(), req, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func startHeldDownload(t *testing.T) (*PluginRoles, *run.Tasks, <-chan error) {
 	provisioner := heldProvisioner{started: make(chan struct{})}
 	host.Dependencies.Replace(provision.NewRegistry(provisioner))
 	tasks := run.NewTasks()
-	reportDependencies(plugins(NewConfig(Config{PluginHost: AdaptPluginHost(host)})), tasks)
+	reportDependencies(plugins(Config{}, PreparePluginHost(AdaptPluginHost(host), false), NewResources()), tasks)
 	answer := make(chan error, 1)
 	go func() {
 		_, err := host.Services.GetDependencies().Provision(
@@ -161,7 +161,7 @@ func TestTheCancelOfTheTaskOfADownloadStopsTheDownload(t *testing.T) {
 func TestStoppingThePluginsStopsTheDownloadsInProgress(t *testing.T) {
 	host, _, answer := startHeldDownload(t)
 
-	if err := stopPlugins(plugins(NewConfig(Config{PluginHost: AdaptPluginHost(host)})), context.WithoutCancel(t.Context())); err != nil {
+	if err := stopPlugins(AdaptPluginHost(host), context.WithoutCancel(t.Context())); err != nil {
 		t.Fatal(err)
 	}
 	if err := <-answer; !errors.Is(err, context.Canceled) {

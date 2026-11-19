@@ -31,11 +31,15 @@ import (
 )
 
 func openIndex(c vaultWiring, ctx context.Context) (*Index, error) {
-	path, err := indexfolder.Prepare(c.IndexPath)
+	return openIndexAt(ctx, c.IndexPath, index.WithQueryLog(c.Clock, c.RecordLog))
+}
+
+func openIndexAt(ctx context.Context, indexPath string, queryLog index.Option) (*Index, error) {
+	path, err := indexfolder.Prepare(indexPath)
 	if err != nil {
 		return nil, err
 	}
-	db, err := index.Open(ctx, path, index.WithQueryLog(c.Clock, c.RecordLog))
+	db, err := index.Open(ctx, path, queryLog)
 	if err != nil {
 		return nil, err
 	}

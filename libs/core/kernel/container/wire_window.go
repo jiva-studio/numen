@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -24,7 +25,7 @@ import (
 // The state, the useCases of notes and vaults and the installation are the window's own, and each
 // service is handed the ones it uses.
 type windowWiring struct {
-	cfg         Config
+	logEntries  *logsusecase.Entries
 	a           pluginsWiring
 	ports       registry.Ports
 	db          *Index
@@ -49,20 +50,20 @@ type tabKinds struct {
 
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
 // them, and opens the vault named, or the one shown last when none is named.
-func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*OpenedWindow, error) {
-	db, err := openIndex(vaultOf(c), ctx)
+func OpenWindow(c Config, host *PluginHost, res *Resources, ctx context.Context, named string, out io.Writer) (*OpenedWindow, error) {
+	db, err := OpenIndex(c, res, ctx)
 	if err != nil {
 		return nil, err
 	}
-	return openWindowOver(c, ctx, WindowOpening{DB: db, Named: named, Out: out})
+	return openWindowOver(c, host, res, ctx, WindowOpening{DB: db, Named: named, Out: out})
 }
 
-func openWindowOver(c Config, ctx context.Context, opening WindowOpening) (*OpenedWindow, error) {
+func openWindowOver(c Config, host *PluginHost, res *Resources, ctx context.Context, opening WindowOpening) (*OpenedWindow, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return nil, errors.Join(err, opening.DB.Close())
 	}
-	opened, err := openWindowWith(c, ctx, ports, opening, nil)
+	opened, err := openWindowWith(ctx, plugins(c, host, res), getLogEntries(res), ports, opening)
 	if err != nil {
 		return nil, err
 	}
@@ -112,13 +113,13 @@ type windowBuilt struct {
 }
 
 func openWindowWith(
-	c Config, ctx context.Context, ports registry.Ports, opening WindowOpening, texts *TextVersions,
+	ctx context.Context, a pluginsWiring, entries *logsusecase.Entries, ports registry.Ports, opening WindowOpening,
 ) (*windowWiring, error) {
 	first, err := registry.NewGetVaultToShow(ports.Lookup, ports.Vaults, ports.Last).Execute(opening.Named)
 	if err != nil {
 		return nil, errors.Join(err, opening.DB.Close())
 	}
-	window := buildWindow(ctx, c, ports, opening, texts)
+	window := buildWindow(ctx, a, entries, ports, opening)
 	if err := startWindow(ctx, window.wiring, first); err != nil {
 		return nil, errors.Join(err, window.closeEmbedder(), opening.DB.Close())
 	}
@@ -126,9 +127,8 @@ func openWindowWith(
 }
 
 func buildWindow(
-	ctx context.Context, c Config, ports registry.Ports, opening WindowOpening, texts *TextVersions,
+	ctx context.Context, a pluginsWiring, entries *logsusecase.Entries, ports registry.Ports, opening WindowOpening,
 ) windowBuilt {
-	a := assemble(c, texts)
 	db := opening.DB
 
 	// One task list serves every operation and the window that displays it.
@@ -148,16 +148,20 @@ func buildWindow(
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(a, event) })
 	state.SetIndexing(embedding)
-	generations := newIndexGenerations(c.Clock())
+	generations := newIndexGenerations(a.vault.Clock)
 	indexer := newIndexWorker(a, db, state, embedding, emitIndexChanged(generations, state.Events), opening.Out)
 	state.Writes.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	current := &vault.CurrentRefresh{Fallback: func() vault.Refreshing { return GetRefresh(c, db) }}
+	current := &vault.CurrentRefresh{Fallback: func() vault.Refreshing {
+		v := a.vault
+		v.CutNotes = cutNotes(a.search)
+		return vaultMakeRefresh(v, db, db.Notes())
+	}}
 	cases := newWindowUseCases(a, ports, db, state, current)
 
-	session := newWindowSession(c, a, state, ctx, windowParts{
+	session := newWindowSession(a, state, ctx, windowParts{
 		indexer: indexer, embedding: embedding, passes: startVault(a, db, current),
 		recordOpen: cases.Vaults.RecordOpen, importFiles: cases.Vaults.Tree.Import, out: opening.Out,
 		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close, frontmatter: db.FrontmatterChanges(),
@@ -173,7 +177,7 @@ func buildWindow(
 	kinds := newTabKinds(a, db)
 	return windowBuilt{
 		wiring: &windowWiring{
-			cfg: c, a: a, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
+			logEntries: entries, a: a, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
 			kinds: kinds, server: newFileServer(a, state, cases), switching: session.userSwitch, cases: cases,
 			tasks: tasks, generations: generations,
 		},

@@ -17,28 +17,28 @@ import (
 // OpenEditor opens the registry and the cache, builds the editor window over them, opens the vault named, or
 // the one shown last when none is named, and connects the plugins to the vault and the window. frame is the application
 // window around the editor, or nil.
-func OpenEditor(
-	c Config, ctx context.Context, named string, out io.Writer, frame editor.Frame,
+func (c Config) OpenEditor(
+	host *PluginHost, res *Resources, ctx context.Context, named string, out io.Writer, frame editor.Frame,
 ) (*OpenedWindow, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return nil, err
 	}
-	db, err := OpenIndex(c, ctx)
+	db, err := OpenIndex(c, res, ctx)
 	if err != nil {
 		return nil, err
 	}
-	return openEditorTexts(c, ctx, ports, db, WindowOpening{DB: db, Named: named, Out: out, Frame: frame})
+	opening := WindowOpening{DB: db, Named: named, Out: out, Frame: frame}
+	a := openIndexedPlugins(c, host, res, db)
+	return openEditorWindow(ctx, a, res, ports, opening)
 }
 
-func openEditorTexts(
-	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, opening WindowOpening,
-) (*OpenedWindow, error) {
-	opened, err := openWindowWith(c, ctx, ports, opening, newTextVersions(vaultOf(c), db))
+func openEditorWindow(ctx context.Context, a pluginsWiring, res *Resources, ports vaultregistry.Ports, opening WindowOpening) (*OpenedWindow, error) {
+	opened, err := openWindowWith(ctx, a, getLogEntries(res), ports, opening)
 	if err != nil {
 		return nil, err
 	}
-	return connectEditor(ports, db, opened)
+	return connectEditor(ports, opening.DB, opened)
 }
 
 func connectEditor(ports vaultregistry.Ports, db *Index, opened *windowWiring) (*OpenedWindow, error) {
@@ -66,17 +66,17 @@ type Shell struct {
 // OpenShell opens the registry and the cache, gives api the window of target, binds the notes, the vault list,
 // the vault indexer, the plugin vault, the change feed and the themes of the shell window to api, and tells
 // log.Notify what it cannot follow.
-func OpenShell(c Config, ctx context.Context, target string, api *shell.API, log ShellLog) (Shell, error) {
+func (c Config) OpenShell(host *PluginHost, res *Resources, ctx context.Context, target string, api *shell.API, log ShellLog) (Shell, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return Shell{}, err
 	}
-	db, err := OpenIndex(c, ctx)
+	db, err := OpenIndex(c, res, ctx)
 	if err != nil {
 		return Shell{}, err
 	}
 	api.Window = shell.NewWindow(target, nil)
-	return bindShell(c, ctx, ports, db, api, log)
+	return bindShell(plugins(c, host, res), ctx, ports, db, api, log)
 }
 
 // ShellLog is where a shell window writes what it reports: Out under Label, and Notify for what the user
@@ -88,9 +88,8 @@ type ShellLog struct {
 }
 
 func bindShell(
-	c Config, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log ShellLog,
+	a pluginsWiring, ctx context.Context, ports vaultregistry.Ports, db *Index, api *shell.API, log ShellLog,
 ) (Shell, error) {
-	a := plugins(c)
 	setModelCalls(a, connectionlog.NewLogNotices().ReportSetAside)
 	vaults := openVaults(a.vault, db, log.Out, log.Label, api.ReportVaultRead)
 	closers := Shell{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}

@@ -41,7 +41,7 @@ type noNotices struct{}
 
 func (noNotices) ReportSetAside(connection.SetAside) {}
 
-func openRowsInstallation(t *testing.T) (Config, string) {
+func openRowsInstallation(t *testing.T) (TestInstallation, string) {
 	t.Helper()
 	plugins := t.TempDir()
 	dir := filepath.Join(plugins, "rows")
@@ -55,7 +55,9 @@ func openRowsInstallation(t *testing.T) (Config, string) {
 	if err := os.WriteFile(path, []byte(rowsInstallation), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	cfg := NewConfig(Config{Paths: Paths{SettingsPath: path}, PluginHost: newPluginHost(t, "desktop.editor", plugins)})
+	cfg := NewTestInstallation(Config{
+		Paths: Paths{SettingsPath: path},
+	}, newPluginHost(t, "desktop.editor", plugins))
 	stored, err := cfg.Settings()
 	if err != nil {
 		t.Fatal(err)
@@ -68,7 +70,7 @@ func openRowsInstallation(t *testing.T) (Config, string) {
 func TestTheConnectionsListWhereTheirRowsAre(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
 
-	entries, err := openConnectionUseCases(plugins(cfg)).List.Execute(t.Context())
+	entries, err := openConnectionUseCases(cfg.buildPluginWiring()).List.Execute(t.Context())
 
 	if err != nil {
 		t.Fatal(err)
@@ -82,7 +84,7 @@ func TestTheConnectionsListWhereTheirRowsAre(t *testing.T) {
 func TestDeletingAConnectionRemovesTheRowsThatNameItFromTheFile(t *testing.T) {
 	cfg, path := openRowsInstallation(t)
 
-	removed, err := openConnectionUseCases(plugins(cfg)).Delete.Execute(t.Context(), rowsConnection)
+	removed, err := openConnectionUseCases(cfg.buildPluginWiring()).Delete.Execute(t.Context(), rowsConnection)
 
 	if err != nil {
 		t.Fatal(err)
@@ -114,7 +116,7 @@ func TestAWriteOfRowsThatNameNoConnectionIsRefused(t *testing.T) {
 
 func TestAPluginAsksTheRowsOfItsOwnSettingForAConnection(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
-	setModelCalls(plugins(cfg), noNotices{}.ReportSetAside)
+	setModelCalls(cfg.buildPluginWiring(), noNotices{}.ReportSetAside)
 
 	_, err := cfg.PluginHost.Endpoint.GetModelCalls().Call(t.Context(), rowsPlugin, modelcall.Request{Operation: "llm.complete"}, func([]byte) error { return nil })
 
@@ -134,7 +136,7 @@ func TestAPluginAsksTheRowsOfItsOwnSettingForAConnection(t *testing.T) {
 
 func TestAPluginWithoutRowsGetsNoConnection(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
-	setModelCalls(plugins(cfg), noNotices{}.ReportSetAside)
+	setModelCalls(cfg.buildPluginWiring(), noNotices{}.ReportSetAside)
 
 	_, err := cfg.PluginHost.Endpoint.GetModelCalls().Call(t.Context(), "md.numen.sample.other", modelcall.Request{Operation: "llm.complete"}, func([]byte) error { return nil })
 

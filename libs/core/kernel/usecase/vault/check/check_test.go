@@ -21,9 +21,9 @@ import (
 func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vault) {
 	t.Helper()
 	v := vaulttest.NewVault(t, notes)
-	db, err := container.OpenIndex(container.NewConfig(container.Config{
+	db, err := container.OpenIndex(container.Config{
 		Paths: container.Paths{IndexPath: indexfile.Path(t)},
-	}), t.Context())
+	}, container.NewResources(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

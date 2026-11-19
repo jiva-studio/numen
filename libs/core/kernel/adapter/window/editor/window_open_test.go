@@ -38,16 +38,19 @@ func (s *mockSourceServer) DescribeSearchSource(
 	return connect.NewResponse(&v1.DescribeSearchSourceResponse{Name: "asked-for", Recipe: "asked-for|384", Width: 384}), nil
 }
 
-func vaultConfig(t *testing.T) container.Config {
+func vaultConfig(t *testing.T) testInstallation {
 	t.Helper()
 	root := t.TempDir()
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
+	cfg := newTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		},
 	})
-	if _, err := cfg.AddVault(root, "alpha"); err != nil {
+	if _, err := cfg.AddVault(cfg.PluginHost, cfg.Resources, root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
 	return cfg

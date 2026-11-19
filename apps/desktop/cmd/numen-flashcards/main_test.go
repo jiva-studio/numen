@@ -24,21 +24,28 @@ func getNotes() map[string]string {
 	}
 }
 
-func makeConfigWithVaults(t *testing.T) (container.Config, []domain.Vault) {
+type testInstallation struct {
+	cfg  container.Config
+	host *container.PluginHost
+	res  *container.Resources
+}
+
+func makeConfigWithVaults(t *testing.T) (testInstallation, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
-	cfg := container.NewConfig(container.Config{
+	cfg := container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(state, "index.db"), RegistryPath: filepath.Join(state, "vaults.json")},
-	})
-	return cfg, []domain.Vault{addVaultOf(t, cfg, "One"), addVaultOf(t, cfg, "Two")}
+	}
+	install := testInstallation{cfg: cfg, host: container.PreparePluginHost(nil, false), res: container.NewResources()}
+	return install, []domain.Vault{addVaultOf(t, install, "One"), addVaultOf(t, install, "Two")}
 }
 
-func makeWindow(t *testing.T) (container.Config, *container.Index) {
+func makeWindow(t *testing.T) (testInstallation, *container.Index) {
 	t.Helper()
 
-	cfg, _ := makeConfigWithVaults(t)
-	db, err := container.OpenIndex(cfg, t.Context())
+	install, _ := makeConfigWithVaults(t)
+	db, err := container.OpenIndex(install.cfg, install.res, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,13 +54,13 @@ func makeWindow(t *testing.T) (container.Config, *container.Index) {
 			t.Error(err)
 		}
 	})
-	return cfg, db
+	return install, db
 }
 
-func openShell(t *testing.T, cfg container.Config, api *shell.API) {
+func openShell(t *testing.T, install testInstallation, api *shell.API) {
 	t.Helper()
 
-	started, err := container.OpenShell(cfg, t.Context(), platform.TargetFlashcards, api, container.ShellLog{Out: io.Discard, Label: "flashcards", Notify: func(string) {}})
+	started, err := install.cfg.OpenShell(install.host, install.res, t.Context(), platform.TargetFlashcards, api, container.ShellLog{Out: io.Discard, Label: "flashcards", Notify: func(string) {}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +72,7 @@ func openShell(t *testing.T, cfg container.Config, api *shell.API) {
 	})
 }
 
-func addVaultOf(t *testing.T, cfg container.Config, name string) domain.Vault {
+func addVaultOf(t *testing.T, install testInstallation, name string) domain.Vault {
 	t.Helper()
 
 	root := t.TempDir()
@@ -78,7 +85,7 @@ func addVaultOf(t *testing.T, cfg container.Config, name string) domain.Vault {
 			t.Fatal(err)
 		}
 	}
-	added, err := cfg.AddVault(root, name)
+	added, err := install.cfg.AddVault(install.host, install.res, root, name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,9 +95,9 @@ func addVaultOf(t *testing.T, cfg container.Config, name string) domain.Vault {
 // The page is given whether a vault is indexed and the plugins' services it
 // forwards.
 func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
-	cfg, db := makeWindow(t)
+	install, db := makeWindow(t)
 
-	api := makeWindowAPI(cfg)
+	api := makeWindowAPI(install.cfg, install.host, install.res)
 	container.SetShellNotes(api, db)
 
 	if api == nil {
@@ -110,9 +117,9 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 
 // The page resolves the links of a note against the vaults the application lists.
 func TestTheFlashcardsPageIsGivenTheLinksOfItsVaults(t *testing.T) {
-	cfg, _ := makeConfigWithVaults(t)
-	api := makeWindowAPI(cfg)
-	openShell(t, cfg, api)
+	install, _ := makeConfigWithVaults(t)
+	api := makeWindowAPI(install.cfg, install.host, install.res)
+	openShell(t, install, api)
 
 	if api.ResolveLinks == nil {
 		t.Error("the page has no links")
@@ -125,9 +132,9 @@ func TestTheFlashcardsPageIsGivenTheLinksOfItsVaults(t *testing.T) {
 // The window binds the indexer of its vaults: a vault is read into the index, and the read is reported
 // as a change. An indexer set after that is the one a vault not read yet is read with.
 func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
-	cfg, target := makeConfigWithVaults(t)
-	api := makeWindowAPI(cfg)
-	openShell(t, cfg, api)
+	install, target := makeConfigWithVaults(t)
+	api := makeWindowAPI(install.cfg, install.host, install.res)
+	openShell(t, install, api)
 
 	for {
 		state, err := api.EnsureIndexed(t.Context(), target[0])
@@ -173,16 +180,16 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 // identity, and a vault that is not in the index is read into it when a plugin
 // requests it.
 func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
-	cfg, target := makeConfigWithVaults(t)
-	host, err := container.NewPluginHost(cfg, func(error) {}, "md.numen.test", t.TempDir())
+	install, target := makeConfigWithVaults(t)
+	host, err := container.NewPluginHost("", install.res, func(error) {}, "md.numen.test", t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.PluginHost = host
-	api := makeWindowAPI(cfg)
-	openShell(t, cfg, api)
+	install.host = host
+	api := makeWindowAPI(install.cfg, install.host, install.res)
+	openShell(t, install, api)
 	api.SetVaultIndexer(t.Context(), nil)
-	lent := cfg.PluginHost.Endpoint.GetPluginVault()
+	lent := host.Endpoint.GetPluginVault()
 
 	recognized, listErr := lent.Switch.GetVaults()
 	linked, withErr := lent.Switch.With(target[1].ID)
@@ -200,8 +207,8 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 // The page receives the plugins of the flashcards target and is served the
 // files of their frontends.
 func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
-	cfg, _ := makeConfigWithVaults(t)
-	api := makeWindowAPI(cfg)
+	install, _ := makeConfigWithVaults(t)
+	api := makeWindowAPI(install.cfg, install.host, install.res)
 
 	if api.GetFrontendPluginIDs == nil || api.GetPluginDir == nil {
 		t.Error("the page is not told the plugins it loads")

@@ -310,13 +310,13 @@ func (refusing) WatchVault(context.Context, domain.Vault) (<-chan []string, <-ch
 	return nil, nil, os.ErrPermission
 }
 
-func openVault(t *testing.T, notes map[string]string) (container.Config, *container.Index, domain.Vault) {
+func openVault(t *testing.T, notes map[string]string) (container.TestInstallation, *container.Index, domain.Vault) {
 	t.Helper()
 
-	cfg := container.NewConfig(container.Config{
+	cfg := container.NewTestInstallation(container.Config{
 		Paths: container.Paths{IndexPath: indexfile.Path(t)},
-	})
-	db, err := container.OpenIndex(cfg, t.Context())
+	}, nil)
+	db, err := container.OpenIndex(cfg.Config, cfg.Resources, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,7 +1,6 @@
 package container
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 
@@ -28,24 +27,24 @@ import (
 
 // ApplySettings reads the settings file and returns the configuration with its values applied, and
 // the notices that reading it raised. An unconfigured installation applies the default settings.
-func (c Config) ApplySettings() (Config, []string, error) {
-	selected, err := settingsSettings(settingsOf(c))
+func (c Config) ApplySettings(host *PluginHost, res *Resources) (Config, []string, error) {
+	selected, err := settingsSettings(settingsOf(c, host, res))
 	if err != nil {
 		return c, nil, err
 	}
-	return applySettingsFile(c, selected), selected.Notices, nil
+	return applySettingsFile(c, host, res, selected), selected.Notices, nil
 }
 
-func applySettingsFile(c Config, s settingsadapter.File) Config {
+func applySettingsFile(c Config, host *PluginHost, res *Resources, s settingsadapter.File) Config {
 	c.machine = Machine{ResolvedCompute: settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(s.Performance.Profile)}
-	configurePluginHost(settingsOf(c), s)
+	configurePluginHost(settingsOf(c, host, res), s)
 	return c
 }
 
 // SetThemes gives the window the themes it can use: the catalog of themes, and the settings file that
 // stores the selection. The window keeps the themes the binary ships when the answer is a fault.
-func SetThemes(c Config, inst *editor.Installation, scales Scales, say func(string)) error {
-	service, err := settingsThemes(settingsOf(c), scales, say)
+func SetThemes(c Config, host *PluginHost, res *Resources, inst *editor.Installation, scales Scales, say func(string)) error {
+	service, err := settingsThemes(settingsOf(c, host, res), scales, say)
 	inst.SetThemes(service)
 	return err
 }
@@ -95,7 +94,7 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 		subscribe = feed(c).Subscribe
 	}
 	settingsusecase.NewApplyToPlugins(settingsusecase.ApplyToPluginsDeps{
-		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Configuration, Write: settingsWriteSettings(c), Notify: notifyPlugins(c),
+		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Configuration, Write: openWriteSettings(c), Notify: notifyPlugins(c),
 		Subscribe: c.PluginHost.Views.Follow(subscribe), Hosts: hosts,
 	}).Execute(s.Plugins, getPluginPerformance(c.ResolvedCompute))
 }
@@ -151,10 +150,6 @@ func listAppSettings(c settingsWiring) []plugindomain.Setting {
 	).Execute()
 }
 
-func subscribeSettingChanges(c settingsWiring) (<-chan []settingsdomain.Setting, func()) {
-	return feed(c).Subscribe()
-}
-
 func refreshSettingEvents(c settingsWiring) {
 	feed(c).Refresh()
 }
@@ -169,12 +164,8 @@ func syncSetting(c settingsWiring) naming.SyncSetting {
 	}
 }
 
-func logLevelSetting(c settingsWiring) func() domainlogs.Level {
-	return c.SettingsFiles.GetLogLevel
-}
-
 func writeLogLevel(c settingsWiring) func(domainlogs.Level) error {
-	write := settingsWriteSettings(c)
+	write := openWriteSettings(c)
 	return func(level domainlogs.Level) error {
 		return write.Execute([]settingsdomain.Setting{{
 			Path: []string{settingsdomain.AppOwner, "logging", "level"},
@@ -188,27 +179,19 @@ func readSettings(c settingsWiring) func() (string, string, uint64, error) {
 }
 
 func getSettingsWriter(c settingsWiring) func(entries []settingsdomain.Setting) error {
-	return settingsWriteSettings(c).Execute
+	return openWriteSettings(c).Execute
 }
 
 func settingsSettingsFile(c settingsWiring) (string, error) {
 	return settingsadapter.LocateFile(c.SettingsPath, c.RegistryPath)
 }
 
-func openWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
-	return settingsWriteSettings(c)
-}
-
 func openWatchSettings(c settingsWiring) *settingsusecase.WatchSettingChanges {
-	return settingsusecase.NewWatchSettingChanges(func() (<-chan []settingsdomain.Setting, func()) { return subscribeSettingChanges(c) })
+	return settingsusecase.NewWatchSettingChanges(func() (<-chan []settingsdomain.Setting, func()) { return feed(c).Subscribe() })
 }
 
 func openChoosePluginPath(c settingsWiring, dialog machineport.PathDialog) *settingsusecase.ChoosePluginPath {
 	return settingsusecase.NewChoosePluginPath(dialog, settingsPlugins(c), getSettingsWriter(c))
-}
-
-func openRetryPlugin(_ settingsWiring, retrier func(context.Context, string) (*plugindomain.Failure, error)) *settingsusecase.RetryPlugin {
-	return settingsusecase.NewRetryPlugin(retrier)
 }
 
 func settingsStore(c settingsWiring) *settingsadapter.Store {
@@ -247,7 +230,7 @@ func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
 	)
 }
 
-func settingsWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
+func openWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
 	check := settingsusecase.NewCheckSettings(
 		settingsadapter.JSONCodec{}, getDeclarations(c), getRegistries(c), getPluginChecks(c.PluginHost.Views),
 	)
@@ -272,7 +255,7 @@ func settingsThemes(c settingsWiring, scales Scales, say func(string)) (*theme.S
 	sources := getThemeSources(c, files)
 	store := settingsadapter.NewAppearanceStore(
 		settingsusecase.NewReadAppearance(settingsStore(c)).Execute,
-		settingsusecase.NewWriteAppearance(settingsadapter.JSONCodec{}, settingsWriteSettings(c)).Execute,
+		settingsusecase.NewWriteAppearance(settingsadapter.JSONCodec{}, openWriteSettings(c)).Execute,
 		say,
 	)
 	sizes := themeusecase.NewScales(scales.InterfaceScale, scales.TextScale)

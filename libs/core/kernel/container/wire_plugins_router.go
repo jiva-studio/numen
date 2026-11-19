@@ -72,22 +72,21 @@ const pluginGracePeriod = 2 * time.Second
 // errSafeMode is an installation started in safe mode, which starts no plugin.
 var errSafeMode = errors.New("numen is running in safe mode")
 
-// NewPluginHost creates and initializes a plugin host for the specified target and search directories, on the
-// clock of c.
+// NewPluginHost creates and initializes a plugin host for the target and search directories on the installation clock.
 // The host provisions the dependencies the plugins declare. The host is returned also when the discovery of the
 // plugins failed, with the failure. report receives the problems the host meets outside a call, such as a failed
 // shutdown of a plugin.
-func NewPluginHost(c Config, report func(error), target string, dirs ...string) (*PluginHost, error) {
-	host, err := OpenPluginRoles(c, report, target, dirs...)
+func NewPluginHost(indexPath string, res *Resources, report func(error), target string, dirs ...string) (*PluginHost, error) {
+	host, err := OpenPluginRoles(indexPath, res, report, target, dirs...)
 	return AdaptPluginHost(host), err
 }
 
 // OpenPluginRoles creates the roles of a plugin host as NewPluginHost does and returns them, for a caller that holds
 // the roles. The roles are returned also when the discovery of the plugins failed, with the failure. report receives
 // the problems the host meets outside a call.
-func OpenPluginRoles(c Config, report func(error), target string, dirs ...string) (*PluginRoles, error) {
-	host := NewPluginRoles(c.Clock(), target, dirs...)
-	record := openOptionalRecordLog(c)
+func OpenPluginRoles(indexPath string, res *Resources, report func(error), target string, dirs ...string) (*PluginRoles, error) {
+	host := NewPluginRoles(GetClock(res), target, dirs...)
+	record := openOptionalRecordLog(indexPath, res)
 	host.Failures.SetOnFailure(supervision.ReportPluginFailure(record))
 	host.Failures.SetErrorHandler(windowlogs.ReportError(record, report, "Plugin host failure"))
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
@@ -101,9 +100,9 @@ func setPluginVaultPath(c pluginsWiring, path string) {
 	c.PluginHost.Runtime.SetVaultPath(path)
 }
 
-func stopPlugins(c pluginsWiring, ctx context.Context) error {
-	c.PluginHost.Watch.CancelDependencies()
-	return c.PluginHost.Watch.TeardownAll(ctx, pluginGracePeriod)
+func stopPlugins(host *PluginHost, ctx context.Context) error {
+	host.Watch.CancelDependencies()
+	return host.Watch.TeardownAll(ctx, pluginGracePeriod)
 }
 
 func getPluginCommands(c pluginsWiring) PluginCommandUseCases {

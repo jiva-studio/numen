@@ -70,7 +70,7 @@ func (p *meaningPlugin) SearchChunks(
 // the plugin.
 type meaningCore struct {
 	roles    *container.PluginRoles
-	config   container.Config
+	config   container.TestInstallation
 	launches *atomic.Int32
 }
 
@@ -97,8 +97,10 @@ func openMeaningCore(t *testing.T, pluginDir, cacheRoot string, port int) meanin
 		return processes[next].Process, wiretest.GetReadyOutput(port), nil
 	})
 	return meaningCore{
-		roles:    roles,
-		config:   container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(roles), Paths: container.Paths{ServiceDir: ".numen"}}),
+		roles: roles,
+		config: container.NewTestInstallation(container.Config{
+			Paths: container.Paths{ServiceDir: ".numen"},
+		}, container.AdaptPluginHost(roles)),
 		launches: launches,
 	}
 }

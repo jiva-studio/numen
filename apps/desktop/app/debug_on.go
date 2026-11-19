@@ -27,9 +27,9 @@ func RegisterDebugFlags(fs *flag.FlagSet, opts *Options) {
 		"use fast mock ML models, and an empty placeholder file for every dependency a plugin declares")
 }
 
-func (d *DebugOptions) apply(cfg *container.Config) error {
+func (d *DebugOptions) apply(host *container.PluginHost, res *container.Resources) error {
 	if d.isServingHTTP() {
-		cfg.KeyStore = debugserve.NewKeyStore()
+		res.KeyStore = debugserve.NewKeyStore()
 	}
 	if !d.IsMockML {
 		return nil
@@ -37,14 +37,14 @@ func (d *DebugOptions) apply(cfg *container.Config) error {
 	if err := os.Setenv("NUMEN_TEST_MOCK_ML", "true"); err != nil {
 		return err
 	}
-	if cfg.PluginHost != nil {
-		cfg.PluginHost.RefreshDependencies()
+	if host != nil {
+		host.RefreshDependencies()
 	}
 	return nil
 }
 
-func (d *DebugOptions) ensureVault(cfg container.Config, vaultPath string) error {
-	return debugserve.RegisterVault(cfg, vaultPath)
+func (d *DebugOptions) ensureVault(cfg container.Config, host *container.PluginHost, res *container.Resources, vaultPath string) error {
+	return debugserve.RegisterVault(cfg, host, res, vaultPath)
 }
 
 func (d *DebugOptions) isServingHTTP() bool {
@@ -53,12 +53,12 @@ func (d *DebugOptions) isServingHTTP() bool {
 
 func (d *DebugOptions) serveHTTP(
 	ctx context.Context,
-	cfg container.Config,
+	res *container.Resources,
 	opened *container.OpenedWindow,
 	pages http.Handler,
 ) error {
 	if d.FolderFile != "" {
 		opened.SetFolderDialog(debugserve.NewFolderFileDialog(d.FolderFile))
 	}
-	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)
+	return debugserve.Serve(ctx, container.GetClock(res), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)
 }

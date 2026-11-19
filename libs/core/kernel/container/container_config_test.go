@@ -34,14 +34,16 @@ func isolateWithNoHome(t *testing.T) {
 
 func TestTheClockIsTheOneTheInstallationNamed(t *testing.T) {
 	named := time.Date(2020, 2, 3, 4, 5, 6, 0, time.UTC)
-	if got := (NewConfig(Config{Now: testsupport.NewClockAt(named)})).Clock().Now(); !got.Equal(named) {
+	resources := NewResources()
+	resources.Now = testsupport.NewClockAt(named)
+	if got := GetClock(resources).Now(); !got.Equal(named) {
 		t.Errorf("the clock reads %v, and the installation named %v", got, named)
 	}
 }
 
 func TestAnInstallationNamingNoClockReadsTheMachinesOwn(t *testing.T) {
 	before := testsupport.GetMachine().Now()
-	got := NewConfig(Config{}).Clock().Now()
+	got := GetClock(NewResources()).Now()
 	if got.Before(before) || got.After(testsupport.GetMachine().Now()) {
 		t.Errorf("the clock reads %v, and it is %v", got, before)
 	}
@@ -50,7 +52,7 @@ func TestAnInstallationNamingNoClockReadsTheMachinesOwn(t *testing.T) {
 func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 	cfg, path := writeSettings(t, `{not json`)
 
-	content, response, _, err := readSettings(settingsOf(cfg))()
+	content, response, _, err := readSettings(cfg.buildSettingsWiring())()
 	if err == nil {
 		t.Fatalf("settings that are not JSON were read out as %q", content)
 	}
@@ -62,10 +64,10 @@ func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	if _, response, _, err := readSettings(settingsOf((NewConfig(Config{}))))(); err == nil || response != "" {
+	if _, response, _, err := readSettings(settingsOf(Config{}, nil, NewResources()))(); err == nil || response != "" {
 		t.Errorf("settings were read from %q: %v", response, err)
 	}
-	err := getSettingsWriter(settingsOf(NewConfig(Config{})))([]settings.Setting{
+	err := getSettingsWriter(settingsOf(Config{}, nil, NewResources()))([]settings.Setting{
 		{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`},
 	})
 	if err == nil {
@@ -81,7 +83,7 @@ func TestSettingsFile_DefaultsToUserConfigDir(t *testing.T) {
 	}
 	want = filepath.Join(want, "numen", "numen.json")
 
-	got, err := settingsSettingsFile(settingsOf(NewConfig(Config{})))
+	got, err := settingsSettingsFile(settingsOf(Config{}, nil, NewResources()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,9 +96,9 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 	isolate(t)
 	registry := filepath.Join(t.TempDir(), "registry.json")
 
-	got, err := settingsSettingsFile(settingsOf(NewConfig(Config{
+	got, err := settingsSettingsFile(settingsOf(Config{
 		Paths: Paths{RegistryPath: registry},
-	})))
+	}, nil, NewResources()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,20 +108,18 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 }
 
 func TestVaultsAreOpenedForWritingWithTheOptionsOfTheInstallation(t *testing.T) {
-	cfg := NewConfig(Config{
-		Paths: Paths{ServiceDir: ".mine"},
-	})
+	cfg := NewTestInstallation(Config{Paths: Paths{ServiceDir: ".mine"}}, nil)
 
-	opened, ok := noteWriters(vaultOf(cfg)).(vaultwriter.VaultWriters)
+	opened, ok := noteWriters(cfg.buildVaultWiring()).(vaultwriter.VaultWriters)
 	if !ok {
-		t.Fatalf("vaults are opened for writing by %T", noteWriters(vaultOf(cfg)))
+		t.Fatalf("vaults are opened for writing by %T", noteWriters(cfg.buildVaultWiring()))
 	}
 	if opened.Options.ServiceDir != ".mine" {
 		t.Errorf("vaults are opened with %+v", opened.Options)
 	}
-	read, ok := vaultReaders(vaultOf(cfg)).(vaultreader.Readers)
+	read, ok := vaultReaders(cfg.buildVaultWiring()).(vaultreader.Readers)
 	if !ok {
-		t.Fatalf("vaults are opened for reading by %T", vaultReaders(vaultOf(cfg)))
+		t.Fatalf("vaults are opened for reading by %T", vaultReaders(cfg.buildVaultWiring()))
 	}
 	if read.Options.ServiceDir != ".mine" {
 		t.Errorf("vaults are opened with %+v", read.Options)
@@ -130,9 +130,7 @@ func TestTheIndexIsWhereTheInstallationNamedItAndItsFolderIsMade(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "nested", "deeper", "index.db")
 
-	got, err := prepareIndexPath(vaultOf(NewConfig(Config{
-		Paths: Paths{IndexPath: named},
-	})))
+	got, err := prepareIndexPath(vaultOf(Config{Paths: Paths{IndexPath: named}}, nil, NewResources()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,15 +149,15 @@ func TestAnIndexWhoseFolderCannotBeMadeIsAReason(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := prepareIndexPath(vaultOf(NewConfig(Config{
+	got, err := prepareIndexPath(vaultOf(Config{
 		Paths: Paths{IndexPath: filepath.Join(file, "index.db")},
-	})))
+	}, nil, NewResources()))
 	if err == nil || got != "" {
 		t.Errorf("the index is at %q: %v", got, err)
 	}
-	if _, err := openIndex(vaultOf((NewConfig(Config{
+	if _, err := openIndex(vaultOf(Config{
 		Paths: Paths{IndexPath: filepath.Join(file, "index.db")},
-	}))), t.Context()); err == nil {
+	}, nil, NewResources()), t.Context()); err == nil {
 		t.Error("an index was opened where its folder cannot be made")
 	}
 }
@@ -168,17 +166,19 @@ func TestHandleError_CallsConfiguredHandler(t *testing.T) {
 	var notified []error
 	problem := errors.New("a vacuum that could not run")
 
-	handleError(NewConfig(Config{ErrorHandler: func(err error) { notified = append(notified, err) }}), problem)
+	resources := NewResources()
+	resources.ErrorHandler = func(err error) { notified = append(notified, err) }
+	getErrorHandler("", resources)(problem)
 	if len(notified) != 1 || !errors.Is(notified[0], problem) {
 		t.Errorf("told %v", notified)
 	}
-	handleError(NewConfig(Config{}), problem)
+	getErrorHandler("", NewResources())(problem)
 }
 
 func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	err := getSettingsWriter(settingsOf(NewConfig(Config{})))([]settings.Setting{{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`}})
+	err := getSettingsWriter(settingsOf(Config{}, nil, NewResources()))([]settings.Setting{{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `false`}})
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}
@@ -187,7 +187,7 @@ func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
-	err := getSettingsWriter(settingsOf(cfg))([]settings.Setting{{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `nope`}})
+	err := getSettingsWriter(cfg.buildSettingsWiring())([]settings.Setting{{Path: []string{"app", "naming", "syncTitleAndFilename"}, JSON: `nope`}})
 	if !errors.Is(err, settings.ErrNotASetting) {
 		t.Errorf("got %v", err)
 	}
@@ -208,9 +208,7 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 	named := filepath.Join(t.TempDir(), "vaults.json")
 	type placed interface{ Path() string }
 
-	got, err := NewConfig(Config{
-		Paths: Paths{RegistryPath: named},
-	}).registry()
+	got, err := (Config{Paths: Paths{RegistryPath: named}}).registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,7 +216,7 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 		t.Errorf("the registry is %#v, and it was pointed at %q", got, named)
 	}
 
-	got, err = NewConfig(Config{}).registry()
+	got, err = (Config{}).registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,17 +231,19 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 
 func TestEveryFolderOfTheMachineIsGivenAnIdentityAndATrash(t *testing.T) {
 	isolate(t)
-	if vaultIdentity(vaultOf((NewConfig(Config{})))) == nil {
+	if vaultIdentity(vaultOf(Config{}, nil, NewResources())) == nil {
 		t.Error("folders are given no identity")
 	}
-	if vaultTrash(vaultOf((NewConfig(Config{})))) == nil {
+	if vaultTrash(vaultOf(Config{}, nil, NewResources())) == nil {
 		t.Error("what is deleted has nowhere to go")
 	}
 }
 
 func TestTheVaultWaitsOnTheClockTheInstallationNamed(t *testing.T) {
 	named := testsupport.NewClock()
-	quiet := vaultBase(NewConfig(Config{Now: named}), nil).Clock.After(indexing.QuietPeriod)
+	resources := NewResources()
+	resources.Now = named
+	quiet := vaultBase(Config{}, nil, resources, nil).Clock.After(indexing.QuietPeriod)
 	named.Advance(indexing.QuietPeriod)
 	select {
 	case <-quiet:

@@ -15,7 +15,7 @@ import (
 // entropy is the whole of the note the vault below holds.
 const entropy = "Entropy is the measure of disorder.\n"
 
-func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
+func makeScannedVault(t *testing.T) (container.TestInstallation, domain.Vault) {
 	t.Helper()
 
 	dir := t.TempDir()
@@ -23,11 +23,11 @@ func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 		t.Fatal(err)
 	}
 	vault := domain.Vault{ID: "01ENTROPY", Name: "physics", Path: dir}
-	cfg := container.NewConfig(container.Config{
+	cfg := container.NewTestInstallation(container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-	})
+	}, nil)
 
-	db, err := container.OpenIndex(cfg, t.Context())
+	db, err := container.OpenIndex(cfg.Config, cfg.Resources, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,9 +53,9 @@ func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 	return cfg, vault
 }
 
-func read(t *testing.T, cfg container.Config) *container.Index {
+func read(t *testing.T, cfg container.TestInstallation) *container.Index {
 	t.Helper()
-	db, err := container.OpenIndex(cfg, t.Context())
+	db, err := container.OpenIndex(cfg.Config, cfg.Resources, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,9 +102,7 @@ func TestReopenedIndex_KeepsSources(t *testing.T) {
 // A machine where nothing has scanned reads as a vault holding nothing.
 func TestAnIndexThatWasNeverBuiltAnswersEmpty(t *testing.T) {
 	pos := filepath.Join(t.TempDir(), "index.db")
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: pos},
-	})
+	cfg := container.NewTestInstallation(container.Config{Paths: container.Paths{IndexPath: pos}}, nil)
 	vault := domain.Vault{ID: "01ENTROPY", Name: "physics", Path: t.TempDir()}
 
 	db := read(t, cfg)

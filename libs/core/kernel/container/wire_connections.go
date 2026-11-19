@@ -109,8 +109,8 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 // GetConnectionCalls is the calls plugin views make through their connections, for a window that serves
 // ConnectionCallService without the routes of the editor. It is nil where the installation runs no
 // plugins.
-func GetConnectionCalls(c Config) connectionport.ModelCalls {
-	return openModelCalls(plugins(c))
+func GetConnectionCalls(c Config, host *PluginHost, res *Resources) connectionport.ModelCalls {
+	return openModelCalls(plugins(c, host, res))
 }
 
 func openRowLists(c pluginsWiring) connectioncall.Rows {
@@ -128,8 +128,8 @@ func openRowLists(c pluginsWiring) connectioncall.Rows {
 
 // GetConnectionRows is the listing of the rows plugin views offer a choice of, for a window that serves
 // ConnectionCallService without the routes of the editor. It is nil where the installation runs no plugins.
-func GetConnectionRows(c Config) connectioncall.Rows {
-	return openRowLists(plugins(c))
+func GetConnectionRows(c Config, host *PluginHost, res *Resources) connectioncall.Rows {
+	return openRowLists(plugins(c, host, res))
 }
 
 func openRowOptions(c pluginsWiring, deps connection.Deps) *rowoptions.Options {

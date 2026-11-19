@@ -29,6 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/logfiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -109,7 +110,7 @@ func mountSearch(w *windowWiring) {
 		state,
 		search.NewFindNames(w.db.NoteQueries(), w.kinds.list),
 		search.NewFindText(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
-		searchcancel.NewSearches(w.cfg.Clock()),
+		searchcancel.NewSearches(w.a.vault.Clock),
 	)
 	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError, newSearchRuns(w))
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
@@ -177,19 +178,19 @@ func mountNote(w *windowWiring) {
 	w.inst.Mount(editor.NewNoteRoute(state, handler))
 }
 
-func openGetSettings(c Config) *settings.Get {
-	return settings.NewGet(readSettings(settingsOf(c)), settingsPlugins(settingsOf(c)), func() []plugin.Setting { return listAppSettings(settingsOf(c)) })
+func openGetSettings(s settingsWiring) *settings.Get {
+	return settings.NewGet(readSettings(s), settingsPlugins(s), func() []plugin.Setting { return listAppSettings(s) })
 }
 
 func mountSettings(w *windowWiring) {
 	state := w.state
-	retry := openRetryPlugin(w.a.settings, getPluginRetrier(w.a))
+	retry := settings.NewRetryPlugin(getPluginRetrier(w.a))
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)
 	if data := openPluginData(w.a.vault); data != nil {
 		folders = windowsettings.NewPluginFolders(retry, data, state)
 	}
 	values := windowsettings.NewValues(
-		openGetSettings(w.cfg),
+		openGetSettings(w.a.settings),
 		openWriteSettings(w.a.settings), openWatchSettings(w.a.settings), nil,
 	)
 	handler := windowsettings.NewHandler(values, folders)
@@ -203,7 +204,7 @@ func mountSettings(w *windowWiring) {
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(getPluginServices(w.a), func(id string) (string, bool) { return getPluginDir(w.a, id) })
 	host := w.a.PluginHost
-	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.PluginResolver, getConnectionResolve(w.a), w.cfg.Clock())
+	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.PluginResolver, getConnectionResolve(w.a), w.a.vault.Clock)
 	handler := windowplugin.NewHandler(watch)
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.state.Gate.CountQuestions())))
 }
@@ -217,48 +218,34 @@ func mountHealth(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func openLogEntries(c Config) *logsusecase.Entries {
-	if c.Resources != nil && c.Resources.logEntries != nil {
-		return c.Resources.logEntries
-	}
-	return logsusecase.NewEntries()
+func openRecordLog(indexPath string, entries *logsusecase.Entries, getLevel func() domainlogs.Level, timer machineport.Timer) *logsusecase.Record {
+	return logsusecase.NewRecord(entries, logfiles.NewBesideIndex(indexPath), getLevel, timer)
 }
 
-func openRecordLog(c Config) *logsusecase.Record {
-	return logsusecase.NewRecord(
-		openLogEntries(c),
-		logfiles.NewBesideIndex(c.IndexPath),
-		logLevelSetting(settingsOf(c)),
-		c.Clock(),
-	)
-}
-
-func openRecordLogFunc(c Config) func(domainlogs.Entry) {
-	record := openRecordLog(c)
+func recordLogFunc(record *logsusecase.Record, report func(error)) func(domainlogs.Entry) {
 	return func(entry domainlogs.Entry) {
-		if err := record.Execute(entry); err != nil {
-			if c.ErrorHandler != nil {
-				c.ErrorHandler(err)
-			}
+		if err := record.Execute(entry); err != nil && report != nil {
+			report(err)
 		}
 	}
 }
 
-func openOptionalRecordLog(c Config) func(domainlogs.Entry) {
-	if c.Resources == nil {
+func openOptionalRecordLog(indexPath string, res *Resources) func(domainlogs.Entry) {
+	if res == nil {
 		return nil
 	}
-	return openRecordLogFunc(c)
+	record := openRecordLog(indexPath, getLogEntries(res), res.settingsFiles.GetLogLevel, GetClock(res))
+	return recordLogFunc(record, res.ErrorHandler)
 }
 
 func mountLogs(w *windowWiring) {
-	record := openRecordLog(w.cfg)
-	watch := logsusecase.NewWatch(openLogEntries(w.cfg), logfiles.NewBesideIndex(w.cfg.IndexPath), w.cfg.Clock())
-	w.state.SetCallTrace(w.cfg.Clock(), openRecordLogFunc(w.cfg))
+	record := openRecordLog(w.a.vault.IndexPath, w.logEntries, w.a.settings.SettingsFiles.GetLogLevel, w.a.vault.Clock)
+	watch := logsusecase.NewWatch(w.logEntries, logfiles.NewBesideIndex(w.a.vault.IndexPath), w.a.vault.Clock)
+	w.state.SetCallTrace(w.a.vault.Clock, w.a.vault.RecordLog)
 	w.a.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
 		l.Logs = record
 	})
-	handler := windowlogs.NewHandler(watch, record, logLevelSetting(settingsOf(w.cfg)), writeLogLevel(settingsOf(w.cfg)))
+	handler := windowlogs.NewHandler(watch, record, w.a.settings.SettingsFiles.GetLogLevel, writeLogLevel(w.a.settings))
 	path, served := windowlogs.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

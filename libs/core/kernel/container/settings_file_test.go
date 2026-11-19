@@ -32,9 +32,9 @@ func writeSettingsFile(t *testing.T, body string) string {
 }
 
 func openSettingsAt(path string) (settings.File, error) {
-	return container.NewConfig(container.Config{
+	return container.NewTestInstallation(container.Config{
 		Paths: container.Paths{SettingsPath: path},
-	}).Settings()
+	}, nil).Settings()
 }
 
 func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {

@@ -62,7 +62,7 @@ func (*chunkingPlugin) IndexTexts(
 	return connect.NewResponse(&v1.IndexTextsResponse{Vectors: vectors}), nil
 }
 
-func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *container.PluginRoles, *chunkingPlugin) {
+func openChunkingConfig(t *testing.T, tokens int32) (container.TestInstallation, *container.PluginRoles, *chunkingPlugin) {
 	t.Helper()
 	reporter := &chunkingPlugin{}
 	reporter.tokens.Store(tokens)
@@ -91,13 +91,12 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *containe
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, wiretest.GetReadyOutput(port), nil
 	})
-	return container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost(host),
-		Paths:      container.Paths{ServiceDir: ".numen"},
-	}), host, reporter
+	return container.NewTestInstallation(container.Config{
+		Paths: container.Paths{ServiceDir: ".numen"},
+	}, container.AdaptPluginHost(host)), host, reporter
 }
 
-func openEmbedder(t *testing.T, cfg container.Config) {
+func openEmbedder(t *testing.T, cfg container.TestInstallation) {
 	t.Helper()
 	embedder, closeEmbedder, err := cfg.Embedder(t.Context())
 	if err != nil {
@@ -114,7 +113,7 @@ type closerOf func() error
 func (c closerOf) Close() error { return c() }
 
 func TestChunkLimitIsTheCharacterBoundOfTheChunkSizeInTheCell(t *testing.T) {
-	cfg := container.NewConfig(container.Config{})
+	cfg := container.NewTestInstallation(container.Config{}, nil)
 
 	cfg.Resources.Chunks.Set(512)
 	if got := cfg.CutNotes().Sizes.Limit; got != chunking.GetCharacterBound(512) {
@@ -127,7 +126,7 @@ func TestChunkLimitIsTheCharacterBoundOfTheChunkSizeInTheCell(t *testing.T) {
 }
 
 func TestEveryCopyOfAConfigChunksAtTheSizeSetThroughOneCopy(t *testing.T) {
-	cfg := container.NewConfig(container.Config{})
+	cfg := container.NewTestInstallation(container.Config{}, nil)
 	copied := cfg
 
 	cfg.Resources.Chunks.Set(300)
@@ -163,7 +162,7 @@ func TestAChangeOfTheChunkSizeOfThePluginReachesTheCell(t *testing.T) {
 }
 
 func TestWithNoEmbeddingPluginNotesAreChunkedAtTheDefaultLimit(t *testing.T) {
-	cfg := container.NewConfig(container.Config{})
+	cfg := container.NewTestInstallation(container.Config{}, nil)
 
 	embedder, closeEmbedder, err := cfg.Embedder(t.Context())
 	if err != nil || embedder != nil {
@@ -196,9 +195,7 @@ func TestNoChunkSizeFromThePluginKeepsTheCellAtZero(t *testing.T) {
 // The file texts follow the number through the recipe they keep, which names the sizes.
 func TestFileTextsAreChunkedAtTheLimitOfTheCell(t *testing.T) {
 	db := makeIndex(t)
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{ServiceDir: ".numen"},
-	})
+	cfg := container.NewTestInstallation(container.Config{Paths: container.Paths{ServiceDir: ".numen"}}, nil)
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
 	cfg.Resources.Chunks.Set(256)
@@ -292,7 +289,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 
 func TestAScanChecksTheRecordedChunkingOnlyWhereTheSizeIsKnown(t *testing.T) {
 	db := makeIndex(t)
-	cfg := container.NewConfig(container.Config{})
+	cfg := container.NewTestInstallation(container.Config{}, nil)
 
 	if scan := container.Scan(cfg, db); scan.ShouldRecut {
 		t.Error("a scan with no chunk size known checks the recorded cut")
@@ -306,7 +303,7 @@ func TestAScanChecksTheRecordedChunkingOnlyWhereTheSizeIsKnown(t *testing.T) {
 
 func TestANewChunkSizeMakesTheNextScanReadTheNotesAgain(t *testing.T) {
 	db := makeIndex(t)
-	cfg := container.NewConfig(container.Config{})
+	cfg := container.NewTestInstallation(container.Config{}, nil)
 	v := vaulttest.NewVault(t, map[string]string{
 		"Hedge.md":   "# Hedge\n\nThe hedge along the lane is thick and tangled.\n",
 		"Gate.md":    "# Gate\n\nThe gate of the orchard sticks in wet weather.\n",

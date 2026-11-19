@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/trash"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -27,46 +26,39 @@ import (
 )
 
 func (c Config) registry() (vaultregistry.Ports, error) {
-	return vaultRegistry(vaultOf(c))
+	return vaultRegistry(c.RegistryPath)
 }
 
 // AddVault registers a new vault in the registry with the given root path and name.
-func (c Config) AddVault(root, name string) (domain.Vault, error) {
+func (c Config) AddVault(host *PluginHost, res *Resources, root, name string) (domain.Vault, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	return addVault(vaultOf(c), ports, root, name)
+	return addVault(vaultOf(c, host, res), ports, root, name)
 }
 
 // EnsureVault has the folder at root on the list of vaults and returns its vault. A folder that is on the list is
 // returned as it is; otherwise it is added under name, and it is recorded as the vault opened last when
 // isRecordedOpened is set.
-func (c Config) EnsureVault(root, name string, isRecordedOpened bool) (domain.Vault, error) {
+func (c Config) EnsureVault(host *PluginHost, res *Resources, root, name string, isRecordedOpened bool) (domain.Vault, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	return ensureVault(vaultOf(c), ports, vaultregistry.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
+	return ensureVault(vaultOf(c, host, res), ports, vaultregistry.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
 }
 
 // OpenIndex opens the cache. The caller closes it.
-func OpenIndex(c Config, ctx context.Context) (*Index, error) {
-	return openIndex(vaultOf(c), ctx)
+func OpenIndex(c Config, res *Resources, ctx context.Context) (*Index, error) {
+	timer := GetClock(res)
+	record := openRecordLog(c.IndexPath, getLogEntries(res), res.settingsFiles.GetLogLevel, timer)
+	return openIndexAt(ctx, c.IndexPath, index.WithQueryLog(timer, recordLogFunc(record, res.ErrorHandler)))
 }
 
 // Queries builds everything that answers a question about the notes of a vault.
 func Queries(db *Index) query.UseCases {
 	return vaultQueries(db)
-}
-
-// GetRefresh brings named notes up to date in the index, over the notes of the cache.
-func GetRefresh(c Config, db *Index) vault.Refresh {
-	return makeRefresh(c, db, db.Notes())
-}
-
-func makeRefresh(c Config, db *Index, notes noteport.NoteRepository) vault.Refresh {
-	return vaultMakeRefresh(vaultOf(c), db, notes)
 }
 
 // vaultWiring wires vaults, opening, notes, text versions, index and open vaults.
@@ -88,8 +80,8 @@ type vaultWiring struct {
 	RecordLog    index.QueryLogFunc
 }
 
-func vaultRegistry(c vaultWiring) (vaultregistry.Ports, error) {
-	list, err := openRegistry(c)
+func vaultRegistry(path string) (vaultregistry.Ports, error) {
+	list, err := openRegistry(path)
 	if err != nil {
 		return vaultregistry.Ports{}, err
 	}
@@ -98,9 +90,9 @@ func vaultRegistry(c vaultWiring) (vaultregistry.Ports, error) {
 	}, nil
 }
 
-func openRegistry(c vaultWiring) (*appstate.VaultRegistry, error) {
-	if c.RegistryPath != "" {
-		return appstate.OpenAt(c.RegistryPath), nil
+func openRegistry(path string) (*appstate.VaultRegistry, error) {
+	if path != "" {
+		return appstate.OpenAt(path), nil
 	}
 	return appstate.Open()
 }

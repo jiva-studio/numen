@@ -79,16 +79,14 @@ func newTalkVault(t *testing.T) domain.Vault {
 
 func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 	v := newTalkVault(t)
-	cfg := NewConfig(Config{
-		Paths: Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-	})
-	db, err := openIndex(vaultOf(cfg), t.Context())
+	cfg := NewTestInstallation(Config{Paths: Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")}}, nil)
+	db, err := openIndex(cfg.buildVaultWiring(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions := newTextVersions(vaultOf(cfg), db)
-	a := assemble(cfg, versions)
+	versions := newTextVersions(cfg.buildVaultWiring(), db)
+	a := assemble(cfg.Config, cfg.PluginHost, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 
 	readIntoIndex(t, a, db, v)
@@ -104,10 +102,8 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	v := newTalkVault(t)
 	path := filepath.Join(t.TempDir(), "index.db")
-	cfg := NewConfig(Config{
-		Paths: Paths{IndexPath: path},
-	})
-	db, err := openIndex(vaultOf(cfg), t.Context())
+	cfg := NewTestInstallation(Config{Paths: Paths{IndexPath: path}}, nil)
+	db, err := openIndex(cfg.buildVaultWiring(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,13 +113,13 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	}
 
 	cfg.ShouldRebuildIndex = true
-	db, err = openIndex(vaultOf(cfg), t.Context())
+	db, err = openIndex(cfg.buildVaultWiring(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions := newTextVersions(vaultOf(cfg), db)
-	a := assemble(cfg, versions)
+	versions := newTextVersions(cfg.buildVaultWiring(), db)
+	a := assemble(cfg.Config, cfg.PluginHost, cfg.Resources, versions)
 	readIntoIndex(t, a, db, v)
 	if _, err := db.VectorIndex().DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
 		t.Fatal(err)
@@ -147,16 +143,14 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 
 func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	v := newTalkVault(t)
-	cfg := NewConfig(Config{
-		Paths: Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-	})
-	db, err := openIndex(vaultOf(cfg), t.Context())
+	cfg := NewTestInstallation(Config{Paths: Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")}}, nil)
+	db, err := openIndex(cfg.buildVaultWiring(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions := newTextVersions(vaultOf(cfg), db)
-	a := assemble(cfg, versions)
+	versions := newTextVersions(cfg.buildVaultWiring(), db)
+	a := assemble(cfg.Config, cfg.PluginHost, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, a, db, v)
 
@@ -185,16 +179,14 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 func newTalkIndex(t *testing.T) (pluginsWiring, *Index, domain.Vault, domain.TextVersion) {
 	t.Helper()
 	v := newTalkVault(t)
-	cfg := NewConfig(Config{
-		Paths: Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-	})
-	db, err := openIndex(vaultOf(cfg), t.Context())
+	cfg := NewTestInstallation(Config{Paths: Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")}}, nil)
+	db, err := openIndex(cfg.buildVaultWiring(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions := newTextVersions(vaultOf(cfg), db)
-	a := assemble(cfg, versions)
+	versions := newTextVersions(cfg.buildVaultWiring(), db)
+	a := assemble(cfg.Config, cfg.PluginHost, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, a, db, v)
 	return a, db, v, version
@@ -346,15 +338,13 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	v := newTalkVault(t)
 	path := filepath.Join(t.TempDir(), "index.db")
-	cfg := NewConfig(Config{
-		Paths: Paths{IndexPath: path},
-	})
-	db, err := openIndex(vaultOf(cfg), t.Context())
+	cfg := NewTestInstallation(Config{Paths: Paths{IndexPath: path}}, nil)
+	db, err := openIndex(cfg.buildVaultWiring(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	texts := newTextVersions(vaultOf(cfg), db)
-	a := assemble(cfg, texts)
+	texts := newTextVersions(cfg.buildVaultWiring(), db)
+	a := assemble(cfg.Config, cfg.PluginHost, cfg.Resources, texts)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, a, db, v)
 	if err := db.Close(); err != nil {
@@ -365,13 +355,13 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db, err = openIndex(vaultOf(cfg), t.Context())
+	db, err = openIndex(cfg.buildVaultWiring(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	texts = newTextVersions(vaultOf(cfg), db)
-	a = assemble(cfg, texts)
+	texts = newTextVersions(cfg.buildVaultWiring(), db)
+	a = assemble(cfg.Config, cfg.PluginHost, cfg.Resources, texts)
 	readIntoIndex(t, a, db, v)
 
 	raw, err := os.ReadFile(filepath.Join(v.Path, renamed))

@@ -30,7 +30,7 @@ const importerManifest = `{
 	]
 }`
 
-func installationWith(t *testing.T, content string) (container.Config, string) {
+func installationWith(t *testing.T, content string) (container.TestInstallation, string) {
 	t.Helper()
 	plugins := t.TempDir()
 	dir := filepath.Join(plugins, importerID)
@@ -48,10 +48,9 @@ func installationWith(t *testing.T, content string) (container.Config, string) {
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	return container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost(host),
-		Paths:      container.Paths{SettingsPath: path},
-	}), path
+	return container.NewTestInstallation(container.Config{
+		Paths: container.Paths{SettingsPath: path},
+	}, container.AdaptPluginHost(host)), path
 }
 
 func countNotices(notices []string, words ...string) int {

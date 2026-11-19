@@ -23,12 +23,12 @@ func registerDebugFlags(fs *flag.FlagSet, opts *debugOptions) {
 	fs.StringVar(&opts.vaultPath, "debug-vault", "", "put this folder in the list of vaults before the window opens")
 }
 
-func (d debugOptions) registerVault(cfg container.Config) error {
-	return debugserve.RegisterVault(cfg, d.vaultPath)
+func (d debugOptions) registerVault(cfg container.Config, host *container.PluginHost, res *container.Resources) error {
+	return debugserve.RegisterVault(cfg, host, res, d.vaultPath)
 }
 
 func (d debugOptions) isServingHTTP() bool { return d.httpAddr != "" }
 
-func (d debugOptions) serveHTTP(ctx context.Context, cfg container.Config, handler http.Handler) error {
-	return debugserve.Serve(ctx, cfg.Clock(), d.httpAddr, handler, os.Stdout)
+func (d debugOptions) serveHTTP(ctx context.Context, res *container.Resources, handler http.Handler) error {
+	return debugserve.Serve(ctx, container.GetClock(res), d.httpAddr, handler, os.Stdout)
 }
