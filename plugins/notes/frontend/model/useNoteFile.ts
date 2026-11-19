@@ -52,7 +52,7 @@ export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'writ
     isLoading,
     updateBody: (text: string) => {
       body.value = text
-      void save()
+      return save()
     },
     save,
   }
