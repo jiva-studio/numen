@@ -15,11 +15,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -221,15 +223,15 @@ func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoin
 			TextReaders:        textReaders,
 			ErrorHandler:       getErrorHandler(c.IndexPath, res),
 		},
-		source: sourceBinding{
+		source: sourcebridge.Binding{
 			Activator: running.Runtime.Activator,
-			Plugins: sourcePlugins{
+			Plugins: sourcebridge.PluginAccess{
 				PluginResolver: running.Runtime.PluginResolver,
 				ConfigWatcher:  running.Runtime.ConfigWatcher,
 			},
 			Descriptions: endpoints.SourceDescriptions,
-			Health:       exec.Health,
-			Chunks:       res.Chunks,
+			ReportRead:   pluginhealth.NewReportSearchSource(exec.Health).Execute,
+			Follow:       res.Chunks.Follow,
 		},
 		vault: vaultWith(res, base, settings, chunks),
 	}

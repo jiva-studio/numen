@@ -3,6 +3,8 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
@@ -53,13 +55,14 @@ func (c TestInstallation) CutNotes() chunking.CutNotes {
 }
 
 func (c TestInstallation) Embedder(ctx context.Context) (searchsourceport.WatchedSource, func() error, error) {
-	return searchSource(c.buildPluginWiring().source, ctx)
+	return c.buildPluginWiring().source.Open(ctx)
 }
 
 func (c TestInstallation) EmbedderReady() bool { return embedderReady(c.buildPluginWiring().source) }
 
 func (c TestInstallation) Embedders(ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
-	return searchSources(c.buildPluginWiring().source, ctx)
+	source, closer, err := c.buildPluginWiring().source.OpenWatching(ctx)
+	return source, source, closer, err
 }
 
 func (c TestInstallation) NewSearchOver(queries sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
@@ -99,7 +102,7 @@ func NotesShowingMoves(
 
 func GetNoteChanges(notes NoteUseCases) hostvault.NoteChanges { return getNoteChanges(notes) }
 
-func embedderReady(c sourceBinding) bool {
+func embedderReady(c sourcebridge.Binding) bool {
 	_, err := c.Plugins.ResolveCapability(bridge.CapabilitySearchSource)
 	return err == nil
 }

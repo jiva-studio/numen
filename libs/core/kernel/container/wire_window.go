@@ -139,7 +139,7 @@ func buildWindow(
 	// compiled behind this, so the window is drawn while it arrives. A source that cannot describe itself
 	// yet is opened all the same: the search item of its plugin shows why, and the source joins search and
 	// indexing once a configuration of its plugin lets it describe itself.
-	embedder, asking, closeEmbedder, why := searchSources(a.source, ctx)
+	embedder, closeEmbedder, why := a.source.OpenWatching(ctx)
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(a, event) })
 	state.SetIndexing(embedding)
@@ -172,7 +172,7 @@ func buildWindow(
 	kinds := newTabKinds(a, db)
 	return windowBuilt{
 		wiring: &windowWiring{
-			logEntries: entries, a: a, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
+			logEntries: entries, a: a, ports: ports, db: db, embedder: embedder, asking: embedder, inst: inst, state: state,
 			kinds: kinds, server: newFileServer(a, state, cases), switching: session.userSwitch, cases: cases,
 			tasks: tasks, generations: generations,
 		},

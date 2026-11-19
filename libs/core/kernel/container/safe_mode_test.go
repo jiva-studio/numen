@@ -37,7 +37,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		if embedderReady(cfg.buildPluginWiring().source) {
 			t.Fatal("expected EmbedderReady to report false in safe mode")
 		}
-		indexing, asking, closer, err := searchSources(cfg.buildPluginWiring().source, ctx)
+		indexing, asking, closer, err := cfg.Embedders(ctx)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedders in safe mode, got %v", err)
 		}
@@ -48,7 +48,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		embedder, closer, err := searchSource(cfg.buildPluginWiring().source, ctx)
+		embedder, closer, err := cfg.Embedder(ctx)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedder in safe mode, got %v", err)
 		}

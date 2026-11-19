@@ -5,6 +5,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
@@ -54,7 +56,7 @@ type pluginsWiring struct {
 	settings settingsWiring
 	search   textSearch
 	indexing vaultIndexPlan
-	source   sourceBinding
+	source   sourcebridge.Binding
 	vault    vaultWiring
 }
 

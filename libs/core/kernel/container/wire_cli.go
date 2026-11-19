@@ -150,7 +150,7 @@ func reportSearchFallback(errorHandler window.ErrorHandler, err error) {
 }
 
 func openCLIEmbedder(r *cliRun, a pluginsWiring, ctx context.Context) (searchsourceport.Source, error) {
-	embedder, closeEmbedder, why := searchSource(a.source, ctx)
+	embedder, closeEmbedder, why := a.source.Open(ctx)
 	if closeEmbedder != nil {
 		r.closers = append(r.closers, closeEmbedder)
 	}
