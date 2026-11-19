@@ -105,14 +105,14 @@ func (h *fakeChangeHub) Subscribe() (<-chan struct{}, func()) {
 }
 
 type fakeValidator struct {
-	mu             sync.Mutex
-	activateCalls  int
-	validateCalls  int
-	deactivateErr  error
-	activateResult licenseport.ActivationResult
-	activateErr    error
-	validateResult licenseport.ValidationResult
-	validateErr    error
+	mu              sync.Mutex
+	activateCalls   int
+	validateCalls   int
+	deactivateErr   error
+	activateResult  licenseport.ActivationResult
+	activateErr     error
+	validateResult  licenseport.ValidationResult
+	validateErr     error
 	validateStarted chan struct{}
 	validateRelease chan struct{}
 }

@@ -189,7 +189,6 @@ enum PluginContributionKind {
   PLUGIN_CONTRIBUTION_KIND_SERVICES = 19;
   PLUGIN_CONTRIBUTION_KIND_CAPABILITIES = 20;
   PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS = 21;
-  PLUGIN_CONTRIBUTION_KIND_LICENSES = 22;
 }
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.
