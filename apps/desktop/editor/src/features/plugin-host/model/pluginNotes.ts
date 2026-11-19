@@ -14,7 +14,7 @@ export interface PluginNotesDeps {
   readonly write: (
     path: string,
     body: string,
-    baseline: { prose: string; stat: string } | null,
+    baseline: { prose: string; stat: string; mustExist?: boolean } | null,
   ) => Promise<WriteResult>
 }
 
@@ -90,7 +90,11 @@ export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
   const writeIfUnchanged: PluginNotes['writeIfUnchanged'] = (path, body, observed) => {
     queued.delete(path)
     return enqueue(path, async () => {
-      const reply = await deps.write(path, body, { prose: observed.body, stat: observed.at })
+      const reply = await deps.write(path, body, {
+        prose: observed.body,
+        stat: observed.at,
+        mustExist: true,
+      })
       if (!reply.ok && reply.error === 'changed')
         throw new Error('The note changed on disk. Reopen it before saving.')
       if (!reply.ok || !reply.value.at) throw new Error(NOT_WRITTEN)

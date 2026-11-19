@@ -112,6 +112,24 @@ func TestASaveRemakesANoteDeletedBelowIt(t *testing.T) {
 	}
 }
 
+func TestAConditionalSavePreservesAnExternalDeletion(t *testing.T) {
+	t.Parallel()
+	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
+	baseline := c.openNote(t, "Entropy.md")
+	baseline.MustExist = true
+	path := filepath.Join(c.vault.Path, "Entropy.md")
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", "Draft", baseline); !errors.Is(err, edit.ErrStale) {
+		t.Fatalf("save returned %v, want a conflict", err)
+	}
+	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("stat after save returned %v, want a missing file", err)
+	}
+}
+
 // The prose the tab read is absent from the file, so the save stops and requests
 // a decision from the user. Nothing is saved.
 func TestASaveOverProseTheTabNeverReadIsStopped(t *testing.T) {

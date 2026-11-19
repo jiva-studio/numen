@@ -288,7 +288,7 @@ func newBaseline(baseline *v1.ReadBaseline) *edit.Baseline {
 	if baseline == nil {
 		return nil
 	}
-	return &edit.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt())}
+	return &edit.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt()), MustExist: baseline.GetMustExist()}
 }
 
 func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {

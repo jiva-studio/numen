@@ -1346,7 +1346,9 @@ type ReadBaseline struct {
 	// it.
 	Prose string `protobuf:"bytes,1,opt,name=prose,proto3" json:"prose,omitempty"`
 	// The file the prose came out of.
-	At            *FileStat `protobuf:"bytes,2,opt,name=at,proto3" json:"at,omitempty"`
+	At *FileStat `protobuf:"bytes,2,opt,name=at,proto3" json:"at,omitempty"`
+	// A save of an existing note reports a conflict if the file has been removed.
+	MustExist     bool `protobuf:"varint,3,opt,name=must_exist,json=mustExist,proto3" json:"must_exist,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1393,6 +1395,13 @@ func (x *ReadBaseline) GetAt() *FileStat {
 		return x.At
 	}
 	return nil
+}
+
+func (x *ReadBaseline) GetMustExist() bool {
+	if x != nil {
+		return x.MustExist
+	}
+	return false
 }
 
 type WriteNoteRequest struct {
@@ -3152,10 +3161,12 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12'\n" +
 	"\x02at\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x01R\x02at\x88\x01\x01B\b\n" +
 	"\x06_errorB\x05\n" +
-	"\x03_at\"H\n" +
+	"\x03_at\"g\n" +
 	"\fReadBaseline\x12\x14\n" +
 	"\x05prose\x18\x01 \x01(\tR\x05prose\x12\"\n" +
-	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\x02at\"\x80\x01\n" +
+	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\x02at\x12\x1d\n" +
+	"\n" +
+	"must_exist\x18\x03 \x01(\bR\tmustExist\"\x80\x01\n" +
 	"\x10WriteNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x127\n" +
