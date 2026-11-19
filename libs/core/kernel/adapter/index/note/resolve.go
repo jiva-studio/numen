@@ -200,9 +200,9 @@ func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.Reso
 	if err := r.prefetchIdentifiers(ctx, links); err != nil {
 		return err
 	}
-	requested := r.getRequestedNames(links)
+	requested := getRequestedNames(links, r.named)
 	r.cache.copyNamedInto(r.vaultID, requested, r.named)
-	missing := r.getMissingNames(requested)
+	missing := getMissingNames(requested, r.named)
 	if len(missing) == 0 {
 		return nil
 	}
@@ -213,7 +213,7 @@ func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.Reso
 	return r.readCandidateNames(ctx, missing)
 }
 
-func (r *resolution) getRequestedNames(links []domain.ResolvedLink) []string {
+func getRequestedNames(links []domain.ResolvedLink, named map[string][]string) []string {
 	var requested []string
 	seen := map[string]bool{}
 	for _, l := range links {
@@ -221,7 +221,7 @@ func (r *resolution) getRequestedNames(links []domain.ResolvedLink) []string {
 			continue
 		}
 		name := l.Target.Value
-		if _, ok := r.named[name]; !ok && !seen[name] {
+		if _, ok := named[name]; !ok && !seen[name] {
 			seen[name] = true
 			requested = append(requested, name)
 		}
@@ -229,10 +229,10 @@ func (r *resolution) getRequestedNames(links []domain.ResolvedLink) []string {
 	return requested
 }
 
-func (r *resolution) getMissingNames(requested []string) []string {
+func getMissingNames(requested []string, named map[string][]string) []string {
 	var missing []string
 	for _, name := range requested {
-		if _, ok := r.named[name]; !ok {
+		if _, ok := named[name]; !ok {
 			missing = append(missing, name)
 		}
 	}
@@ -240,7 +240,7 @@ func (r *resolution) getMissingNames(requested []string) []string {
 }
 
 func (r *resolution) readCandidateNames(ctx context.Context, missing []string) (err error) {
-	candidates := r.createCandidateNames(missing)
+	candidates := createCandidateNames(missing, r.named)
 	pathsJSON, err := json.Marshal(candidates.paths)
 	if err != nil {
 		return err
@@ -257,7 +257,7 @@ func (r *resolution) readCandidateNames(ctx context.Context, missing []string) (
 	}
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
-	if err := r.appendCandidateNames(rows, candidates); err != nil {
+	if err := appendCandidateNames(rows, candidates, r.named); err != nil {
 		return err
 	}
 	r.cache.setNamed(r.generation, r.vaultID, missing, r.named)
@@ -271,13 +271,13 @@ type candidateNames struct {
 	byBase map[string][]string
 }
 
-func (r *resolution) createCandidateNames(missing []string) candidateNames {
+func createCandidateNames(missing []string, named map[string][]string) candidateNames {
 	candidates := candidateNames{
 		paths: make([]string, 0, len(missing)*2), bases: make([]string, 0, len(missing)),
 		byPath: make(map[string][]string, len(missing)*2), byBase: make(map[string][]string, len(missing)),
 	}
 	for _, name := range missing {
-		r.named[name] = nil
+		named[name] = nil
 		candidates.add(name)
 	}
 	return candidates
@@ -295,24 +295,24 @@ func (c *candidateNames) add(name string) {
 	c.byBase[base] = append(c.byBase[base], name)
 }
 
-func (r *resolution) appendCandidateNames(rows *sql.Rows, candidates candidateNames) error {
+func appendCandidateNames(rows *sql.Rows, candidates candidateNames, named map[string][]string) error {
 	for rows.Next() {
 		var path, folded string
 		if err := rows.Scan(&path, &folded); err != nil {
 			return err
 		}
-		r.appendCandidatePath(path, folded, candidates)
+		appendCandidatePath(path, folded, candidates, named)
 	}
 	return rows.Err()
 }
 
-func (r *resolution) appendCandidatePath(path, folded string, candidates candidateNames) {
+func appendCandidatePath(path, folded string, candidates candidateNames, named map[string][]string) {
 	for _, name := range candidates.byPath[path] {
-		r.named[name] = append(r.named[name], path)
+		named[name] = append(named[name], path)
 	}
 	for _, name := range candidates.byBase[folded] {
 		if path != name && path != name+domain.NoteExtension {
-			r.named[name] = append(r.named[name], path)
+			named[name] = append(named[name], path)
 		}
 	}
 }
