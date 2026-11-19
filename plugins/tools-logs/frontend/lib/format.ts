@@ -2,7 +2,9 @@
  * Pure formatting and filtering helpers for structured log entries: timestamp formatting, SQL
  * query pretty-printing, JSON property formatting, key extraction, and level/message filtering.
  */
+import type { JsonValue } from '@numen/plugin-sdk'
 import type { FormattedProperty, LevelFilter, LogEntry, LogRow } from '../types'
+import { tokenizeJson, tokenizeSql } from './tokenize'
 
 const pad2 = (n: number): string => String(n).padStart(2, '0')
 const pad3 = (n: number): string => String(n).padStart(3, '0')
@@ -42,19 +44,38 @@ const MAJOR_SQL_CLAUSES = [
 
 const MINOR_SQL_CLAUSES = ['AND', 'OR']
 
-const MAJOR_SQL_PATTERN = new RegExp(
-  `\\b(${MAJOR_SQL_CLAUSES.map((clause) => clause.replace(/ /g, '\\s+')).join('|')})\\b`,
+const SQL_CLAUSE_TOKEN = new RegExp(
+  `'[^']*'|"(?:""|[^"])*"|[()]|\\b(?:${[...MAJOR_SQL_CLAUSES, ...MINOR_SQL_CLAUSES]
+    .map((clause) => clause.replace(/ /g, '\\s+'))
+    .join('|')})\\b`,
   'gi',
 )
 
-const MINOR_SQL_PATTERN = new RegExp(`\\b(${MINOR_SQL_CLAUSES.join('|')})\\b`, 'gi')
-
-function formatSql(rawSql: string): string {
-  const collapsed = rawSql.replace(/\s+/g, ' ').trim()
+function formatSqlStatement(statement: string): string {
+  const collapsed = statement.replace(/\s+/g, ' ').trim()
   if (!collapsed) return ''
-  const result = collapsed
-    .replace(MAJOR_SQL_PATTERN, (match) => `\n${match.replace(/\s+/g, ' ').toUpperCase()}`)
-    .replace(MINOR_SQL_PATTERN, (match) => `\n  ${match.toUpperCase()}`)
+  let depth = 0
+  const result = collapsed.replace(SQL_CLAUSE_TOKEN, (match) => {
+    if (match === '(') {
+      depth += 1
+      return match
+    }
+    if (match === ')') {
+      depth = Math.max(0, depth - 1)
+      return match
+    }
+    if (match.startsWith("'") || match.startsWith('"')) {
+      return match
+    }
+    const upper = match.replace(/\s+/g, ' ').toUpperCase()
+    if (depth > 0) {
+      return upper
+    }
+    if (MINOR_SQL_CLAUSES.includes(upper)) {
+      return `\n  ${upper}`
+    }
+    return `\n${upper}`
+  })
   return result
     .split('\n')
     .map((line) => line.trimEnd())
@@ -62,27 +83,151 @@ function formatSql(rawSql: string): string {
     .join('\n')
 }
 
+function formatSql(rawSql: string): string {
+  const bodyLines: string[] = []
+  for (const line of rawSql.split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('--')) continue
+    bodyLines.push(trimmed)
+  }
+  return formatSqlStatement(bodyLines.join(' '))
+}
+
 function parseJsonString(
   raw: string,
-):
-  | { readonly ok: true; readonly parsed: string | number | boolean | object | null }
-  | { readonly ok: false } {
+): { readonly ok: true; readonly parsed: JsonValue } | { readonly ok: false } {
   try {
-    return { ok: true, parsed: JSON.parse(raw) as string | number | boolean | object | null }
+    return { ok: true, parsed: JSON.parse(raw) as JsonValue }
   } catch {
     return { ok: false }
   }
 }
 
+function createSqlProperty(key: string, rawSql: string): FormattedProperty {
+  const display = formatSql(rawSql)
+  return { key, kind: 'sql', display, tokens: tokenizeSql(display) }
+}
+
+function tryParseNestedJson(value: JsonValue): JsonValue {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (
+      (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+      (trimmed.startsWith('[') && trimmed.endsWith(']'))
+    ) {
+      const nested = parseJsonString(trimmed)
+      if (nested.ok && typeof nested.parsed === 'object' && nested.parsed !== null) {
+        return unwrapNestedJson(nested.parsed)
+      }
+    }
+    return value
+  }
+  return unwrapNestedJson(value)
+}
+
+function unwrapNestedJson(value: JsonValue): JsonValue {
+  if (Array.isArray(value)) {
+    return value.map((item) => tryParseNestedJson(item))
+  }
+  if (typeof value === 'object' && value !== null) {
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, tryParseNestedJson(v as JsonValue)]),
+    )
+  }
+  return value
+}
+
+function createJsonProperty(key: string, value: JsonValue): FormattedProperty {
+  const unwrapped = unwrapNestedJson(value)
+  const display = JSON.stringify(unwrapped, null, 2)
+  return { key, kind: 'json', display, tokens: tokenizeJson(display) }
+}
+
+function createScalarProperty(key: string, display: string): FormattedProperty {
+  return { key, kind: 'scalar', display, tokens: [] }
+}
+
+const TRUNCATED_SUFFIX = '... [truncated]'
+
+function looksLikeTruncatedJson(text: string): boolean {
+  const trimmed = text.trimStart()
+  return (trimmed.startsWith('{') || trimmed.startsWith('[')) && trimmed.endsWith(TRUNCATED_SUFFIX)
+}
+
+function stepInString(
+  ch: string,
+  escaped: boolean,
+): { readonly inString: boolean; readonly escaped: boolean } {
+  if (escaped) return { inString: true, escaped: false }
+  if (ch === '\\') return { inString: true, escaped: true }
+  return { inString: ch !== '"', escaped: false }
+}
+
+function appendJsonStructureChar(out: string[], ch: string, indent: number): number {
+  if (ch === '{' || ch === '[') {
+    const next = indent + 1
+    out.push(ch, '\n', '  '.repeat(next))
+    return next
+  }
+  if (ch === '}' || ch === ']') {
+    const next = Math.max(0, indent - 1)
+    out.push('\n', '  '.repeat(next), ch)
+    return next
+  }
+  if (ch === ',') {
+    out.push(',\n', '  '.repeat(indent))
+    return indent
+  }
+  if (ch === ':') {
+    out.push(': ')
+    return indent
+  }
+  if (!/\s/.test(ch)) {
+    out.push(ch)
+  }
+  return indent
+}
+
+function formatTruncatedJson(raw: string): string {
+  const out: string[] = []
+  let indent = 0
+  let inString = false
+  let escaped = false
+  for (const ch of raw) {
+    if (inString) {
+      out.push(ch)
+      const next = stepInString(ch, escaped)
+      inString = next.inString
+      escaped = next.escaped
+      continue
+    }
+    if (ch === '"') {
+      inString = true
+      out.push(ch)
+      continue
+    }
+    indent = appendJsonStructureChar(out, ch, indent)
+  }
+  return out.join('')
+}
+
+function createTruncatedJsonProperty(key: string, raw: string): FormattedProperty {
+  const display = formatTruncatedJson(raw)
+  return { key, kind: 'json', display, tokens: tokenizeJson(display) }
+}
+
 function formatStringValue(key: string, text: string): FormattedProperty {
   if (key.toLowerCase() === 'sql') {
-    return { key, kind: 'sql', display: formatSql(text) }
+    return createSqlProperty(key, text)
   }
   const nested = parseJsonString(text)
   if (nested.ok && typeof nested.parsed === 'object' && nested.parsed !== null) {
-    return { key, kind: 'json', display: JSON.stringify(nested.parsed, null, 2) }
+    return createJsonProperty(key, nested.parsed)
   }
-  return { key, kind: 'scalar', display: text }
+  if (looksLikeTruncatedJson(text)) {
+    return createTruncatedJsonProperty(key, text)
+  }
+  return createScalarProperty(key, text)
 }
 
 function formatProperty(key: string, rawJson: string): FormattedProperty {
@@ -95,9 +240,9 @@ function formatProperty(key: string, rawJson: string): FormattedProperty {
     return formatStringValue(key, parsed)
   }
   if (typeof parsed === 'object' && parsed !== null) {
-    return { key, kind: 'json', display: JSON.stringify(parsed, null, 2) }
+    return createJsonProperty(key, parsed)
   }
-  return { key, kind: 'scalar', display: String(parsed) }
+  return createScalarProperty(key, String(parsed))
 }
 
 /** Formats all properties of an entry in alphabetical key order. */
@@ -134,6 +279,5 @@ export function createLogRow(id: number, entry: LogEntry): LogRow {
     id,
     entry,
     timeText: formatTimestamp(entry.time),
-    keys: getPropertyKeys(entry.properties),
   }
 }

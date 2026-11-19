@@ -170,5 +170,11 @@ func truncatePropertyValue(val string) string {
 		return trimmed
 	}
 	prefix := trimmed[:MaxPropertyBytes]
+	if strings.HasPrefix(prefix, `"`) {
+		if unquoted, err := strconv.Unquote(prefix + `"`); err == nil {
+			return strconv.Quote(unquoted + "... [truncated]")
+		}
+		prefix = strings.TrimPrefix(prefix, `"`)
+	}
 	return strconv.Quote(prefix + "... [truncated]")
 }

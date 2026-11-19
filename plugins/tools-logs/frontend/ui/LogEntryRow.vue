@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * One row in the Logs viewer: collapsed summary showing timestamp, severity badge, source, message
- * and property key chips; clicking expands the row to display formatted SQL and JSON properties.
+ * One row in the Logs viewer: collapsed summary showing timestamp, severity badge and message;
+ * clicking expands the row to display source, formatted SQL and JSON properties.
  */
 import { computed } from 'vue'
 import { formatEntryProperties } from '../lib/format'
@@ -21,7 +21,12 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const formattedProperties = computed(() =>
-  props.isExpanded ? formatEntryProperties(props.row.entry.properties) : [],
+  props.isExpanded
+    ? formatEntryProperties({
+        source: JSON.stringify(props.row.entry.source),
+        ...props.row.entry.properties,
+      })
+    : [],
 )
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -34,14 +39,13 @@ function onToggle() {
   <li class="log-row" :class="`log-row--${row.entry.level}`">
     <button type="button" class="log-row__summary" :aria-expanded="isExpanded" @click="onToggle">
       <span class="log-row__time">{{ row.timeText }}</span>
-      <span class="log-row__level" :class="`log-row__level--${row.entry.level}`">
-        {{ row.entry.level }}
-      </span>
-      <span class="log-row__source">{{ row.entry.source }}</span>
       <span class="log-row__message">{{ row.entry.message }}</span>
-      <span v-if="row.keys.length > 0" class="log-row__keys">
-        <span v-for="key in row.keys" :key="key" class="log-row__key-chip">{{ key }}</span>
-      </span>
+      <span
+        class="log-row__dot"
+        :class="`log-row__dot--${row.entry.level}`"
+        :title="row.entry.level"
+        :aria-label="row.entry.level"
+      />
     </button>
 
     <div v-if="isExpanded" class="log-row__details">
@@ -60,7 +64,11 @@ function onToggle() {
             <pre
               v-if="prop.kind === 'sql' || prop.kind === 'json'"
               class="log-row__code"
-            ><code>{{ prop.display }}</code></pre>
+            ><code><span
+                v-for="(tok, idx) in prop.tokens"
+                :key="idx"
+                :class="`log-row__token--${tok.kind}`"
+              >{{ tok.text }}</span></code></pre>
             <span v-else class="log-row__scalar">{{ prop.display }}</span>
           </dd>
         </div>

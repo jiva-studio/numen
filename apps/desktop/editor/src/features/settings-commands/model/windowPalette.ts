@@ -50,14 +50,18 @@ export function createWindowSettingPalette(deps: {
   words: SettingWords
 }) {
   const { rest, appearance, words } = deps
+  const isPluginEnabled = (pluginId: string): boolean =>
+    rest.read.getCommittedSetting([pluginId, 'enabled']) !== false
   return createSettingPalette({
     getOwners: () => [
       { id: APP_OWNER, name: '', settings: rest.state.app.value },
-      ...rest.state.plugins.value.map((one) => ({
-        id: one.id,
-        name: one.name,
-        settings: one.settings,
-      })),
+      ...rest.state.plugins.value
+        .filter((one) => isPluginEnabled(one.id))
+        .map((one) => ({
+          id: one.id,
+          name: one.name,
+          settings: one.settings,
+        })),
     ],
     words,
     preview: createWindowPreview(appearance),

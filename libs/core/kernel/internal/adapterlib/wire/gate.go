@@ -109,13 +109,15 @@ func (t *CallTrace) recordCall(
 	duration := t.clock.Now().Sub(start)
 	service, method := splitProcedure(req.Spec().Procedure)
 	level := getProcedureLevel(method, err)
+	durationMs := strconv.FormatFloat(float64(duration.Microseconds())/1000.0, 'f', -1, 64)
 	props := map[string]string{
 		"service":    strconv.Quote(service),
 		"method":     strconv.Quote(method),
 		"request":    encodeMessageJSON(req.Any()),
-		"durationMs": strconv.FormatFloat(float64(duration.Microseconds())/1000.0, 'f', -1, 64),
+		"durationMs": durationMs,
 	}
-	if caller := describeCaller(plugindomain.GetCaller(ctx)); caller != "" {
+	caller := describeCaller(plugindomain.GetCaller(ctx))
+	if caller != "" {
 		props["caller"] = strconv.Quote(caller)
 	}
 	if err != nil {
@@ -127,9 +129,17 @@ func (t *CallTrace) recordCall(
 		Time:       start,
 		Level:      level,
 		Source:     logs.SourceRPC,
-		Message:    service + "/" + method,
+		Message:    formatRPCMessage(service, method, caller, durationMs),
 		Properties: props,
 	})
+}
+
+func formatRPCMessage(service, method, caller, durationMs string) string {
+	msg := "RPC: " + service + "/" + method
+	if caller != "" {
+		msg += " [" + caller + "]"
+	}
+	return msg + " (" + durationMs + " ms)"
 }
 
 func splitProcedure(procedure string) (service, method string) {
@@ -148,7 +158,10 @@ func getProcedureLevel(method string, err error) logs.Level {
 	if err != nil {
 		return logs.LevelError
 	}
-	for _, prefix := range []string{"Create", "Rename", "Remove", "Delete", "Execute", "Add", "Open", "Move", "Empty", "Update", "Retry", "Install", "Uninstall"} {
+	if method == "WriteOpenTabs" || method == "WriteTabLinks" {
+		return logs.LevelDebug
+	}
+	for _, prefix := range []string{"Create", "Rename", "Remove", "Delete", "Execute", "Run", "Write", "Save", "Join", "Add", "Open", "Move", "Empty", "Update", "Retry", "Install", "Uninstall", "Choose"} {
 		if strings.HasPrefix(method, prefix) {
 			return logs.LevelInfo
 		}

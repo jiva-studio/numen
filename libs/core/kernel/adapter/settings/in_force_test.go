@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	domainsettings "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
@@ -26,7 +27,6 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"naming":{"syncTitleAndFilename":false},
 		"editor":{"fontSize":19,"fontFamily":"serif","lineHeight":2,"lineNumbers":true,"softWrap":false},
 		"performance":{"profile":"eco"},
-		"logging":{"level":"debug"},
 		"search":{"rerankWindow":70,"maxReranked":200,"maxRerankedBytes":2048,"defaultLimit":30,"maxLimit":90,
 			"candidatesPerCondition":250,"maxCandidates":900,"maxPathPrefixes":4,"mergeGapBytes":100,"maxQueryBytes":8192}}}`)
 	want := map[string]any{
@@ -41,7 +41,6 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"editor.lineNumbers":            true,
 		"editor.softWrap":               false,
 		"performance.profile":           "eco",
-		"logging.level":                 "debug",
 		"search.rerankWindow":           70.0,
 		"search.maxReranked":            200.0,
 		"search.maxRerankedBytes":       2048.0,
@@ -58,5 +57,27 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		if got, _ := file.GetValue(path...); got != want[declared.Key] {
 			t.Errorf("%s in force is %v, the file has %v", declared.Key, got, want[declared.Key])
 		}
+	}
+}
+
+func TestLogLevelDependsOnLogsPluginEnabledAndLevel(t *testing.T) {
+	defaultFile := settings.DefaultFile()
+	if got := defaultFile.LogLevel(); got != logs.DefaultLevel {
+		t.Fatalf("default LogLevel = %v, want %v", got, logs.DefaultLevel)
+	}
+
+	disabled := readFileWith(t, `{"md.numen.tools.logs":{"enabled":false,"level":"debug"}}`)
+	if got := disabled.LogLevel(); got != logs.DefaultLevel {
+		t.Fatalf("disabled plugin LogLevel = %v, want %v", got, logs.DefaultLevel)
+	}
+
+	enabledDefault := readFileWith(t, `{"md.numen.tools.logs":{"enabled":true}}`)
+	if got := enabledDefault.LogLevel(); got != logs.DefaultLevel {
+		t.Fatalf("enabled without level LogLevel = %v, want %v", got, logs.DefaultLevel)
+	}
+
+	enabledDebug := readFileWith(t, `{"md.numen.tools.logs":{"enabled":true,"level":"debug"}}`)
+	if got := enabledDebug.LogLevel(); got != logs.LevelDebug {
+		t.Fatalf("enabled debug LogLevel = %v, want %v", got, logs.LevelDebug)
 	}
 }

@@ -244,11 +244,7 @@ func openRecordLogFunc(c Config) func(domainlogs.Entry) {
 func mountLogs(w *windowWiring) {
 	record := openRecordLog(w.cfg)
 	watch := logsusecase.NewWatch(openLogEntries(w.cfg), logfiles.NewBesideIndex(w.cfg.IndexPath), w.cfg.Clock())
-	w.state.SetCallTrace(w.cfg.Clock(), func(entry domainlogs.Entry) {
-		if err := record.Execute(entry); err != nil {
-			handleError(w.cfg, err)
-		}
-	})
+	w.state.SetCallTrace(w.cfg.Clock(), openRecordLogFunc(w.cfg))
 	w.a.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
 		l.Logs = record
 	})
@@ -306,7 +302,7 @@ func newIndexWorker(
 		Source:       embedding.GetSource(),
 		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
 		IndexChanged: indexChanged,
-		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
+		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out, a.vault.RecordLog),
 		Quiet:        indexing.QuietPeriod,
 		After:        a.vault.Clock.After,
 	})

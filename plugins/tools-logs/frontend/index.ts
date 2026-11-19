@@ -3,6 +3,7 @@
  * command.
  */
 import { onScopeDispose } from 'vue'
+import { ScrollText } from '@lucide/vue'
 import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { createLogsView, type LogsView } from './model/logs'
 import LogsTab from './ui/LogsTab.vue'
@@ -19,6 +20,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   plugin.register.tabKind<LogsView>({
     kind: LOGS_KIND,
     title: words.title,
+    icon: ScrollText,
     component: LogsTab,
     isTool: true,
     identity: () => LOGS_KIND,

@@ -18,16 +18,25 @@ const manifest = JSON.parse(
     readonly tabKinds: readonly { readonly kind: string; readonly title: string }[]
     readonly commands: readonly { readonly id: string; readonly title: string }[]
   }
+  readonly settings?: readonly {
+    readonly key: string
+    readonly type: string
+    readonly title: string
+    readonly default: string
+    readonly palette?: boolean
+  }[]
   readonly isOffByDefault?: boolean
   readonly backend?: unknown
 }
 
 describe('the manifest', () => {
-  it('declares the logs tab kind and the logs.open command in the editor', () => {
+  it('declares the logs tab kind, the logs.open command and the level setting in the editor', () => {
     expect(manifest.id).toBe('md.numen.tools.logs')
     expect(manifest.targets).toStrictEqual(['desktop.editor'])
     expect(manifest.contributes.tabKinds.map((one) => one.kind)).toStrictEqual([LOGS_KIND])
     expect(manifest.contributes.commands.map((one) => one.id)).toStrictEqual([OPEN_LOGS_COMMAND])
+    expect(manifest.settings?.map((one) => one.key)).toStrictEqual(['level'])
+    expect(manifest.settings?.[0]?.palette).toBe(true)
   })
 
   it('requests logs:read and vault:read and is off by default', () => {

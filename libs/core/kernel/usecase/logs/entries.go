@@ -50,9 +50,7 @@ func (s *Entries) Watch(ctx context.Context, initial []logs.Entry) <-chan []logs
 	s.mu.Lock()
 	s.waiting = append(s.waiting, watcher)
 	snapshot := mergeInitial(initial, s.items)
-	if len(snapshot) > 0 {
-		watcher <- snapshot
-	}
+	watcher <- snapshot
 	s.mu.Unlock()
 
 	go func() {

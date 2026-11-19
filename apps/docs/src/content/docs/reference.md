@@ -49,12 +49,6 @@ Two things are not settings and are not in here: which files count as notes, and
 | `lineNumbers` | yes or no | number the lines in editors. |
 | `softWrap` | yes or no | wrap long lines in editors instead of scrolling sideways. |
 
-### `app.logging`
-
-| | | |
-| --- | --- | --- |
-| `level` | text | which entries are written to the application log. One of `error`, `warning`, `info`, `debug`. |
-
 ### `app.search`
 
 | | | |
@@ -174,6 +168,14 @@ The settings of the plugin PDF Reader.
 | | | |
 | --- | --- | --- |
 | `defaultZoom` | text | zoom a PDF opens at. One of `page`, `width`, `100%`. |
+
+### `md.numen.tools.logs`
+
+The settings of the plugin Logs.
+
+| | | |
+| --- | --- | --- |
+| `level` | text | which entries are written to the application log. One of `error`, `warning`, `info`, `debug`. |
 
 ### `md.numen.tools.media.importer`
 

@@ -141,7 +141,7 @@ func (c *tracedConn) QueryContext(ctx context.Context, query string, args []driv
 }
 
 func (c *tracedConn) record(start time.Time, query string, args []driver.NamedValue, err error) {
-	cleaned := strings.TrimSpace(query)
+	cleaned := stripSQLComments(query)
 	if cleaned == "" {
 		return
 	}
@@ -167,9 +167,41 @@ func (c *tracedConn) record(start time.Time, query string, args []driver.NamedVa
 		Time:       start,
 		Level:      level,
 		Source:     logs.SourceSQL,
-		Message:    "SQL query",
+		Message:    summarizeSQL(cleaned, duration),
 		Properties: props,
 	})
+}
+
+func stripSQLComments(query string) string {
+	var bodyLines []string
+	for line := range strings.SplitSeq(query, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "--") {
+			continue
+		}
+		bodyLines = append(bodyLines, line)
+	}
+	return strings.TrimSpace(strings.Join(bodyLines, "\n"))
+}
+
+func summarizeSQL(query string, duration time.Duration) string {
+	var bodyLines []string
+	for line := range strings.SplitSeq(query, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "--") {
+			continue
+		}
+		bodyLines = append(bodyLines, trimmed)
+	}
+	summary := strings.Join(bodyLines, " ")
+	if summary == "" {
+		summary = "query"
+	}
+	const maxLen = 72
+	if len(summary) > maxLen {
+		summary = strings.TrimSpace(summary[:maxLen]) + "..."
+	}
+	return fmt.Sprintf("SQL: %s (%s ms)", summary, formatDurationMs(duration))
 }
 
 type tracedStmt struct {

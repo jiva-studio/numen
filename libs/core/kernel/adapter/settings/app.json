@@ -156,37 +156,6 @@
       ]
     },
     {
-      "key": "logging.level",
-      "type": "enum",
-      "title": "Log level",
-      "description": "Which entries are written to the application log.",
-      "default": "info",
-      "palette": true,
-      "icon": "scroll-text",
-      "options": [
-        {
-          "value": "error",
-          "title": "Error",
-          "detail": "Failures of the application, the database and the plugins."
-        },
-        {
-          "value": "warning",
-          "title": "Warning",
-          "detail": "Errors and warnings."
-        },
-        {
-          "value": "info",
-          "title": "Info",
-          "detail": "Errors, warnings and the work of the application and its plugins."
-        },
-        {
-          "value": "debug",
-          "title": "Debug",
-          "detail": "Every entry, with SQL queries and RPC calls."
-        }
-      ]
-    },
-    {
       "key": "search.reranking",
       "type": "connections",
       "title": "Reranking",

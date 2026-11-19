@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -61,14 +62,17 @@ func (h *Handler) WriteLog(
 	return connect.NewResponse(&v1.WriteLogResponse{}), nil
 }
 
-// WatchLogs sends the recent log entries at once and each new batch as entries arrive, until the
-// caller disconnects.
+// WatchLogs sends the recent log entries at once, each new batch as entries arrive, and a heartbeat
+// every wire.ResendInterval until the caller disconnects.
 func (h *Handler) WatchLogs(
 	ctx context.Context, _ *connect.Request[v1.WatchLogsRequest], out *connect.ServerStream[v1.WatchLogsResponse],
 ) error {
 	watching, stop := context.WithCancel(ctx)
 	defer stop()
 	watch := h.watcher.Execute(watching)
+	repeat := time.NewTicker(wire.ResendInterval)
+	defer repeat.Stop()
+
 	for {
 		select {
 		case batch, isOpen := <-watch:
@@ -76,6 +80,11 @@ func (h *Handler) WatchLogs(
 				return nil
 			}
 			if err := out.Send(&v1.WatchLogsResponse{Entries: wire.DescribeLogEntries(batch)}); err != nil {
+				return err
+			}
+			repeat.Reset(wire.ResendInterval)
+		case <-repeat.C:
+			if err := out.Send(&v1.WatchLogsResponse{}); err != nil {
 				return err
 			}
 		case <-ctx.Done():
