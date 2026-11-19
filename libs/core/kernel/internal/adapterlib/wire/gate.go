@@ -70,7 +70,7 @@ func (g *Gate) FinishQuestion() { g.questions.finish() }
 
 // CountQuestions counts each call to a service among the questions the window
 // is answering, refuses it once the window is shut, and records a structured log entry when a
-// CallTrace is attached.
+// call tracing is enabled.
 func (g *Gate) CountQuestions() connect.HandlerOption {
 	return connect.WithInterceptors(connect.UnaryInterceptorFunc(
 		func(next connect.UnaryFunc) connect.UnaryFunc {

@@ -2,28 +2,25 @@ package container
 
 import (
 	"context"
-	"io"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
-	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // windowParts are what the use cases of one window are built over besides its state.
 type windowParts struct {
-	indexer       *indexing.Worker
-	embedding     *indexing.Embedding
-	passes        windowsession.VaultPassesFunc
+	indexer   *indexing.Worker
+	embedding *indexing.Embedding
+
 	recordOpen    vault.RecordOpen
 	importFiles   vault.Import
-	out           io.Writer
+	diagnostics   *windowsession.Diagnostics
 	embedderError error
 	closeEmbedder func() error
 	closeIndex    func() error
 	shouldRebuild bool
-	startFeed     func(ctx context.Context, v domain.Vault) func()
 }
 
 // windowCases are the use cases that run a window from its start to its close.
@@ -49,18 +46,11 @@ type windowSession struct {
 	userSwitch windowsession.UserSwitch
 }
 
-func newWindowSession(parts windowParts,
-	pluginVault windowsession.PluginVaultPath, triggers windowsession.TriggerSource, vaultDeps vaultWiring, state *editor.Session, page *editor.PageAccess, ctx context.Context,
+func newWindowSession(
+	parts windowParts, pluginVault windowsession.PluginVaultPath, runner *windowsession.PassRunner, vaultDeps vaultWiring, state *editor.Session, page *editor.PageAccess,
 ) windowSession {
-	diag := windowsession.NewDiagnostics(parts.out, page.Window)
-	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
-		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
-		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(vaultDeps.TextVersions), diag),
-		Passes:   parts.passes, Triggers: triggers, StartFeed: parts.startFeed,
-		Report: editor.ReportVault(vaultDeps.RecordLog),
-	})
 	identity := vault.NewCheckIdentity(vaultIdentity(vaultDeps.Options))
-	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)
+	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, parts.diagnostics, parts.embedderError, runner)
 	guard := &windowsession.Guard{}
 	flush := windowsession.NewPageFlush(page.Window, page.Writes)
 	rebuild := windowsession.NewRebuildSession(guard, session)
@@ -69,7 +59,7 @@ func newWindowSession(parts windowParts,
 	switching := windowsession.NewSwitchVault(show, pluginVault, &state.Tabs, state.ShowOpenTabs)
 	return windowSession{
 		cases: windowCases{
-			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, parts.shouldRebuild),
+			start:      windowsession.NewStartWindow(parts.diagnostics, parts.embedderError, follow, session, parts.shouldRebuild),
 			show:       show,
 			openPlugin: windowsession.NewOpenPluginVault(guard, identity, page.Window, switching),
 			flush:      windowsession.NewFlushPending(guard, flush),

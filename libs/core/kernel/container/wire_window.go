@@ -169,14 +169,20 @@ func buildWindow(
 	moves := vaultVaults(vaultDeps, ports, db, notes.Place.Move)
 	listing := vaultListing(vaultDeps.Readers, ports)
 
+	diag := windowsession.NewDiagnostics(opening.Out, page.Window)
+	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
+		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(indexer),
+		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, indexer, getTextVersions(vaultDeps.TextVersions), diag),
+		Passes:   startVault(vaultDeps, db, current), Triggers: plugins.triggers, StartFeed: plugins.startFeed,
+		Report: editor.ReportVault(vaultDeps.RecordLog),
+	})
 	parts := windowParts{
 		shouldRebuild: searchDeps.ShouldRebuildIndex,
-		indexer:       indexer, embedding: embedding, passes: startVault(vaultDeps, db, current),
-		recordOpen: moves.RecordOpen, importFiles: moves.Tree.Import, out: opening.Out,
+		indexer:       indexer, embedding: embedding,
+		recordOpen: moves.RecordOpen, importFiles: moves.Tree.Import, diagnostics: diag,
 		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
-		startFeed: plugins.startFeed,
 	}
-	session := newWindowSession(parts, plugins.vault, plugins.triggers, vaultDeps, state, page, ctx)
+	session := newWindowSession(parts, plugins.vault, runner, vaultDeps, state, page)
 	inst := editor.NewInstallation(page, editor.Lifecycle{
 		Show:  session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
