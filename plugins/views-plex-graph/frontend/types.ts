@@ -103,6 +103,7 @@ export interface PlexView {
   readonly nextPath: Ref<string>
   readonly isLoading: Ref<boolean>
   go(path: string): Promise<void>
+  warm?(path: string): void
   followMoves(renames: readonly PathRename[]): void
   close(): void
 }

@@ -146,33 +146,49 @@ export interface CachedVaultNotes extends VaultNotes {
 
 export function createVaultNotes(deps: VaultNotesDeps): CachedVaultNotes {
   const { notes, search, making, pluginNotes } = deps
-  const relatedAtDepthOne = new Map<
-    string,
-    Awaited<ReturnType<VaultNotes['listRelatedNotes']>>[number]
-  >()
+  type DepthOneGraph = Awaited<ReturnType<VaultNotes['listRelatedNotes']>>[number]
+  const relatedAtDepthOne = new Map<string, DepthOneGraph>()
+  const inFlightAtDepthOne = new Map<string, Promise<DepthOneGraph | undefined>>()
   return {
-    clearRelatedNotes: () => relatedAtDepthOne.clear(),
+    clearRelatedNotes: () => {
+      relatedAtDepthOne.clear()
+      inFlightAtDepthOne.clear()
+    },
     peekRelatedNote: (path) => relatedAtDepthOne.get(path),
     listRelatedNotes: async (paths, depth = 1) => {
       if (depth !== 1) return notes.listRelatedNotes(paths, depth)
       const missing: string[] = []
       const seen = new Set<string>()
       for (const path of paths) {
-        if (!relatedAtDepthOne.has(path) && !seen.has(path)) {
+        if (!relatedAtDepthOne.has(path) && !inFlightAtDepthOne.has(path) && !seen.has(path)) {
           seen.add(path)
           missing.push(path)
         }
       }
       if (missing.length > 0) {
-        const loaded = await notes.listRelatedNotes(missing, 1)
+        const batch = notes.listRelatedNotes(missing, 1)
         missing.forEach((path, index) => {
-          const graph = loaded[index]
-          if (graph) relatedAtDepthOne.set(path, graph)
+          const pending = batch.then(
+            (loaded) => {
+              inFlightAtDepthOne.delete(path)
+              const graph = loaded[index]
+              if (graph) relatedAtDepthOne.set(path, graph)
+              return graph
+            },
+            (error) => {
+              inFlightAtDepthOne.delete(path)
+              throw error
+            },
+          )
+          inFlightAtDepthOne.set(path, pending)
         })
       }
-      return paths.map(
-        (path) =>
-          relatedAtDepthOne.get(path) ?? {
+      const resolved = await Promise.all(
+        paths.map((path) => relatedAtDepthOne.get(path) ?? inFlightAtDepthOne.get(path)),
+      )
+      return resolved.map(
+        (graph) =>
+          graph ?? {
             focus: { path: '', title: '' },
             focusType: 'note',
             related: [],

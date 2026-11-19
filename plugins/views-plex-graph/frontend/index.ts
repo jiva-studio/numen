@@ -28,7 +28,23 @@ export function activate(plugin: PluginContext, host: HostServices): void {
       relations,
       look: readLook(plugin),
     },
-    () => usePlexView({ listRelatedNotes: (paths, depth) => notes.listRelatedNotes(paths, depth) }),
+    () =>
+      usePlexView({
+        listRelatedNotes: async (paths, depth) => {
+          const graphs = await notes.listRelatedNotes(paths, depth)
+          for (const graph of graphs) {
+            if (graph.related.length > 0) {
+              void notes
+                .listRelatedNotes(
+                  graph.related.map((related) => related.path),
+                  1,
+                )
+                .catch(() => undefined)
+            }
+          }
+          return graphs
+        },
+      }),
     PlexGraphView,
   )
   plugin.register.tabKind(plexes.kind)
