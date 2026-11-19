@@ -157,6 +157,7 @@ describe('what a follower holds for one reading of a stream', () => {
     })
 
     await follows(async function* (): AsyncIterable<string> {
+      yield* []
       throw new Error('the connection went')
     }, vi.fn())
 
@@ -207,6 +208,7 @@ describe('a window that closes while a stream is read', () => {
     })
 
     await follows(async function* (): AsyncIterable<string> {
+      yield* []
       open = false
       throw new Error('the connection went')
     }, vi.fn())

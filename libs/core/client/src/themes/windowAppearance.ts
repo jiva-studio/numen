@@ -36,16 +36,10 @@ interface WindowAppearanceDeps {
   wait?: (ms: number) => Promise<void>
 }
 
-interface ThemeApplierDeps {
-  core: Themes
-  output: AppearanceOutput
-  write: AppearanceWriter
-  words: AppearanceWords
-  applied: Ref<string>
-}
-
-function createThemeApplier(deps: ThemeApplierDeps) {
-  const { core, output, write, words, applied } = deps
+function createThemeApplier(
+  { core, output, write, words }: WindowAppearanceDeps,
+  applied: Ref<string>,
+) {
   const files = new Map<string, string>()
   let revision = 0
 
@@ -164,13 +158,7 @@ function initAppearanceState() {
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
   const { core, words, write, output, wait = sleep } = deps
   const state = initAppearanceState()
-  const { files, applyTheme } = createThemeApplier({
-    core,
-    output,
-    write,
-    words,
-    applied: state.applied,
-  })
+  const { files, applyTheme } = createThemeApplier(deps, state.applied)
 
   const preview = createAppearancePreview({
     write,

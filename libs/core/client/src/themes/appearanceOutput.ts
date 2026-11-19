@@ -4,9 +4,9 @@ import type { ThemeMode, ThemeScales } from './themes'
 /** The styles the window was served with and the changes applied as the appearance is read. */
 export interface AppearanceOutput {
   readonly servedTheme: string
-  writeMode(mode: ThemeMode): void
-  writeTheme(css: string): void
-  writeSizes(sizes: ThemeScales<number>): void
+  readonly writeMode: (mode: ThemeMode) => void
+  readonly writeTheme: (css: string) => void
+  readonly writeSizes: (sizes: ThemeScales<number>) => void
 }
 
 export type AppearanceWriter = (text: string, severity: 'error') => void

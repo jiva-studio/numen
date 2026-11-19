@@ -1,7 +1,4 @@
-/**
- * The values that make up the window appearance: the themes, the modes in which a theme's tokens are
- * read, and the sizes, with the service the window reads them from.
- */
+/** The theme entries and size and mode values drawn by the window. */
 import type { Caught } from '@numen/ui'
 
 /** Which half of a `light-dark()` pair every token is read as. */
@@ -20,12 +17,10 @@ export interface Theme {
 }
 
 /** One value for each of the two sizes: the interface scale and the text scale. */
-export interface Scales<T> {
-  readonly interfaceScale: T
-  readonly textScale: T
+export interface Sizes {
+  readonly interfaceScale: number
+  readonly textScale: number
 }
-
-export type Sizes = Scales<number>
 
 /** Where the appearance reports a failure. */
 export type AppearanceWriter = (text: string, severity: 'error') => void
