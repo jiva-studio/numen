@@ -3,51 +3,29 @@
  * Media recording tab: microphone capture, live level visualization,
  * recording timer, and preview playback.
  */
-import type { NoteTabState } from '@numen/plugin-sdk'
+import type { RecorderTab } from '../api/saveRecording'
 import MediaRecordingActions from './MediaRecordingActions.vue'
 import MediaRecordingMeter from './MediaRecordingMeter.vue'
 import MediaRecordingPreview from './MediaRecordingPreview.vue'
-import { useMediaRecording } from './useMediaRecording'
+import { useMediaRecording } from '../model/useMediaRecording'
 
 /* --------------------------------- Props ---------------------------------- */
-
-const props = withDefaults(
-  defineProps<{
-    at?: string
-    path?: string
-    title?: string
-    state?: Partial<NoteTabState>
-  }>(),
-  {
-    at: '',
-    path: '',
-    title: 'Record Audio',
-    state: () => ({}),
-  },
-)
-
-/* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{
-  'record-start': []
-  'record-stop': [blob: Blob | null]
-  save: [blob: Blob]
+const props = defineProps<{
+  readonly title?: string
+  readonly state?: RecorderTab
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const {
   status,
   elapsedMs,
+  bars,
   recordedAudioUrl,
-  recordedBlob,
   errorMessage,
   isRecording,
   onRecordAction,
-} = useMediaRecording(emit)
-
-/* -------------------------------- Handlers -------------------------------- */
-function onSave(blob: Blob) {
-  emit('save', blob)
-}
+  save,
+} = useMediaRecording(() => props.state)
 </script>
 
 <template>
@@ -63,16 +41,16 @@ function onSave(blob: Blob) {
       {{ errorMessage }}
     </div>
 
-    <MediaRecordingMeter :elapsed-ms="elapsedMs" :is-recording="isRecording" />
+    <MediaRecordingMeter :bars="bars" :elapsed-ms="elapsedMs" :is-recording="isRecording" />
 
     <MediaRecordingActions :status="status" :is-recording="isRecording" @action="onRecordAction" />
 
     <MediaRecordingPreview
-      v-if="recordedAudioUrl !== null && status === 'stopped'"
+      v-if="recordedAudioUrl && status === 'stopped'"
       :audio-url="recordedAudioUrl"
-      :blob="recordedBlob"
+      :can-retry="Boolean(errorMessage)"
       :elapsed-ms="elapsedMs"
-      @save="onSave"
+      @save="save"
     />
   </div>
 </template>

@@ -40,6 +40,7 @@ use (
 	./plugins/tools-taxonomy
 	./plugins/tools-updater
 	./plugins/views-flashcards-studio
+	./plugins/views-media-viewer
 	./tools/checks/structure/go
 	./tools/checks/style/comments
 )

@@ -23,6 +23,7 @@ describe('media-viewer plugin', () => {
 
     expect(registerTabKindSpy).toHaveBeenCalledWith({
       kind: 'recording',
+      open: expect.any(Function),
       component: MediaRecordingTab,
       title: 'Record Audio',
     })

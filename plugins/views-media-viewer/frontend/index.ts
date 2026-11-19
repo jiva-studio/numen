@@ -1,5 +1,6 @@
 import { AudioLines } from '@lucide/vue'
 import { definePlugin, getFileStem, type HostServices, type PluginContext } from '@numen/plugin-sdk'
+import { createRecorderTab } from './api/saveRecording'
 import RecordingTab from './ui/RecordingTab.vue'
 import MediaRecordingTab from './ui/MediaRecordingTab.vue'
 import { bindCommands, bindNotes, bindTexts, refreshRecordings, setTaskHost } from './api/wire'
@@ -33,6 +34,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
 
   plugin.register.tabKind({
     kind: RECORDER,
+    open: (folder) => createRecorderTab(folder, host),
     component: MediaRecordingTab,
     title: 'Record Audio',
   })
@@ -49,8 +51,9 @@ export function activate(plugin: PluginContext, host: HostServices): void {
 
   plugin.register.command({
     id: 'recording.create',
-    handler: async () => {
-      await host.tabs.open?.(RECORDER)
+    handler: async (target) => {
+      const folder = target.isFolder ? target.path : target.path.split('/').slice(0, -1).join('/')
+      await host.tabs.open?.(RECORDER, folder)
     },
   })
 }

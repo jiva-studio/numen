@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import { ref, useTemplateRef } from 'vue'
 import { Pause, Play } from '@lucide/vue'
-import { doc, getCurrentDate } from '@numen/ui'
 import { clock } from '../lib/duration'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   readonly audioUrl: string
-  readonly blob: Blob | null
+  readonly canRetry: boolean
   readonly elapsedMs: number
 }>()
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  save: [blob: Blob]
+  save: []
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -54,13 +53,7 @@ function onPreviewEnded() {
 }
 
 function onSaveRecording() {
-  if (!props.blob) return
-  emit('save', props.blob)
-
-  const anchor = doc.createElement('a')
-  anchor.href = props.audioUrl
-  anchor.download = `recording-${getCurrentDate().toISOString().replace(/[:.]/g, '-')}.webm`
-  anchor.click()
+  emit('save')
 }
 </script>
 
@@ -94,12 +87,13 @@ function onSaveRecording() {
       </span>
 
       <button
+        v-if="props.canRetry"
         type="button"
         class="media-recorder__save-btn"
         aria-label="Save audio recording"
         @click="onSaveRecording"
       >
-        Save Recording
+        Retry
       </button>
     </div>
   </section>

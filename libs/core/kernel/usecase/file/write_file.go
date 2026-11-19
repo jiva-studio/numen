@@ -38,24 +38,25 @@ func (u WriteFile) Execute(
 	return stat, edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)
 }
 
+// FileCreator creates a new vault file with the supplied bytes.
+type FileCreator interface {
+	CreateFile(ctx context.Context, v domain.Vault, path string, content []byte) error
+}
+
 // CreateFile makes a file of a vault that is not there and updates the index for it.
 type CreateFile struct {
-	writers vaultport.NoteWriters
+	writers FileCreator
 	index   edit.IndexUpdater
 }
 
-func NewCreateFile(writers vaultport.NoteWriters, index edit.IndexUpdater) CreateFile {
+func NewCreateFile(writers FileCreator, index edit.IndexUpdater) CreateFile {
 	return CreateFile{writers: writers, index: index}
 }
 
 // Execute writes the file, or returns vault.ErrAlreadyExists when the path holds one. A file that was
 // written and not indexed returns edit.ErrIndexOutdated.
 func (u CreateFile) Execute(ctx context.Context, v domain.Vault, path string, content []byte) error {
-	writer, err := u.writers.OpenNoteWriter(v)
-	if err != nil {
-		return err
-	}
-	if err := writer.Create(ctx, path, content); err != nil {
+	if err := u.writers.CreateFile(ctx, v, path, content); err != nil {
 		return err
 	}
 	return edit.WrapIndexOutdated(u.index(ctx, v, []string{path}), path)

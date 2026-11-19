@@ -5,6 +5,8 @@
      the agent this application starts is a program of its own with a signature
      of its own. -->
 <dict>
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
     <!-- A model runs through the ONNX Runtime, which is fetched from the people
          who publish it and carries their signature. The hardened runtime loads
          a library signed by this application's team or by Apple, and this is

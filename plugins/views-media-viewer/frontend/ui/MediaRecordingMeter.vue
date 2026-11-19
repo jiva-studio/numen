@@ -1,16 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { clock } from '../lib/duration'
-import { getWaveformBars } from './useMediaRecording'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
+  readonly bars: readonly number[]
   readonly elapsedMs: number
   readonly isRecording: boolean
 }>()
-
-/* --------------------------------- State ---------------------------------- */
-const liveBars = computed(() => getWaveformBars(props.elapsedMs, props.isRecording))
 </script>
 
 <template>
@@ -21,7 +17,7 @@ const liveBars = computed(() => getWaveformBars(props.elapsedMs, props.isRecordi
 
     <div class="media-recorder__waveform" aria-label="Microphone input meter">
       <div
-        v-for="(height, index) in liveBars"
+        v-for="(height, index) in props.bars"
         :key="index"
         class="media-recorder__waveform-bar"
         :class="{ 'media-recorder__waveform-bar--active': props.isRecording }"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Mic, Pause, Play, RotateCcw, Square } from '@lucide/vue'
-import type { RecordingStatus, RecordAction } from './useMediaRecording'
+import type { RecordingStatus, RecordAction } from '../model/useMediaRecording'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
