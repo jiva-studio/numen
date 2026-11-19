@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@fontsource-variable/nunito-sans": "^5.3.0",
-    "@lucide/vue": "^1.71.0",
+    "@lucide/vue": "^1.72.0",
     "@numen/ui": "*",
     "@numen/workbench": "*",
     "astro": "^7.4.12",
@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
-    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitejs/plugin-vue": "^6.0.11",
     "eslint": "^10.14.0",
     "eslint-plugin-astro": "^3.1.0",
     "globals": "^17.14.0",

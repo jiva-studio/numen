@@ -15,7 +15,7 @@
     "test:stories": "node ../../../tools/ci-stories/run.mjs apps/desktop/editor apps/desktop/editor/src"
   },
   "dependencies": {
-    "@lucide/vue": "^1.71.0",
+    "@lucide/vue": "^1.72.0",
     "@numen/core-client": "*",
     "@numen/plugin-loader": "*",
     "@numen/plugin-manager": "*",
@@ -27,7 +27,7 @@
     "@bufbuild/protobuf": "^2.17.0",
     "@storybook/addon-vitest": "^10.6.7",
     "@storybook/vue3-vite": "^10.6.7",
-    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitejs/plugin-vue": "^6.0.11",
     "@vitest/browser-playwright": "^5.1.0",
     "@vitest/coverage-v8": "^5.0.3",
     "@vue/test-utils": "^2.4.6",
@@ -39,7 +39,7 @@
     "storybook": "^10.0.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.2",
-    "vite": "^8.3.7",
+    "vite": "^8.3.8",
     "vitest": "^5.0.3",
     "vue-tsc": "^3.3.14"
   }
