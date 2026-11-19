@@ -29,7 +29,7 @@ function onSelectLevel(level: LevelFilter) {
 
 function onSetLogLevel(level: LevelFilter) {
   if (level === 'all') return
-  void props.state.setLogLevel(level)
+  props.state.setLogLevel(level).catch(() => undefined)
 }
 
 function onSearchInput(event: Event) {
