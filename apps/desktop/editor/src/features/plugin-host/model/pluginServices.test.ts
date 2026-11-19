@@ -234,6 +234,7 @@ describe('the notes of the vault a plugin is handed', () => {
     const pluginNotes = {
       readNote: vi.fn(() => Promise.resolve({ body: 'Prose.' })),
       writeNote: vi.fn(() => Promise.resolve()),
+      write: vi.fn(() => Promise.resolve('next')),
     }
     return {
       making,
@@ -256,10 +257,11 @@ describe('the notes of the vault a plugin is handed', () => {
     const { notes, pluginNotes } = createNotes()
 
     expect(await notes.read('Root.md')).toStrictEqual({ body: 'Prose.' })
-    await notes.write('Root.md', 'More prose.')
+    const observed = { body: 'Prose.', at: 'first' }
+    expect(await notes.write('Root.md', 'More prose.', observed)).toBe('next')
 
     expect(pluginNotes.readNote).toHaveBeenCalledWith('Root.md')
-    expect(pluginNotes.writeNote).toHaveBeenCalledWith('Root.md', 'More prose.')
+    expect(pluginNotes.write).toHaveBeenCalledWith('Root.md', 'More prose.', observed)
   })
 
   it('reads what is around a note and the headings of notes', async () => {
@@ -400,7 +402,11 @@ describe('createWorkspaceService, createVaultAccess and createWindowService', ()
       relations: { roles: [] } as never,
       search: { names: async () => [] },
       making: { createUntitledNote, createWithTitle: async () => null } as never,
-      pluginNotes: { readNote: async () => ({ body: '' }), writeNote: async () => undefined },
+      pluginNotes: {
+        readNote: async () => ({ body: '' }),
+        writeNote: async () => undefined,
+        write: async () => 'next',
+      },
       getTarget: () => ({}) as never,
       runInvocation: async () => undefined,
     })

@@ -11,12 +11,21 @@ import {
 /** The queries a plugin's note tab makes to the vault. */
 export interface PluginNotesDeps {
   readonly read: (path: string) => Promise<NoteResult>
-  readonly write: (path: string, body: string, baseline: null) => Promise<WriteResult>
+  readonly write: (
+    path: string,
+    body: string,
+    baseline: { prose: string; stat: string } | null,
+  ) => Promise<WriteResult>
 }
 
 /** What a plugin's note tab is handed. */
 export interface PluginNotes {
-  readonly readNote: (path: string) => Promise<{ body: string; error?: string }>
+  readonly write: (
+    path: string,
+    body: string,
+    observed: { body: string; at: string },
+  ) => Promise<string>
+  readonly readNote: (path: string) => Promise<{ body: string; at?: string; error?: string }>
   readonly writeNote: (path: string, body: string) => Promise<void>
 }
 
@@ -38,6 +47,21 @@ export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
   const queued = new Map<string, QueuedWrite>()
   const tails = new Map<string, Promise<void>>()
 
+  function enqueue<T>(path: string, run: () => Promise<T>): Promise<T> {
+    const before = tails.get(path)
+    const result = before ? before.then(run) : run()
+    const settled = result
+      .then(
+        () => undefined,
+        () => undefined,
+      )
+      .then(() => {
+        if (tails.get(path) === settled) tails.delete(path)
+      })
+    tails.set(path, settled)
+    return result
+  }
+
   const writeNote = (path: string, body: string): Promise<void> => {
     const pendingItem = queued.get(path)
     if (pendingItem) {
@@ -51,24 +75,31 @@ export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
       if (!reply.ok) throw new Error(NOT_WRITTEN)
     }
     queued.set(path, job)
-    const before = tails.get(path)
-    job.promise = before ? before.then(run) : run()
-    const resolved: Promise<void> = job.promise
-      .catch(() => undefined)
-      .then(() => {
-        if (tails.get(path) === resolved) tails.delete(path)
-      })
-    tails.set(path, resolved)
+    job.promise = enqueue(path, run)
     return job.promise
   }
 
-  const readNote = async (path: string): Promise<{ body: string; error?: string }> => {
+  const readNote = async (path: string): Promise<{ body: string; at?: string; error?: string }> => {
     const before = tails.get(path)
     queued.delete(path)
     const reply = await (before ? before.then(() => deps.read(path)) : deps.read(path))
-    if (reply.ok) return { body: reply.value.body }
+    if (reply.ok) return reply.value
     return { body: '', error: ERROR_MESSAGES[convertErrorCode(reply.error)] || UNREADABLE }
   }
 
-  return { readNote, writeNote }
+  const write: PluginNotes['write'] = (path, body, observed) => {
+    queued.delete(path)
+    return enqueue(path, async () => {
+      const reply = await deps.write(path, body, {
+        prose: observed.body,
+        stat: observed.at,
+      })
+      if (!reply.ok && reply.error === 'changed')
+        throw new Error('The note changed on disk. Reopen it before saving.')
+      if (!reply.ok || !reply.value.at) throw new Error(NOT_WRITTEN)
+      return reply.value.at
+    })
+  }
+
+  return { readNote, writeNote, write }
 }

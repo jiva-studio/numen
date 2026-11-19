@@ -197,7 +197,7 @@ export function createVaultNotes(deps: VaultNotesDeps): CachedVaultNotes {
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),
     createUntitledNote: () => making.createUntitledNote(''),
     read: (path) => pluginNotes.readNote(path),
-    write: (path, body) => pluginNotes.writeNote(path, body),
+    write: pluginNotes.write,
     readProperties: async (path) => (await deps.getFileKinds([path])).get(path)?.properties ?? {},
   }
 }

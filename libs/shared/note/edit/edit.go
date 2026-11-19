@@ -113,7 +113,6 @@ func (e Edit) splice(
 		return domain.FileStat{}, fmt.Errorf("%s: %w", path, err)
 	}
 
-	// A note that is not there cannot hold anything the caller has not read, so it is made.
 	if looked == nil && e.Baseline.isStale(on, markdown.Normalize(doc.Body())) {
 		return domain.FileStat{}, fmt.Errorf("write %s: %w", path, ErrStale)
 	}
@@ -154,7 +153,11 @@ func (e Edit) readNote(ctx context.Context, files Reader, path string) ([]byte, 
 }
 
 func (e Edit) getExpectedStat(path string, on domain.FileStat, looked error) (domain.FileStat, error) {
-	if !e.FileStat.IsZero() || e.ShouldOverwrite {
+	if e.Baseline != nil {
+		if errors.Is(looked, fs.ErrNotExist) {
+			return domain.FileStat{}, fmt.Errorf("write %s: %w", path, ErrStale)
+		}
+	} else if !e.FileStat.IsZero() || e.ShouldOverwrite {
 		return e.FileStat, nil
 	}
 	if looked != nil {

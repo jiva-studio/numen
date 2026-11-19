@@ -1,40 +1,43 @@
-/**
- * One note of the vault as the note editor view holds it: read once, and written after each edit.
- */
 import { ref } from 'vue'
 import type { VaultNotes, Caught } from '@numen/plugin-sdk'
 
 const getErrorMessage = (error: Caught): string =>
   error instanceof Error ? error.message : String(error)
 
-/**
- * An edit made while the note is still being read keeps what was typed. The error shown is the one
- * of the latest write.
- */
+/** Each save starts from the last version read or successfully written by this editor. */
 export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'write'>) {
   const body = ref('')
   const errorMessage = ref('')
   const isLoading = ref(true)
-  let hasEdited = false
-  let writes = 0
+  let observed: { body: string; at: string } | undefined
+  let isSaving = false
 
-  const write = (text: string) => {
-    const turn = ++writes
-    notes.write(path, text).then(
-      () => {
-        if (turn === writes) errorMessage.value = ''
-      },
-      (error: Caught) => {
-        if (turn === writes) errorMessage.value = getErrorMessage(error)
-      },
-    )
+  async function save() {
+    if (isSaving || !observed) return
+    isSaving = true
+    try {
+      while (body.value !== observed.body) {
+        const text: string = body.value
+        const at = await notes.write(path, text, observed)
+        observed = { body: text, at }
+        errorMessage.value = ''
+      }
+    } catch (error: Caught) {
+      errorMessage.value = getErrorMessage(error)
+    } finally {
+      isSaving = false
+    }
   }
 
   notes.read(path).then(
     (result) => {
       isLoading.value = false
-      if (!hasEdited) body.value = result.body
-      if (result.error) errorMessage.value = result.error
+      body.value = result.body
+      if (result.error || !result.at) {
+        errorMessage.value = result.error || 'The version of this note could not be read.'
+        return
+      }
+      observed = { body: result.body, at: result.at }
     },
     (error: Caught) => {
       isLoading.value = false
@@ -48,13 +51,9 @@ export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'writ
     errorMessage,
     isLoading,
     updateBody: (text: string) => {
-      hasEdited = true
       body.value = text
-      write(text)
+      return save()
     },
-    save: () => {
-      if (isLoading.value && !hasEdited) return
-      write(body.value)
-    },
+    save,
   }
 }

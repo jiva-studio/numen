@@ -64,9 +64,11 @@ export interface VaultNotes {
   // A note made untitled at the root of the vault: its path, and empty where none was made.
   createUntitledNote(): Promise<string>
   // The prose of a note below its frontmatter, and why it could not be read: empty where it was.
-  read(path: string): Promise<{ readonly body: string; readonly error?: string }>
-  // Prose written into a note, keeping its frontmatter. Writes to one path are made in order.
-  write(path: string, body: string): Promise<void>
+  read(
+    path: string,
+  ): Promise<{ readonly body: string; readonly at?: string; readonly error?: string }>
+  // Writes against the observed prose and file fingerprint, returning the fingerprint of the saved note.
+  write(path: string, body: string, observed: { body: string; at: string }): Promise<string>
   // The frontmatter of the note at the path by its keys, and empty for a path holding no note.
   readProperties(path: string): Promise<Readonly<Record<string, JsonValue>>>
 }
