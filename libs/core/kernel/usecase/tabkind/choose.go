@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -30,15 +31,44 @@ func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTyp
 	return &Choose{kinds: kinds, types: types, config: value, conditions: when.NewConditions()}
 }
 
+type parsedKind struct {
+	entry     plugin.TabKindEntry
+	condition when.Condition
+	hasConfig bool
+}
+
 // Execute gives the kind of tab the note at the path opens in: of the kinds whose when condition
 // holds over the note, a default kind before an alternate one, and among those the one
 // domain.ChooseHandler picks, the lower plugin id first. A kind without a condition takes no note.
 // Empty where no condition holds.
 func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[string]any) string {
-	contentType := u.types.GetContentType(path)
-	values := plugin.NewTargetValues(path, false, contentType).WithNote(noteType, properties).Get()
-	var matching []domain.ContentHandler
-	for _, one := range u.kinds.ListTabKinds() {
+	return u.chooseForNote(u.parseTabKinds(), nil, path, noteType, properties)
+}
+
+// ChooseMany gives the kind of tab each note in heads opens in, reading the tab kinds of the enabled
+// plugins once for the batch. A path where no condition holds is omitted.
+func (u *Choose) ChooseMany(heads map[string]frontmatter.Head) map[string]string {
+	out := make(map[string]string, len(heads))
+	if len(heads) == 0 {
+		return out
+	}
+	kinds := u.parseTabKinds()
+	if len(kinds) == 0 {
+		return out
+	}
+	var cachedConfig map[string]any
+	for path, head := range heads {
+		if kind := u.chooseForNote(kinds, &cachedConfig, path, head.Type, head.Values); kind != "" {
+			out[path] = kind
+		}
+	}
+	return out
+}
+
+func (u *Choose) parseTabKinds() []parsedKind {
+	entries := u.kinds.ListTabKinds()
+	out := make([]parsedKind, 0, len(entries))
+	for _, one := range entries {
 		if one.TabKind.When == "" {
 			continue
 		}
@@ -46,14 +76,28 @@ func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[s
 		if err != nil {
 			continue
 		}
-		if _, isRead := values["config"]; !isRead && slices.Contains(condition.ListNames(), "config") {
-			u.config.add(values)
-		}
-		if condition.Evaluate(values) != when.True {
+		out = append(out, parsedKind{
+			entry:     one,
+			condition: condition,
+			hasConfig: slices.Contains(condition.ListNames(), "config"),
+		})
+	}
+	return out
+}
+
+func (u *Choose) chooseForNote(
+	kinds []parsedKind, cachedConfig *map[string]any, path string, noteType domain.NoteType, properties map[string]any,
+) string {
+	contentType := u.types.GetContentType(path)
+	values := plugin.NewTargetValues(path, false, contentType).WithNote(noteType, properties).Get()
+	var matching []domain.ContentHandler
+	for _, one := range kinds {
+		u.addConfig(values, cachedConfig, one.hasConfig)
+		if one.condition.Evaluate(values) != when.True {
 			continue
 		}
 		matching = append(matching, domain.ContentHandler{
-			PluginID: one.PluginID, ID: one.TabKind.Kind, Type: domain.AnyContentType, Rank: one.TabKind.Rank,
+			PluginID: one.entry.PluginID, ID: one.entry.TabKind.Kind, Type: domain.AnyContentType, Rank: one.entry.TabKind.Rank,
 		})
 	}
 	if chosen, ok := domain.ChooseHandler(contentType, matching); ok {
@@ -64,6 +108,35 @@ func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[s
 	}
 	chosen, _ := domain.ChooseHandler(contentType, matching)
 	return chosen.ID
+}
+
+func (u *Choose) addConfig(values map[string]any, cachedConfig *map[string]any, needsConfig bool) {
+	if !needsConfig {
+		return
+	}
+	if _, isRead := values["config"]; isRead {
+		return
+	}
+	if cachedConfig == nil {
+		u.config.add(values)
+		return
+	}
+	if *cachedConfig == nil {
+		*cachedConfig = u.getConfig()
+	}
+	if *cachedConfig != nil {
+		values["config"] = *cachedConfig
+	}
+}
+
+func (u *Choose) getConfig() map[string]any {
+	values := map[string]any{}
+	u.config.add(values)
+	config, ok := values["config"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	return config
 }
 
 // configValue gives a condition the config variable.

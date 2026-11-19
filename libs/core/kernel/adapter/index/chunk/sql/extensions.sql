@@ -17,8 +17,9 @@ WITH named AS (
            CASE WHEN instr(ext, '/') > 0 OR instr(ext, char(92)) > 0 THEN '' ELSE ext END AS ext
       FROM named
 )
-SELECT p.ext, count(DISTINCT p.id), count(c.id)
+SELECT p.ext,
+       count(p.id),
+       coalesce(sum((SELECT count(*) FROM chunks c WHERE c.source_id = p.id AND c.vault_id = ? AND c.parent_id IS NOT NULL AND c.length >= ?)), 0)
   FROM plain p
-  LEFT JOIN chunks c ON c.source_id = p.id AND c.vault_id = ? AND c.parent_id IS NOT NULL AND c.length >= ?
  GROUP BY p.ext
  ORDER BY 2 DESC, 1;

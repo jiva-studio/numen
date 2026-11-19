@@ -68,6 +68,11 @@ func (r *statementCache) close() error {
 	return err
 }
 
+type identifiedNote struct {
+	vault domain.VaultID
+	path  string
+}
+
 // resolution resolves the links of one read in one vault. The candidates of a
 // name are asked once per read, because the backlinks of one note mostly write
 // the same name.
@@ -75,22 +80,38 @@ type resolution struct {
 	statements *statementCache
 	vault      int64
 	vaultID    domain.VaultID
+	cache      *Cache
+	generation uint64
 	named      map[string][]string
+	identified map[string]identifiedNote
 }
 
 func runResolution[T any](
-	ctx context.Context, db *sql.DB, vaultID domain.VaultID, none T, read func(r *resolution) (T, error),
+	ctx context.Context, db *sql.DB, cache *Cache, vaultID domain.VaultID, none T, read func(r *resolution) (T, error),
 ) (_ T, err error) {
 	statements := newStatementCache(db)
 	defer func() { err = sqlwrite.JoinClose(err, statements.close()) }()
 
-	vault, err := vaultRow(ctx, statements, vaultID)
-	if errors.Is(err, errNoVault) {
-		return none, nil
+	gen := cache.getGeneration()
+	vault, ok := cache.getVaultRow(vaultID)
+	if !ok {
+		vault, err = vaultRow(ctx, statements, vaultID)
+		if errors.Is(err, errNoVault) {
+			return none, nil
+		}
+		if err != nil {
+			var zero T
+			return zero, err
+		}
+		cache.setVaultRow(gen, vaultID, vault)
 	}
-	if err != nil {
-		var zero T
-		return zero, err
-	}
-	return read(&resolution{statements: statements, vault: vault, vaultID: vaultID, named: map[string][]string{}})
+	return read(&resolution{
+		statements: statements,
+		vault:      vault,
+		vaultID:    vaultID,
+		cache:      cache,
+		generation: gen,
+		named:      map[string][]string{},
+		identified: map[string]identifiedNote{},
+	})
 }

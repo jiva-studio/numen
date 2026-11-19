@@ -8,11 +8,20 @@ import _ "embed"
 //go:embed sql/addressing.sql
 var addressingSQL string
 
+//go:embed sql/addressing_at.sql
+var addressingAtSQL string
+
 //go:embed sql/backlink_candidates.sql
 var backlinkCandidatesSQL string
 
+//go:embed sql/backlink_candidates_at.sql
+var backlinkCandidatesAtSQL string
+
 //go:embed sql/candidates.sql
 var candidatesSQL string
+
+//go:embed sql/candidates_at.sql
+var candidatesAtSQL string
 
 //go:embed sql/dangling.sql
 var danglingSQL string
@@ -32,6 +41,9 @@ var headingsOfSQL string
 //go:embed sql/identify.sql
 var identifySQL string
 
+//go:embed sql/links_at.sql
+var linksAtSQL string
+
 //go:embed sql/links_of.sql
 var linksOfSQL string
 
@@ -40,6 +52,9 @@ var namedSQL string
 
 //go:embed sql/note_by_identifier.sql
 var noteByIdentifierSQL string
+
+//go:embed sql/notes_by_identifier_at.sql
+var notesByIdentifierAtSQL string
 
 //go:embed sql/notes_at.sql
 var notesAtSQL string
@@ -91,3 +106,9 @@ var countFrontmatterErrorsSQL string
 
 //go:embed sql/heads_at.sql
 var headsAtSQL string
+
+//go:embed sql/vault_notes.sql
+var vaultNotesSQL string
+
+//go:embed sql/vault_links.sql
+var vaultLinksSQL string

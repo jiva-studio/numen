@@ -21,14 +21,28 @@ func getStatement(name string) string { return sqlfile.Read(files, "sql", name) 
 
 // Repository is the collection of vaults. Rows elsewhere point at these, which
 // is why a vault is registered before anything is stored for it.
-type Repository struct{ db *sql.DB }
+type Repository struct {
+	db       *sql.DB
+	onChange func()
+}
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
+
+// OnChange returns a copy of Repository that calls report after registering or unregistering a vault.
+func (r *Repository) OnChange(report func()) *Repository {
+	return &Repository{db: r.db, onChange: report}
+}
+
+func (r *Repository) notifyChange() {
+	if r.onChange != nil {
+		r.onChange()
+	}
+}
 
 // Register creates a row for the vault that other rows reference. A vault the
 // index already tracks keeps its existing row and its change feed.
 func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error {
-	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	err := sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
 		if _, err := tx.ExecContext(ctx, getStatement("register"), string(vaultID)); err != nil {
 			return err
 		}
@@ -38,6 +52,10 @@ func (r *Repository) Register(ctx context.Context, vaultID domain.VaultID) error
 		}
 		return changefeed.OpenFeed(ctx, tx, row)
 	})
+	if err == nil {
+		r.notifyChange()
+	}
+	return err
 }
 
 func getForgettingStatements() []string {
@@ -52,7 +70,7 @@ func getForgettingStatements() []string {
 // The vectors stay. One is addressed by the text it was made from, so chunks of
 // several vaults hold the same vector.
 func (r *Repository) Unregister(ctx context.Context, vaultID domain.VaultID) error {
-	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+	err := sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
 		var row int64
 		err := tx.QueryRowContext(ctx, getStatement("vault_row"), string(vaultID)).Scan(&row)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -68,4 +86,8 @@ func (r *Repository) Unregister(ctx context.Context, vaultID domain.VaultID) err
 		}
 		return nil
 	})
+	if err == nil {
+		r.notifyChange()
+	}
+	return err
 }

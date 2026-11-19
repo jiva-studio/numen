@@ -13,6 +13,9 @@ func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambi
 	if len(candidates) == 0 {
 		return "", false
 	}
+	if len(candidates) == 1 {
+		return candidates[0], false
+	}
 
 	folded := make([]string, len(candidates))
 	for i, c := range candidates {
@@ -33,10 +36,6 @@ func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambi
 		if idx := findIndex(folded, relative); idx >= 0 {
 			return candidates[idx], false
 		}
-	}
-
-	if len(candidates) == 1 {
-		return candidates[0], false
 	}
 
 	// Nearest by how much of the path they have in common with the note the

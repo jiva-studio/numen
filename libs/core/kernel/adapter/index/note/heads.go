@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
@@ -17,18 +18,24 @@ import (
 // A path with no indexed note is absent from the result. Whole numbers of the frontmatter are returned as int
 // and the others as float64, as the YAML of the file gives them.
 func (q *Queries) GetHeads(ctx context.Context, vaultID domain.VaultID, paths []string) (_ map[string]frontmatter.Head, err error) {
-	out := map[string]frontmatter.Head{}
 	if len(paths) == 0 {
+		return map[string]frontmatter.Head{}, nil
+	}
+	gen, out, missing, err := q.cache.splitHeads(vaultID, paths)
+	if err != nil {
+		return nil, err
+	}
+	if len(missing) == 0 {
 		return out, nil
 	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := q.getVaultRow(ctx, vaultID)
 	if errors.Is(err, errNoVault) {
 		return out, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	wanted, err := json.Marshal(paths)
+	wanted, err := json.Marshal(missing)
 	if err != nil {
 		return nil, err
 	}
@@ -37,6 +44,7 @@ func (q *Queries) GetHeads(ctx context.Context, vaultID domain.VaultID, paths []
 		return nil, err
 	}
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+	fetched := make(map[string]frontmatter.Head, len(missing))
 	for rows.Next() {
 		var path, noteType string
 		var stored sql.NullString
@@ -47,9 +55,14 @@ func (q *Queries) GetHeads(ctx context.Context, vaultID domain.VaultID, paths []
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", path, err)
 		}
-		out[path] = frontmatter.Head{Type: domain.NoteType(noteType), Values: values}
+		fetched[path] = frontmatter.Head{Type: domain.NoteType(noteType), Values: values}
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	q.cache.setHeads(gen, vaultID, missing, fetched)
+	maps.Copy(out, fetched)
+	return out, nil
 }
 
 func readHeadValues(stored sql.NullString) (map[string]any, error) {

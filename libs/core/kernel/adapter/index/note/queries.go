@@ -14,9 +14,29 @@ import (
 
 // Queries answers queries about notes in shapes other than notes: what the
 // index records about each file, what a name resolves to, and how many there are.
-type Queries struct{ db *sql.DB }
+type Queries struct {
+	db    *sql.DB
+	cache *Cache
+}
 
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
+
+// WithCache returns a copy of Queries using cache for read lookups.
+func (q *Queries) WithCache(cache *Cache) *Queries {
+	return &Queries{db: q.db, cache: cache}
+}
+
+func (q *Queries) getVaultRow(ctx context.Context, vaultID domain.VaultID) (int64, error) {
+	if row, ok := q.cache.getVaultRow(vaultID); ok {
+		return row, nil
+	}
+	gen := q.cache.getGeneration()
+	row, err := vaultRow(ctx, q.db, vaultID)
+	if err == nil {
+		q.cache.setVaultRow(gen, vaultID, row)
+	}
+	return row, err
+}
 
 // GetFileStats is what the index records about each note of the vault, keyed by path.
 func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error) {
