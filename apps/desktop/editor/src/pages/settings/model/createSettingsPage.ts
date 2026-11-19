@@ -11,6 +11,7 @@ import {
   type SettingsStore,
 } from '@/entities/settings'
 import type { ConnectionApi, ConnectionStore } from '@/entities/connection'
+import { createLicenseStore, type LicenseApi, type LicenseStore } from '@/entities/license'
 import { countNotes, type FileApi } from '@/entities/file'
 import {
   PLUGIN_FAILURE_WORDS,
@@ -38,6 +39,7 @@ interface SettingsPageApi {
     SettingsApi,
     'choosePluginPath' | 'getPluginData' | 'deletePluginData' | 'retryPlugin'
   >
+  readonly license: LicenseApi
   readonly listFiles: FileApi['listFiles']
   readonly listCatalog: CatalogReader
   readonly listRowOptions: ConnectionApi['listRowOptions']
@@ -81,6 +83,7 @@ interface SettingsTabConfigDeps {
   settings: InstallationSettingsDeps
   plugin: InstallationPluginDeps
   connections: ConnectionStore
+  licenses: LicenseStore
   api: Pick<SettingsPageApi, 'listFiles' | 'listRowOptions'>
 }
 
@@ -188,11 +191,22 @@ function createInstallationConnections(
   }
 }
 
+function createInstallationLicenses(licenses: LicenseStore) {
+  return {
+    list: licenses.licenses,
+    load: () => licenses.load(),
+    watch: (signal: AbortSignal) => licenses.watch(signal),
+    activate: (licenseId: string, key: string) => licenses.activate(licenseId, key),
+    deactivate: (licenseId: string) => licenses.deactivate(licenseId),
+  }
+}
+
 function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
   return {
     settings: createInstallationSettings(deps.settings),
     plugin: createInstallationPlugin(deps.plugin),
     connections: createInstallationConnections(deps.connections, deps.api),
+    licenses: createInstallationLicenses(deps.licenses),
   }
 }
 
@@ -210,6 +224,9 @@ export function createSettingsPage({
   const getPluginName = (pluginId: string): string =>
     rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const reportError = (error: Caught) => log.getWriter('configured')(formatError(error), 'error')
+  const licenses = createLicenseStore(api.license, (text, level) =>
+    log.getWriter('licenses')(text, level),
+  )
   const retry = createPluginRetry({
     askPluginRetry: api.settings.retryPlugin,
     words: { stopped: PLUGIN_FAILURE_WORDS.stopped, retryFailed: PLUGIN_FAILURE_WORDS.retryFailed },
@@ -234,6 +251,7 @@ export function createSettingsPage({
         health: plugins.health,
       },
       connections,
+      licenses,
       api,
     }),
     reportError,

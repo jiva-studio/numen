@@ -203,6 +203,7 @@ const create = (timing: Timing, shown: 'system' | 'appearance') => {
     ...createSettingsPage({
       api: {
         settings: configuration.settings,
+        license: configuration.license,
         listFiles: api.vault.file.listFiles,
         listCatalog: api.plugins.listCatalog,
         listRowOptions: configuration.connection.listRowOptions,

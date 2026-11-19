@@ -29,6 +29,21 @@ func New(host Host) Manifests {
 	return Manifests{host: host}
 }
 
+// Open creates manifest readers from the plugin host capabilities they need.
+func Open(
+	lister pluginport.PluginLister,
+	resolver pluginport.PluginResolver,
+	failures pluginport.PluginFailures,
+) Manifests {
+	return New(host{PluginLister: lister, PluginResolver: resolver, PluginFailures: failures})
+}
+
+type host struct {
+	pluginport.PluginLister
+	pluginport.PluginResolver
+	pluginport.PluginFailures
+}
+
 // ListCommands lists the commands the manifests of the enabled plugins declare. No plugin is started.
 func (m Manifests) ListCommands() []plugindomain.CommandEntry {
 	var found []plugindomain.CommandEntry

@@ -12,7 +12,7 @@ func TestTheIndexOfAPluginCommandClosesOnceThePluginWorkFinished(t *testing.T) {
 	work := run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil)
 	work.ReportTask("org.example.ears", plugin.Task{ID: "talk", Title: "Transcribing"})
 	closed := make(chan struct{})
-	closeIndex := closeAfterWork(t.Context(), work, func() error {
+	closeIndex := run.CloseAfterWork(t.Context(), work, func() error {
 		close(closed)
 		return nil
 	})

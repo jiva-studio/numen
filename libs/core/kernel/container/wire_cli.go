@@ -183,7 +183,7 @@ func openCLIPluginCommands(
 	if err != nil {
 		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
 	}
-	return getPluginCommands(plugins(c)).Run, closeAfterWork(ctx, pluginWork, db.Close), nil
+	return getPluginCommands(plugins(c)).Run, run.CloseAfterWork(ctx, pluginWork, db.Close), nil
 }
 
 func closeCLI(r *cliRun) ([]string, error) {

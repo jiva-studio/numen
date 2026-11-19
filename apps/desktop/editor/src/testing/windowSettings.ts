@@ -44,6 +44,7 @@ export function createWindowSettingsPart(deps: WindowSettingsDeps) {
   const page = createSettingsPage({
     api: {
       settings: configuration.settings,
+      license: configuration.license,
       listFiles: api.vault.file.listFiles,
       listCatalog: api.plugins.listCatalog,
       listRowOptions: configuration.connection.listRowOptions,

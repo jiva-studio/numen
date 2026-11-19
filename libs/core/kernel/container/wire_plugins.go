@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"errors"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
@@ -16,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
@@ -30,12 +30,6 @@ import (
 // StopPlugins stops every plugin the host runs.
 func (c Config) StopPlugins(ctx context.Context) error {
 	return stopPlugins(plugins(c), ctx)
-}
-
-func closeAfterWork(ctx context.Context, work *run.PluginWork, closeIndex func() error) func() error {
-	return func() error {
-		return errors.Join(work.WaitIdle(ctx), closeIndex())
-	}
 }
 
 func openPluginWork(
@@ -98,11 +92,12 @@ type PluginWatch struct {
 // nothing: the settings then accept every plugin value and list no plugin, and no connection type exists. Follow returns the
 // subscription to the setting changes that the host follows, or none.
 type PluginViews struct {
-	Types      connectionport.Types
-	Operations connectionport.OperationTitles
-	Infos      settingsport.PluginInfos
-	Checks     settingsport.PluginSettings
-	Follow     func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber
+	Types        connectionport.Types
+	Operations   connectionport.OperationTitles
+	Declarations licenseport.Declarations
+	Infos        settingsport.PluginInfos
+	Checks       settingsport.PluginSettings
+	Follow       func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber
 }
 
 // PluginHost is the plugin host as the capabilities the wiring and the use cases consume, each taken from the
@@ -170,7 +165,8 @@ func AdaptPluginHost(host *PluginRoles) *PluginHost {
 		}).Execute,
 		Views: PluginViews{
 			Types: types, Operations: types,
-			Infos: host.Registry, Checks: host.Settings,
+			Declarations: host.Registry,
+			Infos:        host.Registry, Checks: host.Settings,
 			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
 		},
 		SetStorage: func(cacheRoot, dataRoot string) {
@@ -192,7 +188,7 @@ func AdaptPluginHost(host *PluginRoles) *PluginHost {
 func lendHostEndpoint(host *PluginRoles, lender *hostendpoint.Lender) *hostendpoint.Services {
 	services := hostendpoint.NewServices(lender.Get)
 	toolHost := plugin.NewToolHost(host.Activation, host.Registry)
-	manifests := pluginmanifest.New(pluginManifestHost{pluginInfos{host.Registry, host.Registry}, host.Failures})
+	manifests := pluginmanifest.Open(host.Registry, host.Registry, host.Failures)
 	revision := getListingRevision(getSearchCatalog(manifests))
 	tools := toolbridge.NewCatalog(toolHost, toolHost, host.Storage, revision, host.Clock, toolbridge.GetErrorOutput())
 	host.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
@@ -209,19 +205,6 @@ func lendHostEndpoint(host *PluginRoles, lender *hostendpoint.Lender) *hostendpo
 	return services
 }
 
-// pluginInfos is what the manifest and theme readers take of the runtime: the plugins listed and their manifests.
-type pluginInfos struct {
-	pluginport.PluginLister
-	pluginport.PluginResolver
-}
-
-// pluginManifestHost is what the manifest reader takes of the runtime: the plugins, their manifests and
-// whether one is suspended.
-type pluginManifestHost struct {
-	pluginInfos
-	pluginport.PluginFailures
-}
-
 func getRuntimeManifests(r PluginRuntime) pluginmanifest.Manifests {
-	return pluginmanifest.New(pluginManifestHost{pluginInfos{r.PluginLister, r.PluginResolver}, r.PluginFailures})
+	return pluginmanifest.Open(r.PluginLister, r.PluginResolver, r.PluginFailures)
 }

@@ -115,13 +115,13 @@ describe('PluginsList', () => {
     ])
   })
 
-  it('draws the tiles System, Appearance, Editor, Search and Connections in that order, each with its detail', () => {
+  it('draws the tiles System, Appearance, Editor, Search, Connections and Licenses in that order, each with its detail', () => {
     const wrapper = mountList()
 
     const tiles = wrapper
       .findAll('button[aria-label]')
       .filter((one) =>
-        ['System', 'Appearance', 'Editor', 'Search', 'Connections'].includes(
+        ['System', 'Appearance', 'Editor', 'Search', 'Connections', 'Licenses'].includes(
           one.attributes('aria-label') ?? '',
         ),
       )
@@ -131,8 +131,10 @@ describe('PluginsList', () => {
       'Editor',
       'Search',
       'Connections',
+      'Licenses',
     ])
     expect(tiles[3]?.text()).toContain('Reranking, limits and results')
+    expect(tiles[5]?.text()).toContain('Subscriptions and license keys')
   })
 
   it('emits the page search from the Search tile', async () => {

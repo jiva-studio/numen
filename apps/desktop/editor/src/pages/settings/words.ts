@@ -82,4 +82,19 @@ export const WORDS = {
   pathChoose: 'Choose…',
   pathAdd: 'Add…',
   pathClear: 'Clear',
+  /** The page of licenses. */
+  licensesEmpty: 'No licenses declared.',
+  licensesEmptyDetail:
+    'Add a plugin with a subscription or license key to manage its license here.',
+  licenseKeyPlaceholder: 'Enter license key…',
+  licenseKeyLabel: (title: string) => `License key for ${title}`,
+  licenseActivate: 'Activate',
+  licenseActivating: 'Activating…',
+  licenseDeactivate: 'Deactivate',
+  licenseDeactivating: 'Deactivating…',
+  licenseBuy: 'Buy',
+  licenseStatusActive: 'Active',
+  licenseStatusExpired: 'Expired',
+  licenseStatusUnverified: 'Unverified',
+  licenseStatusInactive: 'Inactive',
 }

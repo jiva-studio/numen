@@ -9,6 +9,7 @@ import { groupManagedHealth } from '../lib/pluginHealth'
 import { useSettingsTab } from '../model/useSettingsTab'
 import SystemDetail from './SystemDetail.vue'
 import ConnectionsPage from './connections/ConnectionsPage.vue'
+import LicensesPage from './licenses/LicensesPage.vue'
 import { AvailablePluginDetail, PluginsList, PluginDetail } from './plugins'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -62,6 +63,11 @@ function onOpenCategory(category: string): void {
         <ConnectionsPage
           v-else-if="selectedPluginId === 'connections'"
           :connections="installation.connections"
+          @back="goBack"
+        />
+        <LicensesPage
+          v-else-if="selectedPluginId === 'licenses'"
+          :licenses="installation.licenses"
           @back="goBack"
         />
         <PluginDetail

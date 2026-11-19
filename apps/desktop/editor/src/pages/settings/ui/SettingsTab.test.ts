@@ -14,8 +14,15 @@ import { mount } from '@vue/test-utils'
 import { NumberField, Select, Switch } from '@numen/ui'
 
 import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
+import type { LicenseInfo } from '@/entities/license'
 import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
-import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
+import {
+  asFailure,
+  asValue,
+  createInstallation,
+  createSettingsState,
+  type InstallationOverrides,
+} from '@/pages/settings/testing/installation'
 import SettingsTab from './SettingsTab.vue'
 import SettingRow from './setting-row/SettingRow.vue'
 import type { Installation } from '../types'
@@ -115,6 +122,7 @@ const createTab = (
   file: JsonObject = {},
   plugins: readonly PluginInfo[] = [],
   app: readonly PluginSettingInfo[] = SHELL,
+  overrides: InstallationOverrides = {},
 ) => {
   const content: SettingEdit[] = []
   const installation: Installation = createInstallation({
@@ -124,6 +132,7 @@ const createTab = (
     },
     plugins: ref(plugins),
     app: ref(app),
+    ...overrides,
   })
   const initialSearchQuery = ref('')
   const tab = mount(SettingsTab, {
@@ -230,7 +239,7 @@ describe('the settings tab', () => {
     expect(system.text()).toContain(words.systemSettingsDetail)
   })
 
-  it('draws the Appearance, Editor, Search and Connections tiles after System and the plugin rows below them', () => {
+  it('draws the Appearance, Editor, Search, Connections and Licenses tiles after System and the plugin rows below them', () => {
     const samplePlugin: PluginInfo = {
       id: 'test.transcription',
       name: 'Transcription Plugin',
@@ -249,6 +258,7 @@ describe('the settings tab', () => {
       'Editor',
       'Search',
       'Connections',
+      'Licenses',
       'Transcription Plugin',
     ])
   })
@@ -534,6 +544,122 @@ describe('the settings tab', () => {
       expect(getSegments(tab)).toStrictEqual(['Settings'])
       expect(getCurrent(tab)).toBe(words.connections)
       expect(getToolbar(tab).find('.settings-toolbar__actions').exists()).toBe(false)
+    })
+
+    it('opens the Licenses page, shows Buy providers, activates a key and deactivates it', async () => {
+      const sync: LicenseInfo = {
+        id: 'numen.sync',
+        title: 'Numen Sync',
+        contributors: [
+          {
+            pluginId: 'md.numen.views.agent-chat',
+            pluginName: 'Agent Chat',
+            description: 'Multi-agent conversations and background tasks',
+          },
+        ],
+        providers: [
+          {
+            provider: 'creem',
+            providerName: 'Creem',
+            productId: 'prod_creem_1',
+            checkoutUrl: 'https://creem.io/checkout/numen-sync',
+            paymentMethods: ['Cards', 'Apple Pay'],
+          },
+          {
+            provider: 'dodo',
+            providerName: 'Dodo Payments',
+            productId: 'prod_dodo_1',
+            checkoutUrl: 'https://checkout.dodopayments.com/buy/numen-sync',
+            paymentMethods: ['UPI', 'PIX'],
+          },
+        ],
+        status: 'inactive',
+        isActive: false,
+        hasKey: false,
+        keyHint: '',
+        activeProvider: '',
+        instanceName: '',
+        expiresAt: '',
+        verifiedAt: '',
+      }
+      const list = ref<readonly LicenseInfo[]>([sync])
+      const activate = vi.fn(async (licenseId: string, key: string) => {
+        if (key === 'BAD-KEY') return asFailure('This license key was not recognized.')
+        const activated: LicenseInfo = {
+          ...sync,
+          id: licenseId,
+          status: 'active',
+          isActive: true,
+          hasKey: true,
+          keyHint: '••••-814A',
+          activeProvider: 'creem',
+          instanceName: 'workstation',
+        }
+        list.value = [activated]
+        return asValue(activated)
+      })
+      const deactivate = vi.fn(async () => {
+        list.value = [sync]
+        return asValue(sync)
+      })
+      const { tab } = createTab({}, [], SHELL, {
+        licenses: {
+          list,
+          load: vi.fn(async () => undefined),
+          watch: vi.fn(async () => undefined),
+          activate,
+          deactivate,
+        },
+      })
+
+      await openPlugin(tab, 'Licenses')
+
+      expect(getSegments(tab)).toStrictEqual(['Settings'])
+      expect(getCurrent(tab)).toBe(words.licenses)
+      expect(tab.text()).toContain('Numen Sync')
+      expect(tab.text()).toContain('Agent Chat')
+      expect(tab.text()).toContain('Multi-agent conversations and background tasks')
+
+      // While input is empty, Buy dropdown button is shown and opens provider options.
+      const buyBtn = tab.findAll('button').find((one) => one.text().includes('Buy'))
+      expect(buyBtn).toBeDefined()
+      await buyBtn!.trigger('click')
+      await nextTick()
+      const menuLinks = tab.findAll('a[role="menuitem"]')
+      expect(menuLinks.map((one) => one.attributes('href'))).toStrictEqual([
+        'https://creem.io/checkout/numen-sync',
+        'https://checkout.dodopayments.com/buy/numen-sync',
+      ])
+
+      // Typing a key switches the contextual button from Buy to Activate.
+      const keyInput = tab.get('input[aria-label="License key for Numen Sync"]')
+      await keyInput.setValue('BAD-KEY')
+      await nextTick()
+      const activateBtn = tab.findAll('button').find((one) => one.text() === 'Activate')
+      expect(activateBtn).toBeDefined()
+      await activateBtn!.trigger('click')
+      await nextTick()
+      expect(tab.get('[role="alert"]').text()).toBe('This license key was not recognized.')
+
+      await keyInput.setValue('GOOD-KEY-814A')
+      await nextTick()
+      await tab
+        .findAll('button')
+        .find((one) => one.text() === 'Activate')!
+        .trigger('click')
+      await nextTick()
+      expect(activate).toHaveBeenCalledWith('numen.sync', 'GOOD-KEY-814A')
+      expect(
+        (tab.get('input[aria-label="License key for Numen Sync"]').element as HTMLInputElement)
+          .value,
+      ).toBe('••••-814A')
+
+      const deactivateBtn = tab.findAll('button').find((one) => one.text() === 'Deactivate')
+      expect(deactivateBtn).toBeDefined()
+      await deactivateBtn!.trigger('click')
+      await nextTick()
+      expect(deactivate).toHaveBeenCalledWith('numen.sync')
+      expect(tab.findAll('button').some((one) => one.text().includes('Buy'))).toBe(true)
     })
 
     it('holds the state and the enabled switch of a plugin on its page', async () => {

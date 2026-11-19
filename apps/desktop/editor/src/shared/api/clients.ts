@@ -12,6 +12,8 @@ import {
   createConnectionClient,
   createFileClient,
   createLogServiceClient,
+  createLicenseClient,
+  createLicenseServiceClient,
   createNoteClient,
   createPluginCatalog,
   createPluginClient,
@@ -57,12 +59,13 @@ export const createWorkspaceClients = ({ transport, keepalive }: WindowTransport
   windowService: createWindowClient(transport),
 })
 
-/** The clients of the settings, the connections and the themes. */
+/** The clients of the settings, the connections, the licenses and the themes. */
 export const createSettingsClients = (transport: Transport) => {
   const settings = createCallerTransport('settings', transport)
   return {
     settingsService: createSettingsClient(settings),
     connections: createConnectionClient(createProviderConnectionClient(settings)),
+    licenses: createLicenseClient(createLicenseServiceClient(settings)),
     theme: createThemeServiceClient(transport),
   }
 }

@@ -37,6 +37,7 @@ export function registerSettingsPage(deps: SettingsPageDeps): void {
   const settingsPage = createSettingsPage({
     api: {
       settings: api.configuration.settings,
+      license: api.configuration.license,
       listFiles: api.vault.file.listFiles,
       listCatalog: api.plugins.listCatalog,
       listRowOptions: api.configuration.connection.listRowOptions,
