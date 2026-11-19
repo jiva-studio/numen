@@ -5,12 +5,29 @@ import { formatCommandId } from '../../commandId'
 import { createPluginHealth } from '../../pluginHealth'
 import type { DeclaredSlotEntry } from '../../slots'
 import type {
+  ContextLicenseHost,
   ContextUiHost,
   ContextVaultHost,
   ContextWorkHost,
   HostCommands,
+  HostPlugins,
   PluginHostDeps,
 } from '../types'
+
+const NO_PLUGINS: HostPlugins = {}
+
+export function createLicenseServiceBridge({
+  plugins = NO_PLUGINS,
+}: Pick<PluginHostDeps, 'plugins'>): ContextLicenseHost {
+  return {
+    hasLicense: (pluginId, licenseId) => plugins.hasLicense?.(pluginId, licenseId) ?? false,
+    getLicenseKey: (pluginId, licenseId) => plugins.getLicenseKey?.(pluginId, licenseId),
+    onLicenseChange: (pluginId, licenseId, handler) => {
+      if (!plugins.onLicenseChange) return { dispose: () => undefined }
+      return { dispose: plugins.onLicenseChange(pluginId, licenseId, handler) }
+    },
+  }
+}
 
 /** The notices of a window that shows none: what a plugin reports is dropped. */
 const DISCARDING_NOTICES: NoticeHost = { show: () => undefined, setTasks: () => undefined }

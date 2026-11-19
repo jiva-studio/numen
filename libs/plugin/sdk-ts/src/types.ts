@@ -259,6 +259,13 @@ export interface PluginSettings {
   onEditorChange(handler: (settings: EditorSettings) => void): Disposable
 }
 
+// PluginLicenses reads and follows the licenses the plugin declares in its manifest.
+export interface PluginLicenses {
+  has(licenseId: string): boolean
+  getKey(licenseId: string): string | undefined
+  onChange(licenseId: string, handler: (isActive: boolean) => void): Disposable
+}
+
 // PluginEvents is what a plugin receives of the vault and says to the other plugins.
 export interface PluginEvents {
   onVaultChange(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable
@@ -311,12 +318,13 @@ export interface PluginWork {
   readonly processes?: ProcessHost
 }
 
-// PluginContext is what an activated plugin owns: who it is, what it registers, its settings and
-// its health.
+// PluginContext is what an activated plugin owns: who it is, what it registers, its settings,
+// its licenses and its health.
 export interface PluginContext {
   readonly identity: PluginIdentity
   readonly register: PluginRegistrations
   readonly settings: PluginSettings
+  readonly licenses: PluginLicenses
   readonly health?: HealthHost
 }
 

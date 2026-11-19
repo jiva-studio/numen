@@ -34,6 +34,7 @@ import {
   type HostRegistry,
 } from './registry'
 import {
+  createLicenseServiceBridge,
   createUiServiceBridge,
   createVaultServiceBridge,
   createWorkServiceBridge,
@@ -115,6 +116,7 @@ const NO_SLOTS: HostSlots = {}
 function createSettingBridge({
   plugins = NO_PLUGINS,
 }: Pick<PluginHostDeps, 'plugins'>): ContextSettingHost {
+  const licenses = createLicenseServiceBridge({ plugins })
   return {
     getSetting: <T extends JsonValue = JsonValue>(pluginId: string, key: string) =>
       plugins.getSetting ? (plugins.getSetting(pluginId, key) as T | undefined) : undefined,
@@ -138,6 +140,9 @@ function createSettingBridge({
       if (!plugins.onEditorSettingsChange) return { dispose: () => undefined }
       return { dispose: plugins.onEditorSettingsChange(pluginId, handler) }
     },
+    hasLicense: licenses.hasLicense,
+    getLicenseKey: licenses.getLicenseKey,
+    onLicenseChange: licenses.onLicenseChange,
   }
 }
 

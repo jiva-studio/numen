@@ -56,6 +56,9 @@ const MEMBERS: GroupMembers = {
     onSettingChange: true,
     getEditorSettings: true,
     onEditorSettingsChange: true,
+    hasLicense: true,
+    getLicenseKey: true,
+    onLicenseChange: true,
   },
   commands: {
     getCommandDeclarations: true,

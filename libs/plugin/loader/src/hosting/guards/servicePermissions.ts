@@ -13,6 +13,7 @@ import type {
   HealthHost,
   PluginEvents,
   PluginIdentity,
+  PluginLicenses,
   PluginRegistrations,
   PluginSettings,
   PluginTabs,
@@ -116,6 +117,7 @@ export interface GuardedParts {
   readonly identity: Pick<PluginIdentity, 'openExternal'>
   readonly register: PluginRegistrations
   readonly settings: PluginSettings
+  readonly licenses: PluginLicenses
   readonly events: PluginEvents
   readonly tabs: PluginTabs
   readonly vault: PluginVault
@@ -147,6 +149,13 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     onChange: requireNothing('it listens to the settings of the plugin itself'),
     getEditor: requireNothing('it reads the editor settings of the application, read-only'),
     onEditorChange: requireNothing('it listens to the editor settings of the application'),
+  },
+  licenses: {
+    has: requireNothing('it reads the state of a license the manifest of the plugin declares'),
+    getKey: requireNothing('it reads the key of a license the manifest of the plugin declares'),
+    onChange: requireNothing(
+      'it listens to the state of a license the manifest of the plugin declares',
+    ),
   },
   events: {
     onVaultChange: requirePermissions(READ),

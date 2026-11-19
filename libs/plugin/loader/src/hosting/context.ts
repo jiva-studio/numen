@@ -12,6 +12,7 @@ import type {
   JsonValue,
   PluginContext,
   PluginEvents,
+  PluginLicenses,
   PluginSettings,
   PluginTabs,
   PluginUi,
@@ -23,6 +24,7 @@ import { isUnsavedBuffersError, UnsavedBuffersError } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
 import { limitCommands } from './guards/commandRun'
+import { requireDeclaredLicense } from './guards/declarations'
 import { checkPermission, type PermissionTarget, type RequirePermission } from './guards/permission'
 import {
   createMountView,
@@ -80,6 +82,28 @@ function createSettings(pluginId: string, host: PluginContextHost, add: Track): 
     getEditor: () => host.settings.getEditorSettings(),
     onEditorChange: (h: (settings: EditorSettings) => void) =>
       add(host.settings.onEditorSettingsChange(pluginId, h)),
+  }
+}
+
+function createLicenses(
+  target: PermissionTarget,
+  host: PluginContextHost,
+  add: Track,
+): PluginLicenses {
+  const { pluginId } = target
+  return {
+    has: (licenseId: string) => {
+      requireDeclaredLicense(target, licenseId)
+      return host.settings.hasLicense(pluginId, licenseId)
+    },
+    getKey: (licenseId: string) => {
+      requireDeclaredLicense(target, licenseId)
+      return host.settings.getLicenseKey(pluginId, licenseId)
+    },
+    onChange: (licenseId: string, handler: (isActive: boolean) => void) => {
+      requireDeclaredLicense(target, licenseId)
+      return add(host.settings.onLicenseChange(pluginId, licenseId, handler))
+    },
   }
 }
 
@@ -225,6 +249,7 @@ function createPluginContext(scope: PartsScope, host: PluginContextHost): Plugin
       { check },
     ),
     settings: guardService(createSettings(pluginId, host, add), rules.settings, { check }),
+    licenses: guardService(createLicenses(target, host, add), rules.licenses, { check }),
     health: health && guardService(health, rules.health, { check }),
   })
 }

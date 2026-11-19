@@ -11,6 +11,7 @@ import {
   type HostServices,
   type NoticeHost,
   type PluginEvents,
+  type PluginLicenses,
   type PluginRegistrations,
   type PluginSettings,
   type PluginTabs,
@@ -260,6 +261,7 @@ describe('the services of a plugin context', () => {
     type Rules = typeof SERVICE_RULES
     expectTypeOf<keyof Rules['register']>().toEqualTypeOf<keyof PluginRegistrations>()
     expectTypeOf<keyof Rules['settings']>().toEqualTypeOf<keyof PluginSettings>()
+    expectTypeOf<keyof Rules['licenses']>().toEqualTypeOf<keyof PluginLicenses>()
     expectTypeOf<keyof Rules['events']>().toEqualTypeOf<keyof PluginEvents>()
     expectTypeOf<keyof Rules['tabs']>().toEqualTypeOf<keyof PluginTabs>()
     expectTypeOf<keyof Rules['vault']>().toEqualTypeOf<keyof PluginVault>()

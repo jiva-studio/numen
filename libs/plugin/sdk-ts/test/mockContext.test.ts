@@ -305,4 +305,43 @@ describe('mock plugin context', () => {
     expect(createMockHostServices().vault).not.toHaveProperty('buffers')
     expect(() => createMockHostServices().tabs.close('tab-1')).not.toThrow()
   })
+
+  it('tracks license state, key and change listeners', () => {
+    const ctx = createMockPluginContext({
+      initialLicenses: {
+        pro: true,
+        custom: { isActive: true, key: 'KEY-1' },
+      },
+    })
+
+    expect(ctx.licenses.has('pro')).toBe(true)
+    expect(ctx.licenses.getKey('pro')).toBeUndefined()
+    expect(ctx.licenses.has('custom')).toBe(true)
+    expect(ctx.licenses.getKey('custom')).toBe('KEY-1')
+    expect(ctx.licenses.has('sync')).toBe(false)
+    expect(ctx.licenses.getKey('sync')).toBeUndefined()
+
+    const listener = vi.fn()
+    const sub = ctx.licenses.onChange('sync', listener)
+
+    ctx.setLicense('sync', false)
+    expect(listener).not.toHaveBeenCalled()
+
+    ctx.setLicense('sync', true, 'SUP-123')
+    expect(ctx.licenses.has('sync')).toBe(true)
+    expect(ctx.licenses.getKey('sync')).toBe('SUP-123')
+    expect(listener).toHaveBeenCalledExactlyOnceWith(true)
+
+    ctx.setLicense('sync', true, 'SUP-456')
+    expect(ctx.licenses.getKey('sync')).toBe('SUP-456')
+    expect(listener).toHaveBeenCalledOnce()
+
+    ctx.setLicense('sync', false)
+    expect(ctx.licenses.has('sync')).toBe(false)
+    expect(listener.mock.calls).toStrictEqual([[true], [false]])
+
+    sub.dispose()
+    ctx.setLicense('sync', true)
+    expect(listener).toHaveBeenCalledTimes(2)
+  })
 })

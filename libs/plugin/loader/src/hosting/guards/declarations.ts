@@ -12,6 +12,7 @@ interface DeclaringManifest {
         readonly commands?: readonly { readonly id: string }[] | undefined
         readonly handlers?: readonly { readonly command: string }[] | undefined
         readonly dropHandlers?: readonly { readonly types: readonly string[] }[] | undefined
+        readonly licenses?: readonly { readonly id: string }[] | undefined
       }
     | undefined
 }
@@ -86,4 +87,14 @@ export function requireDeclaredDropTypes(
       fail(target, { kind: 'drop type', id: type, where: 'contributes.dropHandlers' })
   }
   return checked
+}
+
+export function requireDeclaredLicense(target: PermissionTarget, licenseId: string): void {
+  const licenses = getManifest(target)?.contributes?.licenses
+  if (!licenses) return
+  if (!licenses.some((one) => one.id === licenseId)) {
+    throw new Error(
+      `Plugin "${target.pluginId}" accesses the license "${licenseId}", which its manifest does not declare in contributes.licenses`,
+    )
+  }
 }

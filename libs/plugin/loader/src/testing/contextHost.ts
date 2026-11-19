@@ -7,6 +7,7 @@ export interface ContextHostParts {
   readonly registration?: Partial<PluginContextHost['registration']>
   readonly views?: Partial<PluginContextHost['views']>
   readonly settings?: Partial<PluginContextHost['settings']>
+  readonly licenses?: Partial<PluginContextHost['settings']>
   readonly events?: Partial<PluginContextHost['events']>
   readonly tabs?: Partial<PluginContextHost['tabs']>
   readonly vault?: Partial<PluginContextHost['vault']>
@@ -35,6 +36,9 @@ const IDLE: PluginContextHost = {
     onSettingChange: () => NOTHING,
     getEditorSettings: () => undefined,
     onEditorSettingsChange: () => NOTHING,
+    hasLicense: () => false,
+    getLicenseKey: () => undefined,
+    onLicenseChange: () => NOTHING,
   },
   events: {
     onVaultChange: () => NOTHING,
@@ -77,7 +81,7 @@ export function createTestContextHost(parts: ContextHostParts = {}): PluginConte
   return {
     registration: { ...IDLE.registration, ...parts.registration },
     views: { ...IDLE.views, ...parts.views },
-    settings: { ...IDLE.settings, ...parts.settings },
+    settings: { ...IDLE.settings, ...parts.settings, ...parts.licenses },
     events: { ...IDLE.events, ...parts.events },
     tabs: { ...IDLE.tabs, ...parts.tabs },
     vault: { ...IDLE.vault, ...parts.vault },
