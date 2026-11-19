@@ -33,7 +33,7 @@ interface UnnamedModelTitles {
  * `isListed` is false until its connection answered which models it has. `isFailed` is true where its
  * connection could not list them; the next open of a picker asks again.
  */
-export interface Agent {
+interface Agent {
   readonly row: ConnectionRow
   readonly models: readonly AgentModelOption[]
   readonly isListed: boolean
