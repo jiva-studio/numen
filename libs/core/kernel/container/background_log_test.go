@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/logevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/logfiles"
@@ -32,9 +33,9 @@ func TestBackgroundErrorIsRecordedAndReported(t *testing.T) {
 func TestDependencyLogRecordsOnlyTerminalStates(t *testing.T) {
 	var entries []logs.Entry
 	record := func(entry logs.Entry) { entries = append(entries, entry) }
-	recordDependencyStatus(record, "model", plugin.DependencyStatus{State: plugin.DependencyStateProvisioning})
-	recordDependencyStatus(record, "model", plugin.DependencyStatus{State: plugin.DependencyStateFailed, Error: "checksum mismatch"})
-	recordDependencyStatus(record, "model", plugin.DependencyStatus{State: plugin.DependencyStateReady})
+	logevents.RecordDependencyStatus(record, "model", plugin.DependencyStatus{State: plugin.DependencyStateProvisioning})
+	logevents.RecordDependencyStatus(record, "model", plugin.DependencyStatus{State: plugin.DependencyStateFailed, Error: "checksum mismatch"})
+	logevents.RecordDependencyStatus(record, "model", plugin.DependencyStatus{State: plugin.DependencyStateReady})
 	if len(entries) != 2 {
 		t.Fatalf("entries = %v", entries)
 	}

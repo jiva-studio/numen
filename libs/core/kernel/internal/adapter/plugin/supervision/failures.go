@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/failureevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/errsink"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/eventbus"
@@ -27,22 +28,19 @@ type Failures struct {
 	health HealthItems
 
 	mu              sync.Mutex
-	onCleared       func(pluginID string)
-	onFailure       func(plugindomain.Failure)
+	events          *failureevents.Events
 	reportedTargets map[string]struct{}
 }
 
 // SetOnFailure registers a callback for recorded plugin failures.
 func (f *Failures) SetOnFailure(fn func(plugindomain.Failure)) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.onFailure = fn
+	f.events.SetOnFailure(fn)
 }
 
 // NewFailures returns the failures of the plugins the supervisors track, listed in health. Problems the
 // host meets go to errs.
 func NewFailures(sups *Supervisors, clock machineport.Clock, errs *errsink.Sink, health HealthItems) *Failures {
-	return &Failures{sups: sups, clock: clock, errs: errs, health: health, reportedTargets: make(map[string]struct{})}
+	return &Failures{sups: sups, clock: clock, errs: errs, health: health, events: &failureevents.Events{}, reportedTargets: make(map[string]struct{})}
 }
 
 // SetErrorHandler registers a callback for problems the host meets outside a call, such as a failed shutdown.
@@ -52,9 +50,7 @@ func (f *Failures) SetErrorHandler(handler eventbus.ErrorHandler) {
 
 // SetOnFailureCleared registers a callback invoked with the id of a plugin whose failure the host forgets, because the plugin started, was enabled or was disabled.
 func (f *Failures) SetOnFailureCleared(fn func(pluginID string)) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.onCleared = fn
+	f.events.SetOnCleared(fn)
 }
 
 // IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended until
@@ -104,12 +100,7 @@ func (f *Failures) list(failure plugindomain.Failure) {
 			Values:  map[string]string{plugindomain.OpenSettingsPlugin: failure.PluginID},
 		},
 	})
-	f.mu.Lock()
-	notify := f.onFailure
-	f.mu.Unlock()
-	if notify != nil {
-		notify(failure)
-	}
+	f.events.ReportFailure(failure)
 }
 
 // FailActivation sets a plugin whose start failed dormant, and records and lists the failure unless ctx ended.
@@ -150,12 +141,7 @@ func (f *Failures) Clear(pluginID string, sup *lifecycle.Supervisor) {
 		return
 	}
 	f.health.Remove(pluginID, plugindomain.HealthKeyStart)
-	f.mu.Lock()
-	notify := f.onCleared
-	f.mu.Unlock()
-	if notify != nil {
-		notify(pluginID)
-	}
+	f.events.ReportCleared(pluginID)
 }
 
 // ForgetTargetReport forgets that the failure of a plugin was reported through a listener.

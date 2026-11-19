@@ -243,6 +243,13 @@ func openRecordLogFunc(c Config) func(domainlogs.Entry) {
 	}
 }
 
+func openOptionalRecordLog(c Config) func(domainlogs.Entry) {
+	if c.Resources == nil {
+		return nil
+	}
+	return openRecordLogFunc(c)
+}
+
 func mountLogs(w *windowWiring) {
 	record := openRecordLog(w.cfg)
 	watch := logsusecase.NewWatch(openLogEntries(w.cfg), logfiles.NewBesideIndex(w.cfg.IndexPath), w.cfg.Clock())
