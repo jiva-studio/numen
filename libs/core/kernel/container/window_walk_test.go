@@ -1,6 +1,15 @@
 package container_test
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"time"
+
+	"connectrpc.com/connect"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
+
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,5 +41,20 @@ func TestAVaultReportsNoOperationsOnceItIsRead(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	testsupport.WaitFor(t, func() bool { return len(installation.State.Window.Tasks.List()) == 0 })
+	server := httptest.NewServer(installation.NewHandler(http.NotFoundHandler(), numenv1connect.WindowServiceName))
+	defer server.Close()
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+	defer cancel()
+	client := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
+	tasks, err := client.WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{Window: "editor"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testsupport.Close(t, tasks)
+	for tasks.Receive() {
+		if len(tasks.Msg().GetTasks()) == 0 {
+			return
+		}
+	}
+	t.Fatalf("task stream ended before the work finished: %v", tasks.Err())
 }

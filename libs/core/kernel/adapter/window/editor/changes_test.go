@@ -79,7 +79,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	}
 	testsupport.CloseAfter(t, installation)
 
-	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
+	rendered, itself := numenv1connect.NewWindowServiceHandler(editor.PagesOf(installation.Installation).Window)
 	mux := http.NewServeMux()
 	mountQuestionsServices(mux, installation)
 	mux.Handle(rendered, itself)
@@ -231,7 +231,7 @@ func newQuestionsClient(client connect.HTTPClient, pos string) questions {
 }
 
 func mountQuestionsServices(mux *http.ServeMux, installation *container.OpenedWindow) {
-	services := editor.ServicesOf(installation.Installation, installation.State)
+	services := editor.ServicesOf(installation.Installation)
 	pages := installation.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName, numenv1connect.WorkspaceServiceName)
 	mux.Handle("/"+numenv1connect.VaultServiceName+"/", pages)
 	mux.Handle("/"+numenv1connect.WorkspaceServiceName+"/", pages)
@@ -337,14 +337,14 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		recording{NoteWriters: writers, VaultLocks: writers, order: recorded, hold: hold},
 		noIndex,
 		testsupport.NewClock(),
-		installation.State.Writes,
+		editor.PagesOf(installation.Installation).Writes,
 	)
 
 	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation.Installation))
-	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
+	rendered, itself := numenv1connect.NewWindowServiceHandler(editor.PagesOf(installation.Installation).Window)
 	mux := http.NewServeMux()
 	mountQuestionsServices(mux, installation)
-	mountNoteEdit(mux, installation.State, numenv1connect.NoteServiceWriteNoteProcedure, &writing, nil, nil)
+	mountNoteEdit(mux, installation.Installation, numenv1connect.NoteServiceWriteNoteProcedure, &writing, nil, nil)
 	mux.Handle(turning, settings)
 	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)
@@ -371,10 +371,10 @@ func (f *going) read(t *testing.T) {
 	t.Helper()
 
 	for range 500 {
-		if f.installation.State.Runtime.IsReady() {
+		if editor.SessionOf(f.installation.Installation).Runtime.IsReady() {
 			return
 		}
-		if why := f.installation.State.Runtime.GetError(); why != "" {
+		if why := editor.SessionOf(f.installation.Installation).Runtime.GetError(); why != "" {
 			t.Fatalf("the vault could not be read: %v", why)
 		}
 		time.Sleep(10 * time.Millisecond)

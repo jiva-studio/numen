@@ -21,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
@@ -32,14 +31,14 @@ import (
 // A change arrives at every subscriber drawing the vault, the same way a note
 // opened in the editor does.
 func TestAChangeReachesEveryoneDrawing(t *testing.T) {
-	state := NewState(run.NewTasks(), nil, nil)
+	state := newTestWindow(run.NewTasks(), nil, nil)
 	line, isDone := state.Notices.Edits.Subscribe()
 	t.Cleanup(isDone)
 
 	response := domain.Edit{
 		Change: "one", Path: "Aggressor.md", From: 2, To: 12, Text: "An axe",
 	}
-	if err := ViewOf(state).ShowEdit(t.Context(), response); err != nil {
+	if err := ViewOf(state.Notices).ShowEdit(t.Context(), response); err != nil {
 		t.Fatal(err)
 	}
 
@@ -280,11 +279,10 @@ func TestEditLoad(t *testing.T) {
 		testsupport.OpenGate{},
 	)
 	read := note.NewRead(vaultreader.Readers{})
-	api := createServices(NewState(run.NewTasks(), nil, nil))
+	api := createServices(newTestWindow(run.NewTasks(), nil, nil))
 	bindNotes(api, db)
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
-	api.state.Indexing.Embedding = indexing.NewEmbedding(nil, nil, db.Chunks.Progress)
 	api.state.Runtime.SetVault(v)
 
 	startTime := testsupport.GetMachine().Now()

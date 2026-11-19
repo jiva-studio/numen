@@ -67,14 +67,14 @@ func getStorePagePolicy(t *testing.T, setBeforeStart bool, plugins PluginService
 	api := newBareServices()
 	api.readFiles(vaultreader.Readers{}, file.NewOpenPluginFile(storedFiles{importer: {pageName: []byte(pageBytes)}}), file.NewGetMediaType(contenttype.Open()))
 	api.state.Runtime.SetVault(vault)
-	installation := NewInstallation(api.state, Lifecycle{Start: noStart{}}, nil, nil, nil)
+	installation := NewInstallation(api.state.PageAccess, Lifecycle{Start: noStart{}}, nil, nil, nil)
 	if setBeforeStart {
 		installation.SetPlugins(plugins, nil)
 	}
 	if err := installation.Start(t.Context(), vault, api.server); err != nil {
 		t.Fatal(err)
 	}
-	back := api.state.Playing.Load()
+	back := api.state.Media.Playing.Load()
 	testsupport.CloseAfter(t, loopbackCloser{back})
 	if !setBeforeStart {
 		installation.SetPlugins(plugins, nil)

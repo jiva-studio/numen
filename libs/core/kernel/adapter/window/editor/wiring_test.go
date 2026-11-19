@@ -57,7 +57,7 @@ type openDoor struct{}
 func (openDoor) Close() {}
 
 func (w wiring) startSession(
-	t *testing.T, ctx context.Context, db *testIndex, state *State, v domain.Vault,
+	t *testing.T, ctx context.Context, db *testIndex, state *testWindow, v domain.Vault,
 	readers vaultport.VaultReaders, watcher vaultport.VaultWatcher, opts sessionOptions,
 ) (end func()) {
 	t.Helper()

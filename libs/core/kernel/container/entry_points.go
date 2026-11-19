@@ -37,20 +37,20 @@ func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultreg
 	return ports, db, err
 }
 
-func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, opened *OpenedWindow, startup windowStartup, access windowPluginAccess) (*OpenedWindow, error) {
+func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, opened *windowRoutes, startup windowStartup, access windowPluginAccess) error {
 	if !startup.isEditor {
-		return opened, nil
+		return nil
 	}
-	state := opened.State
+	state := opened.session
 	exec.Runtime.PluginBinding.SetVaultPath(state.GetCurrentVault().Path)
-	hooks := pluginVaultHooks{Written: state.Writes.NoteWritten, Notes: &access.notes}
+	hooks := pluginVaultHooks{Written: opened.page.Writes.NoteWritten, Notes: &access.notes}
 	if err := installPluginVault(install, vaultDeps, startup.ports, startup.db, state.GetShownVault, hooks); err != nil {
-		return nil, err
+		return err
 	}
 	setPluginVaultList(install.Endpoints.Lender, access.vaults)
 	setPluginTexts(install.Endpoints.Lender, vaultDeps.TextVersions)
 	shareEditorWindow(startup.db, opened, access.showTab, install, vaultDeps)
-	return opened, nil
+	return nil
 }
 
 // Shell is what a shell window closes when it ends: CloseVaults waits until nothing is still writing to the

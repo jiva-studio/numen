@@ -3,6 +3,8 @@ package container
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"io"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
@@ -60,7 +62,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	opened, launch := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps)
 	search := newTextSearch(searchDeps, c.machine.ResolvedCompute.Workers)
 	session := windowSearch{index: db, source: launch.source, tasks: plugins.tasks, generations: launch.generations, kinds: plugins.kinds.list}
-	query := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, search, db, launch.source, opened.State.ReportFloorError)
+	query := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, search, db, launch.source, (editor.SearchTasks{Window: opened.page.Window}).ReportFloorError)
 	runs := newSearchRuns(session, query, exec.Runtime.Registry, exec.Runtime.Manifests, vaultDeps.Clock)
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
 	mountServices(opened, install, exec, settingsDeps, vaultDeps)
@@ -68,7 +70,10 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	if err := opened.Start(ctx, first, launch.server); err != nil {
 		return nil, errors.Join(err, launch.closeSource(), db.Close())
 	}
-	return connectWindow(install, exec, vaultDeps, opened, startup, launch.plugins)
+	if err := connectWindow(install, exec, vaultDeps, opened, startup, launch.plugins); err != nil {
+		return nil, err
+	}
+	return &OpenedWindow{Installation: opened.Installation, tabs: &opened.session.Tabs}, nil
 }
 
 func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup windowStartup) *textVersions {
@@ -89,7 +94,16 @@ type WindowOpening struct {
 // OpenedWindow serves one editor installation and exposes its active state to the application.
 type OpenedWindow struct {
 	*editor.Installation
-	State *editor.State
+	tabs *windowsession.TabReports
+}
+
+// GetOpenTabs returns the last tab report from the window.
+func (w *OpenedWindow) GetOpenTabs() window.OpenTabs { return w.tabs.GetOpenTabs() }
+
+type windowRoutes struct {
+	*editor.Installation
+	session *editor.Session
+	page    *editor.PageAccess
 }
 
 type windowPluginAccess struct {
@@ -138,7 +152,7 @@ func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDep
 
 func buildWindow(
 	s windowStartup, ctx context.Context, plugins windowPlugins, searchDeps vaultIndexPlan, vaultDeps vaultWiring,
-) (*OpenedWindow, windowLaunch) {
+) (*windowRoutes, windowLaunch) {
 	db, opening, ports := s.db, s.opening, s.ports
 	tasks := plugins.tasks
 	// Opened once, for as long as the window is. A local model is fetched and
@@ -147,11 +161,13 @@ func buildWindow(
 	// indexing once a configuration of its plugin lets it describe itself.
 	embedder, closeEmbedder, why := plugins.source.OpenWatching(ctx)
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
-	state := editor.NewState(tasks, opening.Frame, func(event string) { plugins.events.EmitEvent(event) })
-	state.SetIndexing(embedding)
+	state := editor.NewSession(opening.Frame)
+	page := editor.NewPageAccess(tasks, state)
+	events := &editor.Events{Emit: plugins.events.EmitEvent}
+	state.Runtime.RecordModel(embedding.Describe())
 	generations := newIndexGenerations(vaultDeps.Clock)
-	indexer := newIndexWorker(s, searchDeps, vaultDeps, state, embedding, emitIndexChanged(generations, state.Events))
-	state.Writes.NotifyNoteWritten = indexer.WakeNotes
+	indexer := s.newIndexWorker(searchDeps, vaultDeps, &state.Runtime, page.Window, embedding, emitIndexChanged(generations, events))
+	page.Writes.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
@@ -160,23 +176,24 @@ func buildWindow(
 		v.CutNotes = cutNotes(searchDeps.ChunkPolicy)
 		return vaultMakeRefresh(v, db, db.Notes())
 	}}
-	notes, pluginNotes := newWindowNotes(vaultDeps, db, state, current)
+	notes, pluginNotes := newWindowNotes(vaultDeps, db, state, page.Writes, current)
 	moves := vaultVaults(vaultDeps, ports, db, notes.Place.Move)
 	listing := vaultListing(vaultDeps.Readers, ports)
 
-	session := newWindowSession(plugins.vault, plugins.triggers, vaultDeps, state, ctx, windowParts{
+	parts := windowParts{
 		shouldRebuild: searchDeps.ShouldRebuildIndex,
 		indexer:       indexer, embedding: embedding, passes: startVault(vaultDeps, db, current),
 		recordOpen: moves.RecordOpen, importFiles: moves.Tree.Import, out: opening.Out,
 		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
 		startFeed: plugins.startFeed,
-	})
-	inst := editor.NewInstallation(state, editor.Lifecycle{
+	}
+	session := parts.newWindowSession(plugins.vault, plugins.triggers, vaultDeps, state, page, ctx)
+	inst := editor.NewInstallation(page, editor.Lifecycle{
 		Start: session.cases.start, Show: session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
 	}, session.tools.importFiles, getMediaType(), opening.Out)
 
-	window := &OpenedWindow{Installation: inst, State: state}
+	window := &windowRoutes{Installation: inst, session: state, page: page}
 	mountVault(window)
 	mountWorkspace(window, db)
 	mountWindowState(window)
@@ -184,17 +201,17 @@ func buildWindow(
 	mountNote(window, &notes, db, plugins.kinds.list)
 	mountVaults(window, &listing, moves.Change, session.userSwitch)
 	return window, windowLaunch{
-		server: newFileServer(vaultDeps, state, &listing.Find), closeSource: closeEmbedder, source: embedder, generations: generations,
+		server: newFileServer(vaultDeps, &state.Runtime, page.Window, &listing.Find), closeSource: closeEmbedder, source: embedder, generations: generations,
 		plugins: windowPluginAccess{
-			notes: pluginNotes, vaults: newPluginVaultList(state, moves.Change, listing, session.cases.openPlugin), showTab: session.tools.showTab,
+			notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, listing, session.cases.openPlugin), showTab: session.tools.showTab,
 		},
 	}
 }
 
-func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.State, current *vault.CurrentRefresh) (noteUseCases, hostvault.NoteChanges) {
+func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session, writes *wire.Writes, current *vault.CurrentRefresh) (noteUseCases, hostvault.NoteChanges) {
 	update := vault.NewUpdateIndex(current.Get).Execute
-	moves := note.NewTellMoveInShownVault(state.GetShownVault, windowView(state))
-	notes := vaultNotes(vaultDeps, db, update, noteViews{Moves: moves, Writes: state.Writes, Follow: state.Writes})
+	moves := note.NewTellMoveInShownVault(state.GetShownVault, windowView(state.Notices))
+	notes := vaultNotes(vaultDeps, db, update, noteViews{Moves: moves, Writes: writes, Follow: writes})
 	pluginNotes := vaultNotes(vaultDeps, db, update, noteViews{Moves: moves, Writes: none.OpenGate{}})
 	return notes, getNoteChanges(pluginNotes)
 }
@@ -205,16 +222,16 @@ func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps v
 	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
 
-func newFileServer(vaultDeps vaultWiring, state *editor.State, find *registry.Find) *editor.FileServer {
+func newFileServer(vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks *wire.Window, find *registry.Find) *editor.FileServer {
 	return editor.NewFileServer(
-		state,
+		runtime, tasks,
 		file.NewOpenVaultFile(
 			find, file.NewOpenFile(vaultDeps.Readers), openPluginFile(vaultDeps.Options), getMediaType(),
 		),
 	)
 }
 
-func mountServices(w *OpenedWindow, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	mountSettings(w, exec, settingsDeps, vaultDeps)
 	mountMedia(w, vaultDeps)
 	mountCommand(w, install, exec, settingsDeps, vaultDeps)
@@ -227,8 +244,7 @@ func mountServices(w *OpenedWindow, install pluginInstall, exec *PluginExecution
 	mountCatalog(w, install, settingsDeps)
 }
 
-func windowView(state *editor.State) windowsession.View {
-	notices := state.Notices
+func windowView(notices *editor.Notices) windowsession.View {
 	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
 }
 

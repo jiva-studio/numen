@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"io"
 	"net"
 	"net/http"
@@ -120,7 +121,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	name, _ := installation.State.Indexing.Embedding.Describe()
+	name, _ := editor.SessionOf(installation.Installation).Runtime.GetModel()
 	if name == "" {
 		t.Fatal("the vault opened with no embedder on hand")
 	}
@@ -137,7 +138,7 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	if name, _ := installation.State.Indexing.Embedding.Describe(); name != "" {
+	if name, _ := editor.SessionOf(installation.Installation).Runtime.GetModel(); name != "" {
 		t.Errorf("got an embedder: %v", name)
 	}
 }

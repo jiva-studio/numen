@@ -30,7 +30,7 @@ func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open window
 
 // showing is a window state that shows a vault.
 type showing struct {
-	*editor.State
+	*editor.Session
 	vault domain.Vault
 }
 
@@ -47,7 +47,7 @@ func newHandlerOver(t *testing.T, window showing, store memoryTabs) *Handler {
 
 func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
 	state := newState()
-	api := newHandlerOver(t, showing{State: state}, memoryTabs{})
+	api := newHandlerOver(t, showing{Session: state}, memoryTabs{})
 
 	if open := state.Tabs.GetOpenTabs(); len(open.Tabs) != 0 || open.ActiveID != "" {
 		t.Fatalf("a window that has said nothing has %+v open", open)
@@ -78,7 +78,7 @@ func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
 
 func TestReadOpenTabsReturnsTabsSavedForVault(t *testing.T) {
 	store := memoryTabs{}
-	current := showing{State: newState(), vault: domain.Vault{ID: "v", Path: t.TempDir()}}
+	current := showing{Session: newState(), vault: domain.Vault{ID: "v", Path: t.TempDir()}}
 	api := newHandlerOver(t, current, store)
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
@@ -89,7 +89,7 @@ func TestReadOpenTabsReturnsTabsSavedForVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	// A core started again reads the store, not the tabs held in memory.
-	restarted := newHandlerOver(t, showing{State: newState(), vault: current.vault}, store)
+	restarted := newHandlerOver(t, showing{Session: newState(), vault: current.vault}, store)
 	got, err := restarted.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.ReadOpenTabsRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -100,7 +100,7 @@ func TestReadOpenTabsReturnsTabsSavedForVault(t *testing.T) {
 }
 
 func TestReadOpenTabsReturnsNoneWithoutAVault(t *testing.T) {
-	api := newHandlerOver(t, showing{State: newState()}, memoryTabs{})
+	api := newHandlerOver(t, showing{Session: newState()}, memoryTabs{})
 	got, err := api.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.ReadOpenTabsRequest{}))
 	if err != nil || len(got.Msg.GetTabs()) != 0 {
 		t.Errorf("read %+v, %v", got.Msg, err)
@@ -111,7 +111,7 @@ func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 	var received []window.OpenTabs
 	state := newState()
 	state.NotifyOpenTabs = func(open window.OpenTabs) { received = append(received, open) }
-	api := newHandlerOver(t, showing{State: state}, memoryTabs{})
+	api := newHandlerOver(t, showing{Session: state}, memoryTabs{})
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
 		ActiveId: "one",

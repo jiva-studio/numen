@@ -82,7 +82,7 @@ func openTwoVaultsWith(t *testing.T, open openTestWindow) *showing {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	going, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
+	going, itself := numenv1connect.NewWindowServiceHandler(editor.PagesOf(installation.Installation).Window)
 	mux := http.NewServeMux()
 	mountQuestionsServices(mux, installation)
 	mux.Handle(going, itself)
@@ -282,7 +282,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, again)
 
-	if got := again.State.GetCurrentVault(); got.ID != f.second.ID {
+	if got := again.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window opened on %s, want the vault it showed last", got.Name)
 	}
 }
@@ -433,7 +433,7 @@ func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 	case <-time.After(30 * time.Second):
 		t.Fatal("a page that says nothing held the swap with nothing to wait for")
 	}
-	if got := f.installation.State.GetCurrentVault(); got.ID != f.second.ID {
+	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window is showing %s", got.Name)
 	}
 }
@@ -545,7 +545,7 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the page never wrote what it holds")
 	}
-	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {
+	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window is showing %s", got.Name)
 	}
 }
@@ -675,7 +675,7 @@ func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
 	create := noteusecase.NewCreate(newVaultWriters(), f.index.NoteQueries(), refuseToUpdate, testsupport.NewClock(), testsupport.OpenGate{})
-	mountNoteEdit(f.mux, f.installation.State, numenv1connect.NoteServiceCreateNoteProcedure, nil, &create, nil)
+	mountNoteEdit(f.mux, f.installation.Installation, numenv1connect.NoteServiceCreateNoteProcedure, nil, &create, nil)
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
@@ -702,8 +702,8 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	})
 	waitForScan(t, f)
 	remove := noteusecase.NewRemove(newVaultWriters(), f.index.NoteQueries(), f.index.Sources(), f.index.Sources(), refuseToUpdate, testsupport.OpenGate{})
-	removeFile := noteusecase.NewRemoveFile(&remove, f.installation.State.Writes)
-	mountFileEdit(f.mux, f.installation.State, numenv1connect.FileServiceRemoveFileProcedure, nil, &removeFile)
+	removeFile := noteusecase.NewRemoveFile(&remove, editor.PagesOf(f.installation.Installation).Writes)
+	mountFileEdit(f.mux, f.installation.Installation, numenv1connect.FileServiceRemoveFileProcedure, nil, &removeFile)
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Ontology.md",
@@ -753,7 +753,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	installation, db := openInstallation(t)
 
 	const body = "tetragrammaton is a word nothing else in this vault holds"
-	content, err := editor.ServicesOf(installation.Installation, installation.State).Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+	content, err := editor.ServicesOf(installation.Installation).Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Kept.md",
 		Body: body,
 	}))
@@ -765,7 +765,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	}
 
 	found, err := db.ChunkSearch().FindLexical(
-		t.Context(), installation.State.GetCurrentVault().ID, source.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
+		t.Context(), installation.GetCurrentVault().ID, source.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -832,7 +832,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 func TestOpenWindow_NoVaultCreatesNothing(t *testing.T) {
 	f := openEmptyWindow(t)
 
-	if got := f.installation.State.GetCurrentVault(); got != (domain.Vault{}) {
+	if got := f.installation.GetCurrentVault(); got != (domain.Vault{}) {
 		t.Errorf("the window opened on %+v, want no vault", got)
 	}
 
@@ -950,7 +950,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 			case <-asking.Done():
 				return
 			case <-time.After(20 * time.Millisecond):
-				if err := editor.ViewOf(f.installation.State).FocusPlace(asking, domain.Place{Path: "Somewhere.md"}); err != nil && asking.Err() == nil {
+				if err := editor.ViewOf(editor.SessionOf(f.installation.Installation).Notices).FocusPlace(asking, domain.Place{Path: "Somewhere.md"}); err != nil && asking.Err() == nil {
 					t.Error(err)
 				}
 			}
@@ -1100,7 +1100,7 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 		t.Fatalf("the vault just added would not open: %v", err)
 	}
 
-	if got := string(f.installation.State.GetCurrentVault().ID); got != added.Msg.GetVault().GetId() {
+	if got := string(f.installation.GetCurrentVault().ID); got != added.Msg.GetVault().GetId() {
 		t.Fatalf("the window is showing %q, want the vault just added", got)
 	}
 

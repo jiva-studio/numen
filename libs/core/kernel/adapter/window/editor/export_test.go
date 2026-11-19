@@ -32,7 +32,7 @@ import (
 // tests that call a handler without the HTTP stack, or put a window together from the handlers they
 // choose.
 type Services struct {
-	state *State
+	state *testWindow
 
 	File    *filewindow.Handler
 	Note    *notewindow.Handler
@@ -86,7 +86,7 @@ func (s *Services) UseNotes() {
 	)
 }
 
-func createServices(state *State) *Services {
+func createServices(state *testWindow) *Services {
 	services := &Services{
 		state: state,
 		File: filewindow.NewHandler(
@@ -94,9 +94,9 @@ func createServices(state *State) *Services {
 			filewindow.NewChanges(state, state.Notices, nil, nil, nil),
 		),
 		Command: newEmptyCommandHandler(state),
-		Media:   mediawindow.NewHandler(state, state, nil),
+		Media:   mediawindow.NewHandler(state, &state.Media, nil),
 		Plugin:  numenv1connect.UnimplementedPluginServiceHandler{},
-		server:  NewFileServer(state, nil),
+		server:  NewFileServer(state, state.Window, nil),
 	}
 	services.Extra = []Route{
 		RouteOf(state, search.NewHandler(state, nil, nil, searchcancel.NewSearches(testsupport.NewClock())), search.NewRoute),
@@ -128,12 +128,12 @@ func (s *Services) pages() pageSet {
 	path, served = numenv1connect.NewPluginServiceHandler(s.Plugin, counted)
 	routes = append(routes, NewRoute(path, served, s.Plugin))
 	routes = append(routes, s.Extra...)
-	return pageSet{gate: s.state.Gate, window: statePages{state: s.state}, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir, mediaTypes: s.mediaTypes}
+	return pageSet{window: s.state.PageAccess, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir, mediaTypes: s.mediaTypes}
 }
 
 // RouteOf is the route of a handler built by its own package: the path it serves and the handler
 // that serves it come from build, counted the way the container counts them.
-func RouteOf[H any](state *State, handler H, build func(H, ...connect.HandlerOption) (string, http.Handler)) Route {
+func RouteOf[H any](state *testWindow, handler H, build func(H, ...connect.HandlerOption) (string, http.Handler)) Route {
 	path, served := build(handler, state.Gate.CountQuestions())
 	return NewRoute(path, served, handler)
 }
@@ -160,13 +160,13 @@ func HandlerOf[T any](o *Installation) T {
 	return none
 }
 
-func (s *Services) storePlayingLoopback(playing *Loopback) { s.state.Playing.Store(playing) }
+func (s *Services) storePlayingLoopback(playing *Loopback) { s.state.Media.Playing.Store(playing) }
 
 func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *file.OpenPluginFile, mediaTypes *file.GetMediaType) {
 	s.readers, s.pluginFiles, s.mediaTypes = readers, openPluginFile, mediaTypes
 	s.findVaults(nil)
 	s.resolve = file.NewResolveAddress(file.NewStatFile(readers), openPluginFile, mediaTypes)
-	s.Media = mediawindow.NewHandler(s.state, s.state, s.resolve)
+	s.Media = mediawindow.NewHandler(s.state, &s.state.Media, s.resolve)
 }
 
 func (s *Services) findVaults(find file.VaultFinder) {
@@ -174,8 +174,8 @@ func (s *Services) findVaults(find file.VaultFinder) {
 }
 
 // ServicesOf is the handlers a window answers through.
-func ServicesOf(o *Installation, state *State) *Services {
-	services := &Services{state: state}
+func ServicesOf(o *Installation) *Services {
+	services := &Services{}
 	for _, one := range o.pages.routes {
 		switch handler := one.service.(type) {
 		case *filewindow.Handler:
@@ -190,12 +190,11 @@ func ServicesOf(o *Installation, state *State) *Services {
 }
 
 // ViewOf is the view of the window as the core asks it to show something.
-func ViewOf(state *State) windowsession.View {
-	notices := state.Notices
+func ViewOf(notices *Notices) windowsession.View {
 	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
 }
 
-func newEmptyCommandHandler(state *State) *command.Handler {
+func newEmptyCommandHandler(state *testWindow) *command.Handler {
 	list := plugincommand.NewList(noCommands{}, when.NewConditions())
 	run := plugincommand.NewRun(noCommands{}, noCommands{}, noContentTypes{}, nil, nil, when.NewConditions())
 	return command.NewHandler(state, plugincommand.NewListCommands(list, noContentTypes{}), plugincommand.NewRunCommand(list, run, nil), plugincommand.NewListItems(list, nil))
@@ -218,3 +217,9 @@ type noContentTypes struct{}
 
 func (noContentTypes) GetContentType(string) domain.ContentType   { return domain.UnknownContentType }
 func (noContentTypes) ListExtensions(domain.ContentType) []string { return nil }
+
+// PagesOf returns the request gates used by the running installation.
+func PagesOf(o *Installation) *PageAccess { return o.pages.window }
+
+// SessionOf returns the editor session displayed by the running installation.
+func SessionOf(o *Installation) *Session { return o.pages.window.vaults.(*Session) }

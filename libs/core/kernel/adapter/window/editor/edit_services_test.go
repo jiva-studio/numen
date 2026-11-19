@@ -31,13 +31,15 @@ func newNoteMover(db *index.DB) note.Move {
 		Links: db.NoteQueries(), Names: db.NoteQueries(), Sources: db.Sources(), Now: testsupport.NewClock()})
 }
 
-func mountNoteEdit(mux *http.ServeMux, state *editor.State, procedure string, write *note.Write, create *note.Create, rename *note.Rename) {
-	prose := notewindow.NewProse(state, nil, write, create, rename, state.Writes)
+func mountNoteEdit(mux *http.ServeMux, installation *editor.Installation, procedure string, write *note.Write, create *note.Create, rename *note.Rename) {
+	state := editor.SessionOf(installation)
+	prose := notewindow.NewProse(state, nil, write, create, rename, editor.PagesOf(installation).Writes)
 	_, handler := numenv1connect.NewNoteServiceHandler(notewindow.NewHandler(state.Notices, prose, nil, nil, nil))
 	mux.Handle(procedure, handler)
 }
 
-func mountFileEdit(mux *http.ServeMux, state *editor.State, procedure string, move *vault.MoveFile, remove *note.RemoveFile) {
+func mountFileEdit(mux *http.ServeMux, installation *editor.Installation, procedure string, move *vault.MoveFile, remove *note.RemoveFile) {
+	state := editor.SessionOf(installation)
 	changes := filewindow.NewChanges(state, state.Notices, move, remove, nil)
 	_, handler := numenv1connect.NewFileServiceHandler(filewindow.NewHandler(nil, changes))
 	mux.Handle(procedure, handler)

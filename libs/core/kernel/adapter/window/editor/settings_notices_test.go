@@ -9,9 +9,9 @@ import (
 
 func TestTheNoticesOfTheSettingsReachTheWindowAsNoticesAndNotAsFailedTasks(t *testing.T) {
 	const notice = "numen.json: no installed plugin md.numen.proofreading; its settings are ignored"
-	state := NewState(run.NewTasks(), nil, nil)
+	state := newTestWindow(run.NewTasks(), nil, nil)
 
-	NewInstallation(state, Lifecycle{}, nil, nil, nil).Report([]string{notice})
+	NewInstallation(state.PageAccess, Lifecycle{}, nil, nil, nil).Report([]string{notice})
 
 	tasks := state.Window.Tasks.List()
 	if len(tasks) != 1 || !strings.Contains(tasks[0].About, notice) {

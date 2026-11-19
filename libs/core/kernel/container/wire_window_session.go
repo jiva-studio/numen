@@ -50,10 +50,10 @@ type windowSession struct {
 	userSwitch windowsession.UserSwitch
 }
 
-func newWindowSession(
-	pluginVault windowsession.PluginVaultPath, triggers windowsession.TriggerSource, vaultDeps vaultWiring, state *editor.State, ctx context.Context, parts windowParts,
+func (parts windowParts) newWindowSession(
+	pluginVault windowsession.PluginVaultPath, triggers windowsession.TriggerSource, vaultDeps vaultWiring, state *editor.Session, page *editor.PageAccess, ctx context.Context,
 ) windowSession {
-	diag := windowsession.NewDiagnostics(parts.out, state.Window)
+	diag := windowsession.NewDiagnostics(parts.out, page.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(vaultDeps.TextVersions), diag),
@@ -63,7 +63,7 @@ func newWindowSession(
 	identity := vault.NewCheckIdentity(vaultIdentity(vaultDeps.Options))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)
 	guard := &windowsession.Guard{}
-	flush := windowsession.NewPageFlush(state.Window, state.Writes)
+	flush := windowsession.NewPageFlush(page.Window, page.Writes)
 	rebuild := windowsession.NewRebuildSession(guard, session)
 	show := windowsession.NewShowVault(guard, session, identity, flush, &state.Notices.ChangeEvents)
 	follow := windowsession.NewModelFollow(parts.embedding, parts.indexer, &state.Runtime, rebuild)
@@ -72,18 +72,18 @@ func newWindowSession(
 		cases: windowCases{
 			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, parts.shouldRebuild),
 			show:       show,
-			openPlugin: windowsession.NewOpenPluginVault(guard, identity, state.Window, switching),
+			openPlugin: windowsession.NewOpenPluginVault(guard, identity, page.Window, switching),
 			flush:      windowsession.NewFlushPending(guard, flush),
 			close: windowsession.NewCloseWindow(
-				state.Gate, session,
-				state.ClosePlaying,
+				page.Gate, session,
+				page.Media.ClosePlaying,
 				func(context.Context) error { return parts.closeEmbedder() },
 				func(context.Context) error { return parts.closeIndex() },
 			),
 		},
 		tools: windowTools{
 			importFiles: windowsession.NewImportFiles(
-				parts.importFiles, state.Writes, state.Window, &state.Notices.ChangeEvents,
+				parts.importFiles, page.Writes, page.Window, &state.Notices.ChangeEvents,
 			),
 			showTab: windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, 0),
 		},
