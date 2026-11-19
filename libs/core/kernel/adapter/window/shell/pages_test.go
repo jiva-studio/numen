@@ -179,8 +179,7 @@ func TestTheWindowServesItsPluginsAndTheirFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 	api := newAPI(t)
-	api.GetFrontendPluginIDs = func() []string { return []string{"md.numen.example"} }
-	api.GetPluginDir = func(id string) (string, bool) { return dir, id == "md.numen.example" }
+	api.Frontends = NewFrontendPlugins(func() []string { return []string{"md.numen.example"} }, func(id string) (string, bool) { return dir, id == "md.numen.example" })
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 

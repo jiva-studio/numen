@@ -56,6 +56,7 @@ func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vault
 // Shell is what a shell window closes when it ends: CloseVaults waits until nothing is still writing to the
 // index, CloseIndex closes it, and Themes is why the themes could not be loaded, or nil.
 type Shell struct {
+	API         *shell.API
 	CloseVaults func()
 	CloseIndex  func() error
 	Themes      error
@@ -64,11 +65,10 @@ type Shell struct {
 // ShellOpening identifies the target window, its services and its output.
 type ShellOpening struct {
 	Target string
-	API    *shell.API
 	Log    ShellLog
 }
 
-// OpenShell opens the registry and the cache, gives api the window of target, binds the notes, the vault list,
+// OpenShell opens the registry and the cache, creates the window of target, binds the notes, the vault list,
 // the vault indexer, the plugin vault, the change feed and the themes of the shell window to api, and tells
 // log.Notify what it cannot follow.
 func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening ShellOpening) (Shell, error) {
@@ -77,18 +77,19 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	if err != nil {
 		return Shell{}, err
 	}
-	opening.API.Window = shell.NewWindow(opening.Target, nil)
 	install := newPluginInstall(c, prefs, endpoints, res)
 	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
 
-	api, log := opening.API, opening.Log
-	api.GetFrontendPluginIDs = exec.Runtime.Manifests.ListFrontendPluginIDs
-	api.GetPluginDir = func(id string) (string, bool) { return getPluginDir(exec.Runtime.Registry, id) }
-	api.PluginServices = servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Registry)
-	api.ConnectionCalls = connectioncall.NewService(getConnectionCalls(prefs, endpoints), openRowLists(install, exec, settingsDeps, vaultDeps))
+	log := opening.Log
+	api := &shell.API{
+		Window:          shell.NewWindow(opening.Target, nil),
+		Frontends:       shell.NewFrontendPlugins(exec.Runtime.Manifests.ListFrontendPluginIDs, func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) }),
+		PluginServices:  servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver),
+		ConnectionCalls: connectioncall.NewService(getConnectionCalls(prefs, endpoints), openRowLists(install, exec, settingsDeps, vaultDeps)),
+	}
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
 	vaults := openVaults(vaultDeps, db, log.Out, log.Label, api.ReportVaultRead)
-	closers := Shell{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
+	closers := Shell{API: api, CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
 	setShellNotes(api, db)
 	vaultList := vaultregistry.NewList(ports.Vaults)
 	api.Vaults = &vaultList

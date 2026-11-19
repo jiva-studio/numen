@@ -74,7 +74,7 @@ func mountCommand(w *windowRoutes, install pluginInstall, exec *PluginExecution,
 	if menu := openVersionItems(install, exec, settingsDeps, vaultDeps); menu != nil {
 		versions = menu
 	}
-	commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.Registry), vaultDeps, exec, versions)
+	commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.Listing), vaultDeps, exec, versions)
 	handler := command.NewHandler(&w.session.Runtime, commands.Listing, commands.RunCommand, commands.ListItems)
 	w.Installation.Mount(editor.NewRoute(command.NewRoute(w.page.Gate.CountQuestions(), handler)))
 }
@@ -200,9 +200,9 @@ func mountSettings(w *windowRoutes, exec *PluginExecution, settingsDeps settings
 }
 
 func mountPlugin(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	w.Installation.SetPlugins(servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Registry), func(id string) (string, bool) { return getPluginDir(exec.Runtime.Registry, id) })
+	w.Installation.SetPlugins(servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver), func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) })
 	host := exec
-	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.Registry, getConnectionResolve(install, exec, settingsDeps, vaultDeps), vaultDeps.Clock)
+	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.Resolver, getConnectionResolve(install, exec, settingsDeps, vaultDeps), vaultDeps.Clock)
 	handler := windowplugin.NewHandler(watch)
 	w.Installation.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.page.Gate.CountQuestions())))
 }
@@ -210,7 +210,7 @@ func mountPlugin(w *windowRoutes, install pluginInstall, exec *PluginExecution, 
 func mountHealth(w *windowRoutes, exec *PluginExecution) {
 	host := exec
 	handler := windowhealth.NewHandler(
-		host.Health, pluginhealth.NewReport(host.Health, host.Runtime.Registry), pluginhealth.NewClear(host.Health),
+		host.Health, pluginhealth.NewReport(host.Health, host.Runtime.Resolver), pluginhealth.NewClear(host.Health),
 	)
 	path, served := windowhealth.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))

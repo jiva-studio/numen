@@ -72,7 +72,8 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 
 func (h *downEmbeddingHost) lend() *container.TestPlugins {
 	execution := &container.PluginExecution{Health: pluginhealth.NewItems()}
-	execution.Runtime.Registry = h
+	execution.Runtime.Resolver = h
+	execution.Runtime.Listing = h
 	execution.Runtime.Activator = h
 	execution.Runtime.PluginBinding = container.AbsentBinding()
 	execution.Runtime.ConfigWatcher = h

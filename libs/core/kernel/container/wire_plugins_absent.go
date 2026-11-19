@@ -19,7 +19,7 @@ func newAbsentExecution(reason plugindomain.UnavailableReason, cause error) *Plu
 	settings := absent.Settings{}
 	return &PluginExecution{
 		Runtime: pluginRuntime{
-			Activator: runtime, PluginRetrier: runtime, Registry: runtime, Manifests: pluginmanifest.Open(runtime, runtime, runtime), PluginEventEmitter: runtime, PluginBinding: runtime, TextPlugins: runtime,
+			Activator: runtime, PluginRetrier: runtime, Listing: runtime, Resolver: runtime, Manifests: pluginmanifest.Open(runtime, runtime, runtime), PluginEventEmitter: runtime, PluginBinding: runtime, TextPlugins: runtime,
 			PluginFailures: runtime, ConfigWatcher: runtime, ClientLookup: transport.NewClientLookup(nil),
 		},
 		Watch:     PluginWatch{PluginShutdown: settings, DependencyReporter: settings, ContentTypeTable: contenttype.Open()},

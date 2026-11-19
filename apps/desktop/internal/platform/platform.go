@@ -61,7 +61,7 @@ func NewPluginServices(target string) Installation {
 	reportPluginFailure("discover plugins", discoverErr)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
 	preferences.SetStorage(cacheRoot, dataRoot)
-	res.PluginCatalog = getCatalogConfig(target, dirs, execution.Runtime.Registry.IsPluginEnabled)
+	res.PluginCatalog = getCatalogConfig(target, dirs, execution.Runtime.Listing.IsPluginEnabled)
 	return Installation{Execution: execution, Preferences: preferences, Endpoints: endpoints, Resources: res}
 }
 

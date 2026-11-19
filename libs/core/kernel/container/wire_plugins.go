@@ -32,16 +32,12 @@ func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *vault
 	return installPluginVault(install, vaultDeps, registry, db, current, pluginVaultHooks{})
 }
 
-type pluginRegistry interface {
-	pluginport.PluginLister
-	pluginport.PluginResolver
-}
-
 // pluginRuntime is what runs, finds and addresses the plugins.
 type pluginRuntime struct {
 	bridge.Activator
 	pluginport.PluginRetrier
-	Registry  pluginRegistry
+	Listing   pluginport.PluginLister
+	Resolver  pluginport.PluginResolver
 	Manifests pluginmanifest.Manifests
 	pluginport.PluginEventEmitter
 	pluginport.PluginBinding
@@ -122,7 +118,8 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 		Runtime: pluginRuntime{
 			Activator:          management.Activation,
 			PluginRetrier:      management.Retry,
-			Registry:           management.Registry,
+			Listing:            management.Registry,
+			Resolver:           management.Registry,
 			Manifests:          pluginmanifest.Open(management.Registry, management.Registry, supervision.Failures),
 			PluginEventEmitter: management.Events,
 			PluginBinding:      plugin.NewBinding(management.Teardown, management.Mode),

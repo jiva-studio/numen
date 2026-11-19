@@ -75,10 +75,9 @@ func run(cfg container.Config, services platform.Installation, debug debugOption
 		return err
 	}
 
-	api := &shell.API{}
 	opening := container.ShellOpening{
-		Target: platform.TargetFlashcards, API: api,
-		Log: container.ShellLog{Out: os.Stderr, Label: appName, Notify: notifyUser},
+		Target: platform.TargetFlashcards,
+		Log:    container.ShellLog{Out: os.Stderr, Label: appName, Notify: notifyUser},
 	}
 	started, err := cfg.OpenShell(services.Execution, services.Preferences, services.Endpoints, services.Resources, ctx, opening)
 	if err != nil {
@@ -100,7 +99,7 @@ func run(cfg container.Config, services platform.Installation, debug debugOption
 	if err != nil {
 		return err
 	}
-	handler := api.NewHandler(pages)
+	handler := started.API.NewHandler(pages)
 	if debug.isServingHTTP() {
 		return debug.serveHTTP(ctx, services.Resources, handler)
 	}

@@ -64,7 +64,7 @@ func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 		func() cli.PluginCommands {
 			install := newPluginInstall(c, prefs, endpoints, res)
 			settingsDeps, plan, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
-			commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.Registry), vaultDeps, exec, nil)
+			commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.Listing), vaultDeps, exec, nil)
 			plugins := getRunningExecution(exec, c.SafeMode).Runtime.TextPlugins
 			return getCLIPluginCommands(c, commands, newCLIPluginWork(install, exec, r), plugins, plan.ChunkPolicy, vaultDeps)
 		},

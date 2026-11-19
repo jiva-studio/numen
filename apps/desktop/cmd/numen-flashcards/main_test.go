@@ -45,12 +45,11 @@ func makeConfigWithVaults(t *testing.T) (testInstallation, []domain.Vault) {
 
 func openShell(t *testing.T, install testInstallation) *shell.API {
 	t.Helper()
-	api := &shell.API{}
 
 	services := install.services
 	opening := container.ShellOpening{
-		Target: platform.TargetFlashcards, API: api,
-		Log: container.ShellLog{Out: io.Discard, Label: "flashcards", Notify: func(string) {}},
+		Target: platform.TargetFlashcards,
+		Log:    container.ShellLog{Out: io.Discard, Label: "flashcards", Notify: func(string) {}},
 	}
 	started, err := install.cfg.OpenShell(services.Execution, services.Preferences, services.Endpoints, services.Resources, t.Context(), opening)
 	if err != nil {
@@ -62,7 +61,7 @@ func openShell(t *testing.T, install testInstallation) *shell.API {
 			t.Error(err)
 		}
 	})
-	return api
+	return started.API
 }
 
 func addVaultOf(t *testing.T, install testInstallation, name string) domain.Vault {
