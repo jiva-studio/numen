@@ -100,7 +100,7 @@ type Search struct {
 	prepare        VaultPreparing
 	words          Participant
 	names          Participant
-	sources        []Participant
+	sources        []externalSource
 	readers        vaultport.VaultReaders
 	texts          textdomain.Readers
 	errorHandler   window.ErrorHandler
@@ -152,7 +152,7 @@ func New(queries sourceport.LexicalQueries, readers vaultport.VaultReaders, text
 	return Search{
 		words:          NewWords(queries),
 		names:          NewNames(queries),
-		sources:        sources,
+		sources:        newExternalSources(sources),
 		readers:        readers,
 		texts:          texts,
 		errorHandler:   errorHandler,
@@ -185,7 +185,7 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 type asked struct {
 	participant Participant
 	limit       int
-	isTolerated bool
+	source      *externalSource
 }
 
 func (u Search) getAskedParticipants(p Parameters) []asked {
@@ -197,8 +197,8 @@ func (u Search) getAskedParticipants(p Parameters) []asked {
 		out = append(out, asked{participant: u.names, limit: p.Named})
 	}
 	if p.Sources > 0 {
-		for _, source := range u.sources {
-			out = append(out, asked{participant: source, limit: p.Sources, isTolerated: true})
+		for i := range u.sources {
+			out = append(out, asked{source: &u.sources[i], limit: p.Sources})
 		}
 	}
 	return out
@@ -221,6 +221,9 @@ func (u Search) rankAll(ctx context.Context, v domain.Vault, query string, p Par
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	out := make([]Ranking, 0, len(answers))
 	for _, one := range answers {
 		if one != nil {
@@ -234,21 +237,11 @@ func (u Search) rank(ctx context.Context, v domain.Vault, one asked, q Query) (*
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	ranking, err := one.participant.Rank(ctx, v, q)
-	switch {
-	case err == nil:
-		if one.isTolerated {
-			u.reportAnswered()
-		}
-		return &ranking, nil
-	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
-		return nil, err
-	case one.isTolerated:
-		u.errorHandler(err)
-		return nil, nil
-	default:
-		return nil, err
+	if one.source == nil {
+		ranking, err := one.participant.Rank(ctx, v, q)
+		return &ranking, err
 	}
+	return u.rankSource(ctx, v, one.source, q)
 }
 
 // errUnreadable marks a source that exists but yields no usable text. It is not
