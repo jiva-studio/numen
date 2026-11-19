@@ -24,6 +24,7 @@ func getWireContributionKinds() map[plugin.ContributionKind]v1.PluginContributio
 		plugin.ContributionFrameOrigins:     v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_FRAME_ORIGINS,
 		plugin.ContributionConnectionTypes:  v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_CONNECTION_TYPES,
 		plugin.ContributionOperations:       v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_OPERATIONS,
+		plugin.ContributionLicenses:         v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_LICENSES,
 		plugin.ContributionPermissions:      v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_PERMISSIONS,
 		plugin.ContributionDependencies:     v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_DEPENDENCIES,
 		plugin.ContributionServices:         v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SERVICES,

@@ -56,46 +56,118 @@ type CoreClaims struct {
 	SearchFunctions []string
 }
 
-// ListContributionConflicts lists the declarations of tab kinds, readers and search functions that a
-// plugin makes after the core or an earlier plugin of the list already made them. The reader of an id and
-// the tab kind of the name the window gives that reader are one claim, which one plugin may make as both. A
-// plugin with a conflict owns nothing, because the host refuses it.
+// ListContributionConflicts lists the declarations of tab kinds, readers, search functions and
+// license providers that a plugin makes after the core or an earlier plugin of the list already made
+// them. The reader of an id and the tab kind of the name the window gives that reader are one claim,
+// which one plugin may make as both. Two plugins may contribute to one license id unless they give
+// the same provider different productIds or urls. A plugin with a conflict owns nothing, because the
+// host refuses it.
 func ListContributionConflicts(plugins []Discovered, core CoreClaims) []DuplicateContributionError {
 	owners := map[string]string{}
 	for _, name := range core.SearchFunctions {
 		owners[searchFunctionSpace+"\x00"+name] = CoreOwnerID
 	}
+	licenseProviders := map[string]licenseProviderClaim{}
 	var conflicts []DuplicateContributionError
 	for _, p := range plugins {
-		pending := map[string]bool{}
-		hasConflict := false
-		claim := func(what, space, id string) {
-			key := space + "\x00" + id
-			if owner, isOwned := owners[key]; isOwned {
-				conflicts = append(conflicts, DuplicateContributionError{PluginID: p.Manifest.ID, OwnerID: owner, What: what, ID: id})
-				hasConflict = true
-				return
-			}
-			pending[key] = true
-		}
 		c := p.Manifest.Contributes
-		for _, kind := range c.TabKinds {
-			claim("tab kind", "tab", kind.Kind)
-		}
-		for _, reader := range c.Readers {
-			claim("reader", "tab", getReaderTabKind(reader.ID))
-		}
-		for _, f := range c.SearchFunctions.Functions {
-			claim("search function", searchFunctionSpace, f.Name)
-		}
-		if hasConflict {
+		pending, pluginConflicts := collectPluginContributionClaims(p.Manifest.ID, c, owners)
+		pluginConflicts = append(pluginConflicts, listLicenseProviderConflicts(p.Manifest.ID, c.Licenses, licenseProviders)...)
+		if len(pluginConflicts) > 0 {
+			conflicts = append(conflicts, pluginConflicts...)
 			continue
 		}
 		for key := range pending {
 			owners[key] = p.Manifest.ID
 		}
+		recordLicenseProviders(p.Manifest.ID, c.Licenses, licenseProviders)
 	}
 	return conflicts
+}
+
+func collectPluginContributionClaims(
+	pluginID string,
+	c Contributes,
+	owners map[string]string,
+) (map[string]bool, []DuplicateContributionError) {
+	pending := map[string]bool{}
+	var conflicts []DuplicateContributionError
+	claim := func(what, space, id string) {
+		key := space + "\x00" + id
+		if owner, isOwned := owners[key]; isOwned {
+			conflicts = append(conflicts, DuplicateContributionError{PluginID: pluginID, OwnerID: owner, What: what, ID: id})
+			return
+		}
+		pending[key] = true
+	}
+	for _, kind := range c.TabKinds {
+		claim("tab kind", "tab", kind.Kind)
+	}
+	for _, reader := range c.Readers {
+		claim("reader", "tab", getReaderTabKind(reader.ID))
+	}
+	for _, f := range c.SearchFunctions.Functions {
+		claim("search function", searchFunctionSpace, f.Name)
+	}
+	return pending, conflicts
+}
+
+type licenseProviderClaim struct {
+	productID      string
+	productIDOwner string
+	url            string
+	urlOwner       string
+}
+
+func listLicenseProviderConflicts(
+	pluginID string,
+	licenses []License,
+	claimed map[string]licenseProviderClaim,
+) []DuplicateContributionError {
+	var conflicts []DuplicateContributionError
+	for _, lic := range licenses {
+		for _, prov := range lic.Providers {
+			id := lic.ID + "/" + prov.Provider
+			existing := claimed[id]
+			if owner := findLicenseProviderConflictOwner(prov, existing); owner != "" {
+				conflicts = append(conflicts, DuplicateContributionError{
+					PluginID: pluginID,
+					OwnerID:  owner,
+					What:     "license provider",
+					ID:       id,
+				})
+			}
+		}
+	}
+	return conflicts
+}
+
+func findLicenseProviderConflictOwner(prov LicenseProvider, existing licenseProviderClaim) string {
+	if prov.ProductID != "" && existing.productID != "" && prov.ProductID != existing.productID {
+		return existing.productIDOwner
+	}
+	if prov.URL != "" && existing.url != "" && prov.URL != existing.url {
+		return existing.urlOwner
+	}
+	return ""
+}
+
+func recordLicenseProviders(pluginID string, licenses []License, claimed map[string]licenseProviderClaim) {
+	for _, lic := range licenses {
+		for _, prov := range lic.Providers {
+			id := lic.ID + "/" + prov.Provider
+			entry := claimed[id]
+			if entry.productID == "" && prov.ProductID != "" {
+				entry.productID = prov.ProductID
+				entry.productIDOwner = pluginID
+			}
+			if entry.url == "" && prov.URL != "" {
+				entry.url = prov.URL
+				entry.urlOwner = pluginID
+			}
+			claimed[id] = entry
+		}
+	}
 }
 
 func getReaderTabKind(id string) string {

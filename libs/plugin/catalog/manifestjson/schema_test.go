@@ -70,7 +70,9 @@ const everyFieldManifest = `{
 			{"key": "parallelRequests", "type": "number", "title": "Parallel", "default": 4, "min": 1, "max": 32, "step": 1}]}],
 		"operations": [{"name": "llm.complete", "title": "complete text"}, {"name": "llm.models", "title": "list models"}],
 		"searchFunctions": {"version": 1, "functions": [{"name": "rhymes", "args": [{"name": "word", "type": "string"}], "level": "document",
-			"description": "notes that rhyme with a word", "example": "rhymes(\"moon\")"}]}}
+			"description": "notes that rhyme with a word", "example": "rhymes(\"moon\")"}]},
+		"licenses": [{"id": "supporter", "title": "Supporter", "description": "Shows the Supporter badge", "offlineGraceDays": 30,
+			"providers": [{"provider": "creem", "productId": "prod_supporter", "url": "https://creem.io/buy/supporter"}]}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

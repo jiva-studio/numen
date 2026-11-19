@@ -30,6 +30,7 @@ const CONTRIBUTION_KINDS: Readonly<Record<PluginContributionKind, string>> = {
   frameOrigins: 'Frame origins',
   connectionTypes: 'Connection types',
   operations: 'Operations',
+  licenses: 'Licenses',
   permissions: 'Permissions',
   dependencies: 'Dependencies',
   services: 'Services',

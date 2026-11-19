@@ -28,6 +28,7 @@ const (
 	ContributionFrameOrigins
 	ContributionConnectionTypes
 	ContributionOperations
+	ContributionLicenses
 	ContributionPermissions
 	ContributionDependencies
 	ContributionServices
@@ -106,6 +107,9 @@ func listContributesSections(c manifest.Contributes) []Contribution {
 		})},
 		{ContributionOperations, mapItems(c.Operations, func(one manifest.Operation) ContributionItem {
 			return ContributionItem{Text: getTitle(one.Title, one.Name), Detail: one.Name}
+		})},
+		{ContributionLicenses, mapItems(c.Licenses, func(one manifest.License) ContributionItem {
+			return ContributionItem{Text: getTitle(one.Title, one.ID), Detail: one.ID}
 		})},
 	}
 }
