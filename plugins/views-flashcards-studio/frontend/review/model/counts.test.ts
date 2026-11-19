@@ -133,7 +133,7 @@ describe('what the counting follows', () => {
     expect(wire.reloadsOpened).toBe(1)
   })
 
-  it('keeps the reconnect warning beside other tasks until the first refresh succeeds', async () => {
+  it('retains the reload task until refresh succeeds', async () => {
     vi.useFakeTimers()
     wire.reloads = () => (wire.reloadsOpened > 2 ? sends({ reload: false }) : fails())
     const host = createMockNoticeHost()
