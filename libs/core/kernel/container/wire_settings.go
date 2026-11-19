@@ -156,10 +156,6 @@ func listAppSettings(c settingsWiring) []plugindomain.Setting {
 	).Execute()
 }
 
-func subscribeSettingChanges(c settingsWiring) (<-chan []settingsdomain.Setting, func()) {
-	return feed(c).Subscribe()
-}
-
 func refreshSettingEvents(c settingsWiring) {
 	feed(c).Refresh()
 }
@@ -172,10 +168,6 @@ func syncSetting(c settingsWiring) naming.SyncSetting {
 		}
 		return naming.SyncTitleAndFilename(target.Sync())
 	}
-}
-
-func logLevelSetting(c settingsWiring) func() domainlogs.Level {
-	return c.SettingsFiles.GetLogLevel
 }
 
 func writeLogLevel(c settingsWiring) func(domainlogs.Level) error {
@@ -201,7 +193,7 @@ func settingsSettingsFile(c settingsWiring) (string, error) {
 }
 
 func openWatchSettings(c settingsWiring) *settingsusecase.WatchSettingChanges {
-	return settingsusecase.NewWatchSettingChanges(func() (<-chan []settingsdomain.Setting, func()) { return subscribeSettingChanges(c) })
+	return settingsusecase.NewWatchSettingChanges(func() (<-chan []settingsdomain.Setting, func()) { return feed(c).Subscribe() })
 }
 
 func openChoosePluginPath(c settingsWiring, dialog machineport.PathDialog) *settingsusecase.ChoosePluginPath {

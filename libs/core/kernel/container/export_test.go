@@ -73,7 +73,7 @@ func (c TestInstallation) OpenWatchSettings() *settings.WatchSettingChanges {
 }
 
 func (c TestInstallation) SubscribeSettingChanges() (<-chan []settingsdomain.Setting, func()) {
-	return subscribeSettingChanges(c.buildSettingsWiring())
+	return feed(c.buildSettingsWiring()).Subscribe()
 }
 
 func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher) *vault.VaultOpener {
