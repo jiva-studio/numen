@@ -100,10 +100,15 @@ func (a *Adapter) Activate(
 			errs = append(errs, fmt.Errorf("%s: %w", one.Provider, license.ErrProviderUnavailable))
 			continue
 		}
+		expectedProductID := resolveExpectedProductID(one)
+		if one.Provider == sharedlicensing.ProviderIDDodo && expectedProductID == "" {
+			errs = append(errs, fmt.Errorf("%s: %w: product ID is required", prov.GetInfo().Name, license.ErrInvalidKey))
+			continue
+		}
 		res, err := prov.Activate(ctx, sharedlicensing.ActivationRequest{
 			Key:          cleanedKey,
 			InstanceName: instanceName,
-			ProductID:    resolveExpectedProductID(one),
+			ProductID:    expectedProductID,
 		})
 		if err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", prov.GetInfo().Name, err))
