@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"io"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
@@ -69,15 +70,15 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	db := startup.db
 	install := newPluginInstall(c, endpoints, res)
 	versions := getWindowVersions(c, exec, res, startup)
-	settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, install.Endpoints, res, versions)
+	settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, res, versions)
 	ports := startup.ports
 	first, err := registry.NewGetVaultToShow(ports.Lookup, ports.Vaults, ports.Last).Execute(startup.opening.Named)
 	if err != nil {
 		return nil, errors.Join(err, db.Close())
 	}
-	plugins := openWindowPlugins(install, exec, settingsDeps, vaultDeps, db)
+	plugins := openWindowPlugins(install, exec, settingsDeps, vaultDeps, db, newSourceBinding(exec, c.SafeMode, install.Endpoints, res))
 	opened, closeEmbedder := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps, getLogEntries(res))
-	mountServices(opened, install, exec, settingsDeps, searchDeps, vaultDeps)
+	mountServices(opened, install, exec, settingsDeps, searchDeps.newTextSearch(c.machine.ResolvedCompute.Workers), vaultDeps)
 	if err := opened.inst.Start(ctx, first, opened.server); err != nil {
 		return nil, errors.Join(err, closeEmbedder(), db.Close())
 	}
@@ -133,6 +134,7 @@ type windowStartup struct {
 }
 
 type windowPlugins struct {
+	source    sourcebridge.Binding
 	tasks     *run.Tasks
 	events    pluginport.PluginEventEmitter
 	vault     windowsession.PluginVaultPath
@@ -141,21 +143,22 @@ type windowPlugins struct {
 	kinds     tabKinds
 }
 
-func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) windowPlugins {
+func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index, source sourcebridge.Binding) windowPlugins {
 	tasks := run.NewTasks()
 	exec.Runtime.SetOnFailureCleared(func(string) { settingsDeps.PluginChanges.Signal() })
 	reportDependencies(exec.Watch, tasks, vaultDeps.RecordLog)
 	pluginsOpenPluginWork(install, exec, tasks, &run.Lock{})
 	setModelCalls(install, exec, settingsDeps, vaultDeps, run.NewConnectionNoticeTasks(tasks).Execute)
 	return windowPlugins{
-		tasks: tasks, events: exec.Runtime.PluginEventEmitter, vault: exec.Runtime.PluginBinding,
+		source: source,
+		tasks:  tasks, events: exec.Runtime.PluginEventEmitter, vault: exec.Runtime.PluginBinding,
 		triggers:  getTriggerSource(install, exec, settingsDeps, vaultDeps, db.FrontmatterChanges()),
 		startFeed: getFeedStart(exec, settingsDeps, vaultDeps, db), kinds: newTabKinds(exec, settingsDeps, vaultDeps, db),
 	}
 }
 
 func buildWindow(
-	s windowStartup, ctx context.Context, plugins windowPlugins, searchDeps searchWiring, vaultDeps vaultWiring, entries *logsusecase.Entries,
+	s windowStartup, ctx context.Context, plugins windowPlugins, searchDeps vaultIndexPlan, vaultDeps vaultWiring, entries *logsusecase.Entries,
 ) (*windowWiring, func() error) {
 	db, opening, ports := s.db, s.opening, s.ports
 	tasks := plugins.tasks
@@ -163,7 +166,7 @@ func buildWindow(
 	// compiled behind this, so the window is drawn while it arrives. A source that cannot describe itself
 	// yet is opened all the same: the search item of its plugin shows why, and the source joins search and
 	// indexing once a configuration of its plugin lets it describe itself.
-	embedder, asking, closeEmbedder, why := searchSources(searchDeps, ctx)
+	embedder, closeEmbedder, why := plugins.source.OpenWatching(ctx)
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
 	state := editor.NewState(tasks, opening.Frame, func(event string) { plugins.events.EmitEvent(event) })
 	state.SetIndexing(embedding)
@@ -175,7 +178,7 @@ func buildWindow(
 	// so the vault reflects its content without waiting for the watcher.
 	current := &vault.CurrentRefresh{Fallback: func() vault.Refreshing {
 		v := vaultDeps
-		v.CutNotes = cutNotes(searchDeps)
+		v.CutNotes = cutNotes(searchDeps.ChunkPolicy)
 		return vaultMakeRefresh(v, db, db.Notes())
 	}}
 	cases := newWindowUseCases(vaultDeps, ports, db, state, current)
@@ -195,7 +198,7 @@ func buildWindow(
 	}, session.tools.importFiles, getMediaType(), opening.Out)
 
 	window := &windowWiring{
-		logEntries: entries, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
+		logEntries: entries, ports: ports, db: db, embedder: embedder, asking: embedder, inst: inst, state: state,
 		kinds: plugins.kinds, server: newFileServer(vaultDeps, state, cases), switching: session.userSwitch, cases: cases,
 		tasks: tasks, generations: generations,
 	}
@@ -241,7 +244,7 @@ func newFileServer(vaultDeps vaultWiring, state *editor.State, cases WindowUseCa
 	)
 }
 
-func mountServices(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring) {
+func mountServices(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, searchDeps textSearch, vaultDeps vaultWiring) {
 	mountVault(w)
 	mountWorkspace(w)
 	mountWindowState(w)

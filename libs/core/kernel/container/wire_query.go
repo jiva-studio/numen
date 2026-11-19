@@ -7,6 +7,9 @@ import (
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/searchfunctionbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
@@ -18,7 +21,7 @@ import (
 const operationResultRows = 200_000
 
 func newFindSearchResults(
-	rerank rerankDeps, settingsDeps settingsWiring, searchDeps searchWiring, db *Index, source searchsourceport.Source, errorHandler func(error),
+	ports queryPorts, settingsDeps settingsWiring, searchDeps textSearch, db *Index, source searchsourceport.Source, errorHandler func(error),
 ) *searchqueryusecase.FindSearchResults {
 	limits, stageLimits := readSearchLimits(settingsDeps, errorHandler)
 	search := db.ChunkSearch()
@@ -28,28 +31,28 @@ func newFindSearchResults(
 		Places:       search,
 		Contents:     db.NoteQueryReads(),
 		Links:        db.NoteQueryReads(),
-		Functions:    searchfunctionbridge.Open(searchDeps.Runtime.Activator),
+		Functions:    ports.functions,
 		Matcher:      wordmatch.NewMatcher(),
 		Readers:      searchDeps.VaultReaders,
 		Texts:        searchDeps.TextReaders,
 		Source:       getQuerySource(source),
 		Floors:       newFloorPolicy(db, source, errorHandler),
-		ContentTypes: searchDeps.Watch,
+		ContentTypes: ports.contentTypes,
 	})
 	stages := searchqueryusecase.NewApplyStages(searchqueryusecase.ApplyStagesDeps{
-		Calls:   rerank.calls,
-		Rows:    rerank.rows,
-		Resolve: rerank.resolve,
+		Calls:   ports.calls,
+		Rows:    ports.rows,
+		Resolve: ports.resolve,
 		Results: db.OperationResults(operationResultRows),
-		Clock:   searchDeps.Clock,
+		Clock:   ports.clock,
 		Readers: searchDeps.VaultReaders,
 		Texts:   searchDeps.TextReaders,
 		Limits:  stageLimits,
 	})
 	return searchqueryusecase.NewFindSearchResults(searchqueryusecase.FindSearchResultsDeps{
 		Parser:        celquery.NewParser(limits),
-		Catalog:       getSearchCatalog(getRuntimeManifests(searchDeps.Runtime)),
-		Clock:         searchDeps.Clock,
+		Catalog:       ports.catalog,
+		Clock:         ports.clock,
 		Limits:        limits,
 		Evaluate:      evaluate.Execute,
 		FillDocuments: evaluate.FillDocuments,
@@ -66,23 +69,28 @@ func readSearchLimits(settingsDeps settingsWiring, errorHandler func(error)) (se
 	return file.Search.GetLimits()
 }
 
-type rerankDeps struct {
-	resolve connectionport.ResolveConnection
-	rows    searchqueryusecase.RerankRows
-	calls   connectionport.ModelCalls
+type queryPorts struct {
+	functions    pluginport.SearchFunctions
+	contentTypes contenttypeport.ContentTypeTable
+	catalog      func() searchquerydomain.Catalog
+	clock        machineport.Clock
+	resolve      connectionport.ResolveConnection
+	rows         searchqueryusecase.RerankRows
+	calls        connectionport.ModelCalls
 }
 
-func openRerankDeps(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) rerankDeps {
+func openQueryPorts(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) queryPorts {
+	ports := queryPorts{functions: searchfunctionbridge.Open(exec.Runtime.Activator), contentTypes: exec.Watch.ContentTypeTable,
+		catalog: getSearchCatalog(getRuntimeManifests(exec.Runtime)), clock: vaultDeps.Clock, rows: none.RerankRows{}}
 	connections, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
-		return rerankDeps{rows: none.RerankRows{}}
+		return ports
 	}
 	resolve := connection.NewResolve(connections).Execute
-	return rerankDeps{
-		resolve: resolve,
-		rows:    modelcall.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, nil),
-		calls:   openModelCalls(install, settingsDeps),
-	}
+	ports.resolve = resolve
+	ports.rows = modelcall.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, nil)
+	ports.calls = openModelCalls(install, settingsDeps)
+	return ports
 }
 
 func getQuerySource(source searchsourceport.Source) searchsourceport.QuerySource {

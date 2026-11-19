@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
@@ -49,20 +50,21 @@ func (c TestInstallation) Themes(say func(string)) (*theme.Service, error) {
 
 // The methods below are the wiring the tests of this package reach from outside it.
 
-func (c TestInstallation) CutNotes() chunking.CutNotes { return cutNotes(searchOf(c)) }
+func (c TestInstallation) CutNotes() chunking.CutNotes { return cutNotes(indexPlanOf(c).ChunkPolicy) }
 
 func (c TestInstallation) Embedder(ctx context.Context) (searchsourceport.WatchedSource, func() error, error) {
-	return searchSource(searchOf(c), ctx)
+	return sourceOf(c).Open(ctx)
 }
 
-func (c TestInstallation) EmbedderReady() bool { return embedderReady(searchOf(c)) }
+func (c TestInstallation) EmbedderReady() bool { return embedderReady(sourceOf(c)) }
 
 func (c TestInstallation) Embedders(ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
-	return searchSources(searchOf(c), ctx)
+	source, closer, err := sourceOf(c).OpenWatching(ctx)
+	return source, source, closer, err
 }
 
 func (c TestInstallation) NewSearchOver(queries sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
-	return newSearchOver(searchOf(c), queries, sources, errorHandler, nil)
+	return newSearchOver(indexPlanOf(c).newTextSearch(c.machine.ResolvedCompute.Workers), queries, sources, errorHandler, nil)
 }
 
 func (c TestInstallation) OpenGetSettings() *settings.Get {
@@ -98,8 +100,12 @@ func NotesShowingMoves(
 
 func GetNoteChanges(notes NoteUseCases) hostvault.NoteChanges { return getNoteChanges(notes) }
 
-func embedderReady(c searchWiring) bool {
-	_, err := c.ActiveRuntime.ResolveCapability(bridge.CapabilitySearchSource)
+func sourceOf(c TestInstallation) sourcebridge.Binding {
+	return newSourceBinding(c.Execution, c.SafeMode, c.Endpoints, c.Resources)
+}
+
+func embedderReady(c sourcebridge.Binding) bool {
+	_, err := c.Plugins.ResolveCapability(bridge.CapabilitySearchSource)
 	return err == nil
 }
 
@@ -109,18 +115,18 @@ func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File,
 	return settingsStore(c).ReadUncheckedAt(path)
 }
 
-func Scan(c TestInstallation, db *Index) vault.Scan { return searchScan(searchOf(c), db) }
+func Scan(c TestInstallation, db *Index) vault.Scan { return searchScan(indexPlanOf(c), db) }
 
 func Embed(c TestInstallation, db *Index, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
-	return searchEmbed(searchOf(c), db, source, v)
+	return searchEmbed(indexPlanOf(c), db, source, v)
 }
 
 func IndexTexts(c TestInstallation, db *Index, v domain.Vault) (filetext.Index, error) {
-	return indexTexts(searchOf(c), db, v, nil)
+	return indexTexts(indexPlanOf(c), db, v, nil)
 }
 
 func NewSearch(c TestInstallation, db *Index, asking searchsourceport.Source, errorHandler func(error)) searchusecase.Search {
-	return newSearch(searchOf(c), db, asking, errorHandler, nil)
+	return newSearch(indexPlanOf(c).newTextSearch(c.machine.ResolvedCompute.Workers), db, asking, errorHandler, nil)
 }
 
 func SyncSetting(c TestInstallation) naming.SyncSetting {
@@ -173,15 +179,15 @@ func InstallPluginVault(c TestInstallation, db *Index, current func() (domain.Va
 	return installPluginVault(c.buildPluginInstall(), c.buildVaultWiring(), vaults, db, current, hooks)
 }
 
-func searchOf(c TestInstallation) searchWiring {
-	_, search, _ := buildVaultSearch(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources, nil)
+func indexPlanOf(c TestInstallation) vaultIndexPlan {
+	_, search, _ := buildVaultSearch(c.Config, c.Execution, c.Preferences, c.Resources, nil)
 	return search
 }
 
 func ReadWholeVault(c TestInstallation,
 	ctx context.Context, db *Index, source searchsourceport.Source, v domain.Vault,
 ) (indexing.ReadWholeVault, error) {
-	return readWholeVault(searchOf(c), ctx, db, source, v, GetRefresh(c, db))
+	return readWholeVault(indexPlanOf(c), ctx, db, source, v, GetRefresh(c, db))
 }
 
 type TestInstallation struct {
@@ -208,7 +214,7 @@ func (c TestInstallation) buildPluginInstall() pluginInstall {
 }
 
 func (c TestInstallation) buildVaultWiring() vaultWiring {
-	_, _, vault := buildVaultSearch(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources, nil)
+	_, _, vault := buildVaultSearch(c.Config, c.Execution, c.Preferences, c.Resources, nil)
 	return vault
 }
 

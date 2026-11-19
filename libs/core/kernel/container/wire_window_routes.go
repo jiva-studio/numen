@@ -101,7 +101,7 @@ func mountVaults(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountSearch(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring) {
+func mountSearch(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, searchDeps textSearch, vaultDeps vaultWiring) {
 	state := w.state
 	finds := newSearch(searchDeps, w.db, w.asking, state.ReportWordsAlone, state.ClearWordsAlone)
 	handler := windowsearch.NewHandler(
@@ -110,7 +110,9 @@ func mountSearch(w *windowWiring, install pluginInstall, exec *PluginExecution, 
 		search.NewFindText(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
 		searchcancel.NewSearches(vaultDeps.Clock),
 	)
-	setPluginSearch(searchDeps, w.db, w.embedder, state.ReportFloorError, newSearchRuns(w, install, exec, settingsDeps, searchDeps, vaultDeps))
+	runs := newSearchRuns(w, install, exec, settingsDeps, searchDeps, vaultDeps)
+	access := buildPluginSearch(searchDeps, w.db, w.embedder, state.ReportFloorError, vaultDeps.Clock).Access(runs)
+	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Search = access })
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
@@ -275,7 +277,7 @@ func mountVault(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func getReadVault(searchDeps searchWiring, vaultDeps vaultWiring, db *Index) indexing.OpenReading {
+func getReadVault(searchDeps vaultIndexPlan, vaultDeps vaultWiring, db *Index) indexing.OpenReading {
 	return func(
 		ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 	) (indexing.ReadWholeVault, error) {
@@ -286,7 +288,7 @@ func getReadVault(searchDeps searchWiring, vaultDeps vaultWiring, db *Index) ind
 }
 
 func newIndexWorker(
-	s windowStartup, searchDeps searchWiring, vaultDeps vaultWiring, state *editor.State, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault),
+	s windowStartup, searchDeps vaultIndexPlan, vaultDeps vaultWiring, state *editor.State, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault),
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
 		Reading:      getReadVault(searchDeps, vaultDeps, s.db),
