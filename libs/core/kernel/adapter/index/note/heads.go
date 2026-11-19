@@ -21,7 +21,10 @@ func (q *Queries) GetHeads(ctx context.Context, vaultID domain.VaultID, paths []
 	if len(paths) == 0 {
 		return map[string]frontmatter.Head{}, nil
 	}
-	gen, out, missing := q.cache.splitHeads(vaultID, paths)
+	gen, out, missing, err := q.cache.splitHeads(vaultID, paths)
+	if err != nil {
+		return nil, err
+	}
 	if len(missing) == 0 {
 		return out, nil
 	}

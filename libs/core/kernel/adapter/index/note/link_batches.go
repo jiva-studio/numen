@@ -14,6 +14,9 @@ func (q *QueryReads) GetLinksOf(ctx context.Context, vaultID domain.VaultID, fro
 	if len(from) == 0 {
 		return map[string][]domain.ResolvedLink{}, nil
 	}
+	if err := q.cache.ensureGraphLoaded(ctx, q.db, vaultID); err != nil {
+		return nil, err
+	}
 	gen, out, missing := q.cache.splitLinksOf(vaultID, from)
 	if len(missing) == 0 {
 		return out, nil
@@ -87,6 +90,9 @@ func (r *resolution) getLinksOf(ctx context.Context, from []string) (_ map[strin
 func (q *QueryReads) GetBacklinksOf(ctx context.Context, vaultID domain.VaultID, to []string) (map[string][]domain.ResolvedLink, error) {
 	if len(to) == 0 {
 		return map[string][]domain.ResolvedLink{}, nil
+	}
+	if err := q.cache.ensureGraphLoaded(ctx, q.db, vaultID); err != nil {
+		return nil, err
 	}
 	gen, out, missing := q.cache.splitBacklinksOf(vaultID, to)
 	if len(missing) == 0 {

@@ -59,6 +59,8 @@ func getExpectedPlans(t *testing.T) []struct {
 		{notes, "links_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)", "(note_id=?)"}},
 		{notes, "addressing_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)"}},
 		{notes, "backlink_candidates_at", []any{`["id"]`, 1, `["base"]`, 1}, []string{"links_by_target", "links_by_name"}},
+		{notes, "vault_notes", []any{1}, []string{"sources_by_fingerprint"}},
+		{notes, "vault_links", []any{1}, []string{"(vault_id=?)", "(note_id=?)"}},
 
 		{chunks, "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
 		{chunks, "file_stats", []any{1, "book"}, []string{"sources_by_fingerprint"}},

@@ -106,3 +106,9 @@ var countFrontmatterErrorsSQL string
 
 //go:embed sql/heads_at.sql
 var headsAtSQL string
+
+//go:embed sql/vault_notes.sql
+var vaultNotesSQL string
+
+//go:embed sql/vault_links.sql
+var vaultLinksSQL string
