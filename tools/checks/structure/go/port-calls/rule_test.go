@@ -29,7 +29,6 @@ func getCalledInterfaceMethod(call *ast.CallExpr, info *types.Info) *types.Func 
 	return method
 }
 
-// returnsPort reports whether a function of a use case package builds a port: one of its results is a port interface.
 func returnsPort(function *ast.FuncDecl, info *types.Info, ports []load.PortInterface) bool {
 	if function.Type.Results == nil {
 		return false

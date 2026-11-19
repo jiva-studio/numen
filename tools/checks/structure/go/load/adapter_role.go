@@ -18,7 +18,7 @@ func IsInLayer(path, root, layer string) bool {
 	return IsWithin(path, root+"/"+layer)
 }
 
-// ListDeclaredPortInterfaces lists the interfaces with methods that a package under port/ declares.
+// ListDeclaredPortInterfaces excludes aliases, marker interfaces and generic constraints.
 func ListDeclaredPortInterfaces(pkgs []*packages.Package, root string) []PortInterface {
 	var found []PortInterface
 	for _, pkg := range pkgs {
@@ -99,6 +99,28 @@ func isUseCaseTestSupport(pkg *packages.Package) bool {
 	return strings.HasSuffix(pkg.Types.Name(), "test")
 }
 
+func listUseCaseDependencyFields(decl ast.Decl) []*ast.Field {
+	switch decl := decl.(type) {
+	case *ast.FuncDecl:
+		if decl.Recv == nil && decl.Name.IsExported() {
+			return decl.Type.Params.List
+		}
+	case *ast.GenDecl:
+		var fields []*ast.Field
+		for _, spec := range decl.Specs {
+			typeSpec, ok := spec.(*ast.TypeSpec)
+			if !ok {
+				continue
+			}
+			if structure, ok := typeSpec.Type.(*ast.StructType); ok {
+				fields = append(fields, structure.Fields.List...)
+			}
+		}
+		return fields
+	}
+	return nil
+}
+
 func listUseCaseHeldTypes(pkg *packages.Package) []types.Type {
 	var found []types.Type
 	for _, file := range pkg.Syntax {
@@ -106,26 +128,8 @@ func listUseCaseHeldTypes(pkg *packages.Package) []types.Type {
 			continue
 		}
 		for _, decl := range file.Decls {
-			switch decl := decl.(type) {
-			case *ast.GenDecl:
-				for _, spec := range decl.Specs {
-					typeSpec, ok := spec.(*ast.TypeSpec)
-					if !ok {
-						continue
-					}
-					if structType, ok := typeSpec.Type.(*ast.StructType); ok {
-						for _, field := range structType.Fields.List {
-							found = append(found, pkg.TypesInfo.TypeOf(field.Type))
-						}
-					}
-				}
-			case *ast.FuncDecl:
-				if decl.Recv != nil || !decl.Name.IsExported() {
-					continue
-				}
-				for _, param := range decl.Type.Params.List {
-					found = append(found, pkg.TypesInfo.TypeOf(param.Type))
-				}
+			for _, field := range listUseCaseDependencyFields(decl) {
+				found = append(found, pkg.TypesInfo.TypeOf(field.Type))
 			}
 		}
 	}

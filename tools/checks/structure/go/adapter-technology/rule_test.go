@@ -25,7 +25,6 @@ func getTechnologyFreeAdapters() map[string]string {
 	}
 }
 
-// isCallingUseCase reports whether the package names anything of a use case package other than a port the use case requires.
 func isCallingUseCase(pkg *packages.Package, root string, ports []load.PortInterface) bool {
 	isUseCase := func(object types.Object) bool {
 		return load.IsWithin(object.Pkg().Path(), root+"/usecase") && !load.IsPortType(object, ports)
