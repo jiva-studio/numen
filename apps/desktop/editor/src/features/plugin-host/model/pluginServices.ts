@@ -141,8 +141,9 @@ export interface CachedVaultNotes extends VaultNotes {
   readonly clearRelatedNotes: () => void
 }
 
-export function createVaultNotes(deps: VaultNotesDeps): CachedVaultNotes {
-  const { notes, search, making, pluginNotes } = deps
+function createRelatedNotesCache(
+  notes: VaultNotesDeps['notes'],
+): Pick<CachedVaultNotes, 'listRelatedNotes' | 'clearRelatedNotes'> {
   type DepthOneGraph = Awaited<ReturnType<VaultNotes['listRelatedNotes']>>[number]
   const relatedAtDepthOne = new Map<string, DepthOneGraph>()
   const inFlightAtDepthOne = new Map<string, Promise<DepthOneGraph | undefined>>()
@@ -192,6 +193,13 @@ export function createVaultNotes(deps: VaultNotesDeps): CachedVaultNotes {
           },
       )
     },
+  }
+}
+
+export function createVaultNotes(deps: VaultNotesDeps): CachedVaultNotes {
+  const { notes, search, making, pluginNotes } = deps
+  return {
+    ...createRelatedNotesCache(notes),
     getHeadings: (paths) => notes.listHeadings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),
