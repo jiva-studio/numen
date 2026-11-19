@@ -58,8 +58,6 @@ export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { Skeleton } from './shared/ui/skeleton'
 
 /** A link that leads out of the application, and the window held against it. */
-export { interceptExternalLinks } from './shared/api/externalLink'
-export { isExternalLink } from './shared/lib/text/externalLink'
 
 /** Numbers as they are read out, which both windows read the same way. */
 export { groupDigits, many, percent, plural } from './shared/lib/format/digits'

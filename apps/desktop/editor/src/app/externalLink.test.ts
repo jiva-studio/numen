@@ -3,8 +3,7 @@
  * address bar.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { isExternalLink } from '../lib/text/externalLink'
-import { interceptExternalLinks } from './externalLink'
+import { isExternalLink, interceptExternalLinks } from '../../../window/externalLink'
 
 let stop: (() => void) | undefined
 
@@ -69,10 +68,10 @@ describe('a press on a link', () => {
     expect(openLink).not.toHaveBeenCalled()
   })
 
-  it('passes a letter to whatever writes one', () => {
-    const { openLink, prevented } = pressLink('mailto:someone@example.com')
+  it.each(['mailto:someone@example.com', 'tel:+12345678'])('opens %s externally', (href) => {
+    const { openLink, prevented } = pressLink(href)
     expect(prevented).toBe(true)
-    expect(openLink).toHaveBeenCalledWith('mailto:someone@example.com')
+    expect(openLink).toHaveBeenCalledWith(href)
   })
 
   it('takes the window nowhere and passes no caller an address it cannot open', () => {

@@ -8,6 +8,13 @@ describe('whether a link leads out of the window', () => {
     expect(isExternalHref('https://example.invalid/away', HERE)).toBe(true)
   })
 
+  it('compares the scheme, hostname, and port independently', () => {
+    expect(isExternalHref('https://numen.test/book', HERE)).toBe(true)
+    expect(isExternalHref('http://other.test/book', HERE)).toBe(true)
+    expect(isExternalHref('http://numen.test:8080/book', HERE)).toBe(true)
+    expect(isExternalHref('http://numen.test:80/book?chapter=2#page', HERE)).toBe(false)
+  })
+
   it('leads nowhere outward, where the address is one the window serves', () => {
     expect(isExternalHref('OEBPS/second.xhtml#alpha', HERE)).toBe(false)
     expect(isExternalHref('#alpha', HERE)).toBe(false)

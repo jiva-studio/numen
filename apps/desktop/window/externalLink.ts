@@ -6,13 +6,15 @@
  * browser can open is passed to the system browser.
  */
 
-import { isExternalLink } from '../lib/text/externalLink'
+/** Whether an address names somewhere this page is not served from. */
+export const isExternalLink = (target: URL, here: URL): boolean =>
+  target.protocol !== here.protocol || target.host !== here.host
 
 /** The schemes passed to the browser. Any other scheme is not opened. */
 const ALLOWED_SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:'])
 
 /** Passes an address to the system browser. */
-export type LinkOpener = (href: string) => void
+type LinkOpener = (href: string) => void
 
 /**
  * Keeps the window on the pages it serves until the returned function is called.

@@ -195,6 +195,12 @@ describe('the filters of the changed areas', () => {
     for (const area of ['desktop', 'ui', 'plugins_all']) assert.ok(!areas.includes(area), area)
   })
 
+  it('runs desktop frontend checks for shared window code', () => {
+    const areas = getAreas('apps/desktop/window/externalLink.ts')
+    assert.ok(areas.includes('desktop_fe'))
+    assert.ok(!areas.includes('desktop'))
+  })
+
   it('lints the end-to-end package for a change to its tests', () => {
     assert.ok(getAreas('tests/e2e/desktop/tests/plugins/system/startup.spec.ts').includes('desktop_fe'))
     assert.ok(getAreas('tests/e2e/cli/plugin-commands.sh').includes('desktop'))

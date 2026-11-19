@@ -1,7 +1,8 @@
 import { createApp } from 'vue'
 import { createKeepaliveTransport, createOriginTransport } from '@numen/core-client'
-import { interceptExternalLinks, reportFailure, runInBackground } from '@numen/ui'
+import { reportFailure, runInBackground } from '@numen/ui'
 import { openExternalUrl } from '@numen/workbench'
+import { interceptExternalLinks } from '../../window/externalLink'
 import { createRoot } from './app/createRoot'
 import { loadFrameRuntime } from './shared/api/runtime'
 
