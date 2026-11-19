@@ -12,15 +12,37 @@ import (
 
 // GetNotes returns the data needed to display each of the given paths. An empty
 // path is skipped.
-func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error) {
-	return queryEachPath(ctx, q.db, vaultID, paths, notesAtSQL, func(statement *sql.Stmt, vault int64, path string) (domain.NoteRef, bool, error) {
+func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (_ map[string]domain.NoteRef, err error) {
+	out := map[string]domain.NoteRef{}
+	if len(paths) == 0 {
+		return out, nil
+	}
+	vault, err := vaultRow(ctx, q.db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return out, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	wanted, err := json.Marshal(paths)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := q.db.QueryContext(ctx, notesAtSQL, vault, string(wanted))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+
+	for rows.Next() {
 		var ref domain.NoteRef
-		err := statement.QueryRowContext(ctx, vault, path).Scan(&ref.Path, &ref.Title, &ref.ID)
-		if errors.Is(err, sql.ErrNoRows) {
-			return ref, false, nil
+		if err := rows.Scan(&ref.Path, &ref.Title, &ref.ID); err != nil {
+			return nil, err
 		}
-		return ref, err == nil, err
-	})
+		out[ref.Path] = ref
+	}
+	return out, rows.Err()
 }
 
 func queryEachPath[T any](

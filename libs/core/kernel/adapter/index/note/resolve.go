@@ -3,6 +3,7 @@ package note
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 
@@ -44,6 +45,9 @@ func (r *resolution) getLinks(ctx context.Context, from string) (_ []domain.Reso
 		out = append(out, l)
 	}
 	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if err := r.prefetchCandidates(ctx, out); err != nil {
 		return nil, err
 	}
 
@@ -179,6 +183,68 @@ func (r *resolution) queryCandidates(ctx context.Context, name string) (_ []stri
 	return out, rows.Err()
 }
 
+func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.ResolvedLink) (err error) {
+	var missing []string
+	seen := map[string]bool{}
+	for _, l := range links {
+		if l.Target.Scheme != domain.SchemeName {
+			continue
+		}
+		name := l.Target.Value
+		if _, ok := r.named[name]; !ok && !seen[name] {
+			seen[name] = true
+			missing = append(missing, name)
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	if len(missing) == 1 {
+		_, err := r.getCandidates(ctx, missing[0])
+		return err
+	}
+
+	withExts := make([]string, len(missing))
+	bases := make([]string, len(missing))
+	for i, name := range missing {
+		r.named[name] = nil
+		withExts[i] = name + domain.NoteExtension
+		bases[i] = domain.FoldName(domain.LinkName(name))
+	}
+	namesJSON, err := json.Marshal(missing)
+	if err != nil {
+		return err
+	}
+	extsJSON, err := json.Marshal(withExts)
+	if err != nil {
+		return err
+	}
+	basesJSON, err := json.Marshal(bases)
+	if err != nil {
+		return err
+	}
+
+	rows, err := r.statements.QueryContext(ctx, candidatesAtSQL,
+		r.vault, string(namesJSON), r.vault, string(extsJSON), r.vault, string(basesJSON))
+	if err != nil {
+		return err
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+
+	for rows.Next() {
+		var path, folded string
+		if err := rows.Scan(&path, &folded); err != nil {
+			return err
+		}
+		for i, name := range missing {
+			if path == name || path == withExts[i] || folded == bases[i] {
+				r.named[name] = append(r.named[name], path)
+			}
+		}
+	}
+	return rows.Err()
+}
+
 // GetBacklinks returns the notes that point at one note.
 // A link is a backlink because it resolves here, not because its text looks
 // like this note: a path link is also filed under its last segment, and a bare
@@ -204,6 +270,9 @@ func (r *resolution) getBacklinks(ctx context.Context, to string) ([]domain.Reso
 
 	candidates, err := r.getBacklinkCandidates(ctx, identifier, base)
 	if err != nil {
+		return nil, err
+	}
+	if err := r.prefetchCandidates(ctx, candidates); err != nil {
 		return nil, err
 	}
 

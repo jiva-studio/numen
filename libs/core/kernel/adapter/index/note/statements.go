@@ -8,11 +8,20 @@ import _ "embed"
 //go:embed sql/addressing.sql
 var addressingSQL string
 
+//go:embed sql/addressing_at.sql
+var addressingAtSQL string
+
 //go:embed sql/backlink_candidates.sql
 var backlinkCandidatesSQL string
 
+//go:embed sql/backlink_candidates_at.sql
+var backlinkCandidatesAtSQL string
+
 //go:embed sql/candidates.sql
 var candidatesSQL string
+
+//go:embed sql/candidates_at.sql
+var candidatesAtSQL string
 
 //go:embed sql/dangling.sql
 var danglingSQL string
@@ -31,6 +40,9 @@ var headingsOfSQL string
 
 //go:embed sql/identify.sql
 var identifySQL string
+
+//go:embed sql/links_at.sql
+var linksAtSQL string
 
 //go:embed sql/links_of.sql
 var linksOfSQL string

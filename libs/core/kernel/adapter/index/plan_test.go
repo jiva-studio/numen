@@ -46,6 +46,7 @@ func getExpectedPlans(t *testing.T) []struct {
 		endPos     []string
 	}{
 		{notes, "candidates", []any{1, "a", 1, "b", 1, "c"}, []string{"notes_by_folded_name"}},
+		{notes, "candidates_at", []any{1, `["a"]`, 1, `["b"]`, 1, `["c"]`}, []string{"notes_by_folded_name"}},
 		{notes, "backlink_candidates", []any{"id", 1, "base", 1}, []string{"links_by_target", "links_by_name"}},
 		{notes, "note_by_identifier", []any{"id"}, []string{"notes_by_identifier"}},
 		{notes, "links_of", []any{1}, []string{"(note_id=?)"}},
@@ -53,6 +54,10 @@ func getExpectedPlans(t *testing.T) []struct {
 		{notes, "addressing", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
 		{notes, "notes_of_type", []any{1, "sample"}, []string{"notes_by_type"}},
 		{notes, "types_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)"}},
+		{notes, "notes_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)"}},
+		{notes, "links_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)", "(note_id=?)"}},
+		{notes, "addressing_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)"}},
+		{notes, "backlink_candidates_at", []any{`["id"]`, 1, `["base"]`, 1}, []string{"links_by_target", "links_by_name"}},
 
 		{chunks, "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
 		{chunks, "file_stats", []any{1, "book"}, []string{"sources_by_fingerprint"}},
@@ -80,6 +85,7 @@ func getExpectedPlans(t *testing.T) []struct {
 		{chunks, "record", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
 		{chunks, "enclosing", []any{1, 1}, []string{"INTEGER PRIMARY KEY"}},
 		{chunks, "progress", []any{"model", 1, 0}, []string{"chunks_by_vault_parent", "vectors_by_hash"}},
+		{chunks, "extensions", []any{1, 1, 0}, []string{"chunks_by_source"}},
 		// A search by words reads the full-text index and then the row each hit
 		// names. A virtual table reports itself as a scan and has no named index.
 		{chunks, "lexical", []any{`"entropy"`, 1, 20, "notes/", "notes/"}, []string{"chunks_fts", "INTEGER PRIMARY KEY"}},

@@ -1,6 +1,8 @@
--- What is needed to show one note, for a path. Asked once per path rather than
--- with a list, so that the statement is one the database can keep.
+-- What is needed to show the notes at these paths.
+--
+-- The paths arrive as a JSON array, so any number of them is one question. A path the index holds
+-- no note at is absent from the answer.
 SELECT s.path, n.title, COALESCE(n.identifier, '')
 FROM sources s
 JOIN notes n ON n.source_id = s.id
-WHERE s.vault_id = ? AND s.path = ?;
+WHERE s.vault_id = ? AND s.path IN (SELECT value FROM json_each(?));
