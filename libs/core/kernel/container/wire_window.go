@@ -66,7 +66,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	exec = getPluginExecution(exec)
 	db := startup.db
 	install := newPluginInstall(c, endpoints, res)
-	settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, endpoints, res, nil)
+	settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, install.Endpoints, res, nil)
 	if startup.isEditor {
 		searchDeps, vaultDeps = openIndexedVault(searchDeps, vaultDeps, db)
 	}
