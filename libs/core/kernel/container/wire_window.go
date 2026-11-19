@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
@@ -50,21 +51,29 @@ type tabKinds struct {
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
 // them, and opens the vault named, or the one shown last when none is named.
 func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening) (*OpenedWindow, error) {
+	exec = getPluginExecution(exec)
 	db, err := OpenIndex(c, res, ctx)
 	if err != nil {
 		return nil, err
 	}
-	install := newPluginInstall(c, exec, endpoints, res)
+	install := newPluginInstall(c, endpoints, res)
 	settingsDeps, searchDeps, vaultDeps := openVaultSearch(c, exec, prefs, endpoints, res)
 	ports, err := vaultRegistry(vaultDeps.RegistryPath)
 	if err != nil {
 		return nil, errors.Join(err, db.Close())
 	}
 	startup := windowStartup{opening: opening, ports: ports, db: db, entries: getLogEntries(res)}
-	opened, err := openWindowStartup(startup, ctx, install, settingsDeps, searchDeps, vaultDeps)
+	first, err := getFirstWindowVault(startup)
 	if err != nil {
 		return nil, err
 	}
+	plugins := openWindowPlugins(install, exec, settingsDeps, vaultDeps, db)
+	opened, closeEmbedder := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps)
+	mountServices(opened, install, exec, settingsDeps, searchDeps, vaultDeps)
+	if err := startWindow(ctx, opened, first); err != nil {
+		return nil, errors.Join(err, closeEmbedder(), db.Close())
+	}
+
 	return getOpenedWindow(opened), nil
 }
 
@@ -100,12 +109,6 @@ func getOpenedWindow(w *windowWiring) *OpenedWindow {
 	return &OpenedWindow{Installation: w.inst, State: w.state, Index: w.db, UseCases: w.cases}
 }
 
-// windowBuilt is a window put together and not started yet, with the close of the embedder it opened.
-type windowBuilt struct {
-	wiring        *windowWiring
-	closeEmbedder func() error
-}
-
 type windowStartup struct {
 	opening WindowOpening
 	ports   registry.Ports
@@ -113,42 +116,48 @@ type windowStartup struct {
 	entries *logsusecase.Entries
 }
 
-func openWindowStartup(
-	s windowStartup, ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring,
-) (*windowWiring, error) {
-	db := s.db
+func getFirstWindowVault(s windowStartup) (domain.Vault, error) {
 	first, err := registry.NewGetVaultToShow(s.ports.Lookup, s.ports.Vaults, s.ports.Last).Execute(s.opening.Named)
 	if err != nil {
-		return nil, errors.Join(err, db.Close())
+		return domain.Vault{}, errors.Join(err, s.db.Close())
 	}
-	window := buildWindow(s, ctx, install, settingsDeps, searchDeps, vaultDeps)
-	if err := startWindow(ctx, window.wiring, first); err != nil {
-		return nil, errors.Join(err, window.closeEmbedder(), db.Close())
+	return first, nil
+}
+
+type windowPlugins struct {
+	tasks     *run.Tasks
+	events    pluginport.PluginEventEmitter
+	vault     windowsession.PluginVaultPath
+	triggers  windowsession.TriggerSource
+	startFeed func(context.Context, domain.Vault) func()
+	kinds     tabKinds
+}
+
+func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) windowPlugins {
+	tasks := run.NewTasks()
+	signalFailureClears(exec, settingsDeps)
+	reportDependencies(exec.Watch, tasks, vaultDeps.RecordLog)
+	setPluginWork(install, exec, tasks, &run.Lock{})
+	setModelCalls(install, exec, settingsDeps, vaultDeps, run.NewConnectionNoticeTasks(tasks).Execute)
+	return windowPlugins{
+		tasks: tasks, events: exec.Runtime.PluginEventEmitter, vault: exec.Runtime.PluginBinding,
+		triggers:  getTriggerSource(install, exec, settingsDeps, vaultDeps, db.FrontmatterChanges()),
+		startFeed: getFeedStart(exec, settingsDeps, vaultDeps, db), kinds: newTabKinds(exec, settingsDeps, vaultDeps, db),
 	}
-	return window.wiring, nil
 }
 
 func buildWindow(
-	s windowStartup, ctx context.Context, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring,
-) windowBuilt {
+	s windowStartup, ctx context.Context, plugins windowPlugins, searchDeps searchWiring, vaultDeps vaultWiring,
+) (*windowWiring, func() error) {
 	db, opening, ports := s.db, s.opening, s.ports
-
-	// One task list serves every operation and the window that displays it.
-	// A request is one task regardless of how it was issued. The list is created
-	// before any component that reports into it.
-	tasks := run.NewTasks()
-	signalFailureClears(install, settingsDeps)
-	reportDependencies(install.Execution.Watch, tasks)
-	setPluginWork(install, tasks, &run.Lock{})
-	setModelCalls(install, settingsDeps, vaultDeps, run.NewConnectionNoticeTasks(tasks).Execute)
-
+	tasks := plugins.tasks
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives. A source that cannot describe itself
 	// yet is opened all the same: the search item of its plugin shows why, and the source joins search and
 	// indexing once a configuration of its plugin lets it describe itself.
 	embedder, asking, closeEmbedder, why := searchSources(searchDeps, ctx)
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
-	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(install.Execution.Runtime.PluginEventEmitter, event) })
+	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(plugins.events, event) })
 	state.SetIndexing(embedding)
 	generations := newIndexGenerations(vaultDeps.Clock)
 	indexer := newIndexWorker(s, searchDeps, vaultDeps, state, embedding, emitIndexChanged(generations, state.Events))
@@ -163,12 +172,12 @@ func buildWindow(
 	}}
 	cases := newWindowUseCases(vaultDeps, ports, db, state, current)
 
-	session := newWindowSession(install.Execution.Runtime, vaultDeps, state, ctx, windowParts{
-		triggers: getTriggerSource(install, settingsDeps, vaultDeps, db.FrontmatterChanges()), shouldRebuild: searchDeps.ShouldRebuildIndex,
+	session := newWindowSession(plugins.vault, vaultDeps, state, ctx, windowParts{
+		triggers: plugins.triggers, shouldRebuild: searchDeps.ShouldRebuildIndex,
 		indexer: indexer, embedding: embedding, passes: startVault(vaultDeps, db, current),
 		recordOpen: cases.Vaults.RecordOpen, importFiles: cases.Vaults.Tree.Import, out: opening.Out,
 		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
-		startFeed: getFeedStart(install, settingsDeps, vaultDeps, db),
+		startFeed: plugins.startFeed,
 	})
 	cases.ShowTab = session.tools.showTab
 	cases.OpenPlugin = session.cases.openPlugin
@@ -177,14 +186,12 @@ func buildWindow(
 		Flush: session.cases.flush, Close: session.cases.close,
 	}, session.tools.importFiles, getMediaType(vaultDeps), opening.Out)
 
-	kinds := newTabKinds(install, settingsDeps, vaultDeps, db)
 	window := &windowWiring{
 		logEntries: s.entries, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
-		kinds: kinds, server: newFileServer(vaultDeps, state, cases), switching: session.userSwitch, cases: cases,
+		kinds: plugins.kinds, server: newFileServer(vaultDeps, state, cases), switching: session.userSwitch, cases: cases,
 		tasks: tasks, generations: generations,
 	}
-	mountServices(window, install, settingsDeps, searchDeps, vaultDeps)
-	return windowBuilt{wiring: window, closeEmbedder: closeEmbedder}
+	return window, closeEmbedder
 }
 
 func newWindowUseCases(
@@ -211,9 +218,9 @@ func newWindowUseCases(
 	return WindowUseCases{Notes: &notes, Queries: &queries, PluginNotes: &pluginNotes, Listing: &listing, Vaults: &moves}
 }
 
-func newTabKinds(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) tabKinds {
+func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) tabKinds {
 	files := file.NewGetFileKinds(vaultReaders(vaultDeps), db.NoteQueries())
-	chooser := getTabKindChooser(install, settingsDeps)
+	chooser := getTabKindChooser(exec, settingsDeps)
 	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
 
@@ -230,23 +237,23 @@ func startWindow(ctx context.Context, w *windowWiring, first domain.Vault) error
 	return w.inst.Start(ctx, first, w.server)
 }
 
-func mountServices(w *windowWiring, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring) {
+func mountServices(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring) {
 	mountVault(w)
 	mountWorkspace(w)
 	mountWindowState(w)
 	mountFile(w, vaultDeps)
 	mountNote(w)
-	mountSearch(w, install, settingsDeps, searchDeps, vaultDeps)
+	mountSearch(w, install, exec, settingsDeps, searchDeps, vaultDeps)
 	mountVaults(w)
-	mountSettings(w, install, settingsDeps, vaultDeps)
+	mountSettings(w, exec, settingsDeps, vaultDeps)
 	mountMedia(w, vaultDeps)
-	mountCommand(w, install, settingsDeps, vaultDeps)
-	mountConnection(w, install, settingsDeps, vaultDeps)
-	mountConnectionCall(w, install, settingsDeps, vaultDeps)
+	mountCommand(w, install, exec, settingsDeps, vaultDeps)
+	mountConnection(w, install, exec, settingsDeps, vaultDeps)
+	mountConnectionCall(w, install, exec, settingsDeps, vaultDeps)
 	mountLicense(w, install, settingsDeps, vaultDeps)
 	mountText(w, vaultDeps)
-	mountPlugin(w, install, settingsDeps, vaultDeps)
-	mountHealth(w, install)
+	mountPlugin(w, install, exec, settingsDeps, vaultDeps)
+	mountHealth(w, exec)
 	mountLogs(w, install, settingsDeps, vaultDeps)
 	mountCatalog(w, install, settingsDeps)
 }

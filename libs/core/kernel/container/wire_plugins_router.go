@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
+	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
@@ -27,7 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
-func reportDependencies(watch PluginWatch, tasks *run.Tasks) {
+func reportDependencies(watch PluginWatch, tasks *run.Tasks, record func(domainlogs.Entry)) {
 	show := run.NewDependencyTasks(tasks)
 	watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
 		show.Execute(req.ID, status, func() { watch.CancelDependency(req) })
@@ -35,13 +36,11 @@ func reportDependencies(watch PluginWatch, tasks *run.Tasks) {
 	})
 }
 
-// pluginInstall is where the plugins are installed from and run: the host that runs them, the catalog
-// they are offered from, and the key store their secrets are kept in.
+// pluginInstall supplies storage, catalog and host endpoints to the installation.
 type pluginInstall struct {
 	PluginCachePath string
 	ServiceDir      string
-	Execution       *PluginExecution
-	ActiveExecution *PluginExecution
+	SafeMode        bool
 	Endpoints       *PluginEndpoints
 	PluginCatalog   catalog.Config
 	KeyStore        pluginport.KeyStore
@@ -98,15 +97,15 @@ func StopPlugins(watch PluginWatch, ctx context.Context) error {
 	return watch.TeardownAll(ctx, pluginGracePeriod)
 }
 
-func getPluginCommands(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) PluginCommandUseCases {
-	return newPluginCommands(install, settingsDeps, vaultDeps, install.Execution, nil)
+func getPluginCommands(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) PluginCommandUseCases {
+	return newPluginCommands(exec, settingsDeps, vaultDeps, exec, nil)
 }
 
-func newPluginCommands(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring, host *PluginExecution, versions plugincommand.VersionItems) PluginCommandUseCases {
+func newPluginCommands(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, host *PluginExecution, versions plugincommand.VersionItems) PluginCommandUseCases {
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := getRuntimeManifests(host.Runtime), when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
-	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(vaultDeps), getWhenConfig(install, settingsDeps), conditions)
+	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(vaultDeps), getWhenConfig(exec, settingsDeps), conditions)
 	return PluginCommandUseCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, host.Watch),
@@ -121,21 +120,17 @@ func GetPluginServices(runtime PluginRuntime) editor.PluginServices {
 	return servicebridge.Open(runtime.Activator, runtime)
 }
 
-func getPluginRetrier(retry pluginport.PluginRetrier) func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
-	return retry.RetryPlugin
+func signalFailureClears(exec *PluginExecution, settingsDeps settingsWiring) {
+	exec.Runtime.SetOnFailureCleared(func(string) { signalPluginChanges(settingsDeps.PluginChanges) })
 }
 
-func signalFailureClears(install pluginInstall, settingsDeps settingsWiring) {
-	install.Execution.Runtime.SetOnFailureCleared(func(string) { signalPluginChanges(settingsDeps.PluginChanges) })
+func setPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks, models *run.Lock) {
+	pluginsOpenPluginWork(install, exec, tasks, models)
 }
 
-func setPluginWork(install pluginInstall, tasks *run.Tasks, models *run.Lock) {
-	pluginsOpenPluginWork(install, tasks, models)
-}
-
-func pluginsOpenPluginWork(install pluginInstall, tasks *run.Tasks, models *run.Lock) *run.PluginWork {
+func pluginsOpenPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks, models *run.Lock) *run.PluginWork {
 	work := run.NewPluginWork(models, tasks, func(pluginID string) string {
-		return pluginsGetPluginName(install.Execution.Runtime.PluginResolver, pluginID)
+		return pluginsGetPluginName(exec.Runtime.PluginResolver, pluginID)
 	})
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Work = work })
 	return work

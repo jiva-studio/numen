@@ -70,7 +70,7 @@ func openRowsInstallation(t *testing.T) (TestInstallation, string) {
 func TestTheConnectionsListWhereTheirRowsAre(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
 
-	entries, err := openConnectionUseCases(cfg.buildPluginInstall(), cfg.buildSettingsWiring(), cfg.buildVaultWiring()).List.Execute(t.Context())
+	entries, err := openConnectionUseCases(cfg.buildPluginInstall(), cfg.Execution, cfg.buildSettingsWiring(), cfg.buildVaultWiring()).List.Execute(t.Context())
 
 	if err != nil {
 		t.Fatal(err)
@@ -84,7 +84,7 @@ func TestTheConnectionsListWhereTheirRowsAre(t *testing.T) {
 func TestDeletingAConnectionRemovesTheRowsThatNameItFromTheFile(t *testing.T) {
 	cfg, path := openRowsInstallation(t)
 
-	removed, err := openConnectionUseCases(cfg.buildPluginInstall(), cfg.buildSettingsWiring(), cfg.buildVaultWiring()).Delete.Execute(t.Context(), rowsConnection)
+	removed, err := openConnectionUseCases(cfg.buildPluginInstall(), cfg.Execution, cfg.buildSettingsWiring(), cfg.buildVaultWiring()).Delete.Execute(t.Context(), rowsConnection)
 
 	if err != nil {
 		t.Fatal(err)
@@ -116,7 +116,7 @@ func TestAWriteOfRowsThatNameNoConnectionIsRefused(t *testing.T) {
 
 func TestAPluginAsksTheRowsOfItsOwnSettingForAConnection(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
-	setModelCalls(cfg.buildPluginInstall(), cfg.buildSettingsWiring(), cfg.buildVaultWiring(), noNotices{}.ReportSetAside)
+	setModelCalls(cfg.buildPluginInstall(), cfg.Execution, cfg.buildSettingsWiring(), cfg.buildVaultWiring(), noNotices{}.ReportSetAside)
 
 	_, err := cfg.Endpoints.Endpoint.GetModelCalls().Call(t.Context(), rowsPlugin, modelcall.Request{Operation: "llm.complete"}, func([]byte) error { return nil })
 
@@ -136,7 +136,7 @@ func TestAPluginAsksTheRowsOfItsOwnSettingForAConnection(t *testing.T) {
 
 func TestAPluginWithoutRowsGetsNoConnection(t *testing.T) {
 	cfg, _ := openRowsInstallation(t)
-	setModelCalls(cfg.buildPluginInstall(), cfg.buildSettingsWiring(), cfg.buildVaultWiring(), noNotices{}.ReportSetAside)
+	setModelCalls(cfg.buildPluginInstall(), cfg.Execution, cfg.buildSettingsWiring(), cfg.buildVaultWiring(), noNotices{}.ReportSetAside)
 
 	_, err := cfg.Endpoints.Endpoint.GetModelCalls().Call(t.Context(), "md.numen.sample.other", modelcall.Request{Operation: "llm.complete"}, func([]byte) error { return nil })
 

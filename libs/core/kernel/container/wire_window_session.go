@@ -51,7 +51,7 @@ type windowSession struct {
 	userSwitch windowsession.UserSwitch
 }
 
-func newWindowSession(runtime PluginRuntime, vaultDeps vaultWiring, state *editor.State, ctx context.Context, parts windowParts) windowSession {
+func newWindowSession(pluginVault windowsession.PluginVaultPath, vaultDeps vaultWiring, state *editor.State, ctx context.Context, parts windowParts) windowSession {
 	diag := windowsession.NewDiagnostics(parts.out, state.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
@@ -66,7 +66,7 @@ func newWindowSession(runtime PluginRuntime, vaultDeps vaultWiring, state *edito
 	rebuild := windowsession.NewRebuildSession(guard, session)
 	show := windowsession.NewShowVault(guard, session, identity, flush, &state.Notices.ChangeEvents)
 	follow := windowsession.NewModelFollow(parts.embedding, parts.indexer, &state.Runtime, rebuild)
-	switching := windowsession.NewSwitchVault(show, runtime, state)
+	switching := windowsession.NewSwitchVault(show, pluginVault, state)
 	return windowSession{
 		cases: windowCases{
 			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, parts.shouldRebuild),

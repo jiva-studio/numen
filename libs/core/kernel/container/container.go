@@ -242,12 +242,11 @@ func openIndexedVault(search searchWiring, v vaultWiring, db *Index) (searchWiri
 	return search, setVaultSearch(v, search)
 }
 
-func newPluginInstall(c Config, exec *PluginExecution, endpoints *PluginEndpoints, res *Resources) pluginInstall {
+func newPluginInstall(c Config, endpoints *PluginEndpoints, res *Resources) pluginInstall {
 	return pluginInstall{
 		PluginCachePath: c.PluginCachePath,
 		ServiceDir:      c.ServiceDir,
-		Execution:       getPluginExecution(exec),
-		ActiveExecution: getRunningExecution(exec, c.SafeMode),
+		SafeMode:        c.SafeMode,
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
 		KeyStore:        res.KeyStore,

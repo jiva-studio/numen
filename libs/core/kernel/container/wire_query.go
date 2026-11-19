@@ -76,15 +76,15 @@ type rerankDeps struct {
 	calls   connectionport.ModelCalls
 }
 
-func openRerankDeps(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) rerankDeps {
-	connections, ok := openConnectionDeps(install, settingsDeps, vaultDeps)
+func openRerankDeps(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) rerankDeps {
+	connections, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return rerankDeps{rows: none.RerankRows{}}
 	}
 	resolve := connection.NewResolve(connections).Execute
 	return rerankDeps{
 		resolve: resolve,
-		rows:    modelcall.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(install, settingsDeps, vaultDeps)).Execute, nil),
+		rows:    modelcall.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, nil),
 		calls:   openModelCalls(install, settingsDeps),
 	}
 }

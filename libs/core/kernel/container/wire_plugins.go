@@ -19,22 +19,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
-
-func openPluginWork(
-	install pluginInstall, vaultDeps vaultWiring, db *Index, v domain.Vault, tasks *run.Tasks, models *run.Lock,
-) (*run.PluginWork, error) {
-	setPluginVaultPath(install.Execution.Runtime.PluginBinding, v.Path)
-	if err := installCurrentVault(install, vaultDeps, db, v); err != nil {
-		return nil, err
-	}
-	work := pluginsOpenPluginWork(install, tasks, models)
-	setPluginTexts(vaultDeps)
-	return work, nil
-}
 
 func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *Index, v domain.Vault) error {
 	registry, err := vaultRegistry(vaultDeps.RegistryPath)

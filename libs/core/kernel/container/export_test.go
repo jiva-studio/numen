@@ -203,7 +203,7 @@ func (c TestInstallation) buildSettingsWiring() settingsWiring {
 }
 
 func (c TestInstallation) buildPluginInstall() pluginInstall {
-	install := newPluginInstall(c.Config, c.Execution, c.Endpoints, c.Resources)
+	install := newPluginInstall(c.Config, c.Endpoints, c.Resources)
 	return install
 }
 

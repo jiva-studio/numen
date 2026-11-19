@@ -29,8 +29,8 @@ func emitIndexChanged(generations *indexgeneration.Generations, events *editor.E
 	}
 }
 
-func newSearchRuns(w *windowWiring, install pluginInstall, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring) *searchrunusecase.SearchRuns {
-	find := newFindSearchResults(openRerankDeps(install, settingsDeps, vaultDeps), settingsDeps, searchDeps, w.db, w.asking, w.state.ReportFloorError)
+func newSearchRuns(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring) *searchrunusecase.SearchRuns {
+	find := newFindSearchResults(openRerankDeps(install, exec, settingsDeps, vaultDeps), settingsDeps, searchDeps, w.db, w.asking, w.state.ReportFloorError)
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
 		Store:       searchstore.New(),
 		Cancels:     searchcancel.NewSearches(vaultDeps.Clock),
@@ -41,7 +41,7 @@ func newSearchRuns(w *windowWiring, install pluginInstall, settingsDeps settings
 		Generations: w.generations,
 		Run:         find.Execute,
 		Names: func(pluginID string) string {
-			return pluginsGetPluginName(install.Execution.Runtime.PluginResolver, pluginID)
+			return pluginsGetPluginName(exec.Runtime.PluginResolver, pluginID)
 		},
 		Catalog:    getSearchCatalog(getRuntimeManifests(searchDeps.Runtime)),
 		MaxResults: find.Limits.MaxLimit,

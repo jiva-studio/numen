@@ -142,25 +142,27 @@ func watchPluginChanges(changes *settingsusecase.PluginChanges) (<-chan struct{}
 	return changes.Subscribe()
 }
 
-func openChooseTabKind(install pluginInstall, settingsDeps settingsWiring) *tabkind.Choose {
-	return tabkind.NewChoose(getRuntimeManifests(install.Execution.Runtime), install.Execution.Watch, getWhenConfig(install, settingsDeps))
+func openChooseTabKind(exec *PluginExecution, settingsDeps settingsWiring) *tabkind.Choose {
+	return tabkind.NewChoose(getRuntimeManifests(exec.Runtime), exec.Watch, getWhenConfig(exec, settingsDeps))
 }
 
-func openVersionItems(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) *textversion.VersionItems {
+func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *textversion.VersionItems {
 	if vaultDeps.TextVersions == nil {
 		return nil
 	}
-	run := newPluginCommands(install, settingsDeps, vaultDeps, install.ActiveExecution, nil).Run
-	return textversion.NewVersionItems(vaultDeps.TextVersions.Texts, vaultDeps.TextVersions.Versions, run, install.ActiveExecution.Watch)
+	running := getRunningExecution(exec, install.SafeMode)
+	run := newPluginCommands(exec, settingsDeps, vaultDeps, running, nil).Run
+	return textversion.NewVersionItems(vaultDeps.TextVersions.Texts, vaultDeps.TextVersions.Versions, run, running.Watch)
 }
 
-func openTriggers(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) *trigger.Triggers {
+func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *trigger.Triggers {
 	if vaultDeps.TextVersions == nil {
 		return nil
 	}
+	running := getRunningExecution(exec, install.SafeMode)
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: getRuntimeManifests(install.ActiveExecution.Runtime), Run: newPluginCommands(install, settingsDeps, vaultDeps, install.ActiveExecution, nil).Run, Readers: vaultReaders(vaultDeps),
-		Notes: pluginsNewNoteReader(vaultDeps), Types: install.ActiveExecution.Watch, Versions: vaultDeps.TextVersions.Texts, Config: getWhenConfig(install, settingsDeps),
+		Plugins: getRuntimeManifests(running.Runtime), Run: newPluginCommands(exec, settingsDeps, vaultDeps, running, nil).Run, Readers: vaultReaders(vaultDeps),
+		Notes: pluginsNewNoteReader(vaultDeps), Types: running.Watch, Versions: vaultDeps.TextVersions.Texts, Config: getWhenConfig(exec, settingsDeps),
 	})
 }
 
@@ -168,10 +170,10 @@ func pluginsNewNoteReader(v vaultWiring) noteport.NoteReader {
 	return note.NewReadFrontmatter(vaultReaders(v))
 }
 
-func getWhenConfig(install pluginInstall, settingsDeps settingsWiring) pluginport.WhenConfig {
+func getWhenConfig(exec *PluginExecution, settingsDeps settingsWiring) pluginport.WhenConfig {
 	return settingsadapter.WhenConfig{
 		App:     func() []plugindomain.Setting { return listAppSettings(settingsDeps) },
-		Plugins: install.Execution.Runtime.GetPluginInfos,
+		Plugins: exec.Runtime.GetPluginInfos,
 	}
 }
 
