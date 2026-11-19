@@ -5,6 +5,7 @@
  * invented.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import { createSettingsStore, SETTINGS_WORDS, type PluginSettingInfo } from '@/entities/settings'
 import { createSettingsCoreApi, type SettingsCore } from '@/testing/settingsWire'
 import { readTokens } from '@/testing/readTokens'
@@ -137,9 +138,9 @@ describe('the editor tokens of the window', () => {
   it('are the defaults of the page where the settings could not be read', async () => {
     const { store } = createWindow(
       {},
-      { getSettings: () => Promise.reject(new Error('the core is busy')) },
+      { getSettings: () => Promise.reject(createLostConnection('the core is busy')) },
     )
-    await store.start()
+    await expect(store.start()).rejects.toThrow('the core is busy')
 
     startTokens(store)
 

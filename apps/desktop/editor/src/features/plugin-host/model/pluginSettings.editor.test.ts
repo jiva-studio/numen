@@ -4,6 +4,7 @@
  * the transport of a test core. Every value here is invented.
  */
 import { describe, expect, it, vi } from 'vitest'
+import { createLostConnection } from '@numen/core-client/testing'
 import { createSettingsStore, SETTINGS_WORDS, type PluginSettingInfo } from '@/entities/settings'
 import { createSettingsCoreApi, type SettingsCore } from '@/testing/settingsWire'
 import { createPluginSettingsAccessor } from './pluginSettings'
@@ -80,10 +81,10 @@ describe('the editor settings a plugin reads', () => {
   it('stay undefined where the first read of the settings failed', async () => {
     const { store, accessor } = createWindow(
       {},
-      { getSettings: () => Promise.reject(new Error('the core is busy')) },
+      { getSettings: () => Promise.reject(createLostConnection('the core is busy')) },
     )
 
-    await store.start()
+    await expect(store.start()).rejects.toThrow('the core is busy')
 
     expect(accessor.getEditorSettings()).toBeUndefined()
   })
@@ -125,12 +126,12 @@ describe('the handler of the editor settings', () => {
   it('is not called while the settings have not arrived', async () => {
     const { store, accessor } = createWindow(
       {},
-      { getSettings: () => Promise.reject(new Error('the core is busy')) },
+      { getSettings: () => Promise.reject(createLostConnection('the core is busy')) },
     )
     const handler = vi.fn()
     accessor.onEditorSettingsChange(PLUGIN, handler)
 
-    await store.start()
+    await expect(store.start()).rejects.toThrow('the core is busy')
     await Promise.resolve()
 
     expect(handler).not.toHaveBeenCalled()

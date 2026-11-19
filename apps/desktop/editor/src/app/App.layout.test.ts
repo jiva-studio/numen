@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { WelcomePage } from '@numen/workbench'
 import { WorkspaceLayout, getPanes, type TabMenu, type Workspace } from '@numen/workbench'
+import { BootstrapFailure } from '@/features/app-start'
 import { requests, cards, listed, mountWindow, vaultState, settle, getTabs } from '@/testing/window'
 
 describe('the window holding no tab', () => {
@@ -50,13 +51,22 @@ describe('the window holding no tab', () => {
     ])
   })
 
-  it('lists as a failed task that the vaults could not be listed, and draws none', async () => {
+  it('offers a retry when the vault list fails and then opens the welcome screen', async () => {
+    listed.showing = ''
     vaultState.listable = false
 
     const window = await mountWindow()
 
     expect(cards().join(' ')).toContain('Vault list unavailable')
-    expect(window.findComponent(WelcomePage).props('vaults')).toStrictEqual([])
+    expect(window.findComponent(WelcomePage).exists()).toBe(false)
+    const retry = window.getComponent(BootstrapFailure).get('button')
+
+    vaultState.listable = true
+    await retry.trigger('click')
+    await settle()
+
+    expect(window.findComponent(BootstrapFailure).exists()).toBe(false)
+    expect(window.findComponent(WelcomePage).exists()).toBe(true)
   })
 })
 
