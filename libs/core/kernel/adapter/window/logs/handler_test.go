@@ -25,7 +25,7 @@ func TestWriteLogAndWatchLogsStreamEntriesOverConnect(t *testing.T) {
 	entries := usecaselogs.NewEntries()
 	record := usecaselogs.NewRecord(entries, nil, func() domainlogs.Level { return domainlogs.LevelDebug }, fixedClock{})
 	watch := usecaselogs.NewWatch(entries, nil, fixedClock{})
-	handler := windowlogs.NewHandler(watch, record)
+	handler := windowlogs.NewHandler(watch, record, func() domainlogs.Level { return domainlogs.LevelDebug }, func(domainlogs.Level) error { return nil })
 
 	mux := http.NewServeMux()
 	mux.Handle(windowlogs.NewRoute(handler, connect.WithInterceptors()))
@@ -60,5 +60,34 @@ func TestWriteLogAndWatchLogsStreamEntriesOverConnect(t *testing.T) {
 	got := stream.Msg().GetEntries()
 	if len(got) != 1 || got[0].GetMessage() != "opened tab" || got[0].GetPropertiesJson()["kind"] != `"logs"` {
 		t.Errorf("got = %+v", got)
+	}
+}
+
+func TestLogLevelReadsAndWritesApplicationSettingOverConnect(t *testing.T) {
+	level := domainlogs.LevelInfo
+	handler := windowlogs.NewHandler(nil, nil, func() domainlogs.Level { return level }, func(next domainlogs.Level) error {
+		level = next
+		return nil
+	})
+
+	mux := http.NewServeMux()
+	mux.Handle(windowlogs.NewRoute(handler, connect.WithInterceptors()))
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+
+	client := numenv1connect.NewLogServiceClient(srv.Client(), srv.URL)
+	got, err := client.GetLogLevel(t.Context(), connect.NewRequest(&v1.GetLogLevelRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Msg.GetLevel() != v1.LogLevel_LOG_LEVEL_INFO {
+		t.Errorf("level = %v, want %v", got.Msg.GetLevel(), v1.LogLevel_LOG_LEVEL_INFO)
+	}
+
+	if _, err := client.SetLogLevel(t.Context(), connect.NewRequest(&v1.SetLogLevelRequest{Level: v1.LogLevel_LOG_LEVEL_DEBUG})); err != nil {
+		t.Fatal(err)
+	}
+	if level != domainlogs.LevelDebug {
+		t.Errorf("level = %v, want %v", level, domainlogs.LevelDebug)
 	}
 }

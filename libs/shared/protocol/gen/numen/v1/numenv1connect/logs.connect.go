@@ -33,6 +33,10 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// LogServiceGetLogLevelProcedure is the fully-qualified name of the LogService's GetLogLevel RPC.
+	LogServiceGetLogLevelProcedure = "/numen.v1.LogService/GetLogLevel"
+	// LogServiceSetLogLevelProcedure is the fully-qualified name of the LogService's SetLogLevel RPC.
+	LogServiceSetLogLevelProcedure = "/numen.v1.LogService/SetLogLevel"
 	// LogServiceWriteLogProcedure is the fully-qualified name of the LogService's WriteLog RPC.
 	LogServiceWriteLogProcedure = "/numen.v1.LogService/WriteLog"
 	// LogServiceWatchLogsProcedure is the fully-qualified name of the LogService's WatchLogs RPC.
@@ -41,6 +45,8 @@ const (
 
 // LogServiceClient is a client for the numen.v1.LogService service.
 type LogServiceClient interface {
+	GetLogLevel(context.Context, *connect.Request[v1.GetLogLevelRequest]) (*connect.Response[v1.GetLogLevelResponse], error)
+	SetLogLevel(context.Context, *connect.Request[v1.SetLogLevelRequest]) (*connect.Response[v1.SetLogLevelResponse], error)
 	// WriteLog appends one structured entry to the log. An entry without a
 	// message answers INVALID_ARGUMENT.
 	WriteLog(context.Context, *connect.Request[v1.WriteLogRequest]) (*connect.Response[v1.WriteLogResponse], error)
@@ -60,6 +66,18 @@ func NewLogServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 	baseURL = strings.TrimRight(baseURL, "/")
 	logServiceMethods := v1.File_numen_v1_logs_proto.Services().ByName("LogService").Methods()
 	return &logServiceClient{
+		getLogLevel: connect.NewClient[v1.GetLogLevelRequest, v1.GetLogLevelResponse](
+			httpClient,
+			baseURL+LogServiceGetLogLevelProcedure,
+			connect.WithSchema(logServiceMethods.ByName("GetLogLevel")),
+			connect.WithClientOptions(opts...),
+		),
+		setLogLevel: connect.NewClient[v1.SetLogLevelRequest, v1.SetLogLevelResponse](
+			httpClient,
+			baseURL+LogServiceSetLogLevelProcedure,
+			connect.WithSchema(logServiceMethods.ByName("SetLogLevel")),
+			connect.WithClientOptions(opts...),
+		),
 		writeLog: connect.NewClient[v1.WriteLogRequest, v1.WriteLogResponse](
 			httpClient,
 			baseURL+LogServiceWriteLogProcedure,
@@ -77,8 +95,20 @@ func NewLogServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 
 // logServiceClient implements LogServiceClient.
 type logServiceClient struct {
-	writeLog  *connect.Client[v1.WriteLogRequest, v1.WriteLogResponse]
-	watchLogs *connect.Client[v1.WatchLogsRequest, v1.WatchLogsResponse]
+	getLogLevel *connect.Client[v1.GetLogLevelRequest, v1.GetLogLevelResponse]
+	setLogLevel *connect.Client[v1.SetLogLevelRequest, v1.SetLogLevelResponse]
+	writeLog    *connect.Client[v1.WriteLogRequest, v1.WriteLogResponse]
+	watchLogs   *connect.Client[v1.WatchLogsRequest, v1.WatchLogsResponse]
+}
+
+// GetLogLevel calls numen.v1.LogService.GetLogLevel.
+func (c *logServiceClient) GetLogLevel(ctx context.Context, req *connect.Request[v1.GetLogLevelRequest]) (*connect.Response[v1.GetLogLevelResponse], error) {
+	return c.getLogLevel.CallUnary(ctx, req)
+}
+
+// SetLogLevel calls numen.v1.LogService.SetLogLevel.
+func (c *logServiceClient) SetLogLevel(ctx context.Context, req *connect.Request[v1.SetLogLevelRequest]) (*connect.Response[v1.SetLogLevelResponse], error) {
+	return c.setLogLevel.CallUnary(ctx, req)
 }
 
 // WriteLog calls numen.v1.LogService.WriteLog.
@@ -93,6 +123,8 @@ func (c *logServiceClient) WatchLogs(ctx context.Context, req *connect.Request[v
 
 // LogServiceHandler is an implementation of the numen.v1.LogService service.
 type LogServiceHandler interface {
+	GetLogLevel(context.Context, *connect.Request[v1.GetLogLevelRequest]) (*connect.Response[v1.GetLogLevelResponse], error)
+	SetLogLevel(context.Context, *connect.Request[v1.SetLogLevelRequest]) (*connect.Response[v1.SetLogLevelResponse], error)
 	// WriteLog appends one structured entry to the log. An entry without a
 	// message answers INVALID_ARGUMENT.
 	WriteLog(context.Context, *connect.Request[v1.WriteLogRequest]) (*connect.Response[v1.WriteLogResponse], error)
@@ -108,6 +140,18 @@ type LogServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewLogServiceHandler(svc LogServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	logServiceMethods := v1.File_numen_v1_logs_proto.Services().ByName("LogService").Methods()
+	logServiceGetLogLevelHandler := connect.NewUnaryHandler(
+		LogServiceGetLogLevelProcedure,
+		svc.GetLogLevel,
+		connect.WithSchema(logServiceMethods.ByName("GetLogLevel")),
+		connect.WithHandlerOptions(opts...),
+	)
+	logServiceSetLogLevelHandler := connect.NewUnaryHandler(
+		LogServiceSetLogLevelProcedure,
+		svc.SetLogLevel,
+		connect.WithSchema(logServiceMethods.ByName("SetLogLevel")),
+		connect.WithHandlerOptions(opts...),
+	)
 	logServiceWriteLogHandler := connect.NewUnaryHandler(
 		LogServiceWriteLogProcedure,
 		svc.WriteLog,
@@ -122,6 +166,10 @@ func NewLogServiceHandler(svc LogServiceHandler, opts ...connect.HandlerOption) 
 	)
 	return "/numen.v1.LogService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case LogServiceGetLogLevelProcedure:
+			logServiceGetLogLevelHandler.ServeHTTP(w, r)
+		case LogServiceSetLogLevelProcedure:
+			logServiceSetLogLevelHandler.ServeHTTP(w, r)
 		case LogServiceWriteLogProcedure:
 			logServiceWriteLogHandler.ServeHTTP(w, r)
 		case LogServiceWatchLogsProcedure:
@@ -134,6 +182,14 @@ func NewLogServiceHandler(svc LogServiceHandler, opts ...connect.HandlerOption) 
 
 // UnimplementedLogServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedLogServiceHandler struct{}
+
+func (UnimplementedLogServiceHandler) GetLogLevel(context.Context, *connect.Request[v1.GetLogLevelRequest]) (*connect.Response[v1.GetLogLevelResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.LogService.GetLogLevel is not implemented"))
+}
+
+func (UnimplementedLogServiceHandler) SetLogLevel(context.Context, *connect.Request[v1.SetLogLevelRequest]) (*connect.Response[v1.SetLogLevelResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.LogService.SetLogLevel is not implemented"))
+}
 
 func (UnimplementedLogServiceHandler) WriteLog(context.Context, *connect.Request[v1.WriteLogRequest]) (*connect.Response[v1.WriteLogResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.LogService.WriteLog is not implemented"))

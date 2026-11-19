@@ -27,6 +27,11 @@ function onSelectLevel(level: LevelFilter) {
   props.state.setLevelFilter(level)
 }
 
+async function onSetLogLevel(level: LevelFilter) {
+  if (level === 'all') return
+  await props.state.setLogLevel(level)
+}
+
 function onSearchInput(event: Event) {
   const target = event.target as HTMLInputElement | null
   props.state.setSearchQuery(target?.value ?? '')
@@ -49,6 +54,20 @@ function onToggleRow(id: number) {
           :class="{ 'logs-tab__level-btn--active': state.levelFilter.value === item.id }"
           :aria-pressed="state.levelFilter.value === item.id"
           @click="onSelectLevel(item.id)"
+        >
+          {{ item.label }}
+        </button>
+      </div>
+
+      <div class="logs-tab__levels" role="group" :aria-label="words.logLevelLabel">
+        <button
+          v-for="item in levels.filter((one) => one.id !== 'all')"
+          :key="item.id"
+          type="button"
+          class="logs-tab__level-btn"
+          :class="{ 'logs-tab__level-btn--active': state.logLevel.value === item.id }"
+          :aria-pressed="state.logLevel.value === item.id"
+          @click="onSetLogLevel(item.id)"
         >
           {{ item.label }}
         </button>

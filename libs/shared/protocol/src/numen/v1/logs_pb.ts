@@ -10,7 +10,67 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/logs.proto.
  */
 export const file_numen_v1_logs: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9sb2dzLnByb3RvEghudW1lbi52MSLcAQoITG9nRW50cnkSFAoMdGltZV91bml4X21zGAEgASgDEiEKBWxldmVsGAIgASgOMhIubnVtZW4udjEuTG9nTGV2ZWwSDgoGc291cmNlGAMgASgJEg8KB21lc3NhZ2UYBCABKAkSPwoPcHJvcGVydGllc19qc29uGAUgAygLMiYubnVtZW4udjEuTG9nRW50cnkuUHJvcGVydGllc0pzb25FbnRyeRo1ChNQcm9wZXJ0aWVzSnNvbkVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEi1AEKD1dyaXRlTG9nUmVxdWVzdBIhCgVsZXZlbBgBIAEoDjISLm51bWVuLnYxLkxvZ0xldmVsEg4KBnNvdXJjZRgCIAEoCRIPCgdtZXNzYWdlGAMgASgJEkYKD3Byb3BlcnRpZXNfanNvbhgEIAMoCzItLm51bWVuLnYxLldyaXRlTG9nUmVxdWVzdC5Qcm9wZXJ0aWVzSnNvbkVudHJ5GjUKE1Byb3BlcnRpZXNKc29uRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASISChBXcml0ZUxvZ1Jlc3BvbnNlIhIKEFdhdGNoTG9nc1JlcXVlc3QiOAoRV2F0Y2hMb2dzUmVzcG9uc2USIwoHZW50cmllcxgBIAMoCzISLm51bWVuLnYxLkxvZ0VudHJ5KnoKCExvZ0xldmVsEhkKFUxPR19MRVZFTF9VTlNQRUNJRklFRBAAEhMKD0xPR19MRVZFTF9ERUJVRxABEhIKDkxPR19MRVZFTF9JTkZPEAISFQoRTE9HX0xFVkVMX1dBUk5JTkcQAxITCg9MT0dfTEVWRUxfRVJST1IQBDKXAQoKTG9nU2VydmljZRJBCghXcml0ZUxvZxIZLm51bWVuLnYxLldyaXRlTG9nUmVxdWVzdBoaLm51bWVuLnYxLldyaXRlTG9nUmVzcG9uc2USRgoJV2F0Y2hMb2dzEhoubnVtZW4udjEuV2F0Y2hMb2dzUmVxdWVzdBobLm51bWVuLnYxLldhdGNoTG9nc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChNudW1lbi92MS9sb2dzLnByb3RvEghudW1lbi52MSIUChJHZXRMb2dMZXZlbFJlcXVlc3QiOAoTR2V0TG9nTGV2ZWxSZXNwb25zZRIhCgVsZXZlbBgBIAEoDjISLm51bWVuLnYxLkxvZ0xldmVsIjcKElNldExvZ0xldmVsUmVxdWVzdBIhCgVsZXZlbBgBIAEoDjISLm51bWVuLnYxLkxvZ0xldmVsIhUKE1NldExvZ0xldmVsUmVzcG9uc2Ui3AEKCExvZ0VudHJ5EhQKDHRpbWVfdW5peF9tcxgBIAEoAxIhCgVsZXZlbBgCIAEoDjISLm51bWVuLnYxLkxvZ0xldmVsEg4KBnNvdXJjZRgDIAEoCRIPCgdtZXNzYWdlGAQgASgJEj8KD3Byb3BlcnRpZXNfanNvbhgFIAMoCzImLm51bWVuLnYxLkxvZ0VudHJ5LlByb3BlcnRpZXNKc29uRW50cnkaNQoTUHJvcGVydGllc0pzb25FbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBItQBCg9Xcml0ZUxvZ1JlcXVlc3QSIQoFbGV2ZWwYASABKA4yEi5udW1lbi52MS5Mb2dMZXZlbBIOCgZzb3VyY2UYAiABKAkSDwoHbWVzc2FnZRgDIAEoCRJGCg9wcm9wZXJ0aWVzX2pzb24YBCADKAsyLS5udW1lbi52MS5Xcml0ZUxvZ1JlcXVlc3QuUHJvcGVydGllc0pzb25FbnRyeRo1ChNQcm9wZXJ0aWVzSnNvbkVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiEgoQV3JpdGVMb2dSZXNwb25zZSISChBXYXRjaExvZ3NSZXF1ZXN0IjgKEVdhdGNoTG9nc1Jlc3BvbnNlEiMKB2VudHJpZXMYASADKAsyEi5udW1lbi52MS5Mb2dFbnRyeSp6CghMb2dMZXZlbBIZChVMT0dfTEVWRUxfVU5TUEVDSUZJRUQQABITCg9MT0dfTEVWRUxfREVCVUcQARISCg5MT0dfTEVWRUxfSU5GTxACEhUKEUxPR19MRVZFTF9XQVJOSU5HEAMSEwoPTE9HX0xFVkVMX0VSUk9SEAQyrwIKCkxvZ1NlcnZpY2USSgoLR2V0TG9nTGV2ZWwSHC5udW1lbi52MS5HZXRMb2dMZXZlbFJlcXVlc3QaHS5udW1lbi52MS5HZXRMb2dMZXZlbFJlc3BvbnNlEkoKC1NldExvZ0xldmVsEhwubnVtZW4udjEuU2V0TG9nTGV2ZWxSZXF1ZXN0Gh0ubnVtZW4udjEuU2V0TG9nTGV2ZWxSZXNwb25zZRJBCghXcml0ZUxvZxIZLm51bWVuLnYxLldyaXRlTG9nUmVxdWVzdBoaLm51bWVuLnYxLldyaXRlTG9nUmVzcG9uc2USRgoJV2F0Y2hMb2dzEhoubnVtZW4udjEuV2F0Y2hMb2dzUmVxdWVzdBobLm51bWVuLnYxLldhdGNoTG9nc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+
+/**
+ * @generated from message numen.v1.GetLogLevelRequest
+ */
+export type GetLogLevelRequest = Message<"numen.v1.GetLogLevelRequest"> & {
+};
+
+/**
+ * Describes the message numen.v1.GetLogLevelRequest.
+ * Use `create(GetLogLevelRequestSchema)` to create a new message.
+ */
+export const GetLogLevelRequestSchema: GenMessage<GetLogLevelRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_logs, 0);
+
+/**
+ * @generated from message numen.v1.GetLogLevelResponse
+ */
+export type GetLogLevelResponse = Message<"numen.v1.GetLogLevelResponse"> & {
+  /**
+   * @generated from field: numen.v1.LogLevel level = 1;
+   */
+  level: LogLevel;
+};
+
+/**
+ * Describes the message numen.v1.GetLogLevelResponse.
+ * Use `create(GetLogLevelResponseSchema)` to create a new message.
+ */
+export const GetLogLevelResponseSchema: GenMessage<GetLogLevelResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_logs, 1);
+
+/**
+ * @generated from message numen.v1.SetLogLevelRequest
+ */
+export type SetLogLevelRequest = Message<"numen.v1.SetLogLevelRequest"> & {
+  /**
+   * @generated from field: numen.v1.LogLevel level = 1;
+   */
+  level: LogLevel;
+};
+
+/**
+ * Describes the message numen.v1.SetLogLevelRequest.
+ * Use `create(SetLogLevelRequestSchema)` to create a new message.
+ */
+export const SetLogLevelRequestSchema: GenMessage<SetLogLevelRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_logs, 2);
+
+/**
+ * @generated from message numen.v1.SetLogLevelResponse
+ */
+export type SetLogLevelResponse = Message<"numen.v1.SetLogLevelResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.SetLogLevelResponse.
+ * Use `create(SetLogLevelResponseSchema)` to create a new message.
+ */
+export const SetLogLevelResponseSchema: GenMessage<SetLogLevelResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_logs, 3);
 
 /**
  * LogEntry is one structured record in the application log.
@@ -57,7 +117,7 @@ export type LogEntry = Message<"numen.v1.LogEntry"> & {
  * Use `create(LogEntrySchema)` to create a new message.
  */
 export const LogEntrySchema: GenMessage<LogEntry> = /*@__PURE__*/
-  messageDesc(file_numen_v1_logs, 0);
+  messageDesc(file_numen_v1_logs, 4);
 
 /**
  * @generated from message numen.v1.WriteLogRequest
@@ -94,7 +154,7 @@ export type WriteLogRequest = Message<"numen.v1.WriteLogRequest"> & {
  * Use `create(WriteLogRequestSchema)` to create a new message.
  */
 export const WriteLogRequestSchema: GenMessage<WriteLogRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_logs, 1);
+  messageDesc(file_numen_v1_logs, 5);
 
 /**
  * @generated from message numen.v1.WriteLogResponse
@@ -107,7 +167,7 @@ export type WriteLogResponse = Message<"numen.v1.WriteLogResponse"> & {
  * Use `create(WriteLogResponseSchema)` to create a new message.
  */
 export const WriteLogResponseSchema: GenMessage<WriteLogResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_logs, 2);
+  messageDesc(file_numen_v1_logs, 6);
 
 /**
  * @generated from message numen.v1.WatchLogsRequest
@@ -120,7 +180,7 @@ export type WatchLogsRequest = Message<"numen.v1.WatchLogsRequest"> & {
  * Use `create(WatchLogsRequestSchema)` to create a new message.
  */
 export const WatchLogsRequestSchema: GenMessage<WatchLogsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_logs, 3);
+  messageDesc(file_numen_v1_logs, 7);
 
 /**
  * @generated from message numen.v1.WatchLogsResponse
@@ -139,7 +199,7 @@ export type WatchLogsResponse = Message<"numen.v1.WatchLogsResponse"> & {
  * Use `create(WatchLogsResponseSchema)` to create a new message.
  */
 export const WatchLogsResponseSchema: GenMessage<WatchLogsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_logs, 4);
+  messageDesc(file_numen_v1_logs, 8);
 
 /**
  * LogLevel is the severity of a log entry. The zero value means nothing.
@@ -198,6 +258,22 @@ export const LogLevelSchema: GenEnum<LogLevel> = /*@__PURE__*/
  * @generated from service numen.v1.LogService
  */
 export const LogService: GenService<{
+  /**
+   * @generated from rpc numen.v1.LogService.GetLogLevel
+   */
+  getLogLevel: {
+    methodKind: "unary";
+    input: typeof GetLogLevelRequestSchema;
+    output: typeof GetLogLevelResponseSchema;
+  },
+  /**
+   * @generated from rpc numen.v1.LogService.SetLogLevel
+   */
+  setLogLevel: {
+    methodKind: "unary";
+    input: typeof SetLogLevelRequestSchema;
+    output: typeof SetLogLevelResponseSchema;
+  },
   /**
    * WriteLog appends one structured entry to the log. An entry without a
    * message answers INVALID_ARGUMENT.

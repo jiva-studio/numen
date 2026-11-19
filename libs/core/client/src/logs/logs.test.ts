@@ -15,6 +15,23 @@ const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> =>
 }
 
 describe('structured application logs', () => {
+  it('reads and writes the application log level', async () => {
+    const getLogLevel = vi.fn(async () => ({ level: LogLevel.WARNING }))
+    const setLogLevel = vi.fn(async () => ({}))
+    const logs = createLogClient({
+      getLogLevel: getLogLevel as never,
+      setLogLevel: setLogLevel as never,
+      watchLogs: vi.fn(),
+      writeLog: vi.fn(),
+    })
+
+    await expect(logs.getLogLevel()).resolves.toBe('warning')
+    await logs.setLogLevel('debug')
+
+    expect(getLogLevel).toHaveBeenCalledWith({})
+    expect(setLogLevel).toHaveBeenCalledWith({ level: LogLevel.DEBUG })
+  })
+
   it('streams batches of log entries with their timestamp, severity level, source, message and JSON properties', async () => {
     const logs = createLogs({
       logService: {
@@ -112,6 +129,8 @@ describe('structured application logs', () => {
       yield create(WatchLogsResponseSchema, {})
     })
     const rpc: LogRpc = {
+      getLogLevel: vi.fn(),
+      setLogLevel: vi.fn(),
       watchLogs,
       writeLog: vi.fn(),
     }

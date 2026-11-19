@@ -10,7 +10,7 @@ import (
 
 func ReadLogEntry(in *v1.WriteLogRequest) logs.Entry {
 	return logs.Entry{
-		Level:      readLogLevel(in.GetLevel()),
+		Level:      ReadLogLevel(in.GetLevel()),
 		Source:     in.GetSource(),
 		Message:    in.GetMessage(),
 		Properties: maps.Clone(in.GetPropertiesJson()),
@@ -22,7 +22,7 @@ func DescribeLogEntries(entries []logs.Entry) []*v1.LogEntry {
 	for _, entry := range entries {
 		out = append(out, &v1.LogEntry{
 			TimeUnixMs:     entry.Time.UnixMilli(),
-			Level:          describeLogLevel(entry.Level),
+			Level:          DescribeLogLevel(entry.Level),
 			Source:         entry.Source,
 			Message:        entry.Message,
 			PropertiesJson: maps.Clone(entry.Properties),
@@ -31,7 +31,7 @@ func DescribeLogEntries(entries []logs.Entry) []*v1.LogEntry {
 	return out
 }
 
-func readLogLevel(in v1.LogLevel) logs.Level {
+func ReadLogLevel(in v1.LogLevel) logs.Level {
 	switch in {
 	case v1.LogLevel_LOG_LEVEL_DEBUG:
 		return logs.LevelDebug
@@ -47,7 +47,7 @@ func readLogLevel(in v1.LogLevel) logs.Level {
 	return logs.DefaultLevel
 }
 
-func describeLogLevel(in logs.Level) v1.LogLevel {
+func DescribeLogLevel(in logs.Level) v1.LogLevel {
 	switch in {
 	case logs.LevelDebug:
 		return v1.LogLevel_LOG_LEVEL_DEBUG

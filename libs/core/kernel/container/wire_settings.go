@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
@@ -170,6 +171,16 @@ func syncSetting(c settingsWiring) naming.SyncSetting {
 
 func logLevelSetting(c settingsWiring) func() domainlogs.Level {
 	return c.SettingsFiles.GetLogLevel
+}
+
+func writeLogLevel(c settingsWiring) func(domainlogs.Level) error {
+	write := settingsWriteSettings(c)
+	return func(level domainlogs.Level) error {
+		return write.Execute([]settingsdomain.Setting{{
+			Path: []string{settingsdomain.AppOwner, "logging", "level"},
+			JSON: strconv.Quote(level.String()),
+		}})
+	}
 }
 
 func readSettings(c settingsWiring) func() (string, string, uint64, error) {

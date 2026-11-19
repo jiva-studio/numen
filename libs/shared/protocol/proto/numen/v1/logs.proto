@@ -11,6 +11,8 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 // plugin by its token. A window calls WriteLog for itself or for a plugin
 // frontend, and WatchLogs to follow the log stream.
 service LogService {
+  rpc GetLogLevel(GetLogLevelRequest) returns (GetLogLevelResponse);
+  rpc SetLogLevel(SetLogLevelRequest) returns (SetLogLevelResponse);
   // WriteLog appends one structured entry to the log. An entry without a
   // message answers INVALID_ARGUMENT.
   rpc WriteLog(WriteLogRequest) returns (WriteLogResponse);
@@ -19,6 +21,18 @@ service LogService {
   // arrive, for as long as the caller listens.
   rpc WatchLogs(WatchLogsRequest) returns (stream WatchLogsResponse);
 }
+
+message GetLogLevelRequest {}
+
+message GetLogLevelResponse {
+  LogLevel level = 1;
+}
+
+message SetLogLevelRequest {
+  LogLevel level = 1;
+}
+
+message SetLogLevelResponse {}
 
 // LogLevel is the severity of a log entry. The zero value means nothing.
 enum LogLevel {

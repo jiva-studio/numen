@@ -3,7 +3,7 @@
  * rows (newest first), filters by severity level and search query, and tracks expanded rows.
  */
 import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue'
-import type { Disposable, LogEntry, LogHost } from '@numen/plugin-sdk'
+import type { Disposable, LogEntry, LogHost, LogLevel } from '@numen/plugin-sdk'
 import { createLogRow, filterRows } from '../lib/format'
 import type { LevelFilter, LogRow } from '../types'
 
@@ -15,10 +15,12 @@ type LogsPhase = 'loading' | 'ready' | 'unavailable'
 export interface LogsView {
   readonly phase: Readonly<Ref<LogsPhase>>
   readonly levelFilter: Readonly<Ref<LevelFilter>>
+  readonly logLevel: Readonly<Ref<LogLevel>>
   readonly searchQuery: Readonly<Ref<string>>
   readonly visibleRows: ComputedRef<readonly LogRow[]>
   readonly expandedIds: Readonly<Ref<ReadonlySet<number>>>
   setLevelFilter(level: LevelFilter): void
+  setLogLevel(level: Exclude<LevelFilter, 'all'>): Promise<void>
   setSearchQuery(query: string): void
   toggleExpanded(id: number): void
 }
@@ -34,6 +36,7 @@ export function createLogsView(host: LogHost | undefined): LogsController {
   const phase = ref<LogsPhase>('loading')
   const allRows = shallowRef<readonly LogRow[]>([])
   const levelFilter = ref<LevelFilter>('all')
+  const logLevel = ref<LogLevel>('info')
   const searchQuery = ref('')
   const expandedIds = shallowRef<ReadonlySet<number>>(new Set())
   let nextId = 1
@@ -56,11 +59,16 @@ export function createLogsView(host: LogHost | undefined): LogsController {
     view: {
       phase,
       levelFilter,
+      logLevel,
       searchQuery,
       visibleRows,
       expandedIds,
       setLevelFilter: (level) => {
         levelFilter.value = level
+      },
+      setLogLevel: async (level) => {
+        await host?.setLevel(level)
+        logLevel.value = level
       },
       setSearchQuery: (query) => {
         searchQuery.value = query
@@ -82,6 +90,12 @@ export function createLogsView(host: LogHost | undefined): LogsController {
       }
       try {
         subscription = host.watch(appendBatch)
+        host.getLevel().then(
+          (level) => {
+            logLevel.value = level
+          },
+          () => undefined,
+        )
       } catch {
         phase.value = 'unavailable'
       }

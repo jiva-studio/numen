@@ -161,7 +161,10 @@ func getProcedureLevel(method string, err error) logs.Level {
 	if method == "WriteOpenTabs" || method == "WriteTabLinks" {
 		return logs.LevelDebug
 	}
-	for _, prefix := range []string{"Create", "Rename", "Remove", "Delete", "Execute", "Run", "Write", "Save", "Join", "Add", "Open", "Move", "Empty", "Update", "Retry", "Install", "Uninstall", "Choose"} {
+	for _, prefix := range []string{
+		"Create", "Rename", "Remove", "Delete", "Execute", "Run", "Write", "Save", "Join",
+		"Add", "Open", "Move", "Empty", "Update", "Retry", "Install", "Uninstall", "Choose",
+	} {
 		if strings.HasPrefix(method, prefix) {
 			return logs.LevelInfo
 		}

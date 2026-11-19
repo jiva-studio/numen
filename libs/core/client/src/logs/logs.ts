@@ -37,10 +37,15 @@ export interface LogWrite {
 }
 
 /** The calls of LogService a window makes. */
-export type LogRpc = Pick<Client<typeof LogService>, 'watchLogs' | 'writeLog'>
+export type LogRpc = Pick<
+  Client<typeof LogService>,
+  'getLogLevel' | 'setLogLevel' | 'watchLogs' | 'writeLog'
+>
 
 /** The structured logs of the installation, as a window watches and writes them. */
 export interface LogClient {
+  getLogLevel(): Promise<LogLevelName>
+  setLogLevel(level: LogLevelName): Promise<void>
   /** Streams batches of recent and incoming log entries until the signal aborts. */
   watchLogs(signal: AbortSignal): AsyncGenerator<readonly LogEntry[]>
   /** Appends one structured log entry to the core log. */
@@ -88,6 +93,10 @@ const encodeProperties = (
 /** Creates the log client over LogService. */
 export function createLogClient(rpc: LogRpc): LogClient {
   return {
+    getLogLevel: async () => READ_LEVEL[(await rpc.getLogLevel({})).level] ?? 'info',
+    setLogLevel: async (level) => {
+      await rpc.setLogLevel({ level: WRITE_LEVEL[level] })
+    },
     watchLogs: async function* (signal) {
       for await (const update of rpc.watchLogs({}, { signal })) {
         yield update.entries.map(readEntry)

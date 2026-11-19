@@ -72,25 +72,42 @@ describe('the Logs plugin', () => {
 
     const wrapper = mount(LogsTab, { props: { state } })
 
+    host.work.logs.pushEntries([
+      {
+        time: Date.UTC(2026, 10, 18, 12, 0, 3, 0),
+        level: 'info',
+        source: 'window',
+        message: 'Opened logs',
+        properties: { tab: '"logs"' },
+      },
+    ])
+    await wrapper.vm.$nextTick()
+
     const rows = wrapper.findAll('.log-row')
-    expect(rows).toHaveLength(3)
-    expect(rows[0]?.text()).toContain('Recognition failed')
-    expect(rows[0]?.find('.log-row__dot--error').exists()).toBe(true)
-    expect(rows[2]?.text()).toContain('SQL query')
+    expect(rows).toHaveLength(4)
+    expect(rows[0]?.text()).toContain('Opened logs')
+    await rows[0]?.find('.log-row__summary').trigger('click')
+    expect(rows[0]?.find('.log-row__details').exists()).toBe(true)
+    expect(rows[1]?.find('.log-row__dot--error').exists()).toBe(true)
+    expect(rows[3]?.text()).toContain('SQL query')
 
     // Expand the SQL row and verify formatted and syntax-highlighted SQL block
-    await rows[2]?.find('.log-row__summary').trigger('click')
-    expect(rows[2]?.find('.log-row__code').text()).toContain(
+    await rows[3]?.find('.log-row__summary').trigger('click')
+    expect(rows[3]?.find('.log-row__code').text()).toContain(
       'SELECT id, path\nFROM notes\nWHERE vault_id = ?\nORDER BY path',
     )
-    expect(rows[2]?.find('.log-row__token--keyword').text()).toBe('SELECT')
+    expect(rows[3]?.find('.log-row__token--keyword').text()).toBe('SELECT')
 
     // Expand the RPC row and verify formatted and syntax-highlighted JSON block
-    await rows[1]?.find('.log-row__summary').trigger('click')
-    expect(rows[1]?.find('.log-row__code').text()).toContain(
+    await rows[2]?.find('.log-row__summary').trigger('click')
+    expect(rows[2]?.find('.log-row__code').text()).toContain(
       '{\n  "vaultId": "v1",\n  "title": "Welcome"\n}',
     )
-    expect(rows[1]?.find('.log-row__token--key').text()).toBe('"vaultId"')
+    expect(rows[2]?.find('.log-row__token--key').text()).toBe('"vaultId"')
+
+    const levelGroups = wrapper.findAll('.logs-tab__levels')
+    await levelGroups[1]?.findAll('button')[0]?.trigger('click')
+    expect(state.logLevel.value).toBe('debug')
 
     // Filter by Error level
     const errorBtn = wrapper.findAll('.logs-tab__level-btn').find((btn) => btn.text() === 'Error')

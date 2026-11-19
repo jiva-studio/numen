@@ -81,6 +81,166 @@ func (LogLevel) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_logs_proto_rawDescGZIP(), []int{0}
 }
 
+type GetLogLevelRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLogLevelRequest) Reset() {
+	*x = GetLogLevelRequest{}
+	mi := &file_numen_v1_logs_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLogLevelRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLogLevelRequest) ProtoMessage() {}
+
+func (x *GetLogLevelRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_logs_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLogLevelRequest.ProtoReflect.Descriptor instead.
+func (*GetLogLevelRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_logs_proto_rawDescGZIP(), []int{0}
+}
+
+type GetLogLevelResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Level         LogLevel               `protobuf:"varint,1,opt,name=level,proto3,enum=numen.v1.LogLevel" json:"level,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLogLevelResponse) Reset() {
+	*x = GetLogLevelResponse{}
+	mi := &file_numen_v1_logs_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLogLevelResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLogLevelResponse) ProtoMessage() {}
+
+func (x *GetLogLevelResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_logs_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLogLevelResponse.ProtoReflect.Descriptor instead.
+func (*GetLogLevelResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_logs_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetLogLevelResponse) GetLevel() LogLevel {
+	if x != nil {
+		return x.Level
+	}
+	return LogLevel_LOG_LEVEL_UNSPECIFIED
+}
+
+type SetLogLevelRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Level         LogLevel               `protobuf:"varint,1,opt,name=level,proto3,enum=numen.v1.LogLevel" json:"level,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetLogLevelRequest) Reset() {
+	*x = SetLogLevelRequest{}
+	mi := &file_numen_v1_logs_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetLogLevelRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetLogLevelRequest) ProtoMessage() {}
+
+func (x *SetLogLevelRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_logs_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetLogLevelRequest.ProtoReflect.Descriptor instead.
+func (*SetLogLevelRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_logs_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SetLogLevelRequest) GetLevel() LogLevel {
+	if x != nil {
+		return x.Level
+	}
+	return LogLevel_LOG_LEVEL_UNSPECIFIED
+}
+
+type SetLogLevelResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetLogLevelResponse) Reset() {
+	*x = SetLogLevelResponse{}
+	mi := &file_numen_v1_logs_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetLogLevelResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetLogLevelResponse) ProtoMessage() {}
+
+func (x *SetLogLevelResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_logs_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetLogLevelResponse.ProtoReflect.Descriptor instead.
+func (*SetLogLevelResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_logs_proto_rawDescGZIP(), []int{3}
+}
+
 // LogEntry is one structured record in the application log.
 type LogEntry struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -99,7 +259,7 @@ type LogEntry struct {
 
 func (x *LogEntry) Reset() {
 	*x = LogEntry{}
-	mi := &file_numen_v1_logs_proto_msgTypes[0]
+	mi := &file_numen_v1_logs_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -111,7 +271,7 @@ func (x *LogEntry) String() string {
 func (*LogEntry) ProtoMessage() {}
 
 func (x *LogEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_logs_proto_msgTypes[0]
+	mi := &file_numen_v1_logs_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -124,7 +284,7 @@ func (x *LogEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogEntry.ProtoReflect.Descriptor instead.
 func (*LogEntry) Descriptor() ([]byte, []int) {
-	return file_numen_v1_logs_proto_rawDescGZIP(), []int{0}
+	return file_numen_v1_logs_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *LogEntry) GetTimeUnixMs() int64 {
@@ -177,7 +337,7 @@ type WriteLogRequest struct {
 
 func (x *WriteLogRequest) Reset() {
 	*x = WriteLogRequest{}
-	mi := &file_numen_v1_logs_proto_msgTypes[1]
+	mi := &file_numen_v1_logs_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -189,7 +349,7 @@ func (x *WriteLogRequest) String() string {
 func (*WriteLogRequest) ProtoMessage() {}
 
 func (x *WriteLogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_logs_proto_msgTypes[1]
+	mi := &file_numen_v1_logs_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -202,7 +362,7 @@ func (x *WriteLogRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteLogRequest.ProtoReflect.Descriptor instead.
 func (*WriteLogRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_logs_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_logs_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *WriteLogRequest) GetLevel() LogLevel {
@@ -241,7 +401,7 @@ type WriteLogResponse struct {
 
 func (x *WriteLogResponse) Reset() {
 	*x = WriteLogResponse{}
-	mi := &file_numen_v1_logs_proto_msgTypes[2]
+	mi := &file_numen_v1_logs_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -253,7 +413,7 @@ func (x *WriteLogResponse) String() string {
 func (*WriteLogResponse) ProtoMessage() {}
 
 func (x *WriteLogResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_logs_proto_msgTypes[2]
+	mi := &file_numen_v1_logs_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -266,7 +426,7 @@ func (x *WriteLogResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteLogResponse.ProtoReflect.Descriptor instead.
 func (*WriteLogResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_logs_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_logs_proto_rawDescGZIP(), []int{6}
 }
 
 type WatchLogsRequest struct {
@@ -277,7 +437,7 @@ type WatchLogsRequest struct {
 
 func (x *WatchLogsRequest) Reset() {
 	*x = WatchLogsRequest{}
-	mi := &file_numen_v1_logs_proto_msgTypes[3]
+	mi := &file_numen_v1_logs_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -289,7 +449,7 @@ func (x *WatchLogsRequest) String() string {
 func (*WatchLogsRequest) ProtoMessage() {}
 
 func (x *WatchLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_logs_proto_msgTypes[3]
+	mi := &file_numen_v1_logs_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -302,7 +462,7 @@ func (x *WatchLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchLogsRequest.ProtoReflect.Descriptor instead.
 func (*WatchLogsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_logs_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_logs_proto_rawDescGZIP(), []int{7}
 }
 
 type WatchLogsResponse struct {
@@ -315,7 +475,7 @@ type WatchLogsResponse struct {
 
 func (x *WatchLogsResponse) Reset() {
 	*x = WatchLogsResponse{}
-	mi := &file_numen_v1_logs_proto_msgTypes[4]
+	mi := &file_numen_v1_logs_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -327,7 +487,7 @@ func (x *WatchLogsResponse) String() string {
 func (*WatchLogsResponse) ProtoMessage() {}
 
 func (x *WatchLogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_logs_proto_msgTypes[4]
+	mi := &file_numen_v1_logs_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -340,7 +500,7 @@ func (x *WatchLogsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchLogsResponse.ProtoReflect.Descriptor instead.
 func (*WatchLogsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_logs_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_logs_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *WatchLogsResponse) GetEntries() []*LogEntry {
@@ -354,7 +514,13 @@ var File_numen_v1_logs_proto protoreflect.FileDescriptor
 
 const file_numen_v1_logs_proto_rawDesc = "" +
 	"\n" +
-	"\x13numen/v1/logs.proto\x12\bnumen.v1\"\x9c\x02\n" +
+	"\x13numen/v1/logs.proto\x12\bnumen.v1\"\x14\n" +
+	"\x12GetLogLevelRequest\"?\n" +
+	"\x13GetLogLevelResponse\x12(\n" +
+	"\x05level\x18\x01 \x01(\x0e2\x12.numen.v1.LogLevelR\x05level\">\n" +
+	"\x12SetLogLevelRequest\x12(\n" +
+	"\x05level\x18\x01 \x01(\x0e2\x12.numen.v1.LogLevelR\x05level\"\x15\n" +
+	"\x13SetLogLevelResponse\"\x9c\x02\n" +
 	"\bLogEntry\x12 \n" +
 	"\ftime_unix_ms\x18\x01 \x01(\x03R\n" +
 	"timeUnixMs\x12(\n" +
@@ -382,9 +548,11 @@ const file_numen_v1_logs_proto_rawDesc = "" +
 	"\x0fLOG_LEVEL_DEBUG\x10\x01\x12\x12\n" +
 	"\x0eLOG_LEVEL_INFO\x10\x02\x12\x15\n" +
 	"\x11LOG_LEVEL_WARNING\x10\x03\x12\x13\n" +
-	"\x0fLOG_LEVEL_ERROR\x10\x042\x97\x01\n" +
+	"\x0fLOG_LEVEL_ERROR\x10\x042\xaf\x02\n" +
 	"\n" +
-	"LogService\x12A\n" +
+	"LogService\x12J\n" +
+	"\vGetLogLevel\x12\x1c.numen.v1.GetLogLevelRequest\x1a\x1d.numen.v1.GetLogLevelResponse\x12J\n" +
+	"\vSetLogLevel\x12\x1c.numen.v1.SetLogLevelRequest\x1a\x1d.numen.v1.SetLogLevelResponse\x12A\n" +
 	"\bWriteLog\x12\x19.numen.v1.WriteLogRequest\x1a\x1a.numen.v1.WriteLogResponse\x12F\n" +
 	"\tWatchLogs\x12\x1a.numen.v1.WatchLogsRequest\x1a\x1b.numen.v1.WatchLogsResponse0\x01BHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -401,32 +569,42 @@ func file_numen_v1_logs_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_logs_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_logs_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_numen_v1_logs_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_numen_v1_logs_proto_goTypes = []any{
-	(LogLevel)(0),             // 0: numen.v1.LogLevel
-	(*LogEntry)(nil),          // 1: numen.v1.LogEntry
-	(*WriteLogRequest)(nil),   // 2: numen.v1.WriteLogRequest
-	(*WriteLogResponse)(nil),  // 3: numen.v1.WriteLogResponse
-	(*WatchLogsRequest)(nil),  // 4: numen.v1.WatchLogsRequest
-	(*WatchLogsResponse)(nil), // 5: numen.v1.WatchLogsResponse
-	nil,                       // 6: numen.v1.LogEntry.PropertiesJsonEntry
-	nil,                       // 7: numen.v1.WriteLogRequest.PropertiesJsonEntry
+	(LogLevel)(0),               // 0: numen.v1.LogLevel
+	(*GetLogLevelRequest)(nil),  // 1: numen.v1.GetLogLevelRequest
+	(*GetLogLevelResponse)(nil), // 2: numen.v1.GetLogLevelResponse
+	(*SetLogLevelRequest)(nil),  // 3: numen.v1.SetLogLevelRequest
+	(*SetLogLevelResponse)(nil), // 4: numen.v1.SetLogLevelResponse
+	(*LogEntry)(nil),            // 5: numen.v1.LogEntry
+	(*WriteLogRequest)(nil),     // 6: numen.v1.WriteLogRequest
+	(*WriteLogResponse)(nil),    // 7: numen.v1.WriteLogResponse
+	(*WatchLogsRequest)(nil),    // 8: numen.v1.WatchLogsRequest
+	(*WatchLogsResponse)(nil),   // 9: numen.v1.WatchLogsResponse
+	nil,                         // 10: numen.v1.LogEntry.PropertiesJsonEntry
+	nil,                         // 11: numen.v1.WriteLogRequest.PropertiesJsonEntry
 }
 var file_numen_v1_logs_proto_depIdxs = []int32{
-	0, // 0: numen.v1.LogEntry.level:type_name -> numen.v1.LogLevel
-	6, // 1: numen.v1.LogEntry.properties_json:type_name -> numen.v1.LogEntry.PropertiesJsonEntry
-	0, // 2: numen.v1.WriteLogRequest.level:type_name -> numen.v1.LogLevel
-	7, // 3: numen.v1.WriteLogRequest.properties_json:type_name -> numen.v1.WriteLogRequest.PropertiesJsonEntry
-	1, // 4: numen.v1.WatchLogsResponse.entries:type_name -> numen.v1.LogEntry
-	2, // 5: numen.v1.LogService.WriteLog:input_type -> numen.v1.WriteLogRequest
-	4, // 6: numen.v1.LogService.WatchLogs:input_type -> numen.v1.WatchLogsRequest
-	3, // 7: numen.v1.LogService.WriteLog:output_type -> numen.v1.WriteLogResponse
-	5, // 8: numen.v1.LogService.WatchLogs:output_type -> numen.v1.WatchLogsResponse
-	7, // [7:9] is the sub-list for method output_type
-	5, // [5:7] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	0,  // 0: numen.v1.GetLogLevelResponse.level:type_name -> numen.v1.LogLevel
+	0,  // 1: numen.v1.SetLogLevelRequest.level:type_name -> numen.v1.LogLevel
+	0,  // 2: numen.v1.LogEntry.level:type_name -> numen.v1.LogLevel
+	10, // 3: numen.v1.LogEntry.properties_json:type_name -> numen.v1.LogEntry.PropertiesJsonEntry
+	0,  // 4: numen.v1.WriteLogRequest.level:type_name -> numen.v1.LogLevel
+	11, // 5: numen.v1.WriteLogRequest.properties_json:type_name -> numen.v1.WriteLogRequest.PropertiesJsonEntry
+	5,  // 6: numen.v1.WatchLogsResponse.entries:type_name -> numen.v1.LogEntry
+	1,  // 7: numen.v1.LogService.GetLogLevel:input_type -> numen.v1.GetLogLevelRequest
+	3,  // 8: numen.v1.LogService.SetLogLevel:input_type -> numen.v1.SetLogLevelRequest
+	6,  // 9: numen.v1.LogService.WriteLog:input_type -> numen.v1.WriteLogRequest
+	8,  // 10: numen.v1.LogService.WatchLogs:input_type -> numen.v1.WatchLogsRequest
+	2,  // 11: numen.v1.LogService.GetLogLevel:output_type -> numen.v1.GetLogLevelResponse
+	4,  // 12: numen.v1.LogService.SetLogLevel:output_type -> numen.v1.SetLogLevelResponse
+	7,  // 13: numen.v1.LogService.WriteLog:output_type -> numen.v1.WriteLogResponse
+	9,  // 14: numen.v1.LogService.WatchLogs:output_type -> numen.v1.WatchLogsResponse
+	11, // [11:15] is the sub-list for method output_type
+	7,  // [7:11] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_logs_proto_init() }
@@ -440,7 +618,7 @@ func file_numen_v1_logs_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_logs_proto_rawDesc), len(file_numen_v1_logs_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

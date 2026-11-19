@@ -1,6 +1,7 @@
 /** User-facing strings of the Logs plugin. */
 export const WORDS = {
   title: 'Logs',
+  logLevelLabel: 'Log level',
   searchPlaceholder: 'Filter by message…',
   searchLabel: 'Search log messages',
   levelAll: 'All',

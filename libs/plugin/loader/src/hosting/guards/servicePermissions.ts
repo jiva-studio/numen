@@ -298,6 +298,8 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       watch: requirePermissions(PLUGINS_READ),
     },
     logs: {
+      getLevel: requirePermissionsAsync(LOGS_READ),
+      setLevel: requirePermissionsAsync(LOGS_READ),
       watch: requirePermissions(LOGS_READ),
       write: requireNothing('the entry is filed under the id of the plugin'),
     },

@@ -255,6 +255,19 @@
       "step": 1
     },
     {
+      "key": "logging.level",
+      "type": "enum",
+      "title": "Log level",
+      "description": "Which entries are written to the application log.",
+      "default": "info",
+      "options": [
+        { "value": "error", "title": "Error" },
+        { "value": "warning", "title": "Warning" },
+        { "value": "info", "title": "Info" },
+        { "value": "debug", "title": "Debug" }
+      ]
+    },
+    {
       "key": "search.maxQueryBytes",
       "type": "number",
       "title": "Longest query",

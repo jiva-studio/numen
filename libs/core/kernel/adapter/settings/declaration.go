@@ -25,6 +25,7 @@ const (
 	keyTextScale      = "appearance.textScale"
 	keySyncNaming     = "naming.syncTitleAndFilename"
 	keyProfile        = "performance.profile"
+	keyLogLevel       = "logging.level"
 )
 
 func listDetectedConnectionIDs(detected connectionport.Detected) []string {

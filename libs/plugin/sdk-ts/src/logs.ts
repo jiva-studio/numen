@@ -23,6 +23,8 @@ export interface LogWrite {
 // LogHost streams the structured log entries of the installation (`logs:read`) and records entries
 // from the plugin's frontend.
 export interface LogHost {
+  getLevel(): Promise<LogLevel>
+  setLevel(level: LogLevel): Promise<void>
   // Calls the handler with the recent log entries at once and with each incoming batch as entries
   // arrive, until the returned disposable is disposed. Requires `logs:read`.
   watch(handler: (entries: readonly LogEntry[]) => void): Disposable

@@ -28,7 +28,8 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"editor":{"fontSize":19,"fontFamily":"serif","lineHeight":2,"lineNumbers":true,"softWrap":false},
 		"performance":{"profile":"eco"},
 		"search":{"rerankWindow":70,"maxReranked":200,"maxRerankedBytes":2048,"defaultLimit":30,"maxLimit":90,
-			"candidatesPerCondition":250,"maxCandidates":900,"maxPathPrefixes":4,"mergeGapBytes":100,"maxQueryBytes":8192}}}`)
+			"candidatesPerCondition":250,"maxCandidates":900,"maxPathPrefixes":4,"mergeGapBytes":100,"maxQueryBytes":8192},
+		"logging":{"level":"debug"}}}`)
 	want := map[string]any{
 		"appearance.theme":              "mine:sea",
 		"appearance.mode":               "dark",
@@ -51,6 +52,7 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"search.maxPathPrefixes":        4.0,
 		"search.mergeGapBytes":          100.0,
 		"search.maxQueryBytes":          8192.0,
+		"logging.level":                 "debug",
 	}
 	for _, declared := range settings.GetAppDeclaration() {
 		path := append([]string{domainsettings.AppOwner}, strings.Split(declared.Key, ".")...)
@@ -60,24 +62,14 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 	}
 }
 
-func TestLogLevelDependsOnLogsPluginEnabledAndLevel(t *testing.T) {
+func TestLogLevelReadsApplicationLoggingSetting(t *testing.T) {
 	defaultFile := settings.DefaultFile()
 	if got := defaultFile.LogLevel(); got != logs.DefaultLevel {
 		t.Fatalf("default LogLevel = %v, want %v", got, logs.DefaultLevel)
 	}
 
-	disabled := readFileWith(t, `{"md.numen.tools.logs":{"enabled":false,"level":"debug"}}`)
-	if got := disabled.LogLevel(); got != logs.DefaultLevel {
-		t.Fatalf("disabled plugin LogLevel = %v, want %v", got, logs.DefaultLevel)
-	}
-
-	enabledDefault := readFileWith(t, `{"md.numen.tools.logs":{"enabled":true}}`)
-	if got := enabledDefault.LogLevel(); got != logs.DefaultLevel {
-		t.Fatalf("enabled without level LogLevel = %v, want %v", got, logs.DefaultLevel)
-	}
-
-	enabledDebug := readFileWith(t, `{"md.numen.tools.logs":{"enabled":true,"level":"debug"}}`)
-	if got := enabledDebug.LogLevel(); got != logs.LevelDebug {
-		t.Fatalf("enabled debug LogLevel = %v, want %v", got, logs.LevelDebug)
+	debug := readFileWith(t, `{"app":{"logging":{"level":"debug"}}}`)
+	if got := debug.LogLevel(); got != logs.LevelDebug {
+		t.Fatalf("debug LogLevel = %v, want %v", got, logs.LevelDebug)
 	}
 }

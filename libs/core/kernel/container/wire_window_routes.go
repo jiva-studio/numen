@@ -248,7 +248,7 @@ func mountLogs(w *windowWiring) {
 	w.a.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
 		l.Logs = record
 	})
-	handler := windowlogs.NewHandler(watch, record)
+	handler := windowlogs.NewHandler(watch, record, logLevelSetting(settingsOf(w.cfg)), writeLogLevel(settingsOf(w.cfg)))
 	path, served := windowlogs.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

@@ -18,6 +18,8 @@ export const createLogHost = (
 ): ((pluginId: string) => LogHost) => {
   const logs = createLogClient(logService)
   return (pluginId: string) => ({
+    getLevel: () => logs.getLogLevel(),
+    setLevel: (level) => logs.setLogLevel(level),
     watch: (handler) => {
       const listening = new AbortController()
       const follows = createFollower({
