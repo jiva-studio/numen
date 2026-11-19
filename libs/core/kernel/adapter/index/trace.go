@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -134,10 +135,14 @@ func (c *tracedConn) QueryContext(ctx context.Context, query string, args []driv
 	}
 	start := c.clock.Now()
 	rows, err := queryer.QueryContext(ctx, query, args)
-	if !errors.Is(err, driver.ErrSkip) {
-		c.record(start, query, args, err)
+	if errors.Is(err, driver.ErrSkip) {
+		return rows, err
 	}
-	return rows, err
+	if err != nil {
+		c.record(start, query, args, err)
+		return nil, err
+	}
+	return &tracedRows{rows: rows, conn: c, start: start, query: query, args: args}, nil
 }
 
 func (c *tracedConn) record(start time.Time, query string, args []driver.NamedValue, err error) {
@@ -240,8 +245,44 @@ func (s *tracedStmt) QueryContext(ctx context.Context, args []driver.NamedValue)
 	}
 	start := s.conn.clock.Now()
 	rows, err := queryer.QueryContext(ctx, args)
-	s.conn.record(start, s.query, args, err)
-	return rows, err
+	if err != nil {
+		s.conn.record(start, s.query, args, err)
+		return nil, err
+	}
+	return &tracedRows{rows: rows, conn: s.conn, start: start, query: s.query, args: args}, nil
+}
+
+type tracedRows struct {
+	rows     driver.Rows
+	conn     *tracedConn
+	start    time.Time
+	query    string
+	args     []driver.NamedValue
+	recorded bool
+	stepErr  error
+}
+
+func (r *tracedRows) Columns() []string { return r.rows.Columns() }
+
+func (r *tracedRows) Next(dest []driver.Value) error {
+	err := r.rows.Next(dest)
+	if err != nil && !errors.Is(err, io.EOF) {
+		r.stepErr = err
+	}
+	return err
+}
+
+func (r *tracedRows) Close() error {
+	err := r.rows.Close()
+	if !r.recorded {
+		r.recorded = true
+		recErr := r.stepErr
+		if recErr == nil {
+			recErr = err
+		}
+		r.conn.record(r.start, r.query, r.args, recErr)
+	}
+	return err
 }
 
 func toNamedValues(args []driver.Value) []driver.NamedValue {
