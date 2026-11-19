@@ -3,7 +3,6 @@ package editor
 import (
 	"context"
 	"errors"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -14,21 +13,20 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
-
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func newPluginWindow(

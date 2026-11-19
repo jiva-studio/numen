@@ -2,16 +2,16 @@ package editor
 
 import (
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
 func TestSuccessfulMeaningSearchRemovesTheWordsOnlyTask(t *testing.T) {
 	tasks := run.NewTasks()
-	state := SearchTasks{Window: &wire.Window{Tasks: tasks}}
+	state := SearchTasks{Tasks: &wire.Window{Tasks: tasks}}
 
 	state.ReportWordsAlone(errors.New("dial tcp: network is unreachable"))
 	if !hasTask(tasks, work.WordsAlone) {

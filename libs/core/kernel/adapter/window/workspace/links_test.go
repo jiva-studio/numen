@@ -143,11 +143,10 @@ func TestWatchTabLinksSendsGroupAndPathSyncToTwoWindows(t *testing.T) {
 
 func newDetachingState() (*editor.Session, chan struct{}) {
 	windowRequests := make(chan struct{}, 1)
-	state := newState()
-	state.DetachTab = func(context.Context, window.DetachedTab) error {
+	state := editor.NewSession(testFrame{detach: func(context.Context, window.DetachedTab) error {
 		windowRequests <- struct{}{}
 		return nil
-	}
+	}})
 	return state, windowRequests
 }
 
@@ -223,8 +222,7 @@ func TestDetachTabRespondsAfterTheNewWindowAcceptsTheTab(t *testing.T) {
 }
 
 func TestDetachTabEndsTheDetachWhenTheRequestIsCanceled(t *testing.T) {
-	state := newState()
-	state.DetachTab = func(context.Context, window.DetachedTab) error { return nil }
+	state := editor.NewSession(testFrame{detach: func(context.Context, window.DetachedTab) error { return nil }})
 	api, links := newHandler(t, state, scheduleNothing)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -351,8 +349,7 @@ func openWatch(t *testing.T, client numenv1connect.WorkspaceServiceClient, windo
 
 func TestFailedDetachTabDropsTabClosedInItsWindow(t *testing.T) {
 	errNoWindow := errors.New("no window opened")
-	state := newState()
-	state.DetachTab = func(context.Context, window.DetachedTab) error { return errNoWindow }
+	state := editor.NewSession(testFrame{detach: func(context.Context, window.DetachedTab) error { return errNoWindow }})
 	client, links := serveTabLinks(t, state, scheduleNothing)
 	openWatch(t, client, "window-a")
 	writeTabs(t, client, "window-a",

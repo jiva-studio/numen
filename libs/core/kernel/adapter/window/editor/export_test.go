@@ -160,7 +160,7 @@ func HandlerOf[T any](o *Installation) T {
 	return none
 }
 
-func (s *Services) storePlayingLoopback(playing *Loopback) { s.state.Media.Playing.Store(playing) }
+func (s *Services) storePlayingLoopback(playing *Loopback) { s.state.Media.playing.Store(playing) }
 
 func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *file.OpenPluginFile, mediaTypes *file.GetMediaType) {
 	s.readers, s.pluginFiles, s.mediaTypes = readers, openPluginFile, mediaTypes

@@ -3,10 +3,10 @@ package editor_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 

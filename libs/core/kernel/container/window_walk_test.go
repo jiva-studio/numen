@@ -4,19 +4,18 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"time"
-
-	"connectrpc.com/connect"
-	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
-
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // Reading a vault is work, and work is one entry in the list of operations. Each

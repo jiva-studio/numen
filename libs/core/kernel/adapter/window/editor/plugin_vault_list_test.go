@@ -3,8 +3,6 @@ package editor_test
 import (
 	"context"
 	"errors"
-	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"os"
 	"strings"
 	"sync"
@@ -14,15 +12,15 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
 // immediateBound is how long a call that must not wait for a page's FlushTimeout may take.

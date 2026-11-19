@@ -2,9 +2,10 @@ package editor_test
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 // The user's own switch is rejected while a page prompts; the user then closes the prompt, so nothing is

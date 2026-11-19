@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"io"
 	"net"
 	"net/http"
@@ -16,14 +15,14 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
-
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"

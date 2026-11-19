@@ -74,7 +74,7 @@ func getStorePagePolicy(t *testing.T, setBeforeStart bool, plugins PluginService
 	if err := installation.Start(t.Context(), vault, api.server); err != nil {
 		t.Fatal(err)
 	}
-	back := api.state.Media.Playing.Load()
+	back := api.state.Media.playing.Load()
 	testsupport.CloseAfter(t, loopbackCloser{back})
 	if !setBeforeStart {
 		installation.SetPlugins(plugins, nil)

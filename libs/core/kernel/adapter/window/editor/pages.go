@@ -97,7 +97,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 
 	// The origin recordings play from is known once the socket it is served over is
 	// open, which precedes any page request.
-	played := s.window.Media.Playing.Load().getPlayOrigins()
+	played := s.window.Media.playing.Load().getPlayOrigins()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", s.getPolicy(played))
 		// A window being taken away answers nothing.

@@ -107,7 +107,7 @@ func mountVaults(w *windowRoutes, listing *registry.Listing, change vaultChangin
 
 func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock machineport.Timer, runs *searchrun.SearchRuns) {
 	state := w.session
-	status := editor.SearchTasks{Window: w.page.Window}
+	status := editor.SearchTasks{Tasks: w.page.Window}
 	finds := newSearch(searchDeps, session.index, session.source, status.ReportWordsAlone, status.ClearWordsAlone)
 	handler := windowsearch.NewHandler(
 		&state.Runtime,

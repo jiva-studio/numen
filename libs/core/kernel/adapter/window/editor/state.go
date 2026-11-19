@@ -7,6 +7,7 @@ package editor
 
 import (
 	"context"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -14,11 +15,10 @@ import (
 
 // Session tracks the vault, tab reports and view notifications for a window.
 type Session struct {
-	Runtime        windowsession.Runtime
-	Tabs           windowsession.TabReports
-	Notices        *Notices
-	NotifyOpenTabs func(window.OpenTabs)
-	DetachTab      func(context.Context, window.DetachedTab) error
+	Runtime windowsession.Runtime
+	Tabs    windowsession.TabReports
+	Notices *Notices
+	frame   Frame
 }
 
 // Frame is the application window around the editor.
@@ -31,11 +31,7 @@ type Frame interface {
 
 // NewSession opens the editor's vault and tab reporting state.
 func NewSession(frame Frame) *Session {
-	s := &Session{Notices: newNotices()}
-	if frame != nil {
-		s.NotifyOpenTabs, s.DetachTab = frame.ShowOpenTabs, frame.DetachTab
-	}
-	return s
+	return &Session{Notices: newNotices(), frame: frame}
 }
 
 // GetCurrentVault is the vault the window shows.
@@ -62,13 +58,13 @@ func (s *Session) ReportOpenTabs(open window.OpenTabs) {
 
 // ShowOpenTabs sends the supplied tab snapshot to the current window frame.
 func (s *Session) ShowOpenTabs(open window.OpenTabs) {
-	if s.NotifyOpenTabs != nil {
-		s.NotifyOpenTabs(open)
+	if s.frame != nil {
+		s.frame.ShowOpenTabs(open)
 	}
 }
 
-func (s *Session) CanOpenTabWindow() bool { return s.DetachTab != nil }
+func (s *Session) CanOpenTabWindow() bool { return s.frame != nil }
 
 func (s *Session) OpenTabWindow(ctx context.Context, tab window.DetachedTab) error {
-	return s.DetachTab(ctx, tab)
+	return s.frame.DetachTab(ctx, tab)
 }

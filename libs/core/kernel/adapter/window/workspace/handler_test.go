@@ -109,8 +109,7 @@ func TestReadOpenTabsReturnsNoneWithoutAVault(t *testing.T) {
 
 func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 	var received []window.OpenTabs
-	state := newState()
-	state.NotifyOpenTabs = func(open window.OpenTabs) { received = append(received, open) }
+	state := editor.NewSession(testFrame{show: func(open window.OpenTabs) { received = append(received, open) }})
 	api := newHandlerOver(t, showing{Session: state}, memoryTabs{})
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
@@ -162,15 +161,15 @@ func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
 
 func TestDetachTabInvokesState(t *testing.T) {
 	var got window.DetachedTab
-	state := newState()
-	api, links := newHandler(t, state, scheduleNothing)
-	state.DetachTab = func(_ context.Context, tab window.DetachedTab) error {
+	var links *tablinks.Tabs
+	state := editor.NewSession(testFrame{detach: func(_ context.Context, tab window.DetachedTab) error {
 		got = tab
 		// The new window reads and accepts the tab, so DetachTab responds.
 		_, moveID, _ := links.Transfers.ReadDetached("window-b", tab.ID)
 		links.Transfers.Accept("window-b", tab.ID, moveID)
 		return nil
-	}
+	}})
+	api, links := newHandler(t, state, scheduleNothing)
 
 	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{
 		Tab:    &v1.Tab{Id: "plex:7a2e", Kind: "plex", Path: "physics/Ontology.md"},
@@ -190,8 +189,7 @@ func TestDetachTabInvokesState(t *testing.T) {
 }
 
 func TestDetachTabRequiresATabID(t *testing.T) {
-	state := newState()
-	state.DetachTab = func(context.Context, window.DetachedTab) error { return nil }
+	state := editor.NewSession(testFrame{detach: func(context.Context, window.DetachedTab) error { return nil }})
 	api, _ := newHandler(t, state, scheduleNothing)
 
 	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Tab: &v1.Tab{Kind: "plex"}}))
@@ -231,4 +229,18 @@ func TestFocusSentToWindowOmitsRangeBeyond32Bits(t *testing.T) {
 	if !reflect.DeepEqual(ranges, want) {
 		t.Errorf("the window is sent the ranges %v, want %v", ranges, want)
 	}
+}
+
+type testFrame struct {
+	show   func(window.OpenTabs)
+	detach func(context.Context, window.DetachedTab) error
+}
+
+func (f testFrame) ShowOpenTabs(open window.OpenTabs) {
+	if f.show != nil {
+		f.show(open)
+	}
+}
+func (f testFrame) DetachTab(ctx context.Context, tab window.DetachedTab) error {
+	return f.detach(ctx, tab)
 }

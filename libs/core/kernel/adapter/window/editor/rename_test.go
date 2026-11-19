@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 	"os"
 	"path/filepath"
 	"slices"
@@ -15,20 +13,20 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // The window renames a note and takes one out of the vault. What the vault

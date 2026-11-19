@@ -3,15 +3,15 @@ package container
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"io"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -62,7 +62,8 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	opened, launch := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps)
 	search := newTextSearch(searchDeps, c.machine.ResolvedCompute.Workers)
 	session := windowSearch{index: db, source: launch.source, tasks: plugins.tasks, generations: launch.generations, kinds: plugins.kinds.list}
-	query := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, search, db, launch.source, (editor.SearchTasks{Window: opened.page.Window}).ReportFloorError)
+	status := editor.SearchTasks{Tasks: opened.page.Window}
+	query := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, search, db, launch.source, status.ReportFloorError)
 	runs := newSearchRuns(session, query, exec.Runtime.Registry, exec.Runtime.Manifests, vaultDeps.Clock)
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
 	mountServices(opened, install, exec, settingsDeps, vaultDeps)
