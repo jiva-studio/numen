@@ -230,7 +230,7 @@ func serveGardenHost(t *testing.T) (*gardenHost, tools.Client) {
 func newTestAgent(t *testing.T, host task.Tools) *agent {
 	t.Helper()
 	t.Setenv("CLAUDE_CONFIG_DIR", t.TempDir())
-	built, err := newAgent(parts{environment: hostenv.Process{}, tools: host, isAsync: false})
+	built, err := newAgent(parts{environment: hostenv.Process{}, tools: host, isDiskEnabled: false})
 	if err != nil {
 		t.Fatal(err)
 	}

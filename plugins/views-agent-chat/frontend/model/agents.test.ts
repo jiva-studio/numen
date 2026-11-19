@@ -240,17 +240,25 @@ describe('the agents a chat offers', () => {
     ])
   })
 
-  it('ask to choose a model of an agent whose type requires one and whose row names none', async () => {
+  it('send through the first listed model when the first agent requires a model', async () => {
     const lantern: ConnectionRow = {
       connectionId: 'c-lantern',
       connectionName: 'Lantern agent',
       options: {},
       fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: true }],
     }
-    const { choice } = await createChat([lantern, row('c-orchard', 'Orchard agent')])
+    const { choice } = await createChat([lantern, row('c-orchard', 'Orchard agent')], {
+      isPickerOpened: false,
+    })
+
+    expect(choice.getPreferredRow()).toStrictEqual({
+      connectionId: 'c-lantern',
+      options: { model: 'c-meadow|clover' },
+      isExclusive: true,
+    })
+    await choice.listChoices()
 
     expect(readOptions(choice)).toStrictEqual([
-      `Lantern agent · ${WORDS.chooseModel}`,
       'Lantern agent · Meadow / Clover',
       `Orchard agent · ${WORDS.defaultModel}`,
       'Orchard agent · Pear Large',
@@ -559,6 +567,7 @@ describe('a model listing that fails', () => {
       agentId: 'c-lantern',
       modelId: 'c-meadow|clover',
     })
+    expect(readOptions(restored.agents!)).toContain('Lantern agent · c-meadow|clover')
     expect(restored.agents!.offered.failedAgentIds.value).toStrictEqual(['c-lantern'])
     expect(restored.agents!.offered.pendingAgentIds.value).toStrictEqual([])
   })

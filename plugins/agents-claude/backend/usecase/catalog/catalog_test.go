@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/plugintest"
 	"github.com/jiva-studio/numen/plugins/agents-claude/backend/model"
 )
@@ -19,9 +18,9 @@ func (f listerFunc) ListModels(ctx context.Context, command, env []string) ([]mo
 	return f(ctx, command, env)
 }
 
-func newCatalog(t *testing.T, lister listerFunc, isAsync bool, extra ...cache.Option) *Catalog {
+func newCatalog(t *testing.T, lister listerFunc, isDiskEnabled bool) *Catalog {
 	t.Helper()
-	c, err := New(lister, func(err error) { t.Logf("the catalog fell back: %v", err) }, isAsync, extra...)
+	c, err := New(lister, func(err error) { t.Logf("the catalog fell back: %v", err) }, isDiskEnabled)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,38 +117,14 @@ func TestTheProgramIsAskedWithTheCommandAndTheEnvironment(t *testing.T) {
 	}
 }
 
-// The load runs in the background and fails when the test lets it. The cache reports the failure
-// to its error handler after it has recorded it, so waiting for the report is waiting for the
-// failure.
-func TestAsyncReturnsEmptyThenFallbackOnFailure(t *testing.T) {
+func TestColdCatalogReturnsProgramModelsOnFirstRequest(t *testing.T) {
 	plugintest.GrantStorage(t)
-	fail := make(chan struct{})
-	reported := make(chan error, 2)
-	c := newCatalog(t, func(ctx context.Context, _, _ []string) ([]model.Model, error) {
-		select {
-		case <-fail:
-			return nil, errors.New("the program lists no model")
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-	}, true, cache.WithErrorHandler(func(err error) { reported <- err }))
-	command := []string{"claude"}
-	got, err := c.Get(t.Context(), command, nil)
-	if err != nil || len(got) != 0 {
-		t.Fatalf("in-flight async cache returned %v, %v", got, err)
-	}
-	close(fail)
-	select {
-	case reportErr := <-reported:
-		if reportErr == nil {
-			t.Error("the load reported no failure")
-		}
-	case <-t.Context().Done():
-		t.Fatal("the load did not report its failure")
-	}
-	got, err = c.Get(t.Context(), command, nil)
-	if err != nil || len(got) != len(model.GetFallback()) {
-		t.Fatalf("failed async cache returned %v, %v", got, err)
+	c := newCatalog(t, func(context.Context, []string, []string) ([]model.Model, error) {
+		return []model.Model{{Value: "opus"}}, nil
+	}, true)
+	list := c.List(t.Context(), "claude", nil, nil)
+	if len(list) != 1 || list[0].Value != "opus" {
+		t.Fatalf("first request returned %v", list)
 	}
 }
 

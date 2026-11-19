@@ -52,6 +52,19 @@ describe('the composer where no agent can answer', () => {
 })
 
 describe('the composer where an agent can answer', () => {
+  it('keeps the draft and picker usable while sending requires a model', async () => {
+    const wrapper = missing({
+      isAgentMissing: false,
+      canSubmit: false,
+      options: [OPTION],
+      modelValue: 'hello',
+    })
+    expect(wrapper.get('.disc button').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('.model-selector__pill').attributes('disabled')).toBeUndefined()
+    await wrapper.get('textarea').trigger('keydown', { key: 'Enter' })
+    expect(wrapper.emitted('submit')).toBeUndefined()
+  })
+
   it('keeps the input and shows no message', () => {
     const wrapper = missing({ isAgentMissing: false, options: [OPTION] })
     expect(wrapper.find('textarea').exists()).toBe(true)

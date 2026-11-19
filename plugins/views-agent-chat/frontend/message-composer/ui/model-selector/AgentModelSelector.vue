@@ -66,7 +66,14 @@ const menuItems = computed<ListItem[]>(() => {
   return props.options.flatMap((one) => {
     const isFailed = props.failedAgentIds.includes(one.agentId)
     if (!isFailed && !props.pendingAgentIds.includes(one.agentId)) {
-      return [{ id: `${one.agentId}:${one.modelId}`, text: one.modelTitle, group: one.agentTitle }]
+      return [
+        {
+          id: `${one.agentId}:${one.modelId}`,
+          text: one.modelTitle,
+          group: one.agentTitle,
+          isDisabled: !one.isAvailable,
+        },
+      ]
     }
     if (placed.has(one.agentId)) return []
     placed.add(one.agentId)

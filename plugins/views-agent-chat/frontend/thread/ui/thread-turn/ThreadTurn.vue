@@ -128,6 +128,7 @@ const call = computed(() => ({
    nothing to break at is broken where it reaches the edge. The window's body
    takes no selection; a question is selected with the answers around it. */
 .thread__text {
+  font-size: var(--numen-prose-size);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;

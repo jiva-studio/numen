@@ -23,15 +23,15 @@ type agent struct {
 // parts are what differs between the plugin process, a host that links the plugin in, and a test.
 // Tools is nil where the plugin has no host to list the tools on.
 type parts struct {
-	environment ports.Environment
-	tools       task.Tools
-	isAsync     bool
+	environment   ports.Environment
+	tools         task.Tools
+	isDiskEnabled bool
 }
 
 func newAgent(p parts) (*agent, error) {
 	values := new(settings.Settings)
 	lister := process.Lister{}
-	models, err := catalog.New(lister, lister.ReportError, p.isAsync)
+	models, err := catalog.New(lister, lister.ReportError, p.isDiskEnabled)
 	if err != nil {
 		return nil, err
 	}
