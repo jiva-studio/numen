@@ -9,8 +9,7 @@ import { createWindowPluginStatus } from '@/features/plugin-host'
 import { loadFrameRuntime } from '@/shared/api/runtime'
 import { createEmitter } from '@/shared/lib/emitter'
 import { createCommandRegistry, type SettingsRequest } from '@/shared/model/command'
-import { createMessageLog } from '@/shared/model/notices/messages'
-import { createRecordedMessageLog } from '@/shared/model/notices/recordedMessages'
+import { createMessageLog, createRecordedMessageLog } from '@/shared/model/notices/messages'
 import type { WindowApi } from './createWindowApi'
 
 export function createWindowFoundation(api: WindowApi) {

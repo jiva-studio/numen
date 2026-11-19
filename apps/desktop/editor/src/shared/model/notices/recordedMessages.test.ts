@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createMessageLog } from './messages'
-import { createRecordedMessageLog } from './recordedMessages'
+import { createMessageLog, createRecordedMessageLog } from './messages'
 
 describe('window message recording', () => {
   it('records changed warnings and errors without their text', () => {

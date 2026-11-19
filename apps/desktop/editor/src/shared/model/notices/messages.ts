@@ -6,6 +6,7 @@
  * are rendered.
  */
 import { shallowRef, type Ref } from 'vue'
+import type { WindowLogClient } from '@/shared/api/clients'
 import type { Severity, MessageWriter } from '@numen/plugin-loader'
 
 export type { MessageWriter }
@@ -60,4 +61,31 @@ export function createMessageLog(): MessageLog {
   }
 
   return { messages, getWriter, dismiss }
+}
+
+/** Records warning and error messages from the window in the application log. */
+export function createRecordedMessageLog(
+  messages: MessageLog,
+  logs: Pick<WindowLogClient, 'writeLog'>,
+): MessageLog {
+  return {
+    messages: messages.messages,
+    dismiss: (id) => messages.dismiss(id),
+    getWriter: (name) => {
+      const write = messages.getWriter(name)
+      return (text, severity = 'info') => {
+        const previous = messages.messages.value
+        write(text, severity)
+        if (messages.messages.value === previous || text === '' || severity === 'info') return
+        logs
+          .writeLog({
+            level: severity,
+            source: 'window',
+            message: 'Window message',
+            properties: { component: name },
+          })
+          .catch(() => undefined)
+      }
+    },
+  }
 }

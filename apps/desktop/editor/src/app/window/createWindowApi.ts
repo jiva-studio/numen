@@ -3,7 +3,6 @@
  * to the parts that make them, grouped by what they reach: the vault, the window, the tabs, the
  * plugins and the configuration.
  */
-import { createLogClient } from '@numen/core-client'
 import { createConnectionApi } from '@/entities/connection'
 import { createFileApi } from '@/entities/file'
 import { createLinkApi, createNoteApi, createRelations } from '@/entities/note'
@@ -32,6 +31,7 @@ import {
   createSettingsClients,
   createVaultClients,
   createWorkspaceClients,
+  createWindowLogClient,
   type WindowTransports,
 } from '@/shared/api/clients'
 
@@ -56,7 +56,7 @@ export function createWindowApi(transports: WindowTransports) {
       listVaults: createVaultListReader({ vaults, getShownVault: shownVault.getShownVault }),
     },
     window: {
-      logs: createLogClient(workspaceClients.logService),
+      logs: createWindowLogClient(workspaceClients.logService),
       focus: createFocusApi(workspaceClients.workspace),
       quit: createQuitApi(workspaceClients.windowService),
       shownVault,

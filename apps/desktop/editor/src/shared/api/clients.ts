@@ -11,6 +11,7 @@ import {
   createConnectionCallServiceClient,
   createConnectionClient,
   createFileClient,
+  createLogClient,
   createLogServiceClient,
   createNoteClient,
   createPluginCatalog,
@@ -85,3 +86,11 @@ export type WindowClients = ReturnType<typeof createVaultClients> &
   ReturnType<typeof createWorkspaceClients> &
   ReturnType<typeof createSettingsClients> &
   ReturnType<typeof createPluginHostClients>
+
+/** The application log used by the window. */
+export type WindowLogClient = ReturnType<typeof createLogClient>
+
+/** Creates the application log client over the window's service. */
+export function createWindowLogClient(service: WindowClients['logService']): WindowLogClient {
+  return createLogClient(service)
+}
