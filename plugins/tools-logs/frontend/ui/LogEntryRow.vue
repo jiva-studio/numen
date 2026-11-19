@@ -43,7 +43,6 @@ function onToggle() {
       <span
         class="log-row__dot"
         :class="`log-row__dot--${row.entry.level}`"
-        :title="row.entry.level"
         :aria-label="row.entry.level"
       />
     </button>

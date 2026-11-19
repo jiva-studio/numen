@@ -27,9 +27,9 @@ function onSelectLevel(level: LevelFilter) {
   props.state.setLevelFilter(level)
 }
 
-async function onSetLogLevel(level: LevelFilter) {
+function onSetLogLevel(level: LevelFilter) {
   if (level === 'all') return
-  await props.state.setLogLevel(level)
+  void props.state.setLogLevel(level)
 }
 
 function onSearchInput(event: Event) {

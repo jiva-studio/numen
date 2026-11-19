@@ -37,7 +37,6 @@ type Handler struct {
 
 var _ numenv1connect.LogServiceHandler = (*Handler)(nil)
 
-// NewHandler returns the handler over the log watcher, recorder and level setting.
 func NewHandler(
 	watcher Watcher,
 	recorder Recorder,
