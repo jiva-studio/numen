@@ -25,8 +25,11 @@ func getTechnologyFreeAdapters() map[string]string {
 	}
 }
 
-func isUseCaseImport(root, path string) bool {
-	return load.IsWithin(path, root+"/usecase")
+func isCallingUseCase(pkg *packages.Package, root string, ports []load.PortInterface) bool {
+	isUseCase := func(object types.Object) bool {
+		return load.IsWithin(object.Pkg().Path(), root+"/usecase") && !load.IsPortType(object, ports)
+	}
+	return len(load.ListReferences(pkg, isUseCase, func(object types.Object) types.Object { return object })) > 0
 }
 
 func getCalledObject(info *types.Info, call *ast.CallExpr) types.Object {
@@ -121,10 +124,7 @@ func getAdapterTechnologyFindings(pkgs []*packages.Package, root string, free ma
 		if !isInternalAdapter && !isDrivenAdapter(pkg, rel, ports) {
 			continue
 		}
-		isDriving := false
-		for path := range pkg.Imports {
-			isDriving = isDriving || isUseCaseImport(root, path)
-		}
+		isDriving := isCallingUseCase(pkg, root, ports)
 		switch {
 		case isDriving && isInternalAdapter:
 			found = append(found, rel+" calls a use case: a driving adapter lives under adapter/")

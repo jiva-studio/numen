@@ -72,6 +72,34 @@ func Open() *store.Store { return &store.Store{} }
 	}
 }
 
+// A port that a use case package declares and holds counts: an adapter that implements it is driven.
+func TestWiringPackageRule_ReadsAPortADeclaredByAUseCase(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"usecase/find/find.go": `package find
+
+type Cache interface{ Get() string }
+
+type Find struct{ cache Cache }
+
+func New(c Cache) *Find { return &Find{cache: c} }
+`,
+		"adapter/blob/blob.go": "package blob\n\ntype Blob struct{}\n\nfunc (Blob) Get() string { return \"\" }\n",
+		"internal/hub/hub.go": `package hub
+
+import (
+	"fixture/adapter/blob"
+	"fixture/usecase/find"
+)
+
+func Build() *find.Find { return find.New(blob.Blob{}) }
+`,
+	})
+	found, _ := getWiringPackages(load.LoadFixture(t, dir), "fixture", func(string) bool { return false })
+	if got, want := load.FormatFindings(found), []string{"hub.go:1 fixture/internal/hub"}; !slices.Equal(got, want) {
+		t.Errorf("the rule rejects %v, want %v", got, want)
+	}
+}
+
 func TestCompositionRootRule_ExemptsTheContainerAndTheApplicationRoots(t *testing.T) {
 	for _, tc := range []struct {
 		path     string

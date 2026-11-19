@@ -29,11 +29,26 @@ func getCalledInterfaceMethod(call *ast.CallExpr, info *types.Info) *types.Func 
 	return method
 }
 
+func returnsPort(function *ast.FuncDecl, info *types.Info, ports []load.PortInterface) bool {
+	if function.Type.Results == nil {
+		return false
+	}
+	for _, result := range function.Type.Results.List {
+		named, ok := load.GetElementType(info.TypeOf(result.Type)).(*types.Named)
+		if ok && load.IsPortType(named.Obj(), ports) {
+			return true
+		}
+	}
+	return false
+}
+
 func getPortInterfaceCalls(pkgs []*packages.Package, root string) ([]load.Finding, int) {
 	var found []load.Finding
 	read := 0
+	ports := load.ListPortInterfaces(pkgs, root)
 	for _, pkg := range pkgs {
-		if !load.IsInLayer(pkg.PkgPath, root, "port") {
+		isPort := load.IsInLayer(pkg.PkgPath, root, "port")
+		if !isPort && !load.IsInLayer(pkg.PkgPath, root, "usecase") {
 			continue
 		}
 		for _, file := range pkg.Syntax {
@@ -42,7 +57,7 @@ func getPortInterfaceCalls(pkgs []*packages.Package, root string) ([]load.Findin
 			}
 			for _, decl := range file.Decls {
 				function, ok := decl.(*ast.FuncDecl)
-				if !ok || function.Body == nil {
+				if !ok || function.Body == nil || !isPort && !returnsPort(function, pkg.TypesInfo, ports) {
 					continue
 				}
 				read++

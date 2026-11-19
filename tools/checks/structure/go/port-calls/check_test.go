@@ -57,6 +57,42 @@ func Execute(r noteport.Reader) string { return r.Read("a.md") }
 	}
 }
 
+// A function of a use case package that returns a port is read as a function of a port; one that returns anything
+// else, and the use case itself, is not.
+func TestPortCallRule_ReadsAFunctionThatBuildsAPort(t *testing.T) {
+	dir := load.WriteTreeFixture(t, map[string]string{
+		"usecase/find/find.go": `package find
+
+type Cache interface{ Get() string }
+
+type Reader interface{ Read() string }
+
+type Find struct{ cache Cache }
+
+func New(c Cache) *Find { return &Find{cache: c} }
+
+func (f *Find) Execute() string { return f.cache.Get() }
+
+func Wrap(c Cache, r Reader) Cache { _ = r.Read(); return c }
+
+func Count(r Reader) int { return len(r.Read()) }
+
+func WrapArray(c Cache, r Reader) [1]Cache { _ = r.Read(); return [1]Cache{c} }
+
+func WrapChannel(r Reader) <-chan Cache { _ = r.Read(); return nil }
+`,
+	})
+	found, read := getPortInterfaceCalls(load.LoadFixture(t, dir), "fixture")
+	want := []string{
+		"find.go:13 find.Wrap calls fixture/usecase/find.Reader.Read",
+		"find.go:17 find.WrapArray calls fixture/usecase/find.Reader.Read",
+		"find.go:19 find.WrapChannel calls fixture/usecase/find.Reader.Read",
+	}
+	if got := load.FormatFindings(found); !slices.Equal(got, want) || read != len(want) {
+		t.Errorf("the rule rejects %v of %d functions read, want %v of %d", got, read, want, len(want))
+	}
+}
+
 func TestAPortDeclaresAndDoesNotOrchestrate(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the modules of the workspace")
