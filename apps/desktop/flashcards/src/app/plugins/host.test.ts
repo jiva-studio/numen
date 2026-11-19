@@ -303,7 +303,7 @@ describe('createShellHost', () => {
       setup: (props) => () => h('p', (props.context as { vault: string }).vault),
     })
     host
-      .createContext('md.numen.chat', withVault('md.numen.chat'))
+      .createContext('md.numen.views.agent.chat', withVault('md.numen.views.agent.chat'))
       .plugin.register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
 
@@ -312,7 +312,7 @@ describe('createShellHost', () => {
       .host.ui.mountView(CONVERSATION, panel, { connections: CONNECTIONS, vault: 'physics' })
     expect(panel.textContent).toBe('physics')
 
-    host.disposePlugin('md.numen.chat')
+    host.disposePlugin('md.numen.views.agent.chat')
     expect(panel.textContent).toBe('')
   })
 
@@ -320,7 +320,7 @@ describe('createShellHost', () => {
     const { host } = createShellHost()
     const conversation = defineComponent({ setup: () => () => h('p', 'conversation') })
     host
-      .createContext('md.numen.chat', withVault('md.numen.chat'))
+      .createContext('md.numen.views.agent.chat', withVault('md.numen.views.agent.chat'))
       .plugin.register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
     host
@@ -483,13 +483,18 @@ describe('the tab of the window', () => {
 
   it("draws a view a plugin declares into the window's own element", () => {
     const { host, mountView } = createShellHost()
-    host.createContext('md.numen.cards', withVault('md.numen.cards')).plugin.register.view({
-      capability: VAULT_SUMMARY,
-      component: defineComponent({
-        props: { context: { type: Object, required: true } },
-        setup: (props) => () => h('b', (props.context as { vault: string }).vault),
-      }),
-    })
+    host
+      .createContext(
+        'md.numen.views.flashcards.studio',
+        withVault('md.numen.views.flashcards.studio'),
+      )
+      .plugin.register.view({
+        capability: VAULT_SUMMARY,
+        component: defineComponent({
+          props: { context: { type: Object, required: true } },
+          setup: (props) => () => h('b', (props.context as { vault: string }).vault),
+        }),
+      })
     const row = document.createElement('span')
 
     const view = mountView(VAULT_SUMMARY, row, { vault: 'roots' })

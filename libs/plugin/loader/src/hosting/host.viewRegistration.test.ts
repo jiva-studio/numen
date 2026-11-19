@@ -93,16 +93,15 @@ describe('a plugin that registers a view for other plugins', () => {
   it('is refused a second registration of a capability, and the first view stays', () => {
     const { createPlugin } = createHost()
     const received: string[] = []
-    const chat = createPlugin('md.numen.chat', { viewCapabilities: [CONVERSATION] })
-    const second = createPlugin('org.example.second', { viewCapabilities: [CONVERSATION] })
+    const chat = createPlugin('md.numen.views.agent.chat', { viewCapabilities: [CONVERSATION] })
     chat.plugin.register.view({ capability: CONVERSATION, component: createView('chat', received) })
 
     expect(() =>
-      second.plugin.register.view({
+      chat.plugin.register.view({
         capability: CONVERSATION,
         component: createView('second', received),
       }),
-    ).toThrowError(/"md.numen.chat" already draws/)
+    ).toThrowError(/"md.numen.views.agent.chat" already draws/)
     const element = document.createElement('div')
     mountConversation(createPlugin('md.numen.mounter'), element)
 
@@ -112,17 +111,17 @@ describe('a plugin that registers a view for other plugins', () => {
 
   it('may register the capability once the plugin that drew it is disposed', () => {
     const { host, createPlugin } = createHost()
-    createPlugin('md.numen.chat', {
+    createPlugin('md.numen.views.agent.chat', {
       viewCapabilities: [CONVERSATION],
     }).plugin.register.view({
       capability: CONVERSATION,
       component: createView('chat', []),
     })
-    host.lifecycle.disposePlugin('md.numen.chat')
+    host.lifecycle.disposePlugin('md.numen.views.agent.chat')
     const element = document.createElement('div')
     mountConversation(createPlugin('md.numen.mounter'), element)
 
-    createPlugin('org.example.next', {
+    createPlugin('md.numen.views.agent.chat', {
       viewCapabilities: [CONVERSATION],
     }).plugin.register.view({
       capability: CONVERSATION,
@@ -132,16 +131,16 @@ describe('a plugin that registers a view for other plugins', () => {
     expect(element.textContent).toBe('next: roots')
   })
 
-  it.each<[ViewCapability, string[], string]>([
-    [NOTE_EDITOR, ['vault:read'], 'vault:write'],
-    [NOTE_EDITOR, [], 'vault:read'],
-    [VAULT_SUMMARY, [], 'vault:read'],
+  it.each<[ViewCapability, string, string[], string]>([
+    [NOTE_EDITOR, 'md.numen.notes', ['vault:read'], 'vault:write'],
+    [NOTE_EDITOR, 'md.numen.notes', [], 'vault:read'],
+    [VAULT_SUMMARY, 'md.numen.views.flashcards.studio', [], 'vault:read'],
   ])(
-    'is refused %s with the permissions %j, which lack %s the context hands over',
-    (capability, permissions, missing) => {
+    'is refused %s as %s with the permissions %j, which lack %s the context hands over',
+    (capability, owner, permissions, missing) => {
       const { createPlugin } = createHost()
       const received: string[] = []
-      const registrant = createPlugin('org.example.registrant', {
+      const registrant = createPlugin(owner, {
         permissions,
         viewCapabilities: [capability],
       })
@@ -163,16 +162,24 @@ describe('a plugin that registers a view for other plugins', () => {
     },
   )
 
-  it('registers a view of each kind for a plugin that holds the permissions of the kind', () => {
+  it('reserves each built-in capability for its owner even before registration', () => {
     const { createPlugin } = createHost()
     const cases = [
-      [CONVERSATION, []],
-      [NOTE_EDITOR, READ_WRITE],
-      [VAULT_SUMMARY, ['vault:read']],
+      [CONVERSATION, 'md.numen.views.agent.chat', []],
+      [NOTE_EDITOR, 'md.numen.notes', READ_WRITE],
+      [VAULT_SUMMARY, 'md.numen.views.flashcards.studio', ['vault:read']],
     ] as const
 
-    for (const [index, [capability, permissions]] of cases.entries()) {
-      const registrant = createPlugin(`org.example.registrant${index}`, {
+    for (const [capability, owner, permissions] of cases) {
+      const other = createPlugin('org.example.other', {
+        permissions: READ_WRITE,
+        viewCapabilities: [capability],
+      })
+      expect(() =>
+        other.plugin.register.view({ capability, component: createView('other', []) }),
+      ).toThrowError(`owned by "${owner}"`)
+
+      const registrant = createPlugin(owner, {
         permissions: [...permissions],
         viewCapabilities: [capability],
       })
@@ -185,7 +192,9 @@ describe('a plugin that registers a view for other plugins', () => {
   it('is checked on one read of the registration, whatever a getter answers later', () => {
     const { createPlugin } = createHost()
     const received: string[] = []
-    const hijacker = createPlugin('org.example.hijacker', { viewCapabilities: [VAULT_SUMMARY] })
+    const hijacker = createPlugin('md.numen.views.flashcards.studio', {
+      viewCapabilities: [VAULT_SUMMARY],
+    })
     const answers = [VAULT_SUMMARY, CONVERSATION, CONVERSATION, CONVERSATION]
     const registration = {
       get capability() {
@@ -205,7 +214,9 @@ describe('a plugin that registers a view for other plugins', () => {
   it('is checked on one read of a proxy that answers each read differently', () => {
     const { createPlugin } = createHost()
     const received: string[] = []
-    const hijacker = createPlugin('org.example.hijacker', { viewCapabilities: [VAULT_SUMMARY] })
+    const hijacker = createPlugin('md.numen.views.flashcards.studio', {
+      viewCapabilities: [VAULT_SUMMARY],
+    })
     let reads = 0
     const registration = new Proxy(
       { capability: VAULT_SUMMARY, component: createView('hijacker', received) },
@@ -240,7 +251,7 @@ describe('a plugin that registers a view for other plugins', () => {
         component: createView('hijacker', received),
       }),
     ).toThrowError()
-    createPlugin('md.numen.chat', {
+    createPlugin('md.numen.views.agent.chat', {
       viewCapabilities: [CONVERSATION],
     }).plugin.register.view({
       capability: CONVERSATION,

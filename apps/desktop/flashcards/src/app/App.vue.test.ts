@@ -137,7 +137,7 @@ const activateCards = (
 }
 
 const MANIFEST = {
-  id: 'md.numen.cards',
+  id: 'md.numen.views.flashcards.studio',
   name: 'Cards',
   version: '1.0.0',
   frontend: {},
@@ -157,7 +157,7 @@ const serveCore = (
 }
 
 const createDeps = (listVaults?: () => Promise<readonly VaultRow[]>) => {
-  serveCore(['md.numen.cards'], listVaults)
+  serveCore(['md.numen.views.flashcards.studio'], listVaults)
   return {
     fetch: (async () => new Response(JSON.stringify(MANIFEST))) as unknown as typeof fetch,
     dynamicImport: async () => ({ activate: activateCards }),
@@ -330,8 +330,12 @@ describe('the window over a plugin that draws the review', () => {
       'due physics',
       'due words',
     ])
-    expect(getPluginStyle('md.numen.cards')).toBe('/plugin/md.numen.cards/dist/styles.css')
-    expect(document.adoptedStyleSheets).toContain(getPluginSheet('md.numen.cards'))
+    expect(getPluginStyle('md.numen.views.flashcards.studio')).toBe(
+      '/plugin/md.numen.views.flashcards.studio/dist/styles.css',
+    )
+    expect(document.adoptedStyleSheets).toContain(
+      getPluginSheet('md.numen.views.flashcards.studio'),
+    )
   })
 
   it('opens the review on a vault pressed, and goes back to the vaults when the review closes', async () => {
@@ -709,7 +713,7 @@ const createBarPlugin = (
 
 const createBarDeps = (plugins: readonly ReturnType<typeof createBarPlugin>[]) => {
   const findPlugin = (url: string) => plugins.find((one) => url.includes(`/${one.manifest.id}/`))
-  serveCore(['md.numen.cards', ...plugins.map((one) => one.manifest.id)])
+  serveCore(['md.numen.views.flashcards.studio', ...plugins.map((one) => one.manifest.id)])
   return {
     fetch: (async (url: string) =>
       new Response(
@@ -839,7 +843,7 @@ describe('the title bar of the flashcards window', () => {
       createRoot(core, {
         ...deps,
         dynamicImport: (url: string) =>
-          url.includes('/md.numen.cards/')
+          url.includes('/md.numen.views.flashcards.studio/')
             ? new Promise<object>(() => undefined)
             : deps.dynamicImport(url),
       }),

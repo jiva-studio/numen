@@ -497,8 +497,8 @@ describe('createPluginHost', () => {
     })
     host.lifecycle
       .createContext(
-        'md.numen.chat',
-        createMockManifest('md.numen.chat', {
+        'md.numen.views.agent.chat',
+        createMockManifest('md.numen.views.agent.chat', {
           permissions: ['vault:read', 'vault:write'],
           viewCapabilities: [CONVERSATION],
         }),
@@ -521,8 +521,8 @@ describe('createPluginHost', () => {
     const conversation = defineComponent({ setup: () => () => h('p', 'conversation') })
     host.lifecycle
       .createContext(
-        'md.numen.chat',
-        createMockManifest('md.numen.chat', {
+        'md.numen.views.agent.chat',
+        createMockManifest('md.numen.views.agent.chat', {
           permissions: ['vault:read', 'vault:write'],
           viewCapabilities: [CONVERSATION],
         }),
@@ -533,7 +533,7 @@ describe('createPluginHost', () => {
       .createContext('org.example.sample')
       .host.ui.mountView(CONVERSATION, panel, { connections: STUB_CONNECTIONS })
 
-    host.lifecycle.disposePlugin('md.numen.chat')
+    host.lifecycle.disposePlugin('md.numen.views.agent.chat')
 
     expect(panel.textContent).toBe('')
   })
@@ -586,8 +586,12 @@ describe('a view mounted by a plugin', () => {
       createMockManifest('md.numen.notes', {
         name: 'Notes',
         permissions: ['vault:read', 'vault:write'],
-        viewCapabilities: [NOTE_EDITOR, CONVERSATION],
+        viewCapabilities: [NOTE_EDITOR],
       }),
+    )
+    const chatPlugin = host.lifecycle.createContext(
+      'md.numen.views.agent.chat',
+      createMockManifest('md.numen.views.agent.chat', { viewCapabilities: [CONVERSATION] }),
     )
     const registerViews = () => {
       notesPlugin.plugin.register.view({
@@ -604,7 +608,7 @@ describe('a view mounted by a plugin', () => {
           },
         }),
       })
-      notesPlugin.plugin.register.view({
+      chatPlugin.plugin.register.view({
         capability: CONVERSATION,
         component: defineComponent({ setup: () => () => h('p', 'conversation') }),
       })
