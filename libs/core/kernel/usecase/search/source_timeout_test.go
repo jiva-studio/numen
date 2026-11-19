@@ -135,3 +135,21 @@ func TestRepeatedSearchesBoundOutstandingCallsAndResumeWhenTheSourceRecovers(t *
 		}
 	})
 }
+
+func TestAShorterSourceDeadlinePreservesTheHealthyRanking(t *testing.T) {
+	source := rankFunc(func(context.Context) (Ranking, error) {
+		return Ranking{}, context.DeadlineExceeded
+	})
+	var reported error
+	u := New(nil, nil, nil, []Participant{source}, func(err error) { reported = err }, nil)
+	u.words = rankFunc(func(context.Context) (Ranking, error) {
+		return Ranking{Results: []domain.SearchResult{{Path: "words.md"}}}, nil
+	})
+	got, err := u.rankAll(t.Context(), domain.Vault{}, "word", Parameters{Lexical: 1, Sources: 1})
+	if err != nil || len(got) != 1 || got[0].Results[0].Path != "words.md" {
+		t.Fatalf("rankings after source deadline: %v, %v", got, err)
+	}
+	if !errors.Is(reported, context.DeadlineExceeded) {
+		t.Fatalf("source deadline diagnostic = %v", reported)
+	}
+}

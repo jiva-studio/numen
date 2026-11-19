@@ -21,15 +21,18 @@ func (u Search) rankSource(ctx context.Context, v domain.Vault, source *external
 	sourceCtx, cancel := context.WithTimeout(ctx, sourceTimeout)
 	defer cancel()
 	answer := source.rank(sourceCtx, v, q)
+	if err := sourceCtx.Err(); err != nil {
+		answer.err = err
+	}
 	switch {
 	case ctx.Err() != nil:
 		return nil, ctx.Err()
-	case sourceCtx.Err() != nil:
-		u.errorHandler(fmt.Errorf("search source %d: %w", source.number, sourceCtx.Err()))
+	case errors.Is(answer.err, context.DeadlineExceeded):
+		u.errorHandler(fmt.Errorf("search source %d: %w", source.number, answer.err))
 	case answer.err == nil:
 		u.reportAnswered()
 		return &answer.ranking, nil
-	case errors.Is(answer.err, context.Canceled), errors.Is(answer.err, context.DeadlineExceeded):
+	case errors.Is(answer.err, context.Canceled):
 		return nil, answer.err
 	default:
 		u.errorHandler(answer.err)
