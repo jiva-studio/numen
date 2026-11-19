@@ -10,7 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -34,21 +35,24 @@ func vaultAt(t *testing.T, root string) (domain.Vault, vaultport.VaultReaders) {
 		vaultreader.Readers{}
 }
 
-func openIndex(t *testing.T) *container.Index {
+type scanIndex struct {
+	*index.DB
+	walks vaults.Walks
+}
+
+func openIndex(t *testing.T) *scanIndex {
 	t.Helper()
-	db, err := container.OpenIndex(container.Config{
-		Paths: container.Paths{IndexPath: indexfile.Path(t)},
-	}, container.NewResources(), t.Context())
+	db, err := index.Open(t.Context(), indexfile.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	return db
+	return &scanIndex{DB: db}
 }
 
 func getNotesOnly() []domain.SourceKind { return []domain.SourceKind{domain.KindNote} }
 
-func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
+func searchNotes(t *testing.T, db *scanIndex, v domain.Vault, query string) []string {
 	t.Helper()
 	found, err := db.ChunkSearch().FindLexical(t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: getNotesOnly(), Limit: 20})
 	if err != nil {
@@ -63,9 +67,9 @@ func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string
 	return out
 }
 
-func scanner(readers vaultport.VaultReaders, db *container.Index) vaults.Scan {
+func scanner(readers vaultport.VaultReaders, db *scanIndex) vaults.Scan {
 	scan := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
-	scan.Walks = &db.Walks
+	scan.Walks = &db.walks
 	return scan
 }
 
@@ -604,7 +608,7 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	// part-way through are whole groups, which does not show the order.
 	content := &groupedWrites{}
 	scan := vaults.NewScan(readers, db.Vaults(), content, db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
-	scan.Walks = &db.Walks
+	scan.Walks = &db.walks
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
 	}

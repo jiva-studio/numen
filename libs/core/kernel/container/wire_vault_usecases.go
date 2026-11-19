@@ -35,11 +35,11 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
-func openIndex(c vaultWiring, ctx context.Context) (*Index, error) {
+func openIndex(c vaultWiring, ctx context.Context) (*vaultIndex, error) {
 	return openIndexAt(ctx, c.IndexPath, index.WithQueryLog(c.Clock, c.RecordLog))
 }
 
-func openIndexAt(ctx context.Context, indexPath string, queryLog index.Option) (*Index, error) {
+func openIndexAt(ctx context.Context, indexPath string, queryLog index.Option) (*vaultIndex, error) {
 	path, err := indexfolder.Prepare(indexPath)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func openIndexAt(ctx context.Context, indexPath string, queryLog index.Option) (
 	if err != nil {
 		return nil, err
 	}
-	return &Index{DB: db, File: path, Ledger: vault.NewLedger(), Versions: version.NewIndexVersions(db.TextVersions())}, nil
+	return &vaultIndex{DB: db, File: path, Ledger: vault.NewLedger(), Versions: version.NewIndexVersions(db.TextVersions())}, nil
 }
 
 func vaultMoves(ctx context.Context, indexPath string, watcher vaultwatch.Watcher) (<-chan struct{}, error) {
@@ -69,7 +69,7 @@ type noteViews struct {
 	Follow indexport.IndexFollow
 }
 
-func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteViews) NoteUseCases {
+func vaultNotes(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views noteViews) noteUseCases {
 	names, links := db.NoteQueries(), db.NoteQueries()
 	indexed := db.Sources()
 	readers := c.Readers
@@ -93,22 +93,22 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 		Gate: views.Writes, Follow: views.Follow,
 	}
 
-	return NoteUseCases{
-		Edit: NoteEditing{
+	return noteUseCases{
+		Edit: noteEditing{
 			Read:    note.NewRead(readers),
 			Write:   note.NewWrite(readers, writers, index, now, views.Writes),
 			Create:  create,
 			Linking: linking,
 		},
-		Properties: NoteProperties{Frontmatter: note.NewWriteFrontmatter(readers, writers, index, now)},
-		Place: NotePlacing{
+		Properties: noteProperties{Frontmatter: note.NewWriteFrontmatter(readers, writers, index, now)},
+		Place: notePlacing{
 			Move:       mover,
 			Rename:     note.NewRename(moveDeps, mover, views.Writes),
 			Remove:     remove,
 			RemoveNote: note.NewRemoveNote(remove, readers),
 			EmptyTrash: note.NewEmptyTrash(writers, textversion.NewTrashVersions(db.Versions, derivedfile.TextStores{Options: c.Options}), views.Writes),
 		},
-		Connect: NoteConnecting{
+		Connect: noteConnecting{
 			SaveConnection:   note.NewSaveConnection(connecting),
 			RemoveSide:       note.NewRemoveSide(connecting),
 			RemoveConnection: note.NewRemoveConnection(connecting),
@@ -118,7 +118,7 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 	}
 }
 
-func vaultQueries(db *Index) query.UseCases {
+func vaultQueries(db *vaultIndex) query.UseCases {
 	links := db.NoteQueries()
 	return query.UseCases{
 		Refer: query.Referring{
@@ -133,12 +133,12 @@ func vaultQueries(db *Index) query.UseCases {
 	}
 }
 
-func vaultOpener(c vaultWiring, db *Index) *vault.VaultOpener {
+func vaultOpener(c vaultWiring, db *vaultIndex) *vault.VaultOpener {
 	return vaultOpenerWith(c, db, c.Readers, c.Watcher)
 }
 
 func vaultOpenerWith(c vaultWiring,
-	db *Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
+	db *vaultIndex, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
 ) *vault.VaultOpener {
 	scan := vault.NewScan(
 		walking,
@@ -157,23 +157,23 @@ func vaultOpenerWith(c vaultWiring,
 	return vault.ConfigureVaultOpener(watcher, scan, buffered, vaultMakeRefresh(c, db, buffered))
 }
 
-func vaultMakeRefresh(c vaultWiring, db *Index, notes noteport.NoteRepository) vault.Refresh {
+func vaultMakeRefresh(c vaultWiring, db *vaultIndex, notes noteport.NoteRepository) vault.Refresh {
 	return vault.NewRefreshFrom(vault.RefreshDeps{
 		Readers: c.Readers, Vaults: db.Vaults(), Notes: notes, Queries: db.Sources(), Sources: db.Sources(),
 		Now: c.Clock, Cut: c.CutNotes, Ledger: db.Ledger,
 	})
 }
 
-func newTextVersions(options vaultconfig.Options, plugins textport.TextPlugins, clock machineport.Clock, db *Index) *TextVersions {
+func newTextVersions(options vaultconfig.Options, plugins textport.TextPlugins, clock machineport.Clock, db *vaultIndex) *textVersions {
 	files := derivedfile.TextStores{Options: options, Decoded: derivedfile.NewDecodedTexts(derivedfile.DefaultDecodedBudget)}
 	stores, readers := db.Versions, vaultreader.Readers{Options: options}
 	texts := textversion.NewTexts(stores, files, readers, note.NewReadFrontmatter(readers), clock)
 	changes := textversion.NewChanges(texts)
 	versions := textversion.NewVersions(stores, files, plugins, clock, changes)
-	return &TextVersions{Versions: versions, Texts: texts, Changes: changes}
+	return &textVersions{Versions: versions, Texts: texts, Changes: changes}
 }
 
-func getTextReaders(readers textdomain.Readers, versions *TextVersions) textdomain.Readers {
+func getTextReaders(readers textdomain.Readers, versions *textVersions) textdomain.Readers {
 	if readers != nil {
 		return readers
 	}
@@ -183,7 +183,7 @@ func getTextReaders(readers textdomain.Readers, versions *TextVersions) textdoma
 	return versions.Texts
 }
 
-func setPluginTexts(lender *hostendpoint.Lender, versions *TextVersions) {
+func setPluginTexts(lender *hostendpoint.Lender, versions *textVersions) {
 	if versions == nil {
 		lender.Update(func(l *hostendpoint.Lent) { l.Texts = nil })
 		return
@@ -192,14 +192,14 @@ func setPluginTexts(lender *hostendpoint.Lender, versions *TextVersions) {
 	lender.Update(func(l *hostendpoint.Lent) { l.Texts = texts })
 }
 
-func openPluginData(options vaultconfig.Options, versions *TextVersions) *textversion.PluginData {
+func openPluginData(options vaultconfig.Options, versions *textVersions) *textversion.PluginData {
 	if versions == nil {
 		return nil
 	}
 	return textversion.NewPluginData(versions.Versions, derivedfile.PluginStores{Options: options})
 }
 
-func openFileText(versions *TextVersions) *textversion.FileText {
+func openFileText(versions *textVersions) *textversion.FileText {
 	if versions == nil {
 		return nil
 	}
@@ -214,15 +214,14 @@ func getMediaType() *file.GetMediaType {
 	return file.NewGetMediaType(contenttype.Open())
 }
 
-func openVaults(c vaultWiring, db *Index, out io.Writer, label string, record func(domain.Vault)) *vault.OpenVaults[*Index] {
-	return &vault.OpenVaults[*Index]{
-		Opener: func(i *Index) *vault.VaultOpener { return vaultOpener(c, i) }, Index: db, Out: out, Label: label,
+func openVaults(c vaultWiring, db *vaultIndex, out io.Writer, label string, record func(domain.Vault)) *vault.OpenVaults[*vaultIndex] {
+	return &vault.OpenVaults[*vaultIndex]{
+		Opener: func(i *vaultIndex) *vault.VaultOpener { return vaultOpener(c, i) }, Index: db, Out: out, Label: label,
 		RecordVault: record,
 	}
 }
 
-// SetShellNotes gives a shell the notes it answers about: whether a vault is indexed.
-func SetShellNotes(api *shell.API, db *Index) {
+func setShellNotes(api *shell.API, db *vaultIndex) {
 	queries := vaultQueries(db)
 	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, queries.Browse.IsVaultIndexed, api.Window, &api.Changes)
 }

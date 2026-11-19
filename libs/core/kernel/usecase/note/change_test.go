@@ -3,12 +3,13 @@ package note_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
@@ -25,7 +26,7 @@ import (
 // changeFixture is a vault that can be both queried and written to, with the index
 // kept current as a real caller would keep it.
 type changeFixture struct {
-	db    *container.Index
+	db    *index.DB
 	vault domain.Vault
 	index func(ctx context.Context, v domain.Vault, paths []string) error
 }

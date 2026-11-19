@@ -3,10 +3,11 @@ package container
 import (
 	"context"
 	"errors"
+	"slices"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/operationresult"
-	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
@@ -63,8 +64,8 @@ func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 		func() cli.PluginCommands {
 			install := newPluginInstall(c, prefs, endpoints, res)
 			settingsDeps, plan, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
-			commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.PluginLister), vaultDeps, exec, nil)
-			plugins := getRunningExecution(exec, c.SafeMode).Runtime.TextPlugins
+			commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.Listing), vaultDeps, exec, nil)
+			plugins := getRunningExecution(exec, c.SafeMode).Runtime.Listing
 			return getCLIPluginCommands(c, commands, newCLIPluginWork(install, exec, r), plugins, plan.ChunkPolicy, vaultDeps)
 		},
 		func() ([]string, error) { return closeCLI(r) },
@@ -84,10 +85,10 @@ func openCLIVaults(vaultDeps vaultWiring) (cli.Vaults, error) {
 	}, nil
 }
 
-type cliPluginWork func(vaultWiring, *Index, domain.Vault) (*run.PluginWork, error)
+type cliPluginWork func(vaultWiring, *vaultIndex, domain.Vault) (*run.PluginWork, error)
 
 func newCLIPluginWork(install pluginInstall, exec *PluginExecution, r *cliRun) cliPluginWork {
-	return func(vaultDeps vaultWiring, db *Index, v domain.Vault) (*run.PluginWork, error) {
+	return func(vaultDeps vaultWiring, db *vaultIndex, v domain.Vault) (*run.PluginWork, error) {
 		exec.Runtime.PluginBinding.SetVaultPath(v.Path)
 		if err := installCurrentVault(install, vaultDeps, db, v); err != nil {
 			return nil, err
@@ -104,11 +105,11 @@ type cliIndex struct {
 	workers  int
 	openWork cliPluginWork
 	closers  *[]func() error
-	db       *Index
+	db       *vaultIndex
 	report   window.ErrorHandler
 }
 
-func newCLIIndex(r *cliRun, db *Index, report window.ErrorHandler, openWork cliPluginWork) cliIndex {
+func newCLIIndex(r *cliRun, db *vaultIndex, report window.ErrorHandler, openWork cliPluginWork) cliIndex {
 	r.closers = append(r.closers, db.Close)
 	return cliIndex{
 		db: db, report: report, openWork: openWork,
@@ -123,7 +124,7 @@ type cliPreparations struct {
 }
 
 func newCLIPreparations(index cliIndex, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, plan vaultIndexPlan, vaultDeps vaultWiring) cliPreparations {
-	plugins := getRunningExecution(exec, install.SafeMode).Runtime.TextPlugins
+	plugins := getRunningExecution(exec, install.SafeMode).Runtime.Listing
 	db := index.db
 	prepareScan := func(ctx context.Context, v domain.Vault) (indexing.ReadWholeVault, error) {
 		ranking, storage := openIndexedVault(plan, vaultDeps, db, plugins)
@@ -148,7 +149,7 @@ func newCLIPreparations(index cliIndex, install pluginInstall, exec *PluginExecu
 	return cliPreparations{scan: prepareScan, search: prepareSearch, query: prepareQuery}
 }
 
-func newCLIIndexed(ports registry.Ports, db *Index, vaultDeps vaultWiring, prepare cliPreparations, notices connectionport.ReportSetAside) cli.Indexed {
+func newCLIIndexed(ports registry.Ports, db *vaultIndex, vaultDeps vaultWiring, prepare cliPreparations, notices connectionport.ReportSetAside) cli.Indexed {
 	find := registry.NewFind(ports.Lookup).Execute
 	unregister := vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
 	return cli.Indexed{
@@ -162,7 +163,7 @@ func newCLIIndexed(ports registry.Ports, db *Index, vaultDeps vaultWiring, prepa
 			Now:  vaultDeps.Clock.Now,
 		},
 		Search:   cli.Search{Search: searchusecase.NewByName(find, prepare.search)},
-		Links:    query.NewShowLinksByName(find, Queries(db).Refer.Links),
+		Links:    query.NewShowLinksByName(find, vaultQueries(db).Refer.Links),
 		Problems: vault.NewGetProblemsByName(find, getProblems(db.NoteProblems())),
 		Query: searchqueryusecase.NewFindSearchResultsByName(find, func(ctx context.Context, v domain.Vault) (*searchqueryusecase.FindSearchResults, error) {
 			return prepare.query(ctx, v, notices)
@@ -212,7 +213,7 @@ func openCLIEmbedder(closers *[]func() error, source sourcebridge.Binding, ctx c
 	return embedder, why
 }
 
-func getCLIPluginCommands(c Config, commands PluginCommandUseCases, openWork cliPluginWork, plugins textport.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) cli.PluginCommands {
+func getCLIPluginCommands(c Config, commands pluginCommandUseCases, openWork cliPluginWork, plugins textport.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) cli.PluginCommands {
 	find := func(nameOrPath string) (domain.Vault, error) { return findCLIVault(c, nameOrPath) }
 	return cli.PluginCommands{
 		List:   commands.List,

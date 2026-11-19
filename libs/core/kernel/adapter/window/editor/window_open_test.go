@@ -15,14 +15,13 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
-
 	"connectrpc.com/connect"
-
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
@@ -52,7 +51,7 @@ func vaultConfig(t *testing.T) testInstallation {
 			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 		},
 	})
-	if _, err := cfg.AddVault(cfg.Resources, root, "alpha"); err != nil {
+	if _, err := cfg.EnsureVault(cfg.Resources, root, "alpha", false); err != nil {
 		t.Fatal(err)
 	}
 	return cfg
@@ -120,7 +119,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	name, _ := installation.State.Indexing.Embedding.Describe()
+	name, _ := editor.SessionOf(t, installation).Runtime.GetModel()
 	if name == "" {
 		t.Fatal("the vault opened with no embedder on hand")
 	}
@@ -137,7 +136,7 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	if name, _ := installation.State.Indexing.Embedding.Describe(); name != "" {
+	if name, _ := editor.SessionOf(t, installation).Runtime.GetModel(); name != "" {
 		t.Errorf("got an embedder: %v", name)
 	}
 }

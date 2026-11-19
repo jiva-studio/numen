@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
@@ -12,9 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -91,9 +90,6 @@ func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultRead
 func (c TestInstallation) VaultWatcher() vaultport.VaultWatcher {
 	return c.buildVaultWiring().Watcher
 }
-
-// AbsentBinding is the binding of a plugin host that runs nothing.
-func AbsentBinding() pluginport.PluginBinding { return absent.Runtime{} }
 
 // NotesShowingMoves is Notes where each move of a note in the vault the window shows also reaches view, so a
 // view showing a note under its old name switches to the new name.
@@ -236,6 +232,15 @@ func GetRefresh(c TestInstallation, db *Index) vault.Refresh {
 	return vaultMakeRefresh(c.buildVaultWiring(), db, db.Notes())
 }
 
-func (c TestInstallation) openTextVersions(db *Index) *TextVersions {
-	return newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, getRunningExecution(c.Execution, c.SafeMode).Runtime.TextPlugins, GetClock(c.Resources), db)
+func (c TestInstallation) openTextVersions(db *Index) *textVersions {
+	return newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, getRunningExecution(c.Execution, c.SafeMode).Runtime.Listing, GetClock(c.Resources), db)
+}
+
+// These aliases let external container tests inspect the composition they exercise.
+type Index = vaultIndex
+type PluginVaultHooks = pluginVaultHooks
+type NoteUseCases = noteUseCases
+
+func OpenIndex(c Config, res *Resources, ctx context.Context) (*Index, error) {
+	return c.openIndex(res, ctx)
 }

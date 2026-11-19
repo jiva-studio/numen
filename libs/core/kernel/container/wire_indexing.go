@@ -56,7 +56,7 @@ func setNoteCut(c noteChunkPolicy, scan *vault.Scan) {
 	scan.ShouldRecut = c.Chunks.Get() > 0
 }
 
-func searchScan(c vaultIndexPlan, db *Index) vault.Scan {
+func searchScan(c vaultIndexPlan, db *vaultIndex) vault.Scan {
 	scan := vault.NewScan(
 		c.VaultReaders,
 		db.Vaults(),
@@ -71,7 +71,7 @@ func searchScan(c vaultIndexPlan, db *Index) vault.Scan {
 }
 
 func readWholeVault(c vaultIndexPlan,
-	ctx context.Context, db *Index, source searchsourceport.Source, v domain.Vault, refresh vault.Refresh,
+	ctx context.Context, db *vaultIndex, source searchsourceport.Source, v domain.Vault, refresh vault.Refresh,
 ) (indexing.ReadWholeVault, error) {
 	fit := vectorscase.NewFitIndex(db.VectorIndex(), c.ErrorHandler, c.ShouldRebuildIndex)
 	if err := fit.Execute(ctx, source); err != nil {
@@ -81,7 +81,7 @@ func readWholeVault(c vaultIndexPlan,
 }
 
 func buildReadWholeVault(c vaultIndexPlan,
-	db *Index, source searchsourceport.Source, v domain.Vault, refresh vault.Refresh,
+	db *vaultIndex, source searchsourceport.Source, v domain.Vault, refresh vault.Refresh,
 ) (indexing.ReadWholeVault, error) {
 	refresh.Force = true
 	texts, err := indexTexts(c, db, v, file.NewReadNoteAgain(createUnreadableFinder(refresh)).Execute)
@@ -102,7 +102,7 @@ func createUnreadableFinder(refresh vault.Refresh) func(ctx context.Context, v d
 	}
 }
 
-func searchEmbed(c vaultIndexPlan, db *Index, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
+func searchEmbed(c vaultIndexPlan, db *vaultIndex, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
 	store, err := derivedfile.OpenDerived(v.Path, vaultconfig.Options{ServiceDir: c.ServiceDir}, coreFolder)
 	if err != nil {
 		return vectorscase.Embed{}, err
@@ -113,7 +113,7 @@ func searchEmbed(c vaultIndexPlan, db *Index, source searchsourceport.Source, v 
 }
 
 func indexTexts(
-	c vaultIndexPlan, db *Index, v domain.Vault, readNote func(ctx context.Context, v domain.Vault, path string) error,
+	c vaultIndexPlan, db *vaultIndex, v domain.Vault, readNote func(ctx context.Context, v domain.Vault, path string) error,
 ) (filetext.Index, error) {
 	if _, err := c.VaultReaders.Open(v); err != nil {
 		return filetext.Index{}, err

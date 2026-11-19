@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -26,16 +25,6 @@ import (
 
 func (c Config) registry() (vaultregistry.Ports, error) {
 	return vaultRegistry(c.RegistryPath)
-}
-
-// AddVault registers a new vault in the registry with the given root path and name.
-func (c Config) AddVault(res *Resources, root, name string) (domain.Vault, error) {
-	ports, err := c.registry()
-	if err != nil {
-		return domain.Vault{}, err
-	}
-	identity := vaultIdentity(vaultconfig.Options{ServiceDir: c.ServiceDir})
-	return newAddVault(identity, GetClock(res), ports).Execute(root, name)
 }
 
 // EnsureVault has the folder at root on the list of vaults and returns its vault. A folder that is on the list is
@@ -52,16 +41,10 @@ func (c Config) EnsureVault(res *Resources, root, name string, isRecordedOpened 
 	return ensure.Execute(vaultregistry.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
 }
 
-// OpenIndex opens the cache. The caller closes it.
-func OpenIndex(c Config, res *Resources, ctx context.Context) (*Index, error) {
+func (c Config) openIndex(res *Resources, ctx context.Context) (*vaultIndex, error) {
 	timer := GetClock(res)
 	record := openRecordLog(c.IndexPath, getLogEntries(res), res.settingsFiles.GetLogLevel, timer)
 	return openIndexAt(ctx, c.IndexPath, index.WithQueryLog(timer, recordLogFunc(record, res.ErrorHandler)))
-}
-
-// Queries builds everything that answers a question about the notes of a vault.
-func Queries(db *Index) query.UseCases {
-	return vaultQueries(db)
 }
 
 // vaultWiring holds the filesystem ports and indexing callbacks of an installation.
@@ -73,14 +56,14 @@ type vaultWiring struct {
 	Writers      vaultwriter.VaultWriters
 	Watcher      vaultwatch.Watcher
 	Clock        machineport.Timer
-	TextVersions *TextVersions
+	TextVersions *textVersions
 	SyncSetting  naming.SyncSetting
 	CutNotes     chunking.CutNotes
 	SetNoteCut   func(*vault.Scan)
 	RecordLog    index.QueryLogFunc
 }
 
-func openVaultAccess(paths Paths, timer machineport.Timer, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *TextVersions) vaultWiring {
+func openVaultAccess(paths Paths, timer machineport.Timer, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *textVersions) vaultWiring {
 	options := vaultconfig.Options{ServiceDir: paths.ServiceDir}
 	return vaultWiring{
 		IndexPath:    paths.IndexPath,
@@ -117,14 +100,14 @@ func vaultIdentity(options vaultconfig.Options) vaultport.VaultIdentity {
 
 func vaultTrash(clock machineport.Clock) machineport.Trash { return trash.New(clock) }
 
-func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *Index, notes note.Move) VaultUseCases {
+func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vaultIndex, notes note.Move) vaultUseCases {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
 	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Vaults())
 	identity := vaultIdentity(c.Options)
 	erase := vault.NewErase(identity, vaultTrash(c.Clock), unregister)
 	find := vaultregistry.NewFind(registry.Lookup)
-	return VaultUseCases{
-		Change: VaultChanging{
+	return vaultUseCases{
+		Change: vaultChanging{
 			Add:        newAddVault(identity, c.Clock, registry),
 			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
 			Remove:     vault.NewRemove(find.Execute, unregister, erase),

@@ -4,6 +4,8 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
@@ -34,14 +36,14 @@ func emitIndexChanged(generations *indexgeneration.Generations, events *editor.E
 }
 
 type windowSearch struct {
-	index       *Index
+	index       *vaultIndex
 	source      searchsourceport.Source
 	tasks       *run.Tasks
 	generations *indexgeneration.Generations
 	kinds       *file.ListTabKinds
 }
 
-func newSearchRuns(w windowSearch, find *queryusecase.FindSearchResults, runtime PluginRuntime, clock machineport.Timer) *searchrunusecase.SearchRuns {
+func newSearchRuns(w windowSearch, find *queryusecase.FindSearchResults, resolver pluginport.PluginResolver, manifests pluginmanifest.Manifests, clock machineport.Timer) *searchrunusecase.SearchRuns {
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
 		Store:       searchstore.New(),
 		Cancels:     searchcancel.NewSearches(clock),
@@ -52,9 +54,9 @@ func newSearchRuns(w windowSearch, find *queryusecase.FindSearchResults, runtime
 		Generations: w.generations,
 		Run:         find.Execute,
 		Names: func(pluginID string) string {
-			return pluginsGetPluginName(runtime.PluginResolver, pluginID)
+			return pluginsGetPluginName(resolver, pluginID)
 		},
-		Catalog:    getSearchCatalog(getRuntimeManifests(runtime)),
+		Catalog:    getSearchCatalog(manifests),
 		MaxResults: find.Limits.MaxLimit,
 	})
 	return &runs

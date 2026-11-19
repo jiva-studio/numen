@@ -3,7 +3,6 @@ package editor
 import (
 	"context"
 	"errors"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -14,25 +13,24 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
-
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func newPluginWindow(
-	state *State, focusNote *query.FocusNote, focusFile *file.FocusFile, limit time.Duration,
+	state *testWindow, focusNote *query.FocusNote, focusFile *file.FocusFile, limit time.Duration,
 ) hostendpoint.WindowControl {
 	return windowsession.NewPluginWindow(
 		&state.Runtime,
@@ -57,28 +55,28 @@ func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open window
 	return nil
 }
 
-func newWorkspace(t *testing.T, state *State) *workspace.Handler {
+func newWorkspace(t *testing.T, state *testWindow) *workspace.Handler {
 	t.Helper()
 	links := workspace.NewLinks()
 	store := memoryTabs{}
 	return workspace.NewHandler(state, state.Notices, state, vaults.NewWriteOpenTabs(store), vaults.NewReadOpenTabs(store), links)
 }
 
-func newBoundWindow(t *testing.T) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
+func newBoundWindow(t *testing.T) (*testWindow, hostendpoint.WindowControl, <-chan domain.Place) {
 	t.Helper()
 	return newBoundWindowWith(t, 0)
 }
 
-func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
+func newBoundWindowWith(t *testing.T, limit time.Duration) (*testWindow, hostendpoint.WindowControl, <-chan domain.Place) {
 	t.Helper()
-	state := NewState(run.NewTasks(), nil, nil)
+	state := newTestWindow(run.NewTasks(), nil, nil)
 	state.Runtime.SetVault(vaulttest.NewVault(t, map[string]string{
 		"library/Birds.pdf": "%PDF-1.7 a guide to the birds of the marsh",
 		"notes/Heron.md":    "# Gray Heron\nHerons fish at dusk.\n",
 	}))
 	line, unsubscribe := state.Notices.Places.Subscribe()
 	t.Cleanup(unsubscribe)
-	return state, newPluginWindow(state, nil, file.NewFocusFile(vaultreader.Readers{}, ViewOf(state)), limit), line
+	return state, newPluginWindow(state, nil, file.NewFocusFile(vaultreader.Readers{}, ViewOf(state.Notices)), limit), line
 }
 
 func TestPluginWindowFocusFileSendsRangesToWindow(t *testing.T) {
@@ -158,7 +156,7 @@ func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 // activateFixture is a bound window whose state serves WatchFocus over HTTP, and the focus requests
 // one subscriber of that stream receives.
 type activateFixture struct {
-	state  *State
+	state  *testWindow
 	api    *workspace.Handler
 	window hostendpoint.WindowControl
 	focus  <-chan *v1.WatchFocusResponse
@@ -202,7 +200,7 @@ func (f activateFixture) waitUntilSubscribed(t *testing.T) {
 	t.Helper()
 	deadline := time.After(5 * time.Second)
 	for {
-		if err := ViewOf(f.state).FocusPlace(t.Context(), domain.Place{Path: "notes/Heron.md"}); err != nil {
+		if err := ViewOf(f.state.Notices).FocusPlace(t.Context(), domain.Place{Path: "notes/Heron.md"}); err != nil {
 			t.Fatal(err)
 		}
 		select {

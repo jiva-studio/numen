@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -61,9 +62,7 @@ func vaultOf(b *testing.B, notes int) map[string]string {
 func scanBenchVault(b *testing.B, notes map[string]string) (check.Checks, domain.Vault) {
 	b.Helper()
 	v := vaulttest.NewVault(b, notes)
-	db, err := container.OpenIndex(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(b.TempDir(), "index.db")},
-	}, container.NewResources(), b.Context())
+	db, err := index.Open(b.Context(), filepath.Join(b.TempDir(), "index.db"))
 	if err != nil {
 		b.Fatal(err)
 	}

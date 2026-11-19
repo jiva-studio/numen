@@ -1,13 +1,21 @@
 package container_test
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // Reading a vault is work, and work is one entry in the list of operations. Each
@@ -23,7 +31,7 @@ func TestAVaultReportsNoOperationsOnceItIsRead(t *testing.T) {
 			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 		},
 	}, nil)
-	if _, err := cfg.AddVault(cfg.Resources, root, "alpha"); err != nil {
+	if _, err := cfg.EnsureVault(cfg.Resources, root, "alpha", false); err != nil {
 		t.Fatal(err)
 	}
 	installation, err := cfg.OpenWindow(cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, t.Context(), container.WindowOpening{Named: "", Out: os.Stderr})
@@ -32,5 +40,20 @@ func TestAVaultReportsNoOperationsOnceItIsRead(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	testsupport.WaitFor(t, func() bool { return len(installation.State.Window.Tasks.List()) == 0 })
+	server := httptest.NewServer(installation.NewHandler(http.NotFoundHandler(), numenv1connect.WindowServiceName))
+	defer server.Close()
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+	defer cancel()
+	client := numenv1connect.NewWindowServiceClient(server.Client(), server.URL)
+	tasks, err := client.WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{Window: "editor"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer testsupport.Close(t, tasks)
+	for tasks.Receive() {
+		if len(tasks.Msg().GetTasks()) == 0 {
+			return
+		}
+	}
+	t.Fatalf("task stream ended before the work finished: %v", tasks.Err())
 }

@@ -3,10 +3,10 @@ package editor_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -39,7 +39,7 @@ func TestAPluginOpenAfterACallThatEndedSucceeds(t *testing.T) {
 	if err := list.OpenVault(t.Context(), f.second.ID); err != nil {
 		t.Errorf("the plugin's open after a call that ended returned %v", err)
 	}
-	if got := f.installation.State.GetCurrentVault(); got.ID != f.second.ID {
+	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s after the plugin's open, want %s", got.Name, f.second.Name)
 	}
 }

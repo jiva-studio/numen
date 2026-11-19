@@ -2,9 +2,10 @@ package editor_test
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 // The user's own switch is rejected while a page prompts; the user then closes the prompt, so nothing is
@@ -35,7 +36,7 @@ func TestPluginOpenVaultAfterSwitchPromptClosesShowsVault(t *testing.T) {
 	case <-time.After(20 * time.Second):
 		t.Fatal("the plugin's open after the prompt closed never returned")
 	}
-	if got := f.installation.State.GetCurrentVault(); got.ID != f.second.ID {
+	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s after the plugin's open, want %s", got.Name, f.second.Name)
 	}
 }

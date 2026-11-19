@@ -26,7 +26,7 @@ func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 // of. A window given no ConnectionCalls answers each such call as unimplemented.
 func (a *API) NewHandler(files http.Handler) http.Handler {
 	windowRoute, window := numenv1connect.NewWindowServiceHandler(a.Window)
-	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(pluginList{getIDs: a.GetFrontendPluginIDs})
+	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(a.Frontends)
 	callsRoute, calls := numenv1connect.NewConnectionCallServiceHandler(a.getConnectionCalls())
 	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(vaultList{list: a.listVaults()})
 	notesRoute, notes := numenv1connect.NewNoteServiceHandler(noteLinks{resolve: a.ResolveLinks})
@@ -66,7 +66,7 @@ func (a *API) serveOther(w http.ResponseWriter, r *http.Request, files http.Hand
 	switch {
 	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
 		// The shell runs no plugin backend: the route serves only the files of a plugin folder.
-		if !wire.ServePluginFile(w, r, a.GetPluginDir) {
+		if !wire.ServePluginFile(w, r, a.Frontends.directory) {
 			http.Error(w, "plugin file not found", http.StatusNotFound)
 		}
 	case a.PluginServices != nil && a.PluginServices.Serves(r.URL.Path):

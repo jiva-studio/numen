@@ -5,6 +5,6 @@ import (
 )
 
 // NewFileServer is the server of the files over the loopback socket.
-func NewFileServer(state *State, open *file.OpenVaultFile) *FileServer {
-	return &FileServer{vaults: state, tasks: state.Window, open: open}
+func NewFileServer(vaults shownVault, tasks taskList, open *file.OpenVaultFile) *FileServer {
+	return &FileServer{vaults: vaults, tasks: tasks, open: open}
 }

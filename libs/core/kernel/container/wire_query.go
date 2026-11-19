@@ -21,7 +21,7 @@ import (
 const operationResultRows = 200_000
 
 func newFindSearchResults(
-	ports queryPorts, settingsDeps settingsWiring, searchDeps textSearch, db *Index, source searchsourceport.Source, errorHandler func(error),
+	ports queryPorts, settingsDeps settingsWiring, searchDeps textSearch, db *vaultIndex, source searchsourceport.Source, errorHandler func(error),
 ) *searchqueryusecase.FindSearchResults {
 	limits, stageLimits := readSearchLimits(settingsDeps, errorHandler)
 	search := db.ChunkSearch()
@@ -81,7 +81,7 @@ type queryPorts struct {
 
 func openQueryPorts(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) queryPorts {
 	ports := queryPorts{functions: searchfunctionbridge.Open(exec.Runtime.Activator), contentTypes: exec.Watch.ContentTypeTable,
-		catalog: getSearchCatalog(getRuntimeManifests(exec.Runtime)), clock: vaultDeps.Clock, rows: none.RerankRows{}}
+		catalog: getSearchCatalog(exec.Runtime.Manifests), clock: vaultDeps.Clock, rows: none.RerankRows{}}
 	connections, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return ports

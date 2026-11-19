@@ -14,26 +14,26 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tablinks"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-func newState() *editor.State { return editor.NewState(run.NewTasks(), nil, nil) }
+func newState() *editor.Session { return editor.NewSession(nil) }
 
 func scheduleNothing(time.Duration, func()) func() bool {
 	return func() bool { return true }
 }
 
-func newTabLinksClient(t *testing.T, state *editor.State) numenv1connect.WorkspaceServiceClient {
+func newTabLinksClient(t *testing.T, state *editor.Session) numenv1connect.WorkspaceServiceClient {
 	t.Helper()
 	client, _ := serveTabLinks(t, state, scheduleNothing)
 	return client
 }
 
-func newHandler(t *testing.T, state *editor.State, schedule func(time.Duration, func()) func() bool) (*Handler, *tablinks.Tabs) {
+func newHandler(t *testing.T, state *editor.Session, schedule func(time.Duration, func()) func() bool) (*Handler, *tablinks.Tabs) {
 	t.Helper()
 	links := tablinks.New(LinkGrace, schedule, newLinkEvents())
 	store := memoryTabs{}
@@ -41,7 +41,7 @@ func newHandler(t *testing.T, state *editor.State, schedule func(time.Duration, 
 }
 
 func serveTabLinks(
-	t *testing.T, state *editor.State, schedule func(time.Duration, func()) func() bool,
+	t *testing.T, state *editor.Session, schedule func(time.Duration, func()) func() bool,
 ) (numenv1connect.WorkspaceServiceClient, *tablinks.Tabs) {
 	t.Helper()
 	handler, links := newHandler(t, state, schedule)
@@ -141,13 +141,12 @@ func TestWatchTabLinksSendsGroupAndPathSyncToTwoWindows(t *testing.T) {
 	}
 }
 
-func newDetachingState() (*editor.State, chan struct{}) {
+func newDetachingState() (*editor.Session, chan struct{}) {
 	windowRequests := make(chan struct{}, 1)
-	state := newState()
-	state.DetachTab = func(context.Context, window.DetachedTab) error {
+	state := editor.NewSession(testFrame{detach: func(context.Context, window.DetachedTab) error {
 		windowRequests <- struct{}{}
 		return nil
-	}
+	}})
 	return state, windowRequests
 }
 
@@ -223,8 +222,7 @@ func TestDetachTabRespondsAfterTheNewWindowAcceptsTheTab(t *testing.T) {
 }
 
 func TestDetachTabEndsTheDetachWhenTheRequestIsCanceled(t *testing.T) {
-	state := newState()
-	state.DetachTab = func(context.Context, window.DetachedTab) error { return nil }
+	state := editor.NewSession(testFrame{detach: func(context.Context, window.DetachedTab) error { return nil }})
 	api, links := newHandler(t, state, scheduleNothing)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
@@ -351,8 +349,7 @@ func openWatch(t *testing.T, client numenv1connect.WorkspaceServiceClient, windo
 
 func TestFailedDetachTabDropsTabClosedInItsWindow(t *testing.T) {
 	errNoWindow := errors.New("no window opened")
-	state := newState()
-	state.DetachTab = func(context.Context, window.DetachedTab) error { return errNoWindow }
+	state := editor.NewSession(testFrame{detach: func(context.Context, window.DetachedTab) error { return errNoWindow }})
 	client, links := serveTabLinks(t, state, scheduleNothing)
 	openWatch(t, client, "window-a")
 	writeTabs(t, client, "window-a",

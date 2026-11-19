@@ -5,7 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -17,12 +18,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
-func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, domain.Vault) {
+func newIndexedVault(t *testing.T, notes map[string]string) (*index.DB, domain.Vault) {
 	t.Helper()
 	v := vaulttest.NewVault(t, notes)
-	db, err := container.OpenIndex(container.Config{
-		Paths: container.Paths{IndexPath: indexfile.Path(t)},
-	}, container.NewResources(), t.Context())
+	db, err := index.Open(t.Context(), indexfile.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +34,7 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, d
 	return db, v
 }
 
-func links(t *testing.T, db *container.Index, v domain.Vault, path string) query.NoteLinks {
+func links(t *testing.T, db *index.DB, v domain.Vault, path string) query.NoteLinks {
 	t.Helper()
 	c, err := query.NewShowLinks(db.NoteQueries()).Execute(t.Context(), v, path)
 	if err != nil {
@@ -255,7 +254,7 @@ func TestShowLinks_UnconnectedVaultLinkIsNotResolvedOrBroken(t *testing.T) {
 	}
 }
 
-func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
+func addVault(t *testing.T, db *index.DB, v domain.Vault) domain.Vault {
 	t.Helper()
 	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	if _, err := scan.Execute(t.Context(), v); err != nil {
@@ -418,7 +417,7 @@ func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {
 	}
 }
 
-func getSingleLink(t *testing.T, db *container.Index, v domain.Vault, path string) query.NoteLinks {
+func getSingleLink(t *testing.T, db *index.DB, v domain.Vault, path string) query.NoteLinks {
 	t.Helper()
 	c := links(t, db, v, path)
 	if len(c.Links) != 1 {

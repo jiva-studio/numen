@@ -10,12 +10,11 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 // ErrShut is returned for a request to a window that has been shut; the window answers no further requests.
@@ -26,15 +25,10 @@ type CallClock interface {
 	Now() time.Time
 }
 
-// CallTrace records structured log entries for unary RPC calls passing through a Gate.
-type CallTrace struct {
+// callTrace records structured log entries for unary RPC calls passing through a Gate.
+type callTrace struct {
 	clock  CallClock
 	record func(logs.Entry)
-}
-
-// NewCallTrace returns a call tracer using clock and reporting entries to record.
-func NewCallTrace(clock CallClock, record func(logs.Entry)) *CallTrace {
-	return &CallTrace{clock: clock, record: record}
 }
 
 type inflight struct {
@@ -50,11 +44,11 @@ func (w *inflight) seal() <-chan struct{} { return w.in.Seal() }
 type Gate struct {
 	closed    atomic.Bool
 	questions inflight
-	trace     atomic.Pointer[CallTrace]
+	trace     atomic.Pointer[callTrace]
 }
 
-func (g *Gate) SetCallTrace(trace *CallTrace) {
-	g.trace.Store(trace)
+func (g *Gate) SetCallTrace(clock CallClock, record func(logs.Entry)) {
+	g.trace.Store(&callTrace{clock: clock, record: record})
 }
 
 // Close rejects all new requests permanently. It returns after the requests
@@ -76,7 +70,7 @@ func (g *Gate) FinishQuestion() { g.questions.finish() }
 
 // CountQuestions counts each call to a service among the questions the window
 // is answering, refuses it once the window is shut, and records a structured log entry when a
-// CallTrace is attached.
+// call tracing is enabled.
 func (g *Gate) CountQuestions() connect.HandlerOption {
 	return connect.WithInterceptors(connect.UnaryInterceptorFunc(
 		func(next connect.UnaryFunc) connect.UnaryFunc {
@@ -103,7 +97,7 @@ func isLogProcedure(procedure string) bool {
 	return strings.HasPrefix(procedure, "/numen.v1.LogService/")
 }
 
-func (t *CallTrace) recordCall(
+func (t *callTrace) recordCall(
 	ctx context.Context, start time.Time, req connect.AnyRequest, resp connect.AnyResponse, err error,
 ) {
 	duration := t.clock.Now().Sub(start)

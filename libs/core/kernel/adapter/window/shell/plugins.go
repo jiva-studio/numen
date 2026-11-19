@@ -9,13 +9,18 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// pluginList answers which plugins the page loads: the ones of the window's target, by id.
-type pluginList struct {
+// FrontendPlugins lists the plugins for the window and locates their frontend files.
+type FrontendPlugins struct {
 	numenv1connect.UnimplementedPluginServiceHandler
-	getIDs func() []string
+	getIDs    func() []string
+	directory func(string) (string, bool)
 }
 
-func (l pluginList) GetPlugins(
+func NewFrontendPlugins(getIDs func() []string, directory func(string) (string, bool)) FrontendPlugins {
+	return FrontendPlugins{getIDs: getIDs, directory: directory}
+}
+
+func (l FrontendPlugins) GetPlugins(
 	context.Context, *connect.Request[v1.GetPluginsRequest],
 ) (*connect.Response[v1.GetPluginsResponse], error) {
 	out := &v1.GetPluginsResponse{}

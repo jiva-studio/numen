@@ -30,7 +30,7 @@ func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open window
 
 // showing is a window state that shows a vault.
 type showing struct {
-	*editor.State
+	*editor.Session
 	vault domain.Vault
 }
 
@@ -47,7 +47,7 @@ func newHandlerOver(t *testing.T, window showing, store memoryTabs) *Handler {
 
 func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
 	state := newState()
-	api := newHandlerOver(t, showing{State: state}, memoryTabs{})
+	api := newHandlerOver(t, showing{Session: state}, memoryTabs{})
 
 	if open := state.Tabs.GetOpenTabs(); len(open.Tabs) != 0 || open.ActiveID != "" {
 		t.Fatalf("a window that has said nothing has %+v open", open)
@@ -78,7 +78,7 @@ func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
 
 func TestReadOpenTabsReturnsTabsSavedForVault(t *testing.T) {
 	store := memoryTabs{}
-	current := showing{State: newState(), vault: domain.Vault{ID: "v", Path: t.TempDir()}}
+	current := showing{Session: newState(), vault: domain.Vault{ID: "v", Path: t.TempDir()}}
 	api := newHandlerOver(t, current, store)
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
@@ -89,7 +89,7 @@ func TestReadOpenTabsReturnsTabsSavedForVault(t *testing.T) {
 		t.Fatal(err)
 	}
 	// A core started again reads the store, not the tabs held in memory.
-	restarted := newHandlerOver(t, showing{State: newState(), vault: current.vault}, store)
+	restarted := newHandlerOver(t, showing{Session: newState(), vault: current.vault}, store)
 	got, err := restarted.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.ReadOpenTabsRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -100,7 +100,7 @@ func TestReadOpenTabsReturnsTabsSavedForVault(t *testing.T) {
 }
 
 func TestReadOpenTabsReturnsNoneWithoutAVault(t *testing.T) {
-	api := newHandlerOver(t, showing{State: newState()}, memoryTabs{})
+	api := newHandlerOver(t, showing{Session: newState()}, memoryTabs{})
 	got, err := api.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.ReadOpenTabsRequest{}))
 	if err != nil || len(got.Msg.GetTabs()) != 0 {
 		t.Errorf("read %+v, %v", got.Msg, err)
@@ -109,9 +109,8 @@ func TestReadOpenTabsReturnsNoneWithoutAVault(t *testing.T) {
 
 func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 	var received []window.OpenTabs
-	state := newState()
-	state.NotifyOpenTabs = func(open window.OpenTabs) { received = append(received, open) }
-	api := newHandlerOver(t, showing{State: state}, memoryTabs{})
+	state := editor.NewSession(testFrame{show: func(open window.OpenTabs) { received = append(received, open) }})
+	api := newHandlerOver(t, showing{Session: state}, memoryTabs{})
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
 		ActiveId: "one",
@@ -162,15 +161,15 @@ func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
 
 func TestDetachTabInvokesState(t *testing.T) {
 	var got window.DetachedTab
-	state := newState()
-	api, links := newHandler(t, state, scheduleNothing)
-	state.DetachTab = func(_ context.Context, tab window.DetachedTab) error {
+	var links *tablinks.Tabs
+	state := editor.NewSession(testFrame{detach: func(_ context.Context, tab window.DetachedTab) error {
 		got = tab
 		// The new window reads and accepts the tab, so DetachTab responds.
 		_, moveID, _ := links.Transfers.ReadDetached("window-b", tab.ID)
 		links.Transfers.Accept("window-b", tab.ID, moveID)
 		return nil
-	}
+	}})
+	api, links := newHandler(t, state, scheduleNothing)
 
 	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{
 		Tab:    &v1.Tab{Id: "plex:7a2e", Kind: "plex", Path: "physics/Ontology.md"},
@@ -190,8 +189,7 @@ func TestDetachTabInvokesState(t *testing.T) {
 }
 
 func TestDetachTabRequiresATabID(t *testing.T) {
-	state := newState()
-	state.DetachTab = func(context.Context, window.DetachedTab) error { return nil }
+	state := editor.NewSession(testFrame{detach: func(context.Context, window.DetachedTab) error { return nil }})
 	api, _ := newHandler(t, state, scheduleNothing)
 
 	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Tab: &v1.Tab{Kind: "plex"}}))
@@ -231,4 +229,18 @@ func TestFocusSentToWindowOmitsRangeBeyond32Bits(t *testing.T) {
 	if !reflect.DeepEqual(ranges, want) {
 		t.Errorf("the window is sent the ranges %v, want %v", ranges, want)
 	}
+}
+
+type testFrame struct {
+	show   func(window.OpenTabs)
+	detach func(context.Context, window.DetachedTab) error
+}
+
+func (f testFrame) ShowOpenTabs(open window.OpenTabs) {
+	if f.show != nil {
+		f.show(open)
+	}
+}
+func (f testFrame) DetachTab(ctx context.Context, tab window.DetachedTab) error {
+	return f.detach(ctx, tab)
 }

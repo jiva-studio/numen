@@ -727,10 +727,7 @@ func TestStopAnswersTheErrorOfAWindowThatWillNotClose(t *testing.T) {
 
 	core.mu.Lock()
 	live := core.running.opened
-	core.running.opened = &container.OpenedWindow{
-		Installation: editor.NewInstallation(live.State, editor.Lifecycle{Close: refusingCloser{closeErr}}, nil, nil, io.Discard),
-		State:        live.State,
-	}
+	core.running.opened = editor.NewInstallation(nil, editor.Lifecycle{Close: refusingCloser{closeErr}}, nil, nil)
 	core.mu.Unlock()
 	t.Cleanup(func() {
 		if err := live.Close(); err != nil {

@@ -5,7 +5,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
-func getPluginLookups(db *Index) hostvault.Lookups {
+func getPluginLookups(db *vaultIndex) hostvault.Lookups {
 	queries, frontmatter, feed := db.NoteQueries(), db.NoteQueryReads(), db.FileChanges()
 	return hostvault.Lookups{
 		Notes: hostvault.Notes{

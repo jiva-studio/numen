@@ -12,8 +12,8 @@ import (
 )
 
 func TestPluginWindowWithNoVaultReturnsErrNoWindow(t *testing.T) {
-	state := NewState(run.NewTasks(), nil, nil)
-	window := newPluginWindow(state, nil, file.NewFocusFile(vaultreader.Readers{}, ViewOf(state)), 0)
+	state := newTestWindow(run.NewTasks(), nil, nil)
+	window := newPluginWindow(state, nil, file.NewFocusFile(vaultreader.Readers{}, ViewOf(state.Notices)), 0)
 	ctx := t.Context()
 
 	if _, err := window.FocusNote(ctx, "notes/Heron.md"); !errors.Is(err, plugin.ErrNoWindow) {

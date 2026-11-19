@@ -23,31 +23,37 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *Index, v domain.Vault) error {
+func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *vaultIndex, v domain.Vault) error {
 	registry, err := vaultRegistry(vaultDeps.RegistryPath)
 	if err != nil {
 		return err
 	}
 	current := func() (domain.Vault, bool) { return v, true }
-	return installPluginVault(install, vaultDeps, registry, db, current, PluginVaultHooks{})
+	return installPluginVault(install, vaultDeps, registry, db, current, pluginVaultHooks{})
 }
 
-// PluginRuntime is what runs, finds and addresses the plugins.
-type PluginRuntime struct {
+type installedPlugins interface {
+	textport.TextPlugins
+	pluginport.PluginLister
+	pluginport.PluginManifests
+}
+
+// pluginRuntime is what runs, finds and addresses the plugins.
+type pluginRuntime struct {
 	bridge.Activator
 	pluginport.PluginRetrier
-	pluginport.PluginLister
-	pluginport.PluginResolver
+	Listing   installedPlugins
+	Resolver  pluginport.PluginResolver
+	Manifests pluginmanifest.Manifests
 	pluginport.PluginEventEmitter
 	pluginport.PluginBinding
 	transport.ClientLookup
-	textport.TextPlugins
 	pluginport.PluginFailures
 	pluginport.ConfigWatcher
 }
 
-// PluginConfiguration is what carries the settings to the plugins.
-type PluginConfiguration struct {
+// pluginConfiguration is what carries the settings to the plugins.
+type pluginConfiguration struct {
 	pluginport.PluginSettingDeclarer
 	pluginport.ConfigRefresher
 	settingsport.PluginConfig
@@ -61,10 +67,10 @@ type PluginWatch struct {
 	contenttypeport.ContentTypeTable
 }
 
-// PluginViews are the parts of the host that the settings take as they are, and that stay unset where the host runs
+// pluginViews are the parts of the host that the settings take as they are, and that stay unset where the host runs
 // nothing: the settings then accept every plugin value and list no plugin, and no connection type exists. Follow returns the
 // subscription to the setting changes that the host follows, or none.
-type PluginViews struct {
+type pluginViews struct {
 	Types        connectionport.Types
 	Operations   connectionport.OperationTitles
 	Declarations licenseport.Declarations
@@ -75,7 +81,7 @@ type PluginViews struct {
 
 // PluginExecution runs plugins and tracks their processes.
 type PluginExecution struct {
-	Runtime   PluginRuntime
+	Runtime   pluginRuntime
 	Watch     PluginWatch
 	Health    *pluginhealth.Items
 	Processes pluginprocess.Processes
@@ -83,16 +89,16 @@ type PluginExecution struct {
 
 // PluginPreferences applies settings and storage locations to the installation's plugins.
 type PluginPreferences struct {
-	Configuration       PluginConfiguration
-	Views               PluginViews
+	Configuration       pluginConfiguration
+	Views               pluginViews
 	ApplySetting        settingsport.PluginSettingApplier
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
 	Detection           connectionport.Detected
 }
 
-// PluginProviders connects plugin providers to search and model clients.
-type PluginProviders struct {
+// pluginProviders connects plugin providers to search and model clients.
+type pluginProviders struct {
 	Detection          *providerbridge.Detection
 	RowOptions         *rowoptions.Lists
 	RunningProviders   *providerbridge.RunningSource
@@ -103,7 +109,7 @@ type PluginProviders struct {
 type PluginEndpoints struct {
 	Endpoint *hostendpoint.Services
 	Lender   *hostendpoint.Lender
-	PluginProviders
+	pluginProviders
 }
 
 // AdaptPluginHost connects the process and management roles to their consumers.
@@ -114,15 +120,15 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 	detection := providerbridge.NewDetection(types, providerbridge.NewQuestionSource(management.Activation), supervision.Clock)
 	management.Activation.SetOnStart(detection.DetectInBackground)
 	exec := &PluginExecution{
-		Runtime: PluginRuntime{
+		Runtime: pluginRuntime{
 			Activator:          management.Activation,
 			PluginRetrier:      management.Retry,
-			PluginLister:       management.Registry,
-			PluginResolver:     management.Registry,
+			Listing:            management.Registry,
+			Resolver:           management.Registry,
+			Manifests:          pluginmanifest.Open(management.Registry, management.Registry, supervision.Failures),
 			PluginEventEmitter: management.Events,
 			PluginBinding:      plugin.NewBinding(management.Teardown, management.Mode),
 			ClientLookup:       management.Activation.ClientLookup(),
-			TextPlugins:        management.Registry,
 			PluginFailures:     supervision.Failures,
 			ConfigWatcher:      management.Config,
 		},
@@ -135,7 +141,7 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 		Processes: supervision.RunningProcesses,
 	}
 	prefs := &PluginPreferences{
-		Configuration: PluginConfiguration{
+		Configuration: pluginConfiguration{
 			PluginSettingDeclarer: management.Registry,
 			ConfigRefresher:       management.Config,
 			PluginConfig:          management.Settings,
@@ -145,7 +151,7 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 			Values: management.Settings, Stopper: management.Teardown, Failures: supervision.Failures, Listeners: management.Listeners, Push: management.Config,
 			Health: supervision.Health,
 		}).Execute,
-		Views: PluginViews{
+		Views: pluginViews{
 			Types: types, Operations: types,
 			Declarations: management.Registry, Infos: management.Registry, Checks: management.Settings,
 			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
@@ -162,7 +168,7 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 	endpoints := &PluginEndpoints{
 		Endpoint: lent,
 		Lender:   lender,
-		PluginProviders: PluginProviders{
+		pluginProviders: pluginProviders{
 			Detection:          detection,
 			RowOptions:         rowoptions.NewLists(supervision.Storage, management.Config),
 			RunningProviders:   providerbridge.NewRunningSource(management.Activation, management.Activation.ClientLookup()),
@@ -190,8 +196,4 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 		},
 	}))
 	return services
-}
-
-func getRuntimeManifests(r PluginRuntime) pluginmanifest.Manifests {
-	return pluginmanifest.Open(r.PluginLister, r.PluginResolver, r.PluginFailures)
 }

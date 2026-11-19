@@ -5,8 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -29,19 +30,20 @@ import (
 func TestWorker(t *testing.T) {
 	indexing.RunWorkerTests(t, func(t *testing.T) (indexing.OpenReading, vaultport.VaultReaders, *indexing.WorkerIndex) {
 		t.Helper()
-		cfg := container.Config{Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")}}
-		db, err := container.OpenIndex(cfg, container.NewResources(), t.Context())
+		db, err := index.Open(t.Context(), filepath.Join(t.TempDir(), "index.db"))
 		if err != nil {
 			t.Fatal(err)
 		}
 		testsupport.CloseAfter(t, db)
+		var walks vault.Walks
+		ledger := vault.NewLedger()
 		read := func(
 			ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 		) (indexing.ReadWholeVault, error) {
 			if err := vectors.NewFitIndex(db.VectorIndex(), nil, rebuild).Execute(ctx, source); err != nil {
 				return indexing.ReadWholeVault{}, err
 			}
-			return createReadWholeVault(db, source, v, rebuild)
+			return createReadWholeVault(db, &walks, ledger, source, v, rebuild)
 		}
 		index := &indexing.WorkerIndex{
 			Vaults: db.Vaults(), Notes: db.Notes(), FileStats: db.NoteQueries(),
@@ -52,14 +54,14 @@ func TestWorker(t *testing.T) {
 }
 
 func createReadWholeVault(
-	db *container.Index, source searchsourceport.Source, v domain.Vault, rebuild bool,
+	db *index.DB, walks *vault.Walks, ledger *vault.Ledger, source searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
 	readers := vaultreader.Readers{}
 	scan := vault.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), db.Sources())
-	scan.Walks = &db.Walks
+	scan.Walks = walks
 	refresh := vault.NewRefreshFrom(vault.RefreshDeps{
 		Readers: readers, Vaults: db.Vaults(), Notes: db.Notes(), Queries: db.Sources(), Sources: db.Sources(),
-		Now: testsupport.GetMachine(), Ledger: db.Ledger,
+		Now: testsupport.GetMachine(), Ledger: ledger,
 	})
 	refresh.Force = true
 	findUnreadable := func(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {

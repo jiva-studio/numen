@@ -20,9 +20,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
-
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // Core holds the one server the platform starts. Starting again while active
@@ -40,7 +40,7 @@ type runningCore struct {
 	token  string
 	isDown atomic.Bool
 	stop   context.CancelFunc
-	opened *container.OpenedWindow
+	opened *editor.Installation
 	server *http.Server
 }
 
@@ -88,7 +88,7 @@ func (c *Core) Start(dir string) (int, error) {
 	// folder cannot be created, only the default theme is loaded. A theme
 	// named in the settings that is missing from the catalog is reported on
 	// the platform log.
-	if wrong := cfg.SetThemes(execution, preferences, res, opened.Installation, container.Scales{}, opened.RecordThemeWarning); wrong != nil {
+	if wrong := cfg.SetThemes(execution, preferences, res, opened, container.Scales{}, opened.RecordThemeWarning); wrong != nil {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
 	listener, err := listenLocal(ctx)

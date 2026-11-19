@@ -109,7 +109,7 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheAvailableOnes(
 	cfg.Resources.PluginCatalog = catalog.Config{
 		Target: "desktop.editor", InstallDir: "", CacheDir: "",
 		Sources: []catalog.Source{
-			localsource.New([]string{dir}, localsource.SettingsFunc(host.Execution.Runtime.IsPluginEnabled)),
+			localsource.New([]string{dir}, localsource.SettingsFunc(host.Execution.Runtime.Listing.IsPluginEnabled)),
 			indexsource.New(nil, []string{availableDir}),
 		},
 	}

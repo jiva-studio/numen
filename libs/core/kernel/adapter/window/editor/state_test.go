@@ -5,12 +5,13 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
 func TestSuccessfulMeaningSearchRemovesTheWordsOnlyTask(t *testing.T) {
 	tasks := run.NewTasks()
-	state := NewState(tasks, nil, nil)
+	state := SearchTasks{Tasks: &wire.Window{Tasks: tasks}}
 
 	state.ReportWordsAlone(errors.New("dial tcp: network is unreachable"))
 	if !hasTask(tasks, work.WordsAlone) {
@@ -29,4 +30,15 @@ func hasTask(tasks *run.Tasks, id string) bool {
 		}
 	}
 	return false
+}
+
+type testWindow struct {
+	*Session
+	*PageAccess
+	Events *Events
+}
+
+func newTestWindow(tasks *run.Tasks, frame Frame, emit func(string)) *testWindow {
+	session := NewSession(frame)
+	return &testWindow{Session: session, PageAccess: NewPageAccess(tasks, session), Events: &Events{Emit: emit}}
 }

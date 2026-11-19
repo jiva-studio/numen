@@ -15,12 +15,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
-
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
@@ -29,11 +24,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func openVault(t *testing.T, notes map[string]string) (questions, string) {
@@ -43,7 +41,7 @@ func openVault(t *testing.T, notes map[string]string) (questions, string) {
 }
 
 func openVaultWithWindow(t *testing.T, notes map[string]string) (
-	questions, numenv1connect.WindowServiceClient, string, *container.OpenedWindow,
+	questions, numenv1connect.WindowServiceClient, string, *editor.Installation,
 ) {
 	t.Helper()
 	root := t.TempDir()
@@ -67,7 +65,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		},
 	})
 	settings.Resources.TextReaders = testsupport.Texts{Readers: vaultreader.Readers{}}
-	if _, err := settings.AddVault(settings.Resources, root, "watched"); err != nil {
+	if _, err := settings.EnsureVault(settings.Resources, root, "watched", false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -77,7 +75,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	}
 	testsupport.CloseAfter(t, installation)
 
-	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
+	rendered, itself := numenv1connect.NewWindowServiceHandler(editor.PagesOf(installation).Window)
 	mux := http.NewServeMux()
 	mountQuestionsServices(mux, installation)
 	mux.Handle(rendered, itself)
@@ -228,14 +226,14 @@ func newQuestionsClient(client connect.HTTPClient, pos string) questions {
 	}
 }
 
-func mountQuestionsServices(mux *http.ServeMux, installation *container.OpenedWindow) {
-	services := editor.ServicesOf(installation.Installation, installation.State)
+func mountQuestionsServices(mux *http.ServeMux, installation *editor.Installation) {
+	services := editor.ServicesOf(installation)
 	pages := installation.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName, numenv1connect.WorkspaceServiceName)
 	mux.Handle("/"+numenv1connect.VaultServiceName+"/", pages)
 	mux.Handle("/"+numenv1connect.WorkspaceServiceName+"/", pages)
 	mux.Handle(numenv1connect.NewFileServiceHandler(services.File))
 	mux.Handle(numenv1connect.NewNoteServiceHandler(services.Note))
-	mux.Handle(numenv1connect.NewSearchServiceHandler(editor.HandlerOf[*windowsearch.Handler](installation.Installation)))
+	mux.Handle(numenv1connect.NewSearchServiceHandler(editor.HandlerOf[*windowsearch.Handler](installation)))
 }
 
 // going is one vault with everything a window has behind it, and a client
@@ -244,14 +242,14 @@ type going struct {
 	client       questions
 	configuring  numenv1connect.SettingsServiceClient
 	canvas       numenv1connect.WindowServiceClient
-	installation *container.OpenedWindow
+	installation *editor.Installation
 	write        *note.Write
 	mux          *http.ServeMux
 	root         string
 	settings     string
 	order        *order
 	cfg          testInstallation
-	index        *container.Index
+	index        *index.DB
 }
 
 // order is a record of the moments a test is asking about the sequence of.
@@ -312,7 +310,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		},
 	})
 	writeNamingSettings(t, cfg.RegistryPath, sync)
-	if _, err := cfg.AddVault(cfg.Resources, root, "quitting"); err != nil {
+	if _, err := cfg.EnsureVault(cfg.Resources, root, "quitting", false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -335,14 +333,14 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		recording{NoteWriters: writers, VaultLocks: writers, order: recorded, hold: hold},
 		noIndex,
 		testsupport.NewClock(),
-		installation.State.Writes,
+		editor.PagesOf(installation).Writes,
 	)
 
-	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation.Installation))
-	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
+	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation))
+	rendered, itself := numenv1connect.NewWindowServiceHandler(editor.PagesOf(installation).Window)
 	mux := http.NewServeMux()
 	mountQuestionsServices(mux, installation)
-	mountNoteEdit(mux, installation.State, numenv1connect.NoteServiceWriteNoteProcedure, &writing, nil, nil)
+	mountNoteEdit(t, mux, installation, numenv1connect.NoteServiceWriteNoteProcedure, &writing, nil, nil)
 	mux.Handle(turning, settings)
 	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)
@@ -369,10 +367,10 @@ func (f *going) read(t *testing.T) {
 	t.Helper()
 
 	for range 500 {
-		if f.installation.State.Runtime.IsReady() {
+		if editor.SessionOf(t, f.installation).Runtime.IsReady() {
 			return
 		}
-		if why := f.installation.State.Runtime.GetError(); why != "" {
+		if why := editor.SessionOf(t, f.installation).Runtime.GetError(); why != "" {
 			t.Fatalf("the vault could not be read: %v", why)
 		}
 		time.Sleep(10 * time.Millisecond)

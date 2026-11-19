@@ -21,7 +21,7 @@ func writeAt(cfg TestInstallation, json string, path ...string) error {
 func TestAProfileThatIsNoOptionIsRefusedAndNotSent(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 	host := &profileHost{}
-	cfg.TestPlugins = &TestPlugins{Preferences: &PluginPreferences{Configuration: PluginConfiguration{PluginConfig: host}}}
+	cfg.TestPlugins = &TestPlugins{Preferences: &PluginPreferences{Configuration: pluginConfiguration{PluginConfig: host}}}
 
 	err := writeAt(cfg, `"bogus"`, "app", "performance", "profile")
 	if !errors.Is(err, settings.ErrNotASetting) {

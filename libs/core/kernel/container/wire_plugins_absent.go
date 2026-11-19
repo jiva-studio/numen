@@ -3,6 +3,8 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -16,9 +18,9 @@ func newAbsentExecution(reason plugindomain.UnavailableReason, cause error) *Plu
 	runtime := absent.Runtime{Reason: reason, Cause: cause}
 	settings := absent.Settings{}
 	return &PluginExecution{
-		Runtime: PluginRuntime{
-			Activator: runtime, PluginRetrier: runtime, PluginLister: runtime,
-			PluginResolver: runtime, PluginEventEmitter: runtime, PluginBinding: runtime, TextPlugins: runtime,
+		Runtime: pluginRuntime{
+			Activator: runtime, PluginRetrier: runtime, Listing: runtime, Resolver: runtime,
+			Manifests: pluginmanifest.Open(runtime, runtime, runtime), PluginEventEmitter: runtime, PluginBinding: runtime,
 			PluginFailures: runtime, ConfigWatcher: runtime, ClientLookup: transport.NewClientLookup(nil),
 		},
 		Watch:     PluginWatch{PluginShutdown: settings, DependencyReporter: settings, ContentTypeTable: contenttype.Open()},
@@ -30,12 +32,12 @@ func newAbsentExecution(reason plugindomain.UnavailableReason, cause error) *Plu
 func newAbsentPreferences() *PluginPreferences {
 	settings := absent.Settings{}
 	return &PluginPreferences{
-		Configuration: PluginConfiguration{
+		Configuration: pluginConfiguration{
 			PluginSettingDeclarer: settings, ConfigRefresher: settings, PluginConfig: settings,
 			PluginSettings: settings,
 		},
 		ApplySetting:        func(context.Context, string, string, any) error { return nil },
-		Views:               PluginViews{Follow: func(settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return nil }},
+		Views:               pluginViews{Follow: func(settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return nil }},
 		SetStorage:          func(string, string) {},
 		RefreshDependencies: func() {},
 	}

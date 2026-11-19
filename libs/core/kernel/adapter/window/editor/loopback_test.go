@@ -268,7 +268,7 @@ func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer testsupport.Close(t, loopbackCloser{back})
-	api.state.Playing.Store(back)
+	api.state.Media.playing.Store(back)
 
 	response := getResponse(t, api.NewHandler(http.NotFoundHandler()), "/").
 		Header().Get("Content-Security-Policy")

@@ -5,12 +5,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func windowOn(t *testing.T) (*container.OpenedWindow, container.Config) {
+func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 	t.Helper()
 	cfg := newWindowConfig(t)
 	return openWindowAt(t, cfg, t.TempDir()), cfg
@@ -23,11 +24,11 @@ func newWindowConfig(t *testing.T) container.Config {
 	}
 }
 
-func openWindowAt(t *testing.T, cfg container.Config, root string) *container.OpenedWindow {
+func openWindowAt(t *testing.T, cfg container.Config, root string) *editor.Installation {
 	t.Helper()
 	res := container.NewResources()
 	execution, preferences, endpoints := container.PreparePluginHost(nil, nil, nil, false)
-	if _, err := cfg.AddVault(res, root, "one"); err != nil {
+	if _, err := cfg.EnsureVault(res, root, "one", false); err != nil {
 		t.Fatal(err)
 	}
 

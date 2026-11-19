@@ -2,7 +2,6 @@ package vault_test
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"io"
 	"testing"
 	"time"
@@ -98,7 +97,7 @@ func TestWalksIntoTwoIndexesDoNotWaitOnEachOther(t *testing.T) {
 	v := domain.Vault{ID: "one", Path: t.TempDir()}
 
 	isDone := make(chan error, 2)
-	for _, db := range []*container.Index{openIndex(t), openIndex(t)} {
+	for _, db := range []*scanIndex{openIndex(t), openIndex(t)} {
 		scan := scanner(readers, db)
 		go func() { _, err := scan.Execute(t.Context(), v); isDone <- err }()
 	}

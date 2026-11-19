@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -15,9 +16,9 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-func openWindowIndex(t *testing.T, cfg testInstallation) *container.Index {
+func openWindowIndex(t *testing.T, cfg testInstallation) *index.DB {
 	t.Helper()
-	db, err := container.OpenIndex(cfg.Config, cfg.Resources, t.Context())
+	db, err := index.Open(t.Context(), cfg.Config.IndexPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,18 +26,22 @@ func openWindowIndex(t *testing.T, cfg testInstallation) *container.Index {
 	return db
 }
 
-func newNoteMover(db *container.Index) note.Move {
+func newNoteMover(db *index.DB) note.Move {
 	return note.NewMove(note.MoveDeps{Readers: vaultreader.Readers{}, Writers: newVaultWriters(),
 		Links: db.NoteQueries(), Names: db.NoteQueries(), Sources: db.Sources(), Now: testsupport.NewClock()})
 }
 
-func mountNoteEdit(mux *http.ServeMux, state *editor.State, procedure string, write *note.Write, create *note.Create, rename *note.Rename) {
-	prose := notewindow.NewProse(state, nil, write, create, rename, state.Writes)
+func mountNoteEdit(t *testing.T, mux *http.ServeMux, installation *editor.Installation, procedure string, write *note.Write, create *note.Create, rename *note.Rename) {
+	t.Helper()
+	state := editor.SessionOf(t, installation)
+	prose := notewindow.NewProse(state, nil, write, create, rename, editor.PagesOf(installation).Writes)
 	_, handler := numenv1connect.NewNoteServiceHandler(notewindow.NewHandler(state.Notices, prose, nil, nil, nil))
 	mux.Handle(procedure, handler)
 }
 
-func mountFileEdit(mux *http.ServeMux, state *editor.State, procedure string, move *vault.MoveFile, remove *note.RemoveFile) {
+func mountFileEdit(t *testing.T, mux *http.ServeMux, installation *editor.Installation, procedure string, move *vault.MoveFile, remove *note.RemoveFile) {
+	t.Helper()
+	state := editor.SessionOf(t, installation)
 	changes := filewindow.NewChanges(state, state.Notices, move, remove, nil)
 	_, handler := numenv1connect.NewFileServiceHandler(filewindow.NewHandler(nil, changes))
 	mux.Handle(procedure, handler)

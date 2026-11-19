@@ -20,16 +20,15 @@ import (
 
 // API is what the page may ask of the window itself.
 type API struct {
-	Ensure               *indexing.EnsureIndexed
-	Runs                 indexing.Runs
-	Themes               numenv1connect.ThemeServiceHandler
-	Window               *wire.Window
-	GetFrontendPluginIDs func() []string
-	GetPluginDir         func(id string) (string, bool)
-	PluginServices       PluginServices
-	ConnectionCalls      numenv1connect.ConnectionCallServiceHandler
-	Vaults               *registry.List
-	ResolveLinks         *query.ResolveVaultLinks
+	Ensure          *indexing.EnsureIndexed
+	Runs            indexing.Runs
+	Themes          numenv1connect.ThemeServiceHandler
+	Window          *wire.Window
+	Frontends       FrontendPlugins
+	PluginServices  PluginServices
+	ConnectionCalls numenv1connect.ConnectionCallServiceHandler
+	Vaults          *registry.List
+	ResolveLinks    *query.ResolveVaultLinks
 
 	Changes indexing.Changes
 }

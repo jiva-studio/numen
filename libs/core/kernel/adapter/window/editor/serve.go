@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -47,9 +48,8 @@ type Importer interface {
 	Execute(ctx context.Context, v domain.Vault, into string, paths []string)
 }
 
-// Lifecycle is what runs the window from its start to its close.
+// Lifecycle switches, flushes and closes an open window.
 type Lifecycle struct {
-	Start Starter
 	Show  Shower
 	Flush Flusher
 	Close Closer
@@ -64,7 +64,6 @@ type Installation struct {
 	imports   Importer
 	pages     pageSet
 	dialogs   []func(dialog PathDialog)
-	out       io.Writer
 }
 
 // errNoVault is returned for a vault query on a window with no vault open.
@@ -73,12 +72,11 @@ var errNoVault = errors.New("the window has no vault")
 // NewInstallation makes the installation of a window over its state, the lifecycle of what it shows,
 // the import of dropped files and the content types vault files are served as. Nothing is served and no
 // vault is open until Start.
-func NewInstallation(state *State, lifecycle Lifecycle, imports Importer, mediaTypes *file.GetMediaType, out io.Writer) *Installation {
+func NewInstallation(page *PageAccess, lifecycle Lifecycle, imports Importer, mediaTypes *file.GetMediaType) *Installation {
 	return &Installation{
 		lifecycle: lifecycle,
 		imports:   imports,
-		pages:     pageSet{gate: state.Gate, window: statePages{state: state}, mediaTypes: mediaTypes},
-		out:       out,
+		pages:     pageSet{window: page, mediaTypes: mediaTypes},
 	}
 }
 
@@ -96,7 +94,7 @@ func (o *Installation) GetThemes() numenv1connect.ThemeServiceHandler { return o
 // and where the files of a plugin are read from.
 func (o *Installation) SetPlugins(services PluginServices, dir func(id string) (string, bool)) {
 	o.pages.plugins, o.pages.pluginDir = services, dir
-	o.pages.window.GetPlaying().Load().setPluginServices(services)
+	o.pages.window.Media.playing.Load().setPluginServices(services)
 }
 
 // OnFolderDialog registers what a service does with the native dialog when the
@@ -115,20 +113,20 @@ func (o *Installation) SetFolderDialog(dialog PathDialog) {
 
 // Start opens the first vault, follows the model of the embedder and serves
 // recordings over the loopback socket.
-func (o *Installation) Start(ctx context.Context, first domain.Vault, files *FileServer) error {
-	o.lifecycle.Start.Execute(ctx, first)
+func (o *Installation) Start(ctx context.Context, first domain.Vault, files *FileServer, starter Starter, out io.Writer) error {
+	starter.Execute(ctx, first)
 
 	// Recordings are served over a dedicated socket, opened after every
 	// dependency it answers through is in place. When the socket cannot be opened,
 	// the player has no address.
 	onStop := func(why error) {
-		writeDiagnostic(o.pages.window.GetTasks().AddTask, o.out, "recordings will no longer play: %v\n", why)
+		writeDiagnostic(o.pages.window.Window.AddTask, out, "recordings will no longer play: %v\n", why)
 	}
 	if playing, why := Listen(ctx, files, onStop); why != nil {
-		writeDiagnostic(o.pages.window.GetTasks().AddTask, o.out, "recordings will not play: %v\n", why)
+		writeDiagnostic(o.pages.window.Window.AddTask, out, "recordings will not play: %v\n", why)
 	} else {
 		playing.setPluginServices(o.pages.plugins)
-		o.pages.window.GetPlaying().Store(playing)
+		o.pages.window.Media.playing.Store(playing)
 	}
 	return nil
 }
@@ -153,7 +151,7 @@ func (o *Installation) FlushPending(ctx context.Context) bool {
 // WaitForFlush waits for every page to write its pending data. The wait is on
 // ctx ended or the vault was requested again.
 func (o *Installation) WaitForFlush(ctx context.Context) bool {
-	return o.pages.window.WaitForFlush(ctx)
+	return o.pages.window.Window.WaitForFlush(ctx)
 }
 
 const (
@@ -170,16 +168,16 @@ const (
 // which says the theme the settings name is found now.
 func (o *Installation) RecordThemeWarning(message string) {
 	if message == "" {
-		o.pages.window.GetTasks().RemoveTask(applyingTheme)
+		o.pages.window.Window.RemoveTask(applyingTheme)
 		return
 	}
-	o.pages.window.GetTasks().AddTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
+	o.pages.window.Window.AddTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
 // Report records configuration messages as tasks that are notices, not failures.
 func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
-		o.pages.window.GetTasks().AddTask(work.Task{
+		o.pages.window.Window.AddTask(work.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
 			Title: "Read settings",
 			About: one,
@@ -194,5 +192,13 @@ func (o *Installation) Report(messages []string) {
 // returns no value: results go to all listeners.
 // The watcher does not report images or archives, so Imports names what arrived itself.
 func (o *Installation) Imports(ctx context.Context, into string, paths []string) {
-	o.imports.Execute(ctx, o.pages.window.GetCurrentVault(), into, paths)
+	o.imports.Execute(ctx, o.GetCurrentVault(), into, paths)
 }
+
+// GetCurrentVault returns the vault displayed in the window.
+func (o *Installation) GetCurrentVault() domain.Vault {
+	return o.pages.window.session.GetCurrentVault()
+}
+
+// GetOpenTabs returns the tabs reported by the displayed page.
+func (o *Installation) GetOpenTabs() window.OpenTabs { return o.pages.window.session.GetOpenTabs() }

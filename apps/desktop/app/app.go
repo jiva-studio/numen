@@ -13,9 +13,6 @@ import (
 	"path"
 	"runtime/debug"
 
-	"github.com/wailsapp/wails/v3/pkg/application"
-	"github.com/wailsapp/wails/v3/pkg/events"
-
 	"github.com/jiva-studio/numen/apps/desktop/internal/folderdialog"
 	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
@@ -26,6 +23,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/events"
 )
 
 const appName = "numen"
@@ -181,7 +180,7 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 	}
 	pages, installation := displayed.pages, displayed.opened
 	scales := container.Scales{InterfaceScale: scaleFlags.interfaceScale, TextScale: scaleFlags.textScale}
-	themes.Report(cfg.SetThemes(services.Execution, services.Preferences, services.Resources, installation.Installation, scales, installation.RecordThemeWarning), os.Stdout)
+	themes.Report(cfg.SetThemes(services.Execution, services.Preferences, services.Resources, installation, scales, installation.RecordThemeWarning), os.Stdout)
 
 	installation.Report(notices)
 
@@ -227,7 +226,7 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 
 type shownInstallation struct {
 	pages  http.Handler
-	opened *container.OpenedWindow
+	opened *editor.Installation
 }
 
 func openInstallation(
@@ -245,7 +244,7 @@ func openInstallation(
 }
 
 func makeApplication(
-	opened *container.OpenedWindow, pages http.Handler, shutdownSeq *shutdown.Sequence,
+	opened *editor.Installation, pages http.Handler, shutdownSeq *shutdown.Sequence,
 	going *vaultFlush, windowVis visibility,
 ) *application.App {
 	return application.New(application.Options{
@@ -263,13 +262,13 @@ func makeApplication(
 	})
 }
 
-func makeWindow(app *application.App, opened *container.OpenedWindow) *application.WebviewWindow {
+func makeWindow(app *application.App, opened *editor.Installation) *application.WebviewWindow {
 	return app.Window.NewWithOptions(getMainWindowOptions(opened))
 }
 
-func getMainWindowOptions(opened *container.OpenedWindow) application.WebviewWindowOptions {
+func getMainWindowOptions(opened *editor.Installation) application.WebviewWindowOptions {
 	return frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Tabs.GetOpenTabs()),
+		Title:          getWindowTitle(opened.GetCurrentVault(), opened.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
 		URL:            "/",
@@ -286,7 +285,7 @@ func getSecondaryWindowURL(tab windowdomain.DetachedTab) string {
 }
 
 func makeSecondaryWindow(
-	app *application.App, opened *container.OpenedWindow, tab windowdomain.DetachedTab,
+	app *application.App, opened *editor.Installation, tab windowdomain.DetachedTab,
 ) *application.WebviewWindow {
 	return app.Window.NewWithOptions(getSecondaryWindowOptions(opened, tab))
 }
@@ -297,9 +296,9 @@ const (
 	secondaryWindowHeight = 860
 )
 
-func getSecondaryWindowOptions(opened *container.OpenedWindow, tab windowdomain.DetachedTab) application.WebviewWindowOptions {
+func getSecondaryWindowOptions(opened *editor.Installation, tab windowdomain.DetachedTab) application.WebviewWindowOptions {
 	opts := frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Tabs.GetOpenTabs()),
+		Title:          getWindowTitle(opened.GetCurrentVault(), opened.GetOpenTabs()),
 		Width:          secondaryWindowWidth,
 		Height:         secondaryWindowHeight,
 		URL:            getSecondaryWindowURL(tab),
@@ -328,13 +327,13 @@ type windowHooks struct {
 // by connectWindow, so it does nothing until then.
 type windowFrame struct {
 	window *application.WebviewWindow
-	opened *container.OpenedWindow
+	opened *editor.Installation
 	detach func(tab windowdomain.DetachedTab) error
 }
 
 func (f *windowFrame) ShowOpenTabs(open windowdomain.OpenTabs) {
 	if f.window != nil {
-		f.window.SetTitle(getWindowTitle(f.opened.State.GetCurrentVault(), open))
+		f.window.SetTitle(getWindowTitle(f.opened.GetCurrentVault(), open))
 	}
 }
 
@@ -346,7 +345,7 @@ func (f *windowFrame) DetachTab(_ context.Context, tab windowdomain.DetachedTab)
 }
 
 func detachTab(
-	ctx context.Context, app *application.App, opened *container.OpenedWindow, hooks windowHooks, tab windowdomain.DetachedTab,
+	ctx context.Context, app *application.App, opened *editor.Installation, hooks windowHooks, tab windowdomain.DetachedTab,
 ) error {
 	hooks.tracker.addWindow()
 	secWindow := makeSecondaryWindow(app, opened, tab)
@@ -368,7 +367,7 @@ func detachTab(
 var errNoWindow = errors.New("the application has no window to open")
 
 func connectWindow(
-	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *container.OpenedWindow,
+	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *editor.Installation,
 	frame *windowFrame, hooks windowHooks,
 ) {
 	opened.SetFolderDialog(folderdialog.New(window))
@@ -382,7 +381,7 @@ func connectWindow(
 	})
 }
 
-func importDroppedFiles(ctx context.Context, opened *container.OpenedWindow, event *application.WindowEvent) {
+func importDroppedFiles(ctx context.Context, opened *editor.Installation, event *application.WindowEvent) {
 	landed := event.Context().DropTargetDetails()
 	if landed == nil {
 		return

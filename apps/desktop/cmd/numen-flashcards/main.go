@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connectioncall"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
@@ -76,10 +75,9 @@ func run(cfg container.Config, services platform.Installation, debug debugOption
 		return err
 	}
 
-	api := makeWindowAPI(cfg, services)
 	opening := container.ShellOpening{
-		Target: platform.TargetFlashcards, API: api,
-		Log: container.ShellLog{Out: os.Stderr, Label: appName, Notify: notifyUser},
+		Target: platform.TargetFlashcards,
+		Log:    container.ShellLog{Out: os.Stderr, Label: appName, Notify: notifyUser},
 	}
 	started, err := cfg.OpenShell(services.Execution, services.Preferences, services.Endpoints, services.Resources, ctx, opening)
 	if err != nil {
@@ -101,22 +99,11 @@ func run(cfg container.Config, services platform.Installation, debug debugOption
 	if err != nil {
 		return err
 	}
-	handler := api.NewHandler(pages)
+	handler := started.API.NewHandler(pages)
 	if debug.isServingHTTP() {
 		return debug.serveHTTP(ctx, services.Resources, handler)
 	}
 	return runApplication(handler, target)
-}
-
-func makeWindowAPI(cfg container.Config, services platform.Installation) *shell.API {
-	calls := container.GetConnectionCalls(services.Preferences, services.Endpoints)
-	rows := container.GetConnectionRows(cfg, services.Execution, services.Preferences, services.Endpoints, services.Resources)
-	return &shell.API{
-		GetFrontendPluginIDs: func() []string { return container.GetFrontendPluginIDs(services.Execution.Runtime) },
-		GetPluginDir:         func(id string) (string, bool) { return container.GetPluginDir(services.Execution.Runtime, id) },
-		PluginServices:       container.GetPluginServices(services.Execution.Runtime),
-		ConnectionCalls:      connectioncall.NewService(calls, rows),
-	}
 }
 
 func runApplication(handler http.Handler, target *shutdown.Sequence) error {

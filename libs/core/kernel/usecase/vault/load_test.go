@@ -12,7 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
@@ -45,9 +46,8 @@ func TestLoad(t *testing.T) {
 	v := vaulttest.GenerateVault(t, notes)
 	t.Logf("generated %d notes in %s", notes, getElapsedTime(generating))
 
-	db, err := container.OpenIndex(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-	}, container.NewResources(), ctx)
+	path := filepath.Join(t.TempDir(), "index.db")
+	db, err := index.Open(ctx, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestLoad(t *testing.T) {
 	}
 	t.Logf("warm scan: %s — this is what a startup pays", getElapsedTime(warmStart))
 
-	size, err := os.Stat(db.File)
+	size, err := os.Stat(path)
 	if err == nil {
 		t.Logf("index: %.1f MB for %d notes", float64(size.Size())/(1<<20), notes)
 	}
@@ -89,7 +89,7 @@ func TestLoad(t *testing.T) {
 	})
 }
 
-func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan vaults.Scan, query string) {
+func measureUnderLoad(t *testing.T, db *index.DB, v domain.Vault, scan vaults.Scan, query string) {
 	t.Helper()
 	const (
 		readers  = 4
