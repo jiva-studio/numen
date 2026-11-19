@@ -4,16 +4,23 @@
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
-import { getFailureText, type AppearanceWriter, type Mode } from '../lib/appearance'
+import { getFailureText, type AppearanceWriter, type Mode, type Theme } from '../lib/appearance'
 import { getAppearanceGroups, readAppearancePick, type AppearanceChoiceWords } from '../lib/choices'
-import type { WindowAppearance } from './appearance'
+import type { Ref } from 'vue'
 
 /**
  * What the appearance palette works with. writeChoice resolves to why a choice was not written, empty where
  * it was; onOpen reads again what the palette offers each time it opens.
  */
 export interface AppearancePaletteDeps {
-  readonly appearance: Pick<WindowAppearance, 'state' | 'show'>
+  readonly appearance: {
+    readonly state: {
+      readonly themes: Ref<readonly Theme[]>
+      readonly applied: Ref<string>
+      readonly mode: Ref<Mode>
+    }
+    show(theme: string, mode: Mode): Promise<void>
+  }
   readonly words: AppearanceChoiceWords
   readonly getPluginName: (pluginId: string) => string
   readonly writeChoice: (theme: string, mode: Mode) => Promise<string>

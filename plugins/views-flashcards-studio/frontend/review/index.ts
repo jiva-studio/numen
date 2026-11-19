@@ -7,7 +7,6 @@ import { computed, defineComponent, h, type PropType } from 'vue'
 import {
   VAULT_SUMMARY,
   type ConnectionHost,
-  type NoticeHost,
   type TabKindRegistration,
   type VaultSummaryContext,
   type VaultRelations,
@@ -15,6 +14,7 @@ import {
 } from '@numen/plugin-sdk'
 import ReviewTab from './ui/ReviewTab.vue'
 import { useReview, type Review } from './model/review'
+import type { ReviewNotices } from './model/notices'
 import type { VaultCounts } from './model/counts'
 import VaultSummary from './ui/vaults/VaultSummary.vue'
 import type { MountView } from './model/views'
@@ -28,7 +28,7 @@ export const REVIEW = 'flashcards.review'
 /** The dependencies the review needs from the window it is rendered in. */
 export interface ReviewKindDeps {
   readonly counts: VaultCounts
-  readonly notices: NoticeHost
+  readonly notices: ReviewNotices
   readonly connections: ConnectionHost
   readonly relations: Pick<VaultRelations, 'resolveLinks'>
   readonly mountView: MountView

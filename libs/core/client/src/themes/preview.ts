@@ -6,19 +6,20 @@
  * A theme and a half are applied as soon as the keyboard is on their row. A size is applied once the
  * keyboard has rested on its row for HELD.
  */
-import type { Caught } from '@numen/ui'
+import type { Caught } from '../errors'
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
-import { getFailureText, type AppearanceWriter, type Mode, type Sizes } from '../lib/appearance'
-import { HELD, onto } from '../lib/appearanceValues'
-import type { ScaleKind } from '../lib/appearanceValues'
+import { getFailureText, type AppearanceWriter } from './appearanceOutput'
+import type { ThemeMode as Mode, ThemeScales } from './themes'
+import { HELD, onto } from './appearanceValues'
+import type { ScaleKind } from './appearanceValues'
 
 /** What previewing reads, and what it applies. */
 export interface PreviewDeps {
   readonly write: AppearanceWriter
   readonly applied: Ref<string>
   readonly mode: Ref<Mode>
-  readonly settings: Ref<Sizes>
+  readonly settings: Ref<ThemeScales<number>>
   readonly applyTheme: (theme: string, half: Mode) => Promise<void>
 }
 
@@ -37,7 +38,7 @@ export function createAppearancePreview(on: PreviewDeps) {
 
   const current = computed(() => theme.value || applied.value)
   const shownHalf = computed<Mode>(() => half.value || mode.value)
-  const sized = computed<Sizes>(() => {
+  const sized = computed<ThemeScales<number>>(() => {
     const previewed = pendingSize.value
     return previewed ? onto(settings.value, previewed.which, previewed.size) : settings.value
   })

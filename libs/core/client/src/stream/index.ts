@@ -1,0 +1,1 @@
+export { createFollower } from './stream'

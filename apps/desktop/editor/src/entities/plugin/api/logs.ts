@@ -1,9 +1,9 @@
 /**
  * Structured application logs, as the frontends of the plugins watch and write them.
  */
-import { createLogClient } from '@numen/core-client'
+import { createFollower, createLogClient } from '@numen/core-client'
 import type { LogHost } from '@numen/plugin-loader'
-import { createFollower, runInBackground } from '@numen/ui'
+import { runInBackground } from '@numen/ui'
 import type { WindowClients } from '@/shared/api/clients'
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

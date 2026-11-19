@@ -34,13 +34,14 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     if (!connections || !relations) {
       throw new Error('the review needs the connections and the links of the window it is drawn in')
     }
-    const counts = createVaultCounts({ reportError: createNotices(notices).reportError })
+    const reviewNotices = createNotices(notices)
+    const counts = createVaultCounts(reviewNotices)
     plugin.identity.subscriptions.push({ dispose: counts.dispose })
     plugin.register.view(createVaultSummaryView(counts))
     plugin.register.tabKind(
       createReviewKind({
         counts,
-        notices,
+        notices: reviewNotices,
         connections,
         relations,
         mountView: (capability, element, view) => host.ui.mountView(capability, element, view),

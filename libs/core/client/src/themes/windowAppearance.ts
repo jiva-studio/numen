@@ -8,42 +8,40 @@
  * list offers and what choosing a row writes belong to the adapter of the settings.
  */
 import { ref, shallowRef, watch, type Ref } from 'vue'
-import { createFollower, createRequestGuard, doc, type Caught } from '@numen/ui'
+import type { Caught } from '../errors'
+import { createFollower } from '../stream'
 import {
-  DESIGNED,
-  SCHEMES,
   getFailureText,
-  type Appearance,
+  type AppearanceOutput,
   type AppearanceWords,
   type AppearanceWriter,
-  type Mode,
-  type Sizes,
-  type Theme,
-  type Themes,
-} from '../lib/appearance'
-import { IS_SIZES, addAfter, getSizesCss, getStyleElements } from '../api/head'
+} from './appearanceOutput'
+import type {
+  ThemeClient,
+  ThemeEntry as Theme,
+  ThemeAppearance as Appearance,
+  ThemeMode as Mode,
+  ThemeScales,
+} from './themes'
 import { createAppearancePreview } from './preview'
+
+type Sizes = ThemeScales<number>
+type Themes = Pick<ThemeClient, 'getAppearance' | 'readTheme' | 'watchThemes'>
 
 interface WindowAppearanceDeps {
   core: Themes
   words: AppearanceWords
   write: AppearanceWriter
-  sheet?: Document
+  output: AppearanceOutput
   wait?: (ms: number) => Promise<void>
 }
 
-interface ThemeApplierDeps {
-  core: Themes
-  styleElements: ReturnType<typeof getStyleElements>
-  write: AppearanceWriter
-  words: AppearanceWords
-  applied: Ref<string>
-}
-
-function createThemeApplier(deps: ThemeApplierDeps) {
-  const { core, styleElements, write, words, applied } = deps
+function createThemeApplier(
+  { core, output, write, words }: WindowAppearanceDeps,
+  applied: Ref<string>,
+) {
   const files = new Map<string, string>()
-  const guard = createRequestGuard()
+  let revision = 0
 
   const fileOf = async (name: string): Promise<string> => {
     const cached = files.get(name)
@@ -55,30 +53,17 @@ function createThemeApplier(deps: ThemeApplierDeps) {
 
   const applyTheme = async (theme: string, half: Mode) => {
     if (!applied.value) return
-    const mine = guard.acquireRequest()
-    styleElements.mode.textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
+    const mine = ++revision
+    output.writeMode(half)
     try {
       const css = await fileOf(theme)
-      if (mine.isCurrent) styleElements.theme.textContent = css
+      if (mine === revision) output.writeTheme(css)
     } catch {
-      if (mine.isCurrent) write(words.themeUnreadable, 'error')
+      if (mine === revision) write(words.themeUnreadable, 'error')
     }
   }
 
   return { files, applyTheme }
-}
-
-function createSizesWriter(styleElements: ReturnType<typeof getStyleElements>, sheet: Document) {
-  // Stryker disable next-line StringLiteral: Empty initial string represents unapplied state.
-  let appliedSizesCss = ''
-  return (sizes: Sizes) => {
-    const css = getSizesCss(sizes)
-    // Stryker disable next-line ConditionalExpression: Cached css skips redundant DOM style mutations.
-    if (css === appliedSizesCss) return
-    appliedSizesCss = css
-    styleElements.sizes ??= addAfter(styleElements.theme, IS_SIZES, sheet)
-    styleElements.sizes.textContent = css
-  }
 }
 
 interface LoaderDeps {
@@ -94,10 +79,10 @@ interface LoaderDeps {
 }
 
 function createAppearanceLoader(deps: LoaderDeps) {
-  const guard = createRequestGuard()
+  let revision = 0
   /** The first read caches the stylesheet the page was served with under the theme applied. */
   return async (isFirstRead = false) => {
-    const mine = guard.acquireRequest()
+    const mine = ++revision
     let answer: Appearance
     try {
       answer = await deps.core.getAppearance()
@@ -106,7 +91,7 @@ function createAppearanceLoader(deps: LoaderDeps) {
       return
     }
     // An answer to an earlier read is not applied over the answer to a later one.
-    if (!mine.isCurrent) return
+    if (mine !== revision) return
     deps.themes.value = answer.themes
     deps.applied.value = answer.applied
     deps.mode.value = answer.mode
@@ -165,23 +150,15 @@ function initAppearanceState() {
   const themes = shallowRef<readonly Theme[]>([])
   const applied = ref('')
   const mode = ref<Mode>('system')
-  const settings = ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED })
+  const settings = ref<Sizes>({ interfaceScale: 1, textScale: 1 })
   const missing = ref('')
   return { themes, applied, mode, settings, lost: missing }
 }
 
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
-  const { core, words, write, sheet = doc, wait = sleep } = deps
-  const styleElements = getStyleElements(sheet)
-  const served = styleElements.theme.textContent
+  const { core, words, write, output, wait = sleep } = deps
   const state = initAppearanceState()
-  const { files, applyTheme } = createThemeApplier({
-    core,
-    styleElements,
-    write,
-    words,
-    applied: state.applied,
-  })
+  const { files, applyTheme } = createThemeApplier(deps, state.applied)
 
   const preview = createAppearancePreview({
     write,
@@ -193,15 +170,14 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
 
   const applyAppearance = () =>
     applyTheme(preview.display.current.value, preview.display.half.value)
-  const writeSizes = createSizesWriter(styleElements, sheet)
-  const targetDrawing = watch(preview.display.sized, writeSizes)
+  const targetDrawing = watch(preview.display.sized, output.writeSizes)
 
   const loadAppearance = createAppearanceLoader({
     core,
     write,
     words,
     files,
-    served,
+    served: output.servedTheme,
     themes: state.themes,
     applied: state.applied,
     mode: state.mode,

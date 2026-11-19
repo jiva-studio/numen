@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, ref, shallowRef } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
-import { DESIGNED, type Mode, type Sizes, type Theme } from '../lib/appearance'
+import { type Mode, type Theme } from '../lib/appearance'
 import { useAppearancePalette, type AppearancePaletteDeps } from './useAppearancePalette'
 
 const WORDS = {
@@ -21,8 +21,6 @@ const createPalette = (reason = '') => {
     themes: shallowRef<readonly Theme[]>([SEA]),
     applied: ref('preset:numen'),
     mode: ref<Mode>('system'),
-    settings: ref<Sizes>({ interfaceScale: DESIGNED, textScale: DESIGNED }),
-    lost: ref(''),
   }
   const shown: [string, Mode][] = []
   const errors: [string, string][] = []

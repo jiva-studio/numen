@@ -8,6 +8,7 @@
  * collaborator left un-forgotten fails it whether or not anybody remembered
  * to write a case for it.
  */
+import { createNotices } from './notices'
 import { effectScope, isRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ConnectionHost } from '@numen/plugin-sdk'
@@ -196,13 +197,13 @@ const closers: (() => void)[] = []
 const openReview = async ({ isPageDrawn = true } = {}) => {
   notices = createMockNoticeHost()
   goToVaults = vi.fn()
-  const counts = createVaultCounts({ reportError: vi.fn() })
+  const counts = createVaultCounts(createNotices(createMockNoticeHost()))
   const scope = effectScope()
   const review = scope.run(() =>
     useReview({
       vault: 'roots',
       counts,
-      notices,
+      notices: createNotices(notices),
       connections,
       relations,
       mountView: mountEmptyView,

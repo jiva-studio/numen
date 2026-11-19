@@ -2,7 +2,7 @@
  * Watches the tab links stream for this window, reports its linkable tabs,
  * opens tabs sent from other windows, and cancels the watch on close.
  */
-import { createFollower } from '@numen/ui'
+import { createFollower } from '@/shared/api/stream'
 import type {
   WindowTabs,
   TabLinkGroup,

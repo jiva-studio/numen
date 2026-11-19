@@ -6,7 +6,8 @@ import { isVaultSwapped, readShownVault, useShownVault, type VaultStateApi } fro
 import type { PathRename } from '@/shared/lib/paths'
 import type { TextRange } from '@/shared/lib/textRange'
 import { formatError, type Caught } from '@/shared/api/errors'
-import { createFollower, runInBackground } from '@numen/ui'
+import { runInBackground } from '@numen/ui'
+import { createFollower } from '@/shared/api/stream'
 import {
   createEditStream,
   createFocusStream,

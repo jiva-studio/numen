@@ -2,6 +2,7 @@ import { watch } from 'vue'
 import type { ConnectionStore } from '@/entities/connection'
 import {
   createChangeFollower,
+  createWindowAppearance,
   type SettingsApi,
   type SettingsStore,
   type ThemeClient,
@@ -9,7 +10,7 @@ import {
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { runInBackground } from '@numen/ui'
-import { createWindowAppearance } from '@numen/workbench'
+import { createAppearanceOutput } from '@numen/workbench'
 import { APPEARANCE_WORDS } from '../words'
 import type { SettingWords } from './settingCommands'
 import { createWindowSettingPalette } from './windowPalette'
@@ -41,6 +42,7 @@ export function createWindowSettings({
   const writeSettingsMessage = log.getWriter('configured')
   const appearance = createWindowAppearance({
     core: themes,
+    output: createAppearanceOutput(),
     words: APPEARANCE_WORDS,
     write: log.getWriter('appearance'),
   })

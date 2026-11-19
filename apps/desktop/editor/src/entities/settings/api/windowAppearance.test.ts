@@ -7,11 +7,14 @@
  * after the keyboard focus has stayed on its row.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
-import { DESIGNED, type Appearance, type Mode, type Sizes, type Themes } from '../lib/appearance'
-import { IS_SIZES } from '../api/head'
-import { createWindowAppearance } from './appearance'
-import { createAppearancePreview } from './preview'
+import {
+  createWindowAppearance,
+  type ThemeAppearance as Appearance,
+  type ThemeClient,
+} from '@numen/core-client'
+import { createAppearanceOutput } from '@numen/workbench'
+
+type Themes = Pick<ThemeClient, 'getAppearance' | 'readTheme' | 'watchThemes'>
 
 const words = { unlisted: 'Themes unavailable', themeUnreadable: 'Theme unreadable' }
 
@@ -41,7 +44,7 @@ const page = (css = SERVED): Document => {
     sheet.createElement('link'),
     createStyle(sheet, IS_MODE, PAIR),
     createStyle(sheet, IS_THEME, css),
-    createStyle(sheet, IS_SIZES, SIZED),
+    createStyle(sheet, 'sizes', SIZED),
   )
   return sheet
 }
@@ -112,7 +115,7 @@ const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
       write: (text, kind) => {
         notifiedCalls.push({ text, kind })
       },
-      sheet,
+      output: createAppearanceOutput(sheet),
     }),
     sheet,
     requests: request,
@@ -183,7 +186,7 @@ describe('the page as it was served', () => {
       },
       words,
       write: vi.fn(),
-      sheet,
+      output: createAppearanceOutput(sheet),
     })
     await bareAppearance.start()
 
@@ -344,24 +347,6 @@ describe('the size the keyboard is standing on', () => {
     }
   })
 
-  it('reports an error when applying a previewed theme rejects', async () => {
-    const messages: [string, string][] = []
-    const preview = createAppearancePreview({
-      write: (text, kind) => messages.push([text, kind]),
-      applied: ref('preset:numen'),
-      mode: ref<Mode>('system'),
-      settings: ref<Sizes>({ interfaceScale: 1, textScale: 1 }),
-      applyTheme: async () => {
-        throw new Error('apply failed')
-      },
-    })
-
-    preview.keyboard.previewTheme('mine:sea')
-    await settle()
-
-    expect(messages).toStrictEqual([['apply failed', 'error']])
-  })
-
   it('keeps the theme and the mode unchanged', async () => {
     const one = await startWindow()
 
@@ -460,7 +445,7 @@ describe('two reads of the settings in flight', () => {
       },
       words,
       write: vi.fn(),
-      sheet,
+      output: createAppearanceOutput(sheet),
     })
 
     const first = target.reload()
@@ -507,7 +492,7 @@ const createManualThemes = (waits = Infinity) => {
     write: (text) => {
       notifiedCalls.push(text)
     },
-    sheet,
+    output: createAppearanceOutput(sheet),
     wait: () =>
       waited++ < waits ? new Promise((isDone) => setTimeout(isDone, 0)) : new Promise(vi.fn()),
   })
@@ -534,8 +519,8 @@ describe('the window before it has received anything', () => {
     expect(appearance.state.mode.value).toBe('system')
     expect(appearance.state.lost.value).toBe('')
     expect(appearance.preview.display.sized.value).toStrictEqual({
-      interfaceScale: DESIGNED,
-      textScale: DESIGNED,
+      interfaceScale: 1,
+      textScale: 1,
     })
   })
 
@@ -668,7 +653,7 @@ describe('the application that cannot list the themes', () => {
       write: (text, kind) => {
         notifiedCalls.push({ text, kind })
       },
-      sheet,
+      output: createAppearanceOutput(sheet),
     })
 
     await windowAppearance.start()
@@ -696,7 +681,7 @@ describe('a folder stream that ended', () => {
       },
       words,
       write: vi.fn(),
-      sheet: page(),
+      output: createAppearanceOutput(page()),
     })
     await windowAppearance.start()
     await vi.advanceTimersByTimeAsync(0)

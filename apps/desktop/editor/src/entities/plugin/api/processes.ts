@@ -1,9 +1,9 @@
 /**
  * The plugins that run, as the frontends of the plugins watch them.
  */
-import { createProcessClient } from '@numen/core-client'
+import { createFollower, createProcessClient } from '@numen/core-client'
 import type { ProcessHost } from '@numen/plugin-loader'
-import { createFollower, runInBackground } from '@numen/ui'
+import { runInBackground } from '@numen/ui'
 import type { WindowClients } from '@/shared/api/clients'
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

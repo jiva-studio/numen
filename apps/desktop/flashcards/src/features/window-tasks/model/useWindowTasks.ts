@@ -4,7 +4,6 @@
  * because an indexing begins without the page asking for one.
  */
 import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
-import { createFollower } from '@numen/ui'
 import {
   createBackgroundTaskHost,
   getFailedTasks,
@@ -13,7 +12,7 @@ import {
 } from '@numen/workbench'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
-import type { TaskApi } from '../api/tasks'
+import { createFollower, type TaskApi } from '../api/tasks'
 
 export function useWindowTasks(api: TaskApi, notices: NoticeQueue) {
   const { watchTasks, cancelTask } = api

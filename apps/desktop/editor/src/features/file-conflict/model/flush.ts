@@ -7,7 +7,7 @@
  * unwritten too, so a quit never reports text written that no handler confirmed.
  */
 import { shallowRef, type Ref } from 'vue'
-import { createFollower } from '@numen/ui'
+import { createFollower } from '@/shared/api/stream'
 
 /** Outcome of a flush: everything written, or a user decision pending. */
 type FlushResult = 'written' | 'unsaved'

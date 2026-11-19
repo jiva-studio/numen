@@ -4,14 +4,13 @@
  * and a write of the appearance reads it again.
  */
 import type { JsonValue } from '@/shared/api/json'
+import { MODES, type Mode } from '@numen/workbench'
 import {
   INTERFACE_SCALE,
-  MODES,
   TEXT_SCALE,
-  type Mode,
   type WindowAppearance,
-} from '@numen/workbench'
-import type { createSettingsStore } from '@/entities/settings'
+  type createSettingsStore,
+} from '@/entities/settings'
 import { APP_OWNER } from '../lib/settingsConfig'
 import { createSettingPalette, type SettingPreview, type SettingWords } from './settingCommands'
 import type { Unvalidated } from '@/shared/api/errors'

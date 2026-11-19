@@ -20,10 +20,27 @@ export function createNotices(host: NoticeHost) {
     if (text) showNotice(text, 'error')
   }
 
-  /** What is being done behind the window. The whole list arrives at once. */
-  const setTasks = (work: readonly NoticeTask[]) => host.setTasks(work)
+  let work: readonly NoticeTask[] = []
+  let isReloadLost = false
+  const publishTasks = () => {
+    const reconnect = {
+      id: 'review-reload',
+      label: 'Reconnecting flashcard updates',
+      error: 'Lost touch with numen — the window keeps trying.',
+    }
+    host.setTasks(isReloadLost ? [...work, reconnect] : work)
+  }
+  const setTasks = (tasks: readonly NoticeTask[]) => {
+    work = tasks
+    publishTasks()
+  }
+  const setReloadLost = (lost: boolean) => {
+    if (isReloadLost === lost) return
+    isReloadLost = lost
+    publishTasks()
+  }
 
-  return { showNotice, reportError, setTasks }
+  return { showNotice, reportError, setTasks, setReloadLost }
 }
 
 const sentence = (text: string): string => {
@@ -31,3 +48,5 @@ const sentence = (text: string): string => {
   const ended = /[.!?]$/.test(text) ? text : `${text}.`
   return ended.charAt(0).toUpperCase() + ended.slice(1)
 }
+
+export type ReviewNotices = ReturnType<typeof createNotices>

@@ -1,4 +1,4 @@
-import { createFollower } from '@numen/ui'
+import { createFollower } from '@/shared/api/stream'
 import type { SettingsApi } from '../api/settings'
 import type { SettingEdit } from '../lib/configuration'
 

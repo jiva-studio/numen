@@ -61,14 +61,51 @@ describe('a stream that fails', () => {
     expect(one.lost[0]).toBe(LOST)
   })
 
-  it('says nothing about it once it has it back', async () => {
-    const one = window(1)
+  it('keeps the loss through failed retries and clears it after handling the first recovered item', async () => {
+    const one = window(3)
+    let attempts = 0
+    const observed: string[][] = []
+    await one.follows(
+      async function* () {
+        if (++attempts < 3) throw new Error('offline')
+        yield 'connected'
+      },
+      () => {
+        observed.push([...one.lost])
+      },
+    )
 
-    await one.follows(() => {
-      throw new Error('connection lost')
-    }, vi.fn())
+    expect(observed).toEqual([[LOST], [LOST, '']])
+    expect(one.lost).toEqual([LOST, ''])
+  })
 
-    expect(one.lost[1]).toBe('')
+  it('keeps the loss while another subscription is disconnected', async () => {
+    let open = true
+    const reports: string[] = []
+    const retries: (() => void)[] = []
+    const follow = createFollower({
+      isOpen: () => open,
+      setLost: (text) => reports.push(text),
+      wait: () => new Promise((resolve) => retries.push(resolve)),
+    })
+    const reconnect = () => {
+      let attempt = 0
+      return follow(async function* () {
+        if (++attempt === 1) throw new Error('offline')
+        yield 'connected'
+      }, vi.fn())
+    }
+    const subscriptions = [reconnect(), reconnect()]
+    await vi.waitFor(() => expect(retries).toHaveLength(2))
+    retries[0]!()
+    await vi.waitFor(() => expect(retries).toHaveLength(3))
+    expect(reports).toEqual([LOST])
+    retries[1]!()
+    await vi.waitFor(() => expect(retries).toHaveLength(4))
+    expect(reports).toEqual([LOST, ''])
+    open = false
+    retries.slice(2).forEach((resume) => resume())
+    await Promise.all(subscriptions)
   })
 
   it('is taken up again when what answers it throws', async () => {
@@ -157,6 +194,7 @@ describe('what a follower holds for one reading of a stream', () => {
     })
 
     await follows(async function* (): AsyncIterable<string> {
+      yield* []
       throw new Error('the connection went')
     }, vi.fn())
 
@@ -207,6 +245,7 @@ describe('a window that closes while a stream is read', () => {
     })
 
     await follows(async function* (): AsyncIterable<string> {
+      yield* []
       open = false
       throw new Error('the connection went')
     }, vi.fn())

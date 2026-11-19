@@ -6,3 +6,5 @@ import type { WindowClients } from '@/shared/api/clients'
 export const createThemes = (theme: WindowClients['theme']): ThemeClient => createThemeClient(theme)
 
 export type { ThemeClient }
+
+export { createWindowAppearance } from '@numen/core-client'
