@@ -19,11 +19,11 @@ func mount(s *server.Server, fetcher updates.Fetcher, releaser process.Releaser)
 }
 
 // Mount registers the updater API on s. The manifest is requested over the network, and each check
-// releases the process through the host the environment names.
+// releases the process through its registered host.
 func Mount(s *server.Server) error {
 	var releaser process.Releaser
-	if client, err := process.NewClientFromEnv(); err == nil {
-		releaser = client
+	if endpoint, err := s.GetHostEndpoint(); err == nil {
+		releaser = process.NewClient(endpoint)
 	}
 	return mount(s, feed.New(), releaser)
 }

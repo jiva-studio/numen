@@ -12,9 +12,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
+
+const pluginToken = "plugin-token"
 
 // Host serves the release of a process on a loopback port for as long as the test runs.
 type Host struct {
@@ -42,7 +45,7 @@ func (s *service) ReleaseProcess(
 func NewHost(t *testing.T) *Host {
 	t.Helper()
 	host := &Host{service: &service{}}
-	_, handler := numenv1connect.NewPluginServiceHandler(host.service)
+	_, handler := numenv1connect.NewPluginServiceHandler(host.service, connect.WithInterceptors(server.NewAuthInterceptor(pluginToken)))
 	served := httptest.NewServer(handler)
 	t.Cleanup(served.Close)
 	address, err := url.Parse(served.URL)
@@ -53,10 +56,15 @@ func NewHost(t *testing.T) *Host {
 	return host
 }
 
+// GetLaunchVars returns the host port and token to pass to a linked plugin.
+func (h *Host) GetLaunchVars() map[string]string {
+	return map[string]string{hostcall.HostPortEnv: h.port, hostcall.PluginTokenEnv: pluginToken}
+}
+
 // NewClient returns a client of the plugin that releases its process on this host.
 func (h *Host) NewClient(t *testing.T) *process.Client {
 	t.Helper()
-	endpoint, err := hostcall.FromVars(map[string]string{hostcall.HostPortEnv: h.port, hostcall.PluginTokenEnv: "token"})
+	endpoint, err := hostcall.FromVars(h.GetLaunchVars())
 	if err != nil {
 		t.Fatal(err)
 	}

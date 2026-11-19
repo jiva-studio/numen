@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process/processtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
@@ -165,5 +166,23 @@ func TestACheckReleasesTheProcessOnceItIsAnswered(t *testing.T) {
 
 	if releases := host.CountReleases(); releases != 1 {
 		t.Errorf("releases after the check = %d, want 1", releases)
+	}
+}
+
+func TestLinkedUpdaterReleasesThroughItsRegisteredHost(t *testing.T) {
+	t.Setenv(hostcall.HostPortEnv, "")
+	t.Setenv(hostcall.PluginTokenEnv, "")
+	host := processtest.NewHost(t)
+	handler, err := server.NewLinkedHandler(host.GetLaunchVars(), Mount)
+	if err != nil {
+		t.Fatal(err)
+	}
+	web := httptest.NewServer(handler)
+	defer web.Close()
+	if status, body := post(t, web, "/"+api.Service+"/"+api.MethodCheck, "{}"); status != http.StatusPreconditionFailed {
+		t.Fatalf("check before configure = %d %s", status, body)
+	}
+	if got := host.CountReleases(); got != 1 {
+		t.Errorf("registered host received %d releases, want 1", got)
 	}
 }

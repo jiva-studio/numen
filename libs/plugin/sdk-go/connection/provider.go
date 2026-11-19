@@ -51,11 +51,11 @@ func NewHandler(provider Provider, releaser Releaser, opts ...connect.HandlerOpt
 }
 
 // Mount registers the operations of a Provider on the plugin Server. It releases the process through
-// the host the environment of the process names, and releases nothing where it names none.
+// its host endpoint when one is available.
 func Mount(s *server.Server, provider Provider) {
 	var releaser Releaser
-	if client, err := process.NewClientFromEnv(); err == nil {
-		releaser = client
+	if endpoint, err := s.GetHostEndpoint(); err == nil {
+		releaser = process.NewClient(endpoint)
 	}
 	s.Register(NewHandler(provider, releaser, s.HandlerOptions()...))
 }

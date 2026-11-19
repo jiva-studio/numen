@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -135,5 +136,35 @@ func TestALinkedHandlerReturnsTheCloseErrorOfAFailedMount(t *testing.T) {
 
 	if !errors.Is(err, mountErr) || !errors.Is(err, closeErr) {
 		t.Fatalf("err = %v, want the mount and the close error", err)
+	}
+}
+
+func TestLinkedHostEndpointsAreIsolatedFromTheProcess(t *testing.T) {
+	t.Setenv(hostcall.HostPortEnv, "8100")
+	t.Setenv(tokenVar, "process-token")
+	process := New()
+	linked := func(vars map[string]string) *Server {
+		t.Helper()
+		var mounted *Server
+		if _, err := NewLinkedHandler(vars, func(s *Server) error { mounted = s; return nil }); err != nil {
+			t.Fatal(err)
+		}
+		return mounted
+	}
+	first := linked(map[string]string{hostcall.HostPortEnv: "8200", tokenVar: "first"})
+	second := linked(map[string]string{hostcall.HostPortEnv: "8300", tokenVar: "second"})
+	missing := linked(map[string]string{tokenVar: "unconnected"})
+	for s, want := range map[*Server]hostcall.Endpoint{
+		process: {BaseURL: "http://127.0.0.1:8100", Token: "process-token"},
+		first:   {BaseURL: "http://127.0.0.1:8200", Token: "first"},
+		second:  {BaseURL: "http://127.0.0.1:8300", Token: "second"},
+	} {
+		got, err := s.GetHostEndpoint()
+		if got != want || err != nil {
+			t.Errorf("endpoint = %v, %v; want %v", got, err, want)
+		}
+	}
+	if _, err := missing.GetHostEndpoint(); !errors.Is(err, hostcall.ErrNoHost) {
+		t.Errorf("missing registered address = %v, want ErrNoHost", err)
 	}
 }
