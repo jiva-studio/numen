@@ -131,7 +131,3 @@ type TriggerSource struct {
 	Watch            func() (<-chan struct{}, func())
 	WatchFrontmatter func(id domain.VaultID, report func(paths []string)) func()
 }
-
-type currentVault interface {
-	GetCurrentVault() domain.Vault
-}

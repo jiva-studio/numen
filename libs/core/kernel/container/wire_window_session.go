@@ -66,7 +66,7 @@ func newWindowSession(a pluginsWiring, state *editor.State, ctx context.Context,
 	rebuild := windowsession.NewRebuildSession(guard, session)
 	show := windowsession.NewShowVault(guard, session, identity, flush, &state.Notices.ChangeEvents)
 	follow := windowsession.NewModelFollow(parts.embedding, parts.indexer, &state.Runtime, rebuild)
-	switching := windowsession.NewSwitchVault(show, a.Execution.Runtime, state)
+	switching := windowsession.NewSwitchVault(show, a.Execution.Runtime, &state.Tabs, state.ShowOpenTabs)
 	return windowSession{
 		cases: windowCases{
 			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, a.search.ShouldRebuildIndex),
