@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -52,7 +53,10 @@ func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 				return cli.Indexed{}, err
 			}
 			r.closers = append(r.closers, db.Close)
-			index := cliIndex{run: r, db: db, ports: ports, report: options.ErrorHandler, openWork: newCLIPluginWork(install, exec, r)}
+			index := cliIndex{
+				db: db, ports: ports, report: options.ErrorHandler, openWork: newCLIPluginWork(install, exec, r),
+				closers: &r.closers, notices: run.NewConnectionNoticeTasks(r.tasks).Execute,
+			}
 			return newCLIIndexed(index, install, exec, settingsDeps, searchDeps, vaultDeps), nil
 		},
 		func() cli.PluginCommands {
@@ -96,7 +100,8 @@ func newCLIPluginWork(install pluginInstall, exec *PluginExecution, r *cliRun) c
 type cliIndex struct {
 	ports    registry.Ports
 	openWork cliPluginWork
-	run      *cliRun
+	closers  *[]func() error
+	notices  connectionport.ReportSetAside
 	db       *Index
 	report   window.ErrorHandler
 }
@@ -119,11 +124,10 @@ func newCLIIndexed(index cliIndex, install pluginInstall, exec *PluginExecution,
 		if err != nil {
 			return nil, err
 		}
-		r := index.run
 		errorHandler := index.report
-		embedder, why := openCLIEmbedder(r, ranking, ctx)
+		embedder, why := openCLIEmbedder(index.closers, ranking, ctx)
 		reportSearchFallback(errorHandler, why)
-		setModelCalls(install, exec, settingsDeps, storage, run.NewConnectionNoticeTasks(r.tasks).Execute)
+		setModelCalls(install, exec, settingsDeps, storage, index.notices)
 		return newFindSearchResults(openRerankDeps(install, exec, settingsDeps, storage), settingsDeps, ranking, db, embedder, errorHandler), nil
 	}
 	return cli.Indexed{
@@ -145,12 +149,12 @@ func newCLIIndexed(index cliIndex, install pluginInstall, exec *PluginExecution,
 }
 
 func prepareCLIScan(i cliIndex, ctx context.Context, v domain.Vault, searchDeps searchWiring, vaultDeps vaultWiring) (indexing.ReadWholeVault, error) {
-	db, r := i.db, i.run
+	db := i.db
 	_, err := i.openWork(vaultDeps, db, v)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
-	embedder, why := openCLIEmbedder(r, searchDeps, ctx)
+	embedder, why := openCLIEmbedder(i.closers, searchDeps, ctx)
 	read, err := readWholeVault(searchDeps, ctx, db, embedder, v, vaultMakeRefresh(vaultDeps, db, db.Notes()))
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
@@ -160,13 +164,13 @@ func prepareCLIScan(i cliIndex, ctx context.Context, v domain.Vault, searchDeps 
 }
 
 func prepareCLISearch(i cliIndex, ctx context.Context, v domain.Vault, searchDeps searchWiring, vaultDeps vaultWiring) (searchusecase.Search, error) {
-	db, r := i.db, i.run
+	db := i.db
 	errorHandler := i.report
 	_, err := i.openWork(vaultDeps, db, v)
 	if err != nil {
 		return searchusecase.Search{}, err
 	}
-	embedder, why := openCLIEmbedder(r, searchDeps, ctx)
+	embedder, why := openCLIEmbedder(i.closers, searchDeps, ctx)
 	reportSearchFallback(errorHandler, why)
 	return newSearch(searchDeps, db, embedder, errorHandler, nil), nil
 }
@@ -177,10 +181,10 @@ func reportSearchFallback(errorHandler window.ErrorHandler, err error) {
 	}
 }
 
-func openCLIEmbedder(r *cliRun, searchDeps searchWiring, ctx context.Context) (searchsourceport.Source, error) {
+func openCLIEmbedder(closers *[]func() error, searchDeps searchWiring, ctx context.Context) (searchsourceport.Source, error) {
 	embedder, closeEmbedder, why := searchSource(searchDeps, ctx)
 	if closeEmbedder != nil {
-		r.closers = append(r.closers, closeEmbedder)
+		*closers = append(*closers, closeEmbedder)
 	}
 	return embedder, why
 }

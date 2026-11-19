@@ -65,7 +65,6 @@ func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, startup windowStartup) (*OpenedWindow, error) {
 	exec = getPluginExecution(exec)
 	db := startup.db
-	startup.entries = getLogEntries(res)
 	install := newPluginInstall(c, endpoints, res)
 	settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, endpoints, res, nil)
 	if startup.isEditor {
@@ -77,7 +76,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 		return nil, errors.Join(err, db.Close())
 	}
 	plugins := openWindowPlugins(install, exec, settingsDeps, vaultDeps, db)
-	opened, closeEmbedder := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps)
+	opened, closeEmbedder := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps, getLogEntries(res))
 	mountServices(opened, install, exec, settingsDeps, searchDeps, vaultDeps)
 	if err := opened.inst.Start(ctx, first, opened.server); err != nil {
 		return nil, errors.Join(err, closeEmbedder(), db.Close())
@@ -126,7 +125,6 @@ type windowStartup struct {
 	opening  WindowOpening
 	ports    registry.Ports
 	db       *Index
-	entries  *logsusecase.Entries
 }
 
 type windowPlugins struct {
@@ -152,7 +150,7 @@ func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDep
 }
 
 func buildWindow(
-	s windowStartup, ctx context.Context, plugins windowPlugins, searchDeps searchWiring, vaultDeps vaultWiring,
+	s windowStartup, ctx context.Context, plugins windowPlugins, searchDeps searchWiring, vaultDeps vaultWiring, entries *logsusecase.Entries,
 ) (*windowWiring, func() error) {
 	db, opening, ports := s.db, s.opening, s.ports
 	tasks := plugins.tasks
@@ -192,7 +190,7 @@ func buildWindow(
 	}, session.tools.importFiles, getMediaType(vaultDeps), opening.Out)
 
 	window := &windowWiring{
-		logEntries: s.entries, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
+		logEntries: entries, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
 		kinds: plugins.kinds, server: newFileServer(vaultDeps, state, cases), switching: session.userSwitch, cases: cases,
 		tasks: tasks, generations: generations,
 	}
