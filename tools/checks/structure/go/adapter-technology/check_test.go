@@ -170,8 +170,8 @@ func TestTechnologyRule_RejectsAPackageItsFamilyImports(t *testing.T) {
 // A package that names a port a use case package declares is not driving, and implementing that port makes it driven.
 func TestTechnologyRule_ReadsAPortADeclaredByAUseCase(t *testing.T) {
 	dir := load.WriteTreeFixture(t, map[string]string{
-		"usecase/find/find.go":       "package find\n\ntype Cache interface{ Get() string }\n\ntype Find struct{ cache Cache }\n\nfunc New(c Cache) *Find { return &Find{cache: c} }\n",
-		"adapter/blob/blob.go":       "package blob\n\ntype Blob struct{}\n\nfunc (Blob) Get() string { return \"\" }\n",
+		"usecase/find/find.go": "package find\n\ntype Cache interface{ Get() string }\n\ntype Find struct{ cache Cache }\n\nfunc New(c Cache) *Find { return &Find{cache: c} }\n",
+		"adapter/blob/blob.go": "package blob\n\ntype Blob struct{}\n\nfunc (Blob) Get() string { return \"\" }\n",
 		"internal/adapter/disk/d.go": "package disk\n\nimport (\n\t\"os\"\n\n\t\"fixture/usecase/find\"\n)\n\ntype Disk struct{}\n\n" +
 			"func (Disk) Get() string { _, _ = os.Getwd(); return \"\" }\n\nvar _ find.Cache = Disk{}\n",
 	})
