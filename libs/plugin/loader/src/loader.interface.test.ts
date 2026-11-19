@@ -4,6 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LoaderHost, PluginParts } from './host'
+import { createSignal } from './loading'
 import { createTestPluginLoader } from './testing/pluginLoader'
 
 const BAR = 'org.example.ledger'
@@ -170,4 +171,34 @@ describe('a plugin that has not started within 30 s', () => {
     expect(loader.status.isPluginActive(TABS)).toBe(true)
     await started
   })
+})
+
+it('keeps a module import from a closed window out of the restarted window', async () => {
+  const loading = createSignal()
+  const finish = createSignal()
+  const lateActivate = vi.fn()
+  const activate = vi.fn()
+  const loader = createTestPluginLoader({
+    host: createHost(),
+    fetch: async () => new Response(JSON.stringify(MANIFESTS[BAR])),
+    dynamicImport: vi
+      .fn()
+      .mockImplementationOnce(async () => {
+        loading.settle()
+        await finish.promise
+        return { activate: lateActivate }
+      })
+      .mockResolvedValue({ activate }),
+  })
+  await loader.trackPlugins([BAR])
+  const startup = loader.start()
+  await loading.promise
+  await loader.close()
+  await loader.start()
+  finish.settle()
+  await startup
+
+  expect(lateActivate).not.toHaveBeenCalled()
+  expect(activate).toHaveBeenCalledTimes(1)
+  expect(loader.status.isPluginActive(BAR)).toBe(true)
 })

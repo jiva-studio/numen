@@ -47,6 +47,7 @@ export function parseLifecycleHooks(resolved: Unvalidated): {
 }
 
 export interface LoadModuleOptions {
+  readonly signal?: AbortSignal
   readonly baseUrl: string
   readonly fetchFn: typeof fetch
   readonly importFn: (url: string) => Promise<PluginModule>
@@ -56,7 +57,7 @@ export interface LoadModuleOptions {
 /** The manifest.json of a plugin, read from the window once and kept in `manifests`. */
 export async function readPluginManifest(
   pluginId: string,
-  options: Pick<LoadModuleOptions, 'baseUrl' | 'fetchFn' | 'manifests'>,
+  options: Pick<LoadModuleOptions, 'baseUrl' | 'fetchFn' | 'manifests' | 'signal'>,
 ): Promise<Manifest> {
   const { baseUrl, fetchFn, manifests } = options
   const cached = manifests.get(pluginId)
@@ -69,7 +70,7 @@ export async function readPluginManifest(
   if (!parsed.ok) {
     throw new Error(`manifest.json of plugin "${pluginId}" is invalid: ${parsed.error}`)
   }
-  manifests.set(pluginId, parsed.value)
+  if (!options.signal?.aborted) manifests.set(pluginId, parsed.value)
   return parsed.value
 }
 
@@ -86,7 +87,7 @@ async function loadDynamicModule(
 ): Promise<PluginModule | undefined> {
   const { baseUrl, fetchFn, importFn } = options
   const manifest = await readPluginManifest(pluginId, options)
-  if (manifest.frontend === undefined) return undefined
+  if (options.signal?.aborted || manifest.frontend === undefined) return undefined
   const style = loadPluginStyle(pluginId, `${baseUrl}/${pluginId}/${FRONTEND_STYLES}`, fetchFn)
   const [loaded] = await Promise.all([
     importFn(`${baseUrl}/${pluginId}/${FRONTEND_ENTRYPOINT}`),
