@@ -47,7 +47,7 @@ func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vault
 		return nil, err
 	}
 	shareVaultList(opened, install)
-	setPluginTexts(vaultDeps)
+	setPluginTexts(install.Endpoints.Lender, vaultDeps.TextVersions)
 	shareEditorWindow(db, opened, install, vaultDeps)
 	return getOpenedWindow(opened), nil
 }
@@ -106,7 +106,7 @@ type ShellLog struct {
 }
 
 func followShell(settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
-	changes, err := vaultMoves(vaultDeps, ctx)
+	changes, err := vaultMoves(ctx, vaultDeps.IndexPath, vaultDeps.Watcher)
 	if err != nil {
 		notify(label + ": the index is not being followed: " + err.Error())
 	} else {

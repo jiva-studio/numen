@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -167,7 +168,7 @@ func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *
 	}
 }
 
-func searchWith(c Config, exec, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, v vaultWiring) searchWiring {
+func (c Config) searchWith(exec, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, readers vaultport.VaultReaders, texts textdomain.Readers) searchWiring {
 	return searchWiring{
 		ServiceDir:         c.ServiceDir,
 		ShouldRebuildIndex: c.ShouldRebuildIndex,
@@ -180,25 +181,9 @@ func searchWith(c Config, exec, running *PluginExecution, endpoints *PluginEndpo
 		Sources:            endpoints.SourceDescriptions,
 		Lender:             endpoints.Lender,
 		Clock:              GetClock(res),
-		VaultReaders:       vaultReaders(v),
-		TextReaders:        getTextReaders(v),
+		VaultReaders:       readers,
+		TextReaders:        texts,
 		ErrorHandler:       getErrorHandler(c.IndexPath, res),
-	}
-}
-
-func vaultBase(c Config, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) vaultWiring {
-	return vaultWiring{
-		IndexPath:    c.IndexPath,
-		RegistryPath: c.RegistryPath,
-		ServiceDir:   c.ServiceDir,
-		Clock:        GetClock(res),
-		Lender:       endpoints.Lender,
-		TextPlugins:  running.Runtime.TextPlugins,
-		TextVersions: texts,
-		TextReaders:  res.TextReaders,
-		VaultLocks:   res.vaultLocks,
-		Watches:      res.watches,
-		ErrorHandler: getErrorHandler(c.IndexPath, res),
 	}
 }
 
@@ -216,8 +201,8 @@ func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences,
 	running := getRunningExecution(exec, c.SafeMode)
 	endpoints = getPluginEndpoints(endpoints)
 	settings := settingsOf(c, exec, prefs, res)
-	base := vaultBase(c, running, endpoints, res, texts)
-	search := searchWith(c, exec, running, endpoints, res, base)
+	base := openVaultAccess(c.Paths, GetClock(res), res.vaultLocks, res.watches, texts)
+	search := c.searchWith(exec, running, endpoints, res, base.Readers, getTextReaders(res.TextReaders, texts))
 
 	return settings, search, vaultWith(res, base, settings, search)
 }
@@ -229,8 +214,8 @@ func setVaultSearch(v vaultWiring, search searchWiring) vaultWiring {
 }
 
 func openIndexedVault(search searchWiring, v vaultWiring, db *Index) (searchWiring, vaultWiring) {
-	v.TextVersions = newTextVersions(v, db)
-	search.TextReaders = getTextReaders(v)
+	v.TextVersions = newTextVersions(v.Options, search.ActiveRuntime.TextPlugins, v.Clock, db)
+	search.TextReaders = getTextReaders(search.TextReaders, v.TextVersions)
 	return search, setVaultSearch(v, search)
 }
 

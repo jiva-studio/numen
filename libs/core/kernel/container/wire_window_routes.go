@@ -59,7 +59,7 @@ func mountCatalog(w *windowWiring, install pluginInstall, settingsDeps settingsW
 
 func mountMedia(w *windowWiring, vaultDeps vaultWiring) {
 	state := w.state
-	resolve := file.NewResolveAddress(file.NewStatFile(vaultReaders(vaultDeps)), openPluginFile(vaultDeps), getMediaType(vaultDeps))
+	resolve := file.NewResolveAddress(file.NewStatFile(vaultDeps.Readers), openPluginFile(vaultDeps.Options), getMediaType())
 	handler := mediawindow.NewHandler(state, state, resolve)
 	w.inst.Mount(editor.NewMediaRoute(state, handler))
 }
@@ -76,7 +76,7 @@ func mountCommand(w *windowWiring, install pluginInstall, exec *PluginExecution,
 
 func mountText(w *windowWiring, vaultDeps vaultWiring) {
 	handler := windowtext.NewHandler(w.state, nil)
-	if text := openFileText(vaultDeps); text != nil {
+	if text := openFileText(vaultDeps.TextVersions); text != nil {
 		handler = windowtext.NewHandler(w.state, text)
 	}
 	path, served := windowtext.NewRoute(handler, w.state.Gate.CountQuestions())
@@ -117,13 +117,13 @@ func mountSearch(w *windowWiring, install pluginInstall, exec *PluginExecution, 
 
 func mountFile(w *windowWiring, vaultDeps vaultWiring) {
 	state := w.state
-	readers := vaultReaders(vaultDeps)
+	readers := vaultDeps.Readers
 	kinds := w.kinds
 	folders := filewindow.NewFolders(
 		state,
 		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), kinds.list),
 		file.NewListFileKinds(kinds.files, kinds.chooser),
-		file.NewCreateFolder(folderWriters(vaultDeps), state.Writes),
+		file.NewCreateFolder(vaultDeps.Writers, state.Writes),
 	)
 	moveFile := vault.NewMoveFile(&w.cases.Vaults.Tree.Move, state.Writes, state.Writes)
 	removeFile := note.NewRemoveFile(&w.cases.Notes.Place.Remove, state.Writes)
@@ -180,7 +180,7 @@ func mountSettings(w *windowWiring, exec *PluginExecution, settingsDeps settings
 	state := w.state
 	retry := settings.NewRetryPlugin(exec.Runtime.RetryPlugin)
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)
-	if data := openPluginData(vaultDeps); data != nil {
+	if data := openPluginData(vaultDeps.Options, vaultDeps.TextVersions); data != nil {
 		folders = windowsettings.NewPluginFolders(retry, data, state)
 	}
 	values := windowsettings.NewValues(
@@ -246,11 +246,11 @@ func mountLogs(w *windowWiring, install pluginInstall, settingsDeps settingsWiri
 
 func shareEditorWindow(db *Index, opened *windowWiring, install pluginInstall, vaultDeps vaultWiring) {
 	view := windowView(opened.state)
-	focusFile := file.NewFocusFile(vaultReaders(vaultDeps), view)
+	focusFile := file.NewFocusFile(vaultDeps.Readers, view)
 	setPluginWindow(install.Endpoints.Lender, windowsession.NewPluginWindow(
 		&opened.state.Runtime,
 		&opened.state.Tabs,
-		vaultFocusNote(vaultDeps, db.NoteQueries(), view),
+		query.NewFocusNote(db.NoteQueries(), view),
 		windowsession.FileFocusFunc(func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error {
 			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
 		}),
@@ -311,8 +311,8 @@ func newIndexSession(worker *indexing.Worker) func() windowsession.IndexSession 
 	}
 }
 
-func getTextVersions(vaultDeps vaultWiring) windowsession.TextVersions {
-	if versions := vaultDeps.TextVersions; versions != nil {
+func getTextVersions(versions *TextVersions) windowsession.TextVersions {
+	if versions != nil {
 		return versions.Changes
 	}
 	return nil

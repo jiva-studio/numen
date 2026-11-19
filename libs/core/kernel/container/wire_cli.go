@@ -72,8 +72,8 @@ func openCLIVaults(vaultDeps vaultWiring) (cli.Vaults, error) {
 	}
 	find := registry.NewFind(ports.Lookup).Execute
 	return cli.Vaults{
-		Add:        vault.NewAdd(vaultIdentity(vaultDeps), ports.Vaults, ports.Lookup, ports.Saver, vaultDeps.Clock),
-		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, vaultReaders(vaultDeps)),
+		Add:        vault.NewAdd(vaultIdentity(vaultDeps.Options), ports.Vaults, ports.Lookup, ports.Saver, vaultDeps.Clock),
+		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, vaultDeps.Readers),
 		RecordOpen: vault.NewRecordOpenByName(find, vault.NewRecordOpen(ports.Recorder)),
 	}, nil
 }
@@ -87,7 +87,7 @@ func newCLIPluginWork(install pluginInstall, exec *PluginExecution, r *cliRun) c
 			return nil, err
 		}
 		work := pluginsOpenPluginWork(install, exec, r.tasks, r.models)
-		setPluginTexts(vaultDeps)
+		setPluginTexts(install.Endpoints.Lender, vaultDeps.TextVersions)
 		return work, nil
 
 	}
@@ -138,7 +138,7 @@ func newCLIIndexed(index cliIndex, install pluginInstall, exec *PluginExecution,
 		Changes: cli.VaultChanges{
 			Rename:     vault.NewRenameByName(find, vault.NewRename(ports.Vaults, ports.Saver, db.Vaults())),
 			Unregister: vault.NewUnregisterByName(find, unregister),
-			Erase:      vault.NewEraseByName(find, vault.NewErase(vaultIdentity(vaultDeps), vaultTrash(vaultDeps), unregister)),
+			Erase:      vault.NewEraseByName(find, vault.NewErase(vaultIdentity(vaultDeps.Options), vaultTrash(vaultDeps.Clock), unregister)),
 		},
 		Scan: cli.Scan{
 			Scan: indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, prepareScan), db.NoteQueries()),
@@ -146,7 +146,7 @@ func newCLIIndexed(index cliIndex, install pluginInstall, exec *PluginExecution,
 		},
 		Search:           cli.Search{Search: searchusecase.NewByName(find, prepareSearch)},
 		Links:            query.NewShowLinksByName(find, Queries(db).Refer.Links),
-		Problems:         vault.NewGetProblemsByName(find, getProblems(vaultDeps, db.NoteProblems())),
+		Problems:         vault.NewGetProblemsByName(find, getProblems(db.NoteProblems())),
 		Query:            searchqueryusecase.NewFindSearchResultsByName(find, prepareQuery),
 		OperationResults: operationresult.NewClearOperationResults(db.OperationResults(operationResultRows)),
 	}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -67,7 +68,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	exec = getPluginExecution(exec)
 	db := startup.db
 	install := newPluginInstall(c, endpoints, res)
-	versions := getWindowVersions(c, exec, install.Endpoints, res, startup)
+	versions := getWindowVersions(c, exec, res, startup)
 	settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, install.Endpoints, res, versions)
 	ports := startup.ports
 	first, err := registry.NewGetVaultToShow(ports.Lookup, ports.Vaults, ports.Last).Execute(startup.opening.Named)
@@ -84,12 +85,12 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	return connectWindow(install, exec, vaultDeps, opened, startup.isEditor)
 }
 
-func getWindowVersions(c Config, exec *PluginExecution, endpoints *PluginEndpoints, res *Resources, startup windowStartup) *TextVersions {
+func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup windowStartup) *TextVersions {
 	if !startup.isEditor {
 		return nil
 	}
-	base := vaultBase(c, getRunningExecution(exec, c.SafeMode), endpoints, res, nil)
-	return newTextVersions(base, startup.db)
+	running := getRunningExecution(exec, c.SafeMode)
+	return newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, running.Runtime.TextPlugins, GetClock(res), startup.db)
 }
 
 // WindowOpening names the vault to show, the output and the optional editor frame.
@@ -191,7 +192,7 @@ func buildWindow(
 	inst := editor.NewInstallation(state, editor.Lifecycle{
 		Start: session.cases.start, Show: session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
-	}, session.tools.importFiles, getMediaType(vaultDeps), opening.Out)
+	}, session.tools.importFiles, getMediaType(), opening.Out)
 
 	window := &windowWiring{
 		logEntries: entries, ports: ports, db: db, embedder: embedder, asking: asking, inst: inst, state: state,
@@ -221,12 +222,12 @@ func newWindowUseCases(
 		},
 	)
 	moves := vaultVaults(vaultDeps, ports, db, notes.Place.Move)
-	listing := vaultListing(vaultDeps, ports)
+	listing := vaultListing(vaultDeps.Readers, ports)
 	return WindowUseCases{Notes: &notes, Queries: &queries, PluginNotes: &pluginNotes, Listing: &listing, Vaults: &moves}
 }
 
 func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) tabKinds {
-	files := file.NewGetFileKinds(vaultReaders(vaultDeps), db.NoteQueries())
+	files := file.NewGetFileKinds(vaultDeps.Readers, db.NoteQueries())
 	chooser := tabkind.NewChoose(getRuntimeManifests(exec.Runtime), exec.Watch, getWhenConfig(settingsDeps, exec.Runtime.PluginLister))
 	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
@@ -235,7 +236,7 @@ func newFileServer(vaultDeps vaultWiring, state *editor.State, cases WindowUseCa
 	return editor.NewFileServer(
 		state,
 		file.NewOpenVaultFile(
-			&cases.Listing.Find, file.NewOpenFile(vaultReaders(vaultDeps)), openPluginFile(vaultDeps), getMediaType(vaultDeps),
+			&cases.Listing.Find, file.NewOpenFile(vaultDeps.Readers), openPluginFile(vaultDeps.Options), getMediaType(),
 		),
 	)
 }

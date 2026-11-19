@@ -77,15 +77,15 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 			Written:    hooks.Written,
 		},
 		hostvault.Files{
-			Stat:        file.NewHashFile(vaultReaders(vaultDeps), vaultVersions(vaultDeps)),
-			ReadFile:    file.NewReadFile(vaultReaders(vaultDeps), vaultVersions(vaultDeps)),
-			RangeReader: file.Read{Readers: vaultReaders(vaultDeps)},
+			Stat:        file.NewHashFile(vaultDeps.Readers, vaultDeps.Writers),
+			ReadFile:    file.NewReadFile(vaultDeps.Readers, vaultDeps.Writers),
+			RangeReader: file.Read{Readers: vaultDeps.Readers},
 		},
 		hostvault.Writer{
-			Write:  file.NewWriteFile(noteWriters(vaultDeps), index),
-			Create: file.NewCreateFile(noteWriters(vaultDeps), index),
+			Write:  file.NewWriteFile(vaultDeps.Writers, index),
+			Create: file.NewCreateFile(vaultDeps.Writers, index),
 			Index:  file.NewScanFiles(index),
-			Locks:  hold.NewLocks(writeLocks(vaultDeps), hold.LockHold),
+			Locks:  hold.NewLocks(vaultDeps.Writers, hold.LockHold),
 		},
 		getPluginLookups(db),
 		arranger,
@@ -107,7 +107,7 @@ func newArranger(
 	arranger := hostvault.Arranger{
 		Notes:       getNoteChanges(useCases),
 		Frontmatter: useCases.Properties.Frontmatter,
-		Checks:      getProblemChecks(getProblems(vaultWiring{}, db.NoteProblems())),
+		Checks:      getProblemChecks(getProblems(db.NoteProblems())),
 		Problems:    vault.NewGetParseProblems(db.NoteProblems()),
 	}
 	if window != nil {
@@ -121,7 +121,7 @@ func completeHooks(v vaultWiring, db *Index, hooks PluginVaultHooks) PluginVault
 		hooks.IndexState = query.NewGetIndexState(db.NoteQueries()).Execute
 	}
 	if hooks.Moved == nil {
-		hooks.Moved = func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(v, ctx) }
+		hooks.Moved = func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(ctx, v.IndexPath, v.Watcher) }
 	}
 	return hooks
 }
@@ -146,13 +146,13 @@ func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps set
 	running := getRunningExecution(exec, install.SafeMode)
 	config := getWhenConfig(settingsDeps, exec.Runtime.PluginLister)
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: getRuntimeManifests(running.Runtime), Run: newPluginCommands(config, vaultDeps, running, nil).Run, Readers: vaultReaders(vaultDeps),
+		Plugins: getRuntimeManifests(running.Runtime), Run: newPluginCommands(config, vaultDeps, running, nil).Run, Readers: vaultDeps.Readers,
 		Notes: pluginsNewNoteReader(vaultDeps), Types: running.Watch, Versions: vaultDeps.TextVersions.Texts, Config: config,
 	})
 }
 
 func pluginsNewNoteReader(v vaultWiring) noteport.NoteReader {
-	return note.NewReadFrontmatter(vaultReaders(v))
+	return note.NewReadFrontmatter(v.Readers)
 }
 
 func getWhenConfig(settingsDeps settingsWiring, plugins pluginport.PluginLister) pluginport.WhenConfig {

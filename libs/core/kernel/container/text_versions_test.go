@@ -85,7 +85,7 @@ func TestATranscriptOfAPluginNotInstalledIsLiveAndFound(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions := newTextVersions(cfg.buildVaultWiring(), db)
+	versions := cfg.openTextVersions(db)
 	_, s, _ := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 
@@ -118,7 +118,7 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions := newTextVersions(cfg.buildVaultWiring(), db)
+	versions := cfg.openTextVersions(db)
 	_, s, _ := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	readIntoIndex(t, s, db, v)
 	if _, err := db.VectorIndex().DeleteVectorsOfOtherRecipes(t.Context(), "recipe"); err != nil {
@@ -149,13 +149,13 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions := newTextVersions(cfg.buildVaultWiring(), db)
+	versions := cfg.openTextVersions(db)
 	_, s, vaultDeps := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, s, db, v)
 
 	const renamed = "talks/Heron talk.mp3"
-	move := vault.NewMove(fileMovers(vaultDeps), db.NoteQueries(), db.Sources(), db.Sources(), note.NewMove(note.MoveDeps{}))
+	move := vault.NewMove(vaultDeps.Writers, db.NoteQueries(), db.Sources(), db.Sources(), note.NewMove(note.MoveDeps{}))
 	if _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
 		t.Fatal(err)
 	}
@@ -185,7 +185,7 @@ func newTalkIndex(t *testing.T) (searchWiring, vaultWiring, *Index, domain.Vault
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	versions := newTextVersions(cfg.buildVaultWiring(), db)
+	versions := cfg.openTextVersions(db)
 	_, s, vaultDeps := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, versions)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, s, db, v)
@@ -303,7 +303,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	vaultDeps.TextVersions.Changes.SetListener(cutOnChange{t: t, extract: extract})
-	data := openPluginData(vaultDeps)
+	data := openPluginData(vaultDeps.Options, vaultDeps.TextVersions)
 
 	if err := data.DeletePluginData(t.Context(), v, transcriber); err != nil {
 		t.Fatal(err)
@@ -343,7 +343,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	texts := newTextVersions(cfg.buildVaultWiring(), db)
+	texts := cfg.openTextVersions(db)
 	_, s, _ := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, texts)
 	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
 	readIntoIndex(t, s, db, v)
@@ -360,7 +360,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	texts = newTextVersions(cfg.buildVaultWiring(), db)
+	texts = cfg.openTextVersions(db)
 	_, s, vaultDeps := buildVaultSearch(cfg.Config, cfg.Execution, cfg.Preferences, cfg.Endpoints, cfg.Resources, texts)
 	readIntoIndex(t, s, db, v)
 

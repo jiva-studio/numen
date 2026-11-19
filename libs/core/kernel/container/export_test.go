@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -81,7 +82,7 @@ func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultRead
 }
 
 func (c TestInstallation) VaultWatcher() vaultport.VaultWatcher {
-	return vaultWatcher(c.buildVaultWiring())
+	return c.buildVaultWiring().Watcher
 }
 
 // AbsentBinding is the binding of a plugin host that runs nothing.
@@ -107,8 +108,6 @@ func notifyHost(c settingsWiring, batch []settingsdomain.Setting) { notifyPlugin
 func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File, error) {
 	return settingsStore(c).ReadUncheckedAt(path)
 }
-
-func fileMovers(c vaultWiring) vaultport.FileMovers { return vaultWriters(c) }
 
 func Scan(c TestInstallation, db *Index) vault.Scan { return searchScan(searchOf(c), db) }
 
@@ -142,7 +141,7 @@ func UnsubscribeHost(c TestInstallation) {
 }
 
 func VaultReaders(c TestInstallation) vaultport.VaultReaders {
-	return vaultReaders(c.buildVaultWiring())
+	return c.buildVaultWiring().Readers
 }
 
 func UpdateIndex(c TestInstallation, db *Index) edit.IndexUpdater {
@@ -154,7 +153,8 @@ func UpdateIndex(c TestInstallation, db *Index) edit.IndexUpdater {
 }
 
 func Moves(c TestInstallation, ctx context.Context) (<-chan struct{}, error) {
-	return vaultMoves(c.buildVaultWiring(), ctx)
+	access := c.buildVaultWiring()
+	return vaultMoves(ctx, access.IndexPath, access.Watcher)
 }
 
 func Notes(c TestInstallation, db *Index, index edit.IndexUpdater) NoteUseCases {
@@ -225,4 +225,8 @@ func AdaptTestPlugins(management *PluginManagement, supervision *PluginSupervisi
 
 func GetRefresh(c TestInstallation, db *Index) vault.Refresh {
 	return vaultMakeRefresh(c.buildVaultWiring(), db, db.Notes())
+}
+
+func (c TestInstallation) openTextVersions(db *Index) *TextVersions {
+	return newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, getRunningExecution(c.Execution, c.SafeMode).Runtime.TextPlugins, GetClock(c.Resources), db)
 }
