@@ -71,6 +71,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	mux.Handle(numenv1connect.NewHostWindowServiceHandler(&windowEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewPluginHealthServiceHandler(&healthEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewPluginServiceHandler(&processEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewLogServiceHandler(&logsEndpoint{endpoint: endpoint}))
 	countingHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		endpoint.callCount.Add(1)
 		defer endpoint.callCount.Add(-1)

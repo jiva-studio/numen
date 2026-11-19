@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 	"syscall"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
@@ -315,8 +316,28 @@ func resolvePath(path string) string {
 // file keeps the writers of other processes apart too. Every writer of one file shares
 // one Files.
 type Files struct {
-	mu      sync.Mutex
-	version atomic.Uint64
+	mu       sync.Mutex
+	version  atomic.Uint64
+	logLevel atomic.Int32
+}
+
+// GetLogLevel returns the active log level most recently read or written by a Store over this Files.
+func (f *Files) GetLogLevel() logs.Level {
+	if f == nil {
+		return logs.DefaultLevel
+	}
+	raw := logs.Level(f.logLevel.Load())
+	if raw < logs.LevelDebug || raw > logs.LevelError {
+		return logs.DefaultLevel
+	}
+	return raw
+}
+
+func (f *Files) setLogLevel(level logs.Level) {
+	if f == nil {
+		return
+	}
+	f.logLevel.Store(int32(level))
 }
 
 // ErrNoFiles is returned by a settings read or write that was given no Files.

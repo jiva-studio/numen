@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
@@ -54,6 +55,11 @@ type Callers struct {
 	Health    HealthCalls
 	Processes ProcessRelease
 	Files     FileTypes
+}
+
+// LogWriter records a structured log entry reported by a plugin backend.
+type LogWriter interface {
+	Execute(entry logs.Entry) error
 }
 
 // FileTypes tells which files a plugin takes, by the types its manifest declares.

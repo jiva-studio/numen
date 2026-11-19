@@ -29,6 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 )
 
 // DB owns the connections.
@@ -74,7 +75,11 @@ type Option func(*settings)
 
 // settings are what one index is opened with, and nothing outside this call
 // reads them.
-type settings struct{ synchronous string }
+type settings struct {
+	synchronous string
+	clock       QueryClock
+	onQuery     func(logs.Entry)
+}
 
 // Unsynchronized opens an index that does not wait for the disk on a commit. WAL, the single
 // writer and the busy timeout stay as they are; only the moment of the flush moves.
@@ -100,7 +105,7 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	}
 
 	// The first connection reports an unusable path.
-	write, err := sql.Open("sqlite", writeDSN(path, pos))
+	write, err := openSQLitePool(writeDSN(path, pos), "write", pos)
 	if err != nil {
 		return nil, fmt.Errorf("open the index at %s: %w", path, err)
 	}
@@ -112,7 +117,7 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 		return nil, errors.Join(err, write.Close())
 	}
 
-	read, err := sql.Open("sqlite", dsn(path, pos))
+	read, err := openSQLitePool(dsn(path, pos), "read", pos)
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("open the index at %s: %w", path, err), write.Close())
 	}

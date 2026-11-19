@@ -9,6 +9,7 @@ import (
 	"context"
 	"sync/atomic"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
@@ -148,4 +149,8 @@ func (s *State) GetMediaAddress(v domain.Vault, stat domain.FileStat) string {
 // while the socket does not answer.
 func (s *State) GetPluginFileAddress(v domain.Vault, address file.Address, size int64) string {
 	return s.Playing.Load().PluginFileAddress(v, address, size)
+}
+
+func (s *State) SetCallTrace(clock wire.CallClock, record func(logs.Entry)) {
+	s.Gate.SetCallTrace(wire.NewCallTrace(clock, record))
 }

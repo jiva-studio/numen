@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	domainsettings "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
@@ -27,7 +28,8 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"editor":{"fontSize":19,"fontFamily":"serif","lineHeight":2,"lineNumbers":true,"softWrap":false},
 		"performance":{"profile":"eco"},
 		"search":{"rerankWindow":70,"maxReranked":200,"maxRerankedBytes":2048,"defaultLimit":30,"maxLimit":90,
-			"candidatesPerCondition":250,"maxCandidates":900,"maxPathPrefixes":4,"mergeGapBytes":100,"maxQueryBytes":8192}}}`)
+			"candidatesPerCondition":250,"maxCandidates":900,"maxPathPrefixes":4,"mergeGapBytes":100,"maxQueryBytes":8192},
+		"logging":{"level":"debug"}}}`)
 	want := map[string]any{
 		"appearance.theme":              "mine:sea",
 		"appearance.mode":               "dark",
@@ -50,11 +52,24 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"search.maxPathPrefixes":        4.0,
 		"search.mergeGapBytes":          100.0,
 		"search.maxQueryBytes":          8192.0,
+		"logging.level":                 "debug",
 	}
 	for _, declared := range settings.GetAppDeclaration() {
 		path := append([]string{domainsettings.AppOwner}, strings.Split(declared.Key, ".")...)
 		if got, _ := file.GetValue(path...); got != want[declared.Key] {
 			t.Errorf("%s in force is %v, the file has %v", declared.Key, got, want[declared.Key])
 		}
+	}
+}
+
+func TestLogLevelReadsApplicationLoggingSetting(t *testing.T) {
+	defaultFile := settings.DefaultFile()
+	if got := defaultFile.LogLevel(); got != logs.DefaultLevel {
+		t.Fatalf("default LogLevel = %v, want %v", got, logs.DefaultLevel)
+	}
+
+	debug := readFileWith(t, `{"app":{"logging":{"level":"debug"}}}`)
+	if got := debug.LogLevel(); got != logs.LevelDebug {
+		t.Fatalf("debug LogLevel = %v, want %v", got, logs.LevelDebug)
 	}
 }

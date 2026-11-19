@@ -71,6 +71,7 @@ const IDLE: PluginContextHost = {
     getTasks: () => undefined,
     getBackgroundTasks: () => undefined,
     getProcesses: () => undefined,
+    getLogs: () => undefined,
     getHealth: () => undefined,
     getConnections: () => undefined,
   },

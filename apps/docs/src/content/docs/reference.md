@@ -65,6 +65,12 @@ Two things are not settings and are not in here: which files count as notes, and
 | `mergeGapBytes` | a number | largest gap in bytes between passages of one file that join. From 0 to 4096. |
 | `maxQueryBytes` | a number | most bytes of the text of one query. From 256 to 65536. |
 
+### `app.logging`
+
+| | | |
+| --- | --- | --- |
+| `level` | text | which entries are written to the application log. One of `error`, `warning`, `info`, `debug`. |
+
 ### `md.numen.agents.acp`
 
 The settings of the plugin ACP Agents.

@@ -116,6 +116,7 @@ export function createWorkServiceBridge({ work }: Pick<PluginHostDeps, 'work'>):
     getTasks: (pluginId) => work?.getTasks?.(pluginId),
     getBackgroundTasks: () => work?.getBackgroundTasks?.(),
     getProcesses: () => work?.getProcesses?.(),
+    getLogs: (pluginId) => work?.getLogs?.(pluginId),
     getHealth: (pluginId) => work?.health && createPluginHealth(work.health, pluginId),
     getConnections: (pluginId) => work?.getConnections?.(pluginId),
   }

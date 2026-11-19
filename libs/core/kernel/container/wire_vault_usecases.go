@@ -35,7 +35,7 @@ func openIndex(c vaultWiring, ctx context.Context) (*Index, error) {
 	if err != nil {
 		return nil, err
 	}
-	db, err := index.Open(ctx, path)
+	db, err := index.Open(ctx, path, index.WithQueryLog(c.Clock, c.RecordLog))
 	if err != nil {
 		return nil, err
 	}

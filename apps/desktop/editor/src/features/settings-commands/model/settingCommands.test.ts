@@ -636,6 +636,7 @@ describe('windowConfig and windowPalette', () => {
           },
         ]),
       },
+      read: { getCommittedSetting: () => true },
       write: { writeSettings },
     }
     const palette = createWindowSettingPalette({
@@ -682,5 +683,48 @@ describe('windowConfig and windowPalette', () => {
 
     await palette.choose('setting:app:appearance.theme', 'preset:dracula')
     expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers plugin setting commands only while the plugin is enabled', () => {
+    let isScannerEnabled = false
+    const rest = {
+      state: {
+        app: ref<readonly PluginSettingInfo[]>([THEME]),
+        plugins: ref([
+          {
+            id: PLUGIN.id,
+            name: PLUGIN.name,
+            settings: PLUGIN.settings,
+          },
+        ]),
+      },
+      read: {
+        getCommittedSetting: (path: readonly string[]) =>
+          path[0] === PLUGIN.id && path[1] === 'enabled' ? isScannerEnabled : undefined,
+      },
+      write: { writeSettings: vi.fn(async () => undefined) },
+    }
+    const palette = createWindowSettingPalette({
+      rest: rest as never,
+      appearance: {
+        preview: {
+          keyboard: { previewTheme: vi.fn(), previewMode: vi.fn(), previewSize: vi.fn() },
+          restore: vi.fn(),
+        },
+        reload: vi.fn(async () => undefined),
+      } as never,
+      words: { current: 'Current', on: 'On', off: 'Off' },
+    })
+
+    expect(palette.getCommands().map((one) => one.id)).toStrictEqual([
+      'setting:app:appearance.theme',
+    ])
+
+    isScannerEnabled = true
+    expect(palette.getCommands().map((one) => one.id)).toStrictEqual([
+      'setting:app:appearance.theme',
+      'setting:md.example.scanner:autoScan',
+      'setting:md.example.scanner:engine',
+    ])
   })
 })

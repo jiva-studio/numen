@@ -16,6 +16,7 @@ export * from './themes'
 export * from './tasks'
 export * from './health'
 export * from './processes'
+export * from './logs'
 export {
   formatErrorCodeMessage,
   formatErrorMessage,

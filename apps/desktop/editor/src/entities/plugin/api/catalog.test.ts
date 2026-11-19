@@ -4,6 +4,7 @@ import { createLostConnection, createMockCatalogEntry } from '@numen/core-client
 import { createAnsweredApi, createAnsweredClients } from '@/testing/coreAnswers'
 import { createCatalogReader } from './catalog'
 import { createHealthApi } from './health'
+import { createLogHost } from './logs'
 import { createProcessHost } from './processes'
 
 describe('the entries of the catalog', () => {
@@ -192,5 +193,49 @@ describe('createHealthApi and createProcessHost', () => {
     })
 
     await vi.waitFor(() => expect(seen).toStrictEqual([42]))
+  })
+
+  it('watches and writes structured logs for a plugin', async () => {
+    const written: object[] = []
+    const getLogs = createLogHost(
+      createAnsweredClients({
+        logService: {
+          watchLogs: async function* () {
+            yield {
+              entries: [
+                {
+                  timeUnixMs: 100n,
+                  level: 2,
+                  source: 'core',
+                  message: 'started',
+                  propertiesJson: { ok: 'true' },
+                },
+              ],
+            }
+          },
+          writeLog: (req) => {
+            written.push(req)
+            return {}
+          },
+        },
+      }).logService,
+    )
+    const host = getLogs('md.numen.tools.logs')
+    const seen: string[] = []
+    const subscription = host.watch((entries) => {
+      seen.push(...entries.map((one) => one.message))
+      subscription.dispose()
+    })
+
+    await vi.waitFor(() => expect(seen).toStrictEqual(['started']))
+    await host.write({ level: 'debug', message: 'opened tab', properties: { tab: 'logs' } })
+    expect(written).toMatchObject([
+      {
+        level: 1,
+        source: 'md.numen.tools.logs',
+        message: 'opened tab',
+        propertiesJson: { tab: '"logs"' },
+      },
+    ])
   })
 })

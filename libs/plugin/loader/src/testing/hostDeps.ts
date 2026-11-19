@@ -108,6 +108,7 @@ const MEMBERS: GroupMembers = {
     getConnections: true,
     getBackgroundTasks: true,
     getProcesses: true,
+    getLogs: true,
     health: true,
   },
 }

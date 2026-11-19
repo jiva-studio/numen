@@ -20,6 +20,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/logs"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -123,6 +124,14 @@ func run(errOut io.Writer, mount func(*Server) error, opts ...Option) int {
 	}
 	if err == nil {
 		return 0
+	}
+	if logClient, logErr := logs.NewClientFromEnv(); logErr == nil {
+		if writeLogErr := logClient.Write(context.Background(), logs.Entry{
+			Level:   logs.Error,
+			Message: err.Error(),
+		}); writeLogErr != nil {
+			err = errors.Join(err, writeLogErr)
+		}
 	}
 	if _, writeErr := fmt.Fprintf(errOut, "server error: %v\n", err); writeErr != nil {
 		return 2

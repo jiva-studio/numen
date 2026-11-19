@@ -8,6 +8,7 @@ import {
   createPluginTasks,
   type HostKinds,
   type HostTabs,
+  type HostWork,
   type PickerHost,
   type PluginHostDeps,
   type ProcessHost,
@@ -104,10 +105,11 @@ export function createVaultServiceParts(deps: {
   }
 }
 
-/** The tasks, the connections, the health items and the plugins that run the window gives a plugin. */
+/** The tasks, the connections, the health items, the logs and the plugins that run the window gives a plugin. */
 export function createTaskServiceParts(deps: {
   readonly services: Pick<PluginServices, 'taskList' | 'backgroundTasks'>
   readonly processes: ProcessHost
+  readonly getLogs?: HostWork['getLogs']
   readonly healthReports: HealthApi['healthReports']
   readonly api: Pick<PluginHostApi, 'getPluginConnections'>
   readonly rest: SettingsStore
@@ -119,6 +121,7 @@ export function createTaskServiceParts(deps: {
       getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
       getBackgroundTasks: () => services.backgroundTasks,
       getProcesses: () => deps.processes,
+      ...(deps.getLogs ? { getLogs: deps.getLogs } : {}),
       health: deps.healthReports,
       getConnections: (pluginId) => deps.api.getPluginConnections(pluginId, subscribeRowChanges),
     },

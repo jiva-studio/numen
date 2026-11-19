@@ -23,6 +23,7 @@ type File struct {
 	Editor      Editor      `json:"editor"`
 	Performance Performance `json:"performance"`
 	Search      Search      `json:"search"`
+	Logging     Logging     `json:"logging"`
 	Plugins     map[string]map[string]any
 	Connections []connection.Connection
 	Notices     []string
@@ -35,6 +36,7 @@ type appObject struct {
 	Editor      Editor      `json:"editor"`
 	Performance Performance `json:"performance"`
 	Search      *Search     `json:"search"`
+	Logging     *Logging    `json:"logging"`
 }
 
 // appSections are the sections of the owner app that a read fills in place, so that a section the
@@ -45,6 +47,7 @@ type appSections struct {
 	Editor      *Editor      `json:"editor"`
 	Performance *Performance `json:"performance"`
 	Search      *Search      `json:"search"`
+	Logging     *Logging     `json:"logging"`
 }
 
 const keyVersion = "v"
@@ -79,7 +82,7 @@ func (f *File) MarshalJSON() ([]byte, error) {
 		value any
 	}{
 		{keyVersion, f.Version},
-		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search}},
+		{settings.AppOwner, appObject{f.Appearance, f.Titles, f.Editor, f.Performance, &f.Search, &f.Logging}},
 	}
 	if len(f.Connections) > 0 {
 		members = append(members, struct {
@@ -173,7 +176,7 @@ func (f *File) readApp(raw json.RawMessage) (hasInterfaceScale bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	sections := appSections{&f.Appearance, &f.Titles, &f.Editor, &f.Performance, &f.Search}
+	sections := appSections{&f.Appearance, &f.Titles, &f.Editor, &f.Performance, &f.Search, &f.Logging}
 	return hasInterfaceScale, json.Unmarshal(content, &sections)
 }
 
@@ -271,6 +274,7 @@ func DefaultFile() File {
 		Editor:      DefaultEditor(),
 		Performance: DefaultPerformance(),
 		Search:      DefaultSearch(),
+		Logging:     DefaultLogging(),
 		Plugins:     map[string]map[string]any{},
 	}
 }

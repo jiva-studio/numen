@@ -45,6 +45,10 @@ const (
 	// when the host stops it for idleness, and its worst health item.
 	PermissionPluginsRead = "plugins:read"
 
+	// PermissionLogsRead allows reading and watching the structured log entries of the application,
+	// the database, the windows and the plugins.
+	PermissionLogsRead = "logs:read"
+
 	// PermissionConnectionsUse is the start of the permission connections:use:<operation>, which allows
 	// calling the operation through every connection that serves it, and listing those connections and the
 	// values of their row fields. No setting of rows of the plugin lists the operation.
@@ -62,6 +66,7 @@ func PluginPermissions() []string {
 	return []string{
 		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionLinkOpen,
 		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus, PermissionPluginsRead,
+		PermissionLogsRead,
 	}
 }
 

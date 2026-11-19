@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -84,6 +85,7 @@ type vaultWiring struct {
 	SyncSetting  naming.SyncSetting
 	CutNotes     chunking.CutNotes
 	SetNoteCut   func(*vault.Scan)
+	RecordLog    index.QueryLogFunc
 }
 
 func vaultRegistry(c vaultWiring) (vaultregistry.Ports, error) {

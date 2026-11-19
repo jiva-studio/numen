@@ -16,6 +16,7 @@ import type {
   FileSelectEvent,
   HealthHost,
   JsonValue,
+  LogHost,
   MountedView,
   NoticeHost,
   PickerHost,
@@ -236,12 +237,13 @@ export interface HostVault {
   readonly resolveLink?: (from: string, address: string) => Promise<string>
 }
 
-/** The background work of the window: the tasks, the connections, the processes and the health items. */
+/** The background work of the window: the tasks, the connections, the processes, the logs and the health items. */
 export interface HostWork {
   readonly getTasks?: (pluginId: string) => TaskHost | undefined
   readonly getConnections?: (pluginId: string) => ConnectionHost
   readonly getBackgroundTasks?: () => BackgroundTaskHost | undefined
   readonly getProcesses?: () => ProcessHost | undefined
+  readonly getLogs?: (pluginId: string) => LogHost | undefined
   readonly health?: HealthReports
 }
 
@@ -398,6 +400,7 @@ export interface ContextWorkHost {
   readonly getConnections: (pluginId: string) => ConnectionHost | undefined
   readonly getBackgroundTasks: () => BackgroundTaskHost | undefined
   readonly getProcesses: () => ProcessHost | undefined
+  readonly getLogs: (pluginId: string) => LogHost | undefined
   readonly getHealth: (pluginId: string) => HealthHost | undefined
 }
 

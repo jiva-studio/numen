@@ -6,6 +6,7 @@ import type { NoticeHost } from './notices'
 import type { PickerHost } from './picker'
 import type { TaskHost } from './tasks'
 import type { ProcessHost } from './processes'
+import type { LogHost } from './logs'
 import type { BackgroundTaskHost } from './backgroundTasks'
 import type { HealthHost } from './health'
 import type { CommandItem, CommandsHost, CommandTarget } from './commands'
@@ -310,12 +311,13 @@ export interface PluginUi {
   ): MountedView
 }
 
-// PluginWork is the connections and the background work of the core, and the plugins that run.
+// PluginWork is the connections and the background work of the core, the plugins that run, and the application logs.
 export interface PluginWork {
   readonly connections?: ConnectionHost
   readonly tasks?: TaskHost
   readonly backgroundTasks?: BackgroundTaskHost
   readonly processes?: ProcessHost
+  readonly logs?: LogHost
 }
 
 // PluginContext is what an activated plugin owns: who it is, what it registers, its settings,

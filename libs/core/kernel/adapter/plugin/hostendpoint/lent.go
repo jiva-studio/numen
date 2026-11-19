@@ -7,7 +7,7 @@ import (
 )
 
 // Lent is what the host lends to the plugins that call it: the calls on models, the rows, the vault, the
-// texts, the window, the list of vaults, the search and the queue of work. What is not lent is nil, and a call
+// texts, the window, the list of vaults, the search, the queue of work and the log writer. What is not lent is nil, and a call
 // that needs it is refused.
 type Lent struct {
 	ModelCalls ModelCalls
@@ -18,6 +18,7 @@ type Lent struct {
 	VaultList  vault.List
 	Search     *SearchAccess
 	Work       WorkQueue
+	Logs       LogWriter
 }
 
 // Lender keeps the Lent the services read. It is replaced whole at each change, so a call reads one
@@ -81,3 +82,6 @@ func (s *Services) GetPluginSearch() *SearchAccess { return s.source().Search }
 
 // GetPluginWork returns the queue and the list of tasks the plugins use, or nil.
 func (s *Services) GetPluginWork() WorkQueue { return s.source().Work }
+
+// GetPluginLogs returns the log writer the plugins use, or nil.
+func (s *Services) GetPluginLogs() LogWriter { return s.source().Logs }

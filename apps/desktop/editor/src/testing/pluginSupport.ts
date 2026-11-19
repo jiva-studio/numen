@@ -99,6 +99,7 @@ export function createTestPluginSupport(deps: TestPluginSupportDeps) {
       createTaskServiceParts({
         services,
         processes: api.plugins.processes,
+        getLogs: api.plugins.logs,
         healthReports: api.plugins.health.healthReports,
         api: api.plugins.pluginHost,
         rest: deps.rest,
