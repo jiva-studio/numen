@@ -27,13 +27,11 @@ func (u Search) rankSource(ctx context.Context, v domain.Vault, source *external
 	switch {
 	case ctx.Err() != nil:
 		return nil, ctx.Err()
-	case errors.Is(answer.err, context.DeadlineExceeded):
+	case errors.Is(answer.err, context.DeadlineExceeded), errors.Is(answer.err, context.Canceled):
 		u.errorHandler(fmt.Errorf("search source %d: %w", source.number, answer.err))
 	case answer.err == nil:
 		u.reportAnswered()
 		return &answer.ranking, nil
-	case errors.Is(answer.err, context.Canceled):
-		return nil, answer.err
 	default:
 		u.errorHandler(answer.err)
 	}

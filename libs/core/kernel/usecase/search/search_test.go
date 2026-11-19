@@ -318,17 +318,19 @@ func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 	}
 }
 
-func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
-	// A search whose caller canceled returns the cancellation error, not a
-	// words-only result.
-	ctx := t.Context()
+func TestACanceledSourcePreservesTheWordsToAnswer(t *testing.T) {
 	c := newCorpus(t)
+	var reported error
+	source := outOfReach{why: context.Canceled}
+	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(source),
+		func(err error) { reported = err }, nil)
 
-	canceled := outOfReach{why: context.Canceled}
-	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, c.participants(canceled), func(error) {}, nil)
-
-	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {
-		t.Fatalf("got %v", err)
+	found, err := finds.Execute(t.Context(), c.first, "disorder", search.Parameters{})
+	if err != nil || len(found) != 1 || !strings.Contains(found[0].Path, "Entropy") {
+		t.Fatalf("search returned %v, %v", sources(found), err)
+	}
+	if !errors.Is(reported, context.Canceled) {
+		t.Fatalf("source diagnostic = %v", reported)
 	}
 }
 

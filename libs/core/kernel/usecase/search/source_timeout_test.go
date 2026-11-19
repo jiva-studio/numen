@@ -153,3 +153,27 @@ func TestAShorterSourceDeadlinePreservesTheHealthyRanking(t *testing.T) {
 		t.Fatalf("source deadline diagnostic = %v", reported)
 	}
 }
+
+func TestCallerCancellationStopsAnActiveSearch(t *testing.T) {
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	started := make(chan struct{})
+	source := rankFunc(func(ctx context.Context) (Ranking, error) {
+		close(started)
+		<-ctx.Done()
+		return Ranking{}, ctx.Err()
+	})
+	u := New(nil, nil, nil, []Participant{source}, func(err error) {
+		t.Errorf("caller cancellation reported as source failure: %v", err)
+	}, nil)
+	done := make(chan error, 1)
+	go func() {
+		_, err := u.rankAll(ctx, domain.Vault{}, "word", Parameters{Sources: 1})
+		done <- err
+	}()
+	<-started
+	cancel()
+	if err := <-done; !errors.Is(err, context.Canceled) {
+		t.Fatalf("search returned %v", err)
+	}
+}
