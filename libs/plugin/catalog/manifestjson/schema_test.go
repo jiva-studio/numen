@@ -71,8 +71,8 @@ const everyFieldManifest = `{
 		"operations": [{"name": "llm.complete", "title": "complete text"}, {"name": "llm.models", "title": "list models"}],
 		"searchFunctions": {"version": 1, "functions": [{"name": "rhymes", "args": [{"name": "word", "type": "string"}], "level": "document",
 			"description": "notes that rhyme with a word", "example": "rhymes(\"moon\")"}]},
-		"licenses": [{"id": "supporter", "title": "Supporter", "description": "Shows the Supporter badge", "offlineGraceDays": 30,
-			"providers": [{"provider": "creem", "productId": "prod_supporter", "url": "https://creem.io/buy/supporter"}]}]}
+		"licenses": [{"id": "sync", "title": "Numen Sync", "description": "Synchronizes your vaults across devices", "offlineGraceDays": 30,
+			"providers": [{"provider": "creem", "productId": "prod_sync", "url": "https://creem.io/buy/sync"}]}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

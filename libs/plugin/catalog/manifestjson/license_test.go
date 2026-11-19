@@ -10,19 +10,19 @@ import (
 
 func TestDecodeReadsLicensesAndProviders(t *testing.T) {
 	m, err := manifestjson.Decode([]byte(`{
-		"id": "md.example.supporter",
-		"name": "Supporter",
+		"id": "md.example.sync",
+		"name": "Numen Sync",
 		"version": "1.0.0",
 		"contributes": {
 			"licenses": [
 				{
-					"id": "supporter",
-					"title": "Supporter",
-					"description": "Shows the Supporter badge",
+					"id": "sync",
+					"title": "Numen Sync",
+					"description": "Synchronizes your vaults across devices",
 					"offlineGraceDays": 45,
 					"providers": [
-						{"provider": "creem", "productId": "prod_supporter", "url": "https://creem.io/buy/supporter"},
-						{"provider": "dodo", "productId": "pdt_supporter"}
+						{"provider": "creem", "productId": "prod_sync", "url": "https://creem.io/buy/sync"},
+						{"provider": "dodo", "productId": "pdt_sync"}
 					]
 				},
 				{
@@ -39,13 +39,13 @@ func TestDecodeReadsLicensesAndProviders(t *testing.T) {
 	grace := 45
 	want := []manifest.License{
 		{
-			ID:               "supporter",
-			Title:            "Supporter",
-			Description:      "Shows the Supporter badge",
+			ID:               "sync",
+			Title:            "Numen Sync",
+			Description:      "Synchronizes your vaults across devices",
 			OfflineGraceDays: &grace,
 			Providers: []manifest.LicenseProvider{
-				{Provider: "creem", ProductID: "prod_supporter", URL: "https://creem.io/buy/supporter"},
-				{Provider: "dodo", ProductID: "pdt_supporter"},
+				{Provider: "creem", ProductID: "prod_sync", URL: "https://creem.io/buy/sync"},
+				{Provider: "dodo", ProductID: "pdt_sync"},
 			},
 		},
 		{

@@ -55,7 +55,7 @@ func TestListContributions_TitleFallsBackToID(t *testing.T) {
 		TabKinds:        []manifest.TabKind{{Kind: "graph", Title: "Graph"}, {Kind: "list"}},
 		ConnectionTypes: []manifest.ConnectionType{{ID: "openai"}},
 		Operations:      []manifest.Operation{{Name: "llm.chat", Title: "chat"}},
-		Licenses:        []manifest.License{{ID: "supporter", Title: "Supporter"}, {ID: "custom"}},
+		Licenses:        []manifest.License{{ID: "sync", Title: "Numen Sync"}, {ID: "custom"}},
 		Themes:          []manifest.Theme{{ID: "sea", Name: "Sea"}},
 		Slots:           []manifest.SlotEntry{{Slot: "statusBar.right", View: "clock"}},
 		Listeners:       []manifest.Listener{{Name: "mcp", PortSetting: "port"}, {Name: "fixed", Port: 8080}},
@@ -73,7 +73,7 @@ func TestListContributions_TitleFallsBackToID(t *testing.T) {
 		{Kind: plugin.ContributionConnectionTypes, Items: []plugin.ContributionItem{{Text: "openai", Detail: "openai"}}},
 		{Kind: plugin.ContributionOperations, Items: []plugin.ContributionItem{{Text: "chat", Detail: "llm.chat"}}},
 		{Kind: plugin.ContributionLicenses, Items: []plugin.ContributionItem{
-			{Text: "Supporter", Detail: "supporter"}, {Text: "custom", Detail: "custom"},
+			{Text: "Numen Sync", Detail: "sync"}, {Text: "custom", Detail: "custom"},
 		}},
 	}
 	if !reflect.DeepEqual(got, want) {

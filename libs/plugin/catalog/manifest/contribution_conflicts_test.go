@@ -80,34 +80,34 @@ func TestListContributionConflicts(t *testing.T) {
 		"two plugins contributing to the same license id with matching provider productId": {
 			plugins: []manifest.Discovered{
 				plugin("md.example.a", manifest.Contributes{Licenses: []manifest.License{{
-					ID: "supporter", Description: "A", Providers: []manifest.LicenseProvider{{Provider: "creem", ProductID: "prod_1"}},
+					ID: "sync", Description: "A", Providers: []manifest.LicenseProvider{{Provider: "creem", ProductID: "prod_1"}},
 				}}}),
 				plugin("md.example.b", manifest.Contributes{Licenses: []manifest.License{{
-					ID: "supporter", Description: "B", Providers: []manifest.LicenseProvider{{Provider: "creem", ProductID: "prod_1", URL: "https://creem.io/buy/1"}},
+					ID: "sync", Description: "B", Providers: []manifest.LicenseProvider{{Provider: "creem", ProductID: "prod_1", URL: "https://creem.io/buy/1"}},
 				}}}),
 			},
 		},
 		"two plugins declaring different productId for the same license provider": {
 			plugins: []manifest.Discovered{
 				plugin("md.example.a", manifest.Contributes{Licenses: []manifest.License{{
-					ID: "supporter", Description: "A", Providers: []manifest.LicenseProvider{{Provider: "creem", ProductID: "prod_1"}},
+					ID: "sync", Description: "A", Providers: []manifest.LicenseProvider{{Provider: "creem", ProductID: "prod_1"}},
 				}}}),
 				plugin("md.example.b", manifest.Contributes{Licenses: []manifest.License{{
-					ID: "supporter", Description: "B", Providers: []manifest.LicenseProvider{{Provider: "creem", ProductID: "prod_2"}},
+					ID: "sync", Description: "B", Providers: []manifest.LicenseProvider{{Provider: "creem", ProductID: "prod_2"}},
 				}}}),
 			},
-			want: []string{`plugin "md.example.b" declares the license provider "supporter/creem", which plugin "md.example.a" already declares`},
+			want: []string{`plugin "md.example.b" declares the license provider "sync/creem", which plugin "md.example.a" already declares`},
 		},
 		"two plugins declaring different url for the same license provider": {
 			plugins: []manifest.Discovered{
 				plugin("md.example.a", manifest.Contributes{Licenses: []manifest.License{{
-					ID: "supporter", Description: "A", Providers: []manifest.LicenseProvider{{Provider: "dodo", URL: "https://checkout.dodopayments.com/buy/1"}},
+					ID: "sync", Description: "A", Providers: []manifest.LicenseProvider{{Provider: "dodo", URL: "https://checkout.dodopayments.com/buy/1"}},
 				}}}),
 				plugin("md.example.b", manifest.Contributes{Licenses: []manifest.License{{
-					ID: "supporter", Description: "B", Providers: []manifest.LicenseProvider{{Provider: "dodo", URL: "https://checkout.dodopayments.com/buy/2"}},
+					ID: "sync", Description: "B", Providers: []manifest.LicenseProvider{{Provider: "dodo", URL: "https://checkout.dodopayments.com/buy/2"}},
 				}}}),
 			},
-			want: []string{`plugin "md.example.b" declares the license provider "supporter/dodo", which plugin "md.example.a" already declares`},
+			want: []string{`plugin "md.example.b" declares the license provider "sync/dodo", which plugin "md.example.a" already declares`},
 		},
 	}
 	for name, one := range cases {
