@@ -2,6 +2,3 @@
 export { createLicenseStore, type LicenseStore } from './model/licenses'
 export { createLicenseApi, type LicenseApi } from './api/licenses'
 export type { LicenseInfo, LicenseProviderOptionInfo } from './lib/types'
-
-
-

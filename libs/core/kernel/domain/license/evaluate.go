@@ -52,7 +52,7 @@ func mergePluginLicense(
 		decl = &Declaration{
 			ID:               lic.ID,
 			Title:            lic.Title,
-			OfflineGraceDays: lic.GetOfflineGraceDays(),
+			OfflineGraceDays: getLicenseOfflineGraceDays(lic),
 		}
 		byID[lic.ID] = decl
 		ids = append(ids, lic.ID)
@@ -72,7 +72,7 @@ func applySecondaryLicenseFields(decl *Declaration, lic manifest.License) {
 	if decl.Title == "" && lic.Title != "" {
 		decl.Title = lic.Title
 	}
-	if days := lic.GetOfflineGraceDays(); days < decl.OfflineGraceDays {
+	if days := getLicenseOfflineGraceDays(lic); days < decl.OfflineGraceDays {
 		decl.OfflineGraceDays = days
 	}
 }
@@ -191,10 +191,17 @@ func evaluateActiveProviderEnvelope(env Envelope, decl Declaration, nowUTC time.
 
 func isOfflineGraceElapsed(graceDays int, verifiedAt, nowUTC time.Time) bool {
 	if graceDays <= 0 {
-		graceDays = manifest.DefaultLicenseOfflineGraceDays
+		graceDays = manifest.DefaultOfflineGraceDays
 	}
 	graceDeadline := verifiedAt.Add(time.Duration(graceDays) * 24 * time.Hour)
 	return !nowUTC.Before(graceDeadline)
+}
+
+func getLicenseOfflineGraceDays(lic manifest.License) int {
+	if lic.OfflineGraceDays == nil || *lic.OfflineGraceDays <= 0 {
+		return manifest.DefaultOfflineGraceDays
+	}
+	return *lic.OfflineGraceDays
 }
 
 func evaluateExpiration(expiresAtStr string, nowUTC time.Time) (bool, bool) {
