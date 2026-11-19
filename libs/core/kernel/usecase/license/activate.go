@@ -39,7 +39,11 @@ func (u *Activate) Execute(ctx context.Context, req ActivateRequest) (license.In
 	if err != nil {
 		return license.Info{}, err
 	}
-	return result.(license.Info), nil
+	info, ok := result.(license.Info)
+	if !ok {
+		return license.Info{}, fmt.Errorf("activate license: unexpected result")
+	}
+	return info, nil
 }
 
 func (u *Activate) activateOnce(ctx context.Context, req ActivateRequest, cleanedKey string) (license.Info, error) {

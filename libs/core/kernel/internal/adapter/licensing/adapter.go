@@ -251,9 +251,9 @@ func readPlatformMachineID() string {
 	var command *exec.Cmd
 	switch runtime.GOOS {
 	case "darwin":
-		command = exec.Command("ioreg", "-rd1", "-c", "IOPlatformExpertDevice")
+		command = exec.CommandContext(context.Background(), "ioreg", "-rd1", "-c", "IOPlatformExpertDevice")
 	case "windows":
-		command = exec.Command("wmic", "csproduct", "get", "uuid")
+		command = exec.CommandContext(context.Background(), "wmic", "csproduct", "get", "uuid")
 	default:
 		return ""
 	}
@@ -261,7 +261,7 @@ func readPlatformMachineID() string {
 	if err != nil {
 		return ""
 	}
-	for _, line := range strings.Split(string(output), "\n") {
+	for line := range strings.SplitSeq(string(output), "\n") {
 		trimmed := strings.TrimSpace(line)
 		if runtime.GOOS == "darwin" && strings.Contains(trimmed, "IOPlatformUUID") {
 			parts := strings.Split(trimmed, "=")
