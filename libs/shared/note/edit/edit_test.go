@@ -480,13 +480,16 @@ func TestEditSpliceAndHelperBranches(t *testing.T) {
 		t.Errorf("MaxBytes = %d, want 1048576", edit.MaxBytes)
 	}
 
-	// Missing note with ShouldOverwrite: true and non-empty Baseline creates the note.
+	// A baseline protects an externally deleted note.
 	fMissingBaseline := newFiles(nil)
 	eMissingBaseline := editing(fMissingBaseline)
 	eMissingBaseline.ShouldOverwrite = true
 	eMissingBaseline.Baseline = &edit.Baseline{Prose: "# Old\n", FileStat: domain.FileStat{Path: "New.md", Size: 6}}
-	if _, err := eMissingBaseline.Apply(t.Context(), getVault(), "New.md", func(doc *markdown.Document) error { return doc.SetBody("# Created\n") }); err != nil {
-		t.Errorf("creating missing note with Baseline failed: %v", err)
+	if _, err := eMissingBaseline.Apply(t.Context(), getVault(), "New.md", func(doc *markdown.Document) error { return doc.SetBody("# Created\n") }); !errors.Is(err, edit.ErrStale) {
+		t.Errorf("expected ErrStale after deletion, got %v", err)
+	}
+	if _, exists := fMissingBaseline.content["New.md"]; exists {
+		t.Error("conditional edit recreated the deleted note")
 	}
 
 	// Missing note with ShouldOverwrite: false and non-zero FileStat fails in readNote with "read ...: ErrNoNote".
