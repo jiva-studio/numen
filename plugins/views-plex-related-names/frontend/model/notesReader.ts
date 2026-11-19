@@ -4,7 +4,9 @@ import type { Caught, NoteGraph, PluginEvents, VaultNotes } from '@numen/plugin-
 
 /** What the notes are read with and kept up to date through. */
 export interface NotesReaderSource {
-  readonly notes: Pick<VaultNotes, 'listRelatedNotes'>
+  readonly notes: Pick<VaultNotes, 'listRelatedNotes'> & {
+    readonly peekRelatedNote?: (path: string) => NoteGraph | undefined
+  }
   readonly events: Pick<PluginEvents, 'onVaultChange'>
   readonly reportFailure: (error: Caught) => void
 }
@@ -120,10 +122,11 @@ export function createNotesReader(source: NotesReaderSource): NotesReader {
       }
       let entry = entries.get(path)
       if (!entry) {
+        const cached = source.notes.peekRelatedNote?.(path)
         entry = {
           path,
-          noteGraph: shallowRef(null),
-          isReadEnded: shallowRef(false),
+          noteGraph: shallowRef(cached?.focus.path ? cached : null),
+          isReadEnded: shallowRef(cached !== undefined),
           leases: 0,
           latest: 0,
           isReading: false,

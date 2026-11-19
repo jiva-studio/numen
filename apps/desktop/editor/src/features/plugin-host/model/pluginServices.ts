@@ -139,6 +139,9 @@ const FOUND_LIMIT = 20
 /** The notes of the vault as a plugin reads and writes them, with an action to forget cached related notes when the vault changes. */
 export interface CachedVaultNotes extends VaultNotes {
   readonly clearRelatedNotes: () => void
+  readonly peekRelatedNote: (
+    path: string,
+  ) => Awaited<ReturnType<VaultNotes['listRelatedNotes']>>[number] | undefined
 }
 
 export function createVaultNotes(deps: VaultNotesDeps): CachedVaultNotes {
@@ -149,6 +152,7 @@ export function createVaultNotes(deps: VaultNotesDeps): CachedVaultNotes {
   >()
   return {
     clearRelatedNotes: () => relatedAtDepthOne.clear(),
+    peekRelatedNote: (path) => relatedAtDepthOne.get(path),
     listRelatedNotes: async (paths, depth = 1) => {
       if (depth !== 1) return notes.listRelatedNotes(paths, depth)
       const missing: string[] = []
