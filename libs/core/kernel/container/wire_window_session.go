@@ -3,11 +3,13 @@ package container
 import (
 	"context"
 	"io"
+	"strconv"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -57,6 +59,20 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a), diag),
 		Passes:   parts.passes, Triggers: getTriggerSource(a, parts.frontmatter), StartFeed: parts.startFeed,
+		Report: func(v domain.Vault, event string, err error) {
+			if a.vault.RecordLog == nil {
+				return
+			}
+			level := logs.LevelInfo
+			if err != nil || event == "Vault watch stopped" {
+				level = logs.LevelWarning
+			}
+			properties := map[string]string{"vault": strconv.Quote(string(v.ID))}
+			if err != nil {
+				properties["error"] = strconv.Quote(err.Error())
+			}
+			a.vault.RecordLog(logs.Entry{Level: level, Source: logs.SourceCore, Message: event, Properties: properties})
+		},
 	})
 	identity := vault.NewCheckIdentity(vaultIdentity(a.vault))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)

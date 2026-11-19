@@ -14,21 +14,25 @@ const formatLoadError = (error: Caught): string =>
 export function createPluginReports(
   log: Pick<MessageLog, 'getWriter'>,
   getPluginName: (pluginId: string) => string,
+  record?: (pluginId: string, phase: string, severity: 'warning' | 'error') => void,
 ) {
-  const write = (pluginId: string, text: string, severity: 'warning' | 'error') =>
+  const write = (pluginId: string, text: string, severity: 'warning' | 'error', phase: string) => {
     log.getWriter(`plugin:${pluginId}`)(text, severity)
+    record?.(pluginId, phase, severity)
+  }
   return {
     writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') =>
-      write(pluginId, `${getPluginName(pluginId)}: ${message}`, severity),
+      write(pluginId, `${getPluginName(pluginId)}: ${message}`, severity, 'registration'),
     reportViewIssue: (pluginId: string, message: string) =>
-      write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'error'),
+      write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'error', 'view'),
     reportCommandIssue: (pluginId: string, message: string) =>
-      write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'warning'),
+      write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'warning', 'command'),
     reportError: (pluginId: string, error: Caught) =>
       write(
         pluginId,
         PLUGIN_FAILURE_WORDS.error(getPluginName(pluginId), formatError(error)),
         'error',
+        'runtime',
       ),
     reportLoadError: (pluginId: string, error: Caught) =>
       write(
@@ -38,6 +42,7 @@ export function createPluginReports(
           `${PLUGIN_FAILURE_WORDS.loadFailed}: ${formatLoadError(error)}`,
         ),
         'error',
+        'activation',
       ),
   }
 }

@@ -62,6 +62,7 @@ func (g *Gateway) Chat(
 	defer cancel()
 	defer closeBody(response.Body)
 	if response.StatusCode < 200 || response.StatusCode > 299 {
+		g.report(ctx, "/chat/completions", "http_status", response.StatusCode)
 		return nil, g.mapStatus(response)
 	}
 	finish, err := readChatStream(requestCtx, bufio.NewReader(response.Body), limit, send)
@@ -74,8 +75,10 @@ func (g *Gateway) Chat(
 		case ctx.Err() != nil:
 			return nil, ctx.Err()
 		case errors.As(err, &failure):
+			g.report(ctx, "/chat/completions", "stream", response.StatusCode)
 			return nil, failure.err
 		}
+		g.report(ctx, "/chat/completions", "stream", response.StatusCode)
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	return finish, nil
@@ -135,6 +138,11 @@ func (g *Gateway) openStream(
 	if err != nil {
 		stopCanceling()
 		cancel()
+		failure := getTransportFailure(err)
+		if ctx.Err() == nil && opening.Err() != nil {
+			failure = "timeout"
+		}
+		g.report(ctx, "/chat/completions", failure, 0)
 		if ctx.Err() == nil && opening.Err() != nil {
 			return nil, nil, nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 		}
@@ -146,6 +154,7 @@ func (g *Gateway) openStream(
 		if ctx.Err() != nil {
 			return nil, nil, nil, ctx.Err()
 		}
+		g.report(ctx, "/chat/completions", "timeout", 0)
 		return nil, nil, nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	return response, requestCtx, cancel, nil

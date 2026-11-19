@@ -28,8 +28,20 @@ type Clock interface {
 // next connection after, for a service that is unreachable or slow. A key sent over plain http goes only
 // to a loopback address, so it stays on this machine.
 type Gateway struct {
-	clients clients
-	clock   Clock
+	clients       clients
+	clock         Clock
+	reportFailure func(context.Context, string, string, int)
+}
+
+// SetFailureReporter sets the receiver of HTTP failure classifications.
+func (g *Gateway) SetFailureReporter(report func(context.Context, string, string, int)) {
+	g.reportFailure = report
+}
+
+func (g *Gateway) report(ctx context.Context, operation, failure string, status int) {
+	if g.reportFailure != nil && ctx.Err() == nil {
+		g.reportFailure(ctx, operation, failure, status)
+	}
 }
 
 var _ ports.Gateway = (*Gateway)(nil)

@@ -236,7 +236,9 @@ func openRecordLogFunc(c Config) func(domainlogs.Entry) {
 	record := openRecordLog(c)
 	return func(entry domainlogs.Entry) {
 		if err := record.Execute(entry); err != nil {
-			handleError(c, err)
+			if c.ErrorHandler != nil {
+				c.ErrorHandler(err)
+			}
 		}
 	}
 }

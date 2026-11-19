@@ -6,7 +6,10 @@
 package container
 
 import (
+	"strconv"
+
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -138,8 +141,22 @@ func (c Config) Clock() machineport.Timer {
 }
 
 func handleError(c Config, err error) {
+	recordBackgroundError(c, "Background operation failed", err)
 	if c.ErrorHandler != nil {
 		c.ErrorHandler(err)
+	}
+}
+
+func recordBackgroundError(c Config, message string, err error) {
+	if c.Resources == nil || err == nil {
+		return
+	}
+	logErr := openRecordLog(c).Execute(domainlogs.Entry{
+		Level: domainlogs.LevelError, Source: domainlogs.SourceCore, Message: message,
+		Properties: map[string]string{"error": strconv.Quote(err.Error())},
+	})
+	if logErr != nil && c.ErrorHandler != nil {
+		c.ErrorHandler(logErr)
 	}
 }
 

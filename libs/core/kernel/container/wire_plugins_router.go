@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"strconv"
 	"time"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
+	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
@@ -28,7 +30,25 @@ func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 	show := run.NewDependencyTasks(tasks)
 	c.PluginHost.Watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
 		show.Execute(req.ID, status, func() { c.PluginHost.Watch.CancelDependency(req) })
+		recordDependencyStatus(c.vault.RecordLog, req.ID, status)
 	})
+}
+
+func recordDependencyStatus(record func(domainlogs.Entry), id string, status plugindomain.DependencyStatus) {
+	if record == nil {
+		return
+	}
+	entry := domainlogs.Entry{Source: domainlogs.SourceCore, Properties: map[string]string{"dependency": strconv.Quote(id)}}
+	switch status.State {
+	case plugindomain.DependencyStateReady:
+		entry.Level, entry.Message = domainlogs.LevelInfo, "Plugin dependency ready"
+	case plugindomain.DependencyStateFailed:
+		entry.Level, entry.Message = domainlogs.LevelError, "Plugin dependency failed"
+		entry.Properties["error"] = strconv.Quote(status.Error)
+	default:
+		return
+	}
+	record(entry)
 }
 
 // pluginInstall is where the plugins are installed from and run: the host that runs them, the catalog
@@ -84,10 +104,31 @@ func NewPluginHost(c Config, report func(error), target string, dirs ...string) 
 // the problems the host meets outside a call.
 func OpenPluginRoles(c Config, report func(error), target string, dirs ...string) (*PluginRoles, error) {
 	host := NewPluginRoles(c.Clock(), target, dirs...)
-	host.Failures.SetErrorHandler(report)
+	host.Failures.SetOnFailure(func(failure plugindomain.Failure) {
+		if c.Resources == nil {
+			return
+		}
+		openRecordLogFunc(c)(domainlogs.Entry{
+			Level: domainlogs.LevelError, Source: domainlogs.SourceCore, Message: "Plugin failed",
+			Properties: map[string]string{
+				"plugin": strconv.Quote(failure.PluginID),
+				"reason": strconv.Quote(failure.Reason),
+			},
+		})
+	})
+	host.Failures.SetErrorHandler(func(err error) {
+		recordBackgroundError(c, "Plugin host failure", err)
+		if report != nil {
+			report(err)
+		}
+	})
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	host.Dependencies.Replace(newDependencyRegistry(host.Clock, ""))
-	return host, host.Discovery.Discover()
+	err := host.Discovery.Discover()
+	if err != nil {
+		recordBackgroundError(c, "Plugin discovery failed", err)
+	}
+	return host, err
 }
 
 func setPluginVaultPath(c pluginsWiring, path string) {

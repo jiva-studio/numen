@@ -28,7 +28,15 @@ type Failures struct {
 
 	mu              sync.Mutex
 	onCleared       func(pluginID string)
+	onFailure       func(plugindomain.Failure)
 	reportedTargets map[string]struct{}
+}
+
+// SetOnFailure registers a callback for recorded plugin failures.
+func (f *Failures) SetOnFailure(fn func(plugindomain.Failure)) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.onFailure = fn
 }
 
 // NewFailures returns the failures of the plugins the supervisors track, listed in health. Problems the
@@ -96,6 +104,12 @@ func (f *Failures) list(failure plugindomain.Failure) {
 			Values:  map[string]string{plugindomain.OpenSettingsPlugin: failure.PluginID},
 		},
 	})
+	f.mu.Lock()
+	notify := f.onFailure
+	f.mu.Unlock()
+	if notify != nil {
+		notify(failure)
+	}
 }
 
 // FailActivation sets a plugin whose start failed dormant, and records and lists the failure unless ctx ended.
