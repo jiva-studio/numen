@@ -145,6 +145,12 @@ type Executor interface{ Execute() string }
 
 func NewCached(c Cache) *Find { return &Find{} }
 `,
+		"usecase/find/findtest/support.go": `package fixturedata
+
+import "fixture/usecase/find"
+
+type Harness struct { Caller find.Executor }
+`,
 		"adapter/cache/cache.go": `package cache
 
 type Cache struct{}

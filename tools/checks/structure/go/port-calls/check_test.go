@@ -76,12 +76,20 @@ func (f *Find) Execute() string { return f.cache.Get() }
 func Wrap(c Cache, r Reader) Cache { _ = r.Read(); return c }
 
 func Count(r Reader) int { return len(r.Read()) }
+
+func WrapArray(c Cache, r Reader) [1]Cache { _ = r.Read(); return [1]Cache{c} }
+
+func WrapChannel(r Reader) <-chan Cache { _ = r.Read(); return nil }
 `,
 	})
 	found, read := getPortInterfaceCalls(load.LoadFixture(t, dir), "fixture")
-	want := []string{"find.go:13 find.Wrap calls fixture/usecase/find.Reader.Read"}
-	if got := load.FormatFindings(found); !slices.Equal(got, want) || read != 1 {
-		t.Errorf("the rule rejects %v of %d functions read, want %v of 1", got, read, want)
+	want := []string{
+		"find.go:13 find.Wrap calls fixture/usecase/find.Reader.Read",
+		"find.go:17 find.WrapArray calls fixture/usecase/find.Reader.Read",
+		"find.go:19 find.WrapChannel calls fixture/usecase/find.Reader.Read",
+	}
+	if got := load.FormatFindings(found); !slices.Equal(got, want) || read != len(want) {
+		t.Errorf("the rule rejects %v of %d functions read, want %v of %d", got, read, want, len(want))
 	}
 }
 

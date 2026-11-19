@@ -76,7 +76,8 @@ func getPortInterface(t types.Type, root string) (name string, iface *types.Inte
 	return path + "." + named.Obj().Name(), iface
 }
 
-func stripContainers(t types.Type) types.Type {
+// GetElementType unwraps aliases, pointers and collections to the type of their elements.
+func GetElementType(t types.Type) types.Type {
 	for {
 		switch next := types.Unalias(t).(type) {
 		case *types.Pointer:
@@ -90,13 +91,9 @@ func stripContainers(t types.Type) types.Type {
 		case *types.Chan:
 			t = next.Elem()
 		default:
-			return t
+			return next
 		}
 	}
-}
-
-func isUseCaseTestSupport(pkg *packages.Package) bool {
-	return strings.HasSuffix(pkg.Types.Name(), "test")
 }
 
 func listUseCaseDependencyFields(decl ast.Decl) []*ast.Field {
@@ -147,14 +144,14 @@ func ListPortInterfaces(pkgs []*packages.Package, root string) []PortInterface {
 		seen[one.Name] = true
 	}
 	for _, pkg := range pkgs {
-		if !IsInLayer(pkg.PkgPath, root, "usecase") || isUseCaseTestSupport(pkg) {
+		if !IsInLayer(pkg.PkgPath, root, "usecase") || IsUseCaseTestSupport(pkg.PkgPath) {
 			continue
 		}
 		for _, t := range listUseCaseHeldTypes(pkg) {
 			if t == nil {
 				continue
 			}
-			name, iface := getPortInterface(stripContainers(t), root)
+			name, iface := getPortInterface(GetElementType(t), root)
 			if iface != nil && !seen[name] {
 				seen[name] = true
 				found = append(found, PortInterface{Name: name, Iface: iface})

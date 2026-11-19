@@ -34,21 +34,9 @@ func returnsPort(function *ast.FuncDecl, info *types.Info, ports []load.PortInte
 		return false
 	}
 	for _, result := range function.Type.Results.List {
-		t := info.TypeOf(result.Type)
-		for t != nil {
-			switch next := types.Unalias(t).(type) {
-			case *types.Pointer:
-				t = next.Elem()
-			case *types.Slice:
-				t = next.Elem()
-			case *types.Map:
-				t = next.Elem()
-			default:
-				if named, ok := next.(*types.Named); ok && load.IsPortType(named.Obj(), ports) {
-					return true
-				}
-				t = nil
-			}
+		named, ok := load.GetElementType(info.TypeOf(result.Type)).(*types.Named)
+		if ok && load.IsPortType(named.Obj(), ports) {
+			return true
 		}
 	}
 	return false
