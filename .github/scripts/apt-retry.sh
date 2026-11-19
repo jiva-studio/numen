@@ -76,13 +76,9 @@ for ((attempt = 1; attempt <= attempts; attempt++)); do
     run_bounded "${update[@]}" > /dev/null 2>&1 || true
   fi
   > "$log"
-  tail -n +1 -f "$log" --pid=$$ &
-  tail_pid=$!
   run_bounded "$@" > "$log" 2>&1
   status=$?
-  sleep 0.05
-  kill "$tail_pid" 2>/dev/null || true
-  wait "$tail_pid" 2>/dev/null || true
+  cat "$log"
   if [ "$status" -eq 0 ]; then
     exit 0
   fi
