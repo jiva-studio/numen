@@ -103,7 +103,10 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
       picker,
     }),
   })
-  vault.vaultChanges.subscribe((event) => pluginHost.notifyVaultChange(event))
+  vault.vaultChanges.subscribe((event) => {
+    services.notes.clearRelatedNotes()
+    pluginHost.notifyVaultChange(event)
+  })
   const declaredCommands = useDeclaredCommands({
     list: api.plugins.declaredCommands.listDeclaredCommands,
     run: api.plugins.declaredCommands.runDeclaredCommand,

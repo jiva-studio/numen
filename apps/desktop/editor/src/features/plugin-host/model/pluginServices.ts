@@ -136,10 +136,46 @@ export interface VaultNotesDeps {
 /** How many notes a search for a note to link to answers with, where the plugin names no number. */
 const FOUND_LIMIT = 20
 
-export function createVaultNotes(deps: VaultNotesDeps): VaultNotes {
+/** The notes of the vault as a plugin reads and writes them, with an action to forget cached related notes when the vault changes. */
+export interface CachedVaultNotes extends VaultNotes {
+  readonly clearRelatedNotes: () => void
+}
+
+export function createVaultNotes(deps: VaultNotesDeps): CachedVaultNotes {
   const { notes, search, making, pluginNotes } = deps
+  const relatedAtDepthOne = new Map<
+    string,
+    Awaited<ReturnType<VaultNotes['listRelatedNotes']>>[number]
+  >()
   return {
-    listRelatedNotes: (paths, depth) => notes.listRelatedNotes(paths, depth),
+    clearRelatedNotes: () => relatedAtDepthOne.clear(),
+    listRelatedNotes: async (paths, depth = 1) => {
+      if (depth !== 1) return notes.listRelatedNotes(paths, depth)
+      const missing: string[] = []
+      const seen = new Set<string>()
+      for (const path of paths) {
+        if (!relatedAtDepthOne.has(path) && !seen.has(path)) {
+          seen.add(path)
+          missing.push(path)
+        }
+      }
+      if (missing.length > 0) {
+        const loaded = await notes.listRelatedNotes(missing, 1)
+        missing.forEach((path, index) => {
+          const graph = loaded[index]
+          if (graph) relatedAtDepthOne.set(path, graph)
+        })
+      }
+      return paths.map(
+        (path) =>
+          relatedAtDepthOne.get(path) ?? {
+            focus: { path: '', title: '' },
+            focusType: 'note',
+            related: [],
+            connections: [],
+          },
+      )
+    },
     getHeadings: (paths) => notes.listHeadings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),

@@ -297,6 +297,25 @@ describe('the notes of the vault a plugin is handed', () => {
     expect(graphs.map((graph) => graph.focus.path)).toEqual(['Root.md', 'Other.md'])
   })
 
+  it('keeps the depth 1 related notes of a path in memory until cleared', async () => {
+    const { notes, listRelatedNotes } = createNotes()
+
+    await notes.listRelatedNotes(['Root.md', 'Other.md'], 1)
+    const [cachedRoot, loadedThird] = await notes.listRelatedNotes(['Root.md', 'Third.md'], 1)
+
+    expect(listRelatedNotes).toHaveBeenCalledTimes(2)
+    expect(listRelatedNotes.mock.calls[1]?.[0]).toMatchObject({
+      paths: ['Third.md'],
+      depth: 1,
+    })
+    expect(cachedRoot?.focus.path).toBe('Root.md')
+    expect(loadedThird?.focus.path).toBe('Third.md')
+
+    notes.clearRelatedNotes()
+    await notes.listRelatedNotes(['Root.md'], 1)
+    expect(listRelatedNotes).toHaveBeenCalledTimes(3)
+  })
+
   it('finds notes by name, twenty unless told how many', async () => {
     const { notes, search } = createNotes()
 
