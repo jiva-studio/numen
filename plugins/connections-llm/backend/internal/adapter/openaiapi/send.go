@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -53,20 +54,31 @@ func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Dur
 	}
 	response, err := g.clients.get(isLoopbackRequired).Do(request)
 	if err != nil {
+		g.report(ctx, target.path, getTransportFailure(err), 0)
 		return classifyTransportError(ctx, err)
 	}
 	defer closeBody(response.Body)
 	if response.StatusCode < 200 || response.StatusCode > 299 {
+		g.report(ctx, target.path, "http_status", response.StatusCode)
 		return g.mapStatus(response)
 	}
 	body, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBytes+1))
 	if err != nil {
+		g.report(ctx, target.path, "read_response", response.StatusCode)
 		return classifyTransportError(ctx, err)
 	}
 	if len(body) > maxResponseBytes || json.Unmarshal(body, out) != nil {
+		g.report(ctx, target.path, "invalid_response", response.StatusCode)
 		return connection.NewStopError(connection.ReasonUnavailable)
 	}
 	return nil
+}
+
+func getTransportFailure(err error) string {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "timeout"
+	}
+	return "transport"
 }
 
 func newRequest(ctx context.Context, target endpoint, base *url.URL, key string, in any) (*http.Request, error) {

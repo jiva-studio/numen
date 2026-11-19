@@ -1,9 +1,13 @@
 package service
 
 import (
+	"context"
+	"time"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/logs"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/internal/adapter/openaiapi"
@@ -57,6 +61,18 @@ func Mount(srv *server.Server) error {
 	built, err := newService(clock.System{}, models.Lists{Dir: dir, Report: openaiapi.ReportListError})
 	if err != nil {
 		return err
+	}
+	if client, err := logs.NewClientFromEnv(); err == nil {
+		built.gateway.SetFailureReporter(func(ctx context.Context, operation, failure string, status int) {
+			logging, cancel := context.WithTimeout(context.WithoutCancel(ctx), 250*time.Millisecond)
+			defer cancel()
+			if err := client.Write(logging, logs.Entry{
+				Level: logs.Warning, Message: "Connection request failed",
+				Properties: map[string]any{"operation": operation, "failure": failure, "status": status},
+			}); err != nil {
+				openaiapi.ReportLogError()
+			}
+		})
 	}
 	srv.SetUpdateConfig(built.limits.Configure)
 	srv.OnClose(func() error {

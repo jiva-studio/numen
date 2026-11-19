@@ -57,6 +57,7 @@ func newWindowSession(c Config, a pluginsWiring, state *editor.State, ctx contex
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
 		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a), diag),
 		Passes:   parts.passes, Triggers: getTriggerSource(a, parts.frontmatter), StartFeed: parts.startFeed,
+		Report: editor.ReportVault(a.vault.RecordLog),
 	})
 	identity := vault.NewCheckIdentity(vaultIdentity(a.vault))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)

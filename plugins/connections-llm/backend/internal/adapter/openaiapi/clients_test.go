@@ -10,9 +10,31 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/address"
+	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/servicetype"
 )
+
+func TestRequestFailureReportsStatusWithoutResponseBody(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "private response", http.StatusTooManyRequests)
+	}))
+	defer server.Close()
+	gateway := New(clock.System{})
+	defer gateway.Close()
+	var operation, failure string
+	var status int
+	gateway.SetFailureReporter(func(_ context.Context, op, kind string, code int) {
+		operation, failure, status = op, kind, code
+	})
+	call := connection.Call{Type: servicetype.OpenAI, Fields: map[string]string{servicetype.FieldBaseURL: server.URL}}
+	var response map[string]any
+	err := gateway.send(t.Context(), call, time.Second, endpoint{http.MethodGet, "/models"}, nil, &response)
+	if err == nil || operation != "/models" || failure != "http_status" || status != http.StatusTooManyRequests {
+		t.Fatalf("error %v, operation %q, failure %q, status %d", err, operation, failure, status)
+	}
+}
 
 func newContext(t *testing.T) context.Context {
 	t.Helper()

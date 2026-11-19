@@ -44,6 +44,9 @@ func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
 func GetConfigFor(target string) container.Config {
 	dirs := getPluginsDirs()
 	base := container.Config{KeyStore: getKeyStore(), Resources: container.NewResources()}
+	if path, err := GetIndexPath(); err == nil {
+		base.IndexPath = path
+	}
 	host, discoverErr := container.NewPluginHost(base, reportPluginHost, target, dirs...)
 	reportPluginFailure("discover plugins", discoverErr)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
@@ -51,9 +54,6 @@ func GetConfigFor(target string) container.Config {
 	base.PluginHost, base.PluginCatalog = host, getCatalogConfig(target, dirs, host)
 	cfg := container.NewConfig(base)
 	// A machine with no data folder leaves the path empty, and the core fails to start.
-	if path, err := GetIndexPath(); err == nil {
-		cfg.IndexPath = path
-	}
 	return cfg
 }
 

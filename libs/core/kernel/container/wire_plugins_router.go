@@ -10,11 +10,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -28,6 +30,7 @@ func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 	show := run.NewDependencyTasks(tasks)
 	c.PluginHost.Watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
 		show.Execute(req.ID, status, func() { c.PluginHost.Watch.CancelDependency(req) })
+		supervision.RecordDependencyStatus(c.vault.RecordLog, req.ID, status)
 	})
 }
 
@@ -84,10 +87,14 @@ func NewPluginHost(c Config, report func(error), target string, dirs ...string) 
 // the problems the host meets outside a call.
 func OpenPluginRoles(c Config, report func(error), target string, dirs ...string) (*PluginRoles, error) {
 	host := NewPluginRoles(c.Clock(), target, dirs...)
-	host.Failures.SetErrorHandler(report)
+	record := openOptionalRecordLog(c)
+	host.Failures.SetOnFailure(supervision.ReportPluginFailure(record))
+	host.Failures.SetErrorHandler(windowlogs.ReportError(record, report, "Plugin host failure"))
 	host.ContentTypes.SetContentTypeTable(contenttype.Open())
 	host.Dependencies.Replace(newDependencyRegistry(host.Clock, ""))
-	return host, host.Discovery.Discover()
+	err := host.Discovery.Discover()
+	windowlogs.RecordError(record, "Plugin discovery failed", err)
+	return host, err
 }
 
 func setPluginVaultPath(c pluginsWiring, path string) {

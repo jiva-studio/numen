@@ -32,6 +32,7 @@ import {
   createSettingsClients,
   createVaultClients,
   createWorkspaceClients,
+  createWindowLogClient,
   type WindowTransports,
 } from '@/shared/api/clients'
 
@@ -56,6 +57,7 @@ export function createWindowApi(transports: WindowTransports) {
       listVaults: createVaultListReader({ vaults, getShownVault: shownVault.getShownVault }),
     },
     window: {
+      logs: createWindowLogClient(workspaceClients.logService),
       focus: createFocusApi(workspaceClients.workspace),
       quit: createQuitApi(workspaceClients.windowService),
       shownVault,
@@ -74,7 +76,7 @@ export function createWindowApi(transports: WindowTransports) {
       }),
       health: createHealthApi(pluginClients.pluginHealth),
       processes: createProcessHost(pluginClients.pluginService),
-      logs: createLogHost(pluginClients.logService),
+      logs: createLogHost(workspaceClients.logService),
       listCatalog: createCatalogReader(pluginClients.pluginCatalog),
       findTabKindPlugin: createTabKindPluginFinder(pluginClients.pluginCatalog),
     },

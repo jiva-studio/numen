@@ -7,6 +7,7 @@ package container
 
 import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -138,6 +139,7 @@ func (c Config) Clock() machineport.Timer {
 }
 
 func handleError(c Config, err error) {
+	windowlogs.RecordError(openOptionalRecordLog(c), "Background operation failed", err)
 	if c.ErrorHandler != nil {
 		c.ErrorHandler(err)
 	}

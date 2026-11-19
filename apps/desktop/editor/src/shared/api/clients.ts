@@ -11,6 +11,7 @@ import {
   createConnectionCallServiceClient,
   createConnectionClient,
   createFileClient,
+  createLogClient,
   createLogServiceClient,
   createLicenseClient,
   createLicenseServiceClient,
@@ -57,6 +58,7 @@ export const createWorkspaceClients = ({ transport, keepalive }: WindowTransport
   workspace: createWorkspaceClient(transport),
   keepaliveWorkspace: createWorkspaceClient(keepalive),
   windowService: createWindowClient(transport),
+  logService: createLogServiceClient(transport),
 })
 
 /** The clients of the settings, the connections, the licenses and the themes. */
@@ -79,7 +81,6 @@ export const createPluginHostClients = (transport: Transport) => {
     pluginHealth: createPluginHealthClient(plugins),
     pluginCatalog: createPluginCatalog(createCatalogClient(transport)),
     connectionCalls: createConnectionCallClient(createConnectionCallServiceClient(transport)),
-    logService: createLogServiceClient(plugins),
   }
 }
 
@@ -88,3 +89,11 @@ export type WindowClients = ReturnType<typeof createVaultClients> &
   ReturnType<typeof createWorkspaceClients> &
   ReturnType<typeof createSettingsClients> &
   ReturnType<typeof createPluginHostClients>
+
+/** The application log used by the window. */
+export type WindowLogClient = ReturnType<typeof createLogClient>
+
+/** Creates the application log client over the window's service. */
+export function createWindowLogClient(service: WindowClients['logService']): WindowLogClient {
+  return createLogClient(service)
+}

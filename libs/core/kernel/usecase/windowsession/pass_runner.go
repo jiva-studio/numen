@@ -25,6 +25,7 @@ type PassRunner struct {
 	passes     VaultPasses
 	triggers   TriggerSource
 	startFeed  func(ctx context.Context, v domain.Vault) func()
+	report     func(domain.Vault, string, error)
 }
 
 // PassRunnerConfig is what a PassRunner is made of. Closing ends every run when it closes. Triggers.Open and
@@ -38,13 +39,14 @@ type PassRunnerConfig struct {
 	Passes     VaultPasses
 	Triggers   TriggerSource
 	StartFeed  func(ctx context.Context, v domain.Vault) func()
+	Report     func(domain.Vault, string, error)
 }
 
 // NewPassRunner makes the runner over the passes of a vault.
 func NewPassRunner(cfg PassRunnerConfig) *PassRunner {
 	return &PassRunner{
 		failures: cfg.Failures, diag: cfg.Diag, closing: cfg.Closing, newSession: cfg.NewSession,
-		reporter: cfg.Reporter, passes: cfg.Passes, triggers: cfg.Triggers, startFeed: cfg.StartFeed,
+		reporter: cfg.Reporter, passes: cfg.Passes, triggers: cfg.Triggers, startFeed: cfg.StartFeed, report: cfg.Report,
 	}
 }
 
@@ -72,7 +74,11 @@ func (r *PassRunner) build(ctx context.Context, v domain.Vault, rebuild bool) *r
 	if started.Publish != nil {
 		started.Publish()
 	}
-	return &runningVault{retire: started.Retire, cancel: stop, wait: ended}
+	r.reportEvent(v, "Vault opened", nil)
+	return &runningVault{retire: started.Retire, cancel: stop, wait: func() {
+		ended()
+		r.reportEvent(v, "Vault closed", nil)
+	}}
 }
 
 func (r *PassRunner) startIndexing(
@@ -96,6 +102,7 @@ func (r *PassRunner) startIndexing(
 	if started.Unwatched != nil {
 		r.diag.say("not watching %s: %v\n", v.Name, started.Unwatched)
 		r.failures.SetWatchError(started.Unwatched.Error())
+		r.reportEvent(v, "Vault watch unavailable", started.Unwatched)
 	}
 	running.Go(func() {
 		started.Run(ctx)
@@ -103,6 +110,7 @@ func (r *PassRunner) startIndexing(
 		// followed from this point.
 		if started.Unwatched == nil && ctx.Err() == nil {
 			r.failures.SetWatchError("the watch stopped")
+			r.reportEvent(v, "Vault watch stopped", nil)
 		}
 	})
 
@@ -112,6 +120,7 @@ func (r *PassRunner) startIndexing(
 
 	if runTriggers := r.triggers.start(ctx, v, triggerPasses, func(err error) {
 		r.diag.say("run the triggers of %s: %v\n", v.Name, err)
+		r.reportEvent(v, "Vault trigger failed", err)
 	}); runTriggers != nil {
 		running.Go(runTriggers)
 	}
@@ -121,6 +130,12 @@ func (r *PassRunner) startIndexing(
 	}
 
 	return started, running.Wait
+}
+
+func (r *PassRunner) reportEvent(v domain.Vault, event string, err error) {
+	if r.report != nil {
+		r.report(v, event, err)
+	}
 }
 
 func (r *PassRunner) reportFailure(err error) {
