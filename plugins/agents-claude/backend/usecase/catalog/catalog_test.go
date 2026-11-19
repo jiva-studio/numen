@@ -18,9 +18,10 @@ func (f listerFunc) ListModels(ctx context.Context, command, env []string) ([]mo
 	return f(ctx, command, env)
 }
 
-func newCatalog(t *testing.T, lister listerFunc, isDiskEnabled bool) *Catalog {
+func newCatalog(t *testing.T, lister listerFunc) *Catalog {
 	t.Helper()
-	c, err := New(lister, func(err error) { t.Logf("the catalog fell back: %v", err) }, isDiskEnabled)
+	plugintest.GrantStorage(t)
+	c, err := New(lister, func(err error) { t.Logf("the catalog fell back: %v", err) })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,16 +50,16 @@ func readFixtureModels(t *testing.T) []model.Model {
 }
 
 func TestNewRefusesAMissingLister(t *testing.T) {
-	if _, err := New(nil, func(error) {}, false); err == nil {
+	if _, err := New(nil, func(error) {}); err == nil {
 		t.Error("a catalog without a lister was created")
 	}
-	if _, err := New(neverCalled(t), nil, false); err == nil {
+	if _, err := New(neverCalled(t), nil); err == nil {
 		t.Error("a catalog without a report callback was created")
 	}
 }
 
 func TestDepthLimitedToModelLevels(t *testing.T) {
-	c := newCatalog(t, neverCalled(t), false)
+	c := newCatalog(t, neverCalled(t))
 	c.lists.Put("claude", readFixtureModels(t))
 	cases := []struct{ model, requestedLevel, want string }{
 		{"claude-sonnet-4-6", "xhigh", ""},
@@ -76,7 +77,7 @@ func TestDepthLimitedToModelLevels(t *testing.T) {
 }
 
 func TestAnEmptyModelNameIsTheDefaultModel(t *testing.T) {
-	c := newCatalog(t, neverCalled(t), false)
+	c := newCatalog(t, neverCalled(t))
 	c.lists.Put("claude", []model.Model{
 		{Value: model.DefaultName, SupportsEffort: true, EffortLevels: []string{"low", "high"}},
 	})
@@ -86,7 +87,7 @@ func TestAnEmptyModelNameIsTheDefaultModel(t *testing.T) {
 }
 
 func TestCachedListIsNotRequeried(t *testing.T) {
-	c := newCatalog(t, neverCalled(t), false)
+	c := newCatalog(t, neverCalled(t))
 	c.lists.Put("x", []model.Model{{Value: "m"}})
 	got, err := c.Get(t.Context(), []string{"x"}, nil)
 	if err != nil || len(got) != 1 {
@@ -97,7 +98,7 @@ func TestCachedListIsNotRequeried(t *testing.T) {
 func TestASynchronousCatalogReturnsTheErrorOfTheProgram(t *testing.T) {
 	c := newCatalog(t, func(context.Context, []string, []string) ([]model.Model, error) {
 		return nil, errors.New("sync fetch failed")
-	}, false)
+	})
 	if _, err := c.Get(t.Context(), []string{"claude"}, nil); err == nil {
 		t.Error("expected Get to return the synchronous error")
 	}
@@ -108,7 +109,7 @@ func TestTheProgramIsAskedWithTheCommandAndTheEnvironment(t *testing.T) {
 	c := newCatalog(t, func(_ context.Context, command, env []string) ([]model.Model, error) {
 		asked = append(append([]string{}, command...), env...)
 		return []model.Model{{Value: "m"}}, nil
-	}, false)
+	})
 	if _, err := c.Get(t.Context(), []string{"claude", "--extra"}, []string{"A=1"}); err != nil {
 		t.Fatal(err)
 	}
@@ -118,10 +119,9 @@ func TestTheProgramIsAskedWithTheCommandAndTheEnvironment(t *testing.T) {
 }
 
 func TestColdCatalogReturnsProgramModelsOnFirstRequest(t *testing.T) {
-	plugintest.GrantStorage(t)
 	c := newCatalog(t, func(context.Context, []string, []string) ([]model.Model, error) {
 		return []model.Model{{Value: "opus"}}, nil
-	}, true)
+	})
 	list := c.List(t.Context(), "claude", nil, nil)
 	if len(list) != 1 || list[0].Value != "opus" {
 		t.Fatalf("first request returned %v", list)
@@ -130,7 +130,7 @@ func TestColdCatalogReturnsProgramModelsOnFirstRequest(t *testing.T) {
 
 func TestAProgramThatIsNotInstalledListsTheFallbackModels(t *testing.T) {
 	var reported error
-	c, err := New(neverCalled(t), func(err error) { reported = err }, false)
+	c, err := New(neverCalled(t), func(err error) { reported = err })
 	if err != nil {
 		t.Fatal(err)
 	}

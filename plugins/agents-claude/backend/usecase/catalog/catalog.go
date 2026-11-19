@@ -23,7 +23,7 @@ type Catalog struct {
 
 // New creates a catalog that asks lister for the models and passes report the listing errors when
 // List falls back. The first request waits for the program when the cache is empty.
-func New(lister ports.ModelLister, report func(error), isDiskEnabled bool) (*Catalog, error) {
+func New(lister ports.ModelLister, report func(error)) (*Catalog, error) {
 	if lister == nil {
 		return nil, errors.New("catalog: the model lister is required")
 	}
@@ -36,7 +36,7 @@ func New(lister ports.ModelLister, report func(error), isDiskEnabled bool) (*Cat
 			"models",
 			cache.WithTTL(model.Lifetime),
 			cache.WithTimeout(model.Timeout),
-			cache.WithDisk(isDiskEnabled),
+			cache.WithDisk(true),
 		),
 		report: report,
 	}, nil

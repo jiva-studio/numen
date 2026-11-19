@@ -16,7 +16,7 @@ func Mount(s *server.Server) error {
 	if endpoint, err := hostcall.FromEnv(); err == nil {
 		host = tools.NewClient(endpoint)
 	}
-	built, err := newAgent(parts{environment: hostenv.Process{}, tools: host, isDiskEnabled: true})
+	built, err := newAgent(parts{environment: hostenv.Process{}, tools: host})
 	if err != nil {
 		return err
 	}
