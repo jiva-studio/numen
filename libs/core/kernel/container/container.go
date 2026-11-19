@@ -205,7 +205,7 @@ func vaultBase(c Config, running *PluginExecution, endpoints *PluginEndpoints, r
 func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, search searchWiring) vaultWiring {
 	base.SyncSetting = syncSetting(settings)
 	base = setVaultSearch(base, search)
-	record := openRecordLog(base.IndexPath, getLogEntries(res), logLevelSetting(settings), base.Clock)
+	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
 	base.RecordLog = recordLogFunc(record, res.ErrorHandler)
 	return base
 }

@@ -237,13 +237,13 @@ func openOptionalRecordLog(indexPath string, res *Resources) func(domainlogs.Ent
 }
 
 func mountLogs(w *windowWiring, install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	record := openRecordLog(vaultDeps.IndexPath, w.logEntries, logLevelSetting(settingsDeps), vaultDeps.Clock)
+	record := openRecordLog(vaultDeps.IndexPath, w.logEntries, settingsDeps.SettingsFiles.GetLogLevel, vaultDeps.Clock)
 	watch := logsusecase.NewWatch(w.logEntries, logfiles.NewBesideIndex(vaultDeps.IndexPath), vaultDeps.Clock)
 	w.state.SetCallTrace(vaultDeps.Clock, vaultDeps.RecordLog)
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) {
 		l.Logs = record
 	})
-	handler := windowlogs.NewHandler(watch, record, logLevelSetting(settingsDeps), writeLogLevel(settingsDeps))
+	handler := windowlogs.NewHandler(watch, record, settingsDeps.SettingsFiles.GetLogLevel, writeLogLevel(settingsDeps))
 	path, served := windowlogs.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
