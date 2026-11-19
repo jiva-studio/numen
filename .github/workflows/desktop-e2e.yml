@@ -61,8 +61,7 @@ permissions:
 jobs:
   # Plans the jobs the scope needs, each engine split into shards of about five minutes by
   # shards.json, and builds the windows, the plugins and the debug binaries they run once for them.
-  # A cache entry of main holds the build of the same sources; a hit skips the build, and the jobs
-  # restore the entry instead of downloading the artifact.
+  # The build restores a matching archive from main or builds one, then publishes it for its test jobs.
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -73,7 +72,7 @@ jobs:
       acceptance: ${{ steps.plan.outputs.acceptance }}
       paths: ${{ steps.plan.outputs.paths }}
       matrix: ${{ steps.plan.outputs.matrix }}
-      cache-key: ${{ steps.lookup.outputs.cache-matched-key }}
+      artifact-name: ${{ steps.key.outputs.artifact-name }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -125,23 +124,24 @@ jobs:
             restore="$prefix-all"
           fi
           {
+            echo "artifact-name=e2e-build-$(cat /proc/sys/kernel/random/uuid)"
             echo "flashcards=$flashcards"
             echo "key=$prefix-$name"
             echo "restore-keys=$restore"
           } | tee -a "$GITHUB_OUTPUT"
 
-      - id: lookup
+      - name: Restore the build archive
         if: steps.plan.outputs.build == 'true'
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/e2e-build.tar
           key: ${{ steps.key.outputs.key }}
           restore-keys: ${{ steps.key.outputs.restore-keys }}
-          lookup-only: true
 
       - id: need
-        if: steps.plan.outputs.build == 'true' && steps.lookup.outputs.cache-matched-key == ''
-        run: echo "build=true" | tee -a "$GITHUB_OUTPUT"
+        if: steps.plan.outputs.build == 'true'
+        run: |
+          if [ ! -s "$RUNNER_TEMP/e2e-build.tar" ]; then echo "build=true" >> "$GITHUB_OUTPUT"; fi
 
       - id: setup-go
         if: steps.need.outputs.build == 'true'
@@ -220,10 +220,11 @@ jobs:
           key: ${{ steps.key.outputs.key }}
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: steps.need.outputs.build == 'true'
+        if: steps.plan.outputs.build == 'true'
         with:
-          name: e2e-build
+          name: ${{ steps.key.outputs.artifact-name }}
           path: ${{ runner.temp }}/e2e-build.tar
+          if-no-files-found: error
           compression-level: 1
           retention-days: 1
 
@@ -259,7 +260,7 @@ jobs:
 
       - uses: ./.github/actions/fetch-e2e-build
         with:
-          cache-key: ${{ needs.build.outputs.cache-key }}
+          artifact-name: ${{ needs.build.outputs.artifact-name }}
 
       - name: Unpack the build
         run: |
@@ -331,7 +332,7 @@ jobs:
 
       - uses: ./.github/actions/fetch-e2e-build
         with:
-          cache-key: ${{ needs.build.outputs.cache-key }}
+          artifact-name: ${{ needs.build.outputs.artifact-name }}
 
       - name: Unpack the build
         run: |
@@ -388,7 +389,7 @@ jobs:
 
       - uses: ./.github/actions/fetch-e2e-build
         with:
-          cache-key: ${{ needs.build.outputs.cache-key }}
+          artifact-name: ${{ needs.build.outputs.artifact-name }}
 
       - name: Unpack the build
         run: |
