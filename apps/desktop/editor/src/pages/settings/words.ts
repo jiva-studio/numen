@@ -85,7 +85,7 @@ export const WORDS = {
   /** The page of licenses. */
   licensesEmpty: 'No licenses declared.',
   licensesEmptyDetail:
-    'Add a plugin with a supporter key or subscription to manage its license here.',
+    'Add a plugin with a subscription or license key to manage its license here.',
   licenseKeyPlaceholder: 'Enter license key…',
   licenseKeyLabel: (title: string) => `License key for ${title}`,
   licenseActivate: 'Activate',
@@ -97,12 +97,4 @@ export const WORDS = {
   licenseStatusExpired: 'Expired',
   licenseStatusUnverified: 'Unverified',
   licenseStatusInactive: 'Inactive',
-  licenseActivatedOn: (instanceName: string, provider: string) =>
-    instanceName !== '' && provider !== ''
-      ? `Activated on ${instanceName} via ${provider}`
-      : instanceName !== ''
-        ? `Activated on ${instanceName}`
-        : provider !== ''
-          ? `Activated via ${provider}`
-          : '',
 }

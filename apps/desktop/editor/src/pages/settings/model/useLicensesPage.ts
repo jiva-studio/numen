@@ -37,7 +37,9 @@ function getLicenseTitle(license: LicenseInfo): string {
 function getStatusText(license: LicenseInfo): string {
   switch (license.status) {
     case 'active':
-      return words.licenseStatusActive
+      return license.instanceName !== ''
+        ? `${words.licenseStatusActive} · ${license.instanceName}`
+        : words.licenseStatusActive
     case 'expired':
       return words.licenseStatusExpired
     case 'unverified':
@@ -45,16 +47,6 @@ function getStatusText(license: LicenseInfo): string {
     case 'inactive':
       return words.licenseStatusInactive
   }
-}
-
-function getActivationSubtitle(license: LicenseInfo): string {
-  if (!license.hasKey) return ''
-  const providerId = license.activeProvider
-  const providerName =
-    providerId === ''
-      ? ''
-      : (license.providers.find((one) => one.provider === providerId)?.providerName ?? providerId)
-  return words.licenseActivatedOn(license.instanceName, providerName)
 }
 
 function getBuyOptions(license: LicenseInfo): readonly LicenseProviderOptionInfo[] {
@@ -67,13 +59,44 @@ export interface LicenseCardInput {
   readonly deactivate: (licenseId: string) => Promise<Result<LicenseInfo, string>>
 }
 
+const DRAFT_STORAGE_PREFIX = 'numen:license-draft:'
+
+function readStoredDraftKey(licenseId: string): string {
+  return localStorage.getItem(`${DRAFT_STORAGE_PREFIX}${licenseId}`) ?? ''
+}
+
+function writeStoredDraftKey(licenseId: string, value: string): void {
+  const key = `${DRAFT_STORAGE_PREFIX}${licenseId}`
+  if (value.trim() === '') {
+    localStorage.removeItem(key)
+  } else {
+    localStorage.setItem(key, value)
+  }
+}
+
+export interface LicenseContributorRow {
+  readonly pluginId: string
+  readonly pluginName: string
+  readonly description: string
+}
+
+function formatContributors(license: LicenseInfo): readonly LicenseContributorRow[] {
+  const title = getLicenseTitle(license)
+  return license.contributors.map((one) => ({
+    pluginId: one.pluginId,
+    pluginName: license.contributors.length === 1 && one.pluginName === title ? '' : one.pluginName,
+    description: one.description,
+  }))
+}
+
 export function useLicenseCard(input: LicenseCardInput) {
-  const draftKey = ref('')
+  const draftKey = ref(readStoredDraftKey(input.getLicense().id))
   const isBusy = ref(false)
   const problem = ref('')
 
   const setDraftKey = (value: string): void => {
     draftKey.value = value
+    writeStoredDraftKey(input.getLicense().id, value)
     if (problem.value !== '') problem.value = ''
   }
 
@@ -92,6 +115,7 @@ export function useLicenseCard(input: LicenseCardInput) {
             return
           }
           draftKey.value = ''
+          writeStoredDraftKey(license.id, '')
         })
         .finally(() => {
           isBusy.value = false
@@ -133,7 +157,7 @@ export function useLicenseCard(input: LicenseCardInput) {
     view: {
       displayTitle: computed(() => getLicenseTitle(input.getLicense())),
       statusText: computed(() => getStatusText(input.getLicense())),
-      activationSubtitle: computed(() => getActivationSubtitle(input.getLicense())),
+      contributors: computed(() => formatContributors(input.getLicense())),
       hasDraftKey: computed(() => draftKey.value.trim() !== ''),
       buyOptions: computed(() => getBuyOptions(input.getLicense())),
     },

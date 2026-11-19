@@ -11,6 +11,7 @@ import (
 
 const (
 	defaultCreemAPIBase      = "https://api.creem.io"
+	defaultCreemTestAPIBase  = "https://test-api.creem.io"
 	defaultCreemCheckoutBase = "https://creem.io/payment/"
 )
 
@@ -31,13 +32,15 @@ func NewCreemProvider() *CreemProvider {
 
 // Configure overrides the API base URL, API key and HTTP client when non-empty.
 func (p *CreemProvider) Configure(baseURL, apiKey string, client HTTPDoer) {
-	trimmedURL := strings.TrimRight(strings.TrimSpace(baseURL), "/")
-	if trimmedURL != "" {
-		p.baseURL = trimmedURL
-	}
 	trimmedKey := strings.TrimSpace(apiKey)
 	if trimmedKey != "" {
 		p.apiKey = trimmedKey
+	}
+	trimmedURL := strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	if trimmedURL != "" {
+		p.baseURL = trimmedURL
+	} else if strings.HasPrefix(p.apiKey, "creem_test_") {
+		p.baseURL = defaultCreemTestAPIBase
 	}
 	if client != nil {
 		p.client = client

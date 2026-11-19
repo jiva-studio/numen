@@ -134,7 +134,7 @@ describe('PluginsList', () => {
       'Licenses',
     ])
     expect(tiles[3]?.text()).toContain('Reranking, limits and results')
-    expect(tiles[5]?.text()).toContain('Subscriptions and supporter keys')
+    expect(tiles[5]?.text()).toContain('Subscriptions and license keys')
   })
 
   it('emits the page search from the Search tile', async () => {

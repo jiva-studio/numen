@@ -102,7 +102,7 @@ func (a *Adapter) Activate(
 		res, err := prov.Activate(ctx, sharedlicensing.ActivationRequest{
 			Key:          cleanedKey,
 			InstanceName: instanceName,
-			ProductID:    one.ProductID,
+			ProductID:    resolveExpectedProductID(one),
 		})
 		if err != nil {
 			errs = append(errs, fmt.Errorf("%s: %w", prov.GetInfo().Name, err))
@@ -198,6 +198,20 @@ func (a *Adapter) Subscribe() (<-chan struct{}, func()) {
 		defer a.mu.Unlock()
 		delete(a.subscribers, id)
 	}
+}
+
+func resolveExpectedProductID(decl manifest.LicenseProvider) string {
+	if trimmed := strings.TrimSpace(decl.ProductID); trimmed != "" {
+		return trimmed
+	}
+	if idx := strings.LastIndex(decl.URL, "/payment/"); idx >= 0 {
+		rest := decl.URL[idx+len("/payment/"):]
+		if qIdx := strings.IndexAny(rest, "?#/"); qIdx >= 0 {
+			rest = rest[:qIdx]
+		}
+		return strings.TrimSpace(rest)
+	}
+	return ""
 }
 
 func readMachineID() string {

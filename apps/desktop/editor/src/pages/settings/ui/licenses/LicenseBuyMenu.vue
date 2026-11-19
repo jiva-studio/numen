@@ -42,6 +42,7 @@ function onClose(): void {
     <Button
       type="button"
       variant="outline"
+      class="license-buy__button"
       :aria-expanded="isOpen"
       aria-haspopup="menu"
       @click="onToggle"
@@ -74,6 +75,12 @@ function onClose(): void {
 .license-buy {
   position: relative;
   flex: none;
+}
+
+.license-buy__button {
+  box-sizing: border-box;
+  block-size: var(--numen-action-size);
+  margin: 0;
 }
 
 .license-buy__menu {

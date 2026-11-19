@@ -25,7 +25,7 @@ const card = useLicenseCard({
   deactivate: props.deactivate,
 })
 const { draftKey, isBusy, problem } = card.state
-const { displayTitle, statusText, activationSubtitle, hasDraftKey, buyOptions } = card.view
+const { displayTitle, statusText, contributors, hasDraftKey, buyOptions } = card.view
 
 /* -------------------------------- Handlers -------------------------------- */
 function onInputKey(event: Event): void {
@@ -46,7 +46,6 @@ function onDeactivate(): void {
   <section class="settings-card license-card" :aria-label="displayTitle">
     <div class="license-card__header">
       <h3 class="license-card__title">{{ displayTitle }}</h3>
-      <code class="license-card__id">{{ license.id }}</code>
       <span
         class="license-card__badge"
         :class="{
@@ -59,19 +58,21 @@ function onDeactivate(): void {
       </span>
     </div>
 
-    <p v-if="activationSubtitle !== ''" class="license-card__subtitle">
-      {{ activationSubtitle }}
-    </p>
-
-    <ul v-if="license.contributors.length > 0" class="license-card__contributors">
+    <ul v-if="contributors.length > 0" class="license-card__contributors">
       <li
-        v-for="contributor in license.contributors"
+        v-for="contributor in contributors"
         :key="contributor.pluginId"
         class="license-card__contributor"
       >
-        <span class="license-card__plugin">{{ contributor.pluginName }}</span>
+        <span v-if="contributor.pluginName !== ''" class="license-card__plugin">
+          {{ contributor.pluginName }}
+        </span>
         <span v-if="contributor.description !== ''" class="license-card__description">
-          — {{ contributor.description }}
+          {{
+            contributor.pluginName !== ''
+              ? ` — ${contributor.description}`
+              : contributor.description
+          }}
         </span>
       </li>
     </ul>
@@ -84,7 +85,13 @@ function onDeactivate(): void {
         :value="license.keyHint"
         :aria-label="words.licenseKeyLabel(displayTitle)"
       />
-      <Button type="button" variant="outline" :disabled="isBusy" @click="onDeactivate">
+      <Button
+        type="button"
+        variant="outline"
+        class="license-card__button"
+        :disabled="isBusy"
+        @click="onDeactivate"
+      >
         {{ isBusy ? words.licenseDeactivating : words.licenseDeactivate }}
       </Button>
     </div>
@@ -106,6 +113,7 @@ function onDeactivate(): void {
         v-if="hasDraftKey"
         type="button"
         variant="solid"
+        class="license-card__button license-card__button--solid"
         :disabled="isBusy"
         @click="onSubmitActivate"
       >
@@ -140,18 +148,6 @@ function onDeactivate(): void {
   font-size: var(--numen-text-2);
   font-weight: 600;
   color: var(--numen-ink);
-}
-
-.license-card__id {
-  font-family: var(--numen-font-mono);
-  font-size: var(--numen-text-1);
-  color: var(--numen-hushed);
-}
-
-.license-card__subtitle {
-  margin: 0;
-  font-size: var(--numen-text-1);
-  color: var(--numen-hushed);
 }
 
 .license-card__badge {
@@ -204,15 +200,29 @@ function onDeactivate(): void {
 .license-card__input {
   flex: 1;
   box-sizing: border-box;
+  appearance: none;
   min-inline-size: 0;
   block-size: var(--numen-action-size);
-  padding: 0.25rem 0.625rem;
+  margin: 0;
+  padding: 0 0.625rem;
   background-color: var(--numen-field-bg);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);
   color: var(--numen-ink);
   font-family: var(--numen-font-mono);
   font-size: var(--numen-text-2);
+  line-height: var(--numen-line-height);
+}
+
+.license-card__button {
+  box-sizing: border-box;
+  block-size: var(--numen-action-size);
+  margin: 0;
+}
+
+.license-card__button--solid {
+  border: var(--numen-stroke) solid transparent;
+  background-clip: padding-box;
 }
 
 .license-card__input:focus {

@@ -75,7 +75,7 @@ export const PLUGIN_WORDS = {
   connections: 'Connections',
   connectionsDetail: 'Services and programs for plugins',
   licenses: 'Licenses',
-  licensesDetail: 'Subscriptions and supporter keys',
+  licensesDetail: 'Subscriptions and license keys',
   /** The sections of a plugin page, in the order of its tabs. */
   pluginTabs: { settings: 'Settings', about: 'About', contributions: 'Contributes', data: 'Data' },
   pluginSections: 'Sections',
