@@ -81,7 +81,7 @@ export function usePlexView(core: RelatedNoteQueries) {
         const candidates: string[] = []
         for (const related of answer.related) {
           const count = counts.get(related.relation) ?? 0
-          if (count < 6) {
+          if (count < 16) {
             counts.set(related.relation, count + 1)
             candidates.push(related.path)
           }
