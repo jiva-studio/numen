@@ -19,30 +19,17 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func openPluginWork(
-	a pluginsWiring, db *Index, v domain.Vault, tasks *run.Tasks, models *run.Lock,
-) (pluginsWiring, *run.PluginWork, error) {
-	setPluginVaultPath(a, v.Path)
-	if err := installCurrentVault(a, db, v); err != nil {
-		return pluginsWiring{}, nil, err
-	}
-	work := pluginsOpenPluginWork(a, tasks, models)
-	setPluginTexts(a.vault)
-	return a, work, nil
-}
-
-func installCurrentVault(a pluginsWiring, db *Index, v domain.Vault) error {
-	registry, err := vaultRegistry(a.vault.RegistryPath)
+func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *Index, v domain.Vault) error {
+	registry, err := vaultRegistry(vaultDeps.RegistryPath)
 	if err != nil {
 		return err
 	}
 	current := func() (domain.Vault, bool) { return v, true }
-	return installPluginVault(a, registry, db, current, PluginVaultHooks{})
+	return installPluginVault(install, vaultDeps, registry, db, current, PluginVaultHooks{})
 }
 
 // PluginRuntime is what runs, finds and addresses the plugins.

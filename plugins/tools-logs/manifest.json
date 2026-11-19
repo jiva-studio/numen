@@ -23,7 +23,7 @@
       }
     ]
   },
-  "permissions": ["logs:read"],
+  "permissions": ["logs:read", "vault:read"],
   "frontend": {},
   "isOffByDefault": true
 }

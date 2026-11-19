@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"io"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
@@ -50,35 +49,34 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func mountCatalog(w *windowWiring) {
-	if plugins := getPluginCatalog(w.a); plugins != nil {
+func mountCatalog(w *windowWiring, install pluginInstall, settingsDeps settingsWiring) {
+	if plugins := getPluginCatalog(install.PluginCatalog, settingsDeps.ErrorHandler); plugins != nil {
 		handler := windowcatalog.NewHandler(plugins)
 		path, served := windowcatalog.NewRoute(handler, w.state.Gate.CountQuestions())
 		w.inst.Mount(editor.NewRoute(path, served, handler))
 	}
 }
 
-func mountMedia(w *windowWiring) {
+func mountMedia(w *windowWiring, vaultDeps vaultWiring) {
 	state := w.state
-	resolve := file.NewResolveAddress(file.NewStatFile(vaultReaders(w.a.vault)), openPluginFile(w.a.vault), getMediaType(w.a.vault))
+	resolve := file.NewResolveAddress(file.NewStatFile(vaultReaders(vaultDeps)), openPluginFile(vaultDeps), getMediaType(vaultDeps))
 	handler := mediawindow.NewHandler(state, state, resolve)
 	w.inst.Mount(editor.NewMediaRoute(state, handler))
 }
 
-func mountCommand(w *windowWiring) {
-	p := w.a
+func mountCommand(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	var versions plugincommand.VersionItems
-	if menu := openVersionItems(p); menu != nil {
+	if menu := openVersionItems(install, exec, settingsDeps, vaultDeps); menu != nil {
 		versions = menu
 	}
-	commands := newPluginCommands(p, p.Execution, versions)
+	commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.PluginLister), vaultDeps, exec, versions)
 	handler := command.NewHandler(w.state, commands.Listing, commands.RunCommand, commands.ListItems)
 	w.inst.Mount(editor.NewRoute(command.NewRoute(w.state.Gate.CountQuestions(), handler)))
 }
 
-func mountText(w *windowWiring) {
+func mountText(w *windowWiring, vaultDeps vaultWiring) {
 	handler := windowtext.NewHandler(w.state, nil)
-	if text := openFileText(w.a.vault); text != nil {
+	if text := openFileText(vaultDeps); text != nil {
 		handler = windowtext.NewHandler(w.state, text)
 	}
 	path, served := windowtext.NewRoute(handler, w.state.Gate.CountQuestions())
@@ -103,33 +101,29 @@ func mountVaults(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountSearch(w *windowWiring) {
+func mountSearch(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring) {
 	state := w.state
-	finds := newSearch(w.a.search, w.db, w.asking, state.ReportWordsAlone, state.ClearWordsAlone)
+	finds := newSearch(searchDeps, w.db, w.asking, state.ReportWordsAlone, state.ClearWordsAlone)
 	handler := windowsearch.NewHandler(
 		state,
 		search.NewFindNames(w.db.NoteQueries(), w.kinds.list),
 		search.NewFindText(finds, w.db.NoteQueries(), w.db.NoteQueries(), w.kinds.list),
-		searchcancel.NewSearches(w.a.vault.Clock),
+		searchcancel.NewSearches(vaultDeps.Clock),
 	)
-	setPluginSearch(w.a.search, w.db, w.embedder, state.ReportFloorError, newSearchRuns(w))
+	setPluginSearch(searchDeps, w.db, w.embedder, state.ReportFloorError, newSearchRuns(w, install, exec, settingsDeps, searchDeps, vaultDeps))
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func getTabKindChooser(c pluginsWiring) file.TabKindChooser {
-	return openChooseTabKind(c)
-}
-
-func mountFile(w *windowWiring) {
+func mountFile(w *windowWiring, vaultDeps vaultWiring) {
 	state := w.state
-	readers := vaultReaders(w.a.vault)
+	readers := vaultReaders(vaultDeps)
 	kinds := w.kinds
 	folders := filewindow.NewFolders(
 		state,
 		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), kinds.list),
 		file.NewListFileKinds(kinds.files, kinds.chooser),
-		file.NewCreateFolder(folderWriters(w.a.vault), state.Writes),
+		file.NewCreateFolder(folderWriters(vaultDeps), state.Writes),
 	)
 	moveFile := vault.NewMoveFile(&w.cases.Vaults.Tree.Move, state.Writes, state.Writes)
 	removeFile := note.NewRemoveFile(&w.cases.Notes.Place.Remove, state.Writes)
@@ -179,38 +173,38 @@ func mountNote(w *windowWiring) {
 }
 
 func openGetSettings(s settingsWiring) *settings.Get {
-	return settings.NewGet(readSettings(s), settingsPlugins(s), func() []plugin.Setting { return listAppSettings(s) })
+	return settings.NewGet(readSettings(s), s.Infos.GetPluginInfos, func() []plugin.Setting { return listAppSettings(s) })
 }
 
-func mountSettings(w *windowWiring) {
+func mountSettings(w *windowWiring, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	state := w.state
-	retry := settings.NewRetryPlugin(w.a.Execution.Runtime.RetryPlugin)
+	retry := settings.NewRetryPlugin(exec.Runtime.RetryPlugin)
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)
-	if data := openPluginData(w.a.vault); data != nil {
+	if data := openPluginData(vaultDeps); data != nil {
 		folders = windowsettings.NewPluginFolders(retry, data, state)
 	}
 	values := windowsettings.NewValues(
-		openGetSettings(w.a.settings),
-		openWriteSettings(w.a.settings), openWatchSettings(w.a.settings), nil,
+		openGetSettings(settingsDeps),
+		openWriteSettings(settingsDeps), openWatchSettings(settingsDeps), nil,
 	)
 	handler := windowsettings.NewHandler(values, folders)
 	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
-		handler.SetPathChooser(openChoosePluginPath(w.a.settings, dialog))
+		handler.SetPathChooser(openChoosePluginPath(settingsDeps, dialog))
 	})
 	path, served := windowsettings.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountPlugin(w *windowWiring) {
-	w.inst.SetPlugins(GetPluginServices(w.a.Execution.Runtime), func(id string) (string, bool) { return GetPluginDir(w.a.Execution.Runtime.PluginResolver, id) })
-	host := w.a.Execution
-	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.PluginResolver, getConnectionResolve(w.a), w.a.vault.Clock)
+func mountPlugin(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+	w.inst.SetPlugins(GetPluginServices(exec.Runtime), func(id string) (string, bool) { return GetPluginDir(exec.Runtime.PluginResolver, id) })
+	host := exec
+	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.PluginResolver, getConnectionResolve(install, exec, settingsDeps, vaultDeps), vaultDeps.Clock)
 	handler := windowplugin.NewHandler(watch)
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.state.Gate.CountQuestions())))
 }
 
-func mountHealth(w *windowWiring) {
-	host := w.a.Execution
+func mountHealth(w *windowWiring, exec *PluginExecution) {
+	host := exec
 	handler := windowhealth.NewHandler(
 		host.Health, pluginhealth.NewReport(host.Health, host.Runtime.PluginResolver), pluginhealth.NewClear(host.Health),
 	)
@@ -238,25 +232,25 @@ func openOptionalRecordLog(indexPath string, res *Resources) func(domainlogs.Ent
 	return recordLogFunc(record, res.ErrorHandler)
 }
 
-func mountLogs(w *windowWiring) {
-	record := openRecordLog(w.a.vault.IndexPath, w.logEntries, w.a.settings.SettingsFiles.GetLogLevel, w.a.vault.Clock)
-	watch := logsusecase.NewWatch(w.logEntries, logfiles.NewBesideIndex(w.a.vault.IndexPath), w.a.vault.Clock)
-	w.state.SetCallTrace(w.a.vault.Clock, w.a.vault.RecordLog)
-	w.a.Endpoints.Lender.Update(func(l *hostendpoint.Lent) {
+func mountLogs(w *windowWiring, install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+	record := openRecordLog(vaultDeps.IndexPath, w.logEntries, settingsDeps.SettingsFiles.GetLogLevel, vaultDeps.Clock)
+	watch := logsusecase.NewWatch(w.logEntries, logfiles.NewBesideIndex(vaultDeps.IndexPath), vaultDeps.Clock)
+	w.state.SetCallTrace(vaultDeps.Clock, vaultDeps.RecordLog)
+	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) {
 		l.Logs = record
 	})
-	handler := windowlogs.NewHandler(watch, record, w.a.settings.SettingsFiles.GetLogLevel, writeLogLevel(w.a.settings))
+	handler := windowlogs.NewHandler(watch, record, settingsDeps.SettingsFiles.GetLogLevel, writeLogLevel(settingsDeps))
 	path, served := windowlogs.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func shareEditorWindow(db *Index, opened *windowWiring) {
+func shareEditorWindow(db *Index, opened *windowWiring, install pluginInstall, vaultDeps vaultWiring) {
 	view := windowView(opened.state)
-	focusFile := file.NewFocusFile(vaultReaders(opened.a.vault), view)
-	setPluginWindow(opened.a, windowsession.NewPluginWindow(
+	focusFile := file.NewFocusFile(vaultReaders(vaultDeps), view)
+	setPluginWindow(install.Endpoints.Lender, windowsession.NewPluginWindow(
 		&opened.state.Runtime,
 		&opened.state.Tabs,
-		vaultFocusNote(opened.a.vault, db.NoteQueries(), view),
+		vaultFocusNote(vaultDeps, db.NoteQueries(), view),
 		windowsession.FileFocusFunc(func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error {
 			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
 		}),
@@ -264,9 +258,9 @@ func shareEditorWindow(db *Index, opened *windowWiring) {
 	))
 }
 
-func shareVaultList(opened *windowWiring) {
+func shareVaultList(opened *windowWiring, install pluginInstall) {
 	useCases := opened.cases.Vaults
-	setPluginVaultList(opened.a, windowsession.NewPluginVaults(&opened.state.Runtime, windowsession.VaultOps{
+	setPluginVaultList(install.Endpoints.Lender, windowsession.NewPluginVaults(&opened.state.Runtime, windowsession.VaultOps{
 		Edit:    windowsession.VaultEdits{Add: useCases.Change.Add, Rename: useCases.Change.Rename, Remove: useCases.Change.Remove},
 		Find:    opened.cases.Listing.Find,
 		Missing: opened.cases.Listing.FolderCheck,
@@ -281,27 +275,27 @@ func mountVault(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func getReadVault(a pluginsWiring, db *Index) indexing.OpenReading {
+func getReadVault(searchDeps searchWiring, vaultDeps vaultWiring, db *Index) indexing.OpenReading {
 	return func(
 		ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 	) (indexing.ReadWholeVault, error) {
-		search := a.search
+		search := searchDeps
 		search.ShouldRebuildIndex = rebuild
-		return readWholeVault(search, ctx, db, source, v, vaultMakeRefresh(a.vault, db, db.Notes()))
+		return readWholeVault(search, ctx, db, source, v, vaultMakeRefresh(vaultDeps, db, db.Notes()))
 	}
 }
 
 func newIndexWorker(
-	a pluginsWiring, db *Index, state *editor.State, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault), out io.Writer,
+	s windowStartup, searchDeps searchWiring, vaultDeps vaultWiring, state *editor.State, embedding *indexing.Embedding, indexChanged func(context.Context, domain.Vault),
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:      getReadVault(a, db),
+		Reading:      getReadVault(searchDeps, vaultDeps, s.db),
 		Source:       embedding.GetSource(),
 		VectorCounts: indexing.NewVectorCounts(embedding, &state.Runtime).Execute,
 		IndexChanged: indexChanged,
-		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out, a.vault.RecordLog),
+		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, s.opening.Out, vaultDeps.RecordLog),
 		Quiet:        indexing.QuietPeriod,
-		After:        a.vault.Clock.After,
+		After:        vaultDeps.Clock.After,
 	})
 }
 
@@ -317,31 +311,31 @@ func newIndexSession(worker *indexing.Worker) func() windowsession.IndexSession 
 	}
 }
 
-func getTextVersions(a pluginsWiring) windowsession.TextVersions {
-	if versions := a.vault.TextVersions; versions != nil {
+func getTextVersions(vaultDeps vaultWiring) windowsession.TextVersions {
+	if versions := vaultDeps.TextVersions; versions != nil {
 		return versions.Changes
 	}
 	return nil
 }
 
-func getTriggerSource(a pluginsWiring, frontmatter *indexnote.FrontmatterChanges) windowsession.TriggerSource {
+func getTriggerSource(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, frontmatter *indexnote.FrontmatterChanges) windowsession.TriggerSource {
 	return windowsession.TriggerSource{
 		Open: func() windowsession.TriggerRunner {
-			if triggers := openTriggers(a); triggers != nil {
+			if triggers := openTriggers(install, exec, settingsDeps, vaultDeps); triggers != nil {
 				return triggers
 			}
 			return nil
 		},
-		Watch:            func() (<-chan struct{}, func()) { return watchPluginChanges(a) },
+		Watch:            settingsDeps.PluginChanges.Subscribe,
 		WatchFrontmatter: frontmatter.Watch,
 	}
 }
 
-func startVault(a pluginsWiring, db *Index, current *vault.CurrentRefresh) windowsession.VaultPassesFunc {
+func startVault(vaultDeps vaultWiring, db *Index, current *vault.CurrentRefresh) windowsession.VaultPassesFunc {
 	return func(
 		ctx context.Context, v domain.Vault, rebuild bool, report windowsession.Reporters,
 	) windowsession.Started {
-		opening := vaultOpener(a.vault, db)
+		opening := vaultOpener(vaultDeps, db)
 		opening.ShouldRebuild = rebuild
 		var changed func(vault.VaultChanges)
 		if report.Changed != nil {
@@ -360,44 +354,44 @@ func startVault(a pluginsWiring, db *Index, current *vault.CurrentRefresh) windo
 	}
 }
 
-func mountConnection(w *windowWiring) {
-	handler := windowconnection.NewService(openConnectionUseCases(w.a))
+func mountConnection(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+	handler := windowconnection.NewService(openConnectionUseCases(install, exec, settingsDeps, vaultDeps))
 	path, served := windowconnection.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountConnectionCall(w *windowWiring) {
-	handler := connectioncall.NewService(openModelCalls(w.a), openRowLists(w.a))
+func mountConnectionCall(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+	handler := connectioncall.NewService(openModelCalls(install, settingsDeps), openRowLists(install, exec, settingsDeps, vaultDeps))
 	path, served := connectioncall.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountLicense(w *windowWiring) {
-	handler := windowlicense.NewService(openLicenseUseCases(w.a))
+func mountLicense(w *windowWiring, install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+	handler := windowlicense.NewService(openLicenseUseCases(install, settingsDeps, vaultDeps))
 	path, served := windowlicense.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func getConnectionResolve(c pluginsWiring) connectionport.ResolveConnection {
-	deps, ok := openConnectionDeps(c)
+func getConnectionResolve(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) connectionport.ResolveConnection {
+	deps, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return nil
 	}
 	return connection.NewResolve(deps).Execute
 }
 
-func getFeedStart(a pluginsWiring, db *Index) func(ctx context.Context, v domain.Vault) func() {
+func getFeedStart(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) func(ctx context.Context, v domain.Vault) func() {
 	events := windowsession.FeedEvents{
 		WatchWrites:    db.FeedChanges().Watch,
-		WatchPlugins:   func() (<-chan struct{}, func()) { return watchPluginChanges(a) },
+		WatchPlugins:   settingsDeps.PluginChanges.Subscribe,
 		ReadHead:       db.FileChanges().GetHead,
 		ListPaths:      db.FileChanges().ListChangedPaths,
-		GetContentType: a.Execution.Watch.GetContentType,
+		GetContentType: exec.Watch.GetContentType,
 		Emit: func(v domain.Vault, types []domain.ContentType) {
-			a.Execution.Runtime.EmitFilesChanged(string(v.ID), types)
+			exec.Runtime.EmitFilesChanged(string(v.ID), types)
 		},
 		Quiet: windowsession.FeedQuietPeriod,
-		After: a.vault.Clock.After,
+		After: vaultDeps.Clock.After,
 	}
 	return events.Start
 }

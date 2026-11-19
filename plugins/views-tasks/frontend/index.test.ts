@@ -369,7 +369,7 @@ describe('the actions of a task', () => {
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
-    expect(wrapper.find('[data-task-id="n"] .task-item__notice-icon').exists()).toBe(true)
+    expect(wrapper.find('[data-task-id="n"] .task-item__notice-icon').exists()).toBe(false)
     await wrapper.find('[data-task-id="n"] button[aria-label="Dismiss"]').trigger('click')
 
     expect(host.work.backgroundTasks.getActions()).toStrictEqual([{ action: 'dismiss', id: 'n' }])

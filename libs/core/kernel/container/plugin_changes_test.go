@@ -23,7 +23,7 @@ func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 		Execution:   &PluginExecution{Runtime: PluginRuntime{PluginBinding: absent.Runtime{}}},
 		Preferences: &PluginPreferences{ApplySetting: applyingHost(&applied)},
 	})
-	changes, stop := watchPluginChanges(c.buildPluginWiring())
+	changes, stop := c.Resources.pluginChanges.Subscribe()
 	defer stop()
 
 	notifyHost(c.buildSettingsWiring(), []settingsdomain.Setting{{Path: []string{"org.example.scans", "isAutomatic"}, JSON: "true"}})
@@ -43,7 +43,7 @@ func TestAPluginChangeIsNotReportedAfterTheWatchStops(t *testing.T) {
 		Execution:   &PluginExecution{Runtime: PluginRuntime{PluginBinding: absent.Runtime{}}},
 		Preferences: &PluginPreferences{ApplySetting: applyingHost(new([]string))},
 	})
-	changes, stop := watchPluginChanges(c.buildPluginWiring())
+	changes, stop := c.Resources.pluginChanges.Subscribe()
 	stop()
 
 	notifyHost(c.buildSettingsWiring(), nil)
