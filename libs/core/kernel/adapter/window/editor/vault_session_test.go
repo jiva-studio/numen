@@ -944,13 +944,14 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	// while the stream opens, until it arrives.
 	asking, cancel := context.WithCancel(t.Context())
 	defer cancel()
+	view := editor.ViewOf(editor.SessionOf(t, f.installation.Installation).Notices)
 	go func() {
 		for {
 			select {
 			case <-asking.Done():
 				return
 			case <-time.After(20 * time.Millisecond):
-				if err := editor.ViewOf(editor.SessionOf(t, f.installation.Installation).Notices).FocusPlace(asking, domain.Place{Path: "Somewhere.md"}); err != nil && asking.Err() == nil {
+				if err := view.FocusPlace(asking, domain.Place{Path: "Somewhere.md"}); err != nil && asking.Err() == nil {
 					t.Error(err)
 				}
 			}
