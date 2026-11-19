@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
@@ -50,6 +49,7 @@ func openDisabledCourier(t *testing.T) (container.TestInstallation, string, *rec
 		t.Fatal(err)
 	}
 	cfg = cfg.SetSettings(selected)
+	t.Cleanup(func() { container.UnsubscribeHost(cfg) })
 	if token, ok := pluginHost.Management.Settings.GetPluginSettings(courierPlugin)["token"]; ok {
 		t.Fatalf("the disabled plugin holds the token %v after load", token)
 	}
@@ -94,29 +94,16 @@ func TestEnablingAPluginTogetherWithATokenKeepsThePersonsToken(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			cfg, path, host, getPluginSettings := openDisabledCourier(t)
-			reader := listen(t, cfg)
+			applied, stop := cfg.SubscribeAppliedPluginSettings()
+			t.Cleanup(stop)
 
 			write(t, cfg, path)
+			<-applied
 
-			reader.await(t)
-			waitFor(t, func() bool {
-				updates := host.listUpdates()
-				return slices.Contains(updates, courierPlugin+".enabled") && slices.Contains(updates, courierPlugin+".token")
-			})
-			deadline := time.After(quiet)
-			for isQuiet := false; !isQuiet; {
-				select {
-				case batch := <-reader.changes:
-					for _, one := range batch {
-						if slices.Equal(one.Path, []string{courierPlugin, "token"}) && one.JSON != `"`+courierToken+`"` {
-							t.Errorf("a later change wrote the token %s over the one the person set", one.JSON)
-						}
-					}
-				case <-deadline:
-					isQuiet = true
-				}
+			want := []string{courierPlugin + ".token", courierPlugin + ".enabled"}
+			if got := host.listUpdates(); !slices.Equal(got, want) {
+				t.Errorf("applied settings = %v, want %v", got, want)
 			}
-
 			if got := readCourierToken(t, path); got != courierToken {
 				t.Errorf("numen.json holds the token %#v, want the one the person set", got)
 			}

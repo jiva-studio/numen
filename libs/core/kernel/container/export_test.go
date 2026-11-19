@@ -79,6 +79,11 @@ func (c TestInstallation) SubscribeSettingChanges() (<-chan []settingsdomain.Set
 	return feed(c.buildSettingsWiring()).Subscribe()
 }
 
+// SubscribeAppliedPluginSettings reports when the host finishes applying a settings batch.
+func (c TestInstallation) SubscribeAppliedPluginSettings() (<-chan struct{}, func()) {
+	return c.Resources.pluginChanges.Subscribe()
+}
+
 func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher) *vault.VaultOpener {
 	return vaultOpenerWith(c.buildVaultWiring(), db, walking, watcher)
 }
