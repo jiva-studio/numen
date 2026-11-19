@@ -3,6 +3,8 @@ package search
 import (
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
@@ -183,9 +185,9 @@ func (u Search) Execute(ctx context.Context, v domain.Vault, query string, p Par
 // asked is one participant a search asks, with the number of search results it ranks and whether its failure
 // fails the search.
 type asked struct {
-	participant Participant
-	limit       int
-	isTolerated bool
+	participant  Participant
+	limit        int
+	sourceNumber int
 }
 
 func (u Search) getAskedParticipants(p Parameters) []asked {
@@ -197,8 +199,8 @@ func (u Search) getAskedParticipants(p Parameters) []asked {
 		out = append(out, asked{participant: u.names, limit: p.Named})
 	}
 	if p.Sources > 0 {
-		for _, source := range u.sources {
-			out = append(out, asked{participant: source, limit: p.Sources, isTolerated: true})
+		for i, source := range u.sources {
+			out = append(out, asked{participant: source, limit: p.Sources, sourceNumber: i + 1})
 		}
 	}
 	return out
@@ -221,6 +223,9 @@ func (u Search) rankAll(ctx context.Context, v domain.Vault, query string, p Par
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	out := make([]Ranking, 0, len(answers))
 	for _, one := range answers {
 		if one != nil {
@@ -234,21 +239,49 @@ func (u Search) rank(ctx context.Context, v domain.Vault, one asked, q Query) (*
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	ranking, err := one.participant.Rank(ctx, v, q)
-	switch {
-	case err == nil:
-		if one.isTolerated {
-			u.reportAnswered()
-		}
-		return &ranking, nil
-	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
-		return nil, err
-	case one.isTolerated:
-		u.errorHandler(err)
-		return nil, nil
-	default:
-		return nil, err
+	if one.sourceNumber == 0 {
+		ranking, err := one.participant.Rank(ctx, v, q)
+		return &ranking, err
 	}
+	return u.rankSource(ctx, v, one, q)
+}
+
+// sourceTimeout bounds the wait for one external ranking of an interactive search.
+const sourceTimeout = 2 * time.Second
+
+type sourceAnswer struct {
+	ranking Ranking
+	err     error
+}
+
+func (u Search) rankSource(ctx context.Context, v domain.Vault, one asked, q Query) (*Ranking, error) {
+	sourceCtx, cancel := context.WithTimeout(ctx, sourceTimeout)
+	defer cancel()
+	done := make(chan sourceAnswer, 1)
+	go func() {
+		ranking, err := one.participant.Rank(sourceCtx, v, q)
+		done <- sourceAnswer{ranking: ranking, err: err}
+	}()
+
+	var answer sourceAnswer
+	select {
+	case answer = <-done:
+	case <-sourceCtx.Done():
+	}
+	switch {
+	case ctx.Err() != nil:
+		return nil, ctx.Err()
+	case sourceCtx.Err() != nil:
+		u.errorHandler(fmt.Errorf("search source %d: %w", one.sourceNumber, sourceCtx.Err()))
+	case answer.err == nil:
+		u.reportAnswered()
+		return &answer.ranking, nil
+	case errors.Is(answer.err, context.Canceled), errors.Is(answer.err, context.DeadlineExceeded):
+		return nil, answer.err
+	default:
+		u.errorHandler(answer.err)
+	}
+	return nil, nil
 }
 
 // errUnreadable marks a source that exists but yields no usable text. It is not
