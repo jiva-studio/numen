@@ -66,10 +66,12 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	exec = getPluginExecution(exec)
 	db := startup.db
 	install := newPluginInstall(c, endpoints, res)
-	settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, install.Endpoints, res, nil)
+	var versions *TextVersions
 	if startup.isEditor {
-		searchDeps, vaultDeps = openIndexedVault(searchDeps, vaultDeps, db)
+		base := vaultBase(c, getRunningExecution(exec, c.SafeMode), install.Endpoints, res, nil)
+		versions = newTextVersions(base, db)
 	}
+	settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, install.Endpoints, res, versions)
 	ports := startup.ports
 	first, err := registry.NewGetVaultToShow(ports.Lookup, ports.Vaults, ports.Last).Execute(startup.opening.Named)
 	if err != nil {
