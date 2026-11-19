@@ -7,6 +7,19 @@
   "targets": ["desktop.editor"],
   "contributes": {
     "category": "tools",
+    "licenses": [
+      {
+        "id": "sync",
+        "title": "Numen Sync",
+        "description": "Synchronizes your vaults across devices",
+        "providers": [
+          {
+            "provider": "creem",
+            "url": "https://www.creem.io/test/payment/prod_5YckdJcFG6a0eH2aETTOAz"
+          }
+        ]
+      }
+    ],
     "slots": [{ "slot": "titleBar.status", "view": "sync", "order": 5 }]
   },
   "frontend": {}
