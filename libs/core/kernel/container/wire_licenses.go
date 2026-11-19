@@ -9,14 +9,14 @@ import (
 )
 
 func openLicenseUseCases(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) *windowlicense.UseCases {
-	if settingsDeps.Views.Declarations == nil {
+	if install.Licenses == nil {
 		return nil
 	}
 	adapter := licensingadapter.NewAdapter(func(ctx context.Context) {
-		if err := settingsDeps.Configuration.Refresh(ctx); err != nil {
+		if err := install.Configuration.Refresh(ctx); err != nil {
 			settingsDeps.ErrorHandler(err)
 		}
 	})
-	deps := license.NewDeps(settingsDeps.Views.Declarations, install.KeyStore, adapter, adapter, vaultDeps.Clock, adapter).WithErrorReporter(settingsDeps.ErrorHandler)
+	deps := license.NewDeps(install.Licenses, install.KeyStore, adapter, adapter, vaultDeps.Clock, adapter).WithErrorReporter(settingsDeps.ErrorHandler)
 	return &windowlicense.UseCases{List: license.NewList(deps), Activate: license.NewActivate(deps), Deactivate: license.NewDeactivate(deps), Watch: license.NewWatch(deps)}
 }

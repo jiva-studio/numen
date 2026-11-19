@@ -35,21 +35,20 @@ func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultreg
 	return ports, db, err
 }
 
-func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, opened *windowWiring, isEditor bool) (*OpenedWindow, error) {
-	if !isEditor {
-		return getOpenedWindow(opened), nil
+func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, opened *OpenedWindow, startup windowStartup, access windowPluginAccess) (*OpenedWindow, error) {
+	if !startup.isEditor {
+		return opened, nil
 	}
-	ports, db, state := opened.ports, opened.db, opened.state
+	state := opened.State
 	exec.Runtime.PluginBinding.SetVaultPath(state.GetCurrentVault().Path)
-	pluginNotes := getNoteChanges(*opened.cases.PluginNotes)
-	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: &pluginNotes}
-	if err := installPluginVault(install, vaultDeps, ports, db, state.GetShownVault, hooks); err != nil {
+	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: &access.notes}
+	if err := installPluginVault(install, vaultDeps, startup.ports, startup.db, state.GetShownVault, hooks); err != nil {
 		return nil, err
 	}
-	shareVaultList(opened, install)
-	setPluginTexts(vaultDeps)
-	shareEditorWindow(db, opened, install, vaultDeps)
-	return getOpenedWindow(opened), nil
+	setPluginVaultList(install.Endpoints.Lender, access.vaults)
+	setPluginTexts(install.Endpoints.Lender, vaultDeps.TextVersions)
+	shareEditorWindow(startup.db, opened, access.showTab, install, vaultDeps)
+	return opened, nil
 }
 
 // Shell is what a shell window closes when it ends: CloseVaults waits until nothing is still writing to the
@@ -77,8 +76,8 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 		return Shell{}, err
 	}
 	opening.API.Window = shell.NewWindow(opening.Target, nil)
-	install := newPluginInstall(c, endpoints, res)
-	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, install.Endpoints, res, nil)
+	install := newPluginInstall(c, prefs, endpoints, res)
+	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
 
 	api, log := opening.API, opening.Log
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
@@ -106,7 +105,7 @@ type ShellLog struct {
 }
 
 func followShell(settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context.Context, api *shell.API, label string, notify func(message string)) error {
-	changes, err := vaultMoves(vaultDeps, ctx)
+	changes, err := vaultMoves(ctx, vaultDeps.IndexPath, vaultDeps.Watcher)
 	if err != nil {
 		notify(label + ": the index is not being followed: " + err.Error())
 	} else {

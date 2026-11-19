@@ -15,9 +15,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
+
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -145,97 +149,76 @@ func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *
 	runtime := getPluginExecution(exec).Runtime
 	prefs = getPluginPreferences(prefs)
 	return settingsWiring{
-		settingsPlaces: settingsPlaces{
-			SettingsPath:    c.SettingsPath,
-			ThemesPath:      c.ThemesPath,
-			RegistryPath:    c.RegistryPath,
-			ResolvedCompute: c.machine.ResolvedCompute,
-		},
-		settingsStores: settingsStores{
-			Watches:         res.watches,
-			SettingsFiles:   res.settingsFiles,
-			SettingEvents:   res.settingEvents,
-			PluginChanges:   res.pluginChanges,
-			SubscribedHosts: &res.subscribedHosts,
-		},
-		Infos:         runtime,
-		Configuration: prefs.Configuration,
-		Views:         prefs.Views,
-		ApplySetting:  prefs.ApplySetting,
-		Detection:     prefs.Detection,
-		ErrorHandler:  getErrorHandler(c.IndexPath, res),
+		SettingsPath:    c.SettingsPath,
+		ThemesPath:      c.ThemesPath,
+		RegistryPath:    c.RegistryPath,
+		Watches:         res.watches,
+		SettingsFiles:   res.settingsFiles,
+		SettingEvents:   res.settingEvents,
+		PluginChanges:   res.pluginChanges,
+		Infos:           runtime,
+		Declarations:    prefs.Configuration.PluginSettingDeclarer,
+		ConnectionTypes: prefs.Views.Types,
+		PluginInfos:     prefs.Views.Infos,
+		Checks:          prefs.Views.Checks,
+		Detection:       prefs.Detection,
+		ErrorHandler:    getErrorHandler(c.IndexPath, res),
 	}
 }
 
-func searchWith(c Config, exec, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, v vaultWiring) searchWiring {
-	return searchWiring{
-		ServiceDir:         c.ServiceDir,
-		ShouldRebuildIndex: c.ShouldRebuildIndex,
-		Chunks:             res.Chunks,
-		ResolvedCompute:    c.machine.ResolvedCompute,
-		Runtime:            exec.Runtime,
-		Watch:              exec.Watch,
-		Health:             exec.Health,
-		ActiveRuntime:      running.Runtime,
-		Sources:            endpoints.SourceDescriptions,
-		Lender:             endpoints.Lender,
-		Clock:              GetClock(res),
-		VaultReaders:       vaultReaders(v),
-		TextReaders:        getTextReaders(v),
-		ErrorHandler:       getErrorHandler(c.IndexPath, res),
-	}
-}
-
-func vaultBase(c Config, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) vaultWiring {
-	return vaultWiring{
-		IndexPath:    c.IndexPath,
-		RegistryPath: c.RegistryPath,
-		ServiceDir:   c.ServiceDir,
-		Clock:        GetClock(res),
-		Lender:       endpoints.Lender,
-		TextPlugins:  running.Runtime.TextPlugins,
-		TextVersions: texts,
-		TextReaders:  res.TextReaders,
-		VaultLocks:   res.vaultLocks,
-		Watches:      res.watches,
-		ErrorHandler: getErrorHandler(c.IndexPath, res),
-	}
-}
-
-func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, search searchWiring) vaultWiring {
+func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, chunks noteChunkPolicy) vaultWiring {
 	base.SyncSetting = syncSetting(settings)
-	base = setVaultSearch(base, search)
+	base = setVaultSearch(base, chunks)
 	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
 	base.RecordLog = recordLogFunc(record, res.ErrorHandler)
 	return base
 }
 
-func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) (settingsWiring, searchWiring, vaultWiring) {
+func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, texts *TextVersions) (settingsWiring, vaultIndexPlan, vaultWiring) {
 	// texts are the text versions the open made over its index, or nil where it makes none.
 	exec = getPluginExecution(exec)
-	running := getRunningExecution(exec, c.SafeMode)
-	endpoints = getPluginEndpoints(endpoints)
 	settings := settingsOf(c, exec, prefs, res)
-	base := vaultBase(c, running, endpoints, res, texts)
-	search := searchWith(c, exec, running, endpoints, res, base)
-
-	return settings, search, vaultWith(res, base, settings, search)
+	base := openVaultAccess(c.Paths, GetClock(res), res.vaultLocks, res.watches, texts)
+	plan := vaultIndexPlan{
+		ChunkPolicy: noteChunkPolicy{Chunks: res.Chunks, Profiles: exec.Runtime.PluginResolver},
+		ServiceDir:  c.ServiceDir, ShouldRebuildIndex: c.ShouldRebuildIndex,
+		VaultReaders: base.Readers, TextReaders: getTextReaders(res.TextReaders, texts), ErrorHandler: settings.ErrorHandler,
+	}
+	return settings, plan, vaultWith(res, base, settings, plan.ChunkPolicy)
 }
 
-func setVaultSearch(v vaultWiring, search searchWiring) vaultWiring {
-	v.CutNotes = cutNotes(search)
-	v.SetNoteCut = func(scan *vault.Scan) { setNoteCut(search, scan) }
+func setVaultSearch(v vaultWiring, chunks noteChunkPolicy) vaultWiring {
+	v.CutNotes = cutNotes(chunks)
+	v.SetNoteCut = func(scan *vault.Scan) { setNoteCut(chunks, scan) }
 	return v
 }
 
-func openIndexedVault(search searchWiring, v vaultWiring, db *Index) (searchWiring, vaultWiring) {
-	v.TextVersions = newTextVersions(v, db)
-	search.TextReaders = getTextReaders(v)
-	return search, setVaultSearch(v, search)
+func openIndexedVault(plan vaultIndexPlan, v vaultWiring, db *Index, plugins textport.TextPlugins) (vaultIndexPlan, vaultWiring) {
+	v = openVaultTextVersions(v, db, plugins, plan.ChunkPolicy)
+	plan.TextReaders = getTextReaders(plan.TextReaders, v.TextVersions)
+	return plan, v
 }
 
-func newPluginInstall(c Config, endpoints *PluginEndpoints, res *Resources) pluginInstall {
+func openVaultTextVersions(v vaultWiring, db *Index, plugins textport.TextPlugins, chunks noteChunkPolicy) vaultWiring {
+	v.TextVersions = newTextVersions(v.Options, plugins, v.Clock, db)
+	return setVaultSearch(v, chunks)
+}
+
+func newSourceBinding(exec *PluginExecution, safeMode bool, endpoints *PluginEndpoints, res *Resources) sourcebridge.Binding {
+	runtime := getRunningExecution(exec, safeMode).Runtime
+	return sourcebridge.Binding{
+		Activator:    runtime.Activator,
+		Plugins:      sourcebridge.PluginAccess{PluginResolver: runtime.PluginResolver, ConfigWatcher: runtime.ConfigWatcher},
+		Descriptions: getPluginEndpoints(endpoints).SourceDescriptions,
+		ReportRead:   pluginhealth.NewReportSearchSource(exec.Health).Execute,
+		Follow:       res.Chunks.Follow,
+	}
+}
+
+func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) pluginInstall {
+	prefs = getPluginPreferences(prefs)
 	return pluginInstall{
+		Licenses: prefs.Views.Declarations, Configuration: prefs.Configuration, OperationTitles: prefs.Views.Operations,
 		PluginCachePath: c.PluginCachePath,
 		ServiceDir:      c.ServiceDir,
 		SafeMode:        c.SafeMode,

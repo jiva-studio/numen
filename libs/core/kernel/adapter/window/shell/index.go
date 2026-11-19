@@ -31,5 +31,5 @@ func (a *API) EnsureIndexed(ctx context.Context, v domain.Vault) (plugin.IndexSt
 // for the vault is released and a change is reported.
 func (a *API) ReportVaultRead(v domain.Vault) {
 	a.ClearIndexFailure(v.ID)
-	a.ReportChange()
+	a.Changes.ReportChange()
 }

@@ -31,7 +31,7 @@ type API struct {
 	Vaults               *registry.List
 	ResolveLinks         *query.ResolveVaultLinks
 
-	subscribers changeSubscribers
+	Changes indexing.Changes
 }
 
 // PluginServices is where the calls for the services plugins serve are forwarded.

@@ -19,6 +19,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -38,6 +40,9 @@ func reportDependencies(watch PluginWatch, tasks *run.Tasks, record func(domainl
 
 // pluginInstall supplies storage, catalog and host endpoints to the installation.
 type pluginInstall struct {
+	Licenses        licenseport.Declarations
+	Configuration   pluginport.ConfigRefresher
+	OperationTitles connectionport.OperationTitles
 	PluginCachePath string
 	ServiceDir      string
 	SafeMode        bool

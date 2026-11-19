@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Disposable, HostServices, PluginContext } from '@numen/plugin-sdk'
 import type { LoaderHost, PluginParts } from './host'
+import { createSignal } from './loading'
 import { createTestPluginLoader } from './testing/pluginLoader'
 
 const HARBOR = 'org.example.harbor'
@@ -77,5 +78,41 @@ describe('a start cancelled at the limit', () => {
       'window.watch',
     ])
     expect(pushed.dispose).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('closing a loader during activation', () => {
+  it('releases registrations and deactivates the plugin while new starts stay closed', async () => {
+    const began = createSignal()
+    const finish = createSignal()
+    const deactivate = vi.fn()
+    const lateActivate = vi.fn()
+    const registration = { dispose: vi.fn() }
+    const subscriptions: Disposable[] = []
+    const host = {
+      createContext: () =>
+        ({ plugin: { identity: { subscriptions } }, host: {} }) as unknown as PluginParts,
+      disposePlugin: vi.fn(() => subscriptions.splice(0).forEach((one) => one.dispose())),
+      disposeAll: vi.fn(),
+    }
+    const loader = createTestPluginLoader({ host })
+    const starting = loader.activation.activatePlugin(HARBOR, {
+      activate: async (plugin: PluginContext) => {
+        began.settle()
+        await finish.promise
+        plugin.identity.subscriptions.push(registration)
+      },
+      deactivate,
+    })
+    await began.promise
+    const closing = loader.close()
+    const late = loader.activation.activatePlugin('org.example.late', { activate: lateActivate })
+    finish.settle()
+    await Promise.all([closing, starting, late])
+
+    expect(loader.status.getActivePluginIds()).toEqual([])
+    expect(deactivate).toHaveBeenCalledTimes(1)
+    expect(registration.dispose).toHaveBeenCalledTimes(1)
+    expect(lateActivate).not.toHaveBeenCalled()
   })
 })

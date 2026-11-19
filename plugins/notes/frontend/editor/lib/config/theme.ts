@@ -136,9 +136,7 @@ export const theme = EditorView.theme({
     backgroundColor: 'var(--numen-selection)',
   },
 
-  /* The base theme paints the active line and special characters for a light
-     page; both are reset here. */
-  '.cm-activeLine': { backgroundColor: 'transparent' },
+  '.cm-activeLine': { backgroundColor: 'var(--numen-editor-active-line, transparent)' },
   '.cm-specialChar': { color: 'var(--editor-mark)' },
   '.cm-selectionMatch': { backgroundColor: 'var(--numen-selection-match)' },
 

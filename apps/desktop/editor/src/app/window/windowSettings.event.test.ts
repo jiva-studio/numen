@@ -4,6 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import { createLostConnection } from '@numen/core-client/testing'
 import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
 import { createTestTabs } from '@/testing/tabs'
 import { createSettingsStore, SETTINGS_WORDS, type SettingEdit } from '@/entities/settings'
@@ -128,6 +129,25 @@ describe('a setting that changes', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('recovers the saved appearance on retry and keeps one settings stream', async () => {
+    const themes = vi.spyOn(THEME, 'listThemes').mockImplementationOnce(() => {
+      throw createLostConnection('appearance offline')
+    })
+    const { settings, core } = create()
+    vi.mocked(core.getSettings).mockRejectedValueOnce(createLostConnection('settings offline'))
+    try {
+      await expect(settings.start()).rejects.toThrow('settings offline')
+      await settings.start()
+      await settle()
+
+      expect(settings.appearance.state.mode.value).toBe('light')
+      expect(core.watchSettings).toHaveBeenCalledTimes(1)
+    } finally {
+      settings.close()
+      themes.mockRestore()
+    }
   })
 
   it('shows its new value in the settings of the window when the event arrives', async () => {

@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
@@ -10,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -48,20 +50,21 @@ func (c TestInstallation) Themes(say func(string)) (*theme.Service, error) {
 
 // The methods below are the wiring the tests of this package reach from outside it.
 
-func (c TestInstallation) CutNotes() chunking.CutNotes { return cutNotes(searchOf(c)) }
+func (c TestInstallation) CutNotes() chunking.CutNotes { return cutNotes(indexPlanOf(c).ChunkPolicy) }
 
 func (c TestInstallation) Embedder(ctx context.Context) (searchsourceport.WatchedSource, func() error, error) {
-	return searchSource(searchOf(c), ctx)
+	return sourceOf(c).Open(ctx)
 }
 
-func (c TestInstallation) EmbedderReady() bool { return embedderReady(searchOf(c)) }
+func (c TestInstallation) EmbedderReady() bool { return embedderReady(sourceOf(c)) }
 
 func (c TestInstallation) Embedders(ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
-	return searchSources(searchOf(c), ctx)
+	source, closer, err := sourceOf(c).OpenWatching(ctx)
+	return source, source, closer, err
 }
 
 func (c TestInstallation) NewSearchOver(queries sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
-	return newSearchOver(searchOf(c), queries, sources, errorHandler, nil)
+	return newSearchOver(newTextSearch(indexPlanOf(c), c.machine.ResolvedCompute.Workers), queries, sources, errorHandler, nil)
 }
 
 func (c TestInstallation) OpenGetSettings() *settings.Get {
@@ -81,7 +84,7 @@ func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultRead
 }
 
 func (c TestInstallation) VaultWatcher() vaultport.VaultWatcher {
-	return vaultWatcher(c.buildVaultWiring())
+	return c.buildVaultWiring().Watcher
 }
 
 // AbsentBinding is the binding of a plugin host that runs nothing.
@@ -97,31 +100,35 @@ func NotesShowingMoves(
 
 func GetNoteChanges(notes NoteUseCases) hostvault.NoteChanges { return getNoteChanges(notes) }
 
-func embedderReady(c searchWiring) bool {
-	_, err := c.ActiveRuntime.ResolveCapability(bridge.CapabilitySearchSource)
+func sourceOf(c TestInstallation) sourcebridge.Binding {
+	return newSourceBinding(c.Execution, c.SafeMode, c.Endpoints, c.Resources)
+}
+
+func embedderReady(c sourcebridge.Binding) bool {
+	_, err := c.Plugins.ResolveCapability(bridge.CapabilitySearchSource)
 	return err == nil
 }
 
-func notifyHost(c settingsWiring, batch []settingsdomain.Setting) { notifyPlugins(c).Execute(batch) }
+func notifyHost(c TestInstallation, batch []settingsdomain.Setting) {
+	notifyPlugins(c.buildSettingsWiring(), c.Preferences).Execute(batch)
+}
 
 func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File, error) {
 	return settingsStore(c).ReadUncheckedAt(path)
 }
 
-func fileMovers(c vaultWiring) vaultport.FileMovers { return vaultWriters(c) }
-
-func Scan(c TestInstallation, db *Index) vault.Scan { return searchScan(searchOf(c), db) }
+func Scan(c TestInstallation, db *Index) vault.Scan { return searchScan(indexPlanOf(c), db) }
 
 func Embed(c TestInstallation, db *Index, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
-	return searchEmbed(searchOf(c), db, source, v)
+	return searchEmbed(indexPlanOf(c), db, source, v)
 }
 
 func IndexTexts(c TestInstallation, db *Index, v domain.Vault) (filetext.Index, error) {
-	return indexTexts(searchOf(c), db, v, nil)
+	return indexTexts(indexPlanOf(c), db, v, nil)
 }
 
 func NewSearch(c TestInstallation, db *Index, asking searchsourceport.Source, errorHandler func(error)) searchusecase.Search {
-	return newSearch(searchOf(c), db, asking, errorHandler, nil)
+	return newSearch(newTextSearch(indexPlanOf(c), c.machine.ResolvedCompute.Workers), db, asking, errorHandler, nil)
 }
 
 func SyncSetting(c TestInstallation) naming.SyncSetting {
@@ -134,15 +141,11 @@ func GetSettingsWriter(c TestInstallation) func(entries []settingsdomain.Setting
 
 // UnsubscribeHost stops the settings subscription of the plugin host before a test ends.
 func UnsubscribeHost(c TestInstallation) {
-	wiring := c.buildSettingsWiring()
-	if wiring.SubscribedHosts == nil {
-		return
-	}
-	wiring.SubscribedHosts.Unsubscribe(wiring.Configuration)
+	c.Resources.subscribedHosts.Unsubscribe(c.Preferences.Configuration)
 }
 
 func VaultReaders(c TestInstallation) vaultport.VaultReaders {
-	return vaultReaders(c.buildVaultWiring())
+	return c.buildVaultWiring().Readers
 }
 
 func UpdateIndex(c TestInstallation, db *Index) edit.IndexUpdater {
@@ -154,7 +157,8 @@ func UpdateIndex(c TestInstallation, db *Index) edit.IndexUpdater {
 }
 
 func Moves(c TestInstallation, ctx context.Context) (<-chan struct{}, error) {
-	return vaultMoves(c.buildVaultWiring(), ctx)
+	access := c.buildVaultWiring()
+	return vaultMoves(ctx, access.IndexPath, access.Watcher)
 }
 
 func Notes(c TestInstallation, db *Index, index edit.IndexUpdater) NoteUseCases {
@@ -173,15 +177,15 @@ func InstallPluginVault(c TestInstallation, db *Index, current func() (domain.Va
 	return installPluginVault(c.buildPluginInstall(), c.buildVaultWiring(), vaults, db, current, hooks)
 }
 
-func searchOf(c TestInstallation) searchWiring {
-	_, search, _ := buildVaultSearch(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources, nil)
+func indexPlanOf(c TestInstallation) vaultIndexPlan {
+	_, search, _ := buildVaultSearch(c.Config, c.Execution, c.Preferences, c.Resources, nil)
 	return search
 }
 
 func ReadWholeVault(c TestInstallation,
 	ctx context.Context, db *Index, source searchsourceport.Source, v domain.Vault,
 ) (indexing.ReadWholeVault, error) {
-	return readWholeVault(searchOf(c), ctx, db, source, v, GetRefresh(c, db))
+	return readWholeVault(indexPlanOf(c), ctx, db, source, v, GetRefresh(c, db))
 }
 
 type TestInstallation struct {
@@ -203,12 +207,12 @@ func (c TestInstallation) buildSettingsWiring() settingsWiring {
 }
 
 func (c TestInstallation) buildPluginInstall() pluginInstall {
-	install := newPluginInstall(c.Config, c.Endpoints, c.Resources)
+	install := newPluginInstall(c.Config, c.Preferences, c.Endpoints, c.Resources)
 	return install
 }
 
 func (c TestInstallation) buildVaultWiring() vaultWiring {
-	_, _, vault := buildVaultSearch(c.Config, c.Execution, c.Preferences, c.Endpoints, c.Resources, nil)
+	_, _, vault := buildVaultSearch(c.Config, c.Execution, c.Preferences, c.Resources, nil)
 	return vault
 }
 
@@ -225,4 +229,8 @@ func AdaptTestPlugins(management *PluginManagement, supervision *PluginSupervisi
 
 func GetRefresh(c TestInstallation, db *Index) vault.Refresh {
 	return vaultMakeRefresh(c.buildVaultWiring(), db, db.Notes())
+}
+
+func (c TestInstallation) openTextVersions(db *Index) *TextVersions {
+	return newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, getRunningExecution(c.Execution, c.SafeMode).Runtime.TextPlugins, GetClock(c.Resources), db)
 }

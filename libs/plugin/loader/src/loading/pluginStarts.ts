@@ -43,7 +43,9 @@ export function createPluginStarts(deps: PluginStartsDeps) {
   const startPluginsOf = async (match: ContributionMatch): Promise<void> => {
     if (!deps.isRunning.value) return
     const ids = getEnabledPluginIds()
+    const starter = deps.starter.current
     const manifests = await Promise.all(ids.map(readManifest))
+    if (starter !== deps.starter.current) return
     const matched = ids.filter((_, index) => {
       const manifest = manifests[index]
       return manifest !== undefined && match(manifest)

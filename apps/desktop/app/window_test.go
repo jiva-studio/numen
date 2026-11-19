@@ -12,19 +12,21 @@ import (
 
 func windowOn(t *testing.T) (*container.OpenedWindow, container.Config) {
 	t.Helper()
-	opened, cfg, _ := windowWithCases(t)
-	return opened, cfg
+	cfg := newWindowConfig(t)
+	return openWindowAt(t, cfg, t.TempDir()), cfg
 }
 
-func windowWithCases(t *testing.T) (*container.OpenedWindow, container.Config, *container.WindowUseCases) {
+func newWindowConfig(t *testing.T) container.Config {
 	t.Helper()
-
-	cfg := container.Config{
+	return container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	}
+}
+
+func openWindowAt(t *testing.T, cfg container.Config, root string) *container.OpenedWindow {
+	t.Helper()
 	res := container.NewResources()
 	execution, preferences, endpoints := container.PreparePluginHost(nil, nil, nil, false)
-	root := t.TempDir()
 	if _, err := cfg.AddVault(res, root, "one"); err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +40,7 @@ func windowWithCases(t *testing.T) (*container.OpenedWindow, container.Config, *
 			t.Error(err)
 		}
 	})
-	return opened, cfg, &opened.UseCases
+	return opened
 }
 
 // TestTheWindowIsNamedAfterTheFileInFrontOfThePerson checks that the page

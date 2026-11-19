@@ -56,18 +56,18 @@ func newWindowSession(
 	diag := windowsession.NewDiagnostics(parts.out, state.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
-		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(vaultDeps), diag),
+		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(vaultDeps.TextVersions), diag),
 		Passes:   parts.passes, Triggers: triggers, StartFeed: parts.startFeed,
 		Report: editor.ReportVault(vaultDeps.RecordLog),
 	})
-	identity := vault.NewCheckIdentity(vaultIdentity(vaultDeps))
+	identity := vault.NewCheckIdentity(vaultIdentity(vaultDeps.Options))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)
 	guard := &windowsession.Guard{}
 	flush := windowsession.NewPageFlush(state.Window, state.Writes)
 	rebuild := windowsession.NewRebuildSession(guard, session)
 	show := windowsession.NewShowVault(guard, session, identity, flush, &state.Notices.ChangeEvents)
 	follow := windowsession.NewModelFollow(parts.embedding, parts.indexer, &state.Runtime, rebuild)
-	switching := windowsession.NewSwitchVault(show, pluginVault, state)
+	switching := windowsession.NewSwitchVault(show, pluginVault, &state.Tabs, state.ShowOpenTabs)
 	return windowSession{
 		cases: windowCases{
 			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, parts.shouldRebuild),

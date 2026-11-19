@@ -3,6 +3,7 @@ package editor_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"testing"
 	"time"
 
@@ -12,13 +13,13 @@ import (
 // A plugin open whose call ends while the page is still writing leaves no request of its own running,
 // so the next plugin open succeeds.
 func TestAPluginOpenAfterACallThatEndedSucceeds(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
 	f.respondToFlushes(t, stream, flushRequest, release)
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 
 	ctx, hangUp := context.WithCancel(t.Context())
 	openResult := callOpenVault(ctx, list, f.second.ID)

@@ -26,6 +26,8 @@ export function createEditorTokens(
   const readCss = (): string => {
     const family = store.read.getCommittedSetting(['app', 'editor', 'fontFamily'])
     return getEditorCss({
+      highlightActiveLine:
+        store.read.getCommittedSetting(['app', 'editor', 'highlightActiveLine']) === true,
       fontSize: readNumber('fontSize', DEFAULT_FONT_SIZE),
       lineHeight: readNumber('lineHeight', DEFAULT_LINE_HEIGHT),
       fontFamily: typeof family === 'string' ? family : '',

@@ -55,7 +55,7 @@ const EDITOR: readonly PluginSettingInfo[] = [
   },
   {
     key: 'editor.fontFamily',
-    type: 'enum',
+    type: 'string',
     title: 'Font family',
     description: '',
     default: '',
@@ -623,6 +623,16 @@ describe('the Editor page of the shell settings', () => {
     findRow(wrapper, 'Font family').findComponent(Select).vm.$emit('update:modelValue', 'mono')
 
     expect(writes).toStrictEqual([{ at: ['app', 'editor', 'fontFamily'], value: '"mono"' }])
+  })
+
+  it('accepts an installed family typed into the font selector', () => {
+    const { wrapper, writes } = createPage('editor')
+    const select = findRow(wrapper, 'Font family').findComponent(Select)
+    expect(select.props('canEnterCustom')).toBe(true)
+    select.vm.$emit('update:modelValue', 'JetBrains Mono')
+    expect(writes).toStrictEqual([
+      { at: ['app', 'editor', 'fontFamily'], value: '"JetBrains Mono"' },
+    ])
   })
 
   it('writes the empty family when the face of the theme is chosen', () => {

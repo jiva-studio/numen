@@ -126,7 +126,7 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		opening := vaultOpener(cfg.buildVaultWiring(), db)
 		broken := errors.New("index unavailable")
 		opening.Refresh = vault.NewRefreshFrom(vault.RefreshDeps{
-			Readers: vaultReaders(cfg.buildVaultWiring()), Vaults: db.Vaults(), Notes: repositoryAnswering{err: broken},
+			Readers: cfg.buildVaultWiring().Readers, Vaults: db.Vaults(), Notes: repositoryAnswering{err: broken},
 			Queries: db.Sources(), Sources: db.Sources(), Now: GetClock(cfg.Resources),
 			Ledger: vault.NewLedger(),
 		})

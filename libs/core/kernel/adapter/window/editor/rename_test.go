@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 	"os"
 	"path/filepath"
 	"slices"
@@ -614,10 +615,13 @@ func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
-	f.cases.Vaults.Tree.Move = vaults.NewMove(
+	move := vaults.NewMove(
 		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, f.index.NoteQueries(), f.index.Sources(),
-		stuck{f.index.Sources()}, f.cases.Notes.Place.Move,
+		stuck{f.index.Sources()}, newNoteMover(f.index),
 	)
+
+	moveFile := vaults.NewMoveFile(&move, f.installation.State.Writes, f.installation.State.Writes)
+	mountFileEdit(f.mux, f.installation.State, numenv1connect.FileServiceMoveFileProcedure, &moveFile, nil)
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 		From: "Entropy.md",
@@ -639,11 +643,13 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 	waitForScan(t, f)
-	f.cases.Notes.Place.Rename = note.NewRename(note.MoveDeps{
+	rename := note.NewRename(note.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, Now: testsupport.NewClock(),
-	}, failingAfterMove{f.cases.Notes.Place.Move},
+	}, failingAfterMove{newNoteMover(f.index)},
 		testsupport.OpenGate{},
 	)
+
+	mountNoteEdit(f.mux, f.installation.State, numenv1connect.NoteServiceRenameNoteProcedure, nil, nil, &rename)
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Entropy.md",
@@ -942,12 +948,12 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerReachesBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := f.cases.Queries.Browse.GetTitles.Execute(t.Context(), f.installation.State.GetCurrentVault(), []string{"Entropy.md"})
+	found, err := f.index.NoteQueries().GetNotes(t.Context(), f.installation.State.GetCurrentVault().ID, []string{"Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found.Notes) != 1 || found.Notes[0].Title != "Entropy" {
-		t.Errorf("the index answers %v for a note that was just made", found.Notes)
+	if len(found) != 1 || found["Entropy.md"].Title != "Entropy" {
+		t.Errorf("the index answers %v for a note that was just made", found)
 	}
 }
 
