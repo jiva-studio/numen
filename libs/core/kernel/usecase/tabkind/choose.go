@@ -92,22 +92,7 @@ func (u *Choose) chooseForNote(
 	values := plugin.NewTargetValues(path, false, contentType).WithNote(noteType, properties).Get()
 	var matching []domain.ContentHandler
 	for _, one := range kinds {
-		if _, isRead := values["config"]; !isRead && one.hasConfig {
-			if cachedConfig != nil {
-				if *cachedConfig == nil {
-					tmp := map[string]any{}
-					u.config.add(tmp)
-					if cfg, ok := tmp["config"].(map[string]any); ok {
-						*cachedConfig = cfg
-					}
-				}
-				if *cachedConfig != nil {
-					values["config"] = *cachedConfig
-				}
-			} else {
-				u.config.add(values)
-			}
-		}
+		u.addConfig(values, cachedConfig, one.hasConfig)
 		if one.condition.Evaluate(values) != when.True {
 			continue
 		}
@@ -123,6 +108,35 @@ func (u *Choose) chooseForNote(
 	}
 	chosen, _ := domain.ChooseHandler(contentType, matching)
 	return chosen.ID
+}
+
+func (u *Choose) addConfig(values map[string]any, cachedConfig *map[string]any, needsConfig bool) {
+	if !needsConfig {
+		return
+	}
+	if _, isRead := values["config"]; isRead {
+		return
+	}
+	if cachedConfig == nil {
+		u.config.add(values)
+		return
+	}
+	if *cachedConfig == nil {
+		*cachedConfig = u.getConfig()
+	}
+	if *cachedConfig != nil {
+		values["config"] = *cachedConfig
+	}
+}
+
+func (u *Choose) getConfig() map[string]any {
+	values := map[string]any{}
+	u.config.add(values)
+	config, ok := values["config"].(map[string]any)
+	if !ok {
+		return nil
+	}
+	return config
 }
 
 // configValue gives a condition the config variable.

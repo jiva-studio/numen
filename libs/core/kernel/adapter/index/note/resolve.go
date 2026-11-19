@@ -200,6 +200,20 @@ func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.Reso
 	if err := r.prefetchIdentifiers(ctx, links); err != nil {
 		return err
 	}
+	requested := r.getRequestedNames(links)
+	r.cache.copyNamedInto(r.vaultID, requested, r.named)
+	missing := r.getMissingNames(requested)
+	if len(missing) == 0 {
+		return nil
+	}
+	if len(missing) == 1 {
+		_, err := r.getCandidates(ctx, missing[0])
+		return err
+	}
+	return r.readCandidateNames(ctx, missing)
+}
+
+func (r *resolution) getRequestedNames(links []domain.ResolvedLink) []string {
 	var requested []string
 	seen := map[string]bool{}
 	for _, l := range links {
@@ -212,42 +226,26 @@ func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.Reso
 			requested = append(requested, name)
 		}
 	}
-	r.cache.copyNamedInto(r.vaultID, requested, r.named)
+	return requested
+}
+
+func (r *resolution) getMissingNames(requested []string) []string {
 	var missing []string
 	for _, name := range requested {
 		if _, ok := r.named[name]; !ok {
 			missing = append(missing, name)
 		}
 	}
-	if len(missing) == 0 {
-		return nil
-	}
-	if len(missing) == 1 {
-		_, err := r.getCandidates(ctx, missing[0])
-		return err
-	}
+	return missing
+}
 
-	paths := make([]string, 0, len(missing)*2)
-	bases := make([]string, 0, len(missing))
-	byPath := make(map[string][]string, len(missing)*2)
-	byBase := make(map[string][]string, len(missing))
-	for _, name := range missing {
-		r.named[name] = nil
-		withExt := name + domain.NoteExtension
-		base := domain.FoldName(domain.LinkName(name))
-		paths = append(paths, name, withExt)
-		byPath[name] = append(byPath[name], name)
-		byPath[withExt] = append(byPath[withExt], name)
-		if _, exists := byBase[base]; !exists {
-			bases = append(bases, base)
-		}
-		byBase[base] = append(byBase[base], name)
-	}
-	pathsJSON, err := json.Marshal(paths)
+func (r *resolution) readCandidateNames(ctx context.Context, missing []string) (err error) {
+	candidates := r.createCandidateNames(missing)
+	pathsJSON, err := json.Marshal(candidates.paths)
 	if err != nil {
 		return err
 	}
-	basesJSON, err := json.Marshal(bases)
+	basesJSON, err := json.Marshal(candidates.bases)
 	if err != nil {
 		return err
 	}
@@ -259,25 +257,64 @@ func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.Reso
 	}
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
+	if err := r.appendCandidateNames(rows, candidates); err != nil {
+		return err
+	}
+	r.cache.setNamed(r.generation, r.vaultID, missing, r.named)
+	return nil
+}
+
+type candidateNames struct {
+	paths  []string
+	bases  []string
+	byPath map[string][]string
+	byBase map[string][]string
+}
+
+func (r *resolution) createCandidateNames(missing []string) candidateNames {
+	candidates := candidateNames{
+		paths: make([]string, 0, len(missing)*2), bases: make([]string, 0, len(missing)),
+		byPath: make(map[string][]string, len(missing)*2), byBase: make(map[string][]string, len(missing)),
+	}
+	for _, name := range missing {
+		r.named[name] = nil
+		candidates.add(name)
+	}
+	return candidates
+}
+
+func (c *candidateNames) add(name string) {
+	withExt := name + domain.NoteExtension
+	base := domain.FoldName(domain.LinkName(name))
+	c.paths = append(c.paths, name, withExt)
+	c.byPath[name] = append(c.byPath[name], name)
+	c.byPath[withExt] = append(c.byPath[withExt], name)
+	if _, exists := c.byBase[base]; !exists {
+		c.bases = append(c.bases, base)
+	}
+	c.byBase[base] = append(c.byBase[base], name)
+}
+
+func (r *resolution) appendCandidateNames(rows *sql.Rows, candidates candidateNames) error {
 	for rows.Next() {
 		var path, folded string
 		if err := rows.Scan(&path, &folded); err != nil {
 			return err
 		}
-		for _, name := range byPath[path] {
+		r.appendCandidatePath(path, folded, candidates)
+	}
+	return rows.Err()
+}
+
+func (r *resolution) appendCandidatePath(path, folded string, candidates candidateNames) {
+	for _, name := range candidates.byPath[path] {
+		r.named[name] = append(r.named[name], path)
+	}
+	for _, name := range candidates.byBase[folded] {
+		if path != name && path != name+domain.NoteExtension {
 			r.named[name] = append(r.named[name], path)
 		}
-		for _, name := range byBase[folded] {
-			if path != name && path != name+domain.NoteExtension {
-				r.named[name] = append(r.named[name], path)
-			}
-		}
 	}
-	if err := rows.Err(); err != nil {
-		return err
-	}
-	r.cache.setNamed(r.generation, r.vaultID, missing, r.named)
-	return nil
 }
 
 func (r *resolution) prefetchIdentifiers(ctx context.Context, links []domain.ResolvedLink) (err error) {

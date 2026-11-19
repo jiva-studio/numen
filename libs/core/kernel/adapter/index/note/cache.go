@@ -53,6 +53,29 @@ type rawVaultLink struct {
 	folded string
 }
 
+type vaultGraph struct {
+	notes          map[string]cachedNoteRef
+	types          map[string]cachedNoteType
+	rawFrontmatter map[string]sql.NullString
+	linksOf        map[string][]domain.ResolvedLink
+	backlinksOf    map[string][]domain.ResolvedLink
+	named          map[string][]string
+}
+
+type headCacheRead struct {
+	cached    map[string]frontmatter.Head
+	missing   []string
+	toDecode  []string
+	raws      map[string]sql.NullString
+	noteTypes map[string]domain.NoteType
+}
+
+type vaultLinkResolver struct {
+	cachedResolution
+	idByPath    map[string]string
+	backlinksOf map[string][]domain.ResolvedLink
+}
+
 // NewCache creates an empty read cache.
 func NewCache() *Cache {
 	return &Cache{vaults: map[domain.VaultID]*vaultCache{}}
@@ -93,70 +116,100 @@ func (c *Cache) ensureGraphLoaded(ctx context.Context, db *sql.DB, vaultID domai
 		return nil
 	}
 	gen := c.getGeneration()
-	vault, ok := c.getVaultRow(vaultID)
-	if !ok {
-		var err error
-		vault, err = vaultRow(ctx, db, vaultID)
-		if errors.Is(err, errNoVault) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		c.setVaultRow(gen, vaultID, vault)
+	vault, found, err := c.getGraphVault(ctx, db, gen, vaultID)
+	if err != nil || !found {
+		return err
 	}
-
-	notes, types, rawFrontmatter, byPath, idByPath, byFolded, err := loadVaultNotes(ctx, db, vault)
+	graph, err := loadVaultGraph(ctx, db, vault, vaultID)
 	if err != nil {
 		return err
+	}
+	c.setVaultGraph(gen, vaultID, vault, graph)
+	return nil
+}
+
+func (c *Cache) getGraphVault(
+	ctx context.Context, db *sql.DB, gen uint64, vaultID domain.VaultID,
+) (int64, bool, error) {
+	if vault, ok := c.getVaultRow(vaultID); ok {
+		return vault, true, nil
+	}
+	vault, err := vaultRow(ctx, db, vaultID)
+	if errors.Is(err, errNoVault) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	c.setVaultRow(gen, vaultID, vault)
+	return vault, true, nil
+}
+
+func loadVaultGraph(ctx context.Context, db *sql.DB, vault int64, vaultID domain.VaultID) (vaultGraph, error) {
+	notes, types, rawFrontmatter, byPath, idByPath, byFolded, err := loadVaultNotes(ctx, db, vault)
+	if err != nil {
+		return vaultGraph{}, err
 	}
 	order, grouped, noteIDs, err := loadVaultLinks(ctx, db, vault)
 	if err != nil {
-		return err
+		return vaultGraph{}, err
 	}
 	identified, err := loadIdentifiedNotes(ctx, db, noteIDs)
 	if err != nil {
-		return err
+		return vaultGraph{}, err
 	}
+	resolver := vaultLinkResolver{
+		cachedResolution: cachedResolution{vaultID: vaultID, byPath: byPath, byFolded: byFolded, named: make(map[string][]string, len(byFolded)), identified: identified},
+		idByPath:         idByPath,
+		backlinksOf:      make(map[string][]domain.ResolvedLink, len(byPath)),
+	}
+	linksOf, err := resolver.resolve(ctx, order, grouped)
+	if err != nil {
+		return vaultGraph{}, err
+	}
+	return vaultGraph{notes: notes, types: types, rawFrontmatter: rawFrontmatter, linksOf: linksOf, backlinksOf: resolver.backlinksOf, named: resolver.named}, nil
+}
 
-	named := make(map[string][]string, len(byFolded))
-	linksOf := make(map[string][]domain.ResolvedLink, len(byPath))
-	backlinksOf := make(map[string][]domain.ResolvedLink, len(byPath))
+func (r *vaultLinkResolver) resolve(
+	ctx context.Context, order []string, grouped map[string][]rawVaultLink,
+) (map[string][]domain.ResolvedLink, error) {
+	linksOf := make(map[string][]domain.ResolvedLink, len(r.byPath))
 	for _, from := range order {
 		if err := ctx.Err(); err != nil {
-			return err
+			return nil, err
 		}
-		raws := grouped[from]
-		resolved := make([]domain.ResolvedLink, len(raws))
-		for i, raw := range raws {
-			l := raw.link
-			resolveCachedLink(vaultID, from, &l, byPath, byFolded, named, identified)
-			resolved[i] = l
-			if l.ToVault == vaultID && l.To != "" && isBacklinkMatch(l, raw.folded, idByPath[l.To], byPath[l.To]) {
-				backlinksOf[l.To] = append(backlinksOf[l.To], l)
-			}
-		}
-		if deduped := dedupe(resolved); len(deduped) > 0 {
-			linksOf[from] = deduped
+		links := r.resolveAt(from, grouped[from])
+		if len(links) > 0 {
+			linksOf[from] = links
 		}
 	}
+	return linksOf, nil
+}
 
+func (r *vaultLinkResolver) resolveAt(from string, raws []rawVaultLink) []domain.ResolvedLink {
+	links := make([]domain.ResolvedLink, len(raws))
+	for i, raw := range raws {
+		link := raw.link
+		r.resolveLink(from, &link)
+		links[i] = link
+		if link.ToVault == r.vaultID && link.To != "" && isBacklinkMatch(link, raw.folded, r.idByPath[link.To], r.byPath[link.To]) {
+			r.backlinksOf[link.To] = append(r.backlinksOf[link.To], link)
+		}
+	}
+	return dedupe(links)
+}
+
+func (c *Cache) setVaultGraph(gen uint64, vaultID domain.VaultID, vault int64, graph vaultGraph) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.generation != gen {
-		return nil
+		return
 	}
 	v := c.getOrCreateVault(vaultID)
-	v.row = vault
-	v.hasRow = true
-	v.isGraphLoaded = true
-	v.linksOf = linksOf
-	v.backlinksOf = backlinksOf
-	maps.Copy(v.named, named)
-	v.notes = notes
-	v.types = types
-	v.rawFrontmatter = rawFrontmatter
-	return nil
+	v.row, v.hasRow, v.isGraphLoaded = vault, true, true
+	v.linksOf, v.backlinksOf = graph.linksOf, graph.backlinksOf
+	maps.Copy(v.named, graph.named)
+	v.notes, v.types, v.rawFrontmatter = graph.notes, graph.types, graph.rawFrontmatter
 }
 
 func (c *Cache) getOrCreateVault(vaultID domain.VaultID) *vaultCache {
@@ -444,61 +497,84 @@ func (c *Cache) splitHeads(
 		c.mu.RUnlock()
 		return gen, map[string]frontmatter.Head{}, paths, nil
 	}
-	cached := make(map[string]frontmatter.Head, len(paths))
-	var missing []string
-	var toDecode []string
+	read := readCachedHeads(v, paths)
+	if len(read.toDecode) == 0 {
+		c.mu.RUnlock()
+		return gen, read.cached, read.missing, nil
+	}
+	c.mu.RUnlock()
+	decoded, err := decodeHeads(read)
+	if err != nil {
+		return 0, nil, nil, err
+	}
+	for path, head := range decoded {
+		read.cached[path] = cloneHead(head)
+	}
+	c.setHeads(gen, vaultID, read.toDecode, decoded)
+	return gen, read.cached, nil, nil
+}
+
+func readCachedHeads(v *vaultCache, paths []string) headCacheRead {
+	read := headCacheRead{cached: make(map[string]frontmatter.Head, len(paths)), raws: map[string]sql.NullString{}, noteTypes: map[string]domain.NoteType{}}
 	seen := map[string]bool{}
-	isLoaded := v.isGraphLoaded
 	for _, path := range paths {
-		if entry, found := v.heads[path]; found {
-			if entry.exists {
-				head := entry.head
-				if head.Values != nil {
-					head.Values = maps.Clone(head.Values)
-				}
-				cached[path] = head
+		if head, found, exists := getCachedHead(v, path); found {
+			if exists {
+				read.cached[path] = head
 			}
 			continue
 		}
-		if !seen[path] {
-			seen[path] = true
-			if isLoaded {
-				if _, exists := v.types[path]; exists {
-					toDecode = append(toDecode, path)
-				}
-			} else {
-				missing = append(missing, path)
-			}
+		if seen[path] {
+			continue
 		}
+		seen[path] = true
+		read.addHeadPath(v, path)
 	}
-	if len(toDecode) == 0 {
-		c.mu.RUnlock()
-		return gen, cached, missing, nil
-	}
-	raws := make(map[string]sql.NullString, len(toDecode))
-	noteTypes := make(map[string]domain.NoteType, len(toDecode))
-	for _, path := range toDecode {
-		raws[path] = v.rawFrontmatter[path]
-		noteTypes[path] = v.types[path].noteType
-	}
-	c.mu.RUnlock()
+	return read
+}
 
-	decoded := make(map[string]frontmatter.Head, len(toDecode))
-	for _, path := range toDecode {
-		values, err := readHeadValues(raws[path])
-		if err != nil {
-			return 0, nil, nil, fmt.Errorf("%s: %w", path, err)
-		}
-		head := frontmatter.Head{Type: noteTypes[path], Values: values}
-		decoded[path] = head
-		cloned := head
-		if cloned.Values != nil {
-			cloned.Values = maps.Clone(cloned.Values)
-		}
-		cached[path] = cloned
+func getCachedHead(v *vaultCache, path string) (frontmatter.Head, bool, bool) {
+	entry, found := v.heads[path]
+	if !found {
+		return frontmatter.Head{}, false, false
 	}
-	c.setHeads(gen, vaultID, toDecode, decoded)
-	return gen, cached, nil, nil
+	if !entry.exists {
+		return frontmatter.Head{}, true, false
+	}
+	return cloneHead(entry.head), true, true
+}
+
+func (r *headCacheRead) addHeadPath(v *vaultCache, path string) {
+	if !v.isGraphLoaded {
+		r.missing = append(r.missing, path)
+		return
+	}
+	noteType, exists := v.types[path]
+	if !exists {
+		return
+	}
+	r.toDecode = append(r.toDecode, path)
+	r.raws[path] = v.rawFrontmatter[path]
+	r.noteTypes[path] = noteType.noteType
+}
+
+func decodeHeads(read headCacheRead) (map[string]frontmatter.Head, error) {
+	decoded := make(map[string]frontmatter.Head, len(read.toDecode))
+	for _, path := range read.toDecode {
+		values, err := readHeadValues(read.raws[path])
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", path, err)
+		}
+		decoded[path] = frontmatter.Head{Type: read.noteTypes[path], Values: values}
+	}
+	return decoded, nil
+}
+
+func cloneHead(head frontmatter.Head) frontmatter.Head {
+	if head.Values != nil {
+		head.Values = maps.Clone(head.Values)
+	}
+	return head
 }
 
 func (c *Cache) setHeads(

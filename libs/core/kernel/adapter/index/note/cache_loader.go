@@ -111,22 +111,30 @@ func loadIdentifiedNotes(
 	return identified, rows.Err()
 }
 
-func resolveCachedLink(vaultID domain.VaultID, from string, l *domain.ResolvedLink, byPath map[string]string, byFolded map[string][]string, named map[string][]string, identified map[string]identifiedNote) {
+type cachedResolution struct {
+	vaultID    domain.VaultID
+	byPath     map[string]string
+	byFolded   map[string][]string
+	named      map[string][]string
+	identified map[string]identifiedNote
+}
+
+func (r *cachedResolution) resolveLink(from string, l *domain.ResolvedLink) {
 	switch l.Target.Scheme {
 	case domain.SchemeNote:
-		if found, ok := identified[l.Target.Value]; ok {
+		if found, ok := r.identified[l.Target.Value]; ok {
 			l.ToVault, l.To = found.vault, found.path
 		}
 	case domain.SchemeName:
 		name := l.Target.Value
-		candidates, ok := named[name]
+		candidates, ok := r.named[name]
 		if !ok {
-			candidates = lookupCandidatesInMemory(name, byPath, byFolded)
-			named[name] = candidates
+			candidates = lookupCandidatesInMemory(name, r.byPath, r.byFolded)
+			r.named[name] = candidates
 		}
 		l.To, l.IsAmbiguous = domain.ChooseMatch(from, name, candidates)
 		if l.To != "" {
-			l.ToVault = vaultID
+			l.ToVault = r.vaultID
 		}
 	}
 }

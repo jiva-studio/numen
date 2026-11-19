@@ -33,13 +33,24 @@ func (q *QueryReads) GetLinksOf(ctx context.Context, vaultID domain.VaultID, fro
 }
 
 func (r *resolution) getLinksOf(ctx context.Context, from []string) (_ map[string][]domain.ResolvedLink, err error) {
-	wanted, err := json.Marshal(from)
+	grouped, order, allLinks, err := r.readLinksAt(ctx, from)
 	if err != nil {
 		return nil, err
 	}
+	if err := r.prefetchCandidates(ctx, allLinks); err != nil {
+		return nil, err
+	}
+	return r.resolveLinksOf(ctx, grouped, order)
+}
+
+func (r *resolution) readLinksAt(ctx context.Context, from []string) (_ map[string][]domain.ResolvedLink, _ []string, _ []domain.ResolvedLink, err error) {
+	wanted, err := json.Marshal(from)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	rows, err := r.statements.QueryContext(ctx, linksAtSQL, r.vault, string(wanted))
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
@@ -51,7 +62,7 @@ func (r *resolution) getLinksOf(ctx context.Context, from []string) (_ map[strin
 		var l domain.ResolvedLink
 		if err := rows.Scan(&path, &l.Target.Scheme, &l.Target.Value, &role,
 			&l.Type, &l.Why, &l.Label, &marker); err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 		l.From = path
 		l.Role = domain.LinkRole(role)
@@ -63,12 +74,12 @@ func (r *resolution) getLinksOf(ctx context.Context, from []string) (_ map[strin
 		allLinks = append(allLinks, l)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
-	if err := r.prefetchCandidates(ctx, allLinks); err != nil {
-		return nil, err
-	}
+	return grouped, order, allLinks, nil
+}
 
+func (r *resolution) resolveLinksOf(ctx context.Context, grouped map[string][]domain.ResolvedLink, order []string) (map[string][]domain.ResolvedLink, error) {
 	out := make(map[string][]domain.ResolvedLink, len(grouped))
 	for _, path := range order {
 		if err := ctx.Err(); err != nil {
