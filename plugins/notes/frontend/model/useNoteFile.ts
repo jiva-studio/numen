@@ -17,7 +17,7 @@ export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'writ
     isSaving = true
     try {
       while (body.value !== observed.body) {
-        const text = body.value
+        const text: string = body.value
         const at = await notes.writeIfUnchanged(path, text, observed)
         observed = { body: text, at }
         errorMessage.value = ''
