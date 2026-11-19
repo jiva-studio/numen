@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"runtime"
@@ -210,23 +211,26 @@ func resolveExpectedProductID(decl manifest.LicenseProvider) string {
 	if trimmed := strings.TrimSpace(decl.ProductID); trimmed != "" {
 		return trimmed
 	}
-	if idx := strings.LastIndex(decl.URL, "/payment/"); idx >= 0 {
-		rest := decl.URL[idx+len("/payment/"):]
-		if qIdx := strings.IndexAny(rest, "?#/"); qIdx >= 0 {
-			rest = rest[:qIdx]
-		}
-		return strings.TrimSpace(rest)
-	}
 	if decl.Provider == sharedlicensing.ProviderIDDodo {
-		if idx := strings.LastIndex(decl.URL, "/buy/"); idx >= 0 {
-			rest := decl.URL[idx+len("/buy/"):]
-			if qIdx := strings.IndexAny(rest, "?#/"); qIdx >= 0 {
-				rest = rest[:qIdx]
-			}
-			return strings.TrimSpace(rest)
-		}
+		return getCheckoutProductID(decl.URL, "/buy/")
 	}
-	return ""
+	return getCheckoutProductID(decl.URL, "/payment/")
+}
+
+func getCheckoutProductID(rawURL, marker string) string {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	idx := strings.LastIndex(parsed.Path, marker)
+	if idx < 0 {
+		return ""
+	}
+	rest := parsed.Path[idx+len(marker):]
+	if slash := strings.IndexByte(rest, '/'); slash >= 0 {
+		rest = rest[:slash]
+	}
+	return strings.TrimSpace(rest)
 }
 
 func readMachineID() string {

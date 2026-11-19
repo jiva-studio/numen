@@ -20,20 +20,38 @@ func NewWatch(deps Deps) *Watch {
 // Execute sends the current list of licenses immediately and again whenever a change signal
 // arrives, until ctx ends or send fails.
 func (u *Watch) Execute(ctx context.Context, send func([]license.Info) error) error {
-	var changes <-chan struct{}
-	if u.changes != nil {
-		var stop func()
-		changes, stop = u.changes.Subscribe()
+	changes, stop := u.subscribe()
+	if stop != nil {
 		defer stop()
 	}
 	list := NewList(Deps{base: u.operation})
+	if err := sendLicenseList(ctx, list, send); err != nil {
+		return err
+	}
+	return u.waitForChanges(ctx, changes, list, send)
+}
+
+func (u *Watch) subscribe() (<-chan struct{}, func()) {
+	if u.changes == nil {
+		return nil, nil
+	}
+	return u.changes.Subscribe()
+}
+
+func sendLicenseList(ctx context.Context, list *List, send func([]license.Info) error) error {
 	entries, err := list.Execute(ctx)
 	if err != nil {
 		return err
 	}
-	if err := send(entries); err != nil {
-		return err
-	}
+	return send(entries)
+}
+
+func (u *Watch) waitForChanges(
+	ctx context.Context,
+	changes <-chan struct{},
+	list *List,
+	send func([]license.Info) error,
+) error {
 	if changes == nil {
 		<-ctx.Done()
 		return nil
@@ -46,11 +64,7 @@ func (u *Watch) Execute(ctx context.Context, send func([]license.Info) error) er
 			if !open {
 				return nil
 			}
-			entries, err := list.Execute(ctx)
-			if err != nil {
-				return err
-			}
-			if err := send(entries); err != nil {
+			if err := sendLicenseList(ctx, list, send); err != nil {
 				return err
 			}
 		}
