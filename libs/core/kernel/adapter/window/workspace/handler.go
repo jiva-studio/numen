@@ -7,8 +7,6 @@ import (
 	"errors"
 	"math"
 	"net/http"
-	"slices"
-	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -60,10 +58,6 @@ type Handler struct {
 	write      OpenTabsWriter
 	read       OpenTabsReader
 	links      *tablinks.Tabs
-	mu         sync.Mutex
-	lastTabs   window.OpenTabs
-	hasLast    bool
-	lastVault  domain.VaultID
 }
 
 func NewHandler(
@@ -105,33 +99,11 @@ func (h *Handler) WriteOpenTabs(
 	}
 	h.window.ReportOpenTabs(open)
 	if v := h.window.GetCurrentVault(); v.Path != "" {
-		if !h.shouldWriteOpenTabs(v.ID, open) {
-			return connect.NewResponse(&v1.WriteOpenTabsResponse{}), nil
-		}
 		if err := h.write.Execute(ctx, v, open); err != nil {
-			h.clearLastOpenTabs()
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 	}
 	return connect.NewResponse(&v1.WriteOpenTabsResponse{}), nil
-}
-
-func (h *Handler) shouldWriteOpenTabs(vaultID domain.VaultID, open window.OpenTabs) bool {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.hasLast && h.lastVault == vaultID && h.lastTabs.ActiveID == open.ActiveID && slices.Equal(h.lastTabs.Tabs, open.Tabs) {
-		return false
-	}
-	h.lastVault = vaultID
-	h.lastTabs = window.OpenTabs{ActiveID: open.ActiveID, Tabs: slices.Clone(open.Tabs)}
-	h.hasLast = true
-	return true
-}
-
-func (h *Handler) clearLastOpenTabs() {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.hasLast = false
 }
 
 // ReadOpenTabs returns the tabs kept for the vault in the window.
