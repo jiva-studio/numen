@@ -29,11 +29,7 @@ import type { MessageLog } from '@/shared/model/notices/messages'
 export interface PluginDeclarationsDeps {
   readonly api: DeclaredCommandsApi
   readonly rest: SettingsStore
-  readonly diagnostics: {
-    readonly log: MessageLog
-    readonly recordPluginIssue?:
-      ((pluginId: string, phase: string, severity: 'warning' | 'error') => void) | undefined
-  }
+  readonly log: MessageLog
   readonly isPaletteOpen: HostPort['isPaletteOpen']
   readonly getTarget: () => CommandTarget
   readonly appCommands: readonly Command[]
@@ -46,10 +42,9 @@ export interface PluginDeclarationsDeps {
  * that read them: the slots and the handlers of the backends.
  */
 export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
-  const { api, rest, itemLists, tabOpeners } = deps
-  const { log, recordPluginIssue } = deps.diagnostics
+  const { api, rest, log, itemLists, tabOpeners } = deps
   const catalog = createPluginCatalog(rest)
-  const reports = createPluginReports(log, catalog.getName, recordPluginIssue)
+  const reports = createPluginReports(log, catalog.getName)
   const declared = createDeclaredState({
     list: api.listDeclaredCommands,
     getConfig: () => getWindowConfig(rest),

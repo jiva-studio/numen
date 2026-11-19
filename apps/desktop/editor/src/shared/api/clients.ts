@@ -55,6 +55,7 @@ export const createWorkspaceClients = ({ transport, keepalive }: WindowTransport
   workspace: createWorkspaceClient(transport),
   keepaliveWorkspace: createWorkspaceClient(keepalive),
   windowService: createWindowClient(transport),
+  logService: createLogServiceClient(transport),
 })
 
 /** The clients of the settings, the connections and the themes. */
@@ -76,7 +77,6 @@ export const createPluginHostClients = (transport: Transport) => {
     pluginHealth: createPluginHealthClient(plugins),
     pluginCatalog: createPluginCatalog(createCatalogClient(transport)),
     connectionCalls: createConnectionCallClient(createConnectionCallServiceClient(transport)),
-    logService: createLogServiceClient(plugins),
   }
 }
 

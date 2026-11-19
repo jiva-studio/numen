@@ -97,8 +97,7 @@ describe('the problems of a plugin', () => {
         return writer
       },
     }
-    const record = vi.fn()
-    const reports = createPluginReports(log, () => 'Sketch', record)
+    const reports = createPluginReports(log, () => 'Sketch')
 
     reports.reportViewIssue('md.example.sketch', 'no pane')
     reports.reportCommandIssue('md.example.sketch', 'no title')
@@ -131,8 +130,6 @@ describe('the problems of a plugin', () => {
       expect.stringContaining('syntax error'),
       'error',
     )
-    expect(record).toHaveBeenNthCalledWith(1, 'md.example.sketch', 'view', 'error')
-    expect(record).toHaveBeenNthCalledWith(5, 'md.example.sketch', 'activation', 'error')
   })
 })
 

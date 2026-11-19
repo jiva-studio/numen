@@ -269,7 +269,7 @@ describe('the parts of the window wired together', () => {
         }),
       },
       rest: base.foundation.rest,
-      diagnostics: { log: base.foundation.log },
+      log: base.foundation.log,
       isPaletteOpen: () => false,
       getTarget: base.getTarget,
       appCommands: base.appCommands,

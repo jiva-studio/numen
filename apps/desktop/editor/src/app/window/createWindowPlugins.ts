@@ -24,14 +24,6 @@ import {
 type WindowBase = ReturnType<typeof createWindowBase>
 type WindowFoundation = WindowBase['foundation']
 
-function createIssueRecorder(logs: WindowFoundation['api']['plugins']['logs']) {
-  return (pluginId: string, phase: string, severity: 'warning' | 'error') => {
-    logs(pluginId)
-      .write({ level: severity, message: 'Plugin frontend issue', properties: { phase } })
-      .catch(() => undefined)
-  }
-}
-
 /** What the plugins of the window read of the foundation. */
 type PluginsFoundation = Pick<
   WindowFoundation,
@@ -59,7 +51,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
   const declarations = createPluginDeclarations({
     api: api.plugins.declaredCommands,
     rest,
-    diagnostics: { log, recordPluginIssue: createIssueRecorder(api.plugins.logs) },
+    log,
     isPaletteOpen: hostPort.isPaletteOpen,
     getTarget,
     appCommands,

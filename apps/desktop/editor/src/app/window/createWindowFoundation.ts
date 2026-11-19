@@ -10,11 +10,12 @@ import { loadFrameRuntime } from '@/shared/api/runtime'
 import { createEmitter } from '@/shared/lib/emitter'
 import { createCommandRegistry, type SettingsRequest } from '@/shared/model/command'
 import { createMessageLog } from '@/shared/model/notices/messages'
+import { createRecordedMessageLog } from '@/shared/model/notices/recordedMessages'
 import type { WindowApi } from './createWindowApi'
 
 export function createWindowFoundation(api: WindowApi) {
   const { configuration } = api
-  const log = createMessageLog()
+  const log = createRecordedMessageLog(createMessageLog(), api.window.logs)
   const rest = createSettingsStore(
     configuration.settings,
     SETTINGS_WORDS,
