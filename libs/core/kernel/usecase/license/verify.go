@@ -119,6 +119,16 @@ func (u *Verify) applyVerifiedStatus(
 		env.ExpiresAt = license.FormatTime(*expiresAt)
 	}
 	u.gate.Lock()
+	current, isFound, readErr := u.readEnvelope(ctx, decl.ID)
+	if readErr != nil {
+		u.gate.Unlock()
+		return license.Info{}, readErr
+	}
+	if !isFound || !isSameActivation(current, env) {
+		info, _, buildErr := u.buildInfo(ctx, decl)
+		u.gate.Unlock()
+		return info, buildErr
+	}
 	if writeErr := u.writeEnvelope(ctx, decl.ID, env); writeErr != nil {
 		u.gate.Unlock()
 		return license.Info{}, writeErr
@@ -129,4 +139,11 @@ func (u *Verify) applyVerifiedStatus(
 		u.notifyChange(ctx)
 	}
 	return info, err
+}
+
+func isSameActivation(current, expected license.Envelope) bool {
+	return license.NormalizeKey(current.Key) == license.NormalizeKey(expected.Key) &&
+		current.Provider == expected.Provider &&
+		current.InstanceID == expected.InstanceID &&
+		current.MachineFingerprint == expected.MachineFingerprint
 }

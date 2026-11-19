@@ -113,6 +113,8 @@ type fakeValidator struct {
 	activateErr    error
 	validateResult licenseport.ValidationResult
 	validateErr    error
+	validateStarted chan struct{}
+	validateRelease chan struct{}
 }
 
 func (v *fakeValidator) ListProviderOptions(providers []manifest.LicenseProvider) []license.ProviderOption {
@@ -138,9 +140,17 @@ func (v *fakeValidator) Activate(_ context.Context, _ []manifest.LicenseProvider
 
 func (v *fakeValidator) Validate(_ context.Context, _, _, _ string) (licenseport.ValidationResult, error) {
 	v.mu.Lock()
-	defer v.mu.Unlock()
 	v.validateCalls++
-	return v.validateResult, v.validateErr
+	result, err := v.validateResult, v.validateErr
+	started, release := v.validateStarted, v.validateRelease
+	v.mu.Unlock()
+	if started != nil {
+		close(started)
+	}
+	if release != nil {
+		<-release
+	}
+	return result, err
 }
 
 func (v *fakeValidator) Deactivate(_ context.Context, _, _, _ string) error {

@@ -164,3 +164,61 @@ func TestVerifyUpdatesStatusAfterTTL(t *testing.T) {
 		t.Fatalf("verified = %+v, want expired with HasKey=true", verified)
 	}
 }
+
+func TestVerifyDoesNotRestoreDeactivatedLicense(t *testing.T) {
+	t.Parallel()
+	now := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
+	keys := newFakeKeyStore()
+	validator := &fakeValidator{
+		activateResult: licenseport.ActivationResult{
+			Provider:   "creem",
+			InstanceID: "li_101",
+			Status:     license.StatusActive,
+		},
+		validateResult: licenseport.ValidationResult{Status: license.StatusActive},
+	}
+	clock := &fakeClock{now: now}
+	deps := licenseusecase.NewDeps(
+		&fakeDeclarations{plugins: syncPlugins()},
+		keys,
+		validator,
+		fakeMachine{fingerprint: "fp-local", instanceName: "akd-laptop"},
+		clock,
+		newFakeChangeHub(),
+	)
+	activateUC := licenseusecase.NewActivate(deps)
+	verifyUC := licenseusecase.NewVerify(deps)
+	deactivateUC := licenseusecase.NewDeactivate(deps)
+	listUC := licenseusecase.NewList(deps)
+
+	if _, err := activateUC.Execute(t.Context(), licenseusecase.ActivateRequest{
+		LicenseID: "sync",
+		Key:       "CREEM-ABCD-814A",
+	}); err != nil {
+		t.Fatalf("Activate() error = %v", err)
+	}
+	clock.set(now.Add(2 * time.Hour))
+	validator.validateStarted = make(chan struct{})
+	validator.validateRelease = make(chan struct{})
+	verifyDone := make(chan error, 1)
+	go func() {
+		_, err := verifyUC.Execute(t.Context(), "sync")
+		verifyDone <- err
+	}()
+	<-validator.validateStarted
+
+	if _, err := deactivateUC.Execute(t.Context(), "sync"); err != nil {
+		t.Fatalf("Deactivate() error = %v", err)
+	}
+	close(validator.validateRelease)
+	if err := <-verifyDone; err != nil {
+		t.Fatalf("Verify() error = %v", err)
+	}
+	licenses, err := listUC.Execute(t.Context())
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if licenses[0].HasKey || licenses[0].IsActive {
+		t.Fatalf("license = %+v, want deactivated license", licenses[0])
+	}
+}
