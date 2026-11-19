@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
+import type * as CoreClient from '@numen/core-client'
 import { createCoreHandlerTransport } from '@numen/core-client/testing'
 import {
   VAULT_SUMMARY,
@@ -38,7 +39,7 @@ vi.mock('@numen/workbench', async (importOriginal) => {
 })
 
 vi.mock('@numen/core-client', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@numen/core-client')>()
+  const actual = await importOriginal<typeof CoreClient>()
   return {
     ...actual,
     createWindowAppearance: (

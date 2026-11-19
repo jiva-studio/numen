@@ -16,23 +16,27 @@ export interface VaultCountsDeps {
   readonly reportError: (error: Caught) => void
 }
 
+async function readReloads(signal: AbortSignal, refresh: () => Promise<void>) {
+  let isOpening = true
+  for await (const response of cards.watchReloads({}, { signal })) {
+    if (signal.aborted) return
+    if (isOpening || response.reload) await refresh()
+    isOpening = false
+  }
+}
+
 async function followReloads(
   signal: AbortSignal,
   refresh: () => Promise<void>,
   reportError: VaultCountsDeps['reportError'],
 ) {
   while (!signal.aborted) {
-    let isOpening = true
     try {
-      for await (const response of cards.watchReloads({}, { signal })) {
-        if (signal.aborted) return
-        if (isOpening || response.reload) await refresh()
-        isOpening = false
-      }
+      await readReloads(signal, refresh)
     } catch {
-      if (signal.aborted) return
-      reportError('lost touch with numen — the window keeps trying')
+      if (!signal.aborted) reportError('lost touch with numen — the window keeps trying')
     }
+    if (signal.aborted) return
     await new Promise<void>((resolve) => setTimeout(resolve, 1000))
     if (!signal.aborted) reportError('')
   }
