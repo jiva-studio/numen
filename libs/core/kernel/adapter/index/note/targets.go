@@ -11,7 +11,7 @@ import (
 // a note address the notes of the vault with that identifier, for a name the candidates the link resolution
 // reads.
 func (q *QueryReads) GetNoteCandidates(ctx context.Context, vaultID domain.VaultID, address domain.Address) ([]string, error) {
-	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) ([]string, error) {
+	return runResolution(ctx, q.db, q.cache, vaultID, nil, func(r *resolution) ([]string, error) {
 		switch address.Scheme {
 		case domain.SchemeNote:
 			return r.queryPaths(ctx, noteInVaultByIdentifierSQL, address.Value, r.vault)
@@ -23,7 +23,7 @@ func (q *QueryReads) GetNoteCandidates(ctx context.Context, vaultID domain.Vault
 }
 
 func (q *QueryReads) ListFilePaths(ctx context.Context, vaultID domain.VaultID) ([]string, error) {
-	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) ([]string, error) {
+	return runResolution(ctx, q.db, q.cache, vaultID, nil, func(r *resolution) ([]string, error) {
 		return r.queryPaths(ctx, filePathsSQL, r.vault)
 	})
 }
@@ -31,7 +31,7 @@ func (q *QueryReads) ListFilePaths(ctx context.Context, vaultID domain.VaultID) 
 // ListLinksByName returns the links written in the notes of one vault whose target's last segment folds to
 // the name, unresolved, with the path of the note each is written in.
 func (q *QueryReads) ListLinksByName(ctx context.Context, vaultID domain.VaultID, foldedName string) ([]domain.ResolvedLink, error) {
-	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) (_ []domain.ResolvedLink, err error) {
+	return runResolution(ctx, q.db, q.cache, vaultID, nil, func(r *resolution) (_ []domain.ResolvedLink, err error) {
 		rows, err := r.statements.QueryContext(ctx, linksByNameSQL, foldedName, r.vault)
 		if err != nil {
 			return nil, err

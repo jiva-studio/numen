@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"maps"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -13,18 +15,21 @@ import (
 // GetNotes returns the data needed to display each of the given paths. An empty
 // path is skipped.
 func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (_ map[string]domain.NoteRef, err error) {
-	out := map[string]domain.NoteRef{}
 	if len(paths) == 0 {
+		return map[string]domain.NoteRef{}, nil
+	}
+	gen, out, missing := q.cache.splitNotes(vaultID, paths)
+	if len(missing) == 0 {
 		return out, nil
 	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := q.getVaultRow(ctx, vaultID)
 	if errors.Is(err, errNoVault) {
 		return out, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	wanted, err := json.Marshal(paths)
+	wanted, err := json.Marshal(missing)
 	if err != nil {
 		return nil, err
 	}
@@ -35,14 +40,20 @@ func (q *Queries) GetNotes(ctx context.Context, vaultID domain.VaultID, paths []
 	}
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
+	fetched := make(map[string]domain.NoteRef, len(missing))
 	for rows.Next() {
 		var ref domain.NoteRef
 		if err := rows.Scan(&ref.Path, &ref.Title, &ref.ID); err != nil {
 			return nil, err
 		}
-		out[ref.Path] = ref
+		fetched[ref.Path] = ref
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	q.cache.setNotes(gen, vaultID, missing, fetched)
+	maps.Copy(out, fetched)
+	return out, nil
 }
 
 func queryEachPath[T any](
@@ -82,11 +93,14 @@ func queryEachPath[T any](
 // GetTypes returns the type of each of the given paths. A path with no indexed
 // note is omitted, so a listing shows it as a plain file.
 func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (_ map[string]domain.NoteType, err error) {
-	out := map[string]domain.NoteType{}
 	if len(paths) == 0 {
+		return map[string]domain.NoteType{}, nil
+	}
+	gen, out, missing := q.cache.splitTypes(vaultID, paths)
+	if len(missing) == 0 {
 		return out, nil
 	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := q.getVaultRow(ctx, vaultID)
 	if errors.Is(err, errNoVault) {
 		return out, nil
 	}
@@ -95,7 +109,7 @@ func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []
 	}
 	// The paths travel as a JSON array, so the statement is one the database
 	// can keep whatever number of them arrive.
-	wanted, err := json.Marshal(paths)
+	wanted, err := json.Marshal(missing)
 	if err != nil {
 		return nil, err
 	}
@@ -106,14 +120,20 @@ func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []
 	}
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 
+	fetched := make(map[string]domain.NoteType, len(missing))
 	for rows.Next() {
 		var path, target string
 		if err := rows.Scan(&path, &target); err != nil {
 			return nil, err
 		}
-		out[path] = domain.NoteType(target)
+		fetched[path] = domain.NoteType(target)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	q.cache.setTypes(gen, vaultID, missing, fetched)
+	maps.Copy(out, fetched)
+	return out, nil
 }
 
 // GetPathsOfType is every note of one type the vault holds, by path.

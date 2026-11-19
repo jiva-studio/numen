@@ -3,6 +3,7 @@ package note
 import (
 	"context"
 	"encoding/json"
+	"maps"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -13,9 +14,19 @@ func (q *QueryReads) GetLinksOf(ctx context.Context, vaultID domain.VaultID, fro
 	if len(from) == 0 {
 		return map[string][]domain.ResolvedLink{}, nil
 	}
-	return runResolution(ctx, q.db, vaultID, map[string][]domain.ResolvedLink{}, func(r *resolution) (map[string][]domain.ResolvedLink, error) {
-		return r.getLinksOf(ctx, from)
+	gen, out, missing := q.cache.splitLinksOf(vaultID, from)
+	if len(missing) == 0 {
+		return out, nil
+	}
+	fetched, err := runResolution(ctx, q.db, q.cache, vaultID, map[string][]domain.ResolvedLink{}, func(r *resolution) (map[string][]domain.ResolvedLink, error) {
+		return r.getLinksOf(ctx, missing)
 	})
+	if err != nil {
+		return nil, err
+	}
+	q.cache.setLinksOf(gen, vaultID, missing, fetched)
+	maps.Copy(out, fetched)
+	return out, nil
 }
 
 func (r *resolution) getLinksOf(ctx context.Context, from []string) (_ map[string][]domain.ResolvedLink, err error) {
@@ -77,9 +88,19 @@ func (q *QueryReads) GetBacklinksOf(ctx context.Context, vaultID domain.VaultID,
 	if len(to) == 0 {
 		return map[string][]domain.ResolvedLink{}, nil
 	}
-	return runResolution(ctx, q.db, vaultID, map[string][]domain.ResolvedLink{}, func(r *resolution) (map[string][]domain.ResolvedLink, error) {
-		return r.getBacklinksOf(ctx, to)
+	gen, out, missing := q.cache.splitBacklinksOf(vaultID, to)
+	if len(missing) == 0 {
+		return out, nil
+	}
+	fetched, err := runResolution(ctx, q.db, q.cache, vaultID, map[string][]domain.ResolvedLink{}, func(r *resolution) (map[string][]domain.ResolvedLink, error) {
+		return r.getBacklinksOf(ctx, missing)
 	})
+	if err != nil {
+		return nil, err
+	}
+	q.cache.setBacklinksOf(gen, vaultID, missing, fetched)
+	maps.Copy(out, fetched)
+	return out, nil
 }
 
 func (r *resolution) getBacklinksOf(ctx context.Context, to []string) (_ map[string][]domain.ResolvedLink, err error) {

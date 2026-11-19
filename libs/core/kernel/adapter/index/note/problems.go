@@ -88,7 +88,7 @@ func (q *Problems) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID)
 // link goes through anywhere else decides ambiguity, so SQL does not duplicate
 // that rule.
 func (q *Problems) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) ([]domain.AmbiguousLink, error) {
-	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.AmbiguousLink, error) {
+	return runResolution(ctx, q.db, nil, vaultID, nil, func(r *resolution) ([]domain.AmbiguousLink, error) {
 		return r.getAmbiguousLinks(ctx)
 	})
 }

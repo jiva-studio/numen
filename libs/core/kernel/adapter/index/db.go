@@ -42,6 +42,7 @@ type DB struct {
 	minimum     chunk.Minimum
 	frontmatter *note.FrontmatterChanges
 	feed        *changefeed.Changes
+	noteCache   *note.Cache
 }
 
 func getPragmas() []string {
@@ -121,7 +122,16 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	if err := changefeed.Trim(ctx, write, changefeed.RemovalLifetime); err != nil {
 		return nil, errors.Join(err, read.Close(), write.Close())
 	}
-	return &DB{write: write, read: read, frontmatter: &note.FrontmatterChanges{}, feed: &changefeed.Changes{}}, nil
+	feed := &changefeed.Changes{}
+	noteCache := note.NewCache()
+	feed.OnPublish(noteCache.Invalidate)
+	return &DB{
+		write:       write,
+		read:        read,
+		frontmatter: &note.FrontmatterChanges{},
+		feed:        feed,
+		noteCache:   noteCache,
+	}, nil
 }
 
 func (d *DB) Close() error {
@@ -132,7 +142,9 @@ func (d *DB) Close() error {
 	return readErr
 }
 
-func (d *DB) Vaults() *vault.Repository { return vault.NewRepository(d.write) }
+func (d *DB) Vaults() *vault.Repository {
+	return vault.NewRepository(d.write).OnChange(d.noteCache.Invalidate)
+}
 func (d *DB) Notes() *note.Repository {
 	return note.NewRepository(d.write).ReportingTo(d.frontmatter).ReportingFeedTo(d.feed)
 }
@@ -151,10 +163,12 @@ func (d *DB) FileChanges() *changefeed.Feed { return changefeed.NewFeed(d.read) 
 func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.write} }
 
 // NoteQueries reads, so it takes the pool that does not wait for the writer.
-func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read) }
+func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read).WithCache(d.noteCache) }
 
 // NoteQueryReads reads, so it takes the pool that does not wait for the writer.
-func (d *DB) NoteQueryReads() *note.QueryReads { return note.NewQueryReads(d.read) }
+func (d *DB) NoteQueryReads() *note.QueryReads {
+	return note.NewQueryReads(d.read).WithCache(d.noteCache)
+}
 
 // NoteProblems reads what the index found wrong in the notes.
 func (d *DB) NoteProblems() *note.Problems { return note.NewProblems(d.read) }

@@ -11,7 +11,7 @@ import (
 )
 
 func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
-	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
+	return runResolution(ctx, q.db, q.cache, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
 		return r.getLinks(ctx, from)
 	})
 }
@@ -89,7 +89,7 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 func (q *Queries) ResolveLinks(
 	ctx context.Context, vaultID domain.VaultID, from string, content []string,
 ) (map[string]domain.ResolvedLink, error) {
-	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) (map[string]domain.ResolvedLink, error) {
+	return runResolution(ctx, q.db, q.cache, vaultID, nil, func(r *resolution) (map[string]domain.ResolvedLink, error) {
 		return r.resolveLinks(ctx, from, content)
 	})
 }
@@ -158,11 +158,16 @@ func (r *resolution) getCandidates(ctx context.Context, name string) ([]string, 
 	if found, ok := r.named[name]; ok {
 		return found, nil
 	}
+	r.cache.copyNamedInto(r.vaultID, []string{name}, r.named)
+	if found, ok := r.named[name]; ok {
+		return found, nil
+	}
 	found, err := r.queryCandidates(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 	r.named[name] = found
+	r.cache.setNamed(r.generation, r.vaultID, []string{name}, r.named)
 	return found, nil
 }
 
@@ -194,7 +199,7 @@ func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.Reso
 	if err := r.prefetchIdentifiers(ctx, links); err != nil {
 		return err
 	}
-	var missing []string
+	var requested []string
 	seen := map[string]bool{}
 	for _, l := range links {
 		if l.Target.Scheme != domain.SchemeName {
@@ -203,6 +208,13 @@ func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.Reso
 		name := l.Target.Value
 		if _, ok := r.named[name]; !ok && !seen[name] {
 			seen[name] = true
+			requested = append(requested, name)
+		}
+	}
+	r.cache.copyNamedInto(r.vaultID, requested, r.named)
+	var missing []string
+	for _, name := range requested {
+		if _, ok := r.named[name]; !ok {
 			missing = append(missing, name)
 		}
 	}
@@ -260,7 +272,11 @@ func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.Reso
 			}
 		}
 	}
-	return rows.Err()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	r.cache.setNamed(r.generation, r.vaultID, missing, r.named)
+	return nil
 }
 
 func (r *resolution) prefetchIdentifiers(ctx context.Context, links []domain.ResolvedLink) (err error) {
@@ -311,7 +327,7 @@ func (r *resolution) prefetchIdentifiers(ctx context.Context, links []domain.Res
 // name may resolve to a nearer note of the same name. Every candidate goes
 // through the forward resolution and only those that land here are kept.
 func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
-	return runResolution(ctx, q.db, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
+	return runResolution(ctx, q.db, q.cache, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
 		return r.getBacklinks(ctx, to)
 	})
 }

@@ -17,9 +17,17 @@ import (
 )
 
 // QueryReads answers the reads of the search query language over the notes: what their frontmatter and headings hold.
-type QueryReads struct{ db *sql.DB }
+type QueryReads struct {
+	db    *sql.DB
+	cache *Cache
+}
 
 func NewQueryReads(db *sql.DB) *QueryReads { return &QueryReads{db: db} }
+
+// WithCache returns a copy of QueryReads using cache for read lookups.
+func (q *QueryReads) WithCache(cache *Cache) *QueryReads {
+	return &QueryReads{db: q.db, cache: cache}
+}
 
 // ListPropertyValues returns the path and the value of every note of the vault whose stored frontmatter has the
 // top-level key. A note without frontmatter, or whose frontmatter could not be read, is absent.

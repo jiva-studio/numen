@@ -80,28 +80,37 @@ type resolution struct {
 	statements *statementCache
 	vault      int64
 	vaultID    domain.VaultID
+	cache      *Cache
+	generation uint64
 	named      map[string][]string
 	identified map[string]identifiedNote
 }
 
 func runResolution[T any](
-	ctx context.Context, db *sql.DB, vaultID domain.VaultID, none T, read func(r *resolution) (T, error),
+	ctx context.Context, db *sql.DB, cache *Cache, vaultID domain.VaultID, none T, read func(r *resolution) (T, error),
 ) (_ T, err error) {
 	statements := newStatementCache(db)
 	defer func() { err = sqlwrite.JoinClose(err, statements.close()) }()
 
-	vault, err := vaultRow(ctx, statements, vaultID)
-	if errors.Is(err, errNoVault) {
-		return none, nil
-	}
-	if err != nil {
-		var zero T
-		return zero, err
+	gen := cache.getGeneration()
+	vault, ok := cache.getVaultRow(vaultID)
+	if !ok {
+		vault, err = vaultRow(ctx, statements, vaultID)
+		if errors.Is(err, errNoVault) {
+			return none, nil
+		}
+		if err != nil {
+			var zero T
+			return zero, err
+		}
+		cache.setVaultRow(gen, vaultID, vault)
 	}
 	return read(&resolution{
 		statements: statements,
 		vault:      vault,
 		vaultID:    vaultID,
+		cache:      cache,
+		generation: gen,
 		named:      map[string][]string{},
 		identified: map[string]identifiedNote{},
 	})
