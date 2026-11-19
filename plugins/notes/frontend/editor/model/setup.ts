@@ -23,6 +23,7 @@ import {
   GutterMarker,
   drawSelection,
   gutterLineClass,
+  highlightActiveLine,
   keymap,
   lineNumberWidgetMarker,
   lineNumbers,
@@ -192,6 +193,7 @@ const getAccessibility = (settings: Settings): Extension =>
 export const setup = (settings: Settings = {}): Extension => [
   history(),
   drawSelection(),
+  highlightActiveLine(),
   rectangularSelection(),
   bracketMatching({ renderMatch: renderBracketMatch }),
   ...getLayout(settings),

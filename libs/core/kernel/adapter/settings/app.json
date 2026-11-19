@@ -67,9 +67,9 @@
     },
     {
       "key": "editor.fontFamily",
-      "type": "enum",
+      "type": "string",
       "title": "Font family",
-      "description": "The typeface of editor text.",
+      "description": "Choose a preset or enter an installed font family.",
       "default": "",
       "options": [
         { "value": "", "title": "As in the theme" },
@@ -100,6 +100,15 @@
       "default": false,
       "palette": true,
       "icon": "list-ordered"
+    },
+    {
+      "key": "editor.highlightActiveLine",
+      "type": "boolean",
+      "title": "Highlight active line",
+      "description": "Highlight the line containing the caret.",
+      "default": false,
+      "palette": true,
+      "icon": "highlighter"
     },
     {
       "key": "editor.softWrap",

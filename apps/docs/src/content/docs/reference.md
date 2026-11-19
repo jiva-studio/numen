@@ -44,9 +44,10 @@ Two things are not settings and are not in here: which files count as notes, and
 | | | |
 | --- | --- | --- |
 | `fontSize` | a number | size of editor text in px, whatever the interface size. From 10 to 32. |
-| `fontFamily` | text | the typeface of editor text. One of ``, `sans`, `serif`, `mono`. |
+| `fontFamily` | text | choose a preset or enter an installed font family. |
 | `lineHeight` | a number | height of a line of editor text as a multiple of the font size. From 1.2 to 2.4. |
 | `lineNumbers` | yes or no | number the lines in editors. |
+| `highlightActiveLine` | yes or no | highlight the line containing the caret. |
 | `softWrap` | yes or no | wrap long lines in editors instead of scrolling sideways. |
 
 ### `app.search`

@@ -26,9 +26,9 @@ func getEditorOf(t *testing.T, content string) map[string]any {
 }
 
 func TestTheEditorSettingsOfTheFileAreInForce(t *testing.T) {
-	file := readFileWith(t, `{"app":{"editor":{"fontSize":19,"fontFamily":"serif","lineHeight":2,"lineNumbers":true,"softWrap":false}}}`)
+	file := readFileWith(t, `{"app":{"editor":{"fontSize":19,"fontFamily":"JetBrains Mono","highlightActiveLine":true,"lineHeight":2,"lineNumbers":true,"softWrap":false}}}`)
 	want := map[string]any{
-		"fontSize": 19.0, "fontFamily": "serif", "lineHeight": 2.0, "lineNumbers": true, "softWrap": false,
+		"fontSize": 19.0, "fontFamily": "JetBrains Mono", "highlightActiveLine": true, "lineHeight": 2.0, "lineNumbers": true, "softWrap": false,
 	}
 	for key, value := range want {
 		if got, _ := file.GetValue(domainsettings.AppOwner, "editor", key); got != value {

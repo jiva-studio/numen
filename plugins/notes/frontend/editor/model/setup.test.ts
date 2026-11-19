@@ -247,6 +247,14 @@ describe('editor preferences in setup', () => {
     expect(elements[4]?.classList.contains('cm-gutter-code-first')).toBe(true)
   })
 
+  it('moves the active line decoration with the caret', () => {
+    const view = open({}, 'first\nsecond')
+    const getLine = () => view.dom.querySelector('.cm-activeLine')?.textContent
+    expect(getLine()).toBe('first')
+    view.dispatch({ selection: { anchor: 6 } })
+    expect(getLine()).toBe('second')
+  })
+
   it('indents with the configured tabSize', () => {
     const view = open({ tabSize: 4 }, 'one')
     expect(view.state.tabSize).toBe(4)

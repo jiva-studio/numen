@@ -7,7 +7,6 @@ export const WORDS = {
   /** Shown in place of the settings file path until the path is known. */
   file: 'numen.json in the configuration folder',
   /** Accessible name of the search field in a long model list. */
-  searchModels: 'Search models',
   searchValues: (title: string) => `Search ${title.toLowerCase()}`,
   searchConnections: 'Search connections',
   /** The button of the fix of a health item that names no title of its own. */

@@ -35,7 +35,7 @@ const DECLARATION: readonly PluginSettingInfo[] = [
   },
   {
     key: 'editor.fontFamily',
-    type: 'enum',
+    type: 'string',
     title: 'Font family',
     description: '',
     default: '',
@@ -58,6 +58,14 @@ const DECLARATION: readonly PluginSettingInfo[] = [
     key: 'editor.lineNumbers',
     type: 'boolean',
     title: 'Line numbers',
+    description: '',
+    default: false,
+    isShown: true,
+  },
+  {
+    key: 'editor.highlightActiveLine',
+    type: 'boolean',
+    title: 'Highlight active line',
     description: '',
     default: false,
     isShown: true,
@@ -172,6 +180,18 @@ describe('the editor tokens of the window', () => {
       expect(tokens.get(HEIGHT)).toBe('2')
       expect(tokens.get(FAMILY)).toContain('serif')
     })
+  })
+
+  it('toggles the active line colour in the open window', async () => {
+    const { store } = createWindow({})
+    await store.start()
+    startTokens(store)
+    const key = '--numen-editor-active-line'
+    expect(readPageTokens().has(key)).toBe(false)
+    await store.write.writeSetting(['app', 'editor', 'highlightActiveLine'], true)
+    await vi.waitFor(() => expect(readPageTokens().get(key)).toBe('var(--numen-selection-match)'))
+    await store.write.writeSetting(['app', 'editor', 'highlightActiveLine'], false)
+    await vi.waitFor(() => expect(readPageTokens().has(key)).toBe(false))
   })
 
   it('drop the family when the choice goes back to the face of the theme', async () => {

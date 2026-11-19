@@ -25,7 +25,7 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 	file := readFileWith(t, `{"app":{
 		"appearance":{"theme":"mine:sea","mode":"dark","interfaceScale":1.25,"textScale":1.5},
 		"naming":{"syncTitleAndFilename":false},
-		"editor":{"fontSize":19,"fontFamily":"serif","lineHeight":2,"lineNumbers":true,"softWrap":false},
+		"editor":{"fontSize":19,"fontFamily":"serif","lineHeight":2,"lineNumbers":true,"highlightActiveLine":true,"softWrap":false},
 		"performance":{"profile":"eco"},
 		"search":{"rerankWindow":70,"maxReranked":200,"maxRerankedBytes":2048,"defaultLimit":30,"maxLimit":90,
 			"candidatesPerCondition":250,"maxCandidates":900,"maxPathPrefixes":4,"mergeGapBytes":100,"maxQueryBytes":8192},
@@ -40,6 +40,7 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"editor.fontFamily":             "serif",
 		"editor.lineHeight":             2.0,
 		"editor.lineNumbers":            true,
+		"editor.highlightActiveLine":    true,
 		"editor.softWrap":               false,
 		"performance.profile":           "eco",
 		"search.rerankWindow":           70.0,

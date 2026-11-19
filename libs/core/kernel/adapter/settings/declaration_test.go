@@ -164,6 +164,10 @@ func TestEverySettingFlaggedForThePaletteIsABooleanAnEnumOrARange(t *testing.T) 
 			continue
 		}
 		switch declared.Type {
+		case "string":
+			if len(declared.Options) == 0 {
+				t.Errorf("%s has no palette choices", declared.Key)
+			}
 		case "boolean", "enum", "range":
 		default:
 			t.Errorf("%s is offered in the palette as a %s, which has no choice step", declared.Key, declared.Type)
@@ -180,11 +184,12 @@ func TestTheEditorSettingsAreDeclaredWithTheirTypeBoundsAndDefaults(t *testing.T
 		defaultValue any
 		bounds       *bounds
 	}{
-		"editor.fontSize":    {"range", 14.0, &bounds{10, 32, 1}},
-		"editor.lineHeight":  {"range", 1.6, &bounds{1.2, 2.4, 0.1}},
-		"editor.lineNumbers": {"boolean", false, nil},
-		"editor.softWrap":    {"boolean", true, nil},
-		"editor.fontFamily":  {"enum", "", nil},
+		"editor.fontSize":            {"range", 14.0, &bounds{10, 32, 1}},
+		"editor.lineHeight":          {"range", 1.6, &bounds{1.2, 2.4, 0.1}},
+		"editor.lineNumbers":         {"boolean", false, nil},
+		"editor.highlightActiveLine": {"boolean", false, nil},
+		"editor.softWrap":            {"boolean", true, nil},
+		"editor.fontFamily":          {"string", "", nil},
 	} {
 		declared := findDeclaredSetting(t, key)
 		if declared.Type != want.kind {
@@ -227,14 +232,14 @@ func TestTheEditorSettingsAreDeclaredInTheOrderOfTheEditorGroup(t *testing.T) {
 			got = append(got, declared.Key)
 		}
 	}
-	want := []string{"editor.fontSize", "editor.fontFamily", "editor.lineHeight", "editor.lineNumbers", "editor.softWrap"}
+	want := []string{"editor.fontSize", "editor.fontFamily", "editor.lineHeight", "editor.lineNumbers", "editor.highlightActiveLine", "editor.softWrap"}
 	if !slices.Equal(got, want) {
 		t.Errorf("the editor group declares %q, want %q", got, want)
 	}
 }
 
 func TestTheEditorSettingsAreDeclaredForThePaletteWithTheirIconAndNoPreview(t *testing.T) {
-	for _, key := range []string{"editor.fontSize", "editor.fontFamily", "editor.lineHeight", "editor.lineNumbers", "editor.softWrap"} {
+	for _, key := range []string{"editor.fontSize", "editor.fontFamily", "editor.lineHeight", "editor.lineNumbers", "editor.highlightActiveLine", "editor.softWrap"} {
 		declared := findDeclaredSetting(t, key)
 		if !declared.Palette {
 			t.Errorf("%s is not flagged for the palette", key)

@@ -5,7 +5,7 @@
  */
 import { doc } from '@numen/ui'
 import { Compartment, EditorState, type Extension } from '@codemirror/state'
-import { EditorView, drawSelection, keymap } from '@codemirror/view'
+import { EditorView, drawSelection, highlightActiveLine, keymap } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 
 export interface TranscriptViewOptions {
@@ -31,7 +31,7 @@ const theme = EditorView.theme({
   '&': {
     color: 'var(--numen-ink)',
     backgroundColor: 'transparent',
-    fontFamily: 'var(--numen-font-sans)',
+    fontFamily: 'var(--numen-editor-font-family, var(--numen-font-sans))',
     fontSize: 'var(--numen-reading-size)',
     lineHeight: '1.6',
     height: '100%',
@@ -51,6 +51,7 @@ const theme = EditorView.theme({
   },
   '.cm-gutters': { maxWidth: 'var(--editor-measure, none)' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--numen-ink)' },
+  '.cm-activeLine': { backgroundColor: 'var(--numen-editor-active-line, transparent)' },
   '.cm-line': { padding: '0 var(--numen-gutter)' },
   '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground': {
     backgroundColor: 'var(--numen-selection)',
@@ -89,6 +90,7 @@ export function createTranscriptView(options: TranscriptViewOptions): Transcript
       extensions: [
         history(),
         drawSelection(),
+        highlightActiveLine(),
         EditorView.lineWrapping,
         keymap.of([
           {

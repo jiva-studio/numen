@@ -150,7 +150,7 @@ const { isChanged, resetSetting: onReset } = useSettingDefaults(fieldDeps)
         :aria-describedby="describedBy"
         is-searchable
         can-enter-custom
-        :search-name="words.searchModels"
+        :search-name="setting.title"
         class="settings__choice"
         @update:model-value="(val) => onSettingChange(setting.key, val)"
       />
