@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
@@ -39,7 +40,8 @@ func (c Config) ApplySettings(exec *PluginExecution, prefs *PluginPreferences, r
 
 func applySettingsFile(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, s settingsadapter.File) Config {
 	c.machine = Machine{ResolvedCompute: settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(s.Performance.Profile)}
-	configurePluginHost(settingsOf(c, exec, prefs, res), s)
+	prefs = getPluginPreferences(prefs)
+	configurePluginHost(settingsOf(c, exec, prefs, res), prefs, &res.subscribedHosts, s, c.machine.ResolvedCompute)
 	return c
 }
 
@@ -51,31 +53,23 @@ func (c Config) SetThemes(exec *PluginExecution, prefs *PluginPreferences, res *
 	return err
 }
 
-type settingsPlaces struct {
-	SettingsPath    string
-	ThemesPath      string
-	RegistryPath    string
-	ResolvedCompute machinedomain.ResolvedCompute
-}
-
-type settingsStores struct {
-	Watches         *vaultwatch.Hub
-	SettingsFiles   *settingsadapter.Files
-	SettingEvents   *settingevents.Events
-	SubscribedHosts *settingsusecase.HostSubscriptions
-	PluginChanges   *settingsusecase.PluginChanges
-}
-
 // settingsWiring wires the settings, setting change events and themes of an installation.
 type settingsWiring struct {
-	settingsPlaces
-	settingsStores
-	Infos         themefiles.PluginHost
-	Configuration PluginConfiguration
-	Views         PluginViews
-	ApplySetting  settingsport.PluginSettingApplier
-	Detection     connectionport.Detected
-	ErrorHandler  func(error)
+	SettingsPath  string
+	ThemesPath    string
+	RegistryPath  string
+	Watches       *vaultwatch.Hub
+	SettingsFiles *settingsadapter.Files
+	SettingEvents *settingevents.Events
+
+	PluginChanges   *settingsusecase.PluginChanges
+	Infos           themefiles.PluginHost
+	Declarations    pluginport.PluginSettingDeclarer
+	ConnectionTypes connectionport.Types
+	PluginInfos     settingsport.PluginInfos
+	Checks          settingsport.PluginSettings
+	Detection       connectionport.Detected
+	ErrorHandler    func(error)
 }
 
 func settingsSettings(c settingsWiring) (settingsadapter.File, error) {
@@ -90,19 +84,15 @@ func readCheckedSettings(c settingsWiring) (settingsadapter.File, error) {
 	return settingsStore(c).ReadCheckedFile()
 }
 
-func configurePluginHost(c settingsWiring, s settingsadapter.File) {
-	hosts := c.SubscribedHosts
-	if hosts == nil {
-		hosts = &settingsusecase.HostSubscriptions{}
-	}
+func configurePluginHost(c settingsWiring, prefs *PluginPreferences, hosts *settingsusecase.HostSubscriptions, s settingsadapter.File, compute machinedomain.ResolvedCompute) {
 	var subscribe settingsport.ChangeSubscriber
 	if c.SettingEvents != nil {
 		subscribe = feed(c).Subscribe
 	}
 	settingsusecase.NewApplyToPlugins(settingsusecase.ApplyToPluginsDeps{
-		Codec: settingsadapter.JSONCodec{}, Config: c.Configuration, Write: openWriteSettings(c), Notify: notifyPlugins(c),
-		Subscribe: c.Views.Follow(subscribe), Hosts: hosts,
-	}).Execute(s.Plugins, getPluginPerformance(c.ResolvedCompute))
+		Codec: settingsadapter.JSONCodec{}, Config: prefs.Configuration, Write: openWriteSettings(c), Notify: notifyPlugins(c, prefs),
+		Subscribe: prefs.Views.Follow(subscribe), Hosts: hosts,
+	}).Execute(s.Plugins, getPluginPerformance(compute))
 }
 
 func getDeclarations(c settingsWiring) settingsdomain.Declarations {
@@ -110,7 +100,7 @@ func getDeclarations(c settingsWiring) settingsdomain.Declarations {
 		if owner == settingsdomain.AppOwner {
 			return settingsadapter.GetAppDeclaration(), true
 		}
-		return c.Configuration.GetPluginSettingDeclarations(owner)
+		return c.Declarations.GetPluginSettingDeclarations(owner)
 	}
 }
 
@@ -121,7 +111,7 @@ func getRegistries(c settingsWiring) settingsdomain.Registries {
 			return listConnectionIDs(c)
 		}
 		return themes(name)
-	}, c.Views.Types, c.Detection)
+	}, c.ConnectionTypes, c.Detection)
 }
 
 func listConnectionIDs(c settingsWiring) ([]string, bool) {
@@ -198,7 +188,7 @@ func openChoosePluginPath(c settingsWiring, dialog machineport.PathDialog) *sett
 
 func settingsStore(c settingsWiring) *settingsadapter.Store {
 	var declared settingsdomain.Declarations
-	if c.Views.Infos != nil {
+	if c.PluginInfos != nil {
 		declared = getDeclarations(c)
 	}
 	return settingsadapter.NewStore(c.SettingsFiles, func() (string, error) { return settingsSettingsFile(c) }, declared, getRegistries(c))
@@ -228,21 +218,21 @@ func feed(c settingsWiring) settingevents.Feed {
 
 func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
 	return settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, cmp.Or[settingsport.PluginInfos](c.Views.Infos, none.PluginInfos{}),
+		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, cmp.Or[settingsport.PluginInfos](c.PluginInfos, none.PluginInfos{}),
 	)
 }
 
 func openWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.JSONCodec{}, getDeclarations(c), getRegistries(c), cmp.Or[settingsport.PluginSettings](c.Views.Checks, none.PluginSettings{}),
+		settingsadapter.JSONCodec{}, getDeclarations(c), getRegistries(c), cmp.Or[settingsport.PluginSettings](c.Checks, none.PluginSettings{}),
 	)
 	return settingsusecase.NewWriteSettings(check, settingsStore(c), feed(c))
 }
 
-func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
+func notifyPlugins(c settingsWiring, prefs *PluginPreferences) *settingsusecase.NotifyPlugins {
 	signal := c.PluginChanges.Signal
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
-		Codec: settingsadapter.JSONCodec{}, Apply: c.ApplySetting, Config: c.Configuration,
+		Codec: settingsadapter.JSONCodec{}, Apply: prefs.ApplySetting, Config: prefs.Configuration,
 		ResolveProfile: resolveProfile, Signal: signal,
 		Report: func(err error) { c.ErrorHandler(err) },
 	})

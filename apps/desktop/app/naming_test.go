@@ -1,7 +1,12 @@
 package app
 
 import (
+	"connectrpc.com/connect"
 	"fmt"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,24 +14,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
-
-func waitForIndex(t *testing.T, queries *query.UseCases, v domain.Vault, path string) {
-	t.Helper()
-	for range 200 {
-		titles, err := queries.Browse.GetTitles.Execute(t.Context(), v, []string{path})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(titles.Missing) == 0 {
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	t.Fatalf("%s was never read into the index", path)
-}
 
 // TestTheAgentRenamesTheWayTheSettingsSay. `note_rename` calls the same use
 // case the window does, and the tools pass the one setting to it.
@@ -39,33 +27,42 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 		"told apart": {sync: false, filename: "Entropy.md"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			opened, cfg, cases := windowWithCases(t)
+			cfg := newWindowConfig(t)
+			root := t.TempDir()
 			response := fmt.Sprintf(`{"app":{"naming":{"syncTitleAndFilename":%v}}}`, bool(c.sync))
 			if err := os.WriteFile(
 				filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json"), []byte(response), 0o644,
 			); err != nil {
 				t.Fatal(err)
 			}
-			v := opened.State.GetCurrentVault()
-			raw := "---\ntitle: Entropy\n---\nA measure.\n"
-			if err := os.WriteFile(
-				filepath.Join(v.Path, "Entropy.md"), []byte(raw), 0o644,
-			); err != nil {
+			const path = "Entropy.md"
+			if err := os.WriteFile(filepath.Join(root, path), []byte("---\ntitle: Entropy\n---\nA measure.\n"), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			// The note is in the index before it is renamed. A rename racing the
-			// walk that first reads the file files it at two paths at once.
-			waitForIndex(t, cases.Queries, v, "Entropy.md")
+			opened := openWindowAt(t, cfg, root)
+			deadline := time.After(10 * time.Second)
+			for !opened.State.Runtime.IsReady() {
+				if reason := opened.State.Runtime.GetError(); reason != "" {
+					t.Fatalf("initial scan failed: %s", reason)
+				}
+				select {
+				case <-deadline:
+					t.Fatal("initial scan did not finish")
+				case <-time.After(10 * time.Millisecond):
+				}
+			}
 
-			notes := cases.Notes
-			renamed, err := notes.Place.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
+			server := httptest.NewServer(opened.NewHandler(http.NotFoundHandler(), numenv1connect.NoteServiceName))
+			t.Cleanup(server.Close)
+			client := numenv1connect.NewNoteServiceClient(server.Client(), server.URL)
+			renamed, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{Path: path, Title: "Disorder"}))
 			if err != nil {
 				t.Fatal(err)
 			}
-			if renamed.Path != c.filename {
-				t.Errorf("the note is filed at %q", renamed.Path)
+			if renamed.Msg.GetPath() != c.filename {
+				t.Errorf("the note is filed at %q", renamed.Msg.GetPath())
 			}
-			body, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(c.filename)))
+			body, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(c.filename)))
 			if err != nil {
 				t.Fatal(err)
 			}

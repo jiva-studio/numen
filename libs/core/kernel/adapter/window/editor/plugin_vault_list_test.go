@@ -27,16 +27,6 @@ import (
 // immediateBound is how long a call that must not wait for a page's FlushTimeout may take.
 const immediateBound = windowsession.FlushTimeout / 2
 
-func newPluginVaultList(f *showing) vaultapi.List {
-	vaults, listing := f.cases.Vaults, f.cases.Listing
-	return windowsession.NewPluginVaults(&f.installation.State.Runtime, windowsession.VaultOps{
-		Edit:    windowsession.VaultEdits{Add: vaults.Change.Add, Rename: vaults.Change.Rename, Remove: vaults.Change.Remove},
-		Find:    listing.Find,
-		Missing: listing.FolderCheck,
-		Open:    f.cases.OpenPlugin,
-	})
-}
-
 func (f *showing) respondToFlushes(
 	t *testing.T, stream *connect.ServerStreamForClient[v1.WatchQuitResponse], flushRequest chan<- struct{}, release <-chan struct{},
 ) {
@@ -135,14 +125,14 @@ func requireUnsavedChanges(t *testing.T, openResult <-chan error, action string)
 }
 
 func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	userResponded := make(chan struct{})
 	respondAsUser := sync.OnceFunc(func() { close(userResponded) })
 	t.Cleanup(respondAsUser)
 	page := f.startPromptingPage(t, stream, userResponded)
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 
 	requireUnsavedChanges(t, callOpenVault(t.Context(), list, f.second.ID), "the plugin's open while a page holds unsaved changes")
 	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {
@@ -183,11 +173,11 @@ func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
 }
 
 func TestPluginOpenVaultWithoutUnsavedChangesShowsVaultFirst(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	f.respondToAllFlushes(t, stream)
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 
 	select {
 	case err := <-callOpenVault(t.Context(), list, f.second.ID):
@@ -212,7 +202,7 @@ func TestPluginOpenVaultWithoutUnsavedChangesShowsVaultFirst(t *testing.T) {
 // A close rejected because a page prompts the user waits until the prompt closes (closeAsDesktopApp). A
 // plugin's open that starts in that wait returns ErrUnsavedChanges and does not end the user's flush.
 func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	userResponded := make(chan struct{})
@@ -232,7 +222,7 @@ func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
 	case <-time.After(200 * time.Millisecond):
 	}
 
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 	select {
 	case err := <-callOpenVault(ctx, list, f.second.ID):
 		if !errors.Is(err, plugin.ErrUnsavedChanges) {
@@ -262,7 +252,7 @@ func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
 }
 
 func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
@@ -282,7 +272,7 @@ func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
 		t.Fatal("the close never requested a flush from the page")
 	}
 
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 	openResult := callOpenVault(t.Context(), list, f.second.ID)
 
 	select {
@@ -309,13 +299,13 @@ func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
 }
 
 func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
 	f.respondToFlushes(t, stream, flushRequest, release)
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 
 	first := callOpenVault(t.Context(), list, f.second.ID)
 	select {
@@ -347,12 +337,12 @@ func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 }
 
 func TestPluginOpenVaultOfMissingFolderReturnsUnreadable(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	if err := os.RemoveAll(f.second.Path); err != nil {
 		t.Fatal(err)
 	}
 
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 	err := list.OpenVault(t.Context(), f.second.ID)
 
 	if !errors.Is(err, vaultdomain.ErrUnreadable) {
@@ -380,7 +370,7 @@ func watchFlushRequests(stream *connect.ServerStreamForClient[v1.WatchQuitRespon
 
 func startPluginOpen(t *testing.T, f *showing, flushRequest <-chan struct{}, release chan struct{}) <-chan error {
 	t.Helper()
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 	openResult := callOpenVault(context.WithoutCancel(t.Context()), list, f.second.ID)
 	select {
 	case <-flushRequest:
@@ -416,7 +406,7 @@ func closeAsDesktopApp(ctx context.Context, o *container.OpenedWindow) bool {
 }
 
 func TestACloseDuringAPluginOpenWithASilentPageClosesTheWindow(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	openResult := startPluginOpen(t, f, watchFlushRequests(stream), nil)
@@ -430,7 +420,7 @@ func TestACloseDuringAPluginOpenWithASilentPageClosesTheWindow(t *testing.T) {
 }
 
 func TestAQuitDuringAPluginOpenIsAccepted(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
@@ -460,7 +450,7 @@ func TestAQuitDuringAPluginOpenIsAccepted(t *testing.T) {
 }
 
 func TestUserVaultSwitchDuringPluginOpenIsAccepted(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
@@ -489,7 +479,7 @@ func TestUserVaultSwitchDuringPluginOpenIsAccepted(t *testing.T) {
 }
 
 func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
@@ -503,7 +493,7 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 		close(release)
 		t.Fatal("the switch never requested a flush from the page")
 	}
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 	err := list.OpenVault(t.Context(), f.first.ID)
 	close(release)
 
@@ -582,11 +572,11 @@ func (f *showing) respondToAllFlushes(t *testing.T, stream *connect.ServerStream
 // The user switches vault again and again while plugins keep opening vaults: every user switch
 // completes within its bound and no plugin open blocks the window.
 func TestUserVaultSwitchesSucceedDuringRepeatedPluginOpens(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	f.respondToAllFlushes(t, stream)
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 
 	stop := make(chan struct{})
 	var openers sync.WaitGroup
@@ -643,7 +633,7 @@ func TestUserVaultSwitchesSucceedDuringRepeatedPluginOpens(t *testing.T) {
 // Two user actions, a close and a vault switch, arrive while a plugin opens a vault. Neither hangs,
 // one succeeds and the plugin open is canceled.
 func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := make(chan struct{}, 1)
@@ -686,11 +676,11 @@ func TestTwoUserActionsDuringPluginOpenBothReturn(t *testing.T) {
 // A plugin call that ends during its open (the host endpoint closes, the plugin hangs up) returns
 // unavailable and does not change the vault of the window.
 func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	flushRequest := watchFlushRequests(stream)
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 
 	ctx, hangUp := context.WithCancel(t.Context())
 	openResult := callOpenVault(ctx, list, f.second.ID)

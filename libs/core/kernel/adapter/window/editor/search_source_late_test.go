@@ -197,7 +197,7 @@ func TestASourceThatDescribesItselfAfterASettingJoinsTheOpenWindow(t *testing.T)
 	cfg.Execution, cfg.Preferences, cfg.Endpoints = container.AdaptPluginHost(host.Management, host.Supervision)
 	newListedVault(t, cfg, "garden", map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})
 
-	installation, _, err := openRegisteredWindow(cfg, t.Context(), "garden", os.Stderr)
+	installation, err := openRegisteredWindow(cfg, t.Context(), "garden", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

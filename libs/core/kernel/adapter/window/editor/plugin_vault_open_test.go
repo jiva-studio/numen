@@ -2,6 +2,7 @@ package editor_test
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"testing"
 	"time"
 )
@@ -9,7 +10,7 @@ import (
 // The user's own switch is rejected while a page prompts; the user then closes the prompt, so nothing is
 // unsaved. A plugin's open after that shows the vault.
 func TestPluginOpenVaultAfterSwitchPromptClosesShowsVault(t *testing.T) {
-	f := openTwoVaults(t)
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
 	stream, isDone := f.watchQuit(t)
 	defer isDone()
 	userResponded := make(chan struct{})
@@ -25,7 +26,7 @@ func TestPluginOpenVaultAfterSwitchPromptClosesShowsVault(t *testing.T) {
 		t.Fatal("closing the prompt never completed the flush request")
 	}
 
-	list := newPluginVaultList(f)
+	list := f.cfg.Endpoints.Endpoint.GetPluginVaultList()
 	select {
 	case err := <-callOpenVault(t.Context(), list, f.second.ID):
 		if err != nil {

@@ -98,7 +98,6 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 			Read:    note.NewRead(readers),
 			Write:   note.NewWrite(readers, writers, index, now, views.Writes),
 			Create:  create,
-			Replace: note.NewReplace(readers, writers, index, now),
 			Linking: linking,
 		},
 		Properties: NoteProperties{Frontmatter: note.NewWriteFrontmatter(readers, writers, index, now)},
@@ -120,7 +119,7 @@ func vaultNotes(c vaultWiring, db *Index, index edit.IndexUpdater, views noteVie
 }
 
 func vaultQueries(db *Index) query.UseCases {
-	links, refs := db.NoteQueries(), db.NoteQueries()
+	links := db.NoteQueries()
 	return query.UseCases{
 		Refer: query.Referring{
 			Links:        query.NewShowLinks(links),
@@ -129,9 +128,7 @@ func vaultQueries(db *Index) query.UseCases {
 		},
 		Browse: query.Browsing{
 			Connection:     query.NewGetConnection(links),
-			GetTitles:      query.NewGetTitles(refs),
-			GetTitle:       query.NewGetTitle(refs),
-			IsVaultIndexed: query.NewIsVaultIndexed(db.NoteQueries()),
+			IsVaultIndexed: query.NewIsVaultIndexed(links),
 		},
 	}
 }
