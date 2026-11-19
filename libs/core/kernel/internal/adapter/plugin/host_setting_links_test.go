@@ -7,12 +7,13 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
-func newLinkedHost(t *testing.T) *container.PluginRoles {
+func newLinkedHost(t *testing.T) *pluginhost.Host {
 	t.Helper()
 	tmp := t.TempDir()
 	dir := filepath.Join(tmp, "sample")
@@ -34,8 +35,8 @@ func newLinkedHost(t *testing.T) *container.PluginRoles {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	return host
@@ -46,12 +47,12 @@ func newLinkedHost(t *testing.T) *container.PluginRoles {
 func TestRequirementsFollowTheModelSetting(t *testing.T) {
 	host := newLinkedHost(t)
 	getIDs := func() []string {
-		return plugin.GetRequirementIDs(host.Registry, "md.numen.sample")
+		return plugin.GetRequirementIDs(host.Management.Registry, "md.numen.sample")
 	}
 	if got := getIDs(); !slices.Equal(got, []string{"large-weights"}) {
 		t.Errorf("requirements = %v, want the large weights", got)
 	}
-	if _, ok := host.Settings.GetPluginSettings("md.numen.sample")["url"]; ok {
+	if _, ok := host.Management.Settings.GetPluginSettings("md.numen.sample")["url"]; ok {
 		t.Error("the url is passed while its condition fails")
 	}
 
@@ -61,7 +62,7 @@ func TestRequirementsFollowTheModelSetting(t *testing.T) {
 	if got := getIDs(); !slices.Equal(got, []string{"small-weights"}) {
 		t.Errorf("requirements = %v, want the small weights", got)
 	}
-	if got := host.Settings.GetPluginSettings("md.numen.sample")["url"]; got != "https://example.org" {
+	if got := host.Management.Settings.GetPluginSettings("md.numen.sample")["url"]; got != "https://example.org" {
 		t.Errorf("url = %v, want its default", got)
 	}
 }
@@ -90,7 +91,7 @@ func TestCheckPluginSettingAcceptsPathsOfItsType(t *testing.T) {
 		{"dictionary", 3.0, plugin.ErrPathNotFound},
 		{"model", "anything", nil},
 	} {
-		err := host.Settings.CheckPluginSetting("md.numen.sample", tc.key, tc.value)
+		err := host.Management.Settings.CheckPluginSetting("md.numen.sample", tc.key, tc.value)
 		if !errors.Is(err, tc.want) || (tc.want == nil && err != nil) {
 			t.Errorf("%s = %v: err = %v, want %v", tc.key, tc.value, err, tc.want)
 		}

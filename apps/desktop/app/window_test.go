@@ -12,22 +12,26 @@ import (
 
 func windowOn(t *testing.T) (*container.OpenedWindow, container.Config) {
 	t.Helper()
-	opened, cfg, _ := windowWithCases(t)
-	return opened, cfg
+	cfg := newWindowConfig(t)
+	return openWindowAt(t, cfg, t.TempDir()), cfg
 }
 
-func windowWithCases(t *testing.T) (*container.OpenedWindow, container.Config, *container.WindowUseCases) {
+func newWindowConfig(t *testing.T) container.Config {
 	t.Helper()
-
-	cfg := container.NewConfig(container.Config{
+	return container.Config{
 		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
-	})
-	root := t.TempDir()
-	if _, err := cfg.AddVault(root, "one"); err != nil {
+	}
+}
+
+func openWindowAt(t *testing.T, cfg container.Config, root string) *container.OpenedWindow {
+	t.Helper()
+	res := container.NewResources()
+	execution, preferences, endpoints := container.PreparePluginHost(nil, nil, nil, false)
+	if _, err := cfg.AddVault(res, root, "one"); err != nil {
 		t.Fatal(err)
 	}
 
-	opened, err := container.OpenWindow(cfg, t.Context(), "one", io.Discard)
+	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, t.Context(), container.WindowOpening{Named: "one", Out: io.Discard})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +40,7 @@ func windowWithCases(t *testing.T) (*container.OpenedWindow, container.Config, *
 			t.Error(err)
 		}
 	})
-	return opened, cfg, &opened.UseCases
+	return opened
 }
 
 // TestTheWindowIsNamedAfterTheFileInFrontOfThePerson checks that the page

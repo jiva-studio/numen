@@ -2,7 +2,6 @@ package plugin_test
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"net/http"
 	"os"
 	"strconv"
@@ -10,12 +9,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
@@ -24,7 +25,7 @@ import (
 
 // taskHost is a running, idle host whose plugin reports tasks through the host endpoint.
 type taskHost struct {
-	host    *container.PluginRoles
+	host    *pluginhost.Host
 	process *os.Process
 	client  numenv1connect.HostQueueServiceClient
 }
@@ -34,23 +35,23 @@ func newTaskHost(t *testing.T) taskHost {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	var procs []*os.Process
-	host.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
+	host.Supervision.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
 	lender, _ := lendEndpoint(host, hostendpoint.Address)
 	lender.Update(func(l *hostendpoint.Lent) { l.Work = run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil) })
-	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
 		t.Fatal(err)
 	}
-	host.Activation.Release(workingPlugin, endpointOf(host, workingPlugin).Token, getTestHolder())
+	host.Management.Activation.Release(workingPlugin, endpointOf(host.Management, workingPlugin).Token, getTestHolder())
 	return taskHost{host: host, process: procs[0], client: newTaskClient(t, host)}
 }
 
-func newTaskClient(t *testing.T, host *container.PluginRoles) numenv1connect.HostQueueServiceClient {
+func newTaskClient(t *testing.T, host *pluginhost.Host) numenv1connect.HostQueueServiceClient {
 	t.Helper()
-	port, err := host.Services.OpenHostEndpoint(t.Context())
+	port, err := host.Supervision.Services.OpenHostEndpoint(t.Context())
 	if err != nil || port == 0 {
 		t.Fatalf("the host endpoint is not serving: port %d, %v", port, err)
 	}
-	token := endpointOf(host, workingPlugin).Token
+	token := endpointOf(host.Management, workingPlugin).Token
 	return numenv1connect.NewHostQueueServiceClient(
 		http.DefaultClient, "http://127.0.0.1:"+strconv.Itoa(port), connect.WithInterceptors(transport.AuthInterceptor(token)))
 }
@@ -72,7 +73,7 @@ func (w taskHost) finishTask(t *testing.T, id string) {
 
 func (w taskHost) listEvictedIDs(t *testing.T) []string {
 	t.Helper()
-	return w.host.Teardown.EvictIdle(t.Context(), 0, 50*time.Millisecond)
+	return w.host.Management.Teardown.EvictIdle(t.Context(), 0, 50*time.Millisecond)
 }
 
 func TestAnOpenTaskBlocksIdleEviction(t *testing.T) {
@@ -160,12 +161,12 @@ func TestACrashClearsTheOpenTasks(t *testing.T) {
 	w.reportTask(t, "scan.sample", 0, 4)
 
 	wiretest.KillProcess(t, w.process)
-	waitForProcessExit(t, supervisorOf(w.host, workingPlugin).GetExitSignal())
+	waitForProcessExit(t, supervisorOf(w.host.Management, workingPlugin).GetExitSignal())
 
-	if _, err := w.host.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
+	if _, err := w.host.Management.Activation.EnsureActive(t.Context(), workingPlugin, getTestHolder()); err != nil {
 		t.Fatalf("restart after the crash: %v", err)
 	}
-	w.host.Activation.Release(workingPlugin, endpointOf(w.host, workingPlugin).Token, getTestHolder())
+	w.host.Management.Activation.Release(workingPlugin, endpointOf(w.host.Management, workingPlugin).Token, getTestHolder())
 	if evicted := w.listEvictedIDs(t); len(evicted) != 1 || evicted[0] != workingPlugin {
 		t.Fatalf("evicted %v, want the restarted plugin without the crashed process's task", evicted)
 	}
@@ -173,24 +174,24 @@ func TestACrashClearsTheOpenTasks(t *testing.T) {
 func TestATaskReportedAfterTheReleaseDoesNotCancelIt(t *testing.T) {
 	w := newTaskHost(t)
 	w.reportTask(t, "first", 0, 4)
-	w.host.Teardown.ReleaseProcess(t.Context(), workingPlugin)
+	w.host.Management.Teardown.ReleaseProcess(t.Context(), workingPlugin)
 	w.reportTask(t, "second", 0, 4)
 
 	w.finishTask(t, "first")
-	if state := supervisorOf(w.host, workingPlugin).GetState(); state == lifecycle.StateDormant {
+	if state := supervisorOf(w.host.Management, workingPlugin).GetState(); state == lifecycle.StateDormant {
 		t.Fatal("the released plugin stopped while a task is open")
 	}
 	w.finishTask(t, "second")
 
 	wiretest.WaitUntil(t, "the released plugin to stop once its tasks finished", func() bool {
-		return supervisorOf(w.host, workingPlugin).GetState() == lifecycle.StateDormant
+		return supervisorOf(w.host.Management, workingPlugin).GetState() == lifecycle.StateDormant
 	})
 }
 
 func TestAQueueTurnTakenAfterTheReleaseDoesNotCancelIt(t *testing.T) {
 	w := newTaskHost(t)
 	w.reportTask(t, "first", 0, 4)
-	w.host.Teardown.ReleaseProcess(t.Context(), workingPlugin)
+	w.host.Management.Teardown.ReleaseProcess(t.Context(), workingPlugin)
 	ctx, closeStream := context.WithCancel(t.Context())
 	defer closeStream()
 	stream, err := w.client.EnqueueWork(ctx, connect.NewRequest(&v1.EnqueueWorkRequest{}))
@@ -205,6 +206,6 @@ func TestAQueueTurnTakenAfterTheReleaseDoesNotCancelIt(t *testing.T) {
 	closeStream()
 
 	wiretest.WaitUntil(t, "the released plugin to stop once its turn ended", func() bool {
-		return supervisorOf(w.host, workingPlugin).GetState() == lifecycle.StateDormant
+		return supervisorOf(w.host.Management, workingPlugin).GetState() == lifecycle.StateDormant
 	})
 }

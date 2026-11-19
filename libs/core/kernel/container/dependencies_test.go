@@ -22,16 +22,17 @@ import (
 )
 
 func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
-	host := NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := newTestPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
 	registry := provision.NewRegistry()
-	host.Dependencies.Replace(registry)
+	host.Supervision.Dependencies.Replace(registry)
 	tasks := run.NewTasks()
-	reportDependencies(plugins(NewConfig(Config{PluginHost: AdaptPluginHost(host)})), tasks)
+	execution, _, _ := AdaptPluginHost(host.Management, host.Supervision)
+	reportDependencies(execution.Watch, tasks, nil)
 	req := manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}
 
 	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateProvisioning, BytesDownloaded: 5, BytesTotal: 10})
@@ -54,7 +55,7 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 	t.Setenv(provision.EnvMockML, "true")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	registry := newDependencyRegistry(Config{}.Clock(), "")
+	registry := newDependencyRegistry(GetClock(NewResources()), "")
 
 	model := manifest.DependencyRequirement{
 		ID: "pp-ocr-det", Kind: manifest.DependencyKindModel,
@@ -100,7 +101,7 @@ func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
 		SourceURL: server.URL + "/model.onnx", ChecksumSHA256: hex.EncodeToString(sum[:]),
 	}
 
-	resolved, err := newDependencyRegistry(Config{}.Clock(), models).Provision(t.Context(), req, nil)
+	resolved, err := newDependencyRegistry(GetClock(NewResources()), models).Provision(t.Context(), req, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,16 +128,17 @@ func (p heldProvisioner) Provision(
 	return plugindomain.ResolvedDependency{}, ctx.Err()
 }
 
-func startHeldDownload(t *testing.T) (*PluginRoles, *run.Tasks, <-chan error) {
+func startHeldDownload(t *testing.T) (*testPluginRoles, *run.Tasks, <-chan error) {
 	t.Helper()
-	host := NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := newTestPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	provisioner := heldProvisioner{started: make(chan struct{})}
-	host.Dependencies.Replace(provision.NewRegistry(provisioner))
+	host.Supervision.Dependencies.Replace(provision.NewRegistry(provisioner))
 	tasks := run.NewTasks()
-	reportDependencies(plugins(NewConfig(Config{PluginHost: AdaptPluginHost(host)})), tasks)
+	execution, _, _ := AdaptPluginHost(host.Management, host.Supervision)
+	reportDependencies(execution.Watch, tasks, nil)
 	answer := make(chan error, 1)
 	go func() {
-		_, err := host.Services.GetDependencies().Provision(
+		_, err := host.Supervision.Services.GetDependencies().Provision(
 			t.Context(), manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}, nil)
 		answer <- err
 	}()
@@ -161,7 +163,7 @@ func TestTheCancelOfTheTaskOfADownloadStopsTheDownload(t *testing.T) {
 func TestStoppingThePluginsStopsTheDownloadsInProgress(t *testing.T) {
 	host, _, answer := startHeldDownload(t)
 
-	if err := stopPlugins(plugins(NewConfig(Config{PluginHost: AdaptPluginHost(host)})), context.WithoutCancel(t.Context())); err != nil {
+	if err := StopPlugins(AdaptTestPlugins(host.Management, host.Supervision).Execution.Watch, context.WithoutCancel(t.Context())); err != nil {
 		t.Fatal(err)
 	}
 	if err := <-answer; !errors.Is(err, context.Canceled) {

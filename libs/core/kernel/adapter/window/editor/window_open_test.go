@@ -15,6 +15,8 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
@@ -38,16 +40,19 @@ func (s *mockSourceServer) DescribeSearchSource(
 	return connect.NewResponse(&v1.DescribeSearchSourceResponse{Name: "asked-for", Recipe: "asked-for|384", Width: 384}), nil
 }
 
-func vaultConfig(t *testing.T) container.Config {
+func vaultConfig(t *testing.T) testInstallation {
 	t.Helper()
 	root := t.TempDir()
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
+	cfg := newTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		},
 	})
-	if _, err := cfg.AddVault(root, "alpha"); err != nil {
+	if _, err := cfg.AddVault(cfg.Resources, root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
 	return cfg
@@ -84,8 +89,8 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	}
 	serverPort := serverAddress.Port
 
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -101,15 +106,15 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 		}
 	}()
 
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
 
 	cfg := vaultConfig(t)
-	cfg.PluginHost = container.AdaptPluginHost(host)
+	cfg.Execution, cfg.Preferences, cfg.Endpoints = container.AdaptPluginHost(host.Management, host.Supervision)
 
-	installation, _, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
+	installation, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +131,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 
 // An installation with no model opens, and reports that by having none.
 func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
-	installation, _, err := openRegisteredWindow(vaultConfig(t), t.Context(), "", os.Stderr)
+	installation, err := openRegisteredWindow(vaultConfig(t), t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}

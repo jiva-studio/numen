@@ -115,21 +115,19 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		{"nothing written under the walk", false, 0},
 		{"a note written under the walk", true, 1},
 	} {
-		cfg := NewConfig(Config{
-			Paths: Paths{IndexPath: indexfile.Path(t)},
-		})
-		db, err := openIndex(vaultOf(cfg), t.Context())
+		cfg := NewTestInstallation(Config{Paths: Paths{IndexPath: indexfile.Path(t)}}, nil)
+		db, err := openIndex(cfg.buildVaultWiring(), t.Context())
 		if err != nil {
 			t.Fatal(err)
 		}
 		testsupport.CloseAfter(t, db)
 		v := vaulttest.NewVault(t, map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"})
 
-		opening := vaultOpener(vaultOf(cfg), db)
+		opening := vaultOpener(cfg.buildVaultWiring(), db)
 		broken := errors.New("index unavailable")
 		opening.Refresh = vault.NewRefreshFrom(vault.RefreshDeps{
-			Readers: vaultReaders(vaultOf(cfg)), Vaults: db.Vaults(), Notes: repositoryAnswering{err: broken},
-			Queries: db.Sources(), Sources: db.Sources(), Now: cfg.Clock(),
+			Readers: cfg.buildVaultWiring().Readers, Vaults: db.Vaults(), Notes: repositoryAnswering{err: broken},
+			Queries: db.Sources(), Sources: db.Sources(), Now: GetClock(cfg.Resources),
 			Ledger: vault.NewLedger(),
 		})
 
@@ -165,10 +163,8 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 // The notes indexed while their modification time is recent are remembered in
 // one ledger by every refresh of the index.
 func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
-	cfg := NewConfig(Config{
-		Paths: Paths{IndexPath: indexfile.Path(t)},
-	})
-	db, err := openIndex(vaultOf(cfg), t.Context())
+	cfg := NewTestInstallation(Config{Paths: Paths{IndexPath: indexfile.Path(t)}}, nil)
+	db, err := openIndex(cfg.buildVaultWiring(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +174,7 @@ func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 		"Two.md": "---\ntitle: Two\n---\n\n# Two\n",
 	})
 
-	if _, err := vaultOpener(vaultOf(cfg), db).GetRefresh().Execute(t.Context(), v, []string{"One.md"}); err != nil {
+	if _, err := vaultOpener(cfg.buildVaultWiring(), db).GetRefresh().Execute(t.Context(), v, []string{"One.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := db.Ledger.Len(); got != 1 {

@@ -20,7 +20,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -141,8 +140,8 @@ func (s *mockSourceServer) SearchChunks(
 }
 
 func TestOpenSourceBridgeNoPlugin(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", t.TempDir())
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", t.TempDir())
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -156,7 +155,7 @@ func TestOpenSourceBridgeNoPlugin(t *testing.T) {
 	}
 }
 
-func startSource(t *testing.T, mockServer *mockSourceServer) *container.PluginRoles {
+func startSource(t *testing.T, mockServer *mockSourceServer) *pluginhost.Host {
 	t.Helper()
 	mux := http.NewServeMux()
 	wiretest.HandlePluginLifecycle(mux)
@@ -181,12 +180,12 @@ func startSource(t *testing.T, mockServer *mockSourceServer) *container.PluginRo
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifestText), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	cmd := wiretest.StartSleepProcess(t)
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})

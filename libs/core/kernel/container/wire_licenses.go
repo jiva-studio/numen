@@ -8,15 +8,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 )
 
-func openLicenseUseCases(c pluginsWiring) *windowlicense.UseCases {
-	if c.PluginHost.Views.Declarations == nil {
+func openLicenseUseCases(install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) *windowlicense.UseCases {
+	if install.Licenses == nil {
 		return nil
 	}
 	adapter := licensingadapter.NewAdapter(func(ctx context.Context) {
-		if err := c.PluginHost.Configuration.Refresh(ctx); err != nil {
-			c.settings.ErrorHandler(err)
+		if err := install.Configuration.Refresh(ctx); err != nil {
+			settingsDeps.ErrorHandler(err)
 		}
 	})
-	deps := license.NewDeps(c.PluginHost.Views.Declarations, c.KeyStore, adapter, adapter, c.vault.Clock, adapter).WithErrorReporter(c.settings.ErrorHandler)
+	deps := license.NewDeps(install.Licenses, install.KeyStore, adapter, adapter, vaultDeps.Clock, adapter).WithErrorReporter(settingsDeps.ErrorHandler)
 	return &windowlicense.UseCases{List: license.NewList(deps), Activate: license.NewActivate(deps), Deactivate: license.NewDeactivate(deps), Watch: license.NewWatch(deps)}
 }

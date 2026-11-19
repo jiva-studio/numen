@@ -88,7 +88,6 @@
   --item-pad-block: 0.375rem;
   --item-pad-inline: 0.5rem;
   --content-gap: 0.125rem;
-  --notice-icon-offset: 0.125rem;
   --failure-row-offset: 0.25rem;
   --action-link-gap: 0.25rem;
   --action-link-pad-block: 0.125rem;
@@ -179,13 +178,6 @@
 
 .task-item__btn--visible {
   opacity: 1;
-}
-
-.task-item__notice-icon {
-  flex-shrink: 0;
-  align-self: flex-start;
-  margin-block-start: var(--notice-icon-offset);
-  color: var(--numen-hushed);
 }
 
 .task-item__btn:hover {

@@ -1,14 +1,11 @@
 package container
 
 import (
-	"context"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
@@ -22,41 +19,17 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// StopPlugins stops every plugin the host runs.
-func (c Config) StopPlugins(ctx context.Context) error {
-	return stopPlugins(plugins(c), ctx)
-}
-
-func openPluginWork(
-	c Config, db *Index, v domain.Vault, tasks *run.Tasks, models *run.Lock,
-) (pluginsWiring, *run.PluginWork, error) {
-	setPluginVaultPath(plugins(c), v.Path)
-	a := assemble(c, newTextVersions(vaultOf(c), db))
-	if err := installCurrentVault(a, c, db, v); err != nil {
-		return pluginsWiring{}, nil, err
-	}
-	work := pluginsOpenPluginWork(a, tasks, models)
-	setPluginTexts(a.vault)
-	return a, work, nil
-}
-
-func installCurrentVault(a pluginsWiring, c Config, db *Index, v domain.Vault) error {
-	registry, err := c.registry()
+func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *Index, v domain.Vault) error {
+	registry, err := vaultRegistry(vaultDeps.RegistryPath)
 	if err != nil {
 		return err
 	}
 	current := func() (domain.Vault, bool) { return v, true }
-	return installPluginVault(a, registry, db, current, PluginVaultHooks{})
-}
-
-// GetPluginServices is the forwarding of the services plugins serve to the windows.
-func GetPluginServices(c Config) editor.PluginServices {
-	return getPluginServices(plugins(c))
+	return installPluginVault(install, vaultDeps, registry, db, current, PluginVaultHooks{})
 }
 
 // PluginRuntime is what runs, finds and addresses the plugins.
@@ -100,106 +73,120 @@ type PluginViews struct {
 	Follow       func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber
 }
 
-// PluginHost is the plugin host as the capabilities the wiring and the use cases consume, each taken from the
-// role of the host that does it. The settings subscription is keyed by the one *PluginHost the container
-// made. ApplySetting makes a plugin follow one setting that changed. SetStorage sets the folders the plugins
-// store files in and keeps the dependencies in the models folder the host names; RefreshDependencies
-// provisions them as the environment names them now. Detection and RowOptions keep what the providers
-// reported, for every window of the host, in the cache files of the plugins; RunningProviders opens the
-// provider of a plugin only while it runs.
-// SourceDescriptions keeps the description of the search source between its openings and processes.
-type PluginHost struct {
-	Runtime             PluginRuntime
-	Configuration       PluginConfiguration
-	Watch               PluginWatch
-	Endpoint            *hostendpoint.Services
-	Lender              *hostendpoint.Lender
-	ApplySetting        settingsport.PluginSettingApplier
-	Views               PluginViews
-	SetStorage          func(cacheRoot, dataRoot string)
-	RefreshDependencies func()
-	Health              *pluginhealth.Items
-	Processes           pluginprocess.Processes
-	Detection           *providerbridge.Detection
-	RowOptions          *rowoptions.Lists
-	RunningProviders    *providerbridge.RunningSource
-	SourceDescriptions  *sourcebridge.Descriptions
+// PluginExecution runs plugins and tracks their processes.
+type PluginExecution struct {
+	Runtime   PluginRuntime
+	Watch     PluginWatch
+	Health    *pluginhealth.Items
+	Processes pluginprocess.Processes
 }
 
-// AdaptPluginHost lends the capabilities of host, the roles of a plugin host made with NewPluginRoles or OpenPluginRoles, to the container.
-func AdaptPluginHost(host *PluginRoles) *PluginHost {
+// PluginPreferences applies settings and storage locations to the installation's plugins.
+type PluginPreferences struct {
+	Configuration       PluginConfiguration
+	Views               PluginViews
+	ApplySetting        settingsport.PluginSettingApplier
+	SetStorage          func(cacheRoot, dataRoot string)
+	RefreshDependencies func()
+	Detection           connectionport.Detected
+}
+
+// PluginProviders connects plugin providers to search and model clients.
+type PluginProviders struct {
+	Detection          *providerbridge.Detection
+	RowOptions         *rowoptions.Lists
+	RunningProviders   *providerbridge.RunningSource
+	SourceDescriptions *sourcebridge.Descriptions
+}
+
+// PluginEndpoints connects the host RPC services and the providers served by plugins.
+type PluginEndpoints struct {
+	Endpoint *hostendpoint.Services
+	Lender   *hostendpoint.Lender
+	PluginProviders
+}
+
+// AdaptPluginHost connects the process and management roles to their consumers.
+func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervision) (*PluginExecution, *PluginPreferences, *PluginEndpoints) {
 	lender := hostendpoint.NewLender()
-	lent := lendHostEndpoint(host, lender)
-	types := plugin.NewConnectionTypes(host.Registry)
-	detection := providerbridge.NewDetection(types, providerbridge.NewQuestionSource(host.Activation), host.Clock)
-	host.Activation.SetOnStart(detection.DetectInBackground)
-	return &PluginHost{
+	lent := lendHostEndpoint(management, supervision, lender)
+	types := plugin.NewConnectionTypes(management.Registry)
+	detection := providerbridge.NewDetection(types, providerbridge.NewQuestionSource(management.Activation), supervision.Clock)
+	management.Activation.SetOnStart(detection.DetectInBackground)
+	exec := &PluginExecution{
 		Runtime: PluginRuntime{
-			Activator:          host.Activation,
-			PluginRetrier:      host.Retry,
-			PluginLister:       host.Registry,
-			PluginResolver:     host.Registry,
-			PluginEventEmitter: host.Events,
-			PluginBinding:      plugin.NewBinding(host.Teardown, host.Mode),
-			ClientLookup:       host.Activation.ClientLookup(),
-			TextPlugins:        host.Registry,
-			PluginFailures:     host.Failures,
-			ConfigWatcher:      host.Config,
-		},
-		Configuration: PluginConfiguration{
-			PluginSettingDeclarer: host.Registry,
-			ConfigRefresher:       host.Config,
-			PluginConfig:          host.Settings,
-			PluginSettings:        host.Settings,
+			Activator:          management.Activation,
+			PluginRetrier:      management.Retry,
+			PluginLister:       management.Registry,
+			PluginResolver:     management.Registry,
+			PluginEventEmitter: management.Events,
+			PluginBinding:      plugin.NewBinding(management.Teardown, management.Mode),
+			ClientLookup:       management.Activation.ClientLookup(),
+			TextPlugins:        management.Registry,
+			PluginFailures:     supervision.Failures,
+			ConfigWatcher:      management.Config,
 		},
 		Watch: PluginWatch{
-			PluginShutdown:     host.Teardown,
-			DependencyReporter: host.Services,
-			ContentTypeTable:   host.ContentTypes,
+			PluginShutdown:     management.Teardown,
+			DependencyReporter: supervision.Services,
+			ContentTypeTable:   management.ContentTypes,
 		},
-		Endpoint: lent,
-		Lender:   lender,
+		Health:    supervision.Health,
+		Processes: supervision.RunningProcesses,
+	}
+	prefs := &PluginPreferences{
+		Configuration: PluginConfiguration{
+			PluginSettingDeclarer: management.Registry,
+			ConfigRefresher:       management.Config,
+			PluginConfig:          management.Settings,
+			PluginSettings:        management.Settings,
+		},
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
-			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,
-			Health: host.Health,
+			Values: management.Settings, Stopper: management.Teardown, Failures: supervision.Failures, Listeners: management.Listeners, Push: management.Config,
+			Health: supervision.Health,
 		}).Execute,
 		Views: PluginViews{
 			Types: types, Operations: types,
-			Declarations: host.Registry,
-			Infos:        host.Registry, Checks: host.Settings,
+			Declarations: management.Registry, Infos: management.Registry, Checks: management.Settings,
 			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
 		},
 		SetStorage: func(cacheRoot, dataRoot string) {
-			setPluginStorage(host, cacheRoot, dataRoot, func(modelsDir string) pluginport.DependencyRegistry {
-				return newDependencyRegistry(host.Clock, modelsDir)
+			setPluginStorage(supervision, cacheRoot, dataRoot, func(modelsDir string) pluginport.DependencyRegistry {
+				return newDependencyRegistry(supervision.Clock, modelsDir)
 			})
-			detection.SetFiles(host.Storage)
+			detection.SetFiles(supervision.Storage)
 		},
-		RefreshDependencies: func() { host.Dependencies.Replace(newDependencyRegistry(host.Clock, "")) },
-		Health:              host.Health,
-		Processes:           host.RunningProcesses,
+		RefreshDependencies: func() { supervision.Dependencies.Replace(newDependencyRegistry(supervision.Clock, "")) },
 		Detection:           detection,
-		RowOptions:          rowoptions.NewLists(host.Storage, host.Config),
-		RunningProviders:    providerbridge.NewRunningSource(host.Activation, host.Activation.ClientLookup()),
-		SourceDescriptions:  sourcebridge.NewDescriptions(host.Storage, host.Config),
 	}
+	endpoints := &PluginEndpoints{
+		Endpoint: lent,
+		Lender:   lender,
+		PluginProviders: PluginProviders{
+			Detection:          detection,
+			RowOptions:         rowoptions.NewLists(supervision.Storage, management.Config),
+			RunningProviders:   providerbridge.NewRunningSource(management.Activation, management.Activation.ClientLookup()),
+			SourceDescriptions: sourcebridge.NewDescriptions(supervision.Storage, management.Config),
+		},
+	}
+	return exec, prefs, endpoints
 }
 
-func lendHostEndpoint(host *PluginRoles, lender *hostendpoint.Lender) *hostendpoint.Services {
+func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision, lender *hostendpoint.Lender) *hostendpoint.Services {
 	services := hostendpoint.NewServices(lender.Get)
-	toolHost := plugin.NewToolHost(host.Activation, host.Registry)
-	manifests := pluginmanifest.Open(host.Registry, host.Registry, host.Failures)
+	toolHost := plugin.NewToolHost(management.Activation, management.Registry)
+	manifests := pluginmanifest.Open(management.Registry, management.Registry, processes.Failures)
 	revision := getListingRevision(getSearchCatalog(manifests))
-	tools := toolbridge.NewCatalog(toolHost, toolHost, host.Storage, revision, host.Clock, toolbridge.GetErrorOutput())
-	host.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
-		Identity: host.Activation, Leases: host.Activation, Processes: host.Teardown, Files: host.ContentTypes,
+	tools := toolbridge.NewCatalog(toolHost, toolHost, processes.Storage, revision, processes.Clock, toolbridge.GetErrorOutput())
+	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
+		Identity: management.Activation, Leases: management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
 		Lent: services,
 		Tools: func() hostendpoint.PluginTools {
 			return tools
 		},
 		Health: hostendpoint.HealthCalls{
-			Report: pluginhealth.NewReport(host.Health, host.Registry),
-			Clear:  pluginhealth.NewClear(host.Health),
+			Report: pluginhealth.NewReport(processes.Health, management.Registry),
+			Clear:  pluginhealth.NewClear(processes.Health),
 		},
 	}))
 	return services

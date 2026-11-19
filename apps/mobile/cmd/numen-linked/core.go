@@ -26,7 +26,7 @@ const readHeaderTimeout = 10 * time.Second
 type linkedCore struct {
 	url    string
 	token  string
-	cfg    container.Config
+	watch  container.PluginWatch
 	stop   context.CancelFunc
 	opened *container.OpenedWindow
 	server *http.Server
@@ -38,31 +38,37 @@ func startCore(dir string, errOut io.Writer) (*linkedCore, error) {
 		return nil, err
 	}
 	report := func(err error) { writeLine(errOut, "numen-linked:", err) }
-	cfg, err := newConfig(dir, report)
-	if err != nil {
+	cfg := newConfig(dir)
+	res := container.NewResources()
+	res.ErrorHandler = report
+	management, supervision := container.NewPluginRoles(container.GetClock(res), target)
+	if err := container.InitializePluginRoles(cfg.IndexPath, res, management, supervision, report); err != nil {
 		return nil, err
 	}
-	shown, err := cfg.EnsureVault(root, "numen", false)
+	if err := management.Discovery.RegisterBuiltIn(updater.Manifest, serveLinked(updaterservice.Mount)); err != nil {
+		return nil, err
+	}
+	execution, preferences, endpoints := container.AdaptPluginHost(management, supervision)
+	execution.Runtime.SetSafeMode(cfg.SafeMode)
+	shown, err := cfg.EnsureVault(res, root, "numen", false)
 	if err != nil {
-		return nil, errors.Join(err, cfg.StopPlugins(context.Background()))
+		return nil, errors.Join(err, container.StopPlugins(execution.Watch, context.Background()))
 	}
 	ctx, stop := context.WithCancel(context.Background())
-	opened, err := container.OpenWindow(cfg, ctx, shown.Path, errOut)
+	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, ctx, container.WindowOpening{Named: shown.Path, Out: errOut})
 	if err != nil {
 		stop()
-		return nil, errors.Join(err, cfg.StopPlugins(context.Background()))
+		return nil, errors.Join(err, container.StopPlugins(execution.Watch, context.Background()))
 	}
-	core := &linkedCore{cfg: cfg, stop: stop, opened: opened}
+	core := &linkedCore{watch: execution.Watch, stop: stop, opened: opened}
 	if err := core.serve(ctx, report); err != nil {
 		return nil, errors.Join(err, core.Close())
 	}
 	return core, nil
 }
 
-func newConfig(dir string, report func(error)) (container.Config, error) {
-	base := container.Config{
-		Resources:    container.NewResources(),
-		ErrorHandler: report,
+func newConfig(dir string) container.Config {
+	return container.Config{
 		Paths: container.Paths{
 			IndexPath:       filepath.Join(dir, "index.db"),
 			RegistryPath:    filepath.Join(dir, "vaults.json"),
@@ -71,15 +77,6 @@ func newConfig(dir string, report func(error)) (container.Config, error) {
 			PluginCachePath: filepath.Join(dir, "plugin-cache"),
 		},
 	}
-	roles, err := container.OpenPluginRoles(base, report, target)
-	if err != nil {
-		return container.Config{}, err
-	}
-	if err := roles.Discovery.RegisterBuiltIn(updater.Manifest, serveLinked(updaterservice.Mount)); err != nil {
-		return container.Config{}, err
-	}
-	base.PluginHost = container.AdaptPluginHost(roles)
-	return container.NewConfig(base), nil
 }
 
 func serveLinked(mount func(*server.Server) error) func(map[string]string) (http.Handler, error) {
@@ -113,5 +110,5 @@ func (c *linkedCore) Close() error {
 		err = c.server.Close()
 	}
 	c.stop()
-	return errors.Join(err, c.opened.Close(), c.cfg.StopPlugins(context.Background()))
+	return errors.Join(err, c.opened.Close(), container.StopPlugins(c.watch, context.Background()))
 }

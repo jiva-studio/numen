@@ -61,10 +61,13 @@ func makeOpenVaults(t *testing.T) (*vault.OpenVaults[*Index], []domain.Vault, *a
 	t.Helper()
 
 	state := t.TempDir()
-	cfg := NewConfig(Config{
-		Paths: Paths{IndexPath: filepath.Join(state, "index.db"), RegistryPath: filepath.Join(state, "vaults.json")},
-	})
-	db, err := openIndex(vaultOf(cfg), t.Context())
+	cfg := NewTestInstallation(Config{
+		Paths: Paths{
+			IndexPath:    filepath.Join(state, "index.db"),
+			RegistryPath: filepath.Join(state, "vaults.json"),
+		},
+	}, nil)
+	db, err := openIndex(cfg.buildVaultWiring(), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +81,7 @@ func makeOpenVaults(t *testing.T) (*vault.OpenVaults[*Index], []domain.Vault, *a
 	vaults := &vault.OpenVaults[*Index]{
 		Opener: func(i *Index) *vault.VaultOpener {
 			openings.Add(1)
-			return vaultOpener(vaultOf(cfg), i)
+			return vaultOpener(cfg.buildVaultWiring(), i)
 		},
 		Index:       db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
@@ -87,11 +90,11 @@ func makeOpenVaults(t *testing.T) (*vault.OpenVaults[*Index], []domain.Vault, *a
 	return vaults, target, &openings
 }
 
-func makeSampleVault(t *testing.T, cfg Config) string {
+func makeSampleVault(t *testing.T, cfg TestInstallation) string {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := vaultIdentity(vaultOf(cfg)).EnsureIdentity(root, testsupport.GetEpoch()); err != nil {
+	if _, err := vaultIdentity(cfg.buildVaultWiring().Options).EnsureIdentity(root, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 	for name, body := range getOpenVaultsSamples() {

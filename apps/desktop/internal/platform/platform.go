@@ -35,26 +35,34 @@ const (
 	TargetFlashcards = "desktop.flashcards"
 )
 
-// GetConfig returns the core's configuration with the values this machine
-// supplies. Values from a settings file are applied over it.
-func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
-
-// GetConfigFor is GetConfig for the window of a target, whose plugin host runs the plugins that name
-// that target.
-func GetConfigFor(target string) container.Config {
-	dirs := getPluginsDirs()
-	base := container.Config{KeyStore: getKeyStore(), Resources: container.NewResources()}
+// GetConfig returns the desktop launch paths.
+func GetConfig() container.Config {
+	var cfg container.Config
 	if path, err := GetIndexPath(); err == nil {
-		base.IndexPath = path
+		cfg.IndexPath = path
 	}
-	host, discoverErr := container.NewPluginHost(base, reportPluginHost, target, dirs...)
+	return cfg
+}
+
+// Installation holds the roles built when a desktop application starts.
+type Installation struct {
+	Execution   *container.PluginExecution
+	Preferences *container.PluginPreferences
+	Endpoints   *container.PluginEndpoints
+	Resources   *container.Resources
+}
+
+// NewPluginServices builds the plugin host and shared resources of a desktop window or command.
+func NewPluginServices(target string) Installation {
+	dirs := getPluginsDirs()
+	res := container.NewResources()
+	res.KeyStore = getKeyStore()
+	execution, preferences, endpoints, discoverErr := container.NewPluginHost(GetConfig().IndexPath, res, reportPluginHost, target, dirs...)
 	reportPluginFailure("discover plugins", discoverErr)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
-	host.SetStorage(cacheRoot, dataRoot)
-	base.PluginHost, base.PluginCatalog = host, getCatalogConfig(target, dirs, host)
-	cfg := container.NewConfig(base)
-	// A machine with no data folder leaves the path empty, and the core fails to start.
-	return cfg
+	preferences.SetStorage(cacheRoot, dataRoot)
+	res.PluginCatalog = getCatalogConfig(target, dirs, execution.Runtime.IsPluginEnabled)
+	return Installation{Execution: execution, Preferences: preferences, Endpoints: endpoints, Resources: res}
 }
 
 func reportPluginHost(err error) {
@@ -77,8 +85,8 @@ func getKeyStore() *keychain.Store {
 
 func getDevPluginsDirs() []string { return []string{"plugins"} }
 
-func getCatalogConfig(target string, pluginDirs []string, host *container.PluginHost) catalog.Config {
-	local := localsource.New(slices.Clone(pluginDirs), localsource.SettingsFunc(host.Runtime.IsPluginEnabled))
+func getCatalogConfig(target string, pluginDirs []string, isEnabled localsource.SettingsFunc) catalog.Config {
+	local := localsource.New(slices.Clone(pluginDirs), isEnabled)
 	config := catalog.Config{Target: target, Sources: []catalog.Source{local, getIndexSource(pluginDirs)}, InstallDir: "", CacheDir: ""}
 	if configDir, err := os.UserConfigDir(); err == nil {
 		config.InstallDir = filepath.Join(configDir, "numen", "plugins")

@@ -20,12 +20,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
@@ -183,7 +184,7 @@ func (h toolsInfoHost) GetPluginInfos() []plugindomain.Info {
 func (h toolsInfoHost) IsEnabled(string) bool { return true }
 
 type lazyPlugin struct {
-	host    *container.PluginRoles
+	host    *pluginhost.Host
 	backend *builtInBackend
 	catalog *toolbridge.Catalog
 }
@@ -191,12 +192,12 @@ type lazyPlugin struct {
 func newLazyPluginFrom(t *testing.T, dependencies *provision.Registry, manifest []byte) lazyPlugin {
 	t.Helper()
 	host := newBuiltInHost(t)
-	host.Dependencies.Replace(dependencies)
+	host.Supervision.Dependencies.Replace(dependencies)
 	backend := newBuiltInBackend()
-	registerBuiltIn(t, host, manifest, serveReadOnlyTools(backend))
+	registerBuiltIn(t, host.Management, manifest, serveReadOnlyTools(backend))
 	files := storage.New(func(err error) { t.Errorf("the storage reported %v", err) }, func(string) string { return "1.0.0" })
 	files.SetStorageRoots(t.TempDir(), "")
-	catalog := toolbridge.NewCatalog(host.Activation, toolsInfoHost{pluginID: firstBuiltInID}, files, func() string { return "r1" }, testsupport.NewClock(), io.Discard)
+	catalog := toolbridge.NewCatalog(host.Management.Activation, toolsInfoHost{pluginID: firstBuiltInID}, files, func() string { return "r1" }, testsupport.NewClock(), io.Discard)
 	return lazyPlugin{host: host, backend: backend, catalog: catalog}
 }
 
@@ -217,18 +218,18 @@ func (p lazyPlugin) listTools(t *testing.T) []string {
 
 func (p lazyPlugin) use(t *testing.T) error {
 	t.Helper()
-	endpoint, err := p.host.Activation.EnsureActive(t.Context(), firstBuiltInID, getTestHolder())
+	endpoint, err := p.host.Management.Activation.EnsureActive(t.Context(), firstBuiltInID, getTestHolder())
 	if err != nil {
 		return err
 	}
-	p.host.Activation.Release(firstBuiltInID, endpoint.Token, getTestHolder())
+	p.host.Management.Activation.Release(firstBuiltInID, endpoint.Token, getTestHolder())
 	return nil
 }
 
 func (p lazyPlugin) waitUntilReleased(t *testing.T) {
 	t.Helper()
 	wiretest.WaitUntil(t, "the plugin to hold no lease", func() bool {
-		return slices.Contains(p.host.Teardown.EvictIdle(t.Context(), 0, releaseGrace), firstBuiltInID)
+		return slices.Contains(p.host.Management.Teardown.EvictIdle(t.Context(), 0, releaseGrace), firstBuiltInID)
 	})
 }
 
@@ -236,11 +237,11 @@ func TestAPluginStartedForAQuestionDownloadsNothing(t *testing.T) {
 	source := newModelSource(t)
 	p := newLazyPlugin(t, source)
 
-	endpoint, err := p.host.Activation.EnsureActiveForQuestion(t.Context(), firstBuiltInID, getTestHolder())
+	endpoint, err := p.host.Management.Activation.EnsureActiveForQuestion(t.Context(), firstBuiltInID, getTestHolder())
 	if err != nil {
 		t.Fatal(err)
 	}
-	p.host.Activation.ReleaseQuestion(firstBuiltInID, endpoint.Token, getTestHolder())
+	p.host.Management.Activation.ReleaseQuestion(firstBuiltInID, endpoint.Token, getTestHolder())
 
 	if got := source.count(); got != 0 {
 		t.Errorf("the question downloaded %d times, want none", got)
@@ -375,11 +376,11 @@ func TestASecondUseDownloadsNothing(t *testing.T) {
 func TestAUseOfAPluginAlreadyRunningForAQuestionDownloadsTheModels(t *testing.T) {
 	source := newModelSource(t)
 	p := newLazyPlugin(t, source)
-	asked, err := p.host.Activation.EnsureActiveForQuestion(t.Context(), firstBuiltInID, getTestHolder())
+	asked, err := p.host.Management.Activation.EnsureActiveForQuestion(t.Context(), firstBuiltInID, getTestHolder())
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { p.host.Activation.ReleaseQuestion(firstBuiltInID, asked.Token, getTestHolder()) })
+	t.Cleanup(func() { p.host.Management.Activation.ReleaseQuestion(firstBuiltInID, asked.Token, getTestHolder()) })
 	if got := source.count(); got != 0 {
 		t.Fatalf("the question downloaded %d times, want none", got)
 	}
@@ -416,10 +417,10 @@ func TestAFailedDownloadDoesNotMarkThePluginAsFailedToStart(t *testing.T) {
 		t.Fatal("the failed download did not fail the use")
 	}
 
-	if status, ok := p.host.Registry.GetPluginStatus(firstBuiltInID); !ok || status.Failed {
+	if status, ok := p.host.Management.Registry.GetPluginStatus(firstBuiltInID); !ok || status.Failed {
 		t.Errorf("status = %+v, want a plugin that did not fail", status)
 	}
-	if items := p.host.Health.List(); len(items) != 0 {
+	if items := p.host.Supervision.Health.List(); len(items) != 0 {
 		t.Errorf("the failed download raised health items %+v", items)
 	}
 }
@@ -631,7 +632,7 @@ func TestAPluginDeclaringARuntimeNothingProvisionsIsNotStartedForAQuestion(t *te
 	t.Setenv("NUMEN_DEPENDENCY_SAMPLE_RUNTIME", "")
 	p := newLazyPluginFrom(t, provision.NewRegistry(), newBuiltInManifest(firstBuiltInID, sampleRuntime))
 
-	_, err := p.host.Activation.EnsureActiveForQuestion(t.Context(), firstBuiltInID, getTestHolder())
+	_, err := p.host.Management.Activation.EnsureActiveForQuestion(t.Context(), firstBuiltInID, getTestHolder())
 
 	if !errors.Is(err, supervision.ErrRuntimeUnavailable) {
 		t.Errorf("EnsureActiveForQuestion() = %v, want ErrRuntimeUnavailable at launch", err)
@@ -681,18 +682,18 @@ func TestAChangedModelSettingDownloadsTheNewModelAtTheNextUse(t *testing.T) {
 	}
 }
 
-func newEventPlugin(t *testing.T, source *modelSource) (*container.PluginRoles, *eventRecorder) {
+func newEventPlugin(t *testing.T, source *modelSource) (*pluginhost.Host, *eventRecorder) {
 	t.Helper()
 	t.Setenv(source.envName(sampleRuntime), "")
 	host := newBuiltInHost(t)
-	host.Dependencies.Replace(provision.NewRegistry(source))
+	host.Supervision.Dependencies.Replace(provision.NewRegistry(source))
 	recorder := &eventRecorder{}
 	manifest := fmt.Appendf(nil, `{
 		"id": %q, "name": "Example Events", "version": "1.0.0", "targets": ["desktop.editor"], "permissions": [],
 		"activationEvents": [%q], "dependencies": [{"id": %q, "kind": "runtime"}],
 		"backend": {"entrypoint": "bin/example"}
 	}`, firstBuiltInID, catalogmanifest.ActivationEventIndexChanged, sampleRuntime)
-	registerBuiltIn(t, host, manifest, func(map[string]string) (http.Handler, error) {
+	registerBuiltIn(t, host.Management, manifest, func(map[string]string) (http.Handler, error) {
 		mux := http.NewServeMux()
 		wiretest.HandlePluginLifecycle(mux)
 		mux.Handle(numenv1connect.NewPluginEventServiceHandler(recorder))
@@ -701,7 +702,7 @@ func newEventPlugin(t *testing.T, source *modelSource) (*container.PluginRoles, 
 	return host, recorder
 }
 
-func newSpawnedLazyHost(t *testing.T, source *modelSource) *container.PluginRoles {
+func newSpawnedLazyHost(t *testing.T, source *modelSource) *pluginhost.Host {
 	t.Helper()
 	host := newEventHost(t,
 		map[string]catalogmanifest.Manifest{
@@ -709,7 +710,7 @@ func newSpawnedLazyHost(t *testing.T, source *modelSource) *container.PluginRole
 		},
 		map[string]int{"md.test.lazy": servePlugin(t, nil)},
 	)
-	host.Dependencies.Replace(provision.NewRegistry(source))
+	host.Supervision.Dependencies.Replace(provision.NewRegistry(source))
 	return host
 }
 
@@ -717,7 +718,7 @@ func TestAnEventDeliveredToAPluginDownloadsNothing(t *testing.T) {
 	source := newModelSource(t)
 	host, recorder := newEventPlugin(t, source)
 
-	activated, err := host.Events.TriggerEvent(t.Context(), indexChangedEvent)
+	activated, err := host.Management.Events.TriggerEvent(t.Context(), indexChangedEvent)
 
 	if err != nil {
 		t.Fatal(err)
@@ -734,8 +735,8 @@ func TestAnEventOnTheBusDownloadsNothing(t *testing.T) {
 	source := newModelSource(t)
 	host, recorder := newEventPlugin(t, source)
 
-	host.Events.EmitEvent(indexChangedEvent)
-	if err := host.Events.GetEventBus().Flush(t.Context()); err != nil {
+	host.Management.Events.EmitEvent(indexChangedEvent)
+	if err := host.Management.Events.GetEventBus().Flush(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -752,11 +753,11 @@ func TestASpawnedPluginDownloadsOnceForTwoUses(t *testing.T) {
 	host := newSpawnedLazyHost(t, source)
 
 	for range 2 {
-		endpoint, err := host.Activation.EnsureActive(t.Context(), "md.test.lazy", getTestHolder())
+		endpoint, err := host.Management.Activation.EnsureActive(t.Context(), "md.test.lazy", getTestHolder())
 		if err != nil {
 			t.Fatal(err)
 		}
-		host.Activation.Release("md.test.lazy", endpoint.Token, getTestHolder())
+		host.Management.Activation.Release("md.test.lazy", endpoint.Token, getTestHolder())
 	}
 
 	if got := source.count(); got != 1 {
@@ -769,14 +770,14 @@ func TestADownloadLongerThanTheActivationTimeoutStillFinishes(t *testing.T) {
 	host := newSpawnedLazyHost(t, source)
 	policy := lifecycle.DefaultActivationPolicy()
 	policy.Timeout = 50 * time.Millisecond
-	host.Processes.SetActivationPolicy(policy)
+	host.Supervision.Processes.SetActivationPolicy(policy)
 	release := source.holdDownloads(t)
 	done := make(chan error, 1)
 
 	go func() {
-		endpoint, err := host.Activation.EnsureActive(t.Context(), "md.test.lazy", getTestHolder())
+		endpoint, err := host.Management.Activation.EnsureActive(t.Context(), "md.test.lazy", getTestHolder())
 		if err == nil {
-			host.Activation.Release("md.test.lazy", endpoint.Token, getTestHolder())
+			host.Management.Activation.Release("md.test.lazy", endpoint.Token, getTestHolder())
 		}
 		done <- err
 	}()
@@ -787,7 +788,7 @@ func TestADownloadLongerThanTheActivationTimeoutStillFinishes(t *testing.T) {
 	if err := <-done; err != nil {
 		t.Errorf("the use failed after a download longer than the activation timeout: %v", err)
 	}
-	if status, ok := host.Registry.GetPluginStatus("md.test.lazy"); !ok || status.Failed {
+	if status, ok := host.Management.Registry.GetPluginStatus("md.test.lazy"); !ok || status.Failed {
 		t.Errorf("status = %+v, want a plugin that did not fail", status)
 	}
 }
@@ -810,11 +811,11 @@ func TestAListenerConnectionDownloadsNothing(t *testing.T) {
 	if err := os.WriteFile(manifestPath, []byte(declared), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", root)
-	teardownAfter(t, host)
-	host.Dependencies.Replace(provision.NewRegistry(source))
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
+	teardownAfter(t, host.Management)
+	host.Supervision.Dependencies.Replace(provision.NewRegistry(source))
 	var started atomic.Int32
-	host.Processes.SetLauncher(startRelayLauncher(t, &started, "listener.mcp="+strconv.Itoa(serveEcho(t))))
+	host.Supervision.Processes.SetLauncher(startRelayLauncher(t, &started, "listener.mcp="+strconv.Itoa(serveEcho(t))))
 	discover(t, host)
 
 	conn := connectListener(t, port)
@@ -840,12 +841,12 @@ func TestCancelingTheDependenciesStopsTheDownloadInProgress(t *testing.T) {
 	source := newModelSource(t)
 	source.holdDownloads(t)
 	p := newLazyPlugin(t, source)
-	p.host.Services.ObserveDependencies(func(catalogmanifest.DependencyRequirement, plugindomain.DependencyStatus) {})
+	p.host.Supervision.Services.ObserveDependencies(func(catalogmanifest.DependencyRequirement, plugindomain.DependencyStatus) {})
 	answer := make(chan error, 1)
 	go func() { answer <- p.use(t) }()
 	source.waitForDownload(t)
 
-	p.host.Services.CancelDependencies()
+	p.host.Supervision.Services.CancelDependencies()
 	if err := <-answer; !errors.Is(err, context.Canceled) {
 		t.Errorf("the use received %v, want the cancellation", err)
 	}
@@ -856,7 +857,7 @@ func TestCancelingTheDependenciesStopsEveryVersionOfOneDependency(t *testing.T) 
 	source.holdDownloads(t)
 	registry := provision.NewRegistry(source)
 	p := newLazyPluginFrom(t, registry, newBuiltInManifest(firstBuiltInID, sampleRuntime))
-	p.host.Services.ObserveDependencies(func(catalogmanifest.DependencyRequirement, plugindomain.DependencyStatus) {})
+	p.host.Supervision.Services.ObserveDependencies(func(catalogmanifest.DependencyRequirement, plugindomain.DependencyStatus) {})
 	older := catalogmanifest.DependencyRequirement{ID: sampleRuntime, Kind: catalogmanifest.DependencyKindModel, Version: "1"}
 	newer := catalogmanifest.DependencyRequirement{ID: sampleRuntime, Kind: catalogmanifest.DependencyKindModel, Version: "2"}
 	answers := make(chan error, 2)
@@ -875,7 +876,7 @@ func TestCancelingTheDependenciesStopsEveryVersionOfOneDependency(t *testing.T) 
 		t.Fatalf("the older version received %v, want the cancellation", err)
 	}
 
-	p.host.Services.CancelDependencies()
+	p.host.Supervision.Services.CancelDependencies()
 	if err := <-answers; !errors.Is(err, context.Canceled) {
 		t.Errorf("the newer version received %v, want the cancellation", err)
 	}

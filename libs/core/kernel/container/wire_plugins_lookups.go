@@ -25,7 +25,3 @@ func getPluginLookups(db *Index) hostvault.Lookups {
 		},
 	}
 }
-
-func getIndexState(db *Index) *query.GetIndexState {
-	return query.NewGetIndexState(db.NoteQueries())
-}

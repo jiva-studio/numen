@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
@@ -33,13 +34,13 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 		t.Fatalf("write manifest failed: %v", err)
 	}
 
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("discover failed: %v", err)
 	}
 
 	// 1. Initial settings should match defaults
-	initial := host.Settings.GetPluginSettings("md.numen.sample")
+	initial := host.Management.Settings.GetPluginSettings("md.numen.sample")
 	if initial["verbose"] != true {
 		t.Errorf("expected default verbose=true, got %v", initial["verbose"])
 	}
@@ -51,12 +52,12 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 	}
 
 	// 2. SetSettings from configuration file overlay
-	host.Settings.SetSettings(map[string]map[string]any{
+	host.Management.Settings.SetSettings(map[string]map[string]any{
 		"md.numen.sample": {
 			"count": 10,
 		},
 	})
-	overlaid := host.Settings.GetPluginSettings("md.numen.sample")
+	overlaid := host.Management.Settings.GetPluginSettings("md.numen.sample")
 	if overlaid["verbose"] != true {
 		t.Errorf("expected verbose=true from default, got %v", overlaid["verbose"])
 	}
@@ -70,13 +71,13 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 		t.Fatalf("updating the setting failed: %v", err)
 	}
 
-	updated := host.Settings.GetPluginSettings("md.numen.sample")
+	updated := host.Management.Settings.GetPluginSettings("md.numen.sample")
 	if updated["mode"] != "accurate" {
 		t.Errorf("expected updated mode=accurate, got %v", updated["mode"])
 	}
 
 	// 4. Config JSON serialization
-	cfgJSON, err := host.Settings.GetPluginConfigJSON("md.numen.sample")
+	cfgJSON, err := host.Management.Settings.GetPluginConfigJSON("md.numen.sample")
 	if err != nil {
 		t.Fatalf("GetPluginConfigJSON failed: %v", err)
 	}
@@ -85,7 +86,7 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 	}
 
 	// 5. Host.GetPluginInfos
-	infos := host.Registry.GetPluginInfos()
+	infos := host.Management.Registry.GetPluginInfos()
 	if len(infos) != 1 {
 		t.Fatalf("expected 1 plugin info, got %d", len(infos))
 	}
@@ -122,19 +123,19 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Fatalf("write manifest failed: %v", err)
 	}
 
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("discover failed: %v", err)
 	}
 
 	pluginID := "md.numen.toggleable"
 
 	// 1. Initial state is enabled
-	if !host.Registry.IsPluginEnabled(pluginID) {
+	if !host.Management.Registry.IsPluginEnabled(pluginID) {
 		t.Errorf("expected plugin to be enabled initially")
 	}
 
-	st, ok := host.Registry.GetPluginStatus(pluginID)
+	st, ok := host.Management.Registry.GetPluginStatus(pluginID)
 	if !ok {
 		t.Fatalf("expected status to exist for %s", pluginID)
 	}
@@ -145,7 +146,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Errorf("status.IsActive = true, want false")
 	}
 
-	if _, found := host.Registry.FindPluginByCapability("tools"); !found {
+	if _, found := host.Management.Registry.FindPluginByCapability("tools"); !found {
 		t.Errorf("expected capability text-processing to be found")
 	}
 
@@ -154,21 +155,21 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Fatalf("switching the plugin failed: %v", err)
 	}
 
-	if host.Registry.IsPluginEnabled(pluginID) {
+	if host.Management.Registry.IsPluginEnabled(pluginID) {
 		t.Errorf("expected plugin to be disabled")
 	}
 
-	st, ok = host.Registry.GetPluginStatus(pluginID)
+	st, ok = host.Management.Registry.GetPluginStatus(pluginID)
 	if !ok || st.Enabled {
 		t.Errorf("expected status.Enabled = false after disable")
 	}
 
-	if _, found := host.Registry.FindPluginByCapability("tools"); found {
+	if _, found := host.Management.Registry.FindPluginByCapability("tools"); found {
 		t.Errorf("expected disabled plugin to not be found by capability")
 	}
 
 	ctx := t.Context()
-	triggered, err := host.Events.TriggerEvent(ctx, "on-edit")
+	triggered, err := host.Management.Events.TriggerEvent(ctx, "on-edit")
 	if err != nil {
 		t.Fatalf("TriggerEvent error: %v", err)
 	}
@@ -176,7 +177,7 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Errorf("expected 0 triggered plugins for disabled plugin, got %d", len(triggered))
 	}
 
-	_, err = host.Activation.EnsureActive(ctx, pluginID, getTestHolder())
+	_, err = host.Management.Activation.EnsureActive(ctx, pluginID, getTestHolder())
 	if err == nil {
 		t.Errorf("expected EnsureActive to fail for disabled plugin")
 	}
@@ -186,14 +187,14 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Fatalf("switching the plugin failed: %v", err)
 	}
 
-	if !host.Registry.IsPluginEnabled(pluginID) {
+	if !host.Management.Registry.IsPluginEnabled(pluginID) {
 		t.Errorf("expected plugin to be enabled after toggle")
 	}
-	if _, found := host.Registry.FindPluginByCapability("tools"); !found {
+	if _, found := host.Management.Registry.FindPluginByCapability("tools"); !found {
 		t.Errorf("expected capability text-processing to be found after re-enabling")
 	}
 
-	all := host.Registry.GetPluginStatuses()
+	all := host.Management.Registry.GetPluginStatuses()
 	if len(all) != 1 || !all[0].Enabled {
 		t.Errorf("expected 1 enabled plugin in GetPluginStatuses")
 	}
@@ -217,18 +218,18 @@ func TestAPluginOffByDefaultRunsOnceEnabled(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
-	if host.Registry.IsPluginEnabled("org.example.lantern") {
+	if host.Management.Registry.IsPluginEnabled("org.example.lantern") {
 		t.Error("the plugin runs before the person enables it")
 	}
 	if err := setEnabled(t.Context(), host, "org.example.lantern", true); err != nil {
 		t.Fatal(err)
 	}
-	if !host.Registry.IsPluginEnabled("org.example.lantern") {
+	if !host.Management.Registry.IsPluginEnabled("org.example.lantern") {
 		t.Error("the plugin stays off once the person enables it")
 	}
 }

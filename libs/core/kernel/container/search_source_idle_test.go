@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -69,27 +71,27 @@ func (p *meaningPlugin) SearchChunks(
 // meaningCore is one process of the core over the meaning plugin: its plugin host and the times it started
 // the plugin.
 type meaningCore struct {
-	roles    *container.PluginRoles
-	config   container.Config
+	roles    *pluginhost.Host
+	config   container.TestInstallation
 	launches *atomic.Int32
 }
 
 func openMeaningCore(t *testing.T, pluginDir, cacheRoot string, port int) meaningCore {
 	t.Helper()
-	roles := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", pluginDir)
-	if err := roles.Discovery.Discover(); err != nil {
+	roles := pluginhost.New(testsupport.GetMachine(), "desktop.editor", pluginDir)
+	if err := roles.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	roles.Storage.SetStorageRoots(cacheRoot, "")
+	roles.Supervision.Storage.SetStorageRoots(cacheRoot, "")
 	t.Cleanup(func() {
-		if err := roles.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := roles.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
 	// Each start takes the next of the processes started here.
 	processes := []*exec.Cmd{wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t), wiretest.StartSleepProcess(t)}
 	launches := &atomic.Int32{}
-	roles.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	roles.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		next := int(launches.Add(1)) - 1
 		if next >= len(processes) {
 			return nil, nil, errors.New("no process is left to start")
@@ -97,8 +99,10 @@ func openMeaningCore(t *testing.T, pluginDir, cacheRoot string, port int) meanin
 		return processes[next].Process, wiretest.GetReadyOutput(port), nil
 	})
 	return meaningCore{
-		roles:    roles,
-		config:   container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(roles), Paths: container.Paths{ServiceDir: ".numen"}}),
+		roles: roles,
+		config: container.NewTestInstallation(container.Config{
+			Paths: container.Paths{ServiceDir: ".numen"},
+		}, container.AdaptTestPlugins(roles.Management, roles.Supervision)),
 		launches: launches,
 	}
 }
@@ -131,7 +135,7 @@ func (c meaningCore) readVault(t *testing.T, db *container.Index, source searchs
 func (c meaningCore) awaitNoLease(t *testing.T, what string) {
 	t.Helper()
 	wiretest.WaitUntil(t, what, func() bool {
-		sup, isKnown := c.roles.Activation.GetSupervisor(meaningPluginID)
+		sup, isKnown := c.roles.Management.Activation.GetSupervisor(meaningPluginID)
 		if !isKnown {
 			return true
 		}
@@ -179,7 +183,7 @@ func TestTheSearchSourceRunsOnlyWhileThereIsWork(t *testing.T) {
 
 	first := openMeaningCore(t, pluginDir, cacheRoot, port)
 	first.readVault(t, db, first.openSource(t), v)
-	if err := first.roles.Teardown.StopPlugin(t.Context(), meaningPluginID); err != nil {
+	if err := first.roles.Management.Teardown.StopPlugin(t.Context(), meaningPluginID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -214,7 +218,7 @@ func TestTheSearchSourceRunsOnlyWhileThereIsWork(t *testing.T) {
 	}
 	next.awaitNoLease(t, "the pass to give the plugin back")
 
-	if err := next.roles.Teardown.StopPlugin(t.Context(), meaningPluginID); err != nil {
+	if err := next.roles.Management.Teardown.StopPlugin(t.Context(), meaningPluginID); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := container.NewSearch(next.config, db, source, nil).Execute(t.Context(), v, "orchard", search.GetTypingParameters(search.Sources, 5)); err != nil {
@@ -233,7 +237,7 @@ func TestANewVersionOfTheSearchSourceIsAskedForItsDescription(t *testing.T) {
 	cacheRoot := t.TempDir()
 	first := openMeaningCore(t, pluginDir, cacheRoot, port)
 	first.openSource(t)
-	if err := first.roles.Teardown.StopPlugin(t.Context(), meaningPluginID); err != nil {
+	if err := first.roles.Management.Teardown.StopPlugin(t.Context(), meaningPluginID); err != nil {
 		t.Fatal(err)
 	}
 

@@ -7,12 +7,14 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func newResolvedHost(t *testing.T) *container.PluginRoles {
+func newResolvedHost(t *testing.T) *pluginhost.Host {
 	t.Helper()
 	tmp := t.TempDir()
 	dir := filepath.Join(tmp, "sample")
@@ -35,16 +37,16 @@ func newResolvedHost(t *testing.T) *container.PluginRoles {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	return host
 }
 
-func findInfoSetting(t *testing.T, host *container.PluginRoles, key string) plugindomain.Setting {
+func findInfoSetting(t *testing.T, management *container.PluginManagement, key string) plugindomain.Setting {
 	t.Helper()
-	for _, info := range host.Registry.GetPluginInfos() {
+	for _, info := range management.Registry.GetPluginInfos() {
 		for _, one := range info.Settings {
 			if one.Key == key {
 				return one
@@ -65,46 +67,46 @@ func listValues(options manifest.SettingOptions) []string {
 
 func TestThePluginInfoCarriesTheOptionsInForceForTheStoredValues(t *testing.T) {
 	host := newResolvedHost(t)
-	if got := listValues(findInfoSetting(t, host, "model").ActiveOptions); !slices.Equal(got, []string{"big", "huge"}) {
+	if got := listValues(findInfoSetting(t, host.Management, "model").ActiveOptions); !slices.Equal(got, []string{"big", "huge"}) {
 		t.Errorf("the options under the remote provider are %v", got)
 	}
 
 	if err := updateSetting(t.Context(), host, "md.numen.sample", "provider", "local"); err != nil {
 		t.Fatal(err)
 	}
-	if got := listValues(findInfoSetting(t, host, "model").ActiveOptions); !slices.Equal(got, []string{"small"}) {
+	if got := listValues(findInfoSetting(t, host.Management, "model").ActiveOptions); !slices.Equal(got, []string{"small"}) {
 		t.Errorf("the options under the local provider are %v", got)
 	}
 }
 
 func TestThePluginInfoCarriesTheValueInForceOfASettingThatFollowsAnother(t *testing.T) {
 	host := newResolvedHost(t)
-	if got := findInfoSetting(t, host, "model").ValueJSON; got != `"big"` {
+	if got := findInfoSetting(t, host.Management, "model").ValueJSON; got != `"big"` {
 		t.Errorf("the model in force is %s, want the first option of the provider", got)
 	}
-	if got := findInfoSetting(t, host, "url").ValueJSON; got != `"https://example.org"` {
+	if got := findInfoSetting(t, host.Management, "url").ValueJSON; got != `"https://example.org"` {
 		t.Errorf("the url in force is %s, want its default", got)
 	}
 	if err := updateSetting(t.Context(), host, "md.numen.sample", "model", "huge"); err != nil {
 		t.Fatal(err)
 	}
-	if got := findInfoSetting(t, host, "model").ValueJSON; got != `"huge"` {
+	if got := findInfoSetting(t, host.Management, "model").ValueJSON; got != `"huge"` {
 		t.Errorf("the model in force is %s, want the stored one", got)
 	}
 }
 
 func TestThePluginInfoMarksTheSettingsTheirConditionsShow(t *testing.T) {
 	host := newResolvedHost(t)
-	if !findInfoSetting(t, host, "url").IsShown {
+	if !findInfoSetting(t, host.Management, "url").IsShown {
 		t.Error("the url is hidden under the remote provider")
 	}
-	if !findInfoSetting(t, host, "provider").IsShown {
+	if !findInfoSetting(t, host.Management, "provider").IsShown {
 		t.Error("a setting with no condition is hidden")
 	}
 	if err := updateSetting(t.Context(), host, "md.numen.sample", "provider", "local"); err != nil {
 		t.Fatal(err)
 	}
-	if findInfoSetting(t, host, "url").IsShown {
+	if findInfoSetting(t, host.Management, "url").IsShown {
 		t.Error("the url is shown under the local provider")
 	}
 }

@@ -19,7 +19,7 @@ const (
 	courierToken  = "5ca1ab1e5ca1ab1e5ca1ab1e5ca1ab1e5ca1ab1e5ca1ab1e5ca1ab1e5ca1ab1e"
 )
 
-func openDisabledCourier(t *testing.T) (container.Config, string, *recordingHost, func(string) map[string]any) {
+func openDisabledCourier(t *testing.T) (container.TestInstallation, string, *recordingHost, func(string) map[string]any) {
 	t.Helper()
 	root := t.TempDir()
 	dir := filepath.Join(root, "courier")
@@ -41,22 +41,19 @@ func openDisabledCourier(t *testing.T) (container.Config, string, *recordingHost
 		t.Fatal(err)
 	}
 	pluginHost := pluginhost.Open(t, "desktop.editor", root)
-	lent := container.AdaptPluginHost(pluginHost)
-	host := &recordingHost{apply: lent.ApplySetting, PluginConfig: lent.Configuration.PluginConfig}
-	lent.ApplySetting, lent.Configuration.PluginConfig = host.applySetting, host
-	cfg := container.NewConfig(container.Config{
-		PluginHost: lent,
-		Paths:      container.Paths{SettingsPath: path},
-	})
+	lent := container.AdaptTestPlugins(pluginHost.Management, pluginHost.Supervision)
+	host := &recordingHost{apply: lent.Preferences.ApplySetting, PluginConfig: lent.Preferences.Configuration.PluginConfig}
+	lent.Preferences.ApplySetting, lent.Preferences.Configuration.PluginConfig = host.applySetting, host
+	cfg := container.NewTestInstallation(container.Config{Paths: container.Paths{SettingsPath: path}}, lent)
 	selected, err := cfg.Settings()
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfg = cfg.SetSettings(selected)
-	if token, ok := pluginHost.Settings.GetPluginSettings(courierPlugin)["token"]; ok {
+	if token, ok := pluginHost.Management.Settings.GetPluginSettings(courierPlugin)["token"]; ok {
 		t.Fatalf("the disabled plugin holds the token %v after load", token)
 	}
-	return cfg, path, host, pluginHost.Settings.GetPluginSettings
+	return cfg, path, host, pluginHost.Management.Settings.GetPluginSettings
 }
 
 func readCourierToken(t *testing.T, path string) any {
@@ -77,8 +74,8 @@ func readCourierToken(t *testing.T, path string) any {
 }
 
 func TestEnablingAPluginTogetherWithATokenKeepsThePersonsToken(t *testing.T) {
-	for name, write := range map[string]func(t *testing.T, cfg container.Config, path string){
-		"one write of both settings": func(t *testing.T, cfg container.Config, _ string) {
+	for name, write := range map[string]func(t *testing.T, cfg container.TestInstallation, path string){
+		"one write of both settings": func(t *testing.T, cfg container.TestInstallation, _ string) {
 			t.Helper()
 			if err := container.GetSettingsWriter(cfg)([]settings.Setting{
 				{Path: []string{courierPlugin, "enabled"}, JSON: `true`},
@@ -87,7 +84,7 @@ func TestEnablingAPluginTogetherWithATokenKeepsThePersonsToken(t *testing.T) {
 				t.Fatal(err)
 			}
 		},
-		"an edit of numen.json by hand": func(t *testing.T, _ container.Config, path string) {
+		"an edit of numen.json by hand": func(t *testing.T, _ container.TestInstallation, path string) {
 			t.Helper()
 			body := `{"` + courierPlugin + `":{"enabled":true,"token":"` + courierToken + `"}}`
 			if err := os.WriteFile(path, []byte(body), 0o600); err != nil {

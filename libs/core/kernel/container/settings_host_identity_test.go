@@ -13,7 +13,8 @@ import (
 func TestAPluginHostIsSubscribedOncePerHost(t *testing.T) {
 	cfg, _, host := openInstallation(t, `{}`)
 	cfg.SetSettings(container.DefaultSettings())
-	container.NewConfig(cfg).SetSettings(container.DefaultSettings())
+	copyOfConfig := cfg
+	copyOfConfig.SetSettings(container.DefaultSettings())
 	reader := listen(t, cfg)
 
 	err := container.GetSettingsWriter(cfg)([]settings.Setting{{Path: []string{eventPlugin, "mode"}, JSON: `"b"`}})

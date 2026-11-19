@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -15,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/trash"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -27,32 +25,38 @@ import (
 )
 
 func (c Config) registry() (vaultregistry.Ports, error) {
-	return vaultRegistry(vaultOf(c))
+	return vaultRegistry(c.RegistryPath)
 }
 
 // AddVault registers a new vault in the registry with the given root path and name.
-func (c Config) AddVault(root, name string) (domain.Vault, error) {
+func (c Config) AddVault(res *Resources, root, name string) (domain.Vault, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	return addVault(vaultOf(c), ports, root, name)
+	identity := vaultIdentity(vaultconfig.Options{ServiceDir: c.ServiceDir})
+	return newAddVault(identity, GetClock(res), ports).Execute(root, name)
 }
 
 // EnsureVault has the folder at root on the list of vaults and returns its vault. A folder that is on the list is
 // returned as it is; otherwise it is added under name, and it is recorded as the vault opened last when
 // isRecordedOpened is set.
-func (c Config) EnsureVault(root, name string, isRecordedOpened bool) (domain.Vault, error) {
+func (c Config) EnsureVault(res *Resources, root, name string, isRecordedOpened bool) (domain.Vault, error) {
 	ports, err := c.registry()
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	return ensureVault(vaultOf(c), ports, vaultregistry.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
+	identity := vaultIdentity(vaultconfig.Options{ServiceDir: c.ServiceDir})
+	add := newAddVault(identity, GetClock(res), ports)
+	ensure := vaultregistry.NewEnsureRegistered(identity, ports.Lookup, add, ports.Recorder)
+	return ensure.Execute(vaultregistry.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
 }
 
 // OpenIndex opens the cache. The caller closes it.
-func OpenIndex(c Config, ctx context.Context) (*Index, error) {
-	return openIndex(vaultOf(c), ctx)
+func OpenIndex(c Config, res *Resources, ctx context.Context) (*Index, error) {
+	timer := GetClock(res)
+	record := openRecordLog(c.IndexPath, getLogEntries(res), res.settingsFiles.GetLogLevel, timer)
+	return openIndexAt(ctx, c.IndexPath, index.WithQueryLog(timer, recordLogFunc(record, res.ErrorHandler)))
 }
 
 // Queries builds everything that answers a question about the notes of a vault.
@@ -60,36 +64,38 @@ func Queries(db *Index) query.UseCases {
 	return vaultQueries(db)
 }
 
-// GetRefresh brings named notes up to date in the index, over the notes of the cache.
-func GetRefresh(c Config, db *Index) vault.Refresh {
-	return makeRefresh(c, db, db.Notes())
-}
-
-func makeRefresh(c Config, db *Index, notes noteport.NoteRepository) vault.Refresh {
-	return vaultMakeRefresh(vaultOf(c), db, notes)
-}
-
-// vaultWiring wires vaults, opening, notes, text versions, index and open vaults.
+// vaultWiring holds the filesystem ports and indexing callbacks of an installation.
 type vaultWiring struct {
 	IndexPath    string
 	RegistryPath string
-	ServiceDir   string
+	Options      vaultconfig.Options
+	Readers      vaultport.VaultReaders
+	Writers      vaultwriter.VaultWriters
+	Watcher      vaultwatch.Watcher
 	Clock        machineport.Timer
-	PluginHost   *PluginHost
-	RunningHost  *PluginHost
 	TextVersions *TextVersions
-	TextReaders  textdomain.Readers
-	VaultLocks   *vaultwriter.Locks
-	Watches      *vaultwatch.Hub
-	ErrorHandler func(error)
 	SyncSetting  naming.SyncSetting
 	CutNotes     chunking.CutNotes
 	SetNoteCut   func(*vault.Scan)
 	RecordLog    index.QueryLogFunc
 }
 
-func vaultRegistry(c vaultWiring) (vaultregistry.Ports, error) {
-	list, err := openRegistry(c)
+func openVaultAccess(paths Paths, timer machineport.Timer, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *TextVersions) vaultWiring {
+	options := vaultconfig.Options{ServiceDir: paths.ServiceDir}
+	return vaultWiring{
+		IndexPath:    paths.IndexPath,
+		RegistryPath: paths.RegistryPath,
+		Options:      options,
+		Clock:        timer,
+		TextVersions: texts,
+		Readers:      vaultreader.Readers{Options: options},
+		Writers:      vaultwriter.VaultWriters{Options: options, Locks: locks},
+		Watcher:      vaultwatch.Watcher{Options: options, Hub: watches.GetShared()},
+	}
+}
+
+func vaultRegistry(path string) (vaultregistry.Ports, error) {
+	list, err := openRegistry(path)
 	if err != nil {
 		return vaultregistry.Ports{}, err
 	}
@@ -98,95 +104,56 @@ func vaultRegistry(c vaultWiring) (vaultregistry.Ports, error) {
 	}, nil
 }
 
-func openRegistry(c vaultWiring) (*appstate.VaultRegistry, error) {
-	if c.RegistryPath != "" {
-		return appstate.OpenAt(c.RegistryPath), nil
+func openRegistry(path string) (*appstate.VaultRegistry, error) {
+	if path != "" {
+		return appstate.OpenAt(path), nil
 	}
 	return appstate.Open()
 }
 
-func vaultReaders(c vaultWiring) vaultport.VaultReaders {
-	return vaultreader.Readers{Options: vaultOptions(c)}
+func vaultIdentity(options vaultconfig.Options) vaultport.VaultIdentity {
+	return vaultreader.Identity{Options: options}
 }
 
-func vaultWriters(c vaultWiring) vaultwriter.VaultWriters {
-	return vaultwriter.VaultWriters{Options: vaultOptions(c), Locks: c.VaultLocks}
-}
-
-func noteWriters(c vaultWiring) vaultport.NoteWriters { return vaultWriters(c) }
-
-func folderWriters(c vaultWiring) vaultport.FolderWriters { return vaultWriters(c) }
-
-func writeLocks(c vaultWiring) vaultport.VaultLocks { return vaultWriters(c) }
-
-func vaultVersions(c vaultWiring) vaultport.VaultVersions { return vaultWriters(c) }
-
-func getImportedFiles(_ vaultWiring) vaultport.ImportedFiles {
-	return filesystem.ImportedFiles{}
-}
-
-func vaultWatcher(c vaultWiring) vaultport.VaultWatcher {
-	return vaultwatch.Watcher{Options: vaultOptions(c), Hub: c.Watches.GetShared()}
-}
-
-func vaultIdentity(c vaultWiring) vaultport.VaultIdentity {
-	return vaultreader.Identity{Options: vaultOptions(c)}
-}
-
-func vaultTrash(c vaultWiring) machineport.Trash {
-	return trash.New(c.Clock)
-}
-
-func vaultOptions(c vaultWiring) vaultconfig.Options {
-	return vaultconfig.Options{
-		ServiceDir: c.ServiceDir,
-	}
-}
+func vaultTrash(clock machineport.Clock) machineport.Trash { return trash.New(clock) }
 
 func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *Index, notes note.Move) VaultUseCases {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
 	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Vaults())
-	erase := vault.NewErase(vaultIdentity(c), vaultTrash(c), unregister)
+	identity := vaultIdentity(c.Options)
+	erase := vault.NewErase(identity, vaultTrash(c.Clock), unregister)
 	find := vaultregistry.NewFind(registry.Lookup)
 	return VaultUseCases{
 		Change: VaultChanging{
-			Add:        newAddVault(c, registry),
+			Add:        newAddVault(identity, c.Clock, registry),
 			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
 			Remove:     vault.NewRemove(find.Execute, unregister, erase),
 			Unregister: unregister,
 			Erase:      erase,
 		},
 		Tree: vault.Tree{
-			Move:   vault.NewMove(vaultWriters(c), db.NoteQueries(), db.Sources(), db.Sources(), notes),
-			Import: vault.NewImport(vaultWriters(c), getImportedFiles(c)),
+			Move:   vault.NewMove(c.Writers, db.NoteQueries(), db.Sources(), db.Sources(), notes),
+			Import: vault.NewImport(c.Writers, filesystem.ImportedFiles{}),
 		},
 		RecordOpen: vault.NewRecordOpen(registry.Recorder),
 	}
 }
 
-func newAddVault(c vaultWiring, registry vaultregistry.Ports) vault.Add {
-	return vault.NewAdd(vaultIdentity(c), registry.Vaults, registry.Lookup, registry.Saver, c.Clock)
+func newAddVault(identity vaultport.VaultIdentity, clock machineport.Clock, registry vaultregistry.Ports) vault.Add {
+	return vault.NewAdd(identity, registry.Vaults, registry.Lookup, registry.Saver, clock)
 }
 
-func addVault(c vaultWiring, registry vaultregistry.Ports, root, name string) (domain.Vault, error) {
-	return newAddVault(c, registry).Execute(root, name)
-}
-
-func ensureVault(c vaultWiring, registry vaultregistry.Ports, request vaultregistry.EnsureRequest) (domain.Vault, error) {
-	return vaultregistry.NewEnsureRegistered(vaultIdentity(c), registry.Lookup, newAddVault(c, registry), registry.Recorder).Execute(request)
-}
-
-func getProblems(_ vaultWiring, problems problemport.ProblemQueries) *vault.GetProblems {
+func getProblems(problems problemport.ProblemQueries) *vault.GetProblems {
 	if problems == nil {
 		return vault.NewGetProblems(check.Checks{})
 	}
 	return vault.NewGetProblems(check.Standard(problems))
 }
 
-func vaultListing(c vaultWiring, registry vaultregistry.Ports) vaultregistry.Listing {
+func vaultListing(readers vaultport.VaultReaders, registry vaultregistry.Ports) vaultregistry.Listing {
 	return vaultregistry.Listing{
 		List:        vaultregistry.NewList(registry.Vaults),
 		Find:        vaultregistry.NewFind(registry.Lookup),
-		FolderCheck: vaultregistry.NewFolderCheck(vaultReaders(c)),
+		FolderCheck: vaultregistry.NewFolderCheck(readers),
 	}
 }

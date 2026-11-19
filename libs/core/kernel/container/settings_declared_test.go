@@ -14,14 +14,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
-func writeAt(cfg Config, json string, path ...string) error {
-	return getSettingsWriter(settingsOf(cfg))([]settings.Setting{{Path: path, JSON: json}})
+func writeAt(cfg TestInstallation, json string, path ...string) error {
+	return getSettingsWriter(cfg.buildSettingsWiring())([]settings.Setting{{Path: path, JSON: json}})
 }
 
 func TestAProfileThatIsNoOptionIsRefusedAndNotSent(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 	host := &profileHost{}
-	cfg.PluginHost = &PluginHost{Configuration: PluginConfiguration{PluginConfig: host}}
+	cfg.TestPlugins = &TestPlugins{Preferences: &PluginPreferences{Configuration: PluginConfiguration{PluginConfig: host}}}
 
 	err := writeAt(cfg, `"bogus"`, "app", "performance", "profile")
 	if !errors.Is(err, settings.ErrNotASetting) {
@@ -89,7 +89,7 @@ func TestAKeyAPluginDoesNotDeclareIsRefused(t *testing.T) {
 
 func TestAWriteOfSeveralSettingsIsRefusedWholeWhenOneIsRefused(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
-	err := getSettingsWriter(settingsOf(cfg))([]settings.Setting{
+	err := getSettingsWriter(cfg.buildSettingsWiring())([]settings.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 		{Path: []string{"app", "appearance", "textScale"}, JSON: `9`},
 	})
@@ -159,11 +159,11 @@ func TestSettingsWriteOfUsedPluginPortFailsAndKeepsTheFile(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 	host := newPluginHost(t, "desktop.editor", writeRelayPlugin(t, defaultPort))
 	t.Cleanup(func() {
-		if err := host.Watch.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Execution.Watch.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Errorf("TeardownAll: %v", err)
 		}
 	})
-	cfg.PluginHost = host
+	cfg.TestPlugins = host
 
 	err := writeAt(cfg, fmt.Sprint(takenPort), relayPlugin, "port")
 	if !errors.Is(err, settings.ErrNotASetting) {

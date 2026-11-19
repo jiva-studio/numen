@@ -102,11 +102,9 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	model := searchsource.Description{Name: "bench", Width: 384, SourceRecipe: "mean"}
 
 	dbPath := filepath.Join(b.TempDir(), "search_bench.db")
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: dbPath},
-	})
+	cfg := container.NewTestInstallation(container.Config{Paths: container.Paths{IndexPath: dbPath}}, nil)
 	cfg.Resources.Chunks.Set(maxTokens)
-	db, err := container.OpenIndex(cfg, ctx)
+	db, err := container.OpenIndex(cfg.Config, cfg.Resources, ctx)
 	if err != nil {
 		b.Fatal(err)
 	}

@@ -3,11 +3,12 @@ package plugin_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
@@ -84,16 +85,16 @@ func TestThePluginEnvironmentCarriesTheRuntime(t *testing.T) {
 }
 
 func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
 	catalog := newRuntimeCatalog()
-	host.Dependencies.Replace(catalog)
+	host.Supervision.Dependencies.Replace(catalog)
 
-	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Mode.GetVaultPath(), 5, "t")
+	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,18 +112,18 @@ func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
 }
 
 func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
-	host.Dependencies.Replace(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
+	host.Supervision.Dependencies.Replace(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
 		"whisper": {ID: "whisper", EnvVars: map[string]string{"NUMEN_DEPENDENCY_WHISPER": "/deps/whisper.bin"}},
 	}})
 	manifest := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindModel}}}
 
-	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", manifest.GetDependencyRequirements("/plugins/a", nil), host.Mode.GetVaultPath(), 5, "t")
+	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "md.numen.a", manifest.GetDependencyRequirements("/plugins/a", nil), host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,16 +133,16 @@ func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
 }
 
 func TestAPluginThatDeclaresNoRuntimeProvisionsNothing(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
 	catalog := newRuntimeCatalog()
-	host.Dependencies.Replace(catalog)
+	host.Supervision.Dependencies.Replace(catalog)
 
-	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Mode.GetVaultPath(), 5, "t")
+	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,17 +157,17 @@ func TestAPluginThatDeclaresNoRuntimeProvisionsNothing(t *testing.T) {
 }
 
 func TestAPluginIsLaunchedWhenItsRuntimeCannotBeDownloaded(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
 	catalog := newRuntimeCatalog()
 	catalog.err = errors.New("the archive is not the pinned one")
-	host.Dependencies.Replace(catalog)
+	host.Supervision.Dependencies.Replace(catalog)
 
-	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Mode.GetVaultPath(), 5, "t")
+	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Management.Mode.GetVaultPath(), 5, "t")
 
 	if err != nil {
 		t.Fatalf("getLaunchVars() = %v, want the download failure left to the first use", err)
@@ -180,9 +181,9 @@ func TestAPluginIsLaunchedWhenItsRuntimeCannotBeDownloaded(t *testing.T) {
 }
 
 func TestALaunchedPluginIsGivenThePlannedPathOfAMissingDependency(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
@@ -190,10 +191,10 @@ func TestALaunchedPluginIsGivenThePlannedPathOfAMissingDependency(t *testing.T) 
 		"whisper": {ID: "whisper", PrimaryPath: "/models/whisper/w.bin", EnvVars: map[string]string{"NUMEN_DEPENDENCY_WHISPER": "/models/whisper/w.bin"}},
 	}}
 	catalog.state = plugindomain.DependencyStateMissing
-	host.Dependencies.Replace(catalog)
+	host.Supervision.Dependencies.Replace(catalog)
 	declared := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindModel}}}
 
-	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", declared.GetDependencyRequirements("/plugins/a", nil), host.Mode.GetVaultPath(), 5, "t")
+	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "md.numen.a", declared.GetDependencyRequirements("/plugins/a", nil), host.Management.Mode.GetVaultPath(), 5, "t")
 
 	if err != nil {
 		t.Fatal(err)
@@ -207,29 +208,30 @@ func TestALaunchedPluginIsGivenThePlannedPathOfAMissingDependency(t *testing.T) 
 }
 
 func TestAPluginIsNotLaunchedWhenNothingProvisionsItsRuntime(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
 
-	if _, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Mode.GetVaultPath(), 5, "t"); !errors.Is(err, supervision.ErrRuntimeUnavailable) {
+	_, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Management.Mode.GetVaultPath(), 5, "t")
+	if !errors.Is(err, supervision.ErrRuntimeUnavailable) {
 		t.Fatalf("getLaunchVars() = %v, want supervision.ErrRuntimeUnavailable", err)
 	}
 }
 
 func TestAPluginIsNotLaunchedWithARuntimeTheHostDoesNotKnow(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
-	host.Dependencies.Replace(newRuntimeCatalog())
+	host.Supervision.Dependencies.Replace(newRuntimeCatalog())
 	unknown := []manifest.DependencyRequirement{{ID: "tensorrt", Kind: manifest.DependencyKindRuntime}}
 
-	if _, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", unknown, host.Mode.GetVaultPath(), 5, "t"); !errors.Is(err, supervision.ErrRuntimeUnavailable) {
+	if _, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "md.numen.a", unknown, host.Management.Mode.GetVaultPath(), 5, "t"); !errors.Is(err, supervision.ErrRuntimeUnavailable) {
 		t.Fatalf("getLaunchVars() = %v, want supervision.ErrRuntimeUnavailable", err)
 	}
 }

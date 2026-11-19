@@ -2,12 +2,13 @@ package container_test
 
 import (
 	"context"
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
 	"testing"
+
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
@@ -68,11 +69,11 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	return &downEmbeddingHost{endpoint: transport.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
 
-func (h *downEmbeddingHost) lend() *container.PluginHost {
+func (h *downEmbeddingHost) lend() *container.TestPlugins {
 	runtime := container.PluginRuntime{
 		PluginResolver: h, Activator: h, PluginBinding: container.AbsentBinding(), ConfigWatcher: h,
 	}
-	return &container.PluginHost{Runtime: runtime, Health: pluginhealth.NewItems()}
+	return &container.TestPlugins{Execution: &container.PluginExecution{Runtime: runtime, Health: pluginhealth.NewItems()}}
 }
 
 // A plugin that does not answer names no model: the window opens its source undescribed, and a vault read
@@ -80,11 +81,10 @@ func (h *downEmbeddingHost) lend() *container.PluginHost {
 func TestDownEmbeddingPluginPreservesIndexVectors(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
 	host := newDownEmbeddingHost(t)
-	target := container.NewConfig(container.Config{
-		PluginHost:         host.lend(),
+	target := container.NewTestInstallation(container.Config{
 		ShouldRebuildIndex: true,
 		Paths:              container.Paths{ServiceDir: ".numen"},
-	})
+	}, host.lend())
 
 	indexed, _, closeSource, err := target.Embedders(t.Context())
 	if err != nil {

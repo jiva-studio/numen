@@ -14,6 +14,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
@@ -130,7 +132,7 @@ func launchSleepProcesses(t *testing.T, port int) func(context.Context, manifest
 	}
 }
 
-func startConnectionSource(t *testing.T, plugin *connectionSource) *container.PluginRoles {
+func startConnectionSource(t *testing.T, plugin *connectionSource) *pluginhost.Host {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(plugin))
@@ -149,13 +151,13 @@ func startConnectionSource(t *testing.T, plugin *connectionSource) *container.Pl
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(text), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", root)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	// The host forgets a plugin when its process exits and stops an idle plugin, so one process handed to two
 	// starts ends the second start as soon as the stop of the first is noticed.
-	host.Processes.SetLauncher(launchSleepProcesses(t, port))
+	host.Supervision.Processes.SetLauncher(launchSleepProcesses(t, port))
 	return host
 }
 
@@ -175,7 +177,7 @@ func (f *showing) findMeaning(t *testing.T, query string) []string {
 }
 
 func (f *showing) hasSearchItem(text string) bool {
-	return slices.ContainsFunc(f.cfg.PluginHost.Health.List(), func(item plugindomain.HealthItem) bool {
+	return slices.ContainsFunc(f.cfg.Execution.Health.List(), func(item plugindomain.HealthItem) bool {
 		return item.PluginID == gardenSourceID && item.Key == plugindomain.HealthKeySearch && item.Severity == plugindomain.HealthError && item.Text == text
 	})
 }
@@ -186,13 +188,16 @@ func (f *showing) hasSearchItem(text string) bool {
 func TestASourceThatDescribesItselfAfterASettingJoinsTheOpenWindow(t *testing.T) {
 	plugin := &connectionSource{}
 	host := startConnectionSource(t, plugin)
-	cfg := container.NewConfig(container.Config{
-		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
+	cfg := newTestInstallation(container.Config{
+		Paths: container.Paths{
+			IndexPath:    filepath.Join(t.TempDir(), "index.db"),
+			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		},
 	})
-	cfg.PluginHost = container.AdaptPluginHost(host)
+	cfg.Execution, cfg.Preferences, cfg.Endpoints = container.AdaptPluginHost(host.Management, host.Supervision)
 	newListedVault(t, cfg, "garden", map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})
 
-	installation, _, err := openRegisteredWindow(cfg, t.Context(), "garden", os.Stderr)
+	installation, err := openRegisteredWindow(cfg, t.Context(), "garden", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,13 +213,13 @@ func TestASourceThatDescribesItselfAfterASettingJoinsTheOpenWindow(t *testing.T)
 	f.read(t)
 
 	if !f.hasSearchItem(chooseRow) {
-		t.Errorf("the plugin has no search item %q: %+v", chooseRow, cfg.PluginHost.Health.List())
+		t.Errorf("the plugin has no search item %q: %+v", chooseRow, cfg.Execution.Health.List())
 	}
 	if found := f.findMeaning(t, "shrubbery"); len(found) != 0 {
 		t.Errorf("a source that has not described itself found %v", found)
 	}
 
-	if err := cfg.PluginHost.ApplySetting(t.Context(), gardenSourceID, "connection", "garden-row"); err != nil {
+	if err := cfg.Preferences.ApplySetting(t.Context(), gardenSourceID, "connection", "garden-row"); err != nil {
 		t.Fatal(err)
 	}
 

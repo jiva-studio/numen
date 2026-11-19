@@ -29,18 +29,15 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg := NewConfig(Config{
-		SafeMode:   true,
-		PluginHost: newPluginHost(t, "desktop.editor", tmp),
-	})
+	cfg := NewTestInstallation(Config{SafeMode: true}, newPluginHost(t, "desktop.editor", tmp))
 
 	ctx := t.Context()
 
 	t.Run("embedder reports not ready", func(t *testing.T) {
-		if embedderReady(searchOf(cfg)) {
+		if embedderReady(sourceOf(cfg)) {
 			t.Fatal("expected EmbedderReady to report false in safe mode")
 		}
-		indexing, asking, closer, err := searchSources(searchOf(cfg), ctx)
+		indexing, asking, closer, err := cfg.Embedders(ctx)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedders in safe mode, got %v", err)
 		}
@@ -51,7 +48,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		embedder, closer, err := searchSource(searchOf(cfg), ctx)
+		embedder, closer, err := cfg.Embedder(ctx)
 		if err != nil {
 			t.Fatalf("expected nil error from Embedder in safe mode, got %v", err)
 		}
@@ -64,7 +61,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 	})
 
 	t.Run("plugin processes were never started", func(t *testing.T) {
-		for _, info := range cfg.PluginHost.Runtime.GetPluginInfos() {
+		for _, info := range cfg.Execution.Runtime.GetPluginInfos() {
 			if info.IsActive {
 				t.Fatalf("expected plugin %s to remain inactive in safe mode", info.ID)
 			}
@@ -73,18 +70,18 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 }
 
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
-	cfg := NewConfig(Config{})
-	_, err := plugins(cfg).RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
+	cfg := NewTestInstallation(Config{}, nil)
+	_, err := getRunningExecution(cfg.Execution, cfg.SafeMode).Runtime.ResolveCapability(bridge.CapabilitySearchSource)
 	var missing *plugindomain.UnavailableError
 	if !errors.As(err, &missing) || missing.Reason != plugindomain.NotInstalled || missing.Capability != bridge.CapabilitySearchSource {
 		t.Fatalf("resolvePlugin = %v, want the embedding plugin not installed", err)
 	}
-	setPluginVaultPath(plugins(cfg), "vault")
-	if err := cfg.StopPlugins(t.Context()); err != nil {
+	cfg.Execution.Runtime.PluginBinding.SetVaultPath("vault")
+	if err := StopPlugins(cfg.Execution.Watch, t.Context()); err != nil {
 		t.Fatalf("StopPlugins = %v, want nothing to stop", err)
 	}
-	safe := NewConfig(Config{SafeMode: true})
-	_, err = plugins(safe).RunningHost.Runtime.ResolveCapability(bridge.CapabilitySearchSource)
+	safe := NewTestInstallation(Config{SafeMode: true}, nil)
+	_, err = getRunningExecution(safe.Execution, safe.SafeMode).Runtime.ResolveCapability(bridge.CapabilitySearchSource)
 	if !errors.Is(err, errSafeMode) || !errors.As(err, &missing) || missing.Reason != plugindomain.Disabled {
 		t.Fatalf("resolvePlugin in safe mode = %v, want the embedding plugin disabled by safe mode", err)
 	}
@@ -103,20 +100,20 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 		t.Fatal(err)
 	}
 	host := openPluginRoles(t, "desktop.editor", tmp)
-	cfg := NewConfig(Config{PluginHost: AdaptPluginHost(host)})
+	cfg := NewTestInstallation(Config{}, AdaptTestPlugins(host.Management, host.Supervision))
 
-	setPluginVaultPath(plugins(cfg), "vault")
-	if got := host.Mode.GetVaultPath(); got != "vault" {
+	cfg.Execution.Runtime.PluginBinding.SetVaultPath("vault")
+	if got := host.Management.Mode.GetVaultPath(); got != "vault" {
 		t.Errorf("the host holds the vault %q", got)
 	}
-	if !embedderReady(searchOf(cfg)) {
+	if !embedderReady(sourceOf(cfg)) {
 		t.Fatal("an installed plugin is not ready")
 	}
-	safe := NewConfig(Config{PluginHost: cfg.PluginHost, SafeMode: true})
-	if embedderReady(searchOf(safe)) {
+	safe := NewTestInstallation(Config{SafeMode: true}, cfg.TestPlugins)
+	if embedderReady(sourceOf(safe)) {
 		t.Error("the host started a plugin in safe mode")
 	}
-	if !embedderReady(searchOf(NewConfig(Config{PluginHost: cfg.PluginHost}))) {
+	if !embedderReady(sourceOf(NewTestInstallation(Config{}, cfg.TestPlugins))) {
 		t.Error("the host stayed in safe mode once it was left")
 	}
 }

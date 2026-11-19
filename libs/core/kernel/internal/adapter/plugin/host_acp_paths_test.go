@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
@@ -31,19 +32,19 @@ func TestExecutablePathHasNoDefaultOrOptionsFromThePath(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(acpManifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", root)
-	if err := host.Discovery.Discover(); err != nil {
+	management, _ := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", root)
+	if err := management.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
-	for _, info := range host.Registry.GetPluginInfos() {
+	for _, info := range management.Registry.GetPluginInfos() {
 		for _, s := range info.Settings {
 			if s.DefaultJSON != `""` || len(s.Options) != 0 {
 				t.Errorf("%s: default %s, options %+v; want the empty default of the manifest and no options", s.Key, s.DefaultJSON, s.Options)
 			}
 		}
 	}
-	if got := host.Settings.GetPluginSettings("md.numen.agents.acp")["executablePath"]; got != "" {
+	if got := management.Settings.GetPluginSettings("md.numen.agents.acp")["executablePath"]; got != "" {
 		t.Errorf("executablePath = %v, want the empty path of the manifest", got)
 	}
 }

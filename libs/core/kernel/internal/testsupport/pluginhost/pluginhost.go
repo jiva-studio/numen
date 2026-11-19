@@ -5,15 +5,18 @@ package pluginhost
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 )
 
 // Open returns a plugin host for the target that has discovered the plugins in dirs.
-func Open(tb testing.TB, target string, dirs ...string) *container.PluginRoles {
+func Open(tb testing.TB, target string, dirs ...string) *Host {
 	tb.Helper()
-	host, err := container.OpenPluginRoles(container.Config{}, func(error) {}, target, dirs...)
+	host := New(container.GetClock(container.NewResources()), target, dirs...)
+	err := container.InitializePluginRoles("", container.NewResources(), host.Management, host.Supervision, func(error) {})
 	if err != nil {
 		tb.Logf("discover plugins: %v", err)
 	}
@@ -35,10 +38,21 @@ type Roles struct {
 }
 
 // Join presents the roles of host as one value.
-func Join(host *container.PluginRoles) Roles {
+func Join(host *Host) Roles {
 	return Roles{
-		Activation: host.Activation, Registry: host.Registry, Settings: host.Settings, ConfigPush: host.Config,
-		Failures: host.Failures, Events: host.Events, Mode: host.Mode, ContentTypes: host.ContentTypes,
-		Discovery: host.Discovery, Services: host.Services,
+		Activation: host.Management.Activation, Registry: host.Management.Registry, Settings: host.Management.Settings, ConfigPush: host.Management.Config,
+		Failures: host.Supervision.Failures, Events: host.Management.Events, Mode: host.Management.Mode, ContentTypes: host.Management.ContentTypes,
+		Discovery: host.Management.Discovery, Services: host.Supervision.Services,
 	}
+}
+
+// Host holds the two roles exercised by plugin integration tests.
+type Host struct {
+	Management  *container.PluginManagement
+	Supervision *container.PluginSupervision
+}
+
+func New(clock machineport.Clock, target string, dirs ...string) *Host {
+	management, supervision := container.NewPluginRoles(clock, target, dirs...)
+	return &Host{Management: management, Supervision: supervision}
 }

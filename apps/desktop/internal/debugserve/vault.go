@@ -13,7 +13,7 @@ import (
 
 // RegisterVault puts the folder at vaultPath in the installation's list of vaults, where it is a
 // folder the list does not hold yet. A path that names no folder registers nothing.
-func RegisterVault(cfg container.Config, vaultPath string) error {
+func RegisterVault(cfg container.Config, res *container.Resources, vaultPath string) error {
 	if vaultPath == "" {
 		return nil
 	}
@@ -31,6 +31,6 @@ func RegisterVault(cfg container.Config, vaultPath string) error {
 	if !info.IsDir() {
 		return nil
 	}
-	_, err = cfg.EnsureVault(abs, filepath.Base(abs), true)
+	_, err = cfg.EnsureVault(res, abs, filepath.Base(abs), true)
 	return err
 }

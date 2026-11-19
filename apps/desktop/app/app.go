@@ -66,7 +66,8 @@ func Run(opts ...*Options) error {
 		return err
 	}
 
-	cfg := makeConfig(os.Stderr)
+	cfg := platform.GetConfig()
+	services := makeServices(os.Stderr)
 	if opt.IndexPath != "" {
 		cfg.IndexPath = opt.IndexPath
 	}
@@ -75,14 +76,16 @@ func Run(opts ...*Options) error {
 	}
 	cfg.ShouldRebuildIndex = opt.RebuildIndex
 	cfg.SafeMode = opt.SafeMode
-	cfg = container.NewConfig(cfg)
+	services.Execution, services.Preferences, services.Endpoints = container.PreparePluginHost(
+		services.Execution, services.Preferences, services.Endpoints, cfg.SafeMode,
+	)
 
 	scaleFlags := scaleSettings{
 		interfaceScale: opt.InterfaceScale,
 		textScale:      opt.TextScale,
 	}
 
-	err := run(cfg, opt.Vault, scaleFlags, &opt.Debug)
+	err := run(cfg, services, opt.Vault, scaleFlags, &opt.Debug)
 	if err == nil {
 		return nil
 	}
@@ -119,15 +122,15 @@ func parseFlags() (*Options, error) {
 	return opts, nil
 }
 
-func makeConfig(out io.Writer) container.Config {
-	cfg := platform.GetConfig()
-	cfg.ErrorHandler = func(err error) {
+func makeServices(out io.Writer) platform.Installation {
+	services := platform.NewPluginServices(platform.TargetEditor)
+	services.Resources.ErrorHandler = func(err error) {
 		// gomutants:disable-next-line BRANCH_IF,CONDITIONALS_NEGATION reason="the branch returns where the function ends, so skipping it or inverting its condition ends the function at the same point"
 		if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
 			return
 		}
 	}
-	return cfg
+	return services
 }
 
 type scaleSettings struct{ interfaceScale, textScale float64 }
@@ -144,15 +147,15 @@ func (s scaleSettings) validate() error {
 	return nil
 }
 
-func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts *DebugOptions) error {
-	if err := debugOpts.apply(&cfg); err != nil {
+func run(cfg container.Config, services platform.Installation, vault string, scaleFlags scaleSettings, debugOpts *DebugOptions) error {
+	if err := debugOpts.apply(services.Preferences.RefreshDependencies, services.Resources); err != nil {
 		return err
 	}
-	if err := debugOpts.ensureVault(cfg, vault); err != nil {
+	if err := debugOpts.ensureVault(cfg, services.Resources, vault); err != nil {
 		return err
 	}
 	defer shutdown.Report(appName, os.Stderr, "plugins", func() error {
-		return cfg.StopPlugins(context.Background())
+		return container.StopPlugins(services.Execution.Watch, context.Background())
 	})()
 	if err := scaleFlags.validate(); err != nil {
 		return err
@@ -165,20 +168,20 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
-	cfg, notices, err := cfg.ApplySettings()
+	cfg, notices, err := cfg.ApplySettings(services.Execution, services.Preferences, services.Resources)
 	if err != nil {
 		return err
 	}
 	applyMemoryLimit(cfg.GetMachine().ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 
 	frame := &windowFrame{}
-	displayed, err := openInstallation(ctx, cfg, vault, frame)
+	displayed, err := openInstallation(ctx, cfg, services, vault, frame)
 	if err != nil {
 		return err
 	}
 	pages, installation := displayed.pages, displayed.opened
 	scales := container.Scales{InterfaceScale: scaleFlags.interfaceScale, TextScale: scaleFlags.textScale}
-	themes.Report(container.SetThemes(cfg, installation.Installation, scales, installation.RecordThemeWarning), os.Stdout)
+	themes.Report(cfg.SetThemes(services.Execution, services.Preferences, services.Resources, installation.Installation, scales, installation.RecordThemeWarning), os.Stdout)
 
 	installation.Report(notices)
 
@@ -186,7 +189,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	shutdownSeq := shutdown.NewSequence(
 		shutdown.Report(appName, os.Stderr, "", installation.Close),
 		shutdown.Report(appName, os.Stderr, "plugins", func() error {
-			return cfg.StopPlugins(context.Background())
+			return container.StopPlugins(services.Execution.Watch, context.Background())
 		}),
 		stop,
 	)
@@ -197,7 +200,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	}()
 
 	if debugOpts.isServingHTTP() {
-		return debugOpts.serveHTTP(ctx, cfg, installation, pages)
+		return debugOpts.serveHTTP(ctx, services.Resources, installation, pages)
 	}
 
 	tracker := newWindowTracker()
@@ -228,13 +231,13 @@ type shownInstallation struct {
 }
 
 func openInstallation(
-	ctx context.Context, cfg container.Config, vault string, frame editor.Frame,
+	ctx context.Context, cfg container.Config, services platform.Installation, vault string, frame editor.Frame,
 ) (shownInstallation, error) {
 	pages, err := editor.Pages()
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	opened, err := container.OpenEditor(cfg, ctx, vault, os.Stdout, frame)
+	opened, err := cfg.OpenEditor(services.Execution, services.Preferences, services.Endpoints, services.Resources, ctx, container.WindowOpening{Named: vault, Out: os.Stdout, Frame: frame})
 	if err != nil {
 		return shownInstallation{}, err
 	}

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 
@@ -35,35 +36,35 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	host.Teardown.SetSafeMode(true)
+	management, _ := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
+	management.Teardown.SetSafeMode(true)
 
-	if !host.Mode.IsSafeMode() {
+	if !management.Mode.IsSafeMode() {
 		t.Fatal("expected IsSafeMode to report true")
 	}
 
-	if err := host.Discovery.Discover(); err != nil {
+	if err := management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if plugins := host.Registry.GetPlugins(); len(plugins) != 0 {
+	if plugins := management.Registry.GetPlugins(); len(plugins) != 0 {
 		t.Fatalf("expected 0 plugins in safe mode, got %d", len(plugins))
 	}
 
-	if _, ok := host.Registry.GetPlugin("org.example.sample"); ok {
+	if _, ok := management.Registry.GetPlugin("org.example.sample"); ok {
 		t.Fatal("expected GetPlugin to report false in safe mode")
 	}
 
-	if _, ok := host.Registry.FindPluginByCapability("search.source"); ok {
+	if _, ok := management.Registry.FindPluginByCapability("search.source"); ok {
 		t.Fatal("expected FindPluginByCapability to report false in safe mode")
 	}
 
 	ctx := t.Context()
-	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); !errors.Is(err, plugin.ErrSafeModeActive) {
+	if _, err := management.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); !errors.Is(err, plugin.ErrSafeModeActive) {
 		t.Fatalf("expected errSafeModeActive, got %v", err)
 	}
 
-	activated, err := host.Events.TriggerEvent(ctx, protocol.GetIndexChangedEvent("v-1"))
+	activated, err := management.Events.TriggerEvent(ctx, protocol.GetIndexChangedEvent("v-1"))
 	if err != nil {
 		t.Fatalf("TriggerEvent error: %v", err)
 	}

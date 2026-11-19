@@ -15,16 +15,18 @@ type DebugOptions struct{}
 
 func RegisterDebugFlags(*flag.FlagSet, *Options) {}
 
-func (d *DebugOptions) apply(*container.Config) error { return nil }
+func (d *DebugOptions) apply(func(), *container.Resources) error { return nil }
 
-func (d *DebugOptions) ensureVault(container.Config, string) error { return nil }
+func (d *DebugOptions) ensureVault(container.Config, *container.Resources, string) error {
+	return nil
+}
 
 func (d *DebugOptions) isServingHTTP() bool {
 	return false
 }
 
 func (d *DebugOptions) serveHTTP(
-	context.Context, container.Config, *container.OpenedWindow, http.Handler,
+	context.Context, *container.Resources, *container.OpenedWindow, http.Handler,
 ) error {
 	return nil
 }

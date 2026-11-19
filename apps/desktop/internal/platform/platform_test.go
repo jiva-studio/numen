@@ -120,28 +120,29 @@ func TestPluginDiscoveryDevMode(t *testing.T) {
 	}
 }
 
-func TestGetConfig(t *testing.T) {
+func TestNewPluginServices(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	cfg := GetConfig()
-	if cfg.PluginHost == nil {
+	services := NewPluginServices(TargetEditor)
+	if services.Execution == nil || services.Preferences == nil || services.Endpoints == nil {
 		t.Fatal("expected configured plugin host")
 	}
-	if cfg.PluginCatalog.InstallDir == "" || cfg.PluginCatalog.CacheDir == "" {
-		t.Errorf("expected InstallDir and CacheDir to be set, got %+v", cfg.PluginCatalog)
+	if services.Resources.PluginCatalog.InstallDir == "" || services.Resources.PluginCatalog.CacheDir == "" {
+		t.Errorf("expected InstallDir and CacheDir to be set, got %+v", services.Resources.PluginCatalog)
 	}
 
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("XDG_CACHE_HOME", "")
 	t.Setenv("HOME", "")
-	cfgNoHome := GetConfig()
-	if cfgNoHome.PluginCatalog.InstallDir != "" || cfgNoHome.PluginCatalog.CacheDir != "" {
-		t.Errorf("expected empty InstallDir and CacheDir without HOME, got %+v", cfgNoHome.PluginCatalog)
+	noHome := NewPluginServices(TargetEditor)
+	if noHome.Resources.PluginCatalog.InstallDir != "" || noHome.Resources.PluginCatalog.CacheDir != "" {
+		t.Errorf("expected empty InstallDir and CacheDir without HOME, got %+v", noHome.Resources.PluginCatalog)
 	}
 }
 
-func TestGetConfigNamesTheSystemKeychain(t *testing.T) {
-	if GetConfigFor(TargetFlashcards).KeyStore == nil {
+func TestPluginServicesUseTheSystemKeychain(t *testing.T) {
+	services := NewPluginServices(TargetFlashcards)
+	if services.Resources.KeyStore == nil {
 		t.Error("the desktop configuration names no key store")
 	}
 
@@ -201,7 +202,8 @@ func TestGetConfigListsThePluginsOfTheIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sources := GetConfigFor(TargetEditor).PluginCatalog.Sources
+	services := NewPluginServices(TargetEditor)
+	sources := services.Resources.PluginCatalog.Sources
 
 	if len(sources) != 2 {
 		t.Fatalf("%d catalog sources, want the plugin folders and the plugin index", len(sources))

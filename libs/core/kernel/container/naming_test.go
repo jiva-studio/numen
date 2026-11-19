@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
-func writeSettings(t *testing.T, body string) container.Config {
+func writeSettings(t *testing.T, body string) container.TestInstallation {
 	t.Helper()
 	target := t.TempDir()
 	if body != "" {
@@ -17,9 +17,9 @@ func writeSettings(t *testing.T, body string) container.Config {
 			t.Fatal(err)
 		}
 	}
-	return container.NewConfig(container.Config{
+	return container.NewTestInstallation(container.Config{
 		Paths: container.Paths{RegistryPath: filepath.Join(target, "vaults.json")},
-	})
+	}, nil)
 }
 
 // The setting is read at each rename, so changing it in the palette applies

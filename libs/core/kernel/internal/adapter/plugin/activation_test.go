@@ -3,12 +3,13 @@ package plugin_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
@@ -18,12 +19,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func newDiscoveredHost(t *testing.T) *container.PluginRoles {
+func newDiscoveredHost(t *testing.T) *pluginhost.Host {
 	t.Helper()
 	tmp := t.TempDir()
 	wiretest.CreateTestPluginTree(t, tmp)
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 	return host
@@ -33,7 +34,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 	host := newDiscoveredHost(t)
 	policy := lifecycle.DefaultActivationPolicy()
 	policy.Timeout = 50 * time.Millisecond
-	host.Processes.SetActivationPolicy(policy)
+	host.Supervision.Processes.SetActivationPolicy(policy)
 
 	cmd := wiretest.NewIdleCommand(t.Context())
 	if err := cmd.Start(); err != nil {
@@ -46,11 +47,11 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 			t.Errorf("close pipe: %v", err)
 		}
 	})
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, silent, nil
 	})
 
-	_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
+	_, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 	if !errors.Is(err, transport.ErrHandshakeTimeout) {
 		t.Fatalf("expected a handshake timeout, got %v", err)
 	}
@@ -58,7 +59,7 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 	if err := cmd.Process.Signal(os.Kill); !errors.Is(err, os.ErrProcessDone) {
 		t.Fatalf("expected the silent process to be killed and reaped, got %v", err)
 	}
-	if state := supervisorOf(host, "org.example.sample").GetState(); state != lifecycle.StateDormant {
+	if state := supervisorOf(host.Management, "org.example.sample").GetState(); state != lifecycle.StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
@@ -73,10 +74,10 @@ func failLaunchingCounting(launches *int) supervision.Launcher {
 func TestAPluginWhoseStartFailedIsStartedAgainOnItsNextUseAtOnce(t *testing.T) {
 	host := newDiscoveredHost(t)
 	launches := 0
-	host.Processes.SetLauncher(failLaunchingCounting(&launches))
+	host.Supervision.Processes.SetLauncher(failLaunchingCounting(&launches))
 
 	for range 3 {
-		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err == nil {
+		if _, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err == nil {
 			t.Fatal("expected the start to fail")
 		}
 	}
@@ -89,18 +90,18 @@ func TestAPluginWhoseStartFailedIsStartedAgainOnItsNextUseAtOnce(t *testing.T) {
 func TestAFailedStartIsListedOnceAndShownWithItsReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	launches := 0
-	host.Processes.SetLauncher(failLaunchingCounting(&launches))
+	host.Supervision.Processes.SetLauncher(failLaunchingCounting(&launches))
 
 	for range 2 {
-		if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err == nil {
+		if _, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err == nil {
 			t.Fatal("expected the start to fail")
 		}
 	}
 
-	if items := host.Health.List(); len(items) != 1 || items[0].PluginID != "org.example.sample" || items[0].Key != plugindomain.HealthKeyStart {
+	if items := host.Supervision.Health.List(); len(items) != 1 || items[0].PluginID != "org.example.sample" || items[0].Key != plugindomain.HealthKeyStart {
 		t.Fatalf("expected one start item for the plugin, got %+v", items)
 	}
-	status, ok := host.Registry.GetPluginStatus("org.example.sample")
+	status, ok := host.Management.Registry.GetPluginStatus("org.example.sample")
 	if !ok || !status.Failed || status.FailureReason == "" {
 		t.Fatalf("expected a failed status with a reason, got %+v", status)
 	}
@@ -108,15 +109,15 @@ func TestAFailedStartIsListedOnceAndShownWithItsReason(t *testing.T) {
 
 func TestACanceledCallerDoesNotRecordAFailedStart(t *testing.T) {
 	host := newDiscoveredHost(t)
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("canceled")
 	})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); err == nil {
+	if _, err := host.Management.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); err == nil {
 		t.Fatal("expected the activation to fail")
 	}
-	if supervisorOf(host, "org.example.sample").Failure.IsFailed() {
+	if supervisorOf(host.Management, "org.example.sample").Failure.IsFailed() {
 		t.Fatal("a canceled caller recorded a failed start")
 	}
 }

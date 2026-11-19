@@ -1,12 +1,12 @@
 package plugin_test
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
@@ -24,12 +24,12 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 		t.Skipf("Embeddings binary not found at %s; skipping real process E2E test", embeddingsBin)
 	}
 
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", pluginsDir)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", pluginsDir)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	plugins := host.Registry.GetPlugins()
+	plugins := host.Management.Registry.GetPlugins()
 	if len(plugins) == 0 {
 		t.Fatal("expected to discover embedding plugin in real plugins/")
 	}
@@ -42,7 +42,7 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 	}
 	defer func() {
 		testsupport.Close(t, bridge)
-		if err := host.Teardown.TeardownAll(ctx, 1*time.Second); err != nil {
+		if err := host.Management.Teardown.TeardownAll(ctx, 1*time.Second); err != nil {
 			t.Error(err)
 		}
 	}()

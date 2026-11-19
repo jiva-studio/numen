@@ -348,16 +348,17 @@ func TestRegisterVault_RegistersVaultAtResolvedPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg := makeConfig(dir, io.Discard)
+	cfg := makeConfig(dir)
+	res := makeResources(io.Discard)
 
-	filed, err := registerVault(cfg, link)
+	filed, err := registerVault(cfg, res, link)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if filed != resolved {
 		t.Errorf("filed under %q, want %q", filed, resolved)
 	}
-	again, err := registerVault(cfg, target)
+	again, err := registerVault(cfg, res, target)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -380,9 +381,10 @@ func TestRegisterVaultFindsVaultWhenGivenSymlinkToExistingVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg := makeConfig(dir, io.Discard)
+	cfg := makeConfig(dir)
+	res := makeResources(io.Discard)
 
-	first, err := registerVault(cfg, target)
+	first, err := registerVault(cfg, res, target)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -390,7 +392,7 @@ func TestRegisterVaultFindsVaultWhenGivenSymlinkToExistingVault(t *testing.T) {
 		t.Errorf("first registration filed under %q, want %q", first, resolved)
 	}
 
-	second, err := registerVault(cfg, link)
+	second, err := registerVault(cfg, res, link)
 	if err != nil {
 		t.Fatalf("registering link to existing vault failed: %v", err)
 	}
@@ -404,7 +406,7 @@ func TestRegisterVaultAnswersTheErrorOfAListItCannotRead(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "vaults.json"), []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	filed, err := registerVault(makeConfig(dir, io.Discard), dir)
+	filed, err := registerVault(makeConfig(dir), makeResources(io.Discard), dir)
 	var failed *json.SyntaxError
 	if !errors.As(err, &failed) || filed != "" {
 		t.Errorf("registerVault answered %q, %v for a list that is not JSON, want no path and the error of reading it", filed, err)
@@ -424,7 +426,7 @@ func TestRegisterVaultAnswersTheErrorOfAListItCannotWrite(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	filed, err := registerVault(makeConfig(tempDir, io.Discard), t.TempDir())
+	filed, err := registerVault(makeConfig(tempDir), makeResources(io.Discard), t.TempDir())
 	if !errors.Is(err, fs.ErrPermission) || filed != "" {
 		t.Errorf("registerVault answered %q, %v for a list it cannot write, want no path and the permission error", filed, err)
 	}
@@ -751,12 +753,13 @@ func TestRegisterVault_SymlinkAndTargetShareOneEntry(t *testing.T) {
 	if err := os.Symlink(target, link); err != nil {
 		t.Fatal(err)
 	}
-	cfg := makeConfig(dir, io.Discard)
-	first, err := registerVault(cfg, link)
+	cfg := makeConfig(dir)
+	res := makeResources(io.Discard)
+	first, err := registerVault(cfg, res, link)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := registerVault(cfg, link)
+	second, err := registerVault(cfg, res, link)
 	if err != nil {
 		t.Fatalf("registering the same link again: %v", err)
 	}
@@ -770,7 +773,7 @@ func TestRegisterVault_ErrorsOnUnreadableListBeforeFolderCheck(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "vaults.json"), []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	filed, err := registerVault(makeConfig(dir, io.Discard), filepath.Join(dir, "missing"))
+	filed, err := registerVault(makeConfig(dir), makeResources(io.Discard), filepath.Join(dir, "missing"))
 	var failed *json.SyntaxError
 	if !errors.As(err, &failed) || filed != "" {
 		t.Errorf("registerVault answered %q, %v for a list that is not JSON, want no path and the error of reading it", filed, err)
@@ -783,7 +786,7 @@ func TestRegisterVault_ErrorsWithoutConfigFolder(t *testing.T) {
 	t.Setenv("XDG_DATA_HOME", t.TempDir())
 	t.Setenv("XDG_STATE_HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
-	filed, err := registerVault(container.NewConfig(container.Config{}), t.TempDir())
+	filed, err := registerVault(container.Config{}, makeResources(io.Discard), t.TempDir())
 	if err == nil || filed != "" {
 		t.Errorf("registerVault answered %q, %v for a machine with no configuration folder, want no path and an error", filed, err)
 	}

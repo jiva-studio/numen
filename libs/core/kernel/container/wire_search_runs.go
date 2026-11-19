@@ -8,9 +8,13 @@ import (
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
+	queryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchstore"
@@ -29,20 +33,29 @@ func emitIndexChanged(generations *indexgeneration.Generations, events *editor.E
 	}
 }
 
-func newSearchRuns(w *windowWiring) *searchrunusecase.SearchRuns {
-	find := newFindSearchResults(w.a, w.db, w.asking, w.state.ReportFloorError)
+type windowSearch struct {
+	index       *Index
+	source      searchsourceport.Source
+	tasks       *run.Tasks
+	generations *indexgeneration.Generations
+	kinds       *file.ListTabKinds
+}
+
+func newSearchRuns(w windowSearch, find *queryusecase.FindSearchResults, runtime PluginRuntime, clock machineport.Timer) *searchrunusecase.SearchRuns {
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
 		Store:       searchstore.New(),
-		Cancels:     searchcancel.NewSearches(w.cfg.Clock()),
+		Cancels:     searchcancel.NewSearches(clock),
 		Tasks:       w.tasks,
-		Timer:       w.cfg.Clock(),
+		Timer:       clock,
 		Policy:      searchrundomain.DefaultPolicy(),
 		Slots:       searchslot.New(searchrundomain.DefaultPolicy().MaxRunning),
 		Generations: w.generations,
 		Run:         find.Execute,
-		Names:       func(pluginID string) string { return pluginsGetPluginName(w.a, pluginID) },
-		Catalog:     getSearchCatalog(getRuntimeManifests(w.a.search.PluginHost.Runtime)),
-		MaxResults:  find.Limits.MaxLimit,
+		Names: func(pluginID string) string {
+			return pluginsGetPluginName(runtime.PluginResolver, pluginID)
+		},
+		Catalog:    getSearchCatalog(getRuntimeManifests(runtime)),
+		MaxResults: find.Limits.MaxLimit,
 	})
 	return &runs
 }

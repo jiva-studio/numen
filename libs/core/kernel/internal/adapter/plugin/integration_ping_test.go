@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"net"
 	"net/http"
@@ -14,6 +13,8 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -48,19 +49,19 @@ func TestEnsureActive_RefusesPluginWithMismatchedProtocol(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			host := newDiscoveredHost(t)
 			var procs []*os.Process
-			host.Processes.SetLauncher(launchAnsweringPing(t, tc.protocol, &procs))
+			host.Supervision.Processes.SetLauncher(launchAnsweringPing(t, tc.protocol, &procs))
 
-			_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
+			_, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 			if !errors.Is(err, manifest.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("EnsureActive() = %v, want %v naming %q", err, manifest.ErrUnsupportedProtocol, tc.want)
 			}
-			if items := host.Health.List(); len(items) != 1 || items[0].PluginID != "org.example.sample" || items[0].Text != lifecycle.DescribeFailure(manifest.ErrUnsupportedProtocol) {
+			if items := host.Supervision.Health.List(); len(items) != 1 || items[0].PluginID != "org.example.sample" || items[0].Text != lifecycle.DescribeFailure(manifest.ErrUnsupportedProtocol) {
 				t.Fatalf("health items = %+v, want org.example.sample with the protocol reason", items)
 			}
 			if err := procs[0].Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) {
 				t.Fatalf("signal the rejected process: %v, want %v", err, os.ErrProcessDone)
 			}
-			if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
+			if _, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
 				t.Fatalf("second EnsureActive() = %v, want a new start that fails with %v", err, manifest.ErrUnsupportedProtocol)
 			}
 			if len(procs) != 2 {
@@ -73,13 +74,13 @@ func TestEnsureActive_RefusesPluginWithMismatchedProtocol(t *testing.T) {
 func TestEnsureActive_ActivatesPluginWithHostProtocol(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
-	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
+	host.Supervision.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
 
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive() = %v, want the plugin active", err)
 	}
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
-	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
+	if err := host.Management.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }

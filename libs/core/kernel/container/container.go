@@ -15,9 +15,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
+
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -46,39 +50,22 @@ type Machine struct {
 	ResolvedCompute machinedomain.ResolvedCompute
 }
 
-// Config is what the user may point somewhere else. Empty fields mean the platform's own locations. What the
-// parts of one installation share and what the settings and the open vault give it is in Resources. The machine plan the settings resolved is a
-// value of the Config itself, so ApplySettings changes no Config that was copied before it.
+// Config holds the launch settings and the resolved machine plan.
 type Config struct {
 	Paths
-
-	PluginHost *PluginHost
-
-	PluginCatalog catalog.Config
-
-	KeyStore pluginport.KeyStore
-
 	ShouldRebuildIndex bool
-
-	SafeMode bool
-
-	ErrorHandler window.ErrorHandler
-
-	Now machineport.Timer
-
-	Resources *Resources
-
-	machine Machine
+	SafeMode           bool
+	machine            Machine
 }
 
-// Resources is what every part a container assembles shares: the write lock of each vault, the
-// folder watches, the access to the settings file and the state the settings give the installation. An
-// application builds one with NewResources and names it in its Config. Chunks is the chunk size the embedding
-// plugin reports, which the notes are cut at; TextReaders read the text of the files of a vault for an
-// installation that has no text versions to read it from.
+// Resources holds the services shared by the parts of one installation.
 type Resources struct {
-	Chunks      *note.ChunkTokens
-	TextReaders textdomain.Readers
+	PluginCatalog catalog.Config
+	KeyStore      pluginport.KeyStore
+	ErrorHandler  window.ErrorHandler
+	Now           machineport.Timer
+	Chunks        *note.ChunkTokens
+	TextReaders   textdomain.Readers
 
 	vaultLocks      *vaultwriter.Locks
 	watches         *vaultwatch.Hub
@@ -101,131 +88,142 @@ func NewResources() *Resources {
 	}
 }
 
-// NewConfig returns c with the resources of one container, and its plugin host in safe mode or out of it as
-// SafeMode says. A Config built without NewConfig and without Resources opens nothing. The plugin host of a
-// Config that names none is one that runs nothing.
-func NewConfig(c Config) Config {
-	if c.Resources == nil {
-		c.Resources = NewResources()
+func getLogEntries(res *Resources) *logsusecase.Entries {
+	if res.logEntries != nil {
+		return res.logEntries
 	}
-	c.PluginHost = c.host()
-	c.PluginHost.Runtime.SetSafeMode(c.SafeMode)
-	return c
+	return logsusecase.NewEntries()
 }
 
-// GetMachine is what the hardware allows the installation to use, as the settings last resolved it.
+// PreparePluginHost selects the installation's roles and applies its launch mode.
+func PreparePluginHost(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, safeMode bool) (*PluginExecution, *PluginPreferences, *PluginEndpoints) {
+	exec = getPluginExecution(exec)
+	exec.Runtime.SetSafeMode(safeMode)
+	return exec, getPluginPreferences(prefs), getPluginEndpoints(endpoints)
+}
+
+// GetMachine returns the machine plan resolved from the settings.
 func (c Config) GetMachine() Machine { return c.machine }
 
-func (c Config) host() *PluginHost {
-	if c.PluginHost == nil {
-		return newAbsentHost(plugindomain.NotInstalled, nil)
+func getPluginExecution(exec *PluginExecution) *PluginExecution {
+	if exec == nil {
+		return newAbsentExecution(plugindomain.NotInstalled, nil)
 	}
-	return c.PluginHost
+	return exec
 }
 
-func (c Config) runningHost() *PluginHost {
-	if c.SafeMode {
-		return newAbsentHost(plugindomain.Disabled, errSafeMode)
+func getPluginPreferences(prefs *PluginPreferences) *PluginPreferences {
+	if prefs == nil {
+		return newAbsentPreferences()
 	}
-	return c.host()
+	return prefs
 }
 
-// Clock is the clock every use case assembled here is handed.
-func (c Config) Clock() machineport.Timer {
-	if c.Now != nil {
-		return c.Now
+func getPluginEndpoints(endpoints *PluginEndpoints) *PluginEndpoints {
+	if endpoints == nil {
+		return newAbsentEndpoints()
+	}
+	return endpoints
+}
+
+func getRunningExecution(exec *PluginExecution, safeMode bool) *PluginExecution {
+	if safeMode {
+		return newAbsentExecution(plugindomain.Disabled, errSafeMode)
+	}
+	return getPluginExecution(exec)
+}
+
+// GetClock returns the clock every use case assembled here is handed.
+func GetClock(res *Resources) machineport.Timer {
+	if res.Now != nil {
+		return res.Now
 	}
 	return clock.System{}
 }
 
-func handleError(c Config, err error) {
-	windowlogs.RecordError(openOptionalRecordLog(c), "Background operation failed", err)
-	if c.ErrorHandler != nil {
-		c.ErrorHandler(err)
-	}
+func getErrorHandler(indexPath string, res *Resources) window.ErrorHandler {
+	return windowlogs.ReportError(openOptionalRecordLog(indexPath, res), res.ErrorHandler, "Background operation failed")
 }
 
-func settingsOf(c Config) settingsWiring {
-	res := c.Resources
+func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources) settingsWiring {
+	runtime := getPluginExecution(exec).Runtime
+	prefs = getPluginPreferences(prefs)
 	return settingsWiring{
-		settingsPlaces: settingsPlaces{
-			SettingsPath:    c.SettingsPath,
-			ThemesPath:      c.ThemesPath,
-			RegistryPath:    c.RegistryPath,
-			ResolvedCompute: c.machine.ResolvedCompute,
-		},
-		settingsStores: settingsStores{
-			Watches:         res.watches,
-			SettingsFiles:   res.settingsFiles,
-			SettingEvents:   res.settingEvents,
-			PluginChanges:   res.pluginChanges,
-			SubscribedHosts: &res.subscribedHosts,
-		},
-		PluginHost:   c.host(),
-		ErrorHandler: func(err error) { handleError(c, err) },
+		SettingsPath:    c.SettingsPath,
+		ThemesPath:      c.ThemesPath,
+		RegistryPath:    c.RegistryPath,
+		Watches:         res.watches,
+		SettingsFiles:   res.settingsFiles,
+		SettingEvents:   res.settingEvents,
+		PluginChanges:   res.pluginChanges,
+		Infos:           runtime,
+		Declarations:    prefs.Configuration.PluginSettingDeclarer,
+		ConnectionTypes: prefs.Views.Types,
+		PluginInfos:     prefs.Views.Infos,
+		Checks:          prefs.Views.Checks,
+		Detection:       prefs.Detection,
+		ErrorHandler:    getErrorHandler(c.IndexPath, res),
 	}
 }
 
-func searchWith(c Config, v vaultWiring) searchWiring {
-	return searchWiring{
-		ServiceDir:         c.ServiceDir,
-		ShouldRebuildIndex: c.ShouldRebuildIndex,
-		Chunks:             c.Resources.Chunks,
-		ResolvedCompute:    c.machine.ResolvedCompute,
-		PluginHost:         c.host(),
-		RunningHost:        c.runningHost(),
-		Clock:              c.Clock(),
-		VaultReaders:       vaultReaders(v),
-		TextReaders:        getTextReaders(v),
-		ErrorHandler:       func(err error) { handleError(c, err) },
-	}
-}
-
-func vaultBase(c Config, texts *TextVersions) vaultWiring {
-	res := c.Resources
-	return vaultWiring{
-		IndexPath:    c.IndexPath,
-		RegistryPath: c.RegistryPath,
-		ServiceDir:   c.ServiceDir,
-		Clock:        c.Clock(),
-		PluginHost:   c.host(),
-		RunningHost:  c.runningHost(),
-		TextVersions: texts,
-		TextReaders:  res.TextReaders,
-		VaultLocks:   res.vaultLocks,
-		Watches:      res.watches,
-		ErrorHandler: func(err error) { handleError(c, err) },
-	}
-}
-
-func vaultWith(c Config, base vaultWiring, settings settingsWiring, search searchWiring) vaultWiring {
+func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, chunks noteChunkPolicy) vaultWiring {
 	base.SyncSetting = syncSetting(settings)
-	base.CutNotes = cutNotes(search)
-	base.SetNoteCut = func(scan *vault.Scan) { setNoteCut(search, scan) }
-	base.RecordLog = openRecordLogFunc(c)
+	base = setVaultSearch(base, chunks)
+	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
+	base.RecordLog = recordLogFunc(record, res.ErrorHandler)
 	return base
 }
 
-func assemble(c Config, texts *TextVersions) pluginsWiring {
+func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, res *Resources, texts *TextVersions) (settingsWiring, vaultIndexPlan, vaultWiring) {
 	// texts are the text versions the open made over its index, or nil where it makes none.
-	settings := settingsOf(c)
-	base := vaultBase(c, texts)
-	search := searchWith(c, base)
-	return pluginsWiring{
-		pluginInstall: pluginInstall{
-			PluginCachePath: c.PluginCachePath,
-			ServiceDir:      c.ServiceDir,
-			PluginHost:      c.host(),
-			RunningHost:     c.runningHost(),
-			PluginCatalog:   c.PluginCatalog,
-			KeyStore:        c.KeyStore,
-		},
-		settings: settings,
-		search:   search,
-		vault:    vaultWith(c, base, settings, search),
+	exec = getPluginExecution(exec)
+	settings := settingsOf(c, exec, prefs, res)
+	base := openVaultAccess(c.Paths, GetClock(res), res.vaultLocks, res.watches, texts)
+	plan := vaultIndexPlan{
+		ChunkPolicy: noteChunkPolicy{Chunks: res.Chunks, Profiles: exec.Runtime.PluginResolver},
+		ServiceDir:  c.ServiceDir, ShouldRebuildIndex: c.ShouldRebuildIndex,
+		VaultReaders: base.Readers, TextReaders: getTextReaders(res.TextReaders, texts), ErrorHandler: settings.ErrorHandler,
+	}
+	return settings, plan, vaultWith(res, base, settings, plan.ChunkPolicy)
+}
+
+func setVaultSearch(v vaultWiring, chunks noteChunkPolicy) vaultWiring {
+	v.CutNotes = cutNotes(chunks)
+	v.SetNoteCut = func(scan *vault.Scan) { setNoteCut(chunks, scan) }
+	return v
+}
+
+func openIndexedVault(plan vaultIndexPlan, v vaultWiring, db *Index, plugins textport.TextPlugins) (vaultIndexPlan, vaultWiring) {
+	v = openVaultTextVersions(v, db, plugins, plan.ChunkPolicy)
+	plan.TextReaders = getTextReaders(plan.TextReaders, v.TextVersions)
+	return plan, v
+}
+
+func openVaultTextVersions(v vaultWiring, db *Index, plugins textport.TextPlugins, chunks noteChunkPolicy) vaultWiring {
+	v.TextVersions = newTextVersions(v.Options, plugins, v.Clock, db)
+	return setVaultSearch(v, chunks)
+}
+
+func newSourceBinding(exec *PluginExecution, safeMode bool, endpoints *PluginEndpoints, res *Resources) sourcebridge.Binding {
+	runtime := getRunningExecution(exec, safeMode).Runtime
+	return sourcebridge.Binding{
+		Activator:    runtime.Activator,
+		Plugins:      sourcebridge.PluginAccess{PluginResolver: runtime.PluginResolver, ConfigWatcher: runtime.ConfigWatcher},
+		Descriptions: getPluginEndpoints(endpoints).SourceDescriptions,
+		ReportRead:   pluginhealth.NewReportSearchSource(exec.Health).Execute,
+		Follow:       res.Chunks.Follow,
 	}
 }
 
-func plugins(c Config) pluginsWiring { return assemble(c, nil) }
-
-func vaultOf(c Config) vaultWiring { return plugins(c).vault }
+func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) pluginInstall {
+	prefs = getPluginPreferences(prefs)
+	return pluginInstall{
+		Licenses: prefs.Views.Declarations, Configuration: prefs.Configuration, OperationTitles: prefs.Views.Operations,
+		PluginCachePath: c.PluginCachePath,
+		ServiceDir:      c.ServiceDir,
+		SafeMode:        c.SafeMode,
+		Endpoints:       getPluginEndpoints(endpoints),
+		PluginCatalog:   res.PluginCatalog,
+		KeyStore:        res.KeyStore,
+	}
+}

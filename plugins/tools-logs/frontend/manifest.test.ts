@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
  * The manifest of `md.numen.tools.logs`: declares the `logs` tab kind, the `logs.open` command,
- * `logs:read` permission and `isOffByDefault: true`.
+ * `logs:read` and `vault:read` permissions and `isOffByDefault: true`.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -30,8 +30,8 @@ describe('the manifest', () => {
     expect(manifest.contributes.commands.map((one) => one.id)).toStrictEqual([OPEN_LOGS_COMMAND])
   })
 
-  it('requests logs:read and is off by default', () => {
-    expect(manifest.permissions).toStrictEqual(['logs:read'])
+  it('requests access to logs and tabs and is off by default', () => {
+    expect(manifest.permissions).toStrictEqual(['logs:read', 'vault:read'])
     expect(manifest.isOffByDefault).toBe(true)
     expect(manifest.backend).toBeUndefined()
   })

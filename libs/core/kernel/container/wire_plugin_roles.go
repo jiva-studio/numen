@@ -9,11 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 )
 
-// PluginRoles are the roles of a plugin host, each keeping its own state and made from the roles it needs, so that
-// none reaches back to one made after it. NewPluginRoles is the one place that makes them, for the container and for
-// the tests that hold a host.
-type PluginRoles struct {
-	PluginSupervision
+// PluginManagement provides discovery, activation and settings for installed plugins.
+type PluginManagement struct {
 	Registry     *plugin.Registry
 	Discovery    *plugin.Discovery
 	Activation   *plugin.Activation
@@ -23,15 +20,11 @@ type PluginRoles struct {
 	Config       *plugin.ConfigPush
 	Listeners    *plugin.Listeners
 	ContentTypes *plugin.ContentTypes
-	Storage      *storage.Storage
 	Events       *plugin.Events
 	Mode         *plugin.Mode
-	Health       *pluginhealth.Items
-	Clock        machineport.Clock
 }
 
-// PluginSupervision are the roles that run the processes of the plugins: their start and stop, their
-// failures and the services they serve, and the list of the ones that run.
+// PluginSupervision owns the process, storage and service dependencies of the plugin runtime.
 type PluginSupervision struct {
 	RunningProcesses *supervision.RunningProcesses
 	Processes        *supervision.Processes
@@ -39,11 +32,13 @@ type PluginSupervision struct {
 	Services         *supervision.Services
 	Endpoint         *supervision.Slot[supervision.HostEndpoint]
 	Dependencies     *supervision.Slot[pluginport.DependencyRegistry]
+	Storage          *storage.Storage
+	Health           *pluginhealth.Items
+	Clock            machineport.Clock
 }
 
-// NewPluginRoles creates the roles of a plugin host for the target application and the folders its plugins are in. The
-// roles read the time from clock.
-func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *PluginRoles {
+// NewPluginRoles shares one supervisor set and activation mode across discovery, execution and teardown.
+func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*PluginManagement, *PluginSupervision) {
 	errs := plugin.NewErrorSink()
 	mode := plugin.NewMode()
 	values := plugin.NewSettingValues()
@@ -71,10 +66,11 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *Plu
 	listeners := plugin.NewListeners(plugin.ListenersDeps{
 		Set: set, Mode: mode, Supervisors: sups, Activation: activation, Failures: failures, Clock: clock, Report: errs.Report,
 	})
-	return &PluginRoles{
-		PluginSupervision: PluginSupervision{RunningProcesses: supervision.NewRunningProcesses(sups), Processes: processes, Failures: failures, Services: services,
-			Endpoint: endpoint, Dependencies: dependencies,
-		},
+	processHost := &PluginSupervision{
+		RunningProcesses: supervision.NewRunningProcesses(sups), Processes: processes, Failures: failures, Services: services,
+		Endpoint: endpoint, Dependencies: dependencies, Storage: files, Health: health, Clock: clock,
+	}
+	return &PluginManagement{
 		Registry: registry,
 		Discovery: plugin.NewDiscovery(plugin.DiscoveryDeps{
 			Set: set, Registrar: set, Scan: scan, Mode: mode, Supervisors: sups, Stopper: stopper, Listeners: listeners, Storage: files,
@@ -91,15 +87,12 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) *Plu
 		Config:       config,
 		Listeners:    listeners,
 		ContentTypes: plugin.NewContentTypes(plugin.ContentTypesDeps{Set: set, Lookup: readers}),
-		Storage:      files,
 		Events:       events,
 		Mode:         mode,
-		Health:       health,
-		Clock:        clock,
-	}
+	}, processHost
 }
 
-func setPluginStorage(roles *PluginRoles, cacheRoot, dataRoot string, newRegistry func(modelsDir string) pluginport.DependencyRegistry) {
+func setPluginStorage(roles *PluginSupervision, cacheRoot, dataRoot string, newRegistry func(modelsDir string) pluginport.DependencyRegistry) {
 	roles.Storage.SetStorageRoots(cacheRoot, dataRoot)
 	// gomutants:disable-next-line reason="a window started without a models directory gets no dependency registry, which only an installation with downloaded models exercises"
 	if models := roles.Storage.GetModelsDir(); models != "" {

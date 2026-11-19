@@ -104,19 +104,17 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheAvailableOnes(
 	availableDir := t.TempDir()
 	writeCatalogPlugin(t, availableDir, "org.example.offered", `"desktop.editor"`)
 	host := newPluginHost(t, "desktop.editor", dir)
-	host.Configuration.SetSettings(map[string]map[string]any{"org.example.off": {"enabled": false}})
-	cfg := NewConfig(Config{
-		PluginHost: host,
-		PluginCatalog: catalog.Config{
-			Target: "desktop.editor", InstallDir: "", CacheDir: "",
-			Sources: []catalog.Source{
-				localsource.New([]string{dir}, localsource.SettingsFunc(host.Runtime.IsPluginEnabled)),
-				indexsource.New(nil, []string{availableDir}),
-			},
+	host.Preferences.Configuration.SetSettings(map[string]map[string]any{"org.example.off": {"enabled": false}})
+	cfg := NewTestInstallation(Config{}, host)
+	cfg.Resources.PluginCatalog = catalog.Config{
+		Target: "desktop.editor", InstallDir: "", CacheDir: "",
+		Sources: []catalog.Source{
+			localsource.New([]string{dir}, localsource.SettingsFunc(host.Execution.Runtime.IsPluginEnabled)),
+			indexsource.New(nil, []string{availableDir}),
 		},
-	})
+	}
 
-	service := getPluginCatalog(plugins(cfg))
+	service := getPluginCatalog(cfg.Resources.PluginCatalog, getErrorHandler(cfg.IndexPath, cfg.Resources))
 	if service == nil {
 		t.Fatal("no catalog")
 	}
@@ -155,9 +153,9 @@ func findEntry(listing catalog.Listing, id string) (catalog.Entry, bool) {
 }
 
 func TestAnInstallationThatNamesNoTargetHasNoCatalog(t *testing.T) {
-	cfg := NewConfig(Config{PluginHost: newPluginHost(t, "desktop.editor", t.TempDir())})
+	cfg := NewTestInstallation(Config{}, newPluginHost(t, "desktop.editor", t.TempDir()))
 
-	if getPluginCatalog(plugins(cfg)) != nil {
+	if getPluginCatalog(cfg.Resources.PluginCatalog, getErrorHandler(cfg.IndexPath, cfg.Resources)) != nil {
 		t.Error("a catalog was made with no target")
 	}
 }

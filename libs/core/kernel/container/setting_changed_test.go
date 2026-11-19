@@ -85,19 +85,16 @@ func writeEventfulPlugin(t *testing.T) string {
 	return root
 }
 
-func openInstallation(t *testing.T, body string) (container.Config, string, *recordingHost) {
+func openInstallation(t *testing.T, body string) (container.TestInstallation, string, *recordingHost) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	lent := newExternalPluginHost(t, "desktop.editor", writeEventfulPlugin(t))
-	host := &recordingHost{apply: lent.ApplySetting, PluginConfig: lent.Configuration.PluginConfig}
-	lent.ApplySetting, lent.Configuration.PluginConfig = host.applySetting, host
-	cfg := container.NewConfig(container.Config{
-		PluginHost: lent,
-		Paths:      container.Paths{SettingsPath: path},
-	})
+	host := &recordingHost{apply: lent.Preferences.ApplySetting, PluginConfig: lent.Preferences.Configuration.PluginConfig}
+	lent.Preferences.ApplySetting, lent.Preferences.Configuration.PluginConfig = host.applySetting, host
+	cfg := container.NewTestInstallation(container.Config{Paths: container.Paths{SettingsPath: path}}, lent)
 	cfg = cfg.SetSettings(container.DefaultSettings())
 	t.Cleanup(func() { container.UnsubscribeHost(cfg) })
 	return cfg, path, host
@@ -108,7 +105,7 @@ type listener struct {
 	changes <-chan []settings.Setting
 }
 
-func listen(t *testing.T, cfg container.Config) listener {
+func listen(t *testing.T, cfg container.TestInstallation) listener {
 	t.Helper()
 	changes, stop := cfg.SubscribeSettingChanges()
 	t.Cleanup(stop)

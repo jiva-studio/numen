@@ -5,9 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +17,11 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/shared/protocol"
@@ -43,10 +45,10 @@ func getTestHolder() plugindomain.Holder {
 	return plugindomain.Holder{Who: plugindomain.WhoWindow, Why: "open view"}
 }
 
-func newDiscoveredHostAt(t *testing.T, clock machineport.Clock, root string) *container.PluginRoles {
+func newDiscoveredHostAt(t *testing.T, clock machineport.Clock, root string) *pluginhost.Host {
 	t.Helper()
-	host := container.NewPluginRoles(clock, "desktop.editor", root)
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(clock, "desktop.editor", root)
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 	return host
@@ -106,17 +108,17 @@ func TestHostDiscoveryAndLookup(t *testing.T) {
 
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 
-	plugins := host.Registry.GetPlugins()
+	plugins := host.Management.Registry.GetPlugins()
 	if len(plugins) != 1 {
 		t.Fatalf("expected 1 plugin, got %d", len(plugins))
 	}
 
-	p, ok := host.Registry.GetPlugin("org.example.sample")
+	p, ok := host.Management.Registry.GetPlugin("org.example.sample")
 	if !ok || p.Manifest.ID != "org.example.sample" {
 		t.Fatal("expected to find org.example.sample")
 	}
 
-	capPlugin, ok := host.Registry.FindPluginByCapability("tools")
+	capPlugin, ok := host.Management.Registry.FindPluginByCapability("tools")
 	if !ok || capPlugin.Manifest.ID != "org.example.sample" {
 		t.Fatal("expected to find plugin by capability tools")
 	}
@@ -127,18 +129,18 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	pingPort := wiretest.ServeHostPing(t)
 	wiretest.CreateTestPluginTree(t, tmp)
 
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	host.ContentTypes.SetContentTypeTable(contenttype.Open())
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	host.Management.ContentTypes.SetContentTypeTable(contenttype.Open())
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
 	cmd := wiretest.StartSleepProcess(t)
 
-	host.Processes.SetLauncher(launchProcess(cmd, pingPort))
+	host.Supervision.Processes.SetLauncher(launchProcess(cmd, pingPort))
 
 	ctx := t.Context()
-	endpoint, err := host.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder())
+	endpoint, err := host.Management.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder())
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
@@ -147,7 +149,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	}
 
 	// Calling EnsureActive again should return the existing active endpoint
-	endpoint2, err := host.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder())
+	endpoint2, err := host.Management.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder())
 	if err != nil {
 		t.Fatalf("second EnsureActive failed: %v", err)
 	}
@@ -156,11 +158,11 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	}
 
 	// Release twice to enter idle state
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
 
 	// TriggerEvent for matching event
-	activated, err := host.Events.TriggerEvent(ctx, protocol.GetIndexChangedEvent("v-1"))
+	activated, err := host.Management.Events.TriggerEvent(ctx, protocol.GetIndexChangedEvent("v-1"))
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
@@ -169,35 +171,35 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 	}
 
 	// EvictIdle test
-	evicted := host.Teardown.EvictIdle(ctx, 10*time.Millisecond, 50*time.Millisecond)
+	evicted := host.Management.Teardown.EvictIdle(ctx, 10*time.Millisecond, 50*time.Millisecond)
 	// The plugin holds a lease, so it is not evicted
 	if len(evicted) != 0 {
 		t.Fatalf("expected 0 evicted before threshold, got %v", evicted)
 	}
 
 	// Cleanup
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
-	if err := host.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
+	if err := host.Management.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
 
 func TestHostEvictLoopTeardown(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
-	if !host.Teardown.IsEvicting() {
+	management, _ := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	if !management.Teardown.IsEvicting() {
 		t.Fatal("expected evict loop to be running")
 	}
 
 	ctx := t.Context()
-	if err := host.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+	if err := management.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 
-	if host.Teardown.IsEvicting() {
+	if management.Teardown.IsEvicting() {
 		t.Fatal("expected evict loop to be stopped after TeardownAll")
 	}
 
-	if err := host.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+	if err := management.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
 		t.Fatalf("second TeardownAll failed: %v", err)
 	}
 }
@@ -243,27 +245,27 @@ func TestHostEmitEventActivation(t *testing.T) {
 	pingPort := wiretest.ServeHostPing(t)
 	wiretest.CreateTestPluginTree(t, tmp)
 
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor", tmp)
-	host.ContentTypes.SetContentTypeTable(contenttype.Open())
-	if err := host.Discovery.Discover(); err != nil {
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", tmp)
+	host.Management.ContentTypes.SetContentTypeTable(contenttype.Open())
+	if err := host.Management.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
 	cmd := wiretest.StartSleepProcess(t)
 
-	host.Processes.SetLauncher(launchProcess(cmd, pingPort))
+	host.Supervision.Processes.SetLauncher(launchProcess(cmd, pingPort))
 
 	ctx := t.Context()
 
 	// Initial state is dormant
-	sup := supervisorOf(host, "org.example.sample")
+	sup := supervisorOf(host.Management, "org.example.sample")
 	if sup == nil || sup.GetState() != lifecycle.StateDormant {
 		t.Fatalf("expected initial state dormant, got %v", sup.GetState())
 	}
 
 	// Emit the event through the debounced event bus
-	host.Events.EmitEvent(protocol.GetIndexChangedEvent("v-1"))
-	if err := host.Events.GetEventBus().Flush(ctx); err != nil {
+	host.Management.Events.EmitEvent(protocol.GetIndexChangedEvent("v-1"))
+	if err := host.Management.Events.GetEventBus().Flush(ctx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -272,8 +274,8 @@ func TestHostEmitEventActivation(t *testing.T) {
 		t.Fatalf("expected state active or idle after EmitEvent, got %v", sup.GetState())
 	}
 
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
-	if err := host.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
+	if err := host.Management.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -292,7 +294,7 @@ func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 		t.Fatalf("create pipe failed: %v", err)
 	}
 
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, pr, nil
 	})
 
@@ -313,7 +315,7 @@ func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 	}()
 
 	ctx := t.Context()
-	endpoint, err := host.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder())
+	endpoint, err := host.Management.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder())
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
@@ -330,8 +332,8 @@ func TestHostDrainsStdoutAfterPasseshake(t *testing.T) {
 		t.Fatal("timed out waiting for large stdout write to complete")
 	}
 
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
-	if err := host.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
+	if err := host.Management.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -350,7 +352,7 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 	allowHandshake := make(chan struct{})
 	var once sync.Once
 
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		launchCount.Add(1)
 		once.Do(func() {
 			close(launchStarted)
@@ -369,7 +371,7 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 	errs := make([]error, numGoroutines)
 
 	wg.Go(func() {
-		endpoints[0], errs[0] = host.Activation.EnsureActive(t.Context(), "test.concurrent", getTestHolder())
+		endpoints[0], errs[0] = host.Management.Activation.EnsureActive(t.Context(), "test.concurrent", getTestHolder())
 	})
 
 	<-launchStarted
@@ -378,7 +380,7 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			endpoints[idx], errs[idx] = host.Activation.EnsureActive(t.Context(), "test.concurrent", getTestHolder())
+			endpoints[idx], errs[idx] = host.Management.Activation.EnsureActive(t.Context(), "test.concurrent", getTestHolder())
 		}(i)
 	}
 
@@ -402,9 +404,9 @@ func TestHostEnsureActiveConcurrentSamePlugin(t *testing.T) {
 	}
 
 	for range numGoroutines {
-		host.Activation.Release("test.concurrent", endpointOf(host, "test.concurrent").Token, getTestHolder())
+		host.Management.Activation.Release("test.concurrent", endpointOf(host.Management, "test.concurrent").Token, getTestHolder())
 	}
-	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := host.Management.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -425,7 +427,7 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	slowStarted := make(chan struct{})
 	slowAllowHandshake := make(chan struct{})
 
-	host.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "plugin.slow" {
 			close(slowStarted)
 			<-slowAllowHandshake
@@ -447,12 +449,12 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 	var slowErr error
 
 	slowWg.Go(func() {
-		slowEndpoint, slowErr = host.Activation.EnsureActive(t.Context(), "plugin.slow", getTestHolder())
+		slowEndpoint, slowErr = host.Management.Activation.EnsureActive(t.Context(), "plugin.slow", getTestHolder())
 	})
 
 	<-slowStarted
 
-	fastEndpoint, err := host.Activation.EnsureActive(t.Context(), "plugin.fast", getTestHolder())
+	fastEndpoint, err := host.Management.Activation.EnsureActive(t.Context(), "plugin.fast", getTestHolder())
 	if err != nil {
 		t.Fatalf("EnsureActive on fast plugin failed while slow plugin was handshaking: %v", err)
 	}
@@ -460,11 +462,11 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 		t.Fatalf("fast plugin expected port %d, got %d", fastPort, fastEndpoint.Port)
 	}
 
-	plugins := host.Registry.GetPlugins()
+	plugins := host.Management.Registry.GetPlugins()
 	if len(plugins) != 2 {
 		t.Fatalf("expected 2 plugins, got %d", len(plugins))
 	}
-	status, ok := host.Registry.GetPluginStatus("plugin.fast")
+	status, ok := host.Management.Registry.GetPluginStatus("plugin.fast")
 	if !ok || !status.IsActive {
 		t.Fatalf("expected plugin.fast to be active, got ok=%v, active=%v", ok, status.IsActive)
 	}
@@ -479,9 +481,9 @@ func TestHostEnsureActiveEliminatesHeadOfLineBlocking(t *testing.T) {
 		t.Fatalf("slow plugin expected port %d, got %d", slowPort, slowEndpoint.Port)
 	}
 
-	host.Activation.Release("plugin.slow", endpointOf(host, "plugin.slow").Token, getTestHolder())
-	host.Activation.Release("plugin.fast", endpointOf(host, "plugin.fast").Token, getTestHolder())
-	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	host.Management.Activation.Release("plugin.slow", endpointOf(host.Management, "plugin.slow").Token, getTestHolder())
+	host.Management.Activation.Release("plugin.fast", endpointOf(host.Management, "plugin.fast").Token, getTestHolder())
+	if err := host.Management.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -497,7 +499,7 @@ func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
 	var once sync.Once
 	failErr := errors.New("simulated launch failure")
 
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		once.Do(func() {
 			close(launchStarted)
 		})
@@ -510,7 +512,7 @@ func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
 	errs := make([]error, numGoroutines)
 
 	wg.Go(func() {
-		_, errs[0] = host.Activation.EnsureActive(t.Context(), "test.fail", getTestHolder())
+		_, errs[0] = host.Management.Activation.EnsureActive(t.Context(), "test.fail", getTestHolder())
 	})
 
 	<-launchStarted
@@ -519,7 +521,7 @@ func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			_, errs[idx] = host.Activation.EnsureActive(t.Context(), "test.fail", getTestHolder())
+			_, errs[idx] = host.Management.Activation.EnsureActive(t.Context(), "test.fail", getTestHolder())
 		}(i)
 	}
 
@@ -532,7 +534,7 @@ func TestHostEnsureActiveConcurrentFailure(t *testing.T) {
 		}
 	}
 
-	status, ok := host.Registry.GetPluginStatus("test.fail")
+	status, ok := host.Management.Registry.GetPluginStatus("test.fail")
 	if !ok {
 		t.Fatal("expected status for test.fail")
 	}
@@ -553,7 +555,7 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	launchStarted := make(chan struct{})
 	allowHandshake := make(chan struct{})
 
-	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Supervision.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		close(launchStarted)
 		<-allowHandshake
 		actualPort := port
@@ -568,7 +570,7 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	var activeErr error
 
 	wg.Go(func() {
-		activeEp, activeErr = host.Activation.EnsureActive(t.Context(), "test.cancel", getTestHolder())
+		activeEp, activeErr = host.Management.Activation.EnsureActive(t.Context(), "test.cancel", getTestHolder())
 	})
 
 	<-launchStarted
@@ -576,7 +578,7 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 	cancelCtx, cancel := context.WithCancel(t.Context())
 	cancelErrCh := make(chan error, 1)
 	go func() {
-		_, err := host.Activation.EnsureActive(cancelCtx, "test.cancel", getTestHolder())
+		_, err := host.Management.Activation.EnsureActive(cancelCtx, "test.cancel", getTestHolder())
 		cancelErrCh <- err
 	}()
 
@@ -601,8 +603,8 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 		t.Fatalf("expected port %d, got %d", pingPort, activeEp.Port)
 	}
 
-	host.Activation.Release("test.cancel", endpointOf(host, "test.cancel").Token, getTestHolder())
-	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	host.Management.Activation.Release("test.cancel", endpointOf(host.Management, "test.cancel").Token, getTestHolder())
+	if err := host.Management.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -670,10 +672,10 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 		wiretest.Kill(t, cmd)
 	}
 
-	host.Processes.SetLauncher(launchProcessAt(cmd, serverPort))
+	host.Supervision.Processes.SetLauncher(launchProcessAt(cmd, serverPort))
 
 	ctx := t.Context()
-	endpoint, err := host.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder())
+	endpoint, err := host.Management.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder())
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
@@ -682,14 +684,14 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 
 	closer := &testCloser{}
-	host.Processes.HoldStdin("org.example.sample", cmd.Process.Pid, closer)
+	host.Supervision.Processes.HoldStdin("org.example.sample", cmd.Process.Pid, closer)
 
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
 
 	clock.Advance(1050 * time.Millisecond)
 
-	evicted := host.Teardown.EvictIdle(ctx, 0, 500*time.Millisecond)
+	evicted := host.Management.Teardown.EvictIdle(ctx, 0, 500*time.Millisecond)
 	if len(evicted) != 1 || evicted[0] != "org.example.sample" {
 		t.Fatalf("expected org.example.sample to be evicted, got %v", evicted)
 	}
@@ -702,12 +704,12 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 		t.Error("expected stdin closer to be closed on eviction")
 	}
 
-	stdinExists := host.Processes.CountStdins() > 0
+	stdinExists := host.Supervision.Processes.CountStdins() > 0
 	if stdinExists {
 		t.Error("expected stdin pipe to be deleted from host.stdins")
 	}
 
-	sup := supervisorOf(host, "org.example.sample")
+	sup := supervisorOf(host.Management, "org.example.sample")
 	if sup.GetState() != lifecycle.StateDormant {
 		t.Errorf("expected StateDormant, got %v", sup.GetState())
 	}
@@ -728,17 +730,17 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 		wiretest.Kill(t, cmd)
 	}
 
-	host.Processes.SetLauncher(launchProcessAt(cmd, serverPort))
+	host.Supervision.Processes.SetLauncher(launchProcessAt(cmd, serverPort))
 
 	ctx := t.Context()
-	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); err != nil {
+	if _, err := host.Management.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 
 	closer := &testCloser{}
-	host.Processes.HoldStdin("org.example.sample", cmd.Process.Pid, closer)
+	host.Supervision.Processes.HoldStdin("org.example.sample", cmd.Process.Pid, closer)
 
-	if err := host.Teardown.TeardownAll(ctx, 500*time.Millisecond); err != nil {
+	if err := host.Management.Teardown.TeardownAll(ctx, 500*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 
@@ -750,7 +752,7 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 		t.Error("expected stdin closer to be closed during TeardownAll")
 	}
 
-	stdinCount := host.Processes.CountStdins()
+	stdinCount := host.Supervision.Processes.CountStdins()
 	if stdinCount != 0 {
 		t.Errorf("expected empty host.stdins, got %d entries", stdinCount)
 	}
@@ -776,29 +778,29 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 		wiretest.Kill(t, cmd)
 	}
 
-	host.Processes.SetLauncher(launchProcessAt(cmd, serverPort))
+	host.Supervision.Processes.SetLauncher(launchProcessAt(cmd, serverPort))
 
 	ctx := t.Context()
-	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); err != nil {
+	if _, err := host.Management.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
 
 	clock.Advance(1050 * time.Millisecond)
 
 	isDone := make(chan struct{})
 	go func() {
 		defer close(isDone)
-		_ = host.Teardown.EvictIdle(ctx, 0, 1*time.Second)
+		_ = host.Management.Teardown.EvictIdle(ctx, 0, 1*time.Second)
 	}()
 
 	<-rpcReceived
 
 	lookedUp := make(chan struct{})
 	go func() {
-		plugin.GetSupervisors(host.Registry).Get("org.example.sample")
+		plugin.GetSupervisors(host.Management.Registry).Get("org.example.sample")
 		close(lookedUp)
 	}()
 	select {
@@ -837,25 +839,25 @@ func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 	var started atomic.Int32
 	var procs []*os.Process
-	host.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
+	host.Supervision.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
 
-	first, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
+	first, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	sup := supervisorOf(host, "org.example.sample")
+	sup := supervisorOf(host.Management, "org.example.sample")
 	wiretest.KillProcess(t, procs[0])
 	wiretest.WaitUntil(t, "the crashed plugin to become dormant", func() bool {
-		_, hasEndpoint := plugin.GetSupervisors(host.Registry).GetEndpoint("org.example.sample")
+		_, hasEndpoint := plugin.GetSupervisors(host.Management.Registry).GetEndpoint("org.example.sample")
 		return sup.GetState() == lifecycle.StateDormant && !hasEndpoint
 	})
 
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
 	if sup.GetState() != lifecycle.StateDormant {
 		t.Fatalf("Release moved a crashed plugin to %v", sup.GetState())
 	}
 
-	second, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
+	second, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 	if err != nil {
 		t.Fatalf("EnsureActive after crash failed: %v", err)
 	}
@@ -865,7 +867,7 @@ func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
 	if started.Load() != 2 {
 		t.Fatalf("expected the plugin to be launched twice, got %d", started.Load())
 	}
-	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := host.Management.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -895,16 +897,16 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 	var started atomic.Int32
 	var procs []*os.Process
-	host.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
+	host.Supervision.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
 
-	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
+	if _, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	dropEndpoint(host, "org.example.sample")
-	sup := supervisorOf(host, "org.example.sample")
+	dropEndpoint(host.Management, "org.example.sample")
+	sup := supervisorOf(host.Management, "org.example.sample")
 	firstExit := sup.GetExitSignal()
 
-	endpoint, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
+	endpoint, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
@@ -919,17 +921,17 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 	case <-time.After(5 * time.Second):
 		t.Fatal("the unreachable process was not stopped")
 	}
-	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := host.Management.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
 
 func TestProcessExitDropsEndpoint(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
-	putEndpoint(host, "p", transport.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "old"})
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
+	putEndpoint(host.Management, "p", transport.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "old"})
 
-	plugin.GetSupervisors(host.Registry).Drop("p")
-	_, stillThere := plugin.GetSupervisors(host.Registry).GetEndpoint("p")
+	plugin.GetSupervisors(host.Management.Registry).Drop("p")
+	_, stillThere := plugin.GetSupervisors(host.Management.Registry).GetEndpoint("p")
 	if stillThere {
 		t.Fatal("the endpoint of a stopped plugin was kept")
 	}
@@ -941,7 +943,7 @@ func TestEnsureActive_PreservesPluginInUseDuringConcurrentEviction(t *testing.T)
 	clock := testsupport.NewClock()
 	host := newDiscoveredHostAt(t, clock, tmp)
 	var started atomic.Int32
-	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
+	host.Supervision.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
 	var evictions atomic.Int32
 	stop := make(chan struct{})
 	var evictor sync.WaitGroup
@@ -951,7 +953,7 @@ func TestEnsureActive_PreservesPluginInUseDuringConcurrentEviction(t *testing.T)
 			case <-stop:
 				return
 			default:
-				evictions.Add(int32(len(host.Teardown.EvictIdle(t.Context(), 0, 20*time.Millisecond))))
+				evictions.Add(int32(len(host.Management.Teardown.EvictIdle(t.Context(), 0, 20*time.Millisecond))))
 			}
 		}
 	})
@@ -963,36 +965,36 @@ func TestEnsureActive_PreservesPluginInUseDuringConcurrentEviction(t *testing.T)
 	t.Cleanup(stopEvictor)
 
 	for i := 0; i < 60 || (evictions.Load() == 0 && i < 5000); i++ {
-		endpoint, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
+		endpoint, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 		if err != nil {
 			t.Fatalf("round %d: EnsureActive failed: %v", i, err)
 		}
 		if supervision.IsNoEndpoint(endpoint) {
 			t.Fatalf("round %d: EnsureActive returned an empty endpoint", i)
 		}
-		sup := supervisorOf(host, "org.example.sample")
+		sup := supervisorOf(host.Management, "org.example.sample")
 		if state := sup.GetState(); state != lifecycle.StateActive {
 			t.Fatalf("round %d: a held plugin is in state %v", i, state)
 		}
-		host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
+		host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
 		clock.Advance(1050 * time.Millisecond)
 	}
 	stopEvictor()
 	if evictions.Load() == 0 {
 		t.Fatal("the evictor never stopped an idle plugin, so the race was not exercised")
 	}
-	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := host.Management.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
 
 func TestCloseStdin_PreservesNewerProcessStdin(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	oldPipe, newPipe := &testCloser{}, &testCloser{}
-	host.Processes.HoldStdin("p", 1, oldPipe)
-	host.Processes.HoldStdin("p", 2, newPipe)
+	host.Supervision.Processes.HoldStdin("p", 1, oldPipe)
+	host.Supervision.Processes.HoldStdin("p", 2, newPipe)
 
-	host.Processes.CloseStdin("p", 1)
+	host.Supervision.Processes.CloseStdin("p", 1)
 
 	if !oldPipe.getIsClosed() {
 		t.Fatal("expected the evicted process stdin to be closed")
@@ -1000,7 +1002,7 @@ func TestCloseStdin_PreservesNewerProcessStdin(t *testing.T) {
 	if newPipe.getIsClosed() {
 		t.Fatal("closed the stdin of a newer process")
 	}
-	if err := host.Teardown.TeardownAll(t.Context(), 10*time.Millisecond); err != nil {
+	if err := host.Management.Teardown.TeardownAll(t.Context(), 10*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -1010,14 +1012,14 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	wiretest.CreateTestPluginTree(t, tmp)
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 	var started atomic.Int32
-	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
-	first, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
+	host.Supervision.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
+	first, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
-	sup := supervisorOf(host, "org.example.sample")
-	dropEndpoint(host, "org.example.sample")
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
+	sup := supervisorOf(host.Management, "org.example.sample")
+	dropEndpoint(host.Management, "org.example.sample")
 	if !sup.BeginDeactivation(0, testsupport.GetMachine().Now()) {
 		t.Fatal("expected the idle plugin to begin deactivating")
 	}
@@ -1028,7 +1030,7 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	}
 	reply := make(chan result, 1)
 	go func() {
-		endpoint, err := host.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
+		endpoint, err := host.Management.Activation.EnsureActive(t.Context(), "org.example.sample", getTestHolder())
 		reply <- result{endpoint: endpoint, err: err}
 	}()
 
@@ -1051,21 +1053,21 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	if started.Load() != 2 {
 		t.Fatalf("expected the plugin to be launched twice, got %d", started.Load())
 	}
-	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := host.Management.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
 
-func newHostOfProviders(t *testing.T) *container.PluginRoles {
+func newHostOfProviders(t *testing.T) *pluginhost.Host {
 	t.Helper()
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Second); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Second); err != nil {
 			t.Error(err)
 		}
 	})
 	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
-		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{
+		setPlugin(host.Management, id, manifest.Discovered{Manifest: manifest.Manifest{
 			ID:           id,
 			Capabilities: []string{bridge.CapabilitySearchSource},
 		}})
@@ -1078,14 +1080,14 @@ func newHostOfProviders(t *testing.T) *container.PluginRoles {
 func TestFindPluginByCapability_SelectsLowestID(t *testing.T) {
 	host := newHostOfProviders(t)
 	for range 100 {
-		byCapability, ok := host.Registry.FindPluginByCapability(bridge.CapabilitySearchSource)
+		byCapability, ok := host.Management.Registry.FindPluginByCapability(bridge.CapabilitySearchSource)
 		if !ok || byCapability.Manifest.ID != "md.numen.provider-a" {
 			t.Fatalf("by capability found %q, %v", byCapability.Manifest.ID, ok)
 		}
 	}
 
-	host.Settings.SetSettings(map[string]map[string]any{"md.numen.provider-a": {plugin.SettingEnabled: false}})
-	if found, _ := host.Registry.FindPluginByCapability(bridge.CapabilitySearchSource); found.Manifest.ID != "md.numen.provider-b" {
+	host.Management.Settings.SetSettings(map[string]map[string]any{"md.numen.provider-a": {plugin.SettingEnabled: false}})
+	if found, _ := host.Management.Registry.FindPluginByCapability(bridge.CapabilitySearchSource); found.Manifest.ID != "md.numen.provider-b" {
 		t.Errorf("with the lowest disabled, found %q", found.Manifest.ID)
 	}
 }
@@ -1095,13 +1097,13 @@ func TestHost_ListsPluginsInIDOrder(t *testing.T) {
 	want := []string{"md.numen.provider-a", "md.numen.provider-b", "md.numen.provider-c"}
 	for range 20 {
 		var items, infos, statuses []string
-		for _, p := range host.Registry.GetPlugins() {
+		for _, p := range host.Management.Registry.GetPlugins() {
 			items = append(items, p.Manifest.ID)
 		}
-		for _, info := range host.Registry.GetPluginInfos() {
+		for _, info := range host.Management.Registry.GetPluginInfos() {
 			infos = append(infos, info.ID)
 		}
-		for _, status := range host.Registry.GetPluginStatuses() {
+		for _, status := range host.Management.Registry.GetPluginStatuses() {
 			statuses = append(statuses, status.ID)
 		}
 		for name, got := range map[string][]string{"plugins": items, "infos": infos, "statuses": statuses} {
@@ -1119,26 +1121,26 @@ func TestHostEvictIdleKeepsAPluginIdleForLessThanTheThreshold(t *testing.T) {
 	host := newDiscoveredHostAt(t, testsupport.GetMachine(), tmp)
 
 	var started atomic.Int32
-	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
+	host.Supervision.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
 
 	ctx := t.Context()
-	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); err != nil {
+	if _, err := host.Management.Activation.EnsureActive(ctx, "org.example.sample", getTestHolder()); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
-	host.Activation.Release("org.example.sample", endpointOf(host, "org.example.sample").Token, getTestHolder())
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
+	host.Management.Activation.Release("org.example.sample", endpointOf(host.Management, "org.example.sample").Token, getTestHolder())
 
-	evicted := host.Teardown.EvictIdle(ctx, supervision.IdleThreshold, 50*time.Millisecond)
+	evicted := host.Management.Teardown.EvictIdle(ctx, supervision.IdleThreshold, 50*time.Millisecond)
 	if len(evicted) != 0 {
 		t.Fatalf("expected 0 evicted before the idle threshold, got %v", evicted)
 	}
-	sup := supervisorOf(host, "org.example.sample")
+	sup := supervisorOf(host.Management, "org.example.sample")
 	if state := sup.GetState(); state != lifecycle.StateIdle {
 		t.Errorf("expected supervisor to stay StateIdle, got %v", state)
 	}
 
-	if err := host.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
+	if err := host.Management.Teardown.TeardownAll(ctx, 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -1152,19 +1154,19 @@ type runningPlugin struct {
 	perms []string
 }
 
-func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *container.PluginRoles {
+func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *pluginhost.Host {
 	t.Helper()
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
 	for id, one := range plugins {
 		sup := lifecycle.New(nil)
 		sup.Permissions.Set(one.perms)
-		putSupervisor(host, id, sup)
-		putEndpoint(host, id, transport.Endpoint{Host: "127.0.0.1", Port: 1, Token: one.token})
+		putSupervisor(host.Management, id, sup)
+		putEndpoint(host.Management, id, transport.Endpoint{Host: "127.0.0.1", Port: 1, Token: one.token})
 	}
 	return host
 }
@@ -1178,19 +1180,19 @@ func TestHost_GetPluginIDByToken(t *testing.T) {
 	})
 
 	for token, want := range map[string]string{"token-a": "md.numen.a", "token-b": "md.numen.b"} {
-		if got, found := host.Activation.GetPluginIDByToken(token); !found || got != want {
+		if got, found := host.Management.Activation.GetPluginIDByToken(token); !found || got != want {
 			t.Errorf("token %q names %q, %v; want %q", token, got, found, want)
 		}
 	}
 	for _, token := range []string{"", "token-", "token-ab", "other"} {
-		if got, found := host.Activation.GetPluginIDByToken(token); found {
+		if got, found := host.Management.Activation.GetPluginIDByToken(token); found {
 			t.Errorf("token %q names %q", token, got)
 		}
 	}
-	if err := host.Activation.CheckPluginPermission("md.numen.b", manifest.PermissionIndexRead); !errors.Is(err, plugindomain.ErrPermissionDenied) {
+	if err := host.Management.Activation.CheckPluginPermission("md.numen.b", manifest.PermissionIndexRead); !errors.Is(err, plugindomain.ErrPermissionDenied) {
 		t.Errorf("a plugin without the permission was allowed: %v", err)
 	}
-	if err := host.Activation.CheckPluginPermission("md.numen.a", manifest.PermissionIndexRead); err != nil {
+	if err := host.Management.Activation.CheckPluginPermission("md.numen.a", manifest.PermissionIndexRead); err != nil {
 		t.Errorf("a plugin with the permission failed: %v", err)
 	}
 }
@@ -1198,26 +1200,26 @@ func TestHost_GetPluginIDByToken(t *testing.T) {
 // The host endpoint serves only once something answers the calls on models, and
 // stops when the host does.
 func TestHost_OpenHostEndpointServesOnceModelCallsSet(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	lender, _ := lendEndpoint(host, hostendpoint.Address)
-	if got, err := host.Services.OpenHostEndpoint(t.Context()); err != nil || got != 0 {
+	if got, err := host.Supervision.Services.OpenHostEndpoint(t.Context()); err != nil || got != 0 {
 		t.Fatalf("without model calls: port %d, %v", got, err)
 	}
 
 	lender.Update(func(l *hostendpoint.Lent) { l.ModelCalls = noModelCalls{} })
-	first, err := host.Services.OpenHostEndpoint(t.Context())
+	first, err := host.Supervision.Services.OpenHostEndpoint(t.Context())
 	if err != nil || first <= 0 {
 		t.Fatalf("with model calls: port %d, %v", first, err)
 	}
-	again, err := host.Services.OpenHostEndpoint(t.Context())
+	again, err := host.Supervision.Services.OpenHostEndpoint(t.Context())
 	if err != nil || again != first {
 		t.Errorf("a second call opened port %d, %v, want %d", again, err, first)
 	}
 
-	if err := host.Teardown.TeardownAll(t.Context(), time.Millisecond); err != nil {
+	if err := host.Management.Teardown.TeardownAll(t.Context(), time.Millisecond); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := host.Services.OpenHostEndpoint(t.Context()); got != 0 {
+	if got, err := host.Supervision.Services.OpenHostEndpoint(t.Context()); got != 0 {
 		t.Errorf("a closed host opened port %d, %v", got, err)
 	}
 }
@@ -1239,20 +1241,20 @@ func TestGetPluginVars_CarriesHostPort(t *testing.T) {
 
 // A plugin process launched while the host endpoint serves receives its port.
 func TestGetLaunchVars_ReportsHostPort(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
 	lender, _ := lendEndpoint(host, hostendpoint.Address)
 	lender.Update(func(l *hostendpoint.Lent) { l.ModelCalls = noModelCalls{} })
 
-	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Mode.GetVaultPath(), 5, "t")
+	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	served, err := host.Services.OpenHostEndpoint(t.Context())
+	served, err := host.Supervision.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1263,18 +1265,18 @@ func TestGetLaunchVars_ReportsHostPort(t *testing.T) {
 
 // An endpoint that cannot start is reported and does not stop a plugin from launching.
 func TestGetLaunchVars_HostEndpointStartFailureDoesNotStopLaunch(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
 	lender, _ := lendEndpoint(host, "127.0.0.1:-1")
 	lender.Update(func(l *hostendpoint.Lent) { l.ModelCalls = noModelCalls{} })
 	var reported []error
-	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
+	host.Supervision.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
-	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Mode.GetVaultPath(), 5, "t")
+	vars, err := host.Supervision.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Management.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatalf("the launch failed: %v", err)
 	}
@@ -1291,9 +1293,9 @@ func TestGetLaunchVars_HostEndpointStartFailureDoesNotStopLaunch(t *testing.T) {
 // The host endpoint binds the loopback interface and rejects any address that
 // would bind more.
 func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
-	host := container.NewPluginRoles(testsupport.GetMachine(), "desktop.editor")
+	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
@@ -1307,7 +1309,7 @@ func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
 		}
 	}
 	t.Cleanup(func() {
-		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Management.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
@@ -1324,14 +1326,14 @@ func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
 }
 
 func TestHostProcessLimitsConfig(t *testing.T) {
-	h := container.NewPluginRoles(testsupport.GetMachine(), "test")
-	if h.Processes.GetProcessLimits() != process.DefaultLimits() {
-		t.Fatalf("NewHost holds %v, want the default limits", h.Processes.GetProcessLimits())
+	_, supervision := container.NewPluginRoles(testsupport.GetMachine(), "test")
+	if supervision.Processes.GetProcessLimits() != process.DefaultLimits() {
+		t.Fatalf("NewHost holds %v, want the default limits", supervision.Processes.GetProcessLimits())
 	}
 
 	customLimits := process.Limits{CPULimitSeconds: 60}
-	h.Processes.SetProcessLimits(customLimits)
-	limits := h.Processes.GetProcessLimits()
+	supervision.Processes.SetProcessLimits(customLimits)
+	limits := supervision.Processes.GetProcessLimits()
 
 	if limits != customLimits {
 		t.Fatalf("got %v, want %v", limits, customLimits)

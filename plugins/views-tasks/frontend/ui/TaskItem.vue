@@ -12,11 +12,10 @@
  * last source a running task named, so a report without one neither removes a line from the row
  * nor moves the row from under the pointer.
  *
- * A notice has an information icon on the left, all of its text on as many lines as it needs, and
- * a dismiss button with a cross that is always visible. It has no ring.
+ * A notice wraps its text and shows a dismiss button.
  */
 import { computed, ref, watch } from 'vue'
-import { Info, RotateCw, X } from '@lucide/vue'
+import { RotateCw, X } from '@lucide/vue'
 import { Button, Tooltip, useTooltip } from '@numen/ui'
 import type { BackgroundTask } from '@numen/plugin-sdk'
 import { getProgress } from '../lib/summary'
@@ -101,8 +100,6 @@ function onRunAction() {
     @pointerenter="onPointerEnter"
     @pointerleave="onPointerLeave"
   >
-    <Info v-if="isNotice" class="task-item__notice-icon" :size="14" aria-hidden="true" />
-
     <div class="task-item__content">
       <span
         class="task-item__label"

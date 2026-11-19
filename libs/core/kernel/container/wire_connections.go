@@ -1,6 +1,9 @@
 package container
 
 import (
+	"cmp"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
@@ -12,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
-func hasPluginHost(c pluginsWiring) bool {
-	return c.PluginHost.Views.Types != nil
+func hasPluginHost(settingsDeps settingsWiring) bool {
+	return settingsDeps.ConnectionTypes != nil
 }
 
 func openConnectionRepository(c settingsWiring) *settingsadapter.ConnectionRepository {
@@ -25,43 +28,44 @@ func openConnectionRepository(c settingsWiring) *settingsadapter.ConnectionRepos
 	)
 }
 
-func openConnectionRows(c pluginsWiring) *settingsadapter.ConnectionRows {
-	s := c.settings
+func openConnectionRows(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *settingsadapter.ConnectionRows {
+	s := settingsDeps
 	return settingsadapter.NewConnectionRows(settingsadapter.ConnectionRowsSource{
 		Connections: openConnectionRepository(s),
-		Detected:    openDetection(c),
-		Plugins:     settingsPlugins(s),
+		Detected:    openDetection(install, exec, settingsDeps, vaultDeps),
+		Plugins:     s.Infos.GetPluginInfos,
 		Declared:    getDeclarations(s),
 		ReadStored:  settingsStore(s).ReadUncheckedFile,
 		Write:       getSettingsWriter(s),
-		Refresh:     c.PluginHost.Configuration.Refresh,
+		Refresh:     install.Configuration.Refresh,
 		Report:      s.ErrorHandler,
 	})
 }
 
-func openConnectionDeps(c pluginsWiring) (connection.Deps, bool) {
-	if !hasPluginHost(c) {
+func openConnectionDeps(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) (connection.Deps, bool) {
+	if !hasPluginHost(settingsDeps) {
 		return connection.Deps{}, false
 	}
-	deps := connection.NewDeps(openConnectionRepository(c.settings), c.PluginHost.Views.Types, c.KeyStore, openConnectionRows(c), openDetection(c))
-	if options := openRowOptions(c, deps); options != nil {
+	deps := connection.NewDeps(openConnectionRepository(settingsDeps), settingsDeps.ConnectionTypes, install.KeyStore,
+		openConnectionRows(install, exec, settingsDeps, vaultDeps), openDetection(install, exec, settingsDeps, vaultDeps))
+	if options := openRowOptions(install, exec, deps); options != nil {
 		deps = deps.AddOptionLists(options)
 	}
 	return deps, true
 }
 
-func openDetection(c pluginsWiring) connectionport.Detected {
-	detection := c.PluginHost.Detection
+func openDetection(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) connectionport.Detected {
+	detection := install.Endpoints.Detection
 	if detection == nil {
-		source := providerbridge.NewQuestionSource(c.PluginHost.Runtime.Activator)
-		return providerbridge.NewDetection(c.PluginHost.Views.Types, source, c.vault.Clock)
+		source := providerbridge.NewQuestionSource(exec.Runtime.Activator)
+		return providerbridge.NewDetection(settingsDeps.ConnectionTypes, source, vaultDeps.Clock)
 	}
-	detection.Follow(func() { refreshSettingEvents(c.settings) }, c.settings.ErrorHandler)
+	detection.Follow(func() { refreshSettingEvents(settingsDeps) }, settingsDeps.ErrorHandler)
 	return detection
 }
 
-func openConnectionUseCases(c pluginsWiring) *windowconnection.UseCases {
-	deps, ok := openConnectionDeps(c)
+func openConnectionUseCases(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *windowconnection.UseCases {
+	deps, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return nil
 	}
@@ -71,34 +75,31 @@ func openConnectionUseCases(c pluginsWiring) *windowconnection.UseCases {
 			Delete: connection.NewDelete(deps),
 		},
 		Reads: windowconnection.Reads{
-			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, getOperationTitles(c.PluginHost.Views)),
-			RowOptions: openRowOptions(c, deps),
+			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, cmp.Or[connectionport.OperationTitles](install.OperationTitles, none.OperationTitles{})),
+			RowOptions: openRowOptions(install, exec, deps),
 		},
 	}
 }
 
-func openModelCalls(c pluginsWiring) connectionport.ModelCalls {
-	if !hasPluginHost(c) {
-		return nil
-	}
-	return modelcall.NewForwardedCalls(func() connectionport.ModelCalls { return c.PluginHost.Endpoint.GetModelCalls() })
+func openModelCalls(install pluginInstall, settingsDeps settingsWiring) connectionport.ModelCalls {
+	return getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
 }
 
-func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
-	deps, ok := openConnectionDeps(c)
+func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, notices connectionport.ReportSetAside) {
+	deps, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return
 	}
 	calls := modelcall.NewCalls(
 		modelcall.Connections{
 			Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
-			Rows:   connection.NewListRows(deps, openConnectionRows(c)).Execute,
-			Titles: c.PluginHost.Views.Operations,
+			Rows:   connection.NewListRows(deps, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute,
+			Titles: install.OperationTitles,
 		},
-		openCallSource(c, deps), c.vault.Clock, c.vault.Clock.Wait, notices,
+		openCallSource(install, exec, deps), vaultDeps.Clock, vaultDeps.Clock.Wait, notices,
 	)
-	lists := openRowLists(c)
-	c.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
+	lists := openRowLists(install, exec, settingsDeps, vaultDeps)
+	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) {
 		l.ModelCalls = calls
 		if lists != nil {
 			l.RowLists = lists
@@ -109,47 +110,60 @@ func setModelCalls(c pluginsWiring, notices connectionport.ReportSetAside) {
 // GetConnectionCalls is the calls plugin views make through their connections, for a window that serves
 // ConnectionCallService without the routes of the editor. It is nil where the installation runs no
 // plugins.
-func GetConnectionCalls(c Config) connectionport.ModelCalls {
-	return openModelCalls(plugins(c))
+func GetConnectionCalls(prefs *PluginPreferences, endpoints *PluginEndpoints) connectionport.ModelCalls {
+	if prefs == nil || endpoints == nil {
+		return nil
+	}
+	return getForwardedCalls(prefs.Views.Types, endpoints.Endpoint)
 }
 
-func openRowLists(c pluginsWiring) connectioncall.Rows {
-	deps, ok := openConnectionDeps(c)
+func getForwardedCalls(types connectionport.Types, endpoint *hostendpoint.Services) connectionport.ModelCalls {
+	if types == nil {
+		return nil
+	}
+	return modelcall.NewForwardedCalls(func() connectionport.ModelCalls { return endpoint.GetModelCalls() })
+}
+
+func openRowLists(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) connectioncall.Rows {
+	deps, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return nil
 	}
 	resolve := connection.NewResolve(deps).Execute
-	options := openRowOptions(c, deps)
+	options := openRowOptions(install, exec, deps)
 	if options == nil {
 		return nil
 	}
-	return modelcall.NewRows(resolve, connection.NewListRows(deps, openConnectionRows(c)).Execute, options.ListOptions)
+	return modelcall.NewRows(resolve, connection.NewListRows(deps, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, options.ListOptions)
 }
 
 // GetConnectionRows is the listing of the rows plugin views offer a choice of, for a window that serves
 // ConnectionCallService without the routes of the editor. It is nil where the installation runs no plugins.
-func GetConnectionRows(c Config) connectioncall.Rows {
-	return openRowLists(plugins(c))
+func GetConnectionRows(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) connectioncall.Rows {
+	exec = getPluginExecution(exec)
+	install := newPluginInstall(c, prefs, endpoints, res)
+	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
+	return openRowLists(install, exec, settingsDeps, vaultDeps)
 }
 
-func openRowOptions(c pluginsWiring, deps connection.Deps) *rowoptions.Options {
-	if c.PluginHost.RowOptions == nil || c.PluginHost.RunningProviders == nil {
+func openRowOptions(install pluginInstall, exec *PluginExecution, deps connection.Deps) *rowoptions.Options {
+	if install.Endpoints.RowOptions == nil || install.Endpoints.RunningProviders == nil {
 		return nil
 	}
 	return rowoptions.NewOptions(rowoptions.Deps{
 		Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
-		Source: providerbridge.NewQuestionSource(c.PluginHost.Runtime.Activator), Running: c.PluginHost.RunningProviders,
-		Lists: c.PluginHost.RowOptions, Titles: c.PluginHost.Views.Operations,
+		Source: providerbridge.NewQuestionSource(exec.Runtime.Activator), Running: install.Endpoints.RunningProviders,
+		Lists: install.Endpoints.RowOptions, Titles: install.OperationTitles,
 		Grants: connection.NewGetGrantRevision(deps).Execute,
 	})
 }
 
-func openCallSource(c pluginsWiring, deps connection.Deps) connectionport.ProviderSource {
-	var source connectionport.ProviderSource = providerbridge.NewSource(c.PluginHost.Runtime.Activator)
-	if c.PluginHost.Detection != nil {
-		source = providerbridge.NewRedetectingSource(source, c.PluginHost.Detection)
+func openCallSource(install pluginInstall, exec *PluginExecution, deps connection.Deps) connectionport.ProviderSource {
+	var source connectionport.ProviderSource = providerbridge.NewSource(exec.Runtime.Activator)
+	if install.Endpoints.Detection != nil {
+		source = providerbridge.NewRedetectingSource(source, install.Endpoints.Detection)
 	}
-	if options := openRowOptions(c, deps); options != nil {
+	if options := openRowOptions(install, exec, deps); options != nil {
 		source = providerbridge.NewCallReportingSource(source, options.RefreshRunning)
 	}
 	return source

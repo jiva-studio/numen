@@ -29,10 +29,8 @@ import (
 func TestWorker(t *testing.T) {
 	indexing.RunWorkerTests(t, func(t *testing.T) (indexing.OpenReading, vaultport.VaultReaders, *indexing.WorkerIndex) {
 		t.Helper()
-		cfg := container.NewConfig(container.Config{
-			Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")},
-		})
-		db, err := container.OpenIndex(cfg, t.Context())
+		cfg := container.Config{Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db")}}
+		db, err := container.OpenIndex(cfg, container.NewResources(), t.Context())
 		if err != nil {
 			t.Fatal(err)
 		}
