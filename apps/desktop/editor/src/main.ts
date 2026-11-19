@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import { createKeepaliveTransport, createOriginTransport } from '@numen/core-client'
 import { reportFailure, runInBackground } from '@numen/ui'
 import { openExternalUrl } from '@numen/workbench'
-import { interceptExternalLinks } from '../../window/externalLink'
+import { interceptExternalLinks } from './app/externalLink'
 import { createRoot } from './app/createRoot'
 import { loadFrameRuntime } from './shared/api/runtime'
 

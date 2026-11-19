@@ -153,7 +153,6 @@ desktop:
   - tests/e2e/cli/**
   - '!apps/desktop/editor/**'
   - '!apps/desktop/flashcards/**'
-  - '!apps/desktop/window/**'
   - '!**/*.md'
 mobile:
   - *go_base
@@ -192,7 +191,6 @@ desktop_fe:
   - .github/workflows/frontend.yml
   - apps/desktop/editor/**
   - apps/desktop/flashcards/**
-  - apps/desktop/window/**
   - tests/e2e/desktop/**
   - tests/acceptance/**
   - features/**
