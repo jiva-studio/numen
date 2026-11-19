@@ -243,7 +243,7 @@ describe('the notes of the vault a plugin is handed', () => {
       listFileKinds,
       search,
       pluginNotes,
-      ...createVaultNotes({
+      notes: createVaultNotes({
         notes: api.vault.note,
         getFileKinds: api.vault.file.getFileKinds,
         search,
@@ -257,10 +257,11 @@ describe('the notes of the vault a plugin is handed', () => {
     const { notes, pluginNotes } = createNotes()
 
     expect(await notes.read('Root.md')).toStrictEqual({ body: 'Prose.' })
-    await notes.write('Root.md', 'More prose.')
+    const observed = { body: 'Prose.', at: 'first' }
+    expect(await notes.write('Root.md', 'More prose.', observed)).toBe('next')
 
     expect(pluginNotes.readNote).toHaveBeenCalledWith('Root.md')
-    expect(pluginNotes.writeNote).toHaveBeenCalledWith('Root.md', 'More prose.')
+    expect(pluginNotes.writeIfUnchanged).toHaveBeenCalledWith('Root.md', 'More prose.', observed)
   })
 
   it('reads what is around a note and the headings of notes', async () => {
@@ -299,7 +300,7 @@ describe('the notes of the vault a plugin is handed', () => {
   })
 
   it('keeps the depth 1 related notes of a path in memory until cleared', async () => {
-    const { notes, listRelatedNotes, clearRelatedNotes } = createNotes()
+    const { notes, listRelatedNotes } = createNotes()
 
     await notes.listRelatedNotes(['Root.md', 'Other.md'], 1)
     const [cachedRoot, loadedThird] = await notes.listRelatedNotes(['Root.md', 'Third.md'], 1)
@@ -312,7 +313,7 @@ describe('the notes of the vault a plugin is handed', () => {
     expect(cachedRoot?.focus.path).toBe('Root.md')
     expect(loadedThird?.focus.path).toBe('Third.md')
 
-    clearRelatedNotes()
+    notes.clearRelatedNotes()
     await notes.listRelatedNotes(['Root.md'], 1)
     expect(listRelatedNotes).toHaveBeenCalledTimes(3)
   })

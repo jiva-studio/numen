@@ -45,8 +45,7 @@ const createServices = () => {
     read: vi.fn(() => Promise.resolve({ body: 'Example prose.' })),
     readProperties: vi.fn(() => Promise.resolve({ title: 'Example' })),
     createUntitledNote: vi.fn(() => Promise.resolve('Untitled.md')),
-    write: vi.fn(() => Promise.resolve()),
-    writeIfUnchanged: vi.fn(() => Promise.resolve('next')),
+    write: vi.fn(() => Promise.resolve('next')),
   } as unknown as VaultNotes
   const relations = {
     roles: ['parent', 'child', 'jump'],
@@ -104,9 +103,7 @@ type Call = (services: HostServices) => unknown
 
 const NOTE_WRITES: Record<string, Call> = {
   createUntitledNote: (c) => c.vault.notes!.createUntitledNote(),
-  write: (c) => c.vault.notes!.write('a.md', 'Prose.'),
-  writeIfUnchanged: (c) =>
-    c.vault.notes!.writeIfUnchanged('a.md', 'Prose.', { body: '', at: 'original' }),
+  write: (c) => c.vault.notes!.write('a.md', 'Prose.', { body: '', at: 'original' }),
 }
 
 const NOTE_READS: Record<string, Call> = {
@@ -265,9 +262,10 @@ describe('a note a plugin reads and writes', () => {
   it('is written and not read with vault:write and without vault:read', async () => {
     const { context, notes } = createContext(['vault:write'])
 
-    await context.host.vault.notes!.write('Notes/Example.md', 'New prose.')
+    const observed = { body: 'Example prose.', at: 'first' }
+    await context.host.vault.notes!.write('Notes/Example.md', 'New prose.', observed)
 
-    expect(notes.write).toHaveBeenCalledWith('Notes/Example.md', 'New prose.')
+    expect(notes.write).toHaveBeenCalledWith('Notes/Example.md', 'New prose.', observed)
     await expect(context.host.vault.notes!.read('Notes/Example.md')).rejects.toThrowError(
       'Plugin "md.numen.sample" lacks required permission "vault:read" for notes.read',
     )

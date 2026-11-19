@@ -80,17 +80,15 @@ export interface VaultAccessDeps {
 /** The notes, the links and the files of the vault. */
 export function createVaultAccess(
   deps: VaultAccessDeps,
-): Pick<PluginServices, 'relations' | 'files'> & CachedVaultNotes {
-  const { notes, clearRelatedNotes } = createVaultNotes({
-    notes: deps.notes,
-    getFileKinds: deps.files.getFileKinds,
-    search: deps.search,
-    making: deps.making,
-    pluginNotes: deps.pluginNotes,
-  })
+): Pick<PluginServices, 'relations' | 'files'> & { readonly notes: CachedVaultNotes } {
   return {
-    notes,
-    clearRelatedNotes,
+    notes: createVaultNotes({
+      notes: deps.notes,
+      getFileKinds: deps.files.getFileKinds,
+      search: deps.search,
+      making: deps.making,
+      pluginNotes: deps.pluginNotes,
+    }),
     relations: deps.relations,
     files: createVaultFiles({
       listFiles: deps.files.listFiles,

@@ -23,7 +23,7 @@ afterEach(() => {
 
 const createNotes = (body = 'A bell over the door.\n') => ({
   read: vi.fn(() => Promise.resolve({ body, at: 'first' })),
-  writeIfUnchanged: vi.fn((_path: string, _text: string, _observed: { body: string; at: string }) =>
+  write: vi.fn((_path: string, _text: string, _observed: { body: string; at: string }) =>
     Promise.resolve('next'),
   ),
 })
@@ -61,22 +61,16 @@ describe('createNoteEditorView', () => {
     editor.dispatch({ changes: { from: 0, insert: 'Rain. ' } })
     await flushPromises()
 
-    expect(notes.writeIfUnchanged).toHaveBeenLastCalledWith(
-      'Shed.md',
-      'Rain. A bell over the door.\n',
-      { body: 'A bell over the door.\n', at: 'first' },
-    )
+    expect(notes.write).toHaveBeenLastCalledWith('Shed.md', 'Rain. A bell over the door.\n', {
+      body: 'A bell over the door.\n',
+      at: 'first',
+    })
   })
 
   it('keeps an external edit on disk and shows the conflict alongside the local draft', async () => {
     let disk = 'original'
-    const notes = {
-      ...createNotes(disk),
-      write: async (_path: string, text: string) => {
-        disk = text
-      },
-    }
-    notes.writeIfUnchanged.mockImplementation(async (_path, text, observed) => {
+    const notes = createNotes(disk)
+    notes.write.mockImplementation(async (_path, text, observed) => {
       if (observed.body !== disk) throw new Error('The note changed on disk.')
       disk = text
       return 'next'
@@ -93,7 +87,7 @@ describe('createNoteEditorView', () => {
   it('uses the fingerprint returned by the preceding save for an edit typed in flight', async () => {
     const notes = createNotes('a')
     let finish!: (at: string) => void
-    notes.writeIfUnchanged.mockImplementationOnce(
+    notes.write.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           finish = resolve
@@ -102,10 +96,10 @@ describe('createNoteEditorView', () => {
     const editor = await open(notes)
     editor.dispatch({ changes: { from: 1, insert: 'b' } })
     editor.dispatch({ changes: { from: 2, insert: 'c' } })
-    expect(notes.writeIfUnchanged).toHaveBeenCalledTimes(1)
+    expect(notes.write).toHaveBeenCalledTimes(1)
     finish('second')
     await flushPromises()
-    expect(notes.writeIfUnchanged).toHaveBeenLastCalledWith('Shed.md', 'abc', {
+    expect(notes.write).toHaveBeenLastCalledWith('Shed.md', 'abc', {
       body: 'ab',
       at: 'second',
     })

@@ -137,14 +137,12 @@ export interface VaultNotesDeps {
 const FOUND_LIMIT = 20
 
 /** The notes of the vault as a plugin reads and writes them, with an action to forget cached related notes when the vault changes. */
-export interface CachedVaultNotes {
-  readonly notes: VaultNotes
+export interface CachedVaultNotes extends VaultNotes {
   readonly clearRelatedNotes: () => void
 }
 
-function createRelatedNotesCache(
-  notes: VaultNotesDeps['notes'],
-): Pick<VaultNotes, 'listRelatedNotes'> & Pick<CachedVaultNotes, 'clearRelatedNotes'> {
+export function createVaultNotes(deps: VaultNotesDeps): CachedVaultNotes {
+  const { notes, search, making, pluginNotes } = deps
   type DepthOneGraph = Awaited<ReturnType<VaultNotes['listRelatedNotes']>>[number]
   const relatedAtDepthOne = new Map<string, DepthOneGraph>()
   const inFlightAtDepthOne = new Map<string, Promise<DepthOneGraph | undefined>>()
@@ -194,24 +192,12 @@ function createRelatedNotesCache(
           },
       )
     },
-  }
-}
-
-export function createVaultNotes(deps: VaultNotesDeps): CachedVaultNotes {
-  const { notes, search, making, pluginNotes } = deps
-  const cache = createRelatedNotesCache(notes)
-  return {
-    clearRelatedNotes: cache.clearRelatedNotes,
-    notes: {
-      listRelatedNotes: cache.listRelatedNotes,
-      getHeadings: (paths) => notes.listHeadings(paths),
-      findNotes: async (query, limit = FOUND_LIMIT) =>
-        (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),
-      createUntitledNote: () => making.createUntitledNote(''),
-      read: (path) => pluginNotes.readNote(path),
-      write: (path, body) => pluginNotes.writeNote(path, body),
-      writeIfUnchanged: pluginNotes.writeIfUnchanged,
-      readProperties: async (path) => (await deps.getFileKinds([path])).get(path)?.properties ?? {},
-    },
+    getHeadings: (paths) => notes.listHeadings(paths),
+    findNotes: async (query, limit = FOUND_LIMIT) =>
+      (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),
+    createUntitledNote: () => making.createUntitledNote(''),
+    read: (path) => pluginNotes.readNote(path),
+    write: pluginNotes.writeIfUnchanged,
+    readProperties: async (path) => (await deps.getFileKinds([path])).get(path)?.properties ?? {},
   }
 }

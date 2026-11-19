@@ -190,7 +190,6 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       createUntitledNote: requirePermissionsAsync(WRITE),
       read: requirePermissionsAsync(READ),
       write: requirePermissionsAsync(WRITE),
-      writeIfUnchanged: requirePermissionsAsync(WRITE),
       readProperties: requirePermissionsAsync(READ),
     },
     relations: {

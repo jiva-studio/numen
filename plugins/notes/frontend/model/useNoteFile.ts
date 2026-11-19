@@ -5,7 +5,7 @@ const getErrorMessage = (error: Caught): string =>
   error instanceof Error ? error.message : String(error)
 
 /** Each save starts from the last version read or successfully written by this editor. */
-export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'writeIfUnchanged'>) {
+export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'write'>) {
   const body = ref('')
   const errorMessage = ref('')
   const isLoading = ref(true)
@@ -18,7 +18,7 @@ export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'writ
     try {
       while (body.value !== observed.body) {
         const text: string = body.value
-        const at = await notes.writeIfUnchanged(path, text, observed)
+        const at = await notes.write(path, text, observed)
         observed = { body: text, at }
         errorMessage.value = ''
       }
