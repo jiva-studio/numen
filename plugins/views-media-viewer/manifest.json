@@ -34,6 +34,7 @@
           "audio/mp4",
           "audio/vnd.wave",
           "audio/ogg",
+          "audio/webm",
           "audio/aac",
           "audio/flac",
           "video/mp4",

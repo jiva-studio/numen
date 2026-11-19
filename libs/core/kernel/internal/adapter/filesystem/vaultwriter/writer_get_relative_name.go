@@ -64,7 +64,8 @@ func (w *VaultWriter) isWritableNote(path string) bool {
 	return w.opts.IsNote(pathpkg.Base(clean)) && w.isWritableFile(clean)
 }
 
-func (w *VaultWriter) isWritableFile(clean string) bool {
+func (w *VaultWriter) isWritableFile(path string) bool {
+	clean := pathpkg.Clean(filepath.ToSlash(path))
 	if w.ignored.MatchesPath(clean) {
 		return false
 	}
@@ -152,12 +153,9 @@ func (w VaultWriters) CreateFile(ctx context.Context, v domain.Vault, path strin
 	if err != nil {
 		return err
 	}
-	target, err := writer.getContainedPath(path)
+	target, err := writer.resolveWritableFile(path, writer.isWritableFile)
 	if err != nil {
 		return err
-	}
-	if !writer.isWritableFile(pathpkg.Clean(filepath.ToSlash(path))) {
-		return fmt.Errorf("%s: %w", path, edit.ErrNotANote)
 	}
 	return writer.createFile(path, target, content)
 }

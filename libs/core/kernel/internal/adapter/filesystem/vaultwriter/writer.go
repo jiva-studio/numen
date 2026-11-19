@@ -66,7 +66,7 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, st
 	if ctx.Err() != nil {
 		return vault.WriteResult{}, ctx.Err()
 	}
-	target, err := w.resolveNoteFile(path)
+	target, err := w.resolveWritableFile(path, w.isWritableNote)
 	if err != nil {
 		return vault.WriteResult{}, err
 	}
@@ -237,21 +237,20 @@ func (w *VaultWriter) resolvePath(path string) (string, error) {
 	return target, nil
 }
 
-func (w *VaultWriter) resolveNoteFile(path string) (string, error) {
+func (w *VaultWriter) resolveWritableFile(path string, isWritable func(string) bool) (string, error) {
 	resolved, err := vaultconfig.ResolveLinks(w.root, path, w.opts.GetServiceDir())
 	if err != nil {
 		return "", err
 	}
-	if !w.isWritableNote(path) {
+	if !isWritable(path) {
 		return "", fmt.Errorf("%s: %w", path, edit.ErrNotANote)
 	}
-	// The note rules apply to the resolved path as well as to the requested name:
-	// a link is a name for another location, and a rename replaces that location.
+	// Both the requested and resolved path must be writable.
 	inside, err := filepath.Rel(w.root, resolved)
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", path, vault.ErrOutside)
 	}
-	if !w.isWritableNote(inside) {
+	if !isWritable(inside) {
 		return "", fmt.Errorf("%s: %w", inside, edit.ErrNotANote)
 	}
 	return resolved, nil
