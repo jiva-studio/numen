@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"errors"
 	"io"
 	"time"
 
@@ -20,7 +19,6 @@ import (
 func (c Config) OpenEditor(
 	exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening,
 ) (*OpenedWindow, error) {
-	exec = getPluginExecution(exec)
 	ports, err := c.registry()
 	if err != nil {
 		return nil, err
@@ -29,26 +27,12 @@ func (c Config) OpenEditor(
 	if err != nil {
 		return nil, err
 	}
-	install := newPluginInstall(c, endpoints, res)
-	settingsDeps, searchDeps, vaultDeps := openIndexedVaultSearch(c, exec, prefs, endpoints, res, db)
-	startup := windowStartup{opening: opening, ports: ports, db: db, entries: getLogEntries(res)}
-	first, err := getFirstWindowVault(startup)
-	if err != nil {
-		return nil, err
-	}
-	plugins := openWindowPlugins(install, exec, settingsDeps, vaultDeps, db)
-	opened, closeEmbedder := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps)
-	mountServices(opened, install, exec, settingsDeps, searchDeps, vaultDeps)
-	if err := startWindow(ctx, opened, first); err != nil {
-		return nil, errors.Join(err, closeEmbedder(), db.Close())
-	}
-
-	return connectEditor(install, exec, vaultDeps, ports, db, opened)
+	return c.openWindow(exec, prefs, endpoints, res, ctx, windowStartup{opening: opening, ports: ports, db: db, isEditor: true})
 }
 
 func connectEditor(install pluginInstall, exec *PluginExecution, vaultDeps vaultWiring, ports vaultregistry.Ports, db *Index, opened *windowWiring) (*OpenedWindow, error) {
 	state := opened.state
-	setPluginVaultPath(exec.Runtime.PluginBinding, state.GetCurrentVault().Path)
+	exec.Runtime.PluginBinding.SetVaultPath(state.GetCurrentVault().Path)
 	pluginNotes := getNoteChanges(*opened.cases.PluginNotes)
 	hooks := PluginVaultHooks{Written: state.Writes.NoteWritten, Notes: &pluginNotes}
 	if err := installPluginVault(install, vaultDeps, ports, db, state.GetShownVault, hooks); err != nil {
@@ -90,7 +74,7 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	}
 	opening.API.Window = shell.NewWindow(opening.Target, nil)
 	install := newPluginInstall(c, endpoints, res)
-	settingsDeps, _, vaultDeps := openVaultSearch(c, exec, prefs, endpoints, res)
+	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, endpoints, res, nil)
 
 	api, log := opening.API, opening.Log
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)

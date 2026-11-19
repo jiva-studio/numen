@@ -33,7 +33,7 @@ func openConnectionRows(install pluginInstall, exec *PluginExecution, settingsDe
 	return settingsadapter.NewConnectionRows(settingsadapter.ConnectionRowsSource{
 		Connections: openConnectionRepository(s),
 		Detected:    openDetection(install, exec, settingsDeps, vaultDeps),
-		Plugins:     settingsPlugins(s),
+		Plugins:     s.Infos.GetPluginInfos,
 		Declared:    getDeclarations(s),
 		ReadStored:  settingsStore(s).ReadUncheckedFile,
 		Write:       getSettingsWriter(s),
@@ -142,7 +142,7 @@ func openRowLists(install pluginInstall, exec *PluginExecution, settingsDeps set
 func GetConnectionRows(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) connectioncall.Rows {
 	exec = getPluginExecution(exec)
 	install := newPluginInstall(c, endpoints, res)
-	settingsDeps, _, vaultDeps := openVaultSearch(c, exec, prefs, endpoints, res)
+	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, endpoints, res, nil)
 	return openRowLists(install, exec, settingsDeps, vaultDeps)
 }
 

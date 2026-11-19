@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
@@ -87,25 +87,17 @@ func InitializePluginRoles(indexPath string, res *Resources, management *PluginM
 	return err
 }
 
-func setPluginVaultPath(binding pluginport.PluginBinding, path string) {
-	binding.SetVaultPath(path)
-}
-
 // StopPlugins cancels pending dependencies before stopping plugin processes.
 func StopPlugins(watch PluginWatch, ctx context.Context) error {
 	watch.CancelDependencies()
 	return watch.TeardownAll(ctx, pluginGracePeriod)
 }
 
-func getPluginCommands(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) PluginCommandUseCases {
-	return newPluginCommands(exec, settingsDeps, vaultDeps, exec, nil)
-}
-
-func newPluginCommands(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, host *PluginExecution, versions plugincommand.VersionItems) PluginCommandUseCases {
+func newPluginCommands(settingsDeps settingsWiring, vaultDeps vaultWiring, host *PluginExecution, versions plugincommand.VersionItems) PluginCommandUseCases {
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := getRuntimeManifests(host.Runtime), when.NewConditions()
 	list := plugincommand.NewList(commands, conditions)
-	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(vaultDeps), getWhenConfig(exec, settingsDeps), conditions)
+	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch, pluginsNewNoteReader(vaultDeps), getWhenConfig(settingsDeps), conditions)
 	return PluginCommandUseCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, host.Watch),
@@ -121,11 +113,7 @@ func GetPluginServices(runtime PluginRuntime) editor.PluginServices {
 }
 
 func signalFailureClears(exec *PluginExecution, settingsDeps settingsWiring) {
-	exec.Runtime.SetOnFailureCleared(func(string) { signalPluginChanges(settingsDeps.PluginChanges) })
-}
-
-func setPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks, models *run.Lock) {
-	pluginsOpenPluginWork(install, exec, tasks, models)
+	exec.Runtime.SetOnFailureCleared(func(string) { settingsDeps.PluginChanges.Signal() })
 }
 
 func pluginsOpenPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks, models *run.Lock) *run.PluginWork {
@@ -149,10 +137,6 @@ func setPluginVault(lender *hostendpoint.Lender, v *pluginvault.Access) {
 
 func setPluginVaultList(lender *hostendpoint.Lender, list pluginvault.List) {
 	lender.Update(func(l *hostendpoint.Lent) { l.VaultList = list })
-}
-
-func openPluginCache(path string) (*appstate.PluginCaches, error) {
-	return appstate.OpenPluginCachesIn(path)
 }
 
 func newDependencyRegistry(clock machineport.Clock, defaultDir string) pluginport.DependencyRegistry {

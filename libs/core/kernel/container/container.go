@@ -222,14 +222,6 @@ func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences,
 	return settings, search, vaultWith(res, base, settings, search)
 }
 
-func openVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) (settingsWiring, searchWiring, vaultWiring) {
-	return buildVaultSearch(c, exec, prefs, endpoints, res, nil)
-}
-
-func openIndexedVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, db *Index) (settingsWiring, searchWiring, vaultWiring) {
-	return buildVaultSearch(c, exec, prefs, endpoints, res, newTextVersions(vaultBase(c, getRunningExecution(exec, c.SafeMode), getPluginEndpoints(endpoints), res, nil), db))
-}
-
 func setVaultSearch(v vaultWiring, search searchWiring) vaultWiring {
 	v.CutNotes = cutNotes(search)
 	v.SetNoteCut = func(scan *vault.Scan) { setNoteCut(search, scan) }

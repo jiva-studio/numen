@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/operationresult"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
@@ -34,14 +35,14 @@ func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 	r := &cliRun{tasks: run.NewTasks(), models: &run.Lock{}}
 	return cli.NewSession(
 		func() (cli.Vaults, error) {
-			_, _, v := openVaultSearch(c, exec, prefs, endpoints, res)
+			_, _, v := buildVaultSearch(c, exec, prefs, endpoints, res, nil)
 			return openCLIVaults(v)
 		},
 		func(ctx context.Context, options cli.IndexOptions) (cli.Indexed, error) {
 			config := c
 			config.ShouldRebuildIndex = options.Rebuild
 			install := newPluginInstall(config, endpoints, res)
-			settingsDeps, searchDeps, vaultDeps := openVaultSearch(config, exec, prefs, endpoints, res)
+			settingsDeps, searchDeps, vaultDeps := buildVaultSearch(config, exec, prefs, endpoints, res, nil)
 			ports, err := vaultRegistry(vaultDeps.RegistryPath)
 			if err != nil {
 				return cli.Indexed{}, err
@@ -56,8 +57,8 @@ func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 		},
 		func() cli.PluginCommands {
 			install := newPluginInstall(c, endpoints, res)
-			settingsDeps, searchDeps, vaultDeps := openVaultSearch(c, exec, prefs, endpoints, res)
-			commands := getPluginCommands(exec, settingsDeps, vaultDeps)
+			settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, endpoints, res, nil)
+			commands := newPluginCommands(settingsDeps, vaultDeps, exec, nil)
 			return getCLIPluginCommands(c, commands, newCLIPluginWork(install, exec, r), searchDeps, vaultDeps)
 		},
 		func() ([]string, error) { return closeCLI(r) },
@@ -81,7 +82,7 @@ type cliPluginWork func(vaultWiring, *Index, domain.Vault) (*run.PluginWork, err
 
 func newCLIPluginWork(install pluginInstall, exec *PluginExecution, r *cliRun) cliPluginWork {
 	return func(vaultDeps vaultWiring, db *Index, v domain.Vault) (*run.PluginWork, error) {
-		setPluginVaultPath(exec.Runtime.PluginBinding, v.Path)
+		exec.Runtime.PluginBinding.SetVaultPath(v.Path)
 		if err := installCurrentVault(install, vaultDeps, db, v); err != nil {
 			return nil, err
 		}
@@ -139,7 +140,7 @@ func newCLIIndexed(index cliIndex, install pluginInstall, exec *PluginExecution,
 		Links:            query.NewShowLinksByName(find, Queries(db).Refer.Links),
 		Problems:         vault.NewGetProblemsByName(find, getProblems(vaultDeps, db.NoteProblems())),
 		Query:            searchqueryusecase.NewFindSearchResultsByName(find, prepareQuery),
-		OperationResults: newClearOperationResults(db),
+		OperationResults: operationresult.NewClearOperationResults(db.OperationResults(operationResultRows)),
 	}
 }
 

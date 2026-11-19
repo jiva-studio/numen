@@ -76,7 +76,7 @@ func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	if !errors.As(err, &missing) || missing.Reason != plugindomain.NotInstalled || missing.Capability != bridge.CapabilitySearchSource {
 		t.Fatalf("resolvePlugin = %v, want the embedding plugin not installed", err)
 	}
-	setPluginVaultPath(cfg.Execution.Runtime.PluginBinding, "vault")
+	cfg.Execution.Runtime.PluginBinding.SetVaultPath("vault")
 	if err := StopPlugins(cfg.Execution.Watch, t.Context()); err != nil {
 		t.Fatalf("StopPlugins = %v, want nothing to stop", err)
 	}
@@ -102,7 +102,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	host := openPluginRoles(t, "desktop.editor", tmp)
 	cfg := NewTestInstallation(Config{}, AdaptTestPlugins(host.Management, host.Supervision))
 
-	setPluginVaultPath(cfg.Execution.Runtime.PluginBinding, "vault")
+	cfg.Execution.Runtime.PluginBinding.SetVaultPath("vault")
 	if got := host.Management.Mode.GetVaultPath(); got != "vault" {
 		t.Errorf("the host holds the vault %q", got)
 	}

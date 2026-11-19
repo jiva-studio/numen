@@ -69,7 +69,7 @@ func mountCommand(w *windowWiring, install pluginInstall, exec *PluginExecution,
 	if menu := openVersionItems(install, exec, settingsDeps, vaultDeps); menu != nil {
 		versions = menu
 	}
-	commands := newPluginCommands(exec, settingsDeps, vaultDeps, exec, versions)
+	commands := newPluginCommands(settingsDeps, vaultDeps, exec, versions)
 	handler := command.NewHandler(w.state, commands.Listing, commands.RunCommand, commands.ListItems)
 	w.inst.Mount(editor.NewRoute(command.NewRoute(w.state.Gate.CountQuestions(), handler)))
 }
@@ -113,10 +113,6 @@ func mountSearch(w *windowWiring, install pluginInstall, exec *PluginExecution, 
 	setPluginSearch(searchDeps, w.db, w.embedder, state.ReportFloorError, newSearchRuns(w, install, exec, settingsDeps, searchDeps, vaultDeps))
 	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
-}
-
-func getTabKindChooser(exec *PluginExecution, settingsDeps settingsWiring) file.TabKindChooser {
-	return openChooseTabKind(exec, settingsDeps)
 }
 
 func mountFile(w *windowWiring, vaultDeps vaultWiring) {
@@ -177,7 +173,7 @@ func mountNote(w *windowWiring) {
 }
 
 func openGetSettings(s settingsWiring) *settings.Get {
-	return settings.NewGet(readSettings(s), settingsPlugins(s), func() []plugin.Setting { return listAppSettings(s) })
+	return settings.NewGet(readSettings(s), s.Infos.GetPluginInfos, func() []plugin.Setting { return listAppSettings(s) })
 }
 
 func mountSettings(w *windowWiring, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
@@ -330,7 +326,7 @@ func getTriggerSource(install pluginInstall, exec *PluginExecution, settingsDeps
 			}
 			return nil
 		},
-		Watch:            func() (<-chan struct{}, func()) { return watchPluginChanges(settingsDeps.PluginChanges) },
+		Watch:            settingsDeps.PluginChanges.Subscribe,
 		WatchFrontmatter: frontmatter.Watch,
 	}
 }
@@ -387,7 +383,7 @@ func getConnectionResolve(install pluginInstall, exec *PluginExecution, settings
 func getFeedStart(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) func(ctx context.Context, v domain.Vault) func() {
 	events := windowsession.FeedEvents{
 		WatchWrites:    db.FeedChanges().Watch,
-		WatchPlugins:   func() (<-chan struct{}, func()) { return watchPluginChanges(settingsDeps.PluginChanges) },
+		WatchPlugins:   settingsDeps.PluginChanges.Subscribe,
 		ReadHead:       db.FileChanges().GetHead,
 		ListPaths:      db.FileChanges().ListChangedPaths,
 		GetContentType: exec.Watch.GetContentType,

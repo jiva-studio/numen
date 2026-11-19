@@ -114,7 +114,7 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheAvailableOnes(
 		},
 	}
 
-	service := getPluginCatalog(cfg.Resources.PluginCatalog, getErrorHandler(cfg.Resources))
+	service := getPluginCatalog(cfg.Resources.PluginCatalog, getErrorHandler(cfg.IndexPath, cfg.Resources))
 	if service == nil {
 		t.Fatal("no catalog")
 	}
@@ -155,7 +155,7 @@ func findEntry(listing catalog.Listing, id string) (catalog.Entry, bool) {
 func TestAnInstallationThatNamesNoTargetHasNoCatalog(t *testing.T) {
 	cfg := NewTestInstallation(Config{}, newPluginHost(t, "desktop.editor", t.TempDir()))
 
-	if getPluginCatalog(cfg.Resources.PluginCatalog, getErrorHandler(cfg.Resources)) != nil {
+	if getPluginCatalog(cfg.Resources.PluginCatalog, getErrorHandler(cfg.IndexPath, cfg.Resources)) != nil {
 		t.Error("a catalog was made with no target")
 	}
 }

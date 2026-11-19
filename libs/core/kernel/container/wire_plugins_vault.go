@@ -2,7 +2,8 @@ package container
 
 import (
 	"context"
-	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
@@ -55,7 +56,7 @@ func installPluginVault(install pluginInstall, vaultDeps vaultWiring,
 func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 	registry vaultregistry.Ports, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) (*pluginvault.Access, error) {
-	cache, err := openPluginCache(install.PluginCachePath)
+	cache, err := appstate.OpenPluginCachesIn(install.PluginCachePath)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +119,7 @@ func newArranger(
 
 func completeHooks(v vaultWiring, db *Index, hooks PluginVaultHooks) PluginVaultHooks {
 	if hooks.IndexState == nil {
-		hooks.IndexState = getIndexState(db).Execute
+		hooks.IndexState = query.NewGetIndexState(db.NoteQueries()).Execute
 	}
 	if hooks.Moved == nil {
 		hooks.Moved = func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(v, ctx) }
@@ -134,16 +135,8 @@ func emitPluginEvent(events pluginport.PluginEventEmitter, event string) {
 	events.EmitEvent(event)
 }
 
-func signalPluginChanges(changes *settingsusecase.PluginChanges) {
-	changes.Signal()
-}
-
-func watchPluginChanges(changes *settingsusecase.PluginChanges) (<-chan struct{}, func()) {
-	return changes.Subscribe()
-}
-
 func openChooseTabKind(exec *PluginExecution, settingsDeps settingsWiring) *tabkind.Choose {
-	return tabkind.NewChoose(getRuntimeManifests(exec.Runtime), exec.Watch, getWhenConfig(exec, settingsDeps))
+	return tabkind.NewChoose(getRuntimeManifests(exec.Runtime), exec.Watch, getWhenConfig(settingsDeps))
 }
 
 func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *textversion.VersionItems {
@@ -151,7 +144,7 @@ func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps
 		return nil
 	}
 	running := getRunningExecution(exec, install.SafeMode)
-	run := newPluginCommands(exec, settingsDeps, vaultDeps, running, nil).Run
+	run := newPluginCommands(settingsDeps, vaultDeps, running, nil).Run
 	return textversion.NewVersionItems(vaultDeps.TextVersions.Texts, vaultDeps.TextVersions.Versions, run, running.Watch)
 }
 
@@ -161,8 +154,8 @@ func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps set
 	}
 	running := getRunningExecution(exec, install.SafeMode)
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: getRuntimeManifests(running.Runtime), Run: newPluginCommands(exec, settingsDeps, vaultDeps, running, nil).Run, Readers: vaultReaders(vaultDeps),
-		Notes: pluginsNewNoteReader(vaultDeps), Types: running.Watch, Versions: vaultDeps.TextVersions.Texts, Config: getWhenConfig(exec, settingsDeps),
+		Plugins: getRuntimeManifests(running.Runtime), Run: newPluginCommands(settingsDeps, vaultDeps, running, nil).Run, Readers: vaultReaders(vaultDeps),
+		Notes: pluginsNewNoteReader(vaultDeps), Types: running.Watch, Versions: vaultDeps.TextVersions.Texts, Config: getWhenConfig(settingsDeps),
 	})
 }
 
@@ -170,10 +163,10 @@ func pluginsNewNoteReader(v vaultWiring) noteport.NoteReader {
 	return note.NewReadFrontmatter(vaultReaders(v))
 }
 
-func getWhenConfig(exec *PluginExecution, settingsDeps settingsWiring) pluginport.WhenConfig {
+func getWhenConfig(settingsDeps settingsWiring) pluginport.WhenConfig {
 	return settingsadapter.WhenConfig{
 		App:     func() []plugindomain.Setting { return listAppSettings(settingsDeps) },
-		Plugins: exec.Runtime.GetPluginInfos,
+		Plugins: settingsDeps.Infos.GetPluginInfos,
 	}
 }
 

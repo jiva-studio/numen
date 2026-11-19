@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/operationresult"
+
 	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 )
 
@@ -64,10 +64,6 @@ func readSearchLimits(settingsDeps settingsWiring, errorHandler func(error)) (se
 		return searchquerydomain.DefaultLimits(), searchquerydomain.DefaultStageLimits()
 	}
 	return file.Search.GetLimits()
-}
-
-func newClearOperationResults(db *Index) *operationresult.ClearOperationResults {
-	return operationresult.NewClearOperationResults(db.OperationResults(operationResultRows))
 }
 
 type rerankDeps struct {

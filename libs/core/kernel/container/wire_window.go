@@ -51,29 +51,41 @@ type tabKinds struct {
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
 // them, and opens the vault named, or the one shown last when none is named.
 func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, opening WindowOpening) (*OpenedWindow, error) {
-	exec = getPluginExecution(exec)
 	db, err := OpenIndex(c, res, ctx)
 	if err != nil {
 		return nil, err
 	}
-	install := newPluginInstall(c, endpoints, res)
-	settingsDeps, searchDeps, vaultDeps := openVaultSearch(c, exec, prefs, endpoints, res)
-	ports, err := vaultRegistry(vaultDeps.RegistryPath)
+	ports, err := c.registry()
 	if err != nil {
 		return nil, errors.Join(err, db.Close())
 	}
-	startup := windowStartup{opening: opening, ports: ports, db: db, entries: getLogEntries(res)}
-	first, err := getFirstWindowVault(startup)
+	return c.openWindow(exec, prefs, endpoints, res, ctx, windowStartup{opening: opening, ports: ports, db: db})
+}
+
+func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, ctx context.Context, startup windowStartup) (*OpenedWindow, error) {
+	exec = getPluginExecution(exec)
+	db := startup.db
+	startup.entries = getLogEntries(res)
+	install := newPluginInstall(c, endpoints, res)
+	settingsDeps, searchDeps, vaultDeps := buildVaultSearch(c, exec, prefs, endpoints, res, nil)
+	if startup.isEditor {
+		searchDeps, vaultDeps = openIndexedVault(searchDeps, vaultDeps, db)
+	}
+	ports := startup.ports
+	first, err := registry.NewGetVaultToShow(ports.Lookup, ports.Vaults, ports.Last).Execute(startup.opening.Named)
 	if err != nil {
-		return nil, err
+		return nil, errors.Join(err, db.Close())
 	}
 	plugins := openWindowPlugins(install, exec, settingsDeps, vaultDeps, db)
 	opened, closeEmbedder := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps)
 	mountServices(opened, install, exec, settingsDeps, searchDeps, vaultDeps)
-	if err := startWindow(ctx, opened, first); err != nil {
+	if err := opened.inst.Start(ctx, first, opened.server); err != nil {
 		return nil, errors.Join(err, closeEmbedder(), db.Close())
 	}
 
+	if startup.isEditor {
+		return connectEditor(install, exec, vaultDeps, startup.ports, db, opened)
+	}
 	return getOpenedWindow(opened), nil
 }
 
@@ -110,18 +122,11 @@ func getOpenedWindow(w *windowWiring) *OpenedWindow {
 }
 
 type windowStartup struct {
-	opening WindowOpening
-	ports   registry.Ports
-	db      *Index
-	entries *logsusecase.Entries
-}
-
-func getFirstWindowVault(s windowStartup) (domain.Vault, error) {
-	first, err := registry.NewGetVaultToShow(s.ports.Lookup, s.ports.Vaults, s.ports.Last).Execute(s.opening.Named)
-	if err != nil {
-		return domain.Vault{}, errors.Join(err, s.db.Close())
-	}
-	return first, nil
+	isEditor bool
+	opening  WindowOpening
+	ports    registry.Ports
+	db       *Index
+	entries  *logsusecase.Entries
 }
 
 type windowPlugins struct {
@@ -137,7 +142,7 @@ func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDep
 	tasks := run.NewTasks()
 	signalFailureClears(exec, settingsDeps)
 	reportDependencies(exec.Watch, tasks, vaultDeps.RecordLog)
-	setPluginWork(install, exec, tasks, &run.Lock{})
+	pluginsOpenPluginWork(install, exec, tasks, &run.Lock{})
 	setModelCalls(install, exec, settingsDeps, vaultDeps, run.NewConnectionNoticeTasks(tasks).Execute)
 	return windowPlugins{
 		tasks: tasks, events: exec.Runtime.PluginEventEmitter, vault: exec.Runtime.PluginBinding,
@@ -220,7 +225,7 @@ func newWindowUseCases(
 
 func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *Index) tabKinds {
 	files := file.NewGetFileKinds(vaultReaders(vaultDeps), db.NoteQueries())
-	chooser := getTabKindChooser(exec, settingsDeps)
+	chooser := openChooseTabKind(exec, settingsDeps)
 	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
 
@@ -231,10 +236,6 @@ func newFileServer(vaultDeps vaultWiring, state *editor.State, cases WindowUseCa
 			&cases.Listing.Find, file.NewOpenFile(vaultReaders(vaultDeps)), openPluginFile(vaultDeps), getMediaType(vaultDeps),
 		),
 	)
-}
-
-func startWindow(ctx context.Context, w *windowWiring, first domain.Vault) error {
-	return w.inst.Start(ctx, first, w.server)
 }
 
 func mountServices(w *windowWiring, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, searchDeps searchWiring, vaultDeps vaultWiring) {
