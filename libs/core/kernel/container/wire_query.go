@@ -29,13 +29,13 @@ func newFindSearchResults(
 		Places:       search,
 		Contents:     db.NoteQueryReads(),
 		Links:        db.NoteQueryReads(),
-		Functions:    searchfunctionbridge.Open(c.search.Runtime.Activator),
+		Functions:    searchfunctionbridge.Open(c.Execution.Runtime.Activator),
 		Matcher:      wordmatch.NewMatcher(),
 		Readers:      c.search.VaultReaders,
 		Texts:        c.search.TextReaders,
 		Source:       getQuerySource(source),
 		Floors:       newFloorPolicy(db, source, errorHandler),
-		ContentTypes: c.search.Watch,
+		ContentTypes: c.Execution.Watch.ContentTypeTable,
 	})
 	stages := searchqueryusecase.NewApplyStages(searchqueryusecase.ApplyStagesDeps{
 		Calls:   rerank.calls,
@@ -49,7 +49,7 @@ func newFindSearchResults(
 	})
 	return searchqueryusecase.NewFindSearchResults(searchqueryusecase.FindSearchResultsDeps{
 		Parser:        celquery.NewParser(limits),
-		Catalog:       getSearchCatalog(getRuntimeManifests(c.search.Runtime)),
+		Catalog:       getSearchCatalog(getRuntimeManifests(c.Execution.Runtime)),
 		Clock:         c.vault.Clock,
 		Limits:        limits,
 		Evaluate:      evaluate.Execute,

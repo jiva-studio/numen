@@ -53,10 +53,10 @@ func putTranscript(t *testing.T, db *Index, v domain.Vault, words string) domain
 
 func readIntoIndex(t *testing.T, a pluginsWiring, db *Index, v domain.Vault) {
 	t.Helper()
-	if _, err := searchScan(a.search, db).Execute(t.Context(), v); err != nil {
+	if _, err := searchScan(a.indexing, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := indexTexts(a.search, db, v, nil)
+	extract, err := indexTexts(a.indexing, db, v, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -298,7 +298,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if err := repo.SaveVersion(t.Context(), subtitles); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := indexTexts(a.search, db, v, nil)
+	extract, err := indexTexts(a.indexing, db, v, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

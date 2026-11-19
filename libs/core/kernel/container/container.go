@@ -167,25 +167,6 @@ func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *
 	}
 }
 
-func searchWith(c Config, exec, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, v vaultWiring) searchWiring {
-	return searchWiring{
-		ServiceDir:         c.ServiceDir,
-		ShouldRebuildIndex: c.ShouldRebuildIndex,
-		Chunks:             res.Chunks,
-		ResolvedCompute:    c.machine.ResolvedCompute,
-		Runtime:            exec.Runtime,
-		Watch:              exec.Watch,
-		Health:             exec.Health,
-		ActiveRuntime:      running.Runtime,
-		Sources:            endpoints.SourceDescriptions,
-		Lender:             endpoints.Lender,
-		Clock:              GetClock(res),
-		VaultReaders:       vaultReaders(v),
-		TextReaders:        getTextReaders(v),
-		ErrorHandler:       getErrorHandler(c.IndexPath, res),
-	}
-}
-
 func vaultBase(c Config, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) vaultWiring {
 	return vaultWiring{
 		IndexPath:    c.IndexPath,
@@ -202,10 +183,10 @@ func vaultBase(c Config, running *PluginExecution, endpoints *PluginEndpoints, r
 	}
 }
 
-func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, search searchWiring) vaultWiring {
+func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, chunks noteChunkPolicy) vaultWiring {
 	base.SyncSetting = syncSetting(settings)
-	base.CutNotes = cutNotes(search)
-	base.SetNoteCut = func(scan *vault.Scan) { setNoteCut(search, scan) }
+	base.CutNotes = cutNotes(chunks)
+	base.SetNoteCut = func(scan *vault.Scan) { setNoteCut(chunks, scan) }
 	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
 	base.RecordLog = recordLogFunc(record, res.ErrorHandler)
 	return base
@@ -218,7 +199,8 @@ func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoin
 	endpoints = getPluginEndpoints(endpoints)
 	settings := settingsOf(c, exec, prefs, res)
 	base := vaultBase(c, running, endpoints, res, texts)
-	search := searchWith(c, exec, running, endpoints, res, base)
+	vaultFiles, textReaders := vaultReaders(base), getTextReaders(base)
+	chunks := noteChunkPolicy{Chunks: res.Chunks, Profiles: exec.Runtime.PluginResolver}
 	return pluginsWiring{
 		pluginInstall: pluginInstall{
 			PluginCachePath: c.PluginCachePath,
@@ -230,8 +212,26 @@ func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoin
 			KeyStore:        res.KeyStore,
 		},
 		settings: settings,
-		search:   search,
-		vault:    vaultWith(res, base, settings, search),
+		search:   textSearch{VaultReaders: vaultFiles, TextReaders: textReaders, Workers: c.machine.ResolvedCompute.Workers},
+		indexing: vaultIndexPlan{
+			ChunkPolicy:        chunks,
+			ServiceDir:         c.ServiceDir,
+			ShouldRebuildIndex: c.ShouldRebuildIndex,
+			VaultReaders:       vaultFiles,
+			TextReaders:        textReaders,
+			ErrorHandler:       getErrorHandler(c.IndexPath, res),
+		},
+		source: sourceBinding{
+			Activator: running.Runtime.Activator,
+			Plugins: sourcePlugins{
+				PluginResolver: running.Runtime.PluginResolver,
+				ConfigWatcher:  running.Runtime.ConfigWatcher,
+			},
+			Descriptions: endpoints.SourceDescriptions,
+			Health:       exec.Health,
+			Chunks:       res.Chunks,
+		},
+		vault: vaultWith(res, base, settings, chunks),
 	}
 }
 

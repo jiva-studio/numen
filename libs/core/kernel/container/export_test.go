@@ -48,20 +48,22 @@ func (c TestInstallation) Themes(say func(string)) (*theme.Service, error) {
 
 // The methods below are the wiring the tests of this package reach from outside it.
 
-func (c TestInstallation) CutNotes() chunking.CutNotes { return cutNotes(searchOf(c)) }
-
-func (c TestInstallation) Embedder(ctx context.Context) (searchsourceport.WatchedSource, func() error, error) {
-	return searchSource(searchOf(c), ctx)
+func (c TestInstallation) CutNotes() chunking.CutNotes {
+	return cutNotes(c.buildPluginWiring().indexing.ChunkPolicy)
 }
 
-func (c TestInstallation) EmbedderReady() bool { return embedderReady(searchOf(c)) }
+func (c TestInstallation) Embedder(ctx context.Context) (searchsourceport.WatchedSource, func() error, error) {
+	return searchSource(c.buildPluginWiring().source, ctx)
+}
+
+func (c TestInstallation) EmbedderReady() bool { return embedderReady(c.buildPluginWiring().source) }
 
 func (c TestInstallation) Embedders(ctx context.Context) (indexing, asking searchsourceport.WatchedSource, closer func() error, why error) {
-	return searchSources(searchOf(c), ctx)
+	return searchSources(c.buildPluginWiring().source, ctx)
 }
 
 func (c TestInstallation) NewSearchOver(queries sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
-	return newSearchOver(searchOf(c), queries, sources, errorHandler, nil)
+	return newSearchOver(c.buildPluginWiring().search, queries, sources, errorHandler, nil)
 }
 
 func (c TestInstallation) OpenGetSettings() *settings.Get {
@@ -97,8 +99,8 @@ func NotesShowingMoves(
 
 func GetNoteChanges(notes NoteUseCases) hostvault.NoteChanges { return getNoteChanges(notes) }
 
-func embedderReady(c searchWiring) bool {
-	_, err := c.ActiveRuntime.ResolveCapability(bridge.CapabilitySearchSource)
+func embedderReady(c sourceBinding) bool {
+	_, err := c.Plugins.ResolveCapability(bridge.CapabilitySearchSource)
 	return err == nil
 }
 
@@ -110,18 +112,20 @@ func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File,
 
 func fileMovers(c vaultWiring) vaultport.FileMovers { return vaultWriters(c) }
 
-func Scan(c TestInstallation, db *Index) vault.Scan { return searchScan(searchOf(c), db) }
+func Scan(c TestInstallation, db *Index) vault.Scan {
+	return searchScan(c.buildPluginWiring().indexing, db)
+}
 
 func Embed(c TestInstallation, db *Index, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
-	return searchEmbed(searchOf(c), db, source, v)
+	return searchEmbed(c.buildPluginWiring().indexing, db, source, v)
 }
 
 func IndexTexts(c TestInstallation, db *Index, v domain.Vault) (filetext.Index, error) {
-	return indexTexts(searchOf(c), db, v, nil)
+	return indexTexts(c.buildPluginWiring().indexing, db, v, nil)
 }
 
 func NewSearch(c TestInstallation, db *Index, asking searchsourceport.Source, errorHandler func(error)) searchusecase.Search {
-	return newSearch(searchOf(c), db, asking, errorHandler, nil)
+	return newSearch(c.buildPluginWiring().search, db, asking, errorHandler, nil)
 }
 
 func SyncSetting(c TestInstallation) naming.SyncSetting {
@@ -173,14 +177,10 @@ func InstallPluginVault(c TestInstallation, db *Index, current func() (domain.Va
 	return installPluginVault(c.buildPluginWiring(), vaults, db, current, hooks)
 }
 
-func searchOf(c TestInstallation) searchWiring {
-	return c.buildPluginWiring().search
-}
-
 func ReadWholeVault(c TestInstallation,
 	ctx context.Context, db *Index, source searchsourceport.Source, v domain.Vault,
 ) (indexing.ReadWholeVault, error) {
-	return readWholeVault(searchOf(c), ctx, db, source, v, GetRefresh(c, db))
+	return readWholeVault(c.buildPluginWiring().indexing, ctx, db, source, v, GetRefresh(c, db))
 }
 
 type TestInstallation struct {

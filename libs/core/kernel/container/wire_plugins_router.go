@@ -52,7 +52,9 @@ type pluginInstall struct {
 type pluginsWiring struct {
 	pluginInstall
 	settings settingsWiring
-	search   searchWiring
+	search   textSearch
+	indexing vaultIndexPlan
+	source   sourceBinding
 	vault    vaultWiring
 }
 

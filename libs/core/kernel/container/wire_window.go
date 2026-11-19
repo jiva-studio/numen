@@ -139,7 +139,7 @@ func buildWindow(
 	// compiled behind this, so the window is drawn while it arrives. A source that cannot describe itself
 	// yet is opened all the same: the search item of its plugin shows why, and the source joins search and
 	// indexing once a configuration of its plugin lets it describe itself.
-	embedder, asking, closeEmbedder, why := searchSources(a.search, ctx)
+	embedder, asking, closeEmbedder, why := searchSources(a.source, ctx)
 	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
 	state := editor.NewState(tasks, opening.Frame, func(event string) { emitPluginEvent(a, event) })
 	state.SetIndexing(embedding)
@@ -151,7 +151,7 @@ func buildWindow(
 	// so the vault reflects its content without waiting for the watcher.
 	current := &vault.CurrentRefresh{Fallback: func() vault.Refreshing {
 		v := a.vault
-		v.CutNotes = cutNotes(a.search)
+		v.CutNotes = cutNotes(a.indexing.ChunkPolicy)
 		return vaultMakeRefresh(v, db, db.Notes())
 	}}
 	cases := newWindowUseCases(a, ports, db, state, current)

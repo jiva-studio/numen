@@ -110,7 +110,7 @@ func prepareCLIScan(
 		return indexing.ReadWholeVault{}, err
 	}
 	embedder, why := openCLIEmbedder(r, opened, ctx)
-	read, err := readWholeVault(opened.search, ctx, db, embedder, v, vaultMakeRefresh(opened.vault, db, db.Notes()))
+	read, err := readWholeVault(opened.indexing, ctx, db, embedder, v, vaultMakeRefresh(opened.vault, db, db.Notes()))
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
@@ -150,7 +150,7 @@ func reportSearchFallback(errorHandler window.ErrorHandler, err error) {
 }
 
 func openCLIEmbedder(r *cliRun, a pluginsWiring, ctx context.Context) (searchsourceport.Source, error) {
-	embedder, closeEmbedder, why := searchSource(a.search, ctx)
+	embedder, closeEmbedder, why := searchSource(a.source, ctx)
 	if closeEmbedder != nil {
 		r.closers = append(r.closers, closeEmbedder)
 	}
@@ -183,7 +183,7 @@ func openCLIPluginCommands(
 	if err != nil {
 		return plugincommand.Run{}, nil, err
 	}
-	_, pluginWork, err := openPluginWork(buildIndexed(db, a.search.ShouldRebuildIndex), db, v, r.tasks, r.models)
+	_, pluginWork, err := openPluginWork(buildIndexed(db, a.indexing.ShouldRebuildIndex), db, v, r.tasks, r.models)
 	if err != nil {
 		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
 	}

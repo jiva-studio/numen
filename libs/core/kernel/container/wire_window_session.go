@@ -69,7 +69,7 @@ func newWindowSession(a pluginsWiring, state *editor.State, ctx context.Context,
 	switching := windowsession.NewSwitchVault(show, a.Execution.Runtime, state)
 	return windowSession{
 		cases: windowCases{
-			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, a.search.ShouldRebuildIndex),
+			start:      windowsession.NewStartWindow(diag, parts.embedderError, follow, session, a.indexing.ShouldRebuildIndex),
 			show:       show,
 			openPlugin: windowsession.NewOpenPluginVault(guard, identity, state.Window, switching),
 			flush:      windowsession.NewFlushPending(guard, flush),
