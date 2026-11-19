@@ -243,7 +243,7 @@ describe('the notes of the vault a plugin is handed', () => {
       listFileKinds,
       search,
       pluginNotes,
-      notes: createVaultNotes({
+      ...createVaultNotes({
         notes: api.vault.note,
         getFileKinds: api.vault.file.getFileKinds,
         search,
@@ -299,7 +299,7 @@ describe('the notes of the vault a plugin is handed', () => {
   })
 
   it('keeps the depth 1 related notes of a path in memory until cleared', async () => {
-    const { notes, listRelatedNotes } = createNotes()
+    const { notes, listRelatedNotes, clearRelatedNotes } = createNotes()
 
     await notes.listRelatedNotes(['Root.md', 'Other.md'], 1)
     const [cachedRoot, loadedThird] = await notes.listRelatedNotes(['Root.md', 'Third.md'], 1)
@@ -312,7 +312,7 @@ describe('the notes of the vault a plugin is handed', () => {
     expect(cachedRoot?.focus.path).toBe('Root.md')
     expect(loadedThird?.focus.path).toBe('Third.md')
 
-    notes.clearRelatedNotes()
+    clearRelatedNotes()
     await notes.listRelatedNotes(['Root.md'], 1)
     expect(listRelatedNotes).toHaveBeenCalledTimes(3)
   })

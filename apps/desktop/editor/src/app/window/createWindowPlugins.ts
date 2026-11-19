@@ -123,7 +123,7 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     }),
   })
   vault.vaultChanges.subscribe((event) => {
-    services.notes.clearRelatedNotes()
+    services.clearRelatedNotes()
     pluginHost.notifyVaultChange(event)
   })
   const declaredCommands = useDeclaredCommands({
