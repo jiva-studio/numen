@@ -2,7 +2,7 @@ import { ref, type Ref } from 'vue'
 import type { Disposable, PluginLicenses } from '@numen/plugin-sdk'
 
 export const SYNC_LICENSE_ID = 'sync'
-export const DEFAULT_SYNC_DURATION_MS = 2000
+const DEFAULT_SYNC_DURATION_MS = 2000
 
 export type SyncPhase = 'hidden' | 'syncing' | 'synced'
 
@@ -27,7 +27,7 @@ export function createSyncState(
     }
   }
 
-  const applyActive = (isActive: boolean): void => {
+  const updateSyncPhase = (isActive: boolean): void => {
     clearTimer()
     if (!isActive) {
       phase.value = 'hidden'
@@ -43,9 +43,9 @@ export function createSyncState(
   return {
     phase,
     start: () => {
-      applyActive(licenses.has(SYNC_LICENSE_ID))
+      updateSyncPhase(licenses.has(SYNC_LICENSE_ID))
       watching = licenses.onChange(SYNC_LICENSE_ID, (next) => {
-        applyActive(next)
+        updateSyncPhase(next)
       })
     },
     stop: () => {

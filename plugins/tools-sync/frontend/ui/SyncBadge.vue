@@ -9,22 +9,14 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const label = computed(() =>
-  props.phase === 'syncing' ? words.syncingLabel : words.syncedLabel,
-)
+const label = computed(() => (props.phase === 'syncing' ? words.syncingLabel : words.syncedLabel))
 const detail = computed(() =>
   props.phase === 'syncing' ? words.syncingDetail : words.syncedDetail,
 )
 </script>
 
 <template>
-  <span
-    v-if="phase !== 'hidden'"
-    class="sync-badge"
-    role="status"
-    :title="detail"
-    :aria-label="detail"
-  >
+  <span v-if="phase !== 'hidden'" class="sync-badge" role="status" :aria-label="detail">
     <span v-if="phase === 'syncing'" class="sync-badge__spinner" aria-hidden="true" />
     <span v-else class="sync-badge__dot" aria-hidden="true" />
     <span class="sync-badge__label">{{ label }}</span>
