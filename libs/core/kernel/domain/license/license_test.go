@@ -17,8 +17,8 @@ func TestMergeDeclarationsCombinesContributorsAndProviders(t *testing.T) {
 			ID:   "md.numen.b",
 			Name: "Plugin B",
 			Licenses: []manifest.License{{
-				ID:               "supporter",
-				Title:            "Supporter",
+				ID:               "sync",
+				Title:            "Numen Sync",
 				Description:      "Unlocks B",
 				OfflineGraceDays: &grace14,
 				Providers: []manifest.LicenseProvider{
@@ -30,7 +30,7 @@ func TestMergeDeclarationsCombinesContributorsAndProviders(t *testing.T) {
 			ID:   "md.numen.a",
 			Name: "Plugin A",
 			Licenses: []manifest.License{{
-				ID:               "supporter",
+				ID:               "sync",
 				Description:      "Unlocks A",
 				OfflineGraceDays: &grace30,
 				Providers: []manifest.LicenseProvider{
@@ -43,7 +43,7 @@ func TestMergeDeclarationsCombinesContributorsAndProviders(t *testing.T) {
 		t.Fatalf("len(decls) = %d, want 1", len(decls))
 	}
 	got := decls[0]
-	if got.ID != "supporter" || got.Title != "Supporter" || got.OfflineGraceDays != 14 {
+	if got.ID != "sync" || got.Title != "Numen Sync" || got.OfflineGraceDays != 14 {
 		t.Fatalf("merged declaration = %+v", got)
 	}
 	if len(got.Contributors) != 2 || got.Contributors[0].PluginID != "md.numen.a" || got.Contributors[1].PluginID != "md.numen.b" {
@@ -58,8 +58,8 @@ func TestEvaluateEnvelopeEnforcesMachineFingerprintClockAndGrace(t *testing.T) {
 	t.Parallel()
 	baseTime := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
 	decl := license.Declaration{
-		ID:               "supporter",
-		Title:            "Supporter",
+		ID:               "sync",
+		Title:            "Numen Sync",
 		Providers:        []manifest.LicenseProvider{{Provider: "creem", ProductID: "prod_sup"}},
 		OfflineGraceDays: 30,
 	}

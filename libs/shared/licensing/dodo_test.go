@@ -14,12 +14,12 @@ func TestDodoBuildCheckoutURL(t *testing.T) {
 	t.Parallel()
 	p := licensing.NewDodoProvider()
 
-	urlFromID, err := p.BuildCheckoutURL("pdt_supporter", "")
+	urlFromID, err := p.BuildCheckoutURL("pdt_sync", "")
 	if err != nil {
-		t.Fatalf("BuildCheckoutURL(pdt_supporter) error = %v", err)
+		t.Fatalf("BuildCheckoutURL(pdt_sync) error = %v", err)
 	}
-	if urlFromID != "https://checkout.dodopayments.com/buy/pdt_supporter" {
-		t.Fatalf("BuildCheckoutURL(pdt_supporter) = %q, want https://checkout.dodopayments.com/buy/pdt_supporter", urlFromID)
+	if urlFromID != "https://checkout.dodopayments.com/buy/pdt_sync" {
+		t.Fatalf("BuildCheckoutURL(pdt_sync) = %q, want https://checkout.dodopayments.com/buy/pdt_sync", urlFromID)
 	}
 }
 
@@ -41,8 +41,8 @@ func TestDodoActivateValidateAndDeactivate(t *testing.T) {
 				"license_key_id": "lic_777",
 				"name": "akd-workstation",
 				"product": {
-					"product_id": "pdt_supporter",
-					"name": "Numen Supporter"
+					"product_id": "pdt_sync",
+					"name": "Numen Sync"
 				}
 			}`)
 		case "/licenses/validate":
@@ -74,12 +74,12 @@ func TestDodoActivateValidateAndDeactivate(t *testing.T) {
 	act, err := p.Activate(t.Context(), licensing.ActivationRequest{
 		Key:          "DODO-KEY-1",
 		InstanceName: "akd-workstation",
-		ProductID:    "pdt_supporter",
+		ProductID:    "pdt_sync",
 	})
 	if err != nil {
 		t.Fatalf("Activate() error = %v", err)
 	}
-	if act.InstanceID != "lki_777" || act.ProductID != "pdt_supporter" || act.Status != licensing.StatusActive {
+	if act.InstanceID != "lki_777" || act.ProductID != "pdt_sync" || act.Status != licensing.StatusActive {
 		t.Fatalf("Activate() = %+v", act)
 	}
 

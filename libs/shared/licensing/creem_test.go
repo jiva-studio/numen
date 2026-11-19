@@ -72,7 +72,7 @@ func TestCreemActivateValidateAndDeactivate(t *testing.T) {
 			}
 			writeReply(t, w, http.StatusOK, `{
 				"id": "lic_1",
-				"product_id": "prod_supporter",
+				"product_id": "prod_sync",
 				"status": "active",
 				"expires_at": "2027-01-15T12:00:00Z",
 				"instance": {
@@ -84,7 +84,7 @@ func TestCreemActivateValidateAndDeactivate(t *testing.T) {
 		case "/v1/licenses/validate":
 			writeReply(t, w, http.StatusOK, `{
 				"id": "lic_1",
-				"product_id": "prod_supporter",
+				"product_id": "prod_sync",
 				"status": "active",
 				"expires_at": "2027-02-15T12:00:00Z",
 				"instance": {
@@ -110,7 +110,7 @@ func TestCreemActivateValidateAndDeactivate(t *testing.T) {
 	act, err := p.Activate(t.Context(), licensing.ActivationRequest{
 		Key:          "  CREEM-KEY-1 \n",
 		InstanceName: "akd-laptop",
-		ProductID:    "prod_supporter",
+		ProductID:    "prod_sync",
 	})
 	if err != nil {
 		t.Fatalf("Activate() error = %v", err)
@@ -118,7 +118,7 @@ func TestCreemActivateValidateAndDeactivate(t *testing.T) {
 	if gotKey := sawAPIKey.Load(); gotKey == nil || *gotKey != "creem_test_secret" {
 		t.Fatalf("x-api-key = %v, want creem_test_secret", gotKey)
 	}
-	if act.InstanceID != "li_999" || act.Status != licensing.StatusActive || act.ProductID != "prod_supporter" {
+	if act.InstanceID != "li_999" || act.Status != licensing.StatusActive || act.ProductID != "prod_sync" {
 		t.Fatalf("Activate() = %+v", act)
 	}
 	wantExp := time.Date(2027, 1, 15, 12, 0, 0, 0, time.UTC)

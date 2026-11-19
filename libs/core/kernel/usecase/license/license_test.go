@@ -11,19 +11,19 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func supporterPlugins() []manifest.Discovered {
+func syncPlugins() []manifest.Discovered {
 	return []manifest.Discovered{{
 		Manifest: manifest.Manifest{
-			ID:   "md.numen.tools.supporter",
-			Name: "Supporter",
+			ID:   "md.numen.tools.sync",
+			Name: "Numen Sync",
 			Contributes: manifest.Contributes{
 				Licenses: []manifest.License{{
-					ID:          "supporter",
-					Title:       "Supporter",
-					Description: "Shows the Supporter badge in the title bar",
+					ID:          "sync",
+					Title:       "Numen Sync",
+					Description: "Synchronizes your vaults across devices",
 					Providers: []manifest.LicenseProvider{
-						{Provider: "creem", ProductID: "prod_supporter"},
-						{Provider: "dodo", ProductID: "pdt_supporter"},
+						{Provider: "creem", ProductID: "prod_sync"},
+						{Provider: "dodo", ProductID: "pdt_sync"},
 					},
 				}},
 			},
@@ -51,7 +51,7 @@ func TestActivateIdempotencyAndDeactivateConfirmation(t *testing.T) {
 	clock := &fakeClock{now: now}
 	changes := newFakeChangeHub()
 	deps := licenseusecase.NewDeps(
-		&fakeDeclarations{plugins: supporterPlugins()},
+		&fakeDeclarations{plugins: syncPlugins()},
 		keys,
 		validator,
 		fakeMachine{fingerprint: "fp-local", instanceName: "akd-laptop"},
@@ -74,7 +74,7 @@ func TestActivateIdempotencyAndDeactivateConfirmation(t *testing.T) {
 
 	// Activate key.
 	activated, err := activateUC.Execute(t.Context(), licenseusecase.ActivateRequest{
-		LicenseID: "supporter",
+		LicenseID: "sync",
 		Key:       "  CREEM-ABCD-814A \n",
 	})
 	if err != nil {
@@ -89,7 +89,7 @@ func TestActivateIdempotencyAndDeactivateConfirmation(t *testing.T) {
 
 	// Re-activating the same key on the same machine calls Validate rather than burning another slot.
 	reActivated, err := activateUC.Execute(t.Context(), licenseusecase.ActivateRequest{
-		LicenseID: "supporter",
+		LicenseID: "sync",
 		Key:       "CREEM-ABCD-814A",
 	})
 	if err != nil || !reActivated.IsActive {
@@ -101,7 +101,7 @@ func TestActivateIdempotencyAndDeactivateConfirmation(t *testing.T) {
 
 	// Deactivate fails when provider is unreachable and preserves the key in KeyStore.
 	validator.deactivateErr = license.ErrProviderUnavailable
-	if _, err := deactivateUC.Execute(t.Context(), "supporter"); !errors.Is(err, license.ErrProviderUnavailable) {
+	if _, err := deactivateUC.Execute(t.Context(), "sync"); !errors.Is(err, license.ErrProviderUnavailable) {
 		t.Fatalf("Deactivate(offline) error = %v, want ErrProviderUnavailable", err)
 	}
 	afterFailedDeactivate, err := listUC.Execute(t.Context())
@@ -111,7 +111,7 @@ func TestActivateIdempotencyAndDeactivateConfirmation(t *testing.T) {
 
 	// Deactivate succeeds when provider returns 200 OK or 404 ErrNotFound.
 	validator.deactivateErr = license.ErrNotFound
-	deactivated, err := deactivateUC.Execute(t.Context(), "supporter")
+	deactivated, err := deactivateUC.Execute(t.Context(), "sync")
 	if err != nil {
 		t.Fatalf("Deactivate(404) error = %v", err)
 	}
@@ -136,7 +136,7 @@ func TestVerifyUpdatesStatusAfterTTL(t *testing.T) {
 	}
 	clock := &fakeClock{now: now}
 	deps := licenseusecase.NewDeps(
-		&fakeDeclarations{plugins: supporterPlugins()},
+		&fakeDeclarations{plugins: syncPlugins()},
 		keys,
 		validator,
 		fakeMachine{fingerprint: "fp-local", instanceName: "akd-laptop"},
@@ -148,7 +148,7 @@ func TestVerifyUpdatesStatusAfterTTL(t *testing.T) {
 	verifyUC := licenseusecase.NewVerify(deps)
 
 	if _, err := activateUC.Execute(t.Context(), licenseusecase.ActivateRequest{
-		LicenseID: "supporter",
+		LicenseID: "sync",
 		Key:       "DODO-1234-9999",
 	}); err != nil {
 		t.Fatalf("Activate() error = %v", err)
@@ -156,7 +156,7 @@ func TestVerifyUpdatesStatusAfterTTL(t *testing.T) {
 
 	// Advance clock by 2 hours (past 1h FreshnessTTL) and verify.
 	clock.set(now.Add(2 * time.Hour))
-	verified, err := verifyUC.Execute(t.Context(), "supporter")
+	verified, err := verifyUC.Execute(t.Context(), "sync")
 	if err != nil {
 		t.Fatalf("Verify() error = %v", err)
 	}

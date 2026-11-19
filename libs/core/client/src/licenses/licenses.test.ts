@@ -16,8 +16,8 @@ const createRpc = (overrides: Partial<LicenseRpc> = {}): LicenseRpc => ({
       create(ListLicensesResponseSchema, {
         licenses: [
           {
-            id: 'numen.supporter',
-            title: 'Numen Supporter',
+            id: 'numen.sync',
+            title: 'Numen Sync',
             contributors: [
               {
                 pluginId: 'md.numen.views.agent-chat',
@@ -30,7 +30,7 @@ const createRpc = (overrides: Partial<LicenseRpc> = {}): LicenseRpc => ({
                 provider: 'creem',
                 providerName: 'Creem',
                 productId: 'prod_creem_1',
-                checkoutUrl: 'https://creem.io/checkout/numen-supporter',
+                checkoutUrl: 'https://creem.io/checkout/numen-sync',
                 paymentMethods: ['Cards', 'Apple Pay'],
               },
             ],
@@ -50,8 +50,8 @@ const createRpc = (overrides: Partial<LicenseRpc> = {}): LicenseRpc => ({
     Promise.resolve(
       create(ActivateLicenseResponseSchema, {
         license: {
-          id: 'numen.supporter',
-          title: 'Numen Supporter',
+          id: 'numen.sync',
+          title: 'Numen Sync',
           status: LicenseStatus.ACTIVE,
           isActive: true,
           hasKey: true,
@@ -65,8 +65,8 @@ const createRpc = (overrides: Partial<LicenseRpc> = {}): LicenseRpc => ({
     Promise.resolve(
       create(DeactivateLicenseResponseSchema, {
         license: {
-          id: 'numen.supporter',
-          title: 'Numen Supporter',
+          id: 'numen.sync',
+          title: 'Numen Sync',
           status: LicenseStatus.INACTIVE,
           isActive: false,
           hasKey: false,
@@ -77,8 +77,8 @@ const createRpc = (overrides: Partial<LicenseRpc> = {}): LicenseRpc => ({
     yield create(WatchLicensesResponseSchema, {
       licenses: [
         {
-          id: 'numen.supporter',
-          title: 'Numen Supporter',
+          id: 'numen.sync',
+          title: 'Numen Sync',
           status: LicenseStatus.EXPIRED,
           isActive: false,
           hasKey: true,
@@ -96,8 +96,8 @@ describe('createLicenseClient', () => {
 
     expect(licenses).toStrictEqual([
       {
-        id: 'numen.supporter',
-        title: 'Numen Supporter',
+        id: 'numen.sync',
+        title: 'Numen Sync',
         contributors: [
           {
             pluginId: 'md.numen.views.agent-chat',
@@ -110,7 +110,7 @@ describe('createLicenseClient', () => {
             provider: 'creem',
             providerName: 'Creem',
             productId: 'prod_creem_1',
-            checkoutUrl: 'https://creem.io/checkout/numen-supporter',
+            checkoutUrl: 'https://creem.io/checkout/numen-sync',
             paymentMethods: ['Cards', 'Apple Pay'],
           },
         ],
@@ -129,11 +129,11 @@ describe('createLicenseClient', () => {
   it('activates and deactivates a license', async () => {
     const client = createLicenseClient(createRpc())
 
-    const activated = await client.activate('numen.supporter', 'KEY-814A')
+    const activated = await client.activate('numen.sync', 'KEY-814A')
     expect(activated.ok).toBe(true)
     expect(activated.ok && activated.value.status).toBe('active')
 
-    const deactivated = await client.deactivate('numen.supporter')
+    const deactivated = await client.deactivate('numen.sync')
     expect(deactivated.ok).toBe(true)
     expect(deactivated.ok && deactivated.value.status).toBe('inactive')
   })
@@ -158,7 +158,7 @@ describe('createLicenseClient', () => {
             ),
         }),
       )
-      const answer = await client.activate('numen.supporter', 'BAD')
+      const answer = await client.activate('numen.sync', 'BAD')
       expect(answer).toStrictEqual({
         ok: false,
         error: { errorCode: expected, detail: 'refused' },

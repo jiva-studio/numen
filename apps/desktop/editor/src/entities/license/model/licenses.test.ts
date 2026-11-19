@@ -12,8 +12,8 @@ const asFailure = (error: LicenseFailure): Result<never, LicenseFailure> => ({
 })
 
 const createSampleLicense = (overrides: Partial<LicenseInfo> = {}): LicenseInfo => ({
-  id: 'numen.supporter',
-  title: 'Numen Supporter',
+  id: 'numen.sync',
+  title: 'Numen Sync',
   contributors: [
     {
       pluginId: 'md.numen.views.agent-chat',
@@ -26,7 +26,7 @@ const createSampleLicense = (overrides: Partial<LicenseInfo> = {}): LicenseInfo 
       provider: 'creem',
       providerName: 'Creem',
       productId: 'prod_1',
-      checkoutUrl: 'https://creem.io/checkout/numen-supporter',
+      checkoutUrl: 'https://creem.io/checkout/numen-sync',
       paymentMethods: ['Cards'],
     },
   ],
@@ -76,7 +76,7 @@ describe('createLicenseStore', () => {
 
     await store.load()
 
-    expect(store.licenses.value.map((one) => one.id)).toStrictEqual(['numen.supporter'])
+    expect(store.licenses.value.map((one) => one.id)).toStrictEqual(['numen.sync'])
     expect(notify).toHaveBeenCalledWith('')
   })
 
@@ -84,12 +84,12 @@ describe('createLicenseStore', () => {
     const { store } = createStore(createClient())
     await store.load()
 
-    const activated = await store.activate('numen.supporter', 'KEY-814A')
+    const activated = await store.activate('numen.sync', 'KEY-814A')
     expect(activated.ok).toBe(true)
     expect(store.licenses.value[0]?.status).toBe('active')
     expect(store.licenses.value[0]?.keyHint).toBe('••••-814A')
 
-    const deactivated = await store.deactivate('numen.supporter')
+    const deactivated = await store.deactivate('numen.sync')
     expect(deactivated.ok).toBe(true)
     expect(store.licenses.value[0]?.status).toBe('inactive')
   })
@@ -102,7 +102,7 @@ describe('createLicenseStore', () => {
       }),
     )
 
-    const answer = await store.activate('numen.supporter', 'BAD')
+    const answer = await store.activate('numen.sync', 'BAD')
     expect(answer).toStrictEqual({
       ok: false,
       error: 'This license key was not recognized.',

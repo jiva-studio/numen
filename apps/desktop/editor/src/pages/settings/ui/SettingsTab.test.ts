@@ -547,9 +547,9 @@ describe('the settings tab', () => {
     })
 
     it('opens the Licenses page, shows Buy providers, activates a key and deactivates it', async () => {
-      const supporter: LicenseInfo = {
-        id: 'numen.supporter',
-        title: 'Numen Supporter',
+      const sync: LicenseInfo = {
+        id: 'numen.sync',
+        title: 'Numen Sync',
         contributors: [
           {
             pluginId: 'md.numen.views.agent-chat',
@@ -562,14 +562,14 @@ describe('the settings tab', () => {
             provider: 'creem',
             providerName: 'Creem',
             productId: 'prod_creem_1',
-            checkoutUrl: 'https://creem.io/checkout/numen-supporter',
+            checkoutUrl: 'https://creem.io/checkout/numen-sync',
             paymentMethods: ['Cards', 'Apple Pay'],
           },
           {
             provider: 'dodo',
             providerName: 'Dodo Payments',
             productId: 'prod_dodo_1',
-            checkoutUrl: 'https://checkout.dodopayments.com/buy/numen-supporter',
+            checkoutUrl: 'https://checkout.dodopayments.com/buy/numen-sync',
             paymentMethods: ['UPI', 'PIX'],
           },
         ],
@@ -582,11 +582,11 @@ describe('the settings tab', () => {
         expiresAt: '',
         verifiedAt: '',
       }
-      const list = ref<readonly LicenseInfo[]>([supporter])
+      const list = ref<readonly LicenseInfo[]>([sync])
       const activate = vi.fn(async (licenseId: string, key: string) => {
         if (key === 'BAD-KEY') return asFailure('This license key was not recognized.')
         const activated: LicenseInfo = {
-          ...supporter,
+          ...sync,
           id: licenseId,
           status: 'active',
           isActive: true,
@@ -599,8 +599,8 @@ describe('the settings tab', () => {
         return asValue(activated)
       })
       const deactivate = vi.fn(async () => {
-        list.value = [supporter]
-        return asValue(supporter)
+        list.value = [sync]
+        return asValue(sync)
       })
       const { tab } = createTab({}, [], SHELL, {
         licenses: {
@@ -616,7 +616,7 @@ describe('the settings tab', () => {
 
       expect(getSegments(tab)).toStrictEqual(['Settings'])
       expect(getCurrent(tab)).toBe(words.licenses)
-      expect(tab.text()).toContain('Numen Supporter')
+      expect(tab.text()).toContain('Numen Sync')
       expect(tab.text()).toContain('Agent Chat')
       expect(tab.text()).toContain('Multi-agent conversations and background tasks')
 
@@ -627,12 +627,12 @@ describe('the settings tab', () => {
       await nextTick()
       const menuLinks = tab.findAll('a[role="menuitem"]')
       expect(menuLinks.map((one) => one.attributes('href'))).toStrictEqual([
-        'https://creem.io/checkout/numen-supporter',
-        'https://checkout.dodopayments.com/buy/numen-supporter',
+        'https://creem.io/checkout/numen-sync',
+        'https://checkout.dodopayments.com/buy/numen-sync',
       ])
 
       // Typing a key switches the contextual button from Buy to Activate.
-      const keyInput = tab.get('input[aria-label="License key for Numen Supporter"]')
+      const keyInput = tab.get('input[aria-label="License key for Numen Sync"]')
       await keyInput.setValue('BAD-KEY')
       await nextTick()
       const activateBtn = tab.findAll('button').find((one) => one.text() === 'Activate')
@@ -648,9 +648,9 @@ describe('the settings tab', () => {
         .find((one) => one.text() === 'Activate')!
         .trigger('click')
       await nextTick()
-      expect(activate).toHaveBeenCalledWith('numen.supporter', 'GOOD-KEY-814A')
+      expect(activate).toHaveBeenCalledWith('numen.sync', 'GOOD-KEY-814A')
       expect(
-        (tab.get('input[aria-label="License key for Numen Supporter"]').element as HTMLInputElement)
+        (tab.get('input[aria-label="License key for Numen Sync"]').element as HTMLInputElement)
           .value,
       ).toBe('••••-814A')
 
@@ -658,7 +658,7 @@ describe('the settings tab', () => {
       expect(deactivateBtn).toBeDefined()
       await deactivateBtn!.trigger('click')
       await nextTick()
-      expect(deactivate).toHaveBeenCalledWith('numen.supporter')
+      expect(deactivate).toHaveBeenCalledWith('numen.sync')
       expect(tab.findAll('button').some((one) => one.text().includes('Buy'))).toBe(true)
     })
 
