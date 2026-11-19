@@ -55,11 +55,11 @@ func newWindowSession(a pluginsWiring, state *editor.State, ctx context.Context,
 	diag := windowsession.NewDiagnostics(parts.out, state.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag, Closing: ctx.Done(), NewSession: newIndexSession(parts.indexer),
-		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a), diag),
+		Reporter: windowsession.NewChangeReporter(&state.Notices.ChangeEvents, parts.indexer, getTextVersions(a.vault.TextVersions), diag),
 		Passes:   parts.passes, Triggers: getTriggerSource(a, parts.frontmatter), StartFeed: parts.startFeed,
 		Report: editor.ReportVault(a.vault.RecordLog),
 	})
-	identity := vault.NewCheckIdentity(vaultIdentity(a.vault))
+	identity := vault.NewCheckIdentity(vaultIdentity(a.vault.Options))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, diag, parts.embedderError, runner)
 	guard := &windowsession.Guard{}
 	flush := windowsession.NewPageFlush(state.Window, state.Writes)

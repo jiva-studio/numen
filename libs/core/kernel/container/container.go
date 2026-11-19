@@ -13,11 +13,13 @@ import (
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -167,7 +169,7 @@ func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *
 	}
 }
 
-func searchWith(c Config, exec, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, v vaultWiring) searchWiring {
+func (c Config) searchWith(exec, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, readers vaultport.VaultReaders, texts textdomain.Readers) searchWiring {
 	return searchWiring{
 		ServiceDir:         c.ServiceDir,
 		ShouldRebuildIndex: c.ShouldRebuildIndex,
@@ -180,35 +182,10 @@ func searchWith(c Config, exec, running *PluginExecution, endpoints *PluginEndpo
 		Sources:            endpoints.SourceDescriptions,
 		Lender:             endpoints.Lender,
 		Clock:              GetClock(res),
-		VaultReaders:       vaultReaders(v),
-		TextReaders:        getTextReaders(v),
+		VaultReaders:       readers,
+		TextReaders:        texts,
 		ErrorHandler:       getErrorHandler(c.IndexPath, res),
 	}
-}
-
-func vaultBase(c Config, running *PluginExecution, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) vaultWiring {
-	return vaultWiring{
-		IndexPath:    c.IndexPath,
-		RegistryPath: c.RegistryPath,
-		ServiceDir:   c.ServiceDir,
-		Clock:        GetClock(res),
-		Lender:       endpoints.Lender,
-		TextPlugins:  running.Runtime.TextPlugins,
-		TextVersions: texts,
-		TextReaders:  res.TextReaders,
-		VaultLocks:   res.vaultLocks,
-		Watches:      res.watches,
-		ErrorHandler: getErrorHandler(c.IndexPath, res),
-	}
-}
-
-func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, search searchWiring) vaultWiring {
-	base.SyncSetting = syncSetting(settings)
-	base.CutNotes = cutNotes(search)
-	base.SetNoteCut = func(scan *vault.Scan) { setNoteCut(search, scan) }
-	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
-	base.RecordLog = recordLogFunc(record, res.ErrorHandler)
-	return base
 }
 
 func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, texts *TextVersions) pluginsWiring {
@@ -217,8 +194,13 @@ func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoin
 	running := getRunningExecution(exec, c.SafeMode)
 	endpoints = getPluginEndpoints(endpoints)
 	settings := settingsOf(c, exec, prefs, res)
-	base := vaultBase(c, running, endpoints, res, texts)
-	search := searchWith(c, exec, running, endpoints, res, base)
+	access := openVaultAccess(c.Paths, GetClock(res), res.vaultLocks, res.watches, texts)
+	search := c.searchWith(exec, running, endpoints, res, access.Readers, getTextReaders(res.TextReaders, texts))
+	access.SyncSetting = syncSetting(settings)
+	access.CutNotes = cutNotes(search)
+	access.SetNoteCut = func(scan *vault.Scan) { setNoteCut(search, scan) }
+	record := openRecordLog(c.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, access.Clock)
+	access.RecordLog = recordLogFunc(record, res.ErrorHandler)
 	return pluginsWiring{
 		pluginInstall: pluginInstall{
 			PluginCachePath: c.PluginCachePath,
@@ -231,7 +213,7 @@ func assemble(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoin
 		},
 		settings: settings,
 		search:   search,
-		vault:    vaultWith(res, base, settings, search),
+		vault:    access,
 	}
 }
 
@@ -240,5 +222,7 @@ func plugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoint
 }
 
 func openIndexedPlugins(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources, db *Index) pluginsWiring {
-	return assemble(c, exec, prefs, endpoints, res, newTextVersions(vaultBase(c, getRunningExecution(exec, c.SafeMode), getPluginEndpoints(endpoints), res, nil), db))
+	running := getRunningExecution(exec, c.SafeMode)
+	texts := newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, running.Runtime.TextPlugins, GetClock(res), db)
+	return assemble(c, exec, prefs, endpoints, res, texts)
 }

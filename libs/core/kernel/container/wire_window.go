@@ -167,7 +167,7 @@ func buildWindow(
 	inst := editor.NewInstallation(state, editor.Lifecycle{
 		Start: session.cases.start, Show: session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
-	}, session.tools.importFiles, getMediaType(a.vault), opening.Out)
+	}, session.tools.importFiles, getMediaType(), opening.Out)
 
 	kinds := newTabKinds(a, db)
 	return windowBuilt{
@@ -200,12 +200,12 @@ func newWindowUseCases(
 		},
 	)
 	moves := vaultVaults(a.vault, ports, db, notes.Place.Move)
-	listing := vaultListing(a.vault, ports)
+	listing := vaultListing(a.vault.Readers, ports)
 	return WindowUseCases{Notes: &notes, Queries: &queries, PluginNotes: &pluginNotes, Listing: &listing, Vaults: &moves}
 }
 
 func newTabKinds(a pluginsWiring, db *Index) tabKinds {
-	files := file.NewGetFileKinds(vaultReaders(a.vault), db.NoteQueries())
+	files := file.NewGetFileKinds(a.vault.Readers, db.NoteQueries())
 	chooser := getTabKindChooser(a)
 	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
@@ -214,7 +214,7 @@ func newFileServer(a pluginsWiring, state *editor.State, cases WindowUseCases) *
 	return editor.NewFileServer(
 		state,
 		file.NewOpenVaultFile(
-			&cases.Listing.Find, file.NewOpenFile(vaultReaders(a.vault)), openPluginFile(a.vault), getMediaType(a.vault),
+			&cases.Listing.Find, file.NewOpenFile(a.vault.Readers), openPluginFile(a.vault.Options), getMediaType(),
 		),
 	)
 }

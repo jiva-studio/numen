@@ -32,7 +32,7 @@ func openPluginWork(
 		return pluginsWiring{}, nil, err
 	}
 	work := pluginsOpenPluginWork(a, tasks, models)
-	setPluginTexts(a.vault)
+	setPluginTexts(a.Endpoints.Lender, a.vault.TextVersions)
 	return a, work, nil
 }
 

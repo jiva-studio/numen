@@ -57,8 +57,8 @@ func openCLIVaults(a pluginsWiring) (cli.Vaults, error) {
 	}
 	find := registry.NewFind(ports.Lookup).Execute
 	return cli.Vaults{
-		Add:        vault.NewAdd(vaultIdentity(a.vault), ports.Vaults, ports.Lookup, ports.Saver, a.vault.Clock),
-		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, vaultReaders(a.vault)),
+		Add:        vault.NewAdd(vaultIdentity(a.vault.Options), ports.Vaults, ports.Lookup, ports.Saver, a.vault.Clock),
+		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, a.vault.Readers),
 		RecordOpen: vault.NewRecordOpenByName(find, vault.NewRecordOpen(ports.Recorder)),
 	}, nil
 }
@@ -88,7 +88,7 @@ func openCLIIndexed(r *cliRun, a pluginsWiring, buildIndexed func(*Index, bool) 
 		Changes: cli.VaultChanges{
 			Rename:     vault.NewRenameByName(find, vault.NewRename(ports.Vaults, ports.Saver, db.Vaults())),
 			Unregister: vault.NewUnregisterByName(find, unregister),
-			Erase:      vault.NewEraseByName(find, vault.NewErase(vaultIdentity(a.vault), vaultTrash(a.vault), unregister)),
+			Erase:      vault.NewEraseByName(find, vault.NewErase(vaultIdentity(a.vault.Options), vaultTrash(a.vault.Clock), unregister)),
 		},
 		Scan: cli.Scan{
 			Scan: indexing.NewScanVault(indexing.NewReadWholeVaultByName(find, prepareScan), db.NoteQueries()),
@@ -96,7 +96,7 @@ func openCLIIndexed(r *cliRun, a pluginsWiring, buildIndexed func(*Index, bool) 
 		},
 		Search:           cli.Search{Search: searchusecase.NewByName(find, prepareSearch)},
 		Links:            query.NewShowLinksByName(find, Queries(db).Refer.Links),
-		Problems:         vault.NewGetProblemsByName(find, getProblems(a.vault, db.NoteProblems())),
+		Problems:         vault.NewGetProblemsByName(find, getProblems(db.NoteProblems())),
 		Query:            searchqueryusecase.NewFindSearchResultsByName(find, prepareQuery),
 		OperationResults: newClearOperationResults(db),
 	}, nil

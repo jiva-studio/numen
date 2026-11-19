@@ -60,7 +60,7 @@ func mountCatalog(w *windowWiring) {
 
 func mountMedia(w *windowWiring) {
 	state := w.state
-	resolve := file.NewResolveAddress(file.NewStatFile(vaultReaders(w.a.vault)), openPluginFile(w.a.vault), getMediaType(w.a.vault))
+	resolve := file.NewResolveAddress(file.NewStatFile(w.a.vault.Readers), openPluginFile(w.a.vault.Options), getMediaType())
 	handler := mediawindow.NewHandler(state, state, resolve)
 	w.inst.Mount(editor.NewMediaRoute(state, handler))
 }
@@ -78,7 +78,7 @@ func mountCommand(w *windowWiring) {
 
 func mountText(w *windowWiring) {
 	handler := windowtext.NewHandler(w.state, nil)
-	if text := openFileText(w.a.vault); text != nil {
+	if text := openFileText(w.a.vault.TextVersions); text != nil {
 		handler = windowtext.NewHandler(w.state, text)
 	}
 	path, served := windowtext.NewRoute(handler, w.state.Gate.CountQuestions())
@@ -123,13 +123,13 @@ func getTabKindChooser(c pluginsWiring) file.TabKindChooser {
 
 func mountFile(w *windowWiring) {
 	state := w.state
-	readers := vaultReaders(w.a.vault)
+	readers := w.a.vault.Readers
 	kinds := w.kinds
 	folders := filewindow.NewFolders(
 		state,
 		file.NewListFolder(file.NewGetFolderEntries(readers, w.db.NoteQueries()), kinds.list),
 		file.NewListFileKinds(kinds.files, kinds.chooser),
-		file.NewCreateFolder(folderWriters(w.a.vault), state.Writes),
+		file.NewCreateFolder(w.a.vault.Writers, state.Writes),
 	)
 	moveFile := vault.NewMoveFile(&w.cases.Vaults.Tree.Move, state.Writes, state.Writes)
 	removeFile := note.NewRemoveFile(&w.cases.Notes.Place.Remove, state.Writes)
@@ -186,7 +186,7 @@ func mountSettings(w *windowWiring) {
 	state := w.state
 	retry := settings.NewRetryPlugin(w.a.Execution.Runtime.RetryPlugin)
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)
-	if data := openPluginData(w.a.vault); data != nil {
+	if data := openPluginData(w.a.vault.Options, w.a.vault.TextVersions); data != nil {
 		folders = windowsettings.NewPluginFolders(retry, data, state)
 	}
 	values := windowsettings.NewValues(
@@ -252,11 +252,11 @@ func mountLogs(w *windowWiring) {
 
 func shareEditorWindow(db *Index, opened *windowWiring) {
 	view := windowView(opened.state)
-	focusFile := file.NewFocusFile(vaultReaders(opened.a.vault), view)
+	focusFile := file.NewFocusFile(opened.a.vault.Readers, view)
 	setPluginWindow(opened.a, windowsession.NewPluginWindow(
 		&opened.state.Runtime,
 		&opened.state.Tabs,
-		vaultFocusNote(opened.a.vault, db.NoteQueries(), view),
+		query.NewFocusNote(db.NoteQueries(), view),
 		windowsession.FileFocusFunc(func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error {
 			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
 		}),
@@ -317,8 +317,8 @@ func newIndexSession(worker *indexing.Worker) func() windowsession.IndexSession 
 	}
 }
 
-func getTextVersions(a pluginsWiring) windowsession.TextVersions {
-	if versions := a.vault.TextVersions; versions != nil {
+func getTextVersions(versions *TextVersions) windowsession.TextVersions {
+	if versions != nil {
 		return versions.Changes
 	}
 	return nil

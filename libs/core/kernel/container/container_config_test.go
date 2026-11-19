@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
@@ -110,16 +109,13 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 func TestVaultsAreOpenedForWritingWithTheOptionsOfTheInstallation(t *testing.T) {
 	cfg := NewTestInstallation(Config{Paths: Paths{ServiceDir: ".mine"}}, nil)
 
-	opened, ok := noteWriters(cfg.buildVaultWiring()).(vaultwriter.VaultWriters)
-	if !ok {
-		t.Fatalf("vaults are opened for writing by %T", noteWriters(cfg.buildVaultWiring()))
-	}
+	opened := cfg.buildVaultWiring().Writers
 	if opened.Options.ServiceDir != ".mine" {
 		t.Errorf("vaults are opened with %+v", opened.Options)
 	}
-	read, ok := vaultReaders(cfg.buildVaultWiring()).(vaultreader.Readers)
+	read, ok := cfg.buildVaultWiring().Readers.(vaultreader.Readers)
 	if !ok {
-		t.Fatalf("vaults are opened for reading by %T", vaultReaders(cfg.buildVaultWiring()))
+		t.Fatalf("vaults are opened for reading by %T", cfg.buildVaultWiring().Readers)
 	}
 	if read.Options.ServiceDir != ".mine" {
 		t.Errorf("vaults are opened with %+v", read.Options)
@@ -231,10 +227,10 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 
 func TestEveryFolderOfTheMachineIsGivenAnIdentityAndATrash(t *testing.T) {
 	isolate(t)
-	if vaultIdentity(plugins(Config{}, nil, nil, nil, NewResources()).vault) == nil {
+	if vaultIdentity(plugins(Config{}, nil, nil, nil, NewResources()).vault.Options) == nil {
 		t.Error("folders are given no identity")
 	}
-	if vaultTrash(plugins(Config{}, nil, nil, nil, NewResources()).vault) == nil {
+	if vaultTrash(plugins(Config{}, nil, nil, nil, NewResources()).vault.Clock) == nil {
 		t.Error("what is deleted has nowhere to go")
 	}
 }
@@ -243,7 +239,7 @@ func TestTheVaultWaitsOnTheClockTheInstallationNamed(t *testing.T) {
 	named := testsupport.NewClock()
 	resources := NewResources()
 	resources.Now = named
-	quiet := vaultBase(Config{}, getPluginExecution(nil), getPluginEndpoints(nil), resources, nil).Clock.After(indexing.QuietPeriod)
+	quiet := openVaultAccess(Paths{}, GetClock(resources), resources.vaultLocks, resources.watches, nil).Clock.After(indexing.QuietPeriod)
 	named.Advance(indexing.QuietPeriod)
 	select {
 	case <-quiet:
