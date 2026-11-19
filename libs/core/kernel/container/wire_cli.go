@@ -140,7 +140,7 @@ func newCLIIndexed(index cliIndex, install pluginInstall, exec *PluginExecution,
 		embedder, why := openCLIEmbedder(index.closers, index.source, ctx)
 		reportSearchFallback(errorHandler, why)
 		setModelCalls(install, exec, settingsDeps, storage, index.notices)
-		return newFindSearchResults(openQueryPorts(install, exec, settingsDeps, storage), settingsDeps, ranking.newTextSearch(index.workers), db, embedder, errorHandler), nil
+		return newFindSearchResults(openQueryPorts(install, exec, settingsDeps, storage), settingsDeps, newTextSearch(ranking, index.workers), db, embedder, errorHandler), nil
 	}
 	return cli.Indexed{
 		Changes: cli.VaultChanges{
@@ -184,7 +184,7 @@ func prepareCLISearch(i cliIndex, ctx context.Context, v domain.Vault, plan vaul
 	}
 	embedder, why := openCLIEmbedder(i.closers, i.source, ctx)
 	reportSearchFallback(errorHandler, why)
-	return newSearch(plan.newTextSearch(i.workers), db, embedder, errorHandler, nil), nil
+	return newSearch(newTextSearch(plan, i.workers), db, embedder, errorHandler, nil), nil
 }
 
 func reportSearchFallback(errorHandler window.ErrorHandler, err error) {

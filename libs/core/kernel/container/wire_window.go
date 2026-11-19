@@ -78,7 +78,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	}
 	plugins := openWindowPlugins(install, exec, settingsDeps, vaultDeps, db, newSourceBinding(exec, c.SafeMode, install.Endpoints, res))
 	opened, closeEmbedder := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps, getLogEntries(res))
-	mountServices(opened, install, exec, settingsDeps, searchDeps.newTextSearch(c.machine.ResolvedCompute.Workers), vaultDeps)
+	mountServices(opened, install, exec, settingsDeps, newTextSearch(searchDeps, c.machine.ResolvedCompute.Workers), vaultDeps)
 	if err := opened.inst.Start(ctx, first, opened.server); err != nil {
 		return nil, errors.Join(err, closeEmbedder(), db.Close())
 	}

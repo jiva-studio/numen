@@ -39,7 +39,7 @@ type vaultIndexPlan struct {
 	ErrorHandler       func(error)
 }
 
-func (plan vaultIndexPlan) newTextSearch(workers int) textSearch {
+func newTextSearch(plan vaultIndexPlan, workers int) textSearch {
 	return textSearch{VaultReaders: plan.VaultReaders, TextReaders: plan.TextReaders, Workers: workers}
 }
 

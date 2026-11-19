@@ -64,7 +64,7 @@ func (c TestInstallation) Embedders(ctx context.Context) (indexing, asking searc
 }
 
 func (c TestInstallation) NewSearchOver(queries sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
-	return newSearchOver(indexPlanOf(c).newTextSearch(c.machine.ResolvedCompute.Workers), queries, sources, errorHandler, nil)
+	return newSearchOver(newTextSearch(indexPlanOf(c), c.machine.ResolvedCompute.Workers), queries, sources, errorHandler, nil)
 }
 
 func (c TestInstallation) OpenGetSettings() *settings.Get {
@@ -126,7 +126,7 @@ func IndexTexts(c TestInstallation, db *Index, v domain.Vault) (filetext.Index, 
 }
 
 func NewSearch(c TestInstallation, db *Index, asking searchsourceport.Source, errorHandler func(error)) searchusecase.Search {
-	return newSearch(indexPlanOf(c).newTextSearch(c.machine.ResolvedCompute.Workers), db, asking, errorHandler, nil)
+	return newSearch(newTextSearch(indexPlanOf(c), c.machine.ResolvedCompute.Workers), db, asking, errorHandler, nil)
 }
 
 func SyncSetting(c TestInstallation) naming.SyncSetting {
