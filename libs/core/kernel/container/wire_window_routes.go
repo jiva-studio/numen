@@ -184,7 +184,7 @@ func openGetSettings(s settingsWiring) *settings.Get {
 
 func mountSettings(w *windowWiring) {
 	state := w.state
-	retry := openRetryPlugin(w.a.settings, getPluginRetrier(w.a))
+	retry := settings.NewRetryPlugin(getPluginRetrier(w.a))
 	folders := windowsettings.NewPluginFolders(retry, nil, nil)
 	if data := openPluginData(w.a.vault); data != nil {
 		folders = windowsettings.NewPluginFolders(retry, data, state)
@@ -239,13 +239,13 @@ func openOptionalRecordLog(indexPath string, res *Resources) func(domainlogs.Ent
 }
 
 func mountLogs(w *windowWiring) {
-	record := openRecordLog(w.a.vault.IndexPath, w.logEntries, logLevelSetting(w.a.settings), w.a.vault.Clock)
+	record := openRecordLog(w.a.vault.IndexPath, w.logEntries, w.a.settings.SettingsFiles.GetLogLevel, w.a.vault.Clock)
 	watch := logsusecase.NewWatch(w.logEntries, logfiles.NewBesideIndex(w.a.vault.IndexPath), w.a.vault.Clock)
 	w.state.SetCallTrace(w.a.vault.Clock, w.a.vault.RecordLog)
 	w.a.PluginHost.Lender.Update(func(l *hostendpoint.Lent) {
 		l.Logs = record
 	})
-	handler := windowlogs.NewHandler(watch, record, logLevelSetting(w.a.settings), writeLogLevel(w.a.settings))
+	handler := windowlogs.NewHandler(watch, record, w.a.settings.SettingsFiles.GetLogLevel, writeLogLevel(w.a.settings))
 	path, served := windowlogs.NewRoute(handler, w.state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

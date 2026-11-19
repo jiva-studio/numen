@@ -182,7 +182,7 @@ func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, search
 	base.SyncSetting = syncSetting(settings)
 	base.CutNotes = cutNotes(search)
 	base.SetNoteCut = func(scan *vault.Scan) { setNoteCut(search, scan) }
-	record := openRecordLog(base.IndexPath, getLogEntries(res), logLevelSetting(settings), base.Clock)
+	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
 	base.RecordLog = recordLogFunc(record, res.ErrorHandler)
 	return base
 }
