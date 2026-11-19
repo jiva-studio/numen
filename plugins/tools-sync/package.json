@@ -1,9 +1,9 @@
 {
-  "name": "@numen/tools.supporter",
+  "name": "@numen/tools.sync",
   "version": "2026.11.1",
   "private": true,
   "type": "module",
-  "description": "Supporter plugin frontend for Numen",
+  "description": "Numen Sync plugin frontend for Numen",
   "main": "./frontend/index.ts",
   "types": "./frontend/index.ts",
   "scripts": {

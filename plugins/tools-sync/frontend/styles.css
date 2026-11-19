@@ -1,0 +1,50 @@
+/* Numen Sync plugin styles */
+.sync-badge {
+  --chip-height: 1.25rem;
+  --chip-text: 0.75rem;
+  --chip-pad: 0.5rem;
+  --chip-dot: 0.4375rem;
+  --chip-ring: 0.625rem;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--chip-pad) / 2);
+  box-sizing: border-box;
+  height: var(--chip-height);
+  margin-inline: calc(var(--numen-inset) / 4);
+  padding: 0 var(--chip-pad);
+  background: var(--numen-surface);
+  border-radius: var(--numen-radius);
+  color: var(--numen-ink);
+  font: inherit;
+  font-size: var(--chip-text);
+  line-height: 1;
+}
+
+.sync-badge__spinner {
+  flex: none;
+  box-sizing: border-box;
+  inline-size: var(--chip-ring);
+  block-size: var(--chip-ring);
+  border: var(--numen-stroke) solid var(--numen-hushed);
+  border-block-start-color: var(--numen-accent);
+  border-radius: var(--numen-radius-pill);
+  animation: sync-badge-spin var(--numen-wait-spin) linear infinite;
+}
+
+.sync-badge__dot {
+  flex: none;
+  inline-size: var(--chip-dot);
+  block-size: var(--chip-dot);
+  border-radius: var(--numen-radius-pill);
+  background: var(--numen-positive);
+}
+
+.sync-badge__label {
+  white-space: nowrap;
+}
+
+@keyframes sync-badge-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
