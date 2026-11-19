@@ -53,7 +53,7 @@ type VaultOps struct {
 // PluginVaults lets the plugins that have vault:manage change the list of vaults and the vault the
 // window shows. It uses the operations of the window, so a plugin and the user see the same errors.
 type PluginVaults struct {
-	current currentVault
+	current *Runtime
 	ops     VaultOps
 }
 

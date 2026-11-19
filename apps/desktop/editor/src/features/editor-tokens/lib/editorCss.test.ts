@@ -57,14 +57,12 @@ describe('the tokens of the editor written from its settings', () => {
     expect(new Set(faces).size).toBe(3)
   })
 
-  it.each([
-    'cursive',
-    'Sans',
-    'sans; color: red',
-    'serif } body { display: none',
-    'mono /* x */',
-    '<b>',
-  ])(
+  it('quotes an installed font family', () => {
+    const css = getEditorCss({ fontSize: 14, lineHeight: 1.6, fontFamily: 'JetBrains Mono' })
+    expect(readTokens(css).get(FAMILY)).toBe('"JetBrains Mono"')
+  })
+
+  it.each(['sans; color: red', 'serif } body { display: none', 'mono /* x */', '<b>'])(
     'writes no family for the value %s that is none of the choices, and keeps the size',
     (value) => {
       const tokens = readTokens(getEditorCss({ fontSize: 18, lineHeight: 1.5, fontFamily: value }))

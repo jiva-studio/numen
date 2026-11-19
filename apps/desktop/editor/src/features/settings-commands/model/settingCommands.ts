@@ -55,7 +55,10 @@ export interface SettingPalette {
 }
 
 const isChoiceKind = (setting: PluginSettingInfo): boolean =>
-  setting.type === 'boolean' || setting.type === 'enum' || setting.type === 'range'
+  setting.type === 'boolean' ||
+  setting.type === 'enum' ||
+  setting.type === 'range' ||
+  (setting.type === 'string' && getOptions(setting).length > 0)
 
 /** A setting and the owner that declares it. */
 interface FoundSetting {
@@ -103,7 +106,7 @@ const getChoices = (setting: PluginSettingInfo, words: SettingWords): readonly C
       { row: { id: 'off', title: words.off, ...getMark(!isOn, '', words) }, value: false },
     ]
   }
-  if (setting.type === 'enum') {
+  if (setting.type === 'enum' || setting.type === 'string') {
     const now = typeof current === 'string' ? current : JSON.stringify(current ?? '')
     return getOptions(setting).map((one) => ({
       row: {

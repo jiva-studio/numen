@@ -150,7 +150,7 @@ function createInstallationPlugin(deps: InstallationPluginDeps) {
       try {
         const answer = await settings.choosePluginPath(pluginId, key)
         if (answer.isChosen) {
-          await rest.start()
+          await rest.refresh()
         }
         return answer.problem
       } catch (caughtError) {
@@ -231,7 +231,7 @@ export function createSettingsPage({
     askPluginRetry: api.settings.retryPlugin,
     words: { stopped: PLUGIN_FAILURE_WORDS.stopped, retryFailed: PLUGIN_FAILURE_WORDS.retryFailed },
     notify: log.getWriter('plugins'),
-    refresh: () => rest.start(),
+    refresh: () => rest.refresh(),
     getName: getPluginName,
   })
 
