@@ -45,9 +45,9 @@ export function useVaults({ listVaults, log }: VaultsDeps) {
   const loadVaults = async () => {
     try {
       items.value = await listVaults()
-    } catch {
-      // The layout the window opens with is the one the list's answer decides.
+    } catch (error) {
       unlisted(VAULT_WORDS.unlisted, 'error')
+      throw error
     }
   }
 

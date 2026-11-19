@@ -84,7 +84,7 @@ describe('the vault list before and after it is requested for', () => {
       log: { getWriter } as never,
     })
 
-    await target.loadVaults()
+    await expect(target.loadVaults()).rejects.toThrow('down')
 
     expect(getWriter).toHaveBeenCalledWith('listed')
     expect(write).toHaveBeenCalledWith(VAULT_WORDS.unlisted, 'error')

@@ -74,7 +74,7 @@ describe('what remains at a setting', () => {
     const retainedState = createSettingsStore(settings, words, vi.fn())
 
     expect(retainedState.state.plugins.value).toStrictEqual([])
-    await retainedState.start()
+    await retainedState.refresh()
 
     expect(retainedState.read.getSetting(['agent'])).toBeUndefined()
     expect(retainedState.state.path.value).toBe('')
@@ -83,7 +83,7 @@ describe('what remains at a setting', () => {
 
   it('returns empty when response is not valid JSON', async () => {
     const { kept, notify } = createStore('not JSON at all')
-    await kept.start()
+    await kept.refresh()
     expect(kept.read.getSetting(['agent'])).toBeUndefined()
     expect(notify).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
   })

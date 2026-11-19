@@ -51,19 +51,23 @@ export function createWindowSettings({
     watchSettings,
     refresh: async (batch) => {
       try {
-        await Promise.all([rest.start(), appearance.reload(), connections.reload()])
+        await Promise.all([rest.refresh(), appearance.reload(), connections.reload()])
       } finally {
         rest.changes.emit(batch)
       }
     },
   })
+  let isFollowing = false
   return {
     appearance,
     settingPalette,
     paletteLists: settingPalette.lists,
     start: async () => {
-      runInBackground(appearance.start(), reportError)
-      runInBackground(changes.start(), reportError)
+      if (!isFollowing) {
+        isFollowing = true
+        runInBackground(appearance.start(), reportError)
+        runInBackground(changes.start(), reportError)
+      }
       // The plugins the window starts are named by what this read answers.
       await rest.start()
     },
