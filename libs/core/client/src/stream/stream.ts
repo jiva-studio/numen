@@ -22,46 +22,46 @@ export interface StreamDeps {
   reset?(): void
 }
 
-export function createFollower(deps: StreamDeps) {
-  /**
-   * One reading of a stream, to its end or to the fault that ends it. It
-   * returns whether the window is still open.
-   */
-  const readStream = async <T>(
-    stream: () => AsyncIterable<T>,
-    each: (item: T) => void | Promise<void>,
-  ): Promise<boolean> => {
-    try {
-      for await (const item of stream()) {
-        if (!deps.isOpen()) return false
-        await each(item)
-      }
-    } catch {
-      // Any error thrown while reading ends this reading and is reported as a
-      // lost connection. This also covers a fault thrown by `each`, which cannot
-      // be distinguished from a transport fault here.
-      if (!deps.isOpen()) return false
-      deps.setLost(LOST)
-    }
-    return true
+async function readStream<T>(
+  stream: () => AsyncIterable<T>,
+  each: (item: T) => Promise<void>,
+  isOpen: () => boolean,
+): Promise<void> {
+  for await (const item of stream()) {
+    if (!isOpen()) return
+    await each(item)
   }
+}
 
-  /**
-   * One stream, read for as long as the window is open. What arrives is
-   * answered before the next of it is read, and what the answer throws ends
-   * this reading of the stream and begins another.
-   */
-  return async function follows<T>(
+export function createFollower(deps: StreamDeps) {
+  const disconnected = new Set<symbol>()
+
+  return async function follow<T>(
     stream: () => AsyncIterable<T>,
     each: (item: T) => void | Promise<void>,
     again = AGAIN,
   ): Promise<void> {
-    while (deps.isOpen()) {
-      if (!(await readStream(stream, each))) return
-      deps.reset?.()
-      await deps.wait(again)
-      // The stream resumed, so the lost-connection report is cleared.
-      if (deps.isOpen()) deps.setLost('')
+    const subscription = Symbol()
+    const deliver = async (item: T) => {
+      await each(item)
+      if (deps.isOpen() && disconnected.delete(subscription) && disconnected.size === 0) {
+        deps.setLost('')
+      }
+    }
+    const reportLoss = () => {
+      if (!deps.isOpen()) return
+      if (disconnected.size === 0) deps.setLost(LOST)
+      disconnected.add(subscription)
+    }
+    try {
+      while (deps.isOpen()) {
+        await readStream(stream, deliver, () => deps.isOpen()).catch(reportLoss)
+        if (!deps.isOpen()) return
+        deps.reset?.()
+        await deps.wait(again)
+      }
+    } finally {
+      disconnected.delete(subscription)
     }
   }
 }

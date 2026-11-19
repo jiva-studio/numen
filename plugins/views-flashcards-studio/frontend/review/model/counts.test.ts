@@ -132,7 +132,7 @@ describe('what the counting follows', () => {
 
   it('takes a stream that went up again after a wait', async () => {
     vi.useFakeTimers()
-    wire.reloads = (signal) => (wire.reloadsOpened > 1 ? failsOnAbort(signal) : fails())
+    wire.reloads = () => (wire.reloadsOpened > 2 ? sends({ reload: false }) : fails())
     const reportError = vi.fn()
     const counts = createVaultCounts({ reportError })
     counts.start()
@@ -143,7 +143,13 @@ describe('what the counting follows', () => {
 
     await vi.advanceTimersByTimeAsync(1)
     expect(wire.reloadsOpened).toBe(2)
-    expect(reportError).toHaveBeenLastCalledWith('')
+    expect(reportError.mock.calls).toEqual([['lost touch with numen — the window keeps trying']])
+    await vi.advanceTimersByTimeAsync(AGAIN)
+    expect(wire.reloadsOpened).toBe(3)
+    expect(reportError.mock.calls).toEqual([
+      ['lost touch with numen — the window keeps trying'],
+      [''],
+    ])
     counts.dispose()
   })
 })

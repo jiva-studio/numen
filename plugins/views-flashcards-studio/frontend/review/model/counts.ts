@@ -30,15 +30,25 @@ async function followReloads(
   refresh: () => Promise<void>,
   reportError: VaultCountsDeps['reportError'],
 ) {
+  let isLost = false
+  const refreshCounts = async () => {
+    await refresh()
+    if (isLost && !signal.aborted) {
+      isLost = false
+      reportError('')
+    }
+  }
   while (!signal.aborted) {
     try {
-      await readReloads(signal, refresh)
+      await readReloads(signal, refreshCounts)
     } catch {
-      if (!signal.aborted) reportError('lost touch with numen — the window keeps trying')
+      if (!signal.aborted && !isLost) {
+        isLost = true
+        reportError('lost touch with numen — the window keeps trying')
+      }
     }
     if (signal.aborted) return
     await new Promise<void>((resolve) => setTimeout(resolve, 1000))
-    if (!signal.aborted) reportError('')
   }
 }
 
