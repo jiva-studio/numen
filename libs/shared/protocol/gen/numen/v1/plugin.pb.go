@@ -959,7 +959,8 @@ type PluginInfo struct {
 	// PluginContributionKind.
 	Contributions []*PluginContribution `protobuf:"bytes,15,rep,name=contributions,proto3" json:"contributions,omitempty"`
 	// Whether the plugin stays off until the person enables it, when its settings hold no enabled value.
-	IsOffByDefault bool `protobuf:"varint,16,opt,name=is_off_by_default,json=isOffByDefault,proto3" json:"is_off_by_default,omitempty"`
+	IsOffByDefault bool             `protobuf:"varint,16,opt,name=is_off_by_default,json=isOffByDefault,proto3" json:"is_off_by_default,omitempty"`
+	Compute        *ManifestCompute `protobuf:"bytes,17,opt,name=compute,proto3" json:"compute,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1090,6 +1091,13 @@ func (x *PluginInfo) GetIsOffByDefault() bool {
 		return x.IsOffByDefault
 	}
 	return false
+}
+
+func (x *PluginInfo) GetCompute() *ManifestCompute {
+	if x != nil {
+		return x.Compute
+	}
+	return nil
 }
 
 // PluginContribution is one section of a plugin's manifest and the entries it declares, in the
@@ -1439,6 +1447,95 @@ func (*WatchPluginProcessesRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{18}
 }
 
+type ReportModelProvidersRequest struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Providers []*ModelProvider       `protobuf:"bytes,1,rep,name=providers,proto3" json:"providers,omitempty"`
+	// Increases with each change to the open stages for this process.
+	Revision      uint64 `protobuf:"varint,2,opt,name=revision,proto3" json:"revision,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportModelProvidersRequest) Reset() {
+	*x = ReportModelProvidersRequest{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportModelProvidersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportModelProvidersRequest) ProtoMessage() {}
+
+func (x *ReportModelProvidersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportModelProvidersRequest.ProtoReflect.Descriptor instead.
+func (*ReportModelProvidersRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ReportModelProvidersRequest) GetProviders() []*ModelProvider {
+	if x != nil {
+		return x.Providers
+	}
+	return nil
+}
+
+func (x *ReportModelProvidersRequest) GetRevision() uint64 {
+	if x != nil {
+		return x.Revision
+	}
+	return 0
+}
+
+type ReportModelProvidersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportModelProvidersResponse) Reset() {
+	*x = ReportModelProvidersResponse{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportModelProvidersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportModelProvidersResponse) ProtoMessage() {}
+
+func (x *ReportModelProvidersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportModelProvidersResponse.ProtoReflect.Descriptor instead.
+func (*ReportModelProvidersResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{20}
+}
+
 type ReleaseProcessRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1447,7 +1544,7 @@ type ReleaseProcessRequest struct {
 
 func (x *ReleaseProcessRequest) Reset() {
 	*x = ReleaseProcessRequest{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[19]
+	mi := &file_numen_v1_plugin_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1459,7 +1556,7 @@ func (x *ReleaseProcessRequest) String() string {
 func (*ReleaseProcessRequest) ProtoMessage() {}
 
 func (x *ReleaseProcessRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[19]
+	mi := &file_numen_v1_plugin_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1472,7 +1569,7 @@ func (x *ReleaseProcessRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseProcessRequest.ProtoReflect.Descriptor instead.
 func (*ReleaseProcessRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{21}
 }
 
 type ReleaseProcessResponse struct {
@@ -1483,7 +1580,7 @@ type ReleaseProcessResponse struct {
 
 func (x *ReleaseProcessResponse) Reset() {
 	*x = ReleaseProcessResponse{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[20]
+	mi := &file_numen_v1_plugin_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1495,7 +1592,7 @@ func (x *ReleaseProcessResponse) String() string {
 func (*ReleaseProcessResponse) ProtoMessage() {}
 
 func (x *ReleaseProcessResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[20]
+	mi := &file_numen_v1_plugin_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1508,7 +1605,7 @@ func (x *ReleaseProcessResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseProcessResponse.ProtoReflect.Descriptor instead.
 func (*ReleaseProcessResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{20}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{22}
 }
 
 type WatchPluginProcessesResponse struct {
@@ -1524,7 +1621,7 @@ type WatchPluginProcessesResponse struct {
 
 func (x *WatchPluginProcessesResponse) Reset() {
 	*x = WatchPluginProcessesResponse{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[21]
+	mi := &file_numen_v1_plugin_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1536,7 +1633,7 @@ func (x *WatchPluginProcessesResponse) String() string {
 func (*WatchPluginProcessesResponse) ProtoMessage() {}
 
 func (x *WatchPluginProcessesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[21]
+	mi := &file_numen_v1_plugin_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1549,7 +1646,7 @@ func (x *WatchPluginProcessesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchPluginProcessesResponse.ProtoReflect.Descriptor instead.
 func (*WatchPluginProcessesResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{21}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *WatchPluginProcessesResponse) GetProcesses() []*PluginProcess {
@@ -1595,14 +1692,15 @@ type PluginProcess struct {
 	// The holder whose lease started the process.
 	StartedBy *PluginLeaseHolder `protobuf:"bytes,10,opt,name=started_by,json=startedBy,proto3" json:"started_by,omitempty"`
 	// The holders of the leases open now, oldest first.
-	Holders       []*PluginLeaseHolder `protobuf:"bytes,11,rep,name=holders,proto3" json:"holders,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Holders        []*PluginLeaseHolder `protobuf:"bytes,11,rep,name=holders,proto3" json:"holders,omitempty"`
+	ModelProviders []*ModelProvider     `protobuf:"bytes,12,rep,name=model_providers,json=modelProviders,proto3" json:"model_providers,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *PluginProcess) Reset() {
 	*x = PluginProcess{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[22]
+	mi := &file_numen_v1_plugin_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1614,7 +1712,7 @@ func (x *PluginProcess) String() string {
 func (*PluginProcess) ProtoMessage() {}
 
 func (x *PluginProcess) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[22]
+	mi := &file_numen_v1_plugin_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1627,7 +1725,7 @@ func (x *PluginProcess) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginProcess.ProtoReflect.Descriptor instead.
 func (*PluginProcess) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{22}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *PluginProcess) GetPluginId() string {
@@ -1707,6 +1805,66 @@ func (x *PluginProcess) GetHolders() []*PluginLeaseHolder {
 	return nil
 }
 
+func (x *PluginProcess) GetModelProviders() []*ModelProvider {
+	if x != nil {
+		return x.ModelProviders
+	}
+	return nil
+}
+
+// ModelProvider identifies the execution provider an open model stage uses.
+type ModelProvider struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Stage         string                 `protobuf:"bytes,1,opt,name=stage,proto3" json:"stage,omitempty"`
+	Provider      string                 `protobuf:"bytes,2,opt,name=provider,proto3" json:"provider,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ModelProvider) Reset() {
+	*x = ModelProvider{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ModelProvider) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModelProvider) ProtoMessage() {}
+
+func (x *ModelProvider) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModelProvider.ProtoReflect.Descriptor instead.
+func (*ModelProvider) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *ModelProvider) GetStage() string {
+	if x != nil {
+		return x.Stage
+	}
+	return ""
+}
+
+func (x *ModelProvider) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
 // PluginLeaseHolder is who holds a lease on a plugin process and why.
 type PluginLeaseHolder struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1721,7 +1879,7 @@ type PluginLeaseHolder struct {
 
 func (x *PluginLeaseHolder) Reset() {
 	*x = PluginLeaseHolder{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[23]
+	mi := &file_numen_v1_plugin_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1733,7 +1891,7 @@ func (x *PluginLeaseHolder) String() string {
 func (*PluginLeaseHolder) ProtoMessage() {}
 
 func (x *PluginLeaseHolder) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[23]
+	mi := &file_numen_v1_plugin_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1746,7 +1904,7 @@ func (x *PluginLeaseHolder) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginLeaseHolder.ProtoReflect.Descriptor instead.
 func (*PluginLeaseHolder) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{23}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *PluginLeaseHolder) GetWho() string {
@@ -1773,7 +1931,7 @@ type DeliverEventRequest struct {
 
 func (x *DeliverEventRequest) Reset() {
 	*x = DeliverEventRequest{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[24]
+	mi := &file_numen_v1_plugin_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1785,7 +1943,7 @@ func (x *DeliverEventRequest) String() string {
 func (*DeliverEventRequest) ProtoMessage() {}
 
 func (x *DeliverEventRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[24]
+	mi := &file_numen_v1_plugin_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1798,7 +1956,7 @@ func (x *DeliverEventRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeliverEventRequest.ProtoReflect.Descriptor instead.
 func (*DeliverEventRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{24}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *DeliverEventRequest) GetEvent() string {
@@ -1818,7 +1976,7 @@ type DeliverEventResponse struct {
 
 func (x *DeliverEventResponse) Reset() {
 	*x = DeliverEventResponse{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[25]
+	mi := &file_numen_v1_plugin_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1830,7 +1988,7 @@ func (x *DeliverEventResponse) String() string {
 func (*DeliverEventResponse) ProtoMessage() {}
 
 func (x *DeliverEventResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[25]
+	mi := &file_numen_v1_plugin_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1843,7 +2001,7 @@ func (x *DeliverEventResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeliverEventResponse.ProtoReflect.Descriptor instead.
 func (*DeliverEventResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{25}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *DeliverEventResponse) GetError() PluginEventErrorCode {
@@ -1864,7 +2022,7 @@ var File_numen_v1_plugin_proto protoreflect.FileDescriptor
 
 const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/plugin.proto\x12\bnumen.v1\x1a\x15numen/v1/health.proto\"\r\n" +
+	"\x15numen/v1/plugin.proto\x12\bnumen.v1\x1a\x15numen/v1/health.proto\x1a\x17numen/v1/manifest.proto\"\r\n" +
 	"\vPingRequest\"B\n" +
 	"\fPingResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x1a\n" +
@@ -1930,7 +2088,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1e.numen.v1.PluginSettingOptionsR\x05value:\x028\x01\"B\n" +
 	"\x16PluginSettingCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xb4\x04\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xe9\x04\n" +
 	"\n" +
 	"PluginInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -1947,7 +2105,8 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\vhas_backend\x18\x0e \x01(\bR\n" +
 	"hasBackend\x12B\n" +
 	"\rcontributions\x18\x0f \x03(\v2\x1c.numen.v1.PluginContributionR\rcontributions\x12)\n" +
-	"\x11is_off_by_default\x18\x10 \x01(\bR\x0eisOffByDefaultJ\x04\b\n" +
+	"\x11is_off_by_default\x18\x10 \x01(\bR\x0eisOffByDefault\x123\n" +
+	"\acompute\x18\x11 \x01(\v2\x19.numen.v1.ManifestComputeR\acomputeJ\x04\b\n" +
 	"\x10\v\"\x82\x01\n" +
 	"\x12PluginContribution\x124\n" +
 	"\x04kind\x18\x01 \x01(\x0e2 .numen.v1.PluginContributionKindR\x04kind\x126\n" +
@@ -1967,13 +2126,17 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x11GetPluginsRequest\"D\n" +
 	"\x12GetPluginsResponse\x12.\n" +
 	"\aplugins\x18\x01 \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\"\x1d\n" +
-	"\x1bWatchPluginProcessesRequest\"\x17\n" +
+	"\x1bWatchPluginProcessesRequest\"p\n" +
+	"\x1bReportModelProvidersRequest\x125\n" +
+	"\tproviders\x18\x01 \x03(\v2\x17.numen.v1.ModelProviderR\tproviders\x12\x1a\n" +
+	"\brevision\x18\x02 \x01(\x04R\brevision\"\x1e\n" +
+	"\x1cReportModelProvidersResponse\"\x17\n" +
 	"\x15ReleaseProcessRequest\"\x18\n" +
 	"\x16ReleaseProcessResponse\"w\n" +
 	"\x1cWatchPluginProcessesResponse\x125\n" +
 	"\tprocesses\x18\x01 \x03(\v2\x17.numen.v1.PluginProcessR\tprocesses\x12 \n" +
 	"\ftime_unix_ms\x18\x02 \x01(\x03R\n" +
-	"timeUnixMs\"\xeb\x03\n" +
+	"timeUnixMs\"\xad\x04\n" +
 	"\rPluginProcess\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1f\n" +
 	"\vplugin_name\x18\x02 \x01(\tR\n" +
@@ -1990,7 +2153,11 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\n" +
 	"started_by\x18\n" +
 	" \x01(\v2\x1b.numen.v1.PluginLeaseHolderR\tstartedBy\x125\n" +
-	"\aholders\x18\v \x03(\v2\x1b.numen.v1.PluginLeaseHolderR\aholders\"7\n" +
+	"\aholders\x18\v \x03(\v2\x1b.numen.v1.PluginLeaseHolderR\aholders\x12@\n" +
+	"\x0fmodel_providers\x18\f \x03(\v2\x17.numen.v1.ModelProviderR\x0emodelProviders\"A\n" +
+	"\rModelProvider\x12\x14\n" +
+	"\x05stage\x18\x01 \x01(\tR\x05stage\x12\x1a\n" +
+	"\bprovider\x18\x02 \x01(\tR\bprovider\"7\n" +
 	"\x11PluginLeaseHolder\x12\x10\n" +
 	"\x03who\x18\x01 \x01(\tR\x03who\x12\x10\n" +
 	"\x03why\x18\x02 \x01(\tR\x03why\"+\n" +
@@ -2030,11 +2197,12 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x16PluginLifecycleService\x125\n" +
 	"\x04Ping\x12\x15.numen.v1.PingRequest\x1a\x16.numen.v1.PingResponse\x12A\n" +
 	"\bShutdown\x12\x19.numen.v1.ShutdownRequest\x1a\x1a.numen.v1.ShutdownResponse\x12D\n" +
-	"\tConfigure\x12\x1a.numen.v1.ConfigureRequest\x1a\x1b.numen.v1.ConfigureResponse2\x96\x02\n" +
+	"\tConfigure\x12\x1a.numen.v1.ConfigureRequest\x1a\x1b.numen.v1.ConfigureResponse2\xfd\x02\n" +
 	"\rPluginService\x12G\n" +
 	"\n" +
 	"GetPlugins\x12\x1b.numen.v1.GetPluginsRequest\x1a\x1c.numen.v1.GetPluginsResponse\x12g\n" +
-	"\x14WatchPluginProcesses\x12%.numen.v1.WatchPluginProcessesRequest\x1a&.numen.v1.WatchPluginProcessesResponse0\x01\x12S\n" +
+	"\x14WatchPluginProcesses\x12%.numen.v1.WatchPluginProcessesRequest\x1a&.numen.v1.WatchPluginProcessesResponse0\x01\x12e\n" +
+	"\x14ReportModelProviders\x12%.numen.v1.ReportModelProvidersRequest\x1a&.numen.v1.ReportModelProvidersResponse\x12S\n" +
 	"\x0eReleaseProcess\x12\x1f.numen.v1.ReleaseProcessRequest\x1a .numen.v1.ReleaseProcessResponse2c\n" +
 	"\x12PluginEventService\x12M\n" +
 	"\fDeliverEvent\x12\x1d.numen.v1.DeliverEventRequest\x1a\x1e.numen.v1.DeliverEventResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
@@ -2052,7 +2220,7 @@ func file_numen_v1_plugin_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_plugin_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_numen_v1_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_numen_v1_plugin_proto_goTypes = []any{
 	(PluginContributionKind)(0),          // 0: numen.v1.PluginContributionKind
 	(PluginEventErrorCode)(0),            // 1: numen.v1.PluginEventErrorCode
@@ -2075,57 +2243,66 @@ var file_numen_v1_plugin_proto_goTypes = []any{
 	(*GetPluginsRequest)(nil),            // 18: numen.v1.GetPluginsRequest
 	(*GetPluginsResponse)(nil),           // 19: numen.v1.GetPluginsResponse
 	(*WatchPluginProcessesRequest)(nil),  // 20: numen.v1.WatchPluginProcessesRequest
-	(*ReleaseProcessRequest)(nil),        // 21: numen.v1.ReleaseProcessRequest
-	(*ReleaseProcessResponse)(nil),       // 22: numen.v1.ReleaseProcessResponse
-	(*WatchPluginProcessesResponse)(nil), // 23: numen.v1.WatchPluginProcessesResponse
-	(*PluginProcess)(nil),                // 24: numen.v1.PluginProcess
-	(*PluginLeaseHolder)(nil),            // 25: numen.v1.PluginLeaseHolder
-	(*DeliverEventRequest)(nil),          // 26: numen.v1.DeliverEventRequest
-	(*DeliverEventResponse)(nil),         // 27: numen.v1.DeliverEventResponse
-	nil,                                  // 28: numen.v1.ConfigureRequest.ValuesEntry
-	nil,                                  // 29: numen.v1.PluginSettingOptionsBy.OptionsEntry
-	(HealthSeverity)(0),                  // 30: numen.v1.HealthSeverity
+	(*ReportModelProvidersRequest)(nil),  // 21: numen.v1.ReportModelProvidersRequest
+	(*ReportModelProvidersResponse)(nil), // 22: numen.v1.ReportModelProvidersResponse
+	(*ReleaseProcessRequest)(nil),        // 23: numen.v1.ReleaseProcessRequest
+	(*ReleaseProcessResponse)(nil),       // 24: numen.v1.ReleaseProcessResponse
+	(*WatchPluginProcessesResponse)(nil), // 25: numen.v1.WatchPluginProcessesResponse
+	(*PluginProcess)(nil),                // 26: numen.v1.PluginProcess
+	(*ModelProvider)(nil),                // 27: numen.v1.ModelProvider
+	(*PluginLeaseHolder)(nil),            // 28: numen.v1.PluginLeaseHolder
+	(*DeliverEventRequest)(nil),          // 29: numen.v1.DeliverEventRequest
+	(*DeliverEventResponse)(nil),         // 30: numen.v1.DeliverEventResponse
+	nil,                                  // 31: numen.v1.ConfigureRequest.ValuesEntry
+	nil,                                  // 32: numen.v1.PluginSettingOptionsBy.OptionsEntry
+	(*ManifestCompute)(nil),              // 33: numen.v1.ManifestCompute
+	(HealthSeverity)(0),                  // 34: numen.v1.HealthSeverity
 }
 var file_numen_v1_plugin_proto_depIdxs = []int32{
-	28, // 0: numen.v1.ConfigureRequest.values:type_name -> numen.v1.ConfigureRequest.ValuesEntry
+	31, // 0: numen.v1.ConfigureRequest.values:type_name -> numen.v1.ConfigureRequest.ValuesEntry
 	9,  // 1: numen.v1.PluginSetting.options:type_name -> numen.v1.PluginSettingOption
 	11, // 2: numen.v1.PluginSetting.options_by:type_name -> numen.v1.PluginSettingOptionsBy
 	12, // 3: numen.v1.PluginSetting.when:type_name -> numen.v1.PluginSettingCondition
 	9,  // 4: numen.v1.PluginSetting.active_options:type_name -> numen.v1.PluginSettingOption
 	9,  // 5: numen.v1.PluginSettingOptions.options:type_name -> numen.v1.PluginSettingOption
-	29, // 6: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
+	32, // 6: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
 	8,  // 7: numen.v1.PluginInfo.settings:type_name -> numen.v1.PluginSetting
 	17, // 8: numen.v1.PluginInfo.readers:type_name -> numen.v1.PluginReader
 	16, // 9: numen.v1.PluginInfo.settings_views:type_name -> numen.v1.PluginSettingsView
 	14, // 10: numen.v1.PluginInfo.contributions:type_name -> numen.v1.PluginContribution
-	0,  // 11: numen.v1.PluginContribution.kind:type_name -> numen.v1.PluginContributionKind
-	15, // 12: numen.v1.PluginContribution.items:type_name -> numen.v1.PluginContributionItem
-	13, // 13: numen.v1.GetPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
-	24, // 14: numen.v1.WatchPluginProcessesResponse.processes:type_name -> numen.v1.PluginProcess
-	30, // 15: numen.v1.PluginProcess.health:type_name -> numen.v1.HealthSeverity
-	25, // 16: numen.v1.PluginProcess.started_by:type_name -> numen.v1.PluginLeaseHolder
-	25, // 17: numen.v1.PluginProcess.holders:type_name -> numen.v1.PluginLeaseHolder
-	1,  // 18: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.PluginEventErrorCode
-	10, // 19: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
-	2,  // 20: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
-	4,  // 21: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
-	6,  // 22: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
-	18, // 23: numen.v1.PluginService.GetPlugins:input_type -> numen.v1.GetPluginsRequest
-	20, // 24: numen.v1.PluginService.WatchPluginProcesses:input_type -> numen.v1.WatchPluginProcessesRequest
-	21, // 25: numen.v1.PluginService.ReleaseProcess:input_type -> numen.v1.ReleaseProcessRequest
-	26, // 26: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
-	3,  // 27: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
-	5,  // 28: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
-	7,  // 29: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
-	19, // 30: numen.v1.PluginService.GetPlugins:output_type -> numen.v1.GetPluginsResponse
-	23, // 31: numen.v1.PluginService.WatchPluginProcesses:output_type -> numen.v1.WatchPluginProcessesResponse
-	22, // 32: numen.v1.PluginService.ReleaseProcess:output_type -> numen.v1.ReleaseProcessResponse
-	27, // 33: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
-	27, // [27:34] is the sub-list for method output_type
-	20, // [20:27] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	33, // 11: numen.v1.PluginInfo.compute:type_name -> numen.v1.ManifestCompute
+	0,  // 12: numen.v1.PluginContribution.kind:type_name -> numen.v1.PluginContributionKind
+	15, // 13: numen.v1.PluginContribution.items:type_name -> numen.v1.PluginContributionItem
+	13, // 14: numen.v1.GetPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
+	27, // 15: numen.v1.ReportModelProvidersRequest.providers:type_name -> numen.v1.ModelProvider
+	26, // 16: numen.v1.WatchPluginProcessesResponse.processes:type_name -> numen.v1.PluginProcess
+	34, // 17: numen.v1.PluginProcess.health:type_name -> numen.v1.HealthSeverity
+	28, // 18: numen.v1.PluginProcess.started_by:type_name -> numen.v1.PluginLeaseHolder
+	28, // 19: numen.v1.PluginProcess.holders:type_name -> numen.v1.PluginLeaseHolder
+	27, // 20: numen.v1.PluginProcess.model_providers:type_name -> numen.v1.ModelProvider
+	1,  // 21: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.PluginEventErrorCode
+	10, // 22: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
+	2,  // 23: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
+	4,  // 24: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
+	6,  // 25: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
+	18, // 26: numen.v1.PluginService.GetPlugins:input_type -> numen.v1.GetPluginsRequest
+	20, // 27: numen.v1.PluginService.WatchPluginProcesses:input_type -> numen.v1.WatchPluginProcessesRequest
+	21, // 28: numen.v1.PluginService.ReportModelProviders:input_type -> numen.v1.ReportModelProvidersRequest
+	23, // 29: numen.v1.PluginService.ReleaseProcess:input_type -> numen.v1.ReleaseProcessRequest
+	29, // 30: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
+	3,  // 31: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
+	5,  // 32: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
+	7,  // 33: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
+	19, // 34: numen.v1.PluginService.GetPlugins:output_type -> numen.v1.GetPluginsResponse
+	25, // 35: numen.v1.PluginService.WatchPluginProcesses:output_type -> numen.v1.WatchPluginProcessesResponse
+	22, // 36: numen.v1.PluginService.ReportModelProviders:output_type -> numen.v1.ReportModelProvidersResponse
+	24, // 37: numen.v1.PluginService.ReleaseProcess:output_type -> numen.v1.ReleaseProcessResponse
+	30, // 38: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
+	31, // [31:39] is the sub-list for method output_type
+	23, // [23:31] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_plugin_proto_init() }
@@ -2134,6 +2311,7 @@ func file_numen_v1_plugin_proto_init() {
 		return
 	}
 	file_numen_v1_health_proto_init()
+	file_numen_v1_manifest_proto_init()
 	file_numen_v1_plugin_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -2141,7 +2319,7 @@ func file_numen_v1_plugin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_plugin_proto_rawDesc), len(file_numen_v1_plugin_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   28,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   3,
 		},

@@ -24,6 +24,7 @@ describe('the plugins that run', () => {
               {
                 pluginId: 'org.example.atlas',
                 pluginName: 'Atlas',
+                modelProviders: [{ stage: 'Embeddings', provider: 'cpu' }],
                 startTimeUnixMs: 1_700_000_000_000n,
                 lastUseTimeUnixMs: 1_700_000_060_000n,
                 leaseCount: 0,
@@ -63,6 +64,7 @@ describe('the plugins that run', () => {
       {
         pluginId: 'org.example.atlas',
         pluginName: 'Atlas',
+        modelProviders: [{ stage: 'Embeddings', provider: 'cpu' }],
         startTime: 1_700_000_000_000,
         lastUseTime: 1_700_000_060_000,
         leaseCount: 0,
@@ -76,6 +78,7 @@ describe('the plugins that run', () => {
       {
         pluginId: 'org.example.maps',
         pluginName: 'Maps',
+        modelProviders: [],
         startTime: 1_700_000_000_000,
         lastUseTime: 1_700_000_000_000,
         leaseCount: 2,

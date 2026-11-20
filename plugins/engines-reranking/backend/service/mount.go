@@ -4,7 +4,9 @@ package service
 
 import (
 	"context"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	modelprocess "github.com/jiva-studio/numen/libs/plugin/sdk-go/process"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -17,23 +19,23 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/usecase/reranking"
 )
 
-func newScorerOpener(library *onnx.Library, fetch onnx.FetchFile, queue host.InferenceQueue) ports.OpenScorer {
+func newScorerOpener(library *onnx.Library, fetch onnx.FetchFile, queue host.InferenceQueue, sessions *modelprocess.ModelSessions) ports.OpenScorer {
 	return func(ctx context.Context, p profile.Profile) (ports.Scorer, error) {
-		scorer, err := engine.Open(ctx, library, p, fetch, queue)
+		scorer, err := engine.Open(ctx, library, p, fetch, queue, sessions.GetCompute())
 		if err != nil {
 			return nil, err
 		}
-		return scorer, nil
+		return activeScorer{Scorer: scorer, release: sessions.Track(ctx, map[string]string{"Reranking": string(scorer.Provider)})}, nil
 	}
 }
 
-func openRerankingUseCase(queue host.InferenceQueue, fetch onnx.FetchFile) (*reranking.Reranking, error) {
-	return reranking.New(profilefiles.GetDefaultDirectory(), newScorerOpener(onnx.NewLibrary(), fetch, queue), queue, console.Report)
+func openRerankingUseCase(queue host.InferenceQueue, fetch onnx.FetchFile, sessions *modelprocess.ModelSessions) (*reranking.Reranking, error) {
+	return reranking.New(profilefiles.GetDefaultDirectory(), newScorerOpener(onnx.NewLibrary(), fetch, queue, sessions), queue, console.Report)
 }
 
 // Mount serves the provider of the local-reranker connection type on s. The loaded model closes with s.
 func Mount(s *server.Server) error {
-	r, err := openRerankingUseCase(host.NewInferenceQueue(s.GetHostEndpoint), fetchModelFile(s))
+	r, err := openRerankingUseCase(host.NewInferenceQueue(s.GetHostEndpoint), fetchModelFile(s), modelprocess.NewModelSessions(s, console.Report))
 	if err != nil {
 		return err
 	}
@@ -50,4 +52,14 @@ func fetchModelFile(s *server.Server) onnx.FetchFile {
 		}
 		return host.NewDependencyClient(endpoint).FetchModelFile(ctx, address, sum)
 	}
+}
+
+type activeScorer struct {
+	ports.Scorer
+	release func()
+}
+
+func (m activeScorer) Close() error {
+	defer m.release()
+	return m.Scorer.Close()
 }

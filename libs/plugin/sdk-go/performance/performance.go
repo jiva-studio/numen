@@ -8,6 +8,8 @@ import "strconv"
 
 // The entries of the Configure values that hold the limits.
 const (
+	// ProviderKey holds the requested hardware provider for local models.
+	ProviderKey = "host.computeProvider"
 	// ProfileKey holds the name of the profile.
 	ProfileKey = "host.performanceProfile"
 	// ThreadsKey holds the most CPU-bound threads the plugin may run at once.
@@ -15,6 +17,12 @@ const (
 	// NiceKey holds the niceness the plugin runs at.
 	NiceKey = "host.performanceNice"
 )
+
+// Compute is the host policy for opening a model session. A zero thread limit leaves it unconstrained.
+type Compute struct {
+	Provider    string
+	ThreadLimit int
+}
 
 // Profile is a workload preset of the settings page.
 type Profile string

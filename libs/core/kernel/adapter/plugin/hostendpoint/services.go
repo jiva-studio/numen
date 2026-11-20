@@ -2,6 +2,7 @@ package hostendpoint
 
 import (
 	"context"
+
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -49,14 +50,15 @@ type WorkQueue interface {
 // window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
 // every file.
 type Callers struct {
-	Dependencies *plugindependency.Fetch
-	Identity     Identity
-	Leases       Leases
-	Lent         *Services
-	Tools        func() PluginTools
-	Health       HealthCalls
-	Processes    ProcessRelease
-	Files        FileTypes
+	Dependencies   *plugindependency.Fetch
+	Identity       Identity
+	Leases         Leases
+	Lent           *Services
+	Tools          func() PluginTools
+	Health         HealthCalls
+	Processes      ProcessRelease
+	ModelProviders func(pluginID, token string, revision uint64, rows []plugin.ModelProvider) bool
+	Files          FileTypes
 }
 
 // LogWriter records a structured log entry reported by a plugin backend.

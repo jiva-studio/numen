@@ -4,10 +4,11 @@ import (
 	"cmp"
 	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"runtime"
 	"slices"
 	"sync"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
@@ -32,6 +33,7 @@ func getOutputs(pooling string) []string {
 
 // Embedder is one model, loaded.
 type Embedder struct {
+	Provider     onnx.Provider
 	name         string
 	origin       string
 	dimensions   int
@@ -105,6 +107,7 @@ func openModel(ctx context.Context, library *onnx.Library, identity model.ModelI
 
 	first := sessions[0]
 	e := &Embedder{
+		Provider:     provider,
 		name:         identity.Name,
 		origin:       identity.From,
 		dimensions:   identity.Dimensions,

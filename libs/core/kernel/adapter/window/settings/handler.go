@@ -113,6 +113,13 @@ func newWireSettings(target []settingsdomain.Setting) []*v1.Setting {
 	return content
 }
 
+func newWireCompute(info plugin.Info) *v1.ManifestCompute {
+	if info.Compute == nil {
+		return nil
+	}
+	return &v1.ManifestCompute{Accelerator: info.Compute.Accelerator, Threads: info.Compute.Threads}
+}
+
 // NewWirePluginInfos is the discovered plugins and their declarative settings, as the wire carries it.
 func NewWirePluginInfos(target []plugin.Info) []*v1.PluginInfo {
 	infos := make([]*v1.PluginInfo, 0, len(target))
@@ -132,6 +139,7 @@ func NewWirePluginInfos(target []plugin.Info) []*v1.PluginInfo {
 			SettingsViews:  newWireSettingsViews(one.SettingsViews),
 			Contributions:  newWireContributions(one.Contributions),
 			IsOffByDefault: one.IsOffByDefault,
+			Compute:        newWireCompute(one),
 		})
 	}
 	return infos

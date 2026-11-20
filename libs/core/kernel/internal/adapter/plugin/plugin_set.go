@@ -315,10 +315,10 @@ func (v setView) listProblems() []manifestjson.DiscoveryProblem {
 	return v.set.problems
 }
 
-// GetVersion returns the version of the manifest of the plugin, or none for a plugin the set does not know.
+// GetVersion returns the installed manifest version, or an empty string for an unknown plugin.
 func (s *PluginSet) GetVersion(pluginID string) string {
-	p, _ := s.getKnownPlugin(pluginID)
-	return p.Manifest.Version
+	discovered, _ := s.getKnownPlugin(pluginID)
+	return discovered.Manifest.Version
 }
 
 // errProviderIDTaken is a plugin found on disk under the id of a built-in plugin that provides connection

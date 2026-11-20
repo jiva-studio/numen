@@ -179,6 +179,7 @@ export const createSettingsApi = (settingsService: WindowClients['settingsServic
           readers: p.readers.map((one) => ({ id: one.id, extensions: one.extensions })),
           settingsViews: p.settingsViews.map((one) => ({ id: one.id, title: one.title })),
           contributions: readContributions(p.contributions),
+          ...(p.compute && { compute: { accelerator: p.compute.accelerator, threads: p.compute.threads } }),
           isOffByDefault: p.isOffByDefault,
           settings: p.settings.map(readPluginSetting),
         })),

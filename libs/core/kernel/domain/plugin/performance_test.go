@@ -8,8 +8,8 @@ import (
 )
 
 func TestTheLimitsBecomeConfigureValues(t *testing.T) {
-	got := plugin.Performance{Profile: "high", Threads: 6, Nice: 5}.GetConfigValues()
-	want := map[string]string{"host.performanceProfile": "high", "host.performanceThreads": "6", "host.performanceNice": "5"}
+	got := plugin.Performance{Provider: "cuda", Profile: "high", Threads: 6, Nice: 5}.GetConfigValues()
+	want := map[string]string{"host.computeProvider": "cuda", "host.performanceProfile": "high", "host.performanceThreads": "6", "host.performanceNice": "5"}
 	if !maps.Equal(got, want) {
 		t.Errorf("values = %v, want %v", got, want)
 	}

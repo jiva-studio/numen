@@ -8,10 +8,10 @@ import (
 // batchPairs is the most pairs one pass of the model reads.
 const batchPairs = 8
 
-func getSessionSettings(modelPath string) onnx.SessionSettings {
+func getSessionSettings(modelPath, provider string, threadLimit int) onnx.SessionSettings {
 	return onnx.SessionSettings{
-		Provider:     onnx.GetSessionProvider(),
-		Threads:      onnx.GetDefaultThreads(),
+		Provider:     onnx.GetSessionProvider(provider),
+		Threads:      onnx.LimitThreads(onnx.GetDefaultThreads(), threadLimit),
 		ComputeUnits: onnx.ComputeUnitsDefault,
 		CacheRoot:    getCacheRoot(),
 		ModelPath:    modelPath,

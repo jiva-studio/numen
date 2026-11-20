@@ -54,5 +54,5 @@ type PluginConfigPush interface {
 	NotifyPluginConfig(ctx context.Context, pluginID string) error
 }
 
-// ProfileResolver returns the limits the machine runs a profile setting with.
-type ProfileResolver func(profile string) plugin.Performance
+// ProfileResolver reads the active compute provider and resolves the performance profile on the machine.
+type ProfileResolver func() (plugin.Performance, error)

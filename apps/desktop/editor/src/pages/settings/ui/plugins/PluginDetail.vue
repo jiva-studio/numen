@@ -15,6 +15,7 @@ import type {
 } from '../../types'
 import PluginConnectionSections from './PluginConnectionSections.vue'
 import PluginFields from './PluginFields.vue'
+import PluginModelProviders from './PluginModelProviders.vue'
 import { getManagedHealth, getMarkedSettings } from '../../lib/pluginHealth'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -41,6 +42,11 @@ const detailDeps = {
 const { managed, hasSettings, isApple, fileCount, deleteProblem, readmeText, deleteData } =
   usePluginDetail(detailDeps)
 const { isEnabled, isPending, setEnabled, retry } = usePluginSwitch(detailDeps)
+const providerOptions = computed(
+  () =>
+    props.settings.app.value.find((setting) => setting.key === 'performance.provider')?.options ??
+    [],
+)
 const items = computed(() =>
   props.manager.health.items.value.filter((item) => item.pluginId === props.plugin.id),
 )
@@ -73,7 +79,7 @@ function onRunAction(key: string): void {
     :data-file-count="fileCount"
     :problem="deleteProblem"
     :can-install="false"
-    :has-settings="hasSettings"
+    :has-settings="hasSettings || !!props.plugin.compute"
     :health="health"
     :is-apple="isApple"
     @back="onBack"
@@ -84,6 +90,12 @@ function onRunAction(key: string): void {
     @run-action="onRunAction"
   >
     <template #settings>
+      <PluginModelProviders
+        v-if="props.plugin.compute"
+        :plugin-id="props.plugin.id"
+        :processes="props.manager.processes"
+        :options="providerOptions"
+      />
       <PluginFields
         v-if="hasSettings"
         :settings="props.settings"

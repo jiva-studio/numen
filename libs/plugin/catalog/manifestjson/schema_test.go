@@ -20,6 +20,7 @@ import (
 
 // everyFieldManifest sets every field of the schema at least once, and every kind of option.
 const everyFieldManifest = `{
+ "compute": {"accelerator": true, "threads": true},
 	"id": "org.example.full", "name": "Full", "version": "1.2.3", "protocol": 1, "description": "d", "isOffByDefault": true,
 	"capabilities": ["tools"], "targets": ["desktop.editor"], "activationEvents": ["onIndexChanged"],
 	"permissions": ["vault:read"],

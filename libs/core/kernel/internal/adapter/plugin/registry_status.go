@@ -89,6 +89,7 @@ func (r *Registry) GetPluginInfos() []plugindomain.Info {
 			SettingsViews:  slices.Clone(p.Manifest.SettingsViews),
 			Contributions:  plugindomain.ListContributions(p.Manifest),
 			IsOffByDefault: p.Manifest.IsOffByDefault,
+			Compute:        p.Manifest.Compute,
 		})
 	}
 	return result

@@ -11,7 +11,9 @@ type Config struct {
 
 	Threads int `json:"threads"`
 
-	Workers int `json:"-"`
+	Workers     int    `json:"-"`
+	Provider    string `json:"-"`
+	ThreadLimit int    `json:"-"`
 
 	Model     ParakeetModel  `json:"model"`
 	Segmenter SegmenterModel `json:"segmenter"`
@@ -40,6 +42,7 @@ func Defaults() Config {
 		Dir:      "",
 		Threads:  0,
 		Workers:  0,
+		Provider: "", ThreadLimit: 0,
 		Progress: nil,
 		Model:    GetModels()[0],
 		Segmenter: SegmenterModel{

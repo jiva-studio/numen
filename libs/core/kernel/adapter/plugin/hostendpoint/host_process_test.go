@@ -8,6 +8,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
@@ -66,5 +68,37 @@ func TestAnUnknownTokenReleasesNothing(t *testing.T) {
 
 	if connect.CodeOf(err) != connect.CodeUnauthenticated || len(released.list()) != 0 {
 		t.Errorf("release = %v with %v released, want it unauthenticated", err, released.list())
+	}
+}
+
+func TestInvalidProviderReportsPreserveTheRunningStages(t *testing.T) {
+	callers := newCallers().asCallers()
+	var stages []plugin.ModelProvider
+	callers.ModelProviders = func(id, token string, _ uint64, rows []plugin.ModelProvider) bool {
+		if id != "md.numen.a" || token != "token-a" {
+			return false
+		}
+		stages = slices.Clone(rows)
+		return true
+	}
+	endpoint := processEndpoint{endpoint: &Endpoint{callers: callers}}
+	report := func(rows ...*v1.ModelProvider) error {
+		req := connect.NewRequest(&v1.ReportModelProvidersRequest{Providers: rows, Revision: 1})
+		req.Header().Set("Authorization", "Bearer token-a")
+		_, err := endpoint.ReportModelProviders(t.Context(), req)
+		return err
+	}
+	row := &v1.ModelProvider{Stage: "Layout", Provider: "cpu"}
+	if err := report(row); err != nil {
+		t.Fatal(err)
+	}
+	if err := report(row, row); connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("duplicate model stage: %v", err)
+	}
+	if want := []plugin.ModelProvider{{Stage: "Layout", Provider: "cpu"}}; !slices.Equal(stages, want) {
+		t.Fatalf("stages = %v", stages)
+	}
+	if err := report(); err != nil || len(stages) != 0 {
+		t.Fatalf("close: %v, stages %v", err, stages)
 	}
 }

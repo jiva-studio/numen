@@ -252,6 +252,12 @@ type Setting struct {
 	Discover    bool
 }
 
+// Compute declares the hardware controls a backend honors.
+type Compute struct {
+	Accelerator bool
+	Threads     bool
+}
+
 // Manifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
 type Manifest struct {
 	ID               string
@@ -271,6 +277,7 @@ type Manifest struct {
 	SettingsViews    []SettingsView
 	Contributes      Contributes
 	IsOffByDefault   bool
+	Compute          *Compute
 	Warnings         []string
 }
 

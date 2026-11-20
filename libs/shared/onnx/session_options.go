@@ -2,6 +2,7 @@ package onnx
 
 import (
 	"fmt"
+	"math"
 	"sync"
 	"unsafe"
 
@@ -94,6 +95,13 @@ func (l *Library) setGraphOptimizationLevel(opts *ort.SessionOptions, level uint
 // NewSessionOptions creates and configures session options according to the
 // requested provider, applying hardware acceleration with fallback to CPU.
 func (l *Library) NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort.SessionOptions, Provider, error) {
+	threads := s.Threads
+	if threads <= 0 {
+		threads = GetDefaultThreads()
+	}
+	if threads > math.MaxInt32 {
+		return nil, "", fmt.Errorf("session thread count %d exceeds the native limit %d", threads, math.MaxInt32)
+	}
 	_, libPath := l.runtime.GetLoaded()
 	if err := checkProvider(libPath, s.Provider); err != nil {
 		return nil, "", err
@@ -103,10 +111,6 @@ func (l *Library) NewSessionOptions(engine *ort.Engine, s SessionSettings) (*ort
 		return nil, "", err
 	}
 
-	threads := s.Threads
-	if threads <= 0 {
-		threads = GetDefaultThreads()
-	}
 	if err := opts.SetIntraOpNumThreads(int32(threads)); err != nil {
 		opts.Destroy()
 		return nil, "", err

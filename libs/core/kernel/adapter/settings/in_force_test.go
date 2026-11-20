@@ -26,7 +26,7 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"appearance":{"theme":"mine:sea","mode":"dark","interfaceScale":1.25,"textScale":1.5},
 		"naming":{"syncTitleAndFilename":false},
 		"editor":{"fontSize":19,"fontFamily":"serif","lineHeight":2,"lineNumbers":true,"highlightActiveLine":true,"softWrap":false},
-		"performance":{"profile":"eco"},
+		"performance":{"profile":"eco","provider":"cuda"},
 		"search":{"rerankWindow":70,"maxReranked":200,"maxRerankedBytes":2048,"defaultLimit":30,"maxLimit":90,
 			"candidatesPerCondition":250,"maxCandidates":900,"maxPathPrefixes":4,"mergeGapBytes":100,"maxQueryBytes":8192},
 		"logging":{"level":"debug"}}}`)
@@ -43,6 +43,7 @@ func TestEverySettingOfTheShellInTheFileIsInForce(t *testing.T) {
 		"editor.highlightActiveLine":    true,
 		"editor.softWrap":               false,
 		"performance.profile":           "eco",
+		"performance.provider":          "cuda",
 		"search.rerankWindow":           70.0,
 		"search.maxReranked":            200.0,
 		"search.maxRerankedBytes":       2048.0,

@@ -21,5 +21,5 @@ type sessionThreads struct {
 }
 
 func getSessionThreads(cfg settings.Config) sessionThreads {
-	return sessionThreads{encoder: cfg.GetThreads(onnx.GetDefaultThreads()), decoder: 1, joiner: 1, segmenter: 1}
+	return sessionThreads{encoder: onnx.LimitThreads(cfg.GetThreads(onnx.GetDefaultThreads()), cfg.ThreadLimit), decoder: 1, joiner: 1, segmenter: 1}
 }

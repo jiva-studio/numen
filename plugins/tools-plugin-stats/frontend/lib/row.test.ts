@@ -7,6 +7,7 @@ const NOW = 1_700_000_600_000
 const IDLE: PluginProcess = {
   pluginId: 'org.example.atlas',
   pluginName: 'Atlas',
+  modelProviders: [],
   startTime: NOW - 10 * 60_000,
   lastUseTime: NOW - 65_000,
   leaseCount: 0,

@@ -218,15 +218,17 @@ func TestApplySettingsKeepsTheOriginalConfiguration(t *testing.T) {
 
 func TestThePluginsReceiveTheBudgetAndTheNicenessTheHostResolved(t *testing.T) {
 	hw := machinedomain.Specs{LogicalCPUs: 16, PhysicalCPUs: 8, PerformanceCPUs: 8}
-	got := getPluginPerformance(machinedomain.ResolveCompute(machinedomain.ProfileHigh, hw))
+	got := getPluginPerformance(machinedomain.ResolveCompute(machinedomain.ProfileHigh, hw), "cuda")
 
-	if want := (plugindomain.Performance{Profile: "high", Threads: 12, Nice: 5}); got != want {
+	if want := (plugindomain.Performance{Provider: "cuda", Profile: "high", Threads: 12, Nice: 5}); got != want {
 		t.Errorf("the plugins receive %+v, want %+v", got, want)
 	}
 }
 
 func TestEcoReachesThePluginsAsOneThreadAtTheLowestPriority(t *testing.T) {
-	if got := resolveProfile(machinedomain.ProfileEco); got != (plugindomain.Performance{Profile: "eco", Threads: 1, Nice: 19}) {
+	budget := machinedomain.ResolveCompute(machinedomain.ProfileEco, machinedomain.Specs{})
+	want := plugindomain.Performance{Provider: "cpu", Profile: "eco", Threads: 1, Nice: 19}
+	if got := getPluginPerformance(budget, "cpu"); got != want {
 		t.Errorf("eco resolves to %+v", got)
 	}
 }

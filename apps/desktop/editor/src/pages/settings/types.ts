@@ -6,6 +6,7 @@
  * command of the same name in the palette go through one piece of code.
  */
 import type { Ref } from 'vue'
+import type { ProcessHost } from '@numen/plugin-loader'
 import type { CatalogEntry, PluginHealthItem } from '@/entities/plugin'
 import type {
   ConnectionChange,
@@ -51,6 +52,7 @@ export interface InstallationSettings {
   isRequested(at: readonly string[]): boolean
   getPlatform(): string
   write(content: readonly SettingEdit[]): void
+  readonly app: Readonly<Ref<readonly PluginSettingInfo[]>>
   readonly file: Readonly<Ref<string>>
 }
 
@@ -60,8 +62,8 @@ export interface InstallationSettings {
  * views, by view id; a view the plugin declares and has not registered is absent.
  */
 export interface InstallationPlugin {
+  readonly processes: ProcessHost
   readonly plugins: Readonly<Ref<readonly PluginInfo[]>>
-  readonly app: Readonly<Ref<readonly PluginSettingInfo[]>>
   readonly catalog: Readonly<Ref<readonly CatalogEntry[]>>
   readonly health: InstallationHealth
   /** A plugin whose last start failed, started once more. */

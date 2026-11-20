@@ -87,7 +87,7 @@ describe('the settings of the shell in the settings tab', () => {
 
     await settings.rest.start()
 
-    expect(settings.configured.state.installation.plugin.app?.value).toMatchObject([
+    expect(settings.configured.state.installation.settings.app.value).toMatchObject([
       { key: 'appearance.interfaceScale', value: 1.4 },
     ])
   })

@@ -41,6 +41,7 @@ interface SettingsPageApi {
   >
   readonly license: LicenseApi
   readonly listFiles: FileApi['listFiles']
+  readonly processes: InstallationPlugin['processes']
   readonly listCatalog: CatalogReader
   readonly listRowOptions: ConnectionApi['listRowOptions']
 }
@@ -70,6 +71,7 @@ interface InstallationSettingsDeps {
 }
 
 interface InstallationPluginDeps {
+  processes: InstallationPlugin['processes']
   settings: SettingsPageApi['settings']
   rest: SettingsStore
   retry: ReturnType<typeof createPluginRetry>
@@ -108,6 +110,7 @@ function createInstallationSettings(deps: InstallationSettingsDeps) {
       )
       return promise
     },
+    app: rest.state.app,
     file: rest.state.path,
     getPlatform,
   }
@@ -144,6 +147,7 @@ function createInstallationPlugin(deps: InstallationPluginDeps) {
   const { settings, rest, retry, getSettingsViews, catalogEntries, reportError } = deps
   return {
     catalog: catalogEntries,
+    processes: deps.processes,
     health: createInstallationHealth(deps.health, reportError),
     retryPlugin: (pluginId: string) => retry.retryPlugin(pluginId),
     choosePath: async (pluginId: string, key: string): Promise<string> => {
@@ -159,7 +163,6 @@ function createInstallationPlugin(deps: InstallationPluginDeps) {
     },
     files: createInstallationPluginFiles(settings),
     plugins: rest.state.plugins,
-    app: rest.state.app,
     getSettingsViews,
   }
 }
@@ -243,6 +246,7 @@ export function createSettingsPage({
       settings: { appearance, rest, getPlatform, reportError },
       plugin: {
         settings: api.settings,
+        processes: api.processes,
         rest,
         retry,
         getSettingsViews: plugins.getSettingsViews,

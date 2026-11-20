@@ -84,6 +84,7 @@ export interface PluginHealth {
 
 /** Information about an installed and active plugin, including declarative settings. */
 export interface PluginInfo {
+  readonly compute?: { readonly accelerator: boolean; readonly threads: boolean }
   readonly id: string
   readonly name: string
   readonly version: string

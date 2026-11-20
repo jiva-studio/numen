@@ -4,6 +4,8 @@ package service
 import (
 	"context"
 
+	modelprocess "github.com/jiva-studio/numen/libs/plugin/sdk-go/process"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	hostdomain "github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -23,9 +25,12 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
 
-func newLocalModelOpener(library *onnx.Library, fetch onnx.FetchFile, queue host.InferenceQueue) ports.OpenEmbedder {
+func newLocalModelOpener(library *onnx.Library, fetch onnx.FetchFile, queue host.InferenceQueue, sessions *modelprocess.ModelSessions) ports.OpenEmbedder {
 	// gomutants:disable-next-line RETURN_ZERO reason="production opener wraps engine.Open with native ONNX runtime"
 	return func(ctx context.Context, info model.ModelInfo, local model.LocalModel) (ports.Embedder, error) {
+		if local.Provider == "" {
+			local.Provider = string(onnx.GetProvider(sessions.GetCompute().Provider))
+		}
 		emb, err := engine.Open(ctx, library, info, local, fetch, queue)
 		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="production opener wraps engine.Open with native ONNX runtime"
 		if err != nil {
@@ -33,7 +38,7 @@ func newLocalModelOpener(library *onnx.Library, fetch onnx.FetchFile, queue host
 			return nil, err
 		}
 		// gomutants:disable-next-line RETURN_ZERO reason="production opener wraps engine.Open with native ONNX runtime"
-		return emb, nil
+		return activeEmbedder{Embedder: emb, release: sessions.Track(ctx, map[string]string{"Embeddings": string(emb.Provider)})}, nil
 	}
 }
 
@@ -41,12 +46,12 @@ func newMockEmbedder(logPath string) ports.Embedder {
 	return mockembedder.Embedder{LogPath: logPath}
 }
 
-func newServer(open ports.OpenModels, fetch onnx.FetchFile, queue host.InferenceQueue) *serving.Server {
+func newServer(open ports.OpenModels, fetch onnx.FetchFile, queue host.InferenceQueue, sessions *modelprocess.ModelSessions) *serving.Server {
 	return serving.New(serving.Ports{
 		Queue: queue, Machine: process.Process{},
 		Profiles:    profilefiles.GetDefaultDirectory(),
 		Environment: environment.Variables{},
-		OpenLocal:   newLocalModelOpener(onnx.NewLibrary(), fetch, queue),
+		OpenLocal:   newLocalModelOpener(onnx.NewLibrary(), fetch, queue, sessions),
 		NewMock:     newMockEmbedder,
 		OpenModels:  open,
 		Report:      console.Report,
@@ -71,7 +76,7 @@ func getPlaces(connect func() (*host.SearchClient, error)) openPlace {
 }
 
 func mount(s *server.Server, queue host.InferenceQueue, open ports.OpenModels, places openPlace, reports sourcehealth.OpenHealth) error {
-	embedSrv := newServer(open, fetchModelFile(s), queue)
+	embedSrv := newServer(open, fetchModelFile(s), queue, modelprocess.NewModelSessions(s, console.Report))
 	s.SetUpdateConfig(func(values map[string]string) {
 		embedSrv.Update(values)
 	})
@@ -89,4 +94,14 @@ func fetchModelFile(s *server.Server) onnx.FetchFile {
 		}
 		return host.NewDependencyClient(endpoint).FetchModelFile(ctx, address, sum)
 	}
+}
+
+type activeEmbedder struct {
+	ports.Embedder
+	release func()
+}
+
+func (m activeEmbedder) Close() error {
+	defer m.release()
+	return m.Embedder.Close()
 }

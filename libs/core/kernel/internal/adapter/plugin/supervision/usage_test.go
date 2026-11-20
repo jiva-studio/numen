@@ -176,3 +176,37 @@ func TestListProcessesReturnsTheStarterAndTheHoldersOfEachPlugin(t *testing.T) {
 		t.Errorf("holders %+v, want %+v", got[0].Holders, want)
 	}
 }
+
+func TestModelProvidersFollowTheRunningProcess(t *testing.T) {
+	sups := NewSupervisors(func(error) {}, func(string) {})
+	startInProcess(t, sups, mapsID)
+	processes := NewRunningProcesses(sups)
+	watch := processes.WatchProcesses(t.Context())
+	current := []plugindomain.ModelProvider{{Stage: "Layout", Provider: "cuda"}}
+	if !processes.SetModelProviders(mapsID, mapsID, 2, current) {
+		t.Fatal("running process could not report models")
+	}
+	select {
+	case <-watch:
+	default:
+		t.Fatal("watch missed the provider change")
+	}
+	if processes.SetModelProviders(mapsID, "earlier-token", 3, nil) {
+		t.Fatal("old process changed current provider")
+	}
+	if !processes.SetModelProviders(mapsID, mapsID, 1, nil) {
+		t.Fatal("live process token rejected")
+	}
+	if got := processes.ListProcesses()[0].ModelProviders; !slices.Equal(got, current) {
+		t.Fatalf("providers = %v", got)
+	}
+	sups.Drop(mapsID)
+	if processes.SetModelProviders(mapsID, mapsID, 2, current) {
+		t.Fatal("stopped process updated model providers")
+	}
+	for _, p := range processes.ListProcesses() {
+		if len(p.ModelProviders) != 0 {
+			t.Fatal("stopped process kept model providers")
+		}
+	}
+}

@@ -11,6 +11,7 @@ const create = (pluginId: string, pluginName: string, extra: Partial<PluginProce
   ({
     pluginId,
     pluginName,
+    modelProviders: [],
     startTime: 1_700_000_000_000,
     lastUseTime: 1_700_000_000_000,
     leaseCount: 0,

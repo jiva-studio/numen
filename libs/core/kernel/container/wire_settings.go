@@ -92,7 +92,7 @@ func configurePluginHost(c settingsWiring, prefs *PluginPreferences, hosts *sett
 	settingsusecase.NewApplyToPlugins(settingsusecase.ApplyToPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Config: prefs.Configuration, Write: openWriteSettings(c), Notify: notifyPlugins(c, prefs),
 		Subscribe: prefs.Views.Follow(subscribe), Hosts: hosts,
-	}).Execute(s.Plugins, getPluginPerformance(compute))
+	}).Execute(s.Plugins, getPluginPerformance(compute, s.Performance.Provider))
 }
 
 func getDeclarations(c settingsWiring) settingsdomain.Declarations {
@@ -233,13 +233,16 @@ func notifyPlugins(c settingsWiring, prefs *PluginPreferences) *settingsusecase.
 	signal := c.PluginChanges.Signal
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Apply: prefs.ApplySetting, Config: prefs.Configuration,
-		ResolveProfile: resolveProfile, Signal: signal,
+		ResolveProfile: func() (plugindomain.Performance, error) {
+			selected, err := settingsSettings(c)
+			if err != nil {
+				return plugindomain.Performance{}, err
+			}
+			compute := settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(selected.Performance.Profile)
+			return getPluginPerformance(compute, selected.Performance.Provider), nil
+		}, Signal: signal,
 		Report: func(err error) { c.ErrorHandler(err) },
 	})
-}
-
-func resolveProfile(profile string) plugindomain.Performance {
-	return getPluginPerformance(settingsusecase.NewResolveCompute(machineadapter.SpecsReader{}).Execute(profile))
 }
 
 func settingsThemes(c settingsWiring, scales Scales, say func(string)) (*theme.Service, error) {
@@ -283,6 +286,6 @@ func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
 	return themefiles.Open(c.Watches.GetShared())
 }
 
-func getPluginPerformance(compute machinedomain.ResolvedCompute) plugindomain.Performance {
-	return plugindomain.Performance{Profile: compute.Profile, Threads: compute.CoreBudget, Nice: compute.Nice}
+func getPluginPerformance(compute machinedomain.ResolvedCompute, provider string) plugindomain.Performance {
+	return plugindomain.Performance{Provider: provider, Profile: compute.Profile, Threads: compute.CoreBudget, Nice: compute.Nice}
 }

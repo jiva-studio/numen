@@ -26,9 +26,17 @@ const SETTINGS_KEYS = [
   'isRequested',
   'getPlatform',
   'write',
+  'app',
   'file',
 ]
-const PLUGIN_KEYS = ['plugins', 'app', 'catalog', 'retryPlugin', 'choosePath', 'getSettingsViews']
+const PLUGIN_KEYS = [
+  'plugins',
+  'catalog',
+  'processes',
+  'retryPlugin',
+  'choosePath',
+  'getSettingsViews',
+]
 const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
 const HEALTH_KEYS = ['items', 'canRunCommand', 'runCommand']
 const EDITS_KEYS = ['create', 'update', 'delete']
@@ -59,14 +67,15 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     isRequested: () => false,
     getPlatform: () => '',
     write: fn(),
+    app: ref([]),
     file: ref('/numen.json'),
     ...pickOf(overrides, SETTINGS_KEYS),
   },
   plugin: {
     retryPlugin: fn(),
+    processes: { watch: () => ({ dispose: fn() }) },
     choosePath: fn(() => Promise.resolve('')),
     plugins: ref([]),
-    app: ref([]),
     catalog: ref([]),
     health: {
       items: ref([]),

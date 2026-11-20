@@ -21,15 +21,16 @@ type Model = scan.Model
 
 // Recognizer executes OCR recognition models on images.
 type Recognizer struct {
-	shape  *Layout
-	lines  *paddle.Engine
-	layout func(image.Image) ([]Region, error)
-	read   func(image.Image) ([]read.RecResult, error)
-	body   map[string]bool
-	head   map[string]int
-	margin int
-	jobs   int
-	model  Model
+	LayoutProvider onnx.Provider
+	shape          *Layout
+	lines          *paddle.Engine
+	layout         func(image.Image) ([]Region, error)
+	read           func(image.Image) ([]read.RecResult, error)
+	body           map[string]bool
+	head           map[string]int
+	margin         int
+	jobs           int
+	model          Model
 }
 
 // Open loads the layout and PaddleOCR recognition models through the library.
@@ -39,8 +40,8 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch
 		return nil, err
 	}
 	cacheRoot := getCacheRoot()
-	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
-		Provider: onnx.GetSessionProvider(),
+	options, actual, err := library.NewSessionOptions(engine, onnx.SessionSettings{
+		Provider: onnx.GetSessionProvider(cfg.Compute.Provider),
 		Threads:  getThreads(cfg),
 
 		ComputeUnits: onnx.ComputeUnitsDefault,
@@ -80,14 +81,15 @@ func Open(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch
 	}
 
 	return &Recognizer{
-		shape:  layout,
-		lines:  lines,
-		layout: layout.Regions,
-		read:   lines.RunOCR,
-		body:   toSet(cfg.Regions.GetBody()),
-		head:   getDepths(cfg.Regions.GetHead()),
-		margin: cfg.Layout.GetMargin(),
-		jobs:   cfg.GetJobs(),
+		LayoutProvider: actual,
+		shape:          layout,
+		lines:          lines,
+		layout:         layout.Regions,
+		read:           lines.RunOCR,
+		body:           toSet(cfg.Regions.GetBody()),
+		head:           getDepths(cfg.Regions.GetHead()),
+		margin:         cfg.Layout.GetMargin(),
+		jobs:           cfg.GetJobs(),
 		model: Model{
 			Layout:     name(found.layout),
 			Recognizer: name(found.recognize),
