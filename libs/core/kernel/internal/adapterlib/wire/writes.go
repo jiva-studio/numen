@@ -5,19 +5,16 @@ import (
 
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 // updatingIndex is the task ID for a file written to the vault that the index did not follow.
 const updatingIndex = "update index"
 
-// Writes is the writes to the vault that the window waits for before it closes, and what a write
-// tells: whether the index followed it, and the embedder that a note holds new prose.
+// Writes tracks the operations the window waits for on close and reports failures to update the index.
 type Writes struct {
 	writing inflight
 	window  *Window
-	indexing.WriteWake
 }
 
 // NewWrites returns the writes of a window that tells its tasks to window.

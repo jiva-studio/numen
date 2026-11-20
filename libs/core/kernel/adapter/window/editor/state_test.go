@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -35,10 +36,12 @@ func hasTask(tasks *run.Tasks, id string) bool {
 type testWindow struct {
 	*Session
 	*PageAccess
-	Events *Events
+	Events      *Events
+	writeReport note.Writes
 }
 
 func newTestWindow(tasks *run.Tasks, frame Frame, emit func(string)) *testWindow {
 	session := NewSession(frame)
-	return &testWindow{Session: session, PageAccess: NewPageAccess(tasks, session), Events: &Events{Emit: emit}}
+	pages := NewPageAccess(tasks, session)
+	return &testWindow{Session: session, PageAccess: pages, Events: &Events{Emit: emit}, writeReport: note.Writes{IsIndexOutdated: pages.Writes.IsIndexOutdated}}
 }

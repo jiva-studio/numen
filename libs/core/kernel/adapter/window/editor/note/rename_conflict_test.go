@@ -39,9 +39,8 @@ func (staleNoteWriter) Write(context.Context, string, []byte, domain.FileStat) (
 
 type openSession struct{ vault domain.Vault }
 
-func (s openSession) GetCurrentVault() domain.Vault       { return s.vault }
-func (openSession) IsIndexOutdated(error) bool            { return false }
-func (openSession) ReportWrites(domain.VaultID, ...error) {}
+func (s openSession) GetCurrentVault() domain.Vault { return s.vault }
+func (openSession) IsIndexOutdated(error) bool      { return false }
 
 // A note that another writer changed since it was read is a question for the user.
 func TestRenamingANoteChangedElsewhereAnswersWithAConflict(t *testing.T) {
@@ -55,7 +54,7 @@ func TestRenamingANoteChangedElsewhereAnswersWithAConflict(t *testing.T) {
 	}
 	rename := notecase.NewRename(deps, notecase.NewMove(deps), nil)
 	session := openSession{vault: domain.Vault{ID: "v1", Name: "v1", Path: root}}
-	prose := NewProse(session, nil, nil, nil, &rename, session)
+	prose := NewProse(session, nil, nil, nil, &rename, &Writes{IsIndexOutdated: session.IsIndexOutdated})
 
 	out, err := prose.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{Path: "Old.md", Title: "New"}))
 	if err != nil {

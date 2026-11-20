@@ -58,12 +58,12 @@ type Prose struct {
 	save   *note.Write
 	create *note.Create
 	rename *note.Rename
-	writes Writes
+	writes *Writes
 }
 
 // NewProse is the part of NoteService that reads and changes the prose of notes.
 func NewProse(
-	window Vault, read *note.Read, save *note.Write, create *note.Create, rename *note.Rename, writes Writes,
+	window Vault, read *note.Read, save *note.Write, create *note.Create, rename *note.Rename, writes *Writes,
 ) *Prose {
 	return &Prose{vault: window, read: read, save: save, create: create, rename: rename, writes: writes}
 }
@@ -86,21 +86,21 @@ func NewOutline(
 
 // Links writes the links of notes and answers where links land and which notes link to a note.
 type Links struct {
-	vault         Vault
-	resolveLinks  *query.ResolveLinks
-	createRelated *note.CreateInRelation
-	getBacklinks  *query.GetBacklinks
-	writes        Writes
+	vault           Vault
+	resolveLinks    *query.ResolveLinks
+	createRelated   *note.CreateInRelation
+	getBacklinks    *query.GetBacklinks
+	isIndexOutdated func(error) bool
 }
 
 // NewLinks is the part of NoteService that works the links of notes.
 func NewLinks(
 	window Vault,
 	resolve *query.ResolveLinks, create *note.CreateInRelation, backlinks *query.GetBacklinks,
-	writes Writes,
+	isIndexOutdated func(error) bool,
 ) *Links {
 	return &Links{
-		vault: window, resolveLinks: resolve, createRelated: create, getBacklinks: backlinks, writes: writes,
+		vault: window, resolveLinks: resolve, createRelated: create, getBacklinks: backlinks, isIndexOutdated: isIndexOutdated,
 	}
 }
 

@@ -78,7 +78,7 @@ func (w wiring) startSession(
 		Quiet:        opts.idle,
 		After:        time.After,
 	})
-	state.Writes.WriteWake = worker.WakeWrittenVault
+	state.writeReport.WriteWake = worker.WakeWrittenVault
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
 	diag := windowsession.NewDiagnostics(opts.out, state.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{

@@ -155,7 +155,7 @@ func (h *Links) CreateRelatedNote(
 	made, err := h.createRelated.Execute(ctx, showing, domain.NewRelatedNote{
 		From: r.Msg.GetFrom(), Role: role, Title: r.Msg.GetTitle(), Type: r.Msg.GetType(), Marker: marker,
 	})
-	indexOutdated := h.writes.IsIndexOutdated(err)
+	indexOutdated := h.isIndexOutdated(err)
 	switch {
 	case errors.Is(err, windowdomain.ErrClosing):
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
