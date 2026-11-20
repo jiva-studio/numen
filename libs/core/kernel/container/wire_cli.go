@@ -90,7 +90,7 @@ type cliPluginWork func(vaultWiring, *vaultIndex, domain.Vault) (*run.PluginWork
 
 func newCLIPluginWork(install pluginInstall, exec *PluginExecution, r *cliRun) cliPluginWork {
 	return func(vaultDeps vaultWiring, db *vaultIndex, v domain.Vault) (*run.PluginWork, error) {
-		exec.Runtime.PluginBinding.SetVaultPath(v.Path)
+		exec.Runtime.pluginBinding.SetVaultPath(v.Path)
 		if err := installCurrentVault(install, vaultDeps, db, v); err != nil {
 			return nil, err
 		}

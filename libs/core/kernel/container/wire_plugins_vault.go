@@ -173,7 +173,7 @@ func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.V
 	}
 }
 
-func getPluginDir(resolver PluginResolver, id string) (string, bool) {
+func getPluginDir(resolver pluginResolver, id string) (string, bool) {
 	p, ok := resolver.GetPlugin(id)
 	return p.Dir, ok
 }

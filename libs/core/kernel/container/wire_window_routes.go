@@ -103,7 +103,7 @@ func mountVaults(w *windowRoutes, listing *registry.Listing, change vaultChangin
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock Timer, runs *searchrun.SearchRuns) {
+func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock installationClock, runs *searchrun.SearchRuns) {
 	state := w.session
 	status := editor.SearchTasks{Tasks: w.page.Window}
 	finds := newSearch(searchDeps, session.index, session.source, status.ReportWordsAlone, status.ClearWordsAlone)
@@ -214,7 +214,7 @@ func mountHealth(w *windowRoutes, exec *PluginExecution) {
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func openRecordLog(indexPath string, entries *logsusecase.Entries, getLevel func() domainlogs.Level, timer Timer) *logsusecase.Record {
+func openRecordLog(indexPath string, entries *logsusecase.Entries, getLevel func() domainlogs.Level, timer installationClock) *logsusecase.Record {
 	return logsusecase.NewRecord(entries, logfiles.NewBesideIndex(indexPath), getLevel, timer)
 }
 

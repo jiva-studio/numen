@@ -1,6 +1,7 @@
 package portsreferenced
 
 import (
+	"go/ast"
 	"go/types"
 	"slices"
 
@@ -43,20 +44,36 @@ func (c portConsumers) addPackages(root, dir string, pkgs []*packages.Package) {
 				}
 			}
 		}
-		for _, value := range pkg.TypesInfo.Types {
-			record(value.Type)
-		}
-		// A call through an embedding interface also consumes the contract that declares the method.
-		for _, selection := range pkg.TypesInfo.Selections {
-			record(selection.Recv())
-			if m, ok := selection.Obj().(*types.Func); ok {
-				record(m.Signature().Recv().Type())
-			}
+		for _, file := range pkg.Syntax {
+			ast.Inspect(file, func(node ast.Node) bool {
+				if spec, ok := node.(*ast.ValueSpec); ok && !slices.ContainsFunc(spec.Names, func(name *ast.Ident) bool { return name.Name != "_" }) {
+					return false
+				}
+				expr, ok := node.(ast.Expr)
+				if !ok {
+					return true
+				}
+				if value, ok := pkg.TypesInfo.Types[expr]; ok {
+					record(value.Type)
+				}
+				selector, ok := expr.(*ast.SelectorExpr)
+				if !ok {
+					return true
+				}
+				if selection := pkg.TypesInfo.Selections[selector]; selection != nil {
+					record(selection.Recv())
+					// A call through an embedding interface also consumes the contract that declares the method.
+					if method, ok := selection.Obj().(*types.Func); ok {
+						record(method.Signature().Recv().Type())
+					}
+				}
+				return true
+			})
 		}
 	}
 }
 
-func (c portConsumers) listUnshared() []string {
+func (c portConsumers) listSingleConsumerContracts() []string {
 	var unshared []string
 	for name, owners := range c {
 		if len(owners) < 2 {

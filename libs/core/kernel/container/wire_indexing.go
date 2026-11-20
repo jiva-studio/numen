@@ -26,7 +26,7 @@ const coreFolder = "core"
 
 type noteChunkPolicy struct {
 	Chunks   *note.ChunkTokens
-	Profiles PluginResolver
+	Profiles pluginResolver
 }
 
 type vaultIndexPlan struct {

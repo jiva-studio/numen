@@ -116,7 +116,7 @@ type windowStartup struct {
 type windowPlugins struct {
 	source    sourcebridge.Binding
 	tasks     *run.Tasks
-	events    PluginEventEmitter
+	events    pluginEventEmitter
 	vault     windowsession.PluginVaultPath
 	triggers  windowsession.TriggerSource
 	startFeed func(context.Context, domain.Vault) func()
@@ -126,12 +126,12 @@ type windowPlugins struct {
 func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex, source sourcebridge.Binding) windowPlugins {
 	tasks := run.NewTasks()
 	exec.Runtime.SetOnFailureCleared(func(string) { settingsDeps.PluginChanges.Signal() })
-	reportDependencies(exec.Watch.DependencyReporter, tasks, vaultDeps.RecordLog)
+	reportDependencies(exec.Watch.dependencyReporter, tasks, vaultDeps.RecordLog)
 	pluginsOpenPluginWork(install, exec, tasks, &run.Lock{})
 	setModelCalls(install, exec, settingsDeps, vaultDeps, run.NewConnectionNoticeTasks(tasks).Execute)
 	return windowPlugins{
 		source: source,
-		tasks:  tasks, events: exec.Runtime.PluginEventEmitter, vault: exec.Runtime.PluginBinding,
+		tasks:  tasks, events: exec.Runtime.pluginEventEmitter, vault: exec.Runtime.pluginBinding,
 		triggers:  getTriggerSource(install, exec, settingsDeps, vaultDeps, db.FrontmatterChanges()),
 		startFeed: getFeedStart(exec, settingsDeps, vaultDeps, db), kinds: newTabKinds(exec, settingsDeps, vaultDeps, db),
 	}

@@ -68,7 +68,7 @@ type Resources struct {
 	PluginCatalog catalog.Config
 	KeyStore      pluginport.KeyStore
 	ErrorHandler  window.ErrorHandler
-	Now           Timer
+	Now           installationClock
 	Chunks        *note.ChunkTokens
 	TextReaders   textdomain.Readers
 
@@ -139,7 +139,7 @@ func getRunningExecution(exec *PluginExecution, safeMode bool) *PluginExecution 
 }
 
 // GetClock returns the clock every use case assembled here is handed.
-func GetClock(res *Resources) Timer {
+func GetClock(res *Resources) installationClock {
 	if res.Now != nil {
 		return res.Now
 	}
@@ -162,7 +162,7 @@ func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *
 		SettingEvents:   res.settingEvents,
 		PluginChanges:   res.pluginChanges,
 		Infos:           runtime.Listing,
-		Declarations:    prefs.Configuration.PluginSettingDeclarer,
+		Declarations:    prefs.Configuration.pluginSettingDeclarer,
 		ConnectionTypes: prefs.Views.Types,
 		PluginInfos:     prefs.Views.Infos,
 		Checks:          prefs.Views.Checks,

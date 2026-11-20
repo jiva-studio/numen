@@ -66,7 +66,7 @@ func newEmbedQueries(source searchsourceport.Source) *vectorscase.EmbedQueries {
 }
 
 func getFloorHint(source searchsourceport.Source) searchusecase.FloorHint {
-	if advisor, ok := source.(FloorAdvisor); ok {
+	if advisor, ok := source.(floorAdvisor); ok {
 		return advisor.GetFloorHint
 	}
 	return nil

@@ -62,7 +62,7 @@ type settingsWiring struct {
 
 	PluginChanges   *settingsusecase.PluginChanges
 	Infos           themefiles.PluginHost
-	Declarations    PluginSettingDeclarer
+	Declarations    pluginSettingDeclarer
 	ConnectionTypes connectionport.Types
 	PluginInfos     settingsusecase.PluginInfos
 	Checks          settingsusecase.PluginSettings

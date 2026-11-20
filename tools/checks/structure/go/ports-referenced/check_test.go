@@ -66,7 +66,7 @@ func TestPortMethodsAreCalledOutsidePort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range consumers.listUnshared() {
+	for _, name := range consumers.listSingleConsumerContracts() {
 		t.Errorf("%s belongs to its consumer: %v", name, consumers[name])
 	}
 	for _, one := range uncalled {
@@ -104,7 +104,7 @@ func TestPortWalk_FindsThePlantedPort(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"noteport.Orphan", "noteport.Reader"}; !slices.Equal(consumers.listUnshared(), want) {
+	if want := []string{"noteport.Orphan", "noteport.Reader"}; !slices.Equal(consumers.listSingleConsumerContracts(), want) {
 		t.Errorf("unshared contracts = %v, want %v", consumers, want)
 	}
 	if want := []string{"Orphan.Drop", "Reader.Close"}; !slices.Equal(uncalled, want) {
@@ -126,10 +126,11 @@ func TestPortWalk_FindsThePlantedPort(t *testing.T) {
 // A factory result is consumed even when the use case never spells the port name.
 func TestPortOwnershipCountsFactoryResultsAndExcludesFixturesAndWiring(t *testing.T) {
 	root := load.WriteTreeFixture(t, map[string]string{
-		"port/fileport/file.go":            "package fileport\n type Reader interface{ Read() string }; type Files interface{ Open() Reader }",
-		"usecase/file/file.go":             "package file\n import f \"fixture/port/fileport\"\n func Read(files f.Files) string { return files.Open().Read() }",
+		"port/fileport/file.go":            "package fileport\n type Reader interface{ Read() string }; type Files interface{ Open() (Reader, error) }",
+		"usecase/file/file.go":             "package file\n import f \"fixture/port/fileport\"\n func Read(files f.Files) string { r, err := files.Open(); if err != nil { return \"\" }; return r.Read() }",
 		"usecase/search/search.go":         "package search\n import f \"fixture/port/fileport\"\n func Read(r f.Reader) string { return r.Read() }",
 		"usecase/file/filetest/fixture.go": "package filetest\n import f \"fixture/port/fileport\"\n type Fixture struct { Files f.Files }",
+		"adapter/disk/claim.go":            "package disk\n import f \"fixture/port/fileport\"\n type Disk struct{}; func (Disk) Open() (f.Reader,error){ return nil,nil }; var _ f.Files = Disk{}",
 		"container/wire.go":                "package container\n import f \"fixture/port/fileport\"\n type Wiring struct { Files f.Files }",
 	})
 	consumers := portConsumers{}
@@ -137,7 +138,7 @@ func TestPortOwnershipCountsFactoryResultsAndExcludesFixturesAndWiring(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"fileport.Files"}; !slices.Equal(consumers.listUnshared(), want) {
+	if want := []string{"fileport.Files"}; !slices.Equal(consumers.listSingleConsumerContracts(), want) {
 		t.Fatalf("unshared contracts = %v, want %v", consumers, want)
 	}
 	if len(consumers["fileport.Files"]) != 1 || !consumers["fileport.Files"]["usecase/file"] {

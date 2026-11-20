@@ -54,7 +54,7 @@ type vaultWiring struct {
 	Readers      vaultport.VaultReaders
 	Writers      vaultwriter.VaultWriters
 	Watcher      vaultwatch.Watcher
-	Clock        Timer
+	Clock        installationClock
 	TextVersions *textVersions
 	SyncSetting  naming.SyncSetting
 	CutNotes     chunking.CutNotes
@@ -62,7 +62,7 @@ type vaultWiring struct {
 	RecordLog    index.QueryLogFunc
 }
 
-func openVaultAccess(paths Paths, timer Timer, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *textVersions) vaultWiring {
+func openVaultAccess(paths Paths, timer installationClock, locks *vaultwriter.Locks, watches *vaultwatch.Hub, texts *textVersions) vaultWiring {
 	options := vaultconfig.Options{ServiceDir: paths.ServiceDir}
 	return vaultWiring{
 		IndexPath:    paths.IndexPath,

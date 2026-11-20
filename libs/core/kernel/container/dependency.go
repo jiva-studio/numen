@@ -5,8 +5,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// DependencyReporter receives the function that observes each change of the state of a dependency.
-type DependencyReporter interface {
+// dependencyReporter receives the function that observes each change of the state of a dependency.
+type dependencyReporter interface {
 	ObserveDependencies(observer func(manifest.DependencyRequirement, plugin.DependencyStatus))
 	// CancelDependency stops the download of the requirement, if one runs.
 	CancelDependency(req manifest.DependencyRequirement)

@@ -40,8 +40,8 @@ type installedPlugins interface {
 	pluginport.PluginManifests
 }
 
-// PluginResolver supplies the plugin lookups used during host assembly.
-type PluginResolver interface {
+// pluginResolver supplies the plugin lookups used during host assembly.
+type pluginResolver interface {
 	servicebridge.ServiceResolver
 	sourcebridge.CapabilityResolver
 	pluginmanifest.PluginLookup
@@ -51,12 +51,12 @@ type PluginResolver interface {
 // pluginRuntime is what runs, finds and addresses the plugins.
 type pluginRuntime struct {
 	bridge.Activator
-	PluginRetrier
+	pluginRetrier
 	Listing   installedPlugins
-	Resolver  PluginResolver
+	Resolver  pluginResolver
 	Manifests pluginmanifest.Manifests
-	PluginEventEmitter
-	PluginBinding
+	pluginEventEmitter
+	pluginBinding
 	transport.ClientLookup
 	pluginmanifest.PluginFailures
 	sourcebridge.ConfigWatcher
@@ -64,16 +64,16 @@ type pluginRuntime struct {
 
 // pluginConfiguration is what carries the settings to the plugins.
 type pluginConfiguration struct {
-	PluginSettingDeclarer
-	ConfigRefresher
+	pluginSettingDeclarer
+	configRefresher
 	settingsusecase.PluginConfig
 	settingsusecase.PluginSettings
 }
 
 // PluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
 type PluginWatch struct {
-	PluginShutdown
-	DependencyReporter
+	pluginShutdown
+	dependencyReporter
 	contenttypeport.ContentTypeTable
 }
 
@@ -132,19 +132,19 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 	exec := &PluginExecution{
 		Runtime: pluginRuntime{
 			Activator:          management.Activation,
-			PluginRetrier:      management.Retry,
+			pluginRetrier:      management.Retry,
 			Listing:            management.Registry,
 			Resolver:           management.Registry,
 			Manifests:          pluginmanifest.Open(management.Registry, management.Registry, supervision.Failures),
-			PluginEventEmitter: management.Events,
-			PluginBinding:      plugin.NewBinding(management.Teardown, management.Mode),
+			pluginEventEmitter: management.Events,
+			pluginBinding:      plugin.NewBinding(management.Teardown, management.Mode),
 			ClientLookup:       management.Activation.ClientLookup(),
 			PluginFailures:     supervision.Failures,
 			ConfigWatcher:      management.Config,
 		},
 		Watch: PluginWatch{
-			PluginShutdown:     management.Teardown,
-			DependencyReporter: supervision.Services,
+			pluginShutdown:     management.Teardown,
+			dependencyReporter: supervision.Services,
 			ContentTypeTable:   management.ContentTypes,
 		},
 		Health:    supervision.Health,
@@ -152,8 +152,8 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 	}
 	prefs := &PluginPreferences{
 		Configuration: pluginConfiguration{
-			PluginSettingDeclarer: management.Registry,
-			ConfigRefresher:       management.Config,
+			pluginSettingDeclarer: management.Registry,
+			configRefresher:       management.Config,
 			PluginConfig:          management.Settings,
 			PluginSettings:        management.Settings,
 		},
