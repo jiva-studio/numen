@@ -8,11 +8,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
-func newWriter(file *memoryFile, plugins settingsport.PluginSettings, events *[]string) *settings.WriteSettings {
+func newWriter(file *memoryFile, plugins settings.PluginSettings, events *[]string) *settings.WriteSettings {
 	declared := declare([]string{"app", "appearance", "theme"}, []string{"org.example.scans", "isAutomatic"})
 	return settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, declared, nil, plugins), file, refreshRecorder{events})
 }
@@ -38,7 +38,7 @@ func TestWriteSettingsRefusesWhatCannotBeReadBack(t *testing.T) {
 	reason := errors.New("not a boolean")
 	cases := map[string]struct {
 		entry settingsdomain.Setting
-		host  settingsport.PluginSettings
+		host  settings.PluginSettings
 	}{
 		"undeclared":     {settingsdomain.Setting{Path: []string{"app", "nothing"}, JSON: `1`}, nil},
 		"not JSON":       {settingsdomain.Setting{Path: []string{"app", "appearance", "theme"}, JSON: `{`}, nil},

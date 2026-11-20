@@ -16,7 +16,7 @@ type Feed struct {
 	Hub     *watchhub.Hub
 }
 
-// Subscribe starts delivering to a new reader. See settingsport.ChangeSubscriber.
+// Subscribe starts delivering to a new reader.
 func (f Feed) Subscribe() (<-chan []settings.Setting, func()) {
 	if f.Events == nil {
 		return closedFeed()

@@ -5,23 +5,22 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // ListAppSettings lists the settings the shell declares, each with the value in force and the
 // options it offers.
 type ListAppSettings struct {
-	codec      settingsport.ValueCodec
-	file       settingsport.SettingsFile
-	defaults   settingsport.Defaults
-	app        settingsport.AppDeclarations
-	registries settingsport.RegistryOptions
+	codec      ValueCodec
+	file       SettingsFile
+	defaults   Defaults
+	app        AppDeclarations
+	registries RegistryOptions
 }
 
 // NewListAppSettings makes the use case. Where the file cannot be read, the values are the defaults.
 func NewListAppSettings(
-	codec settingsport.ValueCodec, file settingsport.SettingsFile, defaults settingsport.Defaults, app settingsport.AppDeclarations,
-	registries settingsport.RegistryOptions,
+	codec ValueCodec, file SettingsFile, defaults Defaults, app AppDeclarations,
+	registries RegistryOptions,
 ) *ListAppSettings {
 	return &ListAppSettings{codec: codec, file: file, defaults: defaults, app: app, registries: registries}
 }

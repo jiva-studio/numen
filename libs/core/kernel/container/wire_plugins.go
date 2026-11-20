@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
@@ -56,8 +56,8 @@ type pluginRuntime struct {
 type pluginConfiguration struct {
 	pluginport.PluginSettingDeclarer
 	pluginport.ConfigRefresher
-	settingsport.PluginConfig
-	settingsport.PluginSettings
+	settingsusecase.PluginConfig
+	settingsusecase.PluginSettings
 }
 
 // PluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
@@ -74,9 +74,9 @@ type pluginViews struct {
 	Types        connectionport.Types
 	Operations   connectionport.OperationTitles
 	Declarations licenseport.Declarations
-	Infos        settingsport.PluginInfos
-	Checks       settingsport.PluginSettings
-	Follow       func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber
+	Infos        settingsusecase.PluginInfos
+	Checks       settingsusecase.PluginSettings
+	Follow       func(subscribe settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber
 }
 
 // PluginExecution runs plugins and tracks their processes.
@@ -91,7 +91,7 @@ type PluginExecution struct {
 type PluginPreferences struct {
 	Configuration       pluginConfiguration
 	Views               pluginViews
-	ApplySetting        settingsport.PluginSettingApplier
+	ApplySetting        settingsusecase.PluginSettingApplier
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
 	Detection           connectionport.Detected
@@ -154,7 +154,7 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 		Views: pluginViews{
 			Types: types, Operations: types,
 			Declarations: management.Registry, Infos: management.Registry, Checks: management.Settings,
-			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
+			Follow: func(subscribe settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber { return subscribe },
 		},
 		SetStorage: func(cacheRoot, dataRoot string) {
 			setPluginStorage(supervision, cacheRoot, dataRoot, func(modelsDir string) pluginport.DependencyRegistry {

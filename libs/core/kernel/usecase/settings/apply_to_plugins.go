@@ -5,17 +5,16 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // ApplyToPlugins gives the plugin host the settings, lets it save the settings a plugin changes
 // itself, and has it follow every later change.
 type ApplyToPlugins struct {
-	codec     settingsport.ValueCodec
-	config    settingsport.PluginConfig
+	codec     ValueCodec
+	config    PluginConfig
 	write     settingsWriting
 	notify    pluginNotifying
-	subscribe settingsport.ChangeSubscriber
+	subscribe ChangeSubscriber
 	hosts     hostSubscribing
 }
 
@@ -23,11 +22,11 @@ type ApplyToPlugins struct {
 // capability of the host is built from.
 // Subscribe is nil where the changes are not followed.
 type ApplyToPluginsDeps struct {
-	Codec     settingsport.ValueCodec
-	Config    settingsport.PluginConfig
+	Codec     ValueCodec
+	Config    PluginConfig
 	Write     settingsWriting
 	Notify    pluginNotifying
-	Subscribe settingsport.ChangeSubscriber
+	Subscribe ChangeSubscriber
 	Hosts     hostSubscribing
 }
 
@@ -74,11 +73,11 @@ type pluginNotifying interface {
 
 // hostSubscribing delivers the setting changes to a host once.
 type hostSubscribing interface {
-	Subscribe(host any, subscribe settingsport.ChangeSubscriber, deliver func([]settingsdomain.Setting))
+	Subscribe(host any, subscribe ChangeSubscriber, deliver func([]settingsdomain.Setting))
 }
 
 // ignoredSubscriptions follows no setting changes.
 type ignoredSubscriptions struct{}
 
-func (ignoredSubscriptions) Subscribe(any, settingsport.ChangeSubscriber, func([]settingsdomain.Setting)) {
+func (ignoredSubscriptions) Subscribe(any, ChangeSubscriber, func([]settingsdomain.Setting)) {
 }

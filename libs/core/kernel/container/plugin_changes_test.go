@@ -7,10 +7,10 @@ import (
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
-func applyingHost(applied *[]string) settingsport.PluginSettingApplier {
+func applyingHost(applied *[]string) settingsusecase.PluginSettingApplier {
 	return func(_ context.Context, pluginID, key string, _ any) error {
 		*applied = append(*applied, pluginID+"."+key)
 		return nil

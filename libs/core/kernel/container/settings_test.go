@@ -17,7 +17,7 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
 func writeSettings(t *testing.T, output string) (TestInstallation, string) {
@@ -178,7 +178,7 @@ func TestSettings_AddNoticeAccumulatesNotices(t *testing.T) {
 
 // profileHost records the profiles the container gives the plugin host.
 type profileHost struct {
-	settingsport.PluginConfig
+	settingsusecase.PluginConfig
 	profiles []string
 }
 

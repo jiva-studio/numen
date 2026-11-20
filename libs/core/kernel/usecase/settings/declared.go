@@ -1,4 +1,4 @@
-package settingsport
+package settings
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
