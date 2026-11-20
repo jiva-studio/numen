@@ -29,20 +29,27 @@ func placeGraph(cache, graph string, files map[string]string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = linkGraphFiles(dir, files)
+	err = linkGraphFiles(dir, path.Dir(graph), files)
 	return filepath.Join(dir, path.Base(graph)), errors.Join(err, release())
 }
 
-func linkGraphFiles(dir string, files map[string]string) error {
+func linkGraphFiles(dir, folder string, files map[string]string) error {
 	for name, src := range files {
-		dest := filepath.Join(dir, path.Base(name))
+		rel, err := filepath.Rel(filepath.FromSlash(folder), filepath.FromSlash(name))
+		if err != nil || !filepath.IsLocal(rel) {
+			return fmt.Errorf("invalid external model file %q", name)
+		}
+		dest := filepath.Join(dir, rel)
+		if err := os.MkdirAll(filepath.Dir(dest), 0o700); err != nil {
+			return err
+		}
 		if _, err := os.Stat(dest); err == nil {
 			continue
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
 		if err := os.Link(src, dest); err != nil {
-			if err := copyGraphFile(dir, src, dest); err != nil {
+			if err := copyGraphFile(filepath.Dir(dest), src, dest); err != nil {
 				return err
 			}
 		}

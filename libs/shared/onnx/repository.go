@@ -71,7 +71,7 @@ func (model RepositoryModel) listFiles(ctx context.Context, revision string, fet
 	if len(model.Files) > 0 {
 		files := make(map[string]string)
 		for _, name := range model.Files {
-			if model.isMember(name) {
+			if model.isMember(name, model.Files) {
 				files[name] = model.Sums[name]
 			}
 		}
@@ -88,11 +88,23 @@ func (model RepositoryModel) listFiles(ctx context.Context, revision string, fet
 	return model.readFiles(index)
 }
 
-func (model RepositoryModel) isMember(name string) bool {
-	if !fs.ValidPath(name) || strings.ContainsAny(name, "\\?#") {
+func (model RepositoryModel) isMember(name string, names []string) bool {
+	if !fs.ValidPath(name) || strings.ContainsAny(name, "\\?#") || strings.HasPrefix(name, model.Graph+"/") {
 		return false
 	}
-	return name == "tokenizer.json" || (path.Dir(name) == path.Dir(model.Graph) && strings.HasPrefix(name, model.Graph))
+	if name == "tokenizer.json" || name == model.Graph {
+		return true
+	}
+	folder := path.Dir(model.Graph)
+	if folder != "." && !strings.HasPrefix(name, folder+"/") {
+		return false
+	}
+	for _, other := range names {
+		if other != model.Graph && strings.HasSuffix(other, ".onnx") && strings.HasPrefix(name, other) {
+			return false
+		}
+	}
+	return true
 }
 
 func (model RepositoryModel) readFiles(index string) (map[string]string, string, error) {
@@ -115,9 +127,13 @@ func (model RepositoryModel) readFiles(index string) (map[string]string, string,
 	if info.Revision == "" {
 		return nil, "", fmt.Errorf("%s returned no revision", model.ID)
 	}
+	names := make([]string, 0, len(info.Files))
+	for _, entry := range info.Files {
+		names = append(names, entry.Name)
+	}
 	files := make(map[string]string)
 	for _, entry := range info.Files {
-		if model.isMember(entry.Name) {
+		if model.isMember(entry.Name, names) {
 			sum := model.Sums[entry.Name]
 			if sum == "" {
 				sum = entry.LFS.SHA256

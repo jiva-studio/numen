@@ -11,7 +11,7 @@ import (
 func TestPrepareCustomProfileUsesOneRevisionAndKeepsExternalDataBesideGraph(t *testing.T) {
 	root := t.TempDir()
 	files := map[string]string{
-		"metadata": `{"sha":"immutable","siblings":[{"rfilename":"onnx/a.onnx","lfs":{"sha256":"lfs digest"}},{"rfilename":"onnx/a.onnx_data"},{"rfilename":"onnx/a.onnx/other"},{"rfilename":"onnx/b.onnx"},{"rfilename":"tokenizer.json"}]}`,
+		"metadata": `{"sha":"immutable","siblings":[{"rfilename":"onnx/a.onnx","lfs":{"sha256":"lfs digest"}},{"rfilename":"onnx/a.onnx_data"},{"rfilename":"onnx/a.onnx/other"},{"rfilename":"onnx/b.onnx_data"},{"rfilename":"onnx/b.onnx"},{"rfilename":"onnx/chunks/weights.bin"},{"rfilename":"tokenizer.json"}]}`,
 		"graph":    "model bytes", "tokens": "tokenizer bytes", "data": "external bytes",
 	}
 	for name, body := range files {
@@ -21,10 +21,11 @@ func TestPrepareCustomProfileUsesOneRevisionAndKeepsExternalDataBesideGraph(t *t
 	}
 	type result struct{ file, digest string }
 	answers := map[string]result{
-		"https://huggingface.co/api/models/team/repo/revision/immutable?blobs=true": {"metadata", ""},
-		"https://huggingface.co/team/repo/resolve/immutable/onnx/a.onnx":            {"graph", "graph pin"},
-		"https://huggingface.co/team/repo/resolve/immutable/onnx/a.onnx_data":       {"data", ""},
-		"https://huggingface.co/team/repo/resolve/immutable/tokenizer.json":         {"tokens", "owner pin"},
+		"https://huggingface.co/api/models/team/repo/revision/immutable?blobs=true":  {"metadata", ""},
+		"https://huggingface.co/team/repo/resolve/immutable/onnx/chunks/weights.bin": {"data", ""},
+		"https://huggingface.co/team/repo/resolve/immutable/onnx/a.onnx":             {"graph", "graph pin"},
+		"https://huggingface.co/team/repo/resolve/immutable/onnx/a.onnx_data":        {"data", ""},
+		"https://huggingface.co/team/repo/resolve/immutable/tokenizer.json":          {"tokens", "owner pin"},
 	}
 	fetch := func(_ context.Context, url, sum string) (string, error) {
 		got, ok := answers[url]
@@ -42,7 +43,7 @@ func TestPrepareCustomProfileUsesOneRevisionAndKeepsExternalDataBesideGraph(t *t
 		if located.Tokenizer != filepath.Join(root, "tokens") || filepath.Base(located.Model) != "a.onnx" {
 			t.Fatalf("paths = %+v", located)
 		}
-		for name, body := range map[string]string{"a.onnx": "model bytes", "a.onnx_data": "external bytes"} {
+		for name, body := range map[string]string{"a.onnx": "model bytes", "a.onnx_data": "external bytes", "chunks/weights.bin": "external bytes"} {
 			b, err := os.ReadFile(filepath.Join(filepath.Dir(located.Model), name))
 			if err != nil || string(b) != body {
 				t.Fatalf("%s = %q, %v", name, b, err)
