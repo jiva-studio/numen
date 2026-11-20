@@ -29,7 +29,7 @@ func (c changeFixture) addresses() edit.NameQueries {
 func (c changeFixture) connectionDeps(writers note.NoteWriting) note.ConnectionDeps {
 	return note.ConnectionDeps{
 		Readers: vaultreader.Readers{}, Writers: writers, Index: c.index, Now: testsupport.NewClock(),
-		Links: c.db.NoteQueries(), Names: c.addresses(), Gate: testsupport.OpenGate{},
+		Links: c.db.NoteQueries(), Names: c.addresses(),
 	}
 }
 

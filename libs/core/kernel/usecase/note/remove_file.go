@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 )
 
-// RemoveFile moves a file or a folder of the vault to the trash as a write of the window.
+// RemoveFile moves a file or a folder of the vault to the trash.
 type RemoveFile struct {
 	remove *Remove
 	follow indexport.IndexFollow
@@ -19,8 +19,7 @@ func NewRemoveFile(remove *Remove, follow indexport.IndexFollow) RemoveFile {
 	return RemoveFile{remove: remove, follow: follow}
 }
 
-// Execute puts the file or folder at path in the trash and reports whether the index did not follow. It
-// fails with window.ErrClosing once the window is closing.
+// Execute puts the file or folder at path in the trash and reports whether the index did not follow.
 func (u RemoveFile) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, bool, error) {
 	removed, err := u.remove.Execute(ctx, v, path)
 	return removed, u.follow.IsIndexOutdated(err), err

@@ -8,33 +8,31 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
-// MoveFile moves a file or a folder in the vault as a write of the window.
+// MoveFile moves a file or a folder in the vault.
 type MoveFile struct {
-	move   *Move
-	gate   windowport.WriteGate
-	follow indexport.IndexFollow
+	move      *Move
+	admission vaultport.WriteAdmission
+	follow    indexport.IndexFollow
 }
 
 // NewMoveFile returns the use case over the moving of a file or a folder.
-func NewMoveFile(move *Move, gate windowport.WriteGate, follow indexport.IndexFollow) MoveFile {
-	return MoveFile{move: move, gate: gate, follow: follow}
+func NewMoveFile(move *Move, admission vaultport.WriteAdmission, follow indexport.IndexFollow) MoveFile {
+	return MoveFile{move: move, admission: admission, follow: follow}
 }
 
-// Execute moves the file or folder from from to to and reports whether the index did not follow. It
-// fails with window.ErrClosing once the window is closing.
+// Execute moves the file or folder from from to to and reports whether the index did not follow.
 func (u MoveFile) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, bool, error) {
-	if !u.gate.BeginWrite() {
-		return domain.MoveResult{}, false, windowdomain.ErrClosing
+	release, err := u.admission.Begin()
+	if err != nil {
+		return domain.MoveResult{}, false, err
 	}
-	defer u.gate.FinishWrite()
+	defer release()
 	moved, err := u.move.Execute(ctx, v, from, to)
 	return moved, u.follow.IsIndexOutdated(err), err
 }

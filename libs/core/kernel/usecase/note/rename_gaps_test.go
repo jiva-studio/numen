@@ -2,12 +2,10 @@ package note_test
 
 import (
 	"errors"
-	"strings"
-	"testing"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
+	"strings"
+	"testing"
 )
 
 // A rename that cannot be applied reports nothing for a name the note never
@@ -88,7 +86,7 @@ func TestARenameIsBuiltOverTheMoveItWasGiven(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Old.md": "# Old\n"})
 
-	renaming := note.NewRename(c.moveDeps(), c.move(), testsupport.OpenGate{})
+	renaming := note.NewRename(c.moveDeps(), c.move(), nil)
 	if _, err := renaming.Execute(t.Context(), c.vault, "Old.md", "Entropy"); err != nil {
 		t.Fatal(err)
 	}

@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // TrashDir is where a removed note is kept. A name beginning with a dot is not
@@ -28,23 +27,20 @@ const TrashDir = ".trash"
 // from the file, so losing the index costs a scan; the file is the one thing
 // nothing rebuilds.
 type Remove struct {
-	writers vaultport.FileMovers
-	links   noteport.LinkQueries
-	queries sourceport.SourcesUnder
-	filer   sourceport.VersionMover
-	index   edit.IndexUpdater
-	gate    windowport.WriteGate
+	writers   vaultport.FileMovers
+	links     noteport.LinkQueries
+	queries   sourceport.SourcesUnder
+	filer     sourceport.VersionMover
+	index     edit.IndexUpdater
+	admission vaultport.WriteAdmission
 }
 
-// NewRemove is what takes a note out of the vault: the vault it is moved
-// within, the links that pointed at it, what the index holds about the files
-// under it, the filer of the text versions that follow the file into the trash, what updates the index for
-// the path it left, and the gate a removal passes.
+// NewRemove builds the use case that moves a note into the trash.
 func NewRemove(
 	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, filer sourceport.VersionMover,
-	index edit.IndexUpdater, gate windowport.WriteGate,
+	index edit.IndexUpdater, admission vaultport.WriteAdmission,
 ) Remove {
-	return Remove{writers: writers, links: links, queries: queries, filer: filer, index: getIndexUpdater(index), gate: gate}
+	return Remove{writers: writers, links: links, queries: queries, filer: filer, index: getIndexUpdater(index), admission: admission}
 }
 
 type RemoveResult struct {
@@ -55,9 +51,8 @@ type RemoveResult struct {
 
 // Execute puts the file or the folder in the trash, with everything a folder
 // holds. Destroy takes one note out of the world.
-// It fails with window.ErrClosing once the window is closing.
 func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {
-	return writeUnder(u.gate, func() (RemoveResult, error) { return u.trash(ctx, v, path) })
+	return writeUnder(u.admission, func() (RemoveResult, error) { return u.trash(ctx, v, path) })
 }
 
 func (u Remove) trash(ctx context.Context, v domain.Vault, path string) (RemoveResult, error) {

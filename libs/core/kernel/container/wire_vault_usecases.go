@@ -24,7 +24,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -59,14 +59,11 @@ func vaultMoves(ctx context.Context, indexPath string, watcher vaultwatch.Watche
 	return watcher.File(ctx, path)
 }
 
-// noteViews are the viewers that receive what a person or a program does to the notes, the gate the writes
-// pass, and the report of whether the index followed a write. A nil view receives no one; a nil Follow takes
-// the index to follow every write.
-// index to follow every write.
+// noteViews configures move notifications, write admission and index status for note operations.
 type noteViews struct {
-	Moves  note.TellMove
-	Writes windowport.WriteGate
-	Follow indexport.IndexFollow
+	Moves     note.TellMove
+	Admission vaultport.WriteAdmission
+	Follow    indexport.IndexFollow
 }
 
 func vaultNotes(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views noteViews) noteUseCases {
@@ -86,27 +83,27 @@ func vaultNotes(c vaultWiring, db *vaultIndex, index edit.IndexUpdater, views no
 	mover := note.NewMove(moveDeps)
 
 	linking := note.NewEditLinks(readers, writers, index, now)
-	remove := note.NewRemove(writers, links, indexed, indexed, index, views.Writes)
-	create := note.NewCreate(writers, names, index, now, views.Writes)
+	remove := note.NewRemove(writers, links, indexed, indexed, index, views.Admission)
+	create := note.NewCreate(writers, names, index, now, views.Admission)
 	connecting := note.ConnectionDeps{
 		Readers: readers, Writers: writers, Index: index, Now: now, Links: links, Names: names,
-		Gate: views.Writes, Follow: views.Follow,
+		Admission: views.Admission, Follow: views.Follow,
 	}
 
 	return noteUseCases{
 		Edit: noteEditing{
 			Read:    note.NewRead(readers),
-			Write:   note.NewWrite(readers, writers, index, now, views.Writes),
+			Write:   note.NewWrite(readers, writers, index, now, views.Admission),
 			Create:  create,
 			Linking: linking,
 		},
 		Properties: noteProperties{Frontmatter: note.NewWriteFrontmatter(readers, writers, index, now)},
 		Place: notePlacing{
 			Move:       mover,
-			Rename:     note.NewRename(moveDeps, mover, views.Writes),
+			Rename:     note.NewRename(moveDeps, mover, views.Admission),
 			Remove:     remove,
 			RemoveNote: note.NewRemoveNote(remove, readers),
-			EmptyTrash: note.NewEmptyTrash(writers, textversion.NewTrashVersions(db.Versions, derivedfile.TextStores{Options: c.Options}), views.Writes),
+			EmptyTrash: note.NewEmptyTrash(writers, textversion.NewTrashVersions(db.Versions, derivedfile.TextStores{Options: c.Options}), views.Admission),
 		},
 		Connect: noteConnecting{
 			SaveConnection:   note.NewSaveConnection(connecting),

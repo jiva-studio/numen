@@ -559,7 +559,7 @@ func unwritten(t *testing.T, notes map[string]string) *going {
 
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
-	*f.write = noteusecase.NewWrite(vaultreader.Readers{}, newVaultWriters(), refuseToUpdate, testsupport.NewClock(), testsupport.OpenGate{})
+	*f.write = noteusecase.NewWrite(vaultreader.Readers{}, newVaultWriters(), refuseToUpdate, testsupport.NewClock(), nil)
 	return f
 }
 
@@ -636,7 +636,7 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 	// The index stays behind until a later write updates it, and that write
 	// reports the state.
 	updated := func(context.Context, domain.Vault, []string) error { return nil }
-	*f.write = noteusecase.NewWrite(vaultreader.Readers{}, newVaultWriters(), updated, testsupport.NewClock(), testsupport.OpenGate{})
+	*f.write = noteusecase.NewWrite(vaultreader.Readers{}, newVaultWriters(), updated, testsupport.NewClock(), nil)
 	save()
 	if offset := findUpdateIndexTask(t, f); offset != nil {
 		t.Errorf("the index came level and the user is still shown %+v", offset)
@@ -671,7 +671,7 @@ func findUpdateIndexTask(t *testing.T, f *going) *v1.Task {
 func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
-	create := noteusecase.NewCreate(newVaultWriters(), f.index.NoteQueries(), refuseToUpdate, testsupport.NewClock(), testsupport.OpenGate{})
+	create := noteusecase.NewCreate(newVaultWriters(), f.index.NoteQueries(), refuseToUpdate, testsupport.NewClock(), nil)
 	mountNoteEdit(t, f.mux, f.installation, numenv1connect.NoteServiceCreateNoteProcedure, nil, &create, nil)
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
@@ -698,7 +698,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 			"# Entropy\n",
 	})
 	waitForScan(t, f)
-	remove := noteusecase.NewRemove(newVaultWriters(), f.index.NoteQueries(), f.index.Sources(), f.index.Sources(), refuseToUpdate, testsupport.OpenGate{})
+	remove := noteusecase.NewRemove(newVaultWriters(), f.index.NoteQueries(), f.index.Sources(), f.index.Sources(), refuseToUpdate, nil)
 	removeFile := noteusecase.NewRemoveFile(&remove, editor.PagesOf(f.installation).Writes)
 	mountFileEdit(t, f.mux, f.installation, numenv1connect.FileServiceRemoveFileProcedure, nil, &removeFile)
 

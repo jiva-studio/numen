@@ -3,11 +3,9 @@ package container
 import (
 	"context"
 
+	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
-	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
@@ -65,7 +63,7 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
-	useCases := vaultNotes(vaultDeps, db, index, noteViews{Writes: none.OpenGate{}})
+	useCases := vaultNotes(vaultDeps, db, index, noteViews{})
 	arranger := newArranger(useCases, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: install.ServiceDir}}
 	return hostvault.NewAccess(

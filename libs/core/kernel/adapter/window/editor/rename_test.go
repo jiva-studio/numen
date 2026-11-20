@@ -618,7 +618,7 @@ func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 		stuck{f.index.Sources()}, newNoteMover(f.index),
 	)
 
-	moveFile := vaults.NewMoveFile(&move, editor.PagesOf(f.installation).Writes, editor.PagesOf(f.installation).Writes)
+	moveFile := vaults.NewMoveFile(&move, editor.PagesOf(f.installation).Writes.AdmitWrite, editor.PagesOf(f.installation).Writes)
 	mountFileEdit(t, f.mux, f.installation, numenv1connect.FileServiceMoveFileProcedure, &moveFile, nil)
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
@@ -644,7 +644,7 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 	rename := note.NewRename(note.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, Now: testsupport.NewClock(),
 	}, failingAfterMove{newNoteMover(f.index)},
-		testsupport.OpenGate{},
+		nil,
 	)
 
 	mountNoteEdit(t, f.mux, f.installation, numenv1connect.NoteServiceRenameNoteProcedure, nil, nil, &rename)

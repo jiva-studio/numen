@@ -157,7 +157,7 @@ func openEditor(t *testing.T, notes map[string]string) *Services {
 	t.Helper()
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock(),
-		testsupport.OpenGate{},
+		nil,
 	)
 	read := note.NewRead(vaultreader.Readers{})
 	api := newBareServices()
@@ -276,7 +276,7 @@ func TestEditLoad(t *testing.T) {
 
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock(),
-		testsupport.OpenGate{},
+		nil,
 	)
 	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(newTestWindow(run.NewTasks(), nil, nil))

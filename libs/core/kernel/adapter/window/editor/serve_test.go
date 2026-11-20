@@ -196,7 +196,7 @@ func openingWith(
 
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock(),
-		testsupport.OpenGate{},
+		nil,
 	)
 	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(newTestWindow(run.NewTasks(), nil, nil))
