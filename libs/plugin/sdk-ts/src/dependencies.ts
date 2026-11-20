@@ -10,10 +10,10 @@ const dependencies = createClient(HostDependencyService, transport)
 export async function fetchModelFile(
   url: string,
   sha256?: string,
-  signal?: AbortSignal,
+  options?: { readonly signal?: AbortSignal },
 ): Promise<Result<string>> {
   try {
-    const answer = await dependencies.fetchModelFile({ url, sha256: sha256 ?? '' }, { signal })
+    const answer = await dependencies.fetchModelFile({ url, sha256: sha256 ?? '' }, options)
     return answer.error ? asFailure(answer.error) : asValue(answer.path)
   } catch (error) {
     return asFailure(formatErrorMessage(error))
