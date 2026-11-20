@@ -127,9 +127,9 @@ func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tab
 		&state.Runtime,
 		file.NewListFolder(file.NewGetFolderEntries(readers, db.NoteQueries()), kinds.list),
 		file.NewListFileKinds(kinds.files, kinds.chooser),
-		file.NewCreateFolder(vaultDeps.Writers, w.page.Writes),
+		file.NewCreateFolder(vaultDeps.Writers, w.page.Writes.AdmitWrite),
 	)
-	moveFile := vault.NewMoveFile(moving, w.page.Writes, w.page.Writes)
+	moveFile := vault.NewMoveFile(moving, w.page.Writes.AdmitWrite, w.page.Writes)
 	removeFile := note.NewRemoveFile(&placing.Remove, w.page.Writes)
 	changes := filewindow.NewChanges(&state.Runtime, state.Notices, &moveFile, &removeFile, &placing.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)

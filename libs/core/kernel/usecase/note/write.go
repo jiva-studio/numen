@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // Write replaces the prose of a note and leaves its frontmatter unchanged.
@@ -19,24 +18,22 @@ import (
 // shared with the user, and keys the application does not own are preserved
 // because nothing here rewrites them. The user's YAML formatting is retained.
 type Write struct {
-	readers vaultport.VaultReaders
-	writers NoteWriting
-	index   edit.IndexUpdater
-	now     machineport.Clock
-	Bound   int
-	Drawing TellEdit
-	gate    windowport.WriteGate
+	readers   vaultport.VaultReaders
+	writers   NoteWriting
+	index     edit.IndexUpdater
+	now       machineport.Clock
+	Bound     int
+	Drawing   TellEdit
+	admission vaultport.WriteAdmission
 }
 
-// NewWrite returns the writer that saves a note to disk. It takes the vault
-// readers and writers, the index synchronizer, the clock, and the gate a write passes.
 func NewWrite(
-	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock, gate windowport.WriteGate,
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock, admission vaultport.WriteAdmission,
 ) Write {
-	return Write{readers: readers, writers: writers, index: index, now: now, gate: gate}
+	return Write{readers: readers, writers: writers, index: index, now: now, admission: admission}
 }
 
-// Execute writes body to the note at path. It fails with window.ErrClosing once the window is closing.
+// Execute writes body to the note at path.
 // FileStat, when set, is the file state the caller expects on disk. A note
 // changed since it was read is left unchanged and port.ErrStale is returned:
 // the user's edits take precedence over a caller working from an older read.
@@ -44,7 +41,7 @@ func NewWrite(
 func (u Write) Execute(
 	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
 ) (domain.FileStat, error) {
-	return writeUnder(u.gate, func() (domain.FileStat, error) { return u.replace(ctx, v, path, body, stat) })
+	return writeUnder(u.admission, func() (domain.FileStat, error) { return u.replace(ctx, v, path, body, stat) })
 }
 
 func (u Write) replace(
@@ -93,11 +90,10 @@ func (u Write) replace(
 // frontmatter the file holds when the write begins; a note without an
 // identifier keeps none, and a created note has no frontmatter.
 // Baseline is the state the caller last read: a differing note is left unchanged and port.ErrStale is returned; nil skips the check.
-// It fails with window.ErrClosing once the window is closing.
 func (u Write) Save(
 	ctx context.Context, v domain.Vault, path, body string, baseline *edit.Baseline,
 ) (domain.FileStat, error) {
-	return writeUnder(u.gate, func() (domain.FileStat, error) { return u.overwrite(ctx, v, path, body, baseline) })
+	return writeUnder(u.admission, func() (domain.FileStat, error) { return u.overwrite(ctx, v, path, body, baseline) })
 }
 
 func (u Write) overwrite(

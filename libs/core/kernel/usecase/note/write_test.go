@@ -192,13 +192,20 @@ func TestAWriteUsesThePortsItIsGiven(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	updated := 0
+	isAdmitted := false
 	w := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		func(context.Context, domain.Vault, []string) error {
+			if !isAdmitted {
+				t.Error("the index was updated outside write admission")
+			}
 			updated++
 			return nil
 		}, testsupport.NewClock(),
-		testsupport.OpenGate{},
+		func() (func(), error) {
+			isAdmitted = true
+			return func() { isAdmitted = false }, nil
+		},
 	)
 
 	if _, err := w.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", domain.FileStat{}); err != nil {
@@ -206,6 +213,9 @@ func TestAWriteUsesThePortsItIsGiven(t *testing.T) {
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Mine.") {
 		t.Errorf("the note was not written:\n%s", body)
+	}
+	if isAdmitted {
+		t.Error("the completed write still holds admission")
 	}
 	if updated != 1 {
 		t.Errorf("the index was called %d times, want 1", updated)
@@ -228,5 +238,16 @@ func TestAWriteWhoseObserverCannotBeNotifiedIsRefused(t *testing.T) {
 	}
 	if body := c.read(t, "Entropy.md"); body != was {
 		t.Errorf("the refused write landed anyway:\n%s", body)
+	}
+}
+
+func TestWriteReturnsTheAdmissionErrorBeforeOpeningTheVault(t *testing.T) {
+	errBusy := errors.New("the vault is temporarily read-only")
+	write := note.NewWrite(nil, nil, nil, nil, func() (func(), error) {
+		return nil, errBusy
+	})
+	_, err := write.Execute(t.Context(), domain.Vault{}, "Note.md", "updated", domain.FileStat{})
+	if !errors.Is(err, errBusy) {
+		t.Fatalf("write returned %v, want %v", err, errBusy)
 	}
 }

@@ -55,7 +55,7 @@ func (c changeFixture) search() search.Search {
 }
 
 func (c changeFixture) create() note.Create {
-	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.index, testsupport.NewClock(), testsupport.OpenGate{})
+	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.index, testsupport.NewClock(), nil)
 }
 
 func (c changeFixture) moveDeps() note.MoveDeps {
@@ -70,7 +70,7 @@ func (c changeFixture) move() note.Move { return note.NewMove(c.moveDeps()) }
 func (c changeFixture) remove() note.Remove {
 	return note.NewRemove(
 		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries(), c.db.Sources(), c.db.Sources(), c.index,
-		testsupport.OpenGate{},
+		nil,
 	)
 }
 
@@ -508,7 +508,7 @@ func TestWrite_RejectsStaleEdit(t *testing.T) {
 	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(),
-		testsupport.OpenGate{},
+		nil,
 	)
 
 	reader, err := (vaultreader.Readers{}).Open(c.vault)
@@ -542,7 +542,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	c := openChangeFixture(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(),
-		testsupport.OpenGate{},
+		nil,
 	)
 
 	reader, err := (vaultreader.Readers{}).Open(c.vault)

@@ -3,9 +3,6 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
@@ -14,6 +11,7 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -96,7 +94,7 @@ func (c TestInstallation) VaultWatcher() vaultport.VaultWatcher {
 func NotesShowingMoves(
 	c TestInstallation, db *Index, index edit.IndexUpdater, showing func() (domain.Vault, bool), view note.MoveView,
 ) NoteUseCases {
-	return vaultNotes(c.buildVaultWiring(), db, index, noteViews{Moves: note.NewTellMoveInShownVault(showing, view), Writes: none.OpenGate{}})
+	return vaultNotes(c.buildVaultWiring(), db, index, noteViews{Moves: note.NewTellMoveInShownVault(showing, view)})
 }
 
 func GetNoteChanges(notes NoteUseCases) hostvault.NoteChanges { return getNoteChanges(notes) }
@@ -163,7 +161,7 @@ func Moves(c TestInstallation, ctx context.Context) (<-chan struct{}, error) {
 }
 
 func Notes(c TestInstallation, db *Index, index edit.IndexUpdater) NoteUseCases {
-	return vaultNotes(c.buildVaultWiring(), db, index, noteViews{Writes: none.OpenGate{}})
+	return vaultNotes(c.buildVaultWiring(), db, index, noteViews{})
 }
 
 func VaultOpener(c TestInstallation, db *Index) *vault.VaultOpener {

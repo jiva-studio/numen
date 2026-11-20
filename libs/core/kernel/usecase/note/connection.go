@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 func getConnectionRoles() [3]domain.LinkRole {
@@ -30,38 +29,38 @@ type noteChange struct {
 // connectionEditor writes the records of a connection into the notes that hold
 // them. A write either leaves every note changed or none.
 type connectionEditor struct {
-	readers vaultport.VaultReaders
-	writers NoteWriting
-	index   edit.IndexUpdater
-	now     machineport.Clock
-	links   noteport.LinkQueries
-	names   edit.NameQueries
-	gate    windowport.WriteGate
-	follow  indexport.IndexFollow
+	readers   vaultport.VaultReaders
+	writers   NoteWriting
+	index     edit.IndexUpdater
+	now       machineport.Clock
+	links     noteport.LinkQueries
+	names     edit.NameQueries
+	admission vaultport.WriteAdmission
+	follow    indexport.IndexFollow
 }
 
-// ConnectionDeps are what the use cases that write connections work over. A write passes Gate. Where Follow
+// ConnectionDeps are what the use cases that write connections work over. Where Follow
 // is nil the index is taken to follow every write. Where Names is nil, a link names a note by its basename.
 type ConnectionDeps struct {
-	Readers vaultport.VaultReaders
-	Writers NoteWriting
-	Index   edit.IndexUpdater
-	Now     machineport.Clock
-	Links   noteport.LinkQueries
-	Names   edit.NameQueries
-	Gate    windowport.WriteGate
-	Follow  indexport.IndexFollow
+	Readers   vaultport.VaultReaders
+	Writers   NoteWriting
+	Index     edit.IndexUpdater
+	Now       machineport.Clock
+	Links     noteport.LinkQueries
+	Names     edit.NameQueries
+	Admission vaultport.WriteAdmission
+	Follow    indexport.IndexFollow
 }
 
 func newConnectionEditor(d ConnectionDeps) connectionEditor {
 	return connectionEditor{
 		readers: d.Readers, writers: d.Writers, index: d.Index, now: d.Now, links: d.Links, names: d.Names,
-		gate: d.Gate, follow: d.Follow,
+		admission: d.Admission, follow: d.Follow,
 	}
 }
 
 func (e connectionEditor) run(ctx context.Context, write func(ctx context.Context) error) error {
-	_, err := writeUnder(e.gate, func() (struct{}, error) { return struct{}{}, write(ctx) })
+	_, err := writeUnder(e.admission, func() (struct{}, error) { return struct{}{}, write(ctx) })
 	if e.follow != nil && e.follow.IsIndexOutdated(err) {
 		return nil
 	}

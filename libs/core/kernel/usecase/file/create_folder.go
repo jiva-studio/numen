@@ -3,29 +3,28 @@ package file
 import (
 	"context"
 
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // CreateFolder makes an empty folder with the folders above it.
 // Only the failure to make the folder wraps its cause.
 type CreateFolder struct {
-	writers vaultport.FolderWriters
-	gate    windowport.WriteGate
+	writers   vaultport.FolderWriters
+	admission vaultport.WriteAdmission
 }
 
-func NewCreateFolder(writers vaultport.FolderWriters, gate windowport.WriteGate) *CreateFolder {
-	return &CreateFolder{writers: writers, gate: gate}
+func NewCreateFolder(writers vaultport.FolderWriters, admission vaultport.WriteAdmission) *CreateFolder {
+	return &CreateFolder{writers: writers, admission: admission}
 }
 
 func (u *CreateFolder) Execute(ctx context.Context, v domain.Vault, path string) error {
-	if !u.gate.BeginWrite() {
-		return windowdomain.ErrClosing
+	release, err := u.admission.Begin()
+	if err != nil {
+		return err
 	}
-	defer u.gate.FinishWrite()
+	defer release()
 	writer, err := u.writers.OpenFolderWriter(v)
 	if err != nil {
 		return newVaultFailure(err)

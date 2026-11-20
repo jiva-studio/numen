@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -165,7 +164,7 @@ func buildWindow(
 		v.CutNotes = cutNotes(searchDeps.ChunkPolicy)
 		return vaultMakeRefresh(v, db, db.Notes())
 	}}
-	notes, pluginNotes := newWindowNotes(vaultDeps, db, state, noteViews{Writes: page.Writes, Follow: page.Writes}, current)
+	notes, pluginNotes := newWindowNotes(vaultDeps, db, state, noteViews{Admission: page.Writes.AdmitWrite, Follow: page.Writes}, current)
 	moves := vaultVaults(vaultDeps, ports, db, notes.Place.Move)
 	listing := vaultListing(vaultDeps.Readers, ports)
 
@@ -209,7 +208,7 @@ func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session
 	moves := note.NewTellMoveInShownVault(state.GetShownVault, windowView(state.Notices))
 	views.Moves = moves
 	notes := vaultNotes(vaultDeps, db, update, views)
-	pluginNotes := vaultNotes(vaultDeps, db, update, noteViews{Moves: moves, Writes: none.OpenGate{}})
+	pluginNotes := vaultNotes(vaultDeps, db, update, noteViews{Moves: moves})
 	return notes, getNoteChanges(pluginNotes)
 }
 

@@ -333,7 +333,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync naming.Sync
 		recording{NoteWriters: writers, VaultLocks: writers, order: recorded, hold: hold},
 		noIndex,
 		testsupport.NewClock(),
-		editor.PagesOf(installation).Writes,
+		editor.PagesOf(installation).Writes.AdmitWrite,
 	)
 
 	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation))

@@ -7,14 +7,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
 func TestAFolderIsMadeWithTheFoldersAboveIt(t *testing.T) {
 	v := vaulttest.NewVault(t, nil)
 
-	if err := file.NewCreateFolder(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, testsupport.OpenGate{}).Execute(t.Context(), v, "a/b/c"); err != nil {
+	if err := file.NewCreateFolder(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, nil).Execute(t.Context(), v, "a/b/c"); err != nil {
 		t.Fatal(err)
 	}
 	if info, err := os.Stat(filepath.Join(v.Path, "a", "b", "c")); err != nil || !info.IsDir() {

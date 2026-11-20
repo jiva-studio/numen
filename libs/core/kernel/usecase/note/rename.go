@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
+
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
@@ -24,13 +24,13 @@ import (
 // two names it is updated first. The file follows when title and filename are
 // kept as one name, so the rename does not leave a title different from the filename.
 type Rename struct {
-	readers vaultport.VaultReaders
-	writers MoveWriting
-	index   edit.IndexUpdater
-	now     machineport.Clock
-	sync    naming.SyncSetting
-	moving  fileMoving
-	gate    windowport.WriteGate
+	readers   vaultport.VaultReaders
+	writers   MoveWriting
+	index     edit.IndexUpdater
+	now       machineport.Clock
+	sync      naming.SyncSetting
+	moving    fileMoving
+	admission vaultport.WriteAdmission
 }
 
 // fileMoving files a note at another path. A note that traveled because it was
@@ -40,11 +40,9 @@ type fileMoving interface {
 	Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error)
 }
 
-// NewRename is the rename over the mover that files the note. It takes the readers,
-// writers, index updater, clock and naming setting of d, and uses the rest of d
-// nowhere. A rename passes gate.
-func NewRename(d MoveDeps, moving fileMoving, gate windowport.WriteGate) Rename {
-	return Rename{readers: d.Readers, writers: d.Writers, index: d.Index, now: d.Now, sync: d.Sync, moving: moving, gate: gate}
+// NewRename builds the use case that updates a note title and its path.
+func NewRename(d MoveDeps, moving fileMoving, admission vaultport.WriteAdmission) Rename {
+	return Rename{readers: d.Readers, writers: d.Writers, index: d.Index, now: d.Now, sync: d.Sync, moving: moving, admission: admission}
 }
 
 // RenameResult reports the note's current name and what happened to the file.
@@ -59,9 +57,8 @@ type RenameResult struct {
 // has nothing in it to bring into line, and is moved and not edited.
 var errFilenameNamesIt = errors.New("the filename determines the title")
 
-// Execute renames the note at path to title. It fails with window.ErrClosing once the window is closing.
 func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string) (RenameResult, error) {
-	return writeUnder(u.gate, func() (RenameResult, error) { return u.rename(ctx, v, path, title) })
+	return writeUnder(u.admission, func() (RenameResult, error) { return u.rename(ctx, v, path, title) })
 }
 
 func (u Rename) rename(ctx context.Context, v domain.Vault, path, title string) (RenameResult, error) {

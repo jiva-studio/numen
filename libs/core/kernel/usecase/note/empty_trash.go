@@ -3,11 +3,9 @@ package note
 import (
 	"context"
 
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // TrashedVersions deletes the text versions that follow files into the trash.
@@ -19,23 +17,24 @@ type TrashedVersions interface {
 
 // EmptyTrash deletes everything the vault's trash holds, with the text versions of it.
 type EmptyTrash struct {
-	writers  vaultport.TrashEmptiers
-	versions TrashedVersions
-	gate     windowport.WriteGate
+	writers   vaultport.TrashEmptiers
+	versions  TrashedVersions
+	admission vaultport.WriteAdmission
 }
 
-func NewEmptyTrash(writers vaultport.TrashEmptiers, versions TrashedVersions, gate windowport.WriteGate) EmptyTrash {
-	return EmptyTrash{writers: writers, versions: versions, gate: gate}
+func NewEmptyTrash(writers vaultport.TrashEmptiers, versions TrashedVersions, admission vaultport.WriteAdmission) EmptyTrash {
+	return EmptyTrash{writers: writers, versions: versions, admission: admission}
 }
 
 // Execute deletes the trash content permanently and returns the paths it could
 // not delete. The trash is not indexed, so the index is left as it is. The
 // versions of the paths it could not delete stay with them.
 func (u EmptyTrash) Execute(ctx context.Context, v domain.Vault) ([]string, error) {
-	if !u.gate.BeginWrite() {
-		return nil, windowdomain.ErrClosing
+	release, err := u.admission.Begin()
+	if err != nil {
+		return nil, err
 	}
-	defer u.gate.FinishWrite()
+	defer release()
 	writer, err := u.writers.OpenTrashEmptier(v)
 	if err != nil {
 		return nil, err

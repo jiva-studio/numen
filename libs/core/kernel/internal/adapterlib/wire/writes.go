@@ -3,6 +3,7 @@ package wire
 import (
 	"errors"
 
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
@@ -20,6 +21,14 @@ type Writes struct {
 
 // NewWrites returns the writes of a window that tells its tasks to window.
 func NewWrites(window *Window) *Writes { return &Writes{window: window} }
+
+// AdmitWrite tracks a data operation until its caller releases it.
+func (w *Writes) AdmitWrite() (func(), error) {
+	if !w.BeginWrite() {
+		return nil, windowdomain.ErrClosing
+	}
+	return w.FinishWrite, nil
+}
 
 // BeginWrite registers a write and reports false once the window is closing, when nothing may be
 // written.

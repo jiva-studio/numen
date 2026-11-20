@@ -1,16 +1,15 @@
 package note
 
 import (
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-func writeUnder[T any](gate windowport.WriteGate, write func() (T, error)) (T, error) {
-	// Once the window is closing it fails with window.ErrClosing and does not run write.
-	if !gate.BeginWrite() {
+func writeUnder[T any](admission vaultport.WriteAdmission, write func() (T, error)) (T, error) {
+	release, err := admission.Begin()
+	if err != nil {
 		var none T
-		return none, windowdomain.ErrClosing
+		return none, err
 	}
-	defer gate.FinishWrite()
+	defer release()
 	return write()
 }

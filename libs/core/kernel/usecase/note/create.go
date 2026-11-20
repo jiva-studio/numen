@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // Create makes a note.
@@ -23,20 +22,18 @@ import (
 // is shown by its `title`, else by its filename. A title the filename cannot
 // carry whole is written into the frontmatter, and nothing else writes that key.
 type Create struct {
-	writers vaultport.NoteWriters
-	names   edit.NameQueries
-	index   edit.IndexUpdater
-	now     machineport.Clock
-	gate    windowport.WriteGate
+	writers   vaultport.NoteWriters
+	names     edit.NameQueries
+	index     edit.IndexUpdater
+	now       machineport.Clock
+	admission vaultport.WriteAdmission
 }
 
-// NewCreate builds the use case that creates notes. It takes the vault the note
-// is written into, the query for which names are taken, the index update for
-// the new file, the clock, and the gate a write passes.
+// NewCreate builds the use case that creates notes.
 func NewCreate(
-	writers vaultport.NoteWriters, names edit.NameQueries, index edit.IndexUpdater, now machineport.Clock, gate windowport.WriteGate,
+	writers vaultport.NoteWriters, names edit.NameQueries, index edit.IndexUpdater, now machineport.Clock, admission vaultport.WriteAdmission,
 ) Create {
-	return Create{writers: writers, names: names, index: getIndexUpdater(index), now: now, gate: gate}
+	return Create{writers: writers, names: names, index: getIndexUpdater(index), now: now, admission: admission}
 }
 
 // NewNote is what to make. Create resolves Named into Links.
@@ -58,14 +55,13 @@ type CreateResult struct {
 
 // Execute creates the note. A note that is on disk is answered with where it is, whether or not the index
 // followed.
-// A link in Named that names no note, or one with no address, is ErrInvalidLink and nothing is created. It
-// fails with window.ErrClosing once the window is closing.
+// A link in Named that names no note, or one with no address, is ErrInvalidLink and nothing is created.
 func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (CreateResult, error) {
 	in, err := u.resolveNamedNote(ctx, v, in)
 	if err != nil {
 		return CreateResult{}, err
 	}
-	return writeUnder(u.gate, func() (CreateResult, error) { return u.createTitledNote(ctx, v, in) })
+	return writeUnder(u.admission, func() (CreateResult, error) { return u.createTitledNote(ctx, v, in) })
 }
 
 func (u Create) resolveNamedNote(ctx context.Context, v domain.Vault, in NewNote) (NewNote, error) {
