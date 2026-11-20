@@ -17,13 +17,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // downEmbeddingHost resolves an embedding plugin whose process is not listening.
 type downEmbeddingHost struct {
-	pluginport.PluginResolver
+	container.PluginResolver
 	endpoint transport.Endpoint
 	released atomic.Int32
 	acquired atomic.Int32

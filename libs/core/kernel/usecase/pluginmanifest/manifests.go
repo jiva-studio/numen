@@ -9,8 +9,12 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
+
+// PluginLookup finds the installed plugin by ID.
+type PluginLookup interface {
+	GetPlugin(id string) (manifest.Discovered, bool)
+}
 
 // Host provides the plugins, their manifests and whether the host holds one suspended.
 type Host interface {
@@ -32,15 +36,15 @@ func New(host Host) Manifests {
 // Open creates manifest readers from the plugin host capabilities they need.
 func Open(
 	lister PluginLister,
-	resolver pluginport.PluginResolver,
+	resolver PluginLookup,
 	failures PluginFailures,
 ) Manifests {
-	return New(host{PluginLister: lister, PluginResolver: resolver, PluginFailures: failures})
+	return New(host{PluginLister: lister, PluginLookup: resolver, PluginFailures: failures})
 }
 
 type host struct {
 	PluginLister
-	pluginport.PluginResolver
+	PluginLookup
 	PluginFailures
 }
 

@@ -213,7 +213,7 @@ func newSourceBinding(exec *PluginExecution, safeMode bool, endpoints *PluginEnd
 	runtime := getRunningExecution(exec, safeMode).Runtime
 	return sourcebridge.Binding{
 		Activator:    runtime.Activator,
-		Plugins:      sourcebridge.PluginAccess{PluginResolver: runtime.Resolver, ConfigWatcher: runtime.ConfigWatcher},
+		Plugins:      sourcebridge.PluginAccess{CapabilityResolver: runtime.Resolver, ConfigWatcher: runtime.ConfigWatcher},
 		Descriptions: getPluginEndpoints(endpoints).SourceDescriptions,
 		ReportRead:   pluginhealth.NewReportSearchSource(exec.Health).Execute,
 		Follow:       res.Chunks.Follow,

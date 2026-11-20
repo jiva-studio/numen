@@ -5,14 +5,19 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
+// CapabilityResolver finds the enabled plugin that provides a capability.
+type CapabilityResolver interface {
+	ResolveCapability(capability string) (manifest.Discovered, error)
+}
+
 // PluginAccess resolves the source provider and subscribes to its settings.
 type PluginAccess struct {
-	pluginport.PluginResolver
+	CapabilityResolver
 	ConfigWatcher
 }
 

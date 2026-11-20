@@ -4,8 +4,6 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
@@ -43,7 +41,7 @@ type windowSearch struct {
 	kinds       *file.ListTabKinds
 }
 
-func newSearchRuns(w windowSearch, find *queryusecase.FindSearchResults, resolver pluginport.PluginResolver, manifests pluginmanifest.Manifests, clock Timer) *searchrunusecase.SearchRuns {
+func newSearchRuns(w windowSearch, find *queryusecase.FindSearchResults, resolver PluginResolver, manifests pluginmanifest.Manifests, clock Timer) *searchrunusecase.SearchRuns {
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
 		Store:       searchstore.New(),
 		Cancels:     searchcancel.NewSearches(clock),

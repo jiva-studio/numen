@@ -119,7 +119,7 @@ func pluginsOpenPluginWork(install pluginInstall, exec *PluginExecution, tasks *
 	return work
 }
 
-func pluginsGetPluginName(resolver pluginport.PluginResolver, pluginID string) string {
+func pluginsGetPluginName(resolver PluginResolver, pluginID string) string {
 	if found, isKnown := resolver.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
 		return found.Manifest.Name
 	}

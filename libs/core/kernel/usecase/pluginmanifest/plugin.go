@@ -2,7 +2,6 @@ package pluginmanifest
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // PluginFailures tells the plugins whose start failed.
@@ -14,7 +13,6 @@ type PluginFailures interface {
 // PluginLister returns the metadata of the plugins in the order of their ids.
 type PluginLister interface {
 	GetPluginInfos() []plugin.Info
-	pluginport.PluginEnablement
 }
 
 // PluginSuspensions reports whether the host holds a plugin suspended.

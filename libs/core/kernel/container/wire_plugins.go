@@ -5,6 +5,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -33,9 +34,18 @@ func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *vault
 }
 
 type installedPlugins interface {
+	plugin.PluginEnablement
 	textversion.TextPlugins
 	pluginmanifest.PluginLister
 	pluginport.PluginManifests
+}
+
+// PluginResolver supplies the plugin lookups used during host assembly.
+type PluginResolver interface {
+	servicebridge.ServiceResolver
+	sourcebridge.CapabilityResolver
+	pluginmanifest.PluginLookup
+	ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile, bool)
 }
 
 // pluginRuntime is what runs, finds and addresses the plugins.
@@ -43,7 +53,7 @@ type pluginRuntime struct {
 	bridge.Activator
 	PluginRetrier
 	Listing   installedPlugins
-	Resolver  pluginport.PluginResolver
+	Resolver  PluginResolver
 	Manifests pluginmanifest.Manifests
 	PluginEventEmitter
 	PluginBinding
