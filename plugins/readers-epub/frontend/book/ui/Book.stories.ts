@@ -504,12 +504,17 @@ export const TargetInFrontKeptAcrossAResize: Story = {
     for (let frame = 0; frame < 60; frame += 1) await waitForFrame()
 
     const area = getArea(canvasElement)
-    const middle = getPointerPosition(area).clientX
-    const inSecondColumn = getShownRuns(canvasElement).filter((run) => {
-      const fragment = run.getClientRects()[0]
-      return fragment && fragment.left > middle
-    })
-    const offset = Number(inSecondColumn.at(-1)!.dataset['offset'])
+    const getRunAtPoint = (down: number) => {
+      const point = getPointerPosition(area, 0.75, down)
+      return area.ownerDocument
+        .elementFromPoint(point.clientX, point.clientY)
+        ?.closest<HTMLElement>('[data-offset]')
+    }
+    const target = [0.9, 0.75, 0.5, 0.25]
+      .map(getRunAtPoint)
+      .find((run) => run && area.contains(run))
+    await expect(target).toBeTruthy()
+    const offset = Number(target!.dataset['offset'])
     const front = getFrontOffset(canvasElement)
 
     canvasElement

@@ -227,9 +227,9 @@ export const PopoverBelowTheBar: Story = {
       return found
     })
     const bar = canvasElement.querySelector('[data-title-bar]')!
-    const { clientX, clientY } = getPointerPosition(popover, 0.5, 0.75)
-    await expect(clientY).toBeGreaterThan(getPointerPosition(bar, 0.5, 1).clientY)
-    const topmost = canvasElement.ownerDocument.elementFromPoint(clientX, clientY)
+    const { clientX } = getPointerPosition(popover)
+    const { clientY } = getPointerPosition(bar, 0.5, 1)
+    const topmost = canvasElement.ownerDocument.elementFromPoint(clientX, clientY + 4)
     await expect(topmost).toBe(popover)
   },
 }
