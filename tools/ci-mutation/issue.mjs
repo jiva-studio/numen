@@ -66,6 +66,20 @@ export const isTargetIssue = (name, body) => (body ?? '').includes(getMarker(nam
 const formatLine = (survivor, link, more = 0) =>
   `- [\`${survivor.path}:${survivor.line}\`](${link(survivor)}) ${survivor.mutator}: \`${survivor.original || '∅'}\` → \`${survivor.replacement || '∅'}\` <sub>${survivor.key}</sub>${more > 0 ? ` and ${more} more on this line` : ''}`
 
+// GitHub accepts up to 65,536 characters in an issue or comment.
+const listWithinLimit = (header, rows, total, describeRest) => {
+  let body = header
+  for (const [index, row] of rows.entries()) {
+    const rest = total - index - 1
+    const footer = rest ? describeRest(rest) : ''
+    if (body.length + 1 + row.length + footer.length > 65536) {
+      return body + describeRest(total - index)
+    }
+    body += '\n' + row
+  }
+  return body + (total > rows.length ? describeRest(total - rows.length) : '')
+}
+
 export const renderBody = ({ name, summary, survivors, link, runUrl, previous = null }) => {
   const { counts, total, efficacy } = summary
   const rows = Object.entries(counts)
@@ -73,9 +87,8 @@ export const renderBody = ({ name, summary, survivors, link, runUrl, previous = 
     .map(([status, count]) => `| ${status} | ${count} |`)
   const lines = groupByLine(survivors)
   const listed = lines.slice(0, LISTED)
-  const rest = lines.length - listed.length
   const trend = previous === null ? '' : ` (${previous} on the run before)`
-  return [
+  const header = [
     getMarker(name),
     `<!-- numen-mutation count=${survivors.length} -->`,
     `<!-- numen-mutation keys=${survivors
@@ -95,9 +108,13 @@ export const renderBody = ({ name, summary, survivors, link, runUrl, previous = 
     '',
     `### Survivors: ${survivors.length}${trend}, on ${lines.length} lines`,
     '',
-    ...listed.map(({ survivor, more }) => formatLine(survivor, link, more)),
-    ...(rest > 0 ? ['', `…and ${rest} more lines in the HTML report of the run.`] : []),
   ].join('\n')
+  return listWithinLimit(
+    header,
+    listed.map(({ survivor, more }) => formatLine(survivor, link, more)),
+    lines.length,
+    (rest) => `\n\n…and ${rest} more lines in the HTML report of the run.`,
+  )
 }
 
 /**
@@ -114,12 +131,12 @@ export const planIssue = (existing, survivors) => {
 }
 
 export const renderComment = (fresh, link) =>
-  [
-    `${fresh.length} new survivor${fresh.length === 1 ? '' : 's'} since the last run:`,
-    '',
-    ...fresh.slice(0, ANNOUNCED).map((one) => formatLine(one, link)),
-    ...(fresh.length > ANNOUNCED ? ['', `…and ${fresh.length - ANNOUNCED} more.`] : []),
-  ].join('\n')
+  listWithinLimit(
+    `${fresh.length} new survivor${fresh.length === 1 ? '' : 's'} since the last run:\n`,
+    fresh.slice(0, ANNOUNCED).map((one) => formatLine(one, link)),
+    fresh.length,
+    (rest) => `\n\n…and ${rest} more.`,
+  )
 
 /* ---------------------------------- Main ---------------------------------- */
 

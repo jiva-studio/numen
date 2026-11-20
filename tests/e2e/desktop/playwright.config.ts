@@ -5,6 +5,10 @@ import { planShards, readPathsFromEnv } from './scripts/shards.mjs'
 const port = process.env.NUMEN_TEST_PORT ?? '3456'
 const baseURL = `https://127.0.0.1:${port}`
 
+// The bundled Linux WebKit omits MediaRecorder. Each project exercises its native recording behavior.
+const recording = /@native-recorder\b/
+const unavailableRecording = /@unavailable-recorder\b/
+
 const readShardFiles = (): string[] | undefined => {
   const named = process.env.NUMEN_E2E_SHARD
   const paths = readPathsFromEnv()
@@ -70,6 +74,7 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      grepInvert: unavailableRecording,
     },
     {
       name: 'webkit',
@@ -77,6 +82,7 @@ export default defineConfig({
       // WebKit does not report a request it was holding as cancelled.
       // The specs of tests/requests call the server without a window: one engine is enough.
       testIgnore: ['**/*.chromium.spec.ts', '**/requests/**'],
+      grepInvert: process.platform === 'linux' ? recording : unavailableRecording,
     },
   ],
 })
