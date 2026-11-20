@@ -63,7 +63,7 @@ In a backend mount, `s.GetHostEndpoint()` reads the linked registration or the p
 
 ## Storage
 
-`cache.GetPluginDir()` and `cache.GetDataDir()` return the directories the host granted the plugin, from `NUMEN_PLUGIN_CACHE_DIR` and `NUMEN_PLUGIN_DATA_DIR`. `cache.GetSharedDir()` and `cache.GetSharedDataDir()` return the directories all plugins share, from `NUMEN_SHARED_CACHE_DIR` and `NUMEN_SHARED_DATA_DIR`; a plugin writes there only content named by its digest, writes it atomically and deletes nothing. `cache.GetSharedDirOrPluginDir()` and `cache.GetSharedDataDirOrPluginDataDir()` fall back to the plugin's own directory. Each returns an error where the host granted none; a plugin computes no platform path. `plugintest.GrantStorage(t)` sets all four for a test.
+`cache.GetPluginDir()` and `cache.GetDataDir()` return the plugin's cache and data directories. `cache.GetSharedDir()` returns the shared cache. `cache.GetSharedDirOrPluginDir()` uses the plugin cache when the host grants only that directory. A plugin requests model files with `host.NewDependencyClient(endpoint).FetchModelFile(ctx, url, sha256)`. `plugintest.GrantStorage(t)` grants the storage directories in a test.
 
 ## Clock
 

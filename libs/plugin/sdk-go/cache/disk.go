@@ -56,20 +56,6 @@ func GetDataDir() (string, error) { return getGrantedDir(EnvDataDir) }
 // once its digest is verified, and never delete what is there: the host owns its lifetime.
 func GetSharedDir() (string, error) { return getGrantedDir(EnvSharedDir) }
 
-// GetSharedDataDir returns the directory the host shares between all plugins for what is downloaded or made
-// and cannot be computed again, such as models. The same rules hold as for GetSharedDir. The OS never
-// purges it as it may a cache.
-func GetSharedDataDir() (string, error) { return getGrantedDir(EnvSharedDataDir) }
-
-// GetSharedDataDirOrPluginDataDir returns the shared data directory, and the plugin's own data directory
-// where the host granted no shared one.
-func GetSharedDataDirOrPluginDataDir() (string, error) {
-	if dir, err := GetSharedDataDir(); err == nil {
-		return dir, nil
-	}
-	return GetDataDir()
-}
-
 // GetSharedDirOrPluginDir returns the shared directory, and the plugin's own cache directory where the
 // host granted no shared one.
 func GetSharedDirOrPluginDir() (string, error) {

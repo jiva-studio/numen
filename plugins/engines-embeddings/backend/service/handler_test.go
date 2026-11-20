@@ -41,7 +41,7 @@ func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	for name, value := range hostHealth.Vars(linkedToken) {
 		t.Setenv(name, value)
 	}
-	h := newHandler(newServer(nil), noPlaces, sourcehealth.New(health.NewClientFromEnv, console.Report))
+	h := newHandler(newServer(nil, nil), noPlaces, sourcehealth.New(health.NewClientFromEnv, console.Report))
 
 	_, describeErr := h.Describe(t.Context())
 	if !hasCode(describeErr, rpcerror.FailedPrecondition) {
@@ -65,7 +65,7 @@ func hasCode(err error, code rpcerror.Code) bool {
 
 func TestTheHandlerDescribesAndIndexesWithTheModelTheEnvironmentNames(t *testing.T) {
 	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
-	h := newHandler(newServer(nil), noPlaces, sourcehealth.New(noHealth, console.Report))
+	h := newHandler(newServer(nil, nil), noPlaces, sourcehealth.New(noHealth, console.Report))
 
 	described, err := h.Describe(t.Context())
 	if err != nil {
@@ -88,7 +88,7 @@ func TestASearchAsksThePlaceWithTheVectorOfTheQueryAndAnswersItsChunks(t *testin
 	t.Setenv("NUMEN_TEST_MOCK_ML", "true")
 	place := &nearestPlace{matches: []host.NearestMatch{{ChunkID: "41", Similarity: 0.8}, {ChunkID: "7", Similarity: 0.5}}}
 	var vaults []string
-	h := newHandler(newServer(nil), func(vaultID string) (host.PlaceSearch, error) {
+	h := newHandler(newServer(nil, nil), func(vaultID string) (host.PlaceSearch, error) {
 		vaults = append(vaults, vaultID)
 		return place, nil
 	}, sourcehealth.New(noHealth, console.Report))

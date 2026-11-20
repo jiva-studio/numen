@@ -105,15 +105,32 @@ func (p *FileProvisioner) Provision(
 	defer func() { err = errors.Join(err, release()) }()
 
 	sum := getReadySum(source)
-	if resolved, ok := readCachedDependency(req, dir, sum); ok {
+	if resolved, ok := p.getCachedFile(req, dir, sum); ok {
 		return resolved, nil
 	}
 	if p.cfg.Offline {
 		return plugin.ResolvedDependency{}, fmt.Errorf("%s %s: %w", req.Kind, req.ID, ErrOffline)
 	}
-	primary, err := p.fetch(ctx, req, source, dir, onProgress)
+	return p.store(ctx, req, source, dir, onProgress)
+}
+
+func (p *FileProvisioner) store(
+	ctx context.Context, req manifest.DependencyRequirement, source manifest.DependencySource, dir string, onProgress func(plugin.DependencyStatus),
+) (plugin.ResolvedDependency, error) {
+	sum := getReadySum(source)
+	primary, actual, err := p.fetch(ctx, req, source, dir, onProgress)
 	if err != nil {
 		return plugin.ResolvedDependency{}, err
+	}
+	if source.ChecksumSHA256 == "" {
+		return p.storeModelFile(ctx, req, dir, primary, actual)
+	}
+	if source.ArchiveMember != "" {
+		member, err := unpackMember(ctx, primary, source.ArchiveMember, source.MemberSHA256, dir)
+		if err = errors.Join(err, os.Remove(primary)); err != nil {
+			return plugin.ResolvedDependency{}, err
+		}
+		primary = member
 	}
 	if err := writeReadyMarker(ctx, dir, filepath.Base(primary), sum); err != nil {
 		return plugin.ResolvedDependency{}, err
@@ -123,15 +140,17 @@ func (p *FileProvisioner) Provision(
 
 func (p *FileProvisioner) fetch(
 	ctx context.Context, req manifest.DependencyRequirement, source manifest.DependencySource, dir string, onProgress func(plugin.DependencyStatus),
-) (string, error) {
+) (string, string, error) {
 	name, err := getFileName(req, source)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	primary := filepath.Join(dir, name)
 	title := "Downloading " + req.ID
+	var actual string
 	err = transfer{
-		client: p.cfg.Client, address: source.SourceURL, dest: primary, sum: source.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
+		onDigest: func(sum string) { actual = sum },
+		client:   p.cfg.Client, address: source.SourceURL, dest: primary, sum: source.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
 		onProgress: func(done, total int64) {
 			onProgress(plugin.DependencyStatus{
 				ID: req.ID, State: plugin.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
@@ -139,14 +158,7 @@ func (p *FileProvisioner) fetch(
 			})
 		},
 	}.fetch(ctx)
-	if err != nil || source.ArchiveMember == "" {
-		return primary, err
-	}
-	member, err := unpackMember(primary, source.ArchiveMember, source.MemberSHA256, dir)
-	if err != nil {
-		return "", errors.Join(err, os.Remove(primary))
-	}
-	return member, os.Remove(primary)
+	return primary, actual, err
 }
 
 func getReadySum(source manifest.DependencySource) string {
@@ -193,7 +205,7 @@ func readCachedDependency(req manifest.DependencyRequirement, dir, sum string) (
 		return plugin.ResolvedDependency{}, false
 	}
 	name, found, err := readReadyMarker(dir)
-	if err != nil || !isPlainName(name) || found != sum {
+	if err != nil || !isPlainName(name) || (sum != "" && found != sum) || found == "" {
 		return plugin.ResolvedDependency{}, false
 	}
 	primary := filepath.Join(dir, name)
@@ -238,7 +250,7 @@ func (p *FileProvisioner) Resolve(req manifest.DependencyRequirement) (plugin.Re
 	if !ok {
 		return newResolvedDependency(req, dir, filepath.Join(dir, cleanName(req.ID))), plugin.DependencyStateMissing, nil
 	}
-	if resolved, ok := readCachedDependency(req, dir, getReadySum(source)); ok {
+	if resolved, ok := p.getCachedFile(req, dir, getReadySum(source)); ok {
 		return resolved, plugin.DependencyStateReady, nil
 	}
 	name, err := getFileName(req, source)

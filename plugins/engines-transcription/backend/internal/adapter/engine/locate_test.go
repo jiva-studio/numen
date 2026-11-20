@@ -1,12 +1,13 @@
 package engine
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
 )
 
 func TestLocateModelResolvesExplicitPath(t *testing.T) {
@@ -16,14 +17,14 @@ func TestLocateModelResolvesExplicitPath(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := locateModel(explicit, "", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir)
+	found, err := locateModel(explicit, "", encoderFile, dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if found != explicit {
 		t.Errorf("got %s, want %s", found, explicit)
 	}
-	if _, err := locateModel(filepath.Join(dir, "missing.onnx"), "", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir); !errors.Is(err, os.ErrNotExist) {
+	if _, err := locateModel(filepath.Join(dir, "missing.onnx"), "", encoderFile, dir); !errors.Is(err, os.ErrNotExist) {
 		t.Errorf("missing explicit path err = %v, want os.ErrNotExist", err)
 	}
 }
@@ -46,52 +47,6 @@ func TestLocateModelEdgeCases(t *testing.T) {
 		t.Errorf("resolveFileName(custom.onnx) = %q, want custom.onnx", got)
 	}
 
-	t.Setenv("NUMEN_DEPENDENCY_PARAKEET_ENCODER", filepath.Join(dir, "missing-env.onnx"))
-	if got := findInEnv("NUMEN_DEPENDENCY_PARAKEET_ENCODER"); got != "" {
-		t.Errorf("findInEnv missing file = %q, want empty", got)
-	}
-	if got := findInEnv(""); got != "" {
-		t.Errorf("findInEnv empty var = %q, want empty", got)
-	}
-
-	homeDir := t.TempDir()
-	homeModel := filepath.Join(homeDir, "in-home.onnx")
-	writeFile(t, homeModel, []byte("home"), 0o644)
-	t.Setenv(EnvDir, homeDir)
-	got, err := locateModel("", "https://example.invalid/repo/", "", "in-home.onnx", "")
-	if err != nil || got != homeModel {
-		t.Errorf("locateModel in home = %q, %v, want %q", got, err, homeModel)
-	}
-
-	t.Setenv(EnvDir, t.TempDir())
-	sharedData := t.TempDir()
-	sharedModels := filepath.Join(sharedData, "models")
-	if err := os.MkdirAll(sharedModels, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	sharedModel := filepath.Join(sharedModels, "in-shared.onnx")
-	writeFile(t, sharedModel, []byte("shared"), 0o644)
-	t.Setenv(cache.EnvSharedDataDir, sharedData)
-	if got := findInHome("in-shared.onnx"); got != sharedModel {
-		t.Errorf("findInHome shared = %q, want %q", got, sharedModel)
-	}
-}
-
-func TestLocateModelResolvesEnvironmentVariable(t *testing.T) {
-	dir := t.TempDir()
-	envPath := filepath.Join(dir, "provisioned-encoder.onnx")
-	if err := os.WriteFile(envPath, []byte("encoder"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("NUMEN_DEPENDENCY_PARAKEET_ENCODER", envPath)
-
-	found, err := locateModel("", "", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, "")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if found != envPath {
-		t.Errorf("got %s, want %s", found, envPath)
-	}
 }
 
 func TestLocateModelResolvesDirFallback(t *testing.T) {
@@ -101,7 +56,7 @@ func TestLocateModelResolvesDirFallback(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := locateModel("", "https://example.invalid/parakeet/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir)
+	found, err := locateModel("", "https://example.invalid/parakeet/", encoderFile, dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -112,7 +67,7 @@ func TestLocateModelResolvesDirFallback(t *testing.T) {
 
 func TestLocateModelErrorsWhenNotFound(t *testing.T) {
 	dir := t.TempDir()
-	_, err := locateModel("", "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", "non-existent.onnx", dir)
+	_, err := locateModel("", "https://example.invalid/repo/", "non-existent.onnx", dir)
 	if err == nil {
 		t.Fatal("expected error for non-existent model, got nil")
 	}
@@ -123,24 +78,14 @@ func TestLocateModelPrecedence(t *testing.T) {
 	explicit := filepath.Join(dir, "explicit.onnx")
 	writeFile(t, explicit, []byte("explicit"), 0o644)
 
-	envPath := filepath.Join(dir, "env.onnx")
-	writeFile(t, envPath, []byte("env"), 0o644)
-	t.Setenv("NUMEN_DEPENDENCY_PARAKEET_ENCODER", envPath)
-
 	dirPath := filepath.Join(dir, encoderFile)
 	writeFile(t, dirPath, []byte("dir"), 0o644)
 
-	// 1. Explicit beats env and dir
-	got, err := locateModel(explicit, "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir)
+	got, err := locateModel(explicit, "https://example.invalid/repo/", encoderFile, dir)
 	if err != nil || got != explicit {
 		t.Errorf("explicit precedence failed: got %s, err %v", got, err)
 	}
 
-	// 2. Env beats dir
-	got, err = locateModel("", "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, dir)
-	if err != nil || got != envPath {
-		t.Errorf("env precedence failed: got %s, err %v", got, err)
-	}
 }
 
 func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
@@ -150,19 +95,23 @@ func writeFile(t *testing.T, path string, content []byte, perm os.FileMode) {
 	}
 }
 
-func TestLocateModelFindsTheFileOfTheEnvironmentPathThatAppearsAfterTheFirstLook(t *testing.T) {
-	envPath := filepath.Join(t.TempDir(), "downloaded-encoder.onnx")
-	t.Setenv("NUMEN_DEPENDENCY_PARAKEET_ENCODER", envPath)
-	t.Setenv(EnvDir, t.TempDir())
-	t.Setenv(cache.EnvSharedDataDir, t.TempDir())
-
-	if found, err := locateModel("", "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, ""); err == nil {
-		t.Fatalf("locateModel found %q before the file was there", found)
+func TestResolveSelectedModelThroughHost(t *testing.T) {
+	model, _ := settings.FindModel("parakeet-tdt-0.6b-v2-int8")
+	address := model.Repo
+	ctx := t.Context()
+	fetch := func(call context.Context, url, sha string) (string, error) {
+		if call != ctx || url != address+encoderFile || sha != "a32b12d17bbbc309d0686fbbcc2987b5e9b8333a7da83fa6b089f0a2acd651ab" {
+			t.Fatalf("unexpected model request %s (%s)", url, sha)
+		}
+		return "/shared/model", nil
 	}
-	writeFile(t, envPath, []byte("encoder"), 0o644)
-
-	found, err := locateModel("", "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, "")
-	if err != nil || found != envPath {
-		t.Errorf("locateModel after the download = %q, %v, want %q", found, err, envPath)
+	files := modelFiles{dir: t.TempDir(), shouldDownload: true, fetch: fetch}
+	got, err := files.resolve(ctx, "", address, encoderFile)
+	if err != nil || got != "/shared/model" {
+		t.Fatalf("resolve = %q, %v", got, err)
+	}
+	files.shouldDownload = false
+	if _, err := files.resolve(ctx, "", address, encoderFile); err == nil {
+		t.Fatal("downloaded an absent model with downloads disabled")
 	}
 }

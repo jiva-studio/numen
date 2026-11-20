@@ -93,8 +93,8 @@ type Transcriber struct {
 
 // Open loads the models through the runtime and compiles them, reading the weights. The result is
 // used for any number of recordings until it is closed.
-func Open(ctx context.Context, runtime Runtime, cfg settings.Config) (*Transcriber, error) {
-	engine, found, err := locateModels(ctx, runtime.library, cfg)
+func Open(ctx context.Context, runtime Runtime, cfg settings.Config, fetch FetchModelFile) (*Transcriber, error) {
+	engine, found, err := locateModels(ctx, runtime.library, cfg, fetch)
 	if err != nil {
 		return nil, err
 	}

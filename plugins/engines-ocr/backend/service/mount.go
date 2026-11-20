@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/document"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/internal/adapter/engine"
@@ -40,24 +41,17 @@ func (a *App) HandleEvent(ctx context.Context, event string) error {
 // Mount registers the services of the plugin on s, working the vault, the plugin's folder, the text
 // versions and the queue through the host the environment names. The recognizer closes with s.
 func (a *App) Mount(s *server.Server) error {
-	vault, err := host.NewClientFromEnv()
+	endpoint, err := hostcall.FromEnv()
 	if err != nil {
 		return err
 	}
-	store, err := host.NewStoreClientFromEnv()
-	if err != nil {
-		return err
-	}
-	texts, err := host.NewTextClientFromEnv()
-	if err != nil {
-		return err
-	}
-	queue, err := host.NewQueueClientFromEnv()
-	if err != nil {
-		return err
-	}
+	vault := host.NewClient(endpoint)
+	store := host.NewStoreClient(endpoint)
+	texts := host.NewTextClient(endpoint)
+	queue := host.NewQueueClient(endpoint)
+	fetch := host.NewDependencyClient(endpoint).FetchModelFile
 	env := process.Process{}
-	holder := engines.NewHolder(env.GetConfig(), newOpener(engine.NewLibrary(), env.IsMockML), env)
+	holder := engines.NewHolder(env.GetConfig(), newOpener(engine.NewLibrary(), env.IsMockML, fetch), env)
 	feeds := func(id domain.VaultID) feed.Vault { return feed.Vault{Feed: vault.With(id), Store: store.With(id)} }
 	auto, err := mount(s, recognition.Host{
 		Vaults:    func(id domain.VaultID) recognition.Files { return vault.With(id) },

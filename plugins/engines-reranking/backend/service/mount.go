@@ -4,6 +4,7 @@ package service
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -16,9 +17,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/usecase/reranking"
 )
 
-func newScorerOpener(library *onnx.Library) ports.OpenScorer {
+func newScorerOpener(library *onnx.Library, fetch onnx.FetchFile) ports.OpenScorer {
 	return func(ctx context.Context, p profile.Profile) (ports.Scorer, error) {
-		scorer, err := engine.Open(ctx, library, p)
+		scorer, err := engine.Open(ctx, library, p, fetch)
 		if err != nil {
 			return nil, err
 		}
@@ -26,17 +27,27 @@ func newScorerOpener(library *onnx.Library) ports.OpenScorer {
 	}
 }
 
-func openRerankingUseCase() (*reranking.Reranking, error) {
-	return reranking.New(profilefiles.GetDefaultDirectory(), newScorerOpener(onnx.NewLibrary()), console.Report)
+func openRerankingUseCase(fetch onnx.FetchFile) (*reranking.Reranking, error) {
+	return reranking.New(profilefiles.GetDefaultDirectory(), newScorerOpener(onnx.NewLibrary(), fetch), console.Report)
 }
 
 // Mount serves the provider of the local-reranker connection type on s. The loaded model closes with s.
 func Mount(s *server.Server) error {
-	r, err := openRerankingUseCase()
+	r, err := openRerankingUseCase(fetchModelFile(s))
 	if err != nil {
 		return err
 	}
 	s.OnClose(r.Close)
 	connection.Mount(s, newProvider(r))
 	return nil
+}
+
+func fetchModelFile(s *server.Server) onnx.FetchFile {
+	return func(ctx context.Context, address, sum string) (string, error) {
+		endpoint, err := s.GetHostEndpoint()
+		if err != nil {
+			return "", err
+		}
+		return host.NewDependencyClient(endpoint).FetchModelFile(ctx, address, sum)
+	}
 }

@@ -35,6 +35,7 @@ type transfer struct {
 	sum        string
 	backoff    backoff
 	clock      machineport.Clock
+	onDigest   func(string)
 	onProgress func(count, total int64)
 }
 
@@ -93,8 +94,7 @@ func claimPartial(dir string) (string, error) {
 }
 
 func (t transfer) append(ctx context.Context, part string) (err error) {
-	hasher := sha256.New()
-	offset, err := hashExisting(part, hasher)
+	hasher, offset, err := t.getPartialHash(part)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 	defer closeAndJoin(&err, answer.Body)
 
 	switch {
-	case answer.StatusCode == http.StatusRequestedRangeNotSatisfiable:
+	case answer.StatusCode == http.StatusRequestedRangeNotSatisfiable && offset > 0:
 		return t.finish(hasher, offset)
 	case answer.StatusCode == http.StatusPartialContent && offset > 0:
 	case answer.StatusCode == http.StatusOK:
@@ -127,6 +127,16 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 		return fmt.Errorf("fetching %s: %w", t.address, err)
 	}
 	return t.finish(hasher, offset+byteCount)
+}
+
+func (t transfer) getPartialHash(part string) (hash.Hash, int64, error) {
+	hasher := sha256.New()
+	if t.sum == "" {
+		// A URL without a pinned sum can serve different bytes between attempts.
+		return hasher, 0, nil
+	}
+	offset, err := hashExisting(part, hasher)
+	return hasher, offset, err
 }
 
 func (t transfer) newRequest(ctx context.Context, offset int64) (*http.Request, error) {
@@ -159,8 +169,12 @@ func (t transfer) store(part string, body io.Reader, hasher hash.Hash, offset, t
 }
 
 func (t transfer) finish(hasher hash.Hash, size int64) error {
-	if found := hex.EncodeToString(hasher.Sum(nil)); found != t.sum {
+	found := hex.EncodeToString(hasher.Sum(nil))
+	if t.sum != "" && found != t.sum {
 		return fmt.Errorf("%w: %s holds %s, and %s is pinned", ErrChecksum, t.address, found, t.sum)
+	}
+	if t.onDigest != nil {
+		t.onDigest(found)
 	}
 	if t.onProgress != nil {
 		t.onProgress(size, size)

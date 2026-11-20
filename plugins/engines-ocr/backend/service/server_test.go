@@ -103,24 +103,15 @@ func TestTheHandlerOfCreateTextFailsBeforeAnyTask(t *testing.T) {
 // Each model the manifest offers is one the engine runs, fetched from the engine's own address.
 func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 	var manifest struct {
-		Dependencies []struct {
-			ID        string `json:"id"`
-			SourceURL string `json:"sourceUrl"`
-		} `json:"dependencies"`
 		Settings []struct {
 			Key     string `json:"key"`
 			Options []struct {
-				Value        string   `json:"value"`
-				Dependencies []string `json:"dependencies"`
+				Value string `json:"value"`
 			} `json:"options"`
 		} `json:"settings"`
 	}
 	if err := json.Unmarshal(ocr.Manifest, &manifest); err != nil {
 		t.Fatal(err)
-	}
-	sources := map[string]string{}
-	for _, one := range manifest.Dependencies {
-		sources[one.ID] = one.SourceURL
 	}
 	count := 0
 	for _, setting := range manifest.Settings {
@@ -134,12 +125,10 @@ func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
 				t.Errorf("the manifest offers %s, which the engine does not run", option.Value)
 				continue
 			}
-			var provisioned []string
-			for _, id := range option.Dependencies {
-				provisioned = append(provisioned, sources[id])
-			}
-			if address != "" && (len(provisioned) != 1 || provisioned[0] != address) {
-				t.Errorf("%s provisions %v, and the engine fetches %s", option.Value, provisioned, address)
+			if address != "" {
+				if _, ok := settings.FindModelDigest(address); !ok {
+					t.Errorf("%s has no checksum for %s", option.Value, address)
+				}
 			}
 		}
 	}

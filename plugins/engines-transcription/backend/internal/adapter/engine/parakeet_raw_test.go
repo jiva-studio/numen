@@ -20,7 +20,7 @@ func openCachedTranscriber(tb testing.TB) *Transcriber {
 	if dir := os.Getenv("NUMEN_MODELS"); dir != "" {
 		cfg.Dir = dir
 	}
-	delta, err := Open(tb.Context(), NewRuntime(), cfg)
+	delta, err := Open(tb.Context(), NewRuntime(), cfg, nil)
 	if err != nil {
 		tb.Skipf("parakeet models not available: %v", err)
 	}

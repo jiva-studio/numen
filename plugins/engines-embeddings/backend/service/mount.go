@@ -23,10 +23,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
 
-func newLocalModelOpener(library *onnx.Library) ports.OpenEmbedder {
+func newLocalModelOpener(library *onnx.Library, fetch onnx.FetchFile) ports.OpenEmbedder {
 	// gomutants:disable-next-line RETURN_ZERO reason="production opener wraps engine.Open with native ONNX runtime"
 	return func(ctx context.Context, info model.ModelInfo, local model.LocalModel) (ports.Embedder, error) {
-		emb, err := engine.Open(ctx, library, info, local, nil)
+		emb, err := engine.Open(ctx, library, info, local, fetch)
 		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="production opener wraps engine.Open with native ONNX runtime"
 		if err != nil {
 			// gomutants:disable-next-line RETURN_ERROR_NIL reason="production opener wraps engine.Open with native ONNX runtime"
@@ -41,12 +41,12 @@ func newMockEmbedder(logPath string) ports.Embedder {
 	return mockembedder.Embedder{LogPath: logPath}
 }
 
-func newServer(open ports.OpenModels) *serving.Server {
+func newServer(open ports.OpenModels, fetch onnx.FetchFile) *serving.Server {
 	return serving.New(serving.Ports{
 		Machine:     process.Process{},
 		Profiles:    profilefiles.GetDefaultDirectory(),
 		Environment: environment.Variables{},
-		OpenLocal:   newLocalModelOpener(onnx.NewLibrary()),
+		OpenLocal:   newLocalModelOpener(onnx.NewLibrary(), fetch),
 		NewMock:     newMockEmbedder,
 		OpenModels:  open,
 		Report:      console.Report,
@@ -71,7 +71,7 @@ func getPlaces(connect func() (*host.SearchClient, error)) openPlace {
 }
 
 func mount(s *server.Server, open ports.OpenModels, places openPlace, reports sourcehealth.OpenHealth) error {
-	embedSrv := newServer(open)
+	embedSrv := newServer(open, fetchModelFile(s))
 	s.SetUpdateConfig(func(values map[string]string) {
 		embedSrv.Update(values)
 	})
@@ -79,4 +79,14 @@ func mount(s *server.Server, open ports.OpenModels, places openPlace, reports so
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server shutdown callback closes internal embedSrv state"
 	s.OnClose(embedSrv.Close)
 	return nil
+}
+
+func fetchModelFile(s *server.Server) onnx.FetchFile {
+	return func(ctx context.Context, address, sum string) (string, error) {
+		endpoint, err := s.GetHostEndpoint()
+		if err != nil {
+			return "", err
+		}
+		return host.NewDependencyClient(endpoint).FetchModelFile(ctx, address, sum)
+	}
 }

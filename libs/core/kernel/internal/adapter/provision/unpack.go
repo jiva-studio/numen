@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -18,14 +19,14 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/atomicfile"
 )
 
-func unpackMember(archive, member, sum, dir string) (string, error) {
+func unpackMember(ctx context.Context, archive, member, sum, dir string) (string, error) {
 	if strings.HasSuffix(strings.ToLower(archive), ".zip") {
-		return unpackZipMember(archive, member, sum, dir)
+		return unpackZipMember(ctx, archive, member, sum, dir)
 	}
-	return unpackTarMember(archive, member, sum, dir)
+	return unpackTarMember(ctx, archive, member, sum, dir)
 }
 
-func unpackTarMember(archive, member, sum, dir string) (_ string, err error) {
+func unpackTarMember(ctx context.Context, archive, member, sum, dir string) (_ string, err error) {
 	file, err := os.Open(archive)
 	if err != nil {
 		return "", err
@@ -46,12 +47,12 @@ func unpackTarMember(archive, member, sum, dir string) (_ string, err error) {
 			return "", err
 		}
 		if entry.Typeflag == tar.TypeReg && isMember(entry.Name, member) {
-			return writeMember(dir, entry.Name, entries, sum)
+			return writeMember(ctx, dir, entry.Name, entries, sum)
 		}
 	}
 }
 
-func unpackZipMember(archive, member, sum, dir string) (_ string, err error) {
+func unpackZipMember(ctx context.Context, archive, member, sum, dir string) (_ string, err error) {
 	entries, err := zip.OpenReader(archive)
 	if err != nil {
 		return "", err
@@ -65,7 +66,7 @@ func unpackZipMember(archive, member, sum, dir string) (_ string, err error) {
 		if err != nil {
 			return "", err
 		}
-		pos, err := writeMember(dir, entry.Name, file, sum)
+		pos, err := writeMember(ctx, dir, entry.Name, file, sum)
 		return pos, errors.Join(err, file.Close())
 	}
 	return "", fmt.Errorf("%s holds no %s", archive, member)
@@ -79,17 +80,21 @@ func isMember(name, member string) bool {
 	return err == nil && matched
 }
 
-func writeMember(dir, name string, from io.Reader, sum string) (string, error) {
+func writeMember(ctx context.Context, dir, name string, from io.Reader, sum string) (string, error) {
 	base := cleanName(path.Base(name))
-	if isReserved(base) {
+	if !filepath.IsLocal(base) || isReserved(base) {
 		return "", fmt.Errorf("%q is a name the folder keeps for itself", base)
 	}
-	pos := filepath.Join(dir, base)
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return "", err
+	}
 	checked := &memberReader{source: from, digest: sha256.New(), wanted: sum}
-	if err := atomicfile.WriteFile(pos, checked, 0o755); err != nil {
+	_, err = atomicfile.Replace(ctx, root, base, checked, 0o755)
+	if err = errors.Join(err, root.Close()); err != nil {
 		return "", fmt.Errorf("unpacking %s: %w", name, err)
 	}
-	return pos, nil
+	return filepath.Join(dir, base), nil
 }
 
 // memberReader hands on the bytes of an archive member and, at their end, refuses a member that does

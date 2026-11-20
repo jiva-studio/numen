@@ -14,7 +14,7 @@ func TestGraphConstants(t *testing.T) {
 	}
 
 	t.Setenv(onnx.EnvLibrary, "")
-	if _, err := Open(t.Context(), NewRuntime(), settings.Config{}); !errors.Is(err, onnx.ErrNoLibrary) {
+	if _, err := Open(t.Context(), NewRuntime(), settings.Config{}, nil); !errors.Is(err, onnx.ErrNoLibrary) {
 		t.Errorf("Open without library = %v, want %v", err, onnx.ErrNoLibrary)
 	}
 }
