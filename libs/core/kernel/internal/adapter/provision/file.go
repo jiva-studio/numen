@@ -105,7 +105,7 @@ func (p *FileProvisioner) Provision(
 	defer func() { err = errors.Join(err, release()) }()
 
 	sum := getReadySum(source)
-	if resolved, ok := readCachedDependency(req, dir, sum); ok {
+	if resolved, ok := p.getCachedFile(req, dir, sum); ok {
 		return resolved, nil
 	}
 	if p.cfg.Offline {
@@ -116,7 +116,7 @@ func (p *FileProvisioner) Provision(
 		return plugin.ResolvedDependency{}, err
 	}
 	if sum == "" {
-		sum = actual
+		return p.storeModelFile(ctx, req, dir, primary, actual)
 	}
 	if err := writeReadyMarker(ctx, dir, filepath.Base(primary), sum); err != nil {
 		return plugin.ResolvedDependency{}, err
@@ -243,7 +243,7 @@ func (p *FileProvisioner) Resolve(req manifest.DependencyRequirement) (plugin.Re
 	if !ok {
 		return newResolvedDependency(req, dir, filepath.Join(dir, cleanName(req.ID))), plugin.DependencyStateMissing, nil
 	}
-	if resolved, ok := readCachedDependency(req, dir, getReadySum(source)); ok {
+	if resolved, ok := p.getCachedFile(req, dir, getReadySum(source)); ok {
 		return resolved, plugin.DependencyStateReady, nil
 	}
 	name, err := getFileName(req, source)

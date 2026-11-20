@@ -115,7 +115,7 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 	defer closeAndJoin(&err, answer.Body)
 
 	switch {
-	case answer.StatusCode == http.StatusRequestedRangeNotSatisfiable:
+	case answer.StatusCode == http.StatusRequestedRangeNotSatisfiable && offset > 0:
 		return t.finish(hasher, offset)
 	case answer.StatusCode == http.StatusPartialContent && offset > 0:
 	case answer.StatusCode == http.StatusOK:

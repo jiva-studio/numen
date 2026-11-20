@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"path/filepath"
 	"slices"
@@ -22,7 +23,9 @@ import (
 func newTestProvider(t *testing.T) connection.Provider {
 	t.Helper()
 	t.Setenv("NUMEN_PLUGIN_DATA_DIR", t.TempDir())
-	r, err := openRerankingUseCase(nil)
+	r, err := openRerankingUseCase(func(context.Context, string, string) (string, error) {
+		return "", errors.New("model unavailable offline")
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
