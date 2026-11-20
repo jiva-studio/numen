@@ -100,7 +100,7 @@ const writeValues = (edits: readonly SettingEdit[]) => {
   for (const edit of edits) VALUES.set(edit.at.join('/'), JSON.parse(edit.value))
 }
 
-const APP_SETTINGS: Installation['plugin']['app'] = ref([
+const APP_SETTINGS: Installation['settings']['app'] = ref([
   {
     key: 'appearance.theme',
     type: 'enum',
