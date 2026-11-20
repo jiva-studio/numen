@@ -7,7 +7,8 @@ export function getVisibleFraction(element: Element, root: Element | null = null
       ([entry]) => {
         if (!entry) return
         observer.disconnect()
-        resolve(entry.intersectionRatio)
+        const { width, height } = entry.intersectionRect
+        resolve(width > 0 && height > 0 ? entry.intersectionRatio : 0)
       },
       { root },
     )
