@@ -29,8 +29,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 )
 
 var errRefused = errors.New("rejected on purpose")
@@ -220,7 +218,7 @@ func (fixedProblemQueries) GetDanglingLinks(context.Context, domain.VaultID) ([]
 	return nil, nil
 }
 
-func problemsDeps(queries problemport.ProblemQueries) stubSession {
+func problemsDeps(queries check.ProblemQueries) stubSession {
 	return stubSession{
 		Vaults: createVaultList(getNotebook()),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
@@ -663,7 +661,7 @@ func TestScanNeedsExactlyOneVault(t *testing.T) {
 
 // refusingSummaries counts what the index holds, or fails with err when it is set.
 type refusingSummaries struct {
-	noteport.VaultSummaries
+	indexing.VaultSummaries
 	err error
 }
 

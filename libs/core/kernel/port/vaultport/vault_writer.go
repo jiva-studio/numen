@@ -50,21 +50,8 @@ type FileMovers interface {
 	OpenFileMover(v domain.Vault) (FileMover, error)
 }
 
-// TrashEmptiers opens a vault for emptying its trash.
-type TrashEmptiers interface {
-	OpenTrashEmptier(v domain.Vault) (TrashEmptier, error)
-}
-
 // VaultLocks holds a vault's write lock, so two writers do not change a vault at once.
 type VaultLocks interface {
 	// Lock waits while another holder has the lock and returns what releases it.
 	Lock(ctx context.Context, v domain.Vault) (release func(), err error)
-}
-
-// VaultVersions counts the writes a vault has taken, so a caller can tell which of two answers about its
-// files is the newer.
-type VaultVersions interface {
-	// GetVersion returns the number of writes the vault has taken since the core started. A write raises
-	// it only when it succeeds.
-	GetVersion(v domain.Vault) uint64
 }

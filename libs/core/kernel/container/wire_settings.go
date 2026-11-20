@@ -20,9 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -64,10 +62,10 @@ type settingsWiring struct {
 
 	PluginChanges   *settingsusecase.PluginChanges
 	Infos           themefiles.PluginHost
-	Declarations    pluginport.PluginSettingDeclarer
+	Declarations    pluginSettingDeclarer
 	ConnectionTypes connectionport.Types
-	PluginInfos     settingsport.PluginInfos
-	Checks          settingsport.PluginSettings
+	PluginInfos     settingsusecase.PluginInfos
+	Checks          settingsusecase.PluginSettings
 	Detection       connectionport.Detected
 	ErrorHandler    func(error)
 }
@@ -85,7 +83,7 @@ func readCheckedSettings(c settingsWiring) (settingsadapter.File, error) {
 }
 
 func configurePluginHost(c settingsWiring, prefs *PluginPreferences, hosts *settingsusecase.HostSubscriptions, s settingsadapter.File, compute machinedomain.ResolvedCompute) {
-	var subscribe settingsport.ChangeSubscriber
+	var subscribe settingsusecase.ChangeSubscriber
 	if c.SettingEvents != nil {
 		subscribe = feed(c).Subscribe
 	}
@@ -182,7 +180,7 @@ func openWatchSettings(c settingsWiring) *settingsusecase.WatchSettingChanges {
 	return settingsusecase.NewWatchSettingChanges(func() (<-chan []settingsdomain.Setting, func()) { return feed(c).Subscribe() })
 }
 
-func openChoosePluginPath(c settingsWiring, dialog machineport.PathDialog) *settingsusecase.ChoosePluginPath {
+func openChoosePluginPath(c settingsWiring, dialog settingsusecase.PathDialog) *settingsusecase.ChoosePluginPath {
 	return settingsusecase.NewChoosePluginPath(dialog, c.Infos.GetPluginInfos, getSettingsWriter(c))
 }
 
@@ -218,13 +216,13 @@ func feed(c settingsWiring) settingevents.Feed {
 
 func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
 	return settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, cmp.Or[settingsport.PluginInfos](c.PluginInfos, none.PluginInfos{}),
+		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, cmp.Or[settingsusecase.PluginInfos](c.PluginInfos, none.PluginInfos{}),
 	)
 }
 
 func openWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.JSONCodec{}, getDeclarations(c), getRegistries(c), cmp.Or[settingsport.PluginSettings](c.Checks, none.PluginSettings{}),
+		settingsadapter.JSONCodec{}, getDeclarations(c), getRegistries(c), cmp.Or[settingsusecase.PluginSettings](c.Checks, none.PluginSettings{}),
 	)
 	return settingsusecase.NewWriteSettings(check, settingsStore(c), feed(c))
 }

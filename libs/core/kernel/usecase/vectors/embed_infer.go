@@ -30,7 +30,7 @@ type inferrer struct {
 
 // storer writes the vectors of the completed batches.
 type storer struct {
-	vectors searchsourceport.VectorRepository
+	vectors VectorRepository
 }
 
 func (u inferrer) inferBatches(

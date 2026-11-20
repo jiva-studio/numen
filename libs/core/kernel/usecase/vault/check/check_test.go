@@ -15,8 +15,6 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 )
 
 func scanVault(t *testing.T, notes map[string]string) (check.Checks, domain.Vault) {
@@ -185,7 +183,7 @@ func TestAnIdentifierFromAnotherVaultIsNotDangling(t *testing.T) {
 
 // brokenQueries is a store that cannot answer any question put to it.
 type brokenQueries struct {
-	problemport.ProblemQueries
+	check.ProblemQueries
 	err error
 }
 

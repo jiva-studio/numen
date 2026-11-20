@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/license"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 )
 
 // ActivateRequest is the input for activating a license key on this machine.
@@ -97,7 +96,7 @@ func (u *Activate) activateOnce(ctx context.Context, req ActivateRequest, cleane
 	return license.Info{}, writeErr
 }
 
-func getMachineTarget(machine licenseport.MachineIdentity) (string, string) {
+func getMachineTarget(machine MachineIdentity) (string, string) {
 	if machine == nil {
 		return "", "numen"
 	}
@@ -187,7 +186,7 @@ func (u *Activate) revalidateExisting(
 
 func buildActivatedEnvelope(
 	cleanedKey, instanceName, fingerprint, nowStr string,
-	act licenseport.ActivationResult,
+	act license.ActivationResult,
 ) license.Envelope {
 	expiresStr := ""
 	if act.ExpiresAt != nil {

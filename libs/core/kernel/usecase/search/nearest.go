@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -28,7 +27,7 @@ type ranked struct {
 	similarity float64
 }
 
-func rankCandidates(ctx context.Context, queries sourceport.NearestQueries, q source.StoredVectorQuery, query []float32, floor float64) ([]ranked, error) {
+func rankCandidates(ctx context.Context, queries NearestQueries, q source.StoredVectorQuery, query []float32, floor float64) ([]ranked, error) {
 	if len(q.Chunks) == 0 {
 		return nil, nil
 	}
@@ -60,11 +59,11 @@ func rankCandidates(ctx context.Context, queries sourceport.NearestQueries, q so
 
 // FindNearest finds the small chunks of a vault nearest a query vector.
 type FindNearest struct {
-	queries sourceport.NearestQueries
+	queries NearestQueries
 }
 
 // NewFindNearest creates the search by meaning over the queries of the index.
-func NewFindNearest(queries sourceport.NearestQueries) FindNearest {
+func NewFindNearest(queries NearestQueries) FindNearest {
 	return FindNearest{queries: queries}
 }
 
@@ -104,11 +103,11 @@ func (f FindNearest) Execute(ctx context.Context, vaultID domain.VaultID, q sour
 
 // GetBestSimilarity reads how near the nearest chunk of a vault is to a query vector.
 type GetBestSimilarity struct {
-	queries sourceport.NearestQueries
+	queries NearestQueries
 }
 
 // NewGetBestSimilarity creates the reading over the queries of the index.
-func NewGetBestSimilarity(queries sourceport.NearestQueries) GetBestSimilarity {
+func NewGetBestSimilarity(queries NearestQueries) GetBestSimilarity {
 	return GetBestSimilarity{queries: queries}
 }
 

@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
@@ -59,10 +57,10 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	plugins := openWindowPlugins(install, exec, settingsDeps, vaultDeps, db, newSourceBinding(exec, c.SafeMode, install.Endpoints, res))
 	opened, launch := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps)
 	search := newTextSearch(searchDeps, c.machine.ResolvedCompute.Workers)
-	session := windowSearch{index: db, source: launch.source, tasks: plugins.tasks, generations: launch.generations, kinds: plugins.kinds.list}
+	session := windowSearch{index: db, source: launch.source, kinds: plugins.kinds.list}
 	status := editor.SearchTasks{Tasks: opened.page.Window}
 	query := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, search, db, launch.source, status.ReportFloorError)
-	runs := newSearchRuns(session, query, exec.Runtime.Resolver, exec.Runtime.Manifests, vaultDeps.Clock)
+	runs := newSearchRuns(plugins.tasks, launch.generations, query, exec.Runtime.Resolver, exec.Runtime.Manifests, vaultDeps.Clock)
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
 	mountServices(opened, install, exec, settingsDeps, vaultDeps)
 	mountLogs(opened, getLogEntries(res), install, settingsDeps, vaultDeps)
@@ -105,7 +103,7 @@ type windowLaunch struct {
 	server      *editor.FileServer
 	closeSource func() error
 	plugins     windowPluginAccess
-	source      searchsourceport.WatchedSource
+	source      sourceAccess
 	generations *indexgeneration.Generations
 }
 type windowStartup struct {
@@ -118,7 +116,7 @@ type windowStartup struct {
 type windowPlugins struct {
 	source    sourcebridge.Binding
 	tasks     *run.Tasks
-	events    pluginport.PluginEventEmitter
+	events    pluginEventEmitter
 	vault     windowsession.PluginVaultPath
 	triggers  windowsession.TriggerSource
 	startFeed func(context.Context, domain.Vault) func()
@@ -128,12 +126,12 @@ type windowPlugins struct {
 func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex, source sourcebridge.Binding) windowPlugins {
 	tasks := run.NewTasks()
 	exec.Runtime.SetOnFailureCleared(func(string) { settingsDeps.PluginChanges.Signal() })
-	reportDependencies(exec.Watch.DependencyReporter, tasks, vaultDeps.RecordLog)
+	reportDependencies(exec.Watch.dependencyReporter, tasks, vaultDeps.RecordLog)
 	pluginsOpenPluginWork(install, exec, tasks)
 	setModelCalls(install, exec, settingsDeps, vaultDeps, run.NewConnectionNoticeTasks(tasks).Execute)
 	return windowPlugins{
 		source: source,
-		tasks:  tasks, events: exec.Runtime.PluginEventEmitter, vault: exec.Runtime.PluginBinding,
+		tasks:  tasks, events: exec.Runtime.pluginEventEmitter, vault: exec.Runtime.pluginBinding,
 		triggers:  getTriggerSource(install, exec, settingsDeps, vaultDeps, db.FrontmatterChanges()),
 		startFeed: getFeedStart(exec, settingsDeps, vaultDeps, db), kinds: newTabKinds(exec, settingsDeps, vaultDeps, db),
 	}
@@ -149,7 +147,8 @@ func buildWindow(
 	// yet is opened all the same: the search item of its plugin shows why, and the source joins search and
 	// indexing once a configuration of its plugin lets it describe itself.
 	embedder, closeEmbedder, why := plugins.source.OpenWatching(ctx)
-	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
+	source := getSourceAccess(embedder)
+	embedding := indexing.NewEmbedding(source.searchSource, source.watcher, db.ChunkVectors())
 	state := editor.NewSession(opening.Frame)
 	page := editor.NewPageAccess(tasks, state)
 	events := &editor.Events{Emit: plugins.events.EmitEvent}
@@ -197,7 +196,7 @@ func buildWindow(
 	mountVaults(window, &listing, moves.Change, session.userSwitch)
 	return window, windowLaunch{
 		start:  session.cases.start,
-		server: newFileServer(vaultDeps, &state.Runtime, page.Window, &listing.Find), closeSource: closeEmbedder, source: embedder, generations: generations,
+		server: newFileServer(vaultDeps, &state.Runtime, page.Window, &listing.Find), closeSource: closeEmbedder, source: source, generations: generations,
 		plugins: windowPluginAccess{
 			writeWake: writeWake, notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, listing, session.cases.openPlugin), showTab: session.tools.showTab,
 		},

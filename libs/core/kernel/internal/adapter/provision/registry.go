@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -19,20 +18,20 @@ import (
 // observer.
 type Registry struct {
 	mu           sync.Mutex
-	provisioners []pluginport.DependencyProvisioner
+	provisioners []DependencyProvisioner
 	flights      flightGroup
 	observer     func(manifest.DependencyRequirement, plugin.DependencyStatus)
 }
 
 // NewRegistry returns a Registry that routes to the provisioners in order.
-func NewRegistry(provisioners ...pluginport.DependencyProvisioner) *Registry {
+func NewRegistry(provisioners ...DependencyProvisioner) *Registry {
 	return &Registry{
 		provisioners: provisioners,
 	}
 }
 
 // Add appends a provisioner after those already routed to.
-func (r *Registry) Add(provisioner pluginport.DependencyProvisioner) {
+func (r *Registry) Add(provisioner DependencyProvisioner) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.provisioners = append(r.provisioners, provisioner)
@@ -61,7 +60,7 @@ func (r *Registry) CanProvision(req manifest.DependencyRequirement) bool {
 	return ok
 }
 
-func (r *Registry) route(req manifest.DependencyRequirement) (pluginport.DependencyProvisioner, bool) {
+func (r *Registry) route(req manifest.DependencyRequirement) (DependencyProvisioner, bool) {
 	r.mu.Lock()
 	provisioners := slices.Clone(r.provisioners)
 	r.mu.Unlock()
@@ -91,7 +90,7 @@ func (r *Registry) Provision(
 }
 
 func (r *Registry) run(
-	ctx context.Context, provisioner pluginport.DependencyProvisioner, req manifest.DependencyRequirement, report func(plugin.DependencyStatus),
+	ctx context.Context, provisioner DependencyProvisioner, req manifest.DependencyRequirement, report func(plugin.DependencyStatus),
 ) (plugin.ResolvedDependency, error) {
 	note := func(status plugin.DependencyStatus) {
 		status.ID = req.ID

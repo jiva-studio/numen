@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -23,7 +22,7 @@ type similarChunk struct {
 
 type meaningSearch struct {
 	vectors  VectorQueries
-	source   searchsourceport.QuerySource
+	source   QuerySource
 	filter   scopeFilter
 	req      *searchquery.Evaluation
 	warnings *warnings

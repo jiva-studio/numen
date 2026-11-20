@@ -3,24 +3,23 @@ package container
 import (
 	"context"
 	"errors"
-
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
+
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
+
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -30,7 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
-func reportDependencies(watch pluginport.DependencyReporter, tasks *run.Tasks, record func(domainlogs.Entry)) {
+func reportDependencies(watch dependencyReporter, tasks *run.Tasks, record func(domainlogs.Entry)) {
 	show := run.NewDependencyTasks(tasks)
 	watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
 		show.Execute(req.ID, status, func() { watch.CancelDependency(req) })
@@ -40,8 +39,8 @@ func reportDependencies(watch pluginport.DependencyReporter, tasks *run.Tasks, r
 
 // pluginInstall supplies storage, catalog and host endpoints to the installation.
 type pluginInstall struct {
-	Licenses        licenseport.Declarations
-	Configuration   pluginport.ConfigRefresher
+	Licenses        license.Declarations
+	Configuration   configRefresher
 	OperationTitles connectionport.OperationTitles
 	PluginCachePath string
 	ServiceDir      string
@@ -120,7 +119,7 @@ func pluginsOpenPluginWork(install pluginInstall, exec *PluginExecution, tasks *
 	return work
 }
 
-func pluginsGetPluginName(resolver pluginport.PluginResolver, pluginID string) string {
+func pluginsGetPluginName(resolver pluginResolver, pluginID string) string {
 	if found, isKnown := resolver.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
 		return found.Manifest.Name
 	}

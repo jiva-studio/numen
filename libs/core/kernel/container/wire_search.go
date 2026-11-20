@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
@@ -29,7 +28,7 @@ func getParticipants(db *vaultIndex, source searchsourceport.Source) []searchuse
 	return []searchusecase.Participant{searchusecase.NewSource(source, db.ChunkSearch())}
 }
 
-func newSearchOver(c textSearch, queries sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error), reportAnswered func()) searchusecase.Search {
+func newSearchOver(c textSearch, queries searchusecase.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error), reportAnswered func()) searchusecase.Search {
 	searching := searchusecase.New(queries, c.VaultReaders, c.TextReaders, sources, errorHandler, reportAnswered)
 	if workers := c.Workers; workers > 0 {
 		searching.Extractors = workers
@@ -37,14 +36,14 @@ func newSearchOver(c textSearch, queries sourceport.LexicalQueries, sources []se
 	return searching
 }
 
-func newFloorPolicy(db *vaultIndex, source searchsourceport.Source, errorHandler func(error)) searchusecase.FloorPolicy {
-	return searchusecase.NewFloorPolicy(db.SearchFloors(), getFloorHint(source), errorHandler)
+func newFloorPolicy(db *vaultIndex, hint searchusecase.FloorHint, errorHandler func(error)) searchusecase.FloorPolicy {
+	return searchusecase.NewFloorPolicy(db.SearchFloors(), hint, errorHandler)
 }
 
 func buildPluginSearch(
-	c textSearch, db *vaultIndex, source searchsourceport.Source, errorHandler func(error), clock machineport.Clock,
+	c textSearch, db *vaultIndex, source sourceAccess, errorHandler func(error), clock machineport.Clock,
 ) hostsearch.Search {
-	policy := newFloorPolicy(db, source, errorHandler)
+	policy := newFloorPolicy(db, source.floorHint, errorHandler)
 	return hostsearch.Search{
 		Samples:    db.SearchFloors(),
 		Nearest:    searchusecase.NewGetBestSimilarity(db.ChunkSearch()),
@@ -52,23 +51,15 @@ func buildPluginSearch(
 		Progress:   db.ChunkVectors(),
 		Stats:      searchusecase.NewStats(db.ChunkVectors(), clock),
 		Policy:     policy,
-		TextSearch: searchusecase.NewSearchText(newSearch(c, db, source, errorHandler, nil)),
-		Source:     source,
-		Queries:    newEmbedQueries(source),
+		TextSearch: searchusecase.NewSearchText(newSearch(c, db, source.searchSource, errorHandler, nil)),
+		Source:     source.searchSource,
+		Queries:    newEmbedQueries(source.queries),
 	}
 }
 
-func newEmbedQueries(source searchsourceport.Source) *vectorscase.EmbedQueries {
-	queries, ok := source.(searchsourceport.QueryEmbedder)
-	if !ok {
+func newEmbedQueries(queries searchsourceport.QueryEmbedder) *vectorscase.EmbedQueries {
+	if queries == nil {
 		return nil
 	}
 	return vectorscase.NewEmbedQueries(queries)
-}
-
-func getFloorHint(source searchsourceport.Source) searchusecase.FloorHint {
-	if advisor, ok := source.(searchsourceport.FloorAdvisor); ok {
-		return advisor.GetFloorHint
-	}
-	return nil
 }

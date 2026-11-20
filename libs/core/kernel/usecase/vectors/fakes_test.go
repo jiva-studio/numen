@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -81,7 +80,7 @@ func vectorOf(text string, dims int) []float32 {
 	return out
 }
 
-func newEmbed(readers vaultport.VaultReaders, chunks searchsourceport.VectorQueries, vectors searchsourceport.VectorRepository) Embed {
+func newEmbed(readers vaultport.VaultReaders, chunks VectorQueries, vectors VectorRepository) Embed {
 	return NewEmbed(readers, chunks, vectors, openClaim{}, bookTexts{readers: readers}, noModel{})
 }
 

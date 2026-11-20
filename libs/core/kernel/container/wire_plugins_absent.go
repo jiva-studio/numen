@@ -10,8 +10,8 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
 func newAbsentExecution(reason plugindomain.UnavailableReason, cause error) *PluginExecution {
@@ -19,11 +19,11 @@ func newAbsentExecution(reason plugindomain.UnavailableReason, cause error) *Plu
 	settings := absent.Settings{}
 	return &PluginExecution{
 		Runtime: pluginRuntime{
-			Activator: runtime, PluginRetrier: runtime, Listing: runtime, Resolver: runtime,
-			Manifests: pluginmanifest.Open(runtime, runtime, runtime), PluginEventEmitter: runtime, PluginBinding: runtime,
+			Activator: runtime, pluginRetrier: runtime, Listing: runtime, Resolver: runtime,
+			Manifests: pluginmanifest.Open(runtime, runtime, runtime), pluginEventEmitter: runtime, pluginBinding: runtime,
 			PluginFailures: runtime, ConfigWatcher: runtime, ClientLookup: transport.NewClientLookup(nil),
 		},
-		Watch:     PluginWatch{PluginShutdown: settings, DependencyReporter: settings, ContentTypeTable: contenttype.Open()},
+		Watch:     PluginWatch{pluginShutdown: settings, dependencyReporter: settings, ContentTypeTable: contenttype.Open()},
 		Health:    pluginhealth.NewItems(),
 		Processes: absent.Processes{},
 	}
@@ -33,11 +33,11 @@ func newAbsentPreferences() *PluginPreferences {
 	settings := absent.Settings{}
 	return &PluginPreferences{
 		Configuration: pluginConfiguration{
-			PluginSettingDeclarer: settings, ConfigRefresher: settings, PluginConfig: settings,
+			pluginSettingDeclarer: settings, configRefresher: settings, PluginConfig: settings,
 			PluginSettings: settings,
 		},
 		ApplySetting:        func(context.Context, string, string, any) error { return nil },
-		Views:               pluginViews{Follow: func(settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return nil }},
+		Views:               pluginViews{Follow: func(settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber { return nil }},
 		SetStorage:          func(string, string) {},
 		RefreshDependencies: func() {},
 	}

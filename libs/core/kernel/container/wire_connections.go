@@ -85,7 +85,7 @@ func openModelCalls(install pluginInstall, settingsDeps settingsWiring) connecti
 	return getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
 }
 
-func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, notices connectionport.ReportSetAside) {
+func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, notices modelcall.ReportSetAside) {
 	deps, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return

@@ -7,17 +7,15 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // TrashVersions deletes the text versions of files that are gone for good.
 type TrashVersions struct {
-	stores textport.VersionStores
-	files  textport.TextFileStores
+	stores VersionStores
+	files  TextFileStores
 }
 
-func NewTrashVersions(stores textport.VersionStores, files textport.TextFileStores) TrashVersions {
+func NewTrashVersions(stores VersionStores, files TextFileStores) TrashVersions {
 	return TrashVersions{stores: stores, files: files}
 }
 

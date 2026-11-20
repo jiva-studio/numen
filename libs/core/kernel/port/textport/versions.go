@@ -36,14 +36,6 @@ type ContentHashes interface {
 	SaveContentHash(ctx context.Context, record text.ContentHash) error
 }
 
-// VersionStores opens the versions of one vault to read them and to change them, and
-// the content hashes recorded beside them.
-type VersionStores interface {
-	OpenVersionReader(v domain.Vault) (VersionReader, error)
-	OpenVersionWriter(v domain.Vault) (VersionWriter, error)
-	OpenContentHashes(v domain.Vault) (ContentHashes, error)
-}
-
 // TextFiles is the version files in the plugin folders of one vault's store.
 type TextFiles interface {
 	// ReadTextFile reads a file of a plugin's folder, or returns text.ErrNoText where it is not there.
@@ -53,9 +45,4 @@ type TextFiles interface {
 	WriteTextFile(ctx context.Context, pluginID, name string, segments []domain.TextSegment) (string, error)
 	// DeleteTextFile deletes a file of a plugin's folder. A file that is not there is deleted.
 	DeleteTextFile(ctx context.Context, pluginID, name string) error
-}
-
-// TextFileStores opens the version files of one vault.
-type TextFileStores interface {
-	Open(v domain.Vault) (TextFiles, error)
 }

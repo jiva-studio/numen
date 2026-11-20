@@ -46,7 +46,7 @@ An adapter is driving or driven, never both. A package that would be both is spl
 
 - `libs/shared/note/domain` holds entities, value objects, identifiers (`NoteID`, `VaultID`, `CardFaceID`), the errors that name a refusal, and the rules that need only those values. It does no I/O, reads no clock, and knows no storage and no wire format.
 - `libs/shared/note/markdown`, `edit`, `textfile` and `ulid` hold the format of a note's file and the identifier scheme. They are pure and take time and entropy as arguments.
-- `libs/core/kernel/port/<name>port` holds the interfaces that several use cases share, at most five methods each and three where practical; the types they exchange and the sentinel errors a caller tests with `errors.Is` are in `domain/<area>` or `libs/shared/note/domain`. It holds no function that calls a method of an interface value, no default behaviour and no policy.
+- `libs/core/kernel/port/<name>port` holds the interfaces that several production consumers share, at most five methods each and three where practical; the types they exchange and the sentinel errors a caller tests with `errors.Is` are in `domain/<area>` or `libs/shared/note/domain`. It holds no function that calls a method of an interface value, no default behaviour and no policy.
 - `libs/core/kernel/domain/<area>` holds the core's own concepts that are not about notes, as small packages, with the errors of the area. It does no I/O and reads no clock.
 - `libs/core/kernel/usecase/<name>` holds the use cases of one bounded context, one per file, each isolated from the others, with its request and result types, the small interfaces only that use case consumes, and the policy of the scenario (order of steps, what is reported). It holds no `os`, no SQL, and no clock read.
 - `libs/core/kernel/adapter/*` and `libs/core/kernel/internal/adapter/*` hold technology: the settings file, SQL, directory watching, process management, toolkit calls. They hold no rule about what a note is.
@@ -73,9 +73,9 @@ An adapter is driving or driven, never both. A package that would be both is spl
 
 ## How a port is cut
 
-- The use case that needs a thing declares the interface: in the use case package when one use case package consumes it, in `port/<name>port` when several do. The adapter that satisfies it never names it, and no `var _ port.X = ...` line appears in an adapter.
+- Declare an interface in the package that consumes it. A shared factory result or a contract used by a delegating adapter and a use case belongs in `port/<name>port`. The adapter that satisfies it never names it, and no `var _ port.X = ...` line appears in an adapter.
 - The name states the need: `VaultReaders`, `Clock`, `Trash`, `FloorStore`. The technology (`SQLite`, `Fs`, `Os`) appears only in the adapter's package and type names.
-- A port has at most five methods (the lint limit) and three where practical. When a use case needs seven operations, it needs two or three ports of that size, and each use case takes the ones it calls. A longer method list is cut along the question each caller asks. A port with one consumer lives in that use case's package; `port/<name>port/` keeps the interfaces several use cases share.
+- A port has at most five methods (the lint limit) and three where practical. When a use case needs seven operations, it needs two or three ports of that size, and each use case takes the ones it calls. A longer method list is cut along the question each caller asks. Count production callers, including calls on inferred factory results. Composition wiring and test fixtures do not establish shared ownership.
 - Every method is called from a use case. A method that only an adapter calls does not belong to the port.
 - Reading and writing are separate ports. A repository is a collection of aggregates (put one in, take one out, remove one); a question that spans many (matches, counts, summaries) is a query port.
 - A port names the core's own types: `domain` types and the core's identifiers, never a type of `internal/`, a wire message or a driver.

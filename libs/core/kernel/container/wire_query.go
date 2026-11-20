@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 
@@ -21,7 +19,7 @@ import (
 const operationResultRows = 200_000
 
 func newFindSearchResults(
-	ports queryPorts, settingsDeps settingsWiring, searchDeps textSearch, db *vaultIndex, source searchsourceport.Source, errorHandler func(error),
+	ports queryPorts, settingsDeps settingsWiring, searchDeps textSearch, db *vaultIndex, source sourceAccess, errorHandler func(error),
 ) *searchqueryusecase.FindSearchResults {
 	limits, stageLimits := readSearchLimits(settingsDeps, errorHandler)
 	search := db.ChunkSearch()
@@ -35,8 +33,8 @@ func newFindSearchResults(
 		Matcher:      wordmatch.NewMatcher(),
 		Readers:      searchDeps.VaultReaders,
 		Texts:        searchDeps.TextReaders,
-		Source:       getQuerySource(source),
-		Floors:       newFloorPolicy(db, source, errorHandler),
+		Source:       source.queries,
+		Floors:       newFloorPolicy(db, source.floorHint, errorHandler),
 		ContentTypes: ports.contentTypes,
 	})
 	stages := searchqueryusecase.NewApplyStages(searchqueryusecase.ApplyStagesDeps{
@@ -70,7 +68,7 @@ func readSearchLimits(settingsDeps settingsWiring, errorHandler func(error)) (se
 }
 
 type queryPorts struct {
-	functions    pluginport.SearchFunctions
+	functions    searchqueryusecase.SearchFunctions
 	contentTypes contenttypeport.ContentTypeTable
 	catalog      func() searchquerydomain.Catalog
 	clock        machineport.Clock
@@ -91,11 +89,4 @@ func openQueryPorts(install pluginInstall, exec *PluginExecution, settingsDeps s
 	ports.rows = modelcall.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, nil)
 	ports.calls = openModelCalls(install, settingsDeps)
 	return ports
-}
-
-func getQuerySource(source searchsourceport.Source) searchsourceport.QuerySource {
-	if query, ok := source.(searchsourceport.QuerySource); ok {
-		return query
-	}
-	return nil
 }

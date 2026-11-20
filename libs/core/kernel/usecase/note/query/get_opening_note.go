@@ -4,16 +4,14 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
 // GetOpeningNote finds the note to show when nothing else has been chosen.
 type GetOpeningNote struct {
-	queries noteport.OpeningNote
+	queries OpeningNote
 }
 
-func NewGetOpeningNote(queries noteport.OpeningNote) *GetOpeningNote {
+func NewGetOpeningNote(queries OpeningNote) *GetOpeningNote {
 	return &GetOpeningNote{queries: queries}
 }
 

@@ -15,7 +15,7 @@ import (
 
 // sourceQueries are the queries on the sources the index records.
 type sourceQueries struct {
-	records sourceport.SourceRecords
+	records SourceRecords
 	backlog sourceport.SourceBacklog
 	lookup  sourceport.RemovalLookup
 }
@@ -24,7 +24,7 @@ type sourceQueries struct {
 // and moves or removes the sources of the files that went.
 type discoverer struct {
 	sources       sourceport.SourceRepository
-	records       sourceport.SourceRecords
+	records       SourceRecords
 	lookup        sourceport.RemovalLookup
 	shouldRebuild bool
 }

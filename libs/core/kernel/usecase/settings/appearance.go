@@ -6,7 +6,6 @@ import (
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 func appearancePath(key string) []string {
@@ -15,11 +14,11 @@ func appearancePath(key string) []string {
 
 // ReadAppearance reads the theme, the mode and the scales the settings file holds.
 type ReadAppearance struct {
-	file settingsport.SettingsFile
+	file SettingsFile
 }
 
 // NewReadAppearance makes the use case over the settings file.
-func NewReadAppearance(file settingsport.SettingsFile) *ReadAppearance {
+func NewReadAppearance(file SettingsFile) *ReadAppearance {
 	return &ReadAppearance{file: file}
 }
 
@@ -54,12 +53,12 @@ func getAppearanceValue[T any](stored settingsdomain.Stored, key string) T {
 // WriteAppearance writes the theme, the mode and the scales into the settings file. A scale of zero
 // leaves the stored one as it is.
 type WriteAppearance struct {
-	codec settingsport.ValueCodec
+	codec ValueCodec
 	write *WriteSettings
 }
 
 // NewWriteAppearance makes the use case over the settings writer.
-func NewWriteAppearance(codec settingsport.ValueCodec, write *WriteSettings) *WriteAppearance {
+func NewWriteAppearance(codec ValueCodec, write *WriteSettings) *WriteAppearance {
 	return &WriteAppearance{codec: codec, write: write}
 }
 

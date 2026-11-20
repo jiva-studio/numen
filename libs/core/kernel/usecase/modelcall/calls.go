@@ -17,12 +17,12 @@ import (
 type Calls struct {
 	resolve     connectionport.ResolveConnection
 	readSecrets connectionport.ReadConnectionSecrets
-	rows        connectionport.ListRows
+	rows        ListRows
 	titles      connectionport.OperationTitles
 	source      connectionport.ProviderSource
 	clock       machineport.Clock
 	queues      *queues
-	notices     connectionport.ReportSetAside
+	notices     ReportSetAside
 	cooldown    *connection.Cooldowns
 }
 
@@ -31,14 +31,14 @@ type Calls struct {
 type Connections struct {
 	Resolve     connectionport.ResolveConnection
 	ReadSecrets connectionport.ReadConnectionSecrets
-	Rows        connectionport.ListRows
+	Rows        ListRows
 	Titles      connectionport.OperationTitles
 }
 
 // NewCalls returns the calls over the connections and the providers the source
 // opens. wait times the calls that wait for a slot of their connection. notices is called when a connection was set aside and a row after it answered.
 func NewCalls(
-	connections Connections, source connectionport.ProviderSource, clock machineport.Clock, wait Wait, notices connectionport.ReportSetAside,
+	connections Connections, source connectionport.ProviderSource, clock machineport.Clock, wait Wait, notices ReportSetAside,
 ) *Calls {
 	return &Calls{
 		resolve: connections.Resolve, readSecrets: connections.ReadSecrets, rows: connections.Rows, titles: connections.Titles, source: source, clock: clock, queues: newQueues(wait), notices: notices,

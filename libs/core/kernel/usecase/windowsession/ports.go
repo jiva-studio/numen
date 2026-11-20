@@ -6,7 +6,6 @@ import (
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -21,7 +20,7 @@ type Pages interface {
 
 // Writes is the writes taken and not yet finished.
 type Writes interface {
-	windowport.WriteGate
+	WriteGate
 	// Seal refuses new writes and answers with what closes once the writes taken have finished.
 	Seal() <-chan struct{}
 	// Open accepts writes again.

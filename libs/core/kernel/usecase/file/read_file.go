@@ -16,10 +16,10 @@ import (
 // took it, so the answer is never newer than the version it carries.
 type ReadFile struct {
 	readers  vaultport.VaultReaders
-	versions vaultport.VaultVersions
+	versions VaultVersions
 }
 
-func NewReadFile(readers vaultport.VaultReaders, versions vaultport.VaultVersions) *ReadFile {
+func NewReadFile(readers vaultport.VaultReaders, versions VaultVersions) *ReadFile {
 	return &ReadFile{readers: readers, versions: versions}
 }
 

@@ -4,13 +4,10 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
@@ -36,22 +33,23 @@ func emitIndexChanged(generations *indexgeneration.Generations, events *editor.E
 }
 
 type windowSearch struct {
-	index       *vaultIndex
-	source      searchsourceport.Source
-	tasks       *run.Tasks
-	generations *indexgeneration.Generations
-	kinds       *file.ListTabKinds
+	index  *vaultIndex
+	source sourceAccess
+	kinds  *file.ListTabKinds
 }
 
-func newSearchRuns(w windowSearch, find *queryusecase.FindSearchResults, resolver pluginport.PluginResolver, manifests pluginmanifest.Manifests, clock machineport.Timer) *searchrunusecase.SearchRuns {
+func newSearchRuns(
+	tasks *run.Tasks, generations *indexgeneration.Generations, find *queryusecase.FindSearchResults,
+	resolver pluginResolver, manifests pluginmanifest.Manifests, clock installationClock,
+) *searchrunusecase.SearchRuns {
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
 		Store:       searchstore.New(),
 		Cancels:     searchcancel.NewSearches(clock),
-		Tasks:       w.tasks,
+		Tasks:       tasks,
 		Timer:       clock,
 		Policy:      searchrundomain.DefaultPolicy(),
 		Slots:       searchslot.New(searchrundomain.DefaultPolicy().MaxRunning),
-		Generations: w.generations,
+		Generations: generations,
 		Run:         find.Execute,
 		Names: func(pluginID string) string {
 			return pluginsGetPluginName(resolver, pluginID)

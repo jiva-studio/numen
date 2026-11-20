@@ -24,13 +24,13 @@ type KnownVault struct {
 // together keeps one screen from marking a vault that another leaves unmarked.
 type GetKnownVaults struct {
 	vaults  vaultport.VaultList
-	last    vaultport.LastVault
+	last    LastVault
 	folders FolderCheck
 }
 
 // NewGetKnownVaults is what the list and the last vault are read out of and what a vault's folder is
 // opened through.
-func NewGetKnownVaults(vaults vaultport.VaultList, last vaultport.LastVault, readers vaultport.VaultReaders) GetKnownVaults {
+func NewGetKnownVaults(vaults vaultport.VaultList, last LastVault, readers vaultport.VaultReaders) GetKnownVaults {
 	return GetKnownVaults{vaults: vaults, last: last, folders: NewFolderCheck(readers)}
 }
 

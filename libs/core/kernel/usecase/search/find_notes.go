@@ -21,7 +21,7 @@ type FindNames struct {
 }
 
 // NewFindNames creates the search over the names of the index.
-func NewFindNames(matches noteport.NameMatches, tabKinds windowport.TabKinds) *FindNames {
+func NewFindNames(matches NameMatches, tabKinds windowport.TabKinds) *FindNames {
 	return &FindNames{matches: NewGetNameMatches(matches), tabKinds: tabKinds}
 }
 

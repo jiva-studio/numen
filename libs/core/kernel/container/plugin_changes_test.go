@@ -7,10 +7,10 @@ import (
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
-func applyingHost(applied *[]string) settingsport.PluginSettingApplier {
+func applyingHost(applied *[]string) settingsusecase.PluginSettingApplier {
 	return func(_ context.Context, pluginID, key string, _ any) error {
 		*applied = append(*applied, pluginID+"."+key)
 		return nil
@@ -20,7 +20,7 @@ func applyingHost(applied *[]string) settingsport.PluginSettingApplier {
 func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 	var applied []string
 	c := NewTestInstallation(Config{}, &TestPlugins{
-		Execution:   &PluginExecution{Runtime: pluginRuntime{PluginBinding: absent.Runtime{}}},
+		Execution:   &PluginExecution{Runtime: pluginRuntime{pluginBinding: absent.Runtime{}}},
 		Preferences: &PluginPreferences{ApplySetting: applyingHost(&applied)},
 	})
 	changes, stop := c.Resources.pluginChanges.Subscribe()
@@ -40,7 +40,7 @@ func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 
 func TestAPluginChangeIsNotReportedAfterTheWatchStops(t *testing.T) {
 	c := NewTestInstallation(Config{}, &TestPlugins{
-		Execution:   &PluginExecution{Runtime: pluginRuntime{PluginBinding: absent.Runtime{}}},
+		Execution:   &PluginExecution{Runtime: pluginRuntime{pluginBinding: absent.Runtime{}}},
 		Preferences: &PluginPreferences{ApplySetting: applyingHost(new([]string))},
 	})
 	changes, stop := c.Resources.pluginChanges.Subscribe()

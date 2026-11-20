@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 )
 
 // danglingCheck finds links whose target does not exist.
@@ -20,7 +18,7 @@ import (
 // Creating the missing note resolves the problem without editing the link: the
 // target of a name is resolved when the check runs.
 type danglingCheck struct {
-	queries problemport.ProblemQueries
+	queries ProblemQueries
 }
 
 func (danglingCheck) Name() domain.Check { return domain.CheckDangling }

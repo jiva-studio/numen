@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -24,7 +23,7 @@ import (
 // Plugins finds the plugin of the search source and watches its configuration.
 type Plugins interface {
 	ResolveCapability(capability string) (manifest.Discovered, error)
-	pluginport.ConfigWatcher
+	ConfigWatcher
 }
 
 // description is what one read of the source answers: its description, and the floor hint, which is no part

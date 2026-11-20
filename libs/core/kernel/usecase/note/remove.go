@@ -30,14 +30,14 @@ type Remove struct {
 	writers   vaultport.FileMovers
 	links     noteport.LinkQueries
 	queries   sourceport.SourcesUnder
-	filer     sourceport.VersionMover
+	filer     VersionMover
 	index     edit.IndexUpdater
 	admission vaultport.WriteAdmission
 }
 
 // NewRemove builds the use case that moves a note into the trash.
 func NewRemove(
-	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, filer sourceport.VersionMover,
+	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, filer VersionMover,
 	index edit.IndexUpdater, admission vaultport.WriteAdmission,
 ) Remove {
 	return Remove{writers: writers, links: links, queries: queries, filer: filer, index: getIndexUpdater(index), admission: admission}

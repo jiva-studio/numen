@@ -19,13 +19,6 @@ type RemovalLookup interface {
 	GetSourceText(ctx context.Context, vaultID domain.VaultID, path string) (source.Text, bool, error)
 }
 
-// SourceRecords answers what the index recorded about each file when it last read
-// it, in shapes that are not sources.
-type SourceRecords interface {
-	GetFileStats(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.FileStat, error)
-	GetRecognizedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]source.Text, error)
-}
-
 // SourceBacklog answers which sources of one kind still need their text cut.
 type SourceBacklog interface {
 	GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error)

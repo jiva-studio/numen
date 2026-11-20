@@ -3,14 +3,13 @@ package indexing
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ScanVault reads the whole vault the user names and reports how much of it the index holds afterwards.
 type ScanVault struct {
 	read      ReadWholeVault
-	summaries noteport.VaultSummaries
+	summaries VaultSummaries
 }
 
 // ScanVaultResult is the vault that was read, what each pass made, and what the index holds of the vault.
@@ -21,7 +20,7 @@ type ScanVaultResult struct {
 }
 
 // NewScanVault returns the use case over a read that finds its vault by name.
-func NewScanVault(read ReadWholeVault, summaries noteport.VaultSummaries) ScanVault {
+func NewScanVault(read ReadWholeVault, summaries VaultSummaries) ScanVault {
 	return ScanVault{read: read, summaries: summaries}
 }
 

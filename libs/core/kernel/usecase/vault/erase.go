@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -23,14 +22,14 @@ type EraseConfirmation interface {
 // vault's identity.
 type Erase struct {
 	identity   vaultport.VaultIdentity
-	trash      machineport.Trash
+	trash      Trash
 	unregister Unregister
 }
 
 // NewErase creates an Erase from the vault identity reader, the trash, and the
 // Unregister that removes the vault from the list, the same one used for every
 // other vault unregistration.
-func NewErase(identity vaultport.VaultIdentity, trash machineport.Trash, unregister Unregister) Erase {
+func NewErase(identity vaultport.VaultIdentity, trash Trash, unregister Unregister) Erase {
 	return Erase{identity: identity, trash: trash, unregister: unregister}
 }
 

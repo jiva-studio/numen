@@ -11,15 +11,14 @@ import (
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // Texts reads the versions of vault files and their text, and tells which version is live for the
 // content a file has.
 type Texts struct {
-	stores  textport.VersionStores
-	files   textport.TextFileStores
+	stores  VersionStores
+	files   TextFileStores
 	readers vaultport.VaultReaders
 	clock   machineport.Clock
 	live    live
@@ -28,7 +27,7 @@ type Texts struct {
 // NewTexts returns the reader of the versions of vault files over the version stores, the file stores,
 // the vault readers, the reader of a note's properties and the clock.
 func NewTexts(
-	stores textport.VersionStores, files textport.TextFileStores, readers vaultport.VaultReaders, notes noteport.NoteReader,
+	stores VersionStores, files TextFileStores, readers vaultport.VaultReaders, notes noteport.NoteReader,
 	clock machineport.Clock,
 ) *Texts {
 	return &Texts{stores: stores, files: files, readers: readers, clock: clock, live: live{files: files, notes: notes}}

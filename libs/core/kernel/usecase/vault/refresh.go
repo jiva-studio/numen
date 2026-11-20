@@ -28,7 +28,7 @@ import (
 // not a note is reported in the result and skipped.
 type Refresh struct {
 	readers vaultport.VaultReaders
-	vaults  vaultport.VaultRepository
+	vaults  VaultRepository
 	notes   noteport.NoteRepository
 	queries sourceport.RemovalLookup
 	sources sourceport.SourceRepository
@@ -126,7 +126,7 @@ func (u Refresh) isRecent(mtime time.Time) bool {
 // that identifies recently modified notes, the sizes the notes are cut at, and the ledger the refreshes of one index share.
 type RefreshDeps struct {
 	Readers vaultport.VaultReaders
-	Vaults  vaultport.VaultRepository
+	Vaults  VaultRepository
 	Notes   noteport.NoteRepository
 	Queries sourceport.RemovalLookup
 	Sources sourceport.SourceRepository

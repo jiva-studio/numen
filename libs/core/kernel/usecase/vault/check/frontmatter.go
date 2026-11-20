@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 )
 
 // frontmatterCheck is a block between the delimiters that is not YAML.
@@ -14,7 +12,7 @@ import (
 // may write to it: changing a key in a block the application could not read
 // means guessing at the rest of it.
 type frontmatterCheck struct {
-	queries problemport.ProblemQueries
+	queries ProblemQueries
 }
 
 func (frontmatterCheck) Name() domain.Check { return domain.CheckFrontmatter }

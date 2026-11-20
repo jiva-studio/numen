@@ -29,7 +29,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/logfiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
@@ -104,10 +103,10 @@ func mountVaults(w *windowRoutes, listing *registry.Listing, change vaultChangin
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock machineport.Timer, runs *searchrun.SearchRuns) {
+func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock installationClock, runs *searchrun.SearchRuns) {
 	state := w.session
 	status := editor.SearchTasks{Tasks: w.page.Window}
-	finds := newSearch(searchDeps, session.index, session.source, status.ReportWordsAlone, status.ClearWordsAlone)
+	finds := newSearch(searchDeps, session.index, session.source.searchSource, status.ReportWordsAlone, status.ClearWordsAlone)
 	handler := windowsearch.NewHandler(
 		&state.Runtime,
 		search.NewFindNames(session.index.NoteQueries(), session.kinds),
@@ -215,7 +214,7 @@ func mountHealth(w *windowRoutes, exec *PluginExecution) {
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func openRecordLog(indexPath string, entries *logsusecase.Entries, getLevel func() domainlogs.Level, timer machineport.Timer) *logsusecase.Record {
+func openRecordLog(indexPath string, entries *logsusecase.Entries, getLevel func() domainlogs.Level, timer installationClock) *logsusecase.Record {
 	return logsusecase.NewRecord(entries, logfiles.NewBesideIndex(indexPath), getLevel, timer)
 }
 

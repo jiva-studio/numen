@@ -43,7 +43,7 @@ func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vault
 		return opened.Installation, nil
 	}
 	state := opened.session
-	exec.Runtime.PluginBinding.SetVaultPath(state.GetCurrentVault().Path)
+	exec.Runtime.pluginBinding.SetVaultPath(state.GetCurrentVault().Path)
 	hooks := pluginVaultHooks{WriteWake: access.writeWake, Notes: &access.notes}
 	if err := installPluginVault(install, vaultDeps, startup.ports, startup.db, state.GetShownVault, hooks); err != nil {
 		return nil, err

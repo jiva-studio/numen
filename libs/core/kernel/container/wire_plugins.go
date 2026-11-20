@@ -1,26 +1,26 @@
 package container
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
+
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -35,37 +35,46 @@ func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *vault
 }
 
 type installedPlugins interface {
-	textport.TextPlugins
-	pluginport.PluginLister
+	plugin.PluginEnablement
+	textversion.TextPlugins
+	pluginmanifest.PluginLister
 	pluginport.PluginManifests
+}
+
+// pluginResolver supplies the plugin lookups used during host assembly.
+type pluginResolver interface {
+	servicebridge.ServiceResolver
+	sourcebridge.CapabilityResolver
+	pluginmanifest.PluginLookup
+	ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile, bool)
 }
 
 // pluginRuntime is what runs, finds and addresses the plugins.
 type pluginRuntime struct {
 	bridge.Activator
-	pluginport.PluginRetrier
+	pluginRetrier
 	Listing   installedPlugins
-	Resolver  pluginport.PluginResolver
+	Resolver  pluginResolver
 	Manifests pluginmanifest.Manifests
-	pluginport.PluginEventEmitter
-	pluginport.PluginBinding
+	pluginEventEmitter
+	pluginBinding
 	transport.ClientLookup
-	pluginport.PluginFailures
-	pluginport.ConfigWatcher
+	pluginmanifest.PluginFailures
+	sourcebridge.ConfigWatcher
 }
 
 // pluginConfiguration is what carries the settings to the plugins.
 type pluginConfiguration struct {
-	pluginport.PluginSettingDeclarer
-	pluginport.ConfigRefresher
-	settingsport.PluginConfig
-	settingsport.PluginSettings
+	pluginSettingDeclarer
+	configRefresher
+	settingsusecase.PluginConfig
+	settingsusecase.PluginSettings
 }
 
 // PluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
 type PluginWatch struct {
-	pluginport.PluginShutdown
-	pluginport.DependencyReporter
+	pluginShutdown
+	dependencyReporter
 	contenttypeport.ContentTypeTable
 }
 
@@ -75,10 +84,10 @@ type PluginWatch struct {
 type pluginViews struct {
 	Types        connectionport.Types
 	Operations   connectionport.OperationTitles
-	Declarations licenseport.Declarations
-	Infos        settingsport.PluginInfos
-	Checks       settingsport.PluginSettings
-	Follow       func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber
+	Declarations license.Declarations
+	Infos        settingsusecase.PluginInfos
+	Checks       settingsusecase.PluginSettings
+	Follow       func(subscribe settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber
 }
 
 // PluginExecution runs plugins and tracks their processes.
@@ -93,7 +102,7 @@ type PluginExecution struct {
 type PluginPreferences struct {
 	Configuration       pluginConfiguration
 	Views               pluginViews
-	ApplySetting        settingsport.PluginSettingApplier
+	ApplySetting        settingsusecase.PluginSettingApplier
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
 	Detection           connectionport.Detected
@@ -125,19 +134,19 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 	exec := &PluginExecution{
 		Runtime: pluginRuntime{
 			Activator:          management.Activation,
-			PluginRetrier:      management.Retry,
+			pluginRetrier:      management.Retry,
 			Listing:            management.Registry,
 			Resolver:           management.Registry,
 			Manifests:          pluginmanifest.Open(management.Registry, management.Registry, supervision.Failures),
-			PluginEventEmitter: management.Events,
-			PluginBinding:      plugin.NewBinding(management.Teardown, management.Mode),
+			pluginEventEmitter: management.Events,
+			pluginBinding:      plugin.NewBinding(management.Teardown, management.Mode),
 			ClientLookup:       management.Activation.ClientLookup(),
 			PluginFailures:     supervision.Failures,
 			ConfigWatcher:      management.Config,
 		},
 		Watch: PluginWatch{
-			PluginShutdown:     management.Teardown,
-			DependencyReporter: supervision.Services,
+			pluginShutdown:     management.Teardown,
+			dependencyReporter: supervision.Services,
 			ContentTypeTable:   management.ContentTypes,
 		},
 		Health:    supervision.Health,
@@ -145,8 +154,8 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 	}
 	prefs := &PluginPreferences{
 		Configuration: pluginConfiguration{
-			PluginSettingDeclarer: management.Registry,
-			ConfigRefresher:       management.Config,
+			pluginSettingDeclarer: management.Registry,
+			configRefresher:       management.Config,
 			PluginConfig:          management.Settings,
 			PluginSettings:        management.Settings,
 		},
@@ -157,7 +166,7 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 		Views: pluginViews{
 			Types: types, Operations: types,
 			Declarations: management.Registry, Infos: management.Registry, Checks: management.Settings,
-			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
+			Follow: func(subscribe settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber { return subscribe },
 		},
 		SetStorage: func(cacheRoot, dataRoot string) {
 			setPluginStorage(supervision, cacheRoot, dataRoot, func(modelsDir string) pluginport.DependencyRegistry {

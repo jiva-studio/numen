@@ -11,5 +11,5 @@ type Ports struct {
 	Saver    vaultport.VaultSaver
 	Remover  vaultport.VaultRemover
 	Recorder vaultport.VaultRecorder
-	Last     vaultport.LastVault
+	Last     LastVault
 }

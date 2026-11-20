@@ -17,8 +17,6 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 )
 
 // A Checker is one thing that can be wrong with a vault, and what notices it.
@@ -43,7 +41,7 @@ type Checks struct {
 	List []Checker
 }
 
-func Standard(queries problemport.ProblemQueries) Checks {
+func Standard(queries ProblemQueries) Checks {
 	return Checks{List: []Checker{
 		parseCheck{queries},
 		frontmatterCheck{queries},

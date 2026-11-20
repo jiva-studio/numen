@@ -25,7 +25,7 @@ import (
 
 // Plugins is the triggers, the handlers and the commands of the enabled plugins.
 type Plugins interface {
-	pluginport.PluginTriggers
+	PluginTriggers
 	ListHandlers() []plugin.CommandEntry
 	ListCommands() []plugin.CommandEntry
 }

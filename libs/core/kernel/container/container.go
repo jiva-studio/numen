@@ -6,10 +6,16 @@
 package container
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
+
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
+
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
+
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
@@ -17,13 +23,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -63,7 +68,7 @@ type Resources struct {
 	PluginCatalog catalog.Config
 	KeyStore      pluginport.KeyStore
 	ErrorHandler  window.ErrorHandler
-	Now           machineport.Timer
+	Now           installationClock
 	Chunks        *note.ChunkTokens
 	TextReaders   textdomain.Readers
 
@@ -134,7 +139,7 @@ func getRunningExecution(exec *PluginExecution, safeMode bool) *PluginExecution 
 }
 
 // GetClock returns the clock every use case assembled here is handed.
-func GetClock(res *Resources) machineport.Timer {
+func GetClock(res *Resources) installationClock {
 	if res.Now != nil {
 		return res.Now
 	}
@@ -157,7 +162,7 @@ func settingsOf(c Config, exec *PluginExecution, prefs *PluginPreferences, res *
 		SettingEvents:   res.settingEvents,
 		PluginChanges:   res.pluginChanges,
 		Infos:           runtime.Listing,
-		Declarations:    prefs.Configuration.PluginSettingDeclarer,
+		Declarations:    prefs.Configuration.pluginSettingDeclarer,
 		ConnectionTypes: prefs.Views.Types,
 		PluginInfos:     prefs.Views.Infos,
 		Checks:          prefs.Views.Checks,
@@ -193,13 +198,13 @@ func setVaultSearch(v vaultWiring, chunks noteChunkPolicy) vaultWiring {
 	return v
 }
 
-func openIndexedVault(plan vaultIndexPlan, v vaultWiring, db *vaultIndex, plugins textport.TextPlugins) (vaultIndexPlan, vaultWiring) {
+func openIndexedVault(plan vaultIndexPlan, v vaultWiring, db *vaultIndex, plugins textversion.TextPlugins) (vaultIndexPlan, vaultWiring) {
 	v = openVaultTextVersions(v, db, plugins, plan.ChunkPolicy)
 	plan.TextReaders = getTextReaders(plan.TextReaders, v.TextVersions)
 	return plan, v
 }
 
-func openVaultTextVersions(v vaultWiring, db *vaultIndex, plugins textport.TextPlugins, chunks noteChunkPolicy) vaultWiring {
+func openVaultTextVersions(v vaultWiring, db *vaultIndex, plugins textversion.TextPlugins, chunks noteChunkPolicy) vaultWiring {
 	v.TextVersions = newTextVersions(v.Options, plugins, v.Clock, db)
 	return setVaultSearch(v, chunks)
 }
@@ -208,7 +213,7 @@ func newSourceBinding(exec *PluginExecution, safeMode bool, endpoints *PluginEnd
 	runtime := getRunningExecution(exec, safeMode).Runtime
 	return sourcebridge.Binding{
 		Activator:    runtime.Activator,
-		Plugins:      sourcebridge.PluginAccess{PluginResolver: runtime.Resolver, ConfigWatcher: runtime.ConfigWatcher},
+		Plugins:      sourcebridge.PluginAccess{CapabilityResolver: runtime.Resolver, ConfigWatcher: runtime.ConfigWatcher},
 		Descriptions: getPluginEndpoints(endpoints).SourceDescriptions,
 		ReportRead:   pluginhealth.NewReportSearchSource(exec.Health).Execute,
 		Follow:       res.Chunks.Follow,

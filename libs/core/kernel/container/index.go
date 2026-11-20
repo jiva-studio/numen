@@ -2,7 +2,7 @@ package container
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
@@ -13,5 +13,5 @@ type vaultIndex struct {
 	File     string
 	Walks    vault.Walks
 	Ledger   *vault.Ledger
-	Versions textport.VersionStores
+	Versions textversion.VersionStores
 }

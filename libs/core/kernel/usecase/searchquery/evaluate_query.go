@@ -7,9 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -19,14 +16,14 @@ import (
 type EvaluateQueryDeps struct {
 	Documents    DocumentQueries
 	Vectors      VectorQueries
-	Places       sourceport.ChunkPlaces
+	Places       ChunkPlaces
 	Contents     NoteContents
 	Links        LinkReaders
-	Functions    pluginport.SearchFunctions
-	Matcher      sourceport.WordMatching
+	Functions    SearchFunctions
+	Matcher      WordMatching
 	Readers      vaultport.VaultReaders
 	Texts        textdomain.Readers
-	Source       searchsourceport.QuerySource
+	Source       QuerySource
 	Floors       FloorReader
 	ContentTypes contenttypeport.ContentTypeTable
 }
@@ -35,14 +32,14 @@ type EvaluateQueryDeps struct {
 type EvaluateQuery struct {
 	documents    DocumentQueries
 	vectors      VectorQueries
-	places       sourceport.ChunkPlaces
+	places       ChunkPlaces
 	contents     NoteContents
 	links        LinkReaders
-	functions    pluginport.SearchFunctions
-	matcher      sourceport.WordMatching
+	functions    SearchFunctions
+	matcher      WordMatching
 	readers      vaultport.VaultReaders
 	texts        textdomain.Readers
-	source       searchsourceport.QuerySource
+	source       QuerySource
 	floors       FloorReader
 	contentTypes contenttypeport.ContentTypeTable
 }

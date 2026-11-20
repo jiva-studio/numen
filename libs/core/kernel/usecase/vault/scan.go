@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -23,10 +22,10 @@ import (
 // a scan the index holds exactly what the scan found.
 type Scan struct {
 	readers     vaultport.VaultReaders
-	vaults      vaultport.VaultRepository
+	vaults      VaultRepository
 	notes       noteport.NoteRepository
-	indexedVal  noteport.FileStats
-	maintenance indexport.IndexMaintenance
+	indexedVal  FileStats
+	maintenance IndexMaintenance
 	backlog     sourceport.SourceBacklog
 
 	Cut chunking.CutNotes
@@ -45,10 +44,10 @@ type Scan struct {
 // Maintenance runs only when the walk found a change.
 func NewScan(
 	readers vaultport.VaultReaders,
-	vaults vaultport.VaultRepository,
+	vaults VaultRepository,
 	notes noteport.NoteRepository,
-	queries noteport.FileStats,
-	maintenance indexport.IndexMaintenance,
+	queries FileStats,
+	maintenance IndexMaintenance,
 	backlog sourceport.SourceBacklog,
 ) Scan {
 	return Scan{

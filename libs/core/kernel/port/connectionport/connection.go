@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -31,33 +30,6 @@ type OperationTitles interface {
 	// declaration of the name in the order of the plugin ids.
 	ListOperationTitles() []manifest.Operation
 }
-
-// Uses connects a connection to the settings of rows that name it, and lists the plugins whose grants reach it.
-type Uses interface {
-	// ListUses returns the settings of rows in force that name the connection, one for each plugin and
-	// operation, in the order of the plugin ids.
-	ListUses(connectionID string) ([]connection.Use, error)
-	// RemoveRows writes the settings of rows without the rows that name the connection.
-	RemoveRows(connectionID string) error
-	// Refresh sends the configuration again to each running plugin whose rows name the connection.
-	Refresh(ctx context.Context, connectionID string) error
-	// ListPlugins returns the plugins in force, in the order of the plugin ids.
-	ListPlugins() []plugin.Info
-}
-
-// ListRows returns the rows a plugin calls an operation through, in the order of use.
-type ListRows func(pluginID, operation string) ([]connection.Row, error)
-
-// RowSettings reads the settings of rows of the plugins.
-type RowSettings interface {
-	// ReadRowSetting returns the setting of rows of the plugin for an operation, with the rows that name an
-	// existing connection. A plugin with no such setting shown has no row and does not discover, whatever
-	// it is granted.
-	ReadRowSetting(pluginID, operation string) (connection.RowSetting, error)
-}
-
-// ReportSetAside tells the person that a connection was set aside for a reason and a row after it answered.
-type ReportSetAside func(setAside connection.SetAside)
 
 // ResolveConnection reads a connection and its type as a call to the provider needs them. It fails with
 // connection.ErrNotFound and connection.ErrTypeUnavailable.

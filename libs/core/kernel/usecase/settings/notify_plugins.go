@@ -7,15 +7,14 @@ import (
 	"strings"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // NotifyPlugins gives the plugins the settings that changed.
 type NotifyPlugins struct {
-	codec          settingsport.ValueCodec
-	apply          settingsport.PluginSettingApplier
-	config         settingsport.PluginConfig
-	resolveProfile settingsport.ProfileResolver
+	codec          ValueCodec
+	apply          PluginSettingApplier
+	config         PluginConfig
+	resolveProfile ProfileResolver
 	signal         func()
 	report         func(error)
 }
@@ -23,10 +22,10 @@ type NotifyPlugins struct {
 // NotifyPluginsDeps is what NotifyPlugins is made of. Signal is called once the plugins have received the
 // batch. It is optional.
 type NotifyPluginsDeps struct {
-	Codec          settingsport.ValueCodec
-	Apply          settingsport.PluginSettingApplier
-	Config         settingsport.PluginConfig
-	ResolveProfile settingsport.ProfileResolver
+	Codec          ValueCodec
+	Apply          PluginSettingApplier
+	Config         PluginConfig
+	ResolveProfile ProfileResolver
 	Signal         func()
 	Report         func(error)
 }

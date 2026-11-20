@@ -13,14 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
-
 	"connectrpc.com/connect"
-
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
@@ -29,6 +25,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // meaningPluginID is a plugin that searches the notes by meaning.
@@ -107,7 +105,7 @@ func openMeaningCore(t *testing.T, pluginDir, cacheRoot string, port int) meanin
 	}
 }
 
-func (c meaningCore) openSource(t *testing.T) searchsourceport.WatchedSource {
+func (c meaningCore) openSource(t *testing.T) searchsourceport.Source {
 	t.Helper()
 	source, _, closeSource, why := c.config.Embedders(t.Context())
 	if why != nil {

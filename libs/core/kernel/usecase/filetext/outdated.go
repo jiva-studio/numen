@@ -17,7 +17,7 @@ import (
 // outdated finds the sources whose text version is no longer the live one.
 type outdated struct {
 	sources sourceport.SourceRepository
-	records sourceport.SourceRecords
+	records SourceRecords
 }
 
 func newOutdatedIndex(u Index) outdated {

@@ -16,30 +16,30 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	adapterSettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+
 	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // noTabKinds gives no note a kind of tab.
@@ -175,7 +175,7 @@ type behind struct {
 	recordedVal <-chan window.Change
 }
 
-func opening(t *testing.T, notes map[string]string, watcher vaultport.VaultWatcher, readers vaultport.VaultReaders) *behind {
+func opening(t *testing.T, notes map[string]string, watcher vault.VaultWatcher, readers vaultport.VaultReaders) *behind {
 	t.Helper()
 	return openingWith(t, notes, watcher, readers, nil, indexing.QuietPeriod)
 }
@@ -183,7 +183,7 @@ func opening(t *testing.T, notes map[string]string, watcher vaultport.VaultWatch
 func openingWith(
 	t *testing.T,
 	notes map[string]string,
-	watcher vaultport.VaultWatcher,
+	watcher vault.VaultWatcher,
 	readers vaultport.VaultReaders,
 	embedder sourcefake.Embedder,
 	idleDuration time.Duration,

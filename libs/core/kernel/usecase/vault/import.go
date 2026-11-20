@@ -17,12 +17,12 @@ import (
 // copied, and the source file is left in place.
 type Import struct {
 	writers vaultport.FolderWriters
-	files   vaultport.ImportedFiles
+	files   ImportedFiles
 }
 
 // NewImport creates an Import from the writers of the target vault and the port
 // that reads imported files.
-func NewImport(writers vaultport.FolderWriters, files vaultport.ImportedFiles) Import {
+func NewImport(writers vaultport.FolderWriters, files ImportedFiles) Import {
 	return Import{writers: writers, files: files}
 }
 

@@ -5,9 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 )
 
 type dialog struct {

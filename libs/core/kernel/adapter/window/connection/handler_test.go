@@ -112,11 +112,11 @@ func getTypes() fixedTypes {
 	}}}
 }
 
-func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
+func newHandlerWithUses(keys *memoryKeys, uses connections.Uses) *Handler {
 	return newHandlerOver(keys, uses, &modelList{})
 }
 
-func newHandlerOver(keys *memoryKeys, uses connectionport.Uses, provider *modelList) *Handler {
+func newHandlerOver(keys *memoryKeys, uses connections.Uses, provider *modelList) *Handler {
 	next := 0
 	return NewHandler(useCasesOf(connectiontest.New(connectiontest.Parts{
 		Repository: &memoryRepository{}, Types: getTypes(), Keys: keys, Uses: uses,

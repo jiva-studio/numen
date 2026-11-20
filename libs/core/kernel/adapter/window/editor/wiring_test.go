@@ -58,7 +58,7 @@ func (openDoor) Close() {}
 
 func (w wiring) startSession(
 	t *testing.T, ctx context.Context, db *testIndex, state *testWindow, v domain.Vault,
-	readers vaultport.VaultReaders, watcher vaultport.VaultWatcher, opts sessionOptions,
+	readers vaultport.VaultReaders, watcher vaults.VaultWatcher, opts sessionOptions,
 ) (end func()) {
 	t.Helper()
 	embedding := opts.embedding
@@ -112,7 +112,7 @@ type testPasses struct {
 	wiring
 	db      *testIndex
 	readers vaultport.VaultReaders
-	watcher vaultport.VaultWatcher
+	watcher vaults.VaultWatcher
 }
 
 func (p testPasses) ReadWholeVault(

@@ -16,7 +16,6 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/license"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	sharedlicensing "github.com/jiva-studio/numen/libs/shared/licensing"
 )
@@ -91,7 +90,7 @@ func (a *Adapter) Activate(
 	ctx context.Context,
 	declared []manifest.LicenseProvider,
 	key, instanceName string,
-) (licenseport.ActivationResult, error) {
+) (license.ActivationResult, error) {
 	cleanedKey := sharedlicensing.NormalizeKey(key)
 	_ = sharedlicensing.GetKeyHint(cleanedKey)
 	var errs []error
@@ -115,7 +114,7 @@ func (a *Adapter) Activate(
 			errs = append(errs, fmt.Errorf("%s: %w", prov.GetInfo().Name, err))
 			continue
 		}
-		return licenseport.ActivationResult{
+		return license.ActivationResult{
 			Provider:   one.Provider,
 			InstanceID: res.InstanceID,
 			Status:     mapSharedStatus(res.Status),
@@ -124,25 +123,25 @@ func (a *Adapter) Activate(
 	}
 	chosen := sharedlicensing.SelectError(errs)
 	if chosen == nil {
-		return licenseport.ActivationResult{}, license.ErrNotFound
+		return license.ActivationResult{}, license.ErrNotFound
 	}
-	return licenseport.ActivationResult{}, mapSharedError(chosen)
+	return license.ActivationResult{}, mapSharedError(chosen)
 }
 
 // Validate checks whether a license key and machine instance remain valid at the named provider.
 func (a *Adapter) Validate(
 	ctx context.Context,
 	provider, key, instanceID string,
-) (licenseport.ValidationResult, error) {
+) (license.ValidationResult, error) {
 	prov, ok := a.providers[provider]
 	if !ok {
-		return licenseport.ValidationResult{}, fmt.Errorf("%w: unknown provider %s", license.ErrProviderUnavailable, provider)
+		return license.ValidationResult{}, fmt.Errorf("%w: unknown provider %s", license.ErrProviderUnavailable, provider)
 	}
 	res, err := prov.Validate(ctx, key, instanceID)
 	if err != nil {
-		return licenseport.ValidationResult{}, mapSharedError(err)
+		return license.ValidationResult{}, mapSharedError(err)
 	}
-	return licenseport.ValidationResult{
+	return license.ValidationResult{
 		Status:    mapSharedStatus(res.Status),
 		ExpiresAt: res.ExpiresAt,
 	}, nil

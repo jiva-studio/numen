@@ -27,11 +27,11 @@ const chunksPerQuery = 200
 // another, and a chunk that has a vector is never selected again.
 type Embed struct {
 	readers vaultport.VaultReaders
-	chunks  searchsourceport.VectorQueries
-	vectors searchsourceport.VectorRepository
+	chunks  VectorQueries
+	vectors VectorRepository
 
 	texts  textdomain.Readers
-	claim  vaultport.IndexClaim
+	claim  IndexClaim
 	source searchsourceport.Source
 
 	BatchCharacters int
@@ -54,8 +54,8 @@ func (u Embed) inferWorkers() int {
 // written, the claim on the index, the readers of file texts and the search source.
 // Nil texts means no file has text.
 func NewEmbed(
-	readers vaultport.VaultReaders, chunks searchsourceport.VectorQueries, vectors searchsourceport.VectorRepository,
-	claim vaultport.IndexClaim, texts textdomain.Readers, source searchsourceport.Source,
+	readers vaultport.VaultReaders, chunks VectorQueries, vectors VectorRepository,
+	claim IndexClaim, texts textdomain.Readers, source searchsourceport.Source,
 ) Embed {
 	if texts == nil {
 		texts = noTextReaders{}

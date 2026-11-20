@@ -6,23 +6,22 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // ListSettingValues lists the value in force of every declared setting: the stored value, else the
 // default its owner declares.
 type ListSettingValues struct {
-	codec    settingsport.ValueCodec
-	file     settingsport.SettingsFile
-	defaults settingsport.Defaults
-	app      settingsport.AppDeclarations
-	plugins  settingsport.PluginInfos
+	codec    ValueCodec
+	file     SettingsFile
+	defaults Defaults
+	app      AppDeclarations
+	plugins  PluginInfos
 }
 
 // NewListSettingValues makes the use case. plugins is nil where there is no plugin host.
 func NewListSettingValues(
-	codec settingsport.ValueCodec, file settingsport.SettingsFile, defaults settingsport.Defaults, app settingsport.AppDeclarations,
-	plugins settingsport.PluginInfos,
+	codec ValueCodec, file SettingsFile, defaults Defaults, app AppDeclarations,
+	plugins PluginInfos,
 ) *ListSettingValues {
 	return &ListSettingValues{codec: codec, file: file, defaults: defaults, app: app, plugins: plugins}
 }

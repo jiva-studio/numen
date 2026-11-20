@@ -14,9 +14,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
+
+// ServiceResolver finds the plugin that serves a service to the windows.
+type ServiceResolver interface {
+	// ResolveService returns the enabled plugin with the lowest id among those that serve the service
+	// to the windows, and false where none does.
+	ResolveService(service string) (manifest.Discovered, bool)
+}
 
 // Plugins lists the installed plugins and reads their manifests.
 type Plugins interface {
@@ -30,7 +36,7 @@ type Plugins interface {
 type Proxy struct {
 	activator bridge.Activator
 	plugins   Plugins
-	services  pluginport.ServiceResolver
+	services  ServiceResolver
 	onError   func(error)
 }
 
@@ -59,7 +65,7 @@ func (p *Proxy) releasePlugin(lease *bridge.Lease) {
 }
 
 // Open makes the proxy for the plugins that activator starts. It starts none.
-func Open(activator bridge.Activator, services pluginport.ServiceResolver, plugins Plugins) *Proxy {
+func Open(activator bridge.Activator, services ServiceResolver, plugins Plugins) *Proxy {
 	return &Proxy{activator: activator, services: services, plugins: plugins}
 }
 

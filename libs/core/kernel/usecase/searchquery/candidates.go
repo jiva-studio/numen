@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -16,7 +15,7 @@ type placeKey struct {
 type scopeFilter func(ctx context.Context, s searchquery.Scope, ids []domain.ChunkID) (map[domain.ChunkID]bool, error)
 
 type placeCache struct {
-	source   sourceport.ChunkPlaces
+	source   ChunkPlaces
 	vaultID  domain.VaultID
 	found    map[domain.ChunkID]domain.SearchResult
 	document func(path string, sourceKind domain.SourceKind) searchquery.Document

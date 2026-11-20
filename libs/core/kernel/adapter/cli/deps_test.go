@@ -38,7 +38,7 @@ func (s *session) parts(where cli.Locations) vaultParts {
 		identity: vaultreader.Identity{Options: options},
 		trash:    s.bin,
 		now:      testsupport.NewClock(),
-		rows: func(ctx context.Context) (vaultport.VaultRepository, func() error, error) {
+		rows: func(ctx context.Context) (vaults.VaultRepository, func() error, error) {
 			db, err := index.Open(ctx, where.Index)
 			if err != nil {
 				return nil, nil, err
@@ -162,9 +162,9 @@ type vaultParts struct {
 	ports    registry.Ports
 	readers  vaultport.VaultReaders
 	identity vaultport.VaultIdentity
-	trash    machineport.Trash
+	trash    vaults.Trash
 	now      machineport.Clock
-	rows     func(context.Context) (vaultport.VaultRepository, func() error, error)
+	rows     func(context.Context) (vaults.VaultRepository, func() error, error)
 }
 
 func (p vaultParts) build() cli.Vaults {
@@ -176,7 +176,7 @@ func (p vaultParts) build() cli.Vaults {
 	}
 }
 
-func (p vaultParts) indexedOver(rows vaultport.VaultRepository) cli.Indexed {
+func (p vaultParts) indexedOver(rows vaults.VaultRepository) cli.Indexed {
 	find := registry.NewFind(p.ports.Lookup).Execute
 	unregister := vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)
 	return cli.Indexed{Changes: cli.VaultChanges{

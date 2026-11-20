@@ -8,12 +8,12 @@ import (
 
 // GetVaultToShow returns the vault named, which must be on the list; with none named, the last shown, else the first on the list, else none.
 type GetVaultToShow struct {
-	last vaultport.LastVault
+	last LastVault
 	find Find
 	list List
 }
 
-func NewGetVaultToShow(lookup vaultport.VaultLookup, vaults vaultport.VaultList, last vaultport.LastVault) GetVaultToShow {
+func NewGetVaultToShow(lookup vaultport.VaultLookup, vaults vaultport.VaultList, last LastVault) GetVaultToShow {
 	return GetVaultToShow{last: last, find: NewFind(lookup), list: NewList(vaults)}
 }
 

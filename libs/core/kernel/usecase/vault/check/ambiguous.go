@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 )
 
 // ambiguousCheck finds links that match more than one note.
@@ -21,7 +19,7 @@ import (
 // the user opens to resolve it, by naming which note was meant. Neither of the
 // candidate notes is responsible.
 type ambiguousCheck struct {
-	queries problemport.ProblemQueries
+	queries ProblemQueries
 }
 
 func (ambiguousCheck) Name() domain.Check { return domain.CheckAmbiguous }

@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/filechange"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 // FileChangePageSize is the most changes one read of the feed returns.
@@ -15,10 +14,10 @@ const FileChangePageSize = 1000
 
 // ListFileChanges reads the file change feed of a vault, a page at a time.
 type ListFileChanges struct {
-	feed sourceport.FileChangeFeed
+	feed FileChangeFeed
 }
 
-func NewListFileChanges(feed sourceport.FileChangeFeed) ListFileChanges {
+func NewListFileChanges(feed FileChangeFeed) ListFileChanges {
 	return ListFileChanges{feed: feed}
 }
 
