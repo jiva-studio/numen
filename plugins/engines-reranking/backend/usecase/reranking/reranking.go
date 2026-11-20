@@ -52,11 +52,11 @@ func (r *Reranking) Rerank(ctx context.Context, call connection.Call, query stri
 		return nil, err
 	}
 	defer r.models.release(model)
-	release, err := r.queue.Acquire(ctx, call.Priority == connection.PriorityInteractive)
+	turn, err := r.queue.Acquire(ctx, host.Work{IsUserStarted: call.Priority == connection.PriorityInteractive})
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = errors.Join(err, release()) }()
+	defer func() { err = errors.Join(err, turn.Release()) }()
 	scores, err = model.scorer.ScorePairs(ctx, query, documents)
 	if err == nil && len(scores) != len(documents) {
 		err = fmt.Errorf("the model answered %d scores for %d documents", len(scores), len(documents))

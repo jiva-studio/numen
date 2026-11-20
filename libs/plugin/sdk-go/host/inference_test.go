@@ -19,7 +19,7 @@ func TestInferenceRetainsItsTurnWhileCanceledNativeWorkUnwinds(t *testing.T) {
 			return backing.EnqueueWork(ctx, work)
 		})
 		ctx, cancel := context.WithCancel(t.Context())
-		release, err := queue.Acquire(ctx, true)
+		turn, err := queue.Acquire(ctx, host.Work{IsUserStarted: true})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -30,9 +30,9 @@ func TestInferenceRetainsItsTurnWhileCanceledNativeWorkUnwinds(t *testing.T) {
 		}
 		next := make(chan error, 1)
 		go func() {
-			releaseNext, err := host.InferenceQueue(backing.EnqueueWork).Acquire(t.Context(), false)
+			nextTurn, err := host.InferenceQueue(backing.EnqueueWork).Acquire(t.Context(), host.Work{})
 			if err == nil {
-				err = releaseNext()
+				err = nextTurn.Release()
 			}
 			next <- err
 		}()
@@ -42,7 +42,12 @@ func TestInferenceRetainsItsTurnWhileCanceledNativeWorkUnwinds(t *testing.T) {
 			t.Fatal("overlapping native inference")
 		default:
 		}
-		if err := release(); err != nil {
+		select {
+		case <-turn.WatchWaiting():
+		default:
+			t.Fatal("the running transcription did not see a waiting engine")
+		}
+		if err := turn.Release(); err != nil {
 			t.Fatal(err)
 		}
 		if leaseContext.Err() == nil {
@@ -57,19 +62,19 @@ func TestInferenceRetainsItsTurnWhileCanceledNativeWorkUnwinds(t *testing.T) {
 func TestCanceledInferenceWaitingForAnotherEngineNeverRuns(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		queue := host.InferenceQueue(hosttest.NewQueue().EnqueueWork)
-		release, err := queue.Acquire(t.Context(), false)
+		turn, err := queue.Acquire(t.Context(), host.Work{})
 		if err != nil {
 			t.Fatal(err)
 		}
 		ctx, cancel := context.WithCancel(t.Context())
 		waited := make(chan error, 1)
-		go func() { _, err := queue.Acquire(ctx, true); waited <- err }()
+		go func() { _, err := queue.Acquire(ctx, host.Work{IsUserStarted: true}); waited <- err }()
 		synctest.Wait()
 		cancel()
 		if err := <-waited; !errors.Is(err, context.Canceled) {
 			t.Fatalf("wait returned %v", err)
 		}
-		if err := release(); err != nil {
+		if err := turn.Release(); err != nil {
 			t.Fatal(err)
 		}
 	})

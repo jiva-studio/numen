@@ -22,13 +22,13 @@ func NewInferenceQueue(endpoint func() (hostcall.Endpoint, error)) InferenceQueu
 }
 
 // Acquire waits with ctx and holds the turn until release, including while canceled native work unwinds.
-func (q InferenceQueue) Acquire(ctx context.Context, isUserStarted bool) (func() error, error) {
+func (q InferenceQueue) Acquire(ctx context.Context, work Work) (Turn, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 	wait, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	stop := context.AfterFunc(ctx, cancel)
-	turn, err := q(wait, Work{IsUserStarted: isUserStarted})
+	turn, err := q(wait, work)
 	stop()
 	if err != nil {
 		cancel()
@@ -38,21 +38,28 @@ func (q InferenceQueue) Acquire(ctx context.Context, isUserStarted bool) (func()
 		cancel()
 		return nil, errors.Join(err, turn.Release())
 	}
-	return func() error {
-		defer cancel()
-		return turn.Release()
-	}, nil
+	return &inferenceTurn{Turn: turn, cancel: cancel}, nil
+}
+
+type inferenceTurn struct {
+	Turn
+	cancel context.CancelFunc
+}
+
+func (t *inferenceTurn) Release() error {
+	defer t.cancel()
+	return t.Turn.Release()
 }
 
 // OpenModel opens a native model after its files are available and closes it if the host loses the turn.
 func OpenModel[T interface{ Close() error }](ctx context.Context, queue InferenceQueue, open func() (T, error)) (model T, err error) {
-	release, err := queue.Acquire(ctx, false)
+	turn, err := queue.Acquire(ctx, Work{})
 	if err != nil {
 		return model, err
 	}
 	didOpen := false
 	defer func() {
-		if endErr := release(); endErr != nil {
+		if endErr := turn.Release(); endErr != nil {
 			if didOpen {
 				endErr = errors.Join(endErr, model.Close())
 				var zero T

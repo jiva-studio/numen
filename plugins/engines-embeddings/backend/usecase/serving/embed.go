@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
@@ -151,10 +152,10 @@ func (s *Server) EmbedTexts(ctx context.Context, role model.Role, texts []string
 }
 
 func (s *Server) embedBatch(ctx context.Context, emb ports.Embedder, role model.Role, texts []string) (vectors [][]float32, err error) {
-	release, err := s.queue.Acquire(ctx, role == model.RoleQuery)
+	turn, err := s.queue.Acquire(ctx, host.Work{IsUserStarted: role == model.RoleQuery})
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = errors.Join(err, release()) }()
+	defer func() { err = errors.Join(err, turn.Release()) }()
 	return emb.Embed(ctx, texts)
 }
