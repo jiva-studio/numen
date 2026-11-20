@@ -6,16 +6,21 @@ import (
 	"io"
 	"slices"
 
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
+
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
+
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
@@ -24,7 +29,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -32,7 +36,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
+
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
@@ -86,35 +92,35 @@ func (w readingParts) OpenIndex(ctx context.Context) (*testIndex, error) {
 // testIndex is the part of an open index the tests of the window read and write.
 type testIndex struct {
 	closer  io.Closer
-	vectors searchsourceport.VectorIndex
+	vectors vectors.VectorIndex
 	walks   vault.Walks
 	ledger  *vault.Ledger
 
 	Stores struct {
-		Vaults      vaultport.VaultRepository
+		Vaults      vault.VaultRepository
 		Notes       noteport.NoteRepository
-		Maintenance indexport.IndexMaintenance
+		Maintenance vault.IndexMaintenance
 	}
 	NoteQueries struct {
-		FileStats   noteport.FileStats
-		Headings    noteport.Headings
+		FileStats   vault.FileStats
+		Headings    query.Headings
 		Links       noteport.LinkQueries
 		LinkBatches noteport.LinkBatches
-		NamedPaths  noteport.NamedPaths
+		NamedPaths  query.NamedPaths
 		NoteRefs    noteport.NoteRefs
 		NoteTypes   noteport.NoteTypes
-		OpeningNote noteport.OpeningNote
+		OpeningNote query.OpeningNote
 	}
 	Chunks struct {
-		Lexical       sourceport.LexicalQueries
-		Nearest       sourceport.NearestQueries
-		Progress      indexport.IndexProgress
-		Vectors       searchsourceport.VectorRepository
-		VectorQueries searchsourceport.VectorQueries
+		Lexical       search.LexicalQueries
+		Nearest       search.NearestQueries
+		Progress      indexing.IndexProgress
+		Vectors       vectors.VectorRepository
+		VectorQueries vectors.VectorQueries
 	}
 	Source struct {
 		Sources       sourceport.SourceRepository
-		SourceRecords sourceport.SourceRecords
+		SourceRecords filetext.SourceRecords
 		SourceBacklog sourceport.SourceBacklog
 		RemovalLookup sourceport.RemovalLookup
 	}
@@ -126,12 +132,12 @@ func (i *testIndex) Walks() *vault.Walks { return &i.walks }
 
 func (i *testIndex) Ledger() *vault.Ledger { return i.ledger }
 
-func (i *testIndex) VectorIndex() searchsourceport.VectorIndex { return i.vectors }
+func (i *testIndex) VectorIndex() vectors.VectorIndex { return i.vectors }
 
 func (w readingParts) GetVaultReaders() vaultport.VaultReaders { return vaultreader.Readers{} }
 
 // GetVaultWatcher monitors vaults for external filesystem changes.
-func (w readingParts) GetVaultWatcher() vaultport.VaultWatcher {
+func (w readingParts) GetVaultWatcher() vault.VaultWatcher {
 	return vaultwatch.Watcher{Hub: w.watches.GetShared()}
 }
 
@@ -169,7 +175,7 @@ func (w readingParts) makeRefresh(db *testIndex, notes noteport.NoteRepository) 
 
 // OpenVaultWith is how a vault is opened over the readers and the watcher given.
 func (w readingParts) OpenVaultWith(
-	db *testIndex, walkCountingReaders vaultport.VaultReaders, watcher vaultport.VaultWatcher,
+	db *testIndex, walkCountingReaders vaultport.VaultReaders, watcher vault.VaultWatcher,
 ) *vault.VaultOpener {
 	scan := vault.NewScan(walkCountingReaders, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance, db.Source.SourceBacklog)
 	w.setNoteCut(&scan)

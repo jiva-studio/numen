@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // Follow keeps the index consistent with a vault that is edited concurrently,
@@ -15,7 +14,7 @@ import (
 // The rule is independent of the front end: changed files are reindexed, and
 // when the changes cannot be determined the vault is scanned again.
 type Follow struct {
-	watcher vaultport.VaultWatcher
+	watcher VaultWatcher
 	refresh Refreshing
 	scan    Scanning
 
@@ -27,7 +26,7 @@ type Follow struct {
 // files, the scan used when the changes cannot be determined, and what receives the changes and the errors;
 // a nil one receives nothing. Refresh and scan run from Run, which the caller starts without waiting on.
 func NewFollow(
-	watcher vaultport.VaultWatcher, refresh Refreshing, scan Scanning, changed func(VaultChanges), errorHandler window.ErrorHandler,
+	watcher VaultWatcher, refresh Refreshing, scan Scanning, changed func(VaultChanges), errorHandler window.ErrorHandler,
 ) Follow {
 	return Follow{watcher: watcher, refresh: refresh, scan: scan, changed: changed, errorHandler: errorHandler}
 }

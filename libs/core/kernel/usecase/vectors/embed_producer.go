@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 func getSources(chunks []domain.SearchResult) []string {
@@ -48,8 +47,8 @@ type preparedBatch struct {
 
 // producer reads the chunks that lack vectors and cuts them into batches with the vectors already kept.
 type producer struct {
-	chunks          searchsourceport.VectorQueries
-	vectors         searchsourceport.VectorRepository
+	chunks          VectorQueries
+	vectors         VectorRepository
 	batchCharacters int
 	isSkipped       func(path, hash string) bool
 }

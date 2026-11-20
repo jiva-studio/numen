@@ -10,7 +10,6 @@ import (
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -139,7 +138,7 @@ func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p P
 // A nil `texts` means only notes return their text.
 // `errorHandler` receives the error of a search source that could not answer; nil ignores such errors.
 // `reportAnswered` is called each time a search source answers; nil calls no one.
-func New(queries sourceport.LexicalQueries, readers vaultport.VaultReaders, texts textdomain.Readers, sources []Participant, errorHandler window.ErrorHandler, reportAnswered func()) Search {
+func New(queries LexicalQueries, readers vaultport.VaultReaders, texts textdomain.Readers, sources []Participant, errorHandler window.ErrorHandler, reportAnswered func()) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}

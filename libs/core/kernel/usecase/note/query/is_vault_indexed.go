@@ -4,16 +4,14 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
 // IsVaultIndexed reports whether the index already contains a vault.
 type IsVaultIndexed struct {
-	queries noteport.VaultHolds
+	queries VaultHolds
 }
 
-func NewIsVaultIndexed(queries noteport.VaultHolds) *IsVaultIndexed {
+func NewIsVaultIndexed(queries VaultHolds) *IsVaultIndexed {
 	return &IsVaultIndexed{queries: queries}
 }
 

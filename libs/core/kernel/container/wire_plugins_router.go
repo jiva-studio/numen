@@ -3,24 +3,23 @@ package container
 import (
 	"context"
 	"errors"
-
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
+
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
+
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -40,7 +39,7 @@ func reportDependencies(watch pluginport.DependencyReporter, tasks *run.Tasks, r
 
 // pluginInstall supplies storage, catalog and host endpoints to the installation.
 type pluginInstall struct {
-	Licenses        licenseport.Declarations
+	Licenses        license.Declarations
 	Configuration   pluginport.ConfigRefresher
 	OperationTitles connectionport.OperationTitles
 	PluginCachePath string

@@ -5,19 +5,20 @@ import (
 	"errors"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/operationresult"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/operationresult"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+
 	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -120,7 +121,7 @@ func newCLIIndex(r *cliRun, db *vaultIndex, report window.ErrorHandler, openWork
 type cliPreparations struct {
 	scan   func(context.Context, domain.Vault) (indexing.ReadWholeVault, error)
 	search func(context.Context, domain.Vault) (searchusecase.Search, error)
-	query  func(context.Context, domain.Vault, connectionport.ReportSetAside) (*searchqueryusecase.FindSearchResults, error)
+	query  func(context.Context, domain.Vault, modelcall.ReportSetAside) (*searchqueryusecase.FindSearchResults, error)
 }
 
 func newCLIPreparations(index cliIndex, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, plan vaultIndexPlan, vaultDeps vaultWiring) cliPreparations {
@@ -134,7 +135,7 @@ func newCLIPreparations(index cliIndex, install pluginInstall, exec *PluginExecu
 		ranking, storage := openIndexedVault(plan, vaultDeps, db, plugins)
 		return prepareCLISearch(index, ctx, v, ranking, storage)
 	}
-	prepareQuery := func(ctx context.Context, v domain.Vault, notices connectionport.ReportSetAside) (*searchqueryusecase.FindSearchResults, error) {
+	prepareQuery := func(ctx context.Context, v domain.Vault, notices modelcall.ReportSetAside) (*searchqueryusecase.FindSearchResults, error) {
 		ranking, storage := openIndexedVault(plan, vaultDeps, db, plugins)
 		_, err := index.openWork(storage, db, v)
 		if err != nil {
@@ -149,7 +150,7 @@ func newCLIPreparations(index cliIndex, install pluginInstall, exec *PluginExecu
 	return cliPreparations{scan: prepareScan, search: prepareSearch, query: prepareQuery}
 }
 
-func newCLIIndexed(ports registry.Ports, db *vaultIndex, vaultDeps vaultWiring, prepare cliPreparations, notices connectionport.ReportSetAside) cli.Indexed {
+func newCLIIndexed(ports registry.Ports, db *vaultIndex, vaultDeps vaultWiring, prepare cliPreparations, notices modelcall.ReportSetAside) cli.Indexed {
 	find := registry.NewFind(ports.Lookup).Execute
 	unregister := vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
 	return cli.Indexed{

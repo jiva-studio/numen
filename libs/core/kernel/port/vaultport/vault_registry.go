@@ -27,8 +27,3 @@ type VaultRemover interface {
 type VaultRecorder interface {
 	RecordOpened(id domain.VaultID) error
 }
-
-// LastVault is the vault of the list that was opened most recently.
-type LastVault interface {
-	GetLastVault() (domain.Vault, bool, error)
-}

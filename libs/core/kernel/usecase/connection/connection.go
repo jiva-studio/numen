@@ -120,7 +120,7 @@ func NewResolve(deps Deps) *Resolve { return &Resolve{operation: deps.base} }
 
 // NewListRows returns the use case that lists the rows a plugin calls an operation through, from the settings
 // of rows of the plugins.
-func NewListRows(deps Deps, settings connectionport.RowSettings) *ListRows {
+func NewListRows(deps Deps, settings RowSettings) *ListRows {
 	return &ListRows{operation: deps.base, settings: settings}
 }
 

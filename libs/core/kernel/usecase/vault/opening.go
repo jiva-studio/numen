@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -23,7 +22,7 @@ type WriteRecorder interface {
 type VaultOpener struct {
 	ShouldRebuild bool
 
-	watcher  vaultport.VaultWatcher
+	watcher  VaultWatcher
 	scan     Rebuildable
 	Buffered WriteRecorder
 	Refresh  Refreshing
@@ -35,7 +34,7 @@ type Rebuildable interface {
 }
 
 // ConfigureVaultOpener constructs a VaultOpener with the given watcher, scan, buffered repository, and refresh.
-func ConfigureVaultOpener(watcher vaultport.VaultWatcher, scan Rebuildable, buffered WriteRecorder, refresh Refreshing) *VaultOpener {
+func ConfigureVaultOpener(watcher VaultWatcher, scan Rebuildable, buffered WriteRecorder, refresh Refreshing) *VaultOpener {
 	return &VaultOpener{
 		watcher:  watcher,
 		scan:     scan,

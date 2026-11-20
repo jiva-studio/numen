@@ -35,12 +35,6 @@ type PluginRetrier interface {
 	RetryPlugin(ctx context.Context, pluginID string) (*plugin.Failure, error)
 }
 
-// PluginLister returns the metadata of the plugins in the order of their ids.
-type PluginLister interface {
-	GetPluginInfos() []plugin.Info
-	PluginEnablement
-}
-
 // PluginEnablement reports whether the settings of a plugin leave it enabled.
 type PluginEnablement interface {
 	// IsPluginEnabled reports whether the settings of the plugin leave it enabled.
@@ -70,18 +64,6 @@ type PluginEventEmitter interface {
 	// EmitFilesChanged emits the onFilesChanged event of the vault to the plugins that take a file of one of
 	// the types.
 	EmitFilesChanged(vaultID string, types []domain.FileType)
-}
-
-// PluginFailures tells the plugins whose start failed.
-type PluginFailures interface {
-	SetOnFailureCleared(fn func(pluginID string))
-	PluginSuspensions
-}
-
-// PluginSuspensions reports whether the host holds a plugin suspended.
-type PluginSuspensions interface {
-	// IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended.
-	IsPluginSuspended(pluginID string) bool
 }
 
 // PluginShutdown stops the plugins when the host shuts down.

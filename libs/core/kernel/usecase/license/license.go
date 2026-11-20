@@ -12,19 +12,18 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/license"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // operation holds the collaborators shared across the license use cases.
 type operation struct {
-	declarations licenseport.Declarations
+	declarations Declarations
 	keys         pluginport.KeyStore
-	validator    licenseport.Validator
-	machine      licenseport.MachineIdentity
+	validator    Validator
+	machine      MachineIdentity
 	clock        machineport.Clock
-	changes      licenseport.ChangeHub
+	changes      ChangeHub
 	reportError  func(error)
 	gate         *sync.Mutex
 	flights      *singleflight.Group
@@ -43,12 +42,12 @@ type Deps struct {
 
 // NewDeps constructs the shared license use case dependencies.
 func NewDeps(
-	declarations licenseport.Declarations,
+	declarations Declarations,
 	keys pluginport.KeyStore,
-	validator licenseport.Validator,
-	machine licenseport.MachineIdentity,
+	validator Validator,
+	machine MachineIdentity,
 	clock machineport.Clock,
-	changes licenseport.ChangeHub,
+	changes ChangeHub,
 ) Deps {
 	return Deps{
 		base: operation{

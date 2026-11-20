@@ -14,10 +14,10 @@ import (
 // compares content; StatFile is the call that opens nothing.
 type HashFile struct {
 	readers  vaultport.VaultReaders
-	versions vaultport.VaultVersions
+	versions VaultVersions
 }
 
-func NewHashFile(readers vaultport.VaultReaders, versions vaultport.VaultVersions) *HashFile {
+func NewHashFile(readers vaultport.VaultReaders, versions VaultVersions) *HashFile {
 	return &HashFile{readers: readers, versions: versions}
 }
 

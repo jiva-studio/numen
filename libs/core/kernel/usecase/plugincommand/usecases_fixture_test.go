@@ -19,7 +19,7 @@ type useCases struct {
 }
 
 func newUseCases(
-	commands pluginport.PluginCommands, runs pluginport.PluginCommandRuns, types contenttypeport.ContentTypeTable,
+	commands plugincommand.PluginCommands, runs plugincommand.PluginCommandRuns, types contenttypeport.ContentTypeTable,
 	notes noteport.NoteReader, config pluginport.WhenConfig,
 ) useCases {
 	if types == nil {

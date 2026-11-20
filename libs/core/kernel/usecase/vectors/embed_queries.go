@@ -6,15 +6,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
 // EmbedQueries makes the vectors of queries the way the search source compares a query with its place.
 type EmbedQueries struct {
-	queries searchsourceport.QueryEmbedder
+	queries QueryEmbedder
 }
 
-func NewEmbedQueries(queries searchsourceport.QueryEmbedder) *EmbedQueries {
+func NewEmbedQueries(queries QueryEmbedder) *EmbedQueries {
 	return &EmbedQueries{queries: queries}
 }
 

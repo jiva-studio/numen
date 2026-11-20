@@ -6,13 +6,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 type scorer struct {
-	places  sourceport.ChunkPlaces
-	matcher sourceport.WordMatching
+	places  ChunkPlaces
+	matcher WordMatching
 	words   WordQueries
 	req     *searchquery.Evaluation
 }

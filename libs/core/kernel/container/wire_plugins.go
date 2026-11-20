@@ -1,25 +1,24 @@
 package container
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
+
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -35,7 +34,7 @@ func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *vault
 
 type installedPlugins interface {
 	textport.TextPlugins
-	pluginport.PluginLister
+	pluginmanifest.PluginLister
 	pluginport.PluginManifests
 }
 
@@ -49,7 +48,7 @@ type pluginRuntime struct {
 	pluginport.PluginEventEmitter
 	pluginport.PluginBinding
 	transport.ClientLookup
-	pluginport.PluginFailures
+	pluginmanifest.PluginFailures
 	pluginport.ConfigWatcher
 }
 
@@ -74,7 +73,7 @@ type PluginWatch struct {
 type pluginViews struct {
 	Types        connectionport.Types
 	Operations   connectionport.OperationTitles
-	Declarations licenseport.Declarations
+	Declarations license.Declarations
 	Infos        settingsusecase.PluginInfos
 	Checks       settingsusecase.PluginSettings
 	Follow       func(subscribe settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber

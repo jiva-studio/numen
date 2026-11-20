@@ -42,7 +42,7 @@ type Index struct {
 type IndexDeps struct {
 	Readers vaultport.VaultReaders
 	Sources sourceport.SourceRepository
-	Records sourceport.SourceRecords
+	Records SourceRecords
 	Backlog sourceport.SourceBacklog
 	Lookup  sourceport.RemovalLookup
 	Texts   text.Readers

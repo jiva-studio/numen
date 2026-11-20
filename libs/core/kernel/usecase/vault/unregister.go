@@ -16,12 +16,12 @@ import (
 type Unregister struct {
 	vaults  vaultport.VaultList
 	remover vaultport.VaultRemover
-	index   vaultport.VaultRepository
+	index   VaultRepository
 }
 
 // NewUnregister is what takes a vault off the list: the list this installation
 // keeps and its remover, and the index its rows are taken out of.
-func NewUnregister(vaults vaultport.VaultList, remover vaultport.VaultRemover, index vaultport.VaultRepository) Unregister {
+func NewUnregister(vaults vaultport.VaultList, remover vaultport.VaultRemover, index VaultRepository) Unregister {
 	return Unregister{vaults: vaults, remover: remover, index: index}
 }
 

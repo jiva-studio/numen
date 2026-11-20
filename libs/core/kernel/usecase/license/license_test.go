@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/license"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 	licenseusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -37,13 +36,13 @@ func TestActivateIdempotencyAndDeactivateConfirmation(t *testing.T) {
 	expires := now.Add(30 * 24 * time.Hour)
 	keys := newFakeKeyStore()
 	validator := &fakeValidator{
-		activateResult: licenseport.ActivationResult{
+		activateResult: license.ActivationResult{
 			Provider:   "creem",
 			InstanceID: "li_101",
 			Status:     license.StatusActive,
 			ExpiresAt:  &expires,
 		},
-		validateResult: licenseport.ValidationResult{
+		validateResult: license.ValidationResult{
 			Status:    license.StatusActive,
 			ExpiresAt: &expires,
 		},
@@ -125,12 +124,12 @@ func TestVerifyUpdatesStatusAfterTTL(t *testing.T) {
 	now := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
 	keys := newFakeKeyStore()
 	validator := &fakeValidator{
-		activateResult: licenseport.ActivationResult{
+		activateResult: license.ActivationResult{
 			Provider:   "dodo",
 			InstanceID: "lki_55",
 			Status:     license.StatusActive,
 		},
-		validateResult: licenseport.ValidationResult{
+		validateResult: license.ValidationResult{
 			Status: license.StatusExpired,
 		},
 	}
@@ -170,12 +169,12 @@ func TestVerifyDoesNotRestoreDeactivatedLicense(t *testing.T) {
 	now := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
 	keys := newFakeKeyStore()
 	validator := &fakeValidator{
-		activateResult: licenseport.ActivationResult{
+		activateResult: license.ActivationResult{
 			Provider:   "creem",
 			InstanceID: "li_101",
 			Status:     license.StatusActive,
 		},
-		validateResult: licenseport.ValidationResult{Status: license.StatusActive},
+		validateResult: license.ValidationResult{Status: license.StatusActive},
 	}
 	clock := &fakeClock{now: now}
 	deps := licenseusecase.NewDeps(
@@ -226,7 +225,7 @@ func TestVerifyDoesNotRestoreDeactivatedLicense(t *testing.T) {
 func TestActivateRejectsNonActiveProviderStatus(t *testing.T) {
 	t.Parallel()
 	now := time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC)
-	validator := &fakeValidator{activateResult: licenseport.ActivationResult{
+	validator := &fakeValidator{activateResult: license.ActivationResult{
 		Provider: "creem", InstanceID: "li_101", Status: license.StatusExpired,
 	}}
 	deps := licenseusecase.NewDeps(

@@ -3,14 +3,17 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -22,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/hold"
+
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -155,7 +159,7 @@ func pluginsNewNoteReader(v vaultWiring) noteport.NoteReader {
 	return note.NewReadFrontmatter(v.Readers)
 }
 
-func getWhenConfig(settingsDeps settingsWiring, plugins pluginport.PluginLister) pluginport.WhenConfig {
+func getWhenConfig(settingsDeps settingsWiring, plugins pluginmanifest.PluginLister) pluginport.WhenConfig {
 	return settingsadapter.WhenConfig{
 		App:     func() []plugindomain.Setting { return listAppSettings(settingsDeps) },
 		Plugins: plugins.GetPluginInfos,

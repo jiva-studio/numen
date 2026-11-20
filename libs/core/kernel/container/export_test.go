@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -60,7 +59,7 @@ func (c TestInstallation) Embedders(ctx context.Context) (indexing, asking searc
 	return source, source, closer, err
 }
 
-func (c TestInstallation) NewSearchOver(queries sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
+func (c TestInstallation) NewSearchOver(queries searchusecase.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {
 	return newSearchOver(newTextSearch(indexPlanOf(c), c.machine.ResolvedCompute.Workers), queries, sources, errorHandler, nil)
 }
 
@@ -81,11 +80,11 @@ func (c TestInstallation) SubscribeAppliedPluginSettings() (<-chan struct{}, fun
 	return c.Resources.pluginChanges.Subscribe()
 }
 
-func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher) *vault.VaultOpener {
+func (c TestInstallation) VaultOpenerWith(db *Index, walking vaultport.VaultReaders, watcher vault.VaultWatcher) *vault.VaultOpener {
 	return vaultOpenerWith(c.buildVaultWiring(), db, walking, watcher)
 }
 
-func (c TestInstallation) VaultWatcher() vaultport.VaultWatcher {
+func (c TestInstallation) VaultWatcher() vault.VaultWatcher {
 	return c.buildVaultWiring().Watcher
 }
 

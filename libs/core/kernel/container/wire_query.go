@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
@@ -70,7 +69,7 @@ func readSearchLimits(settingsDeps settingsWiring, errorHandler func(error)) (se
 }
 
 type queryPorts struct {
-	functions    pluginport.SearchFunctions
+	functions    searchqueryusecase.SearchFunctions
 	contentTypes contenttypeport.ContentTypeTable
 	catalog      func() searchquerydomain.Catalog
 	clock        machineport.Clock
@@ -93,8 +92,8 @@ func openQueryPorts(install pluginInstall, exec *PluginExecution, settingsDeps s
 	return ports
 }
 
-func getQuerySource(source searchsourceport.Source) searchsourceport.QuerySource {
-	if query, ok := source.(searchsourceport.QuerySource); ok {
+func getQuerySource(source searchsourceport.Source) searchqueryusecase.QuerySource {
+	if query, ok := source.(searchqueryusecase.QuerySource); ok {
 		return query
 	}
 	return nil

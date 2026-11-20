@@ -15,7 +15,7 @@ import (
 
 // Choose gives a note the kind of tab it opens in, from the tab kinds of the enabled plugins.
 type Choose struct {
-	kinds      pluginport.PluginTabKinds
+	kinds      PluginTabKinds
 	types      contenttypeport.ContentTypeTable
 	config     configValue
 	conditions *when.Conditions
@@ -23,7 +23,7 @@ type Choose struct {
 
 // NewChoose makes the choice over the tab kinds, the table that gives a file its type, and the
 // settings a condition reads as config, which may be none. It needs the tab kinds and the table.
-func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTypeTable, config pluginport.WhenConfig) *Choose {
+func NewChoose(kinds PluginTabKinds, types contenttypeport.ContentTypeTable, config pluginport.WhenConfig) *Choose {
 	var value configValue = noConfig{}
 	if config != nil {
 		value = givenConfig{config}

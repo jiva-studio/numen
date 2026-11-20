@@ -8,16 +8,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 // Words ranks the chunks of a vault by the words of the query, through the full text index.
 type Words struct {
-	queries sourceport.LexicalQueries
+	queries LexicalQueries
 }
 
 // NewWords returns the participant over the word queries of the index.
-func NewWords(queries sourceport.LexicalQueries) Words {
+func NewWords(queries LexicalQueries) Words {
 	return Words{queries: queries}
 }
 
@@ -30,11 +29,11 @@ func (w Words) Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, erro
 // Names ranks the sections of a vault whose names match the query. Its ranking leads: the section a
 // source is found by comes before the other search results of that source.
 type Names struct {
-	queries sourceport.LexicalQueries
+	queries LexicalQueries
 }
 
 // NewNames returns the participant over the section names of the index.
-func NewNames(queries sourceport.LexicalQueries) Names {
+func NewNames(queries LexicalQueries) Names {
 	return Names{queries: queries}
 }
 

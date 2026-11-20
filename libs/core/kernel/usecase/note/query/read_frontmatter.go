@@ -7,8 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 // FrontmatterLimits bound one read of frontmatter: the notes of a page, the paths and the keys a
@@ -26,12 +24,12 @@ func GetFrontmatterLimits() FrontmatterLimits {
 
 // ReadFrontmatter reads the stored frontmatter of the notes of a vault, a page at a time.
 type ReadFrontmatter struct {
-	queries noteport.FrontmatterQueries
-	feed    sourceport.FileChangeFeed
+	queries FrontmatterQueries
+	feed    FileChangeFeed
 	limits  FrontmatterLimits
 }
 
-func NewReadFrontmatter(queries noteport.FrontmatterQueries, feed sourceport.FileChangeFeed, limits FrontmatterLimits) ReadFrontmatter {
+func NewReadFrontmatter(queries FrontmatterQueries, feed FileChangeFeed, limits FrontmatterLimits) ReadFrontmatter {
 	return ReadFrontmatter{queries: queries, feed: feed, limits: limits}
 }
 

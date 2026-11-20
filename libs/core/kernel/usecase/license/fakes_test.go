@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/license"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/licenseport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -109,9 +108,9 @@ type fakeValidator struct {
 	activateCalls   int
 	validateCalls   int
 	deactivateErr   error
-	activateResult  licenseport.ActivationResult
+	activateResult  license.ActivationResult
 	activateErr     error
-	validateResult  licenseport.ValidationResult
+	validateResult  license.ValidationResult
 	validateErr     error
 	validateStarted chan struct{}
 	validateRelease chan struct{}
@@ -131,14 +130,14 @@ func (v *fakeValidator) ListProviderOptions(providers []manifest.LicenseProvider
 	return out
 }
 
-func (v *fakeValidator) Activate(_ context.Context, _ []manifest.LicenseProvider, _, _ string) (licenseport.ActivationResult, error) {
+func (v *fakeValidator) Activate(_ context.Context, _ []manifest.LicenseProvider, _, _ string) (license.ActivationResult, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	v.activateCalls++
 	return v.activateResult, v.activateErr
 }
 
-func (v *fakeValidator) Validate(_ context.Context, _, _, _ string) (licenseport.ValidationResult, error) {
+func (v *fakeValidator) Validate(_ context.Context, _, _, _ string) (license.ValidationResult, error) {
 	v.mu.Lock()
 	v.validateCalls++
 	result, err := v.validateResult, v.validateErr

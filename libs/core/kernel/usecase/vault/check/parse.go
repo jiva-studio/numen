@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 )
 
 // parseCheck is what reading one file found, which the scan already has: a link
@@ -15,7 +13,7 @@ import (
 // parsed, which is the only place that can see what the file contains without
 // reading it again.
 type parseCheck struct {
-	queries problemport.ProblemQueries
+	queries ProblemQueries
 }
 
 func (parseCheck) Name() domain.Check { return domain.CheckParse }

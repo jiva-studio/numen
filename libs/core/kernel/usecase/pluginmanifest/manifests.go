@@ -16,7 +16,7 @@ import (
 type Host interface {
 	GetPluginInfos() []plugindomain.Info
 	GetPlugin(id string) (manifest.Discovered, bool)
-	pluginport.PluginSuspensions
+	PluginSuspensions
 }
 
 // Manifests is the manifests of the plugins the host holds.
@@ -31,17 +31,17 @@ func New(host Host) Manifests {
 
 // Open creates manifest readers from the plugin host capabilities they need.
 func Open(
-	lister pluginport.PluginLister,
+	lister PluginLister,
 	resolver pluginport.PluginResolver,
-	failures pluginport.PluginFailures,
+	failures PluginFailures,
 ) Manifests {
 	return New(host{PluginLister: lister, PluginResolver: resolver, PluginFailures: failures})
 }
 
 type host struct {
-	pluginport.PluginLister
+	PluginLister
 	pluginport.PluginResolver
-	pluginport.PluginFailures
+	PluginFailures
 }
 
 // ListCommands lists the commands the manifests of the enabled plugins declare. No plugin is started.

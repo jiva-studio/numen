@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
 // TabKindChooser gives a note the kind of tab it opens in, or an empty kind where none applies.
@@ -39,11 +38,11 @@ func chooseTabKinds(folder Folder, chooser TabKindChooser) map[string]string {
 // frontmatter the index holds, in one question and without touching a file. A path the index holds no
 // note at has no kind of tab, as a note whose file cannot be read has none.
 type ListTabKinds struct {
-	heads   noteport.NoteHeads
+	heads   NoteHeads
 	chooser TabKindChooser
 }
 
-func NewListTabKinds(heads noteport.NoteHeads, chooser TabKindChooser) *ListTabKinds {
+func NewListTabKinds(heads NoteHeads, chooser TabKindChooser) *ListTabKinds {
 	return &ListTabKinds{heads: heads, chooser: chooser}
 }
 

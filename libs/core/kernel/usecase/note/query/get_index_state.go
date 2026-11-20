@@ -4,17 +4,16 @@ import (
 	"context"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // GetIndexState reports whether the index carries a vault yet: a vault the index holds is indexed, any
 // other is still being read into it.
 type GetIndexState struct {
-	holds noteport.VaultHolds
+	holds VaultHolds
 }
 
-func NewGetIndexState(holds noteport.VaultHolds) *GetIndexState {
+func NewGetIndexState(holds VaultHolds) *GetIndexState {
 	return &GetIndexState{holds: holds}
 }
 

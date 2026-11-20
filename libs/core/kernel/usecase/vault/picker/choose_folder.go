@@ -5,16 +5,15 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // ChooseFolder shows this machine's folder dialog with the given title and
 // starting folder.
 type ChooseFolder struct {
-	dialog machineport.FolderDialog
+	dialog FolderDialog
 }
 
-func NewChooseFolder(dialog machineport.FolderDialog) ChooseFolder {
+func NewChooseFolder(dialog FolderDialog) ChooseFolder {
 	return ChooseFolder{dialog: dialog}
 }
 

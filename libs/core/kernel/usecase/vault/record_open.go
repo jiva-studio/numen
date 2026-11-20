@@ -7,10 +7,10 @@ package vault
 
 import (
 	"context"
+
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -55,10 +55,10 @@ func (u RecordOpenByName) ExecuteByName(nameOrPath string) (domain.Vault, error)
 }
 
 type WriteOpenTabs struct {
-	store windowport.OpenTabsStore
+	store OpenTabsStore
 }
 
-func NewWriteOpenTabs(store windowport.OpenTabsStore) WriteOpenTabs {
+func NewWriteOpenTabs(store OpenTabsStore) WriteOpenTabs {
 	return WriteOpenTabs{store: store}
 }
 
@@ -68,10 +68,10 @@ func (u WriteOpenTabs) Execute(ctx context.Context, v domain.Vault, open windowd
 }
 
 type ReadOpenTabs struct {
-	store windowport.OpenTabsStore
+	store OpenTabsStore
 }
 
-func NewReadOpenTabs(store windowport.OpenTabsStore) ReadOpenTabs {
+func NewReadOpenTabs(store OpenTabsStore) ReadOpenTabs {
 	return ReadOpenTabs{store: store}
 }
 

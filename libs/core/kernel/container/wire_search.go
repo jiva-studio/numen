@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
@@ -29,7 +28,7 @@ func getParticipants(db *vaultIndex, source searchsourceport.Source) []searchuse
 	return []searchusecase.Participant{searchusecase.NewSource(source, db.ChunkSearch())}
 }
 
-func newSearchOver(c textSearch, queries sourceport.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error), reportAnswered func()) searchusecase.Search {
+func newSearchOver(c textSearch, queries searchusecase.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error), reportAnswered func()) searchusecase.Search {
 	searching := searchusecase.New(queries, c.VaultReaders, c.TextReaders, sources, errorHandler, reportAnswered)
 	if workers := c.Workers; workers > 0 {
 		searching.Extractors = workers
@@ -59,7 +58,7 @@ func buildPluginSearch(
 }
 
 func newEmbedQueries(source searchsourceport.Source) *vectorscase.EmbedQueries {
-	queries, ok := source.(searchsourceport.QueryEmbedder)
+	queries, ok := source.(vectorscase.QueryEmbedder)
 	if !ok {
 		return nil
 	}

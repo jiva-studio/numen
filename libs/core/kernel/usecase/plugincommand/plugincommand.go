@@ -36,7 +36,7 @@ var (
 
 // NewList makes the scenario that lists the commands the plugins declare. conditions parses the condition of
 // a command; it is shared with the scenarios that run commands, so one condition is parsed once.
-func NewList(commands pluginport.PluginCommands, conditions *when.Conditions) List {
+func NewList(commands PluginCommands, conditions *when.Conditions) List {
 	return List{commands: commands, conditions: conditions}
 }
 
@@ -45,7 +45,7 @@ func NewList(commands pluginport.PluginCommands, conditions *when.Conditions) Li
 // a note, and the settings a condition reads as config; without settings a condition over config is
 // undecided and holds.
 func NewRun(
-	commands pluginport.PluginCommands, runs pluginport.PluginCommandRuns, types contenttypeport.ContentTypeTable,
+	commands PluginCommands, runs PluginCommandRuns, types contenttypeport.ContentTypeTable,
 	notes noteport.NoteReader, config pluginport.WhenConfig, conditions *when.Conditions,
 ) Run {
 	run := Run{commands: commands, runs: runs, types: types, notes: noNotes{}, config: noConfig{}, conditions: conditions}
@@ -60,7 +60,7 @@ func NewRun(
 
 // List lists the commands the enabled plugins declare.
 type List struct {
-	commands   pluginport.PluginCommands
+	commands   PluginCommands
 	conditions *when.Conditions
 }
 
@@ -120,8 +120,8 @@ func (u List) Find(id string) (plugin.CommandEntry, bool) {
 
 // Run runs one command in the backend of the plugin that declares it.
 type Run struct {
-	commands   pluginport.PluginCommands
-	runs       pluginport.PluginCommandRuns
+	commands   PluginCommands
+	runs       PluginCommandRuns
 	types      contenttypeport.ContentTypeTable
 	notes      targetNotes
 	config     targetConfig

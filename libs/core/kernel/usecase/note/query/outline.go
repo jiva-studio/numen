@@ -75,11 +75,11 @@ type NoteHeadings struct {
 
 // ListHeadings lists what each of the notes at some paths is divided into.
 type ListHeadings struct {
-	queries noteport.Headings
+	queries Headings
 }
 
 // NewListHeadings creates the listing over the headings of the index.
-func NewListHeadings(queries noteport.Headings) *ListHeadings {
+func NewListHeadings(queries Headings) *ListHeadings {
 	return &ListHeadings{queries: queries}
 }
 

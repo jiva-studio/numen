@@ -17,7 +17,7 @@ import (
 type Rename struct {
 	vaults vaultport.VaultList
 	saver  vaultport.VaultSaver
-	index  vaultport.VaultRepository
+	index  VaultRepository
 }
 
 // RenameResult is a renamed vault and the name it had before.
@@ -28,7 +28,7 @@ type RenameResult struct {
 
 // NewRename creates a Rename from the list this installation keeps and the saver of
 // the list, which stores the name, and the index, which holds the row the vault's other rows point at.
-func NewRename(vaults vaultport.VaultList, saver vaultport.VaultSaver, index vaultport.VaultRepository) Rename {
+func NewRename(vaults vaultport.VaultList, saver vaultport.VaultSaver, index VaultRepository) Rename {
 	return Rename{vaults: vaults, saver: saver, index: index}
 }
 

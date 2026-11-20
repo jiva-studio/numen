@@ -21,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 type benchEmbedder struct {
@@ -87,7 +86,7 @@ type benchCorpus struct {
 	db         *container.Index
 	searchMock search.Search
 	mockModel  sourcefake.Embedder
-	queries    sourceport.LexicalQueries
+	queries    search.LexicalQueries
 	candidates []domain.SearchResult
 	recipe     string
 	queryVec   []float32

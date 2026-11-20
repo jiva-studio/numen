@@ -4,16 +4,14 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
 // GetNamedPaths returns the notes that a link's name resolves to.
 type GetNamedPaths struct {
-	queries noteport.NamedPaths
+	queries NamedPaths
 }
 
-func NewGetNamedPaths(queries noteport.NamedPaths) *GetNamedPaths {
+func NewGetNamedPaths(queries NamedPaths) *GetNamedPaths {
 	return &GetNamedPaths{queries: queries}
 }
 

@@ -14,15 +14,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 func getBeforeNames() []string {
@@ -599,12 +597,12 @@ func testCancelingTheVectorTaskEndsTheEmbedCall(t *testing.T, openReading openFu
 
 // WorkerIndex is the part of an open index the tests of the worker read and write.
 type WorkerIndex struct {
-	Vaults      vaultport.VaultRepository
+	Vaults      vault.VaultRepository
 	Notes       noteport.NoteRepository
-	FileStats   noteport.FileStats
-	Maintenance indexport.IndexMaintenance
-	Progress    indexport.IndexProgress
-	Vectors     searchsourceport.VectorIndex
+	FileStats   vault.FileStats
+	Maintenance vault.IndexMaintenance
+	Progress    IndexProgress
+	Vectors     vectors.VectorIndex
 	Closer      io.Closer
 }
 

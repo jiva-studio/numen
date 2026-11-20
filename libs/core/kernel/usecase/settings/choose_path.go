@@ -8,7 +8,6 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -23,7 +22,7 @@ type ChosenPath struct {
 // ChoosePluginPath opens the machine's native file picker for a setting of
 // type file, and writes the chosen path.
 type ChoosePluginPath struct {
-	dialog  machineport.PathDialog
+	dialog  PathDialog
 	plugins func() []plugindomain.Info
 	write   func(settings []settingsdomain.Setting) error
 }
@@ -31,7 +30,7 @@ type ChoosePluginPath struct {
 // NewChoosePluginPath makes the use case over the picker and the plugins:
 // write writes settings as Write does.
 func NewChoosePluginPath(
-	dialog machineport.PathDialog, plugins func() []plugindomain.Info, write func(settings []settingsdomain.Setting) error,
+	dialog PathDialog, plugins func() []plugindomain.Info, write func(settings []settingsdomain.Setting) error,
 ) *ChoosePluginPath {
 	return &ChoosePluginPath{dialog: dialog, plugins: plugins, write: write}
 }

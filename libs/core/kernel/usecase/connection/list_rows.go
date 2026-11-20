@@ -2,13 +2,12 @@ package connection
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 )
 
 // ListRows reads the rows a plugin calls an operation through.
 type ListRows struct {
 	operation
-	settings connectionport.RowSettings
+	settings RowSettings
 }
 
 // Execute returns the rows the person chose for the operation, in their order. Where the person chose none

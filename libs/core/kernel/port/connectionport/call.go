@@ -19,7 +19,3 @@ type ModelCalls interface {
 	// of the context when the call is canceled.
 	Call(ctx context.Context, callerPluginID string, request modelcall.Request, send modelcall.Send) ([]byte, error)
 }
-
-// ListRowOptions returns the values a row field of a connection can take, as its provider lists them for the
-// options of the row and the operations of its setting.
-type ListRowOptions func(ctx context.Context, connectionID, field string, options map[string]string, operations []string) ([]modelcall.Option, error)

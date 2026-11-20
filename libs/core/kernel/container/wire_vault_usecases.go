@@ -134,7 +134,7 @@ func vaultOpener(c vaultWiring, db *vaultIndex) *vault.VaultOpener {
 }
 
 func vaultOpenerWith(c vaultWiring,
-	db *vaultIndex, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
+	db *vaultIndex, walking vaultport.VaultReaders, watcher vault.VaultWatcher,
 ) *vault.VaultOpener {
 	scan := vault.NewScan(
 		walking,

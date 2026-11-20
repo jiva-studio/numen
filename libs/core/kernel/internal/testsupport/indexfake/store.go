@@ -14,11 +14,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // Store is the index, in memory, answering every question the way the index
@@ -390,6 +389,5 @@ func (s *Store) GetSmallChunks(vaultID domain.VaultID) []Chunk {
 var (
 	_ sourceport.SourcesUnder  = (*Store)(nil)
 	_ sourceport.RemovalLookup = (*Store)(nil)
-	_ sourceport.SourceRecords = (*Store)(nil)
 	_ sourceport.SourceBacklog = (*Store)(nil)
 )

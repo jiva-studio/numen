@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/trash"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -98,7 +97,7 @@ func vaultIdentity(options vaultconfig.Options) vaultport.VaultIdentity {
 	return vaultreader.Identity{Options: options}
 }
 
-func vaultTrash(clock machineport.Clock) machineport.Trash { return trash.New(clock) }
+func vaultTrash(clock machineport.Clock) vault.Trash { return trash.New(clock) }
 
 func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vaultIndex, notes note.Move) vaultUseCases {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
@@ -126,7 +125,7 @@ func newAddVault(identity vaultport.VaultIdentity, clock machineport.Clock, regi
 	return vault.NewAdd(identity, registry.Vaults, registry.Lookup, registry.Saver, clock)
 }
 
-func getProblems(problems problemport.ProblemQueries) *vault.GetProblems {
+func getProblems(problems check.ProblemQueries) *vault.GetProblems {
 	if problems == nil {
 		return vault.NewGetProblems(check.Checks{})
 	}

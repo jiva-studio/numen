@@ -45,20 +45,6 @@ type Uses interface {
 	ListPlugins() []plugin.Info
 }
 
-// ListRows returns the rows a plugin calls an operation through, in the order of use.
-type ListRows func(pluginID, operation string) ([]connection.Row, error)
-
-// RowSettings reads the settings of rows of the plugins.
-type RowSettings interface {
-	// ReadRowSetting returns the setting of rows of the plugin for an operation, with the rows that name an
-	// existing connection. A plugin with no such setting shown has no row and does not discover, whatever
-	// it is granted.
-	ReadRowSetting(pluginID, operation string) (connection.RowSetting, error)
-}
-
-// ReportSetAside tells the person that a connection was set aside for a reason and a row after it answered.
-type ReportSetAside func(setAside connection.SetAside)
-
 // ResolveConnection reads a connection and its type as a call to the provider needs them. It fails with
 // connection.ErrNotFound and connection.ErrTypeUnavailable.
 type ResolveConnection func(connectionID string) (connection.Resolved, error)

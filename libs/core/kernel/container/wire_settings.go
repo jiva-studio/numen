@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -182,7 +181,7 @@ func openWatchSettings(c settingsWiring) *settingsusecase.WatchSettingChanges {
 	return settingsusecase.NewWatchSettingChanges(func() (<-chan []settingsdomain.Setting, func()) { return feed(c).Subscribe() })
 }
 
-func openChoosePluginPath(c settingsWiring, dialog machineport.PathDialog) *settingsusecase.ChoosePluginPath {
+func openChoosePluginPath(c settingsWiring, dialog settingsusecase.PathDialog) *settingsusecase.ChoosePluginPath {
 	return settingsusecase.NewChoosePluginPath(dialog, c.Infos.GetPluginInfos, getSettingsWriter(c))
 }
 
