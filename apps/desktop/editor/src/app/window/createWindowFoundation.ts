@@ -2,11 +2,11 @@
  * What every part of the window reads: the calls to the core, the log of messages, the store of the
  * settings, the frame and the registry of the commands, made before the parts that read the vault.
  */
+import { loadWindowFrameControls } from '@numen/plugin-loader'
 import { useWindowFrame } from '@numen/workbench'
 import { createConnectionStore } from '@/entities/connection'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { createWindowPluginStatus } from '@/features/plugin-host'
-import { loadFrameRuntime } from '@/shared/api/runtime'
 import { createEmitter } from '@/shared/lib/emitter'
 import { createCommandRegistry, type SettingsRequest } from '@/shared/model/command'
 import { createMessageLog, createRecordedMessageLog } from '@/shared/model/notices/messages'
@@ -25,7 +25,7 @@ export function createWindowFoundation(api: WindowApi) {
     log,
     rest,
     connections: createConnectionStore(configuration.connection, log.getWriter('connections')),
-    frame: useWindowFrame(loadFrameRuntime),
+    frame: useWindowFrame(loadWindowFrameControls),
     status: createWindowPluginStatus(rest),
     registry: createCommandRegistry(),
     /** The settings a part asks for: the page of a plugin and a setting of it, or the settings tab. */

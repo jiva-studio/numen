@@ -2,32 +2,30 @@ import { describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { MAC_BUTTONS_INSET } from '../lib/sizes'
-import type { FrameRuntime } from '../lib/runtime'
 import { getWindowEdge } from './frameEdge'
 import { useWindowFrame } from './useWindowFrame'
+
+type FrameControls = NonNullable<Awaited<ReturnType<Parameters<typeof useWindowFrame>[0]>>>
 
 function createRuntime(platform: 'windows' | 'mac' | 'linux', maximized = false) {
   const state = { maximized }
   const calls = {
-    Minimise: vi.fn(async () => undefined),
-    ToggleMaximise: vi.fn(async () => {
+    minimize: vi.fn(async () => undefined),
+    toggleMaximize: vi.fn(async () => {
       state.maximized = !state.maximized
     }),
-    Close: vi.fn(async () => undefined),
+    close: vi.fn(async () => undefined),
   }
-  const runtime: FrameRuntime = {
-    Window: { ...calls, IsMaximised: async () => state.maximized },
-    System: {
-      IsWindows: () => platform === 'windows',
-      IsMac: () => platform === 'mac',
-      IsLinux: () => platform === 'linux',
-    },
+  const runtime: FrameControls = {
+    ...calls,
+    isMaximized: async () => state.maximized,
+    getPlatform: () => (platform === 'mac' ? 'darwin' : platform),
   }
   return { runtime, calls }
 }
 
 describe('useWindowFrame', () => {
-  it('minimizes, toggles maximize and closes through the Wails window', async () => {
+  it('minimizes, toggles maximize and closes through the supplied controls', async () => {
     const { runtime, calls } = createRuntime('windows')
     const frame = useWindowFrame(async () => runtime)
 
@@ -35,9 +33,9 @@ describe('useWindowFrame', () => {
     await frame.toggleMaximizeWindow()
     await frame.closeWindow()
 
-    expect(calls.Minimise).toHaveBeenCalledOnce()
-    expect(calls.ToggleMaximise).toHaveBeenCalledOnce()
-    expect(calls.Close).toHaveBeenCalledOnce()
+    expect(calls.minimize).toHaveBeenCalledOnce()
+    expect(calls.toggleMaximize).toHaveBeenCalledOnce()
+    expect(calls.close).toHaveBeenCalledOnce()
   })
 
   it('reports the maximized state of the window, also after it is toggled', async () => {
@@ -72,7 +70,7 @@ describe('useWindowFrame', () => {
     expect(frame.platform.value).toBe('linux')
   })
 
-  it('does nothing and stays unmaximized where Wails does not serve the page', async () => {
+  it('does nothing and stays unmaximized without window controls', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
 
     const frame = useWindowFrame(async () => undefined)
@@ -89,21 +87,14 @@ describe('useWindowFrame', () => {
     expect(frame.platform.value).toBe('windows')
   })
 
-  it('handles partial Wails runtime objects and disposes its resize listener with its scope', async () => {
+  it('handles partial window controls and disposes its resize listener with its scope', async () => {
     const emptyRuntime = useWindowFrame(async () => ({}))
     await flushPromises()
     await expect(emptyRuntime.minimizeWindow()).resolves.toBeUndefined()
     await expect(emptyRuntime.toggleMaximizeWindow()).resolves.toBeUndefined()
     await expect(emptyRuntime.closeWindow()).resolves.toBeUndefined()
 
-    const emptyWindow = useWindowFrame(async () => ({ Window: {}, System: {} }))
-    await flushPromises()
-    await expect(emptyWindow.minimizeWindow()).resolves.toBeUndefined()
-    await expect(emptyWindow.toggleMaximizeWindow()).resolves.toBeUndefined()
-    await expect(emptyWindow.closeWindow()).resolves.toBeUndefined()
-
-    // Initial load returns undefined, then readWindowState sees a maximized Window; then resize sees partial runtimes.
-    let currentRuntime: FrameRuntime | undefined
+    let currentRuntime: FrameControls | undefined
     let callCount = 0
     const transitioning = useWindowFrame(async () => {
       callCount += 1
@@ -111,15 +102,17 @@ describe('useWindowFrame', () => {
       return currentRuntime
     })
     currentRuntime = {
-      Window: { IsMaximised: async () => true, IsFullscreen: async () => true },
+      isMaximized: async () => true,
+      isFullscreen: async () => true,
     }
     await flushPromises()
     expect(transitioning.isMaximized.value).toBe(true)
     expect(transitioning.isFullscreen.value).toBe(true)
 
-    for (const nextRuntime of [undefined, {}, { Window: {} }]) {
+    for (const nextRuntime of [undefined, {}]) {
       currentRuntime = {
-        Window: { IsMaximised: async () => true, IsFullscreen: async () => true },
+        isMaximized: async () => true,
+        isFullscreen: async () => true,
       }
       globalThis.dispatchEvent(new Event('resize'))
       await flushPromises()
@@ -133,24 +126,14 @@ describe('useWindowFrame', () => {
       expect(transitioning.isFullscreen.value).toBe(false)
     }
 
-    // Empty System with maximized Window still reads window state without throwing in getPlatform.
-    const emptySystemMax = useWindowFrame(async () => ({
-      System: {},
-      Window: { IsMaximised: async () => true },
-    }))
-    await flushPromises()
-    expect(emptySystemMax.isMaximized.value).toBe(true)
-
     // Scope disposal removes resize listener.
     let resizeReads = 0
     const scope = effectScope()
     scope.run(() =>
       useWindowFrame(async () => ({
-        Window: {
-          IsMaximised: async () => {
-            resizeReads += 1
-            return false
-          },
+        isMaximized: async () => {
+          resizeReads += 1
+          return false
         },
       })),
     )
@@ -175,15 +158,13 @@ describe('useWindowFrame when the read of the maximized state fails', () => {
   /** A runtime whose state read resolves once, then rejects, as a Wails window that went away mid-call. */
   function createFailingRuntime(maximized: boolean) {
     const failing = { value: false }
-    const runtime: FrameRuntime = {
-      Window: {
-        ToggleMaximise: async () => {
-          failing.value = true
-        },
-        IsMaximised: async () => {
-          if (failing.value) throw new Error('the window state is not available')
-          return maximized
-        },
+    const runtime: FrameControls = {
+      toggleMaximize: async () => {
+        failing.value = true
+      },
+      isMaximized: async () => {
+        if (failing.value) throw new Error('the window state is not available')
+        return maximized
       },
     }
     return { runtime, failing }
@@ -208,11 +189,9 @@ describe('useWindowFrame when the read of the maximized state fails', () => {
   })
 
   it('stays unmaximized when the first read of the state rejects', async () => {
-    const runtime: FrameRuntime = {
-      Window: {
-        IsMaximised: async () => {
-          throw new Error('the window state is not available')
-        },
+    const runtime: FrameControls = {
+      isMaximized: async () => {
+        throw new Error('the window state is not available')
       },
     }
     const frame = useWindowFrame(async () => runtime)
@@ -247,7 +226,7 @@ describe('the room of the system buttons', () => {
     const state = { isFullscreen: true }
     const frame = useWindowFrame(async () => ({
       ...runtime,
-      Window: { ...runtime.Window, IsFullscreen: async () => state.isFullscreen },
+      isFullscreen: async () => state.isFullscreen,
     }))
     await flushPromises()
     expect(frame.isFullscreen.value).toBe(true)
@@ -269,14 +248,12 @@ describe('the room of the system buttons', () => {
 
 describe('the corner radius of the window', () => {
   /** A macOS runtime that reports the version, and full screen when asked. */
-  function createMacRuntime(version: string | undefined, isFullscreen = false): FrameRuntime {
+  function createMacRuntime(version: string | undefined, isFullscreen = false): FrameControls {
     const { runtime } = createRuntime('mac')
     return {
-      Window: { ...runtime.Window, IsFullscreen: async () => isFullscreen },
-      System: {
-        ...runtime.System,
-        Environment: async () => ({ OSInfo: version === undefined ? {} : { Version: version } }),
-      },
+      ...runtime,
+      isFullscreen: async () => isFullscreen,
+      getVersion: async () => version,
     }
   }
 
@@ -297,7 +274,7 @@ describe('the corner radius of the window', () => {
   it('takes the larger radius when the version cannot be read', async () => {
     const frame = useWindowFrame(async () => ({
       ...createMacRuntime(undefined),
-      Window: { IsMaximised: async () => true },
+      isMaximized: async () => true,
     }))
     await flushPromises()
 
@@ -305,8 +282,8 @@ describe('the corner radius of the window', () => {
     expect(frame.isMaximized.value).toBe(true)
 
     const noEnv = useWindowFrame(async () => ({
-      System: { IsMac: () => true },
-      Window: { IsMaximised: async () => true },
+      getPlatform: () => 'darwin',
+      isMaximized: async () => true,
     }))
     await flushPromises()
     expect(noEnv.windowRadius.value).toBe(16)
@@ -315,13 +292,10 @@ describe('the corner radius of the window', () => {
 
   it('takes the larger radius when the environment call fails', async () => {
     const runtime = createMacRuntime('15.0')
-    const failing: FrameRuntime = {
+    const failing: FrameControls = {
       ...runtime,
-      System: {
-        ...runtime.System,
-        Environment: async () => {
-          throw new Error('no environment')
-        },
+      getVersion: async () => {
+        throw new Error('no environment')
       },
     }
     const frame = useWindowFrame(async () => failing)
@@ -340,10 +314,10 @@ describe('the corner radius of the window', () => {
   it('takes no radius on Windows and Linux', async () => {
     for (const platform of ['windows', 'linux'] as const) {
       const { runtime } = createRuntime(platform)
-      const envSpy = vi.fn(async () => ({ OSInfo: { Version: '15.0' } }))
+      const envSpy = vi.fn(async () => '15.0')
       const frame = useWindowFrame(async () => ({
         ...runtime,
-        System: { ...runtime.System, Environment: envSpy },
+        getVersion: envSpy,
       }))
       await flushPromises()
 

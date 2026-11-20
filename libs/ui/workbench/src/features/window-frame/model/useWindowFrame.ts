@@ -13,7 +13,6 @@ import {
   WINDOW_RADIUS_VARIABLE,
   type WindowPlatform,
 } from '../lib/corners'
-import type { FrameRuntime, FrameRuntimeLoader } from '../lib/runtime'
 import { getWindowEdge, type FrameEdge } from './frameEdge'
 
 export interface WindowFrame {
@@ -27,16 +26,21 @@ export interface WindowFrame {
   closeWindow(): Promise<void>
 }
 
-function getPlatform(system: FrameRuntime['System']): WindowPlatform {
-  if (system?.IsMac?.()) return 'darwin'
-  return system?.IsLinux?.() ? 'linux' : 'windows'
+interface FrameControls {
+  getPlatform?(): WindowPlatform
+  getVersion?(): Promise<string | undefined>
+  isMaximized?(): Promise<boolean>
+  isFullscreen?(): Promise<boolean>
+  minimize?(): Promise<void>
+  toggleMaximize?(): Promise<void>
+  close?(): Promise<void>
 }
 
 const ignoreFailure = (): undefined => undefined
 
-async function readMacVersion(system: FrameRuntime['System']): Promise<number | undefined> {
+async function readMacVersion(controls: FrameControls | undefined): Promise<number | undefined> {
   try {
-    return readMajorVersion((await system?.Environment?.())?.OSInfo?.Version)
+    return readMajorVersion(await controls?.getVersion?.())
   } catch {
     return undefined
   }
@@ -46,7 +50,7 @@ async function readMacVersion(system: FrameRuntime['System']): Promise<number | 
  * The frame of the window this page is drawn in, read through the runtime the shell loads: its platform, its
  * maximized and full screen state, which a resize reads again, and its buttons.
  */
-export function useWindowFrame(load: FrameRuntimeLoader): WindowFrame {
+export function useWindowFrame(load: () => Promise<FrameControls | undefined>): WindowFrame {
   const platform = ref<WindowPlatform>('windows')
   const isMaximized = ref(false)
   const isFullscreen = ref(false)
@@ -66,28 +70,28 @@ export function useWindowFrame(load: FrameRuntimeLoader): WindowFrame {
 
   /** Reads the maximized and the full screen state, which a resize changes. */
   async function readWindowState(): Promise<void> {
-    const wailsWindow = (await load())?.Window
-    isMaximized.value = (await wailsWindow?.IsMaximised?.()) ?? false
-    isFullscreen.value = (await wailsWindow?.IsFullscreen?.()) ?? false
+    const controls = await load()
+    isMaximized.value = (await controls?.isMaximized?.()) ?? false
+    isFullscreen.value = (await controls?.isFullscreen?.()) ?? false
   }
 
   async function minimizeWindow(): Promise<void> {
-    await (await load())?.Window?.Minimise?.()
+    await (await load())?.minimize?.()
   }
 
   async function toggleMaximizeWindow(): Promise<void> {
-    await (await load())?.Window?.ToggleMaximise?.()
+    await (await load())?.toggleMaximize?.()
     await readWindowState().catch(ignoreFailure)
   }
 
   async function closeWindow(): Promise<void> {
-    await (await load())?.Window?.Close?.()
+    await (await load())?.close?.()
   }
 
   runInBackground(
     load().then(async (loaded) => {
-      platform.value = getPlatform(loaded?.System)
-      if (platform.value === 'darwin') macVersion.value = await readMacVersion(loaded?.System)
+      platform.value = loaded?.getPlatform?.() ?? 'windows'
+      if (platform.value === 'darwin') macVersion.value = await readMacVersion(loaded)
       await readWindowState()
     }),
     ignoreFailure,

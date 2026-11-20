@@ -7,6 +7,7 @@
 import {
   SLOT,
   createAppInfo,
+  openExternalUrl,
   createPluginHost,
   createPluginNotices,
   readManifestSlotEntries,
@@ -20,10 +21,9 @@ import {
   type WindowHost,
 } from '@numen/plugin-loader'
 import { createNamedIcon } from '@numen/ui'
-import { openExternalUrl, type NoticeQueue, type WindowPlatform } from '@numen/workbench'
+import type { NoticeQueue, WindowPlatform } from '@numen/workbench'
 import { createViewIssueReporter } from '@/entities/plugin'
 import type { WindowTabs } from '@/entities/tab'
-import { loadFrameRuntime } from '@/app/runtime'
 import { TARGET } from '@/shared/lib/window'
 
 /** The commands, the vaults, the window and its background tasks the plugins read. */
@@ -64,7 +64,7 @@ export function createShellHost(deps: ShellHostDeps) {
         build: import.meta.env.VITE_NUMEN_BUILD,
         getPlatform,
       }),
-      openExternal: (url) => openExternalUrl(url, loadFrameRuntime),
+      openExternal: openExternalUrl,
       getNotices: (pluginId) => createPluginNotices(notices, pluginId),
       clearNotices: (pluginId) => notices.clear(pluginId),
       getCommands: () => services.commands,

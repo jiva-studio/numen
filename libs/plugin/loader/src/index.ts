@@ -1,4 +1,11 @@
 export {
+  loadFrameRuntime,
+  loadWindowFrameControls,
+  openExternalUrl,
+  type FrameRuntime,
+  type FrameRuntimeLoader,
+} from './frameRuntime'
+export {
   DEFAULT_PLUGIN_ENABLED,
   createPluginLoader,
   isPluginEnabledValue,
