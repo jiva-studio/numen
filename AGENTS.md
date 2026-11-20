@@ -357,7 +357,7 @@ Each surface of the repository takes one casing convention:
 | **Go files** | `snake_case` | `count_reviews.go`, `one_schema_test.go` |
 | **TypeScript / JavaScript files** | `camelCase` | `useWorkspaceTabs.ts`, `useFileRouter.ts`, `transport.ts` |
 | **Vue components** | `PascalCase` | `App.vue`, `NoteTab.vue`, `Field.vue` |
-| **SQL tables and columns** | `snake_case` | `open_tabs`, `source_id`, `folded_name` |
+| **SQL tables and columns** | `snake_case` | `app_state`, `source_id`, `folded_name` |
 | **Environment variables** | `UPPER_SNAKE` | `NUMEN_MODELS_DIR`, `NUMEN_PLUGIN_DATA_DIR` |
 | **CLI flags, CSS classes and variables, URL paths** | `kebab-case` | `--output-format`, `--numen-text-color` |
 | **Plugin ids** | reverse-domain with dots | `md.numen.engines.embeddings`, `md.numen.views.flashcards-studio` |
