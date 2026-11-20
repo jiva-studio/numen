@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
@@ -23,8 +24,5 @@ func NewRoute(models *plugindependency.Fetch, counted connect.HandlerOption) (st
 
 func (h *handler) FetchModelFile(ctx context.Context, req *connect.Request[v1.FetchModelFileRequest]) (*connect.Response[v1.FetchModelFileResponse], error) {
 	path, err := h.models.Execute(ctx, req.Msg.GetUrl(), req.Msg.GetSha256())
-	if err != nil {
-		return connect.NewResponse(&v1.FetchModelFileResponse{Error: err.Error()}), nil
-	}
-	return connect.NewResponse(&v1.FetchModelFileResponse{Path: path}), nil
+	return connect.NewResponse(wire.DescribeModelFile(path, err)), nil
 }
