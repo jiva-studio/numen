@@ -48,6 +48,9 @@ type WorkQueue interface {
 // window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
 // every file.
 type Callers struct {
+	Dependencies interface {
+		Execute(context.Context, string, string) (string, error)
+	}
 	Identity  Identity
 	Leases    Leases
 	Lent      *Services

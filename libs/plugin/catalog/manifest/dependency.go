@@ -206,3 +206,12 @@ func listEnvironmentIssues(req DependencyRequirement) []error {
 	}
 	return issues
 }
+
+// NewModelFile declares a downloadable model file identified by its SHA-256.
+func NewModelFile(address, digest string) (DependencyRequirement, error) {
+	source := DependencySource{SourceURL: address, ChecksumSHA256: digest}
+	if err := errors.Join(listSourceIssues("model file", source)...); err != nil {
+		return DependencyRequirement{}, err
+	}
+	return DependencyRequirement{ID: digest, Kind: DependencyKindModel, SourceURL: address, ChecksumSHA256: digest}, nil
+}
