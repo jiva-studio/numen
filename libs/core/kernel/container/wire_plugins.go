@@ -108,15 +108,17 @@ type pluginProviders struct {
 
 // PluginEndpoints connects the host RPC services and the providers served by plugins.
 type PluginEndpoints struct {
-	Endpoint *hostendpoint.Services
-	Lender   *hostendpoint.Lender
+	ModelFiles *plugindependency.Fetch
+	Endpoint   *hostendpoint.Services
+	Lender     *hostendpoint.Lender
 	pluginProviders
 }
 
 // AdaptPluginHost connects the process and management roles to their consumers.
 func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervision) (*PluginExecution, *PluginPreferences, *PluginEndpoints) {
 	lender := hostendpoint.NewLender()
-	lent := lendHostEndpoint(management, supervision, lender)
+	models := plugindependency.NewFetch(supervision.Services.GetDependencies)
+	lent := lendHostEndpoint(management, supervision, lender, models)
 	types := plugin.NewConnectionTypes(management.Registry)
 	detection := providerbridge.NewDetection(types, providerbridge.NewQuestionSource(management.Activation), supervision.Clock)
 	management.Activation.SetOnStart(detection.DetectInBackground)
@@ -167,8 +169,9 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 		Detection:           detection,
 	}
 	endpoints := &PluginEndpoints{
-		Endpoint: lent,
-		Lender:   lender,
+		Endpoint:   lent,
+		ModelFiles: models,
+		Lender:     lender,
 		pluginProviders: pluginProviders{
 			Detection:          detection,
 			RowOptions:         rowoptions.NewLists(supervision.Storage, management.Config),
@@ -179,14 +182,14 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 	return exec, prefs, endpoints
 }
 
-func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision, lender *hostendpoint.Lender) *hostendpoint.Services {
+func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision, lender *hostendpoint.Lender, models *plugindependency.Fetch) *hostendpoint.Services {
 	services := hostendpoint.NewServices(lender.Get)
 	toolHost := plugin.NewToolHost(management.Activation, management.Registry)
 	manifests := pluginmanifest.Open(management.Registry, management.Registry, processes.Failures)
 	revision := getListingRevision(getSearchCatalog(manifests))
 	tools := toolbridge.NewCatalog(toolHost, toolHost, processes.Storage, revision, processes.Clock, toolbridge.GetErrorOutput())
 	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
-		Dependencies: plugindependency.NewFetch(processes.Services.GetDependencies),
+		Dependencies: models,
 		Identity:     management.Activation, Leases: management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
 		Lent: services,
 		Tools: func() hostendpoint.PluginTools {
