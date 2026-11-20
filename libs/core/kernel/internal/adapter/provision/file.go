@@ -111,9 +111,12 @@ func (p *FileProvisioner) Provision(
 	if p.cfg.Offline {
 		return plugin.ResolvedDependency{}, fmt.Errorf("%s %s: %w", req.Kind, req.ID, ErrOffline)
 	}
-	primary, err := p.fetch(ctx, req, source, dir, onProgress)
+	primary, actual, err := p.fetch(ctx, req, source, dir, onProgress)
 	if err != nil {
 		return plugin.ResolvedDependency{}, err
+	}
+	if sum == "" {
+		sum = actual
 	}
 	if err := writeReadyMarker(ctx, dir, filepath.Base(primary), sum); err != nil {
 		return plugin.ResolvedDependency{}, err
@@ -123,15 +126,17 @@ func (p *FileProvisioner) Provision(
 
 func (p *FileProvisioner) fetch(
 	ctx context.Context, req manifest.DependencyRequirement, source manifest.DependencySource, dir string, onProgress func(plugin.DependencyStatus),
-) (string, error) {
+) (string, string, error) {
 	name, err := getFileName(req, source)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	primary := filepath.Join(dir, name)
 	title := "Downloading " + req.ID
+	var actual string
 	err = transfer{
-		client: p.cfg.Client, address: source.SourceURL, dest: primary, sum: source.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
+		onDigest: func(sum string) { actual = sum },
+		client:   p.cfg.Client, address: source.SourceURL, dest: primary, sum: source.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
 		onProgress: func(done, total int64) {
 			onProgress(plugin.DependencyStatus{
 				ID: req.ID, State: plugin.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
@@ -140,13 +145,13 @@ func (p *FileProvisioner) fetch(
 		},
 	}.fetch(ctx)
 	if err != nil || source.ArchiveMember == "" {
-		return primary, err
+		return primary, actual, err
 	}
 	member, err := unpackMember(primary, source.ArchiveMember, source.MemberSHA256, dir)
 	if err != nil {
-		return "", errors.Join(err, os.Remove(primary))
+		return "", "", errors.Join(err, os.Remove(primary))
 	}
-	return member, os.Remove(primary)
+	return member, source.MemberSHA256, os.Remove(primary)
 }
 
 func getReadySum(source manifest.DependencySource) string {
@@ -193,7 +198,7 @@ func readCachedDependency(req manifest.DependencyRequirement, dir, sum string) (
 		return plugin.ResolvedDependency{}, false
 	}
 	name, found, err := readReadyMarker(dir)
-	if err != nil || !isPlainName(name) || found != sum {
+	if err != nil || !isPlainName(name) || (sum != "" && found != sum) || found == "" {
 		return plugin.ResolvedDependency{}, false
 	}
 	primary := filepath.Join(dir, name)

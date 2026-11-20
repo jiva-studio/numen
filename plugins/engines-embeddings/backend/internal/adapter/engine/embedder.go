@@ -52,12 +52,12 @@ type Embedder struct {
 
 // Open loads the model, fetching it first where this machine does not hold it.
 func Open(
-	ctx context.Context, library *onnx.Library, identity model.ModelInfo, cfg model.LocalModel, progress FetchProgress,
+	ctx context.Context, library *onnx.Library, identity model.ModelInfo, cfg model.LocalModel, fetch onnx.FetchFile,
 ) (*Embedder, error) {
 	if err := model.CheckIdentity(identity, cfg.Name); err != nil {
 		return nil, err
 	}
-	paths, err := Locate(ctx, cfg, progress)
+	paths, err := Locate(ctx, cfg, fetch)
 	if err != nil {
 		return nil, err
 	}

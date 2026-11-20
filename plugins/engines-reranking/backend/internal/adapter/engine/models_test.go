@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gomlx/go-huggingface/hub"
+	"context"
 
 	"github.com/jiva-studio/numen/libs/shared/onnx"
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/domain/profile"
@@ -126,8 +126,11 @@ func TestShippedProfilesScoreARelevantDocumentAboveAnUnrelatedOne(t *testing.T) 
 			if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(p.OnnxFile))); err != nil {
 				t.Skipf("%s holds no %s of %s", root, p.OnnxFile, p.ID)
 			}
-			linkSnapshot(t, p, dir)
-			scorer, err := Open(t.Context(), onnx.NewLibrary(), p)
+			fetch := func(_ context.Context, address, _ string) (string, error) {
+				_, name, _ := strings.Cut(address, "/resolve/"+p.Revision+"/")
+				return filepath.Join(dir, filepath.FromSlash(name)), nil
+			}
+			scorer, err := Open(t.Context(), onnx.NewLibrary(), p, fetch)
 			if err != nil {
 				t.Fatalf("Open: %v", err)
 			}
@@ -173,27 +176,6 @@ func checkRelevance(t *testing.T, scorer *Scorer, query string, documents []stri
 	for i := range scores {
 		if diff := scores[i] - again[i]; diff > 1e-3 || diff < -1e-3 {
 			t.Errorf("%q: document %d scores %v in one order and %v in the other", query, i, scores[i], again[i])
-		}
-	}
-}
-
-func linkSnapshot(t *testing.T, p profile.Profile, dir string) {
-	t.Helper()
-	home := t.TempDir()
-	t.Setenv(EnvDir, home)
-	t.Setenv(EnvOffline, "1")
-	cache, err := hub.New(p.ID).WithCacheDir(filepath.Join(home, "huggingface")).CacheDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	snapshot := filepath.Join(cache, "snapshots", p.Revision)
-	for _, name := range []string{p.OnnxFile, "tokenizer.json"} {
-		target := filepath.Join(snapshot, filepath.FromSlash(name))
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.Symlink(filepath.Join(dir, filepath.FromSlash(name)), target); err != nil {
-			t.Fatal(err)
 		}
 	}
 }

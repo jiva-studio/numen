@@ -1,6 +1,8 @@
 package manifest
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"regexp"
@@ -207,8 +209,15 @@ func listEnvironmentIssues(req DependencyRequirement) []error {
 	return issues
 }
 
-// NewModelFile declares a downloadable model file identified by its SHA-256.
+// NewModelFile declares a downloadable model file. A profile without a pin identifies the source by its URL.
 func NewModelFile(address, digest string) (DependencyRequirement, error) {
+	if digest == "" {
+		if !domain.IsHTTPSAddress(address) {
+			return DependencyRequirement{}, fmt.Errorf("%w: model file source must use HTTPS", ErrInvalidDependency)
+		}
+		key := sha256.Sum256([]byte(address))
+		return DependencyRequirement{ID: "source-" + hex.EncodeToString(key[:]), Kind: DependencyKindModel, SourceURL: address}, nil
+	}
 	source := DependencySource{SourceURL: address, ChecksumSHA256: digest}
 	if err := errors.Join(listSourceIssues("model file", source)...); err != nil {
 		return DependencyRequirement{}, err

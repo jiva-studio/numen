@@ -35,6 +35,7 @@ type transfer struct {
 	sum        string
 	backoff    backoff
 	clock      machineport.Clock
+	onDigest   func(string)
 	onProgress func(count, total int64)
 }
 
@@ -98,6 +99,11 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 	if err != nil {
 		return err
 	}
+	if t.sum == "" {
+		// A URL without a pinned sum can serve different bytes between attempts.
+		offset = 0
+		hasher.Reset()
+	}
 	request, err := t.newRequest(ctx, offset)
 	if err != nil {
 		return err
@@ -159,8 +165,12 @@ func (t transfer) store(part string, body io.Reader, hasher hash.Hash, offset, t
 }
 
 func (t transfer) finish(hasher hash.Hash, size int64) error {
-	if found := hex.EncodeToString(hasher.Sum(nil)); found != t.sum {
+	found := hex.EncodeToString(hasher.Sum(nil))
+	if t.sum != "" && found != t.sum {
 		return fmt.Errorf("%w: %s holds %s, and %s is pinned", ErrChecksum, t.address, found, t.sum)
+	}
+	if t.onDigest != nil {
+		t.onDigest(found)
 	}
 	if t.onProgress != nil {
 		t.onProgress(size, size)
