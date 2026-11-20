@@ -28,8 +28,6 @@ func (p *FileProvisioner) getModelContentDir(sum string) string {
 	return getDependencyDir(p.cfg.Dir, string(manifest.DependencyKindModel), sum, "")
 }
 
-// storeModelFile places a download without a supplied pin in the content store and records
-// the digest observed for that URL. The caller already holds the source folder lock.
 func (p *FileProvisioner) storeModelFile(ctx context.Context, req manifest.DependencyRequirement, source, primary, sum string) (_ plugin.ResolvedDependency, err error) {
 	dir := p.getModelContentDir(sum)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
