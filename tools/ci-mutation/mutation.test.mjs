@@ -23,6 +23,7 @@ import {
   readCount,
   readKeys,
   renderBody,
+  renderComment,
 } from './issue.mjs'
 import { findTarget, formatSurvivors, getRunName, renderVitestConfig } from './mutate.mjs'
 import { listShards } from './shards.mjs'
@@ -266,6 +267,28 @@ test('the body names its target and carries the keys it was written with', () =>
   assert.equal(isTargetIssue(ts.name, body), true)
   assert.equal(isTargetIssue('core', body), false)
   assert.deepEqual([...readKeys(body)], ['aaaaaa', 'bbbbbb'])
+})
+
+test('large mutation reports fit in GitHub issues and comments', () => {
+  const survivors = Array.from({ length: 100 }, (_, index) => ({
+    ...survivor(index.toString(16).padStart(6, '0')),
+    line: index + 1,
+    original: 'a'.repeat(1800),
+  }))
+  const body = renderBody({
+    name: ts.name,
+    summary: { counts: { Survived: 100 }, total: 100, efficacy: 0 },
+    survivors,
+    link,
+    runUrl: 'https://example.test/runs/1',
+  })
+  assert.equal(readKeys(body).size, survivors.length)
+  for (const report of [body, renderComment(survivors, link)]) {
+    assert.ok(report.length <= 65536)
+    const listed = report.split('\n').filter((row) => row.startsWith('- [')).length
+    assert.ok(listed > 0)
+    assert.ok(report.includes(`…and ${survivors.length - listed} more`))
+  }
 })
 
 test('no issue and survivors: one is created', () => {
