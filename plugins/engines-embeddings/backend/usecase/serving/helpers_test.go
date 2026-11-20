@@ -3,6 +3,7 @@ package serving
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,7 +24,7 @@ func newEmbeddingServer() *Server {
 
 func newEmbeddingServerWith(open ports.OpenModels) *Server {
 	return New(Ports{
-		Machine:     process.Process{},
+		Queue: hosttest.NewQueue().EnqueueWork, Machine: process.Process{},
 		Profiles:    profilefiles.GetDefaultDirectory(),
 		Environment: environment.Variables{},
 		OpenLocal: func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {

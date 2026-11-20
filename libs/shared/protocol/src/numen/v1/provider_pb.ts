@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/provider.proto.
  */
 export const file_numen_v1_provider: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9wcm92aWRlci5wcm90bxIIbnVtZW4udjEipwIKDFByb3ZpZGVyQ2FsbBIVCg1jb25uZWN0aW9uX2lkGAEgASgJEgwKBHR5cGUYAiABKAkSMgoGZmllbGRzGAMgAygLMiIubnVtZW4udjEuUHJvdmlkZXJDYWxsLkZpZWxkc0VudHJ5EikKB3NlY3JldHMYBCADKAsyGC5udW1lbi52MS5Qcm92aWRlclNlY3JldBI0CgdvcHRpb25zGAUgAygLMiMubnVtZW4udjEuUHJvdmlkZXJDYWxsLk9wdGlvbnNFbnRyeRotCgtGaWVsZHNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBGi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIjEKDlByb3ZpZGVyU2VjcmV0EgsKA2tleRgBIAEoCRISCgV2YWx1ZRgCIAEoCUIDgAEBIogBCg9Qcm92aWRlckZhaWx1cmUSIwoEa2luZBgBIAEoDjIVLm51bWVuLnYxLkZhaWx1cmVLaW5kEicKBnJlYXNvbhgCIAEoDjIXLm51bWVuLnYxLkZhaWx1cmVSZWFzb24SFgoOcmV0cnlfYWZ0ZXJfbXMYAyABKAMSDwoHbWVzc2FnZRgEIAEoCSJmChpQcm92aWRlclNlcnZpY2VDYWxsUmVxdWVzdBIRCglvcGVyYXRpb24YASABKAkSJAoEY2FsbBgCIAEoCzIWLm51bWVuLnYxLlByb3ZpZGVyQ2FsbBIPCgdwYXlsb2FkGAMgASgMIkgKE0RldGVjdGVkQ29ubmVjdGlvbnMSMQoLY29ubmVjdGlvbnMYASADKAsyHC5udW1lbi52MS5EZXRlY3RlZENvbm5lY3Rpb24imQEKEkRldGVjdGVkQ29ubmVjdGlvbhIMCgRuYW1lGAEgASgJEjgKBmZpZWxkcxgCIAMoCzIoLm51bWVuLnYxLkRldGVjdGVkQ29ubmVjdGlvbi5GaWVsZHNFbnRyeRIMCgRwYXRoGAMgASgJGi0KC0ZpZWxkc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEidAobUHJvdmlkZXJTZXJ2aWNlQ2FsbFJlc3BvbnNlEg4KBGRhdGEYASABKAxIABIOCgRkb25lGAIgASgMSAASLAoHZmFpbHVyZRgDIAEoCzIZLm51bWVuLnYxLlByb3ZpZGVyRmFpbHVyZUgAQgcKBWZyYW1lKl0KC0ZhaWx1cmVLaW5kEhwKGEZBSUxVUkVfS0lORF9VTlNQRUNJRklFRBAAEhkKFUZBSUxVUkVfS0lORF9UUllfTkVYVBABEhUKEUZBSUxVUkVfS0lORF9TVE9QEAIq2gEKDUZhaWx1cmVSZWFzb24SHgoaRkFJTFVSRV9SRUFTT05fVU5TUEVDSUZJRUQQABIfChtGQUlMVVJFX1JFQVNPTl9SRUpFQ1RFRF9LRVkQARIjCh9GQUlMVVJFX1JFQVNPTl9QQVlNRU5UX1JFUVVJUkVEEAISHwobRkFJTFVSRV9SRUFTT05fUkFURV9MSU1JVEVEEAMSHgoaRkFJTFVSRV9SRUFTT05fVU5BVkFJTEFCTEUQBBIiCh5GQUlMVVJFX1JFQVNPTl9JTlZBTElEX1JFUVVFU1QQBTJoCg9Qcm92aWRlclNlcnZpY2USVQoEQ2FsbBIkLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUNhbGxSZXF1ZXN0GiUubnVtZW4udjEuUHJvdmlkZXJTZXJ2aWNlQ2FsbFJlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChdudW1lbi92MS9wcm92aWRlci5wcm90bxIIbnVtZW4udjEizQIKDFByb3ZpZGVyQ2FsbBIVCg1jb25uZWN0aW9uX2lkGAEgASgJEgwKBHR5cGUYAiABKAkSMgoGZmllbGRzGAMgAygLMiIubnVtZW4udjEuUHJvdmlkZXJDYWxsLkZpZWxkc0VudHJ5EikKB3NlY3JldHMYBCADKAsyGC5udW1lbi52MS5Qcm92aWRlclNlY3JldBI0CgdvcHRpb25zGAUgAygLMiMubnVtZW4udjEuUHJvdmlkZXJDYWxsLk9wdGlvbnNFbnRyeRIkCghwcmlvcml0eRgGIAEoDjISLm51bWVuLnYxLlByaW9yaXR5Gi0KC0ZpZWxkc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEaLgoMT3B0aW9uc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiMQoOUHJvdmlkZXJTZWNyZXQSCwoDa2V5GAEgASgJEhIKBXZhbHVlGAIgASgJQgOAAQEiiAEKD1Byb3ZpZGVyRmFpbHVyZRIjCgRraW5kGAEgASgOMhUubnVtZW4udjEuRmFpbHVyZUtpbmQSJwoGcmVhc29uGAIgASgOMhcubnVtZW4udjEuRmFpbHVyZVJlYXNvbhIWCg5yZXRyeV9hZnRlcl9tcxgDIAEoAxIPCgdtZXNzYWdlGAQgASgJImYKGlByb3ZpZGVyU2VydmljZUNhbGxSZXF1ZXN0EhEKCW9wZXJhdGlvbhgBIAEoCRIkCgRjYWxsGAIgASgLMhYubnVtZW4udjEuUHJvdmlkZXJDYWxsEg8KB3BheWxvYWQYAyABKAwiSAoTRGV0ZWN0ZWRDb25uZWN0aW9ucxIxCgtjb25uZWN0aW9ucxgBIAMoCzIcLm51bWVuLnYxLkRldGVjdGVkQ29ubmVjdGlvbiKZAQoSRGV0ZWN0ZWRDb25uZWN0aW9uEgwKBG5hbWUYASABKAkSOAoGZmllbGRzGAIgAygLMigubnVtZW4udjEuRGV0ZWN0ZWRDb25uZWN0aW9uLkZpZWxkc0VudHJ5EgwKBHBhdGgYAyABKAkaLQoLRmllbGRzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJ0ChtQcm92aWRlclNlcnZpY2VDYWxsUmVzcG9uc2USDgoEZGF0YRgBIAEoDEgAEg4KBGRvbmUYAiABKAxIABIsCgdmYWlsdXJlGAMgASgLMhkubnVtZW4udjEuUHJvdmlkZXJGYWlsdXJlSABCBwoFZnJhbWUqVwoIUHJpb3JpdHkSGAoUUFJJT1JJVFlfVU5TUEVDSUZJRUQQABIYChRQUklPUklUWV9JTlRFUkFDVElWRRABEhcKE1BSSU9SSVRZX0JBQ0tHUk9VTkQQAipdCgtGYWlsdXJlS2luZBIcChhGQUlMVVJFX0tJTkRfVU5TUEVDSUZJRUQQABIZChVGQUlMVVJFX0tJTkRfVFJZX05FWFQQARIVChFGQUlMVVJFX0tJTkRfU1RPUBACKtoBCg1GYWlsdXJlUmVhc29uEh4KGkZBSUxVUkVfUkVBU09OX1VOU1BFQ0lGSUVEEAASHwobRkFJTFVSRV9SRUFTT05fUkVKRUNURURfS0VZEAESIwofRkFJTFVSRV9SRUFTT05fUEFZTUVOVF9SRVFVSVJFRBACEh8KG0ZBSUxVUkVfUkVBU09OX1JBVEVfTElNSVRFRBADEh4KGkZBSUxVUkVfUkVBU09OX1VOQVZBSUxBQkxFEAQSIgoeRkFJTFVSRV9SRUFTT05fSU5WQUxJRF9SRVFVRVNUEAUyaAoPUHJvdmlkZXJTZXJ2aWNlElUKBENhbGwSJC5udW1lbi52MS5Qcm92aWRlclNlcnZpY2VDYWxsUmVxdWVzdBolLm51bWVuLnYxLlByb3ZpZGVyU2VydmljZUNhbGxSZXNwb25zZTABQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * ProviderCall is the connection one call is made for: a snapshot the core reads at the start of the call.
@@ -48,6 +48,11 @@ export type ProviderCall = Message<"numen.v1.ProviderCall"> & {
    * @generated from field: map<string, string> options = 5;
    */
   options: { [key: string]: string };
+
+  /**
+   * @generated from field: numen.v1.Priority priority = 6;
+   */
+  priority: Priority;
 };
 
 /**
@@ -240,6 +245,39 @@ export const ProviderServiceCallResponseSchema: GenMessage<ProviderServiceCallRe
   messageDesc(file_numen_v1_provider, 6);
 
 /**
+ * Priority says whose action a call serves. The zero value is background, so a call that sets none
+ * waits behind the calls of a person's actions.
+ *
+ * @generated from enum numen.v1.Priority
+ */
+export enum Priority {
+  /**
+   * @generated from enum value: PRIORITY_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * PRIORITY_INTERACTIVE is a call made for a person's action, such as a search or a check of a line.
+   *
+   * @generated from enum value: PRIORITY_INTERACTIVE = 1;
+   */
+  INTERACTIVE = 1,
+
+  /**
+   * PRIORITY_BACKGROUND is a call made for work that serves no person's action, such as indexing.
+   *
+   * @generated from enum value: PRIORITY_BACKGROUND = 2;
+   */
+  BACKGROUND = 2,
+}
+
+/**
+ * Describes the enum numen.v1.Priority.
+ */
+export const PrioritySchema: GenEnum<Priority> = /*@__PURE__*/
+  enumDesc(file_numen_v1_provider, 0);
+
+/**
  * FailureKind is what the core does after a call fails.
  *
  * @generated from enum numen.v1.FailureKind
@@ -269,7 +307,7 @@ export enum FailureKind {
  * Describes the enum numen.v1.FailureKind.
  */
 export const FailureKindSchema: GenEnum<FailureKind> = /*@__PURE__*/
-  enumDesc(file_numen_v1_provider, 0);
+  enumDesc(file_numen_v1_provider, 1);
 
 /**
  * FailureReason is why a call failed. The core shows a reason, and sees no HTTP code and no text from a
@@ -313,7 +351,7 @@ export enum FailureReason {
  * Describes the enum numen.v1.FailureReason.
  */
 export const FailureReasonSchema: GenEnum<FailureReason> = /*@__PURE__*/
-  enumDesc(file_numen_v1_provider, 1);
+  enumDesc(file_numen_v1_provider, 2);
 
 /**
  * ProviderService is served by a plugin that provides connection types. The core calls it with the

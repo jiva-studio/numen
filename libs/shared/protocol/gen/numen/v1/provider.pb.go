@@ -21,6 +21,59 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Priority says whose action a call serves. The zero value is background, so a call that sets none
+// waits behind the calls of a person's actions.
+type Priority int32
+
+const (
+	Priority_PRIORITY_UNSPECIFIED Priority = 0
+	// PRIORITY_INTERACTIVE is a call made for a person's action, such as a search or a check of a line.
+	Priority_PRIORITY_INTERACTIVE Priority = 1
+	// PRIORITY_BACKGROUND is a call made for work that serves no person's action, such as indexing.
+	Priority_PRIORITY_BACKGROUND Priority = 2
+)
+
+// Enum value maps for Priority.
+var (
+	Priority_name = map[int32]string{
+		0: "PRIORITY_UNSPECIFIED",
+		1: "PRIORITY_INTERACTIVE",
+		2: "PRIORITY_BACKGROUND",
+	}
+	Priority_value = map[string]int32{
+		"PRIORITY_UNSPECIFIED": 0,
+		"PRIORITY_INTERACTIVE": 1,
+		"PRIORITY_BACKGROUND":  2,
+	}
+)
+
+func (x Priority) Enum() *Priority {
+	p := new(Priority)
+	*p = x
+	return p
+}
+
+func (x Priority) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Priority) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_provider_proto_enumTypes[0].Descriptor()
+}
+
+func (Priority) Type() protoreflect.EnumType {
+	return &file_numen_v1_provider_proto_enumTypes[0]
+}
+
+func (x Priority) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Priority.Descriptor instead.
+func (Priority) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{0}
+}
+
 // FailureKind is what the core does after a call fails.
 type FailureKind int32
 
@@ -57,11 +110,11 @@ func (x FailureKind) String() string {
 }
 
 func (FailureKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_provider_proto_enumTypes[0].Descriptor()
+	return file_numen_v1_provider_proto_enumTypes[1].Descriptor()
 }
 
 func (FailureKind) Type() protoreflect.EnumType {
-	return &file_numen_v1_provider_proto_enumTypes[0]
+	return &file_numen_v1_provider_proto_enumTypes[1]
 }
 
 func (x FailureKind) Number() protoreflect.EnumNumber {
@@ -70,7 +123,7 @@ func (x FailureKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FailureKind.Descriptor instead.
 func (FailureKind) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{0}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{1}
 }
 
 // FailureReason is why a call failed. The core shows a reason, and sees no HTTP code and no text from a
@@ -117,11 +170,11 @@ func (x FailureReason) String() string {
 }
 
 func (FailureReason) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_provider_proto_enumTypes[1].Descriptor()
+	return file_numen_v1_provider_proto_enumTypes[2].Descriptor()
 }
 
 func (FailureReason) Type() protoreflect.EnumType {
-	return &file_numen_v1_provider_proto_enumTypes[1]
+	return &file_numen_v1_provider_proto_enumTypes[2]
 }
 
 func (x FailureReason) Number() protoreflect.EnumNumber {
@@ -130,7 +183,7 @@ func (x FailureReason) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use FailureReason.Descriptor instead.
 func (FailureReason) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_provider_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_provider_proto_rawDescGZIP(), []int{2}
 }
 
 // ProviderCall is the connection one call is made for: a snapshot the core reads at the start of the call.
@@ -144,6 +197,7 @@ type ProviderCall struct {
 	Secrets []*ProviderSecret `protobuf:"bytes,4,rep,name=secrets,proto3" json:"secrets,omitempty"`
 	// options are the values of the row fields of the type that the row of the call holds.
 	Options       map[string]string `protobuf:"bytes,5,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Priority      Priority          `protobuf:"varint,6,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -211,6 +265,13 @@ func (x *ProviderCall) GetOptions() map[string]string {
 		return x.Options
 	}
 	return nil
+}
+
+func (x *ProviderCall) GetPriority() Priority {
+	if x != nil {
+		return x.Priority
+	}
+	return Priority_PRIORITY_UNSPECIFIED
 }
 
 type ProviderSecret struct {
@@ -612,13 +673,14 @@ var File_numen_v1_provider_proto protoreflect.FileDescriptor
 
 const file_numen_v1_provider_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/provider.proto\x12\bnumen.v1\"\xed\x02\n" +
+	"\x17numen/v1/provider.proto\x12\bnumen.v1\"\x9d\x03\n" +
 	"\fProviderCall\x12#\n" +
 	"\rconnection_id\x18\x01 \x01(\tR\fconnectionId\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12:\n" +
 	"\x06fields\x18\x03 \x03(\v2\".numen.v1.ProviderCall.FieldsEntryR\x06fields\x122\n" +
 	"\asecrets\x18\x04 \x03(\v2\x18.numen.v1.ProviderSecretR\asecrets\x12=\n" +
-	"\aoptions\x18\x05 \x03(\v2#.numen.v1.ProviderCall.OptionsEntryR\aoptions\x1a9\n" +
+	"\aoptions\x18\x05 \x03(\v2#.numen.v1.ProviderCall.OptionsEntryR\aoptions\x12.\n" +
+	"\bpriority\x18\x06 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\x1a9\n" +
 	"\vFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a:\n" +
@@ -650,7 +712,11 @@ const file_numen_v1_provider_proto_rawDesc = "" +
 	"\x04data\x18\x01 \x01(\fH\x00R\x04data\x12\x14\n" +
 	"\x04done\x18\x02 \x01(\fH\x00R\x04done\x125\n" +
 	"\afailure\x18\x03 \x01(\v2\x19.numen.v1.ProviderFailureH\x00R\afailureB\a\n" +
-	"\x05frame*]\n" +
+	"\x05frame*W\n" +
+	"\bPriority\x12\x18\n" +
+	"\x14PRIORITY_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14PRIORITY_INTERACTIVE\x10\x01\x12\x17\n" +
+	"\x13PRIORITY_BACKGROUND\x10\x02*]\n" +
 	"\vFailureKind\x12\x1c\n" +
 	"\x18FAILURE_KIND_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15FAILURE_KIND_TRY_NEXT\x10\x01\x12\x15\n" +
@@ -677,39 +743,41 @@ func file_numen_v1_provider_proto_rawDescGZIP() []byte {
 	return file_numen_v1_provider_proto_rawDescData
 }
 
-var file_numen_v1_provider_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_numen_v1_provider_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_numen_v1_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_provider_proto_goTypes = []any{
-	(FailureKind)(0),                    // 0: numen.v1.FailureKind
-	(FailureReason)(0),                  // 1: numen.v1.FailureReason
-	(*ProviderCall)(nil),                // 2: numen.v1.ProviderCall
-	(*ProviderSecret)(nil),              // 3: numen.v1.ProviderSecret
-	(*ProviderFailure)(nil),             // 4: numen.v1.ProviderFailure
-	(*ProviderServiceCallRequest)(nil),  // 5: numen.v1.ProviderServiceCallRequest
-	(*DetectedConnections)(nil),         // 6: numen.v1.DetectedConnections
-	(*DetectedConnection)(nil),          // 7: numen.v1.DetectedConnection
-	(*ProviderServiceCallResponse)(nil), // 8: numen.v1.ProviderServiceCallResponse
-	nil,                                 // 9: numen.v1.ProviderCall.FieldsEntry
-	nil,                                 // 10: numen.v1.ProviderCall.OptionsEntry
-	nil,                                 // 11: numen.v1.DetectedConnection.FieldsEntry
+	(Priority)(0),                       // 0: numen.v1.Priority
+	(FailureKind)(0),                    // 1: numen.v1.FailureKind
+	(FailureReason)(0),                  // 2: numen.v1.FailureReason
+	(*ProviderCall)(nil),                // 3: numen.v1.ProviderCall
+	(*ProviderSecret)(nil),              // 4: numen.v1.ProviderSecret
+	(*ProviderFailure)(nil),             // 5: numen.v1.ProviderFailure
+	(*ProviderServiceCallRequest)(nil),  // 6: numen.v1.ProviderServiceCallRequest
+	(*DetectedConnections)(nil),         // 7: numen.v1.DetectedConnections
+	(*DetectedConnection)(nil),          // 8: numen.v1.DetectedConnection
+	(*ProviderServiceCallResponse)(nil), // 9: numen.v1.ProviderServiceCallResponse
+	nil,                                 // 10: numen.v1.ProviderCall.FieldsEntry
+	nil,                                 // 11: numen.v1.ProviderCall.OptionsEntry
+	nil,                                 // 12: numen.v1.DetectedConnection.FieldsEntry
 }
 var file_numen_v1_provider_proto_depIdxs = []int32{
-	9,  // 0: numen.v1.ProviderCall.fields:type_name -> numen.v1.ProviderCall.FieldsEntry
-	3,  // 1: numen.v1.ProviderCall.secrets:type_name -> numen.v1.ProviderSecret
-	10, // 2: numen.v1.ProviderCall.options:type_name -> numen.v1.ProviderCall.OptionsEntry
-	0,  // 3: numen.v1.ProviderFailure.kind:type_name -> numen.v1.FailureKind
-	1,  // 4: numen.v1.ProviderFailure.reason:type_name -> numen.v1.FailureReason
-	2,  // 5: numen.v1.ProviderServiceCallRequest.call:type_name -> numen.v1.ProviderCall
-	7,  // 6: numen.v1.DetectedConnections.connections:type_name -> numen.v1.DetectedConnection
-	11, // 7: numen.v1.DetectedConnection.fields:type_name -> numen.v1.DetectedConnection.FieldsEntry
-	4,  // 8: numen.v1.ProviderServiceCallResponse.failure:type_name -> numen.v1.ProviderFailure
-	5,  // 9: numen.v1.ProviderService.Call:input_type -> numen.v1.ProviderServiceCallRequest
-	8,  // 10: numen.v1.ProviderService.Call:output_type -> numen.v1.ProviderServiceCallResponse
-	10, // [10:11] is the sub-list for method output_type
-	9,  // [9:10] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	10, // 0: numen.v1.ProviderCall.fields:type_name -> numen.v1.ProviderCall.FieldsEntry
+	4,  // 1: numen.v1.ProviderCall.secrets:type_name -> numen.v1.ProviderSecret
+	11, // 2: numen.v1.ProviderCall.options:type_name -> numen.v1.ProviderCall.OptionsEntry
+	0,  // 3: numen.v1.ProviderCall.priority:type_name -> numen.v1.Priority
+	1,  // 4: numen.v1.ProviderFailure.kind:type_name -> numen.v1.FailureKind
+	2,  // 5: numen.v1.ProviderFailure.reason:type_name -> numen.v1.FailureReason
+	3,  // 6: numen.v1.ProviderServiceCallRequest.call:type_name -> numen.v1.ProviderCall
+	8,  // 7: numen.v1.DetectedConnections.connections:type_name -> numen.v1.DetectedConnection
+	12, // 8: numen.v1.DetectedConnection.fields:type_name -> numen.v1.DetectedConnection.FieldsEntry
+	5,  // 9: numen.v1.ProviderServiceCallResponse.failure:type_name -> numen.v1.ProviderFailure
+	6,  // 10: numen.v1.ProviderService.Call:input_type -> numen.v1.ProviderServiceCallRequest
+	9,  // 11: numen.v1.ProviderService.Call:output_type -> numen.v1.ProviderServiceCallResponse
+	11, // [11:12] is the sub-list for method output_type
+	10, // [10:11] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_provider_proto_init() }
@@ -727,7 +795,7 @@ func file_numen_v1_provider_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_provider_proto_rawDesc), len(file_numen_v1_provider_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,

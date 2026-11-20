@@ -30,7 +30,6 @@ func (m *fakeModel) Close() error {
 type harness struct {
 	lock      sync.Mutex
 	loader    *modelLoader[string]
-	nices     []int
 	reports   []string
 	opened    []ports.Embedder
 	openModel func(ctx context.Context, name string) (ports.Embedder, error)
@@ -40,11 +39,7 @@ func newHarness(t *testing.T, openModel func(ctx context.Context, name string) (
 	t.Helper()
 	h := &harness{openModel: openModel}
 	h.loader = newModelLoader(&h.lock, loaderPorts[string]{
-		Open: func(ctx context.Context, name string) (ports.Embedder, error) { return h.openModel(ctx, name) },
-		LowerNice: func(nice int) error {
-			h.nices = append(h.nices, nice)
-			return nil
-		},
+		Open:   func(ctx context.Context, name string) (ports.Embedder, error) { return h.openModel(ctx, name) },
 		Report: func(what string, err error) { h.reports = append(h.reports, what+": "+err.Error()) },
 		Opened: func(emb ports.Embedder) { h.opened = append(h.opened, emb) },
 	})
@@ -56,9 +51,7 @@ func newHarness(t *testing.T, openModel func(ctx context.Context, name string) (
 	return h
 }
 
-func start(name string, nice int) func() loadStart[string] {
-	return func() loadStart[string] { return loadStart[string]{Spec: name, Nice: nice} }
-}
+func start(name string) func() string { return func() string { return name } }
 
 func TestTheModelOpensOnceForCallsThatWaitTogether(t *testing.T) {
 	var opens atomic.Int32
@@ -74,7 +67,7 @@ func TestTheModelOpensOnceForCallsThatWaitTogether(t *testing.T) {
 	results := make(chan ports.Embedder, 2)
 	for range 2 {
 		go func() {
-			emb, err := h.loader.Get(t.Context(), start("a", 10))
+			emb, err := h.loader.Get(t.Context(), start("a"))
 			if err != nil {
 				t.Error(err)
 			}
@@ -88,8 +81,8 @@ func TestTheModelOpensOnceForCallsThatWaitTogether(t *testing.T) {
 	if first != second || opens.Load() != 1 {
 		t.Fatalf("opened %d times, models %v and %v", opens.Load(), first, second)
 	}
-	if len(h.nices) != 1 || h.nices[0] != 10 || len(h.opened) != 1 {
-		t.Errorf("nices %v, opened %d", h.nices, len(h.opened))
+	if len(h.opened) != 1 {
+		t.Errorf("opened %d", len(h.opened))
 	}
 }
 
@@ -108,7 +101,7 @@ func TestACanceledCallDoesNotStopTheOpening(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(t.Context())
 	ended := make(chan error, 1)
-	go func() { _, err := h.loader.Get(ctx, start("a", 0)); ended <- err }()
+	go func() { _, err := h.loader.Get(ctx, start("a")); ended <- err }()
 	<-entered
 	cancel()
 	if err := <-ended; !errors.Is(err, context.Canceled) {
@@ -116,7 +109,7 @@ func TestACanceledCallDoesNotStopTheOpening(t *testing.T) {
 	}
 
 	close(release)
-	if emb, err := h.loader.Get(t.Context(), start("a", 0)); err != nil || emb == nil {
+	if emb, err := h.loader.Get(t.Context(), start("a")); err != nil || emb == nil {
 		t.Fatalf("the next call: %v, %v", emb, err)
 	}
 }
@@ -132,11 +125,11 @@ func TestAFailedOpeningReturnsItsErrorAndTheNextCallOpensAgain(t *testing.T) {
 		return &fakeModel{}, nil
 	})
 
-	emb, err := h.loader.Get(t.Context(), start("a", 0))
+	emb, err := h.loader.Get(t.Context(), start("a"))
 	if !errors.Is(err, boom) || emb != nil || h.loader.IsLoaded() {
 		t.Fatalf("Get = %v, %v, loaded %v", emb, err, h.loader.IsLoaded())
 	}
-	if emb, err = h.loader.Get(t.Context(), start("a", 0)); err != nil || emb == nil {
+	if emb, err = h.loader.Get(t.Context(), start("a")); err != nil || emb == nil {
 		t.Fatalf("the next Get = %v, %v", emb, err)
 	}
 }
@@ -158,7 +151,7 @@ func TestAResetDuringTheOpeningClosesThatModelAndOpensAnother(t *testing.T) {
 
 	result := make(chan ports.Embedder, 1)
 	go func() {
-		emb, err := h.loader.Get(t.Context(), start("a", 0))
+		emb, err := h.loader.Get(t.Context(), start("a"))
 		if err != nil {
 			t.Error(err)
 		}
@@ -182,7 +175,7 @@ func TestAResetCancelsTheOpeningAndClosesTheLoadedModel(t *testing.T) {
 	h := newHarness(t, func(context.Context, string) (ports.Embedder, error) {
 		return &fakeModel{closed: closed}, nil
 	})
-	if _, err := h.loader.Get(t.Context(), start("a", 0)); err != nil {
+	if _, err := h.loader.Get(t.Context(), start("a")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -202,7 +195,7 @@ func TestCloseCancelsTheOpeningAndReturnsTheErrorOfTheLoadedModel(t *testing.T) 
 	h := newHarness(t, func(context.Context, string) (ports.Embedder, error) {
 		return &fakeModel{closeErr: wantErr}, nil
 	})
-	if _, err := h.loader.Get(t.Context(), start("a", 0)); err != nil {
+	if _, err := h.loader.Get(t.Context(), start("a")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -225,7 +218,7 @@ func TestCloseEndsTheContextOfAnOpeningInProgress(t *testing.T) {
 		return nil, ctx.Err()
 	})
 	ended := make(chan error, 1)
-	go func() { _, err := h.loader.Get(t.Context(), start("a", 0)); ended <- err }()
+	go func() { _, err := h.loader.Get(t.Context(), start("a")); ended <- err }()
 	<-entered
 
 	if err := h.loader.Close(); err != nil {
@@ -233,18 +226,4 @@ func TestCloseEndsTheContextOfAnOpeningInProgress(t *testing.T) {
 	}
 
 	<-canceled
-}
-
-func TestAFailedPriorityChangeIsReportedAndTheModelStaysLoaded(t *testing.T) {
-	h := newHarness(t, func(context.Context, string) (ports.Embedder, error) { return &fakeModel{}, nil })
-	failure := errors.New("no permission")
-	h.loader.ports.LowerNice = func(int) error { return failure }
-
-	if _, err := h.loader.Get(t.Context(), start("a", 0)); err != nil {
-		t.Fatal(err)
-	}
-
-	if len(h.reports) != 1 || h.reports[0] != "set the priority of the embeddings plugin: no permission" {
-		t.Errorf("reports = %v", h.reports)
-	}
 }

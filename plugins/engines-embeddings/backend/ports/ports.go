@@ -19,7 +19,6 @@ type Embedder interface {
 // Machine is the process the server runs in.
 type Machine interface {
 	SetMaxProcs(count int)
-	LowerNice(nice int) error
 }
 
 // ProfileSource reads the model profiles. It returns the profiles it could read together with the

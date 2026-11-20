@@ -14,6 +14,16 @@ service ProviderService {
   rpc Call(ProviderServiceCallRequest) returns (stream ProviderServiceCallResponse);
 }
 
+// Priority says whose action a call serves. The zero value is background, so a call that sets none
+// waits behind the calls of a person's actions.
+enum Priority {
+  PRIORITY_UNSPECIFIED = 0;
+  // PRIORITY_INTERACTIVE is a call made for a person's action, such as a search or a check of a line.
+  PRIORITY_INTERACTIVE = 1;
+  // PRIORITY_BACKGROUND is a call made for work that serves no person's action, such as indexing.
+  PRIORITY_BACKGROUND = 2;
+}
+
 // ProviderCall is the connection one call is made for: a snapshot the core reads at the start of the call.
 message ProviderCall {
   string connection_id = 1;
@@ -24,6 +34,7 @@ message ProviderCall {
   repeated ProviderSecret secrets = 4;
   // options are the values of the row fields of the type that the row of the call holds.
   map<string, string> options = 5;
+  Priority priority = 6;
 }
 
 message ProviderSecret {

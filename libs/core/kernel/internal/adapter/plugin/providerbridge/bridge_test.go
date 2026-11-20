@@ -150,7 +150,7 @@ func TestCallCarriesTheOperationTheConnectionAndThePayloadAndStreamsTheFramesInO
 	service := &scriptedService{frames: []*v1.ProviderServiceCallResponse{data("Let me "), data("look."), done([]byte("finish"))}}
 	provider, _, _ := newBridge(t, service)
 	call := modelcall.ProviderCall{
-		ConnectionID: "c0000beef", Type: "openrouter", Fields: map[string]string{"baseUrl": "https://openrouter.test/api/v1"},
+		Priority: modelcall.PriorityInteractive, ConnectionID: "c0000beef", Type: "openrouter", Fields: map[string]string{"baseUrl": "https://openrouter.test/api/v1"},
 		Secrets: map[string]string{"apiKey": "sk-or-123"}, Options: map[string]string{"model": "google/gemini-2.5-flash", "reasoning": "low"},
 	}
 	var frames []string
@@ -166,7 +166,7 @@ func TestCallCarriesTheOperationTheConnectionAndThePayloadAndStreamsTheFramesInO
 	received := service.received[0]
 	wire := received.GetCall()
 	if received.GetOperation() != "llm.chat" || string(received.GetPayload()) != "turn" ||
-		wire.GetConnectionId() != "c0000beef" || wire.GetType() != "openrouter" || wire.GetFields()["baseUrl"] != "https://openrouter.test/api/v1" ||
+		wire.GetPriority() != v1.Priority_PRIORITY_INTERACTIVE || wire.GetConnectionId() != "c0000beef" || wire.GetType() != "openrouter" || wire.GetFields()["baseUrl"] != "https://openrouter.test/api/v1" ||
 		wire.GetOptions()["model"] != "google/gemini-2.5-flash" || wire.GetOptions()["reasoning"] != "low" ||
 		len(wire.GetSecrets()) != 1 || wire.GetSecrets()[0].GetKey() != "apiKey" || wire.GetSecrets()[0].GetValue() != "sk-or-123" {
 		t.Errorf("received = %+v", received)

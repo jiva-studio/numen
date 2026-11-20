@@ -405,6 +405,7 @@ func TestTheChunkSettingsApplyToTheConnection(t *testing.T) {
 func TestTheConnectionSourceNeverOpensTheLocalModel(t *testing.T) {
 	host := &hostModels{profile: openAIProfile()}
 	srv := newConnectionServer(host)
+	srv.queue = nil
 	isOpened := false
 	srv.open = func(context.Context, model.ModelInfo, model.LocalModel) (ports.Embedder, error) {
 		isOpened = true

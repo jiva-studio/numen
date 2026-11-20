@@ -57,6 +57,7 @@ type Send func(data []byte) error
 // fields by key, and Options are the values of the row fields the row of the call holds. The provider
 // holds it for the length of the call.
 type ProviderCall struct {
+	Priority     Priority
 	ConnectionID string
 	Type         string
 	Fields       map[string]string

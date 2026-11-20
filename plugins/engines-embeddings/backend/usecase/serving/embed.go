@@ -133,11 +133,11 @@ func (s *Server) EmbedTexts(ctx context.Context, role model.Role, texts []string
 		return nil, err
 	}
 
-	denseVectors, err := emb.Embed(ctx, texts)
+	denseVectors, err := s.embedBatch(ctx, emb, role, texts)
 	if errors.Is(err, ports.ErrClosed) {
 		// A change of the performance profile retired the model while this batch waited for a pass.
 		if emb, err = s.getEmbedder(ctx); err == nil {
-			denseVectors, err = emb.Embed(ctx, texts)
+			denseVectors, err = s.embedBatch(ctx, emb, role, texts)
 		}
 	}
 	if err != nil {
@@ -148,4 +148,13 @@ func (s *Server) EmbedTexts(ctx context.Context, role model.Role, texts []string
 	}
 
 	return denseVectors, nil
+}
+
+func (s *Server) embedBatch(ctx context.Context, emb ports.Embedder, role model.Role, texts []string) (vectors [][]float32, err error) {
+	release, err := s.queue.Acquire(ctx, role == model.RoleQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = errors.Join(err, release()) }()
+	return emb.Embed(ctx, texts)
 }

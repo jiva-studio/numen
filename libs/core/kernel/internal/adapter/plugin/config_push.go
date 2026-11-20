@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"maps"
 	"net/http"
 	"strconv"
@@ -112,6 +114,17 @@ func (c *ConfigPush) NotifyPluginConfig(ctx context.Context, pluginID string) er
 		return err
 	}
 	defer c.delivery.Unlock()
+	return c.configurePlugin(ctx, pluginID)
+}
+
+func (c *ConfigPush) configurePlugin(ctx context.Context, pluginID string) error {
+	if sup, ok := c.sups.Get(pluginID); ok {
+		if pid := sup.GetProcessID(); pid > 0 {
+			if err := process.SetNice(pid, c.GetProcessNice()); err != nil {
+				c.report(fmt.Errorf("set priority of %s: %w", pluginID, err))
+			}
+		}
+	}
 	return c.delivery.Configure(ctx, pluginID)
 }
 
@@ -134,6 +147,15 @@ func (c *ConfigPush) SetPerformance(ctx context.Context, performance plugindomai
 	}
 }
 
+// GetProcessNice returns the configured niceness for a newly launched plugin.
+func (c *ConfigPush) GetProcessNice() int {
+	profile := c.getPerformance()
+	if profile.Profile == "" {
+		return machine.ResolveCompute(machine.ProfileBalanced, machine.Specs{}).Nice
+	}
+	return profile.Nice
+}
+
 func (c *ConfigPush) getPerformance() plugindomain.Performance {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -149,7 +171,7 @@ func (c *ConfigPush) configureActivated(ctx context.Context, pluginID string) er
 		c.delivery.ClearFirstConfigure(pluginID)
 		return lockErr
 	}
-	configureErr := c.delivery.Configure(ctx, pluginID)
+	configureErr := c.configurePlugin(ctx, pluginID)
 	c.delivery.ClearFirstConfigure(pluginID)
 	c.delivery.Unlock()
 	// A refusal of the plugin is listed as its configure item.

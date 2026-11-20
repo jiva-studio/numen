@@ -5,6 +5,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
@@ -108,6 +109,7 @@ type pluginProviders struct {
 
 // PluginEndpoints connects the host RPC services and the providers served by plugins.
 type PluginEndpoints struct {
+	workLock run.Lock
 	Endpoint *hostendpoint.Services
 	Lender   *hostendpoint.Lender
 	pluginProviders

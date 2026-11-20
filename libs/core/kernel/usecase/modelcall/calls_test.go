@@ -90,12 +90,12 @@ func TestTheCallCarriesTheSnapshotOfTheRow(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, connection.Row{ConnectionID: s.one.ID, Options: map[string]string{"model": "model-one", "reasoning": "low"}})
 
-	if _, err := s.complete(t); err != nil {
+	if _, err := s.calls.Call(t.Context(), consumerID, modelcalldomain.Request{Operation: modelcalltest.CompleteOperation, Payload: []byte("fix this"), Priority: modelcalldomain.PriorityInteractive}, func([]byte) error { return nil }); err != nil {
 		t.Fatal(err)
 	}
 
 	got := s.world.Provider.CallsTo(addressOne)[0].Call
-	if got.Type != "server" || got.ConnectionID != s.one.ID || got.Options["model"] != "model-one" || got.Options["reasoning"] != "low" ||
+	if got.Priority != modelcalldomain.PriorityInteractive || got.Type != "server" || got.ConnectionID != s.one.ID || got.Options["model"] != "model-one" || got.Options["reasoning"] != "low" ||
 		got.Fields["baseUrl"] != addressOne || got.Secrets["apiKey"] != keyOne {
 		t.Errorf("call = %+v", got)
 	}

@@ -3,6 +3,8 @@ package reranking_test
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"slices"
 	"strings"
 	"sync"
@@ -132,7 +134,7 @@ func (r *reports) getTexts() []string {
 
 func newRerankingUseCase(t *testing.T, open *opener, report *reports) *reranking.Reranking {
 	t.Helper()
-	r, err := reranking.New(shippedSource{}, open.open, report.report)
+	r, err := reranking.New(shippedSource{}, open.open, hosttest.NewQueue().EnqueueWork, report.report)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,7 +318,7 @@ func TestRerankOfAnotherProfileClosesTheLoadedModel(t *testing.T) {
 
 func TestCloseClosesTheLoadedModel(t *testing.T) {
 	open := newOpener()
-	r, err := reranking.New(shippedSource{}, open.open, (&reports{}).report)
+	r, err := reranking.New(shippedSource{}, open.open, hosttest.NewQueue().EnqueueWork, (&reports{}).report)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -425,5 +427,35 @@ func TestDetectConnectionsAnswersOneLocalReranker(t *testing.T) {
 	}
 	if opened := open.getScorers(); len(opened) != 0 {
 		t.Errorf("detecting the connection opened %d models", len(opened))
+	}
+}
+
+func TestLocalRerankingWaitsAtTheProviderCallsPriority(t *testing.T) {
+	stopped := errors.New("queue stopped")
+	open := &opener{score: scoreByLength}
+	call := callFor(gteID)
+	queue := func(_ context.Context, work host.Work) (host.Turn, error) {
+		if work.IsUserStarted != (call.Priority == connection.PriorityInteractive) {
+			t.Errorf("priority %v queued as interactive %v", call.Priority, work.IsUserStarted)
+		}
+		return nil, stopped
+	}
+	r, err := reranking.New(shippedSource{}, open.open, queue, (&reports{}).report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := r.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	for _, priority := range []connection.Priority{connection.PriorityBackground, connection.PriorityInteractive} {
+		call.Priority = priority
+		if _, err := r.Rerank(t.Context(), call, "q", []string{"d"}); !errors.Is(err, stopped) {
+			t.Fatalf("priority %v: %v", priority, err)
+		}
+	}
+	if got := len(open.opened[0].getCalls()); got != 0 {
+		t.Fatalf("scored %d times without a turn", got)
 	}
 }

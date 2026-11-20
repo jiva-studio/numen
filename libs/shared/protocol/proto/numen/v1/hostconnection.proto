@@ -26,16 +26,6 @@ service HostConnectionService {
   rpc ListRowOptions(HostConnectionServiceListRowOptionsRequest) returns (HostConnectionServiceListRowOptionsResponse);
 }
 
-// Priority says whose action a call serves. The zero value is background, so a call that sets none
-// waits behind the calls of a person's actions.
-enum Priority {
-  PRIORITY_UNSPECIFIED = 0;
-  // PRIORITY_INTERACTIVE is a call made for a person's action, such as a search or a check of a line.
-  PRIORITY_INTERACTIVE = 1;
-  // PRIORITY_BACKGROUND is a call made for work that serves no person's action, such as indexing.
-  PRIORITY_BACKGROUND = 2;
-}
-
 // CallErrorCode is the reason a call did not succeed.
 enum CallErrorCode {
   CALL_ERROR_CODE_UNSPECIFIED = 0;

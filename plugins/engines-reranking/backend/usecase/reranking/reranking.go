@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
@@ -19,6 +20,7 @@ const detectedName = "Local reranker"
 
 // Reranking scores documents against a query with the model of the profile a row names.
 type Reranking struct {
+	queue  host.InferenceQueue
 	source ports.ProfileSource
 	report func(what string, err error)
 	models *loader
@@ -26,15 +28,15 @@ type Reranking struct {
 
 // New returns a Reranking that reads profiles from source, opens models with open and reports what fails to
 // report. The error is the one of the shipped profiles.
-func New(source ports.ProfileSource, open ports.OpenScorer, report func(what string, err error)) (*Reranking, error) {
+func New(source ports.ProfileSource, open ports.OpenScorer, queue host.InferenceQueue, report func(what string, err error)) (*Reranking, error) {
 	if _, err := source.Load(func(string, error) {}); err != nil {
 		return nil, err
 	}
-	return &Reranking{source: source, report: report, models: newLoader(open, report)}, nil
+	return &Reranking{source: source, report: report, queue: queue, models: newLoader(open, report)}, nil
 }
 
 // Rerank scores each document against the query with the model the row names. No document is no load.
-func (r *Reranking) Rerank(ctx context.Context, call connection.Call, query string, documents []string) ([]float32, error) {
+func (r *Reranking) Rerank(ctx context.Context, call connection.Call, query string, documents []string) (scores []float32, err error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -50,7 +52,12 @@ func (r *Reranking) Rerank(ctx context.Context, call connection.Call, query stri
 		return nil, err
 	}
 	defer r.models.release(model)
-	scores, err := model.scorer.ScorePairs(ctx, query, documents)
+	release, err := r.queue.Acquire(ctx, call.Priority == connection.PriorityInteractive)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = errors.Join(err, release()) }()
+	scores, err = model.scorer.ScorePairs(ctx, query, documents)
 	if err == nil && len(scores) != len(documents) {
 		err = fmt.Errorf("the model answered %d scores for %d documents", len(scores), len(documents))
 	}

@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"runtime"
 	"slices"
 	"sync"
@@ -52,7 +53,7 @@ type Embedder struct {
 
 // Open loads the model, fetching it first where this machine does not hold it.
 func Open(
-	ctx context.Context, library *onnx.Library, identity model.ModelInfo, cfg model.LocalModel, fetch onnx.FetchFile,
+	ctx context.Context, library *onnx.Library, identity model.ModelInfo, cfg model.LocalModel, fetch onnx.FetchFile, queue host.InferenceQueue,
 ) (*Embedder, error) {
 	if err := model.CheckIdentity(identity, cfg.Name); err != nil {
 		return nil, err
@@ -61,6 +62,10 @@ func Open(
 	if err != nil {
 		return nil, err
 	}
+	return host.OpenModel(ctx, queue, func() (*Embedder, error) { return openModel(ctx, library, identity, cfg, paths) })
+}
+
+func openModel(ctx context.Context, library *onnx.Library, identity model.ModelInfo, cfg model.LocalModel, paths onnx.ModelFiles) (*Embedder, error) {
 	encoder, err := loadTokenizer(identity, paths.Tokenizer)
 	if err != nil {
 		return nil, err

@@ -131,7 +131,11 @@ func writeCall(call modelcall.ProviderCall) *v1.ProviderCall {
 	for key, value := range call.Secrets {
 		secrets = append(secrets, &v1.ProviderSecret{Key: key, Value: value})
 	}
-	return &v1.ProviderCall{
+	priority := v1.Priority_PRIORITY_BACKGROUND
+	if call.Priority == modelcall.PriorityInteractive {
+		priority = v1.Priority_PRIORITY_INTERACTIVE
+	}
+	return &v1.ProviderCall{Priority: priority,
 		ConnectionId: call.ConnectionID, Type: call.Type, Fields: call.Fields, Secrets: secrets, Options: call.Options,
 	}
 }
