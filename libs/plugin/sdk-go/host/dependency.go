@@ -23,7 +23,7 @@ func NewDependencyClient(endpoint hostcall.Endpoint) *DependencyClient {
 func (c *DependencyClient) FetchModelFile(ctx context.Context, address, digest string) (string, error) {
 	res, err := c.rpc.FetchModelFile(ctx, connect.NewRequest(&v1.FetchModelFileRequest{Url: address, Sha256: digest}))
 	if err != nil {
-		return "", readError(err)
+		return "", err
 	}
 	if message := res.Msg.GetError(); message != "" {
 		return "", errors.New(message)
