@@ -1,12 +1,12 @@
 /**
  * What is currently open, reported to the application, and the icon each tab carries.
  */
-import { computed, ref, watch, type Component, type Ref } from 'vue'
-import { runInBackground } from '@numen/ui'
+import { computed, ref, type Component, type Ref } from 'vue'
 import { getPanes } from '@numen/workbench'
 import { findTabKindIcon } from '../lib/icons'
 import type { SavedTabsApi } from '../api/saved-tabs'
 import type { OpenTabs, SavedTab, Tab } from '../lib/tab'
+import { useTabPersistence } from './useTabPersistence'
 import type { WindowTabs } from './windowTabs'
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
@@ -78,55 +78,7 @@ export function useOpenTabs({
   })
 
   const open = computed<OpenTabs>(() => getOpenTabs())
-  let lastWritten: string | undefined
-  let pendingWrite: { value: OpenTabs; json: string } | null = null
-  let sending: Promise<void> | null = null
-  const sendPending = async (): Promise<void> => {
-    while (pendingWrite) {
-      const current = pendingWrite
-      pendingWrite = null
-      if (current.json === lastWritten) continue
-      try {
-        await writeOpenTabs(current.value)
-        lastWritten = current.json
-      } catch (error) {
-        lastWritten = undefined
-        reportError(error)
-      }
-    }
-    sending = null
-  }
-  const flushOpenTabs = (next: OpenTabs): Promise<void> => {
-    const json = JSON.stringify(next)
-    if (!sending && json === lastWritten) return Promise.resolve()
-    pendingWrite = { value: next, json }
-    sending ??= sendPending()
-    return sending
-  }
-  /** Whether the writes are held back, because the vault the tabs belong to is being left. */
-  const isPaused = ref(false)
-  watch(
-    [open, isWriting, isPaused],
-    ([now, isOn, isHeld]) => {
-      if (!isOn || isHeld) return
-      runInBackground(flushOpenTabs(now), reportError)
-    },
-    { immediate: true },
-  )
-
-  /**
-   * Writes the tabs as they are now, waits until every write has reached the core, and holds
-   * later writes back. A write made after the core shows another vault would be kept for that vault.
-   */
-  const pause = async (): Promise<void> => {
-    if (isWriting.value) await flushOpenTabs(open.value)
-    isPaused.value = true
-  }
-
-  /** Lets the tabs be written again, where the vault was not left. */
-  const resume = (): void => {
-    isPaused.value = false
-  }
+  const { flush, pause, resume } = useTabPersistence(open, isWriting, writeOpenTabs, reportError)
 
   /** Returns the declared icon of a kind, or its built-in icon. Tabs of other windows use it. */
   const getKindIcon = (kind: string): Component | null =>
@@ -141,6 +93,7 @@ export function useOpenTabs({
 
   return {
     open,
+    flush,
     pause,
     resume,
     getActiveTabId,

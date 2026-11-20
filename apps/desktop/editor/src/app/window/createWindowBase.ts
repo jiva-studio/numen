@@ -41,6 +41,7 @@ export function createWindowBase(api: WindowApi) {
     notes,
     writeMessage,
   })
+  editing.fileFlush.addHandler(tabParts.openTabs.flush)
   const features = collectFeatureCommands(
     {
       notes: {
