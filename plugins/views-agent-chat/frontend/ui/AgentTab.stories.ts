@@ -163,20 +163,23 @@ const createAgentsState = (deps: AgentTabDeps): AgentTabState => {
   return useAgentConversation(conversation, deps, choice)
 }
 
-/**
- * The agents of the plugin in the picker under the field: the one that answers named with the model its
- * row holds until the picker opens; then the models of each agent under its name, and the reasoning
- * levels of the model in force.
- */
+/** Select a reasoning level, then switch to a model without reasoning. */
 export const Agents: Story = {
   render: () => ({ components: { Tab: createTab(createAgentsState) }, template: '<Tab />' }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const picker = await canvas.findByRole('button', { name: 'Orchard agent · pear-small' })
-    await expect(canvas.queryByRole('button', { name: 'Reasoning' })).toBeNull()
+    const body = within(document.body)
+    const reasoning = await canvas.findByRole('button', { name: 'Reasoning' })
+    await userEvent.click(reasoning)
+    const high = await body.findByRole('menuitemradio', { name: 'High' })
+    await userEvent.hover(high)
+    await expect(high).toBeVisible()
+    await userEvent.click(high)
+    await expect(reasoning).toHaveTextContent('High')
+
+    const picker = await canvas.findByRole('button', { name: 'Orchard agent · Pear Small' })
 
     await userEvent.click(picker)
-    const body = within(document.body)
     await waitFor(() =>
       expect(
         within(body.getByRole('listbox', { name: 'Model' })).getAllByRole('option'),

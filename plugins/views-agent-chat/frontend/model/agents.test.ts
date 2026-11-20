@@ -3,7 +3,9 @@
  * what discovery found, and carried on the turns of that conversation.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
+import { DOMWrapper, mount, flushPromises } from '@vue/test-utils'
+import { h, nextTick } from 'vue'
+import { MessageComposer } from '../message-composer'
 import type { ConnectionRow, JsonValue } from '@numen/plugin-sdk'
 import { createAgentList, useAgentChoice } from './agents'
 import { createAgentKind } from './kind'
@@ -165,6 +167,74 @@ describe('the agents a chat offers', () => {
       'Orchard agent · Pear Small',
       'Meadow agent · Clover',
     ])
+  })
+
+  it('keeps the open reasoning menu through a background refresh of the same model', async () => {
+    const current = row('c-orchard', 'Orchard agent', { model: 'pear-large' })
+    const { host } = createAgentConnections({ frames: [] }, { rows: [current], listOptions })
+    const connections = { ...host, listRows: async () => [{ ...current }] }
+    const list = createAgentList(connections, WORDS)
+    await list.reload()
+    const choice = useAgentChoice(connections, list)
+    const wrapper = mount(() =>
+      h(MessageComposer, {
+        reasoningLevels: choice.offered.reasoningLevels.value,
+        onSelectReasoning: choice.selectReasoningLevel,
+      }),
+    )
+    try {
+      await flushPromises()
+      await wrapper.get('button[aria-label="Reasoning"]').trigger('click')
+      const menu = () => wrapper.getComponent({ name: 'Menu' })
+      expect(menu().props('isOpen')).toBe(true)
+
+      const high = new DOMWrapper(document.body)
+        .get('[role="menu"][aria-label="Reasoning"]')
+        .findAll('[role="menuitemradio"]')[1]!
+      await high.trigger('mouseenter')
+      await high.trigger('mousemove', { clientX: 10, clientY: 20 })
+      await list.reload()
+      await flushPromises()
+      expect(menu().props('isOpen')).toBe(true)
+      await high.trigger('click')
+      expect(choice.selected.reasoningId.value).toBe('high')
+      expect(menu().props('isOpen')).toBe(false)
+    } finally {
+      choice.stopReasoning()
+      wrapper.unmount()
+    }
+  })
+
+  it('retains reasoning levels after a failed refresh until the provider confirms an empty list', async () => {
+    const current = row('c-orchard', 'Orchard agent', { model: 'pear-large' })
+    const levels = vi
+      .fn()
+      .mockResolvedValueOnce(await listOptions('c-orchard', 'reasoning', current.options))
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce([])
+    const { host } = createAgentConnections(
+      { frames: [] },
+      {
+        rows: [current],
+        listOptions: (id, field, options) =>
+          field === 'reasoning' ? levels() : listOptions(id, field, options),
+      },
+    )
+    const connections = { ...host, listRows: async () => [{ ...current }] }
+    const list = createAgentList(connections, WORDS)
+    await list.reload()
+    const choice = useAgentChoice(connections, list)
+    try {
+      await flushPromises()
+      await list.reload()
+      await flushPromises()
+      expect(choice.offered.reasoningLevels.value.map(({ id }) => id)).toEqual(['low', 'high'])
+      await choice.listChoices()
+      await flushPromises()
+      expect(choice.offered.reasoningLevels.value).toEqual([])
+    } finally {
+      choice.stopReasoning()
+    }
   })
 
   it('stay listed through a reload, with the models listed before', async () => {
