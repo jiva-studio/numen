@@ -57,10 +57,10 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	plugins := openWindowPlugins(install, exec, settingsDeps, vaultDeps, db, newSourceBinding(exec, c.SafeMode, install.Endpoints, res))
 	opened, launch := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps)
 	search := newTextSearch(searchDeps, c.machine.ResolvedCompute.Workers)
-	session := windowSearch{index: db, source: launch.source, tasks: plugins.tasks, generations: launch.generations, kinds: plugins.kinds.list}
+	session := windowSearch{index: db, source: launch.source, kinds: plugins.kinds.list}
 	status := editor.SearchTasks{Tasks: opened.page.Window}
 	query := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, search, db, launch.source, status.ReportFloorError)
-	runs := newSearchRuns(session, query, exec.Runtime.Resolver, exec.Runtime.Manifests, vaultDeps.Clock)
+	runs := newSearchRuns(plugins.tasks, launch.generations, query, exec.Runtime.Resolver, exec.Runtime.Manifests, vaultDeps.Clock)
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
 	mountServices(opened, install, exec, settingsDeps, vaultDeps)
 	mountLogs(opened, getLogEntries(res), install, settingsDeps, vaultDeps)
