@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestPrepareCustomProfileUsesOneRevisionAndKeepsExternalDataBesideGraph(t *testing.T) {
+func TestPrepareModelPreservesExternalDataPaths(t *testing.T) {
 	root := t.TempDir()
 	files := map[string]string{
 		"metadata": `{"sha":"immutable","siblings":[{"rfilename":"onnx/a.onnx","lfs":{"sha256":"lfs digest"}},{"rfilename":"onnx/a.onnx_data"},{"rfilename":"onnx/a.onnx/other"},{"rfilename":"onnx/b.onnx_data"},{"rfilename":"onnx/b.onnx"},{"rfilename":"onnx/chunks/weights.bin"},{"rfilename":"tokenizer.json"}]}`,
