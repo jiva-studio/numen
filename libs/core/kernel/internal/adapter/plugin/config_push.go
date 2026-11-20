@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"maps"
 	"net/http"
 	"strconv"
@@ -119,10 +118,8 @@ func (c *ConfigPush) NotifyPluginConfig(ctx context.Context, pluginID string) er
 
 func (c *ConfigPush) configurePlugin(ctx context.Context, pluginID string) error {
 	if sup, ok := c.sups.Get(pluginID); ok {
-		if pid := sup.GetProcessID(); pid > 0 {
-			if err := process.SetNice(pid, c.GetProcessNice()); err != nil {
-				c.report(fmt.Errorf("set priority of %s: %w", pluginID, err))
-			}
+		if err := sup.SetNice(c.GetProcessNice()); err != nil {
+			c.report(fmt.Errorf("set priority of %s: %w", pluginID, err))
 		}
 	}
 	return c.delivery.Configure(ctx, pluginID)

@@ -16,7 +16,8 @@ import (
 func SetNice(pid, nice int) error {
 	dir := fmt.Sprintf("/proc/%d/task", pid)
 	applied := map[string]bool{}
-	for {
+	// The second snapshot covers threads created during the first pass.
+	for range 2 {
 		threads, err := os.ReadDir(dir)
 		if err != nil {
 			return err
@@ -40,4 +41,5 @@ func SetNice(pid, nice int) error {
 			return nil
 		}
 	}
+	return nil
 }

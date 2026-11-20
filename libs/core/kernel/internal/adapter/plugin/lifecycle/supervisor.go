@@ -67,6 +67,7 @@ type Supervisor struct {
 
 	mu            sync.Mutex
 	state         ProcessState
+	priority      process.Priority
 	process       *os.Process
 	inProcess     bool
 	teardownBegun bool
@@ -290,6 +291,13 @@ func (s *Supervisor) BeginDeactivation(threshold time.Duration, now time.Time) b
 	}
 	s.state = StateDeactivating
 	return true
+}
+
+// SetNice applies the profile to the attached external process.
+func (s *Supervisor) SetNice(nice int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.priority.Apply(s.process, nice, process.SetNice)
 }
 
 // GetProcessID returns the pid of the attached process, or zero when none is attached.
