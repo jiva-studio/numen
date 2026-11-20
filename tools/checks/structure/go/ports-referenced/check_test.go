@@ -49,7 +49,7 @@ func TestPortRule_ReportsUnreferencedPortTypes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range []string{"VectorIndex", "ChangeSubscriber"} {
+	for _, one := range []string{"NoteRefs", "VaultReaders"} {
 		if !slices.Contains(unnamed, one) {
 			t.Errorf("nothing outside names port.%s and the rule does not refuse it", one)
 		}
@@ -61,9 +61,13 @@ func TestPortRule_ReportsUnreferencedPortTypes(t *testing.T) {
 // Test files are not read here, and that asymmetry is the rule: a method called
 // only by a test exists to be tested. The two rules above read tests.
 func TestPortMethodsAreCalledOutsidePort(t *testing.T) {
-	uncalled, err := getUncalledMethods("..", filepath.Join("..", "port"))
+	consumers := portConsumers{}
+	uncalled, err := getUncalledMethods("..", filepath.Join("..", "port"), consumers)
 	if err != nil {
 		t.Fatal(err)
+	}
+	for _, name := range consumers.listUnshared() {
+		t.Errorf("%s belongs to its consumer: %v", name, consumers[name])
 	}
 	for _, one := range uncalled {
 		t.Errorf("%s is declared and nothing outside a test calls it", one)
@@ -74,7 +78,7 @@ func TestPortMethodsAreCalledOutsidePort(t *testing.T) {
 // the rule has to be restored with the methods below.
 func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 	pos := filepath.Join("..", "port")
-	uncalled, err := getUncalledMethods(pos, pos)
+	uncalled, err := getUncalledMethods(pos, pos, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,9 +99,13 @@ func TestPortWalk_FindsThePlantedPort(t *testing.T) {
 			"func read(r noteport.Reader) string {\n\tfile{}.Close()\n\treturn r.Read()\n}\n",
 	})
 	port := filepath.Join(root, "port", "noteport")
-	uncalled, err := getUncalledMethods(root, port, "GOWORK=off")
+	consumers := portConsumers{}
+	uncalled, err := getUncalledMethods(root, port, consumers, "GOWORK=off")
 	if err != nil {
 		t.Fatal(err)
+	}
+	if want := []string{"noteport.Orphan", "noteport.Reader"}; !slices.Equal(consumers.listUnshared(), want) {
+		t.Errorf("unshared contracts = %v, want %v", consumers, want)
 	}
 	if want := []string{"Orphan.Drop", "Reader.Close"}; !slices.Equal(uncalled, want) {
 		t.Errorf("the walk reports uncalled methods %v, want %v", uncalled, want)
@@ -110,8 +118,30 @@ func TestPortWalk_FindsThePlantedPort(t *testing.T) {
 		t.Errorf("the walk reports unnamed types %v, want %v", unnamed, want)
 	}
 	empty := t.TempDir()
-	if _, err := getUncalledMethods(empty, empty); err == nil {
+	if _, err := getUncalledMethods(empty, empty, nil); err == nil {
 		t.Error("a port folder without a declaration passed")
+	}
+}
+
+// A factory result is consumed even when the use case never spells the port name.
+func TestPortOwnershipCountsFactoryResultsAndExcludesFixturesAndWiring(t *testing.T) {
+	root := load.WriteTreeFixture(t, map[string]string{
+		"port/fileport/file.go":            "package fileport\n type Reader interface{ Read() string }; type Files interface{ Open() Reader }",
+		"usecase/file/file.go":             "package file\n import f \"fixture/port/fileport\"\n func Read(files f.Files) string { return files.Open().Read() }",
+		"usecase/search/search.go":         "package search\n import f \"fixture/port/fileport\"\n func Read(r f.Reader) string { return r.Read() }",
+		"usecase/file/filetest/fixture.go": "package filetest\n import f \"fixture/port/fileport\"\n type Fixture struct { Files f.Files }",
+		"container/wire.go":                "package container\n import f \"fixture/port/fileport\"\n type Wiring struct { Files f.Files }",
+	})
+	consumers := portConsumers{}
+	_, err := getUncalledMethods(root, filepath.Join(root, "port"), consumers, "GOWORK=off")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"fileport.Files"}; !slices.Equal(consumers.listUnshared(), want) {
+		t.Fatalf("unshared contracts = %v, want %v", consumers, want)
+	}
+	if len(consumers["fileport.Files"]) != 1 || !consumers["fileport.Files"]["usecase/file"] {
+		t.Fatalf("file factory consumers = %v", consumers["fileport.Files"])
 	}
 }
 

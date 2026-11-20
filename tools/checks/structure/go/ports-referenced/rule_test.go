@@ -15,8 +15,12 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-func getUncalledMethods(root, dir string, env ...string) ([]string, error) {
-	dir, err := filepath.Abs(dir)
+func getUncalledMethods(root, dir string, consumers portConsumers, env ...string) ([]string, error) {
+	root, err := filepath.Abs(root)
+	if err != nil {
+		return nil, err
+	}
+	dir, err = filepath.Abs(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +38,9 @@ func getUncalledMethods(root, dir string, env ...string) ([]string, error) {
 			if len(pkg.Errors) > 0 {
 				return nil, fmt.Errorf("%s does not load for %s/%s: %w", pkg.ID, platform.GOOS, platform.GOARCH, pkg.Errors[0])
 			}
+		}
+		if consumers != nil {
+			consumers.addPackages(root, dir, pkgs)
 		}
 		methods := getPortMethods(pkgs, dir)
 		for _, name := range methods {
