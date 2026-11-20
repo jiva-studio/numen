@@ -38,7 +38,10 @@ type windowSearch struct {
 	kinds  *file.ListTabKinds
 }
 
-func newSearchRuns(tasks *run.Tasks, generations *indexgeneration.Generations, find *queryusecase.FindSearchResults, resolver pluginResolver, manifests pluginmanifest.Manifests, clock installationClock) *searchrunusecase.SearchRuns {
+func newSearchRuns(
+	tasks *run.Tasks, generations *indexgeneration.Generations, find *queryusecase.FindSearchResults,
+	resolver pluginResolver, manifests pluginmanifest.Manifests, clock installationClock,
+) *searchrunusecase.SearchRuns {
 	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
 		Store:       searchstore.New(),
 		Cancels:     searchcancel.NewSearches(clock),
