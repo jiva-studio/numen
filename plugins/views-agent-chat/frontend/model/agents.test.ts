@@ -99,25 +99,7 @@ describe('the agents a chat offers', () => {
     expect(choice.offered.isAgentMissing.value).toBe(false)
   })
 
-  it('offer the stored model and reasoning level of each row until a picker opens', async () => {
-    const { choice, asked } = await createChat(
-      [
-        row('c-orchard', 'Orchard agent', { model: 'pear-small', reasoning: 'low' }),
-        row('c-meadow', 'Meadow agent'),
-      ],
-      { isPickerOpened: false },
-    )
-
-    expect(readOptions(choice)).toStrictEqual([
-      'Orchard agent · pear-small',
-      `Meadow agent · ${WORDS.defaultModel}`,
-    ])
-    expect(choice.offered.reasoningLevels.value).toStrictEqual([{ id: 'low', title: 'low' }])
-    expect(choice.selected.reasoningId.value).toBe('low')
-    expect(asked).toStrictEqual([])
-  })
-
-  it('list the models of every agent and the reasoning levels of the choice once a picker opens', async () => {
+  it('list the models of every agent and the reasoning levels of the choice before a picker opens', async () => {
     const { choice, asked } = await createChat(
       [
         row('c-orchard', 'Orchard agent', { model: 'pear-large' }),
@@ -125,9 +107,6 @@ describe('the agents a chat offers', () => {
       ],
       { isPickerOpened: false },
     )
-
-    await choice.listChoices()
-    await waitTask()
 
     expect([...asked].sort()).toStrictEqual([
       'c-meadow model',
@@ -165,12 +144,11 @@ describe('the agents a chat offers', () => {
       },
     )
     const list = createAgentList(host, WORDS)
-    await list.reload()
+    const listing = list.reload()
     const choice = useAgentChoice(host, list)
+    await vi.waitFor(() => expect(answers.size).toBe(2))
     expect(choice.offered.pendingAgentIds.value).toStrictEqual(['c-orchard', 'c-meadow'])
 
-    const listing = choice.listChoices()
-    await vi.waitFor(() => expect(answers.size).toBe(2))
     answers.get('c-meadow')!([{ value: 'clover', title: 'Clover' }])
     await vi.waitFor(() =>
       expect(choice.offered.pendingAgentIds.value).toStrictEqual(['c-orchard']),
@@ -478,6 +456,26 @@ const saveWithLanternModel = async () => {
 }
 
 describe('a choice saved before a restart', () => {
+  it('restores explicit reasoning for the first turn before opening a picker', async () => {
+    const rows = [row('c-orchard', 'Orchard agent', { model: 'pear-large', reasoning: 'low' })]
+    const before = startWindow(rows)
+    await before.list.reload()
+    const tab = before.open('agent:1')
+    tab.agents!.selectReasoningLevel('high')
+    const saved = JSON.parse(JSON.stringify(before.kind.getState!(tab)))
+
+    const after = startWindow(rows)
+    const restored = after.open('agent:1', saved)
+    await after.list.reload()
+    await restored.conversation.ask('Count the trees.')
+    expect(after.calls[0]?.options?.preferred?.options).toEqual({
+      model: 'pear-large',
+      reasoning: 'high',
+    })
+    expect(restored.agents!.selected.reasoningId.value).toBe('high')
+    expect(after.open('agent:2').agents!.selected.reasoningId.value).toBe('low')
+  })
+
   it('is the connection and the model of the agent the conversation chose', async () => {
     const saved = await saveWithLanternModel()
 
@@ -568,14 +566,14 @@ describe('a model listing that fails', () => {
     await waitTask()
     const fresh = after.open('agent:2')
 
-    expect(restored.agents!.getChosen()).toStrictEqual({
+    expect(restored.agents!.persistence.getChosen()).toStrictEqual({
       agentId: 'c-lantern',
       modelId: 'c-meadow|clover',
     })
     expect(after.kind.getState!(restored)).toMatchObject({
       model: { connectionId: 'c-lantern', modelId: 'c-meadow|clover' },
     })
-    expect(fresh.agents!.getChosen()).toStrictEqual({
+    expect(fresh.agents!.persistence.getChosen()).toStrictEqual({
       agentId: 'c-lantern',
       modelId: 'c-meadow|clover',
     })

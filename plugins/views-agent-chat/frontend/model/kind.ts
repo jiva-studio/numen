@@ -54,11 +54,13 @@ export function createAgentKind(
       ),
     getTitle: getAgentTitle,
     onClose: (state, id) => {
+      state.agents?.stopReasoning()
       state.conversation.stop()
       states.delete(id)
       return true
     },
     onDestroy: (state, id) => {
+      state.agents?.stopReasoning()
       state.conversation.stop()
       states.delete(id)
     },

@@ -186,13 +186,19 @@ export function useAgentConversation(
     userQuestion.value = saved.question
     if (saved.turns.length > 0) conversation.turns.value = saved.turns.map((turn) => ({ ...turn }))
     if (saved.model) {
-      agents?.restoreChoice({ agentId: saved.model.connectionId, modelId: saved.model.modelId })
+      agents?.persistence.restoreChoice(
+        { agentId: saved.model.connectionId, modelId: saved.model.modelId },
+        saved.model.reasoningId,
+      )
     }
   }
 
   const getSavedModel = (): SavedModel | null => {
-    const chosen = agents?.getChosen()
-    return chosen ? { connectionId: chosen.agentId, modelId: chosen.modelId } : null
+    const chosen = agents?.persistence.getChosen()
+    if (!chosen) return null
+    const model = { connectionId: chosen.agentId, modelId: chosen.modelId }
+    const reasoningId = chosen.reasoningId
+    return reasoningId == null ? model : { ...model, reasoningId }
   }
 
   const openTurnSource = (turn: Turn) => {
