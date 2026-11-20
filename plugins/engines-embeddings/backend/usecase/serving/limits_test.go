@@ -2,7 +2,6 @@ package serving
 
 import (
 	"context"
-	"errors"
 	"runtime"
 	"sync"
 	"testing"
@@ -11,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/limits"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/mockembedder"
-	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/process"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
 
@@ -19,7 +17,6 @@ import (
 type openRecord struct {
 	mu      sync.Mutex
 	opened  []model.LocalModel
-	nices   []int
 	closing int
 }
 
@@ -45,11 +42,6 @@ func newRecordedServer(t *testing.T) (*Server, *openRecord) {
 		record.opened = append(record.opened, local)
 		return recordedEmbedder{record: record}, nil
 	}
-	srv.machine = niceRecorder{Process: process.Process{}, record: func(nice int) {
-		record.mu.Lock()
-		defer record.mu.Unlock()
-		record.nices = append(record.nices, nice)
-	}}
 	return srv, record
 }
 
@@ -67,9 +59,6 @@ func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 	}
 	if got := record.opened[0]; got.Threads != 1 || got.BatchTexts != limits.EcoBatchTexts {
 		t.Errorf("opened with %d threads and batches of %d, want 1 and %d", got.Threads, got.BatchTexts, limits.EcoBatchTexts)
-	}
-	if last := record.nices[len(record.nices)-1]; last != 19 {
-		t.Errorf("the niceness is %d, want 19", last)
 	}
 }
 
@@ -93,9 +82,6 @@ func TestAChangeOfTheProfileReachesTheRunningModel(t *testing.T) {
 	second := record.opened[1]
 	if second.Threads != 1 || second.BatchTexts != limits.EcoBatchTexts || first.BatchTexts != model.GetDefaultBatchTexts() {
 		t.Errorf("opened %d threads and %d texts after %d texts, want 1 thread and %d texts", second.Threads, second.BatchTexts, first.BatchTexts, limits.EcoBatchTexts)
-	}
-	if record.nices[len(record.nices)-1] != 19 {
-		t.Errorf("the niceness after the change is %v", record.nices)
 	}
 }
 
@@ -135,48 +121,17 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 
 	srv, record := newRecordedServer(t)
 	srv.updateConfig(getBalancedValues())
-	if len(record.nices) != 1 || record.nices[0] != 10 {
-		t.Fatalf("nices on first balanced config = %v, want [10]", record.nices)
-	}
 
 	srv.updateConfig(getBalancedValues())
-	if len(record.nices) != 1 {
-		t.Fatalf("nices on repeated balanced config = %v, want [10]", record.nices)
-	}
 
 	runtime.GOMAXPROCS(4)
 	srv.updateConfig(getEcoValues())
-	if len(record.nices) != 2 || record.nices[1] != 19 {
-		t.Fatalf("nices on eco config = %v, want [10 19]", record.nices)
-	}
 	if got := runtime.GOMAXPROCS(0); got != 1 {
 		t.Fatalf("GOMAXPROCS = %d, want 1", got)
 	}
 
-	niceErr := errors.New("nice denied")
-	var reportedNiceErr error
-	srv.report = func(_ string, err error) {
-		reportedNiceErr = err
-	}
-	srv.machine = niceRecorder{
-		Process: process.Process{},
-		err:     niceErr,
-		record: func(nice int) {
-			record.mu.Lock()
-			defer record.mu.Unlock()
-			record.nices = append(record.nices, nice)
-		},
-	}
-	// The loader keeps the report it was built with.
-	srv.mu.Lock()
-	srv.loader = srv.newLoader()
-	srv.mu.Unlock()
-
 	if _, err := srv.EmbedTexts(t.Context(), model.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
-	}
-	if !errors.Is(reportedNiceErr, niceErr) {
-		t.Fatalf("reportedNiceErr = %v, want %v", reportedNiceErr, niceErr)
 	}
 	srv.mu.Lock()
 	srv.isProfileSet = false
@@ -231,18 +186,6 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 	if got := runtime.GOMAXPROCS(0); got != 4 {
 		t.Fatalf("mock profile changed GOMAXPROCS to %d, want 4", got)
 	}
-}
-
-// niceRecorder is a process whose priority changes are recorded and not made.
-type niceRecorder struct {
-	process.Process
-	record func(nice int)
-	err    error
-}
-
-func (n niceRecorder) LowerNice(nice int) error {
-	n.record(nice)
-	return n.err
 }
 
 func getEcoValues() map[string]string {

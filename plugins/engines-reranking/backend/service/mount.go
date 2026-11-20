@@ -17,9 +17,9 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-reranking/backend/usecase/reranking"
 )
 
-func newScorerOpener(library *onnx.Library, fetch onnx.FetchFile) ports.OpenScorer {
+func newScorerOpener(library *onnx.Library, fetch onnx.FetchFile, queue host.InferenceQueue) ports.OpenScorer {
 	return func(ctx context.Context, p profile.Profile) (ports.Scorer, error) {
-		scorer, err := engine.Open(ctx, library, p, fetch)
+		scorer, err := engine.Open(ctx, library, p, fetch, queue)
 		if err != nil {
 			return nil, err
 		}
@@ -27,13 +27,13 @@ func newScorerOpener(library *onnx.Library, fetch onnx.FetchFile) ports.OpenScor
 	}
 }
 
-func openRerankingUseCase(fetch onnx.FetchFile) (*reranking.Reranking, error) {
-	return reranking.New(profilefiles.GetDefaultDirectory(), newScorerOpener(onnx.NewLibrary(), fetch), console.Report)
+func openRerankingUseCase(queue host.InferenceQueue, fetch onnx.FetchFile) (*reranking.Reranking, error) {
+	return reranking.New(profilefiles.GetDefaultDirectory(), newScorerOpener(onnx.NewLibrary(), fetch, queue), queue, console.Report)
 }
 
 // Mount serves the provider of the local-reranker connection type on s. The loaded model closes with s.
 func Mount(s *server.Server) error {
-	r, err := openRerankingUseCase(fetchModelFile(s))
+	r, err := openRerankingUseCase(host.NewInferenceQueue(s.GetHostEndpoint), fetchModelFile(s))
 	if err != nil {
 		return err
 	}

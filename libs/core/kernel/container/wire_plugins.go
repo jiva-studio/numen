@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -117,6 +118,7 @@ type pluginProviders struct {
 
 // PluginEndpoints connects the host RPC services and the providers served by plugins.
 type PluginEndpoints struct {
+	workLock run.Lock
 	Endpoint *hostendpoint.Services
 	Lender   *hostendpoint.Lender
 	pluginProviders

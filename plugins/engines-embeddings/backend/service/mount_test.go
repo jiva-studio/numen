@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/hostmodel"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -40,7 +43,7 @@ func mountMockPlugin(t *testing.T) (http.Handler, *server.Server) {
 	var mounted *server.Server
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": linkedToken}, func(s *server.Server) error {
 		mounted = s
-		return Mount(s)
+		return mount(s, hosttest.NewQueue().EnqueueWork, hostmodel.OpenFromEnvironment, getPlaces(host.NewSearchClientFromEnv), health.NewClientFromEnv)
 	})
 	if err != nil {
 		t.Fatalf("NewLinkedHandler: %v", err)

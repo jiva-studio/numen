@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"io/fs"
 	"path/filepath"
 	"slices"
@@ -23,7 +24,7 @@ import (
 func newTestProvider(t *testing.T) connection.Provider {
 	t.Helper()
 	t.Setenv("NUMEN_PLUGIN_DATA_DIR", t.TempDir())
-	r, err := openRerankingUseCase(func(context.Context, string, string) (string, error) {
+	r, err := openRerankingUseCase(hosttest.NewQueue().EnqueueWork, func(context.Context, string, string) (string, error) {
 		return "", errors.New("model unavailable offline")
 	})
 	if err != nil {
@@ -103,7 +104,7 @@ func TestRerankScoresTheDocumentsAgainstTheQueryWithoutTheInstruction(t *testing
 	t.Setenv("NUMEN_PLUGIN_DATA_DIR", t.TempDir())
 	scorer := &recordingScorer{}
 	open := func(context.Context, profile.Profile) (ports.Scorer, error) { return scorer, nil }
-	use, err := reranking.New(profilefiles.GetDefaultDirectory(), open, console.Report)
+	use, err := reranking.New(profilefiles.GetDefaultDirectory(), open, hosttest.NewQueue().EnqueueWork, console.Report)
 	if err != nil {
 		t.Fatal(err)
 	}

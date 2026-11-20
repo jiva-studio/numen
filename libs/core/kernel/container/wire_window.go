@@ -127,7 +127,7 @@ func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDep
 	tasks := run.NewTasks()
 	exec.Runtime.SetOnFailureCleared(func(string) { settingsDeps.PluginChanges.Signal() })
 	reportDependencies(exec.Watch.dependencyReporter, tasks, vaultDeps.RecordLog)
-	pluginsOpenPluginWork(install, exec, tasks, &run.Lock{})
+	pluginsOpenPluginWork(install, exec, tasks)
 	setModelCalls(install, exec, settingsDeps, vaultDeps, run.NewConnectionNoticeTasks(tasks).Execute)
 	return windowPlugins{
 		source: source,

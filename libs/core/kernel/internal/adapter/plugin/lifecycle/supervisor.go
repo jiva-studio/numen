@@ -64,10 +64,10 @@ func (l Lease) isUse() bool {
 type Supervisor struct {
 	Failure     process.StartFailure
 	Permissions security.Permissions
+	Child       process.Child
 
 	mu            sync.Mutex
 	state         ProcessState
-	process       *os.Process
 	inProcess     bool
 	teardownBegun bool
 	leases        plugin.Leases
@@ -175,7 +175,7 @@ func (s *Supervisor) SetDormant(err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.state = StateDormant
-	s.process = nil
+	s.Child.SetProcess(nil)
 	s.inProcess = false
 	s.teardownBegun = false
 	s.leases.Clear()
@@ -197,7 +197,7 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.process = p
+	s.Child.SetProcess(p)
 	s.teardownBegun = false
 	s.state = StateActive
 	s.leases.Start(now)
@@ -213,7 +213,7 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 		}
 		s.mu.Lock()
 		var onExit func()
-		if s.process == p {
+		if s.Child.GetProcess() == p {
 			onExit = s.onExit
 		}
 		s.mu.Unlock()
@@ -223,8 +223,8 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 			onExit()
 		}
 		s.mu.Lock()
-		if s.process == p {
-			s.process = nil
+		if s.Child.GetProcess() == p {
+			s.Child.SetProcess(nil)
 			s.inProcess = false
 			s.teardownBegun = false
 			s.state = StateDormant
@@ -251,7 +251,7 @@ func isRunning(s *Supervisor) bool {
 	if s.state != StateActive && s.state != StateIdle {
 		return false
 	}
-	return s.process != nil || s.inProcess
+	return s.Child.GetProcess() != nil || s.inProcess
 }
 
 // Acquire takes the lease on a running plugin and reports whether it did. A use lease marks the plugin
@@ -292,16 +292,6 @@ func (s *Supervisor) BeginDeactivation(threshold time.Duration, now time.Time) b
 	return true
 }
 
-// GetProcessID returns the pid of the attached process, or zero when none is attached.
-func (s *Supervisor) GetProcessID() int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.process == nil {
-		return 0
-	}
-	return s.process.Pid
-}
-
 // WaitWhileDeactivating blocks until the supervisor leaves StateDeactivating or ctx ends.
 func (s *Supervisor) WaitWhileDeactivating(ctx context.Context) error {
 	ticker := time.NewTicker(5 * time.Millisecond)
@@ -323,7 +313,7 @@ func (s *Supervisor) Teardown(
 	rpcShutdown func(ctx context.Context) error,
 ) error {
 	s.mu.Lock()
-	if s.process == nil {
+	if s.Child.GetProcess() == nil {
 		s.mu.Unlock()
 		return s.teardownNilProcess(ctx, rpcShutdown)
 	}
@@ -335,7 +325,7 @@ func (s *Supervisor) Teardown(
 	s.state = StateDeactivating
 	s.teardownBegun = true
 	closeActivationSignal(&s.activatingCh)
-	proc := s.process
+	proc := s.Child.GetProcess()
 	exitCh := s.exitCh
 	if rpcShutdown == nil {
 		rpcShutdown = s.rpcShutdown
@@ -408,9 +398,9 @@ func kill(proc *os.Process, exitCh chan struct{}) error {
 func (s *Supervisor) markDormant(proc *os.Process) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if proc == nil || s.process == proc {
+	if proc == nil || s.Child.GetProcess() == proc {
 		s.state = StateDormant
-		s.process = nil
+		s.Child.SetProcess(nil)
 		s.inProcess = false
 		s.teardownBegun = false
 		s.leases.Clear()

@@ -181,7 +181,9 @@ The Vector Embeddings plugin sizes the local model by it while it indexes the va
 | ----------------- | --- | --- | -------------------- | ------------ | ------- |
 | Texts in one pass | 2   | 3   | 4                    | 6, at most 8 | 8       |
 
-A model open when the profile changes closes when its running batches end, and the next batch opens it with the new threads. The niceness is set on every thread of the plugin process, and the system lets a process only lower its priority: a change to a profile that asks for a higher priority than the plugin has keeps the priority in force until the plugin restarts. The mock model of the tests takes the niceness but is not sized by the profile.
+When the profile changes, the embedding model closes after its current batches finish. The next batch opens it with the new thread count.
+
+OCR, transcription, local embedding and local reranking share a host queue. Native models can each use the full CPU budget or the GPU, so one native job runs at a time. Interactive queries take priority over background index batches. Embedding requests served by a connection use that connection’s concurrency settings. The host sets the scheduling priority of external plugin processes. On Linux it updates every thread. On Windows the maximum profile uses the normal process priority class and other profiles use below normal. On systems that require permission to raise priority, a running plugin retains its previous priority until it restarts.
 
 ## How the index keeps vectors
 

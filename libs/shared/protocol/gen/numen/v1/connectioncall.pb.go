@@ -422,7 +422,7 @@ var File_numen_v1_connectioncall_proto protoreflect.FileDescriptor
 
 const file_numen_v1_connectioncall_proto_rawDesc = "" +
 	"\n" +
-	"\x1dnumen/v1/connectioncall.proto\x12\bnumen.v1\x1a\x1dnumen/v1/hostconnection.proto\x1a\x17numen/v1/settings.proto\"\xdd\x01\n" +
+	"\x1dnumen/v1/connectioncall.proto\x12\bnumen.v1\x1a\x1dnumen/v1/hostconnection.proto\x1a\x17numen/v1/provider.proto\x1a\x17numen/v1/settings.proto\"\xdd\x01\n" +
 	" ConnectionCallServiceCallRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1c\n" +
 	"\toperation\x18\x02 \x01(\tR\toperation\x12\x18\n" +
@@ -508,6 +508,7 @@ func file_numen_v1_connectioncall_proto_init() {
 		return
 	}
 	file_numen_v1_hostconnection_proto_init()
+	file_numen_v1_provider_proto_init()
 	file_numen_v1_settings_proto_init()
 	file_numen_v1_connectioncall_proto_msgTypes[1].OneofWrappers = []any{
 		(*ConnectionCallServiceCallResponse_Data)(nil),

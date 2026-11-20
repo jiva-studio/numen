@@ -2,6 +2,7 @@ package engine
 
 import (
 	"encoding/json"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"math"
 	"os"
 	"path/filepath"
@@ -69,7 +70,7 @@ func checkRetrieval(t *testing.T, profile model.Profile, dir, lib string, fixtur
 	info, local := model.NewConfig(profile)
 	local.Dir, local.ShouldDownload, local.Runtime = flatten(t, dir), false, lib
 	local.Threads, local.BatchTexts = 4, 8
-	emb, err := Open(t.Context(), onnx.NewLibrary(), info, local, nil)
+	emb, err := Open(t.Context(), onnx.NewLibrary(), info, local, nil, hosttest.NewQueue().EnqueueWork)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}

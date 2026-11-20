@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"runtime"
 	"slices"
 	"sync"
@@ -38,11 +39,15 @@ type Scorer struct {
 // Open loads the model of p, fetching its files first where this machine does not hold them. It fails on a
 // graph that takes an input other than the tokens, the mask and the token types, or answers more than one
 // logit for a pair.
-func Open(ctx context.Context, library *onnx.Library, p profile.Profile, fetch onnx.FetchFile) (*Scorer, error) {
+func Open(ctx context.Context, library *onnx.Library, p profile.Profile, fetch onnx.FetchFile, queue host.InferenceQueue) (*Scorer, error) {
 	paths, err := Locate(ctx, p, fetch)
 	if err != nil {
 		return nil, err
 	}
+	return host.OpenModel(ctx, queue, func() (*Scorer, error) { return openModel(ctx, library, p, paths) })
+}
+
+func openModel(ctx context.Context, library *onnx.Library, p profile.Profile, paths onnx.ModelFiles) (*Scorer, error) {
 	pairs, err := loadPairTokenizer(paths.Tokenizer, p.MaxTokens)
 	if err != nil {
 		return nil, err

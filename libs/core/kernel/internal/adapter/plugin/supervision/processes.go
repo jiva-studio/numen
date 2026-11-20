@@ -67,6 +67,7 @@ type Processes struct {
 	services launchServices
 	storage  *storage.Storage
 	starter  *process.Starter
+	getNice  func() int
 
 	mu       sync.RWMutex
 	launcher Launcher
@@ -78,11 +79,11 @@ type Processes struct {
 }
 
 // NewProcesses returns the starter of the processes the supervisors track.
-func NewProcesses(sups processTable, clock machineport.Clock, report func(error), services launchServices, files *storage.Storage) *Processes {
+func NewProcesses(sups processTable, clock machineport.Clock, report func(error), services launchServices, files *storage.Storage, getNice func() int) *Processes {
 	return &Processes{
 		sups: sups, clock: clock, report: report, services: services, storage: files,
-		starter: process.NewStarter(),
-		limits:  process.DefaultLimits(), policy: lifecycle.DefaultActivationPolicy(),
+		starter: process.NewStarter(), getNice: getNice,
+		limits: process.DefaultLimits(), policy: lifecycle.DefaultActivationPolicy(),
 		stdins: make(map[stdinKey]io.Closer),
 	}
 }
@@ -325,6 +326,9 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 		return nil, nil, fmt.Errorf("start %s: %w", binPath, err)
 	}
 
+	if err := process.SetNice(cmd.Process.Pid, p.getNice()); err != nil {
+		p.report(fmt.Errorf("set priority of %s: %w", plug.Manifest.ID, err))
+	}
 	if _, err := io.WriteString(stdin, token+"\n"); err != nil {
 		killProcess(p.report, cmd.Process, plug.Manifest.ID)
 		return nil, nil, errors.Join(fmt.Errorf("write token: %w", err), stdin.Close(), stdout.Close())

@@ -2333,7 +2333,7 @@ var File_numen_v1_hostsearch_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\n" +
-	"\x19numen/v1/hostsearch.proto\x12\bnumen.v1\x1a\x18numen/v1/embedding.proto\x1a\x1dnumen/v1/hostconnection.proto\x1a\x15numen/v1/search.proto\x1a\x1cnumen/v1/search_source.proto\"\x1a\n" +
+	"\x19numen/v1/hostsearch.proto\x12\bnumen.v1\x1a\x18numen/v1/embedding.proto\x1a\x17numen/v1/provider.proto\x1a\x15numen/v1/search.proto\x1a\x1cnumen/v1/search_source.proto\"\x1a\n" +
 	"\x18GetEmbeddingStateRequest\"\x80\x02\n" +
 	"\x19GetEmbeddingStateResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x12\x16\n" +
@@ -2664,7 +2664,7 @@ func file_numen_v1_hostsearch_proto_init() {
 		return
 	}
 	file_numen_v1_embedding_proto_init()
-	file_numen_v1_hostconnection_proto_init()
+	file_numen_v1_provider_proto_init()
 	file_numen_v1_search_proto_init()
 	file_numen_v1_search_source_proto_init()
 	type x struct{}

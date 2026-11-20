@@ -23,10 +23,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/usecase/serving"
 )
 
-func newLocalModelOpener(library *onnx.Library, fetch onnx.FetchFile) ports.OpenEmbedder {
+func newLocalModelOpener(library *onnx.Library, fetch onnx.FetchFile, queue host.InferenceQueue) ports.OpenEmbedder {
 	// gomutants:disable-next-line RETURN_ZERO reason="production opener wraps engine.Open with native ONNX runtime"
 	return func(ctx context.Context, info model.ModelInfo, local model.LocalModel) (ports.Embedder, error) {
-		emb, err := engine.Open(ctx, library, info, local, fetch)
+		emb, err := engine.Open(ctx, library, info, local, fetch, queue)
 		// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="production opener wraps engine.Open with native ONNX runtime"
 		if err != nil {
 			// gomutants:disable-next-line RETURN_ERROR_NIL reason="production opener wraps engine.Open with native ONNX runtime"
@@ -41,12 +41,12 @@ func newMockEmbedder(logPath string) ports.Embedder {
 	return mockembedder.Embedder{LogPath: logPath}
 }
 
-func newServer(open ports.OpenModels, fetch onnx.FetchFile) *serving.Server {
+func newServer(open ports.OpenModels, fetch onnx.FetchFile, queue host.InferenceQueue) *serving.Server {
 	return serving.New(serving.Ports{
-		Machine:     process.Process{},
+		Queue: queue, Machine: process.Process{},
 		Profiles:    profilefiles.GetDefaultDirectory(),
 		Environment: environment.Variables{},
-		OpenLocal:   newLocalModelOpener(onnx.NewLibrary(), fetch),
+		OpenLocal:   newLocalModelOpener(onnx.NewLibrary(), fetch, queue),
 		NewMock:     newMockEmbedder,
 		OpenModels:  open,
 		Report:      console.Report,
@@ -57,7 +57,7 @@ func newServer(open ports.OpenModels, fetch onnx.FetchFile) *serving.Server {
 // model closes with s. The model API, the index and the list of health items of the host are the ones
 // the environment names.
 func Mount(s *server.Server) error {
-	return mount(s, hostmodel.OpenFromEnvironment, getPlaces(host.NewSearchClientFromEnv), health.NewClientFromEnv)
+	return mount(s, host.NewInferenceQueue(s.GetHostEndpoint), hostmodel.OpenFromEnvironment, getPlaces(host.NewSearchClientFromEnv), health.NewClientFromEnv)
 }
 
 func getPlaces(connect func() (*host.SearchClient, error)) openPlace {
@@ -70,8 +70,8 @@ func getPlaces(connect func() (*host.SearchClient, error)) openPlace {
 	}
 }
 
-func mount(s *server.Server, open ports.OpenModels, places openPlace, reports sourcehealth.OpenHealth) error {
-	embedSrv := newServer(open, fetchModelFile(s))
+func mount(s *server.Server, queue host.InferenceQueue, open ports.OpenModels, places openPlace, reports sourcehealth.OpenHealth) error {
+	embedSrv := newServer(open, fetchModelFile(s), queue)
 	s.SetUpdateConfig(func(values map[string]string) {
 		embedSrv.Update(values)
 	})

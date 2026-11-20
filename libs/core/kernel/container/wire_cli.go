@@ -25,10 +25,9 @@ import (
 )
 
 // cliRun is what the parts of one run of the command line share: the one list of tasks the plugin work of
-// the run reports into, the lock of the models, and what Close closes.
+// the run reports into, and what Close closes.
 type cliRun struct {
 	tasks   *run.Tasks
-	models  *run.Lock
 	closers []func() error
 }
 
@@ -36,7 +35,8 @@ type cliRun struct {
 // nothing: each command opens what it works over, and Close closes it.
 func OpenCLI(c Config, exec *PluginExecution, prefs *PluginPreferences, endpoints *PluginEndpoints, res *Resources) cli.Session {
 	exec = getPluginExecution(exec)
-	r := &cliRun{tasks: run.NewTasks(), models: &run.Lock{}}
+	endpoints = getPluginEndpoints(endpoints)
+	r := &cliRun{tasks: run.NewTasks()}
 	return cli.NewSession(
 		func() (cli.Vaults, error) {
 			_, _, v := buildVaultSearch(c, exec, prefs, res, nil)
@@ -93,7 +93,7 @@ func newCLIPluginWork(install pluginInstall, exec *PluginExecution, r *cliRun) c
 		if err := installCurrentVault(install, vaultDeps, db, v); err != nil {
 			return nil, err
 		}
-		work := pluginsOpenPluginWork(install, exec, r.tasks, r.models)
+		work := pluginsOpenPluginWork(install, exec, r.tasks)
 		setPluginTexts(install.Endpoints.Lender, vaultDeps.TextVersions)
 		return work, nil
 
