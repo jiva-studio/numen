@@ -40,7 +40,7 @@ const (
 
 // HostDependencyServiceClient is a client for the numen.v1.HostDependencyService service.
 type HostDependencyServiceClient interface {
-	// FetchModelFile returns the local file after its content matches the requested SHA-256.
+	// FetchModelFile returns the cached path of the selected file.
 	FetchModelFile(context.Context, *connect.Request[v1.FetchModelFileRequest]) (*connect.Response[v1.FetchModelFileResponse], error)
 }
 
@@ -76,7 +76,7 @@ func (c *hostDependencyServiceClient) FetchModelFile(ctx context.Context, req *c
 
 // HostDependencyServiceHandler is an implementation of the numen.v1.HostDependencyService service.
 type HostDependencyServiceHandler interface {
-	// FetchModelFile returns the local file after its content matches the requested SHA-256.
+	// FetchModelFile returns the cached path of the selected file.
 	FetchModelFile(context.Context, *connect.Request[v1.FetchModelFileRequest]) (*connect.Response[v1.FetchModelFileResponse], error)
 }
 

@@ -6,12 +6,13 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 
 // HostDependencyService provisions files that a plugin selects while running.
 service HostDependencyService {
-  // FetchModelFile returns the local file after its content matches the requested SHA-256.
+  // FetchModelFile returns the cached path of the selected file.
   rpc FetchModelFile(FetchModelFileRequest) returns (FetchModelFileResponse);
 }
 
 message FetchModelFileRequest {
   string url = 1;
+  // An optional pin. An empty value trusts the HTTPS source on the first download.
   string sha256 = 2;
 }
 

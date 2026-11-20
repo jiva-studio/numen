@@ -22,9 +22,10 @@ const (
 )
 
 type FetchModelFileRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
-	Sha256        string                 `protobuf:"bytes,2,opt,name=sha256,proto3" json:"sha256,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Url   string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	// An optional pin. An empty value trusts the HTTPS source on the first download.
+	Sha256        string `protobuf:"bytes,2,opt,name=sha256,proto3" json:"sha256,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

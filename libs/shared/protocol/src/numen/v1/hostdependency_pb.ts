@@ -22,6 +22,8 @@ export type FetchModelFileRequest = Message<"numen.v1.FetchModelFileRequest"> & 
   url: string;
 
   /**
+   * An optional pin. An empty value trusts the HTTPS source on the first download.
+   *
    * @generated from field: string sha256 = 2;
    */
   sha256: string;
@@ -63,7 +65,7 @@ export const FetchModelFileResponseSchema: GenMessage<FetchModelFileResponse> = 
  */
 export const HostDependencyService: GenService<{
   /**
-   * FetchModelFile returns the local file after its content matches the requested SHA-256.
+   * FetchModelFile returns the cached path of the selected file.
    *
    * @generated from rpc numen.v1.HostDependencyService.FetchModelFile
    */
