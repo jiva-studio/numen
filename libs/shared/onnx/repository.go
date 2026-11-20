@@ -20,6 +20,7 @@ type RepositoryModel struct {
 	Revision string
 	Graph    string
 	Sums     map[string]string
+	Files    []string
 }
 
 // ModelFiles holds the graph and tokenizer locations used to open a model.
@@ -67,11 +68,11 @@ func PrepareModel(ctx context.Context, model RepositoryModel, cache string, fetc
 }
 
 func (model RepositoryModel) listFiles(ctx context.Context, revision string, fetch FetchFile) (map[string]string, string, error) {
-	if model.Revision != "" && model.Sums[model.Graph] != "" && model.Sums["tokenizer.json"] != "" {
+	if len(model.Files) > 0 {
 		files := make(map[string]string)
-		for name, sum := range model.Sums {
+		for _, name := range model.Files {
 			if model.isMember(name) {
-				files[name] = sum
+				files[name] = model.Sums[name]
 			}
 		}
 		return files, revision, nil

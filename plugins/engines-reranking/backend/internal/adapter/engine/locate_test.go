@@ -9,17 +9,22 @@ import (
 )
 
 func TestLocateRequestsTheSelectedModelAndTokenizer(t *testing.T) {
-	sums := map[string]string{"onnx/model.onnx": "graph digest", "tokenizer.json": "tokenizer digest"}
+	table, err := profile.GetShippedProfiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := table.GetCurated()[0]
+	sums := p.SHA256
 	fetch := func(_ context.Context, address, sum string) (string, error) {
-		name := strings.TrimPrefix(address, "https://huggingface.co/owner/repo/resolve/commit/")
+		name := strings.TrimPrefix(address, "https://huggingface.co/"+p.ID+"/resolve/"+p.Revision+"/")
 		if sums[name] != sum {
 			t.Fatalf("unexpected file %s with sum %s", name, sum)
 		}
 		return "/files/" + name, nil
 	}
 	t.Setenv("HF_ENDPOINT", "")
-	files, err := Locate(t.Context(), profile.Profile{ID: "owner/repo", Revision: "commit", OnnxFile: "onnx/model.onnx", SHA256: sums}, fetch)
-	if err != nil || files.Model != "/files/onnx/model.onnx" || files.Tokenizer != "/files/tokenizer.json" {
+	files, err := Locate(t.Context(), p, fetch)
+	if err != nil || files.Model != "/files/"+p.OnnxFile || files.Tokenizer != "/files/tokenizer.json" {
 		t.Fatalf("Locate = %+v, %v", files, err)
 	}
 }

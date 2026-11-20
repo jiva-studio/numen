@@ -21,10 +21,10 @@ func TestPrepareCustomProfileUsesOneRevisionAndKeepsExternalDataBesideGraph(t *t
 	}
 	type result struct{ file, digest string }
 	answers := map[string]result{
-		"https://huggingface.co/api/models/team/repo/revision/main?blobs=true": {"metadata", ""},
-		"https://huggingface.co/team/repo/resolve/immutable/onnx/a.onnx":       {"graph", "lfs digest"},
-		"https://huggingface.co/team/repo/resolve/immutable/onnx/a.onnx_data":  {"data", ""},
-		"https://huggingface.co/team/repo/resolve/immutable/tokenizer.json":    {"tokens", "owner pin"},
+		"https://huggingface.co/api/models/team/repo/revision/immutable?blobs=true": {"metadata", ""},
+		"https://huggingface.co/team/repo/resolve/immutable/onnx/a.onnx":            {"graph", "graph pin"},
+		"https://huggingface.co/team/repo/resolve/immutable/onnx/a.onnx_data":       {"data", ""},
+		"https://huggingface.co/team/repo/resolve/immutable/tokenizer.json":         {"tokens", "owner pin"},
 	}
 	fetch := func(_ context.Context, url, sum string) (string, error) {
 		got, ok := answers[url]
@@ -33,7 +33,7 @@ func TestPrepareCustomProfileUsesOneRevisionAndKeepsExternalDataBesideGraph(t *t
 		}
 		return filepath.Join(root, got.file), nil
 	}
-	spec := RepositoryModel{ID: "team/repo", Graph: "onnx/a.onnx", Sums: map[string]string{"tokenizer.json": "owner pin"}}
+	spec := RepositoryModel{ID: "team/repo", Revision: "immutable", Graph: "onnx/a.onnx", Sums: map[string]string{"tokenizer.json": "owner pin", "onnx/a.onnx": "graph pin"}}
 	for range 2 {
 		located, err := PrepareModel(t.Context(), spec, root, fetch)
 		if err != nil {
