@@ -41,7 +41,7 @@
             "https://dl.photoprism.app/onnx/runtime/v1.23.0/onnxruntime-osx-arm64-1.23.0.tgz"
           ],
           "checksumSha256": "8182db0ebb5caa21036a3c78178f17fabb98a7916bdab454467c8f4cf34bcfdf",
-          "archiveMember": "libonnxruntime.*dylib",
+          "archiveMember": "libonnxruntime.1.23.0.dylib",
           "memberSha256": "d3859aecdb70ea099f5b5f4185fe16f0527c6680b18731e6e96fc971ec767cca"
         },
         {
