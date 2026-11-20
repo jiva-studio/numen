@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"connectrpc.com/connect"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
@@ -24,5 +23,11 @@ func (e *dependencyEndpoint) FetchModelFile(
 		return nil, connect.NewError(connect.CodeUnavailable, errors.New("the host has no dependency service"))
 	}
 	file, err := fetch.Execute(ctx, req.Msg.GetUrl(), req.Msg.GetSha256())
-	return connect.NewResponse(wire.DescribeModelFile(file, err)), nil
+	response := &v1.FetchModelFileResponse{}
+	if err != nil {
+		response.Error = err.Error()
+	} else {
+		response.Path = file
+	}
+	return connect.NewResponse(response), nil
 }

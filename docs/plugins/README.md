@@ -611,7 +611,7 @@ The host serves a loopback endpoint and sets `NUMEN_HOST_PORT` in the environmen
 
 ## Models
 
-OCR, transcription, embeddings and reranking request the files for the selected model when they first need them. In a Go backend, call `host.NewDependencyClient(endpoint).FetchModelFile(ctx, url, sha256)`. A TypeScript frontend calls `fetchModelFile(url, sha256)` from `@numen/plugin-sdk`. The core reports download progress and returns a local path. Requests with the same SHA-256 share one cached file, including requests from different plugins. The engine manifest declares the ONNX runtime needed at startup. The engine owns the file names, URLs and checksums for each model it offers.
+OCR, transcription, embeddings and reranking request the files for the selected model when they first need them. In a Go backend, call `host.NewDependencyClient(endpoint).FetchModelFile(ctx, url, sha256)`. The core reports download progress and returns a local path. Requests with the same SHA-256 share one cached file, including requests from different plugins. The engine manifest declares the ONNX runtime needed at startup. The engine owns the file names, URLs and checksums for each model it offers.
 
 The core checks a supplied SHA-256 before making the file available. User-defined profiles can also refer to HTTPS files without a known checksum. For those files the core records the digest of the bytes it received. `NUMEN_OFFLINE=1` allows cached files and prevents network downloads. A local model directory selected in the engine settings is read directly.
 

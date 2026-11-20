@@ -32,4 +32,3 @@ export {
   type Unvalidated,
 } from './errors'
 export { resolveAddress, type AddressSource } from './media'
-export { fetchModelFile } from './dependencies'
