@@ -90,7 +90,8 @@ func TestTheCallCarriesTheSnapshotOfTheRow(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, connection.Row{ConnectionID: s.one.ID, Options: map[string]string{"model": "model-one", "reasoning": "low"}})
 
-	if _, err := s.calls.Call(t.Context(), consumerID, modelcalldomain.Request{Operation: modelcalltest.CompleteOperation, Payload: []byte("fix this"), Priority: modelcalldomain.PriorityInteractive}, func([]byte) error { return nil }); err != nil {
+	request := modelcalldomain.Request{Operation: modelcalltest.CompleteOperation, Payload: []byte("fix this"), Priority: modelcalldomain.PriorityInteractive}
+	if _, err := s.calls.Call(t.Context(), consumerID, request, func([]byte) error { return nil }); err != nil {
 		t.Fatal(err)
 	}
 

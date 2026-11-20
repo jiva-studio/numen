@@ -166,7 +166,8 @@ func TestCallCarriesTheOperationTheConnectionAndThePayloadAndStreamsTheFramesInO
 	received := service.received[0]
 	wire := received.GetCall()
 	if received.GetOperation() != "llm.chat" || string(received.GetPayload()) != "turn" ||
-		wire.GetPriority() != v1.Priority_PRIORITY_INTERACTIVE || wire.GetConnectionId() != "c0000beef" || wire.GetType() != "openrouter" || wire.GetFields()["baseUrl"] != "https://openrouter.test/api/v1" ||
+		wire.GetPriority() != v1.Priority_PRIORITY_INTERACTIVE ||
+		wire.GetConnectionId() != "c0000beef" || wire.GetType() != "openrouter" || wire.GetFields()["baseUrl"] != "https://openrouter.test/api/v1" ||
 		wire.GetOptions()["model"] != "google/gemini-2.5-flash" || wire.GetOptions()["reasoning"] != "low" ||
 		len(wire.GetSecrets()) != 1 || wire.GetSecrets()[0].GetKey() != "apiKey" || wire.GetSecrets()[0].GetValue() != "sk-or-123" {
 		t.Errorf("received = %+v", received)

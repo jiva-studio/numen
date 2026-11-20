@@ -118,7 +118,7 @@ func (c *ConfigPush) NotifyPluginConfig(ctx context.Context, pluginID string) er
 
 func (c *ConfigPush) configurePlugin(ctx context.Context, pluginID string) error {
 	if sup, ok := c.sups.Get(pluginID); ok {
-		if err := sup.SetNice(c.GetProcessNice()); err != nil {
+		if err := sup.Child.SetNice(c.GetProcessNice()); err != nil {
 			c.report(fmt.Errorf("set priority of %s: %w", pluginID, err))
 		}
 	}

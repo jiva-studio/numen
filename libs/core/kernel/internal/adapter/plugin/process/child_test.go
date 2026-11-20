@@ -7,7 +7,7 @@ import (
 )
 
 func TestPriorityChangesAreAttemptedOncePerProcessAndValue(t *testing.T) {
-	var scheduler Priority
+	var scheduler Child
 	first := &os.Process{Pid: 1}
 	second := &os.Process{Pid: 2}
 	refused := errors.New("raise denied")
@@ -27,7 +27,8 @@ func TestPriorityChangesAreAttemptedOncePerProcessAndValue(t *testing.T) {
 	}{
 		{nil, 10, 0, nil}, {first, 10, 1, nil}, {first, 19, 2, nil}, {first, 0, 3, refused}, {first, 0, 3, nil}, {second, 0, 4, refused}, {second, 10, 5, nil},
 	} {
-		if err := scheduler.Apply(test.child, test.nice, apply); !errors.Is(err, test.err) || calls != test.calls {
+		scheduler.SetProcess(test.child)
+		if err := scheduler.applyNice(test.nice, apply); !errors.Is(err, test.err) || calls != test.calls {
 			t.Fatalf("nice %d: calls %d, error %v", test.nice, calls, err)
 		}
 	}
