@@ -66,9 +66,10 @@ func getShippedFiles(id, revision, graph string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	p, err := table.GetLocal(id)
-	if err != nil || p.ID != id || p.Revision != revision || p.OnnxFile != graph {
-		return nil, nil
+	for _, p := range table.GetCurated() {
+		if p.ID == id && p.Revision == revision && p.OnnxFile == graph {
+			return slices.Sorted(maps.Keys(p.SHA256)), nil
+		}
 	}
-	return slices.Sorted(maps.Keys(p.SHA256)), nil
+	return nil, nil
 }

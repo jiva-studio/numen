@@ -22,7 +22,9 @@ func placeGraph(cache, graph string, files map[string]string) (string, error) {
 	}
 	key := sha256.New()
 	for _, name := range slices.Sorted(maps.Keys(files)) {
-		fmt.Fprintf(key, "%s\x00%s\x00", name, files[name])
+		if _, err := fmt.Fprintf(key, "%s\x00%s\x00", name, files[name]); err != nil {
+			return "", err
+		}
 	}
 	dir := filepath.Join(cache, "external-data", hex.EncodeToString(key.Sum(nil)))
 	release, err := lockDir(dir)

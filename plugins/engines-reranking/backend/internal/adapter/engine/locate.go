@@ -7,6 +7,7 @@ import (
 	"maps"
 	"os"
 	"slices"
+	"strings"
 )
 
 func Locate(ctx context.Context, p profile.Profile, fetch onnx.FetchFile) (onnx.ModelFiles, error) {
@@ -15,7 +16,7 @@ func Locate(ctx context.Context, p profile.Profile, fetch onnx.FetchFile) (onnx.
 		return onnx.ModelFiles{}, err
 	}
 	return onnx.PrepareModel(ctx, onnx.RepositoryModel{Endpoint: os.Getenv("HF_ENDPOINT"), ID: p.ID,
-		Revision: p.Revision, Graph: p.OnnxFile, Sums: p.SHA256, Files: files}, getCacheRoot(), fetch)
+		Revision: p.Revision, Graph: p.OnnxFile, Sums: p.SHA256, Files: files, SelectExternal: func(name string) bool { return strings.HasPrefix(name, p.OnnxFile) }}, getCacheRoot(), fetch)
 }
 
 func getShippedFiles(id, revision, graph string) ([]string, error) {
@@ -23,9 +24,10 @@ func getShippedFiles(id, revision, graph string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	p, err := table.GetLocal(id)
-	if err != nil || p.ID != id || p.Revision != revision || p.OnnxFile != graph {
-		return nil, nil
+	for _, p := range table.GetCurated() {
+		if p.ID == id && p.Revision == revision && p.OnnxFile == graph {
+			return slices.Sorted(maps.Keys(p.SHA256)), nil
+		}
 	}
-	return slices.Sorted(maps.Keys(p.SHA256)), nil
+	return nil, nil
 }

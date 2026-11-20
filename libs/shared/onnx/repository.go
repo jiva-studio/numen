@@ -15,12 +15,13 @@ import (
 
 // RepositoryModel describes an ONNX graph and its tokenizer in a Hugging Face repository.
 type RepositoryModel struct {
-	Endpoint string
-	ID       string
-	Revision string
-	Graph    string
-	Sums     map[string]string
-	Files    []string
+	Endpoint       string
+	ID             string
+	Revision       string
+	Graph          string
+	Sums           map[string]string
+	Files          []string
+	SelectExternal func(string) bool
 }
 
 // ModelFiles holds the graph and tokenizer locations used to open a model.
@@ -97,6 +98,9 @@ func (model RepositoryModel) isMember(name string, names []string) bool {
 	}
 	folder := path.Dir(model.Graph)
 	if folder != "." && !strings.HasPrefix(name, folder+"/") {
+		return false
+	}
+	if _, pinned := model.Sums[name]; !pinned && model.SelectExternal != nil && !model.SelectExternal(name) {
 		return false
 	}
 	for _, other := range names {
