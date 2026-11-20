@@ -152,13 +152,13 @@ func newChannelWakes() *channelWakes {
 	return &channelWakes{sources: make(chan struct{}, 1), notes: make(chan struct{}, 1), read: make(chan struct{}, 1)}
 }
 
-// A write signal belongs to the vault whose pending vectors the pass can process.
-func (c channelWakes) forVault(id domain.VaultID) *channelWakes {
+func (c *channelWakes) forVault(id domain.VaultID) *channelWakes {
+	next := *c
 	if c.vault != "" && c.vault != id {
-		c.notes = make(chan struct{}, 1)
+		next.notes = make(chan struct{}, 1)
 	}
-	c.vault = id
-	return &c
+	next.vault = id
+	return &next
 }
 
 func (c *channelWakes) wakeSources() { signal(c.sources) }
@@ -269,7 +269,7 @@ type Session struct {
 	pending map[string]domain.Vault
 }
 
-// NewSession is the work of a vault that has not been started.
+// NewSession directs committed writes to this vault before its first scan starts.
 func (w *Worker) NewSession(v domain.Vault) *Session {
 	signals := w.wakes.Load().forVault(v.ID)
 	w.wakes.Store(signals)
