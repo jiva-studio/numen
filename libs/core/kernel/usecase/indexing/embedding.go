@@ -15,13 +15,13 @@ var ErrNoProgress = errors.New("index progress is unknown")
 // under its recipe. Either may be missing: a window without a source indexes words alone.
 type Embedding struct {
 	source   searchsourceport.Source
-	watcher  searchsourceport.DescriptionWatcher
+	watcher  DescriptionWatcher
 	progress IndexProgress
 }
 
 // NewEmbedding returns the embedding of a search source, the watcher of its description and the count of
 // what it has indexed. A source whose description never changes has no watcher.
-func NewEmbedding(source searchsourceport.Source, watcher searchsourceport.DescriptionWatcher, progress IndexProgress) *Embedding {
+func NewEmbedding(source searchsourceport.Source, watcher DescriptionWatcher, progress IndexProgress) *Embedding {
 	return &Embedding{source: source, watcher: watcher, progress: progress}
 }
 

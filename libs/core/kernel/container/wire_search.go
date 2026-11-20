@@ -36,14 +36,14 @@ func newSearchOver(c textSearch, queries searchusecase.LexicalQueries, sources [
 	return searching
 }
 
-func newFloorPolicy(db *vaultIndex, source searchsourceport.Source, errorHandler func(error)) searchusecase.FloorPolicy {
-	return searchusecase.NewFloorPolicy(db.SearchFloors(), getFloorHint(source), errorHandler)
+func newFloorPolicy(db *vaultIndex, hint searchusecase.FloorHint, errorHandler func(error)) searchusecase.FloorPolicy {
+	return searchusecase.NewFloorPolicy(db.SearchFloors(), hint, errorHandler)
 }
 
 func buildPluginSearch(
-	c textSearch, db *vaultIndex, source searchsourceport.Source, errorHandler func(error), clock machineport.Clock,
+	c textSearch, db *vaultIndex, source sourceAccess, errorHandler func(error), clock machineport.Clock,
 ) hostsearch.Search {
-	policy := newFloorPolicy(db, source, errorHandler)
+	policy := newFloorPolicy(db, source.floorHint, errorHandler)
 	return hostsearch.Search{
 		Samples:    db.SearchFloors(),
 		Nearest:    searchusecase.NewGetBestSimilarity(db.ChunkSearch()),
@@ -51,23 +51,15 @@ func buildPluginSearch(
 		Progress:   db.ChunkVectors(),
 		Stats:      searchusecase.NewStats(db.ChunkVectors(), clock),
 		Policy:     policy,
-		TextSearch: searchusecase.NewSearchText(newSearch(c, db, source, errorHandler, nil)),
-		Source:     source,
-		Queries:    newEmbedQueries(source),
+		TextSearch: searchusecase.NewSearchText(newSearch(c, db, source.searchSource, errorHandler, nil)),
+		Source:     source.searchSource,
+		Queries:    newEmbedQueries(source.queries),
 	}
 }
 
-func newEmbedQueries(source searchsourceport.Source) *vectorscase.EmbedQueries {
-	queries, ok := source.(vectorscase.QueryEmbedder)
-	if !ok {
+func newEmbedQueries(queries searchsourceport.QueryEmbedder) *vectorscase.EmbedQueries {
+	if queries == nil {
 		return nil
 	}
 	return vectorscase.NewEmbedQueries(queries)
-}
-
-func getFloorHint(source searchsourceport.Source) searchusecase.FloorHint {
-	if advisor, ok := source.(floorAdvisor); ok {
-		return advisor.GetFloorHint
-	}
-	return nil
 }

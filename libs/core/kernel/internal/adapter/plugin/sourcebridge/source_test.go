@@ -16,7 +16,6 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
-	vectorsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
@@ -28,12 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
-)
-
-// The bridge is the search source the core works through, and makes the vectors of queries for calibration.
-var (
-	_ sourcebridge.WatchedSource   = (*sourcebridge.Source)(nil)
-	_ vectorsusecase.QueryEmbedder = (*sourcebridge.Source)(nil)
 )
 
 // noConnection is the sentence a plugin answers while its settings name no connection.

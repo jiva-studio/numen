@@ -8,7 +8,6 @@ import (
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
@@ -35,7 +34,7 @@ func emitIndexChanged(generations *indexgeneration.Generations, events *editor.E
 
 type windowSearch struct {
 	index       *vaultIndex
-	source      searchsourceport.Source
+	source      sourceAccess
 	tasks       *run.Tasks
 	generations *indexgeneration.Generations
 	kinds       *file.ListTabKinds

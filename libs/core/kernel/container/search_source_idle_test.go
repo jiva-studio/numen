@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -106,7 +105,7 @@ func openMeaningCore(t *testing.T, pluginDir, cacheRoot string, port int) meanin
 	}
 }
 
-func (c meaningCore) openSource(t *testing.T) sourcebridge.WatchedSource {
+func (c meaningCore) openSource(t *testing.T) searchsourceport.Source {
 	t.Helper()
 	source, _, closeSource, why := c.config.Embedders(t.Context())
 	if why != nil {

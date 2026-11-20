@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -180,7 +179,7 @@ func prepareCLIScan(i cliIndex, ctx context.Context, v domain.Vault, plan vaultI
 		return indexing.ReadWholeVault{}, err
 	}
 	embedder, why := openCLIEmbedder(i.closers, i.source, ctx)
-	read, err := readWholeVault(plan, ctx, db, embedder, v, vaultMakeRefresh(vaultDeps, db, db.Notes()))
+	read, err := readWholeVault(plan, ctx, db, embedder.searchSource, v, vaultMakeRefresh(vaultDeps, db, db.Notes()))
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
@@ -197,7 +196,7 @@ func prepareCLISearch(i cliIndex, ctx context.Context, v domain.Vault, plan vaul
 	}
 	embedder, why := openCLIEmbedder(i.closers, i.source, ctx)
 	reportSearchFallback(errorHandler, why)
-	return newSearch(newTextSearch(plan, i.workers), db, embedder, errorHandler, nil), nil
+	return newSearch(newTextSearch(plan, i.workers), db, embedder.searchSource, errorHandler, nil), nil
 }
 
 func reportSearchFallback(errorHandler window.ErrorHandler, err error) {
@@ -206,12 +205,12 @@ func reportSearchFallback(errorHandler window.ErrorHandler, err error) {
 	}
 }
 
-func openCLIEmbedder(closers *[]func() error, source sourcebridge.Binding, ctx context.Context) (searchsourceport.Source, error) {
+func openCLIEmbedder(closers *[]func() error, source sourcebridge.Binding, ctx context.Context) (sourceAccess, error) {
 	embedder, closeEmbedder, why := source.Open(ctx)
 	if closeEmbedder != nil {
 		*closers = append(*closers, closeEmbedder)
 	}
-	return embedder, why
+	return getSourceAccess(embedder), why
 }
 
 func getCLIPluginCommands(c Config, commands pluginCommandUseCases, openWork cliPluginWork, plugins textversion.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) cli.PluginCommands {

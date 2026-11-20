@@ -48,15 +48,17 @@ func (c TestInstallation) Themes(say func(string)) (*theme.Service, error) {
 
 func (c TestInstallation) CutNotes() chunking.CutNotes { return cutNotes(indexPlanOf(c).ChunkPolicy) }
 
-func (c TestInstallation) Embedder(ctx context.Context) (sourcebridge.WatchedSource, func() error, error) {
-	return sourceOf(c).Open(ctx)
+func (c TestInstallation) Embedder(ctx context.Context) (searchsourceport.Source, func() error, error) {
+	source, closeSource, err := sourceOf(c).Open(ctx)
+	return getSourceAccess(source).searchSource, closeSource, err
 }
 
 func (c TestInstallation) EmbedderReady() bool { return embedderReady(sourceOf(c)) }
 
-func (c TestInstallation) Embedders(ctx context.Context) (indexing, asking sourcebridge.WatchedSource, closer func() error, why error) {
+func (c TestInstallation) Embedders(ctx context.Context) (indexing, asking searchsourceport.Source, closer func() error, why error) {
 	source, closer, err := sourceOf(c).OpenWatching(ctx)
-	return source, source, closer, err
+	access := getSourceAccess(source)
+	return access.searchSource, access.searchSource, closer, err
 }
 
 func (c TestInstallation) NewSearchOver(queries searchusecase.LexicalQueries, sources []searchusecase.Participant, errorHandler func(error)) searchusecase.Search {

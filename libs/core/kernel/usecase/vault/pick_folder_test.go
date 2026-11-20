@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 )
 
@@ -18,7 +19,7 @@ func (d dialog) ChooseFolder(context.Context, string, string) (string, bool, err
 	return d.chose, d.did, d.err
 }
 
-var _ picker.FolderDialog = dialog{}
+var _ machineport.FolderDialog = dialog{}
 
 func TestTheFolderThePersonChoosesIsReturned(t *testing.T) {
 	t.Parallel()

@@ -103,7 +103,7 @@ type windowLaunch struct {
 	server      *editor.FileServer
 	closeSource func() error
 	plugins     windowPluginAccess
-	source      sourcebridge.WatchedSource
+	source      sourceAccess
 	generations *indexgeneration.Generations
 }
 type windowStartup struct {
@@ -147,7 +147,8 @@ func buildWindow(
 	// yet is opened all the same: the search item of its plugin shows why, and the source joins search and
 	// indexing once a configuration of its plugin lets it describe itself.
 	embedder, closeEmbedder, why := plugins.source.OpenWatching(ctx)
-	embedding := indexing.NewEmbedding(embedder, embedder, db.ChunkVectors())
+	source := getSourceAccess(embedder)
+	embedding := indexing.NewEmbedding(source.searchSource, source.watcher, db.ChunkVectors())
 	state := editor.NewSession(opening.Frame)
 	page := editor.NewPageAccess(tasks, state)
 	events := &editor.Events{Emit: plugins.events.EmitEvent}
@@ -195,7 +196,7 @@ func buildWindow(
 	mountVaults(window, &listing, moves.Change, session.userSwitch)
 	return window, windowLaunch{
 		start:  session.cases.start,
-		server: newFileServer(vaultDeps, &state.Runtime, page.Window, &listing.Find), closeSource: closeEmbedder, source: embedder, generations: generations,
+		server: newFileServer(vaultDeps, &state.Runtime, page.Window, &listing.Find), closeSource: closeEmbedder, source: source, generations: generations,
 		plugins: windowPluginAccess{
 			writeWake: writeWake, notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, listing, session.cases.openPlugin), showTab: session.tools.showTab,
 		},

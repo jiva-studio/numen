@@ -31,12 +31,12 @@ type Binding struct {
 }
 
 // Open resolves the configured source and returns its initial description error to the caller.
-func (b Binding) Open(ctx context.Context) (WatchedSource, func() error, error) {
+func (b Binding) Open(ctx context.Context) (*Source, func() error, error) {
 	return b.open(func(string) (*Source, error) { return Open(ctx, b.Activator, b.Plugins, b.Descriptions) })
 }
 
 // OpenWatching reports description errors as the source's configuration changes.
-func (b Binding) OpenWatching(ctx context.Context) (WatchedSource, func() error, error) {
+func (b Binding) OpenWatching(ctx context.Context) (*Source, func() error, error) {
 	source, closeSource, err := b.open(func(pluginID string) (*Source, error) {
 		return OpenWatching(ctx, b.Activator, b.Plugins, b.Descriptions, func(err error) { b.ReportRead(pluginID, err) })
 	})
@@ -46,7 +46,7 @@ func (b Binding) OpenWatching(ctx context.Context) (WatchedSource, func() error,
 	return source, closeSource, nil
 }
 
-func (b Binding) open(openSource func(string) (*Source, error)) (WatchedSource, func() error, error) {
+func (b Binding) open(openSource func(string) (*Source, error)) (*Source, func() error, error) {
 	found, err := b.Plugins.ResolveCapability(bridge.CapabilitySearchSource)
 	if errors.Is(err, domain.ErrUnavailable) {
 		return nil, func() error { return nil }, nil

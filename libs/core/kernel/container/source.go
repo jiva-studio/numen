@@ -1,10 +1,24 @@
 package container
 
-import "context"
+import (
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
+)
 
-// floorAdvisor reports the similarity a chunk starts out having to reach to answer a query under the
-// source. The hint is not part of the identity and is absent from the recipe.
-type floorAdvisor interface {
-	// GetFloorHint returns the starting floor, and zero where the source has none.
-	GetFloorHint(ctx context.Context) float64
+// sourceAccess supplies the active plugin's capabilities to search and indexing.
+type sourceAccess struct {
+	searchSource searchsourceport.Source
+	watcher      indexing.DescriptionWatcher
+	queries      searchquery.QuerySource
+	floorHint    search.FloorHint
+}
+
+func getSourceAccess(source *sourcebridge.Source) sourceAccess {
+	if source == nil {
+		return sourceAccess{}
+	}
+	return sourceAccess{searchSource: source, watcher: source, queries: source, floorHint: source.GetFloorHint}
 }
