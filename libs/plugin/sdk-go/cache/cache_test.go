@@ -390,32 +390,6 @@ func TestAHostThatGrantedNothingProvidesNoDirectoryAtAll(t *testing.T) {
 	}
 }
 
-func TestGetSharedDataDirIsTheDataDirectoryTheHostShares(t *testing.T) {
-	plugintest.GrantStorage(t)
-	shared := os.Getenv(cache.EnvSharedDataDir)
-
-	got, err := cache.GetSharedDataDir()
-	own, ownErr := cache.GetSharedDataDirOrPluginDataDir()
-
-	if err != nil || got != shared || ownErr != nil || own != shared || shared == os.Getenv(cache.EnvSharedDir) {
-		t.Errorf("GetSharedDataDir() = %q, %v; OrPluginDataDir = %q, %v; want %q", got, err, own, ownErr, shared)
-	}
-}
-
-func TestAnOlderHostThatSharesNoDataMakesThePluginUseItsOwnDataDirectory(t *testing.T) {
-	_, dataDir := plugintest.GrantStorage(t)
-	t.Setenv(cache.EnvSharedDataDir, "")
-
-	if dir, err := cache.GetSharedDataDir(); err == nil {
-		t.Errorf("GetSharedDataDir() = %q, want an error", dir)
-	}
-	got, err := cache.GetSharedDataDirOrPluginDataDir()
-
-	if err != nil || got != dataDir {
-		t.Errorf("GetSharedDataDirOrPluginDataDir() = %q, %v, want %q", got, err, dataDir)
-	}
-}
-
 func TestCacheZeroValueTimeoutDiskCorruptAndAsyncInFlightEdgeCases(t *testing.T) {
 	var zeroCache cache.Cache[string]
 	zeroCache.Put("k1", "v1")

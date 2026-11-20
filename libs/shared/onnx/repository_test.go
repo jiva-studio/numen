@@ -11,8 +11,16 @@ import (
 func TestPrepareModelPreservesExternalDataPaths(t *testing.T) {
 	root := t.TempDir()
 	files := map[string]string{
-		"metadata": `{"sha":"immutable","siblings":[{"rfilename":"onnx/a.onnx","lfs":{"sha256":"lfs digest"}},{"rfilename":"onnx/a.onnx_data"},{"rfilename":"onnx/a.onnx/other"},{"rfilename":"onnx/b.onnx_data"},{"rfilename":"onnx/b.onnx"},{"rfilename":"onnx/chunks/weights.bin"},{"rfilename":"tokenizer.json"}]}`,
-		"graph":    "model bytes", "tokens": "tokenizer bytes", "data": "external bytes",
+		"metadata": `{"sha":"immutable",
+ "siblings":[
+ {"rfilename":"onnx/a.onnx","lfs":{"sha256":"lfs digest"}},
+ {"rfilename":"onnx/a.onnx_data"},
+ {"rfilename":"onnx/a.onnx/other"},
+ {"rfilename":"onnx/b.onnx_data"},
+ {"rfilename":"onnx/b.onnx"},
+ {"rfilename":"onnx/chunks/weights.bin"},
+ {"rfilename":"tokenizer.json"}]}`,
+		"graph": "model bytes", "tokens": "tokenizer bytes", "data": "external bytes",
 	}
 	for name, body := range files {
 		if err := os.WriteFile(filepath.Join(root, name), []byte(body), 0o600); err != nil {

@@ -37,7 +37,13 @@ func TestCustomRerankerFetchesOnlyItsGraphAndExternalData(t *testing.T) {
 	t.Setenv("NUMEN_PLUGIN_CACHE_DIR", root)
 	t.Setenv("HF_ENDPOINT", "")
 	list := filepath.Join(root, "index.json")
-	if err := os.WriteFile(list, []byte(`{"sha":"current","siblings":[{"rfilename":"encoder.onnx"},{"rfilename":"encoder.onnx_data"},{"rfilename":"tokenizer.json"},{"rfilename":"named-weights.bin"},{"rfilename":"pytorch_model.bin"}]}`), 0o600); err != nil {
+	if err := os.WriteFile(list, []byte(`{"sha":"current",
+ "siblings":[
+ {"rfilename":"encoder.onnx"},
+ {"rfilename":"encoder.onnx_data"},
+ {"rfilename":"tokenizer.json"},
+ {"rfilename":"named-weights.bin"},
+ {"rfilename":"pytorch_model.bin"}]}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	fetch := func(_ context.Context, address, sum string) (string, error) {
