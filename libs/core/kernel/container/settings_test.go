@@ -226,7 +226,9 @@ func TestThePluginsReceiveTheBudgetAndTheNicenessTheHostResolved(t *testing.T) {
 }
 
 func TestEcoReachesThePluginsAsOneThreadAtTheLowestPriority(t *testing.T) {
-	if got := getPluginPerformance(machinedomain.ResolveCompute(machinedomain.ProfileEco, machinedomain.Specs{}), "cpu"); got != (plugindomain.Performance{Provider: "cpu", Profile: "eco", Threads: 1, Nice: 19}) {
+	budget := machinedomain.ResolveCompute(machinedomain.ProfileEco, machinedomain.Specs{})
+	want := plugindomain.Performance{Provider: "cpu", Profile: "eco", Threads: 1, Nice: 19}
+	if got := getPluginPerformance(budget, "cpu"); got != want {
 		t.Errorf("eco resolves to %+v", got)
 	}
 }
