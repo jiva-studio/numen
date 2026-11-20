@@ -120,8 +120,15 @@ func (p *FileProvisioner) store(ctx context.Context, req manifest.DependencyRequ
 	if err != nil {
 		return plugin.ResolvedDependency{}, err
 	}
-	if sum == "" {
+	if source.ChecksumSHA256 == "" {
 		return p.storeModelFile(ctx, req, dir, primary, actual)
+	}
+	if source.ArchiveMember != "" {
+		member, err := unpackMember(ctx, primary, source.ArchiveMember, source.MemberSHA256, dir)
+		if err = errors.Join(err, os.Remove(primary)); err != nil {
+			return plugin.ResolvedDependency{}, err
+		}
+		primary = member
 	}
 	if err := writeReadyMarker(ctx, dir, filepath.Base(primary), sum); err != nil {
 		return plugin.ResolvedDependency{}, err
@@ -149,14 +156,7 @@ func (p *FileProvisioner) fetch(
 			})
 		},
 	}.fetch(ctx)
-	if err != nil || source.ArchiveMember == "" {
-		return primary, actual, err
-	}
-	member, err := unpackMember(primary, source.ArchiveMember, source.MemberSHA256, dir)
-	if err != nil {
-		return "", "", errors.Join(err, os.Remove(primary))
-	}
-	return member, source.MemberSHA256, os.Remove(primary)
+	return primary, actual, err
 }
 
 func getReadySum(source manifest.DependencySource) string {
