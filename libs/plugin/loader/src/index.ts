@@ -51,7 +51,12 @@ export { createPluginTexts } from './pluginTexts'
 export { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from './commandId'
 export * from './contract'
 export { createPluginNotices, type NoticeList, type NoticeListTask } from './pluginNotices'
-export { createBackgroundTaskHost, createFailedTask, getFailedTasks, type WorkTask } from './background-tasks'
+export {
+  createBackgroundTaskHost,
+  createFailedTask,
+  getFailedTasks,
+  type WorkTask,
+} from './background-tasks'
 export { createPluginTasks, type WindowTask } from './pluginTasks'
 export type { HealthReports } from './pluginHealth'
 export {
