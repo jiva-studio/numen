@@ -80,9 +80,9 @@ func (s *Services) UseNotes() {
 	writes := s.state.Writes
 	s.Note = notewindow.NewHandler(
 		s.state.Notices,
-		notewindow.NewProse(s.state, use.Read, use.Write, use.Create, use.Rename, writes),
+		notewindow.NewProse(s.state, use.Read, use.Write, use.Create, use.Rename, &s.state.writeReport),
 		notewindow.NewOutline(s.state, use.OpeningNote, use.RelatedNotes, use.Headings),
-		notewindow.NewLinks(s.state, use.ResolveLinks, nil, nil, writes),
+		notewindow.NewLinks(s.state, use.ResolveLinks, nil, nil, writes.IsIndexOutdated),
 		notewindow.NewConnections(s.state, nil, nil, nil, nil, nil),
 	)
 }

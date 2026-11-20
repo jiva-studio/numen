@@ -75,12 +75,12 @@ type Worker struct {
 	events       Events
 	debounce     time.Duration
 	after        func(time.Duration) <-chan time.Time
-	wakes        *channelWakes
+	wakes        atomic.Pointer[channelWakes]
 	skips        *vaultreading.Skips
 }
 
 func NewWorker(cfg Config) *Worker {
-	return &Worker{
+	worker := &Worker{
 		reading:      cfg.Reading,
 		source:       cfg.Source,
 		vectorCounts: cfg.VectorCounts,
@@ -88,17 +88,18 @@ func NewWorker(cfg Config) *Worker {
 		events:       cfg.Events,
 		debounce:     cfg.Quiet,
 		after:        cfg.After,
-		wakes:        newChannelWakes(),
 		skips:        vaultreading.NewSkips(),
 	}
+	worker.wakes.Store(newChannelWakes())
+	return worker
 }
 
 // WakeSources leaves one pass over the file texts waiting.
-func (w *Worker) WakeSources() { w.wakes.wakeSources() }
+func (w *Worker) WakeSources() { w.wakes.Load().wakeSources() }
 
 // WakeNotes leaves one pass over the notes' vectors waiting. Several changes at
 // once are one pass.
-func (w *Worker) WakeNotes() { w.wakes.wakeNotes() }
+func (w *Worker) WakeNotes() { w.wakes.Load().wakeNotes() }
 
 // ClearSkips indexes again the sources at the paths given whose indexing a
 // person canceled. The vault calls it for every path it reports changed.
@@ -114,7 +115,7 @@ func (w *Worker) hasSource() bool { return w.source != nil && w.source.Describe(
 
 func (w *Worker) waitForQuiet() <-chan time.Time { return w.after(w.debounce) }
 
-func (w *Worker) wakeRead() { w.wakes.wakeRead() }
+func (w *Worker) wakeRead() { w.wakes.Load().wakeRead() }
 
 func (w *Worker) notifyIndexChanged(ctx context.Context, v domain.Vault) {
 	if w.indexChanged == nil || ctx.Err() != nil {
@@ -123,8 +124,8 @@ func (w *Worker) notifyIndexChanged(ctx context.Context, v domain.Vault) {
 	w.indexChanged(ctx, v)
 }
 
-func (w *Worker) newPass(s *Session, v domain.Vault, rebuild bool) *pass {
-	return &pass{env: w, events: w.events, waits: w.wakes, skips: w.skips, session: s, v: v, isRebuild: rebuild}
+func (w *Worker) newPass(s *Session, rebuild bool) *pass {
+	return &pass{env: w, events: w.events, waits: s.signals, skips: w.skips, drainSources: s.drain, v: s.vault, isRebuild: rebuild}
 }
 
 // wakeWaits waits for the signals that something arrived for a pass to do.
@@ -141,6 +142,7 @@ type wakeWaits interface {
 // channelWakes are the signals that something arrived for a pass to do. Each is held until a pass takes it,
 // and several of the same kind are one.
 type channelWakes struct {
+	vault   domain.VaultID
 	sources chan struct{}
 	notes   chan struct{}
 	read    chan struct{}
@@ -148,6 +150,15 @@ type channelWakes struct {
 
 func newChannelWakes() *channelWakes {
 	return &channelWakes{sources: make(chan struct{}, 1), notes: make(chan struct{}, 1), read: make(chan struct{}, 1)}
+}
+
+func (c *channelWakes) forVault(id domain.VaultID) *channelWakes {
+	next := *c
+	if c.vault != "" && c.vault != id {
+		next.notes = make(chan struct{}, 1)
+	}
+	next.vault = id
+	return &next
 }
 
 func (c *channelWakes) wakeSources() { signal(c.sources) }
@@ -244,21 +255,25 @@ func signal(wake chan struct{}) {
 // sessionHost is the worker a session runs its passes for.
 type sessionHost interface {
 	wakeRead()
-	newPass(s *Session, v domain.Vault, rebuild bool) *pass
+	newPass(s *Session, rebuild bool) *pass
 }
 
 // Session is the work of one vault: the sources a recognition has written more
 // of than their chunks account for, and the passes over the vault.
 type Session struct {
-	host sessionHost
+	host    sessionHost
+	signals *channelWakes
+	vault   domain.Vault
 
 	mu      sync.Mutex
 	pending map[string]domain.Vault
 }
 
-// NewSession is the work of a vault that has not been started.
-func (w *Worker) NewSession() *Session {
-	return &Session{host: w}
+// NewSession directs committed writes to this vault before its first scan starts.
+func (w *Worker) NewSession(v domain.Vault) *Session {
+	signals := w.wakes.Load().forVault(v.ID)
+	w.wakes.Store(signals)
+	return &Session{host: w, signals: signals, vault: v}
 }
 
 // RequestCut requests that the source at a path be cut again from its text. A
@@ -290,6 +305,6 @@ func (s *Session) drain() map[string]domain.Vault {
 // Run is the first indexing of a vault, and then every indexing that arrives
 // until ctx ends. rebuild indexes every file again in the first pass over the
 // file texts.
-func (s *Session) Run(ctx context.Context, v domain.Vault, rebuild bool, read ReadNotes) {
-	s.host.newPass(s, v, rebuild).run(ctx, read)
+func (s *Session) Run(ctx context.Context, rebuild bool, read ReadNotes) {
+	s.host.newPass(s, rebuild).run(ctx, read)
 }

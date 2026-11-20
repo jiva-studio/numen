@@ -173,7 +173,7 @@ func newSession(withSource bool) *session {
 		Quiet:  QuietPeriod,
 		After:  s.steps.startTimer,
 	})
-	s.run = s.worker.NewSession()
+	s.run = s.worker.NewSession(s.v)
 	return s
 }
 
@@ -187,7 +187,7 @@ func (s *session) start(t *testing.T) {
 	})
 	go func() {
 		defer close(ended)
-		s.run.Run(ctx, s.v, false, s.readNotes)
+		s.run.Run(ctx, false, s.readNotes)
 	}()
 }
 
@@ -430,7 +430,7 @@ func TestCanceledSessionEmitsNothing(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 
-		s.run.Run(ctx, s.v, false, s.readNotes)
+		s.run.Run(ctx, false, s.readNotes)
 
 		if heard := s.getHeard(); len(heard) != 0 {
 			t.Errorf("with a source %v, the listener heard %+v from a canceled session", withSource, heard)

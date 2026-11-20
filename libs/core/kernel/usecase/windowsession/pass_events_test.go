@@ -16,8 +16,8 @@ func TestUnwatchedVaultReportsFailureAndLifecycle(t *testing.T) {
 	diag := NewDiagnostics(io.Discard, tasks)
 	runner := NewPassRunner(PassRunnerConfig{
 		Failures: &Runtime{}, Diag: diag,
-		NewSession: func() IndexSession {
-			return IndexSession{Run: func(context.Context, domain.Vault, bool, ReadNotes) {}}
+		NewSession: func(domain.Vault) IndexSession {
+			return IndexSession{Run: func(context.Context, bool, ReadNotes) {}}
 		},
 		Reporter: NewChangeReporter(&changeLog{}, nil, nil, diag),
 		Passes: VaultPassesFunc(func(context.Context, domain.Vault, bool, Reporters) Started {
@@ -30,7 +30,7 @@ func TestUnwatchedVaultReportsFailureAndLifecycle(t *testing.T) {
 			events <- event
 		},
 	})
-	run := runner.build(t.Context(), garden(), false)
+	run := runner.build(t.Context(), garden(), false, runner.newSession(garden()))
 	run.cancel()
 	run.wait()
 	for _, want := range []string{"Vault watch unavailable", "Vault opened", "Vault closed"} {

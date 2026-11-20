@@ -11,12 +11,10 @@ import (
 // updatingIndex is the task ID for a file written to the vault that the index did not follow.
 const updatingIndex = "update index"
 
-// Writes is the writes to the vault that the window waits for before it closes, and what a write
-// tells: whether the index followed it, and the embedder that a note holds new prose.
+// Writes tracks the operations the window waits for on close and reports failures to update the index.
 type Writes struct {
-	writing           inflight
-	window            *Window
-	NotifyNoteWritten func()
+	writing inflight
+	window  *Window
 }
 
 // NewWrites returns the writes of a window that tells its tasks to window.
@@ -55,11 +53,4 @@ func (w *Writes) IsIndexOutdated(err error) bool {
 	}
 	w.window.AddTask(work.Task{ID: updatingIndex, Title: "Update index", Error: err.Error()})
 	return true
-}
-
-// NoteWritten tells the embedder that a note holds new prose.
-func (w *Writes) NoteWritten() {
-	if w.NotifyNoteWritten != nil {
-		w.NotifyNoteWritten()
-	}
 }

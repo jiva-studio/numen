@@ -20,7 +20,7 @@ type PassRunner struct {
 	failures   FailureSink
 	diag       *Diagnostics
 	closing    <-chan struct{}
-	newSession func() IndexSession
+	newSession func(domain.Vault) IndexSession
 	reporter   ChangeReporting
 	passes     VaultPasses
 	triggers   TriggerSource
@@ -34,7 +34,7 @@ type PassRunnerConfig struct {
 	Failures   FailureSink
 	Diag       *Diagnostics
 	Closing    <-chan struct{}
-	NewSession func() IndexSession
+	NewSession func(domain.Vault) IndexSession
 	Reporter   ChangeReporting
 	Passes     VaultPasses
 	Triggers   TriggerSource
@@ -50,7 +50,9 @@ func NewPassRunner(cfg PassRunnerConfig) *PassRunner {
 	}
 }
 
-func (r *PassRunner) build(ctx context.Context, v domain.Vault, rebuild bool) *runningVault {
+func (r *PassRunner) openIndexSession(v domain.Vault) IndexSession { return r.newSession(v) }
+
+func (r *PassRunner) build(ctx context.Context, v domain.Vault, rebuild bool, indexed IndexSession) *runningVault {
 	watching, stop := context.WithCancel(context.WithoutCancel(ctx))
 	if r.closing != nil {
 		go func() {
@@ -65,7 +67,6 @@ func (r *PassRunner) build(ctx context.Context, v domain.Vault, rebuild bool) *r
 	// What a plugin writes as a text version is cut where every other cut happens.
 	// A version being made and a vault being scanned are then never two passes
 	// over the index at once.
-	indexed := r.newSession()
 	r.reporter.listenVersions(indexed)
 
 	// Indexing every file again belongs to the vault this window was opened on,
@@ -115,7 +116,7 @@ func (r *PassRunner) startIndexing(
 	})
 
 	running.Go(func() {
-		indexed.Run(ctx, v, rebuild, started.Read)
+		indexed.Run(ctx, rebuild, started.Read)
 	})
 
 	if runTriggers := r.triggers.start(ctx, v, triggerPasses, func(err error) {

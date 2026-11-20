@@ -152,12 +152,12 @@ func mountWorkspace(w *windowRoutes, db *vaultIndex) {
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds *file.ListTabKinds) {
+func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds *file.ListTabKinds, wake indexing.WriteWake) {
 	state := w.session
 	queries := vaultQueries(db)
 	writes := w.page.Writes
 	prose := notewindow.NewProse(
-		&state.Runtime, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename, writes,
+		&state.Runtime, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename, &notewindow.Writes{IsIndexOutdated: writes.IsIndexOutdated, WriteWake: wake},
 	)
 	outlining := notewindow.NewOutline(
 		&state.Runtime,
@@ -166,7 +166,7 @@ func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds *file
 		query.NewListHeadings(db.NoteQueries()),
 	)
 	links := notewindow.NewLinks(
-		&state.Runtime, query.NewResolveLinks(db.NoteQueries()), &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, writes,
+		&state.Runtime, query.NewResolveLinks(db.NoteQueries()), &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, writes.IsIndexOutdated,
 	)
 	connections := notewindow.NewConnections(
 		&state.Runtime, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
@@ -301,12 +301,12 @@ func (s windowStartup) newIndexWorker(
 	})
 }
 
-func newIndexSession(worker *indexing.Worker) func() windowsession.IndexSession {
-	return func() windowsession.IndexSession {
-		session := worker.NewSession()
+func newIndexSession(worker *indexing.Worker) func(domain.Vault) windowsession.IndexSession {
+	return func(v domain.Vault) windowsession.IndexSession {
+		session := worker.NewSession(v)
 		return windowsession.IndexSession{
-			Run: func(ctx context.Context, v domain.Vault, rebuild bool, read windowsession.ReadNotes) {
-				session.Run(ctx, v, rebuild, read)
+			Run: func(ctx context.Context, rebuild bool, read windowsession.ReadNotes) {
+				session.Run(ctx, rebuild, read)
 			},
 			ReportVersionsChanged: session.ReportVersionsChanged,
 		}

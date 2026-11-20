@@ -2,15 +2,14 @@ package hostvault
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
 // Session chooses the vault a call works, follows it, and tells the window that a call changed a file.
@@ -21,7 +20,7 @@ type Session struct {
 	Find       func(id domain.VaultID) (domain.Vault, error)
 	IndexState func(ctx context.Context, v domain.Vault) (plugin.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
-	Written    func()
+	indexing.WriteWake
 
 	rebuild func(found domain.Vault) *vault.Access
 }
@@ -29,7 +28,7 @@ type Session struct {
 func (s *Session) showing(found domain.Vault) Session {
 	return Session{
 		Current: func() (domain.Vault, bool) { return found, true }, Vaults: s.Vaults, Find: s.Find,
-		IndexState: s.IndexState, Moved: s.Moved, Written: s.Written,
+		IndexState: s.IndexState, Moved: s.Moved, WriteWake: s.WriteWake,
 	}
 }
 
@@ -97,17 +96,4 @@ func (s *Session) open() (domain.Vault, error) {
 		return domain.Vault{}, plugin.ErrNoVault
 	}
 	return v, nil
-}
-
-func (s *Session) notifyFileWritten() {
-	if s.Written != nil {
-		s.Written()
-	}
-}
-
-func (s *Session) notifyAfterWrite(err error) error {
-	if err == nil || errors.Is(err, edit.ErrIndexOutdated) {
-		s.notifyFileWritten()
-	}
-	return err
 }

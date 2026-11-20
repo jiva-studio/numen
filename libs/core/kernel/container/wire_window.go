@@ -94,9 +94,10 @@ type windowRoutes struct {
 }
 
 type windowPluginAccess struct {
-	notes   hostvault.NoteChanges
-	vaults  windowsession.PluginVaults
-	showTab windowsession.ShowTab
+	writeWake indexing.WriteWake
+	notes     hostvault.NoteChanges
+	vaults    windowsession.PluginVaults
+	showTab   windowsession.ShowTab
 }
 
 type windowLaunch struct {
@@ -155,7 +156,7 @@ func buildWindow(
 	state.Runtime.RecordModel(embedding.Describe())
 	generations := newIndexGenerations(vaultDeps.Clock)
 	indexer := s.newIndexWorker(searchDeps, vaultDeps, &state.Runtime, page.Window, embedding, emitIndexChanged(generations, events))
-	page.Writes.NotifyNoteWritten = indexer.WakeNotes
+	writeWake := indexing.WriteWake(indexer.WakeWrittenVault)
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
@@ -192,13 +193,13 @@ func buildWindow(
 	mountWorkspace(window, db)
 	mountWindowState(window)
 	mountFile(window, vaultDeps, db, plugins.kinds, &moves.Tree.Move, &notes.Place)
-	mountNote(window, &notes, db, plugins.kinds.list)
+	mountNote(window, &notes, db, plugins.kinds.list, writeWake)
 	mountVaults(window, &listing, moves.Change, session.userSwitch)
 	return window, windowLaunch{
 		start:  session.cases.start,
 		server: newFileServer(vaultDeps, &state.Runtime, page.Window, &listing.Find), closeSource: closeEmbedder, source: embedder, generations: generations,
 		plugins: windowPluginAccess{
-			notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, listing, session.cases.openPlugin), showTab: session.tools.showTab,
+			writeWake: writeWake, notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, listing, session.cases.openPlugin), showTab: session.tools.showTab,
 		},
 	}
 }

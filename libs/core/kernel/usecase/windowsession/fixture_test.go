@@ -293,7 +293,7 @@ type VaultPorts struct {
 
 type IndexPorts struct {
 	Wake       IndexWake
-	NewSession func() IndexSession
+	NewSession func(domain.Vault) IndexSession
 	Triggers   TriggerSource
 	Model      ModelSource
 }
@@ -386,9 +386,9 @@ func newLoggedWindow(t *testing.T, log *eventLog, edit func(*Deps)) *testWindow 
 		Vault:  VaultPorts{Identity: identity{}, Recorded: openRecord{log: log}, Passes: w.passes},
 		Index: IndexPorts{
 			Wake: w.wake,
-			NewSession: func() IndexSession {
+			NewSession: func(domain.Vault) IndexSession {
 				return IndexSession{
-					Run:                   func(ctx context.Context, _ domain.Vault, _ bool, _ ReadNotes) { <-ctx.Done() },
+					Run:                   func(ctx context.Context, _ bool, _ ReadNotes) { <-ctx.Done() },
 					ReportVersionsChanged: func(domain.Vault, string) {},
 				}
 			},

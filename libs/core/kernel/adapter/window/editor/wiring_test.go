@@ -78,16 +78,16 @@ func (w wiring) startSession(
 		Quiet:        opts.idle,
 		After:        time.After,
 	})
-	state.Writes.NotifyNoteWritten = worker.WakeNotes
+	state.writeReport.WriteWake = worker.WakeWrittenVault
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
 	diag := windowsession.NewDiagnostics(opts.out, state.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
 		Failures: &state.Runtime, Diag: diag,
-		NewSession: func() windowsession.IndexSession {
-			indexed := worker.NewSession()
+		NewSession: func(v domain.Vault) windowsession.IndexSession {
+			indexed := worker.NewSession(v)
 			return windowsession.IndexSession{
-				Run: func(ctx context.Context, v domain.Vault, rebuild bool, read windowsession.ReadNotes) {
-					indexed.Run(ctx, v, rebuild, read)
+				Run: func(ctx context.Context, rebuild bool, read windowsession.ReadNotes) {
+					indexed.Run(ctx, rebuild, read)
 				},
 				ReportVersionsChanged: indexed.ReportVersionsChanged,
 			}

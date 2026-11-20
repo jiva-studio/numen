@@ -18,7 +18,8 @@ type vaultSession interface {
 
 // vaultRunner builds the passes behind one vault.
 type vaultRunner interface {
-	build(ctx context.Context, v domain.Vault, rebuild bool) *runningVault
+	openIndexSession(v domain.Vault) IndexSession
+	build(ctx context.Context, v domain.Vault, rebuild bool, indexed IndexSession) *runningVault
 }
 
 // Session starts and stops the passes behind the vault of a window. Every scenario that changes what
@@ -41,19 +42,21 @@ func NewSession(
 }
 
 func (s *Session) startVault(ctx context.Context, v domain.Vault, rebuild bool) {
-	s.runtime.SetVault(v)
 	if v.ID == "" {
+		s.runtime.SetVault(v)
 		// Nothing is being read, so nothing is waited for.
 		s.runtime.SetReady(true)
 		return
 	}
+	indexed := s.runner.openIndexSession(v)
+	s.runtime.SetVault(v)
 	// Recorded before the vault is built, so the next window opens on it. A failure
 	// to write the list is reported and does not stop the vault from opening.
 	if err := s.recorded.Execute(v.ID); err != nil {
 		s.diag.say("not recording %s as the vault opened: %v\n", v.Name, err)
 	}
 	// Published last, so a request that reads a run reads the one belonging to the vault in front of it.
-	s.running.Store(s.runner.build(ctx, v, rebuild))
+	s.running.Store(s.runner.build(ctx, v, rebuild, indexed))
 }
 
 func (s *Session) stopVault() {

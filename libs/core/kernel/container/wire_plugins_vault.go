@@ -5,6 +5,7 @@ import (
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
@@ -27,7 +28,7 @@ import (
 
 // pluginVaultHooks is what a window adds to the vault it lets the plugins work.
 type pluginVaultHooks struct {
-	Written    func()
+	WriteWake  indexing.WriteWake
 	IndexState func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
 	Notes      *hostvault.NoteChanges
@@ -73,7 +74,7 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 			Find:       vaultregistry.NewFindByID(registry.Lookup).Execute,
 			IndexState: hooks.IndexState,
 			Moved:      hooks.Moved,
-			Written:    hooks.Written,
+			WriteWake:  hooks.WriteWake,
 		},
 		hostvault.Files{
 			Stat:        file.NewHashFile(vaultDeps.Readers, vaultDeps.Writers),

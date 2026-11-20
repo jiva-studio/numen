@@ -116,7 +116,7 @@ func TestCancelMarksTheSourcesInFlight(t *testing.T) {
 				Quiet:  time.Hour,
 				After:  time.After,
 			})
-			p := worker.newPass(worker.NewSession(), domain.Vault{ID: "v1"}, false)
+			p := worker.newPass(worker.NewSession(domain.Vault{ID: "v1"}), false)
 
 			ended := make(chan struct{})
 			go func() {

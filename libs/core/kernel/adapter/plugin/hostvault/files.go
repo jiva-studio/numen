@@ -65,7 +65,8 @@ func (w Writer) WriteFile(
 		return domain.FileStat{}, err
 	}
 	stat, err := w.Write.Execute(ctx, v, path, content, baseline)
-	return stat, w.session.notifyAfterWrite(err)
+	w.session.ReportWrites(v.ID, err)
+	return stat, err
 }
 
 func (w Writer) CreateFile(ctx context.Context, path string, content []byte) error {
@@ -73,7 +74,9 @@ func (w Writer) CreateFile(ctx context.Context, path string, content []byte) err
 	if err != nil {
 		return err
 	}
-	return w.session.notifyAfterWrite(w.Create.Execute(ctx, v, path, content))
+	err = w.Create.Execute(ctx, v, path, content)
+	w.session.ReportWrites(v.ID, err)
+	return err
 }
 
 // ScanFiles updates the index for the files named, which the plugin wrote outside the vault calls.
@@ -82,5 +85,7 @@ func (w Writer) ScanFiles(ctx context.Context, paths []string) error {
 	if err != nil {
 		return err
 	}
-	return w.session.notifyAfterWrite(w.Index.Execute(ctx, v, paths))
+	err = w.Index.Execute(ctx, v, paths)
+	w.session.ReportWrites(v.ID, err)
+	return err
 }
