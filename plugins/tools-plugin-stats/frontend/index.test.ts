@@ -8,6 +8,7 @@ import { activate, PLUGINS_VIEW } from './index'
 const MAPS: PluginProcess = {
   pluginId: 'org.example.maps',
   pluginName: 'Maps',
+  modelProviders: [],
   startTime: 1_700_000_000_000,
   lastUseTime: 1_700_000_000_000,
   leaseCount: 1,

@@ -135,6 +135,9 @@ func (m *ModelSessions) publish(ctx context.Context) error {
 // GetCompute reads the host policy in force when a model opens.
 func (m *ModelSessions) GetCompute() performance.Compute {
 	config := m.server.Lifecycle().AllConfigs()
-	threads, _ := strconv.Atoi(config[performance.ThreadsKey])
+	threads, err := strconv.Atoi(config[performance.ThreadsKey])
+	if err != nil || threads < 0 {
+		threads = 0
+	}
 	return performance.Compute{Provider: config[performance.ProviderKey], ThreadLimit: threads}
 }

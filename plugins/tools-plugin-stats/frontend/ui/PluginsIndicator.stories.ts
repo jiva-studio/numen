@@ -22,6 +22,7 @@ const PLUGINS: readonly PluginProcess[] = [
   {
     pluginId: 'org.example.atlas',
     pluginName: 'Atlas',
+    modelProviders: [],
     startTime: NOW - 42 * MINUTE,
     lastUseTime: NOW - 2_000,
     leaseCount: 2,
@@ -36,6 +37,7 @@ const PLUGINS: readonly PluginProcess[] = [
   {
     pluginId: 'org.example.gazette',
     pluginName: 'Gazette',
+    modelProviders: [],
     startTime: NOW - 5 * MINUTE,
     lastUseTime: NOW - 57_000,
     leaseCount: 0,
@@ -48,6 +50,7 @@ const PLUGINS: readonly PluginProcess[] = [
   {
     pluginId: 'org.example.ledger',
     pluginName: 'Ledger',
+    modelProviders: [],
     startTime: NOW - 3 * 60 * MINUTE,
     lastUseTime: NOW - 3 * MINUTE - 10_000,
     leaseCount: 0,
@@ -60,6 +63,7 @@ const PLUGINS: readonly PluginProcess[] = [
   {
     pluginId: 'org.example.maps',
     pluginName: 'Maps',
+    modelProviders: [],
     startTime: NOW - 20 * MINUTE,
     lastUseTime: NOW - 4_000,
     leaseCount: 1,
@@ -72,6 +76,7 @@ const PLUGINS: readonly PluginProcess[] = [
   {
     pluginId: 'org.example.words',
     pluginName: 'Words',
+    modelProviders: [],
     startTime: NOW - 3 * 60 * MINUTE,
     lastUseTime: NOW - 3 * 60 * MINUTE,
     leaseCount: 1,
