@@ -2,9 +2,9 @@
  * The tasks of the window as the background tasks the plugins read: the work of the core and the
  * plugins, and the failures the window reports as failed tasks, with a cancel and a dismissal.
  */
-import type { Caught } from '@numen/ui'
+import type { BackgroundTask, BackgroundTaskHost, Caught } from '@numen/plugin-sdk'
 import { computed, ref, watch, type Ref } from 'vue'
-import { createBackgroundTask, type BackgroundTask, type WorkTask } from '../lib/backgroundTask'
+import { createBackgroundTask, type WorkTask } from './backgroundTask'
 
 export interface BackgroundTaskHostDeps {
   readonly tasks: Readonly<Ref<readonly WorkTask[]>>
@@ -14,18 +14,6 @@ export interface BackgroundTaskHostDeps {
   reportCancelError(error: Caught): void
   /** Runs the action of the task; a window whose tasks offer none leaves it out. */
   runAction?(id: string): void
-}
-
-/** The background tasks of a window, as the plugin that lists them reads and acts on them. */
-interface BackgroundTaskHost {
-  /** Calls the handler with the tasks at once and again on every change. */
-  watch(handler: (tasks: readonly BackgroundTask[]) => void): { dispose(): void }
-  /** Asks the core to stop the task; settles once it has, and rejects with why it did not. */
-  cancel(id: string): Promise<void>
-  retry(id: string): void
-  /** Takes a task out of the list while it is listed. */
-  dismiss(id: string): void
-  runAction(id: string): void
 }
 
 export function createBackgroundTaskHost(deps: BackgroundTaskHostDeps): BackgroundTaskHost {

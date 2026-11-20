@@ -26,9 +26,6 @@ export type { ActionWords, PaletteItem, PaletteGroup, PaletteMultiProps } from '
 
 /** One list of notices for a window, given by the parts it hosts. */
 export { createNoticeQueue, type NoticeQueue } from './features/notices'
-/** The background tasks of a window, and the failures it reports, as the list a plugin draws. */
-export { createBackgroundTaskHost, createFailedTask, getFailedTasks } from './features/notices'
-export type { WorkTask } from './features/notices'
 
 /** The screen a window opens on, and the letter a vault on it is opened by. */
 export { WelcomePage, getVaultForKey } from './features/welcome'

@@ -2,54 +2,12 @@
  * The background work of a window as the plugin that lists it reads it: the tasks of the core and of
  * the plugins, and the failures the window and its plugins report, as failed tasks. Plain values.
  */
-import type { Severity, TallyUnit } from './tally'
+import type { CoreTask } from '@numen/core-client'
+import type { BackgroundTask, BackgroundTaskState, Severity } from '@numen/plugin-sdk'
 
-/**
- * One piece of work the application is doing behind the window. source names the plugin that runs it, and
- * no plugin where the core runs it.
- */
-export interface WorkTask {
-  readonly id: string
-  readonly label: string
-  readonly about: string
-  readonly progress: {
-    readonly completedCount: number
-    readonly total: number
-    readonly counting: TallyUnit
-  }
-  readonly error: string
-  readonly source: {
-    readonly isUserStarted: boolean
-    readonly pluginId: string
-    readonly pluginName: string
-  }
-  readonly isCancellable: boolean
-  readonly kind: 'work' | 'notice'
-  readonly action?: BackgroundTaskAction | undefined
-}
-
-/** How a task stands: running, being cancelled, ended in failure, or a notice. */
-type BackgroundTaskState = 'running' | 'cancelling' | 'failed' | 'notice'
-
-/** The fix a failed task offers; the label is empty where it offers none. */
-interface BackgroundTaskAction {
-  readonly label: string
-}
-
-/** One task as the list draws it. `counting` is empty where the task counts items one by one. */
-export interface BackgroundTask {
-  readonly id: string
-  readonly label: string
-  readonly about: string
-  readonly state: BackgroundTaskState
-  readonly progress: {
-    readonly completedCount: number
-    readonly total: number
-    readonly counting: string
-  }
-  readonly error: string
-  readonly allowed: { readonly cancel: boolean; readonly retry: boolean }
-  readonly actionLabel: string
+/** A task from the window, with the action its failure offers. */
+export interface WorkTask extends CoreTask {
+  readonly action?: { readonly label: string } | undefined
 }
 
 /** A message reported in a window, as a failure it can be. */

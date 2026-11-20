@@ -1,5 +1,6 @@
 import { computed, type Ref } from 'vue'
-import { createBackgroundTaskHost, type NoticeQueue } from '@numen/workbench'
+import { createBackgroundTaskHost } from '@numen/plugin-loader'
+import type { NoticeQueue } from '@numen/workbench'
 import { runInBackground } from '@numen/ui'
 import type { PluginHealthItem } from '@/entities/plugin'
 import type { Task, TaskApi } from '@/entities/window'
