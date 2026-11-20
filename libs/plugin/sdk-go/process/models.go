@@ -3,6 +3,7 @@ package process
 import (
 	"cmp"
 	"context"
+	"errors"
 	"slices"
 	"strconv"
 	"sync"
@@ -103,9 +104,14 @@ func (m *ModelSessions) publishLocked(ctx context.Context) {
 	}
 	if err := m.publish(ctx); err != nil {
 		m.report("report the execution providers of open models", err)
+		if errors.Is(err, hostcall.ErrNoHost) {
+			return
+		}
 		switch connect.CodeOf(err) {
 		case connect.CodeUnknown, connect.CodeDeadlineExceeded, connect.CodeUnavailable, connect.CodeResourceExhausted:
 			m.retry = time.AfterFunc(retryInterval, func() { m.retryReport(ctx) })
+		default:
+			return
 		}
 	}
 }
