@@ -301,12 +301,12 @@ func (s windowStartup) newIndexWorker(
 	})
 }
 
-func newIndexSession(worker *indexing.Worker) func() windowsession.IndexSession {
-	return func() windowsession.IndexSession {
-		session := worker.NewSession()
+func newIndexSession(worker *indexing.Worker) func(domain.Vault) windowsession.IndexSession {
+	return func(v domain.Vault) windowsession.IndexSession {
+		session := worker.NewSession(v)
 		return windowsession.IndexSession{
-			Run: func(ctx context.Context, v domain.Vault, rebuild bool, read windowsession.ReadNotes) {
-				session.Run(ctx, v, rebuild, read)
+			Run: func(ctx context.Context, rebuild bool, read windowsession.ReadNotes) {
+				session.Run(ctx, rebuild, read)
 			},
 			ReportVersionsChanged: session.ReportVersionsChanged,
 		}

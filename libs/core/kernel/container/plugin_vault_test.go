@@ -112,7 +112,7 @@ func TestAnotherVaultOfTheInstallationIsWorkedByItsIdentity(t *testing.T) {
 func TestAWriteByAPluginIsReportedToTheWindow(t *testing.T) {
 	_, current, assembly := openPluginVault(t, getNote())
 	notifyCount := 0
-	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{Written: func() { notifyCount++ }})
+	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{WriteWake: func(domain.VaultID) { notifyCount++ }})
 	if err != nil {
 		t.Fatal(err)
 	}

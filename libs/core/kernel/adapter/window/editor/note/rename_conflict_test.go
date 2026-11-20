@@ -39,9 +39,9 @@ func (staleNoteWriter) Write(context.Context, string, []byte, domain.FileStat) (
 
 type openSession struct{ vault domain.Vault }
 
-func (s openSession) GetCurrentVault() domain.Vault { return s.vault }
-func (openSession) IsIndexOutdated(error) bool      { return false }
-func (openSession) NoteWritten()                    {}
+func (s openSession) GetCurrentVault() domain.Vault       { return s.vault }
+func (openSession) IsIndexOutdated(error) bool            { return false }
+func (openSession) ReportWrites(domain.VaultID, ...error) {}
 
 // A note that another writer changed since it was read is a question for the user.
 func TestRenamingANoteChangedElsewhereAnswersWithAConflict(t *testing.T) {

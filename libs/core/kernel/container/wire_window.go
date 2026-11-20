@@ -155,7 +155,7 @@ func buildWindow(
 	state.Runtime.RecordModel(embedding.Describe())
 	generations := newIndexGenerations(vaultDeps.Clock)
 	indexer := s.newIndexWorker(searchDeps, vaultDeps, &state.Runtime, page.Window, embedding, emitIndexChanged(generations, events))
-	page.Writes.NotifyNoteWritten = indexer.WakeNotes
+	page.Writes.WriteWake = indexer.WakeWrittenVault
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.

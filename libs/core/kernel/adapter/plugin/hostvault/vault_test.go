@@ -28,7 +28,7 @@ import (
 // diskHooks are what a test sets of the vault: the notice of a written file, the indexing of paths, the
 // lookup of a vault by identity and the use case that adds links.
 type diskHooks struct {
-	onWrite  func()
+	onWrite  func(domain.VaultID)
 	index    func(ctx context.Context, v domain.Vault, paths []string) error
 	find     func(id domain.VaultID) (domain.Vault, error)
 	addLinks note.AddLinks
@@ -43,7 +43,7 @@ func diskVault(t *testing.T, files map[string]string, hooks diskHooks) (*vault.A
 		index = func(context.Context, domain.Vault, []string) error { return nil }
 	}
 	return NewAccess(
-		Session{Current: func() (domain.Vault, bool) { return v, true }, Written: hooks.onWrite, Find: hooks.find},
+		Session{Current: func() (domain.Vault, bool) { return v, true }, WriteWake: hooks.onWrite, Find: hooks.find},
 		Files{
 			Stat:        file.NewHashFile(vaultreader.Readers{}, writers),
 			ReadFile:    file.NewReadFile(vaultreader.Readers{}, writers),
@@ -89,7 +89,7 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 	var writeCount int
 	var v domain.Vault
 	access, v := diskVault(t, map[string]string{"samples/A.md": "body"}, diskHooks{
-		onWrite: func() { writeCount++ },
+		onWrite: func(domain.VaultID) { writeCount++ },
 		index: func(_ context.Context, got domain.Vault, paths []string) error {
 			if got.ID == v.ID {
 				indexed = append(indexed, paths...)
@@ -244,7 +244,7 @@ func TestAddLinksCanceledAfterTheFirstNoteSendsOneFileWriteNotification(t *testi
 	access, _ := diskVault(t, map[string]string{
 		"Danube.md": "# Danube\n", "Rhine.md": "# Rhine\n", "Volga.md": "# Volga\n",
 	}, diskHooks{
-		onWrite: func() { writeCount++ },
+		onWrite: func(domain.VaultID) { writeCount++ },
 		addLinks: note.NewAddLinks(note.NewEditLinks(
 			vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, cancelAfterIndex, testsupport.NewClock())),
 	})
@@ -269,7 +269,7 @@ func TestAddLinksCanceledBeforeAnyWriteDoesNotNotify(t *testing.T) {
 	cancel()
 	writeCount := 0
 	access, _ := diskVault(t, map[string]string{"Danube.md": "# Danube\n"}, diskHooks{
-		onWrite: func() { writeCount++ },
+		onWrite: func(domain.VaultID) { writeCount++ },
 		addLinks: note.NewAddLinks(note.NewEditLinks(
 			vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, nil, testsupport.NewClock())),
 	})
@@ -322,7 +322,7 @@ func TestWriteFile_IndexFailureReturnsErrIndexOutdated(t *testing.T) {
 	refused := errors.New("the index is closed")
 	writeCount := 0
 	access, v := diskVault(t, map[string]string{"samples/A.md": "body"}, diskHooks{
-		onWrite: func() { writeCount++ },
+		onWrite: func(domain.VaultID) { writeCount++ },
 		index:   func(context.Context, domain.Vault, []string) error { return refused },
 	})
 	_, pos, err := access.Files.Read(t.Context(), "samples/A.md")
@@ -345,5 +345,28 @@ func TestWriteFile_IndexFailureReturnsErrIndexOutdated(t *testing.T) {
 		if got, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(path))); err != nil || string(got) != want {
 			t.Errorf("%s holds %q (%v), want %q", path, got, err, want)
 		}
+	}
+}
+
+func TestAWriteToANamedVaultReportsTheIdentityOfThatVault(t *testing.T) {
+	other := vaulttest.NewVault(t, nil)
+	var wakes []domain.VaultID
+	access, shown := diskVault(t, nil, diskHooks{
+		find:    func(domain.VaultID) (domain.Vault, error) { return other, nil },
+		onWrite: func(id domain.VaultID) { wakes = append(wakes, id) },
+	})
+	linked, err := access.Switch.With(other.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := linked.Writer.CreateFile(t.Context(), "Other.md", []byte("# Other")); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := access.Writer.CreateFile(t.Context(), "Here.md", []byte("# Here")); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(wakes, []domain.VaultID{other.ID, shown.ID}) {
+		t.Errorf("writes reported vaults %v, want %s then %s", wakes, other.ID, shown.ID)
 	}
 }

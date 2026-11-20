@@ -55,11 +55,7 @@ func (h *Prose) WriteNote(
 	}
 	pos, err := h.save.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
 	indexOutdated := h.writes.IsIndexOutdated(err)
-	if err == nil || indexOutdated {
-		// The written prose requires new vectors. The pending chunks are tracked in the index, so several saves
-		// are embedded in one pass.
-		h.writes.NoteWritten()
-	}
+	h.writes.ReportWrites(showing.ID, err)
 	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}

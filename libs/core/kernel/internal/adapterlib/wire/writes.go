@@ -5,6 +5,7 @@ import (
 
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
@@ -14,9 +15,9 @@ const updatingIndex = "update index"
 // Writes is the writes to the vault that the window waits for before it closes, and what a write
 // tells: whether the index followed it, and the embedder that a note holds new prose.
 type Writes struct {
-	writing           inflight
-	window            *Window
-	NotifyNoteWritten func()
+	writing inflight
+	window  *Window
+	indexing.WriteWake
 }
 
 // NewWrites returns the writes of a window that tells its tasks to window.
@@ -55,11 +56,4 @@ func (w *Writes) IsIndexOutdated(err error) bool {
 	}
 	w.window.AddTask(work.Task{ID: updatingIndex, Title: "Update index", Error: err.Error()})
 	return true
-}
-
-// NoteWritten tells the embedder that a note holds new prose.
-func (w *Writes) NoteWritten() {
-	if w.NotifyNoteWritten != nil {
-		w.NotifyNoteWritten()
-	}
 }

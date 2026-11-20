@@ -10,8 +10,7 @@ import (
 // notice that a call changed a file.
 type sessionAccess interface {
 	open() (domain.Vault, error)
-	notifyFileWritten()
-	notifyAfterWrite(err error) error
+	ReportWrites(domain.VaultID, ...error)
 }
 
 // NewAccess returns the capabilities of the open vault the way hostendpoint serves them, each in the

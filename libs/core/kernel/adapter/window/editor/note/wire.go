@@ -56,6 +56,5 @@ func instant(nanos int64) time.Time {
 type Writes interface {
 	// IsIndexOutdated reports whether err says the write reached the vault and the index did not follow.
 	IsIndexOutdated(err error) bool
-	// NoteWritten tells the embedder that a note holds new prose.
-	NoteWritten()
+	ReportWrites(v domain.VaultID, outcomes ...error)
 }

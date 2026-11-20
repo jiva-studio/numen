@@ -74,7 +74,7 @@ type ReadNotes = func(ctx context.Context, during func()) (vaultreading.ScanResu
 
 // IndexSession is the pass that reads one vault into the index and cuts again what it is asked to.
 type IndexSession struct {
-	Run                   func(ctx context.Context, v domain.Vault, rebuild bool, read ReadNotes)
+	Run                   func(ctx context.Context, rebuild bool, read ReadNotes)
 	ReportVersionsChanged func(v domain.Vault, path string)
 }
 

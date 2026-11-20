@@ -78,7 +78,7 @@ func newPass(
 		Quiet:  time.Hour,
 		After:  time.After,
 	})
-	return &testPass{pass: worker.newPass(worker.NewSession(), v, false), worker: worker}
+	return &testPass{pass: worker.newPass(worker.NewSession(v), false), worker: worker}
 }
 
 func cut(t *testing.T, made reading, db *WorkerIndex, v domain.Vault) {
@@ -343,7 +343,7 @@ func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.Describe().Recipe(), v)
-	p.worker.wakes.read = model.wake
+	p.worker.wakes.Load().read = model.wake
 	p.embed(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())
@@ -393,7 +393,7 @@ func testAChangeOfSourcesStopsTheVectorPass(t *testing.T, openReading openFunc) 
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.Describe().Recipe(), v)
-	p.worker.wakes.sources = model.wake
+	p.worker.wakes.Load().sources = model.wake
 	p.embed(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())
@@ -425,7 +425,7 @@ func testANoteSaveStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	cut(t, made, db, v)
 
 	p := newPass(made, db, events, model, model.Describe().Recipe(), v)
-	p.worker.wakes.notes = model.wake
+	p.worker.wakes.Load().notes = model.wake
 	p.embed(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())
@@ -452,22 +452,22 @@ func TestAWakeForNotesIsLeftOnceWhateverTheNumberOfChanges(t *testing.T) {
 	for range 3 {
 		worker.WakeNotes()
 	}
-	if got := len(worker.wakes.notes); got != 1 {
+	if got := len(worker.wakes.Load().notes); got != 1 {
 		t.Errorf("%d wakes are waiting, want 1", got)
 	}
 }
 
 func TestVersionChangeRequestsExtractionOfTheFileAgain(t *testing.T) {
 	worker := NewWorker(Config{Quiet: time.Hour, After: time.After})
-	session := worker.NewSession()
 	v := domain.Vault{ID: "v1"}
+	session := worker.NewSession(v)
 
 	session.ReportVersionsChanged(v, "books/scan.pdf")
 	session.ReportVersionsChanged(v, "books/scan.pdf")
 	session.ReportVersionsChanged(v, "talks/a.mp3")
 
 	select {
-	case <-worker.wakes.read:
+	case <-worker.wakes.Load().read:
 	default:
 		t.Fatal("a change of versions woke nothing")
 	}
@@ -488,7 +488,7 @@ func testVersionChangeEmbedsPendingVaultContent(t *testing.T, openReading openFu
 
 	p := newPass(made, db, newRecorder(), model, model.Describe().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "books/scan.pdf")
-	<-p.worker.wakes.read
+	<-p.worker.wakes.Load().read
 	p.embedRecognized(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())
@@ -518,7 +518,7 @@ func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) 
 
 	p := newPass(made, db, newRecorder(), model, model.Describe().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "Note.md")
-	<-p.worker.wakes.read
+	<-p.worker.wakes.Load().read
 	p.embedRecognized(t.Context())
 
 	target, embedded, err := db.Progress.GetProgress(t.Context(), v.ID, model.Describe().Recipe())

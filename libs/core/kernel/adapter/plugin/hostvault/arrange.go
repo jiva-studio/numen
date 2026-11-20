@@ -52,8 +52,10 @@ func (a Arranger) RenameNote(ctx context.Context, path, title string) (string, b
 		return "", false, nil, err
 	}
 	rename, err := a.getChanges(v).Rename.Execute(ctx, v, path, title)
-	if rename.Moved != nil || err == nil {
-		a.session.notifyFileWritten()
+	if rename.Moved != nil {
+		a.session.ReportWrites(v.ID, nil)
+	} else {
+		a.session.ReportWrites(v.ID, err)
 	}
 	return rename.Path, rename.By == naming.ByFilename, rename.Moved, err
 }
@@ -65,7 +67,7 @@ func (a Arranger) MoveNote(ctx context.Context, from, to string) (domain.MoveRes
 	}
 	move, err := a.getChanges(v).Move.Execute(ctx, v, from, to)
 	if move.IsMoved {
-		a.session.notifyFileWritten()
+		a.session.ReportWrites(v.ID, nil)
 	}
 	return move, err
 }
@@ -80,7 +82,7 @@ func (a Arranger) RemoveNote(ctx context.Context, path string) (string, []string
 		return "", nil, domain.NewDetailError(fmt.Sprintf("%s is a folder; pass the paths of the notes to remove", path), edit.ErrNotANote, err)
 	}
 	if removal.Trashed != "" {
-		a.session.notifyFileWritten()
+		a.session.ReportWrites(v.ID, nil)
 	}
 	return removal.Trashed, removal.Dangling, err
 }
@@ -109,14 +111,12 @@ func (a Arranger) AddLinks(ctx context.Context, additions []plugin.LinkAddition)
 		return nil, err
 	}
 	out := make([]plugin.LinkAdded, len(added))
-	isWritten := false
+	outcomes := make([]error, len(added))
 	for i, one := range added {
 		out[i] = plugin.LinkAdded{Stat: one.FileStat, Err: one.Error}
-		isWritten = isWritten || one.Error == nil || errors.Is(one.Error, edit.ErrIndexOutdated)
+		outcomes[i] = one.Error
 	}
-	if isWritten {
-		a.session.notifyFileWritten()
-	}
+	a.session.ReportWrites(v.ID, outcomes...)
 	return out, nil
 }
 
@@ -128,7 +128,8 @@ func (a Arranger) UpdateLinks(
 		return domain.FileStat{}, err
 	}
 	stat, err := a.getChanges(v).Links.Update(ctx, v, from, to, change, baseline)
-	return stat, a.session.notifyAfterWrite(err)
+	a.session.ReportWrites(v.ID, err)
+	return stat, err
 }
 
 func (a Arranger) RemoveLinks(
@@ -139,7 +140,8 @@ func (a Arranger) RemoveLinks(
 		return domain.FileStat{}, err
 	}
 	stat, err := a.getChanges(v).Links.RemoveTargetLinks(ctx, v, from, to, role, baseline)
-	return stat, a.session.notifyAfterWrite(err)
+	a.session.ReportWrites(v.ID, err)
+	return stat, err
 }
 
 // GetParseProblems returns the notes of the vault that could not be read.
@@ -169,13 +171,11 @@ func (a LinkEditor) WriteFrontmatter(ctx context.Context, writes []plugin.Frontm
 		return nil, err
 	}
 	out := make([]plugin.FrontmatterWritten, len(written))
-	isWritten := false
+	outcomes := make([]error, len(written))
 	for i, one := range written {
 		out[i] = plugin.FrontmatterWritten{Stat: one.FileStat, Err: one.Error}
-		isWritten = isWritten || one.Error == nil || errors.Is(one.Error, edit.ErrIndexOutdated)
+		outcomes[i] = one.Error
 	}
-	if isWritten {
-		a.session.notifyFileWritten()
-	}
+	a.session.ReportWrites(v.ID, outcomes...)
 	return out, nil
 }
