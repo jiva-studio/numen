@@ -14,10 +14,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 )
 
-// EnvDir names the folder plugins keep their models in. The host sets it, to the folder a user chose or
-// to models in the shared data directory.
-const EnvDir = "NUMEN_MODELS_DIR"
-
 type paths struct {
 	layout    string
 	detect    string
@@ -36,34 +32,14 @@ func findInFolder(dir, fileName string) string {
 	return ""
 }
 
-func findInHome(fileName string) string {
-	if home := os.Getenv(EnvDir); home != "" {
-		if found := findInFolder(home, fileName); found != "" {
-			return found
-		}
-	}
-	if base, err := cache.GetSharedDataDirOrPluginDataDir(); err == nil {
-		return findInFolder(filepath.Join(base, "models"), fileName)
-	}
-	return ""
-}
-
-func locateModel(explicitPath, envVar, fileName, dir string) (string, error) {
+func locateModel(explicitPath, fileName, dir string) (string, error) {
 	if explicitPath != "" {
 		if _, err := os.Stat(explicitPath); err != nil {
 			return "", fmt.Errorf("configured model path not found: %w", err)
 		}
 		return explicitPath, nil
 	}
-	if envVar != "" {
-		if env := os.Getenv(envVar); isPresent(env) {
-			return env, nil
-		}
-	}
 	if found := findInFolder(dir, fileName); found != "" {
-		return found, nil
-	}
-	if found := findInHome(fileName); found != "" {
 		return found, nil
 	}
 	return "", fmt.Errorf("model %s not found", fileName)
@@ -78,11 +54,11 @@ type modelFiles struct {
 	fetch          FetchModelFile
 }
 
-func (files modelFiles) resolve(ctx context.Context, path, address, envVar, name string) (string, error) {
+func (files modelFiles) resolve(ctx context.Context, path, address, name string) (string, error) {
 	if address == settings.RecognizerCustom && path == "" {
 		return "", fmt.Errorf("a custom recognizer needs a model path")
 	}
-	local, err := locateModel(path, envVar, name, files.dir)
+	local, err := locateModel(path, name, files.dir)
 	if err == nil || path != "" || !files.shouldDownload {
 		return local, err
 	}
@@ -99,15 +75,15 @@ func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Confi
 		return nil, "", paths{}, err
 	}
 	files := modelFiles{dir: cfg.Dir, shouldDownload: cfg.ShouldDownload, fetch: fetch}
-	layout, err := files.resolve(ctx, cfg.Layout.Path, cfg.Layout.Name, "NUMEN_DEPENDENCY_PP_DOCLAYOUT", "pp-doclayout.onnx")
+	layout, err := files.resolve(ctx, cfg.Layout.Path, cfg.Layout.Name, "pp-doclayout.onnx")
 	if err != nil {
 		return nil, "", paths{}, fmt.Errorf("layout model: %w", err)
 	}
-	detect, err := files.resolve(ctx, cfg.Detect.Path, cfg.Detect.Name, "NUMEN_DEPENDENCY_PP_OCR_DET", "pp-ocr-det.onnx")
+	detect, err := files.resolve(ctx, cfg.Detect.Path, cfg.Detect.Name, "pp-ocr-det.onnx")
 	if err != nil {
 		return nil, "", paths{}, fmt.Errorf("detect model: %w", err)
 	}
-	recognize, err := files.resolve(ctx, cfg.Recognize.Path, cfg.Recognize.Name, "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx")
+	recognize, err := files.resolve(ctx, cfg.Recognize.Path, cfg.Recognize.Name, "pp-ocr-rec.onnx")
 	if err != nil {
 		return nil, "", paths{}, fmt.Errorf("recognize model: %w", err)
 	}
@@ -134,9 +110,4 @@ func getCacheRoot() string {
 		return ""
 	}
 	return root
-}
-
-func isPresent(pos string) bool {
-	_, err := os.Stat(pos)
-	return err == nil
 }
