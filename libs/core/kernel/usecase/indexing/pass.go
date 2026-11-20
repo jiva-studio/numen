@@ -18,7 +18,7 @@ type pass struct {
 	events         Events
 	waits          wakeWaits
 	skips          *vaultreading.Skips
-	session        *Session
+	drainSources   func() map[string]domain.Vault
 	v              domain.Vault
 	isRebuild      bool
 	isIndexChanged bool
@@ -107,7 +107,7 @@ func (p *pass) indexSources(ctx context.Context) (isStoppedByWake bool) {
 }
 
 func (p *pass) embedRecognized(ctx context.Context) (isStoppedByWake bool) {
-	target := p.session.drain()
+	target := p.drainSources()
 	if len(target) == 0 {
 		return false
 	}

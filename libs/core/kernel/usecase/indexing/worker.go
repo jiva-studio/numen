@@ -125,7 +125,7 @@ func (w *Worker) notifyIndexChanged(ctx context.Context, v domain.Vault) {
 }
 
 func (w *Worker) newPass(s *Session, rebuild bool) *pass {
-	return &pass{env: w, events: w.events, waits: s.signals, skips: w.skips, session: s, v: s.vault, isRebuild: rebuild}
+	return &pass{env: w, events: w.events, waits: s.signals, skips: w.skips, drainSources: s.drain, v: s.vault, isRebuild: rebuild}
 }
 
 // wakeWaits waits for the signals that something arrived for a pass to do.

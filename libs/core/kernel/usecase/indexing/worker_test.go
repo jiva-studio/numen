@@ -78,7 +78,8 @@ func newPass(
 		Quiet:  time.Hour,
 		After:  time.After,
 	})
-	return &testPass{pass: worker.newPass(worker.NewSession(v), false), worker: worker}
+	session := worker.NewSession(v)
+	return &testPass{pass: worker.newPass(session, false), worker: worker, session: session}
 }
 
 func cut(t *testing.T, made reading, db *WorkerIndex, v domain.Vault) {
@@ -609,6 +610,7 @@ type WorkerIndex struct {
 
 // testPass is a pass with the worker it runs for, which a test reaches into.
 type testPass struct {
+	session *Session
 	*pass
 	worker *Worker
 }
