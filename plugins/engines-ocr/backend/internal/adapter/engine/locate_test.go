@@ -1,10 +1,13 @@
 package engine
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 )
@@ -151,5 +154,27 @@ func TestLocateModelFindsTheFileOfTheEnvironmentPathThatAppearsAfterTheFirstLook
 	found, err := locateModel("", "NUMEN_DEPENDENCY_PP_OCR_DET", "pp-ocr-det.onnx", "")
 	if err != nil || found != envPath {
 		t.Errorf("locateModel after the download = %q, %v, want %q", found, err, envPath)
+	}
+}
+
+func TestResolveSelectedModelThroughHost(t *testing.T) {
+	t.Setenv(EnvDir, t.TempDir())
+	t.Setenv(cache.EnvSharedDataDir, t.TempDir())
+	address, _ := settings.FindRecognizer("pp-ocrv5-greek")
+	ctx := t.Context()
+	fetch := func(call context.Context, url, sha string) (string, error) {
+		if call != ctx || url != address || sha != "b4368bccd557123c702b7549fee6cd1e94b581337d1c9b65310f109131542b7f" {
+			t.Fatalf("unexpected model request %s (%s)", url, sha)
+		}
+		return "/shared/model", nil
+	}
+	files := modelFiles{dir: t.TempDir(), shouldDownload: true, fetch: fetch}
+	got, err := files.resolve(ctx, "", address, "", "pp-ocr-rec.onnx")
+	if err != nil || got != "/shared/model" {
+		t.Fatalf("resolve = %q, %v", got, err)
+	}
+	files.shouldDownload = false
+	if _, err := files.resolve(ctx, "", address, "", "pp-ocr-rec.onnx"); err == nil {
+		t.Fatal("downloaded an absent model with downloads disabled")
 	}
 }

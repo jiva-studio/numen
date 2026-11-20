@@ -69,20 +69,45 @@ func locateModel(explicitPath, envVar, fileName, dir string) (string, error) {
 	return "", fmt.Errorf("model %s not found", fileName)
 }
 
-func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Config) (*ort.Engine, string, paths, error) {
+// FetchModelFile resolves a pinned model through the host.
+type FetchModelFile func(context.Context, string, string) (string, error)
+
+type modelFiles struct {
+	dir            string
+	shouldDownload bool
+	fetch          FetchModelFile
+}
+
+func (files modelFiles) resolve(ctx context.Context, path, address, envVar, name string) (string, error) {
+	if address == settings.RecognizerCustom && path == "" {
+		return "", fmt.Errorf("a custom recognizer needs a model path")
+	}
+	local, err := locateModel(path, envVar, name, files.dir)
+	if err == nil || path != "" || !files.shouldDownload {
+		return local, err
+	}
+	digest, ok := settings.FindModelDigest(address)
+	if !ok {
+		return "", fmt.Errorf("no SHA-256 pinned for model %q", address)
+	}
+	return files.fetch(ctx, address, digest)
+}
+
+func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch FetchModelFile) (*ort.Engine, string, paths, error) {
 	engine, pos, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
 		return nil, "", paths{}, err
 	}
-	layout, err := locateModel(cfg.Layout.Path, "NUMEN_DEPENDENCY_PP_DOCLAYOUT", "pp-doclayout.onnx", cfg.Dir)
+	files := modelFiles{dir: cfg.Dir, shouldDownload: cfg.ShouldDownload, fetch: fetch}
+	layout, err := files.resolve(ctx, cfg.Layout.Path, cfg.Layout.Name, "NUMEN_DEPENDENCY_PP_DOCLAYOUT", "pp-doclayout.onnx")
 	if err != nil {
 		return nil, "", paths{}, fmt.Errorf("layout model: %w", err)
 	}
-	detect, err := locateModel(cfg.Detect.Path, "NUMEN_DEPENDENCY_PP_OCR_DET", "pp-ocr-det.onnx", cfg.Dir)
+	detect, err := files.resolve(ctx, cfg.Detect.Path, cfg.Detect.Name, "NUMEN_DEPENDENCY_PP_OCR_DET", "pp-ocr-det.onnx")
 	if err != nil {
 		return nil, "", paths{}, fmt.Errorf("detect model: %w", err)
 	}
-	recognize, err := locateModel(cfg.Recognize.Path, "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx", cfg.Dir)
+	recognize, err := files.resolve(ctx, cfg.Recognize.Path, cfg.Recognize.Name, "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx")
 	if err != nil {
 		return nil, "", paths{}, fmt.Errorf("recognize model: %w", err)
 	}

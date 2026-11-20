@@ -97,28 +97,53 @@ func findInEnv(envVar string) string {
 	return env
 }
 
-func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Config) (*ort.Engine, paths, error) {
+// FetchModelFile resolves a pinned model through the host.
+type FetchModelFile func(context.Context, string, string) (string, error)
+
+type modelFiles struct {
+	dir            string
+	shouldDownload bool
+	fetch          FetchModelFile
+}
+
+func (files modelFiles) resolve(ctx context.Context, path, address, envVar, name string) (string, error) {
+	local, err := locateModel(path, address, envVar, name, files.dir)
+	if strings.HasSuffix(address, "/") {
+		address += name
+	}
+	if err == nil || path != "" || !files.shouldDownload {
+		return local, err
+	}
+	digest, ok := settings.FindModelDigest(address)
+	if !ok {
+		return "", fmt.Errorf("no SHA-256 pinned for model %q", address)
+	}
+	return files.fetch(ctx, address, digest)
+}
+
+func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch FetchModelFile) (*ort.Engine, paths, error) {
 	engine, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
 		return nil, paths{}, err
 	}
-	encoder, err := locateModel(cfg.Model.Encoder, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, cfg.Dir)
+	files := modelFiles{dir: cfg.Dir, shouldDownload: cfg.ShouldDownload, fetch: fetch}
+	encoder, err := files.resolve(ctx, cfg.Model.Encoder, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile)
 	if err != nil {
 		return nil, paths{}, fmt.Errorf("encoder model: %w", err)
 	}
-	decoder, err := locateModel(cfg.Model.Decoder, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_DECODER", decoderFile, cfg.Dir)
+	decoder, err := files.resolve(ctx, cfg.Model.Decoder, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_DECODER", decoderFile)
 	if err != nil {
 		return nil, paths{}, fmt.Errorf("decoder model: %w", err)
 	}
-	joiner, err := locateModel(cfg.Model.Joiner, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_JOINER", joinerFile, cfg.Dir)
+	joiner, err := files.resolve(ctx, cfg.Model.Joiner, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_JOINER", joinerFile)
 	if err != nil {
 		return nil, paths{}, fmt.Errorf("joiner model: %w", err)
 	}
-	tokens, err := locateModel(cfg.Model.Tokens, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_TOKENS", tokensFile, cfg.Dir)
+	tokens, err := files.resolve(ctx, cfg.Model.Tokens, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_TOKENS", tokensFile)
 	if err != nil {
 		return nil, paths{}, fmt.Errorf("tokens file: %w", err)
 	}
-	segmenterPath, err := locateModel(cfg.Segmenter.Path, cfg.Segmenter.Repo, "NUMEN_DEPENDENCY_SILERO_VAD", "silero.onnx", cfg.Dir)
+	segmenterPath, err := files.resolve(ctx, cfg.Segmenter.Path, cfg.Segmenter.Repo, "NUMEN_DEPENDENCY_SILERO_VAD", "silero.onnx")
 	if err != nil {
 		return nil, paths{}, fmt.Errorf("segmenter model: %w", err)
 	}

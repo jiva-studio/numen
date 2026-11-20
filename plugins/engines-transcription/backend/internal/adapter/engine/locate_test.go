@@ -1,10 +1,13 @@
 package engine
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/domain/settings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/cache"
 )
@@ -164,5 +167,28 @@ func TestLocateModelFindsTheFileOfTheEnvironmentPathThatAppearsAfterTheFirstLook
 	found, err := locateModel("", "https://example.invalid/repo/", "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, "")
 	if err != nil || found != envPath {
 		t.Errorf("locateModel after the download = %q, %v, want %q", found, err, envPath)
+	}
+}
+
+func TestResolveSelectedModelThroughHost(t *testing.T) {
+	t.Setenv(EnvDir, t.TempDir())
+	t.Setenv(cache.EnvSharedDataDir, t.TempDir())
+	model, _ := settings.FindModel("parakeet-tdt-0.6b-v2-int8")
+	address := model.Repo
+	ctx := t.Context()
+	fetch := func(call context.Context, url, sha string) (string, error) {
+		if call != ctx || url != address+encoderFile || sha != "a32b12d17bbbc309d0686fbbcc2987b5e9b8333a7da83fa6b089f0a2acd651ab" {
+			t.Fatalf("unexpected model request %s (%s)", url, sha)
+		}
+		return "/shared/model", nil
+	}
+	files := modelFiles{dir: t.TempDir(), shouldDownload: true, fetch: fetch}
+	got, err := files.resolve(ctx, "", address, "", encoderFile)
+	if err != nil || got != "/shared/model" {
+		t.Fatalf("resolve = %q, %v", got, err)
+	}
+	files.shouldDownload = false
+	if _, err := files.resolve(ctx, "", address, "", encoderFile); err == nil {
+		t.Fatal("downloaded an absent model with downloads disabled")
 	}
 }

@@ -50,7 +50,7 @@ func (a *App) Mount(s *server.Server) error {
 }
 
 func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock bool) (*feed.Automatic, error) {
-	holder := model.NewHolder(cfg, newOpener(engine.NewRuntime(), isMock))
+	holder := model.NewHolder(cfg, newOpener(engine.NewRuntime(), isMock, hosted.FetchModelFile))
 	report := process.Process{}.ReportError
 	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, holder.GetRecognizer, report)
 	requests := transcribe.NewRequests(transcriber, func(id domain.VaultID) transcribe.Vault { return hosted.Vaults(id) })
