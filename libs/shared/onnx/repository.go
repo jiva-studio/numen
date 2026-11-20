@@ -36,7 +36,7 @@ type FetchFile func(context.Context, string, string) (string, error)
 // PrepareModel fetches the selected graph, its external data and the tokenizer. External data
 // files are placed next to the graph under the relative names encoded in the model.
 func PrepareModel(ctx context.Context, model RepositoryModel, cache string, fetch FetchFile) (ModelFiles, error) {
-	if !fs.ValidPath(model.ID) || !fs.ValidPath(model.Graph) || strings.ContainsAny(model.ID+model.Graph, "\\?#") {
+	if !isRepositoryPath(model.ID) || !isRepositoryPath(model.Graph) {
 		return ModelFiles{}, fmt.Errorf("invalid model repository %q or graph %q", model.ID, model.Graph)
 	}
 	if model.Endpoint == "" {
@@ -90,7 +90,7 @@ func (model RepositoryModel) listFiles(ctx context.Context, revision string, fet
 }
 
 func (model RepositoryModel) isMember(name string, names []string) bool {
-	if !fs.ValidPath(name) || strings.ContainsAny(name, "\\?#") || strings.HasPrefix(name, model.Graph+"/") {
+	if !isRepositoryPath(name) || strings.HasPrefix(name, model.Graph+"/") {
 		return false
 	}
 	if name == "tokenizer.json" || name == model.Graph {
@@ -103,12 +103,20 @@ func (model RepositoryModel) isMember(name string, names []string) bool {
 	if _, pinned := model.Sums[name]; !pinned && model.SelectExternal != nil && !model.SelectExternal(name) {
 		return false
 	}
+	return !model.belongsToOtherGraph(name, names)
+}
+
+func isRepositoryPath(name string) bool {
+	return fs.ValidPath(name) && name != "." && !strings.ContainsAny(name, "\\?#")
+}
+
+func (model RepositoryModel) belongsToOtherGraph(name string, names []string) bool {
 	for _, other := range names {
 		if other != model.Graph && strings.HasSuffix(other, ".onnx") && strings.HasPrefix(name, other) {
-			return false
+			return true
 		}
 	}
-	return true
+	return false
 }
 
 func (model RepositoryModel) readFiles(index string) (map[string]string, string, error) {

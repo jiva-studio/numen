@@ -94,15 +94,9 @@ func claimPartial(dir string) (string, error) {
 }
 
 func (t transfer) append(ctx context.Context, part string) (err error) {
-	hasher := sha256.New()
-	offset, err := hashExisting(part, hasher)
+	hasher, offset, err := t.getPartialHash(part)
 	if err != nil {
 		return err
-	}
-	if t.sum == "" {
-		// A URL without a pinned sum can serve different bytes between attempts.
-		offset = 0
-		hasher.Reset()
 	}
 	request, err := t.newRequest(ctx, offset)
 	if err != nil {
@@ -133,6 +127,16 @@ func (t transfer) append(ctx context.Context, part string) (err error) {
 		return fmt.Errorf("fetching %s: %w", t.address, err)
 	}
 	return t.finish(hasher, offset+byteCount)
+}
+
+func (t transfer) getPartialHash(part string) (hash.Hash, int64, error) {
+	hasher := sha256.New()
+	if t.sum == "" {
+		// A URL without a pinned sum can serve different bytes between attempts.
+		return hasher, 0, nil
+	}
+	offset, err := hashExisting(part, hasher)
+	return hasher, offset, err
 }
 
 func (t transfer) newRequest(ctx context.Context, offset int64) (*http.Request, error) {

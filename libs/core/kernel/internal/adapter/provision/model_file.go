@@ -40,23 +40,26 @@ func (p *FileProvisioner) storeModelFile(ctx context.Context, req manifest.Depen
 		return plugin.ResolvedDependency{}, err
 	}
 	defer func() { err = errors.Join(err, release()) }()
-	resolved, exists := readCachedDependency(req, dir, sum)
-	if exists {
-		if err := os.Remove(primary); err != nil {
-			return plugin.ResolvedDependency{}, err
-		}
-	} else {
-		dest := filepath.Join(dir, filepath.Base(primary))
-		if err := os.Rename(primary, dest); err != nil {
-			return plugin.ResolvedDependency{}, err
-		}
-		if err := writeReadyMarker(ctx, dir, filepath.Base(dest), sum); err != nil {
-			return plugin.ResolvedDependency{}, err
-		}
-		resolved = newResolvedDependency(req, dir, dest)
+	resolved, err := installContent(ctx, req, dir, primary, sum)
+	if err != nil {
+		return plugin.ResolvedDependency{}, err
 	}
 	if err := writeReadyMarker(ctx, source, filepath.Base(resolved.PrimaryPath), sum); err != nil {
 		return plugin.ResolvedDependency{}, err
 	}
 	return resolved, nil
+}
+
+func installContent(ctx context.Context, req manifest.DependencyRequirement, dir, primary, sum string) (plugin.ResolvedDependency, error) {
+	if resolved, exists := readCachedDependency(req, dir, sum); exists {
+		return resolved, os.Remove(primary)
+	}
+	dest := filepath.Join(dir, filepath.Base(primary))
+	if err := os.Rename(primary, dest); err != nil {
+		return plugin.ResolvedDependency{}, err
+	}
+	if err := writeReadyMarker(ctx, dir, filepath.Base(dest), sum); err != nil {
+		return plugin.ResolvedDependency{}, err
+	}
+	return newResolvedDependency(req, dir, dest), nil
 }

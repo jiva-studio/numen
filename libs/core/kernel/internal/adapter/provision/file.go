@@ -111,6 +111,11 @@ func (p *FileProvisioner) Provision(
 	if p.cfg.Offline {
 		return plugin.ResolvedDependency{}, fmt.Errorf("%s %s: %w", req.Kind, req.ID, ErrOffline)
 	}
+	return p.store(ctx, req, source, dir, onProgress)
+}
+
+func (p *FileProvisioner) store(ctx context.Context, req manifest.DependencyRequirement, source manifest.DependencySource, dir string, onProgress func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error) {
+	sum := getReadySum(source)
 	primary, actual, err := p.fetch(ctx, req, source, dir, onProgress)
 	if err != nil {
 		return plugin.ResolvedDependency{}, err

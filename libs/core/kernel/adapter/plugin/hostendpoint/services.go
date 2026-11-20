@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
 )
@@ -48,16 +49,14 @@ type WorkQueue interface {
 // window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
 // every file.
 type Callers struct {
-	Dependencies interface {
-		Execute(context.Context, string, string) (string, error)
-	}
-	Identity  Identity
-	Leases    Leases
-	Lent      *Services
-	Tools     func() PluginTools
-	Health    HealthCalls
-	Processes ProcessRelease
-	Files     FileTypes
+	Dependencies *plugindependency.Fetch
+	Identity     Identity
+	Leases       Leases
+	Lent         *Services
+	Tools        func() PluginTools
+	Health       HealthCalls
+	Processes    ProcessRelease
+	Files        FileTypes
 }
 
 // LogWriter records a structured log entry reported by a plugin backend.
