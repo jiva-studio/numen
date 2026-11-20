@@ -64,14 +64,15 @@ async function askOptions(
   return connections.listRowOptions({ operation: acp.OPERATION_TASK, ...request })
 }
 
-async function listOptions(
+async function listReasoningLevels(
   connections: ConnectionHost,
   request: Omit<ConnectionRowOptionsRequest, 'operation'>,
-): Promise<readonly ConnectionRowOption[]> {
+): Promise<readonly ReasoningLevelOption[] | undefined> {
   try {
-    return await askOptions(connections, request)
+    const listed = await askOptions(connections, request)
+    return listed.map((one) => ({ id: one.value, title: one.title || one.value }))
   } catch {
-    return []
+    return undefined
   }
 }
 
@@ -276,33 +277,43 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
     return row.options[getFieldKey(row, REASONING)] ?? ''
   })
 
+  function resetReasoningLevels() {
+    const stored = selectedReasoningId.value
+    reasoningLevels.value = stored ? [{ id: stored, title: stored }] : []
+  }
+
+  function applyReasoningLevels(levels: readonly ReasoningLevelOption[] | undefined) {
+    canRetryReasoning = !levels?.length
+    if (levels) reasoningLevels.value = levels
+  }
+
   const stopReasoning = watch(
-    [currentRow, () => current.value?.modelId, reasoningRetry],
-    async ([row, modelId], _, onCleanup) => {
+    [currentRow, () => current.value?.modelId, () => reasoningRetry.value],
+    async ([row, modelId], [previousRow, previousModelId], onCleanup) => {
       let isStale = false
       onCleanup(() => {
         isStale = true
       })
       canRetryReasoning = false
-      reasoningLevels.value = []
-      if (!row || modelId === undefined) return
+      if (!row || modelId === undefined) {
+        reasoningLevels.value = []
+        return
+      }
       const field = getFieldKey(row, REASONING)
-      if (!field) return
-      const stored = selectedReasoningId.value
-      if (stored) reasoningLevels.value = [{ id: stored, title: stored }]
+      if (!field) {
+        reasoningLevels.value = []
+        return
+      }
+      if (row.connectionId !== previousRow?.connectionId || modelId !== previousModelId) {
+        resetReasoningLevels()
+      }
       if (!connections.listRowOptions) return
-      const listed = await listOptions(connections, {
+      const levels = await listReasoningLevels(connections, {
         connectionId: row.connectionId,
         field,
         options: getModelOptions(row, modelId),
       })
-      if (!isStale) {
-        canRetryReasoning = listed.length === 0
-        reasoningLevels.value = listed.map((one) => ({
-          id: one.value,
-          title: one.title || one.value,
-        }))
-      }
+      if (!isStale) applyReasoningLevels(levels)
     },
     { immediate: true },
   )
