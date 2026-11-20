@@ -130,7 +130,7 @@ apps/desktop/flashcards/src/
 ├── features/
 │   ├── app-start/                start the plugins the core lists and tell when the window can be drawn: model/
 │   ├── appearance/               the appearance and the theme palette of @numen/workbench over the theme service: api/, model/
-│   └── window-tasks/             the background task list of @numen/workbench over the window service stream: api/, model/
+│   └── window-tasks/             the background task host of @numen/plugin-loader over the window service stream: api/, model/
 ├── entities/
 │   ├── vault/                    the vaults of the installation: api/ (vaults service), lib/ (VaultRow)
 │   ├── tab/                      the tab kinds the plugins register and the one tab the window shows, a plugin view opened on a vault: model/ (open and close), lib/
