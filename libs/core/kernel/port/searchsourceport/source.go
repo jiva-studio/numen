@@ -19,13 +19,6 @@ type Source interface {
 	SearchChunks(ctx context.Context, place searchsource.Place, q searchsource.Query) ([]searchsource.Match, error)
 }
 
-// FloorAdvisor reports the similarity a chunk starts out having to reach to answer a query under the
-// source. The hint is not part of the identity and is absent from the recipe.
-type FloorAdvisor interface {
-	// GetFloorHint returns the starting floor, and zero where the source has none.
-	GetFloorHint(ctx context.Context) float64
-}
-
 // WatchedSource is a Source whose description can change while the window is open, as it does when the
 // settings of its plugin change.
 type WatchedSource interface {

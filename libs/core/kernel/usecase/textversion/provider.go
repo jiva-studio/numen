@@ -1,4 +1,4 @@
-package textport
+package textversion
 
 // TextPlugins is the enabled plugins, which may record text versions.
 type TextPlugins interface {

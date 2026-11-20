@@ -9,13 +9,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/operationresult"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 
@@ -214,7 +214,7 @@ func openCLIEmbedder(closers *[]func() error, source sourcebridge.Binding, ctx c
 	return embedder, why
 }
 
-func getCLIPluginCommands(c Config, commands pluginCommandUseCases, openWork cliPluginWork, plugins textport.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) cli.PluginCommands {
+func getCLIPluginCommands(c Config, commands pluginCommandUseCases, openWork cliPluginWork, plugins textversion.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) cli.PluginCommands {
 	find := func(nameOrPath string) (domain.Vault, error) { return findCLIVault(c, nameOrPath) }
 	return cli.PluginCommands{
 		List:   commands.List,
@@ -237,7 +237,7 @@ func findCLIVault(c Config, nameOrPath string) (domain.Vault, error) {
 	return registry.NewFind(ports.Lookup).Execute(nameOrPath)
 }
 
-func openCLIPluginWork(openWork cliPluginWork, ctx context.Context, v domain.Vault, plugins textport.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) (func() error, error) {
+func openCLIPluginWork(openWork cliPluginWork, ctx context.Context, v domain.Vault, plugins textversion.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) (func() error, error) {
 	db, err := openIndex(vaultDeps, ctx)
 	if err != nil {
 		return nil, err

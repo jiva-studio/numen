@@ -29,7 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 )
 
-func reportDependencies(watch pluginport.DependencyReporter, tasks *run.Tasks, record func(domainlogs.Entry)) {
+func reportDependencies(watch DependencyReporter, tasks *run.Tasks, record func(domainlogs.Entry)) {
 	show := run.NewDependencyTasks(tasks)
 	watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
 		show.Execute(req.ID, status, func() { watch.CancelDependency(req) })
@@ -40,7 +40,7 @@ func reportDependencies(watch pluginport.DependencyReporter, tasks *run.Tasks, r
 // pluginInstall supplies storage, catalog and host endpoints to the installation.
 type pluginInstall struct {
 	Licenses        license.Declarations
-	Configuration   pluginport.ConfigRefresher
+	Configuration   ConfigRefresher
 	OperationTitles connectionport.OperationTitles
 	PluginCachePath string
 	ServiceDir      string

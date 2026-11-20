@@ -22,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -160,7 +159,7 @@ func vaultMakeRefresh(c vaultWiring, db *vaultIndex, notes noteport.NoteReposito
 	})
 }
 
-func newTextVersions(options vaultconfig.Options, plugins textport.TextPlugins, clock machineport.Clock, db *vaultIndex) *textVersions {
+func newTextVersions(options vaultconfig.Options, plugins textversion.TextPlugins, clock machineport.Clock, db *vaultIndex) *textVersions {
 	files := derivedfile.TextStores{Options: options, Decoded: derivedfile.NewDecodedTexts(derivedfile.DefaultDecodedBudget)}
 	stores, readers := db.Versions, vaultreader.Readers{Options: options}
 	texts := textversion.NewTexts(stores, files, readers, note.NewReadFrontmatter(readers), clock)

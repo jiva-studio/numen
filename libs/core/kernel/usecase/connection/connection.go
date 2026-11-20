@@ -34,7 +34,7 @@ type operation struct {
 	repository connectionport.Repository
 	types      connectionport.Types
 	keys       pluginport.KeyStore
-	uses       connectionport.Uses
+	uses       Uses
 	detected   connectionport.Detected
 	lists      OptionLists
 	gate       *sync.Mutex
@@ -74,7 +74,7 @@ type Deps struct{ base operation }
 // connection and the connections the providers detect, listed after the stored ones. keys is nil on a
 // machine with no key store; a connection with no secret field value still works there.
 func NewDeps(
-	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, uses connectionport.Uses,
+	repository connectionport.Repository, types connectionport.Types, keys pluginport.KeyStore, uses Uses,
 	detected connectionport.Detected,
 ) Deps {
 	return Deps{base: operation{

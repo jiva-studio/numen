@@ -19,7 +19,7 @@ import (
 type Versions struct {
 	stores  textport.VersionStores
 	files   textport.TextFileStores
-	plugins textport.TextPlugins
+	plugins TextPlugins
 	clock   machineport.Clock
 	changes versionReporter
 }
@@ -34,7 +34,7 @@ type versionReporter interface {
 func NewVersions(
 	stores textport.VersionStores,
 	files textport.TextFileStores,
-	plugins textport.TextPlugins,
+	plugins TextPlugins,
 	clock machineport.Clock,
 	changes *Changes,
 ) *Versions {

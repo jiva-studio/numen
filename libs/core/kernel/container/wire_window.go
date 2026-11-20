@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -118,7 +117,7 @@ type windowStartup struct {
 type windowPlugins struct {
 	source    sourcebridge.Binding
 	tasks     *run.Tasks
-	events    pluginport.PluginEventEmitter
+	events    PluginEventEmitter
 	vault     windowsession.PluginVaultPath
 	triggers  windowsession.TriggerSource
 	startFeed func(context.Context, domain.Vault) func()

@@ -11,13 +11,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -33,7 +33,7 @@ func installCurrentVault(install pluginInstall, vaultDeps vaultWiring, db *vault
 }
 
 type installedPlugins interface {
-	textport.TextPlugins
+	textversion.TextPlugins
 	pluginmanifest.PluginLister
 	pluginport.PluginManifests
 }
@@ -41,12 +41,12 @@ type installedPlugins interface {
 // pluginRuntime is what runs, finds and addresses the plugins.
 type pluginRuntime struct {
 	bridge.Activator
-	pluginport.PluginRetrier
+	PluginRetrier
 	Listing   installedPlugins
 	Resolver  pluginport.PluginResolver
 	Manifests pluginmanifest.Manifests
-	pluginport.PluginEventEmitter
-	pluginport.PluginBinding
+	PluginEventEmitter
+	PluginBinding
 	transport.ClientLookup
 	pluginmanifest.PluginFailures
 	pluginport.ConfigWatcher
@@ -54,16 +54,16 @@ type pluginRuntime struct {
 
 // pluginConfiguration is what carries the settings to the plugins.
 type pluginConfiguration struct {
-	pluginport.PluginSettingDeclarer
-	pluginport.ConfigRefresher
+	PluginSettingDeclarer
+	ConfigRefresher
 	settingsusecase.PluginConfig
 	settingsusecase.PluginSettings
 }
 
 // PluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
 type PluginWatch struct {
-	pluginport.PluginShutdown
-	pluginport.DependencyReporter
+	PluginShutdown
+	DependencyReporter
 	contenttypeport.ContentTypeTable
 }
 

@@ -1,10 +1,6 @@
 package pluginport
 
 import (
-	"context"
-	"time"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -29,50 +25,13 @@ type ServiceResolver interface {
 	ResolveService(service string) (manifest.Discovered, bool)
 }
 
-// PluginRetrier starts a plugin once, as any use of it does.
-type PluginRetrier interface {
-	// RetryPlugin answers why the start failed where it did.
-	RetryPlugin(ctx context.Context, pluginID string) (*plugin.Failure, error)
-}
-
 // PluginEnablement reports whether the settings of a plugin leave it enabled.
 type PluginEnablement interface {
 	// IsPluginEnabled reports whether the settings of the plugin leave it enabled.
 	IsPluginEnabled(pluginID string) bool
 }
 
-type PluginSettingDeclarer interface {
-	// GetPluginSettingDeclarations returns the settings the manifest of the plugin declares, and
-	// false for a plugin the host does not know.
-	GetPluginSettingDeclarations(pluginID string) ([]manifest.Setting, bool)
-}
-
-// ConfigRefresher sends the configuration again to the plugins that were not given it yet.
-type ConfigRefresher interface {
-	// Refresh configures the running plugins that were not given their configuration yet, and the
-	// plugins named in forced.
-	Refresh(ctx context.Context, forced ...string) error
-}
-
 // ConfigWatcher tells when a plugin has been given its configuration.
 type ConfigWatcher interface {
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
-}
-
-type PluginEventEmitter interface {
-	EmitEvent(event string)
-	// EmitFilesChanged emits the onFilesChanged event of the vault to the plugins that take a file of one of
-	// the types.
-	EmitFilesChanged(vaultID string, types []domain.FileType)
-}
-
-// PluginShutdown stops the plugins when the host shuts down.
-type PluginShutdown interface {
-	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
-}
-
-// PluginBinding gives the host the mode and the vault path the plugins run under.
-type PluginBinding interface {
-	SetSafeMode(enabled bool)
-	SetVaultPath(path string)
 }

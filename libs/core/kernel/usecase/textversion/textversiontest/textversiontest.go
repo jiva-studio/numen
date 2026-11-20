@@ -21,7 +21,7 @@ type TextVersions struct {
 // NewTextVersions builds the use cases over the stores, the file stores, the enabled plugins, the vault
 // readers and the clock.
 func NewTextVersions(
-	stores textport.VersionStores, files textport.TextFileStores, plugins textport.TextPlugins,
+	stores textport.VersionStores, files textport.TextFileStores, plugins textversion.TextPlugins,
 	readers vaultport.VaultReaders, clock machineport.Clock,
 ) *TextVersions {
 	texts := textversion.NewTexts(stores, files, readers, note.NewReadFrontmatter(readers), clock)

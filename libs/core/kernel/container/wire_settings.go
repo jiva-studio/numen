@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
@@ -63,7 +62,7 @@ type settingsWiring struct {
 
 	PluginChanges   *settingsusecase.PluginChanges
 	Infos           themefiles.PluginHost
-	Declarations    pluginport.PluginSettingDeclarer
+	Declarations    PluginSettingDeclarer
 	ConnectionTypes connectionport.Types
 	PluginInfos     settingsusecase.PluginInfos
 	Checks          settingsusecase.PluginSettings
