@@ -326,7 +326,9 @@ type WriteOpenTabsRequest struct {
 	Tabs []*Tab `protobuf:"bytes,1,rep,name=tabs,proto3" json:"tabs,omitempty"`
 	// Which of them the person is looking at, by its id. Empty where the window
 	// has nothing open.
-	ActiveId      string `protobuf:"bytes,2,opt,name=active_id,json=activeId,proto3" json:"active_id,omitempty"`
+	ActiveId string `protobuf:"bytes,2,opt,name=active_id,json=activeId,proto3" json:"active_id,omitempty"`
+	// The window's pane layout as opaque JSON. Empty when no layout was saved.
+	Layout        string `protobuf:"bytes,3,opt,name=layout,proto3" json:"layout,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -371,6 +373,13 @@ func (x *WriteOpenTabsRequest) GetTabs() []*Tab {
 func (x *WriteOpenTabsRequest) GetActiveId() string {
 	if x != nil {
 		return x.ActiveId
+	}
+	return ""
+}
+
+func (x *WriteOpenTabsRequest) GetLayout() string {
+	if x != nil {
+		return x.Layout
 	}
 	return ""
 }
@@ -452,7 +461,9 @@ type ReadOpenTabsResponse struct {
 	// The tabs last written, in the order they were written.
 	Tabs []*Tab `protobuf:"bytes,1,rep,name=tabs,proto3" json:"tabs,omitempty"`
 	// The id of the tab that was active, empty where none was.
-	ActiveId      string `protobuf:"bytes,2,opt,name=active_id,json=activeId,proto3" json:"active_id,omitempty"`
+	ActiveId string `protobuf:"bytes,2,opt,name=active_id,json=activeId,proto3" json:"active_id,omitempty"`
+	// The window's pane layout as opaque JSON. Empty when no layout was saved.
+	Layout        string `protobuf:"bytes,3,opt,name=layout,proto3" json:"layout,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -497,6 +508,13 @@ func (x *ReadOpenTabsResponse) GetTabs() []*Tab {
 func (x *ReadOpenTabsResponse) GetActiveId() string {
 	if x != nil {
 		return x.ActiveId
+	}
+	return ""
+}
+
+func (x *ReadOpenTabsResponse) GetLayout() string {
+	if x != nil {
+		return x.Layout
 	}
 	return ""
 }
@@ -2083,15 +2101,17 @@ const file_numen_v1_workspace_proto_rawDesc = "" +
 	"\x12WatchFocusResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x06ranges\x18\x02 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\x12\x15\n" +
-	"\x06tab_id\x18\x03 \x01(\tR\x05tabId\"V\n" +
+	"\x06tab_id\x18\x03 \x01(\tR\x05tabId\"n\n" +
 	"\x14WriteOpenTabsRequest\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x1b\n" +
-	"\tactive_id\x18\x02 \x01(\tR\bactiveId\"\x17\n" +
+	"\tactive_id\x18\x02 \x01(\tR\bactiveId\x12\x16\n" +
+	"\x06layout\x18\x03 \x01(\tR\x06layout\"\x17\n" +
 	"\x15WriteOpenTabsResponse\"\x15\n" +
-	"\x13ReadOpenTabsRequest\"V\n" +
+	"\x13ReadOpenTabsRequest\"n\n" +
 	"\x14ReadOpenTabsResponse\x12!\n" +
 	"\x04tabs\x18\x01 \x03(\v2\r.numen.v1.TabR\x04tabs\x12\x1b\n" +
-	"\tactive_id\x18\x02 \x01(\tR\bactiveId\"\x7f\n" +
+	"\tactive_id\x18\x02 \x01(\tR\bactiveId\x12\x16\n" +
+	"\x06layout\x18\x03 \x01(\tR\x06layout\"\x7f\n" +
 	"\x03Tab\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +

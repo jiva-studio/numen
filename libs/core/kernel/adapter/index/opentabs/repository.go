@@ -1,73 +1,56 @@
-// Package opentabs stores the tabs the window has open on each vault in the index database.
+// Package opentabs stores the editor workspace of each vault.
 package opentabs
 
 import (
 	"context"
 	"database/sql"
-	"embed"
+	"encoding/json"
+	"errors"
 	"fmt"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-//go:embed sql/*.sql
-var files embed.FS
+const workspaceKey = "editor.workspace"
 
-func getStatement(name string) string { return sqlfile.Read(files, "sql", name) }
-
-// Repository is the open tabs of every vault. Reads go through read and writes
-// through write, the pools the index database opens.
+// Repository reads and writes the editor workspace as one vault state entry.
 type Repository struct {
 	read  *sql.DB
 	write *sql.DB
 }
 
-// NewRepository is the open tabs over the index database's two pools.
+// NewRepository is the workspace store over the index database's two pools.
 func NewRepository(read, write *sql.DB) *Repository {
 	return &Repository{read: read, write: write}
 }
 
-// ReadOpenTabs returns the tabs last written for the vault, and none where nothing was written.
-func (r *Repository) ReadOpenTabs(ctx context.Context, v domain.Vault) (_ windowdomain.OpenTabs, err error) {
-	rows, err := r.read.QueryContext(ctx, listSQL, string(v.ID))
+// ReadOpenTabs returns the last workspace written for the vault.
+func (r *Repository) ReadOpenTabs(ctx context.Context, v domain.Vault) (windowdomain.OpenTabs, error) {
+	var value []byte
+	err := r.read.QueryRowContext(ctx, listSQL, string(v.ID), workspaceKey).Scan(&value)
+	if errors.Is(err, sql.ErrNoRows) {
+		return windowdomain.OpenTabs{}, nil
+	}
 	if err != nil {
-		return windowdomain.OpenTabs{}, fmt.Errorf("read the open tabs of %s: %w", v.ID, err)
+		return windowdomain.OpenTabs{}, fmt.Errorf("read editor workspace of %s: %w", v.ID, err)
 	}
-	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
-	var open windowdomain.OpenTabs
-	for rows.Next() {
-		var tab windowdomain.Tab
-		var isFront bool
-		if err := rows.Scan(&tab.ID, &tab.Kind, &tab.Path, &tab.Title, &tab.State, &isFront); err != nil {
-			return windowdomain.OpenTabs{}, fmt.Errorf("read the open tabs of %s: %w", v.ID, err)
-		}
-		if isFront {
-			open.ActiveID = tab.ID
-		}
-		open.Tabs = append(open.Tabs, tab)
+	var saved workspace
+	if err := json.Unmarshal(value, &saved); err != nil {
+		return windowdomain.OpenTabs{}, fmt.Errorf("decode editor workspace of %s: %w", v.ID, err)
 	}
-	if err := rows.Err(); err != nil {
-		return windowdomain.OpenTabs{}, fmt.Errorf("read the open tabs of %s: %w", v.ID, err)
-	}
-	return open, nil
+	return saved.getOpenTabs(), nil
 }
 
-// WriteOpenTabs replaces the tabs kept for the vault in one transaction.
+// WriteOpenTabs stores the tabs, selection and pane layout together.
 func (r *Repository) WriteOpenTabs(ctx context.Context, v domain.Vault, open windowdomain.OpenTabs) error {
-	return sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
-		if _, err := tx.ExecContext(ctx, getStatement("clear"), string(v.ID)); err != nil {
-			return fmt.Errorf("clear the open tabs of %s: %w", v.ID, err)
-		}
-		for position, tab := range open.Tabs {
-			isFront := tab.ID != "" && tab.ID == open.ActiveID
-			if _, err := tx.ExecContext(ctx, getStatement("save"),
-				string(v.ID), position, tab.ID, tab.Kind, tab.Path, tab.Title, tab.State, isFront); err != nil {
-				return fmt.Errorf("save the open tab %s of %s: %w", tab.ID, v.ID, err)
-			}
-		}
-		return nil
-	})
+	value, err := json.Marshal(newWorkspace(open))
+	if err != nil {
+		return fmt.Errorf("encode editor workspace of %s: %w", v.ID, err)
+	}
+	if _, err := sqlwrite.Exec(ctx, r.write, saveSQL, string(v.ID), workspaceKey, string(value)); err != nil {
+		return fmt.Errorf("write editor workspace of %s: %w", v.ID, err)
+	}
+	return nil
 }

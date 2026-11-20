@@ -82,17 +82,14 @@ CREATE TABLE notes (
     FOREIGN KEY (source_id, vault_id) REFERENCES sources (id, vault_id) ON DELETE CASCADE
 );
 
-CREATE TABLE open_tabs (
-    vault    TEXT NOT NULL,
-    position INTEGER NOT NULL,
-    id       TEXT NOT NULL,
-    kind     TEXT NOT NULL,
-    path     TEXT NOT NULL,
-    title    TEXT NOT NULL,
-    state    TEXT NOT NULL,
-    is_front INTEGER NOT NULL,
-    PRIMARY KEY (vault, position)
+CREATE TABLE app_state (
+    vault TEXT,
+    key   TEXT NOT NULL,
+    value TEXT NOT NULL CHECK (json_valid(value))
 );
+
+CREATE UNIQUE INDEX app_state_by_vault_key ON app_state (vault, key) WHERE vault IS NOT NULL;
+CREATE UNIQUE INDEX app_state_by_global_key ON app_state (key) WHERE vault IS NULL;
 
 CREATE TABLE problems (
     note_id INTEGER NOT NULL REFERENCES notes(source_id) ON DELETE CASCADE,

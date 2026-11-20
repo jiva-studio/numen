@@ -1,9 +1,5 @@
 import { test, expect, type Page } from '../../support/test.js'
-import {
-  TOOL_NOTE_PATH,
-  TOOL_NOTE_TEXT,
-  TOOL_PROMPT,
-} from '../../../scripts/stand-ins.mjs'
+import { TOOL_NOTE_PATH, TOOL_NOTE_TEXT, TOOL_PROMPT } from '../../../scripts/stand-ins.mjs'
 import { openWorkspace } from '../../support/workspace.js'
 import { hasVaultFile } from '../../support/media.js'
 import { destroyNote, readVaultFile } from '../../support/vault.js'
@@ -17,6 +13,30 @@ const openAgentPanel = async (page: Page) => {
 }
 
 test.describe('Agent Plugin and Interface', () => {
+  test('saves a burst of typing once and restores the complete chat draft', async ({ page }) => {
+    const input = await openAgentPanel(page)
+    const prefix = 'Unsent'
+    const question = prefix + ' question about these notes'
+    let writes = 0
+    page.on('request', (request) => {
+      if (request.url().endsWith('/WriteOpenTabs') && request.postDataBuffer()?.includes(prefix)) {
+        writes++
+      }
+    })
+    const saved = page.waitForResponse(
+      (response) =>
+        response.ok() &&
+        response.url().endsWith('/WriteOpenTabs') &&
+        !!response.request().postDataBuffer()?.includes(question),
+    )
+    await input.pressSequentially(question, { delay: 50 })
+    await saved
+    expect(writes).toBe(1)
+
+    await page.reload()
+    await expect(input).toHaveValue(question)
+  })
+
   test('writes the note a tool call of the model asks for, and shows the call in the turn', async ({
     page,
     request,

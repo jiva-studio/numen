@@ -1,2 +1,3 @@
-INSERT INTO open_tabs (vault, position, id, kind, path, title, state, is_front)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO app_state (vault, key, value) VALUES (?, ?, ?)
+ON CONFLICT DO UPDATE SET value = excluded.value
+WHERE value <> excluded.value;

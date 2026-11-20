@@ -20,9 +20,21 @@ describe('the tabs a window holds open', () => {
   it('are written as they stand, with the one in front', async () => {
     const tab = { id: 't1', kind: 'note', path: 'Llama.md', title: 'Llama', state: '' }
 
-    await api.writeOpenTabs({ tabs: [tab], activeId: 't1' })
+    const layout = '{ "panes": ["t1"] }'
+    await api.writeOpenTabs({ tabs: [tab], activeId: 't1', layout })
 
-    expect(request.writeOpenTabs.mock.lastCall?.[0]).toMatchObject({ tabs: [tab], activeId: 't1' })
+    expect(request.writeOpenTabs.mock.lastCall?.[0]).toMatchObject({
+      tabs: [tab],
+      activeId: 't1',
+      layout,
+    })
+  })
+
+  it('reads a saved layout even when it contains no tabs', async () => {
+    const layout = '{ "panes": [] }'
+    request.readOpenTabs.mockResolvedValueOnce({ activeId: '', tabs: [], layout })
+
+    expect(await api.readOpenTabs()).toStrictEqual({ activeId: '', tabs: [], layout })
   })
 
   it('are read back with the one that was in front', async () => {
