@@ -5,6 +5,7 @@
  * The label sits next to the pointer and must never become the thing the pointer is over, or the drop
  * target under it would stop seeing the pointer.
  */
+import { getPointerPosition } from '@/shared/fixtures/browser'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import { DragPreview } from '.'
@@ -40,11 +41,8 @@ export const PointerPassesThrough: Story = {
   }),
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
-    const box = canvas.getByText(args.label).getBoundingClientRect()
-    const topElement = canvasElement.ownerDocument.elementFromPoint(
-      box.left + box.width / 2,
-      box.top + box.height / 2,
-    )
+    const { clientX, clientY } = getPointerPosition(canvas.getByText(args.label))
+    const topElement = canvasElement.ownerDocument.elementFromPoint(clientX, clientY)
     await expect(topElement).toBe(canvas.getByRole('button', { name: 'Drop here' }))
   },
 }

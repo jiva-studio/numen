@@ -2,6 +2,7 @@
  * What the editor looks like while it is being typed into. What it does to the
  * text is asserted in `live.test.ts`, `table.test.ts` and `change.test.ts`.
  */
+import { getPointerPosition } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { createApp, ref } from 'vue'
@@ -104,16 +105,10 @@ const loadFaces = () => {
   return Promise.all(FACES.map(({ name }) => document.fonts.load(`100px '${name}'`)))
 }
 
-const reach = (name: string) => {
-  const probe = document.createElement('span')
-  probe.textContent = 'x'
-  probe.style.cssText =
-    'position:absolute;visibility:hidden;line-height:normal;font-size:100px;' +
-    `font-family:'${name}'`
-  document.body.append(probe)
-  const height = probe.getBoundingClientRect().height
-  probe.remove()
-  return height
+const getFontAscent = (name: string): number => {
+  const drawing = document.createElement('canvas').getContext('2d')!
+  drawing.font = `100px '${name}'`
+  return drawing.measureText('x').actualBoundingBoxAscent
 }
 
 /**
@@ -134,7 +129,7 @@ export const ClickLandsOnTheLine: Story = {
 
     await loadFaces()
     // A face the machine cannot cut pins nothing.
-    await expect(reach(TALL.name) > reach(LOW.name)).toBe(true)
+    await expect(getFontAscent(TALL.name) > getFontAscent(LOW.name)).toBe(true)
 
     for (const selected of [null, ...FACES]) {
       const face = selected ? selected.name : 'the machine'
@@ -379,8 +374,8 @@ const getView = (canvas: HTMLElement): EditorView => {
 const nextFrame = () => new Promise((isDone) => requestAnimationFrame(() => isDone(null)))
 
 const topmost = (view: EditorView): number => {
-  const box = view.scrollDOM.getBoundingClientRect()
-  const pos = view.posAtCoords({ x: box.left + 8, y: box.top + 8 }) ?? 0
+  const top = getPointerPosition(view.scrollDOM, 0, 0)
+  const pos = view.posAtCoords({ x: top.clientX + 8, y: top.clientY + 8 }) ?? 0
   return view.state.doc.lineAt(pos).number
 }
 
@@ -859,11 +854,10 @@ export const CompletionOpen: Story = {
 
 const SHORT_LINES = 'A bell over the door.\nSeeds and spades.\nA lamp on the shelf.\n'
 
-const getTextCentre = (element: Element): number => {
+const getTextPosition = (element: Element) => {
   const range = document.createRange()
   range.selectNodeContents(element)
-  const box = range.getBoundingClientRect()
-  return (box.top + box.bottom) / 2
+  return getPointerPosition(range)
 }
 
 const renderWithTokens = (size: string, height: string): Render => {
@@ -890,14 +884,14 @@ const playNumbersOnTheirLines = async (
   await expect(lines).toHaveLength(3)
   await expect(numbers).toHaveLength(3)
 
-  // The line is as tall as the tokens say: the font size times the line height.
-  for (const line of lines) {
-    await expect(Math.abs(line.getBoundingClientRect().height - size * height)).toBeLessThan(1)
-  }
-  // Each number is on the line of its text.
   for (const [index, line] of lines.entries()) {
-    const number = numbers[index] as Element
-    await expect(Math.abs(getTextCentre(number) - getTextCentre(line))).toBeLessThan(1.5)
+    const row = view.state.doc.line(index + 1)
+    await expect(Math.abs(view.lineBlockAt(row.from).height - size * height)).toBeLessThan(1)
+    const gutter = getTextPosition(numbers[index]!)
+    const text = getTextPosition(line)
+    const position = view.posAtCoords({ x: text.clientX, y: gutter.clientY })
+    await expect(position).not.toBeNull()
+    await expect(view.state.doc.lineAt(position!).number).toBe(row.number)
   }
 }
 

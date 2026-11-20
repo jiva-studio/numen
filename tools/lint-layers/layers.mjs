@@ -100,7 +100,8 @@ export function createOwnImportConfig({ layer, patterns, group, message, outside
  * and a fixture is made-up content, so neither imports a wire type, a client, a domain type or an
  * application.
  */
-export function createStoryImportConfig({ patterns }) {
+export function createStoryImportConfig({ patterns: [packages, ...paths] }) {
+  const patterns = [{ ...packages, group: [...packages.group, '!@numen/ui/testing'] }, ...paths]
   return {
     files: ['src/**/*.stories.ts', 'src/**/fixtures/**/*.ts'],
     rules: {

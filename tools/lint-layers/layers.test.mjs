@@ -45,6 +45,16 @@ describe("the import block of the stories and fixtures of a component library", 
     assert.deepEqual(findRejectedImports("src/features/tree/fixtures/deep/rows.ts", DOMAIN_SOURCE), [1, 2, 3]);
   });
 
+  it("allows UI browser fixtures only in stories and fixtures", () => {
+    const source = [
+      "import { getPointerPosition } from '@numen/ui/testing'",
+      "import { createClient } from '@numen/core-client/testing'",
+      "import secret from '@numen/ui/private'",
+    ].join("\n");
+    assert.deepEqual(findRejectedImports("src/shared/ui/button/Button.stories.ts", source), [2, 3]);
+    assert.deepEqual(findRejectedImports("src/shared/ui/button/useButton.ts", source), [1, 2, 3]);
+  });
+
   it("passes the imports a story may make", () => {
     const source = ["import { expect } from 'storybook/test'", "import Local from './Local.vue'", "import { DARK } from '@/shared/fixtures/theme'"].join("\n");
     assert.deepEqual(findRejectedImports("src/shared/ui/button/Button.stories.ts", source), []);

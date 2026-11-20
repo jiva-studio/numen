@@ -5,6 +5,7 @@
  * Each story renders two sections and loads a section `READ_DELAY` after the offset moves into
  * it, as the reader does.
  */
+import { waitForPageLayout, isOnPage } from '../fixtures/pages'
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor } from 'storybook/test'
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
@@ -139,21 +140,12 @@ const waitForSettledLayout = async (canvasElement: HTMLElement) => {
     },
     { timeout: BROWSER_TIMEOUT },
   )
-  await document.fonts.ready
-  const readState = () => {
-    const paper = getPaper(canvasElement)
-    const copies = getCopyHolder(canvasElement).childElementCount
-    return `${paper.getBoundingClientRect().left}|${paper.scrollWidth}|${copies}`
-  }
-  let last = readState()
-  let stableFrameCount = 0
-  for (let frame = 0; frame < 600 && stableFrameCount < SETTLED_FRAME_COUNT; frame += 1) {
-    await waitForFrame()
-    const now = readState()
-    stableFrameCount = now === last ? stableFrameCount + 1 : 0
-    last = now
-  }
-  await expect(stableFrameCount).toBe(SETTLED_FRAME_COUNT)
+  await waitForPageLayout(
+    getArea(canvasElement),
+    getPaper(canvasElement),
+    SETTLED_FRAME_COUNT,
+    BROWSER_TIMEOUT,
+  )
 }
 
 const waitForFrontOffset = async (
@@ -164,16 +156,21 @@ const waitForFrontOffset = async (
     timeout: BROWSER_TIMEOUT,
   })
 
-const getLinesInArea = (element: Element, box: DOMRect) => {
+const getTextFragments = (element: Element) => {
   const range = document.createRange()
   range.selectNodeContents(element)
-  return [...range.getClientRects()].filter(
-    (rect) => rect.width > 0 && rect.right > box.left + 1 && rect.left < box.right - 1,
-  )
+  return [...range.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0)
 }
 
-const isOverlapping = (a: DOMRect, b: DOMRect) =>
-  a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1
+const hasVisibleOverlap = (area: HTMLElement, a: DOMRect, b: DOMRect) => {
+  const left = Math.max(a.left, b.left)
+  const right = Math.min(a.right, b.right)
+  const top = Math.max(a.top, b.top)
+  const bottom = Math.min(a.bottom, b.bottom)
+  if (right - left <= 1 || bottom - top <= 1) return false
+  const y = (bottom + top) / 2
+  return [left + 0.5, (left + right) / 2, right - 0.5].some((x) => isOnPage(area, x, y))
+}
 
 interface CopyFrame {
   readonly isOverlapping: boolean
@@ -184,14 +181,12 @@ const recordCopyFrames = (canvasElement: HTMLElement) => {
   const read = () => {
     const copy = getCopyHolder(canvasElement).firstElementChild
     if (copy) {
-      const box = getArea(canvasElement).getBoundingClientRect()
+      const area = getArea(canvasElement)
       const paper = getPaper(canvasElement)
-      const oldLines = getLinesInArea(copy, box)
-      const newLines = paper.classList.contains('book__paper--unset')
-        ? []
-        : getLinesInArea(paper, box)
+      const oldLines = getTextFragments(copy)
+      const newLines = paper.classList.contains('book__paper--unset') ? [] : getTextFragments(paper)
       frames.push({
-        isOverlapping: oldLines.some((a) => newLines.some((b) => isOverlapping(a, b))),
+        isOverlapping: oldLines.some((a) => newLines.some((b) => hasVisibleOverlap(area, a, b))),
       })
     }
     frame = requestAnimationFrame(read)

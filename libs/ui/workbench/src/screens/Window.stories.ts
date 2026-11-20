@@ -9,6 +9,7 @@
  * pane is empty for the same reason: views-agent-chat draws the agent chat. The
  * notes are plain text: the notes plugin draws the note editor.
  */
+import { isBefore } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import { Book, BookOpen, Bot, FileText, Folder, FolderOpen, FolderTree } from '@lucide/vue'
@@ -480,9 +481,6 @@ const getPane = (canvas: HTMLElement, id: string): HTMLElement => {
   return element
 }
 
-const isPast = (later: HTMLElement, earlier: HTMLElement): boolean =>
-  later.getBoundingClientRect().left >= earlier.getBoundingClientRect().right - 1
-
 export const Writing: Story = {
   render: () =>
     screen({
@@ -590,8 +588,8 @@ export const Asking: Story = {
     const aside = getPane(canvasElement, 'aside')
 
     // The three stand in the order they were divided in, the agent last.
-    await expect(isPast(note, source)).toBe(true)
-    await expect(isPast(aside, note)).toBe(true)
+    await expect(isBefore(source, note, 'horizontal')).toBe(true)
+    await expect(isBefore(note, aside, 'horizontal')).toBe(true)
 
     // The aside holds the agent's pane, which the views-agent-chat plugin draws.
     within(aside).getByRole('region', { name: 'Agent' })

@@ -7,7 +7,7 @@
  * the same frame, so what is judged here is what every list that is searched
  * looks like.
  */
-import { getVisibleFraction } from '@/testing'
+import { getVisibleFraction } from '@/shared/fixtures/browser'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
