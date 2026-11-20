@@ -1,10 +1,9 @@
 import { createApp } from 'vue'
 import { createKeepaliveTransport, createOriginTransport } from '@numen/core-client'
 import { reportFailure, runInBackground } from '@numen/ui'
-import { openExternalUrl } from '@numen/workbench'
+import { openExternalUrl } from '@numen/plugin-loader'
 import { interceptExternalLinks } from './features/external-links'
 import { createRoot } from './app/createRoot'
-import { loadFrameRuntime } from './shared/api/runtime'
 
 // The window draws its own menus. The one the webview draws carries a browser's
 // idea of what is here — inspect, reload, view source — and refusing it
@@ -15,7 +14,7 @@ document.addEventListener('contextmenu', (event) => event.preventDefault())
 // current location. Links stay inside the served pages, and an external
 // address opens in the system browser.
 interceptExternalLinks((href) => {
-  runInBackground(openExternalUrl(href, loadFrameRuntime), reportFailure)
+  runInBackground(openExternalUrl(href), reportFailure)
 })
 
 createApp(

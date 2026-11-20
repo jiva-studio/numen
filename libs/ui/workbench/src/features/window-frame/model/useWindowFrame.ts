@@ -1,8 +1,3 @@
-/**
- * The frame of the desktop window: minimize, maximize, close, and the platform the window runs on.
- * The calls go through the Wails runtime served beside the page; a page served without it (stories,
- * tests) gets a frame that does nothing.
- */
 import { computed, getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
 import { doc, hasDocument, runInBackground } from '@numen/ui'
 import {
@@ -13,7 +8,6 @@ import {
   WINDOW_RADIUS_VARIABLE,
   type WindowPlatform,
 } from '../lib/corners'
-import type { FrameRuntime, FrameRuntimeLoader } from '../lib/runtime'
 import { getWindowEdge, type FrameEdge } from './frameEdge'
 
 export interface WindowFrame {
@@ -27,26 +21,19 @@ export interface WindowFrame {
   closeWindow(): Promise<void>
 }
 
-function getPlatform(system: FrameRuntime['System']): WindowPlatform {
-  if (system?.IsMac?.()) return 'darwin'
-  return system?.IsLinux?.() ? 'linux' : 'windows'
+interface FrameControls {
+  getEnvironment(): Promise<{ platform: WindowPlatform; version: string | undefined }>
+  isMaximized(): Promise<boolean>
+  isFullscreen(): Promise<boolean>
+  minimize(): Promise<void>
+  toggleMaximize(): Promise<void>
+  close(): Promise<void>
 }
 
 const ignoreFailure = (): undefined => undefined
 
-async function readMacVersion(system: FrameRuntime['System']): Promise<number | undefined> {
-  try {
-    return readMajorVersion((await system?.Environment?.())?.OSInfo?.Version)
-  } catch {
-    return undefined
-  }
-}
-
-/**
- * The frame of the window this page is drawn in, read through the runtime the shell loads: its platform, its
- * maximized and full screen state, which a resize reads again, and its buttons.
- */
-export function useWindowFrame(load: FrameRuntimeLoader): WindowFrame {
+/** Reads the platform once at startup and updates frame geometry on resize. */
+export function useWindowFrame(controls: FrameControls): WindowFrame {
   const platform = ref<WindowPlatform>('windows')
   const isMaximized = ref(false)
   const isFullscreen = ref(false)
@@ -66,32 +53,32 @@ export function useWindowFrame(load: FrameRuntimeLoader): WindowFrame {
 
   /** Reads the maximized and the full screen state, which a resize changes. */
   async function readWindowState(): Promise<void> {
-    const wailsWindow = (await load())?.Window
-    isMaximized.value = (await wailsWindow?.IsMaximised?.()) ?? false
-    isFullscreen.value = (await wailsWindow?.IsFullscreen?.()) ?? false
+    isMaximized.value = await controls.isMaximized()
+    isFullscreen.value = await controls.isFullscreen()
   }
 
   async function minimizeWindow(): Promise<void> {
-    await (await load())?.Window?.Minimise?.()
+    await controls.minimize()
   }
 
   async function toggleMaximizeWindow(): Promise<void> {
-    await (await load())?.Window?.ToggleMaximise?.()
+    await controls.toggleMaximize()
     await readWindowState().catch(ignoreFailure)
   }
 
   async function closeWindow(): Promise<void> {
-    await (await load())?.Window?.Close?.()
+    await controls.close()
   }
 
   runInBackground(
-    load().then(async (loaded) => {
-      platform.value = getPlatform(loaded?.System)
-      if (platform.value === 'darwin') macVersion.value = await readMacVersion(loaded?.System)
-      await readWindowState()
+    controls.getEnvironment().then(({ platform: current, version }) => {
+      platform.value = current
+      macVersion.value = readMajorVersion(version)
     }),
     ignoreFailure,
   )
+
+  runInBackground(readWindowState(), ignoreFailure)
 
   // A resize is how a window gets maximized or restored by the system, not only by the button.
   const onResize = () => runInBackground(readWindowState(), ignoreFailure)

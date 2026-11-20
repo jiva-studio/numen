@@ -36,11 +36,4 @@ export type { VaultRow, WelcomeAction } from './features/welcome'
 
 /** The frame of the desktop window a page is drawn in, as both windows read it. */
 export { useWindowFrame } from './features/window-frame'
-/** Opens an address in the system browser, through the runtime loader a window passes. */
-export { openExternalUrl } from './features/window-frame'
-export type {
-  FrameRuntime,
-  FrameRuntimeLoader,
-  WindowFrame,
-  WindowPlatform,
-} from './features/window-frame'
+export type { WindowFrame, WindowPlatform } from './features/window-frame'

@@ -7,6 +7,7 @@
 import {
   createPluginLoader,
   createWindowHost,
+  createWindowFrameControls,
   usePluginStyles,
   type PluginLoaderDeps,
 } from '@numen/plugin-loader'
@@ -29,7 +30,6 @@ import { useWindowKeys } from '@/features/window-keys'
 import { createTaskApi, useWindowTasks } from '@/features/window-tasks'
 import { createWindowClients, type Transport } from '@/shared/api/clients'
 import { formatError } from '@/shared/api/errors'
-import { loadFrameRuntime } from '@/app/runtime'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { createShellHost } from '../plugins/host'
 
@@ -41,7 +41,7 @@ export function createWindow(transport: Transport, deps: WindowDeps = {}) {
   const listPlugins = createPluginLister(clients.pluginService)
   const notices = createNoticeQueue()
   const tabs = createWindowTabs()
-  const frame = useWindowFrame(loadFrameRuntime)
+  const frame = useWindowFrame(createWindowFrameControls())
   const { vaults, isListing } = useVaults(createVaultLister(clients.vaultsService), (text) =>
     notices.show(WINDOW_SOURCE, text, 'error'),
   )

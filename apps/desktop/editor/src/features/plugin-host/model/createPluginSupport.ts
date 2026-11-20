@@ -1,13 +1,13 @@
 import {
   createAppInfo,
+  openExternalUrl,
   createPluginHost,
   createPluginLoader,
   type PluginStatus,
 } from '@numen/plugin-loader'
-import { openExternalUrl, type WindowPlatform } from '@numen/workbench'
+import type { WindowPlatform } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
 import type { Caught } from '@/shared/api/errors'
-import { loadFrameRuntime } from '@/shared/api/runtime'
 import { TARGET } from '../lib/window'
 import type { HostParts, TabActionParts, TabKindParts } from './createHostParts'
 import type { createPluginCatalog } from './createPluginCatalog'
@@ -57,7 +57,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
         build: import.meta.env.VITE_NUMEN_BUILD,
         getPlatform: deps.getPlatform,
       }),
-      openExternal: (url) => openExternalUrl(url, loadFrameRuntime),
+      openExternal: openExternalUrl,
       onError: deps.reports.reportError,
     },
     plugins: {
