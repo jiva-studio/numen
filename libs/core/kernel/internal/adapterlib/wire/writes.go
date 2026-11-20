@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )

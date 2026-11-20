@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
@@ -38,5 +39,18 @@ func TestPluginOpenVaultAfterSwitchPromptClosesShowsVault(t *testing.T) {
 	}
 	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s after the plugin's open, want %s", got.Name, f.second.Name)
+	}
+}
+
+func TestPluginCanEditTheShownVaultWhileTheWindowDrainsWrites(t *testing.T) {
+	f := openTwoVaultsWith(t, container.Config.OpenEditor)
+	writes := editor.PagesOf(f.installation).Writes
+	<-writes.Seal()
+	defer writes.Open()
+
+	access := f.cfg.Endpoints.Endpoint.GetPluginVault()
+	trashed, _, err := access.Arranger.RemoveNote(t.Context(), entropy)
+	if err != nil || trashed == "" {
+		t.Fatalf("plugin removal returned %q, %v", trashed, err)
 	}
 }
