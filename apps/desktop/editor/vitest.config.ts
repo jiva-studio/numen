@@ -15,6 +15,7 @@ import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 import { getStoryBrowser } from '../../../libs/ui/components/.storybook/browser'
 
 const alias = createWindowAliases(import.meta.url, {
+  '@numen/ui/testing': '../../../libs/ui/components/src/testing/index.ts',
   '@numen/core-client/testing': '../../../libs/core/client/src/testing/index.ts',
   '@numen/plugin-manager/testing': '../../../libs/plugin/manager/src/testing/index.ts',
   '@numen/plugin-manager': '../../../libs/plugin/manager/src/index.ts',

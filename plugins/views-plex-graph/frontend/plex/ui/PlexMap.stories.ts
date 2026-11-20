@@ -2,6 +2,7 @@
  * The plex of a note on entropy: the map and the menu on a node. The manual and
  * the landing page take their plex images from these stories.
  */
+import { getVisibleFraction } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import {
@@ -172,11 +173,7 @@ export const Mapping: Story = {
     const menu = within(document.body).getByRole('menu', {
       name: 'What can be done to this note',
     })
-    const box = menu.getBoundingClientRect()
-    await expect(box.left).toBeGreaterThanOrEqual(0)
-    await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
-    await expect(box.top).toBeGreaterThanOrEqual(0)
-    await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
+    await expect(await getVisibleFraction(menu)).toBe(1)
     await expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0)
   },
 }

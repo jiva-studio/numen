@@ -2,10 +2,6 @@
   "keptBy": "#1949 the stories that read geometry stay listed until each is rewritten or replaced",
   "stories": [
     {
-      "file": "apps/desktop/editor/src/features/file-conflict/ui/UnsavedChangesPrompt.stories.ts",
-      "reason": "the prompt for two notes stays inside the viewport"
-    },
-    {
       "file": "libs/ui/components/src/features/tree/ui/Tree.stories.ts",
       "reason": "a row dragged over another is dropped before or after it by where the pointer is in the row"
     },
@@ -16,14 +12,6 @@
     {
       "file": "libs/ui/components/src/shared/ui/menu/Menu.stories.ts",
       "reason": "a menu opens inside the viewport, scrolls instead of clipping and puts its submenu beside the row that opened it"
-    },
-    {
-      "file": "libs/ui/components/src/shared/ui/searchable-list/SearchableList.stories.ts",
-      "reason": "the active option of a long list is scrolled into view inside the list"
-    },
-    {
-      "file": "libs/ui/workbench/src/features/palette/ui/Palette.stories.ts",
-      "reason": "the last row of a far too long list is reachable inside the list"
     },
     {
       "file": "libs/ui/workbench/src/features/workspace/ui/WorkspaceLayout.stories.ts",
@@ -54,20 +42,12 @@
       "reason": "a section settles in place before the story reads the page"
     },
     {
-      "file": "plugins/readers-epub/frontend/book/ui/book-contents/BookContents.stories.ts",
-      "reason": "the contents scroll to the entry where the reading is"
-    },
-    {
       "file": "plugins/readers-pdf/frontend/reader/ui/Reader.stories.ts",
       "reason": "a sheet opens inside the free space of the reader"
     },
     {
       "file": "plugins/views-agent-chat/frontend/thread/ui/Thread.stories.ts",
       "reason": "a selection of words is found by where its words are drawn"
-    },
-    {
-      "file": "plugins/views-file-tree/frontend/ui/FilesTab.stories.ts",
-      "reason": "the menu of a row opens at the row"
     },
     {
       "file": "plugins/views-flashcards-studio/frontend/preset/ui/PresetTab.stories.ts",
@@ -80,10 +60,6 @@
     {
       "file": "plugins/views-plex-graph/frontend/plex/ui/Plex.stories.ts",
       "reason": "a link is made by dragging from a node to another and the nodes keep their place"
-    },
-    {
-      "file": "plugins/views-plex-graph/frontend/plex/ui/PlexMap.stories.ts",
-      "reason": "the menu of the map opens inside the view and the suspended words keep their order"
     },
     {
       "file": "plugins/views-title-bar/frontend/ui/TitleBar.stories.ts",

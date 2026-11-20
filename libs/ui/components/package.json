@@ -19,6 +19,7 @@
     },
     "./styles.css": "./dist/numen-ui.css",
     "./theme.css": "./src/shared/tokens/theme.css",
+    "./testing": "./src/testing/index.ts",
     "./vite": "./src/vite.ts"
   },
   "scripts": {

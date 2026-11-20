@@ -32,6 +32,12 @@ describe("the allow-list of the stories that prove geometry", () => {
     assert.deepEqual(findGeometryReadsOutsideAllowlist([["a.stories.ts", reading]], [{ file: "a.stories.ts", reason: "the menu stays inside the viewport" }]), []);
   });
 
+  it("rejects style reads even when a story proves geometry", () => {
+    const text = [reading.trim(), "window.getComputedStyle(el)", "expect(el).toHaveStyle({ color: 'red' })"].join("\n");
+    const found = findGeometryReadsOutsideAllowlist([["a.stories.ts", text]], [{ file: "a.stories.ts", reason: "the menu stays inside the viewport" }]);
+    assert.deepEqual(symbols(found), ["a.stories.ts:2", "a.stories.ts:3"]);
+  });
+
   it("fails an allowed file with no reason, one that reads nothing and one that is not a story file", () => {
     const found = findGeometryReadsOutsideAllowlist(
       [["a.stories.ts", reading], ["b.stories.ts", "const x = 1\n"]],

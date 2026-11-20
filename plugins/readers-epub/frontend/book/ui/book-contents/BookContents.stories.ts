@@ -5,6 +5,7 @@
  * The panel is judged here because only a real layout can judge it: whether the
  * line being read is brought into view as the reading moves.
  */
+import { getVisibleFraction } from '@numen/ui/testing'
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
@@ -110,10 +111,7 @@ export const BroughtToWhereTheReadingIs: Story = {
       async () => {
         const line = getStandingLine(canvasElement)
         await expect(line).not.toBeNull()
-        const box = line!.getBoundingClientRect()
-        const inside = list.getBoundingClientRect()
-        await expect(box.bottom).toBeGreaterThan(inside.top)
-        await expect(box.top).toBeLessThan(inside.bottom)
+        await expect(await getVisibleFraction(line!, list)).toBeGreaterThan(0)
       },
       { timeout: ITS_OWN_PACE },
     )

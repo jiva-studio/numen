@@ -34,13 +34,15 @@ export function findGeometryReadsOutsideAllowlist(stories, allowed) {
   const reads = new Map(stories.map(([file, text]) => [file, findGeometryReads(file, text)]));
   const allowedFiles = new Set(allowed.map((one) => one.file));
   for (const [file, found] of reads) {
-    if (allowedFiles.has(file)) continue;
-    for (const one of found) findings.push({ file, line: one.line, symbol: `a story reads ${one.name}; a story proves what a person sees or does, and a file that proves geometry as behavior is listed with its reason in story-geometry/allowlist.json` });
+    for (const one of found) {
+      if (one.name === "getBoundingClientRect" && allowedFiles.has(file)) continue;
+      findings.push({ file, line: one.line, symbol: `a story reads ${one.name}; assert observable behavior` });
+    }
   }
   for (const one of allowed) {
     if (one.reason.trim() === "") findings.push({ file: one.file, line: 1, symbol: "an allowed story file has no reason" });
     if (!reads.has(one.file)) findings.push({ file: one.file, line: 1, symbol: "an allowed story file is not a tracked story file" });
-    else if (reads.get(one.file).length === 0) findings.push({ file: one.file, line: 1, symbol: "an allowed story file reads no box and no style; remove it from the allow-list" });
+    else if (!reads.get(one.file).some(({ name }) => name === "getBoundingClientRect")) findings.push({ file: one.file, line: 1, symbol: "an allowed story file reads no box; remove it from the allow-list" });
   }
   return findings;
 }
@@ -59,7 +61,7 @@ export const STORY_GEOMETRY_VERIFIERS = [
     id: "story-reads-no-geometry",
     scope: "libs",
     module: "ui",
-    name: "No Story Reads getBoundingClientRect, getComputedStyle or toHaveStyle Unless Its File Is Allowed With a Reason",
+    name: "Stories Prove Browser Behavior Without Reading Styles",
     run: verifyStoriesReadNoGeometryOutsideAllowlist,
   },
 ];

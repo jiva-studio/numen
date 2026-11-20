@@ -7,6 +7,7 @@
  * the same frame, so what is judged here is what every list that is searched
  * looks like.
  */
+import { getVisibleFraction } from '@/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
@@ -140,10 +141,8 @@ export const LongList: Story = {
     const list = canvas.getByRole('listbox')
     await userEvent.type(canvas.getByRole('combobox'), '{ArrowUp}')
     await waitFor(() => expect(canvas.getByRole('option', { name: 'Shelf 60' })).toBeVisible())
-    const active = canvas.getByRole('option', { name: 'Shelf 60' }).getBoundingClientRect()
-    const inside = list.getBoundingClientRect()
-    await expect(active.top).toBeLessThan(inside.bottom)
-    await expect(active.bottom).toBeGreaterThan(inside.top)
+    const active = canvas.getByRole('option', { name: 'Shelf 60' })
+    await expect(await getVisibleFraction(active, list)).toBeGreaterThan(0)
     await expectOneFrame(canvasElement)
   },
 }
@@ -182,10 +181,7 @@ export const FollowsTheItemInForce: Story = {
     const target = canvas.getByRole('option', { name: 'Shelf 50' })
     await waitFor(() => expect(target).toHaveAttribute('aria-selected', 'true'))
     await waitFor(async () => {
-      const box = target.getBoundingClientRect()
-      const inside = list.getBoundingClientRect()
-      await expect(box.top).toBeLessThan(inside.bottom)
-      await expect(box.bottom).toBeGreaterThan(inside.top)
+      await expect(await getVisibleFraction(target, list)).toBeGreaterThan(0)
     })
   },
 }
@@ -266,8 +262,7 @@ export const Popup: Story = {
   play: async ({ args }) => {
     const frame = document.body.querySelector<HTMLElement>('[data-numen-searchable-list]')!
     await expect(frame.parentElement).toBe(document.body)
-    const box = frame.getBoundingClientRect()
-    await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
+    await expect(await getVisibleFraction(frame)).toBe(1)
     await userEvent.keyboard('{Escape}')
     await expect(args.onClose).toHaveBeenCalled()
   },
