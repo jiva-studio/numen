@@ -155,6 +155,7 @@ func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequire
 			Kind:           manifest.DependencyKind(one.GetKind()),
 			Version:        one.GetVersion(),
 			SourceURL:      one.GetSourceUrl(),
+			SourceURLs:     one.GetSourceUrls(),
 			ChecksumSHA256: one.GetChecksumSha256(),
 			Metadata:       one.GetMetadata(),
 			Sources:        newDependencySources(one.GetSources()),
@@ -175,6 +176,7 @@ func newDependencySources(wire []*v1.ManifestDependencySource) []manifest.Depend
 		out = append(out, manifest.DependencySource{
 			Platform:       one.GetPlatform(),
 			SourceURL:      one.GetSourceUrl(),
+			SourceURLs:     one.GetSourceUrls(),
 			ChecksumSHA256: one.GetChecksumSha256(),
 			ArchiveMember:  one.GetArchiveMember(),
 			MemberSHA256:   one.GetMemberSha256(),

@@ -36,13 +36,17 @@ func TestARuntimeIsFetchedFromTheSourceOfThePlatform(t *testing.T) {
 	sum, member := strings.Repeat("a", 64), strings.Repeat("b", 64)
 	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},
 		"dependencies":[{"id":"lib","kind":"runtime","sources":[
-			{"platform":"linux/amd64","sourceUrl":"https://example.com/linux.tgz","checksumSha256":"` + sum + `","archiveMember":"lib.so","memberSha256":"` + member + `"},
+			{"platform":"linux/amd64","sourceUrls":["https://example.com/linux.tgz","https://mirror.example.com/linux.tgz"],"checksumSha256":"` + sum + `","archiveMember":"lib.so","memberSha256":"` + member + `"},
 			{"platform":"windows/amd64","sourceUrl":"https://example.com/windows.zip","checksumSha256":"` + sum + `","archiveMember":"lib.dll","memberSha256":"` + member + `"}],
 			"search":["/opt/lib/lib.so*"]}]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	req := m.GetDependencyRequirements("/p", nil)[0]
+	linuxSource, ok := req.GetSource("linux", "amd64")
+	if !ok || linuxSource.SourceURL != "https://example.com/linux.tgz" || !slices.Equal(linuxSource.GetURLs(), []string{"https://example.com/linux.tgz", "https://mirror.example.com/linux.tgz"}) {
+		t.Errorf("linux source = %+v, %v", linuxSource, ok)
+	}
 	source, ok := req.GetSource("windows", "amd64")
 	if !ok || source.SourceURL != "https://example.com/windows.zip" || source.ArchiveMember != "lib.dll" || source.MemberSHA256 != member {
 		t.Errorf("windows source = %+v, %v", source, ok)
@@ -59,16 +63,19 @@ func TestAManifestRejectsAnInvalidPlatformSource(t *testing.T) {
 	sum := strings.Repeat("a", 64)
 	linux := `{"platform":"linux/amd64","sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `"`
 	for name, dependency := range map[string]string{
-		"sources and sourceUrl":  `{"id":"x","kind":"runtime","sourceUrl":"https://example.com/x","checksumSha256":"` + sum + `","sources":[` + linux + `}]}`,
-		"no platform":            `{"id":"x","kind":"runtime","sources":[{"sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `"}]}`,
-		"platform not os/arch":   `{"id":"x","kind":"runtime","sources":[{"platform":"linux","sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `"}]}`,
-		"platform twice":         `{"id":"x","kind":"runtime","sources":[` + linux + `},` + linux + `}]}`,
-		"http source":            `{"id":"x","kind":"runtime","sources":[{"platform":"linux/amd64","sourceUrl":"http://example.com/y","checksumSha256":"` + sum + `"}]}`,
-		"member without sha256":  `{"id":"x","kind":"runtime","sources":[` + linux + `,"archiveMember":"lib.so"}]}`,
-		"sha256 without member":  `{"id":"x","kind":"runtime","sources":[` + linux + `,"memberSha256":"` + sum + `"}]}`,
-		"variable with a space":  `{"id":"x","kind":"runtime","environment":["GPU PATH"]}`,
-		"star inside a variable": `{"id":"x","kind":"runtime","environment":["GPU_*_PATH"]}`,
-		"empty search pattern":   `{"id":"x","kind":"runtime","search":[""]}`,
+		"sources and sourceUrl":       `{"id":"x","kind":"runtime","sourceUrl":"https://example.com/x","checksumSha256":"` + sum + `","sources":[` + linux + `}]}`,
+		"sources and sourceUrls":      `{"id":"x","kind":"runtime","sourceUrls":["https://example.com/x"],"checksumSha256":"` + sum + `","sources":[` + linux + `}]}`,
+		"sourceUrl and sourceUrls":    `{"id":"x","kind":"runtime","sources":[` + linux + `,"sourceUrls":["https://example.com/z"]}]}`,
+		"no platform":                 `{"id":"x","kind":"runtime","sources":[{"sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `"}]}`,
+		"platform not os/arch":        `{"id":"x","kind":"runtime","sources":[{"platform":"linux","sourceUrl":"https://example.com/y","checksumSha256":"` + sum + `"}]}`,
+		"platform twice":              `{"id":"x","kind":"runtime","sources":[` + linux + `},` + linux + `}]}`,
+		"http source":                 `{"id":"x","kind":"runtime","sources":[{"platform":"linux/amd64","sourceUrl":"http://example.com/y","checksumSha256":"` + sum + `"}]}`,
+		"http mirror in sourceUrls":   `{"id":"x","kind":"runtime","sources":[{"platform":"linux/amd64","sourceUrls":["https://example.com/y","http://mirror.example.com/y"],"checksumSha256":"` + sum + `"}]}`,
+		"member without sha256":       `{"id":"x","kind":"runtime","sources":[` + linux + `,"archiveMember":"lib.so"}]}`,
+		"sha256 without member":       `{"id":"x","kind":"runtime","sources":[` + linux + `,"memberSha256":"` + sum + `"}]}`,
+		"variable with a space":       `{"id":"x","kind":"runtime","environment":["GPU PATH"]}`,
+		"star inside a variable":      `{"id":"x","kind":"runtime","environment":["GPU_*_PATH"]}`,
+		"empty search pattern":        `{"id":"x","kind":"runtime","search":[""]}`,
 	} {
 		_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"dependencies":[` + dependency + `]}`))
 		if !errors.Is(err, manifest.ErrInvalidDependency) {

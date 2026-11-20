@@ -42,6 +42,7 @@ type DependencyRequirement struct {
 	Kind           DependencyKind
 	Version        string
 	SourceURL      string
+	SourceURLs     []string
 	ChecksumSHA256 string
 	Metadata       map[string]string
 	Sources        []DependencySource
@@ -57,9 +58,21 @@ type DependencyRequirement struct {
 type DependencySource struct {
 	Platform       string
 	SourceURL      string
+	SourceURLs     []string
 	ChecksumSHA256 string
 	ArchiveMember  string
 	MemberSHA256   string
+}
+
+// GetURLs returns the addresses the source is fetched from, in the order they are tried.
+func (s DependencySource) GetURLs() []string {
+	if len(s.SourceURLs) > 0 {
+		return s.SourceURLs
+	}
+	if s.SourceURL != "" {
+		return []string{s.SourceURL}
+	}
+	return nil
 }
 
 // GetSource returns the file the dependency is fetched from on the platform goos/goarch: its entry
@@ -71,12 +84,20 @@ func (req DependencyRequirement) GetSource(goos, goarch string) (DependencySourc
 		if i < 0 {
 			return DependencySource{}, false
 		}
-		return req.Sources[i], true
+		source := req.Sources[i]
+		if source.SourceURL == "" && len(source.SourceURLs) > 0 {
+			source.SourceURL = source.SourceURLs[0]
+		}
+		return source, true
 	}
-	if req.SourceURL == "" {
+	if req.SourceURL == "" && len(req.SourceURLs) == 0 {
 		return DependencySource{}, false
 	}
-	return DependencySource{SourceURL: req.SourceURL, ChecksumSHA256: req.ChecksumSHA256}, true
+	sourceURL := req.SourceURL
+	if sourceURL == "" {
+		sourceURL = req.SourceURLs[0]
+	}
+	return DependencySource{SourceURL: sourceURL, SourceURLs: req.SourceURLs, ChecksumSHA256: req.ChecksumSHA256}, true
 }
 
 // GetIdentity returns the string that tells one download from another: the kind, id, version, source on this platform and plugin
@@ -84,7 +105,7 @@ func (req DependencyRequirement) GetSource(goos, goarch string) (DependencySourc
 func (req DependencyRequirement) GetIdentity() string {
 	source, _ := req.GetSource(runtime.GOOS, runtime.GOARCH)
 	return strings.Join([]string{
-		string(req.Kind), req.ID, req.Version, source.SourceURL, source.ChecksumSHA256, source.ArchiveMember, source.MemberSHA256, req.PluginDir,
+		string(req.Kind), req.ID, req.Version, strings.Join(source.GetURLs(), "\x00"), source.ChecksumSHA256, source.ArchiveMember, source.MemberSHA256, req.PluginDir,
 	}, "\x00")
 }
 
@@ -144,16 +165,19 @@ func (m Manifest) listDependencyIssues() []error {
 }
 
 func listDependencySourceIssues(req DependencyRequirement) []error {
-	if req.SourceURL == "" {
+	if req.SourceURL == "" && len(req.SourceURLs) == 0 {
 		if req.ChecksumSHA256 != "" {
 			return []error{fmt.Errorf("%w: %s has a checksum and no sourceUrl", ErrInvalidDependency, req.ID)}
 		}
 		return nil
 	}
+	if req.SourceURL != "" && len(req.SourceURLs) > 0 {
+		return []error{fmt.Errorf("%w: %s declares both sourceUrl and sourceUrls", ErrInvalidDependency, req.ID)}
+	}
 	if len(req.Sources) > 0 {
 		return []error{fmt.Errorf("%w: %s declares both sourceUrl and sources", ErrInvalidDependency, req.ID)}
 	}
-	return listSourceIssues(req.ID, DependencySource{SourceURL: req.SourceURL, ChecksumSHA256: req.ChecksumSHA256})
+	return listSourceIssues(req.ID, DependencySource{SourceURL: req.SourceURL, SourceURLs: req.SourceURLs, ChecksumSHA256: req.ChecksumSHA256})
 }
 
 func listPlatformSourceIssues(req DependencyRequirement) []error {
@@ -168,8 +192,12 @@ func listPlatformSourceIssues(req DependencyRequirement) []error {
 			issues = append(issues, fmt.Errorf("%w: %s declares platform %s twice", ErrInvalidDependency, req.ID, source.Platform))
 		}
 		observed[source.Platform] = true
-		if source.SourceURL == "" {
+		switch {
+		case source.SourceURL == "" && len(source.SourceURLs) == 0:
 			issues = append(issues, fmt.Errorf("%w: %s has no sourceUrl", ErrInvalidDependency, name))
+			continue
+		case source.SourceURL != "" && len(source.SourceURLs) > 0:
+			issues = append(issues, fmt.Errorf("%w: %s declares both sourceUrl and sourceUrls", ErrInvalidDependency, name))
 			continue
 		}
 		issues = append(issues, listSourceIssues(name, source)...)
@@ -179,8 +207,10 @@ func listPlatformSourceIssues(req DependencyRequirement) []error {
 
 func listSourceIssues(name string, source DependencySource) []error {
 	var issues []error
-	if !domain.IsHTTPSAddress(source.SourceURL) {
-		issues = append(issues, fmt.Errorf("%w: %s sourceUrl %q is not an https address", ErrInvalidDependency, name, source.SourceURL))
+	for _, address := range source.GetURLs() {
+		if !domain.IsHTTPSAddress(address) {
+			issues = append(issues, fmt.Errorf("%w: %s sourceUrl %q is not an https address", ErrInvalidDependency, name, address))
+		}
 	}
 	if !dependencyChecksumPattern.MatchString(source.ChecksumSHA256) {
 		issues = append(issues, fmt.Errorf("%w: %s checksumSha256 is not 64 lower-case hex digits", ErrInvalidDependency, name))

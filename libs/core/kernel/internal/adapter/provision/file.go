@@ -61,7 +61,7 @@ func NewFileProvisioner(cfg Config) *FileProvisioner {
 // CanProvision reports whether the requirement names a file to fetch, or a
 // program or library the machine may already hold.
 func (p *FileProvisioner) CanProvision(req manifest.DependencyRequirement) bool {
-	return req.SourceURL != "" || len(req.Sources) > 0 || req.Kind == manifest.DependencyKindBinary || req.Kind == manifest.DependencyKindRuntime
+	return req.SourceURL != "" || len(req.SourceURLs) > 0 || len(req.Sources) > 0 || req.Kind == manifest.DependencyKindBinary || req.Kind == manifest.DependencyKindRuntime
 }
 
 func (p *FileProvisioner) getDir(req manifest.DependencyRequirement) (string, error) {
@@ -148,17 +148,27 @@ func (p *FileProvisioner) fetch(
 	primary := filepath.Join(dir, name)
 	title := "Downloading " + req.ID
 	var actual string
-	err = transfer{
-		onDigest: func(sum string) { actual = sum },
-		client:   p.cfg.Client, address: source.SourceURL, dest: primary, sum: source.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
-		onProgress: func(done, total int64) {
-			onProgress(plugin.DependencyStatus{
-				ID: req.ID, State: plugin.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
-				ProgressPercent: getPercent(done, total), Message: title,
-			})
-		},
-	}.fetch(ctx)
-	return primary, actual, err
+	var errs []error
+	for _, address := range source.GetURLs() {
+		err = transfer{
+			onDigest: func(sum string) { actual = sum },
+			client:   p.cfg.Client, address: address, dest: primary, sum: source.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
+			onProgress: func(done, total int64) {
+				onProgress(plugin.DependencyStatus{
+					ID: req.ID, State: plugin.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
+					ProgressPercent: getPercent(done, total), Message: title,
+				})
+			},
+		}.fetch(ctx)
+		if err == nil {
+			return primary, actual, nil
+		}
+		errs = append(errs, err)
+		if ctx.Err() != nil {
+			break
+		}
+	}
+	return primary, actual, errors.Join(errs...)
 }
 
 func getReadySum(source manifest.DependencySource) string {

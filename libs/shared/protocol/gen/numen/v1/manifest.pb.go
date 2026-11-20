@@ -1806,7 +1806,7 @@ type ManifestDependency struct {
 	ChecksumSha256 string            `protobuf:"bytes,5,opt,name=checksum_sha256,json=checksumSha256,proto3" json:"checksum_sha256,omitempty"`
 	Metadata       map[string]string `protobuf:"bytes,6,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// sources holds the file fetched on each platform, at most one per platform. A dependency
-	// declares sources or source_url, not both.
+	// declares sources or source_url/source_urls, not both.
 	Sources []*ManifestDependencySource `protobuf:"bytes,7,rep,name=sources,proto3" json:"sources,omitempty"`
 	// environment names the variables of the host passed to the plugin process while the plugin
 	// declares the dependency: a name, or a prefix followed by *. A variable whose name holds KEY,
@@ -1816,7 +1816,9 @@ type ManifestDependency struct {
 	// before any download, and used without a checksum. $NAME in a pattern is the value of the host
 	// variable NAME; a pattern that names an unset variable, or is no absolute path once expanded, is
 	// skipped.
-	Search        []string `protobuf:"bytes,9,rep,name=search,proto3" json:"search,omitempty"`
+	Search []string `protobuf:"bytes,9,rep,name=search,proto3" json:"search,omitempty"`
+	// source_urls holds the primary URL and fallback mirror URLs tried in order.
+	SourceUrls    []string `protobuf:"bytes,10,rep,name=source_urls,json=sourceUrls,proto3" json:"source_urls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1914,6 +1916,13 @@ func (x *ManifestDependency) GetSearch() []string {
 	return nil
 }
 
+func (x *ManifestDependency) GetSourceUrls() []string {
+	if x != nil {
+		return x.SourceUrls
+	}
+	return nil
+}
+
 // ManifestDependencySource is the file a dependency is fetched from on one platform.
 type ManifestDependencySource struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1926,7 +1935,9 @@ type ManifestDependencySource struct {
 	// slash. Empty uses the downloaded file as it is.
 	ArchiveMember string `protobuf:"bytes,4,opt,name=archive_member,json=archiveMember,proto3" json:"archive_member,omitempty"`
 	// member_sha256 is the sha256 the unpacked file holds; it is required with archive_member.
-	MemberSha256  string `protobuf:"bytes,5,opt,name=member_sha256,json=memberSha256,proto3" json:"member_sha256,omitempty"`
+	MemberSha256 string `protobuf:"bytes,5,opt,name=member_sha256,json=memberSha256,proto3" json:"member_sha256,omitempty"`
+	// source_urls holds the primary URL and fallback mirror URLs tried in order.
+	SourceUrls    []string `protobuf:"bytes,6,rep,name=source_urls,json=sourceUrls,proto3" json:"source_urls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1994,6 +2005,13 @@ func (x *ManifestDependencySource) GetMemberSha256() string {
 		return x.MemberSha256
 	}
 	return ""
+}
+
+func (x *ManifestDependencySource) GetSourceUrls() []string {
+	if x != nil {
+		return x.SourceUrls
+	}
+	return nil
 }
 
 // ManifestBackend declares that the plugin has a backend process.
@@ -3002,7 +3020,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x04icon\x18\x03 \x01(\tR\x04icon\x12\x12\n" +
 	"\x04when\x18\x04 \x01(\tR\x04when\x12\x12\n" +
 	"\x04rank\x18\x05 \x01(\tR\x04rank\x12$\n" +
-	"\x0eis_note_editor\x18\x06 \x01(\bR\fisNoteEditor\"\x97\x03\n" +
+	"\x0eis_note_editor\x18\x06 \x01(\bR\fisNoteEditor\"\xb8\x03\n" +
 	"\x12ManifestDependency\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x18\n" +
@@ -3013,17 +3031,22 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\bmetadata\x18\x06 \x03(\v2*.numen.v1.ManifestDependency.MetadataEntryR\bmetadata\x12<\n" +
 	"\asources\x18\a \x03(\v2\".numen.v1.ManifestDependencySourceR\asources\x12 \n" +
 	"\venvironment\x18\b \x03(\tR\venvironment\x12\x16\n" +
-	"\x06search\x18\t \x03(\tR\x06search\x1a;\n" +
+	"\x06search\x18\t \x03(\tR\x06search\x12\x1f\n" +
+	"\vsource_urls\x18\n" +
+	" \x03(\tR\n" +
+	"sourceUrls\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xca\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xeb\x01\n" +
 	"\x18ManifestDependencySource\x12\x1a\n" +
 	"\bplatform\x18\x01 \x01(\tR\bplatform\x12\x1d\n" +
 	"\n" +
 	"source_url\x18\x02 \x01(\tR\tsourceUrl\x12'\n" +
 	"\x0fchecksum_sha256\x18\x03 \x01(\tR\x0echecksumSha256\x12%\n" +
 	"\x0earchive_member\x18\x04 \x01(\tR\rarchiveMember\x12#\n" +
-	"\rmember_sha256\x18\x05 \x01(\tR\fmemberSha256\"]\n" +
+	"\rmember_sha256\x18\x05 \x01(\tR\fmemberSha256\x12\x1f\n" +
+	"\vsource_urls\x18\x06 \x03(\tR\n" +
+	"sourceUrls\"]\n" +
 	"\x0fManifestBackend\x12\x1e\n" +
 	"\n" +
 	"entrypoint\x18\x02 \x01(\tR\n" +
