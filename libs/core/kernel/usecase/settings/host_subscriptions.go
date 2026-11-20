@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // HostSubscriptions keeps the delivery of setting changes to the plugin hosts, one per host. A
@@ -28,7 +27,7 @@ func isKeyed(host any) bool {
 // Subscribe delivers each batch of setting changes to deliver, once per host. A host that is
 // already subscribed is left as it is.
 func (s *HostSubscriptions) Subscribe(
-	host any, subscribe settingsport.ChangeSubscriber, deliver func([]settingsdomain.Setting),
+	host any, subscribe ChangeSubscriber, deliver func([]settingsdomain.Setting),
 ) {
 	var one *hostSubscription
 	if isKeyed(host) {

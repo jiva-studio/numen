@@ -10,8 +10,8 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/absent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
 func newAbsentExecution(reason plugindomain.UnavailableReason, cause error) *PluginExecution {
@@ -37,7 +37,7 @@ func newAbsentPreferences() *PluginPreferences {
 			PluginSettings: settings,
 		},
 		ApplySetting:        func(context.Context, string, string, any) error { return nil },
-		Views:               pluginViews{Follow: func(settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return nil }},
+		Views:               pluginViews{Follow: func(settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber { return nil }},
 		SetStorage:          func(string, string) {},
 		RefreshDependencies: func() {},
 	}

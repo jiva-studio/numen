@@ -1,4 +1,4 @@
-package settingsport
+package settings
 
 import (
 	"context"

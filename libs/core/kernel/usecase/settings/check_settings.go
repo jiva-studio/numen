@@ -4,23 +4,22 @@ import (
 	"fmt"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // CheckSettings validates settings against the declarations of the settings they are written to,
 // and against the plugin that owns a plugin setting.
 type CheckSettings struct {
-	codec      settingsport.ValueCodec
+	codec      ValueCodec
 	declared   settingsdomain.Declarations
 	registries settingsdomain.Registries
-	plugins    settingsport.PluginSettings
+	plugins    PluginSettings
 }
 
 // NewCheckSettings makes the use case. registries lists the values of the settings that draw their
 // options from a registry. plugins is nil where no plugin host runs.
 func NewCheckSettings(
-	codec settingsport.ValueCodec, declared settingsdomain.Declarations, registries settingsdomain.Registries,
-	plugins settingsport.PluginSettings,
+	codec ValueCodec, declared settingsdomain.Declarations, registries settingsdomain.Registries,
+	plugins PluginSettings,
 ) *CheckSettings {
 	return &CheckSettings{codec: codec, declared: declared, registries: registries, plugins: plugins}
 }

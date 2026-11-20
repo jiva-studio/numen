@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
 const (
@@ -30,8 +30,8 @@ const (
 // recordingHost is a plugin host that records what the container tells it, and passes the rest to
 // the real host.
 type recordingHost struct {
-	settingsport.PluginConfig
-	apply    settingsport.PluginSettingApplier
+	settingsusecase.PluginConfig
+	apply    settingsusecase.PluginSettingApplier
 	mu       sync.Mutex
 	updates  []string
 	profiles []string

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 type PluginHealth interface {
@@ -16,21 +15,21 @@ type PluginHealth interface {
 // configuration. A listener that cannot be bound puts the previous value back. A plugin switched off
 // loses its health items.
 type ApplyPluginSetting struct {
-	values    settingsport.PluginSettingValues
-	stopper   settingsport.PluginStopper
-	failures  settingsport.FailureClearer
-	listeners settingsport.PluginListeners
-	push      settingsport.PluginConfigPush
+	values    PluginSettingValues
+	stopper   PluginStopper
+	failures  FailureClearer
+	listeners PluginListeners
+	push      PluginConfigPush
 	health    PluginHealth
 }
 
 // ApplyPluginSettingDeps is what ApplyPluginSetting is made of.
 type ApplyPluginSettingDeps struct {
-	Values    settingsport.PluginSettingValues
-	Stopper   settingsport.PluginStopper
-	Failures  settingsport.FailureClearer
-	Listeners settingsport.PluginListeners
-	Push      settingsport.PluginConfigPush
+	Values    PluginSettingValues
+	Stopper   PluginStopper
+	Failures  FailureClearer
+	Listeners PluginListeners
+	Push      PluginConfigPush
 	Health    PluginHealth
 }
 
