@@ -388,12 +388,15 @@ func TestAManifestDeclaresDependencies(t *testing.T) {
 }
 
 func TestAManifestRejectsAnInvalidDependency(t *testing.T) {
+	sum := strings.Repeat("a", 64)
 	for name, dependency := range map[string]string{
-		"no id":              `{"kind":"model"}`,
-		"unknown kind":       `{"id":"x","kind":"plugin"}`,
-		"http address":       `{"id":"x","kind":"model","sourceUrl":"http://example.com/x","checksumSha256":"` + strings.Repeat("a", 64) + `"}`,
-		"no checksum":        `{"id":"x","kind":"model","sourceUrl":"https://example.com/x"}`,
-		"checksum no source": `{"id":"x","kind":"model","checksumSha256":"` + strings.Repeat("a", 64) + `"}`,
+		"no id":                      `{"kind":"model"}`,
+		"unknown kind":               `{"id":"x","kind":"plugin"}`,
+		"http address":               `{"id":"x","kind":"model","sourceUrl":"http://example.com/x","checksumSha256":"` + sum + `"}`,
+		"http address in sourceUrls": `{"id":"x","kind":"model","sourceUrls":["https://example.com/x","http://mirror.example.com/x"],"checksumSha256":"` + sum + `"}`,
+		"sourceUrl and sourceUrls":   `{"id":"x","kind":"model","sourceUrl":"https://example.com/x","sourceUrls":["https://mirror.example.com/x"],"checksumSha256":"` + sum + `"}`,
+		"no checksum":                `{"id":"x","kind":"model","sourceUrl":"https://example.com/x"}`,
+		"checksum no source":         `{"id":"x","kind":"model","checksumSha256":"` + sum + `"}`,
 	} {
 		_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","dependencies":[` + dependency + `]}`))
 		if !errors.Is(err, manifest.ErrInvalidDependency) {

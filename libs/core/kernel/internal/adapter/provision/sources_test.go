@@ -234,3 +234,49 @@ func TestASearchPatternFindsTheDependencyOnThisMachine(t *testing.T) {
 		t.Errorf("%d requests for a dependency the machine holds", requests.Load())
 	}
 }
+
+func TestAFallbackSourceURLIsTriedWhenAnEarlierSourceFails(t *testing.T) {
+	here := []byte("library from mirror")
+	server, _ := serveFiles(t, map[string][]byte{
+		"/tampered.so": []byte("wrong bytes"),
+		"/mirror.so":   here,
+	})
+	req := newRuntimeRequirement([]manifest.DependencySource{{
+		Platform: getPlatform(),
+		SourceURLs: []string{
+			server.URL + "/missing.so",
+			server.URL + "/tampered.so",
+			server.URL + "/mirror.so",
+		},
+		ChecksumSHA256: sumOf(here),
+	}})
+	provisioner := newTestProvisioner(t, false)
+	provisioner.cfg.Client = server.Client()
+
+	resolved, err := provisioner.Provision(t.Context(), req, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := os.ReadFile(resolved.PrimaryPath)
+	if err != nil || !bytes.Equal(got, here) {
+		t.Errorf("the library holds %q, %v; want %q", got, err, here)
+	}
+}
+
+func TestEverySourceURLFailingReportsEveryError(t *testing.T) {
+	server, _ := serveFiles(t, nil)
+	req := manifest.DependencyRequirement{
+		ID:             "whisper",
+		Kind:           manifest.DependencyKindModel,
+		Version:        "1",
+		SourceURLs:     []string{server.URL + "/primary.bin", server.URL + "/mirror.bin"},
+		ChecksumSHA256: sumOf([]byte("model")),
+	}
+	provisioner := newTestProvisioner(t, false)
+	provisioner.cfg.Client = server.Client()
+
+	_, err := provisioner.Provision(t.Context(), req, nil)
+	if err == nil || !strings.Contains(err.Error(), "/primary.bin") || !strings.Contains(err.Error(), "/mirror.bin") {
+		t.Errorf("error = %v, want both failed URLs", err)
+	}
+}

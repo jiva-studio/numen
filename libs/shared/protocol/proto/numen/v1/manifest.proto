@@ -342,7 +342,7 @@ message ManifestDependency {
   string checksum_sha256 = 5;
   map<string, string> metadata = 6;
   // sources holds the file fetched on each platform, at most one per platform. A dependency
-  // declares sources or source_url, not both.
+  // declares sources or source_url/source_urls, not both.
   repeated ManifestDependencySource sources = 7;
   // environment names the variables of the host passed to the plugin process while the plugin
   // declares the dependency: a name, or a prefix followed by *. A variable whose name holds KEY,
@@ -353,6 +353,8 @@ message ManifestDependency {
   // variable NAME; a pattern that names an unset variable, or is no absolute path once expanded, is
   // skipped.
   repeated string search = 9;
+  // source_urls holds the primary URL and fallback mirror URLs tried in order.
+  repeated string source_urls = 10;
 }
 
 // ManifestDependencySource is the file a dependency is fetched from on one platform.
@@ -367,6 +369,8 @@ message ManifestDependencySource {
   string archive_member = 4;
   // member_sha256 is the sha256 the unpacked file holds; it is required with archive_member.
   string member_sha256 = 5;
+  // source_urls holds the primary URL and fallback mirror URLs tried in order.
+  repeated string source_urls = 6;
 }
 
 // ManifestBackend declares that the plugin has a backend process.
