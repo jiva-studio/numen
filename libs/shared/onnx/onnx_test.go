@@ -1,8 +1,10 @@
 package onnx
 
 import (
+	"math"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 )
 
@@ -91,5 +93,16 @@ func TestSessionThreadsRespectTheHostLimit(t *testing.T) {
 		if got := LimitThreads(one.requested, one.limit); got != one.want {
 			t.Fatalf("LimitThreads(%d,%d)=%d", one.requested, one.limit, got)
 		}
+	}
+}
+
+func TestSessionRejectsAnOversizeThreadCountBeforeAllocatingOptions(t *testing.T) {
+	if strconv.IntSize <= 32 {
+		t.Skip("int fits in the native thread count")
+	}
+	count := int64(math.MaxInt32) + 1
+	_, _, err := NewLibrary().NewSessionOptions(nil, SessionSettings{Threads: int(count)})
+	if err == nil {
+		t.Fatal("accepted a thread count that overflows int32")
 	}
 }
