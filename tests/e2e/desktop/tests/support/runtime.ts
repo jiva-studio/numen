@@ -16,9 +16,7 @@ export const Window = {
   IsFullscreen: async () => false,
 }
 export const System = {
-  IsMac: () => ${platform === 'mac'},
-  IsWindows: () => ${platform === 'windows'},
-  IsLinux: () => false,
+  Environment: async () => ({ OS: '${platform === 'mac' ? 'darwin' : platform}' }),
 }
 `
 

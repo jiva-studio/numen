@@ -7,7 +7,7 @@
 import {
   createPluginLoader,
   createWindowHost,
-  loadWindowFrameControls,
+  createWindowFrameControls,
   usePluginStyles,
   type PluginLoaderDeps,
 } from '@numen/plugin-loader'
@@ -41,7 +41,7 @@ export function createWindow(transport: Transport, deps: WindowDeps = {}) {
   const listPlugins = createPluginLister(clients.pluginService)
   const notices = createNoticeQueue()
   const tabs = createWindowTabs()
-  const frame = useWindowFrame(loadWindowFrameControls)
+  const frame = useWindowFrame(createWindowFrameControls())
   const { vaults, isListing } = useVaults(createVaultLister(clients.vaultsService), (text) =>
     notices.show(WINDOW_SOURCE, text, 'error'),
   )

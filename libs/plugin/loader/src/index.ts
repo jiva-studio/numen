@@ -1,6 +1,6 @@
 export {
   loadFrameRuntime,
-  loadWindowFrameControls,
+  createWindowFrameControls,
   openExternalUrl,
   type FrameRuntime,
   type FrameRuntimeLoader,

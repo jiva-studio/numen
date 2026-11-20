@@ -9,10 +9,10 @@ export interface FrameRuntime {
     readonly IsFullscreen?: () => Promise<boolean>
   }
   readonly System?: {
-    readonly IsMac?: () => boolean
-    readonly IsWindows?: () => boolean
-    readonly IsLinux?: () => boolean
-    readonly Environment?: () => Promise<{ readonly OSInfo?: { readonly Version?: string } }>
+    readonly Environment?: () => Promise<{
+      readonly OS: string
+      readonly OSInfo?: { readonly Version?: string }
+    }>
   }
   readonly Browser?: { readonly OpenURL?: (href: string) => void | Promise<void> }
 }
@@ -52,26 +52,26 @@ export async function openExternalUrl(
 }
 
 /** Adapts the shell controls and platform queries used by the window chrome. */
-export async function loadWindowFrameControls(load: FrameRuntimeLoader = loadFrameRuntime) {
-  const runtime = await load()
-  if (!runtime) return undefined
-  const { Window: shell, System: system } = runtime
+export function createWindowFrameControls(load: FrameRuntimeLoader = loadFrameRuntime) {
+  const runtime = load()
   return {
-    getPlatform: (): 'darwin' | 'linux' | 'windows' => {
-      if (system?.IsMac?.()) return 'darwin'
-      return system?.IsLinux?.() ? 'linux' : 'windows'
+    async getEnvironment() {
+      const environment = await (await runtime)?.System?.Environment?.()
+      const os = environment?.OS
+      const platform: 'darwin' | 'linux' | 'windows' =
+        os === 'darwin' || os === 'linux' ? os : 'windows'
+      return { platform, version: environment?.OSInfo?.Version }
     },
-    getVersion: async () => (await system?.Environment?.())?.OSInfo?.Version,
-    isMaximized: async () => (await shell?.IsMaximised?.()) ?? false,
-    isFullscreen: async () => (await shell?.IsFullscreen?.()) ?? false,
+    isMaximized: async () => (await (await runtime)?.Window?.IsMaximised?.()) ?? false,
+    isFullscreen: async () => (await (await runtime)?.Window?.IsFullscreen?.()) ?? false,
     minimize: async () => {
-      await shell?.Minimise?.()
+      await (await runtime)?.Window?.Minimise?.()
     },
     toggleMaximize: async () => {
-      await shell?.ToggleMaximise?.()
+      await (await runtime)?.Window?.ToggleMaximise?.()
     },
     close: async () => {
-      await shell?.Close?.()
+      await (await runtime)?.Window?.Close?.()
     },
   }
 }

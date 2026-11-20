@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { loadWindowFrameControls, openExternalUrl } from './frameRuntime'
+import { createWindowFrameControls, loadFrameRuntime, openExternalUrl } from './frameRuntime'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -44,38 +44,45 @@ describe('desktop frame controls', () => {
       IsMaximised: vi.fn(async () => true),
       IsFullscreen: vi.fn(async () => false),
     }
-    const frame = await loadWindowFrameControls(async () => ({ Window: shell }))
-    await frame?.minimize()
-    await frame?.toggleMaximize()
-    await frame?.close()
+    const frame = createWindowFrameControls(async () => ({ Window: shell }))
+    await frame.minimize()
+    await frame.toggleMaximize()
+    await frame.close()
     expect(shell.Minimise).toHaveBeenCalledOnce()
     expect(shell.ToggleMaximise).toHaveBeenCalledOnce()
     expect(shell.Close).toHaveBeenCalledOnce()
-    expect(await frame?.isMaximized()).toBe(true)
-    expect(await frame?.isFullscreen()).toBe(false)
+    expect(await frame.isMaximized()).toBe(true)
+    expect(await frame.isFullscreen()).toBe(false)
     expect(shell.IsMaximised).toHaveBeenCalledOnce()
     expect(shell.IsFullscreen).toHaveBeenCalledOnce()
   })
 
-  it('identifies macOS and Linux and reads the system version', async () => {
-    const mac = await loadWindowFrameControls(async () => ({
-      System: { IsMac: () => true, Environment: async () => ({ OSInfo: { Version: '26.0' } }) },
-    }))
-    const linux = await loadWindowFrameControls(async () => ({ System: { IsLinux: () => true } }))
-    expect(mac?.getPlatform()).toBe('darwin')
-    expect(await mac?.getVersion()).toBe('26.0')
-    expect(linux?.getPlatform()).toBe('linux')
+  it.each(['darwin', 'linux', 'windows'] as const)('reads %s and its version', async (platform) => {
+    const Environment = vi.fn(async () => ({ OS: platform, OSInfo: { Version: '26.0' } }))
+    const frame = createWindowFrameControls(async () => ({ System: { Environment } }))
+    expect(await frame.getEnvironment()).toEqual({ platform, version: '26.0' })
+    await frame.isMaximized()
+    await frame.toggleMaximize()
+    expect(Environment).toHaveBeenCalledOnce()
   })
 
-  it('handles missing shell modules and window controls', async () => {
-    expect(await loadWindowFrameControls(async () => undefined)).toBeUndefined()
-    const frame = await loadWindowFrameControls(async () => ({}))
-    expect(frame?.getPlatform()).toBe('windows')
-    expect(await frame?.getVersion()).toBeUndefined()
-    expect(await frame?.isMaximized()).toBe(false)
-    expect(await frame?.isFullscreen()).toBe(false)
-    await expect(frame?.minimize()).resolves.toBeUndefined()
-    await expect(frame?.toggleMaximize()).resolves.toBeUndefined()
-    await expect(frame?.close()).resolves.toBeUndefined()
-  })
+  it.each([undefined, {}, { Window: {}, System: {} }])(
+    'handles absent shell controls',
+    async (shell) => {
+      const frame = createWindowFrameControls(async () => shell)
+      expect(await frame.getEnvironment()).toEqual({ platform: 'windows', version: undefined })
+      expect(await frame.isMaximized()).toBe(false)
+      expect(await frame.isFullscreen()).toBe(false)
+      await expect(frame.minimize()).resolves.toBeUndefined()
+      await expect(frame.toggleMaximize()).resolves.toBeUndefined()
+      await expect(frame.close()).resolves.toBeUndefined()
+    },
+  )
+})
+
+it('shares the pending shell import and its unavailable result', async () => {
+  const pending = loadFrameRuntime()
+  expect(loadFrameRuntime()).toBe(pending)
+  await expect(pending).resolves.toBeUndefined()
+  expect(loadFrameRuntime()).toBe(pending)
 })
