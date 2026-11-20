@@ -19,13 +19,6 @@ type Source interface {
 	SearchChunks(ctx context.Context, place searchsource.Place, q searchsource.Query) ([]searchsource.Match, error)
 }
 
-// WatchedSource is a Source whose description can change while the window is open, as it does when the
-// settings of its plugin change.
-type WatchedSource interface {
-	Source
-	DescriptionWatcher
-}
-
 // DescriptionWatcher reports when the description of a source changes.
 type DescriptionWatcher interface {
 	// OnDescriptionChange registers fn to run each time the description changes.

@@ -4,7 +4,6 @@ package textversiontest
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -21,7 +20,7 @@ type TextVersions struct {
 // NewTextVersions builds the use cases over the stores, the file stores, the enabled plugins, the vault
 // readers and the clock.
 func NewTextVersions(
-	stores textport.VersionStores, files textport.TextFileStores, plugins textversion.TextPlugins,
+	stores textversion.VersionStores, files textversion.TextFileStores, plugins textversion.TextPlugins,
 	readers vaultport.VaultReaders, clock machineport.Clock,
 ) *TextVersions {
 	texts := textversion.NewTexts(stores, files, readers, note.NewReadFrontmatter(readers), clock)

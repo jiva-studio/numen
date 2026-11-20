@@ -17,12 +17,12 @@ type TrashedVersions interface {
 
 // EmptyTrash deletes everything the vault's trash holds, with the text versions of it.
 type EmptyTrash struct {
-	writers   vaultport.TrashEmptiers
+	writers   TrashEmptiers
 	versions  TrashedVersions
 	admission vaultport.WriteAdmission
 }
 
-func NewEmptyTrash(writers vaultport.TrashEmptiers, versions TrashedVersions, admission vaultport.WriteAdmission) EmptyTrash {
+func NewEmptyTrash(writers TrashEmptiers, versions TrashedVersions, admission vaultport.WriteAdmission) EmptyTrash {
 	return EmptyTrash{writers: writers, versions: versions, admission: admission}
 }
 

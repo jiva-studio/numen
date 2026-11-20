@@ -14,7 +14,7 @@ type IndexVersions struct {
 	repo *Repository
 }
 
-// NewIndexVersions wraps a Repository as a textport.VersionStores.
+// NewIndexVersions wraps a Repository as a textversion.VersionStores.
 func NewIndexVersions(r *Repository) IndexVersions {
 	return IndexVersions{repo: r}
 }

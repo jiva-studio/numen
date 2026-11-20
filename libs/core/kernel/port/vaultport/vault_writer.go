@@ -50,11 +50,6 @@ type FileMovers interface {
 	OpenFileMover(v domain.Vault) (FileMover, error)
 }
 
-// TrashEmptiers opens a vault for emptying its trash.
-type TrashEmptiers interface {
-	OpenTrashEmptier(v domain.Vault) (TrashEmptier, error)
-}
-
 // VaultLocks holds a vault's write lock, so two writers do not change a vault at once.
 type VaultLocks interface {
 	// Lock waits while another holder has the lock and returns what releases it.

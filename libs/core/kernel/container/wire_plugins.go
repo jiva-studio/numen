@@ -49,7 +49,7 @@ type pluginRuntime struct {
 	PluginBinding
 	transport.ClientLookup
 	pluginmanifest.PluginFailures
-	pluginport.ConfigWatcher
+	sourcebridge.ConfigWatcher
 }
 
 // pluginConfiguration is what carries the settings to the plugins.

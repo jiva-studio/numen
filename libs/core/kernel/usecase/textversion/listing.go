@@ -11,12 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // live finds the live version of a file among its versions.
 type live struct {
-	files textport.TextFileStores
+	files TextFileStores
 	notes noteport.NoteReader
 }
 
@@ -54,7 +53,7 @@ func (u live) readSourceProperties(
 	return properties, nil
 }
 
-func getVersions(ctx context.Context, stores textport.VersionStores, v domain.Vault, path string) ([]domain.TextVersion, error) {
+func getVersions(ctx context.Context, stores VersionStores, v domain.Vault, path string) ([]domain.TextVersion, error) {
 	reader, err := stores.OpenVersionReader(v)
 	if err != nil {
 		return nil, err

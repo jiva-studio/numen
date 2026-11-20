@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
@@ -104,7 +103,7 @@ type windowLaunch struct {
 	server      *editor.FileServer
 	closeSource func() error
 	plugins     windowPluginAccess
-	source      searchsourceport.WatchedSource
+	source      sourcebridge.WatchedSource
 	generations *indexgeneration.Generations
 }
 type windowStartup struct {

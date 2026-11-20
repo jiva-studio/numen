@@ -23,7 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
@@ -69,7 +68,7 @@ type Resources struct {
 	PluginCatalog catalog.Config
 	KeyStore      pluginport.KeyStore
 	ErrorHandler  window.ErrorHandler
-	Now           machineport.Timer
+	Now           Timer
 	Chunks        *note.ChunkTokens
 	TextReaders   textdomain.Readers
 
@@ -140,7 +139,7 @@ func getRunningExecution(exec *PluginExecution, safeMode bool) *PluginExecution 
 }
 
 // GetClock returns the clock every use case assembled here is handed.
-func GetClock(res *Resources) machineport.Timer {
+func GetClock(res *Resources) Timer {
 	if res.Now != nil {
 		return res.Now
 	}

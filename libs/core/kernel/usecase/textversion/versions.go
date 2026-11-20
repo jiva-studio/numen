@@ -11,14 +11,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // Versions records, replaces and removes the text versions of vault files, and keeps the files of
 // those versions. Each change is reported to the Changes it was built with.
 type Versions struct {
-	stores  textport.VersionStores
-	files   textport.TextFileStores
+	stores  VersionStores
+	files   TextFileStores
 	plugins TextPlugins
 	clock   machineport.Clock
 	changes versionReporter
@@ -32,8 +31,8 @@ type versionReporter interface {
 // NewVersions returns the versions use case over the version stores, the file stores, the enabled plugins
 // that may record versions and the clock that dates new versions. changes receives every change.
 func NewVersions(
-	stores textport.VersionStores,
-	files textport.TextFileStores,
+	stores VersionStores,
+	files TextFileStores,
 	plugins TextPlugins,
 	clock machineport.Clock,
 	changes *Changes,
