@@ -12,8 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -26,18 +25,24 @@ func TestDependencyClientRequiresAnAuthenticatedRequest(t *testing.T) {
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	const address = "https://models.invalid/selected.onnx"
-	client := host.NewDependencyClient(hostcall.Endpoint{BaseURL: server.URL, Token: "unrecognized"})
-	if _, err := client.FetchModelFile(t.Context(), address, ""); connect.CodeOf(err) != connect.CodeUnauthenticated {
+	client := numenv1connect.NewHostDependencyServiceClient(server.Client(), server.URL)
+	call := func(token, sum string) (*connect.Response[v1.FetchModelFileResponse], error) {
+		req := connect.NewRequest(&v1.FetchModelFileRequest{Url: address, Sha256: sum})
+		req.Header().Set("Authorization", "Bearer "+token)
+		return client.FetchModelFile(t.Context(), req)
+	}
+	if _, err := call("unrecognized", ""); connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("unauthenticated request = %v", err)
 	}
-	client = host.NewDependencyClient(hostcall.Endpoint{BaseURL: server.URL, Token: "token-a"})
-	if _, err := client.FetchModelFile(t.Context(), address, "bogus"); err == nil {
-		t.Fatal("invalid pin succeeded")
+	invalid, err := call("token-a", "bogus")
+	if err != nil || invalid.Msg.GetError() == "" || invalid.Msg.GetPath() != "" {
+		t.Fatalf("invalid pin response = %v, %v", invalid, err)
 	}
-	file, err := client.FetchModelFile(t.Context(), address, strings.Repeat("0", 64))
+	answer, err := call("token-a", strings.Repeat("0", 64))
 	if err != nil {
 		t.Fatal(err)
 	}
+	file := answer.Msg.GetPath()
 	if _, err := os.Stat(file); err != nil {
 		t.Fatal(err)
 	}
