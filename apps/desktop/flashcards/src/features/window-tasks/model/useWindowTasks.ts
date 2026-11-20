@@ -4,12 +4,8 @@
  * because an indexing begins without the page asking for one.
  */
 import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
-import {
-  createBackgroundTaskHost,
-  getFailedTasks,
-  type NoticeQueue,
-  type WorkTask,
-} from '@numen/workbench'
+import { createBackgroundTaskHost, getFailedTasks, type WorkTask } from '@numen/plugin-loader'
+import type { NoticeQueue } from '@numen/workbench'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { createFollower, type TaskApi } from '../api/tasks'
