@@ -9,20 +9,12 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/ports"
 )
 
-// loadStart is what one load of the model needs: the description of the model the opener reads and the
-// niceness the process takes once the model is loaded.
-type loadStart[S any] struct {
-	Spec S
-	Nice int
-}
-
 // loaderPorts is what the loader asks of the machine. Opened runs once for each loaded model, with the
 // lock held.
 type loaderPorts[S any] struct {
-	Open      func(ctx context.Context, spec S) (ports.Embedder, error)
-	LowerNice func(nice int) error
-	Report    func(what string, err error)
-	Opened    func(emb ports.Embedder)
+	Open   func(ctx context.Context, spec S) (ports.Embedder, error)
+	Report func(what string, err error)
+	Opened func(emb ports.Embedder)
 }
 
 // modelLoader holds the loaded model and the load in progress. It shares the lock of its owner: the owner
@@ -54,7 +46,7 @@ func newModelLoader[S any](lock sync.Locker, ports loaderPorts[S]) *modelLoader[
 // Get returns the loaded model. A call that finds none starts the load with start, which runs with
 // the lock held, and waits for it; a call that finds a load in progress waits for that one. A load
 // outlives the call that started it.
-func (l *modelLoader[S]) Get(ctx context.Context, start func() loadStart[S]) (ports.Embedder, error) {
+func (l *modelLoader[S]) Get(ctx context.Context, start func() S) (ports.Embedder, error) {
 	for {
 		emb, err := l.wait(ctx, start)
 		if !errors.Is(err, errSuperseded) {
@@ -63,7 +55,7 @@ func (l *modelLoader[S]) Get(ctx context.Context, start func() loadStart[S]) (po
 	}
 }
 
-func (l *modelLoader[S]) wait(ctx context.Context, start func() loadStart[S]) (ports.Embedder, error) {
+func (l *modelLoader[S]) wait(ctx context.Context, start func() S) (ports.Embedder, error) {
 	l.lock.Lock()
 	if l.embedder != nil {
 		emb := l.embedder
@@ -84,20 +76,20 @@ func (l *modelLoader[S]) wait(ctx context.Context, start func() loadStart[S]) (p
 	}
 }
 
-func (l *modelLoader[S]) begin(caller context.Context, start loadStart[S]) *opening {
+func (l *modelLoader[S]) begin(caller context.Context, start S) *opening {
 	// The load outlives the call that started it, and ends with the settings or the plugin.
 	ctx, cancel := context.WithCancel(context.WithoutCancel(caller))
 	op := &opening{ready: make(chan struct{}), cancel: cancel, emb: nil, err: nil}
 	l.opening = op
 	go func() {
 		defer cancel()
-		emb, err := l.ports.Open(ctx, start.Spec)
-		l.finish(op, emb, err, start.Nice)
+		emb, err := l.ports.Open(ctx, start)
+		l.finish(op, emb, err)
 	}()
 	return op
 }
 
-func (l *modelLoader[S]) finish(op *opening, emb ports.Embedder, err error, nice int) {
+func (l *modelLoader[S]) finish(op *opening, emb ports.Embedder, err error) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	defer close(op.ready)
@@ -113,12 +105,6 @@ func (l *modelLoader[S]) finish(op *opening, emb ports.Embedder, err error, nice
 	if err != nil {
 		op.err = fmt.Errorf("opening onnx embedding engine: %w", err)
 		return
-	}
-	// The runtime starts its threads while it opens the model, and a thread starts at the niceness of
-	// the thread that starts it.
-	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr log on priority error has no side effect"
-	if err := l.ports.LowerNice(nice); err != nil {
-		l.ports.Report("set the priority of the embeddings plugin", err)
 	}
 	l.embedder = emb
 	l.ports.Opened(emb)

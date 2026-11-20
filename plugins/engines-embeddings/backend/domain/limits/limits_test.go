@@ -8,16 +8,16 @@ import (
 
 const maximumBatchTexts = 8
 
-func TestTheProfileSetsTheBatchAndTheHostSetsThreadsAndPriority(t *testing.T) {
+func TestTheProfileSetsTheBatchAndTheHostSetsThreads(t *testing.T) {
 	table := []struct {
 		limits performance.Limits
 		want   Run
 	}{
-		{performance.Limits{Profile: performance.Eco, Threads: 1, Nice: 19}, Run{Threads: 1, BatchTexts: 2, Nice: 19}},
-		{performance.Limits{Profile: performance.Low, Threads: 4, Nice: 15}, Run{Threads: 4, BatchTexts: 3, Nice: 15}},
-		{performance.Limits{Profile: performance.Balanced, Threads: 8, Nice: 10}, Run{Threads: 8, BatchTexts: 4, Nice: 10}},
-		{performance.Limits{Profile: performance.High, Threads: 12, Nice: 5}, Run{Threads: 12, BatchTexts: 6, Nice: 5}},
-		{performance.Limits{Profile: performance.Maximum, Threads: 16, Nice: 0}, Run{Threads: 16, BatchTexts: 8, Nice: 0}},
+		{performance.Limits{Profile: performance.Eco, Threads: 1, Nice: 19}, Run{Threads: 1, BatchTexts: 2}},
+		{performance.Limits{Profile: performance.Low, Threads: 4, Nice: 15}, Run{Threads: 4, BatchTexts: 3}},
+		{performance.Limits{Profile: performance.Balanced, Threads: 8, Nice: 10}, Run{Threads: 8, BatchTexts: 4}},
+		{performance.Limits{Profile: performance.High, Threads: 12, Nice: 5}, Run{Threads: 12, BatchTexts: 6}},
+		{performance.Limits{Profile: performance.Maximum, Threads: 16, Nice: 0}, Run{Threads: 16, BatchTexts: 8}},
 	}
 	for _, c := range table {
 		if got := GetRun(c.limits, maximumBatchTexts); got != c.want {
@@ -33,7 +33,7 @@ func TestHighNeverBatchesMoreThanMaximum(t *testing.T) {
 }
 
 func TestNoLimitsFromTheHostRunOneThreadAtTheBalancedBatch(t *testing.T) {
-	if got := GetRun(performance.Read(nil), maximumBatchTexts); got != (Run{Threads: 1, BatchTexts: 4, Nice: 10}) {
+	if got := GetRun(performance.Read(nil), maximumBatchTexts); got != (Run{Threads: 1, BatchTexts: 4}) {
 		t.Errorf("the run without limits is %+v", got)
 	}
 }

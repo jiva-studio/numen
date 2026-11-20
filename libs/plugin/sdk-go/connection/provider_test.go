@@ -81,12 +81,14 @@ func TestAnOperationReceivesTheConnectionAndThePayloadAndItsFramesReachTheCore(t
 		return []byte("finish"), nil
 	}})
 
-	got, err := readCallResponse(t, client, newCallRequest("llm.chat"))
+	request := newCallRequest("llm.chat")
+	request.Msg.Call.Priority = v1.Priority_PRIORITY_INTERACTIVE
+	got, err := readCallResponse(t, client, request)
 
 	if err != nil || !slices.Equal(got.frames, []string{"Let me ", "look."}) || got.done != "finish" || got.failure != nil {
 		t.Fatalf("Call = %+v, %v", got, err)
 	}
-	if received.ConnectionID != "c1f0a9e20" || received.Type != "openrouter" || received.Fields["baseUrl"] != "https://openrouter.test/api/v1" ||
+	if received.Priority != PriorityInteractive || received.ConnectionID != "c1f0a9e20" || received.Type != "openrouter" || received.Fields["baseUrl"] != "https://openrouter.test/api/v1" ||
 		received.Secrets["apiKey"].Value != "sk-or-1" || received.Options["model"] != "google/gemini-2.5-flash" || payload != "list the notes" {
 		t.Errorf("call = %+v, payload = %q", received, payload)
 	}

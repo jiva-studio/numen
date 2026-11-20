@@ -21,7 +21,7 @@ type Lock struct {
 	mu        sync.Mutex
 	isIndexed bool
 	waiting   [priorities][]chan struct{}
-	watchers  []chan struct{}
+	contended chan struct{}
 }
 
 // Acquire waits for the lock and returns a function that releases it. waiting is
@@ -41,10 +41,10 @@ func (g *Lock) Acquire(ctx context.Context, requested bool, waiting func()) (fun
 	}
 	stand := make(chan struct{})
 	g.waiting[pos] = append(g.waiting[pos], stand)
-	for _, watcher := range g.watchers {
-		close(watcher)
+	if g.contended != nil {
+		close(g.contended)
+		g.contended = nil
 	}
-	g.watchers = nil
 	g.mu.Unlock()
 
 	if waiting != nil {
@@ -98,13 +98,15 @@ func (g *Lock) HasWaiting() bool {
 func (g *Lock) WatchWaiting() <-chan struct{} {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	watcher := make(chan struct{})
 	if g.hasWaitingLocked() {
-		close(watcher)
-		return watcher
+		ready := make(chan struct{})
+		close(ready)
+		return ready
 	}
-	g.watchers = append(g.watchers, watcher)
-	return watcher
+	if g.contended == nil {
+		g.contended = make(chan struct{})
+	}
+	return g.contended
 }
 
 func (g *Lock) hasWaitingLocked() bool {

@@ -1,7 +1,7 @@
 // Package performance gives a plugin the limits of the performance profile of the person: how much
 // of the machine background work may use. The host resolves the profile on the machine and passes
 // the limits in every Configure call, and again when the person changes it; the plugin sizes its
-// threads from them and lowers its own priority with SetNice.
+// threads from them and the host sets the priority of each external process.
 package performance
 
 import "strconv"

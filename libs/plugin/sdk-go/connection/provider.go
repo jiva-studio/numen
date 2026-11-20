@@ -20,6 +20,8 @@ import (
 //
 //numen:api
 type Call struct {
+	// Priority identifies the action the provider serves.
+	Priority Priority
 	// ConnectionID is the id of the connection, for the log of the provider.
 	ConnectionID string
 	// Type is the id of the connection type in the manifest of the plugin, without the plugin id.
@@ -103,6 +105,9 @@ func readCall(wire *v1.ProviderCall) Call {
 		Fields:       wire.GetFields(),
 		Secrets:      make(map[string]Secret, len(wire.GetSecrets())),
 		Options:      wire.GetOptions(),
+	}
+	if wire.GetPriority() == v1.Priority_PRIORITY_INTERACTIVE {
+		call.Priority = PriorityInteractive
 	}
 	for _, one := range wire.GetSecrets() {
 		call.Secrets[one.GetKey()] = Secret{Value: one.GetValue()}

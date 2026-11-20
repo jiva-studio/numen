@@ -7,7 +7,6 @@ import "github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
 type Run struct {
 	Threads    int
 	BatchTexts int
-	Nice       int
 }
 
 // The most texts in one pass for each profile: a smaller pass holds a core for less time and gives
@@ -19,7 +18,7 @@ const (
 	HighBatchTexts     = 6
 )
 
-// GetRun takes the threads and the niceness the host resolved, and the batch size of the profile:
+// GetRun takes the threads the host resolved, and the batch size of the profile:
 // Maximum batches maximumBatchTexts texts, High at most that many, the others the sizes above.
 func GetRun(limits performance.Limits, maximumBatchTexts int) Run {
 	batchTexts := BalancedBatchTexts
@@ -36,7 +35,7 @@ func GetRun(limits performance.Limits, maximumBatchTexts int) Run {
 	case performance.Maximum:
 		batchTexts = maximumBatchTexts
 	}
-	return Run{Threads: limits.Threads, BatchTexts: batchTexts, Nice: limits.Nice}
+	return Run{Threads: limits.Threads, BatchTexts: batchTexts}
 }
 
 // GetIndexShare is the passes the index may take: one pass stays free for questions.

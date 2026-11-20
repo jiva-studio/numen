@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"os"
 	"path/filepath"
 	"slices"
@@ -158,7 +159,7 @@ func TestAnOpenWhoseTokenizerIsNotTheKindOfItsProfileFails(t *testing.T) {
 	info, local := model.NewConfig(profiles[0])
 	local.Dir = dir
 
-	emb, err := Open(t.Context(), onnx.NewLibrary(), info, local, nil)
+	emb, err := Open(t.Context(), onnx.NewLibrary(), info, local, nil, hosttest.NewQueue().EnqueueWork)
 	if err == nil {
 		if closeErr := emb.Close(); closeErr != nil {
 			t.Errorf("Close() = %v", closeErr)

@@ -28,7 +28,7 @@ func takeTarget(s *Supervisors, pluginID string) (Target, bool) {
 	if !ok {
 		return Target{}, false
 	}
-	return takeTargetLocked(s, pluginID, sup, sup.GetProcessID()), true
+	return takeTargetLocked(s, pluginID, sup, sup.Child.GetProcessID()), true
 }
 
 func takeIdleTargets(s *Supervisors, defaultLimit time.Duration, now time.Time) []Target {
@@ -36,7 +36,7 @@ func takeIdleTargets(s *Supervisors, defaultLimit time.Duration, now time.Time) 
 	defer s.mu.Unlock()
 	var targets []Target
 	for id, sup := range s.byPlugin {
-		pid := sup.GetProcessID()
+		pid := sup.Child.GetProcessID()
 		if sup.BeginDeactivation(getIdleLimitLocked(s, id, defaultLimit), now) {
 			targets = append(targets, takeTargetLocked(s, id, sup, pid))
 		}
@@ -51,7 +51,7 @@ func takeIdleTarget(s *Supervisors, pluginID string, defaultLimit time.Duration,
 	if !ok {
 		return nil
 	}
-	pid := sup.GetProcessID()
+	pid := sup.Child.GetProcessID()
 	if !sup.BeginDeactivation(getIdleLimitLocked(s, pluginID, defaultLimit), now) {
 		return nil
 	}
@@ -64,7 +64,7 @@ func takeRunningTargets(s *Supervisors) []Target {
 	var targets []Target
 	for id, sup := range s.byPlugin {
 		if sup.GetState() != lifecycle.StateDormant {
-			targets = append(targets, takeTargetLocked(s, id, sup, sup.GetProcessID()))
+			targets = append(targets, takeTargetLocked(s, id, sup, sup.Child.GetProcessID()))
 		}
 	}
 	return targets
@@ -84,7 +84,7 @@ func takeReleasedTarget(s *Supervisors, pluginID string, now time.Time) []Target
 		run.isReleased = true
 	}
 	notifyLocked(s)
-	pid := sup.GetProcessID()
+	pid := sup.Child.GetProcessID()
 	if !sup.BeginDeactivation(0, now) {
 		return nil
 	}

@@ -112,8 +112,8 @@ func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host
 	}
 }
 
-func pluginsOpenPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks, models *run.Lock) *run.PluginWork {
-	work := run.NewPluginWork(models, tasks, func(pluginID string) string {
+func pluginsOpenPluginWork(install pluginInstall, exec *PluginExecution, tasks *run.Tasks) *run.PluginWork {
+	work := run.NewPluginWork(&install.Endpoints.workLock, tasks, func(pluginID string) string {
 		return pluginsGetPluginName(exec.Runtime.Resolver, pluginID)
 	})
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Work = work })

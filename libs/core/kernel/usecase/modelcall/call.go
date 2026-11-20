@@ -24,6 +24,7 @@ func (c *Calls) Call(ctx context.Context, callerPluginID string, request modelca
 	return carry(ctx, c, asking{callerPluginID, request.Operation, request.Priority, request.Preferred}, func(
 		ctx context.Context, provider connectionport.Provider, call modelcall.ProviderCall,
 	) ([]byte, error) {
+		call.Priority = request.Priority
 		var sendErr error
 		done, err := provider.Call(ctx, request.Operation, call, request.Payload, func(data []byte) error {
 			isStarted = true

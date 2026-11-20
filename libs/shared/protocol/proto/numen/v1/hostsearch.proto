@@ -3,7 +3,7 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/embedding.proto";
-import "numen/v1/hostconnection.proto";
+import "numen/v1/provider.proto";
 import "numen/v1/search.proto";
 import "numen/v1/search_source.proto";
 

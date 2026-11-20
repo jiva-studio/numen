@@ -4,6 +4,7 @@ package serving
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
@@ -15,6 +16,7 @@ import (
 
 // Ports is what a server asks of the machine. Report writes a fault nothing else handles.
 type Ports struct {
+	Queue       host.InferenceQueue
 	Machine     ports.Machine
 	Profiles    ports.ProfileSource
 	Environment ports.Environment
@@ -27,6 +29,7 @@ type Ports struct {
 // Server serves one embedding model, a local one or the one a connection answers with, and follows the
 // settings it is given.
 type Server struct {
+	queue      host.InferenceQueue
 	machine    ports.Machine
 	profileSrc ports.ProfileSource
 	env        ports.Environment
@@ -71,7 +74,7 @@ func New(ports Ports) *Server {
 	var noLocal model.LocalModel
 	s := &Server{
 		machine: ports.Machine, profileSrc: ports.Profiles, env: ports.Environment,
-		report:    ports.Report,
+		report: ports.Report, queue: ports.Queue,
 		modelInfo: none, localModel: noLocal, localInfo: none, localErr: nil,
 		profilesErr: nil, localKey: "", profiles: nil, mockLog: "", localName: "",
 		open:        ports.OpenLocal,
@@ -112,9 +115,8 @@ func (s *Server) newLoader() *modelLoader[modelSpec] {
 		Open: func(ctx context.Context, spec modelSpec) (ports.Embedder, error) {
 			return spec.open(ctx, spec.info, spec.local)
 		},
-		LowerNice: func(nice int) error { return s.machine.LowerNice(nice) },
-		Report:    s.report,
-		Opened:    func(emb ports.Embedder) { s.modelInfo.Concurrency = emb.Concurrency() },
+		Report: s.report,
+		Opened: func(emb ports.Embedder) { s.modelInfo.Concurrency = emb.Concurrency() },
 	})
 }
 
@@ -122,7 +124,7 @@ func (s *Server) getEmbedder(ctx context.Context) (ports.Embedder, error) {
 	return s.loader.Get(ctx, s.getStartLocked)
 }
 
-func (s *Server) getStartLocked() loadStart[modelSpec] {
+func (s *Server) getStartLocked() modelSpec {
 	info := s.modelInfo
 	if !s.isMock {
 		info = s.localInfo
@@ -133,7 +135,7 @@ func (s *Server) getStartLocked() loadStart[modelSpec] {
 		local.Threads = run.Threads
 	}
 	local.BatchTexts = run.BatchTexts
-	return loadStart[modelSpec]{Spec: modelSpec{open: s.open, info: info, local: local}, Nice: run.Nice}
+	return modelSpec{open: s.open, info: info, local: local}
 }
 
 func (s *Server) getLimitsLocked() limits.Run {
@@ -147,10 +149,6 @@ func (s *Server) applyProfileLocked(next performance.Limits) {
 	before := s.getLimitsLocked()
 	s.limits, s.isProfileSet = next, true
 	run := s.getLimitsLocked()
-	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="stderr log on priority error has no side effect"
-	if err := s.machine.LowerNice(run.Nice); err != nil {
-		s.report("set the priority of the embeddings plugin", err)
-	}
 	if s.isMock {
 		return
 	}
