@@ -11,6 +11,7 @@ export const createSavedTabsApi = (workspace: WindowClients['workspace']) => ({
     await workspace.writeOpenTabs({
       tabs: open.tabs.map((one) => ({ ...one })),
       activeId: open.activeId,
+      layout: open.layout ?? '',
     })
   },
 
@@ -19,6 +20,7 @@ export const createSavedTabsApi = (workspace: WindowClients['workspace']) => ({
     const answer = await workspace.readOpenTabs({})
     return {
       activeId: answer.activeId,
+      ...(answer.layout ? { layout: answer.layout } : {}),
       tabs: answer.tabs.map(({ id, kind, path, title, state }) => ({
         id,
         kind,

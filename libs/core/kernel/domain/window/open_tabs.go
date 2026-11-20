@@ -1,10 +1,10 @@
 package window
 
-// OpenTabs is the set of tabs open in the user's window and the tab that is
-// active.
+// OpenTabs holds the tabs, active tab and opaque pane layout reported by a vault window.
 type OpenTabs struct {
 	Tabs     []Tab
 	ActiveID string
+	Layout   string
 }
 
 // GetActiveTab returns the active tab, and false where the window has none.

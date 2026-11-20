@@ -5,6 +5,7 @@ import { getPanes, openTab } from '@numen/workbench'
 import type { Workspace } from '@numen/workbench'
 import type { AnyTabKind } from '../lib/kinds'
 import type { SavedTab } from '../lib/tab'
+import { readSavedLayout } from '../lib/savedLayout'
 import { createWorkspace } from '../lib/workspace'
 import { createTabOpeners } from './tabOperations'
 import { showTab, type TabStore } from './tabStore'
@@ -62,17 +63,10 @@ export function createRestoredTabs(store: TabStore) {
     }
   }
 
-  /**
-   * The tabs the core kept, opened again with the state each kind saved and laid out by the
-   * placement of their kind. A tab whose kind is not registered opens as a placeholder.
-   * The core lists the tab shown last at the end, so the last tab of each pane is the one in front
-   * there; the active tab is shown after them and takes the focus.
-   */
-  const restoreTabs = (saved: readonly SavedTab[], activeId: string) => {
+  const restorePlacedLayout = (saved: readonly SavedTab[], activeId: string) => {
     const main: string[] = []
     const aside: string[] = []
     for (const one of saved) {
-      if (!open.value.has(one.id)) openers.openSavedTab(one)
       const kind = byKind.value.get(one.kind)
       if (kind?.display?.placement?.pane === 'aside') aside.push(one.id)
       else main.push(one.id)
@@ -82,6 +76,26 @@ export function createRestoredTabs(store: TabStore) {
       if (front) layout.value = openTab(layout.value, front)
     }
     if (open.value.has(activeId)) layout.value = openTab(layout.value, activeId)
+  }
+
+  /** Restores the saved tabs and returns whether the session supplied a layout or tabs. */
+  const restoreTabs = (saved: readonly SavedTab[], activeId: string, savedLayout?: string) => {
+    for (const one of saved) {
+      if (!open.value.has(one.id)) openers.openSavedTab(one)
+    }
+    if (savedLayout) {
+      const restored = readSavedLayout(
+        savedLayout,
+        saved.map((one) => one.id),
+      )
+      if (restored.ok) {
+        layout.value = restored.value
+        return true
+      }
+    }
+    if (saved.length === 0) return false
+    restorePlacedLayout(saved, activeId)
+    return true
   }
 
   /** A tab the core kept, opened and shown; a tab already open is only shown. */

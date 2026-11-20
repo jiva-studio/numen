@@ -18,7 +18,7 @@ import (
 
 // expectedVersion is the schema version of this build. 10 is what the build before the collapse left,
 // and an index of that build is not readable by this one.
-const expectedVersion = 6
+const expectedVersion = 7
 
 type catalogEntry struct{ kind, name, body string }
 

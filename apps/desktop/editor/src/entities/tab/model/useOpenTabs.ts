@@ -70,29 +70,36 @@ export function useOpenTabs({
    */
   const getActiveTabId = (): string => findActiveTabId(windowTabs)
 
+  const savedLayout = computed(() => JSON.stringify(windowTabs.panes.layout.value))
   const getOpenTabs = (): OpenTabs => ({
     activeId: getActiveTabId(),
+    layout: savedLayout.value,
     tabs: windowTabs.tabs.tabs.value.map(({ id, title }) => describeTab(windowTabs, id, title)),
   })
 
   const open = computed<OpenTabs>(() => getOpenTabs())
-  let pendingWrite: OpenTabs | null = null
+  let lastWritten: string | undefined
+  let pendingWrite: { value: OpenTabs; json: string } | null = null
   let sending: Promise<void> | null = null
   const sendPending = async (): Promise<void> => {
     while (pendingWrite) {
       const current = pendingWrite
       pendingWrite = null
+      if (current.json === lastWritten) continue
       try {
-        await writeOpenTabs(current)
+        await writeOpenTabs(current.value)
+        lastWritten = current.json
       } catch (error) {
-        // The next tab opened, closed or moved writes the list again.
+        lastWritten = undefined
         reportError(error)
       }
     }
     sending = null
   }
   const flushOpenTabs = (next: OpenTabs): Promise<void> => {
-    pendingWrite = next
+    const json = JSON.stringify(next)
+    if (!sending && json === lastWritten) return Promise.resolve()
+    pendingWrite = { value: next, json }
     sending ??= sendPending()
     return sending
   }

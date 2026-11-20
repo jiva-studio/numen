@@ -1,6 +1,7 @@
 /** How a window starts: the layout it opens with, and the plugins it loads before that. */
 import { describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h } from 'vue'
+import { pane } from '@numen/workbench'
 import { flushPromises, mount } from '@vue/test-utils'
 import type { PluginLoader } from '@numen/plugin-loader'
 import { createWindowLayout, useOpenTabs, type AnyTabKind, type MovedTab } from '@/entities/tab'
@@ -32,6 +33,7 @@ const withPlacement = (kind: string): AnyTabKind => ({
 const SAVED = { id: 'note:1', kind: 'note', path: 'Tides.md', title: 'Tides', state: '' }
 
 interface Parts {
+  readonly savedLayout?: string
   readonly saved?: boolean
   readonly isReadFailing?: boolean
   readonly vaultId?: string
@@ -41,6 +43,7 @@ interface Parts {
 const writeOpenTabsToCore = vi.fn(() => ({}))
 
 const setup = ({
+  savedLayout,
   saved = false,
   isReadFailing = false,
   vaultId = 'sea',
@@ -50,7 +53,11 @@ const setup = ({
     workspace: {
       readOpenTabs: () => {
         if (isReadFailing) throw new Error('core is busy')
-        return { tabs: saved ? [SAVED] : [], activeId: saved ? SAVED.id : '' }
+        return {
+          tabs: saved ? [SAVED] : [],
+          activeId: saved ? SAVED.id : '',
+          layout: savedLayout ?? '',
+        }
       },
       writeOpenTabs: writeOpenTabsToCore,
     },
@@ -168,6 +175,17 @@ describe('a window starting', () => {
     await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
 
     expect(windowTabs.tabs.tabs.value.map((one) => one.id)).toStrictEqual(['note:1'])
+  })
+
+  it.each([true, false])('restores the saved pane when it contains a tab: %s', async (saved) => {
+    const workspace = {
+      axis: 'vertical',
+      root: pane('restored', saved ? [SAVED.id] : []),
+      focus: 'restored',
+    }
+    const { layout, windowTabs } = setup({ saved, savedLayout: JSON.stringify(workspace) })
+    await vi.waitFor(() => expect(layout.isReady.value).toBe(true))
+    expect(windowTabs.panes.layout.value).toEqual(workspace)
   })
 
   it('reports a failed read of the saved tabs and never writes the open tabs to the core', async () => {

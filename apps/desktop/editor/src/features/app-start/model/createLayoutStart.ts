@@ -64,14 +64,10 @@ export function createLayoutStart(deps: LayoutStartDeps) {
     const read = await readSavedTabs()
     // The tabs the core holds stay as they are until a read has succeeded.
     const saved = read ?? { tabs: [], activeId: '' }
-    // The pane of a tab is the placement of its kind, so the tabs are laid out once the plugins of
-    // their kinds have started or failed. A window with no saved tab opens the tabs the kinds place,
-    // which only their plugins know, so it starts every plugin with a tab kind.
+    const tabs = parseSavedTabs(saved)
     const { startTabPlugins } = deps.pluginLoader.status
-    if (saved.tabs.length > 0) {
-      await startTabPlugins(saved.tabs.map((one) => one.kind))
-      windowTabs.restored.restoreTabs(parseSavedTabs(saved), saved.activeId)
-    } else {
+    if (tabs.length > 0) await startTabPlugins(tabs.map((one) => one.kind))
+    if (!windowTabs.restored.restoreTabs(tabs, saved.activeId, saved.layout)) {
       await startTabPlugins()
       await openPlacedTabs(windowTabs, writeMessage)
     }

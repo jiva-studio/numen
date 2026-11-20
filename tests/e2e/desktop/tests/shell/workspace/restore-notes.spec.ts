@@ -1,4 +1,5 @@
-import { test, expect, readSavedStates, type Page } from '../../support/test.js'
+import { test, expect, readActivePath, readSavedStates, type Page } from '../../support/test.js'
+import { readBox } from '../../support/browser.js'
 import { openWorkspace } from '../../support/workspace.js'
 import {
   createNote,
@@ -58,6 +59,56 @@ const expectNoColonFile = async (page: Page, folders: readonly string[]): Promis
 
 test.describe('The note tabs of the window after a restart', () => {
   test.describe.configure({ timeout: 120_000 })
+
+  test('restore a resized split and its note after reopening the window', async ({
+    page,
+    request,
+  }) => {
+    const path = await createNote(request, createUniqueTitle('Split note'))
+    try {
+      await openWorkspace(page)
+      await openNote(page, path)
+      const tab = getNoteTab(page, path)
+      const panes = page.locator('section[data-workspace-pane]')
+      const holder = panes.filter({ has: tab })
+      const from = await readBox(tab)
+      const target = await readBox(holder)
+      await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+      await page.mouse.down()
+      await page.mouse.move(target.x + target.width / 2, target.y + target.height - 30, {
+        steps: 12,
+      })
+      await page.mouse.up()
+      await expect(panes).toHaveCount(3)
+
+      const handle = page.locator('[aria-label="Resize panes"][data-direction="vertical"]')
+      const grip = await readBox(handle)
+      const initial = await readBox(holder)
+      await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2)
+      await page.mouse.down()
+      await page.mouse.move(grip.x + grip.width / 2, grip.y - 70, { steps: 8 })
+      await page.mouse.up()
+      await expect
+        .poll(async () => (await readBox(holder)).height)
+        .toBeGreaterThan(initial.height + 30)
+      const resized = await readBox(holder)
+
+      await page.getByRole('tab', { name: /^Files/ }).click()
+      await tab.click()
+      await expect.poll(() => readActivePath(request)).toBe(path)
+      await page.reload()
+
+      await expect(tab).toBeVisible()
+      await expect(panes).toHaveCount(3)
+      await expect(holder).toHaveAttribute('data-focused', 'true')
+      await expect(handle).toBeVisible()
+      await expect
+        .poll(async () => Math.abs((await readBox(holder)).height - resized.height))
+        .toBeLessThan(3)
+    } finally {
+      await destroyNote(request, path)
+    }
+  })
 
   test('keep the saved path of each note when the application asks the window to flush on quit', async ({
     page,

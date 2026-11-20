@@ -24,6 +24,7 @@ export interface SavedTab {
 
 /** What currently open: every tab, and which of them is active. */
 export interface OpenTabs {
+  readonly layout?: string
   readonly tabs: readonly Tab[]
   readonly activeId: string
 }

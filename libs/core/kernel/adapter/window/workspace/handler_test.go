@@ -94,8 +94,26 @@ func TestReadOpenTabsReturnsTabsSavedForVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Msg.GetActiveId() != "one" || len(got.Msg.GetTabs()) != 1 || got.Msg.GetTabs()[0].GetState() != `{"page":3}` {
+	if got.Msg.GetLayout() != "" || got.Msg.GetActiveId() != "one" || len(got.Msg.GetTabs()) != 1 || got.Msg.GetTabs()[0].GetState() != `{"page":3}` {
 		t.Errorf("read %+v", got.Msg)
+	}
+}
+
+func TestOpenTabsRoundTripsPaneLayoutWithNoTabs(t *testing.T) {
+	store := memoryTabs{}
+	current := showing{Session: newState(), vault: domain.Vault{ID: "v", Path: t.TempDir()}}
+	api := newHandlerOver(t, current, store)
+	const layout = `{ "panes": [] }`
+	if _, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{Layout: layout})); err != nil {
+		t.Fatal(err)
+	}
+	restarted := newHandlerOver(t, showing{Session: newState(), vault: current.vault}, store)
+	got, err := restarted.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.ReadOpenTabsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Msg.GetLayout() != layout {
+		t.Errorf("read layout %q, want %q", got.Msg.GetLayout(), layout)
 	}
 }
 

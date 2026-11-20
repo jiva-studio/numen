@@ -111,6 +111,9 @@ message WriteOpenTabsRequest {
   // Which of them the person is looking at, by its id. Empty where the window
   // has nothing open.
   string active_id = 2;
+
+  // The window's pane layout as opaque JSON. Empty when no layout was saved.
+  string layout = 3;
 }
 
 message WriteOpenTabsResponse {}
@@ -123,6 +126,9 @@ message ReadOpenTabsResponse {
 
   // The id of the tab that was active, empty where none was.
   string active_id = 2;
+
+  // The window's pane layout as opaque JSON. Empty when no layout was saved.
+  string layout = 3;
 }
 
 // A Tab is one tab of the window: what kind it is, and its contents.

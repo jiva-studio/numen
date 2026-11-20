@@ -1,6 +1,16 @@
 [
   {
     "kind": "index",
+    "name": "app_state_by_global_key",
+    "body": "CREATE UNIQUE INDEX app_state_by_global_key ON app_state (key) WHERE vault IS NULL"
+  },
+  {
+    "kind": "index",
+    "name": "app_state_by_vault_key",
+    "body": "CREATE UNIQUE INDEX app_state_by_vault_key ON app_state (vault, key) WHERE vault IS NOT NULL"
+  },
+  {
+    "kind": "index",
     "name": "chunks_by_hash",
     "body": "CREATE INDEX chunks_by_hash ON chunks (hash)"
   },
@@ -93,6 +103,11 @@
     "kind": "index",
     "name": "vectors_by_hash",
     "body": "CREATE UNIQUE INDEX vectors_by_hash ON vectors (hash, recipe)"
+  },
+  {
+    "kind": "table",
+    "name": "app_state",
+    "body": "CREATE TABLE app_state (\n    vault TEXT,\n    key   TEXT NOT NULL,\n    value TEXT NOT NULL CHECK (json_valid(value))\n)"
   },
   {
     "kind": "table",
@@ -213,11 +228,6 @@
     "kind": "table",
     "name": "notes",
     "body": "CREATE TABLE notes (\n    source_id         INTEGER PRIMARY KEY,\n    vault_id          INTEGER NOT NULL,\n\n    -- The name a link written by name reaches this note by, as domain.FoldName\n    -- computes it: one name whatever case and composition it is written in.\n    folded_name       TEXT NOT NULL,\n\n    title             TEXT NOT NULL,\n    type              TEXT NOT NULL DEFAULT 'note',\n    identifier        TEXT,\n    frontmatter       TEXT,\n    frontmatter_error TEXT,\n\n    FOREIGN KEY (source_id, vault_id) REFERENCES sources (id, vault_id) ON DELETE CASCADE\n)"
-  },
-  {
-    "kind": "table",
-    "name": "open_tabs",
-    "body": "CREATE TABLE open_tabs (\n    vault    TEXT NOT NULL,\n    position INTEGER NOT NULL,\n    id       TEXT NOT NULL,\n    kind     TEXT NOT NULL,\n    path     TEXT NOT NULL,\n    title    TEXT NOT NULL,\n    state    TEXT NOT NULL,\n    is_front INTEGER NOT NULL,\n    PRIMARY KEY (vault, position)\n)"
   },
   {
     "kind": "table",

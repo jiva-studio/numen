@@ -2,8 +2,8 @@ package opentabs
 
 import _ "embed"
 
-// The statements the package reads through a pool of the index database,
-// embedded when the package is built.
-
 //go:embed sql/list.sql
 var listSQL string
+
+//go:embed sql/save.sql
+var saveSQL string

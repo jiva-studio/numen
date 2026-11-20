@@ -3,6 +3,8 @@
  */
 import { nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { branch, pane } from '@numen/workbench'
+import { createWorkspace } from '../lib/workspace'
 import { findTabKindIcon } from '../lib/icons'
 import { parseSavedTabs, useOpenTabs } from './useOpenTabs'
 
@@ -33,6 +35,14 @@ const create = (
   const { writeOpenTabs } = coreCalls
   const tabs = ref(entries.map(({ id, title }) => ({ id, title })))
   const windowTabs = {
+    panes: {
+      layout: ref(
+        createWorkspace(
+          entries.map((entry) => entry.id),
+          [],
+        ),
+      ),
+    },
     handle: { front: () => front },
     kinds: {
       findKind: (isWanted: (kind: { kind: string }) => boolean) =>
@@ -67,6 +77,7 @@ const create = (
     ...useOpenTabs({ windowTabs, isWriting, writeMessage: vi.fn(), writeOpenTabs }),
     writeOpenTabs,
     tabs,
+    layout: windowTabs.panes.layout,
   }
 }
 
@@ -155,6 +166,7 @@ describe('the open tabs', () => {
 
     expect(target.writeOpenTabs).toHaveBeenLastCalledWith({
       activeId: 'b',
+      layout: JSON.stringify(createWorkspace(['b'], [])),
       tabs: [
         {
           id: 'b',
@@ -196,6 +208,27 @@ describe('the open tabs', () => {
     expect(tab.writeOpenTabs).toHaveBeenCalledTimes(2)
   })
 
+  it('writes pane changes and skips a repeated snapshot', async () => {
+    const target = create([
+      { id: 'a', title: 'A' },
+      { id: 'b', title: 'B' },
+    ])
+    await nextTick()
+    target.writeOpenTabs.mockClear()
+    target.layout.value = {
+      root: branch('split', [pane('first', ['a']), pane('second', ['b'])], [0.4, 0.6]),
+      axis: 'vertical',
+      focus: 'first',
+    }
+    await nextTick()
+    expect(target.writeOpenTabs).toHaveBeenCalledExactlyOnceWith(target.open.value)
+    target.layout.value = { ...target.layout.value }
+    target.tabs.value = [...target.tabs.value]
+    await nextTick()
+    await target.pause()
+    expect(target.writeOpenTabs).toHaveBeenCalledTimes(1)
+  })
+
   it('waits for an in-flight write before sending the latest list', async () => {
     let releaseFirst!: () => void
     let calls = 0
@@ -213,6 +246,7 @@ describe('the open tabs', () => {
     })
     const tabs = ref([{ id: 'a', title: 'A' }])
     const windowTabs = {
+      panes: { layout: ref(createWorkspace([], [])) },
       handle: { front: () => null },
       tabs: {
         tabs,
@@ -253,12 +287,24 @@ describe('the open tabs', () => {
     expect(writeOpenTabs).toHaveBeenCalledTimes(3)
   })
 
+  it('writes the last acknowledged state again after an intervening write fails', async () => {
+    const target = create([{ id: 'a', title: 'A' }])
+    await nextTick()
+    target.writeOpenTabs.mockRejectedValueOnce(new Error('lost response'))
+    target.tabs.value = [{ id: 'a', title: 'Renamed' }]
+    await nextTick()
+    target.tabs.value = [{ id: 'a', title: 'A' }]
+    await nextTick()
+    expect(target.writeOpenTabs).toHaveBeenCalledTimes(3)
+  })
+
   it('carries on when the core cannot take the list and reports the failure', async () => {
     coreCalls.writeOpenTabs.mockRejectedValue(new Error('down'))
     const writeMessage = vi.fn()
     const tabs = ref<{ id: string; title: string }[]>([])
     const rejecting = {
       windowTabs: {
+        panes: { layout: ref(createWorkspace([], [])) },
         handle: { front: () => null },
         tabs: { tabs, getTab: () => undefined },
       },
@@ -425,7 +471,7 @@ describe('the open tabs while the window leaves its vault', () => {
     await nextTick()
     target.writeOpenTabs.mockClear()
     await target.pause()
-    expect(target.writeOpenTabs).toHaveBeenCalledTimes(1)
+    expect(target.writeOpenTabs).not.toHaveBeenCalled()
   })
 
   it('parses saved tabs and filters out entries with empty id or kind', () => {

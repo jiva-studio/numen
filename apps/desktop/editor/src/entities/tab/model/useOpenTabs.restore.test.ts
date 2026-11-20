@@ -4,7 +4,7 @@
  */
 import { ref } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { getPanes } from '@numen/workbench'
+import { branch, getPanes, pane, type Workspace } from '@numen/workbench'
 import { createTestTabs } from '@/testing/tabs'
 import type { AnyTabKind } from '../lib/kinds'
 import { parseSavedTabs, useOpenTabs } from './useOpenTabs'
@@ -120,5 +120,61 @@ describe('the tab in front of each pane after a restart', () => {
 
     const fronts = getPanes(restarted.panes.layout.value.root).map((one) => one.active)
     expect(fronts).toEqual(['plex-1', 'files-3'])
+  })
+})
+
+describe('saved pane layouts', () => {
+  it('restores nested splits, tab order, pane selections and focus independently of the reported active tab', () => {
+    const original = createWindow()
+    original.restored.restoreTabs(
+      [
+        { id: 'note', kind: 'note', path: 'Notes/First.md' },
+        { id: 'reader', kind: 'reader', path: 'File.pdf' },
+        { id: 'files', kind: 'files', path: '' },
+        { id: 'missing', kind: 'missing.plugin', path: 'Other.md' },
+      ],
+      'note',
+    )
+    const layout: Workspace = {
+      axis: 'vertical',
+      focus: 'file-pane',
+      root: branch(
+        'root',
+        [
+          pane('stack', ['reader', 'note'], 'reader'),
+          branch('lower', [pane('file-pane', ['files']), pane('last', ['missing'])], [0.2, 0.8]),
+        ],
+        [0.45, 0.55],
+      ),
+    }
+    original.panes.layout.value = layout
+    const snapshot = createOpenTabs(original).open.value
+    expect(snapshot.activeId).not.toBe('files')
+
+    const restored = createWindow()
+    restored.restored.restoreTabs(parseSavedTabs(snapshot), snapshot.activeId, snapshot.layout)
+
+    expect(restored.panes.layout.value).toStrictEqual(layout)
+    expect(restored.handle.front()?.id).toBe('files')
+    expect(restored.tabs.getTab('missing')?.kind.kind).toBe('missing.plugin')
+  })
+
+  it('restores saved tabs by kind placement when their layout has an obsolete tab id', () => {
+    const window = createWindow()
+    const layout = { axis: 'vertical', root: pane('stack', ['gone']), focus: 'stack' }
+    window.restored.restoreTabs(
+      [
+        { id: 'note', kind: 'note', path: 'Notes/First.md' },
+        { id: 'files', kind: 'files', path: '' },
+      ],
+      'note',
+      JSON.stringify(layout),
+    )
+
+    expect(getPanes(window.panes.layout.value.root).map((p) => p.tabs)).toEqual([
+      ['note'],
+      ['files'],
+    ])
+    expect(window.handle.front()?.id).toBe('note')
   })
 })
