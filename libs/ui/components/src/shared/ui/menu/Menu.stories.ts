@@ -4,6 +4,7 @@
  * component exists for can fail: clipping by an ancestor, flipping at an edge,
  * and keyboard focus.
  */
+import { getPointerPosition, getVisibleFraction } from '@/shared/fixtures/browser'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { defineComponent, h, nextTick, onMounted, ref, type Component } from 'vue'
@@ -255,22 +256,19 @@ export const NotClipped: Story = {
       await expect(menuElement()).not.toBeNull()
     })
     const menu = menuElement()!
-    const box = menu.getBoundingClientRect()
-    const clipping = canvasElement.querySelector('[data-clipping]')!
+    const clipping = canvasElement.querySelector<HTMLElement>('[data-clipping]')!
 
-    await expect(box.height).toBeGreaterThan(clipping.getBoundingClientRect().height)
+    await expect(menu.offsetHeight).toBeGreaterThan(clipping.clientHeight)
     await expect(clipping.contains(menu)).toBe(false)
 
     // Whole at its current position: what is under its far edge is the menu itself,
     // which is exactly what being clipped would take away.
-    const underElement = document.elementFromPoint(box.left + box.width / 2, box.bottom - 4)
+    const { clientX, clientY } = getPointerPosition(menu, 0.5, 0.95)
+    const underElement = document.elementFromPoint(clientX, clientY)
     await expect(menu.contains(underElement)).toBe(true)
 
     // And inside the area it is placed in, on every side.
-    await expect(box.left).toBeGreaterThanOrEqual(0)
-    await expect(box.top).toBeGreaterThanOrEqual(0)
-    await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
-    await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
+    await expect(await getVisibleFraction(menu)).toBe(1)
   },
 }
 
@@ -351,7 +349,7 @@ export const FarTooMany: Story = {
   },
   play: async () => {
     const menu = menuElement()!
-    await expect(menu.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight)
+    await expect(await getVisibleFraction(menu)).toBe(1)
     await expect(menu.scrollHeight).toBeGreaterThan(menu.clientHeight)
   },
 }
@@ -391,15 +389,11 @@ export const RequestedAtTheEdge: Story = {
       { id: 'near', text: 'Beside the edge it was asked for at' },
     ],
   },
-  play: async ({ canvasElement }) => {
+  play: async () => {
     const menu = document.body.querySelector<HTMLElement>('.menu')
     await expect(menu).not.toBeNull()
     await expect(document.body.querySelectorAll('.menu__text')).toHaveLength(2)
-    const box = menu!.getBoundingClientRect()
-    await expect(box.right).toBeLessThanOrEqual(
-      canvasElement.ownerDocument.documentElement.clientWidth,
-    )
-    await expect(box.left).toBeGreaterThanOrEqual(0)
+    await expect(await getVisibleFraction(menu!)).toBe(1)
   },
 }
 
@@ -529,8 +523,8 @@ const renderScrollingOpening = (args: Knobs) => ({
 
     const ask = async (event: MouseEvent) => {
       from.value = event.currentTarget as HTMLElement
-      const box = from.value.getBoundingClientRect()
-      pos.value = { x: box.left, y: box.bottom }
+      const anchor = getPointerPosition(from.value, 0, 1)
+      pos.value = { x: anchor.clientX, y: anchor.clientY }
       open.value = true
       await nextTick()
       scroller.value?.scrollTo({ top: scroller.value.scrollHeight })
@@ -630,21 +624,8 @@ export const PassingOverSubmenuParent: Story = {
     const menu = within(menuElement()!)
     const moveRow = menu.getByRole('menuitem', { name: 'Move to' })
     const renameRow = menu.getByRole('menuitem', { name: 'Rename' })
-    const moveBox = moveRow.getBoundingClientRect()
-    const renameBox = renameRow.getBoundingClientRect()
-
-    moveRow.dispatchEvent(
-      new MouseEvent('mouseenter', {
-        clientX: moveBox.left + 24,
-        clientY: moveBox.top + moveBox.height / 2,
-      }),
-    )
-    renameRow.dispatchEvent(
-      new MouseEvent('mouseenter', {
-        clientX: renameBox.left + 24,
-        clientY: renameBox.top + renameBox.height / 2,
-      }),
-    )
+    moveRow.dispatchEvent(new MouseEvent('mouseenter', getPointerPosition(moveRow, 0.15)))
+    renameRow.dispatchEvent(new MouseEvent('mouseenter', getPointerPosition(renameRow, 0.15)))
     await expect(document.body.querySelectorAll('.menu')).toHaveLength(1)
 
     await userEvent.click(renameRow)
@@ -661,23 +642,14 @@ export const DiagonalMoveIntoSubmenu: Story = {
     const menu = within(menuElement()!)
     const moveRow = menu.getByRole('menuitem', { name: 'Move to' })
     const renameRow = menu.getByRole('menuitem', { name: 'Rename' })
-    const moveBox = moveRow.getBoundingClientRect()
-
-    moveRow.dispatchEvent(
-      new MouseEvent('mouseenter', {
-        clientX: moveBox.left + 20,
-        clientY: moveBox.top + moveBox.height / 2,
-      }),
-    )
+    moveRow.dispatchEvent(new MouseEvent('mouseenter', getPointerPosition(moveRow, 0.15)))
     await waitFor(async () => {
       await expect(document.body.querySelectorAll('.menu')).toHaveLength(2)
     })
 
-    const renameBox = renameRow.getBoundingClientRect()
-    const midX = moveBox.left + (moveBox.width * 3) / 4
-    const midY = renameBox.top + renameBox.height / 2
-    renameRow.dispatchEvent(new MouseEvent('mouseenter', { clientX: midX, clientY: midY }))
-    renameRow.dispatchEvent(new MouseEvent('mousemove', { clientX: midX, clientY: midY }))
+    const diagonal = getPointerPosition(renameRow, 0.75)
+    renameRow.dispatchEvent(new MouseEvent('mouseenter', diagonal))
+    renameRow.dispatchEvent(new MouseEvent('mousemove', diagonal))
     await expect(document.body.querySelectorAll('.menu')).toHaveLength(2)
 
     const menus = document.body.querySelectorAll<HTMLElement>('.menu')

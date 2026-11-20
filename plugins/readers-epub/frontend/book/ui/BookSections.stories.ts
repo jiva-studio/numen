@@ -7,6 +7,7 @@
  * section. A move to another section without a page turn shows the page without
  * animation.
  */
+import { waitForPageLayout, isOnPage } from '../fixtures/pages'
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
@@ -120,8 +121,6 @@ const getPaper = (canvasElement: HTMLElement) =>
 const getFrontOffset = (canvasElement: HTMLElement) =>
   Number(canvasElement.querySelector('[data-front]')?.getAttribute('data-front'))
 
-const waitForFrame = () => new Promise<number>((resolve) => requestAnimationFrame(resolve))
-
 const waitForSettledLayout = async (canvasElement: HTMLElement) => {
   await waitFor(
     async () => {
@@ -133,20 +132,12 @@ const waitForSettledLayout = async (canvasElement: HTMLElement) => {
     },
     { timeout: BROWSER_TIMEOUT },
   )
-  await document.fonts.ready
-  const readState = () => {
-    const paper = getPaper(canvasElement)
-    return `${paper.getBoundingClientRect().left}|${paper.scrollWidth}|${paper.className}`
-  }
-  let last = readState()
-  let stableFrameCount = 0
-  for (let frame = 0; frame < 600 && stableFrameCount < SETTLED_FRAME_COUNT; frame += 1) {
-    await waitForFrame()
-    const now = readState()
-    stableFrameCount = now === last ? stableFrameCount + 1 : 0
-    last = now
-  }
-  await expect(stableFrameCount).toBe(SETTLED_FRAME_COUNT)
+  await waitForPageLayout(
+    getArea(canvasElement),
+    getPaper(canvasElement),
+    SETTLED_FRAME_COUNT,
+    BROWSER_TIMEOUT,
+  )
 }
 
 const watchRun = (canvasElement: HTMLElement, offset: number, fragment: 'first' | 'last') => {
@@ -163,16 +154,16 @@ const watchRun = (canvasElement: HTMLElement, offset: number, fragment: 'first' 
   return { edges, stop: () => cancelAnimationFrame(frame) }
 }
 
-const readRunLeft = (canvasElement: HTMLElement, offset: number, fragment: 'first' | 'last') => {
+const getRunFragment = (canvasElement: HTMLElement, offset: number, fragment: 'first' | 'last') => {
   const run = canvasElement.querySelector<HTMLElement>(`[data-offset="${offset}"]`)!
   const rects = run.getClientRects()
-  return (fragment === 'first' ? rects[0] : rects[rects.length - 1])!.left
+  return (fragment === 'first' ? rects[0] : rects[rects.length - 1])!
 }
 
-const expectInArea = async (canvasElement: HTMLElement, edge: number) => {
-  const box = getArea(canvasElement).getBoundingClientRect()
-  await expect(edge).toBeGreaterThanOrEqual(box.left - 1)
-  await expect(edge).toBeLessThan(box.right)
+const expectInArea = async (canvasElement: HTMLElement, fragment: DOMRect) => {
+  await expect(
+    isOnPage(getArea(canvasElement), fragment.left + 1, fragment.top + fragment.height / 2),
+  ).toBe(true)
 }
 
 const turnUntil = async (
@@ -200,8 +191,8 @@ export const ForwardTurnIntoNextSectionShowsFirstPage: Story = {
     await turnUntil(canvasElement, '{ArrowRight}', (front) => front >= LONG_SECOND.span.start)
     await waitForSettledLayout(canvasElement)
 
-    const finalEdge = readRunLeft(canvasElement, first, 'first')
-    await expectInArea(canvasElement, finalEdge)
+    const fragment = getRunFragment(canvasElement, first, 'first')
+    await expectInArea(canvasElement, fragment)
     await expect(getFrontOffset(canvasElement)).toBe(LONG_SECOND.span.start)
   },
 }
@@ -220,8 +211,8 @@ export const BackwardTurnIntoPreviousSectionShowsLastPage: Story = {
     await turnUntil(canvasElement, '{ArrowLeft}', (front) => front < LONG_FIRST.span.end)
     await waitForSettledLayout(canvasElement)
 
-    const finalEdge = readRunLeft(canvasElement, last, 'last')
-    await expectInArea(canvasElement, finalEdge)
+    const fragment = getRunFragment(canvasElement, last, 'last')
+    await expectInArea(canvasElement, fragment)
     await expect(getFrontOffset(canvasElement)).toBeGreaterThanOrEqual(LONG_FIRST.span.start)
   },
 }
@@ -244,9 +235,9 @@ export const JumpIntoNextSectionSkipsAnimation: Story = {
     await waitForSettledLayout(canvasElement)
     recording.stop()
 
-    const finalEdge = readRunLeft(canvasElement, first, 'first')
-    await expectInArea(canvasElement, finalEdge)
+    const fragment = getRunFragment(canvasElement, first, 'first')
+    await expectInArea(canvasElement, fragment)
     await expect(recording.edges.length).toBeGreaterThan(0)
-    await expect(recording.edges.filter((edge) => Math.abs(edge - finalEdge) > 1)).toEqual([])
+    await expect(recording.edges.filter((edge) => Math.abs(edge - fragment.left) > 1)).toEqual([])
   },
 }

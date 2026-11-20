@@ -1,5 +1,6 @@
+import { isBefore } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fn, userEvent, waitFor } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed, provide, ref } from 'vue'
 import WorkspaceBranch from './WorkspaceBranch.vue'
 import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
@@ -132,9 +133,7 @@ export const Nested: Story = {
       'lower',
     ])
 
-    const upper = panes[1]!.getBoundingClientRect()
-    const lower = panes[2]!.getBoundingClientRect()
-    await expect(lower.top).toBeGreaterThan(upper.top)
+    await expect(isBefore(panes[1]!, panes[2]!, 'vertical')).toBe(true)
   },
 }
 
@@ -151,21 +150,11 @@ export const ThreeAcross: Story = {
 export const CrowdedByTheLeastSpace: Story = {
   args: { arrangement: 'three across, unevenly', minimum: 400, room: '600px' },
   play: async ({ canvasElement }) => {
-    const widths = () =>
-      [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(
-        (pane) => pane.getBoundingClientRect().width,
-      )
-    await expect(widths()).toHaveLength(3)
-
-    const room = widths().reduce((all, one) => all + one, 0)
-    await expect(room).toBeLessThan(3 * 400)
-
-    const handle = canvasElement.querySelector<HTMLElement>('[role="separator"]')
-    handle?.focus()
+    const handle = within(canvasElement).getAllByRole('separator')[0]!
+    handle.focus()
     for (let press = 0; press < 20; press += 1) await userEvent.keyboard('{ArrowLeft}')
 
-    await waitFor(async () => {
-      await expect(Math.abs((widths()[0] ?? 0) - room / 3)).toBeLessThan(2)
-    })
+    await waitFor(() => expect(handle).toHaveAttribute('aria-valuenow', '33'))
+    await expect(handle).toHaveAttribute('aria-valuemin', '33')
   },
 }

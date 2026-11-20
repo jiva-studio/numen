@@ -5,6 +5,7 @@
  * A row is represented by a plain glyph here. The tree has no knowledge of
  * what it renders, and neither do these stories.
  */
+import { getPointerPosition } from '@/shared/fixtures/browser'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent } from 'storybook/test'
 import { ref, watch } from 'vue'
@@ -301,13 +302,8 @@ const getSelectedRows = (canvas: HTMLElement) =>
     row.getAttribute('data-tree-row'),
   )
 
-const getMiddle = (element: Element) => {
-  const box = element.getBoundingClientRect()
-  return { clientX: box.x + box.width / 2, clientY: box.y + box.height / 2 }
-}
-
 async function dragTo(from: Element, to: { clientX: number; clientY: number }): Promise<void> {
-  const start = getMiddle(from)
+  const start = getPointerPosition(from)
   await userEvent.pointer([
     { keys: '[MouseLeft>]', target: from, coords: start },
     {
@@ -363,7 +359,7 @@ export const EmitsOpenAndClose: Story = {
 export const DragsIntoARow: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    await dragTo(getRow(canvasElement, 'loose'), getMiddle(getRow(canvasElement, 'work')))
+    await dragTo(getRow(canvasElement, 'loose'), getPointerPosition(getRow(canvasElement, 'work')))
 
     await expect(getRow(canvasElement, 'loose').getAttribute('aria-level')).toBe('2')
     await expect(getDrawnRows(canvasElement)).toStrictEqual([
@@ -380,12 +376,8 @@ export const DragsIntoARow: Story = {
 export const DragsBetweenRows: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const first = getRow(canvasElement, 'work').getBoundingClientRect()
-
-    await dragTo(getRow(canvasElement, 'loose'), {
-      clientX: first.x + first.width / 2,
-      clientY: first.y + 1,
-    })
+    const row = getRow(canvasElement, 'work')
+    await dragTo(getRow(canvasElement, 'loose'), getPointerPosition(row, 0.5, 0.05))
 
     await expect(getDrawnRows(canvasElement)).toStrictEqual([
       'loose',
@@ -438,8 +430,8 @@ export const DraggingSeveral: Story = {
   args: { selected: ['pages', 'loose'] },
   play: async ({ canvasElement }) => {
     const from = getRow(canvasElement, 'loose')
-    const start = getMiddle(from)
-    const to = getMiddle(getRow(canvasElement, 'work'))
+    const start = getPointerPosition(from)
+    const to = getPointerPosition(getRow(canvasElement, 'work'))
 
     await userEvent.pointer([
       { keys: '[MouseLeft>]', target: from, coords: start },
@@ -457,7 +449,7 @@ export const DragsSeveralIntoARow: Story = {
   tags: ['!dev'],
   args: { selected: ['pages', 'loose'] },
   play: async ({ canvasElement }) => {
-    await dragTo(getRow(canvasElement, 'loose'), getMiddle(getRow(canvasElement, 'work')))
+    await dragTo(getRow(canvasElement, 'loose'), getPointerPosition(getRow(canvasElement, 'work')))
 
     await expect(getDrawnRows(canvasElement)).toStrictEqual([
       'work',
@@ -477,7 +469,7 @@ export const RejectsWhatItContains: Story = {
   play: async ({ canvasElement }) => {
     const before = getDrawnRows(canvasElement)
 
-    await dragTo(getRow(canvasElement, 'work'), getMiddle(getRow(canvasElement, 'plans')))
+    await dragTo(getRow(canvasElement, 'work'), getPointerPosition(getRow(canvasElement, 'plans')))
 
     await expect(getDrawnRows(canvasElement)).toStrictEqual(before)
     await expect(getRow(canvasElement, 'work').getAttribute('aria-level')).toBe('1')

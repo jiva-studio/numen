@@ -2,6 +2,7 @@
  * Every state the title bar has to survive. Also the test corpus: the move of commands into the menu,
  * the hiding of views and the stacking of the menu need a browser to fail.
  */
+import { getPointerPosition, getVisibleFraction } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { h, markRaw, type FunctionalComponent } from 'vue'
@@ -148,8 +149,8 @@ export const LongVaultName: Story = {
   args: { vaults: named(LONG) },
   play: async ({ canvasElement }) => {
     await expect(title(canvasElement).textContent).toContain(LONG)
-    const close = canvasElement.querySelector('[data-control="close"]')!.getBoundingClientRect()
-    await expect(close.right).toBeLessThanOrEqual(canvasElement.getBoundingClientRect().right)
+    const close = canvasElement.querySelector('[data-control="close"]')!
+    await expect(await getVisibleFraction(close, canvasElement)).toBe(1)
     await expect(getShownIds(canvasElement)).toStrictEqual(['files', 'plex', 'note'])
     await expect(getShownChips(canvasElement)).toStrictEqual(['2 active'])
   },
@@ -202,8 +203,8 @@ export const ViewsHiddenFromTheEdge: Story = {
     await userEvent.click(canvasElement.querySelector('[data-title-bar-more]')!)
     const entries = await getPage(canvasElement).findAllByRole('menuitem')
     await expect(entries).toHaveLength(5)
-    const close = canvasElement.querySelector('[data-control="close"]')!.getBoundingClientRect()
-    await expect(close.right).toBeLessThanOrEqual(canvasElement.getBoundingClientRect().right)
+    const close = canvasElement.querySelector('[data-control="close"]')!
+    await expect(await getVisibleFraction(close, canvasElement)).toBe(1)
   },
 }
 
@@ -225,11 +226,10 @@ export const PopoverBelowTheBar: Story = {
       if (!found) throw new Error('the popover is not drawn')
       return found
     })
-    const bar = canvasElement.querySelector('[data-title-bar]')!.getBoundingClientRect()
-    const box = popover.getBoundingClientRect()
-    const y = box.bottom - box.height / 4
-    await expect(y).toBeGreaterThan(bar.bottom)
-    const topmost = canvasElement.ownerDocument.elementFromPoint(box.left + box.width / 2, y)
+    const bar = canvasElement.querySelector('[data-title-bar]')!
+    const { clientX } = getPointerPosition(popover)
+    const { clientY } = getPointerPosition(bar, 0.5, 1)
+    const topmost = canvasElement.ownerDocument.elementFromPoint(clientX, clientY + 4)
     await expect(topmost).toBe(popover)
   },
 }

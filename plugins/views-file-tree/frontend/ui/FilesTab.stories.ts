@@ -5,7 +5,7 @@
  * row inside a folder relative to the folder, and the position of the row menu.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { expect, fireEvent, userEvent, waitFor } from 'storybook/test'
+import { expect, userEvent, waitFor } from 'storybook/test'
 import FilesTab from './FilesTab.vue'
 import { useFilesTab, type FilesTabState } from '../model/useFilesTab'
 import { createFileTree, ROOT } from '../model/useFileTree'
@@ -126,9 +126,8 @@ export const TheMenuOnARow: Story = {
     await waitFor(() => expect(rows(canvasElement)).toHaveLength(4))
 
     const note = rows(canvasElement)[1] as HTMLElement
-    const rect = note.getBoundingClientRect()
     await userEvent.click(note)
-    await fireEvent.contextMenu(note, { clientX: rect.left + 8, clientY: rect.top + 8 })
+    await userEvent.pointer({ target: note, keys: '[MouseRight]' })
 
     const getMenuItems = () => [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')]
     await waitFor(() => expect(getMenuItems().length).toBeGreaterThan(0))

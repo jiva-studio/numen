@@ -4,6 +4,7 @@
  * The stories are the behaviour test: this library runs them in a browser, so a
  * state with no story is a state nothing draws.
  */
+import { getVisibleFraction, isBefore } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor } from 'storybook/test'
 import { h } from 'vue'
@@ -280,16 +281,10 @@ export const AtEveryEdge: Story = {
         const response = canvasElement.querySelector('[role="tooltip"]')
         await expect(response, corner.name).not.toBeNull()
 
-        // The whole of it is on the screen, on every side.
-        const box = (response as HTMLElement).getBoundingClientRect()
-        await expect(box.left, corner.name).toBeGreaterThanOrEqual(0)
-        await expect(box.top, corner.name).toBeGreaterThanOrEqual(0)
-        await expect(box.right, corner.name).toBeLessThanOrEqual(window.innerWidth)
-        await expect(box.bottom, corner.name).toBeLessThanOrEqual(window.innerHeight)
-
-        // And beside the day it is about, on one side of it or the other.
-        const day = cell.getBoundingClientRect()
-        await expect(box.right <= day.left || box.left >= day.right, corner.name).toBe(true)
+        await expect(await getVisibleFraction(response!), corner.name).toBe(1)
+        const isBeside =
+          isBefore(response!, cell, 'horizontal') || isBefore(cell, response!, 'horizontal')
+        await expect(isBeside, corner.name).toBe(true)
       })
     }
   },

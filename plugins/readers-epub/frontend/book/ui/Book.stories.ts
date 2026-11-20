@@ -7,6 +7,8 @@
  * whether the passage in front stays in front when the area or the text size
  * changes. Sizes and spacing of the columns are not asserted.
  */
+import { getPointerPosition } from '@numen/ui/testing'
+import { waitForPageLayout, isOnPage } from '../fixtures/pages'
 import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
@@ -176,8 +178,11 @@ const getRunAt = (canvasElement: HTMLElement, offset: number) =>
 const isRunShown = (canvasElement: HTMLElement, run: HTMLElement) => {
   const rect = run.getClientRects()[0]
   if (rect === undefined) return false
-  const box = getArea(canvasElement).getBoundingClientRect()
-  return rect.right > box.left && rect.left < box.right
+  const y = rect.top + rect.height / 2
+  const area = getArea(canvasElement)
+  return [rect.left + 1, rect.right - 1, rect.left + rect.width / 2].some((x) =>
+    isOnPage(area, x, y),
+  )
 }
 
 const getShownRuns = (canvasElement: HTMLElement) =>
@@ -186,30 +191,8 @@ const getShownRuns = (canvasElement: HTMLElement) =>
 const expectRunShown = async (canvasElement: HTMLElement, offset: number) =>
   await expect(isRunShown(canvasElement, getRunAt(canvasElement, offset))).toBe(true)
 
-const waitForSettledLayout = async (canvasElement: HTMLElement) => {
-  // Settled means the indicator, the offset in front, the width of the area, the extent of the columns and the shown runs
-  // stay unchanged for a run of frames, whatever number of pages the font sets the text in.
-  const getState = () =>
-    [
-      getPageCount(canvasElement),
-      getFrontOffset(canvasElement),
-      getArea(canvasElement).getBoundingClientRect().width,
-      getPaper(canvasElement).scrollWidth,
-      getShownRuns(canvasElement)
-        .map((run) => run.dataset['offset'])
-        .join(','),
-    ].join('|')
-  const deadline = performance.now() + ITS_OWN_PACE
-  let last = getState()
-  let stable = 0
-  while (stable < 30) {
-    if (performance.now() > deadline) throw new Error('the layout did not settle')
-    await waitForFrame()
-    const state = getState()
-    stable = state === last ? stable + 1 : 0
-    last = state
-  }
-}
+const waitForSettledLayout = (canvasElement: HTMLElement) =>
+  waitForPageLayout(getArea(canvasElement), getPaper(canvasElement), 30, ITS_OWN_PACE)
 
 /** Turn the pages, set the text larger, and watch the offset in front follow. */
 export const Playground: Story = {
@@ -402,7 +385,7 @@ export const Resized: Story = {
     const before = getFrontOffset(canvasElement)
 
     const holder = getHolder(canvasElement)
-    const from = holder.getBoundingClientRect().width
+    const from = holder.clientWidth
     const to = Math.round(from * 0.6)
     for (let width = from; width > to; width -= 20) {
       holder.style.inlineSize = `${width}px`
@@ -423,7 +406,7 @@ const draggedWithPauses =
     const before = getFrontOffset(canvasElement)
 
     const holder = getHolder(canvasElement)
-    const from = holder.getBoundingClientRect().width
+    const from = holder.clientWidth
     let step = 0
     for (let width = from; width > from - 560; width -= 40) {
       holder.style.inlineSize = `${width}px`
@@ -520,13 +503,18 @@ export const TargetInFrontKeptAcrossAResize: Story = {
     await waitForLayout(canvasElement)
     for (let frame = 0; frame < 60; frame += 1) await waitForFrame()
 
-    const box = getArea(canvasElement).getBoundingClientRect()
-    const middle = box.left + box.width / 2
-    const inSecondColumn = getRunsOf(canvasElement).filter((run) => {
-      const rect = run.getClientRects()[0]
-      return rect !== undefined && rect.left > middle && rect.left < box.right
-    })
-    const offset = Number(inSecondColumn.at(-1)!.dataset['offset'])
+    const area = getArea(canvasElement)
+    const getRunAtPoint = (down: number) => {
+      const point = getPointerPosition(area, 0.75, down)
+      return area.ownerDocument
+        .elementFromPoint(point.clientX, point.clientY)
+        ?.closest<HTMLElement>('[data-offset]')
+    }
+    const target = [0.9, 0.75, 0.5, 0.25]
+      .map(getRunAtPoint)
+      .find((run) => run && area.contains(run))
+    await expect(target).toBeTruthy()
+    const offset = Number(target!.dataset['offset'])
     const front = getFrontOffset(canvasElement)
 
     canvasElement
@@ -575,9 +563,8 @@ export const TurnedManually: Story = {
     })
 
     // A press within a sixth of the far edge turns the page on.
-    const box = area.getBoundingClientRect()
     await userEvent.pointer([
-      { target: area, coords: { clientX: box.right - 8, clientY: box.top + box.height / 2 } },
+      { target: area, coords: getPointerPosition(area, 0.95) },
       { keys: '[MouseLeft]', target: area },
     ])
     await waitFor(async () => await expect(getFrontOffset(canvasElement)).toBeGreaterThan(0), {

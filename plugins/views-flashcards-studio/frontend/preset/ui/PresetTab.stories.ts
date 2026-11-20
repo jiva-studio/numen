@@ -4,6 +4,7 @@
  * browser can verify: the readout under the knob, the bubble above it, the
  * keyboard focus and the pointer drag.
  */
+import { getPointerPosition } from '@numen/ui/testing'
 import { StopReason } from '../../lib/stop'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
@@ -254,7 +255,6 @@ export const TheKnobFollowsThePointer: Story = {
   play: async ({ canvasElement }) => {
     const picture = getImage(canvasElement)
     const was = picture.getAttribute('aria-valuenow')
-    const box = picture.getBoundingClientRect()
 
     // The element answers for the pointer: without a screen matrix nothing can
     // be read off it, and without capture the drag is lost the moment the
@@ -262,8 +262,7 @@ export const TheKnobFollowsThePointer: Story = {
     await expect(picture.getScreenCTM?.()).not.toBeNull()
 
     const coords = (share: number) => ({
-      clientX: box.left + box.width * share,
-      clientY: box.top + box.height / 2,
+      ...getPointerPosition(picture, share),
       pointerId: 1,
       isPrimary: true,
       bubbles: true,

@@ -6,6 +6,7 @@
  * layout width, that highlights stay when the page is drawn larger, and that a
  * book of five hundred pages draws only the visible pages.
  */
+import { getPointerPosition } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
@@ -111,9 +112,9 @@ export const Opened: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(async () => await expect(getImage(canvasElement, 0)).toBeInTheDocument())
 
-    const box = getSheet(canvasElement, 0)!.getBoundingClientRect()
+    const image = getImage(canvasElement, 0)!
     const query = Number(canvasElement.querySelector('[data-wide]')?.getAttribute('data-wide'))
-    await expect(query).toBeGreaterThanOrEqual(box.width * devicePixelRatio)
+    await expect(query).toBeGreaterThanOrEqual(image.width * devicePixelRatio)
   },
 }
 
@@ -126,16 +127,14 @@ export const OnlyWhatIsInTheViewport: Story = {
   play: async ({ canvasElement }) => {
     await waitFor(async () => await expect(getImage(canvasElement, 0)).toBeInTheDocument())
 
-    const room = getFreeSpace(canvasElement).getBoundingClientRect()
-    const box = getSheet(canvasElement, 0)!.getBoundingClientRect()
-    const isAcross = Math.ceil(room.width / box.width)
+    const strip = getFreeSpace(canvasElement)
+    const visiblePageCount = Math.ceil(strip.clientWidth / getImage(canvasElement, 0)!.width)
 
     const drawnNow = canvasElement.querySelectorAll('.reader__page').length
     await expect(drawnNow).toBeLessThan(MANY)
-    await expect(drawnNow).toBeGreaterThanOrEqual(isAcross)
+    await expect(drawnNow).toBeGreaterThanOrEqual(visiblePageCount)
 
     // The strip is as long as the whole book: its end shows the last page.
-    const strip = getFreeSpace(canvasElement)
     strip.scrollLeft = strip.scrollWidth
     strip.dispatchEvent(new Event('scroll'))
     await waitFor(async () => await expect(getSheet(canvasElement, MANY - 1)).not.toBeNull(), {
@@ -181,8 +180,7 @@ export const Scrolling: Story = {
     await waitFor(async () => await expect(getImage(canvasElement, 0)).toBeInTheDocument())
 
     const room = getFreeSpace(canvasElement)
-    const box = getSheet(canvasElement, 0)!.getBoundingClientRect()
-    room.scrollLeft = box.width * 3
+    room.scrollLeft = room.scrollWidth / 2
     room.dispatchEvent(new Event('scroll'))
 
     await waitFor(async () => {
@@ -201,7 +199,7 @@ export const ZoomedByEachPress: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await waitFor(async () => await expect(getImage(canvasElement, 0)).toBeInTheDocument())
-    const getWidth = () => getSheet(canvasElement, 0)!.getBoundingClientRect().width
+    const getWidth = () => getImage(canvasElement, 0)!.width
     const base = getWidth()
     await expect(canvas.getByLabelText('Further')).toBeDisabled()
 
@@ -302,8 +300,7 @@ export const Pulled: Story = {
     await waitFor(async () => await expect(getImage(canvasElement, 0)).toBeInTheDocument())
 
     const room = getFreeSpace(canvasElement)
-    const box = room.getBoundingClientRect()
-    const from = { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }
+    const from = getPointerPosition(room)
 
     room.dispatchEvent(new PointerEvent('pointerdown', { ...from, button: 0, bubbles: true }))
     room.dispatchEvent(

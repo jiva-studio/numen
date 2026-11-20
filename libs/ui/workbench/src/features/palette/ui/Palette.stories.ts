@@ -4,6 +4,7 @@
  * for can fail: a scrolling list, scrolling the active item into view, a line
  * too long for the panel, and a panel stacked above all other content.
  */
+import { getVisibleFraction } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { onMounted, onUnmounted, ref, type Component } from 'vue'
@@ -676,10 +677,7 @@ export const FarTooMany: Story = {
 
     // The last row is brought into sight.
     const list = document.body.querySelector<HTMLElement>('[data-palette="list"]')!
-    const inside = last.getBoundingClientRect()
-    const room = list.getBoundingClientRect()
-    await expect(inside.top).toBeLessThan(room.bottom)
-    await expect(inside.bottom).toBeGreaterThan(room.top)
+    await expect(await getVisibleFraction(last, list)).toBeGreaterThan(0)
   },
 }
 
@@ -826,12 +824,8 @@ export const ActionPanel: Story = {
     // Walking back from the first brings the last row into sight.
     await userEvent.keyboard('{ArrowUp}')
     const last = actions().at(-1)!
-    const inside = last.getBoundingClientRect()
-    const room = document.body
-      .querySelector<HTMLElement>('[data-actions="list"]')!
-      .getBoundingClientRect()
-    await expect(inside.top).toBeLessThan(room.bottom)
-    await expect(inside.bottom).toBeGreaterThan(room.top)
+    const list = document.body.querySelector<HTMLElement>('[data-actions="list"]')!
+    await expect(await getVisibleFraction(last, list)).toBeGreaterThan(0)
 
     await userEvent.keyboard('{Home}')
     await userEvent.keyboard('name')

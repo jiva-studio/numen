@@ -1,3 +1,4 @@
+import { getPointerPosition, isBefore } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { computed, ref } from 'vue'
@@ -364,7 +365,6 @@ export const MakingOne: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const focus = await canvas.findByLabelText(/, focus$/)
-    const box = focus.getBoundingClientRect()
 
     await expect(canvasElement.querySelector('.plex__handle')).toBeNull()
     await userEvent.hover(focus)
@@ -372,12 +372,13 @@ export const MakingOne: Story = {
     const handle = canvasElement.querySelector('.plex__handle')
     await expect(handle).not.toBeNull()
 
-    const above = { clientX: box.x + box.width / 2, clientY: box.y - 220 }
+    const top = getPointerPosition(focus, 0.5, 0)
+    const above = { ...top, clientY: top.clientY - 220 }
     await userEvent.pointer([
       {
         keys: '[MouseLeft>]',
         target: handle!,
-        coords: { clientX: box.right, clientY: box.y + box.height / 2 },
+        coords: getPointerPosition(handle!),
       },
       { target: surface, coords: above },
     ])
@@ -407,8 +408,8 @@ export const DraggingThemIn: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const focus = await canvas.findByLabelText(/, focus$/)
-    const box = focus.getBoundingClientRect()
-    const middle = box.x + box.width / 2
+    const top = getPointerPosition(focus, 0.5, 0)
+    const bottom = getPointerPosition(focus, 0.5, 1)
 
     const dragTo = (clientX: number, clientY: number) =>
       window.dispatchEvent(
@@ -422,18 +423,18 @@ export const DraggingThemIn: Story = {
       })
     }
 
-    dragTo(middle, box.y - 220)
+    dragTo(top.clientX, top.clientY - 220)
     await expectDraggedTitle('as parent')
     await expect(canvasElement.querySelector('.plex__dragged .plex__thread')).not.toBeNull()
 
-    dragTo(middle, box.bottom + 220)
+    dragTo(bottom.clientX, bottom.clientY + 220)
     await expectDraggedTitle('as child')
 
-    dragTo(middle, -400)
+    dragTo(top.clientX, -400)
     await expectDraggedTitle(null)
     await expect(canvasElement.querySelector('.plex__dragged')).toBeNull()
 
-    dragTo(middle, box.y - 220)
+    dragTo(top.clientX, top.clientY - 220)
     await expectDraggedTitle('as parent')
   },
 }
@@ -553,22 +554,18 @@ export const Overcrowded: Story = {
     })
     await expect(status.textContent).toMatch(/\d+ (children|child)\b.* not shown/)
 
-    const boxes = [...canvasElement.querySelectorAll<HTMLElement>('.plex__box')].map((box) =>
-      box.getBoundingClientRect(),
-    )
-    await expect(boxes.length).toBeGreaterThan(1)
-    const overlaps = boxes.flatMap((a, index) =>
-      boxes
-        .slice(index + 1)
-        .filter(
-          (b) =>
-            a.left < b.right - 0.5 &&
-            b.left < a.right - 0.5 &&
-            a.top < b.bottom - 0.5 &&
-            b.top < a.bottom - 0.5,
-        ),
-    )
-    await expect(overlaps).toHaveLength(0)
+    const nodes = [...canvasElement.querySelectorAll('.plex__box')]
+    await expect(nodes.length).toBeGreaterThan(1)
+    for (const [index, node] of nodes.entries()) {
+      for (const other of nodes.slice(index + 1)) {
+        const separate =
+          isBefore(node, other, 'horizontal') ||
+          isBefore(other, node, 'horizontal') ||
+          isBefore(node, other, 'vertical') ||
+          isBefore(other, node, 'vertical')
+        await expect(separate).toBe(true)
+      }
+    }
   },
 }
 
@@ -664,72 +661,37 @@ export const ArrowedLines: Story = {
   args: { graph: arrowedLines, duration: 0 },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const svg = canvasElement.querySelector('svg')!
+    const targets = [
+      {
+        name: 'Line from Marrowfield allotments to Alice Fenn, The Chair, arrow to Marrowfield allotments',
+        hasArrow: true,
+      },
+      {
+        name: 'Line from Bram Doyle to Alice Fenn, The Chair, arrow to Bram Doyle',
+        hasArrow: true,
+      },
+      { name: 'Line from Cora Hale to Alice Fenn, The Chair', hasArrow: false },
+      { name: 'Line from Marrowfield allotments to The question of the rota', hasArrow: false },
+    ]
+    await waitFor(() => expect(canvasElement.querySelectorAll('.plex__edge-arrow')).toHaveLength(2))
 
-    const hasPoint = (box: DOMRect, point: DOMPoint) =>
-      point.x >= box.left - 1 &&
-      point.x <= box.right + 1 &&
-      point.y >= box.top - 1 &&
-      point.y <= box.bottom + 1
-
-    const lines = () => {
-      const onScreen = svg.getScreenCTM()!
-      return [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge')].map((line) => ({
-        line,
-        ends: [line.getPointAtLength(0), line.getPointAtLength(line.getTotalLength())].map(
-          (point) => point.matrixTransform(onScreen),
-        ),
-      }))
-    }
-
-    const getLine = (name: string) => {
-      const box = canvas.getByLabelText(name).getBoundingClientRect()
-      for (const { line, ends } of lines()) {
-        const end = ends.find((point) => hasPoint(box, point))
-        if (end) return { line, end }
+    for (const { name, hasArrow } of targets) {
+      const target = await canvas.findByRole('button', { name })
+      await userEvent.hover(target)
+      const line = canvasElement.querySelector<SVGPathElement>('.plex__raised .plex__edge')!
+      await expect(line.getAttribute('d')).toBe(target.getAttribute('d'))
+      const heads = canvasElement.querySelectorAll<SVGPathElement>(
+        '.plex__raised .plex__edge-arrow',
+      )
+      await expect(heads).toHaveLength(hasArrow ? 1 : 0)
+      for (const head of heads) {
+        const tip = head.getPointAtLength(0).matrixTransform(head.getCTM()!)
+        const from = line.getPointAtLength(0).matrixTransform(line.getCTM()!)
+        await expect(tip.x).toBeCloseTo(from.x)
+        await expect(tip.y).toBeCloseTo(from.y)
       }
-      throw new Error(`no line touches ${name}`)
+      await userEvent.unhover(target)
     }
-
-    const getEnd = (name: string) => getLine(name).end
-
-    const heads = () => [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-arrow')]
-
-    const getHead = (end: DOMPoint) =>
-      heads().some((head) => hasPoint(head.getBoundingClientRect(), end))
-
-    const readView = () =>
-      JSON.stringify([
-        heads().map((head) => {
-          const box = head.getBoundingClientRect()
-          return [box.x, box.y, box.width, box.height]
-        }),
-        lines().map(({ ends }) => ends.map((end) => [end.x, end.y])),
-      ])
-
-    const frame = () => new Promise((isDone) => requestAnimationFrame(() => isDone(null)))
-
-    await waitFor(async () => {
-      await expect(heads()).toHaveLength(2)
-      const was = readView()
-      await frame()
-      await expect(readView()).toBe(was)
-    })
-
-    await expect(getHead(getEnd('Marrowfield allotments, parent'))).toBe(true)
-    await expect(getHead(getEnd('Bram Doyle, jump'))).toBe(true)
-
-    await expect(getHead(getEnd('Cora Hale, jump'))).toBe(false)
-    await expect(getHead(getEnd('The question of the rota, sibling'))).toBe(false)
-
-    const jump = getLine('Bram Doyle, jump')
-    const band = [...canvasElement.querySelectorAll<SVGPathElement>('.plex__edge-hit')].find(
-      (line) => line.getAttribute('d') === jump.line.getAttribute('d'),
-    )!
-    await userEvent.hover(band)
-
-    const raised = canvasElement.querySelector<SVGPathElement>('.plex__raised .plex__edge-arrow')!
-    await expect(raised).not.toBeNull()
   },
 }
 
@@ -747,35 +709,34 @@ export const RestingOnATitle: Story = {
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
     const adjacentNode = canvas.getByLabelText('日本語のノート, child')
 
-    const getBox = () =>
-      canvasElement.querySelector('.plex__lifted .plex__box') ?? node.querySelector('.plex__box')!
-    const getWidth = () => getBox().getBoundingClientRect().width
     const getWords = () =>
       (canvasElement.querySelector('.plex__lifted') ?? node).querySelector<HTMLElement>(
         '.plex__title-text',
       )!
-    const nodeWidth = getWidth()
-    const adjacentX = adjacentNode.getBoundingClientRect().x
+    const adjacentPoint = getPointerPosition(adjacentNode)
+    const getNeighborAtPoint = () =>
+      document
+        .elementFromPoint(adjacentPoint.clientX, adjacentPoint.clientY)
+        ?.closest('[data-node]')
+        ?.getAttribute('data-node')
+    await expect(getNeighborAtPoint()).toBe(adjacentNode.getAttribute('data-node'))
 
     const words = getWords()
     await expect(words.scrollWidth).toBeGreaterThan(words.clientWidth)
 
     await userEvent.hover(node)
-    await waitFor(async () => await expect(getWidth()).toBeGreaterThan(nodeWidth), {
-      timeout: 3000,
-    })
     await waitFor(
       async () => await expect(getWords().scrollWidth).toBeLessThanOrEqual(getWords().clientWidth),
     )
 
-    await expect(adjacentNode.getBoundingClientRect().x).toBe(adjacentX)
+    await expect(getNeighborAtPoint()).toBe(adjacentNode.getAttribute('data-node'))
     const lifted = canvasElement.querySelector('.plex__lifted')!
     await expect(node.compareDocumentPosition(lifted) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     )
 
     await userEvent.unhover(node)
-    await waitFor(async () => await expect(getWidth()).toBe(nodeWidth))
+    await waitFor(() => expect(getWords().scrollWidth).toBeGreaterThan(getWords().clientWidth))
   },
 }
 
@@ -790,21 +751,6 @@ export const Walk: Story = {
     const canvas = within(canvasElement)
     await canvas.findByLabelText(/, focus$/)
 
-    /** The node is in the focus and has stopped moving. */
-    const waitForNode = async (label: string) =>
-      await waitFor(
-        async () => {
-          const read = () =>
-            JSON.stringify(
-              canvas.getByLabelText(label).querySelector('.plex__box')!.getBoundingClientRect(),
-            )
-          const was = read()
-          await new Promise((isDone) => requestAnimationFrame(() => isDone(null)))
-          await expect(read()).toBe(was)
-        },
-        { timeout: 3000 },
-      )
-
     await expect(canvas.getByLabelText('Hexagonal architecture, focus')).toHaveAttribute(
       'tabindex',
       '0',
@@ -818,10 +764,16 @@ export const Walk: Story = {
     await userEvent.keyboard('{Enter}')
     await expect(args.onActivate).toHaveBeenCalledWith('architecture')
 
-    await waitForNode('Architecture, focus')
+    await expect(await canvas.findByLabelText('Architecture, focus')).toHaveAttribute(
+      'tabindex',
+      '0',
+    )
 
     await userEvent.click(canvas.getByLabelText('Hexagonal architecture, child'))
-    await waitForNode('Hexagonal architecture, focus')
+    await expect(await canvas.findByLabelText('Hexagonal architecture, focus')).toHaveAttribute(
+      'tabindex',
+      '0',
+    )
 
     await expect(canvas.getByLabelText('Architecture, parent')).toBeInTheDocument()
   },

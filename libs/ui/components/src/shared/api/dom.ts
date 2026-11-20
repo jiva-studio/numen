@@ -18,7 +18,7 @@ export const measureWindow = (): { width: number; height: number } =>
     ? { width: globalThis.window.innerWidth, height: globalThis.window.innerHeight }
     : { width: 800, height: 600 }
 
-export function measureElementRect(element: Element): DOMRect {
+export function measureElementRect(element: Element | Range): DOMRect {
   return element.getBoundingClientRect()
 }
 

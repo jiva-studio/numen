@@ -1,6 +1,7 @@
 /**
  * What the thread looks like. What it does is asserted in `Thread.test.ts`.
  */
+import { getPointerPosition, getBrowserPointerPosition } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import Thread from './Thread.vue'
@@ -184,21 +185,10 @@ const getWordPosition = (root: Element, word: string): Position => {
     const range = document.createRange()
     range.setStart(node, offset)
     range.setEnd(node, offset + word.length)
-    const box = range.getBoundingClientRect()
-    return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+    const { clientX, clientY } = getPointerPosition(range)
+    return { x: clientX, y: clientY }
   }
   throw new Error(`“${word}” is nowhere in the thread`)
-}
-
-const mapToFrame = (point: Position): Position => {
-  const frame = window.frameElement as HTMLElement | null
-  if (!frame) return point
-
-  const box = frame.getBoundingClientRect()
-  return {
-    x: box.x + point.x * (box.width / window.innerWidth),
-    y: box.y + point.y * (box.height / window.innerHeight),
-  }
 }
 
 const dragAcross = async (from: Position, to: Position): Promise<string | null> => {
@@ -208,7 +198,7 @@ const dragAcross = async (from: Position, to: Position): Promise<string | null> 
   window.getSelection()?.removeAllRanges()
   await (
     context.commands as unknown as { sweep(from: Position, to: Position): Promise<void> }
-  ).sweep(mapToFrame(from), mapToFrame(to))
+  ).sweep(getBrowserPointerPosition(from), getBrowserPointerPosition(to))
   await new Promise((isDone) => setTimeout(isDone, 16))
 
   return String(window.getSelection() ?? '')

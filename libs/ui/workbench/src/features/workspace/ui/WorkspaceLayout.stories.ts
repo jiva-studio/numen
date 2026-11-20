@@ -5,6 +5,7 @@
  * Tab content is a plain panel with a name. The workspace has no knowledge of
  * its contents, and neither do these stories.
  */
+import { getBrowserPointerPosition, getPointerPosition } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { ref, watch } from 'vue'
@@ -141,18 +142,16 @@ export const Marked: Story = {
 /** One tab left in the workspace. */
 export const Alone: Story = { args: { arrangement: 'alone' } }
 
-const getRect = (element: Element) => element.getBoundingClientRect()
-
 const getTab = (canvas: HTMLElement, tab: string) => {
   const found = canvas.querySelector(`[data-workspace-tab="${tab}"]`)
   if (!found) throw new Error(`no tab called ${tab}`)
   return found
 }
 
-const paneBox = (canvas: HTMLElement, pane: string) => {
+const getPane = (canvas: HTMLElement, pane: string) => {
   const found = canvas.querySelector(`[data-workspace-pane="${pane}"]`)
   if (!found) throw new Error(`no pane called ${pane}`)
-  return getRect(found)
+  return found
 }
 
 interface Position {
@@ -160,31 +159,11 @@ interface Position {
   readonly y: number
 }
 
-const mapToFrame = (point: Position): { window: Position; story: Position } => {
-  const frame = window.frameElement as HTMLElement | null
-  if (!frame) {
-    const whole = { x: Math.round(point.x), y: Math.round(point.y) }
-    return { window: whole, story: whole }
-  }
-
-  const box = frame.getBoundingClientRect()
-  const isAcross = box.width / window.innerWidth
-  const down = box.height / window.innerHeight
-  const driven = {
-    x: Math.round(box.x + point.x * isAcross),
-    y: Math.round(box.y + point.y * down),
-  }
-  return {
-    window: driven,
-    story: { x: (driven.x - box.x) / isAcross, y: (driven.y - box.y) / down },
-  }
-}
-
 const sweep = async (from: Position, to: Position): Promise<void> => {
   const context = await import('vitest/browser')
   await (
     context.commands as unknown as { sweep(from: Position, to: Position): Promise<void> }
-  ).sweep(mapToFrame(from).window, mapToFrame(to).window)
+  ).sweep(getBrowserPointerPosition(from), getBrowserPointerPosition(to))
   await new Promise((isDone) => setTimeout(isDone, 16))
 }
 
@@ -202,25 +181,29 @@ async function dragFromAway(
   away: number,
   distance: number,
 ): Promise<void> {
-  const box = getRect(handle)
-  const from =
-    axis === 'x'
-      ? { x: box.x + box.width / 2 + away, y: box.y + box.height / 4 }
-      : { x: box.x + box.width / 4, y: box.y + box.height / 2 + away }
+  const point =
+    axis === 'x' ? getPointerPosition(handle, 0.5, 0.25) : getPointerPosition(handle, 0.25, 0.5)
+  const from = {
+    x: point.clientX + (axis === 'x' ? away : 0),
+    y: point.clientY + (axis === 'y' ? away : 0),
+  }
   await sweep(
     from,
     axis === 'x' ? { x: from.x + distance, y: from.y } : { x: from.x, y: from.y + distance },
   )
 }
 
-async function dragTo(from: Element, to: { x: number; y: number }): Promise<void> {
-  const start = getRect(from)
-  const point = { clientX: start.x + start.width / 2, clientY: start.y + start.height / 2 }
-
+async function dragTo(from: Element, to: { clientX: number; clientY: number }): Promise<void> {
+  const point = getPointerPosition(from)
   await userEvent.pointer([
     { keys: '[MouseLeft>]', target: from, coords: point },
-    { coords: { clientX: (point.clientX + to.x) / 2, clientY: (point.clientY + to.y) / 2 } },
-    { coords: { clientX: to.x, clientY: to.y } },
+    {
+      coords: {
+        clientX: (point.clientX + to.clientX) / 2,
+        clientY: (point.clientY + to.clientY) / 2,
+      },
+    },
+    { coords: to },
     { keys: '[/MouseLeft]' },
   ])
 }
@@ -229,12 +212,8 @@ async function dragTo(from: Element, to: { x: number; y: number }): Promise<void
 export const DividesOnAnEdge: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const main = paneBox(canvasElement, 'main')
-
-    await dragTo(getTab(canvasElement, 'chat'), {
-      x: main.right - main.width * 0.05,
-      y: main.y + main.height / 2,
-    })
+    const main = getPane(canvasElement, 'main')
+    await dragTo(getTab(canvasElement, 'chat'), getPointerPosition(main, 0.95))
 
     // The source pane held no other tab, so it is removed and a new pane holds
     // the chat.
@@ -251,12 +230,8 @@ export const DividesOnAnEdge: Story = {
 export const JoinsAStack: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    const main = paneBox(canvasElement, 'main')
-
-    await dragTo(getTab(canvasElement, 'chat'), {
-      x: main.x + main.width / 2,
-      y: main.y + main.height / 2,
-    })
+    const main = getPane(canvasElement, 'main')
+    await dragTo(getTab(canvasElement, 'chat'), getPointerPosition(main))
 
     await expect(canvasElement.querySelectorAll('[data-workspace-pane]')).toHaveLength(1)
     await expect(canvasElement.querySelectorAll('[data-workspace-tab]')).toHaveLength(2)
@@ -268,22 +243,16 @@ export const StaysPut: Story = {
   tags: ['!dev'],
   args: { arrangement: 'side by side' },
   play: async ({ canvasElement }) => {
-    const before = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map((pane) => [
-      pane.getAttribute('data-workspace-pane'),
-      getRect(pane).width,
-    ])
+    const paneIds = () =>
+      [...canvasElement.querySelectorAll('[data-workspace-pane]')].map((pane) =>
+        pane.getAttribute('data-workspace-pane'),
+      )
+    const handle = within(canvasElement).getByRole('separator')
+    const before = { panes: paneIds(), split: handle.getAttribute('aria-valuenow') }
+    await expect(before.split).toBeTruthy()
 
-    const aside = paneBox(canvasElement, 'aside')
-    await dragTo(getTab(canvasElement, 'chat'), {
-      x: aside.x + aside.width / 2,
-      y: aside.y + aside.height / 2,
-    })
-
-    const after = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map((pane) => [
-      pane.getAttribute('data-workspace-pane'),
-      getRect(pane).width,
-    ])
-    await expect(after).toStrictEqual(before)
+    await dragTo(getTab(canvasElement, 'chat'), getPointerPosition(getPane(canvasElement, 'aside')))
+    await expect({ panes: paneIds(), split: handle.getAttribute('aria-valuenow') }).toEqual(before)
   },
 }
 
@@ -292,19 +261,16 @@ export const DividesTheWorkspace: Story = {
   tags: ['!dev'],
   args: { arrangement: 'crowded' },
   play: async ({ canvasElement }) => {
-    const frame = getRect(canvasElement.querySelector('.workspace') as Element)
-
-    await dragTo(getTab(canvasElement, 'two'), {
-      x: frame.x + frame.width / 2,
-      y: frame.bottom - 6,
-    })
-
-    const panes = [...canvasElement.querySelectorAll('[data-workspace-pane]')].map(getRect)
-    await expect(panes).toHaveLength(3)
-
-    // One of them runs the whole width along the foot.
-    const fullWidthPanes = panes.filter((box) => Math.abs(box.width - frame.width) < 2)
-    await expect(fullWidthPanes).toHaveLength(1)
+    const frame = canvasElement.querySelector('.workspace')!
+    const foot = getPointerPosition(frame, 0.5, 1)
+    await dragTo(getTab(canvasElement, 'two'), { ...foot, clientY: foot.clientY - 6 })
+    await expect(canvasElement.querySelectorAll('[data-workspace-pane]')).toHaveLength(3)
+    const destination = getTab(canvasElement, 'two').closest('[data-workspace-pane]')
+    await expect(destination).not.toBeNull()
+    for (const across of [0.01, 0.99]) {
+      const { clientX, clientY } = getPointerPosition(frame, across, 0.98)
+      await expect(destination!.contains(document.elementFromPoint(clientX, clientY))).toBe(true)
+    }
   },
 }
 
@@ -313,9 +279,8 @@ export const ReordersInAStrip: Story = {
   tags: ['!dev'],
   args: { arrangement: 'crowded' },
   play: async ({ canvasElement }) => {
-    const first = getRect(getTab(canvasElement, 'one'))
-
-    await dragTo(getTab(canvasElement, 'three'), { x: first.x + 2, y: first.y + first.height / 2 })
+    const first = getTab(canvasElement, 'one')
+    await dragTo(getTab(canvasElement, 'three'), getPointerPosition(first, 0.05))
 
     const strip = canvasElement.querySelector('[data-workspace-strip="main"]') as HTMLElement
     const order = [...strip.querySelectorAll('[data-workspace-tab]')].map((tab) =>
@@ -452,8 +417,7 @@ export const SelectsNothingWhileResizing: Story = {
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle')
     if (!handle) throw new Error('no handle')
-    const rect = getRect(handle)
-    const from = { clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2 }
+    const from = getPointerPosition(handle)
 
     /** The branch being resized, while the pointer is on its way. */
     const getResizingBranch = () => canvasElement.querySelector('.branch[data-resizing]')
@@ -491,12 +455,9 @@ export const CatchesAPressOnEitherSideOfTheLine: Story = {
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle')
     if (!handle) throw new Error('no handle')
-    const rect = getRect(handle)
-    const middle = rect.y + rect.height / 2
-
+    const { clientX, clientY } = getPointerPosition(handle)
     for (const away of [-4, 4]) {
-      const x = rect.x + rect.width / 2 + away
-      await expect(document.elementFromPoint(x, middle)).toBe(handle)
+      await expect(document.elementFromPoint(clientX + away, clientY)).toBe(handle)
     }
   },
 }
@@ -509,17 +470,17 @@ export const DragsFromItsWholeReach: Story = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
     const handle = canvasElement.querySelector('.branch__handle') as HTMLElement
-    const before = paneBox(canvasElement, 'main').width
+    const split = handle.getAttribute('aria-valuenow')
+    await expect(split).toBeTruthy()
+    const { clientX, clientY } = getPointerPosition(handle)
 
     await dragFromAway(handle, 'x', CLEAR_OF_REACH, 40)
-    await expect(Math.abs(paneBox(canvasElement, 'main').width - before)).toBeLessThan(2)
+    await expect(handle).toHaveAttribute('aria-valuenow', split!)
+    await expect(document.elementFromPoint(clientX, clientY)).toBe(handle)
 
     await dragFromAway(handle, 'x', EDGE_OF_REACH, 40)
-
-    // The pointer goes to whole pixels of the window, which the story counts in
-    // its own.
-    const moved = paneBox(canvasElement, 'main').width - before
-    await expect(Math.abs(moved - 40)).toBeLessThan(2)
+    await expect(handle).not.toHaveAttribute('aria-valuenow', split!)
+    await expect(document.elementFromPoint(clientX + 40, clientY)).toBe(handle)
   },
 }
 
@@ -531,14 +492,16 @@ export const DragsFromItsWholeReachDownwards: Story = {
     const handle = canvasElement.querySelector(
       '.branch__handle[data-direction="vertical"]',
     ) as HTMLElement
-    const before = paneBox(canvasElement, 'b').height
+    const split = handle.getAttribute('aria-valuenow')
+    await expect(split).toBeTruthy()
+    const { clientX, clientY } = getPointerPosition(handle, 0.25, 0.5)
 
     await dragFromAway(handle, 'y', CLEAR_OF_REACH, 30)
-    await expect(Math.abs(paneBox(canvasElement, 'b').height - before)).toBeLessThan(2)
+    await expect(handle).toHaveAttribute('aria-valuenow', split!)
+    await expect(document.elementFromPoint(clientX, clientY)).toBe(handle)
 
     await dragFromAway(handle, 'y', EDGE_OF_REACH, 30)
-
-    const moved = paneBox(canvasElement, 'b').height - before
-    await expect(Math.abs(moved - 30)).toBeLessThan(2)
+    await expect(handle).not.toHaveAttribute('aria-valuenow', split!)
+    await expect(document.elementFromPoint(clientX, clientY + 30)).toBe(handle)
   },
 }

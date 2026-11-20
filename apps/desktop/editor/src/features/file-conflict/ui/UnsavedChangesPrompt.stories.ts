@@ -5,6 +5,7 @@
  * how a name too long for the row affects the three actions is browser
  * behavior.
  */
+import { getVisibleFraction } from '@numen/ui/testing'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import UnsavedChangesPrompt from './UnsavedChangesPrompt.vue'
@@ -52,10 +53,7 @@ export const TwoNotes: Story = {
     await expect(notes(canvasElement)).toHaveLength(2)
     await expect(getAnswers(canvasElement)).toHaveLength(6)
 
-    // It overlays the work, at the bottom of the window and inside it.
-    const box = response!.getBoundingClientRect()
-    await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
-    await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
+    await expect(await getVisibleFraction(response!)).toBe(1)
   },
 }
 
