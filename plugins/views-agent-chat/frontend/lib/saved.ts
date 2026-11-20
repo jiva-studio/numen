@@ -17,6 +17,7 @@ type SavedTurn = {
 export type SavedModel = {
   readonly connectionId: string
   readonly modelId: string
+  readonly reasoningId?: string
 }
 
 /** What an agent tab saves. `model` is null for a conversation that chose none. */
@@ -39,7 +40,7 @@ export const createSavedConversation = (
   turns: turns
     .filter((turn) => KEPT.has(turn.voice) && (turn.state ?? 'settled') === 'settled')
     .map(({ id, voice, text }) => ({ id, voice, text })),
-  model: model && { connectionId: model.connectionId, modelId: model.modelId },
+  model,
 })
 
 const isObject = (value: JsonValue | undefined): value is { readonly [key: string]: JsonValue } =>
@@ -56,7 +57,10 @@ const parseSavedModel = (value: JsonValue | undefined): SavedModel | null => {
   const connectionId = value['connectionId']
   const modelId = value['modelId']
   if (typeof connectionId !== 'string' || !connectionId || typeof modelId !== 'string') return null
-  return { connectionId, modelId }
+  const reasoningId = value['reasoningId']
+  return typeof reasoningId === 'string'
+    ? { connectionId, modelId, reasoningId }
+    : { connectionId, modelId }
 }
 
 /** The conversation an agent tab saved, and an empty one where the value is not one. */

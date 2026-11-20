@@ -47,11 +47,7 @@ export interface ModelChoice {
 }
 
 /**
- * The agents of the plugin. `agents` is null until they are listed and where the host lists no rows, so
- * nothing is offered then; an empty list is a plugin with no agent. `listModels` lists the models of
- * every agent now and on each reload after; before it, an agent offers the model of its row alone. An
- * agent is replaced in the list when the answer for its own models comes. `lastChoice` is the agent and
- * the model chosen last in any conversation.
+ * The shared model catalog and the last model chosen in this window.
  */
 export interface AgentList {
   readonly agents: Readonly<Ref<readonly Agent[] | null>>
@@ -138,11 +134,12 @@ export function createAgentList(
   const listedModels = new Map<string, readonly ConnectionRowOption[]>()
   const failedModels = new Set<string>()
   let latest = 0
-  let isModelsWanted = false
+  let isLoading = false
 
   const reload = async () => {
     if (!connections.listRows) return
     const request = ++latest
+    isLoading = true
     let rows: readonly ConnectionRow[]
     try {
       const all = await connections.listRows(acp.OPERATION_TASK)
@@ -150,7 +147,10 @@ export function createAgentList(
         (row, index) => all.findIndex((one) => one.connectionId === row.connectionId) === index,
       )
     } catch {
-      if (request === latest) agents.value = null
+      if (request === latest) {
+        agents.value = null
+        isLoading = false
+      }
       return
     }
     if (request !== latest) return
@@ -166,11 +166,7 @@ export function createAgentList(
     }
     update()
     await Promise.all(
-      rows.map(async (row, index) => {
-        if (!isModelsWanted) {
-          const field = getField(row, MODELS)
-          if (index !== 0 || !field?.isRequired || row.options[field.key]) return
-        }
+      rows.map(async (row) => {
         try {
           const listed = await listModelOptions(connections, row)
           if (request !== latest) return
@@ -183,15 +179,20 @@ export function createAgentList(
         update()
       }),
     )
+    if (request === latest) isLoading = false
   }
 
   const listModels = async () => {
     const hasEmptyCatalog = agents.value?.some(
       ({ row }) => getField(row, MODELS) && listedModels.get(row.connectionId)?.length === 0,
     )
-    if (isModelsWanted && failedModels.size === 0 && !hasEmptyCatalog) return
-    failedModels.clear()
-    isModelsWanted = true
+    if (
+      isLoading ||
+      (agents.value &&
+        !agents.value.some(({ row }) => failedModels.has(row.connectionId)) &&
+        !hasEmptyCatalog)
+    )
+      return
     await reload()
   }
 
@@ -207,7 +208,8 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
   const chosen = shallowRef<ModelChoice | null>(list.lastChoice.value)
   const chosenReasoning = shallowRef<string | null>(null)
   const reasoningLevels = shallowRef<readonly ReasoningLevelOption[]>([])
-  const isOptionsWanted = shallowRef(false)
+  const reasoningRetry = shallowRef(0)
+  let canRetryReasoning = false
 
   const agents = computed(() => list.agents.value ?? [])
   const options = computed(() =>
@@ -267,35 +269,35 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
   })
 
   const selectedReasoningId = computed(() => {
-    if (chosenReasoning.value !== null) return chosenReasoning.value
+    if (chosen.value?.agentId === current.value?.agentId && chosenReasoning.value !== null)
+      return chosenReasoning.value
     const row = currentRow.value
     if (!row || !isRowModel.value) return ''
     return row.options[getFieldKey(row, REASONING)] ?? ''
   })
 
-  watch(
-    () => [currentRow.value, current.value?.modelId, isOptionsWanted.value] as const,
-    async ([row, modelId, isWanted], _, onCleanup) => {
+  const stopReasoning = watch(
+    [currentRow, () => current.value?.modelId, reasoningRetry],
+    async ([row, modelId], _, onCleanup) => {
       let isStale = false
       onCleanup(() => {
         isStale = true
       })
-      if (!row || modelId === undefined) {
-        reasoningLevels.value = []
-        return
-      }
+      canRetryReasoning = false
+      reasoningLevels.value = []
+      if (!row || modelId === undefined) return
       const field = getFieldKey(row, REASONING)
-      if (!isWanted) {
-        const stored = row.options[field] ?? ''
-        reasoningLevels.value = field && stored ? [{ id: stored, title: stored }] : []
-        return
-      }
+      if (!field) return
+      const stored = selectedReasoningId.value
+      if (stored) reasoningLevels.value = [{ id: stored, title: stored }]
+      if (!connections.listRowOptions) return
       const listed = await listOptions(connections, {
         connectionId: row.connectionId,
         field,
         options: getModelOptions(row, modelId),
       })
       if (!isStale) {
+        canRetryReasoning = listed.length === 0
         reasoningLevels.value = listed.map((one) => ({
           id: one.value,
           title: one.title || one.value,
@@ -305,10 +307,10 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
     { immediate: true },
   )
 
-  /** Lists the models of the agents and the reasoning levels of the choice, once a picker opens. */
+  /** Retry unavailable catalogs when a picker opens. */
   const listChoices = async (): Promise<void> => {
+    if (canRetryReasoning) reasoningRetry.value++
     await list.listModels()
-    isOptionsWanted.value = true
   }
 
   const selectModel = (option: AgentModelOption) => {
@@ -321,10 +323,10 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
    * Takes the agent and the model a conversation saved before a restart, and as the choice of a new
    * conversation where none was made since.
    */
-  const restoreChoice = (saved: ModelChoice) => {
+  const restoreChoice = (saved: ModelChoice, reasoningId?: string) => {
     chosen.value = saved
     list.lastChoice.value ??= saved
-    list.listModels().catch(() => undefined)
+    chosenReasoning.value = reasoningId ?? null
   }
 
   const selectReasoningLevel = (id: string) => {
@@ -362,11 +364,18 @@ export function useAgentChoice(connections: ConnectionHost, list: AgentList) {
           ),
       ),
     },
+    stopReasoning,
     listChoices,
     selectModel,
     selectReasoningLevel,
-    restoreChoice,
-    getChosen: (): ModelChoice | null => chosen.value,
+    persistence: {
+      restoreChoice,
+      getChosen: (): (ModelChoice & { readonly reasoningId?: string }) | null => {
+        const model = chosen.value
+        if (!model || chosenReasoning.value === null) return model
+        return { ...model, reasoningId: chosenReasoning.value }
+      },
+    },
     getPreferredRow,
   }
 }
