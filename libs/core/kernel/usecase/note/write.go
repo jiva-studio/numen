@@ -27,7 +27,6 @@ type Write struct {
 	admission vaultport.WriteAdmission
 }
 
-// NewWrite builds the writer that saves note text and updates the index.
 func NewWrite(
 	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock, admission vaultport.WriteAdmission,
 ) Write {

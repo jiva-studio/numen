@@ -57,7 +57,6 @@ type RenameResult struct {
 // has nothing in it to bring into line, and is moved and not edited.
 var errFilenameNamesIt = errors.New("the filename determines the title")
 
-// Execute renames the note at path to title.
 func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string) (RenameResult, error) {
 	return writeUnder(u.admission, func() (RenameResult, error) { return u.rename(ctx, v, path, title) })
 }

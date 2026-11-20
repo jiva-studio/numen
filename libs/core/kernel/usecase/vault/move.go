@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// MoveFile moves a file or a folder in the vault.
 type MoveFile struct {
 	move      *Move
 	admission vaultport.WriteAdmission
