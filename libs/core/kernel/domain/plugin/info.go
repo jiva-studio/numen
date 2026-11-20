@@ -30,4 +30,5 @@ type Info struct {
 	SettingsViews  []manifest.SettingsView
 	Contributions  []Contribution
 	IsOffByDefault bool
+	Compute        *manifest.Compute
 }

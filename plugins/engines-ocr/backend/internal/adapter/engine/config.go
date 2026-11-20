@@ -6,5 +6,5 @@ import (
 )
 
 func getThreads(cfg settings.Config) int {
-	return cfg.GetThreads(onnx.GetDefaultThreads())
+	return onnx.LimitThreads(cfg.GetThreads(onnx.GetDefaultThreads()), cfg.Compute.ThreadLimit)
 }

@@ -66,7 +66,7 @@ func DefaultTitles() Titles {
 }
 
 func DefaultPerformance() Performance {
-	return Performance{Profile: getAppString(keyProfile)}
+	return Performance{Profile: getAppString(keyProfile), Provider: getAppString(keyProvider)}
 }
 
 // Path is where the settings live.

@@ -25,6 +25,7 @@ func DescribePluginProcesses(statuses []plugin.ProcessStatus) []*v1.PluginProces
 			HealthText:         status.HealthText,
 			StartedBy:          describeHolder(status.StartedBy),
 			Holders:            describeHolders(status.Holders),
+			ModelProviders:     describeModelProviders(status.ModelProviders),
 		})
 	}
 	return out
@@ -45,6 +46,14 @@ func describeHolders(holders []plugin.Holder) []*v1.PluginLeaseHolder {
 	out := make([]*v1.PluginLeaseHolder, 0, len(holders))
 	for _, holder := range holders {
 		out = append(out, describeHolder(holder))
+	}
+	return out
+}
+
+func describeModelProviders(providers []plugin.ModelProvider) []*v1.ModelProvider {
+	out := make([]*v1.ModelProvider, 0, len(providers))
+	for _, row := range providers {
+		out = append(out, &v1.ModelProvider{Stage: row.Stage, Provider: row.Provider})
 	}
 	return out
 }

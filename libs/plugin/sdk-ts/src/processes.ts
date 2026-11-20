@@ -7,6 +7,7 @@ import type { Disposable } from './types'
 // none, and `healthText` the text of that item. `startedBy` is the holder whose lease started the
 // plugin, and `holders` the holders of the leases open now, oldest first.
 export interface PluginProcess {
+  readonly modelProviders: readonly { readonly stage: string; readonly provider: string }[]
   readonly pluginId: string
   readonly pluginName: string
   readonly startTime: number

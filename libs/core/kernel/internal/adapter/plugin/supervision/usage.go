@@ -5,6 +5,8 @@ import (
 	"context"
 	"slices"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/localendpoint"
+
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
@@ -35,6 +37,9 @@ func (r *RunningProcesses) ListProcesses() []plugindomain.Process {
 			LeaseCount: usage.LeaseCount, IsInProcess: usage.IsInProcess,
 			StartedBy: usage.StartedBy, Holders: usage.Holders,
 		}
+		if run := s.runs[id]; run != nil {
+			process.ModelProviders = slices.Clone(run.modelProviders)
+		}
 		switch {
 		case usage.IsIdle && usage.IsUsed:
 			process.IdleStopTime = usage.LastActiveTime.Add(getIdleLimitLocked(s, id, IdleThreshold))
@@ -62,4 +67,24 @@ func (r *RunningProcesses) WatchProcesses(ctx context.Context) <-chan struct{} {
 		s.watchers = slices.DeleteFunc(s.watchers, func(one chan struct{}) bool { return one == watcher })
 	}()
 	return watcher
+}
+
+// A delayed report from a previous process or an older model selection cannot replace the current snapshot.
+func (r *RunningProcesses) SetModelProviders(pluginID, token string, revision uint64, rows []plugindomain.ModelProvider) bool {
+	s := r.sups
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	run := s.runs[pluginID]
+	if run == nil || !localendpoint.IsTokenEqual(run.endpoint.Token, token) {
+		return false
+	}
+	if revision <= run.modelRevision {
+		return true
+	}
+	run.modelRevision = revision
+	if !slices.Equal(run.modelProviders, rows) {
+		run.modelProviders = slices.Clone(rows)
+		notifyLocked(s)
+	}
+	return true
 }

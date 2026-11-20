@@ -6,6 +6,8 @@ package service
 import (
 	"context"
 
+	modelprocess "github.com/jiva-studio/numen/libs/plugin/sdk-go/process"
+
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
@@ -50,7 +52,7 @@ func (a *App) Mount(s *server.Server) error {
 }
 
 func mount(s *server.Server, hosted hostclient.Host, cfg settings.Config, isMock bool) (*feed.Automatic, error) {
-	holder := model.NewHolder(cfg, newOpener(engine.NewRuntime(), isMock, hosted.FetchModelFile))
+	holder := model.NewHolder(cfg, newOpener(engine.NewRuntime(), isMock, hosted.FetchModelFile, modelprocess.NewModelSessions(s, process.Process{}.ReportError)))
 	report := process.Process{}.ReportError
 	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, holder.GetRecognizer, report)
 	requests := transcribe.NewRequests(transcriber, func(id domain.VaultID) transcribe.Vault { return hosted.Vaults(id) })

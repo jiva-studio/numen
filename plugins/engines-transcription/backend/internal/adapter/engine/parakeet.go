@@ -74,9 +74,10 @@ const blankPiece = "<blk>"
 // A Transcriber is the set of models this machine transcribes a recording
 // with.
 type Transcriber struct {
-	encoder *ort.Session
-	decoder *ort.Session
-	joiner  *ort.Session
+	Providers map[string]string
+	encoder   *ort.Session
+	decoder   *ort.Session
+	joiner    *ort.Session
 
 	pieces tokens.Pieces
 	blank  int
@@ -109,6 +110,7 @@ func Open(ctx context.Context, runtime Runtime, cfg settings.Config, fetch Fetch
 	}
 
 	out := &Transcriber{
+		Providers: make(map[string]string),
 		encoder:   nil,
 		decoder:   nil,
 		joiner:    nil,
@@ -130,32 +132,34 @@ func Open(ctx context.Context, runtime Runtime, cfg settings.Config, fetch Fetch
 		{&out.encoder, found.encoder, "encoder", threads.encoder},
 		{&out.decoder, found.decoder, "decoder", threads.decoder},
 		{&out.joiner, found.joiner, "joiner", threads.joiner},
-		{&out.segmenter, found.segmenter, "segmenter model", threads.segmenter},
+		{&out.segmenter, found.segmenter, "segmenter", threads.segmenter},
 	} {
-		session, err := openSession(runtime.library, engine, one.path, one.threads)
+		session, actual, err := openSession(runtime.library, engine, one.path, one.threads, cfg.Provider)
 		if err != nil {
 			return nil, errors.Join(fmt.Errorf("the %s %s: %w", one.kind, one.path, err), out.Close())
 		}
+		out.Providers["Transcription "+one.kind] = string(actual)
 		*one.dst = session
 	}
 	out.cutter = segmenter.New(out.segmenter, cfg.Segmenter, &out.mu, runtime.runner)
 	return out, nil
 }
 
-func openSession(library *onnx.Library, engine *ort.Engine, path string, threads int) (*ort.Session, error) {
+func openSession(library *onnx.Library, engine *ort.Engine, path string, threads int, provider string) (*ort.Session, onnx.Provider, error) {
 	cacheRoot := getCacheRoot()
-	options, _, err := library.NewSessionOptions(engine, onnx.SessionSettings{
-		Provider:     onnx.GetSessionProvider(),
+	options, actual, err := library.NewSessionOptions(engine, onnx.SessionSettings{
+		Provider:     onnx.GetSessionProvider(provider),
 		Threads:      threads,
 		ComputeUnits: onnx.ComputeUnitsDefault,
 		CacheRoot:    cacheRoot,
 		ModelPath:    path,
 	})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer options.Destroy()
-	return onnx.NewSession(engine, cacheRoot, path, options)
+	session, err := onnx.NewSession(engine, cacheRoot, path, options)
+	return session, actual, err
 }
 
 // Close releases the models this transcriber loaded. The runtime they ran on

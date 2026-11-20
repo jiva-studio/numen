@@ -75,7 +75,7 @@ func Defaults() Config {
 			Name: recogDefault, Path: "", Dict: "", Classes: 0, DPI: 300, Height: 0, Jobs: 0, Threads: 0,
 		},
 		Regions:  RegionKinds{Body: nil, Head: nil},
-		Compute:  Compute{Threads: 0, Jobs: 0},
+		Compute:  Compute{Threads: 0, Jobs: 0, Provider: "", ThreadLimit: 0},
 		Progress: nil,
 	}
 }
@@ -169,8 +169,10 @@ func (r RegionKinds) GetHead() []string {
 
 // Compute configures thread counts and session concurrency.
 type Compute struct {
-	Threads int
-	Jobs    int
+	Provider    string
+	ThreadLimit int
+	Threads     int
+	Jobs        int
 }
 
 const (

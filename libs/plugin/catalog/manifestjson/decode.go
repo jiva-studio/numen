@@ -133,7 +133,15 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
 		Contributes:      contributes,
 		IsOffByDefault:   wire.GetIsOffByDefault(),
+		Compute:          newCompute(wire.GetCompute()),
 	}, nil
+}
+
+func newCompute(wire *v1.ManifestCompute) *manifest.Compute {
+	if wire == nil {
+		return nil
+	}
+	return &manifest.Compute{Accelerator: wire.GetAccelerator(), Threads: wire.GetThreads()}
 }
 
 func newBackend(wire *v1.ManifestBackend) manifest.Backend {

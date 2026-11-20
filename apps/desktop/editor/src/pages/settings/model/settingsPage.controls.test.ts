@@ -206,6 +206,7 @@ const create = (timing: Timing, shown: 'system' | 'appearance') => {
         license: configuration.license,
         listFiles: api.vault.file.listFiles,
         listCatalog: api.plugins.listCatalog,
+        processes: api.plugins.processes,
         listRowOptions: configuration.connection.listRowOptions,
       },
       rest,

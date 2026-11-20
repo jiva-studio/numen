@@ -21,7 +21,7 @@ func findDeclaredSetting(t *testing.T, key string) manifest.Setting {
 	return manifest.Setting{}
 }
 
-func TestTheShellDeclaresItsSixSettingsInTheFormatOfAManifest(t *testing.T) {
+func TestTheShellDeclaresItsSettingsInTheFormatOfAManifest(t *testing.T) {
 	for _, key := range []string{
 		"appearance.theme",
 		"appearance.mode",
@@ -29,6 +29,7 @@ func TestTheShellDeclaresItsSixSettingsInTheFormatOfAManifest(t *testing.T) {
 		"appearance.textScale",
 		"naming.syncTitleAndFilename",
 		"performance.profile",
+		"performance.provider",
 	} {
 		declared := findDeclaredSetting(t, key)
 		if declared.Title == "" {
@@ -74,8 +75,9 @@ func TestTheScalesAreRangesWithTheirBoundsAndDefaults(t *testing.T) {
 
 func TestTheModeAndTheProfileAreEnumsOfTheWordsTheFileUses(t *testing.T) {
 	for key, want := range map[string][]string{
-		"appearance.mode":     {"system", "light", "dark"},
-		"performance.profile": {"eco", "low", "balanced", "high", "maximum"},
+		"appearance.mode":      {"system", "light", "dark"},
+		"performance.provider": {"auto", "cpu", "coreml", "cuda", "directml", "rocm"},
+		"performance.profile":  {"eco", "low", "balanced", "high", "maximum"},
 	} {
 		declared := findDeclaredSetting(t, key)
 		var got []string
@@ -139,7 +141,7 @@ func TestEveryDefaultOfTheShellIsReadFromTheDeclaration(t *testing.T) {
 	}
 }
 
-func TestTheSixSettingsOfTheShellAreDeclaredForThePaletteWithTheirIcon(t *testing.T) {
+func TestTheSettingsOfTheShellAreDeclaredForThePaletteWithTheirIcon(t *testing.T) {
 	for _, key := range []string{
 		"appearance.theme",
 		"appearance.mode",
@@ -147,6 +149,7 @@ func TestTheSixSettingsOfTheShellAreDeclaredForThePaletteWithTheirIcon(t *testin
 		"appearance.textScale",
 		"naming.syncTitleAndFilename",
 		"performance.profile",
+		"performance.provider",
 	} {
 		declared := findDeclaredSetting(t, key)
 		if !declared.Palette {

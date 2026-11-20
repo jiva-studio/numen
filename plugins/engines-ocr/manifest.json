@@ -33,6 +33,7 @@
     ]
   },
   "permissions": ["vault:read", "vault:write", "link:open"],
+  "compute": { "accelerator": true, "threads": true },
   "dependencies": [
     {
       "id": "onnxruntime",

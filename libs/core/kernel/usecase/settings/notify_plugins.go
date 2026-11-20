@@ -43,26 +43,22 @@ func NewNotifyPlugins(deps NotifyPluginsDeps) *NotifyPlugins {
 	}
 }
 
-func getPerformancePath() []string {
-	return []string{settingsdomain.AppOwner, "performance", "profile"}
-}
-
 // Execute gives the plugins a batch of changed settings: their own settings and the
 // performance profile. A failure is reported and the rest of the batch is still given.
 func (u *NotifyPlugins) Execute(batch []settingsdomain.Setting) {
 	u.updatePluginSettings(batch)
 	defer u.signal()
 	for _, one := range batch {
-		if !slices.Equal(one.Path, getPerformancePath()) {
+		if len(one.Path) != 3 || one.Path[0] != settingsdomain.AppOwner || one.Path[1] != "performance" {
 			continue
 		}
-		value, err := u.codec.Decode(one.JSON)
-		profile, isText := value.(string)
-		if err != nil || !isText {
-			u.report(fmt.Errorf("the performance profile is not a name: %s", one.JSON))
-			continue
+		performance, err := u.resolveProfile()
+		if err != nil {
+			u.report(fmt.Errorf("read performance settings: %w", err))
+			return
 		}
-		u.config.SetPerformance(context.Background(), u.resolveProfile(profile))
+		u.config.SetPerformance(context.Background(), performance)
+		return
 	}
 }
 

@@ -165,6 +165,42 @@
       ]
     },
     {
+      "key": "performance.provider",
+      "type": "enum",
+      "title": "Model execution provider",
+      "icon": "cpu",
+      "description": "Hardware used when opening local model sessions.",
+      "details": "Auto keeps the default of each engine. A model-specific provider or NUMEN_ONNX_PROVIDER takes precedence. An open session keeps its provider until it closes.",
+      "default": "auto",
+      "palette": true,
+      "options": [
+        {
+          "value": "auto",
+          "title": "Auto"
+        },
+        {
+          "value": "cpu",
+          "title": "CPU"
+        },
+        {
+          "value": "coreml",
+          "title": "Core ML"
+        },
+        {
+          "value": "cuda",
+          "title": "CUDA"
+        },
+        {
+          "value": "directml",
+          "title": "DirectML"
+        },
+        {
+          "value": "rocm",
+          "title": "ROCm"
+        }
+      ]
+    },
+    {
       "key": "search.reranking",
       "type": "connections",
       "title": "Reranking",

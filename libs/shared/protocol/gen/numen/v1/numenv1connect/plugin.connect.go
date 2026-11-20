@@ -52,6 +52,9 @@ const (
 	// PluginServiceWatchPluginProcessesProcedure is the fully-qualified name of the PluginService's
 	// WatchPluginProcesses RPC.
 	PluginServiceWatchPluginProcessesProcedure = "/numen.v1.PluginService/WatchPluginProcesses"
+	// PluginServiceReportModelProvidersProcedure is the fully-qualified name of the PluginService's
+	// ReportModelProviders RPC.
+	PluginServiceReportModelProvidersProcedure = "/numen.v1.PluginService/ReportModelProviders"
 	// PluginServiceReleaseProcessProcedure is the fully-qualified name of the PluginService's
 	// ReleaseProcess RPC.
 	PluginServiceReleaseProcessProcedure = "/numen.v1.PluginService/ReleaseProcess"
@@ -194,6 +197,8 @@ type PluginServiceClient interface {
 	// that holds a lease as soon as it returns the last. A lease taken after
 	// the call cancels it. A plugin calls it through the host endpoint, which
 	// names the plugin by its token. A plugin with no process answers success.
+	// The process reports the providers of its currently open model stages.
+	ReportModelProviders(context.Context, *connect.Request[v1.ReportModelProvidersRequest]) (*connect.Response[v1.ReportModelProvidersResponse], error)
 	ReleaseProcess(context.Context, *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error)
 }
 
@@ -220,6 +225,12 @@ func NewPluginServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(pluginServiceMethods.ByName("WatchPluginProcesses")),
 			connect.WithClientOptions(opts...),
 		),
+		reportModelProviders: connect.NewClient[v1.ReportModelProvidersRequest, v1.ReportModelProvidersResponse](
+			httpClient,
+			baseURL+PluginServiceReportModelProvidersProcedure,
+			connect.WithSchema(pluginServiceMethods.ByName("ReportModelProviders")),
+			connect.WithClientOptions(opts...),
+		),
 		releaseProcess: connect.NewClient[v1.ReleaseProcessRequest, v1.ReleaseProcessResponse](
 			httpClient,
 			baseURL+PluginServiceReleaseProcessProcedure,
@@ -233,6 +244,7 @@ func NewPluginServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 type pluginServiceClient struct {
 	getPlugins           *connect.Client[v1.GetPluginsRequest, v1.GetPluginsResponse]
 	watchPluginProcesses *connect.Client[v1.WatchPluginProcessesRequest, v1.WatchPluginProcessesResponse]
+	reportModelProviders *connect.Client[v1.ReportModelProvidersRequest, v1.ReportModelProvidersResponse]
 	releaseProcess       *connect.Client[v1.ReleaseProcessRequest, v1.ReleaseProcessResponse]
 }
 
@@ -244,6 +256,11 @@ func (c *pluginServiceClient) GetPlugins(ctx context.Context, req *connect.Reque
 // WatchPluginProcesses calls numen.v1.PluginService.WatchPluginProcesses.
 func (c *pluginServiceClient) WatchPluginProcesses(ctx context.Context, req *connect.Request[v1.WatchPluginProcessesRequest]) (*connect.ServerStreamForClient[v1.WatchPluginProcessesResponse], error) {
 	return c.watchPluginProcesses.CallServerStream(ctx, req)
+}
+
+// ReportModelProviders calls numen.v1.PluginService.ReportModelProviders.
+func (c *pluginServiceClient) ReportModelProviders(ctx context.Context, req *connect.Request[v1.ReportModelProvidersRequest]) (*connect.Response[v1.ReportModelProvidersResponse], error) {
+	return c.reportModelProviders.CallUnary(ctx, req)
 }
 
 // ReleaseProcess calls numen.v1.PluginService.ReleaseProcess.
@@ -262,6 +279,8 @@ type PluginServiceHandler interface {
 	// that holds a lease as soon as it returns the last. A lease taken after
 	// the call cancels it. A plugin calls it through the host endpoint, which
 	// names the plugin by its token. A plugin with no process answers success.
+	// The process reports the providers of its currently open model stages.
+	ReportModelProviders(context.Context, *connect.Request[v1.ReportModelProvidersRequest]) (*connect.Response[v1.ReportModelProvidersResponse], error)
 	ReleaseProcess(context.Context, *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error)
 }
 
@@ -284,6 +303,12 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(pluginServiceMethods.ByName("WatchPluginProcesses")),
 		connect.WithHandlerOptions(opts...),
 	)
+	pluginServiceReportModelProvidersHandler := connect.NewUnaryHandler(
+		PluginServiceReportModelProvidersProcedure,
+		svc.ReportModelProviders,
+		connect.WithSchema(pluginServiceMethods.ByName("ReportModelProviders")),
+		connect.WithHandlerOptions(opts...),
+	)
 	pluginServiceReleaseProcessHandler := connect.NewUnaryHandler(
 		PluginServiceReleaseProcessProcedure,
 		svc.ReleaseProcess,
@@ -296,6 +321,8 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect.HandlerOp
 			pluginServiceGetPluginsHandler.ServeHTTP(w, r)
 		case PluginServiceWatchPluginProcessesProcedure:
 			pluginServiceWatchPluginProcessesHandler.ServeHTTP(w, r)
+		case PluginServiceReportModelProvidersProcedure:
+			pluginServiceReportModelProvidersHandler.ServeHTTP(w, r)
 		case PluginServiceReleaseProcessProcedure:
 			pluginServiceReleaseProcessHandler.ServeHTTP(w, r)
 		default:
@@ -313,6 +340,10 @@ func (UnimplementedPluginServiceHandler) GetPlugins(context.Context, *connect.Re
 
 func (UnimplementedPluginServiceHandler) WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest], *connect.ServerStream[v1.WatchPluginProcessesResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.WatchPluginProcesses is not implemented"))
+}
+
+func (UnimplementedPluginServiceHandler) ReportModelProviders(context.Context, *connect.Request[v1.ReportModelProvidersRequest]) (*connect.Response[v1.ReportModelProvidersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.ReportModelProviders is not implemented"))
 }
 
 func (UnimplementedPluginServiceHandler) ReleaseProcess(context.Context, *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error) {

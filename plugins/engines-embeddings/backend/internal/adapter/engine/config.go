@@ -12,7 +12,7 @@ func getProvider(m model.LocalModel) onnx.Provider {
 	// A model that names no provider runs on the one the host chose, which is auto when it chose none.
 	name := m.Provider
 	if name == "" {
-		name = string(onnx.GetProvider())
+		name = string(onnx.GetProvider(""))
 	}
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "cpu":

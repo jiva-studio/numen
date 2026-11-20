@@ -60,7 +60,7 @@ const owner = computed<PluginInfo>(() => ({
   capabilities: [],
   hasFrontend: false,
   hasBackend: false,
-  settings: props.manager.app.value.filter((one) => getSectionOf(one.key) === props.section),
+  settings: props.settings.app.value.filter((one) => getSectionOf(one.key) === props.section),
 }))
 
 /* -------------------------------- Handlers -------------------------------- */

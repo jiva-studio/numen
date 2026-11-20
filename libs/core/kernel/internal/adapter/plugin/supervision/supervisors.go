@@ -35,10 +35,12 @@ type Supervisors struct {
 // processRun is the process of a plugin that runs: its endpoint, the ports it reported for its
 // listeners, when it started and whether the plugin released it.
 type processRun struct {
-	endpoint      transport.Endpoint
-	listenerPorts map[string]int
-	startTime     time.Time
-	isReleased    bool
+	endpoint       transport.Endpoint
+	listenerPorts  map[string]int
+	modelProviders []plugin.ModelProvider
+	modelRevision  uint64
+	startTime      time.Time
+	isReleased     bool
 }
 
 // NewSupervisors returns the supervisors of a host that has no plugin. report receives the problems

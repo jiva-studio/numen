@@ -25,6 +25,7 @@ const (
 	keyTextScale      = "appearance.textScale"
 	keySyncNaming     = "naming.syncTitleAndFilename"
 	keyProfile        = "performance.profile"
+	keyProvider       = "performance.provider"
 	keyLogLevel       = "logging.level"
 )
 

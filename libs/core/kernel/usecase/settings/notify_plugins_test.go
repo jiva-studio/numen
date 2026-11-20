@@ -17,7 +17,7 @@ func setting(json string, path ...string) settingsdomain.Setting {
 func newNotifier(host *pluginHost, signal func(), report func(error)) *settings.NotifyPlugins {
 	return settings.NewNotifyPlugins(settings.NotifyPluginsDeps{
 		Codec: jsonCodec{}, Apply: host.UpdatePluginSetting, Config: host,
-		ResolveProfile: func(profile string) plugin.Performance { return plugin.Performance{Profile: "resolved-" + profile} }, Signal: signal, Report: report,
+		ResolveProfile: func() (plugin.Performance, error) { return plugin.Performance{Profile: "fast", Provider: "cuda"}, nil }, Signal: signal, Report: report,
 	})
 }
 
@@ -52,7 +52,7 @@ func TestNotifyPluginsFollowsTheProfile(t *testing.T) {
 		setting(`"fast"`, "app", "performance", "profile"),
 	})
 
-	if !slices.Equal(host.profiles, []string{"resolved-fast"}) {
+	if !slices.Equal(host.profiles, []string{"fast"}) {
 		t.Errorf("profiles = %v", host.profiles)
 	}
 	if len(reported) != 0 {

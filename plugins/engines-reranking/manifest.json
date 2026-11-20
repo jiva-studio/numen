@@ -35,6 +35,7 @@
     ]
   },
   "permissions": ["link:open"],
+  "compute": { "accelerator": true, "threads": true },
   "dependencies": [
     {
       "id": "onnxruntime",

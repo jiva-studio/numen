@@ -37,18 +37,26 @@ func ResolveLibrary(configured, dir string) string {
 }
 
 // GetProvider returns the execution provider the host chose, or DefaultProvider.
-func GetProvider() Provider {
+func GetProvider(configured string) Provider {
 	if name := os.Getenv(EnvProvider); name != "" {
 		return Provider(name)
 	}
-	return DefaultProvider
+	return Provider(cmp.Or(configured, string(DefaultProvider)))
 }
 
 // GetSessionProvider returns the execution provider a plugin opens its sessions
 // on: the one the host named, else the CPU.
-func GetSessionProvider() Provider {
-	if name := GetProvider(); !strings.EqualFold(strings.TrimSpace(string(name)), string(DefaultProvider)) {
+func GetSessionProvider(configured string) Provider {
+	if name := GetProvider(configured); !strings.EqualFold(strings.TrimSpace(string(name)), string(DefaultProvider)) {
 		return name
 	}
 	return ProviderCPU
+}
+
+// LimitThreads bounds the requested session thread count by the host budget. A zero limit is unconstrained.
+func LimitThreads(requested, limit int) int {
+	if limit > 0 {
+		return min(requested, limit)
+	}
+	return requested
 }

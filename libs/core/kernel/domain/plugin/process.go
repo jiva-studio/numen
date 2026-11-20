@@ -5,18 +5,25 @@ import (
 	"time"
 )
 
+// ModelProvider names a running model stage and its execution provider.
+type ModelProvider struct {
+	Stage    string
+	Provider string
+}
+
 // Process is the process of a plugin that runs. LastUseTime is when a lease was last taken or
 // returned. IdleStopTime is from when the core stops the process for idleness, and zero while it
 // holds a lease or runs inside the core.
 type Process struct {
-	PluginID     string
-	StartTime    time.Time
-	LastUseTime  time.Time
-	LeaseCount   int
-	IsInProcess  bool
-	IdleStopTime time.Time
-	StartedBy    Holder
-	Holders      []Holder
+	PluginID       string
+	StartTime      time.Time
+	LastUseTime    time.Time
+	LeaseCount     int
+	IsInProcess    bool
+	IdleStopTime   time.Time
+	ModelProviders []ModelProvider
+	StartedBy      Holder
+	Holders        []Holder
 }
 
 // ProcessStatus is a process that runs, with the name of its plugin and the worst health item of the
@@ -54,7 +61,7 @@ type ProcessList struct {
 func IsSameProcess(a, b Process) bool {
 	return a.PluginID == b.PluginID && a.StartTime == b.StartTime && a.LastUseTime == b.LastUseTime &&
 		a.LeaseCount == b.LeaseCount && a.IsInProcess == b.IsInProcess && a.IdleStopTime == b.IdleStopTime &&
-		a.StartedBy == b.StartedBy && slices.Equal(a.Holders, b.Holders)
+		a.StartedBy == b.StartedBy && slices.Equal(a.Holders, b.Holders) && slices.Equal(a.ModelProviders, b.ModelProviders)
 }
 
 // IsSameStatus reports whether two statuses say the same.

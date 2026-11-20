@@ -36,6 +36,13 @@ message Manifest {
   ManifestContributes contributes = 26;
   // is_off_by_default keeps the plugin off until the person enables it.
   bool is_off_by_default = 27;
+  // Hardware controls honored by the backend.
+  ManifestCompute compute = 28;
+}
+
+message ManifestCompute {
+  bool accelerator = 1;
+  bool threads = 2;
 }
 
 // ManifestContributes lists the contributions a plugin makes to the application.

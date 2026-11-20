@@ -3,12 +3,15 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"io/fs"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/process"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
@@ -26,7 +29,7 @@ func newTestProvider(t *testing.T) connection.Provider {
 	t.Setenv("NUMEN_PLUGIN_DATA_DIR", t.TempDir())
 	r, err := openRerankingUseCase(hosttest.NewQueue().EnqueueWork, func(context.Context, string, string) (string, error) {
 		return "", errors.New("model unavailable offline")
-	})
+	}, process.NewModelSessions(server.New(), console.Report))
 	if err != nil {
 		t.Fatal(err)
 	}

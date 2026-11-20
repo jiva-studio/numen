@@ -3,6 +3,7 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/health.proto";
+import "numen/v1/manifest.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
@@ -141,6 +142,7 @@ message PluginInfo {
   repeated PluginContribution contributions = 15;
   // Whether the plugin stays off until the person enables it, when its settings hold no enabled value.
   bool is_off_by_default = 16;
+  ManifestCompute compute = 17;
   reserved 10;
 }
 
@@ -224,6 +226,9 @@ service PluginService {
   // that holds a lease as soon as it returns the last. A lease taken after
   // the call cancels it. A plugin calls it through the host endpoint, which
   // names the plugin by its token. A plugin with no process answers success.
+  // The process reports the providers of its currently open model stages.
+  rpc ReportModelProviders(ReportModelProvidersRequest) returns (ReportModelProvidersResponse);
+
   rpc ReleaseProcess(ReleaseProcessRequest) returns (ReleaseProcessResponse);
 }
 
@@ -234,6 +239,14 @@ message GetPluginsResponse {
 }
 
 message WatchPluginProcessesRequest {}
+
+message ReportModelProvidersRequest {
+  repeated ModelProvider providers = 1;
+  // Increases with each change to the open stages for this process.
+  uint64 revision = 2;
+}
+
+message ReportModelProvidersResponse {}
 
 message ReleaseProcessRequest {}
 
@@ -287,6 +300,13 @@ message PluginProcess {
 
   // The holders of the leases open now, oldest first.
   repeated PluginLeaseHolder holders = 11;
+  repeated ModelProvider model_providers = 12;
+}
+
+// ModelProvider identifies the execution provider an open model stage uses.
+message ModelProvider {
+  string stage = 1;
+  string provider = 2;
 }
 
 // PluginLeaseHolder is who holds a lease on a plugin process and why.

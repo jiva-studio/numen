@@ -7,12 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"maps"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
+
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
@@ -23,9 +26,9 @@ import (
 
 // configPlugins is what the push reads of the set of plugins.
 type configPlugins interface {
+	getKnownPlugin(pluginID string) (manifest.Discovered, bool)
 	listIDs() []string
 	getPluginSettings(pluginID string) map[string]any
-	GetVersion(pluginID string) string
 	isPluginEnabled(pluginID string) bool
 }
 
@@ -98,10 +101,11 @@ func (c *ConfigPush) GetPluginConfigRevision(pluginID string) string {
 	if err != nil {
 		return ""
 	}
-	performance := c.getPerformance()
+	discovered, _ := c.set.getKnownPlugin(pluginID)
+	performance := c.getPerformance(discovered.Manifest.Compute)
 	parts := []string{
-		c.set.GetVersion(pluginID), string(encoded),
-		performance.Profile, strconv.Itoa(performance.Threads), strconv.Itoa(performance.Nice),
+		discovered.Manifest.Version, string(encoded),
+		performance.Profile, performance.Provider, strconv.Itoa(performance.Threads), strconv.Itoa(performance.Nice),
 	}
 	digest := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
 	return hex.EncodeToString(digest[:])
@@ -146,17 +150,24 @@ func (c *ConfigPush) SetPerformance(ctx context.Context, performance plugindomai
 
 // GetProcessNice returns the configured niceness for a newly launched plugin.
 func (c *ConfigPush) GetProcessNice() int {
-	profile := c.getPerformance()
+	profile := c.getPerformance(nil)
 	if profile.Profile == "" {
 		return machine.ResolveCompute(machine.ProfileBalanced, machine.Specs{}).Nice
 	}
 	return profile.Nice
 }
 
-func (c *ConfigPush) getPerformance() plugindomain.Performance {
+func (c *ConfigPush) getPerformance(compute *manifest.Compute) plugindomain.Performance {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.performance
+	performance := c.performance
+	if compute != nil && !compute.Threads {
+		performance.Threads = 0
+	}
+	if compute == nil || !compute.Accelerator {
+		performance.Provider = ""
+	}
+	return performance
 }
 
 func (c *ConfigPush) awaitFirstConfigure(pluginID string) {
@@ -200,7 +211,8 @@ func (c *ConfigPush) RecordConfigureAnswer(pluginID string, refused *delivery.Re
 }
 
 func (c *ConfigPush) GetSnapshot(pluginID string) (delivery.Snapshot, bool, error) {
-	performance := c.getPerformance()
+	discovered, _ := c.set.getKnownPlugin(pluginID)
+	performance := c.getPerformance(discovered.Manifest.Compute)
 	endpoint, hasEndpoint := c.sups.GetEndpoint(pluginID)
 	sup, hasSup := c.sups.Get(pluginID)
 	if !hasEndpoint || !hasSup {

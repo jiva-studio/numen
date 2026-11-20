@@ -38,6 +38,7 @@ Two things are not settings and are not in here: which files count as notes, and
 | | | |
 | --- | --- | --- |
 | `profile` | text | how much of the hardware indexing and models may use. One of `eco`, `low`, `balanced`, `high`, `maximum`. |
+| `provider` | text | auto keeps the default of each engine. A model-specific provider or NUMEN_ONNX_PROVIDER takes precedence. An open session keeps its provider until it closes. One of `auto`, `cpu`, `coreml`, `cuda`, `directml`, `rocm`. |
 
 ### `app.editor`
 

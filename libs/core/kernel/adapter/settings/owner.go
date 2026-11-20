@@ -100,7 +100,9 @@ func (f *File) resetApp(declared manifest.Setting) {
 	case keySyncNaming:
 		f.Titles = DefaultTitles()
 	case keyProfile:
-		f.Performance = DefaultPerformance()
+		f.Performance.Profile = getAppString(keyProfile)
+	case keyProvider:
+		f.Performance.Provider = getAppString(keyProvider)
 	default:
 		f.Editor.reset(declared.Key)
 		f.Search.reset(declared.Key)

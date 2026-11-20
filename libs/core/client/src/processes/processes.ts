@@ -13,6 +13,7 @@ import {
  * the plugin holds a lease.
  */
 export interface PluginProcess {
+  readonly modelProviders: readonly { readonly stage: string; readonly provider: string }[]
   readonly pluginId: string
   readonly pluginName: string
   readonly startTime: number
@@ -53,6 +54,7 @@ const HEALTH: Readonly<Partial<Record<HealthSeverity, PluginProcess['health']>>>
 }
 
 const readProcess = (one: PluginProcessMessage): PluginProcess => ({
+  modelProviders: one.modelProviders.map(({ stage, provider }) => ({ stage, provider })),
   pluginId: one.pluginId,
   pluginName: one.pluginName,
   startTime: Number(one.startTimeUnixMs),

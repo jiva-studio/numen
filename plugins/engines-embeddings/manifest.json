@@ -8,6 +8,7 @@
   "targets": ["desktop.editor"],
   "contributes": { "category": "engines" },
   "permissions": ["vault:read", "link:open", "index:read"],
+  "compute": { "accelerator": true, "threads": true },
   "dependencies": [
     {
       "id": "onnxruntime",

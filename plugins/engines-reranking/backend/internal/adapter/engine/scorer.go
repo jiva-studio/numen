@@ -4,10 +4,13 @@ import (
 	"cmp"
 	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"runtime"
 	"slices"
 	"sync"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
@@ -28,6 +31,7 @@ const outputLogits = "logits"
 
 // Scorer is one cross-encoder, loaded.
 type Scorer struct {
+	Provider onnx.Provider
 	name     string
 	pairs    *pairTokenizer
 	isTyped  bool
@@ -39,15 +43,15 @@ type Scorer struct {
 // Open loads the model of p, fetching its files first where this machine does not hold them. It fails on a
 // graph that takes an input other than the tokens, the mask and the token types, or answers more than one
 // logit for a pair.
-func Open(ctx context.Context, library *onnx.Library, p profile.Profile, fetch onnx.FetchFile, queue host.InferenceQueue) (*Scorer, error) {
+func Open(ctx context.Context, library *onnx.Library, p profile.Profile, fetch onnx.FetchFile, queue host.InferenceQueue, compute performance.Compute) (*Scorer, error) {
 	paths, err := Locate(ctx, p, fetch)
 	if err != nil {
 		return nil, err
 	}
-	return host.OpenModel(ctx, queue, func() (*Scorer, error) { return openModel(ctx, library, p, paths) })
+	return host.OpenModel(ctx, queue, func() (*Scorer, error) { return openModel(ctx, library, p, paths, compute) })
 }
 
-func openModel(ctx context.Context, library *onnx.Library, p profile.Profile, paths onnx.ModelFiles) (*Scorer, error) {
+func openModel(ctx context.Context, library *onnx.Library, p profile.Profile, paths onnx.ModelFiles, compute performance.Compute) (*Scorer, error) {
 	pairs, err := loadPairTokenizer(paths.Tokenizer, p.MaxTokens)
 	if err != nil {
 		return nil, err
@@ -56,8 +60,8 @@ func openModel(ctx context.Context, library *onnx.Library, p profile.Profile, pa
 	if err != nil {
 		return nil, err
 	}
-	settings := getSessionSettings(paths.Model)
-	options, _, err := library.NewSessionOptions(engine, settings)
+	settings := getSessionSettings(paths.Model, compute.Provider, compute.ThreadLimit)
+	options, actual, err := library.NewSessionOptions(engine, settings)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +70,7 @@ func openModel(ctx context.Context, library *onnx.Library, p profile.Profile, pa
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", paths.Model, err)
 	}
-	s, err := newScorer(p.ID, pairs, session)
+	s, err := newScorer(p.ID, pairs, session, actual)
 	if err != nil {
 		session.Destroy()
 		return nil, err
@@ -78,7 +82,7 @@ func openModel(ctx context.Context, library *onnx.Library, p profile.Profile, pa
 	return s, nil
 }
 
-func newScorer(name string, pairs *pairTokenizer, session *ort.Session) (*Scorer, error) {
+func newScorer(name string, pairs *pairTokenizer, session *ort.Session, provider onnx.Provider) (*Scorer, error) {
 	inputs, err := checkInputs(name, session.InputNames)
 	if err != nil {
 		return nil, err
@@ -88,6 +92,7 @@ func newScorer(name string, pairs *pairTokenizer, session *ort.Session) (*Scorer
 		return nil, fmt.Errorf("%s: %w", name, err)
 	}
 	return &Scorer{
+		Provider: provider,
 		name:     name,
 		pairs:    pairs,
 		isTyped:  inputs.isTyped,

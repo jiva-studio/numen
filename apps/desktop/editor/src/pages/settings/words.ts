@@ -4,6 +4,9 @@ import { PLUGIN_WORDS } from '@numen/plugin-manager'
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {
   ...PLUGIN_WORDS,
+  executionProvider: 'Execution provider',
+  pluginStopped: 'Plugin is stopped',
+  noModelLoaded: 'No model loaded',
   /** Shown in place of the settings file path until the path is known. */
   file: 'numen.json in the configuration folder',
   /** Accessible name of the search field in a long model list. */
