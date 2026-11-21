@@ -68,7 +68,9 @@ const removeTag = async (
  * tag picked from each of those notes in one SetTags call. A note that cannot be written keeps the tag
  * and the command fails with the reason.
  */
-export function createDeleteTag(deps: DeleteTagDeps): Omit<CommandRegistration, 'id'> {
+export function createDeleteTag(
+  deps: DeleteTagDeps,
+): Required<Pick<CommandRegistration, 'listItems' | 'handler'>> {
   return {
     listItems: async (): Promise<readonly CommandItem[]> => {
       const grouped = groupByTag(await readTagMap(deps.api))
