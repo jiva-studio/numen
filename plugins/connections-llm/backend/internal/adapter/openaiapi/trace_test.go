@@ -73,7 +73,9 @@ func TestAnswerTraceKeepsOnlyChosenHeaders(t *testing.T) {
 	gateway, entries, call := traceServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("X-Request-Id", "req-1")
 		w.Header().Set("Set-Cookie", "session=private")
-		_, _ = io.WriteString(w, `{"echo":"sk-secret"}`)
+		if _, err := io.WriteString(w, `{"echo":"sk-secret"}`); err != nil {
+			panic(err)
+		}
 	})
 	var out map[string]any
 
@@ -107,7 +109,9 @@ func TestAnswerTraceKeepsOnlyChosenHeaders(t *testing.T) {
 func TestABodyThatEndsEarlyIsTracedAsAFailureOfTheRead(t *testing.T) {
 	gateway, entries, call := traceServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Length", "100")
-		_, _ = io.WriteString(w, "{")
+		if _, err := io.WriteString(w, "{"); err != nil {
+			panic(err)
+		}
 	})
 	var out map[string]any
 

@@ -17,9 +17,11 @@ const maxLoggedBodyBytes = 2 << 10
 
 const redacted = "[redacted]"
 
-var keptHeaders = []string{"Content-Type", "X-Request-Id", "Cf-Ray", "Retry-After", "X-Ratelimit-Limit-Requests",
-	"X-Ratelimit-Remaining-Requests", "X-Ratelimit-Reset-Requests", "X-Ratelimit-Limit-Tokens",
-	"X-Ratelimit-Remaining-Tokens", "X-Ratelimit-Reset-Tokens"}
+func keptHeaders() []string {
+	return []string{"Content-Type", "X-Request-Id", "Cf-Ray", "Retry-After", "X-Ratelimit-Limit-Requests",
+		"X-Ratelimit-Remaining-Requests", "X-Ratelimit-Reset-Requests", "X-Ratelimit-Limit-Tokens",
+		"X-Ratelimit-Remaining-Tokens", "X-Ratelimit-Reset-Tokens"}
+}
 
 var bearerPattern = regexp.MustCompile(`(?i)(bearer\s+)[A-Za-z0-9._~+/=-]+`)
 
@@ -53,7 +55,7 @@ func (g *Gateway) traceResponse(
 		"path": path, "status": response.StatusCode, "response_bytes": size,
 		"elapsed_ms": time.Since(started).Milliseconds(), "limit_ms": limit.Milliseconds(),
 	}
-	for _, name := range keptHeaders {
+	for _, name := range keptHeaders() {
 		if value := response.Header.Get(name); value != "" {
 			properties[strings.ToLower(name)] = redact(value, key)
 		}

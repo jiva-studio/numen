@@ -20,7 +20,6 @@ export interface DocumentEmit {
   (e: 'change', value: string): void
 }
 
-/** The state of a note tab; the state of a reader tab carries no body, so the editor reads the file itself. */
 function getNoteState(props: DocumentOptions): NoteTabState | undefined {
   return props.state && 'body' in props.state ? props.state : undefined
 }
