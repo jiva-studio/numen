@@ -112,7 +112,7 @@ function onSaveRecording() {
 }
 
 .media-recorder__preview-title {
-  --preview-title-font-size: 0.9375rem;
+  --preview-title-font-size: var(--numen-font-size);
   margin: 0;
   font-size: var(--preview-title-font-size);
   font-weight: 600;
@@ -129,7 +129,7 @@ function onSaveRecording() {
   --btn-gap: 0.5rem;
   --btn-padding-block: 0.625rem;
   --btn-padding-inline: 1.25rem;
-  --btn-font-size: 0.9375rem;
+  --btn-font-size: var(--numen-font-size);
   display: inline-flex;
   align-items: center;
   gap: var(--btn-gap);
@@ -164,7 +164,7 @@ function onSaveRecording() {
 }
 
 .media-recorder__time {
-  --time-font-size: 0.8125rem;
+  --time-font-size: var(--numen-font-size);
   font-size: var(--time-font-size);
   font-variant-numeric: tabular-nums;
   color: var(--numen-hushed);
@@ -177,7 +177,7 @@ function onSaveRecording() {
 .media-recorder__save-btn {
   --save-btn-padding-block: 0.5rem;
   --save-btn-padding-inline: 1rem;
-  --save-btn-font-size: 0.8125rem;
+  --save-btn-font-size: var(--numen-font-size);
   margin-inline-start: auto;
   padding: var(--save-btn-padding-block) var(--save-btn-padding-inline);
   font-size: var(--save-btn-font-size);

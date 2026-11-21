@@ -175,7 +175,7 @@ function onOpen(url: string) {
 .caution__dismiss {
   --dismiss-pad-block: 0.125rem;
   --dismiss-pad-inline: 0.375rem;
-  --dismiss-text: 1.125rem;
+  --dismiss-text: var(--numen-title-size);
   display: inline-flex;
   align-items: center;
   justify-content: center;

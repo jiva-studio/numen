@@ -91,7 +91,7 @@ function onAction(type: RecordAction) {
   --btn-gap: 0.5rem;
   --btn-padding-block: 0.625rem;
   --btn-padding-inline: 1.25rem;
-  --btn-font-size: 0.9375rem;
+  --btn-font-size: var(--numen-font-size);
   display: inline-flex;
   align-items: center;
   gap: var(--btn-gap);
