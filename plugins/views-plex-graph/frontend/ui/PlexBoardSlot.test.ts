@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
-import { defineComponent, h } from 'vue'
+import { describe, expect, it, vi } from 'vitest'
+import { defineComponent, h, ref } from 'vue'
 import PlexBoardSlot from './PlexBoardSlot.vue'
 
 const control = (name: string) =>
@@ -29,6 +29,29 @@ describe('PlexBoardSlot', () => {
     const wrapper = mount(PlexBoardSlot, { props: { place: 'top', entries: [], ...board } })
 
     expect(wrapper.find('.plex-board').exists()).toBe(false)
+  })
+
+  it('takes no room while none of its views draws anything', () => {
+    const silent = defineComponent({ render: () => null })
+    const wrapper = mount(PlexBoardSlot, {
+      props: { place: 'top', entries: [{ key: 'a/view/one', component: silent }], ...board },
+    })
+
+    expect(wrapper.get('.plex-board').attributes('style')).toContain('display: none')
+  })
+
+  it('takes room once a view draws', async () => {
+    const drawing = ref(false)
+    const sometimes = defineComponent({ render: () => (drawing.value ? h('button', 'go') : null) })
+    const wrapper = mount(PlexBoardSlot, {
+      props: { place: 'top', entries: [{ key: 'a/view/one', component: sometimes }], ...board },
+    })
+
+    drawing.value = true
+
+    await vi.waitFor(() =>
+      expect(wrapper.get('.plex-board').attributes('style') ?? '').not.toContain('display: none'),
+    )
   })
 
   it('gives each view the board key, the path of the note in front and go', () => {
