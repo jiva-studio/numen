@@ -23,39 +23,6 @@ export class Bullet extends WidgetType {
   }
 }
 
-/** A task's box, which is ticked by clicking it. */
-export class Box extends WidgetType {
-  constructor(
-    readonly isTicked: boolean,
-    readonly isWritable: boolean,
-  ) {
-    super()
-  }
-
-  override eq(other: Box) {
-    return other.isTicked === this.isTicked && other.isWritable === this.isWritable
-  }
-
-  toDOM(view: EditorView) {
-    const box = doc.createElement('input')
-    box.type = 'checkbox'
-    box.className = 'cm-box'
-    box.checked = this.isTicked
-    box.disabled = !this.isWritable
-    box.addEventListener('mousedown', (event) => event.preventDefault())
-    box.addEventListener('click', () => {
-      if (!this.isWritable) return
-      const pos = view.posAtDOM(box)
-      const marker = view.state.doc.sliceString(pos, pos + 3)
-      if (marker.length !== 3) return
-      view.dispatch({
-        changes: { from: pos, to: pos + 3, insert: this.isTicked ? '[ ]' : '[x]' },
-      })
-    })
-    return box
-  }
-}
-
 /** The horizontal rule that a `---` renders. */
 export class Rule extends WidgetType {
   override eq() {

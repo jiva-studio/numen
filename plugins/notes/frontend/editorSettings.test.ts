@@ -48,7 +48,7 @@ const openTab = async () => {
 describe('the editor of a note tab', () => {
   it('is not created while the editor settings are undefined', async () => {
     const { context } = createEditorSettingsContext(undefined)
-    activate(context, { vault: {} } as unknown as HostServices)
+    activate(context, { vault: {}, ui: {} } as unknown as HostServices)
 
     await openTab()
 
@@ -57,7 +57,7 @@ describe('the editor of a note tab', () => {
 
   it('is created once the editor settings arrive', async () => {
     const { context, set } = createEditorSettingsContext(undefined)
-    activate(context, { vault: {} } as unknown as HostServices)
+    activate(context, { vault: {}, ui: {} } as unknown as HostServices)
     await openTab()
 
     set({ lineNumbers: false, softWrap: true })
@@ -69,7 +69,7 @@ describe('the editor of a note tab', () => {
 
   it('is created at once where the window already holds the settings', async () => {
     const { context } = createEditorSettingsContext({ lineNumbers: false, softWrap: true })
-    activate(context, { vault: {} } as unknown as HostServices)
+    activate(context, { vault: {}, ui: {} } as unknown as HostServices)
 
     await openTab()
 
@@ -78,7 +78,7 @@ describe('the editor of a note tab', () => {
 
   it('wraps lines and shows no numbers when the settings say wrap and no numbers', async () => {
     const { context } = createEditorSettingsContext({ lineNumbers: false, softWrap: true })
-    activate(context, { vault: {} } as unknown as HostServices)
+    activate(context, { vault: {}, ui: {} } as unknown as HostServices)
 
     await openTab()
 
@@ -88,7 +88,7 @@ describe('the editor of a note tab', () => {
 
   it('leaves lines long and numbers them when the settings say no wrap and numbers', async () => {
     const { context } = createEditorSettingsContext({ lineNumbers: true, softWrap: false })
-    activate(context, { vault: {} } as unknown as HostServices)
+    activate(context, { vault: {}, ui: {} } as unknown as HostServices)
 
     await openTab()
 
@@ -98,7 +98,7 @@ describe('the editor of a note tab', () => {
 
   it('switches the wrap and the numbers of the open editor when the settings change, and keeps its text', async () => {
     const { context, set } = createEditorSettingsContext({ lineNumbers: true, softWrap: false })
-    activate(context, { vault: {} } as unknown as HostServices)
+    activate(context, { vault: {}, ui: {} } as unknown as HostServices)
     await openTab()
     const view = getEditor()
     expect([isWrapped(view), hasNumbers(view)]).toStrictEqual([false, true])
@@ -113,7 +113,7 @@ describe('the editor of a note tab', () => {
 
   it('switches the wrap alone and leaves the numbers as they were', async () => {
     const { context, set } = createEditorSettingsContext({ lineNumbers: true, softWrap: true })
-    activate(context, { vault: {} } as unknown as HostServices)
+    activate(context, { vault: {}, ui: {} } as unknown as HostServices)
     await openTab()
 
     set({ lineNumbers: true, softWrap: false })
@@ -124,9 +124,9 @@ describe('the editor of a note tab', () => {
 
   it('takes the settings of the activation, not those of an earlier one', async () => {
     const first = createEditorSettingsContext({ lineNumbers: true, softWrap: true })
-    activate(first.context, { vault: {} } as unknown as HostServices)
+    activate(first.context, { vault: {}, ui: {} } as unknown as HostServices)
     const second = createEditorSettingsContext(undefined)
-    activate(second.context, { vault: {} } as unknown as HostServices)
+    activate(second.context, { vault: {}, ui: {} } as unknown as HostServices)
 
     await openTab()
 
@@ -147,7 +147,7 @@ describe('the editor of a note tab', () => {
         return { dispose: () => undefined }
       },
     })
-    activate(context, { vault: {} } as unknown as HostServices)
+    activate(context, { vault: {}, ui: {} } as unknown as HostServices)
 
     await openTab()
 
@@ -162,7 +162,7 @@ describe('the editor of a note tab', () => {
 describe('the editor of the note-editor view', () => {
   const register = (notes = createNotes()) => {
     const settings = createEditorSettingsContext(undefined)
-    activate(settings.context, { vault: { notes } } as unknown as HostServices)
+    activate(settings.context, { vault: { notes }, ui: {} } as unknown as HostServices)
     const view = settings.views.find((one) => one.capability === NOTE_EDITOR)
     if (!view) throw new Error('no note-editor view registered')
     return { ...settings, view, notes }

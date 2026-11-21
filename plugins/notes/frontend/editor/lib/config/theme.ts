@@ -253,12 +253,6 @@ export const theme = EditorView.theme({
   },
 
   '.cm-bullet': { color: 'var(--editor-marker)' },
-  '.cm-box': {
-    verticalAlign: 'middle',
-    margin: '0 2px 2px 0',
-    accentColor: 'var(--numen-accent)',
-    cursor: 'pointer',
-  },
 
   '.cm-rule': {
     display: 'flex',

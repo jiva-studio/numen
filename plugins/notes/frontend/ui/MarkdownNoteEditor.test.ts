@@ -9,6 +9,7 @@ import { createEditorSettingsContext } from '../testing/editorSettings'
 const loadEditorSettings = () =>
   activate(createEditorSettingsContext({ lineNumbers: false, softWrap: true }).context, {
     vault: {},
+    ui: {},
   } as unknown as HostServices)
 
 beforeEach(loadEditorSettings)

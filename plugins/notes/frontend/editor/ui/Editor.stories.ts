@@ -61,7 +61,6 @@ export const ReadOnly: Story = { render: renderEditor(MARKED_UP, { isReadonly: t
 /* One line of every construct whose marks are concealed, each with a blank
    line after it, and a line at the end to park the caret on. */
 const BULLET = '- a bullet'
-const TASK = '- [ ] something to do'
 const RULE = '---'
 const CONCEALED = [
   '# Heading one',
@@ -74,7 +73,6 @@ const CONCEALED = [
   'A `snippet` and a [somewhere](https://example.invalid/x "a title").',
   '> A quotation.',
   BULLET,
-  TASK,
   RULE,
 ]
 
@@ -150,8 +148,6 @@ export const ClickLandsOnTheLine: Story = {
         ['# Heading one', 2],
         [BULLET, 0],
         [BULLET, 1],
-        [TASK, 0],
-        [TASK, 1],
       ] as const) {
         const line = getLineOf(text)
         const spot = view.coordsAtPos(view.state.doc.line(line).from + column)

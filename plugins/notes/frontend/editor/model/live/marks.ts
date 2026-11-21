@@ -12,7 +12,7 @@ import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
 import { findChild } from '../../lib/extensions/address'
 import { getGrid } from '../table/grid'
 import { BULLET, HEADING, HIDDEN, INLINE, line, mark, CARET_ONLY } from '../../lib/live/styles'
-import { Box, Bullet, Picture, Rule } from './widgets'
+import { Bullet, Picture, Rule } from './widgets'
 import {
   drawWikilink,
   findDrawnWikilinks,
@@ -149,13 +149,6 @@ class MarkBuilder {
       case 'ListMark': {
         if (BULLET.test(this.doc.sliceString(node.from, node.to)))
           this.found.push(Decoration.replace({ widget: new Bullet() }).range(node.from, node.to))
-        return false
-      }
-
-      case 'TaskMarker': {
-        const isDone = this.doc.sliceString(node.from, node.to).toLowerCase() === '[x]'
-        const box = new Box(isDone, !this.state.readOnly)
-        this.found.push(Decoration.replace({ widget: box }).range(node.from, node.to))
         return false
       }
     }

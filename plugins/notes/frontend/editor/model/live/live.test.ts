@@ -6,7 +6,7 @@ import { EditorView } from '@codemirror/view'
 import { GFM, type MarkdownConfig } from '@lezer/markdown'
 import { live, wholeLines } from './live'
 import { blockMarks, getMarks } from './marks'
-import { Box, Bullet, Picture, Rule } from './widgets'
+import { Bullet, Picture, Rule } from './widgets'
 import { createState } from '../../fixtures/state'
 
 interface Drawn {
@@ -129,10 +129,10 @@ describe('a list', () => {
     expect(widgets('1. a\n2. b\n')).toHaveLength(0)
   })
 
-  it('draws a box for something to do, ticked or not', () => {
-    const [waiting, isDone] = widgets('- [ ] a\n- [x] b\n').filter((it) => it instanceof Box)
-    expect((waiting as Box).isTicked).toBe(false)
-    expect((isDone as Box).isTicked).toBe(true)
+  it('draws no box for something to do, which belongs to a plugin', () => {
+    const drawn = widgets('- [ ] a\n- [x] b\n')
+    expect(drawn).toHaveLength(2)
+    expect(drawn.every((it) => it instanceof Bullet)).toBe(true)
   })
 })
 
@@ -244,22 +244,6 @@ describe('what stays as written', () => {
 
   it('is the address of a picture, which has its own drawing', () => {
     expect(getDrawnDecorations('![a](p.png)')).toHaveLength(1)
-  })
-})
-
-describe('a box for something to do', () => {
-  it('can be ticked where the text can be written', () => {
-    const [box] = collectDrawnMarks(createCaretState('- [ ] a' + ELSEWHERE, [0]))
-      .map((deco) => deco.spec.widget)
-      .filter((it): it is Box => it instanceof Box)
-    expect(box?.isWritable).toBe(true)
-  })
-
-  it('cannot where the text is read-only', () => {
-    const [box] = collectDrawnMarks(createCaretState('- [ ] a' + ELSEWHERE, [0], true))
-      .map((deco) => deco.spec.widget)
-      .filter((it): it is Box => it instanceof Box)
-    expect(box?.isWritable).toBe(false)
   })
 })
 
