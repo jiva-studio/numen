@@ -30,8 +30,8 @@ type traceCall struct {
 	limit   time.Duration
 }
 
-func (c traceCall) elapsedAndLimit(properties map[string]any) map[string]any {
-	properties["elapsed_ms"] = time.Since(c.started).Milliseconds()
+func (c traceCall) elapsedAndLimit(properties map[string]any, now time.Time) map[string]any {
+	properties["elapsed_ms"] = now.Sub(c.started).Milliseconds()
 	properties["limit_ms"] = c.limit.Milliseconds()
 	return properties
 }
@@ -70,7 +70,7 @@ func (g *Gateway) traceRequest(ctx context.Context, call traceCall, method, mode
 func (g *Gateway) traceResponse(ctx context.Context, call traceCall, response *http.Response, body []byte) {
 	properties := call.elapsedAndLimit(map[string]any{
 		fieldPath: call.path, "status": response.StatusCode, "response_bytes": len(body),
-	})
+	}, g.clock.Now())
 	for _, name := range keptHeaders() {
 		if value := response.Header.Get(name); value != "" {
 			properties[strings.ToLower(name)] = redact(value, call.key)
@@ -85,7 +85,7 @@ func (g *Gateway) traceResponse(ctx context.Context, call traceCall, response *h
 func (g *Gateway) traceFailure(ctx context.Context, call traceCall, stage string, err error, status int) {
 	g.trace(ctx, logs.Warning, "Connection request failed to complete", call.elapsedAndLimit(map[string]any{
 		fieldPath: call.path, "stage": stage, "failure": classifyFailure(err), "status": status,
-	}))
+	}, g.clock.Now()))
 }
 
 func classifyFailure(err error) string {
