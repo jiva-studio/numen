@@ -15,7 +15,7 @@ defineProps<{ title: string }>()
 
 <style scoped>
 .island-card {
-  --body-pad: 0 0.75rem;
+  --body-pad: 0.25rem 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
@@ -26,7 +26,7 @@ defineProps<{ title: string }>()
   align-items: baseline;
   justify-content: space-between;
   gap: 0.5rem;
-  padding-inline: 0.25rem;
+  padding-inline: 0;
 }
 
 .island-card__title {
