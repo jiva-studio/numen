@@ -460,3 +460,35 @@ describe('an open plex with notes related to its related notes', () => {
     expect(state.canvas).not.toHaveProperty('names')
   })
 })
+
+describe('a plex of a vault with no notes', () => {
+  const mountEmptyPlex = async () => {
+    const { host } = createHost({ opening: '' })
+    const ctx = createMockPluginContext({ pluginId: 'md.numen.views.plex.graph' })
+    activate(
+      ctx,
+      createMockHostServices({
+        workspace: host.workspace,
+        notes: host.notes,
+        relations: host.relations,
+      }),
+    )
+    const state = ctx.getRegisteredTabKinds()[0]!.open!('', 'plex:1') as PlexTabState
+    const tab = mount(PlexGraphView, { props: { state } })
+    await nextTick()
+    return tab
+  }
+
+  it('says there are no notes and offers to create one', async () => {
+    const tab = await mountEmptyPlex()
+
+    expect(tab.text()).toContain('No notes in this vault')
+    expect(tab.get('button').text()).toBe('Create note')
+  })
+
+  it('does not show a loading indicator', async () => {
+    const tab = await mountEmptyPlex()
+
+    expect(tab.text()).not.toContain('Loading')
+  })
+})
