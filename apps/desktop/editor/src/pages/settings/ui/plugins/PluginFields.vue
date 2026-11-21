@@ -7,7 +7,6 @@
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
-import PluginSlots from './PluginSlots.vue'
 import SettingsViews from './SettingsViews.vue'
 import type { InstallationSettings, MarkedSetting, PluginFieldsHost } from '../../types'
 import type { PluginInfo } from '@/entities/settings'
@@ -167,12 +166,6 @@ const { isChanged, resetSetting: onReset } = useSettingDefaults(fieldDeps)
         @change="(e) => writeDraft(setting.key, (e.target as HTMLInputElement).value)"
       />
     </SettingRow>
-    <PluginSlots
-      v-else-if="setting.type === 'slots'"
-      :groups="props.host.getSlotGroups?.(props.plugin.id) ?? []"
-      :layout="fields.getValue(setting.key)"
-      @change="(layout) => onSettingChange(setting.key, layout)"
-    />
   </template>
 </template>
 

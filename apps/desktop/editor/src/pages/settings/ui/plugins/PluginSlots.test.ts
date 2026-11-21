@@ -7,26 +7,39 @@ const groups = [
     slot: 'plexGraph.nodeBelow',
     title: 'Below a node',
     contributors: [
-      { key: 'a/view/one', label: 'one', pluginName: 'Alpha', group: '' },
-      { key: 'b/view/two', label: 'two', pluginName: 'Beta', group: '' },
+      { key: 'a/view/one', label: 'one', pluginName: 'Alpha' },
+      { key: 'b/view/two', label: 'two', pluginName: 'Beta' },
     ],
   },
-  { slot: 'plexGraph.node', title: 'Over a node', contributors: [] },
+  {
+    slot: 'plexGraph.nodeAbove',
+    title: 'Above a node',
+    contributors: [{ key: 'c/view/three', label: 'three', pluginName: 'Gamma' }],
+  },
 ]
 
 describe('the slots of a plugin page', () => {
-  it('list the entries of each slot under its title', () => {
+  it('draw an island for each slot, with its entries and the plugin of each', () => {
     const page = mount(PluginSlots, { props: { groups, layout: undefined } })
 
-    expect(page.text()).toContain('Below a node')
+    expect(page.findAll('section')).toHaveLength(2)
+    expect(page.get('[data-testid="slots-plexGraph.nodeBelow"]').text()).toContain('Below a node')
     expect(page.text()).toContain('Alpha')
-    expect(page.text()).toContain('No entries in this slot.')
   })
 
-  it('store the order after a move', async () => {
+  it('give a drag handle only to a slot of several entries, and no arrows', () => {
     const page = mount(PluginSlots, { props: { groups, layout: undefined } })
 
-    await page.get('[aria-label="Move one down"]').trigger('click')
+    expect(page.findAll('[aria-label^="Reorder"]')).toHaveLength(2)
+    expect(page.find('[aria-label="Reorder three"]').exists()).toBe(false)
+    expect(page.find('[aria-label^="Move"]').exists()).toBe(false)
+    expect(page.find('[aria-label="Show three"]').exists()).toBe(true)
+  })
+
+  it('store the order after a move of a grip by the keyboard', async () => {
+    const page = mount(PluginSlots, { props: { groups, layout: undefined } })
+
+    await page.get('[aria-label="Reorder one"]').trigger('keydown', { key: 'ArrowDown' })
 
     expect(page.emitted('change')).toStrictEqual([
       [{ 'plexGraph.nodeBelow': [{ id: 'b/view/two' }, { id: 'a/view/one' }] }],

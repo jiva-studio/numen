@@ -53,7 +53,6 @@ type SlotGroupsReader = (pluginId: string) => readonly {
     readonly key: string
     readonly label: string
     readonly pluginId: string
-    readonly group: string
   }[]
 }[]
 
@@ -169,7 +168,6 @@ function createInstallationSlots(deps: Pick<InstallationPluginDeps, 'rest' | 'ge
           key: one.key,
           label: one.label,
           pluginName: getPluginName(one.pluginId),
-          group: one.group,
         })),
       })),
   }

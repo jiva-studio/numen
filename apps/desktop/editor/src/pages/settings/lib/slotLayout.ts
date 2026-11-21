@@ -6,7 +6,6 @@ export interface SlotRow {
   readonly key: string
   readonly label: string
   readonly pluginName: string
-  readonly group: string
   readonly isHidden: boolean
 }
 
@@ -30,34 +29,22 @@ export function getSlotRows(group: SlotGroup, layout: JsonValue | undefined): re
   const position = new Map(stored.map((one, at) => [one.id, at]))
   const hidden = new Set(stored.filter((one) => one.hidden === true).map((one) => one.id))
   const rank = (key: string): number => position.get(key) ?? stored.length
-  const groupAt = (name: string): number =>
-    group.contributors.findIndex((one) => one.group === name)
   return group.contributors
     .map((one, at) => ({ one, at }))
-    .sort(
-      (a, b) =>
-        groupAt(a.one.group) - groupAt(b.one.group) ||
-        rank(a.one.key) - rank(b.one.key) ||
-        a.at - b.at,
-    )
+    .sort((a, b) => rank(a.one.key) - rank(b.one.key) || a.at - b.at)
     .map(({ one }) => ({ ...one, isHidden: hidden.has(one.key) }))
 }
 
-/** Whether the row at `at` has a neighbour `by` places away in its own group, which it can swap places with. */
-export function canMoveSlotRow(rows: readonly SlotRow[], at: number, by: number): boolean {
-  const moved = rows[at]
-  return moved !== undefined && rows[at + by]?.group === moved.group
-}
-
-/** The rows with the one at `from` moved to `to`; the rows as they were for a place outside its group. */
+/** The rows with the one at `from` moved to `to`; the rows as they were for a place outside the list. */
 export function moveSlotRow(
   rows: readonly SlotRow[],
   from: number,
   to: number,
 ): readonly SlotRow[] {
-  if (!canMoveSlotRow(rows, from, to - from)) return rows
+  const moved = rows[from]
+  if (!moved || from === to || to < 0 || to >= rows.length) return rows
   const next = rows.filter((_, at) => at !== from)
-  next.splice(to, 0, rows[from] as SlotRow)
+  next.splice(to, 0, moved)
   return next
 }
 

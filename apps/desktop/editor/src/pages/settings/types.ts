@@ -59,7 +59,6 @@ interface SlotContributor {
   readonly key: string
   readonly label: string
   readonly pluginName: string
-  readonly group: string
 }
 
 /** A slot a plugin draws and its entries, in the order the slot draws them when nothing is stored. */
@@ -169,10 +168,7 @@ export interface SelectChoice {
 export type ListRowOptions = InstallationConnections['listRowOptions']
 
 /** What the fields of one plugin ask of the plugins of the installation. */
-export type PluginFieldsHost = Pick<
-  InstallationPlugin,
-  'choosePath' | 'getSettingsViews' | 'getSlotGroups'
->
+export type PluginFieldsHost = Pick<InstallationPlugin, 'choosePath' | 'getSettingsViews'>
 
 /** A setting of one plugin the settings tab was opened at. Each request is a new object. */
 export interface MarkedSetting {

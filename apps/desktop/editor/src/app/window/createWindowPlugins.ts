@@ -145,6 +145,6 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     declaredCommands.contributions.keybindings,
     rest.state.plugins,
   )
-  const slotGroups = createSlotGroups(declaredCommands, () => appCommands)
+  const slotGroups = createSlotGroups(declaredCommands)
   return { hostPort, pluginHost, pluginLoader, declaredCommands, slotGroups, picker }
 }
