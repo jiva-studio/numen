@@ -573,7 +573,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### theme
 
-- Is: A set of colours for the windows. Plugin "Preset Themes" has twelve: Amber, Ayu, Catppuccin, Cobalt2, Dracula, GitHub, Gruvbox, Monokai, Nord, One Dark, Solarized, Tokyo Night.
+- Is: A set of colours for the windows. Plugin "Preset Themes" has forty-four, most with a light and a dark half, among them Amber, Ayu, Catppuccin, Dracula, GitHub, Gruvbox, Nord, Solarized and Tokyo Night.
 - Texts: "Built-in", "Custom", "Mode" with "System", "Light", "Dark" (apps/desktop/flashcards/src/shared/words.ts).
 - Not: the mode (light or dark) is not the theme.
 

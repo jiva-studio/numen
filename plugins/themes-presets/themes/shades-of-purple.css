@@ -1,0 +1,53 @@
+/*
+ * Shades of Purple palette in two halves.
+ * The light half is derived: the same accent hues and ground hue, with the lightness reset for a light ground.
+ * Accents are lightened or darkened until text colours reach a 4.5:1 contrast on the surface and the raised fill.
+ */
+:root {
+  --numen-surface: light-dark(#eeedf7, #2d2b55);
+  --numen-titlebar: light-dark(#eeedf7, #2d2b55);
+  --numen-raised: light-dark(#f8f8fc, #1e1e3f);
+  --numen-ink: light-dark(#27264b, #ffffff);
+  --numen-rule: light-dark(#d2d1eb, #3a3875);
+
+  --numen-accent: light-dark(#806a00, #fad000);
+  --numen-accent-ink: light-dark(#ffffff, #000000);
+
+  --numen-relation-parent: light-dark(#007575, #9effff);
+  --numen-relation-child: light-dark(#217d00, #3ad900);
+  --numen-relation-jump: light-dark(#955e00, #fb9e00);
+  --numen-relation-sibling: light-dark(#9525ff, #bd76ff);
+  --numen-relation-reference: light-dark(#d7003a, #ff628c);
+
+  --numen-edge: light-dark(#d2d1eb, #3a3875);
+  --numen-edge-label: light-dark(#585680, #bd76ff);
+  --numen-ring: light-dark(#806a00, #fad000);
+  --numen-selection: light-dark(#806a0038, #fad00045);
+  --numen-selection-away: light-dark(#806a001f, #fad00024);
+  --numen-selection-match: light-dark(#806a001a, #fad0001f);
+  --numen-alarm: light-dark(#d7003a, #ff628c);
+  --numen-caution-bg: light-dark(#dad5cb, #4e4547);
+  --numen-caution-fg: light-dark(#6b5900, #fad000);
+  --numen-highlight: light-dark(#806a0033, #fad0003d);
+
+  --numen-syntax-mark: light-dark(#585680, #bd76ff);
+  --numen-code-bg: light-dark(#f8f8fc, #1e1e3f);
+  --numen-table-head-bg: light-dark(#f8f8fc, #1e1e3f);
+  --numen-syntax-keyword: light-dark(#9525ff, #bd76ff);
+  --numen-syntax-name: light-dark(#007575, #9effff);
+  --numen-syntax-type: light-dark(#806a00, #fad000);
+  --numen-syntax-string: light-dark(#217d00, #3ad900);
+  --numen-syntax-number: light-dark(#955e00, #fb9e00);
+  --numen-syntax-comment: light-dark(#585680, #bd76ff);
+  --numen-syntax-punctuation: light-dark(#27264b, #ffffff);
+
+  --numen-panel-bg: light-dark(#f8f8fccc, #1e1e3fcc);
+  --numen-panel-border: light-dark(#00000014, #ffffff1f);
+
+  --numen-field-bg: light-dark(#f1f1f9, #242244);
+  --numen-field-border: light-dark(#d2d1eb, #3a3875);
+
+  --numen-bubble-bg: light-dark(#f8f8fc, #1e1e3f);
+  --numen-bubble-fg: light-dark(#27264b, #ffffff);
+  --numen-answer-fg: light-dark(#27264b, #ffffff);
+}
