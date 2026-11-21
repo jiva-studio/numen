@@ -3,6 +3,7 @@
  * Displays the graph of notes and handles graph interaction gestures.
  */
 import { computed } from 'vue'
+import { Inbox, Plus } from '@lucide/vue'
 import { Button, Menu, LoadingIndicator } from '@numen/ui'
 import { Plex, getInputStrategies, hasTouchPointer, useTypeSize } from '../plex'
 import type { MenuTrigger } from '@numen/ui'
@@ -139,9 +140,13 @@ function onDismissLinkInspector() {
     <!-- Until the first graph lands, an empty plex and one no one has
          answered for yet are drawn the same way. -->
     <div v-if="props.state.canvas.empty.value" class="plex__empty">
+      <Inbox class="plex__empty-icon" aria-hidden="true" />
       <p class="plex__empty-title">{{ words.emptyTitle }}</p>
       <p class="plex__empty-hint">{{ words.emptyHint }}</p>
-      <Button @click="onCreateFirstNote">{{ words.emptyCreate }}</Button>
+      <Button class="plex__empty-create" @click="onCreateFirstNote">
+        <Plus class="plex__icon" aria-hidden="true" />
+        {{ words.emptyCreate }}
+      </Button>
     </div>
 
     <LoadingIndicator v-else-if="props.state.canvas.view.isLoading.value" :label="words.loading" />
@@ -252,6 +257,18 @@ function onDismissLinkInspector() {
   gap: 0.5rem;
   font-family: var(--numen-font-sans);
   text-align: center;
+}
+
+.plex__empty-icon {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  margin-block-end: 0.5rem;
+  color: var(--numen-hushed);
+  stroke-width: 1.5;
+}
+
+.plex__empty-create {
+  margin-block-start: 0.75rem;
 }
 
 .plex__empty-title {

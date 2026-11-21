@@ -442,6 +442,13 @@ describe('a plex of a vault with no notes', () => {
     expect(tab.get('button').text()).toBe('Create note')
   })
 
+  it('draws icons on the empty state and its button', async () => {
+    const tab = await mountEmptyPlex()
+
+    expect(tab.find('.plex__empty-icon').exists()).toBe(true)
+    expect(tab.find('button svg').exists()).toBe(true)
+  })
+
   it('does not show a loading indicator', async () => {
     const tab = await mountEmptyPlex()
 
