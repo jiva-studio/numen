@@ -134,6 +134,7 @@ describe('an answer', () => {
 
     expect(conversation.turns.value.map((turn) => turn.text)).toEqual([
       'what is here?',
+      'Search notes',
       'Said nothing',
     ])
   })
@@ -331,7 +332,7 @@ describe('the line about work', () => {
     }
   })
 
-  it('is one line however many tools are used, and settles when the last of them ends', async () => {
+  it('is a line for each tool, settled when its call ends', async () => {
     const { hold, release } = createHold()
     const { conversation } = open({
       frames: [callTool('c1', 'Read note'), callTool('c2', 'Search notes'), endTool('c1')],
@@ -340,13 +341,16 @@ describe('the line about work', () => {
     const asked = conversation.ask('what is here?')
     await flushPromises()
 
-    expect(getDrawnTurns(conversation).slice(1)).toEqual([['doing', 'Search notes', 'arriving']])
+    expect(getDrawnTurns(conversation).slice(1)).toEqual([
+      ['doing', 'Read note', 'settled'],
+      ['doing', 'Search notes', 'arriving'],
+    ])
 
     release()
     await asked
   })
 
-  it('hides when the answer begins', async () => {
+  it('stays above the answer that follows it', async () => {
     const { conversation } = open({
       frames: [callTool('c1', 'Read note'), endTool('c1'), say('Two notes.')],
     })
@@ -355,11 +359,12 @@ describe('the line about work', () => {
 
     expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'what is here?', undefined],
+      ['doing', 'Read note', 'settled'],
       ['response', 'Two notes.', undefined],
     ])
   })
 
-  it('shows below an answer already started, and hides when the task ends', async () => {
+  it('shows below an answer already started, and stays when the task ends', async () => {
     const { hold, release } = createHold()
     const { conversation } = open({
       frames: [say('First I look.'), callTool('c1', 'Read note'), endTool('c1')],
@@ -380,12 +385,13 @@ describe('the line about work', () => {
     expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'what is here?', undefined],
       ['response', 'First I look.', undefined],
+      ['doing', 'Read note', 'settled'],
     ])
   })
 })
 
 describe('the reasoning of the model', () => {
-  it('closes the answer so far, takes the line about work down and puts the wait up', async () => {
+  it('closes the answer so far, keeps the lines about work and puts the wait up', async () => {
     const { hold, release } = createHold()
     const { conversation } = open({
       frames: [
@@ -402,6 +408,7 @@ describe('the reasoning of the model', () => {
     expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'what is here?', undefined],
       ['response', 'First I look.', undefined],
+      ['doing', 'Read note', 'settled'],
       ['doing', 'Thinking', 'arriving'],
     ])
 
@@ -536,7 +543,7 @@ describe('a plan', () => {
 })
 
 describe('giving up on an answer', () => {
-  it('keeps what arrived, takes down the line about work and says nothing about failing', async () => {
+  it('keeps what arrived, settles the line about work and says nothing about failing', async () => {
     const { hold, release } = createHold()
     const { conversation } = open({ frames: [say('Two '), callTool('c1', 'Read note')], hold })
     const asked = conversation.ask('q')
@@ -549,6 +556,7 @@ describe('giving up on an answer', () => {
     expect(getDrawnTurns(conversation)).toEqual([
       ['prompt', 'q', undefined],
       ['response', 'Two ', undefined],
+      ['doing', 'Read note', 'settled'],
     ])
     expect(conversation.isAnswerPending.value).toBe(false)
   })
