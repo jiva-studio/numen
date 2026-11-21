@@ -379,3 +379,7 @@
   text-overflow: ellipsis;
   overflow-wrap: anywhere;
 }
+
+.saved-search__error {
+  flex: 1;
+}
