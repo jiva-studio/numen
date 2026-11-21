@@ -16,6 +16,10 @@ Keeps queries of the search language as notes of the vault, and shows their resu
 - `saved_search_create`: saves a query as a note in the folder the assistant names, else in the folder of the setting, runs it at once and returns the path of the note, its link and how many results the run found. The assistant tries the query with `library_query` first. A query the core reports problems of writes nothing.
 - `saved_search_update`: changes the query of a saved search note and runs it again at once.
 
+## Commands
+
+- **Create saved search** (`search.create`): asks for a title and a query, saves them as a note and opens it. It is in the command palette, which files the note in the folder of the setting, and in the **New** menu of a folder of the file tree, which files it in that folder. A query the core reports problems of writes nothing and shows the problems.
+
 Both run their search as an interactive search, which the core shows as its own task.
 
 ## The Cache
