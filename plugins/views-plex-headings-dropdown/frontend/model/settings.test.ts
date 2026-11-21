@@ -19,7 +19,7 @@ const { settings: declared } = JSON.parse(
 
 const read = (initialSettings: Record<string, JsonValue> = {}) => {
   const context = createMockPluginContext({
-    pluginId: 'md.numen.views.plex.headings',
+    pluginId: 'md.numen.views.plex.headings.dropdown',
     initialSettings,
   })
   return { context, settings: readSettings(context) }

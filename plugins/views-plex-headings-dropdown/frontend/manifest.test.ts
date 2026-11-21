@@ -36,10 +36,10 @@ const manifest = JSON.parse(
 }
 
 describe('the manifest', () => {
-  it('names the plugin Plex Headings, for the editor window', () => {
+  it('names the plugin Plex Headings Dropdown, for the editor window', () => {
     expect([manifest.id, manifest.name, manifest.targets]).toStrictEqual([
-      'md.numen.views.plex.headings',
-      'Plex Headings',
+      'md.numen.views.plex.headings.dropdown',
+      'Plex Headings Dropdown',
       ['desktop.editor'],
     ])
   })

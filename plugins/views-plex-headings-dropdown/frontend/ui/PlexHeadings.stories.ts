@@ -42,7 +42,7 @@ interface Knobs {
 }
 
 const createView = (args: Knobs): Component => {
-  const context = createMockPluginContext({ pluginId: 'md.numen.views.plex.headings' })
+  const context = createMockPluginContext({ pluginId: 'md.numen.views.plex.headings.dropdown' })
   const notes = {
     getHeadings: async () => new Map([[PATH, args.headings]]),
   } as unknown as VaultNotes
@@ -56,7 +56,7 @@ const createView = (args: Knobs): Component => {
 }
 
 const meta = {
-  title: 'Plex Headings',
+  title: 'Plex Headings Dropdown',
   args: { headings: SECTIONS, onOpen: fn() },
   parameters: { layout: 'fullscreen' },
   render: (args) => ({

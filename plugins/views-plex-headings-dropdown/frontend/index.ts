@@ -1,5 +1,5 @@
 /**
- * Frontend entrypoint for the Plex Headings plugin: the headings of a note, listed under its node in the plex
+ * Frontend entrypoint for the Plex Headings Dropdown plugin: the headings of a note, listed under its node in the plex
  * while the pointer rests on it, drawn above everything else, beside the slot over the whole node that the pointer is read on.
  */
 import { defineComponent, h, ref, type ComponentPublicInstance } from 'vue'

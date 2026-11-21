@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -93,5 +94,33 @@ func TestProfileWithoutPinsCachesTheObservedBytesByDigest(t *testing.T) {
 	}
 	if calls.Load() != 2 {
 		t.Errorf("requests = %d, want 2", calls.Load())
+	}
+}
+
+func TestModelDownloadStatusNamesTheModel(t *testing.T) {
+	const body = "named model"
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if _, err := w.Write([]byte(body)); err != nil {
+			t.Error(err)
+		}
+	}))
+	defer server.Close()
+	files := newTestProvisioner(t, false)
+	files.cfg.Client = server.Client()
+	registry := NewRegistry(files)
+	var titles []string
+	registry.SetObserver(func(req manifest.DependencyRequirement, status plugin.DependencyStatus) {
+		if status.State == plugin.DependencyStateProvisioning && status.Message != "" {
+			titles = append(titles, req.GetTitle()+"|"+status.Message)
+		}
+	})
+	fetch := plugindependency.NewFetch(func() pluginport.DependencyRegistry { return registry })
+	digest := newModelRequirement(server.URL, []byte(body)).ChecksumSHA256
+	if _, err := fetch.Execute(t.Context(), server.URL+"/rec/latin_rec.onnx", digest); err != nil {
+		t.Fatal(err)
+	}
+	want := "latin_rec model|Downloading latin_rec model"
+	if !slices.Contains(titles, want) {
+		t.Fatalf("statuses = %v, want %q", titles, want)
 	}
 }

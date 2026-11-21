@@ -129,7 +129,7 @@ func run(ctx context.Context, runner Runner, tool program, into io.Writer, argum
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return nil, ctxErr
 		}
-		return nil, fmt.Errorf("%w: %s", err, getLastLine(combined))
+		return nil, fmt.Errorf("%w: %s%s", err, getLastLine(combined), getCertificateHint(combined))
 	}
 	return out, nil
 }
@@ -163,4 +163,16 @@ func Open(isMock bool, tools Tools, programs fetch.Config) *Downloader {
 		return NewMock(tools.Web)
 	}
 	return New(programs, tools.Runner, tools.Files, tools.Paths, tools.Web)
+}
+
+const certificateHint = "; the program does not trust the certificate of the site: its certificate store lacks the authority that signed it " +
+	"(a proxy, antivirus or company network that inspects HTTPS adds its own), or the store is out of date. " +
+	"Install that authority in the system store, or update yt-dlp"
+
+func getCertificateHint(output string) string {
+	lowered := strings.ToLower(output)
+	if strings.Contains(lowered, "certificate_verify_failed") || strings.Contains(lowered, "certificate verify failed") {
+		return certificateHint
+	}
+	return ""
 }

@@ -43,6 +43,6 @@ describe('the title bar colour', () => {
   }
 
   it('is checked against every theme the plugin ships', () => {
-    assert.equal(themes.length, 12)
+    assert.equal(themes.length, 44)
   })
 })
