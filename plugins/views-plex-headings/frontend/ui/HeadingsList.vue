@@ -43,9 +43,6 @@ const style = computed(() => ({
   height: `${props.layout.height}px`,
   minWidth: `${props.layout.nodeWidth}px`,
   maxWidth: `${props.layout.roomWidth - 2 * props.layout.margin}px`,
-  paddingTop: `${props.layout.pad}px`,
-  paddingBottom: `${props.layout.pad}px`,
-  '--headings-arrow-inset': `${props.layout.pad / 2}px`,
   visibility: width.value > 0 ? undefined : ('hidden' as const),
 }))
 
@@ -101,6 +98,7 @@ const onWheel = (event: WheelEvent) => {
   --list-radius: 0.25rem;
   --more-width: 0.5rem;
   --more-height: 0.3125rem;
+  --more-inset: 0.125rem;
   position: fixed;
   z-index: var(--numen-lift-menu);
   box-sizing: border-box;
@@ -130,10 +128,8 @@ const onWheel = (event: WheelEvent) => {
 }
 
 .headings__more--above {
-  inset-block-start: calc(var(--headings-arrow-inset) - var(--more-height) / 2);
 }
 
 .headings__more--below {
-  inset-block-end: calc(var(--headings-arrow-inset) - var(--more-height) / 2);
 }
 </style>

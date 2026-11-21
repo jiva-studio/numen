@@ -3,14 +3,12 @@ export const DESIGNED_TYPE = 13
 const ROW_HEIGHT = 22
 const INDENT_STEP = 12
 const MARGIN = 16
-const PAD_SHARE = 0.25
 
 /** The lengths of the list, in pixels, for the type a title is set in. */
 export interface Measures {
   readonly rowHeight: number
   readonly indentStep: number
   readonly margin: number
-  readonly pad: number
 }
 
 /** Every length is multiplied by what the type was multiplied by, so a row goes on holding its words. */
@@ -21,6 +19,5 @@ export function getMeasures(type: number): Measures {
     rowHeight,
     indentStep: INDENT_STEP * delta,
     margin: MARGIN * delta,
-    pad: Math.round(PAD_SHARE * rowHeight),
   }
 }
