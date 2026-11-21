@@ -22,9 +22,12 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
   plugin.register.slotView({ id: FILE_TAGS_VIEW, component: createFileTags(tagMap) })
   plugin.register.slotView({ id: PLEX_TAGS_VIEW, component: createPlexTags(tagMap) })
   plugin.identity.subscriptions.push({ dispose: () => tagMap.stop() })
-  plugin.register.command(
-    createDeleteTag({ api, setTags: tagMap.setTags, beginWrite: tagMap.beginWrite }),
-  )
+  const deleteTag = createDeleteTag({ api, setTags: tagMap.setTags, beginWrite: tagMap.beginWrite })
+  plugin.register.command({
+    id: 'tags.delete',
+    listItems: deleteTag.listItems,
+    handler: deleteTag.handler,
+  })
   const { picker } = host.ui
   if (picker) {
     const setTags = createSetTags({
