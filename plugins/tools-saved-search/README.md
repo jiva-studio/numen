@@ -18,7 +18,7 @@ Keeps queries of the search language as notes of the vault, and shows their resu
 
 ## Commands
 
-- **Create saved search** (`search.create`): asks for a title and a query, saves them as a note and opens it. It is in the command palette, which files the note in the folder of the setting, and in the **New** menu of a folder of the file tree, which files it in that folder. A query the core reports problems of writes nothing and shows the problems.
+- **Create saved search** (`search.create`): asks for a title only, saves a note with an empty query and opens it; the query is written in the note. It is in the command palette, which files the note in the folder of the setting, and in the **New** menu of a folder of the file tree, which files it in that folder.
 
 Both run their search as an interactive search, which the core shows as its own task.
 

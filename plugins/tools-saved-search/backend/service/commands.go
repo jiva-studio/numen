@@ -13,7 +13,6 @@ import (
 const (
 	commandCreate = "search.create"
 	argumentTitle = "title"
-	argumentQuery = "query"
 )
 
 func newCommands(built *parts) (*command.Registry, error) {
@@ -33,7 +32,7 @@ func newCreateCommand(built *parts) command.Run {
 		saved, err := built.notes.Create(ctx, vault.ID, savedsearch.CreateInput{
 			Title:  req.Arguments.GetString(argumentTitle),
 			Folder: req.Path,
-			Query:  req.Arguments.GetString(argumentQuery),
+			Query:  "",
 		})
 		if err != nil {
 			return command.Result{}, err
