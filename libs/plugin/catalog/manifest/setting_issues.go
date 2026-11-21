@@ -59,6 +59,7 @@ func listManifestSettingIssue(s Setting, key string) []error {
 	}
 	issues = append(issues, listGenerateSettingIssues(s, key)...)
 	issues = append(issues, listFileSettingIssues(s, key)...)
+	issues = append(issues, listListSettingIssues(s, key)...)
 	return append(issues, listConnectionsSettingIssues(s, key)...)
 }
 
@@ -155,6 +156,9 @@ func listConditionIssues(subject string, when *Condition, declared map[string]Se
 	if len(when.Is) == 0 {
 		return []error{fmt.Errorf("%w: %s is shown by %s and lists no values", ErrInvalidSetting, subject, when.Setting)}
 	}
+	if parent.Type == SettingTypeList {
+		return []error{fmt.Errorf("%w: %s is shown by %s, which holds a list", ErrInvalidSetting, subject, when.Setting)}
+	}
 	var issues []error
 	for _, value := range when.Is {
 		switch {
@@ -213,6 +217,52 @@ func listConnectionsSettingExtraIssues(s Setting, key string) []error {
 		if one.isSet {
 			issues = append(issues, fmt.Errorf("%w: %s holds rows of connections and declares %s", ErrInvalidSetting, key, one.name))
 		}
+	}
+	return issues
+}
+
+func listListSettingIssues(s Setting, key string) []error {
+	if s.Type != SettingTypeList {
+		return nil
+	}
+	issues := listListDefaultIssues(s.Default, key)
+	declared := []struct {
+		name  string
+		isSet bool
+	}{
+		{"options", len(s.Options) > 0}, {"optionsBy", s.OptionsBy != nil}, {"optionsFrom", s.OptionsFrom != ""},
+		{"min", s.Min != nil}, {"max", s.Max != nil}, {"step", s.Step != nil}, {"accept", len(s.Accept) > 0},
+		{"multiple", s.Multiple}, {"preview", s.Preview}, {"palette", s.Palette},
+	}
+	for _, one := range declared {
+		if one.isSet {
+			issues = append(issues, fmt.Errorf("%w: %s holds a list and declares %s", ErrInvalidSetting, key, one.name))
+		}
+	}
+	return issues
+}
+
+func listListDefaultIssues(value any, key string) []error {
+	if value == nil {
+		return nil
+	}
+	items, isList := value.([]any)
+	if !isList {
+		return []error{fmt.Errorf("%w: %s holds a list and its default is no list of strings", ErrInvalidSetting, key)}
+	}
+	var issues []error
+	seen := make(map[string]bool, len(items))
+	for _, item := range items {
+		text, isText := item.(string)
+		switch {
+		case !isText:
+			return []error{fmt.Errorf("%w: %s holds a list and its default is no list of strings", ErrInvalidSetting, key)}
+		case strings.TrimSpace(text) == "":
+			issues = append(issues, fmt.Errorf("%w: %s holds a list and its default holds an empty item", ErrInvalidSetting, key))
+		case seen[text]:
+			issues = append(issues, fmt.Errorf("%w: %s holds a list and its default holds %q twice", ErrInvalidSetting, key, text))
+		}
+		seen[text] = true
 	}
 	return issues
 }
