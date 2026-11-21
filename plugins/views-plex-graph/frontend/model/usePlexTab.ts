@@ -29,6 +29,7 @@ import type {
   PlexGraph,
   PlexRelation,
   PlexDestination,
+  PlexBoardContext,
   PlexWidget,
   PlexWidgetSide,
   PlexWidgetsState,
@@ -42,6 +43,7 @@ function usePlexPicture(
   view: PlexView,
   deps: PlexTabDeps,
   map: ReturnType<typeof createNodeIdMap>,
+  getName: (path: string) => string,
 ) {
   const picture = computed<PlexGraph | null>(() => {
     const noteGraph = view.noteGraph.value
@@ -63,7 +65,11 @@ function usePlexPicture(
     return deps.window.dragged.value.filter((path) => path !== here)
   })
 
-  const widgets = usePlexWidgets(deps, map)
+  const widgets = usePlexWidgets(deps, map, {
+    key: deps.tabId,
+    here: view.here,
+    go: (path) => moveFocus({ view, deps, getName }, path),
+  })
 
   return { view, picture, empty, dragged, creatable: deps.creatable, widgets }
 }
@@ -297,6 +303,7 @@ function usePlexMenu(options: {
 function usePlexWidgets(
   deps: PlexTabDeps,
   map: ReturnType<typeof createNodeIdMap>,
+  board: PlexBoardContext,
 ): PlexWidgetsState {
   const watching = (side: PlexWidgetSide) => {
     const entries = shallowRef<readonly PlexWidget[]>([])
@@ -314,6 +321,7 @@ function usePlexWidgets(
     over: watching('over'),
     boardTop: watching('boardTop'),
     boardBottom: watching('boardBottom'),
+    board,
     getPath: map.getNodePath,
   }
 }
@@ -327,7 +335,7 @@ function getPlexNodeName(noteGraph: PlexView['noteGraph']['value'], path: string
 export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
   const getName = (path: string): string => getPlexNodeName(view.noteGraph.value, path)
-  const canvas = usePlexPicture(view, deps, map)
+  const canvas = usePlexPicture(view, deps, map, getName)
   const { getType, getTabKind, followMoves } = usePlexNoteKinds(view, map)
 
   const quickLink = useQuickLink(view, deps, map)
