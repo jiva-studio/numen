@@ -40,8 +40,9 @@ export function useTooltip() {
 
   watch(at, (value, _, onCleanup) => {
     if (!value) return
+    const attached = anchor?.isConnected === true
     const observer = new MutationObserver(() => {
-      if (!anchor?.isConnected) close()
+      if (attached && !anchor?.isConnected) close()
     })
     observer.observe(document.body, { childList: true, subtree: true })
     for (const name of DISMISS_EVENTS) window.addEventListener(name, close, true)
