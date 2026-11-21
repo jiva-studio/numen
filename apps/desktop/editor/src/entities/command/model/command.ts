@@ -2,7 +2,7 @@
  * What a command is: the row a feature declares, and what carries out its rows.
  */
 import type { Component } from 'vue'
-import type { CommandItem } from '@numen/plugin-loader'
+import type { CommandAnswers, CommandItem, CommandWarns } from '@numen/plugin-loader'
 import type { Keystroke } from '@numen/ui'
 import type { CommandInvocation, CommandTarget, RunSupport } from '@/shared/model/command'
 
@@ -33,19 +33,10 @@ export interface CommandPrompt {
 export type PromptStep = Exclude<Step, 'commands'>
 
 /** Text for the step that requires the user to retype a name. */
-export interface RetypeWords {
-  readonly action: string
-  readonly detail: string
-  readonly back: string
-}
+export type RetypeWords = CommandWarns
 
 /** The words the step that confirms is drawn in. */
-export interface ConfirmWords {
-  readonly keeps: string
-  readonly retainedNotice: string
-  readonly action: string
-  readonly detail: string
-}
+export type ConfirmWords = CommandAnswers
 
 /**
  * What carries a command out. A command that made a note or a folder answers with its path; one

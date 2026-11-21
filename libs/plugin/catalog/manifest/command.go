@@ -47,6 +47,23 @@ type Command struct {
 	When       string
 	Permission string
 	Arguments  []CommandArgument
+	Answers    *CommandAnswers
+	Warns      *CommandWarns
+}
+
+// CommandAnswers is the yes or no a command asks for before it runs, the safe answer first.
+type CommandAnswers struct {
+	Keeps          string
+	RetainedNotice string
+	Action         string
+	Detail         string
+}
+
+// CommandWarns is the confirmation a command asks for by having a name typed again.
+type CommandWarns struct {
+	Action string
+	Detail string
+	Back   string
 }
 
 type CommandArgument struct {
@@ -83,6 +100,7 @@ func (m Manifest) listCommandIssues() []error {
 		issues = append(issues, listCommandWhenIssues(command)...)
 		issues = append(issues, m.listCommandPermissionIssues(command)...)
 		issues = append(issues, listCommandArgumentIssues(command)...)
+		issues = append(issues, listCommandConfirmationIssues(command)...)
 	}
 	return issues
 }
@@ -96,6 +114,20 @@ func listCommandWhenIssues(command Command) []error {
 		return []error{fmt.Errorf("%w: %q declares %q, which the host gives", ErrInvalidCommandArgument, command.ID, CommandArgumentVersion)}
 	}
 	return nil
+}
+
+func listCommandConfirmationIssues(command Command) []error {
+	var issues []error
+	if command.Answers != nil && command.Warns != nil {
+		issues = append(issues, fmt.Errorf("%w: %q declares both answers and warns, one confirmation", ErrInvalidCommand, command.ID))
+	}
+	if command.Answers != nil && (strings.TrimSpace(command.Answers.Keeps) == "" || strings.TrimSpace(command.Answers.Action) == "") {
+		issues = append(issues, fmt.Errorf("%w: %q declares answers without keeps and action", ErrInvalidCommand, command.ID))
+	}
+	if command.Warns != nil && strings.TrimSpace(command.Warns.Action) == "" {
+		issues = append(issues, fmt.Errorf("%w: %q declares warns without action", ErrInvalidCommand, command.ID))
+	}
+	return issues
 }
 
 func listCommandArgumentIssues(command Command) []error {

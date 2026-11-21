@@ -126,6 +126,18 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 			commands: `[{"id":"page.convert","title":"C","arguments":[{"name":"pages","type":"string"}]}]`,
 			want:     []error{manifest.ErrInvalidCommandArgument},
 		},
+		"answers without an action": {
+			commands: `[{"id":"page.convert","title":"C","answers":{"keeps":"Keep"}}]`,
+			want:     []error{manifest.ErrInvalidCommand},
+		},
+		"warns without an action": {
+			commands: `[{"id":"page.convert","title":"C","warns":{"back":"Type"}}]`,
+			want:     []error{manifest.ErrInvalidCommand},
+		},
+		"answers and warns together": {
+			commands: `[{"id":"page.convert","title":"C","answers":{"keeps":"K","action":"A"},"warns":{"action":"A"}}]`,
+			want:     []error{manifest.ErrInvalidCommand},
+		},
 		"the argument the host gives a command with items": {
 			commands: `[{"id":"page.convert","title":"C","when":"version.isLive","arguments":[{"name":"version-id","title":"V","type":"string"}]}]`,
 			want:     []error{manifest.ErrInvalidCommandArgument},
@@ -150,5 +162,25 @@ func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 				t.Errorf("error = %v, expected wrapped cause alongside %v", err, one.wrappedSntl)
 			}
 		})
+	}
+}
+
+func TestACommandDeclaresTheConfirmationItAsksFor(t *testing.T) {
+	text := commandManifestHead + `[
+		{"id":"tag.delete","title":"D","answers":{"keeps":"Keep","retainedNotice":"Nothing changes","action":"Delete","detail":"From"}},
+		{"id":"vault.erase","title":"E","warns":{"action":"Erase","detail":"For good","back":"Type the name"}}
+	]}}`
+
+	parsed, err := manifestjson.Read(strings.NewReader(text))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	commands := parsed.Contributes.Commands
+	if got := commands[0].Answers; got == nil || *got != (manifest.CommandAnswers{Keeps: "Keep", RetainedNotice: "Nothing changes", Action: "Delete", Detail: "From"}) {
+		t.Errorf("the answers came out as %+v", got)
+	}
+	if got := commands[1].Warns; got == nil || *got != (manifest.CommandWarns{Action: "Erase", Detail: "For good", Back: "Type the name"}) {
+		t.Errorf("the warns came out as %+v", got)
 	}
 }

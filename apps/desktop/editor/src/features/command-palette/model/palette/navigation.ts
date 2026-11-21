@@ -90,7 +90,17 @@ function resolveInputOrItemAction(
   if (step.step === 'items') {
     const rows = deps.lists.getStepGroups(step.command.id, deps.text.value).flatMap((g) => g.items)
     const one = rows.find((r) => r.id === item)
-    return !one || one.isDisabled ? null : deps.invocation(step.command.id, step.on, one.id)
+    if (!one || one.isDisabled) return null
+    if (step.command.next !== 'confirmation')
+      return deps.invocation(step.command.id, step.on, one.id)
+    const { id, title, detail } = one
+    deps.pushStep({
+      step: 'confirmation',
+      command: step.command,
+      on: step.on,
+      item: { id, title, ...(detail ? { detail } : {}) },
+    })
+    return null
   }
   return null
 }
@@ -105,7 +115,7 @@ function resolveConfirmationAction(
       deps.popStep()
       return null
     }
-    return deps.invocation(step.command.id, step.on)
+    return deps.invocation(step.command.id, step.on, step.item?.id)
   }
   const name = deps.text.value.trim()
   return item === step.command.id && name === deps.getStepTitle(step)

@@ -164,9 +164,30 @@ func newCommands(wire []*v1.ManifestCommand) []manifest.Command {
 			When:       one.GetWhen(),
 			Permission: one.GetPermission(),
 			Arguments:  newCommandArguments(one.GetArguments()),
+			Answers:    newCommandAnswers(one.GetAnswers()),
+			Warns:      newCommandWarns(one.GetWarns()),
 		})
 	}
 	return out
+}
+
+func newCommandAnswers(wire *v1.ManifestCommandAnswers) *manifest.CommandAnswers {
+	if wire == nil {
+		return nil
+	}
+	return &manifest.CommandAnswers{
+		Keeps:          wire.GetKeeps(),
+		RetainedNotice: wire.GetRetainedNotice(),
+		Action:         wire.GetAction(),
+		Detail:         wire.GetDetail(),
+	}
+}
+
+func newCommandWarns(wire *v1.ManifestCommandWarns) *manifest.CommandWarns {
+	if wire == nil {
+		return nil
+	}
+	return &manifest.CommandWarns{Action: wire.GetAction(), Detail: wire.GetDetail(), Back: wire.GetBack()}
 }
 
 func newCommandArguments(wire []*v1.ManifestCommandArgument) []manifest.CommandArgument {

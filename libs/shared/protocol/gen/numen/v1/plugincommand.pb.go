@@ -542,7 +542,10 @@ type PluginCommand struct {
 	// has_items is set for a command that offers items, which a place reads
 	// with ListCommandItems and runs with the id of the one picked as the
 	// item_id of RunPluginCommand.
-	HasItems      bool `protobuf:"varint,11,opt,name=has_items,json=hasItems,proto3" json:"has_items,omitempty"`
+	HasItems bool `protobuf:"varint,11,opt,name=has_items,json=hasItems,proto3" json:"has_items,omitempty"`
+	// answers and warns are the confirmation the manifest declares for the command; empty for none.
+	Answers       *ManifestCommandAnswers `protobuf:"bytes,12,opt,name=answers,proto3" json:"answers,omitempty"`
+	Warns         *ManifestCommandWarns   `protobuf:"bytes,13,opt,name=warns,proto3" json:"warns,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -624,6 +627,20 @@ func (x *PluginCommand) GetHasItems() bool {
 		return x.HasItems
 	}
 	return false
+}
+
+func (x *PluginCommand) GetAnswers() *ManifestCommandAnswers {
+	if x != nil {
+		return x.Answers
+	}
+	return nil
+}
+
+func (x *PluginCommand) GetWarns() *ManifestCommandWarns {
+	if x != nil {
+		return x.Warns
+	}
+	return nil
 }
 
 // CommandArgument is one argument a command takes.
@@ -1170,7 +1187,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\thas_items\x18\x03 \x01(\bR\bhasItems\"a\n" +
 	"\x0fPluginSlotEntry\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x121\n" +
-	"\x05entry\x18\x02 \x01(\v2\x1b.numen.v1.ManifestSlotEntryR\x05entry\"\xd6\x01\n" +
+	"\x05entry\x18\x02 \x01(\v2\x1b.numen.v1.ManifestSlotEntryR\x05entry\"\xc8\x02\n" +
 	"\rPluginCommand\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
@@ -1179,7 +1196,9 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\x04icon\x18\a \x01(\tR\x04icon\x12\x12\n" +
 	"\x04when\x18\n" +
 	" \x01(\tR\x04when\x12\x1b\n" +
-	"\thas_items\x18\v \x01(\bR\bhasItemsJ\x04\b\t\x10\n" +
+	"\thas_items\x18\v \x01(\bR\bhasItems\x12:\n" +
+	"\aanswers\x18\f \x01(\v2 .numen.v1.ManifestCommandAnswersR\aanswers\x124\n" +
+	"\x05warns\x18\r \x01(\v2\x1e.numen.v1.ManifestCommandWarnsR\x05warnsJ\x04\b\t\x10\n" +
 	"\"\\\n" +
 	"\x0fCommandArgument\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
@@ -1270,6 +1289,8 @@ var file_numen_v1_plugincommand_proto_goTypes = []any{
 	(*ManifestKeybinding)(nil),       // 20: numen.v1.ManifestKeybinding
 	(*ManifestHandler)(nil),          // 21: numen.v1.ManifestHandler
 	(*ManifestSlotEntry)(nil),        // 22: numen.v1.ManifestSlotEntry
+	(*ManifestCommandAnswers)(nil),   // 23: numen.v1.ManifestCommandAnswers
+	(*ManifestCommandWarns)(nil),     // 24: numen.v1.ManifestCommandWarns
 }
 var file_numen_v1_plugincommand_proto_depIdxs = []int32{
 	17, // 0: numen.v1.RunCommandRequest.arguments:type_name -> numen.v1.RunCommandRequest.ArgumentsEntry
@@ -1283,25 +1304,27 @@ var file_numen_v1_plugincommand_proto_depIdxs = []int32{
 	21, // 8: numen.v1.PluginHandler.handler:type_name -> numen.v1.ManifestHandler
 	22, // 9: numen.v1.PluginSlotEntry.entry:type_name -> numen.v1.ManifestSlotEntry
 	9,  // 10: numen.v1.PluginCommand.arguments:type_name -> numen.v1.CommandArgument
-	19, // 11: numen.v1.RunPluginCommandRequest.arguments:type_name -> numen.v1.RunPluginCommandRequest.ArgumentsEntry
-	12, // 12: numen.v1.ListCommandItemsRequest.commands:type_name -> numen.v1.PluginCommandId
-	14, // 13: numen.v1.ListCommandItemsResponse.lists:type_name -> numen.v1.CommandItemList
-	15, // 14: numen.v1.CommandItemList.items:type_name -> numen.v1.CommandItem
-	0,  // 15: numen.v1.CommandItemList.error:type_name -> numen.v1.CommandErrorCode
-	0,  // 16: numen.v1.RunPluginCommandResponse.error:type_name -> numen.v1.CommandErrorCode
-	1,  // 17: numen.v1.PluginCommandService.RunCommand:input_type -> numen.v1.RunCommandRequest
-	3,  // 18: numen.v1.CommandService.ListCommands:input_type -> numen.v1.ListCommandsRequest
-	10, // 19: numen.v1.CommandService.RunPluginCommand:input_type -> numen.v1.RunPluginCommandRequest
-	11, // 20: numen.v1.CommandService.ListCommandItems:input_type -> numen.v1.ListCommandItemsRequest
-	2,  // 21: numen.v1.PluginCommandService.RunCommand:output_type -> numen.v1.RunCommandResponse
-	4,  // 22: numen.v1.CommandService.ListCommands:output_type -> numen.v1.ListCommandsResponse
-	16, // 23: numen.v1.CommandService.RunPluginCommand:output_type -> numen.v1.RunPluginCommandResponse
-	13, // 24: numen.v1.CommandService.ListCommandItems:output_type -> numen.v1.ListCommandItemsResponse
-	21, // [21:25] is the sub-list for method output_type
-	17, // [17:21] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	23, // 11: numen.v1.PluginCommand.answers:type_name -> numen.v1.ManifestCommandAnswers
+	24, // 12: numen.v1.PluginCommand.warns:type_name -> numen.v1.ManifestCommandWarns
+	19, // 13: numen.v1.RunPluginCommandRequest.arguments:type_name -> numen.v1.RunPluginCommandRequest.ArgumentsEntry
+	12, // 14: numen.v1.ListCommandItemsRequest.commands:type_name -> numen.v1.PluginCommandId
+	14, // 15: numen.v1.ListCommandItemsResponse.lists:type_name -> numen.v1.CommandItemList
+	15, // 16: numen.v1.CommandItemList.items:type_name -> numen.v1.CommandItem
+	0,  // 17: numen.v1.CommandItemList.error:type_name -> numen.v1.CommandErrorCode
+	0,  // 18: numen.v1.RunPluginCommandResponse.error:type_name -> numen.v1.CommandErrorCode
+	1,  // 19: numen.v1.PluginCommandService.RunCommand:input_type -> numen.v1.RunCommandRequest
+	3,  // 20: numen.v1.CommandService.ListCommands:input_type -> numen.v1.ListCommandsRequest
+	10, // 21: numen.v1.CommandService.RunPluginCommand:input_type -> numen.v1.RunPluginCommandRequest
+	11, // 22: numen.v1.CommandService.ListCommandItems:input_type -> numen.v1.ListCommandItemsRequest
+	2,  // 23: numen.v1.PluginCommandService.RunCommand:output_type -> numen.v1.RunCommandResponse
+	4,  // 24: numen.v1.CommandService.ListCommands:output_type -> numen.v1.ListCommandsResponse
+	16, // 25: numen.v1.CommandService.RunPluginCommand:output_type -> numen.v1.RunPluginCommandResponse
+	13, // 26: numen.v1.CommandService.ListCommandItems:output_type -> numen.v1.ListCommandItemsResponse
+	23, // [23:27] is the sub-list for method output_type
+	19, // [19:23] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_plugincommand_proto_init() }
