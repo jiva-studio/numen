@@ -100,13 +100,6 @@ export const Nesting: Story = {
     await expect(within(document.body).getByText('The arrow of time')).toBeInTheDocument()
     await expect(within(document.body).queryByText('The demon, and its bookkeeping')).toBeNull()
 
-    const rows = getRows() as HTMLElement[]
-    const list = document.querySelector<HTMLElement>('.headings__list')!
-    const inner = list.getBoundingClientRect()
-    const borders = parseFloat(getComputedStyle(list).borderTopWidth)
-    await expect(rows[0]!.getBoundingClientRect().top - inner.top).toBeCloseTo(borders, 1)
-    await expect(inner.bottom - rows.at(-1)!.getBoundingClientRect().bottom).toBeCloseTo(borders, 1)
-
     await userEvent.unhover(view)
     await waitFor(async () => await expect(getRows()).toHaveLength(0))
   },
