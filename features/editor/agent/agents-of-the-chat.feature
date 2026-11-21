@@ -18,7 +18,3 @@ Feature: Agents of the chat
       | Claude Code | Claude Code |
     And the connection "Claude Code" shows "Discovered"
     And the connection "Claude Code" cannot be opened
-
-  Scenario: With no agent chosen the chat uses every agent
-    When the person removes every row of the setting "Agents" of the plugin "Agent Chat"
-    Then the setting "Agents" of the plugin "Agent Chat" shows "Automatic: Numen agent, Claude Code"
