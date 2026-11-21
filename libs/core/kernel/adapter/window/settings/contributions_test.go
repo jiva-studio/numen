@@ -33,6 +33,8 @@ func TestEveryContributionKindIsSavedFromOne(t *testing.T) {
 		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SERVICES:          plugin.ContributionServices,
 		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_CAPABILITIES:      plugin.ContributionCapabilities,
 		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS: plugin.ContributionActivationEvents,
+		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS:  plugin.ContributionSearchFunctions,
+		v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TOOLS:             plugin.ContributionTools,
 	}, convertContributionKind)
 }
 

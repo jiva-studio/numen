@@ -86,3 +86,18 @@ func TestListContributions_ListsNothingForAnEmptyManifest(t *testing.T) {
 		t.Errorf("an empty manifest lists %+v", got)
 	}
 }
+
+func TestListContributions_SearchFunctionsShowTheirSignature(t *testing.T) {
+	got := plugin.ListContributions(manifest.Manifest{Contributes: manifest.Contributes{
+		SearchFunctions: manifest.SearchFunctions{Version: 1, Functions: []manifest.SearchFunction{{
+			Name: "rhymes", Args: []manifest.SearchFunctionArg{{Name: "word", Type: manifest.SearchFunctionArgString}},
+		}}},
+	}})
+
+	want := []plugin.Contribution{
+		{Kind: plugin.ContributionSearchFunctions, Items: []plugin.ContributionItem{{Text: "rhymes", Detail: "rhymes(word: string)"}}},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("the contributions are %+v, want %+v", got, want)
+	}
+}

@@ -10,6 +10,7 @@ import { getPluginCategory } from './filter'
 import NavigationRow from './NavigationRow.vue'
 import type { PluginHealth } from './pluginInfo'
 import { isInstalled, type ManagedPlugin } from './plugins'
+import { getContributionSummary } from './contributionSummary'
 import { getPluginState, hasStateLabel } from './state'
 import { PLUGIN_WORDS as words } from './words'
 
@@ -31,6 +32,7 @@ const menuPosition = ref<{ x: number; y: number } | null>(null)
 const pluginState = computed(() =>
   props.plugin.info ? getPluginState(props.isEnabled, props.health) : 'available',
 )
+const contributionSummary = computed(() => getContributionSummary(props.plugin.info?.contributions))
 const menuItems = computed<readonly MenuItem[]>(() => [
   ...(isInstalled(props.plugin)
     ? [{ id: 'toggle', text: props.isEnabled ? words.pluginDisable : words.pluginEnable }]
@@ -68,8 +70,13 @@ function onChooseMenuItem(id: string): void {
     @select="onSelect"
     @contextmenu.prevent="onContextMenu"
   >
-    <template v-if="hasStateLabel(pluginState)" #trail>
-      <span class="plugin-row__state" :class="`plugin-row__state--${pluginState}`">
+    <template v-if="hasStateLabel(pluginState) || contributionSummary" #trail>
+      <span v-if="contributionSummary" class="plugin-row__contributions">{{ contributionSummary }}</span>
+      <span
+        v-if="hasStateLabel(pluginState)"
+        class="plugin-row__state"
+        :class="`plugin-row__state--${pluginState}`"
+      >
         {{ words.pluginState[pluginState] }}
       </span>
     </template>
@@ -86,6 +93,10 @@ function onChooseMenuItem(id: string): void {
 </template>
 
 <style scoped>
+.plugin-row__contributions {
+  color: var(--numen-hushed);
+}
+
 .plugin-row__state {
   color: var(--numen-hushed);
 }

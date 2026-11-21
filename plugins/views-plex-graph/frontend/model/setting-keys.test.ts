@@ -19,6 +19,7 @@ describe('the keys of the plex look settings', () => {
       outline_thickness: 1.5,
       line_curvature: 0.2,
       note_room: 12,
+      align_to_grid: true,
     })
 
     expect(look.showPills.value).toBe(true)
@@ -30,5 +31,6 @@ describe('the keys of the plex look settings', () => {
     expect(look.outlineThickness.value).toBe(1)
     expect(look.lineCurvature.value).toBe(0.55)
     expect(look.noteRoom.value).toBe(0)
+    expect(look.alignToGrid.value).toBe(false)
   })
 })

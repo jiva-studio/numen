@@ -24,6 +24,7 @@ interface BoxOptions {
   readonly focusGap: number
   readonly margin: number
   readonly squeeze: number
+  readonly alignToGrid: boolean
 }
 
 interface LimitOptions {
@@ -80,6 +81,7 @@ export const DEFAULT_OPTIONS: PlexOptions = {
   focusGap: 56,
   margin: 16,
   squeeze: 0.35,
+  alignToGrid: false,
   maxPerCluster: 20,
   routing: { curvature: 0.55, minReach: 22, arrowClearance: 20, minRun: 52 },
   motion: { arriveAfter: 0.35, leaveBefore: 0.45 },

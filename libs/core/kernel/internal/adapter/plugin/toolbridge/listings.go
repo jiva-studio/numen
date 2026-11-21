@@ -90,3 +90,13 @@ func (l *listings) read(pluginID string) (listing, bool) {
 	}
 	return listing{version: file.Version, tools: tools}, true
 }
+
+// ListKeptTools returns the tools the plugin last listed, read from the files and not from the plugin,
+// and nil where none are kept.
+func ListKeptTools(files ListingFiles, pluginID string) []*v1.PluginTool {
+	read, isRead := newListings(files, func() string { return "" }).read(pluginID)
+	if !isRead {
+		return nil
+	}
+	return read.tools.GetTools()
+}

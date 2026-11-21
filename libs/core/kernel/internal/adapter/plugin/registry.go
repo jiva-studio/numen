@@ -26,6 +26,7 @@ type Registry struct {
 	mode    safeModeReader
 	sups    *supervision.Supervisors
 	readers *contenttypes.Lookup
+	tools   func(pluginID string) []plugindomain.ContributionItem
 }
 
 // safeModeReader reports whether the host runs in safe mode.
@@ -39,11 +40,12 @@ type RegistryDeps struct {
 	Mode        safeModeReader
 	Supervisors *supervision.Supervisors
 	Readers     *contenttypes.Lookup
+	Tools       func(pluginID string) []plugindomain.ContributionItem
 }
 
 // NewRegistry creates the registry over the set of plugins.
 func NewRegistry(d RegistryDeps) *Registry {
-	return &Registry{set: d.Set, mode: d.Mode, sups: d.Supervisors, readers: d.Readers}
+	return &Registry{set: d.Set, mode: d.Mode, sups: d.Supervisors, readers: d.Readers, tools: d.Tools}
 }
 
 // GetPlugins returns all discovered plugins registered with the host, in the order of their ids.

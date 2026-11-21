@@ -58,3 +58,14 @@ func TestThePlexGraphHasSlotsAboveBelowAndOverItsNodes(t *testing.T) {
 		}
 	}
 }
+
+func TestThePlexGraphHasSlotsAtTheTopAndBottomOfItsBoard(t *testing.T) {
+	for _, name := range []string{"plexGraph.boardTop", "plexGraph.boardBottom"} {
+		if !manifest.IsSlot(name) {
+			t.Errorf("IsSlot(%q) = false, want true", name)
+		}
+		if manifest.IsWindowSlot(name) {
+			t.Errorf("IsWindowSlot(%q) = true, want false", name)
+		}
+	}
+}
