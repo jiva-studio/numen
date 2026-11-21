@@ -70,3 +70,28 @@ describe('the commands of the plugins', () => {
     ])
   })
 })
+
+describe('the commands of the plugins the manifests do not declare', () => {
+  it('keep one order whichever side lists them first', () => {
+    const list = (entries: readonly string[]) =>
+      createPaletteCommandList({
+        getAppCommands: () => [],
+        getSettingCommands: () => [],
+        declaredCommands: {
+          commands: ref(declared),
+          paletteCommands: ref([]),
+          slots: ref([]),
+          whenContext: {
+            getConfig: () => ({}),
+            getContentTypes: () => ({}),
+            whenReader: {} as never,
+          },
+        } as never,
+        getPluginEntries: () => entries.map(row),
+      })
+        .listCommands()
+        .map((one) => one.id)
+
+    expect(list(['shared:b', 'shared:a'])).toStrictEqual(list(['shared:a', 'shared:b']))
+  })
+})
