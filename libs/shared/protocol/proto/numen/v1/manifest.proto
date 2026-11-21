@@ -272,7 +272,8 @@ message ManifestSlotEntry {
     // submenu is the id of the submenu the entry declares. It is unique among all plugins.
     string submenu = 4;
   }
-  // title is the title of a submenu.
+  // title is the title of a submenu. On a view or a command it is the name the settings page of the plugin
+  // that draws the slot gives the entry; a command without one is named by its own title.
   string title = 5;
   // icon is the kebab-case icon name of a submenu. Empty for none.
   string icon = 6;

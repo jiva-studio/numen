@@ -7,8 +7,8 @@ const groups = [
     slot: 'plexGraph.nodeBelow',
     title: 'Below a node',
     contributors: [
-      { key: 'a/view/one', label: 'one', pluginName: 'Alpha' },
-      { key: 'b/view/two', label: 'two', pluginName: 'Beta' },
+      { key: 'a/view/one', label: 'one', pluginName: 'Alpha', group: '' },
+      { key: 'b/view/two', label: 'two', pluginName: 'Beta', group: '' },
     ],
   },
   { slot: 'plexGraph.node', title: 'Over a node', contributors: [] },

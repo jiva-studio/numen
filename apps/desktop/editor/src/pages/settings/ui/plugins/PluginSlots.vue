@@ -5,6 +5,7 @@
  */
 import type { JsonValue } from '@/shared/api/json'
 import {
+  canMoveSlotRow,
   getSlotRows,
   moveSlotRow,
   toggleSlotRow,
@@ -24,6 +25,11 @@ const emit = defineEmits<{
   (e: 'change', layout: JsonValue): void
 }>()
 
+const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, props.layout)
+
+const startsGroup = (group: SlotGroup, at: number): boolean =>
+  at > 0 && rowsOf(group)[at]?.group !== rowsOf(group)[at - 1]?.group
+
 function onChange(group: SlotGroup, rows: readonly SlotRow[]): void {
   emit('change', writeSlotRows(props.layout, group.slot, rows))
 }
@@ -42,18 +48,17 @@ function onChange(group: SlotGroup, rows: readonly SlotRow[]): void {
     </p>
     <ul v-else class="plugin-slots__list">
       <li
-        v-for="(row, at) in getSlotRows(group, props.layout)"
+        v-for="(row, at) in rowsOf(group)"
         :key="row.key"
         class="plugin-slots__row"
+        :class="{ 'plugin-slots__row--grouped': startsGroup(group, at) }"
       >
         <PluginSlotRow
           :row="row"
-          :is-first="at === 0"
-          :is-last="at === group.contributors.length - 1"
-          @move="
-            (by) => onChange(group, moveSlotRow(getSlotRows(group, props.layout), at, at + by))
-          "
-          @toggle="onChange(group, toggleSlotRow(getSlotRows(group, props.layout), at))"
+          :can-move-up="canMoveSlotRow(rowsOf(group), at, -1)"
+          :can-move-down="canMoveSlotRow(rowsOf(group), at, 1)"
+          @move="(by) => onChange(group, moveSlotRow(rowsOf(group), at, at + by))"
+          @toggle="onChange(group, toggleSlotRow(rowsOf(group), at))"
         />
       </li>
     </ul>
@@ -94,5 +99,11 @@ function onChange(group: SlotGroup, rows: readonly SlotRow[]): void {
   align-items: center;
   gap: 0.5rem;
   padding-block: 0.25rem;
+}
+
+.plugin-slots__row--grouped {
+  margin-block-start: 0.5rem;
+  padding-block-start: 0.75rem;
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
 }
 </style>

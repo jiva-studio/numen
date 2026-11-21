@@ -25,8 +25,8 @@
       }
     ],
     "slots": [
-      { "slot": "fileTree.rowEnd", "view": "file-tags" },
-      { "slot": "plexGraph.nodeBelow", "view": "plex-tags", "order": 20 },
+      { "slot": "fileTree.rowEnd", "view": "file-tags", "title": "Tags" },
+      { "slot": "plexGraph.nodeBelow", "view": "plex-tags", "title": "Tags", "order": 20 },
       {
         "slot": "fileTree.context",
         "command": "tags.set",

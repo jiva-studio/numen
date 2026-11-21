@@ -7,7 +7,9 @@
   "targets": ["desktop.editor"],
   "contributes": {
     "category": "tools",
-    "slots": [{ "slot": "titleBar.status", "view": "plugins", "order": 30 }]
+    "slots": [
+      { "slot": "titleBar.status", "view": "plugins", "title": "Plugin statistics", "order": 30 }
+    ]
   },
   "permissions": ["plugins:read"],
   "frontend": {},

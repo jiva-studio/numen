@@ -53,6 +53,7 @@ type SlotGroupsReader = (pluginId: string) => readonly {
     readonly key: string
     readonly label: string
     readonly pluginId: string
+    readonly group: string
   }[]
 }[]
 
@@ -157,7 +158,9 @@ function createInstallationSlots(deps: Pick<InstallationPluginDeps, 'rest' | 'ge
   const { rest, getSlotGroups } = deps
   if (!getSlotGroups) return {}
   const getPluginName = (pluginId: string): string =>
-    rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
+    pluginId === 'app'
+      ? 'Numen'
+      : (rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId)
   return {
     getSlotGroups: (pluginId: string) =>
       getSlotGroups(pluginId).map((group) => ({
@@ -166,6 +169,7 @@ function createInstallationSlots(deps: Pick<InstallationPluginDeps, 'rest' | 'ge
           key: one.key,
           label: one.label,
           pluginName: getPluginName(one.pluginId),
+          group: one.group,
         })),
       })),
   }

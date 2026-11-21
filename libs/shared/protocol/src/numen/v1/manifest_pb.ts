@@ -884,7 +884,8 @@ export type ManifestSlotEntry = Message<"numen.v1.ManifestSlotEntry"> & {
   } | { case: undefined; value?: undefined };
 
   /**
-   * title is the title of a submenu.
+   * title is the title of a submenu. On a view or a command it is the name the settings page of the plugin
+   * that draws the slot gives the entry; a command without one is named by its own title.
    *
    * @generated from field: string title = 5;
    */
