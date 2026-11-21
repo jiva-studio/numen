@@ -12,6 +12,7 @@ import {
   writeSlotRows,
   type SlotRow,
 } from '../../lib/slotLayout'
+import { getRowShifts } from '../../lib/slotDrag'
 import type { SlotGroup } from '../../types'
 import PluginSlotRow from './PluginSlotRow.vue'
 
@@ -27,7 +28,14 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const DRAG_THRESHOLD = 4
-let pressed: { group: SlotGroup; list: HTMLElement | null } | null = null
+interface Pressed {
+  group: SlotGroup
+  list: HTMLElement | null
+  key: string
+  startY: number
+  pitch: number
+}
+let pressed: Pressed | null = null
 
 const drag = usePressDrag<number, number>({
   getThreshold: () => DRAG_THRESHOLD,
@@ -42,8 +50,11 @@ const drag = usePressDrag<number, number>({
 /* -------------------------------- Handlers -------------------------------- */
 function onGripPress(group: SlotGroup, at: number, event: PointerEvent): void {
   if (event.button !== 0) return
-  const list = (event.currentTarget as HTMLElement | null)?.closest('ul') ?? null
-  pressed = { group, list }
+  const grip = event.currentTarget as HTMLElement | null
+  const list = grip?.closest('ul') ?? null
+  const item = grip?.closest('li')
+  const pitch = item ? measureRect(item).height : 0
+  pressed = { group, list, key: rowsOf(group)[at]?.key ?? '', startY: event.clientY, pitch }
   drag.startPress(at, event)
 }
 
@@ -68,13 +79,32 @@ function findIndexAt(y: number): number | null {
   return found < 0 ? items.length - 1 : found
 }
 
-const isDragging = (group: SlotGroup, at: number): boolean =>
-  pressed?.group === group &&
-  drag.dragging.value?.hasMoved === true &&
-  drag.dragging.value.item === at
+const isHeld = (group: SlotGroup, key: string): boolean =>
+  pressed?.group === group && pressed.key === key && drag.dragging.value?.hasMoved === true
 
-const isDropTarget = (group: SlotGroup, at: number): boolean =>
-  pressed?.group === group && drag.dragging.value?.hasMoved === true && drag.at.value === at
+const isLifted = (group: SlotGroup, key: string): boolean =>
+  isHeld(group, key) && drag.position.value !== null
+
+const isShifting = (group: SlotGroup): boolean =>
+  pressed?.group === group && drag.position.value !== null
+
+function getOffset(group: SlotGroup, key: string, at: number): number {
+  const point = drag.position.value
+  const from = drag.dragging.value?.item
+  if (!pressed || pressed.group !== group || !point || from === undefined) return 0
+  if (key === pressed.key) return point.y - pressed.startY
+  const shifts = getRowShifts(rowsOf(group).length, from, drag.at.value ?? from, pressed.pitch)
+  return shifts[at] ?? 0
+}
+
+function getRowStyle(
+  group: SlotGroup,
+  key: string,
+  at: number,
+): Record<string, string> | undefined {
+  const offset = getOffset(group, key, at)
+  return offset === 0 ? undefined : { transform: `translateY(${offset}px)` }
+}
 </script>
 
 <template>
@@ -84,15 +114,17 @@ const isDropTarget = (group: SlotGroup, at: number): boolean =>
     :title="group.title"
     :data-testid="`slots-${group.slot}`"
   >
-    <ul class="plugin-slots__list">
+    <TransitionGroup tag="ul" name="plugin-slots" class="plugin-slots__list">
       <li
         v-for="(row, at) in rowsOf(group)"
         :key="row.key"
         class="plugin-slots__row"
         :class="{
-          'plugin-slots__row--dragged': isDragging(group, at),
-          'plugin-slots__row--target': isDropTarget(group, at),
+          'plugin-slots__row--held': isHeld(group, row.key),
+          'plugin-slots__row--lifted': isLifted(group, row.key),
+          'plugin-slots__row--shifting': isShifting(group) && !isLifted(group, row.key),
         }"
+        :style="getRowStyle(group, row.key, at)"
       >
         <PluginSlotRow
           :row="row"
@@ -102,7 +134,7 @@ const isDropTarget = (group: SlotGroup, at: number): boolean =>
           @toggle="onChange(group, toggleSlotRow(rowsOf(group), at))"
         />
       </li>
-    </ul>
+    </TransitionGroup>
   </IslandCard>
 </template>
 
@@ -122,11 +154,29 @@ const isDropTarget = (group: SlotGroup, at: number): boolean =>
   padding-block: 0.125rem;
 }
 
-.plugin-slots__row--dragged {
-  opacity: 0.5;
+.plugin-slots__row--held {
+  position: relative;
+  z-index: 1;
+  transition: transform var(--numen-motion) var(--numen-easing);
 }
 
-.plugin-slots__row--target {
-  box-shadow: inset 0 calc(-1 * var(--numen-stroke)) 0 var(--numen-accent);
+.plugin-slots__row--lifted {
+  background: var(--numen-raised);
+  box-shadow: var(--numen-shadow-card);
+  opacity: 0.9;
+  transition: none;
+}
+
+.plugin-slots__row--shifting,
+.plugin-slots-move {
+  transition: transform var(--numen-motion) var(--numen-easing);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plugin-slots__row--held,
+  .plugin-slots__row--shifting,
+  .plugin-slots-move {
+    transition: none;
+  }
 }
 </style>
