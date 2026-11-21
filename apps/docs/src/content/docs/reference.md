@@ -264,9 +264,17 @@ The settings of the plugin Plex Graph.
 | `animationLength` | a number | time to move to another note, in ms; 0 is instant. From 0 to 2000. |
 | `noteRoom` | a number | empty space around every note. From 0 to 40. |
 
-### `md.numen.views.plex.headings`
+### `md.numen.views.plex.headings.dropdown`
 
-The settings of the plugin Plex Headings.
+The settings of the plugin Plex Headings Dropdown.
+
+| | | |
+| --- | --- | --- |
+| `headingLimit` | a number | most headings shown under a node. From 1 to 12. |
+
+### `md.numen.views.plex.headings.inline`
+
+The settings of the plugin Plex Headings Inline.
 
 | | | |
 | --- | --- | --- |

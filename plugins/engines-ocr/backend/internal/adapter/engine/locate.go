@@ -77,15 +77,15 @@ func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Confi
 	files := modelFiles{dir: cfg.Dir, shouldDownload: cfg.ShouldDownload, fetch: fetch}
 	layout, err := files.resolve(ctx, cfg.Layout.Path, cfg.Layout.Name, "pp-doclayout.onnx")
 	if err != nil {
-		return nil, "", paths{}, fmt.Errorf("layout model: %w", err)
+		return nil, "", paths{}, modelError("layout", cfg.Layout.Name, cfg.Layout.Path, err)
 	}
 	detect, err := files.resolve(ctx, cfg.Detect.Path, cfg.Detect.Name, "pp-ocr-det.onnx")
 	if err != nil {
-		return nil, "", paths{}, fmt.Errorf("detect model: %w", err)
+		return nil, "", paths{}, modelError("detect", cfg.Detect.Name, cfg.Detect.Path, err)
 	}
 	recognize, err := files.resolve(ctx, cfg.Recognize.Path, cfg.Recognize.Name, "pp-ocr-rec.onnx")
 	if err != nil {
-		return nil, "", paths{}, fmt.Errorf("recognize model: %w", err)
+		return nil, "", paths{}, modelError("recognize", cfg.Recognize.Name, cfg.Recognize.Path, err)
 	}
 
 	found := paths{
@@ -110,4 +110,12 @@ func getCacheRoot() string {
 		return ""
 	}
 	return root
+}
+
+func modelError(role, address, path string, err error) error {
+	where := address
+	if path != "" {
+		where = path
+	}
+	return fmt.Errorf("the %s model %s is not available: %w; connect to the internet and run Recognize again", role, where, err)
 }

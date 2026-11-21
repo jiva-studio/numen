@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/domain/settings"
@@ -104,5 +105,20 @@ func TestResolveSelectedModelThroughHost(t *testing.T) {
 	files.shouldDownload = false
 	if _, err := files.resolve(ctx, "", address, "pp-ocr-rec.onnx"); err == nil {
 		t.Fatal("downloaded an absent model with downloads disabled")
+	}
+}
+
+func TestMissingModelIsNamedWithItsAddress(t *testing.T) {
+	address, _ := settings.FindRecognizer("pp-ocrv5-cyrillic")
+	refused := errors.New("connection refused")
+	fetch := func(context.Context, string, string) (string, error) { return "", refused }
+	files := modelFiles{dir: t.TempDir(), shouldDownload: true, fetch: fetch}
+	_, err := files.resolve(t.Context(), "", address, "pp-ocr-rec.onnx")
+	got := modelError("recognize", address, "", err)
+	if !errors.Is(got, refused) || !strings.Contains(got.Error(), address) || !strings.Contains(got.Error(), "run Recognize again") {
+		t.Fatalf("error = %v", got)
+	}
+	if shown := modelError("detect", address, "/models/det.onnx", refused).Error(); !strings.Contains(shown, "/models/det.onnx") {
+		t.Fatalf("error = %v", shown)
 	}
 }

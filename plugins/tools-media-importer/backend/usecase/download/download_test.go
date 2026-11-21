@@ -210,3 +210,19 @@ func TestPagesProviderGetsTheArticleText(t *testing.T) {
 		t.Errorf("GetText(empty prose) = %v, want fetch.ErrNothingDownloaded", err)
 	}
 }
+
+type certificateRunner struct{ stubRunner }
+
+func (certificateRunner) Run(context.Context, []string, []string, io.Writer, ...string) ([]byte, string, error) {
+	return nil, "ERROR: [youtube] x: Unable to download webpage: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed", errors.New("exit status 1")
+}
+
+func TestRunNamesAnUntrustedCertificate(t *testing.T) {
+	_, err := run(t.Context(), &certificateRunner{}, program{command: []string{"yt-dlp"}}, nil)
+	if err == nil || !strings.Contains(err.Error(), "does not trust the certificate") || !strings.Contains(err.Error(), "CERTIFICATE_VERIFY_FAILED") {
+		t.Fatalf("error = %v", err)
+	}
+	if _, err := run(t.Context(), &stubRunner{runErr: errors.New("exit status 1")}, program{command: []string{"yt-dlp"}}, nil); err == nil || strings.Contains(err.Error(), "certificate") {
+		t.Fatalf("error = %v", err)
+	}
+}
