@@ -16,6 +16,7 @@ export interface PendingStep {
   readonly on: CommandTarget
   readonly promptIndex?: number
   readonly values?: Readonly<Record<string, string>>
+  readonly item?: { readonly id: string; readonly title: string; readonly detail?: string }
 }
 
 /** The prompt an `arguments` step requires; undefined for any other step. */

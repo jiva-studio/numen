@@ -15,7 +15,13 @@
         "id": "tags.delete",
         "title": "Delete tag",
         "icon": "trash-2",
-        "when": "window.isVaultOpen"
+        "when": "window.isVaultOpen",
+        "answers": {
+          "keeps": "Keep the tag",
+          "retainedNotice": "No note changes",
+          "action": "Delete the tag",
+          "detail": "Removed from"
+        }
       }
     ],
     "slots": [

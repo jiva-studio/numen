@@ -32,6 +32,25 @@ export interface CommandItem {
   readonly group?: string
 }
 
+// CommandAnswers is the yes or no a command declares in its manifest entry (`answers`): the palette
+// asks it before the command runs, the answer that keeps things as they are first. The row of
+// `action` names what it acts on, and where the command offers items that is the item picked, whose
+// detail follows `detail`.
+export interface CommandAnswers {
+  readonly keeps: string
+  readonly retainedNotice: string
+  readonly action: string
+  readonly detail: string
+}
+
+// CommandWarns is the confirmation a command declares in its manifest entry (`warns`) by having the
+// name of the note typed again: the action, what is said under it and the placeholder of the field.
+export interface CommandWarns {
+  readonly action: string
+  readonly detail: string
+  readonly back: string
+}
+
 // CommandsHost is the commands of the window.
 export interface CommandsHost {
   // The full ids of the commands the window runs now (`<plugin id>:<id>`, `app:<id>`): its own and

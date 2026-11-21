@@ -46,8 +46,12 @@ func (p pluginCommands) ListCommands() []plugin.CommandEntry {
 		}},
 		{PluginID: "org.example.sample", Command: manifest.Command{
 			ID: "print-sample", Title: "Print a sample", When: "target.contentType == 'text/markdown'",
+			Answers: &manifest.CommandAnswers{Keeps: "Keep", RetainedNotice: "Nothing changes", Action: "Print", Detail: "On"},
 		}},
-		{PluginID: "md.numen.cards", Command: manifest.Command{ID: "shuffle-deck", Title: "Shuffle a deck", When: "target.noteType == 'deck'"}},
+		{PluginID: "md.numen.cards", Command: manifest.Command{
+			ID: "shuffle-deck", Title: "Shuffle a deck", When: "target.noteType == 'deck'",
+			Warns: &manifest.CommandWarns{Action: "Shuffle", Detail: "Mixes it", Back: "Type the deck"},
+		}},
 	}
 }
 
@@ -178,5 +182,29 @@ func TestListCommands_CarriesEveryArgumentWithItsRequirement(t *testing.T) {
 	want := []carried{{"pages", true}, {"preview", false}}
 	if !slices.Equal(got, want) {
 		t.Errorf("the wire carries %v, want %v", got, want)
+	}
+}
+
+func TestListCommands_CarriesTheConfirmationAManifestDeclares(t *testing.T) {
+	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown"}, nil, nil)).ListCommands(
+		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	byID := map[string]*v1.PluginCommand{}
+	for _, one := range res.Msg.GetCommands() {
+		byID[one.GetId()] = one
+	}
+	answers := byID["print-sample"].GetAnswers()
+	if answers.GetKeeps() != "Keep" || answers.GetRetainedNotice() != "Nothing changes" || answers.GetAction() != "Print" || answers.GetDetail() != "On" {
+		t.Errorf("the answers came out as %v", answers)
+	}
+	warns := byID["shuffle-deck"].GetWarns()
+	if warns.GetAction() != "Shuffle" || warns.GetDetail() != "Mixes it" || warns.GetBack() != "Type the deck" {
+		t.Errorf("the warns came out as %v", warns)
+	}
+	if byID["sample.create"].GetAnswers() != nil || byID["sample.create"].GetWarns() != nil {
+		t.Error("a command that declares no confirmation carries one")
 	}
 }

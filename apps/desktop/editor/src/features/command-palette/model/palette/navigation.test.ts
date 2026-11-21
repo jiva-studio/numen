@@ -243,3 +243,39 @@ describe('the row a list opens on', () => {
     expect(steps.position.opensOn.value).toBe('')
   })
 })
+
+describe('an item picked for a command that confirms', () => {
+  const asking = command({ id: 'tags.delete', input: 'items', next: 'confirmation' })
+  const rows = [{ id: 'Sea', title: 'Sea', detail: '3 notes' }]
+  const createStepsAsking = () => {
+    const created = createSteps([{ id: 'g', title: 'Tags', items: rows }])
+    created.steps.stack.pushStep(pending('items', { command: asking }))
+    return created
+  }
+
+  it('moves to the confirmation about the item without running the command', () => {
+    const { steps, choose, invoked } = createStepsAsking()
+
+    const made = choose(steps.here.value as PendingStep, 'Sea', '', [], [], () => false)
+
+    expect(made).toBeNull()
+    expect(invoked).toStrictEqual([])
+    expect(steps.here.value).toMatchObject({
+      step: 'confirmation',
+      item: { id: 'Sea', title: 'Sea', detail: '3 notes' },
+    })
+  })
+
+  it('runs with the item once the command is chosen, and runs nothing for the other answer', () => {
+    const { steps, choose, invoked } = createStepsAsking()
+    choose(steps.here.value as PendingStep, 'Sea', '', [], [], () => false)
+    const confirming = steps.here.value as PendingStep
+
+    choose(confirming, 'tags.delete:keep', '', [], [], () => false)
+    expect(invoked).toStrictEqual([])
+    expect(steps.here.value?.step).toBe('items')
+
+    choose(confirming, 'tags.delete', '', [], [], () => false)
+    expect(invoked[0]?.[2]).toBe('Sea')
+  })
+})

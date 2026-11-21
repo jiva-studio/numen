@@ -13,7 +13,9 @@ import {
 } from '@numen/core-client'
 import {
   createWhenReader,
+  type CommandAnswers,
   type CommandItem,
+  type CommandWarns,
   type HandlerDeclaration,
   type WhenReader,
 } from '@numen/plugin-loader'
@@ -73,6 +75,8 @@ export interface DeclaredCommand {
   readonly when?: string
   readonly hasItems?: true
   readonly arguments: readonly DeclaredArgument[]
+  readonly answers?: CommandAnswers
+  readonly warns?: CommandWarns
 }
 
 /**
@@ -94,6 +98,21 @@ type DeclaredCommandOutcome =
   | { ok: true; value: { readonly message: string; readonly openedPath: string } }
   | { ok: false; error: string }
 
+const readAnswers = (wire: PluginCommand['answers']): { answers: CommandAnswers } | object =>
+  wire
+    ? {
+        answers: {
+          keeps: wire.keeps,
+          retainedNotice: wire.retainedNotice,
+          action: wire.action,
+          detail: wire.detail,
+        },
+      }
+    : {}
+
+const readWarns = (wire: PluginCommand['warns']): { warns: CommandWarns } | object =>
+  wire ? { warns: { action: wire.action, detail: wire.detail, back: wire.back } } : {}
+
 const readCommand = (wire: PluginCommand): DeclaredCommand => ({
   pluginId: wire.pluginId,
   id: wire.id,
@@ -106,6 +125,8 @@ const readCommand = (wire: PluginCommand): DeclaredCommand => ({
     title: one.title,
     isRequired: one.isRequired,
   })),
+  ...readAnswers(wire.answers),
+  ...readWarns(wire.warns),
 })
 
 const PLACED_KINDS = ['command', 'view', 'submenu'] as const
