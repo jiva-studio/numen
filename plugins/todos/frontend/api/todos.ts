@@ -4,6 +4,8 @@
  */
 import type {
   GetSummaryRequest,
+  ListFieldsRequest,
+  ListFieldsResponse,
   ListTasksRequest,
   ListTasksResponse,
   RefreshIndexRequest,
@@ -22,6 +24,7 @@ export const SERVICE = 'md.numen.todos'
 export interface Methods {
   GetSummary: { request: GetSummaryRequest; response: Summary }
   ListTasks: { request: ListTasksRequest; response: ListTasksResponse }
+  ListFields: { request: ListFieldsRequest; response: ListFieldsResponse }
   RefreshIndex: { request: RefreshIndexRequest; response: RefreshIndexResponse }
   WatchTasks: { request: WatchTasksRequest; response: WatchMessage }
   SetTaskDone: { request: SetTaskDoneRequest; response: SetTaskDoneResponse }

@@ -13,7 +13,7 @@
         {
           "id": "tasks",
           "title": "Task lines",
-          "description": "Draws a checkbox on task lines of a note, colours their due, done, rec and pri dates, priority, projects and contexts, and dims completed tasks"
+          "description": "Draws a checkbox on task lines of a note, colours their due, done, rec and pri dates, priority, projects and contexts, dims completed tasks, and completes projects, contexts, dates and priority as you type them"
         }
       ]
     },

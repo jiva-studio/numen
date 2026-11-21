@@ -4,7 +4,7 @@
  * Scans markdown text for [[target]] patterns and provides autocompletion
  * for vault notes and document section headings.
  */
-import type { Extension } from '@codemirror/state'
+import { EditorState, type Extension } from '@codemirror/state'
 import {
   autocompletion,
   type Completion,
@@ -61,64 +61,65 @@ function parseWikilinkTarget(context: CompletionContext): WikilinkTarget | null 
  * Creates a CodeMirror extension providing autocompletion for [[wikilinks]].
  */
 export function createWikilinkExtension(options: WikilinkOptions): Extension {
-  return autocompletion({
-    override: [
-      async (context: CompletionContext): Promise<CompletionResult | null> => {
-        const target = parseWikilinkTarget(context)
-        if (!target) {
-          return null
-        }
+  const source = createSource(options)
+  return [autocompletion(), EditorState.languageData.of(() => [{ autocomplete: source }])]
+}
 
-        const isHeadingQuery = target.query.includes('#')
-        let suggestions: Completion[]
+function createSource(options: WikilinkOptions) {
+  return async (context: CompletionContext): Promise<CompletionResult | null> => {
+    const target = parseWikilinkTarget(context)
+    if (!target) {
+      return null
+    }
 
-        if (isHeadingQuery && options.headings) {
-          const parts = target.query.split('#')
-          const noteTitle = parts[0]?.trim() ?? ''
-          const headingPrefix = parts[1]?.trim().toLowerCase() ?? ''
-          const headings = await options.headings(noteTitle)
+    const isHeadingQuery = target.query.includes('#')
+    let suggestions: Completion[]
 
-          suggestions = headings
-            .filter((h) => h.toLowerCase().includes(headingPrefix))
-            .map((h) => ({
-              label: noteTitle ? `${noteTitle}#${h}` : `#${h}`,
-              detail: 'heading',
-              type: 'property',
-              apply: (view, completion, from, to) => {
-                const insertText = target.hasClosingBrackets
-                  ? completion.label
-                  : `${completion.label}]]`
-                view.dispatch({
-                  changes: { from: target.start, to, insert: insertText },
-                })
-              },
-            }))
-        } else {
-          const matches = await options.search(target.query)
-          suggestions = matches.map((m) => {
-            const detail = m.detail ?? m.type
-            return {
-              label: m.title,
-              ...(detail ? { detail } : {}),
-              type: m.type === 'heading' ? 'property' : 'class',
-              apply: (view, completion, from, to) => {
-                const insertText = target.hasClosingBrackets
-                  ? completion.label
-                  : `${completion.label}]]`
-                view.dispatch({
-                  changes: { from: target.start, to, insert: insertText },
-                })
-              },
-            }
-          })
-        }
+    if (isHeadingQuery && options.headings) {
+      const parts = target.query.split('#')
+      const noteTitle = parts[0]?.trim() ?? ''
+      const headingPrefix = parts[1]?.trim().toLowerCase() ?? ''
+      const headings = await options.headings(noteTitle)
 
+      suggestions = headings
+        .filter((h) => h.toLowerCase().includes(headingPrefix))
+        .map((h) => ({
+          label: noteTitle ? `${noteTitle}#${h}` : `#${h}`,
+          detail: 'heading',
+          type: 'property',
+          apply: (view, completion, from, to) => {
+            const insertText = target.hasClosingBrackets
+              ? completion.label
+              : `${completion.label}]]`
+            view.dispatch({
+              changes: { from: target.start, to, insert: insertText },
+            })
+          },
+        }))
+    } else {
+      const matches = await options.search(target.query)
+      suggestions = matches.map((m) => {
+        const detail = m.detail ?? m.type
         return {
-          from: target.start,
-          options: suggestions,
-          filter: false,
+          label: m.title,
+          ...(detail ? { detail } : {}),
+          type: m.type === 'heading' ? 'property' : 'class',
+          apply: (view, completion, from, to) => {
+            const insertText = target.hasClosingBrackets
+              ? completion.label
+              : `${completion.label}]]`
+            view.dispatch({
+              changes: { from: target.start, to, insert: insertText },
+            })
+          },
         }
-      },
-    ],
-  })
+      })
+    }
+
+    return {
+      from: target.start,
+      options: suggestions,
+      filter: false,
+    }
+  }
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -429,5 +430,84 @@ func TestWatchSendsTheStateAtOnceAndAfterEachChangeOfTheIndex(t *testing.T) {
 	stop()
 	if err := <-finished; err != nil && !errors.Is(err, context.Canceled) {
 		t.Errorf("Watch = %v", err)
+	}
+}
+
+func names(counts []FieldCount) []string {
+	out := []string{}
+	for _, one := range counts {
+		out = append(out, fmt.Sprintf("%s=%d", one.Name, one.Count))
+	}
+	return out
+}
+
+func TestListFieldsCountsProjectsAndContextsAndFollowsAddChangeAndRemoveOfANote(t *testing.T) {
+	f := newFixture(map[string]string{
+		"a.md": "- [ ] one +home @phone\n- [ ] two +home +work\n",
+		"b.md": "- [ ] three +work @phone @desk\n",
+	})
+	f.scan(t)
+
+	got := f.index.ListFields()
+	if want := []string{"home=2", "work=2"}; !reflect.DeepEqual(names(got.Projects), want) {
+		t.Errorf("projects = %v, want %v", names(got.Projects), want)
+	}
+	if want := []string{"phone=2", "desk=1"}; !reflect.DeepEqual(names(got.Contexts), want) {
+		t.Errorf("contexts = %v, want %v", names(got.Contexts), want)
+	}
+
+	f.vault.File("a.md", "- [ ] one +garden\n")
+	f.vault.File("c.md", "- [ ] four +garden @phone\n")
+	f.refresh(t, "a.md", "c.md")
+	got = f.index.ListFields()
+	if want := []string{"garden=2", "work=1"}; !reflect.DeepEqual(names(got.Projects), want) {
+		t.Errorf("projects after change = %v, want %v", names(got.Projects), want)
+	}
+	if want := []string{"phone=2", "desk=1"}; !reflect.DeepEqual(names(got.Contexts), want) {
+		t.Errorf("contexts after change = %v, want %v", names(got.Contexts), want)
+	}
+
+	f.vault.Remove("b.md")
+	f.refresh(t, "b.md")
+	got = f.index.ListFields()
+	if want := []string{"garden=2"}; !reflect.DeepEqual(names(got.Projects), want) {
+		t.Errorf("projects after remove = %v, want %v", names(got.Projects), want)
+	}
+	if want := []string{"phone=1"}; !reflect.DeepEqual(names(got.Contexts), want) {
+		t.Errorf("contexts after remove = %v, want %v", names(got.Contexts), want)
+	}
+}
+
+func TestListFieldsOrdersTiesByNameAndKeepsTheMostUsedTwoHundred(t *testing.T) {
+	var body strings.Builder
+	for n := range 205 {
+		fmt.Fprintf(&body, "- [ ] task +p%03d\n", n)
+	}
+	body.WriteString("- [ ] again +p204\n")
+	f := newFixture(map[string]string{"a.md": body.String()})
+	f.scan(t)
+
+	got := f.index.ListFields().Projects
+
+	if len(got) != 200 {
+		t.Fatalf("projects = %d, want 200", len(got))
+	}
+	if got[0].Name != "p204" || got[0].Count != 2 || got[1].Name != "p000" || got[199].Name != "p198" {
+		t.Errorf("order = %v ... %v", got[:2], got[199])
+	}
+}
+
+func TestListFieldsDropsTheCountsOfANoteThatIsRenamedAwayAndStaysTheSameWhenItMoves(t *testing.T) {
+	f := newFixture(map[string]string{"old.md": "- [ ] moved +home"})
+	f.scan(t)
+
+	f.vault.Remove("old.md")
+	f.vault.File("new.md", "- [ ] moved +home")
+	if err := f.index.Refresh(t.Context(), []string{"new.md"}, []Rename{{From: "old.md", To: "new.md"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := names(f.index.ListFields().Projects), []string{"home=1"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("projects = %v, want %v", got, want)
 	}
 }

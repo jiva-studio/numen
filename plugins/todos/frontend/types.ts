@@ -127,3 +127,17 @@ export interface TaskWriter {
   /** Ticks or unticks one task line of a note. */
   setTaskDone(request: SetTaskDoneRequest): Promise<Result<SetTaskDoneResponse, ApiError>>
 }
+
+export type ListFieldsRequest = Record<string, never>
+
+/** A project or a context, written without its + or @, and the number of tasks that carry it. */
+export interface FieldCount {
+  readonly name: string
+  readonly count: number
+}
+
+/** The most used projects and contexts, at most 200 of each, by count and then by name. */
+export interface ListFieldsResponse {
+  readonly projects: readonly FieldCount[]
+  readonly contexts: readonly FieldCount[]
+}

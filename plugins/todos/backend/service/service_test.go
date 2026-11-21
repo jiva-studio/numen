@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -405,5 +406,23 @@ func TestTickOverHTTPAnswersAMalformedDayWithAnInvalidArgumentError(t *testing.T
 				t.Errorf("note = %q, want it untouched", note)
 			}
 		})
+	}
+}
+
+func TestListFieldsReturnsTheProjectsAndContextsMostUsedFirst(t *testing.T) {
+	a := start(t, map[string]string{
+		"a.md": "- [ ] one +home @phone\n- [ ] two +home +work",
+		"b.md": "- [ ] three +work +home",
+	})
+
+	var got api.ListFieldsResponse
+	status, _ := a.call(t, api.MethodListFields, api.ListFieldsRequest{}, &got)
+
+	want := api.ListFieldsResponse{
+		Projects: []api.FieldCount{{Name: "home", Count: 3}, {Name: "work", Count: 2}},
+		Contexts: []api.FieldCount{{Name: "phone", Count: 1}},
+	}
+	if status != http.StatusOK || !reflect.DeepEqual(got, want) {
+		t.Errorf("ListFields = %d %+v, want %+v", status, got, want)
 	}
 }

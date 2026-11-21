@@ -1,0 +1,8 @@
+{
+  "projects": [
+    { "name": "home", "count": 4 },
+    { "name": "work", "count": 4 },
+    { "name": "garden", "count": 1 }
+  ],
+  "contexts": [{ "name": "phone", "count": 2 }]
+}

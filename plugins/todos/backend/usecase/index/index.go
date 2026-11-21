@@ -65,6 +65,8 @@ type Index struct {
 
 	mu       sync.Mutex
 	entries  map[string]entry
+	projects map[string]int
+	contexts map[string]int
 	ignored  []string
 	revision uint64
 	isReady  bool
@@ -75,7 +77,7 @@ type Index struct {
 func New(files ports.FileReader, notes ports.NoteLister, parse ParseFunc) *Index {
 	return &Index{
 		files: files, notes: notes, parse: parse,
-		mu: sync.Mutex{}, entries: map[string]entry{}, ignored: nil, revision: 0, isReady: false, changed: make(chan struct{}),
+		mu: sync.Mutex{}, entries: map[string]entry{}, projects: map[string]int{}, contexts: map[string]int{}, ignored: nil, revision: 0, isReady: false, changed: make(chan struct{}),
 	}
 }
 
@@ -97,7 +99,7 @@ func (i *Index) Scan(ctx context.Context) error {
 	defer i.mu.Unlock()
 	for path := range i.entries {
 		if !slices.Contains(paths, path) {
-			delete(i.entries, path)
+			i.removeEntry(path)
 		}
 	}
 	i.isReady = true
@@ -263,7 +265,7 @@ func (i *Index) dropIgnored() bool {
 	isDropped := false
 	for path := range i.entries {
 		if isUnder(i.ignored, path) {
-			delete(i.entries, path)
+			i.removeEntry(path)
 			isDropped = true
 		}
 	}
@@ -296,7 +298,7 @@ func (i *Index) checkAll(ctx context.Context) error {
 	isChanged := false
 	for path := range i.entries {
 		if !slices.Contains(paths, path) {
-			delete(i.entries, path)
+			i.removeEntry(path)
 			isChanged = true
 		}
 	}

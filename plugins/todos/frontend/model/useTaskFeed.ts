@@ -21,6 +21,7 @@ export function useTaskFeed(
   api: Pick<TodosApi, 'getSummary' | 'watchTasks'>,
   getToday: () => string,
   timer: Timer,
+  onChanged: () => void = () => undefined,
 ): TaskFeed {
   const summary = ref<Summary | null>(null)
   let controller: AbortController | null = null
@@ -39,6 +40,7 @@ export function useTaskFeed(
     for await (const _message of api.watchTasks(signal)) {
       if (signal.aborted) return
       await refresh()
+      onChanged()
     }
   }
 

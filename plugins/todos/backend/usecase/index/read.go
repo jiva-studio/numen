@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 )
 
 // checkFunc brings the entry of one note up to date and reports whether its task list changed.
@@ -115,7 +116,7 @@ func (i *Index) recordFailure(ctx context.Context, path string, err error) (bool
 	i.mu.Lock()
 	unreadable := entry{stat: domain.FileStat{}, hash: [sha256.Size]byte{}, tasks: nil, isUnreadable: true}
 	known := i.entries[path]
-	i.entries[path] = unreadable
+	i.putEntry(path, unreadable)
 	i.mu.Unlock()
 	return !isSame(known, unreadable), nil
 }
@@ -124,14 +125,14 @@ func (i *Index) drop(path string) bool {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	known, isKnown := i.entries[path]
-	delete(i.entries, path)
+	i.removeEntry(path)
 	return isKnown && !isSame(known, emptyEntry())
 }
 
 func (i *Index) set(path string, next entry) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-	i.entries[path] = next
+	i.putEntry(path, next)
 }
 
 func isSame(a, b entry) bool {
@@ -143,4 +144,35 @@ func isSame(a, b entry) bool {
 
 func emptyEntry() entry {
 	return entry{stat: domain.FileStat{}, hash: [sha256.Size]byte{}, tasks: nil, isUnreadable: false}
+}
+
+func (i *Index) putEntry(path string, next entry) {
+	i.removeEntry(path)
+	i.entries[path] = next
+	i.countFields(next.tasks, 1)
+}
+
+func (i *Index) removeEntry(path string) {
+	known, isKnown := i.entries[path]
+	if !isKnown {
+		return
+	}
+	i.countFields(known.tasks, -1)
+	delete(i.entries, path)
+}
+
+func (i *Index) countFields(tasks []todo.Task, step int) {
+	for _, task := range tasks {
+		addCounts(i.projects, task.Projects, step)
+		addCounts(i.contexts, task.Contexts, step)
+	}
+}
+
+func addCounts(counts map[string]int, names []string, step int) {
+	for _, name := range names {
+		counts[name] += step
+		if counts[name] <= 0 {
+			delete(counts, name)
+		}
+	}
 }

@@ -48,6 +48,12 @@ func listTasks(tasks *index.Index) func(context.Context, api.ListTasksRequest) (
 	}
 }
 
+func listFields(tasks *index.Index) func(context.Context, api.ListFieldsRequest) (api.ListFieldsResponse, error) {
+	return func(_ context.Context, _ api.ListFieldsRequest) (api.ListFieldsResponse, error) {
+		return todos.EncodeFields(tasks.ListFields()), nil
+	}
+}
+
 func getLimit(asked int) int {
 	switch {
 	case asked <= 0:
@@ -137,6 +143,7 @@ func mount(s *server.Server, tasks *index.Index, done *complete.SetTaskDone) err
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodGetSummary, getSummary(tasks))
 	server.Handle(a, api.MethodListTasks, listTasks(tasks))
+	server.Handle(a, api.MethodListFields, listFields(tasks))
 	server.Handle(a, api.MethodRefreshIndex, refreshIndex(tasks))
 	server.Handle(a, api.MethodSetTaskDone, setTaskDone(tasks, done))
 	server.Stream(a, api.MethodWatchTasks, watchTasks(tasks))

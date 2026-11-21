@@ -5,6 +5,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/todos/backend/api"
 	"github.com/jiva-studio/numen/plugins/todos/backend/filter"
 	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
+	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
 )
 
 // EncodeTask returns the message of a task. Its lists are never nil, so they encode as [].
@@ -47,4 +48,17 @@ func DecodeFilter(message api.Filter) filter.Filter {
 		Path:       message.Path,
 		Text:       message.Text,
 	}
+}
+
+// EncodeFields returns the message of the projects and the contexts. Its lists are never nil.
+func EncodeFields(fields index.Fields) api.ListFieldsResponse {
+	return api.ListFieldsResponse{Projects: encodeCounts(fields.Projects), Contexts: encodeCounts(fields.Contexts)}
+}
+
+func encodeCounts(counts []index.FieldCount) []api.FieldCount {
+	encoded := make([]api.FieldCount, 0, len(counts))
+	for _, one := range counts {
+		encoded = append(encoded, api.FieldCount{Name: one.Name, Count: one.Count})
+	}
+	return encoded
 }

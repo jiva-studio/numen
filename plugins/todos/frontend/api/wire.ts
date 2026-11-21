@@ -8,6 +8,8 @@ import type {
   TaskWriter,
   SetTaskDoneRequest,
   SetTaskDoneResponse,
+  ListFieldsRequest,
+  ListFieldsResponse,
   ListTasksRequest,
   ListTasksResponse,
   RefreshIndexRequest,
@@ -23,6 +25,8 @@ const api = createApi(SERVICE)
 
 /** What the models ask of the backend. */
 export interface TodosApi extends TaskReader, TaskWriter {
+  /** Reads the projects and the contexts of the tasks, the most used first. */
+  listFields(): Promise<Result<ListFieldsResponse, ApiError>>
   /** Reads the counts of the open tasks at a day. */
   getSummary(today: string): Promise<Result<Summary, ApiError>>
   /** Tells the backend which notes changed; no path and no rename is a full check. */
@@ -35,6 +39,7 @@ export interface TodosApi extends TaskReader, TaskWriter {
 }
 
 export const todosApi: TodosApi = {
+  listFields: () => api.call<ListFieldsRequest, ListFieldsResponse>('ListFields', {}),
   getSummary: (today) => api.call<GetSummaryRequest, Summary>('GetSummary', { today }),
   listTasks: (today, filter, limit) =>
     api.call<ListTasksRequest, ListTasksResponse>('ListTasks', { today, filter, limit }),

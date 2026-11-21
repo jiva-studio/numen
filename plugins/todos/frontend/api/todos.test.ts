@@ -76,6 +76,17 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
       revision: 12,
     },
   },
+  ListFields: {
+    request: {},
+    response: {
+      projects: [
+        { name: 'home', count: 4 },
+        { name: 'work', count: 4 },
+        { name: 'garden', count: 1 },
+      ],
+      contexts: [{ name: 'phone', count: 2 }],
+    },
+  },
   RefreshIndex: {
     request: {
       paths: ['Daily/2026-11-14.md', 'Projects/Home.md'],

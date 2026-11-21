@@ -12,6 +12,7 @@ import {
 import { todosApi, type TodosApi } from './api/wire'
 import { createRefreshRelay } from './model/createRefreshRelay'
 import type { Timer } from './model/timer'
+import { createFieldCache } from './model/createFieldCache'
 import { useTaskFeed, type TaskFeed } from './model/useTaskFeed'
 import { TodosStatus } from './status'
 import { createTaskEditorExtension, TASKS_EXTENSION } from './editor'
@@ -57,9 +58,14 @@ export const activate = (
   if (!workspace) {
     throw new Error('the todos plugin needs the window it is drawn in')
   }
-  const feed = useTaskFeed(parts.api, () => workspace.window.getToday(), parts.timer)
+  const fields = createFieldCache(parts.api)
+  const refreshFields = (): void => {
+    fields.refresh().catch(() => undefined)
+  }
+  const feed = useTaskFeed(parts.api, () => workspace.window.getToday(), parts.timer, refreshFields)
   const refreshSummary = (): void => {
     feed.refresh().catch(() => undefined)
+    refreshFields()
   }
   // The counts are read again once the backend has checked the changed notes, so the chip does not
   // depend on the stream alone.
@@ -73,6 +79,7 @@ export const activate = (
     id: TASKS_EXTENSION,
     extension: createTaskEditorExtension({
       api: parts.api,
+      getFields: fields.get,
       getToday: () => workspace.window.getToday(),
       showError: (message) => workspace.messages.showError(message),
     }),

@@ -6,6 +6,7 @@ import type { ApiError, Result } from '@numen/plugin-sdk'
 import type { TodosApi } from '../api/wire'
 import type {
   Filter,
+  ListFieldsResponse,
   ListTasksResponse,
   Rename,
   SetTaskDoneRequest,
@@ -28,6 +29,7 @@ export interface RefreshCall {
 
 export interface FakeCalls {
   readonly getSummary: string[]
+  listFields: number
   readonly listTasks: ListCall[]
   readonly refreshIndex: RefreshCall[]
   readonly setTaskDone: SetTaskDoneRequest[]
@@ -66,6 +68,7 @@ export const task = (overrides: Partial<Task> & Pick<Task, 'path' | 'line' | 'te
  */
 export interface FakeInit {
   readonly summary?: Summary
+  readonly fields?: ListFieldsResponse
   readonly tasks?: Partial<Record<Filter['due'], ListTasksResponse>>
   readonly setTaskDone?: (
     request: SetTaskDoneRequest,
@@ -81,12 +84,14 @@ export const refuse = (
 
 export function createFakeApi(init: FakeInit = {}) {
   let summary = init.summary ?? SUMMARY
+  let fields: ListFieldsResponse = init.fields ?? { projects: [], contexts: [] }
   let lists: Partial<Record<Filter['due'], ListTasksResponse>> = { ...init.tasks }
   const queue: WatchMessage[] = []
   let wake: (() => void) | null = null
   let isEnding = false
   const calls: FakeCalls = {
     getSummary: [],
+    listFields: 0,
     listTasks: [],
     refreshIndex: [],
     setTaskDone: [],
@@ -95,6 +100,10 @@ export function createFakeApi(init: FakeInit = {}) {
   }
 
   const api: TodosApi = {
+    listFields: async () => {
+      calls.listFields += 1
+      return ok(fields)
+    },
     getSummary: async (today) => {
       calls.getSummary.push(today)
       return ok(summary)
@@ -148,6 +157,9 @@ export function createFakeApi(init: FakeInit = {}) {
   return {
     api,
     calls,
+    setFields: (next: ListFieldsResponse) => {
+      fields = next
+    },
     setSummary: (next: Summary) => {
       summary = next
     },
