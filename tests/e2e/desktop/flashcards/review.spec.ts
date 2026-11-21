@@ -31,9 +31,8 @@ test('the review mounts the conversation of the agent chat plugin in its agent p
   const panel = page.getByRole('region', { name: 'Ask about this card' })
   const field = panel.getByRole('textbox', { name: 'Ask about this card' })
   await expect(field).toBeVisible()
-  // The numen agent needs a model, which the person chooses in the composer.
-  await panel.getByRole('button', { name: /Choose a model/ }).click()
-  await page.getByText(/stand-in\/model/).click()
+  // The composer offers the models of the agent; Send stays disabled until one is listed.
+  await expect(panel.getByRole('button', { name: /Numen agent/ })).toBeVisible()
   await field.fill('Where does it live?')
   await panel.getByRole('button', { name: 'Send' }).click()
 
