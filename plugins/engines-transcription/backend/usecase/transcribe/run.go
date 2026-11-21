@@ -57,12 +57,7 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 		return t.putWholeVersion(ctx, j)
 	}
 
-	if t.isBackground(getTaskID(vault, path)) {
-		isFailed, err := j.store.hasFailed(ctx, j.key)
-		if err != nil || isFailed {
-			return err
-		}
-	} else if err := j.store.clearFailure(ctx, j.key); err != nil {
+	if isSkipped, err := t.settleFailure(ctx, j); err != nil || isSkipped {
 		return err
 	}
 
@@ -83,10 +78,7 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 		return fmt.Errorf("open the model: %w", err)
 	}
 	if err := t.hear(ctx, j, model, raw); err != nil {
-		if !errors.Is(err, context.Canceled) {
-			err = errors.Join(err, j.store.writeFailure(ctx, j.key, err))
-		}
-		return err
+		return rememberFailure(ctx, j, err)
 	}
 	err = j.store.finish(ctx, j.key)
 	if errors.Is(err, host.ErrNotExist) {
@@ -96,6 +88,20 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 		return err
 	}
 	return t.putVersion(ctx, j, getFileName(j.key))
+}
+
+func (t *Transcriber) settleFailure(ctx context.Context, j *job) (bool, error) {
+	if t.isBackground(getTaskID(j.vault, j.path)) {
+		return j.store.hasFailed(ctx, j.key)
+	}
+	return false, j.store.clearFailure(ctx, j.key)
+}
+
+func rememberFailure(ctx context.Context, j *job, err error) error {
+	if errors.Is(err, context.Canceled) {
+		return err
+	}
+	return errors.Join(err, j.store.writeFailure(ctx, j.key, err))
 }
 
 func (t *Transcriber) hear(ctx context.Context, j *job, model ports.Recognizer, raw []byte) (err error) {
