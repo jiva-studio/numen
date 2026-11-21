@@ -102,7 +102,7 @@ func hashFile(path string) (_ string, err error) {
 
 func getFileNames(name string, kind manifest.DependencyKind) []string {
 	if kind == manifest.DependencyKindBinary {
-		if runtime.GOOS == "windows" {
+		if runtime.GOOS == windowsOS {
 			return []string{name + ".exe", name}
 		}
 		return []string{name}
