@@ -20,9 +20,7 @@
         "title": "Create saved search",
         "icon": "search",
         "when": "window.isVaultOpen",
-        "arguments": [
-          { "name": "title", "title": "Title", "type": "string", "required": true }
-        ]
+        "arguments": [{ "name": "title", "title": "Title", "type": "string", "required": true }]
       }
     ],
     "slots": [
