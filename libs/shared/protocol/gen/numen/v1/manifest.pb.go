@@ -1404,7 +1404,8 @@ type ManifestSlotEntry struct {
 	//	*ManifestSlotEntry_View
 	//	*ManifestSlotEntry_Submenu
 	Placed isManifestSlotEntry_Placed `protobuf_oneof:"placed"`
-	// title is the title of a submenu.
+	// title is the title of a submenu. On a view or a command it is the name the settings page of the plugin
+	// that draws the slot gives the entry; a command without one is named by its own title.
 	Title string `protobuf:"bytes,5,opt,name=title,proto3" json:"title,omitempty"`
 	// icon is the kebab-case icon name of a submenu. Empty for none.
 	Icon string `protobuf:"bytes,6,opt,name=icon,proto3" json:"icon,omitempty"`

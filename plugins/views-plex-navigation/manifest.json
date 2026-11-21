@@ -9,7 +9,14 @@
   "contributes": {
     "feature": "plex navigation",
     "category": "views",
-    "slots": [{ "slot": "plexGraph.boardTop", "view": "navigation", "order": 10 }]
+    "slots": [
+      {
+        "slot": "plexGraph.boardTop",
+        "view": "navigation",
+        "title": "Back and forward",
+        "order": 10
+      }
+    ]
   },
   "permissions": [],
   "frontend": {}

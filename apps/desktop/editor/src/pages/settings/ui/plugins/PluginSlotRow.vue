@@ -7,8 +7,8 @@ import { WORDS as words } from '../../words'
 
 const props = defineProps<{
   row: SlotRow
-  isFirst: boolean
-  isLast: boolean
+  canMoveUp: boolean
+  canMoveDown: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,7 +23,9 @@ const emit = defineEmits<{
   <Button
     variant="ghost"
     size="icon"
-    :disabled="props.isFirst"
+    :disabled="!props.canMoveUp"
+    :class="{ 'plugin-slots__arrow--off': !props.canMoveUp }"
+    :tabindex="props.canMoveUp ? 0 : -1"
     :aria-label="words.slotsMoveUp(props.row.label)"
     @click="emit('move', -1)"
   >
@@ -32,7 +34,9 @@ const emit = defineEmits<{
   <Button
     variant="ghost"
     size="icon"
-    :disabled="props.isLast"
+    :disabled="!props.canMoveDown"
+    :class="{ 'plugin-slots__arrow--off': !props.canMoveDown }"
+    :tabindex="props.canMoveDown ? 0 : -1"
     :aria-label="words.slotsMoveDown(props.row.label)"
     @click="emit('move', 1)"
   >
@@ -51,6 +55,10 @@ const emit = defineEmits<{
   min-inline-size: 0;
   font-size: var(--numen-text-2);
   color: var(--numen-ink);
+}
+
+.plugin-slots__arrow--off {
+  visibility: hidden;
 }
 
 .plugin-slots__owner {

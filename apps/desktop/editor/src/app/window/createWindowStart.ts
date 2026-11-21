@@ -5,7 +5,6 @@ import type { PluginLoader } from '@numen/plugin-loader'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
 import type { useVaults } from '@/entities/vault'
-import { createSlotGroups } from '@/features/plugin-host'
 import { createEditorTokens } from '@/features/editor-tokens'
 import { createLayoutStart, createPluginStart, createWindowBootstrap } from '@/features/app-start'
 import type { createWindowPalette } from '@/features/command-palette'
@@ -126,7 +125,7 @@ export function createWindowStart(deps: WindowStartDeps) {
       host: pluginHost,
       health: window.pluginHealth,
       commands: plugins.hostPort.commands,
-      getSlotGroups: createSlotGroups(declaredCommands),
+      getSlotGroups: plugins.slotGroups,
     },
   })
   createWindowKeys({

@@ -1,17 +1,33 @@
 import { describe, expect, it } from 'vitest'
-import { getSlotRows, moveSlotRow, toggleSlotRow, writeSlotRows } from './slotLayout'
+import {
+  canMoveSlotRow,
+  getSlotRows,
+  moveSlotRow,
+  toggleSlotRow,
+  writeSlotRows,
+} from './slotLayout'
 
 const group = {
   slot: 'plexGraph.nodeBelow',
   title: 'Below a node',
   contributors: [
-    { key: 'a/view/one', label: 'one', pluginName: 'A' },
-    { key: 'b/view/two', label: 'two', pluginName: 'B' },
-    { key: 'c/view/three', label: 'three', pluginName: 'C' },
+    { key: 'a/view/one', label: 'one', pluginName: 'A', group: '' },
+    { key: 'b/view/two', label: 'two', pluginName: 'B', group: '' },
+    { key: 'c/view/three', label: 'three', pluginName: 'C', group: '' },
   ],
 }
 
 const keys = (rows: readonly { key: string }[]) => rows.map((one) => one.key)
+
+const grouped = {
+  slot: 'plexGraph.context',
+  title: 'Node menu',
+  contributors: [
+    { key: 'a/command/x', label: 'x', pluginName: 'A', group: '0-open' },
+    { key: 'a/command/y', label: 'y', pluginName: 'A', group: '0-open' },
+    { key: 'b/command/z', label: 'z', pluginName: 'B', group: '1-note' },
+  ],
+}
 
 describe('the rows of a slot', () => {
   it('follow the order the slot draws them when nothing is stored', () => {
@@ -59,5 +75,16 @@ describe('the rows of a slot', () => {
         { id: 'c/view/three' },
       ],
     })
+  })
+
+  it('move only inside their group, and keep the groups together', () => {
+    const rows = getSlotRows(grouped, {
+      [grouped.slot]: [{ id: 'b/command/z' }, { id: 'a/command/y' }],
+    })
+
+    expect(keys(rows)).toStrictEqual(['a/command/y', 'a/command/x', 'b/command/z'])
+    expect(canMoveSlotRow(rows, 1, 1)).toBe(false)
+    expect(canMoveSlotRow(rows, 0, -1)).toBe(false)
+    expect(moveSlotRow(rows, 1, 2)).toBe(rows)
   })
 })

@@ -12,7 +12,7 @@
       { "slot": "statusBar.left", "title": "Left side" },
       { "slot": "statusBar.right", "title": "Right side" }
     ],
-    "slots": [{ "slot": "statusBar", "view": "bar" }]
+    "slots": [{ "slot": "statusBar", "view": "bar", "title": "Status bar" }]
   },
   "frontend": {},
   "isOffByDefault": true,

@@ -59,6 +59,7 @@ interface SlotContributor {
   readonly key: string
   readonly label: string
   readonly pluginName: string
+  readonly group: string
 }
 
 /** A slot a plugin draws and its entries, in the order the slot draws them when nothing is stored. */

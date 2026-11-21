@@ -12,7 +12,7 @@
       { "slot": "titleBar.commands", "title": "Buttons" },
       { "slot": "titleBar.status", "title": "Status views" }
     ],
-    "slots": [{ "slot": "titleBar", "view": "bar" }]
+    "slots": [{ "slot": "titleBar", "view": "bar", "title": "Title bar" }]
   },
   "settings": [
     {

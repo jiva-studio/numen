@@ -9,7 +9,7 @@
   "contributes": {
     "feature": "plex headings dropdown",
     "category": "views",
-    "slots": [{ "slot": "plexGraph.node", "view": "headings" }]
+    "slots": [{ "slot": "plexGraph.node", "view": "headings", "title": "Headings list" }]
   },
   "permissions": ["vault:read"],
   "settings": [
