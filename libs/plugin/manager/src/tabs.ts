@@ -10,9 +10,6 @@ export interface PluginTab {
   readonly text: string
 }
 
-/** The tab a plugin page opens on. */
-export const FIRST_PLUGIN_TAB: PluginTabId = 'settings'
-
 /** The id of the element of a tab of the page whose ids start with `base`. */
 export const getTabElementId = (base: string, id: PluginTabId): string => `${base}-tab-${id}`
 
@@ -23,11 +20,24 @@ const STEPS: Readonly<Record<string, number>> = { ArrowRight: 1, ArrowLeft: -1 }
 
 const isTabId = (id: string): id is PluginTabId => id in words.pluginTabs
 
-/** The tabs of a plugin page in their order; Data only where the plugin has data or a failed delete. */
-export const getPluginTabs = (hasData: boolean): readonly PluginTab[] =>
-  Object.entries(words.pluginTabs).flatMap(([id, text]) =>
-    isTabId(id) && (id !== 'data' || hasData) ? [{ id, text }] : [],
-  )
+/** What decides which tabs a plugin page has. */
+export interface PluginTabsFacts {
+  readonly hasSettings: boolean
+  readonly hasData: boolean
+}
+
+/** The tabs of a plugin page in their order; Settings only with settings, Data only with data or a failed delete. */
+export const getPluginTabs = (facts: PluginTabsFacts): readonly PluginTab[] =>
+  Object.entries(words.pluginTabs).flatMap(([id, text]) => {
+    if (!isTabId(id)) return []
+    if (id === 'settings' && !facts.hasSettings) return []
+    if (id === 'data' && !facts.hasData) return []
+    return [{ id, text }]
+  })
+
+/** The tab a plugin page opens on: Settings where it has settings, else About. */
+export const getFirstPluginTab = (hasSettings: boolean): PluginTabId =>
+  hasSettings ? 'settings' : 'about'
 
 /**
  * The index of the tab a key moves to from the tab at `index` of `count`: the arrow keys step and
