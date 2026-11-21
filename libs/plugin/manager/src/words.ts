@@ -4,6 +4,30 @@ import type { PluginState } from './state'
 // Stryker disable StringLiteral: interface copy
 const countFiles = (files: number): string => (files === 1 ? '1 file' : `${files} files`)
 
+const PERMISSION_MEANINGS: Readonly<Record<string, string>> = {
+  'vault:read': 'Read your notes, files and tabs.',
+  'vault:write': 'Change your notes and files, and act for you.',
+  'vault:manage': 'Add, rename, remove and open vaults.',
+  'link:open': 'Open links in your browser.',
+  network: 'Open links in your browser.',
+  'index:read': 'Read the titles and the search index of your notes.',
+  'search:policy': 'Read and change how strict semantic search is.',
+  'window:focus': 'Bring a note or a file into view, and list the open tabs.',
+  'plugins:read': 'List the running plugins and their health.',
+  'logs:read': 'Read the application log.',
+}
+
+const CONNECTION_PERMISSION = 'connections:use:'
+
+/** What a plugin can do with a permission, in plain words. */
+export const describePermission = (permission: string): string => {
+  const known = PERMISSION_MEANINGS[permission]
+  if (known !== undefined) return known
+  if (permission.startsWith(CONNECTION_PERMISSION))
+    return `Call ${permission.slice(CONNECTION_PERMISSION.length)} through your connections.`
+  return 'Access the app does not describe.'
+}
+
 const PLUGIN_STATES: Readonly<Record<PluginState, string>> = {
   enabled: 'Running',
   disabled: 'Off',
