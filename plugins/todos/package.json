@@ -1,6 +1,6 @@
 {
   "name": "@numen/todos",
-  "version": "2026.11.3",
+  "version": "2026.11.1",
   "private": true,
   "type": "module",
   "description": "Todos plugin frontend for Numen",
