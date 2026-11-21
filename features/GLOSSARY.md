@@ -199,7 +199,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: One row in the task list: work the app does behind the window, or a failure to tell about. Work has progress (`completedCount` of `total`, counted in `items`, `bytes` or `seconds`).
 - States: `running`, `failed` (has an error), `cancelling`, `completed`, `notice`.
 - Actions: "Cancel task" (then "Cancelling"), "Retry task", "Dismiss", "Configure in settings".
-- Texts: titles "Indexing the vault", "Indexing", "Update index", "Read embedding model", "Import files", "Plugin stopped", "Downloading <dependency>"; "<Name> stopped: <reason>" (editor/src/shared/words.ts).
+- Texts: titles "Indexing the vault", "Indexing", "Update index", "Read embedding model", "Import files", "Plugin stopped", "Downloading" with the dependency's file name below it; "<Name> stopped: <reason>" (editor/src/shared/words.ts).
 - Not: three definitions in the code.
 
 ### task list
