@@ -18,7 +18,7 @@ The plugin does not manage what a person writes below the frontmatter; the viewe
 
 At the command line the same run is `numen-cli link.import <vault> --address <url>`. Over a link note, `numen-cli app:file.createText <vault> <note>` fetches the text, which the plugin handles as a shared command over notes of type `link`; its own commands `link.downloadMedia` and `link.deleteMedia` download the video and remove it.
 
-An address dragged out of a browser onto the files tree is the same gesture: the plugin registers a drop handler for `text/uri-list`, and the tree passes it the drop and the selected folder, without knowing the plugin.
+An address dragged out of a browser onto the files tree is the same gesture: the plugin registers a drop handler for `text/uri-list`, and the tree passes it the drop and the selected folder, without knowing the plugin. A dropped address names its note after the title of the page, fetched with the timeout and the size limit of any page fetch (15 seconds, 8 MiB); a title that is no file name is reduced to one and kept as the `title` of the note, and a name taken by another file gets the suffix 1, 2, 3 and so on. When the title cannot be fetched the note is named after the address.
 
 ## What is fetched
 
