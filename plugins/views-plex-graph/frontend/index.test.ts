@@ -58,7 +58,7 @@ describe('view-plex-graph plugin', () => {
     activate(ctx, services)
 
     // The tab kind, the command, and one for each of the eleven settings.
-    expect(ctx.identity.subscriptions).toHaveLength(13)
+    expect(ctx.identity.subscriptions).toHaveLength(14)
 
     ctx.dispose()
     expect(ctx.identity.subscriptions).toHaveLength(0)

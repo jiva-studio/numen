@@ -42,6 +42,7 @@ import {
   type Placement,
   type PlacementContext,
 } from './placement'
+import { alignRooms } from './rooms'
 import type { PlexNode, PlexRelation } from '../../../../types'
 
 /** Blocks that touch within this distance do not count as reaching each other. */
@@ -332,10 +333,13 @@ function placeGrid(
   focus: PlacedNode,
   context: PlacementContext,
 ): PlacedNode[] {
+  const room = context.options.alignToGrid
+    ? alignRooms(nodesByRelation, context.options, context.room)
+    : context.room
   const getSize = (node: PlexNode) =>
     getFootprint(
       { width: context.width(node), height: context.options.nodeSize.height },
-      context.room(node),
+      room(node),
     )
   const blocks = createBlocks(nodesByRelation, context.options, getSize)
   if (blocks.length === 0) return []
@@ -359,7 +363,7 @@ function placeGrid(
       placed.set(node.id, {
         ...node,
         x: cell.x,
-        y: getPillCenterY(footprintY, context.room(node)),
+        y: getPillCenterY(footprintY, room(node)),
         width: context.width(node),
         height: context.options.nodeSize.height,
         order: orders.get(node.id) ?? 0,
