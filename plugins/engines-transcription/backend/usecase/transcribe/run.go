@@ -57,6 +57,15 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 		return t.putWholeVersion(ctx, j)
 	}
 
+	if t.isBackground(getTaskID(vault, path)) {
+		isFailed, err := j.store.hasFailed(ctx, j.key)
+		if err != nil || isFailed {
+			return err
+		}
+	} else if err := j.store.clearFailure(ctx, j.key); err != nil {
+		return err
+	}
+
 	if err := t.takeTurn(ctx, j); err != nil {
 		return err
 	}
@@ -73,14 +82,10 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 	if err != nil {
 		return fmt.Errorf("open the model: %w", err)
 	}
-	recording, err := model.Open(ctx, raw)
-	if err != nil {
-		return fmt.Errorf("%s cannot be opened: %w", path, err)
-	}
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="closing recording in defer releases audio resources"
-	defer func() { err = errors.Join(err, recording.Close()) }()
-
-	if err := t.hearSegments(ctx, j, model, recording); err != nil {
+	if err := t.hear(ctx, j, model, raw); err != nil {
+		if !errors.Is(err, context.Canceled) {
+			err = errors.Join(err, j.store.writeFailure(ctx, j.key, err))
+		}
 		return err
 	}
 	err = j.store.finish(ctx, j.key)
@@ -91,6 +96,16 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 		return err
 	}
 	return t.putVersion(ctx, j, getFileName(j.key))
+}
+
+func (t *Transcriber) hear(ctx context.Context, j *job, model ports.Recognizer, raw []byte) (err error) {
+	recording, err := model.Open(ctx, raw)
+	if err != nil {
+		return fmt.Errorf("%s cannot be opened: %w", j.path, err)
+	}
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="closing recording in defer releases audio resources"
+	defer func() { err = errors.Join(err, recording.Close()) }()
+	return t.hearSegments(ctx, j, model, recording)
 }
 
 func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
