@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** The Back and Forward buttons of a board; a button without a node to go to is disabled. */
-import { createNamedIcon } from '@numen/ui'
+import { Tooltip, useTooltip } from '@numen/ui'
+import { BackIcon, ForwardIcon } from '../model/icons'
 import { WORDS } from '../words'
 
 defineProps<{ canBack: boolean; canForward: boolean }>()
@@ -10,8 +11,8 @@ const emit = defineEmits<{
   (event: 'forward'): void
 }>()
 
-const BackIcon = createNamedIcon('arrow-left')
-const ForwardIcon = createNamedIcon('arrow-right')
+const backTip = useTooltip()
+const forwardTip = useTooltip()
 </script>
 
 <template>
@@ -20,8 +21,10 @@ const ForwardIcon = createNamedIcon('arrow-right')
       type="button"
       class="plex-navigation__button"
       :aria-label="WORDS.back"
-      :title="WORDS.back"
+      :aria-describedby="backTip.describedBy.value"
       :disabled="!canBack"
+      @mouseenter="backTip.open"
+      @mouseleave="backTip.close"
       @click="emit('back')"
     >
       <BackIcon class="plex-navigation__icon" />
@@ -30,12 +33,22 @@ const ForwardIcon = createNamedIcon('arrow-right')
       type="button"
       class="plex-navigation__button"
       :aria-label="WORDS.forward"
-      :title="WORDS.forward"
+      :aria-describedby="forwardTip.describedBy.value"
       :disabled="!canForward"
+      @mouseenter="forwardTip.open"
+      @mouseleave="forwardTip.close"
       @click="emit('forward')"
     >
       <ForwardIcon class="plex-navigation__icon" />
     </button>
+    <Teleport to="body">
+      <Tooltip v-if="backTip.at.value" :id="backTip.id" :at="backTip.at.value">
+        {{ WORDS.back }}
+      </Tooltip>
+      <Tooltip v-if="forwardTip.at.value" :id="forwardTip.id" :at="forwardTip.at.value">
+        {{ WORDS.forward }}
+      </Tooltip>
+    </Teleport>
   </div>
 </template>
 
