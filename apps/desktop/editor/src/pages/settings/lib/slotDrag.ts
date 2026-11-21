@@ -42,3 +42,12 @@ export function getRowShifts(
     return 0
   })
 }
+
+/** How far the held row's place moves when it lands over `to`: the rows between slide, so its new top is not its old one. */
+export function getLandingShift(spans: readonly RowSpan[], from: number, to: number): number {
+  const held = spans[from]
+  const target = spans[to]
+  if (!held || !target || from === to) return 0
+  const newTop = to > from ? target.top + target.height - held.height : target.top
+  return newTop - held.top
+}
