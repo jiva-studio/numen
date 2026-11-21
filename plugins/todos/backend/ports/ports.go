@@ -4,7 +4,9 @@ package ports
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 )
 
 // FileReader reads the notes of the vault.
@@ -23,4 +25,28 @@ type NoteLister interface {
 type FileWriter interface {
 	// Write replaces the file if it matches the baseline, and returns host.ErrStale if it does not.
 	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
+}
+
+// ChangeFeed reads the file changes of the vault after a cursor.
+type ChangeFeed = host.FileChangeLister
+
+// SavedNote is what the index knows of one note, as it is kept between runs.
+type SavedNote struct {
+	Stat         domain.FileStat
+	Hash         []byte
+	Tasks        []todo.Task
+	IsUnreadable bool
+}
+
+// Snapshot is the index of a run and the place of the file change feed it was brought up to.
+type Snapshot struct {
+	Cursor host.FileChangeCursor
+	Notes  map[string]SavedNote
+}
+
+// Snapshots keeps the snapshot of the index between runs. It holds nothing that cannot be
+// recomputed: a snapshot that cannot be read is no snapshot.
+type Snapshots interface {
+	Load(ctx context.Context) (Snapshot, bool)
+	Save(snapshot Snapshot) error
 }

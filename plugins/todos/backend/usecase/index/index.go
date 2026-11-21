@@ -71,13 +71,14 @@ type Index struct {
 	revision uint64
 	isReady  bool
 	changed  chan struct{}
+	saver    *saver
 }
 
 // New returns an empty index over the notes the reader and the lister show.
 func New(files ports.FileReader, notes ports.NoteLister, parse ParseFunc) *Index {
 	return &Index{
 		files: files, notes: notes, parse: parse,
-		mu: sync.Mutex{}, entries: map[string]entry{}, projects: map[string]int{}, contexts: map[string]int{}, ignored: nil, revision: 0, isReady: false, changed: make(chan struct{}),
+		mu: sync.Mutex{}, entries: map[string]entry{}, projects: map[string]int{}, contexts: map[string]int{}, ignored: nil, revision: 0, isReady: false, changed: make(chan struct{}), saver: nil,
 	}
 }
 
@@ -233,6 +234,7 @@ func (i *Index) bump() {
 	i.revision++
 	close(i.changed)
 	i.changed = make(chan struct{})
+	i.scheduleSave()
 }
 
 func (i *Index) listPaths(ctx context.Context) ([]string, error) {

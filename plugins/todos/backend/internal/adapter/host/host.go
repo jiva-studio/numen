@@ -38,3 +38,7 @@ func (v *Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([
 func (v *Vault) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
 	return v.client.Write(ctx, path, content, baseline)
 }
+
+func (v *Vault) ListFileChanges(ctx context.Context, q sdkhost.FileChangeQuery) (sdkhost.FileChangePage, error) {
+	return v.client.ListFileChanges(ctx, q)
+}

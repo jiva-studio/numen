@@ -7,11 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/todos/backend/api"
 	hostadapter "github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/host"
+	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/snapshot"
 	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
@@ -22,6 +24,7 @@ const (
 	defaultLimit = 500
 	maxLimit     = 2000
 	ignoredKey   = "ignoredFolders"
+	flushTimeout = 5 * time.Second
 )
 
 func getSummary(tasks *index.Index) func(context.Context, api.GetSummaryRequest) (api.Summary, error) {
@@ -157,11 +160,18 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	tasks := index.NewForNotes(vault, vault)
+	tasks.Persist(index.Persistence{Snapshots: snapshot.New(""), Feed: vault, After: index.SystemAfter, Cursors: snapshot.NewCursorStore})
 	if err := mount(s, tasks, complete.New(vault, vault)); err != nil {
 		return err
 	}
 	ctx := getClosedContext(s)
-	// A failed scan leaves the index not ready; the next full check of the index scans again.
-	go func() { ignore(tasks.Scan(ctx)) }()
+	// A failed start leaves the index not ready; the next full check of the index scans again.
+	s.OnClose(func() error {
+		flushCtx, stop := context.WithTimeout(context.Background(), flushTimeout)
+		defer stop()
+		tasks.Flush(flushCtx)
+		return nil
+	})
+	go func() { ignore(tasks.Start(ctx)) }()
 	return nil
 }
