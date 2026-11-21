@@ -265,9 +265,9 @@ The settings of the plugin Plex Graph.
 | `noteRoom` | a number | empty space around every note. From 0 to 40. |
 | `alignToGrid` | yes or no | give every note of a side the room of the one with the most over its pill and the most under it, so the pills of a row line up when notes carry views of different heights. Off: a note keeps only the room its own views need. |
 
-### `md.numen.views.plex.headings`
+### `md.numen.views.plex.headings.dropdown`
 
-The settings of the plugin Plex Headings.
+The settings of the plugin Plex Headings Dropdown.
 
 | | | |
 | --- | --- | --- |

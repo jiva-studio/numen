@@ -182,6 +182,6 @@ await test('a change to the plex navigation plugin selects the acceptance scenar
 
 await test('a change to the plex headings plugin selects the acceptance scenarios that guard the headings of the plex', () => {
   assert.ok(
-    getScope(['plugins/views-plex-headings/frontend/index.ts']).split(' ').includes('acceptance'),
+    getScope(['plugins/views-plex-headings-dropdown/frontend/index.ts']).split(' ').includes('acceptance'),
   )
 })

@@ -54,7 +54,7 @@ const setup = (
     },
   } as unknown as WorkspaceHost
   const context = createMockPluginContext({
-    pluginId: 'md.numen.views.plex.headings',
+    pluginId: 'md.numen.views.plex.headings.dropdown',
     initialSettings,
   })
   const notices = createMockNoticeHost()
@@ -112,7 +112,7 @@ describe('the plugin', () => {
   })
 
   it('refuses to activate without the notes of the vault or the window', () => {
-    const context = createMockPluginContext({ pluginId: 'md.numen.views.plex.headings' })
+    const context = createMockPluginContext({ pluginId: 'md.numen.views.plex.headings.dropdown' })
 
     expect(() => activate(context, createMockHostServices())).toThrow(/need the notes/)
   })

@@ -23,7 +23,7 @@ export const SHOTS = [
   { name: 'plex', story: 'plex-map--mapping', width: 1180, height: 740 },
   {
     name: 'parts',
-    story: 'plex-headings--nesting',
+    story: 'plex-headings-dropdown--nesting',
     width: 1180,
     height: 740,
     over: '.node',
