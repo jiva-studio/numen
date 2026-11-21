@@ -47,10 +47,10 @@ const formatDocument: StateCommand = ({ state, dispatch }) => {
   return true
 }
 
-/** Where the editor is drawn, what it starts with, what it reads while it is open, and where a query goes. */
+/** Where the editor is drawn, what it shows, what it reads while it is open, and where a query goes. */
 export interface QueryEditorOptions {
   readonly host: Readonly<Ref<HTMLElement | null>>
-  readonly query: string
+  readonly getQuery: () => string
   readonly getProblems: () => readonly QueryProblem[]
   readonly getFunctions: () => readonly QueryFunction[]
   readonly onChange: (query: string) => void
@@ -90,7 +90,7 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
     if (!parent) return
     view = new EditorView({
       parent,
-      doc: options.query,
+      doc: options.getQuery(),
       extensions: [
         history(),
         drawSelection(),
@@ -133,6 +133,15 @@ export function useQueryEditor(options: QueryEditorOptions): QueryEditor {
   onMounted(() => showProblems(options.getProblems()))
 
   watch(options.getProblems, showProblems)
+
+  watch(options.getQuery, (query) => {
+    if (!view || pause !== null || view.state.doc.toString() === query) return
+    const anchor = Math.min(view.state.selection.main.anchor, query.length)
+    view.dispatch({
+      changes: { from: 0, to: view.state.doc.length, insert: query },
+      selection: { anchor },
+    })
+  })
 
   const moveTo = (line: number, column: number): void => {
     if (!view) return

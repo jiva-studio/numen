@@ -36,7 +36,7 @@ const shownProblems = computed(() => placedProblems.value.slice(0, SHOWN_PROBLEM
 const hiddenProblemCount = computed(() => placedProblems.value.length - shownProblems.value.length)
 const editor = useQueryEditor({
   host,
-  query: props.query,
+  getQuery: () => props.query,
   getProblems: () => props.problems,
   getFunctions: () => props.functions,
   onChange,

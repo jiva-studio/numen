@@ -21,6 +21,25 @@ const open = (query: string) => {
   return view
 }
 
+describe('the query of the editor', () => {
+  it('follows a query changed outside', async () => {
+    const view = open('words("gale")')
+
+    await wrapper?.setProps({ query: 'words("calm")' })
+
+    expect(view.state.doc.toString()).toBe('words("calm")')
+  })
+
+  it('keeps the text being typed', async () => {
+    const view = open('words("gale")')
+    view.dispatch({ changes: { from: 0, insert: ' ' }, userEvent: 'input.type' })
+
+    await wrapper?.setProps({ query: 'words("calm")' })
+
+    expect(view.state.doc.toString()).toBe(' words("gale")')
+  })
+})
+
 describe('the caret of the query editor', () => {
   it('is drawn by the editor, in step with the text', () => {
     const view = open('words("gale")')
