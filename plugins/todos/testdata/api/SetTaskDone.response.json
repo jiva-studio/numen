@@ -1,0 +1,19 @@
+{
+  "task": {
+    "path": "Projects/Home.md",
+    "line": 7,
+    "raw": "- [x] fix the tap +home done:2026-11-14 ^tap",
+    "text": "fix the tap ^tap",
+    "status": "done",
+    "priority": "",
+    "due": "",
+    "doneOn": "2026-11-14",
+    "recurrence": "",
+    "projects": ["home"],
+    "contexts": [],
+    "issues": [],
+    "depth": 0
+  },
+  "change": "completed",
+  "error": ""
+}

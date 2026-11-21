@@ -1,0 +1,36 @@
+{
+  "tasks": [
+    {
+      "path": "Projects/Home.md",
+      "line": 7,
+      "raw": "- [ ] (A) buy milk due:2026-11-13 rec:!1w +home @phone",
+      "text": "buy milk",
+      "status": "open",
+      "priority": "A",
+      "due": "2026-11-13",
+      "doneOn": "",
+      "recurrence": "rec:!1w",
+      "projects": ["home"],
+      "contexts": ["phone"],
+      "issues": [],
+      "depth": 0
+    },
+    {
+      "path": "Daily/2026-11-12.md",
+      "line": 3,
+      "raw": "  - [ ] call due:2026-02-30",
+      "text": "call due:2026-02-30",
+      "status": "open",
+      "priority": "",
+      "due": "",
+      "doneOn": "",
+      "recurrence": "",
+      "projects": [],
+      "contexts": [],
+      "issues": ["invalidDue"],
+      "depth": 1
+    }
+  ],
+  "total": 31,
+  "revision": 12
+}
