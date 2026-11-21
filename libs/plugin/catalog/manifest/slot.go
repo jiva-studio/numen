@@ -39,6 +39,7 @@ type AppCommandArgument struct {
 type SlotPoint struct {
 	Slot  string
 	Title string
+	Menu  bool
 }
 
 // SlotEntry places one thing of the plugin in a slot of a window, or in a submenu a plugin declares.

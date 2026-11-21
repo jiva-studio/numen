@@ -25,7 +25,7 @@
       }
     ],
     "slotPoints": [
-      { "slot": "plexGraph.context", "title": "Node menu" },
+      { "slot": "plexGraph.context", "title": "Node menu", "menu": true },
       { "slot": "plexGraph.nodeAbove", "title": "Above a node" },
       { "slot": "plexGraph.nodeBelow", "title": "Below a node" },
       { "slot": "plexGraph.node", "title": "Over a node" },

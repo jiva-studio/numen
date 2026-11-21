@@ -10,6 +10,7 @@ export interface DeclaredSlotPoint {
   readonly pluginId: string
   readonly slot: string
   readonly title: string
+  readonly menu?: boolean
 }
 
 /** What a plugin keeps of the entries of the slots it draws: the order they are drawn in, and which are hidden. */
@@ -58,5 +59,6 @@ export function readManifestSlotPoints(pluginId: string, manifest: Manifest): De
     pluginId,
     slot: one.slot,
     title: one.title,
+    menu: one.menu,
   }))
 }

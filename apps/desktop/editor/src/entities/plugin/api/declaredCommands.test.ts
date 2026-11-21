@@ -185,13 +185,18 @@ describe('the slots the plugins draw', () => {
       commands: [],
       slotPoints: [
         { pluginId: 'org.example.plex', point: { slot: 'plexGraph.node', title: 'Over a node' } },
+        {
+          pluginId: 'org.example.plex',
+          point: { slot: 'plexGraph.context', title: 'Menu', menu: true },
+        },
       ],
     })
 
     const { slotPoints } = await listDeclaredCommands()
 
     expect(slotPoints).toStrictEqual([
-      { pluginId: 'org.example.plex', slot: 'plexGraph.node', title: 'Over a node' },
+      { pluginId: 'org.example.plex', slot: 'plexGraph.node', title: 'Over a node', menu: false },
+      { pluginId: 'org.example.plex', slot: 'plexGraph.context', title: 'Menu', menu: true },
     ])
   })
 })

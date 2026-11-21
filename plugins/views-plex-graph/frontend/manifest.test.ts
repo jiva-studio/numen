@@ -225,9 +225,10 @@ describe('the settings the code reads', () => {
     max?: number
     options?: readonly { value: string }[]
   }
-  const { settings } = JSON.parse(
+  const { settings: declared } = JSON.parse(
     readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
   ) as { settings: readonly Setting[] }
+  const settings = declared.filter((one) => one.type !== 'slots')
 
   const createContext = (initialSettings: Record<string, JsonValue> = {}) =>
     createMockPluginContext({ pluginId: 'md.numen.views.plex.graph', initialSettings })
@@ -275,5 +276,17 @@ describe('the settings the code reads', () => {
       expect(readBack).toStrictEqual(values)
       expect(readValues({ [one.key]: 'no such option' })[one.key]).toBe(one.default)
     }
+  })
+})
+
+describe('the slots the plugin draws', () => {
+  const { contributes } = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
+  ) as { contributes: { slotPoints: readonly { slot: string; menu?: boolean }[] } }
+
+  it('mark only the node menu as a menu', () => {
+    const menus = contributes.slotPoints.filter((one) => one.menu).map((one) => one.slot)
+
+    expect(menus).toStrictEqual(['plexGraph.context'])
   })
 })

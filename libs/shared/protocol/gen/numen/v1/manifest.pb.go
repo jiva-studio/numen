@@ -1342,7 +1342,10 @@ type ManifestSlotPoint struct {
 	// slot is the name of the slot, words joined by dots, such as plexGraph.nodeBelow.
 	Slot string `protobuf:"bytes,1,opt,name=slot,proto3" json:"slot,omitempty"`
 	// title is what the settings page of the plugin calls the slot.
-	Title         string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// menu marks a slot that draws its entries as the rows of a context menu: the settings page does not
+	// list it, and its order comes from the manifests.
+	Menu          bool `protobuf:"varint,3,opt,name=menu,proto3" json:"menu,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1389,6 +1392,13 @@ func (x *ManifestSlotPoint) GetTitle() string {
 		return x.Title
 	}
 	return ""
+}
+
+func (x *ManifestSlotPoint) GetMenu() bool {
+	if x != nil {
+		return x.Menu
+	}
+	return false
 }
 
 // ManifestSlotEntry places one thing in a slot of a window, or in a submenu a plugin declares. The
@@ -3204,10 +3214,11 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04port\x18\x02 \x01(\x05R\x04port\x12\x1a\n" +
 	"\bprotocol\x18\x03 \x01(\tR\bprotocol\x12!\n" +
-	"\fport_setting\x18\x04 \x01(\tR\vportSetting\"=\n" +
+	"\fport_setting\x18\x04 \x01(\tR\vportSetting\"Q\n" +
 	"\x11ManifestSlotPoint\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\xf4\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
+	"\x04menu\x18\x03 \x01(\bR\x04menu\"\xf4\x02\n" +
 	"\x11ManifestSlotEntry\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x1a\n" +
 	"\acommand\x18\x02 \x01(\tH\x00R\acommand\x12\x14\n" +

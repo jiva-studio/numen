@@ -19,19 +19,24 @@ describe('the slots a plugin draws', () => {
         order: 1,
       },
       { pluginId: 'org.example.bare', slot: 'plexGraph.nodeBelow', view: 'bareView' },
+      { pluginId: PLEX, slot: 'titleBar.commands', command: 'open', group: 'a' },
+      { pluginId: TAGS, slot: 'titleBar.commands', command: 'tags.set', title: 'Set tags' },
+      { pluginId: PLEX, slot: 'titleBar.commands', command: 'app:note.create', group: 'b' },
     ]),
+    commands: ref([{ pluginId: PLEX, id: 'open', title: 'Open graph', arguments: [] }]),
     contributions: {
       slotPoints: ref([
-        { pluginId: PLEX, slot: 'plexGraph.nodeBelow', title: 'Below a node' },
-        { pluginId: PLEX, slot: 'plexGraph.context', title: 'Node menu' },
-        { pluginId: PLEX, slot: 'plexGraph.node', title: 'Over a node' },
-        { pluginId: 'org.example.other', slot: 'other.row', title: 'Row' },
+        { pluginId: PLEX, slot: 'plexGraph.nodeBelow', title: 'Below a node', menu: false },
+        { pluginId: PLEX, slot: 'plexGraph.context', title: 'Node menu', menu: true },
+        { pluginId: PLEX, slot: 'plexGraph.node', title: 'Over a node', menu: false },
+        { pluginId: PLEX, slot: 'titleBar.commands', title: 'Buttons', menu: false },
+        { pluginId: 'org.example.other', slot: 'other.row', title: 'Row', menu: false },
       ]),
     },
   })
 
   it('list the views of the slots of the plugin in the order the slot draws them', () => {
-    expect(groups(PLEX)).toStrictEqual([
+    expect(groups(PLEX).filter((one) => one.slot === 'plexGraph.nodeBelow')).toStrictEqual([
       {
         slot: 'plexGraph.nodeBelow',
         title: 'Below a node',
@@ -45,6 +50,15 @@ describe('the slots a plugin draws', () => {
           },
         ],
       },
+    ])
+  })
+
+  it('list a slot of commands with the title of each command', () => {
+    const buttons = groups(PLEX).find((one) => one.slot === 'titleBar.commands')
+    expect(buttons?.contributors.map((one) => one.label)).toStrictEqual([
+      'Open graph',
+      'Note create',
+      'Set tags',
     ])
   })
 

@@ -1,9 +1,15 @@
 import type { Ref } from 'vue'
-import { getEntryKey, sortSlotEntries, type DeclaredSlotPoint } from '@numen/plugin-loader'
-import type { DeclaredSlot } from '@/entities/plugin'
+import {
+  formatCommandId,
+  getEntryKey,
+  sortSlotEntries,
+  type DeclaredSlotEntry,
+  type DeclaredSlotPoint,
+} from '@numen/plugin-loader'
+import { getPaletteId, type DeclaredCommand, type DeclaredSlot } from '@/entities/plugin'
 import { readSlotEntries } from './pluginSlots'
 
-/** One view a slot holds, under the key a stored layout names it by. */
+/** One entry a slot holds, a view or a command, under the key a stored layout names it by. */
 interface SlotContributor {
   readonly key: string
   readonly label: string
@@ -20,6 +26,7 @@ interface SlotGroup {
 /** What the groups are read from. */
 interface SlotGroupsSource {
   readonly slots: Readonly<Ref<readonly DeclaredSlot[] | undefined>>
+  readonly commands?: Readonly<Ref<readonly DeclaredCommand[] | undefined>>
   readonly contributions: {
     readonly slotPoints: Readonly<Ref<readonly DeclaredSlotPoint[] | undefined>>
   }
@@ -33,23 +40,32 @@ const prettify = (name: string): string => {
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
-/** The slots a plugin draws that hold views, each with the views others place in it; a slot of menu entries or without entries is left out. */
+/** The slots a plugin draws, other than a menu, that hold entries, each with the views and commands others place in it; a slot without entries is left out. */
 export function createSlotGroups(source: SlotGroupsSource) {
   return (pluginId: string): readonly SlotGroup[] => {
+    const titles = new Map(
+      (source.commands?.value ?? []).map((one) => [getPaletteId(one), one.title]),
+    )
+    const getLabel = (entry: DeclaredSlotEntry): string => {
+      if (entry.title) return entry.title
+      if (!entry.command) return prettify(entry.view ?? entry.submenu ?? '')
+      const full = entry.command.includes(':')
+        ? entry.command
+        : formatCommandId(entry.pluginId, entry.command)
+      return titles.get(full) ?? prettify(entry.command.split(':').pop() ?? '')
+    }
     const entries = readSlotEntries(source.slots.value) ?? []
     return (source.contributions.slotPoints.value ?? [])
-      .filter((point) => point.pluginId === pluginId)
+      .filter((point) => point.pluginId === pluginId && !point.menu)
       .map((point) => ({
         slot: point.slot,
         title: point.title,
-        contributors: sortSlotEntries(
-          entries.filter((one) => one.slot === point.slot && one.view),
-        ).flatMap((entry) => {
-          const key = getEntryKey(entry)
-          return key
-            ? [{ key, label: entry.title || prettify(entry.view ?? ''), pluginId: entry.pluginId }]
-            : []
-        }),
+        contributors: sortSlotEntries(entries.filter((one) => one.slot === point.slot)).flatMap(
+          (entry) => {
+            const key = getEntryKey(entry)
+            return key ? [{ key, label: getLabel(entry), pluginId: entry.pluginId }] : []
+          },
+        ),
       }))
       .filter((group) => group.contributors.length > 0)
   }
