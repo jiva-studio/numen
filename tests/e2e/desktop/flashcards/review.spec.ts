@@ -11,7 +11,7 @@ function readFrame(body: Buffer): JsonObject {
 
 const STUDIO = 'md.numen.views.flashcards.studio'
 
-// The task runs on a connection row of the studio, numen's own agent over the stand-in chat API the
+// The task runs on the connection of numen's own agent over the stand-in chat API the
 // server script starts.
 test('the review mounts the conversation of the agent chat plugin in its agent panel', async ({
   page,
@@ -36,7 +36,7 @@ test('the review mounts the conversation of the agent chat plugin in its agent p
 
   await expect(panel.getByText('Where does it live?')).toBeVisible()
   await expect(panel).toContainText(STAND_IN_REPLY)
-  // The task runs on the rows of the studio, with the card in the context of its tools.
+  // The task runs with the card in the context of its tools.
   const tasks = requests.filter((one) => one['operation'] === 'acp.task')
   expect(tasks).toHaveLength(1)
   expect(tasks[0]).toMatchObject({ pluginId: STUDIO })
