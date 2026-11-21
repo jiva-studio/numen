@@ -10,6 +10,7 @@ export function getPlexOptions(look: PlexLook, type: number): PlexOptionsInput {
     focusScale: look.focusSize.value,
     padding: { inline: look.pillPaddingSides.value, block: look.pillPaddingEnds.value },
     room: look.noteRoom.value,
+    alignToGrid: look.alignToGrid.value,
     routing: { curvature: look.lineCurvature.value },
   })
   return optionsForType(type, designed)

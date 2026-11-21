@@ -34,6 +34,8 @@ const (
 	ContributionServices
 	ContributionCapabilities
 	ContributionActivationEvents
+	ContributionSearchFunctions
+	ContributionTools
 )
 
 // Contribution is one section of a manifest and its entries, in the order the manifest declares
@@ -108,6 +110,7 @@ func listContributesSections(c manifest.Contributes) []Contribution {
 		{ContributionOperations, mapItems(c.Operations, func(one manifest.Operation) ContributionItem {
 			return ContributionItem{Text: getTitle(one.Title, one.Name), Detail: one.Name}
 		})},
+		{ContributionSearchFunctions, mapItems(c.SearchFunctions.Functions, newSearchFunctionItem)},
 		{ContributionLicenses, mapItems(c.Licenses, func(one manifest.License) ContributionItem {
 			return ContributionItem{Text: getTitle(one.Title, one.ID), Detail: one.ID}
 		})},
@@ -196,4 +199,12 @@ func joinContentTypes(reader manifest.Reader) string {
 		types = append(types, string(one))
 	}
 	return strings.Join(types, ", ")
+}
+
+func newSearchFunctionItem(one manifest.SearchFunction) ContributionItem {
+	args := make([]string, 0, len(one.Args))
+	for _, arg := range one.Args {
+		args = append(args, arg.Name+": "+string(arg.Type))
+	}
+	return ContributionItem{Text: one.Name, Detail: one.Name + "(" + strings.Join(args, ", ") + ")"}
 }

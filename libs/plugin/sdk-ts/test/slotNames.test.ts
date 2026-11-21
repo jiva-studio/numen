@@ -11,3 +11,12 @@ describe('the slots of the plex graph', () => {
     })
   })
 })
+
+describe('the board slots of the plex graph', () => {
+  it('include one at the top of the board and one at the bottom', () => {
+    expect(SLOT).toMatchObject({
+      plexGraphBoardTop: 'plexGraph.boardTop',
+      plexGraphBoardBottom: 'plexGraph.boardBottom',
+    })
+  })
+})
