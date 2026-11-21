@@ -30,6 +30,8 @@ func getWireContributionKinds() map[plugin.ContributionKind]v1.PluginContributio
 		plugin.ContributionServices:         v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SERVICES,
 		plugin.ContributionCapabilities:     v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_CAPABILITIES,
 		plugin.ContributionActivationEvents: v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS,
+		plugin.ContributionSearchFunctions:  v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS,
+		plugin.ContributionTools:            v1.PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TOOLS,
 	}
 }
 

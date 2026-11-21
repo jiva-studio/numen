@@ -374,3 +374,17 @@ func TestTheListingsAreAskedAgainWhenTheRevisionOfTheRunningCatalogChanges(t *te
 		t.Errorf("a changed revision started %v, want both plugins", starts)
 	}
 }
+
+func TestKeptToolsAreTheLastListing(t *testing.T) {
+	files := filesIn(t, t.TempDir())
+	files.WriteToolListing(gardenPlugin, []byte(`{"version":"1.0.0+","listing":{"tools":[{"name":"water","effect":"TOOL_EFFECT_READ_ONLY"}]}}`))
+
+	kept := toolbridge.ListKeptTools(files, gardenPlugin)
+
+	if len(kept) != 1 || kept[0].GetName() != "water" {
+		t.Errorf("kept tools = %v", kept)
+	}
+	if got := toolbridge.ListKeptTools(files, orchardPlugin); got != nil {
+		t.Errorf("tools of a plugin that listed none = %v", got)
+	}
+}
