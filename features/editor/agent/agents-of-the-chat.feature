@@ -6,13 +6,11 @@ Feature: Agents of the chat
   I want the agents installed on my computer to be ready in the chat
   So that I can ask them without setting them up
 
-  Background:
+  Scenario: An agent found on this computer is listed as a connection
     Given the empty vault "Test"
     And the program "Claude Code" is installed on this computer
     And the application "editor" starts
     And the person enables the plugin "Claude Code Agent"
-
-  Scenario: An agent found on this computer is listed as a connection
     Then the connections list has the following connections:
       | name        | type        |
       | Claude Code | Claude Code |
