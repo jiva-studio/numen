@@ -211,7 +211,16 @@ export interface PlexWidgetsState {
   readonly over: Readonly<Ref<readonly PlexWidget[]>>
   readonly boardTop: Readonly<Ref<readonly PlexWidget[]>>
   readonly boardBottom: Readonly<Ref<readonly PlexWidget[]>>
+  /** What every view of a board slot is given: the key of the board, the note in front of it and how to move it. */
+  readonly board: PlexBoardContext
   getPath(node: string): string
+}
+
+/** The board a tab draws, as its slot views see it. */
+export interface PlexBoardContext {
+  readonly key: string
+  readonly here: Readonly<Ref<string>>
+  go(path: string): void
 }
 
 /** Shows the failure of an operation that runs in the background. */
