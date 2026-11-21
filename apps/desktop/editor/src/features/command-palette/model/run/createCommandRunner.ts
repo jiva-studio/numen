@@ -80,8 +80,9 @@ export function createCommandRunner(parts: CommandRunnerParts) {
   return {
     runCommand: (id: string, target: CommandTarget, input?: string, values?: Values): void => {
       const run = startRun(id, target, { input, values, isAwaited: false })
-      if (typeof run === 'string') parts.writeMessage(run, 'error')
-      else runInBackground(run, (error) => parts.writeMessage(formatError(error), 'error'))
+      const context = { command: id }
+      if (typeof run === 'string') parts.writeMessage(run, 'error', context)
+      else runInBackground(run, (error) => parts.writeMessage(formatError(error), 'error', context))
     },
     runCommandToEnd: async (
       id: string,

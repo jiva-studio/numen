@@ -7,9 +7,15 @@
  */
 import { shallowRef, type Ref } from 'vue'
 import type { WindowLogClient } from '@/shared/api/clients'
-import type { Severity, MessageWriter } from '@numen/plugin-loader'
+import type { Severity } from '@numen/plugin-loader'
 
-export type { MessageWriter }
+/** The command a message is about; it is named in the application log and never shown. */
+interface MessageContext {
+  readonly command: string
+}
+
+/** Writes a message under the name of its writer; the context only reaches the application log. */
+export type MessageWriter = (text: string, severity?: Severity, context?: MessageContext) => void
 
 /** One message the window holds. */
 interface WindowMessage {
@@ -73,7 +79,7 @@ export function createRecordedMessageLog(
     dismiss: (id) => messages.dismiss(id),
     getWriter: (name) => {
       const write = messages.getWriter(name)
-      return (text, severity = 'info') => {
+      return (text, severity = 'info', context) => {
         const previous = messages.messages.value
         write(text, severity)
         if (messages.messages.value === previous || text === '' || severity === 'info') return
@@ -81,8 +87,12 @@ export function createRecordedMessageLog(
           .writeLog({
             level: severity,
             source: 'window',
-            message: 'Window message',
-            properties: { component: name },
+            message:
+              context === undefined
+                ? `Window message from ${name}`
+                : `Window message from command ${context.command}`,
+            properties:
+              context === undefined ? { component: name } : { component: name, ...context },
           })
           .catch(() => undefined)
       }
