@@ -31,7 +31,7 @@ func declaredWithList(owner string) ([]manifest.Setting, bool) {
 }
 
 func checkList(value any) error {
-	return settings.CheckWrite(declaredWithList, nil, []string{listPluginID, "ignoredFolders"}, value)
+	return settingsdomain.CheckValue(declaredWithList, nil, []string{listPluginID, "ignoredFolders"}, value)
 }
 
 func openList(t *testing.T, body string) settings.File {
