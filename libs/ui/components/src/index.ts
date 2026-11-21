@@ -53,6 +53,7 @@ export { Spinner } from './shared/ui/spinner'
 /** A Lucide icon drawn by the name a manifest gives it. */
 export { createNamedIcon } from './shared/ui/named-icon'
 export { LoadingIndicator } from './shared/ui/loading-indicator'
+export { ErrorState } from './shared/ui/error-state'
 export { Skeleton } from './shared/ui/skeleton'
 
 /** A link that leads out of the application, and the window held against it. */
