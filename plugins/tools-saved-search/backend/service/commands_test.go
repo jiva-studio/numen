@@ -7,21 +7,21 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 )
 
-func runCreate(t *testing.T, f *fixture, folder, title, query string) (command.Result, error) {
+func runCreate(t *testing.T, f *fixture, folder, title string) (command.Result, error) {
 	t.Helper()
 	commands, err := f.app.NewCommands()
 	if err != nil {
 		t.Fatal(err)
 	}
 	return commands.RunCommand(t.Context(), command.Request{
-		Command: "search.create", Path: folder, Arguments: command.Arguments{"title": title, "query": query},
+		Command: "search.create", Path: folder, Arguments: command.Arguments{"title": title},
 	})
 }
 
 func TestCreateCommandWritesTheNoteInTheFolderOfTheRow(t *testing.T) {
 	f := newFixture(t, 10)
 
-	result, err := runCreate(t, f, "Searches", "Winter storms", stormsQuery)
+	result, err := runCreate(t, f, "Searches", "Winter storms")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,16 +29,15 @@ func TestCreateCommandWritesTheNoteInTheFolderOfTheRow(t *testing.T) {
 	if result.OpenedPath != stormsPath {
 		t.Errorf("OpenedPath = %q, want %q", result.OpenedPath, stormsPath)
 	}
-	content, _ := readNote(t, f, stormsPath)
-	if !strings.Contains(content, stormsQuery) {
-		t.Errorf("note = %q, want the query", content)
+	if _, isThere := f.vault.Content(stormsPath); !isThere {
+		t.Error("no note was written")
 	}
 }
 
 func TestCreateCommandUsesTheDefaultFolderWithoutARow(t *testing.T) {
 	f := newFixture(t, 10)
 
-	result, err := runCreate(t, f, "", "Winter storms", wordsQuery)
+	result, err := runCreate(t, f, "", "Winter storms")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,15 +47,12 @@ func TestCreateCommandUsesTheDefaultFolderWithoutARow(t *testing.T) {
 	}
 }
 
-func TestCreateCommandRefusesAQueryTheCoreRejects(t *testing.T) {
+func TestCreateCommandRefusesAnEmptyTitle(t *testing.T) {
 	f := newFixture(t, 10)
 
-	_, err := runCreate(t, f, "Searches", "Broken", brokenQuery)
+	_, err := runCreate(t, f, "Searches", "  ")
 
-	if err == nil || !strings.Contains(err.Error(), "Syntax error") {
-		t.Fatalf("err = %v, want the problem of the query", err)
-	}
-	if _, isThere := f.vault.Content("Searches/Broken.md"); isThere {
-		t.Error("a note was written for an invalid query")
+	if err == nil || !strings.Contains(err.Error(), "title") {
+		t.Fatalf("err = %v, want the empty title", err)
 	}
 }

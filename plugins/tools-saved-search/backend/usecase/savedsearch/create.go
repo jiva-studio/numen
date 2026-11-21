@@ -83,12 +83,12 @@ func New(dependencies Dependencies) *UseCase {
 }
 
 // Create writes a new saved search note named after its title, in the folder of the input or of the
-// setting, scans it, and runs it at once. A query the core reports problems of returns them in the output
+// setting, scans it, and runs it at once; a note with no query is written and not run. A query the core reports problems of returns them in the output
 // and writes nothing.
 func (u *UseCase) Create(ctx context.Context, vault domain.VaultID, in CreateInput) (Saved, error) {
 	settings := u.settings()
-	problems, err := u.runner.CheckQuery(ctx, vault, in.Query)
-	if err != nil || len(problems) > 0 {
+	hasQuery := strings.TrimSpace(in.Query) != ""
+	if problems, err := u.checkQuery(ctx, vault, in.Query); err != nil || len(problems) > 0 {
 		return newProblemOutput(problems), err
 	}
 	title := strings.TrimSpace(in.Title)
@@ -123,7 +123,20 @@ func (u *UseCase) Create(ctx context.Context, vault domain.VaultID, in CreateInp
 	if err := notes.Scan(ctx, []string{notePath}); err != nil {
 		return Saved{}, err
 	}
+	if !hasQuery {
+		return Saved{
+			Path: notePath, URI: textplace.FormatNoteAddress(notePath), ResultCount: 0, Order: "", ComputedAt: time.Time{},
+			Warnings: nil, Errors: nil,
+		}, nil
+	}
 	return u.runFirst(ctx, vault, notePath)
+}
+
+func (u *UseCase) checkQuery(ctx context.Context, vault domain.VaultID, query string) ([]resultcache.Problem, error) {
+	if strings.TrimSpace(query) == "" {
+		return nil, nil
+	}
+	return u.runner.CheckQuery(ctx, vault, query)
 }
 
 func newProblemOutput(problems []resultcache.Problem) Saved {

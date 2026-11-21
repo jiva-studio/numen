@@ -21,8 +21,7 @@
         "icon": "search",
         "when": "window.isVaultOpen",
         "arguments": [
-          { "name": "title", "title": "Title", "type": "string", "required": true },
-          { "name": "query", "title": "Query", "type": "string", "required": true }
+          { "name": "title", "title": "Title", "type": "string", "required": true }
         ]
       }
     ],
