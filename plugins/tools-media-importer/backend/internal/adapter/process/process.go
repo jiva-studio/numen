@@ -18,9 +18,26 @@ const stopGrace = 5 * time.Second
 // Runner finds and runs external programs on the machine.
 type Runner struct{}
 
-// LookPath searches for an executable named file in the directories named by the PATH environment variable.
+// LookPath returns the program the host provisioned for file when it is on this machine, and otherwise searches
+// for an executable named file in the directories named by the PATH environment variable.
 func (Runner) LookPath(file string) (string, error) {
+	if provisioned := os.Getenv(getProvisionedVariable(file)); provisioned != "" {
+		if info, err := os.Stat(provisioned); err == nil && info.Mode().IsRegular() {
+			return provisioned, nil
+		}
+	}
 	return exec.LookPath(file)
+}
+
+func getProvisionedVariable(file string) string {
+	switch file {
+	case "yt-dlp":
+		return "NUMEN_YT_DLP"
+	case "ffmpeg":
+		return "NUMEN_FFMPEG"
+	default:
+		return ""
+	}
 }
 
 // Environ returns a copy of strings representing the environment, in the form "key=value".

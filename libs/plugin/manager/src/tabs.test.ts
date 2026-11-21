@@ -1,22 +1,36 @@
 import { describe, expect, it } from 'vitest'
-import { getPanelElementId, getPluginTabs, getTabElementId, getTabIndexForKey } from './tabs'
+import {
+  getFirstPluginTab,
+  getPanelElementId,
+  getPluginTabs,
+  getTabElementId,
+  getTabIndexForKey,
+} from './tabs'
 
 describe('getPluginTabs', () => {
   it('lists Settings, About, Contributes and Data in that order', () => {
-    expect(getPluginTabs(true).map((one) => one.text)).toStrictEqual([
-      'Settings',
-      'About',
-      'Contributes',
-      'Data',
-    ])
+    expect(
+      getPluginTabs({ hasSettings: true, hasData: true }).map((one) => one.text),
+    ).toStrictEqual(['Settings', 'About', 'Contributes', 'Data'])
   })
 
   it('leaves out Data where the plugin has none', () => {
-    expect(getPluginTabs(false).map((one) => one.id)).toStrictEqual([
-      'settings',
-      'about',
-      'contributions',
-    ])
+    expect(getPluginTabs({ hasSettings: true, hasData: false }).map((one) => one.id)).toStrictEqual(
+      ['settings', 'about', 'contributions'],
+    )
+  })
+
+  it('leaves out Settings where the plugin has none', () => {
+    expect(
+      getPluginTabs({ hasSettings: false, hasData: false }).map((one) => one.id),
+    ).toStrictEqual(['about', 'contributions'])
+  })
+})
+
+describe('getFirstPluginTab', () => {
+  it('is Settings with settings and About without', () => {
+    expect(getFirstPluginTab(true)).toBe('settings')
+    expect(getFirstPluginTab(false)).toBe('about')
   })
 })
 

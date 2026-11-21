@@ -251,6 +251,8 @@ The settings of the plugin Plex Graph.
 | | | |
 | --- | --- | --- |
 | `references` | text | show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none. One of `off`, `outgoing`, `incoming`, `both`. |
+| `activateCreated` | yes or no | a note created from the plex through the quick link or the menu becomes the note in the middle. Off: the plex stays on the note it was on. |
+| `activateLinked` | yes or no | a note linked from the plex becomes the note in the middle. Off: the plex stays on the note the link was drawn from. |
 | `showPills` | yes or no | draw a pill behind each title. Off: the title alone. |
 | `pillPaddingSides` | a number | space beside the title inside its pill. From 0 to 24. |
 | `pillPaddingEnds` | a number | space above and below the title inside its pill. From 0 to 16. |

@@ -29,6 +29,8 @@ func getDependencyDir(root, kind, id, version string) string {
 	return filepath.Join(root, cleanName(kind), cleanName(id), fmt.Sprintf("%s-%s-%s", cleanName(version), runtime.GOOS, runtime.GOARCH))
 }
 
+const windowsOS = "windows"
+
 func cleanName(name string) string {
 	clean := unsafeNameChars.ReplaceAllString(name, "_")
 	if strings.Trim(clean, ".") == "" {
@@ -106,7 +108,7 @@ func retry(ctx context.Context, policy backoff, isRetryable func(error) bool, op
 }
 
 func isAccessDenied(err error) bool {
-	return runtime.GOOS == "windows" && errors.Is(err, fs.ErrPermission)
+	return runtime.GOOS == windowsOS && errors.Is(err, fs.ErrPermission)
 }
 
 func renameInFolder(ctx context.Context, from, to string) (err error) {

@@ -112,9 +112,16 @@ describe('PluginDetail', () => {
   })
 
   it('opens on Settings, followed by About and Contributes, and no Data without data', () => {
-    const tabs = mountDetail().findAll('[role="tab"]')
+    const tabs = mountDetail({ hasSettings: true }).findAll('[role="tab"]')
 
     expect(tabs.map((one) => one.text())).toStrictEqual(['Settings', 'About', 'Contributes'])
+    expect(tabs[0]?.attributes('aria-selected')).toBe('true')
+  })
+
+  it('has no Settings tab and opens on About where the plugin has no settings', () => {
+    const tabs = mountDetail().findAll('[role="tab"]')
+
+    expect(tabs.map((one) => one.text())).toStrictEqual(['About', 'Contributes'])
     expect(tabs[0]?.attributes('aria-selected')).toBe('true')
   })
 
@@ -134,7 +141,7 @@ describe('PluginDetail', () => {
   })
 
   it('moves between the tabs with the arrow keys, Home and End', async () => {
-    const wrapper = mountDetail()
+    const wrapper = mountDetail({ hasSettings: true })
     const selected = () => wrapper.get('[role="tab"][aria-selected="true"]').text()
 
     await wrapper.findAll('[role="tab"]')[0]?.trigger('keydown', { key: 'ArrowRight' })
@@ -176,6 +183,30 @@ describe('PluginDetail', () => {
       icons: ['command', 'shift'],
       letter: 'N',
     })
+  })
+
+  it('shows a meaning for each permission', async () => {
+    const wrapper = mountDetail({
+      plugin: createManagedPlugin('sample.perm', 'Perm', {
+        contributions: [
+          {
+            kind: 'permissions',
+            items: ['vault:read', 'connections:use:llm.chat', 'odd:thing'].map((text) => ({
+              text,
+              detail: '',
+              keys: '',
+            })),
+          },
+        ],
+      }),
+    })
+    await openTab(wrapper, 'Contributes')
+
+    const text = wrapper.get('[role="tabpanel"]').text()
+    expect(text).toContain('vault:read')
+    expect(text).toContain('Read your notes, files and tabs.')
+    expect(text).toContain('Call llm.chat through your connections.')
+    expect(text).toContain('Access the app does not describe.')
   })
 
   it('says the plugin contributes nothing where its manifest declares nothing', async () => {
@@ -227,7 +258,6 @@ describe('PluginDetail', () => {
 
   it('draws the settings slot only where the application says it has settings', () => {
     expect(mountDetail({}, true).find('.settings-stub').exists()).toBe(false)
-    expect(mountDetail({}, true).text()).toContain('This plugin has no settings.')
     expect(mountDetail({ hasSettings: true }, true).find('.settings-stub').exists()).toBe(true)
   })
 })

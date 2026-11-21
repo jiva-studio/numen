@@ -5,6 +5,12 @@ export const WORDS = {
   plex: 'Plex',
   /** The related notes are being read, and its contents are not known yet. */
   loading: 'Loading…',
+  /** What the plex says when the vault holds no notes. */
+  emptyTitle: 'No notes in this vault',
+  /** The hint under it. */
+  emptyHint: 'Create a note to see it here.',
+  /** The button that creates the first note. */
+  emptyCreate: 'Create note',
   /** The row of a command of the menu whose items are being read. */
   loadingItems: 'Loading…',
   /** The label of the drop preview shown while notes are dragged over the plex. */

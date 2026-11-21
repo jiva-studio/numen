@@ -4,7 +4,7 @@
  * The gutter and the decoration are read from the view the extension was
  * installed in, which is what the user sees.
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EditorState, StateEffect, StateField, type Extension } from '@codemirror/state'
 import { Decoration, EditorView, type DecorationSet } from '@codemirror/view'
 import { createTimeGutter } from './timeGutter'
@@ -16,8 +16,11 @@ const TEXT = 'A bell over the door.\nRain on the awning.\nSomeone counting chang
 
 const TIMED: TimeGutterState = { times: ['0:01', '0:03', '0:06'], current: -1, isFollowing: false }
 
-const editor = (goToLine: (line: number) => void = () => undefined) => {
-  const times = createTimeGutter(goToLine)
+const editor = (
+  goToLine: (line: number) => void = () => undefined,
+  onScrollAway: () => void = () => undefined,
+) => {
+  const times = createTimeGutter(goToLine, onScrollAway)
   return { times, view: drawGutter(times) }
 }
 
@@ -154,7 +157,10 @@ describe('an editor these are shown in', () => {
 
 describe('an editor drawn a second time', () => {
   it('is shown what the one before it was shown', async () => {
-    const times = createTimeGutter(() => undefined)
+    const times = createTimeGutter(
+      () => undefined,
+      () => undefined,
+    )
     const first = drawGutter(times)
     times.show({ ...TIMED, current: 1 })
     first.destroy()
@@ -167,7 +173,10 @@ describe('an editor drawn a second time', () => {
   })
 
   it('is shown them where nothing was drawn when they were given', async () => {
-    const times = createTimeGutter(() => undefined)
+    const times = createTimeGutter(
+      () => undefined,
+      () => undefined,
+    )
     times.show(TIMED)
 
     const view = drawGutter(times)
@@ -177,7 +186,10 @@ describe('an editor drawn a second time', () => {
   })
 
   it('is the one shown what arrives next, and the one before it is left alone', async () => {
-    const times = createTimeGutter(() => undefined)
+    const times = createTimeGutter(
+      () => undefined,
+      () => undefined,
+    )
     const first = drawGutter(times)
     times.show(TIMED)
     const again = drawGutter(times)
@@ -190,7 +202,10 @@ describe('an editor drawn a second time', () => {
   })
 
   it('goes on being shown them once the one before it is destroyed', () => {
-    const times = createTimeGutter(() => undefined)
+    const times = createTimeGutter(
+      () => undefined,
+      () => undefined,
+    )
     const first = drawGutter(times)
     const again = drawGutter(times)
 
@@ -285,7 +300,10 @@ describe('an editor drawn a second time', () => {
 
 describe('an editor drawn again while the recording remains still', () => {
   it('is not moved by the words being requested for again', async () => {
-    const times = createTimeGutter(() => undefined)
+    const times = createTimeGutter(
+      () => undefined,
+      () => undefined,
+    )
     const first = drawGutter(times)
     times.show({ ...TIMED, current: 2, isFollowing: true })
     first.destroy()
@@ -573,7 +591,10 @@ describe('an editor destroyed', () => {
   })
 
   it('before it was shown what the one before it was, leaves the later times to the next editor', async () => {
-    const times = createTimeGutter(() => undefined)
+    const times = createTimeGutter(
+      () => undefined,
+      () => undefined,
+    )
     const first = drawGutter(times)
     times.show(TIMED)
     first.destroy()
@@ -631,7 +652,10 @@ describe('a time whose slot in the gutter is taken by another line', () => {
       provide: (field) => EditorView.decorations.from(field),
     })
     const request: number[] = []
-    const times = createTimeGutter((line) => request.push(line))
+    const times = createTimeGutter(
+      (line) => request.push(line),
+      () => undefined,
+    )
     const view = new EditorView({
       parent: document.body,
       state: EditorState.create({ doc: TEXT, extensions: [times.extension, folded] }),
@@ -646,5 +670,70 @@ describe('a time whose slot in the gutter is taken by another line', () => {
 
     expect(gutter(view)).toStrictEqual(['0:01', '0:05'])
     expect(request).toStrictEqual([2])
+  })
+})
+
+describe('the view scrolled by the user', () => {
+  const LONG = Array.from({ length: 80 }, (_, index) => `Line ${index}`).join('\n')
+  const FOLLOWING: TimeGutterState = {
+    times: Array.from({ length: 80 }, (_, index) => `0:${index}`),
+    current: 40,
+    isFollowing: true,
+  }
+
+  const scrollerOf = (onScrollAway: () => void, scrollTop: number) => {
+    const times = createTimeGutter(
+      () => undefined,
+      () => onScrollAway(),
+    )
+    const view = new EditorView({
+      parent: document.body,
+      state: EditorState.create({ doc: LONG, extensions: [times.extension] }),
+    })
+    renderedViews.push(view)
+    Object.defineProperty(view.scrollDOM, 'clientHeight', { value: 100, configurable: true })
+    Object.defineProperty(view.scrollDOM, 'scrollTop', { value: scrollTop, configurable: true })
+    times.show(FOLLOWING)
+    return view.scrollDOM
+  }
+
+  it('turns following off when the line being read leaves the view', () => {
+    const away = vi.fn()
+    const scroller = scrollerOf(away, 0)
+
+    scroller.dispatchEvent(new WheelEvent('wheel'))
+    scroller.dispatchEvent(new Event('scroll'))
+
+    expect(away).toHaveBeenCalled()
+  })
+
+  it('keeps following while the line being read stays in view', () => {
+    const away = vi.fn()
+    const scroller = scrollerOf(away, 40 * 14 - 20)
+
+    scroller.dispatchEvent(new WheelEvent('wheel'))
+    scroller.dispatchEvent(new Event('scroll'))
+
+    expect(away).not.toHaveBeenCalled()
+  })
+
+  it('keeps following when a scroll was not the user', () => {
+    const away = vi.fn()
+    const scroller = scrollerOf(away, 0)
+
+    scroller.dispatchEvent(new Event('scroll'))
+
+    expect(away).not.toHaveBeenCalled()
+  })
+
+  it('turns following off when the scrollbar is dragged away', () => {
+    const away = vi.fn()
+    const scroller = scrollerOf(away, 0)
+
+    scroller.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    scroller.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('pointerup'))
+
+    expect(away).toHaveBeenCalled()
   })
 })
