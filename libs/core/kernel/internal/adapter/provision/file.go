@@ -125,17 +125,25 @@ func (p *FileProvisioner) store(
 	if source.ChecksumSHA256 == "" {
 		return p.storeModelFile(ctx, req, dir, primary, actual)
 	}
-	if source.ArchiveMember != "" {
-		member, err := unpackMember(ctx, primary, source.ArchiveMember, source.MemberSHA256, dir)
-		if err = errors.Join(err, os.Remove(primary)); err != nil {
-			return plugin.ResolvedDependency{}, err
-		}
-		primary = member
+	primary, err = prepareFetched(ctx, req, source, dir, primary)
+	if err != nil {
+		return plugin.ResolvedDependency{}, err
 	}
 	if err := writeReadyMarker(ctx, dir, filepath.Base(primary), sum); err != nil {
 		return plugin.ResolvedDependency{}, err
 	}
 	return newResolvedDependency(req, dir, primary), nil
+}
+
+func prepareFetched(ctx context.Context, req manifest.DependencyRequirement, source manifest.DependencySource, dir, primary string) (string, error) {
+	if source.ArchiveMember != "" {
+		member, err := unpackMember(ctx, primary, source.ArchiveMember, source.MemberSHA256, dir)
+		return member, errors.Join(err, os.Remove(primary))
+	}
+	if req.Kind == manifest.DependencyKindBinary {
+		return primary, os.Chmod(primary, 0o755)
+	}
+	return primary, nil
 }
 
 func (p *FileProvisioner) fetch(
@@ -193,7 +201,15 @@ func getFileName(req manifest.DependencyRequirement, source manifest.DependencyS
 	if isReserved(name) {
 		return "", fmt.Errorf("%s %s: %q is a name the folder keeps for itself", req.Kind, req.ID, name)
 	}
+	if isBareProgramName(req, source, name) {
+		name += ".exe"
+	}
 	return name, nil
+}
+
+func isBareProgramName(req manifest.DependencyRequirement, source manifest.DependencySource, name string) bool {
+	return runtime.GOOS == windowsOS && req.Kind == manifest.DependencyKindBinary && source.ArchiveMember == "" &&
+		!strings.HasSuffix(strings.ToLower(name), ".exe")
 }
 
 func pickFileName(req manifest.DependencyRequirement, source manifest.DependencySource) (string, error) {
