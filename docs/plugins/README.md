@@ -446,7 +446,7 @@ A handler gets a `CommandNote`: the `CommandTarget` of the run (`path`, `title`,
 
 A command is listed only when it is declared and something can run it: its frontend registered a handler, or its plugin has a backend and no handler of the frontend takes it. A handler registered for an id the manifest does not declare, and a declared command of a plugin that has a frontend and no backend with no handler once the frontend has started, are not listed and are written to the message log. The same id twice in the list makes the manifest invalid. A command of a plugin whose frontend is still loading is listed, and running it waits for the plugin. A command of a plugin whose backend failed to start is left out. A disabled plugin lists no command and binds no key. A manifest with `commands` at the top level has the key dropped with an `unknown key` warning.
 
-Every declared command is listed in the palette; a command has no way to be hidden from it.
+Every declared command is listed in the palette; a command has no way to be hidden from it. The palette lists the commands of the plugins in the order the manifests declare them, whether the frontend or the backend of a plugin offers them, so the list does not reorder while the plugins start.
 
 A plugin with both parts cannot say which of its commands the frontend registers, so the palette lists its commands through the backend until the frontend has registered them; running one the backend does not know answers an unknown command. The check that the manifest and the code agree (#1523) closes this.
 
