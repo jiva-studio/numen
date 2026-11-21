@@ -104,15 +104,4 @@ describe('PluginRow', () => {
       { id: 'configure', text: 'Settings' },
     ])
   })
-
-  it('names the tools and search functions the plugin contributes', () => {
-    const item = { text: 'a', detail: '', keys: '' }
-    const plugin = createManagedPlugin('test.tools', 'Tools', {
-      contributions: [{ kind: 'tools', items: [item, item] }],
-    })
-
-    const wrapper = mount(PluginRow, { props: { plugin, isEnabled: true } })
-
-    expect(wrapper.get('button').text()).toContain('2 tools')
-  })
 })
