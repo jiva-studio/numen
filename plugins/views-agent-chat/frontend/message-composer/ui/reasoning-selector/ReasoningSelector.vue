@@ -71,7 +71,7 @@ function onDismiss() {
     <button
       ref="trigger"
       type="button"
-      class="reasoning-selector__pill bg-bubble text-ink text-small hover:bg-surface rounded-pill inline-flex h-7 max-w-full min-w-0 cursor-pointer items-center gap-1.5 px-2.5 font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
+      class="reasoning-selector__pill bg-bubble text-ink text-base hover:bg-surface rounded-pill inline-flex h-7 max-w-full min-w-0 cursor-pointer items-center gap-1.5 px-2.5 font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
       :aria-label="name"
       :disabled="isDisabled || levels.length === 0"
       @click="onToggle"

@@ -12,7 +12,7 @@
   --popover-pad: 0.5rem;
   --popover-header-pad-inline: 0.75rem;
   --close-size: 1.25rem;
-  --close-text: 0.75rem;
+  --close-text: var(--numen-font-size);
   --row-gap: 0.75rem;
   --row-pad-block: 0.25rem;
   --row-pad-inline: 0.5rem;
@@ -24,7 +24,7 @@
    same in the three title bar chips; only the width follows the content. */
 .index-stats__trigger {
   --chip-height: 1.25rem;
-  --chip-text: 0.75rem;
+  --chip-text: var(--numen-font-size);
   --chip-pad: 0.5rem;
   --chip-mark: 0.75rem;
   display: inline-flex;
