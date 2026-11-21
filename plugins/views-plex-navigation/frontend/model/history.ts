@@ -1,23 +1,21 @@
-import type { BoardKey } from '../types'
-
 interface Trail {
   readonly nodes: string[]
   cursor: number
 }
 
 export interface BoardHistories {
-  visit(board: BoardKey, node: string): void
-  back(board: BoardKey): string | null
-  forward(board: BoardKey): string | null
-  canBack(board: BoardKey): boolean
-  canForward(board: BoardKey): boolean
-  forget(board: BoardKey): void
+  visit(board: string, node: string): void
+  back(board: string): string | null
+  forward(board: string): string | null
+  canBack(board: string): boolean
+  canForward(board: string): boolean
+  forget(board: string): void
 }
 
 export function createBoardHistories(): BoardHistories {
-  const trails = new Map<BoardKey, Trail>()
+  const trails = new Map<string, Trail>()
 
-  const getTrail = (board: BoardKey): Trail => {
+  const getTrail = (board: string): Trail => {
     const found = trails.get(board)
     if (found) return found
     const made: Trail = { nodes: [], cursor: -1 }
@@ -25,8 +23,8 @@ export function createBoardHistories(): BoardHistories {
     return made
   }
 
-  const canBack = (board: BoardKey) => getTrail(board).cursor > 0
-  const canForward = (board: BoardKey) => {
+  const canBack = (board: string) => getTrail(board).cursor > 0
+  const canForward = (board: string) => {
     const trail = getTrail(board)
     return trail.cursor < trail.nodes.length - 1
   }

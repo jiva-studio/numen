@@ -208,14 +208,13 @@ export interface PlexMenuState {
   makeNote(): Promise<void>
 }
 
-/** The widgets drawn over, under and across each node, and the path of the note of a node. */
+/** The widgets drawn over, under and across each node, the path of the note of a node, and the board the views of the board slots are given. */
 export interface PlexWidgetsState {
   readonly above: Readonly<Ref<readonly PlexWidget[]>>
   readonly below: Readonly<Ref<readonly PlexWidget[]>>
   readonly over: Readonly<Ref<readonly PlexWidget[]>>
   readonly boardTop: Readonly<Ref<readonly PlexWidget[]>>
   readonly boardBottom: Readonly<Ref<readonly PlexWidget[]>>
-  /** What every view of a board slot is given: the key of the board, the note in front of it and how to move it. */
   readonly board: PlexBoardContext
   getPath(node: string): string
 }
