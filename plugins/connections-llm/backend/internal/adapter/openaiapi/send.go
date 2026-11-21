@@ -55,26 +55,27 @@ func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Dur
 	}
 	sent := sentBody(request)
 	started := time.Now()
-	g.traceRequest(ctx, target.method, target.path, call.Options[llm.OptionModel], key, sent)
+	traced := traceCall{path: target.path, key: key, started: started, limit: limit}
+	g.traceRequest(ctx, traced, target.method, call.Options[llm.OptionModel], sent)
 	response, err := g.clients.get(isLoopbackRequired).Do(request)
 	if err != nil {
 		g.report(ctx, target.path, getTransportFailure(err), 0)
-		g.traceFailure(ctx, target.path, "request", err, 0, started, limit)
+		g.traceFailure(ctx, traced, "request", err, 0)
 		return classifyTransportError(ctx, err)
 	}
 	defer closeBody(response.Body)
 	if response.StatusCode < 200 || response.StatusCode > 299 {
 		g.report(ctx, target.path, "http_status", response.StatusCode)
-		g.traceResponse(ctx, target.path, response, 0, nil, key, started, limit)
+		g.traceResponse(ctx, traced, response, nil)
 		return g.mapStatus(response)
 	}
 	body, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBytes+1))
 	if err != nil {
 		g.report(ctx, target.path, "read_response", response.StatusCode)
-		g.traceFailure(ctx, target.path, "read_response", err, response.StatusCode, started, limit)
+		g.traceFailure(ctx, traced, "read_response", err, response.StatusCode)
 		return classifyTransportError(ctx, err)
 	}
-	g.traceResponse(ctx, target.path, response, len(body), body, key, started, limit)
+	g.traceResponse(ctx, traced, response, body)
 	if len(body) > maxResponseBytes || json.Unmarshal(body, out) != nil {
 		g.report(ctx, target.path, "invalid_response", response.StatusCode)
 		return connection.NewStopError(connection.ReasonUnavailable)
@@ -84,7 +85,7 @@ func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Dur
 
 func getTransportFailure(err error) string {
 	if errors.Is(err, context.DeadlineExceeded) {
-		return "timeout"
+		return failureTimeout
 	}
 	return "transport"
 }

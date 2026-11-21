@@ -17,6 +17,25 @@ const maxLoggedBodyBytes = 2 << 10
 
 const redacted = "[redacted]"
 
+const (
+	failureTimeout = "timeout"
+	fieldPath      = "path"
+)
+
+// traceCall is what the entries of one request share: where it went, the key to keep out, when it began and the time it may take.
+type traceCall struct {
+	path    string
+	key     string
+	started time.Time
+	limit   time.Duration
+}
+
+func (c traceCall) elapsedAndLimit(properties map[string]any) map[string]any {
+	properties["elapsed_ms"] = time.Since(c.started).Milliseconds()
+	properties["limit_ms"] = c.limit.Milliseconds()
+	return properties
+}
+
 func keptHeaders() []string {
 	return []string{"Content-Type", "X-Request-Id", "Cf-Ray", "Retry-After", "X-Ratelimit-Limit-Requests",
 		"X-Ratelimit-Remaining-Requests", "X-Ratelimit-Reset-Requests", "X-Ratelimit-Limit-Tokens",
@@ -39,45 +58,41 @@ func (g *Gateway) trace(ctx context.Context, level logs.Level, message string, p
 	}
 }
 
-func (g *Gateway) traceRequest(ctx context.Context, method, path, model, key string, body []byte) {
+func (g *Gateway) traceRequest(ctx context.Context, call traceCall, method, model string, body []byte) {
 	g.trace(ctx, logs.Info, "Connection request sent", map[string]any{
-		"method": method, "path": path, "model": model, "request_bytes": len(body),
+		"method": method, fieldPath: call.path, "model": model, "request_bytes": len(body),
 	})
 	if len(body) > 0 {
-		g.trace(ctx, logs.Debug, "Connection request body", map[string]any{"path": path, "body": loggedBody(body, key)})
+		g.trace(ctx, logs.Debug, "Connection request body", map[string]any{fieldPath: call.path, "body": loggedBody(body, call.key)})
 	}
 }
 
-func (g *Gateway) traceResponse(
-	ctx context.Context, path string, response *http.Response, size int, body []byte, key string, started time.Time, limit time.Duration,
-) {
-	properties := map[string]any{
-		"path": path, "status": response.StatusCode, "response_bytes": size,
-		"elapsed_ms": time.Since(started).Milliseconds(), "limit_ms": limit.Milliseconds(),
-	}
+func (g *Gateway) traceResponse(ctx context.Context, call traceCall, response *http.Response, body []byte) {
+	properties := call.elapsedAndLimit(map[string]any{
+		fieldPath: call.path, "status": response.StatusCode, "response_bytes": len(body),
+	})
 	for _, name := range keptHeaders() {
 		if value := response.Header.Get(name); value != "" {
-			properties[strings.ToLower(name)] = redact(value, key)
+			properties[strings.ToLower(name)] = redact(value, call.key)
 		}
 	}
 	g.trace(ctx, logs.Info, "Connection response received", properties)
 	if len(body) > 0 {
-		g.trace(ctx, logs.Debug, "Connection response body", map[string]any{"path": path, "body": loggedBody(body, key)})
+		g.trace(ctx, logs.Debug, "Connection response body", map[string]any{fieldPath: call.path, "body": loggedBody(body, call.key)})
 	}
 }
 
-func (g *Gateway) traceFailure(ctx context.Context, path, stage string, err error, status int, started time.Time, limit time.Duration) {
-	g.trace(ctx, logs.Warning, "Connection request failed to complete", map[string]any{
-		"path": path, "stage": stage, "failure": classifyFailure(err), "status": status,
-		"elapsed_ms": time.Since(started).Milliseconds(), "limit_ms": limit.Milliseconds(),
-	})
+func (g *Gateway) traceFailure(ctx context.Context, call traceCall, stage string, err error, status int) {
+	g.trace(ctx, logs.Warning, "Connection request failed to complete", call.elapsedAndLimit(map[string]any{
+		fieldPath: call.path, "stage": stage, "failure": classifyFailure(err), "status": status,
+	}))
 }
 
 func classifyFailure(err error) string {
 	var timeout interface{ Timeout() bool }
 	switch {
 	case errors.Is(err, context.DeadlineExceeded), errors.As(err, &timeout) && timeout.Timeout():
-		return "timeout"
+		return failureTimeout
 	case errors.Is(err, context.Canceled):
 		return "canceled"
 	case errors.Is(err, syscall.ECONNRESET):
