@@ -6,7 +6,7 @@
 import { KeyCap } from '@numen/ui'
 import { parseKeystroke } from './keystroke'
 import type { PluginContribution } from './pluginInfo'
-import { PLUGIN_WORDS as words } from './words'
+import { describePermission, PLUGIN_WORDS as words } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -28,6 +28,9 @@ const props = defineProps<{
         <code v-if="item.detail && item.detail !== item.text" class="plugin-contributions__detail">
           {{ item.detail }}
         </code>
+        <span v-if="group.kind === 'permissions'" class="plugin-contributions__meaning">
+          {{ describePermission(item.text) }}
+        </span>
         <KeyCap v-if="item.keys" :keys="parseKeystroke(item.keys, props.isApple)" />
       </dd>
     </div>
@@ -68,6 +71,10 @@ const props = defineProps<{
   min-inline-size: 0;
   margin: 0;
   color: var(--numen-ink);
+}
+
+.plugin-contributions__meaning {
+  color: var(--numen-hushed);
 }
 
 .plugin-contributions__detail {
