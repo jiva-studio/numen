@@ -12,7 +12,7 @@ import { coverageConfigDefaults, defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import { createWindowAliases } from '@numen/workbench/vite'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
-import { getStoryBrowser } from '../../../libs/ui/components/.storybook/browser'
+import { getPointerBrowser, getStoryBrowser } from '../../../libs/ui/components/.storybook/browser'
 
 const alias = createWindowAliases(import.meta.url, {
   '@numen/ui/testing': '../../../libs/ui/components/src/shared/fixtures/browser.ts',
@@ -41,8 +41,19 @@ export default defineConfig({
           name: 'unit',
           environment: 'jsdom',
           include: ['src/**/*.test.ts'],
+          exclude: ['src/**/*.browser.test.ts'],
           setupFiles: ['./src/testing/noLayout.ts'],
           testTimeout: 30_000,
+        },
+      },
+      {
+        plugins: [vue()],
+        resolve: { alias },
+        test: {
+          name: 'browser',
+          include: ['src/**/*.browser.test.ts'],
+          testTimeout: 30_000,
+          browser: getPointerBrowser(),
         },
       },
       {

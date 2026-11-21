@@ -15,17 +15,39 @@ export function clampRowOffset(spans: readonly RowSpan[], from: number, delta: n
   return Math.min(Math.max(delta, min), max)
 }
 
-/** The place the held row is over, from where the rows stood when the drag began and how far the pointer went. */
+const HYSTERESIS = 1 / 8
+
+const middleOf = (span: RowSpan): number => span.top + span.height / 2
+
+/**
+ * The place the held row is over, from where the rows stood when the drag began and how far the pointer
+ * went. The row's centre must pass the middle of a row to take its place, and must go back past the middle
+ * by a margin to give it up, so a pointer resting on the boundary does not flip between two places.
+ */
 export function getDropIndex(
   spans: readonly RowSpan[],
   from: number,
   delta: number,
+  current: number = from,
 ): number | null {
   const held = spans[from]
   if (!held) return null
-  const centre = held.top + held.height / 2 + clampRowOffset(spans, from, delta)
-  const found = spans.findIndex((one) => centre < one.top + one.height)
-  return found < 0 ? spans.length - 1 : found
+  if (delta >= clampRowOffset(spans, from, Infinity)) return spans.length - 1
+  if (delta <= clampRowOffset(spans, from, -Infinity)) return 0
+  const centre = middleOf(held) + delta
+  const margin = held.height * HYSTERESIS
+  const isPassed = (at: number, isBelow: boolean): boolean => {
+    const span = spans[at]
+    if (!span) return false
+    const isHeldBy = isBelow ? current >= at : current <= at
+    const reach = isHeldBy ? -margin : margin
+    return isBelow ? centre > middleOf(span) + reach : centre < middleOf(span) - reach
+  }
+  let target = from
+  while (isPassed(target + 1, true)) target += 1
+  if (target !== from) return target
+  while (isPassed(target - 1, false)) target -= 1
+  return target
 }
 
 /** How far each row of a list is moved aside while the row at `from` is held over the place `to`. */

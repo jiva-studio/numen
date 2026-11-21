@@ -34,11 +34,19 @@ describe('the place a held row is over', () => {
 
   it('moves down once the centre crosses the next row', () => {
     expect(getDropIndex(spans, 0, 30)).toBe(1)
-    expect(getDropIndex(spans, 0, 50)).toBe(2)
+    expect(getDropIndex(spans, 0, 55)).toBe(2)
   })
 
   it('moves up once the centre crosses the row above', () => {
     expect(getDropIndex(spans, 2, -30)).toBe(1)
+  })
+
+  it('keeps the place on the boundary until the centre goes back past the margin', () => {
+    expect(getDropIndex(spans, 0, 25)).toBe(0)
+    expect(getDropIndex(spans, 0, 25, 1)).toBe(1)
+    expect(getDropIndex(spans, 0, 20, 1)).toBe(0)
+    expect(getDropIndex(spans, 2, -25)).toBe(2)
+    expect(getDropIndex(spans, 2, -25, 1)).toBe(1)
   })
 
   it('stays inside the list however far the pointer goes', () => {
