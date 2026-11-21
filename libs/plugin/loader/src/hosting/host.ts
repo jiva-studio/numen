@@ -338,11 +338,18 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
   const slots = createSlotRegistry({
     getKeyFor: keybindings.getKeyFor,
     getEntries: readSlotEntries,
+    drawers: {
+      getPoints: () =>
+        slotDeps.getSlotPoints?.(registry.plugins.contextManifests?.value ?? new Map()),
+      ...(slotDeps.getSlotLayout ? { getLayout: slotDeps.getSlotLayout } : {}),
+    },
     findCommand: (command, target) => findSlotCommand?.(command, target),
     findView: slotViews.findView,
     ...(slotDeps.reportSlotIssue ? { reportIssue: slotDeps.reportSlotIssue } : {}),
-    ...(slotDeps.getSlotWhenValues ? { getWhenValues: slotDeps.getSlotWhenValues } : {}),
-    whenReader,
+    when: {
+      ...(slotDeps.getSlotWhenValues ? { getValues: slotDeps.getSlotWhenValues } : {}),
+      reader: whenReader,
+    },
     requestPlugin: (pluginId) => requestPluginStart(deps, pluginId),
   })
   const contextHost = createHostContextBridge(deps, registry, {

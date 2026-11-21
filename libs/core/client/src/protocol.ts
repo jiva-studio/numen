@@ -15,6 +15,7 @@ export {
   type PluginHandler,
   type PluginKeybinding,
   type PluginSlotEntry,
+  type PluginSlotPoint,
   type RunPluginCommandResponse,
   type TextSegment as TextSegmentMessage,
   type TextVersion as TextVersionMessage,

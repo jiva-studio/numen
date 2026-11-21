@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { SLOT, type TabKindRegistration } from '@numen/plugin-sdk'
+import type { TabKindRegistration } from '@numen/plugin-sdk'
 import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { activate, FilesTab, FILES } from './index'
 import { createHost, NEW_MENU, ROW_MENU, TRASH } from './fixtures/host'
+import { FILE_TREE_SLOT } from './model/slotNames'
 import type { Entry, FilesTabState } from './types'
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
@@ -23,7 +24,7 @@ const createContext = (
   const { host, recorded } = createHost({ folders })
   const ctx = createMockPluginContext({ pluginId: 'md.numen.views.file.tree', initialSettings })
   const services = createMockHostServices({ workspace: host.workspace, files: host.files })
-  services.ui.slots.setEntries(SLOT.fileTreeContext, ROW_MENU)
+  services.ui.slots.setEntries(FILE_TREE_SLOT.context, ROW_MENU)
   return { ctx, services, recorded, folders }
 }
 

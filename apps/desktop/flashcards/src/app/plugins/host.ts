@@ -11,6 +11,7 @@ import {
   createPluginHost,
   createPluginNotices,
   readManifestSlotEntries,
+  readManifestSlotPoints,
   requireMountAccess,
   type BackgroundTaskHost,
   type CommandsHost,
@@ -54,6 +55,9 @@ const readSlotEntries = (manifests: ReadonlyMap<string, Manifest>) =>
     readManifestSlotEntries(pluginId, manifest, createNamedIcon),
   )
 
+const readSlotPoints = (manifests: ReadonlyMap<string, Manifest>) =>
+  [...manifests].flatMap(([pluginId, manifest]) => readManifestSlotPoints(pluginId, manifest))
+
 export function createShellHost(deps: ShellHostDeps) {
   const { tabs, notices, services = {}, getPlatform = () => 'windows' } = deps
   const pluginHost = createPluginHost({
@@ -74,6 +78,7 @@ export function createShellHost(deps: ShellHostDeps) {
     tabs: { closeTab: (id) => tabs.closeTab(id) },
     slots: {
       getSlotEntries: readSlotEntries,
+      getSlotPoints: readSlotPoints,
       reportViewIssue: createViewIssueReporter(notices),
     },
     vault: { getVaults: () => services.vaults, getRelations: () => deps.relations },

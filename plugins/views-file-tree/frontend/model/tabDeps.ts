@@ -5,7 +5,6 @@
 import {
   getFileStem,
   isNotePath,
-  SLOT,
   type DropHost,
   type CommandsHost,
   type SlotHost,
@@ -13,6 +12,7 @@ import {
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { FilesTabDeps } from '../types'
+import { FILE_TREE_SLOT } from './slotNames'
 
 /** The host services a files tab is made from. */
 export interface FileTreeHost {
@@ -48,10 +48,10 @@ export function createFilesTabDeps(
       showError: (text) => workspace.messages.showError(text),
       getEntryIcon: (entry, isOpen) => workspace.icons.getEntry(entry, isOpen),
       watchRowEntries: (handler) =>
-        slots?.watchEntries(SLOT.fileTreeRowEnd, handler) ?? { dispose: () => undefined },
+        slots?.watchEntries(FILE_TREE_SLOT.rowEnd, handler) ?? { dispose: () => undefined },
     },
     menu: {
-      getMenuEntries: (target) => slots?.getEntries(SLOT.fileTreeContext, target) ?? [],
+      getMenuEntries: (target) => slots?.getEntries(FILE_TREE_SLOT.context, target) ?? [],
       listItems: async (command, target) => (await commands?.listItems(command, target)) ?? [],
       runCommand: (command, target, itemId, values) =>
         commands?.run(command, target, itemId, values) ?? Promise.resolve(''),

@@ -41,6 +41,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		FrameOrigins: wire.GetFrameOrigins(),
 		Commands:     newCommands(wire.GetCommands()),
 		Slots:        newSlots(wire.GetSlots()),
+		SlotPoints:   newSlotPoints(wire.GetSlotPoints()),
 		Handlers:     newHandlers(wire.GetHandlers()),
 		Triggers:     newTriggers(wire.GetTriggers()),
 		TextKinds:    newTextKinds(wire.GetTextKinds()),
@@ -79,6 +80,14 @@ func newLicenses(wire []*v1.ManifestLicense) []manifest.License {
 			Providers:        providers,
 			OfflineGraceDays: graceDays,
 		})
+	}
+	return out
+}
+
+func newSlotPoints(wire []*v1.ManifestSlotPoint) []manifest.SlotPoint {
+	var out []manifest.SlotPoint
+	for _, one := range wire {
+		out = append(out, manifest.SlotPoint{Slot: one.GetSlot(), Title: one.GetTitle()})
 	}
 	return out
 }

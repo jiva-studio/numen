@@ -20,7 +20,7 @@ import {
   type HostParts,
   type HostPort,
 } from '@/features/plugin-host'
-import { getWindowConfig } from '@/features/settings-commands'
+import { getSlotLayout, getWindowConfig } from '@/features/settings-commands'
 import { formatError } from '@/shared/api/errors'
 import type { CommandTarget } from '@/shared/model/command'
 import type { MessageLog } from '@/shared/model/notices/messages'
@@ -60,6 +60,7 @@ export function createPluginDeclarations(deps: PluginDeclarationsDeps) {
       getTarget: deps.getTarget,
       isPaletteOpen: deps.isPaletteOpen,
     }),
+    getSlotLayout: (pluginId) => getSlotLayout(rest, pluginId),
     writeIssue: reports.writeIssue,
   })
   const handlers = createBackendHandlers({

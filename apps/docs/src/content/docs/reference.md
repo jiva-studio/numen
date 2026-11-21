@@ -235,6 +235,7 @@ The settings of the plugin File Tree Explorer.
 | | | |
 | --- | --- | --- |
 | `sortBy` | text | how files and folders are ordered in the tree. One of `name`, `modified`. |
+| `slots` | text | choose which entries of each slot are shown, and in what order. |
 
 ### `md.numen.views.flashcards.studio`
 
@@ -264,6 +265,7 @@ The settings of the plugin Plex Graph.
 | `animationLength` | a number | time to move to another note, in ms; 0 is instant. From 0 to 2000. |
 | `noteRoom` | a number | empty space around every note. From 0 to 40. |
 | `alignToGrid` | yes or no | give every note of a side the room of the one with the most over its pill and the most under it, so the pills of a row line up when notes carry views of different heights. Off: a note keeps only the room its own views need. |
+| `slots` | text | choose which entries of each slot are shown, and in what order. |
 
 ### `md.numen.views.plex.headings.dropdown`
 
@@ -290,6 +292,14 @@ The settings of the plugin Plex Related Names.
 | `namesPerNote` | a number | most names shown under and over a related note. From 1 to 12. |
 | `showRelationArrows` | yes or no | an arrow before each name shows how its note is related. |
 
+### `md.numen.views.statusBar`
+
+The settings of the plugin Status bar.
+
+| | | |
+| --- | --- | --- |
+| `slots` | text | choose which entries of each slot are shown, and in what order. |
+
 ### `md.numen.views.titleBar`
 
 The settings of the plugin Title bar.
@@ -298,4 +308,5 @@ The settings of the plugin Title bar.
 | --- | --- | --- |
 | `buttons` | text | where the bar draws the window buttons. macOS always draws them on the left. One of `mac`, `windows`, `none`. |
 | `hideInFullscreen` | yes or no | hide the bar while the window is full screen. |
+| `slots` | text | choose which entries of each slot are shown, and in what order. |
 <!-- END AUTOGEN -->

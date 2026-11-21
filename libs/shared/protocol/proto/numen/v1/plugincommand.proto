@@ -102,6 +102,15 @@ message ListCommandsResponse {
   // The keybindings of every enabled plugin, in the order of the plugins' ids and then of each
   // manifest. They work before a plugin starts.
   repeated PluginKeybinding keybindings = 5;
+  // The slot points of every enabled plugin, in the order of the plugins' ids and then of each
+  // manifest.
+  repeated PluginSlotPoint slot_points = 6;
+}
+
+// PluginSlotPoint is one entry of contributes.slotPoints of a plugin.
+message PluginSlotPoint {
+  string plugin_id = 1;
+  ManifestSlotPoint point = 2;
 }
 
 // PluginKeybinding is one entry of contributes.keybindings of a plugin.

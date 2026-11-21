@@ -330,7 +330,7 @@ describe('the diagnostics of the entries', () => {
 
     expect(reportIssue).toHaveBeenCalledWith(
       HARBOR,
-      'slots: "harbor.open" is placed in "ledger.new", which is neither a slot of the window nor a submenu a plugin declares',
+      'slots: "harbor.open" is placed in "ledger.new", which is neither a slot of the window, a slot a plugin draws, nor a submenu a plugin declares',
       'warning',
     )
   })

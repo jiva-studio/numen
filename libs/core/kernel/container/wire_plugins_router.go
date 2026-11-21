@@ -100,7 +100,7 @@ func StopPlugins(watch PluginWatch, ctx context.Context) error {
 func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host *PluginExecution, versions plugincommand.VersionItems) pluginCommandUseCases {
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := host.Runtime.Manifests, when.NewConditions()
-	list := plugincommand.NewList(commands, conditions)
+	list := plugincommand.NewList(commands, conditions).WithSlotPoints(commands)
 	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch.ContentTypeTable, pluginsNewNoteReader(vaultDeps), config, conditions)
 	return pluginCommandUseCases{
 		List:       list,

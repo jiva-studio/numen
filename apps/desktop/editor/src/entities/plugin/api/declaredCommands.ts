@@ -9,6 +9,7 @@ import {
   type PluginHandler,
   type PluginKeybinding,
   type PluginSlotEntry,
+  type PluginSlotPoint,
   type RunPluginCommandResponse,
 } from '@numen/core-client'
 import {
@@ -16,6 +17,7 @@ import {
   type CommandAnswers,
   type CommandItem,
   type CommandWarns,
+  type DeclaredSlotPoint,
   type HandlerDeclaration,
   type WhenReader,
 } from '@numen/plugin-loader'
@@ -61,6 +63,7 @@ export interface DeclaredKeybinding {
 interface DeclaredList {
   readonly commands: readonly DeclaredCommand[]
   readonly slots: readonly DeclaredSlot[]
+  readonly slotPoints?: readonly DeclaredSlotPoint[]
   readonly contentTypes?: Readonly<Record<string, string>>
   readonly handlers?: readonly HandlerDeclaration[]
   readonly keybindings?: readonly DeclaredKeybinding[]
@@ -154,6 +157,12 @@ const readSlotEntry = ({ pluginId, entry }: PluginSlotEntry): DeclaredSlot => {
   }
 }
 
+const readSlotPoint = ({ pluginId, point }: PluginSlotPoint): DeclaredSlotPoint => ({
+  pluginId,
+  slot: point?.slot ?? '',
+  title: point?.title ?? '',
+})
+
 const readHandler = ({ pluginId, handler, hasItems }: PluginHandler): HandlerDeclaration => ({
   pluginId,
   command: handler?.command ?? '',
@@ -221,6 +230,7 @@ export const createDeclaredCommandsApi = (pluginCommands: WindowClients['pluginC
       return {
         commands: answer.commands.map(readCommand),
         slots: answer.slots.map(readSlotEntry),
+        slotPoints: answer.slotPoints.map(readSlotPoint),
         contentTypes: { ...answer.contentTypeByExtension },
         handlers: answer.handlers.map(readHandler),
         keybindings: answer.keybindings.map(readKeybinding),

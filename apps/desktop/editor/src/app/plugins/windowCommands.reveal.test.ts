@@ -4,7 +4,7 @@
  * table. Only the navigation of a tab is a double, so a path that stops reaching it fails here.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { SLOT, type CommandTarget as RunTarget, type SlotItem } from '@numen/plugin-loader'
+import { type CommandTarget as RunTarget, type SlotItem } from '@numen/plugin-loader'
 import {
   createRealWindow,
   readManifest,
@@ -77,9 +77,9 @@ describe('the keys that show a note', () => {
 
 describe('the entries of a context menu that show a note', () => {
   it.each([
-    [SLOT.plexGraphContext, 'files'],
-    [SLOT.plexGraphContext, 'plex'],
-    [SLOT.fileTreeContext, 'plex'],
+    ['plexGraph.context', 'files'],
+    ['plexGraph.context', 'plex'],
+    ['fileTree.context', 'plex'],
   ])('in %s show the note in the tab of kind %s', async (slot, kind) => {
     const one = setup()
     const commands = createWindowCommands({
