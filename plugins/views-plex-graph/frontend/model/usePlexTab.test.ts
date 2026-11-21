@@ -324,6 +324,26 @@ describe('a plex drawing nothing', () => {
   })
 })
 
+describe('the note a plex without notes creates', () => {
+  it('is made in the vault root and shown', async () => {
+    const one = tab('Root.md')
+
+    await one.state.menu.createNote()
+
+    expect(one.ran).toStrictEqual([['app:note.create', '', '']])
+    expect(one.went).toStrictEqual(['Untitled note 1.md'])
+  })
+
+  it('shows nothing where the run made no note', async () => {
+    const one = tab('Root.md')
+    one.created.value = ''
+
+    await one.state.menu.createNote()
+
+    expect(one.went).toStrictEqual([])
+  })
+})
+
 describe('the menu of a place with no node', () => {
   const request = { node: null, at: { x: 1, y: 2 }, opening: 'pointer' as const }
 

@@ -277,7 +277,21 @@ function usePlexMenu(options: {
     return tabKind === undefined ? null : deps.window.getNoteIcon(tabKind)
   }
 
-  return { request, menuItems, getMenuIcon, getNodeIcon, openMenu, dismiss, chooseMenuItem }
+  const createNote = async (): Promise<void> => {
+    const made = await deps.menu.runCommand(CREATE_NOTE, getCanvasTarget())
+    if (made) await showCreated(made)
+  }
+
+  return {
+    request,
+    menuItems,
+    getMenuIcon,
+    getNodeIcon,
+    openMenu,
+    dismiss,
+    chooseMenuItem,
+    createNote,
+  }
 }
 
 function usePlexWidgets(
