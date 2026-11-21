@@ -137,6 +137,8 @@ func CheckDeclared(declared manifest.Setting, registries Registries, value any) 
 		return checkOption(declared, registries, value)
 	case manifest.SettingTypeConnections:
 		return checkRows(declared, registries, value)
+	case manifest.SettingTypeSlots:
+		return checkSlotLayout(value)
 	}
 	return nil
 }

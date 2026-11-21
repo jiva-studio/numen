@@ -42,6 +42,7 @@ type Contributes struct {
 	FrameOrigins     []string
 	Commands         []Command
 	Slots            []SlotEntry
+	SlotPoints       []SlotPoint
 	Handlers         []Handler
 	Triggers         []Trigger
 	TextKinds        []TextKind
@@ -115,6 +116,7 @@ func (m Manifest) listContributionIssues() []error {
 	issues = append(issues, c.listThemeIssues()...)
 	issues = append(issues, m.listReaderIssues()...)
 	issues = append(issues, m.listSlotIssues()...)
+	issues = append(issues, m.listSlotPointIssues()...)
 	issues = append(issues, m.listHandlerIssues()...)
 	issues = append(issues, m.listTriggerIssues()...)
 	issues = append(issues, listTextKindIssues(c.TextKinds)...)

@@ -24,6 +24,14 @@
         "when": "window.isVaultOpen"
       }
     ],
+    "slotPoints": [
+      { "slot": "plexGraph.context", "title": "Node menu" },
+      { "slot": "plexGraph.nodeAbove", "title": "Above a node" },
+      { "slot": "plexGraph.nodeBelow", "title": "Below a node" },
+      { "slot": "plexGraph.node", "title": "Over a node" },
+      { "slot": "plexGraph.boardTop", "title": "Top of the board" },
+      { "slot": "plexGraph.boardBottom", "title": "Bottom of the board" }
+    ],
     "slots": [
       {
         "slot": "palette.searchResult",
@@ -271,6 +279,13 @@
       "description": "Keep the notes of a side in rows, whatever views they carry",
       "default": false,
       "details": "Give every note of a side the room of the one with the most over its pill and the most under it, so the pills of a row line up when notes carry views of different heights. Off: a note keeps only the room its own views need."
+    },
+    {
+      "key": "slots",
+      "type": "slots",
+      "title": "Slots",
+      "description": "Order and visibility of what plugins place here",
+      "details": "Choose which entries of each slot are shown, and in what order."
     }
   ],
   "frontend": {}

@@ -3,7 +3,6 @@
  * notes of the vault.
  */
 import {
-  SLOT,
   type CommandsHost,
   type SlotHost,
   type VaultNotes,
@@ -11,13 +10,14 @@ import {
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { PlexLook, PlexTabDeps } from '../types'
+import { PLEX_SLOT } from './slotNames'
 
 const WIDGET_SLOTS = {
-  above: SLOT.plexGraphNodeAbove,
-  below: SLOT.plexGraphNodeBelow,
-  over: SLOT.plexGraphNode,
-  boardTop: SLOT.plexGraphBoardTop,
-  boardBottom: SLOT.plexGraphBoardBottom,
+  above: PLEX_SLOT.nodeAbove,
+  below: PLEX_SLOT.nodeBelow,
+  over: PLEX_SLOT.node,
+  boardTop: PLEX_SLOT.boardTop,
+  boardBottom: PLEX_SLOT.boardBottom,
 } as const
 
 /** The host services a plex tab is made from, and the plugin's settings. */
@@ -71,7 +71,7 @@ export function createPlexTabDeps(
       readOpeningPath: () => workspace.window.readOpeningPath(),
     },
     menu: {
-      getMenuEntries: (target) => slots?.getEntries(SLOT.plexGraphContext, target) ?? [],
+      getMenuEntries: (target) => slots?.getEntries(PLEX_SLOT.context, target) ?? [],
       listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
       runCommand: (command, target, itemId, values) =>
         commands?.run(command, target, itemId, values) ?? Promise.resolve(''),

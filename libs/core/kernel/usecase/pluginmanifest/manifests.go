@@ -107,6 +107,21 @@ func (m Manifests) ListSlots() []plugindomain.SlotEntry {
 	return found
 }
 
+// ListSlotPoints lists the slots the manifests of the enabled plugins draw. No plugin is started.
+func (m Manifests) ListSlotPoints() []plugindomain.SlotPointEntry {
+	var found []plugindomain.SlotPointEntry
+	for _, info := range m.host.GetPluginInfos() {
+		plugin, isEnabled := m.host.GetPlugin(info.ID)
+		if !isEnabled {
+			continue
+		}
+		for _, point := range plugin.Manifest.Contributes.SlotPoints {
+			found = append(found, plugindomain.SlotPointEntry{PluginID: plugin.Manifest.ID, Point: point})
+		}
+	}
+	return found
+}
+
 // ListKeybindings lists the keybindings the manifests of the enabled plugins declare. No plugin is started.
 func (m Manifests) ListKeybindings() []plugindomain.KeybindingEntry {
 	var found []plugindomain.KeybindingEntry

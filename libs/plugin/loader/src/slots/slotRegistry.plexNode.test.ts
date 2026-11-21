@@ -9,6 +9,12 @@ const setup = (entries: readonly DeclaredSlotEntry[]) => {
   const reportIssue = vi.fn()
   const registry = createSlotRegistry({
     getEntries: () => entries,
+    drawers: {
+      getPoints: () => [
+        { pluginId: 'org.example.plex', slot: 'plexGraph.nodeAbove', title: 'Above' },
+        { pluginId: 'org.example.plex', slot: 'plexGraph.nodeBelow', title: 'Below' },
+      ],
+    },
     findCommand: () => undefined,
     findView: (pluginId, view) => ({ name: `${pluginId}-${view}` }),
     reportIssue,
@@ -33,7 +39,7 @@ describe('the slots over and under a node of the plex graph', () => {
     expect(readViews(registry.getEntries('plexGraph.nodeBelow'))).toStrictEqual(['related'])
   })
 
-  it('are known to the window, so a view placed in them raises no issue', () => {
+  it('are known once the plex declares them, so a view placed in them raises no issue', () => {
     const { registry, reportIssue } = setup(entries)
 
     registry.getEntries('plexGraph.nodeAbove')

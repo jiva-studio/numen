@@ -184,13 +184,17 @@ const SettingTypeFile = "file"
 // connection and holds the values of the row fields of its type.
 const SettingTypeConnections = "connections"
 
+// SettingTypeSlots is the type of the setting that keeps the order and the visibility of the entries of
+// the slots a plugin draws: an object by slot name, each a list of { id, hidden }.
+const SettingTypeSlots = "slots"
+
 const settingTypeNumber = "number"
 
 // settingTypeBoolean is the type of a setting that stores true or false.
 const settingTypeBoolean = CommandArgumentBoolean
 
 func listSettingTypes() []string {
-	return []string{settingTypeBoolean, SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile, SettingTypeConnections}
+	return []string{settingTypeBoolean, SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile, SettingTypeConnections, SettingTypeSlots}
 }
 
 // Backend describes the server-side executable of a plugin. A zero IdleStopSeconds takes the idle limit

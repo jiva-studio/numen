@@ -8,6 +8,10 @@
   "permissions": ["vault:read", "vault:write", "vault:manage"],
   "contributes": {
     "category": "views",
+    "slotPoints": [
+      { "slot": "titleBar.commands", "title": "Buttons" },
+      { "slot": "titleBar.status", "title": "Status views" }
+    ],
     "slots": [{ "slot": "titleBar", "view": "bar" }]
   },
   "settings": [
@@ -40,6 +44,13 @@
       "title": "Hide in full screen",
       "description": "Hide the bar while the window is full screen",
       "default": false
+    },
+    {
+      "key": "slots",
+      "type": "slots",
+      "title": "Slots",
+      "description": "Order and visibility of what plugins place here",
+      "details": "Choose which entries of each slot are shown, and in what order."
     }
   ],
   "frontend": {}

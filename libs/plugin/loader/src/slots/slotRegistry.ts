@@ -17,6 +17,7 @@ import type { Manifest } from '@numen/core-client'
 import { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from '../commandId'
 import { getTargetValues, type WhenValues, createWhenReader, type WhenReader } from '../when'
 import { WINDOW_SLOTS } from './windowSlots'
+import { applyLayout, type DeclaredSlotPoint, type SlotLayout } from './slotLayout'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
 export interface DeclaredSlotEntry {
@@ -46,14 +47,20 @@ export interface SlotRegistryDeps {
     values?: Readonly<Record<string, string>>,
   ) => string | undefined
   readonly getEntries: () => readonly DeclaredSlotEntry[] | undefined
+  readonly drawers?: {
+    readonly getPoints: () => readonly DeclaredSlotPoint[] | undefined
+    readonly getLayout?: (pluginId: string) => SlotLayout | undefined
+  }
   readonly findCommand: (
     command: string,
     target: CommandTarget | undefined,
   ) => SlotCommandLook | undefined
   readonly findView: (pluginId: string, view: string) => Component | undefined
   readonly reportIssue?: (pluginId: string, message: string, severity: 'warning' | 'error') => void
-  readonly getWhenValues?: (target: CommandTarget | undefined) => WhenValues
-  readonly whenReader?: WhenReader
+  readonly when?: {
+    readonly getValues?: (target: CommandTarget | undefined) => WhenValues
+    readonly reader?: WhenReader
+  }
   readonly requestPlugin?: (pluginId: string) => void
 }
 
@@ -167,18 +174,32 @@ interface Declared {
 
 function reportUnknownPlaces(
   entries: readonly DeclaredSlotEntry[],
-  owners: ReadonlyMap<string, DeclaredSlotEntry>,
+  known: {
+    readonly owners: ReadonlyMap<string, DeclaredSlotEntry>
+    readonly drawn: ReadonlySet<string>
+  },
   report: Report,
 ): void {
   for (const entry of entries) {
-    if (KNOWN_SLOTS.has(entry.slot) || owners.has(entry.slot)) continue
+    if (
+      entry.pluginId === APP_COMMAND_OWNER ||
+      KNOWN_SLOTS.has(entry.slot) ||
+      known.drawn.has(entry.slot) ||
+      known.owners.has(entry.slot)
+    ) {
+      continue
+    }
     const id = entry.command ?? entry.view ?? entry.submenu ?? ''
-    const message = `slots: "${id}" is placed in "${entry.slot}", which is neither a slot of the window nor a submenu a plugin declares`
+    const message = `slots: "${id}" is placed in "${entry.slot}", which is neither a slot of the window, a slot a plugin draws, nor a submenu a plugin declares`
     report(entry.pluginId, message, 'warning')
   }
 }
 
-function readDeclaredSlots(entries: readonly DeclaredSlotEntry[], report: Report): Declared {
+function readDeclaredSlots(
+  entries: readonly DeclaredSlotEntry[],
+  drawn: ReadonlySet<string>,
+  report: Report,
+): Declared {
   const { owners, second } = findSubmenuOwners(entries)
   for (const one of second) {
     const owner = owners.get(one.submenu as string)
@@ -194,7 +215,7 @@ function readDeclaredSlots(entries: readonly DeclaredSlotEntry[], report: Report
     const message = `slots: the submenu "${first}" holds itself through ${loop.join(', ')}`
     report(owners.get(first)?.pluginId ?? '', message, 'error')
   }
-  reportUnknownPlaces(entries, owners, report)
+  reportUnknownPlaces(entries, { owners, drawn }, report)
   return { entries, owners, inCycle: new Set(cycles.flat()) }
 }
 
@@ -294,9 +315,14 @@ function createReport(sink: SlotRegistryDeps['reportIssue']): Report {
 
 export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
   const report = createReport(deps.reportIssue)
-  const declared = computed(() => readDeclaredSlots(deps.getEntries() ?? [], report))
+  const drawers = computed(
+    () => new Map((deps.drawers?.getPoints() ?? []).map((one) => [one.slot, one.pluginId])),
+  )
+  const declared = computed(() =>
+    readDeclaredSlots(deps.getEntries() ?? [], new Set(drawers.value.keys()), report),
+  )
 
-  const whenReader = deps.whenReader ?? createWhenReader()
+  const whenReader = deps.when?.reader ?? createWhenReader()
   const isDrawnOver = (entry: DeclaredSlotEntry, target: CommandTarget | undefined): boolean => {
     if (!entry.when) return true
     const parsed = whenReader.read(entry.when)
@@ -309,7 +335,7 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
       )
       return false
     }
-    return parsed.value.evaluate(deps.getWhenValues?.(target) ?? getTargetValues(target, {}))
+    return parsed.value.evaluate(deps.when?.getValues?.(target) ?? getTargetValues(target, {}))
   }
 
   const toItem = (
@@ -332,7 +358,10 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
       const item = toItem(entry, target)
       if (item) items.push({ entry, item })
     }
-    return layOut(place, items)
+    return applyLayout(
+      layOut(place, items),
+      deps.drawers?.getLayout?.(drawers.value.get(place) ?? '')?.[place],
+    )
   }
 
   return {

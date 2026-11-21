@@ -4,11 +4,12 @@
  * and the run handed to the plugin's backend.
  */
 import type { CommandRegistry } from '@/shared/model/command'
-import { computed, shallowRef, watch } from 'vue'
+import { computed, shallowRef, watch, type ShallowRef } from 'vue'
 import {
   createWhenReader,
   type CommandDeclaration,
   type CommandItem,
+  type DeclaredSlotPoint,
   type HandlerDeclaration,
   type WhenReader,
   type WhenSettings,
@@ -77,6 +78,10 @@ function createDeclaredPaletteCommands(
   })
 }
 
+const hold = <T>(held: ShallowRef<readonly T[] | undefined>, received: readonly T[]): void => {
+  if (!isSameList(held.value, received)) held.value = received
+}
+
 const isSameList = <T>(current: readonly T[] | undefined, received: readonly T[]): boolean =>
   current !== undefined && JSON.stringify(current) === JSON.stringify(received)
 
@@ -125,6 +130,7 @@ export function createDeclaredState(deps: DeclaredStateDeps) {
   const { list } = deps
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
   const declaredSlots = shallowRef<readonly DeclaredSlot[] | undefined>(undefined)
+  const declaredSlotPoints = shallowRef<readonly DeclaredSlotPoint[] | undefined>(undefined)
   const declaredHandlers = shallowRef<readonly HandlerDeclaration[] | undefined>(undefined)
   const declaredKeybindings = shallowRef<readonly DeclaredKeybinding[] | undefined>(undefined)
   const contentTypes = shallowRef<Readonly<Record<string, string>>>({})
@@ -161,11 +167,11 @@ export function createDeclaredState(deps: DeclaredStateDeps) {
     // An answer equal to the lists held keeps them, so the commands are not registered again while
     // the palette lists them.
     const handlers = commands.handlers ?? []
-    if (!isSameList(declared.value, commands.commands)) declared.value = commands.commands
-    if (!isSameList(declaredSlots.value, commands.slots)) declaredSlots.value = commands.slots
-    if (!isSameList(declaredHandlers.value, handlers)) declaredHandlers.value = handlers
-    const keybindings = commands.keybindings ?? []
-    if (!isSameList(declaredKeybindings.value, keybindings)) declaredKeybindings.value = keybindings
+    hold(declared, commands.commands)
+    hold(declaredSlots, commands.slots)
+    hold(declaredSlotPoints, commands.slotPoints ?? [])
+    hold(declaredHandlers, handlers)
+    hold(declaredKeybindings, commands.keybindings ?? [])
     if (commands.contentTypes) contentTypes.value = commands.contentTypes
     isFirstListSettled.value = true
   }
@@ -181,6 +187,7 @@ export function createDeclaredState(deps: DeclaredStateDeps) {
     contributions: {
       handlers: computed(() => declaredHandlers.value),
       keybindings: computed(() => declaredKeybindings.value),
+      slotPoints: computed(() => declaredSlotPoints.value),
     },
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load: (): Promise<void> =>

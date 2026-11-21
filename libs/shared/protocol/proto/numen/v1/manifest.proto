@@ -63,6 +63,10 @@ message ManifestContributes {
   // slots place the commands, views and submenus of the plugin in the slots of a window and in
   // submenus, see slots.json for the list of slots.
   repeated ManifestSlotEntry slots = 15;
+  // slot_points are the slots the plugin draws and lets a person order and hide the entries of: a name
+  // slots.json lists is a slot of the application the plugin draws, any other is a slot the plugin
+  // declares for other plugins to fill.
+  repeated ManifestSlotPoint slot_points = 26;
   // handlers are the plugin's handlers of shared commands, see commands.json for the list of shared
   // commands.
   repeated ManifestHandler handlers = 16;
@@ -242,6 +246,15 @@ message ManifestListener {
   // port_setting is the key of the plugin's number setting that stores the port the host binds; the
   // host binds again when the setting changes. Set exactly one of port and port_setting.
   string port_setting = 4;
+}
+
+// ManifestSlotPoint names a slot the plugin draws. The plugin keeps the order and the visibility of the
+// entries of the slot in its own settings, in the setting of the type slots.
+message ManifestSlotPoint {
+  // slot is the name of the slot, words joined by dots, such as plexGraph.nodeBelow.
+  string slot = 1;
+  // title is what the settings page of the plugin calls the slot.
+  string title = 2;
 }
 
 // ManifestSlotEntry places one thing in a slot of a window, or in a submenu a plugin declares. The

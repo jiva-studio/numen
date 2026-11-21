@@ -97,6 +97,10 @@ export {
   type DeclaredSlotEntry,
   type SlotCommandLook,
   type SlotRegistryDeps,
+  applyLayout,
+  readManifestSlotPoints,
+  type DeclaredSlotPoint,
+  type SlotLayout,
 } from './slots'
 export {
   createWhenReader,

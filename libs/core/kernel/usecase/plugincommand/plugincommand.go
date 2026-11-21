@@ -62,6 +62,13 @@ func NewRun(
 type List struct {
 	commands   PluginCommands
 	conditions *when.Conditions
+	points     SlotPoints
+}
+
+// WithSlotPoints makes the list also tell the slots the enabled plugins draw.
+func (u List) WithSlotPoints(points SlotPoints) List {
+	u.points = points
+	return u
 }
 
 // Execute lists the commands that a plugin backend runs.
@@ -93,6 +100,18 @@ func (u List) ExecuteHandlers() []plugin.CommandEntry {
 // holds suspended and of a plugin with neither a frontend nor a backend.
 func (u List) ExecuteSlots() []plugin.SlotEntry {
 	return slices.DeleteFunc(u.commands.ListSlots(), func(one plugin.SlotEntry) bool {
+		parts := u.commands.GetParts(one.PluginID)
+		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
+	})
+}
+
+// ExecuteSlotPoints lists the slots the enabled plugins draw, leaving out those of a plugin the host
+// holds suspended and of a plugin with neither a frontend nor a backend.
+func (u List) ExecuteSlotPoints() []plugin.SlotPointEntry {
+	if u.points == nil {
+		return nil
+	}
+	return slices.DeleteFunc(u.points.ListSlotPoints(), func(one plugin.SlotPointEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})
