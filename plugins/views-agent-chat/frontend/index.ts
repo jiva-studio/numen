@@ -66,7 +66,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   plugin.register.command({
     id: 'chat.open',
     handler: async (note) => {
-      await host.tabs.navigate?.(AGENT, note.path)
+      await host.tabs.open?.(AGENT, note.path)
     },
   })
   /** A question about a note, written into the conversation the user was last in. */

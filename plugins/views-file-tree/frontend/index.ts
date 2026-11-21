@@ -53,7 +53,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   plugin.register.command({
     id: 'tree.open',
     handler: async (note) => {
-      await host.tabs.navigate?.(FILES, note.path)
+      await host.tabs.open?.(FILES, note.path)
     },
   })
   plugin.register.command({

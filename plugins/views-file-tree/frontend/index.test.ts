@@ -31,13 +31,8 @@ const createWindow = () => {
   let getKinds = (): readonly TabKindRegistration[] => []
   const tabOpens: (readonly [string, string])[] = []
   const tabs: { kind: string; state: object }[] = []
-  const navigateTab = async (kind: string, path: string): Promise<string> => {
+  const openTab = async (kind: string, path: string): Promise<string> => {
     const registration = getKinds().find((one) => one.kind === kind)!
-    const last = tabs.filter((one) => one.kind === kind).at(-1)
-    if (last) {
-      await registration.navigate?.(last.state, path, '')
-      return kind
-    }
     tabOpens.push([kind, path])
     tabs.push({ kind, state: registration.open!(path, `${kind}-${tabs.length}`) })
     return kind
@@ -45,7 +40,7 @@ const createWindow = () => {
   const bind = (ctx: { getRegisteredTabKinds(): TabKindRegistration[] }): void => {
     getKinds = () => ctx.getRegisteredTabKinds()
   }
-  return { tabOpens, tabs, navigateTab, bind }
+  return { tabOpens, tabs, openTab, bind }
 }
 
 const openTab = async () => {
@@ -87,7 +82,7 @@ describe('view-file-tree plugin', () => {
     const services = createMockHostServices({
       workspace: host.workspace,
       files: host.files,
-      navigateTab: strip.navigateTab,
+      openTab: strip.openTab,
     })
     strip.bind(ctx)
     activate(ctx, services)
@@ -150,7 +145,7 @@ describe('view-file-tree plugin', () => {
     ])
   })
 
-  it('opens one files tab however many times the command runs', async () => {
+  it('opens another files tab each time the command runs', async () => {
     const { ctx, strip } = createWindowContext()
 
     await ctx.triggerCommand('tree.open')
@@ -164,31 +159,12 @@ describe('view-file-tree plugin', () => {
       tab: '',
     })
 
-    expect(strip.tabOpens).toStrictEqual([[FILES, '']])
-    expect(strip.tabs).toHaveLength(1)
-  })
-
-  it('shows the active note in a files tab that is already open', async () => {
-    const { ctx, strip } = createWindowContext()
-    await ctx.triggerCommand('tree.open')
-    await settle()
-
-    await ctx.triggerCommand('tree.open', {
-      path: 'B.md',
-
-      title: 'B.md',
-
-      type: 'note',
-
-      isFolder: false,
-
-      others: [],
-
-      tab: '',
-    })
-
-    const state = strip.tabs[0]!.state as FilesTabState
-    expect(state.list.state.selectedPaths.value).toStrictEqual(['B.md'])
+    expect(strip.tabOpens).toStrictEqual([
+      [FILES, ''],
+      [FILES, ''],
+      [FILES, 'B.md'],
+    ])
+    expect(strip.tabs).toHaveLength(3)
   })
 
   it('shows the active note in the files tab it opens', async () => {
@@ -212,17 +188,6 @@ describe('view-file-tree plugin', () => {
     expect(strip.tabOpens).toStrictEqual([[FILES, 'A.md']])
     const state = strip.tabs[0]!.state as FilesTabState
     expect(state.list.state.selectedPaths.value).toStrictEqual(['A.md'])
-  })
-
-  it('selects nothing in a files tab when no note is active', async () => {
-    const { ctx, strip } = createWindowContext()
-    await ctx.triggerCommand('tree.open')
-    await settle()
-
-    await ctx.triggerCommand('tree.open')
-
-    const state = strip.tabs[0]!.state as FilesTabState
-    expect(state.list.state.selectedPaths.value).toStrictEqual([])
   })
 
   it('reads the folders of every files tab again when the vault changes', async () => {

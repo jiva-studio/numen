@@ -37,7 +37,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   plugin.register.command({
     id: 'graph.open',
     handler: async (note) => {
-      await host.tabs.navigate?.(PLEX, note.path)
+      await host.tabs.open?.(PLEX, note.path)
     },
   })
 }

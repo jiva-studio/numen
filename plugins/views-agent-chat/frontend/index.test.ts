@@ -22,27 +22,29 @@ const createWindow = () => {
   let getKinds = (): readonly TabKindRegistration[] => []
   const tabOpens: (readonly [string, string])[] = []
   const tabs: { id: string; kind: string; state: object }[] = []
-  const navigateTab = async (kind: string, path: string): Promise<string> => {
+  const openTab = async (kind: string, path: string): Promise<string> => {
     const registration = getKinds().find((one) => one.kind === kind)!
-    const last = tabs.filter((one) => one.kind === kind).at(-1)
-    if (last) {
-      await registration.navigate?.(last.state, path, '')
-      return last.id
-    }
     tabOpens.push([kind, path])
     const id = `${kind}-${tabs.length}`
     tabs.push({ id, kind, state: registration.open!(path, id) })
     return id
   }
+  const navigateTab = async (kind: string, path: string): Promise<string> => {
+    const registration = getKinds().find((one) => one.kind === kind)!
+    const last = tabs.filter((one) => one.kind === kind).at(-1)
+    if (!last) return openTab(kind, path)
+    await registration.navigate?.(last.state, path, '')
+    return last.id
+  }
   const bind = (ctx: { getRegisteredTabKinds(): TabKindRegistration[] }): void => {
     getKinds = () => ctx.getRegisteredTabKinds()
   }
-  return { tabOpens, tabs, navigateTab, bind }
+  return { tabOpens, tabs, openTab, navigateTab, bind }
 }
 
 const createParts = (
   answer: Parameters<typeof createAgentConnections>[0] = { frames: [say('Twelve.')] },
-  navigateTab?: (kind: string, path: string) => Promise<string>,
+  strip?: Pick<ReturnType<typeof createWindow>, 'openTab' | 'navigateTab'>,
   listing?: AgentListing,
 ): { ctx: MockPluginContext; services: MockHostServices } => {
   const { workspace, relations } = createHost()
@@ -50,7 +52,7 @@ const createParts = (
   const services = createMockHostServices({
     workspace,
     relations: relations as unknown as VaultRelations,
-    ...(navigateTab ? { navigateTab } : {}),
+    ...(strip ? { openTab: strip.openTab, navigateTab: strip.navigateTab } : {}),
   })
   const { host } = createAgentConnections(answer, listing)
   return { ctx, services: { ...services, work: { ...services.work, connections: host } } }
@@ -188,9 +190,9 @@ describe('view-agent-chat plugin', () => {
     ])
   })
 
-  it('opens one conversation however many times the command runs', async () => {
+  it('opens another conversation each time the command runs', async () => {
     const strip = createWindow()
-    const { ctx, services } = createParts(undefined, strip.navigateTab)
+    const { ctx, services } = createParts(undefined, strip)
     strip.bind(ctx)
     activate(ctx, services)
 
@@ -204,13 +206,16 @@ describe('view-agent-chat plugin', () => {
       tab: '',
     })
 
-    expect(strip.tabOpens).toStrictEqual([[AGENT, '']])
-    expect(strip.tabs).toHaveLength(1)
+    expect(strip.tabOpens).toStrictEqual([
+      [AGENT, ''],
+      [AGENT, 'One.md'],
+    ])
+    expect(strip.tabs).toHaveLength(2)
   })
 
   it('writes the path of the note into the composer of the conversation last in use', async () => {
     const strip = createWindow()
-    const { ctx, services } = createParts(undefined, strip.navigateTab)
+    const { ctx, services } = createParts(undefined, strip)
     strip.bind(ctx)
     activate(ctx, services)
 
@@ -235,7 +240,7 @@ describe('view-agent-chat plugin', () => {
 
   it('opens a conversation for a question about a note where none is open', async () => {
     const strip = createWindow()
-    const { ctx, services } = createParts(undefined, strip.navigateTab)
+    const { ctx, services } = createParts(undefined, strip)
     strip.bind(ctx)
     activate(ctx, services)
 
