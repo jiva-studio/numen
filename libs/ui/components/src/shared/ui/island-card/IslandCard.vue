@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** A card of a titled header over a body, set off by a hairline: the header names it and may carry actions or a description, and the body holds a list of rows. */
+/** A titled group: the heading sits above a card that holds only the rows, so a group of one row stays one row tall. The heading may carry an aside at its right. */
 defineProps<{ title: string }>()
 </script>
 
@@ -15,23 +15,18 @@ defineProps<{ title: string }>()
 
 <style scoped>
 .island-card {
-  --header-pad: 0.375rem 0.75rem;
   --body-pad: 0 0.75rem;
-  overflow: hidden;
-  box-sizing: border-box;
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  background-color: var(--numen-raised);
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
 }
 
 .island-card__header {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: var(--header-pad);
-  background-color: color-mix(in srgb, var(--numen-ink) 5%, var(--numen-raised));
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
+  padding-inline: 0.25rem;
 }
 
 .island-card__title {
@@ -51,6 +46,11 @@ defineProps<{ title: string }>()
 }
 
 .island-card__body {
+  overflow: hidden;
+  box-sizing: border-box;
   padding: var(--body-pad);
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius);
+  background-color: var(--numen-raised);
 }
 </style>
