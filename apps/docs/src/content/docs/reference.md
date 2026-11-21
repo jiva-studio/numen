@@ -54,7 +54,7 @@ Two things are not settings and are not in here: which files count as notes, and
 
 | | | |
 | --- | --- | --- |
-| `reranking` | text | services that order the results of a query with a rerank stage by relevance, tried in order until one answers. With an OpenRouter key, add an OpenRouter connection and choose the model mongodb/rerank-3: it ranks best and answers in a few seconds. Without one, choose the Local reranker, which runs on this machine and takes tens of seconds for each run. |
+| `reranking` | text | services that order the results of a query with a rerank stage by relevance, tried in order until one answers. With an OpenRouter key, add an OpenRouter connection and choose the model mongodb/rerank-3: it ranks best and answers in a few seconds. Without one, the Local reranker, which runs on this machine and takes tens of seconds for each run, is used while no service is chosen here; choosing a service replaces it. |
 | `rerankWindow` | a number | documents a rerank stage orders when the query names no window. From 1 to 500. |
 | `maxReranked` | a number | most passages one rerank stage sends to the reranking service. From 1 to 2000. |
 | `maxRerankedBytes` | a number | most bytes of one passage sent to the reranking service. From 256 to 32768. |

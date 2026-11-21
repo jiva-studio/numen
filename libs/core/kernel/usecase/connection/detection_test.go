@@ -217,3 +217,41 @@ func TestListRowsDiscoversTheDetectedConnectionsAfterTheStoredOnes(t *testing.T)
 		t.Errorf("rows = %v, asked = %v, want Heron and then Kite agent after one question", rows, detection.listAskedPlugins())
 	}
 }
+
+func listDetectedOnlyRows(t *testing.T, chosen []connectiondomain.Row) []connectiondomain.Row {
+	t.Helper()
+	repository := &memoryRepository{connections: []connectiondomain.Connection{
+		{ID: "c00000002", TypeID: "org.example.agents/heron", Name: "Heron"},
+	}}
+	types := fixedTypes{types: []connectiondomain.Type{
+		agentType(agentsPluginID, "heron", true, taskOp),
+		detectingType(agentsPluginID, "kite", true),
+	}}
+	deps := connection.NewDeps(repository, types, &memoryKeys{values: map[string]string{}}, &memoryUses{}, &answeredDetection{})
+	setting := connectiondomain.RowSetting{Rows: chosen, IsDetectedOnly: true}
+
+	rows, err := connection.NewListRows(deps, fixedRowSettings{setting: setting}).Execute(chatPluginID, taskOp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return rows
+}
+
+func TestListRowsOfADetectedOnlySettingUsesTheDetectedConnectionsAlone(t *testing.T) {
+	rows := listDetectedOnlyRows(t, nil)
+
+	want := []connectiondomain.Row{{ConnectionID: kiteID, Options: map[string]string{}, IsDiscovered: true}}
+	if !reflect.DeepEqual(rows, want) {
+		t.Errorf("rows = %v, want the detected Kite agent alone", rows)
+	}
+}
+
+func TestListRowsOfADetectedOnlySettingKeepsTheChosenRows(t *testing.T) {
+	chosen := []connectiondomain.Row{{ConnectionID: "c00000002", Options: map[string]string{}}}
+
+	rows := listDetectedOnlyRows(t, chosen)
+
+	if !reflect.DeepEqual(rows, chosen) {
+		t.Errorf("rows = %v, want the chosen %v", rows, chosen)
+	}
+}
