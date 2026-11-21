@@ -104,7 +104,7 @@ function onOpen(level: number): void {
 
 .settings-toolbar__back:focus-visible,
 .settings-toolbar__segment:focus-visible {
-  outline: var(--numen-stroke) solid var(--numen-accent);
+  outline: none;
 }
 
 .settings-toolbar__path {
