@@ -1,6 +1,7 @@
 /** Upright boxes in the plex's own coordinates: the area a node occupies, and the area a run of a line occupies. */
 import { createPointOnCurve, type PlacedEdge } from '../../edge'
 import type { PlacedNode, Position } from '../../node'
+import { NO_ROOM, type NodeRoom } from './placement'
 
 /** An upright box in the plex's own coordinates. */
 export interface Box {
@@ -16,12 +17,15 @@ const RUN_SAMPLES = 8
 export const isOverlapping = (one: Box, other: Box): boolean =>
   one.minX < other.maxX && other.minX < one.maxX && one.minY < other.maxY && other.minY < one.maxY
 
-export const getBox = (node: PlacedNode, apart: number): Box => ({
-  minX: node.x - node.width / 2 - apart,
-  minY: node.y - node.height / 2 - apart,
-  maxX: node.x + node.width / 2 + apart,
-  maxY: node.y + node.height / 2 + apart,
-})
+export const getBox = (node: PlacedNode, apart: number, room: NodeRoom = NO_ROOM): Box => {
+  const halfWidth = Math.max(node.width, room.width) / 2
+  return {
+    minX: node.x - halfWidth - apart,
+    minY: node.y - node.height / 2 - room.top - apart,
+    maxX: node.x + halfWidth + apart,
+    maxY: node.y + node.height / 2 + room.bottom + apart,
+  }
+}
 
 /**
  * The area a title occupies, step by step along the run it is set on.

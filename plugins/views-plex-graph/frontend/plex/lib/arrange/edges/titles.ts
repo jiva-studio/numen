@@ -16,6 +16,7 @@ import { createTitle, type TitleSetting } from './labels'
 import { getDepth } from './ink'
 import { MIDDLE } from './positions'
 import type { Routing } from './routing'
+import type { NodeRoom } from '../layout/placement'
 
 /** A run of one line, as fractions of its length. */
 interface Span {
@@ -49,12 +50,13 @@ export function separateTitles(
   edges: readonly PlacedEdge[],
   nodes: readonly PlacedNode[],
   routing: Routing,
+  rooms: ReadonlyMap<string, NodeRoom> = new Map(),
 ): PlacedEdge[] {
   const width = routing.labelWidth
   if (!width) return [...edges]
 
   const apart = APART * getDepth(routing.labelType)
-  const boxes = nodes.map((node) => getBox(node, apart))
+  const boxes = nodes.map((node) => getBox(node, apart, rooms.get(node.id)))
   const titleBoxes: Box[] = []
   const resolved: (EdgeTitle | null)[][] = edges.map((edge) => [...edge.titles])
 
