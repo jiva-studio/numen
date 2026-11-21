@@ -331,7 +331,7 @@ describe('the note a plex without notes creates', () => {
   it('is made in the vault root and shown', async () => {
     const one = tab('Root.md')
 
-    await one.state.menu.createNote()
+    await one.state.menu.makeNote()
 
     expect(one.ran).toStrictEqual([['app:note.create', '', '']])
     expect(one.went).toStrictEqual(['Untitled note 1.md'])
@@ -341,7 +341,7 @@ describe('the note a plex without notes creates', () => {
     const one = tab('Root.md')
     one.created.value = ''
 
-    await one.state.menu.createNote()
+    await one.state.menu.makeNote()
 
     expect(one.went).toStrictEqual([])
   })

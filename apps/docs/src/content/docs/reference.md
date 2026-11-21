@@ -251,6 +251,8 @@ The settings of the plugin Plex Graph.
 | | | |
 | --- | --- | --- |
 | `references` | text | show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none. One of `off`, `outgoing`, `incoming`, `both`. |
+| `activateCreated` | yes or no | a note created from the plex through the quick link or the menu becomes the note in the middle. Off: the plex stays on the note it was on. |
+| `activateLinked` | yes or no | a note linked from the plex becomes the note in the middle. Off: the plex stays on the note the link was drawn from. |
 | `showPills` | yes or no | draw a pill behind each title. Off: the title alone. |
 | `pillPaddingSides` | a number | space beside the title inside its pill. From 0 to 24. |
 | `pillPaddingEnds` | a number | space above and below the title inside its pill. From 0 to 16. |
@@ -259,8 +261,6 @@ The settings of the plugin Plex Graph.
 | `outlineThickness` | a number | width of the outline of a pill, in pixels. From 0.5 to 4. |
 | `lineCurvature` | a number | how far lines bend; 0 is straight. From 0 to 1. |
 | `highlightLinks` | yes or no | highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted. |
-| `activateCreated` | yes or no | a note made from the plex through the quick link or the menu becomes the note in the middle. On unless it is set to false. |
-| `activateLinked` | yes or no | a note linked from the plex becomes the note in the middle. Off unless it is set to true. |
 | `animationLength` | a number | time to move to another note, in ms; 0 is instant. From 0 to 2000. |
 | `noteRoom` | a number | empty space around every note. From 0 to 40. |
 

@@ -80,7 +80,7 @@ function onChooseMenuItem(id: string) {
 }
 
 function onCreateFirstNote() {
-  props.state.menu.createNote().catch(props.state.reportFailure)
+  props.state.menu.makeNote().catch(props.state.reportFailure)
 }
 
 function onDismissMenu() {
