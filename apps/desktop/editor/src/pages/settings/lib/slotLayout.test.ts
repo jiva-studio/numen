@@ -1,33 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import {
-  canMoveSlotRow,
-  getSlotRows,
-  moveSlotRow,
-  toggleSlotRow,
-  writeSlotRows,
-} from './slotLayout'
+import { getSlotRows, moveSlotRow, toggleSlotRow, writeSlotRows } from './slotLayout'
 
 const group = {
   slot: 'plexGraph.nodeBelow',
   title: 'Below a node',
   contributors: [
-    { key: 'a/view/one', label: 'one', pluginName: 'A', group: '' },
-    { key: 'b/view/two', label: 'two', pluginName: 'B', group: '' },
-    { key: 'c/view/three', label: 'three', pluginName: 'C', group: '' },
+    { key: 'a/view/one', label: 'one', pluginName: 'A' },
+    { key: 'b/view/two', label: 'two', pluginName: 'B' },
+    { key: 'c/view/three', label: 'three', pluginName: 'C' },
   ],
 }
 
 const keys = (rows: readonly { key: string }[]) => rows.map((one) => one.key)
-
-const grouped = {
-  slot: 'plexGraph.context',
-  title: 'Node menu',
-  contributors: [
-    { key: 'a/command/x', label: 'x', pluginName: 'A', group: '0-open' },
-    { key: 'a/command/y', label: 'y', pluginName: 'A', group: '0-open' },
-    { key: 'b/command/z', label: 'z', pluginName: 'B', group: '1-note' },
-  ],
-}
 
 describe('the rows of a slot', () => {
   it('follow the order the slot draws them when nothing is stored', () => {
@@ -52,16 +36,22 @@ describe('the rows of a slot', () => {
     expect(rows.map((one) => one.isHidden)).toStrictEqual([false, true, false])
   })
 
-  it('move by one place and stay as they were outside the list', () => {
+  it('move to a place of the list and stay as they were outside it', () => {
     const rows = getSlotRows(group, undefined)
 
-    expect(keys(moveSlotRow(rows, 0, 1))).toStrictEqual([
+    expect(keys(moveSlotRow(rows, 0, 2))).toStrictEqual([
       'b/view/two',
-      'a/view/one',
       'c/view/three',
+      'a/view/one',
+    ])
+    expect(keys(moveSlotRow(rows, 2, 0))).toStrictEqual([
+      'c/view/three',
+      'a/view/one',
+      'b/view/two',
     ])
     expect(moveSlotRow(rows, 0, -1)).toBe(rows)
     expect(moveSlotRow(rows, 2, 3)).toBe(rows)
+    expect(moveSlotRow(rows, 1, 1)).toBe(rows)
   })
 
   it('are stored with the hidden ones marked, and the other slots kept', () => {
@@ -75,16 +65,5 @@ describe('the rows of a slot', () => {
         { id: 'c/view/three' },
       ],
     })
-  })
-
-  it('move only inside their group, and keep the groups together', () => {
-    const rows = getSlotRows(grouped, {
-      [grouped.slot]: [{ id: 'b/command/z' }, { id: 'a/command/y' }],
-    })
-
-    expect(keys(rows)).toStrictEqual(['a/command/y', 'a/command/x', 'b/command/z'])
-    expect(canMoveSlotRow(rows, 1, 1)).toBe(false)
-    expect(canMoveSlotRow(rows, 0, -1)).toBe(false)
-    expect(moveSlotRow(rows, 1, 2)).toBe(rows)
   })
 })

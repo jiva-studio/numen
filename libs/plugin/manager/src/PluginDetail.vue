@@ -2,7 +2,7 @@
 /**
  * The page of one plugin: the toolbar with the path Settings, the category and the plugin and with
  * the state and the enabled switch or the install button, the header, the failure of a suspended
- * plugin or the bar of its worst health item, then the tabs Settings (only where the plugin has settings, then the tab the page opens on), About,
+ * plugin or the bar of its worst health item, then the tabs Settings (only where the plugin has settings, then the tab the page opens on), Slots (only where views are placed in its slots), About,
  * Contributes and Data. The application draws the settings in the `settings` and `sections` slots;
  * Data is there only while the plugin keeps files in the vault or their deletion failed.
  */
@@ -38,6 +38,8 @@ const emit = defineEmits<{
 defineSlots<{
   /** The settings of the plugin, drawn by the application. */
   settings?(): VNode[]
+  /** The islands of the Slots tab, drawn by the application. */
+  slots?(): VNode[]
   /** Sections of the settings tab under the card of the settings, drawn by the application. */
   sections?(): VNode[]
 }>()
@@ -61,6 +63,7 @@ const hasSettingsTab = computed(() => props.hasSettings || hasConnections.value)
 const tabs = computed(() =>
   getPluginTabs({
     hasSettings: hasSettingsTab.value,
+    hasSlots: props.hasSlots === true,
     hasData: props.dataFileCount > 0 || props.problem !== '',
   }),
 )
@@ -159,6 +162,7 @@ function onRunAction(key: string): void {
         <slot name="settings" />
       </PluginSettingsCard>
       <slot v-if="activeTab === 'settings'" name="sections" />
+      <slot v-if="activeTab === 'slots'" name="slots" />
 
       <div v-if="activeTab === 'about' && readmeText" class="settings-card plugin-detail__readme">
         <Prose :text="readmeText" />

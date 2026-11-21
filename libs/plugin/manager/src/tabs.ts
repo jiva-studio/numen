@@ -23,14 +23,16 @@ const isTabId = (id: string): id is PluginTabId => id in words.pluginTabs
 /** What decides which tabs a plugin page has. */
 export interface PluginTabsFacts {
   readonly hasSettings: boolean
+  readonly hasSlots?: boolean
   readonly hasData: boolean
 }
 
-/** The tabs of a plugin page in their order; Settings only with settings, Data only with data or a failed delete. */
+/** The tabs of a plugin page in their order; Settings only with settings, Slots only with slot entries, Data only with data or a failed delete. */
 export const getPluginTabs = (facts: PluginTabsFacts): readonly PluginTab[] =>
   Object.entries(words.pluginTabs).flatMap(([id, text]) => {
     if (!isTabId(id)) return []
     if (id === 'settings' && !facts.hasSettings) return []
+    if (id === 'slots' && !facts.hasSlots) return []
     if (id === 'data' && !facts.hasData) return []
     return [{ id, text }]
   })
