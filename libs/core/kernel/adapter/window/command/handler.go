@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // VaultProvider names the vault the window shows. A window showing none answers a vault with no ID.
