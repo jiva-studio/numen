@@ -64,7 +64,8 @@ export function arrangePlex(
 ): PlexFrame {
   const request = applyRoom(resolveOptions(options))
   const focusNode = assertGraph(graph)
-  const requested = requestKept(requestNodes(graph.nodes, request), only)
+  const everyone = requestNodes(graph.nodes, request)
+  const requested = requestKept(everyone, only)
   const rooms = createRoomLookup(graph.nodes, room)
 
   // Lays the nodes out at the given options, each keeping the room it is given: the focus, then the placement.
@@ -102,7 +103,7 @@ export function arrangePlex(
   // a pill is the same size with widgets as without, and the widgets then cost notes.
   const crowded = measureCrowding(request, (packed) =>
     isInsideWindow(
-      lay(packed, requested, NO_ROOMS, {
+      lay(packed, everyone, NO_ROOMS, {
         shouldStop: stopAtOutside(packed.viewport, packed.margin, NO_ROOMS),
       }).placed,
       packed.viewport,
