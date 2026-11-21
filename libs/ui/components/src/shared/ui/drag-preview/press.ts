@@ -13,6 +13,8 @@ export interface Press<Item, At> {
   readonly getClock: () => Clock
   readonly getDropTargetAt: (item: Item, point: Position) => At | null
   readonly commit: (item: Item, target: At | null, point: Position) => void
+  readonly isPositionTracked?: () => boolean
+  readonly move?: (item: Item, point: Position) => void
   readonly begin?: (item: Item) => void
   readonly cancel?: (item: Item) => void
 }
@@ -30,6 +32,22 @@ interface Capture {
   readonly pointer: number
 }
 
+function takeCapture(event: PointerEvent): Capture | null {
+  const element = event.currentTarget ?? event.target
+  if (!(element instanceof Element)) return null
+  try {
+    element.setPointerCapture(event.pointerId)
+  } catch {
+    return null
+  }
+  return { element, pointer: event.pointerId }
+}
+
+function releaseCapture(capture: Capture | null): void {
+  if (capture?.element.hasPointerCapture(capture.pointer))
+    capture.element.releasePointerCapture(capture.pointer)
+}
+
 /** Tracks a pointer press and starts a drag after the pointer moves past the threshold. */
 export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<Item, At> {
   const dragging = shallowRef<Drag<Item> | null>(null)
@@ -43,7 +61,8 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     window.removeEventListener('pointermove', drag)
     window.removeEventListener('pointerup', drop)
     window.removeEventListener('pointercancel', cancel)
-    releaseCapture()
+    releaseCapture(capture)
+    capture = null
   }
 
   function drag(event: PointerEvent): void {
@@ -56,11 +75,16 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
       Math.abs(now.x - start.x) > press.getThreshold() ||
       Math.abs(now.y - start.y) > press.getThreshold()
 
-    dragging.value = { item: target.item, hasMoved }
-    position.value = hasMoved ? now : null
-    dropTarget.value = hasMoved ? press.getDropTargetAt(target.item, now) : null
+    if (hasMoved !== target.hasMoved) dragging.value = { item: target.item, hasMoved }
+    publish(target.item, hasMoved, now)
 
     if (hasMoved && !target.hasMoved) press.begin?.(target.item)
+  }
+
+  function publish(item: Item, hasMoved: boolean, now: Position): void {
+    if (press.isPositionTracked?.() !== false) position.value = hasMoved ? now : null
+    dropTarget.value = hasMoved ? press.getDropTargetAt(item, now) : null
+    if (hasMoved) press.move?.(item, now)
   }
 
   function drop(event: PointerEvent): void {
@@ -68,10 +92,9 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     if (!target) return
     const point: Position = { x: event.clientX, y: event.clientY }
 
+    const landing = target.hasMoved ? press.getDropTargetAt(target.item, point) : null
     end()
-    if (target.hasMoved) {
-      press.commit(target.item, press.getDropTargetAt(target.item, point), point)
-    }
+    if (target.hasMoved) press.commit(target.item, landing, point)
   }
 
   function cancel(): void {
@@ -91,28 +114,10 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     })
   }
 
-  function takeCapture(event: PointerEvent): void {
-    const element = event.currentTarget ?? event.target
-    if (!(element instanceof Element)) return
-    try {
-      element.setPointerCapture(event.pointerId)
-    } catch {
-      return
-    }
-    capture = { element, pointer: event.pointerId }
-  }
-
-  function releaseCapture(): void {
-    if (!capture) return
-    const { element, pointer } = capture
-    capture = null
-    if (element.hasPointerCapture(pointer)) element.releasePointerCapture(pointer)
-  }
-
   const startPress = (item: Item, event: PointerEvent): void => {
     start = { x: event.clientX, y: event.clientY }
     dragging.value = { item, hasMoved: false }
-    takeCapture(event)
+    capture = takeCapture(event)
     window.addEventListener('pointermove', drag)
     window.addEventListener('pointerup', drop)
     window.addEventListener('pointercancel', cancel)

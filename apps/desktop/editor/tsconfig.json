@@ -14,5 +14,5 @@
       "@numen/core-client/*": ["../../../libs/core/client/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts", "vitest.setup.ts"]
+  "include": ["../../../libs/ui/components/.storybook/browser.ts", "src/**/*.ts", "src/**/*.vue", "vite.config.ts", "vitest.setup.ts"]
 }

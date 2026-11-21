@@ -22,8 +22,17 @@ const sweep: BrowserCommand<[from: Position, to: Position]> = async ({ page }, f
   await page.mouse.up()
 }
 
+type PointerStep = 'down' | 'up' | 'move'
+
+const pointer: BrowserCommand<[step: PointerStep, at?: Position]> = async ({ page }, step, at) => {
+  if (at) await page.mouse.move(at.x, at.y)
+  if (step === 'down') await page.mouse.down()
+  if (step === 'up') await page.mouse.up()
+}
+
 declare module 'vitest/browser' {
   interface BrowserCommands {
+    pointer: (step: PointerStep, at?: Position) => Promise<void>
     sweep: (from: Position, to: Position) => Promise<void>
   }
 }
@@ -51,6 +60,19 @@ const getSystemChrome = (): string | undefined => {
   if (explicit) return explicit
   if (process.env['CI']) return undefined
   return findExecutablePath(CANDIDATES)
+}
+
+/** The browser a test that drives real pointer events runs in: Chromium alone, with a pointer command. */
+export const getPointerBrowser = () => {
+  const chrome = getSystemChrome()
+  return {
+    enabled: true,
+    headless: true,
+    provider: playwright(chrome ? { launchOptions: { executablePath: chrome } } : {}),
+    viewport: { width: 1200, height: 900 },
+    instances: [{ browser: 'chromium' as const }],
+    commands: { pointer },
+  }
 }
 
 /**
