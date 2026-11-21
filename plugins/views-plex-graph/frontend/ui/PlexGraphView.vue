@@ -8,6 +8,7 @@ import { Button, Menu, LoadingIndicator } from '@numen/ui'
 import { Plex, getInputStrategies, hasTouchPointer, useTypeSize } from '../plex'
 import type { MenuTrigger } from '@numen/ui'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
+import PlexBoardSlot from './PlexBoardSlot.vue'
 import PlexLinkInspectorPopover from './PlexLinkInspectorPopover.vue'
 import type { Connection } from '@numen/plugin-sdk'
 import type { PlexTabState, PlexRelation, PlexDestination } from '../types'
@@ -125,6 +126,8 @@ function onDismissLinkInspector() {
       {{ props.state.canvas.view.error.value }}
     </p>
 
+    <PlexBoardSlot place="top" :entries="props.state.canvas.widgets.boardTop.value" />
+
     <!-- Until the first graph lands, an empty plex and one no one has
          answered for yet are drawn the same way. -->
     <div v-if="props.state.canvas.empty.value" class="plex__empty">
@@ -180,6 +183,8 @@ function onDismissLinkInspector() {
         />
       </template>
     </Plex>
+
+    <PlexBoardSlot place="bottom" :entries="props.state.canvas.widgets.boardBottom.value" />
 
     <Menu
       v-if="menu"

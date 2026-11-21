@@ -69,6 +69,16 @@
       "about": "the views over the whole of a node of the plex graph, above the nodes, each given the path of its note and the size, position and scale of the node; a view that does not let clicks and drags through takes them from the node"
     },
     {
+      "name": "plexGraph.boardTop",
+      "owner": "the plugin of the plex graph",
+      "about": "the views of controls at the top of the board of the plex graph"
+    },
+    {
+      "name": "plexGraph.boardBottom",
+      "owner": "the plugin of the plex graph",
+      "about": "the views of controls at the bottom of the board of the plex graph"
+    },
+    {
       "name": "palette.searchResult",
       "owner": "the palette",
       "about": "the actions of a search result that is a note, over that note"
