@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** A card of a titled header over a body: the header names it and may carry actions or a description, and the body holds a list of rows. */
+/** A card of a titled header over a body, set off by a hairline: the header names it and may carry actions or a description, and the body holds a list of rows. */
 defineProps<{ title: string }>()
 </script>
 
@@ -15,8 +15,8 @@ defineProps<{ title: string }>()
 
 <style scoped>
 .island-card {
-  --header-pad: 0.5rem 0.75rem;
-  --body-pad: 0.25rem 0.75rem;
+  --header-pad: 0.375rem 0.75rem;
+  --body-pad: 0.125rem 0.75rem;
   overflow: hidden;
   box-sizing: border-box;
   border: var(--numen-stroke) solid var(--numen-rule);
@@ -31,15 +31,14 @@ defineProps<{ title: string }>()
   gap: 0.5rem;
   padding: var(--header-pad);
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
-  background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 5%);
 }
 
 .island-card__title {
   margin: 0;
   min-inline-size: 0;
-  font-size: var(--numen-text-2);
-  font-weight: 600;
-  color: var(--numen-ink);
+  font-size: var(--numen-text-1);
+  font-weight: 500;
+  color: var(--numen-hushed);
 }
 
 .island-card__aside {
