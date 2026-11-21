@@ -4,7 +4,7 @@
  * The timestamps are in the gutter and can be clicked to seek. The caller decides
  * which line is current and whether the view scrolls to keep it visible.
  */
-import { doc } from '@numen/ui'
+import { doc, win } from '@numen/ui'
 import { StateEffect, StateField, type Extension } from '@codemirror/state'
 import { Decoration, EditorView, GutterMarker, ViewPlugin, gutter } from '@codemirror/view'
 import type { TimeGutterState } from './timeGutterState'
@@ -139,7 +139,19 @@ const isSame = (one: TimeGutterState, two: TimeGutterState): boolean =>
   one.times.length === two.times.length &&
   one.times.every((text, index) => text === two.times[index])
 
-export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
+const USER_SCROLL_WINDOW_MS = 300
+
+const isCurrentOutOfView = (view: EditorView, current: number): boolean => {
+  if (current < 0 || current >= view.state.doc.lines) return false
+  const block = view.lineBlockAt(view.state.doc.line(current + 1).from)
+  const { scrollTop, clientHeight } = view.scrollDOM
+  return block.bottom <= scrollTop || block.top >= scrollTop + clientHeight
+}
+
+export function createTimeGutter(
+  goToLine: (line: number) => void,
+  onScrollAway: () => void,
+): TimeGutter {
   let view: EditorView | null = null
 
   // What was last shown. An editor drawn again — a tab moved, a pane split —
@@ -156,8 +168,36 @@ export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
         if (view === got) applyState(lastTime, false)
       })
     }
+    const dom = got.scrollDOM
+    let lastInput = Number.NEGATIVE_INFINITY
+    let isPressed = false
+    const onInput = (event: Event) => {
+      lastInput = event.timeStamp
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.target !== dom) return
+      isPressed = true
+      lastInput = event.timeStamp
+    }
+    const onPointerUp = () => {
+      isPressed = false
+    }
+    const onScroll = (event: Event) => {
+      const isUser = isPressed || event.timeStamp - lastInput < USER_SCROLL_WINDOW_MS
+      if (isUser && last && isCurrentOutOfView(got, last.current)) onScrollAway()
+    }
+    dom.addEventListener('wheel', onInput, { passive: true })
+    dom.addEventListener('touchmove', onInput, { passive: true })
+    dom.addEventListener('pointerdown', onPointerDown)
+    dom.addEventListener('scroll', onScroll)
+    win.addEventListener('pointerup', onPointerUp)
     return {
       destroy: () => {
+        dom.removeEventListener('wheel', onInput)
+        dom.removeEventListener('touchmove', onInput)
+        dom.removeEventListener('pointerdown', onPointerDown)
+        dom.removeEventListener('scroll', onScroll)
+        win.removeEventListener('pointerup', onPointerUp)
         if (view === got) view = null
       },
     }
