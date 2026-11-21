@@ -46,7 +46,7 @@ const emit = defineEmits<{
   justify-content: center;
   gap: 0 0.9em;
   font-family: var(--numen-font-sans);
-  font-size: 0.7rem;
+  font-size: var(--numen-text-1);
   line-height: 1.3;
 }
 

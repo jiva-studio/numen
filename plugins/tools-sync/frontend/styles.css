@@ -1,7 +1,7 @@
 /* Numen Sync plugin styles */
 .sync-badge {
   --chip-height: 1.25rem;
-  --chip-text: 0.75rem;
+  --chip-text: var(--numen-font-size);
   --chip-pad: 0.5rem;
   --chip-dot: 0.4375rem;
   --chip-ring: 0.625rem;
