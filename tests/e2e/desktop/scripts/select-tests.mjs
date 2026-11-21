@@ -65,6 +65,7 @@ export const PLUGIN_TESTS = {
   'views-media-viewer': [ACCEPTANCE],
   'views-plex-graph': [ACCEPTANCE],
   'views-plex-headings-dropdown': [ACCEPTANCE],
+  'views-plex-headings-inline': [ACCEPTANCE],
   'views-plex-related-names': [ACCEPTANCE],
   'views-status-bar': [ACCEPTANCE],
 }
