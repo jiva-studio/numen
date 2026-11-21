@@ -269,13 +269,16 @@ describe('PluginDetail', () => {
     ])
   })
 
-  it('says there is nothing to set up for a plugin without settings, and keeps its switch', () => {
+  it('opens a plugin without settings on About, with no Settings tab, and keeps its switch', () => {
     const plugin = createPluginInfo('test.empty', 'Empty Plugin')
     const { wrapper } = createDetail(plugin)
 
     expect(wrapper.get('h2').text()).toBe('Empty Plugin')
     expect(wrapper.findComponent(Switch).exists()).toBe(true)
-    expect(wrapper.get('[role="tabpanel"]').text()).toBe(words.noSettings)
+    expect(wrapper.findAll('[role="tab"]').map((one) => one.text())).not.toContain(
+      words.pluginTabs.settings,
+    )
+    expect(wrapper.get('[role="tab"][aria-selected="true"]').text()).toBe(words.pluginTabs.about)
   })
 
   it('puts the back button first, above the title', () => {
@@ -295,7 +298,10 @@ describe('PluginDetail', () => {
       })),
     )
     const { wrapper } = createDetail(
-      createPluginInfo('a', 'Super Engine', { description: 'Fallback' }),
+      createPluginInfo('a', 'Super Engine', {
+        description: 'Fallback',
+        settings: [{ key: 'zoom', type: 'number', title: 'Zoom', description: '', default: 3 }],
+      }),
     )
     await flushPromises()
 
