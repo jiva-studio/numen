@@ -4,7 +4,8 @@
  *
  * The progress ring and the action button share one slot, stacked in one grid cell. The row draws
  * the same elements whether or not the pointer is over it; the pointer on the row, or focus inside
- * it, changes only their opacity.
+ * it, swaps their opacity at once. A notice and a failed task without a retry show only the dismiss
+ * button, so the slot never holds two crosses.
  *
  * A running task is reported again many times a second. The row is one component for the life of
  * the task and updates its text and ring in place; whether the pointer is on it is a flag of the
@@ -12,7 +13,7 @@
  * last source a running task named, so a report without one neither removes a line from the row
  * nor moves the row from under the pointer.
  *
- * A notice wraps its text and shows a dismiss button.
+ * A notice wraps its text.
  */
 import { computed, ref, watch } from 'vue'
 import { RotateCw, X } from '@lucide/vue'
@@ -124,9 +125,12 @@ function onRunAction() {
       </div>
     </div>
 
-    <div class="task-item__slot" :class="{ 'task-item__slot--swaps': hasAction && !isNotice }">
+    <div
+      class="task-item__slot"
+      :class="{ 'task-item__slot--swaps': hasAction && !isDismissShown }"
+    >
       <CircularProgress
-        v-if="!isNotice"
+        v-if="!isDismissShown"
         class="task-item__indicator"
         :progress="progress"
         :state="task.state"
@@ -170,7 +174,7 @@ function onRunAction() {
         variant="ghost"
         size="icon-small"
         class="task-item__btn"
-        :class="{ 'task-item__btn--visible': isNotice }"
+        :class="{ 'task-item__btn--visible': isDismissShown }"
         :aria-label="words.dismiss"
         @mouseenter="tip.open($event, words.dismiss)"
         @mouseleave="tip.close"
