@@ -673,6 +673,9 @@ describe('the Editor page of the shell settings', () => {
     expect(getRowNames('system')).not.toContain('Font size')
     expect(getRowNames('system')).not.toContain('Soft wrap')
     expect(getRowNames('appearance')).not.toContain('Line height')
+  })
+})
+
 describe('a list setting of the shell', () => {
   const FOLDERS: PluginSettingInfo = {
     key: 'search.ignoredFolders',
