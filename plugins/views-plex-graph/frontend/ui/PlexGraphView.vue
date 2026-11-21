@@ -3,7 +3,7 @@
  * Displays the graph of notes and handles graph interaction gestures.
  */
 import { computed } from 'vue'
-import { Menu, LoadingIndicator } from '@numen/ui'
+import { Button, Menu, LoadingIndicator } from '@numen/ui'
 import { Plex, getInputStrategies, hasTouchPointer, useTypeSize } from '../plex'
 import type { MenuTrigger } from '@numen/ui'
 import PlexQuickLinkPopover from './PlexQuickLinkPopover.vue'
@@ -79,6 +79,10 @@ function onChooseMenuItem(id: string) {
   closeMenu(id)
 }
 
+function onCreateFirstNote() {
+  props.state.menu.makeNote().catch(props.state.reportFailure)
+}
+
 function onDismissMenu() {
   closeMenu()
 }
@@ -122,7 +126,13 @@ function onDismissLinkInspector() {
 
     <!-- Until the first graph lands, an empty plex and one no one has
          answered for yet are drawn the same way. -->
-    <LoadingIndicator v-if="props.state.canvas.view.isLoading.value" :label="words.loading" />
+    <div v-if="props.state.canvas.empty.value" class="plex__empty">
+      <p class="plex__empty-title">{{ words.emptyTitle }}</p>
+      <p class="plex__empty-hint">{{ words.emptyHint }}</p>
+      <Button @click="onCreateFirstNote">{{ words.emptyCreate }}</Button>
+    </div>
+
+    <LoadingIndicator v-else-if="props.state.canvas.view.isLoading.value" :label="words.loading" />
 
     <Plex
       v-else-if="graph"
@@ -213,6 +223,28 @@ function onDismissLinkInspector() {
   flex-direction: column;
   block-size: 100%;
   overflow: hidden;
+}
+
+.plex__empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--numen-font-sans);
+  text-align: center;
+}
+
+.plex__empty-title {
+  margin: 0;
+  color: var(--numen-ink);
+  font-weight: 600;
+}
+
+.plex__empty-hint {
+  margin: 0;
+  color: var(--numen-hushed);
 }
 
 .plex__image {

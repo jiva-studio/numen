@@ -155,6 +155,8 @@ export interface PlexLook {
   readonly references: Readonly<Ref<ReferenceMode>>
   readonly showPills: Readonly<Ref<boolean>>
   readonly highlightLinks: Readonly<Ref<boolean>>
+  readonly activateCreated: Readonly<Ref<boolean>>
+  readonly activateLinked: Readonly<Ref<boolean>>
   readonly pillPaddingSides: Readonly<Ref<number>>
   readonly pillPaddingEnds: Readonly<Ref<number>>
   readonly focusSize: Readonly<Ref<number>>
@@ -201,6 +203,8 @@ export interface PlexMenuState {
   openMenu(request: MenuRequest): void
   dismiss(): void
   chooseMenuItem(id: string): void
+  /** Creates a note in the vault root and shows it. */
+  makeNote(): Promise<void>
 }
 
 /** The widgets drawn over, under and across each node, and the path of the note of a node. */
@@ -228,7 +232,6 @@ export interface PlexNodeActions {
 
 export interface PlexQuickLinkState {
   readonly quickLink: Ref<QuickLinkRequest | null>
-  readonly isNavigatingOnCreate: Ref<boolean>
   openQuickLink(request: QuickLinkRequest): void
   dismissQuickLink(): void
   confirmQuickLink(titleOrPath: string, isExisting: boolean): Promise<void>

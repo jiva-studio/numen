@@ -13,7 +13,10 @@ export function useTranscriptGutter(
   const { times: cueTimes } = state.lines
   const isPlaying = computed(() => getIsPlaying() ?? playbackIsPlaying.value)
 
-  const times = createTimeGutter((line) => state.navigation.goToLine(line))
+  const times = createTimeGutter(
+    (line) => state.navigation.goToLine(line),
+    () => state.content.setFollowing(false),
+  )
 
   watch(
     [cueTimes, current, following, isPlaying, typing],

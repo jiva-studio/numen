@@ -2,7 +2,7 @@
 /**
  * The page of one plugin: the toolbar with the path Settings, the category and the plugin and with
  * the state and the enabled switch or the install button, the header, the failure of a suspended
- * plugin or the bar of its worst health item, then the tabs Settings (the tab the page opens on), About,
+ * plugin or the bar of its worst health item, then the tabs Settings (only where the plugin has settings, then the tab the page opens on), About,
  * Contributes and Data. The application draws the settings in the `settings` and `sections` slots;
  * Data is there only while the plugin keeps files in the vault or their deletion failed.
  */
@@ -20,7 +20,7 @@ import { isInstalled } from './plugins'
 import SettingsPage from './SettingsPage.vue'
 import { getReadmeText } from './readme'
 import { getPluginState, getStartItem, getWorstItem, hasConnectionSettings } from './state'
-import { FIRST_PLUGIN_TAB, getPanelElementId, getPluginTabs, getTabElementId } from './tabs'
+import { getFirstPluginTab, getPanelElementId, getPluginTabs, getTabElementId } from './tabs'
 import { PLUGIN_WORDS as words } from './words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -57,19 +57,26 @@ const readmeText = computed(() => getReadmeText(props.readme))
 const state = computed(() =>
   props.plugin.info ? getPluginState(props.isEnabled, props.health) : 'available',
 )
-const tabs = computed(() => getPluginTabs(props.dataFileCount > 0 || props.problem !== ''))
-const activeTab = ref(FIRST_PLUGIN_TAB)
+const hasSettingsTab = computed(() => props.hasSettings || hasConnections.value)
+const tabs = computed(() =>
+  getPluginTabs({
+    hasSettings: hasSettingsTab.value,
+    hasData: props.dataFileCount > 0 || props.problem !== '',
+  }),
+)
+const activeTab = ref(getFirstPluginTab(hasSettingsTab.value))
 const idBase = computed(() => `plugin-${props.plugin.id.replaceAll('.', '-')}`)
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(tabs, (now) => {
-  if (!now.some((one) => one.id === activeTab.value)) activeTab.value = FIRST_PLUGIN_TAB
+  if (!now.some((one) => one.id === activeTab.value))
+    activeTab.value = getFirstPluginTab(hasSettingsTab.value)
 })
 
 watch(
   () => props.plugin.id,
   () => {
-    activeTab.value = FIRST_PLUGIN_TAB
+    activeTab.value = getFirstPluginTab(hasSettingsTab.value)
   },
 )
 
@@ -152,12 +159,6 @@ function onRunAction(key: string): void {
         <slot name="settings" />
       </PluginSettingsCard>
       <slot v-if="activeTab === 'settings'" name="sections" />
-      <p
-        v-if="activeTab === 'settings' && !props.hasSettings && !hasConnections"
-        class="plugin-detail__nothing"
-      >
-        {{ words.noSettings }}
-      </p>
 
       <div v-if="activeTab === 'about' && readmeText" class="settings-card plugin-detail__readme">
         <Prose :text="readmeText" />

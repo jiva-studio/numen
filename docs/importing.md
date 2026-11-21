@@ -52,7 +52,7 @@ While no media are downloaded, the Media Viewer frames the site's player. The pl
 
 ## The tools
 
-A page is fetched by the plugin itself, an ordinary request with the prose found by a library, so it works on every machine. `yt-dlp` fetches what a video site publishes, and `ffmpeg` merges what it fetched. Neither is shipped and neither is required: a machine without `yt-dlp` imports pages and copies no video. Under `-debug-mock-ml` the plugin uses a stand-in for video sites that publishes captions and copies a clip of quiet sound, offline.
+A page is fetched by the plugin itself, an ordinary request with the prose found by a library, so it works on every machine. `yt-dlp` fetches what a video site publishes, and `ffmpeg` merges what it fetched. Neither is shipped. A machine that holds neither gets each downloaded on first use into the application's dependency folder from the address and checksum the plugin's manifest pins, so a file that does not match is refused and a platform with no pinned file is reported by name. A newer version is a new pinned version in the manifest. A program found on the machine or named in the settings is used instead. Under `-debug-mock-ml` the plugin uses a stand-in for video sites that publishes captions and copies a clip of quiet sound, offline.
 
 ## Settings
 

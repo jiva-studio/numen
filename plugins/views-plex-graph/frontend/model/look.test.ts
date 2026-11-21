@@ -10,6 +10,8 @@ const createContext = (initialSettings: Record<string, JsonValue> = {}) =>
 const DEFAULTS = {
   showPills: true,
   highlightLinks: true,
+  activateCreated: true,
+  activateLinked: false,
   pillPaddingSides: 10,
   pillPaddingEnds: 9.25,
   focusSize: 1.22,
@@ -25,6 +27,8 @@ const DEFAULTS = {
 const CHOSEN = {
   showPills: false,
   highlightLinks: false,
+  activateCreated: false,
+  activateLinked: true,
   pillPaddingSides: 4,
   pillPaddingEnds: 3.5,
   focusSize: 1.6,

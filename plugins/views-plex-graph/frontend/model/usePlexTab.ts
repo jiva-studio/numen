@@ -150,7 +150,7 @@ function createPlexNodeActions(options: {
     if (!one || !other || !role) return
     const joined = await deps.editor.join(one, other, { role })
     if (!joined.ok) return deps.window.showMessage(getRelationErrorWords(joined.error))
-    await view.go(one)
+    await view.go(deps.look.activateLinked.value ? other : one)
   }
 
   const dropNodes = async (nodes: readonly string[], relation: PlexRelation) => {
@@ -277,7 +277,21 @@ function usePlexMenu(options: {
     return tabKind === undefined ? null : deps.window.getNoteIcon(tabKind)
   }
 
-  return { request, menuItems, getMenuIcon, getNodeIcon, openMenu, dismiss, chooseMenuItem }
+  const makeNote = async (): Promise<void> => {
+    const made = await deps.menu.runCommand(CREATE_NOTE, getCanvasTarget())
+    if (made) await showCreated(made)
+  }
+
+  return {
+    request,
+    menuItems,
+    getMenuIcon,
+    getNodeIcon,
+    openMenu,
+    dismiss,
+    chooseMenuItem,
+    makeNote,
+  }
 }
 
 function usePlexWidgets(
@@ -336,7 +350,8 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     getName,
     getType,
     getTabKind,
-    showCreated: (path) => view.go(path),
+    showCreated: (path) =>
+      view.go(deps.look.activateCreated.value || !view.here.value ? path : view.here.value),
     dismissOthers: () => {
       quickLink.dismissQuickLink()
       inspector.dismissLinkInspector()

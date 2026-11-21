@@ -37,7 +37,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 
 	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateProvisioning, BytesDownloaded: 5, BytesTotal: 10})
 	list := tasks.List()
-	if len(list) != 1 || list[0].ID != "provision:whisper" || list[0].Title != "Downloading whisper" ||
+	if len(list) != 1 || list[0].ID != "provision:whisper" || list[0].Title != "Downloading" || list[0].About != "whisper" ||
 		list[0].Unit != work.Bytes || list[0].Count != 5 || list[0].Total != 10 || list[0].IsUserStarted {
 		t.Fatalf("tasks = %+v", list)
 	}
