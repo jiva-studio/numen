@@ -18,6 +18,7 @@ import { getNamedIcon } from '@/shared/ui/icons'
 import {
   createEmptyWhenContext,
   createWhenAvailability,
+  getWhenGroup,
   hasNoteVariable,
   type WindowWhenContext,
 } from '../lib/whenContext'
@@ -81,9 +82,7 @@ export function usePluginCommands(
       id: cmd.id,
       text: cmd.title,
       ...getPluginLooks(cmd),
-      group: hasNoteVariable(context.whenReader.getCondition(cmd.when))
-        ? ('note' as const)
-        : ('window' as const),
+      group: getWhenGroup(context.whenReader.getCondition(cmd.when)),
       ...(cmd.when ? { when: cmd.when } : {}),
       ...(pluginHost?.commands.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
       ...getConfirmation(cmd, {

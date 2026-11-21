@@ -33,7 +33,7 @@ export function createPaletteCommandList(sources: PaletteCommandSources) {
     )
     const position = (command: Command): number => order.get(command.id) ?? order.size
     return [...declaredCommands.paletteCommands.value, ...sources.getPluginEntries()].sort(
-      (one, other) => position(one) - position(other),
+      (one, other) => position(one) - position(other) || one.id.localeCompare(other.id),
     )
   }
   return {

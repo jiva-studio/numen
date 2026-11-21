@@ -72,3 +72,28 @@ describe('the palette entry of a command a plugin registers with a confirmation 
     ])
   })
 })
+
+describe('the palette group of a command a plugin declares', () => {
+  const groupOf = (when: string) => {
+    const host = {
+      commands: {
+        hasCommandItems: () => false,
+        getPaletteCommands: () => [{ id: 'md.tree:tree.open', title: 'Open', when }],
+      },
+      keybindings: { getKeyFor: () => undefined },
+    } as unknown as PluginHost
+    return usePluginCommands(
+      createCommandRegistry(),
+      createCommandNoteReader({ fileKinds: getFileKinds }),
+      host,
+    ).getPaletteEntries()[0]?.group
+  }
+
+  it('is over the file for a condition on the target, as before its frontend starts', () => {
+    expect(groupOf('target.isFolder')).toBe('file')
+  })
+
+  it('is over the window for a condition that reads no target', () => {
+    expect(groupOf('window.isVaultOpen')).toBe('window')
+  })
+})
