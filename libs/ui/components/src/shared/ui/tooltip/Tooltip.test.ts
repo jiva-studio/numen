@@ -96,5 +96,44 @@ describe('the tooltip of the library', () => {
       expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
       wrapper.unmount()
     })
+
+    it('closes when the window loses focus', async () => {
+      const wrapper = await mountWithOpenTooltip()
+
+      window.dispatchEvent(new Event('blur'))
+      await flushPromises()
+
+      expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+      wrapper.unmount()
+    })
+
+    it('closes when the document or an ancestor of the element scrolls', async () => {
+      const wrapper = await mountWithOpenTooltip()
+      document.dispatchEvent(new Event('scroll'))
+      await flushPromises()
+      expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+
+      await wrapper.find('.one').trigger('mouseenter')
+      wrapper.element.dispatchEvent(new Event('scroll'))
+      await flushPromises()
+      expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+      wrapper.unmount()
+    })
+
+    it('stays open through the blur and the scroll of an unrelated element', async () => {
+      const wrapper = await mountWithOpenTooltip()
+      const other = document.createElement('input')
+      const list = document.createElement('div')
+      document.body.append(other, list)
+
+      other.dispatchEvent(new FocusEvent('blur'))
+      list.dispatchEvent(new Event('scroll'))
+      await flushPromises()
+
+      expect(wrapper.find('[role="tooltip"]').exists()).toBe(true)
+      other.remove()
+      list.remove()
+      wrapper.unmount()
+    })
   })
 })
