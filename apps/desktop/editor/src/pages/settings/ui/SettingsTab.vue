@@ -33,12 +33,6 @@ const {
   updateQuery,
   goBack,
 } = useSettingsTab(props.state)
-
-/* -------------------------------- Handlers -------------------------------- */
-function onOpenCategory(category: string): void {
-  updateQuery(`category:${category}`)
-  goBack()
-}
 </script>
 
 <template>
@@ -79,14 +73,12 @@ function onOpenCategory(category: string): void {
           :plugin="selectedPlugin"
           :marked-setting="marked"
           @back="goBack"
-          @open-category="onOpenCategory"
           @open-connections="selectPlugin('connections')"
         />
         <AvailablePluginDetail
           v-else-if="uninstalled"
           :plugin="uninstalled"
           @back="goBack"
-          @open-category="onOpenCategory"
         />
         <PluginsList
           v-else

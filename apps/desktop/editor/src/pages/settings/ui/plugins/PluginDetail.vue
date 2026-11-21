@@ -28,7 +28,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'back'): void
-  (e: 'open-category', category: string): void
   (e: 'open-connections'): void
 }>()
 
@@ -77,7 +76,6 @@ function onRunAction(key: string): void {
     :health="health"
     :is-apple="isApple"
     @back="onBack"
-    @open-category="(category) => emit('open-category', category)"
     @toggle-enabled="setEnabled"
     @retry="retry"
     @delete-data="deleteData"
