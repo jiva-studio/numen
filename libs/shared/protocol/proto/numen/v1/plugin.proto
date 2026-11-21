@@ -195,6 +195,8 @@ enum PluginContributionKind {
   // TOOLS lists the tools the plugin last offered an agent, which a manifest does not declare. It
   // is absent until the host has listed them once.
   PLUGIN_CONTRIBUTION_KIND_TOOLS = 24;
+  // EDITOR_EXTENSIONS lists the extensions of contributes.editor.extensions, with the id as the detail.
+  PLUGIN_CONTRIBUTION_KIND_EDITOR_EXTENSIONS = 25;
 }
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.

@@ -51,6 +51,7 @@ const CONTRIBUTION_KINDS: Readonly<Record<PluginContributionKind, string>> = {
   listeners: 'Listeners',
   viewCapabilities: 'View capabilities',
   dropHandlers: 'Drop handlers',
+  editorExtensions: 'Editor extensions',
   frameOrigins: 'Frame origins',
   connectionTypes: 'Connection types',
   operations: 'Operations',

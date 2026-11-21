@@ -65,6 +65,7 @@ const everyFieldManifest = `{
 		"keybindings": [{"key": "mod+shift+r", "command": "task.run", "values": {"n": "3"}, "when": "window.isVaultOpen"}],
 		"viewCapabilities": ["conversation"],
 		"dropHandlers": [{"types": ["text/uri-list"]}],
+		"editor": {"extensions": [{"id": "highlight", "title": "Highlight", "description": "Marks words in the note"}]},
 		"connectionTypes": [{"id": "svc", "title": "Service", "description": "d", "operations": ["llm.complete", "llm.models"], "rowFields": [
 			{"key": "model", "type": "enum", "title": "Model", "optionsFrom": "llm.models"}], "fields": [
 			{"key": "baseUrl", "type": "string", "title": "Address", "description": "d", "isAddress": true, "fixedValue": "https://svc.example/v1"},

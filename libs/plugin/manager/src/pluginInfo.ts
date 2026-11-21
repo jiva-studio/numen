@@ -114,6 +114,7 @@ export type PluginContributionKind =
   | 'listeners'
   | 'viewCapabilities'
   | 'dropHandlers'
+  | 'editorExtensions'
   | 'frameOrigins'
   | 'connectionTypes'
   | 'operations'

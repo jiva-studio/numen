@@ -36,6 +36,7 @@ const (
 	ContributionActivationEvents
 	ContributionSearchFunctions
 	ContributionTools
+	ContributionEditorExtensions
 )
 
 // Contribution is one section of a manifest and its entries, in the order the manifest declares
@@ -102,6 +103,9 @@ func listContributesSections(c manifest.Contributes) []Contribution {
 		{ContributionViewCapabilities, mapItems(c.ViewCapabilities, newNameItem)},
 		{ContributionDropHandlers, mapItems(c.DropHandlers, func(one manifest.DropHandler) ContributionItem {
 			return ContributionItem{Text: strings.Join(one.Types, ", ")}
+		})},
+		{ContributionEditorExtensions, mapItems(c.Editor.Extensions, func(one manifest.EditorExtension) ContributionItem {
+			return ContributionItem{Text: one.Title, Detail: one.ID}
 		})},
 		{ContributionFrameOrigins, mapItems(c.FrameOrigins, newNameItem)},
 		{ContributionConnectionTypes, mapItems(c.ConnectionTypes, func(one manifest.ConnectionType) ContributionItem {

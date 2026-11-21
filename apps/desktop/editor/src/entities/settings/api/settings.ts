@@ -66,6 +66,7 @@ const CONTRIBUTION_KINDS: Readonly<ContributionKinds> = {
   [PLUGIN_CONTRIBUTION_KIND.ACTIVATION_EVENTS]: 'activationEvents',
   [PLUGIN_CONTRIBUTION_KIND.SEARCH_FUNCTIONS]: 'searchFunctions',
   [PLUGIN_CONTRIBUTION_KIND.TOOLS]: 'tools',
+  [PLUGIN_CONTRIBUTION_KIND.EDITOR_EXTENSIONS]: 'editorExtensions',
 }
 
 const readContributionItem = (item: ServedContribution['items'][number]) => ({

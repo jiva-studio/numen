@@ -53,6 +53,7 @@ type Contributes struct {
 	Operations       []Operation
 	SearchFunctions  SearchFunctions
 	Licenses         []License
+	Editor           Editor
 }
 
 // DropHandler lists the data types of a drag from outside the window that the plugin's frontend takes.
@@ -126,6 +127,7 @@ func (m Manifest) listContributionIssues() []error {
 	issues = append(issues, m.listOperationIssues()...)
 	issues = append(issues, m.listSearchFunctionIssues()...)
 	issues = append(issues, m.listLicenseIssues()...)
+	issues = append(issues, m.listEditorIssues()...)
 	return append(issues, m.listFrameIssues()...)
 }
 

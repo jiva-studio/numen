@@ -53,6 +53,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Operations:       newOperations(wire.GetOperations()),
 		SearchFunctions:  newSearchFunctions(wire.GetSearchFunctions()),
 		Licenses:         newLicenses(wire.GetLicenses()),
+		Editor:           newEditor(wire.GetEditor()),
 	}, nil
 }
 
@@ -252,6 +253,14 @@ func newOperations(wire []*v1.ManifestOperation) []manifest.Operation {
 	var out []manifest.Operation
 	for _, one := range wire {
 		out = append(out, manifest.Operation{Name: one.GetName(), Title: one.GetTitle()})
+	}
+	return out
+}
+
+func newEditor(wire *v1.ManifestEditor) manifest.Editor {
+	var out manifest.Editor
+	for _, one := range wire.GetExtensions() {
+		out.Extensions = append(out.Extensions, manifest.EditorExtension{ID: one.GetId(), Title: one.GetTitle(), Description: one.GetDescription()})
 	}
 	return out
 }
