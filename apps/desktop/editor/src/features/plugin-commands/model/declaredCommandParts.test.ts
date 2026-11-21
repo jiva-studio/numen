@@ -119,3 +119,53 @@ describe('the handlers for the plugin host', () => {
     expect(declared.contributions.handlers.value).toStrictEqual([handler])
   })
 })
+
+describe('the confirmation a declared command asks for', () => {
+  const answers = {
+    keeps: 'Keep',
+    retainedNotice: 'Nothing changes',
+    action: 'Delete',
+    detail: 'From',
+  }
+  const warns = { action: 'Erase', detail: 'For good', back: 'Type the name' }
+
+  const loadWith = async (commands: DeclaredCommand[]) => {
+    const declared = useDeclaredCommands({
+      ...UNANSWERED_RUNS,
+      list: async () => ({ commands, slots: [] }),
+      isListed: () => false,
+      hasBackend: () => true,
+    })
+    await declared.load()
+    return declared
+  }
+
+  it('is the only step of a command with no items, and goes to the declarations the host reads', async () => {
+    const declared = await loadWith([
+      { ...createDeck, answers },
+      { ...openPreset, warns },
+    ])
+
+    const [yes, typed] = declared.paletteCommands.value
+    expect([yes?.input, yes?.answers]).toStrictEqual(['confirmation', answers])
+    expect([typed?.input, typed?.warns]).toStrictEqual(['retypedName', warns])
+    expect(declared.declarations.value?.[0]).toMatchObject({ answers })
+    expect(declared.declarations.value?.[1]).toMatchObject({ warns })
+  })
+
+  it('follows the item picked of a command with items', async () => {
+    const declared = await loadWith([{ ...createDeck, hasItems: true, answers }])
+
+    const [one] = declared.paletteCommands.value
+    expect([one?.input, one?.next, one?.answers]).toStrictEqual(['items', 'confirmation', answers])
+  })
+
+  it('leaves a command with a required argument its own step', async () => {
+    const declared = await loadWith([
+      { ...createDeck, answers, arguments: [{ name: 'a', title: 'A', isRequired: true }] },
+    ])
+
+    const [one] = declared.paletteCommands.value
+    expect([one?.input, one?.answers]).toStrictEqual(['arguments', undefined])
+  })
+})

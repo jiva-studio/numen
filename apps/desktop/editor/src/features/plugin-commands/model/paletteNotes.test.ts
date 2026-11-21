@@ -45,9 +45,7 @@ describe('the notes the palette reads', () => {
     const { notes, targets } = createNotes()
 
     expect(notes.getNote(target('links/Mill.md', { path: '' }))).toBeUndefined()
-    expect(
-      notes.getNote(target('links/Other.md', { others: ['links/Extra.md'] })),
-    ).toBeUndefined()
+    expect(notes.getNote(target('links/Other.md', { others: ['links/Extra.md'] }))).toBeUndefined()
     await flushPromises()
 
     expect(notes.getNote(target('links/Mill.md', { path: '' }))).toStrictEqual({

@@ -153,6 +153,10 @@ message PluginCommand {
   // with ListCommandItems and runs with the id of the one picked as the
   // item_id of RunPluginCommand.
   bool has_items = 11;
+
+  // answers and warns are the confirmation the manifest declares for the command; empty for none.
+  ManifestCommandAnswers answers = 12;
+  ManifestCommandWarns warns = 13;
 }
 
 // CommandArgument is one argument a command takes.

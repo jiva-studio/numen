@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -127,7 +128,28 @@ func newWireCommand(entry plugincommand.ListedCommand) *v1.PluginCommand {
 		Arguments: arguments,
 		When:      entry.Command.When,
 		HasItems:  entry.HasItems,
+		Answers:   newWireAnswers(entry.Command.Answers),
+		Warns:     newWireWarns(entry.Command.Warns),
 	}
+}
+
+func newWireAnswers(answers *manifest.CommandAnswers) *v1.ManifestCommandAnswers {
+	if answers == nil {
+		return nil
+	}
+	return &v1.ManifestCommandAnswers{
+		Keeps:          answers.Keeps,
+		RetainedNotice: answers.RetainedNotice,
+		Action:         answers.Action,
+		Detail:         answers.Detail,
+	}
+}
+
+func newWireWarns(warns *manifest.CommandWarns) *v1.ManifestCommandWarns {
+	if warns == nil {
+		return nil
+	}
+	return &v1.ManifestCommandWarns{Action: warns.Action, Detail: warns.Detail, Back: warns.Back}
 }
 
 func newWireKeybindings(entries []plugin.KeybindingEntry) []*v1.PluginKeybinding {

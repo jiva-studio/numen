@@ -466,6 +466,25 @@ message ManifestCommandArgument {
   bool is_required = 4 [json_name = "required"];
 }
 
+// ManifestCommandAnswers is the confirmation a command asks for before it runs: two answers, the
+// first of which keeps things as they are and is the one offered first. The row of the second is
+// the action followed by what it acts on; when the command offers items, that is the title of the
+// item picked, and the detail is followed by the detail of the item.
+message ManifestCommandAnswers {
+  string keeps = 1;
+  string retained_notice = 2;
+  string action = 3;
+  string detail = 4;
+}
+
+// ManifestCommandWarns is the confirmation a command asks for by having the name of what it acts on
+// typed again: the action, what it says under it, and the placeholder of the field.
+message ManifestCommandWarns {
+  string action = 1;
+  string detail = 2;
+  string back = 3;
+}
+
 message ManifestCommand {
   string id = 1;
   string title = 2;
@@ -476,6 +495,11 @@ message ManifestCommand {
   // names version.* offers one item per text version of a file for which it holds.
   string when = 11;
   string permission = 12;
+  // answers makes the palette ask for a yes or a no before the command runs; the safe answer is first.
+  // With items, the question follows the pick of the item and the run is given that item.
+  ManifestCommandAnswers answers = 13;
+  // warns makes the palette ask for the name of the note typed again before the command runs.
+  ManifestCommandWarns warns = 14;
   reserved 10;
 }
 

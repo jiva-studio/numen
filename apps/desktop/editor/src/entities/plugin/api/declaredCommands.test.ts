@@ -37,14 +37,18 @@ const createApi = () =>
     }).pluginCommands,
   )
 
-const listDeclaredCommands = (...args: Parameters<ReturnType<typeof createApi>['listDeclaredCommands']>) =>
-  createApi().listDeclaredCommands(...args)
-const listDeclaredItemLists = (...args: Parameters<ReturnType<typeof createApi>['listDeclaredItemLists']>) =>
-  createApi().listDeclaredItemLists(...args)
-const runDeclaredCommand = (...args: Parameters<ReturnType<typeof createApi>['runDeclaredCommand']>) =>
-  createApi().runDeclaredCommand(...args)
-const runDeclaredHandler = (...args: Parameters<ReturnType<typeof createApi>['runDeclaredHandler']>) =>
-  createApi().runDeclaredHandler(...args)
+const listDeclaredCommands = (
+  ...args: Parameters<ReturnType<typeof createApi>['listDeclaredCommands']>
+) => createApi().listDeclaredCommands(...args)
+const listDeclaredItemLists = (
+  ...args: Parameters<ReturnType<typeof createApi>['listDeclaredItemLists']>
+) => createApi().listDeclaredItemLists(...args)
+const runDeclaredCommand = (
+  ...args: Parameters<ReturnType<typeof createApi>['runDeclaredCommand']>
+) => createApi().runDeclaredCommand(...args)
+const runDeclaredHandler = (
+  ...args: Parameters<ReturnType<typeof createApi>['runDeclaredHandler']>
+) => createApi().runDeclaredHandler(...args)
 
 const proofread = {
   pluginId: 'org.example.ink',
@@ -242,6 +246,40 @@ describe('the commands the plugins declare', () => {
     } = await listDeclaredCommands()
 
     expect(one).toStrictEqual(proofread)
+  })
+})
+
+describe('the confirmation a command declares', () => {
+  const answers = {
+    keeps: 'Keep',
+    retainedNotice: 'No note changes',
+    action: 'Delete',
+    detail: 'Removed from',
+  }
+  const warns = { action: 'Erase', detail: 'For good', back: 'Type the name' }
+
+  it('is read as the answers or the warns the core lists', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [
+        { ...convert, answers },
+        { ...proofread, hasItems: false, warns },
+      ],
+      slots: [],
+    })
+
+    const { commands } = await listDeclaredCommands()
+
+    expect(commands[0]).toMatchObject({ answers })
+    expect(commands[1]).toMatchObject({ warns })
+  })
+
+  it('is left out of a command that declares none', async () => {
+    request.listCommands.mockResolvedValue({ commands: [convert], slots: [] })
+
+    const { commands } = await listDeclaredCommands()
+
+    expect(commands[0]).not.toHaveProperty('answers')
+    expect(commands[0]).not.toHaveProperty('warns')
   })
 })
 
