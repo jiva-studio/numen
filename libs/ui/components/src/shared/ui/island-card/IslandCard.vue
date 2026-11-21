@@ -15,7 +15,7 @@ defineProps<{ title: string }>()
 
 <style scoped>
 .island-card {
-  --header-pad: 0.25rem 0.75rem;
+  --header-pad: 0.375rem 0.75rem;
   --body-pad: 0 0.75rem;
   overflow: hidden;
   box-sizing: border-box;
@@ -30,6 +30,7 @@ defineProps<{ title: string }>()
   justify-content: space-between;
   gap: 0.5rem;
   padding: var(--header-pad);
+  background-color: color-mix(in srgb, var(--numen-ink) 5%, var(--numen-raised));
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
