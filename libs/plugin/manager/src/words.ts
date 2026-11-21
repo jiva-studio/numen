@@ -36,6 +36,8 @@ const CONTRIBUTION_KINDS: Readonly<Record<PluginContributionKind, string>> = {
   services: 'Services',
   capabilities: 'Capabilities',
   activationEvents: 'Activation events',
+  searchFunctions: 'Search functions',
+  tools: 'MCP tools',
 }
 
 /** UI copy of the plugin list and the plugin page. */

@@ -123,6 +123,8 @@ export type PluginContributionKind =
   | 'services'
   | 'capabilities'
   | 'activationEvents'
+  | 'searchFunctions'
+  | 'tools'
 
 /** One section of a manifest with its entries, in the order the manifest declares them. */
 export interface PluginContribution {
