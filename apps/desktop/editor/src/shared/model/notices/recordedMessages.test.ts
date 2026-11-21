@@ -17,15 +17,29 @@ describe('window message recording', () => {
     expect(writeLog).toHaveBeenNthCalledWith(1, {
       level: 'warning',
       source: 'window',
-      message: 'Window message',
+      message: 'Window message from source',
       properties: { component: 'source' },
     })
     expect(writeLog).toHaveBeenNthCalledWith(2, {
       level: 'error',
       source: 'window',
-      message: 'Window message',
+      message: 'Window message from source',
       properties: { component: 'source' },
     })
     expect(messages.messages.value[0]?.text).toBe('private error')
+  })
+
+  it('names the command a message is about', () => {
+    const writeLog = vi.fn(async () => undefined)
+    const messages = createRecordedMessageLog(createMessageLog(), { writeLog })
+
+    messages.getWriter('command')('private text', 'error', { command: 'app:note.create' })
+
+    expect(writeLog).toHaveBeenCalledWith({
+      level: 'error',
+      source: 'window',
+      message: 'Window message from command app:note.create',
+      properties: { component: 'command', command: 'app:note.create' },
+    })
   })
 })

@@ -24,13 +24,8 @@ const createWindow = () => {
   let getKinds = (): readonly TabKindRegistration[] => []
   const tabOpens: (readonly [string, string])[] = []
   const tabs: { kind: string; state: object }[] = []
-  const navigateTab = async (kind: string, path: string): Promise<string> => {
+  const openTab = async (kind: string, path: string): Promise<string> => {
     const registration = getKinds().find((one) => one.kind === kind)!
-    const last = tabs.filter((one) => one.kind === kind).at(-1)
-    if (last) {
-      await registration.navigate?.(last.state, path, '')
-      return kind
-    }
     tabOpens.push([kind, path])
     tabs.push({ kind, state: registration.open!(path, `${kind}-${tabs.length}`) })
     return kind
@@ -38,7 +33,7 @@ const createWindow = () => {
   const bind = (ctx: { getRegisteredTabKinds(): TabKindRegistration[] }): void => {
     getKinds = () => ctx.getRegisteredTabKinds()
   }
-  return { tabOpens, tabs, navigateTab, bind }
+  return { tabOpens, tabs, openTab, bind }
 }
 
 describe('view-plex-graph plugin', () => {
@@ -81,14 +76,14 @@ describe('view-plex-graph plugin', () => {
       workspace: host.workspace,
       notes: host.notes,
       relations: host.relations,
-      navigateTab: strip.navigateTab,
+      openTab: strip.openTab,
     })
     strip.bind(ctx)
     activate(ctx, services)
     return { ctx, strip }
   }
 
-  it('opens one plex however many times the command runs', async () => {
+  it('opens another plex each time the command runs', async () => {
     const { ctx, strip } = createWindowContext()
 
     await ctx.triggerCommand('graph.open')
@@ -102,32 +97,12 @@ describe('view-plex-graph plugin', () => {
       tab: '',
     })
 
-    expect(strip.tabOpens).toStrictEqual([[PLEX, '']])
-    expect(strip.tabs).toHaveLength(1)
-  })
-
-  it('shows the active note in a plex that is already open', async () => {
-    const { ctx, strip } = createWindowContext()
-    await ctx.triggerCommand('graph.open')
-    await settle()
-
-    await ctx.triggerCommand('graph.open', {
-      path: 'Other.md',
-
-      title: 'Other.md',
-
-      type: 'note',
-
-      isFolder: false,
-
-      others: [],
-
-      tab: '',
-    })
-    await settle()
-
-    const state = strip.tabs[0]!.state as PlexTabState
-    expect(state.canvas.view.here.value).toBe('Other.md')
+    expect(strip.tabOpens).toStrictEqual([
+      [PLEX, ''],
+      [PLEX, ''],
+      [PLEX, 'Other.md'],
+    ])
+    expect(strip.tabs).toHaveLength(3)
   })
 
   it('shows the active note in the plex it opens', async () => {
@@ -148,25 +123,6 @@ describe('view-plex-graph plugin', () => {
     })
 
     expect(strip.tabOpens).toStrictEqual([[PLEX, 'Other.md']])
-  })
-
-  it('keeps its note without an active note', async () => {
-    const { ctx, strip } = createWindowContext()
-    await ctx.triggerCommand('graph.open', {
-      path: 'Other.md',
-      title: 'Other.md',
-      type: 'note',
-      isFolder: false,
-      others: [],
-      tab: '',
-    })
-    await settle()
-
-    await ctx.triggerCommand('graph.open')
-    await settle()
-
-    const state = strip.tabs[0]!.state as PlexTabState
-    expect(state.canvas.view.here.value).toBe('Other.md')
   })
 
   it('registers no command that makes a note', () => {

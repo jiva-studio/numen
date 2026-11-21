@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
-import { File } from '@lucide/vue'
+import { AppWindow, File } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
 import { type Command } from '@/entities/command'
 import { findIcon, COMMAND, type CommandTarget } from '@/shared/model/command'
@@ -285,6 +285,7 @@ describe('findRowIcon', () => {
       view: {
         findTabKind: (id: string) => (id === 'n1' ? 'sample' : null),
         findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined),
+        findItemIcon: () => null,
       },
     } as unknown as Commands
     const search = {
@@ -299,7 +300,7 @@ describe('findRowIcon', () => {
   it('resolves search note type, and file hit icons when commands palette is closed', () => {
     const commands = {
       palette: { open: ref(false) },
-      view: { findTabKind: () => 'sample', findCommandIcon: () => customIcon },
+      view: { findTabKind: () => 'sample', findCommandIcon: () => customIcon, findItemIcon: () => null },
     } as unknown as Commands
     const search = {
       reads: {
@@ -316,6 +317,20 @@ describe('findRowIcon', () => {
   })
 })
 
+describe('the icon of an item of a command that lists items', () => {
+  it('is the icon of the command', () => {
+    const commands = {
+      palette: { open: ref(true) },
+      view: { findTabKind: () => null, findCommandIcon: () => null, findItemIcon: () => AppWindow },
+    }
+    const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
+
+    expect(
+      findRowIcon('window-2', commands as unknown as Commands, search as unknown as SearchState),
+    ).toBe(AppWindow)
+  })
+})
+
 describe('the icon of the command that opens a document', () => {
   it('is the file icon the row of a document is drawn with', () => {
     expect(findIcon('app:file.open#document')).toBe(File)
@@ -324,7 +339,7 @@ describe('the icon of the command that opens a document', () => {
   it('is the icon of the command the row of a document offers', () => {
     const commands = {
       palette: { open: ref(true) },
-      view: { findTabKind: () => null, findCommandIcon: () => null },
+      view: { findTabKind: () => null, findCommandIcon: () => null, findItemIcon: () => null },
     }
     const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
 
@@ -353,7 +368,7 @@ describe('the two choices of the confirmation that empties the trash', () => {
     }
     const commands = {
       palette: { open: ref(true) },
-      view: { findTabKind: () => null, findCommandIcon: () => null },
+      view: { findTabKind: () => null, findCommandIcon: () => null, findItemIcon: () => null },
     }
     const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
 

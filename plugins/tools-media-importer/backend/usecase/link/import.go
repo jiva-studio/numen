@@ -57,7 +57,7 @@ func (l *Links) ImportURL(ctx context.Context, req ImportRequest) (ImportResult,
 func (l *Links) CreateLinks(ctx context.Context, folder string, urls []string) (paths, failed []string) {
 	paths, failed = []string{}, []string{}
 	for _, raw := range urls {
-		made, isFound, err := l.FindOrCreate(ctx, "", folder, raw)
+		made, isFound, err := l.findOrCreate(ctx, "", folder, raw, l.getPageTitle)
 		if errors.Is(err, address.ErrNotAURL) {
 			continue
 		}

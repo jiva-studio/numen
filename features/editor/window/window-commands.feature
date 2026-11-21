@@ -39,6 +39,7 @@ Feature: Window commands
     @smoke
     Scenario: The plex is opened with Ctrl+Shift+X
       Given the person opens the note titled "Entropy"
+      And the person closes the Plex tab titled "Entropy"
       When the person presses "Ctrl+Shift+X"
       Then the plex shows the focus note titled "Entropy"
 

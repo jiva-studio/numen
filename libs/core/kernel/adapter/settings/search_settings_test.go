@@ -40,8 +40,8 @@ func TestTheRerankingRowsOfTheShellAreReadAndARowOfAMissingConnectionIsDropped(t
 		t.Fatal(err)
 	}
 	want := []connection.Row{{ConnectionID: workID, Options: map[string]string{"model": "mongodb/rerank-3"}}}
-	if !reflect.DeepEqual(setting.Rows, want) || setting.IsDiscovering {
-		t.Errorf("the rows of the shell are %+v, want %+v without discovery", setting, want)
+	if !reflect.DeepEqual(setting.Rows, want) || setting.IsDiscovering || !setting.IsDetectedOnly {
+		t.Errorf("the rows of the shell are %+v, want %+v, detected only and without general discovery", setting, want)
 	}
 	if other, err := world.rows().ReadRowSetting(settingsdomain.AppOwner, "llm.embed"); err != nil || len(other.Rows) != 0 {
 		t.Errorf("the shell has rows %v for llm.embed, %v", other.Rows, err)
