@@ -13,8 +13,8 @@ Save web articles and online videos (such as YouTube lectures) into your vault f
 
 ## Settings
 
-- **yt-dlp**: Location of the `yt-dlp` program used to download online videos (detected automatically when installed on your system).
-- **ffmpeg**: Location of the `ffmpeg` program used to process downloaded audio and video (detected automatically when installed on your system).
+- **yt-dlp**: Location of the `yt-dlp` program used to download online videos (detected automatically when installed on your system; otherwise a checked copy is downloaded into the application folder on first use).
+- **ffmpeg**: Location of the `ffmpeg` program used to process downloaded audio and video (detected automatically when installed on your system; otherwise a checked copy is downloaded into the application folder on first use).
 - **Caption languages**: Caption languages in order of preference, comma-separated.
 - **Automatic captions**: Use auto-generated captions when a site has no others.
 - **Download captions automatically**: Download the captions or the article of every link note added to the vault that has no text yet.

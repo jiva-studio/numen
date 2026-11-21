@@ -280,3 +280,34 @@ func TestEverySourceURLFailingReportsEveryError(t *testing.T) {
 		t.Errorf("error = %v, want both failed URLs", err)
 	}
 }
+
+func TestAFetchedBinaryIsAProgramThatCanRun(t *testing.T) {
+	program := []byte("program of this platform")
+	server, _ := serveFiles(t, map[string][]byte{"/tool-platform": program})
+	req := manifest.DependencyRequirement{
+		ID: "tool", Kind: manifest.DependencyKindBinary, Version: "1.0.0",
+		Metadata: map[string]string{"fileName": "tool"},
+		Sources:  []manifest.DependencySource{{Platform: getPlatform(), SourceURL: server.URL + "/tool-platform", ChecksumSHA256: sumOf(program)}},
+	}
+	provisioner := newTestProvisioner(t, false)
+	provisioner.cfg.Client = server.Client()
+
+	resolved, err := provisioner.Provision(t.Context(), req, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(resolved.PrimaryPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runtime.GOOS != windowsOS && info.Mode().Perm()&0o100 == 0 {
+		t.Errorf("mode = %v, want an executable file", info.Mode())
+	}
+	want := "tool"
+	if runtime.GOOS == windowsOS {
+		want = "tool.exe"
+	}
+	if got := filepath.Base(resolved.PrimaryPath); got != want {
+		t.Errorf("file = %s, want %s", got, want)
+	}
+}
