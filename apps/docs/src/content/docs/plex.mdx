@@ -81,6 +81,10 @@ Six names are shown over a note and six under it. A note with more shows the fir
 
 Disable the Plex Related Names plugin to hide them. **Names per note** sets how many a note shows, from one to twelve; it is a setting of that plugin, in its section of [the settings](/settings/), stored as `namesPerNote` in the object `md.numen.views.plex.related.names`.
 
+## Back and Forward
+
+The Plex Navigation plugin puts Back and Forward buttons at the top of the board. Each plex board keeps its own history of the nodes it showed. Back shows the node visited before the one in front, and Forward shows the next one after going back. Moving to a new node after going back discards the nodes that were ahead. A button is disabled when there is no node in its direction.
+
 ## Building with it
 
 Every node has a small handle: a disc with a cross in it. Press it and drag away from the

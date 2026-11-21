@@ -1,0 +1,16 @@
+{
+  "id": "md.numen.views.plex.navigation",
+  "name": "Plex Navigation",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Back and Forward buttons for the nodes visited in a plex",
+  "capabilities": [],
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "feature": "plex navigation",
+    "category": "views",
+    "slots": [{ "slot": "plexGraph.boardTop", "view": "navigation", "order": 10 }]
+  },
+  "permissions": [],
+  "frontend": {}
+}
