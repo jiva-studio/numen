@@ -150,7 +150,7 @@ function createPlexNodeActions(options: {
     if (!one || !other || !role) return
     const joined = await deps.editor.join(one, other, { role })
     if (!joined.ok) return deps.window.showMessage(getRelationErrorWords(joined.error))
-    await view.go(one)
+    await view.go(deps.look.activateLinked.value ? other : one)
   }
 
   const dropNodes = async (nodes: readonly string[], relation: PlexRelation) => {
@@ -350,7 +350,8 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     getName,
     getType,
     getTabKind,
-    showCreated: (path) => view.go(path),
+    showCreated: (path) =>
+      view.go(deps.look.activateCreated.value || !view.here.value ? path : view.here.value),
     dismissOthers: () => {
       quickLink.dismissQuickLink()
       inspector.dismissLinkInspector()
