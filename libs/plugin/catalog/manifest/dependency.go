@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"path"
 	"regexp"
 	"runtime"
 	"slices"
@@ -252,5 +253,35 @@ func NewModelFile(address, digest string) (DependencyRequirement, error) {
 	if err := errors.Join(listSourceIssues("model file", source)...); err != nil {
 		return DependencyRequirement{}, err
 	}
-	return DependencyRequirement{ID: digest, Kind: DependencyKindModel, SourceURL: address, ChecksumSHA256: digest}, nil
+	return DependencyRequirement{
+		ID: digest, Kind: DependencyKindModel, SourceURL: address, ChecksumSHA256: digest,
+		Metadata: map[string]string{metadataTitle: getModelTitle(address)},
+	}, nil
+}
+
+const metadataTitle = "title"
+
+// GetTitle is the name a person reads for the dependency: its title metadata, or its id.
+func (req DependencyRequirement) GetTitle() string {
+	if title := req.Metadata[metadataTitle]; title != "" {
+		return title
+	}
+	return req.ID
+}
+
+func getModelTitle(address string) string {
+	_, rest, _ := strings.Cut(address, "://")
+	rest, _, _ = strings.Cut(rest, "?")
+	host, route, _ := strings.Cut(rest, "/")
+	name := strings.TrimSuffix(path.Base(route), path.Ext(route))
+	if name != "inference" && name != "model" {
+		return name + " model"
+	}
+	segments := strings.Split(route, "/")
+	for index, segment := range segments {
+		if segment == "resolve" && index > 0 {
+			return segments[index-1] + " model"
+		}
+	}
+	return host + " model"
 }
