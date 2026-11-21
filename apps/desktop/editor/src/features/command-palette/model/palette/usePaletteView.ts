@@ -3,6 +3,7 @@
  */
 import { computed, type Component } from 'vue'
 import type { Vault } from '@/entities/vault'
+import { findIcon } from '@/shared/model/command'
 import { getPaletteView } from '../view/view'
 import type { PaletteSession } from './session'
 
@@ -34,8 +35,15 @@ export function usePaletteView(session: PaletteSession) {
   /** The icon a command declares, and nothing for one that declares none. */
   const findCommandIcon = (id: string): Component | null => byId.value.get(id)?.icon ?? null
 
+  /** The icon of the command whose items the palette lists, drawn on each item; none outside that step. */
+  const findItemIcon = (): Component | null => {
+    const step = steps.here.value
+    if (step?.step !== 'items') return null
+    return step.command.icon ?? findIcon(step.command.id)
+  }
+
   /** Whether the vault is shown aside, and cannot be chosen. */
   const isVaultAside = (vault: Vault): boolean => Boolean(draws.getVaultAside(vault))
 
-  return { groups, findTabKind: draws.findTabKind, findCommandIcon, isVaultAside }
+  return { groups, findTabKind: draws.findTabKind, findCommandIcon, findItemIcon, isVaultAside }
 }

@@ -10,7 +10,7 @@ import { runSupport } from './runSupport'
 import type { StepGroup } from '@/shared/model/command'
 import type { NoteLookup, PaletteLists } from '../../types'
 import type { Command } from '@/entities/command'
-import type { CommandTarget, RunSupport } from '@/shared/model/command'
+import { findIcon, type CommandTarget, type RunSupport } from '@/shared/model/command'
 import { createCommandPalette, type Commands } from './palette'
 import type { VaultList, Vault } from '@/entities/vault'
 import type { NameMatch } from '../search/search'
@@ -680,6 +680,15 @@ describe('a command that offers a list the window holds', () => {
       owned: [],
     })
     expect(getEmptyMessage(commands.view.groups, 'owned')).toBe('A .css file there is one')
+  })
+
+  it('draws its items with the icon of the command, and no icon outside the step', () => {
+    const { commands } = createPalette({}, [], target)
+    expect(commands.view.findItemIcon()).toBeNull()
+
+    commands.palette.startCommand(THEME_ID, front())
+
+    expect(commands.view.findItemIcon()).toBe(findIcon(THEME_ID))
   })
 
   it('offers each command the list it holds for that command', () => {
