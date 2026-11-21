@@ -32,7 +32,10 @@ export const Timed: Story = {
   render: () => ({
     components: { TranscriptText },
     setup: () => {
-      const times = createTimeGutter(() => undefined)
+      const times = createTimeGutter(
+        () => undefined,
+        () => undefined,
+      )
       times.show({ times: TIMED_TIMES, current: 0, isFollowing: false })
       return { text: TIMED, extensions: times.extension }
     },
