@@ -31,7 +31,7 @@ const emit = defineEmits<{
   align-items: center;
   margin-block-start: var(--numen-node-gap);
   font-family: var(--numen-font-sans);
-  font-size: 0.7rem;
+  font-size: var(--numen-text-1);
   line-height: 1.3;
 }
 
