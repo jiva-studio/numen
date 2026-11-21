@@ -15,8 +15,8 @@ defineProps<{ title: string }>()
 
 <style scoped>
 .island-card {
-  --header-pad: 0.375rem 0.75rem;
-  --body-pad: 0.125rem 0.75rem;
+  --header-pad: 0.25rem 0.75rem;
+  --body-pad: 0 0.75rem;
   overflow: hidden;
   box-sizing: border-box;
   border: var(--numen-stroke) solid var(--numen-rule);
@@ -36,9 +36,9 @@ defineProps<{ title: string }>()
 .island-card__title {
   margin: 0;
   min-inline-size: 0;
-  font-size: var(--numen-text-1);
-  font-weight: 500;
-  color: var(--numen-hushed);
+  font-size: var(--numen-text-2);
+  font-weight: 600;
+  color: var(--numen-ink);
 }
 
 .island-card__aside {
