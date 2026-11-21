@@ -1,4 +1,4 @@
-# Plex Headings
+# Plex Headings Dropdown
 
 Leave the pointer on a note in the plex and the headings of that note appear under its box, each indented by its depth. Click a heading to open the note at that line.
 
