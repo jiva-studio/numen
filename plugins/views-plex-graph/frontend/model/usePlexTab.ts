@@ -298,6 +298,8 @@ function usePlexWidgets(
     above: watching('above'),
     below: watching('below'),
     over: watching('over'),
+    boardTop: watching('boardTop'),
+    boardBottom: watching('boardBottom'),
     getPath: map.getNodePath,
   }
 }

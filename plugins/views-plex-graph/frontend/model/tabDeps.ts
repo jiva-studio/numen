@@ -16,6 +16,8 @@ const WIDGET_SLOTS = {
   above: SLOT.plexGraphNodeAbove,
   below: SLOT.plexGraphNodeBelow,
   over: SLOT.plexGraphNode,
+  boardTop: SLOT.plexGraphBoardTop,
+  boardBottom: SLOT.plexGraphBoardBottom,
 } as const
 
 /** The host services a plex tab is made from, and the plugin's settings. */

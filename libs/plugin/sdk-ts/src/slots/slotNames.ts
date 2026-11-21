@@ -28,6 +28,10 @@ export const SLOT = {
   plexGraphNodeBelow: 'plexGraph.nodeBelow',
   // The views over the whole of a node of the plex graph, above the nodes, each given the path of its note and the size, position and scale of the node; a view that does not let clicks and drags through takes them from the node, drawn by the plugin of the plex graph.
   plexGraphNode: 'plexGraph.node',
+  // The views of controls at the top of the board of the plex graph, drawn by the plugin of the plex graph.
+  plexGraphBoardTop: 'plexGraph.boardTop',
+  // The views of controls at the bottom of the board of the plex graph, drawn by the plugin of the plex graph.
+  plexGraphBoardBottom: 'plexGraph.boardBottom',
   // The actions of a search result that is a note, over that note, drawn by the palette.
   paletteSearchResult: 'palette.searchResult',
   // The commands of the palette over the note in front, drawn by the palette.

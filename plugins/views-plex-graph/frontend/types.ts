@@ -130,7 +130,7 @@ export interface PlexWidget {
 }
 
 /** The place of a node a slot of widgets is drawn in: over it, under it, or across the whole of it. */
-export type PlexWidgetSide = 'above' | 'below' | 'over'
+export type PlexWidgetSide = 'above' | 'below' | 'over' | 'boardTop' | 'boardBottom'
 
 /** What a plex tab requests for its menu. */
 export interface PlexMenuDeps {
@@ -208,6 +208,8 @@ export interface PlexWidgetsState {
   readonly above: Readonly<Ref<readonly PlexWidget[]>>
   readonly below: Readonly<Ref<readonly PlexWidget[]>>
   readonly over: Readonly<Ref<readonly PlexWidget[]>>
+  readonly boardTop: Readonly<Ref<readonly PlexWidget[]>>
+  readonly boardBottom: Readonly<Ref<readonly PlexWidget[]>>
   getPath(node: string): string
 }
 
