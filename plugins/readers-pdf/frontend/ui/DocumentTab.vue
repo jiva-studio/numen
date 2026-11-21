@@ -112,7 +112,7 @@ function onSetPageHandle(reader: Element | ComponentPublicInstance | null) {
 }
 
 .fallback-message {
-  --message-text: 0.875rem;
+  --message-text: var(--numen-font-size);
   font-size: var(--message-text);
   color: var(--text-secondary);
 }

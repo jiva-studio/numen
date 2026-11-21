@@ -1495,6 +1495,31 @@
       "export": "DOCUMENT_VERIFIERS"
     },
     {
+      "name": "ts/plugin-mirror-inventory",
+      "paths": [
+        "plugins/*/manifest.json",
+        "tools/plugin-mirror/**"
+      ],
+      "tags": [
+        "structure",
+        "plugin",
+        "ts",
+        "fast"
+      ],
+      "selftest": "../plugin-mirror/mirror.test.mjs",
+      "runner": "command",
+      "cmd": [
+        "node",
+        "tools/plugin-mirror/run.mjs",
+        "inventory"
+      ],
+      "selftestCmd": [
+        "node",
+        "--test",
+        "tools/plugin-mirror/mirror.test.mjs"
+      ]
+    },
+    {
       "name": "ts/duplication",
       "paths": [
         "libs/**/*.{ts,vue,go}",

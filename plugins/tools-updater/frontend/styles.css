@@ -19,7 +19,7 @@
    three title bar chips; only the width follows the content. */
 .update-indicator__trigger {
   --chip-height: 1.25rem;
-  --chip-text: 0.75rem;
+  --chip-text: var(--numen-font-size);
   --chip-pad: 0.5rem;
   display: inline-flex;
   align-items: center;
