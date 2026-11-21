@@ -54,6 +54,20 @@ export interface InstallationSettings {
   readonly file: Readonly<Ref<string>>
 }
 
+/** One entry a slot holds, named by the key a stored layout refers to it by. */
+interface SlotContributor {
+  readonly key: string
+  readonly label: string
+  readonly pluginName: string
+}
+
+/** A slot a plugin draws and its entries, in the order the slot draws them when nothing is stored. */
+export interface SlotGroup {
+  readonly slot: string
+  readonly title: string
+  readonly contributors: readonly SlotContributor[]
+}
+
 /**
  * The plugins of the installation, what they declare and what the window does for them.
  * `getSettingsViews` answers the components a plugin's frontend registered for its settings
@@ -73,6 +87,8 @@ export interface InstallationPlugin {
    */
   choosePath(pluginId: string, key: string): Promise<string>
   getSettingsViews(pluginId: string): ReadonlyMap<string, ViewComponent>
+  /** The slots a plugin draws, with what is placed in each; absent where the window offers none. */
+  getSlotGroups?(pluginId: string): readonly SlotGroup[]
   readonly files: InstallationPluginFiles
 }
 
@@ -152,7 +168,10 @@ export interface SelectChoice {
 export type ListRowOptions = InstallationConnections['listRowOptions']
 
 /** What the fields of one plugin ask of the plugins of the installation. */
-export type PluginFieldsHost = Pick<InstallationPlugin, 'choosePath' | 'getSettingsViews'>
+export type PluginFieldsHost = Pick<
+  InstallationPlugin,
+  'choosePath' | 'getSettingsViews' | 'getSlotGroups'
+>
 
 /** A setting of one plugin the settings tab was opened at. Each request is a new object. */
 export interface MarkedSetting {
