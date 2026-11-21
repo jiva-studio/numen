@@ -1,12 +1,12 @@
 # Preset Themes
 
-Twelve ready-made color themes for the editor and the flashcards window.
+Forty-four ready-made color themes for the editor and the flashcards window.
 
 <!-- more -->
 
 ## What You Can Do
 
-- **Change the look of the window**: Pick Amber, Ayu, Catppuccin, Cobalt2, Dracula, GitHub, Gruvbox, Monokai, Nord, One Dark, Solarized or Tokyo Night from the appearance settings or the command palette.
+- **Change the look of the window**: Pick any of the forty-four themes, most of them with a light and a dark half, from the appearance settings or the command palette.
 - **Keep the default**: The default Numen theme is part of the application and does not depend on this plugin.
 
 ## Turning It Off
