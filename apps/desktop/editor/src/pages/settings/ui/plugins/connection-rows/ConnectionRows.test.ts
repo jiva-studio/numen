@@ -440,6 +440,12 @@ describe('the rows of a setting of connections', () => {
         ?.props('choices')
         .map((one) => one.text),
     ).toStrictEqual(['Default', 'Deep for alpha'])
+    expect(
+      wrapper
+        .findAllComponents(Select)[2]
+        ?.props('choices')
+        .map((one) => one.detail),
+    ).toStrictEqual([undefined, undefined])
     wrapper.findAllComponents(Select)[1]?.vm.$emit('update:modelValue', 'beta')
     await flushPromises()
 
