@@ -6,7 +6,6 @@ const isDrawn = (node: Node): boolean =>
   node.nodeType === Node.ELEMENT_NODE ||
   (node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim() !== '')
 
-// no client rects at all means no layout engine: an element then counts as drawn
 const hasSize = (row: Element): boolean =>
   row.getClientRects().length === 0 || measureRect(row).height > 0
 
