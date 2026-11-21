@@ -5,6 +5,7 @@ import type {
   BufferHost,
   ConnectionHost,
   Disposable,
+  EditorExtensionHost,
   EditorSettings,
   FileBuffers,
   FileSelectEvent,
@@ -149,6 +150,10 @@ function createVault(pluginId: string, host: PluginContextHost, add: Track): Plu
   })
 }
 
+function trackEditorExtensions(extensions: EditorExtensionHost, add: Track): EditorExtensionHost {
+  return { ...extensions, onChange: (handler) => add(extensions.onChange(handler)) }
+}
+
 function createUi(
   pluginId: string,
   host: PluginContextHost,
@@ -271,6 +276,9 @@ function createHostServices(scope: PartsScope, host: PluginContextHost): HostSer
     ui: createUiService(pluginId, host, { guard: scope, check }),
     work: guardService(createWork(pluginId, host, add), rules.work, { check }),
     events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
+    editor: guardService(trackEditorExtensions(host.views.editorExtensions, add), rules.editor, {
+      check,
+    }),
   }
 }
 

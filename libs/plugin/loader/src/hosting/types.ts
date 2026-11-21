@@ -13,6 +13,8 @@ import type {
   Disposable,
   DropHost,
   DropRegistration,
+  EditorExtensionHost,
+  EditorExtensionRegistry,
   Caught,
   FilePlacement,
   FileSelectEvent,
@@ -319,6 +321,8 @@ export interface ContextViewHost {
   ): MountedView
   readonly registerDropHandler: (pluginId: string, registration: DropRegistration) => Disposable
   readonly drops: DropHost
+  readonly registerEditorExtension: EditorExtensionRegistry['registerEditorExtension']
+  readonly editorExtensions: EditorExtensionHost
 }
 
 /** The settings and licenses a plugin reads and follows. */

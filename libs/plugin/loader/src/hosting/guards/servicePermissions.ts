@@ -11,6 +11,7 @@
  */
 import type {
   HealthHost,
+  EditorExtensionHost,
   PluginEvents,
   PluginIdentity,
   PluginLicenses,
@@ -121,12 +122,15 @@ export interface GuardedParts {
   readonly settings: PluginSettings
   readonly licenses: PluginLicenses
   readonly events: PluginEvents
+  readonly editor: EditorExtensionHost
   readonly tabs: PluginTabs
   readonly vault: PluginVault
   readonly ui: Omit<PluginUi, 'mountView'>
   readonly work: PluginWork
   readonly health: HealthHost
 }
+
+const EDITOR_LIST = requireNothing('it lists and follows the extensions the editor applies')
 
 export const SERVICE_RULES: RulesOf<GuardedParts> = {
   identity: {
@@ -145,6 +149,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       requirePermissions(READ),
       'dropped data is user content, and the handler receives it and the folder it was dropped into',
     ),
+    editorExtension: explain(requirePermissions(READ), 'it runs in the editor of every open note'),
   },
   settings: {
     get: requireNothing('it reads the settings of the plugin itself'),
@@ -285,6 +290,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       drop: requirePermissionsAsync(WRITE),
     },
   },
+  editor: { get: EDITOR_LIST, onChange: EDITOR_LIST, fail: EDITOR_LIST },
   work: {
     connections: {
       call: requireNothing(CONNECTION_GRANT),

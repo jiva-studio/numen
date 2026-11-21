@@ -29,6 +29,7 @@ import { asFailure, asValue, type Result } from '../result'
 import type { MountedView, ViewCapability, ViewContexts, ViewRegistration } from '../views'
 import type { Caught } from '../errors'
 import type { DropRegistration } from '../drops'
+import type { EditorExtensionRegistration } from '../editorExtensions'
 import { createMockNoticeHost } from './mockNotices'
 import {
   createMockBackgroundTaskHost,
@@ -115,6 +116,7 @@ export interface MockPluginContext extends PluginContext {
   getRegisteredCommands(): CommandRegistration[]
   getRegisteredViews(): ViewRegistration[]
   getRegisteredDropHandlers(): DropRegistration[]
+  getRegisteredEditorExtensions(): EditorExtensionRegistration[]
   triggerCommand(
     commandId: string,
     note?: CommandNote,
@@ -210,6 +212,7 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
   const commands: CommandRegistration[] = []
   const views: ViewRegistration[] = []
   const drops: DropRegistration[] = []
+  const editorExtensions: EditorExtensionRegistration[] = []
   const settings = new Map<string, JsonValue>(Object.entries(init.initialSettings ?? {}))
   const settingListeners = new Map<string, Set<(val: JsonValue) => void>>()
   const licenses = new Map<string, { isActive: boolean; key?: string | undefined }>(
@@ -230,6 +233,8 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
       registerInList(tabKinds, registration, subscriptions),
     command: (registration) => registerInList(commands, registration, subscriptions),
     dropHandler: (registration) => registerInList(drops, registration, subscriptions),
+    editorExtension: (registration) =>
+      registerInList(editorExtensions, registration, subscriptions),
     view: (registration) => registerInList(views, registration, subscriptions),
   }
 
@@ -341,6 +346,10 @@ export function createMockPluginContext(initialValues?: MockPluginContextInit): 
 
     getRegisteredDropHandlers(): DropRegistration[] {
       return [...drops]
+    },
+
+    getRegisteredEditorExtensions(): EditorExtensionRegistration[] {
+      return [...editorExtensions]
     },
 
     async triggerCommand(

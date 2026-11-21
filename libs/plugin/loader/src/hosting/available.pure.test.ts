@@ -186,11 +186,19 @@ describe('the host reading the listed commands', () => {
 })
 
 describe('the palette entry of a declared command', () => {
-  const answers = { keeps: 'Keep', retainedNotice: 'Nothing changes', action: 'Delete', detail: 'From' }
+  const answers = {
+    keeps: 'Keep',
+    retainedNotice: 'Nothing changes',
+    action: 'Delete',
+    detail: 'From',
+  }
   const warns = { action: 'Erase', detail: 'For good', back: 'Type the name' }
 
   it('carries the confirmation its declaration holds', () => {
-    const entry = createPaletteCommand({ id: 'md.tree:tree.open', declaration: { ...declaration, answers, warns } })
+    const entry = createPaletteCommand({
+      id: 'md.tree:tree.open',
+      declaration: { ...declaration, answers, warns },
+    })
 
     expect([entry.answers, entry.warns]).toStrictEqual([answers, warns])
   })

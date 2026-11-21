@@ -12,12 +12,15 @@ interface DeclaringManifest {
         readonly commands?: readonly { readonly id: string }[] | undefined
         readonly handlers?: readonly { readonly command: string }[] | undefined
         readonly dropHandlers?: readonly { readonly types: readonly string[] }[] | undefined
+        readonly editor?:
+          { readonly extensions?: readonly { readonly id: string }[] | undefined } | undefined
         readonly licenses?: readonly { readonly id: string }[] | undefined
       }
     | undefined
 }
 
-type Registration = 'drop type' | 'reader' | 'tab kind' | 'command' | 'settings view'
+type Registration =
+  'drop type' | 'editor extension' | 'reader' | 'tab kind' | 'command' | 'settings view'
 
 interface Undeclared {
   readonly kind: Registration
@@ -87,6 +90,12 @@ export function requireDeclaredDropTypes(
       fail(target, { kind: 'drop type', id: type, where: 'contributes.dropHandlers' })
   }
   return checked
+}
+
+export function requireDeclaredEditorExtension(target: PermissionTarget, id: string): void {
+  const declared = getManifest(target)?.contributes?.editor?.extensions ?? []
+  if (!declared.some((one) => one.id === id))
+    fail(target, { kind: 'editor extension', id, where: 'contributes.editor.extensions' })
 }
 
 export function requireDeclaredLicense(target: PermissionTarget, licenseId: string): void {

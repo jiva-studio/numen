@@ -2,6 +2,7 @@ import type { Component, Ref } from 'vue'
 import type { FileConflict } from './buffers'
 import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
+import type { EditorExtensionHost, EditorExtensionRegistration } from './editorExtensions'
 import type { NoticeHost } from './notices'
 import type { PickerHost } from './picker'
 import type { TaskHost } from './tasks'
@@ -243,6 +244,10 @@ export interface PluginRegistrations {
   view(registration: ViewRegistration): Disposable
   // Declares the data dragged in from outside the window the plugin takes, where the host offers drops.
   dropHandler?(registration: DropRegistration): Disposable
+  // Adds the CodeMirror extension the manifest declares under the same id in
+  // `contributes.editor.extensions` to the note editor, where the host offers one. An id the manifest
+  // does not declare throws.
+  editorExtension?(registration: EditorExtensionRegistration): Disposable
 }
 
 // EditorSettings are the settings every editor of a plugin follows. They belong to the application, not to the plugin.
@@ -338,6 +343,8 @@ export interface HostServices {
   readonly ui: PluginUi
   readonly work: PluginWork
   readonly events: PluginEvents
+  // The CodeMirror extensions plugins add to the note editor, where the host offers one.
+  readonly editor?: EditorExtensionHost
 }
 
 // JsonValue is a value that survives JSON.stringify and JSON.parse unchanged: the shape of a setting,

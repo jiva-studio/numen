@@ -5,19 +5,21 @@ import type {
   SettingsViewRegistration,
   VaultChangeEvent,
   DropRegistry,
+  EditorExtensionRegistry,
   JsonValue,
   SlotHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { formatCommandId } from '../commandId'
 import { createDropRegistry } from '../drops'
+import { createEditorExtensionRegistry } from '../editorExtensions'
 import { createSlotRegistry, type DeclaredSlotEntry } from '../slots'
 import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views'
 import { createViewRegistry, type ViewRegistry } from '../views'
 import type { PluginParts } from '../host'
 import { createPluginParts } from './context'
 import { isNoteEditorKind } from './customTabBuffer'
-import { addListener, notifyListeners, requestPluginStart } from './events'
+import { addListener, notifyListeners, reportError, requestPluginStart } from './events'
 import { createCommandApi } from './commandApi'
 import { createWhenReader } from '../when'
 import { APP_KEYBINDINGS, isSharedCommand } from '@numen/plugin-sdk'
@@ -147,13 +149,19 @@ function createSettingBridge({
 }
 
 function createViewBridge(shared: SharedRegistries): ContextViewHost {
-  const { views, drops, slotViews } = shared
+  const { views, drops, slotViews, editorExtensions } = shared
   return {
     registerSlotView: slotViews.registerSlotView,
     registerView: views.registerView,
     mountView: views.mountView,
     registerDropHandler: drops.registerDropHandler,
     drops: { canDrop: drops.canDrop, drop: drops.drop },
+    registerEditorExtension: editorExtensions.registerEditorExtension,
+    editorExtensions: {
+      get: editorExtensions.get,
+      onChange: editorExtensions.onChange,
+      fail: editorExtensions.fail,
+    },
   }
 }
 
@@ -169,6 +177,7 @@ function createTabBridge({ tabs }: Pick<PluginHostDeps, 'tabs'>): ContextTabHost
 interface SharedRegistries {
   readonly views: ViewRegistry
   readonly drops: DropRegistry
+  readonly editorExtensions: EditorExtensionRegistry
   readonly slotViews: SlotViewRegistry
   readonly slots: SlotHost
   readonly readSlotEntries: () => readonly DeclaredSlotEntry[] | undefined
@@ -348,6 +357,9 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
   const contextHost = createHostContextBridge(deps, registry, {
     views: createViewRegistry(deps.plugins),
     drops: createDropRegistry(deps.plugins),
+    editorExtensions: createEditorExtensionRegistry({
+      reportError: (pluginId, error) => reportError(deps, pluginId, error),
+    }),
     slotViews,
     slots,
     readSlotEntries,

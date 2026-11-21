@@ -6,6 +6,7 @@ import {
   type CommandRegistration,
   type Disposable,
   type DropRegistration,
+  type EditorExtensionRegistration,
   type PluginRegistrations,
   type PluginUi,
   type ReaderRegistration,
@@ -18,6 +19,7 @@ import type { PluginContextHost } from '../types'
 import {
   requireDeclaredCommand,
   requireDeclaredDropTypes,
+  requireDeclaredEditorExtension,
   requireDeclaredReader,
   requireDeclaredSettingsView,
   requireDeclaredTabKind,
@@ -89,6 +91,11 @@ export function createRegistrations(
       const { types, drop } = reg
       const declared = requireDeclaredDropTypes(target, types)
       return add(host.views.registerDropHandler(pluginId, { types: declared, drop }))
+    },
+    editorExtension: (reg: EditorExtensionRegistration) => {
+      const { id, extension } = reg
+      requireDeclaredEditorExtension(target, id)
+      return add(host.views.registerEditorExtension(pluginId, { id, extension }))
     },
   }
 }
