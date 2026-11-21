@@ -22,7 +22,7 @@ func (r *ConnectionRows) readAppRowSetting(operation string) (connection.RowSett
 		return connection.RowSetting{}, err
 	}
 	rows, err := r.readExistingRows(encodeAppRows(stored))
-	return connection.RowSetting{Rows: rows}, err
+	return connection.RowSetting{Rows: rows, IsDetectedOnly: true}, err
 }
 
 func encodeAppRows(stored File) string {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { getIssueKey, listAvailableCommands } from './available'
+import { createPaletteCommand, getIssueKey, listAvailableCommands } from './available'
 import type { HostRegistry, RegisteredCommand } from './registry'
 import type { CommandDeclaration } from './types'
 import { createTestHostDeps, createTestPluginHost, type TestHostDeps } from '../testing/hostDeps'
@@ -182,5 +182,23 @@ describe('the host reading the listed commands', () => {
 
     expect(reportCommandIssue).toHaveBeenCalledTimes(1)
     expect(reportCommandIssue).toHaveBeenCalledWith('md.tree', expect.stringContaining('tree.open'))
+  })
+})
+
+describe('the palette entry of a declared command', () => {
+  const answers = { keeps: 'Keep', retainedNotice: 'Nothing changes', action: 'Delete', detail: 'From' }
+  const warns = { action: 'Erase', detail: 'For good', back: 'Type the name' }
+
+  it('carries the confirmation its declaration holds', () => {
+    const entry = createPaletteCommand({ id: 'md.tree:tree.open', declaration: { ...declaration, answers, warns } })
+
+    expect([entry.answers, entry.warns]).toStrictEqual([answers, warns])
+  })
+
+  it('has none where its declaration holds none', () => {
+    const entry = createPaletteCommand({ id: 'md.tree:tree.open', declaration })
+
+    expect(entry).not.toHaveProperty('answers')
+    expect(entry).not.toHaveProperty('warns')
   })
 })

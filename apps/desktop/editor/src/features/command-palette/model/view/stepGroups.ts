@@ -87,6 +87,9 @@ function getConfirmGroup(
     action = '',
     detail = '',
   }: Partial<ConfirmWords> = step.command.answers ?? {}
+  const { item } = step
+  const asked = item ? `${action} “${item.title}”` : `${action} ${label}`
+  const askedDetail = item?.detail ? `${detail} ${item.detail}`.trim() : detail
   const answers: readonly (readonly [string, PaletteItem])[] = [
     [
       keeps,
@@ -101,8 +104,8 @@ function getConfirmGroup(
       action,
       {
         id: step.command.id,
-        title: `${action} ${label}`,
-        detail,
+        title: asked,
+        detail: askedDetail,
         actions: [{ id: step.command.id, text: action }],
       },
     ],

@@ -83,5 +83,7 @@ export function createPaletteCommand({ id, declaration }: AvailableCommand): Plu
   }
   if (declaration.when) command.when = declaration.when
   if (declaration.icon) command.icon = declaration.icon
+  if (declaration.answers) command.answers = declaration.answers
+  if (declaration.warns) command.warns = declaration.warns
   return command
 }

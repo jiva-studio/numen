@@ -26,6 +26,7 @@ import {
 } from '@/entities/plugin'
 import { createWhenAvailability, getWhenGroup, type WindowWhenContext } from '../lib/whenContext'
 import type { Caught } from '@/shared/api/errors'
+import { getConfirmation } from '../lib/confirmation'
 import { createPaletteNotes, type PaletteNotesDeps } from './paletteNotes'
 
 /** The items a command of a plugin offers over a file. */
@@ -53,6 +54,10 @@ function createDeclaredPaletteCommands(
             listItems: (target: CommandTarget) => listItems(one, target.file || target.path),
           }
         : {}),
+      ...getConfirmation(one, {
+        hasItems: one.hasItems === true,
+        hasArguments: required.length > 0,
+      }),
       ...(required.length > 0
         ? {
             input: 'arguments' as const,
@@ -100,6 +105,8 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
   }
   if (command.icon) declaration.icon = command.icon
   if (command.when) declaration.when = command.when
+  if (command.answers) declaration.answers = command.answers
+  if (command.warns) declaration.warns = command.warns
   return declaration
 }
 

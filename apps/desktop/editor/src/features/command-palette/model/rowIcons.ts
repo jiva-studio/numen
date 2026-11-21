@@ -22,7 +22,7 @@ export function findRowIcon(
   if (commands.palette.open.value) {
     const picked = commands.view.findTabKind(id)
     return picked === null
-      ? (commands.view.findCommandIcon(id) ?? findIcon(id))
+      ? (commands.view.findCommandIcon(id) ?? findIcon(id) ?? commands.view.findItemIcon())
       : getNoteIcon(picked)
   }
   const tabKind = search.reads.findTabKind(id)

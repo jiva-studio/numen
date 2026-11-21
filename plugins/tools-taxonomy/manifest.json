@@ -9,7 +9,21 @@
   "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools",
-    "commands": [{ "id": "tags.set", "title": "Set tags", "icon": "tag", "when": "target.isNote" }],
+    "commands": [
+      { "id": "tags.set", "title": "Set tags", "icon": "tag", "when": "target.isNote" },
+      {
+        "id": "tags.delete",
+        "title": "Delete tag",
+        "icon": "trash-2",
+        "when": "window.isVaultOpen",
+        "answers": {
+          "keeps": "Keep the tag",
+          "retainedNotice": "No note changes",
+          "action": "Delete the tag",
+          "detail": "Removed from"
+        }
+      }
+    ],
     "slots": [
       { "slot": "fileTree.rowEnd", "view": "file-tags" },
       { "slot": "plexGraph.nodeBelow", "view": "plex-tags", "order": 20 },

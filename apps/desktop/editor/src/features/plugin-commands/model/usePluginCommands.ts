@@ -18,9 +18,11 @@ import { getNamedIcon } from '@/shared/ui/icons'
 import {
   createEmptyWhenContext,
   createWhenAvailability,
+  getWhenGroup,
   hasNoteVariable,
   type WindowWhenContext,
 } from '../lib/whenContext'
+import { getConfirmation } from '../lib/confirmation'
 import { createSharedCommands } from '../lib/sharedCommands'
 
 /** What a run names: the note, the others selected with it, and the tab it is over. */
@@ -80,11 +82,13 @@ export function usePluginCommands(
       id: cmd.id,
       text: cmd.title,
       ...getPluginLooks(cmd),
-      group: hasNoteVariable(context.whenReader.getCondition(cmd.when))
-        ? ('note' as const)
-        : ('window' as const),
+      group: getWhenGroup(context.whenReader.getCondition(cmd.when)),
       ...(cmd.when ? { when: cmd.when } : {}),
       ...(pluginHost?.commands.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
+      ...getConfirmation(cmd, {
+        hasItems: pluginHost?.commands.hasCommandItems(cmd.id) === true,
+        hasArguments: false,
+      }),
       isAvailable: (target: CommandTarget) => isWhenAvailable(cmd.when, target),
     })),
     ...getSharedEntries(),

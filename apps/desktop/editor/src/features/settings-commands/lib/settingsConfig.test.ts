@@ -7,7 +7,11 @@ const setting = (key: string, value: unknown, when?: PluginSettingInfo['when']) 
   ({ key, value, ...(when ? { when } : {}) }) as never
 
 const OWNERS = [
-  { id: 'app', name: '', settings: [setting('appearance.theme', 'dark'), setting('unset', undefined)] },
+  {
+    id: 'app',
+    name: '',
+    settings: [setting('appearance.theme', 'dark'), setting('unset', undefined)],
+  },
   {
     id: 'org.example.ledger',
     name: 'Ledger',

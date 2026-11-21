@@ -5,7 +5,7 @@
  * and the results, or why there is none with the button that brings them back.
  */
 import { computed, useId } from 'vue'
-import { Button } from '@numen/ui'
+import { Button, ErrorState } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import { EditIcon } from '../model/icons'
 import { getFilterEmpty, type EmptyReason } from '../lib/view'
@@ -107,6 +107,7 @@ function onToggleSource(path: string, isShown: boolean) {
       />
       <EmptyResults v-else-if="view.emptyText" :text="view.emptyText" />
     </template>
-    <p v-if="failure" role="alert" class="saved-search__failure">{{ failure }}</p>
+    <ErrorState v-if="failure && !view" class="saved-search__error" :message="failure" />
+    <p v-else-if="failure" role="alert" class="saved-search__failure">{{ failure }}</p>
   </section>
 </template>

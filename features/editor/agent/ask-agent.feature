@@ -15,7 +15,8 @@ Feature: Ask agent
   Rule: The agent answers a question
 
     Background:
-      Given the person runs the command "Open agent chat"
+      Given the person closes the Agent tab titled "Agent"
+      And the person runs the command "Open agent chat"
 
     Scenario: A new chat is empty
       Then the Agent tab titled "Agent" has "No messages yet"
@@ -32,7 +33,8 @@ Feature: Ask agent
   Rule: The agent works with notes
 
     Background:
-      Given the person runs the command "Open agent chat"
+      Given the person closes the Agent tab titled "Agent"
+      And the person runs the command "Open agent chat"
 
     @smoke
     Scenario: A note is written

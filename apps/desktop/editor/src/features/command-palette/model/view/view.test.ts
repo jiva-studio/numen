@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
-import { File } from '@lucide/vue'
+import { AppWindow, File } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
 import { type Command } from '@/entities/command'
 import { findIcon, COMMAND, type CommandTarget } from '@/shared/model/command'
@@ -285,6 +285,7 @@ describe('findRowIcon', () => {
       view: {
         findTabKind: (id: string) => (id === 'n1' ? 'sample' : null),
         findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined),
+        findItemIcon: () => null,
       },
     } as unknown as Commands
     const search = {
@@ -299,7 +300,11 @@ describe('findRowIcon', () => {
   it('resolves search note type, and file hit icons when commands palette is closed', () => {
     const commands = {
       palette: { open: ref(false) },
-      view: { findTabKind: () => 'sample', findCommandIcon: () => customIcon },
+      view: {
+        findTabKind: () => 'sample',
+        findCommandIcon: () => customIcon,
+        findItemIcon: () => null,
+      },
     } as unknown as Commands
     const search = {
       reads: {
@@ -316,6 +321,20 @@ describe('findRowIcon', () => {
   })
 })
 
+describe('the icon of an item of a command that lists items', () => {
+  it('is the icon of the command', () => {
+    const commands = {
+      palette: { open: ref(true) },
+      view: { findTabKind: () => null, findCommandIcon: () => null, findItemIcon: () => AppWindow },
+    }
+    const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
+
+    expect(
+      findRowIcon('window-2', commands as unknown as Commands, search as unknown as SearchState),
+    ).toBe(AppWindow)
+  })
+})
+
 describe('the icon of the command that opens a document', () => {
   it('is the file icon the row of a document is drawn with', () => {
     expect(findIcon('app:file.open#document')).toBe(File)
@@ -324,7 +343,7 @@ describe('the icon of the command that opens a document', () => {
   it('is the icon of the command the row of a document offers', () => {
     const commands = {
       palette: { open: ref(true) },
-      view: { findTabKind: () => null, findCommandIcon: () => null },
+      view: { findTabKind: () => null, findCommandIcon: () => null, findItemIcon: () => null },
     }
     const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
 
@@ -353,7 +372,7 @@ describe('the two choices of the confirmation that empties the trash', () => {
     }
     const commands = {
       palette: { open: ref(true) },
-      view: { findTabKind: () => null, findCommandIcon: () => null },
+      view: { findTabKind: () => null, findCommandIcon: () => null, findItemIcon: () => null },
     }
     const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
 
@@ -365,5 +384,32 @@ describe('the two choices of the confirmation that empties the trash', () => {
         findRowIcon(one.id, commands as unknown as Commands, search as unknown as SearchState),
       ).not.toBeNull()
     }
+  })
+})
+
+describe('the confirmation of the item picked for a command', () => {
+  const answers = {
+    keeps: 'Keep',
+    retainedNotice: 'No note changes',
+    action: 'Delete the tag',
+    detail: 'Removed from',
+  }
+  const groups = createStepGroups({ words, getStepLabel: () => 'unused' } as unknown as ViewState)
+
+  it('names the item and the detail of it, after the answer that keeps', () => {
+    const command = createCommand({ id: 'tags.delete', text: 'Delete tag', answers })
+    const step: PendingStep = {
+      step: 'confirmation',
+      command,
+      on: front(),
+      item: { id: 'Sea', title: 'Sea', detail: '3 notes' },
+    }
+
+    expect(
+      groups.getConfirmGroup(step, '').items.map((one) => [one.id, one.title, one.detail]),
+    ).toStrictEqual([
+      ['tags.delete:keep', 'Keep', 'No note changes'],
+      ['tags.delete', 'Delete the tag “Sea”', 'Removed from 3 notes'],
+    ])
   })
 })

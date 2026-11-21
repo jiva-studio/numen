@@ -41,10 +41,7 @@ describe('a change of the vault', () => {
     createVaultChangeHandlers(deps).onVaultChanged(['notes/a.md'], [])
 
     expect(leavePath).not.toHaveBeenCalled()
-    expect(deps.editing.notes.applyPathChanges).toHaveBeenCalledExactlyOnceWith(
-      ['notes/a.md'],
-      [],
-    )
+    expect(deps.editing.notes.applyPathChanges).toHaveBeenCalledExactlyOnceWith(['notes/a.md'], [])
     expect(deps.notifyPlugins).toHaveBeenCalledExactlyOnceWith({
       paths: ['notes/a.md'],
       renamed: [],

@@ -5,7 +5,9 @@ import type {
   AppInfo,
   BackgroundTaskHost,
   BufferHost,
+  CommandAnswers,
   CommandItem,
+  CommandWarns,
   CommandRegistration,
   CommandsHost,
   Disposable,
@@ -56,6 +58,8 @@ export interface CommandDeclaration {
   readonly icon?: string
   readonly when?: string
   readonly permission?: string
+  readonly answers?: CommandAnswers
+  readonly warns?: CommandWarns
 }
 
 /** One handler of a shared command as a plugin manifest declares it under `contributes.handlers`. */
@@ -91,6 +95,8 @@ export interface PluginPaletteCommand {
   readonly title: string
   readonly when?: string
   readonly icon?: string
+  readonly answers?: CommandAnswers
+  readonly warns?: CommandWarns
 }
 
 /** What a slot's command finder reads of the commands the plugins registered with the host. */

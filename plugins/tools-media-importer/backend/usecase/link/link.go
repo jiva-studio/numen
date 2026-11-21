@@ -210,6 +210,10 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 	if err != nil {
 		return Link{}, err
 	}
+	return l.createNoteAs(ctx, vault, folder, parsed, name, "")
+}
+
+func (l *Links) createNoteAs(ctx context.Context, vault domain.VaultID, folder string, parsed address.URL, name, title string) (Link, error) {
 	identifier, err := ulid.NewGenerator(newEntropyReader(l.host.Entropy)).NewID(l.clock.Now())
 	// gomutants:disable-next-line BRANCH_IF reason="The entropy of the machine does not fail in ulid generation"
 	if err != nil {
@@ -223,6 +227,11 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 	// gomutants:disable-next-line BRANCH_IF reason="SetScalar on valid frontmatter keys of a new document cannot fail"
 	if err := errors.Join(doc.SetScalar(typeKey, string(NoteType)), doc.SetScalar(urlKey, string(parsed))); err != nil {
 		return Link{}, err
+	}
+	if title != "" {
+		if err := doc.SetTitle(title); err != nil {
+			return Link{}, err
+		}
 	}
 	target, store := l.getVaultByID(vault), l.getStoreByID(vault)
 	path := pathpkg.Join(folder, name+domain.NoteExtension)
@@ -250,12 +259,20 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 // Create where the vault has none. Where a file other than the link note of the address is at the
 // path of the note, the error names the path, and the file is unchanged.
 func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, raw string) (Link, bool, error) {
+	return l.findOrCreate(ctx, vault, folder, raw, nil)
+}
+
+func (l *Links) findOrCreate(ctx context.Context, vault domain.VaultID, folder, raw string, getTitle func(context.Context, address.URL) string) (Link, bool, error) {
 	parsed, err := address.Parse(raw)
 	if err != nil {
 		return Link{}, false, err
 	}
 	if found, isFound, err := l.findByAddress(ctx, l.getVaultByID(vault).Files, parsed); err != nil || isFound {
 		return found, isFound, err
+	}
+	if getTitle != nil {
+		made, err := l.createTitledNote(ctx, vault, folder, parsed, getTitle(ctx, parsed))
+		return made, false, err
 	}
 	made, err := l.Create(ctx, vault, folder, raw)
 	if !errors.Is(err, host.ErrAlreadyExists) {

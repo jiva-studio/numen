@@ -17,7 +17,11 @@ interface TabKind {
 }
 
 interface Manifest {
-  readonly contributes: { readonly tabKinds?: readonly TabKind[] }
+  readonly contributes: {
+    readonly tabKinds?: readonly TabKind[]
+    readonly commands?: readonly { readonly id: string }[]
+    readonly slots?: readonly object[]
+  }
   readonly frontend?: object
 }
 
@@ -44,6 +48,19 @@ describe('the manifest of the saved search frontend', () => {
         title: 'Saved Search',
         icon: 'search',
         when: "target.noteType == 'search'",
+      },
+    ])
+  })
+
+  it('offers creating a saved search in the palette and the New menu of a folder', () => {
+    expect(manifest.contributes.commands?.map((one) => one.id)).toStrictEqual(['search.create'])
+    expect(manifest.contributes.slots).toStrictEqual([
+      {
+        slot: 'fileTree.new',
+        command: 'search.create',
+        group: '2-search',
+        order: 10,
+        when: 'target.isFolder',
       },
     ])
   })

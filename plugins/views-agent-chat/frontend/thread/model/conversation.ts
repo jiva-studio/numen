@@ -2,8 +2,8 @@
  * What the panel shows: the transcript, what the agent is doing, and whether an
  * answer is still on its way, in the panel's vocabulary and not the agent's.
  *
- * An answer grows as its pieces arrive. Work is one line, put up the moment a
- * task is taken and taken down when the answer begins, with the wait under it.
+ * An answer grows as its pieces arrive. Each tool call is a line of its own, put up the moment the
+ * call is made and kept in order with the answers around it, with the wait after them.
  * Every question carries the name of the conversation, and the provider answers
  * them all in one session while it keeps it.
  */
@@ -47,7 +47,7 @@ export interface ConversationOptions {
 
 /**
  * A failure the answer already ends with marks the answer failed; any other failure goes on a turn of its
- * own. The work line settles once no tool call is running, and the wait shows again; it shows again too
+ * own. A call's line settles when the call ends, and the wait shows again once no call is running; it shows again too
  * while the model reasons. A call still being written says how many characters of its text have arrived.
  */
 export function useConversation(options: ConversationOptions): Conversation {
@@ -59,7 +59,7 @@ export function useConversation(options: ConversationOptions): Conversation {
     if (!question || isAnswerPending.value) return
     put({ id: nextId(), voice: 'prompt', text: question })
 
-    const work = createWorkLine({ put, drop, paths, waitWords: words.thinking }, nextId(), nextId())
+    const work = createWorkLine({ put, drop, paths, waitWords: words.thinking, nextId }, nextId())
     work.setWaiting(true)
     const flight = startFlight(work.clear)
     const answer = createAnswer({ put, drop, nextId }, paint)
@@ -285,25 +285,28 @@ const isEnded = (status: acp.ToolCallStatus | undefined): boolean =>
 
 function endCall(id: string, context: FrameContext): void {
   context.calls.delete(id)
+  context.work.end(id)
   if (context.calls.size > 0) return
-  context.work.settle()
   context.work.setWaiting(true)
+}
+
+function endCalls(context: FrameContext): void {
+  for (const id of context.calls) context.work.end(id)
+  context.calls.clear()
 }
 
 function applyMessageChunk(text: string, context: FrameContext): void {
   if (text === '') return
-  const { answer, work, calls } = context
-  calls.clear()
+  const { answer, work } = context
+  endCalls(context)
   work.setWaiting(false)
-  if (!answer.isOpen()) work.dropWorkLine()
   answer.say(text)
 }
 
 function applyThought(context: FrameContext): void {
-  const { answer, work, calls } = context
-  calls.clear()
+  const { answer, work } = context
+  endCalls(context)
   answer.settle()
-  work.dropWorkLine()
   work.setWaiting(true)
 }
 
@@ -313,7 +316,8 @@ function applyToolCallUpdate(change: acp.ToolCallUpdate, context: FrameContext):
     return
   }
   const written = change.diffs.reduce((count, diff) => count + [...diff.newText].length, 0)
-  if (written > 0 && context.calls.has(change.toolCallId)) context.work.write(written)
+  if (written > 0 && context.calls.has(change.toolCallId))
+    context.work.write(change.toolCallId, written)
 }
 
 function applyToolCall(call: acp.ToolCall, context: FrameContext): void {
@@ -321,7 +325,7 @@ function applyToolCall(call: acp.ToolCall, context: FrameContext): void {
   answer.settle()
   work.setWaiting(false)
   calls.add(call.toolCallId)
-  work.reach({
+  work.reach(call.toolCallId, {
     title: call.title,
     subject: call.content[0] ?? '',
     path: call.locations[0]?.path ?? '',
