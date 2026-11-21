@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * The views of one side of a node, drawn at the node in the order the loader sorts them (the slot `order`,
- * then the plugin id), each in its own centered row and given the path of the note. The rows are one column,
+ * then the plugin id), each in its own centered row and given the path of the note. The rows are one column, spaced only between rows that draw something (an empty row adds no gap),
  * the group; its element is emitted so its height can be measured, and only while a widget draws something:
  * a side whose widgets draw nothing keeps no room. The plex adds no gap around the widgets: a view that has
  * content keeps its own gap to the node. The views wrap at `width`, the width the arrangement reserves for them,
@@ -38,7 +38,7 @@ const EXTENT = 480
 
 const rows = ref<HTMLElement | null>(null)
 const drawn = useDrawnWidgets(rows, (element) => emit('widgets', element))
-const { isDrawing } = drawn
+const { isDrawing, filled } = drawn
 const loading = useWidgetsLoading(props.clock, drawn, (isReady) => emit('ready', isReady))
 
 const getTop = () =>
@@ -64,6 +64,7 @@ const getTop = () =>
           v-for="entry in entries"
           :key="entry.key"
           class="plex__widget"
+          :class="{ 'plex__widget--filled': filled.has(entry.key) }"
           :data-plex-widget="entry.key"
         >
           <PlexWidgetEntry :entry="entry" :loading="loading" :path="path" />
@@ -94,7 +95,6 @@ const getTop = () =>
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--widgets-gap);
 }
 
 .plex__widgets-group {
@@ -103,6 +103,10 @@ const getTop = () =>
 
 .plex__widget:empty {
   display: none;
+}
+
+.plex__widget--filled ~ .plex__widget--filled {
+  margin-block-start: var(--widgets-gap);
 }
 
 .plex__widget {
