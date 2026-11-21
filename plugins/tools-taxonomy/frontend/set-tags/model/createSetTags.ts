@@ -1,7 +1,8 @@
 import type { Api, CommandRegistration, PickerHost, PickerItem } from '@numen/plugin-sdk'
 import type { SetTagsRequest, SetTagsResult, TagList, TagsByPath } from '../../types'
 import { getCreateTagTitle, TAG_PLACEHOLDER, TAGS_TITLE } from '../../words'
-import { getPickerState, getTagKey } from '../lib/pickerState'
+import { getPickerState } from '../lib/pickerState'
+import { getTagKey } from '../../lib/tagKey'
 import { getTagColor } from '../../lib/color'
 
 /** What the command Set tags reads and writes through. */

@@ -9,6 +9,7 @@ Reads the tags of your notes from their frontmatter, finds notes by tag in searc
 - **Tag a note**: Write the tags of a note under the key `tags` of its frontmatter, as a list (`tags: [Projects/Web, River]`) or as one tag (`tags: River`).
 - **Nest tags**: A slash puts a tag under another: `Projects/Web` is under `Projects`, and a note tagged `Projects/Web` counts for both.
 - **See the tags of a file in the file tree**: A file that has tags shows them as up to four colored dots at the end of its row, and the count of the rest as `+3` when there are more. Hovering the dots shows every tag. A tag has the same color in every file.
+- **Delete a tag**: **Delete tag** in the command palette lists the tags the notes have, each with the number of notes, and removes the one you pick from every note that has it, in one write. The tags nested under it and the rest of the note stay as they are, and a note left with no tag loses the key `tags`. A note that cannot be written keeps the tag and the command reports it.
 - **Ask an agent about your tags**: An agent lists the tags of the vault with the tool `tag_list`, the whole tree or the tags under one tag.
 - **Find notes by tag in a query**: A query of the search language takes `hasTag("Projects")` for the notes tagged `Projects` or a tag nested under it, `hasTagExactly("Projects")` for the notes tagged `Projects` itself, and `hasAnyTag()` for the notes with any tag, as in `hasTag("Projects") && meaning("deadline")` or `!hasAnyTag() && kind == "note"`.
 

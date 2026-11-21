@@ -8,6 +8,7 @@ import { createFileTags } from './file-tags'
 import { createPlexTags } from './plex-tags'
 import { createTagMap } from './model/createTagMap'
 import { createSetTags } from './set-tags'
+import { createDeleteTag } from './delete-tag'
 
 /** The id the manifest places in the slot fileTree.rowEnd. */
 const FILE_TAGS_VIEW = 'file-tags'
@@ -21,6 +22,9 @@ export const activate = (plugin: PluginContext, host: HostServices): void => {
   plugin.register.slotView({ id: FILE_TAGS_VIEW, component: createFileTags(tagMap) })
   plugin.register.slotView({ id: PLEX_TAGS_VIEW, component: createPlexTags(tagMap) })
   plugin.identity.subscriptions.push({ dispose: () => tagMap.stop() })
+  plugin.register.command(
+    createDeleteTag({ api, setTags: tagMap.setTags, beginWrite: tagMap.beginWrite }),
+  )
   const { picker } = host.ui
   if (picker) {
     const setTags = createSetTags({
