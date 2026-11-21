@@ -12,7 +12,7 @@ import {
   writeSlotRows,
   type SlotRow,
 } from '../../lib/slotLayout'
-import { getRowShifts } from '../../lib/slotDrag'
+import { clampRowOffset, getDropIndex, getRowShifts, type RowSpan } from '../../lib/slotDrag'
 import type { SlotGroup } from '../../types'
 import PluginSlotRow from './PluginSlotRow.vue'
 
@@ -30,17 +30,17 @@ const emit = defineEmits<{
 const DRAG_THRESHOLD = 4
 interface Pressed {
   group: SlotGroup
-  list: HTMLElement | null
+  spans: readonly RowSpan[]
   key: string
   startY: number
-  pitch: number
 }
 let pressed: Pressed | null = null
 
 const drag = usePressDrag<number, number>({
   getThreshold: () => DRAG_THRESHOLD,
   getClock: () => browserClock,
-  getDropTargetAt: (_from, point) => findIndexAt(point.y),
+  getDropTargetAt: (from, point) =>
+    pressed ? getDropIndex(pressed.spans, from, point.y - pressed.startY) : null,
   commit: (from, to) => {
     if (pressed && to !== null)
       onChange(pressed.group, moveSlotRow(rowsOf(pressed.group), from, to))
@@ -52,9 +52,11 @@ function onGripPress(group: SlotGroup, at: number, event: PointerEvent): void {
   if (event.button !== 0) return
   const grip = event.currentTarget as HTMLElement | null
   const list = grip?.closest('ul') ?? null
-  const item = grip?.closest('li')
-  const pitch = item ? measureRect(item).height : 0
-  pressed = { group, list, key: rowsOf(group)[at]?.key ?? '', startY: event.clientY, pitch }
+  const spans = Array.from(list?.children ?? [], (one) => {
+    const { top, height } = measureRect(one)
+    return { top, height }
+  })
+  pressed = { group, spans, key: rowsOf(group)[at]?.key ?? '', startY: event.clientY }
   drag.startPress(at, event)
 }
 
@@ -72,13 +74,6 @@ function onChange(group: SlotGroup, rows: readonly SlotRow[]): void {
 /* --------------------------------- Helpers -------------------------------- */
 const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, props.layout)
 
-function findIndexAt(y: number): number | null {
-  const items = Array.from(pressed?.list?.children ?? [])
-  if (items.length === 0) return null
-  const found = items.findIndex((one) => y < measureRect(one).bottom)
-  return found < 0 ? items.length - 1 : found
-}
-
 const isHeld = (group: SlotGroup, key: string): boolean =>
   pressed?.group === group && pressed.key === key && drag.dragging.value?.hasMoved === true
 
@@ -92,8 +87,13 @@ function getOffset(group: SlotGroup, key: string, at: number): number {
   const point = drag.position.value
   const from = drag.dragging.value?.item
   if (!pressed || pressed.group !== group || !point || from === undefined) return 0
-  if (key === pressed.key) return point.y - pressed.startY
-  const shifts = getRowShifts(rowsOf(group).length, from, drag.at.value ?? from, pressed.pitch)
+  if (key === pressed.key) return clampRowOffset(pressed.spans, from, point.y - pressed.startY)
+  return getShift(group, from, at)
+}
+
+function getShift(group: SlotGroup, from: number, at: number): number {
+  const pitch = pressed?.spans[from]?.height ?? 0
+  const shifts = getRowShifts(rowsOf(group).length, from, drag.at.value ?? from, pitch)
   return shifts[at] ?? 0
 }
 
@@ -157,7 +157,7 @@ function getRowStyle(
 .plugin-slots__row--held {
   position: relative;
   z-index: 1;
-  transition: transform var(--numen-motion) var(--numen-easing);
+  transition: none;
 }
 
 .plugin-slots__row--lifted {
@@ -173,7 +173,6 @@ function getRowStyle(
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .plugin-slots__row--held,
   .plugin-slots__row--shifting,
   .plugin-slots-move {
     transition: none;

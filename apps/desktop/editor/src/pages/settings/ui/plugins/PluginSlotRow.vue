@@ -64,7 +64,7 @@ const emit = defineEmits<{
 }
 
 .plugin-slots__grip:focus-visible {
-  outline: var(--numen-stroke) solid var(--numen-accent);
+  outline: none;
 }
 
 .plugin-slots__grip-icon {
