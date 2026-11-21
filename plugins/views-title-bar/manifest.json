@@ -9,7 +9,7 @@
   "contributes": {
     "category": "views",
     "slotPoints": [
-      { "slot": "titleBar.commands", "title": "Buttons" },
+      { "slot": "titleBar.commands", "title": "Actions" },
       { "slot": "titleBar.status", "title": "Status views" }
     ],
     "slots": [{ "slot": "titleBar", "view": "bar", "title": "Title bar" }]
