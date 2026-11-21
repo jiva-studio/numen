@@ -6,11 +6,14 @@ import PlexBoardSlot from './PlexBoardSlot.vue'
 const control = (name: string) =>
   defineComponent({ render: () => h('button', { 'data-control': name }, name) })
 
+const board = { board: 'plex:1', path: 'Root.md', go: () => undefined }
+
 describe('PlexBoardSlot', () => {
   it('draws its views in order in the place given', () => {
     const wrapper = mount(PlexBoardSlot, {
       props: {
         place: 'bottom',
+        ...board,
         entries: [
           { key: 'a/view/one', component: control('one') },
           { key: 'b/view/two', component: control('two') },
@@ -23,8 +26,25 @@ describe('PlexBoardSlot', () => {
   })
 
   it('draws nothing without views', () => {
-    const wrapper = mount(PlexBoardSlot, { props: { place: 'top', entries: [] } })
+    const wrapper = mount(PlexBoardSlot, { props: { place: 'top', entries: [], ...board } })
 
     expect(wrapper.find('.plex-board').exists()).toBe(false)
+  })
+
+  it('gives each view the board key, the path of the note in front and go', () => {
+    const go = () => undefined
+    const probe = defineComponent({
+      props: { board: String, path: String, go: Function },
+      render: () => h('i', { 'data-probe': '' }),
+    })
+    const wrapper = mount(PlexBoardSlot, {
+      props: { place: 'top', entries: [{ key: 'a/view/one', component: probe }], ...board, go },
+    })
+
+    expect(wrapper.findComponent(probe).props()).toStrictEqual({
+      board: 'plex:1',
+      path: 'Root.md',
+      go,
+    })
   })
 })

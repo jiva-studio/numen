@@ -428,6 +428,27 @@ describe('a node of an earlier picture that is still on the screen', () => {
   })
 })
 
+describe('the board given to the views of its slots', () => {
+  it('names the board by its tab and follows the note in front of it', async () => {
+    const plex = tab('Root.md', ['Heat.md'])
+    const { board } = plex.state.canvas.widgets
+
+    await plex.state.canvas.view.go('Other.md')
+    await settle()
+
+    expect([board.key, board.here.value]).toStrictEqual(['plex:1', 'Other.md'])
+  })
+
+  it('moves the board to a note when go is called', async () => {
+    const plex = tab('Root.md', ['Heat.md'])
+
+    plex.state.canvas.widgets.board.go('Heat.md')
+    await settle()
+
+    expect(plex.state.canvas.widgets.board.here.value).toBe('Heat.md')
+  })
+})
+
 describe('notes dragged in and dropped over the picture', () => {
   it('writes the link into the note the plex relies on, naming the dragged one second', async () => {
     const one = tab('Root.md', ['Child.md'])

@@ -28,6 +28,11 @@ const { look } = props.state
 
 const type = useTypeSize()
 const input = getInputStrategies(hasTouchPointer())
+const boardProps = computed(() => {
+  const { board } = props.state.canvas.widgets
+  return { board: board.key, path: board.here.value, go: board.go }
+})
+
 const options = computed(() => getPlexOptions(look, type.value))
 
 const {
@@ -121,7 +126,11 @@ function onDismissLinkInspector() {
       {{ props.state.canvas.view.error.value }}
     </p>
 
-    <PlexBoardSlot place="top" :entries="props.state.canvas.widgets.boardTop.value" />
+    <PlexBoardSlot
+      place="top"
+      :entries="props.state.canvas.widgets.boardTop.value"
+      v-bind="boardProps"
+    />
 
     <!-- Until the first graph lands, an empty plex and one no one has
          answered for yet are drawn the same way. -->
@@ -169,7 +178,11 @@ function onDismissLinkInspector() {
       </template>
     </Plex>
 
-    <PlexBoardSlot place="bottom" :entries="props.state.canvas.widgets.boardBottom.value" />
+    <PlexBoardSlot
+      place="bottom"
+      :entries="props.state.canvas.widgets.boardBottom.value"
+      v-bind="boardProps"
+    />
 
     <Menu
       v-if="menu"
