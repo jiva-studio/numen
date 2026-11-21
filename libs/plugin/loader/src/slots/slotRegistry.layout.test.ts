@@ -1,4 +1,5 @@
 /** What the plugin that draws a slot keeps of its entries. Every plugin here is invented. */
+import { nextTick, shallowRef } from 'vue'
 import { describe, expect, it } from 'vitest'
 import { createSlotRegistry, type DeclaredSlotEntry } from './slotRegistry'
 import type { SlotLayout } from './slotLayout'
@@ -81,5 +82,35 @@ describe('the layout of a slot of commands', () => {
   it('leaves out a hidden command', () => {
     const layout = { [BUTTONS]: [{ id: 'org.example.a/command/org.example.a:one', hidden: true }] }
     expect(readButtons(layout)).toStrictEqual(['org.example.b:two'])
+  })
+})
+
+describe('the layout of a slot while it is watched', () => {
+  it('takes a hidden entry out and brings it back as the layout changes', async () => {
+    const layout = shallowRef<SlotLayout | undefined>(undefined)
+    const registry = createSlotRegistry({
+      getEntries: () => entries,
+      drawers: {
+        getPoints: () => [{ pluginId: DRAWER, slot: SLOT_NAME, title: 'Below' }],
+        getLayout: (pluginId) => (pluginId === DRAWER ? layout.value : undefined),
+      },
+      findCommand: () => undefined,
+      findView: (pluginId, view) => ({ name: `${pluginId}-${view}` }),
+    })
+    const seen: string[][] = []
+    registry.watchEntries(SLOT_NAME, (items) =>
+      seen.push(items.map((one) => (one.kind === 'view' ? one.view : one.kind))),
+    )
+
+    layout.value = { [SLOT_NAME]: [{ id: KEY('b', 'two'), hidden: true }] }
+    await nextTick()
+    layout.value = { [SLOT_NAME]: [{ id: KEY('b', 'two') }] }
+    await nextTick()
+
+    expect(seen).toStrictEqual([
+      ['one', 'two', 'three'],
+      ['one', 'three'],
+      ['two', 'one', 'three'],
+    ])
   })
 })
