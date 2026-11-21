@@ -509,7 +509,7 @@ jobs:
           mkdir -p "$staged"
 
           tar xzf "$RUNNER_TEMP"/built/numen_*_linux_amd64.tar.gz \
-            -C "$staged" numen numen-flashcards
+            -C "$staged" numen numen-flashcards plugins
           cp -r "$at/icons" "$staged/"
           cp "$at"/flatpak/* "$staged/"
 
@@ -589,6 +589,8 @@ jobs:
 
           tar xzf "$RUNNER_TEMP"/built/numen_*_linux_amd64.tar.gz -C "$staged"
           mv "$staged/numen" "$staged/numen-flashcards" "$staged/bin/"
+          mkdir -p "$staged/lib/numen"
+          mv "$staged/plugins" "$staged/lib/numen/plugins"
           printf '%s' "$VERSION" > "$staged/version"
 
           cp "$at/numen.desktop" "$at/numen-flashcards.desktop" \

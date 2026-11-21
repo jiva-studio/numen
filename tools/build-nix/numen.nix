@@ -34,7 +34,7 @@ stdenv.mkDerivation {
     hash = release.hash;
   };
 
-  # The archive holds the two binaries and nothing around them.
+  # The archive holds the two binaries, the plugins and the share tree.
   sourceRoot = ".";
 
   nativeBuildInputs = [
@@ -73,6 +73,9 @@ stdenv.mkDerivation {
 
     install -Dm755 numen -t $out/bin
     install -Dm755 numen-flashcards -t $out/bin
+
+    mkdir -p $out/lib/numen
+    cp -r plugins $out/lib/numen/plugins
 
     install -Dm644 ${assets}/numen.desktop -t $out/share/applications
     install -Dm644 ${assets}/numen-flashcards.desktop -t $out/share/applications
