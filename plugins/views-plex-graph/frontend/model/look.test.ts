@@ -20,6 +20,7 @@ const DEFAULTS = {
   outlineThickness: 1,
   lineCurvature: 0.55,
   noteRoom: 0,
+  alignToGrid: false,
   references: 'both',
 }
 
@@ -37,6 +38,7 @@ const CHOSEN = {
   outlineThickness: 1.5,
   lineCurvature: 0.2,
   noteRoom: 12,
+  alignToGrid: true,
   references: 'outgoing',
 }
 

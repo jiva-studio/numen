@@ -263,6 +263,14 @@
       "min": 0,
       "max": 40,
       "step": 1
+    },
+    {
+      "key": "alignToGrid",
+      "type": "boolean",
+      "title": "Align notes to a grid",
+      "description": "Keep the notes of a side in rows, whatever views they carry",
+      "default": false,
+      "details": "Give every note of a side the room of the one with the most over its pill and the most under it, so the pills of a row line up when notes carry views of different heights. Off: a note keeps only the room its own views need."
     }
   ],
   "frontend": {}

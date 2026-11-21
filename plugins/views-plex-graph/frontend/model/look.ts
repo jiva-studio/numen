@@ -19,6 +19,9 @@ const ACTIVATE_CREATED = 'activateCreated'
 /** The key the manifest declares Activate a note after linking under. */
 const ACTIVATE_LINKED = 'activateLinked'
 
+/** The key the manifest declares Align notes to a grid under. */
+const ALIGN_TO_GRID = 'alignToGrid'
+
 /** The key the manifest declares References under. */
 const REFERENCES = 'references'
 
@@ -59,6 +62,9 @@ const parseActivateLinked = (value: Unvalidated): boolean =>
 const parseHighlightLinks = (value: Unvalidated): boolean =>
   typeof value === 'boolean' ? value : true
 
+const parseAlignToGrid = (value: Unvalidated): boolean =>
+  typeof value === 'boolean' ? value : false
+
 const parseNumber = (value: Unvalidated, range: NumberRange): number =>
   typeof value === 'number' && Number.isFinite(value)
     ? Math.min(Math.max(value, range.min), range.max)
@@ -78,6 +84,8 @@ export function readLook(context: Pick<PluginContext, 'settings'>): PlexLook {
     highlightLinks: followSetting(context, HIGHLIGHT_LINKS, parseHighlightLinks),
     activateCreated: followSetting(context, ACTIVATE_CREATED, parseActivateCreated),
     activateLinked: followSetting(context, ACTIVATE_LINKED, parseActivateLinked),
+
+    alignToGrid: followSetting(context, ALIGN_TO_GRID, parseAlignToGrid),
     references: followSetting(context, REFERENCES, parseReferences),
   }
 }

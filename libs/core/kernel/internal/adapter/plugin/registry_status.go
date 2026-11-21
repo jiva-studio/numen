@@ -3,6 +3,8 @@ package plugin
 import (
 	"slices"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
@@ -87,9 +89,21 @@ func (r *Registry) GetPluginInfos() []plugindomain.Info {
 			HasBackend:     p.Manifest.HasBackend(),
 			Readers:        r.readers.ListReaderInfos(enabled, p.Manifest),
 			SettingsViews:  slices.Clone(p.Manifest.SettingsViews),
-			Contributions:  plugindomain.ListContributions(p.Manifest),
+			Contributions:  r.listContributions(p.Manifest),
 			IsOffByDefault: p.Manifest.IsOffByDefault,
 		})
 	}
 	return result
+}
+
+func (r *Registry) listContributions(m manifest.Manifest) []plugindomain.Contribution {
+	declared := plugindomain.ListContributions(m)
+	if r.tools == nil {
+		return declared
+	}
+	listed := r.tools(m.ID)
+	if len(listed) == 0 {
+		return declared
+	}
+	return append(declared, plugindomain.Contribution{Kind: plugindomain.ContributionTools, Items: listed})
 }
