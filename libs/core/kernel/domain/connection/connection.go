@@ -143,8 +143,10 @@ type Row struct {
 
 // RowSetting is the setting of rows a plugin uses for an operation. Rows are the rows the person chose, in
 // their order. IsDiscovering is whether, while Rows is empty, the plugin uses every connection whose type
-// serves the operation.
+// serves the operation. IsDetectedOnly is whether, while Rows is empty, the plugin uses the connections
+// detected on this computer that serve the operation, and no connection the person made.
 type RowSetting struct {
-	Rows          []Row
-	IsDiscovering bool
+	Rows           []Row
+	IsDiscovering  bool
+	IsDetectedOnly bool
 }

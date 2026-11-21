@@ -169,7 +169,7 @@
       "type": "connections",
       "title": "Reranking",
       "description": "Services that order the results of a query, tried in order",
-      "details": "Services that order the results of a query with a rerank stage by relevance, tried in order until one answers. With an OpenRouter key, add an OpenRouter connection and choose the model mongodb/rerank-3: it ranks best and answers in a few seconds. Without one, choose the Local reranker, which runs on this machine and takes tens of seconds for each run.",
+      "details": "Services that order the results of a query with a rerank stage by relevance, tried in order until one answers. With an OpenRouter key, add an OpenRouter connection and choose the model mongodb/rerank-3: it ranks best and answers in a few seconds. Without one, the Local reranker, which runs on this machine and takes tens of seconds for each run, is used while no service is chosen here; choosing a service replaces it.",
       "operations": ["llm.rerank"],
       "max": 5
     },
