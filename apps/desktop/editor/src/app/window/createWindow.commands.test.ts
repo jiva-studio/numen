@@ -501,6 +501,7 @@ describe('the parts of the window wired together', () => {
     const tabMenuWriter = vi.fn()
     const customTabMenu = createWindowTabMenu({
       windowTabs: base.tabs.windowTabs,
+      tabLinks: base.tabs.tabLinks,
       moves: base.tabParts.moves,
       pluginHost: {
         slots: {
