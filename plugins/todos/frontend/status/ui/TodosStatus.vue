@@ -48,17 +48,6 @@ watch(
   },
 )
 
-/* --------------------------------- Helpers -------------------------------- */
-const getKey = (task: Task): string => `${task.path}:${task.line}`
-
-function isRecurring(task: Task): boolean {
-  // Ticking a recurring task moves its due date, which the backend does not do yet.
-  return task.recurrence !== '' || task.issues.includes('invalidRecurrence')
-}
-
-const isTickable = (task: Task): boolean =>
-  !isRecurring(task) && !pendingTicks.value.has(getKey(task))
-
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {
   isOpen.value = !isOpen.value
@@ -71,6 +60,17 @@ function onClose() {
 function onTick(task: Task) {
   tick(task).catch(() => undefined)
 }
+
+/* --------------------------------- Helpers -------------------------------- */
+const getKey = (task: Task): string => `${task.path}:${task.line}`
+
+function isRecurring(task: Task): boolean {
+  // Ticking a recurring task moves its due date, which the backend does not do yet.
+  return task.recurrence !== '' || task.issues.includes('invalidRecurrence')
+}
+
+const isTickable = (task: Task): boolean =>
+  !isRecurring(task) && !pendingTicks.value.has(getKey(task))
 
 async function tick(task: Task) {
   if (!isTickable(task)) return

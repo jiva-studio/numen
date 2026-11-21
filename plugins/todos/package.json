@@ -1,6 +1,6 @@
 {
   "name": "@numen/todos",
-  "version": "2026.11.2",
+  "version": "2026.11.3",
   "private": true,
   "type": "module",
   "description": "Todos plugin frontend for Numen",
@@ -18,9 +18,13 @@
     "@numen/ui": "workspace:*"
   },
   "peerDependencies": {
+    "@codemirror/state": "^6.7.1",
+    "@codemirror/view": "^6.43.9",
     "vue": "^3.5.0"
   },
   "devDependencies": {
+    "@codemirror/state": "^6.7.1",
+    "@codemirror/view": "^6.43.9",
     "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^6.0.10",
     "@vue/test-utils": "^2.4.6",

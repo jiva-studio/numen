@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { TODOS_VIEW } from './index'
+import { TASKS_EXTENSION } from './editor'
 import { SERVICE } from './api/todos'
 
 interface Manifest {
@@ -12,6 +13,9 @@ interface Manifest {
     readonly tabKinds?: readonly unknown[]
     readonly commands?: readonly unknown[]
     readonly slots?: readonly { slot: string; view?: string }[]
+    readonly editor?: {
+      readonly extensions: readonly { id: string; title: string; description: string }[]
+    }
   }
   readonly settings?: readonly { key: string }[]
 }
@@ -35,6 +39,7 @@ describe('the manifest of the todos plugin', () => {
   })
 
   it('declares the view the frontend registers in the title bar', () => {
+    expect(manifest.contributes.editor?.extensions.map((one) => one.id)).toEqual([TASKS_EXTENSION])
     expect(manifest.contributes.slots?.map((one) => [one.slot, one.view])).toEqual([
       ['titleBar.status', TODOS_VIEW],
     ])

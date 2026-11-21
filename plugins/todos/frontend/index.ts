@@ -3,12 +3,18 @@
  * tasks due today, and a popover with the lists.
  */
 import { defineComponent, h } from 'vue'
-import { definePlugin, type PluginContext, type WorkspaceHost } from '@numen/plugin-sdk'
+import {
+  definePlugin,
+  type HostServices,
+  type PluginContext,
+  type WorkspaceHost,
+} from '@numen/plugin-sdk'
 import { todosApi, type TodosApi } from './api/wire'
 import { createRefreshRelay } from './model/createRefreshRelay'
 import type { Timer } from './model/timer'
 import { useTaskFeed, type TaskFeed } from './model/useTaskFeed'
 import { TodosStatus } from './status'
+import { createTaskEditorExtension, TASKS_EXTENSION } from './editor'
 
 /** The id the manifest declares the title bar view under. */
 export const TODOS_VIEW = 'status'
@@ -42,8 +48,12 @@ function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost
   })
 }
 
-export const activate = (context: PluginContext, parts: TodosParts = browserParts): void => {
-  const { workspace } = context.ui
+export const activate = (
+  plugin: PluginContext,
+  host: HostServices,
+  parts: TodosParts = browserParts,
+): void => {
+  const { workspace } = host.ui
   if (!workspace) {
     throw new Error('the todos plugin needs the window it is drawn in')
   }
@@ -55,13 +65,21 @@ export const activate = (context: PluginContext, parts: TodosParts = browserPart
   // depend on the stream alone.
   const relay = createRefreshRelay(parts.api, parts.timer, refreshSummary)
 
-  context.register.slotView({
+  plugin.register.slotView({
     id: TODOS_VIEW,
     component: createTodosView(feed, parts.api, workspace),
   })
-  context.events.onVaultChange((event) => relay.push(event))
+  plugin.register.editorExtension?.({
+    id: TASKS_EXTENSION,
+    extension: createTaskEditorExtension({
+      api: parts.api,
+      getToday: () => workspace.window.getToday(),
+      showError: (message) => workspace.messages.showError(message),
+    }),
+  })
+  host.events.onVaultChange((event) => relay.push(event))
   window.addEventListener('focus', refreshSummary)
-  context.plugin.subscriptions.push({
+  plugin.identity.subscriptions.push({
     dispose: () => {
       window.removeEventListener('focus', refreshSummary)
       relay.dispose()

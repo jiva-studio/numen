@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import type { WorkspaceHost } from '@numen/plugin-sdk'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import {
   createFakeApi,
   createFakeTimer,
@@ -37,9 +37,10 @@ const setup = (init: Pick<FakeInit, 'setTaskDone'> = {}) => {
     files: { open },
     messages: { showError },
   } as unknown as WorkspaceHost
-  const context = createMockPluginContext({ pluginId: 'md.numen.todos', workspace })
-  activate(context, { api: fake.api, timer: clock.timer })
-  return { context, fake, clock, open, showError }
+  const context = createMockPluginContext({ pluginId: 'md.numen.todos' })
+  const host = createMockHostServices({ workspace })
+  activate(context, host, { api: fake.api, timer: clock.timer })
+  return { context, host, fake, clock, open, showError }
 }
 
 let view: VueWrapper | null = null
@@ -63,7 +64,10 @@ describe('the todos frontend', () => {
     const context = createMockPluginContext({ pluginId: 'md.numen.todos' })
 
     expect(() =>
-      activate(context, { api: createFakeApi().api, timer: createFakeTimer().timer }),
+      activate(context, createMockHostServices(), {
+        api: createFakeApi().api,
+        timer: createFakeTimer().timer,
+      }),
     ).toThrow()
   })
 
@@ -144,10 +148,10 @@ describe('the todos frontend', () => {
   })
 
   it('sends the changed paths of the vault once, after 400 milliseconds', () => {
-    const { context, fake, clock } = setup()
+    const { host, fake, clock } = setup()
 
-    context.events.emitVaultChange({ paths: ['Daily.md'] })
-    context.events.emitVaultChange({ paths: ['Projects/Home.md'] })
+    host.events.emitVaultChange({ paths: ['Daily.md'] })
+    host.events.emitVaultChange({ paths: ['Projects/Home.md'] })
     expect(fake.calls.refreshIndex).toEqual([])
     expect(clock.waits.map((one) => one.delayMs)).toEqual([400])
     clock.fire()
@@ -158,18 +162,17 @@ describe('the todos frontend', () => {
   })
 
   it('asks for a full check at once when the vault reports a change with no paths', () => {
-    const { context, fake } = setup()
-
-    context.events.emitVaultChange({})
+    const { host, fake } = setup()
+    host.events.emitVaultChange({})
 
     expect(fake.calls.refreshIndex).toEqual([{ paths: [], renamed: [] }])
   })
 
   it('stops following the backend and sends nothing more when the plugin stops', async () => {
-    const { context, fake, clock } = setup()
+    const { context, host, fake, clock } = setup()
     fake.push({ revision: 1, isReady: true })
     await settle()
-    context.events.emitVaultChange({ paths: ['Daily.md'] })
+    host.events.emitVaultChange({ paths: ['Daily.md'] })
 
     context.dispose()
     await settle()
@@ -183,7 +186,7 @@ describe('the todos frontend', () => {
   })
 
   it('updates the chip and the open popover once the backend has checked a changed note', async () => {
-    const { context, fake, clock } = setup()
+    const { context, host, fake, clock } = setup()
     fake.push({ revision: 1, isReady: true })
     await settle()
     view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
@@ -201,7 +204,7 @@ describe('the todos frontend', () => {
         revision: 2,
       },
     })
-    context.events.emitVaultChange({ paths: ['Projects/Home.md'] })
+    host.events.emitVaultChange({ paths: ['Projects/Home.md'] })
     clock.fire()
     await settle()
     await settle()
@@ -211,5 +214,13 @@ describe('the todos frontend', () => {
     const rows = view.findAll('li')
     expect(rows).toHaveLength(1)
     expect(rows[0]?.text()).toContain('water the plants')
+  })
+})
+
+describe('the editor extension of the todos plugin', () => {
+  it('registers the extension the manifest declares', () => {
+    const { context } = setup()
+
+    expect(context.getRegisteredEditorExtensions().map((one) => one.id)).toEqual(['tasks'])
   })
 })
