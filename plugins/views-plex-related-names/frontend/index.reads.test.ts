@@ -324,3 +324,48 @@ describe('the views when the read of a note fails', () => {
     expect(getReads()).toHaveLength(2)
   })
 })
+
+describe('the notes the plex draws as nodes', () => {
+  it('are not named by the views of the other nodes', async () => {
+    const { show, links } = setupRig()
+    links['notes/Pear rows.md'] = {
+      'notes/Orchard plan.md': 'parent',
+      'notes/Rootstock list.md': 'child',
+      'notes/Compost.md': 'child',
+    }
+    const above = show('parents', 'notes/Pear rows.md')
+    const below = show('related', 'notes/Pear rows.md')
+    show('related', 'notes/Rootstock list.md')
+    await flushPromises()
+
+    expect(getNames(above)).toStrictEqual(['Orchard plan'])
+    expect(getNames(below)).toStrictEqual(['Compost'])
+  })
+
+  it('are named again once their node leaves the plex', async () => {
+    const { show, links } = setupRig()
+    links['notes/Pear rows.md'] = { 'notes/Rootstock list.md': 'child' }
+    const below = show('related', 'notes/Pear rows.md')
+    const other = show('related', 'notes/Rootstock list.md')
+    await flushPromises()
+    expect(getNames(below)).toStrictEqual([])
+
+    other.unmount()
+    await flushPromises()
+
+    expect(getNames(below)).toStrictEqual(['Rootstock list'])
+  })
+
+  it('keeps the names that still fit under the limit', async () => {
+    const { show, links } = setupRig({ namesPerNote: 1 })
+    links['notes/Pear rows.md'] = {
+      'notes/Rootstock list.md': 'child',
+      'notes/Compost.md': 'child',
+    }
+    const below = show('related', 'notes/Pear rows.md')
+    show('related', 'notes/Rootstock list.md')
+    await flushPromises()
+
+    expect(getNames(below)).toStrictEqual(['Compost'])
+  })
+})

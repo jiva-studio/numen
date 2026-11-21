@@ -5,6 +5,7 @@ import { listNames } from '../lib/names'
 import type { NamesSide, RelatedName } from '../types'
 import type { NoteLease, NotesReader } from './notesReader'
 import type { NamesSettings } from './settings'
+import type { ShownPaths } from './shownPaths'
 
 /** The command of the window that shows a note in a tab kind. */
 const REVEAL = 'app:file.reveal'
@@ -15,6 +16,7 @@ export interface NamesSource {
   readonly reader: Pick<NotesReader, 'acquire'>
   readonly commands: Pick<CommandsHost, 'run'>
   readonly settings: NamesSettings
+  readonly shown: ShownPaths
   readonly reportFailure: (error: Caught) => void
 }
 
@@ -35,9 +37,18 @@ export function useNames(
   })
   onScopeDispose(() => lease.value.release())
 
+  let unshow = source.shown.add(path())
+  watch(path, (next) => {
+    unshow()
+    unshow = source.shown.add(next)
+  })
+  onScopeDispose(() => unshow())
+
   const names = computed(() => {
     const noteGraph = lease.value.noteGraph.value
-    return noteGraph ? listNames(noteGraph, side, source.settings.namesPerNote.value) : []
+    return noteGraph
+      ? listNames(noteGraph, side, source.settings.namesPerNote.value, source.shown.has)
+      : []
   })
 
   const isLoaded = computed(() => lease.value.isLoaded.value)

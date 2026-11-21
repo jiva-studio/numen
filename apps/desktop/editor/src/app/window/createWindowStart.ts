@@ -133,6 +133,7 @@ export function createWindowStart(deps: WindowStartDeps) {
     views: createWindowViews({ pluginHost, frame }),
     tabMenu: createWindowTabMenu({
       windowTabs,
+      tabLinks: tabs.tabLinks,
       moves: tabParts.moves,
       pluginHost,
       windowCommands: palettes.windowCommands,

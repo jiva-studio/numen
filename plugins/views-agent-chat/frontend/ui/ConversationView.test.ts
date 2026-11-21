@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import ConversationView from './ConversationView.vue'
 import { createAgentConnections } from '../fixtures'
@@ -30,5 +30,34 @@ describe('ConversationView', () => {
 
     expect(document.activeElement).toBe(view.find('textarea').element)
     view.unmount()
+  })
+})
+
+describe('ConversationView models', () => {
+  it('offers the models of the agents of the connections in the composer', async () => {
+    const { host } = createAgentConnections(
+      {},
+      {
+        rows: [
+          {
+            connectionId: 'c-orchard',
+            connectionName: 'Orchard agent',
+            options: {},
+            fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: true }],
+          },
+        ],
+        listOptions: () => [{ value: 'pear-large', title: 'Pear Large', group: '' }],
+      },
+    )
+    const view = mount(ConversationView, { props: { context: { connections: host } } })
+    await flushPromises()
+
+    expect(view.find('.model-selector__pill').text()).toBe('Orchard agent · Pear Large')
+  })
+
+  it('shows no model control where the connections list no agent', () => {
+    const view = mount(ConversationView, { props: { context: { connections } } })
+
+    expect(view.find('.model-selector__pill').exists()).toBe(false)
   })
 })

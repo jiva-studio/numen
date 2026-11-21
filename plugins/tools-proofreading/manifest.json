@@ -8,6 +8,14 @@
   "contributes": {
     "textKinds": [{ "kind": "proofreading", "title": "Proofread text" }],
     "category": "tools",
+    "slots": [
+      {
+        "slot": "fileTree.context",
+        "command": "proofreading.create",
+        "group": "3-text",
+        "order": 20
+      }
+    ],
     "commands": [
       {
         "id": "proofreading.create",

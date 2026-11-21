@@ -929,3 +929,68 @@ func TestRequestAndStartErrorBranches(t *testing.T) {
 		t.Fatalf("expected Create after Close to return errClosed, got %v", err)
 	}
 }
+
+func (s *requestFixture) runFailingInBackground(t *testing.T) {
+	t.Helper()
+	s.model.isBroken = true
+	close(s.blocking.release)
+	if _, err := s.transcriber.StartInBackground(t.Context(), "", lecture); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-s.finishing.failCh:
+	case <-time.After(workDeadline):
+		t.Fatalf("no task failed within %v", workDeadline)
+	}
+	s.transcriber.wg.Wait()
+	s.model.isBroken = false
+}
+
+func (s *requestFixture) getOpenedCount() int {
+	s.model.mu.Lock()
+	defer s.model.mu.Unlock()
+	return s.model.opened
+}
+
+func TestBackgroundStartSkipsUnchangedFailedRecording(t *testing.T) {
+	s := newRequestFixture(t)
+	s.runFailingInBackground(t)
+
+	if _, err := s.transcriber.StartInBackground(t.Context(), "", lecture); err != nil {
+		t.Fatal(err)
+	}
+	s.transcriber.wg.Wait()
+
+	if opened := s.getOpenedCount(); opened != 0 {
+		t.Errorf("the failed recording was opened %d times, want 0", opened)
+	}
+}
+
+func TestBackgroundStartRetriesChangedFailedRecording(t *testing.T) {
+	s := newRequestFixture(t)
+	s.runFailingInBackground(t)
+	s.vault.File(lecture, lectureSound+" edited")
+
+	if _, err := s.transcriber.StartInBackground(t.Context(), "", lecture); err != nil {
+		t.Fatal(err)
+	}
+	s.transcriber.wg.Wait()
+
+	if opened := s.getOpenedCount(); opened != 1 {
+		t.Errorf("the changed recording was opened %d times, want 1", opened)
+	}
+}
+
+func TestStartRetriesFailedRecording(t *testing.T) {
+	s := newRequestFixture(t)
+	s.runFailingInBackground(t)
+
+	if _, err := s.transcriber.Start(t.Context(), "", lecture); err != nil {
+		t.Fatal(err)
+	}
+	s.transcriber.wg.Wait()
+
+	if _, text := s.readLiveVersionAndText(t); text != "first words\nsecond words\n" {
+		t.Errorf("the retried transcript reads %q", text)
+	}
+}

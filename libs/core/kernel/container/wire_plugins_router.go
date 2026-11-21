@@ -32,7 +32,7 @@ import (
 func reportDependencies(watch dependencyReporter, tasks *run.Tasks, record func(domainlogs.Entry)) {
 	show := run.NewDependencyTasks(tasks)
 	watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
-		show.Execute(req.ID, status, func() { watch.CancelDependency(req) })
+		show.Execute(req.ID, req.GetTitle(), status, func() { watch.CancelDependency(req) })
 		supervision.RecordDependencyStatus(record, req.ID, status)
 	})
 }

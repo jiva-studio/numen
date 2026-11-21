@@ -146,7 +146,7 @@ func (p *FileProvisioner) fetch(
 		return "", "", err
 	}
 	primary := filepath.Join(dir, name)
-	title := "Downloading " + req.ID
+	title := "Downloading " + req.GetTitle()
 	var actual string
 	var errs []error
 	for _, address := range source.GetURLs() {

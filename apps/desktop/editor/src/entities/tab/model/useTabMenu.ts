@@ -21,6 +21,8 @@ import type { Caught } from '@/shared/api/errors'
 export interface TabMenuDeps {
   readonly slots?: SlotHost | undefined
   readonly moveCommand: string
+  /** Whether the entry of a command is offered over the tab; an entry not offered is left out of the menu. */
+  isOffered?(this: void, command: string, tab: string): boolean
   /** Runs a command of an entry over the tab; with `itemId`, the one picked, and with `values`, those the entry holds. */
   runCommand?(
     command: string,
@@ -78,9 +80,23 @@ const readTypedTarget = async (
   }
 }
 
+const dropStraySeparators = (items: readonly SlotItem[]): readonly SlotItem[] =>
+  items.filter(
+    (item, index) =>
+      item.kind !== 'separator' ||
+      (index > 0 &&
+        index < items.length - 1 &&
+        items[index - 1]?.kind !== 'separator' &&
+        items[index + 1]?.kind !== 'separator'),
+  )
+
 export function useTabMenu(deps: TabMenuDeps) {
   const getEntries = (target: RunTarget): readonly SlotItem[] =>
-    deps.slots?.getEntries(SLOT.tabStripContext, target) ?? []
+    dropStraySeparators(
+      (deps.slots?.getEntries(SLOT.tabStripContext, target) ?? []).filter(
+        (item) => item.kind !== 'command' || (deps.isOffered?.(item.command, target.tab) ?? true),
+      ),
+    )
   const slotMenu = useSlotMenu<TabMenuTarget>({
     listItems: (command, { target }) => deps.listItems?.(command, target) ?? Promise.resolve([]),
     words: MENU_WORDS,

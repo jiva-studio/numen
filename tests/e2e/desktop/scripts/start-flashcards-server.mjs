@@ -82,7 +82,6 @@ fs.writeFileSync(
         },
       ],
       'md.numen.views.agent.chat': { connections: [NUMEN_AGENT_ROW] },
-      'md.numen.views.flashcards.studio': { agentConnections: [NUMEN_AGENT_ROW] },
       'md.numen.agents.claude': { enabled: false },
       'md.numen.agents.codex': { enabled: false },
       'md.numen.agents.antigravity': { enabled: false },

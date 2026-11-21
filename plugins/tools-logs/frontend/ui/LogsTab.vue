@@ -45,7 +45,8 @@ function onToggleRow(id: number) {
 <template>
   <div class="logs-tab">
     <header class="logs-tab__toolbar">
-      <div class="logs-tab__levels" role="group" :aria-label="words.title">
+      <div class="logs-tab__levels" role="group" :aria-label="words.showLevelLabel">
+        <span class="logs-tab__levels-label">{{ words.showLevelLabel }}</span>
         <button
           v-for="item in levels"
           :key="item.id"
@@ -60,6 +61,7 @@ function onToggleRow(id: number) {
       </div>
 
       <div class="logs-tab__levels" role="group" :aria-label="words.logLevelLabel">
+        <span class="logs-tab__levels-label">{{ words.logLevelLabel }}</span>
         <button
           v-for="item in levels.filter((one) => one.id !== 'all')"
           :key="item.id"

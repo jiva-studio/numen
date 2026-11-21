@@ -12,6 +12,7 @@ import {
 } from '@numen/plugin-sdk'
 import { readSettings } from './model/settings'
 import { createNotesReader } from './model/notesReader'
+import { createShownPaths } from './model/shownPaths'
 import { useNames, type NamesSource } from './model/useNames'
 import type { NamesSide } from './types'
 import RelatedNames from './ui/RelatedNames.vue'
@@ -59,7 +60,13 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     notices.show(error instanceof Error ? error.message : String(error), 'error')
   const reader = createNotesReader({ notes, events: host.events, reportFailure })
   plugin.identity.subscriptions.push({ dispose: reader.dispose })
-  const source: NamesSource = { reader, commands, settings, reportFailure }
+  const source: NamesSource = {
+    reader,
+    commands,
+    settings,
+    shown: createShownPaths(),
+    reportFailure,
+  }
   plugin.register.slotView({ id: PARENTS_VIEW, component: createNamesView(source, 'above') })
   plugin.register.slotView({ id: RELATED_VIEW, component: createNamesView(source, 'below') })
 }

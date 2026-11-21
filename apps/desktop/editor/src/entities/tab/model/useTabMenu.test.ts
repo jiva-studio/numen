@@ -117,6 +117,22 @@ describe('the menu of a tab', () => {
     expect(getEntries).toHaveBeenCalledWith(SLOT.tabStripContext, TARGETS.reef)
   })
 
+  it('leaves out the entry of a command not offered over the tab, and the separators it strands', async () => {
+    const unlink = command('app', 'tab.unlink', 'Unlink tab')
+    const slots = createSlots([DETACH, { kind: 'separator', key: 'separator/1' }, unlink])
+    const menu = useTabMenu({
+      moveCommand: MOVE.command,
+      slots,
+      getTabTarget: (tab) => TARGETS[tab]!,
+      isOffered: (id) => id !== unlink.command,
+    })
+
+    menu.open('reef', { x: 4, y: 8 })
+    await settle()
+
+    expect(menu.menu.value?.items.map((one) => one.id)).toStrictEqual([DETACH.key])
+  })
+
   it('stays closed on a tab the slot holds no entry for', () => {
     const { menu } = setup()
 

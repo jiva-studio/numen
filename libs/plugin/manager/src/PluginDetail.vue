@@ -28,8 +28,6 @@ const props = defineProps<PluginDetailProps>()
 
 const emit = defineEmits<{
   (e: 'back'): void
-  /** The category of the plugin was chosen in the path, by its key. */
-  (e: 'open-category', category: string): void
   (e: 'toggle-enabled', isEnabled: boolean): void
   (e: 'retry'): void
   (e: 'install'): void
@@ -80,9 +78,8 @@ function onBack(): void {
   emit('back')
 }
 
-function onOpen(level: number): void {
-  if (level === 0) emit('back')
-  else emit('open-category', category.value)
+function onOpen(): void {
+  emit('back')
 }
 
 function onToggleEnabled(isEnabled: boolean): void {

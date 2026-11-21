@@ -170,8 +170,8 @@ export const Settings: Story = {
 
 /**
  * The page of a plugin: the toolbar holds the back button, the path from Settings through the
- * category to the plugin, and the state and the switch of the plugin. The category opens the list
- * searched for it.
+ * category to the plugin, and the state and the switch of the plugin. The category returns to the list
+ * with the search kept.
  */
 export const SettingsToolbarOfAPluginPage: Story = {
   render: () => ({
@@ -179,6 +179,7 @@ export const SettingsToolbarOfAPluginPage: Story = {
     setup: () => ({
       state: createSettingsState(createShippedInstallation(), {
         initialPluginId: ref('md.numen.agents.claude'),
+        initialSearchQuery: ref('claude'),
       }),
     }),
     template: `
@@ -201,7 +202,7 @@ export const SettingsToolbarOfAPluginPage: Story = {
 
     await userEvent.click(within(path).getByRole('button', { name: 'Agents' }))
     await expect(await canvas.findByRole('searchbox', { name: 'Search plugins' })).toHaveValue(
-      'category:agents',
+      'claude',
     )
   },
 }

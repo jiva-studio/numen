@@ -20,6 +20,10 @@ export interface DocumentEmit {
   (e: 'change', value: string): void
 }
 
+function getNoteState(props: DocumentOptions): NoteTabState | undefined {
+  return props.state && 'body' in props.state ? props.state : undefined
+}
+
 function getDocumentPath(props: DocumentOptions): string {
   return props.filePath || props.path || props.state?.path || ''
 }
@@ -48,10 +52,10 @@ export function useMarkdownDocument(
 ) {
   const activePath = computed(() => getDocumentPath(props))
 
-  const getInitialBody = (): string => props.modelValue || props.state?.body.value || ''
+  const getInitialBody = (): string => props.modelValue || getNoteState(props)?.body.value || ''
 
   /** A host tab supplies the body from its store, so the editor does not read the file itself. */
-  const isHostOwned = (): boolean => props.state !== undefined
+  const isHostOwned = (): boolean => getNoteState(props) !== undefined
 
   const docContent = ref(getInitialBody())
   const initialContent = ref(getInitialBody())
@@ -61,12 +65,12 @@ export function useMarkdownDocument(
   const loadError = ref('')
   const frontmatterError = computed(() => getFrontmatterError(docContent.value))
 
-  const isLoading = computed(() => props.state?.isLoading.value === true)
+  const isLoading = computed(() => getNoteState(props)?.isLoading.value === true)
 
   const displayErrorMessage = computed<string>(
     () =>
       props.errorMessage?.trim() ||
-      props.state?.errorMessage.value.trim() ||
+      getNoteState(props)?.errorMessage.value.trim() ||
       frontmatterError.value ||
       loadError.value,
   )
@@ -94,10 +98,10 @@ export function useMarkdownDocument(
     )
   }
 
-  watch(editorRef, (editor) => props.state?.attachEditor?.(editor), { immediate: true })
+  watch(editorRef, (editor) => getNoteState(props)?.attachEditor?.(editor), { immediate: true })
 
   onMounted(() => {
-    props.state?.attachEditor?.(editorRef.value)
+    getNoteState(props)?.attachEditor?.(editorRef.value)
     if (!docContent.value && activePath.value && !isHostOwned()) {
       loadContentFromPath(activePath.value)
     }
@@ -118,13 +122,13 @@ export function useMarkdownDocument(
     docContent.value = value
     emit('update:modelValue', value)
     emit('change', value)
-    props.state?.updateBody(value)
+    getNoteState(props)?.updateBody(value)
   }
 
   function onSave() {
     initialContent.value = docContent.value
     emit('save')
-    props.state?.save()
+    getNoteState(props)?.save()
   }
 
   function setContent(value: string) {

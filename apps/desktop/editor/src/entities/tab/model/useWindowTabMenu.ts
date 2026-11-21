@@ -4,11 +4,14 @@
 import type { CommandsHost, CommandTarget as RunTarget, SlotHost } from '@numen/plugin-loader'
 import type { Caught } from '@/shared/api/errors'
 import type { WindowTabs } from './windowTabs'
+import type { TabLinkGroup } from '../lib/links'
 import { useTabMenu, type NoteKind } from './useTabMenu'
 
 /** The tabs of a window, and how the commands of the menu of a tab are read and run. */
 interface WindowTabMenuDeps {
   readonly moveCommand: string
+  readonly unlinkCommand: string
+  readonly tabLinks: { getGroupOf(this: void, tabId: string): TabLinkGroup | null }
   readonly windowTabs: Pick<WindowTabs, 'tabs'>
   readonly slots?: SlotHost | undefined
   readonly commands?: CommandsHost | undefined
@@ -36,6 +39,8 @@ export function useWindowTabMenu(deps: WindowTabMenuDeps) {
   const { windowTabs, slots, commands } = deps
   return useTabMenu({
     moveCommand: deps.moveCommand,
+    isOffered: (command, tab) =>
+      command !== deps.unlinkCommand || deps.tabLinks.getGroupOf(tab) !== null,
     slots,
     runCommand: (command, target, itemId, values) =>
       commands

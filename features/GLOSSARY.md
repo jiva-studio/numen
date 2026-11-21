@@ -302,7 +302,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: A picture of one note in the middle (the focus) and the notes joined to it, as boxes (nodes) and lines (edges). Tab kind `plex`, tab title "Plex", plugin "Plex Graph".
 - States: "Loading…".
 - Actions: `graph.open` "Open plex graph"; `graph.showNote` "Show in plex"; click a node to move the focus; drag a line to link.
-- Texts: setting "Headings per note" of the plugin "Plex Headings" (plugins/views-plex-headings/manifest.json).
+- Texts: setting "Headings per note" of the plugin "Plex Headings Dropdown" (plugins/views-plex-headings-dropdown/manifest.json).
 - Not: "graph" and "map". A node is a note in the plex.
 
 ### reference note
@@ -573,7 +573,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 
 ### theme
 
-- Is: A set of colours for the windows. Plugin "Preset Themes" has twelve: Amber, Ayu, Catppuccin, Cobalt2, Dracula, GitHub, Gruvbox, Monokai, Nord, One Dark, Solarized, Tokyo Night.
+- Is: A set of colours for the windows. Plugin "Preset Themes" has forty-four, most with a light and a dark half, among them Amber, Ayu, Catppuccin, Dracula, GitHub, Gruvbox, Nord, Solarized and Tokyo Night.
 - Texts: "Built-in", "Custom", "Mode" with "System", "Light", "Dark" (apps/desktop/flashcards/src/shared/words.ts).
 - Not: the mode (light or dark) is not the theme.
 
