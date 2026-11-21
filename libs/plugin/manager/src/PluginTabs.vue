@@ -93,7 +93,6 @@ function onSelect(id: PluginTabId): void {
 }
 
 .plugin-tabs__tab:focus-visible {
-  outline: var(--numen-stroke) solid var(--numen-accent);
-  outline-offset: -0.125rem;
+  outline: none;
 }
 </style>
