@@ -375,7 +375,7 @@ func TestTheListingsAreAskedAgainWhenTheRevisionOfTheRunningCatalogChanges(t *te
 	}
 }
 
-func TestKeptToolsAreTheLastListing(t *testing.T) {
+func TestToolListingFile(t *testing.T) {
 	files := filesIn(t, t.TempDir())
 	files.WriteToolListing(gardenPlugin, []byte(`{"version":"1.0.0+","listing":{"tools":[{"name":"water","effect":"TOOL_EFFECT_READ_ONLY"}]}}`))
 
