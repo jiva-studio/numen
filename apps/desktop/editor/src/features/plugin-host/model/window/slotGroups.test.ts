@@ -58,6 +58,7 @@ describe('the slots a plugin draws', () => {
     expect(buttons?.contributors.map((one) => one.label)).toStrictEqual([
       'Open graph',
       'Note create',
+      'Settings open',
       'Set tags',
     ])
   })
