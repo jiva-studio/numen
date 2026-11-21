@@ -185,6 +185,30 @@ describe('PluginDetail', () => {
     })
   })
 
+  it('shows a meaning for each permission', async () => {
+    const wrapper = mountDetail({
+      plugin: createManagedPlugin('sample.perm', 'Perm', {
+        contributions: [
+          {
+            kind: 'permissions',
+            items: ['vault:read', 'connections:use:llm.chat', 'odd:thing'].map((text) => ({
+              text,
+              detail: '',
+              keys: '',
+            })),
+          },
+        ],
+      }),
+    })
+    await openTab(wrapper, 'Contributes')
+
+    const text = wrapper.get('[role="tabpanel"]').text()
+    expect(text).toContain('vault:read')
+    expect(text).toContain('Read your notes, files and tabs.')
+    expect(text).toContain('Call llm.chat through your connections.')
+    expect(text).toContain('Access the app does not describe.')
+  })
+
   it('says the plugin contributes nothing where its manifest declares nothing', async () => {
     const wrapper = mountDetail({
       plugin: createManagedPlugin('sample.empty', 'Empty', { contributions: [] }),
