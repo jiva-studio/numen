@@ -37,7 +37,7 @@ func TestAFailureIsClassifiedByItsCause(t *testing.T) {
 	}
 }
 
-func TestALoggedBodyHoldsNoKeyAndIsTruncated(t *testing.T) {
+func TestLoggedBodyIsTruncatedAndKeyFree(t *testing.T) {
 	got := loggedBody([]byte(`{"k":"sk-secret","h":"Bearer abc.def"}`+strings.Repeat("x", 5000)), "sk-secret")
 
 	if strings.Contains(got, "sk-secret") || strings.Contains(got, "abc.def") || !strings.HasSuffix(got, "…") ||
@@ -69,7 +69,7 @@ func traceServer(t *testing.T, handler http.HandlerFunc) (*Gateway, *[]entry, co
 	return gateway, &entries, call
 }
 
-func TestAnAnswerIsTracedWithItsStatusSizeAndKeptHeadersAndNoKey(t *testing.T) {
+func TestAnswerTraceKeepsOnlyChosenHeaders(t *testing.T) {
 	gateway, entries, call := traceServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("X-Request-Id", "req-1")
 		w.Header().Set("Set-Cookie", "session=private")
