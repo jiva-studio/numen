@@ -189,6 +189,12 @@ enum PluginContributionKind {
   PLUGIN_CONTRIBUTION_KIND_SERVICES = 19;
   PLUGIN_CONTRIBUTION_KIND_CAPABILITIES = 20;
   PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS = 21;
+  // SEARCH_FUNCTIONS lists the functions of contributes.searchFunctions, with the signature as the
+  // detail.
+  PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS = 23;
+  // TOOLS lists the tools the plugin last offered an agent, which a manifest does not declare. It
+  // is absent until the host has listed them once.
+  PLUGIN_CONTRIBUTION_KIND_TOOLS = 24;
 }
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.

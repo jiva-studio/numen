@@ -50,6 +50,12 @@ const (
 	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SERVICES          PluginContributionKind = 19
 	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_CAPABILITIES      PluginContributionKind = 20
 	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS PluginContributionKind = 21
+	// SEARCH_FUNCTIONS lists the functions of contributes.searchFunctions, with the signature as the
+	// detail.
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS PluginContributionKind = 23
+	// TOOLS lists the tools the plugin last offered an agent, which a manifest does not declare. It
+	// is absent until the host has listed them once.
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TOOLS PluginContributionKind = 24
 )
 
 // Enum value maps for PluginContributionKind.
@@ -78,6 +84,8 @@ var (
 		19: "PLUGIN_CONTRIBUTION_KIND_SERVICES",
 		20: "PLUGIN_CONTRIBUTION_KIND_CAPABILITIES",
 		21: "PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS",
+		23: "PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS",
+		24: "PLUGIN_CONTRIBUTION_KIND_TOOLS",
 	}
 	PluginContributionKind_value = map[string]int32{
 		"PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED":       0,
@@ -103,6 +111,8 @@ var (
 		"PLUGIN_CONTRIBUTION_KIND_SERVICES":          19,
 		"PLUGIN_CONTRIBUTION_KIND_CAPABILITIES":      20,
 		"PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS": 21,
+		"PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS":  23,
+		"PLUGIN_CONTRIBUTION_KIND_TOOLS":             24,
 	}
 )
 
@@ -1998,7 +2008,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05event\x18\x01 \x01(\tR\x05event\"d\n" +
 	"\x14DeliverEventResponse\x124\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.v1.PluginEventErrorCodeR\x05error\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason*\xd0\a\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason*\xa3\b\n" +
 	"\x16PluginContributionKind\x12(\n" +
 	"$PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED\x10\x00\x12%\n" +
 	"!PLUGIN_CONTRIBUTION_KIND_COMMANDS\x10\x01\x12(\n" +
@@ -2023,7 +2033,9 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"%PLUGIN_CONTRIBUTION_KIND_DEPENDENCIES\x10\x12\x12%\n" +
 	"!PLUGIN_CONTRIBUTION_KIND_SERVICES\x10\x13\x12)\n" +
 	"%PLUGIN_CONTRIBUTION_KIND_CAPABILITIES\x10\x14\x12.\n" +
-	"*PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS\x10\x15*d\n" +
+	"*PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS\x10\x15\x12-\n" +
+	")PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS\x10\x17\x12\"\n" +
+	"\x1ePLUGIN_CONTRIBUTION_KIND_TOOLS\x10\x18*d\n" +
 	"\x14PluginEventErrorCode\x12'\n" +
 	"#PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fPLUGIN_EVENT_ERROR_CODE_REFUSED\x10\x012\xd8\x01\n" +
