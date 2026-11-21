@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/internal/adapter/settings"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/ports"
@@ -20,6 +21,15 @@ func (a *App) NewRegistry() (*tools.Registry, error) {
 		return nil, err
 	}
 	return a.newRegistry(built)
+}
+
+// NewCommands returns the registry of the commands of the plugin.
+func (a *App) NewCommands() (*command.Registry, error) {
+	built, err := a.getParts()
+	if err != nil {
+		return nil, err
+	}
+	return newCommands(built)
 }
 
 func (a *App) Wait() {

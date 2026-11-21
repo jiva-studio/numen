@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
@@ -61,6 +62,11 @@ func (a *App) Mount(s *server.Server) error {
 		a.updateSettings(ctx, built, values)
 		return nil
 	})
+	commands, err := newCommands(built)
+	if err != nil {
+		return err
+	}
+	command.Mount(s, commands)
 	registry.Mount(s)
 	service := s.NewAPI(api.Service)
 	server.Handle(service, api.MethodGetResults, func(ctx context.Context, req api.GetResultsRequest) (api.GetResultsResponse, error) {
