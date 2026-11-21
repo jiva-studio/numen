@@ -204,7 +204,7 @@ export interface PlexMenuState {
   dismiss(): void
   chooseMenuItem(id: string): void
   /** Creates a note in the vault root and shows it. */
-  createNote(): Promise<void>
+  makeNote(): Promise<void>
 }
 
 /** The widgets drawn over, under and across each node, and the path of the note of a node. */
