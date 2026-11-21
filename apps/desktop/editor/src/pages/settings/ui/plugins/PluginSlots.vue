@@ -61,6 +61,8 @@ function onChange(group: SlotGroup, rows: readonly SlotRow[]): void {
 /* --------------------------------- Helpers -------------------------------- */
 const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, props.layout)
 
+const getViewsText = (count: number): string => `${count} ${count === 1 ? 'view' : 'views'}`
+
 function findIndexAt(y: number): number | null {
   const items = Array.from(pressed?.list?.children ?? [])
   if (items.length === 0) return null
@@ -84,6 +86,7 @@ const isDropTarget = (group: SlotGroup, at: number): boolean =>
     :title="group.title"
     :data-testid="`slots-${group.slot}`"
   >
+    <template #aside>{{ getViewsText(rowsOf(group).length) }}</template>
     <ul class="plugin-slots__list">
       <li
         v-for="(row, at) in rowsOf(group)"
