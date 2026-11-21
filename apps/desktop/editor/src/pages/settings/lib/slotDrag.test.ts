@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { clampRowOffset, getDropIndex, getRowShifts, type RowSpan } from './slotDrag'
+import {
+  clampRowOffset,
+  getDropIndex,
+  getLandingShift,
+  getRowShifts,
+  type RowSpan,
+} from './slotDrag'
 
 describe('the shifts of the rows while one is held', () => {
   it('leave every row in place while the held row is over its own place', () => {
@@ -50,5 +56,25 @@ describe('the place a held row is over', () => {
 
   it('knows no place in an empty list', () => {
     expect(getDropIndex([], 0, 10)).toBeNull()
+  })
+})
+
+describe('getLandingShift', () => {
+  const spans = [
+    { top: 0, height: 10 },
+    { top: 10, height: 10 },
+    { top: 20, height: 10 },
+  ]
+
+  it('is the distance to the new place going down', () => {
+    expect(getLandingShift(spans, 0, 2)).toBe(20)
+  })
+
+  it('is the distance to the new place going up', () => {
+    expect(getLandingShift(spans, 2, 0)).toBe(-20)
+  })
+
+  it('is nothing when the row stays', () => {
+    expect(getLandingShift(spans, 1, 1)).toBe(0)
   })
 })

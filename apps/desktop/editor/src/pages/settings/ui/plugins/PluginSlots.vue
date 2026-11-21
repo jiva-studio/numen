@@ -12,8 +12,15 @@ import {
   writeSlotRows,
   type SlotRow,
 } from '../../lib/slotLayout'
-import { clampRowOffset, getDropIndex, getRowShifts, type RowSpan } from '../../lib/slotDrag'
+import {
+  clampRowOffset,
+  getDropIndex,
+  getLandingShift,
+  getRowShifts,
+  type RowSpan,
+} from '../../lib/slotDrag'
 import type { SlotGroup } from '../../types'
+import { useRowSettle } from '../../model/useRowSettle'
 import PluginSlotRow from './PluginSlotRow.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -36,14 +43,19 @@ interface Pressed {
 }
 let pressed: Pressed | null = null
 
+const { settling, settle, finish } = useRowSettle()
+
 const drag = usePressDrag<number, number>({
   getThreshold: () => DRAG_THRESHOLD,
   getClock: () => browserClock,
   getDropTargetAt: (from, point) =>
     pressed ? getDropIndex(pressed.spans, from, point.y - pressed.startY) : null,
-  commit: (from, to) => {
-    if (pressed && to !== null)
-      onChange(pressed.group, moveSlotRow(rowsOf(pressed.group), from, to))
+  commit: (from, to, point) => {
+    if (!pressed || to === null) return
+    const { group, spans, key, startY } = pressed
+    const offset = clampRowOffset(spans, from, point.y - startY) - getLandingShift(spans, from, to)
+    settle(key, offset)
+    onChange(group, moveSlotRow(rowsOf(group), from, to))
   },
 })
 
@@ -102,7 +114,9 @@ function getRowStyle(
   key: string,
   at: number,
 ): Record<string, string> | undefined {
-  const offset = getOffset(group, key, at)
+  const landing = settling.value
+  const offset =
+    landing?.key === key ? (landing.isMoving ? 0 : landing.offset) : getOffset(group, key, at)
   return offset === 0 ? undefined : { transform: `translateY(${offset}px)` }
 }
 </script>
@@ -114,7 +128,7 @@ function getRowStyle(
     :title="group.title"
     :data-testid="`slots-${group.slot}`"
   >
-    <TransitionGroup tag="ul" name="plugin-slots" class="plugin-slots__list">
+    <ul class="plugin-slots__list">
       <li
         v-for="(row, at) in rowsOf(group)"
         :key="row.key"
@@ -123,8 +137,10 @@ function getRowStyle(
           'plugin-slots__row--held': isHeld(group, row.key),
           'plugin-slots__row--lifted': isLifted(group, row.key),
           'plugin-slots__row--shifting': isShifting(group) && !isLifted(group, row.key),
+          'plugin-slots__row--settling': settling?.key === row.key && settling.isMoving,
         }"
         :style="getRowStyle(group, row.key, at)"
+        @transitionend="finish()"
       >
         <PluginSlotRow
           :row="row"
@@ -134,7 +150,7 @@ function getRowStyle(
           @toggle="onChange(group, toggleSlotRow(rowsOf(group), at))"
         />
       </li>
-    </TransitionGroup>
+    </ul>
   </IslandCard>
 </template>
 
@@ -168,13 +184,13 @@ function getRowStyle(
 }
 
 .plugin-slots__row--shifting,
-.plugin-slots-move {
+.plugin-slots__row--settling {
   transition: transform var(--numen-motion) var(--numen-easing);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .plugin-slots__row--shifting,
-  .plugin-slots-move {
+  .plugin-slots__row--settling {
     transition: none;
   }
 }
