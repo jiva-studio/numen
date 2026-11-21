@@ -87,7 +87,7 @@ func newLicenses(wire []*v1.ManifestLicense) []manifest.License {
 func newSlotPoints(wire []*v1.ManifestSlotPoint) []manifest.SlotPoint {
 	var out []manifest.SlotPoint
 	for _, one := range wire {
-		out = append(out, manifest.SlotPoint{Slot: one.GetSlot(), Title: one.GetTitle()})
+		out = append(out, manifest.SlotPoint{Slot: one.GetSlot(), Title: one.GetTitle(), Menu: one.GetMenu()})
 	}
 	return out
 }

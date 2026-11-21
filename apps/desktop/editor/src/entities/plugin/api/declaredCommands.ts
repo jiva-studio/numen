@@ -161,6 +161,7 @@ const readSlotPoint = ({ pluginId, point }: PluginSlotPoint): DeclaredSlotPoint 
   pluginId,
   slot: point?.slot ?? '',
   title: point?.title ?? '',
+  menu: point?.menu ?? false,
 })
 
 const readHandler = ({ pluginId, handler, hasItems }: PluginHandler): HandlerDeclaration => ({

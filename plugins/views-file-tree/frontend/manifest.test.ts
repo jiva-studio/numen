@@ -160,3 +160,15 @@ describe('the readme', () => {
     expect(readme).toMatch(/title bar/i)
   })
 })
+
+describe('the slots the plugin draws', () => {
+  const { slotPoints } = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
+  ).contributes as { slotPoints: readonly { slot: string; menu?: boolean }[] }
+
+  it('mark only the row menu as a menu, the end of a row holds views', () => {
+    expect(slotPoints.filter((one) => one.menu).map((one) => one.slot)).toStrictEqual([
+      'fileTree.context',
+    ])
+  })
+})

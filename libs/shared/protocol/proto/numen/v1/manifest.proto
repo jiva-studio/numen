@@ -255,6 +255,9 @@ message ManifestSlotPoint {
   string slot = 1;
   // title is what the settings page of the plugin calls the slot.
   string title = 2;
+  // menu marks a slot that draws its entries as the rows of a context menu: the settings page does not
+  // list it, and its order comes from the manifests.
+  bool menu = 3;
 }
 
 // ManifestSlotEntry places one thing in a slot of a window, or in a submenu a plugin declares. The

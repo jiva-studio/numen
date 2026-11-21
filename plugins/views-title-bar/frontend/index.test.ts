@@ -88,7 +88,7 @@ describe('the plugin', () => {
 
     expect(component).toBeDefined()
     expect(manifest.contributes.slots).toStrictEqual([
-      { slot: SLOT.titleBar, view: TITLE_BAR_VIEW },
+      { slot: SLOT.titleBar, view: TITLE_BAR_VIEW, title: 'Title bar' },
     ])
   })
 
@@ -586,5 +586,18 @@ describe('removing the bar', () => {
     expect(disposed.sort()).toStrictEqual(
       [SLOT.titleBarCommands, SLOT.titleBarStatus, 'vaults', 'window'].sort(),
     )
+  })
+})
+
+describe('the slots the title bar draws', () => {
+  const { slotPoints } = JSON.parse(
+    readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
+  ).contributes as { slotPoints: readonly { slot: string; menu?: boolean }[] }
+
+  it('mark no slot as a menu, so the buttons are listed with the status views', () => {
+    expect(slotPoints.map((one) => [one.slot, one.menu ?? false])).toStrictEqual([
+      ['titleBar.commands', false],
+      ['titleBar.status', false],
+    ])
   })
 })

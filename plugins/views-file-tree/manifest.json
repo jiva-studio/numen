@@ -30,7 +30,7 @@
       }
     ],
     "slotPoints": [
-      { "slot": "fileTree.context", "title": "Row menu" },
+      { "slot": "fileTree.context", "title": "Row menu", "menu": true },
       { "slot": "fileTree.rowEnd", "title": "End of a row" }
     ],
     "slots": [

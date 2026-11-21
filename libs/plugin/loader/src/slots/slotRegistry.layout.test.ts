@@ -16,7 +16,7 @@ const read = (layout: SlotLayout | undefined) => {
   const registry = createSlotRegistry({
     getEntries: () => entries,
     drawers: {
-      getPoints: () => [{ pluginId: DRAWER, slot: SLOT_NAME, title: 'Below' }],
+      getPoints: () => [{ pluginId: DRAWER, slot: SLOT_NAME, title: 'Below', menu: false }],
       getLayout: (pluginId) => (pluginId === DRAWER ? layout : undefined),
     },
     findCommand: () => undefined,
@@ -51,5 +51,35 @@ describe('the layout of a slot', () => {
       'two',
       'three',
     ])
+  })
+})
+
+describe('the layout of a slot of commands', () => {
+  const BUTTONS = 'titleBar.commands'
+  const buttons: readonly DeclaredSlotEntry[] = [
+    { pluginId: 'org.example.a', slot: BUTTONS, command: 'one', order: 1 },
+    { pluginId: 'org.example.b', slot: BUTTONS, command: 'two', order: 2 },
+  ]
+  const readButtons = (layout: SlotLayout) =>
+    createSlotRegistry({
+      getEntries: () => buttons,
+      drawers: {
+        getPoints: () => [{ pluginId: DRAWER, slot: BUTTONS, title: 'Buttons', menu: false }],
+        getLayout: () => layout,
+      },
+      findCommand: (command) => ({ title: command }),
+      findView: () => undefined,
+    })
+      .getEntries(BUTTONS)
+      .map((one) => (one.kind === 'command' ? one.command : one.kind))
+
+  it('orders the commands by the list', () => {
+    const layout = { [BUTTONS]: [{ id: 'org.example.b/command/org.example.b:two' }] }
+    expect(readButtons(layout)).toStrictEqual(['org.example.b:two', 'org.example.a:one'])
+  })
+
+  it('leaves out a hidden command', () => {
+    const layout = { [BUTTONS]: [{ id: 'org.example.a/command/org.example.a:one', hidden: true }] }
+    expect(readButtons(layout)).toStrictEqual(['org.example.b:two'])
   })
 })

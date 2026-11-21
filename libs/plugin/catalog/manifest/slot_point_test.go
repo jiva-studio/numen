@@ -17,12 +17,12 @@ func readSlotPoints(points, settings string) (manifest.Manifest, error) {
 const slotsSetting = `{"key":"slots","type":"slots","title":"Slots"}`
 
 func TestSlotPointsRead(t *testing.T) {
-	parsed, err := readSlotPoints(`[{"slot":"ledger.rowEnd","title":"End of a row"}]`, slotsSetting)
+	parsed, err := readSlotPoints(`[{"slot":"ledger.rowEnd","title":"End of a row"},{"slot":"ledger.context","title":"Menu","menu":true}]`, slotsSetting)
 	if err != nil {
 		t.Fatal(err)
 	}
 	got := parsed.Contributes.SlotPoints
-	if len(got) != 1 || got[0].Slot != "ledger.rowEnd" || got[0].Title != "End of a row" {
+	if len(got) != 2 || got[0].Slot != "ledger.rowEnd" || got[0].Title != "End of a row" || got[0].Menu || !got[1].Menu {
 		t.Errorf("slot points came out as %+v", got)
 	}
 }

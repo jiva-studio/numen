@@ -60,7 +60,7 @@ const everyFieldManifest = `{
 		"slots": [{"slot": "titleBar.commands", "command": "task.run", "group": "run", "order": 1, "values": {"n": "3"}},
 			{"slot": "titleBar", "view": "bar"},
 			{"slot": "fileTree.context", "submenu": "full.new", "title": "New", "icon": "plus", "when": "target.isFolder"}],
-		"slotPoints": [{"slot": "full.row", "title": "A row"}],
+		"slotPoints": [{"slot": "full.row", "title": "A row", "menu": true}],
 		"listeners": [{"name": "mcp", "port": 3333, "protocol": "tcp"}, {"name": "console", "portSetting": "mode", "protocol": "tcp"}],
 		"keybindings": [{"key": "mod+shift+r", "command": "task.run", "values": {"n": "3"}, "when": "window.isVaultOpen"}],
 		"viewCapabilities": ["conversation"],
