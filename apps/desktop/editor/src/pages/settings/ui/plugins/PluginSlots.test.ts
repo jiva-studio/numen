@@ -25,13 +25,15 @@ describe('the slots of a plugin page', () => {
     expect(page.findAll('section')).toHaveLength(2)
     expect(page.get('[data-testid="slots-plexGraph.nodeBelow"]').text()).toContain('Below a node')
     expect(page.text()).toContain('Alpha')
+    expect(page.findAll('header')).toHaveLength(2)
   })
 
-  it('give a drag handle only to a slot of several entries, and no arrows', () => {
+  it('keep a handle on every row, dimmed in a slot of one entry, and draw no arrows', () => {
     const page = mount(PluginSlots, { props: { groups, layout: undefined } })
 
-    expect(page.findAll('[aria-label^="Reorder"]')).toHaveLength(2)
-    expect(page.find('[aria-label="Reorder three"]').exists()).toBe(false)
+    expect(page.findAll('[aria-label^="Reorder"]')).toHaveLength(3)
+    expect(page.get('[aria-label="Reorder one"]').attributes('disabled')).toBeUndefined()
+    expect(page.get('[aria-label="Reorder three"]').attributes('disabled')).toBeDefined()
     expect(page.find('[aria-label^="Move"]').exists()).toBe(false)
     expect(page.find('[aria-label="Show three"]').exists()).toBe(true)
   })

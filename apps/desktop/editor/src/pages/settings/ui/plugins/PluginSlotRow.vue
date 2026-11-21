@@ -19,17 +19,20 @@ const emit = defineEmits<{
 
 <template>
   <button
-    v-if="props.isMovable"
     type="button"
     class="plugin-slots__grip"
+    :disabled="!props.isMovable"
     :aria-label="words.slotsGrip(props.row.label)"
     @pointerdown="emit('grip-press', $event)"
     @keydown="emit('grip-key', $event)"
   >
-    <GripVertical :size="14" aria-hidden="true" />
+    <GripVertical class="plugin-slots__grip-icon" aria-hidden="true" />
   </button>
-  <span class="plugin-slots__label">{{ props.row.label }}</span>
-  <span class="plugin-slots__owner">{{ props.row.pluginName }}</span>
+  <span class="plugin-slots__name">
+    <span class="plugin-slots__label">{{ props.row.label }}</span>
+    <span class="plugin-slots__owner" aria-hidden="true">·</span>
+    <span class="plugin-slots__owner">{{ props.row.pluginName }}</span>
+  </span>
   <Switch
     :model-value="!props.row.isHidden"
     :aria-label="words.slotsShow(props.row.label)"
@@ -39,26 +42,41 @@ const emit = defineEmits<{
 
 <style scoped>
 .plugin-slots__grip {
+  --icon: 0.75rem;
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
-  inline-size: 1.5rem;
-  block-size: 2rem;
+  inline-size: 1rem;
+  block-size: 1.5rem;
   padding: 0;
   border: none;
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-radius-tight);
   background: none;
   color: var(--numen-hushed);
   cursor: grab;
   touch-action: none;
 }
 
+.plugin-slots__grip:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .plugin-slots__grip:focus-visible {
   outline: var(--numen-stroke) solid var(--numen-accent);
 }
 
-.plugin-slots__label {
+.plugin-slots__grip-icon {
+  inline-size: var(--icon);
+  block-size: var(--icon);
+}
+
+.plugin-slots__name {
+  display: flex;
   flex: 1 1 auto;
+  align-items: baseline;
+  gap: 0.375rem;
   min-inline-size: 0;
   font-size: var(--numen-text-2);
   color: var(--numen-ink);

@@ -3,7 +3,7 @@
  * The slots a plugin draws, each an island with the views placed in it. A switch hides a view, and a
  * grip drags it to a new place in its slot; the plugin keeps the result in its setting of the type slots.
  */
-import { browserClock, measureRect, usePressDrag } from '@numen/ui'
+import { browserClock, IslandCard, measureRect, usePressDrag } from '@numen/ui'
 import type { JsonValue } from '@/shared/api/json'
 import {
   getSlotRows,
@@ -78,13 +78,12 @@ const isDropTarget = (group: SlotGroup, at: number): boolean =>
 </script>
 
 <template>
-  <section
+  <IslandCard
     v-for="group in props.groups"
     :key="group.slot"
-    class="settings-card plugin-slots"
+    :title="group.title"
     :data-testid="`slots-${group.slot}`"
   >
-    <h3 class="plugin-slots__title">{{ group.title }}</h3>
     <ul class="plugin-slots__list">
       <li
         v-for="(row, at) in rowsOf(group)"
@@ -104,24 +103,10 @@ const isDropTarget = (group: SlotGroup, at: number): boolean =>
         />
       </li>
     </ul>
-  </section>
+  </IslandCard>
 </template>
 
 <style scoped>
-.plugin-slots {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: var(--settings-card-pad);
-}
-
-.plugin-slots__title {
-  margin: 0;
-  font-size: var(--numen-text-2);
-  font-weight: 600;
-  color: var(--numen-ink);
-}
-
 .plugin-slots__list {
   display: flex;
   flex-direction: column;
@@ -133,8 +118,8 @@ const isDropTarget = (group: SlotGroup, at: number): boolean =>
 .plugin-slots__row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding-block: 0.25rem;
+  gap: 0.375rem;
+  padding-block: 0.125rem;
 }
 
 .plugin-slots__row--dragged {
