@@ -10,12 +10,17 @@ const RELATIONS: Readonly<Record<NamesSide, readonly NameRelation[]>> = {
 }
 
 /**
- * The names a side draws for the note of `noteGraph`, cut to `limit`. A note related in several relations is named once,
+ * The names a side draws for the note of `noteGraph`, cut to `limit`, without the notes `isHidden` names. A note related in several relations is named once,
  * in the first relation of the order.
  */
-export function listNames(noteGraph: NoteGraph, side: NamesSide, limit: number): RelatedName[] {
+export function listNames(
+  noteGraph: NoteGraph,
+  side: NamesSide,
+  limit: number,
+  isHidden: (path: string) => boolean = () => false,
+): RelatedName[] {
   const owner = noteGraph.focus.title || WORDS.untitled
-  const own = noteGraph.related.filter((item) => !item.relatedTo)
+  const own = noteGraph.related.filter((item) => !item.relatedTo && !isHidden(item.path))
   const named = new Set<string>()
   return RELATIONS[side]
     .flatMap((relation) =>

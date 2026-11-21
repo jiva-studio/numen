@@ -164,7 +164,6 @@
   /* While the button shows, the transparent ring is painted above it and would take its clicks. */
   pointer-events: none;
   opacity: 1;
-  transition: opacity 0.15s ease;
 }
 
 .task-item__btn {
@@ -173,7 +172,6 @@
   padding: 0;
   color: var(--numen-hushed);
   opacity: 0;
-  transition: opacity 0.15s ease;
 }
 
 .task-item__btn--visible {

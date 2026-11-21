@@ -41,10 +41,10 @@ async function readAnswer(
   }
 }
 
-const readChoice = (one: RowOption): SelectChoice => ({
+const readChoice = (one: RowOption, isEnum: boolean): SelectChoice => ({
   id: one.value,
   text: one.title || one.value,
-  ...(one.title === '' || one.title === one.value ? {} : { detail: one.value }),
+  ...(isEnum || one.title === '' || one.title === one.value ? {} : { detail: one.value }),
   ...(one.group === '' ? {} : { group: one.group }),
 })
 
@@ -86,7 +86,7 @@ export function useRowChoices(source: RowChoicesSource) {
         : field.options.map((one) => ({ ...one, group: '' }))
       const choices = [
         ...(field.isRequired ? [] : [{ id: '', text: words.connectionRowsDefault }]),
-        ...options.map(readChoice),
+        ...options.map((one) => readChoice(one, field.type === 'enum')),
       ]
       return {
         field,

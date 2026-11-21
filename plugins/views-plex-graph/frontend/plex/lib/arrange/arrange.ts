@@ -195,7 +195,12 @@ export function arrangePlex(
 
   const byId = new Map(nodes.map((node) => [node.id, node]))
   const edgeRouting = createRouting(resolved, measureLabel, labelType)
-  const edges = separateTitles(routeEdges(graph.edges, byId, edgeRouting), nodes, edgeRouting)
+  const edges = separateTitles(
+    routeEdges(graph.edges, byId, edgeRouting),
+    nodes,
+    edgeRouting,
+    rooms,
+  )
 
   return { nodes, edges, extent: getExtent(nodes), overflow }
 }

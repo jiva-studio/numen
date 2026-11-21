@@ -4,7 +4,6 @@ import type { Box, Size } from '../types'
 /** What the list needs to be drawn under a node: how many rows stand at once and where the node is on the screen. */
 export interface ListLayout {
   readonly rowHeight: number
-  readonly pad: number
   readonly margin: number
   readonly visibleCount: number
   readonly height: number
@@ -28,20 +27,19 @@ export interface ListLayoutRequest {
  */
 export function getListLayout(request: ListLayoutRequest): ListLayout | null {
   const { count, limit, node, room, measures } = request
-  const { rowHeight, pad, margin } = measures
+  const { rowHeight, margin } = measures
   if (count === 0) return null
 
   const depth = room.height - margin - (node.y + node.height)
-  const rows = Math.min(limit, Math.floor((depth - 2 * pad) / rowHeight))
+  const rows = Math.min(limit, Math.floor(depth / rowHeight))
   if (rows < 1) return null
 
   const visibleCount = Math.min(rows, count)
   return {
     rowHeight,
-    pad,
     margin,
     visibleCount,
-    height: visibleCount * rowHeight + 2 * pad,
+    height: visibleCount * rowHeight,
     top: node.y + node.height,
     nodeLeft: node.x,
     nodeWidth: node.width,

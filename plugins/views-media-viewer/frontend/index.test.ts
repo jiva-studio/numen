@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { AudioLines } from '@lucide/vue'
 import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk'
+import MediaTab from './ui/MediaTab.vue'
 import plugin, { activate, MEDIA, MediaRecordingTab, RecordingTab, RECORDER } from './index'
 import { recordings } from './api/wire'
 
@@ -37,7 +38,7 @@ describe('media-viewer plugin', () => {
 
     const kind = context.getRegisteredTabKinds().find((one) => one.kind === MEDIA)
     expect(MEDIA).toBe('media')
-    expect(kind?.component).toBe(RecordingTab)
+    expect(kind?.component).toBe(MediaTab)
     const state = kind?.open?.('links/Tidal mills.md', 'tab')
     expect(kind?.getTitle?.(state as never)).toBe('Tidal mills')
     expect(kind?.getTarget?.(state as never)).toStrictEqual({
@@ -45,6 +46,18 @@ describe('media-viewer plugin', () => {
       file: 'links/Tidal mills.md',
       title: 'Tidal mills',
     })
+  })
+
+  it('moves a media tab to the renamed path and keeps its title in step', async () => {
+    const context = createMockPluginContext({ pluginId: 'md.numen.views.media.viewer' })
+    activate(context, createMockHostServices())
+
+    const kind = context.getRegisteredTabKinds().find((one) => one.kind === MEDIA)
+    const state = kind?.open?.('links/Tidal mills.mp3', 'tab')
+    await kind?.navigate?.(state as never, 'links/Tides.mp3', '')
+
+    expect(kind?.getTitle?.(state as never)).toBe('Tides')
+    expect(kind?.getOpenTab?.(state as never)).toStrictEqual({ path: 'links/Tides.mp3' })
   })
 
   it('opens a tab to record in from its command', async () => {

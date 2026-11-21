@@ -25,6 +25,7 @@ type transcripts struct {
 func getFileName(key string) string    { return key + ".jsonl" }
 func getPartialName(key string) string { return key + ".partial.jsonl" }
 func getReachedName(key string) string { return key + ".reached" }
+func getFailedName(key string) string  { return key + ".failed" }
 
 func isWholeFile(version domain.TextVersion) bool { return version.File == getFileName(version.Key) }
 
@@ -90,4 +91,20 @@ func (t transcripts) finish(ctx context.Context, key string) error {
 		return err
 	}
 	return t.store.Delete(ctx, getReachedName(key))
+}
+
+func (t transcripts) hasFailed(ctx context.Context, key string) (bool, error) {
+	_, err := t.store.Read(ctx, getFailedName(key))
+	if errors.Is(err, host.ErrNotExist) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+func (t transcripts) writeFailure(ctx context.Context, key string, reason error) error {
+	return t.store.Write(ctx, getFailedName(key), []byte(reason.Error()))
+}
+
+func (t transcripts) clearFailure(ctx context.Context, key string) error {
+	return t.store.Delete(ctx, getFailedName(key))
 }

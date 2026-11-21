@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { getFurthestOffset, getListLayout, getListStart, scrollBy, type ListLayout } from './layout'
 import { getMeasures } from './measures'
 
-const MEASURES = { rowHeight: 20, indentStep: 10, margin: 20, pad: 5 }
+const MEASURES = { rowHeight: 20, indentStep: 10, margin: 20 }
 const ROOM = { width: 1000, height: 600 }
 const NODE = { x: 450, y: 280, width: 100, height: 40 }
 
@@ -26,8 +26,8 @@ describe('the layout of the list', () => {
     expect(layoutOf({ count: 2 }).visibleCount).toBe(2)
   })
 
-  it('is as tall as its rows and a pad above and under them', () => {
-    expect(layoutOf().height).toBe(6 * 20 + 2 * 5)
+  it('is as tall as its rows', () => {
+    expect(layoutOf().height).toBe(6 * 20)
   })
 
   it('holds only the rows the depth below the node holds, inside the margin of the window', () => {
@@ -35,7 +35,7 @@ describe('the layout of the list', () => {
     const depth = ROOM.height - MEASURES.margin - (lower.y + lower.height)
 
     expect(layoutOf({ node: lower, limit: 12 }).visibleCount).toBe(
-      Math.floor((depth - 2 * MEASURES.pad) / MEASURES.rowHeight),
+      Math.floor(depth / MEASURES.rowHeight),
     )
   })
 

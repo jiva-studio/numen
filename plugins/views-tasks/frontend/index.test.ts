@@ -356,6 +356,8 @@ describe('the actions of a task', () => {
     await openList(wrapper)
 
     expect(wrapper.find('button[aria-label="Retry task"]').exists()).toBe(false)
+    expect(wrapper.find('[data-task-id="a"] .circular-progress').exists()).toBe(false)
+    expect(wrapper.find('[data-task-id="a"] .task-item__slot--swaps').exists()).toBe(false)
     await wrapper.find('button[aria-label="Dismiss"]').trigger('click')
 
     expect(host.work.backgroundTasks.getActions()).toStrictEqual([{ action: 'dismiss', id: 'a' }])

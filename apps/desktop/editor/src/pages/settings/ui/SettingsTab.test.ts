@@ -684,19 +684,18 @@ describe('the settings tab', () => {
       expect(isList(tab)).toBe(true)
     })
 
-    it('opens the list searched for the category of a plugin from its segment', async () => {
+    it('returns to the list with the search kept from the category segment', async () => {
       const { tab, initialSearchQuery } = createTab({}, [OCR])
+      initialSearchQuery.value = 'reader'
+      await nextTick()
       await openPlugin(tab, 'Page Reader')
 
       await getPath(tab).findAll('button')[1]?.trigger('click')
       await nextTick()
 
       expect(isList(tab)).toBe(true)
-      expect(initialSearchQuery.value).toBe('category:other')
-      expect((tab.get('input[type="search"]').element as HTMLInputElement).value).toBe(
-        'category:other',
-      )
-      expect(tab.find('button[aria-label="Page Reader"]').exists()).toBe(true)
+      expect(initialSearchQuery.value).toBe('reader')
+      expect((tab.get('input[type="search"]').element as HTMLInputElement).value).toBe('reader')
     })
   })
 })

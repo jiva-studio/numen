@@ -6,7 +6,6 @@ const SETTING = 'section.connection-rows'
 const SETTING_NAME = '.settings__name'
 const ROW = 'li.connection-rows__row'
 const CONNECTION = 'Connection'
-const NOTE = '.connection-rows__note:not(.connection-rows__empty *)'
 /** A list the service gives may arrive after the search line is shown; a value it does not hold is typed after this time. */
 const LISTING_LIMIT_MS = 10_000
 
@@ -21,11 +20,6 @@ export class ConnectionRows {
 
   getRows(setting: Locator): Locator {
     return setting.locator(ROW)
-  }
-
-  /** The line that stands for the rows while there are none, such as the connections the setting discovers; the line of a setting whose connections are not yet listed is not it. */
-  getNote(setting: Locator): Locator {
-    return setting.locator(NOTE)
   }
 
   /** A setting of one row shows its row at once; a setting of more rows adds one with Add connection. */

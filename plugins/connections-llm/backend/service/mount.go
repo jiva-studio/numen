@@ -73,6 +73,13 @@ func Mount(srv *server.Server) error {
 				openaiapi.ReportLogError()
 			}
 		})
+		built.gateway.SetTracer(func(ctx context.Context, level logs.Level, message string, properties map[string]any) {
+			logging, cancel := context.WithTimeout(context.WithoutCancel(ctx), 250*time.Millisecond)
+			defer cancel()
+			if err := client.Write(logging, logs.Entry{Level: level, Message: message, Properties: properties}); err != nil {
+				openaiapi.ReportLogError()
+			}
+		})
 	}
 	srv.SetUpdateConfig(built.limits.Configure)
 	srv.OnClose(func() error {

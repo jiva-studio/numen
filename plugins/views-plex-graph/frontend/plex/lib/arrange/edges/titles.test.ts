@@ -5,6 +5,7 @@ import { DEFAULT_OPTIONS } from '../options'
 import { createTitle, getLabelPlaces, getRise, getShift } from './labels'
 import { getDepth } from './ink'
 import { MIDDLE } from './positions'
+import { NO_ROOM } from '../layout/placement'
 import { createRouting } from './routing'
 import { routeEdges } from './routeEdges'
 import { separateTitles } from './titles'
@@ -781,5 +782,26 @@ describe('the titles of one line', () => {
 
     expect(resolved!.titles).toHaveLength(2)
     expect(second! - first!).toBeGreaterThanOrEqual(half('is a part of') + half('consists of'))
+  })
+})
+
+describe('a title keeps clear of the slots of a node', () => {
+  const room = (node: { id: string }) =>
+    node.id === 'focus' ? { top: 40, bottom: 40, width: 220 } : NO_ROOM
+
+  it('sets no title over the room a node keeps for its views', () => {
+    const frame = arrangePlex(createOneLine('see'), { ...measured, room })
+    const [focus] = frame.nodes
+    const footprint = {
+      minX: focus!.x - 110,
+      minY: focus!.y - focus!.height / 2 - 40,
+      maxX: focus!.x + 110,
+      maxY: focus!.y + focus!.height / 2 + 40,
+    }
+    const [title] = frame.edges[0]!.titles
+
+    expect(
+      title === undefined || !isOverlapping(footprint, getBox(frame.edges[0]!, measureLabel)),
+    ).toBe(true)
   })
 })
