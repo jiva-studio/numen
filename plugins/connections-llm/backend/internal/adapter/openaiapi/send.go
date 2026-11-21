@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/address"
 	"github.com/jiva-studio/numen/plugins/connections-llm/backend/domain/servicetype"
 )
@@ -52,21 +53,29 @@ func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Dur
 	if err != nil {
 		return connection.NewStopError(connection.ReasonUnavailable)
 	}
+	sent := sentBody(request)
+	started := g.clock.Now()
+	traced := traceCall{path: target.path, key: key, started: started, limit: limit}
+	g.traceRequest(ctx, traced, target.method, call.Options[llm.OptionModel], sent)
 	response, err := g.clients.get(isLoopbackRequired).Do(request)
 	if err != nil {
 		g.report(ctx, target.path, getTransportFailure(err), 0)
+		g.traceFailure(ctx, traced, "request", err, 0)
 		return classifyTransportError(ctx, err)
 	}
 	defer closeBody(response.Body)
 	if response.StatusCode < 200 || response.StatusCode > 299 {
 		g.report(ctx, target.path, "http_status", response.StatusCode)
+		g.traceResponse(ctx, traced, response, nil)
 		return g.mapStatus(response)
 	}
 	body, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBytes+1))
 	if err != nil {
 		g.report(ctx, target.path, "read_response", response.StatusCode)
+		g.traceFailure(ctx, traced, "read_response", err, response.StatusCode)
 		return classifyTransportError(ctx, err)
 	}
+	g.traceResponse(ctx, traced, response, body)
 	if len(body) > maxResponseBytes || json.Unmarshal(body, out) != nil {
 		g.report(ctx, target.path, "invalid_response", response.StatusCode)
 		return connection.NewStopError(connection.ReasonUnavailable)
@@ -76,7 +85,7 @@ func (g *Gateway) send(ctx context.Context, call connection.Call, limit time.Dur
 
 func getTransportFailure(err error) string {
 	if errors.Is(err, context.DeadlineExceeded) {
-		return "timeout"
+		return failureTimeout
 	}
 	return "transport"
 }

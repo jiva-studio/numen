@@ -80,7 +80,7 @@ const {
 }
 
 .media-recorder__title {
-  --title-font-size: 1.25rem;
+  --title-font-size: var(--numen-title-size);
   margin: 0;
   font-size: var(--title-font-size);
   font-weight: 600;
@@ -89,7 +89,7 @@ const {
 .media-recorder__status {
   --status-padding-block: 0.25rem;
   --status-padding-inline: 0.6rem;
-  --status-font-size: 0.75rem;
+  --status-font-size: var(--numen-font-size);
   padding: var(--status-padding-block) var(--status-padding-inline);
   font-size: var(--status-font-size);
   font-weight: 700;
@@ -117,7 +117,7 @@ const {
   --error-padding-block: 0.75rem;
   --error-padding-inline: 1rem;
   --error-border-radius: 0.375rem;
-  --error-font-size: 0.875rem;
+  --error-font-size: var(--numen-font-size);
   padding: var(--error-padding-block) var(--error-padding-inline);
   background: var(--numen-alarm-bg);
   border: 1px solid var(--numen-alarm);

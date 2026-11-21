@@ -21,6 +21,8 @@ const createSlots = (entries: readonly SlotItem[]): SlotHost => ({
   watchEntries: () => ({ dispose: () => undefined }),
 })
 
+const NOT_LINKED = { getGroupOf: () => null }
+
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 describe('the target the entries of the menu of a tab run over', () => {
@@ -45,7 +47,13 @@ describe('the target the entries of the menu of a tab run over', () => {
   const openOver = async (tab: string) => {
     const slots = createSlots([DETACH])
     const getEntries = vi.spyOn(slots, 'getEntries')
-    const menu = useWindowTabMenu({ moveCommand: 'app:tab.moveToWindow', windowTabs, slots })
+    const menu = useWindowTabMenu({
+      moveCommand: 'app:tab.moveToWindow',
+      unlinkCommand: 'app:tab.unlink',
+      tabLinks: NOT_LINKED,
+      windowTabs,
+      slots,
+    })
     menu.open(tab, { x: 4, y: 8 })
     await settle()
     return getEntries
@@ -86,6 +94,8 @@ describe('the target the entries of the menu of a tab run over', () => {
     const listItems = vi.fn(async () => [{ id: 'win-2', title: 'Second Window' }])
     const menu = useWindowTabMenu({
       moveCommand: 'app:tab.moveToWindow',
+      unlinkCommand: 'app:tab.unlink',
+      tabLinks: NOT_LINKED,
       windowTabs,
       slots: createSlots([moveEntry]),
       commands: {
@@ -108,6 +118,8 @@ describe('the target the entries of the menu of a tab run over', () => {
 
     const menuWithoutCommands = useWindowTabMenu({
       moveCommand: 'app:tab.moveToWindow',
+      unlinkCommand: 'app:tab.unlink',
+      tabLinks: NOT_LINKED,
       windowTabs,
       slots: createSlots([moveEntry]),
     })
@@ -123,6 +135,8 @@ describe('a command of the menu of a tab of the window that fails', () => {
     const failure = new Error('the window is gone')
     const menu = useWindowTabMenu({
       moveCommand: 'app:tab.moveToWindow',
+      unlinkCommand: 'app:tab.unlink',
+      tabLinks: NOT_LINKED,
       windowTabs: { tabs: { tabs: { value: [] }, getTab: () => undefined } } as never,
       slots: createSlots([DETACH]),
       commands: {
@@ -142,5 +156,38 @@ describe('a command of the menu of a tab of the window that fails', () => {
     await settle()
 
     expect(reportError).toHaveBeenCalledExactlyOnceWith(failure)
+  })
+})
+
+describe('the unlink entry of the menu of a tab', () => {
+  const UNLINK: SlotCommand = {
+    ...DETACH,
+    key: 'app/command/tab.unlink',
+    command: 'app:tab.unlink',
+    title: 'Unlink tab',
+  }
+  const windowTabs = {
+    tabs: { tabs: { value: [] }, getTab: () => undefined },
+  } as never
+
+  const getRows = async (linkedTab: string | null) => {
+    const menu = useWindowTabMenu({
+      moveCommand: 'app:tab.moveToWindow',
+      unlinkCommand: UNLINK.command,
+      tabLinks: { getGroupOf: (tab) => (tab === linkedTab ? ({} as never) : null) },
+      windowTabs,
+      slots: createSlots([DETACH, UNLINK]),
+    })
+    menu.open('reef', { x: 1, y: 2 })
+    await settle()
+    return menu.menu.value?.items.map((one) => one.id)
+  }
+
+  it('is left out for a tab that is not linked', async () => {
+    expect(await getRows(null)).toStrictEqual([DETACH.key])
+  })
+
+  it('is drawn for a linked tab', async () => {
+    expect(await getRows('reef')).toStrictEqual([DETACH.key, UNLINK.key])
   })
 })

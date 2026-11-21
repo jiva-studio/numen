@@ -238,6 +238,18 @@ describe('the icon of a row', () => {
     expect(menu.getIcon(RENAME.key)).toBeUndefined()
     expect(menu.getIcon(`${shared.key}#item:md.numen.pdf`)).toBe(TEXT_ICON)
   })
+
+  it('is the icon of a command with items on every item of its submenu', () => {
+    const withItems = { ...MOVE, icon: TEXT_ICON }
+    const items = [
+      { id: 'a', title: 'A' },
+      { id: 'b', title: 'B' },
+    ]
+    const menu = createSlotMenu([withItems], lists([[withItems, items]]), WORDS)
+
+    expect(menu.getIcon(`${withItems.key}#item:a`)).toBe(TEXT_ICON)
+    expect(menu.getIcon(`${withItems.key}#item:b`)).toBe(TEXT_ICON)
+  })
 })
 
 describe('the values of an entry', () => {

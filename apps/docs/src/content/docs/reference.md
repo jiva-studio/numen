@@ -243,7 +243,6 @@ The settings of the plugin Flashcards Studio.
 | | | |
 | --- | --- | --- |
 | `dayStartTime` | text | the time a review day starts, as HH:MM up to 12:00. Any other value uses 04:00. |
-| `agentConnections` | text | agents. |
 
 ### `md.numen.views.plex.graph`
 

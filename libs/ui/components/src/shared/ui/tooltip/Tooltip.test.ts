@@ -1,5 +1,5 @@
 import { defineComponent, ref } from 'vue'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import Tooltip from './Tooltip.vue'
 import { useTooltip } from './useTooltip'
@@ -57,5 +57,83 @@ describe('the tooltip of the library', () => {
 
     await wrapper.find('.empty').trigger('mouseenter')
     expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+  })
+
+  describe('closing', () => {
+    const mountWithOpenTooltip = async () => {
+      const Harness = defineComponent({
+        components: { Tooltip },
+        setup: () => ({ tip: useTooltip() }),
+        template: `
+          <div>
+            <button class="one" @mouseenter="tip.open($event, 'Label')" />
+            <Tooltip v-if="tip.at.value" :at="tip.at.value">{{ tip.text.value }}</Tooltip>
+          </div>
+        `,
+      })
+      const wrapper = mount(Harness, { attachTo: document.body })
+      await wrapper.find('.one').trigger('mouseenter')
+      expect(wrapper.find('[role="tooltip"]').exists()).toBe(true)
+      return wrapper
+    }
+
+    it('closes when the element it describes is removed from the document', async () => {
+      const wrapper = await mountWithOpenTooltip()
+
+      wrapper.find('.one').element.remove()
+      await flushPromises()
+
+      expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+      wrapper.unmount()
+    })
+
+    it.each(['pointerdown', 'keydown', 'wheel'])('closes on %s', async (name) => {
+      const wrapper = await mountWithOpenTooltip()
+
+      window.dispatchEvent(new Event(name))
+      await flushPromises()
+
+      expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+      wrapper.unmount()
+    })
+
+    it('closes when the window loses focus', async () => {
+      const wrapper = await mountWithOpenTooltip()
+
+      window.dispatchEvent(new Event('blur'))
+      await flushPromises()
+
+      expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+      wrapper.unmount()
+    })
+
+    it('closes when the document or an ancestor of the element scrolls', async () => {
+      const wrapper = await mountWithOpenTooltip()
+      document.dispatchEvent(new Event('scroll'))
+      await flushPromises()
+      expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+
+      await wrapper.find('.one').trigger('mouseenter')
+      wrapper.element.dispatchEvent(new Event('scroll'))
+      await flushPromises()
+      expect(wrapper.find('[role="tooltip"]').exists()).toBe(false)
+      wrapper.unmount()
+    })
+
+    it('stays open through the blur and the scroll of an unrelated element', async () => {
+      const wrapper = await mountWithOpenTooltip()
+      const other = document.createElement('input')
+      const list = document.createElement('div')
+      document.body.append(other, list)
+
+      other.dispatchEvent(new FocusEvent('blur'))
+      list.dispatchEvent(new Event('scroll'))
+      await flushPromises()
+
+      expect(wrapper.find('[role="tooltip"]').exists()).toBe(true)
+      other.remove()
+      list.remove()
+      wrapper.unmount()
+    })
   })
 })

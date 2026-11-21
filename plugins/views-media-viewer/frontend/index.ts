@@ -1,6 +1,8 @@
 import { AudioLines } from '@lucide/vue'
+import { shallowReactive } from 'vue'
 import { definePlugin, getFileStem, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { createRecorderTab } from './api/saveRecording'
+import MediaTab from './ui/MediaTab.vue'
 import RecordingTab from './ui/RecordingTab.vue'
 import MediaRecordingTab from './ui/MediaRecordingTab.vue'
 import { bindCommands, bindNotes, bindTexts, refreshRecordings, setTaskHost } from './api/wire'
@@ -15,7 +17,7 @@ export const MEDIA = 'media'
 
 /** What a note's tab holds: the path of the note. */
 interface MediaTabState {
-  readonly path: string
+  path: string
 }
 
 export function activate(plugin: PluginContext, host: HostServices): void {
@@ -41,8 +43,11 @@ export function activate(plugin: PluginContext, host: HostServices): void {
 
   plugin.register.tabKind<MediaTabState>({
     kind: MEDIA,
-    component: RecordingTab,
-    open: (path) => ({ path }),
+    component: MediaTab,
+    open: (path) => shallowReactive({ path }),
+    navigate: (state, path) => {
+      if (path) state.path = path
+    },
     getTitle: (state) => getFileStem(state.path),
     identity: (path) => path,
     getTarget: (state) => ({ path: state.path, file: state.path, title: getFileStem(state.path) }),

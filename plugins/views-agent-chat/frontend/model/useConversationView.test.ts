@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { effectScope } from 'vue'
 import type { ConnectionHost, ConversationContext } from '@numen/plugin-sdk'
 import { WORDS } from '../words'
@@ -140,5 +141,36 @@ describe('a question in flight', () => {
 
     expect(view.isAnswerPending.value).toBe(false)
     await reply
+  })
+})
+
+describe('the agent of the conversation view', () => {
+  const agents = {
+    rows: [
+      {
+        connectionId: 'c-orchard',
+        connectionName: 'Orchard agent',
+        options: {},
+        fields: [{ key: 'model', title: 'Model', optionsFrom: 'llm.models', isRequired: true }],
+      },
+    ],
+    listOptions: () => [{ value: 'pear-large', title: 'Pear Large', group: '' }],
+  }
+
+  it('sends the model the person chose as the preferred row of the task', async () => {
+    const connections = createAgentConnections({ frames: [say('Done.')] }, agents)
+    const scope = effectScope()
+    const view = scope.run(() => useConversationView({ connections: connections.host }))!
+    await flushPromises()
+    const option = view.agents.offered.options.value.find((one) => one.modelId === 'pear-large')!
+
+    view.agents.selectModel(option)
+    await view.send('why')
+
+    expect(connections.calls[0]?.options?.preferred).toStrictEqual({
+      connectionId: 'c-orchard',
+      options: { model: 'pear-large' },
+      isExclusive: true,
+    })
   })
 })

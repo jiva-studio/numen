@@ -1,6 +1,6 @@
 /**
- * The entries the plugin's manifest places in the New submenu of the file tree: the commands that
- * create a deck, a card model and a preset.
+ * The manifest of the plugin: the entries it places in the New submenu of the file tree (the commands that
+ * create a deck, a card model and a preset) and the way it reaches agents.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -9,6 +9,8 @@ import { describe, expect, it } from 'vitest'
 const manifest = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
 ) as {
+  permissions: readonly string[]
+  settings: readonly { type: string }[]
   contributes: {
     commands: readonly Record<string, unknown>[]
     slots?: readonly Record<string, unknown>[]
@@ -34,5 +36,12 @@ describe('the New submenu of the file tree', () => {
     expect(ids).not.toContain('deck.new')
     expect(ids).not.toContain('cardModel.new')
     expect(ids).not.toContain('preset.new')
+  })
+})
+
+describe('the agents of the review', () => {
+  it('are the ones of the host, reached by a grant and chosen in no setting of the plugin', () => {
+    expect(manifest.permissions).toContain('connections:use:acp.task')
+    expect(manifest.settings.map((one) => one.type)).not.toContain('connections')
   })
 })

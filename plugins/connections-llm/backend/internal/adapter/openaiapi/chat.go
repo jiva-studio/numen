@@ -140,7 +140,7 @@ func (g *Gateway) openStream(
 		cancel()
 		failure := getTransportFailure(err)
 		if ctx.Err() == nil && opening.Err() != nil {
-			failure = "timeout"
+			failure = failureTimeout
 		}
 		g.report(ctx, "/chat/completions", failure, 0)
 		if ctx.Err() == nil && opening.Err() != nil {
@@ -154,7 +154,7 @@ func (g *Gateway) openStream(
 		if ctx.Err() != nil {
 			return nil, nil, nil, ctx.Err()
 		}
-		g.report(ctx, "/chat/completions", "timeout", 0)
+		g.report(ctx, "/chat/completions", failureTimeout, 0)
 		return nil, nil, nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	return response, requestCtx, cancel, nil

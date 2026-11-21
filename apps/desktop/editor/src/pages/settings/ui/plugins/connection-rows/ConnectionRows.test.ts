@@ -440,6 +440,12 @@ describe('the rows of a setting of connections', () => {
         ?.props('choices')
         .map((one) => one.text),
     ).toStrictEqual(['Default', 'Deep for alpha'])
+    expect(
+      wrapper
+        .findAllComponents(Select)[2]
+        ?.props('choices')
+        .map((one) => one.detail),
+    ).toStrictEqual([undefined, undefined])
     wrapper.findAllComponents(Select)[1]?.vm.$emit('update:modelValue', 'beta')
     await flushPromises()
 
@@ -523,37 +529,13 @@ describe('the rows of a setting of connections', () => {
 describe('the rows of a setting that discovers', () => {
   const discoverSwitch = (wrapper: VueWrapper) => wrapper.findComponent(Switch)
 
-  it('shows the switch on and names the connections that serve, in their order, while no row is chosen', async () => {
+  it('shows the switch on while no row is chosen, and no line of detected connections', async () => {
     const { wrapper } = mountRows({ discover: true, isDiscovering: true })
     await flushPromises()
 
     expect(root().textContent).toContain('Discover automatically')
     expect(discoverSwitch(wrapper).props('modelValue')).toBe(true)
-    expect(root().textContent).toContain('Automatic: Work, Home')
-    dispose(wrapper)
-  })
-
-  it('names a connection that serves one of the operations, as the core discovers each on its own', async () => {
-    const { wrapper } = mountRows({
-      discover: true,
-      isDiscovering: true,
-      operations: ['llm.complete', 'llm.embed'],
-    })
-    await flushPromises()
-
-    expect(root().textContent).toContain('Automatic: Embed only, Work, Home')
-    dispose(wrapper)
-  })
-
-  it('says that no connection serves while none can', async () => {
-    const { wrapper } = mountRows({
-      discover: true,
-      isDiscovering: true,
-      connections: [EMBED_ONLY, RETIRED],
-    })
-    await flushPromises()
-
-    expect(root().textContent).toContain('No connection serves this yet')
+    expect(root().textContent).not.toContain('Automatic:')
     dispose(wrapper)
   })
 
@@ -567,20 +549,6 @@ describe('the rows of a setting that discovers', () => {
 
     expect(root().querySelectorAll('li')).toHaveLength(1)
     expect(root().textContent).not.toContain('Automatic:')
-    dispose(wrapper)
-  })
-
-  it('names the automatic connections again once the last row is removed', async () => {
-    const { wrapper } = mountRows({
-      discover: true,
-      isDiscovering: true,
-      value: [row(HOME.id, 'beta')],
-    })
-    await flushPromises()
-
-    await wrapper.setProps({ value: [] })
-
-    expect(root().textContent).toContain('Automatic: Work, Home')
     dispose(wrapper)
   })
 

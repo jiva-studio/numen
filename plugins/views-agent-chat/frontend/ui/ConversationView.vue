@@ -17,6 +17,10 @@ defineExpose({ focus: () => agent.value?.focus({ preventScroll: true }) })
 /* --------------------------------- State ---------------------------------- */
 const view = useConversationView(props.context)
 const agent = useTemplateRef<InstanceType<typeof Agent>>('agent')
+
+const onOpenChoices = () => {
+  view.agents.listChoices().catch(() => undefined)
+}
 </script>
 
 <template>
@@ -27,11 +31,25 @@ const agent = useTemplateRef<InstanceType<typeof Agent>>('agent')
     :turns="view.turns.value"
     :is-answer-pending="view.isAnswerPending.value"
     :placeholder="view.placeholder"
+    :can-submit="view.agents.selected.canSubmit.value"
+    :options="view.agents.offered.options.value"
+    :selected-agent-id="view.agents.selected.agentId.value"
+    :selected-model-id="view.agents.selected.modelId.value"
+    :reasoning-levels="view.agents.offered.reasoningLevels.value"
+    :selected-reasoning-id="view.agents.selected.reasoningId.value"
+    :reasoning-name="words.reasoning"
+    :pending-agent-ids="view.agents.offered.pendingAgentIds.value"
+    :loading-label="words.loading"
+    :failed-agent-ids="view.agents.offered.failedAgentIds.value"
+    :failed-label="words.modelsFailed"
     :send-label="words.send"
     :stop-label="words.stop"
     @update:model-value="view.setQuestion"
     @submit="view.send"
     @stop="view.stop"
+    @select-model="view.agents.selectModel"
+    @select-reasoning="view.agents.selectReasoningLevel"
+    @open-choices="onOpenChoices"
   >
     <template #silence>{{ words.noTranscript }}</template>
     <template #failure="{ turn }">

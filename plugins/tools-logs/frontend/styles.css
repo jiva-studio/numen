@@ -35,6 +35,13 @@
   gap: calc(var(--toolbar-gap) / 2);
 }
 
+.logs-tab__levels-label {
+  margin-inline-end: calc(var(--toolbar-gap) / 2);
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
+  white-space: nowrap;
+}
+
 .logs-tab__level-btn {
   padding: var(--pill-pad-block) var(--pill-pad-inline);
   background: transparent;
@@ -54,7 +61,6 @@
   background: var(--numen-selection-away);
   border-color: var(--numen-ink);
   color: var(--numen-ink);
-  font-weight: 600;
 }
 
 .logs-tab__search {

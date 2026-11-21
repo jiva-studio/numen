@@ -31,6 +31,7 @@ type Gateway struct {
 	clients       clients
 	clock         Clock
 	reportFailure func(context.Context, string, string, int)
+	tracer        Tracer
 }
 
 // SetFailureReporter sets the receiver of HTTP failure classifications.
@@ -48,7 +49,7 @@ var _ ports.Gateway = (*Gateway)(nil)
 
 // New returns a Gateway that reads a date of the services against clock.
 func New(clock Clock) *Gateway {
-	return &Gateway{clients: newClients(), clock: clock, reportFailure: nil}
+	return &Gateway{clients: newClients(), clock: clock, reportFailure: nil, tracer: nil}
 }
 
 // Close closes the idle connections.

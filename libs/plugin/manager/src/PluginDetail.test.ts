@@ -77,13 +77,12 @@ describe('PluginDetail', () => {
     expect(wrapper.emitted('back')).toHaveLength(2)
   })
 
-  it('opens the category of the plugin from its segment of the path', async () => {
+  it('goes back from the category segment of the path', async () => {
     const wrapper = mountDetail()
 
     await wrapper.findAll('nav button')[1]?.trigger('click')
 
-    expect(wrapper.emitted('open-category')).toStrictEqual([['other']])
-    expect(wrapper.emitted('back')).toBeUndefined()
+    expect(wrapper.emitted('back')).toHaveLength(1)
   })
 
   it('shows the path from Settings through the category to the plugin, the plugin as the current page', () => {

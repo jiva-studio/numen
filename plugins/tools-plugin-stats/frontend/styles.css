@@ -12,7 +12,7 @@
   --popover-pad: 0.5rem;
   --popover-header-pad-inline: 0.75rem;
   --close-size: 1.25rem;
-  --close-text: 0.75rem;
+  --close-text: var(--numen-font-size);
   --column-gap: 0.5rem;
   --row-pad-block: 0.375rem;
   --row-pad-inline: 0.5rem;
@@ -25,7 +25,7 @@
 /* The chip: flat, with a ground and no border, as the other title bar chips. */
 .plugin-stats__trigger {
   --chip-height: 1.25rem;
-  --chip-text: 0.75rem;
+  --chip-text: var(--numen-font-size);
   --chip-pad: 0.5rem;
   --chip-mark: 0.75rem;
   display: inline-flex;

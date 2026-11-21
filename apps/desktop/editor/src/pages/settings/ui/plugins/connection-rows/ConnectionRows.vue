@@ -6,8 +6,7 @@
  * with the reason and listed after the others. A row is moved by dragging its grip, or by the
  * keyboard: Space picks it up, the arrows move it and Space drops it.
  *
- * A setting that declares discover has the switch "Discover automatically". While it is on and no row is
- * written, the page names the connections the plugin uses: every one whose type serves the operations.
+ * A setting that declares discover has the switch "Discover automatically".
  *
  * With no connection at all, the rows give way to a note and "Open Connections", which asks the
  * settings tab to show the Connections page.
@@ -78,16 +77,15 @@ const { heldKey, announcement, drag, onGripPress, onGripKey } = useRowOrder({
 
 const operations = computed(() => props.setting.operations ?? [])
 const limit = computed(() => props.setting.max ?? 1)
-const { stored, choices, discovered, getReason, getRowFields } = useConnectionEntries(
+const { stored, choices, getReason, getRowFields } = useConnectionEntries(
   () => props.connections,
   () => operations.value,
 )
 const isSingle = computed(() => limit.value === 1)
-const { isAutomatic, automaticText } = useAutomaticRows({
+const { isAutomatic } = useAutomaticRows({
   isDiscovering: () => props.isDiscovering === true,
   getValue: () => props.value,
   stored,
-  discovered,
   isSingle,
   drafts,
   add,
@@ -145,10 +143,6 @@ function isIndexChange(rows: readonly StoredRow[]): boolean {
         @add="onAdd"
         @discover="(isOn) => emit('discover', isOn)"
       />
-
-      <p v-if="isAutomatic" class="connection-rows__note">
-        {{ automaticText }}
-      </p>
 
       <div v-if="stored.length === 0" class="connection-rows__empty">
         <p class="connection-rows__note">{{ words.connectionRowsNone }}</p>
