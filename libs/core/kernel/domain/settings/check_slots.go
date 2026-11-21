@@ -2,8 +2,6 @@ package settings
 
 import "fmt"
 
-// checkSlotLayout returns why a value is not a slot layout: an object by slot name, each a list of
-// objects that hold the id of an entry and, optionally, whether it is hidden.
 func checkSlotLayout(value any) error {
 	layout, isObject := value.(map[string]any)
 	if !isObject {

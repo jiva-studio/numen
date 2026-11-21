@@ -14,10 +14,18 @@ import {
   type CommandTarget,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
-import { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from '../commandId'
+import { APP_COMMAND_OWNER, getCommandOwner } from '../commandId'
 import { getTargetValues, type WhenValues, createWhenReader, type WhenReader } from '../when'
 import { WINDOW_SLOTS } from './windowSlots'
 import { applyLayout, type DeclaredSlotPoint, type SlotLayout } from './slotLayout'
+import {
+  compareGroups,
+  compareOrder,
+  compareText,
+  formatItemKey,
+  getFullCommand,
+  getValuesKey,
+} from './slotKeys'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
 export interface DeclaredSlotEntry {
@@ -66,32 +74,16 @@ export interface SlotRegistryDeps {
 
 const KNOWN_SLOTS: ReadonlySet<string> = new Set(Object.values(SLOT))
 
-const compareText = (a: string, b: string): number => {
-  if (a === b) return 0
-  return a < b ? -1 : 1
-}
-
 /** An entry with the item it draws, in the order a slot sorts them. */
 interface Placed {
   readonly entry: DeclaredSlotEntry
   readonly item: SlotItem
 }
 
-const compareInGroup = (a: Placed, b: Placed): number => {
-  if (a.entry.order !== b.entry.order) {
-    if (a.entry.order === undefined) return 1
-    if (b.entry.order === undefined) return -1
-    return a.entry.order - b.entry.order
-  }
-  return compareText(a.entry.pluginId, b.entry.pluginId) || compareText(a.item.key, b.item.key)
-}
-
-const compareGroups = (a: string, b: string): number => {
-  if (a === b) return 0
-  if (a === '') return 1
-  if (b === '') return -1
-  return compareText(a, b)
-}
+const compareInGroup = (a: Placed, b: Placed): number =>
+  compareOrder(a.entry, b.entry) ||
+  compareText(a.entry.pluginId, b.entry.pluginId) ||
+  compareText(a.item.key, b.item.key)
 
 const compareInSlot = (a: Placed, b: Placed): number =>
   compareGroups(a.entry.group ?? '', b.entry.group ?? '') || compareInGroup(a, b)
@@ -111,9 +103,6 @@ function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
 
 const isWindowPlace = (slot: string): boolean =>
   WINDOW_SLOTS.some((one) => slot === one || slot.startsWith(`${one}.`))
-
-const getFullCommand = (entry: DeclaredSlotEntry, command: string): string =>
-  command.includes(':') ? command : formatCommandId(entry.pluginId, command)
 
 function layOut(slot: string, placed: readonly Placed[]): SlotItem[] {
   const groups = new Map<string, Placed[]>()
@@ -219,15 +208,6 @@ function readDeclaredSlots(
   return { entries, owners, inCycle: new Set(cycles.flat()) }
 }
 
-const getValuesKey = (values: DeclaredSlotEntry['values']): string => {
-  const names = Object.keys(values ?? {}).sort(compareText)
-  if (names.length === 0) return ''
-  const pairs = names.map(
-    (name) => `${encodeURIComponent(name)}=${encodeURIComponent(values?.[name] ?? '')}`,
-  )
-  return `?${pairs.join('&')}`
-}
-
 function toCommandItem(
   entry: DeclaredSlotEntry,
   command: string,
@@ -238,7 +218,7 @@ function toCommandItem(
   const icon = entry.icon ?? look.icon
   return {
     kind: 'command',
-    key: `${entry.pluginId}/command/${command}${getValuesKey(entry.values)}`,
+    key: formatItemKey(entry, 'command', `${command}${getValuesKey(entry.values)}`),
     pluginId: entry.pluginId,
     command,
     title: entry.title || look.title,
@@ -257,7 +237,7 @@ function toViewItem(
   if (component === undefined) return undefined
   return {
     kind: 'view',
-    key: `${entry.pluginId}/view/${view}`,
+    key: formatItemKey(entry, 'view', view),
     pluginId: entry.pluginId,
     view,
     component,
@@ -272,7 +252,7 @@ function toSubmenuItem(
   if (inner.length === 0) return undefined
   return {
     kind: 'submenu',
-    key: `${entry.pluginId}/submenu/${submenu}`,
+    key: formatItemKey(entry, 'submenu', submenu),
     pluginId: entry.pluginId,
     submenu,
     title: entry.title ?? '',

@@ -108,8 +108,10 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     getEntries: () => slots.hostDeps.slots.getSlotEntries(new Map()),
     findCommand: findSlotCommand,
     findView: () => undefined,
-    getWhenValues: slots.hostDeps.slots.getSlotWhenValues,
-    whenReader: slots.hostDeps.commands.whenReader,
+    when: {
+      getValues: slots.hostDeps.slots.getSlotWhenValues,
+      reader: slots.hostDeps.commands.whenReader,
+    },
   })
   return { registry, hostDeps: slots.hostDeps, state, findSlotCommand }
 }

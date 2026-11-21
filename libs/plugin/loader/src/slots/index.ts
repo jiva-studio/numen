@@ -11,5 +11,6 @@ export {
   type DeclaredSlotPoint,
   type SlotLayout,
 } from './slotLayout'
+export { getEntryKey, sortSlotEntries } from './slotKeys'
 export { createStyledView } from './styledView'
 export { WINDOW_SLOTS } from './windowSlots'

@@ -98,6 +98,8 @@ export {
   type SlotCommandLook,
   type SlotRegistryDeps,
   applyLayout,
+  getEntryKey,
+  sortSlotEntries,
   readManifestSlotPoints,
   type DeclaredSlotPoint,
   type SlotLayout,

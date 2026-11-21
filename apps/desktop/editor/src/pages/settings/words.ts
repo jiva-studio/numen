@@ -14,6 +14,11 @@ export const WORDS = {
   resetSettingOf: (name: string) => `Reset ${name} to its default`,
   /** The info button of a setting with details, and the popover it opens. */
   aboutSetting: (name: string) => `About ${name}`,
+  /** The slots a plugin draws: what is placed in each, and how a person orders and hides it. */
+  slotsEmpty: 'No entries in this slot.',
+  slotsMoveUp: (name: string) => `Move ${name} up`,
+  slotsMoveDown: (name: string) => `Move ${name} down`,
+  slotsShow: (name: string) => `Show ${name}`,
   /** The page of connections. */
   secretMasked: '••••••••',
   connectionAdd: 'Add connection',
