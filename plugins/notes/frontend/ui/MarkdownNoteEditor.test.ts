@@ -260,3 +260,26 @@ describe('MarkdownNoteEditor with the body from its tab', () => {
     expect(wrapper.vm.getContent()).toBe('')
   })
 })
+
+describe('MarkdownNoteEditor in a reader tab', () => {
+  it('reads and shows the file of a plain-text tab whose state carries no body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(new Response('plain words'))),
+    )
+    try {
+      const wrapper = mount(MarkdownNoteEditor, {
+        props: {
+          filePath: 'notes/todo.txt',
+          state: { path: 'notes/todo.txt', file: 'notes/todo.txt' } as unknown as NoteTabState,
+        },
+      })
+      await flushPromises()
+
+      expect(wrapper.vm.getContent()).toBe('plain words')
+      expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+})
