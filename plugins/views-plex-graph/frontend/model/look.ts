@@ -13,6 +13,12 @@ const SHOW_PILLS = 'showPills'
 /** The key the manifest declares Highlight links of a hovered note under. */
 const HIGHLIGHT_LINKS = 'highlightLinks'
 
+/** The key the manifest declares Activate a note after creating it under. */
+const ACTIVATE_CREATED = 'activateCreated'
+
+/** The key the manifest declares Activate a note after linking under. */
+const ACTIVATE_LINKED = 'activateLinked'
+
 /** The key the manifest declares References under. */
 const REFERENCES = 'references'
 
@@ -44,6 +50,12 @@ const parseReferences = (value: Unvalidated): ReferenceMode =>
 
 const parseShowPills = (value: Unvalidated): boolean => (typeof value === 'boolean' ? value : true)
 
+const parseActivateCreated = (value: Unvalidated): boolean =>
+  typeof value === 'boolean' ? value : true
+
+const parseActivateLinked = (value: Unvalidated): boolean =>
+  typeof value === 'boolean' ? value : false
+
 const parseHighlightLinks = (value: Unvalidated): boolean =>
   typeof value === 'boolean' ? value : true
 
@@ -64,6 +76,8 @@ export function readLook(context: Pick<PluginContext, 'settings'>): PlexLook {
     ...numbers,
     showPills: followSetting(context, SHOW_PILLS, parseShowPills),
     highlightLinks: followSetting(context, HIGHLIGHT_LINKS, parseHighlightLinks),
+    activateCreated: followSetting(context, ACTIVATE_CREATED, parseActivateCreated),
+    activateLinked: followSetting(context, ACTIVATE_LINKED, parseActivateLinked),
     references: followSetting(context, REFERENCES, parseReferences),
   }
 }

@@ -8,7 +8,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref, type Component } from 'vue'
 import { createPlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab'
-import type { CommandTarget, SlotCommand, SlotItem } from '@numen/plugin-sdk'
+import type { CommandTarget, JsonValue, SlotCommand, SlotItem } from '@numen/plugin-sdk'
 import { usePlexView as viewing } from './usePlexView'
 import { WORDS as words } from '../words'
 import {
@@ -94,6 +94,7 @@ const tab = (
   relatedNotes: readonly RelatedNoteInput[] = [],
   takes = true,
   types: Types = {},
+  settings: Record<string, JsonValue> = {},
 ) => {
   const plex = viewOn(targetPath, relatedNotes, types)
   const vault = createVault(takes)
@@ -109,7 +110,9 @@ const tab = (
   const deps: PlexTabDeps = {
     editor: vault.editor,
     tabId: 'plex:1',
-    look: getDefaultLook(),
+    look: readLook(
+      createMockPluginContext({ pluginId: 'md.numen.views.plex.graph', initialSettings: settings }),
+    ),
     creatable: ['parent', 'child', 'jump'],
     window: {
       isReady: ref(true),
@@ -973,7 +976,7 @@ describe('quick-link popover from a node handle', () => {
     expect(one.state.quickLink.quickLink.value).toBeNull()
   })
 
-  it('creates new note and navigates to it when confirmed with title and navigation enabled', async () => {
+  it('creates a note and activates it by default', async () => {
     const one = tab('Root.md')
     const rootNode = one.node('Root.md')
     one.state.quickLink.openQuickLink({ from: rootNode, relation: 'child', at: { x: 100, y: 200 } })
@@ -985,8 +988,8 @@ describe('quick-link popover from a node handle', () => {
     expect(one.went).toEqual(['SubTopic.md'])
   })
 
-  it('joins existing note and navigates to it when confirmed as existing note', async () => {
-    const one = tab('Root.md', ['Other.md'])
+  it('joins a note and activates it when linking activates', async () => {
+    const one = tab('Root.md', ['Other.md'], true, {}, { activateLinked: true })
     const rootNode = one.node('Root.md')
     one.state.quickLink.openQuickLink({ from: rootNode, relation: 'jump', at: { x: 100, y: 200 } })
 
@@ -997,9 +1000,8 @@ describe('quick-link popover from a node handle', () => {
     expect(one.went).toEqual(['Other.md'])
   })
 
-  it('remains on source note when navigation on create is disabled', async () => {
-    const one = tab('Root.md')
-    one.state.quickLink.isNavigatingOnCreate.value = false
+  it('creates a note and stays when creation does not activate', async () => {
+    const one = tab('Root.md', [], true, {}, { activateCreated: false })
     const rootNode = one.node('Root.md')
     one.state.quickLink.openQuickLink({ from: rootNode, relation: 'child', at: { x: 100, y: 200 } })
 
@@ -1009,9 +1011,8 @@ describe('quick-link popover from a node handle', () => {
     expect(one.went).toEqual(['Root.md'])
   })
 
-  it('joins existing note and stays on source note when navigation is disabled', async () => {
+  it('joins a note and stays by default', async () => {
     const one = tab('Root.md', ['Other.md'])
-    one.state.quickLink.isNavigatingOnCreate.value = false
     const rootNode = one.node('Root.md')
     one.state.quickLink.openQuickLink({ from: rootNode, relation: 'jump', at: { x: 100, y: 200 } })
 
@@ -1247,5 +1248,57 @@ describe('the References setting on an open tab', () => {
 
     one.context.setSetting('references', 'both')
     expect(one.titles()).toEqual(['Root', 'Child', 'Cites', 'CitedBy'])
+  })
+})
+
+describe('the settings of what a plex activates', () => {
+  const openQuickLink = (one: ReturnType<typeof tab>) =>
+    one.state.quickLink.openQuickLink({
+      from: one.node('Root.md'),
+      relation: 'child',
+      at: { x: 1, y: 2 },
+    })
+
+  const confirm = async (
+    settings: Record<string, JsonValue>,
+    title: string,
+    isExisting: boolean,
+  ) => {
+    const one = tab('Root.md', ['Other.md'], true, {}, settings)
+    openQuickLink(one)
+    await one.state.quickLink.confirmQuickLink(title, isExisting)
+    return one.went
+  }
+
+  it('lets a created note stay while linking still activates', async () => {
+    const settings = { activateCreated: false, activateLinked: true }
+
+    expect(await confirm(settings, 'Fresh', false)).toStrictEqual(['Root.md'])
+    expect(await confirm(settings, 'Other.md', true)).toStrictEqual(['Other.md'])
+  })
+
+  it('lets a linked note stay while creating still activates', async () => {
+    expect(await confirm({}, 'Fresh', false)).toStrictEqual(['Fresh.md'])
+    expect(await confirm({}, 'Other.md', true)).toStrictEqual(['Root.md'])
+  })
+
+  it('activates the note a drag linked to only when linking activates', async () => {
+    const off = tab('Root.md', ['Other.md'])
+    const on = tab('Root.md', ['Other.md'], true, {}, { activateLinked: true })
+
+    await off.state.nodes.joinNodes(off.node('Root.md'), off.node('Other.md'), 'jump')
+    await on.state.nodes.joinNodes(on.node('Root.md'), on.node('Other.md'), 'jump')
+
+    expect(off.went).toStrictEqual(['Root.md'])
+    expect(on.went).toStrictEqual(['Other.md'])
+  })
+
+  it('keeps the plex on its note when the menu creates one and creating does not activate', async () => {
+    const one = tab('Root.md', [], true, {}, { activateCreated: false })
+    one.state.menu.openMenu({ node: null, at: { x: 1, y: 2 }, opening: 'pointer' })
+    one.state.menu.chooseMenuItem(NEW_NOTE_ROW)
+    await settle()
+
+    expect(one.went).toStrictEqual(['Root.md'])
   })
 })
