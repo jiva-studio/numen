@@ -115,8 +115,10 @@
   font-size: calc(16px * var(--numen-interface-scale));
 }
 
-/* The window chrome: the title bar, the status bar and every widget a plugin puts in their slots,
-   with the popovers those widgets open. Like the native window buttons beside it, the chrome keeps
+/* The window chrome: the title bar, the status bar and every widget a plugin puts in their slots.
+   The popups those widgets open follow the interface scale: a rule whose selectors all name a class
+   containing "popover", or that is nested in one, is exempt from numen/chrome-fixed-size, so popup
+   parts are written under the popover selector. Like the native window buttons beside it, the chrome keeps
    its size at every interface scale and every text scale, so it is set in these lengths and not in
    `rem` or a token that follows the root font size. */
 :where(:root) {
