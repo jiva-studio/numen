@@ -115,13 +115,13 @@ describe('PluginsList', () => {
     ])
   })
 
-  it('draws the tiles System, Appearance, Editor, Search, Connections and Licenses in that order, each with its detail', () => {
+  it('draws the tiles System, Appearance, Editor, Search, Connections and Identity and licenses in that order, each with its detail', () => {
     const wrapper = mountList()
 
     const tiles = wrapper
       .findAll('button[aria-label]')
       .filter((one) =>
-        ['System', 'Appearance', 'Editor', 'Search', 'Connections', 'Licenses'].includes(
+        ['System', 'Appearance', 'Editor', 'Search', 'Connections', 'Identity and licenses'].includes(
           one.attributes('aria-label') ?? '',
         ),
       )
@@ -131,10 +131,18 @@ describe('PluginsList', () => {
       'Editor',
       'Search',
       'Connections',
-      'Licenses',
+      'Identity and licenses',
     ])
     expect(tiles[3]?.text()).toContain('Reranking, limits and results')
-    expect(tiles[5]?.text()).toContain('Subscriptions and license keys')
+    expect(tiles[5]?.text()).toContain('Account, this device and license keys')
+  })
+
+  it('emits the page identity from the Identity and licenses tile', async () => {
+    const wrapper = mountList()
+
+    await wrapper.get('button[aria-label="Identity and licenses"]').trigger('click')
+
+    expect(wrapper.emitted('select-plugin')).toStrictEqual([['identity']])
   })
 
   it('emits the page search from the Search tile', async () => {

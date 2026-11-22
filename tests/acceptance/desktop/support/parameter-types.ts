@@ -124,3 +124,9 @@ defineParameterType({
   regexp: / with an arrow to "[^"]+"| without an arrow|/,
   transformer: (arrow: string) => parseArrow(arrow),
 })
+
+defineParameterType({
+  name: 'presence',
+  regexp: /an|no/,
+  transformer: (presence: string) => presence === 'an',
+})

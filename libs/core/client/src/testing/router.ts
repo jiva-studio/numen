@@ -7,6 +7,7 @@ import {
   FileService,
   FolderDialogService,
   LogService,
+  IdentityService,
   LicenseService,
   NoteService,
   PluginDataService,
@@ -50,6 +51,7 @@ const SERVICES = {
   connectionCalls: ConnectionCallService,
   logService: LogService,
   licenses: LicenseService,
+  identity: IdentityService,
 } as const
 
 type ServiceName = keyof typeof SERVICES
