@@ -1,4 +1,4 @@
-package tabkind_test
+package file_test
 
 import (
 	"testing"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
 // declared is the tab kinds of the enabled plugins, in the order of their ids.
@@ -29,9 +29,9 @@ func entry(pluginID, kind, when string, rank domain.HandlerRank) plugin.TabKindE
 	}
 }
 
-func newChoose(t *testing.T, kinds declared, config pluginport.WhenConfig) *tabkind.Choose {
+func newChoose(t *testing.T, kinds declared, config pluginport.WhenConfig) *file.ChooseTabKind {
 	t.Helper()
-	choose := tabkind.NewChoose(kinds, notes{}, config)
+	choose := file.NewChooseTabKind(kinds, notes{}, config)
 	return choose
 }
 

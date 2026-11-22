@@ -1,5 +1,4 @@
-// Package tabkind chooses the kind of tab a note opens in.
-package tabkind
+package file
 
 import (
 	"slices"
@@ -13,22 +12,22 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
-// Choose gives a note the kind of tab it opens in, from the tab kinds of the enabled plugins.
-type Choose struct {
+// ChooseTabKind gives a note the kind of tab it opens in, from the tab kinds of the enabled plugins.
+type ChooseTabKind struct {
 	kinds      PluginTabKinds
 	types      contenttypeport.ContentTypeTable
 	config     configValue
 	conditions *when.Conditions
 }
 
-// NewChoose makes the choice over the tab kinds, the table that gives a file its type, and the
+// NewChooseTabKind makes the choice over the tab kinds, the table that gives a file its type, and the
 // settings a condition reads as config, which may be none. It needs the tab kinds and the table.
-func NewChoose(kinds PluginTabKinds, types contenttypeport.ContentTypeTable, config pluginport.WhenConfig) *Choose {
+func NewChooseTabKind(kinds PluginTabKinds, types contenttypeport.ContentTypeTable, config pluginport.WhenConfig) *ChooseTabKind {
 	var value configValue = noConfig{}
 	if config != nil {
 		value = givenConfig{config}
 	}
-	return &Choose{kinds: kinds, types: types, config: value, conditions: when.NewConditions()}
+	return &ChooseTabKind{kinds: kinds, types: types, config: value, conditions: when.NewConditions()}
 }
 
 type parsedKind struct {
@@ -41,13 +40,13 @@ type parsedKind struct {
 // holds over the note, a default kind before an alternate one, and among those the one
 // domain.ChooseHandler picks, the lower plugin id first. A kind without a condition takes no note.
 // Empty where no condition holds.
-func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[string]any) string {
+func (u *ChooseTabKind) Execute(path string, noteType domain.NoteType, properties map[string]any) string {
 	return u.chooseForNote(u.parseTabKinds(), nil, path, noteType, properties)
 }
 
 // ChooseMany gives the kind of tab each note in heads opens in, reading the tab kinds of the enabled
 // plugins once for the batch. A path where no condition holds is omitted.
-func (u *Choose) ChooseMany(heads map[string]frontmatter.Head) map[string]string {
+func (u *ChooseTabKind) ChooseMany(heads map[string]frontmatter.Head) map[string]string {
 	out := make(map[string]string, len(heads))
 	if len(heads) == 0 {
 		return out
@@ -65,7 +64,7 @@ func (u *Choose) ChooseMany(heads map[string]frontmatter.Head) map[string]string
 	return out
 }
 
-func (u *Choose) parseTabKinds() []parsedKind {
+func (u *ChooseTabKind) parseTabKinds() []parsedKind {
 	entries := u.kinds.ListTabKinds()
 	out := make([]parsedKind, 0, len(entries))
 	for _, one := range entries {
@@ -85,7 +84,7 @@ func (u *Choose) parseTabKinds() []parsedKind {
 	return out
 }
 
-func (u *Choose) chooseForNote(
+func (u *ChooseTabKind) chooseForNote(
 	kinds []parsedKind, cachedConfig *map[string]any, path string, noteType domain.NoteType, properties map[string]any,
 ) string {
 	contentType := u.types.GetContentType(path)
@@ -110,7 +109,7 @@ func (u *Choose) chooseForNote(
 	return chosen.ID
 }
 
-func (u *Choose) addConfig(values map[string]any, cachedConfig *map[string]any, needsConfig bool) {
+func (u *ChooseTabKind) addConfig(values map[string]any, cachedConfig *map[string]any, needsConfig bool) {
 	if !needsConfig {
 		return
 	}
@@ -129,7 +128,7 @@ func (u *Choose) addConfig(values map[string]any, cachedConfig *map[string]any, 
 	}
 }
 
-func (u *Choose) getConfig() map[string]any {
+func (u *ChooseTabKind) getConfig() map[string]any {
 	values := map[string]any{}
 	u.config.add(values)
 	config, ok := values["config"].(map[string]any)

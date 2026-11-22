@@ -1,4 +1,4 @@
-package tabkind
+package file
 
 import "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 

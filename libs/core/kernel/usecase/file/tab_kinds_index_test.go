@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -82,11 +81,11 @@ func (markdownTypes) GetContentType(path string) domain.ContentType {
 
 func (markdownTypes) ListExtensions(domain.ContentType) []string { return []string{"md"} }
 
-func newShippedChoice() *tabkind.Choose {
+func newShippedChoice() *file.ChooseTabKind {
 	entry := func(plugin, kind, when string, rank domain.HandlerRank) pluginentries.TabKindEntry {
 		return pluginentries.TabKindEntry{PluginID: plugin, TabKind: manifest.TabKind{Kind: kind, Title: kind, When: when, Rank: rank}}
 	}
-	return tabkind.NewChoose(shipped{
+	return file.NewChooseTabKind(shipped{
 		entry("org.example.editor", "note", "target.isNote", domain.RankAlternate),
 		entry("org.example.decks", "deck", "target.noteType == 'deck'", domain.RankDefault),
 		entry("org.example.search", "search", "target.noteType == 'search'", domain.RankDefault),
@@ -118,7 +117,7 @@ type tabKindWorld struct {
 	reads  *atomic.Int64
 	stats  *atomic.Int64
 	heads  *countingHeads
-	choose *tabkind.Choose
+	choose *file.ChooseTabKind
 }
 
 func newTabKindWorld(t *testing.T, notes map[string]string) tabKindWorld {
