@@ -289,7 +289,7 @@ message ReadNoteRequest {
 }
 
 message ReadNoteResponse {
-  // The prose below the frontmatter, with line endings as LF. Empty when the
+  // The prose below the frontmatter, with line endings as LF.
   string body = 1;
 
   // Set when the note was not read, and why.
@@ -616,6 +616,6 @@ message WatchEditsResponse {
   Range range = 3;
   // What is going in where that span stands.
   string text = 4;
-  // The last report of this change, which arrives whether the change landed or
+  // Set on the last report of this change.
   bool is_final = 5;
 }

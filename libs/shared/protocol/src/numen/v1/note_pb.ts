@@ -533,7 +533,7 @@ export const ReadNoteRequestSchema: GenMessage<ReadNoteRequest> = /*@__PURE__*/
  */
 export type ReadNoteResponse = Message<"numen.v1.ReadNoteResponse"> & {
   /**
-   * The prose below the frontmatter, with line endings as LF. Empty when the
+   * The prose below the frontmatter, with line endings as LF.
    *
    * @generated from field: string body = 1;
    */
@@ -1453,7 +1453,7 @@ export type WatchEditsResponse = Message<"numen.v1.WatchEditsResponse"> & {
   text: string;
 
   /**
-   * The last report of this change, which arrives whether the change landed or
+   * Set on the last report of this change.
    *
    * @generated from field: bool is_final = 5;
    */

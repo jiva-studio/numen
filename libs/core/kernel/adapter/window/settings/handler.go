@@ -79,7 +79,7 @@ func (h *Values) WriteSettings(
 	}
 	content := make([]settingsdomain.Setting, 0, len(r.Msg.GetSettings()))
 	for _, one := range r.Msg.GetSettings() {
-		content = append(content, settingsdomain.Setting{Path: one.GetAt(), JSON: one.GetValue()})
+		content = append(content, settingsdomain.Setting{Path: one.GetKeyPath(), JSON: one.GetValue()})
 	}
 	applied, err := h.write.Write(content)
 	if err != nil {
@@ -94,7 +94,7 @@ func (h *Values) WriteSettings(
 func newWireSettings(target []settingsdomain.Setting) []*v1.Setting {
 	content := make([]*v1.Setting, 0, len(target))
 	for _, one := range target {
-		content = append(content, &v1.Setting{At: one.Path, Value: one.JSON})
+		content = append(content, &v1.Setting{KeyPath: one.Path, Value: one.JSON})
 	}
 	return content
 }

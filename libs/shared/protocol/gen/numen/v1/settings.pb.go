@@ -166,8 +166,8 @@ type Setting struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The setting, as a path through the file. The first element is the owner, `app` or the id of a
 	// plugin, and the rest is the key path under it. A path is never joined, since ids contain dots.
-	At []string `protobuf:"bytes,1,rep,name=at,proto3" json:"at,omitempty"`
-	// What to write there, as JSON. A value the settings cannot be read out of
+	KeyPath []string `protobuf:"bytes,1,rep,name=key_path,json=keyPath,proto3" json:"key_path,omitempty"`
+	// What to write there, as JSON.
 	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -203,9 +203,9 @@ func (*Setting) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Setting) GetAt() []string {
+func (x *Setting) GetKeyPath() []string {
 	if x != nil {
-		return x.At
+		return x.KeyPath
 	}
 	return nil
 }
@@ -348,8 +348,8 @@ type WriteSettingsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Every setting after the write, in the shape of GetSettingsResponse.settings_json.
 	SettingsJson string `protobuf:"bytes,1,opt,name=settings_json,json=settingsJson,proto3" json:"settings_json,omitempty"`
-	// The version of the state `settings_json` stands for, as in GetSettingsResponse.version. It is greater
-	// than the version of any answer the core gave before the write.
+	// The version of the state `settings_json` describes, as in GetSettingsResponse.version. It is
+	// greater than the version of any answer the core gave before the write.
 	Version       uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -702,9 +702,9 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\aversion\x18\n" +
 	" \x01(\x04R\aversion\x12;\n" +
 	"\n" +
-	"app_groups\x18\v \x03(\v2\x1c.numen.v1.PluginSettingGroupR\tappGroups\"/\n" +
-	"\aSetting\x12\x0e\n" +
-	"\x02at\x18\x01 \x03(\tR\x02at\x12\x14\n" +
+	"app_groups\x18\v \x03(\v2\x1c.numen.v1.PluginSettingGroupR\tappGroups\":\n" +
+	"\aSetting\x12\x19\n" +
+	"\bkey_path\x18\x01 \x03(\tR\akeyPath\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\"\x16\n" +
 	"\x14WatchSettingsRequest\"D\n" +
 	"\x15WatchSettingsResponse\x12+\n" +

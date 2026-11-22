@@ -939,7 +939,7 @@ func TestWriteSettings_NextGetSettingsReturnsSaved(t *testing.T) {
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"app", "appearance", "mode"}, Value: `"dark"`},
+			{KeyPath: []string{"app", "appearance", "mode"}, Value: `"dark"`},
 		},
 	}))
 	if err != nil {
@@ -977,7 +977,7 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 			_, err = f.configuring.WriteSettings(
 				t.Context(),
 				connect.NewRequest(&v1.WriteSettingsRequest{
-					Settings: []*v1.Setting{{At: one.posVal, Value: one.value}},
+					Settings: []*v1.Setting{{KeyPath: one.posVal, Value: one.value}},
 				}),
 			)
 			if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -1003,8 +1003,8 @@ func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"app", "appearance", "mode"}, Value: `"dark"`},
-			{At: []string{"app", "appearance", "textScale"}, Value: `5`},
+			{KeyPath: []string{"app", "appearance", "mode"}, Value: `"dark"`},
+			{KeyPath: []string{"app", "appearance", "textScale"}, Value: `5`},
 		},
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -1032,7 +1032,7 @@ func isSyncing(t *testing.T, f *going) bool {
 func writeSetting(t *testing.T, f *going, value string, path ...string) error {
 	t.Helper()
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
-		Settings: []*v1.Setting{{At: path, Value: value}},
+		Settings: []*v1.Setting{{KeyPath: path, Value: value}},
 	}))
 	return err
 }

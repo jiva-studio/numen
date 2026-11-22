@@ -132,7 +132,7 @@ func oneName(t *testing.T, f *going, preserved bool) error {
 	t.Helper()
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"app", "naming", "syncTitleAndFilename"}, Value: fmt.Sprint(preserved)},
+			{KeyPath: []string{"app", "naming", "syncTitleAndFilename"}, Value: fmt.Sprint(preserved)},
 		},
 	}))
 	return err

@@ -6,8 +6,7 @@
 //
 // A window is not a vault: the editor and the window a person runs their cards
 // in are open at once, and which vault each has in front of the person, what
-// each is doing behind itself, and what has to land before it closes, are its
-// own. Every question here names the window it is about.
+// each runs, and what has to be saved before it closes, are its own. Every question here names the window it is about.
 package numenv1connect
 
 import (
@@ -58,22 +57,18 @@ const (
 
 // WindowServiceClient is a client for the numen.v1.WindowService service.
 type WindowServiceClient interface {
-	// WatchTasks reports everything being done behind the window, for as long as
-	// the caller listens: what it is, what it is on, and how far it has got.
+	// WatchTasks streams the tasks the window runs, for as long as the caller listens:
+	// the title, subject and progress of each.
 	//
-	// The whole list arrives every time any of it changes, and the first arrives
-	// at once, so a window that opened while work was running is notified of it.
-	// It is a stream and not a question asked over and over, because what is
-	// being done is known here the moment it changes and work can begin without
-	// the window asking for it — an agent is instructed to read a document, and this is
-	// where the person watching sees it happen.
+	// The whole list is sent on every change, and the first list is sent at once.
+	// It is a stream because tasks can start without a request from the window.
 	WatchTasks(context.Context, *connect.Request[v1.WatchTasksRequest]) (*connect.ServerStreamForClient[v1.WatchTasksResponse], error)
-	// WatchWindowClose says the window is going, for as long as the caller listens. A
-	// caller holding work that is only in its own memory writes it now and
-	// answers with ReportPendingWork.
+	// WatchWindowClose streams a message when the window is about to close. A caller
+	// holding unsaved work in memory saves it, then calls ReportPendingWork.
 	WatchWindowClose(context.Context, *connect.Request[v1.WatchWindowCloseRequest]) (*connect.ServerStreamForClient[v1.WatchWindowCloseResponse], error)
-	// ReportPendingWork says what a caller has left. Nothing left lets the window go;
-	// work a person is being asked about keeps it open. A caller that never says
+	// ReportPendingWork reports whether a caller still has unsaved work. The window
+	// closes when no caller has any, and stays open while a person is being asked
+	// about the work.
 	ReportPendingWork(context.Context, *connect.Request[v1.ReportPendingWorkRequest]) (*connect.Response[v1.ReportPendingWorkResponse], error)
 	// GetCurrentVault is which vault this window has in front of the person. Two
 	// windows are open on one installation and each shows what it shows, so it is
@@ -166,22 +161,18 @@ func (c *windowServiceClient) CancelTask(ctx context.Context, req *connect.Reque
 
 // WindowServiceHandler is an implementation of the numen.v1.WindowService service.
 type WindowServiceHandler interface {
-	// WatchTasks reports everything being done behind the window, for as long as
-	// the caller listens: what it is, what it is on, and how far it has got.
+	// WatchTasks streams the tasks the window runs, for as long as the caller listens:
+	// the title, subject and progress of each.
 	//
-	// The whole list arrives every time any of it changes, and the first arrives
-	// at once, so a window that opened while work was running is notified of it.
-	// It is a stream and not a question asked over and over, because what is
-	// being done is known here the moment it changes and work can begin without
-	// the window asking for it — an agent is instructed to read a document, and this is
-	// where the person watching sees it happen.
+	// The whole list is sent on every change, and the first list is sent at once.
+	// It is a stream because tasks can start without a request from the window.
 	WatchTasks(context.Context, *connect.Request[v1.WatchTasksRequest], *connect.ServerStream[v1.WatchTasksResponse]) error
-	// WatchWindowClose says the window is going, for as long as the caller listens. A
-	// caller holding work that is only in its own memory writes it now and
-	// answers with ReportPendingWork.
+	// WatchWindowClose streams a message when the window is about to close. A caller
+	// holding unsaved work in memory saves it, then calls ReportPendingWork.
 	WatchWindowClose(context.Context, *connect.Request[v1.WatchWindowCloseRequest], *connect.ServerStream[v1.WatchWindowCloseResponse]) error
-	// ReportPendingWork says what a caller has left. Nothing left lets the window go;
-	// work a person is being asked about keeps it open. A caller that never says
+	// ReportPendingWork reports whether a caller still has unsaved work. The window
+	// closes when no caller has any, and stays open while a person is being asked
+	// about the work.
 	ReportPendingWork(context.Context, *connect.Request[v1.ReportPendingWorkRequest]) (*connect.Response[v1.ReportPendingWorkResponse], error)
 	// GetCurrentVault is which vault this window has in front of the person. Two
 	// windows are open on one installation and each shows what it shows, so it is

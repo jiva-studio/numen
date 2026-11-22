@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IsoBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEhUKDXNldHRpbmdzX2pzb24YASABKAkSDAoEcGF0aBgCIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEg8KB3ZlcnNpb24YCiABKAQSMAoKYXBwX2dyb3VwcxgLIAMoCzIcLm51bWVuLnYxLlBsdWdpblNldHRpbmdHcm91cCIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciPwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlEhUKDXNldHRpbmdzX2pzb24YASABKAkSDwoHdmVyc2lvbhgCIAEoBCI5ChdDaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSCwoDa2V5GAIgASgJIkwKGENob29zZVBsdWdpblBhdGhSZXNwb25zZRIMCgRwYXRoGAEgASgJEhEKCWlzX2Nob3NlbhgCIAEoCBIPCgdwcm9ibGVtGAMgASgJIjYKDk9wdGlvbnNSZXF1ZXN0EhIKCm9wZXJhdGlvbnMYASADKAkSEAoIaXNfZnJlc2gYAiABKAgiQAoHT3B0aW9ucxIhCgdvcHRpb25zGAEgAygLMhAubnVtZW4udjEuT3B0aW9uEhIKCmlzX3BhcnRpYWwYAiABKAgiNQoGT3B0aW9uEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWdyb3VwGAMgASgJMt4CCg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSHC5udW1lbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaHS5udW1lbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElAKDVdyaXRlU2V0dGluZ3MSHi5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXNwb25zZRJZChBDaG9vc2VQbHVnaW5QYXRoEiEubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QaIi5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USUgoNV2F0Y2hTZXR0aW5ncxIeLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_plugin]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IsoBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEhUKDXNldHRpbmdzX2pzb24YASABKAkSDAoEcGF0aBgCIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEg8KB3ZlcnNpb24YCiABKAQSMAoKYXBwX2dyb3VwcxgLIAMoCzIcLm51bWVuLnYxLlBsdWdpblNldHRpbmdHcm91cCIqCgdTZXR0aW5nEhAKCGtleV9wYXRoGAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciPwoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlEhUKDXNldHRpbmdzX2pzb24YASABKAkSDwoHdmVyc2lvbhgCIAEoBCI5ChdDaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSCwoDa2V5GAIgASgJIkwKGENob29zZVBsdWdpblBhdGhSZXNwb25zZRIMCgRwYXRoGAEgASgJEhEKCWlzX2Nob3NlbhgCIAEoCBIPCgdwcm9ibGVtGAMgASgJIjYKDk9wdGlvbnNSZXF1ZXN0EhIKCm9wZXJhdGlvbnMYASADKAkSEAoIaXNfZnJlc2gYAiABKAgiQAoHT3B0aW9ucxIhCgdvcHRpb25zGAEgAygLMhAubnVtZW4udjEuT3B0aW9uEhIKCmlzX3BhcnRpYWwYAiABKAgiNQoGT3B0aW9uEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWdyb3VwGAMgASgJMt4CCg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSHC5udW1lbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaHS5udW1lbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElAKDVdyaXRlU2V0dGluZ3MSHi5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXNwb25zZRJZChBDaG9vc2VQbHVnaW5QYXRoEiEubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QaIi5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USUgoNV2F0Y2hTZXR0aW5ncxIeLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_plugin]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -105,12 +105,12 @@ export type Setting = Message<"numen.v1.Setting"> & {
    * The setting, as a path through the file. The first element is the owner, `app` or the id of a
    * plugin, and the rest is the key path under it. A path is never joined, since ids contain dots.
    *
-   * @generated from field: repeated string at = 1;
+   * @generated from field: repeated string key_path = 1;
    */
-  at: string[];
+  keyPath: string[];
 
   /**
-   * What to write there, as JSON. A value the settings cannot be read out of
+   * What to write there, as JSON.
    *
    * @generated from field: string value = 2;
    */
@@ -188,8 +188,8 @@ export type WriteSettingsResponse = Message<"numen.v1.WriteSettingsResponse"> & 
   settingsJson: string;
 
   /**
-   * The version of the state `settings_json` stands for, as in GetSettingsResponse.version. It is greater
-   * than the version of any answer the core gave before the write.
+   * The version of the state `settings_json` describes, as in GetSettingsResponse.version. It is
+   * greater than the version of any answer the core gave before the write.
    *
    * @generated from field: uint64 version = 2;
    */

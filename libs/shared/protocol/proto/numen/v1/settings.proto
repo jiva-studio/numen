@@ -69,9 +69,9 @@ message GetSettingsResponse {
 message Setting {
   // The setting, as a path through the file. The first element is the owner, `app` or the id of a
   // plugin, and the rest is the key path under it. A path is never joined, since ids contain dots.
-  repeated string at = 1;
+  repeated string key_path = 1;
 
-  // What to write there, as JSON. A value the settings cannot be read out of
+  // What to write there, as JSON.
   string value = 2;
 }
 
@@ -92,8 +92,8 @@ message WriteSettingsResponse {
   // Every setting after the write, in the shape of GetSettingsResponse.settings_json.
   string settings_json = 1;
 
-  // The version of the state `settings_json` stands for, as in GetSettingsResponse.version. It is greater
-  // than the version of any answer the core gave before the write.
+  // The version of the state `settings_json` describes, as in GetSettingsResponse.version. It is
+  // greater than the version of any answer the core gave before the write.
   uint64 version = 2;
 }
 

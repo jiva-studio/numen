@@ -160,7 +160,7 @@ export const createSettingsApi = (
    */
   async function* watchSettings(signal: AbortSignal): AsyncGenerator<readonly SettingEdit[]> {
     for await (const update of settingsService.watchSettings({}, { signal })) {
-      yield update.changed.map((one) => ({ at: [...one.at], value: one.value }))
+      yield update.changed.map((one) => ({ at: [...one.keyPath], value: one.value }))
     }
   }
 
@@ -198,7 +198,7 @@ export const createSettingsApi = (
     /** The settings written, answered with every setting after the write and its version. */
     updateSettings: async (edits: readonly SettingEdit[]): Promise<SettingsWritten> => {
       const answer = await settingsService.writeSettings({
-        settings: edits.map((one) => ({ at: [...one.at], value: one.value })),
+        settings: edits.map((one) => ({ keyPath: [...one.at], value: one.value })),
       })
       return { written: answer.settingsJson, version: answer.version }
     },

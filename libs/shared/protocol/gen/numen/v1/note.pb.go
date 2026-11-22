@@ -1277,7 +1277,7 @@ func (x *ReadNoteRequest) GetPath() string {
 
 type ReadNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The prose below the frontmatter, with line endings as LF. Empty when the
+	// The prose below the frontmatter, with line endings as LF.
 	Body string `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`
 	// Set when the note was not read, and why.
 	Error         ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
@@ -3018,7 +3018,7 @@ type WatchEditsResponse struct {
 	Range *Range `protobuf:"bytes,3,opt,name=range,proto3" json:"range,omitempty"`
 	// What is going in where that span stands.
 	Text string `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
-	// The last report of this change, which arrives whether the change landed or
+	// Set on the last report of this change.
 	IsFinal       bool `protobuf:"varint,5,opt,name=is_final,json=isFinal,proto3" json:"is_final,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

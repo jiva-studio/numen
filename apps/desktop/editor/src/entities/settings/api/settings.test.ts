@@ -204,7 +204,7 @@ describe('every setting', () => {
     await core.updateSettings([{ at: ['app', 'performance', 'profile'], value: '"eco"' }])
 
     expect(writtenLast()).toMatchObject({
-      settings: [{ at: ['app', 'performance', 'profile'], value: '"eco"' }],
+      settings: [{ keyPath: ['app', 'performance', 'profile'], value: '"eco"' }],
     })
   })
 })
@@ -425,7 +425,7 @@ describe('the settings that change', () => {
     request.watchSettings.mockImplementation(async function* (_req, context) {
       yield { changed: [] }
       if (!context.signal.aborted) {
-        yield { changed: [{ at: ['app', 'appearance', 'mode'], value: '"dark"' }] }
+        yield { changed: [{ keyPath: ['app', 'appearance', 'mode'], value: '"dark"' }] }
       }
     })
     const controller = new AbortController()

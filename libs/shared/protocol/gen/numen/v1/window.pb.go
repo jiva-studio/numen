@@ -8,8 +8,7 @@
 //
 // A window is not a vault: the editor and the window a person runs their cards
 // in are open at once, and which vault each has in front of the person, what
-// each is doing behind itself, and what has to land before it closes, are its
-// own. Every question here names the window it is about.
+// each runs, and what has to be saved before it closes, are its own. Every question here names the window it is about.
 
 package numenv1
 
@@ -35,7 +34,7 @@ const (
 	// Work that runs, stops, or fails.
 	TaskKind_TASK_KIND_UNSPECIFIED TaskKind = 0
 	// A message of the core, such as a notice of the read of the settings. It is
-	// neither running nor failed, and About holds the message.
+	// neither running nor failed, and detail holds the message.
 	TaskKind_TASK_KIND_NOTICE TaskKind = 1
 )
 
@@ -284,28 +283,24 @@ func (x *WatchTasksResponse) GetTasks() []*Task {
 	return nil
 }
 
-// A Task is one piece of work the application is doing behind the window.
-//
-// Every kind of work is one of these. That is the point: the next kind is an
-// entry in a list and not another field on the state, another thing for the
-// window to poll, and another branch in what draws it.
+// A Task is one piece of work the application runs for the window. Every kind of
+// work is a Task, so a new kind adds an entry to the list and no new field.
 type Task struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Id is what this work is called, so that the same work reported again
-	// replaces itself and not appearing twice.
+	// Id identifies the work. A task reported again with the same id replaces the
+	// earlier one.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Title is the work, in the words to show. About is what it is on, and is
-	// empty for work that is on nothing in particular.
+	// Title names the work. Detail names what it is on, and is empty for work with
+	// no particular subject.
 	Title  string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	Detail string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
-	// Done and total are how far it has got, when there is a total to count
-	// against. Both zero is work running with nothing to count, which is an
-	// ordinary state and not an unknown one.
+	// Progress of the work: completed_count out of total_count. Both zero means the
+	// work runs with nothing to count.
 	CompletedCount int64 `protobuf:"varint,4,opt,name=completed_count,json=completedCount,proto3" json:"completed_count,omitempty"`
 	TotalCount     int64 `protobuf:"varint,5,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	// Error is why the work stopped, when it stopped badly.
+	// The reason the work failed. Empty when it did not fail.
 	FailureReason string `protobuf:"bytes,6,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
-	// Set for work a person started and is waiting to be notified about.
+	// Set for work a person started and is waiting on.
 	IsUserStarted bool `protobuf:"varint,7,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
 	// Unit is what done and total are counted in.
 	Unit Unit `protobuf:"varint,8,opt,name=unit,proto3,enum=numen.v1.Unit" json:"unit,omitempty"`
@@ -486,7 +481,7 @@ type WatchWindowCloseResponse struct {
 	// What this caller answers ReportPendingWork with. The stream opens by saying it, so
 	// a caller knows it is listening before anything is asked of it.
 	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	// Set when the window is going and this caller's unwritten work has to land.
+	// Set when this caller has unsaved work that has to be saved before the window closes.
 	IsFlushRequired bool `protobuf:"varint,2,opt,name=is_flush_required,json=isFlushRequired,proto3" json:"is_flush_required,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache

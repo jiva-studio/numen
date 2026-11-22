@@ -134,7 +134,7 @@ export const EntrySchema: GenMessage<Entry> = /*@__PURE__*/
  */
 export type ListFileKindsRequest = Message<"numen.v1.ListFileKindsRequest"> & {
   /**
-   * The paths to answer about, as the vault files them. More than the vault
+   * The paths to answer about, as the vault files them.
    *
    * @generated from field: repeated string paths = 1;
    */

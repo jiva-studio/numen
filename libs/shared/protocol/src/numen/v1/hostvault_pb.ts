@@ -416,9 +416,9 @@ export const HostVaultService: GenService<{
     output: typeof GetHostVaultResponseSchema;
   },
   /**
-   * IndexVault brings the vault into the index when it is not there yet,
-   * and says where that stands. The work goes on after the call returns, and the
-   * caller asks again once WatchIndexChanges tells it something moved.
+   * IndexVault starts indexing the vault when it is not indexed yet, and returns the
+   * indexing state. Indexing continues after the call returns; the caller calls
+   * again after WatchIndexChanges reports a change.
    *
    * @generated from rpc numen.v1.HostVaultService.IndexVault
    */
@@ -439,7 +439,7 @@ export const HostVaultService: GenService<{
     output: typeof LockVaultResponseSchema;
   },
   /**
-   * UnlockVault lets the writers go.
+   * UnlockVault releases the lock taken by LockVault.
    *
    * @generated from rpc numen.v1.HostVaultService.UnlockVault
    */
@@ -471,9 +471,9 @@ export const HostVaultService: GenService<{
     output: typeof ListVaultProblemsResponseSchema;
   },
   /**
-   * WatchIndexChanges tells that something moved in some vault of the installation,
-   * until the caller disconnects. It says nothing of what moved. The first message is
-   * sent at once, so that the caller knows the watch is on.
+   * WatchIndexChanges streams a message when any vault of the installation changes,
+   * until the caller disconnects. A message does not say what changed. The first
+   * message is sent at once, to confirm the watch is active.
    *
    * @generated from rpc numen.v1.HostVaultService.WatchIndexChanges
    */

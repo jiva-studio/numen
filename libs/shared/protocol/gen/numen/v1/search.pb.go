@@ -203,8 +203,8 @@ func (x *SearchNamesResponse) GetMatches() []*NameMatch {
 	return nil
 }
 
-// NameMatch is one name that matched, and the note it stands for. A note's own
-// title matched when there is no heading here; otherwise the note is what the
+// NameMatch is one name that matched, and the note it stands for. When no
+// heading is set, the note's own title matched.
 type NameMatch struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Note  *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`

@@ -5,7 +5,7 @@
 //
 // What the vault is and what has changed in it: the questions that are about
 // the vault itself and not about anything filed in it. Its files are
-// file.proto, its notes note.proto and its text search.proto, and where the
+// file.proto, its notes note.proto and its text search.proto.
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";

@@ -54,8 +54,8 @@ message SearchNamesResponse {
   repeated NameMatch matches = 1;
 }
 
-// NameMatch is one name that matched, and the note it stands for. A note's own
-// title matched when there is no heading here; otherwise the note is what the
+// NameMatch is one name that matched, and the note it stands for. When no
+// heading is set, the note's own title matched.
 message NameMatch {
   Note note = 1;
 

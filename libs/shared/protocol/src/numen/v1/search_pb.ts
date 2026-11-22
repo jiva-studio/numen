@@ -77,8 +77,8 @@ export const SearchNamesResponseSchema: GenMessage<SearchNamesResponse> = /*@__P
   messageDesc(file_numen_v1_search, 1);
 
 /**
- * NameMatch is one name that matched, and the note it stands for. A note's own
- * title matched when there is no heading here; otherwise the note is what the
+ * NameMatch is one name that matched, and the note it stands for. When no
+ * heading is set, the note's own title matched.
  *
  * @generated from message numen.v1.NameMatch
  */

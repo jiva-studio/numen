@@ -85,7 +85,7 @@ message Entry {
 }
 
 message ListFileKindsRequest {
-  // The paths to answer about, as the vault files them. More than the vault
+  // The paths to answer about, as the vault files them.
   repeated string paths = 1;
 }
 

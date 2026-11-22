@@ -61,14 +61,14 @@ type HostVaultServiceClient interface {
 	// GetHostVault names the vault the host is showing. A host showing none answers
 	// with the vault unset.
 	GetHostVault(context.Context, *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error)
-	// IndexVault brings the vault into the index when it is not there yet,
-	// and says where that stands. The work goes on after the call returns, and the
-	// caller asks again once WatchIndexChanges tells it something moved.
+	// IndexVault starts indexing the vault when it is not indexed yet, and returns the
+	// indexing state. Indexing continues after the call returns; the caller calls
+	// again after WatchIndexChanges reports a change.
 	IndexVault(context.Context, *connect.Request[v1.IndexVaultRequest]) (*connect.Response[v1.IndexVaultResponse], error)
 	// LockVault holds the vault's writers to one caller until UnlockVault, or
 	// until the plugin stops. A caller that finds it held waits for it.
 	LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error)
-	// UnlockVault lets the writers go.
+	// UnlockVault releases the lock taken by LockVault.
 	UnlockVault(context.Context, *connect.Request[v1.UnlockVaultRequest]) (*connect.Response[v1.UnlockVaultResponse], error)
 	// ListParseProblems lists what parsing each file of the vault turned up.
 	ListParseProblems(context.Context, *connect.Request[v1.ListParseProblemsRequest]) (*connect.Response[v1.ListParseProblemsResponse], error)
@@ -76,9 +76,9 @@ type HostVaultServiceClient interface {
 	// ambiguous, dangling), or every check that is not opt-in when none is named.
 	// It needs vault:read.
 	ListVaultProblems(context.Context, *connect.Request[v1.ListVaultProblemsRequest]) (*connect.Response[v1.ListVaultProblemsResponse], error)
-	// WatchIndexChanges tells that something moved in some vault of the installation,
-	// until the caller disconnects. It says nothing of what moved. The first message is
-	// sent at once, so that the caller knows the watch is on.
+	// WatchIndexChanges streams a message when any vault of the installation changes,
+	// until the caller disconnects. A message does not say what changed. The first
+	// message is sent at once, to confirm the watch is active.
 	WatchIndexChanges(context.Context, *connect.Request[v1.WatchIndexChangesRequest]) (*connect.ServerStreamForClient[v1.WatchIndexChangesResponse], error)
 }
 
@@ -189,14 +189,14 @@ type HostVaultServiceHandler interface {
 	// GetHostVault names the vault the host is showing. A host showing none answers
 	// with the vault unset.
 	GetHostVault(context.Context, *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error)
-	// IndexVault brings the vault into the index when it is not there yet,
-	// and says where that stands. The work goes on after the call returns, and the
-	// caller asks again once WatchIndexChanges tells it something moved.
+	// IndexVault starts indexing the vault when it is not indexed yet, and returns the
+	// indexing state. Indexing continues after the call returns; the caller calls
+	// again after WatchIndexChanges reports a change.
 	IndexVault(context.Context, *connect.Request[v1.IndexVaultRequest]) (*connect.Response[v1.IndexVaultResponse], error)
 	// LockVault holds the vault's writers to one caller until UnlockVault, or
 	// until the plugin stops. A caller that finds it held waits for it.
 	LockVault(context.Context, *connect.Request[v1.LockVaultRequest]) (*connect.Response[v1.LockVaultResponse], error)
-	// UnlockVault lets the writers go.
+	// UnlockVault releases the lock taken by LockVault.
 	UnlockVault(context.Context, *connect.Request[v1.UnlockVaultRequest]) (*connect.Response[v1.UnlockVaultResponse], error)
 	// ListParseProblems lists what parsing each file of the vault turned up.
 	ListParseProblems(context.Context, *connect.Request[v1.ListParseProblemsRequest]) (*connect.Response[v1.ListParseProblemsResponse], error)
@@ -204,9 +204,9 @@ type HostVaultServiceHandler interface {
 	// ambiguous, dangling), or every check that is not opt-in when none is named.
 	// It needs vault:read.
 	ListVaultProblems(context.Context, *connect.Request[v1.ListVaultProblemsRequest]) (*connect.Response[v1.ListVaultProblemsResponse], error)
-	// WatchIndexChanges tells that something moved in some vault of the installation,
-	// until the caller disconnects. It says nothing of what moved. The first message is
-	// sent at once, so that the caller knows the watch is on.
+	// WatchIndexChanges streams a message when any vault of the installation changes,
+	// until the caller disconnects. A message does not say what changed. The first
+	// message is sent at once, to confirm the watch is active.
 	WatchIndexChanges(context.Context, *connect.Request[v1.WatchIndexChangesRequest], *connect.ServerStream[v1.WatchIndexChangesResponse]) error
 }
 

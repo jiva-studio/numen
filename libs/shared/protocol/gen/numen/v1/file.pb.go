@@ -227,7 +227,7 @@ func (x *Entry) GetModifiedUnixMs() int64 {
 
 type ListFileKindsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The paths to answer about, as the vault files them. More than the vault
+	// The paths to answer about, as the vault files them.
 	Paths         []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
