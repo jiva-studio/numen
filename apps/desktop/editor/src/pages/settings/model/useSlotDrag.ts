@@ -39,8 +39,8 @@ export interface SlotDragSource {
 /**
  * The drag of a row of a slot. The held row follows the pointer by its own element, so a move of the
  * pointer renders nothing; the list renders when the place the row is over changes, and the rows
- * between slide aside. The list is marked from the press, before the first move, so the rows are on
- * their own layers by the time one of them is lifted.
+ * between slide aside. Rows move by their `top`, never by a transform or a layer of their own: a
+ * composited row inside the clipped island is not painted in WebKitGTK while it moves.
  */
 export function useSlotDrag(source: SlotDragSource) {
   const { settling, settle, finish } = useRowSettle()
@@ -48,7 +48,7 @@ export function useSlotDrag(source: SlotDragSource) {
   let target = 0
 
   const clearHeldRow = (): void => {
-    pressed?.row?.style.removeProperty('transform')
+    pressed?.row?.style.removeProperty('top')
   }
 
   const drag = usePressDrag<number, number>({
@@ -63,7 +63,7 @@ export function useSlotDrag(source: SlotDragSource) {
     move: (from, point) => {
       if (!pressed?.row) return
       const offset = clampRowOffset(pressed.spans, from, point.y - pressed.startY)
-      pressed.row.style.transform = `translate3d(0, ${offset}px, 0)`
+      pressed.row.style.top = `${offset}px`
     },
     cancel: clearHeldRow,
     commit: (from, to, point) => {
@@ -92,7 +92,7 @@ export function useSlotDrag(source: SlotDragSource) {
   }
 
   const onRowTransitionEnd = (event: TransitionEvent): void => {
-    if (event.target === event.currentTarget && event.propertyName === 'transform') finish()
+    if (event.target === event.currentTarget && event.propertyName === 'top') finish()
   }
 
   const isPressed = (group: SlotGroup): boolean =>
@@ -127,7 +127,7 @@ export function useSlotDrag(source: SlotDragSource) {
     const landing = settling.value
     const offset =
       landing?.key === key ? (landing.isMoving ? 0 : landing.offset) : getShift(group, key, at)
-    return offset === 0 ? undefined : { transform: `translate3d(0, ${offset}px, 0)` }
+    return offset === 0 ? undefined : { top: `${offset}px` }
   }
 
   return { onGripPress, onRowTransitionEnd, isPressed, getRowClass, getRowStyle }

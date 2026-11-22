@@ -120,15 +120,13 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
   user-select: none;
 }
 
-.plugin-slots__list--pressed .plugin-slots__row {
-  will-change: transform;
-}
-
 .plugin-slots__action {
   margin-block: -0.25rem;
 }
 
 .plugin-slots__row {
+  position: relative;
+  inset-block-start: 0;
   display: flex;
   align-items: center;
   gap: 0.375rem;
@@ -139,9 +137,7 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
 
 .plugin-slots__row--lifted,
 .plugin-slots__row--settling {
-  position: relative;
   z-index: 1;
-  will-change: transform;
 }
 
 .plugin-slots__row--lifted {
@@ -150,7 +146,7 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
 
 .plugin-slots__row--shifting,
 .plugin-slots__row--settling {
-  transition: transform var(--numen-motion) var(--numen-easing);
+  transition: top var(--numen-motion) var(--numen-easing);
 }
 
 @media (prefers-reduced-motion: reduce) {
