@@ -15,16 +15,22 @@ afterEach(() => {
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-function open(doc: string): EditorView {
+const FIELDS = {
+  projects: [{ name: 'work', count: 2 }],
+  contexts: [{ name: 'home', count: 1 }],
+  tags: [{ name: 'river', count: 1 }],
+}
+
+function open(doc: string, late = false): EditorView {
+  let fields = late ? { projects: [], contexts: [], tags: [] } : FIELDS
   const extension = createTaskEditorExtension({
     api: {} as never,
     getToday: () => '2026-11-22',
-    getFields: () => ({
-      projects: [{ name: 'work', count: 2 }],
-      contexts: [{ name: 'home', count: 1 }],
-      tags: [{ name: 'river', count: 1 }],
-    }),
-    loadFields: async () => undefined,
+    getFields: () => fields,
+    loadFields: async () => {
+      await wait(60)
+      fields = FIELDS
+    },
     hideFields: false,
     showError: () => undefined,
   })
@@ -53,6 +59,13 @@ async function type(editor: EditorView, text: string): Promise<string[]> {
 }
 
 describe('the task editor extension in a markdown editor', () => {
+  it('offers the projects on the first plus when the fields were not loaded yet', async () => {
+    const editor = open('- [ ] pay ', true)
+
+    expect(await type(editor, '+')).toStrictEqual(['work'])
+    expect(completionStatus(editor.state)).toBe('active')
+  })
+
   it('offers the projects once a plus is typed on a task line', async () => {
     const editor = open('- [ ] pay ')
 

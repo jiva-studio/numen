@@ -62,4 +62,27 @@ describe('the field cache', () => {
 
     expect(cache.get().projects).toHaveLength(1)
   })
+
+  it('waits for the newest read when a newer one started meanwhile', async () => {
+    const answers: ((value: unknown) => void)[] = []
+    const listFields = vi.fn(() => new Promise((resolve) => answers.push(resolve)))
+    const cache = createFieldCache({ listFields } as never, { now: () => 0 })
+
+    const first = cache.refresh()
+    const second = cache.refresh()
+    answers[0]?.({ ok: true, value: { projects: [], contexts: [], tags: [] } })
+    const isFirstDone = first.then(() => true)
+    const isStillWaiting = await Promise.race([isFirstDone, Promise.resolve(false)])
+
+    expect(isStillWaiting).toBe(false)
+
+    answers[1]?.({
+      ok: true,
+      value: { projects: [{ name: 'work', count: 1 }], contexts: [], tags: [] },
+    })
+    await first
+    await second
+
+    expect(cache.get().projects).toEqual([{ name: 'work', count: 1 }])
+  })
 })

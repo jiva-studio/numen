@@ -18,12 +18,16 @@ export function createFieldCache(
   let latest = 0
   let askedAt = Number.NEGATIVE_INFINITY
   let running: Promise<void> | null = null
-  const refresh = async (): Promise<void> => {
+  let pending: Promise<void> = Promise.resolve()
+  const refresh = (): Promise<void> => {
     latest += 1
     const asked = latest
     askedAt = clock.now()
-    const result = await api.listFields()
-    if (result.ok && asked === latest) fields = result.value
+    const run = api.listFields().then((result) => {
+      if (result.ok && asked === latest) fields = result.value
+    })
+    pending = run
+    return run.then(() => (pending === run ? undefined : pending))
   }
   const isEmpty = (): boolean =>
     fields.projects.length + fields.contexts.length + fields.tags.length === 0
