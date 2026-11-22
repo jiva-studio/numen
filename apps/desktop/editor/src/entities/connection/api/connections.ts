@@ -4,7 +4,7 @@
  * rejects.
  */
 import type { ConnectionClient } from '@numen/core-client'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import type {
   ConnectionChange,
   ConnectionDraft,

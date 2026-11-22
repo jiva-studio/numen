@@ -3,8 +3,7 @@
  * reports, and what making one or moving one returns.
  */
 import type { JsonObject } from '@numen/plugin-loader'
-import type { Result } from '@/shared/lib/result'
-import type { ErrorCode } from '@/shared/api/errors'
+import type { ErrorCode, Result } from '@numen/result'
 
 /**
  * The note type from the `type` key of its frontmatter: `note`, or a type a plugin declares.

@@ -14,7 +14,7 @@ import type {
   ConnectionInfo,
   ConnectionTypeInfo,
 } from '@/entities/connection'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import type { SelectChoice } from '../../types'
 import { useConnectionForm } from '../../model/connectionForm'
 import { WORDS as words } from '../../words'

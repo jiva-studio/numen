@@ -7,7 +7,7 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import type * as Capacitor from '@capacitor/core'
 import { CapacitorException } from '@capacitor/core'
 import { IonToast } from '@ionic/vue'
-import { formatErrorMessage } from '@numen/core-client'
+import { formatErrorMessage } from '@numen/result'
 import VaultPage from './VaultPage.vue'
 
 const plugin = vi.hoisted(() => ({ start: vi.fn() }))

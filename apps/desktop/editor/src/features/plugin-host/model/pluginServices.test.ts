@@ -1,6 +1,6 @@
 /** The window and the notes of the vault, as a plugin's tabs are handed them. */
 import { describe, expect, it, vi } from 'vitest'
-import { ReportedError } from '@/shared/api/errors'
+import { ReportedError } from '@numen/result'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { ref, shallowRef } from 'vue'
 import type { FileOpeners } from '@/entities/tab'

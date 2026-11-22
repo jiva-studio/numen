@@ -2,7 +2,8 @@
  * The calls of the note service that read and write connections between notes.
  */
 import type { VaultRelations } from '@numen/plugin-loader'
-import { findErrorCode, asFailure, asValue, type Result } from '@numen/core-client'
+import { findErrorCode } from '@numen/core-client'
+import { asFailure, asValue, type Result } from '@numen/result'
 import type { WindowClients } from '@/shared/api/clients'
 import type { LinkApi } from './notes'
 import {

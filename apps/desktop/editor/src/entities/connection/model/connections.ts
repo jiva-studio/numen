@@ -4,7 +4,7 @@
  */
 import { shallowRef } from 'vue'
 import { createRequestGuard } from '@numen/ui'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { ConnectionApi } from '../api/connections'

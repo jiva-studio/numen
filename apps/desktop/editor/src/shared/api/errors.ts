@@ -1,17 +1,10 @@
 /**
- * The error text and codes the window shows. Slices reach the core client's error helpers through
- * this file.
+ * The error text the window shows. Slices reach the core client's error words through this file.
  */
-import { formatErrorMessage } from '@numen/core-client'
-
-/** The error code a vault operation answers with. */
-export type { ErrorCode } from '@numen/plugin-loader'
+import { formatErrorMessage } from '@numen/result'
 
 /** The sentence an error is reported as. */
 export const formatError = formatErrorMessage
-
-/** An error whose message is shown as it is. */
-export { ReportedError } from '@numen/core-client'
 
 /** The sentence of each error a vault operation answers with. */
 export { ERRORS } from '@numen/core-client'

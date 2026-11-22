@@ -6,7 +6,7 @@
  */
 import { TAB_MOVE_ERROR_CODE, type TabMoveErrorCodeValue } from '@numen/core-client'
 import type { WindowClients } from '@/shared/api/clients'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import type { MovedTab, Tab, TabMoveError } from '@/entities/tab'
 
 const parseTab = ({ id, kind, path, title, state }: Omit<Tab, 'place'>): Tab => ({

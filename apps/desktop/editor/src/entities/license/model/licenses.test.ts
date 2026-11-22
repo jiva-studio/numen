@@ -1,15 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { LicenseClient } from '@numen/core-client'
-import type { Result } from '@/shared/lib/result'
+import { asFailure, asValue } from '@numen/result'
 import type { LicenseFailure, LicenseInfo } from '../lib/types'
 import { createLicenseApi } from '../api/licenses'
 import { createLicenseStore } from './licenses'
-
-const asValue = <T>(value: T): Result<T, LicenseFailure> => ({ ok: true, value })
-const asFailure = (error: LicenseFailure): Result<never, LicenseFailure> => ({
-  ok: false,
-  error,
-})
 
 const createSampleLicense = (overrides: Partial<LicenseInfo> = {}): LicenseInfo => ({
   id: 'numen.sync',

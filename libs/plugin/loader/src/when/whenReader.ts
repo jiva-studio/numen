@@ -3,7 +3,7 @@
  * condition drawn or evaluated again is not parsed again. A window makes one reader and hands it to
  * every place that evaluates conditions.
  */
-import type { Result } from '@numen/plugin-sdk'
+import type { Result } from '@numen/result'
 import { parseWhen, type WhenCondition } from './when'
 
 /** Reads conditions, each text once. */

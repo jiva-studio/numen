@@ -15,7 +15,7 @@ import type {
   SettingEdit,
 } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 
 /** Every setting in effect, as a test core answers them. */
 interface Configuration {

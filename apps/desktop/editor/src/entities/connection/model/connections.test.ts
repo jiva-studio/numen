@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { formatError } from '@/shared/api/errors'
-import type { Result } from '@/shared/lib/result'
+import { asFailure, asValue, type Result } from '@numen/result'
 import type {
   ConnectionChange,
   ConnectionDraft,
@@ -16,12 +16,6 @@ interface TypeList {
 }
 import { createConnectionApi } from '../api/connections'
 import { createConnectionStore } from './connections'
-
-const asValue = <T>(value: T): Result<T, ConnectionFailure> => ({ ok: true, value })
-const asFailure = (error: ConnectionFailure): Result<never, ConnectionFailure> => ({
-  ok: false,
-  error,
-})
 
 /** The calls of the connection client, which a test answers. */
 interface ConnectionClient {

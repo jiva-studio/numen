@@ -1,7 +1,7 @@
 /**
  * Domain types for open notes and their storage.
  */
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import type { NoteErrorCode, State, DEFAULT_WRITE_LIMITS } from './tabState'
 
 import type { NoteContents } from '../../lib/note'

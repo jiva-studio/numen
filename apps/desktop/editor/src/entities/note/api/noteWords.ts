@@ -2,20 +2,8 @@
  * Note domain conversions between schema representations and window models.
  */
 import { formatFingerprint } from '@numen/plugin-loader'
-import {
-  findErrorCode,
-  isStaleAnswer,
-  NAME_SOURCE,
-  NOTE_LINK_DIRECTION,
-  NOTE_RELATION,
-  parseFingerprint,
-  type NameSourceCode,
-  type NoteErrorCodeValue,
-  type NoteLinkDirectionCode,
-  type NoteRelationCode,
-  asFailure,
-  asValue,
-} from '@numen/core-client'
+import { findErrorCode, isStaleAnswer, NAME_SOURCE, NOTE_LINK_DIRECTION, NOTE_RELATION, parseFingerprint, type NameSourceCode, type NoteErrorCodeValue, type NoteLinkDirectionCode, type NoteRelationCode } from '@numen/core-client'
+import { asFailure, asValue } from '@numen/result'
 import type { LinkDirection, NoteGraph, NoteResult, NoteRelation, WriteResult } from '../lib/note'
 import { mapNoteType } from '@/shared/api/wire'
 import { mapConnection, type ConnectionWire } from './relationWords'

@@ -7,7 +7,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 import type { ConnectionFieldInfo, ConnectionInfo, ConnectionTypeInfo } from '@/entities/connection'
-import { asValue, createInstallation } from '@/pages/settings/testing/installation'
+import { createInstallation } from '@/pages/settings/testing/installation'
+import { asValue } from '@numen/result'
 import ConnectionsPage from './ConnectionsPage.vue'
 
 const field = (

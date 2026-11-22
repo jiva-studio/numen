@@ -1,7 +1,7 @@
 /** Command execution against a window double: the registry, the commands of the palette, and the settings. */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
-import { ReportedError } from '@numen/core-client'
+import { ReportedError } from '@numen/result'
 import {
   createCommandRegistry,
   type CommandDeps,

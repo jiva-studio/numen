@@ -4,13 +4,8 @@
  * A plugin's `openExternal` passes an http or https address to this and fails any other address
  * before the window sees it. The window opens the address in the system browser.
  */
-import {
-  asFailure,
-  asValue,
-  formatErrorMessage,
-  isWebAddress,
-  type Result,
-} from '@numen/plugin-sdk'
+import { isWebAddress } from '@numen/plugin-sdk'
+import { asFailure, asValue, formatErrorMessage, type Result } from '@numen/result'
 
 /** Opens an address in the system browser. */
 export type ExternalOpener = (url: string) => Promise<void>
