@@ -196,4 +196,5 @@ export {
   getRelationErrorWords,
   type ErrorCode,
 } from './errors'
+export { isWebAddress } from './webAddress'
 export { resolveAddress, type AddressSource } from './media'
