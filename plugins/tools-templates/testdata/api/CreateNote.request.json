@@ -1,6 +1,7 @@
 {
   "template": "Templates/Meeting.md",
   "folder": "notes",
+  "name": "Kickoff",
   "values": { "client": "Acme", "kind": "visit" },
   "etag": "9f2c1a"
 }

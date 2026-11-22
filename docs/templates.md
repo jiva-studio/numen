@@ -14,9 +14,9 @@ The picker shows each template under a group. Where a mask starts with a folder,
 
 Right-click a folder in the file tree, open "New" and pick "New note from template", then pick a template. The note is made inside that folder. From the palette, the note is made in the folder of the note in front. A note that has no path makes it at the root of the vault.
 
-The new note is named after the template with `.template` left out, so `Meeting.template.md` makes `Meeting.md`, and a number is added where the name is taken: `Meeting.md`, `Meeting 2.md`, `Meeting 3.md`. The note opens in the current pane. Rename it as any note. The template is never changed.
+The first thing the palette asks after the template is picked is the name of the new note. The line starts with a suggestion, the name of the template with `.template` left out, so `Meeting.template.md` suggests `Meeting`, with a number added where that name is taken in the folder: `Meeting`, `Meeting 2`, `Meeting 3`. Enter accepts what is typed, and Escape makes no note. The name is the file name without `.md` and the title the template sees as `.title`. A name no note can have (empty, with a `/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|` or `#`, a `..`, more than one line) is refused, and so is a name a note of the folder has already, which is never overwritten: the palette asks the name again, with the reason after it. The note opens in the current pane. The template is never changed.
 
-The new note holds the frontmatter of the template with its keys in their order, and its own `id`: an `id` the template has is replaced. A template without frontmatter gives a note with the `id` alone. When the template asks questions (see [Asking](#asking)), a small form shows them first, and Cancel makes no note.
+The new note holds the frontmatter of the template with its keys in their order, and its own `id`: an `id` the template has is replaced. A template without frontmatter gives a note with the `id` alone. When the template asks questions (see [Asking](#asking)), the palette asks them after the name, one after the other, with the answer typed or the first option at the start, and Escape on any of them makes no note.
 
 ## The template language
 
@@ -30,7 +30,7 @@ A template is at most 256 KiB, the text it writes at most 1 MiB, and it runs for
 
 | Name | Is |
 | --- | --- |
-| `.title` | the name of the new note |
+| `.title` | the name given to the new note |
 | `.folder` | the folder the note is made in, empty for the root of the vault |
 | `.id` | the `id` of the new note |
 | `.now` | the date and time of the call |

@@ -34,17 +34,21 @@ type Field struct {
 }
 
 // ListFieldsResponse lists the fields of a template, in the order they are asked. Etag tells the template
-// they were read from, and CreateNote gives it back.
+// they were read from, and CreateNote gives it back. Name is the name no note of the folder has yet that a note
+// from the template is suggested to be given.
 type ListFieldsResponse struct {
 	Fields []Field `json:"fields"`
 	Etag   string  `json:"etag"`
+	Name   string  `json:"name"`
 }
 
-// CreateNoteRequest asks for a note made from a template. Values answers the fields by label, and Etag is
+// CreateNoteRequest asks for a note made from a template. Name is what the note is called: its file name
+// without the extension, and its title for the template. Values answers the fields by label, and Etag is
 // the one ListFields gave for the template.
 type CreateNoteRequest struct {
 	Template string            `json:"template"`
 	Folder   string            `json:"folder"`
+	Name     string            `json:"name"`
 	Values   map[string]string `json:"values"`
 	Etag     string            `json:"etag"`
 }

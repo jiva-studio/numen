@@ -4,10 +4,9 @@
 import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import type { CreateNoteResponse } from './api/templates'
 import { templatesApi, type TemplatesApi } from './api/wire'
-import { askFields } from './lib/askFields'
 import { getTargetFolder } from './lib/getTargetFolder'
-import { getTitle } from './lib/groupTemplates'
 import { parseMasks } from './lib/masks'
+import { createFromTemplate } from './model/createFromTemplate'
 import { createTemplateList, TemplateListError } from './model/createTemplateList'
 
 const openAnswer = (host: HostServices, answer: CreateNoteResponse): void => {
@@ -39,29 +38,13 @@ export const activate = (
     },
     handler: async (note, itemId) => {
       if (!itemId) return
-      const folder = getTargetFolder(note)
-      const asked = await api.listFields({ template: itemId, folder })
-      if (!asked.ok) {
-        host.ui.workspace?.messages.showError(asked.error.message)
-        return
-      }
-      const { fields } = asked.value
-      const picker = host.ui.picker
-      if (fields.length > 0 && !picker) {
-        host.ui.workspace?.messages.showError('the window cannot ask the fields of the template')
-        return
-      }
-      const values =
-        fields.length > 0 && picker ? await askFields(picker, getTitle(itemId), fields) : {}
-      if (!values) return
-      const answer = await api.createNote({
-        template: itemId,
-        folder,
-        values,
-        etag: asked.value.etag,
-      })
-      if (answer.ok) openAnswer(host, answer.value)
-      else host.ui.workspace?.messages.showError(answer.error.message)
+      const outcome = await createFromTemplate(
+        { api, picker: host.ui.picker },
+        itemId,
+        getTargetFolder(note),
+      )
+      if (outcome.kind === 'made') openAnswer(host, outcome.answer)
+      else if (outcome.kind === 'failed') host.ui.workspace?.messages.showError(outcome.message)
     },
   })
 }

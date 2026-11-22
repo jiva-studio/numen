@@ -1,0 +1,67 @@
+package newnote
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	pathpkg "path"
+	"strings"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+)
+
+// suggestName is the first name of the template that no note of the folder has: the name of the template, then
+// the name with 2, 3 and on up to maxNames. Every number taken, it is the name of the template.
+func suggestName(ctx context.Context, vault Vault, folder, template string) (string, error) {
+	stem := getName(template)
+	for number := 1; number <= maxNames; number++ {
+		name := stem
+		if number > 1 {
+			name = fmt.Sprintf("%s %d", stem, number)
+		}
+		isOpen, err := isFree(ctx, vault, getNotePath(folder, name))
+		if err != nil {
+			return "", err
+		}
+		if isOpen {
+			return name, nil
+		}
+	}
+	return stem, nil
+}
+
+// checkName refuses a name that no note file can have, as the host refuses the title of a note.
+func checkName(name string) error {
+	reduced, isExact, err := domain.Filename(name)
+	if err != nil {
+		return err
+	}
+	if !isExact {
+		return fmt.Errorf("%w: %q cannot be a file name, %q can", domain.ErrInvalidName, name, reduced)
+	}
+	return nil
+}
+
+func getNotePath(folder, name string) string {
+	return pathpkg.Join(folder, name+noteExtension)
+}
+
+func isFree(ctx context.Context, vault Vault, path string) (bool, error) {
+	_, err := vault.StatFile(ctx, path)
+	if errors.Is(err, host.ErrNotExist) {
+		return true, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("check the name %s: %w", path, err)
+	}
+	return false, nil
+}
+
+func getName(template string) string {
+	stem := strings.TrimSuffix(pathpkg.Base(template), noteExtension)
+	if name := strings.TrimSuffix(stem, templateExtension); name != "" {
+		return name
+	}
+	return stem
+}

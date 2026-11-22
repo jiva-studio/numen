@@ -10,8 +10,8 @@ export const askFields = async (
   fields: readonly Field[],
 ): Promise<Readonly<Record<string, string>> | undefined> => {
   const values: Record<string, string> = {}
-  for (const [index, field] of fields.entries()) {
-    const question = `${title} · ${index + 1}/${fields.length} ${field.label}`
+  for (const field of fields) {
+    const question = `${title} · ${field.label}`
     const answer =
       field.kind === 'select'
         ? await palette.choose({

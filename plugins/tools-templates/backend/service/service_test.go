@@ -5,10 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	pathpkg "path"
 	"reflect"
 	"strings"
 	"testing"
@@ -77,6 +77,16 @@ func createNote(t *testing.T, web *testWeb, template, folder string) (int, []byt
 	return createNoteWith(t, web, template, folder, nil)
 }
 
+func createNoteAs(t *testing.T, web *testWeb, template, folder, name string) (int, []byte) {
+	t.Helper()
+	content, _ := web.vault.Content(template)
+	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Name: name, Values: nil, Etag: newnote.Etag(content)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return post(t, web.Server, "/"+api.Service+"/"+api.MethodCreateNote, string(body))
+}
+
 func listFields(t *testing.T, web *testWeb, template string) (int, []byte) {
 	t.Helper()
 	body, err := json.Marshal(api.ListFieldsRequest{Template: template, Folder: "work"})
@@ -89,7 +99,8 @@ func listFields(t *testing.T, web *testWeb, template string) (int, []byte) {
 func createNoteWith(t *testing.T, web *testWeb, template, folder string, values map[string]string) (int, []byte) {
 	t.Helper()
 	content, _ := web.vault.Content(template)
-	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Values: values, Etag: newnote.Etag(content)})
+	name := strings.TrimSuffix(pathpkg.Base(template), ".md")
+	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Name: name, Values: values, Etag: newnote.Etag(content)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,10 +152,11 @@ func TestListFieldsReturnsWhatTheTemplateAsks(t *testing.T) {
 		{Kind: api.KindText, Label: "Client", Options: []string{}, Default: "Acme"},
 		{Kind: api.KindSelect, Label: "Kind", Options: []string{"call", "visit"}, Default: "call"},
 	}
-	if status != http.StatusOK || !reflect.DeepEqual(got.Fields, want) {
+	if status != http.StatusOK || !reflect.DeepEqual(got.Fields, want) || got.Name != "Visit" {
 		t.Errorf("ListFields = %d %s", status, body)
 	}
-	if status, body := listFields(t, web, "Templates/Plain.md"); status != http.StatusOK || !strings.Contains(string(body), `"fields":[]`) {
+	vault.File("work/Plain.md", "taken")
+	if status, body := listFields(t, web, "Templates/Plain.md"); status != http.StatusOK || !strings.Contains(string(body), `"fields":[]`) || !strings.Contains(string(body), `"name":"Plain 2"`) {
 		t.Errorf("ListFields of a plain template = %d %s", status, body)
 	}
 	if status, body := listFields(t, web, "Notes/x.md"); status != http.StatusBadRequest {
@@ -161,7 +173,7 @@ func TestCreateNoteRefusesATemplateThatChanged(t *testing.T) {
 	if err := json.Unmarshal(listed, &fields); err != nil {
 		t.Fatal(err)
 	}
-	body, err := json.Marshal(api.CreateNoteRequest{Template: "Templates/Visit.md", Folder: "work", Values: nil, Etag: fields.Etag})
+	body, err := json.Marshal(api.CreateNoteRequest{Template: "Templates/Visit.md", Folder: "work", Name: fields.Name, Values: nil, Etag: fields.Etag})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,7 +201,8 @@ func TestCreateNoteWritesTheValues(t *testing.T) {
 	if content, _ := vault.Content("work/Visit.md"); status != http.StatusOK || !strings.Contains(content, "# Globex visit\n") {
 		t.Errorf("CreateNote = %d %s, note %q", status, body, content)
 	}
-	status, body = createNoteWith(t, web, "Templates/Visit.md", "work", map[string]string{"Kind": "nap"})
+	vault.File("Templates/Other.md", asking)
+	status, body = createNoteWith(t, web, "Templates/Other.md", "work", map[string]string{"Kind": "nap"})
 	if failure := readFailure(t, body); status != http.StatusBadRequest || failure.Code != server.CodeInvalidArgument || !strings.Contains(failure.Message, "Kind") {
 		t.Errorf("CreateNote with a bad option = %d %s", status, body)
 	}
@@ -210,12 +223,9 @@ func TestCreateNoteRefusesAFolderOutsideTheVault(t *testing.T) {
 
 func TestMapTheErrorsOfTheUseCaseToTheirCodes(t *testing.T) {
 	t.Run("maps the errors of the use case to their codes", func(t *testing.T) {
-		manyNames := hosttest.New("notes")
-		manyNames.File("Templates/Meeting.md", meeting)
-		manyNames.File("work/Meeting.md", "taken")
-		for number := 2; number <= 100; number++ {
-			manyNames.File(fmt.Sprintf("work/Meeting %d.md", number), "taken")
-		}
+		taken := hosttest.New("notes")
+		taken.File("Templates/Meeting.md", meeting)
+		taken.File("work/Meeting.md", "taken")
 		broken := hosttest.New("notes")
 		broken.File("Templates/Broken.md", "# {{ .title }}\n{{ if }}\n")
 		noVault := hosttest.New("notes")
@@ -225,7 +235,7 @@ func TestMapTheErrorsOfTheUseCaseToTheirCodes(t *testing.T) {
 		denied.File("Templates/Meeting.md", meeting)
 		denied.Refuse("Templates/Meeting.md", host.ErrPermissionDenied)
 		invalid := hosttest.New("notes")
-		invalid.File("Templates/Plan: draft.md", "---\nname: {{ .title }}\n---\n")
+		invalid.File("Templates/@draft.md", "---\nname: {{ .title }}\n---\n")
 		binary := hosttest.New("notes")
 		binary.File("Templates/Binary.md", "\xff\xfe\x00")
 		plain := hosttest.New("notes")
@@ -244,10 +254,10 @@ func TestMapTheErrorsOfTheUseCaseToTheirCodes(t *testing.T) {
 			{"a parent segment", plain, "Templates/../Notes/Meeting.md", 400, server.CodeInvalidArgument, "not a template: Templates/../Notes/Meeting.md"},
 			{"a path that is not a note", plain, "Templates/Meeting.txt", 400, server.CodeInvalidArgument, "not a template: Templates/Meeting.txt"},
 			{"a missing template", plain, "Templates/Nothing.md", 404, server.CodeNotFound, "template not found: Templates/Nothing.md"},
-			{"frontmatter that is invalid after substitution", invalid, "Templates/Plan: draft.md", 412, server.CodeFailedPrecondition, "template does not produce a valid note: "},
+			{"frontmatter that is invalid after substitution", invalid, "Templates/@draft.md", 412, server.CodeFailedPrecondition, "template does not produce a valid note: "},
 			{"a template that is not text", binary, "Templates/Binary.md", 412, server.CodeFailedPrecondition, "template does not produce a valid note: "},
 			{"a template that does not parse", broken, "Templates/Broken.md", 412, server.CodeFailedPrecondition, "template does not produce a valid note: invalid template: template: Broken.md:2"},
-			{"no free name", manyNames, "Templates/Meeting.md", 412, server.CodeFailedPrecondition, "no free name for Meeting"},
+			{"a name that is taken", taken, "Templates/Meeting.md", 409, server.CodeAlreadyExists, "a note of that name exists: work/Meeting.md"},
 			{"no vault", noVault, "Templates/Meeting.md", 412, server.CodeFailedPrecondition, ""},
 			{"a denied host call", denied, "Templates/Meeting.md", 403, server.CodePermissionDenied, ""},
 		} {
@@ -261,6 +271,33 @@ func TestMapTheErrorsOfTheUseCaseToTheirCodes(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestCreateNoteRefusesANameNoNoteCanHave(t *testing.T) {
+	vault := hosttest.New("notes")
+	vault.File("Templates/Meeting.md", meeting)
+	web := newWeb(t, vault)
+
+	for _, name := range []string{"", "a/b", "..", "a:b"} {
+		status, body := createNoteAs(t, web, "Templates/Meeting.md", "work", name)
+
+		failure := readFailure(t, body)
+		if status != http.StatusBadRequest || failure.Code != server.CodeInvalidArgument || !strings.Contains(failure.Message, "cannot be given this title") {
+			t.Errorf("CreateNote named %q = %d %s", name, status, body)
+		}
+	}
+}
+
+func TestCreateNoteUsesTheNameGiven(t *testing.T) {
+	vault := hosttest.New("notes")
+	vault.File("Templates/Meeting.md", meeting)
+	web := newWeb(t, vault)
+
+	status, body := createNoteAs(t, web, "Templates/Meeting.md", "work", "Kickoff")
+
+	if content, isThere := vault.Content("work/Kickoff.md"); status != http.StatusOK || !isThere || !strings.Contains(content, "# Kickoff\n") {
+		t.Errorf("CreateNote = %d %s, note %q", status, body, content)
+	}
 }
 
 func TestTheHostConfiguresTheMasksOfTheTemplates(t *testing.T) {
@@ -293,7 +330,7 @@ func TestAnswerWithTheNoteWhenItCannotBeIndexed(t *testing.T) {
 	vault.File("Templates/Meeting.md", meeting)
 	useCase := newnote.NewCreateFromTemplate(unindexed{vault}, new(clocktest.Fake), ulid.NewGenerator(rand.Reader), func() mask.Set { return mask.Parse("") })
 
-	got, err := makeCreateNoteHandler(useCase)(t.Context(), api.CreateNoteRequest{Template: "Templates/Meeting.md", Folder: "work", Values: nil, Etag: newnote.Etag(meeting)})
+	got, err := makeCreateNoteHandler(useCase)(t.Context(), api.CreateNoteRequest{Template: "Templates/Meeting.md", Folder: "work", Name: "Meeting", Values: nil, Etag: newnote.Etag(meeting)})
 
 	if err != nil || got.Path != "work/Meeting.md" || !strings.Contains(got.Warning, "not indexed") || !strings.Contains(got.Warning, "index is down") {
 		t.Errorf("CreateNote = %+v, %v", got, err)

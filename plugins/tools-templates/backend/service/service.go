@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/api"
@@ -22,11 +23,13 @@ const settingTemplates = "templates"
 
 func convertError(err error, template string) error {
 	switch {
-	case errors.Is(err, newnote.ErrNotATemplate), errors.Is(err, newnote.ErrInvalidFolder), errors.Is(err, engine.ErrNotAnOption):
+	case errors.Is(err, newnote.ErrNotATemplate), errors.Is(err, newnote.ErrInvalidFolder), errors.Is(err, engine.ErrNotAnOption), errors.Is(err, domain.ErrInvalidName):
 		return server.NewAPIError(server.CodeInvalidArgument, err.Error())
+	case errors.Is(err, newnote.ErrNameTaken):
+		return server.NewAPIError(server.CodeAlreadyExists, err.Error())
 	case errors.Is(err, host.ErrNotExist):
 		return server.NewAPIError(server.CodeNotFound, "template not found: "+template)
-	case errors.Is(err, newnote.ErrInvalidNote), errors.Is(err, newnote.ErrTemplateChanged), errors.Is(err, newnote.ErrNoFreeName), errors.Is(err, host.ErrNoVault):
+	case errors.Is(err, newnote.ErrInvalidNote), errors.Is(err, newnote.ErrTemplateChanged), errors.Is(err, host.ErrNoVault):
 		return server.NewAPIError(server.CodeFailedPrecondition, err.Error())
 	case errors.Is(err, host.ErrPermissionDenied):
 		return server.NewAPIError(server.CodePermissionDenied, err.Error())
@@ -36,7 +39,7 @@ func convertError(err error, template string) error {
 
 func makeCreateNoteHandler(useCase newnote.CreateFromTemplate) func(context.Context, api.CreateNoteRequest) (api.CreateNoteResponse, error) {
 	return func(ctx context.Context, req api.CreateNoteRequest) (api.CreateNoteResponse, error) {
-		made, err := useCase.Execute(ctx, newnote.Request{Template: req.Template, Folder: req.Folder, Values: req.Values, Etag: req.Etag})
+		made, err := useCase.Execute(ctx, newnote.Request{Template: req.Template, Folder: req.Folder, Name: req.Name, Values: req.Values, Etag: req.Etag})
 		if errors.Is(err, newnote.ErrNotIndexed) {
 			return api.CreateNoteResponse{Path: made.Path, Warning: err.Error()}, nil
 		}
@@ -57,7 +60,7 @@ func makeListFieldsHandler(useCase newnote.ListFields) func(context.Context, api
 		for i, field := range found.Fields {
 			fields[i] = api.Field{Kind: api.FieldKind(field.Kind), Label: field.Label, Options: field.Options, Default: field.Default}
 		}
-		return api.ListFieldsResponse{Fields: fields, Etag: found.Etag}, nil
+		return api.ListFieldsResponse{Fields: fields, Etag: found.Etag, Name: found.Name}, nil
 	}
 }
 

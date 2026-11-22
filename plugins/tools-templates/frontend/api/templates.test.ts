@@ -36,6 +36,7 @@ const EXPECTED: [
         { kind: 'select', label: 'Kind', options: ['call', 'visit'], default: 'call' },
       ],
       etag: '9f2c1a',
+      name: 'Meeting 2',
     },
   },
   {
@@ -43,12 +44,13 @@ const EXPECTED: [
     request: {
       template: 'Templates/Meeting.md',
       folder: 'notes',
+      name: 'Kickoff',
       values: { client: 'Acme', kind: 'visit' },
       etag: '9f2c1a',
     },
     response: {
-      path: 'notes/Meeting.md',
-      warning: 'note is made but not indexed: notes/Meeting.md: index is down',
+      path: 'notes/Kickoff.md',
+      warning: 'note is made but not indexed: notes/Kickoff.md: index is down',
     },
   },
 ]

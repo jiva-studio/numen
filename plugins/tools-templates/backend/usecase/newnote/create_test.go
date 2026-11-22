@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	pathpkg "path"
 	"regexp"
 	"slices"
 	"strings"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock/clocktest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
@@ -56,9 +58,25 @@ func createNote(t *testing.T, vault *hosttest.Vault, template, folder string) st
 	return made.Path
 }
 
+func newListFields(vault newnote.Vault) newnote.ListFields {
+	return newnote.NewListFields(vault, newClock(getToday()), func() mask.Set { return mask.Parse("") })
+}
+
+func suggestName(vault newnote.Vault, template, folder string) string {
+	found, err := newListFields(vault).Execute(context.Background(), newnote.FieldsRequest{Template: template, Folder: folder})
+	if err != nil {
+		return strings.TrimSuffix(strings.TrimSuffix(pathpkg.Base(template), ".md"), ".template")
+	}
+	return found.Name
+}
+
 func getRequest(vault *hosttest.Vault, template, folder string, values map[string]string) newnote.Request {
+	return getNamedRequest(vault, template, folder, suggestName(vault, template, folder), values)
+}
+
+func getNamedRequest(vault *hosttest.Vault, template, folder, name string, values map[string]string) newnote.Request {
 	content, _ := vault.Content(template)
-	return newnote.Request{Template: template, Folder: folder, Values: values, Etag: newnote.Etag(content)}
+	return newnote.Request{Template: template, Folder: folder, Name: name, Values: values, Etag: newnote.Etag(content)}
 }
 
 func getContent(t *testing.T, vault *hosttest.Vault, path string) string {
@@ -213,102 +231,162 @@ func TestAssignTheNoteItsOwnID(t *testing.T) {
 	})
 }
 
-func TestNameTheNote(t *testing.T) {
-	t.Run("names the note after the template", func(t *testing.T) {
+func TestSuggestTheNameOfTheNote(t *testing.T) {
+	suggest := func(t *testing.T, vault *hosttest.Vault, template, folder string) string {
+		t.Helper()
+		found, err := newListFields(vault).Execute(t.Context(), newnote.FieldsRequest{Template: template, Folder: folder})
+		if err != nil {
+			t.Fatalf("ListFields(%q, %q): %v", template, folder, err)
+		}
+		return found.Name
+	}
+
+	t.Run("suggests the name of the template", func(t *testing.T) {
 		vault := newVault(map[string]string{"Templates/Book review.md": book})
 
-		if path := createNote(t, vault, "Templates/Book review.md", "reading"); path != "reading/Book review.md" {
-			t.Errorf("path = %q", path)
+		if got := suggest(t, vault, "Templates/Book review.md", "reading"); got != "Book review" {
+			t.Errorf("name = %q", got)
 		}
 	})
 	t.Run("strips .template from the name", func(t *testing.T) {
 		vault := newVault(map[string]string{"Notes/Book review.template.md": book})
 
-		path := createNote(t, vault, "Notes/Book review.template.md", "reading")
-
-		if path != "reading/Book review.md" {
-			t.Fatalf("path = %q", path)
-		}
-		if got := openNote(t, getContent(t, vault, path)).Body(); got != "# Book review\n\nAuthor\n" {
-			t.Errorf("body = %q", got)
+		if got := suggest(t, vault, "Notes/Book review.template.md", "reading"); got != "Book review" {
+			t.Errorf("name = %q", got)
 		}
 	})
 	t.Run("keeps a name that is .template alone", func(t *testing.T) {
 		vault := newVault(map[string]string{"Notes/.template.md": book})
 
-		if path := createNote(t, vault, "Notes/.template.md", "work"); path != "work/.template.md" {
-			t.Errorf("path = %q", path)
-		}
-	})
-	t.Run("uses that name as the title variable", func(t *testing.T) {
-		vault := newVault(map[string]string{"Templates/Book review.md": book})
-
-		path := createNote(t, vault, "Templates/Book review.md", "reading")
-
-		if got := openNote(t, getContent(t, vault, path)).Body(); got != "# Book review\n\nAuthor\n" {
-			t.Errorf("body = %q", got)
+		if got := suggest(t, vault, "Notes/.template.md", "work"); got != ".template" {
+			t.Errorf("name = %q", got)
 		}
 	})
 	t.Run("numbers the name when it is taken", func(t *testing.T) {
 		vault := newVault(map[string]string{"Templates/Meeting.md": book, "work/Meeting.md": "taken", "work/Meeting 2.md": "taken"})
 
-		path := createNote(t, vault, "Templates/Meeting.md", "work")
-
-		if path != "work/Meeting 3.md" {
-			t.Fatalf("path = %q", path)
-		}
-		if got := openNote(t, getContent(t, vault, path)).Body(); got != "# Meeting 3\n\nAuthor\n" {
-			t.Errorf("body = %q", got)
-		}
-		if content, _ := vault.Content("work/Meeting.md"); content != "taken" {
-			t.Errorf("a taken note changed: %q", content)
+		if got := suggest(t, vault, "Templates/Meeting.md", "work"); got != "Meeting 3" {
+			t.Errorf("name = %q", got)
 		}
 	})
-	t.Run("renders the template for the free name alone", func(t *testing.T) {
-		const onlyForThree = "{{ if ne .title \"Meeting 3\" }}{{ .missing }}{{ end }}# {{ .title }}\n"
-		vault := newVault(map[string]string{"Templates/Meeting.md": onlyForThree, "work/Meeting.md": "taken", "work/Meeting 2.md": "taken"})
+	t.Run("suggests the name in the folder asked, not another", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Meeting.md": book, "other/Meeting.md": "taken"})
 
-		path := createNote(t, vault, "Templates/Meeting.md", "work")
-
-		if path != "work/Meeting 3.md" {
-			t.Errorf("path = %q", path)
-		}
-	})
-	t.Run("tries the next name when the file appears between check and create", func(t *testing.T) {
-		vault := newVault(map[string]string{"Templates/Meeting.md": book})
-		racing := &racingVault{Vault: vault, pending: []string{"work/Meeting.md"}}
-
-		made, err := newUseCase(racing, newClock(getToday())).Execute(t.Context(), getRequest(vault, "Templates/Meeting.md", "work", nil))
-
-		if err != nil || made.Path != "work/Meeting 2.md" {
-			t.Fatalf("path = %q, error = %v", made.Path, err)
-		}
-		if content, _ := vault.Content("work/Meeting.md"); content != "written by another window" {
-			t.Errorf("the note of the other writer changed: %q", content)
+		if got := suggest(t, vault, "Templates/Meeting.md", "work"); got != "Meeting" {
+			t.Errorf("name = %q", got)
 		}
 	})
 	t.Run("uses the last number of the hundred", func(t *testing.T) {
 		vault := newVault(map[string]string{"Templates/Meeting.md": book})
 		takeNames(vault, "work", "Meeting", 99)
 
-		if path := createNote(t, vault, "Templates/Meeting.md", "work"); path != "work/Meeting 100.md" {
-			t.Errorf("path = %q", path)
+		if got := suggest(t, vault, "Templates/Meeting.md", "work"); got != "Meeting 100" {
+			t.Errorf("name = %q", got)
 		}
 	})
-	t.Run("fails after 100 taken names", func(t *testing.T) {
+	t.Run("falls back to the name of the template after 100 taken names", func(t *testing.T) {
 		vault := newVault(map[string]string{"Templates/Meeting.md": book})
 		takeNames(vault, "work", "Meeting", 100)
 
-		_, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), getRequest(vault, "Templates/Meeting.md", "work", nil))
+		if got := suggest(t, vault, "Templates/Meeting.md", "work"); got != "Meeting" {
+			t.Errorf("name = %q", got)
+		}
+	})
+	t.Run("uses the name as the title the fields of the template see", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Meeting.md": "{{ prompt \"Topic\" .title }}\n", "work/Meeting.md": "taken"})
 
-		if !errors.Is(err, newnote.ErrNoFreeName) || !strings.Contains(err.Error(), "Meeting") {
+		found, err := newListFields(vault).Execute(t.Context(), newnote.FieldsRequest{Template: "Templates/Meeting.md", Folder: "work"})
+
+		if err != nil || len(found.Fields) != 1 || found.Fields[0].Default != "Meeting 2" {
+			t.Errorf("fields = %+v, error = %v", found.Fields, err)
+		}
+	})
+}
+
+func TestNameTheNote(t *testing.T) {
+	execute := func(vault newnote.Vault, request newnote.Request) (newnote.Result, error) {
+		return newUseCase(vault, newClock(getToday())).Execute(context.Background(), request)
+	}
+
+	t.Run("files the note under the name given", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Book review.md": book})
+
+		made, err := execute(vault, getNamedRequest(vault, "Templates/Book review.md", "reading", "Dune", nil))
+
+		if err != nil || made.Path != "reading/Dune.md" {
+			t.Fatalf("path = %q, error = %v", made.Path, err)
+		}
+	})
+	t.Run("uses the name given as the title variable", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Book review.md": book})
+
+		made, err := execute(vault, getNamedRequest(vault, "Templates/Book review.md", "reading", "Dune", nil))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got := openNote(t, getContent(t, vault, made.Path)).Body(); got != "# Dune\n\nAuthor\n" {
+			t.Errorf("body = %q", got)
+		}
+	})
+	t.Run("trims the name", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Book review.md": book})
+
+		made, err := execute(vault, getNamedRequest(vault, "Templates/Book review.md", "reading", "  Dune \t", nil))
+
+		if err != nil || made.Path != "reading/Dune.md" {
+			t.Errorf("path = %q, error = %v", made.Path, err)
+		}
+	})
+	t.Run("takes a name the template did not suggest", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Meeting.md": book})
+
+		made, err := execute(vault, getNamedRequest(vault, "Templates/Meeting.md", "work", "Kickoff 2026-11-14", nil))
+
+		if err != nil || made.Path != "work/Kickoff 2026-11-14.md" {
+			t.Errorf("path = %q, error = %v", made.Path, err)
+		}
+	})
+	t.Run("refuses a name that is taken, and leaves the note it names", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Meeting.md": book, "work/Meeting.md": "taken"})
+
+		_, err := execute(vault, getNamedRequest(vault, "Templates/Meeting.md", "work", "Meeting", nil))
+
+		if !errors.Is(err, newnote.ErrNameTaken) || !strings.Contains(err.Error(), "Meeting") {
 			t.Errorf("error = %v", err)
 		}
-		if content, isThere := vault.Content("work/Meeting 101.md"); isThere {
-			t.Errorf("a 101st note was made: %q", content)
+		if content, _ := vault.Content("work/Meeting.md"); content != "taken" {
+			t.Errorf("a taken note changed: %q", content)
 		}
 		if len(vault.Scans()) != 0 {
 			t.Errorf("scans = %v", vault.Scans())
+		}
+	})
+	t.Run("refuses a name that is taken between the check and the create", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Meeting.md": book})
+		racing := &racingVault{Vault: vault, pending: []string{"work/Meeting.md"}}
+
+		_, err := execute(racing, getNamedRequest(vault, "Templates/Meeting.md", "work", "Meeting", nil))
+
+		if !errors.Is(err, newnote.ErrNameTaken) {
+			t.Errorf("error = %v", err)
+		}
+		if content, _ := vault.Content("work/Meeting.md"); content != "written by another window" {
+			t.Errorf("the note of the other writer changed: %q", content)
+		}
+	})
+	t.Run("refuses a name no note can have", func(t *testing.T) {
+		for _, name := range []string{"", "   ", "..", ".", "a/b", "../x", "a\\b", "a:b", "a*b", "a?b", "a\"b", "a<b", "a>b", "a|b", "a#b", "one\ntwo", "CON", "x\x00"} {
+			vault := newVault(map[string]string{"Templates/Meeting.md": book})
+
+			_, err := execute(vault, getNamedRequest(vault, "Templates/Meeting.md", "work", name, nil))
+
+			if !errors.Is(err, domain.ErrInvalidName) {
+				t.Errorf("name %q: error = %v", name, err)
+			}
+			if len(vault.Scans()) != 0 {
+				t.Errorf("name %q: a note was made: %v", name, vault.Scans())
+			}
 		}
 	})
 }
@@ -338,14 +416,13 @@ func TestWriteTheDateTheClockReports(t *testing.T) {
 		vault := newVault(map[string]string{"Templates/Daily.md": "# {{ .title }} {{ date \"YYYY-MM-DD\" }} {{ time \"HH:mm\" }}\n"})
 		source := newClock(time.Date(2026, 11, 14, 9, 5, 0, 0, time.UTC))
 		useCase := newUseCase(vault, source)
-		request := getRequest(vault, "Templates/Daily.md", "journal", nil)
 
-		first, err := useCase.Execute(t.Context(), request)
+		first, err := useCase.Execute(t.Context(), getNamedRequest(vault, "Templates/Daily.md", "journal", "Daily", nil))
 		if err != nil {
 			t.Fatal(err)
 		}
 		source.Set(time.Date(2027, 2, 3, 21, 45, 0, 0, time.UTC))
-		second, err := useCase.Execute(t.Context(), request)
+		second, err := useCase.Execute(t.Context(), getNamedRequest(vault, "Templates/Daily.md", "journal", "Daily 2", nil))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -426,14 +503,14 @@ func TestRefuseWhatIsNoTemplate(t *testing.T) {
 
 func TestMakeNoNoteFromATemplateThatIsNotText(t *testing.T) {
 	t.Run("makes no note when the substituted frontmatter is invalid", func(t *testing.T) {
-		vault := newVault(map[string]string{"Templates/Plan: draft.md": "---\nname: {{ .title }}\n---\nbody\n"})
+		vault := newVault(map[string]string{"Templates/Plan.md": "---\nname: {{ .title }}\n---\nbody\n"})
 
-		_, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), getRequest(vault, "Templates/Plan: draft.md", "work", nil))
+		_, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), getNamedRequest(vault, "Templates/Plan.md", "work", "@draft", nil))
 
 		if !errors.Is(err, newnote.ErrInvalidNote) {
 			t.Errorf("error = %v", err)
 		}
-		if content, isThere := vault.Content("work/Plan: draft.md"); isThere {
+		if content, isThere := vault.Content("work/@draft.md"); isThere {
 			t.Errorf("a note was made: %q", content)
 		}
 		if len(vault.Scans()) != 0 {
@@ -709,7 +786,7 @@ func TestRefuseATemplateThatChangedSinceItWasListed(t *testing.T) {
 	})
 	t.Run("makes the note for the etag that was listed", func(t *testing.T) {
 		vault := newVault(map[string]string{"Templates/Visit.md": asking})
-		request := newnote.Request{Template: "Templates/Visit.md", Folder: "work", Values: map[string]string{"Client": "Acme"}, Etag: list(vault).Etag}
+		request := newnote.Request{Template: "Templates/Visit.md", Folder: "work", Name: "Visit", Values: map[string]string{"Client": "Acme"}, Etag: list(vault).Etag}
 
 		if _, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), request); err != nil {
 			t.Error(err)
@@ -721,7 +798,7 @@ func TestRefuseATemplateThatChangedSinceItWasListed(t *testing.T) {
 	} {
 		t.Run("makes no note for "+c.name, func(t *testing.T) {
 			vault := newVault(map[string]string{"Templates/Visit.md": asking})
-			request := newnote.Request{Template: "Templates/Visit.md", Folder: "work", Values: nil, Etag: c.etag}
+			request := newnote.Request{Template: "Templates/Visit.md", Folder: "work", Name: "Visit", Values: nil, Etag: c.etag}
 
 			_, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), request)
 

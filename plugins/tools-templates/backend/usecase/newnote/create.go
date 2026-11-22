@@ -35,8 +35,8 @@ var (
 	// ErrInvalidNote is a template that does not produce a valid note.
 	ErrInvalidNote = errors.New("template does not produce a valid note")
 
-	// ErrNoFreeName is a template whose name is taken in the folder, with every number tried.
-	ErrNoFreeName = errors.New("no free name for")
+	// ErrNameTaken is a name a note of the folder already has. Nothing is written.
+	ErrNameTaken = errors.New("a note of that name exists")
 
 	// ErrInvalidFolder is a folder that is not a clean path inside the vault.
 	ErrInvalidFolder = errors.New("not a folder of the vault")
@@ -64,11 +64,12 @@ type IDs interface {
 	NewID(at time.Time) (string, error)
 }
 
-// Request names a template, the folder the note is made in and the values of the fields the template asks.
-// Etag is the one ListFields gave for the template.
+// Request names a template, the folder the note is made in, the name the note is given and the values of the
+// fields the template asks. Etag is the one ListFields gave for the template.
 type Request struct {
 	Template string
 	Folder   string
+	Name     string
 	Values   map[string]string
 	Etag     string
 }
@@ -104,62 +105,46 @@ func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, er
 	if Etag(text) != in.Etag {
 		return Result{}, ErrTemplateChanged
 	}
+	name := strings.TrimSpace(in.Name)
+	if err := checkName(name); err != nil {
+		return Result{}, err
+	}
 	now := u.clock.Now()
 	id, err := u.ids.NewID(now)
 	if err != nil {
 		return Result{}, fmt.Errorf("make the id of the note: %w", err)
 	}
-
-	stem := getName(in.Template)
-	for number := 1; number <= maxNames; number++ {
-		name := stem
-		if number > 1 {
-			name = fmt.Sprintf("%s %d", stem, number)
-		}
-		data := engine.Data{Title: name, Folder: in.Folder, ID: id, Now: now, Values: in.Values}
-		target := pathpkg.Join(in.Folder, name+noteExtension)
-		path, isMade, err := u.createAs(ctx, target, render{renderer: u.renderer, template: in.Template, text: text, data: data})
-		if isMade {
-			return Result{Path: path}, err
-		}
-		if err != nil {
-			return Result{}, err
-		}
+	data := engine.Data{Title: name, Folder: in.Folder, ID: id, Now: now, Values: in.Values}
+	path, err := u.create(ctx, getNotePath(in.Folder, name), render{renderer: u.renderer, template: in.Template, text: text, data: data})
+	if path == "" {
+		return Result{}, err
 	}
-	return Result{}, fmt.Errorf("%w %s", ErrNoFreeName, stem)
+	return Result{Path: path}, err
 }
 
-func (u CreateFromTemplate) createAs(ctx context.Context, path string, r render) (string, bool, error) {
-	isFree, err := u.isFree(ctx, path)
-	if err != nil || !isFree {
-		return "", false, err
+func (u CreateFromTemplate) create(ctx context.Context, path string, r render) (string, error) {
+	isNameFree, err := isFree(ctx, u.vault, path)
+	if err != nil {
+		return "", err
+	}
+	if !isNameFree {
+		return "", fmt.Errorf("%w: %s", ErrNameTaken, path)
 	}
 	content, err := r.getContent(ctx)
 	if err != nil {
-		return "", false, err
+		return "", err
 	}
 	err = u.vault.Create(ctx, path, content)
 	if errors.Is(err, host.ErrAlreadyExists) {
-		return "", false, nil
+		return "", fmt.Errorf("%w: %s", ErrNameTaken, path)
 	}
 	if err != nil {
-		return "", false, fmt.Errorf("create the note %s: %w", path, err)
+		return "", fmt.Errorf("create the note %s: %w", path, err)
 	}
 	if err := u.vault.Scan(ctx, []string{path}); err != nil {
-		return path, true, fmt.Errorf("%w: %s: %w", ErrNotIndexed, path, err)
+		return path, fmt.Errorf("%w: %s: %w", ErrNotIndexed, path, err)
 	}
-	return path, true, nil
-}
-
-func (u CreateFromTemplate) isFree(ctx context.Context, path string) (bool, error) {
-	_, err := u.vault.StatFile(ctx, path)
-	if errors.Is(err, host.ErrNotExist) {
-		return true, nil
-	}
-	if err != nil {
-		return false, fmt.Errorf("check the name %s: %w", path, err)
-	}
-	return false, nil
+	return path, nil
 }
 
 func isTemplate(path string, masks mask.Set) bool {
@@ -184,14 +169,6 @@ func isFolder(path string) bool {
 		return false
 	}
 	return !slices.Contains(strings.Split(path, "/"), "..")
-}
-
-func getName(template string) string {
-	stem := strings.TrimSuffix(pathpkg.Base(template), noteExtension)
-	if name := strings.TrimSuffix(stem, templateExtension); name != "" {
-		return name
-	}
-	return stem
 }
 
 // render is what a note is made from: the template and its text, and what the template reads.

@@ -9,15 +9,15 @@ const LEVEL: Field = { kind: 'select', label: 'Level', options: ['low', 'high'],
 const tick = () => new Promise((resolve) => setTimeout(resolve))
 
 describe('asking the fields in the palette', () => {
-  it('asks each field in order, numbered in the title, and answers by label', async () => {
+  it('asks each field in order, named in the title, and answers by label', async () => {
     const palette = createMockPickerHost()
     const asking = askFields(palette, 'Kickoff', [OWNER, LEVEL])
 
-    expect(palette.getQuestion()).toStrictEqual({ title: 'Kickoff · 1/2 Owner', value: 'Ann' })
+    expect(palette.getQuestion()).toStrictEqual({ title: 'Kickoff · Owner', value: 'Ann' })
     palette.answer('Bob')
     await tick()
     expect(palette.getQuestion()).toStrictEqual({
-      title: 'Kickoff · 2/2 Level',
+      title: 'Kickoff · Level',
       options: [
         { value: 'high', title: 'high' },
         { value: 'low', title: 'low' },
