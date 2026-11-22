@@ -2418,7 +2418,7 @@ type ManifestSetting struct {
 	// discover makes a setting of type connections that holds no row use every connection whose type
 	// serves the operation, in the order of the connections, while the person leaves it on.
 	Discover bool `protobuf:"varint,23,opt,name=discover,proto3" json:"discover,omitempty"`
-	// group is the id of the entry of the manifest's setting_groups the setting is drawn under. Empty draws it in the island without a heading.
+	// group is the id of the entry of the manifest's setting_groups the setting is drawn under. Empty draws it in a card without a heading above the islands.
 	Group         string `protobuf:"bytes,25,opt,name=group,proto3" json:"group,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

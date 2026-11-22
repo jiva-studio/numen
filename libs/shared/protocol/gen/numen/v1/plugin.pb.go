@@ -525,7 +525,7 @@ type PluginSetting struct {
 	// Whether the manifest lets a setting of type connections that holds no row use every connection
 	// whose type serves the operation. The person's choice is in the plugin field "discover".
 	Discover bool `protobuf:"varint,24,opt,name=discover,proto3" json:"discover,omitempty"`
-	// The id of the group the setting is drawn under. Empty draws it in the island without a heading.
+	// The id of the group the setting is drawn under. Empty draws it in a card without a heading above the islands.
 	Group         string `protobuf:"bytes,26,opt,name=group,proto3" json:"group,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

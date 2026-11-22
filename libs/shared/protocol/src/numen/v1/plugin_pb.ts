@@ -288,7 +288,7 @@ export type PluginSetting = Message<"numen.v1.PluginSetting"> & {
   discover: boolean;
 
   /**
-   * The id of the group the setting is drawn under. Empty draws it in the island without a heading.
+   * The id of the group the setting is drawn under. Empty draws it in a card without a heading above the islands.
    *
    * @generated from field: string group = 26;
    */

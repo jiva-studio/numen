@@ -11,7 +11,7 @@ import (
 var ErrInvalidSettingGroup = errors.New("invalid setting group")
 
 // SettingGroup is an island of the settings page: the settings that name its id are drawn under its
-// title. A setting that names no group is drawn in the island without a heading.
+// title. A setting that names no group is drawn in a card without a heading above the islands.
 type SettingGroup struct {
 	ID    string
 	Title string

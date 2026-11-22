@@ -1528,7 +1528,7 @@ export type ManifestSetting = Message<"numen.v1.ManifestSetting"> & {
   discover: boolean;
 
   /**
-   * group is the id of the entry of the manifest's setting_groups the setting is drawn under. Empty draws it in the island without a heading.
+   * group is the id of the entry of the manifest's setting_groups the setting is drawn under. Empty draws it in a card without a heading above the islands.
    *
    * @generated from field: string group = 25;
    */

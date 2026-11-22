@@ -84,7 +84,7 @@ message PluginSetting {
   // Whether the manifest lets a setting of type connections that holds no row use every connection
   // whose type serves the operation. The person's choice is in the plugin field "discover".
   bool discover = 24;
-  // The id of the group the setting is drawn under. Empty draws it in the island without a heading.
+  // The id of the group the setting is drawn under. Empty draws it in a card without a heading above the islands.
   string group = 26;
   reserved 22;
 }
