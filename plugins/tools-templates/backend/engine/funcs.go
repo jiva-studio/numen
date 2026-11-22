@@ -23,10 +23,11 @@ type pass struct {
 	vars       map[string]string
 	collecting bool
 	fields     []Field
+	asked      map[string]bool
 }
 
 func newPass(data Data, values map[string]string) *pass {
-	p := &pass{data: data, vars: values, collecting: values == nil, fields: nil}
+	p := &pass{data: data, vars: values, collecting: values == nil, fields: nil, asked: make(map[string]bool)}
 	if p.collecting {
 		p.vars = make(map[string]string)
 	}
@@ -44,10 +45,14 @@ func (p *pass) ask(kind, label string, options []string, fallback string) string
 		}
 		return fallback
 	}
-	if value, isKnown := p.vars[label]; isKnown {
-		return value
+	key := strings.Join(append([]string{kind, label}, options...), "\x00")
+	if p.asked[key] {
+		return p.vars[label]
 	}
-	p.vars[label] = fallback
+	p.asked[key] = true
+	if _, isKnown := p.vars[label]; !isKnown {
+		p.vars[label] = fallback
+	}
 	p.fields = append(p.fields, Field{Kind: kind, Label: label, Options: options, Default: fallback})
 	return fallback
 }

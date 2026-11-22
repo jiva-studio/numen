@@ -94,7 +94,7 @@ func resolve(fields []Field, given map[string]string) (map[string]string, error)
 	for _, field := range fields {
 		value, isGiven := given[field.Label]
 		switch {
-		case !isGiven:
+		case !isGiven, value == "" && field.Kind == KindText:
 			value = field.Default
 		case field.Kind == KindSelect && !slices.Contains(field.Options, value):
 			return nil, fmt.Errorf("%q is %w of %q: %s", value, ErrNotAnOption, field.Label, strings.Join(field.Options, ", "))

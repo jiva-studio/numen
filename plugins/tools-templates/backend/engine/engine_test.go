@@ -379,3 +379,59 @@ func FuzzRenderNeverPanics(f *testing.F) {
 		}
 	})
 }
+
+func TestAskOnceForTheSameField(t *testing.T) {
+	text := `{{ prompt "Client" }}|{{ prompt "Client" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "c" }}`
+
+	fields, err := engine.New(nil).Fields("T.md", text, getData())
+
+	if err != nil || len(fields) != 3 {
+		t.Fatalf("fields = %+v, %v", fields, err)
+	}
+	t.Run("writes the one answer everywhere", func(t *testing.T) {
+		data := getData()
+		data.Values = map[string]string{"Client": "Globex", "Kind": "b"}
+
+		got, err := engine.New(nil).Render("T.md", `{{ prompt "Client" }}|{{ prompt "Client" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "b" }}`, data)
+
+		if err != nil || got.Text != "Globex|Globex|b|b" {
+			t.Errorf("text = %q, %v", got.Text, err)
+		}
+	})
+}
+
+func TestUseAFieldAsAVariable(t *testing.T) {
+	text := `{{ $name := prompt "Имя" }}{{ if eq $name "" }}anon{{ else }}{{ $name | upper }}{{ end }}/{{ $name | default "none" }}/{{ $name }}`
+
+	t.Run("runs the collecting pass over the placeholder", func(t *testing.T) {
+		fields, err := engine.New(nil).Fields("T.md", text, getData())
+
+		if err != nil || len(fields) != 1 || fields[0].Label != "Имя" {
+			t.Errorf("fields = %+v, %v", fields, err)
+		}
+	})
+	t.Run("renders the value given", func(t *testing.T) {
+		data := getData()
+		data.Values = map[string]string{"Имя": "Ann"}
+
+		if got := renderWith(t, text, data); got != "ANN/Ann/Ann" {
+			t.Errorf("text = %q", got)
+		}
+	})
+	t.Run("ranges over the placeholder", func(t *testing.T) {
+		got := render(t, `{{ range split "," (prompt "Tags" "a,b") }}#{{ . }} {{ end }}`)
+
+		if got != "#a #b " {
+			t.Errorf("text = %q", got)
+		}
+	})
+}
+
+func TestFallBackToTheDefaultWhenLeftEmpty(t *testing.T) {
+	data := getData()
+	data.Values = map[string]string{"Client": ""}
+
+	if got := renderWith(t, `{{ prompt "Client" "Acme" }}`, data); got != "Acme" {
+		t.Errorf("text = %q", got)
+	}
+}
