@@ -84,8 +84,7 @@ interface InstallationSettingsDeps {
 }
 
 interface InstallationPluginDeps {
-  settings: SettingsPageApi['settings']
-  readReadme: ReadmeReader
+  api: Pick<SettingsPageApi, 'settings' | 'readReadme'>
   rest: SettingsStore
   retry: ReturnType<typeof createPluginRetry>
   getSettingsViews: InstallationPlugin['getSettingsViews']
@@ -186,7 +185,8 @@ function createInstallationDeclared(deps: Pick<InstallationPluginDeps, 'rest'>) 
 }
 
 function createInstallationPlugin(deps: InstallationPluginDeps) {
-  const { settings, readReadme, rest, retry, getSettingsViews, catalogEntries, reportError } = deps
+  const { api, rest, retry, getSettingsViews, catalogEntries, reportError } = deps
+  const { settings, readReadme } = api
   return {
     catalog: catalogEntries,
     health: createInstallationHealth(deps.health, reportError),
@@ -290,8 +290,7 @@ export function createSettingsPage({
     createSettingsTabConfig({
       settings: { appearance, rest, getPlatform, reportError },
       plugin: {
-        settings: api.settings,
-        readReadme: api.readReadme,
+        api,
         rest,
         retry,
         getSettingsViews: plugins.getSettingsViews,

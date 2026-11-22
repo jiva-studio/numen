@@ -173,7 +173,6 @@ func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.V
 	}
 }
 
-// getInstalledPluginDir is the folder of an installed plugin, enabled or not.
 func getInstalledPluginDir(listing installedPlugins, id string) (string, bool) {
 	for _, one := range listing.GetPlugins() {
 		if one.Manifest.ID == id {

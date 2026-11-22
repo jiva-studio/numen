@@ -138,8 +138,6 @@ func (h *Handler) ListRowOptions(
 	return connect.NewResponse(&v1.ConnectionCallServiceListRowOptionsResponse{Options: wire.ConvertOptionsToWire(options)}), nil
 }
 
-// getCancelKey names a call among the calls of every plugin; a call without an id has no key and cannot be
-// canceled.
 func getCancelKey(pluginID, callID string) string {
 	if callID == "" {
 		return ""

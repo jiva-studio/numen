@@ -28,10 +28,8 @@ func NewHandler(calls Calls, rows Rows, cancels *searchcancel.Searches) *shared.
 	return shared.NewHandler(func() Calls { return calls }, func() Rows { return rows }, identify, cancels)
 }
 
-// identify names the plugin of a request from the plugin_id it carries and holds the leases of the request in
-// that plugin's name. A window sends no token; a plugin process sends the one the host issued it, and the
-// host endpoint serves it.
 func identify(ctx context.Context, header http.Header, requested string) (context.Context, string, error) {
+	// A plugin process sends the token the host issued it, and the host endpoint serves it.
 	if header.Get("Authorization") != "" {
 		return ctx, "", connect.NewError(connect.CodePermissionDenied, errPluginToken)
 	}

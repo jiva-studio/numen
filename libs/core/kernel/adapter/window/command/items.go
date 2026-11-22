@@ -41,7 +41,6 @@ func (h *Handler) ListCommandItems(
 	return connect.NewResponse(&v1.ListCommandItemsResponse{Lists: wire}), nil
 }
 
-// withPlugin is the commands that name a plugin.
 func withPlugin(commands []plugincommand.CommandID) []plugincommand.CommandID {
 	named := make([]plugincommand.CommandID, 0, len(commands))
 	for _, one := range commands {

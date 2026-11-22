@@ -24,8 +24,7 @@ interface Listed {
   slotPoints?: object[]
 }
 
-// A test sets what the core lists in one object, and the core answers each service with its part.
-const readListed = async (asked: unknown[]) => (await request.listCommands(...asked)) as Listed
+const readListing = async (asked: unknown[]) => (await request.listCommands(...asked)) as Listed
 
 const createApi = () => {
   const clients = createAnsweredClients({
@@ -33,13 +32,13 @@ const createApi = () => {
       runPluginCommand: request.runPluginCommand,
       listCommandItems: request.listCommandItems,
       listCommands: async (...asked: unknown[]) => ({
-        commands: (await readListed(asked)).commands ?? [],
+        commands: (await readListing(asked)).commands ?? [],
       }),
     },
     contributions: {
       // A message from the core always carries its maps and lists, empty where it has none.
       listContributions: async (...asked: unknown[]) => {
-        const answer = await readListed(asked)
+        const answer = await readListing(asked)
         return {
           handlers: [],
           keybindings: [],
@@ -51,7 +50,7 @@ const createApi = () => {
         }
       },
       listContentTypes: async (...asked: unknown[]) => ({
-        contentTypeByExtension: (await readListed(asked)).contentTypeByExtension ?? {},
+        contentTypeByExtension: (await readListing(asked)).contentTypeByExtension ?? {},
       }),
     },
     textVersions: {
