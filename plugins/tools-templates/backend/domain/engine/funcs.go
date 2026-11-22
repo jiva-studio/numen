@@ -50,11 +50,13 @@ type pass struct {
 	asked      map[string]Field
 	ids        *ids
 	called     int
+	steps      int
+	depth      int
 	stopped    atomic.Bool
 }
 
 func newPass(data Data, values map[string]string, issued *ids) *pass {
-	p := &pass{data: data, vars: values, collecting: values == nil, fields: nil, asked: make(map[string]Field), ids: issued, called: 0, stopped: atomic.Bool{}}
+	p := &pass{data: data, vars: values, collecting: values == nil, fields: nil, asked: make(map[string]Field), ids: issued, called: 0, steps: 0, depth: 0, stopped: atomic.Bool{}}
 	if p.collecting {
 		p.vars = make(map[string]string)
 	}
@@ -133,6 +135,9 @@ func getFuncs(p *pass) Funcs {
 		"println":   disabled,
 		"yaml":      quoteYAML,
 		"uuid":      p.newID,
+		tickName:    p.tick,
+		enterName:   p.enter,
+		leaveName:   p.leave,
 		"dict":      dict,
 		"list":      func(items ...any) []any { return items },
 		"prompt": func(label string, defaults ...string) (string, error) {

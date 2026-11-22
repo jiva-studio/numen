@@ -148,6 +148,7 @@ func (r Renderer) execute(ctx context.Context, name, text string, p *pass, optio
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrTemplate, err)
 	}
+	guard(parsed)
 	return run(ctx, parsed, p)
 }
 

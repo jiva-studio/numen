@@ -24,7 +24,7 @@ The text of a template is run by the Go template language, `text/template`, with
 
 ### Limits
 
-A template is at most 256 KiB, the text it writes at most 1 MiB, and it runs for at most 5 seconds. A template over a limit makes no note and says which: `the template writes too much text`, `the template runs too long`. A `range` over a huge number is stopped by the last two.
+A template is at most 256 KiB, the text it writes at most 1 MiB, and it runs for at most 5 seconds. A template over a limit makes no note and says which: `the template writes too much text`, `the template runs too long`. A loop that writes nothing is stopped as well: a template that takes more than two million steps (an iteration of a `range` or a call of a `template`) or nests its `template` calls more than a thousand deep runs too long.
 
 ### What a template knows
 

@@ -463,11 +463,6 @@ describe('which group remains where', () => {
     expect(orderGroups([also, itemGroup]).map((one) => one.id)).toEqual(['text', 'names'])
   })
 
-  it('keeps a heading that holds no rows', () => {
-    const heading = group('ask', [], { isHeading: true })
-    expect(orderGroups([heading]).map((one) => one.id)).toEqual(['ask'])
-  })
-
   it('sends a group holding nothing to the foot', () => {
     expect(orderGroups([empty, itemGroup]).map((one) => one.id)).toEqual(['names', 'text'])
   })

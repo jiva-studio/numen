@@ -35,7 +35,6 @@ export interface PaletteGroup {
   readonly items: readonly PaletteItem[]
   readonly isWorking?: boolean
   readonly silence?: string
-  readonly isHeading?: boolean
 }
 
 /**
@@ -52,12 +51,12 @@ export interface PalettePlace {
 
 /**
  * The groups holding something, then the groups holding nothing.
- * A group holding nothing is kept while it is still working, is a heading, or has something to say in place of items.
+ * A group holding nothing is kept while it is still working or has something to say in place of items.
  * Any other empty group is dropped. Empty groups hold no item, so what the keyboard counts is untouched.
  */
 export const orderGroups = (groups: readonly PaletteGroup[]): readonly PaletteGroup[] => [
   ...groups.filter((one) => one.items.length > 0),
-  ...groups.filter((one) => one.items.length === 0 && (one.isWorking || one.isHeading || Boolean(one.silence))),
+  ...groups.filter((one) => one.items.length === 0 && (one.isWorking || Boolean(one.silence))),
 ]
 
 /**
