@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
-import { formatErrorCodeMessage } from './error'
+import { formatErrorCodeMessage } from '@numen/result'
 import { getRelationErrorWords } from './codes'
 
 const getErrorWords = (code: Parameters<typeof getRelationErrorWords>[0]): string =>

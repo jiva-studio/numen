@@ -1,7 +1,6 @@
 /** The message text for each error code a command can return. */
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
-import { formatErrorCodeMessage } from './error'
-import type { ErrorCode } from './errorCode'
+import { type ErrorCode, formatErrorCodeMessage } from '@numen/result'
 
 /** The error code of the schema each of the window's codes is worded by. */
 const PROTO_BY_CODE: Record<Exclude<ErrorCode, 'unreachable'>, ProtoErrorCode> = {

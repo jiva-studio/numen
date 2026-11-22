@@ -30,8 +30,7 @@ export interface TextRange {
 }
 
 // Result is the discriminated outcome of a fallible operation.
-import type { Result } from './result'
-export type { Result } from './result'
+import type { Result } from '@numen/result'
 
 // ReaderRegistration registers a viewer component for files. The manifest declares, under
 // `contributes.readers` with the same id, the content types it opens. The component gets a ReaderTabState as

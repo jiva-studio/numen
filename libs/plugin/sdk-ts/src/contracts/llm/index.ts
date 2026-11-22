@@ -4,7 +4,7 @@
  */
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import type { ConnectionCallOptions, ConnectionError, ConnectionHost } from '../../connections'
-import { asValue, type Result } from '../../result'
+import { asValue, type Result } from '@numen/result'
 import {
   ChatFinishSchema,
   ChatFrameSchema,

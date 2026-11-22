@@ -1,4 +1,5 @@
-import type { JsonObject, Result } from './types'
+import type { JsonObject } from './types'
+import type { Result } from '@numen/result'
 
 // TextKind is what a text version is, as the plugin that makes it names it. The core
 // compares it as an opaque string.

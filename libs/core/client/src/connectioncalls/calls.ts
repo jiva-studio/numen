@@ -11,7 +11,7 @@ import {
   Priority,
   type CallFailure,
 } from '@numen/protocol'
-import { asFailure, asValue, type Result } from '../result'
+import { asFailure, asValue, type Result } from '@numen/result'
 
 /** The calls of ConnectionCallService. */
 export type ConnectionCallRpc = Pick<
