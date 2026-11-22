@@ -161,30 +161,33 @@
       "key": "showOverdue",
       "type": "boolean",
       "title": "Overdue",
-      "description": "Lists and counts the open tasks due before today in the title bar",
-      "default": true
+      "description": "Open tasks due before today, in the title bar",
+      "default": true,
+      "details": "Lists and counts the open tasks due before today in the title bar popup."
     },
     {
       "key": "showToday",
       "type": "boolean",
       "title": "Today",
-      "description": "Lists and counts the open tasks due today in the title bar",
-      "default": true
+      "description": "Open tasks due today, in the title bar",
+      "default": true,
+      "details": "Lists and counts the open tasks due today in the title bar popup."
     },
     {
       "key": "showNextWeek",
       "type": "boolean",
       "title": "Next 7 days",
-      "description": "Lists and counts the open tasks due in the next days in the title bar",
-      "details": "Open tasks due in the six days after today",
+      "description": "Open tasks due in the next days, in the title bar",
+      "details": "Lists and counts the open tasks due in the six days after today in the title bar popup.",
       "default": true
     },
     {
       "key": "showNoDate",
       "type": "boolean",
       "title": "No date",
-      "description": "Lists and counts the open tasks with no due date in the title bar",
-      "default": true
+      "description": "Open tasks with no due date, in the title bar",
+      "default": true,
+      "details": "Lists and counts the open tasks with no due date in the title bar popup."
     }
   ],
   "backend": {
