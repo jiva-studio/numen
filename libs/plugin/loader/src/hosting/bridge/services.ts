@@ -1,4 +1,5 @@
-import { ReportedError, type Manifest } from '@numen/core-client'
+import { type Manifest } from '@numen/core-client'
+import { ReportedError } from '@numen/result'
 import type { NoticeHost, SlotHost } from '@numen/plugin-sdk'
 import { createAppInfo } from '../../appInfo'
 import { formatCommandId } from '../../commandId'

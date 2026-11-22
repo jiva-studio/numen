@@ -4,7 +4,7 @@
  */
 import { computed, ref, shallowRef, type ComputedRef, type Ref } from 'vue'
 import { createRequestGuard as latest } from '@numen/ui'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import type { Vault } from '@/entities/vault'
 import type { Command } from '@/entities/command'
 import type { CommandInvocation, CommandTarget, RunSupport } from '@/shared/model/command'
@@ -225,7 +225,7 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     onDrop: state.drop,
     onLights: previewItem,
     onLists: () => {
-      loadVaults().catch((error: Caught) => {
+      loadVaults().catch((error: unknown) => {
         state.results.failureMessage.value = formatError(error)
       })
     },

@@ -105,7 +105,7 @@ The imports point inward and nowhere else.
 - `wire` is the layer between `service` and `api`, the domain, the use cases and `ports`: the service imports it, it imports them, and nothing below it imports it. A `wire` package imports no `service`, no `engine`, no adapter and touches no machine. Scenario logic is not wire: a package that decides something goes to `usecase`.
 - A use case imports `ports` and the domain. A port file imports the domain and the SDK's domain types.
 - A domain package imports the standard library and `plugin/sdk-go/host/domain`. It reads no file, opens no socket, and takes no clock.
-- An adapter imports the domain and, when it names the interface it satisfies, the package that declares it. It imports no `service`, no `wire` and no other adapter. An engine that runs a model is an adapter and runs the ONNX Runtime through `libs/shared/onnx`, passing it the cache root it resolves with the SDK (`cache.GetSharedDirOrPluginDir`); a clock reaches an adapter as the SDK `clock` port or a parameter.
+- An adapter imports the domain and, when it names the interface it satisfies, the package that declares it. It imports no `service`, no `wire` and no other adapter. An engine that runs a model is an adapter and runs the ONNX Runtime through `libs/shared/onnx`, passing it the cache root it resolves with the SDK (`cache.GetSharedDir`); a clock reaches an adapter as the SDK `clock` port or a parameter.
 - `api` imports nothing of the plugin.
 - A package named `service` or `engine` is outer; inner packages never import it.
 

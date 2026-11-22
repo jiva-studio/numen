@@ -2,10 +2,9 @@
  * The calls of the file service: what a folder holds, which file is which, and what moves or
  * leaves the vault.
  */
-import { findErrorCode, asFailure, asValue } from '@numen/core-client'
+import { findErrorCode } from '@numen/core-client'
+import { asFailure, asValue, type ErrorCode, type Result } from '@numen/result'
 import type { WindowClients } from '@/shared/api/clients'
-import type { ErrorCode } from '@/shared/api/errors'
-import type { Result } from '@/shared/lib/result'
 import { mapMoveResult, mapNoteType } from '@/shared/api/wire'
 import type { Entry, FileKind, Movement, RemoveResult } from '@/shared/model/fileTypes'
 import { mapEntry } from './fileWords'

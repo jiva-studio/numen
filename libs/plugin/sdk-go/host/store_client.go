@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -34,11 +35,11 @@ func NewStoreClientFromEnv() (*StoreClient, error) {
 }
 
 func NewStoreClient(endpoint hostcall.Endpoint) *StoreClient {
-	return NewStoreClientOver(hostcall.HTTPClient(), endpoint)
+	return newStoreClientOver(transport.HTTPClient(), endpoint)
 }
 
-func NewStoreClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *StoreClient {
-	return &StoreClient{rpc: numenv1connect.NewHostStoreServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
+func newStoreClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *StoreClient {
+	return &StoreClient{rpc: numenv1connect.NewHostStoreServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
 }
 
 // With returns the folder in the vault with the given identity, used as the shown vault is. A call on

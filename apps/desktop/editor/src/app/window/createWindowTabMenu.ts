@@ -6,7 +6,7 @@ import { useWindowTabMenu, type TabLinkGroup, type WindowTabs } from '@/entities
 import { type CommandItemLists } from '@/features/plugin-commands'
 import { createNoteKindReader } from '@/features/plugin-host'
 import type { createWindowTabMover } from '@/features/tab-move'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import { COMMAND } from '@/shared/model/command'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { createHostConnection } from './createHostConnection'
@@ -32,6 +32,6 @@ export function createWindowTabMenu(deps: WindowTabMenuDeps) {
     slots: deps.pluginHost.slots,
     commands: deps.windowCommands,
     readNoteKind: createNoteKindReader(deps.itemLists),
-    reportError: (error: Caught) => deps.writeMessage(formatError(error), 'error'),
+    reportError: (error: unknown) => deps.writeMessage(formatError(error), 'error'),
   })
 }

@@ -8,13 +8,12 @@ import { SETTINGS } from '@/entities/tab'
 import SettingsTab from './ui/SettingsTab.vue'
 import type { Installation, MarkedSetting, SettingsTabState } from './types'
 import { WORDS as words } from './words'
-import type { Caught } from '@/shared/api/errors'
 import type { SettingsRequest } from '@/shared/model/command'
 
 export function useSettingsTabKind(
   handle: WindowHandle,
   installation: Installation,
-  reportError: (error: Caught) => void,
+  reportError: (error: unknown) => void,
 ) {
   const isOpen = ref(false)
   const initialPluginId = ref<string | null>(null)

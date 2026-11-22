@@ -23,7 +23,6 @@ import {
   type Selector,
   type TabKindRegistration,
   type TextRange,
-  type Unvalidated,
 } from '@numen/plugin-sdk'
 import { adoptPluginStyle } from '../styles'
 import {
@@ -106,7 +105,7 @@ export function createPluginPaneWrapper(
   })
 }
 
-const isSelector = (value: Unvalidated): value is Selector =>
+const isSelector = (value: unknown): value is Selector =>
   // Stryker disable next-line ConditionalExpression: null saved value maps to null place in both branches
   typeof value === 'object' && value !== null && !Array.isArray(value)
 

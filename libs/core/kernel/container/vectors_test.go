@@ -133,7 +133,7 @@ func TestAPluginWithoutTheEmbeddingCapabilityIsNotTheProvider(t *testing.T) {
 		"name": "Vectors",
 		"version": "1.0.0",
 		"targets": ["desktop.editor"],
-		"services": ["numen.v1.SearchSourceService"], "backend": {"entrypoint": "bin/vectors"}
+		"backend": {"entrypoint": "bin/vectors"}
 	}`)
 	cfg := container.NewTestInstallation(container.Config{}, container.AdaptTestPlugins(host.Management, host.Supervision))
 

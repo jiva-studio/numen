@@ -252,7 +252,6 @@ func newListeners(wire []*v1.ManifestListener) []manifest.Listener {
 			Name:        one.GetName(),
 			Port:        int(one.GetPort()),
 			PortSetting: one.GetPortSetting(),
-			Protocol:    one.GetProtocol(),
 		})
 	}
 	return out

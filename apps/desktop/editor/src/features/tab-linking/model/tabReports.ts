@@ -5,7 +5,6 @@
  */
 import type { WindowTabsReport } from '@/entities/tab'
 import type { TabLinksApi } from '../api/tab-links'
-import type { Caught } from '@/shared/api/errors'
 import { wait } from '@/shared/model/wait'
 
 /** How long a failed tab report waits before it is sent again. */
@@ -16,7 +15,7 @@ export interface TabReportsDeps {
   readonly windowId: string
   readonly getReport: () => WindowTabsReport
   readonly wait?: (ms: number) => Promise<void>
-  readonly onError: (error: Caught) => void
+  readonly onError: (error: unknown) => void
 }
 
 export function createTabReports(deps: TabReportsDeps) {

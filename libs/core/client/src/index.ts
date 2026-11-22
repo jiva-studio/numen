@@ -7,6 +7,7 @@ export * from './licenses'
 export * from './protocol'
 export {
   CALLER_HEADER,
+  createBearerTransport,
   createCallerTransport,
   createKeepaliveTransport,
   createOriginTransport,
@@ -19,16 +20,10 @@ export * from './health'
 export * from './processes'
 export * from './logs'
 export {
-  formatErrorCodeMessage,
-  formatErrorMessage,
-  ReportedError,
-  type Caught,
-  type Unvalidated,
   findErrorCode,
   isStaleAnswer,
   parseFingerprint,
   ERRORS,
   getKnownErrorCode,
 } from './errors'
-export { asFailure, asValue, type Result } from './result'
 export { createFollower } from './stream'

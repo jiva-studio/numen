@@ -14,6 +14,7 @@ PLUGIN_LOADER := libs/plugin/loader
 PLUGIN_MANAGER := libs/plugin/manager
 PROTOCOL := libs/shared/protocol
 RERANK := libs/shared/rerank
+RESULT := libs/shared/result
 PLUGIN_SDK := libs/plugin/sdk-ts
 PLUGIN_SDK_GO := libs/plugin/sdk-go
 # The base module of the Go plugin SDK and each feature module under it.
@@ -43,7 +44,6 @@ INSTALL  ?= npm install
 
 # The race detector runs in CI only: it makes the Go tests 3 to 4 times slower. CI passes GO_RACE=1.
 GO_RACE  ?=
-LAYERS_FLAGS ?=
 # Selection of `make checks`: TAGS=a,b (and), TAGS=a|b (or), EXCLUDE=tag, ONLY=names, CHANGED=1, LIST=1, SELFTEST=1.
 TAGS     ?=
 EXCLUDE  ?=
@@ -87,7 +87,7 @@ install: ## fetch all workspace dependencies
 	$(INSTALL)
 
 .PHONY: compile
-compile: lib_core_compile lib_atomicfile_compile lib_note_compile lib_plugin_catalog_compile lib_protocol_compile lib_ui_components_compile lib_plugin_sdk_compile lib_core_client_compile lib_workbench_compile lib_plugin_loader_compile lib_plugin_manager_compile lib_plugin_sdk_go_compile lib_shared_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
+compile: lib_core_compile lib_atomicfile_compile lib_note_compile lib_plugin_catalog_compile lib_protocol_compile lib_result_compile lib_ui_components_compile lib_plugin_sdk_compile lib_core_client_compile lib_workbench_compile lib_plugin_loader_compile lib_plugin_manager_compile lib_plugin_sdk_go_compile lib_shared_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
 
 .PHONY: build
 build: interface lib_core_build app_desktop_build ## build all application artifacts
@@ -338,6 +338,26 @@ lib_workbench_lint: lib_ui_components_build ## lint the shell package
 .PHONY: lib_workbench_knip
 lib_workbench_knip: ## check dead code and unused dependencies of the shell with knip
 	npx knip --workspace $(WORKBENCH)
+
+# --------------------------------- Lib: Result --------------------------------
+.PHONY: lib_result_typecheck
+lib_result_typecheck: ## typecheck the result package
+	cd $(RESULT) && npm run typecheck
+
+.PHONY: lib_result_compile
+lib_result_compile: lib_result_typecheck
+
+.PHONY: lib_result_test
+lib_result_test: ## run result tests
+	cd $(RESULT) && npm test
+
+.PHONY: lib_result_lint
+lib_result_lint: ## lint the result package
+	cd $(RESULT) && npm run lint && npm run typecheck
+
+.PHONY: lib_result_knip
+lib_result_knip: ## check dead code and unused dependencies of the result package with knip
+	npx knip --workspace $(RESULT)
 
 # ------------------------------ Lib: Core Client ------------------------------
 .PHONY: lib_core_client_typecheck
@@ -648,10 +668,6 @@ checks: ## run the registered checks of tools/checks (usage: make checks [TAGS=f
 .PHONY: checks_selftest
 checks_selftest: ## run the planted-violation tests of the registered checks
 	node $(CHECKS)/run.mjs --selftest $(CHECKS_ARGS)
-
-.PHONY: lint_layers check_layers tool_layers_check
-lint_layers check_layers tool_layers_check: ## run the structural checks (alias of make checks TAGS=structure; LAYERS_FLAGS=--without-lint --without-go-tests)
-	node $(CHECKS)/run.mjs --tags structure $(LAYERS_FLAGS) $(CHECKS_ARGS)
 
 .PHONY: check_dependencies
 check_dependencies: ## run dependency-cruiser over the frontend sources: package boundaries, segment direction, import cycles

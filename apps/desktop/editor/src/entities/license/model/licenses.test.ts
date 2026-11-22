@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { LicenseClient } from '@numen/core-client'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import type { LicenseFailure, LicenseInfo } from '../lib/types'
 import { createLicenseApi } from '../api/licenses'
 import { createLicenseStore } from './licenses'

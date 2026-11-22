@@ -68,6 +68,12 @@ func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Han
 	return numenv1connect.NewVaultsServiceHandler(handler, counted)
 }
 
+// NewDialogRoute is where the folder dialog service answers: its path and the handler of its calls. Each call
+// goes through counted.
+func NewDialogRoute(dialog *Dialog, counted connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewFolderDialogServiceHandler(dialog, counted)
+}
+
 // SetFolderChooser sets the native folder dialog a client may ask for.
 func (s *Dialog) SetFolderChooser(choose FolderChooser) { s.chooseFolder.Store(&choose) }
 

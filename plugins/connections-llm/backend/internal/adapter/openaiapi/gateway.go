@@ -61,18 +61,6 @@ type reasoningBody struct {
 	Effort string `json:"effort"`
 }
 
-type chatMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type chatBody struct {
-	Model       string        `json:"model"`
-	Messages    []chatMessage `json:"messages"`
-	Temperature *float64      `json:"temperature,omitempty"`
-	answerBounds
-}
-
 // answerBounds is the part of a request body that bounds the answer: its tokens and its reasoning, in the
 // fields the type of the service reads.
 type answerBounds struct {
@@ -89,33 +77,24 @@ func newAnswerBounds(call connection.Call, maxTokens int) answerBounds {
 	return bounds
 }
 
-type chatAnswer struct {
-	Choices []struct {
-		Message struct {
-			Content string `json:"content"`
-		} `json:"message"`
-	} `json:"choices"`
-}
-
-// Complete asks the chat completions endpoint of the service for an answer.
+// Complete asks the chat completions endpoint of the service for an answer. The answer is read as a
+// stream, so the limit is how long the service may stay silent, as for Chat.
 func (g *Gateway) Complete(ctx context.Context, call connection.Call, limit time.Duration, request *llm.CompleteRequest) (*llm.CompleteResult, error) {
-	messages := make([]chatMessage, len(request.GetMessages()))
+	messages := make([]*llm.ChatMessage, len(request.GetMessages()))
 	for i, message := range request.GetMessages() {
-		messages[i] = chatMessage{Role: message.GetRole(), Content: message.GetText()}
+		messages[i] = &llm.ChatMessage{Role: message.GetRole(), Text: message.GetText()}
 	}
-	body := chatBody{
-		Model: call.Options[llm.OptionModel], Messages: messages, Temperature: request.Temperature,
-		answerBounds: newAnswerBounds(call, int(request.GetMaxTokens())),
-	}
-
-	var answer chatAnswer
-	if err := g.send(ctx, call, limit, endpoint{http.MethodPost, "/chat/completions"}, body, &answer); err != nil {
+	var text strings.Builder
+	_, err := g.Chat(ctx, call, limit,
+		&llm.ChatRequest{Messages: messages, Temperature: request.Temperature, MaxTokens: request.GetMaxTokens()},
+		func(frame *llm.ChatFrame) error {
+			text.WriteString(frame.GetTextDelta())
+			return nil
+		})
+	if err != nil {
 		return nil, err
 	}
-	if len(answer.Choices) == 0 {
-		return nil, connection.NewStopError(connection.ReasonUnavailable)
-	}
-	return &llm.CompleteResult{Text: answer.Choices[0].Message.Content}, nil
+	return &llm.CompleteResult{Text: text.String()}, nil
 }
 
 func splitTokenLimit(typeID string, limit int) (maxTokens, maxCompletionTokens int) {

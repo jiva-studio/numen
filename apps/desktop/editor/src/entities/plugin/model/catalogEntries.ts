@@ -1,7 +1,7 @@
 import { shallowRef, watch, type Ref, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { PluginInfo } from '@numen/plugin-manager'
-import { ReportedError, type Caught } from '@/shared/api/errors'
+import { ReportedError } from '@numen/result'
 import type { CatalogReader } from '../api/catalog'
 import type { CatalogEntry } from '../lib/catalogEntry'
 
@@ -12,7 +12,7 @@ import type { CatalogEntry } from '../lib/catalogEntry'
 export function useCatalogEntries(
   listCatalog: CatalogReader,
   plugins: Readonly<Ref<readonly PluginInfo[]>>,
-  reportError: (error: Caught) => void,
+  reportError: (error: unknown) => void,
 ): Readonly<ShallowRef<readonly CatalogEntry[]>> {
   const entries = shallowRef<readonly CatalogEntry[]>([])
 

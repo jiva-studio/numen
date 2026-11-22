@@ -4,10 +4,12 @@ import (
 	"context"
 	"maps"
 	"sync"
+
+	"github.com/jiva-studio/numen/libs/shared/protocol"
 )
 
 // ProtocolVersion is the protocol version the SDK uses.
-const ProtocolVersion = 1
+const ProtocolVersion = protocol.PluginProtocolVersion
 
 // statusOK is the status a healthy plugin answers a ping with.
 const statusOK = "ok"

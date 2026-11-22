@@ -122,7 +122,7 @@ func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Confi
 }
 
 func getCacheRoot() string {
-	root, err := cache.GetSharedDirOrPluginDir()
+	root, err := cache.GetSharedDir()
 	if err != nil {
 		return ""
 	}

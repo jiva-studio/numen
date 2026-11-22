@@ -3,15 +3,10 @@
  * operations on a plugin that belong to its page. Each answer is mapped into the types of this
  * entity.
  */
-import {
-  PLUGIN_CONTRIBUTION_KIND,
-  asFailure,
-  asValue,
-  type PluginContributionKindValue,
-} from '@numen/core-client'
+import { PLUGIN_CONTRIBUTION_KIND, type PluginContributionKindValue } from '@numen/core-client'
+import { asFailure, asValue, type Result } from '@numen/result'
 import type { WindowClients } from '@/shared/api/clients'
 import type { JsonValue } from '@/shared/api/json'
-import type { Result } from '@/shared/lib/result'
 import type {
   Configuration,
   PluginContribution,
@@ -152,7 +147,11 @@ export interface SettingsWritten {
 }
 
 /** The settings of the vault over `settingsService`. */
-export const createSettingsApi = (settingsService: WindowClients['settingsService']) => {
+export const createSettingsApi = (
+  settingsService: WindowClients['settingsService'],
+  pluginProcessService: WindowClients['pluginProcessService'],
+  pluginData: WindowClients['pluginData'],
+) => {
   /**
    * The settings that changed, until the signal aborts: a write by this window, another window, a
    * plugin or the palette, and an edit of the file by hand. Each batch holds the settings that
@@ -217,20 +216,20 @@ export const createSettingsApi = (settingsService: WindowClients['settingsServic
      * A plugin whose last start failed, started once more. A failure is why it failed again.
      */
     retryPlugin: async (pluginId: string): Promise<Result<null, string>> => {
-      const { failure } = await settingsService.retryPlugin({ pluginId })
+      const { failure } = await pluginProcessService.retryPlugin({ pluginId })
       return failure === '' ? asValue(null) : asFailure(failure)
     },
 
     /** How many files the folder of a plugin holds in the shown vault, `.numen/<plugin id>/`. */
     getPluginData: async (pluginId: string): Promise<number> =>
-      (await settingsService.getPluginData({ pluginId })).fileCount,
+      (await pluginData.getPluginData({ pluginId })).fileCount,
 
     /**
      * The folder of a plugin in the shown vault deleted, with the text versions the plugin made
      * there.
      */
     deletePluginData: async (pluginId: string): Promise<void> => {
-      await settingsService.deletePluginData({ pluginId })
+      await pluginData.deletePluginData({ pluginId })
     },
   }
 }

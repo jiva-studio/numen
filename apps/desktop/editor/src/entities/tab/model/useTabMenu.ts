@@ -16,8 +16,6 @@ import {
   type SlotMenu,
 } from '@numen/plugin-loader'
 import { WORDS } from '@/shared/ui/words'
-import type { Caught } from '@/shared/api/errors'
-
 export interface TabMenuDeps {
   readonly slots?: SlotHost | undefined
   readonly moveCommand: string
@@ -37,7 +35,7 @@ export interface TabMenuDeps {
   /** Turns the highlight of another window on or off while the pointer is over its item. */
   onHighlight?(this: void, windowId: string, isOn: boolean): void
   /** Receives the failure of a command that runs after the menu closed, or of a list read. */
-  reportError?(this: void, error: Caught): void
+  reportError?(this: void, error: unknown): void
   /** The type and the properties of the note of the path, which the entries are asked for over. */
   readNoteKind?(this: void, path: string): Promise<NoteKind>
 }
@@ -152,7 +150,7 @@ export function useTabMenu(deps: TabMenuDeps) {
     ;(
       deps.runCommand?.(choice.command, choice.target.target, choice.itemId, choice.values) ??
       Promise.resolve()
-    ).catch((error: Caught) => deps.reportError?.(error))
+    ).catch((error: unknown) => deps.reportError?.(error))
   }
 
   /** The icon of the command or submenu of the entry a row stands for. */

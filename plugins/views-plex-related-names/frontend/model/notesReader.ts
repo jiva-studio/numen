@@ -1,14 +1,13 @@
 /** The notes related to the notes the plex shows, read once for every view that shows a note. */
 import { shallowRef, type Ref, type ShallowRef } from 'vue'
-import type { Caught, NoteGraph, PluginEvents, VaultNotes } from '@numen/plugin-sdk'
-
+import type { NoteGraph, PluginEvents, VaultNotes } from '@numen/plugin-sdk'
 /** What the notes are read with and kept up to date through. */
 export interface NotesReaderSource {
   readonly notes: Pick<VaultNotes, 'listRelatedNotes'> & {
     readonly peekRelatedNote?: (path: string) => NoteGraph | undefined
   }
   readonly events: Pick<PluginEvents, 'onVaultChange'>
-  readonly reportFailure: (error: Caught) => void
+  readonly reportFailure: (error: unknown) => void
 }
 
 /** The use of one note by one view: the notes related to it, `null` until they are read and after a failed read, whether the first read has ended (answered or failed, and also when the path is empty; it never goes back to `false`), and the end of the use. */

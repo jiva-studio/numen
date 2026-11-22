@@ -135,11 +135,11 @@ func TestHandler_MountsEveryVaultService(t *testing.T) {
 	}
 }
 
-// TestPluginServiceIsMounted asserts that PluginServiceHandler is mounted
+// TestPluginProcessServiceIsMounted asserts that PluginProcessServiceHandler is mounted
 // behind the handler the application assembles.
-func TestPluginServiceIsMounted(t *testing.T) {
+func TestPluginProcessServiceIsMounted(t *testing.T) {
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
-	route := numenv1connect.PluginServiceGetPluginsProcedure
+	route := numenv1connect.PluginProcessServiceWatchPluginProcessesProcedure
 	if code := getResponse(t, handler, route).Code; code != http.StatusMethodNotAllowed {
 		t.Errorf("%s answered %d, want %d", route, code, http.StatusMethodNotAllowed)
 	}

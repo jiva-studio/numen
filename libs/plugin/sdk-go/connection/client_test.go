@@ -18,17 +18,17 @@ import (
 
 // fakeHost answers a call with the frames the test sets and records the request and the token.
 type fakeHost struct {
-	numenv1connect.UnimplementedHostConnectionServiceHandler
+	numenv1connect.UnimplementedConnectionCallServiceHandler
 	token    string
-	received *v1.HostConnectionServiceCallRequest
-	frames   []*v1.HostConnectionServiceCallResponse
+	received *v1.ConnectionCallServiceCallRequest
+	frames   []*v1.ConnectionCallServiceCallResponse
 	onCall   func()
 	err      error
 }
 
 func (h *fakeHost) Call(
-	_ context.Context, request *connect.Request[v1.HostConnectionServiceCallRequest],
-	stream *connect.ServerStream[v1.HostConnectionServiceCallResponse],
+	_ context.Context, request *connect.Request[v1.ConnectionCallServiceCallRequest],
+	stream *connect.ServerStream[v1.ConnectionCallServiceCallResponse],
 ) error {
 	h.token, h.received = request.Header().Get("Authorization"), request.Msg
 	if h.onCall != nil {
@@ -42,22 +42,22 @@ func (h *fakeHost) Call(
 	return h.err
 }
 
-func hostData(text string) *v1.HostConnectionServiceCallResponse {
-	return &v1.HostConnectionServiceCallResponse{Frame: &v1.HostConnectionServiceCallResponse_Data{Data: []byte(text)}}
+func hostData(text string) *v1.ConnectionCallServiceCallResponse {
+	return &v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Data{Data: []byte(text)}}
 }
 
-func hostDone(text string) *v1.HostConnectionServiceCallResponse {
-	return &v1.HostConnectionServiceCallResponse{Frame: &v1.HostConnectionServiceCallResponse_Done{Done: []byte(text)}}
+func hostDone(text string) *v1.ConnectionCallServiceCallResponse {
+	return &v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Done{Done: []byte(text)}}
 }
 
-func hostFailure(failure *v1.CallFailure) *v1.HostConnectionServiceCallResponse {
-	return &v1.HostConnectionServiceCallResponse{Frame: &v1.HostConnectionServiceCallResponse_Failure{Failure: failure}}
+func hostFailure(failure *v1.CallFailure) *v1.ConnectionCallServiceCallResponse {
+	return &v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Failure{Failure: failure}}
 }
 
 func newTestClient(t *testing.T, host *fakeHost) *Client {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostConnectionServiceHandler(host))
+	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(host))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return NewClient(server.Client(), server.URL, "token-1")
@@ -81,7 +81,7 @@ func collectCall(t *testing.T, client *Client, priority Priority) ([]string, str
 }
 
 func TestACallSendsTheOperationThePayloadAndTheTokenAndReadsTheFramesInOrder(t *testing.T) {
-	host := &fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostData("Let me "), hostData("look."), hostDone("finish")}}
+	host := &fakeHost{frames: []*v1.ConnectionCallServiceCallResponse{hostData("Let me "), hostData("look."), hostDone("finish")}}
 
 	frames, done, err := collectCall(t, newTestClient(t, host), PriorityInteractive)
 
@@ -128,7 +128,7 @@ func TestAFailureFrameIsReadAsTheErrorOfTheCall(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			host := &fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostData("partial"), hostFailure(c.failure)}}
+			host := &fakeHost{frames: []*v1.ConnectionCallServiceCallResponse{hostData("partial"), hostFailure(c.failure)}}
 
 			frames, _, err := collectCall(t, newTestClient(t, host), PriorityBackground)
 
@@ -140,7 +140,7 @@ func TestAFailureFrameIsReadAsTheErrorOfTheCall(t *testing.T) {
 }
 
 func TestAStreamThatEndsWithoutAFinalFrameIsAnError(t *testing.T) {
-	host := &fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostData("partial")}}
+	host := &fakeHost{frames: []*v1.ConnectionCallServiceCallResponse{hostData("partial")}}
 
 	_, _, err := collectCall(t, newTestClient(t, host), PriorityBackground)
 
@@ -169,13 +169,13 @@ func (b *failingCloseBody) Close() error {
 	return errors.Join(b.ReadCloser.Close(), b.closeErr)
 }
 
-type failingCloseClient struct {
-	base     connect.HTTPClient
+type failingCloseTransport struct {
+	base     http.RoundTripper
 	closeErr error
 }
 
-func (c *failingCloseClient) Do(req *http.Request) (*http.Response, error) {
-	resp, err := c.base.Do(req)
+func (c *failingCloseTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := c.base.RoundTrip(req)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func TestACanceledCallReturnsTheErrorOfTheContext(t *testing.T) {
 
 	streamCtx, cancelStream := context.WithCancel(t.Context())
 	streamHost := &fakeHost{
-		frames: []*v1.HostConnectionServiceCallResponse{hostData("first")},
+		frames: []*v1.ConnectionCallServiceCallResponse{hostData("first")},
 		err:    connect.NewError(connect.CodeInternal, errors.New("aborted")),
 	}
 	frames, err := newTestClient(t, streamHost).Call(streamCtx, "llm.complete", nil, PriorityBackground)
@@ -212,7 +212,7 @@ func TestACanceledCallReturnsTheErrorOfTheContext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	doneHost := &fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostDone("finish"), hostData("trailing")}}
+	doneHost := &fakeHost{frames: []*v1.ConnectionCallServiceCallResponse{hostDone("finish"), hostData("trailing")}}
 	doneFrames, err := newTestClient(t, doneHost).Call(t.Context(), "llm.complete", nil, PriorityBackground)
 	if err != nil {
 		t.Fatal(err)
@@ -226,7 +226,7 @@ func TestACanceledCallReturnsTheErrorOfTheContext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	failHost := &fakeHost{frames: []*v1.HostConnectionServiceCallResponse{
+	failHost := &fakeHost{frames: []*v1.ConnectionCallServiceCallResponse{
 		hostFailure(&v1.CallFailure{Error: v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION}),
 		hostData("trailing"),
 	}}
@@ -244,13 +244,13 @@ func TestACanceledCallReturnsTheErrorOfTheContext(t *testing.T) {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostConnectionServiceHandler(&fakeHost{
-		frames: []*v1.HostConnectionServiceCallResponse{hostData("chunk"), hostDone("ok")},
+	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(&fakeHost{
+		frames: []*v1.ConnectionCallServiceCallResponse{hostData("chunk"), hostDone("ok")},
 	}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	closeErr := errors.New("close failed")
-	closingClient := NewClient(&failingCloseClient{base: server.Client(), closeErr: closeErr}, server.URL, "token-1")
+	closingClient := NewClient(&http.Client{Transport: &failingCloseTransport{base: server.Client().Transport, closeErr: closeErr}}, server.URL, "token-1")
 	closingFrames, err := closingClient.Call(t.Context(), "llm.chat", nil, PriorityBackground)
 	if err != nil {
 		t.Fatal(err)

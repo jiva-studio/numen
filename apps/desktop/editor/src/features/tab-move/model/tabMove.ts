@@ -3,10 +3,10 @@
  * sent from another window.
  */
 import { win } from '@numen/ui'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import { wait as waitMs } from '@/shared/model/wait'
 import { focusWindow } from '@/entities/window'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import {
   formatSavedState,
   parseSavedTab,
@@ -110,7 +110,7 @@ export interface MovedTabOpenerDeps {
   readonly acceptMove: (tabId: string, moveId: string) => Promise<Result<void, TabMoveError>>
   readonly focusWindow?: () => Promise<void>
   readonly wait?: (ms: number) => Promise<void>
-  readonly onError: (error: Caught) => void
+  readonly onError: (error: unknown) => void
 }
 
 /**

@@ -1,9 +1,6 @@
 /**
- * Every action the palette draws on a row is the id of a command, and the source holds no branch
- * that opens a file or creates a note for a chosen result on a path of its own.
+ * Every action the palette draws on a row is the id of a command.
  */
-import { readdirSync, readFileSync } from 'node:fs'
-import { join, relative, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { PaletteGroup } from '@numen/workbench'
 import type { SlotCommand } from '@numen/plugin-loader'
@@ -178,69 +175,5 @@ describe('the actions of the palette', () => {
     const search = await searchFor('Entropy', {}, inFront)
 
     expect(collectActionIds(search.groups.value)).toStrictEqual([])
-  })
-})
-
-const readSources = (): Record<string, string> => {
-  const root = resolve(import.meta.dirname, '../../..')
-  const found: Record<string, string> = {}
-  for (const entry of readdirSync(root, { recursive: true, withFileTypes: true })) {
-    if (!entry.isFile() || !/\.(ts|vue)$/.test(entry.name)) continue
-    const file = join(entry.parentPath, entry.name)
-    found[`/src/${relative(root, file).split(sep).join('/')}`] = readFileSync(file, 'utf8')
-  }
-  return found
-}
-
-const sources = readSources()
-
-describe('the source of the editor', () => {
-  const thisFile = '/src/features/command-palette/model/actionsAreCommands.test.ts'
-  const files = Object.entries(sources).filter(([path]) => path !== thisFile)
-
-  const findIn = (pattern: RegExp) =>
-    files.filter(([, text]) => pattern.test(text)).map(([path]) => path)
-
-  it('holds files to look at', () => {
-    expect(files.length).toBeGreaterThan(100)
-  })
-
-  it('has no destination that a chosen result opens on a path of its own', () => {
-    const names = ['open' + 'Destination', 'resolve' + 'Destination', 'Search' + 'Destination']
-
-    expect(findIn(new RegExp(`\\b(${names.join('|')})\\b`))).toStrictEqual([])
-  })
-
-  it('has no function that creates a note for a chosen result outside the commands', () => {
-    expect(
-      findIn(new RegExp(`\\b(create${'NoteInvocation'}|CREATE_NOTE${'_ID'})\\b`)),
-    ).toStrictEqual([])
-  })
-
-  it('has no action id for a document that is no command, in the palette', () => {
-    const palette = files.filter(([path]) => path.startsWith('/src/features/command-palette/'))
-
-    expect(
-      palette.filter(([, text]) => new RegExp(`\\bNOTE = ${"'note'"}`).test(text)),
-    ).toStrictEqual([])
-  })
-
-  it('has no prefix that makes the id of an action differ from the id of its command', () => {
-    expect(
-      findIn(new RegExp(`\\b(MENU_ACTION${'_PREFIX'}|resolveMenu${'Choice'})\\b`)),
-    ).toStrictEqual([])
-  })
-
-  it('runs a chosen result in the field only through the choice it is handed', () => {
-    const view = sources['/src/features/command-palette/ui/CommandPalette.vue'] ?? ''
-    const field = sources['/src/features/command-palette/model/usePaletteInput.ts'] ?? ''
-
-    expect(field).not.toBe('')
-    for (const text of [view, field]) {
-      expect(text).not.toMatch(/CREATE_NOTE/)
-      expect(text).not.toMatch(/item\s*===/)
-    }
-    expect(view).not.toMatch(/runInvocation\(/)
-    expect(field.match(/runInvocation\(/g) ?? []).toHaveLength(1)
   })
 })

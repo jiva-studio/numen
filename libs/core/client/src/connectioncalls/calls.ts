@@ -11,12 +11,12 @@ import {
   Priority,
   type CallFailure,
 } from '@numen/protocol'
-import { asFailure, asValue, type Result } from '../result'
+import { asFailure, asValue, type Result } from '@numen/result'
 
 /** The calls of ConnectionCallService. */
 export type ConnectionCallRpc = Pick<
   Client<typeof ConnectionCallService>,
-  'call' | 'listRows' | 'listRowOptions'
+  'call' | 'cancelCall' | 'listRows' | 'listRowOptions'
 >
 
 /** Whose action a call serves. A call that names none is background. */
@@ -184,31 +184,55 @@ const writePreferredRow = (preferred: ConnectionCallPreferredRow | undefined) =>
         },
       }
 
+const openCancellation = (
+  rpc: ConnectionCallRpc,
+  pluginId: string,
+  signal: AbortSignal | undefined,
+) => {
+  if (signal === undefined) {
+    return { callId: '', close: () => undefined }
+  }
+  // An aborted fetch does not end the call in the core, so the abort cancels it by its id.
+  const callId = crypto.randomUUID()
+  const cancel = () => {
+    rpc.cancelCall({ pluginId, callId }).catch(() => undefined)
+  }
+  signal.addEventListener('abort', cancel, { once: true })
+  return { callId, close: () => signal.removeEventListener('abort', cancel) }
+}
+
 /** The calls carried out through a ConnectionCallService client. */
 export const createConnectionCallClient = (rpc: ConnectionCallRpc): ConnectionCallClient => ({
   call: async function* (request, options) {
-    const stream = rpc.call(
-      {
-        ...request,
-        priority: writePriority(options?.priority),
-        ...writePreferredRow(options?.preferred),
-      },
-      options?.signal === undefined ? {} : { signal: options.signal },
-    )
-    for await (const answer of stream) {
-      switch (answer.frame.case) {
-        case 'data':
-          yield answer.frame.value
-          break
-        case 'done':
-          return asValue(answer.frame.value)
-        case 'failure':
-          return asFailure(readFailure(answer.frame.value))
-        case undefined:
-          break
+    const signal = options?.signal
+    const cancellation = openCancellation(rpc, request.pluginId, signal)
+    try {
+      const stream = rpc.call(
+        {
+          ...request,
+          callId: cancellation.callId,
+          priority: writePriority(options?.priority),
+          ...writePreferredRow(options?.preferred),
+        },
+        signal === undefined ? {} : { signal },
+      )
+      for await (const answer of stream) {
+        switch (answer.frame.case) {
+          case 'data':
+            yield answer.frame.value
+            break
+          case 'done':
+            return asValue(answer.frame.value)
+          case 'failure':
+            return asFailure(readFailure(answer.frame.value))
+          case undefined:
+            break
+        }
       }
+      throw new Error('ConnectionCallService ended the stream before the call did')
+    } finally {
+      cancellation.close()
     }
-    throw new Error('ConnectionCallService ended the stream before the call did')
   },
   listRows: async (pluginId, operation) => {
     const { rows } = await rpc.listRows({ pluginId, operation })

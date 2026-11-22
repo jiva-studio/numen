@@ -5,7 +5,7 @@
  * that everything was written, and the last seconds of typing are lost.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/core-client'
+import { asFailure, asValue } from '@numen/result'
 
 import { useOpenNotes, flattenOpenNotes } from '@/entities/note'
 import { answerNotes, type NoteAnswer } from '@/testing/noteCore'

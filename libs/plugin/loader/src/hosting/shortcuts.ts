@@ -2,12 +2,7 @@
  * The keys of the plugins as the window handles them: a key event is matched against the keybindings
  * of the registry, and the command of the winner is run over the note in front.
  */
-import {
-  isSharedCommand,
-  type CommandNote,
-  type CommandTarget,
-  type Caught,
-} from '@numen/plugin-sdk'
+import { isSharedCommand, type CommandNote, type CommandTarget } from '@numen/plugin-sdk'
 import { APP_COMMAND_OWNER, getCommandOwner } from '../commandId'
 import type { Keybinding, KeybindingRegistry } from '../keybindings'
 import { type WhenValues, getWhenValues } from '../when'
@@ -83,7 +78,7 @@ export function createShortcutHandler(parts: ShortcutParts) {
     const pluginId = available.get(binding.command)?.declaration.pluginId ?? binding.owner
     getNote()
       .then((note) => parts.executeCommand(binding.command, note, { values: binding.values }))
-      .catch((error: Caught) => reportError(deps, pluginId, error))
+      .catch((error: unknown) => reportError(deps, pluginId, error))
     return true
   }
 }

@@ -1,9 +1,9 @@
 import { fn } from 'storybook/test'
 import { ref } from 'vue'
-import type { Result } from '@/shared/lib/result'
+import { asFailure, asValue } from '@numen/result'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
 import type { Installation, SettingsTabState } from '../types'
-import { readPluginReadme, type CatalogEntry } from '@/entities/plugin'
+import type { CatalogEntry } from '@/entities/plugin'
 
 type Flat<T> = { [K in keyof T]: T[K] }
 
@@ -50,12 +50,6 @@ const CONNECTIONS_KEYS = [
   'countNotes',
 ]
 
-/** A call that failed, with the reason. */
-export const asFailure = <E>(error: E): Result<never, E> => ({ ok: false, error })
-
-/** A call that returned a value. */
-export const asValue = <T>(value: T): Result<T, never> => ({ ok: true, value })
-
 const pickOf = (source: object, keys: readonly string[]): object =>
   Object.fromEntries(Object.entries(source).filter(([key]) => keys.includes(key)))
 
@@ -88,7 +82,7 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     files: {
       getPluginData: () => Promise.resolve(0),
       deletePluginData: () => Promise.resolve(''),
-      getReadme: readPluginReadme,
+      getReadme: () => Promise.resolve(''),
       ...pickOf(overrides, FILES_KEYS),
     },
     ...pickOf(overrides, PLUGIN_KEYS),

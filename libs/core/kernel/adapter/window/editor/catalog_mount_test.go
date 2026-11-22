@@ -25,7 +25,7 @@ func TestCatalogServiceIsMountedOnlyWhereTheInstallationHasACatalog(t *testing.T
 
 	noCatalog := newBareServices().NewHandler(http.NotFoundHandler())
 	services := newBareServices()
-	services.Mount(RouteOf(services.state, windowcatalog.NewHandler(service), windowcatalog.NewRoute))
+	services.Mount(RouteOf(services.state, windowcatalog.NewHandler(service, nil), windowcatalog.NewRoute))
 	withCatalog := services.NewHandler(http.NotFoundHandler())
 
 	if code := getResponse(t, noCatalog, route).Code; code != http.StatusNotFound {

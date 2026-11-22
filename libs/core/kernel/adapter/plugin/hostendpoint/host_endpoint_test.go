@@ -177,10 +177,10 @@ func TestHostEndpoint_BindsLoopbackAndServes(t *testing.T) {
 		t.Fatalf("port = %d", endpoint.GetPort())
 	}
 
-	client := numenv1connect.NewHostConnectionServiceClient(http.DefaultClient,
+	client := numenv1connect.NewConnectionCallServiceClient(http.DefaultClient,
 		fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort()),
 		connect.WithInterceptors(transport.AuthInterceptor("token-a")))
-	request := &v1.HostConnectionServiceCallRequest{Operation: "llm.complete", Payload: []byte("u")}
+	request := &v1.ConnectionCallServiceCallRequest{Operation: "llm.complete", Payload: []byte("u")}
 	got, err := call(t.Context(), client, request)
 	if err != nil || string(got.done) != "ok" {
 		t.Fatalf("answered %+v, %v", got, err)

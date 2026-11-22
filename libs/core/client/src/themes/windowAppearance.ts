@@ -8,7 +8,6 @@
  * list offers and what choosing a row writes belong to the adapter of the settings.
  */
 import { ref, shallowRef, watch, type Ref } from 'vue'
-import type { Caught } from '../errors'
 import { createFollower } from '../stream'
 import {
   getFailureText,
@@ -214,7 +213,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     start: async () => {
       await loadAppearance(true)
       // Stryker disable next-line ArrowFunction: createFollower handles stream errors internally.
-      watcher.follow().catch((error: Caught) => write(getFailureText(error), 'error'))
+      watcher.follow().catch((error: unknown) => write(getFailureText(error), 'error'))
     },
     close: () => {
       watcher.stop()

@@ -3,7 +3,7 @@
  * window's tabs: what they offer, and what each one asks of the core and of the window.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ReportedError } from '@/shared/api/errors'
+import { ReportedError } from '@numen/result'
 import { ref } from 'vue'
 import { NAME_SOURCE, NOTE_ERROR_CODE, NOTE_ROLE } from '@numen/core-client'
 import { createHandledApi } from '@/testing/coreAnswers'

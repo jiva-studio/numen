@@ -15,7 +15,7 @@ const words = {
 const createRetry = (answer: { failure: string } | { rejection: string }) => {
   const calls: string[] = []
   const settings = createAnsweredSettings({
-    settingsService: {
+    pluginProcessService: {
       retryPlugin: (request) => {
         calls.push(request.pluginId)
         if ('rejection' in answer) throw createLostConnection(answer.rejection)

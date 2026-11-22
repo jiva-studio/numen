@@ -6,6 +6,7 @@
   "workspaces": [
     "libs/core/client",
     "libs/shared/protocol",
+    "libs/shared/result",
     "libs/plugin/sdk-ts",
     "libs/shared/rerank",
     "libs/plugin/loader",

@@ -3,10 +3,9 @@
  * were registered and tells the editor which are on; an extension that failed stays off until the
  * window restarts. Disposing a registration removes its extension.
  */
-import type { Caught, EditorExtensionEntry, EditorExtensionRegistry } from '@numen/plugin-sdk'
-
+import type { EditorExtensionEntry, EditorExtensionRegistry } from '@numen/plugin-sdk'
 export interface EditorExtensionRegistryDeps {
-  readonly reportError?: (pluginId: string, error: Caught) => void
+  readonly reportError?: (pluginId: string, error: unknown) => void
 }
 
 const getKey = (pluginId: string, id: string): string => `${pluginId}/${id}`

@@ -7,16 +7,13 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 var errNoProcesses = errors.New("the host does not stop plugins on request")
 
-// processEndpoint answers the calls of PluginService a plugin makes about its own process. The plugin is
-// the one the token names. Listing is the windows' and is not served.
+// processEndpoint answers the calls of HostProcessService a plugin makes about its own process. The plugin is
+// the one the token names.
 type processEndpoint struct {
-	numenv1connect.UnimplementedPluginServiceHandler
-
 	endpoint *Endpoint
 }
 

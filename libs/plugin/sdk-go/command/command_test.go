@@ -10,7 +10,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
@@ -111,7 +111,7 @@ func TestMountAndCanceledContextAndUnlockAfterRun(t *testing.T) {
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 
-	client := numenv1connect.NewPluginCommandServiceClient(srv.Client(), srv.URL, connect.WithInterceptors(hostcall.Bearer("tok")))
+	client := numenv1connect.NewPluginCommandServiceClient(srv.Client(), srv.URL, connect.WithInterceptors(transport.Bearer("tok")))
 	res, err := client.RunCommand(t.Context(), connect.NewRequest(&v1.RunCommandRequest{
 		Command:   "greet",
 		Arguments: map[string]string{"name": "Bob"},

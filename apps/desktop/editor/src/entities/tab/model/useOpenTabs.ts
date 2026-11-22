@@ -8,7 +8,7 @@ import type { SavedTabsApi } from '../api/saved-tabs'
 import type { OpenTabs, SavedTab, Tab } from '../lib/tab'
 import { useTabPersistence } from './useTabPersistence'
 import type { WindowTabs } from './windowTabs'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { JsonValue } from '@/shared/api/json'
 
@@ -60,7 +60,7 @@ export function useOpenTabs({
   writeMessage,
   writeOpenTabs,
 }: OpenTabsDeps) {
-  const reportError = (error: Caught) =>
+  const reportError = (error: unknown) =>
     writeMessage(`The open tabs were not saved: ${formatError(error)}`, 'error')
 
   /**

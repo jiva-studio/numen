@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@/testing/results'
+import { asFailure, asValue } from '@numen/result'
 import { computed, watch } from 'vue'
 
 import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'

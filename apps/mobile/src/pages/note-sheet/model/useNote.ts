@@ -1,5 +1,6 @@
 import { ref } from 'vue'
-import type { Core, NoteBaseline, Result } from '@/entities/core'
+import type { Core, NoteBaseline } from '@/entities/core'
+import type { Result } from '@numen/result'
 
 /** The note at `path`: the prose being edited, and the version of it the core last gave. */
 export function useNote(core: Core, path: string) {

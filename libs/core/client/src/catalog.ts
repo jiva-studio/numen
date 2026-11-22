@@ -11,8 +11,7 @@ import {
   type CatalogEntry as CatalogEntryMessage,
   type CatalogSourceError as CatalogSourceErrorMessage,
 } from '@numen/protocol'
-import { formatErrorMessage, type Caught } from './errors'
-import { asFailure, asValue, type Result } from './result'
+import { asFailure, asValue, formatErrorMessage, type Result } from '@numen/result'
 
 /** One plugin as the catalog knows it. */
 export type CatalogEntry = CatalogEntryMessage
@@ -30,7 +29,7 @@ export const CATALOG_ERROR_CODE = CatalogErrorCode
 /** The calls of CatalogService the catalog is read through. */
 export type CatalogClient = Pick<
   Client<typeof CatalogService>,
-  'listCatalog' | 'getCatalogEntry' | 'findCatalogEntryByTabKind'
+  'listCatalog' | 'getCatalogEntry' | 'findCatalogEntryByTabKind' | 'getCatalogReadme'
 >
 
 /** The entries of every source and the sources that could not be read in full. */
@@ -55,6 +54,8 @@ export interface PluginCatalog {
   list(): Promise<Result<CatalogListing, CatalogFailure>>
   get(id: string): Promise<Result<CatalogMatch, CatalogFailure>>
   findByTabKind(kind: string): Promise<Result<CatalogMatch, CatalogFailure>>
+  /** The README.md of an installed plugin, enabled or not; empty where the plugin has none. */
+  getReadme(id: string): Promise<Result<string, CatalogFailure>>
 }
 
 interface EntryAnswer {
@@ -70,7 +71,7 @@ const readMatch = (answer: EntryAnswer): Result<CatalogMatch, CatalogFailure> =>
   return asValue({ entry: answer.entry, sourceErrors: answer.sourceErrors })
 }
 
-const readUnavailableFailure = (error: Caught): Result<never, CatalogFailure> =>
+const readUnavailableFailure = (error: unknown): Result<never, CatalogFailure> =>
   asFailure({ kind: 'unavailable', message: formatErrorMessage(error) })
 
 /** The catalog read through a CatalogService client. */
@@ -93,6 +94,13 @@ export const createPluginCatalog = (client: CatalogClient): PluginCatalog => ({
   findByTabKind: async (kind) => {
     try {
       return readMatch(await client.findCatalogEntryByTabKind({ kind }))
+    } catch (error) {
+      return readUnavailableFailure(error)
+    }
+  },
+  getReadme: async (id) => {
+    try {
+      return asValue((await client.getCatalogReadme({ id })).text)
     } catch (error) {
       return readUnavailableFailure(error)
     }

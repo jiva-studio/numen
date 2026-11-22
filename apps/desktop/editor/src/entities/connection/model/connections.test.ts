@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { formatError } from '@/shared/api/errors'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import type {
   ConnectionChange,
   ConnectionDraft,

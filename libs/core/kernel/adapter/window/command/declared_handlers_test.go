@@ -30,10 +30,10 @@ func (handlingPlugins) GetParts(pluginID string) plugin.Parts {
 	return plugin.Parts{HasBackend: true}
 }
 
-func TestListCommands_ListsTheHandlersOfThePluginsTheHostRuns(t *testing.T) {
+func TestListContributions_ListsTheHandlersOfThePluginsTheHostRuns(t *testing.T) {
 	handler := newHandler(newUseCases(handlingPlugins{}, handlingPlugins{}, nil, nil, nil))
 
-	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
+	res, err := handler.ListContributions(t.Context(), connect.NewRequest(&v1.ListContributionsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -28,16 +28,11 @@ const createWindow = (
     message: '',
   },
 ) => {
-  const requests: { pluginId: string; command: string; path: string; itemId?: string }[] = []
+  const requests: { path: string; versionId: string }[] = []
   const api = createHandledApi({
-    runPluginCommand: (request: {
-      pluginId: string
-      command: string
-      path: string
-      itemId?: string
-    }) => {
+    deleteVersion: (request: { path: string; versionId: string }) => {
       requests.push(request)
-      return { ...answer, openedPath: '' }
+      return answer
     },
   })
   const listItems = vi.fn(async () => [{ id: 'v1', title: 'transcript (live)' }])
@@ -77,9 +72,7 @@ describe('Delete text', () => {
 
     await set.handlers[DELETE_TEXT]?.(invoke(DELETE_TEXT, createTarget('talks/a.mp3'), 'v1'))
 
-    expect(requests).toMatchObject([
-      { pluginId: '', command: DELETE_TEXT, path: 'talks/a.mp3', itemId: 'v1' },
-    ])
+    expect(requests).toMatchObject([{ path: 'talks/a.mp3', versionId: 'v1' }])
     expect(messages).toStrictEqual([])
   })
 

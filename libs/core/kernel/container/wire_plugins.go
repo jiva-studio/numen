@@ -20,7 +20,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -40,6 +42,7 @@ type installedPlugins interface {
 	textversion.TextPlugins
 	pluginmanifest.PluginLister
 	pluginport.PluginManifests
+	GetPlugins() []manifest.Discovered
 }
 
 // pluginResolver supplies the plugin lookups used during host assembly.
@@ -202,7 +205,7 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
 		Dependencies: plugindependency.NewFetch(getDependencyProvisioner(processes.Services)),
 		Identity:     management.Activation, Leases: management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
-		Lent: services,
+		Lent: services, CallCancels: searchcancel.NewSearches(processes.Clock),
 		Tools: func() hostendpoint.PluginTools {
 			return tools
 		},

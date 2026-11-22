@@ -1,11 +1,13 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/contracts/llm"
@@ -135,7 +137,7 @@ func TestCompleteStopsOnAReasoningLevelThatTheModelRejects(t *testing.T) {
 	}
 }
 
-func TestCompleteStopsOnAnAnswerWithoutChoices(t *testing.T) {
+func TestCompleteTriesTheNextConnectionOnAnAnswerWithoutChoices(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		if _, err := w.Write([]byte(`{"choices":[]}`)); err != nil {
 			t.Error(err)
@@ -143,11 +145,45 @@ func TestCompleteStopsOnAnAnswerWithoutChoices(t *testing.T) {
 	}))
 	t.Cleanup(ts.Close)
 	_, err := newTestService(t).Complete(newContext(t), newCall("openai-compatible", ts.URL, "", "m"), oneUserMessage("hi"))
-	checkFailure(t, err, failureWant{reason: connection.ReasonUnavailable})
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnavailable})
 }
 
 func TestCompleteStopsOnAnUnknownType(t *testing.T) {
 	_, address := startFakeServer(t, fakeopenai.Config{})
 	_, err := newTestService(t).Complete(newContext(t), newCall("nope", address, "", "m"), oneUserMessage("hi"))
 	checkFailure(t, err, failureWant{reason: connection.ReasonInvalidRequest})
+}
+
+func TestCompleteOfASlowButContinuousAnswerSucceedsPastTheLimit(t *testing.T) {
+	fake, address := startFakeServer(t, fakeopenai.Config{})
+	var chunks []string
+	for _, word := range []string{"The ", "garden ", "was ", "quiet ", "at ", "dawn."} {
+		chunks = append(chunks, `{"choices":[{"delta":{"content":"`+word+`"}}]}`)
+	}
+	chunks = append(chunks, `{"choices":[{"delta":{},"finish_reason":"stop"}]}`, "[DONE]")
+	fake.QueueStream(fakeopenai.Stream{Chunks: chunks, Pause: 100 * time.Millisecond})
+	svc := newTestService(t)
+	svc.Configure(map[string]string{"requestTimeout": "0.3"})
+
+	result, err := svc.Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("fix this line"))
+
+	if err != nil || result.GetText() != "The garden was quiet at dawn." {
+		t.Errorf("result = %v, err = %v: an answer longer than the limit must go on while text arrives", result, err)
+	}
+}
+
+func TestCompleteOfAnAnswerThatGoesSilentFailsAsATimeout(t *testing.T) {
+	fake, address := startFakeServer(t, fakeopenai.Config{})
+	fake.QueueStream(fakeopenai.Stream{Chunks: []string{`{"choices":[{"delta":{"content":"The garden"}}]}`}})
+	svc := newTestService(t)
+	svc.Configure(map[string]string{"requestTimeout": "0.2"})
+	var failure string
+	svc.built.gateway.SetFailureReporter(func(_ context.Context, _, kind string, _ int) { failure = kind })
+
+	_, err := svc.Complete(newContext(t), newCall("openrouter", address, testKey, "m"), oneUserMessage("fix this line"))
+
+	checkFailure(t, err, failureWant{isTryNext: true, reason: connection.ReasonUnavailable})
+	if failure != "timeout" {
+		t.Errorf("failure = %q, want timeout", failure)
+	}
 }

@@ -13,6 +13,7 @@ import (
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 )
 
@@ -47,7 +48,7 @@ type WorkQueue interface {
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
 // plugin may do, and what the host lends the plugin to work with. Lent holds what exists only while a
 // window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
-// every file.
+// every file. CallCancels holds the cancels of the calls of connections.
 type Callers struct {
 	Dependencies *plugindependency.Fetch
 	Identity     Identity
@@ -57,6 +58,7 @@ type Callers struct {
 	Health       HealthCalls
 	Processes    ProcessRelease
 	Files        FileTypes
+	CallCancels  *searchcancel.Searches
 }
 
 // LogWriter records a structured log entry reported by a plugin backend.

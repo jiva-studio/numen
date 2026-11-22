@@ -11,14 +11,25 @@ const request = {
   getSettings: vi.fn(),
   writeSettings: vi.fn(),
   choosePluginPath: vi.fn(),
-  retryPlugin: vi.fn(),
-  getPluginData: vi.fn(),
-  deletePluginData: vi.fn(),
   watchSettings: vi.fn(),
 }
 
-const getCore = () =>
-  createSettingsApi(createAnsweredClients({ settingsService: request }).settingsService)
+const processes = { retryPlugin: vi.fn() }
+
+const data = { getPluginData: vi.fn(), deletePluginData: vi.fn() }
+
+const getCore = () => {
+  const clients = createAnsweredClients({
+    settingsService: request,
+    pluginProcessService: processes,
+    pluginData: data,
+  })
+  return createSettingsApi(
+    clients.settingsService,
+    clients.pluginProcessService,
+    clients.pluginData,
+  )
+}
 
 const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
@@ -214,19 +225,19 @@ describe('the version of the settings', () => {
 describe('a plugin whose last start failed', () => {
   it('is started again by its id, and the answer is why it failed again', async () => {
     const core = getCore()
-    request.retryPlugin.mockResolvedValue({
+    processes.retryPlugin.mockResolvedValue({
       failure: 'Timed out while starting',
     })
 
     const failure = await core.retryPlugin('sample.plugin')
 
-    expect(request.retryPlugin.mock.lastCall?.[0]).toMatchObject({ pluginId: 'sample.plugin' })
+    expect(processes.retryPlugin.mock.lastCall?.[0]).toMatchObject({ pluginId: 'sample.plugin' })
     expect(failure).toStrictEqual({ ok: false, error: 'Timed out while starting' })
   })
 
   it('is answered with a value where it started', async () => {
     const core = getCore()
-    request.retryPlugin.mockResolvedValue({ failure: '' })
+    processes.retryPlugin.mockResolvedValue({ failure: '' })
 
     expect(await core.retryPlugin('sample.plugin')).toStrictEqual({ ok: true, value: null })
   })
@@ -235,19 +246,19 @@ describe('a plugin whose last start failed', () => {
 describe('the data of a plugin', () => {
   it('is counted in files of its folder', async () => {
     const core = getCore()
-    request.getPluginData.mockResolvedValue({ fileCount: 3, byteCount: 120n })
+    data.getPluginData.mockResolvedValue({ fileCount: 3, byteCount: 120n })
 
     expect(await core.getPluginData('sample.plugin')).toBe(3)
-    expect(request.getPluginData.mock.lastCall?.[0]).toMatchObject({ pluginId: 'sample.plugin' })
+    expect(data.getPluginData.mock.lastCall?.[0]).toMatchObject({ pluginId: 'sample.plugin' })
   })
 
   it('is deleted by the id of its plugin', async () => {
     const core = getCore()
-    request.deletePluginData.mockResolvedValue({})
+    data.deletePluginData.mockResolvedValue({})
 
     await core.deletePluginData('sample.plugin')
 
-    expect(request.deletePluginData.mock.lastCall?.[0]).toMatchObject({ pluginId: 'sample.plugin' })
+    expect(data.deletePluginData.mock.lastCall?.[0]).toMatchObject({ pluginId: 'sample.plugin' })
   })
 
   it('chooses a path for a plugin setting', async () => {

@@ -8,6 +8,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -89,11 +90,11 @@ func NewQueueClientFromEnv() (*QueueClient, error) {
 }
 
 func NewQueueClient(endpoint hostcall.Endpoint) *QueueClient {
-	return NewQueueClientOver(hostcall.HTTPClient(), endpoint)
+	return newQueueClientOver(transport.HTTPClient(), endpoint)
 }
 
-func NewQueueClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *QueueClient {
-	return &QueueClient{rpc: numenv1connect.NewHostQueueServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
+func newQueueClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *QueueClient {
+	return &QueueClient{rpc: numenv1connect.NewHostQueueServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
 }
 
 // EnqueueWork holds the stream of the call open for as long as the turn lasts.

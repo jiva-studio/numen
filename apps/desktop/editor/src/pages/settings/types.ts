@@ -23,7 +23,7 @@ import type {
   SettingEdit,
 } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import type { Component } from 'vue'
 
 /** What this installation is configured as, as the window already holds it. */

@@ -2,7 +2,7 @@
  * The PDF reader settings, read from the plugin settings and kept current while the plugin is active.
  */
 import { reactive } from 'vue'
-import type { JsonValue, PluginContext, Unvalidated } from '@numen/plugin-sdk'
+import type { JsonValue, PluginContext } from '@numen/plugin-sdk'
 import type { Fit } from '../types'
 
 export interface PDFReaderPreferences {
@@ -11,7 +11,7 @@ export interface PDFReaderPreferences {
 
 const DEFAULT_ZOOM = 'defaultZoom'
 
-const isFit = (value: Unvalidated): value is Fit =>
+const isFit = (value: unknown): value is Fit =>
   typeof value === 'string' && (value === 'page' || value === 'width' || value === '100%')
 
 export function readPDFReaderPreferences(

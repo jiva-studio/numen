@@ -21,7 +21,7 @@ func (v shownVault) GetCurrentVault() domain.Vault { return domain.Vault(v) }
 
 const transcription = "org.example.transcription"
 
-func newFolders(t *testing.T, current shownVault) (*Handler, *textversiontest.TextVersions) {
+func newFolders(t *testing.T, current shownVault) (*PluginFolders, *textversiontest.TextVersions) {
 	t.Helper()
 	files := textfake.Readers{"talk.mp3": []byte("audio")}
 	folders := &textfake.Folders{}
@@ -42,7 +42,7 @@ func newFolders(t *testing.T, current shownVault) (*Handler, *textversiontest.Te
 		t.Fatal(err)
 	}
 	data := textversion.NewPluginData(versions.Versions, textfake.PluginFolders{Files: folders})
-	return NewHandler(Values{}, NewPluginFolders(nil, data, current)), versions
+	return NewPluginFolders(data, current), versions
 }
 
 func TestDeletePluginDataEmptiesTheFolderOfTheShownVault(t *testing.T) {

@@ -1,11 +1,11 @@
 import { PLUGIN_FAILURE_WORDS } from '@/entities/plugin'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import type { MessageLog } from '@/shared/model/notices/messages'
 
 /** The name a call to the core gives its errors, whose text formatError replaces by the code's. */
 const CONNECT_ERROR = 'ConnectError'
 
-const formatLoadError = (error: Caught): string =>
+const formatLoadError = (error: unknown): string =>
   error instanceof Error && error.name !== CONNECT_ERROR && error.message.trim() !== ''
     ? error.message.trim()
     : formatError(error)
@@ -24,13 +24,13 @@ export function createPluginReports(
       write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'error'),
     reportCommandIssue: (pluginId: string, message: string) =>
       write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'warning'),
-    reportError: (pluginId: string, error: Caught) =>
+    reportError: (pluginId: string, error: unknown) =>
       write(
         pluginId,
         PLUGIN_FAILURE_WORDS.error(getPluginName(pluginId), formatError(error)),
         'error',
       ),
-    reportLoadError: (pluginId: string, error: Caught) =>
+    reportLoadError: (pluginId: string, error: unknown) =>
       write(
         pluginId,
         PLUGIN_FAILURE_WORDS.stopped(

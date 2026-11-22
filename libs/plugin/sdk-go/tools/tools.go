@@ -133,7 +133,7 @@ func (r *Registry) add(one registered) error {
 
 // Mount registers the registry as PluginToolService on s.
 func (r *Registry) Mount(s *server.Server) {
-	s.Register(numenv1connect.NewPluginToolServiceHandler(registryHandler{registry: r}, s.HandlerOptions()...))
+	s.RegisterAuthenticated(numenv1connect.NewPluginToolServiceHandler(registryHandler{registry: r}))
 }
 
 // registryHandler serves a Registry as PluginToolService.

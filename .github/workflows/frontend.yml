@@ -68,6 +68,7 @@ jobs:
           npm run lint --prefix apps/desktop/editor
           npm run lint --prefix apps/desktop/flashcards
           npm run lint --prefix libs/ui/workbench
+          npm run lint --prefix libs/shared/result
           npm run lint --prefix libs/core/client
           npm run lint --prefix libs/plugin/loader
           npm run lint --prefix libs/plugin/manager
@@ -78,6 +79,7 @@ jobs:
       - name: Typecheck screens and SDK
         run: |
           npm run typecheck --prefix libs/plugin/sdk-ts
+          npm run typecheck --prefix libs/shared/result
           npm run typecheck --prefix libs/core/client
           npm run typecheck --prefix libs/ui/workbench
           npm run typecheck --prefix libs/plugin/loader
@@ -88,6 +90,7 @@ jobs:
       - name: Run frontend tests
         run: |
           npm test --prefix libs/plugin/sdk-ts
+          npm test --prefix libs/shared/result
           npm test --prefix libs/core/client
           npm run test:unit --prefix libs/ui/workbench -- --coverage
           npm run test:stories --prefix libs/ui/workbench

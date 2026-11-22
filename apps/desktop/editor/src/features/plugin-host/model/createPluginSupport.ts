@@ -7,7 +7,6 @@ import {
 } from '@numen/plugin-loader'
 import type { WindowPlatform } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
-import type { Caught } from '@/shared/api/errors'
 import { TARGET } from '../lib/window'
 import type { HostParts, TabActionParts, TabKindParts } from './createHostParts'
 import type { createPluginCatalog } from './createPluginCatalog'
@@ -23,8 +22,8 @@ export interface PluginSupportDeps {
   readonly parts: readonly HostParts[]
   readonly getPlatform: () => WindowPlatform
   readonly reports: {
-    readonly reportError: (pluginId: string, error: Caught) => void
-    readonly reportLoadError: (pluginId: string, error: Caught) => void
+    readonly reportError: (pluginId: string, error: unknown) => void
+    readonly reportLoadError: (pluginId: string, error: unknown) => void
   }
 }
 

@@ -51,7 +51,7 @@ apps/desktop/         # the window's host: cmd/ and internal/
 
 ### Constructors
 
-- `New*` constructors take their dependencies and return the concrete type. They do not validate them and return no error; a dependency that may be absent is an optional field or a separate type. No `With*` method changes a value after construction.
+- `New*` constructors take their dependencies and return the concrete type. They do not validate them and return no error; a dependency that may be absent is an optional field or a separate type. A functional option passed to a constructor and a `With` method that returns a new value are allowed; a method that changes the object after construction is not.
 - `New…` for constructors, `make` for built-in allocation. Both are idiomatic here.
 - No package-level mutable state, and no `init()` doing work beyond building a constant table.
 

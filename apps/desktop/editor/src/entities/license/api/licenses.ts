@@ -3,7 +3,7 @@
  * activation and deactivation, and the stream of updates when licenses change.
  */
 import type { LicenseClient } from '@numen/core-client'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import type { LicenseFailure, LicenseInfo } from '../lib/types'
 
 /** The calls of the licenses over `licenses`. */

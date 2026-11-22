@@ -3,7 +3,7 @@
  */
 import { CATALOG_STATE } from '@numen/core-client'
 import type { WindowClients } from '@/shared/api/clients'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import type { CatalogListing } from '../lib/catalogEntry'
 
 /**

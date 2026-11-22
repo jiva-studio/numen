@@ -3,8 +3,8 @@
  * wire is a stand-in for `fetch`, which answers in the protocol's JSON encoding.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createConnectTransport } from '@connectrpc/connect-web'
-import { NOTE_ERROR_CODE, formatErrorCodeMessage } from '@numen/core-client'
+import { NOTE_ERROR_CODE, createBearerTransport } from '@numen/core-client'
+import { formatErrorCodeMessage } from '@numen/result'
 import { createNoteApi } from './notes'
 
 /** The file a note was read from, as the wire writes it. */
@@ -18,7 +18,7 @@ function answerWith(answer: object) {
       headers: { 'content-type': 'application/json' },
     })
   })
-  const api = createNoteApi(createConnectTransport({ baseUrl: 'http://127.0.0.1:1' }))
+  const api = createNoteApi(createBearerTransport('http://127.0.0.1:1', 't0ken'))
   return { api, requests }
 }
 

@@ -7,12 +7,8 @@ import { ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import type { ConnectionFieldInfo, ConnectionInfo, ConnectionTypeInfo } from '@/entities/connection'
 import SettingsTab from '../SettingsTab.vue'
-import {
-  asFailure,
-  asValue,
-  createInstallation,
-  createSettingsState,
-} from '@/pages/settings/testing/installation'
+import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
+import { asFailure, asValue } from '@numen/result'
 import {
   click,
   dispose,

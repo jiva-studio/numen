@@ -5,7 +5,7 @@
  */
 import type { CommandItem, HandlerDeclaration, HostCommands } from '@numen/plugin-loader'
 import type { DeclaredCommandsApi } from '@/entities/plugin'
-import { ReportedError } from '@/shared/api/errors'
+import { ReportedError } from '@numen/result'
 
 export interface BackendHandlersDeps {
   readonly getHandlers: () => readonly HandlerDeclaration[] | undefined

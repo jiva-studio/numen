@@ -15,13 +15,7 @@ import type { VaultCardsDue } from '../lib/vault/types'
 import { useReviewDays } from './decks/reviewDays'
 import { useVaultPresets } from './decks/presets'
 import { useReviewSession } from './session/session'
-import type {
-  ConnectionHost,
-  Severity,
-  Caught,
-  Unvalidated,
-  VaultRelations,
-} from '@numen/plugin-sdk'
+import type { ConnectionHost, Severity, VaultRelations } from '@numen/plugin-sdk'
 import type { ReviewNotices } from './notices'
 import type { VaultCounts } from './counts'
 import { usePanels } from './usePanels'
@@ -50,7 +44,7 @@ export interface NotesPage {
 }
 
 /** Whether a ref callback received the notes panel, which exposes scrollPage. */
-export const isNotesPage = (value: Unvalidated): value is NotesPage =>
+export const isNotesPage = (value: unknown): value is NotesPage =>
   typeof value === 'object' &&
   value !== null &&
   'scrollPage' in value &&
@@ -106,7 +100,7 @@ interface NavigationActionDeps {
   goTo: (screen: ReviewScreen) => void
   reviewDays: ReturnType<typeof useReviewDays>
   readSchedules: () => Promise<void>
-  reportError: (error: Caught) => void
+  reportError: (error: unknown) => void
   goToVaults: () => void
 }
 
@@ -137,7 +131,7 @@ function useChosenVault(deps: {
   vaultCount: ComputedRef<VaultCardsDue | null>
   counts: VaultCounts
   readSchedules: () => Promise<void>
-  reportError: (error: Caught) => void
+  reportError: (error: unknown) => void
 }) {
   let isRead = false
   watch(

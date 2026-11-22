@@ -70,6 +70,14 @@
         "@bufbuild/protoc-gen-es"
       ]
     },
+    "libs/shared/result": {
+      "entry": [
+        "src/**/*.test.ts"
+      ],
+      "project": [
+        "src/**/*.ts!"
+      ]
+    },
     "libs/core/client": {
       "entry": [
         "src/**/*.test.ts"

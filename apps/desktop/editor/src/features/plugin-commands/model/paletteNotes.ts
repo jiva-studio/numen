@@ -7,7 +7,6 @@
 import { shallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { CommandNote } from '@numen/plugin-loader'
-import type { Caught } from '@/shared/api/errors'
 import type { CommandTarget } from '@/shared/model/command'
 import type { PaletteNote } from '../lib/whenContext'
 
@@ -19,7 +18,7 @@ type ReadNote = (
 /** How the palette reads a note, and where a failed read is reported. */
 export interface PaletteNotesDeps {
   readonly read: ReadNote
-  readonly reportError: (error: Caught) => void
+  readonly reportError: (error: unknown) => void
 }
 
 export function createPaletteNotes(deps: PaletteNotesDeps) {

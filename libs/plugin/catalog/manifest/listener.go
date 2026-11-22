@@ -5,9 +5,6 @@ import (
 	"regexp"
 )
 
-// listenerProtocolTCP is the only supported listener protocol.
-const listenerProtocolTCP = "tcp"
-
 // MinListenerPort and MaxListenerPort bound the port of a listener: the host binds no privileged port.
 const (
 	MinListenerPort = 1024
@@ -22,7 +19,6 @@ type Listener struct {
 	Name        string
 	Port        int
 	PortSetting string
-	Protocol    string
 }
 
 func (m Manifest) listListenerIssues() []error {
@@ -42,9 +38,6 @@ func (m Manifest) listListenerIssues() []error {
 		seenNames[declared.Name] = true
 		if err := m.checkListenerPort(declared); err != nil {
 			issues = append(issues, err)
-		}
-		if declared.Protocol != listenerProtocolTCP {
-			issues = append(issues, fmt.Errorf("%w: listener %q has protocol %q, want %q", ErrInvalidContribution, declared.Name, declared.Protocol, listenerProtocolTCP))
 		}
 	}
 	return issues

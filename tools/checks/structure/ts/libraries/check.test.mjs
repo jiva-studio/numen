@@ -106,11 +106,12 @@ test("the packages of this repository are read, the plugin manager among them", 
   assert.deepEqual(findPackageViolations(packages, PACKAGE_DEPENDENCIES), []);
 });
 
-test("the rows allow the plugin manager the UI library, the plugin host the SDK and the core client, the SDK the schema, the rerank messages and the UI build helpers, and the core client the schema", () => {
+test("the rows allow the plugin manager the UI library, the plugin host the SDK and the core client, the SDK the schema, the rerank messages, the result package and the UI build helpers, and the core client the schema and the result package", () => {
   assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-manager"], ["@numen/ui"]);
-  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-loader"], ["@numen/plugin-sdk", "@numen/core-client"]);
-  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-sdk"], ["@numen/protocol", "@numen/rerank", "@numen/ui"]);
-  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/core-client"], ["@numen/protocol"]);
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-loader"], ["@numen/plugin-sdk", "@numen/core-client", "@numen/result"]);
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/plugin-sdk"], ["@numen/protocol", "@numen/rerank", "@numen/result", "@numen/ui"]);
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/core-client"], ["@numen/protocol", "@numen/result"]);
+  assert.deepEqual(PACKAGE_DEPENDENCIES["@numen/result"], []);
 });
 
 test("a plugin host that declares the schema is reported", () => {

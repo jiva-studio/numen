@@ -3,7 +3,7 @@
  * goes away, and the files a kind creates.
  */
 import { computed } from 'vue'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import type { AnyTabKind } from '../lib/kinds'
 import { createPlaceholders } from './tabOperations'
 import type { TabStore } from './tabStore'

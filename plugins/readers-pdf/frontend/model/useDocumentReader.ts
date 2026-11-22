@@ -2,7 +2,7 @@
  * Reader state and controls for an open document.
  */
 import { ref, shallowRef } from 'vue'
-import { formatErrorMessage, type Caught } from '@numen/plugin-sdk'
+import { formatErrorMessage } from '@numen/plugin-sdk'
 import type { TextRange } from '../types'
 import { useDocumentNavigation } from './useDocumentNavigation'
 import { useDocumentViewport } from './useDocumentViewport'
@@ -84,7 +84,7 @@ export function useDocumentReader(documents: Documents, path: string) {
     pages.value = []
   }
 
-  const reportFailure = (cause: Caught) => {
+  const reportFailure = (cause: unknown) => {
     error.value = formatErrorMessage(cause)
   }
 

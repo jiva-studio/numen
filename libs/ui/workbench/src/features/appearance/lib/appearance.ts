@@ -1,6 +1,4 @@
 /** The theme entries and size and mode values drawn by the window. */
-import type { Caught } from '@numen/ui'
-
 /** Which half of a `light-dark()` pair every token is read as. */
 export type Mode = 'system' | 'light' | 'dark'
 
@@ -36,5 +34,5 @@ export const SCHEMES: Record<Mode, string> = {
 }
 
 /** The sentence a failure is written as. */
-export const getFailureText = (error: Caught): string =>
+export const getFailureText = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -36,11 +37,11 @@ func NewSearchClientFromEnv() (*SearchClient, error) {
 }
 
 func NewSearchClient(endpoint hostcall.Endpoint) *SearchClient {
-	return NewSearchClientOver(hostcall.HTTPClient(), endpoint)
+	return newSearchClientOver(transport.HTTPClient(), endpoint)
 }
 
-func NewSearchClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *SearchClient {
-	return &SearchClient{rpc: numenv1connect.NewHostSearchServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
+func newSearchClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *SearchClient {
+	return &SearchClient{rpc: numenv1connect.NewHostSearchServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
 }
 
 // With returns the client for the vault with the given identity, used as the shown vault is. A call on

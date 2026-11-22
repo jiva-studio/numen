@@ -1,0 +1,24 @@
+{
+  "name": "@numen/result",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "What a call that can fail answers with: Result, the error codes of a vault operation and the messages of an error. Depends on nothing, so any package can take it.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --build",
+    "test": "vitest run",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ ."
+  },
+  "devDependencies": {
+    "@connectrpc/connect": "^2.3.0",
+    "eslint": "^10.14.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.0.3"
+  }
+}

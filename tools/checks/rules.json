@@ -971,22 +971,6 @@
       "target": "use-case-fields"
     },
     {
-      "name": "go/use-case-ports",
-      "paths": [
-        "libs/core/kernel/**",
-        "go.work"
-      ],
-      "tags": [
-        "structure",
-        "go",
-        "core",
-        "slow"
-      ],
-      "selftest": "structure/go/use-case-ports/check_test.go",
-      "runner": "go",
-      "target": "use-case-ports"
-    },
-    {
       "name": "go/usecase-edges",
       "paths": [
         "libs/core/kernel/**",
@@ -1307,6 +1291,7 @@
         ".golangci*.yml",
         "libs/**/.golangci*.yml",
         "libs/plugin/**",
+        "libs/shared/protocol/version.go",
         "libs/ui/**",
         "plugins/**",
         "plugins/**/*.{ts,vue,js,mjs}",
@@ -1457,6 +1442,23 @@
       "export": "STYLE_VERIFIERS"
     },
     {
+      "name": "ts/testing-entries",
+      "paths": [
+        "libs/**/*.{ts,mts,js,mjs}",
+        "libs/**/package.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "fast"
+      ],
+      "selftest": "structure/ts/testing-entries/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/testing-entries/check.mjs",
+      "export": "TESTING_ENTRY_VERIFIERS"
+    },
+    {
       "name": "ts/ts-packages-eslint",
       "paths": [
         "**/eslint.config.{js,mjs}",
@@ -1509,6 +1511,29 @@
       "runner": "verifiers",
       "module": "docs/paths-exist/check.mjs",
       "export": "DOCUMENT_VERIFIERS"
+    },
+    {
+      "name": "core/migration-forward-only",
+      "paths": [
+        "libs/core/kernel/adapter/index/**"
+      ],
+      "tags": [
+        "structure",
+        "core",
+        "fast"
+      ],
+      "selftest": "../../libs/core/kernel/adapter/index/migration-forward-only.sh",
+      "runner": "command",
+      "cmd": [
+        "bash",
+        "-c",
+        "libs/core/kernel/adapter/index/migration-forward-only.sh \"${BASE_REF:-origin/main}\""
+      ],
+      "selftestCmd": [
+        "bash",
+        "libs/core/kernel/adapter/index/migration-forward-only.sh",
+        "--self-test"
+      ]
     },
     {
       "name": "ts/plugin-mirror-inventory",
@@ -1667,20 +1692,6 @@
       "runner": "eslint"
     },
     {
-      "name": "eslint/no-unknown",
-      "paths": [
-        "tools/lint-layers/base-eslint.mjs",
-        "tools/lint-layers/numen-rules.mjs"
-      ],
-      "tags": [
-        "style",
-        "ts",
-        "fast"
-      ],
-      "selftest": "../lint-layers/noUnknown.test.mjs",
-      "runner": "eslint"
-    },
-    {
       "name": "eslint/pure-segment",
       "paths": [
         "tools/lint-layers/base-eslint.mjs",
@@ -1772,6 +1783,24 @@
         "tools/checks/lib/golangci.test.mjs",
         "tools/checks/lib/changed.test.mjs"
       ]
+    },
+    {
+      "name": "ts/window-sources",
+      "paths": [
+        "apps/desktop/editor/src/**/*.{ts,vue}",
+        "apps/mobile/index.html",
+        "apps/mobile/src/**/*.{ts,vue}"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "window",
+        "fast"
+      ],
+      "selftest": "structure/ts/window-sources/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/window-sources/check.mjs",
+      "export": "WINDOW_SOURCES_VERIFIERS"
     }
   ]
 }

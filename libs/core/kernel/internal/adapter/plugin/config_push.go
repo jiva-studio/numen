@@ -17,6 +17,7 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
@@ -118,7 +119,7 @@ func (c *ConfigPush) NotifyPluginConfig(ctx context.Context, pluginID string) er
 
 func (c *ConfigPush) configurePlugin(ctx context.Context, pluginID string) error {
 	if sup, ok := c.sups.Get(pluginID); ok {
-		if err := sup.Child.SetNice(c.GetProcessNice()); err != nil {
+		if err := sup.Child.SetNice(c.GetProcessNice()); err != nil && !errors.Is(err, process.ErrNiceDenied) {
 			c.report(fmt.Errorf("set priority of %s: %w", pluginID, err))
 		}
 	}

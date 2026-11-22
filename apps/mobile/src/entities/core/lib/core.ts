@@ -1,6 +1,4 @@
-/** The answer to a call that can fail: what was returned, or the sentence that says why not. */
-export type Result<T> =
-  { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: string }
+import type { Result } from '@numen/result'
 
 /** The file a note was read from or written to, as the core last saw it. */
 export interface NoteStamp {

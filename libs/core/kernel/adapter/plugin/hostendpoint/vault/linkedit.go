@@ -26,8 +26,8 @@ func readRole(role v1.Role) domain.LinkRole {
 }
 
 func (e *arrangeCalls) AddLinks(
-	ctx context.Context, req *connect.Request[v1.HostVaultServiceAddLinksRequest],
-) (*connect.Response[v1.HostVaultServiceAddLinksResponse], error) {
+	ctx context.Context, req *connect.Request[v1.HostLinkServiceAddLinksRequest],
+) (*connect.Response[v1.HostLinkServiceAddLinksResponse], error) {
 	if len(req.Msg.GetLinks()) > batchLimit {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyLinks)
 	}
@@ -36,7 +36,7 @@ func (e *arrangeCalls) AddLinks(
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.HostVaultServiceAddLinksResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.HostLinkServiceAddLinksResponse{Error: noVault}), nil
 	}
 	additions := make([]plugin.LinkAddition, len(req.Msg.GetLinks()))
 	for i, one := range req.Msg.GetLinks() {
@@ -51,9 +51,9 @@ func (e *arrangeCalls) AddLinks(
 		if callErr == nil && code == 0 {
 			callErr = connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.HostVaultServiceAddLinksResponse{Error: code}), callErr
+		return connect.NewResponse(&v1.HostLinkServiceAddLinksResponse{Error: code}), callErr
 	}
-	out := &v1.HostVaultServiceAddLinksResponse{Results: make([]*v1.HostLinkAdded, len(added))}
+	out := &v1.HostLinkServiceAddLinksResponse{Results: make([]*v1.HostLinkAdded, len(added))}
 	// The results already hold the cancellation of ctx: the links not written are ErrNotAttempted.
 	resultCtx := context.WithoutCancel(ctx)
 	for i, one := range added {
@@ -63,7 +63,7 @@ func (e *arrangeCalls) AddLinks(
 		}
 		entry, code, callErr := writeLinkEdit(resultCtx, one.Stat, one.Err)
 		if callErr != nil || code != 0 {
-			return connect.NewResponse(&v1.HostVaultServiceAddLinksResponse{Error: code}), callErr
+			return connect.NewResponse(&v1.HostLinkServiceAddLinksResponse{Error: code}), callErr
 		}
 		out.Results[i] = &v1.HostLinkAdded{Stat: entry.stat, Error: entry.code, Detail: entry.detail}
 	}
@@ -71,42 +71,42 @@ func (e *arrangeCalls) AddLinks(
 }
 
 func (e *arrangeCalls) UpdateLinks(
-	ctx context.Context, req *connect.Request[v1.HostVaultServiceUpdateLinksRequest],
-) (*connect.Response[v1.HostVaultServiceUpdateLinksResponse], error) {
+	ctx context.Context, req *connect.Request[v1.HostLinkServiceUpdateLinksRequest],
+) (*connect.Response[v1.HostLinkServiceUpdateLinksResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.HostVaultServiceUpdateLinksResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.HostLinkServiceUpdateLinksResponse{Error: noVault}), nil
 	}
 	m := req.Msg
 	change := domain.Link{Role: readRole(m.GetRole()), Type: m.GetType(), Label: m.GetLabel(), Why: m.GetNote()}
 	stat, err := vault.LinkEditor.UpdateLinks(ctx, m.GetFrom(), domain.ParseAddress(m.GetTo()), change, readFileStat(m.GetBaseline()))
 	entry, code, callErr := writeLinkEdit(ctx, stat, err)
 	if callErr != nil || code != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceUpdateLinksResponse{Error: code}), callErr
+		return connect.NewResponse(&v1.HostLinkServiceUpdateLinksResponse{Error: code}), callErr
 	}
-	return connect.NewResponse(&v1.HostVaultServiceUpdateLinksResponse{Stat: entry.stat, Error: entry.code, Detail: entry.detail}), nil
+	return connect.NewResponse(&v1.HostLinkServiceUpdateLinksResponse{Stat: entry.stat, Error: entry.code, Detail: entry.detail}), nil
 }
 
 func (e *arrangeCalls) RemoveLinks(
-	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveLinksRequest],
-) (*connect.Response[v1.HostVaultServiceRemoveLinksResponse], error) {
+	ctx context.Context, req *connect.Request[v1.HostLinkServiceRemoveLinksRequest],
+) (*connect.Response[v1.HostLinkServiceRemoveLinksResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.HostVaultServiceRemoveLinksResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.HostLinkServiceRemoveLinksResponse{Error: noVault}), nil
 	}
 	m := req.Msg
 	stat, err := vault.LinkEditor.RemoveLinks(ctx, m.GetFrom(), domain.ParseAddress(m.GetTo()), readRole(m.GetRole()), readFileStat(m.GetBaseline()))
 	entry, code, callErr := writeLinkEdit(ctx, stat, err)
 	if callErr != nil || code != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceRemoveLinksResponse{Error: code}), callErr
+		return connect.NewResponse(&v1.HostLinkServiceRemoveLinksResponse{Error: code}), callErr
 	}
-	return connect.NewResponse(&v1.HostVaultServiceRemoveLinksResponse{Stat: entry.stat, Error: entry.code, Detail: entry.detail}), nil
+	return connect.NewResponse(&v1.HostLinkServiceRemoveLinksResponse{Stat: entry.stat, Error: entry.code, Detail: entry.detail}), nil
 }
 
 // linkEdit is the outcome of an edit of the links of one note on the wire.

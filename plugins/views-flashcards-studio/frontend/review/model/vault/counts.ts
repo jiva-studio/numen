@@ -13,8 +13,6 @@ import { ref, shallowRef } from 'vue'
 import type { StopReason } from '../../../lib/stop'
 
 import type { VaultCardsDue } from '../../lib/vault/types'
-import type { Caught } from '@numen/plugin-sdk'
-
 interface CardsDueClient {
   watchCardsDue(
     req: Record<string, never>,
@@ -72,7 +70,7 @@ const getMinutes = (ms: number): number => ms / 60000
 
 export interface CountsDeps {
   cards: CardsDueClient
-  reportError(error: Caught): void
+  reportError(error: unknown): void
 }
 
 const createUncountedVault = (one: VaultCounts): VaultCardsDue => ({

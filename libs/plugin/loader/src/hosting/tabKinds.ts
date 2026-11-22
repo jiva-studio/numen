@@ -1,6 +1,6 @@
 /** A tab kind: the state its tabs hold, and the operations a kind may request from the window. */
 import type { Component } from 'vue'
-import type { Result } from '@numen/core-client'
+import type { Result } from '@numen/result'
 import type { JsonValue, Selector, TabPlacement, TextRange } from '@numen/plugin-sdk'
 
 /**

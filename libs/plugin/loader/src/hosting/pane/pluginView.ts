@@ -11,7 +11,7 @@ import {
   type Ref,
   type VNodeChild,
 } from 'vue'
-import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
+import type { PluginContext } from '@numen/plugin-sdk'
 import { getPluginStyle } from '../../styles'
 import { adoptHostStyles, parseStatePath, PANE_HOST_STYLE, PANE_LAYOUT_STYLE } from './paneHost'
 
@@ -30,7 +30,7 @@ function isLoaderFunction(comp: { readonly length: number }): boolean {
   )
 }
 
-function isAsyncRegistration(comp: Unvalidated): comp is AsyncComponentRegistration {
+function isAsyncRegistration(comp: unknown): comp is AsyncComponentRegistration {
   return (
     typeof comp === 'object' &&
     comp !== null &&
@@ -42,7 +42,7 @@ function isAsyncRegistration(comp: Unvalidated): comp is AsyncComponentRegistrat
 }
 
 function isAsyncComponent(
-  comp: Unvalidated,
+  comp: unknown,
 ): comp is (() => Promise<Component>) | AsyncComponentRegistration {
   return typeof comp === 'function' ? isLoaderFunction(comp) : isAsyncRegistration(comp)
 }
@@ -52,7 +52,7 @@ function isAsyncComponent(
  * that exports it as `default`, or as a loader that resolves to it; none of these is typed alike, so
  * the shape is checked here.
  */
-export function parsePluginComponent(rawComponent: Unvalidated): Component | null {
+export function parsePluginComponent(rawComponent: unknown): Component | null {
   if (!rawComponent) return null
   const comp =
     typeof rawComponent === 'object' && 'default' in rawComponent
@@ -66,7 +66,7 @@ export function parsePluginComponent(rawComponent: Unvalidated): Component | nul
 }
 
 /** The text of a title that a tab state keeps as a string or as a ref, and nothing for any other value. */
-export function parseTitle(title: Unvalidated): string {
+export function parseTitle(title: unknown): string {
   if (typeof title === 'string') return title
   if (typeof title === 'object' && title !== null && 'value' in title) {
     return String(title.value)

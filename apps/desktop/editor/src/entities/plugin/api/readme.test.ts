@@ -1,48 +1,46 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { readPluginReadme } from './readme'
+import { describe, expect, it } from 'vitest'
+import { createAnsweredClients } from '@/testing/coreAnswers'
+import { createReadmeReader } from './readme'
 
-describe('readPluginReadme', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
+const createReader = (answer: () => object) =>
+  createReadmeReader(
+    createAnsweredClients({ pluginCatalog: { getCatalogReadme: answer } }).pluginCatalog,
+  )
+
+describe('createReadmeReader', () => {
+  it('returns the text the core reads from the folder of the plugin', async () => {
+    const read = createReader(() => ({ text: '# Hello' }))
+
+    expect(await read('my-plugin')).toBe('# Hello')
   })
 
-  it('returns empty string when fetch is unavailable, fails, returns non-ok, or returns html', async () => {
-    vi.stubGlobal('fetch', undefined)
-    expect(await readPluginReadme('my-plugin')).toBe('')
+  it('asks the core for the plugin by its id', async () => {
+    const asked: string[] = []
+    const read = createReadmeReader(
+      createAnsweredClients({
+        pluginCatalog: {
+          getCatalogReadme: (request: { id: string }) => {
+            asked.push(request.id)
+            return { text: '' }
+          },
+        },
+      }).pluginCatalog,
+    )
 
-    const fetchMock = vi.fn()
-    vi.stubGlobal('fetch', fetchMock)
+    await read('my-plugin')
 
-    fetchMock.mockResolvedValueOnce({
-      ok: false,
-      headers: new Headers(),
-      text: async () => 'Error body',
+    expect(asked).toStrictEqual(['my-plugin'])
+  })
+
+  it('returns an empty text where the plugin has no README', async () => {
+    expect(await createReader(() => ({ text: '' }))('my-plugin')).toBe('')
+  })
+
+  it('returns an empty text where the core cannot answer', async () => {
+    const read = createReader(() => {
+      throw new Error('the core is closed')
     })
-    expect(await readPluginReadme('my-plugin')).toBe('')
-    expect(fetchMock).toHaveBeenCalledWith('/plugin/my-plugin/README.md')
 
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      headers: new Headers({ 'content-type': 'text/html; charset=utf-8' }),
-      text: async () => '<html></html>',
-    })
-    expect(await readPluginReadme('my-plugin')).toBe('')
-
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      headers: new Headers({ 'content-type': 'text/markdown' }),
-      text: async () => '# Hello',
-    })
-    expect(await readPluginReadme('my-plugin')).toBe('# Hello')
-
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      headers: new Headers(),
-      text: async () => '# Bare',
-    })
-    expect(await readPluginReadme('my-plugin')).toBe('# Bare')
-
-    fetchMock.mockRejectedValueOnce(new Error('network error'))
-    expect(await readPluginReadme('my-plugin')).toBe('')
+    expect(await read('my-plugin')).toBe('')
   })
 })

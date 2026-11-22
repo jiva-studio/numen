@@ -2,7 +2,7 @@ import { computed, ref, watch } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { ConnectionFieldInfo, RowDraft, RowOption } from '@/entities/connection'
 import { formatError } from '@/shared/api/errors'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import { WORDS as words } from '../words'
 import type { ListRowOptions, SelectChoice } from '../types'
 

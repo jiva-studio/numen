@@ -50,7 +50,7 @@ type PreferredRow struct {
 // ListRows returns the rows of the plugin for the operation in the order of use, without the rows whose
 // connection is missing or whose type is unavailable or does not serve the operation.
 func (c *Client) ListRows(ctx context.Context, operation string) ([]Row, error) {
-	response, err := c.host.ListRows(ctx, connect.NewRequest(&v1.HostConnectionServiceListRowsRequest{Operation: operation}))
+	response, err := c.host.ListRows(ctx, connect.NewRequest(&v1.ConnectionCallServiceListRowsRequest{Operation: operation}))
 	if err != nil {
 		return nil, readListError(ctx, "list the rows of "+operation, err)
 	}
@@ -71,7 +71,7 @@ func (c *Client) ListRows(ctx context.Context, operation string) ([]Row, error) 
 // as its provider lists them for the options of the request. It fails for a connection that is not among
 // the rows and for a provider that cannot list them.
 func (c *Client) ListRowOptions(ctx context.Context, request RowOptionsRequest) ([]Option, error) {
-	response, err := c.host.ListRowOptions(ctx, connect.NewRequest(&v1.HostConnectionServiceListRowOptionsRequest{
+	response, err := c.host.ListRowOptions(ctx, connect.NewRequest(&v1.ConnectionCallServiceListRowOptionsRequest{
 		Operation: request.Operation, ConnectionId: request.ConnectionID, Field: request.Field, Options: maps.Clone(request.Options),
 	}))
 	if err != nil {
@@ -95,7 +95,7 @@ type preferringClient struct {
 }
 
 func (p *preferringClient) Call(ctx context.Context, operation string, payload []byte, priority Priority) (Frames, error) {
-	return p.client.call(ctx, &v1.HostConnectionServiceCallRequest{
+	return p.client.call(ctx, &v1.ConnectionCallServiceCallRequest{
 		Operation: operation, Payload: payload, Priority: writePriority(priority),
 		Preferred: &v1.PreferredRow{ConnectionId: p.row.ConnectionID, Options: maps.Clone(p.row.Options), IsExclusive: p.row.IsExclusive},
 	})

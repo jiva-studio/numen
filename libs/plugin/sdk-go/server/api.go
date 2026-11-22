@@ -113,7 +113,7 @@ func (a *API) mount(method string, handler http.Handler) {
 		a.err = fmt.Errorf("server: invalid API method name %q", method)
 		return
 	}
-	a.server.Register(http.MethodPost+" /"+a.service+"/"+method, a.server.interceptor.RequireToken(handler))
+	a.server.RegisterAuthenticated(http.MethodPost+" /"+a.service+"/"+method, handler)
 }
 
 // Handle mounts a method that reads one request and answers one response, both JSON. Unknown

@@ -360,33 +360,17 @@ func TestGetSharedDirIsTheDirectoryTheHostShares(t *testing.T) {
 	shared := plugintest.GrantSharedStorage(t)
 
 	got, err := cache.GetSharedDir()
-	own, ownErr := cache.GetSharedDirOrPluginDir()
 
-	if err != nil || got != shared || ownErr != nil || own != shared {
-		t.Errorf("GetSharedDir() = %q, %v; GetSharedDirOrPluginDir() = %q, %v; want %q", got, err, own, ownErr, shared)
+	if err != nil || got != shared {
+		t.Errorf("GetSharedDir() = %q, %v, want %q", got, err, shared)
 	}
 }
 
-func TestAnOlderHostThatSharesNothingMakesThePluginUseItsOwnDirectory(t *testing.T) {
-	cacheDir, _ := plugintest.GrantStorage(t)
+func TestAHostThatSharesNothingProvidesNoSharedDirectory(t *testing.T) {
 	t.Setenv(cache.EnvSharedDir, "")
 
 	if dir, err := cache.GetSharedDir(); err == nil {
 		t.Errorf("GetSharedDir() = %q, want an error", dir)
-	}
-	got, err := cache.GetSharedDirOrPluginDir()
-
-	if err != nil || got != cacheDir {
-		t.Errorf("GetSharedDirOrPluginDir() = %q, %v, want %q", got, err, cacheDir)
-	}
-}
-
-func TestAHostThatGrantedNothingProvidesNoDirectoryAtAll(t *testing.T) {
-	t.Setenv(cache.EnvSharedDir, "")
-	t.Setenv(cache.EnvCacheDir, "")
-
-	if dir, err := cache.GetSharedDirOrPluginDir(); err == nil {
-		t.Errorf("GetSharedDirOrPluginDir() = %q, want an error", dir)
 	}
 }
 

@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -93,13 +95,13 @@ type Caller interface {
 // rows of the settings of that plugin; a request names a connection only as the row it prefers, and a
 // result holds no key.
 type Client struct {
-	host numenv1connect.HostConnectionServiceClient
+	host numenv1connect.ConnectionCallServiceClient
 }
 
 // NewClient creates a client for the host at baseURL, authenticating with token.
-func NewClient(httpClient connect.HTTPClient, baseURL, token string) *Client {
-	return &Client{host: numenv1connect.NewHostConnectionServiceClient(
-		httpClient, baseURL, connect.WithInterceptors(hostcall.Bearer(token)),
+func NewClient(httpClient *http.Client, baseURL, token string) *Client {
+	return &Client{host: numenv1connect.NewConnectionCallServiceClient(
+		httpClient, baseURL, connect.WithInterceptors(transport.Bearer(token)),
 	)}
 }
 
@@ -114,16 +116,16 @@ func NewClientFromEnv() (*Client, error) {
 }
 
 func newClientAt(endpoint hostcall.Endpoint) *Client {
-	return NewClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Token)
+	return NewClient(transport.HTTPClient(), endpoint.BaseURL, endpoint.Token)
 }
 
 // Call asks the rows of the plugin, in order, to carry out the operation. The core goes to the next row
 // only when a row fails before its first data frame. The caller closes the frames.
 func (c *Client) Call(ctx context.Context, operation string, payload []byte, priority Priority) (Frames, error) {
-	return c.call(ctx, &v1.HostConnectionServiceCallRequest{Operation: operation, Payload: payload, Priority: writePriority(priority)})
+	return c.call(ctx, &v1.ConnectionCallServiceCallRequest{Operation: operation, Payload: payload, Priority: writePriority(priority)})
 }
 
-func (c *Client) call(ctx context.Context, request *v1.HostConnectionServiceCallRequest) (Frames, error) {
+func (c *Client) call(ctx context.Context, request *v1.ConnectionCallServiceCallRequest) (Frames, error) {
 	stream, err := c.host.Call(ctx, connect.NewRequest(request))
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
@@ -135,7 +137,7 @@ func (c *Client) call(ctx context.Context, request *v1.HostConnectionServiceCall
 }
 
 type callStream struct {
-	stream     *connect.ServerStreamForClient[v1.HostConnectionServiceCallResponse]
+	stream     *connect.ServerStreamForClient[v1.ConnectionCallServiceCallResponse]
 	contextErr func() error
 	operation  string
 	data       []byte
@@ -152,12 +154,12 @@ func (s *callStream) Next() bool {
 			return false
 		}
 		switch frame := s.stream.Msg().GetFrame().(type) {
-		case *v1.HostConnectionServiceCallResponse_Data:
+		case *v1.ConnectionCallServiceCallResponse_Data:
 			s.data = frame.Data
 			return true
-		case *v1.HostConnectionServiceCallResponse_Done:
+		case *v1.ConnectionCallServiceCallResponse_Done:
 			s.isDone, s.done = true, frame.Done
-		case *v1.HostConnectionServiceCallResponse_Failure:
+		case *v1.ConnectionCallServiceCallResponse_Failure:
 			s.isDone = true
 			s.err = readFailure(frame.Failure)
 		}

@@ -518,7 +518,7 @@ func newModelManifest(dependencies string) []byte {
 	return fmt.Appendf(nil, `{
 		"id": %q, "name": "Example Tools", "version": "1.0.0", "capabilities": ["tools"], "targets": ["desktop.editor"],
 		"permissions": [], "dependencies": [%s],
-		"services": ["numen.v1.PluginToolService"], "backend": {"entrypoint": "bin/example"}
+		"backend": {"entrypoint": "bin/example"}
 	}`, firstBuiltInID, dependencies)
 }
 
@@ -650,7 +650,7 @@ func newModelSettingManifest() []byte {
 		"id": %q, "name": "Example Tools", "version": "1.0.0", "capabilities": ["tools"], "targets": ["desktop.editor"],
 		"permissions": [],
 		"dependencies": [{"id": "model-small", "kind": "runtime"}, {"id": "model-large", "kind": "runtime"}],
-		"services": ["numen.v1.PluginToolService"], "backend": {"entrypoint": "bin/example"},
+		"backend": {"entrypoint": "bin/example"},
 		"settings": [{"key": "model", "type": "enum", "title": "Model", "default": "small", "options": [
 			{"value": "small", "title": "Small", "dependencies": ["model-small"]},
 			{"value": "large", "title": "Large", "dependencies": ["model-large"]}

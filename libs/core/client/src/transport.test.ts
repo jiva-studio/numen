@@ -11,6 +11,7 @@ import { PluginHealthService } from '@numen/protocol'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   CALLER_HEADER,
+  createBearerTransport,
   createCallerTransport,
   createKeepaliveTransport,
   createOriginTransport,
@@ -33,6 +34,30 @@ describe('the origin transport', () => {
     vi.stubGlobal('window', { location: { origin: 'https://example.test' } })
     createOriginTransport()
     expect(createConnectTransport).toHaveBeenCalledWith({ baseUrl: 'https://example.test' })
+  })
+})
+
+describe('the bearer transport', () => {
+  it('sends each request to its address with the token', async () => {
+    const authorized: (string | null)[] = []
+    const fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      authorized.push(new Headers(init?.headers).get('Authorization'))
+      throw new Error(`no answer for ${String(input)}`)
+    })
+    vi.stubGlobal('fetch', fetch)
+
+    const client = createClient(
+      PluginHealthService,
+      createBearerTransport('http://127.0.0.1:41234', 't0ken'),
+    )
+    await expect(
+      client.clearHealth({ pluginId: 'org.example.atlas', key: 'quota' }),
+    ).rejects.toThrow()
+
+    expect(String(fetch.mock.calls[0]?.[0])).toBe(
+      'http://127.0.0.1:41234/numen.v1.PluginHealthService/ClearHealth',
+    )
+    expect(authorized).toEqual(['Bearer t0ken'])
   })
 })
 

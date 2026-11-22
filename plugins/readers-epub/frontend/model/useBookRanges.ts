@@ -3,13 +3,11 @@
  */
 import { watch, type Ref } from 'vue'
 import type { TextRange } from '../types'
-import type { Caught } from '@numen/plugin-sdk'
-
 /** The reader that highlights the ranges. */
 export interface RangeReader {
   readonly isLoading: Ref<boolean>
   focusSpans(...spans: readonly TextRange[]): Promise<void>
-  reportFailure(error: Caught): void
+  reportFailure(error: unknown): void
 }
 
 /** The tab as the window provides it: the ranges to highlight; the reader scrolls to the first. */

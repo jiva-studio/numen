@@ -56,6 +56,8 @@ shared_go_lib: &shared_go_lib
   - libs/shared/**
 rerank_lib: &rerank_lib
   - libs/shared/rerank/**
+result_lib: &result_lib
+  - libs/shared/result/**
 sdk_ts_lib: &sdk_ts_lib
   - libs/plugin/sdk-ts/**
 ui_lib: &ui_lib
@@ -182,6 +184,7 @@ desktop_fe:
   - *node_lock
   - *ts_config
   - *protocol_lib
+  - *result_lib
   - *sdk_ts_lib
   - *ui_lib
   - *shell_lib
@@ -201,6 +204,7 @@ mobile_fe:
   - *node_lock
   - *ts_config
   - *protocol_lib
+  - *result_lib
   - *ui_lib
   - *client_lib
   - .github/actions/build-ui/**
@@ -223,6 +227,7 @@ plugin_stories:
   - *node_lock
   - tsconfig.base.json
   - *protocol_lib
+  - *result_lib
   - *sdk_ts_lib
   - *ui_lib
   - .github/actions/build-ui/**

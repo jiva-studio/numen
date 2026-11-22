@@ -3,7 +3,7 @@
  * build of the application and offers its download.
  */
 import { defineComponent, h } from 'vue'
-import { definePlugin, type HostServices, type PluginContext, type Caught } from '@numen/plugin-sdk'
+import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { updater, type UpdateApi } from './api/wire'
 import { createUpdates, type Timer, type Updates } from './model/updates'
 import UpdateIndicator from './ui/UpdateIndicator.vue'
@@ -56,7 +56,7 @@ function showFailure(
     (result) => {
       if (!result.ok) host.ui.notices.show(result.error, 'error')
     },
-    (error: Caught) => host.ui.notices.show(String(error), 'error'),
+    (error: unknown) => host.ui.notices.show(String(error), 'error'),
   )
 }
 

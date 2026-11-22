@@ -64,7 +64,7 @@ func readVault(v *v1.Vault) domain.Vault {
 }
 
 func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename, error) {
-	res, err := c.rpc.RenameNote(ctx, request(c, &v1.HostVaultServiceRenameNoteRequest{Path: path, Title: title}))
+	res, err := c.notes.RenameNote(ctx, request(c, &v1.HostNoteServiceRenameNoteRequest{Path: path, Title: title}))
 	if err != nil {
 		return NoteRename{}, readError(err)
 	}
@@ -85,7 +85,7 @@ func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename
 }
 
 func (c *Client) MoveNotes(ctx context.Context, paths []string, folder string) ([]NoteMove, error) {
-	res, err := c.rpc.MoveNotes(ctx, request(c, &v1.HostVaultServiceMoveNotesRequest{Paths: paths, Folder: folder}))
+	res, err := c.notes.MoveNotes(ctx, request(c, &v1.HostNoteServiceMoveNotesRequest{Paths: paths, Folder: folder}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -104,7 +104,7 @@ func (c *Client) MoveNotes(ctx context.Context, paths []string, folder string) (
 }
 
 func (c *Client) RemoveNotes(ctx context.Context, paths []string) ([]NoteRemoval, error) {
-	res, err := c.rpc.RemoveNotes(ctx, request(c, &v1.HostVaultServiceRemoveNotesRequest{Paths: paths}))
+	res, err := c.notes.RemoveNotes(ctx, request(c, &v1.HostNoteServiceRemoveNotesRequest{Paths: paths}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -124,7 +124,7 @@ func (c *Client) RemoveNotes(ctx context.Context, paths []string) ([]NoteRemoval
 }
 
 func (c *Client) GetProblems(ctx context.Context, checks []string) (VaultProblems, error) {
-	res, err := c.rpc.GetVaultProblems(ctx, request(c, &v1.GetVaultProblemsRequest{Checks: checks}))
+	res, err := c.vaults.GetVaultProblems(ctx, request(c, &v1.GetVaultProblemsRequest{Checks: checks}))
 	if err != nil {
 		return VaultProblems{}, readError(err)
 	}
@@ -145,12 +145,9 @@ func (c *Client) GetProblems(ctx context.Context, checks []string) (VaultProblem
 }
 
 func (c *Client) GetVaultList(ctx context.Context) ([]VaultEntry, error) {
-	res, err := c.rpc.ListHostVaults(ctx, request(c, &v1.ListHostVaultsRequest{}))
+	res, err := c.list.ListVaults(ctx, request(c, &v1.ListVaultsRequest{}))
 	if err != nil {
 		return nil, readError(err)
-	}
-	if err := fail(res.Msg.GetError()); err != nil {
-		return nil, err
 	}
 	out := make([]VaultEntry, 0, len(res.Msg.GetVaults()))
 	for _, one := range res.Msg.GetVaults() {
@@ -163,7 +160,7 @@ func (c *Client) GetVaultList(ctx context.Context) ([]VaultEntry, error) {
 }
 
 func (c *Client) AddVault(ctx context.Context, root, name string) (domain.Vault, error) {
-	res, err := c.rpc.AddVault(ctx, request(c, &v1.HostVaultServiceAddVaultRequest{Root: root, Name: name}))
+	res, err := c.list.AddVault(ctx, request(c, &v1.AddVaultRequest{Path: root, Name: name}))
 	if err != nil {
 		return domain.Vault{}, readError(err)
 	}
@@ -174,7 +171,7 @@ func (c *Client) AddVault(ctx context.Context, root, name string) (domain.Vault,
 }
 
 func (c *Client) RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error) {
-	res, err := c.rpc.RenameVault(ctx, request(c, &v1.HostVaultServiceRenameVaultRequest{Id: string(id), Name: name}))
+	res, err := c.list.RenameVault(ctx, request(c, &v1.RenameVaultRequest{Id: string(id), Name: name}))
 	if err != nil {
 		return domain.Vault{}, readError(err)
 	}
@@ -185,7 +182,7 @@ func (c *Client) RenameVault(ctx context.Context, id domain.VaultID, name string
 }
 
 func (c *Client) RemoveVault(ctx context.Context, id domain.VaultID) (string, error) {
-	res, err := c.rpc.RemoveVault(ctx, request(c, &v1.HostVaultServiceRemoveVaultRequest{Id: string(id)}))
+	res, err := c.list.RemoveVault(ctx, request(c, &v1.RemoveVaultRequest{Id: string(id)}))
 	if err != nil {
 		return "", readError(err)
 	}
@@ -196,7 +193,7 @@ func (c *Client) RemoveVault(ctx context.Context, id domain.VaultID) (string, er
 }
 
 func (c *Client) OpenVault(ctx context.Context, id domain.VaultID) error {
-	res, err := c.rpc.OpenVault(ctx, request(c, &v1.HostVaultServiceOpenVaultRequest{Id: string(id)}))
+	res, err := c.list.OpenVault(ctx, request(c, &v1.OpenVaultRequest{Id: string(id)}))
 	if err != nil {
 		return readError(err)
 	}
@@ -211,7 +208,7 @@ func (c *Client) AddLinks(ctx context.Context, additions []LinkAddition) ([]Link
 			Role: writeRole(one.Link.Role), Type: one.Link.Type, Label: one.Link.Label, Note: one.Link.Why,
 		}
 	}
-	res, err := c.rpc.AddLinks(ctx, request(c, &v1.HostVaultServiceAddLinksRequest{Links: links}))
+	res, err := c.links.AddLinks(ctx, request(c, &v1.HostLinkServiceAddLinksRequest{Links: links}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -235,7 +232,7 @@ func (c *Client) UpdateLinks(
 	if err := checkRole(change.Role); err != nil {
 		return domain.FileStat{}, err
 	}
-	res, err := c.rpc.UpdateLinks(ctx, request(c, &v1.HostVaultServiceUpdateLinksRequest{
+	res, err := c.links.UpdateLinks(ctx, request(c, &v1.HostLinkServiceUpdateLinksRequest{
 		From: from, To: to.GetWritten(), Baseline: writeFileStat(baseline),
 		Role: writeRole(change.Role), Type: change.Type, Label: change.Label, Note: change.Why,
 	}))
@@ -254,7 +251,7 @@ func (c *Client) RemoveLinks(
 	if err := checkRole(role); err != nil {
 		return domain.FileStat{}, err
 	}
-	res, err := c.rpc.RemoveLinks(ctx, request(c, &v1.HostVaultServiceRemoveLinksRequest{
+	res, err := c.links.RemoveLinks(ctx, request(c, &v1.HostLinkServiceRemoveLinksRequest{
 		From: from, To: to.GetWritten(), Baseline: writeFileStat(baseline), Role: writeRole(role),
 	}))
 	if err != nil {

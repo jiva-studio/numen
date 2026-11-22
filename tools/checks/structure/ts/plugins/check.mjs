@@ -22,9 +22,35 @@ import {
 
 const CORE_MODULE = `${GO_MODULE_ROOT}libs/core/kernel`
 
+/** The file of the protocol library that declares the version of the plugin protocol. */
+const PROTOCOL_VERSION_FILE = path.join(REPO_ROOT, 'libs', 'shared', 'protocol', 'version.go')
+
+/** The plugin protocol version the Go source `text` declares as `PluginProtocolVersion`. */
+export function readPluginProtocolVersion(text) {
+  const match = /^const PluginProtocolVersion = (\d+)$/m.exec(text)
+  if (match === null) throw new Error('PluginProtocolVersion is not declared as a number')
+  return Number(match[1])
+}
+
+/** The plugins whose manifest names a protocol other than `expected`. */
+export function findProtocolMismatches(manifests, expected) {
+  return manifests
+    .filter((one) => one.manifest.protocol !== expected)
+    .map((one) => `${one.name}: protocol ${one.manifest.protocol}, want ${expected}`)
+}
+
 export function verifyPluginsStatic() {
   const pluginsDir = path.join(MODULES_DIR, 'plugins')
-  readPluginManifests(pluginsDir)
+  const manifests = readPluginManifests(pluginsDir)
+  const mismatches = findProtocolMismatches(
+    manifests,
+    readPluginProtocolVersion(fs.readFileSync(PROTOCOL_VERSION_FILE, 'utf8')),
+  )
+  if (mismatches.length > 0) {
+    throw new Error(
+      'Plugin manifest names another plugin protocol version:\n' + mismatches.join('\n'),
+    )
+  }
 
   const commandMismatches = findPluginCommandMismatches(pluginsDir)
   if (commandMismatches.length > 0) {
@@ -58,8 +84,8 @@ const PLUGIN_PACKAGES = [SDK_PACKAGE, '@numen/ui']
 /** A build configuration file, which may name the build entries a package declares. */
 const BUILD_CONFIGURATION = /\.config\.[cm]?[jt]s$/
 
-/** The entry a plugin file may not name: `testing` is the test entry a package declares, a stylesheet is an asset. */
-const TEST_ENTRY = './testing'
+/** The test entries a package declares; a plugin file may name them. */
+const TEST_ENTRIES = ['./testing', './contracts/testing']
 
 /**
  * The entry of the contracts between plugins. The main entry of the SDK may not re-export them (the
@@ -92,7 +118,7 @@ export function findPluginEntryViolations(files, exportsByPackage) {
       }
       const targetPath = typeof target === 'string' ? target : JSON.stringify(target)
       const isAllowed =
-        entry === TEST_ENTRY ||
+        TEST_ENTRIES.includes(entry) ||
         (entry === CONTRACTS_ENTRY && name === SDK_PACKAGE) ||
         /\.css\b/.test(targetPath) ||
         BUILD_CONFIGURATION.test(path.basename(file))

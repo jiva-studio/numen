@@ -46,7 +46,6 @@ export { runInBackground } from './shared/lib/async/background'
 
 /** Rethrows a rejection of a background task as an uncaught error. */
 export { reportFailure } from './shared/api/report'
-export type { Caught, Unvalidated } from './shared/lib/async/types'
 
 export { Spinner } from './shared/ui/spinner'
 

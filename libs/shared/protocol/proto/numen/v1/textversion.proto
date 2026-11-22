@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/plugincommand.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// TextVersionService is the text versions of a file of the shown vault, as the window lists and deletes
+// them.
+service TextVersionService {
+  // ListVersionItems lists every text version of a file as the items of a menu: its id, what a person reads
+  // it as and a second line.
+  rpc ListVersionItems(ListVersionItemsRequest) returns (ListVersionItemsResponse);
+
+  // DeleteVersion deletes a text version of a file, its record and its file, and reports the file in
+  // WatchVaultChangesResponse.version_paths.
+  rpc DeleteVersion(DeleteVersionRequest) returns (DeleteVersionResponse);
+}
+
+message ListVersionItemsRequest {
+  // The file the versions are listed over, relative to the vault the window shows.
+  string path = 1;
+}
+
+message ListVersionItemsResponse {
+  repeated CommandItem items = 1;
+  // Set when the versions could not be listed; the message then says why.
+  CommandErrorCode error = 2;
+  string message = 3;
+}
+
+message DeleteVersionRequest {
+  // The file the version belongs to, relative to the vault the window shows.
+  string path = 1;
+  // The id ListVersionItems lists the version under.
+  string version_id = 2;
+}
+
+message DeleteVersionResponse {
+  CommandErrorCode error = 1;
+  // What a person reads about a failure.
+  string message = 2;
+}

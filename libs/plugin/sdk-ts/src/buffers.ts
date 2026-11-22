@@ -1,4 +1,3 @@
-import type { Caught } from './errors'
 import type { Disposable } from './types'
 
 // UnsavedBuffer is text a buffer could not write, and the two ways the person settles it.
@@ -26,7 +25,7 @@ export class UnsavedBuffersError extends Error {
 }
 
 // isUnsavedBuffersError tells the error of any copy of the SDK, since a plugin may bundle its own.
-export function isUnsavedBuffersError(error: Caught): error is UnsavedBuffersError {
+export function isUnsavedBuffersError(error: unknown): error is UnsavedBuffersError {
   return error instanceof Error && 'unsaved' in error && Array.isArray(error.unsaved)
 }
 

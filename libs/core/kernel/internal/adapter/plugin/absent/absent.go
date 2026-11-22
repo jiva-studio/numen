@@ -137,3 +137,18 @@ func (Processes) ListProcesses() []plugindomain.Process { return nil }
 
 // WatchProcesses never signals: nothing runs to change.
 func (Processes) WatchProcesses(context.Context) <-chan struct{} { return nil }
+
+// Listing lists the plugins of a plugin host that runs nothing: none are installed and none are enabled.
+type Listing struct{}
+
+func (Listing) GetPlugins() []manifest.Discovered { return nil }
+
+func (Listing) GetPlugin(string) (manifest.Discovered, bool) { return manifest.Discovered{}, false }
+
+func (Listing) GetPluginInfos() []plugindomain.Info { return nil }
+
+// IsPluginEnabled reports that no plugin is enabled.
+func (Listing) IsPluginEnabled(string) bool { return false }
+
+// IsEnabled reports that no plugin is enabled.
+func (Listing) IsEnabled(string) bool { return false }

@@ -5,8 +5,7 @@
  * declares the service in its manifest. A stream is a method answered as Server-Sent Events.
  */
 import { getOrigin } from './transport'
-import { asFailure, asValue } from './result'
-import type { Result } from './result'
+import { asFailure, asValue, type Result } from '@numen/result'
 import { parseEvents } from './stream'
 
 /** Why a method failed: a code such as `not_found` and the text the backend gave. */

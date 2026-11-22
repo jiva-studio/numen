@@ -9,6 +9,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./contracts": "./src/contracts/index.ts",
+    "./contracts/testing": "./src/contracts/testing/index.ts",
     "./testing": "./src/testing/index.ts",
     "./host-modules": "./src/hostModules.ts",
     "./vite": "./src/vite.ts"
@@ -21,7 +22,9 @@
     "@bufbuild/protobuf": "^2.17.0",
     "@connectrpc/connect": "^2.3.0",
     "@connectrpc/connect-web": "^2.3.0",
+    "@numen/protocol": "*",
     "@numen/rerank": "*",
+    "@numen/result": "*",
     "@tailwindcss/node": "^4.3.5",
     "@tailwindcss/oxide": "^4.3.5",
     "@vue/compiler-sfc": "^3.5.45",
@@ -36,7 +39,6 @@
   "devDependencies": {
     "@babel/types": "^8.1.2",
     "@codemirror/state": "^6.7.1",
-    "@numen/protocol": "*",
     "@numen/ui": "*",
     "@storybook/addon-vitest": "^10.6.7",
     "@storybook/vue3-vite": "^10.6.7",

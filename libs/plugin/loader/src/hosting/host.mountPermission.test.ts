@@ -94,7 +94,7 @@ describe('a view kind a plugin registers itself', () => {
 
   it('mounts it for any plugin when its plugin holds no vault permission', () => {
     const { createPlugin } = createHost()
-    const owner = createPlugin('md.numen.owner', ['network'])
+    const owner = createPlugin('md.numen.owner', [])
     owner.plugin.register.view({
       capability: VIEW,
       component: defineComponent({ setup: () => () => h('p', 'plain') }),

@@ -16,7 +16,10 @@ const requestLog = {
   openVault: vi.fn(),
 }
 
-const getVaults = () => createVaults(createHandledClients(requestLog).vaultsService)
+const getVaults = () => {
+  const clients = createHandledClients(requestLog)
+  return createVaults(clients.vaultsService, clients.folderDialog)
+}
 
 beforeEach(() => {
   vi.clearAllMocks()

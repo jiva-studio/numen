@@ -12,11 +12,12 @@ import (
 	"os"
 	"strings"
 	"sync"
-	"syscall"
 	"testing"
 	"time"
 
 	"connectrpc.com/connect"
+
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -229,6 +230,7 @@ func TestServerStdinEOFShutdown(t *testing.T) {
 
 	s := New(
 		withPort(0),
+		withToken("stdin-token"),
 		withStdout(io.Discard),
 		withStdin(stdinReader),
 	)
@@ -241,10 +243,6 @@ func TestServerStdinEOFShutdown(t *testing.T) {
 	go func() {
 		serveErrCh <- s.Serve()
 	}()
-
-	if _, err := io.WriteString(stdinWriter, "stdin-token\n"); err != nil {
-		t.Fatalf("write token to stdin: %v", err)
-	}
 
 	// Closing writer sends EOF to stdin reader
 	if err := stdinWriter.Close(); err != nil {
@@ -522,16 +520,17 @@ func TestRunServesAndTerminatesCleanly(t *testing.T) {
 	var errBuf bytes.Buffer
 	code := run(&errBuf, func(*Server) error {
 		return nil
-	}, withPort(0), withStdout(io.Discard), withStdin(strings.NewReader("clean-token\n")), withSignals())
+	}, withPort(0), withStdout(io.Discard), withToken("clean-token"), withStdin(strings.NewReader("")), withSignals())
 	if code != 0 {
 		t.Fatalf("exit code %d (%s), want 0", code, errBuf.String())
 	}
 }
 
-// A server reads its auth token from stdin when no token is configured.
-func TestServerReadsTokenFromStdin(t *testing.T) {
+// A server reads its auth token from the environment when no token is configured.
+func TestServerReadsTokenFromEnvironment(t *testing.T) {
 	stdinReader, stdinWriter := io.Pipe()
-	token := "stdin-secret-token"
+	token := "env-secret-token"
+	t.Setenv(hostcall.PluginTokenEnv, token)
 	s := New(
 		withPort(0),
 		withStdout(io.Discard),
@@ -548,9 +547,6 @@ func TestServerReadsTokenFromStdin(t *testing.T) {
 		serveErrCh <- s.Serve()
 	}()
 
-	if _, err := io.WriteString(stdinWriter, token+"\n"); err != nil {
-		t.Fatalf("write token: %v", err)
-	}
 	defer func() {
 		if err := stdinWriter.Close(); err != nil {
 			t.Error(err)
@@ -571,30 +567,20 @@ func TestServerReadsTokenFromStdin(t *testing.T) {
 	if resp.Msg.GetStatus() != "ok" {
 		t.Errorf("status = %q, want 'ok'", resp.Msg.GetStatus())
 	}
-	if got := os.Getenv(tokenVar); got != token {
-		t.Errorf("os.Getenv(%s) = %q, want %q", tokenVar, got, token)
-	}
 }
 
 // A server fails to start when the auth token is empty.
 func TestServerRejectsEmptyToken(t *testing.T) {
+	t.Setenv(hostcall.PluginTokenEnv, "")
 	s := New(
 		withPort(0),
 		withStdout(io.Discard),
 		withStdin(nil),
 	)
 	if err := s.Serve(); err == nil || !strings.Contains(err.Error(), "empty auth token") {
-		t.Fatalf("Serve with nil stdin = %v, want empty auth token", err)
+		t.Fatalf("Serve with no token = %v, want empty auth token", err)
 	}
 
-	s2 := New(
-		withPort(0),
-		withStdout(io.Discard),
-		withStdin(strings.NewReader("   \n")),
-	)
-	if err := s2.Serve(); err == nil || !strings.Contains(err.Error(), "empty auth token") {
-		t.Fatalf("Serve with whitespace stdin = %v, want empty auth token", err)
-	}
 }
 
 func waitServe(t *testing.T, serveErrCh <-chan error) {
@@ -610,14 +596,6 @@ var errWriteFailed = errors.New("write failed")
 
 func (errWriter) Write([]byte) (int, error) {
 	return 0, errWriteFailed
-}
-
-type errReader struct{}
-
-var errReadFailed = errors.New("read failed")
-
-func (errReader) Read([]byte) (int, error) {
-	return 0, errReadFailed
 }
 
 type multiStepStdinReader struct {
@@ -657,21 +635,6 @@ func (l *closeErrListener) Accept() (net.Conn, error) {
 	return l.Listener.Accept()
 }
 
-type stepTokenReader struct {
-	step int
-}
-
-func (r *stepTokenReader) Read(p []byte) (int, error) {
-	r.step++
-	switch r.step {
-	case 1:
-		p[0] = 'x'
-		return 1, nil
-	default:
-		return 0, io.EOF
-	}
-}
-
 type bufSizeReader struct {
 	sizes chan int
 }
@@ -681,19 +644,12 @@ func (r *bufSizeReader) Read(p []byte) (int, error) {
 	return 0, io.EOF
 }
 
-func TestAuthInterceptor_EdgeCases(t *testing.T) {
-	emptyAuth := NewAuthInterceptor("")
-	if err := emptyAuth.checkToken(http.Header{"Authorization": {"Bearer "}}); err == nil {
-		t.Fatal("expected error for empty configured token even with Bearer header")
+func TestHasBearerToken_EdgeCases(t *testing.T) {
+	if HasBearerToken(http.Header{"Authorization": {"Bearer "}}, "") {
+		t.Fatal("expected no match for an empty configured token even with a Bearer header")
 	}
-	if !emptyAuth.mu.TryLock() {
-		t.Fatal("RUnlock was not called")
-	}
-	emptyAuth.mu.Unlock()
-
-	auth := NewAuthInterceptor("secret")
-	if err := auth.checkToken(http.Header{"Authorization": {"secret"}}); err == nil {
-		t.Fatal("expected error when Authorization header lacks Bearer prefix")
+	if HasBearerToken(http.Header{"Authorization": {"secret"}}, "secret") {
+		t.Fatal("expected no match when the Authorization header lacks the Bearer prefix")
 	}
 }
 
@@ -910,22 +866,6 @@ func TestServerListenServeAndHelpers(t *testing.T) {
 		t.Fatalf("expected serveHTTP to close errs channel, got %v", err)
 	}
 
-	// authenticate edge cases
-	sTokenStdin := New(withToken("preset"), withStdin(strings.NewReader("stdin-tok\n")))
-	if err := sTokenStdin.authenticate(); err != nil || sTokenStdin.token != "preset" {
-		t.Fatalf("expected preset token to be kept, got %q err=%v", sTokenStdin.token, err)
-	}
-
-	sReadErr := New(withStdin(errReader{}))
-	if err := sReadErr.authenticate(); !errors.Is(err, errReadFailed) {
-		t.Fatalf("expected wrapped read auth token error, got %v", err)
-	}
-
-	sBadEnv := New(withToken("bad\x00token"), withStdin(nil))
-	if err := sBadEnv.authenticate(); !errors.Is(err, syscall.EINVAL) {
-		t.Fatalf("expected wrapped EINVAL setenv error for NUL byte token, got %v", err)
-	}
-
 	// watchStdin edge cases
 	sNilStdin := New(withStdin(nil))
 	if sNilStdin.watchStdin() == nil {
@@ -947,14 +887,5 @@ func TestServerListenServeAndHelpers(t *testing.T) {
 	<-sStepEOF.watchStdin()
 	if stepReader.step != 2 {
 		t.Fatalf("watchStdin step = %d, want 2", stepReader.step)
-	}
-
-	// readTokenLine edge cases
-	tok, err := readTokenLine(&stepTokenReader{})
-	if err != nil || tok != "x" {
-		t.Fatalf("readTokenLine stepTokenReader = %q, %v; want 'x', nil", tok, err)
-	}
-	if _, err := readTokenLine(errReader{}); err == nil {
-		t.Fatal("expected error from readTokenLine with errReader")
 	}
 }

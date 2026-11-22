@@ -3,7 +3,7 @@
  */
 import { Layers } from '@lucide/vue'
 import type { Component } from 'vue'
-import type { TabKindRegistration, Caught } from '@numen/plugin-sdk'
+import type { TabKindRegistration } from '@numen/plugin-sdk'
 import { getMarkOf } from '../../lib/buffer/words'
 import type { Cards } from '../../../types'
 import type { ConflictWords } from '../../lib/buffer/types'
@@ -34,7 +34,7 @@ export interface DeckTabsInside {
   readonly createDeck: Cards['createDeck']
   readonly lists: DeckTabLists
   /** Shows the failure of an operation that runs in the background. */
-  reportFailure(error: Caught): void
+  reportFailure(error: unknown): void
   createDeckTabState(id: string): DeckTabState
   readonly component: Component
 }

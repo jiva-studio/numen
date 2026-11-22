@@ -9,7 +9,6 @@ const PERMISSION_MEANINGS: Readonly<Record<string, string>> = {
   'vault:write': 'Change your notes and files, and act for you.',
   'vault:manage': 'Add, rename, remove and open vaults.',
   'link:open': 'Open links in your browser.',
-  network: 'Open links in your browser.',
   'index:read': 'Read the titles and the search index of your notes.',
   'search:policy': 'Read and change how strict semantic search is.',
   'window:focus': 'Bring a note or a file into view, and list the open tabs.',

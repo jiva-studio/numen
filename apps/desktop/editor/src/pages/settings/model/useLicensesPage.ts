@@ -5,7 +5,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { LicenseInfo, LicenseProviderOptionInfo } from '@/entities/license'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import { formatError } from '@/shared/api/errors'
 import type { InstallationLicenses } from '../types'
 import { WORDS as words } from '../words'

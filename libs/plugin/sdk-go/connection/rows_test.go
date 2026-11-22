@@ -17,31 +17,31 @@ import (
 // rowsHost answers the listings with the row of the connection Meadow and records what it was asked.
 type rowsHost struct {
 	fakeHost
-	listed  *v1.HostConnectionServiceListRowsRequest
-	options *v1.HostConnectionServiceListRowOptionsRequest
+	listed  *v1.ConnectionCallServiceListRowsRequest
+	options *v1.ConnectionCallServiceListRowOptionsRequest
 }
 
 func (h *rowsHost) ListRows(
-	_ context.Context, request *connect.Request[v1.HostConnectionServiceListRowsRequest],
-) (*connect.Response[v1.HostConnectionServiceListRowsResponse], error) {
+	_ context.Context, request *connect.Request[v1.ConnectionCallServiceListRowsRequest],
+) (*connect.Response[v1.ConnectionCallServiceListRowsResponse], error) {
 	h.token, h.listed = request.Header().Get("Authorization"), request.Msg
 	if request.Msg.GetOperation() == "missing" {
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("operation not found"))
 	}
-	return connect.NewResponse(&v1.HostConnectionServiceListRowsResponse{Rows: []*v1.CallRow{{
+	return connect.NewResponse(&v1.ConnectionCallServiceListRowsResponse{Rows: []*v1.CallRow{{
 		ConnectionId: "c-meadow", ConnectionName: "Meadow", Options: map[string]string{"model": "wren-2"},
 		Fields: []*v1.CallRowField{{Key: "model", Title: "Model", OptionsFrom: "llm.models", IsRequired: true}},
 	}}}), nil
 }
 
 func (h *rowsHost) ListRowOptions(
-	_ context.Context, request *connect.Request[v1.HostConnectionServiceListRowOptionsRequest],
-) (*connect.Response[v1.HostConnectionServiceListRowOptionsResponse], error) {
+	_ context.Context, request *connect.Request[v1.ConnectionCallServiceListRowOptionsRequest],
+) (*connect.Response[v1.ConnectionCallServiceListRowOptionsResponse], error) {
 	h.options = request.Msg
 	if request.Msg.GetConnectionId() != "c-meadow" {
 		return nil, connect.NewError(connect.CodeNotFound, errors.New("not among the rows"))
 	}
-	return connect.NewResponse(&v1.HostConnectionServiceListRowOptionsResponse{
+	return connect.NewResponse(&v1.ConnectionCallServiceListRowOptionsResponse{
 		Options: []*v1.Option{{Value: "wren-2", Title: "Wren 2", Group: "Birds"}},
 	}), nil
 }
@@ -49,7 +49,7 @@ func (h *rowsHost) ListRowOptions(
 func newRowsClient(t *testing.T, host *rowsHost) *Client {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostConnectionServiceHandler(host))
+	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(host))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return NewClient(server.Client(), server.URL, "token-1")
@@ -111,7 +111,7 @@ func TestListRowOptionsOfAConnectionThatIsNotAmongTheRowsFails(t *testing.T) {
 }
 
 func TestACallOfAPreferringCallerNamesThePreferredRow(t *testing.T) {
-	host := &rowsHost{fakeHost: fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostDone("finish")}}}
+	host := &rowsHost{fakeHost: fakeHost{frames: []*v1.ConnectionCallServiceCallResponse{hostDone("finish")}}}
 	client := newRowsClient(t, host)
 
 	frames, err := client.Prefer(PreferredRow{ConnectionID: "c-meadow", Options: map[string]string{"model": "wren-2"}}).
@@ -131,7 +131,7 @@ func TestACallOfAPreferringCallerNamesThePreferredRow(t *testing.T) {
 }
 
 func TestACallOfAPreferringCallerNamesAnExclusiveRow(t *testing.T) {
-	host := &rowsHost{fakeHost: fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostDone("finish")}}}
+	host := &rowsHost{fakeHost: fakeHost{frames: []*v1.ConnectionCallServiceCallResponse{hostDone("finish")}}}
 
 	frames, err := newRowsClient(t, host).Prefer(PreferredRow{ConnectionID: "c-meadow", IsExclusive: true}).
 		Call(t.Context(), "llm.chat", nil, PriorityInteractive)
@@ -148,7 +148,7 @@ func TestACallOfAPreferringCallerNamesAnExclusiveRow(t *testing.T) {
 }
 
 func TestACallOfTheClientNamesNoPreferredRow(t *testing.T) {
-	host := &rowsHost{fakeHost: fakeHost{frames: []*v1.HostConnectionServiceCallResponse{hostDone("finish")}}}
+	host := &rowsHost{fakeHost: fakeHost{frames: []*v1.ConnectionCallServiceCallResponse{hostDone("finish")}}}
 
 	frames, err := newRowsClient(t, host).Call(t.Context(), "llm.chat", nil, PriorityBackground)
 	if err != nil {

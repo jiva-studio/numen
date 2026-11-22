@@ -4,7 +4,7 @@ import {
   ManifestContributesSchema,
   ManifestTabKindSchema,
 } from '@numen/protocol'
-import { asFailure, asValue } from '../result'
+import { asFailure, asValue } from '@numen/result'
 import {
   CATALOG_STATE,
   type CatalogEntry,
@@ -97,5 +97,6 @@ export function createMockPluginCatalog(initial: readonly CatalogEntry[] = []): 
           : asFailure({ kind: 'not-found', sourceErrors: [] }),
       )
     },
+    getReadme: () => Promise.resolve(asValue('')),
   }
 }

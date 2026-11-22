@@ -9,6 +9,6 @@ export default tseslint.config(
   {
     files: ['src/**/*_pb.ts'],
     linterOptions: { reportUnusedDisableDirectives: 'off' },
-    rules: { 'max-lines': 'off', 'numen/no-unknown': 'off' },
+    rules: { 'max-lines': 'off' },
   },
 )

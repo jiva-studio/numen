@@ -10,7 +10,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { keyChord } from '@numen/ui'
 import type { VaultList, Vault } from '@/entities/vault'
-import { ReportedError } from '@/shared/api/errors'
+import { ReportedError } from '@numen/result'
 import {
   COMMAND,
   createRowKeys,

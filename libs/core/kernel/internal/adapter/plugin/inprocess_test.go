@@ -54,7 +54,7 @@ func newBuiltInManifest(id string, runtimes ...string) []byte {
 		"targets": ["desktop.editor"],
 		"permissions": [],
 		%s
-		"services": ["numen.v1.PluginToolService"], "backend": {"entrypoint": "bin/example"},
+		"backend": {"entrypoint": "bin/example"},
 		"settings": [{"key": "model", "type": "string", "title": "Model", "default": "small-model"}]
 	}`, id, declared)
 }

@@ -1,4 +1,4 @@
-import type { Result } from '../result'
+import type { Result } from '@numen/result'
 import type { Disposable } from '../types'
 
 // ConnectionPriority says whose action a call serves. A call that names none is background, so it waits
