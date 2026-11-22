@@ -143,7 +143,6 @@ func CheckDeclared(declared manifest.Setting, registries Registries, value any) 
 		return checkList(value)
 	case manifest.SettingTypeSlots:
 		return checkSlotLayout(value)
-		return checkList(value)
 	}
 	return nil
 }
