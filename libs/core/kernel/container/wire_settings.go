@@ -180,10 +180,6 @@ func openWatchSettings(c settingsWiring) *settingsusecase.WatchSettingChanges {
 	return settingsusecase.NewWatchSettingChanges(func() (<-chan []settingsdomain.Setting, func()) { return feed(c).Subscribe() })
 }
 
-func openChoosePluginPath(c settingsWiring, dialog settingsusecase.PathDialog) *settingsusecase.ChoosePluginPath {
-	return settingsusecase.NewChoosePluginPath(dialog, c.Infos.GetPluginInfos, getSettingsWriter(c))
-}
-
 func settingsStore(c settingsWiring) *settingsadapter.Store {
 	var declared settingsdomain.Declarations
 	if c.PluginInfos != nil {

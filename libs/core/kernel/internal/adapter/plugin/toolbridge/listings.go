@@ -6,6 +6,7 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
@@ -99,4 +100,21 @@ func ListKeptTools(files ListingFiles, pluginID string) []*v1.PluginTool {
 		return nil
 	}
 	return read.tools.GetTools()
+}
+
+// ListKeptItems returns the lister of the kept tools of a plugin as the items its contribution shows: each
+// tool by its title, or by its name where it has no title, with its name as the detail.
+func ListKeptItems(files ListingFiles) func(pluginID string) []plugindomain.ContributionItem {
+	return func(pluginID string) []plugindomain.ContributionItem {
+		kept := ListKeptTools(files, pluginID)
+		items := make([]plugindomain.ContributionItem, 0, len(kept))
+		for _, one := range kept {
+			text := one.GetTitle()
+			if text == "" {
+				text = one.GetName()
+			}
+			items = append(items, plugindomain.ContributionItem{Text: text, Detail: one.GetName()})
+		}
+		return items
+	}
 }

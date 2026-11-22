@@ -52,7 +52,7 @@ func installPluginVault(install pluginInstall, vaultDeps vaultWiring,
 	if err != nil {
 		return err
 	}
-	setPluginVault(install.Endpoints.Lender, opened)
+	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Vault = opened })
 	return nil
 }
 
@@ -128,10 +128,6 @@ func completeHooks(v vaultWiring, db *vaultIndex, hooks pluginVaultHooks) plugin
 		hooks.Moved = func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(ctx, v.IndexPath, v.Watcher) }
 	}
 	return hooks
-}
-
-func setPluginWindow(lender *hostendpoint.Lender, window hostendpoint.WindowControl) {
-	lender.Update(func(l *hostendpoint.Lent) { l.Window = window })
 }
 
 func openVersionItems(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *textversion.VersionItems {

@@ -26,7 +26,7 @@ func newRecord(t *testing.T, name string) (identity.Record, account) {
 	return identity.Record{Device: device, Wrapped: wrapped, Chain: chain}, a
 }
 
-func TestParseRecord_RoundTripsAWrittenRecord(t *testing.T) {
+func TestParseRecord_RoundTrip(t *testing.T) {
 	t.Parallel()
 	record, a := newRecord(t, "Laptop")
 	parsed, err := identity.ParseRecord(record.Bytes())

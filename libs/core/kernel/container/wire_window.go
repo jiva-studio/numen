@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	windowidentity "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
@@ -236,7 +235,7 @@ func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution
 	mountConnection(w, install, exec, settingsDeps, vaultDeps)
 	mountConnectionCall(w, install, exec, settingsDeps, vaultDeps, vaultDeps.Clock)
 	mountLicense(w, install, settingsDeps, vaultDeps)
-	w.Installation.Mount(windowidentity.NewRoute(install.KeyStore, vaultDeps.Clock, w.page.Gate.CountQuestions()))
+	mountIdentity(w, install, vaultDeps)
 	mountText(w, vaultDeps)
 	mountPlugin(w, install, exec, settingsDeps, vaultDeps)
 	mountHealth(w, exec)

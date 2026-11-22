@@ -14,10 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
-func hasPluginHost(settingsDeps settingsWiring) bool {
-	return settingsDeps.ConnectionTypes != nil
-}
-
 func openConnectionRepository(c settingsWiring) *settingsadapter.ConnectionRepository {
 	return settingsadapter.NewConnectionRepository(
 		c.SettingsFiles,
@@ -42,7 +38,7 @@ func openConnectionRows(install pluginInstall, exec *PluginExecution, settingsDe
 }
 
 func openConnectionDeps(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) (connection.Deps, bool) {
-	if !hasPluginHost(settingsDeps) {
+	if settingsDeps.ConnectionTypes == nil {
 		return connection.Deps{}, false
 	}
 	deps := connection.NewDeps(openConnectionRepository(settingsDeps), settingsDeps.ConnectionTypes, install.KeyStore,

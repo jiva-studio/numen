@@ -173,7 +173,7 @@ func TestAppendDevice_RefusesABadName(t *testing.T) {
 	}
 }
 
-func TestParseChain_RoundTripsAWrittenChain(t *testing.T) {
+func TestParseChain_RoundTrip(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
 	chain, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch)

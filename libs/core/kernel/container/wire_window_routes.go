@@ -15,6 +15,7 @@ import (
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	windowhealth "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/health"
+	windowidentity "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/identity"
 	windowlicense "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/license"
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
@@ -187,7 +188,7 @@ func mountSettings(w *windowRoutes, settingsDeps settingsWiring) {
 	values := windowsettings.NewValues(openGetSettings(settingsDeps), openWriteSettings(settingsDeps), openWatchSettings(settingsDeps), nil)
 	handler := windowsettings.NewHandler(values)
 	w.Installation.OnFolderDialog(func(dialog editor.PathDialog) {
-		handler.SetPathChooser(openChoosePluginPath(settingsDeps, dialog))
+		handler.SetPathChooser(settings.NewChoosePluginPath(dialog, settingsDeps.Infos.GetPluginInfos, getSettingsWriter(settingsDeps)))
 	})
 	path, served := windowsettings.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
@@ -223,20 +224,12 @@ func openRecordLog(indexPath string, entries *logsusecase.Entries, getLevel func
 	return logsusecase.NewRecord(entries, logfiles.NewBesideIndex(indexPath), getLevel, timer)
 }
 
-func recordLogFunc(record *logsusecase.Record, report func(error)) func(domainlogs.Entry) {
-	return func(entry domainlogs.Entry) {
-		if err := record.Execute(entry); err != nil && report != nil {
-			report(err)
-		}
-	}
-}
-
 func openOptionalRecordLog(indexPath string, res *Resources) func(domainlogs.Entry) {
 	if res == nil {
 		return nil
 	}
 	record := openRecordLog(indexPath, getLogEntries(res), res.settingsFiles.GetLogLevel, GetClock(res))
-	return recordLogFunc(record, res.ErrorHandler)
+	return windowlogs.NewRecordFunc(record, res.ErrorHandler)
 }
 
 func mountLogs(w *windowRoutes, entries *logsusecase.Entries, install pluginInstall, settingsDeps settingsWiring, vaultDeps vaultWiring) {
@@ -254,7 +247,7 @@ func mountLogs(w *windowRoutes, entries *logsusecase.Entries, install pluginInst
 func shareEditorWindow(db *vaultIndex, opened *windowRoutes, showTab windowsession.ShowTab, install pluginInstall, vaultDeps vaultWiring) {
 	view := windowView(opened.session.Notices)
 	focusFile := file.NewFocusFile(vaultDeps.Readers, view)
-	setPluginWindow(install.Endpoints.Lender, windowsession.NewPluginWindow(
+	window := windowsession.NewPluginWindow(
 		&opened.session.Runtime,
 		&opened.session.Tabs,
 		query.NewFocusNote(db.NoteQueries(), view),
@@ -262,7 +255,8 @@ func shareEditorWindow(db *vaultIndex, opened *windowRoutes, showTab windowsessi
 			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
 		}),
 		showTab,
-	))
+	)
+	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Window = window })
 }
 
 func newPluginVaultList(runtime *windowsession.Runtime, changes vaultChanging, listing registry.Listing, open windowsession.OpenPluginVault) windowsession.PluginVaults {
@@ -400,4 +394,10 @@ func getFeedStart(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps 
 		After: vaultDeps.Clock.After,
 	}
 	return events.Start
+}
+
+func mountIdentity(w *windowRoutes, install pluginInstall, vaultDeps vaultWiring) {
+	handler := windowidentity.NewService(openIdentityUseCases(install, vaultDeps))
+	path, served := windowidentity.NewRoute(handler, w.page.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }

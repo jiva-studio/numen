@@ -5,11 +5,13 @@ import (
 	"io"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connectioncall"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/connectionlog"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -49,7 +51,7 @@ func connectWindow(install pluginInstall, exec *PluginExecution, vaultDeps vault
 	if err := installPluginVault(install, vaultDeps, startup.ports, startup.db, state.GetShownVault, hooks); err != nil {
 		return nil, err
 	}
-	setPluginVaultList(install.Endpoints.Lender, access.vaults)
+	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.VaultList = access.vaults })
 	setPluginTexts(install.Endpoints.Lender, vaultDeps.TextVersions)
 	shareEditorWindow(startup.db, opened, access.showTab, install, vaultDeps)
 	return opened.Installation, nil
@@ -92,7 +94,7 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
 	vaults := openVaults(vaultDeps, db, log.Out, log.Label, api.ReportVaultRead)
 	closers := Shell{API: api, CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
-	setShellNotes(api, db)
+	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, vaultQueries(db).Browse.IsVaultIndexed, api.Window, &api.Changes)
 	vaultList := vaultregistry.NewList(ports.Vaults)
 	api.Vaults = &vaultList
 	api.ResolveLinks = query.NewResolveVaultLinks(ports.Vaults, query.NewResolveLinks(db.NoteQueries()))

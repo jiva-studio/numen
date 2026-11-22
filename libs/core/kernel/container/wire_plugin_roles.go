@@ -1,7 +1,6 @@
 package container
 
 import (
-	pluginsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
@@ -52,7 +51,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 	failures := supervision.NewFailures(sups, clock, errs, health)
 	set := plugin.NewPluginSet(plugin.PluginSetDeps{Supervisors: sups, Values: values, Mode: mode, Core: getCoreClaims()})
 	files := storage.New(errs.Report, set.GetVersion)
-	registry := plugin.NewRegistry(plugin.RegistryDeps{Set: set, Mode: mode, Supervisors: sups, Readers: readers, Tools: listKeptToolItems(files)})
+	registry := plugin.NewRegistry(plugin.RegistryDeps{Set: set, Mode: mode, Supervisors: sups, Readers: readers, Tools: toolbridge.ListKeptItems(files)})
 	config := plugin.NewConfigPush(plugin.ConfigPushDeps{Set: set, Supervisors: sups, Report: errs.Report, Health: health})
 	processes := supervision.NewProcesses(sups, clock, errs.Report, services, files, config.GetProcessNice)
 	stopper := supervision.NewStopper(sups, processes, services, clock, errs.Report)
@@ -100,20 +99,5 @@ func setPluginStorage(roles *PluginSupervision, cacheRoot, dataRoot string, newR
 	if models := roles.Storage.GetModelsDir(); models != "" {
 		// gomutants:disable-next-line reason="the registry is built from the models directory of an installation, which a test does not have"
 		roles.Dependencies.Replace(newRegistry(models))
-	}
-}
-
-func listKeptToolItems(files toolbridge.ListingFiles) func(pluginID string) []pluginsdomain.ContributionItem {
-	return func(pluginID string) []pluginsdomain.ContributionItem {
-		kept := toolbridge.ListKeptTools(files, pluginID)
-		items := make([]pluginsdomain.ContributionItem, 0, len(kept))
-		for _, one := range kept {
-			text := one.GetTitle()
-			if text == "" {
-				text = one.GetName()
-			}
-			items = append(items, pluginsdomain.ContributionItem{Text: text, Detail: one.GetName()})
-		}
-		return items
 	}
 }

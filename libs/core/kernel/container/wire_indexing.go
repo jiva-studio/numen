@@ -56,16 +56,8 @@ func setNoteCut(c noteChunkPolicy, scan *vault.Scan) {
 }
 
 func searchScan(c vaultIndexPlan, db *vaultIndex) vault.Scan {
-	scan := vault.NewScan(
-		c.VaultReaders,
-		db.Vaults(),
-		db.Notes(),
-		db.NoteQueries(),
-		db.Maintenance(),
-		db.Sources(),
-	)
+	scan := newScan(c.VaultReaders, db)
 	setNoteCut(c.ChunkPolicy, &scan)
-	scan.Walks = &db.Walks
 	return scan.Rebuilding(c.ShouldRebuildIndex)
 }
 

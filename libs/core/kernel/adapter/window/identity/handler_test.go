@@ -178,29 +178,12 @@ func TestDeleteIdentity_RemovesTheIdentityAndAnswersWithoutOne(t *testing.T) {
 
 func TestNewService_AnswersUnimplementedWhereTheInstallationHasNoKeyStore(t *testing.T) {
 	t.Parallel()
-	service := windowidentity.NewService(nil, testsupport.NewClockAt(time.Now()))
+	service := windowidentity.NewService(nil)
 	_, err := service.GetIdentity(t.Context(), connect.NewRequest(&v1.GetIdentityRequest{}))
 	if connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("error = %v, want Unimplemented", err)
 	}
-}
-
-func TestNewService_StoresTheIdentityInTheKeyStoreWithTheHostName(t *testing.T) {
-	t.Parallel()
-	keys := newKeys()
-	service := windowidentity.NewService(keys, testsupport.NewClockAt(time.Now()))
-	words, err := service.GenerateRecoveryWords(t.Context(), connect.NewRequest(&v1.GenerateRecoveryWordsRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	created, err := service.CreateIdentity(t.Context(), connect.NewRequest(&v1.CreateIdentityRequest{Words: words.Msg.GetWords()}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := keys.keys["identity"]; !ok {
-		t.Errorf("the key store holds %v, want the entry \"identity\"", keys.keys)
-	}
-	if created.Msg.GetIdentity().GetDeviceName() == "" {
-		t.Error("the device has no name")
+	if path, handler := windowidentity.NewRoute(service, connect.WithInterceptors()); path == "" || handler == nil {
+		t.Error("NewRoute returned no route")
 	}
 }

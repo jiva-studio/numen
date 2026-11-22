@@ -175,7 +175,7 @@ func vaultWith(res *Resources, base vaultWiring, settings settingsWiring, chunks
 	base.SyncSetting = syncSetting(settings)
 	base = setVaultSearch(base, chunks)
 	record := openRecordLog(base.IndexPath, getLogEntries(res), settings.SettingsFiles.GetLogLevel, base.Clock)
-	base.RecordLog = recordLogFunc(record, res.ErrorHandler)
+	base.RecordLog = windowlogs.NewRecordFunc(record, res.ErrorHandler)
 	return base
 }
 

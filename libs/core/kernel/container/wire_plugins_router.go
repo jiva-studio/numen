@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 
-	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
@@ -124,14 +123,6 @@ func pluginsGetPluginName(resolver pluginResolver, pluginID string) string {
 		return found.Manifest.Name
 	}
 	return pluginID
-}
-
-func setPluginVault(lender *hostendpoint.Lender, v *pluginvault.Access) {
-	lender.Update(func(l *hostendpoint.Lent) { l.Vault = v })
-}
-
-func setPluginVaultList(lender *hostendpoint.Lender, list pluginvault.List) {
-	lender.Update(func(l *hostendpoint.Lent) { l.VaultList = list })
 }
 
 func newDependencyRegistry(clock machineport.Clock, defaultDir string) pluginport.DependencyRegistry {
