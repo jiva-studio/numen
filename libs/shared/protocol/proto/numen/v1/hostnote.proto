@@ -56,21 +56,13 @@ service HostNoteService {
   rpc RemoveNotes(HostNoteServiceRemoveNotesRequest) returns (HostNoteServiceRemoveNotesResponse);
 }
 
-// HostNoteRef is a note: at its current position and what it is called.
-message HostNoteRef {
-  string path = 1;
-  string title = 2;
-  // The identifier written in the note's frontmatter, empty when it has none.
-  string id = 3;
-}
-
 message GetNoteRefsRequest {
   repeated string paths = 1;
 }
 
 message GetNoteRefsResponse {
   ErrorCode error = 1;
-  repeated HostNoteRef notes = 2;
+  repeated Note notes = 2;
 }
 
 message GetNoteTypesRequest {

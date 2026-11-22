@@ -43,16 +43,16 @@ func (c *Client) FocusNote(ctx context.Context, path string) (FocusedNote, error
 	return FocusedNote{Path: res.Msg.GetPath(), Title: res.Msg.GetTitle(), ID: res.Msg.GetId()}, nil
 }
 
-// errSpanOutOfRange is returned for a span whose start or length exceeds 32 bits.
+// errSpanOutOfRange is returned for a span whose start or end exceeds 32 bits.
 var errSpanOutOfRange = errors.New("host: passage start or length exceeds 32 bits")
 
-func writeByteSpans(spans []ByteSpan) ([]*v1.ByteSpan, error) {
-	wire := make([]*v1.ByteSpan, 0, len(spans))
+func writeByteSpans(spans []ByteSpan) ([]*v1.Range, error) {
+	wire := make([]*v1.Range, 0, len(spans))
 	for _, span := range spans {
-		if !isInt32(span.Start) || !isInt32(span.Length) {
+		if !isInt32(span.Start) || !isInt32(span.Length) || !isInt32(span.Start+span.Length) {
 			return nil, fmt.Errorf("passage at %d of length %d: %w", span.Start, span.Length, errSpanOutOfRange)
 		}
-		wire = append(wire, &v1.ByteSpan{Start: int32(span.Start), Length: int32(span.Length)})
+		wire = append(wire, &v1.Range{Start: int32(span.Start), End: int32(span.Start + span.Length)})
 	}
 	return wire, nil
 }

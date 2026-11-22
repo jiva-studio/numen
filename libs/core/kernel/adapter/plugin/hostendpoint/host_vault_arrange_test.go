@@ -459,7 +459,7 @@ func TestNoteRefsHaveTheIdentifier(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if notes := res.Msg.GetNotes(); len(notes) != 1 || notes[0].GetId() != "01JRIVERDanube" {
+	if notes := res.Msg.GetNotes(); len(notes) != 1 || notes[0].GetIdentifier() != "01JRIVERDanube" {
 		t.Errorf("the notes were %v, want Danube.md with id 01JRIVERDanube", notes)
 	}
 }

@@ -33,7 +33,7 @@ func (r *rangeReading) ReadFile(_ context.Context, req *connect.Request[v1.ReadF
 	}
 	return connect.NewResponse(&v1.ReadFileResponse{
 		Content: []byte("ice moves slowly"), Start: 12,
-		Stat: &v1.FileStat{Path: "Glaciers.md", Size: 5000, ModTime: 7000, IsNote: true},
+		Stat: &v1.FileStat{Path: "Glaciers.md", Size: 5000, Mtime: 7000, IsNote: true},
 	}), nil
 }
 

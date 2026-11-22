@@ -39,7 +39,7 @@ func (h *frontmatterWriter) WriteFrontmatter(
 		return connect.NewResponse(&v1.WriteFrontmatterResponse{Error: h.callError}), nil
 	}
 	return connect.NewResponse(&v1.WriteFrontmatterResponse{Results: []*v1.NoteFrontmatterWritten{
-		{Stat: &v1.FileStat{Path: "a.md", Size: 64, ModTime: 2000, IsNote: true}},
+		{Stat: &v1.FileStat{Path: "a.md", Size: 64, Mtime: 2000, IsNote: true}},
 		{Error: v1.ErrorCode_ERROR_CODE_CONFLICT, Detail: "b.md changed since it was read"},
 		{Error: v1.ErrorCode_ERROR_CODE_INTERNAL, Detail: "disk full"},
 	}}), nil

@@ -91,9 +91,9 @@ func (a *fakeArrangeHost) GetVaultProblems(
 func (a *fakeArrangeHost) GetNoteRefs(
 	_ context.Context, req *connect.Request[v1.GetNoteRefsRequest],
 ) (*connect.Response[v1.GetNoteRefsResponse], error) {
-	notes := make([]*v1.HostNoteRef, 0, len(req.Msg.GetPaths()))
+	notes := make([]*v1.Note, 0, len(req.Msg.GetPaths()))
 	for _, one := range req.Msg.GetPaths() {
-		notes = append(notes, &v1.HostNoteRef{Path: one, Title: "Danube", Id: "01JRIVERDANUBE"})
+		notes = append(notes, &v1.Note{Path: one, Title: "Danube", Identifier: "01JRIVERDANUBE"})
 	}
 	return connect.NewResponse(&v1.GetNoteRefsResponse{Notes: notes}), nil
 }

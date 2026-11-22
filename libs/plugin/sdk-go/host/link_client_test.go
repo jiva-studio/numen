@@ -42,7 +42,7 @@ func (l *linking) AddLinks(
 		return connect.NewResponse(&v1.HostLinkServiceAddLinksResponse{Error: l.callError}), nil
 	}
 	return connect.NewResponse(&v1.HostLinkServiceAddLinksResponse{Results: []*v1.HostLinkAdded{
-		{Stat: &v1.FileStat{Path: "Danube.md", Size: 64, ModTime: 2000, IsNote: true}},
+		{Stat: &v1.FileStat{Path: "Danube.md", Size: 64, Mtime: 2000, IsNote: true}},
 		{Error: v1.ErrorCode_ERROR_CODE_CONFLICT, Detail: staleDetail},
 		{Error: v1.ErrorCode_ERROR_CODE_INTERNAL, Detail: diskFull},
 	}}), nil
@@ -57,7 +57,7 @@ func (l *linking) UpdateLinks(
 	if l.callError != 0 || l.editError != 0 {
 		return connect.NewResponse(&v1.HostLinkServiceUpdateLinksResponse{Error: max(l.callError, l.editError), Detail: l.editDetail}), nil
 	}
-	return connect.NewResponse(&v1.HostLinkServiceUpdateLinksResponse{Stat: &v1.FileStat{Path: "Deltas.md", Size: 90, ModTime: 3000, IsNote: true}}), nil
+	return connect.NewResponse(&v1.HostLinkServiceUpdateLinksResponse{Stat: &v1.FileStat{Path: "Deltas.md", Size: 90, Mtime: 3000, IsNote: true}}), nil
 }
 
 func (l *linking) RemoveLinks(
@@ -69,7 +69,7 @@ func (l *linking) RemoveLinks(
 	if l.callError != 0 || l.editError != 0 {
 		return connect.NewResponse(&v1.HostLinkServiceRemoveLinksResponse{Error: max(l.callError, l.editError), Detail: l.editDetail}), nil
 	}
-	return connect.NewResponse(&v1.HostLinkServiceRemoveLinksResponse{Stat: &v1.FileStat{Path: "Deltas.md", Size: 40, ModTime: 4000, IsNote: true}}), nil
+	return connect.NewResponse(&v1.HostLinkServiceRemoveLinksResponse{Stat: &v1.FileStat{Path: "Deltas.md", Size: 40, Mtime: 4000, IsNote: true}}), nil
 }
 
 func linkingClient(t *testing.T, l *linking) *host.Client {

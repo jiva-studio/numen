@@ -31,7 +31,7 @@ func (a *answering) StatFile(_ context.Context, req *connect.Request[v1.StatFile
 	a.authHeader = req.Header().Get("Authorization")
 	return connect.NewResponse(&v1.StatFileResponse{
 		Error: a.code,
-		Stat:  &v1.FileStat{Path: req.Msg.GetPath(), Size: 7, ModTime: 1_700_000_000_123_456_789, Hash: "ab12", Version: 9},
+		Stat:  &v1.FileStat{Path: req.Msg.GetPath(), Size: 7, Mtime: 1_700_000_000_123_456_789, Hash: "ab12", Version: 9},
 	}), nil
 }
 
