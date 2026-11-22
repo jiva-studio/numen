@@ -389,7 +389,7 @@ func TestToolListingFile(t *testing.T) {
 	}
 }
 
-func TestListKeptItems_TitleOrName(t *testing.T) {
+func TestListKeptItems_Labels(t *testing.T) {
 	files := filesIn(t, t.TempDir())
 	files.WriteToolListing(gardenPlugin, []byte(`{"version":"1.0.0+","listing":{"tools":[{"name":"water","title":"Water the beds"},{"name":"weed"}]}}`))
 
