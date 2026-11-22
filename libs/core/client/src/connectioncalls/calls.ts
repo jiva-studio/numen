@@ -184,7 +184,6 @@ const writePreferredRow = (preferred: ConnectionCallPreferredRow | undefined) =>
         },
       }
 
-/** An aborted fetch does not end the call in the core, so the abort cancels it by its id. */
 const openCancellation = (
   rpc: ConnectionCallRpc,
   pluginId: string,
@@ -193,6 +192,7 @@ const openCancellation = (
   if (signal === undefined) {
     return { callId: '', close: () => undefined }
   }
+  // An aborted fetch does not end the call in the core, so the abort cancels it by its id.
   const callId = crypto.randomUUID()
   const cancel = () => {
     rpc.cancelCall({ pluginId, callId }).catch(() => undefined)

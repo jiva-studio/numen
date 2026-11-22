@@ -16,7 +16,6 @@ type HostVaultClient struct {
 	numenv1connect.VaultsServiceClient
 }
 
-// NewHostVaultClient is the client of the endpoint at url.
 func NewHostVaultClient(httpClient connect.HTTPClient, url string, options ...connect.ClientOption) HostVaultClient {
 	return HostVaultClient{
 		HostVaultServiceClient: numenv1connect.NewHostVaultServiceClient(httpClient, url, options...),
