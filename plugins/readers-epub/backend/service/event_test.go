@@ -39,7 +39,7 @@ func TestAFilesChangedEventWritesTheTextsTheFeedNames(t *testing.T) {
 	_, versions, follower := newFollowedBook(t)
 	app := &App{follower: follower}
 
-	if err := app.HandleEvent(t.Context(), "onIndexChanged:vault"); err != nil {
+	if err := app.HandleEvent(t.Context(), hosttest.GetIndexChangedEvent("vault")); err != nil {
 		t.Fatal(err)
 	}
 	follower.Wait()
