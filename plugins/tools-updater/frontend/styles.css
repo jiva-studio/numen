@@ -1,5 +1,6 @@
 /* Updater plugin styles */
 .update-indicator {
+  --popover-offset: calc(0.25 * var(--numen-chrome-unit));
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -43,7 +44,6 @@ button.update-indicator__trigger[aria-expanded='true'] {
 
 /* The panel of the Background tasks popover: raised ground, rule border, panel radius and shadow. */
 .update-popover {
-  --popover-offset: 0.25rem;
   --popover-width: 20rem;
   --popover-edge-gap: 1rem;
   --popover-gap: 0.5rem;
