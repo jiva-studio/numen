@@ -37,7 +37,6 @@ func (v *Vaults) GetScope(ctx context.Context, vaultID string) (tasktools.Scope,
 	return v.scope, nil
 }
 
-// GetTasks returns the tasks of the vault.
 func (v *Vaults) GetTasks(ctx context.Context, vaultID string) (queryfns.Tasks, error) {
 	if err := v.check(ctx, vaultID); err != nil {
 		return nil, err

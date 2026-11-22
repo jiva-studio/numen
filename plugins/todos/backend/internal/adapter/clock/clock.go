@@ -6,7 +6,12 @@ import "time"
 // System is the clock of the machine the plugin runs on.
 type System struct{}
 
+// Now returns the time of the machine.
+func (System) Now() time.Time {
+	return time.Now()
+}
+
 // GetToday returns the local date as YYYY-MM-DD.
-func (System) GetToday() string {
-	return time.Now().Format(time.DateOnly)
+func (c System) GetToday() string {
+	return c.Now().Format(time.DateOnly)
 }

@@ -15,7 +15,8 @@
   "dependencies": {
     "@codemirror/legacy-modes": "^6.5.3",
     "@numen/plugin-sdk": "workspace:*",
-    "@numen/ui": "workspace:*"
+    "@numen/ui": "workspace:*",
+    "style-mod": "^4.1.4"
   },
   "peerDependencies": {
     "@codemirror/autocomplete": "^6.18.6",
