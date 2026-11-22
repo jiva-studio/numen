@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
-	"golang.org/x/sys/unix"
 	"os"
 	"os/exec"
 	"strconv"
@@ -48,7 +47,7 @@ func TestProcessPriorityLowersTheChildWithoutChangingTheHost(t *testing.T) {
 		err := SetNice(pid, before)
 		want := before
 		switch {
-		case errors.Is(err, unix.EACCES), errors.Is(err, unix.EPERM):
+		case errors.Is(err, ErrNiceDenied):
 			want = target
 		case err != nil:
 			t.Fatal(err)

@@ -326,7 +326,7 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 		return nil, nil, fmt.Errorf("start %s: %w", binPath, err)
 	}
 
-	if err := process.SetNice(cmd.Process.Pid, p.getNice()); err != nil {
+	if err := process.SetNice(cmd.Process.Pid, p.getNice()); err != nil && !errors.Is(err, process.ErrNiceDenied) {
 		p.report(fmt.Errorf("set priority of %s: %w", plug.Manifest.ID, err))
 	}
 	if err := process.ApplyLimits(cmd.Process.Pid, p.GetProcessLimits()); err != nil {
