@@ -18,7 +18,7 @@ const request = {
 interface Listed {
   commands?: object[]
   slots?: { entry?: object }[]
-  contentTypeByExtension?: object
+  contentTypeByExtension?: Record<string, string>
   handlers?: object[]
   keybindings?: object[]
   slotPoints?: object[]

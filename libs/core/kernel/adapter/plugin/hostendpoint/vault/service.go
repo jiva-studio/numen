@@ -91,6 +91,13 @@ func Mount(mux *http.ServeMux, auth Authority, source Source, options ...connect
 	addUnary(list, numenv1connect.VaultsServiceOpenVaultProcedure, "OpenVault", vaults.OpenVault)
 	list.mount(mux)
 
+	mountDocuments(mux, options, files, lookups, arrange, cache)
+}
+
+func mountDocuments(
+	mux *http.ServeMux, options []connect.HandlerOption,
+	files *filesCalls, lookups *lookupsCalls, arrange *arrangeCalls, cache *cacheCalls,
+) {
 	file := newRouter(v1.File_numen_v1_hostfile_proto, numenv1connect.HostFileServiceName, options)
 	addUnary(file, numenv1connect.HostFileServiceStatFileProcedure, "StatFile", files.StatFile)
 	addUnary(file, numenv1connect.HostFileServiceReadFileProcedure, "ReadFile", files.ReadFile)
