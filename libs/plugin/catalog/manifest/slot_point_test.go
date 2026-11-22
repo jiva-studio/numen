@@ -34,9 +34,20 @@ func TestSlotPointsChecked(t *testing.T) {
 		"no title":      {`[{"slot":"a.b","title":" "}]`, slotsSetting},
 		"no setting":    {`[{"slot":"a.b","title":"A"}]`, ``},
 		"no slot point": {`[]`, slotsSetting},
+		"two settings":  {`[{"slot":"a.b","title":"A"}]`, slotsSetting + `,{"key":"more","type":"slots","title":"More"}`},
+		"tab context":   {`[{"slot":"tabStrip.context","title":"A"}]`, slotsSetting},
+		"search result": {`[{"slot":"palette.searchResult","title":"A"}]`, slotsSetting},
+		"palette note":  {`[{"slot":"palette.note","title":"A"}]`, slotsSetting},
 	} {
 		if _, err := readSlotPoints(parts[0], parts[1]); !errors.Is(err, manifest.ErrInvalidSlotPoint) {
 			t.Errorf("%s gave %v", name, err)
 		}
+	}
+}
+
+func TestSlotPointsOfTheBarsOfAWindowAreAllowed(t *testing.T) {
+	points := `[{"slot":"titleBar.commands","title":"Actions"},{"slot":"statusBar.right","title":"End"}]`
+	if _, err := readSlotPoints(points, slotsSetting); err != nil {
+		t.Errorf("a plugin that draws the bars of a window gave %v", err)
 	}
 }
