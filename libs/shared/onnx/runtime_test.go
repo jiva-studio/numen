@@ -11,7 +11,7 @@ type fakeEngine struct{ libPath string }
 
 func TestOpenRejectsWhenTheHostGaveNoLibrary(t *testing.T) {
 	var r Runtime[*fakeEngine]
-	_, _, err := r.Open(t.Context(), "", func(string) (*fakeEngine, error) {
+	_, err := r.Open(t.Context(), "", func(string) (*fakeEngine, error) {
 		t.Fatal("load ran with no library")
 		return nil, nil
 	})
@@ -33,13 +33,14 @@ func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 		return &fakeEngine{libPath: libPath}, nil
 	}
 
-	first, libPath, err := r.Open(t.Context(), "/lib/one.so", load)
-	if err != nil || libPath != "/lib/one.so" || first.libPath != "/lib/one.so" {
-		t.Fatalf("Open() = %v, %q, %v", first, libPath, err)
+	opened, err := r.Open(t.Context(), "/lib/one.so", load)
+	first := opened.Engine
+	if err != nil || opened.LibPath != "/lib/one.so" || first.libPath != "/lib/one.so" {
+		t.Fatalf("Open() = %v, %v", opened, err)
 	}
-	second, libPath, err := r.Open(t.Context(), "/lib/two.so", load)
-	if err != nil || second != first || libPath != "/lib/one.so" {
-		t.Fatalf("second Open() = %v, %q, %v, want the first engine", second, libPath, err)
+	again, err := r.Open(t.Context(), "/lib/two.so", load)
+	if err != nil || again.Engine != first || again.LibPath != "/lib/one.so" {
+		t.Fatalf("second Open() = %v, %v, want the first engine", again, err)
 	}
 	if got := loads.Load(); got != 1 {
 		t.Errorf("load ran %d times, want 1", got)
@@ -55,7 +56,7 @@ func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 func TestOpenTriesAgainAfterALoadFails(t *testing.T) {
 	var r Runtime[*fakeEngine]
 	broken := errors.New("broken library")
-	if _, _, err := r.Open(t.Context(), "/lib/one.so", func(string) (*fakeEngine, error) {
+	if _, err := r.Open(t.Context(), "/lib/one.so", func(string) (*fakeEngine, error) {
 		return nil, broken
 	}); !errors.Is(err, broken) {
 		t.Fatalf("Open() = %v, want %v", err, broken)
@@ -63,9 +64,10 @@ func TestOpenTriesAgainAfterALoadFails(t *testing.T) {
 	if engine, loadedPath := r.GetLoaded(); engine != nil || loadedPath != "" {
 		t.Fatalf("GetLoaded() = %v, %q after a failed load", engine, loadedPath)
 	}
-	engine, _, err := r.Open(t.Context(), "/lib/one.so", func(libPath string) (*fakeEngine, error) {
+	opened, err := r.Open(t.Context(), "/lib/one.so", func(libPath string) (*fakeEngine, error) {
 		return &fakeEngine{libPath: libPath}, nil
 	})
+	engine := opened.Engine
 	if err != nil || engine == nil {
 		t.Fatalf("Open() = %v, %v, want an engine", engine, err)
 	}
@@ -85,27 +87,27 @@ func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 
 	isDone := make(chan *fakeEngine)
 	go func() {
-		engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
+		opened, err := r.Open(t.Context(), "/lib/one.so", load)
 		if err != nil {
 			t.Errorf("first Open() = %v", err)
 		}
-		isDone <- engine
+		isDone <- opened.Engine
 	}()
 	<-entered
 
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, _, err := r.Open(canceled, "/lib/one.so", load); !errors.Is(err, context.Canceled) {
+	if _, err := r.Open(canceled, "/lib/one.so", load); !errors.Is(err, context.Canceled) {
 		t.Fatalf("waiting Open() = %v, want context.Canceled", err)
 	}
 
 	waiterDone := make(chan *fakeEngine)
 	go func() {
-		engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
+		opened, err := r.Open(t.Context(), "/lib/one.so", load)
 		if err != nil {
 			t.Errorf("concurrent Open() = %v", err)
 		}
-		waiterDone <- engine
+		waiterDone <- opened.Engine
 	}()
 	for {
 		r.mu.Lock()
@@ -122,7 +124,8 @@ func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 	if waited != first {
 		t.Fatalf("concurrent waiter got %v, want %v", waited, first)
 	}
-	engine, _, err := r.Open(t.Context(), "/lib/one.so", load)
+	opened, err := r.Open(t.Context(), "/lib/one.so", load)
+	engine := opened.Engine
 	if err != nil || engine != first {
 		t.Fatalf("Open() = %v, %v, want the first engine", engine, err)
 	}
@@ -137,7 +140,7 @@ func TestOpenFailsAndRecordsNothingWhenAHookFails(t *testing.T) {
 	r.Register(func(string) error { return hookErr })
 	load := func(libPath string) (*fakeEngine, error) { return &fakeEngine{libPath: libPath}, nil }
 
-	_, _, err := r.Open(t.Context(), "lib", load)
+	_, err := r.Open(t.Context(), "lib", load)
 
 	if !errors.Is(err, hookErr) {
 		t.Fatalf("Open error = %v, want %v", err, hookErr)

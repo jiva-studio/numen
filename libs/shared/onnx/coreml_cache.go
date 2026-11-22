@@ -20,7 +20,11 @@ func NewSession(engine *ort.Engine, cacheRoot, path string, opts *ort.SessionOpt
 	if err == nil {
 		return session, nil
 	}
-	if !DeleteCoreMLCache(cacheRoot, path) {
+	isDeleted, deleteErr := DeleteCoreMLCache(cacheRoot, path)
+	if deleteErr != nil {
+		return nil, errors.Join(err, deleteErr)
+	}
+	if !isDeleted {
 		return nil, err
 	}
 	return engine.NewSession(path, opts)

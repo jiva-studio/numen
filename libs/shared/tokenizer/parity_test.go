@@ -89,7 +89,7 @@ func TestUnigramModelsMatchHuggingFaceTokenizers(t *testing.T) {
 	}
 }
 
-func checkParitySingles(t *testing.T, tok tokenizer.Tokenizer, fixture parityFixture) {
+func checkParitySingles(t *testing.T, tok *tokenizer.Tokenizer, fixture parityFixture) {
 	t.Helper()
 	for _, one := range fixture.Singles {
 		if got := tok.Encode(one.Text); !slices.Equal(got, one.IDs) {
@@ -98,7 +98,7 @@ func checkParitySingles(t *testing.T, tok tokenizer.Tokenizer, fixture parityFix
 	}
 }
 
-func checkParityPairs(t *testing.T, tok tokenizer.Tokenizer, fixture parityFixture) {
+func checkParityPairs(t *testing.T, tok *tokenizer.Tokenizer, fixture parityFixture) {
 	t.Helper()
 	for _, one := range fixture.Pairs {
 		got, err := tok.EncodePair(one.First, one.Second, one.MaxTokens)

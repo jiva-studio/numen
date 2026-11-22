@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/domain/model"
 )
 
-func loadTokenizer(identity model.ModelInfo, path string) (tokenizer.Tokenizer, error) {
+func loadTokenizer(identity model.ModelInfo, path string) (*tokenizer.Tokenizer, error) {
 	encoder, err := tokenizer.Load(path)
 	if err != nil {
 		return nil, err

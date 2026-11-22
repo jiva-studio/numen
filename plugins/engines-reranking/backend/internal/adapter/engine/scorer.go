@@ -52,10 +52,11 @@ func openModel(ctx context.Context, library *onnx.Library, p profile.Profile, pa
 	if err != nil {
 		return nil, err
 	}
-	engine, _, err := library.Open(ctx, onnx.GetLibrary())
+	opened, err := library.Open(ctx, onnx.GetLibrary())
 	if err != nil {
 		return nil, err
 	}
+	engine := opened.Engine
 	settings := getSessionSettings(paths.Model)
 	options, _, err := library.NewSessionOptions(engine, settings)
 	if err != nil {

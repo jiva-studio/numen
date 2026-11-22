@@ -25,18 +25,23 @@ type Runtime[E any] struct {
 	loaded  atomic.Bool
 }
 
+// Opened is the engine of this process and the path of the library it was made from.
+type Opened[E any] struct {
+	Engine  E
+	LibPath string
+}
+
 // Open returns the engine of this process, made from the library at by load
 // the first time it succeeds. Every hook registered runs once, with the
 // library, in the same step that records the engine. A hook that fails fails
 // the open with the error of every failing hook, and nothing is recorded.
-func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath string) (E, error)) (E, string, error) {
-	var none E
+func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath string) (E, error)) (Opened[E], error) {
 	for {
 		r.mu.Lock()
 		if r.loaded.Load() {
 			engine, openedPath := r.engine, r.libPath
 			r.mu.Unlock()
-			return engine, openedPath, nil
+			return Opened[E]{Engine: engine, LibPath: openedPath}, nil
 		}
 		if pending := r.opening; pending != nil {
 			r.mu.Unlock()
@@ -44,8 +49,7 @@ func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath
 			case <-pending:
 				continue
 			case <-ctx.Done():
-				// gomutants:disable-next-line RETURN_ZERO reason="none is the zero value of E."
-				return none, "", ctx.Err()
+				return Opened[E]{}, ctx.Err()
 			}
 		}
 		mine := make(chan struct{})
@@ -62,10 +66,9 @@ func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath
 		r.mu.Unlock()
 		close(mine)
 		if err != nil {
-			// gomutants:disable-next-line RETURN_ZERO reason="none is the zero value of E."
-			return none, "", err
+			return Opened[E]{}, err
 		}
-		return engine, libPath, nil
+		return Opened[E]{Engine: engine, LibPath: libPath}, nil
 	}
 }
 

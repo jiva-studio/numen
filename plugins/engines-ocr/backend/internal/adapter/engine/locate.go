@@ -70,10 +70,11 @@ func (files modelFiles) resolve(ctx context.Context, path, address, name string)
 }
 
 func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch FetchModelFile) (*ort.Engine, string, paths, error) {
-	engine, pos, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
+	opened, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
 		return nil, "", paths{}, err
 	}
+	engine, pos := opened.Engine, opened.LibPath
 	files := modelFiles{dir: cfg.Dir, shouldDownload: cfg.ShouldDownload, fetch: fetch}
 	layout, err := files.resolve(ctx, cfg.Layout.Path, cfg.Layout.Name, "pp-doclayout.onnx")
 	if err != nil {
