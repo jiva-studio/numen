@@ -73,3 +73,50 @@ describe('the requested line of a note tab', () => {
     expect(editor.reveal).toHaveBeenCalledOnce()
   })
 })
+
+describe('the requested line of a note tab whose editor has no text yet', () => {
+  it('is offered again on later frames until the editor takes it, once', async () => {
+    const frames: (() => void)[] = []
+    const scope = effectScope()
+    const lines = scope.run(() =>
+      createLineReveal(
+        () => true,
+        (run) => frames.push(run),
+      ),
+    )!
+    const editor = createEditor(false)
+    lines.attach(editor)
+    lines.reveal(4)
+    await nextTick()
+    expect(editor.reveal).toHaveBeenCalledTimes(1)
+
+    frames.shift()?.()
+    expect(editor.reveal).toHaveBeenCalledTimes(2)
+    editor.reveal.mockReturnValue(true)
+    frames.shift()?.()
+    expect(editor.reveal).toHaveBeenCalledTimes(3)
+    expect(editor.reveal).toHaveBeenLastCalledWith(4)
+
+    expect(frames).toHaveLength(0)
+    await nextTick()
+    expect(editor.reveal).toHaveBeenCalledTimes(3)
+  })
+
+  it('is given up after a bounded number of frames', async () => {
+    const frames: (() => void)[] = []
+    const scope = effectScope()
+    const lines = scope.run(() =>
+      createLineReveal(
+        () => true,
+        (run) => frames.push(run),
+      ),
+    )!
+    const editor = createEditor(false)
+    lines.attach(editor)
+    lines.reveal(1)
+    await nextTick()
+    while (frames.length > 0) frames.shift()?.()
+
+    expect(editor.reveal.mock.calls.length).toBeLessThanOrEqual(11)
+  })
+})
