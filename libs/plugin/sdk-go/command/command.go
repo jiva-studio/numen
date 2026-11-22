@@ -114,7 +114,7 @@ func (r *Registry) RunCommand(ctx context.Context, request Request) (Result, err
 
 // Mount registers the handler as PluginCommandService on s.
 func Mount(s *server.Server, handler Handler) {
-	s.Register(numenv1connect.NewPluginCommandServiceHandler(service{handler: handler}, s.HandlerOptions()...))
+	s.RegisterAuthenticated(numenv1connect.NewPluginCommandServiceHandler(service{handler: handler}))
 }
 
 // service answers PluginCommandService with a Handler.

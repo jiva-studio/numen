@@ -16,8 +16,6 @@ import (
 	"syscall"
 	"time"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/logs"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
@@ -79,12 +77,11 @@ type Server struct {
 	closers   []func() error
 	closeErr  error
 
-	lifecycle   *LifecycleServer
-	interceptor *AuthInterceptor
-	mux         *http.ServeMux
-	listener    net.Listener
-	actualPort  int
-	listeners   []listenerPort
+	lifecycle  *LifecycleServer
+	mux        *http.ServeMux
+	listener   net.Listener
+	actualPort int
+	listeners  []listenerPort
 }
 
 // New constructs a plugin server using command flags, environment variables, and options.
@@ -157,16 +154,15 @@ func newServer(port int, token string, opts []Option, linked bool) *Server {
 		opt(s)
 	}
 
-	s.interceptor = NewAuthInterceptor(s.token)
 	var lifecycleOpts []LifecycleOption
 	if linked {
 		lifecycleOpts = append(lifecycleOpts, WithLifecycleShutdown(s.Close))
 	}
 	s.lifecycle = NewLifecycleServer(make(chan struct{}), lifecycleOpts...)
 
-	s.Register(numenv1connect.NewPluginLifecycleServiceHandler(lifecycleHandler{state: s.lifecycle}, s.HandlerOptions()...))
+	s.RegisterAuthenticated(numenv1connect.NewPluginLifecycleServiceHandler(lifecycleHandler{state: s.lifecycle}))
 	if s.onEvent != nil {
-		s.Register(numenv1connect.NewPluginEventServiceHandler(eventServer{handle: s.onEvent}, s.HandlerOptions()...))
+		s.RegisterAuthenticated(numenv1connect.NewPluginEventServiceHandler(eventServer{handle: s.onEvent}))
 	}
 
 	return s
@@ -195,9 +191,15 @@ func (s *Server) Close() error {
 	return s.closeErr
 }
 
-// Register mounts a service handler on the server multiplexer.
+// Register mounts a handler on the server multiplexer as it is: the handler checks the token itself, or
+// serves a path that carries none.
 func (s *Server) Register(pattern string, handler http.Handler) {
 	s.mux.Handle(pattern, handler)
+}
+
+// RegisterAuthenticated mounts a handler that answers 401 to a request without the token of the host.
+func (s *Server) RegisterAuthenticated(pattern string, handler http.Handler) {
+	s.mux.Handle(pattern, RequireToken(s.token, handler))
 }
 
 // RoutePrefix is where the host forwards the plugin route: a window's GET of /plugin/<id>/<rest>
@@ -207,16 +209,7 @@ const RoutePrefix = "/plugin/"
 // RegisterRoute mounts handler for GET and HEAD requests at RoutePrefix+pattern, a pattern of
 // http.ServeMux such as "pages/{page}". A request without the host's token is answered 401.
 func (s *Server) RegisterRoute(pattern string, handler http.Handler) {
-	s.mux.Handle(http.MethodGet+" "+RoutePrefix+pattern, s.interceptor.RequireToken(handler))
-}
-
-// HandlerOptions returns Connect-RPC options enforcing server authentication.
-func (s *Server) HandlerOptions() []connect.HandlerOption {
-	return []connect.HandlerOption{connect.WithInterceptors(s.interceptor)}
-}
-
-func (s *Server) AuthInterceptor() connect.Interceptor {
-	return s.interceptor
+	s.RegisterAuthenticated(http.MethodGet+" "+RoutePrefix+pattern, handler)
 }
 
 // Lifecycle returns the lifecycle handler.

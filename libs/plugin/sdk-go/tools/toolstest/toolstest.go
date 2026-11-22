@@ -54,8 +54,8 @@ func (a *serviceAdapter) CallTool(
 }
 
 // NewServiceHandler returns the path and the handler of PluginToolService over h.
-func NewServiceHandler(h ServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewPluginToolServiceHandler(&serviceAdapter{h: h}, opts...)
+func NewServiceHandler(h ServiceHandler) (string, http.Handler) {
+	return numenv1connect.NewPluginToolServiceHandler(&serviceAdapter{h: h})
 }
 
 func writeEffect(effect tools.Effect) v1.ToolEffect {

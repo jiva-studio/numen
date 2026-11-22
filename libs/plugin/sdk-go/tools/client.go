@@ -6,6 +6,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -191,7 +192,7 @@ type rpcClient struct {
 // NewClient creates a Client reaching the given endpoint.
 func NewClient(endpoint hostcall.Endpoint) Client {
 	return &rpcClient{
-		rpc: numenv1connect.NewPluginToolServiceClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Options()...),
+		rpc: numenv1connect.NewPluginToolServiceClient(transport.HTTPClient(), endpoint.BaseURL, transport.Options(endpoint)...),
 	}
 }
 

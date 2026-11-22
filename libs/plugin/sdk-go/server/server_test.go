@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -650,15 +651,12 @@ func (r *bufSizeReader) Read(p []byte) (int, error) {
 	return 0, io.EOF
 }
 
-func TestAuthInterceptor_EdgeCases(t *testing.T) {
-	emptyAuth := NewAuthInterceptor("")
-	if err := emptyAuth.checkToken(http.Header{"Authorization": {"Bearer "}}); err == nil {
-		t.Fatal("expected error for empty configured token even with Bearer header")
+func TestHasBearerToken_EdgeCases(t *testing.T) {
+	if HasBearerToken(http.Header{"Authorization": {"Bearer "}}, "") {
+		t.Fatal("expected no match for an empty configured token even with a Bearer header")
 	}
-
-	auth := NewAuthInterceptor("secret")
-	if err := auth.checkToken(http.Header{"Authorization": {"secret"}}); err == nil {
-		t.Fatal("expected error when Authorization header lacks Bearer prefix")
+	if HasBearerToken(http.Header{"Authorization": {"secret"}}, "secret") {
+		t.Fatal("expected no match when the Authorization header lacks the Bearer prefix")
 	}
 }
 

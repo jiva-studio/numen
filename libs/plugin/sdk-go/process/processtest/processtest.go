@@ -45,8 +45,8 @@ func (s *service) ReleaseProcess(
 func NewHost(t *testing.T) *Host {
 	t.Helper()
 	host := &Host{service: &service{}}
-	_, handler := numenv1connect.NewPluginServiceHandler(host.service, connect.WithInterceptors(server.NewAuthInterceptor(pluginToken)))
-	served := httptest.NewServer(handler)
+	_, handler := numenv1connect.NewPluginServiceHandler(host.service)
+	served := httptest.NewServer(server.RequireToken(pluginToken, handler))
 	t.Cleanup(served.Close)
 	address, err := url.Parse(served.URL)
 	if err != nil {

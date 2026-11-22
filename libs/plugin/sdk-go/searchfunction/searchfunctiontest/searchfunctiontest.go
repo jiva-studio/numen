@@ -8,7 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -20,7 +20,7 @@ type Client struct {
 
 // NewClient returns a client that presents token on every call, as the host does.
 func NewClient(httpClient *http.Client, baseURL, token string) *Client {
-	return &Client{rpc: numenv1connect.NewSearchFunctionServiceClient(httpClient, baseURL, connect.WithInterceptors(hostcall.Bearer(token)))}
+	return &Client{rpc: numenv1connect.NewSearchFunctionServiceClient(httpClient, baseURL, connect.WithInterceptors(transport.Bearer(token)))}
 }
 
 // Call is one call of a function: its name, the vault, the generation of the index and the arguments by name,

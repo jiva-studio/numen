@@ -149,13 +149,13 @@ func (a *adapter) EmbedQueries(
 }
 
 // NewHandler returns the path and the handler of the search source service over h.
-func NewHandler(h Handler, opts ...connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewSearchSourceServiceHandler(&adapter{h: h}, opts...)
+func NewHandler(h Handler) (string, http.Handler) {
+	return numenv1connect.NewSearchSourceServiceHandler(&adapter{h: h})
 }
 
 // Mount registers the search source service of h on s.
 func Mount(s *server.Server, h Handler) {
-	s.Register(NewHandler(h, s.HandlerOptions()...))
+	s.RegisterAuthenticated(NewHandler(h))
 }
 
 func readPlace(place *v1.SearchPlace) Place {

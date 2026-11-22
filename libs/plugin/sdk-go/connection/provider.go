@@ -48,8 +48,8 @@ type Provider map[string]Operation
 // NewHandler creates the Connect-RPC handler for the operations of a Provider. After it answers
 // connections.detected or an option list while no other call of the provider is open, it releases the
 // process through releaser; a nil releaser releases nothing.
-func NewHandler(provider Provider, releaser Releaser, opts ...connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewProviderServiceHandler(&adapter{provider: provider, calls: &openCalls{releaser: releaser}}, opts...)
+func NewHandler(provider Provider, releaser Releaser) (string, http.Handler) {
+	return numenv1connect.NewProviderServiceHandler(&adapter{provider: provider, calls: &openCalls{releaser: releaser}})
 }
 
 // Mount registers the operations of a Provider on the plugin Server. It releases the process through
@@ -59,7 +59,7 @@ func Mount(s *server.Server, provider Provider) {
 	if endpoint, err := s.GetHostEndpoint(); err == nil {
 		releaser = process.NewClient(endpoint)
 	}
-	s.Register(NewHandler(provider, releaser, s.HandlerOptions()...))
+	s.RegisterAuthenticated(NewHandler(provider, releaser))
 }
 
 // adapter serves the operations of a Provider. A canceled call answers with the status code Canceled, and
