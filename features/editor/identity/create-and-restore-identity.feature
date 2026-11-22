@@ -51,6 +51,6 @@ Feature: Create and restore an identity
       Then the account fingerprint is the same as before
 
     Scenario: Words with a mistake are refused
-      When the person restores an identity from the words "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon"
+      When the person restores an identity from the word "abandon" written 12 times
       Then the identity warns about "words that are not valid"
       And this device has no identity
