@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { createFakeApi, refuse, settle, SUMMARY, task } from '../../testing/fakeApi'
 import { taskDoneLabel, WORDS } from '../../words'
@@ -163,6 +163,57 @@ describe('the todos popover', () => {
     expect(view.emitted('open')).toEqual([
       [{ path: 'Daily/2026-11-12.md', line: 3, raw: '- [ ] call the bank' }],
     ])
+  })
+})
+
+describe('the todos popover in the top layer', () => {
+  const stubTopLayer = () => {
+    const show = vi.fn()
+    Object.defineProperty(HTMLElement.prototype, 'showPopover', { value: show, configurable: true })
+    return show
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(HTMLElement.prototype, 'showPopover')
+    vi.restoreAllMocks()
+  })
+
+  it('is a manual popover that opens once, placed under the right edge of the chip', async () => {
+    const show = stubTopLayer()
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      bottom: 30,
+      right: 700,
+    } as DOMRect)
+    const { wrapper: view } = draw(SUMMARY)
+
+    await openPopover(view)
+
+    const popover = view.get('[role="dialog"]')
+    expect(popover.attributes('popover')).toBe('manual')
+    expect(show).toHaveBeenCalledTimes(1)
+    expect(popover.attributes('style')).toMatch(/top:.*30px.*right: \d+px/)
+  })
+
+  it('works where the browser has no popover', async () => {
+    const { wrapper: view } = draw(SUMMARY)
+
+    await openPopover(view)
+
+    expect(view.find('[role="dialog"]').exists()).toBe(true)
+  })
+
+  it('closes on Escape and on a press outside', async () => {
+    const { wrapper: view } = draw(SUMMARY)
+
+    await openPopover(view)
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await settle()
+    expect(view.find('[role="dialog"]').exists()).toBe(false)
+
+    await openPopover(view)
+    document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+    await settle()
+    expect(view.find('[role="dialog"]').exists()).toBe(false)
   })
 })
 

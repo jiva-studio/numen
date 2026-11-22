@@ -2,12 +2,13 @@
 /**
  * The chip of the title bar and the popover with the lists Overdue, Today, Next 7 days and No date.
  */
-import { computed, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, type ComponentPublicInstance, useTemplateRef, watch } from 'vue'
 import { ListChecks } from '@lucide/vue'
 import { isPageMove, Tooltip, useMenuDismissal, useTooltip } from '@numen/ui'
 import { getChip, type ShownGroups } from '../model/chip'
 import { getNoteTitle, useTaskGroups } from '../model/useTaskGroups'
 import { useTaskTicks } from '../model/useTaskTicks'
+import { showInTopLayer, useTopLayerPopover } from '../model/useTopLayerPopover'
 import { taskDoneLabel, WORDS as words } from '../../words'
 import type { Summary, Task, TaskReader, TaskWriter } from '../../types'
 
@@ -28,6 +29,9 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const isOpen = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
+const trigger = useTemplateRef<HTMLElement>('trigger')
+const popover = useTemplateRef<HTMLElement>('popover')
+const { style: popoverStyle } = useTopLayerPopover(isOpen, trigger, popover)
 const dismissal = useMenuDismissal(root, onClose, isPageMove)
 const chip = computed(() => getChip(props.summary, props.shown))
 const label = computed(() => `${words.chipLabel}: ${chip.value.count}`)
@@ -65,11 +69,17 @@ function onTick(task: Task) {
   if (!isTickable(task)) return
   ticks.tick(task).catch(() => emit('showError', words.tickFailed))
 }
+
+/* --------------------------------- Helpers -------------------------------- */
+function showTooltip(instance: ComponentPublicInstance | Element | null) {
+  showInTopLayer(instance && '$el' in instance ? (instance.$el as HTMLElement) : null)
+}
 </script>
 
 <template>
   <div v-if="chip.isVisible" ref="root" class="todos-status">
     <button
+      ref="trigger"
       type="button"
       tabindex="-1"
       class="todos-status__trigger"
@@ -86,7 +96,15 @@ function onTick(task: Task) {
       <span>{{ chip.count }}</span>
     </button>
 
-    <div v-if="isOpen" class="todos-status__popover" role="dialog" :aria-label="words.chipLabel">
+    <div
+      v-if="isOpen"
+      ref="popover"
+      popover="manual"
+      class="todos-status__popover"
+      :style="popoverStyle"
+      role="dialog"
+      :aria-label="words.chipLabel"
+    >
       <section v-for="group in groups" :key="group.key" class="todos-status__group">
         <h3 class="todos-status__heading">
           {{ group.label }}
@@ -126,7 +144,14 @@ function onTick(task: Task) {
       </section>
     </div>
     <Teleport to="body">
-      <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+      <Tooltip
+        v-if="tip.at.value && tip.text.value"
+        :id="tip.id"
+        :ref="showTooltip"
+        popover="manual"
+        class="todos-status__tooltip"
+        :at="tip.at.value"
+      >
         {{ tip.text.value }}
       </Tooltip>
     </Teleport>
@@ -176,11 +201,9 @@ function onTick(task: Task) {
   --popover-width: 24rem;
   --popover-max-height: 22rem;
   --popover-pad: 0.5rem;
-  position: absolute;
-  top: calc(100% + var(--popover-offset));
-  right: 0;
-  z-index: var(--numen-lift-menu);
-  will-change: transform;
+  position: fixed;
+  inset: auto;
+  margin: 0;
   width: var(--popover-width);
   max-width: calc(100vw - 1rem);
   max-height: var(--popover-max-height);
@@ -191,6 +214,12 @@ function onTick(task: Task) {
   border: 1px solid var(--numen-panel-border);
   border-radius: var(--numen-radius-popup);
   box-shadow: var(--numen-panel-shadow);
+}
+
+.todos-status__tooltip {
+  inset: auto;
+  margin: 0;
+  overflow: visible;
 }
 
 .todos-status__popover .todos-status__heading {
