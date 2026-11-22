@@ -228,6 +228,21 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 			`{"id":"a.b","name":"A","version":"1.0.0","settingsViews":[{"id":"v","title":"T"}]}`,
 			manifest.ErrInvalidSettingsView,
 		},
+		{
+			"a setting of a group the manifest does not declare",
+			`{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean","title":"K","group":"g"}]}`,
+			manifest.ErrInvalidSettingGroup,
+		},
+		{
+			"a group declared twice",
+			`{"id":"a.b","name":"A","version":"1.0.0","settingGroups":[{"id":"g","title":"G"},{"id":"g","title":"H"}]}`,
+			manifest.ErrInvalidSettingGroup,
+		},
+		{
+			"a group without a title",
+			`{"id":"a.b","name":"A","version":"1.0.0","settingGroups":[{"id":"g"}]}`,
+			manifest.ErrInvalidSettingGroup,
+		},
 	}
 
 	for _, tc := range cases {
@@ -475,5 +490,23 @@ func TestAManifestDoesNotDeclareASettingKeyWithADot(t *testing.T) {
 	)
 	if !errors.Is(err, manifest.ErrInvalidSettingKey) {
 		t.Errorf("error = %v, want ErrInvalidSettingKey", err)
+	}
+}
+
+func TestManifestReadsSettingGroups(t *testing.T) {
+	m, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0",
+		"settingGroups":[{"id":"look","title":"Look"},{"id":"feel","title":"Feel"}],
+		"settings":[
+			{"key":"a","type":"boolean","title":"A","group":"feel"},
+			{"key":"b","type":"boolean","title":"B"}]}`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []manifest.SettingGroup{{ID: "look", Title: "Look"}, {ID: "feel", Title: "Feel"}}
+	if !slices.Equal(m.SettingGroups, want) {
+		t.Errorf("SettingGroups = %+v, want %+v", m.SettingGroups, want)
+	}
+	if m.Settings[0].Group != "feel" || m.Settings[1].Group != "" {
+		t.Errorf("the settings carry the groups %q and %q", m.Settings[0].Group, m.Settings[1].Group)
 	}
 }

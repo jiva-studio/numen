@@ -128,6 +128,12 @@
     ]
   },
   "permissions": ["vault:read", "vault:write"],
+  "settingGroups": [
+    { "id": "behavior", "title": "Behavior" },
+    { "id": "pills", "title": "Pills" },
+    { "id": "lines", "title": "Lines" },
+    { "id": "layout", "title": "Layout" }
+  ],
   "settings": [
     {
       "key": "references",
@@ -153,7 +159,8 @@
           "title": "Both"
         }
       ],
-      "details": "Show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none."
+      "details": "Show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none.",
+      "group": "behavior"
     },
     {
       "key": "activateCreated",
@@ -161,7 +168,8 @@
       "title": "Activate a created note",
       "description": "Make a note active after it is created in the plex",
       "default": true,
-      "details": "A note created from the plex through the quick link or the menu becomes the note in the middle. Off: the plex stays on the note it was on."
+      "details": "A note created from the plex through the quick link or the menu becomes the note in the middle. Off: the plex stays on the note it was on.",
+      "group": "behavior"
     },
     {
       "key": "activateLinked",
@@ -169,7 +177,19 @@
       "title": "Activate a linked note",
       "description": "Make a note active after a link to it is created in the plex",
       "default": false,
-      "details": "A note linked from the plex becomes the note in the middle. Off: the plex stays on the note the link was drawn from."
+      "details": "A note linked from the plex becomes the note in the middle. Off: the plex stays on the note the link was drawn from.",
+      "group": "behavior"
+    },
+    {
+      "key": "highlightLinks",
+      "type": "boolean",
+      "title": "Highlight links of a hovered note",
+      "description": "Highlight the lines of a note while the pointer is over it",
+      "default": true,
+      "palette": true,
+      "icon": "waypoints",
+      "details": "Highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted.",
+      "group": "behavior"
     },
     {
       "key": "showPills",
@@ -179,7 +199,8 @@
       "default": true,
       "palette": true,
       "icon": "waypoints",
-      "details": "Draw a pill behind each title. Off: the title alone."
+      "details": "Draw a pill behind each title. Off: the title alone.",
+      "group": "pills"
     },
     {
       "key": "pillPaddingSides",
@@ -189,7 +210,8 @@
       "default": 10,
       "min": 0,
       "max": 24,
-      "step": 1
+      "step": 1,
+      "group": "pills"
     },
     {
       "key": "pillPaddingEnds",
@@ -199,7 +221,41 @@
       "default": 9.25,
       "min": 0,
       "max": 16,
-      "step": 0.25
+      "step": 0.25,
+      "group": "pills"
+    },
+    {
+      "key": "lineThickness",
+      "type": "range",
+      "title": "Line thickness",
+      "description": "Width of the lines between notes, in pixels.",
+      "default": 2,
+      "min": 0.5,
+      "max": 4,
+      "step": 0.25,
+      "group": "lines"
+    },
+    {
+      "key": "outlineThickness",
+      "type": "range",
+      "title": "Outline thickness",
+      "description": "Width of the outline of a pill, in pixels.",
+      "default": 1,
+      "min": 0.5,
+      "max": 4,
+      "step": 0.25,
+      "group": "lines"
+    },
+    {
+      "key": "lineCurvature",
+      "type": "range",
+      "title": "Line curvature",
+      "description": "How far lines bend; 0 is straight",
+      "default": 0.55,
+      "min": 0,
+      "max": 1,
+      "step": 0.05,
+      "group": "lines"
     },
     {
       "key": "focusSize",
@@ -210,57 +266,8 @@
       "min": 1,
       "max": 2.5,
       "step": 0.01,
-      "details": "How much larger the note in the middle is drawn: its pill, title and icon."
-    },
-    {
-      "key": "lineThickness",
-      "type": "range",
-      "title": "Line thickness",
-      "description": "Width of the lines between notes, in pixels.",
-      "default": 2,
-      "min": 0.5,
-      "max": 4,
-      "step": 0.25
-    },
-    {
-      "key": "outlineThickness",
-      "type": "range",
-      "title": "Outline thickness",
-      "description": "Width of the outline of a pill, in pixels.",
-      "default": 1,
-      "min": 0.5,
-      "max": 4,
-      "step": 0.25
-    },
-    {
-      "key": "lineCurvature",
-      "type": "range",
-      "title": "Line curvature",
-      "description": "How far lines bend; 0 is straight",
-      "default": 0.55,
-      "min": 0,
-      "max": 1,
-      "step": 0.05
-    },
-    {
-      "key": "highlightLinks",
-      "type": "boolean",
-      "title": "Highlight links of a hovered note",
-      "description": "Highlight the lines of a note while the pointer is over it",
-      "default": true,
-      "palette": true,
-      "icon": "waypoints",
-      "details": "Highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted."
-    },
-    {
-      "key": "animationLength",
-      "type": "range",
-      "title": "Animation",
-      "description": "Time to move to another note, in ms; 0 is instant",
-      "default": 420,
-      "min": 0,
-      "max": 2000,
-      "step": 20
+      "details": "How much larger the note in the middle is drawn: its pill, title and icon.",
+      "group": "layout"
     },
     {
       "key": "noteRoom",
@@ -270,7 +277,8 @@
       "default": 0,
       "min": 0,
       "max": 40,
-      "step": 1
+      "step": 1,
+      "group": "layout"
     },
     {
       "key": "alignToGrid",
@@ -278,7 +286,19 @@
       "title": "Align notes to a grid",
       "description": "Keep the notes of a side in rows, whatever views they carry",
       "default": false,
-      "details": "Give every note of a side the room of the one with the most over its pill and the most under it, so the pills of a row line up when notes carry views of different heights. Off: a note keeps only the room its own views need."
+      "details": "Give every note of a side the room of the one with the most over its pill and the most under it, so the pills of a row line up when notes carry views of different heights. Off: a note keeps only the room its own views need.",
+      "group": "layout"
+    },
+    {
+      "key": "animationLength",
+      "type": "range",
+      "title": "Animation",
+      "description": "Time to move to another note, in ms; 0 is instant",
+      "default": 420,
+      "min": 0,
+      "max": 2000,
+      "step": 20,
+      "group": "layout"
     },
     {
       "key": "slots",

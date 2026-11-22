@@ -238,6 +238,7 @@ type Setting struct {
 	Title       string
 	Description string
 	Details     string
+	Group       string
 	Default     any
 	Palette     bool
 	Icon        string
@@ -273,6 +274,7 @@ type Manifest struct {
 	Settings         []Setting
 	Services         []string
 	SettingsViews    []SettingsView
+	SettingGroups    []SettingGroup
 	Contributes      Contributes
 	IsOffByDefault   bool
 	Warnings         []string
@@ -301,6 +303,7 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listCommandIssues()...)
 	issues = append(issues, m.listSettingsViewIssues()...)
+	issues = append(issues, m.listSettingGroupIssues()...)
 	issues = append(issues, m.listContributionIssues()...)
 	issues = append(issues, m.listSettingLinkIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)

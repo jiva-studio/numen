@@ -71,6 +71,7 @@ export const toWireSetting = (setting: PluginSettingInfo) => ({
   type: setting.type,
   title: setting.title,
   description: setting.description,
+  group: setting.group ?? '',
   defaultJson: JSON.stringify(setting.default),
   palette: Boolean(setting.palette),
   icon: setting.icon ?? '',
@@ -109,6 +110,7 @@ const toWirePlugin = (plugin: PluginInfo) => ({
   hasBackend: plugin.hasBackend,
   readers: (plugin.readers ?? []).map((one) => ({ id: one.id, extensions: [...one.extensions] })),
   settingsViews: plugin.settingsViews ?? [],
+  settingGroups: plugin.settingGroups ?? [],
   contributions: toWireContributions(plugin),
   settings: plugin.settings.map(toWireSetting),
 })

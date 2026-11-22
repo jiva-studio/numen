@@ -84,6 +84,8 @@ message PluginSetting {
   // Whether the manifest lets a setting of type connections that holds no row use every connection
   // whose type serves the operation. The person's choice is in the plugin field "discover".
   bool discover = 24;
+  // The id of the group the setting is drawn under. Empty draws it in the island without a heading.
+  string group = 26;
   reserved 22;
 }
 
@@ -141,6 +143,8 @@ message PluginInfo {
   repeated PluginContribution contributions = 15;
   // Whether the plugin stays off until the person enables it, when its settings hold no enabled value.
   bool is_off_by_default = 16;
+  // The islands the settings page draws the settings in, in the order they are shown.
+  repeated PluginSettingGroup setting_groups = 17;
   reserved 10;
 }
 
@@ -195,6 +199,12 @@ enum PluginContributionKind {
   // TOOLS lists the tools the plugin last offered an agent, which a manifest does not declare. It
   // is absent until the host has listed them once.
   PLUGIN_CONTRIBUTION_KIND_TOOLS = 24;
+}
+
+// PluginSettingGroup is an island of the settings page, with the heading over it.
+message PluginSettingGroup {
+  string id = 1;
+  string title = 2;
 }
 
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.

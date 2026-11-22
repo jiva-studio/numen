@@ -31,6 +31,8 @@ message Manifest {
   repeated ManifestSetting settings = 15;
   repeated string services = 17;
   repeated ManifestSettingsView settings_views = 24;
+  // setting_groups are the islands the settings page draws the settings in, in the order they are shown.
+  repeated ManifestSettingGroup setting_groups = 28;
   // contributes is what the plugin adds to the application, known before its
   // frontend is loaded.
   ManifestContributes contributes = 26;
@@ -463,6 +465,8 @@ message ManifestSetting {
   // discover makes a setting of type connections that holds no row use every connection whose type
   // serves the operation, in the order of the connections, while the person leaves it on.
   bool discover = 23;
+  // group is the id of the entry of the manifest's setting_groups the setting is drawn under. Empty draws it in the island without a heading.
+  string group = 25;
   reserved 21;
 }
 
@@ -524,6 +528,12 @@ message ManifestReader {
   string id = 1;
   repeated string content_types = 2;
   string rank = 3;
+}
+
+// ManifestSettingGroup is an island of the settings page, with the heading over it.
+message ManifestSettingGroup {
+  string id = 1;
+  string title = 2;
 }
 
 message ManifestSettingsView {

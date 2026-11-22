@@ -35,6 +35,23 @@ func TestNewWirePluginInfos_CarriesSettingsViews(t *testing.T) {
 	}
 }
 
+func TestNewWirePluginInfos_CarriesSettingGroups(t *testing.T) {
+	wire := NewWirePluginInfos([]plugin.Info{{
+		ID:            "a.b",
+		SettingGroups: []manifest.SettingGroup{{ID: "look", Title: "Look"}},
+		Settings:      []plugin.Setting{{Key: "a", Type: "boolean", Group: "look"}, {Key: "b", Type: "boolean"}},
+	}})
+
+	groups := wire[0].GetSettingGroups()
+	if len(groups) != 1 || groups[0].GetId() != "look" || groups[0].GetTitle() != "Look" {
+		t.Errorf("the setting groups carry %v", groups)
+	}
+	settings := wire[0].GetSettings()
+	if settings[0].GetGroup() != "look" || settings[1].GetGroup() != "" {
+		t.Errorf("the settings carry the groups %q and %q", settings[0].GetGroup(), settings[1].GetGroup())
+	}
+}
+
 func TestNewWirePluginInfos_CarriesIsOffByDefault(t *testing.T) {
 	wire := NewWirePluginInfos([]plugin.Info{{ID: "a.b", IsOffByDefault: true}, {ID: "c.d"}})
 

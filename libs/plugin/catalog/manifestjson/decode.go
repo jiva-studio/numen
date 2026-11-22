@@ -131,6 +131,7 @@ func newManifest(wire *v1.Manifest) (manifest.Manifest, error) {
 		Settings:         settings,
 		Services:         wire.GetServices(),
 		SettingsViews:    newSettingsViews(wire.GetSettingsViews()),
+		SettingGroups:    newSettingGroups(wire.GetSettingGroups()),
 		Contributes:      contributes,
 		IsOffByDefault:   wire.GetIsOffByDefault(),
 	}, nil
@@ -209,6 +210,7 @@ func newSettings(wire []*v1.ManifestSetting) ([]manifest.Setting, error) {
 			Title:       one.GetTitle(),
 			Description: one.GetDescription(),
 			Details:     one.GetDetails(),
+			Group:       one.GetGroup(),
 			Default:     one.GetDefault().AsInterface(),
 			Palette:     one.GetPalette(),
 			Icon:        one.GetIcon(),
@@ -289,6 +291,14 @@ func newSettingsViews(wire []*v1.ManifestSettingsView) []manifest.SettingsView {
 	var out []manifest.SettingsView
 	for _, one := range wire {
 		out = append(out, manifest.SettingsView{ID: one.GetId(), Title: one.GetTitle()})
+	}
+	return out
+}
+
+func newSettingGroups(wire []*v1.ManifestSettingGroup) []manifest.SettingGroup {
+	var out []manifest.SettingGroup
+	for _, one := range wire {
+		out = append(out, manifest.SettingGroup{ID: one.GetId(), Title: one.GetTitle()})
 	}
 	return out
 }

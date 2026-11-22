@@ -3,6 +3,7 @@ export type {
   SettingEdit,
   PluginInfo,
   PluginSettingInfo,
+  PluginSettingGroupInfo,
   PluginSettingsViewInfo,
   PluginSettingOption,
 } from './lib/configuration'

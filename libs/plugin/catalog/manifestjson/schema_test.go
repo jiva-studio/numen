@@ -31,7 +31,7 @@ const everyFieldManifest = `{
 	"backend": {"entrypoint": "bin/full", "idleStopSeconds": 600},
 	"frontend": {},
 	"settings": [
-		{"key": "mode", "type": "enum", "title": "Mode", "description": "d", "details": "dd", "default": "a", "palette": true, "icon": "gauge",
+		{"key": "mode", "type": "enum", "title": "Mode", "description": "d", "details": "dd", "group": "g", "default": "a", "palette": true, "icon": "gauge",
 			"options": ["a", {"value": "b", "title": "B", "detail": "d", "dependencies": ["weights"], "when": "app.platform != 'darwin'"}],
 			"min": 1, "max": 2, "step": 1, "accept": [".txt"], "multiple": true},
 		{"key": "sub", "type": "enum", "title": "Sub", "optionsBy": {"setting": "mode", "options": {"a": ["x"], "b": ["y"]}},
@@ -42,6 +42,7 @@ const everyFieldManifest = `{
 	],
 	"services": ["numen.v1.Full"],
 	"settingsViews": [{"id": "v", "title": "V"}],
+	"settingGroups": [{"id": "g", "title": "G"}],
 	"contributes": {"commands": [{"id": "task.run", "title": "Run", "icon": "play",
 		"when": "target.contentType.startsWith('audio/')",
 		"permission": "vault:read",

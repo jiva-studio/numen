@@ -15,7 +15,7 @@ import type {
   MarkedSetting,
 } from '../../types'
 import PluginConnectionSections from './PluginConnectionSections.vue'
-import PluginFields from './PluginFields.vue'
+import PluginSettings from './PluginSettings.vue'
 import PluginSlots from './PluginSlots.vue'
 import { getManagedHealth, getMarkedSettings } from '../../lib/pluginHealth'
 
@@ -93,7 +93,7 @@ function onRunAction(key: string): void {
     @run-action="onRunAction"
   >
     <template #settings>
-      <PluginFields
+      <PluginSettings
         v-if="hasSettings"
         :settings="props.settings"
         :host="props.manager"

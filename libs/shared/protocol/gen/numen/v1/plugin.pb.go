@@ -524,7 +524,9 @@ type PluginSetting struct {
 	Operations []string `protobuf:"bytes,23,rep,name=operations,proto3" json:"operations,omitempty"`
 	// Whether the manifest lets a setting of type connections that holds no row use every connection
 	// whose type serves the operation. The person's choice is in the plugin field "discover".
-	Discover      bool `protobuf:"varint,24,opt,name=discover,proto3" json:"discover,omitempty"`
+	Discover bool `protobuf:"varint,24,opt,name=discover,proto3" json:"discover,omitempty"`
+	// The id of the group the setting is drawn under. Empty draws it in the island without a heading.
+	Group         string `protobuf:"bytes,26,opt,name=group,proto3" json:"group,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -718,6 +720,13 @@ func (x *PluginSetting) GetDiscover() bool {
 		return x.Discover
 	}
 	return false
+}
+
+func (x *PluginSetting) GetGroup() string {
+	if x != nil {
+		return x.Group
+	}
+	return ""
 }
 
 // PluginSettingOption is one value an enum setting can hold.
@@ -970,8 +979,10 @@ type PluginInfo struct {
 	Contributions []*PluginContribution `protobuf:"bytes,15,rep,name=contributions,proto3" json:"contributions,omitempty"`
 	// Whether the plugin stays off until the person enables it, when its settings hold no enabled value.
 	IsOffByDefault bool `protobuf:"varint,16,opt,name=is_off_by_default,json=isOffByDefault,proto3" json:"is_off_by_default,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// The islands the settings page draws the settings in, in the order they are shown.
+	SettingGroups []*PluginSettingGroup `protobuf:"bytes,17,rep,name=setting_groups,json=settingGroups,proto3" json:"setting_groups,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PluginInfo) Reset() {
@@ -1102,6 +1113,13 @@ func (x *PluginInfo) GetIsOffByDefault() bool {
 	return false
 }
 
+func (x *PluginInfo) GetSettingGroups() []*PluginSettingGroup {
+	if x != nil {
+		return x.SettingGroups
+	}
+	return nil
+}
+
 // PluginContribution is one section of a plugin's manifest and the entries it declares, in the
 // order the manifest declares them.
 type PluginContribution struct {
@@ -1221,6 +1239,59 @@ func (x *PluginContributionItem) GetKeys() string {
 	return ""
 }
 
+// PluginSettingGroup is an island of the settings page, with the heading over it.
+type PluginSettingGroup struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PluginSettingGroup) Reset() {
+	*x = PluginSettingGroup{}
+	mi := &file_numen_v1_plugin_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PluginSettingGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PluginSettingGroup) ProtoMessage() {}
+
+func (x *PluginSettingGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_plugin_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PluginSettingGroup.ProtoReflect.Descriptor instead.
+func (*PluginSettingGroup) Descriptor() ([]byte, []int) {
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *PluginSettingGroup) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *PluginSettingGroup) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
 // PluginSettingsView is a component of a plugin's frontend drawn among its settings.
 type PluginSettingsView struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -1234,7 +1305,7 @@ type PluginSettingsView struct {
 
 func (x *PluginSettingsView) Reset() {
 	*x = PluginSettingsView{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[14]
+	mi := &file_numen_v1_plugin_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1246,7 +1317,7 @@ func (x *PluginSettingsView) String() string {
 func (*PluginSettingsView) ProtoMessage() {}
 
 func (x *PluginSettingsView) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[14]
+	mi := &file_numen_v1_plugin_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1259,7 +1330,7 @@ func (x *PluginSettingsView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginSettingsView.ProtoReflect.Descriptor instead.
 func (*PluginSettingsView) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{14}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *PluginSettingsView) GetId() string {
@@ -1291,7 +1362,7 @@ type PluginReader struct {
 
 func (x *PluginReader) Reset() {
 	*x = PluginReader{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[15]
+	mi := &file_numen_v1_plugin_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1303,7 +1374,7 @@ func (x *PluginReader) String() string {
 func (*PluginReader) ProtoMessage() {}
 
 func (x *PluginReader) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[15]
+	mi := &file_numen_v1_plugin_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1316,7 +1387,7 @@ func (x *PluginReader) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginReader.ProtoReflect.Descriptor instead.
 func (*PluginReader) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{15}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *PluginReader) GetId() string {
@@ -1341,7 +1412,7 @@ type GetPluginsRequest struct {
 
 func (x *GetPluginsRequest) Reset() {
 	*x = GetPluginsRequest{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[16]
+	mi := &file_numen_v1_plugin_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1353,7 +1424,7 @@ func (x *GetPluginsRequest) String() string {
 func (*GetPluginsRequest) ProtoMessage() {}
 
 func (x *GetPluginsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[16]
+	mi := &file_numen_v1_plugin_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1366,7 +1437,7 @@ func (x *GetPluginsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPluginsRequest.ProtoReflect.Descriptor instead.
 func (*GetPluginsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{16}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{17}
 }
 
 type GetPluginsResponse struct {
@@ -1378,7 +1449,7 @@ type GetPluginsResponse struct {
 
 func (x *GetPluginsResponse) Reset() {
 	*x = GetPluginsResponse{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[17]
+	mi := &file_numen_v1_plugin_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1390,7 +1461,7 @@ func (x *GetPluginsResponse) String() string {
 func (*GetPluginsResponse) ProtoMessage() {}
 
 func (x *GetPluginsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[17]
+	mi := &file_numen_v1_plugin_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1403,7 +1474,7 @@ func (x *GetPluginsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPluginsResponse.ProtoReflect.Descriptor instead.
 func (*GetPluginsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{17}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetPluginsResponse) GetPlugins() []*PluginInfo {
@@ -1421,7 +1492,7 @@ type WatchPluginProcessesRequest struct {
 
 func (x *WatchPluginProcessesRequest) Reset() {
 	*x = WatchPluginProcessesRequest{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[18]
+	mi := &file_numen_v1_plugin_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1433,7 +1504,7 @@ func (x *WatchPluginProcessesRequest) String() string {
 func (*WatchPluginProcessesRequest) ProtoMessage() {}
 
 func (x *WatchPluginProcessesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[18]
+	mi := &file_numen_v1_plugin_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1446,7 +1517,7 @@ func (x *WatchPluginProcessesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchPluginProcessesRequest.ProtoReflect.Descriptor instead.
 func (*WatchPluginProcessesRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{18}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{19}
 }
 
 type ReleaseProcessRequest struct {
@@ -1457,7 +1528,7 @@ type ReleaseProcessRequest struct {
 
 func (x *ReleaseProcessRequest) Reset() {
 	*x = ReleaseProcessRequest{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[19]
+	mi := &file_numen_v1_plugin_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1469,7 +1540,7 @@ func (x *ReleaseProcessRequest) String() string {
 func (*ReleaseProcessRequest) ProtoMessage() {}
 
 func (x *ReleaseProcessRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[19]
+	mi := &file_numen_v1_plugin_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1482,7 +1553,7 @@ func (x *ReleaseProcessRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseProcessRequest.ProtoReflect.Descriptor instead.
 func (*ReleaseProcessRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{19}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{20}
 }
 
 type ReleaseProcessResponse struct {
@@ -1493,7 +1564,7 @@ type ReleaseProcessResponse struct {
 
 func (x *ReleaseProcessResponse) Reset() {
 	*x = ReleaseProcessResponse{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[20]
+	mi := &file_numen_v1_plugin_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1505,7 +1576,7 @@ func (x *ReleaseProcessResponse) String() string {
 func (*ReleaseProcessResponse) ProtoMessage() {}
 
 func (x *ReleaseProcessResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[20]
+	mi := &file_numen_v1_plugin_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1518,7 +1589,7 @@ func (x *ReleaseProcessResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReleaseProcessResponse.ProtoReflect.Descriptor instead.
 func (*ReleaseProcessResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{20}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{21}
 }
 
 type WatchPluginProcessesResponse struct {
@@ -1534,7 +1605,7 @@ type WatchPluginProcessesResponse struct {
 
 func (x *WatchPluginProcessesResponse) Reset() {
 	*x = WatchPluginProcessesResponse{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[21]
+	mi := &file_numen_v1_plugin_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1546,7 +1617,7 @@ func (x *WatchPluginProcessesResponse) String() string {
 func (*WatchPluginProcessesResponse) ProtoMessage() {}
 
 func (x *WatchPluginProcessesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[21]
+	mi := &file_numen_v1_plugin_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1559,7 +1630,7 @@ func (x *WatchPluginProcessesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchPluginProcessesResponse.ProtoReflect.Descriptor instead.
 func (*WatchPluginProcessesResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{21}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *WatchPluginProcessesResponse) GetProcesses() []*PluginProcess {
@@ -1612,7 +1683,7 @@ type PluginProcess struct {
 
 func (x *PluginProcess) Reset() {
 	*x = PluginProcess{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[22]
+	mi := &file_numen_v1_plugin_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1624,7 +1695,7 @@ func (x *PluginProcess) String() string {
 func (*PluginProcess) ProtoMessage() {}
 
 func (x *PluginProcess) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[22]
+	mi := &file_numen_v1_plugin_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1637,7 +1708,7 @@ func (x *PluginProcess) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginProcess.ProtoReflect.Descriptor instead.
 func (*PluginProcess) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{22}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *PluginProcess) GetPluginId() string {
@@ -1731,7 +1802,7 @@ type PluginLeaseHolder struct {
 
 func (x *PluginLeaseHolder) Reset() {
 	*x = PluginLeaseHolder{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[23]
+	mi := &file_numen_v1_plugin_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1743,7 +1814,7 @@ func (x *PluginLeaseHolder) String() string {
 func (*PluginLeaseHolder) ProtoMessage() {}
 
 func (x *PluginLeaseHolder) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[23]
+	mi := &file_numen_v1_plugin_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1756,7 +1827,7 @@ func (x *PluginLeaseHolder) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PluginLeaseHolder.ProtoReflect.Descriptor instead.
 func (*PluginLeaseHolder) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{23}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *PluginLeaseHolder) GetWho() string {
@@ -1783,7 +1854,7 @@ type DeliverEventRequest struct {
 
 func (x *DeliverEventRequest) Reset() {
 	*x = DeliverEventRequest{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[24]
+	mi := &file_numen_v1_plugin_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1795,7 +1866,7 @@ func (x *DeliverEventRequest) String() string {
 func (*DeliverEventRequest) ProtoMessage() {}
 
 func (x *DeliverEventRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[24]
+	mi := &file_numen_v1_plugin_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1808,7 +1879,7 @@ func (x *DeliverEventRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeliverEventRequest.ProtoReflect.Descriptor instead.
 func (*DeliverEventRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{24}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *DeliverEventRequest) GetEvent() string {
@@ -1828,7 +1899,7 @@ type DeliverEventResponse struct {
 
 func (x *DeliverEventResponse) Reset() {
 	*x = DeliverEventResponse{}
-	mi := &file_numen_v1_plugin_proto_msgTypes[25]
+	mi := &file_numen_v1_plugin_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1840,7 +1911,7 @@ func (x *DeliverEventResponse) String() string {
 func (*DeliverEventResponse) ProtoMessage() {}
 
 func (x *DeliverEventResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_plugin_proto_msgTypes[25]
+	mi := &file_numen_v1_plugin_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1853,7 +1924,7 @@ func (x *DeliverEventResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeliverEventResponse.ProtoReflect.Descriptor instead.
 func (*DeliverEventResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{25}
+	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *DeliverEventResponse) GetError() PluginEventErrorCode {
@@ -1892,7 +1963,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"C\n" +
 	"\x11ConfigureResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error\"\x9b\x06\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error\"\xb1\x06\n" +
 	"\rPluginSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1921,7 +1992,8 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\n" +
 	"operations\x18\x17 \x03(\tR\n" +
 	"operations\x12\x1a\n" +
-	"\bdiscover\x18\x18 \x01(\bR\bdiscoverB\x06\n" +
+	"\bdiscover\x18\x18 \x01(\bR\bdiscover\x12\x14\n" +
+	"\x05group\x18\x1a \x01(\tR\x05groupB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
 	"\x05_stepJ\x04\b\x16\x10\x17\"m\n" +
@@ -1940,7 +2012,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1e.numen.v1.PluginSettingOptionsR\x05value:\x028\x01\"B\n" +
 	"\x16PluginSettingCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xb4\x04\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xf9\x04\n" +
 	"\n" +
 	"PluginInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -1957,7 +2029,8 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\vhas_backend\x18\x0e \x01(\bR\n" +
 	"hasBackend\x12B\n" +
 	"\rcontributions\x18\x0f \x03(\v2\x1c.numen.v1.PluginContributionR\rcontributions\x12)\n" +
-	"\x11is_off_by_default\x18\x10 \x01(\bR\x0eisOffByDefaultJ\x04\b\n" +
+	"\x11is_off_by_default\x18\x10 \x01(\bR\x0eisOffByDefault\x12C\n" +
+	"\x0esetting_groups\x18\x11 \x03(\v2\x1c.numen.v1.PluginSettingGroupR\rsettingGroupsJ\x04\b\n" +
 	"\x10\v\"\x82\x01\n" +
 	"\x12PluginContribution\x124\n" +
 	"\x04kind\x18\x01 \x01(\x0e2 .numen.v1.PluginContributionKindR\x04kind\x126\n" +
@@ -1966,6 +2039,9 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\x12\x12\n" +
 	"\x04keys\x18\x03 \x01(\tR\x04keys\":\n" +
+	"\x12PluginSettingGroup\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\":\n" +
 	"\x12PluginSettingsView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\">\n" +
@@ -2064,7 +2140,7 @@ func file_numen_v1_plugin_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_plugin_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_numen_v1_plugin_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_numen_v1_plugin_proto_goTypes = []any{
 	(PluginContributionKind)(0),          // 0: numen.v1.PluginContributionKind
 	(PluginEventErrorCode)(0),            // 1: numen.v1.PluginEventErrorCode
@@ -2082,62 +2158,64 @@ var file_numen_v1_plugin_proto_goTypes = []any{
 	(*PluginInfo)(nil),                   // 13: numen.v1.PluginInfo
 	(*PluginContribution)(nil),           // 14: numen.v1.PluginContribution
 	(*PluginContributionItem)(nil),       // 15: numen.v1.PluginContributionItem
-	(*PluginSettingsView)(nil),           // 16: numen.v1.PluginSettingsView
-	(*PluginReader)(nil),                 // 17: numen.v1.PluginReader
-	(*GetPluginsRequest)(nil),            // 18: numen.v1.GetPluginsRequest
-	(*GetPluginsResponse)(nil),           // 19: numen.v1.GetPluginsResponse
-	(*WatchPluginProcessesRequest)(nil),  // 20: numen.v1.WatchPluginProcessesRequest
-	(*ReleaseProcessRequest)(nil),        // 21: numen.v1.ReleaseProcessRequest
-	(*ReleaseProcessResponse)(nil),       // 22: numen.v1.ReleaseProcessResponse
-	(*WatchPluginProcessesResponse)(nil), // 23: numen.v1.WatchPluginProcessesResponse
-	(*PluginProcess)(nil),                // 24: numen.v1.PluginProcess
-	(*PluginLeaseHolder)(nil),            // 25: numen.v1.PluginLeaseHolder
-	(*DeliverEventRequest)(nil),          // 26: numen.v1.DeliverEventRequest
-	(*DeliverEventResponse)(nil),         // 27: numen.v1.DeliverEventResponse
-	nil,                                  // 28: numen.v1.ConfigureRequest.ValuesEntry
-	nil,                                  // 29: numen.v1.PluginSettingOptionsBy.OptionsEntry
-	(HealthSeverity)(0),                  // 30: numen.v1.HealthSeverity
+	(*PluginSettingGroup)(nil),           // 16: numen.v1.PluginSettingGroup
+	(*PluginSettingsView)(nil),           // 17: numen.v1.PluginSettingsView
+	(*PluginReader)(nil),                 // 18: numen.v1.PluginReader
+	(*GetPluginsRequest)(nil),            // 19: numen.v1.GetPluginsRequest
+	(*GetPluginsResponse)(nil),           // 20: numen.v1.GetPluginsResponse
+	(*WatchPluginProcessesRequest)(nil),  // 21: numen.v1.WatchPluginProcessesRequest
+	(*ReleaseProcessRequest)(nil),        // 22: numen.v1.ReleaseProcessRequest
+	(*ReleaseProcessResponse)(nil),       // 23: numen.v1.ReleaseProcessResponse
+	(*WatchPluginProcessesResponse)(nil), // 24: numen.v1.WatchPluginProcessesResponse
+	(*PluginProcess)(nil),                // 25: numen.v1.PluginProcess
+	(*PluginLeaseHolder)(nil),            // 26: numen.v1.PluginLeaseHolder
+	(*DeliverEventRequest)(nil),          // 27: numen.v1.DeliverEventRequest
+	(*DeliverEventResponse)(nil),         // 28: numen.v1.DeliverEventResponse
+	nil,                                  // 29: numen.v1.ConfigureRequest.ValuesEntry
+	nil,                                  // 30: numen.v1.PluginSettingOptionsBy.OptionsEntry
+	(HealthSeverity)(0),                  // 31: numen.v1.HealthSeverity
 }
 var file_numen_v1_plugin_proto_depIdxs = []int32{
-	28, // 0: numen.v1.ConfigureRequest.values:type_name -> numen.v1.ConfigureRequest.ValuesEntry
+	29, // 0: numen.v1.ConfigureRequest.values:type_name -> numen.v1.ConfigureRequest.ValuesEntry
 	9,  // 1: numen.v1.PluginSetting.options:type_name -> numen.v1.PluginSettingOption
 	11, // 2: numen.v1.PluginSetting.options_by:type_name -> numen.v1.PluginSettingOptionsBy
 	12, // 3: numen.v1.PluginSetting.when:type_name -> numen.v1.PluginSettingCondition
 	9,  // 4: numen.v1.PluginSetting.active_options:type_name -> numen.v1.PluginSettingOption
 	9,  // 5: numen.v1.PluginSettingOptions.options:type_name -> numen.v1.PluginSettingOption
-	29, // 6: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
+	30, // 6: numen.v1.PluginSettingOptionsBy.options:type_name -> numen.v1.PluginSettingOptionsBy.OptionsEntry
 	8,  // 7: numen.v1.PluginInfo.settings:type_name -> numen.v1.PluginSetting
-	17, // 8: numen.v1.PluginInfo.readers:type_name -> numen.v1.PluginReader
-	16, // 9: numen.v1.PluginInfo.settings_views:type_name -> numen.v1.PluginSettingsView
+	18, // 8: numen.v1.PluginInfo.readers:type_name -> numen.v1.PluginReader
+	17, // 9: numen.v1.PluginInfo.settings_views:type_name -> numen.v1.PluginSettingsView
 	14, // 10: numen.v1.PluginInfo.contributions:type_name -> numen.v1.PluginContribution
-	0,  // 11: numen.v1.PluginContribution.kind:type_name -> numen.v1.PluginContributionKind
-	15, // 12: numen.v1.PluginContribution.items:type_name -> numen.v1.PluginContributionItem
-	13, // 13: numen.v1.GetPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
-	24, // 14: numen.v1.WatchPluginProcessesResponse.processes:type_name -> numen.v1.PluginProcess
-	30, // 15: numen.v1.PluginProcess.health:type_name -> numen.v1.HealthSeverity
-	25, // 16: numen.v1.PluginProcess.started_by:type_name -> numen.v1.PluginLeaseHolder
-	25, // 17: numen.v1.PluginProcess.holders:type_name -> numen.v1.PluginLeaseHolder
-	1,  // 18: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.PluginEventErrorCode
-	10, // 19: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
-	2,  // 20: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
-	4,  // 21: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
-	6,  // 22: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
-	18, // 23: numen.v1.PluginService.GetPlugins:input_type -> numen.v1.GetPluginsRequest
-	20, // 24: numen.v1.PluginService.WatchPluginProcesses:input_type -> numen.v1.WatchPluginProcessesRequest
-	21, // 25: numen.v1.PluginService.ReleaseProcess:input_type -> numen.v1.ReleaseProcessRequest
-	26, // 26: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
-	3,  // 27: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
-	5,  // 28: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
-	7,  // 29: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
-	19, // 30: numen.v1.PluginService.GetPlugins:output_type -> numen.v1.GetPluginsResponse
-	23, // 31: numen.v1.PluginService.WatchPluginProcesses:output_type -> numen.v1.WatchPluginProcessesResponse
-	22, // 32: numen.v1.PluginService.ReleaseProcess:output_type -> numen.v1.ReleaseProcessResponse
-	27, // 33: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
-	27, // [27:34] is the sub-list for method output_type
-	20, // [20:27] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	16, // 11: numen.v1.PluginInfo.setting_groups:type_name -> numen.v1.PluginSettingGroup
+	0,  // 12: numen.v1.PluginContribution.kind:type_name -> numen.v1.PluginContributionKind
+	15, // 13: numen.v1.PluginContribution.items:type_name -> numen.v1.PluginContributionItem
+	13, // 14: numen.v1.GetPluginsResponse.plugins:type_name -> numen.v1.PluginInfo
+	25, // 15: numen.v1.WatchPluginProcessesResponse.processes:type_name -> numen.v1.PluginProcess
+	31, // 16: numen.v1.PluginProcess.health:type_name -> numen.v1.HealthSeverity
+	26, // 17: numen.v1.PluginProcess.started_by:type_name -> numen.v1.PluginLeaseHolder
+	26, // 18: numen.v1.PluginProcess.holders:type_name -> numen.v1.PluginLeaseHolder
+	1,  // 19: numen.v1.DeliverEventResponse.error:type_name -> numen.v1.PluginEventErrorCode
+	10, // 20: numen.v1.PluginSettingOptionsBy.OptionsEntry.value:type_name -> numen.v1.PluginSettingOptions
+	2,  // 21: numen.v1.PluginLifecycleService.Ping:input_type -> numen.v1.PingRequest
+	4,  // 22: numen.v1.PluginLifecycleService.Shutdown:input_type -> numen.v1.ShutdownRequest
+	6,  // 23: numen.v1.PluginLifecycleService.Configure:input_type -> numen.v1.ConfigureRequest
+	19, // 24: numen.v1.PluginService.GetPlugins:input_type -> numen.v1.GetPluginsRequest
+	21, // 25: numen.v1.PluginService.WatchPluginProcesses:input_type -> numen.v1.WatchPluginProcessesRequest
+	22, // 26: numen.v1.PluginService.ReleaseProcess:input_type -> numen.v1.ReleaseProcessRequest
+	27, // 27: numen.v1.PluginEventService.DeliverEvent:input_type -> numen.v1.DeliverEventRequest
+	3,  // 28: numen.v1.PluginLifecycleService.Ping:output_type -> numen.v1.PingResponse
+	5,  // 29: numen.v1.PluginLifecycleService.Shutdown:output_type -> numen.v1.ShutdownResponse
+	7,  // 30: numen.v1.PluginLifecycleService.Configure:output_type -> numen.v1.ConfigureResponse
+	20, // 31: numen.v1.PluginService.GetPlugins:output_type -> numen.v1.GetPluginsResponse
+	24, // 32: numen.v1.PluginService.WatchPluginProcesses:output_type -> numen.v1.WatchPluginProcessesResponse
+	23, // 33: numen.v1.PluginService.ReleaseProcess:output_type -> numen.v1.ReleaseProcessResponse
+	28, // 34: numen.v1.PluginEventService.DeliverEvent:output_type -> numen.v1.DeliverEventResponse
+	28, // [28:35] is the sub-list for method output_type
+	21, // [21:28] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_plugin_proto_init() }
@@ -2153,7 +2231,7 @@ func file_numen_v1_plugin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_plugin_proto_rawDesc), len(file_numen_v1_plugin_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   28,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   3,
 		},

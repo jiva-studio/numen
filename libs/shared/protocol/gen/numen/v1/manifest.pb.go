@@ -48,6 +48,8 @@ type Manifest struct {
 	Settings      []*ManifestSetting      `protobuf:"bytes,15,rep,name=settings,proto3" json:"settings,omitempty"`
 	Services      []string                `protobuf:"bytes,17,rep,name=services,proto3" json:"services,omitempty"`
 	SettingsViews []*ManifestSettingsView `protobuf:"bytes,24,rep,name=settings_views,json=settingsViews,proto3" json:"settings_views,omitempty"`
+	// setting_groups are the islands the settings page draws the settings in, in the order they are shown.
+	SettingGroups []*ManifestSettingGroup `protobuf:"bytes,28,rep,name=setting_groups,json=settingGroups,proto3" json:"setting_groups,omitempty"`
 	// contributes is what the plugin adds to the application, known before its
 	// frontend is loaded.
 	Contributes *ManifestContributes `protobuf:"bytes,26,opt,name=contributes,proto3" json:"contributes,omitempty"`
@@ -188,6 +190,13 @@ func (x *Manifest) GetServices() []string {
 func (x *Manifest) GetSettingsViews() []*ManifestSettingsView {
 	if x != nil {
 		return x.SettingsViews
+	}
+	return nil
+}
+
+func (x *Manifest) GetSettingGroups() []*ManifestSettingGroup {
+	if x != nil {
+		return x.SettingGroups
 	}
 	return nil
 }
@@ -2408,7 +2417,9 @@ type ManifestSetting struct {
 	Operations []string `protobuf:"bytes,22,rep,name=operations,proto3" json:"operations,omitempty"`
 	// discover makes a setting of type connections that holds no row use every connection whose type
 	// serves the operation, in the order of the connections, while the person leaves it on.
-	Discover      bool `protobuf:"varint,23,opt,name=discover,proto3" json:"discover,omitempty"`
+	Discover bool `protobuf:"varint,23,opt,name=discover,proto3" json:"discover,omitempty"`
+	// group is the id of the entry of the manifest's setting_groups the setting is drawn under. Empty draws it in the island without a heading.
+	Group         string `protobuf:"bytes,25,opt,name=group,proto3" json:"group,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2588,6 +2599,13 @@ func (x *ManifestSetting) GetDiscover() bool {
 		return x.Discover
 	}
 	return false
+}
+
+func (x *ManifestSetting) GetGroup() string {
+	if x != nil {
+		return x.Group
+	}
+	return ""
 }
 
 type ManifestNoteType struct {
@@ -3036,6 +3054,59 @@ func (x *ManifestReader) GetRank() string {
 	return ""
 }
 
+// ManifestSettingGroup is an island of the settings page, with the heading over it.
+type ManifestSettingGroup struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ManifestSettingGroup) Reset() {
+	*x = ManifestSettingGroup{}
+	mi := &file_numen_v1_manifest_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ManifestSettingGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ManifestSettingGroup) ProtoMessage() {}
+
+func (x *ManifestSettingGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_manifest_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ManifestSettingGroup.ProtoReflect.Descriptor instead.
+func (*ManifestSettingGroup) Descriptor() ([]byte, []int) {
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *ManifestSettingGroup) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ManifestSettingGroup) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
 type ManifestSettingsView struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -3046,7 +3117,7 @@ type ManifestSettingsView struct {
 
 func (x *ManifestSettingsView) Reset() {
 	*x = ManifestSettingsView{}
-	mi := &file_numen_v1_manifest_proto_msgTypes[34]
+	mi := &file_numen_v1_manifest_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3058,7 +3129,7 @@ func (x *ManifestSettingsView) String() string {
 func (*ManifestSettingsView) ProtoMessage() {}
 
 func (x *ManifestSettingsView) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_manifest_proto_msgTypes[34]
+	mi := &file_numen_v1_manifest_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3071,7 +3142,7 @@ func (x *ManifestSettingsView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ManifestSettingsView.ProtoReflect.Descriptor instead.
 func (*ManifestSettingsView) Descriptor() ([]byte, []int) {
-	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{34}
+	return file_numen_v1_manifest_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ManifestSettingsView) GetId() string {
@@ -3092,7 +3163,7 @@ var File_numen_v1_manifest_proto protoreflect.FileDescriptor
 
 const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/manifest.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\"\xc8\x05\n" +
+	"\x17numen/v1/manifest.proto\x12\bnumen.v1\x1a\x1cgoogle/protobuf/struct.proto\"\x8f\x06\n" +
 	"\bManifest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -3108,7 +3179,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\bfrontend\x18\x0e \x01(\v2\x1a.numen.v1.ManifestFrontendR\bfrontend\x125\n" +
 	"\bsettings\x18\x0f \x03(\v2\x19.numen.v1.ManifestSettingR\bsettings\x12\x1a\n" +
 	"\bservices\x18\x11 \x03(\tR\bservices\x12E\n" +
-	"\x0esettings_views\x18\x18 \x03(\v2\x1e.numen.v1.ManifestSettingsViewR\rsettingsViews\x12?\n" +
+	"\x0esettings_views\x18\x18 \x03(\v2\x1e.numen.v1.ManifestSettingsViewR\rsettingsViews\x12E\n" +
+	"\x0esetting_groups\x18\x1c \x03(\v2\x1e.numen.v1.ManifestSettingGroupR\rsettingGroups\x12?\n" +
 	"\vcontributes\x18\x1a \x01(\v2\x1d.numen.v1.ManifestContributesR\vcontributes\x12)\n" +
 	"\x11is_off_by_default\x18\x1b \x01(\bR\x0eisOffByDefault\"\x93\t\n" +
 	"\x13ManifestContributes\x126\n" +
@@ -3304,7 +3376,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01\"=\n" +
 	"\x11ManifestCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xbb\x05\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xd1\x05\n" +
 	"\x0fManifestSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -3330,7 +3402,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
 	"operations\x18\x16 \x03(\tR\n" +
 	"operations\x12\x1a\n" +
-	"\bdiscover\x18\x17 \x01(\bR\bdiscoverB\x06\n" +
+	"\bdiscover\x18\x17 \x01(\bR\bdiscover\x12\x14\n" +
+	"\x05group\x18\x19 \x01(\tR\x05groupB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
 	"\x05_stepJ\x04\b\x15\x10\x16\"\xd1\x01\n" +
@@ -3372,6 +3445,9 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
 	"\rcontent_types\x18\x02 \x03(\tR\fcontentTypes\x12\x12\n" +
 	"\x04rank\x18\x03 \x01(\tR\x04rank\"<\n" +
+	"\x14ManifestSettingGroup\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"<\n" +
 	"\x14ManifestSettingsView\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05titleBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
@@ -3388,7 +3464,7 @@ func file_numen_v1_manifest_proto_rawDescGZIP() []byte {
 	return file_numen_v1_manifest_proto_rawDescData
 }
 
-var file_numen_v1_manifest_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
+var file_numen_v1_manifest_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
 var file_numen_v1_manifest_proto_goTypes = []any{
 	(*Manifest)(nil),                  // 0: numen.v1.Manifest
 	(*ManifestContributes)(nil),       // 1: numen.v1.ManifestContributes
@@ -3424,64 +3500,66 @@ var file_numen_v1_manifest_proto_goTypes = []any{
 	(*ManifestCommandWarns)(nil),      // 31: numen.v1.ManifestCommandWarns
 	(*ManifestCommand)(nil),           // 32: numen.v1.ManifestCommand
 	(*ManifestReader)(nil),            // 33: numen.v1.ManifestReader
-	(*ManifestSettingsView)(nil),      // 34: numen.v1.ManifestSettingsView
-	nil,                               // 35: numen.v1.ManifestKeybinding.ValuesEntry
-	nil,                               // 36: numen.v1.ManifestSlotEntry.ValuesEntry
-	nil,                               // 37: numen.v1.ManifestDependency.MetadataEntry
-	nil,                               // 38: numen.v1.ManifestOptionsBy.OptionsEntry
-	(*structpb.Value)(nil),            // 39: google.protobuf.Value
-	(*structpb.ListValue)(nil),        // 40: google.protobuf.ListValue
+	(*ManifestSettingGroup)(nil),      // 34: numen.v1.ManifestSettingGroup
+	(*ManifestSettingsView)(nil),      // 35: numen.v1.ManifestSettingsView
+	nil,                               // 36: numen.v1.ManifestKeybinding.ValuesEntry
+	nil,                               // 37: numen.v1.ManifestSlotEntry.ValuesEntry
+	nil,                               // 38: numen.v1.ManifestDependency.MetadataEntry
+	nil,                               // 39: numen.v1.ManifestOptionsBy.OptionsEntry
+	(*structpb.Value)(nil),            // 40: google.protobuf.Value
+	(*structpb.ListValue)(nil),        // 41: google.protobuf.ListValue
 }
 var file_numen_v1_manifest_proto_depIdxs = []int32{
 	20, // 0: numen.v1.Manifest.dependencies:type_name -> numen.v1.ManifestDependency
 	22, // 1: numen.v1.Manifest.backend:type_name -> numen.v1.ManifestBackend
 	23, // 2: numen.v1.Manifest.frontend:type_name -> numen.v1.ManifestFrontend
 	27, // 3: numen.v1.Manifest.settings:type_name -> numen.v1.ManifestSetting
-	34, // 4: numen.v1.Manifest.settings_views:type_name -> numen.v1.ManifestSettingsView
-	1,  // 5: numen.v1.Manifest.contributes:type_name -> numen.v1.ManifestContributes
-	19, // 6: numen.v1.ManifestContributes.tab_kinds:type_name -> numen.v1.ManifestTabKind
-	18, // 7: numen.v1.ManifestContributes.themes:type_name -> numen.v1.ManifestTheme
-	33, // 8: numen.v1.ManifestContributes.readers:type_name -> numen.v1.ManifestReader
-	28, // 9: numen.v1.ManifestContributes.note_types:type_name -> numen.v1.ManifestNoteType
-	32, // 10: numen.v1.ManifestContributes.commands:type_name -> numen.v1.ManifestCommand
-	15, // 11: numen.v1.ManifestContributes.slots:type_name -> numen.v1.ManifestSlotEntry
-	14, // 12: numen.v1.ManifestContributes.slot_points:type_name -> numen.v1.ManifestSlotPoint
-	16, // 13: numen.v1.ManifestContributes.handlers:type_name -> numen.v1.ManifestHandler
-	17, // 14: numen.v1.ManifestContributes.triggers:type_name -> numen.v1.ManifestTrigger
-	12, // 15: numen.v1.ManifestContributes.text_kinds:type_name -> numen.v1.ManifestTextKind
-	13, // 16: numen.v1.ManifestContributes.listeners:type_name -> numen.v1.ManifestListener
-	9,  // 17: numen.v1.ManifestContributes.connection_types:type_name -> numen.v1.ManifestConnectionType
-	10, // 18: numen.v1.ManifestContributes.operations:type_name -> numen.v1.ManifestOperation
-	8,  // 19: numen.v1.ManifestContributes.keybindings:type_name -> numen.v1.ManifestKeybinding
-	7,  // 20: numen.v1.ManifestContributes.drop_handlers:type_name -> numen.v1.ManifestDropHandler
-	4,  // 21: numen.v1.ManifestContributes.search_functions:type_name -> numen.v1.ManifestSearchFunctions
-	3,  // 22: numen.v1.ManifestContributes.licenses:type_name -> numen.v1.ManifestLicense
-	2,  // 23: numen.v1.ManifestLicense.providers:type_name -> numen.v1.ManifestLicenseProvider
-	5,  // 24: numen.v1.ManifestSearchFunctions.functions:type_name -> numen.v1.ManifestSearchFunction
-	6,  // 25: numen.v1.ManifestSearchFunction.args:type_name -> numen.v1.ManifestSearchFunctionArg
-	35, // 26: numen.v1.ManifestKeybinding.values:type_name -> numen.v1.ManifestKeybinding.ValuesEntry
-	11, // 27: numen.v1.ManifestConnectionType.fields:type_name -> numen.v1.ManifestConnectionField
-	11, // 28: numen.v1.ManifestConnectionType.row_fields:type_name -> numen.v1.ManifestConnectionField
-	39, // 29: numen.v1.ManifestConnectionField.default:type_name -> google.protobuf.Value
-	40, // 30: numen.v1.ManifestConnectionField.options:type_name -> google.protobuf.ListValue
-	36, // 31: numen.v1.ManifestSlotEntry.values:type_name -> numen.v1.ManifestSlotEntry.ValuesEntry
-	37, // 32: numen.v1.ManifestDependency.metadata:type_name -> numen.v1.ManifestDependency.MetadataEntry
-	21, // 33: numen.v1.ManifestDependency.sources:type_name -> numen.v1.ManifestDependencySource
-	38, // 34: numen.v1.ManifestOptionsBy.options:type_name -> numen.v1.ManifestOptionsBy.OptionsEntry
-	39, // 35: numen.v1.ManifestSetting.default:type_name -> google.protobuf.Value
-	40, // 36: numen.v1.ManifestSetting.options:type_name -> google.protobuf.ListValue
-	25, // 37: numen.v1.ManifestSetting.options_by:type_name -> numen.v1.ManifestOptionsBy
-	26, // 38: numen.v1.ManifestSetting.when:type_name -> numen.v1.ManifestCondition
-	40, // 39: numen.v1.ManifestNoteType.headings:type_name -> google.protobuf.ListValue
-	29, // 40: numen.v1.ManifestCommand.arguments:type_name -> numen.v1.ManifestCommandArgument
-	30, // 41: numen.v1.ManifestCommand.answers:type_name -> numen.v1.ManifestCommandAnswers
-	31, // 42: numen.v1.ManifestCommand.warns:type_name -> numen.v1.ManifestCommandWarns
-	40, // 43: numen.v1.ManifestOptionsBy.OptionsEntry.value:type_name -> google.protobuf.ListValue
-	44, // [44:44] is the sub-list for method output_type
-	44, // [44:44] is the sub-list for method input_type
-	44, // [44:44] is the sub-list for extension type_name
-	44, // [44:44] is the sub-list for extension extendee
-	0,  // [0:44] is the sub-list for field type_name
+	35, // 4: numen.v1.Manifest.settings_views:type_name -> numen.v1.ManifestSettingsView
+	34, // 5: numen.v1.Manifest.setting_groups:type_name -> numen.v1.ManifestSettingGroup
+	1,  // 6: numen.v1.Manifest.contributes:type_name -> numen.v1.ManifestContributes
+	19, // 7: numen.v1.ManifestContributes.tab_kinds:type_name -> numen.v1.ManifestTabKind
+	18, // 8: numen.v1.ManifestContributes.themes:type_name -> numen.v1.ManifestTheme
+	33, // 9: numen.v1.ManifestContributes.readers:type_name -> numen.v1.ManifestReader
+	28, // 10: numen.v1.ManifestContributes.note_types:type_name -> numen.v1.ManifestNoteType
+	32, // 11: numen.v1.ManifestContributes.commands:type_name -> numen.v1.ManifestCommand
+	15, // 12: numen.v1.ManifestContributes.slots:type_name -> numen.v1.ManifestSlotEntry
+	14, // 13: numen.v1.ManifestContributes.slot_points:type_name -> numen.v1.ManifestSlotPoint
+	16, // 14: numen.v1.ManifestContributes.handlers:type_name -> numen.v1.ManifestHandler
+	17, // 15: numen.v1.ManifestContributes.triggers:type_name -> numen.v1.ManifestTrigger
+	12, // 16: numen.v1.ManifestContributes.text_kinds:type_name -> numen.v1.ManifestTextKind
+	13, // 17: numen.v1.ManifestContributes.listeners:type_name -> numen.v1.ManifestListener
+	9,  // 18: numen.v1.ManifestContributes.connection_types:type_name -> numen.v1.ManifestConnectionType
+	10, // 19: numen.v1.ManifestContributes.operations:type_name -> numen.v1.ManifestOperation
+	8,  // 20: numen.v1.ManifestContributes.keybindings:type_name -> numen.v1.ManifestKeybinding
+	7,  // 21: numen.v1.ManifestContributes.drop_handlers:type_name -> numen.v1.ManifestDropHandler
+	4,  // 22: numen.v1.ManifestContributes.search_functions:type_name -> numen.v1.ManifestSearchFunctions
+	3,  // 23: numen.v1.ManifestContributes.licenses:type_name -> numen.v1.ManifestLicense
+	2,  // 24: numen.v1.ManifestLicense.providers:type_name -> numen.v1.ManifestLicenseProvider
+	5,  // 25: numen.v1.ManifestSearchFunctions.functions:type_name -> numen.v1.ManifestSearchFunction
+	6,  // 26: numen.v1.ManifestSearchFunction.args:type_name -> numen.v1.ManifestSearchFunctionArg
+	36, // 27: numen.v1.ManifestKeybinding.values:type_name -> numen.v1.ManifestKeybinding.ValuesEntry
+	11, // 28: numen.v1.ManifestConnectionType.fields:type_name -> numen.v1.ManifestConnectionField
+	11, // 29: numen.v1.ManifestConnectionType.row_fields:type_name -> numen.v1.ManifestConnectionField
+	40, // 30: numen.v1.ManifestConnectionField.default:type_name -> google.protobuf.Value
+	41, // 31: numen.v1.ManifestConnectionField.options:type_name -> google.protobuf.ListValue
+	37, // 32: numen.v1.ManifestSlotEntry.values:type_name -> numen.v1.ManifestSlotEntry.ValuesEntry
+	38, // 33: numen.v1.ManifestDependency.metadata:type_name -> numen.v1.ManifestDependency.MetadataEntry
+	21, // 34: numen.v1.ManifestDependency.sources:type_name -> numen.v1.ManifestDependencySource
+	39, // 35: numen.v1.ManifestOptionsBy.options:type_name -> numen.v1.ManifestOptionsBy.OptionsEntry
+	40, // 36: numen.v1.ManifestSetting.default:type_name -> google.protobuf.Value
+	41, // 37: numen.v1.ManifestSetting.options:type_name -> google.protobuf.ListValue
+	25, // 38: numen.v1.ManifestSetting.options_by:type_name -> numen.v1.ManifestOptionsBy
+	26, // 39: numen.v1.ManifestSetting.when:type_name -> numen.v1.ManifestCondition
+	41, // 40: numen.v1.ManifestNoteType.headings:type_name -> google.protobuf.ListValue
+	29, // 41: numen.v1.ManifestCommand.arguments:type_name -> numen.v1.ManifestCommandArgument
+	30, // 42: numen.v1.ManifestCommand.answers:type_name -> numen.v1.ManifestCommandAnswers
+	31, // 43: numen.v1.ManifestCommand.warns:type_name -> numen.v1.ManifestCommandWarns
+	41, // 44: numen.v1.ManifestOptionsBy.OptionsEntry.value:type_name -> google.protobuf.ListValue
+	45, // [45:45] is the sub-list for method output_type
+	45, // [45:45] is the sub-list for method input_type
+	45, // [45:45] is the sub-list for extension type_name
+	45, // [45:45] is the sub-list for extension extendee
+	0,  // [0:45] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_manifest_proto_init() }
@@ -3504,7 +3582,7 @@ func file_numen_v1_manifest_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_manifest_proto_rawDesc), len(file_numen_v1_manifest_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   39,
+			NumMessages:   40,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
