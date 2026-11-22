@@ -4,30 +4,30 @@
   display: inline-flex;
   align-items: center;
   height: 100%;
-  padding-inline: calc(var(--numen-inset) / 4);
-  --popover-offset: 0.25rem;
-  --popover-width: 32rem;
-  --popover-max-height: 32rem;
-  --popover-edge-gap: 1rem;
-  --popover-pad: 0.5rem;
-  --popover-header-pad-inline: 0.75rem;
-  --close-size: 1.25rem;
-  --close-text: var(--numen-font-size);
-  --column-gap: 0.5rem;
-  --row-pad-block: 0.375rem;
-  --row-pad-inline: 0.5rem;
+  padding-inline: calc(var(--numen-chrome-inset) / 4);
+  --popover-offset: calc(0.25 * var(--numen-chrome-unit));
+  --popover-width: calc(32 * var(--numen-chrome-unit));
+  --popover-max-height: calc(32 * var(--numen-chrome-unit));
+  --popover-edge-gap: var(--numen-chrome-unit);
+  --popover-pad: calc(0.5 * var(--numen-chrome-unit));
+  --popover-header-pad-inline: calc(0.75 * var(--numen-chrome-unit));
+  --close-size: calc(1.25 * var(--numen-chrome-unit));
+  --close-text: var(--numen-chrome-text-2);
+  --column-gap: calc(0.5 * var(--numen-chrome-unit));
+  --row-pad-block: calc(0.375 * var(--numen-chrome-unit));
+  --row-pad-inline: calc(0.5 * var(--numen-chrome-unit));
   --countdown-width: 5em;
-  --tag-gap: 0.25rem;
-  --dot-size: 0.5rem;
-  --chevron-size: 0.875rem;
+  --tag-gap: calc(0.25 * var(--numen-chrome-unit));
+  --dot-size: calc(0.5 * var(--numen-chrome-unit));
+  --chevron-size: calc(0.875 * var(--numen-chrome-unit));
 }
 
 /* The chip: flat, with a ground and no border, as the other title bar chips. */
 .plugin-stats__trigger {
-  --chip-height: 1.25rem;
-  --chip-text: var(--numen-font-size);
-  --chip-pad: 0.5rem;
-  --chip-mark: 0.75rem;
+  --chip-height: calc(1.25 * var(--numen-chrome-unit));
+  --chip-text: var(--numen-chrome-text-2);
+  --chip-pad: calc(0.5 * var(--numen-chrome-unit));
+  --chip-mark: calc(0.75 * var(--numen-chrome-unit));
   display: inline-flex;
   align-items: center;
   gap: calc(var(--chip-pad) / 2);
@@ -36,7 +36,7 @@
   padding: 0 var(--chip-pad);
   background: var(--numen-surface);
   border: none;
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-chrome-radius);
   outline: none;
   color: var(--numen-ink);
   font: inherit;
@@ -75,7 +75,7 @@
   background: var(--numen-raised);
   color: var(--numen-ink);
   border: 1px solid var(--numen-panel-border);
-  border-radius: var(--numen-radius-popup);
+  border-radius: var(--numen-chrome-radius);
   box-shadow: var(--numen-panel-shadow);
   overflow: hidden;
   z-index: 50;
@@ -91,7 +91,7 @@
 }
 
 .plugin-popover__title {
-  font-size: var(--numen-text-2);
+  font-size: var(--numen-chrome-text-2);
   font-weight: 600;
   color: var(--numen-ink);
 }
@@ -105,7 +105,7 @@
   padding: 0;
   background: transparent;
   border: none;
-  border-radius: var(--numen-radius-tight);
+  border-radius: var(--numen-chrome-radius-tight);
   color: var(--numen-hushed);
   font-size: var(--close-text);
   cursor: pointer;
@@ -119,7 +119,7 @@
   margin: 0;
   padding: var(--popover-pad) var(--popover-header-pad-inline);
   color: var(--numen-hushed);
-  font-size: var(--numen-text-2);
+  font-size: var(--numen-chrome-text-2);
 }
 
 /*
@@ -130,7 +130,7 @@
   display: flex;
   flex-direction: column;
   /* The em of the time column is of this size. */
-  font-size: var(--numen-text-2);
+  font-size: var(--numen-chrome-text-2);
   margin: 0;
   padding: var(--popover-pad);
   list-style: none;
@@ -143,7 +143,7 @@
   column-gap: var(--column-gap);
   align-items: center;
   padding: var(--row-pad-block) var(--row-pad-inline);
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-chrome-radius);
   line-height: 1.25;
   white-space: nowrap;
   cursor: pointer;
@@ -186,7 +186,7 @@
 .plugin-popover__tag {
   flex: none;
   color: var(--numen-hushed);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-chrome-text-1);
 }
 
 .plugin-popover__health {
@@ -229,7 +229,7 @@
   column-gap: var(--column-gap);
   row-gap: calc(var(--row-pad-block) / 2);
   margin: var(--row-pad-block) 0 0 calc(var(--dot-size) + var(--column-gap));
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-chrome-text-1);
   white-space: normal;
 }
 

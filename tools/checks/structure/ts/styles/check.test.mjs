@@ -5,7 +5,7 @@ import path from "node:path";
 import { after, before, describe, it } from "node:test";
 import stylelint from "stylelint";
 import config from "../../../../../stylelint.config.mjs";
-import { isTokenFile, readDeclaredTokens } from "../../../../lint-layers/stylelint-plugin.mjs";
+import { findScaledTokens, isTokenFile, readDeclaredTokens } from "../../../../lint-layers/stylelint-plugin.mjs";
 import { REPO_ROOT } from "../../../lib/graph.mjs";
 
 describe("the style rules", () => {
@@ -94,35 +94,35 @@ describe("the rule on lengths", () => {
   });
 
   it("accepts a rem or em literal on a property, inside calc() and next to var()", async () => {
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { gap: 0.5rem; margin-inline-start: 1.5em; padding: var(--pad) 0.3rem; inline-size: calc(100% - 2rem); }"), []);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { gap: 0.5rem; margin-inline-start: 1.5em; padding: var(--pad) 0.3rem; inline-size: calc(100% - 2rem); }"), []);
   });
 
   it("rejects px on a property, a border wider than a hairline, and a unit that is neither px, rem nor em", async () => {
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { outline: 2px solid currentColor; }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { border-radius: 4px; }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { border: 2px solid currentColor; }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { outline: 1px solid currentColor; }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { max-inline-size: 60ch; }"), rejected);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { outline: 2px solid currentColor; }"), rejected);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { border-radius: 4px; }"), rejected);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { border: 2px solid currentColor; }"), rejected);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { outline: 1px solid currentColor; }"), rejected);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { max-inline-size: 60ch; }"), rejected);
   });
 
   it("accepts a custom property in rem or em, whatever the length", async () => {
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --pad: 0.5rem; --icon: 1.25em; padding: var(--pad); inline-size: calc(var(--icon) * 2); }"), []);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { --pad: 0.5rem; --icon: 1.25em; padding: var(--pad); inline-size: calc(var(--icon) * 2); }"), []);
     assert.deepEqual(await lint("apps/desktop/editor/src/Planted.vue", "<template><p /></template>\n<style scoped>\np { --max-width: 40rem; --w: 1000rem; --pad: 0.3rem; }\n</style>\n"), []);
   });
 
   it("rejects a custom property in another absolute unit", async () => {
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --w: 12pt; --h: 3cm; }"), [...rejected, ...rejected]);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { --w: 12pt; --h: 3cm; }"), [...rejected, ...rejected]);
   });
 
   it("rejects px in a custom property, even when a token file declares it", async () => {
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --gap: 4px; }"), rejected);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --hairline: 1px; }"), rejected);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { --gap: 4px; }"), rejected);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { --hairline: 1px; }"), rejected);
   });
 
   it("accepts a 1px hairline border, zero, proportions and a length inside url()", async () => {
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { border: 1px solid currentColor; border-block-end: 1px dashed currentColor; border-width: 1px; }"), []);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { margin: 0; padding: 0px; inline-size: 50%; block-size: 100vh; flex: 1 1 0%; line-height: 1.4; }"), []);
-    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { background: url(icon-16px.png); transition-duration: 150ms; }"), []);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { border: 1px solid currentColor; border-block-end: 1px dashed currentColor; border-width: 1px; }"), []);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { margin: 0; padding: 0px; inline-size: 50%; block-size: 100vh; flex: 1 1 0%; line-height: 1.4; }"), []);
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { background: url(icon-16px.png); transition-duration: 150ms; }"), []);
   });
 
   it("leaves a package outside the converted ones alone", async () => {
@@ -131,6 +131,47 @@ describe("the rule on lengths", () => {
 
   it("leaves the token files alone", async () => {
     assert.deepEqual(await lint("libs/ui/components/src/shared/tokens/tokens.css", ":root { --numen-hairline: 1px; --numen-radius: 4px; --numen-w: 1000rem; }"), []);
+  });
+});
+
+describe("the rule on the window chrome", () => {
+  const lint = async (file, code) => {
+    const { results } = await stylelint.lint({ code, codeFilename: path.join(REPO_ROOT, file), config, configBasedir: REPO_ROOT });
+    return results[0].warnings.map((one) => one.rule);
+  };
+  const rejected = ["numen/chrome-fixed-size"];
+
+  it("rejects rem, a scale and a token that follows the root font size in the title bar, the status bar and a slot widget", async () => {
+    assert.deepEqual(await lint("plugins/views-title-bar/frontend/ui/a.css", "a { --h: 2rem; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-status-bar/frontend/ui/a.css", "a { font-size: var(--numen-text-1); }"), rejected);
+    assert.deepEqual(await lint("plugins/tools-sync/frontend/a.css", "a { --h: calc(1.25rem / var(--numen-interface-scale)); }"), [...rejected, ...rejected]);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/ui/a.css", "a { border-radius: var(--numen-radius-tight); }"), rejected);
+  });
+
+  it("rejects rem in the style block of a slot widget", async () => {
+    const planted = "<template><p /></template>\n<style scoped>\np { --pad: 0.5rem; }\n</style>\n";
+    assert.deepEqual(await lint("plugins/tools-updater/frontend/ui/Planted.vue", planted), rejected);
+  });
+
+  it("accepts the chrome tokens, em and the colors", async () => {
+    const css = "a { --h: calc(1.25 * var(--numen-chrome-unit)); --gap: 0.5em; font-size: var(--numen-chrome-text-2); color: var(--numen-ink); border-radius: var(--numen-radius-pill); }";
+    assert.deepEqual(await lint("plugins/tools-sync/frontend/a.css", css), []);
+  });
+
+  it("leaves a plugin outside the chrome alone", async () => {
+    assert.deepEqual(await lint("plugins/notes/frontend/a.css", "a { --h: 2rem; font-size: var(--numen-text-1); }"), []);
+  });
+
+  it("finds a token that follows a scale through a rem length or another such token", () => {
+    const values = new Map([
+      ["--numen-a", ["0.5rem"]],
+      ["--numen-b", ["calc(var(--numen-a) / 2)"]],
+      ["--numen-c", ["16px"]],
+      ["--numen-d", ["var(--numen-c)"]],
+      ["--numen-e", ["calc(0.8125rem * var(--numen-text-scale))"]],
+    ]);
+    const scaled = findScaledTokens(values);
+    assert.deepEqual(["--numen-a", "--numen-b", "--numen-c", "--numen-d", "--numen-e"].map((one) => scaled.has(one)), [true, true, false, false, true]);
   });
 });
 

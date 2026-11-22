@@ -6,18 +6,18 @@
 /* The space after the system buttons keeps the first command off them. Like the system buttons, the inset
    keeps its size at every interface scale. */
 .mac-buttons-inset {
-  --inset-width: calc(5rem / var(--numen-interface-scale));
-  --inset-gap: calc(0.25rem / var(--numen-interface-scale));
+  --inset-width: calc(5 * var(--numen-chrome-unit));
+  --inset-gap: calc(0.25 * var(--numen-chrome-unit));
   flex: none;
   width: var(--inset-width);
   margin-inline-end: var(--inset-gap);
 }
 
 .window-controls {
-  --windows-button-width: calc(2.75rem / var(--numen-interface-scale));
-  --mac-gap: calc(0.5rem / var(--numen-interface-scale));
-  --mac-pad-inline: calc(0.75rem / var(--numen-interface-scale));
-  --mac-button-size: calc(0.75rem / var(--numen-interface-scale));
+  --windows-button-width: calc(2.75 * var(--numen-chrome-unit));
+  --mac-gap: calc(0.5 * var(--numen-chrome-unit));
+  --mac-pad-inline: calc(0.75 * var(--numen-chrome-unit));
+  --mac-button-size: calc(0.75 * var(--numen-chrome-unit));
   position: relative;
   top: var(--numen-window-edge);
   z-index: 1;

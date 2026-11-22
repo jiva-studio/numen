@@ -115,6 +115,19 @@
   font-size: calc(16px * var(--numen-interface-scale));
 }
 
+/* The window chrome: the title bar, the status bar and every widget a plugin puts in their slots,
+   with the popovers those widgets open. Like the native window buttons beside it, the chrome keeps
+   its size at every interface scale and every text scale, so it is set in these lengths and not in
+   `rem` or a token that follows the root font size. */
+:where(:root) {
+  --numen-chrome-unit: 16px;
+  --numen-chrome-text-1: 10px;
+  --numen-chrome-text-2: 13px;
+  --numen-chrome-inset: 8px;
+  --numen-chrome-radius: 6px;
+  --numen-chrome-radius-tight: 3px;
+}
+
 :where(:root) {
   --numen-font-sans:
     ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans',
