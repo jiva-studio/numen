@@ -29,6 +29,7 @@ type Supervisors struct {
 	onDrop     func(pluginID string)
 	idleLimits map[string]time.Duration
 	stopIdle   func(pluginID string)
+	onExit     func(pluginID string, exited <-chan struct{})
 	watchers   []chan struct{}
 }
 
@@ -314,6 +315,7 @@ func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachmen
 	sup.SetOnExit(func() {
 		s.Drop(pluginID)
 		onExit()
+		s.notifyProcessExit(pluginID, sup)
 	})
 	sup.Acquire(attach.Lease, now)
 	s.runs[pluginID] = &processRun{endpoint: endpoint, listenerPorts: listeners, startTime: now, isReleased: false}
@@ -369,5 +371,23 @@ func notifyLocked(s *Supervisors) {
 		case watcher <- struct{}{}:
 		default:
 		}
+	}
+}
+
+// SetOnProcessExit sets what is called when a process that was up exits, after its endpoint is
+// forgotten. exited is closed once the supervisor has reaped the process and gone dormant. A process
+// that ends before its handshake is not reported.
+func (s *Supervisors) SetOnProcessExit(fn func(pluginID string, exited <-chan struct{})) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.onExit = fn
+}
+
+func (s *Supervisors) notifyProcessExit(pluginID string, sup *lifecycle.Supervisor) {
+	s.mu.RLock()
+	fn := s.onExit
+	s.mu.RUnlock()
+	if fn != nil {
+		fn(pluginID, sup.GetExitSignal())
 	}
 }

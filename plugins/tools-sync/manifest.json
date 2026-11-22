@@ -22,5 +22,19 @@
     ],
     "slots": [{ "slot": "titleBar.status", "view": "sync", "title": "Sync status", "order": 5 }]
   },
+  "permissions": ["identity"],
+  "backend": {
+    "entrypoint": "bin/tools-sync",
+    "lifecycle": "persistent"
+  },
+  "settings": [
+    {
+      "key": "server",
+      "type": "string",
+      "title": "Sync server",
+      "description": "Address of the server this device signs in to",
+      "default": "https://sync.numen.md"
+    }
+  ],
   "frontend": {}
 }

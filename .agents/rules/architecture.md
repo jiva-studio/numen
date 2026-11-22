@@ -34,7 +34,7 @@ numen/
 │   │   ├── loader/               # TypeScript: the loader of plugin frontends
 │   │   ├── manager/              # Vue: the plugin list and the plugin page, data in by props and results out by events
 │   │   └── catalog/              # Go: the plugin catalog, its manifests and their sources
-│   ├── shared/                   # Go libraries that plugins of more than one family import and that do not depend on numen: onnx (the ONNX Runtime layer), tokenizer (Hugging Face tokenizers), identity (keys and the device chain, shared with the sync server)
+│   ├── shared/                   # Go libraries that plugins of more than one family import and that do not depend on numen: onnx (the ONNX Runtime layer), tokenizer (Hugging Face tokenizers), identity (keys and the device chain, shared with the sync server), syncprotocol (the sign-in protocol of Numen Sync, shared with the sync server)
 │   └── ui/                       # Vue 3: `components` holds components that do not use the domain, `workbench` the window chrome
 ├── plugins/                      # one folder per plugin: manifest.json, backend/ (Go), frontend/ (Vue)
 └── apps/

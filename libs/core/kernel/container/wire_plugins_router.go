@@ -73,6 +73,7 @@ var errSafeMode = errors.New("numen is running in safe mode")
 // shutdown of a plugin.
 func NewPluginHost(indexPath string, res *Resources, report func(error), target string, dirs ...string) (*PluginExecution, *PluginPreferences, *PluginEndpoints, error) {
 	management, supervision := NewPluginRoles(GetClock(res), target, dirs...)
+	supervision.Account = openAccount(res)
 	err := InitializePluginRoles(indexPath, res, management, supervision, report)
 	exec, prefs, endpoints := AdaptPluginHost(management, supervision)
 	return exec, prefs, endpoints, err

@@ -24,6 +24,7 @@ func newAbsentExecution(reason plugindomain.UnavailableReason, cause error) *Plu
 			PluginFailures: runtime, ConfigWatcher: runtime, ClientLookup: transport.NewClientLookup(nil),
 		},
 		Watch:     PluginWatch{pluginShutdown: settings, dependencyReporter: settings, ContentTypeTable: contenttype.Open()},
+		Keeper:    settings,
 		Health:    pluginhealth.NewItems(),
 		Processes: absent.Processes{},
 	}

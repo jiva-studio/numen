@@ -1,6 +1,8 @@
 package container
 
 import (
+	"context"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
@@ -99,7 +101,11 @@ type PluginExecution struct {
 	Watch     PluginWatch
 	Health    *pluginhealth.Items
 	Processes pluginprocess.Processes
+	Keeper    pluginKeeper
 }
+
+// pluginKeeper starts the plugins that stay running.
+type pluginKeeper interface{ KeepAll(ctx context.Context) }
 
 // PluginPreferences applies settings and storage locations to the installation's plugins.
 type PluginPreferences struct {
@@ -154,6 +160,7 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 		},
 		Health:    supervision.Health,
 		Processes: supervision.RunningProcesses,
+		Keeper:    management.Keeper,
 	}
 	prefs := &PluginPreferences{
 		Configuration: pluginConfiguration{
@@ -164,7 +171,7 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 		},
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
 			Values: management.Settings, Stopper: management.Teardown, Failures: supervision.Failures, Listeners: management.Listeners, Push: management.Config,
-			Health: supervision.Health,
+			Health: supervision.Health, Keeper: management.Keeper,
 		}).Execute,
 		Views: pluginViews{
 			Types: types, Operations: types,
@@ -201,6 +208,7 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 	tools := toolbridge.NewCatalog(toolHost, toolHost, processes.Storage, revision, processes.Clock, toolbridge.GetErrorOutput())
 	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
 		Dependencies: plugindependency.NewFetch(processes.Services.GetDependencies),
+		Account:      processes.Account,
 		Identity:     management.Activation, Leases: management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
 		Lent: services, CallCancels: searchcancel.NewSearches(processes.Clock),
 		Tools: func() hostendpoint.PluginTools {

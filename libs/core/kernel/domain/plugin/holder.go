@@ -19,6 +19,7 @@ const (
 	WhoSettings    = "Settings"
 	WhoConnections = "Connections"
 	WhoPluginStart = "Plugin start"
+	WhoPersistent  = "Persistent"
 )
 
 // Holder is who holds a lease on a plugin process and why. Who names a part of Numen. PluginID and

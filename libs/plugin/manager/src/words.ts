@@ -14,6 +14,7 @@ const PERMISSION_MEANINGS: Readonly<Record<string, string>> = {
   'window:focus': 'Bring a note or a file into view, and list the open tabs.',
   'plugins:read': 'List the running plugins and their health.',
   'logs:read': 'Read the application log.',
+  identity: 'Use the identity of this device to sign in to Numen services.',
 }
 
 const CONNECTION_PERMISSION = 'connections:use:'

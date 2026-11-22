@@ -416,6 +416,10 @@ message ManifestBackend {
   // idle_stop_seconds is how long the process may run without a lease before the host stops it,
   // from 30 to 3600 seconds. Absent is 180.
   int32 idle_stop_seconds = 3;
+  // lifecycle is "onDemand", where the host starts the process when something uses the plugin and stops it
+  // after the idle limit, or "persistent", where the host keeps it running while the plugin is enabled and
+  // starts it again when it exits. Absent is "onDemand". A persistent backend sets no idle_stop_seconds.
+  string lifecycle = 4;
 }
 
 // ManifestFrontend declares that the plugin has a frontend. The bundle is dist/index.js and the

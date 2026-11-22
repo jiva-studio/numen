@@ -19,9 +19,9 @@ func NewServer(address string, callers Callers) *Server {
 	return &Server{address: address, callers: callers}
 }
 
-// Open starts serving when the host lends the completer, the vault, the search, the queue of work or
-// the dependencies, and returns the port. It returns port 0 while the host lends none of them, and
-// the port it already serves on when it is open.
+// Open starts serving when the host lends the completer, the vault, the search, the queue of work, the
+// dependencies or the identity of this device, and returns the port. It returns port 0 while the host
+// lends none of them, and the port it already serves on when it is open.
 func (s *Server) Open(ctx context.Context) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -42,7 +42,7 @@ func (s *Server) Open(ctx context.Context) (int, error) {
 func (s *Server) hasServices() bool {
 	return s.callers.Lent.GetModelCalls() != nil || s.callers.Lent.GetPluginVault() != nil ||
 		s.callers.Lent.GetPluginWork() != nil ||
-		s.callers.Lent.GetPluginSearch() != nil
+		s.callers.Lent.GetPluginSearch() != nil || s.callers.Account != nil
 }
 
 // GetPort returns the port the server serves on, or 0 while it is not open.

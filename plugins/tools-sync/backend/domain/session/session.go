@@ -1,0 +1,52 @@
+// Package session is the sign-in of this device to the sync server: the identity it signs in with, the
+// challenge it signs, and the session the server gives back.
+package session
+
+import (
+	"errors"
+	"time"
+)
+
+var (
+	// ErrNoIdentity means this device holds no identity yet.
+	ErrNoIdentity = errors.New("no identity on this device")
+	// ErrUpdateRequired means the server speaks another protocol version.
+	ErrUpdateRequired = errors.New("the sync server needs another version of Numen")
+	// ErrUnauthenticated means the server refused the sign-in.
+	ErrUnauthenticated = errors.New("the sync server refused the sign-in")
+	// ErrUnreachable means the server did not answer.
+	ErrUnreachable = errors.New("the sync server could not be reached")
+)
+
+// Identity is what is public of the identity of this device.
+type Identity struct {
+	AccountFingerprint string
+	DeviceSignKey      []byte
+	Chain              []byte
+}
+
+// Challenge is what the server asks this device to sign: its id, and the bytes to sign.
+type Challenge struct {
+	ID      []byte
+	Message []byte
+}
+
+// Proof is what the server checks to give a session.
+type Proof struct {
+	ChallengeID   []byte
+	DeviceSignKey []byte
+	Signature     []byte
+	Chain         []byte
+}
+
+// Session is a session of the server. It lives in memory only and prints as [session], so its token
+// reaches no log.
+type Session struct {
+	Token              string
+	ExpiresAt          time.Time
+	AccountFingerprint string
+}
+
+func (Session) String() string { return "[session]" }
+
+func (s Session) GoString() string { return s.String() }

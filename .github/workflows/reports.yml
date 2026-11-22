@@ -129,6 +129,9 @@ jobs:
           cat "$RUNNER_TEMP/plugins.log"
           if [ "$status" -eq 0 ]; then
             (cd plugins/connections-llm && go build -o bin/fakeopenai ./backend/cmd/fakeopenai) || status=$?
+            if [ "$status" -eq 0 ]; then
+              (cd plugins/tools-sync && go build -o bin/fakesync ./backend/cmd/fakesync) || status=$?
+            fi
           fi
           exit "$status"
 

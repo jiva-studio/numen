@@ -207,6 +207,21 @@ jobs:
             exit 1
           }
 
+      # The messages of the sign-in of Numen Sync, which the plugin and the sync server both import.
+      - name: Lint the sync protocol schema and verify the generated code
+        if: ${{ !cancelled() && inputs.protocol }}
+        working-directory: libs/shared/syncprotocol
+        run: |
+          set -euo pipefail
+          go install tool
+          buf lint
+          buf generate
+          git add -AN -- gen
+          git diff --exit-code -- gen || {
+            echo "::error::the schema changed and the generated code was not regenerated — run: make generate"
+            exit 1
+          }
+
       - if: ${{ !cancelled() }}
         uses: ./.github/actions/save-go-cache
         with:

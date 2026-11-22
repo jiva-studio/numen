@@ -5,6 +5,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/identityport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
@@ -23,6 +24,7 @@ type PluginManagement struct {
 	ContentTypes *plugin.ContentTypes
 	Events       *plugin.Events
 	Mode         *plugin.Mode
+	Keeper       *plugin.Keeper
 }
 
 // PluginSupervision owns the process, storage and service dependencies of the plugin runtime.
@@ -36,6 +38,7 @@ type PluginSupervision struct {
 	Storage          *storage.Storage
 	Health           *pluginhealth.Items
 	Clock            machineport.Clock
+	Account          identityport.Operations
 }
 
 // NewPluginRoles shares one supervisor set and activation mode across discovery, execution and teardown.
@@ -67,6 +70,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 	listeners := plugin.NewListeners(plugin.ListenersDeps{
 		Set: set, Mode: mode, Supervisors: sups, Activation: activation, Failures: failures, Clock: clock, Report: errs.Report,
 	})
+	keeper := plugin.NewKeeper(plugin.KeeperDeps{Set: set, Mode: mode, Supervisors: sups, Activation: activation})
 	processHost := &PluginSupervision{
 		RunningProcesses: supervision.NewRunningProcesses(sups), Processes: processes, Failures: failures, Services: services,
 		Endpoint: endpoint, Dependencies: dependencies, Storage: files, Health: health, Clock: clock,
@@ -90,6 +94,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 		ContentTypes: plugin.NewContentTypes(plugin.ContentTypesDeps{Set: set, Lookup: readers}),
 		Events:       events,
 		Mode:         mode,
+		Keeper:       keeper,
 	}, processHost
 }
 

@@ -25,3 +25,12 @@ type Identity struct {
 	DeviceName         string
 	DeviceAddedAt      time.Time
 }
+
+// Public is what the identity of this device shows to a plugin and to a server: fingerprints, the
+// public signing key of the device and the signed device chain. It holds no secret.
+type Public struct {
+	AccountFingerprint string
+	DeviceFingerprint  string
+	DeviceSignKey      []byte
+	Chain              []byte
+}

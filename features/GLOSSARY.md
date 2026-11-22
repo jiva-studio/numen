@@ -562,6 +562,13 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Texts: page "Identity and licenses" ("Account, this device and license keys"); "Recovery words", "Account fingerprint", "This device"; "words that are not valid" (editor/src/pages/settings/words.ts, libs/plugin/manager/src/words.ts).
 - Not: not a login and not a password. The words are not kept anywhere after they are shown; a lost identity without its words cannot be restored. A license key is not part of the identity.
 
+### sync server and session
+
+- Is: The sync server is the program plugin "Numen Sync" signs in to with the identity of this device; its address is the setting "Sync server" of the plugin. A session is what the server gives a device that signed in. Numen Sync keeps it in memory, signs in again before it ends, and signs in again at once when the server ends it.
+- States: signed in; not signed in, with the plugin warning about why.
+- Texts: "No identity on this device", "Could not reach the sync server", "Update Numen", "Could not sign in" (plugins/tools-sync/backend/usecase/session/keep.go).
+- Not: not a login and not a password. A session is not the identity, and the server never sees the recovery words or a key of the identity.
+
 ### row
 
 - Is: One line of the setting "Connection" or "Connections" of a plugin: a connection and a model. The plugin tries the rows in order and uses the next row when one fails.

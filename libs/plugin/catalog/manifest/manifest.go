@@ -49,6 +49,10 @@ const (
 	// the database, the windows and the plugins.
 	PermissionLogsRead = "logs:read"
 
+	// PermissionIdentity allows asking the host to sign with the key of this device, under the id of the plugin,
+	// and reading what is public of the identity of this device. The plugin never holds a secret key.
+	PermissionIdentity = "identity"
+
 	// PermissionConnectionsUse is the start of the permission connections:use:<operation>, which allows
 	// calling the operation through every connection that serves it, and listing those connections and the
 	// values of their row fields. No setting of rows of the plugin lists the operation.
@@ -65,7 +69,7 @@ func PluginPermissions() []string {
 	return []string{
 		PermissionVaultRead, PermissionVaultWrite, PermissionVaultManage, PermissionLinkOpen,
 		PermissionIndexRead, PermissionSearchPolicy, PermissionWindowFocus, PermissionPluginsRead,
-		PermissionLogsRead,
+		PermissionLogsRead, PermissionIdentity,
 	}
 }
 
@@ -200,10 +204,33 @@ func listSettingTypes() []string {
 }
 
 // Backend describes the server-side executable of a plugin. A zero IdleStopSeconds takes the idle limit
-// of the host.
+// of the host. An empty Lifecycle is LifecycleOnDemand.
 type Backend struct {
 	Entrypoint      string
 	IdleStopSeconds int
+	Lifecycle       string
+}
+
+const (
+	// LifecycleOnDemand starts the process when something uses the plugin and stops it after the idle limit.
+	LifecycleOnDemand = "onDemand"
+	// LifecyclePersistent keeps the process running while the plugin is enabled.
+	LifecyclePersistent = "persistent"
+)
+
+// IsPersistent reports whether the host keeps the process running.
+func (b Backend) IsPersistent() bool {
+	return b.Lifecycle == LifecyclePersistent
+}
+
+func (b Backend) listLifecycleIssues() []error {
+	switch {
+	case b.Lifecycle != "" && b.Lifecycle != LifecycleOnDemand && b.Lifecycle != LifecyclePersistent:
+		return []error{fmt.Errorf("%w: unknown lifecycle %q", ErrInvalidBackend, b.Lifecycle)}
+	case b.IsPersistent() && b.IdleStopSeconds != 0:
+		return []error{fmt.Errorf("%w: a persistent backend has no idle limit", ErrInvalidBackend)}
+	}
+	return nil
 }
 
 const (
@@ -299,6 +326,7 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listEntrypointIssues()...)
 	issues = append(issues, m.listBackendlessIssues()...)
 	issues = append(issues, m.Backend.listIdleStopIssues()...)
+	issues = append(issues, m.Backend.listLifecycleIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
 	issues = append(issues, m.listDependencyIssues()...)
 	issues = append(issues, m.listServiceIssues()...)
