@@ -8,6 +8,7 @@ import {
   type Disposable,
   type HostServices,
   type PluginContext,
+  type VaultNotes,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import { todosApi, type TodosApi } from './api/wire'
@@ -15,8 +16,9 @@ import { createRefreshRelay } from './model/createRefreshRelay'
 import type { Timer } from './model/timer'
 import { createFieldCache } from './model/createFieldCache'
 import { freshTaskLine } from './model/freshTaskLine'
+import { proseLine } from './model/proseLine'
 import { useTaskFeed, type TaskFeed } from './model/useTaskFeed'
-import type { Filter } from './types'
+import type { Filter, Task } from './types'
 import { TodosStatus } from './status'
 import { createTaskEditorExtension, TASKS_EXTENSION } from './editor'
 
@@ -37,12 +39,12 @@ const browserParts: TodosParts = {
   },
 }
 
-/** The line the note holds the task on now; the stored line where the note cannot be read again. */
-async function currentLine(
+/** The tasks of the note as it is now, and the stored ones where the note cannot be read again. */
+async function currentTasks(
   api: TodosApi,
   today: string,
   target: { path: string; line: number; raw: string },
-): Promise<number> {
+): Promise<readonly Task[]> {
   try {
     await api.refreshIndex([target.path], [])
     const filter: Filter = {
@@ -57,13 +59,37 @@ async function currentLine(
       text: '',
     }
     const result = await api.listTasks(today, filter, 2000)
-    return result.ok ? freshTaskLine(result.value.tasks, target) : target.line
+    return result.ok ? result.value.tasks : []
   } catch {
-    return target.line
+    return []
   }
 }
 
-function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost) {
+/** The 1-based line the editor of the note counts the task on: from the prose, below the frontmatter. */
+async function editorLine(
+  api: TodosApi,
+  notes: VaultNotes | undefined,
+  today: string,
+  target: { path: string; line: number; raw: string },
+): Promise<number> {
+  const tasks = await currentTasks(api, today, target)
+  const line = freshTaskLine(tasks, target)
+  if (!notes) return line
+  try {
+    const { body, error } = await notes.read(target.path)
+    if (error) return line
+    return proseLine(body, tasks, { line, raw: target.raw })
+  } catch {
+    return line
+  }
+}
+
+function createTodosView(
+  feed: TaskFeed,
+  api: TodosApi,
+  workspace: WorkspaceHost,
+  notes: VaultNotes | undefined,
+) {
   return defineComponent({
     name: 'TodosView',
     setup: () => () =>
@@ -72,7 +98,7 @@ function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost
         api,
         getToday: () => workspace.window.getToday(),
         onOpen: async (target: { path: string; line: number; raw: string }) => {
-          const line = await currentLine(api, workspace.window.getToday(), target)
+          const line = await editorLine(api, notes, workspace.window.getToday(), target)
           return workspace.files.open(target.path, { line: line - 1 })
         },
         onShowError: (message: string) => workspace.messages.showError(message),
@@ -104,7 +130,7 @@ export const activate = (
 
   plugin.register.slotView({
     id: TODOS_VIEW,
-    component: createTodosView(feed, parts.api, workspace),
+    component: createTodosView(feed, parts.api, workspace, host.vault.notes),
   })
   const editorExtension = plugin.register.editorExtension?.bind(plugin.register)
   if (!editorExtension) {

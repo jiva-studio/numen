@@ -6,7 +6,7 @@ import {
   type CompletionSource,
 } from '@codemirror/autocomplete'
 import { EditorState, type Extension } from '@codemirror/state'
-import type { WorkspaceHost } from '@numen/plugin-sdk'
+import type { VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
 import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import {
   createFakeApi,
@@ -22,7 +22,7 @@ import { activate, TODOS_VIEW } from './index'
 
 const TODAY = '2026-11-14'
 
-const setup = (init: Pick<FakeInit, 'setTaskDone'> = {}) => {
+const setup = (init: Pick<FakeInit, 'setTaskDone'> = {}, notes?: VaultNotes) => {
   const fake = createFakeApi({
     ...init,
     tasks: {
@@ -44,7 +44,7 @@ const setup = (init: Pick<FakeInit, 'setTaskDone'> = {}) => {
     messages: { showError },
   } as unknown as WorkspaceHost
   const context = createMockPluginContext({ pluginId: 'md.numen.todos' })
-  const host = createMockHostServices({ workspace })
+  const host = createMockHostServices({ workspace, ...(notes ? { notes } : {}) })
   activate(context, host, { api: fake.api, timer: clock.timer })
   return { context, host, fake, clock, open, showError }
 }
@@ -110,6 +110,7 @@ describe('the todos frontend', () => {
 
     const text = view.findAll('li button').find((one) => one.text() === 'fix the tap')
     await text?.trigger('click')
+    await settle()
 
     expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 6 })
   })
@@ -152,6 +153,15 @@ describe('the todos frontend', () => {
     expect(fake.calls.refreshIndex).toContainEqual({ paths: ['Projects/Home.md'], renamed: [] })
     expect(fake.calls.listTasks.at(-1)?.filter.path).toBe('Projects/Home.md')
     expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 10 })
+  })
+
+  it('opens on the line of the prose, which is counted below the frontmatter of the note', async () => {
+    const body = '# Heading\n\nprose\n- [ ] fix the tap\nafter'
+    const notes = { read: async () => ({ body }) } as unknown as VaultNotes
+    const { context, fake, open } = setup({}, notes)
+    await clickTask(fake, context)
+
+    expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 3 })
   })
 
   it('opens on the stored line where the note cannot be read again', async () => {

@@ -324,6 +324,33 @@ describe('what a parent can ask for', () => {
     expect(view.state.selection.main.head).toBe(view.state.doc.line(3).from)
   })
 
+  const NOTE = '---\ntitle: demo\n---\n# Heading\n\nprose\n- [ ] the task\nafter'
+
+  it('is the line of the file, with the frontmatter counted', () => {
+    const { view, exposed } = editor({ modelValue: NOTE })
+
+    expect(exposed.reveal(6)).toBe(true)
+    expect(view.state.selection.main.head).toBe(view.state.doc.line(7).from)
+    expect(view.state.doc.lineAt(view.state.selection.main.head).text).toBe('- [ ] the task')
+  })
+
+  it('moves a caret that was elsewhere onto the line', () => {
+    const { view, exposed } = editor({ modelValue: NOTE })
+    setCaret(view, 8, 3)
+
+    expect(exposed.reveal(6)).toBe(true)
+    expect(view.state.selection.main.head).toBe(view.state.doc.line(7).from)
+  })
+
+  it('keeps the line when the text is set again right after', async () => {
+    const { wrapper, view, exposed } = editor({ modelValue: NOTE })
+
+    exposed.reveal(6)
+    await wrapper.setProps({ modelValue: `${NOTE}\nmore` })
+
+    expect(view.state.doc.lineAt(view.state.selection.main.head).number).toBe(7)
+  })
+
   it('is rejected by an editor holding no text, which has no line to give', () => {
     const { exposed } = editor({ modelValue: '' })
     expect(exposed.reveal(2)).toBe(false)
