@@ -20,7 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/todos/backend/api"
 	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
-	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
+	"github.com/jiva-studio/numen/plugins/todos/backend/testsupport"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
 )
@@ -48,7 +48,7 @@ func startWithWriter(t *testing.T, notes map[string]string, getWriter func(*host
 	if getWriter != nil {
 		writer = getWriter(vault)
 	}
-	tasks := index.New(vault, vault, vault, todo.ParseNote)
+	tasks := testsupport.NewIndex(vault, vault, vault)
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}

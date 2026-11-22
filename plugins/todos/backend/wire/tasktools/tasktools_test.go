@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
+	"github.com/jiva-studio/numen/plugins/todos/backend/testsupport"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/edit"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
@@ -46,12 +47,17 @@ func newSession(t *testing.T) *session {
 	vault := hosttest.New("notes")
 	vault.File("Home.md", homeNote)
 	vault.File("work/Plan.md", "- [ ] ship release +work due:2026-11-20\n")
-	tasks := index.NewForNotes(vault, vault, vault)
+	tasks := testsupport.NewIndex(vault, vault, vault)
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	lock := ports.NewWriteLock()
-	registry, err := tasktools.New(oneVault{scope: tasktools.Scope{Tasks: tasks, Editor: edit.New(vault, vault, tasks, lock), Completer: complete.New(vault, vault, tasks, lock)}}, fixedClock{}).Registry()
+	scope := tasktools.Scope{
+		Tasks:     tasks,
+		Editor:    edit.New(vault, vault, tasks, lock),
+		Completer: complete.New(vault, vault, tasks, lock),
+	}
+	registry, err := tasktools.New(oneVault{scope: scope}, fixedClock{}).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}

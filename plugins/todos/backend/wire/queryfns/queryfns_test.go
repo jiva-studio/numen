@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchfunction/searchfunctiontest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
+	"github.com/jiva-studio/numen/plugins/todos/backend/testsupport"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
 	"github.com/jiva-studio/numen/plugins/todos/backend/wire/queryfns"
 )
@@ -54,7 +55,7 @@ func newClient(t *testing.T) *searchfunctiontest.Client {
 	for path, content := range getNotes() {
 		vault.File(path, content)
 	}
-	tasks := index.NewForNotes(vault, vault, vault)
+	tasks := testsupport.NewIndex(vault, vault, vault)
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +181,7 @@ func TestInvalidArgumentsFailTheQueryWithAMessage(t *testing.T) {
 
 func TestAnAnswerBeforeTheFirstScanCarriesAWarning(t *testing.T) {
 	vault := hosttest.New("notes")
-	registry, err := queryfns.New(oneVault{tasks: index.NewForNotes(vault, vault, vault)}, fixedClock{})
+	registry, err := queryfns.New(oneVault{tasks: testsupport.NewIndex(vault, vault, vault)}, fixedClock{})
 	if err != nil {
 		t.Fatal(err)
 	}

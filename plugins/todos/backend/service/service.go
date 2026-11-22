@@ -12,13 +12,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/todos/backend/api"
-	"github.com/jiva-studio/numen/plugins/todos/backend/filter"
 	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/clock"
 	hostadapter "github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/host"
 	logadapter "github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/log"
 	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/snapshot"
 	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
-	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/edit"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
@@ -50,7 +48,7 @@ func getSummary(tasks *index.Index) func(context.Context, api.GetSummaryRequest)
 
 func listTasks(tasks *index.Index) func(context.Context, api.ListTasksRequest) (api.ListTasksResponse, error) {
 	return func(_ context.Context, req api.ListTasksRequest) (api.ListTasksResponse, error) {
-		listing := tasks.List(req.Today, todos.DecodeFilter(req.Filter), filter.ClampLimit(req.Limit, defaultLimit, maxLimit))
+		listing := tasks.List(req.Today, todos.DecodeFilter(req.Filter), todos.ClampLimit(req.Limit, defaultLimit, maxLimit))
 		encoded := make([]api.Task, 0, len(listing.Tasks))
 		for _, task := range listing.Tasks {
 			encoded = append(encoded, todos.EncodeTask(task))
@@ -177,7 +175,7 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	log := logadapter.Slog{}
-	tasks := index.NewPersistent(vault, vault, vault, todo.ParseNote, index.Persistence{
+	tasks := todos.NewIndex(vault, vault, vault, index.Persistence{
 		Snapshots: snapshot.New(""), Feed: vault, After: index.SystemAfter, Cursors: snapshot.NewCursorStore, Log: log,
 	})
 	lock := ports.NewWriteLock()

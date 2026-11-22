@@ -4,6 +4,7 @@ package todos
 import (
 	"github.com/jiva-studio/numen/plugins/todos/backend/api"
 	"github.com/jiva-studio/numen/plugins/todos/backend/filter"
+	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
 	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
@@ -75,4 +76,15 @@ func encodeCounts(counts []index.FieldCount) []api.FieldCount {
 		encoded = append(encoded, api.FieldCount{Name: one.Name, Count: one.Count})
 	}
 	return encoded
+}
+
+// ClampLimit returns the count a listing asked for, the default when it asked for none and at most max.
+func ClampLimit(asked, defaultLimit, maxLimit int) int {
+	return filter.ClampLimit(asked, defaultLimit, maxLimit)
+}
+
+// NewIndex returns an empty index of the notes the reader and the lister show, read with todo.ParseNote
+// and kept as the persistence describes.
+func NewIndex(files ports.FileReader, notes ports.NoteLister, front ports.Frontmatter, p index.Persistence) *index.Index {
+	return index.NewPersistent(files, notes, front, todo.ParseNote, p)
 }

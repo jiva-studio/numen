@@ -93,11 +93,6 @@ func build(files ports.FileReader, notes ports.NoteLister, front ports.Frontmatt
 	}
 }
 
-// NewForNotes returns an empty index that reads its notes with todo.ParseNote.
-func NewForNotes(files ports.FileReader, notes ports.NoteLister, front ports.Frontmatter) *Index {
-	return New(files, notes, front, todo.ParseNote)
-}
-
 // Scan reads every note and marks the index ready when the last is read.
 func (i *Index) Scan(ctx context.Context) error {
 	paths, err := i.listPaths(ctx)

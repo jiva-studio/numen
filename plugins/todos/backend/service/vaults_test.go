@@ -16,9 +16,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
+	"github.com/jiva-studio/numen/plugins/todos/backend/testsupport"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/edit"
-	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
 	"github.com/jiva-studio/numen/plugins/todos/backend/wire/queryfns"
 	"github.com/jiva-studio/numen/plugins/todos/backend/wire/tasktools"
 )
@@ -45,7 +45,7 @@ func newTwoVaults(t *testing.T) *twoVaults {
 	}
 	w.b = w.a.With(added.ID)
 	w.b.File("n.md", "- [ ] in b\n- [ ] more in b\n")
-	tasks := index.NewForNotes(w.a, w.a, w.a)
+	tasks := testsupport.NewIndex(w.a, w.a, w.a)
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}
