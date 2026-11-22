@@ -3,13 +3,13 @@ import path from "node:path";
 import { REPO_ROOT, failOnFindings, requireMatches, listTrackedFiles } from "../../lib/graph.mjs";
 
 /** The roots a backticked path starts with to be read as a path of the repository. */
-const PATH_ROOTS = ["libs", "apps", "plugins", "tools", ".agents"];
+const PATH_ROOTS = ["libs", "apps", "plugins", "tools", "docs", ".agents"];
 
 /**
  * The documents that name folders and files of the repository, as patterns of tracked paths. Every pattern must
- * match a tracked file. `docs/architecture/target-layout.md` is not tracked (it lives outside git) and is not covered.
+ * match a tracked file.
  */
-export const DOCUMENT_PATTERNS = [/^\.agents\/.*\.md$/, /(^|\/)AGENTS\.md$/, /^(tools|libs)\/.*README\.md$/];
+export const DOCUMENT_PATTERNS = [/^\.agents\/.*\.md$/, /^docs\/.*\.md$/, /^[^/]+\.md$/, /(^|\/)AGENTS\.md$/, /^(tools|libs)\/.*README\.md$/];
 
 /** The patterns that match no tracked file: a document that moved or was never tracked is not covered. */
 export function findUnmatchedPatterns(patterns, tracked) {
@@ -44,7 +44,7 @@ function getPattern(token) {
 
 /**
  * The backticked paths in documents that name no file or folder of the tree. A path is a backticked text without
- * spaces that starts with `libs/`, `apps/`, `plugins/`, `tools/` or `.agents/`; a `*`, `<name>`, `{a,b}` or `...`
+ * spaces that starts with `libs/`, `apps/`, `plugins/`, `tools/`, `docs/` or `.agents/`; a `*`, `<name>`, `{a,b}` or `...`
  * stands for part of a path and needs one match.
  *
  * @param {Array<{ file: string, text: string }>} documents The documents, with their text
