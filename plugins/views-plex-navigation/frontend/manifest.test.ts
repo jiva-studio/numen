@@ -30,7 +30,7 @@ describe('the manifest', () => {
 
   it('places the buttons at the top of the board', () => {
     expect(manifest.contributes.slots).toStrictEqual([
-      { slot: 'plexGraph.boardTop', view: 'navigation', order: 10 },
+      { slot: 'plexGraph.boardTop', view: 'navigation', title: 'Back and forward', order: 10 },
     ])
   })
 
