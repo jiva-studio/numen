@@ -16,14 +16,15 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/engine"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/usecase/newnote"
 )
 
 const (
 	templateID = "01J0TEMPLATE0000000000000"
-	meeting    = "---\nid: " + templateID + "\ntype: meeting\ntags:\n  - weekly\ncreated: \"{{date}}\"\nupdated: {{date:DD.MM.YYYY}}\n---\n# {{title}}\n\nAttendees\n"
-	book       = "# {{title}}\n\nAuthor\n"
+	meeting    = "---\nid: " + templateID + "\ntype: meeting\ntags:\n  - weekly\ncreated: \"{{ date \"YYYY-MM-DD\" }}\"\nupdated: {{ date \"DD.MM.YYYY\" }}\n---\n# {{ .title }}\n\nAttendees\n"
+	book       = "# {{ .title }}\n\nAuthor\n"
 )
 
 func getToday() time.Time { return time.Date(2026, 11, 14, 9, 5, 0, 0, time.UTC) }
@@ -319,7 +320,7 @@ func (v *racingVault) Create(ctx context.Context, path string, content []byte) e
 
 func TestWriteTheDateTheClockReports(t *testing.T) {
 	t.Run("writes the date the clock reports", func(t *testing.T) {
-		vault := newVault(map[string]string{"Templates/Daily.md": "# {{title}} {{date}} {{time}}\n"})
+		vault := newVault(map[string]string{"Templates/Daily.md": "# {{ .title }} {{ date \"YYYY-MM-DD\" }} {{ time \"HH:mm\" }}\n"})
 		source := newClock(time.Date(2026, 11, 14, 9, 5, 0, 0, time.UTC))
 		useCase := newUseCase(vault, source)
 		request := newnote.Request{Template: "Templates/Daily.md", Folder: "journal"}
@@ -410,7 +411,7 @@ func TestRefuseWhatIsNoTemplate(t *testing.T) {
 
 func TestMakeNoNoteFromATemplateThatIsNotText(t *testing.T) {
 	t.Run("makes no note when the substituted frontmatter is invalid", func(t *testing.T) {
-		vault := newVault(map[string]string{"Templates/Plan: draft.md": "---\nname: {{title}}\n---\nbody\n"})
+		vault := newVault(map[string]string{"Templates/Plan: draft.md": "---\nname: {{ .title }}\n---\nbody\n"})
 
 		_, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), newnote.Request{Template: "Templates/Plan: draft.md", Folder: "work"})
 
@@ -425,7 +426,7 @@ func TestMakeNoNoteFromATemplateThatIsNotText(t *testing.T) {
 		}
 	})
 	t.Run("makes no note from a template that is not UTF-8 text", func(t *testing.T) {
-		vault := newVault(map[string]string{"Templates/Binary.md": "# {{title}}\n\xff\xfe\x00"})
+		vault := newVault(map[string]string{"Templates/Binary.md": "# {{ .title }}\n\xff\xfe\x00"})
 
 		_, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), newnote.Request{Template: "Templates/Binary.md", Folder: "work"})
 
@@ -459,4 +460,115 @@ func TestReportWhatTheHostRefuses(t *testing.T) {
 			t.Errorf("error = %v", err)
 		}
 	})
+}
+
+func TestFillTheFieldsOfTheTemplate(t *testing.T) {
+	const asking = "---\nclient: {{ prompt \"Client\" \"Acme\" }}\n---\n# {{ select \"Kind\" \"call\" \"visit\" }} with {{ .vars.Client }} in {{ .folder }}\n"
+	execute := func(vault *hosttest.Vault, values map[string]string) (newnote.Result, error) {
+		return newUseCase(vault, newClock(getToday())).Execute(t.Context(), newnote.Request{Template: "Templates/Visit.md", Folder: "work", Values: values})
+	}
+
+	t.Run("writes the values given", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Visit.md": asking})
+
+		made, err := execute(vault, map[string]string{"Client": "Globex", "Kind": "visit"})
+
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := openNote(t, getContent(t, vault, made.Path)).Body(); got != "# visit with Globex in work\n" {
+			t.Errorf("body = %q", got)
+		}
+	})
+	t.Run("writes the defaults for no values", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Visit.md": asking})
+
+		made, err := execute(vault, nil)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := openNote(t, getContent(t, vault, made.Path)).Body(); got != "# call with Acme in work\n" {
+			t.Errorf("body = %q", got)
+		}
+	})
+	t.Run("makes no note for a value that is none of the options", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Visit.md": asking})
+
+		_, err := execute(vault, map[string]string{"Kind": "nap"})
+
+		if !errors.Is(err, engine.ErrNotAnOption) || len(vault.Scans()) != 0 {
+			t.Errorf("error = %v, scans = %v", err, vault.Scans())
+		}
+	})
+}
+
+func TestMakeNoNoteFromATemplateThatDoesNotRun(t *testing.T) {
+	for _, c := range []struct{ name, text, want string }{
+		{"a syntax error", "# {{ .title }}\n{{ if }}\n", "Broken.md:2"},
+		{"an unknown function", "line\nline\n{{ nope }}\n", "Broken.md:3"},
+		{"an unknown name", "{{ .nothing }}\n", "Broken.md:1"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			vault := newVault(map[string]string{"Templates/Broken.md": c.text})
+
+			_, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), newnote.Request{Template: "Templates/Broken.md", Folder: "work"})
+
+			if !errors.Is(err, newnote.ErrInvalidNote) || !strings.Contains(err.Error(), c.want) {
+				t.Errorf("error = %v, want one with %q", err, c.want)
+			}
+			if _, isThere := vault.Content("work/Broken.md"); isThere || len(vault.Scans()) != 0 {
+				t.Error("a note was made")
+			}
+		})
+	}
+}
+
+func TestListTheFieldsOfTheTemplate(t *testing.T) {
+	list := func(vault *hosttest.Vault, template string) ([]engine.Field, error) {
+		useCase := newnote.NewListFields(vault, newClock(getToday()), func() mask.Set { return mask.Parse("") })
+		return useCase.Execute(t.Context(), newnote.FieldsRequest{Template: template, Folder: "work"})
+	}
+
+	t.Run("lists what the template asks", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Visit.md": "{{ prompt \"Client\" \"Acme\" }}{{ select \"Kind\" \"call\" \"visit\" }}"})
+
+		fields, err := list(vault, "Templates/Visit.md")
+
+		if err != nil || len(fields) != 2 || fields[0].Label != "Client" || fields[1].Kind != engine.KindSelect {
+			t.Errorf("fields = %+v, %v", fields, err)
+		}
+	})
+	t.Run("makes no note", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Visit.md": "{{ prompt \"Client\" }}"})
+
+		if _, err := list(vault, "Templates/Visit.md"); err != nil || len(vault.Scans()) != 0 {
+			t.Errorf("error = %v, scans = %v", err, vault.Scans())
+		}
+	})
+	t.Run("refuses a note that is no template", func(t *testing.T) {
+		vault := newVault(map[string]string{"Notes/Visit.md": "x"})
+
+		if _, err := list(vault, "Notes/Visit.md"); !errors.Is(err, newnote.ErrNotATemplate) {
+			t.Errorf("error = %v", err)
+		}
+	})
+	t.Run("reports a template that does not parse", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Broken.md": "{{ if }}"})
+
+		if _, err := list(vault, "Templates/Broken.md"); !errors.Is(err, newnote.ErrInvalidNote) || !strings.Contains(err.Error(), "Broken.md:1") {
+			t.Errorf("error = %v", err)
+		}
+	})
+}
+
+func TestWriteTheIDOfTheNewNote(t *testing.T) {
+	vault := newVault(map[string]string{"Templates/Ref.md": "---\nid: {{ .id }}\n---\nid is {{ .id }}\n"})
+
+	path := createNote(t, vault, "Templates/Ref.md", "work")
+
+	doc := openNote(t, getContent(t, vault, path))
+	if id, _ := doc.Identifier(); id == "" || doc.Body() != "id is "+id+"\n" {
+		t.Errorf("id = %q, body = %q", id, doc.Body())
+	}
 }

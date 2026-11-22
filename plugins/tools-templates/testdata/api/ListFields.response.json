@@ -1,0 +1,6 @@
+{
+  "fields": [
+    { "kind": "text", "label": "Client", "options": [], "default": "Acme" },
+    { "kind": "select", "label": "Kind", "options": ["call", "visit"], "default": "call" }
+  ]
+}

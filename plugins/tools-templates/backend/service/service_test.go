@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -19,7 +20,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/api"
 )
 
-const meeting = "---\ntype: meeting\n---\n# {{title}}\n\nAttendees\n"
+const meeting = "---\ntype: meeting\n---\n# {{ .title }}\n\nAttendees\n"
 
 func getToday() time.Time { return time.Date(2026, 11, 14, 9, 5, 0, 0, time.UTC) }
 
@@ -64,7 +65,21 @@ func post(t *testing.T, web *httptest.Server, path, body string) (int, []byte) {
 
 func createNote(t *testing.T, web *httptest.Server, template, folder string) (int, []byte) {
 	t.Helper()
-	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder})
+	return createNoteWith(t, web, template, folder, nil)
+}
+
+func listFields(t *testing.T, web *httptest.Server, template string) (int, []byte) {
+	t.Helper()
+	body, err := json.Marshal(api.ListFieldsRequest{Template: template, Folder: "work"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return post(t, web, "/"+api.Service+"/"+api.MethodListFields, string(body))
+}
+
+func createNoteWith(t *testing.T, web *httptest.Server, template, folder string, values map[string]string) (int, []byte) {
+	t.Helper()
+	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Values: values})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,6 +114,50 @@ func TestCreateNoteReturnsThePathOfTheNewNote(t *testing.T) {
 	}
 }
 
+const asking = "# {{ prompt \"Client\" \"Acme\" }} {{ select \"Kind\" \"call\" \"visit\" }}\n"
+
+func TestListFieldsReturnsWhatTheTemplateAsks(t *testing.T) {
+	vault := hosttest.New("notes")
+	vault.File("Templates/Visit.md", asking)
+	vault.File("Templates/Plain.md", meeting)
+	web := newWeb(t, vault)
+
+	status, body := listFields(t, web, "Templates/Visit.md")
+	var got api.ListFieldsResponse
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatal(err)
+	}
+	want := []api.Field{
+		{Kind: api.KindText, Label: "Client", Options: []string{}, Default: "Acme"},
+		{Kind: api.KindSelect, Label: "Kind", Options: []string{"call", "visit"}, Default: "call"},
+	}
+	if status != http.StatusOK || !reflect.DeepEqual(got.Fields, want) {
+		t.Errorf("ListFields = %d %s", status, body)
+	}
+	if status, body := listFields(t, web, "Templates/Plain.md"); status != http.StatusOK || !strings.Contains(string(body), `"fields":[]`) {
+		t.Errorf("ListFields of a plain template = %d %s", status, body)
+	}
+	if status, body := listFields(t, web, "Notes/x.md"); status != http.StatusBadRequest {
+		t.Errorf("ListFields of a note that is no template = %d %s", status, body)
+	}
+}
+
+func TestCreateNoteWritesTheValues(t *testing.T) {
+	vault := hosttest.New("notes")
+	vault.File("Templates/Visit.md", asking)
+	web := newWeb(t, vault)
+
+	status, body := createNoteWith(t, web, "Templates/Visit.md", "work", map[string]string{"Client": "Globex", "Kind": "visit"})
+
+	if content, _ := vault.Content("work/Visit.md"); status != http.StatusOK || !strings.Contains(content, "# Globex visit\n") {
+		t.Errorf("CreateNote = %d %s, note %q", status, body, content)
+	}
+	status, body = createNoteWith(t, web, "Templates/Visit.md", "work", map[string]string{"Kind": "nap"})
+	if failure := readFailure(t, body); status != http.StatusBadRequest || failure.Code != server.CodeInvalidArgument || !strings.Contains(failure.Message, "Kind") {
+		t.Errorf("CreateNote with a bad option = %d %s", status, body)
+	}
+}
+
 func TestMapTheErrorsOfTheUseCaseToTheirCodes(t *testing.T) {
 	t.Run("maps the errors of the use case to their codes", func(t *testing.T) {
 		manyNames := hosttest.New("notes")
@@ -107,6 +166,8 @@ func TestMapTheErrorsOfTheUseCaseToTheirCodes(t *testing.T) {
 		for number := 2; number <= 100; number++ {
 			manyNames.File(fmt.Sprintf("work/Meeting %d.md", number), "taken")
 		}
+		broken := hosttest.New("notes")
+		broken.File("Templates/Broken.md", "# {{ .title }}\n{{ if }}\n")
 		noVault := hosttest.New("notes")
 		noVault.File("Templates/Meeting.md", meeting)
 		noVault.Hide()
@@ -114,7 +175,7 @@ func TestMapTheErrorsOfTheUseCaseToTheirCodes(t *testing.T) {
 		denied.File("Templates/Meeting.md", meeting)
 		denied.Refuse("Templates/Meeting.md", host.ErrPermissionDenied)
 		invalid := hosttest.New("notes")
-		invalid.File("Templates/Plan: draft.md", "---\nname: {{title}}\n---\n")
+		invalid.File("Templates/Plan: draft.md", "---\nname: {{ .title }}\n---\n")
 		binary := hosttest.New("notes")
 		binary.File("Templates/Binary.md", "\xff\xfe\x00")
 		plain := hosttest.New("notes")
@@ -135,6 +196,7 @@ func TestMapTheErrorsOfTheUseCaseToTheirCodes(t *testing.T) {
 			{"a missing template", plain, "Templates/Nothing.md", 404, server.CodeNotFound, "template not found: Templates/Nothing.md"},
 			{"frontmatter that is invalid after substitution", invalid, "Templates/Plan: draft.md", 412, server.CodeFailedPrecondition, "template does not produce a valid note: "},
 			{"a template that is not text", binary, "Templates/Binary.md", 412, server.CodeFailedPrecondition, "template does not produce a valid note: "},
+			{"a template that does not parse", broken, "Templates/Broken.md", 412, server.CodeFailedPrecondition, "template does not produce a valid note: invalid template: template: Broken.md:2"},
 			{"no free name", manyNames, "Templates/Meeting.md", 412, server.CodeFailedPrecondition, "no free name for Meeting"},
 			{"no vault", noVault, "Templates/Meeting.md", 412, server.CodeFailedPrecondition, ""},
 			{"a denied host call", denied, "Templates/Meeting.md", 403, server.CodePermissionDenied, ""},

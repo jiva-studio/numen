@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/engine"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/usecase/newnote"
 )
@@ -20,7 +21,7 @@ const settingTemplates = "templates"
 
 func convertError(err error, template string) error {
 	switch {
-	case errors.Is(err, newnote.ErrNotATemplate):
+	case errors.Is(err, newnote.ErrNotATemplate), errors.Is(err, engine.ErrNotAnOption):
 		return server.NewAPIError(server.CodeInvalidArgument, err.Error())
 	case errors.Is(err, host.ErrNotExist):
 		return server.NewAPIError(server.CodeNotFound, "template not found: "+template)
@@ -34,11 +35,25 @@ func convertError(err error, template string) error {
 
 func makeCreateNoteHandler(useCase newnote.CreateFromTemplate) func(context.Context, api.CreateNoteRequest) (api.CreateNoteResponse, error) {
 	return func(ctx context.Context, req api.CreateNoteRequest) (api.CreateNoteResponse, error) {
-		made, err := useCase.Execute(ctx, newnote.Request{Template: req.Template, Folder: req.Folder})
+		made, err := useCase.Execute(ctx, newnote.Request{Template: req.Template, Folder: req.Folder, Values: req.Values})
 		if err != nil {
 			return api.CreateNoteResponse{}, convertError(err, req.Template)
 		}
 		return api.CreateNoteResponse{Path: made.Path}, nil
+	}
+}
+
+func makeListFieldsHandler(useCase newnote.ListFields) func(context.Context, api.ListFieldsRequest) (api.ListFieldsResponse, error) {
+	return func(ctx context.Context, req api.ListFieldsRequest) (api.ListFieldsResponse, error) {
+		found, err := useCase.Execute(ctx, newnote.FieldsRequest{Template: req.Template, Folder: req.Folder})
+		if err != nil {
+			return api.ListFieldsResponse{}, convertError(err, req.Template)
+		}
+		fields := make([]api.Field, len(found))
+		for i, field := range found {
+			fields[i] = api.Field{Kind: field.Kind, Label: field.Label, Options: field.Options, Default: field.Default}
+		}
+		return api.ListFieldsResponse{Fields: fields}, nil
 	}
 }
 
@@ -51,6 +66,7 @@ func mount(s *server.Server, vault newnote.Vault, source newnote.Clock, ids newn
 	})
 	useCase := newnote.NewCreateFromTemplate(vault, source, ids, masks.Get)
 	a := s.NewAPI(api.Service)
+	server.Handle(a, api.MethodListFields, makeListFieldsHandler(newnote.NewListFields(vault, source, masks.Get)))
 	server.Handle(a, api.MethodCreateNote, makeCreateNoteHandler(useCase))
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="api.Service and api.MethodCreateNote are valid compile-time constants."
 	return a.Err()

@@ -16,14 +16,14 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/engine"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/substitute"
 )
 
 const (
 	noteExtension     = ".md"
 	templateExtension = ".template"
-	maxNames      = 100
+	maxNames          = 100
 )
 
 var (
@@ -53,10 +53,11 @@ type IDs interface {
 	NewID(at time.Time) (string, error)
 }
 
-// Request names a template and the folder the note is made in.
+// Request names a template, the folder the note is made in and the values of the fields the template asks.
 type Request struct {
 	Template string
 	Folder   string
+	Values   map[string]string
 }
 
 // Result names the note that was made.
@@ -66,28 +67,23 @@ type Result struct {
 
 // CreateFromTemplate makes a note from a note the masks of the templates setting name.
 type CreateFromTemplate struct {
-	vault     Vault
-	clock     Clock
-	ids       IDs
+	vault    Vault
+	clock    Clock
+	ids      IDs
 	getMasks func() mask.Set
+	renderer engine.Renderer
 }
 
 // NewCreateFromTemplate returns the use case. getMasks is read at each call, so a changed setting applies at once.
 func NewCreateFromTemplate(vault Vault, clock Clock, ids IDs, getMasks func() mask.Set) CreateFromTemplate {
-	return CreateFromTemplate{vault: vault, clock: clock, ids: ids, getMasks: getMasks}
+	return CreateFromTemplate{vault: vault, clock: clock, ids: ids, getMasks: getMasks, renderer: engine.New(nil)}
 }
 
 // Execute makes the note.
 func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, error) {
-	if !isTemplate(in.Template, u.getMasks()) {
-		return Result{}, fmt.Errorf("%w: %s", ErrNotATemplate, in.Template)
-	}
-	raw, _, err := u.vault.Read(ctx, in.Template)
+	text, err := readTemplate(ctx, u.vault, u.getMasks(), in.Template)
 	if err != nil {
-		return Result{}, fmt.Errorf("read the template %s: %w", in.Template, err)
-	}
-	if !utf8.Valid(raw) {
-		return Result{}, fmt.Errorf("%w: it is not UTF-8 text", ErrInvalidNote)
+		return Result{}, err
 	}
 	now := u.clock.Now()
 	id, err := u.ids.NewID(now)
@@ -101,7 +97,7 @@ func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, er
 		if number > 1 {
 			name = fmt.Sprintf("%s %d", stem, number)
 		}
-		path, isMade, err := u.createAs(ctx, pathpkg.Join(in.Folder, name+noteExtension), render{text: string(raw), title: name, now: now, id: id})
+		path, isMade, err := u.createAs(ctx, pathpkg.Join(in.Folder, name+noteExtension), render{renderer: u.renderer, template: in.Template, text: text, data: engine.Data{Title: name, Folder: in.Folder, ID: id, Now: now, Values: in.Values}})
 		if err != nil {
 			return Result{}, err
 		}
@@ -161,24 +157,48 @@ func getName(template string) string {
 	return stem
 }
 
-// render is what a note is made from: the template text, its title and id, and the instant of the call.
+// render is what a note is made from: the template and its text, and what the template reads.
 type render struct {
-	text  string
-	title string
-	now   time.Time
-	id    string
+	renderer engine.Renderer
+	template string
+	text     string
+	data     engine.Data
 }
 
 func (r render) getContent() ([]byte, error) {
-	applied := substitute.Apply(r.text, substitute.Variables{Title: r.title, Now: r.now})
-	doc, err := markdown.Open([]byte(applied.Text))
+	rendered, err := r.renderer.Render(pathpkg.Base(r.template), r.text, r.data)
+	if err != nil {
+		return nil, wrapRenderError(err)
+	}
+	doc, err := markdown.Open([]byte(rendered.Text))
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidNote, err)
 	}
-	if err := doc.SetIdentifier(r.id); err != nil {
+	if err := doc.SetIdentifier(r.data.ID); err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidNote, err)
 	}
 	return doc.Bytes(), nil
+}
+
+func wrapRenderError(err error) error {
+	if errors.Is(err, engine.ErrTemplate) {
+		return fmt.Errorf("%w: %w", ErrInvalidNote, err)
+	}
+	return err
+}
+
+func readTemplate(ctx context.Context, vault Vault, masks mask.Set, path string) (string, error) {
+	if !isTemplate(path, masks) {
+		return "", fmt.Errorf("%w: %s", ErrNotATemplate, path)
+	}
+	raw, _, err := vault.Read(ctx, path)
+	if err != nil {
+		return "", fmt.Errorf("read the template %s: %w", path, err)
+	}
+	if !utf8.Valid(raw) {
+		return "", fmt.Errorf("%w: it is not UTF-8 text", ErrInvalidNote)
+	}
+	return string(raw), nil
 }
 
 // NewIDs returns the generator of the ids of new notes, seeded by the system.

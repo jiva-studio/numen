@@ -1,4 +1,5 @@
 {
   "template": "Templates/Meeting.md",
-  "folder": "notes"
+  "folder": "notes",
+  "values": { "Client": "Acme", "Kind": "visit" }
 }
