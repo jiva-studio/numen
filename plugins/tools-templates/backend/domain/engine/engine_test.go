@@ -256,11 +256,11 @@ func TestKeepAnAnswerOnOneLine(t *testing.T) {
 			}
 		})
 	}
-	t.Run("takes the default for an answer that is only breaks", func(t *testing.T) {
+	t.Run("keeps an answer that is only breaks empty", func(t *testing.T) {
 		data := getData()
 		data.Values = map[string]string{"V": "\n\x00"}
 
-		if got := renderWith(t, `{{ prompt "V" "Acme" }}`, data); got != "Acme" {
+		if got := renderWith(t, `{{ prompt "V" "Acme" }}`, data); got != "" {
 			t.Errorf("text = %q", got)
 		}
 	})
@@ -443,13 +443,25 @@ func TestUseAFieldAsAVariable(t *testing.T) {
 	})
 }
 
-func TestFallBackToTheDefaultWhenLeftEmpty(t *testing.T) {
-	data := getData()
-	data.Values = map[string]string{"Client": ""}
+func TestTakeTheDefaultOnlyForAMissingAnswer(t *testing.T) {
+	t.Run("keeps a text the person emptied", func(t *testing.T) {
+		data := getData()
+		data.Values = map[string]string{"Client": ""}
 
-	if got := renderWith(t, `{{ prompt "Client" "Acme" }}`, data); got != "Acme" {
-		t.Errorf("text = %q", got)
-	}
+		if got := renderWith(t, `{{ prompt "Client" "Acme" }}`, data); got != "" {
+			t.Errorf("text = %q", got)
+		}
+	})
+	t.Run("takes the default of an answer not given", func(t *testing.T) {
+		if got := render(t, `{{ prompt "Client" "Acme" }}`); got != "Acme" {
+			t.Errorf("text = %q", got)
+		}
+	})
+	t.Run("keeps the default on one line", func(t *testing.T) {
+		if got := render(t, "{{ prompt \"Client\" \"a\\nb\" }}"); got != "a b" {
+			t.Errorf("text = %q", got)
+		}
+	})
 }
 
 func TestRenderTheExamplesOfTheDocs(t *testing.T) {

@@ -86,7 +86,7 @@ func (r Renderer) collect(ctx context.Context, name, text string, data Data, iss
 	return pass.fields, nil
 }
 
-// Render renders a template. A field with no value takes its default.
+// Render renders a template. A field with no value given takes its default; a text given empty stays empty.
 func (r Renderer) Render(ctx context.Context, name, text string, data Data) (Result, error) {
 	issued := new(ids)
 	fields, err := r.collect(ctx, name, text, data, issued)
@@ -109,13 +109,13 @@ func resolve(fields []Field, given map[string]string) (map[string]string, error)
 	values := make(map[string]string, len(fields))
 	for _, field := range fields {
 		value, isGiven := given[field.Label]
-		if field.Kind == KindText {
-			value = keepOnOneLine(value)
+		if !isGiven {
+			value = field.Default
 		}
 		switch {
-		case !isGiven, value == "" && field.Kind == KindText:
-			value = field.Default
-		case field.Kind == KindSelect && !slices.Contains(field.Options, value):
+		case field.Kind == KindText:
+			value = keepOnOneLine(value)
+		case !slices.Contains(field.Options, value):
 			return nil, fmt.Errorf("%q is %w of %q: %s", value, ErrNotAnOption, field.Label, strings.Join(field.Options, ", "))
 		}
 		values[field.Label] = value
