@@ -24,6 +24,7 @@
     "@connectrpc/connect-web": "^2.3.0",
     "@numen/protocol": "*",
     "@numen/rerank": "*",
+    "@numen/result": "*",
     "@tailwindcss/node": "^4.3.5",
     "@tailwindcss/oxide": "^4.3.5",
     "@vue/compiler-sfc": "^3.5.45",

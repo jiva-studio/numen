@@ -40,6 +40,7 @@
     "@lezer/markdown": "^1.7.2",
     "@numen/core-client": "*",
     "@numen/plugin-sdk": "*",
+    "@numen/result": "*",
     "vue": "^3.5.45"
   },
   "devDependencies": {
