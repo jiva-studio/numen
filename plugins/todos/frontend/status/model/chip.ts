@@ -14,7 +14,7 @@ export interface ShownGroups {
   readonly noDate: boolean
 }
 
-export const ALL_SHOWN: ShownGroups = {
+const ALL_SHOWN: ShownGroups = {
   overdue: true,
   today: true,
   nextSevenDays: true,

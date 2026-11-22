@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Summary } from '../../types'
-import { ALL_SHOWN, getChip } from './chip'
+import { getChip, type ShownGroups } from './chip'
+
+const ALL_SHOWN: ShownGroups = { overdue: true, today: true, nextSevenDays: true, noDate: true }
 
 const summary = (overrides: Partial<Summary>): Summary => ({
   isReady: true,

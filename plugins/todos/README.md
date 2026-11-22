@@ -32,7 +32,7 @@ Click the checkbox drawn in the note, or the one in the list of the widget. The 
 
 ## The Widget
 
-By default the widget sits in the title bar and shows how many tasks need attention. Click it to open a list grouped by **Overdue**, **Today**, **Next 7 days** and **No date**. Click the text of a task to open its note at that line, or its checkbox to tick it. When nothing needs attention the widget is hidden. Which groups appear, and are counted, is set in the settings below. The widget can be moved to another bar.
+By default the widget is in the title bar and shows how many tasks need attention. Click it to open a list grouped by **Overdue**, **Today**, **Next 7 days** and **No date**. Click the text of a task to open its note at that line, or its checkbox to tick it. When nothing needs attention the widget is hidden. Which groups appear, and are counted, is set in the settings below. The widget can be moved to another bar.
 
 ## Help While You Type
 

@@ -3,10 +3,11 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { createFakeApi, refuse, settle, SUMMARY, task } from '../../testing/fakeApi'
 import { taskDoneLabel, WORDS } from '../../words'
 import type { Summary } from '../../types'
-import { ALL_SHOWN, type ShownGroups } from '../model/chip'
+import type { ShownGroups } from '../model/chip'
 import TodosStatus from './TodosStatus.vue'
 
 const TODAY = '2026-11-14'
+const ALL_SHOWN: ShownGroups = { overdue: true, today: true, nextSevenDays: true, noDate: true }
 
 const TASKS = {
   overdue: {
