@@ -1,4 +1,4 @@
-package vectors
+package indexing
 
 import (
 	"context"
@@ -502,19 +502,19 @@ func (h *holdingEmbedder) Embed(ctx context.Context, texts []string) ([][]float3
 	return h.embedder.Embed(ctx, texts)
 }
 
-// progressLog keeps the progress reports of a run, newest last.
-type progressLog struct {
+// embedLog keeps the progress reports of a run, newest last.
+type embedLog struct {
 	mu      sync.Mutex
 	reports []vaultreading.EmbedResult
 }
 
-func (l *progressLog) add(r vaultreading.EmbedResult) {
+func (l *embedLog) add(r vaultreading.EmbedResult) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.reports = append(l.reports, r)
 }
 
-func (l *progressLog) getLastResult() vaultreading.EmbedResult {
+func (l *embedLog) getLastResult() vaultreading.EmbedResult {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if len(l.reports) == 0 {
@@ -549,7 +549,7 @@ func TestProgressNamesTheSourceBeingEmbedded(t *testing.T) {
 	model := &holdingEmbedder{
 		embedder: &embedder{dims: dimensions}, holds: isB, started: make(chan struct{}, 1),
 	}
-	var log progressLog
+	var log embedLog
 	embed := newEmbed(indexfake.Vaults{first.ID: shelf}, index, index)
 	embed.source = sourcefake.Wrap(model)
 	embed.BatchCharacters = 1
@@ -631,7 +631,7 @@ func TestACanceledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 		unsent   = "library/a.epub"
 	)
 	index := indexfake.NewStore()
-	var log progressLog
+	var log embedLog
 	embed := newEmbed(nil, index, index)
 	res := &vaultreading.EmbedResult{}
 	track := newTracker(log.add, 1, res, &sync.Mutex{})

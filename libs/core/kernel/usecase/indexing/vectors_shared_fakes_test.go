@@ -1,4 +1,4 @@
-package vectors
+package indexing
 
 import (
 	"context"
@@ -29,5 +29,3 @@ func (c *fakeClaim) release() error {
 	c.isIndexed = false
 	return nil
 }
-
-const bookPath = "library/book.epub"

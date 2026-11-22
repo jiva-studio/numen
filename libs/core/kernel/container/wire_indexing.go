@@ -13,11 +13,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -72,7 +70,7 @@ func searchScan(c vaultIndexPlan, db *vaultIndex) vault.Scan {
 func readWholeVault(c vaultIndexPlan,
 	ctx context.Context, db *vaultIndex, source searchsourceport.Source, v domain.Vault, refresh vault.Refresh,
 ) (indexing.ReadWholeVault, error) {
-	fit := vectorscase.NewFitIndex(db.VectorIndex(), c.ErrorHandler, c.ShouldRebuildIndex)
+	fit := indexing.NewFitIndex(db.VectorIndex(), c.ErrorHandler, c.ShouldRebuildIndex)
 	if err := fit.Execute(ctx, source); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
@@ -101,26 +99,26 @@ func createUnreadableFinder(refresh vault.Refresh) func(ctx context.Context, v d
 	}
 }
 
-func searchEmbed(c vaultIndexPlan, db *vaultIndex, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
+func searchEmbed(c vaultIndexPlan, db *vaultIndex, source searchsourceport.Source, v domain.Vault) (indexing.Embed, error) {
 	store, err := derivedfile.OpenDerived(v.Path, vaultconfig.Options{ServiceDir: c.ServiceDir}, coreFolder)
 	if err != nil {
-		return vectorscase.Embed{}, err
+		return indexing.Embed{}, err
 	}
-	return vectorscase.NewEmbed(
+	return indexing.NewEmbed(
 		c.VaultReaders, db.Sources(), db.Sources(), store.NewIndexClaim(coreFolder+"/indexing"), c.TextReaders, cmp.Or[searchsourceport.Source](source, none.SearchSource{}),
 	), nil
 }
 
 func indexTexts(
 	c vaultIndexPlan, db *vaultIndex, v domain.Vault, readNote func(ctx context.Context, v domain.Vault, path string) error,
-) (filetext.Index, error) {
+) (indexing.Index, error) {
 	if _, err := c.VaultReaders.Open(v); err != nil {
-		return filetext.Index{}, err
+		return indexing.Index{}, err
 	}
 	cutter := cutNotes(c.ChunkPolicy)
-	index := filetext.NewIndex(filetext.IndexDeps{
+	index := indexing.NewIndex(indexing.IndexDeps{
 		Readers: c.VaultReaders, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: c.TextReaders, Sizes: cutter.Sizes, Legibility: cutter.Legibility, ShouldRebuildIndex: c.ShouldRebuildIndex,
 	})
-	return filetext.NewHandlingIndex(index, c.ErrorHandler, readNote), nil
+	return indexing.NewHandlingIndex(index, c.ErrorHandler, readNote), nil
 }

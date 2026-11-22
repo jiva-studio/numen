@@ -1,4 +1,4 @@
-package filetext
+package indexing
 
 import (
 	"context"

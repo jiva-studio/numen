@@ -1,4 +1,4 @@
-package vectors
+package indexing
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -86,8 +85,8 @@ func newEmbed(readers vaultport.VaultReaders, chunks VectorQueries, vectors Vect
 
 func newExtract(
 	readers vaultport.VaultReaders, index *indexfake.Store,
-) filetext.Index {
-	extract := filetext.NewIndex(filetext.IndexDeps{
+) Index {
+	extract := NewIndex(IndexDeps{
 		Readers: readers, Sources: index, Records: index, Backlog: index, Lookup: index,
 		Texts: bookTexts{readers: readers},
 	})

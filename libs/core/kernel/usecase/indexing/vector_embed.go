@@ -1,4 +1,4 @@
-package vectors
+package indexing
 
 import (
 	"context"
@@ -58,7 +58,7 @@ func NewEmbed(
 	claim IndexClaim, texts textport.Readers, source searchsourceport.Source,
 ) Embed {
 	if texts == nil {
-		texts = noTextReaders{}
+		texts = noVaultTexts{}
 	}
 	return Embed{readers: readers, chunks: chunks, vectors: vectors, claim: claim, texts: texts, source: source}
 }
@@ -153,7 +153,7 @@ func (u Embed) claimIndex(ctx context.Context) (func() error, bool, error) {
 	return release, false, nil
 }
 
-// noTextReaders is a vault where no file has text.
-type noTextReaders struct{}
+// noVaultTexts is a vault where no file has text.
+type noVaultTexts struct{}
 
-func (noTextReaders) Open(domain.Vault) (textport.VaultTexts, error) { return nil, nil }
+func (noVaultTexts) Open(domain.Vault) (textport.VaultTexts, error) { return nil, nil }

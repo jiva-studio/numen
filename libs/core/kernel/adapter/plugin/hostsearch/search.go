@@ -14,9 +14,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
-	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 )
 
 // Source is the search source that fills the index.
@@ -52,7 +52,7 @@ type Progress interface {
 // hostendpoint.SearchAccess.
 type Search struct {
 	Source     Source
-	Queries    *vectorscase.EmbedQueries
+	Queries    *indexing.EmbedQueries
 	Samples    Samples
 	Nearest    Nearest
 	Places     search.FindNearest

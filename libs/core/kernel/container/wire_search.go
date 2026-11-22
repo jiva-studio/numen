@@ -6,8 +6,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 )
 
 type textSearch struct {
@@ -56,9 +56,9 @@ func buildPluginSearch(
 	}
 }
 
-func newEmbedQueries(queries searchsourceport.QueryEmbedder) *vectorscase.EmbedQueries {
+func newEmbedQueries(queries searchsourceport.QueryEmbedder) *indexing.EmbedQueries {
 	if queries == nil {
 		return nil
 	}
-	return vectorscase.NewEmbedQueries(queries)
+	return indexing.NewEmbedQueries(queries)
 }

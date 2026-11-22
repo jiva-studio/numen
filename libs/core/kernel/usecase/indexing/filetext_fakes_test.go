@@ -1,4 +1,4 @@
-package filetext
+package indexing
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"

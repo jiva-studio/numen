@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
 // suppliedTexts is the text a plugin supplies for the files of a vault: a file has text once a test
@@ -98,7 +98,7 @@ type fileVault struct {
 	db    *DB
 	v     domain.Vault
 	texts *suppliedTexts
-	index filetext.Index
+	index indexing.Index
 }
 
 func openFileVault(t *testing.T) *fileVault {
@@ -107,7 +107,7 @@ func openFileVault(t *testing.T) *fileVault {
 	v := domain.Vault{ID: getFirstVault().ID, Name: "first", Path: t.TempDir()}
 	texts := &suppliedTexts{readers: vaultreader.Readers{}, texts: map[string]domain.VersionText{}}
 	sources := db.Sources()
-	index := filetext.NewIndex(filetext.IndexDeps{
+	index := indexing.NewIndex(indexing.IndexDeps{
 		Readers: vaultreader.Readers{}, Sources: sources, Records: sources, Backlog: sources, Lookup: sources, Texts: texts,
 	})
 	return &fileVault{db: db, v: v, texts: texts, index: index}

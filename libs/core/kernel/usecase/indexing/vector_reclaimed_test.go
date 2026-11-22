@@ -1,4 +1,4 @@
-package vectors
+package indexing
 
 import (
 	"bytes"
