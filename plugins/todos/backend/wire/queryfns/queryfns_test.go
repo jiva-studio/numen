@@ -24,11 +24,7 @@ const (
 type fixedClock struct{}
 
 func (fixedClock) Now() time.Time {
-	now, err := time.Parse(time.DateOnly, today)
-	if err != nil {
-		panic(err)
-	}
-	return now
+	return time.Date(2026, time.November, 14, 12, 0, 0, 0, time.UTC)
 }
 
 // oneVault answers every call with the tasks of one vault.

@@ -25,11 +25,7 @@ import (
 type testClock struct{}
 
 func (testClock) Now() time.Time {
-	now, err := time.Parse(time.DateOnly, today)
-	if err != nil {
-		panic(err)
-	}
-	return now
+	return time.Date(2026, time.November, 14, 12, 0, 0, 0, time.UTC)
 }
 
 // twoVaults is vault a, which the host shows and the plugin keeps the index of, and vault b, which it does not.
