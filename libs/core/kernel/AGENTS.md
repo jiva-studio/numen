@@ -17,6 +17,7 @@ Each check is a folder of `tools/checks/structure/go`.
 | A package is on the layer its path states, and imports only from lower layers                                                                                                                                                                                                                                                        | `go/layers`                                 |
 | No package that the core is compiled from imports an adapter                                                                                                                                                                                                                                                                         | `go/direction`                              |
 | A use case package imports no other use case package (packages are isolated; inside one package the use cases may call each other and no check covers it); a `usecase/` package named `*test` is test support, imported only by tests                                                                                                | `go/usecase-edges`                          |
+| No interface of a use case package or of `port/` is implemented by a use case of another package, and no `Execute` method value of a use case is passed as a function to a field or a function of another use case package: what use cases share is a rule of the domain or a port an adapter implements | `go/use-case-ports` |
 | An adapter does not name the port it implements                                                                                                                                                                                                                                                                                      | `go/adapters-claim-no-ports`                |
 | The composition root returns no adapter type                                                                                                                                                                                                                                                                                         | `go/ports`                                  |
 | A package is imported under the name its layer gives it                                                                                                                                                                                                                                                                              | `go/layers`                                 |
@@ -75,8 +76,9 @@ A concept is named with the standard term of its field.
 
 A use case is created with everything it needs. The constructor takes the
 collaborators, stores them in unexported fields and returns the concrete type. It
-does not validate them and returns no error. No `With*` method changes a use case
-after construction.
+does not validate them and returns no error. No method changes a use case after
+construction; a `With*` method that returns a changed copy is allowed, and so is a functional option
+passed to the constructor.
 
 | The rule                                                                                 | The check                         |
 | ---------------------------------------------------------------------------------------- | --------------------------------- |
