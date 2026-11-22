@@ -643,7 +643,7 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 	waitForScan(t, f)
 	rename := note.NewRename(note.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, Now: testsupport.NewClock(),
-	}, failingAfterMove{newNoteMover(f.index)},
+	}, newNoteMoverFailingToIndex(f.index),
 		nil,
 	)
 
@@ -1625,15 +1625,4 @@ func TestRenameTitledNoteOntoTakenNameFailsAndWritesNothing(t *testing.T) {
 	if now := fileAt(t, f.root, "Entropy.md"); now != "# Entropy\n" {
 		t.Errorf("the note already there was written:\n%s", now)
 	}
-}
-
-// failingAfterMove files the note and then fails, as a step after the move does.
-type failingAfterMove struct{ note.Move }
-
-func (m failingAfterMove) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {
-	moved, err := m.Move.Execute(ctx, v, from, to)
-	if err != nil {
-		return moved, err
-	}
-	return moved, errors.New("a step after the move failed")
 }

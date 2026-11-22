@@ -1,8 +1,12 @@
 package editor_test
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 
@@ -29,6 +33,13 @@ func openWindowIndex(t *testing.T, cfg testInstallation) *index.DB {
 func newNoteMover(db *index.DB) note.Move {
 	return note.NewMove(note.MoveDeps{Readers: vaultreader.Readers{}, Writers: newVaultWriters(),
 		Links: db.NoteQueries(), Names: db.NoteQueries(), Sources: db.Sources(), Now: testsupport.NewClock()})
+}
+
+// newNoteMoverFailingToIndex files the note and then fails to index it, as a step after the move does.
+func newNoteMoverFailingToIndex(db *index.DB) note.Move {
+	return note.NewMove(note.MoveDeps{Readers: vaultreader.Readers{}, Writers: newVaultWriters(),
+		Links: db.NoteQueries(), Names: db.NoteQueries(), Sources: db.Sources(), Now: testsupport.NewClock(),
+		Index: func(context.Context, domain.Vault, []string) error { return errors.New("a step after the move failed") }})
 }
 
 func mountNoteEdit(t *testing.T, mux *http.ServeMux, installation *editor.Installation, procedure string, write *note.Write, create *note.Create, rename *note.Rename) {
