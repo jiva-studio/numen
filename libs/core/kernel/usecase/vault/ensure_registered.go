@@ -1,15 +1,10 @@
-package registry
+package vault
 
 import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
-
-// VaultAdder registers a folder as a vault and returns it.
-type VaultAdder interface {
-	Execute(root, name string) (domain.Vault, error)
-}
 
 // EnsureRequest names the folder to have on the list.
 type EnsureRequest struct {
@@ -23,14 +18,14 @@ type EnsureRequest struct {
 type EnsureRegistered struct {
 	identity vaultport.VaultIdentity
 	lookup   vaultport.VaultLookup
-	adder    VaultAdder
+	adder    Add
 	recorder vaultport.VaultRecorder
 }
 
 // NewEnsureRegistered is what a folder is named and looked up by, what adds it where it is not on
 // the list, and what records the vault opened last.
 func NewEnsureRegistered(
-	identity vaultport.VaultIdentity, lookup vaultport.VaultLookup, adder VaultAdder, recorder vaultport.VaultRecorder,
+	identity vaultport.VaultIdentity, lookup vaultport.VaultLookup, adder Add, recorder vaultport.VaultRecorder,
 ) EnsureRegistered {
 	return EnsureRegistered{identity: identity, lookup: lookup, adder: adder, recorder: recorder}
 }

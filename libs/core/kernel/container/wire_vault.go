@@ -36,8 +36,8 @@ func (c Config) EnsureVault(res *Resources, root, name string, isRecordedOpened 
 	}
 	identity := vaultIdentity(vaultconfig.Options{ServiceDir: c.ServiceDir})
 	add := newAddVault(identity, GetClock(res), ports)
-	ensure := vaultregistry.NewEnsureRegistered(identity, ports.Lookup, add, ports.Recorder)
-	return ensure.Execute(vaultregistry.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
+	ensure := vault.NewEnsureRegistered(identity, ports.Lookup, add, ports.Recorder)
+	return ensure.Execute(vault.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
 }
 
 func (c Config) openIndex(res *Resources, ctx context.Context) (*vaultIndex, error) {
