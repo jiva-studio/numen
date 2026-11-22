@@ -33,6 +33,6 @@ export const completionTheme = EditorView.baseTheme({
     verticalAlign: '-0.125em',
     opacity: '0.75',
   },
-  '.cm-completionIcon-project, .cm-completionIcon-context, .cm-completionIcon-tag, .cm-completionIcon-date, .cm-completionIcon-priority':
+  '.cm-tooltip-autocomplete .cm-completionIcon-project, .cm-tooltip-autocomplete .cm-completionIcon-context, .cm-tooltip-autocomplete .cm-completionIcon-tag, .cm-tooltip-autocomplete .cm-completionIcon-date, .cm-tooltip-autocomplete .cm-completionIcon-priority':
     { display: 'none' },
 })
