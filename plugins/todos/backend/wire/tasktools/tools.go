@@ -178,7 +178,7 @@ func (t *Tools) addTaskSetDone(registry *tools.Registry) error {
 			return TaskOutput{}, describe(in.Path, err)
 		}
 		result, err := scope.Completer.Execute(ctx, complete.Request{
-			Path: in.Path, Line: in.Line, Raw: found.Raw, IsDone: in.IsDone, Today: t.clock.Now().Format(time.DateOnly),
+			Path: in.Path, Line: in.Line, IsProseLine: false, Raw: found.Raw, IsDone: in.IsDone, Today: t.clock.Now().Format(time.DateOnly),
 		})
 		if err != nil {
 			return TaskOutput{}, err

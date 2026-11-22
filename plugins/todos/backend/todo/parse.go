@@ -182,6 +182,7 @@ func readTask(afterMarker, raw string, number, indent int) (Task, bool) {
 	return Task{
 		Path:       "",
 		Line:       number,
+		ProseLine:  0,
 		Raw:        raw,
 		Text:       strings.TrimSpace(strings.Join(found.kept, " ")),
 		Status:     getStatus(mark),
