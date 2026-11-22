@@ -120,7 +120,7 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
   display: flex;
   flex-direction: column;
   margin: 0;
-  padding: var(--settings-row-pad) 0;
+  padding: 0.5rem 0;
   list-style: none;
 }
 

@@ -97,6 +97,7 @@ const emit = defineEmits<{
 .plugin-slots__grip-icon {
   inline-size: var(--icon);
   block-size: var(--icon);
+  margin-inline-start: -0.25rem;
 }
 
 .plugin-slots__separator {
