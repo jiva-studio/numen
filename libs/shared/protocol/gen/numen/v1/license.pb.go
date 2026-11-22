@@ -82,7 +82,7 @@ func (LicenseStatus) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_license_proto_rawDescGZIP(), []int{0}
 }
 
-// LicenseErrorCode is why an activation or deactivation call was refused. The zero value is a call
+// LicenseErrorCode is why an activation or deactivation call failed. The zero value is a call
 // that succeeded.
 type LicenseErrorCode int32
 

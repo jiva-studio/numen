@@ -152,19 +152,19 @@ type PluginEventErrorCode int32
 
 const (
 	PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED PluginEventErrorCode = 0
-	// The plugin's event handler answered an error, which reason carries.
-	PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED PluginEventErrorCode = 1
+	// The plugin's event handler answered an error, which detail carries.
+	PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED PluginEventErrorCode = 1
 )
 
 // Enum value maps for PluginEventErrorCode.
 var (
 	PluginEventErrorCode_name = map[int32]string{
 		0: "PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED",
-		1: "PLUGIN_EVENT_ERROR_CODE_REFUSED",
+		1: "PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED",
 	}
 	PluginEventErrorCode_value = map[string]int32{
-		"PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED": 0,
-		"PLUGIN_EVENT_ERROR_CODE_REFUSED":     1,
+		"PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED":    0,
+		"PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED": 1,
 	}
 )
 
@@ -1858,7 +1858,7 @@ func (x *DeliverEventRequest) GetEvent() string {
 type DeliverEventResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Error         PluginEventErrorCode   `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.PluginEventErrorCode" json:"error,omitempty"`
-	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1900,9 +1900,9 @@ func (x *DeliverEventResponse) GetError() PluginEventErrorCode {
 	return PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *DeliverEventResponse) GetReason() string {
+func (x *DeliverEventResponse) GetDetail() string {
 	if x != nil {
-		return x.Reason
+		return x.Detail
 	}
 	return ""
 }
@@ -2044,7 +2044,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05event\x18\x01 \x01(\tR\x05event\"d\n" +
 	"\x14DeliverEventResponse\x124\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.v1.PluginEventErrorCodeR\x05error\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason*\xd3\b\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail*\xd3\b\n" +
 	"\x16PluginContributionKind\x12(\n" +
 	"$PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED\x10\x00\x12%\n" +
 	"!PLUGIN_CONTRIBUTION_KIND_COMMANDS\x10\x01\x12(\n" +
@@ -2072,10 +2072,10 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"*PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS\x10\x15\x12-\n" +
 	")PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS\x10\x17\x12\"\n" +
 	"\x1ePLUGIN_CONTRIBUTION_KIND_TOOLS\x10\x18\x12.\n" +
-	"*PLUGIN_CONTRIBUTION_KIND_EDITOR_EXTENSIONS\x10\x19*d\n" +
+	"*PLUGIN_CONTRIBUTION_KIND_EDITOR_EXTENSIONS\x10\x19*k\n" +
 	"\x14PluginEventErrorCode\x12'\n" +
-	"#PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n" +
-	"\x1fPLUGIN_EVENT_ERROR_CODE_REFUSED\x10\x012\xd8\x01\n" +
+	"#PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED\x10\x00\x12*\n" +
+	"&PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED\x10\x012\xd8\x01\n" +
 	"\x16PluginLifecycleService\x125\n" +
 	"\x04Ping\x12\x15.numen.v1.PingRequest\x1a\x16.numen.v1.PingResponse\x12A\n" +
 	"\bShutdown\x12\x19.numen.v1.ShutdownRequest\x1a\x1a.numen.v1.ShutdownResponse\x12D\n" +

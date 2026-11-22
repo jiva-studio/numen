@@ -63,7 +63,7 @@ func failText(code v1.TextErrorCode) error {
 	switch code {
 	case v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED:
 		return nil
-	case v1.TextErrorCode_TEXT_ERROR_CODE_MISSING:
+	case v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND:
 		return ErrNotExist
 	case v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT:
 		return ErrNoVault

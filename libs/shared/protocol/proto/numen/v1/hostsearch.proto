@@ -89,7 +89,7 @@ service HostSearchService {
   rpc ListSearchFunctions(ListSearchFunctionsRequest) returns (ListSearchFunctionsResponse);
 }
 
-// HostSearchErrorCode is why a call on the search index was refused. The zero
+// HostSearchErrorCode is why a call on the search index failed. The zero
 // value means it was not.
 enum HostSearchErrorCode {
   HOST_SEARCH_ERROR_CODE_UNSPECIFIED = 0;

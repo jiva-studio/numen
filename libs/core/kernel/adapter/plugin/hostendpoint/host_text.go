@@ -64,7 +64,7 @@ func answerText(ctx context.Context, err error) (v1.TextErrorCode, error) {
 	}
 	switch {
 	case errors.Is(err, text.ErrNoText):
-		return v1.TextErrorCode_TEXT_ERROR_CODE_MISSING, nil
+		return v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND, nil
 	case errors.Is(err, text.ErrInvalidVersion):
 		return v1.TextErrorCode_TEXT_ERROR_CODE_INVALID, nil
 	case errors.Is(err, text.ErrNotTextPlugin):

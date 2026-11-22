@@ -1106,7 +1106,7 @@ export const SearchFunctionSchema: GenMessage<SearchFunction> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostsearch, 33);
 
 /**
- * HostSearchErrorCode is why a call on the search index was refused. The zero
+ * HostSearchErrorCode is why a call on the search index failed. The zero
  * value means it was not.
  *
  * @generated from enum numen.v1.HostSearchErrorCode

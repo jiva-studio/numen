@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// HostSearchErrorCode is why a call on the search index was refused. The zero
+// HostSearchErrorCode is why a call on the search index failed. The zero
 // value means it was not.
 type HostSearchErrorCode int32
 
