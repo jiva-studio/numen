@@ -15,33 +15,27 @@ import {
   settle,
 } from '@/testing/window'
 import { COMMAND } from '@/shared/model/command'
-import type * as ShellModule from '@numen/workbench'
+import type * as LoaderModule from '@numen/plugin-loader'
 
+/** What the desktop shell answers the window: the native edge, which the window reads once at start. */
 const frame = vi.hoisted(() => ({
   platform: 'windows' as 'windows' | 'darwin',
   isMaximized: false,
   isFullscreen: false,
   closeWindow: vi.fn(async () => undefined),
-  minimizeWindow: vi.fn(async () => undefined),
-  toggleMaximizeWindow: vi.fn(async () => undefined),
 }))
 
-vi.mock('@numen/workbench', async (importOriginal) => {
-  const { computed } = await import('vue')
-  const shell = await importOriginal<typeof ShellModule>()
+vi.mock('@numen/plugin-loader', async (importOriginal) => {
+  const loader = await importOriginal<typeof LoaderModule>()
   return {
-    ...shell,
-    useWindowFrame: () => ({
-      platform: computed(() => frame.platform),
-      isMaximized: computed(() => frame.isMaximized),
-      isFullscreen: computed(() => frame.isFullscreen),
-      windowEdge: computed(() => ({
-        leftInset: frame.platform === 'darwin' && !frame.isFullscreen ? 80 : 0,
-        rightInset: 0,
-      })),
-      closeWindow: frame.closeWindow,
-      minimizeWindow: frame.minimizeWindow,
-      toggleMaximizeWindow: frame.toggleMaximizeWindow,
+    ...loader,
+    createWindowFrameControls: () => ({
+      getEnvironment: async () => ({ platform: frame.platform, version: undefined }),
+      isMaximized: async () => frame.isMaximized,
+      isFullscreen: async () => frame.isFullscreen,
+      minimize: async () => undefined,
+      toggleMaximize: async () => undefined,
+      close: frame.closeWindow,
     }),
   }
 })

@@ -1756,6 +1756,24 @@
         "tools/checks/lib/golangci.test.mjs",
         "tools/checks/lib/changed.test.mjs"
       ]
+    },
+    {
+      "name": "ts/window-sources",
+      "paths": [
+        "apps/desktop/editor/src/**/*.{ts,vue}",
+        "apps/mobile/index.html",
+        "apps/mobile/src/**/*.{ts,vue}"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "window",
+        "fast"
+      ],
+      "selftest": "structure/ts/window-sources/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/window-sources/check.mjs",
+      "export": "WINDOW_SOURCES_VERIFIERS"
     }
   ]
 }
