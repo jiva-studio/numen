@@ -206,6 +206,14 @@ function onTick(task: Task) {
   font-size: var(--numen-text-2);
 }
 
+.todos-status__row input[type='checkbox'] {
+  flex: none;
+  inline-size: 1em;
+  block-size: 1em;
+  margin: 0;
+  accent-color: var(--numen-accent);
+}
+
 .todos-status__text {
   flex: 1;
   min-width: 0;
