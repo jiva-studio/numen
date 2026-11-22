@@ -83,3 +83,28 @@ describe('the slots a plugin draws', () => {
     expect(groups('org.example.none')).toStrictEqual([])
   })
 })
+
+describe('a command two plugins place in one slot', () => {
+  const groups = createSlotGroups({
+    slots: ref([
+      { pluginId: TAGS, slot: 'plexGraph.board', command: 'org.example.shared:open' },
+      { pluginId: PLEX, slot: 'plexGraph.board', command: 'org.example.shared:open' },
+      {
+        pluginId: PLEX,
+        slot: 'plexGraph.board',
+        command: 'org.example.shared:open',
+        values: { a: '1' },
+      },
+    ]),
+    contributions: {
+      slotPoints: ref([{ pluginId: PLEX, slot: 'plexGraph.board', title: 'Board', menu: false }]),
+    },
+  })
+
+  it('is listed once, as the entry the slot draws', () => {
+    expect(groups(PLEX)[0]?.contributors.map((one) => one.key)).toStrictEqual([
+      `${PLEX}/command/org.example.shared:open`,
+      `${PLEX}/command/org.example.shared:open?a=1`,
+    ])
+  })
+})

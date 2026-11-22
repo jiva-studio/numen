@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 import {
   formatCommandId,
   getEntryKey,
+  keepFirstOfEachCommand,
   sortSlotEntries,
   type DeclaredSlotEntry,
   type DeclaredSlotPoint,
@@ -61,21 +62,21 @@ export function createSlotGroups(source: SlotGroupsSource) {
       .map((point) => ({
         slot: point.slot,
         title: point.title,
-        contributors: sortSlotEntries(entries.filter((one) => one.slot === point.slot)).flatMap(
-          (entry) => {
-            const key = getEntryKey(entry)
-            return key
-              ? [
-                  {
-                    key,
-                    label: getLabel(entry),
-                    pluginId: entry.pluginId,
-                    group: entry.group ?? '',
-                  },
-                ]
-              : []
-          },
-        ),
+        contributors: sortSlotEntries(
+          keepFirstOfEachCommand(entries.filter((one) => one.slot === point.slot)),
+        ).flatMap((entry) => {
+          const key = getEntryKey(entry)
+          return key
+            ? [
+                {
+                  key,
+                  label: getLabel(entry),
+                  pluginId: entry.pluginId,
+                  group: entry.group ?? '',
+                },
+              ]
+            : []
+        }),
       }))
       .filter((group) => group.contributors.length > 0)
   }

@@ -102,6 +102,7 @@ export {
   collapseSeparators,
   SLOT_SEPARATOR_ID,
   getEntryKey,
+  keepFirstOfEachCommand,
   sortSlotEntries,
   readManifestSlotPoints,
   type DeclaredSlotPoint,

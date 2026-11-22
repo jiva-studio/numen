@@ -49,13 +49,31 @@ export function getEntryKey(entry: DeclaredSlotEntry): string | undefined {
   return entry.submenu ? formatItemKey(entry, 'submenu', entry.submenu) : undefined
 }
 
+const compareEntries = (a: DeclaredSlotEntry, b: DeclaredSlotEntry): number =>
+  compareGroups(a.group ?? '', b.group ?? '') ||
+  compareOrder(a, b) ||
+  compareText(a.pluginId, b.pluginId) ||
+  compareText(getEntryKey(a) ?? '', getEntryKey(b) ?? '')
+
 /** The entries in the order a slot draws them when nothing is stored: by group, then order, then plugin id. */
 export function sortSlotEntries(entries: readonly DeclaredSlotEntry[]): DeclaredSlotEntry[] {
-  return [...entries].sort(
-    (a, b) =>
-      compareGroups(a.group ?? '', b.group ?? '') ||
-      compareOrder(a, b) ||
-      compareText(a.pluginId, b.pluginId) ||
-      compareText(getEntryKey(a) ?? '', getEntryKey(b) ?? ''),
-  )
+  return [...entries].sort(compareEntries)
+}
+
+const getRunKey = (entry: DeclaredSlotEntry): string =>
+  entry.command ? `${getFullCommand(entry, entry.command)}${getValuesKey(entry.values)}` : ''
+
+/**
+ * Of the entries of one slot that run the entries that run the same command with the same values,
+ * only the first in the order the slot draws them.
+ */
+export function keepFirstOfEachCommand(entries: readonly DeclaredSlotEntry[]): DeclaredSlotEntry[] {
+  const first = new Map<string, DeclaredSlotEntry>()
+  for (const entry of entries) {
+    if (!entry.command) continue
+    const current = first.get(getRunKey(entry))
+    if (current === undefined || compareEntries(entry, current) < 0)
+      first.set(getRunKey(entry), entry)
+  }
+  return entries.filter((entry) => !entry.command || first.get(getRunKey(entry)) === entry)
 }

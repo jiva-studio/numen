@@ -25,6 +25,7 @@ import {
   formatItemKey,
   getFullCommand,
   getValuesKey,
+  keepFirstOfEachCommand,
 } from './slotKeys'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
@@ -85,20 +86,9 @@ const compareInGroup = (a: Placed, b: Placed): number =>
   compareText(a.entry.pluginId, b.entry.pluginId) ||
   compareText(a.item.key, b.item.key)
 
-const compareInSlot = (a: Placed, b: Placed): number =>
-  compareGroups(a.entry.group ?? '', b.entry.group ?? '') || compareInGroup(a, b)
-
-const getRunKey = (placed: Placed): string =>
-  `${placed.item.kind === 'command' ? placed.item.command : ''}${getValuesKey(placed.entry.values)}`
-
-function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
-  const first = new Map<string, Placed>()
-  for (const one of placed) {
-    if (one.item.kind !== 'command') continue
-    const current = first.get(getRunKey(one))
-    if (current === undefined || compareInSlot(one, current) < 0) first.set(getRunKey(one), one)
-  }
-  return placed.filter((one) => one.item.kind !== 'command' || first.get(getRunKey(one)) === one)
+function dropRepeatedCommands(placed: readonly Placed[]): Placed[] {
+  const kept = new Set(keepFirstOfEachCommand(placed.map((one) => one.entry)))
+  return placed.filter((one) => kept.has(one.entry))
 }
 
 const isWindowPlace = (slot: string): boolean =>
@@ -106,7 +96,7 @@ const isWindowPlace = (slot: string): boolean =>
 
 function layOut(slot: string, placed: readonly Placed[]): SlotItem[] {
   const groups = new Map<string, Placed[]>()
-  for (const one of keepFirstOfEachCommand(placed)) {
+  for (const one of dropRepeatedCommands(placed)) {
     const name = one.entry.group ?? ''
     groups.set(name, [...(groups.get(name) ?? []), one])
   }
