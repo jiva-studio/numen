@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
-// suggestName is the first name of the template that no note of the folder has: the name of the template, then
-// the name with 2, 3 and on up to maxNames. Every number taken, it is the name of the template.
 func suggestName(ctx context.Context, vault Vault, folder, template string) (string, error) {
 	stem := getName(template)
 	for number := 1; number <= maxNames; number++ {
@@ -31,7 +29,6 @@ func suggestName(ctx context.Context, vault Vault, folder, template string) (str
 	return stem, nil
 }
 
-// checkName refuses a name that no note file can have, as the host refuses the title of a note.
 func checkName(name string) error {
 	reduced, isExact, err := domain.Filename(name)
 	if err != nil {

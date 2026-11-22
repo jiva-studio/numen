@@ -36,7 +36,9 @@ func NewListFields(vault Vault, clock Clock, getMasks func() mask.Set) ListField
 	return ListFields{vault: vault, clock: clock, getMasks: getMasks, renderer: engine.New(nil)}
 }
 
-// Execute lists the fields of the template, in the order they are asked, and suggests the name of the note.
+// Execute lists the fields of the template, in the order they are asked, and suggests the name of the note: the
+// name of the template, then with 2, 3 and on up to 100 where a note of the folder has it, and with every number
+// taken the name of the template.
 func (u ListFields) Execute(ctx context.Context, in FieldsRequest) (FieldsResult, error) {
 	text, err := readTemplate(ctx, u.vault, u.getMasks(), in.Template)
 	if err != nil {
