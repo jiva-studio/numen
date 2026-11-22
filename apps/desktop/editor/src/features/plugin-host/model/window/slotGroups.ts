@@ -2,8 +2,7 @@ import type { Ref } from 'vue'
 import {
   formatCommandId,
   getEntryKey,
-  keepFirstOfEachCommand,
-  sortSlotEntries,
+  orderSlotEntries,
   type DeclaredSlotEntry,
   type DeclaredSlotPoint,
 } from '@numen/plugin-loader'
@@ -62,8 +61,9 @@ export function createSlotGroups(source: SlotGroupsSource) {
       .map((point) => ({
         slot: point.slot,
         title: point.title,
-        contributors: sortSlotEntries(
-          keepFirstOfEachCommand(entries.filter((one) => one.slot === point.slot)),
+        contributors: orderSlotEntries(
+          entries.filter((one) => one.slot === point.slot),
+          (one) => one,
         ).flatMap((entry) => {
           const key = getEntryKey(entry)
           return key

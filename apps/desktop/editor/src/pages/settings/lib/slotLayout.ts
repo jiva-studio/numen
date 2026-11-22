@@ -1,4 +1,4 @@
-import { arrangeByLayout, SLOT_SEPARATOR_ID } from '@numen/plugin-loader'
+import { arrangeByLayout, separateGroups, SLOT_SEPARATOR_ID } from '@numen/plugin-loader'
 import type { JsonValue } from '@/shared/api/json'
 import type { SlotContributor, SlotGroup } from '../types'
 
@@ -33,11 +33,12 @@ function getStoredEntries(layout: JsonValue | undefined, slot: string): readonly
   return Array.isArray(list) ? list.filter(isStoredEntry) : []
 }
 
-function getDefaults(contributors: readonly SlotContributor[]): (SlotContributor | null)[] {
-  return contributors.flatMap((one, at) =>
-    at > 0 && contributors[at - 1]?.group !== one.group ? [null, one] : [one],
-  )
-}
+const getDefaults = (contributors: readonly SlotContributor[]): (SlotContributor | null)[] =>
+  separateGroups<SlotContributor, SlotContributor | null>(contributors, {
+    group: (one) => one.group,
+    row: (one) => one,
+    separator: () => null,
+  })
 
 /**
  * The rows of a slot: its entries and the separators between groups, as the stored layout arranges them,

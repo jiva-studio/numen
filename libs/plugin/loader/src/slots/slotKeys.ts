@@ -7,14 +7,14 @@ export const compareText = (a: string, b: string): number => {
   return a < b ? -1 : 1
 }
 
-export const compareOrder = (a: DeclaredSlotEntry, b: DeclaredSlotEntry): number => {
+const compareOrder = (a: DeclaredSlotEntry, b: DeclaredSlotEntry): number => {
   if (a.order === b.order) return 0
   if (a.order === undefined) return 1
   if (b.order === undefined) return -1
   return a.order - b.order
 }
 
-export const compareGroups = (a: string, b: string): number => {
+const compareGroups = (a: string, b: string): number => {
   if (a === b) return 0
   if (a === '') return 1
   if (b === '') return -1
@@ -55,25 +55,55 @@ const compareEntries = (a: DeclaredSlotEntry, b: DeclaredSlotEntry): number =>
   compareText(a.pluginId, b.pluginId) ||
   compareText(getEntryKey(a) ?? '', getEntryKey(b) ?? '')
 
-/** The entries in the order a slot draws them when nothing is stored: by group, then order, then plugin id. */
-export function sortSlotEntries(entries: readonly DeclaredSlotEntry[]): DeclaredSlotEntry[] {
-  return [...entries].sort(compareEntries)
-}
-
 const getRunKey = (entry: DeclaredSlotEntry): string =>
   entry.command ? `${getFullCommand(entry, entry.command)}${getValuesKey(entry.values)}` : ''
 
-/**
- * Of the entries of one slot that run the entries that run the same command with the same values,
- * only the first in the order the slot draws them.
- */
-export function keepFirstOfEachCommand(entries: readonly DeclaredSlotEntry[]): DeclaredSlotEntry[] {
-  const first = new Map<string, DeclaredSlotEntry>()
-  for (const entry of entries) {
+function keepFirstOfEachCommand<T>(
+  items: readonly T[],
+  getEntry: (one: T) => DeclaredSlotEntry,
+): T[] {
+  const first = new Map<string, T>()
+  for (const one of items) {
+    const entry = getEntry(one)
     if (!entry.command) continue
     const current = first.get(getRunKey(entry))
-    if (current === undefined || compareEntries(entry, current) < 0)
-      first.set(getRunKey(entry), entry)
+    if (current === undefined || compareEntries(entry, getEntry(current)) < 0)
+      first.set(getRunKey(entry), one)
   }
-  return entries.filter((entry) => !entry.command || first.get(getRunKey(entry)) === entry)
+  return items.filter(
+    (one) => !getEntry(one).command || first.get(getRunKey(getEntry(one))) === one,
+  )
+}
+
+/**
+ * The entries of one slot as it draws them when nothing is stored: the first of each command, by group,
+ * then order, then plugin id.
+ */
+export function orderSlotEntries<T>(
+  items: readonly T[],
+  getEntry: (one: T) => DeclaredSlotEntry,
+): T[] {
+  return keepFirstOfEachCommand(items, getEntry).sort((a, b) =>
+    compareEntries(getEntry(a), getEntry(b)),
+  )
+}
+
+/** What a slot in its default arrangement is made of: a row for each entry, a separator where the group changes. */
+export interface GroupedRows<T, R> {
+  readonly group: (one: T) => string | undefined
+  readonly row: (one: T) => R
+  readonly separator: (group: string) => R
+}
+
+/** The ordered entries as rows, with a separator before each group after the first, named by the group it opens. */
+export function separateGroups<T, R>(ordered: readonly T[], read: GroupedRows<T, R>): R[] {
+  const rows: R[] = []
+  let previous: string | undefined
+  for (const one of ordered) {
+    const group = read.group(one) ?? ''
+    if (previous !== undefined && group !== previous) rows.push(read.separator(group))
+    rows.push(read.row(one))
+    previous = group
+  }
+  return rows
 }

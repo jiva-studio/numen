@@ -19,13 +19,12 @@ import { getTargetValues, type WhenValues, createWhenReader, type WhenReader } f
 import { WINDOW_SLOTS } from './windowSlots'
 import { applyLayout, type DeclaredSlotPoint, type SlotLayout } from './slotLayout'
 import {
-  compareGroups,
-  compareOrder,
   compareText,
   formatItemKey,
   getFullCommand,
   getValuesKey,
-  keepFirstOfEachCommand,
+  orderSlotEntries,
+  separateGroups,
 } from './slotKeys'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
@@ -81,32 +80,18 @@ interface Placed {
   readonly item: SlotItem
 }
 
-const compareInGroup = (a: Placed, b: Placed): number =>
-  compareOrder(a.entry, b.entry) ||
-  compareText(a.entry.pluginId, b.entry.pluginId) ||
-  compareText(a.item.key, b.item.key)
-
-function dropRepeatedCommands(placed: readonly Placed[]): Placed[] {
-  const kept = new Set(keepFirstOfEachCommand(placed.map((one) => one.entry)))
-  return placed.filter((one) => kept.has(one.entry))
-}
-
 const isWindowPlace = (slot: string): boolean =>
   WINDOW_SLOTS.some((one) => slot === one || slot.startsWith(`${one}.`))
 
-function layOut(slot: string, placed: readonly Placed[]): SlotItem[] {
-  const groups = new Map<string, Placed[]>()
-  for (const one of dropRepeatedCommands(placed)) {
-    const name = one.entry.group ?? ''
-    groups.set(name, [...(groups.get(name) ?? []), one])
-  }
-  const items: SlotItem[] = []
-  for (const name of [...groups.keys()].sort(compareGroups)) {
-    if (items.length > 0) items.push({ kind: 'separator', key: `${slot}/separator/${name}` })
-    items.push(...(groups.get(name) ?? []).sort(compareInGroup).map((one) => one.item))
-  }
-  return items
-}
+const layOut = (slot: string, placed: readonly Placed[]): SlotItem[] =>
+  separateGroups(
+    orderSlotEntries(placed, (one) => one.entry),
+    {
+      group: (one) => one.entry.group,
+      row: (one) => one.item,
+      separator: (group) => ({ kind: 'separator', key: `${slot}/separator/${group}` }),
+    },
+  )
 
 function findSubmenuOwners(entries: readonly DeclaredSlotEntry[]) {
   const owners = new Map<string, DeclaredSlotEntry>()
