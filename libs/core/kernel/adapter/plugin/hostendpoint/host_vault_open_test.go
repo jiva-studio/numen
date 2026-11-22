@@ -16,14 +16,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, numenv1connect.HostVaultServiceClient) {
+func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, HostVaultClient) {
 	t.Helper()
 	hostCallers := newCallers()
 	hostCallers.vault = vaultOf(newFakeNoteVault())
@@ -32,7 +31,7 @@ func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, numenv1conne
 		t.Fatal(err)
 	}
 	url := fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort())
-	return endpoint, numenv1connect.NewHostVaultServiceClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return endpoint, NewHostVaultClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 }
 
 func TestOpenVaultWithUnsavedChangesReturnsUnsavedWithTheDetail(t *testing.T) {
@@ -46,7 +45,7 @@ func TestOpenVaultWithUnsavedChangesReturnsUnsavedWithTheDetail(t *testing.T) {
 		}
 	})
 
-	res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+	res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{Id: "v2"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +68,7 @@ func TestTwoOpenVaultCallsAtOnceBothReturnAndBothOpen(t *testing.T) {
 	var wg sync.WaitGroup
 	for range 2 {
 		wg.Go(func() {
-			res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+			res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{Id: "v2"}))
 			if err != nil || res.Msg.GetError() != 0 {
 				t.Errorf("OpenVault of v2 returned %v (%v)", res, err)
 			}
@@ -95,7 +94,7 @@ func TestOpenVaultWhileTheWindowFlushesIsUnavailable(t *testing.T) {
 		}
 	}()
 
-	_, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+	_, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{Id: "v2"}))
 
 	var failure *connect.Error
 	if !errors.As(err, &failure) || failure.Code() != connect.CodeUnavailable {
@@ -115,7 +114,7 @@ func TestCloseWithCallRunningPastShutdownToleranceReturnsError(t *testing.T) {
 	endpoint, client := openListEndpoint(t, list)
 	callResult := make(chan error, 1)
 	go func() {
-		_, err := client.OpenVault(context.WithoutCancel(t.Context()), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+		_, err := client.OpenVault(context.WithoutCancel(t.Context()), connect.NewRequest(&v1.OpenVaultRequest{Id: "v2"}))
 		callResult <- err
 	}()
 	select {

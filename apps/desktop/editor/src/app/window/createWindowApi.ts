@@ -9,6 +9,7 @@ import { createLicenseApi } from '@/entities/license'
 import { createLinkApi, createNoteApi, createRelations } from '@/entities/note'
 import {
   createCatalogReader,
+  createReadmeReader,
   createDeclaredCommandsApi,
   createHealthApi,
   createLogHost,
@@ -43,7 +44,7 @@ export function createWindowApi(transports: WindowTransports) {
   const settingsClients = createSettingsClients(transport)
   const pluginClients = createPluginHostClients(transport)
   const links = createLinkApi(vaultClients.notes)
-  const vaults = createVaults(vaultClients.vaultsService)
+  const vaults = createVaults(vaultClients.vaultsService, vaultClients.folderDialog)
   const shownVault = createShownVaultApi(workspaceClients.windowService)
   return {
     vault: {
@@ -69,21 +70,30 @@ export function createWindowApi(transports: WindowTransports) {
       tabMove: createTabMoveApi(workspaceClients.workspace),
     },
     plugins: {
-      declaredCommands: createDeclaredCommandsApi(pluginClients.pluginCommands),
+      declaredCommands: createDeclaredCommandsApi(
+        pluginClients.pluginCommands,
+        pluginClients.contributions,
+        pluginClients.textVersions,
+      ),
       pluginHost: createPluginHostApi({
         texts: vaultClients.texts,
         connectionCalls: pluginClients.connectionCalls,
       }),
       health: createHealthApi(pluginClients.pluginHealth),
-      processes: createProcessHost(pluginClients.pluginService),
+      processes: createProcessHost(pluginClients.pluginProcessService),
       logs: createLogHost(workspaceClients.logService),
       listCatalog: createCatalogReader(pluginClients.pluginCatalog),
+      readReadme: createReadmeReader(pluginClients.pluginCatalog),
       findTabKindPlugin: createTabKindPluginFinder(pluginClients.pluginCatalog),
     },
     configuration: {
       connection: createConnectionApi(settingsClients.connections),
       license: createLicenseApi(settingsClients.licenses),
-      settings: createSettingsApi(settingsClients.settingsService),
+      settings: createSettingsApi(
+        settingsClients.settingsService,
+        pluginClients.pluginProcessService,
+        settingsClients.pluginData,
+      ),
       themes: createThemes(settingsClients.theme),
     },
   }

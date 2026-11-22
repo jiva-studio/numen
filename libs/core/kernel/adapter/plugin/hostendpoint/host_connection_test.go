@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -78,21 +80,21 @@ func (c *recordingClient) Do(request *http.Request) (*http.Response, error) {
 	return response, readErr
 }
 
-func newConnectionClient(t *testing.T, calls ModelCalls, token string) (numenv1connect.HostConnectionServiceClient, *recordingClient) {
+func newConnectionClient(t *testing.T, calls ModelCalls, token string) (numenv1connect.ConnectionCallServiceClient, *recordingClient) {
 	t.Helper()
 	fakeCallers := newCallers()
 	fakeCallers.modelCalls = calls
 	return newConnectionClientFor(t, fakeCallers, token)
 }
 
-func newConnectionClientFor(t *testing.T, fakeCallers *callers, token string) (numenv1connect.HostConnectionServiceClient, *recordingClient) {
+func newConnectionClientFor(t *testing.T, fakeCallers *callers, token string) (numenv1connect.ConnectionCallServiceClient, *recordingClient) {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostConnectionServiceHandler(&connectionEndpoint{endpoint: &Endpoint{callers: fakeCallers.asCallers()}}))
+	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(newConnectionCalls(&Endpoint{callers: fakeCallers.asCallers()}, searchcancel.NewSearches(testsupport.GetMachine()))))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	recording := &recordingClient{inner: server.Client()}
-	return numenv1connect.NewHostConnectionServiceClient(recording, server.URL, connect.WithInterceptors(transport.AuthInterceptor(token))), recording
+	return numenv1connect.NewConnectionCallServiceClient(recording, server.URL, connect.WithInterceptors(transport.AuthInterceptor(token))), recording
 }
 
 // received is what a consumer read from a call: the data frames, the done payload and the failure.
@@ -103,7 +105,7 @@ type received struct {
 	failure *v1.CallFailure
 }
 
-func call(ctx context.Context, client numenv1connect.HostConnectionServiceClient, request *v1.HostConnectionServiceCallRequest) (got received, err error) {
+func call(ctx context.Context, client numenv1connect.ConnectionCallServiceClient, request *v1.ConnectionCallServiceCallRequest) (got received, err error) {
 	stream, err := client.Call(ctx, connect.NewRequest(request))
 	if err != nil {
 		return received{}, err
@@ -111,11 +113,11 @@ func call(ctx context.Context, client numenv1connect.HostConnectionServiceClient
 	defer func() { err = errors.Join(err, stream.Close()) }()
 	for stream.Receive() {
 		switch frame := stream.Msg().GetFrame().(type) {
-		case *v1.HostConnectionServiceCallResponse_Data:
+		case *v1.ConnectionCallServiceCallResponse_Data:
 			got.frames = append(got.frames, string(frame.Data))
-		case *v1.HostConnectionServiceCallResponse_Done:
+		case *v1.ConnectionCallServiceCallResponse_Done:
 			got.done, got.isDone = frame.Done, true
-		case *v1.HostConnectionServiceCallResponse_Failure:
+		case *v1.ConnectionCallServiceCallResponse_Failure:
 			got.failure = frame.Failure
 		}
 	}
@@ -126,7 +128,7 @@ func TestACallIsCarriedOutForThePluginTheTokenNamesAndStreamsItsFrames(t *testin
 	calls := &scriptedCalls{frames: []string{"Let me ", "look."}, done: "finish"}
 	client, _ := newConnectionClient(t, calls, "token-b")
 
-	got, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: "llm.chat", Payload: []byte("list the notes")})
+	got, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.chat", Payload: []byte("list the notes")})
 
 	if err != nil || !slices.Equal(got.frames, []string{"Let me ", "look."}) || string(got.done) != "finish" || got.failure != nil {
 		t.Fatalf("Call = %+v, %v", got, err)
@@ -140,7 +142,7 @@ func TestACallWithoutAKnownTokenIsUnauthenticated(t *testing.T) {
 	calls := &scriptedCalls{}
 	client, _ := newConnectionClient(t, calls, "token-unknown")
 
-	_, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: "llm.complete"})
+	_, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.complete"})
 
 	if connect.CodeOf(err) != connect.CodeUnauthenticated || len(calls.callers) != 0 {
 		t.Errorf("code = %v, callers = %v", connect.CodeOf(err), calls.callers)
@@ -150,7 +152,7 @@ func TestACallWithoutAKnownTokenIsUnauthenticated(t *testing.T) {
 func TestAHostWithNoModelCallsAnswersNoConnection(t *testing.T) {
 	client, _ := newConnectionClient(t, nil, "token-a")
 
-	got, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: "llm.complete"})
+	got, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.complete"})
 
 	if err != nil || got.failure.GetError() != v1.CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION {
 		t.Errorf("Call = %+v, %v, want a served NO_CONNECTION", got, err)
@@ -163,7 +165,7 @@ func TestAllFailedIsAServedFailureThatNamesEachConnection(t *testing.T) {
 	}}
 	client, _ := newConnectionClient(t, &scriptedCalls{err: fmt.Errorf("embed: %w", failure)}, "token-a")
 
-	got, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: "llm.embed"})
+	got, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.embed"})
 
 	if err != nil || got.failure.GetError() != v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED {
 		t.Fatalf("Call = %+v, %v", got, err)
@@ -182,7 +184,7 @@ func TestAFailureAfterTheFirstFrameKeepsTheFramesAndEndsTheStreamWithTheFailure(
 	failure := &connection.AllFailedError{Failures: []connection.Failure{{ConnectionName: "OpenRouter", Reason: "rate limited"}}}
 	client, _ := newConnectionClient(t, &scriptedCalls{frames: []string{"partial"}, err: failure}, "token-a")
 
-	got, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: "llm.chat"})
+	got, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.chat"})
 
 	if err != nil || !slices.Equal(got.frames, []string{"partial"}) || got.isDone ||
 		got.failure.GetError() != v1.CallErrorCode_CALL_ERROR_CODE_ALL_FAILED {
@@ -193,7 +195,7 @@ func TestAFailureAfterTheFirstFrameKeepsTheFramesAndEndsTheStreamWithTheFailure(
 func TestAStopIsAServedFailureThatNamesTheConnection(t *testing.T) {
 	client, _ := newConnectionClient(t, &scriptedCalls{err: &connection.StoppedError{ConnectionName: "OpenRouter", Reason: "invalid request"}}, "token-a")
 
-	got, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: "llm.profile"})
+	got, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.profile"})
 
 	failures := got.failure.GetFailures()
 	if err != nil || got.failure.GetError() != v1.CallErrorCode_CALL_ERROR_CODE_STOPPED ||
@@ -205,7 +207,7 @@ func TestAStopIsAServedFailureThatNamesTheConnection(t *testing.T) {
 func TestAnyOtherFailureIsAStatusCode(t *testing.T) {
 	client, _ := newConnectionClient(t, &scriptedCalls{err: errors.New("the settings are unreadable")}, "token-a")
 
-	_, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: "llm.complete"})
+	_, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.complete"})
 
 	if connect.CodeOf(err) != connect.CodeInternal {
 		t.Errorf("code = %v, want internal", connect.CodeOf(err))
@@ -218,7 +220,7 @@ func TestACanceledCallReachesTheCallsAndReturnsCanceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	outcome := make(chan error, 1)
 	go func() {
-		_, err := call(ctx, client, &v1.HostConnectionServiceCallRequest{Operation: "llm.chat"})
+		_, err := call(ctx, client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.chat"})
 		outcome <- err
 	}()
 	<-calls.started
@@ -259,8 +261,8 @@ func TestAConsumerReceivesNoKeyInAnyAnswer(t *testing.T) {
 		arrange(world)
 		client, recording := newConnectionClient(t, modelcalls.NewCalls(lookupsOf(world), world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside), "token-b")
 
-		_, completeErr := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: modelcalltest.CompleteOperation})
-		_, chatErr := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: modelcalltest.ChatOperation})
+		_, completeErr := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: modelcalltest.CompleteOperation})
+		_, chatErr := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: modelcalltest.ChatOperation})
 		t.Logf("calls: %v; %v", completeErr, chatErr)
 
 		if text := recording.received.String(); strings.Contains(text, "sk-") {
@@ -282,7 +284,7 @@ func TestACallCarriesThePriorityOfTheRequest(t *testing.T) {
 			calls := &scriptedCalls{}
 			client, _ := newConnectionClient(t, calls, "token-a")
 
-			_, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: "llm.embed", Priority: want.wire})
+			_, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.embed", Priority: want.wire})
 
 			if err != nil || calls.request.Priority != want.port {
 				t.Errorf("priority = %v, %v, want %v", calls.request.Priority, err, want.port)
@@ -291,32 +293,47 @@ func TestACallCarriesThePriorityOfTheRequest(t *testing.T) {
 	}
 }
 
-func TestThePluginEndpointDoesNotMountConnectionCallService(t *testing.T) {
-	fakeCallers := newCallers()
-	endpoint, err := Open(t.Context(), "127.0.0.1:0", fakeCallers.asCallers())
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := endpoint.Close(context.WithoutCancel(t.Context())); err != nil {
-			t.Error(err)
-		}
-	})
-	client := numenv1connect.NewConnectionCallServiceClient(http.DefaultClient, fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort()),
-		connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+func lookupsOf(world *modelcalltest.World) modelcalls.Connections {
+	return modelcalls.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows}
+}
 
-	stream, callErr := client.Call(t.Context(), connect.NewRequest(&v1.ConnectionCallServiceCallRequest{PluginId: "md.numen.b", Operation: "llm.complete"}))
-	if callErr == nil {
-		for stream.Receive() {
-		}
-		callErr = stream.Err()
-	}
+func TestACallThatNamesAnotherPluginThanTheTokenIsRefused(t *testing.T) {
+	calls := &scriptedCalls{done: "finish"}
+	client, _ := newConnectionClient(t, calls, "token-a")
 
-	if connect.CodeOf(callErr) != connect.CodeUnimplemented && connect.CodeOf(callErr) != connect.CodeNotFound {
-		t.Errorf("code = %v, want the service to be absent", connect.CodeOf(callErr))
+	_, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{PluginId: "md.numen.b", Operation: "llm.complete"})
+
+	if connect.CodeOf(err) != connect.CodePermissionDenied || len(calls.callers) != 0 {
+		t.Errorf("code = %v, callers = %v, want permission denied and no call", connect.CodeOf(err), calls.callers)
 	}
 }
 
-func lookupsOf(world *modelcalltest.World) modelcalls.Connections {
-	return modelcalls.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows}
+func TestACallThatNamesThePluginOfTheTokenIsCarriedOut(t *testing.T) {
+	calls := &scriptedCalls{done: "finish"}
+	client, _ := newConnectionClient(t, calls, "token-b")
+
+	got, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{PluginId: "md.numen.b", Operation: "llm.complete"})
+
+	if err != nil || string(got.done) != "finish" || !slices.Equal(calls.callers, []string{"md.numen.b"}) {
+		t.Errorf("Call = %+v, %v, callers = %v", got, err, calls.callers)
+	}
+}
+
+func TestCancelCallEndsTheRunningCallWithTheId(t *testing.T) {
+	calls := &scriptedCalls{started: make(chan struct{})}
+	client, _ := newConnectionClient(t, calls, "token-a")
+	ended := make(chan error, 1)
+	go func() {
+		_, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{Operation: "llm.chat", CallId: "call-1"})
+		ended <- err
+	}()
+	<-calls.started
+
+	if _, err := client.CancelCall(t.Context(), connect.NewRequest(&v1.CancelCallRequest{CallId: "call-1"})); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := <-ended; connect.CodeOf(err) != connect.CodeCanceled {
+		t.Errorf("the call ended with %v, want canceled", err)
+	}
 }

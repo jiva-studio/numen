@@ -18,7 +18,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
-var errNoVaultList = errors.New("this host has no list of vaults to change")
+var (
+	errNoVaultList = errors.New("this host has no list of vaults to change")
+	errNoTrash     = errors.New("a plugin removes a vault from the list and leaves its folder")
+)
 
 func getVaultsErrorCode(err error) (v1.VaultsErrorCode, bool) {
 	switch {
@@ -88,27 +91,50 @@ func writeVault(v domain.Vault) *v1.Vault {
 	return &v1.Vault{Id: string(v.ID), Name: v.Name, Path: v.Path}
 }
 
+// ListVaults lists every vault of the installation. A host with no vault lends lists none.
+func (e *vaultsCalls) ListVaults(
+	_ context.Context, req *connect.Request[v1.ListVaultsRequest],
+) (*connect.Response[v1.ListVaultsResponse], error) {
+	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	if err != nil {
+		return nil, err
+	}
+	if vault == nil {
+		return connect.NewResponse(&v1.ListVaultsResponse{}), nil
+	}
+	recognized, err := vault.Switch.GetVaults()
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	list := e.source.GetPluginVaultList()
+	out := make([]*v1.Vault, 0, len(recognized))
+	for _, one := range recognized {
+		out = append(out, &v1.Vault{Id: string(one.ID), Name: one.Name, Path: one.Path, IsMissing: list != nil && list.IsMissing(one)})
+	}
+	return connect.NewResponse(&v1.ListVaultsResponse{Vaults: out}), nil
+}
+
 func (e *vaultsCalls) AddVault(
-	ctx context.Context, req *connect.Request[v1.HostVaultServiceAddVaultRequest],
-) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error) {
+	ctx context.Context, req *connect.Request[v1.AddVaultRequest],
+) (*connect.Response[v1.AddVaultResponse], error) {
 	list, err := e.beginList(req.Header())
 	if err != nil {
 		return nil, err
 	}
-	vault, addErr := list.AddVault(ctx, req.Msg.GetRoot(), req.Msg.GetName())
+	vault, addErr := list.AddVault(ctx, req.Msg.GetPath(), req.Msg.GetName())
 	code, detail, err := getVaultsResult(addErr)
 	if err != nil {
 		return nil, err
 	}
 	if code != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Error: code, Detail: detail}), nil
+		return connect.NewResponse(&v1.AddVaultResponse{Error: &code, Detail: detail}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Vault: writeVault(vault)}), nil
+	return connect.NewResponse(&v1.AddVaultResponse{Vault: writeVault(vault)}), nil
 }
 
 func (e *vaultsCalls) RenameVault(
-	ctx context.Context, req *connect.Request[v1.HostVaultServiceRenameVaultRequest],
-) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error) {
+	ctx context.Context, req *connect.Request[v1.RenameVaultRequest],
+) (*connect.Response[v1.RenameVaultResponse], error) {
 	list, err := e.beginList(req.Header())
 	if err != nil {
 		return nil, err
@@ -119,17 +145,20 @@ func (e *vaultsCalls) RenameVault(
 		return nil, err
 	}
 	if code != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceRenameVaultResponse{Error: code, Detail: detail}), nil
+		return connect.NewResponse(&v1.RenameVaultResponse{Error: &code, Detail: detail}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceRenameVaultResponse{Vault: writeVault(vault)}), nil
+	return connect.NewResponse(&v1.RenameVaultResponse{Vault: writeVault(vault)}), nil
 }
 
 func (e *vaultsCalls) RemoveVault(
-	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveVaultRequest],
-) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error) {
+	ctx context.Context, req *connect.Request[v1.RemoveVaultRequest],
+) (*connect.Response[v1.RemoveVaultResponse], error) {
 	list, err := e.beginList(req.Header())
 	if err != nil {
 		return nil, err
+	}
+	if req.Msg.GetTrash() {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoTrash)
 	}
 	id := domain.VaultID(req.Msg.GetId())
 	// The folder is read from the list before the vault leaves it.
@@ -142,16 +171,16 @@ func (e *vaultsCalls) RemoveVault(
 		return nil, err
 	}
 	if code != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Error: code, Detail: detail}), nil
+		return connect.NewResponse(&v1.RemoveVaultResponse{Error: &code, Detail: detail}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Path: entry.Path}), nil
+	return connect.NewResponse(&v1.RemoveVaultResponse{Path: entry.Path}), nil
 }
 
 // OpenVault returns once the window shows the vault or has rejected the open. A rejection for unsaved
 // changes returns UNSAVED with the window's message in detail.
 func (e *vaultsCalls) OpenVault(
-	ctx context.Context, req *connect.Request[v1.HostVaultServiceOpenVaultRequest],
-) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
+	ctx context.Context, req *connect.Request[v1.OpenVaultRequest],
+) (*connect.Response[v1.OpenVaultResponse], error) {
 	list, err := e.beginList(req.Header())
 	if err != nil {
 		return nil, err
@@ -166,7 +195,7 @@ func (e *vaultsCalls) OpenVault(
 		return nil, err
 	}
 	if code != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Error: code, Detail: detail}), nil
+		return connect.NewResponse(&v1.OpenVaultResponse{Error: &code, Detail: detail}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{}), nil
+	return connect.NewResponse(&v1.OpenVaultResponse{}), nil
 }

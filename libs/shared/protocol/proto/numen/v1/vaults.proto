@@ -10,15 +10,14 @@ package numen.v1;
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // VaultsService answers about the vaults this installation holds, and changes
+// the list. The window serves it, and so does the host endpoint to the plugins
+// that call it: there a call needs vault:read to list and vault:manage to
+// change, the request names no window, and a call that asks to trash the
+// folder of a vault is refused.
 service VaultsService {
   // ListVaults is every vault the installation holds. Which of them a window is
   // showing is asked of that window.
   rpc ListVaults(ListVaultsRequest) returns (ListVaultsResponse);
-
-  // ChooseFolder puts this machine's own folder dialog in front of the person
-  // and answers with the folder they chose. A person who closes the dialog has
-  // chosen nothing, and the answer says so.
-  rpc ChooseFolder(ChooseFolderRequest) returns (ChooseFolderResponse);
 
   // AddVault turns a folder into a vault and puts it on the list. The folder is
   // given an identity that stays with it, and is the same vault wherever it
@@ -103,24 +102,6 @@ message ListVaultsResponse {
   repeated Vault vaults = 1;
 }
 
-message ChooseFolderRequest {
-  // What the dialog is titled. Empty takes the words the application chooses.
-  string title = 1;
-
-  // The folder the dialog opens in. Empty opens wherever this machine opens a
-  // dialog that received nothing.
-  string starting_at = 2;
-}
-
-message ChooseFolderResponse {
-  // The folder that was chosen, empty when none was.
-  string path = 1;
-
-  // Set when the person chose a folder. False is a dialog they closed, which
-  // is an ordinary answer.
-  bool is_chosen = 2;
-}
-
 message AddVaultRequest {
   // The folder to add, absolute on this machine.
   string path = 1;
@@ -136,6 +117,9 @@ message AddVaultResponse {
 
   // Set when nothing was added, and why.
   optional VaultsErrorCode error = 2;
+
+  // The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
+  string detail = 3;
 }
 
 message RenameVaultRequest {
@@ -153,6 +137,9 @@ message RenameVaultResponse {
 
   // Set when the vault was not renamed, and why.
   optional VaultsErrorCode error = 2;
+
+  // The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
+  string detail = 3;
 }
 
 message RemoveVaultRequest {
@@ -169,6 +156,12 @@ message RemoveVaultResponse {
   // Set when the vault is still on the list, and why. The folder is where it
   // was.
   optional VaultsErrorCode error = 1;
+
+  // The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
+  string detail = 2;
+
+  // The folder of the vault, which stays on the disk; set on the host endpoint.
+  string path = 3;
 }
 
 message OpenVaultRequest {
@@ -178,4 +171,7 @@ message OpenVaultRequest {
 
 message OpenVaultResponse {
   optional VaultsErrorCode error = 1;
+
+  // The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
+  string detail = 2;
 }

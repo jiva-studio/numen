@@ -24,6 +24,13 @@ subject belongs to that single service, and a binary mounts a service whole.
 A file path is a storage location, not a domain subject. Two separate concepts
 associated with the same file remain two distinct subjects.
 
+A subject a window and a plugin both ask about is one service, mounted whole on
+the window and on the host endpoint, and the host endpoint has no copy of it
+under another name (`VaultsService`, `ConnectionCallService`). The host endpoint
+names the plugin by its token and checks the permission of each call there; a
+request that names a plugin names only the one the token names. A service only
+one of them serves keeps its name (`Host...` for the host endpoint).
+
 ## An error code is a successful response; a status code is not
 
 A call that cannot be served at all — nothing mounts it, the transport is

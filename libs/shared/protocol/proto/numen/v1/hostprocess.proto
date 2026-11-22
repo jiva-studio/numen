@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// HostProcessService is the process of a plugin, as the plugin ends it. The host endpoint names the plugin by
+// its token.
+service HostProcessService {
+  // ReleaseProcess tells the core that the process of a plugin has finished
+  // its work. The core stops a process that holds no lease at once, and one
+  // that holds a lease as soon as it returns the last. A lease taken after
+  // the call cancels it. A plugin with no process answers success.
+  rpc ReleaseProcess(ReleaseProcessRequest) returns (ReleaseProcessResponse);
+}
+
+message ReleaseProcessRequest {}
+
+message ReleaseProcessResponse {}

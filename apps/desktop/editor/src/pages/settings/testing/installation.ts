@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import type { Result } from '@/shared/lib/result'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
 import type { Installation, SettingsTabState } from '../types'
-import { readPluginReadme, type CatalogEntry } from '@/entities/plugin'
+import type { CatalogEntry } from '@/entities/plugin'
 
 type Flat<T> = { [K in keyof T]: T[K] }
 
@@ -88,7 +88,7 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     files: {
       getPluginData: () => Promise.resolve(0),
       deletePluginData: () => Promise.resolve(''),
-      getReadme: readPluginReadme,
+      getReadme: () => Promise.resolve(''),
       ...pickOf(overrides, FILES_KEYS),
     },
     ...pickOf(overrides, PLUGIN_KEYS),

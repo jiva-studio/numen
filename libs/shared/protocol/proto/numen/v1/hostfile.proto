@@ -1,0 +1,163 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/hostvault.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// HostFileService is the files of the vault, as a plugin reads and writes them
+// through the host, so the index, the watcher, the file stats and the trash
+// stay up to date with what the plugin did.
+//
+// The endpoint checks the permission of each call: a call that reads needs
+// vault:read and one that changes anything needs vault:write.
+//
+// Numen-Vault works the vault of that identity instead of the vault the host
+// shows.
+//
+// Every path is relative to the vault root and written with forward slashes.
+service HostFileService {
+  // StatFile says what a file is now. A file that is not there is
+  // returns the error code NOT_FOUND.
+  rpc StatFile(StatFileRequest) returns (StatFileResponse);
+
+  // ReadFile reads a whole file, with the file stat it had when it was read.
+  rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
+
+  // WriteFile replaces a file that has not changed since the file stat given.
+  // A file changed since returns the error code CONFLICT and
+  // nothing is written.
+  rpc WriteFile(WriteFileRequest) returns (WriteFileResponse);
+
+  // CreateFile makes a file that is not there yet. A file that is there is
+  // answered with the error code ALREADY_EXISTS.
+  rpc CreateFile(CreateFileRequest) returns (CreateFileResponse);
+
+  // ScanFiles updates the index for the files named, after the plugin
+  // changed them.
+  rpc ScanFiles(ScanFilesRequest) returns (ScanFilesResponse);
+
+  // ListFileChanges returns the file change feed of the vault after a cursor:
+  // the latest event of each kind of each file, in the order the index stored
+  // them. It needs vault:read.
+  rpc ListFileChanges(ListFileChangesRequest) returns (ListFileChangesResponse);
+}
+
+// HostFileStat is what a file was at a moment: at its current position, how large it
+// was, when it last changed and what it held. As a baseline, a hash is compared with the content
+// of the file at the write; a baseline without a hash matches no file, so the write is stale.
+message HostFileStat {
+  string path = 1;
+  int64 size = 2;
+  // Nanoseconds since the epoch.
+  int64 mod_time = 3;
+  // Whether the file is a note.
+  bool is_note = 5;
+  // The SHA-256 of the content, in lowercase hex. Empty where the answer did not read the content.
+  string hash = 6;
+  // The number of writes the vault had taken when the answer was made. Zero where the answer
+  // does not say.
+  uint64 version = 7;
+}
+
+message StatFileRequest {
+  string path = 1;
+}
+
+message StatFileResponse {
+  HostVaultErrorCode error = 1;
+  HostFileStat stat = 2;
+}
+
+message ReadFileRequest {
+  string path = 1;
+  // The start of a ranged read, in bytes.
+  int64 start = 2;
+  // Set: read at most this many bytes from start as text, truncated at whole
+  // characters; zero or more than 16000 reads 16000. A range that is not UTF-8
+  // returns NOT_TEXT, a folder or a path not in the vault NOT_FOUND.
+  // Unset: read the whole file as bytes.
+  optional int64 length = 3;
+}
+
+message ReadFileResponse {
+  HostVaultErrorCode error = 1;
+  bytes content = 2;
+  HostFileStat stat = 3;
+  // The start of content in the file: start moved forward to a whole
+  // character. Zero for a whole read.
+  int64 start = 4;
+}
+
+message WriteFileRequest {
+  string path = 1;
+  bytes content = 2;
+  // What the file was when the caller read it.
+  HostFileStat baseline = 3;
+}
+
+message WriteFileResponse {
+  HostVaultErrorCode error = 1;
+  // What the file is now.
+  HostFileStat stat = 2;
+}
+
+message CreateFileRequest {
+  string path = 1;
+  bytes content = 2;
+}
+
+message CreateFileResponse {
+  HostVaultErrorCode error = 1;
+}
+
+message ScanFilesRequest {
+  repeated string paths = 1;
+}
+
+message ScanFilesResponse {
+  HostVaultErrorCode error = 1;
+}
+
+// FileChangeCursor is a place in the file change feed of a vault. The empty
+// cursor is before the start of any feed.
+message FileChangeCursor {
+  // feed_id names the feed. A new index starts a feed of another id.
+  string feed_id = 1;
+  // seq is the number of the last change read.
+  int64 seq = 2;
+}
+
+message ListFileChangesRequest {
+  // since is the cursor of the last read, empty for the first.
+  FileChangeCursor since = 1;
+  // events are the events returned: file.added, file.changed, file.moved,
+  // file.removed, note.frontmatterChanged. At least one.
+  repeated string events = 2;
+  // limit is the number of changes of a page: 0 reads 1000, the most.
+  int32 limit = 3;
+}
+
+message ListFileChangesResponse {
+  HostVaultErrorCode error = 1;
+  repeated FileChange changes = 2;
+  // next is the cursor the next read starts from.
+  FileChangeCursor next = 3;
+  // is_reset is true when the feed cannot continue from since: since is empty,
+  // of another feed, or older than the removals the feed keeps. The reader
+  // reads the vault again from the start, and changes is empty.
+  bool is_reset = 4;
+  // has_more is true when more changes follow next.
+  bool has_more = 5;
+}
+
+// FileChange is the latest event of one kind of one file.
+message FileChange {
+  // source_id is the number the index keeps the file under.
+  int64 source_id = 1;
+  // path is where the file is now, or for file.removed where it was.
+  string path = 2;
+  string event = 3;
+  int64 seq = 4;
+}

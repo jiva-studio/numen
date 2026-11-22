@@ -198,20 +198,66 @@ export interface ItemListAnswer extends ItemListRequest {
     | { readonly ok: false; readonly error: string }
 }
 
-const readOutcome = (answer: RunPluginCommandResponse): DeclaredCommandOutcome =>
+/** The code a command call or a list of items ends with. */
+type CommandErrorValue = RunPluginCommandResponse['error']
+
+const readOutcome = (answer: {
+  readonly error: CommandErrorValue
+  readonly message: string
+  readonly openedPath?: string
+}): DeclaredCommandOutcome =>
   answer.error === COMMAND_ERROR_CODE.UNSPECIFIED
-    ? { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
+    ? { ok: true, value: { message: answer.message, openedPath: answer.openedPath ?? '' } }
     : { ok: false, error: answer.message }
 
+const readItemList = (
+  request: ItemListRequest,
+  answer: {
+    readonly error: CommandErrorValue
+    readonly message: string
+    readonly items: readonly {
+      readonly id: string
+      readonly title: string
+      readonly detail: string
+    }[]
+  },
+): ItemListAnswer => ({
+  ...request,
+  result:
+    answer.error === COMMAND_ERROR_CODE.UNSPECIFIED
+      ? {
+          ok: true,
+          value: answer.items.map((item) => ({
+            id: item.id,
+            title: item.title,
+            ...(item.detail ? { detail: item.detail } : {}),
+          })),
+        }
+      : { ok: false, error: answer.message },
+})
+
+/**
+ * The plugin id of the commands the application serves itself, such as Delete text: they are not
+ * the commands of a plugin and go to the service of their subject.
+ */
+const CORE_PLUGIN = ''
+
 /** The commands the plugins declare, listed and run over `pluginCommands`. */
-export const createDeclaredCommandsApi = (pluginCommands: WindowClients['pluginCommands']) => {
+export const createDeclaredCommandsApi = (
+  pluginCommands: WindowClients['pluginCommands'],
+  contributions: WindowClients['contributions'],
+  textVersions: WindowClients['textVersions'],
+) => {
   const runPluginCommand = async (
     pluginId: string,
     command: string,
     path: string,
     run: DeclaredCommandRun,
-  ): Promise<DeclaredCommandOutcome> =>
-    readOutcome(
+  ): Promise<DeclaredCommandOutcome> => {
+    if (pluginId === CORE_PLUGIN) {
+      return readOutcome(await textVersions.deleteVersion({ path, versionId: run.itemId ?? '' }))
+    }
+    return readOutcome(
       await pluginCommands.runPluginCommand({
         pluginId,
         command,
@@ -220,6 +266,7 @@ export const createDeclaredCommandsApi = (pluginCommands: WindowClients['pluginC
         ...(run.itemId === undefined ? {} : { itemId: run.itemId }),
       }),
     )
+  }
 
   return {
     /**
@@ -227,14 +274,18 @@ export const createDeclaredCommandsApi = (pluginCommands: WindowClients['pluginC
      * entries and their keybindings.
      */
     listDeclaredCommands: async (): Promise<DeclaredList> => {
-      const answer = await pluginCommands.listCommands({})
+      const [listed, contributed, types] = await Promise.all([
+        pluginCommands.listCommands({}),
+        contributions.listContributions({}),
+        contributions.listContentTypes({}),
+      ])
       return {
-        commands: answer.commands.map(readCommand),
-        slots: answer.slots.map(readSlotEntry),
-        slotPoints: answer.slotPoints.map(readSlotPoint),
-        contentTypes: { ...answer.contentTypeByExtension },
-        handlers: answer.handlers.map(readHandler),
-        keybindings: answer.keybindings.map(readKeybinding),
+        commands: listed.commands.map(readCommand),
+        slots: contributed.slots.map(readSlotEntry),
+        slotPoints: contributed.slotPoints.map(readSlotPoint),
+        contentTypes: { ...types.contentTypeByExtension },
+        handlers: contributed.handlers.map(readHandler),
+        keybindings: contributed.keybindings.map(readKeybinding),
       }
     },
 
@@ -261,31 +312,35 @@ export const createDeclaredCommandsApi = (pluginCommands: WindowClients['pluginC
       runPluginCommand(command.pluginId, command.id, getRunPath(command, run, whenReader), run),
 
     /**
-     * The items each of the commands offers over the file, as the core lists them in one request.
+     * The items each of the commands offers over the file, as the core lists them: the commands of
+     * plugins in one request, and the text versions the application lists itself.
      */
     listDeclaredItemLists: async (
       path: string,
       commands: readonly ItemListRequest[],
     ): Promise<readonly ItemListAnswer[]> => {
-      const answer = await pluginCommands.listCommandItems({
-        path,
-        commands: commands.map((one) => ({ pluginId: one.pluginId, command: one.command })),
+      const named = commands.filter((one) => one.pluginId !== CORE_PLUGIN)
+      const [served, versions] = await Promise.all([
+        named.length === 0
+          ? undefined
+          : pluginCommands.listCommandItems({
+              path,
+              commands: named.map((one) => ({ pluginId: one.pluginId, command: one.command })),
+            }),
+        commands.some((one) => one.pluginId === CORE_PLUGIN)
+          ? textVersions.listVersionItems({ path })
+          : undefined,
+      ])
+      const lists = [...(served?.lists ?? [])]
+      return commands.map((one): ItemListAnswer => {
+        if (one.pluginId === CORE_PLUGIN && versions !== undefined)
+          return readItemList(one, versions)
+        const list = lists.shift()
+        return readItemList(
+          { pluginId: list?.pluginId ?? one.pluginId, command: list?.command ?? one.command },
+          list ?? { error: COMMAND_ERROR_CODE.UNSPECIFIED, message: '', items: [] },
+        )
       })
-      return answer.lists.map((one): ItemListAnswer => ({
-        pluginId: one.pluginId,
-        command: one.command,
-        result:
-          one.error === COMMAND_ERROR_CODE.UNSPECIFIED
-            ? {
-                ok: true,
-                value: one.items.map((item) => ({
-                  id: item.id,
-                  title: item.title,
-                  ...(item.detail ? { detail: item.detail } : {}),
-                })),
-              }
-            : { ok: false, error: one.message },
-      }))
     },
   }
 }

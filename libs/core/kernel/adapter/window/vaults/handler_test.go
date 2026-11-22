@@ -115,6 +115,7 @@ func (f *folders) getRequestedPaths() (string, string) {
 // and a client asking about them the way the window does.
 type onTheList struct {
 	client   numenv1connect.VaultsServiceClient
+	dialogs  numenv1connect.FolderDialogServiceClient
 	registry *appstate.VaultRegistry
 	rows     *vaultRows
 	bin      *bin
@@ -180,6 +181,7 @@ func onAList(t *testing.T) *onTheList {
 	handler.SetFolderChooser(chooseFolder)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewVaultsServiceHandler(handler))
+	mux.Handle(numenv1connect.NewFolderDialogServiceHandler(handler))
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -187,6 +189,7 @@ func onAList(t *testing.T) *onTheList {
 	t.Cleanup(server.Close)
 
 	f.client = numenv1connect.NewVaultsServiceClient(server.Client(), server.URL)
+	f.dialogs = numenv1connect.NewFolderDialogServiceClient(server.Client(), server.URL)
 	return f
 }
 
@@ -573,7 +576,7 @@ func TestAWindowThatIsGoingIsNotACodeAboutTheVault(t *testing.T) {
 func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 	f := onAList(t)
 
-	out, err := f.client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{
+	out, err := f.dialogs.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{
 		Title:      "Where are your notes?",
 		StartingAt: f.first.Path,
 	}))
@@ -592,7 +595,7 @@ func TestChooseFolder_ReturnsChosenPath(t *testing.T) {
 	f := onAList(t)
 	f.dialog.pick, f.dialog.isChosen = f.second.Path, true
 
-	out, err := f.client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
+	out, err := f.dialogs.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -607,7 +610,7 @@ func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 	f := onAList(t)
 	f.dialog.fails = machine.ErrChoosing
 
-	_, err := f.client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
+	_, err := f.dialogs.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
 	if got := connect.CodeOf(err); got != connect.CodeUnavailable {
 		t.Errorf("a second dialog answered %v, want %v", got, connect.CodeUnavailable)
 	}

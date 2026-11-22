@@ -3,6 +3,7 @@ import { create } from '@bufbuild/protobuf'
 import {
   FindCatalogEntryByTabKindResponseSchema,
   GetCatalogEntryResponseSchema,
+  GetCatalogReadmeResponseSchema,
   ListCatalogResponseSchema,
 } from '@numen/protocol'
 import {
@@ -26,6 +27,7 @@ const createClient = (overrides: Partial<CatalogClient> = {}): CatalogClient => 
   getCatalogEntry: () => Promise.resolve(create(GetCatalogEntryResponseSchema, { entry: notes })),
   findCatalogEntryByTabKind: () =>
     Promise.resolve(create(FindCatalogEntryByTabKindResponseSchema, { entry: notes })),
+  getCatalogReadme: () => Promise.resolve(create(GetCatalogReadmeResponseSchema, {})),
   ...overrides,
 })
 
@@ -53,6 +55,21 @@ describe('createPluginCatalog', () => {
     expect(answer.ok).toBe(true)
     if (!answer.ok) return
     expect(answer.value.entry.contributes?.feature).toBe('Markdown notes')
+  })
+
+  it('reads the README of a plugin by its id', async () => {
+    const askedIds: Array<string | undefined> = []
+    const client = createClient({
+      getCatalogReadme: (req) => {
+        askedIds.push(req.id)
+        return Promise.resolve(create(GetCatalogReadmeResponseSchema, { text: '# Notes' }))
+      },
+    })
+
+    const answer = await createPluginCatalog(client).getReadme('notes')
+
+    expect(askedIds).toStrictEqual(['notes'])
+    expect(answer).toStrictEqual({ ok: true, value: '# Notes' })
   })
 
   it('gets the entry for a requested plugin id', async () => {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 )
@@ -28,8 +29,8 @@ func (v *versionItems) DeleteVersion(_ context.Context, _ domain.Vault, path str
 	return nil
 }
 
-func TestListCommandItems_OfDeleteTextIsEveryVersionOfTheFile(t *testing.T) {
-	list := listItemsOfOne(t, newItemsHandler(&versionItems{}), "", "app:version.delete", "talks/a.mp3")
+func TestListVersionItems_OfDeleteTextIsEveryVersionOfTheFile(t *testing.T) {
+	list := listVersionItems(t, newItemsHandler(&versionItems{}), "talks/a.mp3")
 
 	var titles []string
 	for _, one := range list.GetItems() {
@@ -41,11 +42,11 @@ func TestListCommandItems_OfDeleteTextIsEveryVersionOfTheFile(t *testing.T) {
 	}
 }
 
-func TestRunPluginCommand_OfDeleteTextDeletesTheVersionPicked(t *testing.T) {
+func TestDeleteVersion_OfDeleteTextDeletesTheVersionPicked(t *testing.T) {
 	items := &versionItems{}
 
-	res, err := newItemsHandler(items).RunPluginCommand(t.Context(), connect.NewRequest(&v1.RunPluginCommandRequest{
-		Command: "app:version.delete", Path: "talks/a.mp3", ItemId: "org.example.viewer/edit-1",
+	res, err := newItemsHandler(items).DeleteVersion(t.Context(), connect.NewRequest(&v1.DeleteVersionRequest{
+		Path: "talks/a.mp3", VersionId: "org.example.viewer/edit-1",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -57,11 +58,11 @@ func TestRunPluginCommand_OfDeleteTextDeletesTheVersionPicked(t *testing.T) {
 	}
 }
 
-func TestRunPluginCommand_OfDeleteTextNeedsAnItem(t *testing.T) {
+func TestDeleteVersion_OfDeleteTextNeedsAnItem(t *testing.T) {
 	items := &versionItems{}
 
-	res, err := newItemsHandler(items).RunPluginCommand(t.Context(), connect.NewRequest(&v1.RunPluginCommandRequest{
-		Command: "app:version.delete", Path: "talks/a.mp3",
+	res, err := newItemsHandler(items).DeleteVersion(t.Context(), connect.NewRequest(&v1.DeleteVersionRequest{
+		Path: "talks/a.mp3",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -92,10 +93,10 @@ func (namingPlugins) GetParts(pluginID string) plugin.Parts {
 	return plugin.Parts{Name: "Transcription", TextKinds: map[string]string{"transcript": "Transcript"}}
 }
 
-func TestListCommandItems_OfDeleteTextNamesAVersionByItsDeclaredKindAndDetailsItsPluginAndDate(t *testing.T) {
+func TestListVersionItems_OfDeleteTextNamesAVersionByItsDeclaredKindAndDetailsItsPluginAndDate(t *testing.T) {
 	handler := newHandler(newUseCases(namingPlugins{}, namingPlugins{}, fileTypes{}, nil, nil).withVersions(&namedVersions{}))
 
-	list := listItemsOfOne(t, handler, "", "app:version.delete", "talks/a.mp3")
+	list := listVersionItems(t, handler, "talks/a.mp3")
 
 	var got [][2]string
 	for _, one := range list.GetItems() {
@@ -105,4 +106,13 @@ func TestListCommandItems_OfDeleteTextNamesAVersionByItsDeclaredKindAndDetailsIt
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %v, want %v", got, want)
 	}
+}
+
+func listVersionItems(t *testing.T, handler *command.Handler, path string) *v1.ListVersionItemsResponse {
+	t.Helper()
+	res, err := handler.ListVersionItems(t.Context(), connect.NewRequest(&v1.ListVersionItemsRequest{Path: path}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return res.Msg
 }

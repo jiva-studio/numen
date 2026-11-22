@@ -22,7 +22,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IsoBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEg8KB3ZlcnNpb24YCiABKAQSMAoKYXBwX2dyb3VwcxgLIAMoCzIcLm51bWVuLnYxLlBsdWdpblNldHRpbmdHcm91cEoECAkQCiIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciOQoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDwoHdmVyc2lvbhgCIAEoBCInChJSZXRyeVBsdWdpblJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJIiYKE1JldHJ5UGx1Z2luUmVzcG9uc2USDwoHZmFpbHVyZRgBIAEoCSI5ChdDaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSCwoDa2V5GAIgASgJIkwKGENob29zZVBsdWdpblBhdGhSZXNwb25zZRIMCgRwYXRoGAEgASgJEhEKCWlzX2Nob3NlbhgCIAEoCBIPCgdwcm9ibGVtGAMgASgJIikKFEdldFBsdWdpbkRhdGFSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSI/ChVHZXRQbHVnaW5EYXRhUmVzcG9uc2USEgoKZmlsZV9jb3VudBgBIAEoBRISCgpieXRlX2NvdW50GAIgASgDIiwKF0RlbGV0ZVBsdWdpbkRhdGFSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSIaChhEZWxldGVQbHVnaW5EYXRhUmVzcG9uc2UiNgoOT3B0aW9uc1JlcXVlc3QSEgoKb3BlcmF0aW9ucxgBIAMoCRIQCghpc19mcmVzaBgCIAEoCCJACgdPcHRpb25zEiEKB29wdGlvbnMYASADKAsyEC5udW1lbi52MS5PcHRpb24SEgoKaXNfcGFydGlhbBgCIAEoCCI1CgZPcHRpb24SDQoFdmFsdWUYASABKAkSDQoFdGl0bGUYAiABKAkSDQoFZ3JvdXAYAyABKAky1wQKD1NldHRpbmdzU2VydmljZRJKCgtHZXRTZXR0aW5ncxIcLm51bWVuLnYxLkdldFNldHRpbmdzUmVxdWVzdBodLm51bWVuLnYxLkdldFNldHRpbmdzUmVzcG9uc2USUAoNV3JpdGVTZXR0aW5ncxIeLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1Jlc3BvbnNlEkoKC1JldHJ5UGx1Z2luEhwubnVtZW4udjEuUmV0cnlQbHVnaW5SZXF1ZXN0Gh0ubnVtZW4udjEuUmV0cnlQbHVnaW5SZXNwb25zZRJZChBDaG9vc2VQbHVnaW5QYXRoEiEubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QaIi5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USUAoNR2V0UGx1Z2luRGF0YRIeLm51bWVuLnYxLkdldFBsdWdpbkRhdGFSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0UGx1Z2luRGF0YVJlc3BvbnNlElkKEERlbGV0ZVBsdWdpbkRhdGESIS5udW1lbi52MS5EZWxldGVQbHVnaW5EYXRhUmVxdWVzdBoiLm51bWVuLnYxLkRlbGV0ZVBsdWdpbkRhdGFSZXNwb25zZRJSCg1XYXRjaFNldHRpbmdzEh4ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5XYXRjaFNldHRpbmdzUmVzcG9uc2UwAUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0IsoBChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIlCgdwbHVnaW5zGAcgAygLMhQubnVtZW4udjEuUGx1Z2luSW5mbxIkCgNhcHAYCCADKAsyFy5udW1lbi52MS5QbHVnaW5TZXR0aW5nEg8KB3ZlcnNpb24YCiABKAQSMAoKYXBwX2dyb3VwcxgLIAMoCzIcLm51bWVuLnYxLlBsdWdpblNldHRpbmdHcm91cEoECAkQCiIkCgdTZXR0aW5nEgoKAmF0GAEgAygJEg0KBXZhbHVlGAIgASgJIhYKFFdhdGNoU2V0dGluZ3NSZXF1ZXN0IjsKFVdhdGNoU2V0dGluZ3NSZXNwb25zZRIiCgdjaGFuZ2VkGAEgAygLMhEubnVtZW4udjEuU2V0dGluZyI7ChRXcml0ZVNldHRpbmdzUmVxdWVzdBIjCghzZXR0aW5ncxgBIAMoCzIRLm51bWVuLnYxLlNldHRpbmciOQoVV3JpdGVTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDwoHdmVyc2lvbhgCIAEoBCI5ChdDaG9vc2VQbHVnaW5QYXRoUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSCwoDa2V5GAIgASgJIkwKGENob29zZVBsdWdpblBhdGhSZXNwb25zZRIMCgRwYXRoGAEgASgJEhEKCWlzX2Nob3NlbhgCIAEoCBIPCgdwcm9ibGVtGAMgASgJIjYKDk9wdGlvbnNSZXF1ZXN0EhIKCm9wZXJhdGlvbnMYASADKAkSEAoIaXNfZnJlc2gYAiABKAgiQAoHT3B0aW9ucxIhCgdvcHRpb25zGAEgAygLMhAubnVtZW4udjEuT3B0aW9uEhIKCmlzX3BhcnRpYWwYAiABKAgiNQoGT3B0aW9uEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWdyb3VwGAMgASgJMt4CCg9TZXR0aW5nc1NlcnZpY2USSgoLR2V0U2V0dGluZ3MSHC5udW1lbi52MS5HZXRTZXR0aW5nc1JlcXVlc3QaHS5udW1lbi52MS5HZXRTZXR0aW5nc1Jlc3BvbnNlElAKDVdyaXRlU2V0dGluZ3MSHi5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVxdWVzdBofLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXNwb25zZRJZChBDaG9vc2VQbHVnaW5QYXRoEiEubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QaIi5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USUgoNV2F0Y2hTZXR0aW5ncxIeLm51bWVuLnYxLldhdGNoU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV2F0Y2hTZXR0aW5nc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_plugin]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -204,44 +204,6 @@ export const WriteSettingsResponseSchema: GenMessage<WriteSettingsResponse> = /*
   messageDesc(file_numen_v1_settings, 6);
 
 /**
- * @generated from message numen.v1.RetryPluginRequest
- */
-export type RetryPluginRequest = Message<"numen.v1.RetryPluginRequest"> & {
-  /**
-   * The plugin, by its id.
-   *
-   * @generated from field: string plugin_id = 1;
-   */
-  pluginId: string;
-};
-
-/**
- * Describes the message numen.v1.RetryPluginRequest.
- * Use `create(RetryPluginRequestSchema)` to create a new message.
- */
-export const RetryPluginRequestSchema: GenMessage<RetryPluginRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 7);
-
-/**
- * @generated from message numen.v1.RetryPluginResponse
- */
-export type RetryPluginResponse = Message<"numen.v1.RetryPluginResponse"> & {
-  /**
-   * Set when the plugin failed to start again, in words a person reads.
-   *
-   * @generated from field: string failure = 1;
-   */
-  failure: string;
-};
-
-/**
- * Describes the message numen.v1.RetryPluginResponse.
- * Use `create(RetryPluginResponseSchema)` to create a new message.
- */
-export const RetryPluginResponseSchema: GenMessage<RetryPluginResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 8);
-
-/**
  * @generated from message numen.v1.ChoosePluginPathRequest
  */
 export type ChoosePluginPathRequest = Message<"numen.v1.ChoosePluginPathRequest"> & {
@@ -263,7 +225,7 @@ export type ChoosePluginPathRequest = Message<"numen.v1.ChoosePluginPathRequest"
  * Use `create(ChoosePluginPathRequestSchema)` to create a new message.
  */
 export const ChoosePluginPathRequestSchema: GenMessage<ChoosePluginPathRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 9);
+  messageDesc(file_numen_v1_settings, 7);
 
 /**
  * @generated from message numen.v1.ChoosePluginPathResponse
@@ -296,76 +258,7 @@ export type ChoosePluginPathResponse = Message<"numen.v1.ChoosePluginPathRespons
  * Use `create(ChoosePluginPathResponseSchema)` to create a new message.
  */
 export const ChoosePluginPathResponseSchema: GenMessage<ChoosePluginPathResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 10);
-
-/**
- * @generated from message numen.v1.GetPluginDataRequest
- */
-export type GetPluginDataRequest = Message<"numen.v1.GetPluginDataRequest"> & {
-  /**
-   * @generated from field: string plugin_id = 1;
-   */
-  pluginId: string;
-};
-
-/**
- * Describes the message numen.v1.GetPluginDataRequest.
- * Use `create(GetPluginDataRequestSchema)` to create a new message.
- */
-export const GetPluginDataRequestSchema: GenMessage<GetPluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 11);
-
-/**
- * @generated from message numen.v1.GetPluginDataResponse
- */
-export type GetPluginDataResponse = Message<"numen.v1.GetPluginDataResponse"> & {
-  /**
-   * @generated from field: int32 file_count = 1;
-   */
-  fileCount: number;
-
-  /**
-   * @generated from field: int64 byte_count = 2;
-   */
-  byteCount: bigint;
-};
-
-/**
- * Describes the message numen.v1.GetPluginDataResponse.
- * Use `create(GetPluginDataResponseSchema)` to create a new message.
- */
-export const GetPluginDataResponseSchema: GenMessage<GetPluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 12);
-
-/**
- * @generated from message numen.v1.DeletePluginDataRequest
- */
-export type DeletePluginDataRequest = Message<"numen.v1.DeletePluginDataRequest"> & {
-  /**
-   * @generated from field: string plugin_id = 1;
-   */
-  pluginId: string;
-};
-
-/**
- * Describes the message numen.v1.DeletePluginDataRequest.
- * Use `create(DeletePluginDataRequestSchema)` to create a new message.
- */
-export const DeletePluginDataRequestSchema: GenMessage<DeletePluginDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 13);
-
-/**
- * @generated from message numen.v1.DeletePluginDataResponse
- */
-export type DeletePluginDataResponse = Message<"numen.v1.DeletePluginDataResponse"> & {
-};
-
-/**
- * Describes the message numen.v1.DeletePluginDataResponse.
- * Use `create(DeletePluginDataResponseSchema)` to create a new message.
- */
-export const DeletePluginDataResponseSchema: GenMessage<DeletePluginDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 14);
+  messageDesc(file_numen_v1_settings, 8);
 
 /**
  * OptionsRequest is the payload of an operation a row field of a connection type names in options_from.
@@ -393,7 +286,7 @@ export type OptionsRequest = Message<"numen.v1.OptionsRequest"> & {
  * Use `create(OptionsRequestSchema)` to create a new message.
  */
 export const OptionsRequestSchema: GenMessage<OptionsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 15);
+  messageDesc(file_numen_v1_settings, 9);
 
 /**
  * Options is the done frame of an operation a row field names in options_from: the values the field can
@@ -420,7 +313,7 @@ export type Options = Message<"numen.v1.Options"> & {
  * Use `create(OptionsSchema)` to create a new message.
  */
 export const OptionsSchema: GenMessage<Options> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 16);
+  messageDesc(file_numen_v1_settings, 10);
 
 /**
  * Option is one value of a field.
@@ -453,7 +346,7 @@ export type Option = Message<"numen.v1.Option"> & {
  * Use `create(OptionSchema)` to create a new message.
  */
 export const OptionSchema: GenMessage<Option> = /*@__PURE__*/
-  messageDesc(file_numen_v1_settings, 17);
+  messageDesc(file_numen_v1_settings, 11);
 
 /**
  * SettingsService answers about that file, one setting at a time.
@@ -484,18 +377,6 @@ export const SettingsService: GenService<{
     output: typeof WriteSettingsResponseSchema;
   },
   /**
-   * RetryPlugin forgets the failures of a plugin the host suspends, and starts
-   * it once. A plugin that fails again is suspended again, and the call answers
-   * the reason.
-   *
-   * @generated from rpc numen.v1.SettingsService.RetryPlugin
-   */
-  retryPlugin: {
-    methodKind: "unary";
-    input: typeof RetryPluginRequestSchema;
-    output: typeof RetryPluginResponseSchema;
-  },
-  /**
    * ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
    * of type file or folder, and writes the path they chose. A path the setting does not accept is not
    * written, and the answer says why.
@@ -506,29 +387,6 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof ChoosePluginPathRequestSchema;
     output: typeof ChoosePluginPathResponseSchema;
-  },
-  /**
-   * GetPluginData is how many files the folder of a plugin holds in the vault
-   * the window shows, `.numen/<plugin id>/`, and their bytes.
-   *
-   * @generated from rpc numen.v1.SettingsService.GetPluginData
-   */
-  getPluginData: {
-    methodKind: "unary";
-    input: typeof GetPluginDataRequestSchema;
-    output: typeof GetPluginDataResponseSchema;
-  },
-  /**
-   * DeletePluginData deletes the folder of a plugin in the vault the window
-   * shows and the records of the text versions the plugin made there. The
-   * files those versions were of are indexed again.
-   *
-   * @generated from rpc numen.v1.SettingsService.DeletePluginData
-   */
-  deletePluginData: {
-    methodKind: "unary";
-    input: typeof DeletePluginDataRequestSchema;
-    output: typeof DeletePluginDataResponseSchema;
   },
   /**
    * WatchSettings reports each setting whose value changed, for as long as the caller listens: a

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// FolderDialogService is this machine's own folder dialog, in front of the person using the window.
+service FolderDialogService {
+  // ChooseFolder puts this machine's own folder dialog in front of the person
+  // and answers with the folder they chose. A person who closes the dialog has
+  // chosen nothing, and the answer says so.
+  rpc ChooseFolder(ChooseFolderRequest) returns (ChooseFolderResponse);
+}
+
+message ChooseFolderRequest {
+  // What the dialog is titled. Empty takes the words the application chooses.
+  string title = 1;
+
+  // The folder the dialog opens in. Empty opens wherever this machine opens a
+  // dialog that received nothing.
+  string starting_at = 2;
+}
+
+message ChooseFolderResponse {
+  // The folder that was chosen, empty when none was.
+  string path = 1;
+
+  // Set when the person chose a folder. False is a dialog they closed, which
+  // is an ordinary answer.
+  bool is_chosen = 2;
+}

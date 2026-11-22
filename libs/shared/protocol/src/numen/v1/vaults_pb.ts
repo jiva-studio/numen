@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/vaults.proto.
  */
 export const file_numen_v1_vaults: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkMKBVZhdWx0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRISCgppc19taXNzaW5nGAQgASgIIhMKEUxpc3RWYXVsdHNSZXF1ZXN0IjUKEkxpc3RWYXVsdHNSZXNwb25zZRIfCgZ2YXVsdHMYASADKAsyDy5udW1lbi52MS5WYXVsdCI5ChNDaG9vc2VGb2xkZXJSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEhMKC3N0YXJ0aW5nX2F0GAIgASgJIjcKFENob29zZUZvbGRlclJlc3BvbnNlEgwKBHBhdGgYASABKAkSEQoJaXNfY2hvc2VuGAIgASgIIi0KD0FkZFZhdWx0UmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBG5hbWUYAiABKAkiegoQQWRkVmF1bHRSZXNwb25zZRIjCgV2YXVsdBgBIAEoCzIPLm51bWVuLnYxLlZhdWx0SACIAQESLQoFZXJyb3IYAiABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGVIAYgBAUIICgZfdmF1bHRCCAoGX2Vycm9yIi4KElJlbmFtZVZhdWx0UmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJIn0KE1JlbmFtZVZhdWx0UmVzcG9uc2USIwoFdmF1bHQYASABKAsyDy5udW1lbi52MS5WYXVsdEgAiAEBEi0KBWVycm9yGAIgASgOMhkubnVtZW4udjEuVmF1bHRzRXJyb3JDb2RlSAGIAQFCCAoGX3ZhdWx0QggKBl9lcnJvciIvChJSZW1vdmVWYXVsdFJlcXVlc3QSCgoCaWQYASABKAkSDQoFdHJhc2gYAiABKAgiTgoTUmVtb3ZlVmF1bHRSZXNwb25zZRItCgVlcnJvchgBIAEoDjIZLm51bWVuLnYxLlZhdWx0c0Vycm9yQ29kZUgAiAEBQggKBl9lcnJvciIeChBPcGVuVmF1bHRSZXF1ZXN0EgoKAmlkGAEgASgJIkwKEU9wZW5WYXVsdFJlc3BvbnNlEi0KBWVycm9yGAEgASgOMhkubnVtZW4udjEuVmF1bHRzRXJyb3JDb2RlSACIAQFCCAoGX2Vycm9yKtUCCg9WYXVsdHNFcnJvckNvZGUSIQodVkFVTFRTX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIgChxWQVVMVFNfRVJST1JfQ09ERV9VTlJFQURBQkxFEAESGgoWVkFVTFRTX0VSUk9SX0NPREVfQ09QWRACEh4KGlZBVUxUU19FUlJPUl9DT0RFX09WRVJMQVBTEAMSIAocVkFVTFRTX0VSUk9SX0NPREVfTkFNRV9UQUtFThAEEiAKHFZBVUxUU19FUlJPUl9DT0RFX0xBU1RfVkFVTFQQBRIdChlWQVVMVFNfRVJST1JfQ09ERV9DVVJSRU5UEAYSHwobVkFVTFRTX0VSUk9SX0NPREVfTk9UX0ZPVU5EEAcSHgoaVkFVTFRTX0VSUk9SX0NPREVfTk9fVFJBU0gQCBIdChlWQVVMVFNfRVJST1JfQ09ERV9VTlNBVkVEEAkyyAMKDVZhdWx0c1NlcnZpY2USRwoKTGlzdFZhdWx0cxIbLm51bWVuLnYxLkxpc3RWYXVsdHNSZXF1ZXN0GhwubnVtZW4udjEuTGlzdFZhdWx0c1Jlc3BvbnNlEk0KDENob29zZUZvbGRlchIdLm51bWVuLnYxLkNob29zZUZvbGRlclJlcXVlc3QaHi5udW1lbi52MS5DaG9vc2VGb2xkZXJSZXNwb25zZRJBCghBZGRWYXVsdBIZLm51bWVuLnYxLkFkZFZhdWx0UmVxdWVzdBoaLm51bWVuLnYxLkFkZFZhdWx0UmVzcG9uc2USSgoLUmVuYW1lVmF1bHQSHC5udW1lbi52MS5SZW5hbWVWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5SZW5hbWVWYXVsdFJlc3BvbnNlEkoKC1JlbW92ZVZhdWx0EhwubnVtZW4udjEuUmVtb3ZlVmF1bHRSZXF1ZXN0Gh0ubnVtZW4udjEuUmVtb3ZlVmF1bHRSZXNwb25zZRJECglPcGVuVmF1bHQSGi5udW1lbi52MS5PcGVuVmF1bHRSZXF1ZXN0GhsubnVtZW4udjEuT3BlblZhdWx0UmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS92YXVsdHMucHJvdG8SCG51bWVuLnYxIkMKBVZhdWx0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRISCgppc19taXNzaW5nGAQgASgIIhMKEUxpc3RWYXVsdHNSZXF1ZXN0IjUKEkxpc3RWYXVsdHNSZXNwb25zZRIfCgZ2YXVsdHMYASADKAsyDy5udW1lbi52MS5WYXVsdCItCg9BZGRWYXVsdFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIMCgRuYW1lGAIgASgJIooBChBBZGRWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgVlcnJvchgCIAEoDjIZLm51bWVuLnYxLlZhdWx0c0Vycm9yQ29kZUgBiAEBEg4KBmRldGFpbBgDIAEoCUIICgZfdmF1bHRCCAoGX2Vycm9yIi4KElJlbmFtZVZhdWx0UmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJIo0BChNSZW5hbWVWYXVsdFJlc3BvbnNlEiMKBXZhdWx0GAEgASgLMg8ubnVtZW4udjEuVmF1bHRIAIgBARItCgVlcnJvchgCIAEoDjIZLm51bWVuLnYxLlZhdWx0c0Vycm9yQ29kZUgBiAEBEg4KBmRldGFpbBgDIAEoCUIICgZfdmF1bHRCCAoGX2Vycm9yIi8KElJlbW92ZVZhdWx0UmVxdWVzdBIKCgJpZBgBIAEoCRINCgV0cmFzaBgCIAEoCCJsChNSZW1vdmVWYXVsdFJlc3BvbnNlEi0KBWVycm9yGAEgASgOMhkubnVtZW4udjEuVmF1bHRzRXJyb3JDb2RlSACIAQESDgoGZGV0YWlsGAIgASgJEgwKBHBhdGgYAyABKAlCCAoGX2Vycm9yIh4KEE9wZW5WYXVsdFJlcXVlc3QSCgoCaWQYASABKAkiXAoRT3BlblZhdWx0UmVzcG9uc2USLQoFZXJyb3IYASABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGVIAIgBARIOCgZkZXRhaWwYAiABKAlCCAoGX2Vycm9yKtUCCg9WYXVsdHNFcnJvckNvZGUSIQodVkFVTFRTX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIgChxWQVVMVFNfRVJST1JfQ09ERV9VTlJFQURBQkxFEAESGgoWVkFVTFRTX0VSUk9SX0NPREVfQ09QWRACEh4KGlZBVUxUU19FUlJPUl9DT0RFX09WRVJMQVBTEAMSIAocVkFVTFRTX0VSUk9SX0NPREVfTkFNRV9UQUtFThAEEiAKHFZBVUxUU19FUlJPUl9DT0RFX0xBU1RfVkFVTFQQBRIdChlWQVVMVFNfRVJST1JfQ09ERV9DVVJSRU5UEAYSHwobVkFVTFRTX0VSUk9SX0NPREVfTk9UX0ZPVU5EEAcSHgoaVkFVTFRTX0VSUk9SX0NPREVfTk9fVFJBU0gQCBIdChlWQVVMVFNfRVJST1JfQ09ERV9VTlNBVkVEEAky+QIKDVZhdWx0c1NlcnZpY2USRwoKTGlzdFZhdWx0cxIbLm51bWVuLnYxLkxpc3RWYXVsdHNSZXF1ZXN0GhwubnVtZW4udjEuTGlzdFZhdWx0c1Jlc3BvbnNlEkEKCEFkZFZhdWx0EhkubnVtZW4udjEuQWRkVmF1bHRSZXF1ZXN0GhoubnVtZW4udjEuQWRkVmF1bHRSZXNwb25zZRJKCgtSZW5hbWVWYXVsdBIcLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVxdWVzdBodLm51bWVuLnYxLlJlbmFtZVZhdWx0UmVzcG9uc2USSgoLUmVtb3ZlVmF1bHQSHC5udW1lbi52MS5SZW1vdmVWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5SZW1vdmVWYXVsdFJlc3BvbnNlEkQKCU9wZW5WYXVsdBIaLm51bWVuLnYxLk9wZW5WYXVsdFJlcXVlc3QaGy5udW1lbi52MS5PcGVuVmF1bHRSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * Vault is one vault the installation holds, as the list has it.
@@ -98,60 +98,6 @@ export const ListVaultsResponseSchema: GenMessage<ListVaultsResponse> = /*@__PUR
   messageDesc(file_numen_v1_vaults, 2);
 
 /**
- * @generated from message numen.v1.ChooseFolderRequest
- */
-export type ChooseFolderRequest = Message<"numen.v1.ChooseFolderRequest"> & {
-  /**
-   * What the dialog is titled. Empty takes the words the application chooses.
-   *
-   * @generated from field: string title = 1;
-   */
-  title: string;
-
-  /**
-   * The folder the dialog opens in. Empty opens wherever this machine opens a
-   * dialog that received nothing.
-   *
-   * @generated from field: string starting_at = 2;
-   */
-  startingAt: string;
-};
-
-/**
- * Describes the message numen.v1.ChooseFolderRequest.
- * Use `create(ChooseFolderRequestSchema)` to create a new message.
- */
-export const ChooseFolderRequestSchema: GenMessage<ChooseFolderRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 3);
-
-/**
- * @generated from message numen.v1.ChooseFolderResponse
- */
-export type ChooseFolderResponse = Message<"numen.v1.ChooseFolderResponse"> & {
-  /**
-   * The folder that was chosen, empty when none was.
-   *
-   * @generated from field: string path = 1;
-   */
-  path: string;
-
-  /**
-   * Set when the person chose a folder. False is a dialog they closed, which
-   * is an ordinary answer.
-   *
-   * @generated from field: bool is_chosen = 2;
-   */
-  isChosen: boolean;
-};
-
-/**
- * Describes the message numen.v1.ChooseFolderResponse.
- * Use `create(ChooseFolderResponseSchema)` to create a new message.
- */
-export const ChooseFolderResponseSchema: GenMessage<ChooseFolderResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 4);
-
-/**
  * @generated from message numen.v1.AddVaultRequest
  */
 export type AddVaultRequest = Message<"numen.v1.AddVaultRequest"> & {
@@ -176,7 +122,7 @@ export type AddVaultRequest = Message<"numen.v1.AddVaultRequest"> & {
  * Use `create(AddVaultRequestSchema)` to create a new message.
  */
 export const AddVaultRequestSchema: GenMessage<AddVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 5);
+  messageDesc(file_numen_v1_vaults, 3);
 
 /**
  * @generated from message numen.v1.AddVaultResponse
@@ -195,6 +141,13 @@ export type AddVaultResponse = Message<"numen.v1.AddVaultResponse"> & {
    * @generated from field: optional numen.v1.VaultsErrorCode error = 2;
    */
   error?: VaultsErrorCode | undefined;
+
+  /**
+   * The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
+   *
+   * @generated from field: string detail = 3;
+   */
+  detail: string;
 };
 
 /**
@@ -202,7 +155,7 @@ export type AddVaultResponse = Message<"numen.v1.AddVaultResponse"> & {
  * Use `create(AddVaultResponseSchema)` to create a new message.
  */
 export const AddVaultResponseSchema: GenMessage<AddVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 6);
+  messageDesc(file_numen_v1_vaults, 4);
 
 /**
  * @generated from message numen.v1.RenameVaultRequest
@@ -228,7 +181,7 @@ export type RenameVaultRequest = Message<"numen.v1.RenameVaultRequest"> & {
  * Use `create(RenameVaultRequestSchema)` to create a new message.
  */
 export const RenameVaultRequestSchema: GenMessage<RenameVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 7);
+  messageDesc(file_numen_v1_vaults, 5);
 
 /**
  * @generated from message numen.v1.RenameVaultResponse
@@ -248,6 +201,13 @@ export type RenameVaultResponse = Message<"numen.v1.RenameVaultResponse"> & {
    * @generated from field: optional numen.v1.VaultsErrorCode error = 2;
    */
   error?: VaultsErrorCode | undefined;
+
+  /**
+   * The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
+   *
+   * @generated from field: string detail = 3;
+   */
+  detail: string;
 };
 
 /**
@@ -255,7 +215,7 @@ export type RenameVaultResponse = Message<"numen.v1.RenameVaultResponse"> & {
  * Use `create(RenameVaultResponseSchema)` to create a new message.
  */
 export const RenameVaultResponseSchema: GenMessage<RenameVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 8);
+  messageDesc(file_numen_v1_vaults, 6);
 
 /**
  * @generated from message numen.v1.RemoveVaultRequest
@@ -283,7 +243,7 @@ export type RemoveVaultRequest = Message<"numen.v1.RemoveVaultRequest"> & {
  * Use `create(RemoveVaultRequestSchema)` to create a new message.
  */
 export const RemoveVaultRequestSchema: GenMessage<RemoveVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 9);
+  messageDesc(file_numen_v1_vaults, 7);
 
 /**
  * @generated from message numen.v1.RemoveVaultResponse
@@ -296,6 +256,20 @@ export type RemoveVaultResponse = Message<"numen.v1.RemoveVaultResponse"> & {
    * @generated from field: optional numen.v1.VaultsErrorCode error = 1;
    */
   error?: VaultsErrorCode | undefined;
+
+  /**
+   * The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
+   *
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
+
+  /**
+   * The folder of the vault, which stays on the disk; set on the host endpoint.
+   *
+   * @generated from field: string path = 3;
+   */
+  path: string;
 };
 
 /**
@@ -303,7 +277,7 @@ export type RemoveVaultResponse = Message<"numen.v1.RemoveVaultResponse"> & {
  * Use `create(RemoveVaultResponseSchema)` to create a new message.
  */
 export const RemoveVaultResponseSchema: GenMessage<RemoveVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 10);
+  messageDesc(file_numen_v1_vaults, 8);
 
 /**
  * @generated from message numen.v1.OpenVaultRequest
@@ -322,7 +296,7 @@ export type OpenVaultRequest = Message<"numen.v1.OpenVaultRequest"> & {
  * Use `create(OpenVaultRequestSchema)` to create a new message.
  */
 export const OpenVaultRequestSchema: GenMessage<OpenVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 11);
+  messageDesc(file_numen_v1_vaults, 9);
 
 /**
  * @generated from message numen.v1.OpenVaultResponse
@@ -332,6 +306,13 @@ export type OpenVaultResponse = Message<"numen.v1.OpenVaultResponse"> & {
    * @generated from field: optional numen.v1.VaultsErrorCode error = 1;
    */
   error?: VaultsErrorCode | undefined;
+
+  /**
+   * The core's error text of a rejected call, set on the host endpoint; empty on success and in a window.
+   *
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
 };
 
 /**
@@ -339,7 +320,7 @@ export type OpenVaultResponse = Message<"numen.v1.OpenVaultResponse"> & {
  * Use `create(OpenVaultResponseSchema)` to create a new message.
  */
 export const OpenVaultResponseSchema: GenMessage<OpenVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_vaults, 12);
+  messageDesc(file_numen_v1_vaults, 10);
 
 /**
  * VaultsErrorCode is why the list is as it was, or why the window is still
@@ -429,6 +410,10 @@ export const VaultsErrorCodeSchema: GenEnum<VaultsErrorCode> = /*@__PURE__*/
 
 /**
  * VaultsService answers about the vaults this installation holds, and changes
+ * the list. The window serves it, and so does the host endpoint to the plugins
+ * that call it: there a call needs vault:read to list and vault:manage to
+ * change, the request names no window, and a call that asks to trash the
+ * folder of a vault is refused.
  *
  * @generated from service numen.v1.VaultsService
  */
@@ -443,18 +428,6 @@ export const VaultsService: GenService<{
     methodKind: "unary";
     input: typeof ListVaultsRequestSchema;
     output: typeof ListVaultsResponseSchema;
-  },
-  /**
-   * ChooseFolder puts this machine's own folder dialog in front of the person
-   * and answers with the folder they chose. A person who closes the dialog has
-   * chosen nothing, and the answer says so.
-   *
-   * @generated from rpc numen.v1.VaultsService.ChooseFolder
-   */
-  chooseFolder: {
-    methodKind: "unary";
-    input: typeof ChooseFolderRequestSchema;
-    output: typeof ChooseFolderResponseSchema;
   },
   /**
    * AddVault turns a folder into a vault and puts it on the list. The folder is

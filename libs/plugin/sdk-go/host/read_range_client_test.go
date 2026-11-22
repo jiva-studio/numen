@@ -21,7 +21,7 @@ import (
 // rangeReading is a host that returns a ranged ReadFile with a fixed range of Glaciers.md, or with
 // code when it is set, and records the request.
 type rangeReading struct {
-	numenv1connect.UnimplementedHostVaultServiceHandler
+	unimplementedHost
 	code    v1.HostVaultErrorCode
 	request *v1.ReadFileRequest
 }

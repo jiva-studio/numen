@@ -48,18 +48,9 @@ const (
 	// SettingsServiceWriteSettingsProcedure is the fully-qualified name of the SettingsService's
 	// WriteSettings RPC.
 	SettingsServiceWriteSettingsProcedure = "/numen.v1.SettingsService/WriteSettings"
-	// SettingsServiceRetryPluginProcedure is the fully-qualified name of the SettingsService's
-	// RetryPlugin RPC.
-	SettingsServiceRetryPluginProcedure = "/numen.v1.SettingsService/RetryPlugin"
 	// SettingsServiceChoosePluginPathProcedure is the fully-qualified name of the SettingsService's
 	// ChoosePluginPath RPC.
 	SettingsServiceChoosePluginPathProcedure = "/numen.v1.SettingsService/ChoosePluginPath"
-	// SettingsServiceGetPluginDataProcedure is the fully-qualified name of the SettingsService's
-	// GetPluginData RPC.
-	SettingsServiceGetPluginDataProcedure = "/numen.v1.SettingsService/GetPluginData"
-	// SettingsServiceDeletePluginDataProcedure is the fully-qualified name of the SettingsService's
-	// DeletePluginData RPC.
-	SettingsServiceDeletePluginDataProcedure = "/numen.v1.SettingsService/DeletePluginData"
 	// SettingsServiceWatchSettingsProcedure is the fully-qualified name of the SettingsService's
 	// WatchSettings RPC.
 	SettingsServiceWatchSettingsProcedure = "/numen.v1.SettingsService/WatchSettings"
@@ -73,21 +64,10 @@ type SettingsServiceClient interface {
 	// object, so every key a person typed keeps its position, and a file the
 	// settings could not be read out of again is not written at all.
 	WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error)
-	// RetryPlugin forgets the failures of a plugin the host suspends, and starts
-	// it once. A plugin that fails again is suspended again, and the call answers
-	// the reason.
-	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
 	// ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
 	// of type file or folder, and writes the path they chose. A path the setting does not accept is not
 	// written, and the answer says why.
 	ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error)
-	// GetPluginData is how many files the folder of a plugin holds in the vault
-	// the window shows, `.numen/<plugin id>/`, and their bytes.
-	GetPluginData(context.Context, *connect.Request[v1.GetPluginDataRequest]) (*connect.Response[v1.GetPluginDataResponse], error)
-	// DeletePluginData deletes the folder of a plugin in the vault the window
-	// shows and the records of the text versions the plugin made there. The
-	// files those versions were of are indexed again.
-	DeletePluginData(context.Context, *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error)
 	// WatchSettings reports each setting whose value changed, for as long as the caller listens: a
 	// write by a window, a plugin or the palette, and an edit of the file by hand. A change arrives
 	// once, named by its declared path, whoever made it and whichever caller listens, and a path no
@@ -119,28 +99,10 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(settingsServiceMethods.ByName("WriteSettings")),
 			connect.WithClientOptions(opts...),
 		),
-		retryPlugin: connect.NewClient[v1.RetryPluginRequest, v1.RetryPluginResponse](
-			httpClient,
-			baseURL+SettingsServiceRetryPluginProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("RetryPlugin")),
-			connect.WithClientOptions(opts...),
-		),
 		choosePluginPath: connect.NewClient[v1.ChoosePluginPathRequest, v1.ChoosePluginPathResponse](
 			httpClient,
 			baseURL+SettingsServiceChoosePluginPathProcedure,
 			connect.WithSchema(settingsServiceMethods.ByName("ChoosePluginPath")),
-			connect.WithClientOptions(opts...),
-		),
-		getPluginData: connect.NewClient[v1.GetPluginDataRequest, v1.GetPluginDataResponse](
-			httpClient,
-			baseURL+SettingsServiceGetPluginDataProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("GetPluginData")),
-			connect.WithClientOptions(opts...),
-		),
-		deletePluginData: connect.NewClient[v1.DeletePluginDataRequest, v1.DeletePluginDataResponse](
-			httpClient,
-			baseURL+SettingsServiceDeletePluginDataProcedure,
-			connect.WithSchema(settingsServiceMethods.ByName("DeletePluginData")),
 			connect.WithClientOptions(opts...),
 		),
 		watchSettings: connect.NewClient[v1.WatchSettingsRequest, v1.WatchSettingsResponse](
@@ -156,10 +118,7 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 type settingsServiceClient struct {
 	getSettings      *connect.Client[v1.GetSettingsRequest, v1.GetSettingsResponse]
 	writeSettings    *connect.Client[v1.WriteSettingsRequest, v1.WriteSettingsResponse]
-	retryPlugin      *connect.Client[v1.RetryPluginRequest, v1.RetryPluginResponse]
 	choosePluginPath *connect.Client[v1.ChoosePluginPathRequest, v1.ChoosePluginPathResponse]
-	getPluginData    *connect.Client[v1.GetPluginDataRequest, v1.GetPluginDataResponse]
-	deletePluginData *connect.Client[v1.DeletePluginDataRequest, v1.DeletePluginDataResponse]
 	watchSettings    *connect.Client[v1.WatchSettingsRequest, v1.WatchSettingsResponse]
 }
 
@@ -173,24 +132,9 @@ func (c *settingsServiceClient) WriteSettings(ctx context.Context, req *connect.
 	return c.writeSettings.CallUnary(ctx, req)
 }
 
-// RetryPlugin calls numen.v1.SettingsService.RetryPlugin.
-func (c *settingsServiceClient) RetryPlugin(ctx context.Context, req *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error) {
-	return c.retryPlugin.CallUnary(ctx, req)
-}
-
 // ChoosePluginPath calls numen.v1.SettingsService.ChoosePluginPath.
 func (c *settingsServiceClient) ChoosePluginPath(ctx context.Context, req *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error) {
 	return c.choosePluginPath.CallUnary(ctx, req)
-}
-
-// GetPluginData calls numen.v1.SettingsService.GetPluginData.
-func (c *settingsServiceClient) GetPluginData(ctx context.Context, req *connect.Request[v1.GetPluginDataRequest]) (*connect.Response[v1.GetPluginDataResponse], error) {
-	return c.getPluginData.CallUnary(ctx, req)
-}
-
-// DeletePluginData calls numen.v1.SettingsService.DeletePluginData.
-func (c *settingsServiceClient) DeletePluginData(ctx context.Context, req *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error) {
-	return c.deletePluginData.CallUnary(ctx, req)
 }
 
 // WatchSettings calls numen.v1.SettingsService.WatchSettings.
@@ -206,21 +150,10 @@ type SettingsServiceHandler interface {
 	// object, so every key a person typed keeps its position, and a file the
 	// settings could not be read out of again is not written at all.
 	WriteSettings(context.Context, *connect.Request[v1.WriteSettingsRequest]) (*connect.Response[v1.WriteSettingsResponse], error)
-	// RetryPlugin forgets the failures of a plugin the host suspends, and starts
-	// it once. A plugin that fails again is suspended again, and the call answers
-	// the reason.
-	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
 	// ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
 	// of type file or folder, and writes the path they chose. A path the setting does not accept is not
 	// written, and the answer says why.
 	ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error)
-	// GetPluginData is how many files the folder of a plugin holds in the vault
-	// the window shows, `.numen/<plugin id>/`, and their bytes.
-	GetPluginData(context.Context, *connect.Request[v1.GetPluginDataRequest]) (*connect.Response[v1.GetPluginDataResponse], error)
-	// DeletePluginData deletes the folder of a plugin in the vault the window
-	// shows and the records of the text versions the plugin made there. The
-	// files those versions were of are indexed again.
-	DeletePluginData(context.Context, *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error)
 	// WatchSettings reports each setting whose value changed, for as long as the caller listens: a
 	// write by a window, a plugin or the palette, and an edit of the file by hand. A change arrives
 	// once, named by its declared path, whoever made it and whichever caller listens, and a path no
@@ -248,28 +181,10 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 		connect.WithSchema(settingsServiceMethods.ByName("WriteSettings")),
 		connect.WithHandlerOptions(opts...),
 	)
-	settingsServiceRetryPluginHandler := connect.NewUnaryHandler(
-		SettingsServiceRetryPluginProcedure,
-		svc.RetryPlugin,
-		connect.WithSchema(settingsServiceMethods.ByName("RetryPlugin")),
-		connect.WithHandlerOptions(opts...),
-	)
 	settingsServiceChoosePluginPathHandler := connect.NewUnaryHandler(
 		SettingsServiceChoosePluginPathProcedure,
 		svc.ChoosePluginPath,
 		connect.WithSchema(settingsServiceMethods.ByName("ChoosePluginPath")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceGetPluginDataHandler := connect.NewUnaryHandler(
-		SettingsServiceGetPluginDataProcedure,
-		svc.GetPluginData,
-		connect.WithSchema(settingsServiceMethods.ByName("GetPluginData")),
-		connect.WithHandlerOptions(opts...),
-	)
-	settingsServiceDeletePluginDataHandler := connect.NewUnaryHandler(
-		SettingsServiceDeletePluginDataProcedure,
-		svc.DeletePluginData,
-		connect.WithSchema(settingsServiceMethods.ByName("DeletePluginData")),
 		connect.WithHandlerOptions(opts...),
 	)
 	settingsServiceWatchSettingsHandler := connect.NewServerStreamHandler(
@@ -284,14 +199,8 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 			settingsServiceGetSettingsHandler.ServeHTTP(w, r)
 		case SettingsServiceWriteSettingsProcedure:
 			settingsServiceWriteSettingsHandler.ServeHTTP(w, r)
-		case SettingsServiceRetryPluginProcedure:
-			settingsServiceRetryPluginHandler.ServeHTTP(w, r)
 		case SettingsServiceChoosePluginPathProcedure:
 			settingsServiceChoosePluginPathHandler.ServeHTTP(w, r)
-		case SettingsServiceGetPluginDataProcedure:
-			settingsServiceGetPluginDataHandler.ServeHTTP(w, r)
-		case SettingsServiceDeletePluginDataProcedure:
-			settingsServiceDeletePluginDataHandler.ServeHTTP(w, r)
 		case SettingsServiceWatchSettingsProcedure:
 			settingsServiceWatchSettingsHandler.ServeHTTP(w, r)
 		default:
@@ -311,20 +220,8 @@ func (UnimplementedSettingsServiceHandler) WriteSettings(context.Context, *conne
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.WriteSettings is not implemented"))
 }
 
-func (UnimplementedSettingsServiceHandler) RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.RetryPlugin is not implemented"))
-}
-
 func (UnimplementedSettingsServiceHandler) ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.ChoosePluginPath is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) GetPluginData(context.Context, *connect.Request[v1.GetPluginDataRequest]) (*connect.Response[v1.GetPluginDataResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.GetPluginData is not implemented"))
-}
-
-func (UnimplementedSettingsServiceHandler) DeletePluginData(context.Context, *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.DeletePluginData is not implemented"))
 }
 
 func (UnimplementedSettingsServiceHandler) WatchSettings(context.Context, *connect.Request[v1.WatchSettingsRequest], *connect.ServerStream[v1.WatchSettingsResponse]) error {
