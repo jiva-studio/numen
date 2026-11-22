@@ -100,7 +100,6 @@ func IsDueMatched(kind DueFilter, due, today string) bool {
 		return due >= today && due <= todo.AddDays(today, daysOfWeek-1)
 	case DueUpcoming:
 		return due > today && due <= todo.AddDays(today, daysOfWeek-1)
-		return due >= today && due <= todo.AddDays(today, daysOfWeek-1)
 	case DueAny, DueRange:
 	}
 	return false

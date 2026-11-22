@@ -34,6 +34,7 @@ const (
 	DueFilterOverdue     DueFilter = "overdue"
 	DueFilterToday       DueFilter = "today"
 	DueFilterThisWeek    DueFilter = "thisWeek"
+	DueFilterUpcoming    DueFilter = "upcoming"
 	DueFilterRange       DueFilter = "range"
 )
 

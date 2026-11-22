@@ -41,7 +41,7 @@ func TestEveryMessageMatchesItsFixture(t *testing.T) {
 		decoded any
 	}{
 		{"GetSummary.request", GetSummaryRequest{Today: "2026-11-14"}, new(GetSummaryRequest)},
-		{"GetSummary.response", Summary{IsReady: true, OverdueCount: 2, TodayCount: 1, NoDateCount: 3, UnreadableCount: 1}, new(Summary)},
+		{"GetSummary.response", Summary{IsReady: true, OverdueCount: 2, TodayCount: 1, ThisWeekCount: 4, NoDateCount: 3, UnreadableCount: 1}, new(Summary)},
 		{"ListFields.request", ListFieldsRequest{}, new(ListFieldsRequest)},
 		{"ListFields.response", ListFieldsResponse{
 			Projects: []FieldCount{{Name: "home", Count: 4}, {Name: "work", Count: 4}, {Name: "garden", Count: 1}},

@@ -164,14 +164,14 @@ func TestAScanOfANewIndexReturnsTheSameTasks(t *testing.T) {
 
 func TestSummarizeCountsOpenTasksOverdueDueTodayAndWithNoDate(t *testing.T) {
 	f := newFixture(map[string]string{
-		"a.md": "- [ ] late due:2026-11-01\n- [ ] late too due:2026-11-13\n- [ ] now due:2026-11-14\n- [ ] later due:2026-11-30\n",
+		"a.md": "- [ ] late due:2026-11-01\n- [ ] late too due:2026-11-13\n- [ ] now due:2026-11-14\n- [ ] soon due:2026-11-16\n- [ ] later due:2026-11-30\n",
 		"b.md": "- [ ] floating\n- [x] finished due:2026-11-01\n- [x] finished too\n- [ ] bad due:2026-02-30\n",
 	})
 	f.scan(t)
 
 	got := f.index.Summarize(today)
 
-	want := Summary{IsReady: true, OverdueCount: 2, TodayCount: 1, NoDateCount: 2, UnreadableCount: 0}
+	want := Summary{IsReady: true, OverdueCount: 2, TodayCount: 1, ThisWeekCount: 1, NoDateCount: 2, UnreadableCount: 0}
 	if got != want {
 		t.Errorf("summary = %+v, want %+v", got, want)
 	}
@@ -534,5 +534,36 @@ func TestListPathsReturnsTheSortedNotesWithATaskTheFilterAccepts(t *testing.T) {
 	}
 	if !slices.Equal(done.Paths, []string{"c.md"}) {
 		t.Errorf("done = %+v, want c.md", done)
+	}
+}
+
+func TestTheGroupsOfTheSummaryAreDisjointAndMatchTheListsOfTheirFilters(t *testing.T) {
+	f := newFixture(map[string]string{
+		"a.md": "- [ ] yesterday due:2026-11-13\n- [ ] now due:2026-11-14\n- [ ] tomorrow due:2026-11-15\n- [ ] in six days due:2026-11-20\n",
+		"b.md": "- [ ] in seven days due:2026-11-21\n- [ ] in eight days due:2026-11-22\n- [ ] floating\n- [x] finished due:2026-11-15\n- [x] finished today due:2026-11-14\n",
+	})
+	f.scan(t)
+
+	groups := map[string]filter.DueFilter{
+		"overdue":  filter.DueOverdue,
+		"today":    filter.DueToday,
+		"thisWeek": filter.DueUpcoming,
+		"noDate":   filter.DueNone,
+	}
+	want := map[string][]string{
+		"overdue":  {"a.md: yesterday"},
+		"today":    {"a.md: now"},
+		"thisWeek": {"a.md: tomorrow", "a.md: in six days"},
+		"noDate":   {"b.md: floating"},
+	}
+	for name, due := range groups {
+		got := texts(f.list(filter.Filter{Due: due}))
+		if !reflect.DeepEqual(got, want[name]) {
+			t.Errorf("%s = %v, want %v", name, got, want[name])
+		}
+	}
+	got := f.index.Summarize(today)
+	if got.OverdueCount != 1 || got.TodayCount != 1 || got.ThisWeekCount != 2 || got.NoDateCount != 1 {
+		t.Errorf("summary = %+v, want overdue 1, today 1, this week 2, no date 1", got)
 	}
 }

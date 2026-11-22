@@ -38,6 +38,7 @@ func getSummary(tasks *index.Index) func(context.Context, api.GetSummaryRequest)
 			IsReady:         summary.IsReady,
 			OverdueCount:    summary.OverdueCount,
 			TodayCount:      summary.TodayCount,
+			ThisWeekCount:   summary.ThisWeekCount,
 			NoDateCount:     summary.NoDateCount,
 			UnreadableCount: summary.UnreadableCount,
 		}, nil

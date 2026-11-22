@@ -31,6 +31,7 @@ type Summary struct {
 	IsReady         bool
 	OverdueCount    int
 	TodayCount      int
+	ThisWeekCount   int
 	NoDateCount     int
 	UnreadableCount int
 }
@@ -220,7 +221,7 @@ func (i *Index) ListPaths(today string, f filter.Filter) PathListing {
 func (i *Index) Summarize(today string) Summary {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-	summary := Summary{IsReady: i.isReady, OverdueCount: 0, TodayCount: 0, NoDateCount: 0, UnreadableCount: 0}
+	summary := Summary{IsReady: i.isReady, OverdueCount: 0, TodayCount: 0, ThisWeekCount: 0, NoDateCount: 0, UnreadableCount: 0}
 	for _, one := range i.entries {
 		if one.isUnreadable {
 			summary.UnreadableCount++
@@ -234,6 +235,8 @@ func (i *Index) Summarize(today string) Summary {
 				summary.OverdueCount++
 			case task.Due == today:
 				summary.TodayCount++
+			case filter.IsDueMatched(filter.DueUpcoming, task.Due, today):
+				summary.ThisWeekCount++
 			}
 		}
 	}

@@ -57,6 +57,7 @@ type Summary struct {
 	IsReady         bool `json:"isReady"`
 	OverdueCount    int  `json:"overdueCount"`
 	TodayCount      int  `json:"todayCount"`
+	ThisWeekCount   int  `json:"thisWeekCount"`
 	NoDateCount     int  `json:"noDateCount"`
 	UnreadableCount int  `json:"unreadableCount"`
 }
