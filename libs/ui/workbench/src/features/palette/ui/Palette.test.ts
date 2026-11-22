@@ -982,6 +982,16 @@ describe('a heading over the field', () => {
     expect(field()?.hasAttribute('aria-label')).toBe(false)
   })
 
+  it('draws no title row for an untitled group', async () => {
+    mountPalette({ groups: [{ ...AVAILABLE_GROUPS[0]!, title: '' }] })
+    await settle()
+
+    expect(document.body.querySelector('[data-palette="title"]')).toBeNull()
+    expect(document.body.querySelector('[role="group"]')?.hasAttribute('aria-labelledby')).toBe(
+      false,
+    )
+  })
+
   it('reads it out through the announcement', async () => {
     mountPalette({ groups: [], heading: 'New name' })
     await settle()

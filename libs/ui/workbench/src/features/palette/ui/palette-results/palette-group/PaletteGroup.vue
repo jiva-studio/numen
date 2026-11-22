@@ -54,10 +54,11 @@ function reveal(item: string): void {
   <section
     class="palette__group"
     role="group"
-    :aria-labelledby="titleId"
+    :aria-labelledby="placed.group.title ? titleId : undefined"
     :aria-busy="placed.group.isWorking || undefined"
   >
     <p
+      v-if="placed.group.title"
       :id="titleId"
       class="palette__title caps-numen text-small text-hushed flex items-center gap-1.5"
       data-palette="title"

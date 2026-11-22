@@ -60,7 +60,7 @@ export function createPromptSession(): PromptSession {
     const word = typed.value.trim().toLowerCase()
     return {
       id: 'question',
-      title: options.title,
+      title: '',
       items: options.options
         .filter((one) => one.title.toLowerCase().includes(word))
         .map((one) => ({
