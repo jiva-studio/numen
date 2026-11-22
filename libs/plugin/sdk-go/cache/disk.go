@@ -56,15 +56,6 @@ func GetDataDir() (string, error) { return getGrantedDir(EnvDataDir) }
 // once its digest is verified, and never delete what is there: the host owns its lifetime.
 func GetSharedDir() (string, error) { return getGrantedDir(EnvSharedDir) }
 
-// GetSharedDirOrPluginDir returns the shared directory, and the plugin's own cache directory where the
-// host granted no shared one.
-func GetSharedDirOrPluginDir() (string, error) {
-	if dir, err := GetSharedDir(); err == nil {
-		return dir, nil
-	}
-	return GetPluginDir()
-}
-
 func getGrantedDir(name string) (string, error) {
 	dir := os.Getenv(name)
 	if dir == "" {

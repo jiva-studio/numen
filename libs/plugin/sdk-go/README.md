@@ -63,7 +63,7 @@ In a backend mount, `s.GetHostEndpoint()` reads the linked registration or the p
 
 ## Storage
 
-`cache.GetPluginDir()` and `cache.GetDataDir()` return the plugin's cache and data directories. `cache.GetSharedDir()` returns the shared cache. `cache.GetSharedDirOrPluginDir()` uses the plugin cache when the host grants only that directory. A plugin requests model files with `host.NewDependencyClient(endpoint).FetchModelFile(ctx, url, sha256)`. `plugintest.GrantStorage(t)` grants the storage directories in a test.
+`cache.GetPluginDir()` and `cache.GetDataDir()` return the plugin's cache and data directories. `cache.GetSharedDir()` returns the shared cache. A plugin requests model files with `host.NewDependencyClient(endpoint).FetchModelFile(ctx, url, sha256)`. `plugintest.GrantStorage(t)` grants the storage directories in a test.
 
 ## Clock
 

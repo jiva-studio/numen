@@ -54,7 +54,7 @@ func locateInDir(dir, file string) (onnx.ModelFiles, error) {
 }
 
 func getCacheRoot() string {
-	root, err := cache.GetSharedDirOrPluginDir()
+	root, err := cache.GetSharedDir()
 	if err != nil {
 		return ""
 	}
