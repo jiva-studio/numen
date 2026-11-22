@@ -98,6 +98,33 @@ func TestListContributionConflicts(t *testing.T) {
 			},
 			want: []string{`plugin "md.example.b" declares the license provider "supporter/creem", which plugin "md.example.a" already declares`},
 		},
+		"a slot point two plugins declare": {
+			plugins: []manifest.Discovered{
+				plugin("md.example.a", manifest.Contributes{SlotPoints: []manifest.SlotPoint{{Slot: "ledger.row", Title: "A"}}}),
+				plugin("md.example.b", manifest.Contributes{SlotPoints: []manifest.SlotPoint{{Slot: "ledger.row", Title: "B"}}}),
+			},
+			want: []string{`plugin "md.example.b" declares the slot point "ledger.row", which plugin "md.example.a" already declares`},
+		},
+		"a submenu named as the slot point of another plugin": {
+			plugins: []manifest.Discovered{
+				plugin("md.example.a", manifest.Contributes{SlotPoints: []manifest.SlotPoint{{Slot: "ledger.row", Title: "A"}}}),
+				plugin("md.example.b", manifest.Contributes{Slots: []manifest.SlotEntry{{Slot: "titleBar.commands", Submenu: "ledger.row", Title: "B"}}}),
+			},
+			want: []string{`plugin "md.example.b" declares the submenu "ledger.row", which plugin "md.example.a" already declares`},
+		},
+		"a slot point named as the submenu of another plugin": {
+			plugins: []manifest.Discovered{
+				plugin("md.example.a", manifest.Contributes{Slots: []manifest.SlotEntry{{Slot: "titleBar.commands", Submenu: "ledger.row", Title: "A"}}}),
+				plugin("md.example.b", manifest.Contributes{SlotPoints: []manifest.SlotPoint{{Slot: "ledger.row", Title: "B"}}}),
+			},
+			want: []string{`plugin "md.example.b" declares the slot point "ledger.row", which plugin "md.example.a" already declares`},
+		},
+		"one submenu in two plugins is left to the slots": {
+			plugins: []manifest.Discovered{
+				plugin("md.example.a", manifest.Contributes{Slots: []manifest.SlotEntry{{Slot: "titleBar.commands", Submenu: "ledger.row", Title: "A"}}}),
+				plugin("md.example.b", manifest.Contributes{Slots: []manifest.SlotEntry{{Slot: "titleBar.commands", Submenu: "ledger.row", Title: "B"}}}),
+			},
+		},
 		"two plugins declaring different url for the same license provider": {
 			plugins: []manifest.Discovered{
 				plugin("md.example.a", manifest.Contributes{Licenses: []manifest.License{{
