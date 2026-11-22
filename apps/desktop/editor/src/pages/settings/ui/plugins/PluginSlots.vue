@@ -72,7 +72,6 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
     v-for="group in props.groups"
     :key="group.slot"
     :title="group.title"
-    is-compact
     :data-testid="`slots-${group.slot}`"
   >
     <template #aside>

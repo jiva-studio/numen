@@ -1,10 +1,10 @@
 <script setup lang="ts">
-/** A titled group: a card whose tinted header holds the title and may carry an aside at its right, with the rows below it. The body pads like a card of settings rows; compact draws the tighter pad of a list of draggable rows. */
-defineProps<{ title: string; isCompact?: boolean }>()
+/** A titled group: a card whose tinted header holds the title and may carry an aside at its right, with the rows below it. The body pads like a card of settings rows. */
+defineProps<{ title: string }>()
 </script>
 
 <template>
-  <section class="island-card numen" :class="{ 'island-card--compact': isCompact }">
+  <section class="island-card numen">
     <header class="island-card__header">
       <h3 class="island-card__title">{{ title }}</h3>
       <div v-if="$slots.aside" class="island-card__aside"><slot name="aside" /></div>
@@ -17,8 +17,6 @@ defineProps<{ title: string; isCompact?: boolean }>()
 
 <style scoped>
 .island-card {
-  --island-pad-x: var(--numen-card-pad);
-  --island-pad-y: var(--numen-card-inset);
   overflow: hidden;
   box-sizing: border-box;
   border: var(--numen-stroke) solid var(--numen-rule);
@@ -31,13 +29,8 @@ defineProps<{ title: string; isCompact?: boolean }>()
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.375rem var(--island-pad-x);
+  padding: 0.375rem var(--numen-card-pad);
   background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 6%);
-}
-
-.island-card--compact {
-  --island-pad-x: 0.5rem;
-  --island-pad-y: 0.25rem;
 }
 
 .island-card__title {
@@ -58,6 +51,6 @@ defineProps<{ title: string; isCompact?: boolean }>()
 
 .island-card__body {
   box-sizing: border-box;
-  padding: var(--island-pad-y) var(--island-pad-x);
+  padding: var(--numen-card-inset) var(--numen-card-pad);
 }
 </style>
