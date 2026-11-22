@@ -108,6 +108,32 @@ func TestExecuteTicksTheOneLineAndKeepsEveryOtherByte(t *testing.T) {
 	}
 }
 
+func TestExecuteTicksTheTaskOfAProseLineBelowTheFrontmatter(t *testing.T) {
+	note := "---\ntitle: Home\n---\n\n\nintro\n- [ ] fix the tap\n- [ ] buy milk\n"
+	vault, _, u := setup(t, "Home.md", note)
+
+	got := execute(t, u, Request{Path: "Home.md", Line: 4, IsProseLine: true, Raw: "- [ ] fix the tap", IsDone: true, Today: today})
+
+	want := "---\ntitle: Home\n---\n\n\nintro\n- [x] fix the tap done:2026-11-14\n- [ ] buy milk\n"
+	if written := content(t, vault, "Home.md"); written != want {
+		t.Errorf("note = %q, want %q", written, want)
+	}
+	if got.Refusal != "" || got.Task.Line != 7 || got.Task.ProseLine != 4 {
+		t.Errorf("result = %+v, want the task of file line 7 and prose line 4", got)
+	}
+}
+
+func TestExecuteRefusesAProseLineWhoseTextChanged(t *testing.T) {
+	note := "---\ntitle: Home\n---\n\n\nintro\n- [ ] fix the tap\n"
+	vault, _, u := setup(t, "Home.md", note)
+
+	got := execute(t, u, Request{Path: "Home.md", Line: 4, IsProseLine: true, Raw: "- [ ] other", IsDone: true, Today: today})
+
+	if got.Refusal != RefusalNotFound || content(t, vault, "Home.md") != note {
+		t.Errorf("result = %+v, want notFound and the note untouched", got)
+	}
+}
+
 func TestExecuteKeepsTheLineEndingsTheByteOrderMarkAndTheFrontmatter(t *testing.T) {
 	cases := []struct {
 		name string

@@ -3,6 +3,7 @@
     {
       "path": "Projects/Home.md",
       "line": 7,
+      "proseLine": 7,
       "raw": "- [ ] (A) buy milk due:2026-11-13 rec:!1w +home @phone",
       "text": "buy milk",
       "status": "open",
@@ -18,6 +19,7 @@
     {
       "path": "Daily/2026-11-12.md",
       "line": 3,
+      "proseLine": 3,
       "raw": "  - [ ] call due:2026-02-30",
       "text": "call due:2026-02-30",
       "status": "open",

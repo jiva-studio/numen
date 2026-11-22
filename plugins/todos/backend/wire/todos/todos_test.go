@@ -11,13 +11,13 @@ import (
 
 func TestEncodeTaskCopiesEveryFieldAndEncodesEmptyListsAsArrays(t *testing.T) {
 	got := EncodeTask(todo.Task{
-		Path: "Projects/Home.md", Line: 7, Raw: "- [ ] (A) buy milk due:2026-11-13 +home @phone", Text: "buy milk",
+		Path: "Projects/Home.md", Line: 7, ProseLine: 4, Raw: "- [ ] (A) buy milk due:2026-11-13 +home @phone", Text: "buy milk",
 		Status: todo.StatusOpen, Priority: "A", Due: "2026-11-13", DoneOn: "2026-11-01", Recurrence: "rec:1w",
 		Projects: []string{"home"}, Contexts: []string{"phone"}, Issues: []todo.Issue{todo.IssueInvalidDone}, Depth: 2,
 	})
 
 	want := api.Task{
-		Path: "Projects/Home.md", Line: 7, Raw: "- [ ] (A) buy milk due:2026-11-13 +home @phone", Text: "buy milk",
+		Path: "Projects/Home.md", Line: 7, ProseLine: 4, Raw: "- [ ] (A) buy milk due:2026-11-13 +home @phone", Text: "buy milk",
 		Status: "open", Priority: "A", Due: "2026-11-13", DoneOn: "2026-11-01", Recurrence: "rec:1w",
 		Projects: []string{"home"}, Contexts: []string{"phone"}, Issues: []api.Issue{api.IssueInvalidDone}, Depth: 2,
 	}

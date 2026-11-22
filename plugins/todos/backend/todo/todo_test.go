@@ -411,3 +411,57 @@ func FuzzParseNoteReturnsTasksThatMatchTheirLines(f *testing.F) {
 		}
 	})
 }
+
+func proseLines(tasks []Task) []int {
+	out := make([]int, 0, len(tasks))
+	for _, task := range tasks {
+		out = append(out, task.ProseLine)
+	}
+	return out
+}
+
+func TestParseNoteCountsTheProseLineBelowTheFrontmatter(t *testing.T) {
+	text := []string{"---", "title: Plan", "tags: [a]", "---", "", "intro", "- [ ] first", "- [x] second"}
+	for name, raw := range map[string][]byte{
+		"LF":   []byte(strings.Join(text, "\n")),
+		"CRLF": []byte(strings.Join(text, "\r\n")),
+		"BOM":  []byte("\xef\xbb\xbf" + strings.Join(text, "\n")),
+	} {
+		tasks := parse(t, raw)
+		if got := proseLines(tasks); !reflect.DeepEqual(got, []int{3, 4}) {
+			t.Errorf("%s note: prose lines = %v, want [3 4] for file lines %v", name, got, []int{tasks[0].Line, tasks[1].Line})
+		}
+		if tasks[0].Line != 7 || tasks[1].Line != 8 {
+			t.Errorf("%s note: file lines = %d %d, want 7 8", name, tasks[0].Line, tasks[1].Line)
+		}
+	}
+}
+
+func TestParseNoteCountsTheProseLineAsTheLineOfANoteWithoutFrontmatter(t *testing.T) {
+	tasks := parse(t, lines("intro", "- [ ] first", "- [ ] second"))
+
+	if got := proseLines(tasks); !reflect.DeepEqual(got, []int{2, 3}) {
+		t.Errorf("prose lines = %v, want the file lines [2 3]", got)
+	}
+}
+
+func TestFrontmatterLinesCountsTheLinesAboveTheProse(t *testing.T) {
+	cases := map[string]struct {
+		raw  []byte
+		want int
+	}{
+		"three lines":  {lines("---", "a: b", "---", "- [ ] x"), 3},
+		"none":         {lines("- [ ] x"), 0},
+		"byte order":   {[]byte("\xef\xbb\xbf---\na: b\n---\nx"), 3},
+		"windows ends": {[]byte("---\r\na: b\r\n---\r\nx"), 3},
+	}
+	for name, tc := range cases {
+		got, err := FrontmatterLines(tc.raw)
+		if err != nil || got != tc.want {
+			t.Errorf("%s: FrontmatterLines = %d, %v, want %d", name, got, err, tc.want)
+		}
+	}
+	if _, err := FrontmatterLines(lines("---", "a: b")); !errors.Is(err, ErrUnreadable) {
+		t.Errorf("unclosed frontmatter: error = %v, want ErrUnreadable", err)
+	}
+}

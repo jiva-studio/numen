@@ -114,7 +114,7 @@ func getClosedContext(s *server.Server) context.Context {
 func setTaskDone(done *complete.SetTaskDone) func(context.Context, api.SetTaskDoneRequest) (api.SetTaskDoneResponse, error) {
 	return func(ctx context.Context, req api.SetTaskDoneRequest) (api.SetTaskDoneResponse, error) {
 		result, err := done.Execute(ctx, complete.Request{
-			Path: req.Path, Line: req.Line, Raw: req.Raw, IsDone: req.IsDone, Today: req.Today,
+			Path: req.Path, Line: req.Line, IsProseLine: req.IsProseLine, Raw: req.Raw, IsDone: req.IsDone, Today: req.Today,
 		})
 		if errors.Is(err, complete.ErrInvalidToday) {
 			return api.SetTaskDoneResponse{}, server.NewAPIError(server.CodeInvalidArgument, err.Error())

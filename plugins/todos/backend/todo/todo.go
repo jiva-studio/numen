@@ -35,13 +35,15 @@ const (
 )
 
 // Task is one task line of a note. ParseNote leaves Path empty and the index sets it. Line is the
-// 1-based number of the line in the file, frontmatter included. Raw is the whole line without its
+// 1-based number of the line in the file, frontmatter included. ProseLine is the same line counted from the first line below the
+// frontmatter, as the note editor numbers its lines. Raw is the whole line without its
 // line ending, which a write compares. Text is the text after the checkbox without the fields, the
 // leading priority, the projects and the contexts. Depth is the indentation width divided by 2,
 // rounded down.
 type Task struct {
 	Path       string   `json:"path"`
 	Line       int      `json:"line"`
+	ProseLine  int      `json:"proseLine"`
 	Raw        string   `json:"raw"`
 	Text       string   `json:"text"`
 	Status     Status   `json:"status"`

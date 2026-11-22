@@ -18,6 +18,7 @@ func EncodeTask(task todo.Task) api.Task {
 	return api.Task{
 		Path:       task.Path,
 		Line:       task.Line,
+		ProseLine:  task.ProseLine,
 		Raw:        task.Raw,
 		Text:       task.Text,
 		Status:     api.Status(task.Status),

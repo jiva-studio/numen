@@ -20,12 +20,12 @@ func readFixture(t *testing.T, name string) []byte {
 func sampleTasks() []Task {
 	return []Task{
 		{
-			Path: "Projects/Home.md", Line: 7, Raw: "- [ ] (A) buy milk due:2026-11-13 rec:!1w +home @phone", Text: "buy milk",
+			Path: "Projects/Home.md", Line: 7, ProseLine: 7, Raw: "- [ ] (A) buy milk due:2026-11-13 rec:!1w +home @phone", Text: "buy milk",
 			Status: "open", Priority: "A", Due: "2026-11-13", DoneOn: "", Recurrence: "rec:!1w",
 			Projects: []string{"home"}, Contexts: []string{"phone"}, Issues: []Issue{}, Depth: 0,
 		},
 		{
-			Path: "Daily/2026-11-12.md", Line: 3, Raw: "  - [ ] call due:2026-02-30", Text: "call due:2026-02-30",
+			Path: "Daily/2026-11-12.md", Line: 3, ProseLine: 3, Raw: "  - [ ] call due:2026-02-30", Text: "call due:2026-02-30",
 			Status: "open", Priority: "", Due: "", DoneOn: "", Recurrence: "",
 			Projects: []string{}, Contexts: []string{}, Issues: []Issue{IssueInvalidDue}, Depth: 1,
 		},
@@ -69,7 +69,7 @@ func TestEveryMessageMatchesItsFixture(t *testing.T) {
 		}, new(SetTaskDoneRequest)},
 		{"SetTaskDone.response", SetTaskDoneResponse{
 			Task: Task{
-				Path: "Projects/Home.md", Line: 7, Raw: "- [x] fix the tap +home done:2026-11-14 ^tap", Text: "fix the tap ^tap",
+				Path: "Projects/Home.md", Line: 7, ProseLine: 7, Raw: "- [x] fix the tap +home done:2026-11-14 ^tap", Text: "fix the tap ^tap",
 				Status: "done", Priority: "", Due: "", DoneOn: "2026-11-14", Recurrence: "",
 				Projects: []string{"home"}, Contexts: []string{}, Issues: []Issue{}, Depth: 0,
 			},

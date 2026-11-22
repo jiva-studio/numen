@@ -38,13 +38,15 @@ const (
 var ErrInvalidToday = errors.New("today is not a YYYY-MM-DD date")
 
 // Request names the task line to change: the note, the line number and the text it had when it
-// was listed, the change and the day.
+// was listed, the change and the day. Line counts the lines of the file, or
+// from the first line below the frontmatter when IsProseLine is set.
 type Request struct {
-	Path   string
-	Line   int
-	Raw    string
-	IsDone bool
-	Today  string
+	Path        string
+	Line        int
+	IsProseLine bool
+	Raw         string
+	IsDone      bool
+	Today       string
 }
 
 // Result is the task after the change, the bytes written and the file stat after the write. A
@@ -109,7 +111,15 @@ func (u *SetTaskDone) write(ctx context.Context, req Request) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	found, ok := findTask(tasks, req.Line, req.Raw)
+	line := req.Line
+	if req.IsProseLine {
+		hidden, err := todo.FrontmatterLines(raw)
+		if err != nil {
+			return refuse(RefusalChanged), nil
+		}
+		line += hidden
+	}
+	found, ok := findTask(tasks, line, req.Raw)
 	if !ok {
 		return refuse(RefusalNotFound), nil
 	}

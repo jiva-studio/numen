@@ -2,6 +2,7 @@
   "task": {
     "path": "Projects/Home.md",
     "line": 7,
+    "proseLine": 7,
     "raw": "- [x] fix the tap +home done:2026-11-14 ^tap",
     "text": "fix the tap ^tap",
     "status": "done",

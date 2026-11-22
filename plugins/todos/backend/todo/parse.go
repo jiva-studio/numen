@@ -19,24 +19,12 @@ const (
 // ParseNote returns the tasks of a note in the order of its lines. A note whose frontmatter cannot
 // be read or is never closed has no tasks and gives ErrUnreadable.
 func ParseNote(raw []byte) ([]Task, error) {
-	doc, err := markdown.Open(raw)
+	start, err := bodyStart(raw)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrUnreadable, err)
+		return nil, err
 	}
-	body := doc.Body()
-	start := len(raw) - len(body)
-	bomLength := 0
-	if strings.HasPrefix(string(raw), byteOrderMark) {
-		bomLength = len(byteOrderMark)
-	}
-	if start == bomLength {
-		// No frontmatter: the first line keeps its byte order mark in the raw line.
-		start = 0
-		if markdown.IsFrontmatterStart(string(raw)) {
-			return nil, ErrUnreadable
-		}
-	}
-	firstLine := strings.Count(string(raw[:start]), "\n") + 1
+	frontmatter := strings.Count(string(raw[:start]), "\n")
+	firstLine := frontmatter + 1
 	scanner := newScanner()
 	var tasks []Task
 	for n, line := range strings.Split(string(raw[start:]), "\n") {
@@ -46,10 +34,41 @@ func ParseNote(raw []byte) ([]Task, error) {
 			content = strings.TrimPrefix(line, byteOrderMark)
 		}
 		if found, ok := scanner.scan(content, firstLine+n, line); ok {
+			found.ProseLine = found.Line - frontmatter
 			tasks = append(tasks, found)
 		}
 	}
 	return tasks, nil
+}
+
+// FrontmatterLines returns the number of lines the frontmatter of a note takes in the file, which
+// is what a line counted from the prose is short of the line of the file.
+func FrontmatterLines(raw []byte) (int, error) {
+	start, err := bodyStart(raw)
+	if err != nil {
+		return 0, err
+	}
+	return strings.Count(string(raw[:start]), "\n"), nil
+}
+
+func bodyStart(raw []byte) (int, error) {
+	doc, err := markdown.Open(raw)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %w", ErrUnreadable, err)
+	}
+	start := len(raw) - len(doc.Body())
+	bomLength := 0
+	if strings.HasPrefix(string(raw), byteOrderMark) {
+		bomLength = len(byteOrderMark)
+	}
+	if start == bomLength {
+		// No frontmatter: the first line keeps its byte order mark in the raw line.
+		start = 0
+		if markdown.IsFrontmatterStart(string(raw)) {
+			return 0, ErrUnreadable
+		}
+	}
+	return start, nil
 }
 
 // scanner follows the lines of a body: the code fence, the HTML comment and the open list.

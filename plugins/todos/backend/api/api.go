@@ -15,10 +15,12 @@ const (
 	MethodSetTaskDone  = "SetTaskDone"
 )
 
-// Task is one task line of a note.
+// Task is one task line of a note. Line counts the lines of the file; ProseLine counts from the
+// first line below the frontmatter, as the note editor does.
 type Task struct {
 	Path       string   `json:"path"`
 	Line       int      `json:"line"`
+	ProseLine  int      `json:"proseLine"`
 	Raw        string   `json:"raw"`
 	Text       string   `json:"text"`
 	Status     Status   `json:"status"`
@@ -98,13 +100,15 @@ type WatchTasksMessage struct {
 }
 
 // SetTaskDoneRequest ticks (isDone) or unticks the task at a line of a note. Raw is the text the
-// line had when it was listed; today is the day of the window.
+// line had when it was listed; today is the day of the window. Line counts the lines of the file,
+// or from the first line below the frontmatter when IsProseLine is set, as the note editor does.
 type SetTaskDoneRequest struct {
-	Path   string `json:"path"`
-	Line   int    `json:"line"`
-	Raw    string `json:"raw"`
-	IsDone bool   `json:"isDone"`
-	Today  string `json:"today"`
+	Path        string `json:"path"`
+	Line        int    `json:"line"`
+	IsProseLine bool   `json:"isProseLine"`
+	Raw         string `json:"raw"`
+	IsDone      bool   `json:"isDone"`
+	Today       string `json:"today"`
 }
 
 // SetTaskDoneResponse is the task after the change and the change: completed, rescheduled or
