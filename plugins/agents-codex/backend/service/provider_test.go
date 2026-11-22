@@ -290,7 +290,7 @@ func TestTheLinkedHandlerServesTheProviderService(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 	lifecycle := servertest.NewLifecycleClient(http.DefaultClient, web.URL, "tok")
-	if _, err := lifecycle.Configure(t.Context(), map[string]string{"executablePath": program}); err != nil {
+	if err := lifecycle.Configure(t.Context(), map[string]string{"executablePath": program}); err != nil {
 		t.Fatal(err)
 	}
 

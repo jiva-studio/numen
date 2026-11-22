@@ -186,70 +186,17 @@ func (x *FocusNoteResponse) GetId() string {
 	return ""
 }
 
-// A ByteSpan is a byte range in a file's text version, as a text search returns it.
-type ByteSpan struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Start         int32                  `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`
-	Length        int32                  `protobuf:"varint,2,opt,name=length,proto3" json:"length,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ByteSpan) Reset() {
-	*x = ByteSpan{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ByteSpan) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ByteSpan) ProtoMessage() {}
-
-func (x *ByteSpan) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ByteSpan.ProtoReflect.Descriptor instead.
-func (*ByteSpan) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *ByteSpan) GetStart() int32 {
-	if x != nil {
-		return x.Start
-	}
-	return 0
-}
-
-func (x *ByteSpan) GetLength() int32 {
-	if x != nil {
-		return x.Length
-	}
-	return 0
-}
-
 type FocusFileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Spans         []*ByteSpan            `protobuf:"bytes,2,rep,name=spans,proto3" json:"spans,omitempty"`
+	Spans         []*Range               `protobuf:"bytes,2,rep,name=spans,proto3" json:"spans,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FocusFileRequest) Reset() {
 	*x = FocusFileRequest{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[3]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -261,7 +208,7 @@ func (x *FocusFileRequest) String() string {
 func (*FocusFileRequest) ProtoMessage() {}
 
 func (x *FocusFileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[3]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -274,7 +221,7 @@ func (x *FocusFileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FocusFileRequest.ProtoReflect.Descriptor instead.
 func (*FocusFileRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *FocusFileRequest) GetPath() string {
@@ -284,7 +231,7 @@ func (x *FocusFileRequest) GetPath() string {
 	return ""
 }
 
-func (x *FocusFileRequest) GetSpans() []*ByteSpan {
+func (x *FocusFileRequest) GetSpans() []*Range {
 	if x != nil {
 		return x.Spans
 	}
@@ -300,7 +247,7 @@ type FocusFileResponse struct {
 
 func (x *FocusFileResponse) Reset() {
 	*x = FocusFileResponse{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[4]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -312,7 +259,7 @@ func (x *FocusFileResponse) String() string {
 func (*FocusFileResponse) ProtoMessage() {}
 
 func (x *FocusFileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[4]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -325,7 +272,7 @@ func (x *FocusFileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FocusFileResponse.ProtoReflect.Descriptor instead.
 func (*FocusFileResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *FocusFileResponse) GetError() HostWindowErrorCode {
@@ -356,7 +303,7 @@ type OpenTab struct {
 
 func (x *OpenTab) Reset() {
 	*x = OpenTab{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[5]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -368,7 +315,7 @@ func (x *OpenTab) String() string {
 func (*OpenTab) ProtoMessage() {}
 
 func (x *OpenTab) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[5]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -381,7 +328,7 @@ func (x *OpenTab) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OpenTab.ProtoReflect.Descriptor instead.
 func (*OpenTab) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *OpenTab) GetId() string {
@@ -427,7 +374,7 @@ type HostWindowServiceReadOpenTabsRequest struct {
 
 func (x *HostWindowServiceReadOpenTabsRequest) Reset() {
 	*x = HostWindowServiceReadOpenTabsRequest{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[6]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -439,7 +386,7 @@ func (x *HostWindowServiceReadOpenTabsRequest) String() string {
 func (*HostWindowServiceReadOpenTabsRequest) ProtoMessage() {}
 
 func (x *HostWindowServiceReadOpenTabsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[6]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -452,7 +399,7 @@ func (x *HostWindowServiceReadOpenTabsRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use HostWindowServiceReadOpenTabsRequest.ProtoReflect.Descriptor instead.
 func (*HostWindowServiceReadOpenTabsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{5}
 }
 
 type HostWindowServiceReadOpenTabsResponse struct {
@@ -466,7 +413,7 @@ type HostWindowServiceReadOpenTabsResponse struct {
 
 func (x *HostWindowServiceReadOpenTabsResponse) Reset() {
 	*x = HostWindowServiceReadOpenTabsResponse{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[7]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -478,7 +425,7 @@ func (x *HostWindowServiceReadOpenTabsResponse) String() string {
 func (*HostWindowServiceReadOpenTabsResponse) ProtoMessage() {}
 
 func (x *HostWindowServiceReadOpenTabsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[7]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -491,7 +438,7 @@ func (x *HostWindowServiceReadOpenTabsResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use HostWindowServiceReadOpenTabsResponse.ProtoReflect.Descriptor instead.
 func (*HostWindowServiceReadOpenTabsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *HostWindowServiceReadOpenTabsResponse) GetError() HostWindowErrorCode {
@@ -524,7 +471,7 @@ type ActivateTabRequest struct {
 
 func (x *ActivateTabRequest) Reset() {
 	*x = ActivateTabRequest{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[8]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -536,7 +483,7 @@ func (x *ActivateTabRequest) String() string {
 func (*ActivateTabRequest) ProtoMessage() {}
 
 func (x *ActivateTabRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[8]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -549,7 +496,7 @@ func (x *ActivateTabRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActivateTabRequest.ProtoReflect.Descriptor instead.
 func (*ActivateTabRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{8}
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ActivateTabRequest) GetTabId() string {
@@ -570,7 +517,7 @@ type ActivateTabResponse struct {
 
 func (x *ActivateTabResponse) Reset() {
 	*x = ActivateTabResponse{}
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[9]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -582,7 +529,7 @@ func (x *ActivateTabResponse) String() string {
 func (*ActivateTabResponse) ProtoMessage() {}
 
 func (x *ActivateTabResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostwindow_proto_msgTypes[9]
+	mi := &file_numen_v1_hostwindow_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -595,7 +542,7 @@ func (x *ActivateTabResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActivateTabResponse.ProtoReflect.Descriptor instead.
 func (*ActivateTabResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_hostwindow_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ActivateTabResponse) GetError() HostWindowErrorCode {
@@ -623,20 +570,17 @@ var File_numen_v1_hostwindow_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostwindow_proto_rawDesc = "" +
 	"\n" +
-	"\x19numen/v1/hostwindow.proto\x12\bnumen.v1\"&\n" +
+	"\x19numen/v1/hostwindow.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"&\n" +
 	"\x10FocusNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\x82\x01\n" +
 	"\x11FocusNoteResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x0e\n" +
-	"\x02id\x18\x04 \x01(\tR\x02id\"8\n" +
-	"\bByteSpan\x12\x14\n" +
-	"\x05start\x18\x01 \x01(\x05R\x05start\x12\x16\n" +
-	"\x06length\x18\x02 \x01(\x05R\x06length\"P\n" +
+	"\x02id\x18\x04 \x01(\tR\x02id\"M\n" +
 	"\x10FocusFileRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12(\n" +
-	"\x05spans\x18\x02 \x03(\v2\x12.numen.v1.ByteSpanR\x05spans\"H\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12%\n" +
+	"\x05spans\x18\x02 \x03(\v2\x0f.numen.v1.RangeR\x05spans\"H\n" +
 	"\x11FocusFileResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostWindowErrorCodeR\x05error\"m\n" +
 	"\aOpenTab\x12\x0e\n" +
@@ -679,36 +623,36 @@ func file_numen_v1_hostwindow_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_hostwindow_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_hostwindow_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_numen_v1_hostwindow_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_numen_v1_hostwindow_proto_goTypes = []any{
 	(HostWindowErrorCode)(0),                      // 0: numen.v1.HostWindowErrorCode
 	(*FocusNoteRequest)(nil),                      // 1: numen.v1.FocusNoteRequest
 	(*FocusNoteResponse)(nil),                     // 2: numen.v1.FocusNoteResponse
-	(*ByteSpan)(nil),                              // 3: numen.v1.ByteSpan
-	(*FocusFileRequest)(nil),                      // 4: numen.v1.FocusFileRequest
-	(*FocusFileResponse)(nil),                     // 5: numen.v1.FocusFileResponse
-	(*OpenTab)(nil),                               // 6: numen.v1.OpenTab
-	(*HostWindowServiceReadOpenTabsRequest)(nil),  // 7: numen.v1.HostWindowServiceReadOpenTabsRequest
-	(*HostWindowServiceReadOpenTabsResponse)(nil), // 8: numen.v1.HostWindowServiceReadOpenTabsResponse
-	(*ActivateTabRequest)(nil),                    // 9: numen.v1.ActivateTabRequest
-	(*ActivateTabResponse)(nil),                   // 10: numen.v1.ActivateTabResponse
+	(*FocusFileRequest)(nil),                      // 3: numen.v1.FocusFileRequest
+	(*FocusFileResponse)(nil),                     // 4: numen.v1.FocusFileResponse
+	(*OpenTab)(nil),                               // 5: numen.v1.OpenTab
+	(*HostWindowServiceReadOpenTabsRequest)(nil),  // 6: numen.v1.HostWindowServiceReadOpenTabsRequest
+	(*HostWindowServiceReadOpenTabsResponse)(nil), // 7: numen.v1.HostWindowServiceReadOpenTabsResponse
+	(*ActivateTabRequest)(nil),                    // 8: numen.v1.ActivateTabRequest
+	(*ActivateTabResponse)(nil),                   // 9: numen.v1.ActivateTabResponse
+	(*Range)(nil),                                 // 10: numen.v1.Range
 }
 var file_numen_v1_hostwindow_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.FocusNoteResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	3,  // 1: numen.v1.FocusFileRequest.spans:type_name -> numen.v1.ByteSpan
+	10, // 1: numen.v1.FocusFileRequest.spans:type_name -> numen.v1.Range
 	0,  // 2: numen.v1.FocusFileResponse.error:type_name -> numen.v1.HostWindowErrorCode
 	0,  // 3: numen.v1.HostWindowServiceReadOpenTabsResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	6,  // 4: numen.v1.HostWindowServiceReadOpenTabsResponse.tabs:type_name -> numen.v1.OpenTab
+	5,  // 4: numen.v1.HostWindowServiceReadOpenTabsResponse.tabs:type_name -> numen.v1.OpenTab
 	0,  // 5: numen.v1.ActivateTabResponse.error:type_name -> numen.v1.HostWindowErrorCode
-	6,  // 6: numen.v1.ActivateTabResponse.tab:type_name -> numen.v1.OpenTab
+	5,  // 6: numen.v1.ActivateTabResponse.tab:type_name -> numen.v1.OpenTab
 	1,  // 7: numen.v1.HostWindowService.FocusNote:input_type -> numen.v1.FocusNoteRequest
-	4,  // 8: numen.v1.HostWindowService.FocusFile:input_type -> numen.v1.FocusFileRequest
-	7,  // 9: numen.v1.HostWindowService.ReadOpenTabs:input_type -> numen.v1.HostWindowServiceReadOpenTabsRequest
-	9,  // 10: numen.v1.HostWindowService.ActivateTab:input_type -> numen.v1.ActivateTabRequest
+	3,  // 8: numen.v1.HostWindowService.FocusFile:input_type -> numen.v1.FocusFileRequest
+	6,  // 9: numen.v1.HostWindowService.ReadOpenTabs:input_type -> numen.v1.HostWindowServiceReadOpenTabsRequest
+	8,  // 10: numen.v1.HostWindowService.ActivateTab:input_type -> numen.v1.ActivateTabRequest
 	2,  // 11: numen.v1.HostWindowService.FocusNote:output_type -> numen.v1.FocusNoteResponse
-	5,  // 12: numen.v1.HostWindowService.FocusFile:output_type -> numen.v1.FocusFileResponse
-	8,  // 13: numen.v1.HostWindowService.ReadOpenTabs:output_type -> numen.v1.HostWindowServiceReadOpenTabsResponse
-	10, // 14: numen.v1.HostWindowService.ActivateTab:output_type -> numen.v1.ActivateTabResponse
+	4,  // 12: numen.v1.HostWindowService.FocusFile:output_type -> numen.v1.FocusFileResponse
+	7,  // 13: numen.v1.HostWindowService.ReadOpenTabs:output_type -> numen.v1.HostWindowServiceReadOpenTabsResponse
+	9,  // 14: numen.v1.HostWindowService.ActivateTab:output_type -> numen.v1.ActivateTabResponse
 	11, // [11:15] is the sub-list for method output_type
 	7,  // [7:11] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
@@ -721,13 +665,14 @@ func file_numen_v1_hostwindow_proto_init() {
 	if File_numen_v1_hostwindow_proto != nil {
 		return
 	}
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostwindow_proto_rawDesc), len(file_numen_v1_hostwindow_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

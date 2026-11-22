@@ -93,7 +93,7 @@ func TestTextClientSavesListsAndReadsThroughTheHost(t *testing.T) {
 
 func TestTheTextClientReadsEveryCodeAsItsError(t *testing.T) {
 	for code, want := range map[v1.TextErrorCode]error{
-		v1.TextErrorCode_TEXT_ERROR_CODE_MISSING:   host.ErrNotExist,
+		v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND: host.ErrNotExist,
 		v1.TextErrorCode_TEXT_ERROR_CODE_NO_VAULT:  host.ErrNoVault,
 		v1.TextErrorCode_TEXT_ERROR_CODE_INVALID:   host.ErrInvalidVersion,
 		v1.TextErrorCode_TEXT_ERROR_CODE_NOT_OWNER: host.ErrNotOwner,

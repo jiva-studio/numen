@@ -101,9 +101,9 @@ func (h *Handler) WatchVaultChanges(
 }
 
 func newChangeResponse(what window.Change) *v1.WatchVaultChangesResponse {
-	renamedMoves := make([]*v1.Move, 0, len(what.Renamed))
+	renamedMoves := make([]*v1.MoveResult, 0, len(what.Renamed))
 	for _, went := range what.Renamed {
-		renamedMoves = append(renamedMoves, &v1.Move{From: went.From, To: went.To})
+		renamedMoves = append(renamedMoves, &v1.MoveResult{From: went.From, To: went.To})
 	}
 	return &v1.WatchVaultChangesResponse{
 		Paths: what.Paths, Reload: what.ShouldReload, Renamed: renamedMoves, VersionPaths: what.VersionPaths,

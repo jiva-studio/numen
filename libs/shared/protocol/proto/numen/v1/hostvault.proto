@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package numen.v1;
 
+import "numen/v1/shared.proto";
+
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // HostVaultService is the vault itself, as a plugin works it: which vault the
@@ -44,59 +46,6 @@ service HostVaultService {
   rpc WatchMoves(WatchMovesRequest) returns (stream WatchMovesResponse);
 }
 
-// means it was not.
-enum HostVaultErrorCode {
-  HOST_VAULT_ERROR_CODE_UNSPECIFIED = 0;
-
-  // The host is showing no vault.
-  HOST_VAULT_ERROR_CODE_NO_VAULT = 1;
-
-  // The file or the note is not there.
-  HOST_VAULT_ERROR_CODE_NOT_FOUND = 2;
-
-  // The path is outside the vault or names no file.
-  HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT = 3;
-
-  // The file changed since the file stat given.
-  HOST_VAULT_ERROR_CODE_CONFLICT = 4;
-
-  // A file is already there.
-  HOST_VAULT_ERROR_CODE_ALREADY_EXISTS = 5;
-
-  // Another program holds the file.
-  HOST_VAULT_ERROR_CODE_LOCKED = 6;
-
-  // The path is not a note this vault holds.
-  HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;
-
-  reserved 9 to 11;
-
-  // The file is not valid note text.
-  HOST_VAULT_ERROR_CODE_NOT_TEXT = 12;
-
-  // The file exceeds the maximum note size.
-  HOST_VAULT_ERROR_CODE_TOO_LARGE = 13;
-
-  // The prose opens with a frontmatter delimiter, so writing it would put a
-  // second block inside the first.
-  HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE = 14;
-
-  // The frontmatter cannot be read, so the note can be neither read nor
-  // written.
-  HOST_VAULT_ERROR_CODE_UNREADABLE = 15;
-
-  // The title is invalid: it is empty after sanitising, spans lines, or parses
-  // as markup.
-  HOST_VAULT_ERROR_CODE_INVALID_NAME = 16;
-
-  // The change of a note failed for a reason with no code of its own; the
-  // detail of that note contains the core's error text.
-  HOST_VAULT_ERROR_CODE_INTERNAL = 17;
-
-  // The call was cancelled before this note was changed: the note is as it was.
-  HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED = 18;
-}
-
 enum HostIndexState {
   HOST_INDEX_STATE_UNSPECIFIED = 0;
   // The index carries the vault.
@@ -110,7 +59,7 @@ enum HostIndexState {
 message EnsureVaultIndexedRequest {}
 
 message EnsureVaultIndexedResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   HostIndexState state = 2;
   string reason = 3;
 }
@@ -122,7 +71,7 @@ message WatchMovesResponse {}
 message GetHostVaultRequest {}
 
 message GetHostVaultResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // The folder the vault is, on this machine.
   string path = 2;
   string id = 3;
@@ -132,7 +81,7 @@ message GetHostVaultResponse {
 message LockVaultRequest {}
 
 message LockVaultResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // The lock to return to UnlockVault.
   string lock = 2;
 }
@@ -152,7 +101,7 @@ message HostParseProblem {
 }
 
 message GetParseProblemsResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   repeated HostParseProblem problems = 2;
 }
 
@@ -176,7 +125,7 @@ message HostVaultProblem {
 }
 
 message GetVaultProblemsResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   repeated HostVaultProblem problems = 2;
   // The checks this result covers.
   repeated string checks = 3;

@@ -1280,8 +1280,8 @@ type ReadNoteResponse struct {
 	// The prose below the frontmatter, with line endings as LF. Empty when the
 	Body string `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`
 	// Set when the note was not read, and why.
-	Error         *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
-	At            *FileStat  `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	Error         ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	At            *FileStat `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1324,8 +1324,8 @@ func (x *ReadNoteResponse) GetBody() string {
 }
 
 func (x *ReadNoteResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -1461,7 +1461,7 @@ func (x *WriteNoteRequest) GetBaseline() *ReadBaseline {
 type WriteNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was written, and why.
-	Error *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
 	At *FileStat `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
@@ -1504,8 +1504,8 @@ func (*WriteNoteResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *WriteNoteResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -1683,7 +1683,7 @@ type CreateNoteResponse struct {
 	// Where the note is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
-	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the note is on disk and the index could not be updated for it.
 	// The note was made and `path` stands; search does not answer about it until
 	// a walk goes past.
@@ -1732,8 +1732,8 @@ func (x *CreateNoteResponse) GetPath() string {
 }
 
 func (x *CreateNoteResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -1978,7 +1978,7 @@ func (x *GetConnectionRequest) GetType() string {
 type GetConnectionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Connection    *Connection            `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
-	Error         *ErrorCode             `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2021,8 +2021,8 @@ func (x *GetConnectionResponse) GetConnection() *Connection {
 }
 
 func (x *GetConnectionResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -2073,7 +2073,7 @@ func (x *SaveConnectionRequest) GetConnection() *Connection {
 
 type SaveConnectionResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error *ErrorCode             `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the connection was not saved because it is not one: a role no
 	// connection carries, roles that are not inverse of each other, or a note
 	// joined to itself.
@@ -2116,8 +2116,8 @@ func (*SaveConnectionResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *SaveConnectionResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -2201,7 +2201,7 @@ func (x *RemoveSideRequest) GetType() string {
 
 type RemoveSideResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         *ErrorCode             `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2237,8 +2237,8 @@ func (*RemoveSideResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *RemoveSideResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -2305,7 +2305,7 @@ func (x *RemoveConnectionRequest) GetType() string {
 
 type RemoveConnectionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         *ErrorCode             `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2341,8 +2341,8 @@ func (*RemoveConnectionResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *RemoveConnectionResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -2411,7 +2411,7 @@ func (x *JoinNotesRequest) GetSide() *ConnectionSide {
 
 type JoinNotesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error *ErrorCode             `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the record was not written because the connection is not valid,
 	// as in SaveConnectionResponse.
 	IsInvalid bool `protobuf:"varint,2,opt,name=is_invalid,json=isInvalid,proto3" json:"is_invalid,omitempty"`
@@ -2453,8 +2453,8 @@ func (*JoinNotesResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *JoinNotesResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -2559,7 +2559,7 @@ type CreateRelatedNoteResponse struct {
 	// Where the note is filed. Empty when nothing was made.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// Set when nothing was made, and why.
-	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the note is on disk and the index could not be updated for it.
 	IsIndexOutdated bool `protobuf:"varint,3,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
 	// Set when every numbered untitled name is taken.
@@ -2606,8 +2606,8 @@ func (x *CreateRelatedNoteResponse) GetPath() string {
 }
 
 func (x *CreateRelatedNoteResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -2880,13 +2880,15 @@ type RenameNoteResponse struct {
 	// Set when the rename did not finish, and why. The note may already have been
 	// written: `path`, `title` and `by` say what stands. A note holding prose the
 	// caller never saw is ERROR_CODE_CONFLICT, and nothing was written at all.
-	Error *ErrorCode `protobuf:"varint,5,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,5,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the rename reached the vault and the index could not be updated
 	// with it. Search answers about these files as it read them last, until a
 	// walk goes past.
 	IsIndexOutdated bool `protobuf:"varint,6,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// The text of the error where it carries more than the code does.
+	Detail        string `protobuf:"bytes,7,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RenameNoteResponse) Reset() {
@@ -2948,8 +2950,8 @@ func (x *RenameNoteResponse) GetMoved() *MoveResult {
 }
 
 func (x *RenameNoteResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -2959,6 +2961,13 @@ func (x *RenameNoteResponse) GetIsIndexOutdated() bool {
 		return x.IsIndexOutdated
 	}
 	return false
+}
+
+func (x *RenameNoteResponse) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
 }
 
 type WatchEditsRequest struct {
@@ -3146,12 +3155,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04line\x18\x02 \x01(\x05R\x04line\x12\x14\n" +
 	"\x05level\x18\x03 \x01(\x05R\x05level\"%\n" +
 	"\x0fReadNoteRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x90\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x81\x01\n" +
 	"\x10ReadNoteResponse\x12\x12\n" +
-	"\x04body\x18\x01 \x01(\tR\x04body\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x01R\x02at\x88\x01\x01B\b\n" +
-	"\x06_errorB\x05\n" +
+	"\x04body\x18\x01 \x01(\tR\x04body\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12'\n" +
+	"\x02at\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x00R\x02at\x88\x01\x01B\x05\n" +
 	"\x03_at\"H\n" +
 	"\fReadBaseline\x12\x14\n" +
 	"\x05prose\x18\x01 \x01(\tR\x05prose\x12\"\n" +
@@ -3160,12 +3168,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x127\n" +
 	"\bbaseline\x18\x03 \x01(\v2\x16.numen.v1.ReadBaselineH\x00R\bbaseline\x88\x01\x01B\v\n" +
-	"\t_baseline\"\xa9\x01\n" +
-	"\x11WriteNoteResponse\x12.\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatH\x01R\x02at\x88\x01\x01\x12*\n" +
-	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdatedB\b\n" +
-	"\x06_errorB\x05\n" +
+	"\t_baseline\"\x9a\x01\n" +
+	"\x11WriteNoteResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12'\n" +
+	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatH\x00R\x02at\x88\x01\x01\x12*\n" +
+	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdatedB\x05\n" +
 	"\x03_at\"\xa2\x01\n" +
 	"\x04Link\x12\x0e\n" +
 	"\x02to\x18\x01 \x01(\tR\x02to\x12\"\n" +
@@ -3177,13 +3184,12 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x11CreateNoteRequest\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12$\n" +
-	"\x05links\x18\x03 \x03(\v2\x0e.numen.v1.LinkR\x05links\"\xba\x01\n" +
+	"\x05links\x18\x03 \x03(\v2\x0e.numen.v1.LinkR\x05links\"\xab\x01\n" +
 	"\x12CreateNoteResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12*\n" +
 	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdated\x12*\n" +
-	"\x11is_name_exhausted\x18\x04 \x01(\bR\x0fisNameExhaustedB\b\n" +
-	"\x06_error\"\x9c\x01\n" +
+	"\x11is_name_exhausted\x18\x04 \x01(\bR\x0fisNameExhausted\"\x9c\x01\n" +
 	"\x0eConnectionSide\x12\"\n" +
 	"\x04role\x18\x01 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x12\n" +
@@ -3204,59 +3210,53 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x14GetConnectionRequest\x12\x14\n" +
 	"\x05first\x18\x01 \x01(\tR\x05first\x12\x16\n" +
 	"\x06second\x18\x02 \x01(\tR\x06second\x12\x12\n" +
-	"\x04type\x18\x03 \x01(\tR\x04type\"\x87\x01\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\"x\n" +
 	"\x15GetConnectionResponse\x124\n" +
 	"\n" +
 	"connection\x18\x01 \x01(\v2\x14.numen.v1.ConnectionR\n" +
-	"connection\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
-	"\x06_error\"M\n" +
+	"connection\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\"M\n" +
 	"\x15SaveConnectionRequest\x124\n" +
 	"\n" +
 	"connection\x18\x01 \x01(\v2\x14.numen.v1.ConnectionR\n" +
-	"connection\"\x8c\x01\n" +
-	"\x16SaveConnectionResponse\x12.\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1d\n" +
+	"connection\"}\n" +
+	"\x16SaveConnectionResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x1d\n" +
 	"\n" +
 	"is_invalid\x18\x02 \x01(\bR\tisInvalid\x12\x19\n" +
-	"\bis_cycle\x18\x03 \x01(\bR\aisCycleB\b\n" +
-	"\x06_error\"K\n" +
+	"\bis_cycle\x18\x03 \x01(\bR\aisCycle\"K\n" +
 	"\x11RemoveSideRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x12\n" +
-	"\x04type\x18\x03 \x01(\tR\x04type\"N\n" +
-	"\x12RemoveSideResponse\x12.\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
-	"\x06_error\"[\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\"?\n" +
+	"\x12RemoveSideResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\"[\n" +
 	"\x17RemoveConnectionRequest\x12\x14\n" +
 	"\x05first\x18\x01 \x01(\tR\x05first\x12\x16\n" +
 	"\x06second\x18\x02 \x01(\tR\x06second\x12\x12\n" +
-	"\x04type\x18\x03 \x01(\tR\x04type\"T\n" +
-	"\x18RemoveConnectionResponse\x12.\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
-	"\x06_error\"d\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\"E\n" +
+	"\x18RemoveConnectionResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\"d\n" +
 	"\x10JoinNotesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12,\n" +
-	"\x04side\x18\x03 \x01(\v2\x18.numen.v1.ConnectionSideR\x04side\"\x87\x01\n" +
-	"\x11JoinNotesResponse\x12.\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12\x1d\n" +
+	"\x04side\x18\x03 \x01(\v2\x18.numen.v1.ConnectionSideR\x04side\"x\n" +
+	"\x11JoinNotesResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x1d\n" +
 	"\n" +
 	"is_invalid\x18\x02 \x01(\bR\tisInvalid\x12\x19\n" +
-	"\bis_cycle\x18\x03 \x01(\bR\aisCycleB\b\n" +
-	"\x06_error\"\xa6\x01\n" +
+	"\bis_cycle\x18\x03 \x01(\bR\aisCycle\"\xa6\x01\n" +
 	"\x18CreateRelatedNoteRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\"\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12(\n" +
-	"\x06marker\x18\x05 \x01(\x0e2\x10.numen.v1.MarkerR\x06marker\"\xc1\x01\n" +
+	"\x06marker\x18\x05 \x01(\x0e2\x10.numen.v1.MarkerR\x06marker\"\xb2\x01\n" +
 	"\x19CreateRelatedNoteResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12*\n" +
 	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdated\x12*\n" +
-	"\x11is_name_exhausted\x18\x04 \x01(\bR\x0fisNameExhaustedB\b\n" +
-	"\x06_error\"*\n" +
+	"\x11is_name_exhausted\x18\x04 \x01(\bR\x0fisNameExhausted\"*\n" +
 	"\x14ListBacklinksRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\xeb\x01\n" +
 	"\bBacklink\x12\"\n" +
@@ -3272,17 +3272,17 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\tbacklinks\x18\x01 \x03(\v2\x12.numen.v1.BacklinkR\tbacklinks\"=\n" +
 	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\x96\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\x9f\x02\n" +
 	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x125\n" +
 	"\vname_source\x18\x03 \x01(\x0e2\x14.numen.v1.NameSourceR\n" +
 	"nameSource\x12/\n" +
-	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12.\n" +
-	"\x05error\x18\x05 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12*\n" +
-	"\x11is_index_outdated\x18\x06 \x01(\bR\x0fisIndexOutdatedB\b\n" +
-	"\x06_movedB\b\n" +
-	"\x06_error\"\x13\n" +
+	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12)\n" +
+	"\x05error\x18\x05 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12*\n" +
+	"\x11is_index_outdated\x18\x06 \x01(\bR\x0fisIndexOutdated\x12\x16\n" +
+	"\x06detail\x18\a \x01(\tR\x06detailB\b\n" +
+	"\x06_moved\"\x13\n" +
 	"\x11WatchEditsRequest\"\x96\x01\n" +
 	"\x12WatchEditsResponse\x12\x16\n" +
 	"\x06change\x18\x01 \x01(\tR\x06change\x12\x12\n" +
@@ -3508,14 +3508,7 @@ func file_numen_v1_note_proto_init() {
 	file_numen_v1_note_proto_msgTypes[16].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[18].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[19].OneofWrappers = []any{}
-	file_numen_v1_note_proto_msgTypes[22].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[24].OneofWrappers = []any{}
-	file_numen_v1_note_proto_msgTypes[26].OneofWrappers = []any{}
-	file_numen_v1_note_proto_msgTypes[28].OneofWrappers = []any{}
-	file_numen_v1_note_proto_msgTypes[30].OneofWrappers = []any{}
-	file_numen_v1_note_proto_msgTypes[32].OneofWrappers = []any{}
-	file_numen_v1_note_proto_msgTypes[34].OneofWrappers = []any{}
-	file_numen_v1_note_proto_msgTypes[36].OneofWrappers = []any{}
 	file_numen_v1_note_proto_msgTypes[41].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

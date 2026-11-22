@@ -64,9 +64,9 @@ func readStoreError(code v1.HostStoreErrorCode) error {
 		return nil
 	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NO_VAULT:
 		return ErrNoVault
-	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_MISSING:
+	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NOT_FOUND:
 		return ErrNotExist
-	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE:
+	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE_VAULT:
 		return ErrOutside
 	case v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER:
 		return ErrLockedByAnother

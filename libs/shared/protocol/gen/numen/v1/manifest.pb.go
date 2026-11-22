@@ -3495,7 +3495,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.google.protobuf.ListValueR\x05value:\x028\x01\"=\n" +
 	"\x11ManifestCondition\x12\x18\n" +
 	"\asetting\x18\x01 \x01(\tR\asetting\x12\x0e\n" +
-	"\x02is\x18\x02 \x03(\tR\x02is\"\xd1\x05\n" +
+	"\x02is\x18\x02 \x03(\tR\x02is\"\xcb\x05\n" +
 	"\x0fManifestSetting\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -3525,7 +3525,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05group\x18\x19 \x01(\tR\x05groupB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_stepJ\x04\b\x15\x10\x16\"\xd1\x01\n" +
+	"\x05_step\"\xd1\x01\n" +
 	"\x10ManifestNoteType\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x1b\n" +
 	"\x06chunks\x18\x02 \x01(\bH\x00R\x06chunks\x88\x01\x01\x126\n" +
@@ -3547,7 +3547,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x14ManifestCommandWarns\x12\x16\n" +
 	"\x06action\x18\x01 \x01(\tR\x06action\x12\x16\n" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\x12\x12\n" +
-	"\x04back\x18\x03 \x01(\tR\x04back\"\xb8\x02\n" +
+	"\x04back\x18\x03 \x01(\tR\x04back\"\xb2\x02\n" +
 	"\x0fManifestCommand\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
@@ -3558,8 +3558,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"permission\x18\f \x01(\tR\n" +
 	"permission\x12:\n" +
 	"\aanswers\x18\r \x01(\v2 .numen.v1.ManifestCommandAnswersR\aanswers\x124\n" +
-	"\x05warns\x18\x0e \x01(\v2\x1e.numen.v1.ManifestCommandWarnsR\x05warnsJ\x04\b\n" +
-	"\x10\v\"Y\n" +
+	"\x05warns\x18\x0e \x01(\v2\x1e.numen.v1.ManifestCommandWarnsR\x05warns\"Y\n" +
 	"\x0eManifestReader\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12#\n" +
 	"\rcontent_types\x18\x02 \x03(\tR\fcontentTypes\x12\x12\n" +

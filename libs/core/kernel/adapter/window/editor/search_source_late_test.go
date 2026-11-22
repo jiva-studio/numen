@@ -2,7 +2,6 @@ package editor_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -47,16 +46,10 @@ type connectionSource struct {
 func (s *connectionSource) Configure(
 	_ context.Context, r *connect.Request[v1.ConfigureRequest],
 ) (*connect.Response[v1.ConfigureResponse], error) {
-	var settings struct {
-		Connection string `json:"connection"`
-	}
-	if err := json.Unmarshal([]byte(r.Msg.GetConfigurationJson()), &settings); err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
 	s.mu.Lock()
-	s.connection = settings.Connection
+	s.connection = r.Msg.GetValues()["connection"]
 	s.mu.Unlock()
-	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
+	return connect.NewResponse(&v1.ConfigureResponse{}), nil
 }
 
 func (s *connectionSource) DescribeSearchSource(

@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// HostStoreErrorCode is why a call on the plugin's folder was refused. The
+// HostStoreErrorCode is why a call on the plugin's folder failed. The
 // zero value means it was not.
 type HostStoreErrorCode int32
 
@@ -30,9 +30,9 @@ const (
 	// The host is showing no vault.
 	HostStoreErrorCode_HOST_STORE_ERROR_CODE_NO_VAULT HostStoreErrorCode = 1
 	// The file is not there.
-	HostStoreErrorCode_HOST_STORE_ERROR_CODE_MISSING HostStoreErrorCode = 2
+	HostStoreErrorCode_HOST_STORE_ERROR_CODE_NOT_FOUND HostStoreErrorCode = 2
 	// The name is not a file of the plugin's folder.
-	HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE HostStoreErrorCode = 3
+	HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE_VAULT HostStoreErrorCode = 3
 	// Another program holds the file.
 	HostStoreErrorCode_HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER HostStoreErrorCode = 4
 )
@@ -42,15 +42,15 @@ var (
 	HostStoreErrorCode_name = map[int32]string{
 		0: "HOST_STORE_ERROR_CODE_UNSPECIFIED",
 		1: "HOST_STORE_ERROR_CODE_NO_VAULT",
-		2: "HOST_STORE_ERROR_CODE_MISSING",
-		3: "HOST_STORE_ERROR_CODE_OUTSIDE",
+		2: "HOST_STORE_ERROR_CODE_NOT_FOUND",
+		3: "HOST_STORE_ERROR_CODE_OUTSIDE_VAULT",
 		4: "HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER",
 	}
 	HostStoreErrorCode_value = map[string]int32{
 		"HOST_STORE_ERROR_CODE_UNSPECIFIED":       0,
 		"HOST_STORE_ERROR_CODE_NO_VAULT":          1,
-		"HOST_STORE_ERROR_CODE_MISSING":           2,
-		"HOST_STORE_ERROR_CODE_OUTSIDE":           3,
+		"HOST_STORE_ERROR_CODE_NOT_FOUND":         2,
+		"HOST_STORE_ERROR_CODE_OUTSIDE_VAULT":     3,
 		"HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER": 4,
 	}
 )
@@ -731,12 +731,12 @@ const file_numen_v1_hoststore_proto_rawDesc = "" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\"M\n" +
 	"\x17RenameStoreFileResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostStoreErrorCodeR\x05error*\xd2\x01\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostStoreErrorCodeR\x05error*\xda\x01\n" +
 	"\x12HostStoreErrorCode\x12%\n" +
 	"!HOST_STORE_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
-	"\x1eHOST_STORE_ERROR_CODE_NO_VAULT\x10\x01\x12!\n" +
-	"\x1dHOST_STORE_ERROR_CODE_MISSING\x10\x02\x12!\n" +
-	"\x1dHOST_STORE_ERROR_CODE_OUTSIDE\x10\x03\x12+\n" +
+	"\x1eHOST_STORE_ERROR_CODE_NO_VAULT\x10\x01\x12#\n" +
+	"\x1fHOST_STORE_ERROR_CODE_NOT_FOUND\x10\x02\x12'\n" +
+	"#HOST_STORE_ERROR_CODE_OUTSIDE_VAULT\x10\x03\x12+\n" +
 	"'HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER\x10\x042\x96\x04\n" +
 	"\x10HostStoreService\x12P\n" +
 	"\rReadStoreFile\x12\x1e.numen.v1.ReadStoreFileRequest\x1a\x1f.numen.v1.ReadStoreFileResponse\x12V\n" +

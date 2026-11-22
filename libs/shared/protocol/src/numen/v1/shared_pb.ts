@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIlQKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAxIMCgRoYXNoGAQgASgJEg8KB3ZlcnNpb24YBSABKAQiIwoFUmFuZ2USDQoFc3RhcnQYASABKAUSCwoDZW5kGAIgASgFIiIKBkJvdW5kcxILCgNtaW4YASABKAESCwoDbWF4GAIgASgBKp8CCglFcnJvckNvZGUSGgoWRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEhgKFEVSUk9SX0NPREVfTk9UX0ZPVU5EEAESGQoVRVJST1JfQ09ERV9OT1RfQV9OT1RFEAISFwoTRVJST1JfQ09ERV9OT1RfVEVYVBADEhgKFEVSUk9SX0NPREVfVE9PX0xBUkdFEAQSHgoaRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQBRIZChVFUlJPUl9DT0RFX1VOUkVBREFCTEUQBhIdChlFUlJPUl9DT0RFX0FMUkVBRFlfRVhJU1RTEAcSGwoXRVJST1JfQ09ERV9JTlZBTElEX05BTUUQCBIXChNFUlJPUl9DT0RFX0NPTkZMSUNUEA1CSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxImUKCEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAxIMCgRoYXNoGAQgASgJEg8KB3ZlcnNpb24YBSABKAQSDwoHaXNfbm90ZRgGIAEoCCIjCgVSYW5nZRINCgVzdGFydBgBIAEoBRILCgNlbmQYAiABKAUiIgoGQm91bmRzEgsKA21pbhgBIAEoARILCgNtYXgYAiABKAEqpAMKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEh0KGUVSUk9SX0NPREVfQUxSRUFEWV9FWElTVFMQBxIbChdFUlJPUl9DT0RFX0lOVkFMSURfTkFNRRAIEhcKE0VSUk9SX0NPREVfQ09ORkxJQ1QQCRIXChNFUlJPUl9DT0RFX05PX1ZBVUxUEAoSHAoYRVJST1JfQ09ERV9PVVRTSURFX1ZBVUxUEAsSFQoRRVJST1JfQ09ERV9MT0NLRUQQDBIXChNFUlJPUl9DT0RFX0lOVEVSTkFMEA0SHAoYRVJST1JfQ09ERV9OT1RfQVRURU1QVEVEEA5CSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * FileStat is which file this is: where it is filed, how big it is, and when
@@ -61,6 +61,13 @@ export type FileStat = Message<"numen.v1.FileStat"> & {
    * @generated from field: uint64 version = 5;
    */
   version: bigint;
+
+  /**
+   * Whether the file is a note.
+   *
+   * @generated from field: bool is_note = 6;
+   */
+  isNote: boolean;
 };
 
 /**
@@ -120,12 +127,9 @@ export const BoundsSchema: GenMessage<Bounds> = /*@__PURE__*/
   messageDesc(file_numen_v1_shared, 2);
 
 /**
- * ErrorCode is why a note could not be read or written.
- *
- * Every code is spelled in the window as the same word in camel case, and
- * three map differently: UNSPECIFIED is `unreadable` there, CONFLICT is
- * shown as a user prompt and not a message, and the window has one code of
- * its own for a core it could not connect to at all.
+ * ErrorCode is why a call on a file or a note was served and did nothing. The
+ * zero value means the call did not fail. The window and the host endpoint
+ * answer with the same codes.
  *
  * @generated from enum numen.v1.ErrorCode
  */
@@ -200,9 +204,45 @@ export enum ErrorCode {
    * The file is no longer the one this caller read. Nothing was written, and
    * the person chooses what happens to what they have.
    *
-   * @generated from enum value: ERROR_CODE_CONFLICT = 13;
+   * @generated from enum value: ERROR_CODE_CONFLICT = 9;
    */
-  CONFLICT = 13,
+  CONFLICT = 9,
+
+  /**
+   * The host is showing no vault.
+   *
+   * @generated from enum value: ERROR_CODE_NO_VAULT = 10;
+   */
+  NO_VAULT = 10,
+
+  /**
+   * The path is outside the vault or names no file.
+   *
+   * @generated from enum value: ERROR_CODE_OUTSIDE_VAULT = 11;
+   */
+  OUTSIDE_VAULT = 11,
+
+  /**
+   * Another program holds the file.
+   *
+   * @generated from enum value: ERROR_CODE_LOCKED = 12;
+   */
+  LOCKED = 12,
+
+  /**
+   * The change of a note failed for a reason with no code of its own; the
+   * detail of that note carries the error text.
+   *
+   * @generated from enum value: ERROR_CODE_INTERNAL = 13;
+   */
+  INTERNAL = 13,
+
+  /**
+   * The call was cancelled before this note was changed: the note is as it was.
+   *
+   * @generated from enum value: ERROR_CODE_NOT_ATTEMPTED = 14;
+   */
+  NOT_ATTEMPTED = 14,
 }
 
 /**

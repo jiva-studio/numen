@@ -24,7 +24,7 @@ type frontmatterWriter struct {
 	unimplementedHost
 	asked     *v1.WriteFrontmatterRequest
 	vault     string
-	callError v1.HostVaultErrorCode
+	callError v1.ErrorCode
 	denied    bool
 }
 
@@ -39,9 +39,9 @@ func (h *frontmatterWriter) WriteFrontmatter(
 		return connect.NewResponse(&v1.WriteFrontmatterResponse{Error: h.callError}), nil
 	}
 	return connect.NewResponse(&v1.WriteFrontmatterResponse{Results: []*v1.NoteFrontmatterWritten{
-		{Stat: &v1.HostFileStat{Path: "a.md", Size: 64, ModTime: 2000, IsNote: true}},
-		{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT, Detail: "b.md changed since it was read"},
-		{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, Detail: "disk full"},
+		{Stat: &v1.FileStat{Path: "a.md", Size: 64, Mtime: 2000, IsNote: true}},
+		{Error: v1.ErrorCode_ERROR_CODE_CONFLICT, Detail: "b.md changed since it was read"},
+		{Error: v1.ErrorCode_ERROR_CODE_INTERNAL, Detail: "disk full"},
 	}}), nil
 }
 
@@ -77,7 +77,7 @@ func TestWriteFrontmatterSendsThePathsTheValuesAsJSONAndTheBaselines(t *testing.
 		!reflect.DeepEqual(values["tags"], []any{"river", "lake"}) || values["rating"] != float64(3) {
 		t.Errorf("the first note is %q with the values %s, want tags, rating and status as null", first.GetPath(), first.GetValues())
 	}
-	if first.GetBaseline().GetSize() != 40 || first.GetBaseline().GetModTime() != 1000 || !first.GetBaseline().GetIsNote() {
+	if first.GetBaseline().GetSize() != 40 || first.GetBaseline().GetMtime() != 1000 || !first.GetBaseline().GetIsNote() {
 		t.Errorf("the baseline of a.md is %v, want the stat given", first.GetBaseline())
 	}
 	if h.asked.GetNotes()[1].GetBaseline() != nil {
@@ -110,7 +110,7 @@ func TestWriteFrontmatterAnswersOnePerNoteAndTellsAStaleNoteFromAFailedOne(t *te
 }
 
 func TestWriteFrontmatterWithoutAVaultIsNoVault(t *testing.T) {
-	h := &frontmatterWriter{callError: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT}
+	h := &frontmatterWriter{callError: v1.ErrorCode_ERROR_CODE_NO_VAULT}
 
 	results, err := frontmatterWriterClient(t, h).WriteFrontmatter(t.Context(), []host.FrontmatterWrite{{Path: "a.md", Values: map[string]any{"tags": "river"}}})
 

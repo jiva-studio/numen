@@ -164,8 +164,6 @@ message SearchResult {
   // where none holds, and for a source that is not a note.
   string tab_kind = 11;
 
-  reserved 12, 13, 14, 15;
-  reserved "chunk_id", "similarity", "word_score", "whole_text";
 
   // note, pdf, epub, audio, video, image or file. Set by HostSearchService.GetSearch.
   string kind = 16;

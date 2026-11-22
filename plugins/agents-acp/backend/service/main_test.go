@@ -11,14 +11,6 @@ func TestLifecycleServer(t *testing.T) {
 	srv := server.NewLifecycleServer(ch)
 
 	ctx := t.Context()
-	status, err := srv.CheckStatus(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if status != "ok" {
-		t.Errorf("expected ok, got %s", status)
-	}
-
 	isShutdown, err := srv.RequestShutdown(ctx)
 	if err != nil {
 		t.Fatal(err)

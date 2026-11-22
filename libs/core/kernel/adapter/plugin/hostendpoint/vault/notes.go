@@ -50,10 +50,10 @@ func (e *lookupsCalls) GetNoteRefs(
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.GetNoteRefsResponse{Error: code}), err
 	}
-	notes := make([]*v1.HostNoteRef, 0, len(target))
+	notes := make([]*v1.Note, 0, len(target))
 	for _, path := range req.Msg.GetPaths() {
 		if one, found := target[path]; found {
-			notes = append(notes, &v1.HostNoteRef{Path: one.Path, Title: one.Title, Id: one.ID})
+			notes = append(notes, &v1.Note{Path: one.Path, Title: one.Title, Identifier: one.ID})
 		}
 	}
 	return connect.NewResponse(&v1.GetNoteRefsResponse{Notes: notes}), nil

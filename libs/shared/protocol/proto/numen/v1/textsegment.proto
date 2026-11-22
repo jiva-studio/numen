@@ -9,8 +9,8 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 // value is a call that succeeded.
 enum TextErrorCode {
   TEXT_ERROR_CODE_UNSPECIFIED = 0;
-  // TEXT_ERROR_CODE_MISSING is a file, a version or a key that does not exist.
-  TEXT_ERROR_CODE_MISSING = 1;
+  // TEXT_ERROR_CODE_NOT_FOUND is a file, a version or a key that does not exist.
+  TEXT_ERROR_CODE_NOT_FOUND = 1;
   // TEXT_ERROR_CODE_NO_VAULT is a call while the host shows no vault.
   TEXT_ERROR_CODE_NO_VAULT = 2;
   // TEXT_ERROR_CODE_INVALID is a version the host does not accept: no kind, an

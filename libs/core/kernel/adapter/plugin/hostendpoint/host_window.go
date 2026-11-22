@@ -3,10 +3,8 @@ package hostendpoint
 import (
 	"context"
 	"errors"
-	"fmt"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"io/fs"
-	"math"
 	"net/http"
 	"slices"
 
@@ -84,12 +82,7 @@ func (e *windowEndpoint) FocusFile(
 	spans := req.Msg.GetSpans()
 	ranges := make([]domain.ByteRange, 0, len(spans))
 	for _, span := range spans {
-		start, end := int64(span.GetStart()), int64(span.GetStart())+int64(span.GetLength())
-		if end > math.MaxInt32 {
-			return nil, connect.NewError(connect.CodeInvalidArgument,
-				fmt.Errorf("the passage at %d with length %d exceeds the 32-bit offsets of the window", start, span.GetLength()))
-		}
-		ranges = append(ranges, domain.ByteRange{Start: int(start), End: int(end)})
+		ranges = append(ranges, domain.ByteRange{Start: int(span.GetStart()), End: int(span.GetEnd())})
 	}
 	code, err := mapWindowError(ctx, window.FocusFile(ctx, req.Msg.GetPath(), ranges))
 	return connect.NewResponse(&v1.FocusFileResponse{Error: code}), err

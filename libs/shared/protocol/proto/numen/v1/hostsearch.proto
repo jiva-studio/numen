@@ -89,7 +89,7 @@ service HostSearchService {
   rpc ListSearchFunctions(ListSearchFunctionsRequest) returns (ListSearchFunctionsResponse);
 }
 
-// HostSearchErrorCode is why a call on the search index was refused. The zero
+// HostSearchErrorCode is why a call on the search index failed. The zero
 // value means it was not.
 enum HostSearchErrorCode {
   HOST_SEARCH_ERROR_CODE_UNSPECIFIED = 0;
@@ -115,8 +115,6 @@ enum HostSearchErrorCode {
   // A query vector has a dimension count other than the one of the vectors in the index.
   HOST_SEARCH_ERROR_CODE_INVALID_QUERY = 7;
 
-  reserved 8, 9;
-  reserved "HOST_SEARCH_ERROR_CODE_INVALID_CONDITION", "HOST_SEARCH_ERROR_CODE_INVALID_WORDS";
 
   // The plugin started no search with the id, or it was removed or expired.
   HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND = 10;
@@ -339,8 +337,6 @@ message HostSearchServiceSearchTextRequest {
   int32 results_per_source = 5;
 
 
-  reserved 6, 7, 8;
-  reserved "mode", "is_raw_words", "is_whole_text";
 }
 
 message HostSearchServiceSearchTextResponse {

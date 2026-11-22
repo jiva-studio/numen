@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package numen.v1;
 
-import "numen/v1/hostvault.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
@@ -26,7 +26,7 @@ message ReadCacheRequest {
 }
 
 message ReadCacheResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // Whether anything is kept under the name. A cache with nothing in it is the
   // answer that nothing has been worked out yet.
   bool is_found = 2;
@@ -39,5 +39,5 @@ message WriteCacheRequest {
 }
 
 message WriteCacheResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
 }

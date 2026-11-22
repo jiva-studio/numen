@@ -413,7 +413,7 @@ export const VaultsErrorCodeSchema: GenEnum<VaultsErrorCode> = /*@__PURE__*/
  * the list. The window serves it, and so does the host endpoint to the plugins
  * that call it: there a call needs vault:read to list and vault:manage to
  * change, the request names no window, and a call that asks to trash the
- * folder of a vault is refused.
+ * folder of a vault is an error.
  *
  * @generated from service numen.v1.VaultsService
  */
