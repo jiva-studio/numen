@@ -45,7 +45,7 @@ import (
 // noTabKinds gives no note a kind of tab.
 type noTabKinds struct{}
 
-func (noTabKinds) Execute(context.Context, domain.Vault, []string) (map[string]string, error) {
+func (noTabKinds) ListTabKinds(context.Context, domain.Vault, []string) (map[string]string, error) {
 	return map[string]string{}, nil
 }
 

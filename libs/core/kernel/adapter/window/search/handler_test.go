@@ -62,7 +62,7 @@ func (t titles) GetNotes(_ context.Context, _ domain.VaultID, paths []string) (m
 // tabKinds is the kind of tab each note opens in, by path.
 type tabKinds map[string]string
 
-func (k tabKinds) Execute(_ context.Context, _ domain.Vault, paths []string) (map[string]string, error) {
+func (k tabKinds) ListTabKinds(_ context.Context, _ domain.Vault, paths []string) (map[string]string, error) {
 	out := map[string]string{}
 	for _, path := range paths {
 		if kind, ok := k[path]; ok {

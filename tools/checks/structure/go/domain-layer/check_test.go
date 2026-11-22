@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/tools/checks/structure/go/load"
 )
 
-// The packages under domain/ of the core import the standard library, the notes domain, the manifest of the plugin catalog and each other.
+// The packages under domain/ of the core import the standard library, the notes domain, the manifest and the condition language of the plugin catalog and each other.
 // The walk reads every non-test file under domain/ and fails when it reads none.
 func TestNoDomainPackageImportsThirdPartyCodeOrAnotherLayer(t *testing.T) {
 	wrong, err := findDomainImportRefusals(filepath.Join("..", "domain"))
@@ -99,7 +99,7 @@ func TestDomainImportRule_RejectsEverythingButTheStandardLibraryTheNotesDomainTh
 		{load.Module + "internal/adapter/trash", true},
 		{load.Module + "container", true},
 		{load.NotesModule + "/edit", true},
-		{load.NumenRoot + "libs/plugin/catalog/when", true},
+		{catalogWhen, false},
 		{catalogManifest + "/internal", true},
 		{load.SdkModule + "/vault", true},
 		{"github.com/google/uuid", true},
