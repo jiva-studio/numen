@@ -12,8 +12,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/engine"
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/engine"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/mask"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/internal/adapter/random"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/usecase/newnote"
 )
 
@@ -51,7 +52,7 @@ func makeListFieldsHandler(useCase newnote.ListFields) func(context.Context, api
 		}
 		fields := make([]api.Field, len(found))
 		for i, field := range found {
-			fields[i] = api.Field{Kind: field.Kind, Label: field.Label, Options: field.Options, Default: field.Default}
+			fields[i] = api.Field{Kind: api.FieldKind(field.Kind), Label: field.Label, Options: field.Options, Default: field.Default}
 		}
 		return api.ListFieldsResponse{Fields: fields}, nil
 	}
@@ -78,5 +79,5 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, host.NewClient(endpoint), clock.System{}, newnote.NewIDs())
+	return mount(s, host.NewClient(endpoint), clock.System{}, random.NewIDs())
 }

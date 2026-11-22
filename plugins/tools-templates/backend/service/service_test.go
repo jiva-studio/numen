@@ -20,7 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/mask"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/usecase/newnote"
 )
 

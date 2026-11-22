@@ -10,10 +10,13 @@ const (
 	MethodCreateNote = "CreateNote"
 )
 
+// FieldKind is what a field asks for.
+type FieldKind string
+
 // The kinds of a field.
 const (
-	KindText   = "text"
-	KindSelect = "select"
+	KindText   FieldKind = "text"
+	KindSelect FieldKind = "select"
 )
 
 // ListFieldsRequest asks what a template asks of the person who makes a note from it.
@@ -24,10 +27,10 @@ type ListFieldsRequest struct {
 
 // Field is a question of a template. Options is empty for a text field.
 type Field struct {
-	Kind    string   `json:"kind"`
-	Label   string   `json:"label"`
-	Options []string `json:"options"`
-	Default string   `json:"default"`
+	Kind    FieldKind `json:"kind"`
+	Label   string    `json:"label"`
+	Options []string  `json:"options"`
+	Default string    `json:"default"`
 }
 
 // ListFieldsResponse lists the fields of a template, in the order they are asked.

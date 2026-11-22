@@ -3,10 +3,11 @@ package mask_test
 import (
 	"encoding/json"
 	"os"
-	"slices"
+	"reflect"
+	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/mask"
 )
 
 type table struct {
@@ -34,21 +35,13 @@ type table struct {
 
 func readTable(t *testing.T) table {
 	t.Helper()
-	raw, err := os.ReadFile("../../testdata/masks.json")
+	raw, err := os.ReadFile("../../../testdata/masks.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 	var got table
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatal(err)
-	}
-	return got
-}
-
-func list(set mask.Set) []string {
-	var got []string
-	for _, one := range set {
-		got = append(got, one.String())
 	}
 	return got
 }
@@ -60,7 +53,7 @@ func TestParse(t *testing.T) {
 		if len(want) == 0 {
 			want = cases.Defaults
 		}
-		if got := list(mask.Parse(c.Raw)); !slices.Equal(got, want) {
+		if got := mask.Parse(c.Raw); !reflect.DeepEqual(got, mask.Parse(strings.Join(want, ","))) {
 			t.Errorf("Parse(%q) = %q, want %q", c.Raw, got, want)
 		}
 	}
@@ -88,11 +81,5 @@ func TestFindUsesTheFirstMaskThatMatches(t *testing.T) {
 		if ok != (c.Group != nil) || (c.Group != nil && group != *c.Group) {
 			t.Errorf("Find(%q) = %q, %v, want %v", c.Path, group, ok, c.Group)
 		}
-	}
-}
-
-func TestSetIsWrittenAsTheSettingWritesIt(t *testing.T) {
-	if got := mask.Parse("a/**,b/*").String(); got != "a/**, b/*" {
-		t.Errorf("String() = %q", got)
 	}
 }

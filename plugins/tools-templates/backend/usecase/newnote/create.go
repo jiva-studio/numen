@@ -3,7 +3,6 @@ package newnote
 
 import (
 	"context"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	pathpkg "path"
@@ -15,9 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/engine"
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/engine"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/mask"
 )
 
 const (
@@ -100,7 +98,9 @@ func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, er
 		if number > 1 {
 			name = fmt.Sprintf("%s %d", stem, number)
 		}
-		path, isMade, err := u.createAs(ctx, pathpkg.Join(in.Folder, name+noteExtension), render{renderer: u.renderer, template: in.Template, text: text, data: engine.Data{Title: name, Folder: in.Folder, ID: id, Now: now, Values: in.Values}})
+		data := engine.Data{Title: name, Folder: in.Folder, ID: id, Now: now, Values: in.Values}
+		target := pathpkg.Join(in.Folder, name+noteExtension)
+		path, isMade, err := u.createAs(ctx, target, render{renderer: u.renderer, template: in.Template, text: text, data: data})
 		if isMade {
 			return Result{Path: path}, err
 		}
@@ -203,9 +203,6 @@ func readTemplate(ctx context.Context, vault Vault, masks mask.Set, path string)
 	}
 	return string(raw), nil
 }
-
-// NewIDs returns the generator of the ids of new notes, seeded by the system.
-func NewIDs() IDs { return ulid.NewGenerator(rand.Reader) }
 
 // Masks holds the masks of the templates setting, which the host changes while calls are being served.
 type Masks struct {

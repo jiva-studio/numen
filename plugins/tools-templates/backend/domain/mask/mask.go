@@ -55,10 +55,7 @@ func parseEntry(entry string) (Mask, bool) {
 	return Mask{segments: segments}, len(segments) > 0
 }
 
-// String is the mask as written.
-func (m Mask) String() string { return strings.Join(m.segments, "/") }
-
-// Match tells whether a vault path is named by the mask.
+// Match reports whether a vault path is named by the mask.
 func (m Mask) Match(path string) bool {
 	return matchSegments(m.segments, strings.Split(path, "/"))
 }
@@ -120,13 +117,4 @@ func (s Set) Find(path string) (string, bool) {
 		}
 	}
 	return "", false
-}
-
-// String is the masks as the setting writes them.
-func (s Set) String() string {
-	texts := make([]string, len(s))
-	for i, one := range s {
-		texts[i] = one.String()
-	}
-	return strings.Join(texts, ", ")
 }

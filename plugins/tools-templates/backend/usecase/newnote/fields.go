@@ -5,8 +5,8 @@ import (
 	"fmt"
 	pathpkg "path"
 
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/engine"
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/engine"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/mask"
 )
 
 // FieldsRequest names a template and the folder a note from it would be made in.

@@ -16,8 +16,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/engine"
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/engine"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/mask"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/usecase/newnote"
 )
 
