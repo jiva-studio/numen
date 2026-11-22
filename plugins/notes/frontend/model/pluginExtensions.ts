@@ -28,7 +28,7 @@ function canBuild(entry: EditorExtensionEntry): boolean {
     return true
   } catch (error) {
     buildable.set(entry.extension, false)
-    failEntry?.(entry, error)
+    queueMicrotask(() => failEntry?.(entry, error))
     return false
   }
 }

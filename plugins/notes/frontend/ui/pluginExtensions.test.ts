@@ -7,7 +7,7 @@ import type { EditorExtensionEntry, EditorExtensionHost, HostServices } from '@n
 import MarkdownNoteEditor from './MarkdownNoteEditor.vue'
 import { activate } from '../index'
 import { createEditorSettingsContext } from '../testing/editorSettings'
-import { pluginExtensionEntries } from '../model/pluginExtensions'
+import { getPluginExtensions, pluginExtensionEntries } from '../model/pluginExtensions'
 
 const NOTE = 'first line\nsecond line\n\nelsewhere'
 
@@ -94,5 +94,21 @@ describe('the extensions other plugins add to the editor', () => {
 
     expect(host.fail).toHaveBeenCalledTimes(1)
     expect(wrapper.text()).toContain('first line')
+  })
+
+  it('reports a failing extension after the read that found it, not during it', async () => {
+    const broken = StateField.define({
+      create() {
+        throw new Error('broken')
+      },
+      update: (value) => value,
+    })
+    const host = createHost()
+
+    getPluginExtensions([entry('broken', broken)])
+    expect(host.fail).not.toHaveBeenCalled()
+
+    await Promise.resolve()
+    expect(host.fail).toHaveBeenCalledTimes(1)
   })
 })

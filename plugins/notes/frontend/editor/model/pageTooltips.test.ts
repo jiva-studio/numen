@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { autocompletion, currentCompletions, startCompletion } from '@codemirror/autocomplete'
-import { EditorState } from '@codemirror/state'
+import { EditorState, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { theme } from '../lib/config/theme'
+import { StyleModule } from 'style-mod'
 import { pageTooltips } from './pageTooltips'
 
 const views: EditorView[] = []
@@ -69,5 +70,23 @@ describe('the page tooltips', () => {
       .join('')
     expect(pageStyles).toMatch(/\.cm-editor\s*\{[^}]*height:\s*100%/)
     expect(pageStyles).not.toMatch(/\.\u037c\d+\s*\{[^}]*height:/)
+  })
+
+  it('mount the styles again only when the set of style modules changes', () => {
+    const view = open(document.body)
+    const mount = vi.spyOn(StyleModule, 'mount')
+
+    view.dispatch({ changes: { from: 0, insert: 'x' } })
+    view.dispatch({ changes: { from: 0, insert: 'y' } })
+    expect(mount).not.toHaveBeenCalled()
+
+    const extra = new StyleModule({ '.extra': { color: 'red' } })
+    view.dispatch({ effects: StateEffect.appendConfig.of(EditorView.styleModule.of(extra)) })
+    const afterChange = mount.mock.calls.length
+    expect(afterChange).toBeGreaterThan(0)
+
+    view.dispatch({ changes: { from: 0, insert: 'z' } })
+    expect(mount).toHaveBeenCalledTimes(afterChange)
+    mount.mockRestore()
   })
 })

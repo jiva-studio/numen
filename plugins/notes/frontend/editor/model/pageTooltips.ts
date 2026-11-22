@@ -3,8 +3,14 @@ import { EditorView, ViewPlugin, tooltips } from '@codemirror/view'
 import { doc } from '@numen/ui'
 import { StyleModule } from 'style-mod'
 
-function mountStyles(view: EditorView): void {
-  StyleModule.mount(doc, view.state.facet(EditorView.styleModule).slice().reverse())
+type Modules = readonly (StyleModule | readonly unknown[])[]
+
+function readModules(view: EditorView): Modules {
+  return view.state.facet(EditorView.styleModule).slice().reverse()
+}
+
+function isSame(a: Modules, b: Modules): boolean {
+  return a.length === b.length && a.every((one, index) => one === b[index])
 }
 
 /**
@@ -17,8 +23,16 @@ export function pageTooltips(): Extension {
   return [
     tooltips({ parent: doc.body }),
     ViewPlugin.define((view) => {
-      mountStyles(view)
-      return { update: () => mountStyles(view) }
+      let mounted = readModules(view)
+      StyleModule.mount(doc, mounted as StyleModule[])
+      return {
+        update: () => {
+          const next = readModules(view)
+          if (isSame(mounted, next)) return
+          mounted = next
+          StyleModule.mount(doc, next as StyleModule[])
+        },
+      }
     }),
   ]
 }
