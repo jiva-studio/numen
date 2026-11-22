@@ -36,7 +36,7 @@ func convertError(err error, template string) error {
 func makeCreateNoteHandler(useCase newnote.CreateFromTemplate) func(context.Context, api.CreateNoteRequest) (api.CreateNoteResponse, error) {
 	return func(ctx context.Context, req api.CreateNoteRequest) (api.CreateNoteResponse, error) {
 		made, err := useCase.Execute(ctx, newnote.Request{Template: req.Template, Folder: req.Folder, Values: req.Values})
-		if err != nil {
+		if err != nil && !errors.Is(err, newnote.ErrNotIndexed) {
 			return api.CreateNoteResponse{}, convertError(err, req.Template)
 		}
 		return api.CreateNoteResponse{Path: made.Path}, nil

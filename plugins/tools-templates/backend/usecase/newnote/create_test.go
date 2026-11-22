@@ -572,3 +572,20 @@ func TestWriteTheIDOfTheNewNote(t *testing.T) {
 		t.Errorf("id = %q, body = %q", id, doc.Body())
 	}
 }
+
+type unindexed struct{ *hosttest.Vault }
+
+func (unindexed) Scan(context.Context, []string) error { return errors.New("index is down") }
+
+func TestKeepTheNoteWhenItCannotBeIndexed(t *testing.T) {
+	vault := newVault(map[string]string{"Templates/Meeting.md": meeting})
+
+	made, err := newUseCase(unindexed{vault}, newClock(getToday())).Execute(t.Context(), newnote.Request{Template: "Templates/Meeting.md", Folder: "work"})
+
+	if !errors.Is(err, newnote.ErrNotIndexed) || made.Path != "work/Meeting.md" {
+		t.Errorf("Execute = %q, %v", made.Path, err)
+	}
+	if _, isThere := vault.Content("work/Meeting.md"); !isThere {
+		t.Error("the note is not made")
+	}
+}

@@ -1,8 +1,10 @@
 package service
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,6 +20,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/usecase/newnote"
 )
 
 const meeting = "---\ntype: meeting\n---\n# {{ .title }}\n\nAttendees\n"
@@ -231,5 +235,21 @@ func TestTheHostConfiguresTheMasksOfTheTemplates(t *testing.T) {
 	}
 	if status, body := createNote(t, web, "Templates/Meeting.md", "work"); status != http.StatusBadRequest {
 		t.Errorf("the old masks: CreateNote = %d %s", status, body)
+	}
+}
+
+type unindexed struct{ *hosttest.Vault }
+
+func (unindexed) Scan(context.Context, []string) error { return errors.New("index is down") }
+
+func TestAnswerWithTheNoteWhenItCannotBeIndexed(t *testing.T) {
+	vault := hosttest.New("notes")
+	vault.File("Templates/Meeting.md", meeting)
+	useCase := newnote.NewCreateFromTemplate(unindexed{vault}, new(clocktest.Fake), ulid.NewGenerator(rand.Reader), func() mask.Set { return mask.Parse("") })
+
+	got, err := makeCreateNoteHandler(useCase)(t.Context(), api.CreateNoteRequest{Template: "Templates/Meeting.md", Folder: "work"})
+
+	if err != nil || got.Path != "work/Meeting.md" {
+		t.Errorf("CreateNote = %q, %v", got.Path, err)
 	}
 }

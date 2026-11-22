@@ -35,6 +35,9 @@ var (
 
 	// ErrNoFreeName is a template whose name is taken in the folder, with every number tried.
 	ErrNoFreeName = errors.New("no free name for")
+
+	// ErrNotIndexed is a note that was made but did not reach the index; Result still names it.
+	ErrNotIndexed = errors.New("note is made but not indexed")
 )
 
 // Vault is the calls the use case makes on the vault.
@@ -98,11 +101,11 @@ func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, er
 			name = fmt.Sprintf("%s %d", stem, number)
 		}
 		path, isMade, err := u.createAs(ctx, pathpkg.Join(in.Folder, name+noteExtension), render{renderer: u.renderer, template: in.Template, text: text, data: engine.Data{Title: name, Folder: in.Folder, ID: id, Now: now, Values: in.Values}})
+		if isMade {
+			return Result{Path: path}, err
+		}
 		if err != nil {
 			return Result{}, err
-		}
-		if isMade {
-			return Result{Path: path}, nil
 		}
 	}
 	return Result{}, fmt.Errorf("%w %s", ErrNoFreeName, stem)
@@ -125,7 +128,7 @@ func (u CreateFromTemplate) createAs(ctx context.Context, path string, r render)
 		return "", false, fmt.Errorf("create the note %s: %w", path, err)
 	}
 	if err := u.vault.Scan(ctx, []string{path}); err != nil {
-		return "", false, fmt.Errorf("index the note %s: %w", path, err)
+		return path, true, fmt.Errorf("%w: %s: %w", ErrNotIndexed, path, err)
 	}
 	return path, true, nil
 }
