@@ -77,6 +77,23 @@ const rowsOf = (root: HTMLElement): HTMLElement[] =>
 
 const nextFrame = (): Promise<void> => new Promise((done) => requestAnimationFrame(() => done()))
 
+const SETTLE_FRAMES = 600
+const isAtRest = (root: HTMLElement): boolean =>
+  rowsOf(root).every(
+    (one) =>
+      !one.classList.contains('plugin-slots__row--settling') &&
+      !one.classList.contains('plugin-slots__row--lifted') &&
+      one.getAnimations().length === 0,
+  )
+
+async function untilSettled(root: HTMLElement): Promise<void> {
+  await nextFrame()
+  for (let frame = 0; frame < SETTLE_FRAMES && !isAtRest(root); frame++) await nextFrame()
+  expect(isAtRest(root)).toBe(true)
+}
+
+const heldTransform = (root: HTMLElement, at = 0): string => rowsOf(root)[at]!.style.transform
+
 async function grab(root: HTMLElement, at = 0) {
   const rows = rowsOf(root)
   const grip = rows[at]!.querySelector('button')!.getBoundingClientRect()
@@ -100,8 +117,10 @@ describe('the slots of a plugin dragged by a real pointer', () => {
     await moveTo(6)
     renders = 0
     for (let offset = 8; offset <= 60; offset += 2) await moveTo(offset)
+    const held = heldTransform(root)
     await commands.pointer('up')
 
+    expect(held).toContain('translate3d')
     expect(renders).toBeLessThanOrEqual(3)
   })
 
@@ -118,10 +137,13 @@ describe('the slots of a plugin dragged by a real pointer', () => {
     neighbours.forEach((one) =>
       watcher.observe(one, { attributes: true, subtree: true, childList: true }),
     )
+    const before = heldTransform(root)
     for (let offset = 7; offset <= 12; offset++) await moveTo(offset)
+    const after = heldTransform(root)
     watcher.disconnect()
     await commands.pointer('up')
 
+    expect(after).not.toBe(before)
     expect(touched).toBe(0)
   })
 
@@ -133,8 +155,10 @@ describe('the slots of a plugin dragged by a real pointer', () => {
     let runs = 0
     root.addEventListener('transitionrun', () => (runs += 1))
     for (let step = 0; step < 20; step++) await moveTo(pitch / 2 + (step % 2 === 0 ? 1 : -1))
+    const held = heldTransform(root)
     await commands.pointer('up')
 
+    expect(held).toContain('translate3d')
     expect(runs).toBeLessThanOrEqual(1)
   })
 
@@ -163,8 +187,10 @@ describe('the slots of a plugin dragged by a real pointer', () => {
     const { moveTo } = await grab(root)
     for (let offset = 2; offset <= 80; offset += 4) await moveTo(offset)
     const selected = window.getSelection()?.toString() ?? ''
+    const held = heldTransform(root)
     await commands.pointer('up')
 
+    expect(held).toContain('translate3d')
     expect(selected).toBe('')
   })
 
@@ -190,8 +216,9 @@ describe('the slots of a plugin dragged by a real pointer', () => {
         await nextFrame()
       }
       await commands.pointer('up')
-      for (let frame = 0; frame < 40; frame++) await nextFrame()
+      await untilSettled(root)
 
+      expect(stored).toBeDefined()
       expect(findDiscontinuities(probe.stop())).toStrictEqual([])
     },
   )
@@ -239,7 +266,7 @@ describe('the slots of a plugin with a separator between two groups', () => {
     const { pitch, moveTo } = await grab(root, 1)
     for (let offset = 2; offset <= pitch * 1.6; offset += 2) await moveTo(offset)
     await commands.pointer('up')
-    for (let frame = 0; frame < 40; frame++) await nextFrame()
+    await untilSettled(root)
 
     expect(labelsOf(root)).toStrictEqual(['one', '|', 'two', 'three', 'four'])
     expect(stored).toStrictEqual({
@@ -259,7 +286,7 @@ describe('the slots of a plugin with a separator between two groups', () => {
     const { pitch, moveTo } = await grab(root, 2)
     for (let offset = 2; offset <= pitch * 1.6; offset += 2) await moveTo(offset)
     await commands.pointer('up')
-    for (let frame = 0; frame < 40; frame++) await nextFrame()
+    await untilSettled(root)
 
     expect(labelsOf(root)).toStrictEqual(['one', 'two', 'three', '|', 'four'])
     expect(stored).toStrictEqual({
@@ -280,8 +307,9 @@ describe('the slots of a plugin with a separator between two groups', () => {
     const { pitch, moveTo } = await grab(root, 2)
     for (let offset = 1; offset <= pitch * 1.6; offset += 2) await moveTo(offset)
     await commands.pointer('up')
-    for (let frame = 0; frame < 40; frame++) await nextFrame()
+    await untilSettled(root)
 
+    expect(stored).toBeDefined()
     expect(findDiscontinuities(probe.stop())).toStrictEqual([])
   })
 
@@ -292,8 +320,9 @@ describe('the slots of a plugin with a separator between two groups', () => {
     const { pitch, moveTo } = await grab(root, 1)
     for (let offset = 1; offset <= pitch * 2 + 10; offset += 2) await moveTo(offset)
     await commands.pointer('up')
-    for (let frame = 0; frame < 40; frame++) await nextFrame()
+    await untilSettled(root)
 
+    expect(stored).toBeDefined()
     expect(findDiscontinuities(probe.stop())).toStrictEqual([])
   })
 })
