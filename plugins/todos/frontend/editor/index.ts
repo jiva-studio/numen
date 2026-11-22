@@ -4,6 +4,7 @@ import type { TodosApi } from '../api/wire'
 import { WORDS } from '../words'
 import type { ListFieldsResponse } from '../types'
 import { createTaskCompletion } from './lib/taskCompletion'
+import { completionTheme } from './ui/completionTheme'
 import { createTaskExtension } from './ui/taskExtension'
 
 /** The id the manifest declares the editor extension under. */
@@ -35,6 +36,7 @@ export function createTaskEditorExtension({
       },
     }),
     autocompletion(),
+    completionTheme,
     EditorState.languageData.of(() => [{ autocomplete: source }]),
   ]
 }

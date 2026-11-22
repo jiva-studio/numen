@@ -189,6 +189,9 @@ export const theme = EditorView.theme({
     fontSize: 'var(--numen-font-size)',
     overflow: 'hidden',
   },
+  '.cm-tooltip.cm-tooltip-autocomplete': {
+    fontSize: 'var(--numen-editor-font-size, var(--numen-font-size))',
+  },
   '.cm-tooltip.cm-tooltip-autocomplete > ul': {
     fontFamily: 'inherit',
     padding: '0.375rem',

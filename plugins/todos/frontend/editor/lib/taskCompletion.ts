@@ -14,22 +14,26 @@ function matches(label: string, typed: string): boolean {
   return label.toLowerCase().startsWith(typed.toLowerCase())
 }
 
-function listFieldOptions(counts: readonly FieldCount[], typed: string): Completion[] {
+function listFieldOptions(
+  counts: readonly FieldCount[],
+  typed: string,
+  type: string,
+): Completion[] {
   return counts
     .filter((one) => matches(one.name, typed))
-    .map((one) => ({ label: one.name, detail: String(one.count), type: 'keyword' }))
+    .map((one) => ({ label: one.name, detail: String(one.count), type }))
 }
 
 function listDateOptions(today: string, typed: string): Completion[] {
   return listDateShortcuts(today)
     .filter((one) => matches(one.label, typed))
-    .map((one) => ({ label: one.label, detail: one.date, apply: one.date, type: 'constant' }))
+    .map((one) => ({ label: one.label, detail: one.date, apply: one.date, type: 'date' }))
 }
 
 function listPriorityOptions(typed: string): Completion[] {
   return PRIORITIES.filter((one) => matches(one, typed)).map((one) => ({
     label: one,
-    type: 'enum',
+    type: 'priority',
   }))
 }
 
@@ -38,9 +42,9 @@ function listOptions(
   deps: TaskCompletionDeps,
 ): { skip: number; options: Completion[] } | null {
   const prefixes: readonly (readonly [string, (typed: string) => Completion[]])[] = [
-    ['+', (typed) => listFieldOptions(deps.getFields().projects, typed)],
-    ['@', (typed) => listFieldOptions(deps.getFields().contexts, typed)],
-    ['#', (typed) => listFieldOptions(deps.getFields().tags, typed)],
+    ['+', (typed) => listFieldOptions(deps.getFields().projects, typed, 'project')],
+    ['@', (typed) => listFieldOptions(deps.getFields().contexts, typed, 'context')],
+    ['#', (typed) => listFieldOptions(deps.getFields().tags, typed, 'tag')],
     ['due:', (typed) => listDateOptions(deps.getToday(), typed)],
     ['done:', (typed) => listDateOptions(deps.getToday(), typed)],
     ['pri:', listPriorityOptions],
