@@ -3,12 +3,18 @@
  */
 import './styles.css'
 import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
+import type { CreateNoteResponse } from './api/templates'
 import { templatesApi, type TemplatesApi } from './api/wire'
 import { showFieldsForm, type ShowFieldsForm } from './ui/showFieldsForm'
 import { getTargetFolder } from './lib/getTargetFolder'
 import { getTitle } from './lib/groupTemplates'
 import { parseMasks } from './lib/masks'
 import { createTemplateList, TemplateListError } from './model/createTemplateList'
+
+const openAnswer = (host: HostServices, answer: CreateNoteResponse): void => {
+  host.ui.workspace?.files.open(answer.path)
+  if (answer.warning) host.ui.workspace?.messages.getWriter('templates')(answer.warning, 'warning')
+}
 
 export const activate = (
   context: PluginContext,
@@ -50,7 +56,7 @@ export const activate = (
         values,
         etag: asked.value.etag,
       })
-      if (answer.ok) host.ui.workspace?.files.open(answer.value.path)
+      if (answer.ok) openAnswer(host, answer.value)
       else host.ui.workspace?.messages.showError(answer.error.message)
     },
   })

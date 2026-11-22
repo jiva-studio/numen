@@ -116,7 +116,7 @@ func TestCreateNoteReturnsThePathOfTheNewNote(t *testing.T) {
 	if err := json.Unmarshal(body, &got); err != nil {
 		t.Fatal(err)
 	}
-	if status != http.StatusOK || got.Path != "work/Meeting.md" {
+	if status != http.StatusOK || got.Path != "work/Meeting.md" || got.Warning != "" {
 		t.Fatalf("CreateNote = %d %s", status, body)
 	}
 	if content, isThere := vault.Content("work/Meeting.md"); !isThere || !strings.Contains(content, "# Meeting\n") {
@@ -192,6 +192,19 @@ func TestCreateNoteWritesTheValues(t *testing.T) {
 	status, body = createNoteWith(t, web, "Templates/Visit.md", "work", map[string]string{"Kind": "nap"})
 	if failure := readFailure(t, body); status != http.StatusBadRequest || failure.Code != server.CodeInvalidArgument || !strings.Contains(failure.Message, "Kind") {
 		t.Errorf("CreateNote with a bad option = %d %s", status, body)
+	}
+}
+
+func TestCreateNoteRefusesAFolderOutsideTheVault(t *testing.T) {
+	vault := hosttest.New("notes")
+	vault.File("Templates/Meeting.md", meeting)
+	web := newWeb(t, vault)
+
+	status, body := createNote(t, web, "Templates/Meeting.md", "../x")
+
+	failure := readFailure(t, body)
+	if status != http.StatusBadRequest || failure.Code != server.CodeInvalidArgument || !strings.Contains(failure.Message, "not a folder of the vault") {
+		t.Errorf("CreateNote = %d %s", status, body)
 	}
 }
 
@@ -282,7 +295,7 @@ func TestAnswerWithTheNoteWhenItCannotBeIndexed(t *testing.T) {
 
 	got, err := makeCreateNoteHandler(useCase)(t.Context(), api.CreateNoteRequest{Template: "Templates/Meeting.md", Folder: "work", Values: nil, Etag: newnote.Etag(meeting)})
 
-	if err != nil || got.Path != "work/Meeting.md" {
-		t.Errorf("CreateNote = %q, %v", got.Path, err)
+	if err != nil || got.Path != "work/Meeting.md" || !strings.Contains(got.Warning, "not indexed") || !strings.Contains(got.Warning, "index is down") {
+		t.Errorf("CreateNote = %+v, %v", got, err)
 	}
 }

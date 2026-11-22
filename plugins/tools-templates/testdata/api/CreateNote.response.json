@@ -1,3 +1,4 @@
 {
-  "path": "notes/Meeting.md"
+  "path": "notes/Meeting.md",
+  "warning": "note is made but not indexed: notes/Meeting.md: index is down"
 }

@@ -22,7 +22,7 @@ const settingTemplates = "templates"
 
 func convertError(err error, template string) error {
 	switch {
-	case errors.Is(err, newnote.ErrNotATemplate), errors.Is(err, engine.ErrNotAnOption):
+	case errors.Is(err, newnote.ErrNotATemplate), errors.Is(err, newnote.ErrInvalidFolder), errors.Is(err, engine.ErrNotAnOption):
 		return server.NewAPIError(server.CodeInvalidArgument, err.Error())
 	case errors.Is(err, host.ErrNotExist):
 		return server.NewAPIError(server.CodeNotFound, "template not found: "+template)
@@ -37,10 +37,13 @@ func convertError(err error, template string) error {
 func makeCreateNoteHandler(useCase newnote.CreateFromTemplate) func(context.Context, api.CreateNoteRequest) (api.CreateNoteResponse, error) {
 	return func(ctx context.Context, req api.CreateNoteRequest) (api.CreateNoteResponse, error) {
 		made, err := useCase.Execute(ctx, newnote.Request{Template: req.Template, Folder: req.Folder, Values: req.Values, Etag: req.Etag})
-		if err != nil && !errors.Is(err, newnote.ErrNotIndexed) {
+		if errors.Is(err, newnote.ErrNotIndexed) {
+			return api.CreateNoteResponse{Path: made.Path, Warning: err.Error()}, nil
+		}
+		if err != nil {
 			return api.CreateNoteResponse{}, convertError(err, req.Template)
 		}
-		return api.CreateNoteResponse{Path: made.Path}, nil
+		return api.CreateNoteResponse{Path: made.Path, Warning: ""}, nil
 	}
 }
 

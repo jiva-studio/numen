@@ -46,7 +46,10 @@ const EXPECTED: [
       values: { client: 'Acme', kind: 'visit' },
       etag: '9f2c1a',
     },
-    response: { path: 'notes/Meeting.md' },
+    response: {
+      path: 'notes/Meeting.md',
+      warning: 'note is made but not indexed: notes/Meeting.md: index is down',
+    },
   },
 ]
 

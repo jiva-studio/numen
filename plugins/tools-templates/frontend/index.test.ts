@@ -79,6 +79,7 @@ const setup = (
 ) => {
   const opened: string[] = []
   const errors: string[] = []
+  const notices: { text: string; severity: string | undefined }[] = []
   const createNote = vi.fn(async (_request: CreateNoteRequest) => answer)
   const listFields = vi.fn(async () => options.fields ?? noFields)
   const showForm = vi.fn(async (_title: string, _fields: readonly Field[]) => options.answers)
@@ -92,16 +93,19 @@ const setup = (
       : createFiles(folders),
     workspace: {
       files: { open: (path: string) => opened.push(path) },
-      messages: { showError: (text: string) => errors.push(text) },
+      messages: {
+        showError: (text: string) => errors.push(text),
+        getWriter: () => (text: string, severity?: string) => notices.push({ text, severity }),
+      },
     } as never,
   })
   activate(context, host, { createNote, listFields }, showForm)
-  return { context, createNote, listFields, showForm, opened, errors }
+  return { context, createNote, listFields, showForm, opened, errors, notices }
 }
 
 const created = (path: string): Result<CreateNoteResponse, ApiError> => ({
   ok: true,
-  value: { path },
+  value: { path, warning: '' },
 })
 
 describe('the templates frontend', () => {
@@ -227,6 +231,27 @@ describe('the templates frontend', () => {
       etag: 'etag-asked',
     })
     expect(opened).toEqual(['notes/Visit.md'])
+  })
+
+  it('opens the note and warns when it could not be indexed', async () => {
+    const { context, opened, errors, notices } = setup({
+      ok: true,
+      value: { path: 'notes/Meeting.md', warning: 'note is made but not indexed' },
+    })
+
+    await context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Meeting.md')
+
+    expect(opened).toEqual(['notes/Meeting.md'])
+    expect(notices).toEqual([{ text: 'note is made but not indexed', severity: 'warning' }])
+    expect(errors).toEqual([])
+  })
+
+  it('says nothing when the note has no warning', async () => {
+    const { context, notices } = setup(created('notes/Meeting.md'))
+
+    await context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Meeting.md')
+
+    expect(notices).toEqual([])
   })
 
   it('makes no note when the person cancels the questions', async () => {

@@ -563,6 +563,29 @@ func TestKeepAnAnswerInsideItsFrontmatterValue(t *testing.T) {
 	})
 }
 
+func TestRefuseAFolderOutsideTheVault(t *testing.T) {
+	for _, folder := range []string{"../x", "..", "work/../../x", "work/..", "/abs", "/", "work//sub", "work/./sub", ".", "work/", "./work", "work\\..\\x", "work/\x00"} {
+		t.Run(folder, func(t *testing.T) {
+			vault := newVault(map[string]string{"Templates/Meeting.md": book})
+
+			_, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), getRequest(vault, "Templates/Meeting.md", folder, nil))
+
+			if !errors.Is(err, newnote.ErrInvalidFolder) || len(vault.Scans()) != 0 {
+				t.Errorf("error = %v, scans = %v", err, vault.Scans())
+			}
+		})
+	}
+	for _, folder := range []string{"", "work", "work/sub", "Mind maps/2026", ".hidden"} {
+		t.Run("takes "+folder, func(t *testing.T) {
+			vault := newVault(map[string]string{"Templates/Meeting.md": book})
+
+			if _, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), getRequest(vault, "Templates/Meeting.md", folder, nil)); err != nil {
+				t.Errorf("error = %v", err)
+			}
+		})
+	}
+}
+
 func TestMakeNoNoteFromATemplateThatIsTooLarge(t *testing.T) {
 	const limit = 256 << 10
 	execute := func(vault *hosttest.Vault) (newnote.Result, error) {

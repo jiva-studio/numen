@@ -34,7 +34,8 @@ export interface CreateNoteRequest {
   readonly etag: string
 }
 
-/** Names the note that was made. */
+/** Names the note that was made; `warning` is what the person should know of it, empty for nothing. */
 export interface CreateNoteResponse {
   readonly path: string
+  readonly warning: string
 }

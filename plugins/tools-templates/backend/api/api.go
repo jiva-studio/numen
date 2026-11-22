@@ -49,7 +49,9 @@ type CreateNoteRequest struct {
 	Etag     string            `json:"etag"`
 }
 
-// CreateNoteResponse names the note that was made.
+// CreateNoteResponse names the note that was made. Warning is what the person should know of a note that was
+// made all the same, and empty when there is nothing.
 type CreateNoteResponse struct {
-	Path string `json:"path"`
+	Path    string `json:"path"`
+	Warning string `json:"warning"`
 }

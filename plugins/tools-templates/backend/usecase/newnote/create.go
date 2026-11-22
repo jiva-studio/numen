@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	pathpkg "path"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -36,6 +37,9 @@ var (
 
 	// ErrNoFreeName is a template whose name is taken in the folder, with every number tried.
 	ErrNoFreeName = errors.New("no free name for")
+
+	// ErrInvalidFolder is a folder that is not a clean path inside the vault.
+	ErrInvalidFolder = errors.New("not a folder of the vault")
 
 	// ErrTemplateChanged is a template that is not the text its fields were listed from.
 	ErrTemplateChanged = errors.New("template changed, open the picker again")
@@ -90,6 +94,9 @@ func NewCreateFromTemplate(vault Vault, clock Clock, ids IDs, getMasks func() ma
 
 // Execute makes the note.
 func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, error) {
+	if !isFolder(in.Folder) {
+		return Result{}, fmt.Errorf("%w: %q", ErrInvalidFolder, in.Folder)
+	}
 	text, err := readTemplate(ctx, u.vault, u.getMasks(), in.Template)
 	if err != nil {
 		return Result{}, err
@@ -156,7 +163,7 @@ func (u CreateFromTemplate) isFree(ctx context.Context, path string) (bool, erro
 }
 
 func isTemplate(path string, masks mask.Set) bool {
-	if path != pathpkg.Clean(path) || !strings.HasSuffix(path, noteExtension) || strings.TrimSuffix(pathpkg.Base(path), noteExtension) == "" {
+	if path == "." || path != pathpkg.Clean(path) || !strings.HasSuffix(path, noteExtension) || strings.TrimSuffix(pathpkg.Base(path), noteExtension) == "" {
 		return false
 	}
 	_, isNamed := masks.Find(path)
@@ -167,6 +174,16 @@ func isTemplate(path string, masks mask.Set) bool {
 func Etag(text string) string {
 	sum := sha256.Sum256([]byte(text))
 	return hex.EncodeToString(sum[:])
+}
+
+func isFolder(path string) bool {
+	if path == "" {
+		return true
+	}
+	if path == "." || path != pathpkg.Clean(path) || strings.ContainsAny(path, "\\\x00") || pathpkg.IsAbs(path) {
+		return false
+	}
+	return !slices.Contains(strings.Split(path, "/"), "..")
 }
 
 func getName(template string) string {
