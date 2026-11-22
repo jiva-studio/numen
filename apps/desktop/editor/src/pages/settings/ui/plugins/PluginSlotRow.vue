@@ -73,7 +73,7 @@ const emit = defineEmits<{
   display: inline-flex;
   flex: none;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   inline-size: 1rem;
   block-size: 1.5rem;
   padding: 0;
