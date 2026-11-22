@@ -38,6 +38,7 @@ Two things are not settings and are not in here: which files count as notes, and
 | | | |
 | --- | --- | --- |
 | `profile` | text | how much of the hardware indexing and models may use. One of `eco`, `low`, `balanced`, `high`, `maximum`. |
+| `disableDmabufRenderer` | yes or no | on Linux the webview can pass finished frames to the screen through GPU buffers (DMABUF, the fastest way) or through ordinary memory. With this on, ordinary memory is used, which avoids drawing faults some graphics drivers and webview versions show, such as flicker, stale frames and vanishing elements, at the cost of a little more processor time on large repaints. Applies after a restart; has effect on Linux only. |
 
 ### `app.editor`
 
