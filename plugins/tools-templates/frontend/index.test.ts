@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
+import {
+  createMockHostServices,
+  createMockPickerHost,
+  createMockPluginContext,
+} from '@numen/plugin-sdk/testing'
 import type { ApiError, CommandNote, Result, VaultEntry, VaultFiles } from '@numen/plugin-sdk'
 import type {
   CreateNoteRequest,
@@ -73,7 +77,6 @@ const setup = (
   folders: Record<string, readonly VaultEntry[]> = invented,
   options: {
     fields?: Result<ListFieldsResponse, ApiError>
-    answers?: Readonly<Record<string, string>> | undefined
     isDenied?: boolean
   } = {},
 ) => {
@@ -82,12 +85,13 @@ const setup = (
   const notices: { text: string; severity: string | undefined }[] = []
   const createNote = vi.fn(async (_request: CreateNoteRequest) => answer)
   const listFields = vi.fn(async () => options.fields ?? noFields)
-  const showForm = vi.fn(async (_title: string, _fields: readonly Field[]) => options.answers)
+  const picker = createMockPickerHost()
   const context = createMockPluginContext({
     pluginId: PLUGIN_ID,
     initialSettings: { templates: 'Templates/**' },
   })
   const host = createMockHostServices({
+    picker,
     files: options.isDenied
       ? { ...createFiles(folders), list: () => Promise.reject(new Error('access denied')) }
       : createFiles(folders),
@@ -99,8 +103,8 @@ const setup = (
       },
     } as never,
   })
-  activate(context, host, { createNote, listFields }, showForm)
-  return { context, createNote, listFields, showForm, opened, errors, notices }
+  activate(context, host, { createNote, listFields })
+  return { context, createNote, listFields, picker, opened, errors, notices }
 }
 
 const created = (path: string): Result<CreateNoteResponse, ApiError> => ({
@@ -207,23 +211,25 @@ describe('the templates frontend', () => {
   })
 
   it('makes the note at once when the template asks nothing', async () => {
-    const { context, showForm, createNote } = setup(created('notes/Meeting.md'))
+    const { context, picker, createNote } = setup(created('notes/Meeting.md'))
 
     await context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Meeting.md')
 
-    expect(showForm).not.toHaveBeenCalled()
+    expect(picker.getQuestion()).toBeUndefined()
     expect(createNote).toHaveBeenCalledTimes(1)
   })
 
   it('asks the fields of the template and makes the note with the answers', async () => {
-    const { context, showForm, createNote, opened } = setup(created('notes/Visit.md'), invented, {
+    const { context, picker, createNote, opened } = setup(created('notes/Visit.md'), invented, {
       fields: askingFor([CLIENT]),
-      answers: { Client: 'Globex' },
     })
 
-    await context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Visit.md')
+    const running = context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Visit.md')
+    await vi.waitFor(() => expect(picker.getQuestion()).toBeDefined())
+    expect(picker.getQuestion()).toEqual({ title: 'Visit · 1/1 Client', value: 'Acme' })
+    picker.answer('Globex')
+    await running
 
-    expect(showForm).toHaveBeenCalledWith('Visit', [CLIENT])
     expect(createNote).toHaveBeenCalledWith({
       template: 'Templates/Visit.md',
       folder: 'notes',
@@ -255,12 +261,18 @@ describe('the templates frontend', () => {
   })
 
   it('makes no note when the person cancels the questions', async () => {
-    const { context, createNote, opened, errors } = setup(created('notes/Visit.md'), invented, {
-      fields: askingFor([CLIENT]),
-      answers: undefined,
-    })
+    const { context, picker, createNote, opened, errors } = setup(
+      created('notes/Visit.md'),
+      invented,
+      {
+        fields: askingFor([CLIENT]),
+      },
+    )
 
-    await context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Visit.md')
+    const running = context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Visit.md')
+    await vi.waitFor(() => expect(picker.getQuestion()).toBeDefined())
+    picker.dismiss()
+    await running
 
     expect(createNote).not.toHaveBeenCalled()
     expect(opened).toEqual([])
@@ -268,7 +280,7 @@ describe('the templates frontend', () => {
   })
 
   it('shows the error and asks nothing when the template cannot be read', async () => {
-    const { context, showForm, createNote, errors } = setup(created('x.md'), invented, {
+    const { context, picker, createNote, errors } = setup(created('x.md'), invented, {
       fields: {
         ok: false,
         error: {
@@ -281,7 +293,7 @@ describe('the templates frontend', () => {
     await context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Visit.md')
 
     expect(errors).toEqual(['template does not produce a valid note: T.md:2'])
-    expect(showForm).not.toHaveBeenCalled()
+    expect(picker.getQuestion()).toBeUndefined()
     expect(createNote).not.toHaveBeenCalled()
   })
 

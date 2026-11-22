@@ -1,11 +1,10 @@
 /**
  * Frontend entrypoint for the Templates plugin: a command that makes a new note from a template.
  */
-import './styles.css'
 import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import type { CreateNoteResponse } from './api/templates'
 import { templatesApi, type TemplatesApi } from './api/wire'
-import { showFieldsForm, type ShowFieldsForm } from './ui/showFieldsForm'
+import { askFields } from './lib/askFields'
 import { getTargetFolder } from './lib/getTargetFolder'
 import { getTitle } from './lib/groupTemplates'
 import { parseMasks } from './lib/masks'
@@ -20,7 +19,6 @@ export const activate = (
   context: PluginContext,
   host: HostServices,
   api: TemplatesApi = templatesApi,
-  showForm: ShowFieldsForm = showFieldsForm,
 ): void => {
   const files = host.vault.files
   if (!files) throw new Error('the Templates plugin needs the files of the vault')
@@ -47,8 +45,14 @@ export const activate = (
         host.ui.workspace?.messages.showError(asked.error.message)
         return
       }
+      const { fields } = asked.value
+      const picker = host.ui.picker
+      if (fields.length > 0 && !picker) {
+        host.ui.workspace?.messages.showError('the window cannot ask the fields of the template')
+        return
+      }
       const values =
-        asked.value.fields.length > 0 ? await showForm(getTitle(itemId), asked.value.fields) : {}
+        fields.length > 0 && picker ? await askFields(picker, getTitle(itemId), fields) : {}
       if (!values) return
       const answer = await api.createNote({
         template: itemId,
