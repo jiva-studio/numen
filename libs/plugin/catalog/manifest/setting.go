@@ -175,7 +175,7 @@ func (m Manifest) IsSettingShown(s Setting, resolved map[string]any) bool {
 	return m.IsSettingShownOn(s, resolved, runtime.GOOS)
 }
 
-// IsSettingShownOn is IsSettingShown on the platform given.
+// IsSettingShownOn takes the platform as runtime.GOOS names it (darwin, linux, windows), which a test passes to see another system.
 func (m Manifest) IsSettingShownOn(s Setting, resolved map[string]any, platform string) bool {
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
 	return m.isActive(s.When, resolved, platform, 0)

@@ -458,7 +458,7 @@ func TestAPlatformConditionIsReadWithTheHostPlatform(t *testing.T) {
 	}
 }
 
-func TestASettingBehindAPlatformIsHiddenWhereAnotherShowsIt(t *testing.T) {
+func TestPlatformConditionHidesSettingOnOtherSystems(t *testing.T) {
 	m, err := readFactManifest(
 		`{"key":"a","type":"boolean","title":"A","when":{"setting":"app.platform","is":["linux"]}},` +
 			`{"key":"b","type":"boolean","title":"B","when":{"setting":"a","is":["true"]}}`)

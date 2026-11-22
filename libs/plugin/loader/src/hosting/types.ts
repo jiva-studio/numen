@@ -193,7 +193,6 @@ export interface HostSlots {
   readonly getSlotPoints?: (
     manifests: ReadonlyMap<string, Manifest>,
   ) => readonly DeclaredSlotPoint[] | undefined
-  /** The names of the slots every installed plugin draws, enabled or not. */
   readonly getDeclaredSlotPoints?: () => readonly string[] | undefined
   readonly getSlotLayout?: (pluginId: string) => SlotLayout | undefined
   readonly createSlotCommandFinder?: (own: HostCommandReads) => SlotCommandFinder

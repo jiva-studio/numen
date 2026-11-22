@@ -94,20 +94,20 @@ func runWithRegistry(t *testing.T, content string) (string, bool) {
 	return os.LookupEnv(dmabufEnv)
 }
 
-func TestTheSettingBesideTheRegistryTurnsTheDisablingOff(t *testing.T) {
+func TestDmabufUnsetForRegistrySettingFalse(t *testing.T) {
 	if _, isSet := runWithRegistry(t, `{"v":1,"app":{"performance":{"disableDmabufRenderer":false}}}`); isSet {
 		t.Error("the variable is set though the file beside the registry turns the setting off")
 	}
 }
 
-func TestTheSettingBesideTheRegistryTurnsTheDisablingOn(t *testing.T) {
+func TestRegistrySettingTrueSetsDmabufVariable(t *testing.T) {
 	got, isSet := runWithRegistry(t, `{"v":1,"app":{"performance":{"disableDmabufRenderer":true}}}`)
 	if !isSet || got != "1" {
 		t.Errorf("the variable is %q (set: %v), want 1", got, isSet)
 	}
 }
 
-func TestNoFileBesideTheRegistryDisablesTheRenderer(t *testing.T) {
+func TestRegistryWithoutFileSetsDmabufVariable(t *testing.T) {
 	got, isSet := runWithRegistry(t, "")
 	if !isSet || got != "1" {
 		t.Errorf("the variable is %q (set: %v), want 1", got, isSet)
