@@ -5,7 +5,8 @@
 import { EditorView, Decoration, WidgetType, type DecorationSet } from '@codemirror/view'
 import { EditorState, RangeSetBuilder, StateField, Prec, type Extension } from '@codemirror/state'
 import { editorNotePath } from '@numen/plugin-sdk'
-import { findFencedLines, readTaskLine, type FieldKind, type TaskLine } from '../lib/taskLine'
+import { WORDS } from '../../words'
+import { createFenceTracker, readTaskLine, type FieldKind, type TaskLine } from '../lib/taskLine'
 
 interface TickRequest {
   readonly path: string
@@ -17,18 +18,20 @@ interface TickRequest {
 export interface TaskExtensionDeps {
   readonly tick: (request: TickRequest) => Promise<void>
   readonly hideFields: boolean
+  readonly showError: (message: string) => void
 }
 
 class TaskBox extends WidgetType {
   constructor(
     readonly isDone: boolean,
+    readonly label: string,
     readonly deps: TaskExtensionDeps,
   ) {
     super()
   }
 
   override eq(other: TaskBox) {
-    return other.isDone === this.isDone && other.deps === this.deps
+    return other.isDone === this.isDone && other.label === this.label && other.deps === this.deps
   }
 
   override ignoreEvent() {
@@ -39,12 +42,15 @@ class TaskBox extends WidgetType {
     const box = document.createElement('input')
     box.type = 'checkbox'
     box.className = 'cm-todo-box'
+    box.setAttribute('aria-label', this.label)
     box.checked = this.isDone
     box.disabled = view.state.readOnly || view.state.facet(editorNotePath) === ''
     box.addEventListener('mousedown', (event) => event.preventDefault())
     box.addEventListener('click', (event) => {
       event.preventDefault()
+      if (box.getAttribute('aria-busy') === 'true') return
       const line = view.state.doc.lineAt(view.posAtDOM(box))
+      box.setAttribute('aria-busy', 'true')
       this.deps
         .tick({
           path: view.state.facet(editorNotePath),
@@ -52,7 +58,8 @@ class TaskBox extends WidgetType {
           raw: line.text,
           isDone: !this.isDone,
         })
-        .catch(() => undefined)
+        .catch(() => this.deps.showError(WORDS.tickFailed))
+        .finally(() => box.removeAttribute('aria-busy'))
     })
     return box
   }
@@ -93,28 +100,32 @@ function addFields(
   }
 }
 
+function getLabel(text: string, task: TaskLine): string {
+  const end = task.fields[0]?.from ?? text.length
+  return text.slice(task.textFrom, end).trim() || WORDS.taskBox
+}
+
 function buildTaskDecorations(state: EditorState, deps: TaskExtensionDeps): DecorationSet {
   const selection = state.selection.ranges
   const builder = new RangeSetBuilder<Decoration>()
-  const lines = state.doc.toString().split('\n')
-  const fenced = findFencedLines(lines)
-  let offset = 0
-  lines.forEach((text, at) => {
-    const from = offset
+  const isFenced = createFenceTracker()
+  let from = 0
+  for (const text of state.doc.iterLines()) {
     const to = from + text.length
-    offset += text.length + 1
-    if (fenced[at]) return
+    const lineFrom = from
+    from = to + 1
+    if (isFenced(text)) continue
     const task = readTaskLine(text)
-    if (!task) return
-    if (task.isDone) builder.add(from, from, DONE_LINE)
+    if (!task) continue
+    if (task.isDone) builder.add(lineFrom, lineFrom, DONE_LINE)
     builder.add(
-      from + task.markerFrom,
-      from + task.textFrom,
-      Decoration.replace({ widget: new TaskBox(task.isDone, deps) }),
+      lineFrom + task.markerFrom,
+      lineFrom + task.textFrom,
+      Decoration.replace({ widget: new TaskBox(task.isDone, getLabel(text, task), deps) }),
     )
-    const isFocused = selection.some((range) => range.from <= to && range.to >= from)
-    addFields(builder, { from, text }, task, deps.hideFields && !isFocused)
-  })
+    const isFocused = selection.some((range) => range.from <= to && range.to >= lineFrom)
+    addFields(builder, { from: lineFrom, text }, task, deps.hideFields && !isFocused)
+  }
   return builder.finish()
 }
 

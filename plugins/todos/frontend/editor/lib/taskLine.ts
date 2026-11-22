@@ -123,19 +123,24 @@ function isClosing(fence: ReturnType<typeof readFence>, open: Open): boolean {
   )
 }
 
-/** Tells which lines of a body sit inside a fenced code block, fence lines included. */
-export function findFencedLines(lines: readonly string[]): boolean[] {
-  const fenced = new Array<boolean>(lines.length).fill(false)
+export function createFenceTracker(): (line: string) => boolean {
   let open: Open | undefined
-  lines.forEach((line, at) => {
+  return (line) => {
     const fence = readFence(line)
     if (open) {
-      fenced[at] = true
       if (isClosing(fence, open)) open = undefined
-    } else if (fence && isOpening(fence)) {
-      open = { char: fence.char, size: fence.size }
-      fenced[at] = true
+      return true
     }
-  })
-  return fenced
+    if (fence && isOpening(fence)) {
+      open = { char: fence.char, size: fence.size }
+      return true
+    }
+    return false
+  }
+}
+
+/** Tells which lines of a body sit inside a fenced code block, fence lines included. */
+export function findFencedLines(lines: readonly string[]): boolean[] {
+  const isFenced = createFenceTracker()
+  return lines.map(isFenced)
 }

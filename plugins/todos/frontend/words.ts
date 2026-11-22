@@ -7,5 +7,6 @@ export const WORDS = {
   taskDone: 'Done',
   changedNote: 'The note changed. Open it to tick the task.',
   recurringNotTickable: 'Recurring tasks cannot be ticked here yet',
+  taskBox: 'Task',
   tickFailed: 'The task could not be ticked',
 } as const

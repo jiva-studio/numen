@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { editorNotePath } from '@numen/plugin-sdk'
+import { WORDS } from '../../words'
 import { createTaskExtension, type TaskExtensionDeps } from './taskExtension'
 
 let view: EditorView | undefined
@@ -11,18 +12,22 @@ afterEach(() => {
   view = undefined
 })
 
-function open(doc: string, path = 'Projects/Home.md', hideFields = false) {
-  const tick = vi.fn<(request: Parameters<TaskExtensionDeps['tick']>[0]) => Promise<void>>(
-    async () => undefined,
-  )
+function open(
+  doc: string,
+  path = 'Projects/Home.md',
+  hideFields = false,
+  implementation: TaskExtensionDeps['tick'] = async () => undefined,
+) {
+  const tick = vi.fn(implementation)
+  const showError = vi.fn()
   view = new EditorView({
     state: EditorState.create({
       doc,
-      extensions: [editorNotePath.of(path), createTaskExtension({ tick, hideFields })],
+      extensions: [editorNotePath.of(path), createTaskExtension({ tick, hideFields, showError })],
     }),
     parent: document.body,
   })
-  return { view, tick }
+  return { view, tick, showError }
 }
 
 const boxes = (root: EditorView) => [...root.dom.querySelectorAll<HTMLInputElement>('.cm-todo-box')]
@@ -113,6 +118,40 @@ describe('the task extension', () => {
     boxes(editor)[0]?.click()
 
     expect(tick).toHaveBeenCalledWith(expect.objectContaining({ line: 1, isDone: false }))
+  })
+
+  it('names the box by the text of its task', () => {
+    const { view: editor } = open('- [ ] write the report due:2026-11-20')
+
+    expect(boxes(editor)[0]?.getAttribute('aria-label')).toBe('write the report')
+  })
+
+  it('shows the error when the tick throws', async () => {
+    const { view: editor, showError } = open('- [ ] write', 'Projects/Home.md', false, async () => {
+      throw new Error('offline')
+    })
+
+    boxes(editor)[0]?.click()
+    await vi.waitFor(() => expect(showError).toHaveBeenCalledWith(WORDS.tickFailed))
+  })
+
+  it('marks the box busy and ignores a second click while the tick runs', async () => {
+    let finish: () => void = () => undefined
+    const { view: editor, tick } = open(
+      '- [ ] write',
+      'Projects/Home.md',
+      false,
+      () => new Promise((resolve) => (finish = resolve)),
+    )
+    const box = boxes(editor)[0]
+
+    box?.click()
+    box?.click()
+    expect(box?.getAttribute('aria-busy')).toBe('true')
+    expect(tick).toHaveBeenCalledTimes(1)
+
+    finish()
+    await vi.waitFor(() => expect(box?.hasAttribute('aria-busy')).toBe(false))
   })
 
   it('leaves the box off where the editor holds no note of the vault', () => {

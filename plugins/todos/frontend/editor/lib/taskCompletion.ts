@@ -1,7 +1,8 @@
+import type { Text } from '@codemirror/state'
 import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete'
 import type { FieldCount, ListFieldsResponse } from '../../types'
 import { listDateShortcuts } from './dateShortcuts'
-import { findFencedLines, readTaskLine } from './taskLine'
+import { createFenceTracker, readTaskLine } from './taskLine'
 
 export interface TaskCompletionDeps {
   readonly getFields: () => ListFieldsResponse
@@ -62,6 +63,13 @@ interface WordAt {
   readonly from: number
 }
 
+function isFencedAt(doc: Text, lineNumber: number): boolean {
+  const isFenced = createFenceTracker()
+  let result = false
+  for (const text of doc.iterLines(1, lineNumber + 1)) result = isFenced(text)
+  return result
+}
+
 function findWord(context: CompletionContext): WordAt | null {
   const line = context.state.doc.lineAt(context.pos)
   const task = readTaskLine(line.text)
@@ -69,8 +77,7 @@ function findWord(context: CompletionContext): WordAt | null {
   const before = line.text.slice(0, context.pos - line.from)
   const wordFrom = before.search(/[^ \t]*$/)
   if (wordFrom < task.textFrom) return null
-  const lines = context.state.doc.sliceString(0, line.to).split('\n')
-  if (findFencedLines(lines)[lines.length - 1]) return null
+  if (isFencedAt(context.state.doc, line.number)) return null
   return { word: before.slice(wordFrom), from: line.from + wordFrom }
 }
 
@@ -88,7 +95,7 @@ export function createTaskCompletion(deps: TaskCompletionDeps) {
   return async (context: CompletionContext): Promise<CompletionResult | null> => {
     const found = complete(context)
     if (found || !/^[+@#]/.test(findWord(context)?.word ?? '')) return found
-    await load().catch(() => undefined)
+    await load().catch(() => undefined) // a failed read leaves the options as they are; the next keystroke asks again
     return complete(context)
   }
 }

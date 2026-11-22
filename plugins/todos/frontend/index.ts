@@ -61,11 +61,11 @@ export const activate = (
   }
   const fields = createFieldCache(parts.api)
   const refreshFields = (): void => {
-    fields.refresh().catch(() => undefined)
+    fields.refresh().catch(() => undefined) // the lists stay as last read; the next change or focus reads again
   }
   const feed = useTaskFeed(parts.api, () => workspace.window.getToday(), parts.timer, refreshFields)
   const refreshSummary = (): void => {
-    feed.refresh().catch(() => undefined)
+    feed.refresh().catch(() => undefined) // the counts stay as last read; the next change or focus reads again
     refreshFields()
   }
   // The counts are read again once the backend has checked the changed notes, so the chip does not

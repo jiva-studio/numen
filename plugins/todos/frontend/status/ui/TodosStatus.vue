@@ -42,12 +42,12 @@ watch(isOpen, (open) => {
     return
   }
   dismissal.listen()
-  load().catch(() => undefined)
+  load().catch(() => undefined) // the popover keeps the lists it has; opening it again reads again
 })
 watch(
   () => props.summary,
   () => {
-    if (isOpen.value) load().catch(() => undefined)
+    if (isOpen.value) load().catch(() => undefined) // the popover keeps the lists it has until the next summary
   },
 )
 
@@ -61,7 +61,7 @@ function onClose() {
 }
 
 function onTick(task: Task) {
-  ticks.tick(task).catch(() => undefined)
+  ticks.tick(task).catch(() => emit('showError', words.tickFailed))
 }
 </script>
 

@@ -31,6 +31,7 @@ export function createTaskEditorExtension({
   return [
     createTaskExtension({
       hideFields,
+      showError,
       tick: async (request) => {
         const result = await api.setTaskDone({ ...request, today: getToday() })
         if (!result.ok) showError(WORDS.tickFailed)
