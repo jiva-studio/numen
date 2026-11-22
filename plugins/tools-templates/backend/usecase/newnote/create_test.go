@@ -867,3 +867,21 @@ func TestSuggestANameANoteCanHave(t *testing.T) {
 		t.Errorf("the suggested name is refused: %v", err)
 	}
 }
+
+func TestRefuseATemplateThatAsksOtherQuestionsForThisName(t *testing.T) {
+	const asking = "{{ if eq .title \"Meeting\" }}{{ prompt \"X\" }}{{ end }}# {{ .title }}\n"
+	vault := newVault(map[string]string{"Templates/Meeting.md": asking, "work/Meeting.md": "taken"})
+	listed, err := newListFields(vault).Execute(t.Context(), newnote.FieldsRequest{Template: "Templates/Meeting.md", Folder: "work"})
+	if err != nil || len(listed.Fields) != 0 {
+		t.Fatalf("fields = %+v, error = %v", listed.Fields, err)
+	}
+	request := getNamedRequest(vault, "Templates/Meeting.md", "work", "Meeting", map[string]string{})
+	request.Name = "Other"
+	request.Values = map[string]string{"X": "typed"}
+
+	_, err = newUseCase(vault, newClock(getToday())).Execute(t.Context(), request)
+
+	if !errors.Is(err, newnote.ErrDifferentQuestions) || len(vault.Scans()) != 0 {
+		t.Errorf("error = %v, scans = %v", err, vault.Scans())
+	}
+}

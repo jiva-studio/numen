@@ -41,6 +41,9 @@ var (
 	// ErrInvalidFolder is a folder that is not a clean path inside the vault.
 	ErrInvalidFolder = errors.New("not a folder of the vault")
 
+	// ErrDifferentQuestions is an answer to a question the template does not ask for the name given, which is not the one its fields were listed with.
+	ErrDifferentQuestions = errors.New("this template asks different questions for this name")
+
 	// ErrTemplateChanged is a template that is not the text its fields were listed from.
 	ErrTemplateChanged = errors.New("template changed, open the picker again")
 
@@ -115,11 +118,27 @@ func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, er
 		return Result{}, fmt.Errorf("make the id of the note: %w", err)
 	}
 	data := engine.Data{Title: name, Folder: in.Folder, ID: id, Now: now, Values: in.Values}
+	if err := u.checkQuestions(ctx, in.Template, text, data); err != nil {
+		return Result{}, err
+	}
 	path, err := u.create(ctx, getNotePath(in.Folder, name), render{renderer: u.renderer, template: in.Template, text: text, data: data})
 	if path == "" {
 		return Result{}, err
 	}
 	return Result{Path: path}, err
+}
+
+func (u CreateFromTemplate) checkQuestions(ctx context.Context, template, text string, data engine.Data) error {
+	fields, err := u.renderer.Fields(ctx, pathpkg.Base(template), text, engine.Data{Title: data.Title, Folder: data.Folder, ID: data.ID, Now: data.Now, Values: nil})
+	if err != nil {
+		return wrapRenderError(err)
+	}
+	for label := range data.Values {
+		if !slices.ContainsFunc(fields, func(field engine.Field) bool { return field.Label == label }) {
+			return fmt.Errorf("%w: %q", ErrDifferentQuestions, label)
+		}
+	}
+	return nil
 }
 
 func (u CreateFromTemplate) create(ctx context.Context, path string, r render) (string, error) {
