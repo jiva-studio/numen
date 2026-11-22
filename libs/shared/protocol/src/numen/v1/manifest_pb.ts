@@ -331,7 +331,7 @@ export const ManifestEditorSchema: GenMessage<ManifestEditor> = /*@__PURE__*/
  */
 export type ManifestEditorExtension = Message<"numen.v1.ManifestEditorExtension"> & {
   /**
-   * id names the extension in the plugin; lowercase words in camelCase, declared once.
+   * id names the extension in the plugin; a lowercase letter, then letters and digits in camelCase, declared once.
    *
    * @generated from field: string id = 1;
    */

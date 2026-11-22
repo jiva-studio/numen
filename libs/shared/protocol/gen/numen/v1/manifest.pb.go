@@ -493,7 +493,7 @@ func (x *ManifestEditor) GetExtensions() []*ManifestEditorExtension {
 // ManifestEditorExtension is one CodeMirror extension a plugin adds to the note editor.
 type ManifestEditorExtension struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// id names the extension in the plugin; lowercase words in camelCase, declared once.
+	// id names the extension in the plugin; a lowercase letter, then letters and digits in camelCase, declared once.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// title is what the extension does, in words a person reads.
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`

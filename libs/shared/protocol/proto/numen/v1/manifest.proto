@@ -104,7 +104,7 @@ message ManifestEditor {
 
 // ManifestEditorExtension is one CodeMirror extension a plugin adds to the note editor.
 message ManifestEditorExtension {
-  // id names the extension in the plugin; lowercase words in camelCase, declared once.
+  // id names the extension in the plugin; a lowercase letter, then letters and digits in camelCase, declared once.
   string id = 1;
   // title is what the extension does, in words a person reads.
   string title = 2;
