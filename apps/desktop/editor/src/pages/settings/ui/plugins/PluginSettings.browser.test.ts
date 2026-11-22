@@ -44,7 +44,7 @@ function draw(): HTMLElement {
   return host
 }
 
-const insets = (card: Element) => {
+const insets = (card: Element, body: Element = card) => {
   const edge = card.getBoundingClientRect()
   const row = card.querySelector('.settings__row')!.getBoundingClientRect()
   const name = card.querySelector('.settings__name')!.getBoundingClientRect()
@@ -54,7 +54,7 @@ const insets = (card: Element) => {
     value: edge.right - value.right,
     dividerLeft: row.left - edge.left,
     dividerRight: edge.right - row.right,
-    firstRowTop: row.top - edge.top,
+    firstRowTop: row.top - body.getBoundingClientRect().top,
   }
 }
 
@@ -62,9 +62,10 @@ describe('the card of the ungrouped settings and the island of a group', () => {
   it('inset the text, the control and the dividers alike from the edges of the card', () => {
     const root = draw()
     const plain = root.querySelector('.settings-card')!
-    const island = root.querySelector('section.island-card .island-card__body')!
+    const island = root.querySelector('section.island-card')!
+    const body = island.querySelector('.island-card__body')!
 
-    expect(insets(island)).toStrictEqual(insets(plain))
+    expect(insets(island, body)).toStrictEqual(insets(plain))
     expect(insets(plain).name).toBeGreaterThan(8)
   })
 })

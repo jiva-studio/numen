@@ -1,15 +1,15 @@
 <script setup lang="ts">
-/** A titled group: the heading is above a card that holds only the rows, so a group of one row stays one row tall. The heading may carry an aside at its right. The card pads like a card of settings rows; compact draws the tighter pad of a list of draggable rows. */
+/** A titled group: a card whose tinted header holds the title and may carry an aside at its right, with the rows below it. The body pads like a card of settings rows; compact draws the tighter pad of a list of draggable rows. */
 defineProps<{ title: string; isCompact?: boolean }>()
 </script>
 
 <template>
-  <section class="island-card numen">
+  <section class="island-card numen" :class="{ 'island-card--compact': isCompact }">
     <header class="island-card__header">
       <h3 class="island-card__title">{{ title }}</h3>
       <div v-if="$slots.aside" class="island-card__aside"><slot name="aside" /></div>
     </header>
-    <div class="island-card__body" :class="{ 'island-card__body--compact': isCompact }">
+    <div class="island-card__body">
       <slot />
     </div>
   </section>
@@ -17,17 +17,27 @@ defineProps<{ title: string; isCompact?: boolean }>()
 
 <style scoped>
 .island-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
+  --island-pad-x: var(--numen-card-pad);
+  --island-pad-y: var(--numen-card-inset);
+  overflow: hidden;
+  box-sizing: border-box;
+  border: var(--numen-stroke) solid var(--numen-rule);
+  border-radius: var(--numen-radius);
+  background-color: var(--numen-raised);
 }
 
 .island-card__header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding-inline: 0;
+  padding: 0.375rem var(--island-pad-x);
+  background-color: color-mix(in oklab, var(--numen-raised), var(--numen-ink) 6%);
+}
+
+.island-card--compact {
+  --island-pad-x: 0.5rem;
+  --island-pad-y: 0.25rem;
 }
 
 .island-card__title {
@@ -47,15 +57,7 @@ defineProps<{ title: string; isCompact?: boolean }>()
 }
 
 .island-card__body {
-  overflow: hidden;
   box-sizing: border-box;
-  padding: var(--numen-card-inset) var(--numen-card-pad);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius);
-  background-color: var(--numen-raised);
-}
-
-.island-card__body--compact {
-  padding: 0.25rem 0.5rem;
+  padding: var(--island-pad-y) var(--island-pad-x);
 }
 </style>
