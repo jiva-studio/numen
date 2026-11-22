@@ -37,12 +37,12 @@ export const parseFingerprint = (stat: string) => {
 /**
  * Maps each error code of the schema to the window's own message code.
  *
- * A file that changed since the caller read it has no message: it is a prompt for the user, not a
+ * An answer with no error has no message, and neither has a file that changed since the caller read it: it is a prompt for the user, not a
  * message, and the window reports it as `changed`. The map is keyed by the schema, so a new error
  * code must be given a message or an explicit empty entry here before this compiles.
  */
 const ERROR_CODE: Record<number, ErrorCode | null> = {
-  [ProtoErrorCode.UNSPECIFIED]: 'unreadable',
+  [ProtoErrorCode.UNSPECIFIED]: null,
   [ProtoErrorCode.NOT_FOUND]: 'notFound',
   [ProtoErrorCode.NOT_A_NOTE]: 'notANote',
   [ProtoErrorCode.NOT_TEXT]: 'notText',

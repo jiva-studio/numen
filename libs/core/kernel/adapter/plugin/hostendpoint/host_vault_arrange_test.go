@@ -226,7 +226,7 @@ func isDenied(err error) bool {
 func callNoteChanges(t *testing.T, client HostVaultClient) map[string]error {
 	t.Helper()
 	ctx := t.Context()
-	_, renameErr := client.RenameNote(ctx, connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+	_, renameErr := client.RenameNote(ctx, connect.NewRequest(&v1.RenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 	_, moveErr := client.MoveNotes(ctx, connect.NewRequest(&v1.HostNoteServiceMoveNotesRequest{Paths: []string{"Rivers/Rhine.md"}}))
 	_, removeErr := client.RemoveNotes(ctx, connect.NewRequest(&v1.HostNoteServiceRemoveNotesRequest{Paths: []string{"Deltas.md"}}))
 	return map[string]error{"RenameNote": renameErr, "MoveNotes": moveErr, "RemoveNotes": removeErr}
@@ -344,7 +344,7 @@ func TestVaultChecksNeedVaultRead(t *testing.T) {
 func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 	client, _, _ := newArrangeClient(t, nil, manifest.PermissionVaultWrite)
 
-	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -352,12 +352,12 @@ func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 		res.Msg.GetNameSource() != v1.NameSource_NAME_SOURCE_FILENAME {
 		t.Errorf("the rename returned %v", res.Msg)
 	}
-	moved := res.Msg.GetMove()
+	moved := res.Msg.GetMoved()
 	if moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" || !slices.Equal(moved.GetRepaired(), []string{"Deltas.md"}) {
 		t.Errorf("the move came out as %v", moved)
 	}
 
-	missing, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Nowhere.md", Title: "Elsewhere"}))
+	missing, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{Path: "Nowhere.md", Title: "Elsewhere"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -590,7 +590,7 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 			t.Cleanup(server.Close)
 			client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 
-			res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+			res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -598,8 +598,8 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 			if res.Msg.GetError() != c.want {
 				t.Errorf("the rejected rename returned %v, want error %s", res.Msg, c.want)
 			}
-			if res.Msg.GetMove() != nil {
-				t.Errorf("the rejected rename returned the move %v", res.Msg.GetMove())
+			if res.Msg.GetMoved() != nil {
+				t.Errorf("the rejected rename returned the move %v", res.Msg.GetMoved())
 			}
 		})
 	}
@@ -818,7 +818,7 @@ func TestTheHostRejectsABatchOfMoreThanFiftyNotes(t *testing.T) {
 func TestARenameWhoseFileMovedReturnsTheMoveWhenTheFollowUpFails(t *testing.T) {
 	client, _ := newEscapingPathClient(t)
 
-	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 	if err != nil {
 		t.Fatalf("the rename returned %v, want the move", err)
 	}
@@ -826,7 +826,7 @@ func TestARenameWhoseFileMovedReturnsTheMoveWhenTheFollowUpFails(t *testing.T) {
 	if res.Msg.GetError() != 0 || res.Msg.GetPath() != "Donau.md" {
 		t.Errorf("the rename returned %v, want Donau.md with no error", res.Msg)
 	}
-	if moved := res.Msg.GetMove(); moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" {
+	if moved := res.Msg.GetMoved(); moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" {
 		t.Errorf("the move came out as %v, want Danube.md to Donau.md", moved)
 	}
 }

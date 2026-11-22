@@ -86,34 +86,34 @@ func (e *arrangeCalls) GetVaultProblems(
 }
 
 func (e *arrangeCalls) RenameNote(
-	ctx context.Context, req *connect.Request[v1.HostNoteServiceRenameNoteRequest],
-) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error) {
+	ctx context.Context, req *connect.Request[v1.RenameNoteRequest],
+) (*connect.Response[v1.RenameNoteResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.RenameNoteResponse{Error: noVault}), nil
 	}
 	newPath, isFilenamed, move, err := vault.Arranger.RenameNote(ctx, req.Msg.GetPath(), req.Msg.GetTitle())
 	// A note whose file was moved to the new name is renamed, even if a later step failed.
 	if err != nil && move == nil {
 		noteCode, code, callErr := splitNoteError(ctx, err)
 		if callErr != nil || code != 0 {
-			return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{Error: code}), callErr
+			return connect.NewResponse(&v1.RenameNoteResponse{Error: code}), callErr
 		}
-		return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{
+		return connect.NewResponse(&v1.RenameNoteResponse{
 			Path: req.Msg.GetPath(), Error: noteCode, Detail: err.Error(),
 		}), nil
 	}
-	out := &v1.HostNoteServiceRenameNoteResponse{
+	out := &v1.RenameNoteResponse{
 		Path: newPath, Title: strings.TrimSpace(req.Msg.GetTitle()), NameSource: v1.NameSource_NAME_SOURCE_FRONTMATTER,
 	}
 	if isFilenamed {
 		out.NameSource = v1.NameSource_NAME_SOURCE_FILENAME
 	}
 	if move != nil {
-		out.Move = writeMove(*move)
+		out.Moved = writeMove(*move)
 	}
 	return connect.NewResponse(out), nil
 }

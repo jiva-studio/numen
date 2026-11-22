@@ -41,13 +41,13 @@ func (a *fakeArrangeHost) getRequests() []string {
 }
 
 func (a *fakeArrangeHost) RenameNote(
-	_ context.Context, req *connect.Request[v1.HostNoteServiceRenameNoteRequest],
-) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error) {
+	_ context.Context, req *connect.Request[v1.RenameNoteRequest],
+) (*connect.Response[v1.RenameNoteResponse], error) {
 	a.record("rename " + req.Msg.GetPath() + " " + req.Msg.GetTitle())
 	if a.noteError != 0 {
-		return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{Error: a.noteError, Path: req.Msg.GetPath()}), nil
+		return connect.NewResponse(&v1.RenameNoteResponse{Error: a.noteError, Path: req.Msg.GetPath()}), nil
 	}
-	return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{
+	return connect.NewResponse(&v1.RenameNoteResponse{
 		Path: "Donau.md", Title: "Donau", NameSource: v1.NameSource_NAME_SOURCE_FILENAME,
 		Move: &v1.MoveResult{From: "Danube.md", To: "Donau.md", Repaired: []string{"Deltas.md"}, Dangling: []string{"Estuaries.md"}},
 	}), nil
