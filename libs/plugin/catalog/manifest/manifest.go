@@ -54,9 +54,6 @@ const (
 	// values of their row fields. No setting of rows of the plugin lists the operation.
 	PermissionConnectionsUse = "connections:use:"
 
-	// PermissionNetworkAlias is the accepted short spelling of PermissionLinkOpen.
-	PermissionNetworkAlias = "network"
-
 	ProtocolVersion = 1
 )
 
@@ -388,14 +385,6 @@ func (m Manifest) listBackendlessIssues() []error {
 	return issues
 }
 
-// NormalizePermission maps the accepted permission spellings to their canonical form.
-func NormalizePermission(permission string) string {
-	if permission == PermissionNetworkAlias {
-		return PermissionLinkOpen
-	}
-	return permission
-}
-
 // ValidatePermissions verifies that all declared permissions are recognized capabilities.
 func (m Manifest) ValidatePermissions() error {
 	return errors.Join(m.listPermissionIssues()...)
@@ -405,7 +394,7 @@ func (m Manifest) listPermissionIssues() []error {
 	var issues []error
 	for _, p := range m.Permissions {
 		_, isGrant := ParseConnectionsUse(p)
-		if !isGrant && !slices.Contains(PluginPermissions(), NormalizePermission(p)) {
+		if !isGrant && !slices.Contains(PluginPermissions(), p) {
 			issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidPermission, p))
 		}
 	}
@@ -484,8 +473,7 @@ func (m Manifest) IsTakingFileTypes(types []domain.FileType) bool {
 
 // HasPermission reports whether this plugin requests the given permission.
 func (m Manifest) HasPermission(permission string) bool {
-	want := NormalizePermission(permission)
-	return slices.ContainsFunc(m.Permissions, func(p string) bool { return NormalizePermission(p) == want })
+	return slices.Contains(m.Permissions, permission)
 }
 
 // CanTarget reports whether this plugin runs in the given workspace target.

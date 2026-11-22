@@ -144,27 +144,6 @@ func TestSupervisorTeardownForceKill(t *testing.T) {
 	}
 }
 
-func TestSupervisorPermissionNormalization(t *testing.T) {
-	sup := New(nil)
-	sup.Permissions.Set([]string{manifest.PermissionVaultRead, "network"})
-
-	if !sup.Permissions.Has(manifest.PermissionVaultRead) {
-		t.Errorf("expected permission %s to be present", manifest.PermissionVaultRead)
-	}
-	if !sup.Permissions.Has(manifest.PermissionLinkOpen) {
-		t.Errorf("expected permission %s to be normalized and present", manifest.PermissionLinkOpen)
-	}
-	if !sup.Permissions.Has("network") {
-		t.Errorf("expected alias network to return true")
-	}
-	if err := sup.Permissions.Check(manifest.PermissionLinkOpen); err != nil {
-		t.Errorf("expected CheckPermission for %s to pass: %v", manifest.PermissionLinkOpen, err)
-	}
-	if sup.Permissions.Has(manifest.PermissionVaultWrite) {
-		t.Errorf("expected undeclared permission %s to be false", manifest.PermissionVaultWrite)
-	}
-}
-
 func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 	cmd := exec.CommandContext(t.Context(), "sleep", "1")
 	if err := cmd.Start(); err != nil {
@@ -488,3 +467,15 @@ func TestAStartedProcessCountsAsUnusedAgain(t *testing.T) {
 
 // testIdleLimit is the idle limit the tests of the countdown stop a used plugin after.
 const testIdleLimit = 3 * time.Minute
+
+func TestSupervisorHoldsOnlyTheDeclaredPermissions(t *testing.T) {
+	sup := New(nil)
+	sup.Permissions.Set([]string{manifest.PermissionVaultRead})
+
+	if !sup.Permissions.Has(manifest.PermissionVaultRead) {
+		t.Errorf("expected permission %s to be present", manifest.PermissionVaultRead)
+	}
+	if sup.Permissions.Has(manifest.PermissionVaultWrite) {
+		t.Errorf("expected undeclared permission %s to be false", manifest.PermissionVaultWrite)
+	}
+}

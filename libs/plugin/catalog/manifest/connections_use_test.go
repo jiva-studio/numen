@@ -39,9 +39,6 @@ func TestAPermissionToUseConnectionsForAnOperationASettingOfRowsListsIsRefused(t
 	if got := manifest.FormatConnectionsUse("llm.chat"); got != "connections:use:llm.chat" {
 		t.Errorf("FormatConnectionsUse = %q, want connections:use:llm.chat", got)
 	}
-	if got := manifest.NormalizePermission("network"); got != manifest.PermissionLinkOpen {
-		t.Errorf("NormalizePermission(network) = %q, want %q", got, manifest.PermissionLinkOpen)
-	}
 	if _, err := readPermissions(`"connections:use:llm.chat"`,
 		`{"key":"embed","type":"connections","title":"Embed","operations":["llm.embed"],"max":1}`); err != nil {
 		t.Errorf("expected distinct operation to be allowed, got %v", err)

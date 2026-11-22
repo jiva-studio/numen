@@ -101,7 +101,7 @@ func TestThePermissionsTheGuideListsAreTheValidators(t *testing.T) {
 		t.Fatal("the guide lists no permissions: a rule checked against nothing")
 	}
 	grant := manifest.FormatConnectionsUse("<operation>")
-	valid := append(manifest.PluginPermissions(), manifest.PermissionNetworkAlias, grant)
+	valid := append(manifest.PluginPermissions(), grant)
 	for _, difference := range listPermissionDifferences(documented, valid) {
 		t.Error(difference)
 	}
@@ -116,14 +116,14 @@ func TestThePermissionsTheGuideListsAreTheValidators(t *testing.T) {
 }
 
 func TestPermissionRule_ReportsPermissionDifferences(t *testing.T) {
-	valid := []string{"vault:read", "link:open", "network"}
-	if got := listPermissionDifferences([]string{"vault:read", "link:open", "network"}, valid); len(got) != 0 {
+	valid := []string{"vault:read", "link:open", "index:read"}
+	if got := listPermissionDifferences([]string{"vault:read", "link:open", "index:read"}, valid); len(got) != 0 {
 		t.Errorf("equal lists differ: %v", got)
 	}
 	if got := listPermissionDifferences([]string{"vault:read", "link:open"}, valid); len(got) != 1 {
 		t.Errorf("a permission left out of the guide is found %d times: %v", len(got), got)
 	}
-	if got := listPermissionDifferences([]string{"vault:read", "link:open", "network", "root"}, valid); len(got) != 1 {
+	if got := listPermissionDifferences([]string{"vault:read", "link:open", "index:read", "root"}, valid); len(got) != 1 {
 		t.Errorf("a permission only the guide names is found %d times: %v", len(got), got)
 	}
 	line := "- **`permissions`**: Whitelisted: `vault:read` and `index:read`. Any other value, such as `root`, is rejected."
