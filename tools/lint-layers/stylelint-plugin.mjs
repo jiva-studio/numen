@@ -288,14 +288,38 @@ const chromeFixedSizeMessages = ruleMessages(CHROME_FIXED_SIZE, {
   token: (name, prop) => `${name} in ${prop} follows the interface scale; the window chrome reads a --numen-chrome- token`,
 });
 
+const chromePlugins = new Map();
+
+/** True when the plugin the file belongs to draws a view in a slot of one of the bars, or draws a bar itself. */
+function isChromePlugin(file, bars) {
+  const dir = /^(.*[\\/]plugins[\\/][^\\/]+)[\\/]/.exec(file)?.[1];
+  if (!dir) return false;
+  const key = `${dir}|${bars.join(",")}`;
+  if (!chromePlugins.has(key)) {
+    let slots = [];
+    try {
+      slots = JSON.parse(fs.readFileSync(path.join(dir, "manifest.json"), "utf8")).contributes?.slots ?? [];
+    } catch {
+      slots = [];
+    }
+    chromePlugins.set(key, slots.some((one) => one.view && bars.some((bar) => one.slot === bar || one.slot?.startsWith(`${bar}.`))));
+  }
+  return chromePlugins.get(key);
+}
+
 const chromeFixedSize = (primary, secondary) => (root, result) => {
   const isValid = validateOptions(
     result,
     CHROME_FIXED_SIZE,
     { actual: primary },
-    { actual: secondary, possible: { root: [(value) => typeof value === "string"] }, optional: true },
+    {
+      actual: secondary,
+      possible: { root: [(value) => typeof value === "string"], slots: [(value) => typeof value === "string"] },
+      optional: true,
+    },
   );
   if (!isValid) return;
+  if (!isChromePlugin(result.opts?.from ?? root.source?.input.file ?? "", secondary?.slots ?? [])) return;
   const scaled = findScaledTokens(readRootTokenValues(path.resolve(secondary?.root ?? process.cwd())));
   root.walkDecls((decl) => {
     for (const length of findLengths(decl.value)) {
