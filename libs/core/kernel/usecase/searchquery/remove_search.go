@@ -18,7 +18,7 @@ func (u *RemoveSearch) Execute(_ context.Context, owner string, id searchrun.ID)
 		return err
 	}
 	remaining := 0
-	u.kept.Store().ChangeSearch(id, func(r *searchrun.Record) {
+	u.kept.Parts().Store.ChangeSearch(id, func(r *searchrun.Record) {
 		r.Holders--
 		remaining = r.Holders
 	})

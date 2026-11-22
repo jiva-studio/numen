@@ -12,6 +12,7 @@ import (
 
 // windowParts are what the use cases of one window are built over besides its state.
 type windowParts struct {
+	lookup    vaultport.VaultLookup
 	indexer   *indexing.Worker
 	embedding *indexing.Embedding
 
@@ -48,7 +49,7 @@ type windowSession struct {
 }
 
 func newWindowSession(
-	parts windowParts, lookup vaultport.VaultLookup, pluginVault windowsession.PluginVaultPath, runner *windowsession.PassRunner, vaultDeps vaultWiring, state *editor.Session, page *editor.PageAccess,
+	parts windowParts, pluginVault windowsession.PluginVaultPath, runner *windowsession.PassRunner, vaultDeps vaultWiring, state *editor.Session, page *editor.PageAccess,
 ) windowSession {
 	identity := windowsession.NewCheckIdentity(vaultIdentity(vaultDeps.Options))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, parts.diagnostics, parts.embedderError, runner)
@@ -62,7 +63,7 @@ func newWindowSession(
 		cases: windowCases{
 			start:      windowsession.NewStartWindow(parts.diagnostics, parts.embedderError, follow, session, parts.shouldRebuild),
 			show:       show,
-			openPlugin: windowsession.NewOpenPluginVault(guard, lookup, identity, page.Window, switching),
+			openPlugin: windowsession.NewOpenPluginVault(guard, parts.lookup, identity, page.Window, switching),
 			flush:      windowsession.NewFlushPending(guard, flush),
 			close: windowsession.NewCloseWindow(
 				page.Gate, session,

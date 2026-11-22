@@ -179,10 +179,10 @@ func buildWindow(
 	parts := windowParts{
 		shouldRebuild: searchDeps.ShouldRebuildIndex,
 		indexer:       indexer, embedding: embedding,
-		recordOpen: ports.Recorder, importFiles: moves.Tree.Import, diagnostics: diag,
+		recordOpen: ports.Recorder, lookup: ports.Lookup, importFiles: moves.Tree.Import, diagnostics: diag,
 		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
 	}
-	session := newWindowSession(parts, ports.Lookup, plugins.vault, runner, vaultDeps, state, page)
+	session := newWindowSession(parts, plugins.vault, runner, vaultDeps, state, page)
 	inst := editor.NewInstallation(page, editor.Lifecycle{
 		Show:  session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
