@@ -7,38 +7,49 @@ interface Settling {
   readonly isMoving: boolean
 }
 
-const isMotionReduced = (): boolean =>
-  typeof window.matchMedia === 'function' &&
-  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const isTransformOf = (event: TransitionEvent): boolean =>
+  event.target === event.currentTarget && event.propertyName === 'transform'
 
 /**
  * The row that was just dropped: it starts where the pointer left it, so it does not jump when the list is
- * reordered, and on the next frame eases to its new place. Where no transition will run, because motion is
- * reduced or the row lands where it was dropped, it is let go on the next frame.
+ * reordered, and on the next frame eases to its new place. A row whose transition does not run, because
+ * motion is reduced or it lands where it was dropped, is cleared one frame after it starts to move, since no
+ * transition ends for it.
  */
 export function useRowSettle(clock: Clock = browserClock): {
   settling: Readonly<Ref<Settling | null>>
   settle: (key: string, offset: number) => void
-  finish: (key: string) => void
+  onTransitionRun: (event: TransitionEvent, key: string) => void
+  onTransitionEnd: (event: TransitionEvent, key: string) => void
 } {
   const settling = ref<Settling | null>(null)
+  let hasRun = false
 
   const finish = (key: string): void => {
     if (settling.value?.key === key) settling.value = null
   }
 
   const settle = (key: string, offset: number): void => {
+    hasRun = false
     settling.value = { key, offset, isMoving: false }
-    if (offset === 0 || isMotionReduced()) {
-      clock.schedule(() => finish(key))
-      return
-    }
     clock.schedule(() =>
       clock.schedule(() => {
-        if (settling.value?.key === key) settling.value = { key, offset, isMoving: true }
+        if (settling.value?.key !== key) return
+        settling.value = { key, offset, isMoving: true }
+        clock.schedule(() => {
+          if (!hasRun) finish(key)
+        })
       }),
     )
   }
 
-  return { settling, settle, finish }
+  const onTransitionRun = (event: TransitionEvent, key: string): void => {
+    if (isTransformOf(event) && settling.value?.key === key) hasRun = true
+  }
+
+  const onTransitionEnd = (event: TransitionEvent, key: string): void => {
+    if (isTransformOf(event)) finish(key)
+  }
+
+  return { settling, settle, onTransitionRun, onTransitionEnd }
 }

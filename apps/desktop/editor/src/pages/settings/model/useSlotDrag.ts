@@ -1,14 +1,9 @@
 import { browserClock, measureRect, usePressDrag, type Clock } from '@numen/ui'
-import {
-  clampRowOffset,
-  getDropIndex,
-  getLandingShift,
-  getRowShifts,
-  type RowSpan,
-} from '../lib/slotDrag'
+import { clampRowOffset, getDropIndex, getLandingShift, type RowSpan } from '../lib/slotDrag'
 import type { SlotRow } from '../lib/slotLayout'
 import type { SlotGroup } from '../types'
 import { useRowSettle } from './useRowSettle'
+import { createRowLook } from './useSlotRowLook'
 
 const DRAG_THRESHOLD = 4
 
@@ -44,7 +39,7 @@ export interface SlotDragSource {
  * their own layers by the time one of them is lifted.
  */
 export function useSlotDrag(source: SlotDragSource, clock: Clock = browserClock) {
-  const { settling, settle, finish } = useRowSettle(clock)
+  const { settling, settle, onTransitionRun, onTransitionEnd } = useRowSettle(clock)
   let pressed: Pressed | null = null
   let target = 0
 
@@ -90,6 +85,15 @@ export function useSlotDrag(source: SlotDragSource, clock: Clock = browserClock)
     },
   })
 
+  const look = createRowLook({
+    getHeld: () => pressed,
+    getFrom: () => drag.dragging.value?.item,
+    getOver: () => drag.at.value,
+    isMoved: () => drag.dragging.value?.hasMoved === true,
+    getSettling: () => settling.value,
+    getRows: source.getRows,
+  })
+
   const onGripPress = (group: SlotGroup, at: number, event: PointerEvent): void => {
     if (event.button !== 0) return
     const grip = event.currentTarget as HTMLElement | null
@@ -106,44 +110,15 @@ export function useSlotDrag(source: SlotDragSource, clock: Clock = browserClock)
     drag.startPress(at, event)
   }
 
-  const onRowTransitionEnd = (event: TransitionEvent, key: string): void => {
-    if (event.target === event.currentTarget && event.propertyName === 'transform') finish(key)
-  }
-
   const isPressed = (group: SlotGroup): boolean =>
     isOfGroup(pressed, group) && drag.dragging.value !== null
 
-  const isDragging = (group: SlotGroup): boolean =>
-    isOfGroup(pressed, group) && drag.dragging.value?.hasMoved === true && drag.at.value !== null
-
-  const getRowClass = (group: SlotGroup, key: string): Record<string, boolean> => {
-    const isHeld = pressed?.key === key
-    const landing = settling.value?.key === key ? settling.value : null
-    return {
-      'plugin-slots__row--lifted': (isDragging(group) && isHeld) || landing?.isMoving === false,
-      'plugin-slots__row--shifting': isDragging(group) && !isHeld,
-      'plugin-slots__row--settling': landing?.isMoving === true,
-    }
+  return {
+    onGripPress,
+    onRowTransitionRun: onTransitionRun,
+    onRowTransitionEnd: onTransitionEnd,
+    isPressed,
+    getRowClass: look.getRowClass,
+    getRowStyle: look.getRowStyle,
   }
-
-  const getShift = (group: SlotGroup, key: string, at: number): number => {
-    const from = drag.dragging.value?.item
-    if (!pressed || !isOfGroup(pressed, group) || from === undefined || key === pressed.key)
-      return 0
-    const pitch = pressed.spans[from]?.height ?? 0
-    return getRowShifts(source.getRows(group).length, from, drag.at.value ?? from, pitch)[at] ?? 0
-  }
-
-  const getRowStyle = (
-    group: SlotGroup,
-    key: string,
-    at: number,
-  ): Record<string, string> | undefined => {
-    const landing = settling.value
-    const offset =
-      landing?.key === key ? (landing.isMoving ? 0 : landing.offset) : getShift(group, key, at)
-    return offset === 0 ? undefined : { transform: `translate3d(0, ${offset}px, 0)` }
-  }
-
-  return { onGripPress, onRowTransitionEnd, isPressed, getRowClass, getRowStyle }
 }

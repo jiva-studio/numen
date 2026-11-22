@@ -415,7 +415,7 @@ describe('usePressDrag', () => {
     press.scope.stop()
   })
 
-  it('cancels a moved drag when asked to abort', () => {
+  it('cancels a moved drag on abort', () => {
     const press = createPress()
     press.startPress('a row', pointer('pointerdown', 10, 10))
     window.dispatchEvent(pointer('pointermove', 40, 60))

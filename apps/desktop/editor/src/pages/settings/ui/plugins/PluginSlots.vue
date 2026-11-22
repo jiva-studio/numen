@@ -37,14 +37,15 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { onGripPress, onRowTransitionEnd, isPressed, getRowClass, getRowStyle } = useSlotDrag({
-  getRows: (group) => rowsOf(group),
-  move: (group, from, to) => {
-    const rows = moveSlotRow(rowsOf(group), from, to)
-    onChange(group, rows)
-    return rows
-  },
-})
+const { onGripPress, onRowTransitionRun, onRowTransitionEnd, isPressed, getRowClass, getRowStyle } =
+  useSlotDrag({
+    getRows: (group) => rowsOf(group),
+    move: (group, from, to) => {
+      const rows = moveSlotRow(rowsOf(group), from, to)
+      onChange(group, rows)
+      return rows
+    },
+  })
 
 /* -------------------------------- Handlers -------------------------------- */
 function onGripKey(group: SlotGroup, at: number, event: KeyboardEvent): void {
@@ -98,6 +99,7 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
         class="plugin-slots__row"
         :class="getRowClass(group, row.key)"
         :style="getRowStyle(group, row.key, at)"
+        @transitionrun="(event) => onRowTransitionRun(event, row.key)"
         @transitionend="(event) => onRowTransitionEnd(event, row.key)"
       >
         <PluginSlotRow

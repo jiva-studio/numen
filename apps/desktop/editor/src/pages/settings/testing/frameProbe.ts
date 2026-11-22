@@ -14,11 +14,12 @@ const LIFT_FADES = ['background-color', 'box-shadow', 'opacity']
 const LIFTED = 'plugin-slots__row--lifted'
 const STATE_CLASSES = [LIFTED, 'plugin-slots__row--settling']
 
-const labelsOf = (rows: readonly HTMLElement[]): string[] => {
+const labelled = (rows: readonly HTMLElement[]): (readonly [string, HTMLElement])[] => {
   let separators = 0
-  return rows.map(
-    (row) => row.querySelector('.plugin-slots__label')?.textContent ?? `|${separators++}`,
-  )
+  return rows.map((row) => [
+    row.querySelector('.plugin-slots__label')?.textContent ?? `|${separators++}`,
+    row,
+  ])
 }
 
 const fadesOf = (row: HTMLElement): Set<string> =>
@@ -32,16 +33,13 @@ const fadesOf = (row: HTMLElement): Set<string> =>
 export function startProbe(root: HTMLElement): { stop: () => Map<string, Frame[]> } {
   const rowsOf = (): HTMLElement[] =>
     Array.from(root.querySelectorAll<HTMLElement>('.plugin-slots__row'))
-  const first = new Map(labelsOf(rowsOf()).map((label, at) => [label, rowsOf()[at]!]))
+  const first = new Map(labelled(rowsOf()))
   const frames = new Map<string, Frame[]>()
   let n = 0
   let isRunning = true
   const sample = (): void => {
     if (!isRunning) return
-    const rows = rowsOf()
-    const labels = labelsOf(rows)
-    rows.forEach((row, at) => {
-      const label = labels[at]!
+    labelled(rowsOf()).forEach(([label, row]) => {
       frames.set(label, [
         ...(frames.get(label) ?? []),
         {

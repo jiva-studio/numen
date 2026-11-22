@@ -92,7 +92,7 @@ async function untilSettled(root: HTMLElement): Promise<void> {
   expect(isAtRest(root)).toBe(true)
 }
 
-const heldTransform = (root: HTMLElement, at = 0): string => rowsOf(root)[at]!.style.transform
+const heldTop = (root: HTMLElement, at = 0): number => rowsOf(root)[at]!.getBoundingClientRect().top
 
 async function grab(root: HTMLElement, at = 0) {
   const rows = rowsOf(root)
@@ -113,14 +113,15 @@ describe('the slots of a plugin dragged by a real pointer', () => {
   it('renders the list once for each place the dragged row takes', async () => {
     const root = mountSlots()
     await nextFrame()
+    const rest = heldTop(root)
     const { moveTo } = await grab(root)
     await moveTo(6)
     renders = 0
     for (let offset = 8; offset <= 60; offset += 2) await moveTo(offset)
-    const held = heldTransform(root)
+    const held = heldTop(root)
     await commands.pointer('up')
 
-    expect(held).toContain('translate3d')
+    expect(held).toBeGreaterThan(rest)
     expect(renders).toBeLessThanOrEqual(3)
   })
 
@@ -137,9 +138,9 @@ describe('the slots of a plugin dragged by a real pointer', () => {
     neighbours.forEach((one) =>
       watcher.observe(one, { attributes: true, subtree: true, childList: true }),
     )
-    const before = heldTransform(root)
+    const before = heldTop(root)
     for (let offset = 7; offset <= 12; offset++) await moveTo(offset)
-    const after = heldTransform(root)
+    const after = heldTop(root)
     watcher.disconnect()
     await commands.pointer('up')
 
@@ -150,15 +151,16 @@ describe('the slots of a plugin dragged by a real pointer', () => {
   it('start no transition of a neighbour while the pointer trembles on the boundary of two rows', async () => {
     const root = mountSlots()
     await nextFrame()
+    const rest = heldTop(root)
     const { pitch, moveTo } = await grab(root)
     await moveTo(pitch / 2 - 6)
     let runs = 0
     root.addEventListener('transitionrun', () => (runs += 1))
     for (let step = 0; step < 20; step++) await moveTo(pitch / 2 + (step % 2 === 0 ? 1 : -1))
-    const held = heldTransform(root)
+    const held = heldTop(root)
     await commands.pointer('up')
 
-    expect(held).toContain('translate3d')
+    expect(held).toBeGreaterThan(rest)
     expect(runs).toBeLessThanOrEqual(1)
   })
 
@@ -184,13 +186,14 @@ describe('the slots of a plugin dragged by a real pointer', () => {
   it('select no text while a row is dragged', async () => {
     const root = mountSlots()
     await nextFrame()
+    const rest = heldTop(root)
     const { moveTo } = await grab(root)
     for (let offset = 2; offset <= 80; offset += 4) await moveTo(offset)
     const selected = window.getSelection()?.toString() ?? ''
-    const held = heldTransform(root)
+    const held = heldTop(root)
     await commands.pointer('up')
 
-    expect(held).toContain('translate3d')
+    expect(held).toBeGreaterThan(rest)
     expect(selected).toBe('')
   })
 
