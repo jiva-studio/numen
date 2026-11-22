@@ -1,7 +1,6 @@
 import { ref } from 'vue'
-import type { VaultNotes, Caught } from '@numen/plugin-sdk'
-
-const getErrorMessage = (error: Caught): string =>
+import type { VaultNotes } from '@numen/plugin-sdk'
+const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
 /** Each save starts from the last version read or successfully written by this editor. */
@@ -22,7 +21,7 @@ export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'writ
         observed = { body: text, at }
         errorMessage.value = ''
       }
-    } catch (error: Caught) {
+    } catch (error: unknown) {
       errorMessage.value = getErrorMessage(error)
     } finally {
       isSaving = false
@@ -39,7 +38,7 @@ export function useNoteFile(path: string, notes: Pick<VaultNotes, 'read' | 'writ
       }
       observed = { body: result.body, at: result.at }
     },
-    (error: Caught) => {
+    (error: unknown) => {
       isLoading.value = false
       errorMessage.value = getErrorMessage(error)
     },

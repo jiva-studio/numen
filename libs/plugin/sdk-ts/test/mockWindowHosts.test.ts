@@ -1,6 +1,7 @@
 /** The stand-ins of the slots, the vaults, the window and the background work a plugin test drives. */
 import { describe, expect, it, vi } from 'vitest'
-import { createMockHostServices, SLOT, type BackgroundTask, type SlotItem } from '../src'
+import { SLOT, type BackgroundTask, type SlotItem } from '../src'
+import { createMockHostServices } from '../src/testing'
 
 const BUTTON: SlotItem = {
   kind: 'command',

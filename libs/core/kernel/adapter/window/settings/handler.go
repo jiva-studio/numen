@@ -17,11 +17,9 @@ import (
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
-// Handler answers every setting read and written. Each
-// part holds the use cases of one kind of call, so no value holds more than five.
+// Handler answers every setting read and written.
 type Handler struct {
 	Values
-	PluginFolders
 }
 
 // Values answers the reads and writes of the settings and the choice of a path. A value with no
@@ -40,22 +38,9 @@ func NewValues(
 	return Values{get: get, write: write, watch: watch, choosePath: choosePath}
 }
 
-// NewHandler is the handler of SettingsService made of its parts.
-func NewHandler(values Values, folders PluginFolders) *Handler {
-	return &Handler{Values: values, PluginFolders: folders}
-}
-
-// PluginFolders answers the calls about the folders plugins keep in the shown vault and the start of
-// a plugin that failed to start.
-type PluginFolders struct {
-	retry  *setting.RetryPlugin
-	data   PluginData
-	vaults VaultProvider
-}
-
-// NewPluginFolders is the part of SettingsService that answers about the folders of plugins in the shown vault.
-func NewPluginFolders(retry *setting.RetryPlugin, data PluginData, vaults VaultProvider) PluginFolders {
-	return PluginFolders{retry: retry, data: data, vaults: vaults}
+// NewHandler is the handler of SettingsService over its values.
+func NewHandler(values Values) *Handler {
+	return &Handler{Values: values}
 }
 
 // errNoSettings is what a build that serves no settings answers.
@@ -170,29 +155,6 @@ func newWirePluginSettings(target []plugin.Setting) []*v1.PluginSetting {
 		})
 	}
 	return settings
-}
-
-// RetryPlugin starts a plugin whose last start failed once more. A plugin that fails
-// again is answered with its reason, and one the host does not know is not found.
-func (h *PluginFolders) RetryPlugin(
-	ctx context.Context, r *connect.Request[v1.RetryPluginRequest],
-) (*connect.Response[v1.RetryPluginResponse], error) {
-	if h.retry == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
-	}
-	failure, err := h.retry.Execute(ctx, r.Msg.GetPluginId())
-	if err != nil {
-		var unavailable *plugin.UnavailableError
-		if errors.As(err, &unavailable) && unavailable.Reason == plugin.NotInstalled {
-			return nil, connect.NewError(connect.CodeNotFound, err)
-		}
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	reply := &v1.RetryPluginResponse{}
-	if failure != nil {
-		reply.Failure = failure.Reason
-	}
-	return connect.NewResponse(reply), nil
 }
 
 func newWireOptions(target manifest.SettingOptions) []*v1.PluginSettingOption {

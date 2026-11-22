@@ -13,7 +13,6 @@ import type {
 import type { TabLinksApi } from '../api/tab-links'
 import type { TabLinksState } from '../types'
 import type { TabReports } from './tabReports'
-import type { Caught } from '@/shared/api/errors'
 import { wait } from '@/shared/model/wait'
 
 /** What the stream of the tab links applies to the tabs of this window. */
@@ -31,7 +30,7 @@ export interface TabLinkSessionDeps {
   readonly setHighlighted: (isOn: boolean) => void
   readonly reports: Pick<TabReports, 'reportTabs' | 'waitForReports' | 'stop' | 'resume'>
   readonly wait?: (ms: number) => Promise<void>
-  readonly onError: (error: Caught) => void
+  readonly onError: (error: unknown) => void
 }
 
 export function createTabLinkSession(deps: TabLinkSessionDeps) {

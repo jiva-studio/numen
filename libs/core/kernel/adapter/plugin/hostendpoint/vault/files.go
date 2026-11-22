@@ -135,28 +135,6 @@ func (e *filesCalls) GetHostVault(
 	return connect.NewResponse(&v1.GetHostVaultResponse{Path: v.Path, Id: string(v.ID), Name: v.Name}), nil
 }
 
-func (e *filesCalls) ListHostVaults(
-	_ context.Context, req *connect.Request[v1.ListHostVaultsRequest],
-) (*connect.Response[v1.ListHostVaultsResponse], error) {
-	vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
-	if err != nil {
-		return nil, err
-	}
-	if vault == nil {
-		return connect.NewResponse(&v1.ListHostVaultsResponse{}), nil
-	}
-	recognized, err := vault.Switch.GetVaults()
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	list := e.source.GetPluginVaultList()
-	out := make([]*v1.HostVaultInfo, 0, len(recognized))
-	for _, one := range recognized {
-		out = append(out, &v1.HostVaultInfo{Id: string(one.ID), Name: one.Name, Path: one.Path, IsMissing: list != nil && list.IsMissing(one)})
-	}
-	return connect.NewResponse(&v1.ListHostVaultsResponse{Vaults: out}), nil
-}
-
 func (e *filesCalls) EnsureVaultIndexed(
 	ctx context.Context, req *connect.Request[v1.EnsureVaultIndexedRequest],
 ) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {

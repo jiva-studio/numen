@@ -2,14 +2,13 @@
  * Tab state for document tabs.
  */
 import { shallowRef } from 'vue'
-import type { Unvalidated } from '@numen/plugin-sdk'
 import type { DocumentReaderState } from './useDocumentReader'
 import type { PageHandle } from '../types'
 
 export type { PageHandle }
 
 /** Whether a ref callback received the page view, which exposes the methods of a PageHandle. */
-export const isPageHandle = (value: Unvalidated): value is PageHandle =>
+export const isPageHandle = (value: unknown): value is PageHandle =>
   typeof value === 'object' &&
   value !== null &&
   'measure' in value &&

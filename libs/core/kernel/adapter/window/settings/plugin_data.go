@@ -26,13 +26,27 @@ type VaultProvider interface {
 
 var errNoVault = errors.New("the window shows no vault")
 
+// errNoPluginData is what a build that keeps no plugin folders answers.
+var errNoPluginData = errors.New("this build keeps no plugin folders")
+
+// PluginFolders answers the calls about the folders plugins keep in the shown vault.
+type PluginFolders struct {
+	data   PluginData
+	vaults VaultProvider
+}
+
+// NewPluginFolders is the handler of PluginDataService over the folders of plugins in the shown vault.
+func NewPluginFolders(data PluginData, vaults VaultProvider) *PluginFolders {
+	return &PluginFolders{data: data, vaults: vaults}
+}
+
 // GetPluginData is the size of a plugin's folder in the shown vault. A window
 // showing no vault answers an empty folder.
 func (h *PluginFolders) GetPluginData(
 	ctx context.Context, r *connect.Request[v1.GetPluginDataRequest],
 ) (*connect.Response[v1.GetPluginDataResponse], error) {
 	if h.data == nil || h.vaults == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoPluginData)
 	}
 	v := h.vaults.GetCurrentVault()
 	if v.ID == "" {
@@ -53,7 +67,7 @@ func (h *PluginFolders) DeletePluginData(
 	ctx context.Context, r *connect.Request[v1.DeletePluginDataRequest],
 ) (*connect.Response[v1.DeletePluginDataResponse], error) {
 	if h.data == nil || h.vaults == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoPluginData)
 	}
 	v := h.vaults.GetCurrentVault()
 	if v.ID == "" {

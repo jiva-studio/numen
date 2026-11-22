@@ -17,7 +17,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
@@ -231,17 +230,17 @@ func (m *memoryVault) GetProblems(context.Context, []domain.Check) ([]domain.Che
 	return nil, nil, errors.ErrUnsupported
 }
 
-func newVaultClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.HostVaultServiceClient {
+func newVaultClient(t *testing.T, fakeCallers *callers, token string) HostVaultClient {
 	t.Helper()
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
-	mux.Handle(vaultapi.NewHandler(endpoint, endpoint.callers.Lent))
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
+	return NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
 }
 
-func newVaultFixture(t *testing.T) (numenv1connect.HostVaultServiceClient, *memoryVault) {
+func newVaultFixture(t *testing.T) (HostVaultClient, *memoryVault) {
 	t.Helper()
 	vault := newMemoryVault(map[string]string{"samples/A.md": "body", "Animal.md": "form"})
 	hosted := newCallers()

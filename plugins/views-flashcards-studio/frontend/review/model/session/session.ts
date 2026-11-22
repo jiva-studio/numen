@@ -14,8 +14,6 @@ import { RATING_BY_GRADE } from '../../lib/card/grades'
 import type { Rating, UndoReviewResponse } from '../../../lib/wire/review'
 import type { ReviewCard, Intervals } from '../../lib/card/cards'
 import type { Grade } from '../../lib/card/grades'
-import type { Caught } from '@numen/plugin-sdk'
-
 /** What a session requests of the application, and nothing more. */
 export interface SessionClient {
   /**
@@ -61,7 +59,7 @@ export interface Report {
 /** What a session is built over: the application client, and the error reporter. */
 export interface SessionDeps {
   cards: SessionClient
-  reportError(error: Caught): void
+  reportError(error: unknown): void
   /** The current time in milliseconds. The time a card is on screen is measured with it. */
   now?(): number
 }
@@ -93,7 +91,7 @@ function useSessionCards() {
 
 async function openSession(deps: {
   cards: SessionClient
-  reportError: (error: Caught) => void
+  reportError: (error: unknown) => void
   id: string
   deck: string
   preset?: string
@@ -117,7 +115,7 @@ async function openSession(deps: {
 
 async function submitAnswer(deps: {
   cards: SessionClient
-  reportError: (error: Caught) => void
+  reportError: (error: unknown) => void
   vault: string
   run: string
   card: ReviewCard
@@ -142,7 +140,7 @@ async function submitAnswer(deps: {
 
 async function revertAnswer(deps: {
   cards: SessionClient
-  reportError: (error: Caught) => void
+  reportError: (error: unknown) => void
   vault: string
   run: string
   answer: string
@@ -158,7 +156,7 @@ async function revertAnswer(deps: {
 
 function createAnswerActions(deps: {
   cardsClient: SessionClient
-  reportError: (error: Caught) => void
+  reportError: (error: unknown) => void
   now: () => number
   vault: Ref<string>
   run: Ref<string>
@@ -218,7 +216,7 @@ function createAnswerActions(deps: {
 
 function createSessionOpener(deps: {
   cardsClient: SessionClient
-  reportError: (error: Caught) => void
+  reportError: (error: unknown) => void
   now: () => number
   cards: ReturnType<typeof useSessionCards>
   vault: Ref<string>

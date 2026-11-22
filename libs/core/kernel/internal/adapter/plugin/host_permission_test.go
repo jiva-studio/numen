@@ -32,7 +32,7 @@ func createManifestedHost(t *testing.T, manifests map[string]string) *pluginhost
 	return newRunningTestHost(t, plugins)
 }
 
-func createRawVaultClient(t *testing.T, host *pluginhost.Host, token string) numenv1connect.HostVaultServiceClient {
+func createRawVaultClient(t *testing.T, host *pluginhost.Host, token string) hostVaultClient {
 	t.Helper()
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, lentCallers(host))
 	if err != nil {
@@ -43,7 +43,7 @@ func createRawVaultClient(t *testing.T, host *pluginhost.Host, token string) num
 			t.Error(err)
 		}
 	})
-	return numenv1connect.NewHostVaultServiceClient(
+	return newHostVaultClient(
 		&http.Client{Timeout: 5 * time.Second},
 		"http://127.0.0.1:"+strconv.Itoa(endpoint.GetPort()),
 		connect.WithInterceptors(transport.AuthInterceptor(token)),

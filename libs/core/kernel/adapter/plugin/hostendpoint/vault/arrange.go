@@ -86,27 +86,27 @@ func (e *arrangeCalls) GetVaultProblems(
 }
 
 func (e *arrangeCalls) RenameNote(
-	ctx context.Context, req *connect.Request[v1.HostVaultServiceRenameNoteRequest],
-) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error) {
+	ctx context.Context, req *connect.Request[v1.HostNoteServiceRenameNoteRequest],
+) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error) {
 	vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{Error: noVault}), nil
 	}
 	newPath, isFilenamed, move, err := vault.Arranger.RenameNote(ctx, req.Msg.GetPath(), req.Msg.GetTitle())
 	// A note whose file was moved to the new name is renamed, even if a later step failed.
 	if err != nil && move == nil {
 		noteCode, code, callErr := splitNoteError(ctx, err)
 		if callErr != nil || code != 0 {
-			return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: code}), callErr
+			return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{Error: code}), callErr
 		}
-		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{
+		return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{
 			Path: req.Msg.GetPath(), Error: noteCode, Detail: err.Error(),
 		}), nil
 	}
-	out := &v1.HostVaultServiceRenameNoteResponse{
+	out := &v1.HostNoteServiceRenameNoteResponse{
 		Path: newPath, Title: strings.TrimSpace(req.Msg.GetTitle()), NameSource: v1.NameSource_NAME_SOURCE_FRONTMATTER,
 	}
 	if isFilenamed {
@@ -119,8 +119,8 @@ func (e *arrangeCalls) RenameNote(
 }
 
 func (e *arrangeCalls) MoveNotes(
-	ctx context.Context, req *connect.Request[v1.HostVaultServiceMoveNotesRequest],
-) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error) {
+	ctx context.Context, req *connect.Request[v1.HostNoteServiceMoveNotesRequest],
+) (*connect.Response[v1.HostNoteServiceMoveNotesResponse], error) {
 	if err := checkBatch(req.Msg.GetPaths()); err != nil {
 		return nil, err
 	}
@@ -129,13 +129,13 @@ func (e *arrangeCalls) MoveNotes(
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.HostNoteServiceMoveNotesResponse{Error: noVault}), nil
 	}
-	out := &v1.HostVaultServiceMoveNotesResponse{Moves: make([]*v1.HostNoteMove, 0, len(req.Msg.GetPaths()))}
+	out := &v1.HostNoteServiceMoveNotesResponse{Moves: make([]*v1.HostNoteMove, 0, len(req.Msg.GetPaths()))}
 	for _, from := range req.Msg.GetPaths() {
 		entry, code, err := moveNote(ctx, vault.Arranger, from, req.Msg.GetFolder())
 		if err != nil || code != 0 {
-			return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Error: code}), err
+			return connect.NewResponse(&v1.HostNoteServiceMoveNotesResponse{Error: code}), err
 		}
 		out.Moves = append(out.Moves, entry)
 	}
@@ -165,8 +165,8 @@ func moveNote(ctx context.Context, vault Arranger, from, folder string) (*v1.Hos
 }
 
 func (e *arrangeCalls) RemoveNotes(
-	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveNotesRequest],
-) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error) {
+	ctx context.Context, req *connect.Request[v1.HostNoteServiceRemoveNotesRequest],
+) (*connect.Response[v1.HostNoteServiceRemoveNotesResponse], error) {
 	if err := checkBatch(req.Msg.GetPaths()); err != nil {
 		return nil, err
 	}
@@ -175,13 +175,13 @@ func (e *arrangeCalls) RemoveNotes(
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.HostNoteServiceRemoveNotesResponse{Error: noVault}), nil
 	}
-	out := &v1.HostVaultServiceRemoveNotesResponse{Removals: make([]*v1.HostNoteRemoval, 0, len(req.Msg.GetPaths()))}
+	out := &v1.HostNoteServiceRemoveNotesResponse{Removals: make([]*v1.HostNoteRemoval, 0, len(req.Msg.GetPaths()))}
 	for _, target := range req.Msg.GetPaths() {
 		entry, code, err := removeNote(ctx, vault.Arranger, target)
 		if err != nil || code != 0 {
-			return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Error: code}), err
+			return connect.NewResponse(&v1.HostNoteServiceRemoveNotesResponse{Error: code}), err
 		}
 		out.Removals = append(out.Removals, entry)
 	}

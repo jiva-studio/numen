@@ -12,3 +12,8 @@ import (
 func NewRoute(handler *Handler, options ...connect.HandlerOption) (string, http.Handler) {
 	return numenv1connect.NewSettingsServiceHandler(handler, options...)
 }
+
+// NewPluginDataRoute is the path PluginDataService is served at and the handler that serves it.
+func NewPluginDataRoute(handler *PluginFolders, options ...connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewPluginDataServiceHandler(handler, options...)
+}

@@ -6,7 +6,7 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { createAppearanceOutput, useAppearancePalette, type NoticeQueue } from '@numen/workbench'
 import type { PluginLister } from '@/entities/plugin'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { createWindowAppearance, type ThemeClient } from '../api/theme'
 import { WORDS } from '../words'
@@ -45,7 +45,7 @@ export function useAppearance(api: AppearanceApi, notices: NoticeQueue) {
     words: WORDS,
     getPluginName: (pluginId) => pluginNames.value.get(pluginId) ?? pluginId,
     writeChoice: (theme, mode) =>
-      themes.writeAppearance(theme, mode).catch((error: Caught) => formatError(error)),
+      themes.writeAppearance(theme, mode).catch((error: unknown) => formatError(error)),
     onOpen: async () => {
       await Promise.all([refreshPluginNames(), appearance.reload()])
     },
@@ -53,7 +53,7 @@ export function useAppearance(api: AppearanceApi, notices: NoticeQueue) {
   })
 
   onMounted(() => {
-    runInBackground(appearance.start(), (error: Caught) => showError(formatError(error)))
+    runInBackground(appearance.start(), (error: unknown) => showError(formatError(error)))
   })
   onUnmounted(() => appearance.close())
 

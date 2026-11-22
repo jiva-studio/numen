@@ -141,15 +141,21 @@ func TestEveryDrivingAdapterIsOnTheLintRule(t *testing.T) {
 }
 
 func TestLintCoverageRule_ReportsUncoveredAdapters(t *testing.T) {
-	got := getUncoveredPatterns(load.GetDriving(t), []string{"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "!**/adapter/cli/deps.go"})
+	got := getUncoveredPatterns(load.GetDriving(t), append(getCoveringPatterns(), "!**/adapter/cli/deps.go"))
 	if want := []string{"adapter/cli"}; !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
-	if got := getUncoveredPatterns(load.GetDriving(t), []string{"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "**/adapter/cli/**"}); len(got) != 0 {
+	if got := getUncoveredPatterns(load.GetDriving(t), append(getCoveringPatterns(), "**/adapter/cli/**")); len(got) != 0 {
 		t.Errorf("the rule refuses %v, want none", got)
 	}
 }
 
 func TestMain(m *testing.M) {
 	os.Exit(load.Main(m))
+}
+
+func getCoveringPatterns() []string {
+	return []string{
+		"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "**/internal/adapterlib/connectioncall/**",
+	}
 }

@@ -5,7 +5,6 @@
  */
 import { computed, shallowRef, watch, type Component, type ComputedRef, type ShallowRef } from 'vue'
 import type { MenuItem } from '@numen/ui'
-import type { Caught } from '../errors'
 import type { CommandItem } from '../commands'
 import {
   createSlotMenu,
@@ -29,7 +28,7 @@ export interface SlotMenuRequest<T> {
 export interface SlotMenuOptions<T> {
   readonly listItems: (command: string, target: T) => Promise<readonly CommandItem[]>
   readonly words: SlotMenuWords
-  readonly onError?: (error: Caught) => void
+  readonly onError?: (error: unknown) => void
   readonly events?: EventTarget
 }
 
@@ -96,13 +95,13 @@ function startHold<T>(
 function runRead<T>(
   read: () => SlotMenuRequest<T> | Promise<SlotMenuRequest<T>>,
   onRequest: (request: SlotMenuRequest<T>) => void,
-  onError: (error: Caught) => void,
+  onError: (error: unknown) => void,
 ): void {
   try {
     const request = read()
     if (request instanceof Promise) request.then(onRequest, onError)
     else onRequest(request)
-  } catch (error: Caught) {
+  } catch (error: unknown) {
     onError(error)
   }
 }
@@ -168,7 +167,7 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
       options
         .listItems(entry.command, request.target)
         .then((items) => setList(opening, entry.key, items))
-        .catch((error: Caught) => {
+        .catch((error: unknown) => {
           if (!opening.isCurrent) return
           options.onError?.(error)
           setList(opening, entry.key, [])
@@ -181,7 +180,7 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
     const opening: Opening<T> = { isCurrent: true, isHoldOver: false, lists: new Map() }
     current = opening
     stopOpening = startHold(opening, options.events ?? globalThis.document, show, close)
-    const fail = (error: Caught): void => {
+    const fail = (error: unknown): void => {
       if (!opening.isCurrent) return
       close()
       options.onError?.(error)

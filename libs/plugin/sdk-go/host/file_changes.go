@@ -57,7 +57,7 @@ type FileChangeLister interface {
 }
 
 func (c *Client) ListFileChanges(ctx context.Context, q FileChangeQuery) (FileChangePage, error) {
-	res, err := c.rpc.ListFileChanges(ctx, request(c, &v1.ListFileChangesRequest{
+	res, err := c.files.ListFileChanges(ctx, request(c, &v1.ListFileChangesRequest{
 		Since: newCursorMessage(q.Since), Events: q.Events, Limit: int32(min(q.Limit, 1<<30)),
 	}))
 	if connect.CodeOf(err) == connect.CodeInvalidArgument {

@@ -5,11 +5,13 @@ package catalog
 import (
 	"context"
 	"errors"
+	"os"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -21,14 +23,46 @@ type Catalog interface {
 	FindByTabKind(ctx context.Context, kind string) (catalog.Entry, error)
 }
 
-// Handler answers CatalogService over a catalog.
+// InstalledPlugins lists the installed plugins, enabled or not.
+type InstalledPlugins func() []manifest.Discovered
+
+// Handler answers CatalogService over a catalog and the installed plugins.
 type Handler struct {
-	plugins Catalog
+	plugins   Catalog
+	installed InstalledPlugins
 }
 
-// NewHandler returns the handler over the catalog.
-func NewHandler(plugins Catalog) *Handler {
-	return &Handler{plugins: plugins}
+// NewHandler returns the handler over the catalog. installed is nil where the installation has no plugin folders.
+func NewHandler(plugins Catalog, installed InstalledPlugins) *Handler {
+	return &Handler{plugins: plugins, installed: installed}
+}
+
+// readmeName is the file of a plugin's folder that describes the plugin.
+const readmeName = "README.md"
+
+// GetCatalogReadme returns the README.md of an installed plugin. A plugin with no folder, or whose folder holds
+// no README.md, has an empty text; no plugin is started.
+func (h *Handler) GetCatalogReadme(
+	ctx context.Context, r *connect.Request[v1.GetCatalogReadmeRequest],
+) (*connect.Response[v1.GetCatalogReadmeResponse], error) {
+	if h.installed == nil {
+		return connect.NewResponse(&v1.GetCatalogReadmeResponse{}), nil
+	}
+	dir, isInstalled := h.getPluginDir(r.Msg.GetId())
+	if !isInstalled {
+		return connect.NewResponse(&v1.GetCatalogReadmeResponse{}), nil
+	}
+	text, err := wire.ReadPluginFile(ctx, dir, readmeName)
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		return connect.NewResponse(&v1.GetCatalogReadmeResponse{}), nil
+	}
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&v1.GetCatalogReadmeResponse{Text: string(text)}), nil
 }
 
 // ListCatalog lists the entries after the merge. A source that failed is listed in source_errors and
@@ -151,4 +185,13 @@ func newWireErrorCode(err error) v1.CatalogErrorCode {
 		return v1.CatalogErrorCode_CATALOG_ERROR_CODE_NOT_FOUND
 	}
 	return v1.CatalogErrorCode_CATALOG_ERROR_CODE_UNSPECIFIED
+}
+
+func (h *Handler) getPluginDir(id string) (string, bool) {
+	for _, one := range h.installed() {
+		if one.Manifest.ID == id {
+			return one.Dir, true
+		}
+	}
+	return "", false
 }

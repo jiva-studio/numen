@@ -9,7 +9,7 @@ import {
   getProfile,
   type ChatFrame,
   type ChatRequest,
-} from '../llm'
+} from '../../llm'
 import { createLlmHost } from './index'
 
 const collect = async (frames: AsyncGenerator<ChatFrame, unknown>) => {

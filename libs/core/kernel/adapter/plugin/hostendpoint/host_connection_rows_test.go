@@ -41,7 +41,7 @@ func (r *meadowRows) ListRowOptions(
 	return []modelcall.Option{{Value: "wren-2", Title: "Wren 2", Group: "Birds"}}, nil
 }
 
-func newRowsClient(t *testing.T, rows RowLists, token string) numenv1connect.HostConnectionServiceClient {
+func newRowsClient(t *testing.T, rows RowLists, token string) numenv1connect.ConnectionCallServiceClient {
 	t.Helper()
 	fakeCallers := newCallers()
 	fakeCallers.rowLists = rows
@@ -53,7 +53,7 @@ func TestListRowsListsTheRowsOfThePluginTheTokenNames(t *testing.T) {
 	rows := &meadowRows{}
 	client := newRowsClient(t, rows, "token-b")
 
-	response, err := client.ListRows(t.Context(), connect.NewRequest(&v1.HostConnectionServiceListRowsRequest{Operation: "llm.chat"}))
+	response, err := client.ListRows(t.Context(), connect.NewRequest(&v1.ConnectionCallServiceListRowsRequest{Operation: "llm.chat"}))
 
 	if err != nil {
 		t.Fatal(err)
@@ -72,7 +72,7 @@ func TestListRowOptionsListsTheValuesOfARowFieldForThePluginTheTokenNames(t *tes
 	rows := &meadowRows{}
 	client := newRowsClient(t, rows, "token-b")
 
-	response, err := client.ListRowOptions(t.Context(), connect.NewRequest(&v1.HostConnectionServiceListRowOptionsRequest{
+	response, err := client.ListRowOptions(t.Context(), connect.NewRequest(&v1.ConnectionCallServiceListRowOptionsRequest{
 		Operation: "llm.chat", ConnectionId: "c-meadow", Field: "model",
 	}))
 
@@ -88,7 +88,7 @@ func TestListRowOptionsListsTheValuesOfARowFieldForThePluginTheTokenNames(t *tes
 func TestListRowOptionsOfAConnectionThatIsNotAmongTheRowsIsNotFound(t *testing.T) {
 	client := newRowsClient(t, &meadowRows{}, "token-b")
 
-	_, err := client.ListRowOptions(t.Context(), connect.NewRequest(&v1.HostConnectionServiceListRowOptionsRequest{
+	_, err := client.ListRowOptions(t.Context(), connect.NewRequest(&v1.ConnectionCallServiceListRowOptionsRequest{
 		Operation: "llm.chat", ConnectionId: "c-elsewhere", Field: "model",
 	}))
 
@@ -101,7 +101,7 @@ func TestListRowsWithoutAKnownTokenIsUnauthenticated(t *testing.T) {
 	rows := &meadowRows{}
 	client := newRowsClient(t, rows, "token-unknown")
 
-	_, err := client.ListRows(t.Context(), connect.NewRequest(&v1.HostConnectionServiceListRowsRequest{Operation: "llm.chat"}))
+	_, err := client.ListRows(t.Context(), connect.NewRequest(&v1.ConnectionCallServiceListRowsRequest{Operation: "llm.chat"}))
 
 	if connect.CodeOf(err) != connect.CodeUnauthenticated || len(rows.asked) != 0 {
 		t.Errorf("code = %v, asked = %v", connect.CodeOf(err), rows.asked)
@@ -111,7 +111,7 @@ func TestListRowsWithoutAKnownTokenIsUnauthenticated(t *testing.T) {
 func TestAHostWithNoRowsListsNone(t *testing.T) {
 	client := newRowsClient(t, nil, "token-b")
 
-	response, err := client.ListRows(t.Context(), connect.NewRequest(&v1.HostConnectionServiceListRowsRequest{Operation: "llm.chat"}))
+	response, err := client.ListRows(t.Context(), connect.NewRequest(&v1.ConnectionCallServiceListRowsRequest{Operation: "llm.chat"}))
 
 	if err != nil || len(response.Msg.GetRows()) != 0 {
 		t.Errorf("rows = %v, %v, want none", response, err)
@@ -122,7 +122,7 @@ func TestACallCarriesThePreferredRowOfTheRequest(t *testing.T) {
 	calls := &scriptedCalls{done: "finish"}
 	client, _ := newConnectionClient(t, calls, "token-b")
 
-	_, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{
+	_, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{
 		Operation: "llm.chat", Preferred: &v1.PreferredRow{ConnectionId: "c-meadow", Options: map[string]string{"model": "wren-2"}},
 	})
 
@@ -136,7 +136,7 @@ func TestACallCarriesAnExclusiveRow(t *testing.T) {
 	calls := &scriptedCalls{done: "finish"}
 	client, _ := newConnectionClient(t, calls, "token-b")
 
-	_, err := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{
+	_, err := call(t.Context(), client, &v1.ConnectionCallServiceCallRequest{
 		Operation: "llm.chat", Preferred: &v1.PreferredRow{ConnectionId: "c-meadow", IsExclusive: true},
 	})
 

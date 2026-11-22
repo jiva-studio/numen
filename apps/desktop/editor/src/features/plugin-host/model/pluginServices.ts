@@ -19,7 +19,7 @@ import type {
 import type { FileOpeners } from '@/entities/tab'
 import type { NoteApi, NoteCreator } from '@/entities/note'
 import type { FileApi } from '@/entities/file'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { Task } from '@/entities/window'
 import type { PluginNotes } from './pluginNotes'
@@ -58,12 +58,12 @@ export function createWorkspaceFiles(deps: WorkspaceFilesDeps): WorkspaceFiles {
           ...(options?.line === undefined ? {} : { line: options.line }),
           ...(options?.selector ? { selector: options.selector } : {}),
         })
-        .catch((error: Caught) => writeMessage(formatError(error), 'error'))
+        .catch((error: unknown) => writeMessage(formatError(error), 'error'))
     },
     openAt: (path, spans) => {
       tabOpeners
         .openFileAt(path, spans)
-        .catch((error: Caught) => writeMessage(formatError(error), 'error'))
+        .catch((error: unknown) => writeMessage(formatError(error), 'error'))
     },
     syncPath: (tabId, path, title) => deps.tabSync?.syncPathFromTab(tabId, path, title) ?? false,
   }

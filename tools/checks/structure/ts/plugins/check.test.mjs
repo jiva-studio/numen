@@ -23,6 +23,7 @@ const EXPORTS = {
   '@numen/plugin-sdk': {
     '.': './src/index.ts',
     './testing': './src/testing/index.ts',
+    './contracts/testing': './src/contracts/testing/index.ts',
     './contracts': './src/contracts/index.ts',
     './vite': './src/vite.ts',
     './internal': './src/internal.ts',
@@ -35,12 +36,13 @@ const file = (name, ...values) => ({
   literals: values.map((value, index) => ({ line: index + 1, value })),
 })
 
-test('the main entry, the test entry and a stylesheet are clean in a plugin source file', () => {
+test('the main entry, the test entries and a stylesheet are clean in a plugin source file', () => {
   const files = [
     file(
       'plugins/a/frontend/index.ts',
       '@numen/plugin-sdk',
       '@numen/plugin-sdk/testing',
+      '@numen/plugin-sdk/contracts/testing',
       '@numen/ui',
       '@numen/ui/styles.css',
     ),

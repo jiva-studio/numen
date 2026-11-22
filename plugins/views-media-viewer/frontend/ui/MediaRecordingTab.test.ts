@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import MediaRecordingTab from './MediaRecordingTab.vue'
 import { createRecorderTab } from '../api/saveRecording'
-import { createMockHostServices } from '@numen/plugin-sdk'
+import { createMockHostServices } from '@numen/plugin-sdk/testing'
 
 afterEach(() => {
   vi.unstubAllGlobals()

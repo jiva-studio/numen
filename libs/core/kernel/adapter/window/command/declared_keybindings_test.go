@@ -35,10 +35,10 @@ func (keyBindingPlugins) GetParts(pluginID string) plugin.Parts {
 	return plugin.Parts{HasFrontend: true}
 }
 
-func TestListCommands_ListsTheKeybindingsOfEnabledPlugins(t *testing.T) {
+func TestListContributions_ListsTheKeybindingsOfEnabledPlugins(t *testing.T) {
 	handler := newHandler(newUseCases(keyBindingPlugins{}, keyBindingPlugins{}, nil, nil, nil))
 
-	res, err := handler.ListCommands(t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
+	res, err := handler.ListContributions(t.Context(), connect.NewRequest(&v1.ListContributionsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

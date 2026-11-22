@@ -16,7 +16,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
@@ -39,7 +38,7 @@ func (f failingFileVault) CreateFile(context.Context, string, []byte) error {
 	return f.err
 }
 
-func newFailingFileClient(t *testing.T, err error) numenv1connect.HostVaultServiceClient {
+func newFailingFileClient(t *testing.T, err error) HostVaultClient {
 	t.Helper()
 	hosted := newCallers()
 	hosted.vault = vaultOf(failingFileVault{memoryVault: newMemoryVault(map[string]string{"Ganges.md": "# Ganges\n"}), err: err})
@@ -123,12 +122,12 @@ func TestMoveNotesReturnsTooLargeForTheNoteThatIsTooLarge(t *testing.T) {
 	hostCallers.vault = vaultOf(tooLargeMoveVault{newFakeNoteVault()})
 	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
-	mux.Handle(vaultapi.NewHandler(endpoint, endpoint.callers.Lent))
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 
-	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
+	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostNoteServiceMoveNotesRequest{
 		Paths: []string{tooLargePath, "Rivers/Rhine.md"}, Folder: "Archive",
 	}))
 	if err != nil {

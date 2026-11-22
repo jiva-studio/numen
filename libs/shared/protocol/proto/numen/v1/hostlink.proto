@@ -1,0 +1,184 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/hostfile.proto";
+import "numen/v1/hostvault.proto";
+import "numen/v1/note.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// HostLinkService is the links between the notes of the vault, as a plugin
+// reads and writes them: the links a note writes, the links that reach it, and
+// the links of its frontmatter.
+//
+// The endpoint checks the permission of each call: a call that reads needs
+// vault:read and one that changes anything needs vault:write.
+//
+// Numen-Vault works the vault of that identity instead of the vault the host
+// shows.
+//
+// Every path is relative to the vault root and written with forward slashes.
+service HostLinkService {
+  // GetLinks lists the links written in a note, with what each reaches now.
+  rpc GetLinks(GetLinksRequest) returns (GetLinksResponse);
+
+  // GetBacklinks lists the links that reach a note.
+  rpc GetBacklinks(GetBacklinksRequest) returns (GetBacklinksResponse);
+
+  // ResolveLinks says what each link written in a note reaches now.
+  rpc ResolveLinks(ResolveLinksRequest) returns (ResolveLinksResponse);
+
+  // AddLinks writes links into the frontmatter links of notes. The links of one
+  // note are one write against one file stat, and succeed or fail together. At
+  // most 50 links. It needs vault:write.
+  rpc AddLinks(HostLinkServiceAddLinksRequest) returns (HostLinkServiceAddLinksResponse);
+
+  // UpdateLinks changes the role, type, label and note of the links a note has
+  // to a target, keeping the target. An empty field is kept. It needs
+  // vault:write.
+  rpc UpdateLinks(HostLinkServiceUpdateLinksRequest) returns (HostLinkServiceUpdateLinksResponse);
+
+  // RemoveLinks removes the frontmatter links a note has to a target, of every
+  // type, or only those of one role. The note at the other end is unchanged. It
+  // needs vault:write.
+  rpc RemoveLinks(HostLinkServiceRemoveLinksRequest) returns (HostLinkServiceRemoveLinksResponse);
+}
+
+// HostLink is a link written in a note, and what it reaches now.
+message HostLink {
+  // The note the link is written in, and the note it reaches. The second is
+  // empty when nothing is there.
+  string from = 1;
+  string to = 2;
+  // The vault the target is in, which is the vault the link is written in for
+  // an ordinary link.
+  string to_vault = 3;
+  // What the author calls the kind of link.
+  string link_type = 4;
+  // How the target is written: its scheme and its value.
+  string target_scheme = 5;
+  string target_value = 6;
+  string label = 7;
+  // Set when several notes answer to the name.
+  bool is_ambiguous = 8;
+  // What kind of relationship the link is, as written in the note it is written
+  // in.
+  Role role = 9;
+  // Why the link exists, in the author's words.
+  string note = 10;
+  // What the link draws at the end that points at its target.
+  Marker marker = 11;
+  // For a backlink, the role of the note the link is written in, relative to the
+  // note asked about. ROLE_UNSPECIFIED where the role has no counterpart.
+  Role source_role = 12;
+}
+
+message GetLinksRequest {
+  string path = 1;
+}
+
+message GetLinksResponse {
+  HostVaultErrorCode error = 1;
+  repeated HostLink links = 2;
+}
+
+message GetBacklinksRequest {
+  string path = 1;
+}
+
+message GetBacklinksResponse {
+  HostVaultErrorCode error = 1;
+  repeated HostLink links = 2;
+}
+
+message ResolveLinksRequest {
+  // The note the links are written in.
+  string path = 1;
+  // How each link is written between its brackets.
+  repeated string addresses = 2;
+}
+
+message ResolveLinksResponse {
+  HostVaultErrorCode error = 1;
+  // What each link reaches, by how it was written.
+  map<string, HostLink> links = 2;
+}
+
+// HostLinkAddition is one link to write into a note.
+message HostLinkAddition {
+  // The note the link is written in.
+  string from = 1;
+  // The note as the caller read it.
+  HostFileStat baseline = 2;
+  // The target as written, e.g. "Rivers" or "note://01H...".
+  string to = 3;
+  Role role = 4;
+  string type = 5;
+  string label = 6;
+  // Why the link exists.
+  string note = 7;
+}
+
+message HostLinkServiceAddLinksRequest {
+  // At most 50 links.
+  repeated HostLinkAddition links = 1;
+}
+
+// HostLinkAdded is the outcome of writing one link.
+message HostLinkAdded {
+  // The note after the write; unset when nothing was written.
+  HostFileStat stat = 1;
+  // Why the link was not written: CONFLICT for a stale baseline, NOT_FOUND,
+  // NOT_A_NOTE, UNREADABLE, INTERNAL and the other per-note codes.
+  HostVaultErrorCode error = 2;
+  // The core's error text where the link was not written, empty on success.
+  string detail = 3;
+}
+
+message HostLinkServiceAddLinksResponse {
+  HostVaultErrorCode error = 1;
+  // One per link, in the order of the request.
+  repeated HostLinkAdded results = 2;
+}
+
+message HostLinkServiceUpdateLinksRequest {
+  // The note the links are written in.
+  string from = 1;
+  // The target as written.
+  string to = 2;
+  // The note as the caller read it.
+  HostFileStat baseline = 3;
+  Role role = 4;
+  string type = 5;
+  string label = 6;
+  string note = 7;
+}
+
+message HostLinkServiceUpdateLinksResponse {
+  HostVaultErrorCode error = 1;
+  // The note after the write.
+  HostFileStat stat = 2;
+  // The core's error text where nothing was written, empty on success.
+  string detail = 3;
+}
+
+message HostLinkServiceRemoveLinksRequest {
+  // The note the links are written in.
+  string from = 1;
+  // The target as written.
+  string to = 2;
+  // The note as the caller read it.
+  HostFileStat baseline = 3;
+  // Only the links of this role. ROLE_UNSPECIFIED removes the links of every
+  // role.
+  Role role = 4;
+}
+
+message HostLinkServiceRemoveLinksResponse {
+  HostVaultErrorCode error = 1;
+  // The note after the write.
+  HostFileStat stat = 2;
+  // The core's error text where nothing was written, empty on success.
+  string detail = 3;
+}

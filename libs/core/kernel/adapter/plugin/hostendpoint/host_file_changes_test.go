@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/filechange"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
@@ -76,7 +75,7 @@ func (s readingStored) ListFrontmatter(ctx context.Context, id domain.VaultID, q
 	return s.storedFrontmatter.ListFrontmatter(ctx, id, q)
 }
 
-func newFeedClient(t *testing.T, token string, feed *memoryFeed, stored storedFrontmatter) numenv1connect.HostVaultServiceClient {
+func newFeedClient(t *testing.T, token string, feed *memoryFeed, stored storedFrontmatter) HostVaultClient {
 	t.Helper()
 	hosted := newCallers()
 	during := func() {
@@ -91,7 +90,7 @@ func newFeedClient(t *testing.T, token string, feed *memoryFeed, stored storedFr
 	return newVaultClient(t, hosted, token)
 }
 
-func listFileChanges(t *testing.T, client numenv1connect.HostVaultServiceClient, request *v1.ListFileChangesRequest) *v1.ListFileChangesResponse {
+func listFileChanges(t *testing.T, client HostVaultClient, request *v1.ListFileChangesRequest) *v1.ListFileChangesResponse {
 	t.Helper()
 	res, err := client.ListFileChanges(t.Context(), connect.NewRequest(request))
 	if err != nil {

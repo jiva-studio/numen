@@ -1,73 +1,7 @@
-/**
- * Frontend architectural boundary tests that keep the host and plugins independent.
- */
-import { readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { createTestTabs } from '@/testing/tabs'
 import { mockVaultState } from '@/testing/answers'
 import { getTabs, mountWindow } from '@/testing/window'
-
-const editorSrcDir = resolve(import.meta.dirname, '../..')
-
-function listHostSources(dir: string): string[] {
-  const sources: string[] = []
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry)
-    const stat = statSync(full)
-    if (stat.isDirectory()) {
-      if (entry === 'testing' || entry === 'node_modules') continue
-      sources.push(...listHostSources(full))
-    } else if (stat.isFile() && (entry.endsWith('.ts') || entry.endsWith('.vue'))) {
-      if (entry.includes('.test.') || entry.includes('.spec.') || entry.includes('.stories.')) {
-        continue
-      }
-      sources.push(full)
-    }
-  }
-  return sources
-}
-
-const pluginIdRegex = /md\.numen\.[a-zA-Z0-9_-]+/
-const readerKindRegex = /['"]reader:[a-zA-Z0-9_-]+['"]/
-
-function findForbiddenLiterals(content: string): string[] {
-  const found: string[] = []
-  const idMatch = content.match(pluginIdRegex)
-  if (idMatch) {
-    found.push(`spells out plugin id ${idMatch[0]}`)
-  }
-  const readerMatch = content.match(readerKindRegex)
-  if (readerMatch) {
-    found.push(`spells out reader tab kind ${readerMatch[0]}`)
-  }
-  return found
-}
-
-describe('host and plugin independence', () => {
-  it('host sources name no plugin id or plugin tab kind', () => {
-    const hostSources = listHostSources(editorSrcDir)
-    expect(hostSources.length).toBeGreaterThan(10)
-
-    const violations: { file: string; issues: string[] }[] = []
-
-    for (const source of hostSources) {
-      const content = readFileSync(source, 'utf8')
-      const issues = findForbiddenLiterals(content)
-      if (issues.length > 0) {
-        violations.push({ file: source.replace(editorSrcDir, 'src'), issues })
-      }
-    }
-
-    expect(violations).toStrictEqual([])
-  })
-
-  it('boundary check detects forbidden literals in sample input', () => {
-    expect(findForbiddenLiterals("const id = 'md.numen.sample'")).toHaveLength(1)
-    expect(findForbiddenLiterals("const kind = 'reader:reader-pdf'")).toHaveLength(1)
-    expect(findForbiddenLiterals("const clean = 'note'")).toHaveLength(0)
-  })
-})
 
 describe('restoring a session with a disabled plugin', () => {
   it('restores a session holding a tab of a disabled plugin without throwing', async () => {

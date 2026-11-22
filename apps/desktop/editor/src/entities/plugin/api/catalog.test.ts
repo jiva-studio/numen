@@ -179,12 +179,12 @@ describe('createHealthApi and createProcessHost', () => {
   it('watches running plugin processes until disposed', async () => {
     const host = createProcessHost(
       createAnsweredClients({
-        pluginService: {
+        pluginProcessService: {
           watchPluginProcesses: async function* () {
             yield { processes: [], timeUnixMs: 42n }
           },
         },
-      }).pluginService,
+      }).pluginProcessService,
     )
     const seen: number[] = []
     const subscription = host.watch((_processes, time) => {

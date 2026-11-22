@@ -1,7 +1,6 @@
 /** How many names a note shows and whether an arrow leads each, as the plugin's own settings hold them. */
 import { shallowRef, type Ref } from 'vue'
-import type { JsonValue, PluginContext, Unvalidated } from '@numen/plugin-sdk'
-
+import type { JsonValue, PluginContext } from '@numen/plugin-sdk'
 const SHOW_RELATION_ARROWS = true
 const NAMES_PER_NOTE = 6
 const NAMES_PER_NOTE_MIN = 1
@@ -13,12 +12,12 @@ export interface NamesSettings {
   readonly showRelationArrows: Readonly<Ref<boolean>>
 }
 
-const parseNamesPerNote = (value: Unvalidated): number =>
+const parseNamesPerNote = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value)
     ? Math.min(Math.max(Math.round(value), NAMES_PER_NOTE_MIN), NAMES_PER_NOTE_MAX)
     : NAMES_PER_NOTE
 
-const parseShowRelationArrows = (value: Unvalidated): boolean =>
+const parseShowRelationArrows = (value: unknown): boolean =>
   typeof value === 'boolean' ? value : SHOW_RELATION_ARROWS
 
 function follow<T>(

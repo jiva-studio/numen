@@ -8,8 +8,6 @@
  * sent together after it, the newest value of each key.
  */
 import { shallowRef } from 'vue'
-import type { Caught } from '@/shared/api/errors'
-
 /** What a write answers: the version of the state it left. */
 export interface WriteAnswer {
   readonly version: bigint
@@ -22,7 +20,7 @@ interface Requested<V> {
 
 interface Waiter {
   readonly resolve: () => void
-  readonly reject: (error: Caught) => void
+  readonly reject: (error: unknown) => void
 }
 
 export function createRemoteValues<V, A extends WriteAnswer>(

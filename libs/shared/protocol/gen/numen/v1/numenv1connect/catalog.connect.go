@@ -42,6 +42,9 @@ const (
 	// CatalogServiceFindCatalogEntryByTabKindProcedure is the fully-qualified name of the
 	// CatalogService's FindCatalogEntryByTabKind RPC.
 	CatalogServiceFindCatalogEntryByTabKindProcedure = "/numen.v1.CatalogService/FindCatalogEntryByTabKind"
+	// CatalogServiceGetCatalogReadmeProcedure is the fully-qualified name of the CatalogService's
+	// GetCatalogReadme RPC.
+	CatalogServiceGetCatalogReadmeProcedure = "/numen.v1.CatalogService/GetCatalogReadme"
 )
 
 // CatalogServiceClient is a client for the numen.v1.CatalogService service.
@@ -52,6 +55,10 @@ type CatalogServiceClient interface {
 	GetCatalogEntry(context.Context, *connect.Request[v1.GetCatalogEntryRequest]) (*connect.Response[v1.GetCatalogEntryResponse], error)
 	// FindCatalogEntryByTabKind returns the entry of the plugin that provides a kind of tab.
 	FindCatalogEntryByTabKind(context.Context, *connect.Request[v1.FindCatalogEntryByTabKindRequest]) (*connect.Response[v1.FindCatalogEntryByTabKindResponse], error)
+	// GetCatalogReadme returns the README.md that the folder of an installed plugin holds, whether the plugin is
+	// enabled or not. A plugin that is not installed, or whose folder holds none, answers an empty text. No plugin
+	// is started.
+	GetCatalogReadme(context.Context, *connect.Request[v1.GetCatalogReadmeRequest]) (*connect.Response[v1.GetCatalogReadmeResponse], error)
 }
 
 // NewCatalogServiceClient constructs a client for the numen.v1.CatalogService service. By default,
@@ -83,6 +90,12 @@ func NewCatalogServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(catalogServiceMethods.ByName("FindCatalogEntryByTabKind")),
 			connect.WithClientOptions(opts...),
 		),
+		getCatalogReadme: connect.NewClient[v1.GetCatalogReadmeRequest, v1.GetCatalogReadmeResponse](
+			httpClient,
+			baseURL+CatalogServiceGetCatalogReadmeProcedure,
+			connect.WithSchema(catalogServiceMethods.ByName("GetCatalogReadme")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -91,6 +104,7 @@ type catalogServiceClient struct {
 	listCatalog               *connect.Client[v1.ListCatalogRequest, v1.ListCatalogResponse]
 	getCatalogEntry           *connect.Client[v1.GetCatalogEntryRequest, v1.GetCatalogEntryResponse]
 	findCatalogEntryByTabKind *connect.Client[v1.FindCatalogEntryByTabKindRequest, v1.FindCatalogEntryByTabKindResponse]
+	getCatalogReadme          *connect.Client[v1.GetCatalogReadmeRequest, v1.GetCatalogReadmeResponse]
 }
 
 // ListCatalog calls numen.v1.CatalogService.ListCatalog.
@@ -108,6 +122,11 @@ func (c *catalogServiceClient) FindCatalogEntryByTabKind(ctx context.Context, re
 	return c.findCatalogEntryByTabKind.CallUnary(ctx, req)
 }
 
+// GetCatalogReadme calls numen.v1.CatalogService.GetCatalogReadme.
+func (c *catalogServiceClient) GetCatalogReadme(ctx context.Context, req *connect.Request[v1.GetCatalogReadmeRequest]) (*connect.Response[v1.GetCatalogReadmeResponse], error) {
+	return c.getCatalogReadme.CallUnary(ctx, req)
+}
+
 // CatalogServiceHandler is an implementation of the numen.v1.CatalogService service.
 type CatalogServiceHandler interface {
 	// ListCatalog lists the entries of every source, one for each plugin id.
@@ -116,6 +135,10 @@ type CatalogServiceHandler interface {
 	GetCatalogEntry(context.Context, *connect.Request[v1.GetCatalogEntryRequest]) (*connect.Response[v1.GetCatalogEntryResponse], error)
 	// FindCatalogEntryByTabKind returns the entry of the plugin that provides a kind of tab.
 	FindCatalogEntryByTabKind(context.Context, *connect.Request[v1.FindCatalogEntryByTabKindRequest]) (*connect.Response[v1.FindCatalogEntryByTabKindResponse], error)
+	// GetCatalogReadme returns the README.md that the folder of an installed plugin holds, whether the plugin is
+	// enabled or not. A plugin that is not installed, or whose folder holds none, answers an empty text. No plugin
+	// is started.
+	GetCatalogReadme(context.Context, *connect.Request[v1.GetCatalogReadmeRequest]) (*connect.Response[v1.GetCatalogReadmeResponse], error)
 }
 
 // NewCatalogServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -143,6 +166,12 @@ func NewCatalogServiceHandler(svc CatalogServiceHandler, opts ...connect.Handler
 		connect.WithSchema(catalogServiceMethods.ByName("FindCatalogEntryByTabKind")),
 		connect.WithHandlerOptions(opts...),
 	)
+	catalogServiceGetCatalogReadmeHandler := connect.NewUnaryHandler(
+		CatalogServiceGetCatalogReadmeProcedure,
+		svc.GetCatalogReadme,
+		connect.WithSchema(catalogServiceMethods.ByName("GetCatalogReadme")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.CatalogService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case CatalogServiceListCatalogProcedure:
@@ -151,6 +180,8 @@ func NewCatalogServiceHandler(svc CatalogServiceHandler, opts ...connect.Handler
 			catalogServiceGetCatalogEntryHandler.ServeHTTP(w, r)
 		case CatalogServiceFindCatalogEntryByTabKindProcedure:
 			catalogServiceFindCatalogEntryByTabKindHandler.ServeHTTP(w, r)
+		case CatalogServiceGetCatalogReadmeProcedure:
+			catalogServiceGetCatalogReadmeHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -170,4 +201,8 @@ func (UnimplementedCatalogServiceHandler) GetCatalogEntry(context.Context, *conn
 
 func (UnimplementedCatalogServiceHandler) FindCatalogEntryByTabKind(context.Context, *connect.Request[v1.FindCatalogEntryByTabKindRequest]) (*connect.Response[v1.FindCatalogEntryByTabKindResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CatalogService.FindCatalogEntryByTabKind is not implemented"))
+}
+
+func (UnimplementedCatalogServiceHandler) GetCatalogReadme(context.Context, *connect.Request[v1.GetCatalogReadmeRequest]) (*connect.Response[v1.GetCatalogReadmeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.CatalogService.GetCatalogReadme is not implemented"))
 }

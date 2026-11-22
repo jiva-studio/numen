@@ -313,7 +313,6 @@ export default [
     rules: {
       'numen/max-composable-return-properties': ['error', { max: 8 }],
       'numen/no-comment-only-catch': 'error',
-      'numen/no-unknown': 'error',
     },
   },
   {

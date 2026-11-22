@@ -21,9 +21,9 @@ type canceledArranging struct {
 }
 
 func (a *canceledArranging) MoveNotes(
-	context.Context, *connect.Request[v1.HostVaultServiceMoveNotesRequest],
-) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error) {
-	return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
+	context.Context, *connect.Request[v1.HostNoteServiceMoveNotesRequest],
+) (*connect.Response[v1.HostNoteServiceMoveNotesResponse], error) {
+	return connect.NewResponse(&v1.HostNoteServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
 		{Move: &v1.MoveResult{From: "Danube.md", To: "Archive/Danube.md", Repaired: []string{"Deltas.md"}}},
 		{
 			Move: &v1.MoveResult{From: "Rivers/Rhine.md"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
@@ -33,9 +33,9 @@ func (a *canceledArranging) MoveNotes(
 }
 
 func (a *canceledArranging) RemoveNotes(
-	context.Context, *connect.Request[v1.HostVaultServiceRemoveNotesRequest],
-) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error) {
-	return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Removals: []*v1.HostNoteRemoval{
+	context.Context, *connect.Request[v1.HostNoteServiceRemoveNotesRequest],
+) (*connect.Response[v1.HostNoteServiceRemoveNotesResponse], error) {
+	return connect.NewResponse(&v1.HostNoteServiceRemoveNotesResponse{Removals: []*v1.HostNoteRemoval{
 		{Path: "Danube.md", TrashPath: ".trash/Danube.md", BrokenLinks: []string{"Deltas.md"}},
 		{
 			Path: "Rivers/Rhine.md", Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,

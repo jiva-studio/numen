@@ -44,7 +44,7 @@ type Services struct {
 
 	PluginServices PluginServices
 
-	Plugin numenv1connect.PluginServiceHandler
+	Plugin numenv1connect.PluginProcessServiceHandler
 
 	Extra []Route
 
@@ -96,12 +96,12 @@ func createServices(state *testWindow) *Services {
 		),
 		Command: newEmptyCommandHandler(state),
 		Media:   mediawindow.NewHandler(state, &state.Media, nil),
-		Plugin:  numenv1connect.UnimplementedPluginServiceHandler{},
+		Plugin:  numenv1connect.UnimplementedPluginProcessServiceHandler{},
 		server:  NewFileServer(state, state.Window, nil),
 	}
 	services.Extra = []Route{
 		RouteOf(state, search.NewHandler(state, nil, nil, searchcancel.NewSearches(testsupport.NewClock())), search.NewRoute),
-		RouteOf(state, settings.NewHandler(settings.Values{}, settings.PluginFolders{}), settings.NewRoute),
+		RouteOf(state, settings.NewHandler(settings.Values{}), settings.NewRoute),
 		RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
 	}
 	services.UseNotes()
@@ -126,7 +126,7 @@ func (s *Services) pages() pageSet {
 	routes = append(routes, NewRoute(path, served, s.Media))
 	path, served = numenv1connect.NewCommandServiceHandler(s.Command, counted)
 	routes = append(routes, NewRoute(path, served, s.Command))
-	path, served = numenv1connect.NewPluginServiceHandler(s.Plugin, counted)
+	path, served = numenv1connect.NewPluginProcessServiceHandler(s.Plugin, counted)
 	routes = append(routes, NewRoute(path, served, s.Plugin))
 	routes = append(routes, s.Extra...)
 	return pageSet{window: s.state.PageAccess, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir, mediaTypes: s.mediaTypes}

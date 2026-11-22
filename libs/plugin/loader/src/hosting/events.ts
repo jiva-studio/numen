@@ -1,4 +1,4 @@
-import type { CommandNote, CommandRegistration, Disposable, Caught } from '@numen/plugin-sdk'
+import type { CommandNote, CommandRegistration, Disposable } from '@numen/plugin-sdk'
 import type { CommandRun, PluginHostDeps } from './types'
 
 /** What a report of a failure reads: the window it goes to. */
@@ -22,7 +22,7 @@ export function addListener<E>(
 }
 
 /** Hands a plugin's failure to the host's reporter, under the id of the plugin. */
-export function reportError(deps: ErrorReport, pluginId: string, error: Caught): void {
+export function reportError(deps: ErrorReport, pluginId: string, error: unknown): void {
   deps.window.onError?.(pluginId, error)
 }
 
@@ -35,7 +35,7 @@ export function notifyListeners<E>(
   for (const { pluginId, handler } of [...listeners]) {
     Promise.resolve()
       .then(() => handler(event))
-      .catch((error: Caught) => reportError(deps, pluginId, error))
+      .catch((error: unknown) => reportError(deps, pluginId, error))
   }
 }
 
@@ -71,6 +71,6 @@ export function requestPluginStart(
   if (!startPlugin || deps.plugins.isPluginFailed?.(pluginId)) return
   // The draw that asks may be inside a computed value, which must not change state as it is read.
   queueMicrotask(() => {
-    startPlugin(pluginId).catch((error: Caught) => reportError(deps, pluginId, error))
+    startPlugin(pluginId).catch((error: unknown) => reportError(deps, pluginId, error))
   })
 }

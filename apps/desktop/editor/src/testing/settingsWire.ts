@@ -198,23 +198,31 @@ const answerSettings = (core: Partial<SettingsCore>): Answers => {
   }
 }
 
-const answerPlugins = (core: Partial<SettingsCore>): Answers => {
-  const { retryPlugin, choosePluginPath, getPluginData, deletePluginData } = core
+const answerPluginPath = (core: Partial<SettingsCore>): Answers => {
+  const { choosePluginPath } = core
+  return choosePluginPath
+    ? {
+        choosePluginPath: (r: { pluginId: string; key: string }) =>
+          choosePluginPath(r.pluginId, r.key),
+      }
+    : {}
+}
+
+const answerPluginProcesses = (core: Partial<SettingsCore>): Answers => {
+  const { retryPlugin } = core
+  return retryPlugin
+    ? {
+        retryPlugin: async (r: { pluginId: string }) => {
+          const answer = await retryPlugin(r.pluginId)
+          return { failure: answer.ok ? '' : answer.error }
+        },
+      }
+    : {}
+}
+
+const answerPluginData = (core: Partial<SettingsCore>): Answers => {
+  const { getPluginData, deletePluginData } = core
   return {
-    ...(retryPlugin
-      ? {
-          retryPlugin: async (r: { pluginId: string }) => {
-            const answer = await retryPlugin(r.pluginId)
-            return { failure: answer.ok ? '' : answer.error }
-          },
-        }
-      : {}),
-    ...(choosePluginPath
-      ? {
-          choosePluginPath: (r: { pluginId: string; key: string }) =>
-            choosePluginPath(r.pluginId, r.key),
-        }
-      : {}),
     ...(getPluginData
       ? {
           getPluginData: async (r: { pluginId: string }) => ({
@@ -244,6 +252,8 @@ export const createSettingsCoreApi = (core: Partial<SettingsCore>, others: CoreA
     ...others,
     settingsService: {
       ...answerSettings(core),
-      ...answerPlugins(core),
+      ...answerPluginPath(core),
     },
+    pluginProcessService: answerPluginProcesses(core),
+    pluginData: answerPluginData(core),
   })

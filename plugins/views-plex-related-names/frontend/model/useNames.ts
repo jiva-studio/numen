@@ -1,6 +1,6 @@
 /** The names one side of a node draws: the notes related to its note, read while the names are shown. */
 import { computed, onScopeDispose, shallowRef, watch, type ComputedRef } from 'vue'
-import type { Caught, CommandsHost } from '@numen/plugin-sdk'
+import type { CommandsHost } from '@numen/plugin-sdk'
 import { listNames } from '../lib/names'
 import type { NamesSide, RelatedName } from '../types'
 import type { NoteLease, NotesReader } from './notesReader'
@@ -17,7 +17,7 @@ export interface NamesSource {
   readonly commands: Pick<CommandsHost, 'run'>
   readonly settings: NamesSettings
   readonly shown: ShownPaths
-  readonly reportFailure: (error: Caught) => void
+  readonly reportFailure: (error: unknown) => void
 }
 
 /** The names `side` of the note at `path`, whether their first read has ended, and `choose`, which shows the note of a name in the plex. */

@@ -5,7 +5,6 @@
 import { defineComponent, h, ref, type ComponentPublicInstance } from 'vue'
 import {
   definePlugin,
-  type Caught,
   type HostServices,
   type NoteHeading,
   type PluginContext,
@@ -73,7 +72,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     },
     settings: readSettings(plugin),
     open: (path, line) => workspace.files.open(path, { placement: 'current', line }),
-    reportFailure: (error: Caught) =>
+    reportFailure: (error: unknown) =>
       notices.show(error instanceof Error ? error.message : String(error), 'error'),
     wait: sleep,
     hoverWait: HOVER_WAIT,

@@ -15,13 +15,13 @@ import { createLicenseStore, type LicenseApi, type LicenseStore } from '@/entiti
 import { countNotes, type FileApi } from '@/entities/file'
 import {
   PLUGIN_FAILURE_WORDS,
-  readPluginReadme,
   useCatalogEntries,
   type CatalogReader,
+  type ReadmeReader,
   type PluginHealthItem,
 } from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import { useSettingsTabKind } from '../useSettingsTabKind'
 import type { Installation, InstallationPlugin, InstallationSettings } from '../types'
 import type { MessageLog } from '@/shared/model/notices/messages'
@@ -42,6 +42,7 @@ interface SettingsPageApi {
   readonly license: LicenseApi
   readonly listFiles: FileApi['listFiles']
   readonly listCatalog: CatalogReader
+  readonly readReadme: ReadmeReader
   readonly listRowOptions: ConnectionApi['listRowOptions']
 }
 
@@ -79,17 +80,17 @@ interface InstallationSettingsDeps {
   appearance: ReturnType<typeof createWindowAppearance>
   rest: SettingsStore
   getPlatform: InstallationSettings['getPlatform']
-  reportError: (error: Caught) => void
+  reportError: (error: unknown) => void
 }
 
 interface InstallationPluginDeps {
-  settings: SettingsPageApi['settings']
+  api: Pick<SettingsPageApi, 'settings' | 'readReadme'>
   rest: SettingsStore
   retry: ReturnType<typeof createPluginRetry>
   getSettingsViews: InstallationPlugin['getSettingsViews']
   getSlotGroups?: SlotGroupsReader
   catalogEntries: NonNullable<InstallationPlugin['catalog']>
-  reportError: (error: Caught) => void
+  reportError: (error: unknown) => void
   health: HealthDeps
 }
 
@@ -127,7 +128,10 @@ function createInstallationSettings(deps: InstallationSettingsDeps) {
   }
 }
 
-function createInstallationPluginFiles(settings: SettingsPageApi['settings']) {
+function createInstallationPluginFiles(
+  settings: SettingsPageApi['settings'],
+  readReadme: ReadmeReader,
+) {
   return {
     getPluginData: (pluginId: string) => settings.getPluginData(pluginId),
     deletePluginData: async (pluginId: string): Promise<string> => {
@@ -138,13 +142,13 @@ function createInstallationPluginFiles(settings: SettingsPageApi['settings']) {
         return formatError(caughtError)
       }
     },
-    getReadme: readPluginReadme,
+    getReadme: readReadme,
   }
 }
 
 function createInstallationHealth(
   { items, commands }: HealthDeps,
-  reportError: (error: Caught) => void,
+  reportError: (error: unknown) => void,
 ) {
   return {
     items,
@@ -181,7 +185,8 @@ function createInstallationDeclared(deps: Pick<InstallationPluginDeps, 'rest'>) 
 }
 
 function createInstallationPlugin(deps: InstallationPluginDeps) {
-  const { settings, rest, retry, getSettingsViews, catalogEntries, reportError } = deps
+  const { api, rest, retry, getSettingsViews, catalogEntries, reportError } = deps
+  const { settings, readReadme } = api
   return {
     catalog: catalogEntries,
     health: createInstallationHealth(deps.health, reportError),
@@ -197,7 +202,7 @@ function createInstallationPlugin(deps: InstallationPluginDeps) {
         return formatError(caughtError)
       }
     },
-    files: createInstallationPluginFiles(settings),
+    files: createInstallationPluginFiles(settings, readReadme),
     plugins: rest.state.plugins,
     getSettingsViews,
   }
@@ -266,7 +271,7 @@ export function createSettingsPage({
 }: SettingsPageDeps) {
   const getPluginName = (pluginId: string): string =>
     rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
-  const reportError = (error: Caught) => log.getWriter('configured')(formatError(error), 'error')
+  const reportError = (error: unknown) => log.getWriter('configured')(formatError(error), 'error')
   const licenses = createLicenseStore(api.license, (text, level) =>
     log.getWriter('licenses')(text, level),
   )
@@ -285,7 +290,7 @@ export function createSettingsPage({
     createSettingsTabConfig({
       settings: { appearance, rest, getPlatform, reportError },
       plugin: {
-        settings: api.settings,
+        api,
         rest,
         retry,
         getSettingsViews: plugins.getSettingsViews,

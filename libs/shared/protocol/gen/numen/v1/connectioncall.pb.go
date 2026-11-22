@@ -21,22 +21,411 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// CallErrorCode is the reason a call did not succeed.
+type CallErrorCode int32
+
+const (
+	CallErrorCode_CALL_ERROR_CODE_UNSPECIFIED CallErrorCode = 0
+	// CALL_ERROR_CODE_NO_CONNECTION is a plugin with no row that can serve the operation.
+	CallErrorCode_CALL_ERROR_CODE_NO_CONNECTION CallErrorCode = 1
+	// CALL_ERROR_CODE_ALL_FAILED is every row set aside or failed; the failures name each one. A row that
+	// fails after its first data frame is ALL_FAILED with that one connection.
+	CallErrorCode_CALL_ERROR_CODE_ALL_FAILED CallErrorCode = 2
+	// CALL_ERROR_CODE_STOPPED is a request that is wrong in itself, and the failure names the connection.
+	CallErrorCode_CALL_ERROR_CODE_STOPPED CallErrorCode = 3
+)
+
+// Enum value maps for CallErrorCode.
+var (
+	CallErrorCode_name = map[int32]string{
+		0: "CALL_ERROR_CODE_UNSPECIFIED",
+		1: "CALL_ERROR_CODE_NO_CONNECTION",
+		2: "CALL_ERROR_CODE_ALL_FAILED",
+		3: "CALL_ERROR_CODE_STOPPED",
+	}
+	CallErrorCode_value = map[string]int32{
+		"CALL_ERROR_CODE_UNSPECIFIED":   0,
+		"CALL_ERROR_CODE_NO_CONNECTION": 1,
+		"CALL_ERROR_CODE_ALL_FAILED":    2,
+		"CALL_ERROR_CODE_STOPPED":       3,
+	}
+)
+
+func (x CallErrorCode) Enum() *CallErrorCode {
+	p := new(CallErrorCode)
+	*p = x
+	return p
+}
+
+func (x CallErrorCode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (CallErrorCode) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_connectioncall_proto_enumTypes[0].Descriptor()
+}
+
+func (CallErrorCode) Type() protoreflect.EnumType {
+	return &file_numen_v1_connectioncall_proto_enumTypes[0]
+}
+
+func (x CallErrorCode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use CallErrorCode.Descriptor instead.
+func (CallErrorCode) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{0}
+}
+
+// CallRowFailure is one row that did not answer. reason is the words the person reads and code the reason
+// a program reads; a row the core set aside for a reason outside the enum has the code UNAVAILABLE.
+type CallRowFailure struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConnectionName string                 `protobuf:"bytes,1,opt,name=connection_name,json=connectionName,proto3" json:"connection_name,omitempty"`
+	Reason         string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	Code           FailureReason          `protobuf:"varint,3,opt,name=code,proto3,enum=numen.v1.FailureReason" json:"code,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CallRowFailure) Reset() {
+	*x = CallRowFailure{}
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CallRowFailure) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CallRowFailure) ProtoMessage() {}
+
+func (x *CallRowFailure) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CallRowFailure.ProtoReflect.Descriptor instead.
+func (*CallRowFailure) Descriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *CallRowFailure) GetConnectionName() string {
+	if x != nil {
+		return x.ConnectionName
+	}
+	return ""
+}
+
+func (x *CallRowFailure) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *CallRowFailure) GetCode() FailureReason {
+	if x != nil {
+		return x.Code
+	}
+	return FailureReason_FAILURE_REASON_UNSPECIFIED
+}
+
+// CallFailure ends a call that did not succeed.
+type CallFailure struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         CallErrorCode          `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.CallErrorCode" json:"error,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	Failures      []*CallRowFailure      `protobuf:"bytes,3,rep,name=failures,proto3" json:"failures,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CallFailure) Reset() {
+	*x = CallFailure{}
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CallFailure) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CallFailure) ProtoMessage() {}
+
+func (x *CallFailure) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CallFailure.ProtoReflect.Descriptor instead.
+func (*CallFailure) Descriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *CallFailure) GetError() CallErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return CallErrorCode_CALL_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *CallFailure) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *CallFailure) GetFailures() []*CallRowFailure {
+	if x != nil {
+		return x.Failures
+	}
+	return nil
+}
+
+// PreferredRow is the row a call asks first. connection_id names a connection among the rows of the plugin
+// for the operation; the call goes to it with options in place of the values of its row fields, then to
+// the other rows in order. A connection that is not among the rows is ignored. is_exclusive asks that row
+// alone: the call ends with its failure, and with no_connection where the connection is not among the
+// rows.
+type PreferredRow struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ConnectionId  string                 `protobuf:"bytes,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	Options       map[string]string      `protobuf:"bytes,2,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	IsExclusive   bool                   `protobuf:"varint,3,opt,name=is_exclusive,json=isExclusive,proto3" json:"is_exclusive,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PreferredRow) Reset() {
+	*x = PreferredRow{}
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PreferredRow) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PreferredRow) ProtoMessage() {}
+
+func (x *PreferredRow) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PreferredRow.ProtoReflect.Descriptor instead.
+func (*PreferredRow) Descriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *PreferredRow) GetConnectionId() string {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return ""
+}
+
+func (x *PreferredRow) GetOptions() map[string]string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *PreferredRow) GetIsExclusive() bool {
+	if x != nil {
+		return x.IsExclusive
+	}
+	return false
+}
+
+// CallRowField is a row field the type of a connection declares. options_from is the operation that lists
+// its values, empty for none. is_required is a field a row must hold a value for.
+type CallRowField struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	OptionsFrom   string                 `protobuf:"bytes,3,opt,name=options_from,json=optionsFrom,proto3" json:"options_from,omitempty"`
+	IsRequired    bool                   `protobuf:"varint,4,opt,name=is_required,json=isRequired,proto3" json:"is_required,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CallRowField) Reset() {
+	*x = CallRowField{}
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CallRowField) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CallRowField) ProtoMessage() {}
+
+func (x *CallRowField) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CallRowField.ProtoReflect.Descriptor instead.
+func (*CallRowField) Descriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CallRowField) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *CallRowField) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *CallRowField) GetOptionsFrom() string {
+	if x != nil {
+		return x.OptionsFrom
+	}
+	return ""
+}
+
+func (x *CallRowField) GetIsRequired() bool {
+	if x != nil {
+		return x.IsRequired
+	}
+	return false
+}
+
+// CallRow is one row of a plugin: its connection, the values of its row fields, and the row fields the
+// type of the connection declares.
+type CallRow struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConnectionId   string                 `protobuf:"bytes,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	ConnectionName string                 `protobuf:"bytes,2,opt,name=connection_name,json=connectionName,proto3" json:"connection_name,omitempty"`
+	Options        map[string]string      `protobuf:"bytes,3,rep,name=options,proto3" json:"options,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Fields         []*CallRowField        `protobuf:"bytes,4,rep,name=fields,proto3" json:"fields,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CallRow) Reset() {
+	*x = CallRow{}
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CallRow) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CallRow) ProtoMessage() {}
+
+func (x *CallRow) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CallRow.ProtoReflect.Descriptor instead.
+func (*CallRow) Descriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CallRow) GetConnectionId() string {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return ""
+}
+
+func (x *CallRow) GetConnectionName() string {
+	if x != nil {
+		return x.ConnectionName
+	}
+	return ""
+}
+
+func (x *CallRow) GetOptions() map[string]string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *CallRow) GetFields() []*CallRowField {
+	if x != nil {
+		return x.Fields
+	}
+	return nil
+}
+
 type ConnectionCallServiceCallRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// plugin_id is the plugin whose rows serve the call.
-	PluginId  string   `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	PluginId string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	// operation is the name of the operation, such as "llm.chat".
 	Operation string   `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
 	Payload   []byte   `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
 	Priority  Priority `protobuf:"varint,4,opt,name=priority,proto3,enum=numen.v1.Priority" json:"priority,omitempty"`
 	// preferred is unset for the rows in their order.
-	Preferred     *PreferredRow `protobuf:"bytes,5,opt,name=preferred,proto3" json:"preferred,omitempty"`
+	Preferred *PreferredRow `protobuf:"bytes,5,opt,name=preferred,proto3" json:"preferred,omitempty"`
+	// call_id is the id CancelCall names this call by, chosen by the client and unique among its calls. Empty
+	// when the call cannot be cancelled.
+	CallId        string `protobuf:"bytes,6,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ConnectionCallServiceCallRequest) Reset() {
 	*x = ConnectionCallServiceCallRequest{}
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[0]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +437,7 @@ func (x *ConnectionCallServiceCallRequest) String() string {
 func (*ConnectionCallServiceCallRequest) ProtoMessage() {}
 
 func (x *ConnectionCallServiceCallRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[0]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +450,7 @@ func (x *ConnectionCallServiceCallRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectionCallServiceCallRequest.ProtoReflect.Descriptor instead.
 func (*ConnectionCallServiceCallRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{0}
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ConnectionCallServiceCallRequest) GetPluginId() string {
@@ -99,6 +488,13 @@ func (x *ConnectionCallServiceCallRequest) GetPreferred() *PreferredRow {
 	return nil
 }
 
+func (x *ConnectionCallServiceCallRequest) GetCallId() string {
+	if x != nil {
+		return x.CallId
+	}
+	return ""
+}
+
 // ConnectionCallServiceCallResponse is one frame of a call.
 type ConnectionCallServiceCallResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -114,7 +510,7 @@ type ConnectionCallServiceCallResponse struct {
 
 func (x *ConnectionCallServiceCallResponse) Reset() {
 	*x = ConnectionCallServiceCallResponse{}
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[1]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -126,7 +522,7 @@ func (x *ConnectionCallServiceCallResponse) String() string {
 func (*ConnectionCallServiceCallResponse) ProtoMessage() {}
 
 func (x *ConnectionCallServiceCallResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[1]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -139,7 +535,7 @@ func (x *ConnectionCallServiceCallResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ConnectionCallServiceCallResponse.ProtoReflect.Descriptor instead.
 func (*ConnectionCallServiceCallResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ConnectionCallServiceCallResponse) GetFrame() isConnectionCallServiceCallResponse_Frame {
@@ -199,6 +595,95 @@ func (*ConnectionCallServiceCallResponse_Done) isConnectionCallServiceCallRespon
 
 func (*ConnectionCallServiceCallResponse_Failure) isConnectionCallServiceCallResponse_Frame() {}
 
+type CancelCallRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// plugin_id is the plugin the call was made for.
+	PluginId      string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	CallId        string `protobuf:"bytes,2,opt,name=call_id,json=callId,proto3" json:"call_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelCallRequest) Reset() {
+	*x = CancelCallRequest{}
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelCallRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelCallRequest) ProtoMessage() {}
+
+func (x *CancelCallRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelCallRequest.ProtoReflect.Descriptor instead.
+func (*CancelCallRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CancelCallRequest) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *CancelCallRequest) GetCallId() string {
+	if x != nil {
+		return x.CallId
+	}
+	return ""
+}
+
+type CancelCallResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelCallResponse) Reset() {
+	*x = CancelCallResponse{}
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelCallResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelCallResponse) ProtoMessage() {}
+
+func (x *CancelCallResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelCallResponse.ProtoReflect.Descriptor instead.
+func (*CancelCallResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{8}
+}
+
 type ConnectionCallServiceListRowsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// plugin_id is the plugin whose rows are listed.
@@ -210,7 +695,7 @@ type ConnectionCallServiceListRowsRequest struct {
 
 func (x *ConnectionCallServiceListRowsRequest) Reset() {
 	*x = ConnectionCallServiceListRowsRequest{}
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[2]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -222,7 +707,7 @@ func (x *ConnectionCallServiceListRowsRequest) String() string {
 func (*ConnectionCallServiceListRowsRequest) ProtoMessage() {}
 
 func (x *ConnectionCallServiceListRowsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[2]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -235,7 +720,7 @@ func (x *ConnectionCallServiceListRowsRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use ConnectionCallServiceListRowsRequest.ProtoReflect.Descriptor instead.
 func (*ConnectionCallServiceListRowsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{2}
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ConnectionCallServiceListRowsRequest) GetPluginId() string {
@@ -261,7 +746,7 @@ type ConnectionCallServiceListRowsResponse struct {
 
 func (x *ConnectionCallServiceListRowsResponse) Reset() {
 	*x = ConnectionCallServiceListRowsResponse{}
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[3]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -273,7 +758,7 @@ func (x *ConnectionCallServiceListRowsResponse) String() string {
 func (*ConnectionCallServiceListRowsResponse) ProtoMessage() {}
 
 func (x *ConnectionCallServiceListRowsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[3]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -286,7 +771,7 @@ func (x *ConnectionCallServiceListRowsResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ConnectionCallServiceListRowsResponse.ProtoReflect.Descriptor instead.
 func (*ConnectionCallServiceListRowsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{3}
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ConnectionCallServiceListRowsResponse) GetRows() []*CallRow {
@@ -311,7 +796,7 @@ type ConnectionCallServiceListRowOptionsRequest struct {
 
 func (x *ConnectionCallServiceListRowOptionsRequest) Reset() {
 	*x = ConnectionCallServiceListRowOptionsRequest{}
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[4]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -323,7 +808,7 @@ func (x *ConnectionCallServiceListRowOptionsRequest) String() string {
 func (*ConnectionCallServiceListRowOptionsRequest) ProtoMessage() {}
 
 func (x *ConnectionCallServiceListRowOptionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[4]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -336,7 +821,7 @@ func (x *ConnectionCallServiceListRowOptionsRequest) ProtoReflect() protoreflect
 
 // Deprecated: Use ConnectionCallServiceListRowOptionsRequest.ProtoReflect.Descriptor instead.
 func (*ConnectionCallServiceListRowOptionsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{4}
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ConnectionCallServiceListRowOptionsRequest) GetPluginId() string {
@@ -383,7 +868,7 @@ type ConnectionCallServiceListRowOptionsResponse struct {
 
 func (x *ConnectionCallServiceListRowOptionsResponse) Reset() {
 	*x = ConnectionCallServiceListRowOptionsResponse{}
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[5]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -395,7 +880,7 @@ func (x *ConnectionCallServiceListRowOptionsResponse) String() string {
 func (*ConnectionCallServiceListRowOptionsResponse) ProtoMessage() {}
 
 func (x *ConnectionCallServiceListRowOptionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_connectioncall_proto_msgTypes[5]
+	mi := &file_numen_v1_connectioncall_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -408,7 +893,7 @@ func (x *ConnectionCallServiceListRowOptionsResponse) ProtoReflect() protoreflec
 
 // Deprecated: Use ConnectionCallServiceListRowOptionsResponse.ProtoReflect.Descriptor instead.
 func (*ConnectionCallServiceListRowOptionsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_connectioncall_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ConnectionCallServiceListRowOptionsResponse) GetOptions() []*Option {
@@ -422,18 +907,52 @@ var File_numen_v1_connectioncall_proto protoreflect.FileDescriptor
 
 const file_numen_v1_connectioncall_proto_rawDesc = "" +
 	"\n" +
-	"\x1dnumen/v1/connectioncall.proto\x12\bnumen.v1\x1a\x1dnumen/v1/hostconnection.proto\x1a\x17numen/v1/provider.proto\x1a\x17numen/v1/settings.proto\"\xdd\x01\n" +
+	"\x1dnumen/v1/connectioncall.proto\x12\bnumen.v1\x1a\x17numen/v1/provider.proto\x1a\x17numen/v1/settings.proto\"~\n" +
+	"\x0eCallRowFailure\x12'\n" +
+	"\x0fconnection_name\x18\x01 \x01(\tR\x0econnectionName\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12+\n" +
+	"\x04code\x18\x03 \x01(\x0e2\x17.numen.v1.FailureReasonR\x04code\"\x8a\x01\n" +
+	"\vCallFailure\x12-\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.CallErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\x124\n" +
+	"\bfailures\x18\x03 \x03(\v2\x18.numen.v1.CallRowFailureR\bfailures\"\xd1\x01\n" +
+	"\fPreferredRow\x12#\n" +
+	"\rconnection_id\x18\x01 \x01(\tR\fconnectionId\x12=\n" +
+	"\aoptions\x18\x02 \x03(\v2#.numen.v1.PreferredRow.OptionsEntryR\aoptions\x12!\n" +
+	"\fis_exclusive\x18\x03 \x01(\bR\visExclusive\x1a:\n" +
+	"\fOptionsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"z\n" +
+	"\fCallRowField\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12!\n" +
+	"\foptions_from\x18\x03 \x01(\tR\voptionsFrom\x12\x1f\n" +
+	"\vis_required\x18\x04 \x01(\bR\n" +
+	"isRequired\"\xfd\x01\n" +
+	"\aCallRow\x12#\n" +
+	"\rconnection_id\x18\x01 \x01(\tR\fconnectionId\x12'\n" +
+	"\x0fconnection_name\x18\x02 \x01(\tR\x0econnectionName\x128\n" +
+	"\aoptions\x18\x03 \x03(\v2\x1e.numen.v1.CallRow.OptionsEntryR\aoptions\x12.\n" +
+	"\x06fields\x18\x04 \x03(\v2\x16.numen.v1.CallRowFieldR\x06fields\x1a:\n" +
+	"\fOptionsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf6\x01\n" +
 	" ConnectionCallServiceCallRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1c\n" +
 	"\toperation\x18\x02 \x01(\tR\toperation\x12\x18\n" +
 	"\apayload\x18\x03 \x01(\fR\apayload\x12.\n" +
 	"\bpriority\x18\x04 \x01(\x0e2\x12.numen.v1.PriorityR\bpriority\x124\n" +
-	"\tpreferred\x18\x05 \x01(\v2\x16.numen.v1.PreferredRowR\tpreferred\"\x8b\x01\n" +
+	"\tpreferred\x18\x05 \x01(\v2\x16.numen.v1.PreferredRowR\tpreferred\x12\x17\n" +
+	"\acall_id\x18\x06 \x01(\tR\x06callId\"\x8b\x01\n" +
 	"!ConnectionCallServiceCallResponse\x12\x14\n" +
 	"\x04data\x18\x01 \x01(\fH\x00R\x04data\x12\x14\n" +
 	"\x04done\x18\x02 \x01(\fH\x00R\x04done\x121\n" +
 	"\afailure\x18\x03 \x01(\v2\x15.numen.v1.CallFailureH\x00R\afailureB\a\n" +
-	"\x05frame\"a\n" +
+	"\x05frame\"I\n" +
+	"\x11CancelCallRequest\x12\x1b\n" +
+	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x17\n" +
+	"\acall_id\x18\x02 \x01(\tR\x06callId\"\x14\n" +
+	"\x12CancelCallResponse\"a\n" +
 	"$ConnectionCallServiceListRowsRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1c\n" +
 	"\toperation\x18\x02 \x01(\tR\toperation\"N\n" +
@@ -449,9 +968,16 @@ const file_numen_v1_connectioncall_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"Y\n" +
 	"+ConnectionCallServiceListRowOptionsResponse\x12*\n" +
-	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions2\xe6\x02\n" +
+	"\aoptions\x18\x01 \x03(\v2\x10.numen.v1.OptionR\aoptions*\x90\x01\n" +
+	"\rCallErrorCode\x12\x1f\n" +
+	"\x1bCALL_ERROR_CODE_UNSPECIFIED\x10\x00\x12!\n" +
+	"\x1dCALL_ERROR_CODE_NO_CONNECTION\x10\x01\x12\x1e\n" +
+	"\x1aCALL_ERROR_CODE_ALL_FAILED\x10\x02\x12\x1b\n" +
+	"\x17CALL_ERROR_CODE_STOPPED\x10\x032\xaf\x03\n" +
 	"\x15ConnectionCallService\x12a\n" +
-	"\x04Call\x12*.numen.v1.ConnectionCallServiceCallRequest\x1a+.numen.v1.ConnectionCallServiceCallResponse0\x01\x12k\n" +
+	"\x04Call\x12*.numen.v1.ConnectionCallServiceCallRequest\x1a+.numen.v1.ConnectionCallServiceCallResponse0\x01\x12G\n" +
+	"\n" +
+	"CancelCall\x12\x1b.numen.v1.CancelCallRequest\x1a\x1c.numen.v1.CancelCallResponse\x12k\n" +
 	"\bListRows\x12..numen.v1.ConnectionCallServiceListRowsRequest\x1a/.numen.v1.ConnectionCallServiceListRowsResponse\x12}\n" +
 	"\x0eListRowOptions\x124.numen.v1.ConnectionCallServiceListRowOptionsRequest\x1a5.numen.v1.ConnectionCallServiceListRowOptionsResponseBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
@@ -467,39 +993,56 @@ func file_numen_v1_connectioncall_proto_rawDescGZIP() []byte {
 	return file_numen_v1_connectioncall_proto_rawDescData
 }
 
-var file_numen_v1_connectioncall_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_numen_v1_connectioncall_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_numen_v1_connectioncall_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_numen_v1_connectioncall_proto_goTypes = []any{
-	(*ConnectionCallServiceCallRequest)(nil),            // 0: numen.v1.ConnectionCallServiceCallRequest
-	(*ConnectionCallServiceCallResponse)(nil),           // 1: numen.v1.ConnectionCallServiceCallResponse
-	(*ConnectionCallServiceListRowsRequest)(nil),        // 2: numen.v1.ConnectionCallServiceListRowsRequest
-	(*ConnectionCallServiceListRowsResponse)(nil),       // 3: numen.v1.ConnectionCallServiceListRowsResponse
-	(*ConnectionCallServiceListRowOptionsRequest)(nil),  // 4: numen.v1.ConnectionCallServiceListRowOptionsRequest
-	(*ConnectionCallServiceListRowOptionsResponse)(nil), // 5: numen.v1.ConnectionCallServiceListRowOptionsResponse
-	nil,                  // 6: numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntry
-	(Priority)(0),        // 7: numen.v1.Priority
-	(*PreferredRow)(nil), // 8: numen.v1.PreferredRow
-	(*CallFailure)(nil),  // 9: numen.v1.CallFailure
-	(*CallRow)(nil),      // 10: numen.v1.CallRow
-	(*Option)(nil),       // 11: numen.v1.Option
+	(CallErrorCode)(0),                                  // 0: numen.v1.CallErrorCode
+	(*CallRowFailure)(nil),                              // 1: numen.v1.CallRowFailure
+	(*CallFailure)(nil),                                 // 2: numen.v1.CallFailure
+	(*PreferredRow)(nil),                                // 3: numen.v1.PreferredRow
+	(*CallRowField)(nil),                                // 4: numen.v1.CallRowField
+	(*CallRow)(nil),                                     // 5: numen.v1.CallRow
+	(*ConnectionCallServiceCallRequest)(nil),            // 6: numen.v1.ConnectionCallServiceCallRequest
+	(*ConnectionCallServiceCallResponse)(nil),           // 7: numen.v1.ConnectionCallServiceCallResponse
+	(*CancelCallRequest)(nil),                           // 8: numen.v1.CancelCallRequest
+	(*CancelCallResponse)(nil),                          // 9: numen.v1.CancelCallResponse
+	(*ConnectionCallServiceListRowsRequest)(nil),        // 10: numen.v1.ConnectionCallServiceListRowsRequest
+	(*ConnectionCallServiceListRowsResponse)(nil),       // 11: numen.v1.ConnectionCallServiceListRowsResponse
+	(*ConnectionCallServiceListRowOptionsRequest)(nil),  // 12: numen.v1.ConnectionCallServiceListRowOptionsRequest
+	(*ConnectionCallServiceListRowOptionsResponse)(nil), // 13: numen.v1.ConnectionCallServiceListRowOptionsResponse
+	nil,                // 14: numen.v1.PreferredRow.OptionsEntry
+	nil,                // 15: numen.v1.CallRow.OptionsEntry
+	nil,                // 16: numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntry
+	(FailureReason)(0), // 17: numen.v1.FailureReason
+	(Priority)(0),      // 18: numen.v1.Priority
+	(*Option)(nil),     // 19: numen.v1.Option
 }
 var file_numen_v1_connectioncall_proto_depIdxs = []int32{
-	7,  // 0: numen.v1.ConnectionCallServiceCallRequest.priority:type_name -> numen.v1.Priority
-	8,  // 1: numen.v1.ConnectionCallServiceCallRequest.preferred:type_name -> numen.v1.PreferredRow
-	9,  // 2: numen.v1.ConnectionCallServiceCallResponse.failure:type_name -> numen.v1.CallFailure
-	10, // 3: numen.v1.ConnectionCallServiceListRowsResponse.rows:type_name -> numen.v1.CallRow
-	6,  // 4: numen.v1.ConnectionCallServiceListRowOptionsRequest.options:type_name -> numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntry
-	11, // 5: numen.v1.ConnectionCallServiceListRowOptionsResponse.options:type_name -> numen.v1.Option
-	0,  // 6: numen.v1.ConnectionCallService.Call:input_type -> numen.v1.ConnectionCallServiceCallRequest
-	2,  // 7: numen.v1.ConnectionCallService.ListRows:input_type -> numen.v1.ConnectionCallServiceListRowsRequest
-	4,  // 8: numen.v1.ConnectionCallService.ListRowOptions:input_type -> numen.v1.ConnectionCallServiceListRowOptionsRequest
-	1,  // 9: numen.v1.ConnectionCallService.Call:output_type -> numen.v1.ConnectionCallServiceCallResponse
-	3,  // 10: numen.v1.ConnectionCallService.ListRows:output_type -> numen.v1.ConnectionCallServiceListRowsResponse
-	5,  // 11: numen.v1.ConnectionCallService.ListRowOptions:output_type -> numen.v1.ConnectionCallServiceListRowOptionsResponse
-	9,  // [9:12] is the sub-list for method output_type
-	6,  // [6:9] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	17, // 0: numen.v1.CallRowFailure.code:type_name -> numen.v1.FailureReason
+	0,  // 1: numen.v1.CallFailure.error:type_name -> numen.v1.CallErrorCode
+	1,  // 2: numen.v1.CallFailure.failures:type_name -> numen.v1.CallRowFailure
+	14, // 3: numen.v1.PreferredRow.options:type_name -> numen.v1.PreferredRow.OptionsEntry
+	15, // 4: numen.v1.CallRow.options:type_name -> numen.v1.CallRow.OptionsEntry
+	4,  // 5: numen.v1.CallRow.fields:type_name -> numen.v1.CallRowField
+	18, // 6: numen.v1.ConnectionCallServiceCallRequest.priority:type_name -> numen.v1.Priority
+	3,  // 7: numen.v1.ConnectionCallServiceCallRequest.preferred:type_name -> numen.v1.PreferredRow
+	2,  // 8: numen.v1.ConnectionCallServiceCallResponse.failure:type_name -> numen.v1.CallFailure
+	5,  // 9: numen.v1.ConnectionCallServiceListRowsResponse.rows:type_name -> numen.v1.CallRow
+	16, // 10: numen.v1.ConnectionCallServiceListRowOptionsRequest.options:type_name -> numen.v1.ConnectionCallServiceListRowOptionsRequest.OptionsEntry
+	19, // 11: numen.v1.ConnectionCallServiceListRowOptionsResponse.options:type_name -> numen.v1.Option
+	6,  // 12: numen.v1.ConnectionCallService.Call:input_type -> numen.v1.ConnectionCallServiceCallRequest
+	8,  // 13: numen.v1.ConnectionCallService.CancelCall:input_type -> numen.v1.CancelCallRequest
+	10, // 14: numen.v1.ConnectionCallService.ListRows:input_type -> numen.v1.ConnectionCallServiceListRowsRequest
+	12, // 15: numen.v1.ConnectionCallService.ListRowOptions:input_type -> numen.v1.ConnectionCallServiceListRowOptionsRequest
+	7,  // 16: numen.v1.ConnectionCallService.Call:output_type -> numen.v1.ConnectionCallServiceCallResponse
+	9,  // 17: numen.v1.ConnectionCallService.CancelCall:output_type -> numen.v1.CancelCallResponse
+	11, // 18: numen.v1.ConnectionCallService.ListRows:output_type -> numen.v1.ConnectionCallServiceListRowsResponse
+	13, // 19: numen.v1.ConnectionCallService.ListRowOptions:output_type -> numen.v1.ConnectionCallServiceListRowOptionsResponse
+	16, // [16:20] is the sub-list for method output_type
+	12, // [12:16] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_connectioncall_proto_init() }
@@ -507,10 +1050,9 @@ func file_numen_v1_connectioncall_proto_init() {
 	if File_numen_v1_connectioncall_proto != nil {
 		return
 	}
-	file_numen_v1_hostconnection_proto_init()
 	file_numen_v1_provider_proto_init()
 	file_numen_v1_settings_proto_init()
-	file_numen_v1_connectioncall_proto_msgTypes[1].OneofWrappers = []any{
+	file_numen_v1_connectioncall_proto_msgTypes[6].OneofWrappers = []any{
 		(*ConnectionCallServiceCallResponse_Data)(nil),
 		(*ConnectionCallServiceCallResponse_Done)(nil),
 		(*ConnectionCallServiceCallResponse_Failure)(nil),
@@ -520,13 +1062,14 @@ func file_numen_v1_connectioncall_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_connectioncall_proto_rawDesc), len(file_numen_v1_connectioncall_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   7,
+			NumEnums:      1,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_connectioncall_proto_goTypes,
 		DependencyIndexes: file_numen_v1_connectioncall_proto_depIdxs,
+		EnumInfos:         file_numen_v1_connectioncall_proto_enumTypes,
 		MessageInfos:      file_numen_v1_connectioncall_proto_msgTypes,
 	}.Build()
 	File_numen_v1_connectioncall_proto = out.File
