@@ -17,9 +17,6 @@ const (
 	Unauthenticated
 )
 
-// String returns the name the client reads for the code.
-func (c Code) String() string { return getConnectCode(c).String() }
-
 // New returns err as the failure of a call with the given code.
 func New(code Code, err error) error {
 	return connect.NewError(getConnectCode(code), err)

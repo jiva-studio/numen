@@ -33,8 +33,5 @@ func TestEveryCodeReadsAsTheCodeOfTheClient(t *testing.T) {
 		if got := connect.CodeOf(rpcerror.New(code, errors.New("failed"))); got != want {
 			t.Errorf("%v reads as %v, want %v", code, got, want)
 		}
-		if got := code.String(); got != want.String() {
-			t.Errorf("name %q, want %q", got, want.String())
-		}
 	}
 }

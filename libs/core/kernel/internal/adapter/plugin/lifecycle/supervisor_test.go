@@ -468,7 +468,7 @@ func TestAStartedProcessCountsAsUnusedAgain(t *testing.T) {
 // testIdleLimit is the idle limit the tests of the countdown stop a used plugin after.
 const testIdleLimit = 3 * time.Minute
 
-func TestSupervisorHoldsOnlyTheDeclaredPermissions(t *testing.T) {
+func TestSupervisorPermissionsAreTheDeclaredOnes(t *testing.T) {
 	sup := New(nil)
 	sup.Permissions.Set([]string{manifest.PermissionVaultRead})
 

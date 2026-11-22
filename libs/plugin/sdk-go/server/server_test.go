@@ -598,14 +598,6 @@ func (errWriter) Write([]byte) (int, error) {
 	return 0, errWriteFailed
 }
 
-type errReader struct{}
-
-var errReadFailed = errors.New("read failed")
-
-func (errReader) Read([]byte) (int, error) {
-	return 0, errReadFailed
-}
-
 type multiStepStdinReader struct {
 	step int
 	mode string

@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
+	"github.com/jiva-studio/numen/libs/shared/protocol"
 )
 
 func TestReadManifest(t *testing.T) {
@@ -493,5 +494,11 @@ func TestManifestReadsSettingGroups(t *testing.T) {
 	}
 	if m.Settings[0].Group != "feel" || m.Settings[1].Group != "" {
 		t.Errorf("the settings carry the groups %q and %q", m.Settings[0].Group, m.Settings[1].Group)
+	}
+}
+
+func TestTheHostProtocolVersionIsTheOneOfTheProtocolLibrary(t *testing.T) {
+	if manifest.ProtocolVersion != protocol.PluginProtocolVersion {
+		t.Errorf("manifest.ProtocolVersion = %d, protocol.PluginProtocolVersion = %d", manifest.ProtocolVersion, protocol.PluginProtocolVersion)
 	}
 }
