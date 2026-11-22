@@ -43,6 +43,7 @@ export class Scenario {
   private currentPage: Page
   private environment: EnvironmentSetting[] = []
   private readonly programs: string[] = []
+  private readonly pluginSettings: Record<string, Record<string, string>> = {}
   private actionCount = 0
 
   constructor(
@@ -82,6 +83,13 @@ export class Scenario {
     if (this.server !== undefined)
       throw new Error(`install the program "${name}" before the application starts`)
     this.programs.push(name)
+  }
+
+  /** Sets a setting of a plugin from the start of the application. */
+  setPluginSetting(pluginId: string, key: string, value: string): void {
+    if (this.server !== undefined)
+      throw new Error(`set the setting "${key}" of ${pluginId} before the application starts`)
+    this.pluginSettings[pluginId] = { ...this.pluginSettings[pluginId], [key]: value }
   }
 
   getServer(): Server {
@@ -130,6 +138,7 @@ export class Scenario {
         readPageText: (address) => world.readPageText(address),
         environment: this.environment,
         programs: this.programs,
+        pluginSettings: this.pluginSettings,
         isLive: this.isLive,
       })
       this.application = application

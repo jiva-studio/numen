@@ -129,6 +129,12 @@ export class IdentityDriver {
     await expect((await this.showPage()).getByRole('alert')).toContainText(text)
   }
 
+  /** The account fingerprint of the last identity this person created. */
+  getAccountFingerprint(): string {
+    expect(this.account, 'no identity was created before').not.toBe('')
+    return this.account
+  }
+
   async expectSameAccount(): Promise<void> {
     expect(this.account, 'no identity was created before').not.toBe('')
     await expect.poll(async () => this.readAccount(await this.showPage())).toBe(this.account)

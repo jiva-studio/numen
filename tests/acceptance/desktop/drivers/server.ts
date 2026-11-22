@@ -8,6 +8,7 @@ import { spawn, type ChildProcess } from 'node:child_process'
 import { createHash, X509Certificate } from 'node:crypto'
 import fs from 'node:fs'
 import http from 'node:http'
+import https from 'node:https'
 import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
@@ -16,6 +17,7 @@ import { STAND_IN_CONNECTION, STAND_IN_MODEL, startStandIns } from '../../../e2e
 import { freeFromRemoval, holdForRemoval } from './reaper.js'
 import { applyEnvironment, type EnvironmentSetting, type EnvironmentTargets } from './environment.js'
 import type { Application } from './rules.js'
+import type { JsonObject } from '../../../e2e/desktop/tests/support/json.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(here, '../../../..')
@@ -82,6 +84,8 @@ export interface ServerOptions {
   readonly environment: readonly EnvironmentSetting[]
   readonly programs: readonly string[]
   readonly isLive: boolean
+  /** The settings of plugins the application starts with, by plugin id. */
+  readonly pluginSettings: Readonly<Record<string, Readonly<Record<string, string>>>>
 }
 
 interface Services {
@@ -125,6 +129,38 @@ export class Server {
 
   getBaseURL(): string {
     return this.baseURL
+  }
+
+  /** The first message of a stream of the debug server: what the application holds when the call is made. */
+  readStreamHead(method: string, request: object): Promise<JsonObject> {
+    return new Promise((resolve, reject) => {
+      const origin = new URL(this.baseURL)
+      const json = Buffer.from(JSON.stringify(request))
+      const header = Buffer.alloc(5)
+      header.writeUInt32BE(json.length, 1)
+      const call = https.request(
+        {
+          host: origin.hostname,
+          port: Number(origin.port),
+          path: `/numen.v1.${method}`,
+          method: 'POST',
+          ca: fs.readFileSync(path.join(this.state, 'cert.pem')),
+          headers: { 'Content-Type': 'application/connect+json' },
+        },
+        (answer) => {
+          let received = Buffer.alloc(0)
+          answer.on('data', (chunk: Buffer) => {
+            received = Buffer.concat([received, chunk])
+            if (received.length < 5 || received.length < 5 + received.readUInt32BE(1)) return
+            call.destroy()
+            resolve(JSON.parse(received.subarray(5, 5 + received.readUInt32BE(1)).toString()) as JsonObject)
+          })
+          answer.on('error', reject)
+        },
+      )
+      call.on('error', reject)
+      call.end(Buffer.concat([header, json]))
+    })
   }
 
   /** The address of the release feed the updater plugin asks. */
@@ -241,7 +277,7 @@ export class Server {
           }
         : {}),
     }
-    fs.writeFileSync(path.join(folder, 'numen.json'), JSON.stringify(settings, null, 2))
+    fs.writeFileSync(path.join(folder, 'numen.json'), JSON.stringify({ ...settings, ...this.options.pluginSettings }, null, 2))
   }
 
   private getLiveSettings() {
