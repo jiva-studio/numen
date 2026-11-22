@@ -24,6 +24,7 @@ function open(doc: string): EditorView {
       contexts: [{ name: 'home', count: 1 }],
       tags: [{ name: 'river', count: 1 }],
     }),
+    loadFields: async () => undefined,
     hideFields: false,
     showError: () => undefined,
   })

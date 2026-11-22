@@ -25,6 +25,7 @@ export function renderCompletionIcon(completion: Completion): Node | null {
 
 export const completionTheme = EditorView.baseTheme({
   '.cm-task-completion-icon': {
+    display: 'inline-block',
     width: '1em',
     height: '1em',
     flex: 'none',

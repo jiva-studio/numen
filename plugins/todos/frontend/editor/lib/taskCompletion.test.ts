@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { CompletionContext, type CompletionResult } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
+import type { ListFieldsResponse } from '../../types'
 import { createTaskCompletion } from './taskCompletion'
 
 const complete = createTaskCompletion({
@@ -74,5 +75,41 @@ describe('the task completion', () => {
 
   it('answers nothing when no field matches', () => {
     expect(run('- [ ] pay +zzz|')).toBeNull()
+  })
+})
+
+describe('the task completion before the fields are loaded', () => {
+  it('loads the fields once and then offers them', async () => {
+    let fields = { projects: [], contexts: [], tags: [] } as ListFieldsResponse
+    const load = vi.fn(async () => {
+      fields = { projects: [{ name: 'work', count: 1 }], contexts: [], tags: [] }
+    })
+    const lazy = createTaskCompletion({
+      getFields: () => fields,
+      getToday: () => '2026-11-22',
+      load,
+    })
+    const doc = '- [ ] pay +'
+    const state = EditorState.create({ doc })
+
+    const result = await lazy(new CompletionContext(state, doc.length, true))
+
+    expect(load).toHaveBeenCalledTimes(1)
+    expect(result?.options.map((one) => one.label)).toStrictEqual(['work'])
+  })
+
+  it('does not load the fields for a word that is no field', async () => {
+    const load = vi.fn(async () => undefined)
+    const lazy = createTaskCompletion({
+      getFields: () => ({ projects: [], contexts: [], tags: [] }),
+      getToday: () => '2026-11-22',
+      load,
+    })
+    const doc = '- [ ] pay now'
+    const state = EditorState.create({ doc })
+
+    await lazy(new CompletionContext(state, doc.length, true))
+
+    expect(load).not.toHaveBeenCalled()
   })
 })

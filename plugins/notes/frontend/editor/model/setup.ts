@@ -29,9 +29,9 @@ import {
   lineNumbers,
   placeholder,
   rectangularSelection,
-  tooltips,
 } from '@codemirror/view'
 import { follow } from '../lib/extensions/follow'
+import { pageTooltips } from './pageTooltips'
 import { escapeKeyBinding, restoreTabCapture, tabCapture, tabKeyBinding } from './tabCapture'
 import {
   pendingChange,
@@ -196,7 +196,7 @@ export const setup = (settings: Settings = {}): Extension => [
   drawSelection(),
   highlightActiveLine(),
   rectangularSelection(),
-  tooltips({ parent: doc.body }),
+  pageTooltips(),
   bracketMatching({ renderMatch: renderBracketMatch }),
   ...getLayout(settings),
   tabCapture,

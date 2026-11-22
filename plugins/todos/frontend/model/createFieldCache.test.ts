@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createFakeApi } from '../testing/fakeApi'
 import { createFieldCache } from './createFieldCache'
 
@@ -32,5 +32,34 @@ describe('the field cache', () => {
 
     expect(cache.get().projects).toHaveLength(1)
     expect(failing.get()).toEqual({ projects: [], contexts: [], tags: [] })
+  })
+
+  it('asks the backend again while it is empty, no more than once in a while', async () => {
+    let at = 0
+    const listFields = vi.fn(async () => ({
+      ok: true as const,
+      value: { projects: [], contexts: [], tags: [] },
+    }))
+    const cache = createFieldCache({ listFields } as never, { now: () => at })
+
+    await cache.ensure()
+    await cache.ensure()
+    expect(listFields).toHaveBeenCalledTimes(1)
+
+    at = 5000
+    await cache.ensure()
+    expect(listFields).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not ask again once it holds something', async () => {
+    const fake = createFakeApi({
+      fields: { projects: [{ name: 'home', count: 2 }], contexts: [], tags: [] },
+    })
+    const cache = createFieldCache(fake.api, { now: () => 0 })
+    await cache.refresh()
+
+    await cache.ensure()
+
+    expect(cache.get().projects).toHaveLength(1)
   })
 })

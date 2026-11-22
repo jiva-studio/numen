@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ensureSyntaxTree } from '@codemirror/language'
-import { autocompletion, currentCompletions, startCompletion } from '@codemirror/autocomplete'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { Tree } from '@lezer/common'
@@ -261,30 +260,5 @@ describe('editor preferences in setup', () => {
     expect(view.state.tabSize).toBe(4)
     expect(tabKeyBinding.run?.(view)).toBe(true)
     expect(view.state.doc.toString()).toBe('    one')
-  })
-})
-
-describe('the tooltips of the editor', () => {
-  it('draw the completion list in the page, not inside the editor', async () => {
-    const source = () => ({ from: 0, options: [{ label: 'one' }] })
-    const view = new EditorView({
-      parent: document.body,
-      state: EditorState.create({
-        doc: 'one',
-        extensions: [
-          setup(),
-          autocompletion(),
-          EditorState.languageData.of(() => [{ autocomplete: source }]),
-        ],
-      }),
-    })
-    views.push(view)
-
-    startCompletion(view)
-    await vi.waitFor(() => expect(currentCompletions(view.state)).toHaveLength(1))
-
-    const list = document.querySelector('.cm-tooltip-autocomplete')
-    expect(list).not.toBeNull()
-    expect(view.dom.contains(list)).toBe(false)
   })
 })

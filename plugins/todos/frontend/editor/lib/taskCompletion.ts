@@ -5,6 +5,7 @@ import { findFencedLines, readTaskLine } from './taskLine'
 
 export interface TaskCompletionDeps {
   readonly getFields: () => ListFieldsResponse
+  readonly load?: () => Promise<void>
   readonly getToday: () => string
 }
 
@@ -56,23 +57,38 @@ function listOptions(
   return null
 }
 
+interface WordAt {
+  readonly word: string
+  readonly from: number
+}
+
+function findWord(context: CompletionContext): WordAt | null {
+  const line = context.state.doc.lineAt(context.pos)
+  const task = readTaskLine(line.text)
+  if (!task) return null
+  const before = line.text.slice(0, context.pos - line.from)
+  const wordFrom = before.search(/[^ \t]*$/)
+  if (wordFrom < task.textFrom) return null
+  const lines = context.state.doc.sliceString(0, line.to).split('\n')
+  if (findFencedLines(lines)[lines.length - 1]) return null
+  return { word: before.slice(wordFrom), from: line.from + wordFrom }
+}
+
 /** Completes the fields of a task line; it answers nowhere else, so `[[` links are left alone. */
 export function createTaskCompletion(deps: TaskCompletionDeps) {
-  return (context: CompletionContext): CompletionResult | null => {
-    const line = context.state.doc.lineAt(context.pos)
-    const task = readTaskLine(line.text)
-    if (!task) return null
-    const before = line.text.slice(0, context.pos - line.from)
-    const wordFrom = before.search(/[^ \t]*$/)
-    if (wordFrom < task.textFrom) return null
-    const lines = context.state.doc.sliceString(0, line.to).split('\n')
-    if (findFencedLines(lines)[lines.length - 1]) return null
-    const found = listOptions(before.slice(wordFrom), deps)
+  const complete = (context: CompletionContext): CompletionResult | null => {
+    const at = findWord(context)
+    if (!at) return null
+    const found = listOptions(at.word, deps)
     if (!found || found.options.length === 0) return null
-    return {
-      from: line.from + wordFrom + found.skip,
-      options: found.options,
-      filter: false,
-    }
+    return { from: at.from + found.skip, options: found.options, filter: false }
+  }
+  const { load } = deps
+  if (!load) return complete
+  return async (context: CompletionContext): Promise<CompletionResult | null> => {
+    const found = complete(context)
+    if (found || !/^[+@#]/.test(findWord(context)?.word ?? '')) return found
+    await load().catch(() => undefined)
+    return complete(context)
   }
 }

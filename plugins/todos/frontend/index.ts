@@ -88,6 +88,7 @@ export const activate = (
       extension: createTaskEditorExtension({
         api: parts.api,
         getFields: fields.get,
+        loadFields: fields.ensure,
         hideFields: plugin.settings.get<boolean>('hideFields') === true,
         getToday: () => workspace.window.getToday(),
         showError: (message) => workspace.messages.showError(message),

@@ -14,6 +14,7 @@ export interface TaskEditorDeps {
   readonly api: TodosApi
   readonly getToday: () => string
   readonly getFields: () => ListFieldsResponse
+  readonly loadFields: () => Promise<void>
   readonly hideFields: boolean
   readonly showError: (message: string) => void
 }
@@ -22,10 +23,11 @@ export function createTaskEditorExtension({
   api,
   getToday,
   getFields,
+  loadFields,
   hideFields,
   showError,
 }: TaskEditorDeps): Extension {
-  const source = createTaskCompletion({ getFields, getToday })
+  const source = createTaskCompletion({ getFields, getToday, load: loadFields })
   return [
     createTaskExtension({
       hideFields,

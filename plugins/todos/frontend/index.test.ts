@@ -234,12 +234,14 @@ describe('the editor extension of the todos plugin', () => {
 describe('the task completion of the todos plugin', () => {
   const projects = [{ name: 'home', count: 2 }]
 
-  const complete = (extension: Extension, doc: string) => {
+  const complete = async (extension: Extension, doc: string) => {
     const state = EditorState.create({ doc, extensions: [extension] })
     const source = state
       .languageDataAt<CompletionSource>('autocomplete', doc.length)
       .find((one) => one !== undefined)
-    return source?.(new CompletionContext(state, doc.length, true)) as CompletionResult | null
+    return (await source?.(
+      new CompletionContext(state, doc.length, true),
+    )) as CompletionResult | null
   }
 
   it('reads the fields once at activation, before the stream sends a message', async () => {
@@ -257,7 +259,7 @@ describe('the task completion of the todos plugin', () => {
     await settle()
 
     const extension = context.getRegisteredEditorExtensions()[0]?.extension as Extension
-    const result = complete(extension, '- [ ] pay +')
+    const result = await complete(extension, '- [ ] pay +')
     expect(result?.options.map((one) => one.label)).toEqual(['home'])
   })
 
@@ -280,7 +282,7 @@ describe('the task completion of the todos plugin', () => {
     await settle()
 
     const extension = context.getRegisteredEditorExtensions()[0]?.extension as Extension
-    expect(complete(extension, '- [ ] pay +')?.options).toHaveLength(1)
+    expect((await complete(extension, '- [ ] pay +'))?.options).toHaveLength(1)
   })
 
   it('offers the tags after a hash', async () => {
@@ -300,7 +302,9 @@ describe('the task completion of the todos plugin', () => {
     await settle()
 
     const extension = context.getRegisteredEditorExtensions()[0]?.extension as Extension
-    expect(complete(extension, '- [ ] pay #')?.options.map((one) => one.label)).toEqual(['port'])
+    expect((await complete(extension, '- [ ] pay #'))?.options.map((one) => one.label)).toEqual([
+      'port',
+    ])
   })
 
   it('registers the extension again when the hideFields setting changes', () => {
