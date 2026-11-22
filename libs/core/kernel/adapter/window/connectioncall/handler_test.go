@@ -43,7 +43,7 @@ func (s *scriptedCalls) Call(_ context.Context, pluginID string, request modelca
 
 func newClient(t *testing.T, calls *scriptedCalls, options ...connect.ClientOption) numenv1connect.ConnectionCallServiceClient {
 	t.Helper()
-	var service numenv1connect.ConnectionCallServiceHandler = connectioncall.NewService(nil, nil, searchcancel.NewSearches(testsupport.GetMachine()))
+	service := connectioncall.NewService(nil, nil, searchcancel.NewSearches(testsupport.GetMachine()))
 	if calls != nil {
 		service = connectioncall.NewHandler(calls, calls, searchcancel.NewSearches(testsupport.GetMachine()))
 	}
