@@ -1,5 +1,3 @@
-// Package searchrun runs the searches of the query language that plugins start, keeps their results for a
-// while, and answers pages of them to the plugin that started each.
 package searchquery
 
 import (

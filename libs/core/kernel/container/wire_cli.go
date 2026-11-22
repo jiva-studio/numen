@@ -213,7 +213,7 @@ func openCLIEmbedder(closers *[]func() error, source sourcebridge.Binding, ctx c
 	return getSourceAccess(embedder), why
 }
 
-func getCLIPluginCommands(c Config, commands pluginCommandUseCases, openWork cliPluginWork, plugins textversion.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) cli.PluginCommands {
+func getCLIPluginCommands(_ Config, commands pluginCommandUseCases, openWork cliPluginWork, plugins textversion.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) cli.PluginCommands {
 	ports, err := vaultRegistry(vaultDeps.RegistryPath)
 	find := ports.Lookup
 	if err != nil {

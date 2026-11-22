@@ -200,8 +200,8 @@ func (identity) GetName(root string) string { return root }
 func (i identity) CheckReadable(string) error { return i.mismatched }
 
 func (identity) GetVaultID(root string) (domain.VaultID, bool, error) {
-	v, isFound, _ := knownVaults{}.FindVault(root)
-	return v.ID, isFound, nil
+	v, isFound, err := knownVaults{}.FindVault(root)
+	return v.ID, isFound, err
 }
 
 func (identity) EnsureIdentity(string, time.Time) (domain.VaultID, error) { return "", nil }

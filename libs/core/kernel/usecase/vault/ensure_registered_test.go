@@ -36,10 +36,10 @@ func TestEnsureRegistered_ReturnsAFolderOnTheListAsItIs(t *testing.T) {
 	if err != nil || got.ID != listed.ID {
 		t.Fatalf("got %+v (%v), want the vault %+v", got, err, listed)
 	}
-	if all, _ := registry.List(); len(all) != 1 {
+	if all, err := registry.List(); err != nil || len(all) != 1 {
 		t.Errorf("the list holds %d vaults, want 1", len(all))
 	}
-	if _, isRecorded, _ := registry.GetLastVault(); isRecorded {
+	if _, isRecorded, err := registry.GetLastVault(); err != nil || isRecorded {
 		t.Error("a vault on the list was recorded as opened")
 	}
 }
@@ -54,10 +54,10 @@ func TestEnsureRegistered_AddsAFolderMissingFromTheList(t *testing.T) {
 	if err != nil || got.Name != "numen" {
 		t.Fatalf("got %+v (%v), want a vault called numen", got, err)
 	}
-	if all, _ := registry.List(); len(all) != 1 {
+	if all, err := registry.List(); err != nil || len(all) != 1 {
 		t.Errorf("the list holds %d vaults, want 1", len(all))
 	}
-	if _, isRecorded, _ := registry.GetLastVault(); isRecorded {
+	if _, isRecorded, err := registry.GetLastVault(); err != nil || isRecorded {
 		t.Error("a vault was recorded as opened without being asked")
 	}
 }
@@ -71,7 +71,7 @@ func TestEnsureRegistered_RecordsAnAddedVaultWhenAsked(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if last, isRecorded, _ := registry.GetLastVault(); !isRecorded || last.ID != got.ID {
+	if last, isRecorded, err := registry.GetLastVault(); err != nil || !isRecorded || last.ID != got.ID {
 		t.Errorf("the vault opened last is %+v, want %+v", last, got)
 	}
 }
@@ -89,7 +89,7 @@ func TestEnsureRegistered_AddsNothingAfterAFailedLookup(t *testing.T) {
 	if _, err := newEnsure(t, registry).Execute(vaults.EnsureRequest{Root: folder(t, "pond")}); err == nil {
 		t.Error("the lookup failed and a vault was returned")
 	}
-	if raw, _ := os.ReadFile(registry.Path()); string(raw) != "not a list" {
+	if raw, err := os.ReadFile(registry.Path()); err != nil || string(raw) != "not a list" {
 		t.Errorf("the registry file is now %q", raw)
 	}
 }
