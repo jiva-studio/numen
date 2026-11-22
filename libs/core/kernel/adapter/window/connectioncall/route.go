@@ -6,6 +6,8 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 )
 
 // NewRoute is the path ConnectionCallService is served at and the handler that serves it. Each call goes
@@ -16,9 +18,9 @@ func NewRoute(handler numenv1connect.ConnectionCallServiceHandler, counted conne
 
 // NewService returns the handler over the calls and the rows, or the handler that answers every call as
 // unimplemented where the installation has no calls.
-func NewService(calls Calls, rows Rows) numenv1connect.ConnectionCallServiceHandler {
+func NewService(calls Calls, rows Rows, cancels *searchcancel.Searches) numenv1connect.ConnectionCallServiceHandler {
 	if calls == nil || rows == nil {
 		return numenv1connect.UnimplementedConnectionCallServiceHandler{}
 	}
-	return NewHandler(calls, rows)
+	return NewHandler(calls, rows, cancels)
 }

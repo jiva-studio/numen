@@ -362,8 +362,8 @@ func mountConnection(w *windowRoutes, install pluginInstall, exec *PluginExecuti
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountConnectionCall(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	handler := connectioncall.NewService(openModelCalls(install, settingsDeps), openRowLists(install, exec, settingsDeps, vaultDeps))
+func mountConnectionCall(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, clock installationClock) {
+	handler := connectioncall.NewService(openModelCalls(install, settingsDeps), openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(clock))
 	path, served := connectioncall.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }

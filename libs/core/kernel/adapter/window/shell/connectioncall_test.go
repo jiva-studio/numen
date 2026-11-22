@@ -2,6 +2,8 @@ package shell
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -54,7 +56,7 @@ func callConnection(t *testing.T, api *API) []*v1.ConnectionCallServiceCallRespo
 func TestTheWindowCarriesOutTheConnectionCallsOfItsPlugins(t *testing.T) {
 	calls := &answeringCalls{calls: make(chan recordedCall, 1)}
 	api := newAPI(t)
-	api.ConnectionCalls = connectioncall.NewHandler(calls, calls)
+	api.ConnectionCalls = connectioncall.NewHandler(calls, calls, searchcancel.NewSearches(testsupport.GetMachine()))
 
 	frames := callConnection(t, api)
 

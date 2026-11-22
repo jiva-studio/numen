@@ -36,6 +36,9 @@ const (
 	// ConnectionCallServiceCallProcedure is the fully-qualified name of the ConnectionCallService's
 	// Call RPC.
 	ConnectionCallServiceCallProcedure = "/numen.v1.ConnectionCallService/Call"
+	// ConnectionCallServiceCancelCallProcedure is the fully-qualified name of the
+	// ConnectionCallService's CancelCall RPC.
+	ConnectionCallServiceCancelCallProcedure = "/numen.v1.ConnectionCallService/CancelCall"
 	// ConnectionCallServiceListRowsProcedure is the fully-qualified name of the ConnectionCallService's
 	// ListRows RPC.
 	ConnectionCallServiceListRowsProcedure = "/numen.v1.ConnectionCallService/ListRows"
@@ -46,8 +49,13 @@ const (
 
 // ConnectionCallServiceClient is a client for the numen.v1.ConnectionCallService service.
 type ConnectionCallServiceClient interface {
-	// Call carries out one operation as HostConnectionService.Call does.
+	// Call carries out one operation. The core goes to the next row only when a row fails before its first data
+	// frame. The stream holds data frames and ends with one done or one failure.
 	Call(context.Context, *connect.Request[v1.ConnectionCallServiceCallRequest]) (*connect.ServerStreamForClient[v1.ConnectionCallServiceCallResponse], error)
+	// CancelCall stops the Call that carries the call id. A client that aborts its request does not stop the call
+	// in the core, so it sends this to free the work the call still does. A cancel that arrives before its call is
+	// kept for a few seconds and cancels the call if the call arrives in that time.
+	CancelCall(context.Context, *connect.Request[v1.CancelCallRequest]) (*connect.Response[v1.CancelCallResponse], error)
 	// ListRows returns the rows of the plugin for an operation, in the order of use, with the connection each
 	// names. A row whose connection is missing, or whose type is unavailable or does not serve the
 	// operation, is left out.
@@ -75,6 +83,12 @@ func NewConnectionCallServiceClient(httpClient connect.HTTPClient, baseURL strin
 			connect.WithSchema(connectionCallServiceMethods.ByName("Call")),
 			connect.WithClientOptions(opts...),
 		),
+		cancelCall: connect.NewClient[v1.CancelCallRequest, v1.CancelCallResponse](
+			httpClient,
+			baseURL+ConnectionCallServiceCancelCallProcedure,
+			connect.WithSchema(connectionCallServiceMethods.ByName("CancelCall")),
+			connect.WithClientOptions(opts...),
+		),
 		listRows: connect.NewClient[v1.ConnectionCallServiceListRowsRequest, v1.ConnectionCallServiceListRowsResponse](
 			httpClient,
 			baseURL+ConnectionCallServiceListRowsProcedure,
@@ -93,6 +107,7 @@ func NewConnectionCallServiceClient(httpClient connect.HTTPClient, baseURL strin
 // connectionCallServiceClient implements ConnectionCallServiceClient.
 type connectionCallServiceClient struct {
 	call           *connect.Client[v1.ConnectionCallServiceCallRequest, v1.ConnectionCallServiceCallResponse]
+	cancelCall     *connect.Client[v1.CancelCallRequest, v1.CancelCallResponse]
 	listRows       *connect.Client[v1.ConnectionCallServiceListRowsRequest, v1.ConnectionCallServiceListRowsResponse]
 	listRowOptions *connect.Client[v1.ConnectionCallServiceListRowOptionsRequest, v1.ConnectionCallServiceListRowOptionsResponse]
 }
@@ -100,6 +115,11 @@ type connectionCallServiceClient struct {
 // Call calls numen.v1.ConnectionCallService.Call.
 func (c *connectionCallServiceClient) Call(ctx context.Context, req *connect.Request[v1.ConnectionCallServiceCallRequest]) (*connect.ServerStreamForClient[v1.ConnectionCallServiceCallResponse], error) {
 	return c.call.CallServerStream(ctx, req)
+}
+
+// CancelCall calls numen.v1.ConnectionCallService.CancelCall.
+func (c *connectionCallServiceClient) CancelCall(ctx context.Context, req *connect.Request[v1.CancelCallRequest]) (*connect.Response[v1.CancelCallResponse], error) {
+	return c.cancelCall.CallUnary(ctx, req)
 }
 
 // ListRows calls numen.v1.ConnectionCallService.ListRows.
@@ -114,8 +134,13 @@ func (c *connectionCallServiceClient) ListRowOptions(ctx context.Context, req *c
 
 // ConnectionCallServiceHandler is an implementation of the numen.v1.ConnectionCallService service.
 type ConnectionCallServiceHandler interface {
-	// Call carries out one operation as HostConnectionService.Call does.
+	// Call carries out one operation. The core goes to the next row only when a row fails before its first data
+	// frame. The stream holds data frames and ends with one done or one failure.
 	Call(context.Context, *connect.Request[v1.ConnectionCallServiceCallRequest], *connect.ServerStream[v1.ConnectionCallServiceCallResponse]) error
+	// CancelCall stops the Call that carries the call id. A client that aborts its request does not stop the call
+	// in the core, so it sends this to free the work the call still does. A cancel that arrives before its call is
+	// kept for a few seconds and cancels the call if the call arrives in that time.
+	CancelCall(context.Context, *connect.Request[v1.CancelCallRequest]) (*connect.Response[v1.CancelCallResponse], error)
 	// ListRows returns the rows of the plugin for an operation, in the order of use, with the connection each
 	// names. A row whose connection is missing, or whose type is unavailable or does not serve the
 	// operation, is left out.
@@ -139,6 +164,12 @@ func NewConnectionCallServiceHandler(svc ConnectionCallServiceHandler, opts ...c
 		connect.WithSchema(connectionCallServiceMethods.ByName("Call")),
 		connect.WithHandlerOptions(opts...),
 	)
+	connectionCallServiceCancelCallHandler := connect.NewUnaryHandler(
+		ConnectionCallServiceCancelCallProcedure,
+		svc.CancelCall,
+		connect.WithSchema(connectionCallServiceMethods.ByName("CancelCall")),
+		connect.WithHandlerOptions(opts...),
+	)
 	connectionCallServiceListRowsHandler := connect.NewUnaryHandler(
 		ConnectionCallServiceListRowsProcedure,
 		svc.ListRows,
@@ -155,6 +186,8 @@ func NewConnectionCallServiceHandler(svc ConnectionCallServiceHandler, opts ...c
 		switch r.URL.Path {
 		case ConnectionCallServiceCallProcedure:
 			connectionCallServiceCallHandler.ServeHTTP(w, r)
+		case ConnectionCallServiceCancelCallProcedure:
+			connectionCallServiceCancelCallHandler.ServeHTTP(w, r)
 		case ConnectionCallServiceListRowsProcedure:
 			connectionCallServiceListRowsHandler.ServeHTTP(w, r)
 		case ConnectionCallServiceListRowOptionsProcedure:
@@ -170,6 +203,10 @@ type UnimplementedConnectionCallServiceHandler struct{}
 
 func (UnimplementedConnectionCallServiceHandler) Call(context.Context, *connect.Request[v1.ConnectionCallServiceCallRequest], *connect.ServerStream[v1.ConnectionCallServiceCallResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ConnectionCallService.Call is not implemented"))
+}
+
+func (UnimplementedConnectionCallServiceHandler) CancelCall(context.Context, *connect.Request[v1.CancelCallRequest]) (*connect.Response[v1.CancelCallResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ConnectionCallService.CancelCall is not implemented"))
 }
 
 func (UnimplementedConnectionCallServiceHandler) ListRows(context.Context, *connect.Request[v1.ConnectionCallServiceListRowsRequest]) (*connect.Response[v1.ConnectionCallServiceListRowsResponse], error) {

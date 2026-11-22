@@ -232,7 +232,7 @@ func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution
 	mountMedia(w, vaultDeps)
 	mountCommand(w, install, exec, settingsDeps, vaultDeps)
 	mountConnection(w, install, exec, settingsDeps, vaultDeps)
-	mountConnectionCall(w, install, exec, settingsDeps, vaultDeps)
+	mountConnectionCall(w, install, exec, settingsDeps, vaultDeps, vaultDeps.Clock)
 	mountLicense(w, install, settingsDeps, vaultDeps)
 	mountText(w, vaultDeps)
 	mountPlugin(w, install, exec, settingsDeps, vaultDeps)

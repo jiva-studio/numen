@@ -2,18 +2,27 @@ syntax = "proto3";
 
 package numen.v1;
 
-import "numen/v1/hostconnection.proto";
 import "numen/v1/provider.proto";
 import "numen/v1/settings.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
-// ConnectionCallService carries out the operations a plugin view asks for, through the rows of the plugin
-// the request names. The host endpoint that plugin processes reach with their token does not mount it,
-// and the handler refuses a request that carries a token.
+// ConnectionCallService carries out the operations a caller asks for, through the rows of a plugin. The window
+// serves it to a plugin view, which names the plugin whose rows serve the call. The host endpoint serves it to a
+// plugin process, which is the plugin its token names: the request names no plugin, or that one, and the host
+// refuses a request that names another. The core takes the connections from the rows of the settings of the
+// plugin; a plugin that holds connections:use:<operation> uses every connection that serves that operation,
+// which none of its settings of rows lists. The payload and the frames are bytes of the contract the operation
+// belongs to.
 service ConnectionCallService {
-  // Call carries out one operation as HostConnectionService.Call does.
+  // Call carries out one operation. The core goes to the next row only when a row fails before its first data
+  // frame. The stream holds data frames and ends with one done or one failure.
   rpc Call(ConnectionCallServiceCallRequest) returns (stream ConnectionCallServiceCallResponse);
+
+  // CancelCall stops the Call that carries the call id. A client that aborts its request does not stop the call
+  // in the core, so it sends this to free the work the call still does. A cancel that arrives before its call is
+  // kept for a few seconds and cancels the call if the call arrives in that time.
+  rpc CancelCall(CancelCallRequest) returns (CancelCallResponse);
 
   // ListRows returns the rows of the plugin for an operation, in the order of use, with the connection each
   // names. A row whose connection is missing, or whose type is unavailable or does not serve the
@@ -26,14 +35,74 @@ service ConnectionCallService {
   rpc ListRowOptions(ConnectionCallServiceListRowOptionsRequest) returns (ConnectionCallServiceListRowOptionsResponse);
 }
 
+// CallErrorCode is the reason a call did not succeed.
+enum CallErrorCode {
+  CALL_ERROR_CODE_UNSPECIFIED = 0;
+  // CALL_ERROR_CODE_NO_CONNECTION is a plugin with no row that can serve the operation.
+  CALL_ERROR_CODE_NO_CONNECTION = 1;
+  // CALL_ERROR_CODE_ALL_FAILED is every row set aside or failed; the failures name each one. A row that
+  // fails after its first data frame is ALL_FAILED with that one connection.
+  CALL_ERROR_CODE_ALL_FAILED = 2;
+  // CALL_ERROR_CODE_STOPPED is a request that is wrong in itself, and the failure names the connection.
+  CALL_ERROR_CODE_STOPPED = 3;
+}
+
+// CallRowFailure is one row that did not answer. reason is the words the person reads and code the reason
+// a program reads; a row the core set aside for a reason outside the enum has the code UNAVAILABLE.
+message CallRowFailure {
+  string connection_name = 1;
+  string reason = 2;
+  FailureReason code = 3;
+}
+
+// CallFailure ends a call that did not succeed.
+message CallFailure {
+  CallErrorCode error = 1;
+  string detail = 2;
+  repeated CallRowFailure failures = 3;
+}
+
+// PreferredRow is the row a call asks first. connection_id names a connection among the rows of the plugin
+// for the operation; the call goes to it with options in place of the values of its row fields, then to
+// the other rows in order. A connection that is not among the rows is ignored. is_exclusive asks that row
+// alone: the call ends with its failure, and with no_connection where the connection is not among the
+// rows.
+message PreferredRow {
+  string connection_id = 1;
+  map<string, string> options = 2;
+  bool is_exclusive = 3;
+}
+
+// CallRowField is a row field the type of a connection declares. options_from is the operation that lists
+// its values, empty for none. is_required is a field a row must hold a value for.
+message CallRowField {
+  string key = 1;
+  string title = 2;
+  string options_from = 3;
+  bool is_required = 4;
+}
+
+// CallRow is one row of a plugin: its connection, the values of its row fields, and the row fields the
+// type of the connection declares.
+message CallRow {
+  string connection_id = 1;
+  string connection_name = 2;
+  map<string, string> options = 3;
+  repeated CallRowField fields = 4;
+}
+
 message ConnectionCallServiceCallRequest {
   // plugin_id is the plugin whose rows serve the call.
   string plugin_id = 1;
+  // operation is the name of the operation, such as "llm.chat".
   string operation = 2;
   bytes payload = 3;
   Priority priority = 4;
   // preferred is unset for the rows in their order.
   PreferredRow preferred = 5;
+  // call_id is the id CancelCall names this call by, chosen by the client and unique among its calls. Empty
+  // when the call cannot be cancelled.
+  string call_id = 6;
 }
 
 // ConnectionCallServiceCallResponse is one frame of a call.
@@ -45,6 +114,14 @@ message ConnectionCallServiceCallResponse {
     CallFailure failure = 3;
   }
 }
+
+message CancelCallRequest {
+  // plugin_id is the plugin the call was made for.
+  string plugin_id = 1;
+  string call_id = 2;
+}
+
+message CancelCallResponse {}
 
 message ConnectionCallServiceListRowsRequest {
   // plugin_id is the plugin whose rows are listed.

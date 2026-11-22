@@ -2,6 +2,8 @@ package connectioncall_test
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -41,9 +43,9 @@ func (s *scriptedCalls) Call(_ context.Context, pluginID string, request modelca
 
 func newClient(t *testing.T, calls *scriptedCalls, options ...connect.ClientOption) numenv1connect.ConnectionCallServiceClient {
 	t.Helper()
-	service := connectioncall.NewService(nil, nil)
+	service := connectioncall.NewService(nil, nil, searchcancel.NewSearches(testsupport.GetMachine()))
 	if calls != nil {
-		service = connectioncall.NewService(calls, calls)
+		service = connectioncall.NewService(calls, calls, searchcancel.NewSearches(testsupport.GetMachine()))
 	}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(service))
@@ -235,5 +237,43 @@ func TestAListingThatCarriesAPluginTokenIsRefused(t *testing.T) {
 
 	if connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("err = %v, want permission denied", err)
+	}
+}
+
+// blockingCalls holds a call open until its context ends.
+type blockingCalls struct {
+	scriptedCalls
+	started chan struct{}
+}
+
+func (b *blockingCalls) Call(ctx context.Context, _ string, _ modelcall.Request, _ modelcall.Send) ([]byte, error) {
+	close(b.started)
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func TestCancelCallEndsTheRunningCallOfThePluginWithTheId(t *testing.T) {
+	calls := &blockingCalls{started: make(chan struct{})}
+	service := connectioncall.NewService(calls, calls, searchcancel.NewSearches(testsupport.GetMachine()))
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(service))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	client := numenv1connect.NewConnectionCallServiceClient(server.Client(), server.URL)
+	ended := make(chan error, 1)
+	go func() {
+		_, err := call(t, client, connect.NewRequest(&v1.ConnectionCallServiceCallRequest{
+			PluginId: "md.numen.views.agent.chat", Operation: "acp.task", CallId: "call-1",
+		}))
+		ended <- err
+	}()
+	<-calls.started
+
+	if _, err := client.CancelCall(t.Context(), connect.NewRequest(&v1.CancelCallRequest{PluginId: "md.numen.views.agent.chat", CallId: "call-1"})); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := <-ended; connect.CodeOf(err) != connect.CodeCanceled {
+		t.Errorf("the call ended with %v, want canceled", err)
 	}
 }
