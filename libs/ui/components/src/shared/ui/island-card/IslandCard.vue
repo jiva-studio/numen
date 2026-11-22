@@ -33,7 +33,7 @@ defineProps<{ title: string; isCompact?: boolean }>()
 .island-card__title {
   margin: 0;
   min-inline-size: 0;
-  font-size: var(--numen-text-3);
+  font-size: var(--numen-text-2);
   font-weight: 600;
   color: var(--numen-ink);
 }
