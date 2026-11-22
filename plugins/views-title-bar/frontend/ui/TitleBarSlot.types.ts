@@ -1,5 +1,4 @@
-import type { AppInfo, CommandItem, SlotItem, Caught } from '@numen/plugin-sdk'
-
+import type { AppInfo, CommandItem, SlotItem } from '@numen/plugin-sdk'
 export interface TitleBarSlotProps {
   name: string
   entries: readonly SlotItem[]
@@ -7,5 +6,5 @@ export interface TitleBarSlotProps {
   hidden: ReadonlySet<string>
   platform: AppInfo['platform']
   listItems: (command: string) => Promise<readonly CommandItem[]>
-  reportError?: ((error: Caught) => void) | undefined
+  reportError?: ((error: unknown) => void) | undefined
 }

@@ -2,11 +2,10 @@
  * What a pane of a plugin view takes from the window: the path its state names, its layout, and the
  * stylesheets of the window.
  */
-import type { Unvalidated } from '@numen/plugin-sdk'
 import { createSheet } from '../../styles'
 
 /** The path a tab state names as `path`, `file` or `at`; the state is the plugin's own, so its shape is checked. */
-export function parseStatePath(state: Unvalidated): string {
+export function parseStatePath(state: unknown): string {
   if (typeof state !== 'object' || state === null) return ''
   const read = (key: 'path' | 'file' | 'at') => (key in state ? Reflect.get(state, key) : undefined)
   const val = read('path') ?? read('file') ?? read('at')

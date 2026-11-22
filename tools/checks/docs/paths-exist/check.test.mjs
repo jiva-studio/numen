@@ -9,6 +9,8 @@ const TRACKED = [
   "plugins/views-tasks/manifest.json",
   "plugins/views-files/manifest.json",
   "tools/lint-layers/README.md",
+  "docs/plugins/README.md",
+  "README.md",
   ".agents/rules/architecture.md",
 ];
 
@@ -42,7 +44,7 @@ describe("the paths documents name exist in the tree", () => {
   });
 
   it("ignores text that is not a path of the repository", () => {
-    const found = findMissingPaths([{ file: "AGENTS.md", text: "`make check_layers` `docs/gone.md` `src/gone.ts` `a/b` `libs gone/x`" }], TRACKED);
+    const found = findMissingPaths([{ file: "AGENTS.md", text: "`make check_layers` `src/gone.ts` `a/b` `libs gone/x`" }], TRACKED);
     assert.deepEqual(found.findings, []);
     assert.equal(found.read, 0);
   });
@@ -50,7 +52,7 @@ describe("the paths documents name exist in the tree", () => {
 
 describe("the document patterns", () => {
   it("reports a pattern that matches no tracked file", () => {
-    assert.deepEqual(findUnmatchedPatterns([/^docs\/architecture\/target-layout\.md$/, /^\.agents\/.*\.md$/], TRACKED), [/^docs\/architecture\/target-layout\.md$/]);
+    assert.deepEqual(findUnmatchedPatterns([/^docs\/gone\.md$/, /^\.agents\/.*\.md$/], TRACKED), [/^docs\/gone\.md$/]);
   });
 
   it("covers every markdown file under .agents and every AGENTS.md", () => {
@@ -61,6 +63,9 @@ describe("the document patterns", () => {
     assert.ok(covers("tools/checks/README.md"));
     assert.ok(covers("libs/plugin/sdk-go/README.md"));
     assert.ok(!covers("plugins/views-tasks/README.md"));
-    assert.ok(!covers("docs/readme.md"));
+    assert.ok(covers("docs/plugins/README.md"));
+    assert.ok(covers("README.md"));
+    assert.ok(!covers("plugins/views-files/NOTES.md"));
+    assert.ok(!covers("docs/diagram.png"));
   });
 });

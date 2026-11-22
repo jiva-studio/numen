@@ -12,12 +12,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // feedHost answers ListFileChanges with one change and records the request.
 type feedHost struct {
-	numenv1connect.UnimplementedHostVaultServiceHandler
+	unimplementedHost
 	asked   *v1.ListFileChangesRequest
 	vault   string
 	refused bool

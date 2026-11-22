@@ -6,7 +6,6 @@ import { defineComponent, h, onScopeDispose, watch } from 'vue'
 import {
   definePlugin,
   useSlotLoading,
-  type Caught,
   type HostServices,
   type PluginContext,
 } from '@numen/plugin-sdk'
@@ -56,7 +55,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     )
   }
   const settings = readSettings(plugin)
-  const reportFailure = (error: Caught) =>
+  const reportFailure = (error: unknown) =>
     notices.show(error instanceof Error ? error.message : String(error), 'error')
   const reader = createNotesReader({ notes, events: host.events, reportFailure })
   plugin.identity.subscriptions.push({ dispose: reader.dispose })

@@ -1,7 +1,6 @@
 /** How many headings a node shows, as the plugin's own setting holds it. */
 import { shallowRef, type Ref } from 'vue'
-import type { JsonValue, PluginContext, Unvalidated } from '@numen/plugin-sdk'
-
+import type { JsonValue, PluginContext } from '@numen/plugin-sdk'
 const HEADING_LIMIT = 6
 const HEADING_LIMIT_MIN = 1
 const HEADING_LIMIT_MAX = 12
@@ -11,7 +10,7 @@ export interface HeadingsSettings {
   readonly headingLimit: Readonly<Ref<number>>
 }
 
-const parseHeadingLimit = (value: Unvalidated): number =>
+const parseHeadingLimit = (value: unknown): number =>
   typeof value === 'number' && Number.isInteger(value)
     ? Math.min(Math.max(value, HEADING_LIMIT_MIN), HEADING_LIMIT_MAX)
     : HEADING_LIMIT

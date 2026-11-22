@@ -2,7 +2,6 @@ package wire
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"strconv"
 	"strings"
@@ -13,8 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 // ErrShut is returned for a request to a window that has been shut; the window answers no further requests.
@@ -86,7 +83,7 @@ func (g *Gate) CountQuestions() connect.HandlerOption {
 				}
 				start := trace.clock.Now()
 				resp, err := next(ctx, r)
-				trace.recordCall(ctx, start, r, resp, err)
+				trace.recordCall(ctx, start, r, err)
 				return resp, err
 			}
 		},
@@ -98,7 +95,7 @@ func isLogProcedure(procedure string) bool {
 }
 
 func (t *callTrace) recordCall(
-	ctx context.Context, start time.Time, req connect.AnyRequest, resp connect.AnyResponse, err error,
+	ctx context.Context, start time.Time, req connect.AnyRequest, err error,
 ) {
 	duration := t.clock.Now().Sub(start)
 	service, method := splitProcedure(req.Spec().Procedure)
@@ -107,7 +104,6 @@ func (t *callTrace) recordCall(
 	props := map[string]string{
 		"service":    strconv.Quote(service),
 		"method":     strconv.Quote(method),
-		"request":    encodeMessageJSON(req.Any()),
 		"durationMs": durationMs,
 	}
 	caller := describeCaller(plugindomain.GetCaller(ctx))
@@ -115,9 +111,7 @@ func (t *callTrace) recordCall(
 		props["caller"] = strconv.Quote(caller)
 	}
 	if err != nil {
-		props["error"] = strconv.Quote(err.Error())
-	} else if resp != nil {
-		props["response"] = encodeMessageJSON(resp.Any())
+		props["error"] = strconv.Quote(connect.CodeOf(err).String())
 	}
 	t.record(logs.Entry{
 		Time:       start,
@@ -174,19 +168,4 @@ func describeCaller(caller plugindomain.Caller, ok bool) string {
 		return caller.PluginID
 	}
 	return caller.Who
-}
-
-func encodeMessageJSON(msg any) string {
-	if msg == nil {
-		return "{}"
-	}
-	if pb, ok := msg.(proto.Message); ok {
-		if raw, err := protojson.Marshal(pb); err == nil {
-			return string(raw)
-		}
-	}
-	if raw, err := json.Marshal(msg); err == nil {
-		return string(raw)
-	}
-	return "{}"
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 const staleDetail = "Deltas.md changed since it was read"
@@ -23,26 +22,26 @@ const staleDetail = "Deltas.md changed since it was read"
 // linking is a host of a vault of rivers that serves the link edits and records the requests. Its
 // AddLinks writes the first link, rejects the second as stale and fails the third with no code.
 type linking struct {
-	numenv1connect.UnimplementedHostVaultServiceHandler
+	unimplementedHost
 	mu         sync.Mutex
 	callError  v1.HostVaultErrorCode
 	editError  v1.HostVaultErrorCode
 	editDetail string
-	added      *v1.HostVaultServiceAddLinksRequest
-	updated    *v1.HostVaultServiceUpdateLinksRequest
-	removed    *v1.HostVaultServiceRemoveLinksRequest
+	added      *v1.HostLinkServiceAddLinksRequest
+	updated    *v1.HostLinkServiceUpdateLinksRequest
+	removed    *v1.HostLinkServiceRemoveLinksRequest
 }
 
 func (l *linking) AddLinks(
-	_ context.Context, req *connect.Request[v1.HostVaultServiceAddLinksRequest],
-) (*connect.Response[v1.HostVaultServiceAddLinksResponse], error) {
+	_ context.Context, req *connect.Request[v1.HostLinkServiceAddLinksRequest],
+) (*connect.Response[v1.HostLinkServiceAddLinksResponse], error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.added = req.Msg
 	if l.callError != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceAddLinksResponse{Error: l.callError}), nil
+		return connect.NewResponse(&v1.HostLinkServiceAddLinksResponse{Error: l.callError}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceAddLinksResponse{Results: []*v1.HostLinkAdded{
+	return connect.NewResponse(&v1.HostLinkServiceAddLinksResponse{Results: []*v1.HostLinkAdded{
 		{Stat: &v1.HostFileStat{Path: "Danube.md", Size: 64, ModTime: 2000, IsNote: true}},
 		{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT, Detail: staleDetail},
 		{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, Detail: diskFull},
@@ -50,27 +49,27 @@ func (l *linking) AddLinks(
 }
 
 func (l *linking) UpdateLinks(
-	_ context.Context, req *connect.Request[v1.HostVaultServiceUpdateLinksRequest],
-) (*connect.Response[v1.HostVaultServiceUpdateLinksResponse], error) {
+	_ context.Context, req *connect.Request[v1.HostLinkServiceUpdateLinksRequest],
+) (*connect.Response[v1.HostLinkServiceUpdateLinksResponse], error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.updated = req.Msg
 	if l.callError != 0 || l.editError != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceUpdateLinksResponse{Error: max(l.callError, l.editError), Detail: l.editDetail}), nil
+		return connect.NewResponse(&v1.HostLinkServiceUpdateLinksResponse{Error: max(l.callError, l.editError), Detail: l.editDetail}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceUpdateLinksResponse{Stat: &v1.HostFileStat{Path: "Deltas.md", Size: 90, ModTime: 3000, IsNote: true}}), nil
+	return connect.NewResponse(&v1.HostLinkServiceUpdateLinksResponse{Stat: &v1.HostFileStat{Path: "Deltas.md", Size: 90, ModTime: 3000, IsNote: true}}), nil
 }
 
 func (l *linking) RemoveLinks(
-	_ context.Context, req *connect.Request[v1.HostVaultServiceRemoveLinksRequest],
-) (*connect.Response[v1.HostVaultServiceRemoveLinksResponse], error) {
+	_ context.Context, req *connect.Request[v1.HostLinkServiceRemoveLinksRequest],
+) (*connect.Response[v1.HostLinkServiceRemoveLinksResponse], error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.removed = req.Msg
 	if l.callError != 0 || l.editError != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceRemoveLinksResponse{Error: max(l.callError, l.editError), Detail: l.editDetail}), nil
+		return connect.NewResponse(&v1.HostLinkServiceRemoveLinksResponse{Error: max(l.callError, l.editError), Detail: l.editDetail}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceRemoveLinksResponse{Stat: &v1.HostFileStat{Path: "Deltas.md", Size: 40, ModTime: 4000, IsNote: true}}), nil
+	return connect.NewResponse(&v1.HostLinkServiceRemoveLinksResponse{Stat: &v1.HostFileStat{Path: "Deltas.md", Size: 40, ModTime: 4000, IsNote: true}}), nil
 }
 
 func linkingClient(t *testing.T, l *linking) *host.Client {

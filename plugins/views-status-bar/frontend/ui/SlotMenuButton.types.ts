@@ -1,6 +1,5 @@
 import type { Component } from 'vue'
-import type { CommandItem, SlotItem, Caught } from '@numen/plugin-sdk'
-
+import type { CommandItem, SlotItem } from '@numen/plugin-sdk'
 export interface SlotMenuButtonProps {
   entries: readonly SlotItem[]
   label: string
@@ -8,5 +7,5 @@ export interface SlotMenuButtonProps {
   tooltip?: string
   isItemList?: boolean
   listItems: (command: string) => Promise<readonly CommandItem[]>
-  reportError?: ((error: Caught) => void) | undefined
+  reportError?: ((error: unknown) => void) | undefined
 }

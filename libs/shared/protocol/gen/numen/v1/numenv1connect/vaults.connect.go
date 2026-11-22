@@ -41,9 +41,6 @@ const (
 	// VaultsServiceListVaultsProcedure is the fully-qualified name of the VaultsService's ListVaults
 	// RPC.
 	VaultsServiceListVaultsProcedure = "/numen.v1.VaultsService/ListVaults"
-	// VaultsServiceChooseFolderProcedure is the fully-qualified name of the VaultsService's
-	// ChooseFolder RPC.
-	VaultsServiceChooseFolderProcedure = "/numen.v1.VaultsService/ChooseFolder"
 	// VaultsServiceAddVaultProcedure is the fully-qualified name of the VaultsService's AddVault RPC.
 	VaultsServiceAddVaultProcedure = "/numen.v1.VaultsService/AddVault"
 	// VaultsServiceRenameVaultProcedure is the fully-qualified name of the VaultsService's RenameVault
@@ -61,10 +58,6 @@ type VaultsServiceClient interface {
 	// ListVaults is every vault the installation holds. Which of them a window is
 	// showing is asked of that window.
 	ListVaults(context.Context, *connect.Request[v1.ListVaultsRequest]) (*connect.Response[v1.ListVaultsResponse], error)
-	// ChooseFolder puts this machine's own folder dialog in front of the person
-	// and answers with the folder they chose. A person who closes the dialog has
-	// chosen nothing, and the answer says so.
-	ChooseFolder(context.Context, *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error)
 	// AddVault turns a folder into a vault and puts it on the list. The folder is
 	// given an identity that stays with it, and is the same vault wherever it
 	// moves to.
@@ -99,12 +92,6 @@ func NewVaultsServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(vaultsServiceMethods.ByName("ListVaults")),
 			connect.WithClientOptions(opts...),
 		),
-		chooseFolder: connect.NewClient[v1.ChooseFolderRequest, v1.ChooseFolderResponse](
-			httpClient,
-			baseURL+VaultsServiceChooseFolderProcedure,
-			connect.WithSchema(vaultsServiceMethods.ByName("ChooseFolder")),
-			connect.WithClientOptions(opts...),
-		),
 		addVault: connect.NewClient[v1.AddVaultRequest, v1.AddVaultResponse](
 			httpClient,
 			baseURL+VaultsServiceAddVaultProcedure,
@@ -134,22 +121,16 @@ func NewVaultsServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // vaultsServiceClient implements VaultsServiceClient.
 type vaultsServiceClient struct {
-	listVaults   *connect.Client[v1.ListVaultsRequest, v1.ListVaultsResponse]
-	chooseFolder *connect.Client[v1.ChooseFolderRequest, v1.ChooseFolderResponse]
-	addVault     *connect.Client[v1.AddVaultRequest, v1.AddVaultResponse]
-	renameVault  *connect.Client[v1.RenameVaultRequest, v1.RenameVaultResponse]
-	removeVault  *connect.Client[v1.RemoveVaultRequest, v1.RemoveVaultResponse]
-	openVault    *connect.Client[v1.OpenVaultRequest, v1.OpenVaultResponse]
+	listVaults  *connect.Client[v1.ListVaultsRequest, v1.ListVaultsResponse]
+	addVault    *connect.Client[v1.AddVaultRequest, v1.AddVaultResponse]
+	renameVault *connect.Client[v1.RenameVaultRequest, v1.RenameVaultResponse]
+	removeVault *connect.Client[v1.RemoveVaultRequest, v1.RemoveVaultResponse]
+	openVault   *connect.Client[v1.OpenVaultRequest, v1.OpenVaultResponse]
 }
 
 // ListVaults calls numen.v1.VaultsService.ListVaults.
 func (c *vaultsServiceClient) ListVaults(ctx context.Context, req *connect.Request[v1.ListVaultsRequest]) (*connect.Response[v1.ListVaultsResponse], error) {
 	return c.listVaults.CallUnary(ctx, req)
-}
-
-// ChooseFolder calls numen.v1.VaultsService.ChooseFolder.
-func (c *vaultsServiceClient) ChooseFolder(ctx context.Context, req *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error) {
-	return c.chooseFolder.CallUnary(ctx, req)
 }
 
 // AddVault calls numen.v1.VaultsService.AddVault.
@@ -177,10 +158,6 @@ type VaultsServiceHandler interface {
 	// ListVaults is every vault the installation holds. Which of them a window is
 	// showing is asked of that window.
 	ListVaults(context.Context, *connect.Request[v1.ListVaultsRequest]) (*connect.Response[v1.ListVaultsResponse], error)
-	// ChooseFolder puts this machine's own folder dialog in front of the person
-	// and answers with the folder they chose. A person who closes the dialog has
-	// chosen nothing, and the answer says so.
-	ChooseFolder(context.Context, *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error)
 	// AddVault turns a folder into a vault and puts it on the list. The folder is
 	// given an identity that stays with it, and is the same vault wherever it
 	// moves to.
@@ -211,12 +188,6 @@ func NewVaultsServiceHandler(svc VaultsServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(vaultsServiceMethods.ByName("ListVaults")),
 		connect.WithHandlerOptions(opts...),
 	)
-	vaultsServiceChooseFolderHandler := connect.NewUnaryHandler(
-		VaultsServiceChooseFolderProcedure,
-		svc.ChooseFolder,
-		connect.WithSchema(vaultsServiceMethods.ByName("ChooseFolder")),
-		connect.WithHandlerOptions(opts...),
-	)
 	vaultsServiceAddVaultHandler := connect.NewUnaryHandler(
 		VaultsServiceAddVaultProcedure,
 		svc.AddVault,
@@ -245,8 +216,6 @@ func NewVaultsServiceHandler(svc VaultsServiceHandler, opts ...connect.HandlerOp
 		switch r.URL.Path {
 		case VaultsServiceListVaultsProcedure:
 			vaultsServiceListVaultsHandler.ServeHTTP(w, r)
-		case VaultsServiceChooseFolderProcedure:
-			vaultsServiceChooseFolderHandler.ServeHTTP(w, r)
 		case VaultsServiceAddVaultProcedure:
 			vaultsServiceAddVaultHandler.ServeHTTP(w, r)
 		case VaultsServiceRenameVaultProcedure:
@@ -266,10 +235,6 @@ type UnimplementedVaultsServiceHandler struct{}
 
 func (UnimplementedVaultsServiceHandler) ListVaults(context.Context, *connect.Request[v1.ListVaultsRequest]) (*connect.Response[v1.ListVaultsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.ListVaults is not implemented"))
-}
-
-func (UnimplementedVaultsServiceHandler) ChooseFolder(context.Context, *connect.Request[v1.ChooseFolderRequest]) (*connect.Response[v1.ChooseFolderResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.VaultsService.ChooseFolder is not implemented"))
 }
 
 func (UnimplementedVaultsServiceHandler) AddVault(context.Context, *connect.Request[v1.AddVaultRequest]) (*connect.Response[v1.AddVaultResponse], error) {

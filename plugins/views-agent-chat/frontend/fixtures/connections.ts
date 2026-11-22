@@ -10,7 +10,8 @@ import type {
   ConnectionRowOption,
   Result,
 } from '@numen/plugin-sdk'
-import { acp, acptest } from '@numen/plugin-sdk/contracts'
+import { acp } from '@numen/plugin-sdk/contracts'
+import { acptest } from '@numen/plugin-sdk/contracts/testing'
 
 export type FrameInit = acptest.TaskFrameInit
 

@@ -2,7 +2,6 @@
  * The menu of a tab of the window, whose commands run through the commands of the window.
  */
 import type { CommandsHost, CommandTarget as RunTarget, SlotHost } from '@numen/plugin-loader'
-import type { Caught } from '@/shared/api/errors'
 import type { WindowTabs } from './windowTabs'
 import type { TabLinkGroup } from '../lib/links'
 import { useTabMenu, type NoteKind } from './useTabMenu'
@@ -19,7 +18,7 @@ interface WindowTabMenuDeps {
   /** The type and the properties of the note of the path. */
   readNoteKind?(this: void, path: string): Promise<NoteKind>
   /** Shows the error of a command of the menu that failed, or of items that could not be read. */
-  reportError?(this: void, error: Caught): void
+  reportError?(this: void, error: unknown): void
 }
 
 const getTabFileTarget = (windowTabs: WindowTabMenuDeps['windowTabs'], id: string): RunTarget => {

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/catalog.proto.
  */
 export const file_numen_v1_catalog: GenFile = /*@__PURE__*/
-  fileDesc("ChZudW1lbi92MS9jYXRhbG9nLnByb3RvEghudW1lbi52MSKmAgoMQ2F0YWxvZ0VudHJ5EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDwoHdmVyc2lvbhgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIQCghjYXRlZ29yeRgFIAEoCRIyCgtjb250cmlidXRlcxgGIAEoCzIdLm51bWVuLnYxLk1hbmlmZXN0Q29udHJpYnV0ZXMSDgoGc291cmNlGAcgASgJEiUKBXN0YXRlGAggASgOMhYubnVtZW4udjEuQ2F0YWxvZ1N0YXRlEjkKD2luY29tcGF0aWJpbGl0eRgJIAEoDjIgLm51bWVuLnYxLkNhdGFsb2dJbmNvbXBhdGliaWxpdHkSHgoWaW5jb21wYXRpYmlsaXR5X2RldGFpbBgKIAEoCSI1ChJDYXRhbG9nU291cmNlRXJyb3ISDgoGc291cmNlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkiFAoSTGlzdENhdGFsb2dSZXF1ZXN0InMKE0xpc3RDYXRhbG9nUmVzcG9uc2USJwoHZW50cmllcxgBIAMoCzIWLm51bWVuLnYxLkNhdGFsb2dFbnRyeRIzCg1zb3VyY2VfZXJyb3JzGAIgAygLMhwubnVtZW4udjEuQ2F0YWxvZ1NvdXJjZUVycm9yIiQKFkdldENhdGFsb2dFbnRyeVJlcXVlc3QSCgoCaWQYASABKAkioAEKF0dldENhdGFsb2dFbnRyeVJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ2F0YWxvZ0Vycm9yQ29kZRIlCgVlbnRyeRgCIAEoCzIWLm51bWVuLnYxLkNhdGFsb2dFbnRyeRIzCg1zb3VyY2VfZXJyb3JzGAMgAygLMhwubnVtZW4udjEuQ2F0YWxvZ1NvdXJjZUVycm9yIjAKIEZpbmRDYXRhbG9nRW50cnlCeVRhYktpbmRSZXF1ZXN0EgwKBGtpbmQYASABKAkiqgEKIUZpbmRDYXRhbG9nRW50cnlCeVRhYktpbmRSZXNwb25zZRIpCgVlcnJvchgBIAEoDjIaLm51bWVuLnYxLkNhdGFsb2dFcnJvckNvZGUSJQoFZW50cnkYAiABKAsyFi5udW1lbi52MS5DYXRhbG9nRW50cnkSMwoNc291cmNlX2Vycm9ycxgDIAMoCzIcLm51bWVuLnYxLkNhdGFsb2dTb3VyY2VFcnJvciqDAQoMQ2F0YWxvZ1N0YXRlEh0KGUNBVEFMT0dfU1RBVEVfVU5TUEVDSUZJRUQQABIbChdDQVRBTE9HX1NUQVRFX0lOU1RBTExFRBABEhoKFkNBVEFMT0dfU1RBVEVfRElTQUJMRUQQAhIbChdDQVRBTE9HX1NUQVRFX0FWQUlMQUJMRRADKosBChZDYXRhbG9nSW5jb21wYXRpYmlsaXR5EicKI0NBVEFMT0dfSU5DT01QQVRJQklMSVRZX1VOU1BFQ0lGSUVEEAASIgoeQ0FUQUxPR19JTkNPTVBBVElCSUxJVFlfVEFSR0VUEAESJAogQ0FUQUxPR19JTkNPTVBBVElCSUxJVFlfUFJPVE9DT0wQAipYChBDYXRhbG9nRXJyb3JDb2RlEiIKHkNBVEFMT0dfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiAKHENBVEFMT0dfRVJST1JfQ09ERV9OT1RfRk9VTkQQATKqAgoOQ2F0YWxvZ1NlcnZpY2USSgoLTGlzdENhdGFsb2cSHC5udW1lbi52MS5MaXN0Q2F0YWxvZ1JlcXVlc3QaHS5udW1lbi52MS5MaXN0Q2F0YWxvZ1Jlc3BvbnNlElYKD0dldENhdGFsb2dFbnRyeRIgLm51bWVuLnYxLkdldENhdGFsb2dFbnRyeVJlcXVlc3QaIS5udW1lbi52MS5HZXRDYXRhbG9nRW50cnlSZXNwb25zZRJ0ChlGaW5kQ2F0YWxvZ0VudHJ5QnlUYWJLaW5kEioubnVtZW4udjEuRmluZENhdGFsb2dFbnRyeUJ5VGFiS2luZFJlcXVlc3QaKy5udW1lbi52MS5GaW5kQ2F0YWxvZ0VudHJ5QnlUYWJLaW5kUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_manifest]);
+  fileDesc("ChZudW1lbi92MS9jYXRhbG9nLnByb3RvEghudW1lbi52MSKmAgoMQ2F0YWxvZ0VudHJ5EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDwoHdmVyc2lvbhgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIQCghjYXRlZ29yeRgFIAEoCRIyCgtjb250cmlidXRlcxgGIAEoCzIdLm51bWVuLnYxLk1hbmlmZXN0Q29udHJpYnV0ZXMSDgoGc291cmNlGAcgASgJEiUKBXN0YXRlGAggASgOMhYubnVtZW4udjEuQ2F0YWxvZ1N0YXRlEjkKD2luY29tcGF0aWJpbGl0eRgJIAEoDjIgLm51bWVuLnYxLkNhdGFsb2dJbmNvbXBhdGliaWxpdHkSHgoWaW5jb21wYXRpYmlsaXR5X2RldGFpbBgKIAEoCSI1ChJDYXRhbG9nU291cmNlRXJyb3ISDgoGc291cmNlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkiFAoSTGlzdENhdGFsb2dSZXF1ZXN0InMKE0xpc3RDYXRhbG9nUmVzcG9uc2USJwoHZW50cmllcxgBIAMoCzIWLm51bWVuLnYxLkNhdGFsb2dFbnRyeRIzCg1zb3VyY2VfZXJyb3JzGAIgAygLMhwubnVtZW4udjEuQ2F0YWxvZ1NvdXJjZUVycm9yIiQKFkdldENhdGFsb2dFbnRyeVJlcXVlc3QSCgoCaWQYASABKAkioAEKF0dldENhdGFsb2dFbnRyeVJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ2F0YWxvZ0Vycm9yQ29kZRIlCgVlbnRyeRgCIAEoCzIWLm51bWVuLnYxLkNhdGFsb2dFbnRyeRIzCg1zb3VyY2VfZXJyb3JzGAMgAygLMhwubnVtZW4udjEuQ2F0YWxvZ1NvdXJjZUVycm9yIiUKF0dldENhdGFsb2dSZWFkbWVSZXF1ZXN0EgoKAmlkGAEgASgJIigKGEdldENhdGFsb2dSZWFkbWVSZXNwb25zZRIMCgR0ZXh0GAEgASgJIjAKIEZpbmRDYXRhbG9nRW50cnlCeVRhYktpbmRSZXF1ZXN0EgwKBGtpbmQYASABKAkiqgEKIUZpbmRDYXRhbG9nRW50cnlCeVRhYktpbmRSZXNwb25zZRIpCgVlcnJvchgBIAEoDjIaLm51bWVuLnYxLkNhdGFsb2dFcnJvckNvZGUSJQoFZW50cnkYAiABKAsyFi5udW1lbi52MS5DYXRhbG9nRW50cnkSMwoNc291cmNlX2Vycm9ycxgDIAMoCzIcLm51bWVuLnYxLkNhdGFsb2dTb3VyY2VFcnJvciqDAQoMQ2F0YWxvZ1N0YXRlEh0KGUNBVEFMT0dfU1RBVEVfVU5TUEVDSUZJRUQQABIbChdDQVRBTE9HX1NUQVRFX0lOU1RBTExFRBABEhoKFkNBVEFMT0dfU1RBVEVfRElTQUJMRUQQAhIbChdDQVRBTE9HX1NUQVRFX0FWQUlMQUJMRRADKosBChZDYXRhbG9nSW5jb21wYXRpYmlsaXR5EicKI0NBVEFMT0dfSU5DT01QQVRJQklMSVRZX1VOU1BFQ0lGSUVEEAASIgoeQ0FUQUxPR19JTkNPTVBBVElCSUxJVFlfVEFSR0VUEAESJAogQ0FUQUxPR19JTkNPTVBBVElCSUxJVFlfUFJPVE9DT0wQAipYChBDYXRhbG9nRXJyb3JDb2RlEiIKHkNBVEFMT0dfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiAKHENBVEFMT0dfRVJST1JfQ09ERV9OT1RfRk9VTkQQATKFAwoOQ2F0YWxvZ1NlcnZpY2USSgoLTGlzdENhdGFsb2cSHC5udW1lbi52MS5MaXN0Q2F0YWxvZ1JlcXVlc3QaHS5udW1lbi52MS5MaXN0Q2F0YWxvZ1Jlc3BvbnNlElYKD0dldENhdGFsb2dFbnRyeRIgLm51bWVuLnYxLkdldENhdGFsb2dFbnRyeVJlcXVlc3QaIS5udW1lbi52MS5HZXRDYXRhbG9nRW50cnlSZXNwb25zZRJ0ChlGaW5kQ2F0YWxvZ0VudHJ5QnlUYWJLaW5kEioubnVtZW4udjEuRmluZENhdGFsb2dFbnRyeUJ5VGFiS2luZFJlcXVlc3QaKy5udW1lbi52MS5GaW5kQ2F0YWxvZ0VudHJ5QnlUYWJLaW5kUmVzcG9uc2USWQoQR2V0Q2F0YWxvZ1JlYWRtZRIhLm51bWVuLnYxLkdldENhdGFsb2dSZWFkbWVSZXF1ZXN0GiIubnVtZW4udjEuR2V0Q2F0YWxvZ1JlYWRtZVJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_manifest]);
 
 /**
  * CatalogEntry is one plugin as the catalog knows it.
@@ -191,6 +191,42 @@ export const GetCatalogEntryResponseSchema: GenMessage<GetCatalogEntryResponse> 
   messageDesc(file_numen_v1_catalog, 5);
 
 /**
+ * @generated from message numen.v1.GetCatalogReadmeRequest
+ */
+export type GetCatalogReadmeRequest = Message<"numen.v1.GetCatalogReadmeRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message numen.v1.GetCatalogReadmeRequest.
+ * Use `create(GetCatalogReadmeRequestSchema)` to create a new message.
+ */
+export const GetCatalogReadmeRequestSchema: GenMessage<GetCatalogReadmeRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_catalog, 6);
+
+/**
+ * @generated from message numen.v1.GetCatalogReadmeResponse
+ */
+export type GetCatalogReadmeResponse = Message<"numen.v1.GetCatalogReadmeResponse"> & {
+  /**
+   * The text of README.md, empty where there is none.
+   *
+   * @generated from field: string text = 1;
+   */
+  text: string;
+};
+
+/**
+ * Describes the message numen.v1.GetCatalogReadmeResponse.
+ * Use `create(GetCatalogReadmeResponseSchema)` to create a new message.
+ */
+export const GetCatalogReadmeResponseSchema: GenMessage<GetCatalogReadmeResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_catalog, 7);
+
+/**
  * @generated from message numen.v1.FindCatalogEntryByTabKindRequest
  */
 export type FindCatalogEntryByTabKindRequest = Message<"numen.v1.FindCatalogEntryByTabKindRequest"> & {
@@ -205,7 +241,7 @@ export type FindCatalogEntryByTabKindRequest = Message<"numen.v1.FindCatalogEntr
  * Use `create(FindCatalogEntryByTabKindRequestSchema)` to create a new message.
  */
 export const FindCatalogEntryByTabKindRequestSchema: GenMessage<FindCatalogEntryByTabKindRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_catalog, 6);
+  messageDesc(file_numen_v1_catalog, 8);
 
 /**
  * @generated from message numen.v1.FindCatalogEntryByTabKindResponse
@@ -234,7 +270,7 @@ export type FindCatalogEntryByTabKindResponse = Message<"numen.v1.FindCatalogEnt
  * Use `create(FindCatalogEntryByTabKindResponseSchema)` to create a new message.
  */
 export const FindCatalogEntryByTabKindResponseSchema: GenMessage<FindCatalogEntryByTabKindResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_catalog, 7);
+  messageDesc(file_numen_v1_catalog, 9);
 
 /**
  * CatalogState is the status of a plugin in the application.
@@ -370,6 +406,18 @@ export const CatalogService: GenService<{
     methodKind: "unary";
     input: typeof FindCatalogEntryByTabKindRequestSchema;
     output: typeof FindCatalogEntryByTabKindResponseSchema;
+  },
+  /**
+   * GetCatalogReadme returns the README.md that the folder of an installed plugin holds, whether the plugin is
+   * enabled or not. A plugin that is not installed, or whose folder holds none, answers an empty text. No plugin
+   * is started.
+   *
+   * @generated from rpc numen.v1.CatalogService.GetCatalogReadme
+   */
+  getCatalogReadme: {
+    methodKind: "unary";
+    input: typeof GetCatalogReadmeRequestSchema;
+    output: typeof GetCatalogReadmeResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_catalog, 0);

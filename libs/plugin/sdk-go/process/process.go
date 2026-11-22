@@ -16,7 +16,7 @@ import (
 
 // Client releases the process of the plugin.
 type Client struct {
-	rpc numenv1connect.PluginServiceClient
+	rpc numenv1connect.HostProcessServiceClient
 }
 
 // NewClient returns the client of the host at the endpoint, sending its calls with the default HTTP client.
@@ -25,7 +25,7 @@ func NewClient(endpoint hostcall.Endpoint) *Client {
 }
 
 func newClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
-	return &Client{rpc: numenv1connect.NewPluginServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
+	return &Client{rpc: numenv1connect.NewHostProcessServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
 }
 
 // NewClientFromEnv returns the client of the host the process was started for. It returns

@@ -2,7 +2,7 @@
  * The calls of a plugin through its connections, carried out over ConnectionCallService for the rows of
  * that plugin.
  */
-import type { Caught, ConnectionCallClient, ConnectionCallFailure } from '@numen/core-client'
+import type { ConnectionCallClient, ConnectionCallFailure } from '@numen/core-client'
 import type { ConnectionError, ConnectionHost, Result } from '@numen/plugin-sdk'
 
 const readError = (failure: ConnectionCallFailure): ConnectionError => ({
@@ -15,7 +15,7 @@ const readError = (failure: ConnectionCallFailure): ConnectionError => ({
   })),
 })
 
-const readCancellation = (error: Caught, signal: AbortSignal | undefined): ConnectionError => {
+const readCancellation = (error: unknown, signal: AbortSignal | undefined): ConnectionError => {
   if (signal?.aborted !== true) throw error
   return {
     error: 'canceled',

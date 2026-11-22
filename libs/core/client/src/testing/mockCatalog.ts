@@ -97,5 +97,6 @@ export function createMockPluginCatalog(initial: readonly CatalogEntry[] = []): 
           : asFailure({ kind: 'not-found', sourceErrors: [] }),
       )
     },
+    getReadme: () => Promise.resolve(asValue('')),
   }
 }

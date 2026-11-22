@@ -5,8 +5,6 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { waitWithinInterfaceLimit } from '@numen/plugin-loader'
-import type { Caught } from '@/shared/api/errors'
-
 export interface StartDeps {
   loadVaults(): Promise<void>
   startSettings(): Promise<void>
@@ -18,7 +16,7 @@ export interface StartDeps {
   /** Settles once the plugins of the window slots have started or failed. */
   waitForInterfacePlugins?(): Promise<void>
   /** Receives the failure of a start that is not awaited. */
-  reportError(this: void, error: Caught): void
+  reportError(this: void, error: unknown): void
 }
 
 /** How long one of the steps the workspace depends on may take before the window says it could not load. */

@@ -2,12 +2,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { HealthSeverity, WatchPluginProcessesResponseSchema } from '@numen/protocol'
-import { createPluginClient } from '../clients'
+import { createPluginProcessClient } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
 import { createProcessClient, type ProcessRpc } from './processes'
 
 const createProcesses = (answers: CoreAnswers) =>
-  createProcessClient(createPluginClient(createCoreTransport(answers)))
+  createProcessClient(createPluginProcessClient(createCoreTransport(answers)))
 
 const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> => {
   for await (const one of stream) return one
@@ -17,7 +17,7 @@ const readFirst = async <T>(stream: AsyncIterable<T>): Promise<T | undefined> =>
 describe('the plugins that run', () => {
   it('arrive with their times in milliseconds, their stop for idleness, their health, who started and holds them, and the time of the list', async () => {
     const processes = createProcesses({
-      pluginService: {
+      pluginProcessService: {
         watchPluginProcesses: async function* () {
           yield {
             processes: [

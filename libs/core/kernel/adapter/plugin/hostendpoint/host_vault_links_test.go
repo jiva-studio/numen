@@ -15,7 +15,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
@@ -147,7 +146,7 @@ func (l *linkingVault) readBaseline(t *testing.T, from string) *v1.HostFileStat 
 	return writeFileStat(now)
 }
 
-func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) numenv1connect.HostVaultServiceClient {
+func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) HostVaultClient {
 	t.Helper()
 	hostCallers := newCallers()
 	if vault != nil {
@@ -155,10 +154,10 @@ func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) numenv
 	}
 	endpoint := &Endpoint{callers: hostCallers.over(nil, granted...)}
 	mux := http.NewServeMux()
-	mux.Handle(vaultapi.NewHandler(endpoint, endpoint.callers.Lent))
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 }
 
 func TestLinkEditsAreDeniedWithoutVaultWrite(t *testing.T) {
@@ -166,13 +165,13 @@ func TestLinkEditsAreDeniedWithoutVaultWrite(t *testing.T) {
 	client := newLinksClient(t, vault, manifest.PermissionVaultRead)
 	ctx := t.Context()
 
-	_, addErr := client.AddLinks(ctx, connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
+	_, addErr := client.AddLinks(ctx, connect.NewRequest(&v1.HostLinkServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
 		{From: "Danube.md", Baseline: vault.readBaseline(t, "Danube.md"), To: "Deltas", Role: v1.Role_ROLE_CHILD},
 	}}))
-	_, updateErr := client.UpdateLinks(ctx, connect.NewRequest(&v1.HostVaultServiceUpdateLinksRequest{
+	_, updateErr := client.UpdateLinks(ctx, connect.NewRequest(&v1.HostLinkServiceUpdateLinksRequest{
 		From: "Deltas.md", To: "Danube", Baseline: vault.readBaseline(t, "Deltas.md"), Label: "flows into",
 	}))
-	_, removeErr := client.RemoveLinks(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveLinksRequest{
+	_, removeErr := client.RemoveLinks(ctx, connect.NewRequest(&v1.HostLinkServiceRemoveLinksRequest{
 		From: "Deltas.md", To: "Danube", Baseline: vault.readBaseline(t, "Deltas.md"),
 	}))
 
@@ -190,11 +189,11 @@ func TestLinkEditsWithoutAVaultReturnNoVault(t *testing.T) {
 	client := newLinksClient(t, nil, manifest.PermissionVaultWrite)
 	ctx := t.Context()
 
-	added, addErr := client.AddLinks(ctx, connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
+	added, addErr := client.AddLinks(ctx, connect.NewRequest(&v1.HostLinkServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
 		{From: "Danube.md", To: "Deltas", Role: v1.Role_ROLE_CHILD},
 	}}))
-	updated, updateErr := client.UpdateLinks(ctx, connect.NewRequest(&v1.HostVaultServiceUpdateLinksRequest{From: "Deltas.md", To: "Danube"}))
-	removed, removeErr := client.RemoveLinks(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveLinksRequest{From: "Deltas.md", To: "Danube"}))
+	updated, updateErr := client.UpdateLinks(ctx, connect.NewRequest(&v1.HostLinkServiceUpdateLinksRequest{From: "Deltas.md", To: "Danube"}))
+	removed, removeErr := client.RemoveLinks(ctx, connect.NewRequest(&v1.HostLinkServiceRemoveLinksRequest{From: "Deltas.md", To: "Danube"}))
 
 	if addErr != nil || added.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT || len(added.Msg.GetResults()) != 0 {
 		t.Errorf("AddLinks returned %v (%v), want NO_VAULT and no results", added, addErr)
@@ -213,7 +212,7 @@ func TestAddLinksSendsOneCallAndReturnsOneResultPerLink(t *testing.T) {
 	danube := vault.readBaseline(t, "Danube.md")
 	rhine := vault.readBaseline(t, "Rivers/Rhine.md")
 
-	res, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
+	res, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
 		{From: "Danube.md", Baseline: danube, To: "Deltas", Role: v1.Role_ROLE_CHILD, Type: "delta", Label: "ends in", Note: "the river ends in the delta"},
 		{From: "Rivers/Rhine.md", Baseline: rhine, To: "note://01JRIVERDanube", Role: v1.Role_ROLE_JUMP},
 		{From: "Danube.md", Baseline: danube, To: "Rivers/Rhine", Role: v1.Role_ROLE_REF},
@@ -265,7 +264,7 @@ func TestAddLinksOverStaleBaselineReturnsConflictAndWritesOthers(t *testing.T) {
 	outdated.Size++
 	rhine := vault.readBaseline(t, "Rivers/Rhine.md")
 
-	res, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
+	res, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
 		{From: "Danube.md", Baseline: outdated, To: "Deltas", Role: v1.Role_ROLE_CHILD},
 		{From: "Rivers/Rhine.md", Baseline: rhine, To: "Danube", Role: v1.Role_ROLE_JUMP},
 		{From: "Danube.md", Baseline: outdated, To: "Rivers/Rhine", Role: v1.Role_ROLE_REF},
@@ -293,7 +292,7 @@ func TestAddLinksToMissingNoteReturnsNotFoundWithTheDetail(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, manifest.PermissionVaultWrite)
 
-	res, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
+	res, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceAddLinksRequest{Links: []*v1.HostLinkAddition{
 		{From: "Volga.md", Baseline: &v1.HostFileStat{Path: "Volga.md", Size: 8, ModTime: time.Unix(0, 100).UnixNano()}, To: "Danube", Role: v1.Role_ROLE_JUMP},
 	}}))
 	if err != nil {
@@ -315,7 +314,7 @@ func TestAddLinksRejectsMoreThanFiftyLinks(t *testing.T) {
 		links[i] = &v1.HostLinkAddition{From: "Danube.md", Baseline: baseline, To: fmt.Sprintf("Tributary %d", i), Role: v1.Role_ROLE_CHILD}
 	}
 
-	_, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: links}))
+	_, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceAddLinksRequest{Links: links}))
 
 	if readCode(t, err) != connect.CodeInvalidArgument {
 		t.Errorf("51 links returned %v, want invalid argument", err)
@@ -334,7 +333,7 @@ func TestAddLinksAcceptsFiftyLinks(t *testing.T) {
 		links[i] = &v1.HostLinkAddition{From: "Danube.md", Baseline: baseline, To: fmt.Sprintf("Tributary %d", i), Role: v1.Role_ROLE_CHILD}
 	}
 
-	res, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: links}))
+	res, err := client.AddLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceAddLinksRequest{Links: links}))
 
 	if err != nil || len(res.Msg.GetResults()) != 50 {
 		t.Fatalf("50 links returned %v (%v), want 50 results", res, err)
@@ -346,7 +345,7 @@ func TestUpdateLinksPassesTheChangeAndReturnsTheFileStat(t *testing.T) {
 	client := newLinksClient(t, vault, manifest.PermissionVaultWrite)
 	baseline := vault.readBaseline(t, "Deltas.md")
 
-	res, err := client.UpdateLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceUpdateLinksRequest{
+	res, err := client.UpdateLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceUpdateLinksRequest{
 		From: "Deltas.md", To: "Danube", Baseline: baseline,
 		Role: v1.Role_ROLE_JUMP, Type: "outflow", Label: "flows from", Note: "the delta is the mouth of the river",
 	}))
@@ -376,7 +375,7 @@ func TestUpdateLinksOverAStaleBaselineReturnsConflict(t *testing.T) {
 	outdated := vault.readBaseline(t, "Deltas.md")
 	outdated.ModTime++
 
-	res, err := client.UpdateLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceUpdateLinksRequest{
+	res, err := client.UpdateLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceUpdateLinksRequest{
 		From: "Deltas.md", To: "Danube", Baseline: outdated, Label: "flows from",
 	}))
 	if err != nil {
@@ -392,7 +391,7 @@ func TestUpdateLinksOfUnlinkedTargetReturnsTheCoreText(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, manifest.PermissionVaultWrite)
 
-	res, err := client.UpdateLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceUpdateLinksRequest{
+	res, err := client.UpdateLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceUpdateLinksRequest{
 		From: "Deltas.md", To: "Volga", Baseline: vault.readBaseline(t, "Deltas.md"), Label: "flows from",
 	}))
 	if err != nil {
@@ -409,7 +408,7 @@ func TestRemoveLinksPassesTheRoleAndReturnsTheFileStat(t *testing.T) {
 	client := newLinksClient(t, vault, manifest.PermissionVaultWrite)
 	baseline := vault.readBaseline(t, "Deltas.md")
 
-	res, err := client.RemoveLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveLinksRequest{
+	res, err := client.RemoveLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceRemoveLinksRequest{
 		From: "Deltas.md", To: "Danube", Baseline: baseline, Role: v1.Role_ROLE_PARENT,
 	}))
 	if err != nil {
@@ -433,7 +432,7 @@ func TestRemoveLinksWithoutARolePassesNoRole(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, manifest.PermissionVaultWrite)
 
-	_, err := client.RemoveLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveLinksRequest{
+	_, err := client.RemoveLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceRemoveLinksRequest{
 		From: "Deltas.md", To: "Danube", Baseline: vault.readBaseline(t, "Deltas.md"),
 	}))
 	if err != nil {
@@ -451,7 +450,7 @@ func TestRemoveLinksOverAStaleBaselineReturnsConflict(t *testing.T) {
 	outdated := vault.readBaseline(t, "Deltas.md")
 	outdated.Size--
 
-	res, err := client.RemoveLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveLinksRequest{
+	res, err := client.RemoveLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceRemoveLinksRequest{
 		From: "Deltas.md", To: "Danube", Baseline: outdated,
 	}))
 	if err != nil {
@@ -467,7 +466,7 @@ func TestRemoveLinksOfUnlinkedTargetReturnsTheCoreText(t *testing.T) {
 	vault := newLinkingVault()
 	client := newLinksClient(t, vault, manifest.PermissionVaultWrite)
 
-	res, err := client.RemoveLinks(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveLinksRequest{
+	res, err := client.RemoveLinks(t.Context(), connect.NewRequest(&v1.HostLinkServiceRemoveLinksRequest{
 		From: "Deltas.md", To: "Volga", Baseline: vault.readBaseline(t, "Deltas.md"),
 	}))
 	if err != nil {

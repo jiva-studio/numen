@@ -15,6 +15,10 @@ service CatalogService {
   rpc GetCatalogEntry(GetCatalogEntryRequest) returns (GetCatalogEntryResponse);
   // FindCatalogEntryByTabKind returns the entry of the plugin that provides a kind of tab.
   rpc FindCatalogEntryByTabKind(FindCatalogEntryByTabKindRequest) returns (FindCatalogEntryByTabKindResponse);
+  // GetCatalogReadme returns the README.md that the folder of an installed plugin holds, whether the plugin is
+  // enabled or not. A plugin that is not installed, or whose folder holds none, answers an empty text. No plugin
+  // is started.
+  rpc GetCatalogReadme(GetCatalogReadmeRequest) returns (GetCatalogReadmeResponse);
 }
 
 // CatalogState is the status of a plugin in the application.
@@ -77,6 +81,15 @@ message GetCatalogEntryResponse {
   CatalogErrorCode error = 1;
   CatalogEntry entry = 2;
   repeated CatalogSourceError source_errors = 3;
+}
+
+message GetCatalogReadmeRequest {
+  string id = 1;
+}
+
+message GetCatalogReadmeResponse {
+  // The text of README.md, empty where there is none.
+  string text = 1;
 }
 
 message FindCatalogEntryByTabKindRequest {

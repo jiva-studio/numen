@@ -84,8 +84,8 @@ const PLUGIN_PACKAGES = [SDK_PACKAGE, '@numen/ui']
 /** A build configuration file, which may name the build entries a package declares. */
 const BUILD_CONFIGURATION = /\.config\.[cm]?[jt]s$/
 
-/** The entry a plugin file may not name: `testing` is the test entry a package declares, a stylesheet is an asset. */
-const TEST_ENTRY = './testing'
+/** The test entries a package declares; a plugin file may name them. */
+const TEST_ENTRIES = ['./testing', './contracts/testing']
 
 /**
  * The entry of the contracts between plugins. The main entry of the SDK may not re-export them (the
@@ -118,7 +118,7 @@ export function findPluginEntryViolations(files, exportsByPackage) {
       }
       const targetPath = typeof target === 'string' ? target : JSON.stringify(target)
       const isAllowed =
-        entry === TEST_ENTRY ||
+        TEST_ENTRIES.includes(entry) ||
         (entry === CONTRACTS_ENTRY && name === SDK_PACKAGE) ||
         /\.css\b/.test(targetPath) ||
         BUILD_CONFIGURATION.test(path.basename(file))

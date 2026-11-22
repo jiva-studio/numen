@@ -26,7 +26,7 @@ type Host struct {
 }
 
 type service struct {
-	numenv1connect.UnimplementedPluginServiceHandler
+	numenv1connect.UnimplementedHostProcessServiceHandler
 
 	mu       sync.Mutex
 	released int
@@ -45,7 +45,7 @@ func (s *service) ReleaseProcess(
 func NewHost(t *testing.T) *Host {
 	t.Helper()
 	host := &Host{service: &service{}}
-	_, handler := numenv1connect.NewPluginServiceHandler(host.service)
+	_, handler := numenv1connect.NewHostProcessServiceHandler(host.service)
 	served := httptest.NewServer(server.RequireToken(pluginToken, handler))
 	t.Cleanup(served.Close)
 	address, err := url.Parse(served.URL)

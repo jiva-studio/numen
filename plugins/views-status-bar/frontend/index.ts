@@ -3,13 +3,7 @@
  * slot `statusBar`, with the entries of `statusBar.left` and `statusBar.right`.
  */
 import { defineComponent, h } from 'vue'
-import {
-  definePlugin,
-  SLOT,
-  type HostServices,
-  type PluginContext,
-  type Caught,
-} from '@numen/plugin-sdk'
+import { definePlugin, SLOT, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { runInBackground } from '@numen/ui'
 import { useSlotEntries } from './model/useSlotEntries'
 import StatusBar from './ui/StatusBar.vue'
@@ -19,7 +13,7 @@ export const STATUS_BAR_VIEW = 'bar'
 
 function createStatusBarView(host: Pick<HostServices, 'ui'>) {
   const { slots, commands } = host.ui
-  const reportError = (error: Caught): void =>
+  const reportError = (error: unknown): void =>
     host.ui.notices.show(error instanceof Error ? error.message : String(error), 'error')
   return defineComponent({
     name: 'StatusBarView',

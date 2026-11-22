@@ -33,15 +33,15 @@ func (r *releasedProcesses) list() []string {
 	return slices.Clone(r.pluginIDs)
 }
 
-func newProcessClient(t *testing.T, released *releasedProcesses, token string) numenv1connect.PluginServiceClient {
+func newProcessClient(t *testing.T, released *releasedProcesses, token string) numenv1connect.HostProcessServiceClient {
 	t.Helper()
 	callers := newCallers().asCallers()
 	callers.Processes = released
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewPluginServiceHandler(&processEndpoint{endpoint: &Endpoint{callers: callers}}))
+	mux.Handle(numenv1connect.NewHostProcessServiceHandler(&processEndpoint{endpoint: &Endpoint{callers: callers}}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewPluginServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
+	return numenv1connect.NewHostProcessServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
 }
 
 // A plugin releases its own process: the token names the plugin.

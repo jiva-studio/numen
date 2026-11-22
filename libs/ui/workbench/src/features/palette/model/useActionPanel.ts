@@ -1,5 +1,5 @@
 import { computed, nextTick, ref, useId, watch, type ComponentPublicInstance, type Ref } from 'vue'
-import { reportFailure, runInBackground, type Unvalidated } from '@numen/ui'
+import { reportFailure, runInBackground } from '@numen/ui'
 import { findKeptAction, placeActions } from '../lib/actions'
 import { getSteppedIndex, type PaletteAction } from '../lib/item'
 import { isActionsChord } from '../lib/keys'
@@ -9,7 +9,7 @@ interface RowHandle {
   readonly element: HTMLElement | null
 }
 
-const isRowHandle = (value: Unvalidated): value is RowHandle =>
+const isRowHandle = (value: unknown): value is RowHandle =>
   typeof value === 'object' && value !== null && 'element' in value
 
 function createActionRows(getActiveActionId: () => string) {

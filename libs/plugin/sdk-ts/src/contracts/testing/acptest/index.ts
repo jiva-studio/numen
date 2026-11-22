@@ -3,8 +3,8 @@
  * their encoding: the TypeScript side of the Go package acptest.
  */
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
-import type { ConnectionCallOptions, ConnectionError, ConnectionHost } from '../../connections'
-import type { Result } from '../../result'
+import type { ConnectionCallOptions, ConnectionError, ConnectionHost } from '../../../connections'
+import type { Result } from '../../../result'
 import {
   OPERATION_TASK,
   TaskDoneSchema,
@@ -12,7 +12,7 @@ import {
   TaskRequestSchema,
   type StopReason,
   type TaskRequest,
-} from '../acp'
+} from '../../acp'
 
 /** A frame of a task as a test writes it: the fields it sets, the rest left at their defaults. */
 export type TaskFrameInit = MessageInitShape<typeof TaskFrameSchema>

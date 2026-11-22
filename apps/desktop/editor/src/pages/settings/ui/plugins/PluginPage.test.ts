@@ -59,16 +59,12 @@ describe('the page of a plugin opened after another', () => {
   it('never shows a value of the plugin shown before', async () => {
     const fileCounts = createHeldAnswers<number>()
     const readmes = createHeldAnswers<string>()
-    vi.stubGlobal('fetch', async (url: string) => {
-      const pluginId = url.split('/')[2] ?? ''
-      const text = await readmes.call(pluginId)
-      return { ok: true, headers: new Headers(), text: async () => text }
-    })
     const initialPluginId = ref<string | null>(FIRST.id)
     const installation = createInstallation({
       getSetting: (path) => at(FILE, path),
       plugins: ref([FIRST, SECOND]),
       getPluginData: (pluginId) => fileCounts.call(pluginId),
+      getReadme: (pluginId) => readmes.call(pluginId),
     })
     const wrapper = mount(SettingsTab, {
       props: { state: createSettingsState(installation, { initialPluginId }) },

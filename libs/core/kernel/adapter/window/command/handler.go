@@ -20,6 +20,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
+// errNoPlugin is a call of a plugin's command that names no plugin.
+var errNoPlugin = errors.New("a command call names the plugin that declares the command")
+
 // VaultProvider names the vault the window shows. A window showing none answers a vault with no ID.
 type VaultProvider interface {
 	GetCurrentVault() domain.Vault
@@ -47,9 +50,8 @@ func NewRoute(options connect.HandlerOption, handler *Handler) (path string, ser
 	return path, served, handler
 }
 
-// ListCommands lists the commands and the handlers of shared commands of every enabled plugin,
-// whichever part of the plugin runs them; one with items, whose condition names version.*, is marked.
-// It carries the content type of a file by its extension.
+// ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them; one with
+// items, whose condition names version.*, is marked.
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
@@ -58,35 +60,19 @@ func (h *Handler) ListCommands(
 	for _, one := range listing.Commands {
 		commands = append(commands, newWireCommand(one))
 	}
-	slots := make([]*v1.PluginSlotEntry, 0, len(listing.Slots))
-	for _, one := range listing.Slots {
-		slots = append(slots, newWireSlotEntry(one))
-	}
-	points := make([]*v1.PluginSlotPoint, 0, len(listing.SlotPoints))
-	for _, one := range listing.SlotPoints {
-		points = append(points, &v1.PluginSlotPoint{
-			PluginId: one.PluginID, Point: &v1.ManifestSlotPoint{Slot: one.Point.Slot, Title: one.Point.Title, Menu: one.Point.Menu},
-		})
-	}
-	handlers := make([]*v1.PluginHandler, 0, len(listing.Handlers))
-	for _, one := range listing.Handlers {
-		handlers = append(handlers, &v1.PluginHandler{
-			PluginId: one.PluginID,
-			Handler:  &v1.ManifestHandler{Command: one.Command.ID, Title: one.Command.Title, When: one.Command.When},
-			HasItems: one.HasItems,
-		})
-	}
-	return connect.NewResponse(&v1.ListCommandsResponse{
-		Commands: commands, Slots: slots, ContentTypeByExtension: listing.ContentTypeByExtension, Handlers: handlers,
-		Keybindings: newWireKeybindings(listing.Keybindings), SlotPoints: points,
-	}), nil
+	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands}), nil
 }
 
 // RunPluginCommand runs one of them. A call that is not a command, matches none, fails, or is routed to no
-// plugin is answered with an error code and a user-readable message.
+// plugin is answered with an error code and a user-readable message. A call that names no plugin matches none.
 func (h *Handler) RunPluginCommand(
 	ctx context.Context, r *connect.Request[v1.RunPluginCommandRequest],
 ) (*connect.Response[v1.RunPluginCommandResponse], error) {
+	if r.Msg.GetPluginId() == "" {
+		return connect.NewResponse(&v1.RunPluginCommandResponse{
+			Error: v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND, Message: errNoPlugin.Error(),
+		}), nil
+	}
 	result, err := h.runCommand.Execute(ctx, h.vaults.GetCurrentVault(), plugin.CommandCall{
 		PluginID:  r.Msg.GetPluginId(),
 		Command:   r.Msg.GetCommand(),
@@ -206,4 +192,54 @@ func clampToInt32(value int) int32 {
 		return math.MinInt32
 	}
 	return int32(value)
+}
+
+// NewContributionRoute is where ContributionService is mounted, what the schema generated to answer it, and
+// the handler it answers through.
+func NewContributionRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler, service any) {
+	path, served = numenv1connect.NewContributionServiceHandler(handler, options)
+	return path, served, handler
+}
+
+// NewVersionRoute is where TextVersionService is mounted, what the schema generated to answer it, and the
+// handler it answers through.
+func NewVersionRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler, service any) {
+	path, served = numenv1connect.NewTextVersionServiceHandler(handler, options)
+	return path, served, handler
+}
+
+// ListContributions lists the slot entries, the slot points, the handlers of shared commands and the
+// keybindings of every enabled plugin.
+func (h *Handler) ListContributions(
+	context.Context, *connect.Request[v1.ListContributionsRequest],
+) (*connect.Response[v1.ListContributionsResponse], error) {
+	listing := h.listing.Execute()
+	slots := make([]*v1.PluginSlotEntry, 0, len(listing.Slots))
+	for _, one := range listing.Slots {
+		slots = append(slots, newWireSlotEntry(one))
+	}
+	points := make([]*v1.PluginSlotPoint, 0, len(listing.SlotPoints))
+	for _, one := range listing.SlotPoints {
+		points = append(points, &v1.PluginSlotPoint{
+			PluginId: one.PluginID, Point: &v1.ManifestSlotPoint{Slot: one.Point.Slot, Title: one.Point.Title, Menu: one.Point.Menu},
+		})
+	}
+	handlers := make([]*v1.PluginHandler, 0, len(listing.Handlers))
+	for _, one := range listing.Handlers {
+		handlers = append(handlers, &v1.PluginHandler{
+			PluginId: one.PluginID,
+			Handler:  &v1.ManifestHandler{Command: one.Command.ID, Title: one.Command.Title, When: one.Command.When},
+			HasItems: one.HasItems,
+		})
+	}
+	return connect.NewResponse(&v1.ListContributionsResponse{
+		Slots: slots, Handlers: handlers, Keybindings: newWireKeybindings(listing.Keybindings), SlotPoints: points,
+	}), nil
+}
+
+// ListContentTypes lists the content type of a file by its extension.
+func (h *Handler) ListContentTypes(
+	context.Context, *connect.Request[v1.ListContentTypesRequest],
+) (*connect.Response[v1.ListContentTypesResponse], error) {
+	return connect.NewResponse(&v1.ListContentTypesResponse{ContentTypeByExtension: h.listing.Execute().ContentTypeByExtension}), nil
 }

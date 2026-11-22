@@ -5,7 +5,7 @@ import type { Client } from '@connectrpc/connect'
 import {
   HealthSeverity,
   type PluginProcess as PluginProcessMessage,
-  type PluginService,
+  type PluginProcessService,
 } from '@numen/protocol'
 
 /**
@@ -32,8 +32,8 @@ export interface LeaseHolder {
   readonly why: string
 }
 
-/** The calls of PluginService a window makes about the plugins that run. */
-export type ProcessRpc = Pick<Client<typeof PluginService>, 'watchPluginProcesses'>
+/** The calls of PluginProcessService a window makes about the plugins that run. */
+export type ProcessRpc = Pick<Client<typeof PluginProcessService>, 'watchPluginProcesses'>
 
 /** The plugins that run, with the time of the core when it took the list. */
 export interface PluginProcessList {

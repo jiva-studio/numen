@@ -2,8 +2,6 @@ import { ref, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { SavedTabsApi } from '../api/saved-tabs'
 import type { OpenTabs } from '../lib/tab'
-import type { Caught } from '@/shared/api/errors'
-
 const SAVE_STATE_DELAY_MS = 500
 
 function hasSameReport(before: OpenTabs, next: OpenTabs): boolean {
@@ -65,7 +63,7 @@ export function useTabPersistence(
   open: Readonly<Ref<OpenTabs>>,
   isWriting: Readonly<Ref<boolean>>,
   write: SavedTabsApi['writeOpenTabs'],
-  reportError: (error: Caught) => void,
+  reportError: (error: unknown) => void,
 ) {
   const save = createTabWriter(write)
   const isPaused = ref(false)

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import {
   CallErrorCode,
+  CancelCallResponseSchema,
   CallFailureSchema,
   ConnectionCallServiceCallResponseSchema,
   FailureReason,
@@ -31,6 +32,7 @@ const read = async (generator: AsyncGenerator<Uint8Array, unknown>) => {
 const bytes = (text: string) => new TextEncoder().encode(text)
 
 const NO_LISTS: Omit<ConnectionCallRpc, 'call'> = {
+  cancelCall: () => Promise.resolve(create(CancelCallResponseSchema, {})),
   listRows: () => Promise.reject(new Error('no rows')),
   listRowOptions: () => Promise.reject(new Error('no options')),
 }
@@ -80,6 +82,44 @@ describe('createConnectionCallClient', () => {
       }),
     ])
     expect(options).toStrictEqual([expect.objectContaining({ signal: controller.signal })])
+  })
+
+  it('cancels the call by its id where the signal aborts', async () => {
+    const calls: Array<{ callId: string }> = []
+    const cancels: Array<{ pluginId: string; callId: string }> = []
+    const controller = new AbortController()
+    const rpc: ConnectionCallRpc = {
+      ...NO_LISTS,
+      cancelCall: (request) => {
+        cancels.push({ pluginId: request.pluginId ?? '', callId: request.callId ?? '' })
+        return Promise.resolve(create(CancelCallResponseSchema, {}))
+      },
+      call: (request) => {
+        calls.push({ callId: request.callId ?? '' })
+        controller.abort()
+        return streamOf({ case: 'done', value: new Uint8Array() })
+      },
+    }
+
+    await read(createConnectionCallClient(rpc).call(CHAT_REQUEST, { signal: controller.signal }))
+
+    expect(calls[0]?.callId).not.toBe('')
+    expect(cancels).toStrictEqual([{ pluginId: CHAT_REQUEST.pluginId, callId: calls[0]?.callId }])
+  })
+
+  it('sends no call id where the call has no signal', async () => {
+    const callIds: Array<string | undefined> = []
+    const rpc: ConnectionCallRpc = {
+      ...NO_LISTS,
+      call: (request) => {
+        callIds.push(request.callId)
+        return streamOf({ case: 'done', value: new Uint8Array() })
+      },
+    }
+
+    await read(createConnectionCallClient(rpc).call(CHAT_REQUEST))
+
+    expect(callIds).toStrictEqual([''])
   })
 
   it('sends background where the call names no priority', async () => {

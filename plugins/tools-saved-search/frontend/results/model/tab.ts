@@ -4,7 +4,7 @@
  * in a notice and saves the query of the note. It never asks for a run.
  */
 import { computed, readonly, ref, shallowRef, type Ref } from 'vue'
-import type { Caught, TextRange } from '@numen/plugin-sdk'
+import type { TextRange } from '@numen/plugin-sdk'
 import { WORDS as words } from '../../words'
 import type { SavedSearchService } from '../api/service'
 import type { GetResultsResponse, Problem, SearchFunction } from '../api/types'
@@ -68,7 +68,7 @@ export interface SavedSearchTab {
   dispose(): void
 }
 
-const getMessage = (error: Caught): string =>
+const getMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)
 
 const getFailureKey = (answer: GetResultsResponse): string =>
@@ -129,7 +129,7 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
       (answer) => {
         if (!call.signal.aborted) show(answer)
       },
-      (error: Caught) => {
+      (error: unknown) => {
         if (!call.signal.aborted) failure.value = getMessage(error)
       },
     )
@@ -185,7 +185,7 @@ export function createSavedSearchTab(notePath: string, deps: SavedSearchTabDeps)
         if (catalogFailure !== null && failure.value === catalogFailure) failure.value = ''
         catalogFailure = null
       },
-      (error: Caught) => {
+      (error: unknown) => {
         functionsRead = null
         if (life.signal.aborted) return
         catalogFailure = getMessage(error)

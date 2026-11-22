@@ -18,14 +18,16 @@ export const vaultAnswers = {
     }),
     watchVaultChanges: changed.stream,
   },
+  folderDialog: {
+    chooseFolder: () => {
+      requests.chose += 1
+      return { isChosen: false, path: '' }
+    },
+  },
   vaultsService: {
     listVaults: () => {
       if (!mockVaultState.listable) throw new Error('the vaults are not there')
       return { vaults: mockVaultList.vaults }
-    },
-    chooseFolder: () => {
-      requests.chose += 1
-      return { isChosen: false, path: '' }
     },
     addVault: () => ({}),
     renameVault: () => ({}),

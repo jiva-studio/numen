@@ -9,11 +9,13 @@ import type { WindowClients } from '@/shared/api/clients'
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 /**
- * The plugins that run, over `pluginService`: each watch follows the stream of the core, taken up
+ * The plugins that run, over `pluginProcessService`: each watch follows the stream of the core, taken up
  * again after it drops, until the watch is disposed.
  */
-export const createProcessHost = (pluginService: WindowClients['pluginService']): ProcessHost => {
-  const processes = createProcessClient(pluginService)
+export const createProcessHost = (
+  pluginProcessService: WindowClients['pluginProcessService'],
+): ProcessHost => {
+  const processes = createProcessClient(pluginProcessService)
   return {
     watch: (handler) => {
       const listening = new AbortController()

@@ -72,7 +72,7 @@ func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequ
 	return res.Msg
 }
 
-func TestListCommands_ListsTheCommandsWithTheirConditionAndTheContentTypesByExtension(t *testing.T) {
+func TestListCommands_ListsTheCommandsWithTheirCondition(t *testing.T) {
 	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil, nil)).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {
@@ -89,6 +89,15 @@ func TestListCommands_ListsTheCommandsWithTheirConditionAndTheContentTypesByExte
 		!argument.GetIsRequired() || len(one.GetArguments()) != 2 {
 		t.Errorf("got %v", one)
 	}
+}
+
+func TestListContentTypes_ListsTheContentTypesByExtension(t *testing.T) {
+	res, err := newHandler(newUseCases(pluginCommands{}, pluginCommands{}, fileTypes{".md": "text/markdown", ".markdown": "text/markdown"}, nil, nil)).ListContentTypes(
+		t.Context(), connect.NewRequest(&v1.ListContentTypesRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	if types := res.Msg.GetContentTypeByExtension(); !maps.Equal(types, map[string]string{"md": "text/markdown", "markdown": "text/markdown"}) {
 		t.Errorf("the content types came out as %v", types)
 	}

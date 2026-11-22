@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
@@ -50,24 +49,24 @@ func (b brokenVault) RenameNote(ctx context.Context, from, title string) (string
 	return b.fakeNoteVault.RenameNote(ctx, from, title)
 }
 
-func newBrokenClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *fakeNoteVault) {
+func newBrokenClient(t *testing.T) (HostVaultClient, *fakeNoteVault) {
 	t.Helper()
 	vault := newFakeNoteVault()
 	hostCallers := newCallers()
 	hostCallers.vault = vaultOf(brokenVault{vault})
 	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
-	mux.Handle(vaultapi.NewHandler(endpoint, endpoint.callers.Lent))
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 	return client, vault
 }
 
 func TestMoveReturnsUncodedErrorAsInternalAndMovesTheOthers(t *testing.T) {
 	client, vault := newBrokenClient(t)
 
-	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
+	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostNoteServiceMoveNotesRequest{
 		Paths: []string{"Danube.md", brokenPath, "Nowhere.md", "Rivers/Rhine.md"}, Folder: "Archive",
 	}))
 	if err != nil {
@@ -100,7 +99,7 @@ func TestMoveReturnsUncodedErrorAsInternalAndMovesTheOthers(t *testing.T) {
 func TestRemovalReturnsUncodedErrorAsInternalAndRemovesOthers(t *testing.T) {
 	client, vault := newBrokenClient(t)
 
-	res, err := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
+	res, err := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostNoteServiceRemoveNotesRequest{
 		Paths: []string{"Danube.md", brokenPath, "Rivers"},
 	}))
 	if err != nil {
@@ -129,7 +128,7 @@ func TestRemovalReturnsUncodedErrorAsInternalAndRemovesOthers(t *testing.T) {
 func TestRenameReturnsUncodedErrorAsInternalWithTheDetail(t *testing.T) {
 	client, _ := newBrokenClient(t)
 
-	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: brokenPath, Title: "Mended"}))
+	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: brokenPath, Title: "Mended"}))
 	if err != nil {
 		t.Fatalf("the rename failed as a whole: %v", err)
 	}
@@ -142,7 +141,7 @@ func TestRenameReturnsUncodedErrorAsInternalWithTheDetail(t *testing.T) {
 func TestRejectedRenameReturnsTheCoreTextInDetail(t *testing.T) {
 	client, _ := newBrokenClient(t)
 
-	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Nowhere.md", Title: "Elsewhere"}))
+	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Nowhere.md", Title: "Elsewhere"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +154,7 @@ func TestRejectedRenameReturnsTheCoreTextInDetail(t *testing.T) {
 func TestRenameThatSucceedsReturnsNoDetail(t *testing.T) {
 	client, _ := newBrokenClient(t)
 
-	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 	if err != nil {
 		t.Fatal(err)
 	}

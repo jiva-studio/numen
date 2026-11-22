@@ -3,7 +3,7 @@
  */
 import { runInBackground } from '@numen/ui'
 import type { useVaults } from '@/entities/vault'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { createAppStart } from './createAppStart'
 import { createAppStop } from './createAppStop'
@@ -27,7 +27,7 @@ export interface WindowBootstrapDeps {
 
 export function createWindowBootstrap(deps: WindowBootstrapDeps) {
   const { vaults, settings, window, editing, layout, plugins, writeMessage } = deps
-  const reportError = (error: Caught) =>
+  const reportError = (error: unknown) =>
     writeMessage(`The window did not start cleanly: ${formatError(error)}`, 'error')
 
   let stopEditorTokens = (): void => undefined

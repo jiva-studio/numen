@@ -3,6 +3,8 @@ package catalog_test
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -31,11 +33,50 @@ func entry(id string, state catalog.State, kind string) catalog.Entry {
 
 func newHandler(t *testing.T, sources ...catalog.Source) *windowcatalog.Handler {
 	t.Helper()
+	return newHandlerOver(t, nil, sources...)
+}
+
+func newHandlerOver(t *testing.T, installed windowcatalog.InstalledPlugins, sources ...catalog.Source) *windowcatalog.Handler {
+	t.Helper()
 	service, err := catalog.NewService(catalog.Config{Target: "desktop.editor", Sources: sources, InstallDir: "", CacheDir: ""})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return windowcatalog.NewHandler(service)
+	return windowcatalog.NewHandler(service, installed)
+}
+
+func TestTheReadmeOfAnInstalledPluginIsReadFromItsFolder(t *testing.T) {
+	withReadme, withoutReadme := t.TempDir(), t.TempDir()
+	if err := os.WriteFile(filepath.Join(withReadme, "README.md"), []byte("# Peat\n\nBurns slowly.\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	handler := newHandlerOver(t, func() []manifest.Discovered {
+		return []manifest.Discovered{
+			{Manifest: manifest.Manifest{ID: "org.example.on"}, Dir: withReadme},
+			{Manifest: manifest.Manifest{ID: "org.example.off"}, Dir: withReadme},
+			{Manifest: manifest.Manifest{ID: "org.example.bare"}, Dir: withoutReadme},
+		}
+	})
+	for id, want := range map[string]string{
+		"org.example.on":      "# Peat\n\nBurns slowly.\n",
+		"org.example.off":     "# Peat\n\nBurns slowly.\n",
+		"org.example.bare":    "",
+		"org.example.missing": "",
+	} {
+		got, err := handler.GetCatalogReadme(t.Context(), connect.NewRequest(&v1.GetCatalogReadmeRequest{Id: id}))
+
+		if err != nil || got.Msg.GetText() != want {
+			t.Errorf("the README of %s is %q (%v), want %q", id, got.Msg.GetText(), err, want)
+		}
+	}
+}
+
+func TestAnInstallationWithNoPluginFoldersHasNoReadme(t *testing.T) {
+	got, err := newHandler(t).GetCatalogReadme(t.Context(), connect.NewRequest(&v1.GetCatalogReadmeRequest{Id: "org.example.on"}))
+
+	if err != nil || got.Msg.GetText() != "" {
+		t.Errorf("the README is %q (%v), want none", got.Msg.GetText(), err)
+	}
 }
 
 func TestTheListCarriesEveryEntryWithItsStateAndContributions(t *testing.T) {

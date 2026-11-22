@@ -228,16 +228,17 @@ func newFileServer(vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks 
 }
 
 func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	mountSettings(w, exec, settingsDeps, vaultDeps)
+	mountPluginData(w, vaultDeps)
+	mountSettings(w, settingsDeps)
 	mountMedia(w, vaultDeps)
 	mountCommand(w, install, exec, settingsDeps, vaultDeps)
 	mountConnection(w, install, exec, settingsDeps, vaultDeps)
-	mountConnectionCall(w, install, exec, settingsDeps, vaultDeps)
+	mountConnectionCall(w, install, exec, settingsDeps, vaultDeps, vaultDeps.Clock)
 	mountLicense(w, install, settingsDeps, vaultDeps)
 	mountText(w, vaultDeps)
 	mountPlugin(w, install, exec, settingsDeps, vaultDeps)
 	mountHealth(w, exec)
-	mountCatalog(w, install, settingsDeps)
+	mountCatalog(w, install, exec, settingsDeps)
 }
 
 func windowView(notices *editor.Notices) windowsession.View {

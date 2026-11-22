@@ -2,11 +2,9 @@
 // @generated from file numen/v1/connectioncall.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { CallFailure, CallRow, PreferredRow } from "./hostconnection_pb.js";
-import { file_numen_v1_hostconnection } from "./hostconnection_pb.js";
-import type { Priority } from "./provider_pb.js";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { FailureReason, Priority } from "./provider_pb.js";
 import { file_numen_v1_provider } from "./provider_pb.js";
 import type { Option } from "./settings_pb.js";
 import { file_numen_v1_settings } from "./settings_pb.js";
@@ -16,7 +14,169 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/connectioncall.proto.
  */
 export const file_numen_v1_connectioncall: GenFile = /*@__PURE__*/
-  fileDesc("Ch1udW1lbi92MS9jb25uZWN0aW9uY2FsbC5wcm90bxIIbnVtZW4udjEiqgEKIENvbm5lY3Rpb25DYWxsU2VydmljZUNhbGxSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIRCglvcGVyYXRpb24YAiABKAkSDwoHcGF5bG9hZBgDIAEoDBIkCghwcmlvcml0eRgEIAEoDjISLm51bWVuLnYxLlByaW9yaXR5EikKCXByZWZlcnJlZBgFIAEoCzIWLm51bWVuLnYxLlByZWZlcnJlZFJvdyJ2CiFDb25uZWN0aW9uQ2FsbFNlcnZpY2VDYWxsUmVzcG9uc2USDgoEZGF0YRgBIAEoDEgAEg4KBGRvbmUYAiABKAxIABIoCgdmYWlsdXJlGAMgASgLMhUubnVtZW4udjEuQ2FsbEZhaWx1cmVIAEIHCgVmcmFtZSJMCiRDb25uZWN0aW9uQ2FsbFNlcnZpY2VMaXN0Um93c1JlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhEKCW9wZXJhdGlvbhgCIAEoCSJICiVDb25uZWN0aW9uQ2FsbFNlcnZpY2VMaXN0Um93c1Jlc3BvbnNlEh8KBHJvd3MYASADKAsyES5udW1lbi52MS5DYWxsUm93IvwBCipDb25uZWN0aW9uQ2FsbFNlcnZpY2VMaXN0Um93T3B0aW9uc1JlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEhEKCW9wZXJhdGlvbhgCIAEoCRIVCg1jb25uZWN0aW9uX2lkGAMgASgJEg0KBWZpZWxkGAQgASgJElIKB29wdGlvbnMYBSADKAsyQS5udW1lbi52MS5Db25uZWN0aW9uQ2FsbFNlcnZpY2VMaXN0Um93T3B0aW9uc1JlcXVlc3QuT3B0aW9uc0VudHJ5Gi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlAKK0Nvbm5lY3Rpb25DYWxsU2VydmljZUxpc3RSb3dPcHRpb25zUmVzcG9uc2USIQoHb3B0aW9ucxgBIAMoCzIQLm51bWVuLnYxLk9wdGlvbjLmAgoVQ29ubmVjdGlvbkNhbGxTZXJ2aWNlEmEKBENhbGwSKi5udW1lbi52MS5Db25uZWN0aW9uQ2FsbFNlcnZpY2VDYWxsUmVxdWVzdBorLm51bWVuLnYxLkNvbm5lY3Rpb25DYWxsU2VydmljZUNhbGxSZXNwb25zZTABEmsKCExpc3RSb3dzEi4ubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd3NSZXF1ZXN0Gi8ubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd3NSZXNwb25zZRJ9Cg5MaXN0Um93T3B0aW9ucxI0Lm51bWVuLnYxLkNvbm5lY3Rpb25DYWxsU2VydmljZUxpc3RSb3dPcHRpb25zUmVxdWVzdBo1Lm51bWVuLnYxLkNvbm5lY3Rpb25DYWxsU2VydmljZUxpc3RSb3dPcHRpb25zUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_hostconnection, file_numen_v1_provider, file_numen_v1_settings]);
+  fileDesc("Ch1udW1lbi92MS9jb25uZWN0aW9uY2FsbC5wcm90bxIIbnVtZW4udjEiYAoOQ2FsbFJvd0ZhaWx1cmUSFwoPY29ubmVjdGlvbl9uYW1lGAEgASgJEg4KBnJlYXNvbhgCIAEoCRIlCgRjb2RlGAMgASgOMhcubnVtZW4udjEuRmFpbHVyZVJlYXNvbiJxCgtDYWxsRmFpbHVyZRImCgVlcnJvchgBIAEoDjIXLm51bWVuLnYxLkNhbGxFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJEioKCGZhaWx1cmVzGAMgAygLMhgubnVtZW4udjEuQ2FsbFJvd0ZhaWx1cmUioQEKDFByZWZlcnJlZFJvdxIVCg1jb25uZWN0aW9uX2lkGAEgASgJEjQKB29wdGlvbnMYAiADKAsyIy5udW1lbi52MS5QcmVmZXJyZWRSb3cuT3B0aW9uc0VudHJ5EhQKDGlzX2V4Y2x1c2l2ZRgDIAEoCBouCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJVCgxDYWxsUm93RmllbGQSCwoDa2V5GAEgASgJEg0KBXRpdGxlGAIgASgJEhQKDG9wdGlvbnNfZnJvbRgDIAEoCRITCgtpc19yZXF1aXJlZBgEIAEoCCLCAQoHQ2FsbFJvdxIVCg1jb25uZWN0aW9uX2lkGAEgASgJEhcKD2Nvbm5lY3Rpb25fbmFtZRgCIAEoCRIvCgdvcHRpb25zGAMgAygLMh4ubnVtZW4udjEuQ2FsbFJvdy5PcHRpb25zRW50cnkSJgoGZmllbGRzGAQgAygLMhYubnVtZW4udjEuQ2FsbFJvd0ZpZWxkGi4KDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIrsBCiBDb25uZWN0aW9uQ2FsbFNlcnZpY2VDYWxsUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSEQoJb3BlcmF0aW9uGAIgASgJEg8KB3BheWxvYWQYAyABKAwSJAoIcHJpb3JpdHkYBCABKA4yEi5udW1lbi52MS5Qcmlvcml0eRIpCglwcmVmZXJyZWQYBSABKAsyFi5udW1lbi52MS5QcmVmZXJyZWRSb3cSDwoHY2FsbF9pZBgGIAEoCSJ2CiFDb25uZWN0aW9uQ2FsbFNlcnZpY2VDYWxsUmVzcG9uc2USDgoEZGF0YRgBIAEoDEgAEg4KBGRvbmUYAiABKAxIABIoCgdmYWlsdXJlGAMgASgLMhUubnVtZW4udjEuQ2FsbEZhaWx1cmVIAEIHCgVmcmFtZSI3ChFDYW5jZWxDYWxsUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY2FsbF9pZBgCIAEoCSIUChJDYW5jZWxDYWxsUmVzcG9uc2UiTAokQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd3NSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIRCglvcGVyYXRpb24YAiABKAkiSAolQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd3NSZXNwb25zZRIfCgRyb3dzGAEgAygLMhEubnVtZW4udjEuQ2FsbFJvdyL8AQoqQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIRCglvcGVyYXRpb24YAiABKAkSFQoNY29ubmVjdGlvbl9pZBgDIAEoCRINCgVmaWVsZBgEIAEoCRJSCgdvcHRpb25zGAUgAygLMkEubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXF1ZXN0Lk9wdGlvbnNFbnRyeRouCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASJQCitDb25uZWN0aW9uQ2FsbFNlcnZpY2VMaXN0Um93T3B0aW9uc1Jlc3BvbnNlEiEKB29wdGlvbnMYASADKAsyEC5udW1lbi52MS5PcHRpb24qkAEKDUNhbGxFcnJvckNvZGUSHwobQ0FMTF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIQodQ0FMTF9FUlJPUl9DT0RFX05PX0NPTk5FQ1RJT04QARIeChpDQUxMX0VSUk9SX0NPREVfQUxMX0ZBSUxFRBACEhsKF0NBTExfRVJST1JfQ09ERV9TVE9QUEVEEAMyrwMKFUNvbm5lY3Rpb25DYWxsU2VydmljZRJhCgRDYWxsEioubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlQ2FsbFJlcXVlc3QaKy5udW1lbi52MS5Db25uZWN0aW9uQ2FsbFNlcnZpY2VDYWxsUmVzcG9uc2UwARJHCgpDYW5jZWxDYWxsEhsubnVtZW4udjEuQ2FuY2VsQ2FsbFJlcXVlc3QaHC5udW1lbi52MS5DYW5jZWxDYWxsUmVzcG9uc2USawoITGlzdFJvd3MSLi5udW1lbi52MS5Db25uZWN0aW9uQ2FsbFNlcnZpY2VMaXN0Um93c1JlcXVlc3QaLy5udW1lbi52MS5Db25uZWN0aW9uQ2FsbFNlcnZpY2VMaXN0Um93c1Jlc3BvbnNlEn0KDkxpc3RSb3dPcHRpb25zEjQubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXF1ZXN0GjUubnVtZW4udjEuQ29ubmVjdGlvbkNhbGxTZXJ2aWNlTGlzdFJvd09wdGlvbnNSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_provider, file_numen_v1_settings]);
+
+/**
+ * CallRowFailure is one row that did not answer. reason is the words the person reads and code the reason
+ * a program reads; a row the core set aside for a reason outside the enum has the code UNAVAILABLE.
+ *
+ * @generated from message numen.v1.CallRowFailure
+ */
+export type CallRowFailure = Message<"numen.v1.CallRowFailure"> & {
+  /**
+   * @generated from field: string connection_name = 1;
+   */
+  connectionName: string;
+
+  /**
+   * @generated from field: string reason = 2;
+   */
+  reason: string;
+
+  /**
+   * @generated from field: numen.v1.FailureReason code = 3;
+   */
+  code: FailureReason;
+};
+
+/**
+ * Describes the message numen.v1.CallRowFailure.
+ * Use `create(CallRowFailureSchema)` to create a new message.
+ */
+export const CallRowFailureSchema: GenMessage<CallRowFailure> = /*@__PURE__*/
+  messageDesc(file_numen_v1_connectioncall, 0);
+
+/**
+ * CallFailure ends a call that did not succeed.
+ *
+ * @generated from message numen.v1.CallFailure
+ */
+export type CallFailure = Message<"numen.v1.CallFailure"> & {
+  /**
+   * @generated from field: numen.v1.CallErrorCode error = 1;
+   */
+  error: CallErrorCode;
+
+  /**
+   * @generated from field: string detail = 2;
+   */
+  detail: string;
+
+  /**
+   * @generated from field: repeated numen.v1.CallRowFailure failures = 3;
+   */
+  failures: CallRowFailure[];
+};
+
+/**
+ * Describes the message numen.v1.CallFailure.
+ * Use `create(CallFailureSchema)` to create a new message.
+ */
+export const CallFailureSchema: GenMessage<CallFailure> = /*@__PURE__*/
+  messageDesc(file_numen_v1_connectioncall, 1);
+
+/**
+ * PreferredRow is the row a call asks first. connection_id names a connection among the rows of the plugin
+ * for the operation; the call goes to it with options in place of the values of its row fields, then to
+ * the other rows in order. A connection that is not among the rows is ignored. is_exclusive asks that row
+ * alone: the call ends with its failure, and with no_connection where the connection is not among the
+ * rows.
+ *
+ * @generated from message numen.v1.PreferredRow
+ */
+export type PreferredRow = Message<"numen.v1.PreferredRow"> & {
+  /**
+   * @generated from field: string connection_id = 1;
+   */
+  connectionId: string;
+
+  /**
+   * @generated from field: map<string, string> options = 2;
+   */
+  options: { [key: string]: string };
+
+  /**
+   * @generated from field: bool is_exclusive = 3;
+   */
+  isExclusive: boolean;
+};
+
+/**
+ * Describes the message numen.v1.PreferredRow.
+ * Use `create(PreferredRowSchema)` to create a new message.
+ */
+export const PreferredRowSchema: GenMessage<PreferredRow> = /*@__PURE__*/
+  messageDesc(file_numen_v1_connectioncall, 2);
+
+/**
+ * CallRowField is a row field the type of a connection declares. options_from is the operation that lists
+ * its values, empty for none. is_required is a field a row must hold a value for.
+ *
+ * @generated from message numen.v1.CallRowField
+ */
+export type CallRowField = Message<"numen.v1.CallRowField"> & {
+  /**
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string options_from = 3;
+   */
+  optionsFrom: string;
+
+  /**
+   * @generated from field: bool is_required = 4;
+   */
+  isRequired: boolean;
+};
+
+/**
+ * Describes the message numen.v1.CallRowField.
+ * Use `create(CallRowFieldSchema)` to create a new message.
+ */
+export const CallRowFieldSchema: GenMessage<CallRowField> = /*@__PURE__*/
+  messageDesc(file_numen_v1_connectioncall, 3);
+
+/**
+ * CallRow is one row of a plugin: its connection, the values of its row fields, and the row fields the
+ * type of the connection declares.
+ *
+ * @generated from message numen.v1.CallRow
+ */
+export type CallRow = Message<"numen.v1.CallRow"> & {
+  /**
+   * @generated from field: string connection_id = 1;
+   */
+  connectionId: string;
+
+  /**
+   * @generated from field: string connection_name = 2;
+   */
+  connectionName: string;
+
+  /**
+   * @generated from field: map<string, string> options = 3;
+   */
+  options: { [key: string]: string };
+
+  /**
+   * @generated from field: repeated numen.v1.CallRowField fields = 4;
+   */
+  fields: CallRowField[];
+};
+
+/**
+ * Describes the message numen.v1.CallRow.
+ * Use `create(CallRowSchema)` to create a new message.
+ */
+export const CallRowSchema: GenMessage<CallRow> = /*@__PURE__*/
+  messageDesc(file_numen_v1_connectioncall, 4);
 
 /**
  * @generated from message numen.v1.ConnectionCallServiceCallRequest
@@ -30,6 +190,8 @@ export type ConnectionCallServiceCallRequest = Message<"numen.v1.ConnectionCallS
   pluginId: string;
 
   /**
+   * operation is the name of the operation, such as "llm.chat".
+   *
    * @generated from field: string operation = 2;
    */
   operation: string;
@@ -50,6 +212,14 @@ export type ConnectionCallServiceCallRequest = Message<"numen.v1.ConnectionCallS
    * @generated from field: numen.v1.PreferredRow preferred = 5;
    */
   preferred?: PreferredRow | undefined;
+
+  /**
+   * call_id is the id CancelCall names this call by, chosen by the client and unique among its calls. Empty
+   * when the call cannot be cancelled.
+   *
+   * @generated from field: string call_id = 6;
+   */
+  callId: string;
 };
 
 /**
@@ -57,7 +227,7 @@ export type ConnectionCallServiceCallRequest = Message<"numen.v1.ConnectionCallS
  * Use `create(ConnectionCallServiceCallRequestSchema)` to create a new message.
  */
 export const ConnectionCallServiceCallRequestSchema: GenMessage<ConnectionCallServiceCallRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_connectioncall, 0);
+  messageDesc(file_numen_v1_connectioncall, 5);
 
 /**
  * ConnectionCallServiceCallResponse is one frame of a call.
@@ -96,7 +266,44 @@ export type ConnectionCallServiceCallResponse = Message<"numen.v1.ConnectionCall
  * Use `create(ConnectionCallServiceCallResponseSchema)` to create a new message.
  */
 export const ConnectionCallServiceCallResponseSchema: GenMessage<ConnectionCallServiceCallResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_connectioncall, 1);
+  messageDesc(file_numen_v1_connectioncall, 6);
+
+/**
+ * @generated from message numen.v1.CancelCallRequest
+ */
+export type CancelCallRequest = Message<"numen.v1.CancelCallRequest"> & {
+  /**
+   * plugin_id is the plugin the call was made for.
+   *
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * @generated from field: string call_id = 2;
+   */
+  callId: string;
+};
+
+/**
+ * Describes the message numen.v1.CancelCallRequest.
+ * Use `create(CancelCallRequestSchema)` to create a new message.
+ */
+export const CancelCallRequestSchema: GenMessage<CancelCallRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_connectioncall, 7);
+
+/**
+ * @generated from message numen.v1.CancelCallResponse
+ */
+export type CancelCallResponse = Message<"numen.v1.CancelCallResponse"> & {
+};
+
+/**
+ * Describes the message numen.v1.CancelCallResponse.
+ * Use `create(CancelCallResponseSchema)` to create a new message.
+ */
+export const CancelCallResponseSchema: GenMessage<CancelCallResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_connectioncall, 8);
 
 /**
  * @generated from message numen.v1.ConnectionCallServiceListRowsRequest
@@ -120,7 +327,7 @@ export type ConnectionCallServiceListRowsRequest = Message<"numen.v1.ConnectionC
  * Use `create(ConnectionCallServiceListRowsRequestSchema)` to create a new message.
  */
 export const ConnectionCallServiceListRowsRequestSchema: GenMessage<ConnectionCallServiceListRowsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_connectioncall, 2);
+  messageDesc(file_numen_v1_connectioncall, 9);
 
 /**
  * @generated from message numen.v1.ConnectionCallServiceListRowsResponse
@@ -137,7 +344,7 @@ export type ConnectionCallServiceListRowsResponse = Message<"numen.v1.Connection
  * Use `create(ConnectionCallServiceListRowsResponseSchema)` to create a new message.
  */
 export const ConnectionCallServiceListRowsResponseSchema: GenMessage<ConnectionCallServiceListRowsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_connectioncall, 3);
+  messageDesc(file_numen_v1_connectioncall, 10);
 
 /**
  * @generated from message numen.v1.ConnectionCallServiceListRowOptionsRequest
@@ -178,7 +385,7 @@ export type ConnectionCallServiceListRowOptionsRequest = Message<"numen.v1.Conne
  * Use `create(ConnectionCallServiceListRowOptionsRequestSchema)` to create a new message.
  */
 export const ConnectionCallServiceListRowOptionsRequestSchema: GenMessage<ConnectionCallServiceListRowOptionsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_connectioncall, 4);
+  messageDesc(file_numen_v1_connectioncall, 11);
 
 /**
  * @generated from message numen.v1.ConnectionCallServiceListRowOptionsResponse
@@ -195,18 +402,63 @@ export type ConnectionCallServiceListRowOptionsResponse = Message<"numen.v1.Conn
  * Use `create(ConnectionCallServiceListRowOptionsResponseSchema)` to create a new message.
  */
 export const ConnectionCallServiceListRowOptionsResponseSchema: GenMessage<ConnectionCallServiceListRowOptionsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_connectioncall, 5);
+  messageDesc(file_numen_v1_connectioncall, 12);
 
 /**
- * ConnectionCallService carries out the operations a plugin view asks for, through the rows of the plugin
- * the request names. The host endpoint that plugin processes reach with their token does not mount it,
- * and the handler refuses a request that carries a token.
+ * CallErrorCode is the reason a call did not succeed.
+ *
+ * @generated from enum numen.v1.CallErrorCode
+ */
+export enum CallErrorCode {
+  /**
+   * @generated from enum value: CALL_ERROR_CODE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * CALL_ERROR_CODE_NO_CONNECTION is a plugin with no row that can serve the operation.
+   *
+   * @generated from enum value: CALL_ERROR_CODE_NO_CONNECTION = 1;
+   */
+  NO_CONNECTION = 1,
+
+  /**
+   * CALL_ERROR_CODE_ALL_FAILED is every row set aside or failed; the failures name each one. A row that
+   * fails after its first data frame is ALL_FAILED with that one connection.
+   *
+   * @generated from enum value: CALL_ERROR_CODE_ALL_FAILED = 2;
+   */
+  ALL_FAILED = 2,
+
+  /**
+   * CALL_ERROR_CODE_STOPPED is a request that is wrong in itself, and the failure names the connection.
+   *
+   * @generated from enum value: CALL_ERROR_CODE_STOPPED = 3;
+   */
+  STOPPED = 3,
+}
+
+/**
+ * Describes the enum numen.v1.CallErrorCode.
+ */
+export const CallErrorCodeSchema: GenEnum<CallErrorCode> = /*@__PURE__*/
+  enumDesc(file_numen_v1_connectioncall, 0);
+
+/**
+ * ConnectionCallService carries out the operations a caller asks for, through the rows of a plugin. The window
+ * serves it to a plugin view, which names the plugin whose rows serve the call. The host endpoint serves it to a
+ * plugin process, which is the plugin its token names: the request names no plugin, or that one, and the host
+ * refuses a request that names another. The core takes the connections from the rows of the settings of the
+ * plugin; a plugin that holds connections:use:<operation> uses every connection that serves that operation,
+ * which none of its settings of rows lists. The payload and the frames are bytes of the contract the operation
+ * belongs to.
  *
  * @generated from service numen.v1.ConnectionCallService
  */
 export const ConnectionCallService: GenService<{
   /**
-   * Call carries out one operation as HostConnectionService.Call does.
+   * Call carries out one operation. The core goes to the next row only when a row fails before its first data
+   * frame. The stream holds data frames and ends with one done or one failure.
    *
    * @generated from rpc numen.v1.ConnectionCallService.Call
    */
@@ -214,6 +466,18 @@ export const ConnectionCallService: GenService<{
     methodKind: "server_streaming";
     input: typeof ConnectionCallServiceCallRequestSchema;
     output: typeof ConnectionCallServiceCallResponseSchema;
+  },
+  /**
+   * CancelCall stops the Call that carries the call id. A client that aborts its request does not stop the call
+   * in the core, so it sends this to free the work the call still does. A cancel that arrives before its call is
+   * kept for a few seconds and cancels the call if the call arrives in that time.
+   *
+   * @generated from rpc numen.v1.ConnectionCallService.CancelCall
+   */
+  cancelCall: {
+    methodKind: "unary";
+    input: typeof CancelCallRequestSchema;
+    output: typeof CancelCallResponseSchema;
   },
   /**
    * ListRows returns the rows of the plugin for an operation, in the order of use, with the connection each

@@ -25,6 +25,8 @@ const (
 	PluginLifecycleServiceName = "numen.v1.PluginLifecycleService"
 	// PluginServiceName is the fully-qualified name of the PluginService service.
 	PluginServiceName = "numen.v1.PluginService"
+	// PluginProcessServiceName is the fully-qualified name of the PluginProcessService service.
+	PluginProcessServiceName = "numen.v1.PluginProcessService"
 	// PluginEventServiceName is the fully-qualified name of the PluginEventService service.
 	PluginEventServiceName = "numen.v1.PluginEventService"
 )
@@ -49,12 +51,12 @@ const (
 	// PluginServiceGetPluginsProcedure is the fully-qualified name of the PluginService's GetPlugins
 	// RPC.
 	PluginServiceGetPluginsProcedure = "/numen.v1.PluginService/GetPlugins"
-	// PluginServiceWatchPluginProcessesProcedure is the fully-qualified name of the PluginService's
-	// WatchPluginProcesses RPC.
-	PluginServiceWatchPluginProcessesProcedure = "/numen.v1.PluginService/WatchPluginProcesses"
-	// PluginServiceReleaseProcessProcedure is the fully-qualified name of the PluginService's
-	// ReleaseProcess RPC.
-	PluginServiceReleaseProcessProcedure = "/numen.v1.PluginService/ReleaseProcess"
+	// PluginProcessServiceWatchPluginProcessesProcedure is the fully-qualified name of the
+	// PluginProcessService's WatchPluginProcesses RPC.
+	PluginProcessServiceWatchPluginProcessesProcedure = "/numen.v1.PluginProcessService/WatchPluginProcesses"
+	// PluginProcessServiceRetryPluginProcedure is the fully-qualified name of the
+	// PluginProcessService's RetryPlugin RPC.
+	PluginProcessServiceRetryPluginProcedure = "/numen.v1.PluginProcessService/RetryPlugin"
 	// PluginEventServiceDeliverEventProcedure is the fully-qualified name of the PluginEventService's
 	// DeliverEvent RPC.
 	PluginEventServiceDeliverEventProcedure = "/numen.v1.PluginEventService/DeliverEvent"
@@ -186,15 +188,6 @@ func (UnimplementedPluginLifecycleServiceHandler) Configure(context.Context, *co
 // PluginServiceClient is a client for the numen.v1.PluginService service.
 type PluginServiceClient interface {
 	GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error)
-	// WatchPluginProcesses sends the plugin processes that run at once and again
-	// on every change, at most once a second, for as long as the caller listens.
-	WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest]) (*connect.ServerStreamForClient[v1.WatchPluginProcessesResponse], error)
-	// ReleaseProcess tells the core that the process of a plugin has finished
-	// its work. The core stops a process that holds no lease at once, and one
-	// that holds a lease as soon as it returns the last. A lease taken after
-	// the call cancels it. A plugin calls it through the host endpoint, which
-	// names the plugin by its token. A plugin with no process answers success.
-	ReleaseProcess(context.Context, *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error)
 }
 
 // NewPluginServiceClient constructs a client for the numen.v1.PluginService service. By default, it
@@ -214,26 +207,12 @@ func NewPluginServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(pluginServiceMethods.ByName("GetPlugins")),
 			connect.WithClientOptions(opts...),
 		),
-		watchPluginProcesses: connect.NewClient[v1.WatchPluginProcessesRequest, v1.WatchPluginProcessesResponse](
-			httpClient,
-			baseURL+PluginServiceWatchPluginProcessesProcedure,
-			connect.WithSchema(pluginServiceMethods.ByName("WatchPluginProcesses")),
-			connect.WithClientOptions(opts...),
-		),
-		releaseProcess: connect.NewClient[v1.ReleaseProcessRequest, v1.ReleaseProcessResponse](
-			httpClient,
-			baseURL+PluginServiceReleaseProcessProcedure,
-			connect.WithSchema(pluginServiceMethods.ByName("ReleaseProcess")),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
 // pluginServiceClient implements PluginServiceClient.
 type pluginServiceClient struct {
-	getPlugins           *connect.Client[v1.GetPluginsRequest, v1.GetPluginsResponse]
-	watchPluginProcesses *connect.Client[v1.WatchPluginProcessesRequest, v1.WatchPluginProcessesResponse]
-	releaseProcess       *connect.Client[v1.ReleaseProcessRequest, v1.ReleaseProcessResponse]
+	getPlugins *connect.Client[v1.GetPluginsRequest, v1.GetPluginsResponse]
 }
 
 // GetPlugins calls numen.v1.PluginService.GetPlugins.
@@ -241,28 +220,9 @@ func (c *pluginServiceClient) GetPlugins(ctx context.Context, req *connect.Reque
 	return c.getPlugins.CallUnary(ctx, req)
 }
 
-// WatchPluginProcesses calls numen.v1.PluginService.WatchPluginProcesses.
-func (c *pluginServiceClient) WatchPluginProcesses(ctx context.Context, req *connect.Request[v1.WatchPluginProcessesRequest]) (*connect.ServerStreamForClient[v1.WatchPluginProcessesResponse], error) {
-	return c.watchPluginProcesses.CallServerStream(ctx, req)
-}
-
-// ReleaseProcess calls numen.v1.PluginService.ReleaseProcess.
-func (c *pluginServiceClient) ReleaseProcess(ctx context.Context, req *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error) {
-	return c.releaseProcess.CallUnary(ctx, req)
-}
-
 // PluginServiceHandler is an implementation of the numen.v1.PluginService service.
 type PluginServiceHandler interface {
 	GetPlugins(context.Context, *connect.Request[v1.GetPluginsRequest]) (*connect.Response[v1.GetPluginsResponse], error)
-	// WatchPluginProcesses sends the plugin processes that run at once and again
-	// on every change, at most once a second, for as long as the caller listens.
-	WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest], *connect.ServerStream[v1.WatchPluginProcessesResponse]) error
-	// ReleaseProcess tells the core that the process of a plugin has finished
-	// its work. The core stops a process that holds no lease at once, and one
-	// that holds a lease as soon as it returns the last. A lease taken after
-	// the call cancels it. A plugin calls it through the host endpoint, which
-	// names the plugin by its token. A plugin with no process answers success.
-	ReleaseProcess(context.Context, *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error)
 }
 
 // NewPluginServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -278,26 +238,10 @@ func NewPluginServiceHandler(svc PluginServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(pluginServiceMethods.ByName("GetPlugins")),
 		connect.WithHandlerOptions(opts...),
 	)
-	pluginServiceWatchPluginProcessesHandler := connect.NewServerStreamHandler(
-		PluginServiceWatchPluginProcessesProcedure,
-		svc.WatchPluginProcesses,
-		connect.WithSchema(pluginServiceMethods.ByName("WatchPluginProcesses")),
-		connect.WithHandlerOptions(opts...),
-	)
-	pluginServiceReleaseProcessHandler := connect.NewUnaryHandler(
-		PluginServiceReleaseProcessProcedure,
-		svc.ReleaseProcess,
-		connect.WithSchema(pluginServiceMethods.ByName("ReleaseProcess")),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/numen.v1.PluginService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case PluginServiceGetPluginsProcedure:
 			pluginServiceGetPluginsHandler.ServeHTTP(w, r)
-		case PluginServiceWatchPluginProcessesProcedure:
-			pluginServiceWatchPluginProcessesHandler.ServeHTTP(w, r)
-		case PluginServiceReleaseProcessProcedure:
-			pluginServiceReleaseProcessHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -311,12 +255,110 @@ func (UnimplementedPluginServiceHandler) GetPlugins(context.Context, *connect.Re
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.GetPlugins is not implemented"))
 }
 
-func (UnimplementedPluginServiceHandler) WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest], *connect.ServerStream[v1.WatchPluginProcessesResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.WatchPluginProcesses is not implemented"))
+// PluginProcessServiceClient is a client for the numen.v1.PluginProcessService service.
+type PluginProcessServiceClient interface {
+	// WatchPluginProcesses sends the plugin processes that run at once and again
+	// on every change, at most once a second, for as long as the caller listens.
+	WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest]) (*connect.ServerStreamForClient[v1.WatchPluginProcessesResponse], error)
+	// RetryPlugin forgets the failures of a plugin the host suspends, and starts
+	// it once. A plugin that fails again is suspended again, and the call answers
+	// the reason.
+	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
 }
 
-func (UnimplementedPluginServiceHandler) ReleaseProcess(context.Context, *connect.Request[v1.ReleaseProcessRequest]) (*connect.Response[v1.ReleaseProcessResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginService.ReleaseProcess is not implemented"))
+// NewPluginProcessServiceClient constructs a client for the numen.v1.PluginProcessService service.
+// By default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped
+// responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
+// connect.WithGRPC() or connect.WithGRPCWeb() options.
+//
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
+// http://api.acme.com or https://acme.com/grpc).
+func NewPluginProcessServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) PluginProcessServiceClient {
+	baseURL = strings.TrimRight(baseURL, "/")
+	pluginProcessServiceMethods := v1.File_numen_v1_plugin_proto.Services().ByName("PluginProcessService").Methods()
+	return &pluginProcessServiceClient{
+		watchPluginProcesses: connect.NewClient[v1.WatchPluginProcessesRequest, v1.WatchPluginProcessesResponse](
+			httpClient,
+			baseURL+PluginProcessServiceWatchPluginProcessesProcedure,
+			connect.WithSchema(pluginProcessServiceMethods.ByName("WatchPluginProcesses")),
+			connect.WithClientOptions(opts...),
+		),
+		retryPlugin: connect.NewClient[v1.RetryPluginRequest, v1.RetryPluginResponse](
+			httpClient,
+			baseURL+PluginProcessServiceRetryPluginProcedure,
+			connect.WithSchema(pluginProcessServiceMethods.ByName("RetryPlugin")),
+			connect.WithClientOptions(opts...),
+		),
+	}
+}
+
+// pluginProcessServiceClient implements PluginProcessServiceClient.
+type pluginProcessServiceClient struct {
+	watchPluginProcesses *connect.Client[v1.WatchPluginProcessesRequest, v1.WatchPluginProcessesResponse]
+	retryPlugin          *connect.Client[v1.RetryPluginRequest, v1.RetryPluginResponse]
+}
+
+// WatchPluginProcesses calls numen.v1.PluginProcessService.WatchPluginProcesses.
+func (c *pluginProcessServiceClient) WatchPluginProcesses(ctx context.Context, req *connect.Request[v1.WatchPluginProcessesRequest]) (*connect.ServerStreamForClient[v1.WatchPluginProcessesResponse], error) {
+	return c.watchPluginProcesses.CallServerStream(ctx, req)
+}
+
+// RetryPlugin calls numen.v1.PluginProcessService.RetryPlugin.
+func (c *pluginProcessServiceClient) RetryPlugin(ctx context.Context, req *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error) {
+	return c.retryPlugin.CallUnary(ctx, req)
+}
+
+// PluginProcessServiceHandler is an implementation of the numen.v1.PluginProcessService service.
+type PluginProcessServiceHandler interface {
+	// WatchPluginProcesses sends the plugin processes that run at once and again
+	// on every change, at most once a second, for as long as the caller listens.
+	WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest], *connect.ServerStream[v1.WatchPluginProcessesResponse]) error
+	// RetryPlugin forgets the failures of a plugin the host suspends, and starts
+	// it once. A plugin that fails again is suspended again, and the call answers
+	// the reason.
+	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
+}
+
+// NewPluginProcessServiceHandler builds an HTTP handler from the service implementation. It returns
+// the path on which to mount the handler and the handler itself.
+//
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
+func NewPluginProcessServiceHandler(svc PluginProcessServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	pluginProcessServiceMethods := v1.File_numen_v1_plugin_proto.Services().ByName("PluginProcessService").Methods()
+	pluginProcessServiceWatchPluginProcessesHandler := connect.NewServerStreamHandler(
+		PluginProcessServiceWatchPluginProcessesProcedure,
+		svc.WatchPluginProcesses,
+		connect.WithSchema(pluginProcessServiceMethods.ByName("WatchPluginProcesses")),
+		connect.WithHandlerOptions(opts...),
+	)
+	pluginProcessServiceRetryPluginHandler := connect.NewUnaryHandler(
+		PluginProcessServiceRetryPluginProcedure,
+		svc.RetryPlugin,
+		connect.WithSchema(pluginProcessServiceMethods.ByName("RetryPlugin")),
+		connect.WithHandlerOptions(opts...),
+	)
+	return "/numen.v1.PluginProcessService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case PluginProcessServiceWatchPluginProcessesProcedure:
+			pluginProcessServiceWatchPluginProcessesHandler.ServeHTTP(w, r)
+		case PluginProcessServiceRetryPluginProcedure:
+			pluginProcessServiceRetryPluginHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+}
+
+// UnimplementedPluginProcessServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedPluginProcessServiceHandler struct{}
+
+func (UnimplementedPluginProcessServiceHandler) WatchPluginProcesses(context.Context, *connect.Request[v1.WatchPluginProcessesRequest], *connect.ServerStream[v1.WatchPluginProcessesResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginProcessService.WatchPluginProcesses is not implemented"))
+}
+
+func (UnimplementedPluginProcessServiceHandler) RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.PluginProcessService.RetryPlugin is not implemented"))
 }
 
 // PluginEventServiceClient is a client for the numen.v1.PluginEventService service.

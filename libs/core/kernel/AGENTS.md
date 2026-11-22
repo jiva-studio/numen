@@ -75,8 +75,9 @@ A concept is named with the standard term of its field.
 
 A use case is created with everything it needs. The constructor takes the
 collaborators, stores them in unexported fields and returns the concrete type. It
-does not validate them and returns no error. No `With*` method changes a use case
-after construction.
+does not validate them and returns no error. A functional option passed to the
+constructor and a `With` method that returns a new value are allowed. A method that
+changes the object after construction is not.
 
 | The rule                                                                                 | The check                         |
 | ---------------------------------------------------------------------------------------- | --------------------------------- |
@@ -90,8 +91,16 @@ composition root decides it explicitly. A use case does not test a required
 collaborator for nil.
 
 A policy is not a collaborator. How many pages a batch holds, where progress is
-reported, what to do after a write — those are set on the created value and have
-a default.
+reported, what to do after a write — those are set by an option of the constructor
+and have a default.
+
+## Migrations
+
+A numbered migration of the index that a build has run is not changed, renamed or removed: the schema goes forward by another number.
+
+| The rule                                                                           | The check                      |
+| ---------------------------------------------------------------------------------- | ------------------------------ |
+| A migration of the base is in the folder with the same name and the same contents | `core/migration-forward-only` |
 
 ## Where a rule lives
 

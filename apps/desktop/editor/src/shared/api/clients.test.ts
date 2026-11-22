@@ -2,11 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { CALLER_HEADER } from '@numen/core-client'
 import { createCoreTransport } from '@numen/core-client/testing'
-import {
-  createPluginHostClients,
-  createSettingsClients,
-  createVaultClients,
-} from './clients'
+import { createPluginHostClients, createSettingsClients, createVaultClients } from './clients'
 
 describe('a request of the editor', () => {
   it('names the part of the window that makes it', async () => {
@@ -39,13 +35,7 @@ describe('a request of the editor', () => {
       pluginCommands: {
         listCommands: (_request, context) => {
           callers.push(context.requestHeader.get(CALLER_HEADER))
-          return {
-            commands: [],
-            slots: [],
-            handlers: [],
-            keybindings: [],
-            contentTypeByExtension: {},
-          }
+          return { commands: [] }
         },
       },
     })

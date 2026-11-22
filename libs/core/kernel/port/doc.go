@@ -11,7 +11,7 @@
 // turns it into a service named after a repository.
 //
 // One sub-package holds one domain's ports:
-// settingsport, pluginport, connectionport, contenttypeport, searchsourceport,
-// textport, vaultport, noteport, sourceport, problemport,
+// pluginport, connectionport, contenttypeport, searchsourceport,
+// textport, vaultport, noteport, sourceport,
 // indexport, machineport and windowport.
 package port

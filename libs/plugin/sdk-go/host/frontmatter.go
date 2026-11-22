@@ -44,7 +44,7 @@ type FrontmatterPage struct {
 }
 
 func (c *Client) ReadFrontmatter(ctx context.Context, q FrontmatterQuery) (FrontmatterPage, error) {
-	res, err := c.rpc.ReadFrontmatter(ctx, request(c, &v1.ReadFrontmatterRequest{
+	res, err := c.notes.ReadFrontmatter(ctx, request(c, &v1.ReadFrontmatterRequest{
 		Paths: q.Paths, Keys: q.Keys, PageSize: int32(min(q.PageSize, 1<<30)), PageToken: q.PageToken,
 	}))
 	if connect.CodeOf(err) == connect.CodeInvalidArgument {
@@ -97,7 +97,7 @@ func (c *Client) WriteFrontmatter(ctx context.Context, writes []FrontmatterWrite
 		}
 		notes[i] = &v1.NoteFrontmatterWrite{Path: one.Path, Values: raw, Baseline: writeFileStat(one.Baseline)}
 	}
-	res, err := c.rpc.WriteFrontmatter(ctx, request(c, &v1.WriteFrontmatterRequest{Notes: notes}))
+	res, err := c.notes.WriteFrontmatter(ctx, request(c, &v1.WriteFrontmatterRequest{Notes: notes}))
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodePermissionDenied {
 			return nil, fmt.Errorf("%w: %w", ErrPermissionDenied, err)

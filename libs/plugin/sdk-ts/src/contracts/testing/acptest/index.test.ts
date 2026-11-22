@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { runTask, StopReason, type TaskFrame, type TaskRequest } from '../acp'
+import { runTask, StopReason, type TaskFrame, type TaskRequest } from '../../acp'
 import { createTaskHost } from './index'
 
 const collect = async (frames: AsyncGenerator<TaskFrame, unknown>) => {

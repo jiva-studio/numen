@@ -13,7 +13,7 @@ afterEach(() => {
 
 describe('the wire transport', () => {
   it('loads where there is no window', async () => {
-    await expect(import('./transport')).resolves.toHaveProperty('transport')
+    await expect(import('./transport')).resolves.toHaveProperty('createTransport')
   })
 
   it('asks at no origin where there is no window', async () => {
@@ -23,8 +23,8 @@ describe('the wire transport', () => {
 
   it('asks at the origin a window was served from', async () => {
     vi.stubGlobal('window', { location: { origin: 'https://example.test' } })
-    const { getOrigin, transport } = await import('./transport')
+    const { getOrigin, createTransport } = await import('./transport')
     expect(getOrigin()).toBe('https://example.test')
-    expect(transport).toBeDefined()
+    expect(createTransport()).toBeDefined()
   })
 })

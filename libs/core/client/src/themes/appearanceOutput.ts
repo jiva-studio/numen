@@ -1,4 +1,3 @@
-import type { Caught } from '../errors'
 import type { ThemeMode, ThemeScales } from './themes'
 
 /** The styles the window was served with and the changes applied as the appearance is read. */
@@ -16,5 +15,5 @@ export interface AppearanceWords {
   readonly themeUnreadable: string
 }
 
-export const getFailureText = (error: Caught): string =>
+export const getFailureText = (error: unknown): string =>
   error instanceof Error ? error.message : String(error)

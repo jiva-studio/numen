@@ -78,7 +78,7 @@ func TestLinkedPluginIsListedAsRunningInProcess(t *testing.T) {
 	core := startTestCore(t)
 	getUpdateStatus(t, core)
 
-	client := numenv1connect.NewPluginServiceClient(http.DefaultClient, core.url)
+	client := numenv1connect.NewPluginProcessServiceClient(http.DefaultClient, core.url)
 	req := connect.NewRequest(&v1.WatchPluginProcessesRequest{})
 	req.Header().Set("Authorization", "Bearer "+core.token)
 	stream, err := client.WatchPluginProcesses(t.Context(), req)

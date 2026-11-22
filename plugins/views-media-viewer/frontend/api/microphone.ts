@@ -1,5 +1,4 @@
-import { asFailure, asValue, type Caught, type Result } from '@numen/plugin-sdk'
-
+import { asFailure, asValue, type Result } from '@numen/plugin-sdk'
 export const BAR_COUNT = 32
 
 export interface Microphone {
@@ -23,7 +22,7 @@ export async function openMicrophone(events: CaptureEvents): Promise<Result<Micr
   let context: AudioContext | undefined
   const release = () => {
     stream?.getTracks().forEach((track) => track.stop())
-    context?.close().catch((error: Caught) => events.fail(String(error)))
+    context?.close().catch((error: unknown) => events.fail(String(error)))
   }
   try {
     const mimeType = ['audio/mp4', 'audio/ogg;codecs=opus', 'audio/webm;codecs=opus'].find((type) =>

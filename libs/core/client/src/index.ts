@@ -7,6 +7,7 @@ export * from './licenses'
 export * from './protocol'
 export {
   CALLER_HEADER,
+  createBearerTransport,
   createCallerTransport,
   createKeepaliveTransport,
   createOriginTransport,
@@ -22,8 +23,6 @@ export {
   formatErrorCodeMessage,
   formatErrorMessage,
   ReportedError,
-  type Caught,
-  type Unvalidated,
   findErrorCode,
   isStaleAnswer,
   parseFingerprint,

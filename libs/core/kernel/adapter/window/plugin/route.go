@@ -1,9 +1,10 @@
 // Package plugin serves the route on which the windows reach the services plugins offer, and the
-// plugins that run.
+// processes of the plugins.
 package plugin
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
 // Processes lists the plugins that run at once and after each change, until the context ends.
@@ -21,25 +23,50 @@ type Processes interface {
 	Execute(ctx context.Context) <-chan plugindomain.ProcessList
 }
 
-// Handler answers PluginService to a window. The window does not manage plugins, so GetPlugins is
-// unimplemented.
+// Handler answers PluginProcessService to a window.
 type Handler struct {
-	numenv1connect.UnimplementedPluginServiceHandler
 	processes Processes
+	retry     *setting.RetryPlugin
 }
 
-var _ numenv1connect.PluginServiceHandler = (*Handler)(nil)
+var _ numenv1connect.PluginProcessServiceHandler = (*Handler)(nil)
 
-// NewHandler answers over the plugins that run.
-func NewHandler(processes Processes) *Handler {
-	return &Handler{processes: processes}
+// NewHandler answers over the plugins that run, and starts a plugin that failed to start through retry.
+func NewHandler(processes Processes, retry *setting.RetryPlugin) *Handler {
+	return &Handler{processes: processes, retry: retry}
 }
 
-// NewRoute is where PluginService is mounted, what the schema generated to answer it, and the
+// NewRoute is where PluginProcessService is mounted, what the schema generated to answer it, and the
 // handler it answers through.
 func NewRoute(handler *Handler, options connect.HandlerOption) (path string, served http.Handler, service any) {
-	path, served = numenv1connect.NewPluginServiceHandler(handler, options)
+	path, served = numenv1connect.NewPluginProcessServiceHandler(handler, options)
 	return path, served, handler
+}
+
+// errNoRetry is what a build that cannot start a plugin again answers.
+var errNoRetry = errors.New("this build does not start plugins again")
+
+// RetryPlugin starts a plugin whose last start failed once more. A plugin that fails
+// again is answered with its reason, and one the host does not know is not found.
+func (h *Handler) RetryPlugin(
+	ctx context.Context, r *connect.Request[v1.RetryPluginRequest],
+) (*connect.Response[v1.RetryPluginResponse], error) {
+	if h.retry == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoRetry)
+	}
+	failure, err := h.retry.Execute(ctx, r.Msg.GetPluginId())
+	if err != nil {
+		var unavailable *plugindomain.UnavailableError
+		if errors.As(err, &unavailable) && unavailable.Reason == plugindomain.NotInstalled {
+			return nil, connect.NewError(connect.CodeNotFound, err)
+		}
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	reply := &v1.RetryPluginResponse{}
+	if failure != nil {
+		reply.Failure = failure.Reason
+	}
+	return connect.NewResponse(reply), nil
 }
 
 // WatchPluginProcesses sends the plugins that run at once, on every change and again every

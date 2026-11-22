@@ -11,7 +11,6 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
@@ -33,7 +32,7 @@ func (readerIdentity) GetPluginIDByToken(token string) (string, bool) {
 
 func (readerIdentity) CheckPluginPermission(string, string) error { return nil }
 
-func openReadEndpoint(t *testing.T, access *vaultapi.Access) numenv1connect.HostVaultServiceClient {
+func openReadEndpoint(t *testing.T, access *vaultapi.Access) hostendpoint.HostVaultClient {
 	t.Helper()
 	lent := hostendpoint.NewServices(func() hostendpoint.Lent { return hostendpoint.Lent{Vault: access} })
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, hostendpoint.Callers{
@@ -48,10 +47,10 @@ func openReadEndpoint(t *testing.T, access *vaultapi.Access) numenv1connect.Host
 		}
 	})
 	url := fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort())
-	return numenv1connect.NewHostVaultServiceClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return hostendpoint.NewHostVaultClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 }
 
-func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
+func newDiskReadClient(t *testing.T) hostendpoint.HostVaultClient {
 	t.Helper()
 	v := vaulttest.NewVault(t, map[string]string{
 		"Rivers.txt":      "the Danube flows east",
@@ -72,7 +71,7 @@ func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 	))
 }
 
-func readFileRange(t *testing.T, client numenv1connect.HostVaultServiceClient, path string, start, length int64) *v1.ReadFileResponse {
+func readFileRange(t *testing.T, client hostendpoint.HostVaultClient, path string, start, length int64) *v1.ReadFileResponse {
 	t.Helper()
 	res, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: path, Start: start, Length: &length}))
 	if err != nil {
