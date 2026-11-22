@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
@@ -14,7 +15,7 @@ import (
 // versionTexts is one text version every path reads as.
 type versionTexts struct{ text domain.VersionText }
 
-func (t versionTexts) Open(domain.Vault) (textdomain.VaultTexts, error) { return t, nil }
+func (t versionTexts) Open(domain.Vault) (textport.VaultTexts, error) { return t, nil }
 
 func (t versionTexts) FindLiveVersion(context.Context, string, string) (domain.TextVersionID, error) {
 	return t.text.Version().GetID(), nil

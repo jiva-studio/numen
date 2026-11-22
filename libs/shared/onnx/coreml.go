@@ -56,27 +56,25 @@ func findCoreMLCacheDir(cacheRoot, modelPath string) (string, bool) {
 
 // DeleteCoreMLCache empties the CoreML cache folder of the model at modelPath inside cacheRoot and
 // reports whether it held anything. The caller holds the lock of the folder.
-func DeleteCoreMLCache(cacheRoot, modelPath string) bool {
-	dir, dirErr := GetCoreMLCacheDir(cacheRoot, modelPath)
-	if dirErr != nil {
-		return false
+func DeleteCoreMLCache(cacheRoot, modelPath string) (isDeleted bool, err error) {
+	dir, err := GetCoreMLCacheDir(cacheRoot, modelPath)
+	if err != nil {
+		return false, err
 	}
 	entries, err := os.ReadDir(dir)
-	// gomutants:disable-next-line BRANCH_IF reason="When os.ReadDir fails, entries is empty and the loop below returns false."
 	if err != nil {
-		return false
+		return false, err
 	}
-	isDeleted := false
 	for _, entry := range entries {
 		if entry.Name() == lockName {
 			continue
 		}
-		if os.RemoveAll(filepath.Join(dir, entry.Name())) != nil {
-			return false
+		if err := os.RemoveAll(filepath.Join(dir, entry.Name())); err != nil {
+			return false, err
 		}
 		isDeleted = true
 	}
-	return isDeleted
+	return isDeleted, nil
 }
 
 // GetCoreMLOptions returns the option list the keyed CoreML entry point is given.

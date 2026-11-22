@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -42,7 +41,7 @@ type TypeList struct {
 // ListTypes reads the kinds of connection the installed plugins provide and the titles of their operations.
 type ListTypes struct {
 	operation
-	titles connectionport.OperationTitles
+	titles OperationTitles
 }
 
 // Execute returns the kinds of connection and the titles of the operations; no titles where the use case

@@ -181,3 +181,10 @@ func (r *VaultRegistry) FindVault(nameOrPath string) (domain.Vault, bool, error)
 	}
 	return domain.Vault{}, false, nil
 }
+
+// UnopenedRegistry stands for a registry that could not be opened: every lookup fails with the reason.
+type UnopenedRegistry struct{ Err error }
+
+func (r UnopenedRegistry) FindVault(string) (domain.Vault, bool, error) {
+	return domain.Vault{}, false, r.Err
+}

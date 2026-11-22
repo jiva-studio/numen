@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 )
 
 // window is a window showing one vault, with nothing writing.
@@ -48,7 +47,7 @@ func (notesOnly) ListExtensions(domain.ContentType) []string { return []string{"
 func newHandler(t *testing.T, notes map[string]string, kinds tabKinds) *filewindow.Handler {
 	t.Helper()
 	open := window{vault: vaulttest.NewVault(t, notes)}
-	choose := tabkind.NewChoose(kinds, notesOnly{}, nil)
+	choose := file.NewChooseTabKind(kinds, notesOnly{}, nil)
 	readers := vaultreader.Readers{}
 	fileKinds := file.NewGetFileKinds(readers, nil)
 	return filewindow.NewHandler(

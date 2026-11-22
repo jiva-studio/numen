@@ -10,8 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
 func hasPluginHost(settingsDeps settingsWiring) bool {
@@ -74,7 +72,7 @@ func openConnectionUseCases(install pluginInstall, exec *PluginExecution, settin
 			Delete: connection.NewDelete(deps),
 		},
 		Reads: windowconnection.Reads{
-			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, cmp.Or[connectionport.OperationTitles](install.OperationTitles, none.OperationTitles{})),
+			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, cmp.Or[connection.OperationTitles](install.OperationTitles, none.OperationTitles{})),
 			RowOptions: openRowOptions(install, exec, deps),
 		},
 	}
@@ -84,13 +82,13 @@ func openModelCalls(install pluginInstall, settingsDeps settingsWiring) connecti
 	return getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
 }
 
-func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, notices modelcall.ReportSetAside) {
+func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, notices connection.ReportSetAside) {
 	deps, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return
 	}
-	calls := modelcall.NewCalls(
-		modelcall.Connections{
+	calls := connection.NewCalls(
+		connection.Connections{
 			Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
 			Rows:   connection.NewListRows(deps, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute,
 			Titles: install.OperationTitles,
@@ -117,10 +115,10 @@ func getForwardedCalls(types connectionport.Types, endpoint *hostendpoint.Servic
 	if types == nil {
 		return nil
 	}
-	return modelcall.NewForwardedCalls(func() connectionport.ModelCalls { return endpoint.GetModelCalls() })
+	return connection.NewForwardedCalls(func() connectionport.ModelCalls { return endpoint.GetModelCalls() })
 }
 
-func openRowLists(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *modelcall.Rows {
+func openRowLists(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *connection.Rows {
 	deps, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return nil
@@ -130,14 +128,14 @@ func openRowLists(install pluginInstall, exec *PluginExecution, settingsDeps set
 	if options == nil {
 		return nil
 	}
-	return modelcall.NewRows(resolve, connection.NewListRows(deps, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, options.ListOptions)
+	return connection.NewRows(resolve, connection.NewListRows(deps, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, options.ListOptions)
 }
 
-func openRowOptions(install pluginInstall, exec *PluginExecution, deps connection.Deps) *rowoptions.Options {
+func openRowOptions(install pluginInstall, exec *PluginExecution, deps connection.Deps) *connection.Options {
 	if install.Endpoints.RowOptions == nil || install.Endpoints.RunningProviders == nil {
 		return nil
 	}
-	return rowoptions.NewOptions(rowoptions.Deps{
+	return connection.NewOptions(connection.OptionsDeps{
 		Resolve: connection.NewResolve(deps).Execute, ReadSecrets: connection.NewReadSecrets(deps).Execute,
 		Source: providerbridge.NewQuestionSource(exec.Runtime.Activator), Running: install.Endpoints.RunningProviders,
 		Lists: install.Endpoints.RowOptions, Titles: install.OperationTitles,

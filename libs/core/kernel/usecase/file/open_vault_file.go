@@ -4,30 +4,27 @@ import (
 	"context"
 	"errors"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // ErrNoVaultNamed is an address that names a vault this installation does not hold.
 var ErrNoVaultNamed = errors.New("no vault of that name")
 
-// VaultFinder finds the registered vault of an identity.
-type VaultFinder interface {
-	Execute(id string) (domain.Vault, error)
-}
-
 // MediaTyper returns the media type a path is served under, or nothing where it has none.
 type MediaTyper interface {
 	Execute(path string) string
 }
 
-func findVault(find VaultFinder, showing domain.Vault, id string) (domain.Vault, error) {
+func findVault(find vaultport.VaultLookup, showing domain.Vault, id string) (domain.Vault, error) {
 	if string(showing.ID) == id {
 		return showing, nil
 	}
 	if find == nil {
 		return domain.Vault{}, ErrNoVaultNamed
 	}
-	found, err := find.Execute(id)
+	found, err := vaultdomain.FindByName(id, find.FindVault)
 	if err != nil {
 		return domain.Vault{}, ErrNoVaultNamed
 	}
@@ -49,7 +46,7 @@ type VaultFile struct {
 
 // OpenVaultFile opens a file of the vault an address names, or a file in the store of a plugin of it.
 type OpenVaultFile struct {
-	find       VaultFinder
+	find       vaultport.VaultLookup
 	open       *OpenFile
 	openPlugin pluginFileOpener
 	types      MediaTyper
@@ -57,7 +54,7 @@ type OpenVaultFile struct {
 
 // NewOpenVaultFile returns the use case over the registry of vaults, the opening of a file, the opening of a
 // file of a plugin, which may be nothing, and the table of media types.
-func NewOpenVaultFile(find VaultFinder, open *OpenFile, openPlugin *OpenPluginFile, types MediaTyper) *OpenVaultFile {
+func NewOpenVaultFile(find vaultport.VaultLookup, open *OpenFile, openPlugin *OpenPluginFile, types MediaTyper) *OpenVaultFile {
 	return &OpenVaultFile{find: find, open: open, openPlugin: getPluginFileOpener(openPlugin), types: types}
 }
 

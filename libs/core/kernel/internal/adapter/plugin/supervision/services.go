@@ -48,50 +48,64 @@ func (s *Slot[T]) Replace(value T) {
 	s.value = value
 }
 
+// Dependencies is what the host reads of the provisioner of the dependencies the plugins declare.
+type Dependencies interface {
+	pluginport.DependencyRegistry
+	CanProvision(req manifest.DependencyRequirement) bool
+	// Resolve returns where the dependency is or will be and whether it is ready, without the network, a lock wait or a download.
+	Resolve(req manifest.DependencyRequirement) (plugindomain.ResolvedDependency, plugindomain.DependencyState, error)
+	// Cancel stops the download of the requirement and reports whether one was in progress.
+	Cancel(req manifest.DependencyRequirement) bool
+}
+
 // Services holds what the host gives the plugins it launches: the endpoint they call the host
 // through and the provisioner of the dependencies they declare. Both are read from the functions
 // the services are made with, at each use.
 type Services struct {
 	closing      Closing
 	endpoint     func() HostEndpoint
-	dependencies func() pluginport.DependencyRegistry
+	dependencies func() Dependencies
 
 	mu          sync.Mutex
+	observer    func(manifest.DependencyRequirement, plugindomain.DependencyStatus)
 	downloading map[string]manifest.DependencyRequirement
 }
 
 // NewServices returns services that read the endpoint and the provisioner of the dependencies from the
 // given functions; a nil result means there is none. They open no endpoint once closing reports the host shut down.
 func NewServices(
-	closing Closing, endpoint func() HostEndpoint, dependencies func() pluginport.DependencyRegistry,
+	closing Closing, endpoint func() HostEndpoint, dependencies func() Dependencies,
 ) *Services {
 	return &Services{closing: closing, endpoint: endpoint, dependencies: dependencies, downloading: map[string]manifest.DependencyRequirement{}}
 }
 
 // GetDependencies returns what provisions the dependencies, or nil when nothing does.
-func (s *Services) GetDependencies() pluginport.DependencyRegistry {
+func (s *Services) GetDependencies() Dependencies {
 	return s.dependencies()
 }
 
 // ObserveDependencies sets the function that observes each change of the state of a dependency. A
 // host that provisions none observes none.
 func (s *Services) ObserveDependencies(observer func(manifest.DependencyRequirement, plugindomain.DependencyStatus)) {
-	if catalog := s.GetDependencies(); catalog != nil {
-		catalog.SetObserver(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
-			s.track(req, status)
-			observer(req, status)
-		})
-	}
-}
-
-func (s *Services) track(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.observer = observer
+}
+
+// Observe records the change of the state of a dependency and passes it to the observer. A provisioner of
+// dependencies takes it at its construction.
+func (s *Services) Observe(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
+	s.mu.Lock()
 	if status.State == plugindomain.DependencyStateProvisioning {
 		s.downloading[req.GetIdentity()] = req
-		return
+	} else {
+		delete(s.downloading, req.GetIdentity())
 	}
-	delete(s.downloading, req.GetIdentity())
+	observer := s.observer
+	s.mu.Unlock()
+	if observer != nil {
+		observer(req, status)
+	}
 }
 
 // CancelDependency stops the download of the dependency, if one runs.

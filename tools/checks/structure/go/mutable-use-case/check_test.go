@@ -25,6 +25,8 @@ func (f *Find) WithLimit(limit int) { f.limit = limit }
 
 func (f Find) WithCopy(limit int) Find { f.limit = limit; return f }
 
+func (f Find) WithNext(limit int) Find { return Find{limit: limit} }
+
 func (f *Find) WithName(name string) string { return name }
 
 func (f *Find) Limit() int { return f.limit }
@@ -37,7 +39,6 @@ func (h *Helper) WithLimit(limit int) { h.limit = limit }
 	found, useCases := listMutatingWithMethods(load.LoadFixture(t, dir))
 	want := []string{
 		"find.go:7 Find.WithLimit changes the use case after construction",
-		"find.go:9 Find.WithCopy changes the use case after construction",
 	}
 	if got := load.FormatFindings(found); !slices.Equal(got, want) {
 		t.Errorf("the rule rejects %v, want %v", got, want)

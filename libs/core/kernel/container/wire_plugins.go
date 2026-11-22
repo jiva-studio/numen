@@ -7,17 +7,18 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -86,7 +87,7 @@ type PluginWatch struct {
 // subscription to the setting changes that the host follows, or none.
 type pluginViews struct {
 	Types        connectionport.Types
-	Operations   connectionport.OperationTitles
+	Operations   connection.OperationTitles
 	Declarations license.Declarations
 	Infos        settingsusecase.PluginInfos
 	Checks       settingsusecase.PluginSettings
@@ -114,7 +115,7 @@ type PluginPreferences struct {
 // pluginProviders connects plugin providers to search and model clients.
 type pluginProviders struct {
 	Detection          *providerbridge.Detection
-	RowOptions         *rowoptions.Lists
+	RowOptions         *connection.Lists
 	RunningProviders   *providerbridge.RunningSource
 	SourceDescriptions *sourcebridge.Descriptions
 }
@@ -128,11 +129,11 @@ type PluginEndpoints struct {
 }
 
 // AdaptPluginHost connects the process and management roles to their consumers.
-func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervision) (*PluginExecution, *PluginPreferences, *PluginEndpoints) {
+func AdaptPluginHost(management *PluginManagement, roles *PluginSupervision) (*PluginExecution, *PluginPreferences, *PluginEndpoints) {
 	lender := hostendpoint.NewLender()
-	lent := lendHostEndpoint(management, supervision, lender)
+	lent := lendHostEndpoint(management, roles, lender)
 	types := plugin.NewConnectionTypes(management.Registry)
-	detection := providerbridge.NewDetection(types, providerbridge.NewQuestionSource(management.Activation), supervision.Clock)
+	detection := providerbridge.NewDetection(types, providerbridge.NewQuestionSource(management.Activation), roles.Clock)
 	management.Activation.SetOnStart(detection.DetectInBackground)
 	exec := &PluginExecution{
 		Runtime: pluginRuntime{
@@ -140,20 +141,20 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 			pluginRetrier:      management.Retry,
 			Listing:            management.Registry,
 			Resolver:           management.Registry,
-			Manifests:          pluginmanifest.Open(management.Registry, management.Registry, supervision.Failures),
+			Manifests:          pluginmanifest.Open(management.Registry, management.Registry, roles.Failures),
 			pluginEventEmitter: management.Events,
 			pluginBinding:      plugin.NewBinding(management.Teardown, management.Mode),
 			ClientLookup:       management.Activation.ClientLookup(),
-			PluginFailures:     supervision.Failures,
+			PluginFailures:     roles.Failures,
 			ConfigWatcher:      management.Config,
 		},
 		Watch: PluginWatch{
 			pluginShutdown:     management.Teardown,
-			dependencyReporter: supervision.Services,
+			dependencyReporter: roles.Services,
 			ContentTypeTable:   management.ContentTypes,
 		},
-		Health:    supervision.Health,
-		Processes: supervision.RunningProcesses,
+		Health:    roles.Health,
+		Processes: roles.RunningProcesses,
 	}
 	prefs := &PluginPreferences{
 		Configuration: pluginConfiguration{
@@ -163,8 +164,8 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 			PluginSettings:        management.Settings,
 		},
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
-			Values: management.Settings, Stopper: management.Teardown, Failures: supervision.Failures, Listeners: management.Listeners, Push: management.Config,
-			Health: supervision.Health,
+			Values: management.Settings, Stopper: management.Teardown, Failures: roles.Failures, Listeners: management.Listeners, Push: management.Config,
+			Health: roles.Health,
 		}).Execute,
 		Views: pluginViews{
 			Types: types, Operations: types,
@@ -172,22 +173,24 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 			Follow: func(subscribe settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber { return subscribe },
 		},
 		SetStorage: func(cacheRoot, dataRoot string) {
-			setPluginStorage(supervision, cacheRoot, dataRoot, func(modelsDir string) pluginport.DependencyRegistry {
-				return newDependencyRegistry(supervision.Clock, modelsDir)
+			setPluginStorage(roles, cacheRoot, dataRoot, func(modelsDir string) supervision.Dependencies {
+				return newDependencyRegistry(roles.Clock, roles.Services.Observe, modelsDir)
 			})
-			detection.SetFiles(supervision.Storage)
+			detection.SetFiles(roles.Storage)
 		},
-		RefreshDependencies: func() { supervision.Dependencies.Replace(newDependencyRegistry(supervision.Clock, "")) },
-		Detection:           detection,
+		RefreshDependencies: func() {
+			roles.Dependencies.Replace(newDependencyRegistry(roles.Clock, roles.Services.Observe, ""))
+		},
+		Detection: detection,
 	}
 	endpoints := &PluginEndpoints{
 		Endpoint: lent,
 		Lender:   lender,
 		pluginProviders: pluginProviders{
 			Detection:          detection,
-			RowOptions:         rowoptions.NewLists(supervision.Storage, management.Config),
+			RowOptions:         connection.NewLists(roles.Storage, management.Config),
 			RunningProviders:   providerbridge.NewRunningSource(management.Activation, management.Activation.ClientLookup()),
-			SourceDescriptions: sourcebridge.NewDescriptions(supervision.Storage, management.Config),
+			SourceDescriptions: sourcebridge.NewDescriptions(roles.Storage, management.Config),
 		},
 	}
 	return exec, prefs, endpoints
@@ -200,7 +203,7 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 	revision := getListingRevision(getSearchCatalog(manifests))
 	tools := toolbridge.NewCatalog(toolHost, toolHost, processes.Storage, revision, processes.Clock, toolbridge.GetErrorOutput())
 	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
-		Dependencies: plugindependency.NewFetch(processes.Services.GetDependencies),
+		Dependencies: plugindependency.NewFetch(getDependencyProvisioner(processes.Services)),
 		Identity:     management.Activation, Leases: management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
 		Lent: services, CallCancels: searchcancel.NewSearches(processes.Clock),
 		Tools: func() hostendpoint.PluginTools {

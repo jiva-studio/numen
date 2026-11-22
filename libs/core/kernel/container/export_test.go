@@ -14,13 +14,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
@@ -119,11 +117,11 @@ func settingsGetSettingsAt(c settingsWiring, path string) (settingsadapter.File,
 
 func Scan(c TestInstallation, db *Index) vault.Scan { return searchScan(indexPlanOf(c), db) }
 
-func Embed(c TestInstallation, db *Index, source searchsourceport.Source, v domain.Vault) (vectorscase.Embed, error) {
+func Embed(c TestInstallation, db *Index, source searchsourceport.Source, v domain.Vault) (indexing.Embed, error) {
 	return searchEmbed(indexPlanOf(c), db, source, v)
 }
 
-func IndexTexts(c TestInstallation, db *Index, v domain.Vault) (filetext.Index, error) {
+func IndexTexts(c TestInstallation, db *Index, v domain.Vault) (indexing.Index, error) {
 	return indexTexts(indexPlanOf(c), db, v, nil)
 }
 

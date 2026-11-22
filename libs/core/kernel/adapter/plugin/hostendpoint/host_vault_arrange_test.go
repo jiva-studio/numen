@@ -23,7 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -472,7 +471,7 @@ func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) 
 		"name taken":      {err: vaultdomain.ErrNameTaken, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN},
 		"last vault":      {err: vaultdomain.ErrLastVault, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT},
 		"current vault":   {err: vaultdomain.ErrShowing, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT},
-		"no such vault":   {err: registry.ErrUnknown, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND},
+		"no such vault":   {err: vaultdomain.ErrUnknown, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND},
 		"unsaved changes": {err: plugin.ErrUnsavedChanges, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED},
 	} {
 		t.Run(name, func(t *testing.T) {

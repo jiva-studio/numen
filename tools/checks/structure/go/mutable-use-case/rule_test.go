@@ -76,7 +76,8 @@ func listMutatingWithMethods(pkgs []*packages.Package) (found []load.Finding, us
 					continue
 				}
 				receiverType := signature.Recv().Type()
-				if pointer, isPointer := receiverType.(*types.Pointer); isPointer {
+				pointer, isPointer := receiverType.(*types.Pointer)
+				if isPointer {
 					receiverType = pointer.Elem()
 				}
 				named, ok := receiverType.(*types.Named)
@@ -89,15 +90,7 @@ func listMutatingWithMethods(pkgs []*packages.Package) (found []load.Finding, us
 				if !strings.HasPrefix(function.Name.Name, "With") {
 					continue
 				}
-				isCopy := false
-				for result := range signature.Results().Variables() {
-					resultType := result.Type()
-					if pointer, isPointer := resultType.(*types.Pointer); isPointer {
-						resultType = pointer.Elem()
-					}
-					isCopy = isCopy || types.Identical(resultType, named)
-				}
-				if isCopy || isAssigningThroughReceiver(function, pkg.TypesInfo, getReceiverIdent(function)) {
+				if isPointer && isAssigningThroughReceiver(function, pkg.TypesInfo, getReceiverIdent(function)) {
 					found = append(found, load.NewFinding(pkg.Fset, function.Pos(), named.Obj().Name()+"."+function.Name.Name+" changes the use case after construction"))
 				}
 			}

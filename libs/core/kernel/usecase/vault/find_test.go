@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
@@ -19,7 +20,7 @@ func TestAVaultIsFoundByNameFolderOrIdentity(t *testing.T) {
 			t.Errorf("%q resolved to %+v, %v", ask, got, err)
 		}
 	}
-	if _, err := find.Execute("nothing"); !errors.Is(err, vaultregistry.ErrUnknown) {
+	if _, err := find.Execute("nothing"); !errors.Is(err, vaultdomain.ErrUnknown) {
 		t.Errorf("a vault nobody holds resolved: %v", err)
 	}
 }
@@ -28,7 +29,7 @@ func TestNamingNoVaultIsRefused(t *testing.T) {
 	t.Parallel()
 	_, _, registry := twoVaults(t)
 
-	if _, err := vaultregistry.NewFind(registry).Execute(""); !errors.Is(err, vaultregistry.ErrNoName) {
+	if _, err := vaultregistry.NewFind(registry).Execute(""); !errors.Is(err, vaultdomain.ErrNoName) {
 		t.Errorf("no name resolved: %v", err)
 	}
 }

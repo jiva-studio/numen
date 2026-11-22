@@ -145,7 +145,7 @@ func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, 
 
 func (wide) Close() error { return nil }
 
-// Nothing outside this package builds a filetext.Index of its own, and no
+// Nothing outside this package builds a indexing.Index of its own, and no
 // package but usecase/note, which owns the cutting, builds a chunking.Sizes or a
 // chunking.Legibility. They decide what a chunk is kept under, and a second
 // assembly is a second answer for one settings file.
@@ -189,8 +189,8 @@ func TestNothingElseAssemblesASplit(t *testing.T) {
 				return true
 			}
 			switch {
-			case pkg.Name == "filetext" && named.Sel.Name == "Index" &&
-				!isWithin(path, "usecase/filetext"):
+			case pkg.Name == "indexing" && named.Sel.Name == "Index" &&
+				!isWithin(path, "usecase/indexing"):
 				constructed = append(constructed, path)
 			case pkg.Name == "chunking" && (named.Sel.Name == "Sizes" || named.Sel.Name == "Legibility") &&
 				!isWithin(path, "usecase/note"):

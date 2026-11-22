@@ -110,14 +110,12 @@ func (a Arranger) AddLinks(ctx context.Context, additions []plugin.LinkAddition)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]plugin.LinkAdded, len(added))
 	outcomes := make([]error, len(added))
 	for i, one := range added {
-		out[i] = plugin.LinkAdded{Stat: one.FileStat, Err: one.Error}
-		outcomes[i] = one.Error
+		outcomes[i] = one.Err
 	}
 	a.session.ReportWrites(v.ID, outcomes...)
-	return out, nil
+	return added, nil
 }
 
 func (a Arranger) UpdateLinks(
@@ -170,12 +168,10 @@ func (a LinkEditor) WriteFrontmatter(ctx context.Context, writes []plugin.Frontm
 	if err != nil {
 		return nil, err
 	}
-	out := make([]plugin.FrontmatterWritten, len(written))
 	outcomes := make([]error, len(written))
 	for i, one := range written {
-		out[i] = plugin.FrontmatterWritten{Stat: one.FileStat, Err: one.Error}
-		outcomes[i] = one.Error
+		outcomes[i] = one.Err
 	}
 	a.session.ReportWrites(v.ID, outcomes...)
-	return out, nil
+	return written, nil
 }

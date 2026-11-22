@@ -15,7 +15,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -232,7 +231,7 @@ func TestACommandOverNotesOfATypeRunsOverThoseNotesAlone(t *testing.T) {
 		"links/talk.md":  "---\ntype: link\nurl: https://video.example/talk\n---\n",
 		"notes/plain.md": "# A plain note\n",
 	}
-	commands := newUseCases(declared, declared, getTypes(), note.NewReadFrontmatter(files), nil)
+	commands := newUseCases(declared, declared, getTypes(), files, nil)
 
 	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.links", Command: "fetch", Path: "links/talk.md"}); err != nil {
 		t.Fatalf("a link note was refused: %v", err)
@@ -271,7 +270,7 @@ func TestRunAnswersTheErrorOfANoteItCannotRead(t *testing.T) {
 	declared := &declaredCommands{entries: []plugin.CommandEntry{
 		{PluginID: "md.numen.links", Command: manifest.Command{ID: "fetch", Title: "Fetch", When: "target.noteType == 'link'"}},
 	}}
-	commands := newUseCases(declared, declared, getTypes(), note.NewReadFrontmatter(noteFiles{}), nil)
+	commands := newUseCases(declared, declared, getTypes(), noteFiles{}, nil)
 
 	_, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.links", Command: "fetch", Path: "links/gone.md"})
 
@@ -303,7 +302,7 @@ func TestRunOverPathsReadsRemovedNoteAsNoteWithoutFrontmatter(t *testing.T) {
 		ID: "tags.update", Title: "Update tags", When: "target.isNote && target.noteType != 'link'",
 	}}}}
 	files := noteFiles{"notes/kept.md": "---\ntags: [river]\n---\n"}
-	commands := newUseCases(declared, declared, getTypes(), note.NewReadFrontmatter(files), nil)
+	commands := newUseCases(declared, declared, getTypes(), files, nil)
 
 	call := plugin.CommandCall{PluginID: "md.numen.a", Command: "tags.update", Paths: []string{"notes/gone.md", "notes/kept.md"}}
 	if _, err := commands.Run.Execute(t.Context(), getVault(), call); err != nil {

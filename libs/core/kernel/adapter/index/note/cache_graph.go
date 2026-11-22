@@ -47,28 +47,28 @@ func getGraphVault(
 }
 
 func loadVaultGraph(ctx context.Context, db *sql.DB, vault int64, vaultID domain.VaultID) (vaultGraph, error) {
-	notes, types, rawFrontmatter, byPath, idByPath, byFolded, err := loadVaultNotes(ctx, db, vault)
+	found, err := loadVaultNotes(ctx, db, vault)
 	if err != nil {
 		return vaultGraph{}, err
 	}
-	order, grouped, noteIDs, err := loadVaultLinks(ctx, db, vault)
+	links, err := loadVaultLinks(ctx, db, vault)
 	if err != nil {
 		return vaultGraph{}, err
 	}
-	identified, err := loadIdentifiedNotes(ctx, db, noteIDs)
+	identified, err := loadIdentifiedNotes(ctx, db, links.noteIDs)
 	if err != nil {
 		return vaultGraph{}, err
 	}
 	resolver := vaultLinkResolver{
-		cachedResolution: cachedResolution{vaultID: vaultID, byPath: byPath, byFolded: byFolded, named: make(map[string][]string, len(byFolded)), identified: identified},
-		idByPath:         idByPath,
-		backlinksOf:      make(map[string][]domain.ResolvedLink, len(byPath)),
+		cachedResolution: cachedResolution{vaultID: vaultID, byPath: found.byPath, byFolded: found.byFolded, named: make(map[string][]string, len(found.byFolded)), identified: identified},
+		idByPath:         found.idByPath,
+		backlinksOf:      make(map[string][]domain.ResolvedLink, len(found.byPath)),
 	}
-	linksOf, err := resolver.resolve(ctx, order, grouped)
+	linksOf, err := resolver.resolve(ctx, links.order, links.grouped)
 	if err != nil {
 		return vaultGraph{}, err
 	}
-	return vaultGraph{notes: notes, types: types, rawFrontmatter: rawFrontmatter, linksOf: linksOf, backlinksOf: resolver.backlinksOf, named: resolver.named}, nil
+	return vaultGraph{notes: found.notes, types: found.types, rawFrontmatter: found.rawFrontmatter, linksOf: linksOf, backlinksOf: resolver.backlinksOf, named: resolver.named}, nil
 }
 
 func (r *vaultLinkResolver) resolve(

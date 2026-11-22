@@ -32,14 +32,8 @@ import (
 func newPluginWindow(
 	state *testWindow, focusNote *query.FocusNote, focusFile *file.FocusFile, limit time.Duration,
 ) hostendpoint.WindowControl {
-	return windowsession.NewPluginWindow(
-		&state.Runtime,
-		&state.Tabs,
-		focusNote,
-		windowsession.FileFocusFunc(func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error {
-			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
-		}),
-		windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, limit),
+	return hostendpoint.NewWindowAccess(
+		&state.Runtime, &state.Tabs, focusNote, focusFile, windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, limit),
 	)
 }
 

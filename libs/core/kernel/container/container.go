@@ -16,7 +16,6 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
@@ -24,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
@@ -70,7 +70,7 @@ type Resources struct {
 	ErrorHandler  window.ErrorHandler
 	Now           installationClock
 	Chunks        *note.ChunkTokens
-	TextReaders   textdomain.Readers
+	TextReaders   textport.Readers
 
 	vaultLocks      *vaultwriter.Locks
 	watches         *vaultwatch.Hub

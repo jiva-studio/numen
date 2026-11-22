@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
 // Edits are the use cases that change the list of connections.
@@ -28,7 +27,7 @@ type Edits struct {
 type Reads struct {
 	List       *connections.List
 	ListTypes  *connections.ListTypes
-	RowOptions *rowoptions.Options
+	RowOptions *connections.Options
 }
 
 // UseCases are the use cases ProviderConnectionService is answered through.
@@ -180,7 +179,7 @@ func getDetail(err error) string {
 	sentinels := []error{
 		connection.ErrNotFound, connections.ErrNameTaken, connections.ErrInvalidField,
 		connection.ErrTypeUnavailable, connection.ErrKeyStore, connection.ErrStaleRevision,
-		rowoptions.ErrProviderUnavailable, rowoptions.ErrNoOptions,
+		connections.ErrProviderUnavailable, connections.ErrNoOptions,
 	}
 	for _, sentinel := range sentinels {
 		if errors.Is(err, sentinel) {
@@ -204,9 +203,9 @@ func getErrorCode(err error) (v1.ProviderConnectionErrorCode, bool) {
 		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED, true
 	case errors.Is(err, connection.ErrStaleRevision):
 		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION, true
-	case errors.Is(err, rowoptions.ErrProviderUnavailable):
+	case errors.Is(err, connections.ErrProviderUnavailable):
 		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE, true
-	case errors.Is(err, rowoptions.ErrNoOptions):
+	case errors.Is(err, connections.ErrNoOptions):
 		return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_INVALID_FIELD, true
 	}
 	return v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_UNSPECIFIED, false

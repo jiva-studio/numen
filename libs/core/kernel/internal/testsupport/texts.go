@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -25,7 +26,7 @@ type Texts struct {
 	Readers vaultport.VaultReaders
 }
 
-func (t Texts) Open(v domain.Vault) (textdomain.VaultTexts, error) {
+func (t Texts) Open(v domain.Vault) (textport.VaultTexts, error) {
 	files, err := t.Readers.Open(v)
 	if err != nil {
 		return nil, err

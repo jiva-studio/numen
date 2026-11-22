@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 )
 
 func TestErrorCodesAreProducedFromFailures(t *testing.T) {
@@ -20,7 +19,7 @@ func TestErrorCodesAreProducedFromFailures(t *testing.T) {
 		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_TYPE_UNAVAILABLE:     connection.ErrTypeUnavailable,
 		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_KEY_STORE_FAILED:     connection.ErrKeyStore,
 		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_STALE_REVISION:       connection.ErrStaleRevision,
-		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE: rowoptions.ErrProviderUnavailable,
+		v1.ProviderConnectionErrorCode_PROVIDER_CONNECTION_ERROR_CODE_PROVIDER_UNAVAILABLE: connections.ErrProviderUnavailable,
 	}, func(failure error) v1.ProviderConnectionErrorCode {
 		code, _ := getErrorCode(failure)
 		return code

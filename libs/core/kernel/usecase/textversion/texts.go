@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -24,28 +24,32 @@ type Texts struct {
 	live    live
 }
 
-// NewTexts returns the reader of the versions of vault files over the version stores, the file stores,
-// the vault readers, the reader of a note's properties and the clock.
 func NewTexts(
-	stores VersionStores, files TextFileStores, readers vaultport.VaultReaders, notes noteport.NoteReader,
-	clock machineport.Clock,
+	stores VersionStores, files TextFileStores, readers vaultport.VaultReaders, clock machineport.Clock,
 ) *Texts {
-	return &Texts{stores: stores, files: files, readers: readers, clock: clock, live: live{files: files, notes: notes}}
+	return &Texts{stores: stores, files: files, readers: readers, clock: clock, live: live{files: files, readers: readers}}
+}
+
+// LiveVersions is the versions recorded for a file and the live one among them, where there is one.
+type LiveVersions struct {
+	Versions []domain.TextVersion
+	Live     domain.TextVersion
+	HasLive  bool
 }
 
 // FindLive lists the versions recorded for the file at the path and finds the live one among them, for
 // the content the file has now. A file with no versions has none live and its content is not read.
-func (u *Texts) FindLive(ctx context.Context, v domain.Vault, path string) ([]domain.TextVersion, domain.TextVersion, bool, error) {
+func (u *Texts) FindLive(ctx context.Context, v domain.Vault, path string) (LiveVersions, error) {
 	versions, err := getVersions(ctx, u.stores, v, path)
 	if err != nil || len(versions) == 0 {
-		return versions, domain.TextVersion{}, false, err
+		return LiveVersions{Versions: versions}, err
 	}
 	contentHash, err := u.GetContentHash(ctx, v, path)
 	if err != nil {
-		return versions, domain.TextVersion{}, false, fmt.Errorf("read %s: %w", path, err)
+		return LiveVersions{Versions: versions}, fmt.Errorf("read %s: %w", path, err)
 	}
 	live, hasLive, err := u.live.find(ctx, v, path, versions, contentHash)
-	return versions, live, hasLive, err
+	return LiveVersions{Versions: versions, Live: live, HasLive: hasLive}, err
 }
 
 // GetLiveText is the text of the file's live version, or textdomain.ErrNoText.
@@ -144,7 +148,7 @@ func (u *Texts) readText(ctx context.Context, v domain.Vault, version domain.Tex
 }
 
 // Open is the text of one vault, as the index, the search and the highlighting read it.
-func (u *Texts) Open(v domain.Vault) (textdomain.VaultTexts, error) {
+func (u *Texts) Open(v domain.Vault) (textport.VaultTexts, error) {
 	return vaultTexts{texts: u, vault: v}, nil
 }
 

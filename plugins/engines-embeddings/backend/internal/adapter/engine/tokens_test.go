@@ -43,7 +43,7 @@ func readTokensFixture(t *testing.T) tokensFixture {
 	return fixture
 }
 
-func loadTestTokenizer(t *testing.T, path string) tokenizer.Tokenizer {
+func loadTestTokenizer(t *testing.T, path string) *tokenizer.Tokenizer {
 	t.Helper()
 	encoder, err := tokenizer.Load(path)
 	if err != nil {

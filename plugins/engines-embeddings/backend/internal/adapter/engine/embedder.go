@@ -40,7 +40,7 @@ type Embedder struct {
 	pooling      string
 	batchTexts   int
 	passes       int
-	encoder      tokenizer.Tokenizer
+	encoder      *tokenizer.Tokenizer
 	pad          int
 	output       string
 	isTyped      bool
@@ -71,10 +71,11 @@ func openModel(ctx context.Context, library *onnx.Library, identity model.ModelI
 		return nil, err
 	}
 	cacheRoot := getCacheRoot()
-	engine, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, ""))
+	opened, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, ""))
 	if err != nil {
 		return nil, err
 	}
+	engine := opened.Engine
 	options, provider, err := library.NewSessionOptions(engine, onnx.SessionSettings{
 		Provider:     getProvider(cfg),
 		Threads:      getThreads(cfg),

@@ -33,12 +33,12 @@ func TestABadLinkCostsOnlyItselfAndTheRestAreSavedPerNote(t *testing.T) {
 	if len(added) != 4 {
 		t.Fatalf("want an outcome for each, got %d", len(added))
 	}
-	if added[1].Error == nil {
+	if added[1].Err == nil {
 		t.Error("a link carrying no known role was written anyway")
 	}
 	for _, i := range []int{0, 2, 3} {
-		if added[i].Error != nil {
-			t.Errorf("link %d failed: %v", i, added[i].Error)
+		if added[i].Err != nil {
+			t.Errorf("link %d failed: %v", i, added[i].Err)
 		}
 	}
 	if body := c.read(t, "Heat.md"); !strings.Contains(body, "Entropy") || !strings.Contains(body, "Work") {
@@ -58,8 +58,8 @@ func TestAddLinks_RejectsLinksWithConflictingFingerprints(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if added[1].Error == nil || !strings.Contains(added[1].Error.Error(), "two different fingerprints") {
-		t.Errorf("the second fingerprint was not rejected for naming another: %v", added[1].Error)
+	if added[1].Err == nil || !strings.Contains(added[1].Err.Error(), "two different fingerprints") {
+		t.Errorf("the second fingerprint was not rejected for naming another: %v", added[1].Err)
 	}
 }
 
@@ -75,11 +75,11 @@ func TestAnUnreadableFingerprintIsReportedAfterTheLinksOwnError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if added[0].Error == nil || errors.Is(added[0].Error, unreadable) {
-		t.Errorf("the link's own error did not come first: %v", added[0].Error)
+	if added[0].Err == nil || errors.Is(added[0].Err, unreadable) {
+		t.Errorf("the link's own error did not come first: %v", added[0].Err)
 	}
-	if !errors.Is(added[1].Error, unreadable) {
-		t.Errorf("the unreadable fingerprint was not reported: %v", added[1].Error)
+	if !errors.Is(added[1].Err, unreadable) {
+		t.Errorf("the unreadable fingerprint was not reported: %v", added[1].Err)
 	}
 	if body := c.read(t, "Heat.md"); body != "# Heat\n" {
 		t.Errorf("the note was written anyway:\n%s", body)
@@ -97,8 +97,8 @@ func TestAWriteTheNoteChangedBelowIsRefusedForEveryLinkOfIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if added[0].Error == nil || added[1].Error == nil || !errors.Is(added[0].Error, added[1].Error) {
-		t.Errorf("the links of one note did not fail together: %v, %v", added[0].Error, added[1].Error)
+	if added[0].Err == nil || added[1].Err == nil || !errors.Is(added[0].Err, added[1].Err) {
+		t.Errorf("the links of one note did not fail together: %v, %v", added[0].Err, added[1].Err)
 	}
 }
 
@@ -114,7 +114,7 @@ func TestACallCanceledBeforeTheFirstWriteReturnsNotAttemptedAndWritesNothing(t *
 	if err != nil {
 		t.Fatalf("Execute returned %v, want the results and no error", err)
 	}
-	if len(added) != 1 || !errors.Is(added[0].Error, plugin.ErrNotAttempted) {
+	if len(added) != 1 || !errors.Is(added[0].Err, plugin.ErrNotAttempted) {
 		t.Fatalf("Execute returned %+v, want one result with ErrNotAttempted", added)
 	}
 	if body := c.read(t, "Heat.md"); body != "# Heat\n" {
@@ -148,22 +148,22 @@ func TestACallCanceledAfterTheFirstNoteReturnsItsResultAndNotAttemptedForTheRest
 		t.Fatalf("Execute returned %d results, want 3", len(added))
 	}
 	heat := c.read(t, "Heat.md")
-	if added[0].Error != nil || added[0].FileStat.Size != int64(len(heat)) {
+	if added[0].Err != nil || added[0].Stat.Size != int64(len(heat)) {
 		t.Errorf("result 0 = %+v, want nil error and the file stat of the written note (size %d)", added[0], len(heat))
 	}
 	if !strings.Contains(heat, "Entropy") {
 		t.Errorf("the first note was not written:\n%s", heat)
 	}
 	for i, path := range map[int]string{1: "Work.md", 2: "Order.md"} {
-		if !errors.Is(added[i].Error, plugin.ErrNotAttempted) {
-			t.Errorf("result %d error = %v, want ErrNotAttempted", i, added[i].Error)
+		if !errors.Is(added[i].Err, plugin.ErrNotAttempted) {
+			t.Errorf("result %d error = %v, want ErrNotAttempted", i, added[i].Err)
 			continue
 		}
-		if !strings.Contains(added[i].Error.Error(), path) {
-			t.Errorf("result %d error = %q, want it to name %s", i, added[i].Error, path)
+		if !strings.Contains(added[i].Err.Error(), path) {
+			t.Errorf("result %d error = %q, want it to name %s", i, added[i].Err, path)
 		}
-		if added[i].FileStat != (domain.FileStat{}) {
-			t.Errorf("result %d carries the file stat %+v, want none", i, added[i].FileStat)
+		if added[i].Stat != (domain.FileStat{}) {
+			t.Errorf("result %d carries the file stat %+v, want none", i, added[i].Stat)
 		}
 	}
 	if body := c.read(t, "Work.md"); body != "# Work\n" {

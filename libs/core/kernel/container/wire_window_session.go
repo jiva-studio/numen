@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -11,10 +12,11 @@ import (
 
 // windowParts are what the use cases of one window are built over besides its state.
 type windowParts struct {
+	lookup    vaultport.VaultLookup
 	indexer   *indexing.Worker
 	embedding *indexing.Embedding
 
-	recordOpen    vault.RecordOpen
+	recordOpen    vaultport.VaultRecorder
 	importFiles   vault.Import
 	diagnostics   *windowsession.Diagnostics
 	embedderError error
@@ -34,22 +36,22 @@ type windowCases struct {
 
 // windowTools are the use cases a window offers beside its lifecycle.
 type windowTools struct {
-	importFiles windowsession.ImportFiles
+	importFiles vault.ImportFiles
 	showTab     windowsession.ShowTab
 }
 
 // windowSession is the use cases of the lifecycle of a window, the ones beside it, and the switch a person
 // shows another vault through.
 type windowSession struct {
-	cases      windowCases
-	tools      windowTools
-	userSwitch windowsession.UserSwitch
+	cases windowCases
+	tools windowTools
+	open  *windowsession.OpenVault
 }
 
 func newWindowSession(
 	parts windowParts, pluginVault windowsession.PluginVaultPath, runner *windowsession.PassRunner, vaultDeps vaultWiring, state *editor.Session, page *editor.PageAccess,
 ) windowSession {
-	identity := vault.NewCheckIdentity(vaultIdentity(vaultDeps.Options))
+	identity := windowsession.NewCheckIdentity(vaultIdentity(vaultDeps.Options))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, parts.diagnostics, parts.embedderError, runner)
 	guard := &windowsession.Guard{}
 	flush := windowsession.NewPageFlush(page.Window, page.Writes)
@@ -61,7 +63,7 @@ func newWindowSession(
 		cases: windowCases{
 			start:      windowsession.NewStartWindow(parts.diagnostics, parts.embedderError, follow, session, parts.shouldRebuild),
 			show:       show,
-			openPlugin: windowsession.NewOpenPluginVault(guard, identity, page.Window, switching),
+			openPlugin: windowsession.NewOpenPluginVault(guard, parts.lookup, identity, page.Window, switching),
 			flush:      windowsession.NewFlushPending(guard, flush),
 			close: windowsession.NewCloseWindow(
 				page.Gate, session,
@@ -71,11 +73,11 @@ func newWindowSession(
 			),
 		},
 		tools: windowTools{
-			importFiles: windowsession.NewImportFiles(
+			importFiles: vault.NewImportFiles(
 				parts.importFiles, page.Writes, page.Window, &state.Notices.ChangeEvents,
 			),
 			showTab: windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, 0),
 		},
-		userSwitch: windowsession.NewUserSwitch(switching),
+		open: windowsession.NewOpenVault(parts.lookup, switching),
 	}
 }

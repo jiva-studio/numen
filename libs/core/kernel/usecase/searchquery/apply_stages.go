@@ -2,9 +2,9 @@ package searchquery
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -17,7 +17,7 @@ type ApplyStagesDeps struct {
 	Results OperationResults
 	Clock   machineport.Clock
 	Readers vaultport.VaultReaders
-	Texts   textdomain.Readers
+	Texts   textport.Readers
 	Limits  searchquery.StageLimits
 }
 
@@ -25,7 +25,7 @@ type ApplyStagesDeps struct {
 type ApplyStages struct {
 	reranker reranker
 	readers  vaultport.VaultReaders
-	texts    textdomain.Readers
+	texts    textport.Readers
 }
 
 // NewApplyStages creates the use case.

@@ -36,8 +36,8 @@ func (c Config) EnsureVault(res *Resources, root, name string, isRecordedOpened 
 	}
 	identity := vaultIdentity(vaultconfig.Options{ServiceDir: c.ServiceDir})
 	add := newAddVault(identity, GetClock(res), ports)
-	ensure := vaultregistry.NewEnsureRegistered(identity, ports.Lookup, add, ports.Recorder)
-	return ensure.Execute(vaultregistry.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
+	ensure := vault.NewEnsureRegistered(identity, ports.Lookup, add, ports.Recorder)
+	return ensure.Execute(vault.EnsureRequest{Root: root, Name: name, IsRecordedOpened: isRecordedOpened})
 }
 
 func (c Config) openIndex(res *Resources, ctx context.Context) (*vaultIndex, error) {
@@ -104,12 +104,11 @@ func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vaultIndex, no
 	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Vaults())
 	identity := vaultIdentity(c.Options)
 	erase := vault.NewErase(identity, vaultTrash(c.Clock), unregister)
-	find := vaultregistry.NewFind(registry.Lookup)
 	return vaultUseCases{
 		Change: vaultChanging{
 			Add:        newAddVault(identity, c.Clock, registry),
 			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
-			Remove:     vault.NewRemove(find.Execute, unregister, erase),
+			Remove:     vault.NewRemove(registry.Lookup, unregister, erase),
 			Unregister: unregister,
 			Erase:      erase,
 		},
@@ -117,7 +116,6 @@ func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vaultIndex, no
 			Move:   vault.NewMove(c.Writers, db.NoteQueries(), db.Sources(), db.Sources(), notes),
 			Import: vault.NewImport(c.Writers, filesystem.ImportedFiles{}),
 		},
-		RecordOpen: vault.NewRecordOpen(registry.Recorder),
 	}
 }
 
@@ -130,12 +128,4 @@ func getProblems(problems check.ProblemQueries) *vault.GetProblems {
 		return vault.NewGetProblems(check.Checks{})
 	}
 	return vault.NewGetProblems(check.Standard(problems))
-}
-
-func vaultListing(readers vaultport.VaultReaders, registry vaultregistry.Ports) vaultregistry.Listing {
-	return vaultregistry.Listing{
-		List:        vaultregistry.NewList(registry.Vaults),
-		Find:        vaultregistry.NewFind(registry.Lookup),
-		FolderCheck: vaultregistry.NewFolderCheck(readers),
-	}
 }

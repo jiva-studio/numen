@@ -11,7 +11,12 @@ import (
 
 // Tokenizer turns text into the token ids of one model, as Hugging Face `tokenizers` does for its
 // tokenizer.json. It is safe for concurrent use; nothing changes after Load.
-type Tokenizer interface {
+type Tokenizer struct {
+	encoder
+}
+
+// encoder is the encoding of one model type: the Unigram model of this package, or the one a delegate encodes.
+type encoder interface {
 	// Encode returns the ids of text inside the single template of the post-processor
 	// (<s> A </s> for XLM-R). It does not truncate.
 	Encode(text string) []int
@@ -49,7 +54,7 @@ var (
 // Load reads the tokenizer.json at path. A Unigram model is encoded by this package, and a file
 // with a step it does not support fails here, with an error that names the step. Every other model
 // type is encoded by hftokenizer of go-huggingface.
-func Load(path string) (Tokenizer, error) {
+func Load(path string) (*Tokenizer, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("read tokenizer: %w", err)
@@ -62,7 +67,7 @@ func Load(path string) (Tokenizer, error) {
 	if err := json.Unmarshal(raw, &head); err != nil {
 		return nil, fmt.Errorf("tokenizer %s: %w", path, err)
 	}
-	var tok Tokenizer
+	var tok encoder
 	if head.Model.Type == "Unigram" {
 		tok, err = loadUnigramTokenizer(raw)
 	} else {
@@ -71,7 +76,7 @@ func Load(path string) (Tokenizer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("tokenizer %s: %w", path, err)
 	}
-	return tok, nil
+	return &Tokenizer{encoder: tok}, nil
 }
 
 type unigramTokenizer struct {

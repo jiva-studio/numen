@@ -164,7 +164,7 @@ func writeLogLevel(c settingsWiring) func(domainlogs.Level) error {
 	}
 }
 
-func readSettings(c settingsWiring) func() (string, string, uint64, error) {
+func readSettings(c settingsWiring) func() (settingsdomain.Snapshot, error) {
 	return settingsStore(c).ReadJSON
 }
 

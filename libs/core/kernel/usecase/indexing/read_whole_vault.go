@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
@@ -29,16 +31,13 @@ type VectorEmbedder interface {
 	) (vaultreading.EmbedResult, error)
 }
 
-// VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
-type VaultFinding = func(nameOrPath string) (domain.Vault, error)
-
 // VaultPreparing prepares a ReadWholeVault for a vault once it has been found.
 type VaultPreparing = func(ctx context.Context, v domain.Vault) (ReadWholeVault, error)
 
 // ReadWholeVault makes a vault answer: its notes are read, the text versions of
 // its other files are cut, and what was cut is given its vectors.
 type ReadWholeVault struct {
-	find    VaultFinding
+	lookup  vaultport.VaultLookup
 	prepare VaultPreparing
 	notes   NoteScanner
 	texts   TextIndexer
@@ -65,8 +64,8 @@ func NewReadWholeVault(notes NoteScanner, texts TextIndexer, vectors VectorEmbed
 }
 
 // NewReadWholeVaultByName creates a ReadWholeVault that resolves the vault and prepares the pass over it.
-func NewReadWholeVaultByName(find VaultFinding, prepare VaultPreparing) ReadWholeVault {
-	base := ReadWholeVault{find: find}
+func NewReadWholeVaultByName(lookup vaultport.VaultLookup, prepare VaultPreparing) ReadWholeVault {
+	base := ReadWholeVault{lookup: lookup}
 	if prepare == nil {
 		prepare = func(context.Context, domain.Vault) (ReadWholeVault, error) { return base, nil }
 	}
@@ -77,7 +76,7 @@ func NewReadWholeVaultByName(find VaultFinding, prepare VaultPreparing) ReadWhol
 func (u ReadWholeVault) ExecuteByName(
 	ctx context.Context, nameOrPath string, reporting Reporting,
 ) (domain.Vault, ReadWholeVaultResult, error) {
-	v, err := u.find(nameOrPath)
+	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
 		return domain.Vault{}, ReadWholeVaultResult{}, err
 	}

@@ -17,10 +17,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -40,7 +38,7 @@ func TestWorker(t *testing.T) {
 		read := func(
 			ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 		) (indexing.ReadWholeVault, error) {
-			if err := vectors.NewFitIndex(db.VectorIndex(), nil, rebuild).Execute(ctx, source); err != nil {
+			if err := indexing.NewFitIndex(db.VectorIndex(), nil, rebuild).Execute(ctx, source); err != nil {
 				return indexing.ReadWholeVault{}, err
 			}
 			return createReadWholeVault(db, &walks, ledger, source, v, rebuild)
@@ -69,7 +67,7 @@ func createReadWholeVault(
 		return result.Unreadable, err
 	}
 	cutter := chunking.NewCutNotes(0)
-	texts := filetext.NewHandlingIndex(filetext.NewIndex(filetext.IndexDeps{
+	texts := indexing.NewHandlingIndex(indexing.NewIndex(indexing.IndexDeps{
 		Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Sizes: cutter.Sizes, Legibility: cutter.Legibility, ShouldRebuildIndex: rebuild,
 	}), nil, file.NewReadNoteAgain(findUnreadable).Execute)
@@ -80,6 +78,6 @@ func createReadWholeVault(
 	if source == nil {
 		source = none.SearchSource{}
 	}
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), store.NewIndexClaim("core/indexing"), nil, source)
+	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), store.NewIndexClaim("core/indexing"), nil, source)
 	return indexing.NewReadWholeVault(scan.Rebuilding(rebuild), texts, embed), nil
 }

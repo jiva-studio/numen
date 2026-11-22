@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -86,30 +88,27 @@ type Participant interface {
 	Rank(ctx context.Context, v domain.Vault, q Query) (Ranking, error)
 }
 
-// VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
-type VaultFinding = func(nameOrPath string) (domain.Vault, error)
-
 // VaultPreparing prepares a Search for a vault once it has been found.
 type VaultPreparing = func(ctx context.Context, v domain.Vault) (Search, error)
 
 // Search answers a query within one vault. Without a search source only the participants of the core run.
 // Extractors is how many sources are extracted at once; the default holds where it is not positive.
 type Search struct {
-	find           VaultFinding
+	lookup         vaultport.VaultLookup
 	prepare        VaultPreparing
 	words          Participant
 	names          Participant
 	sources        []externalSource
 	readers        vaultport.VaultReaders
-	texts          textdomain.Readers
+	texts          textport.Readers
 	errorHandler   window.ErrorHandler
 	Extractors     int
 	reportAnswered func()
 }
 
 // NewByName creates a Search that resolves the vault and prepares the search over it.
-func NewByName(find VaultFinding, prepare VaultPreparing) Search {
-	base := Search{find: find}
+func NewByName(lookup vaultport.VaultLookup, prepare VaultPreparing) Search {
+	base := Search{lookup: lookup}
 	if prepare == nil {
 		prepare = func(context.Context, domain.Vault) (Search, error) { return base, nil }
 	}
@@ -122,7 +121,7 @@ func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p P
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	v, err := u.find(nameOrPath)
+	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +137,7 @@ func (u Search) ExecuteByName(ctx context.Context, nameOrPath, query string, p P
 // A nil `texts` means only notes return their text.
 // `errorHandler` receives the error of a search source that could not answer; nil ignores such errors.
 // `reportAnswered` is called each time a search source answers; nil calls no one.
-func New(queries LexicalQueries, readers vaultport.VaultReaders, texts textdomain.Readers, sources []Participant, errorHandler window.ErrorHandler, reportAnswered func()) Search {
+func New(queries LexicalQueries, readers vaultport.VaultReaders, texts textport.Readers, sources []Participant, errorHandler window.ErrorHandler, reportAnswered func()) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}

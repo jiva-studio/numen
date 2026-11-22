@@ -5,17 +5,19 @@ import (
 	"errors"
 	"io"
 
+	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -94,7 +96,7 @@ type windowRoutes struct {
 type windowPluginAccess struct {
 	writeWake indexing.WriteWake
 	notes     hostvault.NoteChanges
-	vaults    windowsession.PluginVaults
+	vaults    pluginvault.ListAccess
 	showTab   windowsession.ShowTab
 }
 
@@ -166,7 +168,6 @@ func buildWindow(
 	}}
 	notes, pluginNotes := newWindowNotes(vaultDeps, db, state, noteViews{Admission: page.Writes.AdmitWrite, Follow: page.Writes}, current)
 	moves := vaultVaults(vaultDeps, ports, db, notes.Place.Move)
-	listing := vaultListing(vaultDeps.Readers, ports)
 
 	diag := windowsession.NewDiagnostics(opening.Out, page.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
@@ -178,7 +179,7 @@ func buildWindow(
 	parts := windowParts{
 		shouldRebuild: searchDeps.ShouldRebuildIndex,
 		indexer:       indexer, embedding: embedding,
-		recordOpen: moves.RecordOpen, importFiles: moves.Tree.Import, diagnostics: diag,
+		recordOpen: ports.Recorder, lookup: ports.Lookup, importFiles: moves.Tree.Import, diagnostics: diag,
 		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
 	}
 	session := newWindowSession(parts, plugins.vault, runner, vaultDeps, state, page)
@@ -193,12 +194,12 @@ func buildWindow(
 	mountWindowState(window)
 	mountFile(window, vaultDeps, db, plugins.kinds, &moves.Tree.Move, &notes.Place)
 	mountNote(window, &notes, db, plugins.kinds.list, writeWake)
-	mountVaults(window, &listing, moves.Change, session.userSwitch)
+	mountVaults(window, ports, vaultDeps.Readers, moves.Change, session.open)
 	return window, windowLaunch{
 		start:  session.cases.start,
-		server: newFileServer(vaultDeps, &state.Runtime, page.Window, &listing.Find), closeSource: closeEmbedder, source: source, generations: generations,
+		server: newFileServer(vaultDeps, &state.Runtime, page.Window, ports.Lookup), closeSource: closeEmbedder, source: source, generations: generations,
 		plugins: windowPluginAccess{
-			writeWake: writeWake, notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, listing, session.cases.openPlugin), showTab: session.tools.showTab,
+			writeWake: writeWake, notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, ports.Lookup, vaultDeps.Readers, session.cases.openPlugin), showTab: session.tools.showTab,
 		},
 	}
 }
@@ -214,11 +215,11 @@ func newWindowNotes(vaultDeps vaultWiring, db *vaultIndex, state *editor.Session
 
 func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, db *vaultIndex) tabKinds {
 	files := file.NewGetFileKinds(vaultDeps.Readers, db.NoteQueries())
-	chooser := tabkind.NewChoose(exec.Runtime.Manifests, exec.Watch.ContentTypeTable, getWhenConfig(settingsDeps, exec.Runtime.Listing))
+	chooser := file.NewChooseTabKind(exec.Runtime.Manifests, exec.Watch.ContentTypeTable, getWhenConfig(settingsDeps, exec.Runtime.Listing))
 	return tabKinds{files: files, chooser: chooser, list: file.NewListTabKinds(db.NoteQueries(), chooser)}
 }
 
-func newFileServer(vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks windowport.Tasks, find *registry.Find) *editor.FileServer {
+func newFileServer(vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks windowport.Tasks, find vaultport.VaultLookup) *editor.FileServer {
 	return editor.NewFileServer(
 		runtime, tasks,
 		file.NewOpenVaultFile(
@@ -248,7 +249,7 @@ func windowView(notices *editor.Notices) windowsession.View {
 // GetUnknownVaultName returns the name of the vault, named at start, that err says the registry does not
 // hold.
 func GetUnknownVaultName(err error) (string, bool) {
-	unknown, ok := errors.AsType[*registry.UnknownError](err)
+	unknown, ok := errors.AsType[*vaultdomain.UnknownError](err)
 	if !ok {
 		return "", false
 	}

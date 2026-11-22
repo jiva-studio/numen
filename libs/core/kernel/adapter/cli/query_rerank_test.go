@@ -10,8 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
+	connectionusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 )
 
@@ -38,11 +38,11 @@ func newRerankingQuery(t *testing.T) stubSession {
 	w.Rows.Set(settingsdomain.AppOwner, modelcalltest.RerankOperation, connection.Row{ConnectionID: reranker.ID, Options: map[string]string{"model": "rerank-small"}})
 	w.Provider.Answer(rerankAddress, answerEachPassage)
 	return newQuerySession(t, func(db *index.DB, deps *searchquerytest.Deps) {
-		deps.Stages.Calls = modelcall.NewCalls(
-			modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows},
+		deps.Stages.Calls = connectionusecase.NewCalls(
+			connectionusecase.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows},
 			w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside,
 		)
-		deps.Stages.Rows = modelcall.NewRows(w.Resolve, w.Rows.ListRows, nil)
+		deps.Stages.Rows = connectionusecase.NewRows(w.Resolve, w.Rows.ListRows, nil)
 		deps.Stages.Resolve, deps.Stages.Results, deps.Clock = w.Resolve, db.OperationResults(100), w.Clock
 	})
 }

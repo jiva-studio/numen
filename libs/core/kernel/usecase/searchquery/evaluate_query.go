@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -22,7 +22,7 @@ type EvaluateQueryDeps struct {
 	Functions    SearchFunctions
 	Matcher      WordMatching
 	Readers      vaultport.VaultReaders
-	Texts        textdomain.Readers
+	Texts        textport.Readers
 	Source       QuerySource
 	Floors       FloorReader
 	ContentTypes contenttypeport.ContentTypeTable
@@ -38,7 +38,7 @@ type EvaluateQuery struct {
 	functions    SearchFunctions
 	matcher      WordMatching
 	readers      vaultport.VaultReaders
-	texts        textdomain.Readers
+	texts        textport.Readers
 	source       QuerySource
 	floors       FloorReader
 	contentTypes contenttypeport.ContentTypeTable

@@ -17,8 +17,8 @@ import (
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
+	connectionusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 )
@@ -75,11 +75,11 @@ func (s *services) sentTexts(address string) [][]string {
 func (w world) newRerankingFind(s *services, limits searchquerydomain.StageLimits) *searchquery.FindSearchResults {
 	deps := w.newDeps(nil)
 	world := s.world
-	deps.Stages.Calls = modelcall.NewCalls(
-		modelcall.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows},
+	deps.Stages.Calls = connectionusecase.NewCalls(
+		connectionusecase.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows},
 		world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside,
 	)
-	deps.Stages.Rows = modelcall.NewRows(world.Resolve, world.Rows.ListRows, nil)
+	deps.Stages.Rows = connectionusecase.NewRows(world.Resolve, world.Rows.ListRows, nil)
 	deps.Stages.Resolve = world.Resolve
 	deps.Stages.Results = w.db.OperationResults(1000)
 	deps.Clock = world.Clock

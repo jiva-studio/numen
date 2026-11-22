@@ -10,10 +10,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
+	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 )
 
-func writeSearchState(page searchrunusecase.Page) (*v1.SearchState, error) {
+func writeSearchState(page searchqueryusecase.Page) (*v1.SearchState, error) {
 	r := page.Record
 	results := make([]*v1.SearchResult, len(r.Results.Results))
 	for i, one := range r.Results.Results {
