@@ -179,6 +179,27 @@ func TestAStartWhenTheFeedCannotContinueFromTheSnapshotReadsEveryNoteAgain(t *te
 	}
 }
 
+func TestAStartFromASnapshotOfAnotherVersionReadsEveryNoteAgain(t *testing.T) {
+	for _, version := range []int{0, SnapshotVersion - 1, SnapshotVersion + 1} {
+		vault := hosttest.New("notes")
+		vault.File("a.md", "- [ ] one\n")
+		snapshots, clock := new(memorySnapshots), new(timers)
+		first, _ := persisted(vault, snapshots, clock)
+		start(t, first)
+		first.Flush(t.Context())
+		stale := *snapshots.kept
+		stale.Version = version
+		snapshots.kept = &stale
+
+		second, files := persisted(vault, snapshots, clock)
+		start(t, second)
+
+		if files.readsOf("a.md") != 1 || len(listed(second)) != 1 {
+			t.Errorf("version %d: reads = %d, tasks = %v", version, files.readsOf("a.md"), listed(second))
+		}
+	}
+}
+
 func TestPersist_WritesOnceAfterTheDelayAndOnlyOnceReady(t *testing.T) {
 	vault := hosttest.New("notes")
 	vault.File("a.md", "- [ ] one\n")

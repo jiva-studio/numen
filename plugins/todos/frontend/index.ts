@@ -66,9 +66,12 @@ async function editorLine(
   api: TodosApi,
   today: string,
   target: { path: string; line: number; raw: string },
-): Promise<number> {
+): Promise<number | undefined> {
   const tasks = await currentTasks(api, today, target)
-  return freshTaskLine(tasks, target)?.proseLine ?? target.line
+  const proseLine = freshTaskLine(tasks, target)?.proseLine
+  return Number.isInteger(proseLine) && proseLine !== undefined && proseLine >= 1
+    ? proseLine
+    : undefined
 }
 
 function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost) {
@@ -81,7 +84,10 @@ function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost
         getToday: () => workspace.window.getToday(),
         onOpen: async (target: { path: string; line: number; raw: string }) => {
           const line = await editorLine(api, workspace.window.getToday(), target)
-          return workspace.files.open(target.path, { line: line - 1 })
+          return workspace.files.open(
+            target.path,
+            line === undefined ? undefined : { line: line - 1 },
+          )
         },
         onShowError: (message: string) => workspace.messages.showError(message),
       }),

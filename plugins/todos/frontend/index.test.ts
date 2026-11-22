@@ -168,14 +168,39 @@ describe('the todos frontend', () => {
     expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 10 })
   })
 
-  it('opens on the stored line where the note cannot be read again', async () => {
+  it('opens the note without a line where the note cannot be read again', async () => {
     const { context, fake, open } = setup()
     fake.api.refreshIndex = async () => {
       throw new Error('gone')
     }
     await clickTask(fake, context)
 
-    expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 6 })
+    expect(open).toHaveBeenCalledWith('Projects/Home.md', undefined)
+  })
+
+  it('opens the note without a line where the task has no prose line', async () => {
+    const { context, fake, open } = setup()
+    fake.push({ revision: 1, isReady: true })
+    await settle()
+    view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
+    await view.find('button').trigger('click')
+    await settle()
+    fake.setTasks({
+      any: {
+        tasks: [task({ path: 'Projects/Home.md', line: 7, proseLine: 0, text: 'fix the tap' })],
+        total: 1,
+        revision: 2,
+      },
+    })
+    await view
+      .findAll('li button')
+      .find((one) => one.text() === 'fix the tap')
+      ?.trigger('click')
+    await settle()
+
+    expect(open).toHaveBeenCalledWith('Projects/Home.md', undefined)
   })
 
   it('ticks a task in the popover and reads the counts again when the backend reports the change', async () => {
