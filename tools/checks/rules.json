@@ -1441,6 +1441,23 @@
       "export": "STYLE_VERIFIERS"
     },
     {
+      "name": "ts/testing-entries",
+      "paths": [
+        "libs/**/*.{ts,mts,js,mjs}",
+        "libs/**/package.json"
+      ],
+      "tags": [
+        "structure",
+        "ts",
+        "library",
+        "fast"
+      ],
+      "selftest": "structure/ts/testing-entries/check.test.mjs",
+      "runner": "verifiers",
+      "module": "structure/ts/testing-entries/check.mjs",
+      "export": "TESTING_ENTRY_VERIFIERS"
+    },
+    {
       "name": "ts/ts-packages-eslint",
       "paths": [
         "**/eslint.config.{js,mjs}",

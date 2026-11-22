@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { AudioLines } from '@lucide/vue'
-import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import MediaTab from './ui/MediaTab.vue'
 import plugin, { activate, MEDIA, MediaRecordingTab, RecordingTab, RECORDER } from './index'
 import { recordings } from './api/wire'
