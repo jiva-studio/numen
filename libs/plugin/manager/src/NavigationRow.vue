@@ -96,8 +96,7 @@ function onClick(): void {
 }
 
 .navigation-row:focus-visible {
-  outline: var(--numen-stroke) solid var(--numen-accent);
-  outline-offset: calc(-1 * var(--numen-stroke));
+  outline: none;
 }
 
 .navigation-row__glyph,

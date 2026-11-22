@@ -29,6 +29,10 @@
         "icon": "pencil"
       }
     ],
+    "slotPoints": [
+      { "slot": "fileTree.context", "title": "Row menu", "menu": true },
+      { "slot": "fileTree.rowEnd", "title": "End of a row" }
+    ],
     "slots": [
       {
         "slot": "palette.searchResult",
@@ -112,6 +116,13 @@
         { "value": "modified", "title": "Date modified" }
       ],
       "default": "name"
+    },
+    {
+      "key": "slots",
+      "type": "slots",
+      "title": "Slots",
+      "description": "Order and visibility of what plugins place here",
+      "details": "Choose which entries of each slot are shown, and in what order."
     }
   ]
 }

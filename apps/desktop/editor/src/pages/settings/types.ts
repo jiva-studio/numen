@@ -16,7 +16,12 @@ import type {
   RowOption,
 } from '@/entities/connection'
 import type { LicenseInfo } from '@/entities/license'
-import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
+import type {
+  PluginInfo,
+  PluginSettingGroupInfo,
+  PluginSettingInfo,
+  SettingEdit,
+} from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
 import type { Result } from '@/shared/lib/result'
 import type { Component } from 'vue'
@@ -54,6 +59,21 @@ export interface InstallationSettings {
   readonly file: Readonly<Ref<string>>
 }
 
+/** One entry a slot holds, named by the key a stored layout refers to it by. */
+export interface SlotContributor {
+  readonly group?: string | undefined
+  readonly key: string
+  readonly label: string
+  readonly pluginName: string
+}
+
+/** A slot a plugin draws and its entries, in the order the slot draws them when nothing is stored. */
+export interface SlotGroup {
+  readonly slot: string
+  readonly title: string
+  readonly contributors: readonly SlotContributor[]
+}
+
 /**
  * The plugins of the installation, what they declare and what the window does for them.
  * `getSettingsViews` answers the components a plugin's frontend registered for its settings
@@ -62,6 +82,7 @@ export interface InstallationSettings {
 export interface InstallationPlugin {
   readonly plugins: Readonly<Ref<readonly PluginInfo[]>>
   readonly app: Readonly<Ref<readonly PluginSettingInfo[]>>
+  readonly appGroups: Readonly<Ref<readonly PluginSettingGroupInfo[]>>
   readonly catalog: Readonly<Ref<readonly CatalogEntry[]>>
   readonly health: InstallationHealth
   /** A plugin whose last start failed, started once more. */
@@ -73,6 +94,8 @@ export interface InstallationPlugin {
    */
   choosePath(pluginId: string, key: string): Promise<string>
   getSettingsViews(pluginId: string): ReadonlyMap<string, ViewComponent>
+  /** The slots a plugin draws, with what is placed in each; absent where the window offers none. */
+  getSlotGroups?(pluginId: string): readonly SlotGroup[]
   readonly files: InstallationPluginFiles
 }
 

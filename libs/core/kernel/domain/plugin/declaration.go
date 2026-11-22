@@ -16,6 +16,12 @@ type SlotEntry struct {
 	Entry    manifest.SlotEntry
 }
 
+// SlotPointEntry is one slot an enabled plugin draws, and the plugin that draws it.
+type SlotPointEntry struct {
+	PluginID string
+	Point    manifest.SlotPoint
+}
+
 // KeybindingEntry is one keybinding an enabled plugin declares, and the plugin that declares it.
 type KeybindingEntry struct {
 	PluginID   string

@@ -17,8 +17,9 @@
  */
 import { computed, nextTick, onMounted, ref, useTemplateRef, watch, type VNode } from 'vue'
 import { Info, RotateCcw, TriangleAlert } from '@lucide/vue'
-import { Tooltip, runInBackground, isPageMove, useMenuDismissal, useTooltip } from '@numen/ui'
+import { runInBackground, isPageMove, useMenuDismissal } from '@numen/ui'
 import { WORDS as words } from '../../words'
+import RowAction from './RowAction.vue'
 import type { SettingRowProps } from './SettingRow.types'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -45,7 +46,6 @@ const label = useTemplateRef<HTMLElement>('label')
 const infoButton = useTemplateRef<HTMLButtonElement>('infoButton')
 const popover = useTemplateRef<HTMLElement>('popover')
 const isInfoOpen = ref(false)
-const resetTip = useTooltip()
 const dismissal = useMenuDismissal(label, () => closeInfo(false), isPageMove)
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -119,29 +119,14 @@ function scrollIntoView(): void {
         :stroke-width="1.75"
         aria-hidden="true"
       />
-      <button
+      <RowAction
         v-if="props.isChanged"
-        type="button"
         class="settings__reset"
-        :aria-label="words.resetSettingOf(props.name)"
-        :aria-describedby="resetTip.describedBy.value"
-        @mouseenter="resetTip.open"
-        @mouseleave="resetTip.close"
-        @focus="resetTip.open"
-        @blur="resetTip.close"
+        :label="words.resetSettingOf(props.name)"
         @click="onReset"
       >
         <RotateCcw :size="14" aria-hidden="true" />
-      </button>
-      <Teleport to="body">
-        <Tooltip
-          v-if="resetTip.at.value && props.isChanged"
-          :id="resetTip.id"
-          :at="resetTip.at.value"
-        >
-          {{ words.resetSettingOf(props.name) }}
-        </Tooltip>
-      </Teleport>
+      </RowAction>
       <slot name="action" />
       <span v-if="trimmedDetail" :id="detailId" class="settings__detail">
         {{ trimmedDetail }}
@@ -257,22 +242,7 @@ function scrollIntoView(): void {
 }
 
 .settings__reset {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
   margin-block: -0.25rem;
-  padding: 0;
-  border: none;
-  border-radius: var(--numen-radius-tight);
-  background: none;
-  color: var(--numen-hushed);
-  cursor: pointer;
-}
-
-.settings__reset:hover {
-  background-color: var(--settings-hover-bg);
-  color: var(--numen-ink);
 }
 
 .settings__detail {

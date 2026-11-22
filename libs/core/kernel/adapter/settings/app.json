@@ -1,4 +1,12 @@
 {
+  "settingGroups": [
+    { "id": "font", "title": "Font" },
+    { "id": "display", "title": "Display" },
+    { "id": "reranking", "title": "Reranking" },
+    { "id": "results", "title": "Results" },
+    { "id": "limits", "title": "Query limits" },
+    { "id": "performance", "title": "Performance" }
+  ],
   "settings": [
     {
       "key": "appearance.theme",
@@ -55,6 +63,7 @@
     },
     {
       "key": "editor.fontSize",
+      "group": "font",
       "type": "range",
       "title": "Font size",
       "description": "Size of editor text in px, whatever the interface size.",
@@ -67,6 +76,7 @@
     },
     {
       "key": "editor.fontFamily",
+      "group": "font",
       "type": "string",
       "title": "Font family",
       "description": "Choose a preset or enter an installed font family.",
@@ -82,6 +92,7 @@
     },
     {
       "key": "editor.lineHeight",
+      "group": "font",
       "type": "range",
       "title": "Line height",
       "description": "Height of a line of editor text as a multiple of the font size.",
@@ -94,6 +105,7 @@
     },
     {
       "key": "editor.lineNumbers",
+      "group": "display",
       "type": "boolean",
       "title": "Line numbers",
       "description": "Number the lines in editors.",
@@ -103,6 +115,7 @@
     },
     {
       "key": "editor.highlightActiveLine",
+      "group": "display",
       "type": "boolean",
       "title": "Highlight active line",
       "description": "Highlight the line containing the caret.",
@@ -112,6 +125,7 @@
     },
     {
       "key": "editor.softWrap",
+      "group": "display",
       "type": "boolean",
       "title": "Soft wrap",
       "description": "Wrap long lines in editors instead of scrolling sideways.",
@@ -130,6 +144,7 @@
     },
     {
       "key": "performance.profile",
+      "group": "performance",
       "type": "enum",
       "title": "Performance profile",
       "description": "How much of the hardware indexing and models may use.",
@@ -165,7 +180,19 @@
       ]
     },
     {
+      "key": "performance.disableDmabufRenderer",
+      "group": "performance",
+      "type": "boolean",
+      "title": "Draw without GPU buffer sharing",
+      "description": "Draw without GPU buffers; applies after a restart.",
+      "details": "On Linux the webview can pass finished frames to the screen through GPU buffers (DMABUF, the fastest way) or through ordinary memory. With this on, ordinary memory is used, which avoids drawing faults some graphics drivers and webview versions show, such as flicker, stale frames and vanishing elements, at the cost of a little more processor time on large repaints. Applies after a restart; has effect on Linux only.",
+      "default": true,
+      "icon": "monitor",
+      "when": { "setting": "app.platform", "is": ["linux"] }
+    },
+    {
       "key": "search.reranking",
+      "group": "reranking",
       "type": "connections",
       "title": "Reranking",
       "description": "Services that order the results of a query, tried in order",
@@ -175,6 +202,7 @@
     },
     {
       "key": "search.rerankWindow",
+      "group": "reranking",
       "type": "number",
       "title": "Rerank window",
       "description": "Documents a rerank stage orders when the query names no window",
@@ -185,6 +213,7 @@
     },
     {
       "key": "search.maxReranked",
+      "group": "reranking",
       "type": "number",
       "title": "Most reranked passages",
       "description": "Most passages one rerank stage sends to the reranking service",
@@ -195,6 +224,7 @@
     },
     {
       "key": "search.maxRerankedBytes",
+      "group": "reranking",
       "type": "number",
       "title": "Longest reranked text",
       "description": "Most bytes of one passage sent to the reranking service",
@@ -205,6 +235,7 @@
     },
     {
       "key": "search.defaultLimit",
+      "group": "results",
       "type": "number",
       "title": "Default results",
       "description": "Results a query returns when it names no limit",
@@ -215,6 +246,7 @@
     },
     {
       "key": "search.maxLimit",
+      "group": "results",
       "type": "number",
       "title": "Most results",
       "description": "Most results one query returns",
@@ -225,6 +257,7 @@
     },
     {
       "key": "search.candidatesPerCondition",
+      "group": "limits",
       "type": "number",
       "title": "Passages per condition",
       "description": "Passages the index returns for each meaning and words condition",
@@ -235,6 +268,7 @@
     },
     {
       "key": "search.maxCandidates",
+      "group": "limits",
       "type": "number",
       "title": "Most passages scored",
       "description": "Most passages the query is applied to",
@@ -245,6 +279,7 @@
     },
     {
       "key": "search.maxPathPrefixes",
+      "group": "limits",
       "type": "number",
       "title": "Most folders",
       "description": "Most path.startsWith conditions one query joins",
@@ -255,6 +290,7 @@
     },
     {
       "key": "search.mergeGapBytes",
+      "group": "limits",
       "type": "number",
       "title": "Merge gap",
       "description": "Largest gap in bytes between passages of one file that join",
@@ -278,6 +314,7 @@
     },
     {
       "key": "search.maxQueryBytes",
+      "group": "limits",
       "type": "number",
       "title": "Longest query",
       "description": "Most bytes of the text of one query",

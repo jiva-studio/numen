@@ -74,6 +74,24 @@ describe('hasPluginSettings', () => {
     })
     expect(hasPluginSettings(withView)).toBe(true)
   })
+
+  it('does not count a setting the core hides', () => {
+    const hidden = createPluginInfo('p', 'P', {
+      settings: [
+        {
+          key: 'a',
+          type: 'boolean',
+          title: 'A',
+          description: '',
+          default: false,
+          when: { setting: 'app.platform', is: ['linux'] },
+          isShown: false,
+        },
+      ],
+    })
+
+    expect(hasPluginSettings(hidden)).toBe(false)
+  })
 })
 
 describe('getManagedHealth and getMarkedSettings', () => {

@@ -75,6 +75,9 @@ message GetSettingsResponse {
   // The version of the state `written` is read from. It grows with every write the core takes, so
   // an answer with a smaller version than one already taken is older than it and is dropped.
   uint64 version = 10;
+
+  // The groups of the settings of the owner app, in the order their islands are drawn.
+  repeated PluginSettingGroup app_groups = 11;
 }
 
 // Setting is one setting of the file and what to put there.

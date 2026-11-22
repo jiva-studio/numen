@@ -8,7 +8,7 @@ import { ref } from 'vue'
 import { createSettingPalette } from './settingCommands'
 import { getWindowConfig } from './windowConfig'
 import { createWindowSettingPalette } from './windowPalette'
-import type { SettingOwner } from '../lib/settingsConfig'
+import { getSettingWhen, type SettingOwner } from '../lib/settingsConfig'
 import { getNamedIcon } from '@/shared/ui/icons'
 import type { PluginSettingInfo } from '@/entities/settings'
 
@@ -221,6 +221,29 @@ describe('the commands made from the declarations', () => {
       'setting:app:performance.profile': true,
     })
     expect(commands[0]?.when).toBe("string(config.app.performance.profile) in ['eco']")
+  })
+
+  it('offers no setting the core hides, as one that names another platform', () => {
+    const when = { setting: 'app.platform', is: ['linux'] }
+    const owners: readonly SettingOwner[] = [
+      {
+        id: 'md.example.scanner',
+        name: 'Scanner',
+        settings: [
+          declare({ key: 'native', title: 'Native', palette: true, when, isShown: false }),
+          declare({ key: 'any', title: 'Any', palette: true, isShown: true }),
+        ],
+      },
+    ]
+    const palette = createSettingPalette({
+      getOwners: () => owners,
+      words: { current: 'Current', on: 'On', off: 'Off' },
+      preview: { apply: vi.fn(), restore: vi.fn() },
+      write: vi.fn(async () => undefined),
+    })
+
+    expect(palette.getCommands().map((one) => one.text)).toStrictEqual(['Scanner: Any'])
+    expect(getSettingWhen(owners[0]!, owners[0]!.settings[0]!)).toBe('')
   })
 
   it('reads the owners again for each request of the commands', () => {

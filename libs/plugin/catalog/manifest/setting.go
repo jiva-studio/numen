@@ -3,6 +3,7 @@ package manifest
 import (
 	"fmt"
 	"maps"
+	"runtime"
 	"slices"
 	"strconv"
 )
@@ -43,7 +44,16 @@ type OptionsBy struct {
 	Options map[string]SettingOptions
 }
 
-// Condition holds while a setting holds one of the values listed.
+// FactPlatform is the operating system of the host, darwin, linux or windows, which a condition may
+// name in place of a setting, as the `app.platform` of the conditions of the window does.
+const FactPlatform = "app.platform"
+
+// Facts are the names a condition may name in place of a setting, each with the values it holds.
+func Facts() map[string][]string {
+	return map[string][]string{FactPlatform: {"darwin", "linux", "windows"}}
+}
+
+// Condition holds while a setting, or a fact of Facts, holds one of the values listed.
 type Condition struct {
 	Setting string
 	Is      []string
@@ -87,6 +97,12 @@ func (m Manifest) GetSettingOptions(s Setting, values map[string]any) SettingOpt
 // where its value is not among them; a setting whose condition fails is left out. Values of keys the
 // manifest does not declare are kept.
 func (m Manifest) ResolveSettings(stored map[string]any) map[string]any {
+	return m.ResolveSettingsOn(stored, runtime.GOOS)
+}
+
+// ResolveSettingsOn is ResolveSettings on the platform given, which the conditions that name
+// FactPlatform read.
+func (m Manifest) ResolveSettingsOn(stored map[string]any, platform string) map[string]any {
 	values := maps.Clone(stored)
 	if values == nil {
 		values = map[string]any{}
@@ -100,7 +116,7 @@ func (m Manifest) ResolveSettings(stored map[string]any) map[string]any {
 	}
 	for _, s := range m.Settings {
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
-		if !m.isActive(s.When, values, 0) {
+		if !m.isActive(s.When, values, platform, 0) {
 			delete(values, s.Key)
 		}
 	}
@@ -156,13 +172,21 @@ func (s Setting) hasOptionInAnyGroup(value string) bool {
 // IsSettingShown reports whether the condition of the setting holds under the values in force that
 // ResolveSettings returned, and the conditions of the settings it reads.
 func (m Manifest) IsSettingShown(s Setting, resolved map[string]any) bool {
-	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
-	return m.isActive(s.When, resolved, 0)
+	return m.IsSettingShownOn(s, resolved, runtime.GOOS)
 }
 
-func (m Manifest) isActive(when *Condition, values map[string]any, depth int) bool {
+// IsSettingShownOn takes the platform as runtime.GOOS names it (darwin, linux, windows), which a test passes to see another system.
+func (m Manifest) IsSettingShownOn(s Setting, resolved map[string]any, platform string) bool {
+	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
+	return m.isActive(s.When, resolved, platform, 0)
+}
+
+func (m Manifest) isActive(when *Condition, values map[string]any, platform string, depth int) bool {
 	if when == nil {
 		return true
+	}
+	if when.Setting == FactPlatform {
+		return slices.Contains(when.Is, platform)
 	}
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="cycle detection bound exceeds any valid setting chain"
 	if depth > len(m.Settings) || !slices.Contains(when.Is, FormatSettingValue(values[when.Setting])) {
@@ -170,7 +194,7 @@ func (m Manifest) isActive(when *Condition, values map[string]any, depth int) bo
 	}
 	parent, ok := m.GetSetting(when.Setting)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="cycle detection bound exceeds any valid setting chain"
-	return ok && m.isActive(parent.When, values, depth+1)
+	return ok && m.isActive(parent.When, values, platform, depth+1)
 }
 
 func (m Manifest) getAllOptions(s Setting) []SettingOptions {

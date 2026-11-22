@@ -72,6 +72,8 @@ const MEMBERS: GroupMembers = {
   },
   slots: {
     getSlotEntries: true,
+    getSlotPoints: true,
+    getSlotLayout: true,
     createSlotCommandFinder: true,
     getSlotWhenValues: true,
     reportSlotIssue: true,

@@ -84,7 +84,9 @@ const mountBar = (view: Component): VueWrapper => {
 describe('the manifest', () => {
   it('places the bar in the status bar slot of the window', () => {
     expect(manifest.id).toBe('md.numen.views.statusBar')
-    expect(manifest.contributes.slots).toStrictEqual([{ slot: 'statusBar', view: STATUS_BAR_VIEW }])
+    expect(manifest.contributes.slots).toStrictEqual([
+      { slot: 'statusBar', view: STATUS_BAR_VIEW, title: 'Status bar' },
+    ])
   })
 
   it('registers the bar under the id the manifest places', () => {

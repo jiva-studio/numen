@@ -24,7 +24,7 @@ const go = [
   'package manifest',
   '',
   ...slots.flatMap((one) => [
-    `// ${getGoName(one.name)} is ${one.about}, drawn by ${one.owner}.`,
+    `// ${getGoName(one.name)} is ${one.about}.`,
     `const ${getGoName(one.name)} = ${JSON.stringify(one.name)}`,
     '',
   ]),
@@ -63,7 +63,7 @@ const ts = [
   '// SLOT names the slots of a window. A plugin fills them with the entries of `contributes.slots`.',
   'export const SLOT = {',
   ...slots.flatMap((one) => [
-    `  // ${one.about[0].toUpperCase() + one.about.slice(1)}, drawn by ${one.owner}.`,
+    `  // ${one.about[0].toUpperCase() + one.about.slice(1)}.`,
     `  ${getTsKey(one.name)}: '${one.name}',`,
   ]),
   '} as const',

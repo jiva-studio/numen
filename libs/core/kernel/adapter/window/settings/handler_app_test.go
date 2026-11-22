@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
@@ -20,6 +21,7 @@ func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
 				{Key: "appearance.interfaceScale", Type: "range", DefaultJSON: "1", ValueJSON: "1"},
 			}
 		},
+		func() []manifest.SettingGroup { return []manifest.SettingGroup{{ID: "look", Title: "Look"}} },
 	), nil, nil, nil), PluginFolders{})
 
 	response, err := handler.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
@@ -29,5 +31,9 @@ func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
 	app := response.Msg.GetApp()
 	if len(app) != 1 || app[0].GetKey() != "appearance.interfaceScale" || app[0].GetDefaultJson() != "1" {
 		t.Errorf("the declaration of the shell is %v", app)
+	}
+	groups := response.Msg.GetAppGroups()
+	if len(groups) != 1 || groups[0].GetId() != "look" || groups[0].GetTitle() != "Look" {
+		t.Errorf("the groups of the shell are %v", groups)
 	}
 }

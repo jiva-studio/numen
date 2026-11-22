@@ -12,6 +12,7 @@ import { createWindowSlots } from './createWindowSlots'
 
 const TIDE = 'org.example.tide'
 const HARBOR = 'org.example.harbor'
+const TREE = 'org.example.tree'
 
 const command = (pluginId: string, id: string, title: string): DeclaredCommand => ({
   pluginId,
@@ -78,6 +79,9 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
       slots: computed(() => slotEntries),
       commands: computed(() => COMMANDS),
       contributions: {
+        slotPoints: computed(() => [
+          { pluginId: TREE, slot: 'fileTree.context', title: 'Row menu' },
+        ]),
         handlers: computed(() => [
           {
             pluginId: HARBOR,
@@ -104,8 +108,10 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     getEntries: () => slots.hostDeps.slots.getSlotEntries(new Map()),
     findCommand: findSlotCommand,
     findView: () => undefined,
-    getWhenValues: slots.hostDeps.slots.getSlotWhenValues,
-    whenReader: slots.hostDeps.commands.whenReader,
+    when: {
+      getValues: slots.hostDeps.slots.getSlotWhenValues,
+      reader: slots.hostDeps.commands.whenReader,
+    },
   })
   return { registry, hostDeps: slots.hostDeps, state, findSlotCommand }
 }
@@ -186,7 +192,10 @@ describe('the buttons of the title bar while no vault is open', () => {
       declaredCommands: {
         slots: computed(() => undefined),
         commands: computed(() => undefined),
-        contributions: { handlers: computed(() => undefined) },
+        contributions: {
+          handlers: computed(() => undefined),
+          slotPoints: computed(() => undefined),
+        },
         whenContext: {
           getContentTypes: () => ({}),
           getConfig: () => ({}),
@@ -217,26 +226,26 @@ describe('the entries of a menu over a target', () => {
     noteType: 'link',
   }
   const menu: DeclaredSlot[] = [
-    { pluginId: HARBOR, slot: SLOT.fileTreeContext, command: 'harbor.moor' },
-    { pluginId: HARBOR, slot: SLOT.fileTreeContext, command: 'harbor.dock' },
-    { pluginId: HARBOR, slot: SLOT.fileTreeContext, command: 'harbor.read' },
+    { pluginId: HARBOR, slot: 'fileTree.context', command: 'harbor.moor' },
+    { pluginId: HARBOR, slot: 'fileTree.context', command: 'harbor.dock' },
+    { pluginId: HARBOR, slot: 'fileTree.context', command: 'harbor.read' },
   ]
 
   it('read the note type of the target, which the place gives with it', () => {
     const { registry } = setup(menu)
 
-    expect(describeItems(registry.getEntries(SLOT.fileTreeContext, LINK))).toContain(
+    expect(describeItems(registry.getEntries('fileTree.context', LINK))).toContain(
       `${HARBOR}:harbor.moor`,
     )
     expect(
-      describeItems(registry.getEntries(SLOT.fileTreeContext, { ...LINK, noteType: 'note' })),
+      describeItems(registry.getEntries('fileTree.context', { ...LINK, noteType: 'note' })),
     ).not.toContain(`${HARBOR}:harbor.moor`)
   })
 
   it('mark a command of a plugin that lists items', () => {
     const { registry } = setup(menu)
 
-    expect(registry.getEntries(SLOT.fileTreeContext, LINK)).toContainEqual(
+    expect(registry.getEntries('fileTree.context', LINK)).toContainEqual(
       expect.objectContaining({ command: `${HARBOR}:harbor.dock`, hasItems: true }),
     )
   })
@@ -244,7 +253,7 @@ describe('the entries of a menu over a target', () => {
   it('mark a command a backend runs that the core lists with items', () => {
     const { registry } = setup(menu)
 
-    expect(registry.getEntries(SLOT.fileTreeContext, LINK)).toContainEqual(
+    expect(registry.getEntries('fileTree.context', LINK)).toContainEqual(
       expect.objectContaining({ command: `${HARBOR}:harbor.read`, hasItems: true }),
     )
   })

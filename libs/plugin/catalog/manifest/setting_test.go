@@ -2,6 +2,7 @@ package manifest_test
 
 import (
 	"errors"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -422,5 +423,63 @@ func TestASettingDescriptionOfOneLineIsAcceptedWithItsDetails(t *testing.T) {
 
 	if got := m.Settings[0]; got.Description != description || got.Details != details {
 		t.Errorf("got description %q and details %q", got.Description, got.Details)
+	}
+}
+
+func readFactManifest(settings string) (Manifest, error) {
+	return manifestjson.Read(strings.NewReader(
+		`{"id":"a.b","name":"A","version":"1.0.0","settings":[` + settings + `]}`,
+	))
+}
+
+func TestASettingMayBeShownOnAPlatform(t *testing.T) {
+	m, err := readFactManifest(`{"key":"a","type":"boolean","title":"A","when":{"setting":"app.platform","is":["linux","darwin"]}}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := m.Settings[0]
+	for platform, want := range map[string]bool{"linux": true, "darwin": true, "windows": false, "android": false} {
+		if got := m.IsSettingShownOn(a, map[string]any{}, platform); got != want {
+			t.Errorf("shown on %s = %v, want %v", platform, got, want)
+		}
+		if _, held := m.ResolveSettingsOn(map[string]any{"a": true}, platform)["a"]; held != want {
+			t.Errorf("handed to the plugin on %s = %v, want %v", platform, held, want)
+		}
+	}
+}
+
+func TestAPlatformConditionIsReadWithTheHostPlatform(t *testing.T) {
+	m, err := readFactManifest(`{"key":"a","type":"boolean","title":"A","when":{"setting":"app.platform","is":["` + runtime.GOOS + `"]}}`)
+	if err != nil {
+		t.Skipf("%s is no platform of conditions: %v", runtime.GOOS, err)
+	}
+	if !m.IsSettingShown(m.Settings[0], nil) {
+		t.Errorf("a setting shown on %s is hidden on it", runtime.GOOS)
+	}
+}
+
+func TestPlatformConditionHidesSettingOnOtherSystems(t *testing.T) {
+	m, err := readFactManifest(
+		`{"key":"a","type":"boolean","title":"A","when":{"setting":"app.platform","is":["linux"]}},` +
+			`{"key":"b","type":"boolean","title":"B","when":{"setting":"a","is":["true"]}}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := m.Settings[1]
+	if !m.IsSettingShownOn(b, map[string]any{"a": true}, "linux") || m.IsSettingShownOn(b, map[string]any{"a": true}, "darwin") {
+		t.Error("a setting that reads a setting hidden by the platform is not hidden with it")
+	}
+}
+
+func TestAPlatformConditionThatCannotHoldIsRejected(t *testing.T) {
+	for name, when := range map[string]string{
+		"unknown platform": `{"setting":"app.platform","is":["beos"]}`,
+		"no values":        `{"setting":"app.platform","is":[]}`,
+		"spelled":          `{"setting":"app.platform","is":["Linux"]}`,
+	} {
+		_, err := readFactManifest(`{"key":"a","type":"boolean","title":"A","when":` + when + `}`)
+		if !errors.Is(err, ErrInvalidSetting) {
+			t.Errorf("%s: err = %v, want ErrInvalidSetting", name, err)
+		}
 	}
 }

@@ -2,9 +2,12 @@
  * The settings as when conditions read them: `config.<dotted key>`, the application's settings under
  * `app` and a plugin's under its id, as VS Code reads `config.editor.tabCompletion`.
  */
-import type { WhenSettings } from '@numen/plugin-loader'
+import type { SlotLayout, WhenSettings } from '@numen/plugin-loader'
 import type { JsonValue } from '@/shared/api/json'
 import type { PluginSettingInfo } from '@/entities/settings'
+
+/** The fact of the host a condition of a setting may name in place of a setting; the core resolves it. */
+const PLATFORM_FACT = 'app.platform'
 
 /** The owner whose settings the core declares. */
 export const APP_OWNER = 'app'
@@ -46,7 +49,7 @@ export function getSettingWhen(owner: SettingOwner, setting: PluginSettingInfo):
   const parts: string[] = []
   let condition = setting.when
   const visited = new Set<string>()
-  while (condition && !visited.has(condition.setting)) {
+  while (condition && condition.setting !== PLATFORM_FACT && !visited.has(condition.setting)) {
     visited.add(condition.setting)
     const values = condition.is.map((one) => `'${one.replaceAll("'", "\\'")}'`).join(', ')
     parts.push(
@@ -56,4 +59,17 @@ export function getSettingWhen(owner: SettingOwner, setting: PluginSettingInfo):
     condition = owner.settings.find((one) => one.key === named)?.when
   }
   return parts.join(' && ')
+}
+
+/** The stored layout of the slots a plugin draws, from its setting of the type slots. */
+export function getSlotLayout(
+  owners: readonly SettingOwner[],
+  pluginId: string,
+): SlotLayout | undefined {
+  const value = owners
+    .find((one) => one.id === pluginId)
+    ?.settings.find((one) => one.type === 'slots')?.value
+  return value === undefined || value === null || typeof value !== 'object' || Array.isArray(value)
+    ? undefined
+    : (value as SlotLayout)
 }

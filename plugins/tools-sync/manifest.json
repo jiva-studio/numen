@@ -20,7 +20,7 @@
         ]
       }
     ],
-    "slots": [{ "slot": "titleBar.status", "view": "sync", "order": 5 }]
+    "slots": [{ "slot": "titleBar.status", "view": "sync", "title": "Sync status", "order": 5 }]
   },
   "frontend": {}
 }

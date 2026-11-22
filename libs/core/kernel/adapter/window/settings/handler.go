@@ -73,11 +73,12 @@ func (h *Values) GetSettings(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	reply := &v1.GetSettingsResponse{
-		Written: got.Written,
-		Version: got.Version,
-		Path:    got.Path,
-		Plugins: NewWirePluginInfos(got.Plugins),
-		App:     newWirePluginSettings(got.App),
+		Written:   got.Written,
+		Version:   got.Version,
+		Path:      got.Path,
+		Plugins:   NewWirePluginInfos(got.Plugins),
+		App:       newWirePluginSettings(got.App),
+		AppGroups: newWireSettingGroups(got.AppGroups),
 	}
 	return connect.NewResponse(reply), nil
 }
@@ -130,6 +131,7 @@ func NewWirePluginInfos(target []plugin.Info) []*v1.PluginInfo {
 			HasBackend:     one.HasBackend,
 			Readers:        newWireReaders(one.Readers),
 			SettingsViews:  newWireSettingsViews(one.SettingsViews),
+			SettingGroups:  newWireSettingGroups(one.SettingGroups),
 			Contributions:  newWireContributions(one.Contributions),
 			IsOffByDefault: one.IsOffByDefault,
 		})
@@ -146,6 +148,7 @@ func newWirePluginSettings(target []plugin.Setting) []*v1.PluginSetting {
 			Title:         s.Title,
 			Description:   s.Description,
 			Details:       s.Details,
+			Group:         s.Group,
 			DefaultJson:   s.DefaultJSON,
 			Palette:       s.Palette,
 			Icon:          s.Icon,
@@ -247,6 +250,14 @@ func (h *Values) ChoosePluginPath(
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}
 	return connect.NewResponse(reply), nil
+}
+
+func newWireSettingGroups(groups []manifest.SettingGroup) []*v1.PluginSettingGroup {
+	out := make([]*v1.PluginSettingGroup, 0, len(groups))
+	for _, one := range groups {
+		out = append(out, &v1.PluginSettingGroup{Id: one.ID, Title: one.Title})
+	}
+	return out
 }
 
 func newWireSettingsViews(views []manifest.SettingsView) []*v1.PluginSettingsView {

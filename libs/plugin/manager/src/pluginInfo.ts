@@ -18,7 +18,7 @@ interface SettingObject {
 
 /** Declarative setting value types exposed by a plugin. */
 export type PluginSettingType =
-  'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file' | 'connections' | 'list'
+  'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file' | 'connections' | 'list' | 'slots'
 
 /** One value an enum setting can hold, with its display title. */
 export interface PluginSettingOption {
@@ -50,6 +50,7 @@ export interface PluginSettingInfo {
   readonly title: string
   readonly description: string
   readonly details?: string | undefined
+  readonly group?: string | undefined
   readonly default: SettingValue | undefined
   readonly palette?: boolean | undefined
   readonly icon?: string | undefined
@@ -95,6 +96,7 @@ export interface PluginInfo {
   readonly capabilities: readonly string[]
   readonly readers?: readonly PluginReader[]
   readonly settingsViews?: readonly PluginSettingsViewInfo[]
+  readonly settingGroups?: readonly PluginSettingGroupInfo[]
   readonly contributions?: readonly PluginContribution[]
   readonly isOffByDefault?: boolean
 }
@@ -141,6 +143,12 @@ export interface PluginContributionItem {
   readonly text: string
   readonly detail: string
   readonly keys: string
+}
+
+/** An island of the settings page: the settings that name its id are drawn under its title. */
+export interface PluginSettingGroupInfo {
+  readonly id: string
+  readonly title: string
 }
 
 /** A view a plugin's frontend registers under `id` and the settings form mounts. */

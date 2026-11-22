@@ -2,7 +2,8 @@
 /**
  * Declarative settings fields for a plugin: switches, number inputs, sliders,
  * selects, paths, lists, and text fields. A setting whose condition fails is not shown,
- * and keeps its value.
+ * and keeps its value. Without a group the fields are the settings that name none, with the views
+ * of the plugin; with one, the settings of that group.
  */
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
@@ -18,6 +19,7 @@ import {
   usePluginPaths,
   useSettingDefaults,
 } from '../../model/usePluginFields'
+import { getSettingSections } from '../../lib/settingSections'
 import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -27,6 +29,7 @@ const props = defineProps<{
   plugin: PluginInfo
   marked?: readonly string[]
   focused?: MarkedSetting | null
+  group?: string
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -56,14 +59,25 @@ const {
   removeItem: onListRemove,
 } = getPluginLists(fieldDeps, fields)
 const { isChanged, resetSetting: onReset } = useSettingDefaults(fieldDeps)
+
+function getDrawnSettings() {
+  const sections = getSettingSections(getShownSettings(), props.plugin.settingGroups)
+  if (props.group === undefined) return sections.plain
+  return sections.islands.find((one) => one.id === props.group)?.settings ?? []
+}
 </script>
 
 <template>
-  <SettingsViews :settings="props.settings" :host="props.host" :plugin="props.plugin" />
+  <SettingsViews
+    v-if="props.group === undefined"
+    :settings="props.settings"
+    :host="props.host"
+    :plugin="props.plugin"
+  />
 
-  <template v-for="setting in getShownSettings()" :key="setting.key">
+  <template v-for="setting in getDrawnSettings()" :key="setting.key">
     <SettingRow
-      v-if="setting.type !== 'connections'"
+      v-if="setting.type !== 'connections' && setting.type !== 'slots'"
       v-slot="{ labelledBy, describedBy }"
       :at="`${props.plugin.id}-${setting.key}`"
       :name="setting.title"

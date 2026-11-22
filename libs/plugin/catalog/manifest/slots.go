@@ -2,64 +2,40 @@
 
 package manifest
 
-// SlotTitleBar is the bar at the top of a window; one view, the plugin of the title bar, drawn by the window.
+// SlotTitleBar is the bar at the top of a window; it draws one view.
 const SlotTitleBar = "titleBar"
 
-// SlotStatusBar is the bar at the bottom of a window; one view, the plugin of the status bar, drawn by the window.
+// SlotStatusBar is the bar at the bottom of a window; it draws one view.
 const SlotStatusBar = "statusBar"
 
-// SlotTitleBarCommands is the buttons of the title bar, drawn by the plugin of the title bar.
+// SlotTitleBarCommands is the buttons of the title bar.
 const SlotTitleBarCommands = "titleBar.commands"
 
-// SlotTitleBarStatus is the views of the title bar, after its title, drawn by the plugin of the title bar.
+// SlotTitleBarStatus is the views of the title bar, after its title.
 const SlotTitleBarStatus = "titleBar.status"
 
-// SlotStatusBarLeft is the start of the status bar, drawn by the plugin of the status bar.
+// SlotStatusBarLeft is the start of the status bar.
 const SlotStatusBarLeft = "statusBar.left"
 
-// SlotStatusBarRight is the end of the status bar, drawn by the plugin of the status bar.
+// SlotStatusBarRight is the end of the status bar.
 const SlotStatusBarRight = "statusBar.right"
 
-// SlotFileTreeContext is the menu of a row of the file tree, over its file or folder, drawn by the plugin of the file tree.
-const SlotFileTreeContext = "fileTree.context"
-
-// SlotFileTreeRowEnd is the views at the right end of a row of the file tree, each given the path of the row, drawn by the plugin of the file tree.
-const SlotFileTreeRowEnd = "fileTree.rowEnd"
-
-// SlotTabStripContext is the menu of a tab, over the file of the tab, drawn by the tab strip of the window.
+// SlotTabStripContext is the menu of a tab, over the file of the tab.
 const SlotTabStripContext = "tabStrip.context"
 
-// SlotPlexGraphContext is the menu of a node of the plex graph, over its note, drawn by the plugin of the plex graph.
-const SlotPlexGraphContext = "plexGraph.context"
-
-// SlotPlexGraphNodeAbove is the views over a node of the plex graph, each given the path of its note, drawn by the plugin of the plex graph.
-const SlotPlexGraphNodeAbove = "plexGraph.nodeAbove"
-
-// SlotPlexGraphNodeBelow is the views under a node of the plex graph, each given the path of its note, drawn by the plugin of the plex graph.
-const SlotPlexGraphNodeBelow = "plexGraph.nodeBelow"
-
-// SlotPlexGraphNode is the views over the whole of a node of the plex graph, above the nodes, each given the path of its note and the size, position and scale of the node; a view that does not let clicks and drags through takes them from the node, drawn by the plugin of the plex graph.
-const SlotPlexGraphNode = "plexGraph.node"
-
-// SlotPlexGraphBoardTop is the views of controls at the top of the board of the plex graph, drawn by the plugin of the plex graph.
-const SlotPlexGraphBoardTop = "plexGraph.boardTop"
-
-// SlotPlexGraphBoardBottom is the views of controls at the bottom of the board of the plex graph, drawn by the plugin of the plex graph.
-const SlotPlexGraphBoardBottom = "plexGraph.boardBottom"
-
-// SlotPaletteSearchResult is the actions of a search result that is a note, over that note, drawn by the palette.
+// SlotPaletteSearchResult is the actions of a search result that is a note, over that note.
 const SlotPaletteSearchResult = "palette.searchResult"
 
-// SlotPaletteNote is the commands of the palette over the note in front, drawn by the palette.
+// SlotPaletteNote is the commands of the palette over the note in front.
 const SlotPaletteNote = "palette.note"
 
 // Slots are the slots of a window, in the order slots.json lists them.
-var Slots = []string{SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotFileTreeRowEnd, SlotTabStripContext, SlotPlexGraphContext, SlotPlexGraphNodeAbove, SlotPlexGraphNodeBelow, SlotPlexGraphNode, SlotPlexGraphBoardTop, SlotPlexGraphBoardBottom, SlotPaletteSearchResult, SlotPaletteNote}
+var Slots = []string{SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotTabStripContext, SlotPaletteSearchResult, SlotPaletteNote}
 
 // IsSlot reports whether the name is a slot of a window.
 func IsSlot(name string) bool {
 	switch name {
-	case SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotFileTreeRowEnd, SlotTabStripContext, SlotPlexGraphContext, SlotPlexGraphNodeAbove, SlotPlexGraphNodeBelow, SlotPlexGraphNode, SlotPlexGraphBoardTop, SlotPlexGraphBoardBottom, SlotPaletteSearchResult, SlotPaletteNote:
+	case SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotTabStripContext, SlotPaletteSearchResult, SlotPaletteNote:
 		return true
 	}
 	return false

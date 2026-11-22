@@ -93,6 +93,15 @@ describe('the room of the widgets of a node', () => {
     expect(rooms.getNodeRoom.value?.(node('a'))).toMatchObject({ top: 30, bottom: 18 })
   })
 
+  it('is none, as wide as no node, for widgets that measure no height', () => {
+    const rooms = setUp()
+
+    rooms.setWidgets('a', 'below', createWidgets(0).element)
+
+    expect(rooms.getNodeRoom.value).toBeUndefined()
+    expect(rooms.getNodeRoom.value?.(node('a')) ?? NO_ROOM).toStrictEqual(NO_ROOM)
+  })
+
   it('is none for a node whose widgets were not measured', () => {
     const rooms = setUp()
 

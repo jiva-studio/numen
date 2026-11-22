@@ -1,7 +1,7 @@
 /** The settings as when conditions read them, `config.<dotted key>`, and the conditions of the settings. */
 import { describe, expect, it } from 'vitest'
 import type { PluginSettingInfo } from '@/entities/settings'
-import { getSettingWhen, getSettingsConfig } from './settingsConfig'
+import { getSettingWhen, getSettingsConfig, getSlotLayout } from './settingsConfig'
 
 const setting = (key: string, value: unknown, when?: PluginSettingInfo['when']) =>
   ({ key, value, ...(when ? { when } : {}) }) as never
@@ -65,5 +65,25 @@ describe('the condition of a setting command', () => {
     expect(orphan ? getSettingWhen(cyclicOwner, orphan) : null).toBe(
       "string(config.org.example.cycle.missing) in ['no']",
     )
+  })
+})
+
+describe('the layout of the slots a plugin draws', () => {
+  const layout = { 'plexGraph.node': [{ id: 'a/view/b', hidden: true }] }
+  const plex = (...settings: unknown[]) => [
+    { id: 'org.example.plex', name: 'Plex', settings: settings as never },
+  ]
+  const slots = (value?: unknown) => ({ key: 'slots', type: 'slots', value })
+
+  it('is the value of its setting of the type slots', () => {
+    expect(getSlotLayout(plex(slots(layout)), 'org.example.plex')).toStrictEqual(layout)
+  })
+
+  it('is none without that setting, a value or the plugin', () => {
+    expect(getSlotLayout(plex(slots()), 'org.example.plex')).toBeUndefined()
+    expect(
+      getSlotLayout(plex({ key: 'slots', type: 'string', value: 'x' }), 'org.example.plex'),
+    ).toBeUndefined()
+    expect(getSlotLayout(plex(slots(layout)), 'org.example.other')).toBeUndefined()
   })
 })

@@ -46,7 +46,7 @@ import type {
 import type { Manifest } from '@numen/core-client'
 import type { ContributionMatch } from '../loading'
 import type { AnyTabKind, SourceReader } from './tabKinds'
-import type { DeclaredSlotEntry, SlotCommandLook } from '../slots'
+import type { DeclaredSlotEntry, DeclaredSlotPoint, SlotCommandLook, SlotLayout } from '../slots'
 import type { WhenValues, WhenReader } from '../when'
 import type { HealthReports } from '../pluginHealth'
 import type { Component } from 'vue'
@@ -192,6 +192,10 @@ export interface HostSlots {
   readonly getSlotEntries?: (
     manifests: ReadonlyMap<string, Manifest>,
   ) => readonly DeclaredSlotEntry[] | undefined
+  readonly getSlotPoints?: (
+    manifests: ReadonlyMap<string, Manifest>,
+  ) => readonly DeclaredSlotPoint[] | undefined
+  readonly getSlotLayout?: (pluginId: string) => SlotLayout | undefined
   readonly createSlotCommandFinder?: (own: HostCommandReads) => SlotCommandFinder
   readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues
   readonly reportSlotIssue?: (

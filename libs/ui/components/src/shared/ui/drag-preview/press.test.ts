@@ -371,4 +371,58 @@ describe('usePressDrag', () => {
     element.remove()
     press.scope.stop()
   })
+
+  it('cancels a moved drag on Escape, and commits nothing on the pointerup after it', () => {
+    const press = createPress()
+    press.startPress('a row', pointer('pointerdown', 10, 10))
+    window.dispatchEvent(pointer('pointermove', 40, 60))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    window.dispatchEvent(pointer('pointerup', 40, 60))
+
+    expect(press.cancel).toHaveBeenCalledExactlyOnceWith('a row')
+    expect(press.commit).not.toHaveBeenCalled()
+    expect(press.at.value).toBeNull()
+    press.frame()
+    expect(press.dragging.value).toBeNull()
+    press.scope.stop()
+  })
+
+  it('ignores a key other than Escape', () => {
+    const press = createPress()
+    press.startPress('a row', pointer('pointerdown', 10, 10))
+    window.dispatchEvent(pointer('pointermove', 40, 60))
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+    window.dispatchEvent(pointer('pointerup', 40, 60))
+
+    expect(press.cancel).not.toHaveBeenCalled()
+    expect(press.commit).toHaveBeenCalledTimes(1)
+    press.scope.stop()
+  })
+
+  it('ignores the moves, the end and the cancel of a pointer other than the pressed one', () => {
+    const press = createPress()
+    press.startPress('a row', pointer('pointerdown', 10, 10, 1))
+    window.dispatchEvent(pointer('pointermove', 40, 60, 1))
+    window.dispatchEvent(pointer('pointermove', 90, 90, 2))
+    window.dispatchEvent(pointer('pointercancel', 90, 90, 2))
+    window.dispatchEvent(pointer('pointerup', 90, 90, 2))
+
+    expect(press.position.value).toEqual({ x: 40, y: 60 })
+    expect(press.cancel).not.toHaveBeenCalled()
+    expect(press.commit).not.toHaveBeenCalled()
+    window.dispatchEvent(pointer('pointerup', 40, 60, 1))
+    expect(press.commit).toHaveBeenCalledTimes(1)
+    press.scope.stop()
+  })
+
+  it('cancels a moved drag on abort', () => {
+    const press = createPress()
+    press.startPress('a row', pointer('pointerdown', 10, 10))
+    window.dispatchEvent(pointer('pointermove', 40, 60))
+    press.abort()
+
+    expect(press.cancel).toHaveBeenCalledExactlyOnceWith('a row')
+    expect(press.at.value).toBeNull()
+    press.scope.stop()
+  })
 })

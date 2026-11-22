@@ -35,6 +35,7 @@ type Manifest = Entry & {
   readonly capabilities?: readonly string[]
   readonly settings?: readonly ManifestSetting[]
   readonly settingsViews?: PluginInfo['settingsViews']
+  readonly settingGroups?: PluginInfo['settingGroups']
   readonly contributes?: Entry & {
     readonly category?: string
     readonly feature?: string
@@ -170,6 +171,7 @@ const readOptionsBy = (value: JsonValue): PluginSettingOptionsBy => {
 
 const COPIED_FIELDS = [
   'details',
+  'group',
   'palette',
   'icon',
   'when',
@@ -222,6 +224,7 @@ const readPlugin = (manifest: Manifest): PluginInfo => ({
   capabilities: manifest.capabilities ?? [],
   settings: (manifest.settings ?? []).map(readSetting),
   settingsViews: manifest.settingsViews ?? [],
+  settingGroups: manifest.settingGroups ?? [],
   contributions: listContributions(manifest),
 })
 

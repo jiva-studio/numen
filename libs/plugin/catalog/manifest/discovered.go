@@ -51,6 +51,13 @@ const CoreOwnerID = "numen"
 // searchFunctionSpace is the space of the names of query functions.
 const searchFunctionSpace = "searchFunction"
 
+// slotPointSpace and submenuSpace are the spaces of the names a slot goes by: a slot point and a submenu
+// share one, so no plugin gives a submenu the name of a slot point another declares.
+const (
+	slotPointSpace = "slotPoint"
+	submenuSpace   = "submenu"
+)
+
 // CoreClaims are the contributions the core makes itself: the names of its built-in query functions.
 type CoreClaims struct {
 	SearchFunctions []string
@@ -108,6 +115,23 @@ func collectPluginContributionClaims(
 	}
 	for _, f := range c.SearchFunctions.Functions {
 		claim("search function", searchFunctionSpace, f.Name)
+	}
+	claimSlotName := func(what, space, id string, against ...string) {
+		for _, other := range against {
+			if owner, isOwned := owners[other+"\x00"+id]; isOwned {
+				conflicts = append(conflicts, DuplicateContributionError{PluginID: pluginID, OwnerID: owner, What: what, ID: id})
+				return
+			}
+		}
+		pending[space+"\x00"+id] = true
+	}
+	for _, point := range c.SlotPoints {
+		claimSlotName("slot point", slotPointSpace, point.Slot, slotPointSpace, submenuSpace)
+	}
+	for _, entry := range c.Slots {
+		if entry.Submenu != "" {
+			claimSlotName("submenu", submenuSpace, entry.Submenu, slotPointSpace)
+		}
 	}
 	return pending, conflicts
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 var errRead = errors.New("the file cannot be read")
@@ -24,7 +25,7 @@ func TestGetAnswersTheSettingsAndThePlugins(t *testing.T) {
 		},
 	}
 	get := settings.NewGet(
-		read, func() []plugin.Info { return pluginList }, nil,
+		read, func() []plugin.Info { return pluginList }, nil, nil,
 	)
 
 	got, err := get.Execute()
@@ -45,7 +46,7 @@ func TestGetAnswersTheSettingsAndThePlugins(t *testing.T) {
 
 func TestGetAnswersNoPluginsWhereNoneAreBound(t *testing.T) {
 	t.Parallel()
-	get := settings.NewGet(read, nil, nil)
+	get := settings.NewGet(read, nil, nil, nil)
 
 	got, err := get.Execute()
 	if err != nil {
@@ -60,7 +61,7 @@ func TestGet_ErrorWhenFileUnreadable(t *testing.T) {
 	t.Parallel()
 	get := settings.NewGet(
 		func() (string, string, uint64, error) { return "", "", 0, errRead },
-		nil, nil,
+		nil, nil, nil,
 	)
 
 	if _, err := get.Execute(); !errors.Is(err, errRead) {
@@ -75,6 +76,7 @@ func TestGetAnswersTheDeclarationOfTheShell(t *testing.T) {
 		func() []plugin.Setting {
 			return []plugin.Setting{{Key: "appearance.mode", Type: "enum", Title: "Mode"}}
 		},
+		func() []manifest.SettingGroup { return []manifest.SettingGroup{{ID: "a", Title: "A"}} },
 	)
 
 	got, err := get.Execute()
@@ -83,5 +85,8 @@ func TestGetAnswersTheDeclarationOfTheShell(t *testing.T) {
 	}
 	if len(got.App) != 1 || got.App[0].Key != "appearance.mode" {
 		t.Errorf("the declaration of the shell is %v", got.App)
+	}
+	if len(got.AppGroups) != 1 || got.AppGroups[0].ID != "a" {
+		t.Errorf("the groups of the shell are %v", got.AppGroups)
 	}
 }

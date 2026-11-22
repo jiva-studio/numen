@@ -198,7 +198,7 @@ function getReasonId(pluginId: string): string {
 }
 
 .plugins-list__alarm:focus-visible {
-  outline: var(--numen-stroke) solid var(--numen-accent);
+  outline: none;
 }
 
 .plugins-list__alarm--warning .plugins-list__alarm-icon {

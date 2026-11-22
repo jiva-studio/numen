@@ -92,9 +92,14 @@
     "entrypoint": "bin/tools-media-importer"
   },
   "frontend": {},
+  "settingGroups": [
+    { "id": "tools", "title": "Tools" },
+    { "id": "captions", "title": "Captions" }
+  ],
   "settings": [
     {
       "key": "ytDlp",
+      "group": "tools",
       "type": "string",
       "title": "yt-dlp",
       "description": "Path to the yt-dlp program",
@@ -102,6 +107,7 @@
     },
     {
       "key": "ffmpeg",
+      "group": "tools",
       "type": "string",
       "title": "ffmpeg",
       "description": "Path to the ffmpeg program",
@@ -109,6 +115,7 @@
     },
     {
       "key": "captions",
+      "group": "captions",
       "type": "string",
       "title": "Caption languages",
       "description": "Preferred caption languages, comma-separated",
@@ -116,6 +123,7 @@
     },
     {
       "key": "automaticCaptions",
+      "group": "captions",
       "type": "boolean",
       "title": "Automatic captions",
       "description": "Use auto-generated captions when a site has no others",
@@ -123,6 +131,7 @@
     },
     {
       "key": "downloadCaptionsAutomatically",
+      "group": "captions",
       "type": "boolean",
       "title": "Download captions automatically",
       "description": "Download captions or the article of link notes without them",

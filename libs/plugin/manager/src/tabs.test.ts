@@ -8,10 +8,10 @@ import {
 } from './tabs'
 
 describe('getPluginTabs', () => {
-  it('lists Settings, About, Contributes and Data in that order', () => {
+  it('lists Settings, Slots, About, Contributes and Data in that order', () => {
     expect(
-      getPluginTabs({ hasSettings: true, hasData: true }).map((one) => one.text),
-    ).toStrictEqual(['Settings', 'About', 'Contributes', 'Data'])
+      getPluginTabs({ hasSettings: true, hasSlots: true, hasData: true }).map((one) => one.text),
+    ).toStrictEqual(['Settings', 'Slots', 'About', 'Contributes', 'Data'])
   })
 
   it('leaves out Data where the plugin has none', () => {
@@ -56,5 +56,16 @@ describe('the ids of a tab and its panel', () => {
   it('differ, and both carry the base and the tab', () => {
     expect(getTabElementId('plugin-a', 'about')).toBe('plugin-a-tab-about')
     expect(getPanelElementId('plugin-a', 'about')).toBe('plugin-a-panel-about')
+  })
+})
+
+describe('the Slots tab', () => {
+  it('is there only where the plugin has slot entries, after Settings', () => {
+    expect(
+      getPluginTabs({ hasSettings: true, hasSlots: true, hasData: false }).map((one) => one.id),
+    ).toStrictEqual(['settings', 'slots', 'about', 'contributions'])
+    expect(getPluginTabs({ hasSettings: true, hasData: false }).map((one) => one.id)).not.toContain(
+      'slots',
+    )
   })
 })

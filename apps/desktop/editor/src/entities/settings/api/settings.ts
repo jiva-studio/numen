@@ -94,6 +94,12 @@ const readJson = (text: string): JsonValue | undefined => {
   /* Stryker restore BlockStatement */
 }
 
+const readLabels = (s: ServedSetting) => ({
+  ...(s.details ? { details: s.details } : {}),
+  ...(s.group ? { group: s.group } : {}),
+  ...(s.icon ? { icon: s.icon } : {}),
+})
+
 const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
   const defaultValue = readJson(s.defaultJson)
   return {
@@ -101,10 +107,9 @@ const readPluginSetting = (s: ServedSetting): PluginSettingInfo => {
     type: s.type as PluginSettingInfo['type'],
     title: s.title,
     description: s.description,
-    ...(s.details ? { details: s.details } : {}),
+    ...readLabels(s),
     default: defaultValue,
     palette: s.palette,
-    ...(s.icon ? { icon: s.icon } : {}),
     options: s.options.length > 0 ? s.options.map(readOption) : undefined,
     optionsBy: s.optionsBy
       ? {
@@ -181,11 +186,13 @@ export const createSettingsApi = (settingsService: WindowClients['settingsServic
           hasBackend: p.hasBackend,
           readers: p.readers.map((one) => ({ id: one.id, extensions: one.extensions })),
           settingsViews: p.settingsViews.map((one) => ({ id: one.id, title: one.title })),
+          settingGroups: p.settingGroups.map((one) => ({ id: one.id, title: one.title })),
           contributions: readContributions(p.contributions),
           isOffByDefault: p.isOffByDefault,
           settings: p.settings.map(readPluginSetting),
         })),
         app: answer.app.map(readPluginSetting),
+        appGroups: answer.appGroups.map((one) => ({ id: one.id, title: one.title })),
       }
     },
 

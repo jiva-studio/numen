@@ -1,9 +1,10 @@
 /** What the settings hold: one setting written at its current position. */
-import type { PluginInfo, PluginSettingInfo } from '@numen/plugin-manager'
+import type { PluginInfo, PluginSettingGroupInfo, PluginSettingInfo } from '@numen/plugin-manager'
 export type {
   PluginContribution,
   PluginContributionKind,
   PluginInfo,
+  PluginSettingGroupInfo,
   PluginSettingCondition,
   PluginSettingInfo,
   PluginSettingOption,
@@ -24,4 +25,5 @@ export interface Configuration {
   readonly version: bigint
   readonly plugins?: readonly PluginInfo[] | undefined
   readonly app?: readonly PluginSettingInfo[] | undefined
+  readonly appGroups?: readonly PluginSettingGroupInfo[] | undefined
 }

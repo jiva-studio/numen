@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { SLOT } from './slotNames'
 
 describe('the slot names', () => {
-  it('name the end of a row of the file tree', () => {
-    expect((SLOT as Record<string, string>)['fileTreeRowEnd']).toBe('fileTree.rowEnd')
+  it('name the slots of the application only', () => {
+    expect(Object.values(SLOT)).toContain('tabStrip.context')
+    expect(Object.values(SLOT).filter((one) => /^(plexGraph|fileTree)\./.test(one))).toStrictEqual([])
   })
 })

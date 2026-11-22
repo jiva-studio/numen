@@ -14,6 +14,7 @@ export interface PluginDetailProps {
   readonly problem: string
   readonly canInstall: boolean
   readonly hasSettings: boolean
+  readonly hasSlots?: boolean
   readonly health?: readonly PluginHealth[]
   readonly isApple?: boolean
 }

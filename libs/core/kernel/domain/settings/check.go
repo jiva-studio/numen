@@ -141,6 +141,9 @@ func CheckDeclared(declared manifest.Setting, registries Registries, value any) 
 		return checkRows(declared, registries, value)
 	case manifest.SettingTypeList:
 		return checkList(value)
+	case manifest.SettingTypeSlots:
+		return checkSlotLayout(value)
+		return checkList(value)
 	}
 	return nil
 }

@@ -172,7 +172,7 @@ export function createSettingPalette(deps: SettingPaletteDeps): SettingPalette {
     ]
     return ordered.flatMap((owner) =>
       owner.settings
-        .filter((setting) => setting.palette && isChoiceKind(setting))
+        .filter((setting) => setting.palette && setting.isShown !== false && isChoiceKind(setting))
         .map((setting) => ({
           id: getSettingCommandId(owner.id, setting.key),
           text: owner.name ? `${owner.name}: ${setting.title}` : setting.title,

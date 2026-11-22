@@ -7,6 +7,7 @@ import type { WindowTabs } from '@/entities/tab'
 import { createSettingsPage } from '@/pages/settings'
 import type { createWindowSettings } from '@/features/settings-commands'
 import type { PluginHealthItem } from '@/entities/plugin'
+import type { createSlotGroups } from '@/features/plugin-host'
 import type { createWindowFoundation } from './createWindowFoundation'
 
 /** What the settings page reads of the foundation. */
@@ -28,6 +29,7 @@ interface SettingsPagePlugins {
   readonly host: Pick<PluginHost, 'registered'>
   readonly health: Readonly<Ref<readonly PluginHealthItem[]>>
   readonly commands: Pick<CommandsHost, 'getIds' | 'run'>
+  readonly getSlotGroups?: ReturnType<typeof createSlotGroups>
 }
 
 /** Makes the settings page, registers its kinds of tab, and opens it when it is asked for. */
@@ -50,6 +52,7 @@ export function registerSettingsPage(deps: SettingsPageDeps): void {
     getPlatform: () => frame.platform.value,
     plugins: {
       getSettingsViews: plugins.host.registered.getSettingsViews,
+      ...(plugins.getSlotGroups ? { getSlotGroups: plugins.getSlotGroups } : {}),
       health: { items: plugins.health, commands: plugins.commands },
     },
   })

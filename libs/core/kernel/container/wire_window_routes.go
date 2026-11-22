@@ -5,6 +5,7 @@ import (
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
@@ -175,7 +176,7 @@ func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds *file
 }
 
 func openGetSettings(s settingsWiring) *settings.Get {
-	return settings.NewGet(readSettings(s), s.Infos.GetPluginInfos, func() []plugin.Setting { return listAppSettings(s) })
+	return settings.NewGet(readSettings(s), s.Infos.GetPluginInfos, func() []plugin.Setting { return listAppSettings(s) }, settingsadapter.GetAppSettingGroups)
 }
 
 func mountSettings(w *windowRoutes, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {

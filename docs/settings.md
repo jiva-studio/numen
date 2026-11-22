@@ -1,3 +1,4 @@
+| `disableDmabufRenderer` | Linux only: draw the window through ordinary memory instead of GPU buffers (DMABUF). On by default. It avoids drawing faults, such as flicker and stale frames, that some graphics drivers and webview versions show, at the cost of a little more processor time on large repaints. numen reads it before the webview starts, so a change applies after a restart. It sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` for the process; a value of that variable already in the environment stands. |
 # Settings
 
 Settings are stored in one JSON file named `numen.json` in the folder where this desktop keeps a person's configuration — `~/.config/numen/` on Linux, `~/Library/Application Support/numen/` on macOS, `%AppData%\numen\` on Windows. A run that finds no file writes one containing the settings that run is using, so the settings a person edits are the ones in effect.
@@ -142,7 +143,8 @@ Typing a new `# Heading` into a note does not rename its file. A save writes the
 {
   "app": {
     "performance": {
-      "profile": "balanced"
+      "profile": "balanced",
+      "disableDmabufRenderer": true
     }
   }
 }
@@ -151,6 +153,7 @@ Typing a new `# Heading` into a note does not rename its file. A save writes the
 |           |                                                                                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `profile` | the workload profile: `eco`, `low`, `balanced` (default), `high` or `maximum`. Any other value is ignored, with a notice, and `balanced` stands. |
+| `disableDmabufRenderer` | Linux only: draw the window through ordinary memory instead of GPU buffers (DMABUF); `true` by default. It avoids drawing faults, such as flicker and stale frames, that some graphics drivers and webview versions show, at the cost of a little more processor time on large repaints. numen reads it before the webview starts, so a change applies after a restart. It sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` for the process; a value of that variable already in the environment stands. |
 
 ### Hardware adaptation
 

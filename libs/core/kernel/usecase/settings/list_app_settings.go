@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // ListAppSettings lists the settings the shell declares, each with the value in force and the
@@ -32,6 +33,7 @@ func (u *ListAppSettings) Execute() []plugin.Setting {
 		current = u.defaults.GetDefaults()
 	}
 	declared := u.app.GetAppDeclaration()
+	shell := manifest.Manifest{Settings: declared}
 	entries := make([]plugin.Setting, 0, len(declared))
 	for _, one := range declared {
 		options := one.Options
@@ -44,7 +46,7 @@ func (u *ListAppSettings) Execute() []plugin.Setting {
 		}
 		setting := plugin.NewSetting(one, defaultJSON, options)
 		setting.ActiveOptions = options
-		setting.IsShown = true
+		setting.IsShown = shell.IsSettingShown(one, map[string]any{})
 		path := append([]string{settingsdomain.AppOwner}, strings.Split(one.Key, ".")...)
 		if value, found := current.GetValue(path...); found {
 			if encoded, err := u.codec.Encode(value); err == nil {

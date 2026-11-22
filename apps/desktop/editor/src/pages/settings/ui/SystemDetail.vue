@@ -1,13 +1,14 @@
 <script setup lang="ts">
 /**
  * The System, the Appearance or the Editor page: the toolbar and the settings the core declares for
- * the owner `app` that belong to the page, drawn by the renderer of the plugins. Appearance holds
+ * the owner `app` that belong to the page, drawn by the renderer of the plugins, in the islands of
+ * the groups the core declares. Appearance holds
  * the `appearance.*` settings and Editor the `editor.*` ones; System holds the rest, the settings of connection rows below them as
  * the plugin pages draw them, and the path of the numen.json configuration file.
  */
 import { computed } from 'vue'
-import { PluginSettingsCard, SettingsPage } from '@numen/plugin-manager'
-import PluginFields from './plugins/PluginFields.vue'
+import { SettingsPage } from '@numen/plugin-manager'
+import PluginSettings from './plugins/PluginSettings.vue'
 import PluginConnectionSections from './plugins/PluginConnectionSections.vue'
 import type { PluginInfo } from '@/entities/settings'
 import type { InstallationConnections, InstallationPlugin, InstallationSettings } from '../types'
@@ -61,6 +62,7 @@ const owner = computed<PluginInfo>(() => ({
   hasFrontend: false,
   hasBackend: false,
   settings: props.manager.app.value.filter((one) => getSectionOf(one.key) === props.section),
+  settingGroups: props.manager.appGroups.value,
 }))
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -81,9 +83,13 @@ function onBack(): void {
         @open-connections="emit('open-connections')"
       />
 
-      <PluginSettingsCard>
-        <PluginFields :settings="props.settings" :host="props.manager" :plugin="owner" />
-      </PluginSettingsCard>
+      <PluginSettings
+        :settings="props.settings"
+        :host="props.manager"
+        :plugin="owner"
+        :marked="[]"
+        :focused="null"
+      />
 
       <PluginConnectionSections
         v-if="props.section === 'system'"
