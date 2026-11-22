@@ -17,6 +17,7 @@ import (
 const (
 	fieldsSentence   = "A task is a line `- [ ] text` of a note; its fields are written in the text as todo.txt does: `due:YYYY-MM-DD`, `rec:1w`, `pri:A` or a leading `(A)`, `+project` and `@context`."
 	lineSentence     = "A task is addressed by its note path and its line from task_list; a write is refused when the line is no longer that task."
+	expectedSentence = "expectedText is required: pass the text of the task from task_list, so a line number gone stale never changes another task."
 	conflictSentence = "A write goes through the note with the conflict check of a tick in the editor, so a note changed meanwhile is refused or retried once."
 )
 
@@ -197,7 +198,7 @@ type TaskEditInput struct {
 	Path         string `json:"path" jsonschema:"the path of the note"`
 	Line         int    `json:"line" jsonschema:"the line of the task from task_list"`
 	Text         string `json:"text" jsonschema:"the new text with its fields, on one line, replacing everything after the checkbox"`
-	ExpectedText string `json:"expectedText,omitempty" jsonschema:"the text of the task from task_list; the edit is refused when the task now has other text"`
+	ExpectedText string `json:"expectedText" jsonschema:"required: the text of the task from task_list; the edit is refused when the task now has other text"`
 }
 
 func (t *Tools) addTaskEdit(registry *tools.Registry) error {
@@ -206,7 +207,7 @@ func (t *Tools) addTaskEdit(registry *tools.Registry) error {
 		Title:        "Edit a task",
 		Description:  "Replace the text of a task, its fields included, and keep its checkbox state, indentation and list marker.",
 		Effect:       tools.ReadWrite,
-		Instructions: []string{fieldsSentence, lineSentence, conflictSentence},
+		Instructions: []string{fieldsSentence, lineSentence, expectedSentence, conflictSentence},
 	}, func(ctx context.Context, in TaskEditInput) (TaskOutput, error) {
 		scope, err := t.getScope(ctx)
 		if err != nil {
@@ -220,7 +221,7 @@ func (t *Tools) addTaskEdit(registry *tools.Registry) error {
 type TaskRemoveInput struct {
 	Path         string `json:"path" jsonschema:"the path of the note"`
 	Line         int    `json:"line" jsonschema:"the line of the task from task_list"`
-	ExpectedText string `json:"expectedText,omitempty" jsonschema:"the text of the task from task_list; the removal is refused when the task now has other text"`
+	ExpectedText string `json:"expectedText" jsonschema:"required: the text of the task from task_list; the removal is refused when the task now has other text"`
 }
 
 func (t *Tools) addTaskRemove(registry *tools.Registry) error {
@@ -229,7 +230,7 @@ func (t *Tools) addTaskRemove(registry *tools.Registry) error {
 		Title:        "Remove a task",
 		Description:  "Delete the line of a task from its note. The line cannot be restored, so list the task first.",
 		Effect:       tools.ReadWrite,
-		Instructions: []string{lineSentence, conflictSentence},
+		Instructions: []string{lineSentence, expectedSentence, conflictSentence},
 	}, func(ctx context.Context, in TaskRemoveInput) (TaskOutput, error) {
 		scope, err := t.getScope(ctx)
 		if err != nil {
@@ -248,6 +249,8 @@ func describe(path string, err error) error {
 		return fmt.Errorf("%s is not a note of the vault", path)
 	case errors.Is(err, edit.ErrNotTask):
 		return errors.New("the line is not a task; list the tasks again")
+	case errors.Is(err, edit.ErrNoExpected):
+		return errors.New("expectedText is required: pass the text of the task from task_list")
 	case errors.Is(err, edit.ErrChanged):
 		return errors.New("the task text is not the expected text; list the tasks again")
 	}

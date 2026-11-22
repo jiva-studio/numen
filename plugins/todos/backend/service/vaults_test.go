@@ -100,8 +100,8 @@ func TestToolsWriteOnlyTheShownVault(t *testing.T) {
 	}{
 		{"add", "task_add", map[string]any{"path": "n.md", "text": "new"}, "- [ ] in a due:2026-11-01\n- [ ] new\n"},
 		{"tick", "task_set_done", map[string]any{"path": "n.md", "line": 1, "done": true}, "- [x] in a due:2026-11-01 done:2026-11-14\n"},
-		{"edit", "task_edit", map[string]any{"path": "n.md", "line": 1, "text": "changed"}, "- [ ] changed\n"},
-		{"remove", "task_remove", map[string]any{"path": "n.md", "line": 1}, ""},
+		{"edit", "task_edit", map[string]any{"path": "n.md", "line": 1, "text": "changed", "expectedText": "in a"}, "- [ ] changed\n"},
+		{"remove", "task_remove", map[string]any{"path": "n.md", "line": 1, "expectedText": "in a"}, ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -127,8 +127,8 @@ func TestToolsRefuseACallWithNoVaultAndTouchNothing(t *testing.T) {
 		"task_list":     {},
 		"task_add":      {"path": "n.md", "text": "new"},
 		"task_set_done": {"path": "n.md", "line": 1, "done": true},
-		"task_edit":     {"path": "n.md", "line": 1, "text": "x"},
-		"task_remove":   {"path": "n.md", "line": 1},
+		"task_edit":     {"path": "n.md", "line": 1, "text": "x", "expectedText": "in a"},
+		"task_remove":   {"path": "n.md", "line": 1, "expectedText": "in a"},
 	}
 	for name, args := range calls {
 		t.Run(name, func(t *testing.T) {

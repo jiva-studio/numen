@@ -53,7 +53,7 @@ func startWithWriter(t *testing.T, notes map[string]string, getWriter func(*host
 		t.Fatal(err)
 	}
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
-		return mount(s, tasks, complete.New(vault, writer, tasks))
+		return mount(t.Context(), s, tasks, complete.New(vault, writer, tasks))
 	})
 	if err != nil {
 		t.Fatal(err)

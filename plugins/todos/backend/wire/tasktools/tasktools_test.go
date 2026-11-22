@@ -17,8 +17,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/todos/backend/wire/tasktools"
 )
 
-const today = "2026-11-14"
-
 type fixedClock struct{}
 
 func (fixedClock) Now() time.Time {
@@ -246,7 +244,7 @@ func TestTaskEditReplacesTheTextAndRefusesAChangedTask(t *testing.T) {
 	if got := getError(t, s, "task_edit", map[string]any{"path": "Home.md", "line": 5, "text": "x", "expectedText": "read a book"}); !strings.Contains(got, "expected text") {
 		t.Errorf("error = %q", got)
 	}
-	if got := getError(t, s, "task_edit", map[string]any{"path": "Home.md", "line": 1, "text": "x"}); !strings.Contains(got, "not a task") {
+	if got := getError(t, s, "task_edit", map[string]any{"path": "Home.md", "line": 1, "text": "x", "expectedText": "x"}); !strings.Contains(got, "not a task") {
 		t.Errorf("error = %q", got)
 	}
 }
@@ -254,13 +252,13 @@ func TestTaskEditReplacesTheTextAndRefusesAChangedTask(t *testing.T) {
 func TestTaskRemoveDeletesTheLine(t *testing.T) {
 	s := newSession(t)
 
-	removed := call[tasktools.TaskOutput](t, s, "task_remove", map[string]any{"path": "Home.md", "line": 4})
+	removed := call[tasktools.TaskOutput](t, s, "task_remove", map[string]any{"path": "Home.md", "line": 4, "expectedText": "buy milk"})
 
 	want := strings.Replace(homeNote, "- [x] buy milk done:2026-11-01\n", "", 1)
 	if got, _ := s.vault.Content("Home.md"); got != want || removed.Text != "buy milk" {
 		t.Errorf("note = %q, removed = %+v", got, removed)
 	}
-	if got := getError(t, s, "task_remove", map[string]any{"path": "Home.md", "line": 1}); !strings.Contains(got, "not a task") {
+	if got := getError(t, s, "task_remove", map[string]any{"path": "Home.md", "line": 1, "expectedText": "x"}); !strings.Contains(got, "not a task") {
 		t.Errorf("error = %q", got)
 	}
 }

@@ -26,6 +26,8 @@ var (
 	ErrChanged = errors.New("the task changed since it was listed")
 	// ErrStale is a note that changed between the read and the write, twice.
 	ErrStale = errors.New("the note changed while the task was written")
+	// ErrNoExpected is an edit or a removal that does not say the text of the task it targets.
+	ErrNoExpected = errors.New("the expected text of the task is required")
 	// ErrInvalidText is a task text that is empty or has a line break.
 	ErrInvalidText = errors.New("the task text must be one non-empty line")
 )
@@ -46,6 +48,7 @@ func New(files ports.FileReader, writer ports.FileWriter, store ports.NoteStore)
 	return &Editor{files: files, writer: writer, store: store, mu: sync.Mutex{}}
 }
 
+// Find returns the task at the line of the note.
 func (e *Editor) Find(ctx context.Context, path string, line int) (todo.Task, error) {
 	raw, _, err := e.files.Read(ctx, path)
 	if err != nil {
@@ -71,12 +74,15 @@ func (e *Editor) Add(ctx context.Context, path, text string) (todo.Task, error) 
 		}
 		line := bytes.Count(content, []byte("\n")) + 1
 		return append(bytes.Clone(content), todo.NewLine(text)+"\n"...), line, nil
-	}, true)
+	})
 }
 
 // Edit replaces the text after the checkbox of the task at the line and returns the task written.
-// A non-empty expected text must equal the text of the task now.
+// The expected text is required and must equal the text of the task now.
 func (e *Editor) Edit(ctx context.Context, path string, line int, expected, text string) (todo.Task, error) {
+	if expected == "" {
+		return todo.Task{}, ErrNoExpected
+	}
 	text = strings.TrimSpace(text)
 	if err := checkText(text); err != nil {
 		return todo.Task{}, err
@@ -91,59 +97,74 @@ func (e *Editor) Edit(ctx context.Context, path string, line int, expected, text
 			return nil, 0, fmt.Errorf("%w: %w", ErrInvalidText, err)
 		}
 		return replaceLine(raw, line, changed), line, nil
-	}, true)
+	})
 }
 
-// Remove deletes the task line, with its line break, and returns the task removed. A non-empty
-// expected text must equal the text of the task now.
+// Remove deletes the task line, with its line break, and returns the task removed. The expected
+// text is required and must equal the text of the task now.
 func (e *Editor) Remove(ctx context.Context, path string, line int, expected string) (todo.Task, error) {
+	if expected == "" {
+		return todo.Task{}, ErrNoExpected
+	}
 	var removed todo.Task
-	_, err := e.write(ctx, path, func(raw []byte) ([]byte, int, error) {
+	err := e.run(ctx, path, func(raw []byte) ([]byte, error) {
 		found, err := findAt(raw, path, line, expected)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		removed = found
-		return replaceLine(raw, line, ""), 0, nil
-	}, false)
+		return replaceLine(raw, line, ""), nil
+	})
 	return removed, err
 }
 
+// write changes the note and returns the task found at the line the change reports.
 func (e *Editor) write(
-	ctx context.Context, path string, change func(raw []byte) ([]byte, int, error), isReturned bool,
+	ctx context.Context, path string, change func(raw []byte) ([]byte, int, error),
 ) (todo.Task, error) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	task, err := e.attempt(ctx, path, change, isReturned)
-	if errors.Is(err, host.ErrStale) {
-		task, err = e.attempt(ctx, path, change, isReturned)
-	}
-	if errors.Is(err, host.ErrStale) {
-		return todo.Task{}, ErrStale
-	}
-	return task, err
-}
-
-func (e *Editor) attempt(
-	ctx context.Context, path string, change func(raw []byte) ([]byte, int, error), isReturned bool,
-) (todo.Task, error) {
-	raw, baseline, err := e.files.Read(ctx, path)
-	if err != nil {
-		return todo.Task{}, convertReadError(err)
-	}
-	content, line, err := change(raw)
+	var line int
+	var content []byte
+	err := e.run(ctx, path, func(raw []byte) ([]byte, error) {
+		var err error
+		content, line, err = change(raw)
+		return content, err
+	})
 	if err != nil {
 		return todo.Task{}, err
+	}
+	return findAt(content, path, line, "")
+}
+
+// run reads the note, writes what change returns over the stat it was read with, and retries once
+// when the note changed meanwhile.
+func (e *Editor) run(ctx context.Context, path string, change func(raw []byte) ([]byte, error)) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	err := e.attempt(ctx, path, change)
+	if errors.Is(err, host.ErrStale) {
+		err = e.attempt(ctx, path, change)
+	}
+	if errors.Is(err, host.ErrStale) {
+		return ErrStale
+	}
+	return err
+}
+
+func (e *Editor) attempt(ctx context.Context, path string, change func(raw []byte) ([]byte, error)) error {
+	raw, baseline, err := e.files.Read(ctx, path)
+	if err != nil {
+		return convertReadError(err)
+	}
+	content, err := change(raw)
+	if err != nil {
+		return err
 	}
 	stat, err := e.writer.Write(ctx, path, content, baseline)
 	if err != nil {
-		return todo.Task{}, err
+		return err
 	}
 	e.store.StoreNote(path, content, stat)
-	if !isReturned {
-		return todo.Task{}, nil
-	}
-	return findAt(content, path, line, "")
+	return nil
 }
 
 func convertReadError(err error) error {

@@ -102,9 +102,10 @@ func (i *Index) Scan(ctx context.Context) error {
 	if _, err := i.visit(ctx, paths, i.readNote); err != nil {
 		return err
 	}
+	known := toSet(paths)
 	i.mu.Lock()
 	for path := range i.entries {
-		if !slices.Contains(paths, path) {
+		if _, isKnown := known[path]; !isKnown {
 			i.removeEntry(path)
 		}
 	}
@@ -330,10 +331,11 @@ func (i *Index) checkAll(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	known := toSet(paths)
 	i.mu.Lock()
 	isChanged := false
 	for path := range i.entries {
-		if !slices.Contains(paths, path) {
+		if _, isKnown := known[path]; !isKnown {
 			i.removeEntry(path)
 			isChanged = true
 		}
@@ -343,4 +345,12 @@ func (i *Index) checkAll(ctx context.Context) error {
 		return err
 	}
 	return i.refreshAllTags(ctx)
+}
+
+func toSet(paths []string) map[string]struct{} {
+	set := make(map[string]struct{}, len(paths))
+	for _, path := range paths {
+		set[path] = struct{}{}
+	}
+	return set
 }

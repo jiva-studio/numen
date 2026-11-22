@@ -134,7 +134,12 @@ func TestEditReplacesTheTextAfterTheCheckbox(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			vault, editor, _ := setup(t, c.note)
 
-			task, err := editor.Edit(t.Context(), "Home.md", c.line, "", c.text)
+			found, err := editor.Find(t.Context(), "Home.md", c.line)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			task, err := editor.Edit(t.Context(), "Home.md", c.line, found.Text, c.text)
 
 			if err != nil {
 				t.Fatal(err)
@@ -157,9 +162,10 @@ func TestEditAndRemoveRefuseALineThatIsNotTheTaskExpected(t *testing.T) {
 		expected string
 		want     error
 	}{
-		{"a heading", 1, "", edit.ErrNotTask},
-		{"a list item", 3, "", edit.ErrNotTask},
-		{"beyond the note", 9, "", edit.ErrNotTask},
+		{"a heading", 1, "one", edit.ErrNotTask},
+		{"a list item", 3, "one", edit.ErrNotTask},
+		{"beyond the note", 9, "one", edit.ErrNotTask},
+		{"no expected text", 2, "", edit.ErrNoExpected},
 		{"other text", 2, "two", edit.ErrChanged},
 	}
 	for _, c := range cases {
@@ -182,7 +188,7 @@ func TestEditAndRemoveRefuseALineThatIsNotTheTaskExpected(t *testing.T) {
 func TestEditRefusesATextThatIsNotATask(t *testing.T) {
 	vault, editor, _ := setup(t, "- [ ] one\n")
 
-	_, err := editor.Edit(t.Context(), "Home.md", 1, "", "  \t")
+	_, err := editor.Edit(t.Context(), "Home.md", 1, "one", "  \t")
 
 	if !errors.Is(err, edit.ErrInvalidText) || content(t, vault) != "- [ ] one\n" {
 		t.Errorf("err = %v, want ErrInvalidText with the note unchanged", err)
@@ -236,7 +242,7 @@ func TestAWriteOverANoteChangedMeanwhileIsRetriedOnceThenRefused(t *testing.T) {
 			writer := &racingWriter{vault: vault, stale: c.stale}
 			editor := edit.New(vault, writer, &recordingStore{})
 
-			_, err := editor.Edit(t.Context(), "Home.md", 1, "", "two")
+			_, err := editor.Edit(t.Context(), "Home.md", 1, "one", "two")
 
 			if !errors.Is(err, c.wantErr) || writer.writes != c.wantWrites {
 				t.Errorf("err = %v after %d writes, want %v after %d", err, writer.writes, c.wantErr, c.wantWrites)
