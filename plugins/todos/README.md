@@ -50,3 +50,5 @@ A task is addressed by note path and line from `task_list`. Lines count the line
 ## Settings
 
 - **Ignored folders**: Folders whose notes are not searched for tasks, comma separated.
+- **Hide task fields until the line is focused**: Shows due, done, rec, pri, +, @ and # only on the line you edit.
+- **Overdue**, **Today**, **Next 7 days**, **No date**: Which groups the title bar popup lists and the chip counts. All four are on by default. Next 7 days holds the open tasks due in the six days after today; a task due today is only in Today.

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * The chip of the title bar and the popover with the lists Overdue, Today and No date.
+ * The chip of the title bar and the popover with the lists Overdue, Today, Next 7 days and No date.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { ListChecks } from '@lucide/vue'
 import { isPageMove, Tooltip, useMenuDismissal, useTooltip } from '@numen/ui'
-import { getChip } from '../model/chip'
+import { getChip, type ShownGroups } from '../model/chip'
 import { getNoteTitle, useTaskGroups } from '../model/useTaskGroups'
 import { useTaskTicks } from '../model/useTaskTicks'
 import { WORDS as words } from '../../words'
@@ -16,6 +16,7 @@ const props = defineProps<{
   summary: Summary | null
   api: TaskReader & TaskWriter
   getToday: () => string
+  shown: ShownGroups
 }>()
 
 /* --------------------------------- Events --------------------------------- */
@@ -28,9 +29,9 @@ const emit = defineEmits<{
 const isOpen = ref(false)
 const root = useTemplateRef<HTMLElement>('root')
 const dismissal = useMenuDismissal(root, onClose, isPageMove)
-const chip = computed(() => getChip(props.summary))
+const chip = computed(() => getChip(props.summary, props.shown))
 const label = computed(() => `${words.chipLabel}: ${chip.value.count}`)
-const { groups, load } = useTaskGroups(props.api, props.getToday)
+const { groups, load } = useTaskGroups(props.api, props.getToday, () => props.shown)
 const ticks = useTaskTicks(props.api, props.getToday, load, (message) => emit('showError', message))
 const { isRecurring, isTickable } = ticks
 const tip = useTooltip()
@@ -45,7 +46,7 @@ watch(isOpen, (open) => {
   load().catch(() => undefined) // the popover keeps the lists it has; opening it again reads again
 })
 watch(
-  () => props.summary,
+  () => [props.summary, props.shown],
   () => {
     if (isOpen.value) load().catch(() => undefined) // the popover keeps the lists it has until the next summary
   },

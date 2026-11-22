@@ -28,14 +28,14 @@ type DueFilter string
 
 // DueFilter values.
 const (
-	DueFilterUnspecified DueFilter = ""
-	DueFilterAny         DueFilter = "any"
-	DueFilterNone        DueFilter = "none"
-	DueFilterOverdue     DueFilter = "overdue"
-	DueFilterToday       DueFilter = "today"
-	DueFilterThisWeek    DueFilter = "thisWeek"
-	DueFilterUpcoming    DueFilter = "upcoming"
-	DueFilterRange       DueFilter = "range"
+	DueFilterUnspecified   DueFilter = ""
+	DueFilterAny           DueFilter = "any"
+	DueFilterNone          DueFilter = "none"
+	DueFilterOverdue       DueFilter = "overdue"
+	DueFilterToday         DueFilter = "today"
+	DueFilterThisWeek      DueFilter = "thisWeek"
+	DueFilterNextSevenDays DueFilter = "nextSevenDays"
+	DueFilterRange         DueFilter = "range"
 )
 
 // Change is what a tick or an untick did to the line.

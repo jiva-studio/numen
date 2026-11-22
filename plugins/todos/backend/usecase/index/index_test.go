@@ -171,7 +171,7 @@ func TestSummarizeCountsOpenTasksOverdueDueTodayAndWithNoDate(t *testing.T) {
 
 	got := f.index.Summarize(today)
 
-	want := Summary{IsReady: true, OverdueCount: 2, TodayCount: 1, ThisWeekCount: 1, NoDateCount: 2, UnreadableCount: 0}
+	want := Summary{IsReady: true, OverdueCount: 2, TodayCount: 1, NextSevenDaysCount: 1, NoDateCount: 2, UnreadableCount: 0}
 	if got != want {
 		t.Errorf("summary = %+v, want %+v", got, want)
 	}
@@ -545,16 +545,16 @@ func TestTheGroupsOfTheSummaryAreDisjointAndMatchTheListsOfTheirFilters(t *testi
 	f.scan(t)
 
 	groups := map[string]filter.DueFilter{
-		"overdue":  filter.DueOverdue,
-		"today":    filter.DueToday,
-		"thisWeek": filter.DueUpcoming,
-		"noDate":   filter.DueNone,
+		"overdue":       filter.DueOverdue,
+		"today":         filter.DueToday,
+		"nextSevenDays": filter.DueNextSevenDays,
+		"noDate":        filter.DueNone,
 	}
 	want := map[string][]string{
-		"overdue":  {"a.md: yesterday"},
-		"today":    {"a.md: now"},
-		"thisWeek": {"a.md: tomorrow", "a.md: in six days"},
-		"noDate":   {"b.md: floating"},
+		"overdue":       {"a.md: yesterday"},
+		"today":         {"a.md: now"},
+		"nextSevenDays": {"a.md: tomorrow", "a.md: in six days"},
+		"noDate":        {"b.md: floating"},
 	}
 	for name, due := range groups {
 		got := texts(f.list(filter.Filter{Due: due}))
@@ -563,7 +563,7 @@ func TestTheGroupsOfTheSummaryAreDisjointAndMatchTheListsOfTheirFilters(t *testi
 		}
 	}
 	got := f.index.Summarize(today)
-	if got.OverdueCount != 1 || got.TodayCount != 1 || got.ThisWeekCount != 2 || got.NoDateCount != 1 {
-		t.Errorf("summary = %+v, want overdue 1, today 1, this week 2, no date 1", got)
+	if got.OverdueCount != 1 || got.TodayCount != 1 || got.NextSevenDaysCount != 2 || got.NoDateCount != 1 {
+		t.Errorf("summary = %+v, want overdue 1, today 1, next seven days 2, no date 1", got)
 	}
 }

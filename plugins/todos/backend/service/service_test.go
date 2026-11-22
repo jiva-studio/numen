@@ -125,7 +125,7 @@ func TestGetSummaryCountsTheOpenTasksOfTheDay(t *testing.T) {
 	var got api.Summary
 	status, _ := a.call(t, api.MethodGetSummary, api.GetSummaryRequest{Today: today}, &got)
 
-	want := api.Summary{IsReady: true, OverdueCount: 1, TodayCount: 1, ThisWeekCount: 0, NoDateCount: 1, UnreadableCount: 1}
+	want := api.Summary{IsReady: true, OverdueCount: 1, TodayCount: 1, NextSevenDaysCount: 0, NoDateCount: 1, UnreadableCount: 1}
 	if status != http.StatusOK || got != want {
 		t.Errorf("GetSummary = %d %+v, want %+v", status, got, want)
 	}

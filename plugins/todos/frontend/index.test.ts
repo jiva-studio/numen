@@ -92,7 +92,7 @@ describe('the todos frontend', () => {
     expect(fake.calls.getSummary).toEqual([TODAY])
   })
 
-  it('draws the count of overdue tasks and tasks due today in the view', async () => {
+  it('draws the count of the shown groups in the view', async () => {
     const { context, fake } = setup()
     fake.push({ revision: 1, isReady: true })
     await settle()
@@ -100,6 +100,28 @@ describe('the todos frontend', () => {
     view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
       attachTo: document.body,
     })
+
+    expect(view.find('button').text()).toContain(
+      String(
+        SUMMARY.overdueCount +
+          SUMMARY.todayCount +
+          SUMMARY.nextSevenDaysCount +
+          SUMMARY.noDateCount,
+      ),
+    )
+  })
+
+  it('counts only the groups the settings show, and follows a change at once', async () => {
+    const { context, fake } = setup()
+    fake.push({ revision: 1, isReady: true })
+    await settle()
+    view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
+
+    context.setSetting('showNoDate', false)
+    context.setSetting('showNextWeek', false)
+    await settle()
 
     expect(view.find('button').text()).toContain(String(SUMMARY.overdueCount + SUMMARY.todayCount))
   })
@@ -291,7 +313,13 @@ describe('the todos frontend', () => {
     await settle()
     expect(view.findAll('li')).toHaveLength(1)
 
-    fake.setSummary({ ...SUMMARY, overdueCount: 0, todayCount: 1 })
+    fake.setSummary({
+      ...SUMMARY,
+      overdueCount: 0,
+      todayCount: 1,
+      nextSevenDaysCount: 0,
+      noDateCount: 0,
+    })
     fake.setTasks({
       today: {
         tasks: [task({ path: 'Daily.md', line: 2, text: 'water the plants', due: TODAY })],

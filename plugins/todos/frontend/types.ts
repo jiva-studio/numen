@@ -29,7 +29,8 @@ export interface Task {
   readonly depth: number
 }
 
-export type DueFilter = 'any' | 'none' | 'overdue' | 'today' | 'thisWeek' | 'range'
+export type DueFilter =
+  'any' | 'none' | 'overdue' | 'today' | 'thisWeek' | 'nextSevenDays' | 'range'
 
 /** What ListTasks selects by; its fields combine with AND. */
 export interface Filter {
@@ -63,6 +64,7 @@ export interface Summary {
   readonly isReady: boolean
   readonly overdueCount: number
   readonly todayCount: number
+  readonly nextSevenDaysCount: number
   readonly noDateCount: number
   readonly unreadableCount: number
 }

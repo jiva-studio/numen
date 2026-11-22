@@ -2,7 +2,7 @@
  * Frontend entrypoint for the Todos plugin: a title bar chip that counts the overdue tasks and the
  * tasks due today, and a popover with the lists.
  */
-import { defineComponent, h, watch } from 'vue'
+import { defineComponent, h, ref, watch, type Ref } from 'vue'
 import {
   definePlugin,
   type Disposable,
@@ -18,6 +18,7 @@ import { freshTaskLine } from './model/freshTaskLine'
 import { useTaskFeed, type TaskFeed } from './model/useTaskFeed'
 import type { Filter, Task } from './types'
 import { TodosStatus } from './status'
+import type { ShownGroups } from './status/model/chip'
 import { createTaskEditorExtension, TASKS_EXTENSION } from './editor'
 
 /** The id the manifest declares the title bar view under. */
@@ -74,12 +75,32 @@ async function editorLine(
     : undefined
 }
 
-function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost) {
+const SHOWN_SETTINGS: readonly (readonly [keyof ShownGroups, string])[] = [
+  ['overdue', 'showOverdue'],
+  ['today', 'showToday'],
+  ['nextSevenDays', 'showNextWeek'],
+  ['noDate', 'showNoDate'],
+]
+
+function readShownGroups(plugin: PluginContext): ShownGroups {
+  const isShown = (key: string): boolean => plugin.settings.get<boolean>(key) !== false
+  return Object.fromEntries(
+    SHOWN_SETTINGS.map(([group, key]) => [group, isShown(key)]),
+  ) as unknown as ShownGroups
+}
+
+function createTodosView(
+  feed: TaskFeed,
+  api: TodosApi,
+  workspace: WorkspaceHost,
+  shown: Readonly<Ref<ShownGroups>>,
+) {
   return defineComponent({
     name: 'TodosView',
     setup: () => () =>
       h(TodosStatus, {
         summary: feed.summary.value,
+        shown: shown.value,
         api,
         getToday: () => workspace.window.getToday(),
         onOpen: async (target: { path: string; line: number; raw: string }) => {
@@ -116,9 +137,16 @@ export const activate = (
   // depend on the stream alone.
   const relay = createRefreshRelay(parts.api, parts.timer, refreshSummary)
 
+  const shown = ref(readShownGroups(plugin))
+  for (const [, key] of SHOWN_SETTINGS) {
+    plugin.settings.onChange<boolean>(key, () => {
+      shown.value = readShownGroups(plugin)
+    })
+  }
+
   plugin.register.slotView({
     id: TODOS_VIEW,
-    component: createTodosView(feed, parts.api, workspace),
+    component: createTodosView(feed, parts.api, workspace, shown),
   })
   const editorExtension = plugin.register.editorExtension?.bind(plugin.register)
   if (!editorExtension) {

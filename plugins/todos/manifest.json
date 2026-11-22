@@ -156,6 +156,35 @@
       "title": "Hide task fields until the line is focused",
       "description": "Shows due, done, rec, pri, +, @ and # only on the line you edit",
       "default": false
+    },
+    {
+      "key": "showOverdue",
+      "type": "boolean",
+      "title": "Overdue",
+      "description": "Lists and counts the open tasks due before today in the title bar",
+      "default": true
+    },
+    {
+      "key": "showToday",
+      "type": "boolean",
+      "title": "Today",
+      "description": "Lists and counts the open tasks due today in the title bar",
+      "default": true
+    },
+    {
+      "key": "showNextWeek",
+      "type": "boolean",
+      "title": "Next 7 days",
+      "description": "Lists and counts the open tasks due in the next days in the title bar",
+      "details": "Open tasks due in the six days after today",
+      "default": true
+    },
+    {
+      "key": "showNoDate",
+      "type": "boolean",
+      "title": "No date",
+      "description": "Lists and counts the open tasks with no due date in the title bar",
+      "default": true
     }
   ],
   "backend": {

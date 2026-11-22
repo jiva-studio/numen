@@ -63,10 +63,15 @@ func TestTheManifestDeclaresNoTabKindAndNoCommandBeforeTheTabExists(t *testing.T
 	}
 }
 
-func TestTheManifestDeclaresTheIgnoredFoldersAndHideFieldsSettings(t *testing.T) {
+func TestTheManifestDeclaresTheSettings(t *testing.T) {
 	settings := readManifest(t).Settings
 
-	if len(settings) != 2 || settings[0].Key != "ignoredFolders" || settings[1].Key != "hideFields" {
-		t.Errorf("settings = %+v", settings)
+	var keys []string
+	for _, setting := range settings {
+		keys = append(keys, setting.Key)
+	}
+	want := []string{"ignoredFolders", "hideFields", "showOverdue", "showToday", "showNextWeek", "showNoDate"}
+	if !slices.Equal(keys, want) {
+		t.Errorf("setting keys = %v, want %v", keys, want)
 	}
 }

@@ -2,6 +2,7 @@
 export const WORDS = {
   groupOverdue: 'Overdue',
   groupToday: 'Today',
+  groupNextSevenDays: 'Next 7 days',
   groupNoDate: 'No date',
   chipLabel: 'Tasks due',
   taskDone: 'Done',

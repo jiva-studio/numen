@@ -42,6 +42,7 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
       isReady: true,
       overdueCount: 2,
       todayCount: 1,
+      nextSevenDaysCount: 4,
       noDateCount: 3,
       unreadableCount: 1,
     },

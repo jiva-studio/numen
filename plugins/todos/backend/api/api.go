@@ -54,12 +54,12 @@ type GetSummaryRequest struct {
 
 // Summary counts the open tasks.
 type Summary struct {
-	IsReady         bool `json:"isReady"`
-	OverdueCount    int  `json:"overdueCount"`
-	TodayCount      int  `json:"todayCount"`
-	ThisWeekCount   int  `json:"thisWeekCount"`
-	NoDateCount     int  `json:"noDateCount"`
-	UnreadableCount int  `json:"unreadableCount"`
+	IsReady            bool `json:"isReady"`
+	OverdueCount       int  `json:"overdueCount"`
+	TodayCount         int  `json:"todayCount"`
+	NextSevenDaysCount int  `json:"nextSevenDaysCount"`
+	NoDateCount        int  `json:"noDateCount"`
+	UnreadableCount    int  `json:"unreadableCount"`
 }
 
 // ListTasksRequest asks for the tasks a filter accepts. A limit of zero is 500; the most is 2000.

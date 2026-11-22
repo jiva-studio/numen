@@ -41,6 +41,7 @@ export const SUMMARY: Summary = {
   isReady: true,
   overdueCount: 2,
   todayCount: 3,
+  nextSevenDaysCount: 2,
   noDateCount: 1,
   unreadableCount: 0,
 }

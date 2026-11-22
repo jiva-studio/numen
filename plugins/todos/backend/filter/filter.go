@@ -23,8 +23,8 @@ const (
 	DueToday DueFilter = "today"
 	// DueThisWeek accepts open tasks due in the seven days from today.
 	DueThisWeek DueFilter = "thisWeek"
-	// DueUpcoming accepts open tasks due after today within the seven days from today.
-	DueUpcoming DueFilter = "upcoming"
+	// DueNextSevenDays accepts open tasks due in the six days after today.
+	DueNextSevenDays DueFilter = "nextSevenDays"
 	// DueRange accepts tasks due from From to To, both included.
 	DueRange DueFilter = "range"
 )
@@ -78,7 +78,7 @@ func (f Filter) isStatusAccepted(task todo.Task) bool {
 
 func (f Filter) isDueAccepted(task todo.Task, today string) bool {
 	switch f.Due {
-	case DueNone, DueOverdue, DueToday, DueThisWeek, DueUpcoming:
+	case DueNone, DueOverdue, DueToday, DueThisWeek, DueNextSevenDays:
 		return task.Status == todo.StatusOpen && IsDueMatched(f.Due, task.Due, today)
 	case DueRange:
 		return task.Due != "" && (f.From == "" || task.Due >= f.From) && (f.To == "" || task.Due <= f.To)
@@ -98,7 +98,7 @@ func IsDueMatched(kind DueFilter, due, today string) bool {
 		return due == today
 	case DueThisWeek:
 		return due >= today && due <= todo.AddDays(today, daysOfWeek-1)
-	case DueUpcoming:
+	case DueNextSevenDays:
 		return due > today && due <= todo.AddDays(today, daysOfWeek-1)
 	case DueAny, DueRange:
 	}

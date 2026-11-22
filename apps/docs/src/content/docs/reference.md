@@ -184,6 +184,10 @@ The settings of the plugin Todos.
 | --- | --- | --- |
 | `ignoredFolders` | text | paths from the vault root, such as templates, archive/old. A note below one of them is skipped. |
 | `hideFields` | yes or no | shows due, done, rec, pri, +, @ and # only on the line you edit. |
+| `showOverdue` | yes or no | lists and counts the open tasks due before today in the title bar. |
+| `showToday` | yes or no | lists and counts the open tasks due today in the title bar. |
+| `showNextWeek` | yes or no | open tasks due in the six days after today. |
+| `showNoDate` | yes or no | lists and counts the open tasks with no due date in the title bar. |
 
 ### `md.numen.tools.media.importer`
 

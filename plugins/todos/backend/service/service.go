@@ -35,12 +35,12 @@ func getSummary(tasks *index.Index) func(context.Context, api.GetSummaryRequest)
 	return func(_ context.Context, req api.GetSummaryRequest) (api.Summary, error) {
 		summary := tasks.Summarize(req.Today)
 		return api.Summary{
-			IsReady:         summary.IsReady,
-			OverdueCount:    summary.OverdueCount,
-			TodayCount:      summary.TodayCount,
-			ThisWeekCount:   summary.ThisWeekCount,
-			NoDateCount:     summary.NoDateCount,
-			UnreadableCount: summary.UnreadableCount,
+			IsReady:            summary.IsReady,
+			OverdueCount:       summary.OverdueCount,
+			TodayCount:         summary.TodayCount,
+			NextSevenDaysCount: summary.NextSevenDaysCount,
+			NoDateCount:        summary.NoDateCount,
+			UnreadableCount:    summary.UnreadableCount,
 		}, nil
 	}
 }
