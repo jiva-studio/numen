@@ -27,12 +27,12 @@
   "frontend": {},
   "settings": [
     {
-      "key": "folder",
+      "key": "templates",
       "type": "string",
-      "title": "Templates folder",
-      "description": "The folder that holds the templates",
-      "details": "Each note in the folder is a template, and each subfolder is a group.",
-      "default": "Templates"
+      "title": "Template masks",
+      "description": "The masks of the paths that are templates, separated by commas",
+      "details": "A note whose path matches a mask is a template. * stands for part of a name, and ** for any number of folders. Under a mask that starts with a folder, each subfolder is a group.",
+      "default": "Templates/**, **/*.template.md"
     }
   ]
 }

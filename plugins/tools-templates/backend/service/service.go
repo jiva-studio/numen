@@ -6,34 +6,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/api"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/usecase/newnote"
 )
 
-const defaultFolder = "Templates"
-
-func normalizeFolder(raw string) string {
-	var kept []string
-	for segment := range strings.SplitSeq(strings.ReplaceAll(strings.TrimSpace(raw), `\`, "/"), "/") {
-		switch segment {
-		case "", ".":
-		case "..":
-			return defaultFolder
-		default:
-			kept = append(kept, segment)
-		}
-	}
-	if len(kept) == 0 {
-		return defaultFolder
-	}
-	return strings.Join(kept, "/")
-}
+const settingTemplates = "templates"
 
 func convertError(err error, template string) error {
 	switch {
@@ -60,13 +43,13 @@ func makeCreateNoteHandler(useCase newnote.CreateFromTemplate) func(context.Cont
 }
 
 func mount(s *server.Server, vault newnote.Vault, source newnote.Clock, ids newnote.IDs) error {
-	folder := newnote.NewFolder(defaultFolder)
+	masks := newnote.NewMasks(mask.Parse(""))
 	s.SetUpdateConfig(func(values map[string]string) {
-		if raw, isSet := values["folder"]; isSet {
-			folder.Set(normalizeFolder(raw))
+		if raw, isSet := values[settingTemplates]; isSet {
+			masks.Set(mask.Parse(raw))
 		}
 	})
-	useCase := newnote.NewCreateFromTemplate(vault, source, ids, folder.Get)
+	useCase := newnote.NewCreateFromTemplate(vault, source, ids, masks.Get)
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodCreateNote, makeCreateNoteHandler(useCase))
 	// gomutants:disable-next-line RETURN_ERROR_NIL reason="api.Service and api.MethodCreateNote are valid compile-time constants."

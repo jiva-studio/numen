@@ -1,0 +1,55 @@
+{
+  "parse": [
+    { "raw": "Templates/**,**/*.template.md", "masks": ["Templates/**", "**/*.template.md"] },
+    { "raw": "Templates/**\n**/*.template.md", "masks": ["Templates/**", "**/*.template.md"] },
+    { "raw": " Templates/** , ,\n ,Models/* ", "masks": ["Templates/**", "Models/*"] },
+    { "raw": "Notes\\Models\\**", "masks": ["Notes/Models/**"] },
+    { "raw": "/Notes/./Models/**", "masks": ["Notes/Models/**"] },
+    { "raw": "../Secret/**,Templates/**", "masks": ["Templates/**"] },
+    { "raw": "Notes/../Secret/**", "masks": [] },
+    { "raw": "", "masks": [] },
+    { "raw": "  , ", "masks": [] },
+    { "raw": "../a, ..", "masks": [] }
+  ],
+  "defaults": ["Templates/**", "**/*.template.md"],
+  "match": [
+    { "mask": "Templates/**", "path": "Templates/Meeting.md", "matches": true },
+    { "mask": "Templates/**", "path": "Templates/Work/Meeting.md", "matches": true },
+    { "mask": "Templates/**", "path": "Templates/Work/Deep/Meeting.md", "matches": true },
+    { "mask": "Templates/**", "path": "Notes/Meeting.md", "matches": false },
+    { "mask": "Templates/**", "path": "MyTemplates/Meeting.md", "matches": false },
+    { "mask": "templates/**", "path": "Templates/Meeting.md", "matches": false },
+    { "mask": "**/*.template.md", "path": "Meeting.template.md", "matches": true },
+    { "mask": "**/*.template.md", "path": "Notes/Meeting.template.md", "matches": true },
+    { "mask": "**/*.template.md", "path": "a/b/c/Meeting.template.md", "matches": true },
+    { "mask": "**/*.template.md", "path": "Notes/Meeting.md", "matches": false },
+    { "mask": "Models/*", "path": "Models/Meeting.md", "matches": true },
+    { "mask": "Models/*", "path": "Models/Work/Meeting.md", "matches": false },
+    { "mask": "Models/**/Daily.md", "path": "Models/Daily.md", "matches": true },
+    { "mask": "Models/**/Daily.md", "path": "Models/a/b/Daily.md", "matches": true },
+    { "mask": "Models/**/Daily.md", "path": "Models/a/b/Weekly.md", "matches": false },
+    { "mask": "Models/Daily?.md", "path": "Models/Daily1.md", "matches": true },
+    { "mask": "Models/Daily?.md", "path": "Models/Daily.md", "matches": false },
+    { "mask": "Models/[ab].md", "path": "Models/a.md", "matches": true },
+    { "mask": "Models/[ab].md", "path": "Models/c.md", "matches": false },
+    { "mask": "Models/Daily.md", "path": "Models/Daily.md", "matches": true },
+    { "mask": "**", "path": "Anything/here.md", "matches": true }
+  ],
+  "group": [
+    { "mask": "Templates/**", "path": "Templates/Meeting.md", "group": "" },
+    { "mask": "Templates/**", "path": "Templates/Work/Meeting.md", "group": "Work" },
+    { "mask": "Templates/**", "path": "Templates/Work/Deep/Meeting.md", "group": "Work/Deep" },
+    { "mask": "**/*.template.md", "path": "Meeting.template.md", "group": "" },
+    { "mask": "**/*.template.md", "path": "Notes/Meeting.template.md", "group": "Notes" },
+    { "mask": "**/*.template.md", "path": "Notes/Work/Meeting.template.md", "group": "Notes/Work" },
+    { "mask": "Models/*", "path": "Models/Meeting.md", "group": "" },
+    { "mask": "Models/Daily.md", "path": "Models/Daily.md", "group": "" },
+    { "mask": "Notes/*/Models/**", "path": "Notes/a/Models/x/Meeting.md", "group": "a/Models/x" },
+    { "mask": "**", "path": "Notes/Meeting.md", "group": "Notes" }
+  ],
+  "find": [
+    { "masks": "Templates/**,**/*.template.md", "path": "Templates/Work/a.template.md", "group": "Work" },
+    { "masks": "Templates/**,**/*.template.md", "path": "Notes/a.template.md", "group": "Notes" },
+    { "masks": "Templates/**,**/*.template.md", "path": "Notes/a.md", "group": null }
+  ]
+}

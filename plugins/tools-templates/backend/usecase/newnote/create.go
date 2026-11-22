@@ -16,16 +16,18 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/substitute"
 )
 
 const (
-	noteExtension = ".md"
+	noteExtension     = ".md"
+	templateExtension = ".template"
 	maxNames      = 100
 )
 
 var (
-	// ErrNotATemplate is a path that is not a note inside the templates folder.
+	// ErrNotATemplate is a path that is not a note any mask of the templates setting names.
 	ErrNotATemplate = errors.New("not a template")
 
 	// ErrInvalidNote is a template that does not produce a valid note.
@@ -62,22 +64,22 @@ type Result struct {
 	Path string
 }
 
-// CreateFromTemplate makes a note from a note of the templates folder.
+// CreateFromTemplate makes a note from a note the masks of the templates setting name.
 type CreateFromTemplate struct {
 	vault     Vault
 	clock     Clock
 	ids       IDs
-	getFolder func() string
+	getMasks func() mask.Set
 }
 
-// NewCreateFromTemplate returns the use case. getFolder is read at each call, so a changed setting applies at once.
-func NewCreateFromTemplate(vault Vault, clock Clock, ids IDs, getFolder func() string) CreateFromTemplate {
-	return CreateFromTemplate{vault: vault, clock: clock, ids: ids, getFolder: getFolder}
+// NewCreateFromTemplate returns the use case. getMasks is read at each call, so a changed setting applies at once.
+func NewCreateFromTemplate(vault Vault, clock Clock, ids IDs, getMasks func() mask.Set) CreateFromTemplate {
+	return CreateFromTemplate{vault: vault, clock: clock, ids: ids, getMasks: getMasks}
 }
 
 // Execute makes the note.
 func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, error) {
-	if !isTemplate(in.Template, u.getFolder()) {
+	if !isTemplate(in.Template, u.getMasks()) {
 		return Result{}, fmt.Errorf("%w: %s", ErrNotATemplate, in.Template)
 	}
 	raw, _, err := u.vault.Read(ctx, in.Template)
@@ -93,7 +95,7 @@ func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, er
 		return Result{}, fmt.Errorf("make the id of the note: %w", err)
 	}
 
-	stem := strings.TrimSuffix(pathpkg.Base(in.Template), noteExtension)
+	stem := getName(in.Template)
 	for number := 1; number <= maxNames; number++ {
 		name := stem
 		if number > 1 {
@@ -143,11 +145,20 @@ func (u CreateFromTemplate) isFree(ctx context.Context, path string) (bool, erro
 	return false, nil
 }
 
-func isTemplate(path, root string) bool {
-	if path != pathpkg.Clean(path) || !strings.HasPrefix(path, root+"/") || !strings.HasSuffix(path, noteExtension) {
+func isTemplate(path string, masks mask.Set) bool {
+	if path != pathpkg.Clean(path) || !strings.HasSuffix(path, noteExtension) || strings.TrimSuffix(pathpkg.Base(path), noteExtension) == "" {
 		return false
 	}
-	return strings.TrimSuffix(pathpkg.Base(path), noteExtension) != ""
+	_, isNamed := masks.Find(path)
+	return isNamed
+}
+
+func getName(template string) string {
+	stem := strings.TrimSuffix(pathpkg.Base(template), noteExtension)
+	if name := strings.TrimSuffix(stem, templateExtension); name != "" {
+		return name
+	}
+	return stem
 }
 
 // render is what a note is made from: the template text, its title and id, and the instant of the call.
@@ -173,19 +184,19 @@ func (r render) getContent() ([]byte, error) {
 // NewIDs returns the generator of the ids of new notes, seeded by the system.
 func NewIDs() IDs { return ulid.NewGenerator(rand.Reader) }
 
-// Folder holds the templates folder, which the host changes while calls are being served.
-type Folder struct {
-	value atomic.Pointer[string]
+// Masks holds the masks of the templates setting, which the host changes while calls are being served.
+type Masks struct {
+	value atomic.Pointer[mask.Set]
 }
 
-// NewFolder returns a folder that holds initial.
-func NewFolder(initial string) *Folder {
-	folder := new(Folder)
-	folder.Set(initial)
-	return folder
+// NewMasks returns masks that hold initial.
+func NewMasks(initial mask.Set) *Masks {
+	masks := new(Masks)
+	masks.Set(initial)
+	return masks
 }
 
-// Set replaces the folder.
-func (f *Folder) Set(folder string) { f.value.Store(&folder) }
+// Set replaces the masks.
+func (m *Masks) Set(set mask.Set) { m.value.Store(&set) }
 
-func (f *Folder) Get() string { return *f.value.Load() }
+func (m *Masks) Get() mask.Set { return *m.value.Load() }

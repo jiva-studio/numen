@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"slices"
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
 )
 
 type manifestShape struct {
@@ -40,7 +42,7 @@ func readManifest(t *testing.T) manifestShape {
 	return shape
 }
 
-func TestTheManifestDeclaresTheCommandTheFolderSettingTheFolderEntryAndTheService(t *testing.T) {
+func TestTheManifestDeclaresTheCommandTheMasksSettingTheFolderEntryAndTheService(t *testing.T) {
 	shape := readManifest(t)
 
 	if !slices.Equal(shape.Targets, []string{"desktop.editor"}) {
@@ -59,8 +61,11 @@ func TestTheManifestDeclaresTheCommandTheFolderSettingTheFolderEntryAndTheServic
 	if len(commands[0].Arguments) != 0 || commands[0].When != "" {
 		t.Errorf("the command has arguments or a condition: %+v", commands[0])
 	}
-	if len(shape.Settings) != 1 || shape.Settings[0].Key != "folder" || shape.Settings[0].Type != "string" || shape.Settings[0].Default != "Templates" {
+	if len(shape.Settings) != 1 || shape.Settings[0].Key != "templates" || shape.Settings[0].Type != "string" {
 		t.Errorf("settings = %+v", shape.Settings)
+	}
+	if got, want := mask.Parse(shape.Settings[0].Default).String(), mask.Parse("").String(); got != want {
+		t.Errorf("the default of the setting reads as %v, not as the defaults %v", got, want)
 	}
 	slots := shape.Contributes.Slots
 	if len(slots) != 1 || slots[0].Slot != "fileTree.new" || slots[0].Command != "note.createFromTemplate" || slots[0].When != "target.isFolder" {

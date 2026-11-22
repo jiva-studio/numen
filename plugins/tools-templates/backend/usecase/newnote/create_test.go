@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/markdown"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/ulid"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/usecase/newnote"
 )
 
@@ -42,7 +43,7 @@ func newVault(templates map[string]string) *hosttest.Vault {
 }
 
 func newUseCase(vault newnote.Vault, source newnote.Clock) newnote.CreateFromTemplate {
-	return newnote.NewCreateFromTemplate(vault, source, ulid.NewGenerator(rand.Reader), func() string { return "Templates" })
+	return newnote.NewCreateFromTemplate(vault, source, ulid.NewGenerator(rand.Reader), func() mask.Set { return mask.Parse("") })
 }
 
 func createNote(t *testing.T, vault *hosttest.Vault, template, folder string) string {
@@ -145,14 +146,21 @@ func TestMakeTheNoteFromTheTemplate(t *testing.T) {
 			t.Errorf("scans = %v", got)
 		}
 	})
-	t.Run("follows the folder setting at each call", func(t *testing.T) {
+	t.Run("reads a template named by a mask anywhere in the vault", func(t *testing.T) {
+		vault := newVault(map[string]string{"Notes/Work/Weekly.template.md": book})
+
+		if path := createNote(t, vault, "Notes/Work/Weekly.template.md", "work"); path != "work/Weekly.md" {
+			t.Errorf("path = %q", path)
+		}
+	})
+	t.Run("follows the masks setting at each call", func(t *testing.T) {
 		vault := newVault(map[string]string{"Models/Meeting.md": book})
-		folder := "Templates"
-		useCase := newnote.NewCreateFromTemplate(vault, newClock(getToday()), ulid.NewGenerator(rand.Reader), func() string { return folder })
+		masks := mask.Parse("")
+		useCase := newnote.NewCreateFromTemplate(vault, newClock(getToday()), ulid.NewGenerator(rand.Reader), func() mask.Set { return masks })
 		request := newnote.Request{Template: "Models/Meeting.md", Folder: ""}
 
 		_, before := useCase.Execute(t.Context(), request)
-		folder = "Models"
+		masks = mask.Parse("Models/**")
 		made, after := useCase.Execute(t.Context(), request)
 
 		if !errors.Is(before, newnote.ErrNotATemplate) || after != nil || made.Path != "Meeting.md" {
@@ -204,6 +212,25 @@ func TestNameTheNote(t *testing.T) {
 		vault := newVault(map[string]string{"Templates/Book review.md": book})
 
 		if path := createNote(t, vault, "Templates/Book review.md", "reading"); path != "reading/Book review.md" {
+			t.Errorf("path = %q", path)
+		}
+	})
+	t.Run("strips .template from the name", func(t *testing.T) {
+		vault := newVault(map[string]string{"Notes/Book review.template.md": book})
+
+		path := createNote(t, vault, "Notes/Book review.template.md", "reading")
+
+		if path != "reading/Book review.md" {
+			t.Fatalf("path = %q", path)
+		}
+		if got := openNote(t, getContent(t, vault, path)).Body(); got != "# Book review\n\nAuthor\n" {
+			t.Errorf("body = %q", got)
+		}
+	})
+	t.Run("keeps a name that is .template alone", func(t *testing.T) {
+		vault := newVault(map[string]string{"Notes/.template.md": book})
+
+		if path := createNote(t, vault, "Notes/.template.md", "work"); path != "work/.template.md" {
 			t.Errorf("path = %q", path)
 		}
 	})
@@ -337,7 +364,7 @@ func TestLeaveTheTemplateAsItWas(t *testing.T) {
 
 func TestRefuseWhatIsNoTemplate(t *testing.T) {
 	templates := map[string]string{
-		"Templates/Meeting.md": book, "Notes/Meeting.md": book, "Secret.md": "secret", "Templates2/Meeting.md": book,
+		"Templates/Meeting.md": book, "Notes/Meeting.md": book, "Secret.md": "secret", "Templates2/Meeting.md": book, "Notes/Meeting.template.txt": "text",
 		"Templates/Meeting.txt": "text", "Templates/Meeting": "no extension",
 	}
 	refuse := func(t *testing.T, template string) {
@@ -354,7 +381,7 @@ func TestRefuseWhatIsNoTemplate(t *testing.T) {
 		}
 	}
 
-	t.Run("refuses a template outside the folder setting", func(t *testing.T) {
+	t.Run("refuses a note no mask names", func(t *testing.T) {
 		refuse(t, "Notes/Meeting.md")
 		refuse(t, "Secret.md")
 		refuse(t, "Templates2/Meeting.md")

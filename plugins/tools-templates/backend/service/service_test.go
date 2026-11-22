@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -130,7 +129,7 @@ func TestMapTheErrorsOfTheUseCaseToTheirCodes(t *testing.T) {
 			code     server.ErrorCode
 			message  string
 		}{
-			{"a path outside the folder", plain, "Notes/Meeting.md", 400, server.CodeInvalidArgument, "not a template: Notes/Meeting.md"},
+			{"a path no mask names", plain, "Notes/Meeting.md", 400, server.CodeInvalidArgument, "not a template: Notes/Meeting.md"},
 			{"a parent segment", plain, "Templates/../Notes/Meeting.md", 400, server.CodeInvalidArgument, "not a template: Templates/../Notes/Meeting.md"},
 			{"a path that is not a note", plain, "Templates/Meeting.txt", 400, server.CodeInvalidArgument, "not a template: Templates/Meeting.txt"},
 			{"a missing template", plain, "Templates/Nothing.md", 404, server.CodeNotFound, "template not found: Templates/Nothing.md"},
@@ -152,7 +151,7 @@ func TestMapTheErrorsOfTheUseCaseToTheirCodes(t *testing.T) {
 	})
 }
 
-func TestTheHostConfiguresTheFolderOfTheTemplates(t *testing.T) {
+func TestTheHostConfiguresTheMasksOfTheTemplates(t *testing.T) {
 	vault := hosttest.New("notes")
 	vault.File("Templates/Meeting.md", meeting)
 	vault.File("Models/Book.md", meeting)
@@ -161,7 +160,7 @@ func TestTheHostConfiguresTheFolderOfTheTemplates(t *testing.T) {
 	if status, body := createNote(t, web, "Models/Book.md", "work"); status != http.StatusBadRequest {
 		t.Errorf("before the setting: CreateNote = %d %s", status, body)
 	}
-	if status, body := post(t, web, "/numen.v1.PluginLifecycleService/Configure", `{"values":{"folder":" /Models/ "}}`); status != http.StatusOK {
+	if status, body := post(t, web, "/numen.v1.PluginLifecycleService/Configure", `{"values":{"templates":" /Models/** , **/*.tpl.md "}}`); status != http.StatusOK {
 		t.Fatalf("Configure = %d %s", status, body)
 	}
 
@@ -169,32 +168,6 @@ func TestTheHostConfiguresTheFolderOfTheTemplates(t *testing.T) {
 		t.Errorf("after the setting: CreateNote = %d %s", status, body)
 	}
 	if status, body := createNote(t, web, "Templates/Meeting.md", "work"); status != http.StatusBadRequest {
-		t.Errorf("the old folder: CreateNote = %d %s", status, body)
-	}
-}
-
-func TestNormalizeTheFolderSetting(t *testing.T) {
-	raw, err := os.ReadFile("../../testdata/folder.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var table map[string][]struct {
-		Raw    string `json:"raw"`
-		Folder string `json:"folder"`
-	}
-	if err := json.Unmarshal(raw, &table); err != nil {
-		t.Fatal(err)
-	}
-	for _, name := range []string{"reads an empty folder as Templates", "drops slashes and dot segments", "reads a parent segment as Templates"} {
-		t.Run(name, func(t *testing.T) {
-			if len(table[name]) == 0 {
-				t.Fatal("no cases in testdata/folder.json")
-			}
-			for _, c := range table[name] {
-				if got := normalizeFolder(c.Raw); got != c.Folder {
-					t.Errorf("normalizeFolder(%q) = %q, want %q", c.Raw, got, c.Folder)
-				}
-			}
-		})
+		t.Errorf("the old masks: CreateNote = %d %s", status, body)
 	}
 }
