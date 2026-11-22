@@ -442,7 +442,7 @@ describe('a question of a plugin', () => {
   })
 })
 
-describe('a line of text asked by a plugin', () => {
+describe('a text question of a plugin', () => {
   it('starts with the default typed, the question as placeholder, and no row', async () => {
     const { field, picker } = await mountField({}, '')
     const asking = picker.ask({ title: 'Kickoff · Name', value: 'Meeting 2' })

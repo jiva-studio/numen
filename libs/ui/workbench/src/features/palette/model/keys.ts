@@ -52,7 +52,6 @@ interface KeyContext {
   readonly openActions: (event: KeyboardEvent) => void
 }
 
-/** Chooses the lit item, or the first one that can be chosen; with none to choose, the line is submitted. */
 function pressEnter(event: KeyboardEvent, context: KeyContext): void {
   const pos =
     context.active.here.value >= 0
