@@ -1495,6 +1495,29 @@
       "export": "DOCUMENT_VERIFIERS"
     },
     {
+      "name": "core/migration-forward-only",
+      "paths": [
+        "libs/core/kernel/adapter/index/**"
+      ],
+      "tags": [
+        "structure",
+        "core",
+        "fast"
+      ],
+      "selftest": "../../libs/core/kernel/adapter/index/migration-forward-only.sh",
+      "runner": "command",
+      "cmd": [
+        "bash",
+        "-c",
+        "libs/core/kernel/adapter/index/migration-forward-only.sh \"${BASE_REF:-origin/main}\""
+      ],
+      "selftestCmd": [
+        "bash",
+        "libs/core/kernel/adapter/index/migration-forward-only.sh",
+        "--self-test"
+      ]
+    },
+    {
       "name": "ts/plugin-mirror-inventory",
       "paths": [
         "plugins/*/manifest.json",
