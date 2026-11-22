@@ -12,7 +12,9 @@ afterEach(() => {
 })
 
 function open(doc: string, path = 'Projects/Home.md', hideFields = false) {
-  const tick = vi.fn<(request: Parameters<TaskExtensionDeps['tick']>[0]) => Promise<void>>(async () => undefined)
+  const tick = vi.fn<(request: Parameters<TaskExtensionDeps['tick']>[0]) => Promise<void>>(
+    async () => undefined,
+  )
   view = new EditorView({
     state: EditorState.create({
       doc,
@@ -56,7 +58,8 @@ describe('the task extension', () => {
   })
 
   it('hides the fields of a task line the cursor is not on and shows them on the line it is on', () => {
-    const doc = '- [ ] plain\n- [ ] pay due:2026-11-20 +home @bank #port rec:1m pri:A done:2026-11-19'
+    const doc =
+      '- [ ] plain\n- [ ] pay due:2026-11-20 +home @bank #port rec:1m pri:A done:2026-11-19'
     const { view: editor } = open(doc, 'Projects/Home.md', true)
     const content = () => editor.dom.querySelector('.cm-content')?.textContent
 

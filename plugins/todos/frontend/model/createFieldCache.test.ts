@@ -19,7 +19,9 @@ describe('the field cache', () => {
   })
 
   it('keeps what it has when the backend fails', async () => {
-    const fake = createFakeApi({ fields: { projects: [{ name: 'home', count: 2 }], contexts: [], tags: [] } })
+    const fake = createFakeApi({
+      fields: { projects: [{ name: 'home', count: 2 }], contexts: [], tags: [] },
+    })
     const cache = createFieldCache(fake.api)
     await cache.refresh()
 

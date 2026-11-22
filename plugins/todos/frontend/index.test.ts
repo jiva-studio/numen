@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { CompletionContext, type CompletionResult, type CompletionSource } from '@codemirror/autocomplete'
+import {
+  CompletionContext,
+  type CompletionResult,
+  type CompletionSource,
+} from '@codemirror/autocomplete'
 import { EditorState, type Extension } from '@codemirror/state'
 import type { WorkspaceHost } from '@numen/plugin-sdk'
 import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'

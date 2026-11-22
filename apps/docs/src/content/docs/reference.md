@@ -183,6 +183,7 @@ The settings of the plugin Todos.
 | | | |
 | --- | --- | --- |
 | `ignoredFolders` | text | paths from the vault root, such as templates, archive/old. A note below one of them is skipped. |
+| `hideFields` | yes or no | shows due, done, rec, pri, +, @ and # only on the line you edit. |
 
 ### `md.numen.tools.media.importer`
 

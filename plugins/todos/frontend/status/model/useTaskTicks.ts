@@ -23,8 +23,7 @@ export function useTaskTicks(
   const isRecurring = (task: Task): boolean =>
     task.recurrence !== '' || task.issues.includes('invalidRecurrence')
 
-  const isTickable = (task: Task): boolean =>
-    !isRecurring(task) && !pending.value.has(getKey(task))
+  const isTickable = (task: Task): boolean => !isRecurring(task) && !pending.value.has(getKey(task))
 
   const tick = async (task: Task): Promise<void> => {
     if (!isTickable(task)) return
