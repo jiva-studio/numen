@@ -35,6 +35,7 @@ func TestLocateRequestsTheSelectedModelAndTokenizer(t *testing.T) {
 func TestCustomRerankerFetchesOnlyItsGraphAndExternalData(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("NUMEN_PLUGIN_CACHE_DIR", root)
+	t.Setenv("NUMEN_SHARED_CACHE_DIR", root)
 	t.Setenv("HF_ENDPOINT", "")
 	list := filepath.Join(root, "index.json")
 	if err := os.WriteFile(list, []byte(`{"sha":"current",

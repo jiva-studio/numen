@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
+	"github.com/jiva-studio/numen/libs/shared/protocol"
 )
 
 func TestReadManifest(t *testing.T) {
@@ -313,26 +314,6 @@ func TestManifestListIssuesReportsASettingsViewOfNoFrontend(t *testing.T) {
 	}
 }
 
-func TestManifestNetworkAlias(t *testing.T) {
-	if got := manifest.NormalizePermission("network"); got != manifest.PermissionLinkOpen {
-		t.Errorf("got %q, want %q", got, manifest.PermissionLinkOpen)
-	}
-	if got := manifest.NormalizePermission(manifest.PermissionVaultRead); got != manifest.PermissionVaultRead {
-		t.Errorf("got %q, want %q", got, manifest.PermissionVaultRead)
-	}
-
-	m := manifest.Manifest{Permissions: []string{"network"}}
-	if !m.HasPermission(manifest.PermissionLinkOpen) || !m.HasPermission("network") {
-		t.Errorf("alias must hold both spellings")
-	}
-	if m.HasPermission(manifest.PermissionVaultRead) {
-		t.Errorf("alias must not grant vault:read")
-	}
-	if err := m.ValidatePermissions(); err != nil {
-		t.Errorf("alias must validate: %v", err)
-	}
-}
-
 func TestManifestRejectsAICompletePermission(t *testing.T) {
 	_, err := manifestjson.Read(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","permissions":["ai:complete"]}`))
 	if !errors.Is(err, manifest.ErrInvalidPermission) {
@@ -358,9 +339,9 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 		{"a full name", `["a.b.SampleService"]`, false},
 		{"two names", `["a.b.SampleService","a.b.PresetsService"]`, false},
 		{"the id itself", `["a.b"]`, false},
-		{"the embedding service of the protocol", `["numen.v1.SearchSourceService"]`, false},
-		{"the tool service of the protocol", `["numen.v1.PluginToolService"]`, false},
 		{"the provider service of the protocol", `["numen.v1.ProviderService"]`, false},
+		{"the search source service of the protocol", `["numen.v1.SearchSourceService"]`, true},
+		{"the tool service of the protocol", `["numen.v1.PluginToolService"]`, true},
 		{"a service the core serves", `["numen.v1.NoteService"]`, true},
 		{"a service the core serves beside an own one", `["a.b.SampleService","numen.v1.VaultService"]`, true},
 		{"a bare name", `["SampleService"]`, true},
@@ -513,5 +494,11 @@ func TestManifestReadsSettingGroups(t *testing.T) {
 	}
 	if m.Settings[0].Group != "feel" || m.Settings[1].Group != "" {
 		t.Errorf("the settings carry the groups %q and %q", m.Settings[0].Group, m.Settings[1].Group)
+	}
+}
+
+func TestTheHostProtocolVersionIsTheOneOfTheProtocolLibrary(t *testing.T) {
+	if manifest.ProtocolVersion != protocol.PluginProtocolVersion {
+		t.Errorf("manifest.ProtocolVersion = %d, protocol.PluginProtocolVersion = %d", manifest.ProtocolVersion, protocol.PluginProtocolVersion)
 	}
 }

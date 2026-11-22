@@ -8,7 +8,7 @@
   "targets": ["desktop.editor"],
   "contributes": {
     "category": "agents",
-    "listeners": [{ "name": "mcp", "portSetting": "port", "protocol": "tcp" }]
+    "listeners": [{ "name": "mcp", "portSetting": "port" }]
   },
   "permissions": [
     "vault:read",

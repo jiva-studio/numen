@@ -169,13 +169,13 @@ func (b *failingCloseBody) Close() error {
 	return errors.Join(b.ReadCloser.Close(), b.closeErr)
 }
 
-type failingCloseClient struct {
-	base     connect.HTTPClient
+type failingCloseTransport struct {
+	base     http.RoundTripper
 	closeErr error
 }
 
-func (c *failingCloseClient) Do(req *http.Request) (*http.Response, error) {
-	resp, err := c.base.Do(req)
+func (c *failingCloseTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := c.base.RoundTrip(req)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func TestACanceledCallReturnsTheErrorOfTheContext(t *testing.T) {
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	closeErr := errors.New("close failed")
-	closingClient := NewClient(&failingCloseClient{base: server.Client(), closeErr: closeErr}, server.URL, "token-1")
+	closingClient := NewClient(&http.Client{Transport: &failingCloseTransport{base: server.Client().Transport, closeErr: closeErr}}, server.URL, "token-1")
 	closingFrames, err := closingClient.Call(t.Context(), "llm.chat", nil, PriorityBackground)
 	if err != nil {
 		t.Fatal(err)

@@ -12,7 +12,10 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// protocolLeak is a protocol type mentioned by the type of an exported identifier of a public package.
+// connectModule is the transport library the generated services use; its types are as much the protocol as the generated ones.
+const connectModule = "connectrpc.com/connect"
+
+// protocolLeak is a protocol type mentioned by the type of an exported identifier of a public package, a generated type or a type of the transport library.
 type protocolLeak struct {
 	subject      string
 	protocolType string
@@ -20,11 +23,11 @@ type protocolLeak struct {
 
 // leakWalk collects the protocol types that the public API of one set of packages mentions.
 type leakWalk struct {
-	protocolRoot string
-	familyPrefix string
-	subject      string
-	visited      map[*types.TypeName]bool
-	found        map[protocolLeak]bool
+	protocolRoots []string
+	familyPrefix  string
+	subject       string
+	visited       map[*types.TypeName]bool
+	found         map[protocolLeak]bool
 }
 
 func isInternalPackage(path string) bool {
@@ -32,7 +35,7 @@ func isInternalPackage(path string) bool {
 }
 
 func (w *leakWalk) isProtocolPackage(path string) bool {
-	return load.IsWithin(path, w.protocolRoot)
+	return slices.ContainsFunc(w.protocolRoots, func(root string) bool { return load.IsWithin(path, root) })
 }
 
 func (w *leakWalk) walkNamedType(named *types.Named) {
@@ -112,12 +115,12 @@ func (w *leakWalk) walk(t types.Type) {
 	}
 }
 
-func getProtocolLeaks(pkgs []*packages.Package, protocolRoot, familyPrefix string) ([]protocolLeak, int) {
+func getProtocolLeaks(pkgs []*packages.Package, protocolRoots []string, familyPrefix string) ([]protocolLeak, int) {
 	walk := &leakWalk{
-		protocolRoot: protocolRoot,
-		familyPrefix: familyPrefix,
-		visited:      map[*types.TypeName]bool{},
-		found:        map[protocolLeak]bool{},
+		protocolRoots: protocolRoots,
+		familyPrefix:  familyPrefix,
+		visited:       map[*types.TypeName]bool{},
+		found:         map[protocolLeak]bool{},
 	}
 	examined := 0
 	for _, pkg := range pkgs {
@@ -194,7 +197,7 @@ func checkSDKNamesNoProtocolType(t *testing.T, workspace load.WorkspacePackages)
 			pkgs = append(pkgs, pkg)
 		}
 	}
-	leaks, examined := getProtocolLeaks(pkgs, load.Wire, load.SdkModule)
+	leaks, examined := getProtocolLeaks(pkgs, []string{load.Wire, connectModule}, load.SdkModule)
 	for _, one := range leaks {
 		t.Errorf("%s mentions the protocol type %s", one.subject, one.protocolType)
 	}

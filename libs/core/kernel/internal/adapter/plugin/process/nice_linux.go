@@ -33,7 +33,7 @@ func setThreadPriorities(dir string, nice int) error {
 			return err
 		}
 		if err := unix.Setpriority(unix.PRIO_PROCESS, tid, nice); err != nil && !errors.Is(err, unix.ESRCH) {
-			return err
+			return markNiceDenied(err)
 		}
 	}
 	return nil

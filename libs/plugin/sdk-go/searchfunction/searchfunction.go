@@ -136,7 +136,7 @@ func (r *Registry) Add(name string, f Function) error {
 
 // Mount registers the registry as SearchFunctionService on s.
 func (r *Registry) Mount(s *server.Server) {
-	s.Register(numenv1connect.NewSearchFunctionServiceHandler(handler{registry: r}, s.HandlerOptions()...))
+	s.RegisterAuthenticated(numenv1connect.NewSearchFunctionServiceHandler(handler{registry: r}))
 }
 
 type handler struct {

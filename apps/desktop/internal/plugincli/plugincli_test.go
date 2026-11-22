@@ -85,7 +85,7 @@ func TestPluginValidate_InvalidPermission(t *testing.T) {
 	}
 }
 
-func TestPluginValidate_AllowedPermissionsAndNetworkAlias(t *testing.T) {
+func TestPluginValidate_AllowedPermissions(t *testing.T) {
 	tmpDir := t.TempDir()
 	manifestPath := filepath.Join(tmpDir, "manifest.json")
 
@@ -93,7 +93,7 @@ func TestPluginValidate_AllowedPermissionsAndNetworkAlias(t *testing.T) {
   "id": "md.numen.valid",
   "name": "Valid",
   "version": "1.0.0",
-  "permissions": ["vault:read", "vault:write", "network", "link:open"]
+  "permissions": ["vault:read", "vault:write", "link:open"]
 }`
 	if err := os.WriteFile(manifestPath, []byte(manifest), 0o644); err != nil {
 		t.Fatal(err)

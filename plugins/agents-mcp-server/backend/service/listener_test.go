@@ -43,7 +43,7 @@ func (b *lockedBuffer) String() string {
 func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 	t.Helper()
 	t.Setenv("NUMEN_HOST_PORT", "")
-	t.Setenv("NUMEN_PLUGIN_TOKEN", "")
+	t.Setenv("NUMEN_PLUGIN_TOKEN", "plugin-token")
 	t.Setenv("NUMEN_PLUGIN_PORT", "")
 	t.Setenv("MCP_PORT", "")
 	stdinRead, stdinWrite, err := os.Pipe()
@@ -58,9 +58,6 @@ func serveMounted(t *testing.T) (*server.Server, *lockedBuffer) {
 	os.Stdin, os.Stdout = stdinRead, stdoutWrite
 	s := server.New()
 	os.Stdin, os.Stdout = processStdin, processStdout
-	if _, err := io.WriteString(stdinWrite, "plugin-token\n"); err != nil {
-		t.Fatal(err)
-	}
 	stdout := &lockedBuffer{}
 	copyErrCh := make(chan error, 1)
 	go func() {

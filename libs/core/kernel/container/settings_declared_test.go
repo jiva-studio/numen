@@ -120,7 +120,7 @@ func writeRelayPlugin(t *testing.T, defaultPort int) string {
 		"version": "1.0.0",
 		"targets": ["desktop.editor"],
 		"backend": {"entrypoint": "bin/relay"},
-		"contributes": {"listeners": [{"name": "relay", "portSetting": "port", "protocol": "tcp"}]},
+		"contributes": {"listeners": [{"name": "relay", "portSetting": "port"}]},
 		"settings": [
 			{"key": "port", "type": "number", "title": "Port", "default": %d, "step": 1},
 			{"key": "greeting", "type": "string", "title": "Greeting", "default": "good morning"}

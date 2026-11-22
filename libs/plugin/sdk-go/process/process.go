@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -18,14 +19,13 @@ type Client struct {
 	rpc numenv1connect.HostProcessServiceClient
 }
 
-// NewClient returns the client of the host at the endpoint, sending its calls with hostcall.HTTPClient.
+// NewClient returns the client of the host at the endpoint, sending its calls with the default HTTP client.
 func NewClient(endpoint hostcall.Endpoint) *Client {
-	return NewClientOver(hostcall.HTTPClient(), endpoint)
+	return newClientOver(transport.HTTPClient(), endpoint)
 }
 
-// NewClientOver returns the client of the host at the endpoint, sending its calls with httpClient.
-func NewClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
-	return &Client{rpc: numenv1connect.NewHostProcessServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
+func newClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
+	return &Client{rpc: numenv1connect.NewHostProcessServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
 }
 
 // NewClientFromEnv returns the client of the host the process was started for. It returns

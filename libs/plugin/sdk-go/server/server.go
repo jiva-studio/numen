@@ -12,12 +12,9 @@ import (
 	"os/signal"
 	"slices"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
-
-	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/logs"
@@ -80,18 +77,17 @@ type Server struct {
 	closers   []func() error
 	closeErr  error
 
-	lifecycle   *LifecycleServer
-	interceptor *AuthInterceptor
-	mux         *http.ServeMux
-	listener    net.Listener
-	actualPort  int
-	listeners   []listenerPort
+	lifecycle  *LifecycleServer
+	mux        *http.ServeMux
+	listener   net.Listener
+	actualPort int
+	listeners  []listenerPort
 }
 
 // New constructs a plugin server using command flags, environment variables, and options.
 func New(opts ...Option) *Server {
 	port := parseDefaultFlags()
-	return newServer(port, "", opts, false)
+	return newServer(port, os.Getenv(tokenVar), opts, false)
 }
 
 // NewLinkedHandler returns the handler of a server that is not run as a process, for a host that links the
@@ -158,16 +154,15 @@ func newServer(port int, token string, opts []Option, linked bool) *Server {
 		opt(s)
 	}
 
-	s.interceptor = NewAuthInterceptor(s.token)
 	var lifecycleOpts []LifecycleOption
 	if linked {
 		lifecycleOpts = append(lifecycleOpts, WithLifecycleShutdown(s.Close))
 	}
 	s.lifecycle = NewLifecycleServer(make(chan struct{}), lifecycleOpts...)
 
-	s.Register(numenv1connect.NewPluginLifecycleServiceHandler(lifecycleHandler{state: s.lifecycle}, s.HandlerOptions()...))
+	s.RegisterAuthenticated(numenv1connect.NewPluginLifecycleServiceHandler(lifecycleHandler{state: s.lifecycle}))
 	if s.onEvent != nil {
-		s.Register(numenv1connect.NewPluginEventServiceHandler(eventServer{handle: s.onEvent}, s.HandlerOptions()...))
+		s.RegisterAuthenticated(numenv1connect.NewPluginEventServiceHandler(eventServer{handle: s.onEvent}))
 	}
 
 	return s
@@ -196,9 +191,15 @@ func (s *Server) Close() error {
 	return s.closeErr
 }
 
-// Register mounts a service handler on the server multiplexer.
+// Register mounts a handler on the server multiplexer as it is: the handler checks the token itself, or
+// serves a path that carries none.
 func (s *Server) Register(pattern string, handler http.Handler) {
 	s.mux.Handle(pattern, handler)
+}
+
+// RegisterAuthenticated mounts a handler that answers 401 to a request without the token of the host.
+func (s *Server) RegisterAuthenticated(pattern string, handler http.Handler) {
+	s.mux.Handle(pattern, RequireToken(s.token, handler))
 }
 
 // RoutePrefix is where the host forwards the plugin route: a window's GET of /plugin/<id>/<rest>
@@ -208,16 +209,7 @@ const RoutePrefix = "/plugin/"
 // RegisterRoute mounts handler for GET and HEAD requests at RoutePrefix+pattern, a pattern of
 // http.ServeMux such as "pages/{page}". A request without the host's token is answered 401.
 func (s *Server) RegisterRoute(pattern string, handler http.Handler) {
-	s.mux.Handle(http.MethodGet+" "+RoutePrefix+pattern, s.interceptor.RequireToken(handler))
-}
-
-// HandlerOptions returns Connect-RPC options enforcing server authentication.
-func (s *Server) HandlerOptions() []connect.HandlerOption {
-	return []connect.HandlerOption{connect.WithInterceptors(s.interceptor)}
-}
-
-func (s *Server) AuthInterceptor() connect.Interceptor {
-	return s.interceptor
+	s.RegisterAuthenticated(http.MethodGet+" "+RoutePrefix+pattern, handler)
 }
 
 // Lifecycle returns the lifecycle handler.
@@ -281,8 +273,8 @@ func (s *Server) ServeContext(ctx context.Context) (err error) {
 		err = errors.Join(err, s.Close())
 	}()
 
-	if err := s.authenticate(); err != nil {
-		return err
+	if s.token == "" {
+		return errors.New("empty auth token")
 	}
 	if _, err := s.listen(ctx); err != nil {
 		return err
@@ -374,24 +366,6 @@ func (s *Server) closeListener() error {
 	return nil
 }
 
-func (s *Server) authenticate() error {
-	if s.token == "" && s.stdin != nil {
-		line, err := readTokenLine(s.stdin)
-		if err != nil {
-			return fmt.Errorf("read auth token: %w", err)
-		}
-		s.token = line
-		s.interceptor.SetToken(s.token)
-	}
-	if s.token == "" {
-		return errors.New("empty auth token")
-	}
-	if err := os.Setenv(tokenVar, s.token); err != nil {
-		return fmt.Errorf("set %s: %w", tokenVar, err)
-	}
-	return nil
-}
-
 func (s *Server) announceReady() error {
 	if s.stdout == nil {
 		return nil
@@ -418,25 +392,4 @@ func (s *Server) watchStdin() <-chan struct{} {
 		}
 	}()
 	return stdinEOF
-}
-
-func readTokenLine(r io.Reader) (string, error) {
-	var buf []byte
-	b := make([]byte, 1)
-	for {
-		n, err := r.Read(b)
-		if n > 0 {
-			if b[0] == '\n' {
-				break
-			}
-			buf = append(buf, b[0])
-		}
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			return "", err
-		}
-	}
-	return strings.TrimSpace(string(buf)), nil
 }

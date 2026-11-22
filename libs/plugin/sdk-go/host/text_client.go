@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -35,11 +36,11 @@ func NewTextClientFromEnv() (*TextClient, error) {
 }
 
 func NewTextClient(endpoint hostcall.Endpoint) *TextClient {
-	return NewTextClientOver(hostcall.HTTPClient(), endpoint)
+	return newTextClientOver(transport.HTTPClient(), endpoint)
 }
 
-func NewTextClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *TextClient {
-	return &TextClient{rpc: numenv1connect.NewHostTextServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
+func newTextClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *TextClient {
+	return &TextClient{rpc: numenv1connect.NewHostTextServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
 }
 
 // With returns the client for the vault with the given identity, used as the shown vault is. A call on

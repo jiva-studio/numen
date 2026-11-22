@@ -47,6 +47,19 @@ func TestListContributionConflicts(t *testing.T) {
 			},
 			want: []string{`plugin "md.example.b" declares the reader "reader:pdf", which plugin "md.example.a" already declares`},
 		},
+		"the same application view kind in two plugins": {
+			plugins: []manifest.Discovered{
+				plugin("md.example.a", manifest.Contributes{ViewCapabilities: []string{"note-editor"}}),
+				plugin("md.example.b", manifest.Contributes{ViewCapabilities: []string{"note-editor"}}),
+			},
+			want: []string{`plugin "md.example.b" declares the view capability "note-editor", which plugin "md.example.a" already declares`},
+		},
+		"a view kind of the plugin own id in two plugins": {
+			plugins: []manifest.Discovered{
+				plugin("md.example.a", manifest.Contributes{ViewCapabilities: []string{"md.example.a.deck"}}),
+				plugin("md.example.b", manifest.Contributes{ViewCapabilities: []string{"md.example.b.deck"}}),
+			},
+		},
 		"a reader and its tab kind in one plugin": {
 			plugins: []manifest.Discovered{
 				plugin("md.example.a", manifest.Contributes{TabKinds: tabKinds("reader:pdf"), Readers: []manifest.Reader{{ID: "pdf"}}}),

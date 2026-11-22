@@ -22,9 +22,35 @@ import {
 
 const CORE_MODULE = `${GO_MODULE_ROOT}libs/core/kernel`
 
+/** The file of the protocol library that declares the version of the plugin protocol. */
+const PROTOCOL_VERSION_FILE = path.join(REPO_ROOT, 'libs', 'shared', 'protocol', 'version.go')
+
+/** The plugin protocol version the Go source `text` declares as `PluginProtocolVersion`. */
+export function readPluginProtocolVersion(text) {
+  const match = /^const PluginProtocolVersion = (\d+)$/m.exec(text)
+  if (match === null) throw new Error('PluginProtocolVersion is not declared as a number')
+  return Number(match[1])
+}
+
+/** The plugins whose manifest names a protocol other than `expected`. */
+export function findProtocolMismatches(manifests, expected) {
+  return manifests
+    .filter((one) => one.manifest.protocol !== expected)
+    .map((one) => `${one.name}: protocol ${one.manifest.protocol}, want ${expected}`)
+}
+
 export function verifyPluginsStatic() {
   const pluginsDir = path.join(MODULES_DIR, 'plugins')
-  readPluginManifests(pluginsDir)
+  const manifests = readPluginManifests(pluginsDir)
+  const mismatches = findProtocolMismatches(
+    manifests,
+    readPluginProtocolVersion(fs.readFileSync(PROTOCOL_VERSION_FILE, 'utf8')),
+  )
+  if (mismatches.length > 0) {
+    throw new Error(
+      'Plugin manifest names another plugin protocol version:\n' + mismatches.join('\n'),
+    )
+  }
 
   const commandMismatches = findPluginCommandMismatches(pluginsDir)
   if (commandMismatches.length > 0) {

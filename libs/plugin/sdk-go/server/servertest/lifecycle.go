@@ -3,10 +3,11 @@ package servertest
 
 import (
 	"context"
+	"net/http"
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -17,8 +18,8 @@ type LifecycleClient struct {
 }
 
 // NewLifecycleClient returns a client that presents token on every call, as the host does.
-func NewLifecycleClient(httpClient connect.HTTPClient, baseURL, token string) *LifecycleClient {
-	rpc := numenv1connect.NewPluginLifecycleServiceClient(httpClient, baseURL, connect.WithInterceptors(hostcall.Bearer(token)))
+func NewLifecycleClient(httpClient *http.Client, baseURL, token string) *LifecycleClient {
+	rpc := numenv1connect.NewPluginLifecycleServiceClient(httpClient, baseURL, connect.WithInterceptors(transport.Bearer(token)))
 	return &LifecycleClient{rpc: rpc}
 }
 

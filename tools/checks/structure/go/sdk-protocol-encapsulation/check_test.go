@@ -107,7 +107,7 @@ func main() {}
 `,
 	})
 	pkgs := loadAPIPackages(t, dir, []string{"GOWORK=off"})
-	leaks, examined := getProtocolLeaks(pkgs, "fixture/gen", "fixture/")
+	leaks, examined := getProtocolLeaks(pkgs, []string{"fixture/gen"}, "fixture/")
 	var got []string
 	for _, one := range leaks {
 		got = append(got, strings.TrimPrefix(one.subject, "fixture/")+" "+strings.TrimPrefix(one.protocolType, "fixture/"))
@@ -167,7 +167,7 @@ import "fixture/gen"
 func Convert(m gen.Message) gen.Message { return m }
 `,
 	})
-	leaks, examined := getProtocolLeaks(loadAPIPackages(t, dir, []string{"GOWORK=off"}), "fixture/gen", "fixture/")
+	leaks, examined := getProtocolLeaks(loadAPIPackages(t, dir, []string{"GOWORK=off"}), []string{"fixture/gen"}, "fixture/")
 	if len(leaks) != 0 {
 		t.Errorf("leaks %v, want none", leaks)
 	}
@@ -207,12 +207,45 @@ func Check(e schema.Enum) {}
 func Keep(o protocolx.Other) {}
 `,
 	})
-	leaks, _ := getProtocolLeaks(loadAPIPackages(t, dir, []string{"GOWORK=off"}), "fixture/protocol", "fixture/api")
+	leaks, _ := getProtocolLeaks(loadAPIPackages(t, dir, []string{"GOWORK=off"}), []string{"fixture/protocol"}, "fixture/api")
 	var got []string
 	for _, one := range leaks {
 		got = append(got, strings.TrimPrefix(one.subject, "fixture/")+" "+strings.TrimPrefix(one.protocolType, "fixture/"))
 	}
 	want := []string{"api.Check protocol/schema.Enum", "api.Send protocol/gen.Message"}
+	if !slices.Equal(got, want) {
+		t.Errorf("leaks %v, want %v", got, want)
+	}
+}
+
+// A type of the transport library is a protocol type, in a signature and in a type argument.
+func TestSDKProtocolRule_RejectsTypesOfTheTransportLibrary(t *testing.T) {
+	dir := load.WriteFiles(t, map[string]string{
+		"transport/transport.go": `package transport
+
+type HTTPClient interface{ Do() error }
+
+type Option struct{}
+`,
+		"api/api.go": `package api
+
+import "fixture/transport"
+
+func New(client transport.HTTPClient) {}
+
+func Options() []transport.Option { return nil }
+
+func keep(client transport.HTTPClient) {}
+`,
+	})
+
+	leaks, _ := getProtocolLeaks(loadAPIPackages(t, dir, []string{"GOWORK=off"}), []string{"fixture/transport"}, "fixture/api")
+
+	var got []string
+	for _, one := range leaks {
+		got = append(got, strings.TrimPrefix(one.subject, "fixture/")+" "+strings.TrimPrefix(one.protocolType, "fixture/"))
+	}
+	want := []string{"api.New transport.HTTPClient", "api.Options transport.Option"}
 	if !slices.Equal(got, want) {
 		t.Errorf("leaks %v, want %v", got, want)
 	}

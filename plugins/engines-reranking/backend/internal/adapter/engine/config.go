@@ -19,7 +19,7 @@ func getSessionSettings(modelPath string) onnx.SessionSettings {
 }
 
 func getCacheRoot() string {
-	root, err := cache.GetSharedDirOrPluginDir()
+	root, err := cache.GetSharedDir()
 	if err != nil {
 		return ""
 	}

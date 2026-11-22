@@ -24,18 +24,14 @@ func NewPermissions() Permissions {
 func (p *Permissions) Set(permissions []string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	norm := make([]string, len(permissions))
-	for i, one := range permissions {
-		norm[i] = manifest.NormalizePermission(one)
-	}
-	p.granted = norm
+	p.granted = slices.Clone(permissions)
 }
 
 // Has reports whether the plugin holds the given permission.
 func (p *Permissions) Has(permission string) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return slices.Contains(p.granted, manifest.NormalizePermission(permission))
+	return slices.Contains(p.granted, permission)
 }
 
 // Check returns an error if the plugin lacks the requested permission.

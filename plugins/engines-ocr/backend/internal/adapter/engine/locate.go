@@ -105,7 +105,7 @@ func name(path string) string {
 }
 
 func getCacheRoot() string {
-	root, err := cache.GetSharedDirOrPluginDir()
+	root, err := cache.GetSharedDir()
 	if err != nil {
 		return ""
 	}

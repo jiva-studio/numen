@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	hostdomain "github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchsource"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/console"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/sourcehealth"
@@ -45,14 +44,14 @@ func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	h := newHandler(newServer(nil, nil, hosttest.NewQueue().EnqueueWork), noPlaces, sourcehealth.New(health.NewClientFromEnv, console.Report))
 
 	_, describeErr := h.Describe(t.Context())
-	if !hasCode(describeErr, rpcerror.FailedPrecondition) {
+	if !hasCode(describeErr, "failed_precondition") {
 		t.Fatalf("Describe error %v, want FailedPrecondition", describeErr)
 	}
 
 	_, indexErr := h.IndexTexts(t.Context(), searchsource.Place{}, []searchsource.Text{{ChunkID: "1", Text: "text"}})
 	_, searchErr := h.SearchChunks(t.Context(), searchsource.Place{VaultID: "V", Recipe: "r"}, searchsource.Query{Text: "q"})
 
-	if !hasCode(indexErr, rpcerror.FailedPrecondition) || !hasCode(searchErr, rpcerror.FailedPrecondition) {
+	if !hasCode(indexErr, "failed_precondition") || !hasCode(searchErr, "failed_precondition") {
 		t.Fatalf("IndexTexts error %v and SearchChunks error %v, want FailedPrecondition", indexErr, searchErr)
 	}
 	if items := hostHealth.List(); len(items) != 1 || items[0].Key != "source" {
@@ -60,8 +59,8 @@ func TestAModelThatHasNoProfileIsAFailedPrecondition(t *testing.T) {
 	}
 }
 
-func hasCode(err error, code rpcerror.Code) bool {
-	return err != nil && strings.HasPrefix(err.Error(), code.String()+": ")
+func hasCode(err error, code string) bool {
+	return err != nil && strings.HasPrefix(err.Error(), code+": ")
 }
 
 func TestTheHandlerDescribesAndIndexesWithTheModelTheEnvironmentNames(t *testing.T) {
@@ -120,7 +119,7 @@ func TestASearchAsksThePlaceWithTheVectorOfTheQueryAndAnswersItsChunks(t *testin
 	}
 
 	hNoPlace := newHandler(h.model, noPlaces, sourcehealth.New(noHealth, console.Report))
-	if _, err := hNoPlace.SearchChunks(t.Context(), searchsource.Place{VaultID: "01PHYSICS", Recipe: "mock|r"}, query); !hasCode(err, rpcerror.Unavailable) {
+	if _, err := hNoPlace.SearchChunks(t.Context(), searchsource.Place{VaultID: "01PHYSICS", Recipe: "mock|r"}, query); !hasCode(err, "unavailable") {
 		t.Fatalf("SearchChunks noPlaces error = %v, want Unavailable", err)
 	}
 }

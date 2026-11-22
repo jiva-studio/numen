@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -65,18 +66,18 @@ func NewClientFromEnv() (*Client, error) {
 }
 
 func NewClient(endpoint hostcall.Endpoint) *Client {
-	return NewClientOver(hostcall.HTTPClient(), endpoint)
+	return newClientOver(transport.HTTPClient(), endpoint)
 }
 
-func NewClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
+func newClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
 	return &Client{
-		vaults: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
-		list:   numenv1connect.NewVaultsServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
-		files:  numenv1connect.NewHostFileServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
-		notes:  numenv1connect.NewHostNoteServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
-		links:  numenv1connect.NewHostLinkServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
-		cache:  numenv1connect.NewHostCacheServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
-		window: numenv1connect.NewHostWindowServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
+		vaults: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
+		list:   numenv1connect.NewVaultsServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
+		files:  numenv1connect.NewHostFileServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
+		notes:  numenv1connect.NewHostNoteServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
+		links:  numenv1connect.NewHostLinkServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
+		cache:  numenv1connect.NewHostCacheServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
+		window: numenv1connect.NewHostWindowServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...),
 	}
 }
 

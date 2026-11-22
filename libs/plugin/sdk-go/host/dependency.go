@@ -7,6 +7,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/internal/transport"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -17,7 +18,7 @@ type DependencyClient struct {
 }
 
 func NewDependencyClient(endpoint hostcall.Endpoint) *DependencyClient {
-	return &DependencyClient{rpc: numenv1connect.NewHostDependencyServiceClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Options()...)}
+	return &DependencyClient{rpc: numenv1connect.NewHostDependencyServiceClient(transport.HTTPClient(), endpoint.BaseURL, transport.Options(endpoint)...)}
 }
 
 func (c *DependencyClient) FetchModelFile(ctx context.Context, address, digest string) (string, error) {

@@ -49,7 +49,7 @@ func TestALinkedHandlerAnswersWithTheTokenOfItsVariables(t *testing.T) {
 
 // A linked handler takes its token from its variables alone.
 func TestALinkedHandlerReadsNoTokenFromTheEnvironment(t *testing.T) {
-	t.Setenv(tokenVar, "process-token")
+	t.Setenv(hostcall.PluginTokenEnv, "process-token")
 	handler, err := NewLinkedHandler(map[string]string{}, func(*Server) error { return nil })
 	if err == nil || handler != nil {
 		t.Fatalf("NewLinkedHandler with no token = %v, %v; want empty auth token and nil handler", handler, err)
@@ -141,7 +141,7 @@ func TestALinkedHandlerReturnsTheCloseErrorOfAFailedMount(t *testing.T) {
 
 func TestLinkedHostEndpointsAreIsolatedFromTheProcess(t *testing.T) {
 	t.Setenv(hostcall.HostPortEnv, "8100")
-	t.Setenv(tokenVar, "process-token")
+	t.Setenv(hostcall.PluginTokenEnv, "process-token")
 	process := New()
 	linked := func(vars map[string]string) *Server {
 		t.Helper()

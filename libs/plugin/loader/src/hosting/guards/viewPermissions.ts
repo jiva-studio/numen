@@ -6,26 +6,21 @@ type ViewKind = typeof CONVERSATION | typeof NOTE_EDITOR | typeof VAULT_SUMMARY
 
 /** What a view kind needs of the plugin that mounts it and of the plugin that draws it. */
 interface ViewRule {
-  readonly owner: string
   readonly mounter: readonly string[]
   readonly registrant: readonly string[]
 }
 
 /** Each built-in view has one provider and separate permission requirements for registration and mounting. */
 const VIEW_RULES = new Map<string, ViewRule>([
-  [CONVERSATION, { owner: 'md.numen.views.agent.chat', mounter: [], registrant: [] }],
+  [CONVERSATION, { mounter: [], registrant: [] }],
   [
     NOTE_EDITOR,
     {
-      owner: 'md.numen.notes',
       mounter: ['vault:read', 'vault:write'],
       registrant: ['vault:read', 'vault:write'],
     },
   ],
-  [
-    VAULT_SUMMARY,
-    { owner: 'md.numen.views.flashcards.studio', mounter: [], registrant: ['vault:read'] },
-  ],
+  [VAULT_SUMMARY, { mounter: [], registrant: ['vault:read'] }],
 ] satisfies [ViewKind, ViewRule][])
 
 /**
@@ -50,7 +45,7 @@ function getDeclaredViewCapabilities(caller: PermissionTarget): readonly string[
   return manifest && 'contributes' in manifest ? (manifest.contributes?.viewCapabilities ?? []) : []
 }
 
-/** Checks the manifest declaration and, for a built-in view, the provider identity and permissions. */
+/** Checks the manifest declaration and, for a built-in view, the permissions of the provider. */
 export function requireViewRegistration(capability: string, caller: PermissionTarget): void {
   if (!getDeclaredViewCapabilities(caller).includes(capability)) {
     throw new Error(
@@ -58,11 +53,6 @@ export function requireViewRegistration(capability: string, caller: PermissionTa
     )
   }
   const rule = VIEW_RULES.get(capability)
-  if (rule && caller.pluginId !== rule.owner) {
-    throw new Error(
-      `Plugin "${caller.pluginId}" cannot register "${capability}", owned by "${rule.owner}"`,
-    )
-  }
   for (const permission of rule?.registrant ?? []) {
     checkPermission(caller, permission, 'register.view')
   }

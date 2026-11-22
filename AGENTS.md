@@ -10,7 +10,7 @@ Gemini, or any other) must follow them.
 - **Frontend coding style (Vue / TypeScript)**: [`.agents/rules/coding-style-frontend.md`](.agents/rules/coding-style-frontend.md)
 - **Pull requests, commits and issues**: [`.agents/rules/writing-changes.md`](.agents/rules/writing-changes.md)
 - **Unified review skill (`/nm-review`)**: [`.agents/skills/nm-review/SKILL.md`](.agents/skills/nm-review/SKILL.md)
-- **Per-module conventions**: `AGENTS.md` inside `libs/core/kernel`, `libs/shared/protocol`, `libs/plugin/catalog`, `libs/plugin/sdk-ts`, `apps/desktop`.
+- **Per-module conventions**: `AGENTS.md` inside `libs/core/kernel`, `libs/shared/protocol`, `libs/plugin/catalog`, `libs/plugin/sdk-go`, `libs/plugin/sdk-ts`, `apps/desktop`.
 - **Placement and story skills**: the next section.
 
 ## Placement skills
