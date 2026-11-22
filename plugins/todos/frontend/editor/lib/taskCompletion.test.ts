@@ -20,7 +20,7 @@ const complete = createTaskCompletion({
 
 function run(doc: string): CompletionResult | null {
   const pos = doc.indexOf('|')
-  const state = EditorState.create({ doc: doc.replace('|', '') })
+  const state = EditorState.create({ doc: doc.slice(0, pos) + doc.slice(pos + 1) })
   return complete(new CompletionContext(state, pos, true)) as CompletionResult | null
 }
 
