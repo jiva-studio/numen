@@ -154,6 +154,7 @@ main {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
 }
 
 /* Another window offers to move a tab into this one. */
