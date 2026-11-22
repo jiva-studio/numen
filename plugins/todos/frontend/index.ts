@@ -17,8 +17,7 @@ import { createFieldCache } from './model/createFieldCache'
 import { freshTaskLine } from './model/freshTaskLine'
 import { useTaskFeed, type TaskFeed } from './model/useTaskFeed'
 import type { Filter, Task } from './types'
-import { TodosStatus } from './status'
-import type { ShownGroups } from './status/model/chip'
+import { TodosStatus, type ShownGroups } from './status'
 import { WORDS } from './words'
 import { createTaskEditorExtension, TASKS_EXTENSION } from './editor'
 
@@ -69,12 +68,8 @@ async function editorLine(
   target: OpenTarget,
   showError: (message: string) => void,
 ): Promise<number | undefined> {
-  let tasks: readonly Task[] | null = null
-  try {
-    tasks = await currentTasks(api, today, target)
-  } catch {
-    // an unreachable backend is the same as a refused read: reported below, the note still opens
-  }
+  // an unreachable backend is the same as a refused read: reported below, the note still opens
+  const tasks = await currentTasks(api, today, target).catch((): null => null)
   if (tasks === null) {
     showError(WORDS.taskNotRead)
     return undefined
@@ -115,10 +110,7 @@ function createTodosView(
           const showError = (message: string) => workspace.messages.showError(message)
           try {
             const line = await editorLine(api, workspace.window.getToday(), target, showError)
-            await workspace.files.open(
-              target.path,
-              line === undefined ? undefined : { line: line - 1 },
-            )
+            workspace.files.open(target.path, line === undefined ? undefined : { line: line - 1 })
           } catch {
             showError(WORDS.noteNotOpened)
           }

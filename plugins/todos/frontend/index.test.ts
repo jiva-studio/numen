@@ -214,7 +214,9 @@ describe('the todos frontend', () => {
 
   it('says so where the note cannot be opened', async () => {
     const { context, fake, open, showError } = setup()
-    open.mockRejectedValue(new Error('no such note'))
+    open.mockImplementation(() => {
+      throw new Error('no such note')
+    })
     await clickTask(fake, context)
 
     expect(showError).toHaveBeenCalledWith(WORDS.noteNotOpened)
