@@ -556,6 +556,11 @@ export const Unasked: Story = {
   args: { groups: [] },
 }
 
+/** A question over the field, outside the list, with no row to choose. */
+export const Heading: Story = {
+  args: { groups: [], heading: 'Name of the meeting', placeholder: 'Name of the meeting' },
+}
+
 /** One group, one item, one thing to do with it. */
 export const Alone: Story = {
   args: {

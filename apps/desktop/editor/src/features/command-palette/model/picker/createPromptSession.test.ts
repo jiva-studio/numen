@@ -19,13 +19,14 @@ describe('a question session', () => {
     expect(createPromptSession().view.value).toBeUndefined()
   })
 
-  it('starts the line with its value, names the question in the placeholder and lists no row', async () => {
+  it('starts the line with its value, names the question in the placeholder and heading and lists no row', async () => {
     const session = createPromptSession()
     const asking = session.promptText({ title: 'Owner', value: 'Ann' })
 
     expect(session.view.value).toMatchObject({
       typed: 'Ann',
       placeholder: 'Owner',
+      heading: 'Owner',
       groups: [],
     })
     session.dismiss()

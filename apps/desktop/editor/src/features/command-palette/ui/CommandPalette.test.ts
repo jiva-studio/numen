@@ -423,6 +423,7 @@ describe('a question of a plugin', () => {
 
     const palette = field.findComponent(Palette)
     expect(palette.props('placeholder')).toBe('Level')
+    expect(palette.props('heading')).toBe('Level')
     expect(palette.props('groups')?.[0]?.items.map((one) => one.id)).toEqual(['high'])
 
     await choose('high', 'high')
@@ -443,7 +444,7 @@ describe('a question of a plugin', () => {
 })
 
 describe('a text question of a plugin', () => {
-  it('starts with the default typed, the question as placeholder, and no row', async () => {
+  it('starts with the default typed, the question as placeholder and heading, and no row', async () => {
     const { field, picker } = await mountField({}, '')
     const asking = picker.promptText({ title: 'Kickoff · Name', value: 'Meeting 2' })
     await flushPromises()
@@ -452,6 +453,7 @@ describe('a text question of a plugin', () => {
     expect(palette.props()).toMatchObject({
       modelValue: 'Meeting 2',
       placeholder: 'Kickoff · Name',
+      heading: 'Kickoff · Name',
       groups: [],
     })
 

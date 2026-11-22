@@ -970,6 +970,37 @@ describe('what the action panel is called', () => {
   })
 })
 
+describe('a heading over the field', () => {
+  it('draws it above the field, outside the list, and names the field with it', async () => {
+    mountPalette({ groups: AVAILABLE_GROUPS, heading: 'New name' })
+    await settle()
+
+    const heading = document.body.querySelector('[data-palette="heading"]')
+    expect(heading?.textContent?.trim()).toBe('New name')
+    expect(heading?.closest('[role="listbox"]')).toBeNull()
+    expect(field()?.getAttribute('aria-labelledby')).toBe(heading?.id)
+    expect(field()?.hasAttribute('aria-label')).toBe(false)
+  })
+
+  it('reads it out through the announcement', async () => {
+    mountPalette({ groups: [], heading: 'New name' })
+    await settle()
+
+    expect(document.body.querySelector('[data-palette="announcement"]')?.textContent).toBe(
+      'New name',
+    )
+  })
+
+  it('draws nothing and keeps the field named without one', async () => {
+    mountPalette({ groups: AVAILABLE_GROUPS })
+    await settle()
+
+    expect(document.body.querySelector('[data-palette="heading"]')).toBeNull()
+    expect(field()?.hasAttribute('aria-labelledby')).toBe(false)
+    expect(field()?.getAttribute('aria-label')).toBe('Palette')
+  })
+})
+
 describe('one step of several', () => {
   it('says which step the field is on, and says it describes the field', async () => {
     mountPalette({ groups: AVAILABLE_GROUPS, crumb: 'New name for «Entropy»' })

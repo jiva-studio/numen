@@ -65,6 +65,7 @@ function getRowIcon(id: string) {
     :multi="picker.multi.value"
     :is-busy="field.isBusy"
     :placeholder="picker.question.value?.placeholder ?? field.placeholder"
+    :heading="picker.question.value?.heading"
     :crumb="field.crumb"
     :step="picker.question.value?.step ?? field.step"
     :opens-on="field.opensOn"
