@@ -6,7 +6,9 @@ describe('an error code of the schema', () => {
   it.each(ErrorCodeSchema.values.map((value) => [value.name, value.number] as const))(
     'has words of its own for %s',
     (name, number) => {
-      expect(formatErrorCodeMessage(number), `${name} is drawn as nothing`).not.toBe('internal error')
+      expect(formatErrorCodeMessage(number), `${name} is drawn as nothing`).not.toBe(
+        'internal error',
+      )
     },
   )
 
