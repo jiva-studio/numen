@@ -38,7 +38,7 @@ func NewListFields(vault Vault, clock Clock, getMasks func() mask.Set) ListField
 
 // Execute lists the fields of the template, in the order they are asked, and suggests the name of the note: the
 // name of the template, then with 2, 3 and on up to 100 where a note of the folder has it, and with every number
-// taken the name of the template.
+// taken nothing.
 func (u ListFields) Execute(ctx context.Context, in FieldsRequest) (FieldsResult, error) {
 	if !isFolder(in.Folder) {
 		return FieldsResult{}, fmt.Errorf("%w: %q", ErrInvalidFolder, in.Folder)

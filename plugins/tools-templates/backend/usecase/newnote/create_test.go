@@ -255,10 +255,10 @@ func TestSuggestTheNameOfTheNote(t *testing.T) {
 			t.Errorf("name = %q", got)
 		}
 	})
-	t.Run("keeps a name that is .template alone", func(t *testing.T) {
+	t.Run("suggests the name a note can have for one that is .template alone", func(t *testing.T) {
 		vault := newVault(map[string]string{"Notes/.template.md": book})
 
-		if got := suggest(t, vault, "Notes/.template.md", "work"); got != ".template" {
+		if got := suggest(t, vault, "Notes/.template.md", "work"); got != "template" {
 			t.Errorf("name = %q", got)
 		}
 	})
@@ -284,11 +284,11 @@ func TestSuggestTheNameOfTheNote(t *testing.T) {
 			t.Errorf("name = %q", got)
 		}
 	})
-	t.Run("falls back to the name of the template after 100 taken names", func(t *testing.T) {
+	t.Run("suggests nothing after 100 taken names", func(t *testing.T) {
 		vault := newVault(map[string]string{"Templates/Meeting.md": book})
 		takeNames(vault, "work", "Meeting", 100)
 
-		if got := suggest(t, vault, "Templates/Meeting.md", "work"); got != "Meeting" {
+		if got := suggest(t, vault, "Templates/Meeting.md", "work"); got != "" {
 			t.Errorf("name = %q", got)
 		}
 	})
@@ -852,5 +852,18 @@ func TestRefuseToListFieldsOfAFolderOutsideTheVault(t *testing.T) {
 				t.Errorf("error = %v", err)
 			}
 		})
+	}
+}
+
+func TestSuggestANameANoteCanHave(t *testing.T) {
+	vault := newVault(map[string]string{"Templates/A#B.md": book})
+
+	found, err := newListFields(vault).Execute(t.Context(), newnote.FieldsRequest{Template: "Templates/A#B.md", Folder: "work"})
+
+	if err != nil || found.Name == "" || strings.ContainsAny(found.Name, "#") {
+		t.Fatalf("name = %q, error = %v", found.Name, err)
+	}
+	if _, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), getNamedRequest(vault, "Templates/A#B.md", "work", found.Name, nil)); err != nil {
+		t.Errorf("the suggested name is refused: %v", err)
 	}
 }
