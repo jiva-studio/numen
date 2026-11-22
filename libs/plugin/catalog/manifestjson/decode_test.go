@@ -239,6 +239,11 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 			manifest.ErrInvalidSettingGroup,
 		},
 		{
+			"a group id with surrounding space",
+			`{"id":"a.b","name":"A","version":"1.0.0","settingGroups":[{"id":" g","title":"G"}]}`,
+			manifest.ErrInvalidSettingGroup,
+		},
+		{
 			"a group without a title",
 			`{"id":"a.b","name":"A","version":"1.0.0","settingGroups":[{"id":"g"}]}`,
 			manifest.ErrInvalidSettingGroup,

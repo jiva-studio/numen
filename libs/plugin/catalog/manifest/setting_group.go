@@ -24,6 +24,8 @@ func (m Manifest) listSettingGroupIssues() []error {
 		switch {
 		case strings.TrimSpace(group.ID) == "":
 			issues = append(issues, fmt.Errorf("%w: a group has no id", ErrInvalidSettingGroup))
+		case group.ID != strings.TrimSpace(group.ID):
+			issues = append(issues, fmt.Errorf("%w: id %q has surrounding space", ErrInvalidSettingGroup, group.ID))
 		case declared[group.ID]:
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidSettingGroup, group.ID))
 		}
