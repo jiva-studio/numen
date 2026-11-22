@@ -305,7 +305,8 @@ func TestSuggestTheNameOfTheNote(t *testing.T) {
 
 func TestNameTheNote(t *testing.T) {
 	execute := func(vault newnote.Vault, request newnote.Request) (newnote.Result, error) {
-		return newUseCase(vault, newClock(getToday())).Execute(context.Background(), request)
+		t.Helper()
+		return newUseCase(vault, newClock(getToday())).Execute(t.Context(), request)
 	}
 
 	t.Run("files the note under the name given", func(t *testing.T) {
