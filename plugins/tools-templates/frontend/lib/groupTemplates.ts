@@ -1,8 +1,9 @@
 import type { CommandItem } from '@numen/plugin-sdk'
 
-/** A note found under the templates folder. */
+/** A note a mask names, and the group the mask puts it in. */
 export interface FoundTemplate {
   readonly path: string
+  readonly group: string
 }
 
 const compare = (left: string, right: string): number => {
@@ -13,20 +14,16 @@ const compare = (left: string, right: string): number => {
 const compareText = (left: string, right: string): number =>
   compare(left.toLowerCase(), right.toLowerCase())
 
-const getTitle = (path: string): string => (path.split('/').pop() ?? path).replace(/\.md$/i, '')
-
-const getGroup = (root: string, path: string): string => {
-  const inside = path.slice(root.length + 1)
-  return inside.slice(0, Math.max(inside.lastIndexOf('/'), 0))
+const getTitle = (path: string): string => {
+  const stem = (path.split('/').pop() ?? path).replace(/\.md$/i, '')
+  const title = stem.replace(/\.template$/, '')
+  return title === '' ? stem : title
 }
 
-/** Turns the notes found under the templates folder into the items of the picker. */
-export function createTemplateItems(
-  root: string,
-  found: readonly FoundTemplate[],
-): readonly CommandItem[] {
+/** Turns the notes the masks name into the items of the picker. */
+export function createTemplateItems(found: readonly FoundTemplate[]): readonly CommandItem[] {
   return found
-    .map(({ path }) => ({ path, title: getTitle(path), group: getGroup(root, path) }))
+    .map(({ path, group }) => ({ path, title: getTitle(path), group }))
     .sort(
       (left, right) =>
         compareText(left.group, right.group) ||

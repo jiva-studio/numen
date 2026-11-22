@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { VaultEntry } from '@numen/plugin-sdk'
+import { parseMasks } from '../lib/masks'
 import { createTemplateList, type TemplateFiles } from './createTemplateList'
 
 const note = (path: string): VaultEntry => ({
@@ -36,6 +37,7 @@ const createVault = (folders: Record<string, readonly VaultEntry[] | Error>) => 
 }
 
 const vault = {
+  '': [folder('Templates'), folder('Models'), folder('Notes'), note('Inbox.md')],
   Templates: [
     note('Templates/Meeting.md'),
     note('Templates/Book review.md'),
@@ -44,15 +46,18 @@ const vault = {
     folder('Templates/Daily'),
   ],
   'Templates/Daily': [note('Templates/Daily/Journal.md')],
-  Models: [note('Models/Recipe.md')],
+  Models: [note('Models/Recipe.md'), note('Models/Weekly.template.md')],
+  Notes: [note('Notes/Plan.md'), note('Notes/Standup.template.md')],
 }
 
-describe('the template list', () => {
-  it('lists the notes of the folder in the setting', async () => {
-    const { files } = createVault(vault)
-    const list = createTemplateList({ files, getFolder: () => 'Templates' })
+const listWith = (files: TemplateFiles, raw: string) =>
+  createTemplateList({ files, getMasks: () => parseMasks(raw) }).listItems()
 
-    const items = await list.listItems()
+describe('the template list', () => {
+  it('lists the notes the masks name, grouped by the folder below the static folder', async () => {
+    const { files } = createVault(vault)
+
+    const items = await listWith(files, 'Templates/**')
 
     expect(items.map((item) => [item.id, item.title, item.group])).toEqual([
       ['Templates/Book review.md', 'Book review', undefined],
@@ -61,21 +66,49 @@ describe('the template list', () => {
     ])
   })
 
-  it('lists other notes after the setting changes', async () => {
+  it('lists the notes named *.template.md anywhere, titled without the suffix, in their own folder', async () => {
     const { files } = createVault(vault)
-    let setting = 'Templates'
-    const list = createTemplateList({ files, getFolder: () => setting })
+
+    const items = await listWith(files, '**/*.template.md')
+
+    expect(items.map((item) => [item.id, item.title, item.group])).toEqual([
+      ['Models/Weekly.template.md', 'Weekly', 'Models'],
+      ['Notes/Standup.template.md', 'Standup', 'Notes'],
+    ])
+  })
+
+  it('lists the templates of every mask once', async () => {
+    const { files } = createVault({
+      ...vault,
+      Templates: [note('Templates/Plan.template.md')],
+      'Templates/Daily': [],
+    })
+
+    const items = await listWith(files, 'Templates/**, **/*.template.md')
+
+    expect(items.map((item) => item.id)).toEqual([
+      'Templates/Plan.template.md',
+      'Models/Weekly.template.md',
+      'Notes/Standup.template.md',
+    ])
+  })
+
+  it('lists other notes after the masks change', async () => {
+    const { files } = createVault(vault)
+    let setting = 'Templates/**'
+    const list = createTemplateList({ files, getMasks: () => parseMasks(setting) })
 
     const before = await list.listItems()
-    setting = 'Models'
+    setting = 'Models/*'
     const after = await list.listItems()
 
     expect(before.map((item) => item.id)).toContain('Templates/Meeting.md')
-    expect(after.map((item) => item.id)).toEqual(['Models/Recipe.md'])
+    expect(after.map((item) => item.id)).toEqual(['Models/Recipe.md', 'Models/Weekly.template.md'])
   })
 
   it('lists the notes of nested subfolders in the group of their path', async () => {
     const { files } = createVault({
+      '': [folder('Templates')],
       Templates: [folder('Templates/Meetings')],
       'Templates/Meetings': [
         folder('Templates/Meetings/Weekly'),
@@ -84,7 +117,7 @@ describe('the template list', () => {
       'Templates/Meetings/Weekly': [note('Templates/Meetings/Weekly/Standup.md')],
     })
 
-    const items = await createTemplateList({ files, getFolder: () => 'Templates' }).listItems()
+    const items = await listWith(files, 'Templates/**')
 
     expect(items.map((item) => [item.title, item.group])).toEqual([
       ['One to one', 'Meetings'],
@@ -92,16 +125,25 @@ describe('the template list', () => {
     ])
   })
 
-  it('visits each folder once', async () => {
+  it('visits only the folders a mask could reach, each once', async () => {
     const { files, listed } = createVault(vault)
 
-    await createTemplateList({ files, getFolder: () => 'Templates' }).listItems()
+    await listWith(files, 'Templates/**')
 
-    expect([...listed].sort()).toEqual(['Templates', 'Templates/Daily'])
+    expect([...listed].sort()).toEqual(['', 'Templates', 'Templates/Daily'])
+  })
+
+  it('visits every folder for a mask that starts with **', async () => {
+    const { files, listed } = createVault(vault)
+
+    await listWith(files, '**/*.template.md')
+
+    expect([...listed].sort()).toEqual(['', 'Models', 'Notes', 'Templates', 'Templates/Daily'])
   })
 
   it('skips files that are not notes', async () => {
     const { files } = createVault({
+      '': [folder('Templates')],
       Templates: [
         file('Templates/diagram.png'),
         file('Templates/todo.txt'),
@@ -109,19 +151,20 @@ describe('the template list', () => {
       ],
     })
 
-    const items = await createTemplateList({ files, getFolder: () => 'Templates' }).listItems()
+    const items = await listWith(files, 'Templates/**')
 
     expect(items.map((item) => item.id)).toEqual(['Templates/Plan.md'])
   })
 
   it('skips a subfolder that cannot be listed', async () => {
     const { files } = createVault({
+      '': [folder('Templates')],
       Templates: [note('Templates/Plan.md'), folder('Templates/Broken'), folder('Templates/Daily')],
       'Templates/Broken': new Error('access denied'),
       'Templates/Daily': [note('Templates/Daily/Journal.md')],
     })
 
-    const items = await createTemplateList({ files, getFolder: () => 'Templates' }).listItems()
+    const items = await listWith(files, 'Templates/**')
 
     expect(items.map((item) => item.id)).toEqual([
       'Templates/Plan.md',
@@ -129,19 +172,19 @@ describe('the template list', () => {
     ])
   })
 
-  it('lists nothing when the folder is missing', async () => {
+  it('lists nothing when the vault cannot be listed', async () => {
     const { files } = createVault({})
 
-    const items = await createTemplateList({ files, getFolder: () => 'Templates' }).listItems()
-
-    expect(items).toEqual([])
+    expect(await listWith(files, 'Templates/**')).toEqual([])
   })
 
-  it('lists nothing while the folder holds no note', async () => {
-    const { files } = createVault({ Templates: [folder('Templates/Daily')], 'Templates/Daily': [] })
+  it('lists nothing while no note is named', async () => {
+    const { files } = createVault({
+      '': [folder('Templates')],
+      Templates: [folder('Templates/Daily')],
+      'Templates/Daily': [],
+    })
 
-    const items = await createTemplateList({ files, getFolder: () => 'Templates' }).listItems()
-
-    expect(items).toEqual([])
+    expect(await listWith(files, 'Templates/**')).toEqual([])
   })
 })

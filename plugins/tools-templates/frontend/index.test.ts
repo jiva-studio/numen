@@ -15,6 +15,14 @@ const note = (path: string): VaultEntry => ({
   type: 'note',
 })
 
+const folder = (path: string): VaultEntry => ({
+  path,
+  name: path.split('/').pop() ?? path,
+  isFolder: true,
+  isNote: false,
+  type: '',
+})
+
 const targetOf = (path: string, isFolder: boolean): CommandNote => ({
   path,
   title: path.split('/').pop() ?? path,
@@ -36,6 +44,7 @@ const createFiles = (folders: Record<string, readonly VaultEntry[]>): VaultFiles
 })
 
 const invented = {
+  '': [folder('Templates'), folder('Models')],
   Templates: [note('Templates/Meeting.md'), note('Templates/Book review.md')],
   Models: [note('Models/Recipe.md')],
 }
@@ -49,7 +58,7 @@ const setup = (
   const createNote = vi.fn(async (_request: CreateNoteRequest) => answer)
   const context = createMockPluginContext({
     pluginId: PLUGIN_ID,
-    initialSettings: { folder: 'Templates' },
+    initialSettings: { templates: 'Templates/**' },
   })
   const host = createMockHostServices({
     files: createFiles(folders),
@@ -74,7 +83,7 @@ describe('the templates frontend', () => {
     expect(context.getRegisteredCommands().map((command) => command.id)).toEqual([COMMAND])
   })
 
-  it('lists the templates of the folder in the setting', async () => {
+  it('lists the templates the masks of the setting name', async () => {
     const { context } = setup(created('notes/Meeting.md'))
 
     const items = await context.getRegisteredCommands()[0]?.listItems?.(targetOf('a.md', false))
@@ -88,14 +97,17 @@ describe('the templates frontend', () => {
   it('lists other templates after the setting changes', async () => {
     const { context } = setup(created('notes/Meeting.md'))
 
-    context.setSetting('folder', ' /Models/ ')
+    context.setSetting('templates', ' /Models/** ')
     const items = await context.getRegisteredCommands()[0]?.listItems?.(targetOf('a.md', false))
 
     expect(items?.map((item) => item.id)).toEqual(['Models/Recipe.md'])
   })
 
-  it('offers no items while the folder holds no template', async () => {
-    const { context } = setup(created('notes/Meeting.md'), { Templates: [] })
+  it('offers no items while no note is a template', async () => {
+    const { context } = setup(created('notes/Meeting.md'), {
+      '': [folder('Templates')],
+      Templates: [],
+    })
 
     const items = await context.getRegisteredCommands()[0]?.listItems?.(targetOf('a.md', false))
 

@@ -4,7 +4,7 @@
 import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { templatesApi, type TemplatesApi } from './api/wire'
 import { getTargetFolder } from './lib/getTargetFolder'
-import { normalizeFolder } from './lib/normalizeFolder'
+import { parseMasks } from './lib/masks'
 import { createTemplateList } from './model/createTemplateList'
 
 export const activate = (
@@ -16,7 +16,7 @@ export const activate = (
   if (!files) throw new Error('the Templates plugin needs the files of the vault')
   const list = createTemplateList({
     files,
-    getFolder: () => normalizeFolder(context.settings.get<string>('folder') ?? ''),
+    getMasks: () => parseMasks(context.settings.get<string>('templates') ?? ''),
   })
   context.register.command({
     id: 'note.createFromTemplate',

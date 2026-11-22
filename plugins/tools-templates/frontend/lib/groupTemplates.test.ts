@@ -1,52 +1,55 @@
 import { describe, expect, it } from 'vitest'
 import { createTemplateItems } from './groupTemplates'
 
-const ids = (paths: readonly string[], root = 'Templates') =>
-  createTemplateItems(
-    root,
-    paths.map((path) => ({ path })),
-  ).map((item) => item.id)
+const found = (path: string, group = '') => ({ path, group })
+
+const ids = (templates: readonly { path: string; group: string }[]) =>
+  createTemplateItems(templates).map((item) => item.id)
 
 describe('the items of the template picker', () => {
   it('uses the vault path as the id and the file name without the extension as the title', () => {
-    expect(createTemplateItems('Templates', [{ path: 'Templates/Book review.md' }])).toEqual([
+    expect(createTemplateItems([found('Templates/Book review.md')])).toEqual([
       { id: 'Templates/Book review.md', title: 'Book review' },
     ])
   })
 
-  it('places a template of the root in no group', () => {
-    const [item] = createTemplateItems('Templates', [{ path: 'Templates/Meeting.md' }])
+  it('strips .template from the title', () => {
+    expect(createTemplateItems([found('Notes/Weekly.template.md', 'Notes')])).toEqual([
+      { id: 'Notes/Weekly.template.md', title: 'Weekly', group: 'Notes' },
+    ])
+  })
+
+  it('keeps a title that is .template alone', () => {
+    expect(createTemplateItems([found('Notes/.template.md', 'Notes')])).toEqual([
+      { id: 'Notes/.template.md', title: '.template', group: 'Notes' },
+    ])
+  })
+
+  it('places a template with no group in no group', () => {
+    const [item] = createTemplateItems([found('Templates/Meeting.md')])
 
     expect(item).toBeDefined()
     expect('group' in (item ?? {})).toBe(false)
   })
 
-  it('places a template of a subfolder in the group of its path', () => {
-    const items = createTemplateItems('Templates', [
-      { path: 'Templates/Meetings/Weekly.md' },
-      { path: 'Templates/Meetings/Quarterly/Review.md' },
+  it('places a template in the group it was found in', () => {
+    const items = createTemplateItems([
+      found('Templates/Meetings/Weekly.md', 'Meetings'),
+      found('Templates/Meetings/Quarterly/Review.md', 'Meetings/Quarterly'),
     ])
 
     expect(items.map((item) => item.group)).toEqual(['Meetings', 'Meetings/Quarterly'])
   })
 
-  it('reads the group relative to a root that has several segments', () => {
-    const items = createTemplateItems('Work/Models', [{ path: 'Work/Models/Meetings/Weekly.md' }])
-
-    expect(items).toEqual([
-      { id: 'Work/Models/Meetings/Weekly.md', title: 'Weekly', group: 'Meetings' },
-    ])
-  })
-
   it('orders root templates before groups, and titles inside a group', () => {
     expect(
       ids([
-        'Templates/zeta.md',
-        'Templates/Weekly/b.md',
-        'Templates/Alpha.md',
-        'Templates/Weekly/A.md',
-        'Templates/Daily/Note.md',
-        'Templates/archive/x.md',
+        found('Templates/zeta.md'),
+        found('Templates/Weekly/b.md', 'Weekly'),
+        found('Templates/Alpha.md'),
+        found('Templates/Weekly/A.md', 'Weekly'),
+        found('Templates/Daily/Note.md', 'Daily'),
+        found('Templates/archive/x.md', 'archive'),
       ]),
     ).toEqual([
       'Templates/Alpha.md',
@@ -59,14 +62,13 @@ describe('the items of the template picker', () => {
   })
 
   it('orders templates of equal titles by path', () => {
-    expect(ids(['Templates/a.md', 'Templates/A.md'])).toEqual(['Templates/A.md', 'Templates/a.md'])
-    expect(ids(['Templates/a.md', 'Templates/A.md'].reverse())).toEqual([
-      'Templates/A.md',
-      'Templates/a.md',
-    ])
+    const a = [found('Templates/a.md'), found('Templates/A.md')]
+
+    expect(ids(a)).toEqual(['Templates/A.md', 'Templates/a.md'])
+    expect(ids([...a].reverse())).toEqual(['Templates/A.md', 'Templates/a.md'])
   })
 
   it('returns no items for no templates', () => {
-    expect(createTemplateItems('Templates', [])).toEqual([])
+    expect(createTemplateItems([])).toEqual([])
   })
 })
