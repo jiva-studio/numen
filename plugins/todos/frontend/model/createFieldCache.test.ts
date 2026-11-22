@@ -63,24 +63,39 @@ describe('the field cache', () => {
     expect(cache.get().projects).toHaveLength(1)
   })
 
-  it('waits for the newest read when a newer one started meanwhile', async () => {
+  it('waits for a read that is already running before it decides to read', async () => {
+    const answers: ((value: unknown) => void)[] = []
+    const listFields = vi.fn(() => new Promise((resolve) => answers.push(resolve)))
+    const cache = createFieldCache({ listFields } as never, { now: () => 0 })
+
+    const running = cache.refresh()
+    const ensured = cache.ensure()
+    answers[0]?.({
+      ok: true,
+      value: { projects: [{ name: 'work', count: 1 }], contexts: [], tags: [] },
+    })
+    await ensured
+    await running
+
+    expect(listFields).toHaveBeenCalledTimes(1)
+    expect(cache.get().projects).toEqual([{ name: 'work', count: 1 }])
+  })
+
+  it('does not end the wait before the newest of several reads answered', async () => {
     const answers: ((value: unknown) => void)[] = []
     const listFields = vi.fn(() => new Promise((resolve) => answers.push(resolve)))
     const cache = createFieldCache({ listFields } as never, { now: () => 0 })
 
     const first = cache.refresh()
     const second = cache.refresh()
+    const ensured = cache.ensure()
     answers[0]?.({ ok: true, value: { projects: [], contexts: [], tags: [] } })
-    const isFirstDone = first.then(() => true)
-    const isStillWaiting = await Promise.race([isFirstDone, Promise.resolve(false)])
-
-    expect(isStillWaiting).toBe(false)
-
+    await first
     answers[1]?.({
       ok: true,
       value: { projects: [{ name: 'work', count: 1 }], contexts: [], tags: [] },
     })
-    await first
+    await ensured
     await second
 
     expect(cache.get().projects).toEqual([{ name: 'work', count: 1 }])

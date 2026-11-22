@@ -17,7 +17,6 @@ export function createFieldCache(
   let fields: ListFieldsResponse = { projects: [], contexts: [], tags: [] }
   let latest = 0
   let askedAt = Number.NEGATIVE_INFINITY
-  let running: Promise<void> | null = null
   let pending: Promise<void> = Promise.resolve()
   const refresh = (): Promise<void> => {
     latest += 1
@@ -26,20 +25,31 @@ export function createFieldCache(
     const run = api.listFields().then((result) => {
       if (result.ok && asked === latest) fields = result.value
     })
-    pending = run
-    return run.then(() => (pending === run ? undefined : pending))
+    pending = run.then(
+      () => undefined,
+      () => undefined,
+    )
+    return run
+  }
+  const waitForReads = async (): Promise<void> => {
+    let seen = pending
+    await seen
+    while (seen !== pending) {
+      seen = pending
+      await seen
+    }
   }
   const isEmpty = (): boolean =>
     fields.projects.length + fields.contexts.length + fields.tags.length === 0
   return {
     get: () => fields,
     refresh,
-    ensure: () => {
-      if (!isEmpty() || clock.now() - askedAt < RETRY_AFTER_MS) return running ?? Promise.resolve()
-      running ??= refresh().finally(() => {
-        running = null
-      })
-      return running
+    ensure: async () => {
+      if (!isEmpty()) return
+      await waitForReads()
+      if (!isEmpty() || clock.now() - askedAt < RETRY_AFTER_MS) return
+      await refresh()
+      await waitForReads()
     },
   }
 }
