@@ -8,10 +8,10 @@ function mountStyles(view: EditorView): void {
 }
 
 /**
- * Draws the tooltips of the editor in the page. A pane clips what it holds and makes it the containing
- * block of a fixed element, so a list drawn inside the editor is cut at the edge of the pane. The
- * styles of the editor are mounted in the shadow root of the pane, so they are mounted in the page too,
- * in the order the editor mounts them in, or a base rule would win over a rule of the theme.
+ * Draws the tooltips of the editor in the page. The pane body sets `contain: strict`, which clips a
+ * fixed element at the edge of the pane, so a list inside the editor is cut there. The editor styles
+ * are mounted in the shadow root of the pane, so they are mounted in the page too, in the order the
+ * editor mounts them, or a base rule wins over a rule of the theme.
  */
 export function pageTooltips(): Extension {
   return [
