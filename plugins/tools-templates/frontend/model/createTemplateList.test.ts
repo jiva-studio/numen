@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { VaultEntry } from '@numen/plugin-sdk'
 import { parseMasks } from '../lib/masks'
-import { createTemplateList, type TemplateFiles } from './createTemplateList'
+import { createTemplateList, TemplateListError, type TemplateFiles } from './createTemplateList'
 
 const note = (path: string): VaultEntry => ({
   path,
@@ -27,9 +27,10 @@ const createVault = (folders: Record<string, readonly VaultEntry[] | Error>) => 
     list: async (path) => {
       listed.push(path)
       const found = folders[path]
-      if (found === undefined || found instanceof Error) {
-        throw found ?? new Error(`no folder ${path}`)
+      if (found === undefined) {
+        throw Object.assign(new Error(`no folder ${path}`), { code: 'not_found' })
       }
+      if (found instanceof Error) throw found
       return found
     },
   }
@@ -156,11 +157,10 @@ describe('the template list', () => {
     expect(items.map((item) => item.id)).toEqual(['Templates/Plan.md'])
   })
 
-  it('skips a subfolder that cannot be listed', async () => {
+  it('skips a subfolder that is gone', async () => {
     const { files } = createVault({
       '': [folder('Templates')],
-      Templates: [note('Templates/Plan.md'), folder('Templates/Broken'), folder('Templates/Daily')],
-      'Templates/Broken': new Error('access denied'),
+      Templates: [note('Templates/Plan.md'), folder('Templates/Gone'), folder('Templates/Daily')],
       'Templates/Daily': [note('Templates/Daily/Journal.md')],
     })
 
@@ -170,6 +170,19 @@ describe('the template list', () => {
       'Templates/Plan.md',
       'Templates/Daily/Journal.md',
     ])
+  })
+
+  it('fails with the folder it could not list when access is denied', async () => {
+    const { files } = createVault({
+      '': [folder('Templates')],
+      Templates: [note('Templates/Plan.md'), folder('Templates/Broken')],
+      'Templates/Broken': new Error('access denied'),
+    })
+
+    await expect(listWith(files, 'Templates/**')).rejects.toThrow(TemplateListError)
+    await expect(listWith(files, 'Templates/**')).rejects.toThrow(
+      /Templates\/Broken.*access denied/,
+    )
   })
 
   it('lists nothing when the vault cannot be listed', async () => {

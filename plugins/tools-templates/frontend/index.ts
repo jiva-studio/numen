@@ -8,7 +8,7 @@ import { askFields, type AskFields } from './ui/askFields'
 import { getTargetFolder } from './lib/getTargetFolder'
 import { getTitle } from './lib/groupTemplates'
 import { parseMasks } from './lib/masks'
-import { createTemplateList } from './model/createTemplateList'
+import { createTemplateList, TemplateListError } from './model/createTemplateList'
 
 export const activate = (
   context: PluginContext,
@@ -24,7 +24,15 @@ export const activate = (
   })
   context.register.command({
     id: 'note.createFromTemplate',
-    listItems: () => list.listItems(),
+    listItems: async () => {
+      try {
+        return await list.listItems()
+      } catch (error) {
+        if (!(error instanceof TemplateListError)) throw error
+        host.ui.workspace?.messages.showError(error.message)
+        return []
+      }
+    },
     handler: async (note, itemId) => {
       if (!itemId) return
       const folder = getTargetFolder(note)

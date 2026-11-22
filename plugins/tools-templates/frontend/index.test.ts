@@ -41,7 +41,9 @@ const targetOf = (path: string, isFolder: boolean): CommandNote => ({
 const createFiles = (folders: Record<string, readonly VaultEntry[]>): VaultFiles => ({
   list: async (folder) => {
     const found = folders[folder]
-    if (found === undefined) throw new Error(`no folder ${folder}`)
+    if (found === undefined) {
+      throw Object.assign(new Error(`no folder ${folder}`), { code: 'not_found' })
+    }
     return found
   },
   move: () => Promise.reject(new Error('unused')),
@@ -67,7 +69,11 @@ const CLIENT: Field = { kind: 'text', label: 'Client', options: [], default: 'Ac
 const setup = (
   answer: Result<CreateNoteResponse, ApiError>,
   folders: Record<string, readonly VaultEntry[]> = invented,
-  options: { fields?: Result<ListFieldsResponse, ApiError>; answers?: Answers } = {},
+  options: {
+    fields?: Result<ListFieldsResponse, ApiError>
+    answers?: Answers
+    isDenied?: boolean
+  } = {},
 ) => {
   const opened: string[] = []
   const errors: string[] = []
@@ -79,7 +85,9 @@ const setup = (
     initialSettings: { templates: 'Templates/**' },
   })
   const host = createMockHostServices({
-    files: createFiles(folders),
+    files: options.isDenied
+      ? { ...createFiles(folders), list: () => Promise.reject(new Error('access denied')) }
+      : createFiles(folders),
     workspace: {
       files: { open: (path: string) => opened.push(path) },
       messages: { showError: (text: string) => errors.push(text) },
@@ -130,6 +138,15 @@ describe('the templates frontend', () => {
     const items = await context.getRegisteredCommands()[0]?.listItems?.(targetOf('a.md', false))
 
     expect(items).toEqual([])
+  })
+
+  it('tells the user when the templates cannot be listed', async () => {
+    const { context, errors } = setup(created('notes/Meeting.md'), invented, { isDenied: true })
+
+    const items = await context.getRegisteredCommands()[0]?.listItems?.(targetOf('a.md', false))
+
+    expect(items).toEqual([])
+    expect(errors).toEqual(['cannot list the folder "": access denied'])
   })
 
   it('opens the note the backend made', async () => {
