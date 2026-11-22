@@ -195,6 +195,26 @@ func (i *Index) List(today string, f filter.Filter, limit int) Listing {
 	return Listing{Tasks: accepted, Total: total, Revision: revision}
 }
 
+// PathListing is the paths of the notes that hold a task a filter accepts, sorted.
+type PathListing struct {
+	Paths   []string
+	IsReady bool
+}
+
+// ListPaths returns the paths of the notes with at least one task the filter accepts at today.
+func (i *Index) ListPaths(today string, f filter.Filter) PathListing {
+	i.mu.Lock()
+	listing := PathListing{Paths: []string{}, IsReady: i.isReady}
+	for path, one := range i.entries {
+		if len(filter.Apply(one.tasks, f, today)) > 0 {
+			listing.Paths = append(listing.Paths, path)
+		}
+	}
+	i.mu.Unlock()
+	slices.Sort(listing.Paths)
+	return listing
+}
+
 // Summarize counts the open tasks at today.
 func (i *Index) Summarize(today string) Summary {
 	i.mu.Lock()

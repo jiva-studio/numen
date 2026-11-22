@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -509,5 +510,29 @@ func TestListFieldsDropsTheCountsOfANoteThatIsRenamedAwayAndStaysTheSameWhenItMo
 
 	if got, want := formatCounts(f.index.ListFields().Projects), []string{"home=1"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("projects = %v, want %v", got, want)
+	}
+}
+
+func TestListPathsReturnsTheSortedNotesWithATaskTheFilterAccepts(t *testing.T) {
+	f := newFixture(map[string]string{
+		"b.md": "- [ ] one due:2026-11-10\n",
+		"a.md": "- [ ] two due:2026-11-10\n- [ ] three\n",
+		"c.md": "- [x] four\n",
+		"d.md": "- [ ] five due:2026-12-01\n",
+	})
+	before := f.index.ListPaths("2026-11-14", filter.Filter{Due: filter.DueOverdue})
+	f.scan(t)
+
+	overdue := f.index.ListPaths("2026-11-14", filter.Filter{Due: filter.DueOverdue})
+	done := f.index.ListPaths("2026-11-14", filter.Filter{Status: []todo.Status{todo.StatusDone}})
+
+	if before.IsReady || len(before.Paths) != 0 {
+		t.Errorf("before the scan = %+v, want no paths and not ready", before)
+	}
+	if !overdue.IsReady || !slices.Equal(overdue.Paths, []string{"a.md", "b.md"}) {
+		t.Errorf("overdue = %+v, want a.md and b.md", overdue)
+	}
+	if !slices.Equal(done.Paths, []string{"c.md"}) {
+		t.Errorf("done = %+v, want c.md", done)
 	}
 }
