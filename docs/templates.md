@@ -38,6 +38,8 @@ A template is at most 256 KiB, the text it writes at most 1 MiB, and it runs for
 
 The date and the time are those of the machine at the call, in its time zone, and the names of months and days are in English.
 
+A name or a folder is pasted as it is, and a name such as `[x]`, `true`, `2024-01-01`, `{a` or `@a` is not a plain YAML text, so write them into the frontmatter with `yaml`, which quotes them: `title: {{ .title | yaml }}`, `folder: {{ .folder | yaml }}`. A folder has no control character.
+
 ### Dates
 
 | Function | Gives |

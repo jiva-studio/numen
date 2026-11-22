@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -185,6 +186,9 @@ func isFolder(path string) bool {
 		return true
 	}
 	if path == "." || path != pathpkg.Clean(path) || strings.ContainsAny(path, "\\\x00") || pathpkg.IsAbs(path) {
+		return false
+	}
+	if strings.ContainsFunc(path, func(r rune) bool { return unicode.IsControl(r) || r == '\u2028' || r == '\u2029' }) {
 		return false
 	}
 	return !slices.Contains(strings.Split(path, "/"), "..")

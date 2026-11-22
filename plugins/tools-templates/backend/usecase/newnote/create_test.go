@@ -7,6 +7,7 @@ import (
 	"fmt"
 	pathpkg "path"
 	"regexp"
+	"strconv"
 	"slices"
 	"strings"
 	"testing"
@@ -883,5 +884,36 @@ func TestRefuseATemplateThatAsksOtherQuestionsForThisName(t *testing.T) {
 
 	if !errors.Is(err, newnote.ErrDifferentQuestions) || len(vault.Scans()) != 0 {
 		t.Errorf("error = %v, scans = %v", err, vault.Scans())
+	}
+}
+
+func TestKeepTheTitleAndFolderInsideTheirFrontmatterValue(t *testing.T) {
+	for _, name := range []string{"[x]", "true", "2024-01-01", "{a", "- a", "@a", "!x", "&a", "%a", "null", "1e3"} {
+		t.Run(name, func(t *testing.T) {
+			vault := newVault(map[string]string{"Templates/Titled.md": "---\ntitle: {{ .title | yaml }}\nin: {{ .folder | yaml }}\n---\nbody\n"})
+
+			made, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), getNamedRequest(vault, "Templates/Titled.md", "work", name, nil))
+
+			if err != nil {
+				t.Fatal(err)
+			}
+			if content := getContent(t, vault, made.Path); !strings.Contains(content, "title: "+strconv.Quote(name)+"\n") || !strings.Contains(content, "in: \"work\"\n") {
+				t.Errorf("content = %q", content)
+			}
+		})
+	}
+}
+
+func TestRefuseAFolderWithAControlCharacter(t *testing.T) {
+	for _, folder := range []string{"a\nb", "a\rb", "a\tb", "a\x7fb", "a b"} {
+		t.Run(fmt.Sprintf("%q", folder), func(t *testing.T) {
+			vault := newVault(map[string]string{"Templates/Meeting.md": book})
+
+			_, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), getRequest(vault, "Templates/Meeting.md", folder, nil))
+
+			if !errors.Is(err, newnote.ErrInvalidFolder) {
+				t.Errorf("error = %v", err)
+			}
+		})
 	}
 }
