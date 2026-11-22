@@ -24,7 +24,10 @@ const (
 type fixedClock struct{}
 
 func (fixedClock) Now() time.Time {
-	now, _ := time.Parse(time.DateOnly, today)
+	now, err := time.Parse(time.DateOnly, today)
+	if err != nil {
+		panic(err)
+	}
 	return now
 }
 

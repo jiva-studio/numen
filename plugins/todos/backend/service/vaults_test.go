@@ -25,7 +25,10 @@ import (
 type testClock struct{}
 
 func (testClock) Now() time.Time {
-	now, _ := time.Parse(time.DateOnly, today)
+	now, err := time.Parse(time.DateOnly, today)
+	if err != nil {
+		panic(err)
+	}
 	return now
 }
 
