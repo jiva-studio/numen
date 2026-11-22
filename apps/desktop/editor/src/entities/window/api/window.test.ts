@@ -115,7 +115,7 @@ describe('the streams a window follows', () => {
       }
     })().catch(() => undefined)
 
-    expect(seen).toStrictEqual([{ token: 'token-9', isFlushRequired: true }])
+    expect(seen).toStrictEqual([{ token: 'token-9', flush: true }])
     expect(request.watchWindowClose.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
   })
 

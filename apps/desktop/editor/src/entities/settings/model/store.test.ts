@@ -40,7 +40,7 @@ const createStore = (text: string, failure: string | null = null) => {
     settingsService: {
       getSettings: () => answerWith(text),
       writeSettings: (request) => {
-        requests.push(request.settings.map((one) => ({ at: one.at, value: one.value })))
+        requests.push(request.settings.map((one) => ({ at: one.keyPath, value: one.value })))
         if (failure) throw createLostConnection(failure)
         return { written: '{}', version: 1n }
       },

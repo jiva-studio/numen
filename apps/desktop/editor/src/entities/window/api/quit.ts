@@ -22,7 +22,7 @@ export const createQuitApi = (windowService: WindowClients['windowService']) => 
    */
   async function* watchWindowClose(signal: AbortSignal): AsyncGenerator<QuitRequest> {
     for await (const request of windowService.watchWindowClose({ window: WINDOW }, { signal })) {
-      yield { token: request.token, flush: request.flush }
+      yield { token: request.token, flush: request.isFlushRequired }
     }
   }
 

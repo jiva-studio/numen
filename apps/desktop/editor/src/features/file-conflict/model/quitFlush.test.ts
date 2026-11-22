@@ -138,7 +138,7 @@ describe('a page requested to write its unsaved changes', () => {
     // No interval has fired, so what was typed is in the page and nowhere else.
     expect(fakeCore.writtenFiles).toEqual([])
 
-    mockStream.send({ token: '7', isFlushRequired: true })
+    mockStream.send({ token: '7', flush: true })
     await settle()
 
     expect(fakeCore.writtenFiles).toEqual([
@@ -160,7 +160,7 @@ describe('a page requested to write its unsaved changes', () => {
     notes.setBody('Note.md', 'member')
     fakeCore.holdWrites()
 
-    mockStream.send({ token: '1', isFlushRequired: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults).toEqual([])
@@ -185,7 +185,7 @@ describe('a page requested to write its unsaved changes', () => {
     notes.setBody('Note.md', 'still being written')
 
     // The stream opens with a token and no flush request.
-    mockStream.send({ token: '3', isFlushRequired: false })
+    mockStream.send({ token: '3', flush: false })
     await settle()
 
     expect(fakeCore.writtenFiles).toEqual([])
@@ -199,7 +199,7 @@ describe('a page requested to write its unsaved changes', () => {
     going.addHandler(createNoteFlushHandler(openNotes()))
     going.start().catch(rethrow)
 
-    mockStream.send({ token: '0', isFlushRequired: true })
+    mockStream.send({ token: '0', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults).toEqual([{ token: '0', result: 'written' }])
@@ -228,7 +228,7 @@ describe('a page holding text of a note whose file was deleted', () => {
   it('stops the quit and names the note, writing nothing by itself', async () => {
     const { mockStream, fakeCore, notes, going } = await createGoneNote()
 
-    mockStream.send({ token: '1', isFlushRequired: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
 
     expect(fakeCore.writtenFiles.filter((one) => one.path === 'Gone.md')).toEqual([])
@@ -240,7 +240,7 @@ describe('a page holding text of a note whose file was deleted', () => {
 
   it('writes the text as the file again when the person keeps it, and then lets the quit go', async () => {
     const { mockStream, fakeCore, going } = await createGoneNote()
-    mockStream.send({ token: '1', isFlushRequired: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
 
     await going.conflicts.value[0]?.keep()
@@ -255,7 +255,7 @@ describe('a page holding text of a note whose file was deleted', () => {
 
   it('drops the text when the person discards it, and then lets the quit go', async () => {
     const { mockStream, fakeCore, notes, going } = await createGoneNote()
-    mockStream.send({ token: '1', isFlushRequired: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
 
     await going.conflicts.value[0]?.take()
@@ -276,7 +276,7 @@ describe('a page holding text the file changed under', () => {
     note.raise(going.raise)
     going.start().catch(rethrow)
 
-    mockStream.send({ token: '4', isFlushRequired: true })
+    mockStream.send({ token: '4', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults).toEqual([{ token: '4', result: 'unsaved' }])
@@ -298,7 +298,7 @@ describe('a page holding text the file changed under', () => {
     notes.setBody('Other.md', 'on its way')
     fakeCore.holdWrites()
 
-    mockStream.send({ token: '5', isFlushRequired: true })
+    mockStream.send({ token: '5', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults).toEqual([{ token: '5', result: 'unsaved' }])
@@ -322,7 +322,7 @@ describe('a page holding text the file changed under', () => {
     second.raise(going.raise)
     going.start().catch(rethrow)
 
-    mockStream.send({ token: '6', isFlushRequired: true })
+    mockStream.send({ token: '6', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults).toEqual([{ token: '6', result: 'unsaved' }])
@@ -353,7 +353,7 @@ describe('a page holding text the file changed under', () => {
     createConflict('Later.md').raise(going.raise)
     going.start().catch(rethrow)
 
-    mockStream.send({ token: '8', isFlushRequired: true })
+    mockStream.send({ token: '8', flush: true })
     await settle()
 
     going.conflicts.value[0]?.later()
@@ -366,7 +366,7 @@ describe('a page holding text the file changed under', () => {
     // The result is still pending on the next flush request.
     mockStream.end()
     await settle()
-    mockStream.send({ token: '9', isFlushRequired: true })
+    mockStream.send({ token: '9', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '9', result: 'unsaved' })
@@ -383,7 +383,7 @@ describe('a page holding text the file changed under', () => {
     note.raise(going.raise)
     going.start().catch(rethrow)
 
-    mockStream.send({ token: '2', isFlushRequired: true })
+    mockStream.send({ token: '2', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults).toEqual([{ token: '2', result: 'unsaved' }])
@@ -396,7 +396,7 @@ describe('a page holding text the file changed under', () => {
     // No result is reported for that token now, and the page has not been requested again.
     expect(fakeCore.reportedResults).toEqual([{ token: '2', result: 'unsaved' }])
 
-    mockStream.send({ token: '3', isFlushRequired: true })
+    mockStream.send({ token: '3', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '3', result: 'written' })
@@ -412,7 +412,7 @@ describe('a page holding text the file changed under', () => {
     createConflict('Note.md').raise(going.raise)
     going.start().catch(rethrow)
 
-    mockStream.send({ token: '9', isFlushRequired: true })
+    mockStream.send({ token: '9', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults).toEqual([{ token: '9', result: 'unsaved' }])
@@ -420,7 +420,7 @@ describe('a page holding text the file changed under', () => {
     // The stream drops and the page reconnects under a new token.
     mockStream.end()
     await settle()
-    mockStream.send({ token: '10', isFlushRequired: true })
+    mockStream.send({ token: '10', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '10', result: 'unsaved' })
@@ -440,11 +440,11 @@ describe('the conflicts a person put off', () => {
     )
     createConflict('Later.md').raise(going.raise)
     going.start().catch(rethrow)
-    mockStream.send({ token: '1', isFlushRequired: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
     going.conflicts.value[0]?.later()
 
-    mockStream.send({ token: '2', isFlushRequired: true })
+    mockStream.send({ token: '2', flush: true })
     await settle()
 
     expect(getNotes(going)).toEqual(['Later.md'])
@@ -461,7 +461,7 @@ describe('the conflicts a person put off', () => {
     createConflict('A.md').raise(going.raise)
     createConflict('B.md').raise(going.raise)
     going.start().catch(rethrow)
-    mockStream.send({ token: '1', isFlushRequired: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
 
     going.conflicts.value.find((one) => one.note === 'A.md')?.later()
@@ -486,7 +486,7 @@ describe('a conflict put off and settled', () => {
     const first = createConflict('Again.md')
     first.raise(going.raise)
     going.start().catch(rethrow)
-    mockStream.send({ token: '1', isFlushRequired: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
     going.conflicts.value[0]?.later()
     first.dismiss()
@@ -513,7 +513,7 @@ describe('the handlers of a page', () => {
     going.start().catch(rethrow)
 
     remove()
-    mockStream.send({ token: '1', isFlushRequired: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
 
     expect(calls).toBe(0)
@@ -531,9 +531,9 @@ describe('writes pending at an earlier request', () => {
     const gates: (() => void)[] = []
     going.addHandler(() => new Promise<void>((isDone) => gates.push(isDone)))
     going.start().catch(rethrow)
-    mockStream.send({ token: '1', isFlushRequired: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
-    mockStream.send({ token: '2', isFlushRequired: true })
+    mockStream.send({ token: '2', flush: true })
     await settle()
 
     gates[0]?.()
@@ -650,7 +650,7 @@ describe('a page holding text the vault would not take', () => {
     // The first save fails by itself, as it would in the minutes before the quit.
     notes.save('Tides.md')
     await settle()
-    mockStream.send({ token: '1', isFlushRequired: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
     return { refusing, files, mockStream, fakeCore, notes, going }
   }
@@ -702,7 +702,7 @@ describe('a page holding text the vault would not take', () => {
   it('asks again at the next quit, and does not drop the text', async () => {
     const { mockStream, fakeCore, notes } = await quitWith('unreachable')
 
-    mockStream.send({ token: '2', isFlushRequired: true })
+    mockStream.send({ token: '2', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '2', result: 'unsaved' })
@@ -722,12 +722,12 @@ describe('a handler that fails', () => {
     })
     going.start().catch(rethrow)
 
-    mockStream.send({ token: '1', isFlushRequired: true })
+    mockStream.send({ token: '1', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults).toEqual([{ token: '1', result: 'unsaved' }])
 
-    mockStream.send({ token: '2', isFlushRequired: true })
+    mockStream.send({ token: '2', flush: true })
     await settle()
 
     expect(fakeCore.reportedResults.at(-1)).toEqual({ token: '2', result: 'written' })

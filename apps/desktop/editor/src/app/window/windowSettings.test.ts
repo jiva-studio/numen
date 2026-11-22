@@ -367,7 +367,7 @@ describe('the settings tab', () => {
       },
     ]
     vi.mocked(core.getSettings).mockImplementation(async () => ({
-      settingsJson: '{}',
+      written: '{}',
       path: '/vault/.numen/settings.json',
       plugins: ocrPlugins,
     }))
