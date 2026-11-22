@@ -10,7 +10,7 @@ interface Frame {
 
 const JUMP_OF_TOP = 11
 const FLIP_WINDOW = 6
-const LIFT_FADES = ['background-color', 'box-shadow', 'opacity']
+const LIFT_FADES = ['background-color', 'opacity']
 const LIFTED = 'plugin-slots__row--lifted'
 const STATE_CLASSES = [LIFTED, 'plugin-slots__row--settling']
 

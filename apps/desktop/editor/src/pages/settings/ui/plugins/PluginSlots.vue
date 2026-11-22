@@ -146,7 +146,6 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
 
 .plugin-slots__row--lifted {
   background: var(--numen-raised);
-  box-shadow: 0 0.0625rem 0.375rem color-mix(in oklab, var(--numen-ink), transparent 80%);
 }
 
 .plugin-slots__row--shifting,
