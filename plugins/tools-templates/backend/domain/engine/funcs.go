@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"text/template"
@@ -22,18 +23,38 @@ var errDisabled = errors.New("this function is not available in a template")
 
 var errBadKey = errors.New("dict names are text")
 
+var errFieldClash = errors.New("is asked differently elsewhere in the template")
+
+var errFieldUnmet = errors.New("was not met when the template was first run, so it was not asked; ask it where the defaults reach it")
+
+// ids are the identifiers a request hands out, shared by both passes so that the n-th call gets the same one in each.
+type ids struct{ issued []string }
+
+func (i *ids) get(n int) (string, error) {
+	for len(i.issued) <= n {
+		id, err := newUUID()
+		if err != nil {
+			return "", err
+		}
+		i.issued = append(i.issued, id)
+	}
+	return i.issued[n], nil
+}
+
 // pass is one run of a template: the data it reads, the values its fields take, and the fields it met.
 type pass struct {
 	data       Data
 	vars       map[string]string
 	collecting bool
 	fields     []Field
-	asked      map[string]bool
+	asked      map[string]Field
+	ids        *ids
+	called     int
 	stopped    atomic.Bool
 }
 
-func newPass(data Data, values map[string]string) *pass {
-	p := &pass{data: data, vars: values, collecting: values == nil, fields: nil, asked: make(map[string]bool), stopped: atomic.Bool{}}
+func newPass(data Data, values map[string]string, issued *ids) *pass {
+	p := &pass{data: data, vars: values, collecting: values == nil, fields: nil, asked: make(map[string]Field), ids: issued, called: 0, stopped: atomic.Bool{}}
 	if p.collecting {
 		p.vars = make(map[string]string)
 	}
@@ -44,25 +65,35 @@ func (p *pass) getData() map[string]any {
 	return map[string]any{"title": p.data.Title, "folder": p.data.Folder, "id": p.data.ID, "now": p.data.Now, "vars": p.vars}
 }
 
+func (p *pass) newID() (string, error) {
+	if p.stopped.Load() {
+		return "", ErrTooSlow
+	}
+	p.called++
+	return p.ids.get(p.called - 1)
+}
+
 func (p *pass) registerField(kind, label string, options []string, fallback string) (string, error) {
 	if p.stopped.Load() {
 		return "", ErrTooSlow
 	}
 	if !p.collecting {
-		if value, isKnown := p.vars[label]; isKnown {
-			return value, nil
+		value, isKnown := p.vars[label]
+		if !isKnown {
+			return "", fmt.Errorf("field %q %w", label, errFieldUnmet)
 		}
-		return fallback, nil
+		return value, nil
 	}
-	key := strings.Join(append([]string{kind, label}, options...), "\x00")
-	if p.asked[key] {
+	if field, isAsked := p.asked[label]; isAsked {
+		if field.Kind != kind || !slices.Equal(field.Options, options) {
+			return "", fmt.Errorf("field %q %w", label, errFieldClash)
+		}
 		return p.vars[label], nil
 	}
-	p.asked[key] = true
-	if _, isKnown := p.vars[label]; !isKnown {
-		p.vars[label] = fallback
-	}
-	p.fields = append(p.fields, Field{Kind: kind, Label: label, Options: options, Default: fallback})
+	field := Field{Kind: kind, Label: label, Options: options, Default: fallback}
+	p.asked[label] = field
+	p.vars[label] = fallback
+	p.fields = append(p.fields, field)
 	return fallback, nil
 }
 
@@ -101,7 +132,7 @@ func getFuncs(p *pass) Funcs {
 		"print":     disabled,
 		"println":   disabled,
 		"yaml":      quoteYAML,
-		"uuid":      newUUID,
+		"uuid":      p.newID,
 		"dict":      dict,
 		"list":      func(items ...any) []any { return items },
 		"prompt": func(label string, defaults ...string) (string, error) {

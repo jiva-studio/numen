@@ -259,6 +259,16 @@ func TestNameTheNote(t *testing.T) {
 			t.Errorf("a taken note changed: %q", content)
 		}
 	})
+	t.Run("renders the template for the free name alone", func(t *testing.T) {
+		const onlyForThree = "{{ if ne .title \"Meeting 3\" }}{{ .missing }}{{ end }}# {{ .title }}\n"
+		vault := newVault(map[string]string{"Templates/Meeting.md": onlyForThree, "work/Meeting.md": "taken", "work/Meeting 2.md": "taken"})
+
+		path := createNote(t, vault, "Templates/Meeting.md", "work")
+
+		if path != "work/Meeting 3.md" {
+			t.Errorf("path = %q", path)
+		}
+	})
 	t.Run("tries the next name when the file appears between check and create", func(t *testing.T) {
 		vault := newVault(map[string]string{"Templates/Meeting.md": book})
 		racing := &racingVault{Vault: vault, pending: []string{"work/Meeting.md"}}

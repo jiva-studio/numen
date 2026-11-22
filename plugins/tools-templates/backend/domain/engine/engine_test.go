@@ -397,18 +397,18 @@ func FuzzRenderNeverPanics(f *testing.F) {
 }
 
 func TestAskOnceForTheSameField(t *testing.T) {
-	text := `{{ prompt "Client" }}|{{ prompt "Client" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "c" }}`
+	text := `{{ prompt "Client" }}|{{ prompt "Client" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "b" }}`
 
 	fields, err := engine.New(nil).Fields(t.Context(), "T.md", text, getData())
 
-	if err != nil || len(fields) != 3 {
+	if err != nil || len(fields) != 2 {
 		t.Fatalf("fields = %+v, %v", fields, err)
 	}
 	t.Run("writes the one answer everywhere", func(t *testing.T) {
 		data := getData()
 		data.Values = map[string]string{"Client": "Globex", "Kind": "b"}
 
-		got, err := engine.New(nil).Render(t.Context(), "T.md", `{{ prompt "Client" }}|{{ prompt "Client" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "b" }}`, data)
+		got, err := engine.New(nil).Render(t.Context(), "T.md", text, data)
 
 		if err != nil || got.Text != "Globex|Globex|b|b" {
 			t.Errorf("text = %q, %v", got.Text, err)

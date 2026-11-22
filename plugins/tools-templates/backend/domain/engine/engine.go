@@ -75,7 +75,11 @@ func New(extra Funcs) Renderer { return Renderer{extra: extra} }
 
 // Fields lists the fields a template asks, in the order the first pass reaches them.
 func (r Renderer) Fields(ctx context.Context, name, text string, data Data) ([]Field, error) {
-	pass := newPass(data, nil)
+	return r.collect(ctx, name, text, data, new(ids))
+}
+
+func (r Renderer) collect(ctx context.Context, name, text string, data Data, issued *ids) ([]Field, error) {
+	pass := newPass(data, nil, issued)
 	if _, err := r.execute(ctx, name, text, pass, "missingkey=zero"); err != nil {
 		return nil, err
 	}
@@ -84,7 +88,8 @@ func (r Renderer) Fields(ctx context.Context, name, text string, data Data) ([]F
 
 // Render renders a template. A field with no value takes its default.
 func (r Renderer) Render(ctx context.Context, name, text string, data Data) (Result, error) {
-	fields, err := r.Fields(ctx, name, text, data)
+	issued := new(ids)
+	fields, err := r.collect(ctx, name, text, data, issued)
 	if err != nil {
 		return Result{}, err
 	}
@@ -93,7 +98,7 @@ func (r Renderer) Render(ctx context.Context, name, text string, data Data) (Res
 		return Result{}, err
 	}
 	data.Values = values
-	out, err := r.execute(ctx, name, text, newPass(data, values), "missingkey=error")
+	out, err := r.execute(ctx, name, text, newPass(data, values, issued), "missingkey=error")
 	if err != nil {
 		return Result{}, err
 	}

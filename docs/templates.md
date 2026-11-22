@@ -78,7 +78,7 @@ Every other character is copied, and so is a letter that is not a token of this 
 | `replace old new s` | the text with every `old` replaced |
 | `trim s` | the text without the spaces at its ends |
 | `yaml s` | the text written as a double-quoted YAML value, safe in the frontmatter: `title: {{ prompt "Title" \| yaml }}` |
-| `uuid` | a new random identifier |
+| `uuid` | a random identifier for the text of the note, such as an id of a block; each call gives another one and a call gives the same one while the template is run for the questions and again for the note. The `id` of the note is `.id` and is not set by this |
 
 A piped value is the last argument of the function after the bar, so `{{ .title | trunc 5 }}` is `trunc 5 .title` and `{{ .vars.Client | default "none" }}` is `default "none" .vars.Client`; that is why `default`, `trunc`, `replace` and `join` take the text last. These pipe as well: `{{ .title | slug }}`, `{{ .vars.Client | default "none" | upper }}`. Control comes with the language: `if`, `else`, `range`, `with`, variables (`{{ $d := addDays 1 }}`), `eq`, `ne`, `lt`, `and`, `or`, `not`, `list` and `dict`.
 
@@ -89,7 +89,7 @@ A template can ask before it is made into a note:
 - `{{ prompt "Client" }}` asks for a line of text called Client, and `{{ prompt "Client" "Acme" }}` starts it with Acme.
 - `{{ select "Kind" "call" "visit" }}` asks to pick one of the options, the first at the start.
 
-Each becomes the answer, and the answer is kept in `.vars` under the label, so `{{ .vars.Kind }}` repeats it where the label has no spaces. The questions are collected before the note is made, once for each label, in the order the template reaches them; to find them the template is run once with the defaults, so a question under an `if` is asked when the defaults reach it. A field left as it is takes its default.
+Each becomes the answer, and the answer is kept in `.vars` under the label, so `{{ .vars.Kind }}` repeats it where the label has no spaces. The questions are collected before the note is made, once for each label, in the order the template reaches them; to find them the template is run once with the defaults, so a question under an `if` is asked when the defaults reach it. A field left as it is takes its default. Asking one label again as the same kind with the same options is one question; asking it as another kind or with other options is an error, and so is a question that only an answer leads to: a `prompt` under an `if` that the defaults do not reach is never asked, so the note says the field was not met.
 
 An answer to a text question is one line: line breaks become a space and other control characters are dropped. An answer is pasted as it is, so write it into the frontmatter with `yaml`, which quotes it: `client: {{ prompt "Client" | yaml }}` stays one value for an answer such as `a: b`, `[x]` or `---`.
 
