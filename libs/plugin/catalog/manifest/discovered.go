@@ -2,6 +2,7 @@ package manifest
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -51,6 +52,9 @@ const CoreOwnerID = "numen"
 // searchFunctionSpace is the space of the names of query functions.
 const searchFunctionSpace = "searchFunction"
 
+// viewCapabilitySpace is the space of the application view kinds: one plugin draws each.
+const viewCapabilitySpace = "viewCapability"
+
 // slotPointSpace and submenuSpace are the spaces of the names a slot goes by: a slot point and a submenu
 // share one, so no plugin gives a submenu the name of a slot point another declares.
 const (
@@ -63,7 +67,7 @@ type CoreClaims struct {
 	SearchFunctions []string
 }
 
-// ListContributionConflicts lists the declarations of tab kinds, readers, search functions and
+// ListContributionConflicts lists the declarations of tab kinds, readers, application view kinds, search functions and
 // license providers that a plugin makes after the core or an earlier plugin of the list already made
 // them. The reader of an id and the tab kind of the name the window gives that reader are one claim,
 // which one plugin may make as both. Two plugins may contribute to one license id unless they give
@@ -112,6 +116,11 @@ func collectPluginContributionClaims(
 	}
 	for _, reader := range c.Readers {
 		claim("reader", "tab", getReaderTabKind(reader.ID))
+	}
+	for _, capability := range c.ViewCapabilities {
+		if slices.Contains(GetApplicationViewCapabilities(), capability) {
+			claim("view capability", viewCapabilitySpace, capability)
+		}
 	}
 	for _, f := range c.SearchFunctions.Functions {
 		claim("search function", searchFunctionSpace, f.Name)

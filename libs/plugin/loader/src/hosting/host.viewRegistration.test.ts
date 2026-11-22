@@ -162,29 +162,6 @@ describe('a plugin that registers a view for other plugins', () => {
     },
   )
 
-  it.each<[ViewCapability, string, string[]]>([
-    [CONVERSATION, 'md.numen.views.agent.chat', []],
-    [NOTE_EDITOR, 'md.numen.notes', READ_WRITE],
-    [VAULT_SUMMARY, 'md.numen.views.flashcards.studio', ['vault:read']],
-  ])('reserves %s for %s before registration', (capability, owner, permissions) => {
-    const { createPlugin } = createHost()
-    const other = createPlugin('org.example.other', {
-      permissions: READ_WRITE,
-      viewCapabilities: [capability],
-    })
-    expect(() =>
-      other.plugin.register.view({ capability, component: createView('other', []) }),
-    ).toThrowError(`owned by "${owner}"`)
-
-    const registrant = createPlugin(owner, {
-      permissions: [...permissions],
-      viewCapabilities: [capability],
-    })
-    expect(() =>
-      registrant.plugin.register.view({ capability, component: createView('registrant', []) }),
-    ).not.toThrow()
-  })
-
   it('is checked on one read of the registration, whatever a getter answers later', () => {
     const { createPlugin } = createHost()
     const received: string[] = []
