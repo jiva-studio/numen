@@ -116,7 +116,6 @@ func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vaultIndex, no
 			Move:   vault.NewMove(c.Writers, db.NoteQueries(), db.Sources(), db.Sources(), notes),
 			Import: vault.NewImport(c.Writers, filesystem.ImportedFiles{}),
 		},
-		RecordOpen: vault.NewRecordOpen(registry.Recorder),
 	}
 }
 

@@ -307,7 +307,6 @@ type WindowPorts struct {
 }
 
 type VaultPorts struct {
-	Import   FileImport
 	Identity vaultport.VaultIdentity
 	Recorded vaultport.VaultRecorder
 	Passes   VaultPasses
@@ -342,7 +341,6 @@ type UseCases struct {
 	identity CheckIdentity
 	Start    StartWindow
 	ShowTab  ShowTab
-	Import   ImportFiles
 }
 
 // NewUseCases builds the use cases of the window the way the container does.
@@ -366,7 +364,6 @@ func NewUseCases(rt *Runtime, tabs *TabReports, deps Deps) *UseCases {
 	follow := NewModelFollow(deps.Index.Model, deps.Index.Wake, rt, s.Switching.Rebuild)
 	s.Start = NewStartWindow(diag, deps.EmbedderError, follow, session, deps.IsRebuilding)
 	s.ShowTab = NewShowTab(tabs, deps.Window.TabFront, deps.TabBound)
-	s.Import = NewImportFiles(deps.Vault.Import, deps.Window.Writes, deps.Window.Tasks, deps.Window.Changes)
 	return &s
 }
 

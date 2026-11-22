@@ -50,7 +50,7 @@ type sessionOptions struct {
 
 type noRecord struct{}
 
-func (noRecord) Execute(domain.VaultID) error { return nil }
+func (noRecord) RecordOpened(domain.VaultID) error { return nil }
 
 type openDoor struct{}
 

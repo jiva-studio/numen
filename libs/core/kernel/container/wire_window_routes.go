@@ -251,14 +251,8 @@ func mountLogs(w *windowRoutes, entries *logsusecase.Entries, install pluginInst
 func shareEditorWindow(db *vaultIndex, opened *windowRoutes, showTab windowsession.ShowTab, install pluginInstall, vaultDeps vaultWiring) {
 	view := windowView(opened.session.Notices)
 	focusFile := file.NewFocusFile(vaultDeps.Readers, view)
-	setPluginWindow(install.Endpoints.Lender, windowsession.NewPluginWindow(
-		&opened.session.Runtime,
-		&opened.session.Tabs,
-		query.NewFocusNote(db.NoteQueries(), view),
-		windowsession.FileFocusFunc(func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error {
-			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
-		}),
-		showTab,
+	setPluginWindow(install.Endpoints.Lender, hostendpoint.NewWindowAccess(
+		&opened.session.Runtime, &opened.session.Tabs, query.NewFocusNote(db.NoteQueries(), view), focusFile, showTab,
 	))
 }
 

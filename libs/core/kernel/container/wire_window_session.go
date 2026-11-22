@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -14,7 +15,7 @@ type windowParts struct {
 	indexer   *indexing.Worker
 	embedding *indexing.Embedding
 
-	recordOpen    vault.RecordOpen
+	recordOpen    vaultport.VaultRecorder
 	importFiles   vault.Import
 	diagnostics   *windowsession.Diagnostics
 	embedderError error
@@ -34,7 +35,7 @@ type windowCases struct {
 
 // windowTools are the use cases a window offers beside its lifecycle.
 type windowTools struct {
-	importFiles windowsession.ImportFiles
+	importFiles vault.ImportFiles
 	showTab     windowsession.ShowTab
 }
 
@@ -71,7 +72,7 @@ func newWindowSession(
 			),
 		},
 		tools: windowTools{
-			importFiles: windowsession.NewImportFiles(
+			importFiles: vault.NewImportFiles(
 				parts.importFiles, page.Writes, page.Window, &state.Notices.ChangeEvents,
 			),
 			showTab: windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, 0),
