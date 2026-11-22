@@ -2,14 +2,13 @@ package query
 
 import (
 	"context"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
-
-// VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
-type VaultFinding func(nameOrPath string) (domain.Vault, error)
 
 // NoteLinks is what one note is joined to: what it points at, and what points
 // at it. Both halves together, because looking at one without the other is how
@@ -34,18 +33,18 @@ func NewShowLinks(links noteport.LinkQueries) ShowLinks {
 
 // ShowLinksByName gathers the links of one note of the vault a person names.
 type ShowLinksByName struct {
-	find VaultFinding
-	show ShowLinks
+	lookup vaultport.VaultLookup
+	show   ShowLinks
 }
 
 // NewShowLinksByName creates the use case that resolves the vault with find and gathers the links with show.
-func NewShowLinksByName(find VaultFinding, show ShowLinks) ShowLinksByName {
-	return ShowLinksByName{find: find, show: show}
+func NewShowLinksByName(lookup vaultport.VaultLookup, show ShowLinks) ShowLinksByName {
+	return ShowLinksByName{lookup: lookup, show: show}
 }
 
 // ExecuteByName resolves the vault and gathers the links for one note.
 func (u ShowLinksByName) ExecuteByName(ctx context.Context, nameOrPath, path string) (NoteLinks, error) {
-	v, err := u.find(nameOrPath)
+	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
 		return NoteLinks{}, err
 	}
