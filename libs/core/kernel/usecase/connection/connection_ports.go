@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // Uses connects a connection to the settings of rows that name it, and lists the plugins whose grants reach it.
@@ -27,3 +28,15 @@ type RowSettings interface {
 	// it is granted.
 	ReadRowSetting(pluginID, operation string) (connection.RowSetting, error)
 }
+
+// OperationTitles names the operations of the connection types in words a person reads.
+type OperationTitles interface {
+	// ListOperationTitles returns one title for each operation an enabled plugin titles: the first
+	// declaration of the name in the order of the plugin ids.
+	ListOperationTitles() []manifest.Operation
+}
+
+// ReadConnectionSecrets reads the secret fields of a resolved connection from the key store. It fails with
+// connection.ErrSecretMissing for a required secret with no value and connection.ErrStaleRevision for a
+// connection that changed since it was resolved.
+type ReadConnectionSecrets func(ctx context.Context, resolved connection.Resolved) (map[string]string, error)

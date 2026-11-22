@@ -56,12 +56,8 @@ type IndexDeps struct {
 // NewIndex creates an Index. The result ignores the errors a pass reports and reads no note again before it
 // is cut; NewHandlingIndex adds both.
 func NewIndex(d IndexDeps) Index {
-	texts := d.Texts
-	if texts == nil {
-		texts = noTextReaders{readers: d.Readers}
-	}
 	return Index{
-		readers: d.Readers, sources: d.Sources, texts: texts,
+		readers: d.Readers, sources: d.Sources, texts: d.Texts,
 		sizes: d.Sizes, legibility: d.Legibility, shouldRebuildIndex: d.ShouldRebuildIndex,
 		queries: sourceQueries{records: d.Records, backlog: d.Backlog, lookup: d.Lookup},
 	}
@@ -130,6 +126,9 @@ func (u Index) open(v domain.Vault) (openVault, error) {
 	if err != nil {
 		return openVault{}, err
 	}
+	if u.texts == nil {
+		return openVault{files: files, texts: noTexts{files: files}}, nil
+	}
 	texts, err := u.texts.Open(v)
 	if err != nil {
 		return openVault{}, err
@@ -172,15 +171,3 @@ func (u Index) Recipe() string { return chunking.GetTextVersionRecipe(u.sizes.Re
 
 // IsRebuildingIndex reports whether a source the index remembers is cut again.
 func (u Index) IsRebuildingIndex() bool { return u.shouldRebuildIndex }
-
-type noTextReaders struct {
-	readers vaultport.VaultReaders
-}
-
-func (r noTextReaders) Open(v domain.Vault) (textport.VaultTexts, error) {
-	files, err := r.readers.Open(v)
-	if err != nil {
-		return nil, err
-	}
-	return noTexts{files: files}, nil
-}

@@ -51,11 +51,11 @@ type GrantRevision func(pluginID string) (string, bool, error)
 // reaches through its grants.
 type OptionsDeps struct {
 	Resolve     connectionport.ResolveConnection
-	ReadSecrets connectionport.ReadConnectionSecrets
+	ReadSecrets ReadConnectionSecrets
 	Source      connectionport.ProviderSource
 	Running     RunningProviders
 	Lists       *Lists
-	Titles      connectionport.OperationTitles
+	Titles      OperationTitles
 	Grants      GrantRevision
 }
 

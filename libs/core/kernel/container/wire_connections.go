@@ -73,7 +73,7 @@ func openConnectionUseCases(install pluginInstall, exec *PluginExecution, settin
 			Delete: connection.NewDelete(deps),
 		},
 		Reads: windowconnection.Reads{
-			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, cmp.Or[connectionport.OperationTitles](install.OperationTitles, none.OperationTitles{})),
+			List: connection.NewList(deps), ListTypes: connection.NewListTypes(deps, cmp.Or[connection.OperationTitles](install.OperationTitles, none.OperationTitles{})),
 			RowOptions: openRowOptions(install, exec, deps),
 		},
 	}

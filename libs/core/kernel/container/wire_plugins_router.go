@@ -19,9 +19,9 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -41,7 +41,7 @@ func reportDependencies(watch dependencyReporter, tasks *run.Tasks, record func(
 type pluginInstall struct {
 	Licenses        license.Declarations
 	Configuration   configRefresher
-	OperationTitles connectionport.OperationTitles
+	OperationTitles connection.OperationTitles
 	PluginCachePath string
 	ServiceDir      string
 	SafeMode        bool

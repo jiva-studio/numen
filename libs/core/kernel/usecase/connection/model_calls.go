@@ -16,9 +16,9 @@ import (
 // rather than the person.
 type Calls struct {
 	resolve     connectionport.ResolveConnection
-	readSecrets connectionport.ReadConnectionSecrets
+	readSecrets ReadConnectionSecrets
 	rows        RowLister
-	titles      connectionport.OperationTitles
+	titles      OperationTitles
 	source      connectionport.ProviderSource
 	clock       machineport.Clock
 	queues      *queues
@@ -30,9 +30,9 @@ type Calls struct {
 // Titles names the operations in the list of running plugins; a nil Titles names them by their ids.
 type Connections struct {
 	Resolve     connectionport.ResolveConnection
-	ReadSecrets connectionport.ReadConnectionSecrets
+	ReadSecrets ReadConnectionSecrets
 	Rows        RowLister
-	Titles      connectionport.OperationTitles
+	Titles      OperationTitles
 }
 
 // NewCalls returns the calls over the connections and the providers the source

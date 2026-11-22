@@ -205,7 +205,7 @@ func (k *Keys) DeleteKey(_ context.Context, name string) error {
 type World struct {
 	Connections *connectiontest.Connections
 	Resolve     connectionport.ResolveConnection
-	ReadSecrets connectionport.ReadConnectionSecrets
+	ReadSecrets connectionuse.ReadConnectionSecrets
 	Keys        *Keys
 	Rows        *Rows
 	Provider    *Provider

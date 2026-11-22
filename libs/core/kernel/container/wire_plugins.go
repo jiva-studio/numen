@@ -84,7 +84,7 @@ type PluginWatch struct {
 // subscription to the setting changes that the host follows, or none.
 type pluginViews struct {
 	Types        connectionport.Types
-	Operations   connectionport.OperationTitles
+	Operations   connection.OperationTitles
 	Declarations license.Declarations
 	Infos        settingsusecase.PluginInfos
 	Checks       settingsusecase.PluginSettings
