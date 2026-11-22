@@ -78,7 +78,7 @@ const setup = (
   const errors: string[] = []
   const createNote = vi.fn(async (_request: CreateNoteRequest) => answer)
   const listFields = vi.fn(async () => options.fields ?? noFields)
-  const ask = vi.fn(async (_title: string, _fields: readonly Field[]) => options.answers)
+  const showForm = vi.fn(async (_title: string, _fields: readonly Field[]) => options.answers)
   const context = createMockPluginContext({
     pluginId: PLUGIN_ID,
     initialSettings: { templates: 'Templates/**' },
@@ -92,8 +92,8 @@ const setup = (
       messages: { showError: (text: string) => errors.push(text) },
     } as never,
   })
-  activate(context, host, { createNote, listFields }, ask)
-  return { context, createNote, listFields, ask, opened, errors }
+  activate(context, host, { createNote, listFields }, showForm)
+  return { context, createNote, listFields, showForm, opened, errors }
 }
 
 const created = (path: string): Result<CreateNoteResponse, ApiError> => ({
@@ -200,23 +200,23 @@ describe('the templates frontend', () => {
   })
 
   it('makes the note at once when the template asks nothing', async () => {
-    const { context, ask, createNote } = setup(created('notes/Meeting.md'))
+    const { context, showForm, createNote } = setup(created('notes/Meeting.md'))
 
     await context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Meeting.md')
 
-    expect(ask).not.toHaveBeenCalled()
+    expect(showForm).not.toHaveBeenCalled()
     expect(createNote).toHaveBeenCalledTimes(1)
   })
 
   it('asks the fields of the template and makes the note with the answers', async () => {
-    const { context, ask, createNote, opened } = setup(created('notes/Visit.md'), invented, {
+    const { context, showForm, createNote, opened } = setup(created('notes/Visit.md'), invented, {
       fields: askingFor([CLIENT]),
       answers: { Client: 'Globex' },
     })
 
     await context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Visit.md')
 
-    expect(ask).toHaveBeenCalledWith('Visit', [CLIENT])
+    expect(showForm).toHaveBeenCalledWith('Visit', [CLIENT])
     expect(createNote).toHaveBeenCalledWith({
       template: 'Templates/Visit.md',
       folder: 'notes',
@@ -239,7 +239,7 @@ describe('the templates frontend', () => {
   })
 
   it('shows the error and asks nothing when the template cannot be read', async () => {
-    const { context, ask, createNote, errors } = setup(created('x.md'), invented, {
+    const { context, showForm, createNote, errors } = setup(created('x.md'), invented, {
       fields: {
         ok: false,
         error: {
@@ -252,7 +252,7 @@ describe('the templates frontend', () => {
     await context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Visit.md')
 
     expect(errors).toEqual(['template does not produce a valid note: T.md:2'])
-    expect(ask).not.toHaveBeenCalled()
+    expect(showForm).not.toHaveBeenCalled()
     expect(createNote).not.toHaveBeenCalled()
   })
 

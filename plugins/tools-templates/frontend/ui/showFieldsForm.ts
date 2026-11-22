@@ -6,10 +6,10 @@ import FieldsForm from './FieldsForm.vue'
 type Answers = Readonly<Record<string, string>> | undefined
 
 /** What asks the person for the fields of a template. */
-export type AskFields = (title: string, fields: readonly Field[]) => Promise<Answers>
+export type ShowFieldsForm = (title: string, fields: readonly Field[]) => Promise<Answers>
 
 /** Opens the form of the fields over the window and resolves when the person creates or cancels. */
-export const askFields: AskFields = (title, fields) =>
+export const showFieldsForm: ShowFieldsForm = (title, fields) =>
   new Promise((resolve) => {
     const host = document.createElement('div')
     document.body.append(host)

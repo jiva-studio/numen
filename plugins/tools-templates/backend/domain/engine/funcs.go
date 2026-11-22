@@ -38,7 +38,7 @@ func (p *pass) getData() map[string]any {
 	return map[string]any{"title": p.data.Title, "folder": p.data.Folder, "id": p.data.ID, "now": p.data.Now, "vars": p.vars}
 }
 
-func (p *pass) ask(kind, label string, options []string, fallback string) string {
+func (p *pass) registerField(kind, label string, options []string, fallback string) string {
 	if !p.collecting {
 		if value, isKnown := p.vars[label]; isKnown {
 			return value
@@ -57,7 +57,7 @@ func (p *pass) ask(kind, label string, options []string, fallback string) string
 	return fallback
 }
 
-func (p *pass) instant(given []time.Time) time.Time {
+func (p *pass) timeOrNow(given []time.Time) time.Time {
 	if len(given) == 0 {
 		return p.data.Now
 	}
@@ -67,14 +67,14 @@ func (p *pass) instant(given []time.Time) time.Time {
 func getFuncs(p *pass) Funcs {
 	return template.FuncMap{
 		"date": func(layout string, at ...time.Time) string {
-			return formatTime(p.instant(at), layout, defaultDateFormat)
+			return formatTime(p.timeOrNow(at), layout, defaultDateFormat)
 		},
 		"time": func(layout string, at ...time.Time) string {
-			return formatTime(p.instant(at), layout, defaultTimeFormat)
+			return formatTime(p.timeOrNow(at), layout, defaultTimeFormat)
 		},
-		"addDays":   func(days int, at ...time.Time) time.Time { return p.instant(at).AddDate(0, 0, days) },
-		"addMonths": func(months int, at ...time.Time) time.Time { return p.instant(at).AddDate(0, months, 0) },
-		"weekday":   func(at ...time.Time) string { return p.instant(at).Weekday().String() },
+		"addDays":   func(days int, at ...time.Time) time.Time { return p.timeOrNow(at).AddDate(0, 0, days) },
+		"addMonths": func(months int, at ...time.Time) time.Time { return p.timeOrNow(at).AddDate(0, months, 0) },
+		"weekday":   func(at ...time.Time) string { return p.timeOrNow(at).Weekday().String() },
 		"upper":     strings.ToUpper,
 		"lower":     strings.ToLower,
 		"slug":      slug,
@@ -90,13 +90,13 @@ func getFuncs(p *pass) Funcs {
 		"dict":      dict,
 		"list":      func(items ...any) []any { return items },
 		"prompt": func(label string, defaults ...string) string {
-			return p.ask(KindText, label, []string{}, first(defaults))
+			return p.registerField(KindText, label, []string{}, firstOrEmpty(defaults))
 		},
 		"select": func(label string, options ...string) (string, error) {
 			if len(options) == 0 {
 				return "", errNoOptions
 			}
-			return p.ask(KindSelect, label, options, options[0]), nil
+			return p.registerField(KindSelect, label, options, options[0]), nil
 		},
 	}
 }
@@ -106,7 +106,7 @@ const (
 	defaultTimeFormat = "HH:mm"
 )
 
-func first(items []string) string {
+func firstOrEmpty(items []string) string {
 	if len(items) == 0 {
 		return ""
 	}

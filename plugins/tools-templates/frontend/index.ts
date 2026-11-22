@@ -4,7 +4,7 @@
 import './styles.css'
 import { definePlugin, type HostServices, type PluginContext } from '@numen/plugin-sdk'
 import { templatesApi, type TemplatesApi } from './api/wire'
-import { askFields, type AskFields } from './ui/askFields'
+import { showFieldsForm, type ShowFieldsForm } from './ui/showFieldsForm'
 import { getTargetFolder } from './lib/getTargetFolder'
 import { getTitle } from './lib/groupTemplates'
 import { parseMasks } from './lib/masks'
@@ -14,7 +14,7 @@ export const activate = (
   context: PluginContext,
   host: HostServices,
   api: TemplatesApi = templatesApi,
-  ask: AskFields = askFields,
+  showForm: ShowFieldsForm = showFieldsForm,
 ): void => {
   const files = host.vault.files
   if (!files) throw new Error('the Templates plugin needs the files of the vault')
@@ -42,7 +42,7 @@ export const activate = (
         return
       }
       const values =
-        asked.value.fields.length > 0 ? await ask(getTitle(itemId), asked.value.fields) : {}
+        asked.value.fields.length > 0 ? await showForm(getTitle(itemId), asked.value.fields) : {}
       if (!values) return
       const answer = await api.createNote({ template: itemId, folder, values })
       if (answer.ok) host.ui.workspace?.files.open(answer.value.path)
