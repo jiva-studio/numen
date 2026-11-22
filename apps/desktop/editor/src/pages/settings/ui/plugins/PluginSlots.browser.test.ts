@@ -3,6 +3,7 @@ import { commands } from 'vitest/browser'
 import { createApp, h, shallowRef } from 'vue'
 import '@numen/ui/styles.css'
 import type { JsonValue } from '@/shared/api/json'
+import { findDiscontinuities, startProbe } from '../../testing/frameProbe'
 import PluginSlots from './PluginSlots.vue'
 
 const groups = [
@@ -125,6 +126,7 @@ describe('the slots of a plugin dragged by a real pointer', () => {
       'transitionrun',
       (event) =>
         event.target instanceof HTMLLIElement &&
+        event.propertyName === 'transform' &&
         runs.set(event.target, (runs.get(event.target) ?? 0) + 1),
     )
     for (let offset = 2; offset <= 140; offset += 2) await moveTo(offset)
@@ -144,4 +146,32 @@ describe('the slots of a plugin dragged by a real pointer', () => {
 
     expect(selected).toBe('')
   })
+
+  it.each([
+    { name: 'down across two rows', from: 0, by: 2 },
+    { name: 'up across two rows', from: 2, by: -2 },
+  ])(
+    'show no jump, flash or replaced row on any frame of a drag $name and its drop',
+    async ({ from, by }) => {
+      const root = mountSlots()
+      await nextFrame()
+      const grip = rowsOf(root)[from]!.querySelector('button')!.getBoundingClientRect()
+      const x = grip.left + grip.width / 2
+      const y = grip.top + grip.height / 2
+      const pitch =
+        rowsOf(root)[1]!.getBoundingClientRect().top - rowsOf(root)[0]!.getBoundingClientRect().top
+      const probe = startProbe(root)
+      await commands.pointer('move', { x, y })
+      await commands.pointer('down')
+      const sign = Math.sign(by)
+      for (let offset = 1; offset <= Math.abs(by) * pitch + 10; offset += 2) {
+        await commands.pointer('move', { x, y: y + sign * offset })
+        await nextFrame()
+      }
+      await commands.pointer('up')
+      for (let frame = 0; frame < 40; frame++) await nextFrame()
+
+      expect(findDiscontinuities(probe.stop())).toStrictEqual([])
+    },
+  )
 })
