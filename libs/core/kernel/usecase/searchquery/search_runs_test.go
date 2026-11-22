@@ -1,4 +1,4 @@
-package searchrun_test
+package searchquery_test
 
 import (
 	"context"
@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
+	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 )
 
 const (
@@ -20,15 +20,15 @@ const (
 )
 
 func TestAStartReturnsBeforeTheSearchEndsAndAReadWaitsForTheEnd(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	q := w.hold(`words("tide")`)
 	q.results = getResults("a.md", "b.md")
 	id := w.start(t, owner, `words("tide")`)
 	<-w.index.started
 
-	read := make(chan searchrun.Page, 1)
+	read := make(chan searchquery.Page, 1)
 	go func() {
-		page, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: id, Wait: time.Second})
+		page, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: id, Wait: time.Second})
 		if err != nil {
 			t.Error(err)
 		}
@@ -41,17 +41,17 @@ func TestAStartReturnsBeforeTheSearchEndsAndAReadWaitsForTheEnd(t *testing.T) {
 	}
 	close(q.release)
 	page := w.readFinalPage(t, owner, id)
-	if page.Record.IsRunning || !slices.Equal(getPaths(page), []string{"a.md", "b.md"}) || page.TotalResults != 2 {
+	if page.Record.IsRunning || !slices.Equal(getPagePaths(page), []string{"a.md", "b.md"}) || page.TotalResults != 2 {
 		t.Fatalf("page %+v, want the two results", page)
 	}
 }
 
 func TestAQueryThatFailsEndsWithItsProblemsAndNoResults(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
-	w.answer("mening(\"x\")", &query{err: &searchquery.ParseError{Problems: []searchquery.Problem{
-		{Position: searchquery.Position{Line: 1, Column: 1}, Message: "unknown function mening", Suggestion: "meaning"},
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
+	w.answer("mening(\"x\")", &runQuery{err: &searchquerydomain.ParseError{Problems: []searchquerydomain.Problem{
+		{Position: searchquerydomain.Position{Line: 1, Column: 1}, Message: "unknown function mening", Suggestion: "meaning"},
 	}}})
-	w.answer(`words("x").rerank()`, &query{err: fmt.Errorf("1:12: %w", errors.New("no reranker")), results: getResults("a.md")})
+	w.answer(`words("x").rerank()`, &runQuery{err: fmt.Errorf("1:12: %w", errors.New("no reranker")), results: getResults("a.md")})
 
 	parsed := w.readFinalPage(t, owner, w.start(t, owner, "mening(\"x\")"))
 	reranked := w.readFinalPage(t, owner, w.start(t, owner, `words("x").rerank()`))
@@ -66,49 +66,49 @@ func TestAQueryThatFailsEndsWithItsProblemsAndNoResults(t *testing.T) {
 }
 
 func TestAnEmptyQueryEndsAtOnceWithAProblem(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
-	page, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: w.start(t, owner, "  ")})
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
+	page, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: w.start(t, owner, "  ")})
 	if err != nil || page.Record.IsRunning || len(page.Record.Errors) != 1 {
 		t.Fatalf("page %+v (%v), want a stopped search with one problem", page.Record, err)
 	}
 }
 
 func TestAnotherPluginCannotReadOrRemoveASearch(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	id := w.start(t, owner, `words("tide")`)
 
-	if _, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: other, ID: id}); !errors.Is(err, searchrundomain.ErrNotFound) {
+	if _, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: other, ID: id}); !errors.Is(err, searchrundomain.ErrNotFound) {
 		t.Errorf("read by another plugin: %v, want ErrNotFound", err)
 	}
 	if err := w.runs.Remove.Execute(t.Context(), other, id); !errors.Is(err, searchrundomain.ErrNotFound) {
 		t.Errorf("remove by another plugin: %v, want ErrNotFound", err)
 	}
-	if _, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: id}); err != nil {
+	if _, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: id}); err != nil {
 		t.Errorf("read by its plugin: %v", err)
 	}
 }
 
 func TestGetSearchReturnsNotFoundTenMinutesAfterTheLastRead(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	id := w.start(t, owner, `words("tide")`)
 	w.readFinalPage(t, owner, id)
 
 	w.clock.Advance(9 * time.Minute)
-	if _, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: id}); err != nil {
+	if _, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: id}); err != nil {
 		t.Fatalf("read at minute 9: %v", err)
 	}
 	w.clock.Advance(9 * time.Minute)
-	if _, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: id}); err != nil {
+	if _, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: id}); err != nil {
 		t.Fatalf("read at minute 18: %v", err)
 	}
 	w.clock.Advance(10 * time.Minute)
-	if _, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: id}); !errors.Is(err, searchrundomain.ErrNotFound) {
+	if _, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: id}); !errors.Is(err, searchrundomain.ErrNotFound) {
 		t.Fatalf("read at minute 28: %v, want ErrNotFound", err)
 	}
 }
 
 func TestTheTwentyFirstSearchDropsTheOneReadLeastRecently(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	var ids []searchrundomain.ID
 	for i := range 20 {
 		id := w.start(t, owner, fmt.Sprintf("words(\"tide%d\")", i))
@@ -118,16 +118,16 @@ func TestTheTwentyFirstSearchDropsTheOneReadLeastRecently(t *testing.T) {
 	}
 	w.start(t, owner, `words("sea")`)
 
-	if _, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: ids[0]}); !errors.Is(err, searchrundomain.ErrNotFound) {
+	if _, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: ids[0]}); !errors.Is(err, searchrundomain.ErrNotFound) {
 		t.Errorf("the oldest search: %v, want ErrNotFound", err)
 	}
-	if _, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: ids[1]}); err != nil {
+	if _, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: ids[1]}); err != nil {
 		t.Errorf("the second search: %v", err)
 	}
 }
 
 func TestTwentyRunningSearchesRefuseAnother(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	for i := range 20 {
 		w.hold(fmt.Sprintf("words(\"tide%d\")", i))
 		w.start(t, owner, fmt.Sprintf("words(\"tide%d\")", i))
@@ -139,7 +139,7 @@ func TestTwentyRunningSearchesRefuseAnother(t *testing.T) {
 }
 
 func TestAnEqualRunningSearchOfThePluginIsShared(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	q := w.hold(`words("tide")`)
 	first := w.start(t, owner, `words("tide")`)
 	if again := w.start(t, owner, ` words("tide") `); again != first {
@@ -158,7 +158,7 @@ func TestAnEqualRunningSearchOfThePluginIsShared(t *testing.T) {
 func TestAnInteractiveSearchRunsBeforeWaitingBackgroundOnes(t *testing.T) {
 	policy := searchrundomain.DefaultPolicy()
 	policy.MaxRunning = 1
-	w := newWorld(t, policy)
+	w := newRunWorld(t, policy)
 	first := w.hold("words(\"first\")")
 	w.start(t, owner, "words(\"first\")")
 	<-w.index.started
@@ -182,7 +182,7 @@ func TestAnInteractiveSearchRunsBeforeWaitingBackgroundOnes(t *testing.T) {
 }
 
 func TestASearchForAPersonShowsATaskThatCancelsIt(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	w.hold(`words("tide")`)
 	id := w.start(t, owner, `words("tide")`)
 	<-w.index.started
@@ -203,7 +203,7 @@ func TestASearchForAPersonShowsATaskThatCancelsIt(t *testing.T) {
 }
 
 func TestABackgroundSearchShowsNoTask(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	w.hold(`words("tide")`)
 	if _, err := w.runs.Start.Execute(t.Context(), searchrundomain.Start{
 		Owner: owner, Vault: getTideVault(), Query: `words("tide")`, IsBackground: true,
@@ -217,11 +217,11 @@ func TestABackgroundSearchShowsNoTask(t *testing.T) {
 }
 
 func TestAChangeOfTheIndexMakesAFinishedSearchStale(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	id := w.start(t, owner, `words("tide")`)
 	before := w.readFinalPage(t, owner, id)
 	w.generations.IncreaseGeneration(getTideVault().ID)
-	after, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: id})
+	after, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: id})
 	if err != nil || before.IsStale || !after.IsStale || after.Record.IndexGeneration != before.Record.IndexGeneration {
 		t.Fatalf("stale before %v, after %v (%v), generations %q and %q", before.IsStale, after.IsStale, err,
 			before.Record.IndexGeneration, after.Record.IndexGeneration)
@@ -229,7 +229,7 @@ func TestAChangeOfTheIndexMakesAFinishedSearchStale(t *testing.T) {
 }
 
 func TestAReadDuringTheRerankReturnsThePartialResults(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	q := w.hold(`words("tide").rerank()`)
 	partial := getResults("a.md", "b.md")
 	q.partial = &partial
@@ -237,31 +237,31 @@ func TestAReadDuringTheRerankReturnsThePartialResults(t *testing.T) {
 	id := w.start(t, owner, `words("tide").rerank()`)
 	<-w.index.started
 
-	during, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: id})
-	if err != nil || !during.Record.IsPartial || !slices.Equal(getPaths(during), []string{"a.md", "b.md"}) || during.NextPageToken != "" {
+	during, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: id})
+	if err != nil || !during.Record.IsPartial || !slices.Equal(getPagePaths(during), []string{"a.md", "b.md"}) || during.NextPageToken != "" {
 		t.Fatalf("during the rerank %+v (%v), want the partial results", during, err)
 	}
 	close(q.release)
 	after := w.readFinalPage(t, owner, id)
-	if after.Record.IsPartial || !slices.Equal(getPaths(after), []string{"b.md", "a.md"}) {
+	if after.Record.IsPartial || !slices.Equal(getPagePaths(after), []string{"b.md", "a.md"}) {
 		t.Fatalf("after the rerank %+v, want the reranked results", after)
 	}
 }
 
 func TestGetSearchReturnsPagesOfTwentyAndRefusesATokenOfAnotherSearch(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	var paths []string
 	for i := range 45 {
 		paths = append(paths, fmt.Sprintf("n%02d.md", i))
 	}
-	w.answer(`words("tide")`, &query{results: getResults(paths...)})
+	w.answer(`words("tide")`, &runQuery{results: getResults(paths...)})
 	id := w.start(t, owner, `words("tide")`)
 	w.readFinalPage(t, owner, id)
 
 	var sizes []int
 	token := ""
 	for {
-		page, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: id, PageSize: 20, PageToken: token})
+		page, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: id, PageSize: 20, PageToken: token})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -275,14 +275,14 @@ func TestGetSearchReturnsPagesOfTwentyAndRefusesATokenOfAnotherSearch(t *testing
 	}
 	second := w.start(t, owner, `words("sea")`)
 	w.readFinalPage(t, owner, second)
-	_, err := w.runs.Get.Execute(t.Context(), searchrun.Read{Owner: owner, ID: second, PageToken: searchrundomain.EncodePageToken(id, 20)})
+	_, err := w.runs.Get.Execute(t.Context(), searchquery.Read{Owner: owner, ID: second, PageToken: searchrundomain.EncodePageToken(id, 20)})
 	if !errors.Is(err, searchrundomain.ErrInvalidPageToken) {
 		t.Fatalf("a token of another search: %v, want ErrInvalidPageToken", err)
 	}
 }
 
 func TestRemovingARunningSearchCancelsItsQuery(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	w.hold(`words("tide")`)
 	id := w.start(t, owner, `words("tide")`)
 	<-w.index.started
@@ -296,21 +296,21 @@ func TestRemovingARunningSearchCancelsItsQuery(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("the query was not canceled")
 	}
-	if _, err := w.runs.Get.Execute(context.WithoutCancel(t.Context()), searchrun.Read{Owner: owner, ID: id}); !errors.Is(err, searchrundomain.ErrNotFound) {
+	if _, err := w.runs.Get.Execute(context.WithoutCancel(t.Context()), searchquery.Read{Owner: owner, ID: id}); !errors.Is(err, searchrundomain.ErrNotFound) {
 		t.Fatalf("read after removal: %v, want ErrNotFound", err)
 	}
 }
 
 func TestListSearchFunctionsReturnsTheCatalogAndItsRevision(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	catalog, revision := w.runs.Functions.Execute()
-	if len(catalog.Functions) != len(searchquery.GetBuiltinCatalog().Functions) || revision != searchquery.GetCatalogRevision(catalog) {
+	if len(catalog.Functions) != len(searchquerydomain.GetBuiltinCatalog().Functions) || revision != searchquerydomain.GetCatalogRevision(catalog) {
 		t.Fatalf("catalog of %d functions, revision %q", len(catalog.Functions), revision)
 	}
 }
 
 func TestASearchRunsTheQueryOnTheGenerationItStartedOn(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	id := w.start(t, owner, `words("tide")`)
 	page := w.readFinalPage(t, owner, id)
 
@@ -322,7 +322,7 @@ func TestASearchRunsTheQueryOnTheGenerationItStartedOn(t *testing.T) {
 }
 
 func TestRemovingASharedSearchKeepsItForTheOtherStarter(t *testing.T) {
-	w := newWorld(t, searchrundomain.DefaultPolicy())
+	w := newRunWorld(t, searchrundomain.DefaultPolicy())
 	q := w.hold(`words("tide")`)
 	q.results = getResults("a.md")
 	first := w.start(t, owner, `words("tide")`)
@@ -337,8 +337,8 @@ func TestRemovingASharedSearchKeepsItForTheOtherStarter(t *testing.T) {
 	close(q.release)
 
 	page := w.readFinalPage(t, owner, second)
-	if !slices.Equal(getPaths(page), []string{"a.md"}) {
-		t.Errorf("the other starter reads %v, want a.md", getPaths(page))
+	if !slices.Equal(getPagePaths(page), []string{"a.md"}) {
+		t.Errorf("the other starter reads %v, want a.md", getPagePaths(page))
 	}
 	if err := w.runs.Remove.Execute(t.Context(), owner, second); err != nil {
 		t.Fatal(err)

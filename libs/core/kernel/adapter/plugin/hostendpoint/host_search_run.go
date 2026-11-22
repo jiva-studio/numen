@@ -11,7 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
+	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -71,7 +71,7 @@ func (e *searchEndpoint) GetSearch(
 	if code := call.getRunErrorCode(false); code != 0 {
 		return connect.NewResponse(&v1.GetSearchResponse{Error: code}), nil
 	}
-	page, err := call.search.Runs.Get.Execute(ctx, searchrunusecase.Read{
+	page, err := call.search.Runs.Get.Execute(ctx, searchqueryusecase.Read{
 		Owner: call.pluginID, ID: searchrun.ID(req.Msg.GetId()), Wait: time.Duration(max(req.Msg.GetWaitMs(), 0)) * time.Millisecond,
 		PageSize: int(req.Msg.GetPageSize()), PageToken: req.Msg.GetPageToken(),
 	})

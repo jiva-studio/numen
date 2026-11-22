@@ -1,4 +1,4 @@
-package searchrun
+package searchquery
 
 import "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 

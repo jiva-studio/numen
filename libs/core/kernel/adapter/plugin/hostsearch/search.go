@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
+	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 )
 
@@ -198,6 +198,6 @@ func convertSource(source search.FloorSourceKind) plugin.FloorSource {
 
 // Access returns the capabilities of the search the way hostendpoint serves them, with the searches of the
 // query language.
-func (s Search) Access(runs *searchrunusecase.SearchRuns) *hostendpoint.SearchAccess {
+func (s Search) Access(runs *searchqueryusecase.SearchRuns) *hostendpoint.SearchAccess {
 	return &hostendpoint.SearchAccess{SearchIndex: s, TextSearch: s, SearchFloors: s, Runs: runs}
 }

@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	queryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
-	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchslot"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchstore"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -41,8 +40,8 @@ type windowSearch struct {
 func newSearchRuns(
 	tasks *run.Tasks, generations *indexgeneration.Generations, find *queryusecase.FindSearchResults,
 	resolver pluginResolver, manifests pluginmanifest.Manifests, clock installationClock,
-) *searchrunusecase.SearchRuns {
-	runs := searchrunusecase.NewSearchRuns(searchrunusecase.Deps{
+) *queryusecase.SearchRuns {
+	runs := queryusecase.NewSearchRuns(queryusecase.Deps{
 		Store:       searchstore.New(),
 		Cancels:     searchcancel.NewSearches(clock),
 		Tasks:       tasks,

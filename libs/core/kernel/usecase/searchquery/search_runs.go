@@ -1,4 +1,4 @@
-package searchrun
+package searchquery
 
 import (
 	"time"
