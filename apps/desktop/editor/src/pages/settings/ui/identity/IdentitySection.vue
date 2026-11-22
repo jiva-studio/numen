@@ -16,9 +16,7 @@ const props = defineProps<{ identity: InstallationIdentity }>()
 
 /* --------------------------------- State ---------------------------------- */
 const section = useIdentitySection(() => props.identity)
-const { step, recoveryWords, positions, entered, restoreText, problem, isBusy, isAskingDelete } =
-  section.state
-const { identity: current, actions } = section
+const { identity: current, step, recoveryWords, call, confirmation, typing, deletion, actions } = section
 </script>
 
 <template>
@@ -26,11 +24,11 @@ const { identity: current, actions } = section
     <IdentityDetails
       v-if="current"
       :info="current"
-      :is-busy="isBusy"
-      :is-asking-delete="isAskingDelete"
-      @ask="actions.askDelete"
-      @confirm="actions.confirmDelete"
-      @cancel="actions.cancelDelete"
+      :is-busy="call.isBusy.value"
+      :is-asking-delete="deletion.isAskingDelete.value"
+      @ask="deletion.askDelete"
+      @confirm="deletion.confirmDelete"
+      @cancel="deletion.cancelDelete"
     />
 
     <template v-else>
@@ -40,10 +38,10 @@ const { identity: current, actions } = section
       </div>
 
       <div v-if="step === 'idle'" class="identity-section__actions">
-        <Button type="button" variant="solid" :disabled="isBusy" @click="actions.startSetup">
+        <Button type="button" variant="solid" :disabled="call.isBusy.value" @click="actions.startSetup">
           {{ words.identityCreate }}
         </Button>
-        <Button type="button" variant="outline" :disabled="isBusy" @click="actions.startRestore">
+        <Button type="button" variant="outline" :disabled="call.isBusy.value" @click="actions.startRestore">
           {{ words.identityRestore }}
         </Button>
       </div>
@@ -51,9 +49,9 @@ const { identity: current, actions } = section
       <IdentitySetup
         v-else-if="step === 'setup'"
         :recovery-words="recoveryWords"
-        :positions="positions"
-        :entered="entered"
-        :is-busy="isBusy"
+        :positions="confirmation.positions.value"
+        :entered="confirmation.entered.value"
+        :is-busy="call.isBusy.value"
         @change="actions.setEntered"
         @keep="actions.keep"
         @cancel="actions.cancel"
@@ -61,15 +59,15 @@ const { identity: current, actions } = section
 
       <IdentityRestore
         v-else
-        :text="restoreText"
-        :is-busy="isBusy"
-        @change="actions.setRestoreText"
+        :text="typing.restoreText.value"
+        :is-busy="call.isBusy.value"
+        @change="typing.setRestoreText"
         @restore="actions.restore"
         @cancel="actions.cancel"
       />
     </template>
 
-    <p v-if="problem !== ''" role="alert" class="identity-section__problem">{{ problem }}</p>
+    <p v-if="call.problem.value !== ''" role="alert" class="identity-section__problem">{{ call.problem.value }}</p>
   </section>
 </template>
 

@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-// The official BIP-39 English vectors for 128 bits of entropy (trezor vectors.json).
 func bip39Vectors() []struct{ entropy, words string } {
 	return []struct{ entropy, words string }{
 		{"00000000000000000000000000000000", "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"},

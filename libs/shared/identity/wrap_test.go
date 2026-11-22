@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"

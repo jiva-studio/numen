@@ -19,10 +19,11 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
   const identity = computed(() => getIdentity().identity.value)
   const step = ref<Step>('idle')
   const recoveryWords = ref<readonly string[]>([])
-  const { problem, isBusy, run } = useIdentityCall()
+  const call = useIdentityCall()
+  const { problem, isBusy, run } = call
   const confirmation = useWordsConfirmation(recoveryWords)
-  const { restoreText, setRestoreText } = useRestoreText(problem)
-  const { isAskingDelete, ...deletion } = useIdentityDelete(getIdentity, run, () => isBusy.value)
+  const typing = useRestoreText(problem)
+  const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
 
   onMounted(() => {
     runInBackground(getIdentity().load(), (caughtError) => {
@@ -38,7 +39,7 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
     step.value = 'idle'
     recoveryWords.value = []
     confirmation.clear()
-    restoreText.value = ''
+    typing.restoreText.value = ''
     problem.value = ''
     deletion.cancelDelete()
   }
@@ -74,32 +75,19 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
 
   const restore = async (): Promise<void> => {
     if (isBusy.value) return
-    const typed = restoreText.value.split(/\s+/).filter((word) => word !== '')
+    const typed = typing.restoreText.value.split(/\s+/).filter((word) => word !== '')
     const answer = await run(() => getIdentity().create(typed))
     if (answer.ok) reset()
   }
 
   return {
     identity,
-    state: {
-      step,
-      recoveryWords,
-      positions: confirmation.positions,
-      entered: confirmation.entered,
-      restoreText,
-      problem,
-      isBusy,
-      isAskingDelete,
-    },
-    actions: {
-      startSetup,
-      startRestore,
-      cancel: reset,
-      setEntered,
-      setRestoreText,
-      keep,
-      restore,
-      ...deletion,
-    },
+    step,
+    recoveryWords,
+    call,
+    confirmation,
+    typing,
+    deletion,
+    actions: { startSetup, startRestore, cancel: reset, setEntered, keep, restore },
   }
 }
