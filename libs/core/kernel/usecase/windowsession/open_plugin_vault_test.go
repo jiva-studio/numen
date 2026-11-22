@@ -14,7 +14,7 @@ func TestAWindowWithoutAVaultSwitchCannotOpenAVaultForAPlugin(t *testing.T) {
 	w := newTestWindow(t, nil)
 	w.open(t, garden())
 
-	err := w.useCases.Switching.OpenPlugin.Execute(t.Context(), studio())
+	err := w.useCases.Switching.OpenPlugin.Execute(t.Context(), studio().ID)
 
 	if err == nil {
 		t.Error("a window with no switch opened a vault")
@@ -28,7 +28,7 @@ func TestAPluginOpenShowsTheVaultThroughTheSwitchItIsGiven(t *testing.T) {
 		return w.useCases.Switching.Show.Execute(ctx, v, open)
 	}
 
-	if err := openVia(w, show).Execute(t.Context(), studio()); err != nil {
+	if err := openVia(w, show).Execute(t.Context(), studio().ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -43,7 +43,7 @@ func TestAPluginOpenWhileAPageAsksAQuestionAsksTheUserToSave(t *testing.T) {
 	w.pages.isAsking = true
 	show := func(context.Context, domain.Vault, *PluginOpen) error { return nil }
 
-	err := openVia(w, show).Execute(t.Context(), studio())
+	err := openVia(w, show).Execute(t.Context(), studio().ID)
 
 	if !errors.Is(err, plugin.ErrUnsavedChanges) {
 		t.Errorf("the open returned %v, want %v", err, plugin.ErrUnsavedChanges)
@@ -55,7 +55,7 @@ func TestAPluginOpenRefusedForAnUnansweredPageAsksTheUserToSave(t *testing.T) {
 	w.open(t, garden())
 	show := func(context.Context, domain.Vault, *PluginOpen) error { return window.ErrAnswerPending }
 
-	err := openVia(w, show).Execute(t.Context(), studio())
+	err := openVia(w, show).Execute(t.Context(), studio().ID)
 
 	if !errors.Is(err, plugin.ErrUnsavedChanges) {
 		t.Errorf("the open returned %v, want %v", err, plugin.ErrUnsavedChanges)
@@ -71,7 +71,7 @@ func TestAUserSwitchCancelsAPluginOpenThatIsRunning(t *testing.T) {
 		<-ctx.Done()
 		return context.Cause(ctx)
 	}
-	go func() { canceled <- openVia(w, show).Execute(t.Context(), studio()) }()
+	go func() { canceled <- openVia(w, show).Execute(t.Context(), studio().ID) }()
 	<-entered
 
 	if err := w.useCases.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
@@ -90,7 +90,7 @@ func (f switchFunc) Execute(ctx context.Context, v domain.Vault, open *PluginOpe
 }
 
 func openVia(w *testWindow, show func(context.Context, domain.Vault, *PluginOpen) error) OpenPluginVault {
-	return NewOpenPluginVault(w.useCases.guard, w.useCases.identity, w.pages, switchFunc(show))
+	return NewOpenPluginVault(w.useCases.guard, knownVaults{}, w.useCases.identity, w.pages, switchFunc(show))
 }
 
 // A switch given a plugin open that has ended takes the exclusion like any other switch: during the
@@ -104,7 +104,7 @@ func TestASwitchOfAnEndedPluginOpenFailsDuringTheClose(t *testing.T) {
 		recordedCtx, recordedOpen = ctx, open
 		return w.useCases.Switching.Show.Execute(ctx, v, open)
 	}
-	if err := openVia(w, record).Execute(t.Context(), studio()); err != nil {
+	if err := openVia(w, record).Execute(t.Context(), studio().ID); err != nil {
 		t.Fatal(err)
 	}
 

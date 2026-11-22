@@ -41,15 +41,15 @@ type windowTools struct {
 // windowSession is the use cases of the lifecycle of a window, the ones beside it, and the switch a person
 // shows another vault through.
 type windowSession struct {
-	cases      windowCases
-	tools      windowTools
-	userSwitch windowsession.UserSwitch
+	cases windowCases
+	tools windowTools
+	open  *windowsession.OpenVault
 }
 
 func newWindowSession(
-	parts windowParts, pluginVault windowsession.PluginVaultPath, runner *windowsession.PassRunner, vaultDeps vaultWiring, state *editor.Session, page *editor.PageAccess,
+	parts windowParts, lookup vaultport.VaultLookup, pluginVault windowsession.PluginVaultPath, runner *windowsession.PassRunner, vaultDeps vaultWiring, state *editor.Session, page *editor.PageAccess,
 ) windowSession {
-	identity := vault.NewCheckIdentity(vaultIdentity(vaultDeps.Options))
+	identity := windowsession.NewCheckIdentity(vaultIdentity(vaultDeps.Options))
 	session := windowsession.NewSession(&state.Runtime, parts.recordOpen, parts.diagnostics, parts.embedderError, runner)
 	guard := &windowsession.Guard{}
 	flush := windowsession.NewPageFlush(page.Window, page.Writes)
@@ -61,7 +61,7 @@ func newWindowSession(
 		cases: windowCases{
 			start:      windowsession.NewStartWindow(parts.diagnostics, parts.embedderError, follow, session, parts.shouldRebuild),
 			show:       show,
-			openPlugin: windowsession.NewOpenPluginVault(guard, identity, page.Window, switching),
+			openPlugin: windowsession.NewOpenPluginVault(guard, lookup, identity, page.Window, switching),
 			flush:      windowsession.NewFlushPending(guard, flush),
 			close: windowsession.NewCloseWindow(
 				page.Gate, session,
@@ -76,6 +76,6 @@ func newWindowSession(
 			),
 			showTab: windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, 0),
 		},
-		userSwitch: windowsession.NewUserSwitch(switching),
+		open: windowsession.NewOpenVault(lookup, switching),
 	}
 }

@@ -20,8 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
-	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vaultlist"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
@@ -134,7 +133,7 @@ func (f *onTheList) GetCurrentVault() domain.Vault {
 	return f.current
 }
 
-func (f *onTheList) ShowVault(_ context.Context, v domain.Vault) error {
+func (f *onTheList) Execute(_ context.Context, v domain.Vault, _ *windowsession.PluginOpen) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.expected = append(f.expected, v)
@@ -167,15 +166,13 @@ func onAList(t *testing.T) *onTheList {
 	f.current = f.first
 	rename := vaults.NewRename(registry, registry, rows)
 	erase := vaults.NewErase(identity, f.bin, forget)
-	list := vaultregistry.NewList(registry)
-	find := vaultregistry.NewFind(registry)
 	chooseFolder := picker.NewChooseFolder(f.dialog)
-	folderCheck := vaultregistry.NewFolderCheck(vaultreader.Readers{})
+	readers := vaultreader.Readers{}
 	remove := vaults.NewRemove(registry, forget, erase)
 	handler := NewHandler(
 		f,
-		vaultlist.NewListVaults(list, folderCheck), vaultlist.NewAddVault(adding, folderCheck),
-		vaultlist.NewRenameVault(find, rename, folderCheck), vaultlist.NewOpenVault(find, f), remove,
+		vaults.NewListVaults(registry, readers), vaults.NewAddVault(adding, readers),
+		vaults.NewRenameVault(registry, rename, readers), windowsession.NewOpenVault(registry, f), remove,
 	)
 	handler.SetFolderChooser(chooseFolder)
 	mux := http.NewServeMux()

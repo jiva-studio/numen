@@ -32,16 +32,6 @@ type Changes interface {
 	Publish(change window.Change)
 }
 
-// IdentityCheck refuses a vault whose folder does not carry its identity.
-type IdentityCheck interface {
-	Execute(v domain.Vault) error
-}
-
-// OpenRecord remembers the vault the window opened last.
-type OpenRecord interface {
-	Execute(id domain.VaultID) error
-}
-
 // TabFront asks the clients to bring a tab to the front.
 type TabFront interface {
 	Publish(id string)

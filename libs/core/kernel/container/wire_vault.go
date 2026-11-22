@@ -130,11 +130,3 @@ func getProblems(problems check.ProblemQueries) *vault.GetProblems {
 	}
 	return vault.NewGetProblems(check.Standard(problems))
 }
-
-func vaultListing(readers vaultport.VaultReaders, registry vaultregistry.Ports) vaultregistry.Listing {
-	return vaultregistry.Listing{
-		List:        vaultregistry.NewList(registry.Vaults),
-		Find:        vaultregistry.NewFind(registry.Lookup),
-		FolderCheck: vaultregistry.NewFolderCheck(readers),
-	}
-}

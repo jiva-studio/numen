@@ -166,7 +166,7 @@ func buildWindow(
 	}}
 	notes, pluginNotes := newWindowNotes(vaultDeps, db, state, noteViews{Admission: page.Writes.AdmitWrite, Follow: page.Writes}, current)
 	moves := vaultVaults(vaultDeps, ports, db, notes.Place.Move)
-	listing := vaultListing(vaultDeps.Readers, ports)
+	find := registry.NewFind(ports.Lookup)
 
 	diag := windowsession.NewDiagnostics(opening.Out, page.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
@@ -181,7 +181,7 @@ func buildWindow(
 		recordOpen: moves.RecordOpen, importFiles: moves.Tree.Import, diagnostics: diag,
 		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
 	}
-	session := newWindowSession(parts, plugins.vault, runner, vaultDeps, state, page)
+	session := newWindowSession(parts, ports.Lookup, plugins.vault, runner, vaultDeps, state, page)
 	inst := editor.NewInstallation(page, editor.Lifecycle{
 		Show:  session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
@@ -193,12 +193,12 @@ func buildWindow(
 	mountWindowState(window)
 	mountFile(window, vaultDeps, db, plugins.kinds, &moves.Tree.Move, &notes.Place)
 	mountNote(window, &notes, db, plugins.kinds.list, writeWake)
-	mountVaults(window, &listing, moves.Change, session.userSwitch)
+	mountVaults(window, ports, vaultDeps.Readers, moves.Change, session.open)
 	return window, windowLaunch{
 		start:  session.cases.start,
-		server: newFileServer(vaultDeps, &state.Runtime, page.Window, &listing.Find), closeSource: closeEmbedder, source: source, generations: generations,
+		server: newFileServer(vaultDeps, &state.Runtime, page.Window, &find), closeSource: closeEmbedder, source: source, generations: generations,
 		plugins: windowPluginAccess{
-			writeWake: writeWake, notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, listing, session.cases.openPlugin), showTab: session.tools.showTab,
+			writeWake: writeWake, notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, ports.Lookup, vaultDeps.Readers, session.cases.openPlugin), showTab: session.tools.showTab,
 		},
 	}
 }

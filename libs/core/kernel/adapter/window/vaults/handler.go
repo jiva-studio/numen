@@ -16,8 +16,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vaultlist"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -45,18 +46,18 @@ type Dialog struct {
 type Handler struct {
 	*Dialog
 	window Window
-	list   *vaultlist.ListVaults
-	add    *vaultlist.AddVault
-	rename *vaultlist.RenameVault
-	open   *vaultlist.OpenVault
+	list   *vaults.ListVaults
+	add    *vaults.AddVault
+	rename *vaults.RenameVault
+	open   *windowsession.OpenVault
 	remove Remover
 }
 
 // NewHandler is the handler of the vaults service of one window. The folder dialog is set after,
 // when the application has one.
 func NewHandler(
-	current Window, list *vaultlist.ListVaults, add *vaultlist.AddVault, rename *vaultlist.RenameVault,
-	open *vaultlist.OpenVault, remove Remover,
+	current Window, list *vaults.ListVaults, add *vaults.AddVault, rename *vaults.RenameVault,
+	open *windowsession.OpenVault, remove Remover,
 ) *Handler {
 	return &Handler{Dialog: &Dialog{}, window: current, list: list, add: add, rename: rename, open: open, remove: remove}
 }
@@ -182,7 +183,7 @@ func (s *Handler) OpenVault(
 	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil
 }
 
-func convertVaultToWire(v vaultlist.Listed) *v1.Vault {
+func convertVaultToWire(v vaults.Listed) *v1.Vault {
 	return &v1.Vault{
 		Id: string(v.ID), Name: v.Name, Path: v.Path,
 		IsMissing: v.IsMissing,
