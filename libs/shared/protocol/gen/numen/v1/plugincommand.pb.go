@@ -286,12 +286,9 @@ type ListCommandsResponse struct {
 	Keybindings []*PluginKeybinding `protobuf:"bytes,5,rep,name=keybindings,proto3" json:"keybindings,omitempty"`
 	// The slot points of every enabled plugin, in the order of the plugins' ids and then of each
 	// manifest.
-	SlotPoints []*PluginSlotPoint `protobuf:"bytes,6,rep,name=slot_points,json=slotPoints,proto3" json:"slot_points,omitempty"`
-	// The names of the slots every installed plugin draws, enabled or not, in the order of the plugins' ids
-	// and then of each manifest.
-	DeclaredSlotPoints []string `protobuf:"bytes,7,rep,name=declared_slot_points,json=declaredSlotPoints,proto3" json:"declared_slot_points,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	SlotPoints    []*PluginSlotPoint `protobuf:"bytes,6,rep,name=slot_points,json=slotPoints,proto3" json:"slot_points,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCommandsResponse) Reset() {
@@ -362,13 +359,6 @@ func (x *ListCommandsResponse) GetKeybindings() []*PluginKeybinding {
 func (x *ListCommandsResponse) GetSlotPoints() []*PluginSlotPoint {
 	if x != nil {
 		return x.SlotPoints
-	}
-	return nil
-}
-
-func (x *ListCommandsResponse) GetDeclaredSlotPoints() []string {
-	if x != nil {
-		return x.DeclaredSlotPoints
 	}
 	return nil
 }
@@ -1239,7 +1229,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1f\n" +
 	"\vopened_path\x18\x03 \x01(\tR\n" +
 	"openedPath\"\x15\n" +
-	"\x13ListCommandsRequest\"\x9f\x04\n" +
+	"\x13ListCommandsRequest\"\xed\x03\n" +
 	"\x14ListCommandsResponse\x123\n" +
 	"\bcommands\x18\x01 \x03(\v2\x17.numen.v1.PluginCommandR\bcommands\x12/\n" +
 	"\x05slots\x18\x02 \x03(\v2\x19.numen.v1.PluginSlotEntryR\x05slots\x12u\n" +
@@ -1247,8 +1237,7 @@ const file_numen_v1_plugincommand_proto_rawDesc = "" +
 	"\bhandlers\x18\x04 \x03(\v2\x17.numen.v1.PluginHandlerR\bhandlers\x12<\n" +
 	"\vkeybindings\x18\x05 \x03(\v2\x1a.numen.v1.PluginKeybindingR\vkeybindings\x12:\n" +
 	"\vslot_points\x18\x06 \x03(\v2\x19.numen.v1.PluginSlotPointR\n" +
-	"slotPoints\x120\n" +
-	"\x14declared_slot_points\x18\a \x03(\tR\x12declaredSlotPoints\x1aI\n" +
+	"slotPoints\x1aI\n" +
 	"\x1bContentTypeByExtensionEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"a\n" +

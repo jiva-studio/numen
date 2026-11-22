@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -73,24 +72,5 @@ func TestAMenuEntryKeepsItsGroupAndOrder(t *testing.T) {
 	first := entries[0].Entry
 	if first.Group != "navigate" || first.Order == nil || *first.Order != 20 {
 		t.Errorf("the entry came out as %+v", first)
-	}
-}
-
-type declaredPoints struct{}
-
-func (declaredPoints) ListSlotPoints() []plugin.SlotPointEntry { return nil }
-
-func (declaredPoints) ListDeclaredSlotPoints() []string { return []string{"atlas.row", "off.row"} }
-
-func TestExecuteDeclaredSlotPoints_ListsWhatTheInstalledPluginsDeclare(t *testing.T) {
-	list := plugincommand.NewList(nil, declaredPoints{}, nil)
-
-	got := list.ExecuteDeclaredSlotPoints()
-
-	if len(got) != 2 || got[0] != "atlas.row" || got[1] != "off.row" {
-		t.Errorf("got %v", got)
-	}
-	if one := plugincommand.NewList(nil, nil, nil).ExecuteDeclaredSlotPoints(); one != nil {
-		t.Errorf("without points got %v", one)
 	}
 }

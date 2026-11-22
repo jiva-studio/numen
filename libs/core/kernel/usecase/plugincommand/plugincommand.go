@@ -112,14 +112,6 @@ func (u List) ExecuteSlotPoints() []plugin.SlotPointEntry {
 	})
 }
 
-// ExecuteDeclaredSlotPoints lists the names of the slots every installed plugin draws, enabled or not.
-func (u List) ExecuteDeclaredSlotPoints() []string {
-	if u.points == nil {
-		return nil
-	}
-	return u.points.ListDeclaredSlotPoints()
-}
-
 // ExecuteKeybindings lists the keybindings of the enabled plugins, leaving out those of a plugin the host
 // holds suspended and of a plugin with neither a frontend nor a backend.
 func (u List) ExecuteKeybindings() []plugin.KeybindingEntry {

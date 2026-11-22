@@ -321,18 +321,58 @@ describe('the condition of an entry', () => {
 })
 
 describe('the diagnostics of the entries', () => {
-  it('warn of an entry in a place no plugin declares', () => {
+  it('do not warn of an entry of a plugin in a place no loaded plugin declares', () => {
     const { registry, reportIssue } = setup([
       { pluginId: HARBOR, slot: 'ledger.new', command: 'harbor.open' },
     ])
 
-    registry.getEntries('fileTree.context')
+    registry.getEntries('ledger.new')
+
+    expect(reportIssue).not.toHaveBeenCalled()
+  })
+
+  it('do not warn of an entry in the slot of a plugin that is disabled', () => {
+    const { registry, reportIssue } = setup(
+      [{ pluginId: HARBOR, slot: 'tide.board', command: 'harbor.open' }],
+      { drawers: { getPoints: () => [] } },
+    )
+
+    registry.getEntries('tide.board')
+
+    expect(reportIssue).not.toHaveBeenCalled()
+  })
+
+  it('warn of an entry of the application in a place that is no slot, no slot of a loaded plugin and no submenu', () => {
+    const { registry, reportIssue } = setup([
+      { pluginId: 'app', slot: 'ledger.new', command: 'app:settings.open' },
+    ])
+
+    registry.getEntries('ledger.new')
 
     expect(reportIssue).toHaveBeenCalledWith(
-      HARBOR,
-      'slots: "harbor.open" is placed in "ledger.new", which is neither a slot of the window, a slot a plugin draws, nor a submenu a plugin declares',
+      'app',
+      'slots: "app:settings.open" is placed in "ledger.new", which is neither a slot of the window, a slot a plugin draws, nor a submenu a plugin declares',
       'warning',
     )
+  })
+
+  it('do not warn of an entry of the application in a slot a loaded plugin draws or in a submenu', () => {
+    const { registry, reportIssue } = setup(
+      [
+        { pluginId: 'app', slot: 'ledger.new', command: 'app:settings.open' },
+        { pluginId: LEDGER, slot: 'fileTree.context', submenu: 'ledger.sub', title: 'Sub' },
+        { pluginId: 'app', slot: 'ledger.sub', command: 'app:settings.open' },
+      ],
+      {
+        drawers: {
+          getPoints: () => [{ pluginId: LEDGER, slot: 'ledger.new', title: 'New', menu: false }],
+        },
+      },
+    )
+
+    registry.getEntries('ledger.new')
+
+    expect(reportIssue).not.toHaveBeenCalled()
   })
 
   it('give the second plugin to declare a submenu an error, and keep the submenu of the first', () => {
@@ -380,7 +420,7 @@ describe('the diagnostics of the entries', () => {
 
   it('report each issue once, however often the entries are read', () => {
     const { registry, reportIssue } = setup([
-      { pluginId: HARBOR, slot: 'ledger.new', command: 'harbor.open' },
+      { pluginId: 'app', slot: 'ledger.new', command: 'app:settings.open' },
     ])
 
     registry.getEntries('fileTree.context')
@@ -526,37 +566,5 @@ describe('an entry drawn before its plugin has started', () => {
     registry.getEntries('fileTree.context')
 
     expect(requestPlugin.mock.calls).toStrictEqual([[HARBOR]])
-  })
-})
-
-describe('the places no manifest declares', () => {
-  const DRAWERS = {
-    getPoints: () => [{ pluginId: LEDGER, slot: 'ledger.new', title: 'New', menu: false }],
-  }
-
-  it('are not reported for a slot of a plugin that is disabled', () => {
-    const { registry, reportIssue } = setup(
-      [{ pluginId: HARBOR, slot: 'tide.board', command: 'harbor.open' }],
-      { drawers: { ...DRAWERS, getDeclared: () => ['ledger.new', 'tide.board'] } },
-    )
-
-    registry.getEntries('tide.board')
-
-    expect(reportIssue).not.toHaveBeenCalled()
-  })
-
-  it('are reported for an entry of the application too', () => {
-    const { registry, reportIssue } = setup(
-      [{ pluginId: 'app', slot: 'tide.bord', command: 'app:settings.open' }],
-      { drawers: { ...DRAWERS, getDeclared: () => ['tide.board'] } },
-    )
-
-    registry.getEntries('tide.bord')
-
-    expect(reportIssue).toHaveBeenCalledWith(
-      'app',
-      'slots: "app:settings.open" is placed in "tide.bord", which is neither a slot of the window, a slot a plugin draws, nor a submenu a plugin declares',
-      'warning',
-    )
   })
 })

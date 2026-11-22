@@ -341,7 +341,6 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     drawers: {
       getPoints: () =>
         slotDeps.getSlotPoints?.(registry.plugins.contextManifests?.value ?? new Map()),
-      ...(slotDeps.getDeclaredSlotPoints ? { getDeclared: slotDeps.getDeclaredSlotPoints } : {}),
       ...(slotDeps.getSlotLayout ? { getLayout: slotDeps.getSlotLayout } : {}),
     },
     findCommand: (command, target) => findSlotCommand?.(command, target),

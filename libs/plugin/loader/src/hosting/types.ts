@@ -193,7 +193,6 @@ export interface HostSlots {
   readonly getSlotPoints?: (
     manifests: ReadonlyMap<string, Manifest>,
   ) => readonly DeclaredSlotPoint[] | undefined
-  readonly getDeclaredSlotPoints?: () => readonly string[] | undefined
   readonly getSlotLayout?: (pluginId: string) => SlotLayout | undefined
   readonly createSlotCommandFinder?: (own: HostCommandReads) => SlotCommandFinder
   readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues

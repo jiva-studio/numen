@@ -64,7 +64,6 @@ interface DeclaredList {
   readonly commands: readonly DeclaredCommand[]
   readonly slots: readonly DeclaredSlot[]
   readonly slotPoints?: readonly DeclaredSlotPoint[]
-  readonly declaredSlotPoints?: readonly string[]
   readonly contentTypes?: Readonly<Record<string, string>>
   readonly handlers?: readonly HandlerDeclaration[]
   readonly keybindings?: readonly DeclaredKeybinding[]
@@ -233,7 +232,6 @@ export const createDeclaredCommandsApi = (pluginCommands: WindowClients['pluginC
         commands: answer.commands.map(readCommand),
         slots: answer.slots.map(readSlotEntry),
         slotPoints: answer.slotPoints.map(readSlotPoint),
-        declaredSlotPoints: [...answer.declaredSlotPoints],
         contentTypes: { ...answer.contentTypeByExtension },
         handlers: answer.handlers.map(readHandler),
         keybindings: answer.keybindings.map(readKeybinding),

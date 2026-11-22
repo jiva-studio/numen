@@ -59,22 +59,3 @@ func TestListSlotPoints_ReadsEnabledPluginsOnly(t *testing.T) {
 		t.Errorf("got %+v", found)
 	}
 }
-
-func TestListDeclaredSlotPoints_ReadsDisabledPluginsToo(t *testing.T) {
-	points := func(slot string) manifest.Contributes {
-		return manifest.Contributes{SlotPoints: []manifest.SlotPoint{{Slot: slot, Title: "T"}}}
-	}
-	host := &manifestHost{
-		plugins: []manifest.Discovered{
-			{Manifest: manifest.Manifest{ID: "org.example.atlas", Frontend: &manifest.Frontend{}, Contributes: points("atlas.row")}},
-			{Manifest: manifest.Manifest{ID: "org.example.off", Frontend: &manifest.Frontend{}, Contributes: points("off.row")}},
-		},
-		disabled: map[string]bool{"org.example.off": true},
-	}
-
-	found := New(host).ListDeclaredSlotPoints()
-
-	if len(found) != 2 || found[0] != "atlas.row" || found[1] != "off.row" {
-		t.Errorf("got %v", found)
-	}
-}

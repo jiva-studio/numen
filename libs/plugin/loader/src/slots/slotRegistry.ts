@@ -58,7 +58,6 @@ export interface SlotRegistryDeps {
   readonly getEntries: () => readonly DeclaredSlotEntry[] | undefined
   readonly drawers?: {
     readonly getPoints: () => readonly DeclaredSlotPoint[] | undefined
-    readonly getDeclared?: () => readonly string[] | undefined
     readonly getLayout?: (pluginId: string) => SlotLayout | undefined
   }
   readonly findCommand: (
@@ -162,6 +161,7 @@ function reportUnknownPlaces(
 ): void {
   for (const entry of entries) {
     if (
+      entry.pluginId !== APP_COMMAND_OWNER ||
       KNOWN_SLOTS.has(entry.slot) ||
       known.drawn.has(entry.slot) ||
       known.owners.has(entry.slot)
@@ -289,11 +289,7 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
     () => new Map((deps.drawers?.getPoints() ?? []).map((one) => [one.slot, one.pluginId])),
   )
   const declared = computed(() =>
-    readDeclaredSlots(
-      deps.getEntries() ?? [],
-      new Set([...drawers.value.keys(), ...(deps.drawers?.getDeclared?.() ?? [])]),
-      report,
-    ),
+    readDeclaredSlots(deps.getEntries() ?? [], new Set(drawers.value.keys()), report),
   )
 
   const whenReader = deps.when?.reader ?? createWhenReader()
