@@ -35,7 +35,7 @@ type SearchRuns struct {
 
 // NewSearchRuns creates the use cases of the searches over deps.
 func NewSearchRuns(deps Deps) SearchRuns {
-	kept := &Searches{Store: deps.Store, Cancels: deps.Cancels, Tasks: deps.Tasks, Clock: deps.Clock, After: deps.After, Policy: deps.Policy}
+	kept := NewSearches(deps.Store, deps.Cancels, deps.Tasks, deps.Clock, deps.After, deps.Policy)
 	return SearchRuns{
 		Start: &StartSearch{
 			kept: kept, generations: deps.Generations, run: deps.Run, names: deps.Names,

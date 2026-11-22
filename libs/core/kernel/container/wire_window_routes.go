@@ -256,7 +256,9 @@ func shareEditorWindow(db *vaultIndex, opened *windowRoutes, showTab windowsessi
 	))
 }
 
-func newPluginVaultList(runtime *windowsession.Runtime, changes vaultChanging, lookup vaultport.VaultLookup, readers vaultport.VaultReaders, open windowsession.OpenPluginVault) pluginvault.ListAccess {
+func newPluginVaultList(
+	runtime *windowsession.Runtime, changes vaultChanging, lookup vaultport.VaultLookup, readers vaultport.VaultReaders, open windowsession.OpenPluginVault,
+) pluginvault.ListAccess {
 	return pluginvault.NewListAccess(
 		vault.NewAddVault(changes.Add, readers), vault.NewRenameVault(lookup, changes.Rename, readers), changes.Remove, open,
 		registry.NewFolderCheck(readers), func() domain.VaultID { return runtime.GetCurrentVault().ID },

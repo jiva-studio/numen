@@ -37,13 +37,20 @@ type Tasks interface {
 
 // Searches is the kept searches with the cancels, tasks and policy that go with them.
 type Searches struct {
-	Store   Store
-	Cancels Cancels
-	Tasks   Tasks
-	Clock   machineport.Clock
-	After   func(d time.Duration) <-chan time.Time
-	Policy  searchrun.Policy
+	store   Store
+	cancels Cancels
+	tasks   Tasks
+	clock   machineport.Clock
+	after   func(d time.Duration) <-chan time.Time
+	policy  searchrun.Policy
 }
+
+func (s *Searches) Store() Store                                { return s.store }
+func (s *Searches) Cancels() Cancels                            { return s.cancels }
+func (s *Searches) Tasks() Tasks                                { return s.tasks }
+func (s *Searches) Clock() machineport.Clock                    { return s.clock }
+func (s *Searches) After() func(time.Duration) <-chan time.Time { return s.after }
+func (s *Searches) Policy() searchrun.Policy                    { return s.policy }
 
 func getTaskID(id searchrun.ID) string {
 	return "search " + string(id)
@@ -52,16 +59,16 @@ func getTaskID(id searchrun.ID) string {
 // Drop cancels the searches and forgets them.
 func (s *Searches) Drop(ids []searchrun.ID) {
 	for _, id := range ids {
-		s.Cancels.Cancel(string(id))
-		s.Tasks.Remove(getTaskID(id))
+		s.cancels.Cancel(string(id))
+		s.tasks.Remove(getTaskID(id))
 	}
-	s.Store.RemoveSearches(ids)
+	s.store.RemoveSearches(ids)
 }
 
 // DropExpired drops the searches the policy expires to make room for incoming more, and returns the rest.
 func (s *Searches) DropExpired(incoming int) []searchrun.Record {
-	records := s.Store.ListSearches()
-	expired := searchrun.SelectExpired(records, s.Clock.Now(), s.Policy, incoming)
+	records := s.store.ListSearches()
+	expired := searchrun.SelectExpired(records, s.clock.Now(), s.policy, incoming)
 	s.Drop(expired)
 	kept := records[:0]
 	for _, r := range records {
@@ -75,7 +82,7 @@ func (s *Searches) DropExpired(incoming int) []searchrun.Record {
 // Find returns searchrun.ErrNotFound for a search that is unknown, expired, removed or of another owner.
 func (s *Searches) Find(owner string, id searchrun.ID) (searchrun.Record, <-chan struct{}, error) {
 	s.DropExpired(0)
-	r, stopped, isFound := s.Store.FindSearch(id)
+	r, stopped, isFound := s.store.FindSearch(id)
 	if !isFound || r.Start.Owner != owner {
 		return searchrun.Record{}, nil, searchrun.ErrNotFound
 	}
@@ -84,6 +91,25 @@ func (s *Searches) Find(owner string, id searchrun.ID) (searchrun.Record, <-chan
 
 // Touch records that the search was read now.
 func (s *Searches) Touch(id searchrun.ID) {
-	now := s.Clock.Now()
-	s.Store.ChangeSearch(id, func(r *searchrun.Record) { r.AccessedAt = now })
+	now := s.clock.Now()
+	s.store.ChangeSearch(id, func(r *searchrun.Record) { r.AccessedAt = now })
+}
+
+func NewSearches(store Store, cancels Cancels, tasks Tasks, clock machineport.Clock, after func(d time.Duration) <-chan time.Time, policy searchrun.Policy) *Searches {
+	return &Searches{store: store, cancels: cancels, tasks: tasks, clock: clock, after: after, policy: policy}
+}
+
+// keptSearches is what the use cases of the searches read of the kept searches; an interface keeps the
+// fields of Searches out of the use cases that hold it.
+type keptSearches interface {
+	Store() Store
+	Cancels() Cancels
+	Tasks() Tasks
+	Clock() machineport.Clock
+	After() func(d time.Duration) <-chan time.Time
+	Policy() searchrun.Policy
+	Drop(ids []searchrun.ID)
+	DropExpired(incoming int) []searchrun.Record
+	Find(owner string, id searchrun.ID) (searchrun.Record, <-chan struct{}, error)
+	Touch(id searchrun.ID)
 }

@@ -9,7 +9,7 @@ import (
 
 // GetSearch returns the state of a search and one page of its results, waiting a while for it to stop.
 type GetSearch struct {
-	kept        *Searches
+	kept        keptSearches
 	generations IndexGenerations
 }
 
@@ -50,11 +50,11 @@ func (u *GetSearch) Execute(ctx context.Context, r Read) (Page, error) {
 func (u *GetSearch) wait(ctx context.Context, r Read, stopped <-chan struct{}) (searchrun.Record, error) {
 	select {
 	case <-stopped:
-	case <-u.kept.After(min(r.Wait, u.kept.Policy.MaxWait)):
+	case <-u.kept.After()(min(r.Wait, u.kept.Policy().MaxWait)):
 	case <-ctx.Done():
 		return searchrun.Record{}, ctx.Err()
 	}
-	record, _, isFound := u.kept.Store.FindSearch(r.ID)
+	record, _, isFound := u.kept.Store().FindSearch(r.ID)
 	if !isFound {
 		return searchrun.Record{}, searchrun.ErrNotFound
 	}
@@ -67,7 +67,7 @@ func (u *GetSearch) cutPage(record searchrun.Record, r Read) (Page, error) {
 		IsStale:      record.IndexGeneration != u.generations.GetGeneration(record.Start.Vault.ID),
 		TotalResults: len(record.Results.Results),
 	}
-	size := u.kept.Policy.GetPageSize(r.PageSize)
+	size := u.kept.Policy().GetPageSize(r.PageSize)
 	offset := 0
 	if r.PageToken != "" && !record.IsRunning {
 		var err error

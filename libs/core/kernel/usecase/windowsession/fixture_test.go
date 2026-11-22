@@ -357,7 +357,10 @@ func NewUseCases(rt *Runtime, tabs *TabReports, deps Deps) *UseCases {
 	var s UseCases
 	s.Switching.Rebuild = NewRebuildSession(guard, session)
 	s.Switching.Show = NewShowVault(guard, session, NewCheckIdentity(deps.Vault.Identity), flush, deps.Window.Changes)
-	s.Switching.OpenPlugin = NewOpenPluginVault(guard, knownVaults{}, NewCheckIdentity(deps.Vault.Identity), deps.Window.Pages, switchFunc(func(context.Context, domain.Vault, *PluginOpen) error { return errNoVaultSwitch }))
+	s.Switching.OpenPlugin = NewOpenPluginVault(
+		guard, knownVaults{}, NewCheckIdentity(deps.Vault.Identity), deps.Window.Pages,
+		switchFunc(func(context.Context, domain.Vault, *PluginOpen) error { return errNoVaultSwitch }),
+	)
 	s.guard, s.identity = guard, NewCheckIdentity(deps.Vault.Identity)
 	s.Closing.Flush = NewFlushPending(guard, flush)
 	s.Closing.Close = NewCloseWindow(deps.Shutdown.Door, session, deps.Shutdown.Closers...)
