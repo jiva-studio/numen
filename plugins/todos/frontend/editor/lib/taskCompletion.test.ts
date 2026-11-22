@@ -11,6 +11,10 @@ const complete = createTaskCompletion({
       { name: 'work', count: 2 },
     ],
     contexts: [{ name: 'phone', count: 1 }],
+    tags: [
+      { name: 'port', count: 2 },
+      { name: 'Projects/Web', count: 1 },
+    ],
   }),
 })
 
@@ -26,6 +30,11 @@ describe('the task completion', () => {
   it('offers the projects after a plus and the contexts after an at sign', () => {
     expect(labels(run('- [ ] pay +|'))).toEqual(['home', 'work'])
     expect(labels(run('- [x] call @|'))).toEqual(['phone'])
+  })
+
+  it('offers the tags after a hash', () => {
+    expect(labels(run('- [ ] pay #|'))).toEqual(['port', 'Projects/Web'])
+    expect(labels(run('- [ ] pay #pro|'))).toEqual(['Projects/Web'])
   })
 
   it('filters by what is typed and replaces from after the sign', () => {

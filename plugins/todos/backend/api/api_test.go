@@ -46,6 +46,7 @@ func TestEveryMessageMatchesItsFixture(t *testing.T) {
 		{"ListFields.response", ListFieldsResponse{
 			Projects: []FieldCount{{Name: "home", Count: 4}, {Name: "work", Count: 4}, {Name: "garden", Count: 1}},
 			Contexts: []FieldCount{{Name: "phone", Count: 2}},
+			Tags:     []FieldCount{{Name: "Projects/Web", Count: 3}, {Name: "port", Count: 1}},
 		}, new(ListFieldsResponse)},
 		{"ListTasks.request", ListTasksRequest{
 			Today: "2026-11-14",

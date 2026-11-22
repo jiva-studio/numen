@@ -3,6 +3,7 @@ package ports
 
 import (
 	"context"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -21,6 +22,11 @@ type NoteLister interface {
 	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }
 
+// Frontmatter reads the frontmatter of the notes of the vault.
+type Frontmatter interface {
+	ReadFrontmatter(ctx context.Context, q host.FrontmatterQuery) (host.FrontmatterPage, error)
+}
+
 // FileWriter writes a note over the file stat it had when it was read.
 type FileWriter interface {
 	// Write replaces the file if it matches the baseline, and returns host.ErrStale if it does not.
@@ -35,12 +41,24 @@ type NoteStore interface {
 // ChangeFeed reads the file changes of the vault after a cursor.
 type ChangeFeed = host.FileChangeLister
 
+// SavedStat is the file stat of a note as the snapshot keeps it.
+type SavedStat struct {
+	Path    string    `json:"path"`
+	Kind    string    `json:"kind"`
+	Size    int64     `json:"size"`
+	ModTime time.Time `json:"modTime"`
+	FileID  uint64    `json:"fileId"`
+	Hash    string    `json:"hash"`
+	Version uint64    `json:"version"`
+}
+
 // SavedNote is what the index knows of one note, as it is kept between runs.
 type SavedNote struct {
-	Stat         domain.FileStat `json:"stat"`
-	Hash         []byte          `json:"hash"`
-	Tasks        []todo.Task     `json:"tasks"`
-	IsUnreadable bool            `json:"isUnreadable"`
+	Stat         SavedStat   `json:"stat"`
+	Hash         []byte      `json:"hash"`
+	Tasks        []todo.Task `json:"tasks"`
+	Tags         []string    `json:"tags"`
+	IsUnreadable bool        `json:"isUnreadable"`
 }
 
 // Snapshot is the index of a run and the place of the file change feed it was brought up to.

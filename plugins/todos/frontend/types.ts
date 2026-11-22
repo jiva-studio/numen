@@ -130,14 +130,15 @@ export interface TaskWriter {
 
 export type ListFieldsRequest = Record<string, never>
 
-/** A project or a context, written without its + or @, and the number of tasks that carry it. */
+/** A project, a context or a tag, written without its +, @ or #, and the number of tasks that carry it. */
 export interface FieldCount {
   readonly name: string
   readonly count: number
 }
 
-/** The most used projects and contexts, at most 200 of each, by count and then by name. */
+/** The most used projects and contexts of the tasks and tags of the notes, at most 200 of each, by count and then by name. */
 export interface ListFieldsResponse {
   readonly projects: readonly FieldCount[]
   readonly contexts: readonly FieldCount[]
+  readonly tags: readonly FieldCount[]
 }

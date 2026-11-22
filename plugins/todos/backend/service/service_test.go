@@ -48,7 +48,7 @@ func startWithWriter(t *testing.T, notes map[string]string, getWriter func(*host
 	if getWriter != nil {
 		writer = getWriter(vault)
 	}
-	tasks := index.New(vault, vault, todo.ParseNote)
+	tasks := index.New(vault, vault, vault, todo.ParseNote)
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}
@@ -409,10 +409,10 @@ func TestTickOverHTTPAnswersAMalformedDayWithAnInvalidArgumentError(t *testing.T
 	}
 }
 
-func TestListFieldsReturnsTheProjectsAndContextsMostUsedFirst(t *testing.T) {
+func TestListFieldsReturnsTheProjectsContextsAndTagsMostUsedFirst(t *testing.T) {
 	a := start(t, map[string]string{
-		"a.md": "- [ ] one +home @phone\n- [ ] two +home +work",
-		"b.md": "- [ ] three +work +home",
+		"a.md": "---\ntags: [Port, sea]\n---\n- [ ] one +home @phone\n- [ ] two +home +work",
+		"b.md": "---\ntags: port\n---\n- [ ] three +work +home",
 	})
 
 	var got api.ListFieldsResponse
@@ -421,6 +421,7 @@ func TestListFieldsReturnsTheProjectsAndContextsMostUsedFirst(t *testing.T) {
 	want := api.ListFieldsResponse{
 		Projects: []api.FieldCount{{Name: "home", Count: 3}, {Name: "work", Count: 2}},
 		Contexts: []api.FieldCount{{Name: "phone", Count: 1}},
+		Tags:     []api.FieldCount{{Name: "Port", Count: 2}, {Name: "sea", Count: 1}},
 	}
 	if status != http.StatusOK || !reflect.DeepEqual(got, want) {
 		t.Errorf("ListFields = %d %+v, want %+v", status, got, want)

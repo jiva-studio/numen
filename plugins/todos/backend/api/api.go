@@ -116,18 +116,19 @@ type SetTaskDoneResponse struct {
 	Error  Refusal `json:"error"`
 }
 
-// ListFieldsRequest asks for the projects and the contexts of the tasks.
+// ListFieldsRequest asks for the projects and the contexts of the tasks and the tags of the notes.
 type ListFieldsRequest struct{}
 
-// FieldCount is a project or a context, written without its + or @, and the tasks that carry it.
+// FieldCount is a project or a context, written without its +, @ or #, and the tasks that carry it.
 type FieldCount struct {
 	Name  string `json:"name"`
 	Count int    `json:"count"`
 }
 
-// ListFieldsResponse is the most used projects and contexts, at most 200 of each, by count and then
-// by name.
+// ListFieldsResponse is the most used projects and contexts of the tasks and tags of
+// the notes, at most 200 of each, by count and then by name.
 type ListFieldsResponse struct {
 	Projects []FieldCount `json:"projects"`
 	Contexts []FieldCount `json:"contexts"`
+	Tags     []FieldCount `json:"tags"`
 }

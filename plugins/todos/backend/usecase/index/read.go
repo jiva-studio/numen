@@ -93,7 +93,7 @@ func (i *Index) storeNote(path string, raw []byte, stat domain.FileStat) bool {
 		i.set(path, known)
 		return false
 	}
-	next := entry{stat: stat, hash: hash, tasks: nil, isUnreadable: false}
+	next := entry{stat: stat, hash: hash, tasks: nil, tags: known.tags, isUnreadable: false}
 	tasks, err := i.parse(raw)
 	if err != nil {
 		next.isUnreadable = true
@@ -114,7 +114,7 @@ func (i *Index) recordFailure(ctx context.Context, path string, err error) (bool
 		return i.drop(path), nil
 	}
 	i.mu.Lock()
-	unreadable := entry{stat: domain.FileStat{}, hash: [sha256.Size]byte{}, tasks: nil, isUnreadable: true}
+	unreadable := entry{stat: domain.FileStat{}, hash: [sha256.Size]byte{}, tasks: nil, tags: nil, isUnreadable: true}
 	known := i.entries[path]
 	i.putEntry(path, unreadable)
 	i.mu.Unlock()
@@ -143,13 +143,14 @@ func isSame(a, b entry) bool {
 }
 
 func emptyEntry() entry {
-	return entry{stat: domain.FileStat{}, hash: [sha256.Size]byte{}, tasks: nil, isUnreadable: false}
+	return entry{stat: domain.FileStat{}, hash: [sha256.Size]byte{}, tasks: nil, tags: nil, isUnreadable: false}
 }
 
 func (i *Index) putEntry(path string, next entry) {
 	i.removeEntry(path)
 	i.entries[path] = next
 	i.countFields(next.tasks, 1)
+	i.countTags(next.tags, 1)
 }
 
 func (i *Index) removeEntry(path string) {
@@ -158,6 +159,7 @@ func (i *Index) removeEntry(path string) {
 		return
 	}
 	i.countFields(known.tasks, -1)
+	i.countTags(known.tags, -1)
 	delete(i.entries, path)
 }
 

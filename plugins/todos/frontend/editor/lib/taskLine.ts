@@ -3,7 +3,7 @@
  * todo.txt fields. Offsets are in the line, which is what an editor decorates.
  */
 
-export type FieldKind = 'priority' | 'due' | 'done' | 'recurrence' | 'project' | 'context'
+export type FieldKind = 'priority' | 'due' | 'done' | 'recurrence' | 'project' | 'context' | 'tag'
 
 interface TaskField {
   readonly kind: FieldKind
@@ -53,6 +53,7 @@ function getKind(word: string, isFirst: boolean): FieldKind | undefined {
   if (prefixed) return prefixed[1]
   if (word.length > 1 && word[0] === '+') return 'project'
   if (word.length > 1 && word[0] === '@') return 'context'
+  if (word.length > 1 && word[0] === '#') return 'tag'
   return undefined
 }
 

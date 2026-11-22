@@ -7,7 +7,7 @@ export interface FieldCache {
 }
 
 export function createFieldCache(api: Pick<TodosApi, 'listFields'>): FieldCache {
-  let fields: ListFieldsResponse = { projects: [], contexts: [] }
+  let fields: ListFieldsResponse = { projects: [], contexts: [], tags: [] }
   let latest = 0
   return {
     get: () => fields,

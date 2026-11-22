@@ -95,7 +95,7 @@ func newFixture(notes map[string]string) *fixture {
 	}
 	files := newReader(vault)
 	counted := new(parser)
-	return &fixture{vault: vault, reader: files, parser: counted, index: New(files, vault, counted.parse)}
+	return &fixture{vault: vault, reader: files, parser: counted, index: New(files, vault, vault, counted.parse)}
 }
 
 func (f *fixture) scan(t *testing.T) {
@@ -150,7 +150,7 @@ func TestAScanOfANewIndexReturnsTheSameTasks(t *testing.T) {
 	f := newFixture(map[string]string{"a.md": "- [ ] one\n- [x] two\n", "b.md": "- [ ] three +p @c (A)"})
 	f.scan(t)
 
-	again := New(f.reader, f.vault, todo.ParseNote)
+	again := New(f.reader, f.vault, f.vault, todo.ParseNote)
 	if err := again.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}

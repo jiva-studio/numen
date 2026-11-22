@@ -63,9 +63,9 @@ func DecodeFilter(message api.Filter) filter.Filter {
 	}
 }
 
-// EncodeFields returns the message of the projects and the contexts. Its lists are never nil.
+// EncodeFields returns the message of the projects, the contexts and the tags. Its lists are never nil.
 func EncodeFields(fields index.Fields) api.ListFieldsResponse {
-	return api.ListFieldsResponse{Projects: encodeCounts(fields.Projects), Contexts: encodeCounts(fields.Contexts)}
+	return api.ListFieldsResponse{Projects: encodeCounts(fields.Projects), Contexts: encodeCounts(fields.Contexts), Tags: encodeCounts(fields.Tags)}
 }
 
 func encodeCounts(counts []index.FieldCount) []api.FieldCount {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/changes"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
 )
 
@@ -87,12 +88,12 @@ func (i *Index) Flush(ctx context.Context) {
 
 func (i *Index) follow(ctx context.Context) error {
 	from := changes.Source{Feed: i.saver.Feed, Store: i.saver.Cursors(i.saver.getCursor, i.saver.setCursor), CursorFile: cursorFile}
-	events := []string{host.EventFileAdded, host.EventFileChanged, host.EventFileMoved, host.EventFileRemoved}
+	events := []string{host.EventFileAdded, host.EventFileChanged, host.EventFileMoved, host.EventFileRemoved, host.EventNoteFrontmatterChanged}
 	return changes.Follow(ctx, from, events, i.applyChanges, i.Scan)
 }
 
 func (i *Index) applyChanges(ctx context.Context, batch []host.FileChange) error {
-	var paths []string
+	var paths, tagPaths []string
 	isChanged, isMoved := false, false
 	for _, change := range batch {
 		if i.isIgnored(change.Path) {
@@ -104,6 +105,10 @@ func (i *Index) applyChanges(ctx context.Context, batch []host.FileChange) error
 		case host.EventFileMoved:
 			isMoved = true
 			paths = append(paths, change.Path)
+			tagPaths = append(tagPaths, change.Path)
+		case host.EventFileAdded, host.EventNoteFrontmatterChanged:
+			paths = append(paths, change.Path)
+			tagPaths = append(tagPaths, change.Path)
 		default:
 			paths = append(paths, change.Path)
 		}
@@ -115,7 +120,10 @@ func (i *Index) applyChanges(ctx context.Context, batch []host.FileChange) error
 		}
 		isChanged = isChanged || dropped
 	}
-	return i.checkPaths(ctx, paths, isChanged)
+	if err := i.checkPaths(ctx, paths, isChanged); err != nil {
+		return err
+	}
+	return i.refreshTags(ctx, tagPaths)
 }
 
 func (i *Index) dropMissing(ctx context.Context) (bool, error) {
@@ -149,7 +157,7 @@ func (i *Index) restore(snapshot ports.Snapshot) {
 		if isUnder(i.ignored, path) {
 			continue
 		}
-		next := entry{stat: saved.Stat, isUnreadable: saved.IsUnreadable, tasks: saved.Tasks, hash: [sha256.Size]byte{}}
+		next := entry{stat: fromSavedStat(saved.Stat), isUnreadable: saved.IsUnreadable, tasks: saved.Tasks, tags: saved.Tags, hash: [sha256.Size]byte{}}
 		copy(next.hash[:], saved.Hash)
 		i.putEntry(path, next)
 	}
@@ -163,7 +171,7 @@ func (i *Index) takeSnapshot() (ports.Snapshot, bool) {
 	}
 	notes := make(map[string]ports.SavedNote, len(i.entries))
 	for path, one := range i.entries {
-		notes[path] = ports.SavedNote{Stat: one.stat, Hash: slices.Clone(one.hash[:]), Tasks: slices.Clone(one.tasks), IsUnreadable: one.isUnreadable}
+		notes[path] = ports.SavedNote{Stat: toSavedStat(one.stat), Hash: slices.Clone(one.hash[:]), Tasks: slices.Clone(one.tasks), Tags: slices.Clone(one.tags), IsUnreadable: one.isUnreadable}
 	}
 	i.saver.mu.Lock()
 	defer i.saver.mu.Unlock()
@@ -223,3 +231,17 @@ func (s *saver) setCursor(cursor host.FileChangeCursor) {
 }
 
 func ignore(_ error) {}
+
+func toSavedStat(stat domain.FileStat) ports.SavedStat {
+	return ports.SavedStat{
+		Path: stat.Path, Kind: string(stat.Kind), Size: stat.Size, ModTime: stat.ModTime,
+		FileID: uint64(stat.FileID), Hash: stat.Hash, Version: stat.Version,
+	}
+}
+
+func fromSavedStat(stat ports.SavedStat) domain.FileStat {
+	return domain.FileStat{
+		Path: stat.Path, Kind: domain.SourceKind(stat.Kind), Size: stat.Size, ModTime: stat.ModTime,
+		FileID: domain.FileID(stat.FileID), Hash: stat.Hash, Version: stat.Version,
+	}
+}

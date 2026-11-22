@@ -54,6 +54,7 @@ type entry struct {
 	stat         domain.FileStat
 	hash         [sha256.Size]byte
 	tasks        []todo.Task
+	tags         []string
 	isUnreadable bool
 }
 
@@ -61,12 +62,15 @@ type entry struct {
 type Index struct {
 	files ports.FileReader
 	notes ports.NoteLister
+	front ports.Frontmatter
 	parse ParseFunc
 
 	mu       sync.Mutex
 	entries  map[string]entry
 	projects map[string]int
 	contexts map[string]int
+	tags     map[string]int
+	spelling map[string]string
 	ignored  []string
 	revision uint64
 	isReady  bool
@@ -75,16 +79,18 @@ type Index struct {
 }
 
 // New returns an empty index over the notes the reader and the lister show.
-func New(files ports.FileReader, notes ports.NoteLister, parse ParseFunc) *Index {
+func New(files ports.FileReader, notes ports.NoteLister, front ports.Frontmatter, parse ParseFunc) *Index {
 	return &Index{
-		files: files, notes: notes, parse: parse,
-		mu: sync.Mutex{}, entries: map[string]entry{}, projects: map[string]int{}, contexts: map[string]int{}, ignored: nil, revision: 0, isReady: false, changed: make(chan struct{}), saver: nil,
+		files: files, notes: notes, front: front, parse: parse,
+		mu: sync.Mutex{}, entries: map[string]entry{}, projects: map[string]int{}, contexts: map[string]int{},
+		tags: map[string]int{}, spelling: map[string]string{},
+		ignored: nil, revision: 0, isReady: false, changed: make(chan struct{}), saver: nil,
 	}
 }
 
 // NewForNotes returns an empty index that reads its notes with todo.ParseNote.
-func NewForNotes(files ports.FileReader, notes ports.NoteLister) *Index {
-	return New(files, notes, todo.ParseNote)
+func NewForNotes(files ports.FileReader, notes ports.NoteLister, front ports.Frontmatter) *Index {
+	return New(files, notes, front, todo.ParseNote)
 }
 
 // Scan reads every note and marks the index ready when the last is read.
@@ -97,12 +103,17 @@ func (i *Index) Scan(ctx context.Context) error {
 		return err
 	}
 	i.mu.Lock()
-	defer i.mu.Unlock()
 	for path := range i.entries {
 		if !slices.Contains(paths, path) {
 			i.removeEntry(path)
 		}
 	}
+	i.mu.Unlock()
+	if err := i.refreshAllTags(ctx); err != nil {
+		return err
+	}
+	i.mu.Lock()
+	defer i.mu.Unlock()
 	i.isReady = true
 	i.bump()
 	return nil
@@ -126,7 +137,10 @@ func (i *Index) Refresh(ctx context.Context, paths []string, renames []Rename) e
 			checked = append(checked, path)
 		}
 	}
-	return i.checkPaths(ctx, checked, len(moved) > 0)
+	if err := i.checkPaths(ctx, checked, len(moved) > 0); err != nil {
+		return err
+	}
+	return i.refreshTags(ctx, checked)
 }
 
 // SetIgnoredFolders sets the folders, separated by commas, whose notes are not searched.
@@ -305,5 +319,8 @@ func (i *Index) checkAll(ctx context.Context) error {
 		}
 	}
 	i.mu.Unlock()
-	return i.checkPaths(ctx, paths, isChanged)
+	if err := i.checkPaths(ctx, paths, isChanged); err != nil {
+		return err
+	}
+	return i.refreshAllTags(ctx)
 }

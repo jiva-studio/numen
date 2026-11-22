@@ -14,10 +14,11 @@ type FieldCount struct {
 	Count int
 }
 
-// Fields is the projects and the contexts of the tasks.
+// Fields is the projects and the contexts of the tasks and the tags of the notes.
 type Fields struct {
 	Projects []FieldCount
 	Contexts []FieldCount
+	Tags     []FieldCount
 }
 
 // ListFields returns the projects and the contexts of the tasks, the most used first and by name
@@ -25,12 +26,15 @@ type Fields struct {
 func (i *Index) ListFields() Fields {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-	return Fields{Projects: rank(i.projects), Contexts: rank(i.contexts)}
+	return Fields{Projects: rank(i.projects, nil), Contexts: rank(i.contexts, nil), Tags: rank(i.tags, i.spelling)}
 }
 
-func rank(counts map[string]int) []FieldCount {
+func rank(counts map[string]int, spelling map[string]string) []FieldCount {
 	ranked := make([]FieldCount, 0, len(counts))
 	for name, count := range counts {
+		if spelled, isSpelled := spelling[name]; isSpelled {
+			name = spelled
+		}
 		ranked = append(ranked, FieldCount{Name: name, Count: count})
 	}
 	slices.SortFunc(ranked, func(a, b FieldCount) int {

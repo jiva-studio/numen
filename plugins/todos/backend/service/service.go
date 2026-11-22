@@ -148,7 +148,7 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	tasks := index.NewForNotes(vault, vault)
+	tasks := index.NewForNotes(vault, vault, vault)
 	tasks.Persist(index.Persistence{Snapshots: snapshot.New(""), Feed: vault, After: index.SystemAfter, Cursors: snapshot.NewCursorStore})
 	if err := mount(s, tasks, complete.New(vault, vault, tasks)); err != nil {
 		return err

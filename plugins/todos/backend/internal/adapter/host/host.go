@@ -42,3 +42,7 @@ func (v *Vault) Write(ctx context.Context, path string, content []byte, baseline
 func (v *Vault) ListFileChanges(ctx context.Context, q sdkhost.FileChangeQuery) (sdkhost.FileChangePage, error) {
 	return v.client.ListFileChanges(ctx, q)
 }
+
+func (v *Vault) ReadFrontmatter(ctx context.Context, q sdkhost.FrontmatterQuery) (sdkhost.FrontmatterPage, error) {
+	return v.client.ReadFrontmatter(ctx, q)
+}

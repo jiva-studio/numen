@@ -40,6 +40,7 @@ function listOptions(
   const prefixes: readonly (readonly [string, (typed: string) => Completion[]])[] = [
     ['+', (typed) => listFieldOptions(deps.getFields().projects, typed)],
     ['@', (typed) => listFieldOptions(deps.getFields().contexts, typed)],
+    ['#', (typed) => listFieldOptions(deps.getFields().tags, typed)],
     ['due:', (typed) => listDateOptions(deps.getToday(), typed)],
     ['done:', (typed) => listDateOptions(deps.getToday(), typed)],
     ['pri:', listPriorityOptions],

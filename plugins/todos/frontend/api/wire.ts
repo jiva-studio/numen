@@ -25,7 +25,7 @@ const api = createApi(SERVICE)
 
 /** What the models ask of the backend. */
 export interface TodosApi extends TaskReader, TaskWriter {
-  /** Reads the projects and the contexts of the tasks, the most used first. */
+  /** Reads the projects, contexts and tags, the most used first. */
   listFields(): Promise<Result<ListFieldsResponse, ApiError>>
   /** Reads the counts of the open tasks at a day. */
   getSummary(today: string): Promise<Result<Summary, ApiError>>

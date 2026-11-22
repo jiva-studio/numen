@@ -9,6 +9,7 @@ type Vault = notesdomain.Vault
 type VaultID = notesdomain.VaultID
 type FileStat = notesdomain.FileStat
 type SourceKind = notesdomain.SourceKind
+type FileID = notesdomain.FileID
 type Note = notesdomain.Note
 type NoteRef = notesdomain.NoteRef
 type NoteType = notesdomain.NoteType

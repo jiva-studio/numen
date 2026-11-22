@@ -108,6 +108,10 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
         { name: 'garden', count: 1 },
       ],
       contexts: [{ name: 'phone', count: 2 }],
+      tags: [
+        { name: 'Projects/Web', count: 3 },
+        { name: 'port', count: 1 },
+      ],
     },
   },
   RefreshIndex: {

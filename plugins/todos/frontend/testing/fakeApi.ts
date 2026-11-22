@@ -84,7 +84,7 @@ export const refuse = (
 
 export function createFakeApi(init: FakeInit = {}) {
   let summary = init.summary ?? SUMMARY
-  let fields: ListFieldsResponse = init.fields ?? { projects: [], contexts: [] }
+  let fields: ListFieldsResponse = init.fields ?? { projects: [], contexts: [], tags: [] }
   let lists: Partial<Record<Filter['due'], ListTasksResponse>> = { ...init.tasks }
   const queue: WatchMessage[] = []
   let wake: (() => void) | null = null

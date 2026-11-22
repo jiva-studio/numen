@@ -77,7 +77,7 @@ func (c *timers) fire() int {
 
 func persisted(vault *hosttest.Vault, snapshots *memorySnapshots, clock *timers) (*Index, *reader) {
 	files := newReader(vault)
-	one := New(files, vault, todo.ParseNote)
+	one := New(files, vault, vault, todo.ParseNote)
 	one.Persist(Persistence{Snapshots: snapshots, Feed: vault, After: clock.after, Cursors: snapshot.NewCursorStore})
 	return one, files
 }
