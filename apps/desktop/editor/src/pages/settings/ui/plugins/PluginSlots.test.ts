@@ -199,7 +199,7 @@ describe('the slots of a plugin page', () => {
   })
 })
 
-describe('the slots of a plugin page while a row is held', () => {
+describe('the lifted row of the slots of a plugin page', () => {
   const press = (page: ReturnType<typeof mount>) => {
     const grip = page.get('[aria-label="Reorder one"]').element
     grip.dispatchEvent(
@@ -211,7 +211,7 @@ describe('the slots of a plugin page while a row is held', () => {
       )
   }
 
-  it('keep the row held and the others shifting when the groups are read again equal', async () => {
+  it('keep the row lifted and the others shifting across an equal reread of the groups', async () => {
     const page = mount(PluginSlots, {
       props: { groups, layout: undefined },
       attachTo: document.body,
@@ -232,7 +232,7 @@ describe('the slots of a plugin page while a row is held', () => {
     page.unmount()
   })
 
-  it('create no row again when the groups are read again equal', async () => {
+  it('create no row anew on an equal reread of the groups', async () => {
     let mounted = 0
     const page = mount(PluginSlots, {
       props: { groups, layout: undefined },
