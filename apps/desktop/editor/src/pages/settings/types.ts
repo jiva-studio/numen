@@ -167,7 +167,7 @@ export interface SelectChoice {
   readonly id: string
   readonly text: string
   readonly detail?: string
-  readonly group?: string | undefined
+  readonly group?: string
   readonly isDisabled?: boolean
 }
 
