@@ -328,8 +328,17 @@ func TestDmabufDefaultsToDisabledAndNamesRestart(t *testing.T) {
 	if declared.Default != true {
 		t.Errorf("the default is %v, want true", declared.Default)
 	}
-	if !strings.Contains(declared.Description, "restart") || !strings.Contains(declared.Description, "Linux") {
-		t.Errorf("the description %q names no restart or no Linux", declared.Description)
+	if !strings.Contains(declared.Description, "restart") {
+		t.Errorf("the description %q names no restart", declared.Description)
+	}
+	if declared.When == nil || declared.When.Setting != manifest.FactPlatform || !slices.Equal(declared.When.Is, []string{"linux"}) {
+		t.Errorf("when = %+v, want the setting shown while the platform is linux", declared.When)
+	}
+	shell := manifest.Manifest{Settings: settings.GetAppDeclaration()}
+	for platform, want := range map[string]bool{"linux": true, "darwin": false, "windows": false, "android": false} {
+		if got := shell.IsSettingShownOn(declared, nil, platform); got != want {
+			t.Errorf("shown on %s = %v, want %v", platform, got, want)
+		}
 	}
 	if !settings.DefaultPerformance().DisableDmabufRenderer {
 		t.Error("the default performance leaves the renderer on")

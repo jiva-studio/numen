@@ -9,7 +9,10 @@ export function hasRowSettings(settings: readonly PluginSettingInfo[]): boolean 
   return settings.some(isRowSetting)
 }
 
-/** Whether the plugin declares anything its page draws: settings or views of its own. */
+/** Whether the plugin declares anything its page draws: settings it shows or views of its own. */
 export function hasPluginSettings(plugin: PluginInfo): boolean {
-  return hasRowSettings(plugin.settings) || (plugin.settingsViews ?? []).length > 0
+  return (
+    hasRowSettings(plugin.settings.filter((one) => one.isShown !== false)) ||
+    (plugin.settingsViews ?? []).length > 0
+  )
 }

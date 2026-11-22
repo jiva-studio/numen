@@ -148,6 +148,9 @@ func listConditionIssues(subject string, when *Condition, declared map[string]Se
 	if when == nil {
 		return nil
 	}
+	if names, isFact := Facts()[when.Setting]; isFact {
+		return listFactConditionIssues(subject, when, names)
+	}
 	parent, ok := declared[when.Setting]
 	if !ok {
 		return []error{fmt.Errorf("%w: %s is shown by %q, which is no setting declared before it", ErrInvalidSetting, subject, when.Setting)}
@@ -164,6 +167,19 @@ func listConditionIssues(subject string, when *Condition, declared map[string]Se
 			if _, isOption := parent.Options.Find(value); !isOption {
 				issues = append(issues, fmt.Errorf("%w: %s is shown by %s holding %q, which is none of its options", ErrInvalidSetting, subject, when.Setting, value))
 			}
+		}
+	}
+	return issues
+}
+
+func listFactConditionIssues(subject string, when *Condition, names []string) []error {
+	if len(when.Is) == 0 {
+		return []error{fmt.Errorf("%w: %s is shown by %s and lists no values", ErrInvalidSetting, subject, when.Setting)}
+	}
+	var issues []error
+	for _, value := range when.Is {
+		if !slices.Contains(names, value) {
+			issues = append(issues, fmt.Errorf("%w: %s is shown by %s holding %q, and it holds one of %s", ErrInvalidSetting, subject, when.Setting, value, strings.Join(names, ", ")))
 		}
 	}
 	return issues

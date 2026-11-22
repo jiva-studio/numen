@@ -184,10 +184,11 @@
       "group": "performance",
       "type": "boolean",
       "title": "Draw without GPU buffer sharing",
-      "description": "Draw without GPU buffers. Linux only; applies after a restart.",
+      "description": "Draw without GPU buffers; applies after a restart.",
       "details": "On Linux the webview can pass finished frames to the screen through GPU buffers (DMABUF, the fastest way) or through ordinary memory. With this on, ordinary memory is used, which avoids drawing faults some graphics drivers and webview versions show, such as flicker, stale frames and vanishing elements, at the cost of a little more processor time on large repaints. Applies after a restart; has effect on Linux only.",
       "default": true,
-      "icon": "monitor"
+      "icon": "monitor",
+      "when": { "setting": "app.platform", "is": ["linux"] }
     },
     {
       "key": "search.reranking",

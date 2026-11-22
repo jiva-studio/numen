@@ -394,6 +394,51 @@ describe('the page of the shell settings', () => {
     expect(wrapper.findAllComponents(SettingRow)).toHaveLength(5)
   })
 
+  describe('a setting the core hides because the platform is not the one it names', () => {
+    const DMABUF: PluginSettingInfo = {
+      key: 'performance.disableDmabufRenderer',
+      type: 'boolean',
+      title: 'Draw without GPU buffer sharing',
+      description: '',
+      default: true,
+      group: 'performance',
+      when: { setting: 'app.platform', is: ['linux'] },
+      isShown: false,
+      value: true,
+    }
+    const PROFILE = DECLARATION.find((one) => one.key === 'performance.profile')!
+    const groups = [{ id: 'performance', title: 'Performance' }]
+    const getTitles = (app: readonly PluginSettingInfo[]) =>
+      createPage('system', app, groups)
+        .wrapper.findAllComponents(SettingRow)
+        .map((one) => one.props('name'))
+
+    it('is not drawn', () => {
+      expect(getTitles([PROFILE, DMABUF])).not.toContain(DMABUF.title)
+    })
+
+    it('is drawn where the core shows it', () => {
+      expect(getTitles([PROFILE, { ...DMABUF, isShown: true }])).toContain(DMABUF.title)
+    })
+
+    it('leaves no island and no heading for a group whose settings are all hidden', () => {
+      const { wrapper } = createPage('system', [DMABUF], groups)
+
+      expect(wrapper.find('[data-testid="setting-group-performance"]').exists()).toBe(false)
+      expect(wrapper.text()).not.toContain('Performance')
+    })
+
+    it('leaves the island of a group that holds another setting', () => {
+      const { wrapper } = createPage(
+        'system',
+        [{ ...PROFILE, group: 'performance' }, DMABUF],
+        groups,
+      )
+
+      expect(wrapper.find('[data-testid="setting-group-performance"]').exists()).toBe(true)
+    })
+  })
+
   it('draws no row where the core declares no setting for the shell', () => {
     const { wrapper } = createPage('system', [])
 
