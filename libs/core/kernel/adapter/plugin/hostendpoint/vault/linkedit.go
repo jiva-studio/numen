@@ -58,7 +58,7 @@ func (e *arrangeCalls) AddLinks(
 	resultCtx := context.WithoutCancel(ctx)
 	for i, one := range added {
 		if errors.Is(one.Err, plugin.ErrNotAttempted) {
-			out.Results[i] = &v1.HostLinkAdded{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED, Detail: one.Err.Error()}
+			out.Results[i] = &v1.HostLinkAdded{Error: v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED, Detail: one.Err.Error()}
 			continue
 		}
 		entry, code, callErr := writeLinkEdit(resultCtx, one.Stat, one.Err)
@@ -111,12 +111,12 @@ func (e *arrangeCalls) RemoveLinks(
 
 // linkEdit is the outcome of an edit of the links of one note on the wire.
 type linkEdit struct {
-	stat   *v1.HostFileStat
-	code   v1.HostVaultErrorCode
+	stat   *v1.FileStat
+	code   v1.ErrorCode
 	detail string
 }
 
-func writeLinkEdit(ctx context.Context, stat domain.FileStat, err error) (linkEdit, v1.HostVaultErrorCode, error) {
+func writeLinkEdit(ctx context.Context, stat domain.FileStat, err error) (linkEdit, v1.ErrorCode, error) {
 	if err == nil {
 		return linkEdit{stat: writeFileStat(stat)}, 0, nil
 	}

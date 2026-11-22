@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	notesdomain "github.com/jiva-studio/numen/libs/shared/note/domain"
 	notesmarkdown "github.com/jiva-studio/numen/libs/shared/note/markdown"
+	"github.com/jiva-studio/numen/libs/shared/protocol"
 )
 
 func getKind(filePath string) domain.SourceKind {
@@ -235,4 +236,10 @@ func (v *Vault) EnsureIndexed(ctx context.Context) (host.IndexState, error) {
 		return host.IndexState{}, err
 	}
 	return v.state, nil
+}
+
+// GetIndexChangedEvent returns the event the host emits when an indexing pass changed the index of the vault
+// of the given identity, for a test that delivers it to a plugin.
+func GetIndexChangedEvent(vaultID string) string {
+	return protocol.GetIndexChangedEvent(vaultID)
 }

@@ -36,7 +36,7 @@ type Parts struct {
 	Keys       pluginport.KeyStore
 	Uses       connection.Uses
 	Detected   connectionport.Detected
-	Titles     connectionport.OperationTitles
+	Titles     connection.OperationTitles
 }
 
 // New returns the use cases over the parts. newID makes the id of a new connection.

@@ -110,7 +110,7 @@ func TestClientSendsTheSpansInTheirOrder(t *testing.T) {
 	r := h.focusRequests[0]
 	spans := r.GetSpans()
 	if r.GetPath() != "library/Birds.pdf" || len(spans) != 2 ||
-		spans[0].GetStart() != 1500 || spans[0].GetLength() != 80 || spans[1].GetStart() != 400 || spans[1].GetLength() != 700 {
+		spans[0].GetStart() != 1500 || spans[0].GetEnd() != 1580 || spans[1].GetStart() != 400 || spans[1].GetEnd() != 1100 {
 		t.Errorf("the host received %v", r)
 	}
 }

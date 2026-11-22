@@ -20,7 +20,7 @@ func (PluginLifecycle) Ping(
 	_ context.Context,
 	_ *connect.Request[v1.PingRequest],
 ) (*connect.Response[v1.PingResponse], error) {
-	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: manifest.ProtocolVersion}), nil
+	return connect.NewResponse(&v1.PingResponse{Protocol: manifest.ProtocolVersion}), nil
 }
 
 func HandlePluginLifecycle(mux *http.ServeMux) {

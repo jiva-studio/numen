@@ -17,12 +17,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
-
-// VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
-type VaultFinding = func(nameOrPath string) (domain.Vault, error)
 
 // RunnerOpener opens the command runner over a vault.
 type RunnerOpener = func(ctx context.Context, v domain.Vault) (Run, func() error, error)
@@ -42,16 +39,16 @@ func NewList(commands PluginCommands, points SlotPoints, conditions *when.Condit
 }
 
 // NewRun makes the scenario that runs a command in the backend that declares it, over the backends that run
-// them, which may be nothing, the table that gives a file its type, the reader of the type and properties of
+// them, which may be nothing, the table that gives a file its type, the readers of the vault, which give the type and properties of
 // a note, and the settings a condition reads as config; without settings a condition over config is
 // undecided and holds.
 func NewRun(
 	commands PluginCommands, runs PluginCommandRuns, types contenttypeport.ContentTypeTable,
-	notes noteport.NoteReader, config pluginport.WhenConfig, conditions *when.Conditions,
+	readers vaultport.VaultReaders, config pluginport.WhenConfig, conditions *when.Conditions,
 ) Run {
 	run := Run{commands: commands, runs: runs, types: types, notes: noNotes{}, config: noConfig{}, conditions: conditions}
-	if notes != nil {
-		run.notes = readingNotes{notes}
+	if readers != nil {
+		run.notes = readingNotes{readers}
 	}
 	if config != nil {
 		run.config = givenConfig{config}
@@ -309,10 +306,14 @@ type targetNotes interface {
 	addNote(ctx context.Context, v domain.Vault, target plugin.TargetValues, path string) (plugin.TargetValues, error)
 }
 
-type readingNotes struct{ reader noteport.NoteReader }
+type readingNotes struct{ readers vaultport.VaultReaders }
 
 func (n readingNotes) addNote(ctx context.Context, v domain.Vault, target plugin.TargetValues, path string) (plugin.TargetValues, error) {
-	noteType, properties, err := n.reader.Execute(ctx, v, path)
+	reader, err := n.readers.Open(v)
+	if err != nil {
+		return target, err
+	}
+	noteType, properties, err := edit.ReadHead(ctx, reader, path)
 	if err != nil {
 		return target, err
 	}

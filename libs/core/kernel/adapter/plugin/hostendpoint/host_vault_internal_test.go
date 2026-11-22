@@ -77,11 +77,11 @@ func TestMoveReturnsUncodedErrorAsInternalAndMovesTheOthers(t *testing.T) {
 	if res.Msg.GetError() != 0 || len(moves) != 4 {
 		t.Fatalf("the move returned error %v with %d entries, want 4 entries", res.Msg.GetError(), len(moves))
 	}
-	if m := moves[1]; m.GetMove().GetFrom() != brokenPath || m.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL ||
+	if m := moves[1]; m.GetMove().GetFrom() != brokenPath || m.GetError() != v1.ErrorCode_ERROR_CODE_INTERNAL ||
 		!strings.Contains(m.GetDetail(), diskFull) {
 		t.Errorf("the entry of %s is %v, want error INTERNAL with the detail %q", brokenPath, m, diskFull)
 	}
-	if m := moves[2]; m.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND || !strings.Contains(m.GetDetail(), "Nowhere.md") {
+	if m := moves[2]; m.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND || !strings.Contains(m.GetDetail(), "Nowhere.md") {
 		t.Errorf("the entry of Nowhere.md is %v, want error NOT_FOUND with the core's text", m)
 	}
 	for _, i := range []int{0, 3} {
@@ -110,11 +110,11 @@ func TestRemovalReturnsUncodedErrorAsInternalAndRemovesOthers(t *testing.T) {
 	if res.Msg.GetError() != 0 || len(removals) != 3 {
 		t.Fatalf("the removal returned error %v with %d entries, want 3 entries", res.Msg.GetError(), len(removals))
 	}
-	if r := removals[1]; r.GetPath() != brokenPath || r.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL ||
+	if r := removals[1]; r.GetPath() != brokenPath || r.GetError() != v1.ErrorCode_ERROR_CODE_INTERNAL ||
 		!strings.Contains(r.GetDetail(), diskFull) {
 		t.Errorf("the entry of %s is %v, want error INTERNAL with the detail %q", brokenPath, r, diskFull)
 	}
-	if r := removals[2]; r.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE || r.GetDetail() == "" {
+	if r := removals[2]; r.GetError() != v1.ErrorCode_ERROR_CODE_NOT_A_NOTE || r.GetDetail() == "" {
 		t.Errorf("the entry of the folder is %v, want error NOT_A_NOTE with the core's text", r)
 	}
 	if r := removals[0]; r.GetError() != 0 || r.GetDetail() != "" || r.GetTrashPath() != ".trash/Danube.md" {
@@ -133,7 +133,7 @@ func TestRenameReturnsUncodedErrorAsInternalWithTheDetail(t *testing.T) {
 		t.Fatalf("the rename failed as a whole: %v", err)
 	}
 
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL || !strings.Contains(res.Msg.GetDetail(), diskFull) {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_INTERNAL || !strings.Contains(res.Msg.GetDetail(), diskFull) {
 		t.Errorf("the rename returned %v, want error INTERNAL with the detail %q", res.Msg, diskFull)
 	}
 }
@@ -146,7 +146,7 @@ func TestRejectedRenameReturnsTheCoreTextInDetail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND || !strings.Contains(res.Msg.GetDetail(), "Nowhere.md") {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND || !strings.Contains(res.Msg.GetDetail(), "Nowhere.md") {
 		t.Errorf("the rename of Nowhere.md returned %v, want error NOT_FOUND with the core's text", res.Msg)
 	}
 }

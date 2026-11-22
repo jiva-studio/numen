@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 )
 
@@ -32,7 +31,7 @@ type PluginSupervision struct {
 	Failures         *supervision.Failures
 	Services         *supervision.Services
 	Endpoint         *supervision.Slot[supervision.HostEndpoint]
-	Dependencies     *supervision.Slot[pluginport.DependencyRegistry]
+	Dependencies     *supervision.Slot[supervision.Dependencies]
 	Storage          *storage.Storage
 	Health           *pluginhealth.Items
 	Clock            machineport.Clock
@@ -44,7 +43,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 	mode := plugin.NewMode()
 	values := plugin.NewSettingValues()
 	readers := plugin.NewContentTypeLookup()
-	endpoint, dependencies := &supervision.Slot[supervision.HostEndpoint]{}, &supervision.Slot[pluginport.DependencyRegistry]{}
+	endpoint, dependencies := &supervision.Slot[supervision.HostEndpoint]{}, &supervision.Slot[supervision.Dependencies]{}
 	services := supervision.NewServices(mode, endpoint.Get, dependencies.Get)
 	sups := supervision.NewSupervisors(errs.Report, services.ClearPlugin)
 	health := pluginhealth.NewItems()
@@ -93,7 +92,7 @@ func NewPluginRoles(clock machineport.Clock, target string, dirs ...string) (*Pl
 	}, processHost
 }
 
-func setPluginStorage(roles *PluginSupervision, cacheRoot, dataRoot string, newRegistry func(modelsDir string) pluginport.DependencyRegistry) {
+func setPluginStorage(roles *PluginSupervision, cacheRoot, dataRoot string, newRegistry func(modelsDir string) supervision.Dependencies) {
 	roles.Storage.SetStorageRoots(cacheRoot, dataRoot)
 	// gomutants:disable-next-line reason="a window started without a models directory gets no dependency registry, which only an installation with downloaded models exercises"
 	if models := roles.Storage.GetModelsDir(); models != "" {

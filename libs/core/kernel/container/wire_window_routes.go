@@ -5,6 +5,7 @@ import (
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
@@ -32,6 +33,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
@@ -44,12 +46,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vaultlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -90,14 +91,14 @@ func mountText(w *windowRoutes, vaultDeps vaultWiring) {
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountVaults(w *windowRoutes, listing *registry.Listing, change vaultChanging, switching windowsession.UserSwitch) {
+func mountVaults(w *windowRoutes, ports registry.Ports, readers vaultport.VaultReaders, change vaultChanging, open *windowsession.OpenVault) {
 	state := w.session
 	handler := vaults.NewHandler(
 		&state.Runtime,
-		vaultlist.NewListVaults(listing.List, listing.FolderCheck),
-		vaultlist.NewAddVault(change.Add, listing.FolderCheck),
-		vaultlist.NewRenameVault(listing.Find, change.Rename, listing.FolderCheck),
-		vaultlist.NewOpenVault(listing.Find, switching),
+		vault.NewListVaults(ports.Vaults, readers),
+		vault.NewAddVault(change.Add, readers),
+		vault.NewRenameVault(ports.Lookup, change.Rename, readers),
+		open,
 		change.Remove,
 	)
 	w.Installation.OnFolderDialog(func(dialog editor.PathDialog) {
@@ -109,7 +110,7 @@ func mountVaults(w *windowRoutes, listing *registry.Listing, change vaultChangin
 	w.Installation.Mount(editor.NewRoute(path, served, handler.Dialog))
 }
 
-func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock installationClock, runs *searchrun.SearchRuns) {
+func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock installationClock, runs *searchquery.SearchRuns) {
 	state := w.session
 	status := editor.SearchTasks{Tasks: w.page.Window}
 	finds := newSearch(searchDeps, session.index, session.source.searchSource, status.ReportWordsAlone, status.ClearWordsAlone)
@@ -247,25 +248,19 @@ func mountLogs(w *windowRoutes, entries *logsusecase.Entries, install pluginInst
 func shareEditorWindow(db *vaultIndex, opened *windowRoutes, showTab windowsession.ShowTab, install pluginInstall, vaultDeps vaultWiring) {
 	view := windowView(opened.session.Notices)
 	focusFile := file.NewFocusFile(vaultDeps.Readers, view)
-	window := windowsession.NewPluginWindow(
-		&opened.session.Runtime,
-		&opened.session.Tabs,
-		query.NewFocusNote(db.NoteQueries(), view),
-		windowsession.FileFocusFunc(func(ctx context.Context, v domain.Vault, path string, ranges []domain.ByteRange) error {
-			return focusFile.Execute(ctx, v, file.FocusFileInput{Path: path, Ranges: ranges})
-		}),
-		showTab,
+	window := hostendpoint.NewWindowAccess(
+		&opened.session.Runtime, &opened.session.Tabs, query.NewFocusNote(db.NoteQueries(), view), focusFile, showTab,
 	)
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.Window = window })
 }
 
-func newPluginVaultList(runtime *windowsession.Runtime, changes vaultChanging, listing registry.Listing, open windowsession.OpenPluginVault) windowsession.PluginVaults {
-	return windowsession.NewPluginVaults(runtime, windowsession.VaultOps{
-		Edit:    windowsession.VaultEdits{Add: changes.Add, Rename: changes.Rename, Remove: changes.Remove},
-		Find:    listing.Find,
-		Missing: listing.FolderCheck,
-		Open:    open,
-	})
+func newPluginVaultList(
+	runtime *windowsession.Runtime, changes vaultChanging, lookup vaultport.VaultLookup, readers vaultport.VaultReaders, open windowsession.OpenPluginVault,
+) pluginvault.ListAccess {
+	return pluginvault.NewListAccess(
+		vault.NewAddVault(changes.Add, readers), vault.NewRenameVault(lookup, changes.Rename, readers), changes.Remove, open,
+		registry.NewFolderCheck(readers), func() domain.VaultID { return runtime.GetCurrentVault().ID },
+	)
 }
 
 func mountVault(w *windowRoutes) {

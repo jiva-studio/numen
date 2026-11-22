@@ -19,14 +19,13 @@ func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
 	r.SetIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 
 	r.Record(getUnreadVault(), nil)
-	if read, _, _, _ := r.Claim(getUnreadVault()); read != nil {
+	if r.Claim(getUnreadVault()).Read != nil {
 		t.Fatalf("a vault indexed clean was claimed before it was forgotten")
 	}
 
 	r.Clear(getUnreadVault().ID)
 
-	read, _, _, _ := r.Claim(getUnreadVault())
-	if read == nil {
+	if r.Claim(getUnreadVault()).Read == nil {
 		t.Fatalf("a vault forgotten after a clean indexing was not claimable again")
 	}
 }
@@ -40,34 +39,34 @@ func TestAVaultIsClaimedForOneIndexingAtATime(t *testing.T) {
 	r.SetIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 	v := domain.Vault{ID: "one"}
 
-	read, limit, underway, reason := r.Claim(v)
-	if read == nil || limit == nil || !underway || reason != "" {
-		t.Fatalf("the first claim came back %v %v %v %q", read != nil, limit != nil, underway, reason)
+	claim := r.Claim(v)
+	if claim.Read == nil || claim.Closing == nil || !claim.Underway || claim.Reason != "" {
+		t.Fatalf("the first claim came back %v %v %v %q", claim.Read != nil, claim.Closing != nil, claim.Underway, claim.Reason)
 	}
 
-	read, _, underway, reason = r.Claim(v)
-	if read != nil || !underway || reason != "" {
-		t.Errorf("a claim while it ran came back %v %v %q", read != nil, underway, reason)
+	claim = r.Claim(v)
+	if claim.Read != nil || !claim.Underway || claim.Reason != "" {
+		t.Errorf("a claim while it ran came back %v %v %q", claim.Read != nil, claim.Underway, claim.Reason)
 	}
 
 	r.Record(v, errors.New("the folder is not there"))
-	read, _, underway, reason = r.Claim(v)
-	if read != nil || underway || reason != "the folder is not there" {
-		t.Errorf("a claim after a failure came back %v %v %q", read != nil, underway, reason)
+	claim = r.Claim(v)
+	if claim.Read != nil || claim.Underway || claim.Reason != "the folder is not there" {
+		t.Errorf("a claim after a failure came back %v %v %q", claim.Read != nil, claim.Underway, claim.Reason)
 	}
 
 	r.Clear(v.ID)
 	r.Record(v, nil)
-	read, _, underway, reason = r.Claim(v)
-	if read != nil || underway || reason != "" {
-		t.Errorf("a claim after a clean indexing came back %v %v %q", read != nil, underway, reason)
+	claim = r.Claim(v)
+	if claim.Read != nil || claim.Underway || claim.Reason != "" {
+		t.Errorf("a claim after a clean indexing came back %v %v %q", claim.Read != nil, claim.Underway, claim.Reason)
 	}
 }
 
 func TestAWindowThatReadsNothingClaimsNothing(t *testing.T) {
 	r := &indexing.Runs{}
-	read, _, underway, reason := r.Claim(domain.Vault{ID: "one"})
-	if read != nil || underway || reason != "" {
-		t.Errorf("the claim came back %v %v %q", read != nil, underway, reason)
+	claim := r.Claim(domain.Vault{ID: "one"})
+	if claim.Read != nil || claim.Underway || claim.Reason != "" {
+		t.Errorf("the claim came back %v %v %q", claim.Read != nil, claim.Underway, claim.Reason)
 	}
 }

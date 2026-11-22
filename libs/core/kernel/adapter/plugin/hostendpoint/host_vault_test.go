@@ -254,7 +254,7 @@ func TestHostVault_NoVaultReturnsEmptyList(t *testing.T) {
 
 	res, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "samples/A.md"}))
 
-	if err != nil || res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT {
+	if err != nil || res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT {
 		t.Errorf("the answer was %v (%v)", res.Msg, err)
 	}
 }

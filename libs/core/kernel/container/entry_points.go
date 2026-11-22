@@ -94,7 +94,7 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
 	vaults := openVaults(vaultDeps, db, log.Out, log.Label, api.ReportVaultRead)
 	closers := Shell{API: api, CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
-	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, vaultQueries(db).Browse.IsVaultIndexed, api.Window, &api.Changes)
+	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, db.NoteQueries(), api.Window, &api.Changes)
 	vaultList := vaultregistry.NewList(ports.Vaults)
 	api.Vaults = &vaultList
 	api.ResolveLinks = query.NewResolveVaultLinks(ports.Vaults, query.NewResolveLinks(db.NoteQueries()))

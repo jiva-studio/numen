@@ -139,7 +139,7 @@ describe('the text versions a plugin view reads', () => {
     })
 
     const missing = await createPluginTexts(
-      makeErrorClient(TEXT_ERROR_CODE.MISSING),
+      makeErrorClient(TEXT_ERROR_CODE.NOT_FOUND),
       'p',
     ).createEdit('a', 'v1', [])
     expect(missing).toEqual({ ok: false, error: 'missing' })

@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -140,8 +139,7 @@ func TestLoopback_ServesOnlyIssuedAddresses(t *testing.T) {
 func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	target := api.state.GetCurrentVault()
-	find := registry.NewFind(lockedVaults{target})
-	api.findVaults(&find)
+	api.findVaults(lockedVaults{target})
 	back, handler := openLoopback(t, api)
 
 	// The window moves to a vault holding nothing of the kind.

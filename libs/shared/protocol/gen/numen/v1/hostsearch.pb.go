@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// HostSearchErrorCode is why a call on the search index was refused. The zero
+// HostSearchErrorCode is why a call on the search index failed. The zero
 // value means it was not.
 type HostSearchErrorCode int32
 
@@ -2421,14 +2421,14 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"\x06recipe\x18\x01 \x01(\tR\x06recipe\x12\x14\n" +
 	"\x05floor\x18\x02 \x01(\x01R\x05floor\"M\n" +
 	"\x16SetSearchFloorResponse\x123\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\"\xea\x01\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\"\xb5\x01\n" +
 	"\"HostSearchServiceSearchTextRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x14\n" +
 	"\x05kinds\x18\x03 \x03(\tR\x05kinds\x12\x1f\n" +
 	"\vpath_prefix\x18\x04 \x01(\tR\n" +
 	"pathPrefix\x12,\n" +
-	"\x12results_per_source\x18\x05 \x01(\x05R\x10resultsPerSourceJ\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\b\x10\tR\x04modeR\fis_raw_wordsR\ris_whole_text\"\x8c\x01\n" +
+	"\x12results_per_source\x18\x05 \x01(\x05R\x10resultsPerSource\"\x8c\x01\n" +
 	"#HostSearchServiceSearchTextResponse\x123\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1d.numen.v1.HostSearchErrorCodeR\x05error\x120\n" +
 	"\aresults\x18\x02 \x03(\v2\x16.numen.v1.SearchResultR\aresults\"\x7f\n" +
@@ -2502,7 +2502,7 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"signatures\x12 \n" +
 	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x18\n" +
 	"\aexample\x18\x06 \x01(\tR\aexample\x12\x18\n" +
-	"\asummary\x18\a \x01(\tR\asummary*\xc5\x04\n" +
+	"\asummary\x18\a \x01(\tR\asummary*\xe9\x03\n" +
 	"\x13HostSearchErrorCode\x12&\n" +
 	"\"HOST_SEARCH_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fHOST_SEARCH_ERROR_CODE_NO_VAULT\x10\x01\x12#\n" +
@@ -2515,7 +2515,7 @@ const file_numen_v1_hostsearch_proto_rawDesc = "" +
 	"'HOST_SEARCH_ERROR_CODE_SEARCH_NOT_FOUND\x10\n" +
 	"\x12,\n" +
 	"(HOST_SEARCH_ERROR_CODE_TOO_MANY_SEARCHES\x10\v\x12-\n" +
-	")HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN\x10\f\"\x04\b\b\x10\b\"\x04\b\t\x10\t*(HOST_SEARCH_ERROR_CODE_INVALID_CONDITION*$HOST_SEARCH_ERROR_CODE_INVALID_WORDS*\x9d\x01\n" +
+	")HOST_SEARCH_ERROR_CODE_INVALID_PAGE_TOKEN\x10\f*\x9d\x01\n" +
 	"\x11SearchFloorSource\x12#\n" +
 	"\x1fSEARCH_FLOOR_SOURCE_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aSEARCH_FLOOR_SOURCE_STORED\x10\x01\x12\"\n" +

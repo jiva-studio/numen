@@ -149,7 +149,7 @@ func TestHostWindowFocusesTheSpansInTheirOrder(t *testing.T) {
 
 	got, err := client.FocusFile(t.Context(), connect.NewRequest(&v1.FocusFileRequest{
 		Path:  "library/Birds.pdf",
-		Spans: []*v1.ByteSpan{{Start: 1500, Length: 80}, {Start: 400, Length: 700}},
+		Spans: []*v1.Range{{Start: 1500, End: 1580}, {Start: 400, End: 1100}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -272,7 +272,7 @@ func TestHostWindowReturnsUseCaseRejectionAsInvalidArgument(t *testing.T) {
 
 	_, noteErr := client.FocusNote(ctx, connect.NewRequest(&v1.FocusNoteRequest{}))
 	_, fileErr := client.FocusFile(ctx, connect.NewRequest(&v1.FocusFileRequest{
-		Path: "library/Birds.pdf", Spans: []*v1.ByteSpan{{Start: -1, Length: 4}},
+		Path: "library/Birds.pdf", Spans: []*v1.Range{{Start: -1, End: 3}},
 	}))
 	for name, err := range map[string]error{"FocusNote": noteErr, "FocusFile": fileErr} {
 		if connect.CodeOf(err) != connect.CodeInvalidArgument || !strings.Contains(err.Error(), "highlight at most 8 places") {
@@ -333,29 +333,13 @@ func TestHostWindowReturnsThePlaceEachReaderReportedUnread(t *testing.T) {
 	}
 }
 
-func TestHostWindowRejectsSpanPast32BitsBeforeCallingWindow(t *testing.T) {
-	window := &recordingWindow{}
-	client, _ := newWindowClient(t, window, "token-a")
-
-	_, err := client.FocusFile(t.Context(), connect.NewRequest(&v1.FocusFileRequest{
-		Path:  "library/Birds.pdf",
-		Spans: []*v1.ByteSpan{{Start: 400, Length: 80}, {Start: math.MaxInt32 - 10, Length: 20}},
-	}))
-	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Errorf("a passage past the 32-bit range got %v, want invalid argument", err)
-	}
-	if _, places, _ := window.getRequests(); len(places) != 0 {
-		t.Errorf("the window received %+v for a passage past the 32-bit range", places)
-	}
-}
-
 func TestHostWindowFocusesASpanThatEndsAtThe32BitLimit(t *testing.T) {
 	window := &recordingWindow{}
 	client, _ := newWindowClient(t, window, "token-a")
 
 	if _, err := client.FocusFile(t.Context(), connect.NewRequest(&v1.FocusFileRequest{
 		Path:  "library/Birds.pdf",
-		Spans: []*v1.ByteSpan{{Start: math.MaxInt32 - 10, Length: 10}},
+		Spans: []*v1.Range{{Start: math.MaxInt32 - 10, End: math.MaxInt32}},
 	})); err != nil {
 		t.Fatal(err)
 	}

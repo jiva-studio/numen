@@ -17,8 +17,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 )
 
 func getVault() domain.Vault { return domain.Vault{ID: "01VAULT"} }
@@ -150,7 +150,7 @@ func newFixture() *fixture {
 	}
 	f.search = Search{
 		Source:   f.embedder,
-		Queries:  vectorscase.NewEmbedQueries(f.embedder),
+		Queries:  indexing.NewEmbedQueries(f.embedder),
 		Samples:  f.samples,
 		Nearest:  f.nearest,
 		Progress: stubProgress{total: 10, embedded: 10},

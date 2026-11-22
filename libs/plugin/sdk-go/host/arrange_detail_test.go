@@ -26,7 +26,7 @@ func (a *noCodeErrorHost) RenameNote(
 	context.Context, *connect.Request[v1.HostNoteServiceRenameNoteRequest],
 ) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error) {
 	return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{
-		Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, Path: "Broken.md", Detail: diskFull,
+		Error: v1.ErrorCode_ERROR_CODE_INTERNAL, Path: "Broken.md", Detail: diskFull,
 	}), nil
 }
 
@@ -35,8 +35,8 @@ func (a *noCodeErrorHost) MoveNotes(
 ) (*connect.Response[v1.HostNoteServiceMoveNotesResponse], error) {
 	return connect.NewResponse(&v1.HostNoteServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
 		{Move: &v1.MoveResult{From: "Danube.md", To: "Archive/Danube.md"}},
-		{Move: &v1.MoveResult{From: "Broken.md"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, Detail: diskFull},
-		{Move: &v1.MoveResult{From: "Nowhere.md"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND, Detail: "move Nowhere.md: no such note"},
+		{Move: &v1.MoveResult{From: "Broken.md"}, Error: v1.ErrorCode_ERROR_CODE_INTERNAL, Detail: diskFull},
+		{Move: &v1.MoveResult{From: "Nowhere.md"}, Error: v1.ErrorCode_ERROR_CODE_NOT_FOUND, Detail: "move Nowhere.md: no such note"},
 	}}), nil
 }
 
@@ -45,7 +45,7 @@ func (a *noCodeErrorHost) RemoveNotes(
 ) (*connect.Response[v1.HostNoteServiceRemoveNotesResponse], error) {
 	return connect.NewResponse(&v1.HostNoteServiceRemoveNotesResponse{Removals: []*v1.HostNoteRemoval{
 		{Path: "Danube.md", TrashPath: ".trash/Danube.md"},
-		{Path: "Broken.md", Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, Detail: diskFull},
+		{Path: "Broken.md", Error: v1.ErrorCode_ERROR_CODE_INTERNAL, Detail: diskFull},
 	}}), nil
 }
 
@@ -156,7 +156,7 @@ func TestAVaultsErrorWithNoDetailHasThePlainSentinelText(t *testing.T) {
 // detailedRenaming is a host whose rename of a note is rejected with a code and the core's text.
 type detailedRenaming struct {
 	fakeArrangeHost
-	code   v1.HostVaultErrorCode
+	code   v1.ErrorCode
 	detail string
 }
 
@@ -168,7 +168,7 @@ func (a *detailedRenaming) RenameNote(
 
 func TestANoteErrorWithADetailHasTheDetailAsItsText(t *testing.T) {
 	const detail = "Rivers/Donau.md already exists; Rivers/Danube.md is unchanged"
-	server := httptest.NewServer(handler(&detailedRenaming{code: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS, detail: detail}))
+	server := httptest.NewServer(handler(&detailedRenaming{code: v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS, detail: detail}))
 	t.Cleanup(server.Close)
 	client := host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
 

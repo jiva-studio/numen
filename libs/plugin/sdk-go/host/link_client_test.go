@@ -24,8 +24,8 @@ const staleDetail = "Deltas.md changed since it was read"
 type linking struct {
 	unimplementedHost
 	mu         sync.Mutex
-	callError  v1.HostVaultErrorCode
-	editError  v1.HostVaultErrorCode
+	callError  v1.ErrorCode
+	editError  v1.ErrorCode
 	editDetail string
 	added      *v1.HostLinkServiceAddLinksRequest
 	updated    *v1.HostLinkServiceUpdateLinksRequest
@@ -42,9 +42,9 @@ func (l *linking) AddLinks(
 		return connect.NewResponse(&v1.HostLinkServiceAddLinksResponse{Error: l.callError}), nil
 	}
 	return connect.NewResponse(&v1.HostLinkServiceAddLinksResponse{Results: []*v1.HostLinkAdded{
-		{Stat: &v1.HostFileStat{Path: "Danube.md", Size: 64, ModTime: 2000, IsNote: true}},
-		{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT, Detail: staleDetail},
-		{Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, Detail: diskFull},
+		{Stat: &v1.FileStat{Path: "Danube.md", Size: 64, Mtime: 2000, IsNote: true}},
+		{Error: v1.ErrorCode_ERROR_CODE_CONFLICT, Detail: staleDetail},
+		{Error: v1.ErrorCode_ERROR_CODE_INTERNAL, Detail: diskFull},
 	}}), nil
 }
 
@@ -57,7 +57,7 @@ func (l *linking) UpdateLinks(
 	if l.callError != 0 || l.editError != 0 {
 		return connect.NewResponse(&v1.HostLinkServiceUpdateLinksResponse{Error: max(l.callError, l.editError), Detail: l.editDetail}), nil
 	}
-	return connect.NewResponse(&v1.HostLinkServiceUpdateLinksResponse{Stat: &v1.HostFileStat{Path: "Deltas.md", Size: 90, ModTime: 3000, IsNote: true}}), nil
+	return connect.NewResponse(&v1.HostLinkServiceUpdateLinksResponse{Stat: &v1.FileStat{Path: "Deltas.md", Size: 90, Mtime: 3000, IsNote: true}}), nil
 }
 
 func (l *linking) RemoveLinks(
@@ -69,7 +69,7 @@ func (l *linking) RemoveLinks(
 	if l.callError != 0 || l.editError != 0 {
 		return connect.NewResponse(&v1.HostLinkServiceRemoveLinksResponse{Error: max(l.callError, l.editError), Detail: l.editDetail}), nil
 	}
-	return connect.NewResponse(&v1.HostLinkServiceRemoveLinksResponse{Stat: &v1.HostFileStat{Path: "Deltas.md", Size: 40, ModTime: 4000, IsNote: true}}), nil
+	return connect.NewResponse(&v1.HostLinkServiceRemoveLinksResponse{Stat: &v1.FileStat{Path: "Deltas.md", Size: 40, Mtime: 4000, IsNote: true}}), nil
 }
 
 func linkingClient(t *testing.T, l *linking) *host.Client {
@@ -109,7 +109,7 @@ func TestTheClientSendsEachLinkAdditionWithItsBaselineAndRole(t *testing.T) {
 		first.GetType() != "tributary" || first.GetLabel() != "the Danube" || first.GetNote() != "it ends in the Danube delta" {
 		t.Errorf("the first link was sent to the host as %v", first)
 	}
-	if b := first.GetBaseline(); b.GetPath() != "Deltas.md" || b.GetSize() != 48 || b.GetModTime() != 1700 {
+	if b := first.GetBaseline(); b.GetPath() != "Deltas.md" || b.GetSize() != 48 || b.GetMtime() != 1700 {
 		t.Errorf("the baseline of the first link was sent to the host as %v, want Deltas.md of 48 bytes at 1700", b)
 	}
 	if second := links[1]; second.GetTo() != "note://01JRIVERRHINE" || second.GetRole() != v1.Role_ROLE_JUMP {
@@ -161,7 +161,7 @@ func TestTheClientSendsTheChangeOfTheLinksToATarget(t *testing.T) {
 		r.GetLabel() != "Danube arm" || r.GetNote() != "the delta splits the river" {
 		t.Errorf("the update was sent to the host as %v", r)
 	}
-	if b := r.GetBaseline(); b.GetSize() != 48 || b.GetModTime() != 1700 {
+	if b := r.GetBaseline(); b.GetSize() != 48 || b.GetMtime() != 1700 {
 		t.Errorf("the baseline was sent to the host as %v, want 48 bytes at 1700", b)
 	}
 	if stat.Path != "Deltas.md" || stat.Size != 90 || !stat.ModTime.Equal(time.Unix(0, 3000)) {
@@ -179,7 +179,7 @@ func TestTheClientSendsTheRemovalOfTheLinksToATargetWithItsRole(t *testing.T) {
 		}
 
 		r := l.removed
-		if r.GetFrom() != "Deltas.md" || r.GetTo() != "note://01JRIVERDANUBE" || r.GetRole() != want || r.GetBaseline().GetModTime() != 1700 {
+		if r.GetFrom() != "Deltas.md" || r.GetTo() != "note://01JRIVERDANUBE" || r.GetRole() != want || r.GetBaseline().GetMtime() != 1700 {
 			t.Errorf("the removal with role %q was sent to the host as %v, want role %v", role, r, want)
 		}
 		if stat.Size != 40 || !stat.ModTime.Equal(time.Unix(0, 4000)) {
@@ -189,7 +189,7 @@ func TestTheClientSendsTheRemovalOfTheLinksToATargetWithItsRole(t *testing.T) {
 }
 
 func TestTheClientReturnsAStaleLinkEditAsErrStaleWithTheDetail(t *testing.T) {
-	client := linkingClient(t, &linking{editError: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT, editDetail: staleDetail})
+	client := linkingClient(t, &linking{editError: v1.ErrorCode_ERROR_CODE_CONFLICT, editDetail: staleDetail})
 	target := domain.Address{Scheme: domain.SchemeName, Value: "Danube"}
 
 	_, updateErr := client.UpdateLinks(t.Context(), "Deltas.md", target, domain.Link{Role: domain.RoleChild}, getReadBaseline())
@@ -204,7 +204,7 @@ func TestTheClientReturnsAStaleLinkEditAsErrStaleWithTheDetail(t *testing.T) {
 
 func TestTheClientKeepsTheDetailOfALinkEditThatFailed(t *testing.T) {
 	const detail = "no link to Danube is written here"
-	client := linkingClient(t, &linking{editError: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, editDetail: detail})
+	client := linkingClient(t, &linking{editError: v1.ErrorCode_ERROR_CODE_INTERNAL, editDetail: detail})
 	target := domain.Address{Scheme: domain.SchemeName, Value: "Danube"}
 
 	_, updateErr := client.UpdateLinks(t.Context(), "Deltas.md", target, domain.Link{Role: domain.RoleChild}, getReadBaseline())
@@ -218,7 +218,7 @@ func TestTheClientKeepsTheDetailOfALinkEditThatFailed(t *testing.T) {
 }
 
 func TestTheClientReturnsNoVaultForEveryLinkEdit(t *testing.T) {
-	client := linkingClient(t, &linking{callError: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT})
+	client := linkingClient(t, &linking{callError: v1.ErrorCode_ERROR_CODE_NO_VAULT})
 	target := domain.Address{Scheme: domain.SchemeName, Value: "Danube"}
 
 	_, addErr := client.AddLinks(t.Context(), []host.LinkAddition{{From: "Deltas.md", Link: domain.Link{Target: target, Role: domain.RoleRef}}})

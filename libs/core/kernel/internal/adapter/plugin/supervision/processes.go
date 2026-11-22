@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -54,7 +53,7 @@ type processTable interface {
 
 // launchServices is what a start of a process reads of the services the host gives the plugins.
 type launchServices interface {
-	GetDependencies() pluginport.DependencyRegistry
+	GetDependencies() Dependencies
 	OpenHostEndpoint(ctx context.Context) (int, error)
 }
 

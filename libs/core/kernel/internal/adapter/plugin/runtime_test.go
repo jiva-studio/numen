@@ -41,9 +41,6 @@ func (f *fakeCatalog) CanProvision(req manifest.DependencyRequirement) bool {
 
 func (f *fakeCatalog) Cancel(manifest.DependencyRequirement) bool { return false }
 
-func (f *fakeCatalog) SetObserver(func(manifest.DependencyRequirement, plugindomain.DependencyStatus)) {
-}
-
 func (f *fakeCatalog) Provision(_ context.Context, req manifest.DependencyRequirement, _ func(plugindomain.DependencyStatus)) (plugindomain.ResolvedDependency, error) {
 	f.calls = append(f.calls, req)
 	return f.resolved[req.ID], f.err

@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // The ages a stored answer of Stats is used for. The counts change with every change of the index
@@ -28,11 +29,6 @@ type IndexStats interface {
 	GetIndexSizes(ctx context.Context) (index.Sizes, error)
 }
 
-// Clock tells the time.
-type Clock interface {
-	Now() time.Time
-}
-
 type countsKey struct {
 	vault  domain.VaultID
 	recipe string
@@ -47,7 +43,7 @@ type storedCounts struct {
 // second or two reads the index once for all the windows that ask.
 type Stats struct {
 	source IndexStats
-	clock  Clock
+	clock  machineport.Clock
 
 	mu       sync.Mutex
 	counts   map[countsKey]storedCounts
@@ -57,7 +53,7 @@ type Stats struct {
 }
 
 // NewStats reads from source and takes the time from clock.
-func NewStats(source IndexStats, clock Clock) *Stats {
+func NewStats(source IndexStats, clock machineport.Clock) *Stats {
 	return &Stats{
 		source: source, clock: clock, mu: sync.Mutex{}, counts: map[countsKey]storedCounts{},
 		sizes: index.Sizes{}, sizesAt: time.Time{}, hasSizes: false,

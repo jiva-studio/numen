@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/tokenizer"
 )
 
-func loadWithError(t *testing.T, path string) (tok tokenizer.Tokenizer, err error) {
+func loadWithError(t *testing.T, path string) (tok *tokenizer.Tokenizer, err error) {
 	t.Helper()
 	defer func() {
 		if recovered := recover(); recovered != nil {

@@ -118,7 +118,7 @@ func TestHostEndpointSavesListsAndReadsVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if missing.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_MISSING {
+	if missing.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND {
 		t.Fatalf("a version that is not there answered %v", missing.Msg)
 	}
 	if !slices.Contains(fakeCallers.checked, "md.numen.a vault:write") || !slices.Contains(fakeCallers.checked, "md.numen.a vault:read") {

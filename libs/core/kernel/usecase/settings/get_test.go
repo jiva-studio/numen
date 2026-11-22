@@ -2,6 +2,7 @@ package settings_test
 
 import (
 	"errors"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -11,7 +12,9 @@ import (
 
 var errRead = errors.New("the file cannot be read")
 
-func read() (string, string, uint64, error) { return `{"v":1}`, "/home/settings.json", 3, nil }
+func read() (settingsdomain.Snapshot, error) {
+	return settingsdomain.Snapshot{Content: `{"v":1}`, Path: "/home/settings.json", Version: 3}, nil
+}
 
 func TestGetAnswersTheSettingsAndThePlugins(t *testing.T) {
 	t.Parallel()
@@ -60,7 +63,7 @@ func TestGetAnswersNoPluginsWhereNoneAreBound(t *testing.T) {
 func TestGet_ErrorWhenFileUnreadable(t *testing.T) {
 	t.Parallel()
 	get := settings.NewGet(
-		func() (string, string, uint64, error) { return "", "", 0, errRead },
+		func() (settingsdomain.Snapshot, error) { return settingsdomain.Snapshot{}, errRead },
 		nil, nil, nil,
 	)
 

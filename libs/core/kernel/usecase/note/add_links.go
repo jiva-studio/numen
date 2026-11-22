@@ -21,13 +21,6 @@ type LinkAddition struct {
 	FileStatError error
 }
 
-// LinkAdded is the outcome of one addition. Error is nil when the link was
-// written, and FileStat is then the note's current state.
-type LinkAdded struct {
-	FileStat domain.FileStat
-	Error    error
-}
-
 // AddLinks writes a batch of relationships, grouped by the note each is
 // written in: the links of one note are one write against one file stat, and
 // succeed or fail together.
@@ -53,11 +46,11 @@ func NewAddLinks(linking linkAdding) AddLinks {
 // addition that cannot be written is rejected on its own and costs the others
 // nothing. When ctx is canceled, the links of every note not yet written get
 // plugin.ErrNotAttempted, and the results are returned with a nil error.
-func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkAddition) ([]LinkAdded, error) {
-	results := make([]LinkAdded, len(additions))
+func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkAddition) ([]plugin.LinkAdded, error) {
+	results := make([]plugin.LinkAdded, len(additions))
 	groups := newLinkGroups()
 	for i, add := range additions {
-		results[i].Error = groups.add(i, add)
+		results[i].Err = groups.add(i, add)
 	}
 	for _, from := range groups.order {
 		var content domain.FileStat
@@ -70,9 +63,9 @@ func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkA
 			err = fmt.Errorf("the call was canceled before the links were added to %s: %w", from, plugin.ErrNotAttempted)
 		}
 		for _, i := range groups.positions[from] {
-			results[i].Error = err
+			results[i].Err = err
 			if err == nil {
-				results[i].FileStat = content
+				results[i].Stat = content
 			}
 		}
 	}

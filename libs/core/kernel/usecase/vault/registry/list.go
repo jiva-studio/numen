@@ -19,10 +19,3 @@ func NewList(vaults vaultport.VaultList) List {
 func (u List) Execute() ([]domain.Vault, error) {
 	return u.vaults.List()
 }
-
-// Listing looks up the vaults on the list.
-type Listing struct {
-	List        List
-	Find        Find
-	FolderCheck FolderCheck
-}

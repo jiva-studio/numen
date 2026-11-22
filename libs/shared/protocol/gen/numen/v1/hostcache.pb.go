@@ -67,7 +67,7 @@ func (x *ReadCacheRequest) GetName() string {
 
 type ReadCacheResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Whether anything is kept under the name. A cache with nothing in it is the
 	// answer that nothing has been worked out yet.
 	IsFound       bool   `protobuf:"varint,2,opt,name=is_found,json=isFound,proto3" json:"is_found,omitempty"`
@@ -106,11 +106,11 @@ func (*ReadCacheResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostcache_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *ReadCacheResponse) GetError() HostVaultErrorCode {
+func (x *ReadCacheResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ReadCacheResponse) GetIsFound() bool {
@@ -181,7 +181,7 @@ func (x *WriteCacheRequest) GetContent() []byte {
 
 type WriteCacheResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -216,29 +216,29 @@ func (*WriteCacheResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostcache_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *WriteCacheResponse) GetError() HostVaultErrorCode {
+func (x *WriteCacheResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 var File_numen_v1_hostcache_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostcache_proto_rawDesc = "" +
 	"\n" +
-	"\x18numen/v1/hostcache.proto\x12\bnumen.v1\x1a\x18numen/v1/hostvault.proto\"&\n" +
+	"\x18numen/v1/hostcache.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"&\n" +
 	"\x10ReadCacheRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"|\n" +
-	"\x11ReadCacheResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x19\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"s\n" +
+	"\x11ReadCacheResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x19\n" +
 	"\bis_found\x18\x02 \x01(\bR\aisFound\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\fR\acontent\"A\n" +
 	"\x11WriteCacheRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\fR\acontent\"H\n" +
-	"\x12WriteCacheResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error2\xa1\x01\n" +
+	"\acontent\x18\x02 \x01(\fR\acontent\"?\n" +
+	"\x12WriteCacheResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error2\xa1\x01\n" +
 	"\x10HostCacheService\x12D\n" +
 	"\tReadCache\x12\x1a.numen.v1.ReadCacheRequest\x1a\x1b.numen.v1.ReadCacheResponse\x12G\n" +
 	"\n" +
@@ -262,11 +262,11 @@ var file_numen_v1_hostcache_proto_goTypes = []any{
 	(*ReadCacheResponse)(nil),  // 1: numen.v1.ReadCacheResponse
 	(*WriteCacheRequest)(nil),  // 2: numen.v1.WriteCacheRequest
 	(*WriteCacheResponse)(nil), // 3: numen.v1.WriteCacheResponse
-	(HostVaultErrorCode)(0),    // 4: numen.v1.HostVaultErrorCode
+	(ErrorCode)(0),             // 4: numen.v1.ErrorCode
 }
 var file_numen_v1_hostcache_proto_depIdxs = []int32{
-	4, // 0: numen.v1.ReadCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	4, // 1: numen.v1.WriteCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	4, // 0: numen.v1.ReadCacheResponse.error:type_name -> numen.v1.ErrorCode
+	4, // 1: numen.v1.WriteCacheResponse.error:type_name -> numen.v1.ErrorCode
 	0, // 2: numen.v1.HostCacheService.ReadCache:input_type -> numen.v1.ReadCacheRequest
 	2, // 3: numen.v1.HostCacheService.WriteCache:input_type -> numen.v1.WriteCacheRequest
 	1, // 4: numen.v1.HostCacheService.ReadCache:output_type -> numen.v1.ReadCacheResponse
@@ -283,7 +283,7 @@ func file_numen_v1_hostcache_proto_init() {
 	if File_numen_v1_hostcache_proto != nil {
 		return
 	}
-	file_numen_v1_hostvault_proto_init()
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

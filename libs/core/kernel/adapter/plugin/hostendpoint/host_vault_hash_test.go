@@ -12,7 +12,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
-const conflict = v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT
+const conflict = v1.ErrorCode_ERROR_CODE_CONFLICT
 
 func TestAWriteOverTheHashOfWhatWasReadSucceedsAndAnswersTheNewHashAndAHigherVersion(t *testing.T) {
 	_, client := newDiskVaults(t, map[string]string{"samples/A.md": "body"})
@@ -78,14 +78,14 @@ func TestAnExternalChangeThatKeepsTheSizeAndTheTimeIsRefused(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	stamp := time.Unix(0, read.Msg.GetStat().GetModTime())
+	stamp := time.Unix(0, read.Msg.GetStat().GetMtime())
 	if err := os.WriteFile(target, []byte("BODY"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.Chtimes(target, stamp, stamp); err != nil {
 		t.Fatal(err)
 	}
-	withoutHash := &v1.HostFileStat{Path: "samples/A.md", Size: 4, ModTime: read.Msg.GetStat().GetModTime(), IsNote: true}
+	withoutHash := &v1.FileStat{Path: "samples/A.md", Size: 4, Mtime: read.Msg.GetStat().GetMtime(), IsNote: true}
 
 	byHash, err := client.WriteFile(t.Context(), connect.NewRequest(&v1.WriteFileRequest{
 		Path: "samples/A.md", Content: []byte("mine"), Baseline: read.Msg.GetStat(),

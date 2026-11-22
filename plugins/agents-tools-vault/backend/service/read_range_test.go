@@ -212,7 +212,7 @@ func TestLibraryReadOfLargeBinaryStatesThatARecognitionOrTranscriptionCreatesOne
 	const archivePath = "recordings/Long Night.wav"
 	l, vault, _, registry := newRangeLibrary(t)
 	l.vault.File(archivePath, "RIFF\x00\x00wave body")
-	vault.readRefused[archivePath] = errors.New("the host refused the call with the code HOST_VAULT_ERROR_CODE_TOO_LARGE")
+	vault.readRefused[archivePath] = errors.New("the host refused the call with the code ERROR_CODE_TOO_LARGE")
 	vault.rangeErrors[archivePath] = fmt.Errorf("read %s: %w", archivePath, host.ErrNotText)
 
 	failure := callFailure(t, registry, testVault, "library_read", `{"path":"`+archivePath+`"}`, nil)

@@ -377,7 +377,7 @@ export const LicenseStatusSchema: GenEnum<LicenseStatus> = /*@__PURE__*/
   enumDesc(file_numen_v1_license, 0);
 
 /**
- * LicenseErrorCode is why an activation or deactivation call was refused. The zero value is a call
+ * LicenseErrorCode is why an activation or deactivation call failed. The zero value is a call
  * that succeeded.
  *
  * @generated from enum numen.v1.LicenseErrorCode

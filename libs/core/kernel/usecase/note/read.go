@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
-	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -29,33 +28,4 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (edit.Co
 		return edit.Contents{}, err
 	}
 	return edit.Read(ctx, reader, path)
-}
-
-type ReadFrontmatter struct {
-	readers vaultport.VaultReaders
-}
-
-func NewReadFrontmatter(readers vaultport.VaultReaders) ReadFrontmatter {
-	return ReadFrontmatter{readers: readers}
-}
-
-// Execute returns the type and the frontmatter of the note at the path, read from the current file;
-// a path that holds no note has neither.
-func (u ReadFrontmatter) Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteType, map[string]any, error) {
-	if !domain.IsNoteFile(path) {
-		return "", map[string]any{}, nil
-	}
-	reader, err := u.readers.Open(v)
-	if err != nil {
-		return "", nil, err
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return "", nil, err
-	}
-	note := markdown.Parse(domain.FileStat{}, raw)
-	if note.Frontmatter == nil {
-		return note.Type, map[string]any{}, nil
-	}
-	return note.Type, note.Frontmatter, nil
 }

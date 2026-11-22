@@ -56,7 +56,6 @@ message GetSettingsResponse {
   // window reads their defaults, bounds and options from here.
   repeated PluginSetting app = 8;
 
-  reserved 9;
 
   // The version of the state `written` is read from. It grows with every write the core takes, so
   // an answer with a smaller version than one already taken is older than it and is dropped.

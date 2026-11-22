@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
@@ -33,7 +32,7 @@ func newAPI(tb testing.TB, target ...domain.Vault) *API {
 		index.targetVault[v.ID] = true
 	}
 	api := &API{Window: NewWindow(testWindow, run.NewTasks())}
-	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, query.NewIsVaultIndexed(index), api.Window, &api.Changes)
+	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, index, api.Window, &api.Changes)
 	return api
 }
 

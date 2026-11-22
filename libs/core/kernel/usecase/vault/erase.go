@@ -41,18 +41,18 @@ type EraseResult struct {
 }
 
 type EraseByName struct {
-	find  VaultFinding
-	erase Erase
+	lookup vaultport.VaultLookup
+	erase  Erase
 }
 
 // NewEraseByName creates the use case that resolves the vault with find and erases it with erase.
-func NewEraseByName(find VaultFinding, erase Erase) EraseByName {
-	return EraseByName{find: find, erase: erase}
+func NewEraseByName(lookup vaultport.VaultLookup, erase Erase) EraseByName {
+	return EraseByName{lookup: lookup, erase: erase}
 }
 
 // ExecuteByName resolves the vault, asks for confirmation when confirm is non-nil, and erases the vault.
 func (u EraseByName) ExecuteByName(ctx context.Context, nameOrPath string, confirm EraseConfirmation) (EraseResult, error) {
-	v, err := u.find(nameOrPath)
+	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
 		return EraseResult{}, err
 	}

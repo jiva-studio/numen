@@ -8,13 +8,16 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
 	handler := NewHandler(NewValues(setting.NewGet(
-		func() (string, string, uint64, error) { return `{"v":1}`, "/home/numen.json", 1, nil },
+		func() (settingsdomain.Snapshot, error) {
+			return settingsdomain.Snapshot{Content: `{"v":1}`, Path: "/home/numen.json", Version: 1}, nil
+		},
 		nil,
 		func() []plugin.Setting {
 			return []plugin.Setting{

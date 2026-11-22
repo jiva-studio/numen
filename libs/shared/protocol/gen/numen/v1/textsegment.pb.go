@@ -29,8 +29,8 @@ type TextErrorCode int32
 
 const (
 	TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED TextErrorCode = 0
-	// TEXT_ERROR_CODE_MISSING is a file, a version or a key that does not exist.
-	TextErrorCode_TEXT_ERROR_CODE_MISSING TextErrorCode = 1
+	// TEXT_ERROR_CODE_NOT_FOUND is a file, a version or a key that does not exist.
+	TextErrorCode_TEXT_ERROR_CODE_NOT_FOUND TextErrorCode = 1
 	// TEXT_ERROR_CODE_NO_VAULT is a call while the host shows no vault.
 	TextErrorCode_TEXT_ERROR_CODE_NO_VAULT TextErrorCode = 2
 	// TEXT_ERROR_CODE_INVALID is a version the host does not accept: no kind, an
@@ -45,14 +45,14 @@ const (
 var (
 	TextErrorCode_name = map[int32]string{
 		0: "TEXT_ERROR_CODE_UNSPECIFIED",
-		1: "TEXT_ERROR_CODE_MISSING",
+		1: "TEXT_ERROR_CODE_NOT_FOUND",
 		2: "TEXT_ERROR_CODE_NO_VAULT",
 		3: "TEXT_ERROR_CODE_INVALID",
 		4: "TEXT_ERROR_CODE_NOT_OWNER",
 	}
 	TextErrorCode_value = map[string]int32{
 		"TEXT_ERROR_CODE_UNSPECIFIED": 0,
-		"TEXT_ERROR_CODE_MISSING":     1,
+		"TEXT_ERROR_CODE_NOT_FOUND":   1,
 		"TEXT_ERROR_CODE_NO_VAULT":    2,
 		"TEXT_ERROR_CODE_INVALID":     3,
 		"TEXT_ERROR_CODE_NOT_OWNER":   4,
@@ -161,10 +161,10 @@ const file_numen_v1_textsegment_proto_rawDesc = "" +
 	"\vTextSegment\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x18\n" +
 	"\aheading\x18\x02 \x01(\tR\aheading\x12\x1a\n" +
-	"\bselector\x18\x03 \x01(\tR\bselector*\xa7\x01\n" +
+	"\bselector\x18\x03 \x01(\tR\bselector*\xa9\x01\n" +
 	"\rTextErrorCode\x12\x1f\n" +
-	"\x1bTEXT_ERROR_CODE_UNSPECIFIED\x10\x00\x12\x1b\n" +
-	"\x17TEXT_ERROR_CODE_MISSING\x10\x01\x12\x1c\n" +
+	"\x1bTEXT_ERROR_CODE_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19TEXT_ERROR_CODE_NOT_FOUND\x10\x01\x12\x1c\n" +
 	"\x18TEXT_ERROR_CODE_NO_VAULT\x10\x02\x12\x1b\n" +
 	"\x17TEXT_ERROR_CODE_INVALID\x10\x03\x12\x1d\n" +
 	"\x19TEXT_ERROR_CODE_NOT_OWNER\x10\x04BHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"

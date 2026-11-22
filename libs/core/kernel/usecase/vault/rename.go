@@ -33,17 +33,17 @@ func NewRename(vaults vaultport.VaultList, saver vaultport.VaultSaver, index Vau
 }
 
 type RenameByName struct {
-	find   VaultFinding
+	lookup vaultport.VaultLookup
 	rename Rename
 }
 
 // NewRenameByName creates the use case that resolves the vault with find and renames it with rename.
-func NewRenameByName(find VaultFinding, rename Rename) RenameByName {
-	return RenameByName{find: find, rename: rename}
+func NewRenameByName(lookup vaultport.VaultLookup, rename Rename) RenameByName {
+	return RenameByName{lookup: lookup, rename: rename}
 }
 
 func (u RenameByName) ExecuteByName(ctx context.Context, nameOrPath, name string) (RenameResult, error) {
-	v, err := u.find(nameOrPath)
+	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
 		return RenameResult{}, err
 	}

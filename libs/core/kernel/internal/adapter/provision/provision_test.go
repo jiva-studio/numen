@@ -72,7 +72,7 @@ func (f *fakeProvisioner) Provision(ctx context.Context, req manifest.Dependency
 func TestRegistry_RoutesRequirementByKind(t *testing.T) {
 	onnx := &fakeProvisioner{id: "onnxruntime", kind: manifest.DependencyKindRuntime}
 	models := &fakeProvisioner{kind: manifest.DependencyKindModel}
-	registry := NewRegistry(onnx, models)
+	registry := NewObservedRegistry(nil, onnx, models)
 
 	if _, err := registry.Provision(t.Context(), manifest.DependencyRequirement{ID: "onnxruntime", Kind: manifest.DependencyKindRuntime}, nil); err != nil {
 		t.Fatal(err)
@@ -94,7 +94,7 @@ func TestRegistry_RoutesRequirementByKind(t *testing.T) {
 
 func TestRegistry_ConcurrentRequestsShareOneRun(t *testing.T) {
 	provisioner := &fakeProvisioner{kind: manifest.DependencyKindModel, gate: make(chan struct{})}
-	registry := NewRegistry(provisioner)
+	registry := NewObservedRegistry(nil, provisioner)
 	req := manifest.DependencyRequirement{ID: "m", Kind: manifest.DependencyKindModel, Version: "1"}
 
 	const callers = 5
@@ -339,7 +339,7 @@ func TestTheCacheFolderNamesKindIdVersionAndPlatform(t *testing.T) {
 
 func TestARunContinuesWhenEveryCallerStopsWaiting(t *testing.T) {
 	provisioner := &fakeProvisioner{kind: manifest.DependencyKindModel, gate: make(chan struct{})}
-	registry := NewRegistry(provisioner)
+	registry := NewObservedRegistry(nil, provisioner)
 	req := manifest.DependencyRequirement{ID: "m", Kind: manifest.DependencyKindModel}
 	ctx, cancel := context.WithCancel(t.Context())
 	errs := make(chan error, 1)

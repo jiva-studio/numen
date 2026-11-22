@@ -32,12 +32,9 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ErrorCode is why a note could not be read or written.
-//
-// Every code is spelled in the window as the same word in camel case, and
-// three map differently: UNSPECIFIED is `unreadable` there, CONFLICT is
-// shown as a user prompt and not a message, and the window has one code of
-// its own for a core it could not connect to at all.
+// ErrorCode is why a call on a file or a note was served and did nothing. The
+// zero value means the call did not fail. The window and the host endpoint
+// answer with the same codes.
 type ErrorCode int32
 
 const (
@@ -65,7 +62,18 @@ const (
 	ErrorCode_ERROR_CODE_INVALID_NAME ErrorCode = 8
 	// The file is no longer the one this caller read. Nothing was written, and
 	// the person chooses what happens to what they have.
-	ErrorCode_ERROR_CODE_CONFLICT ErrorCode = 13
+	ErrorCode_ERROR_CODE_CONFLICT ErrorCode = 9
+	// The host is showing no vault.
+	ErrorCode_ERROR_CODE_NO_VAULT ErrorCode = 10
+	// The path is outside the vault or names no file.
+	ErrorCode_ERROR_CODE_OUTSIDE_VAULT ErrorCode = 11
+	// Another program holds the file.
+	ErrorCode_ERROR_CODE_LOCKED ErrorCode = 12
+	// The change of a note failed for a reason with no code of its own; the
+	// detail of that note carries the error text.
+	ErrorCode_ERROR_CODE_INTERNAL ErrorCode = 13
+	// The call was cancelled before this note was changed: the note is as it was.
+	ErrorCode_ERROR_CODE_NOT_ATTEMPTED ErrorCode = 14
 )
 
 // Enum value maps for ErrorCode.
@@ -80,7 +88,12 @@ var (
 		6:  "ERROR_CODE_UNREADABLE",
 		7:  "ERROR_CODE_ALREADY_EXISTS",
 		8:  "ERROR_CODE_INVALID_NAME",
-		13: "ERROR_CODE_CONFLICT",
+		9:  "ERROR_CODE_CONFLICT",
+		10: "ERROR_CODE_NO_VAULT",
+		11: "ERROR_CODE_OUTSIDE_VAULT",
+		12: "ERROR_CODE_LOCKED",
+		13: "ERROR_CODE_INTERNAL",
+		14: "ERROR_CODE_NOT_ATTEMPTED",
 	}
 	ErrorCode_value = map[string]int32{
 		"ERROR_CODE_UNSPECIFIED":     0,
@@ -92,7 +105,12 @@ var (
 		"ERROR_CODE_UNREADABLE":      6,
 		"ERROR_CODE_ALREADY_EXISTS":  7,
 		"ERROR_CODE_INVALID_NAME":    8,
-		"ERROR_CODE_CONFLICT":        13,
+		"ERROR_CODE_CONFLICT":        9,
+		"ERROR_CODE_NO_VAULT":        10,
+		"ERROR_CODE_OUTSIDE_VAULT":   11,
+		"ERROR_CODE_LOCKED":          12,
+		"ERROR_CODE_INTERNAL":        13,
+		"ERROR_CODE_NOT_ATTEMPTED":   14,
 	}
 )
 
@@ -135,7 +153,9 @@ type FileStat struct {
 	Hash string `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`
 	// The number of writes the vault had taken when the answer was made. Zero where the answer
 	// does not say.
-	Version       uint64 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
+	Version uint64 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
+	// Whether the file is a note.
+	IsNote        bool `protobuf:"varint,6,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -203,6 +223,13 @@ func (x *FileStat) GetVersion() uint64 {
 		return x.Version
 	}
 	return 0
+}
+
+func (x *FileStat) GetIsNote() bool {
+	if x != nil {
+		return x.IsNote
+	}
+	return false
 }
 
 // Range is a run of text, by where it begins and where it ends. What it counts
@@ -316,19 +343,20 @@ var File_numen_v1_shared_proto protoreflect.FileDescriptor
 
 const file_numen_v1_shared_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/shared.proto\x12\bnumen.v1\"v\n" +
+	"\x15numen/v1/shared.proto\x12\bnumen.v1\"\x8f\x01\n" +
 	"\bFileStat\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x14\n" +
 	"\x05mtime\x18\x03 \x01(\x03R\x05mtime\x12\x12\n" +
 	"\x04hash\x18\x04 \x01(\tR\x04hash\x12\x18\n" +
-	"\aversion\x18\x05 \x01(\x04R\aversion\"/\n" +
+	"\aversion\x18\x05 \x01(\x04R\aversion\x12\x17\n" +
+	"\ais_note\x18\x06 \x01(\bR\x06isNote\"/\n" +
 	"\x05Range\x12\x14\n" +
 	"\x05start\x18\x01 \x01(\x05R\x05start\x12\x10\n" +
 	"\x03end\x18\x02 \x01(\x05R\x03end\",\n" +
 	"\x06Bounds\x12\x10\n" +
 	"\x03min\x18\x01 \x01(\x01R\x03min\x12\x10\n" +
-	"\x03max\x18\x02 \x01(\x01R\x03max*\x9f\x02\n" +
+	"\x03max\x18\x02 \x01(\x01R\x03max*\xa4\x03\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ERROR_CODE_NOT_FOUND\x10\x01\x12\x19\n" +
@@ -339,7 +367,13 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x15ERROR_CODE_UNREADABLE\x10\x06\x12\x1d\n" +
 	"\x19ERROR_CODE_ALREADY_EXISTS\x10\a\x12\x1b\n" +
 	"\x17ERROR_CODE_INVALID_NAME\x10\b\x12\x17\n" +
-	"\x13ERROR_CODE_CONFLICT\x10\rBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x13ERROR_CODE_CONFLICT\x10\t\x12\x17\n" +
+	"\x13ERROR_CODE_NO_VAULT\x10\n" +
+	"\x12\x1c\n" +
+	"\x18ERROR_CODE_OUTSIDE_VAULT\x10\v\x12\x15\n" +
+	"\x11ERROR_CODE_LOCKED\x10\f\x12\x17\n" +
+	"\x13ERROR_CODE_INTERNAL\x10\r\x12\x1c\n" +
+	"\x18ERROR_CODE_NOT_ATTEMPTED\x10\x0eBHZFgithub.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_shared_proto_rawDescOnce sync.Once

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // Repository is the ordered list of connections kept in the settings file.
@@ -24,21 +23,9 @@ type Types interface {
 	GetType(typeID string) (connection.Type, bool)
 }
 
-// OperationTitles names the operations of the connection types in words a person reads.
-type OperationTitles interface {
-	// ListOperationTitles returns one title for each operation an enabled plugin titles: the first
-	// declaration of the name in the order of the plugin ids.
-	ListOperationTitles() []manifest.Operation
-}
-
 // ResolveConnection reads a connection and its type as a call to the provider needs them. It fails with
 // connection.ErrNotFound and connection.ErrTypeUnavailable.
 type ResolveConnection func(connectionID string) (connection.Resolved, error)
-
-// ReadConnectionSecrets reads the secret fields of a resolved connection from the key store. It fails with
-// connection.ErrSecretMissing for a required secret with no value and connection.ErrStaleRevision for a
-// connection that changed since it was resolved.
-type ReadConnectionSecrets func(ctx context.Context, resolved connection.Resolved) (map[string]string, error)
 
 // Detected is the connections the providers report ready on this machine through connection.OperationDetected.
 type Detected interface {

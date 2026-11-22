@@ -84,10 +84,11 @@ func (files modelFiles) resolve(ctx context.Context, path, address, name string)
 }
 
 func locateModels(ctx context.Context, library *onnx.Library, cfg settings.Config, fetch FetchModelFile) (*ort.Engine, paths, error) {
-	engine, _, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
+	opened, err := library.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
 		return nil, paths{}, err
 	}
+	engine := opened.Engine
 	files := modelFiles{dir: cfg.Dir, shouldDownload: cfg.ShouldDownload, fetch: fetch}
 	encoder, err := files.resolve(ctx, cfg.Model.Encoder, cfg.Model.Repo, encoderFile)
 	if err != nil {

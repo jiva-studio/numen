@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	connections "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/connectiontest"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -130,9 +129,9 @@ func newHandlerOver(keys *memoryKeys, uses connections.Uses, provider *modelList
 func useCasesOf(all *connectiontest.Connections, source connectionport.ProviderSource) UseCases {
 	return UseCases{
 		Edits: Edits{Create: all.Create, Update: all.Update, Delete: all.Delete},
-		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: rowoptions.NewOptions(rowoptions.Deps{
+		Reads: Reads{List: all.List, ListTypes: all.ListTypes, RowOptions: connections.NewOptions(connections.OptionsDeps{
 			Resolve: all.Resolve.Execute, ReadSecrets: all.ReadSecrets.Execute, Source: source, Running: notRunning{},
-			Lists:  rowoptions.NewLists(&memoryLists{byPlugin: map[string][]connection.OptionList{}}, sameConfig{}),
+			Lists:  connections.NewLists(&memoryLists{byPlugin: map[string][]connection.OptionList{}}, sameConfig{}),
 			Grants: func(string) (string, bool, error) { return "", false, nil },
 		})},
 	}

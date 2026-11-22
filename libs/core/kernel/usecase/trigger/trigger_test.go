@@ -17,7 +17,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -247,7 +246,7 @@ func newScene(t *testing.T, files map[string]string, entries ...plugin.TriggerEn
 	}
 	vaultReaders := readers{s.memoryVault}
 	s.triggers = trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: s.plugins, Run: s.plugins, Readers: vaultReaders, Notes: note.NewReadFrontmatter(vaultReaders), Types: types{},
+		Plugins: s.plugins, Run: s.plugins, Readers: vaultReaders, Types: types{},
 		Versions: s.versions, Config: settingsOf{config: &s.config},
 	})
 	return s

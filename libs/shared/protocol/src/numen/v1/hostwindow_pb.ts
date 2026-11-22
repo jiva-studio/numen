@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Range } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hostwindow.proto.
  */
 export const file_numen_v1_hostwindow: GenFile = /*@__PURE__*/
-  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiagoRRm9jdXNOb3RlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSCgoCaWQYBCABKAkiKQoIQnl0ZVNwYW4SDQoFc3RhcnQYASABKAUSDgoGbGVuZ3RoGAIgASgFIkMKEEZvY3VzRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIhCgVzcGFucxgCIAMoCzISLm51bWVuLnYxLkJ5dGVTcGFuIkEKEUZvY3VzRmlsZVJlc3BvbnNlEiwKBWVycm9yGAEgASgOMh0ubnVtZW4udjEuSG9zdFdpbmRvd0Vycm9yQ29kZSJPCgdPcGVuVGFiEgoKAmlkGAEgASgJEgwKBGtpbmQYAiABKAkSDAoEcGF0aBgDIAEoCRINCgV0aXRsZRgEIAEoCRINCgVwbGFjZRgFIAEoCSImCiRIb3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1JlcXVlc3QiiQEKJUhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEh8KBHRhYnMYAiADKAsyES5udW1lbi52MS5PcGVuVGFiEhEKCWFjdGl2ZV9pZBgDIAEoCSIkChJBY3RpdmF0ZVRhYlJlcXVlc3QSDgoGdGFiX2lkGAEgASgJInYKE0FjdGl2YXRlVGFiUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEh4KA3RhYhgCIAEoCzIRLm51bWVuLnYxLk9wZW5UYWISEQoJYWN0aXZlX2lkGAMgASgJKokBChNIb3N0V2luZG93RXJyb3JDb2RlEiYKIkhPU1RfV0lORE9XX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIkCiBIT1NUX1dJTkRPV19FUlJPUl9DT0RFX05PX1dJTkRPVxABEiQKIEhPU1RfV0lORE9XX0VSUk9SX0NPREVfTk9UX0ZPVU5EEAIy3AIKEUhvc3RXaW5kb3dTZXJ2aWNlEkQKCUZvY3VzTm90ZRIaLm51bWVuLnYxLkZvY3VzTm90ZVJlcXVlc3QaGy5udW1lbi52MS5Gb2N1c05vdGVSZXNwb25zZRJECglGb2N1c0ZpbGUSGi5udW1lbi52MS5Gb2N1c0ZpbGVSZXF1ZXN0GhsubnVtZW4udjEuRm9jdXNGaWxlUmVzcG9uc2USbwoMUmVhZE9wZW5UYWJzEi4ubnVtZW4udjEuSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXF1ZXN0Gi8ubnVtZW4udjEuSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXNwb25zZRJKCgtBY3RpdmF0ZVRhYhIcLm51bWVuLnYxLkFjdGl2YXRlVGFiUmVxdWVzdBodLm51bWVuLnYxLkFjdGl2YXRlVGFiUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChludW1lbi92MS9ob3N0d2luZG93LnByb3RvEghudW1lbi52MSIgChBGb2N1c05vdGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiagoRRm9jdXNOb3RlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSCgoCaWQYBCABKAkiQAoQRm9jdXNGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJEh4KBXNwYW5zGAIgAygLMg8ubnVtZW4udjEuUmFuZ2UiQQoRRm9jdXNGaWxlUmVzcG9uc2USLAoFZXJyb3IYASABKA4yHS5udW1lbi52MS5Ib3N0V2luZG93RXJyb3JDb2RlIk8KB09wZW5UYWISCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIMCgRwYXRoGAMgASgJEg0KBXRpdGxlGAQgASgJEg0KBXBsYWNlGAUgASgJIiYKJEhvc3RXaW5kb3dTZXJ2aWNlUmVhZE9wZW5UYWJzUmVxdWVzdCKJAQolSG9zdFdpbmRvd1NlcnZpY2VSZWFkT3BlblRhYnNSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RXaW5kb3dFcnJvckNvZGUSHwoEdGFicxgCIAMoCzIRLm51bWVuLnYxLk9wZW5UYWISEQoJYWN0aXZlX2lkGAMgASgJIiQKEkFjdGl2YXRlVGFiUmVxdWVzdBIOCgZ0YWJfaWQYASABKAkidgoTQWN0aXZhdGVUYWJSZXNwb25zZRIsCgVlcnJvchgBIAEoDjIdLm51bWVuLnYxLkhvc3RXaW5kb3dFcnJvckNvZGUSHgoDdGFiGAIgASgLMhEubnVtZW4udjEuT3BlblRhYhIRCglhY3RpdmVfaWQYAyABKAkqiQEKE0hvc3RXaW5kb3dFcnJvckNvZGUSJgoiSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiQKIEhPU1RfV0lORE9XX0VSUk9SX0NPREVfTk9fV0lORE9XEAESJAogSE9TVF9XSU5ET1dfRVJST1JfQ09ERV9OT1RfRk9VTkQQAjLcAgoRSG9zdFdpbmRvd1NlcnZpY2USRAoJRm9jdXNOb3RlEhoubnVtZW4udjEuRm9jdXNOb3RlUmVxdWVzdBobLm51bWVuLnYxLkZvY3VzTm90ZVJlc3BvbnNlEkQKCUZvY3VzRmlsZRIaLm51bWVuLnYxLkZvY3VzRmlsZVJlcXVlc3QaGy5udW1lbi52MS5Gb2N1c0ZpbGVSZXNwb25zZRJvCgxSZWFkT3BlblRhYnMSLi5udW1lbi52MS5Ib3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1JlcXVlc3QaLy5udW1lbi52MS5Ib3N0V2luZG93U2VydmljZVJlYWRPcGVuVGFic1Jlc3BvbnNlEkoKC0FjdGl2YXRlVGFiEhwubnVtZW4udjEuQWN0aXZhdGVUYWJSZXF1ZXN0Gh0ubnVtZW4udjEuQWN0aXZhdGVUYWJSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.FocusNoteRequest
@@ -64,30 +66,6 @@ export const FocusNoteResponseSchema: GenMessage<FocusNoteResponse> = /*@__PURE_
   messageDesc(file_numen_v1_hostwindow, 1);
 
 /**
- * A ByteSpan is a byte range in a file's text version, as a text search returns it.
- *
- * @generated from message numen.v1.ByteSpan
- */
-export type ByteSpan = Message<"numen.v1.ByteSpan"> & {
-  /**
-   * @generated from field: int32 start = 1;
-   */
-  start: number;
-
-  /**
-   * @generated from field: int32 length = 2;
-   */
-  length: number;
-};
-
-/**
- * Describes the message numen.v1.ByteSpan.
- * Use `create(ByteSpanSchema)` to create a new message.
- */
-export const ByteSpanSchema: GenMessage<ByteSpan> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 2);
-
-/**
  * @generated from message numen.v1.FocusFileRequest
  */
 export type FocusFileRequest = Message<"numen.v1.FocusFileRequest"> & {
@@ -97,9 +75,9 @@ export type FocusFileRequest = Message<"numen.v1.FocusFileRequest"> & {
   path: string;
 
   /**
-   * @generated from field: repeated numen.v1.ByteSpan spans = 2;
+   * @generated from field: repeated numen.v1.Range spans = 2;
    */
-  spans: ByteSpan[];
+  spans: Range[];
 };
 
 /**
@@ -107,7 +85,7 @@ export type FocusFileRequest = Message<"numen.v1.FocusFileRequest"> & {
  * Use `create(FocusFileRequestSchema)` to create a new message.
  */
 export const FocusFileRequestSchema: GenMessage<FocusFileRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 3);
+  messageDesc(file_numen_v1_hostwindow, 2);
 
 /**
  * @generated from message numen.v1.FocusFileResponse
@@ -124,7 +102,7 @@ export type FocusFileResponse = Message<"numen.v1.FocusFileResponse"> & {
  * Use `create(FocusFileResponseSchema)` to create a new message.
  */
 export const FocusFileResponseSchema: GenMessage<FocusFileResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 4);
+  messageDesc(file_numen_v1_hostwindow, 3);
 
 /**
  * An OpenTab is a tab of the window as a plugin reads it.
@@ -175,7 +153,7 @@ export type OpenTab = Message<"numen.v1.OpenTab"> & {
  * Use `create(OpenTabSchema)` to create a new message.
  */
 export const OpenTabSchema: GenMessage<OpenTab> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 5);
+  messageDesc(file_numen_v1_hostwindow, 4);
 
 /**
  * @generated from message numen.v1.HostWindowServiceReadOpenTabsRequest
@@ -188,7 +166,7 @@ export type HostWindowServiceReadOpenTabsRequest = Message<"numen.v1.HostWindowS
  * Use `create(HostWindowServiceReadOpenTabsRequestSchema)` to create a new message.
  */
 export const HostWindowServiceReadOpenTabsRequestSchema: GenMessage<HostWindowServiceReadOpenTabsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 6);
+  messageDesc(file_numen_v1_hostwindow, 5);
 
 /**
  * @generated from message numen.v1.HostWindowServiceReadOpenTabsResponse
@@ -215,7 +193,7 @@ export type HostWindowServiceReadOpenTabsResponse = Message<"numen.v1.HostWindow
  * Use `create(HostWindowServiceReadOpenTabsResponseSchema)` to create a new message.
  */
 export const HostWindowServiceReadOpenTabsResponseSchema: GenMessage<HostWindowServiceReadOpenTabsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 7);
+  messageDesc(file_numen_v1_hostwindow, 6);
 
 /**
  * @generated from message numen.v1.ActivateTabRequest
@@ -232,7 +210,7 @@ export type ActivateTabRequest = Message<"numen.v1.ActivateTabRequest"> & {
  * Use `create(ActivateTabRequestSchema)` to create a new message.
  */
 export const ActivateTabRequestSchema: GenMessage<ActivateTabRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 8);
+  messageDesc(file_numen_v1_hostwindow, 7);
 
 /**
  * @generated from message numen.v1.ActivateTabResponse
@@ -259,7 +237,7 @@ export type ActivateTabResponse = Message<"numen.v1.ActivateTabResponse"> & {
  * Use `create(ActivateTabResponseSchema)` to create a new message.
  */
 export const ActivateTabResponseSchema: GenMessage<ActivateTabResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostwindow, 9);
+  messageDesc(file_numen_v1_hostwindow, 8);
 
 /**
  * HostWindowErrorCode is the reason a window call was not served. UNSPECIFIED means success.

@@ -26,7 +26,7 @@ func TestTheMountedPluginServesTheModelItsConfigureNames(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	if _, err := servertest.NewLifecycleClient(web.Client(), web.URL, linkedToken).Configure(t.Context(),
+	if err := servertest.NewLifecycleClient(web.Client(), web.URL, linkedToken).Configure(t.Context(),
 		map[string]string{"source": "local", "model": "Xenova/bge-m3"}); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
@@ -219,7 +219,7 @@ func TestAMissingLocalModelIsReportedAsTheSourceItemUntilAKnownModelAnswers(t *t
 	defer web.Close()
 	lifecycle := servertest.NewLifecycleClient(web.Client(), web.URL, linkedToken)
 
-	if _, err := lifecycle.Configure(t.Context(), map[string]string{"source": "local", "model": "Example/no-such-model"}); err != nil {
+	if err := lifecycle.Configure(t.Context(), map[string]string{"source": "local", "model": "Example/no-such-model"}); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
 	if status := describeStatus(t, web); status == http.StatusOK {
@@ -233,7 +233,7 @@ func TestAMissingLocalModelIsReportedAsTheSourceItemUntilAKnownModelAnswers(t *t
 		t.Fatalf("action = %+v, want the settings of the source", items[0].Action)
 	}
 
-	if _, err := lifecycle.Configure(t.Context(), map[string]string{"source": "local", "model": "Xenova/bge-m3"}); err != nil {
+	if err := lifecycle.Configure(t.Context(), map[string]string{"source": "local", "model": "Xenova/bge-m3"}); err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
 	if status := describeStatus(t, web); status != http.StatusOK {

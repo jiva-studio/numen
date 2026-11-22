@@ -55,8 +55,8 @@ func (r *eventRecorder) DeliverEvent(
 	}
 	if r.reason != "" {
 		return connect.NewResponse(&v1.DeliverEventResponse{
-			Error:  v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_REFUSED,
-			Reason: r.reason,
+			Error:  v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_HANDLER_FAILED,
+			Detail: r.reason,
 		}), nil
 	}
 	return connect.NewResponse(&v1.DeliverEventResponse{}), nil

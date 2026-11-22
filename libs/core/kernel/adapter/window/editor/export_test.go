@@ -170,7 +170,7 @@ func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *fil
 	s.Media = mediawindow.NewHandler(s.state, &s.state.Media, s.resolve)
 }
 
-func (s *Services) findVaults(find file.VaultFinder) {
+func (s *Services) findVaults(find vaultport.VaultLookup) {
 	s.server.open = file.NewOpenVaultFile(find, file.NewOpenFile(s.readers), s.pluginFiles, s.mediaTypes)
 }
 

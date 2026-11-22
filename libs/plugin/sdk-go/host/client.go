@@ -88,23 +88,23 @@ func readError(err error) error {
 	return err
 }
 
-func getHostVaultErrors() map[v1.HostVaultErrorCode]error {
-	return map[v1.HostVaultErrorCode]error{
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:       ErrNoVault,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:      ErrNotExist,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT:  ErrOutside,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:       ErrStale,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS: ErrAlreadyExists,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED:         ErrLockedByAnother,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:     ErrNotANote,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME:   domain.ErrInvalidName,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT:       ErrNotText,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED:  ErrNotAttempted,
+func getHostVaultErrors() map[v1.ErrorCode]error {
+	return map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_NO_VAULT:       ErrNoVault,
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND:      ErrNotExist,
+		v1.ErrorCode_ERROR_CODE_OUTSIDE_VAULT:  ErrOutside,
+		v1.ErrorCode_ERROR_CODE_CONFLICT:       ErrStale,
+		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS: ErrAlreadyExists,
+		v1.ErrorCode_ERROR_CODE_LOCKED:         ErrLockedByAnother,
+		v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:     ErrNotANote,
+		v1.ErrorCode_ERROR_CODE_INVALID_NAME:   domain.ErrInvalidName,
+		v1.ErrorCode_ERROR_CODE_NOT_TEXT:       ErrNotText,
+		v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED:  ErrNotAttempted,
 	}
 }
 
-func fail(code v1.HostVaultErrorCode) error {
-	if code == v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED {
+func fail(code v1.ErrorCode) error {
+	if code == v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		return nil
 	}
 	if err, isKnown := getHostVaultErrors()[code]; isKnown {
@@ -113,17 +113,17 @@ func fail(code v1.HostVaultErrorCode) error {
 	return fmt.Errorf("the host returned the error code %s", code)
 }
 
-func readFileStat(f *v1.HostFileStat) domain.FileStat {
+func readFileStat(f *v1.FileStat) domain.FileStat {
 	if f == nil {
 		return domain.FileStat{}
 	}
 	return domain.FileStat{
-		Path: f.GetPath(), Kind: readKind(f), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
+		Path: f.GetPath(), Kind: readKind(f), Size: f.GetSize(), ModTime: time.Unix(0, f.GetMtime()),
 		Hash: f.GetHash(), Version: f.GetVersion(),
 	}
 }
 
-func readKind(f *v1.HostFileStat) domain.SourceKind {
+func readKind(f *v1.FileStat) domain.SourceKind {
 	switch {
 	case f.GetIsNote():
 		return domain.KindNote
@@ -134,12 +134,12 @@ func readKind(f *v1.HostFileStat) domain.SourceKind {
 	}
 }
 
-func writeFileStat(f domain.FileStat) *v1.HostFileStat {
+func writeFileStat(f domain.FileStat) *v1.FileStat {
 	if f.IsZero() {
 		return nil
 	}
-	return &v1.HostFileStat{
-		Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote,
+	return &v1.FileStat{
+		Path: f.Path, Size: f.Size, Mtime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote,
 		Hash: f.Hash, Version: f.Version,
 	}
 }
@@ -270,7 +270,7 @@ func (c *Client) GetNotes(ctx context.Context, paths []string) (map[string]domai
 	}
 	out := make(map[string]domain.NoteRef, len(res.Msg.GetNotes()))
 	for _, one := range res.Msg.GetNotes() {
-		out[one.GetPath()] = domain.NoteRef{Path: one.GetPath(), Title: one.GetTitle(), ID: one.GetId()}
+		out[one.GetPath()] = domain.NoteRef{Path: one.GetPath(), Title: one.GetTitle(), ID: one.GetIdentifier()}
 	}
 	return out, nil
 }

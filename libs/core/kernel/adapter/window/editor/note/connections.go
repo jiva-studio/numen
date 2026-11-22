@@ -16,7 +16,7 @@ import (
 // connectionFailure is why a connection write did not land, as the schema
 // carries it.
 type connectionFailure struct {
-	code      *v1.ErrorCode
+	code      v1.ErrorCode
 	isInvalid bool
 	isCycle   bool
 }
@@ -36,7 +36,7 @@ func failureOf(err error) (connectionFailure, error) {
 	if !ok {
 		return connectionFailure{}, connect.NewError(wire.GetCode(err), err)
 	}
-	return connectionFailure{code: &reason}, nil
+	return connectionFailure{code: reason}, nil
 }
 
 // GetConnection answers the relationship between two notes as a whole.
@@ -170,7 +170,7 @@ func (h *Links) CreateRelatedNote(
 	if !ok {
 		return nil, connect.NewError(wire.GetCode(err), err)
 	}
-	return connect.NewResponse(&v1.CreateRelatedNoteResponse{Error: &reason}), nil
+	return connect.NewResponse(&v1.CreateRelatedNoteResponse{Error: reason}), nil
 }
 
 // ListBacklinks answers the links written in other notes that point at a note.

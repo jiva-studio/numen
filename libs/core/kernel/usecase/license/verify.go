@@ -40,10 +40,11 @@ func (u *Verify) verifyOnce(ctx context.Context, licenseID string) (license.Info
 	if err != nil {
 		return license.Info{}, err
 	}
-	env, shouldVerify, info, err := u.prepareVerification(ctx, decl)
-	if err != nil || !shouldVerify {
-		return info, err
+	prepared, err := u.prepareVerification(ctx, decl)
+	if err != nil || !prepared.shouldVerify {
+		return prepared.info, err
 	}
+	env := prepared.env
 	val, valErr := u.validator.Validate(ctx, env.Provider, env.Key, env.InstanceID)
 	if valErr != nil {
 		return u.handleValidationFailure(ctx, decl, env, valErr)
@@ -51,19 +52,24 @@ func (u *Verify) verifyOnce(ctx context.Context, licenseID string) (license.Info
 	return u.applyVerifiedStatus(ctx, decl, env, val.Status, val.ExpiresAt, val.Status == license.StatusActive)
 }
 
-func (u *Verify) prepareVerification(
-	ctx context.Context,
-	decl license.Declaration,
-) (license.Envelope, bool, license.Info, error) {
+// verification is what the check of a license holds before it asks the provider: the info to answer when
+// nothing is asked, and the envelope to check otherwise.
+type verification struct {
+	env          license.Envelope
+	info         license.Info
+	shouldVerify bool
+}
+
+func (u *Verify) prepareVerification(ctx context.Context, decl license.Declaration) (verification, error) {
 	u.gate.Lock()
 	defer u.gate.Unlock()
 	env, isFound, err := u.readEnvelope(ctx, decl.ID)
 	if err != nil {
-		return license.Envelope{}, false, license.Info{}, err
+		return verification{}, err
 	}
 	if !isFound {
 		info, _, buildErr := u.buildInfo(ctx, decl)
-		return license.Envelope{}, false, info, buildErr
+		return verification{info: info}, buildErr
 	}
 	fingerprint := ""
 	if u.machine != nil {
@@ -72,9 +78,9 @@ func (u *Verify) prepareVerification(
 	eval := license.EvaluateEnvelope(env, decl, fingerprint, u.clock.Now().UTC())
 	if !canVerifyOnline(decl, env, eval) || u.validator == nil {
 		info, _, buildErr := u.buildInfo(ctx, decl)
-		return license.Envelope{}, false, info, buildErr
+		return verification{info: info}, buildErr
 	}
-	return env, true, license.Info{}, nil
+	return verification{env: env, shouldVerify: true}, nil
 }
 
 func canVerifyOnline(decl license.Declaration, env license.Envelope, eval license.Evaluation) bool {

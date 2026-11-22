@@ -88,7 +88,7 @@ func TestRangedReadFileReturnsRangeTextStartAndFileStat(t *testing.T) {
 	if got.GetError() != 0 || string(got.GetContent()) != "Danube" || got.GetStart() != 4 {
 		t.Errorf("the range returned %v, want \"Danube\" at 4", got)
 	}
-	if got.GetStat().GetPath() != "Rivers.txt" || got.GetStat().GetSize() != int64(len("the Danube flows east")) || got.GetStat().GetModTime() == 0 {
+	if got.GetStat().GetPath() != "Rivers.txt" || got.GetStat().GetSize() != int64(len("the Danube flows east")) || got.GetStat().GetMtime() == 0 {
 		t.Errorf("the file stat is %v, want the file stat of Rivers.txt with its size", got.GetStat())
 	}
 }
@@ -120,7 +120,7 @@ func TestRangedReadFileOfNonUTF8BytesReturnsNotText(t *testing.T) {
 
 	got := readFileRange(t, client, "sonar.bin", 0, 6)
 
-	if got.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT || len(got.GetContent()) != 0 {
+	if got.GetError() != v1.ErrorCode_ERROR_CODE_NOT_TEXT || len(got.GetContent()) != 0 {
 		t.Errorf("a range that is not UTF-8 returned %v, want NOT_TEXT and no content", got)
 	}
 }
@@ -129,7 +129,7 @@ func TestRangedReadFileOfFolderOrMissingPathReturnsNotFound(t *testing.T) {
 	client := newDiskReadClient(t)
 
 	for _, path := range []string{"notes", "Volga.txt"} {
-		if got := readFileRange(t, client, path, 0, 10); got.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
+		if got := readFileRange(t, client, path, 0, 10); got.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 			t.Errorf("a ranged read of %s returned %v, want NOT_FOUND", path, got)
 		}
 	}
@@ -153,7 +153,7 @@ func TestRangedReadFileWithoutAVaultReturnsNoVault(t *testing.T) {
 
 	got := readFileRange(t, client, "Rivers.txt", 0, 10)
 
-	if got.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT {
+	if got.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT {
 		t.Errorf("a ranged read with no vault returned %v, want NO_VAULT", got)
 	}
 }

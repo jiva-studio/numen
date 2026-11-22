@@ -45,7 +45,7 @@ func readVaultsError(code v1.VaultsErrorCode) error {
 	}
 }
 
-func getNoteError(code v1.HostVaultErrorCode, detail string) error {
+func getNoteError(code v1.ErrorCode, detail string) error {
 	return addDetail(fail(code), detail)
 }
 
@@ -77,8 +77,8 @@ func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename
 		IsFilenamed: res.Msg.GetNameSource() == v1.NameSource_NAME_SOURCE_FILENAME,
 		Move:        nil,
 	}
-	if res.Msg.GetMove() != nil {
-		move := readMove(res.Msg.GetMove())
+	if res.Msg.GetMoved() != nil {
+		move := readMove(res.Msg.GetMoved())
 		out.Move = &move
 	}
 	return out, nil

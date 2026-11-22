@@ -93,7 +93,7 @@ func TestWriteFrontmatterWithoutAVaultReturnsNoVault(t *testing.T) {
 		{Path: "Danube.md", Values: []byte(`{"tags":["river"]}`)},
 	}}))
 
-	if err != nil || res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT || len(res.Msg.GetResults()) != 0 {
+	if err != nil || res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT || len(res.Msg.GetResults()) != 0 {
 		t.Errorf("WriteFrontmatter returned %v (%v), want NO_VAULT and no results", res, err)
 	}
 }
@@ -120,7 +120,7 @@ func TestWriteFrontmatterPassesThePathsTheDecodedValuesAndTheBaselinesInOneCall(
 	if first.Path != "Danube.md" || !isList || len(tags) != 2 || tags[0] != "river" || tags[1] != "lake" || !hasStatus || status != nil || first.Values["rating"] != float64(3) {
 		t.Errorf("the first note was sent as %+v, want the tags, the rating and the status as nil", first)
 	}
-	if first.Baseline.Size != danube.GetSize() || first.Baseline.ModTime.UnixNano() != danube.GetModTime() {
+	if first.Baseline.Size != danube.GetSize() || first.Baseline.ModTime.UnixNano() != danube.GetMtime() {
 		t.Errorf("the baseline was sent as %+v, want %v", first.Baseline, danube)
 	}
 	if !vault.writes[0][1].Baseline.IsZero() {
@@ -156,13 +156,13 @@ func TestWriteFrontmatterOverAStaleBaselineReturnsConflictAndWritesTheOthers(t *
 	if len(results) != 3 {
 		t.Fatalf("WriteFrontmatter returned %v, want 3 results", res.Msg)
 	}
-	if results[0].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT || !strings.Contains(results[0].GetDetail(), "Danube.md") {
+	if results[0].GetError() != v1.ErrorCode_ERROR_CODE_CONFLICT || !strings.Contains(results[0].GetDetail(), "Danube.md") {
 		t.Errorf("the stale note returned %v, want CONFLICT naming Danube.md", results[0])
 	}
 	if results[1].GetError() != 0 || results[1].GetStat().GetPath() != "Deltas.md" {
 		t.Errorf("the note after the stale one returned %v, want it written", results[1])
 	}
-	if results[2].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND || !strings.Contains(results[2].GetDetail(), "Volga.md") {
+	if results[2].GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND || !strings.Contains(results[2].GetDetail(), "Volga.md") {
 		t.Errorf("the missing note returned %v, want NOT_FOUND naming Volga.md", results[2])
 	}
 }

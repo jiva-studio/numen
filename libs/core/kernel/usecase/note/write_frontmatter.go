@@ -23,13 +23,6 @@ type FrontmatterWrite struct {
 	Values   map[string]any
 }
 
-// FrontmatterWritten is the outcome of one write. Error is nil when the note was written, and FileStat
-// is then the note's current state.
-type FrontmatterWritten struct {
-	FileStat domain.FileStat
-	Error    error
-}
-
 // WriteFrontmatter sets, replaces and removes top-level frontmatter keys of notes.
 type WriteFrontmatter struct {
 	readers vaultport.VaultReaders
@@ -49,8 +42,8 @@ func NewWriteFrontmatter(
 // Execute writes the keys of each note and answers for each one, in the order given. A note that
 // cannot be written costs the others nothing. When ctx is canceled, every note not yet written gets
 // plugin.ErrNotAttempted, and the results are returned with a nil error.
-func (u WriteFrontmatter) Execute(ctx context.Context, v domain.Vault, writes []FrontmatterWrite) ([]FrontmatterWritten, error) {
-	results := make([]FrontmatterWritten, len(writes))
+func (u WriteFrontmatter) Execute(ctx context.Context, v domain.Vault, writes []FrontmatterWrite) ([]plugin.FrontmatterWritten, error) {
+	results := make([]plugin.FrontmatterWritten, len(writes))
 	for i, one := range writes {
 		var stat domain.FileStat
 		err := ctx.Err()
@@ -64,9 +57,9 @@ func (u WriteFrontmatter) Execute(ctx context.Context, v domain.Vault, writes []
 		if err != nil && ctx.Err() != nil && !errors.Is(err, edit.ErrIndexOutdated) {
 			err = fmt.Errorf("the call was canceled before the frontmatter of %s was written: %w", one.Path, plugin.ErrNotAttempted)
 		}
-		results[i].Error = err
+		results[i].Err = err
 		if err == nil {
-			results[i].FileStat = stat
+			results[i].Stat = stat
 		}
 	}
 	return results, nil

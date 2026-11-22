@@ -58,10 +58,11 @@ func TestAReadAfterSavingAnEditorSettingReturnsItsNewValue(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	content, _, _, err := store.ReadJSON()
+	snapshot, err := store.ReadJSON()
 	if err != nil {
 		t.Fatal(err)
 	}
+	content := snapshot.Content
 	if got := getEditorOf(t, content)["lineNumbers"]; got != true {
 		t.Errorf("the read holds editor.lineNumbers %v, want true; the read is %s", got, content)
 	}

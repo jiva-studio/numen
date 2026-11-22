@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
-	searchrunusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchrun"
+	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 )
 
 // Identity tells who made a call and what that plugin may do.
@@ -160,7 +160,7 @@ type SearchAccess struct {
 	SearchIndex
 	TextSearch
 	SearchFloors
-	Runs *searchrunusecase.SearchRuns
+	Runs *searchqueryusecase.SearchRuns
 }
 
 // WindowControl is the main window of the vault, exposed to the plugins that call the host. A path
