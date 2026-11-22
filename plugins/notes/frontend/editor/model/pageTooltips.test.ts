@@ -56,4 +56,14 @@ describe('the page tooltips', () => {
       .join('')
     expect(pageStyles).toContain('cm-tooltip-autocomplete')
   })
+
+  it('keep the list in the one layer of the page that holds the tooltips', async () => {
+    const first = await showList(open(document.body))
+    const second = await showList(open(document.body))
+
+    const layers = document.querySelectorAll('[data-numen-tooltip-layer]')
+    expect(layers).toHaveLength(1)
+    expect(layers[0]?.contains(first)).toBe(true)
+    expect(layers[0]?.contains(second)).toBe(true)
+  })
 })
