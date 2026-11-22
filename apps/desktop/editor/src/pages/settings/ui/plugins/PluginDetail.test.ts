@@ -35,6 +35,7 @@ const createDetail = (
   platform?: string,
   attachTo?: HTMLElement,
   health: readonly PluginHealthItem[] = [],
+  getReadme?: (pluginId: string) => Promise<string>,
 ) => {
   const recordedWrites: SettingEdit[] = []
   const retryPlugin = vi.fn()
@@ -49,6 +50,7 @@ const createDetail = (
     retryPlugin,
     plugins: ref([plugin]),
     ...(platform ? { getPlatform: () => platform } : {}),
+    ...(getReadme ? { getReadme } : {}),
   })
   const wrapper = mount(PluginDetail, {
     props: {
@@ -288,20 +290,17 @@ describe('PluginDetail', () => {
   })
 
   it('opens on Settings and draws the README on About without its title and comments', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        headers: { get: () => 'text/markdown' },
-        text: async () =>
-          '# Super Engine\n\nShort summary line.\n\n<!-- more -->\n\nDetailed documentation body.',
-      })),
-    )
     const { wrapper } = createDetail(
       createPluginInfo('a', 'Super Engine', {
         description: 'Fallback',
         settings: [{ key: 'zoom', type: 'number', title: 'Zoom', description: '', default: 3 }],
       }),
+      {},
+      undefined,
+      undefined,
+      [],
+      async () =>
+        '# Super Engine\n\nShort summary line.\n\n<!-- more -->\n\nDetailed documentation body.',
     )
     await flushPromises()
 
