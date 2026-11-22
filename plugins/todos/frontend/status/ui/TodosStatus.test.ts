@@ -217,7 +217,9 @@ describe('ticking a task in the todos popover', () => {
     await settle()
 
     expect(box.attributes('disabled')).toBeDefined()
-    expect(box.attributes('title')).toBe(WORDS.recurringNotTickable)
+    box.element.dispatchEvent(new MouseEvent('mouseenter'))
+    await settle()
+    expect(document.body.textContent).toContain(WORDS.recurringNotTickable)
     expect(fake.calls.setTaskDone).toEqual([])
     expect(boxOf(view, 'fix the tap').attributes('disabled')).toBeUndefined()
   })

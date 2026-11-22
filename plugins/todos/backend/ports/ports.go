@@ -27,21 +27,26 @@ type FileWriter interface {
 	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 }
 
+// NoteStore keeps the tasks of a note the plugin wrote, with the file stat after the write.
+type NoteStore interface {
+	StoreNote(path string, content []byte, stat domain.FileStat)
+}
+
 // ChangeFeed reads the file changes of the vault after a cursor.
 type ChangeFeed = host.FileChangeLister
 
 // SavedNote is what the index knows of one note, as it is kept between runs.
 type SavedNote struct {
-	Stat         domain.FileStat
-	Hash         []byte
-	Tasks        []todo.Task
-	IsUnreadable bool
+	Stat         domain.FileStat `json:"stat"`
+	Hash         []byte          `json:"hash"`
+	Tasks        []todo.Task     `json:"tasks"`
+	IsUnreadable bool            `json:"isUnreadable"`
 }
 
 // Snapshot is the index of a run and the place of the file change feed it was brought up to.
 type Snapshot struct {
-	Cursor host.FileChangeCursor
-	Notes  map[string]SavedNote
+	Cursor host.FileChangeCursor `json:"cursor"`
+	Notes  map[string]SavedNote  `json:"notes"`
 }
 
 // Snapshots keeps the snapshot of the index between runs. It holds nothing that cannot be

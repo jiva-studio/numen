@@ -4,7 +4,7 @@ import type { Summary } from '../types'
 import type { Timer } from './timer'
 
 /** How long the feed waits before it opens the stream again after the stream ended, in milliseconds. */
-export const RECONNECT_DELAY_MS = 1000
+const RECONNECT_DELAY_MS = 1000
 
 /** The counts of the open tasks, kept up to date while the backend reports changes. The summary is null before the first read. */
 export interface TaskFeed {

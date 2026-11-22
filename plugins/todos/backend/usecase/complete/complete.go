@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -33,6 +34,9 @@ const (
 	RefusalNotDone Refusal = "notDone"
 )
 
+// ErrInvalidToday is a request whose day is not a YYYY-MM-DD date.
+var ErrInvalidToday = errors.New("today is not a YYYY-MM-DD date")
+
 // Request names the task line to change: the note, the line number and the text it had when it
 // was listed, the change and the day.
 type Request struct {
@@ -58,18 +62,23 @@ type Result struct {
 type SetTaskDone struct {
 	files  ports.FileReader
 	writer ports.FileWriter
+	store  ports.NoteStore
 
 	mu sync.Mutex
 }
 
-// New returns the use case over the notes the reader and the writer reach.
-func New(files ports.FileReader, writer ports.FileWriter) *SetTaskDone {
-	return &SetTaskDone{files: files, writer: writer, mu: sync.Mutex{}}
+// New returns the use case over the notes the reader and the writer reach; the store gets each
+// note written.
+func New(files ports.FileReader, writer ports.FileWriter, store ports.NoteStore) *SetTaskDone {
+	return &SetTaskDone{files: files, writer: writer, store: store, mu: sync.Mutex{}}
 }
 
 // Execute reads the note, finds the line, changes it and writes the note over the read baseline.
 // A host failure is the error; a change the note does not allow is the Refusal of the result.
 func (u *SetTaskDone) Execute(ctx context.Context, req Request) (Result, error) {
+	if !todo.IsDate(req.Today) {
+		return Result{}, fmt.Errorf("%w: %s", ErrInvalidToday, req.Today)
+	}
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	result, err := u.write(ctx, req)
@@ -78,6 +87,9 @@ func (u *SetTaskDone) Execute(ctx context.Context, req Request) (Result, error) 
 	}
 	if errors.Is(err, host.ErrStale) {
 		return refuse(RefusalStale), nil
+	}
+	if err == nil && result.Refusal == "" {
+		u.store.StoreNote(req.Path, result.Content, result.Stat)
 	}
 	return result, err
 }
@@ -118,7 +130,9 @@ func (u *SetTaskDone) write(ctx context.Context, req Request) (Result, error) {
 }
 
 func refuse(refusal Refusal) Result {
-	return Result{Task: todo.Task{}, Change: "", Refusal: refusal, Content: nil, Stat: domain.FileStat{}}
+	var result Result
+	result.Refusal = refusal
+	return result
 }
 
 func findTask(tasks []todo.Task, line int, raw string) (todo.Task, bool) {

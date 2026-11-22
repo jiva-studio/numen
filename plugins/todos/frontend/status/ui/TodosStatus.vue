@@ -4,9 +4,10 @@
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { ListChecks } from '@lucide/vue'
-import { isPageMove, useMenuDismissal } from '@numen/ui'
+import { isPageMove, Tooltip, useMenuDismissal, useTooltip } from '@numen/ui'
 import { getChip } from '../model/chip'
 import { getNoteTitle, useTaskGroups } from '../model/useTaskGroups'
+import { useTaskTicks } from '../model/useTaskTicks'
 import { WORDS as words } from '../../words'
 import type { Summary, Task, TaskReader, TaskWriter } from '../../types'
 
@@ -30,7 +31,9 @@ const dismissal = useMenuDismissal(root, onClose, isPageMove)
 const chip = computed(() => getChip(props.summary))
 const label = computed(() => `${words.chipLabel}: ${chip.value.count}`)
 const { groups, load } = useTaskGroups(props.api, props.getToday)
-const pendingTicks = ref<ReadonlySet<string>>(new Set())
+const ticks = useTaskTicks(props.api, props.getToday, load, (message) => emit('showError', message))
+const { isRecurring, isTickable } = ticks
+const tip = useTooltip()
 
 /* --------------------------------- Hooks ---------------------------------- */
 watch(isOpen, (open) => {
@@ -58,38 +61,7 @@ function onClose() {
 }
 
 function onTick(task: Task) {
-  tick(task).catch(() => undefined)
-}
-
-/* --------------------------------- Helpers -------------------------------- */
-const getKey = (task: Task): string => `${task.path}:${task.line}`
-
-function isRecurring(task: Task): boolean {
-  // Ticking a recurring task moves its due date, which the backend does not do yet.
-  return task.recurrence !== '' || task.issues.includes('invalidRecurrence')
-}
-
-const isTickable = (task: Task): boolean =>
-  !isRecurring(task) && !pendingTicks.value.has(getKey(task))
-
-async function tick(task: Task) {
-  if (!isTickable(task)) return
-  const key = getKey(task)
-  pendingTicks.value = new Set([...pendingTicks.value, key])
-  try {
-    const result = await props.api.setTaskDone({
-      path: task.path,
-      line: task.line,
-      raw: task.raw,
-      isDone: true,
-      today: props.getToday(),
-    })
-    if (!result.ok) emit('showError', words.tickFailed)
-    else if (result.value.error !== '') emit('showError', words.changedNote)
-    await load()
-  } finally {
-    pendingTicks.value = new Set([...pendingTicks.value].filter((one) => one !== key))
-  }
+  ticks.tick(task).catch(() => undefined)
 }
 </script>
 
@@ -100,9 +72,12 @@ async function tick(task: Task) {
       tabindex="-1"
       class="todos-status__trigger"
       :aria-label="label"
-      :title="label"
       :aria-expanded="isOpen"
       aria-haspopup="dialog"
+      @mouseenter="tip.open($event, label)"
+      @mouseleave="tip.close"
+      @focus="tip.open($event, label)"
+      @blur="tip.close"
       @click="onToggle"
     >
       <ListChecks :size="12" aria-hidden="true" />
@@ -124,8 +99,9 @@ async function tick(task: Task) {
             <input
               type="checkbox"
               :disabled="!isTickable(task)"
-              :title="isRecurring(task) ? words.recurringNotTickable : undefined"
               :aria-label="words.taskDone"
+              @mouseenter="tip.open($event, isRecurring(task) ? words.recurringNotTickable : '')"
+              @mouseleave="tip.close"
               @click.prevent="onTick(task)"
             />
             <button
@@ -141,6 +117,11 @@ async function tick(task: Task) {
         </ul>
       </section>
     </div>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+        {{ tip.text.value }}
+      </Tooltip>
+    </Teleport>
   </div>
 </template>
 

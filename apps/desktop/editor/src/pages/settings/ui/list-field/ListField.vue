@@ -5,7 +5,7 @@
  */
 import { computed, ref } from 'vue'
 import { Trash2 } from '@lucide/vue'
-import { Button } from '@numen/ui'
+import { Button, Tooltip, useTooltip } from '@numen/ui'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
@@ -26,6 +26,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
+const tip = useTooltip()
 const text = ref('')
 const listedTwice = ref('')
 const item = computed(() => text.value.trim())
@@ -60,12 +61,20 @@ function onClear(): void {
     :aria-describedby="describedBy"
   >
     <span v-for="one in items" :key="one" class="settings__list-item">
-      <span class="settings__list-label" :title="one">{{ one }}</span>
+      <span
+        class="settings__list-label"
+        @mouseenter="tip.open($event, one)"
+        @mouseleave="tip.close"
+        >{{ one }}</span
+      >
       <Button
         variant="outline"
         size="icon-small"
         :aria-label="words.listRemove(one)"
-        :title="words.listRemove(one)"
+        @mouseenter="tip.open($event, words.listRemove(one))"
+        @mouseleave="tip.close"
+        @focus="tip.open($event, words.listRemove(one))"
+        @blur="tip.close"
         @click="emit('remove', one)"
       >
         <Trash2 :size="14" aria-hidden="true" />
@@ -89,6 +98,11 @@ function onClear(): void {
     <span v-if="listedTwice !== ''" class="settings__list-problem" role="alert">
       {{ words.listItemTwice(listedTwice) }}
     </span>
+    <Teleport to="body">
+      <Tooltip v-if="tip.at.value && tip.text.value" :id="tip.id" :at="tip.at.value">
+        {{ tip.text.value }}
+      </Tooltip>
+    </Teleport>
   </span>
 </template>
 

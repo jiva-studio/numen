@@ -33,8 +33,11 @@ func TestReadManifest_EditorExtensions(t *testing.T) {
 	}
 }
 
+const editorBackendOnly = `{"id":"md.example.todos","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},` +
+	`"contributes":{"editor":{"extensions":[{"id":"tasks","title":"T","description":"d"}]}}}`
+
 func TestReadManifest_EditorExtensionsNeedAFrontend(t *testing.T) {
-	_, err := manifestjson.Read(strings.NewReader(`{"id":"md.example.todos","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"contributes":{"editor":{"extensions":[{"id":"tasks","title":"T","description":"d"}]}}}`))
+	_, err := manifestjson.Read(strings.NewReader(editorBackendOnly))
 
 	if !errors.Is(err, manifest.ErrInvalidContribution) {
 		t.Errorf("error = %v, want %v", err, manifest.ErrInvalidContribution)

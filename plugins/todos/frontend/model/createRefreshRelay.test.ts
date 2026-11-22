@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createFakeApi, createFakeTimer, settle } from '../testing/fakeApi'
-import { createRefreshRelay, REFRESH_DELAY_MS } from './createRefreshRelay'
+import { createRefreshRelay } from './createRefreshRelay'
 
 const setup = () => {
   const fake = createFakeApi()
@@ -19,7 +19,6 @@ describe('the refresh relay', () => {
     relay.push({ paths: ['a.md'] })
     relay.push({ paths: ['b.md'] })
 
-    expect(REFRESH_DELAY_MS).toBe(400)
     expect(clock.waits.map((one) => one.delayMs)).toEqual([400])
   })
 

@@ -53,7 +53,7 @@ func startWithWriter(t *testing.T, notes map[string]string, getWriter func(*host
 		t.Fatal(err)
 	}
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "plugin-token"}, func(s *server.Server) error {
-		return mount(s, tasks, complete.New(vault, writer))
+		return mount(s, tasks, complete.New(vault, writer, tasks))
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -295,7 +295,7 @@ func TestTickOverHTTPWritesTheLineAndTheNextListShowsTheTaskTicked(t *testing.T)
 		t.Errorf("note = %q", note)
 	}
 	open := a.list(t, api.Filter{}, 10)
-	done := a.list(t, api.Filter{Status: []string{"done"}}, 10)
+	done := a.list(t, api.Filter{Status: []api.Status{api.StatusDone}}, 10)
 	if len(open.Tasks) != 1 || open.Tasks[0].Text != "buy milk" || open.Revision <= before.Revision {
 		t.Errorf("open tasks after the tick = %+v, before = revision %d", open, before.Revision)
 	}
@@ -334,7 +334,7 @@ func TestTickOverHTTPAnswersAChangeTheNoteDoesNotAllowWithItsErrorWord(t *testin
 		note      string
 		req       api.SetTaskDoneRequest
 		getWriter func(*hosttest.Vault) ports.FileWriter
-		want      string
+		want      api.Refusal
 	}{
 		{"a line whose text changed", "- [ ] buy milk and bread\n", tickRequest("a.md", 1, "- [ ] buy milk"), nil, "notFound"},
 		{"a note whose frontmatter is never closed", "---\n- [ ] buy milk\n", tickRequest("a.md", 2, "- [ ] buy milk"), nil, "changed"},

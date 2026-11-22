@@ -38,7 +38,7 @@ describe('an editor extension registration', () => {
     expect(registered).not.toHaveBeenCalled()
   })
 
-  it('hands a declared extension to the host under the plugin id', () => {
+  it('registers a declared extension with the host under the plugin id', () => {
     const { host, registered } = createRegisteringHost()
     const manifest = createMockManifest('md.numen.sample', {
       permissions: ['vault:read'],

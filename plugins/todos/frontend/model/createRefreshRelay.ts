@@ -4,7 +4,7 @@ import type { Rename } from '../types'
 import type { Timer } from './timer'
 
 /** How long changed paths are collected before one RefreshIndex call, in milliseconds. */
-export const REFRESH_DELAY_MS = 400
+const REFRESH_DELAY_MS = 400
 
 /** Passes the changes of the vault to the backend. */
 export interface RefreshRelay {

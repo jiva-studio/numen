@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { editorNotePath } from '@numen/plugin-sdk'
-import { createTaskExtension, type TickRequest } from './taskExtension'
+import { createTaskExtension, type TaskExtensionDeps } from './taskExtension'
 
 let view: EditorView | undefined
 
@@ -12,7 +12,7 @@ afterEach(() => {
 })
 
 function open(doc: string, path = 'Projects/Home.md') {
-  const tick = vi.fn<(request: TickRequest) => Promise<void>>(async () => undefined)
+  const tick = vi.fn<(request: Parameters<TaskExtensionDeps['tick']>[0]) => Promise<void>>(async () => undefined)
   view = new EditorView({
     state: EditorState.create({
       doc,

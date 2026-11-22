@@ -5,16 +5,14 @@
 
 export type FieldKind = 'priority' | 'due' | 'done' | 'recurrence' | 'project' | 'context'
 
-export interface TaskField {
+interface TaskField {
   readonly kind: FieldKind
   readonly from: number
   readonly to: number
 }
 
 export interface TaskLine {
-  /** Where the list marker starts: everything before it is quotes and indentation. */
   readonly markerFrom: number
-  /** Where the text after the checkbox starts. */
   readonly textFrom: number
   readonly isDone: boolean
   readonly fields: readonly TaskField[]

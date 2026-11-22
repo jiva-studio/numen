@@ -343,7 +343,6 @@ export interface HostServices {
   readonly ui: PluginUi
   readonly work: PluginWork
   readonly events: PluginEvents
-  // The CodeMirror extensions plugins add to the note editor, where the host offers one.
   readonly editor?: EditorExtensionHost
 }
 

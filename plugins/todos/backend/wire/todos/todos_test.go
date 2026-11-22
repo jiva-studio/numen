@@ -19,7 +19,7 @@ func TestEncodeTaskCopiesEveryFieldAndEncodesEmptyListsAsArrays(t *testing.T) {
 	want := api.Task{
 		Path: "Projects/Home.md", Line: 7, Raw: "- [ ] (A) buy milk due:2026-11-13 +home @phone", Text: "buy milk",
 		Status: "open", Priority: "A", Due: "2026-11-13", DoneOn: "2026-11-01", Recurrence: "rec:1w",
-		Projects: []string{"home"}, Contexts: []string{"phone"}, Issues: []string{"invalidDone"}, Depth: 2,
+		Projects: []string{"home"}, Contexts: []string{"phone"}, Issues: []api.Issue{api.IssueInvalidDone}, Depth: 2,
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("task = %+v, want %+v", got, want)
@@ -33,7 +33,7 @@ func TestEncodeTaskCopiesEveryFieldAndEncodesEmptyListsAsArrays(t *testing.T) {
 
 func TestDecodeFilterCopiesEveryField(t *testing.T) {
 	got := DecodeFilter(api.Filter{
-		Status: []string{"open", "done"}, Due: "range", From: "2026-11-01", To: "2026-11-30", Projects: []string{"home"},
+		Status: []api.Status{api.StatusOpen, api.StatusDone}, Due: "range", From: "2026-11-01", To: "2026-11-30", Projects: []string{"home"},
 		Contexts: []string{"phone"}, Priorities: []string{"A"}, Path: "Projects/", Text: "milk",
 	})
 

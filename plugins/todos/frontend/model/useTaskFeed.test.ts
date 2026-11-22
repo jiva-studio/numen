@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createFakeApi, createFakeTimer, settle, SUMMARY } from '../testing/fakeApi'
-import { RECONNECT_DELAY_MS, useTaskFeed } from './useTaskFeed'
+import { useTaskFeed } from './useTaskFeed'
 
 describe('the task feed', () => {
   it('follows the stream and reads the counts when the first message arrives', async () => {
@@ -88,8 +88,7 @@ describe('the task feed', () => {
     fake.end()
     await settle()
     expect(fake.calls.watchEnds).toBe(1)
-    expect(clock.waits.map((one) => one.delayMs)).toEqual([RECONNECT_DELAY_MS])
-    expect(RECONNECT_DELAY_MS).toBe(1000)
+    expect(clock.waits.map((one) => one.delayMs)).toEqual([1000])
 
     clock.fire()
     fake.setSummary({ ...SUMMARY, todayCount: 8 })

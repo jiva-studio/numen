@@ -688,7 +688,7 @@ describe('a list setting of the shell', () => {
   }
 
   it('draws a list setting of the app with the list control', () => {
-    const { wrapper } = createPage('system', [FOLDERS])
+    const { wrapper } = createPage('search', [FOLDERS])
 
     expect(
       findRow(wrapper, 'Ignored folders').findComponent(ListField).props('items'),
@@ -696,7 +696,7 @@ describe('a list setting of the shell', () => {
   })
 
   it('writes the item added to a list setting of the app under the owner app', () => {
-    const { wrapper, writes } = createPage('system', [FOLDERS])
+    const { wrapper, writes } = createPage('search', [FOLDERS])
 
     findRow(wrapper, 'Ignored folders').findComponent(ListField).vm.$emit('add', 'drafts')
 

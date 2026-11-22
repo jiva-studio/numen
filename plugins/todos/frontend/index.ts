@@ -2,7 +2,7 @@
  * Frontend entrypoint for the Todos plugin: a title bar chip that counts the overdue tasks and the
  * tasks due today, and a popover with the lists.
  */
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, watch } from 'vue'
 import {
   definePlugin,
   type HostServices,
@@ -75,7 +75,10 @@ export const activate = (
     id: TODOS_VIEW,
     component: createTodosView(feed, parts.api, workspace),
   })
-  plugin.register.editorExtension?.({
+  if (!plugin.register.editorExtension) {
+    throw new Error('the todos plugin needs the editor extensions of the host')
+  }
+  plugin.register.editorExtension({
     id: TASKS_EXTENSION,
     extension: createTaskEditorExtension({
       api: parts.api,
@@ -84,16 +87,24 @@ export const activate = (
       showError: (message) => workspace.messages.showError(message),
     }),
   })
+  const stopWatchingReady = watch(
+    () => feed.summary.value?.isReady === true,
+    (isReady) => {
+      if (isReady) refreshFields()
+    },
+  )
   host.events.onVaultChange((event) => relay.push(event))
   window.addEventListener('focus', refreshSummary)
   plugin.identity.subscriptions.push({
     dispose: () => {
       window.removeEventListener('focus', refreshSummary)
+      stopWatchingReady()
       relay.dispose()
       feed.stop()
     },
   })
   feed.start()
+  refreshFields()
 }
 
 export default definePlugin({

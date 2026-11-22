@@ -1,5 +1,5 @@
 import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete'
-import type { FieldCount, ListFieldsResponse } from '../types'
+import type { FieldCount, ListFieldsResponse } from '../../types'
 import { listDateShortcuts } from './dateShortcuts'
 import { findFencedLines, readTaskLine } from './taskLine'
 

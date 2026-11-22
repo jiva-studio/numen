@@ -111,7 +111,7 @@ func TestAWarmStartReadsNoUnchangedNoteAndAnswersWithTheSameTasksAndFields(t *te
 	if got, want := listed(second), listed(first); !reflect.DeepEqual(got, want) {
 		t.Errorf("tasks = %v, want %v", got, want)
 	}
-	if got, want := names(second.ListFields().Projects), []string{"home=1", "work=1"}; !reflect.DeepEqual(got, want) {
+	if got, want := formatCounts(second.ListFields().Projects), []string{"home=1", "work=1"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("projects = %v, want %v", got, want)
 	}
 	if !second.GetState().IsReady {
@@ -145,7 +145,7 @@ func TestAWarmStartReadsOnlyTheNotesChangedAddedOrRemovedWhileTheAppWasClosed(t 
 	if got := listed(second); !reflect.DeepEqual(got, want) {
 		t.Errorf("tasks = %v, want %v", got, want)
 	}
-	if got, want := names(second.ListFields().Projects), []string{"new=1"}; !reflect.DeepEqual(got, want) {
+	if got, want := formatCounts(second.ListFields().Projects), []string{"new=1"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("projects = %v, want %v", got, want)
 	}
 }
@@ -179,7 +179,7 @@ func TestAStartWhenTheFeedCannotContinueFromTheSnapshotReadsEveryNoteAgain(t *te
 	}
 }
 
-func TestChangesAreWrittenOnceAfterTheDelayAndNotBeforeTheIndexIsReady(t *testing.T) {
+func TestPersist_WritesOnceAfterTheDelayAndOnlyOnceReady(t *testing.T) {
 	vault := hosttest.New("notes")
 	vault.File("a.md", "- [ ] one\n")
 	snapshots, clock := new(memorySnapshots), new(timers)

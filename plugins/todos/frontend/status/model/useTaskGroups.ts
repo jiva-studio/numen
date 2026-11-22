@@ -3,10 +3,10 @@ import { WORDS } from '../../words'
 import type { DueFilter, Filter, Task, TaskReader } from '../../types'
 
 /** How many tasks of a group the popover shows. */
-export const GROUP_LIMIT = 20
+const GROUP_LIMIT = 20
 
 /** One list of the popover: the tasks of a due filter and how many there are in all. */
-export interface TaskGroup {
+interface TaskGroup {
   readonly key: DueFilter
   readonly label: string
   readonly tasks: readonly Task[]
@@ -38,7 +38,7 @@ export function getNoteTitle(path: string): string {
   return dot > 0 ? name.slice(0, dot) : name
 }
 
-export interface TaskGroups {
+interface TaskGroups {
   readonly groups: Readonly<Ref<readonly TaskGroup[]>>
   /** Reads the three lists at the day getToday gives now. */
   load(): Promise<void>

@@ -16,7 +16,7 @@ describe('createEditorExtensionRegistry', () => {
     ])
   })
 
-  it('tells the listeners when an extension is registered and disposed', () => {
+  it('notifies the listeners on registering and disposing an extension', () => {
     const registry = createEditorExtensionRegistry()
     const seen: number[] = []
     registry.onChange((entries) => seen.push(entries.length))

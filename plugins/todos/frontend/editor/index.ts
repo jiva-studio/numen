@@ -3,8 +3,8 @@ import { EditorState, type Extension } from '@codemirror/state'
 import type { TodosApi } from '../api/wire'
 import { WORDS } from '../words'
 import type { ListFieldsResponse } from '../types'
-import { createTaskCompletion } from './taskCompletion'
-import { createTaskExtension } from './taskExtension'
+import { createTaskCompletion } from './lib/taskCompletion'
+import { createTaskExtension } from './ui/taskExtension'
 
 /** The id the manifest declares the editor extension under. */
 export const TASKS_EXTENSION = 'tasks'

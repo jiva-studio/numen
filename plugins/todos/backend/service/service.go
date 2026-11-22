@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -14,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/todos/backend/api"
 	hostadapter "github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/host"
 	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/snapshot"
-	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
 	"github.com/jiva-studio/numen/plugins/todos/backend/wire/todos"
@@ -109,27 +107,18 @@ func getClosedContext(s *server.Server) context.Context {
 
 func ignore(_ error) {}
 
-func setTaskDone(tasks *index.Index, done *complete.SetTaskDone) func(context.Context, api.SetTaskDoneRequest) (api.SetTaskDoneResponse, error) {
-	// The written note is stored under the same lock as the write, so two ticks of one note reach
-	// the index in the order they reached the file.
-	var mu sync.Mutex
+func setTaskDone(done *complete.SetTaskDone) func(context.Context, api.SetTaskDoneRequest) (api.SetTaskDoneResponse, error) {
 	return func(ctx context.Context, req api.SetTaskDoneRequest) (api.SetTaskDoneResponse, error) {
-		if !todo.IsDate(req.Today) {
-			return api.SetTaskDoneResponse{}, server.NewAPIError(server.CodeInvalidArgument, "today is not a YYYY-MM-DD date: "+req.Today)
-		}
-		mu.Lock()
-		defer mu.Unlock()
 		result, err := done.Execute(ctx, complete.Request{
 			Path: req.Path, Line: req.Line, Raw: req.Raw, IsDone: req.IsDone, Today: req.Today,
 		})
+		if errors.Is(err, complete.ErrInvalidToday) {
+			return api.SetTaskDoneResponse{}, server.NewAPIError(server.CodeInvalidArgument, err.Error())
+		}
 		if err != nil {
 			return api.SetTaskDoneResponse{}, convertError("change the task", err)
 		}
-		if result.Refusal != "" {
-			return api.SetTaskDoneResponse{Task: todos.EncodeTask(todo.Task{}), Change: "", Error: string(result.Refusal)}, nil
-		}
-		tasks.StoreNote(req.Path, result.Content, result.Stat)
-		return api.SetTaskDoneResponse{Task: todos.EncodeTask(result.Task), Change: string(result.Change), Error: ""}, nil
+		return todos.EncodeResult(result), nil
 	}
 }
 
@@ -148,7 +137,7 @@ func mount(s *server.Server, tasks *index.Index, done *complete.SetTaskDone) err
 	server.Handle(a, api.MethodListTasks, listTasks(tasks))
 	server.Handle(a, api.MethodListFields, listFields(tasks))
 	server.Handle(a, api.MethodRefreshIndex, refreshIndex(tasks))
-	server.Handle(a, api.MethodSetTaskDone, setTaskDone(tasks, done))
+	server.Handle(a, api.MethodSetTaskDone, setTaskDone(done))
 	server.Stream(a, api.MethodWatchTasks, watchTasks(tasks))
 	return a.Err()
 }
@@ -161,7 +150,7 @@ func Mount(s *server.Server) error {
 	}
 	tasks := index.NewForNotes(vault, vault)
 	tasks.Persist(index.Persistence{Snapshots: snapshot.New(""), Feed: vault, After: index.SystemAfter, Cursors: snapshot.NewCursorStore})
-	if err := mount(s, tasks, complete.New(vault, vault)); err != nil {
+	if err := mount(s, tasks, complete.New(vault, vault, tasks)); err != nil {
 		return err
 	}
 	ctx := getClosedContext(s)

@@ -5,21 +5,22 @@ import (
 	"github.com/jiva-studio/numen/plugins/todos/backend/api"
 	"github.com/jiva-studio/numen/plugins/todos/backend/filter"
 	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
+	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
 )
 
 // EncodeTask returns the message of a task. Its lists are never nil, so they encode as [].
 func EncodeTask(task todo.Task) api.Task {
-	issues := make([]string, 0, len(task.Issues))
+	issues := make([]api.Issue, 0, len(task.Issues))
 	for _, issue := range task.Issues {
-		issues = append(issues, string(issue))
+		issues = append(issues, api.Issue(issue))
 	}
 	return api.Task{
 		Path:       task.Path,
 		Line:       task.Line,
 		Raw:        task.Raw,
 		Text:       task.Text,
-		Status:     string(task.Status),
+		Status:     api.Status(task.Status),
 		Priority:   task.Priority,
 		Due:        task.Due,
 		DoneOn:     task.DoneOn,
@@ -29,6 +30,18 @@ func EncodeTask(task todo.Task) api.Task {
 		Issues:     issues,
 		Depth:      task.Depth,
 	}
+}
+
+// EncodeResult returns the message of a change: the refusal and no task when the change was refused.
+func EncodeResult(result complete.Result) api.SetTaskDoneResponse {
+	var response api.SetTaskDoneResponse
+	response.Task = EncodeTask(result.Task)
+	if result.Refusal != "" {
+		response.Error = api.Refusal(result.Refusal)
+		return response
+	}
+	response.Change = api.Change(result.Change)
+	return response
 }
 
 // DecodeFilter returns the filter a message asks for.

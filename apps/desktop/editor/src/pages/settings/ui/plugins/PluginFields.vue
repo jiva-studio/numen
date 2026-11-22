@@ -14,7 +14,7 @@ import type { PluginInfo } from '@/entities/settings'
 import {
   useEnumFields,
   usePluginFields,
-  createPluginLists,
+  getPluginLists,
   usePluginPaths,
   useSettingDefaults,
 } from '../../model/usePluginFields'
@@ -54,7 +54,7 @@ const {
   getListSetting,
   addItem: onListAdd,
   removeItem: onListRemove,
-} = createPluginLists(fieldDeps, fields)
+} = getPluginLists(fieldDeps, fields)
 const { isChanged, resetSetting: onReset } = useSettingDefaults(fieldDeps)
 </script>
 

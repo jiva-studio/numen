@@ -40,17 +40,17 @@ const (
 // leading priority, the projects and the contexts. Depth is the indentation width divided by 2,
 // rounded down.
 type Task struct {
-	Path       string
-	Line       int
-	Raw        string
-	Text       string
-	Status     Status
-	Priority   string
-	Due        string
-	DoneOn     string
-	Recurrence string
-	Projects   []string
-	Contexts   []string
-	Issues     []Issue
-	Depth      int
+	Path       string   `json:"path"`
+	Line       int      `json:"line"`
+	Raw        string   `json:"raw"`
+	Text       string   `json:"text"`
+	Status     Status   `json:"status"`
+	Priority   string   `json:"priority"`
+	Due        string   `json:"due"`
+	DoneOn     string   `json:"doneOn"`
+	Recurrence string   `json:"recurrence"`
+	Projects   []string `json:"projects"`
+	Contexts   []string `json:"contexts"`
+	Issues     []Issue  `json:"issues"`
+	Depth      int      `json:"depth"`
 }

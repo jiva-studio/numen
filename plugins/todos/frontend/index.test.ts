@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
+import { CompletionContext, type CompletionResult, type CompletionSource } from '@codemirror/autocomplete'
+import { EditorState, type Extension } from '@codemirror/state'
 import type { WorkspaceHost } from '@numen/plugin-sdk'
 import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import {
@@ -222,5 +224,72 @@ describe('the editor extension of the todos plugin', () => {
     const { context } = setup()
 
     expect(context.getRegisteredEditorExtensions().map((one) => one.id)).toEqual(['tasks'])
+  })
+})
+
+describe('the task completion of the todos plugin', () => {
+  const projects = [{ name: 'home', count: 2 }]
+
+  const complete = (extension: Extension, doc: string) => {
+    const state = EditorState.create({ doc, extensions: [extension] })
+    const source = state
+      .languageDataAt<CompletionSource>('autocomplete', doc.length)
+      .find((one) => one !== undefined)
+    return source?.(new CompletionContext(state, doc.length, true)) as CompletionResult | null
+  }
+
+  it('reads the fields once at activation, before the stream sends a message', async () => {
+    const fake = createFakeApi({ fields: { projects, contexts: [] } })
+    const context = createMockPluginContext({ pluginId: 'md.numen.todos' })
+    const workspace = {
+      window: { getToday: () => TODAY },
+      files: { open: vi.fn() },
+      messages: { showError: vi.fn() },
+    } as unknown as WorkspaceHost
+    activate(context, createMockHostServices({ workspace }), {
+      api: fake.api,
+      timer: createFakeTimer().timer,
+    })
+    await settle()
+
+    const extension = context.getRegisteredEditorExtensions()[0]?.extension as Extension
+    const result = complete(extension, '- [ ] pay +')
+    expect(result?.options.map((one) => one.label)).toEqual(['home'])
+  })
+
+  it('reads the fields again when the backend reports the index ready', async () => {
+    const fake = createFakeApi({ summary: { ...SUMMARY, isReady: false } })
+    const context = createMockPluginContext({ pluginId: 'md.numen.todos' })
+    const workspace = {
+      window: { getToday: () => TODAY },
+      files: { open: vi.fn() },
+      messages: { showError: vi.fn() },
+    } as unknown as WorkspaceHost
+    activate(context, createMockHostServices({ workspace }), {
+      api: fake.api,
+      timer: createFakeTimer().timer,
+    })
+    await settle()
+    fake.setFields({ projects, contexts: [] })
+    fake.setSummary({ ...SUMMARY, isReady: true })
+    fake.push({ revision: 1, isReady: true })
+    await settle()
+
+    const extension = context.getRegisteredEditorExtensions()[0]?.extension as Extension
+    expect(complete(extension, '- [ ] pay +')?.options).toHaveLength(1)
+  })
+
+  it('refuses to activate in a host without editor extensions', () => {
+    const context = createMockPluginContext({ pluginId: 'md.numen.todos' })
+    const register = context.register as { editorExtension?: unknown }
+    register.editorExtension = undefined
+    const workspace = { window: { getToday: () => TODAY } } as unknown as WorkspaceHost
+
+    expect(() =>
+      activate(context, createMockHostServices({ workspace }), {
+        api: createFakeApi().api,
+        timer: createFakeTimer().timer,
+      }),
+    ).toThrow()
   })
 })

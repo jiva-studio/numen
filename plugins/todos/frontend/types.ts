@@ -6,10 +6,10 @@ import type { ApiError, Result } from '@numen/plugin-sdk'
  */
 
 /** What the character of a checkbox says: a space is open, x is done, any other character is other. */
-export type Status = 'open' | 'done' | 'other'
+type Status = 'open' | 'done' | 'other'
 
 /** A field of a task line that is written but cannot be read. */
-export type Issue = 'invalidDue' | 'invalidDone' | 'invalidRecurrence' | 'invalidPriority'
+type Issue = 'invalidDue' | 'invalidDone' | 'invalidRecurrence' | 'invalidPriority'
 
 /** One task line of a note. Dates are `YYYY-MM-DD` or empty. */
 export interface Task {
@@ -101,10 +101,10 @@ export interface WatchMessage {
 }
 
 /** What a tick or an untick did to the line. */
-export type Change = 'completed' | 'rescheduled' | 'reopened'
+type Change = 'completed' | 'rescheduled' | 'reopened'
 
 /** Why a change was not written; the person can fix it by looking at the note. */
-export type Refusal = 'notFound' | 'changed' | 'stale' | 'invalidRecurrence' | 'notOpen' | 'notDone'
+type Refusal = 'notFound' | 'changed' | 'stale' | 'invalidRecurrence' | 'notOpen' | 'notDone'
 
 /** Ticks (isDone) or unticks the task at a line; raw is the text the line had when it was listed. */
 export interface SetTaskDoneRequest {

@@ -21,28 +21,28 @@ type Task struct {
 	Line       int      `json:"line"`
 	Raw        string   `json:"raw"`
 	Text       string   `json:"text"`
-	Status     string   `json:"status"`
+	Status     Status   `json:"status"`
 	Priority   string   `json:"priority"`
 	Due        string   `json:"due"`
 	DoneOn     string   `json:"doneOn"`
 	Recurrence string   `json:"recurrence"`
 	Projects   []string `json:"projects"`
 	Contexts   []string `json:"contexts"`
-	Issues     []string `json:"issues"`
+	Issues     []Issue  `json:"issues"`
 	Depth      int      `json:"depth"`
 }
 
 // Filter is what ListTasks selects by; its fields combine with AND.
 type Filter struct {
-	Status     []string `json:"status"`
-	Due        string   `json:"due"`
-	From       string   `json:"from"`
-	To         string   `json:"to"`
-	Projects   []string `json:"projects"`
-	Contexts   []string `json:"contexts"`
-	Priorities []string `json:"priorities"`
-	Path       string   `json:"path"`
-	Text       string   `json:"text"`
+	Status     []Status  `json:"status"`
+	Due        DueFilter `json:"due"`
+	From       string    `json:"from"`
+	To         string    `json:"to"`
+	Projects   []string  `json:"projects"`
+	Contexts   []string  `json:"contexts"`
+	Priorities []string  `json:"priorities"`
+	Path       string    `json:"path"`
+	Text       string    `json:"text"`
 }
 
 // GetSummaryRequest asks for the counts at a day.
@@ -111,9 +111,9 @@ type SetTaskDoneRequest struct {
 // reopened. Error is empty, or the reason the change was not written: notFound, changed, stale,
 // invalidRecurrence, notOpen or notDone.
 type SetTaskDoneResponse struct {
-	Task   Task   `json:"task"`
-	Change string `json:"change"`
-	Error  string `json:"error"`
+	Task   Task    `json:"task"`
+	Change Change  `json:"change"`
+	Error  Refusal `json:"error"`
 }
 
 // ListFieldsRequest asks for the projects and the contexts of the tasks.

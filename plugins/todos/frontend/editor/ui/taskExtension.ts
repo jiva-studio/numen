@@ -5,9 +5,9 @@
 import { EditorView, Decoration, WidgetType, type DecorationSet } from '@codemirror/view'
 import { EditorState, RangeSetBuilder, StateField, Prec, type Extension } from '@codemirror/state'
 import { editorNotePath } from '@numen/plugin-sdk'
-import { findFencedLines, readTaskLine, type FieldKind } from './taskLine'
+import { findFencedLines, readTaskLine, type FieldKind } from '../lib/taskLine'
 
-export interface TickRequest {
+interface TickRequest {
   readonly path: string
   readonly line: number
   readonly raw: string
@@ -74,7 +74,7 @@ const FIELD_MARKS = Object.fromEntries(
 )
 const DONE_LINE = Decoration.line({ class: 'cm-todo-line-done' })
 
-export function buildTaskDecorations(state: EditorState, deps: TaskExtensionDeps): DecorationSet {
+function buildTaskDecorations(state: EditorState, deps: TaskExtensionDeps): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>()
   const lines = state.doc.toString().split('\n')
   const fenced = findFencedLines(lines)

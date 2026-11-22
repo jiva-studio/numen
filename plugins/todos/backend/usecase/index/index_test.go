@@ -433,7 +433,7 @@ func TestWatchSendsTheStateAtOnceAndAfterEachChangeOfTheIndex(t *testing.T) {
 	}
 }
 
-func names(counts []FieldCount) []string {
+func formatCounts(counts []FieldCount) []string {
 	out := []string{}
 	for _, one := range counts {
 		out = append(out, fmt.Sprintf("%s=%d", one.Name, one.Count))
@@ -449,32 +449,32 @@ func TestListFieldsCountsProjectsAndContextsAndFollowsAddChangeAndRemoveOfANote(
 	f.scan(t)
 
 	got := f.index.ListFields()
-	if want := []string{"home=2", "work=2"}; !reflect.DeepEqual(names(got.Projects), want) {
-		t.Errorf("projects = %v, want %v", names(got.Projects), want)
+	if want := []string{"home=2", "work=2"}; !reflect.DeepEqual(formatCounts(got.Projects), want) {
+		t.Errorf("projects = %v, want %v", formatCounts(got.Projects), want)
 	}
-	if want := []string{"phone=2", "desk=1"}; !reflect.DeepEqual(names(got.Contexts), want) {
-		t.Errorf("contexts = %v, want %v", names(got.Contexts), want)
+	if want := []string{"phone=2", "desk=1"}; !reflect.DeepEqual(formatCounts(got.Contexts), want) {
+		t.Errorf("contexts = %v, want %v", formatCounts(got.Contexts), want)
 	}
 
 	f.vault.File("a.md", "- [ ] one +garden\n")
 	f.vault.File("c.md", "- [ ] four +garden @phone\n")
 	f.refresh(t, "a.md", "c.md")
 	got = f.index.ListFields()
-	if want := []string{"garden=2", "work=1"}; !reflect.DeepEqual(names(got.Projects), want) {
-		t.Errorf("projects after change = %v, want %v", names(got.Projects), want)
+	if want := []string{"garden=2", "work=1"}; !reflect.DeepEqual(formatCounts(got.Projects), want) {
+		t.Errorf("projects after change = %v, want %v", formatCounts(got.Projects), want)
 	}
-	if want := []string{"phone=2", "desk=1"}; !reflect.DeepEqual(names(got.Contexts), want) {
-		t.Errorf("contexts after change = %v, want %v", names(got.Contexts), want)
+	if want := []string{"phone=2", "desk=1"}; !reflect.DeepEqual(formatCounts(got.Contexts), want) {
+		t.Errorf("contexts after change = %v, want %v", formatCounts(got.Contexts), want)
 	}
 
 	f.vault.Remove("b.md")
 	f.refresh(t, "b.md")
 	got = f.index.ListFields()
-	if want := []string{"garden=2"}; !reflect.DeepEqual(names(got.Projects), want) {
-		t.Errorf("projects after remove = %v, want %v", names(got.Projects), want)
+	if want := []string{"garden=2"}; !reflect.DeepEqual(formatCounts(got.Projects), want) {
+		t.Errorf("projects after remove = %v, want %v", formatCounts(got.Projects), want)
 	}
-	if want := []string{"phone=1"}; !reflect.DeepEqual(names(got.Contexts), want) {
-		t.Errorf("contexts after remove = %v, want %v", names(got.Contexts), want)
+	if want := []string{"phone=1"}; !reflect.DeepEqual(formatCounts(got.Contexts), want) {
+		t.Errorf("contexts after remove = %v, want %v", formatCounts(got.Contexts), want)
 	}
 }
 
@@ -507,7 +507,7 @@ func TestListFieldsDropsTheCountsOfANoteThatIsRenamedAwayAndStaysTheSameWhenItMo
 		t.Fatal(err)
 	}
 
-	if got, want := names(f.index.ListFields().Projects), []string{"home=1"}; !reflect.DeepEqual(got, want) {
+	if got, want := formatCounts(f.index.ListFields().Projects), []string{"home=1"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("projects = %v, want %v", got, want)
 	}
 }

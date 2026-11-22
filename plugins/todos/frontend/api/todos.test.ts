@@ -3,7 +3,30 @@
  * encode to, and they are read here as the TypeScript messages.
  */
 import { describe, expect, it } from 'vitest'
-import type { Methods } from './todos'
+import type {
+  GetSummaryRequest,
+  ListFieldsRequest,
+  ListFieldsResponse,
+  ListTasksRequest,
+  ListTasksResponse,
+  RefreshIndexRequest,
+  RefreshIndexResponse,
+  SetTaskDoneRequest,
+  SetTaskDoneResponse,
+  Summary,
+  WatchMessage,
+  WatchTasksRequest,
+} from '../types'
+
+/** The request and response of each method by name. */
+interface Methods {
+  GetSummary: { request: GetSummaryRequest; response: Summary }
+  ListTasks: { request: ListTasksRequest; response: ListTasksResponse }
+  ListFields: { request: ListFieldsRequest; response: ListFieldsResponse }
+  RefreshIndex: { request: RefreshIndexRequest; response: RefreshIndexResponse }
+  WatchTasks: { request: WatchTasksRequest; response: WatchMessage }
+  SetTaskDone: { request: SetTaskDoneRequest; response: SetTaskDoneResponse }
+}
 
 const fixtures = import.meta.glob('../../testdata/api/*.json', {
   eager: true,

@@ -14,7 +14,6 @@ const complete = createTaskCompletion({
   }),
 })
 
-/** The doc has a | where the cursor is. */
 function run(doc: string): CompletionResult | null {
   const pos = doc.indexOf('|')
   const state = EditorState.create({ doc: doc.replace('|', '') })

@@ -45,12 +45,16 @@ func (w *writer) count() int {
 	return w.writes
 }
 
+type discardStore struct{}
+
+func (discardStore) StoreNote(string, []byte, domain.FileStat) {}
+
 func setup(t *testing.T, path, content string) (*hosttest.Vault, *writer, *SetTaskDone) {
 	t.Helper()
 	vault := hosttest.New("notes")
 	vault.File(path, content)
 	w := &writer{vault: vault}
-	return vault, w, New(vault, w)
+	return vault, w, New(vault, w, discardStore{})
 }
 
 func execute(t *testing.T, u *SetTaskDone, req Request) Result {
