@@ -131,7 +131,7 @@ func (s *session) openIndexedSession(
 	closes.add(db.Close)
 	vaultOptions := vaultconfig.Options{ServiceDir: where.ServiceDir}
 	readers := vaultreader.Readers{Options: vaultOptions}
-	find := registry.NewFind(parts.ports.Lookup).Execute
+	find := parts.ports.Lookup
 
 	notes := vaults.NewScan(readers, db.Vaults(), db.Notes(), db.NoteQueries(), db.Maintenance(), testsupport.EmptySourceBacklog{})
 	notes = notes.Rebuilding(options.Rebuild)
@@ -168,7 +168,7 @@ type vaultParts struct {
 }
 
 func (p vaultParts) build() cli.Vaults {
-	find := registry.NewFind(p.ports.Lookup).Execute
+	find := p.ports.Lookup
 	return cli.Vaults{
 		Add:        vaults.NewAdd(p.identity, p.ports.Vaults, p.ports.Lookup, p.ports.Saver, p.now),
 		Known:      registry.NewGetKnownVaults(p.ports.Vaults, p.ports.Last, p.readers),
@@ -177,7 +177,7 @@ func (p vaultParts) build() cli.Vaults {
 }
 
 func (p vaultParts) indexedOver(rows vaults.VaultRepository) cli.Indexed {
-	find := registry.NewFind(p.ports.Lookup).Execute
+	find := p.ports.Lookup
 	unregister := vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)
 	return cli.Indexed{Changes: cli.VaultChanges{
 		Rename:     vaults.NewRenameByName(find, vaults.NewRename(p.ports.Vaults, p.ports.Saver, rows)),
@@ -239,7 +239,7 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 			return vaultParts{ports: portsOfSingle(singleVaultList{target})}.build(), nil
 		},
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
-			return cli.Indexed{Links: query.NewShowLinksByName(registry.NewFind(singleVaultList{target}).Execute, query.NewShowLinks(fixedLinkQueries{
+			return cli.Indexed{Links: query.NewShowLinksByName(singleVaultList{target}, query.NewShowLinks(fixedLinkQueries{
 				links: []domain.ResolvedLink{{
 					Link: domain.Link{
 						Target: domain.Address{Scheme: domain.SchemeName, Value: "Hives"},

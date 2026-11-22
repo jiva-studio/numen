@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -55,7 +54,7 @@ func createPluginCommandDeps() (stubSession, *pluginCommands, *[]domain.Vault) {
 	}}
 	var vaults []domain.Vault
 	commands := newUseCases(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
-	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
+	find := singleVaultList{getNotebook()}
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
@@ -192,7 +191,7 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 		Command:  manifest.Command{ID: "transcript.create", Title: "Transcribe a recording", When: "target.contentType.startsWith('audio/')"},
 	}}}
 	commands := newUseCases(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
-	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
+	find := singleVaultList{getNotebook()}
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
@@ -263,7 +262,7 @@ func TestVersionCommandRequiresFile(t *testing.T) {
 		Command:  manifest.Command{ID: "proofreading.create", Title: "Proofread", When: "version.isLive && version.kind != ''"},
 	}}}
 	commands := newUseCases(declared, declared, fileTypes{".wav": "audio/vnd.wave"}, nil, nil)
-	find := registry.NewFind(singleVaultList{getNotebook()}).Execute
+	find := singleVaultList{getNotebook()}
 	deps := stubSession{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {

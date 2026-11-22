@@ -13,6 +13,7 @@ import (
 	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
@@ -91,10 +92,10 @@ type Vaults struct {
 }
 
 func formatVaultError(err error) error {
-	if unknown, ok := errors.AsType[*registry.UnknownError](err); ok {
+	if unknown, ok := errors.AsType[*vaultdomain.UnknownError](err); ok {
 		return fmt.Errorf("%w — add it with: numen-cli vault add %s", err, unknown.Name)
 	}
-	if lookup, ok := errors.AsType[*registry.LookupError](err); ok {
+	if lookup, ok := errors.AsType[*vaultdomain.LookupError](err); ok {
 		return fmt.Errorf("%w — add it with: numen-cli vault add %s", err, lookup.Name)
 	}
 	return err

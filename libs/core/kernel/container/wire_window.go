@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
@@ -247,7 +248,7 @@ func windowView(notices *editor.Notices) windowsession.View {
 // GetUnknownVaultName returns the name of the vault, named at start, that err says the registry does not
 // hold.
 func GetUnknownVaultName(err error) (string, bool) {
-	unknown, ok := errors.AsType[*registry.UnknownError](err)
+	unknown, ok := errors.AsType[*vaultdomain.UnknownError](err)
 	if !ok {
 		return "", false
 	}

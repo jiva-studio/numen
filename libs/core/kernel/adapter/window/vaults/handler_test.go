@@ -171,7 +171,7 @@ func onAList(t *testing.T) *onTheList {
 	find := vaultregistry.NewFind(registry)
 	chooseFolder := picker.NewChooseFolder(f.dialog)
 	folderCheck := vaultregistry.NewFolderCheck(vaultreader.Readers{})
-	remove := vaults.NewRemove(find.Execute, forget, erase)
+	remove := vaults.NewRemove(registry, forget, erase)
 	handler := NewHandler(
 		f,
 		vaultlist.NewListVaults(list, folderCheck), vaultlist.NewAddVault(adding, folderCheck),

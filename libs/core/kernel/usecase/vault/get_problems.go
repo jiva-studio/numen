@@ -2,6 +2,8 @@ package vault
 
 import (
 	"context"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -30,18 +32,18 @@ type Problems struct {
 
 // GetProblemsByName lists the problems of the vault a person names.
 type GetProblemsByName struct {
-	find     VaultFinding
+	lookup   vaultport.VaultLookup
 	problems *GetProblems
 }
 
 // NewGetProblemsByName creates the use case that resolves the vault with find and lists its problems with problems.
-func NewGetProblemsByName(find VaultFinding, problems *GetProblems) GetProblemsByName {
-	return GetProblemsByName{find: find, problems: problems}
+func NewGetProblemsByName(lookup vaultport.VaultLookup, problems *GetProblems) GetProblemsByName {
+	return GetProblemsByName{lookup: lookup, problems: problems}
 }
 
 // ExecuteByName resolves the vault and runs the named checks.
 func (u GetProblemsByName) ExecuteByName(ctx context.Context, nameOrPath string, named ...domain.Check) (Problems, error) {
-	v, err := u.find(nameOrPath)
+	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
 		return Problems{}, err
 	}

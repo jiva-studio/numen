@@ -21,9 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
-// VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
-type VaultFinding = func(nameOrPath string) (domain.Vault, error)
-
 // RunnerOpener opens the command runner over a vault.
 type RunnerOpener = func(ctx context.Context, v domain.Vault) (Run, func() error, error)
 

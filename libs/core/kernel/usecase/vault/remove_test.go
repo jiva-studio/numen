@@ -7,13 +7,12 @@ import (
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
 func newRemove(registry *appstate.VaultRegistry) (vaults.Remove, *bin, *indexRows) {
 	erase, trash, index, _ := newErase(registry)
 	return vaults.NewRemove(
-		vaultregistry.NewFind(registry).Execute,
+		registry,
 		vaults.NewUnregister(registry, registry, index),
 		erase,
 	), trash, index
@@ -81,7 +80,7 @@ func TestRemove_RejectsUnlistedVault(t *testing.T) {
 
 	err := remove.Execute(t.Context(), "nothing", retained.ID, false)
 
-	if !errors.Is(err, vaultregistry.ErrUnknown) {
+	if !errors.Is(err, vaultdomain.ErrUnknown) {
 		t.Fatalf("error is %v, want ErrUnknown", err)
 	}
 }

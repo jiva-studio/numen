@@ -3,25 +3,27 @@ package plugincommand
 import (
 	"context"
 	"errors"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // RunByName runs a command in the vault a person names.
 type RunByName struct {
-	find VaultFinding
+	lookup vaultport.VaultLookup
 }
 
 // NewRunByName creates the use case that resolves the vault with find.
-func NewRunByName(find VaultFinding) RunByName {
-	return RunByName{find: find}
+func NewRunByName(lookup vaultport.VaultLookup) RunByName {
+	return RunByName{lookup: lookup}
 }
 
 // ExecuteByName resolves the vault, opens the command runner over it, and runs the command.
 func (u RunByName) ExecuteByName(
 	ctx context.Context, open RunnerOpener, nameOrPath string, call plugin.CommandCall,
 ) (_ plugin.CommandResult, err error) {
-	v, err := u.find(nameOrPath)
+	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
 		return plugin.CommandResult{}, err
 	}
@@ -43,7 +45,7 @@ func (u RunByName) ExecuteSharedByName(
 	ctx context.Context, open RunnerOpener, nameOrPath string, handlers []plugin.CommandEntry,
 	pluginID string, call plugin.CommandCall,
 ) (_ plugin.CommandResult, err error) {
-	v, err := u.find(nameOrPath)
+	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
 		return plugin.CommandResult{}, err
 	}

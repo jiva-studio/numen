@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
@@ -77,11 +78,10 @@ func openCLIVaults(vaultDeps vaultWiring) (cli.Vaults, error) {
 	if err != nil {
 		return cli.Vaults{}, err
 	}
-	find := registry.NewFind(ports.Lookup).Execute
 	return cli.Vaults{
 		Add:        vault.NewAdd(vaultIdentity(vaultDeps.Options), ports.Vaults, ports.Lookup, ports.Saver, vaultDeps.Clock),
 		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, vaultDeps.Readers),
-		RecordOpen: vault.NewRecordOpenByName(find, vault.NewRecordOpen(ports.Recorder)),
+		RecordOpen: vault.NewRecordOpenByName(ports.Lookup, vault.NewRecordOpen(ports.Recorder)),
 	}, nil
 }
 
@@ -150,7 +150,7 @@ func newCLIPreparations(index cliIndex, install pluginInstall, exec *PluginExecu
 }
 
 func newCLIIndexed(ports registry.Ports, db *vaultIndex, vaultDeps vaultWiring, prepare cliPreparations, notices modelcall.ReportSetAside) cli.Indexed {
-	find := registry.NewFind(ports.Lookup).Execute
+	find := ports.Lookup
 	unregister := vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
 	return cli.Indexed{
 		Changes: cli.VaultChanges{
@@ -214,7 +214,11 @@ func openCLIEmbedder(closers *[]func() error, source sourcebridge.Binding, ctx c
 }
 
 func getCLIPluginCommands(c Config, commands pluginCommandUseCases, openWork cliPluginWork, plugins textversion.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) cli.PluginCommands {
-	find := func(nameOrPath string) (domain.Vault, error) { return findCLIVault(c, nameOrPath) }
+	ports, err := vaultRegistry(vaultDeps.RegistryPath)
+	find := ports.Lookup
+	if err != nil {
+		find = appstate.UnopenedRegistry{Err: err}
+	}
 	return cli.PluginCommands{
 		List:   commands.List,
 		ByName: plugincommand.NewRunByName(find),
@@ -226,14 +230,6 @@ func getCLIPluginCommands(c Config, commands pluginCommandUseCases, openWork cli
 			return commands.Run, closeWork, nil
 		},
 	}
-}
-
-func findCLIVault(c Config, nameOrPath string) (domain.Vault, error) {
-	ports, err := c.registry()
-	if err != nil {
-		return domain.Vault{}, err
-	}
-	return registry.NewFind(ports.Lookup).Execute(nameOrPath)
 }
 
 func openCLIPluginWork(openWork cliPluginWork, ctx context.Context, v domain.Vault, plugins textversion.TextPlugins, chunks noteChunkPolicy, vaultDeps vaultWiring) (func() error, error) {

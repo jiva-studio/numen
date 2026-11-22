@@ -104,12 +104,11 @@ func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vaultIndex, no
 	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Vaults())
 	identity := vaultIdentity(c.Options)
 	erase := vault.NewErase(identity, vaultTrash(c.Clock), unregister)
-	find := vaultregistry.NewFind(registry.Lookup)
 	return vaultUseCases{
 		Change: vaultChanging{
 			Add:        newAddVault(identity, c.Clock, registry),
 			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
-			Remove:     vault.NewRemove(find.Execute, unregister, erase),
+			Remove:     vault.NewRemove(registry.Lookup, unregister, erase),
 			Unregister: unregister,
 			Erase:      erase,
 		},

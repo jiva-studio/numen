@@ -27,18 +27,18 @@ func NewUnregister(vaults vaultport.VaultList, remover vaultport.VaultRemover, i
 
 // UnregisterByName takes the vault a person names off the list.
 type UnregisterByName struct {
-	find       VaultFinding
+	lookup     vaultport.VaultLookup
 	unregister Unregister
 }
 
 // NewUnregisterByName creates the use case that resolves the vault with find and unregisters it with unregister.
-func NewUnregisterByName(find VaultFinding, unregister Unregister) UnregisterByName {
-	return UnregisterByName{find: find, unregister: unregister}
+func NewUnregisterByName(lookup vaultport.VaultLookup, unregister Unregister) UnregisterByName {
+	return UnregisterByName{lookup: lookup, unregister: unregister}
 }
 
 // ExecuteByName resolves the vault and takes it off the list and out of the index.
 func (u UnregisterByName) ExecuteByName(ctx context.Context, nameOrPath string) (domain.Vault, error) {
-	v, err := u.find(nameOrPath)
+	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -72,23 +72,20 @@ func keepTheLastVault(vaults vaultport.VaultList, v domain.Vault) error {
 	return nil
 }
 
-// VaultFinding resolves what the user typed, a name, a path or an identity, into a vault on the list.
-type VaultFinding func(nameOrPath string) (domain.Vault, error)
-
 // Remove takes the vault named by an identity off the list, and moves its
 // folder to the trash when requested. The current vault is kept.
 type Remove struct {
-	find       VaultFinding
+	lookup     vaultport.VaultLookup
 	unregister Unregister
 	erase      Erase
 }
 
-func NewRemove(find VaultFinding, unregister Unregister, erase Erase) Remove {
-	return Remove{find: find, unregister: unregister, erase: erase}
+func NewRemove(lookup vaultport.VaultLookup, unregister Unregister, erase Erase) Remove {
+	return Remove{lookup: lookup, unregister: unregister, erase: erase}
 }
 
 func (u Remove) Execute(ctx context.Context, id string, showing domain.VaultID, trash bool) error {
-	v, err := u.find(id)
+	v, err := vaultdomain.FindByName(id, u.lookup.FindVault)
 	if err != nil {
 		return err
 	}
