@@ -18,8 +18,7 @@ import {
 import type { Scenario } from './scenario.js'
 
 /** How the label of a name says the name is related to the note it is under. */
-const NAME_RELATIONS =
-  '(?:parent of|child of|jump from|referenced by|reference to|linked both ways with)'
+const NAME_RELATIONS = '(?:parent of|child of|jump from|referenced by|reference to|linked both ways with)'
 
 export class PlexDriver {
   constructor(private readonly scenario: Scenario) {}
@@ -32,13 +31,9 @@ export class PlexDriver {
     // A note is absent from a plex that has not drawn yet, so an absence is read after the focus note is drawn.
     // The settings tab may be in front of the Plex tab, so the graph is looked up each time.
     const graph = getGraph(this.scenario.page)
-    if (!(await graph.isVisible()))
-      await this.scenario.page.locator('[role="tab"][data-workspace-tab^="plex"]').first().click()
+    if (!(await graph.isVisible())) await this.scenario.page.locator('[role="tab"][data-workspace-tab^="plex"]').first().click()
     await expect(graph).toBeVisible()
-    await expect(
-      graph.locator('.plex__node.plex__node--focus'),
-      'the plex draws no focus note',
-    ).toHaveCount(1)
+    await expect(graph.locator('.plex__node.plex__node--focus'), 'the plex draws no focus note').toHaveCount(1)
     return graph
   }
 
@@ -53,9 +48,7 @@ export class PlexDriver {
 
   private async getNode(title: string): Promise<Locator> {
     const graph = await this.getGraph()
-    return graph
-      .locator('.plex__node')
-      .and(graph.getByLabel(new RegExp(`^${escapeRegExp(title)}, `)))
+    return graph.locator('.plex__node').and(graph.getByLabel(new RegExp(`^${escapeRegExp(title)}, `)))
   }
 
   private async findNode(title: string): Promise<Locator> {
@@ -69,15 +62,9 @@ export class PlexDriver {
     const graph = await this.getGraph()
     const lifted = graph
       .locator('.plex__lifted')
-      .filter({
-        has: this.scenario.page
-          .locator('.plex__title-text')
-          .filter({ hasText: getWholeText(title) }),
-      })
+      .filter({ has: this.scenario.page.locator('.plex__title-text').filter({ hasText: getWholeText(title) }) })
     const node = await this.getNode(title)
-    const across = graph.locator(
-      `.plex__over-node[data-node=${JSON.stringify(await node.getAttribute('data-node'))}]`,
-    )
+    const across = graph.locator(`.plex__over-node[data-node=${JSON.stringify(await node.getAttribute('data-node'))}]`)
     return node.locator(selector).or(lifted.locator(selector)).or(across.locator(selector))
   }
 
@@ -92,9 +79,7 @@ export class PlexDriver {
   }
 
   async expectShowsHeading(heading: string, has: boolean): Promise<void> {
-    const headings = this.scenario.page
-      .locator('.headings__text')
-      .filter({ hasText: getWholeText(heading) })
+    const headings = this.scenario.page.locator('.headings__text').filter({ hasText: getWholeText(heading) })
     if (has) {
       await expect(headings).toHaveCount(1)
       return
@@ -113,10 +98,7 @@ export class PlexDriver {
 
   async enterHeading(heading: string, title: string): Promise<void> {
     await this.hoverNote(title)
-    await this.scenario.page
-      .locator('.headings__row')
-      .filter({ hasText: getWholeText(heading) })
-      .click()
+    await this.scenario.page.locator('.headings__row').filter({ hasText: getWholeText(heading) }).click()
   }
 
   async choose(reference: string, name: string): Promise<void> {
@@ -130,11 +112,7 @@ export class PlexDriver {
   }
 
   async expectShowsNotes(rows: readonly (readonly string[])[], has: boolean): Promise<void> {
-    for (const [relation = '', title = '', tag = ''] of getTableBody(
-      rows,
-      ['relation', 'title'],
-      ['tag'],
-    )) {
+    for (const [relation = '', title = '', tag = ''] of getTableBody(rows, ['relation', 'title'], ['tag'])) {
       await this.expectShowsNote(title, relation, has)
       if (tag !== '') await this.expectShowsTag(title, tag, has)
     }
@@ -142,14 +120,9 @@ export class PlexDriver {
 
   private async expectShowsTag(title: string, tag: string, has: boolean): Promise<void> {
     const { page } = this.scenario
-    const node = page
-      .locator('.plex__node')
-      .and(page.getByLabel(new RegExp(`^${escapeRegExp(title)}, `)))
+    const node = page.locator('.plex__node').and(page.getByLabel(new RegExp(`^${escapeRegExp(title)}, `)))
     const stack = (await this.getGraph()).locator('.plex__stack').filter({ has: node })
-    await expect(
-      stack.locator('[data-plex-tag]').filter({ hasText: getWholeText(tag) }),
-      `the plex shows the tag "${tag}" of the note titled "${title}"`,
-    ).toHaveCount(has ? 1 : 0)
+    await expect(stack.locator('[data-plex-tag]').filter({ hasText: getWholeText(tag) }), `the plex shows the tag "${tag}" of the note titled "${title}"`).toHaveCount(has ? 1 : 0)
   }
 
   /** The note is on every side of the focus note that the table names: the middle of its box is compared with the middle of the box of the focus. */
@@ -159,17 +132,9 @@ export class PlexDriver {
     for (const [title, side] of getTableBody(rows, ['title', 'side'])) {
       const sides = parseSides(side)
       await expect
-        .poll(
-          async () =>
-            isOnSides(
-              sides,
-              await getMiddle(await this.getPart(title, '.plex__box')),
-              await getMiddle(focus.locator('.plex__box')),
-            ),
-          {
-            message: `the note "${title}" is not ${side} of the focus note`,
-          },
-        )
+        .poll(async () => isOnSides(sides, await getMiddle(await this.getPart(title, '.plex__box')), await getMiddle(focus.locator('.plex__box'))), {
+          message: `the note "${title}" is not ${side} of the focus note`,
+        })
         .toBe(true)
     }
   }
@@ -216,11 +181,7 @@ export class PlexDriver {
   }
 
   /** Drags from the handle of a note in the direction of a relation, and picks or makes the note in the popover that opens there. */
-  async dragLine(
-    direction: string,
-    title: string,
-    target: { title: string; isNew: boolean },
-  ): Promise<void> {
+  async dragLine(direction: string, title: string, target: { title: string; isNew: boolean }): Promise<void> {
     const [dx, dy] = getDirectionStep(direction)
     await this.pressHandle(title)
     const middle = await getMiddle(await this.getPart(title, '.plex__box'))
@@ -241,10 +202,7 @@ export class PlexDriver {
     await this.hoverNote(title)
     await (await this.waitForHandle(title)).hover()
     await this.scenario.page.mouse.down()
-    await expect(
-      await this.getNode(title),
-      `the handle of the note titled "${title}" does not start a line`,
-    ).toContainClass('plex__node--source')
+    await expect(await this.getNode(title), `the handle of the note titled "${title}" does not start a line`).toContainClass('plex__node--source')
   }
 
   private async measureRoom(from: Point, dx: number, dy: number): Promise<number> {
@@ -258,14 +216,10 @@ export class PlexDriver {
   private async expectEmptyPlace(at: Point): Promise<void> {
     // A line that ends on a note links it: the end of a line that makes a note is on no note.
     const isOnNote = await this.scenario.page.evaluate(
-      ([x, y]) =>
-        document.elementsFromPoint(x, y).some((one) => one.closest('.plex__node') !== null),
+      ([x, y]) => document.elementsFromPoint(x, y).some((one) => one.closest('.plex__node') !== null),
       [at.x, at.y] as const,
     )
-    if (isOnNote)
-      throw new Error(
-        `the line would end on a note, at ${Math.round(at.x)} and ${Math.round(at.y)}: the plex has no empty place there`,
-      )
+    if (isOnNote) throw new Error(`the line would end on a note, at ${Math.round(at.x)} and ${Math.round(at.y)}: the plex has no empty place there`)
   }
 
   private async release(at: Point): Promise<void> {
@@ -275,20 +229,15 @@ export class PlexDriver {
   }
 
   private async getName(name: string, title: string): Promise<Locator> {
-    return (await this.getGraph()).getByRole('button', {
-      name: new RegExp(`^${escapeRegExp(name)}, ${NAME_RELATIONS} ${escapeRegExp(title)}$`),
-    })
+    return (await this.getGraph()).getByRole('button', { name: new RegExp(`^${escapeRegExp(name)}, ${NAME_RELATIONS} ${escapeRegExp(title)}$`) })
   }
 
   async expectShowsNames(rows: readonly (readonly string[])[]): Promise<void> {
-    for (const [title, name] of getTableBody(rows, ['note', 'name']))
-      await expect(await this.getName(name, title)).toHaveCount(1)
+    for (const [title, name] of getTableBody(rows, ['note', 'name'])) await expect(await this.getName(name, title)).toHaveCount(1)
   }
 
   async expectShowsNoNames(title: string): Promise<void> {
-    const nameButtons = (await this.getGraph()).getByRole('button', {
-      name: new RegExp(`, ${NAME_RELATIONS} ${escapeRegExp(title)}$`),
-    })
+    const nameButtons = (await this.getGraph()).getByRole('button', { name: new RegExp(`, ${NAME_RELATIONS} ${escapeRegExp(title)}$`) })
     await expect(nameButtons).toHaveCount(0)
   }
 
@@ -298,23 +247,14 @@ export class PlexDriver {
 
   private async getLine(first: string, second: string): Promise<Locator> {
     const names = `${escapeRegExp(first)} to ${escapeRegExp(second)}|${escapeRegExp(second)} to ${escapeRegExp(first)}`
-    return (await this.getGraph()).getByRole('button', {
-      name: new RegExp(`^Line from (${names})(, arrow to .+)*$`),
-    })
+    return (await this.getGraph()).getByRole('button', { name: new RegExp(`^Line from (${names})(, arrow to .+)*$`) })
   }
 
   /** The line joins the two notes, in either order; an arrow names the note it points to, `NO_ARROW` says it has none, and no arrow asks nothing of it. */
   async expectDrawsLine(first: string, second: string, arrow: string | undefined): Promise<void> {
     const pair = `${escapeRegExp(first)} to ${escapeRegExp(second)}|${escapeRegExp(second)} to ${escapeRegExp(first)}`
-    const end =
-      arrow === undefined
-        ? '(, arrow to .+)?'
-        : arrow === NO_ARROW
-          ? ''
-          : `, arrow to ${escapeRegExp(arrow)}`
-    const line = (await this.getGraph()).getByRole('button', {
-      name: new RegExp(`^Line from (${pair})${end}$`),
-    })
+    const end = arrow === undefined ? '(, arrow to .+)?' : arrow === NO_ARROW ? '' : `, arrow to ${escapeRegExp(arrow)}`
+    const line = (await this.getGraph()).getByRole('button', { name: new RegExp(`^Line from (${pair})${end}$`) })
     await expect(line).toHaveCount(1)
   }
 
@@ -346,10 +286,7 @@ export class PlexDriver {
     const rows = inspector.locator('.plex-link-row')
     const authors = await rows.evaluateAll((all) => all.map((row) => row.getAttribute('data-from')))
     const index = authors.indexOf(from)
-    if (index < 0)
-      throw new Error(
-        `the link inspector has no row of the link from "${from}": its rows are from ${authors.join(' and ') || 'nobody'}`,
-      )
+    if (index < 0) throw new Error(`the link inspector has no row of the link from "${from}": its rows are from ${authors.join(' and ') || 'nobody'}`)
     return rows.nth(index)
   }
 
@@ -363,17 +300,14 @@ export class PlexDriver {
         await expect(button).not.toHaveAttribute('aria-label', name)
       }
     }
-    throw new Error(
-      `the arrow button of the link does not show "${arrow}" after ${MAX_ARROW_CLICKS} clicks`,
-    )
+    throw new Error(`the arrow button of the link does not show "${arrow}" after ${MAX_ARROW_CLICKS} clicks`)
   }
 
   private async fillRow(row: Locator, fields: readonly (readonly string[])[]): Promise<void> {
     for (const [field, value] of fields) {
       if (field === 'Description') await row.getByLabel('Link description').fill(value)
       else if (field === 'Arrow') await this.setArrow(row, value)
-      else
-        throw new Error(`the link inspector has no field "${field}": it has Arrow and Description`)
+      else throw new Error(`the link inspector has no field "${field}": it has Arrow and Description`)
     }
   }
 
@@ -382,21 +316,13 @@ export class PlexDriver {
     await expect(inspector).toBeHidden()
   }
 
-  async changeLink(
-    from: string,
-    to: string,
-    fields: readonly (readonly string[])[],
-  ): Promise<void> {
+  async changeLink(from: string, to: string, fields: readonly (readonly string[])[]): Promise<void> {
     const inspector = await this.openInspector(from, to)
     await this.fillRow(await this.getRow(inspector, from), fields)
     await this.finish(inspector)
   }
 
-  async cancelLinkChange(
-    from: string,
-    to: string,
-    fields: readonly (readonly string[])[],
-  ): Promise<void> {
+  async cancelLinkChange(from: string, to: string, fields: readonly (readonly string[])[]): Promise<void> {
     const inspector = await this.openInspector(from, to)
     await this.fillRow(await this.getRow(inspector, from), fields)
     await inspector.getByRole('button', { name: 'Cancel' }).click()
@@ -435,9 +361,7 @@ export class PlexDriver {
   }
 
   async chooseMenuItem(item: string): Promise<void> {
-    const menuItem = this.scenario.page
-      .getByRole('menu')
-      .getByRole('menuitem', { name: item, exact: true })
+    const menuItem = this.scenario.page.getByRole('menu').getByRole('menuitem', { name: item, exact: true })
     await expect(menuItem, `the menu has no item "${item}"`).toHaveCount(1)
     await menuItem.click()
   }
@@ -453,16 +377,12 @@ export class PlexDriver {
     return (await items.allInnerTexts()).map((text) => text.trim())
   }
 
-  async expectMenuItems(
-    rows: readonly (readonly string[])[],
-    rule: 'only' | 'include' | 'exclude',
-  ): Promise<void> {
+  async expectMenuItems(rows: readonly (readonly string[])[], rule: 'only' | 'include' | 'exclude'): Promise<void> {
     const wanted = getTableBody(rows, ['item']).map(([item]) => item)
     await expect
       .poll(async () => {
         const items = await this.listMenuItems()
-        if (rule === 'only')
-          return wanted.length === items.length && wanted.every((item) => items.includes(item))
+        if (rule === 'only') return wanted.length === items.length && wanted.every((item) => items.includes(item))
         if (rule === 'include') return wanted.every((item) => items.includes(item))
         return wanted.every((item) => !items.includes(item))
       })
