@@ -10,9 +10,10 @@ import { createRequestGuard, runInBackground } from '@numen/ui'
 import type { PluginInfo } from '@/entities/settings'
 import { formatError } from '@/shared/api/errors'
 import type { JsonValue } from '@/shared/api/json'
+import { keepEqual } from '../lib/keepEqual'
 import { createManagedFromEntries } from '../lib/pluginListing'
 import { hasPluginSettings } from '../lib/pluginSettings'
-import type { InstallationPlugin, InstallationSettings } from '../types'
+import type { InstallationPlugin, InstallationSettings, SlotGroup } from '../types'
 import { createPluginSettings } from './createPluginSettings'
 
 export interface PluginDetailDeps {
@@ -76,7 +77,9 @@ export function usePluginDetail(deps: PluginDetailDeps) {
   )
 
   const hasSettings = computed(() => hasPluginSettings(deps.getPlugin()))
-  const slotGroups = computed(() => deps.getManager().getSlotGroups?.(deps.getPlugin().id) ?? [])
+  const slotGroups = computed<readonly SlotGroup[]>((held) =>
+    keepEqual(held, deps.getManager().getSlotGroups?.(deps.getPlugin().id) ?? []),
+  )
   const isApple = computed(() => deps.getSettings().getPlatform() === 'darwin')
   /** How many files the plugin keeps in the shown vault; zero hides the delete action. */
   const fileCount = ref(0)

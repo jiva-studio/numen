@@ -6,6 +6,7 @@
 import { computed } from 'vue'
 import { PluginDetail as PluginDetailView } from '@numen/plugin-manager'
 import type { PluginInfo } from '@/entities/settings'
+import type { JsonValue } from '@/shared/api/json'
 import { usePluginDetail, usePluginSwitch } from '../../model/usePluginDetail'
 import { usePluginFields } from '../../model/usePluginFields'
 import type {
@@ -18,6 +19,7 @@ import PluginConnectionSections from './PluginConnectionSections.vue'
 import PluginSettings from './PluginSettings.vue'
 import PluginSlots from './PluginSlots.vue'
 import { getManagedHealth, getMarkedSettings } from '../../lib/pluginHealth'
+import { keepEqual } from '../../lib/keepEqual'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
@@ -51,6 +53,9 @@ const {
 } = usePluginDetail(detailDeps)
 const { isEnabled, isPending, setEnabled, retry } = usePluginSwitch(detailDeps)
 const slotsKey = computed(() => props.plugin.settings.find((one) => one.type === 'slots')?.key)
+const slotsLayout = computed<JsonValue | undefined>((held) =>
+  keepEqual(held, slotsKey.value === undefined ? undefined : fields.getValue(slotsKey.value)),
+)
 const hasSlots = computed(() => slotsKey.value !== undefined && slotGroups.value.length > 0)
 const fields = usePluginFields({
   getSettings: () => props.settings,
@@ -113,7 +118,7 @@ function onRunAction(key: string): void {
       <PluginSlots
         v-if="slotsKey !== undefined"
         :groups="slotGroups"
-        :layout="fields.getValue(slotsKey ?? '')"
+        :layout="slotsLayout"
         @change="(layout) => fields.setSetting(slotsKey ?? '', layout)"
       />
     </template>

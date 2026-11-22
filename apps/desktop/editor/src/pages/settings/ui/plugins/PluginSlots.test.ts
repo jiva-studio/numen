@@ -198,3 +198,58 @@ describe('the slots of a plugin page', () => {
     expect(page.find('[aria-label^="Reset"]').exists()).toBe(false)
   })
 })
+
+describe('the slots of a plugin page while a row is held', () => {
+  const press = (page: ReturnType<typeof mount>) => {
+    const grip = page.get('[aria-label="Reorder one"]').element
+    grip.dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, button: 0, clientY: 10, pointerId: 1 }),
+    )
+    for (const y of [20, 30])
+      window.dispatchEvent(
+        new PointerEvent('pointermove', { bubbles: true, clientY: y, pointerId: 1 }),
+      )
+  }
+
+  it('keep the row held and the others shifting when the groups are read again equal', async () => {
+    const page = mount(PluginSlots, {
+      props: { groups, layout: undefined },
+      attachTo: document.body,
+    })
+    press(page)
+    await page.vm.$nextTick()
+    const held = (): boolean =>
+      page
+        .get('[data-testid="slots-plexGraph.nodeBelow"] li')
+        .classes()
+        .includes('plugin-slots__row--lifted')
+    expect(held()).toBe(true)
+
+    await page.setProps({ groups: structuredClone(groups) })
+
+    expect(held()).toBe(true)
+    expect(page.find('.plugin-slots__list--pressed').exists()).toBe(true)
+    page.unmount()
+  })
+
+  it('create no row again when the groups are read again equal', async () => {
+    let mounted = 0
+    const page = mount(PluginSlots, {
+      props: { groups, layout: undefined },
+      global: {
+        mixins: [
+          {
+            mounted() {
+              mounted += 1
+            },
+          },
+        ],
+      },
+    })
+    const before = mounted
+
+    await page.setProps({ groups: structuredClone(groups), layout: { x: [] } })
+
+    expect(mounted).toBe(before)
+  })
+})

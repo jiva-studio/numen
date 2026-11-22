@@ -20,6 +20,9 @@ interface Pressed {
   readonly row: HTMLElement | null
 }
 
+const isOfGroup = (held: Pressed | null, group: SlotGroup): boolean =>
+  held?.group.slot === group.slot
+
 function measureSpans(list: Element | null | undefined): readonly RowSpan[] {
   return Array.from(list?.children ?? [], (one) => {
     const { top, height } = measureRect(one)
@@ -93,10 +96,10 @@ export function useSlotDrag(source: SlotDragSource) {
   }
 
   const isPressed = (group: SlotGroup): boolean =>
-    pressed?.group === group && drag.dragging.value !== null
+    isOfGroup(pressed, group) && drag.dragging.value !== null
 
   const isDragging = (group: SlotGroup): boolean =>
-    pressed?.group === group && drag.dragging.value?.hasMoved === true && drag.at.value !== null
+    isOfGroup(pressed, group) && drag.dragging.value?.hasMoved === true && drag.at.value !== null
 
   const getRowClass = (group: SlotGroup, key: string): Record<string, boolean> => {
     const isHeld = pressed?.key === key
@@ -110,7 +113,8 @@ export function useSlotDrag(source: SlotDragSource) {
 
   const getShift = (group: SlotGroup, key: string, at: number): number => {
     const from = drag.dragging.value?.item
-    if (!pressed || pressed.group !== group || from === undefined || key === pressed.key) return 0
+    if (!pressed || !isOfGroup(pressed, group) || from === undefined || key === pressed.key)
+      return 0
     const pitch = pressed.spans[from]?.height ?? 0
     return getRowShifts(source.getRows(group).length, from, drag.at.value ?? from, pitch)[at] ?? 0
   }

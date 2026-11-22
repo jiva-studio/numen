@@ -36,6 +36,7 @@ const PLUGIN_KEYS = [
   'retryPlugin',
   'choosePath',
   'getSettingsViews',
+  'getSlotGroups',
 ]
 const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
 const HEALTH_KEYS = ['items', 'canRunCommand', 'runCommand']
