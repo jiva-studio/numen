@@ -17,6 +17,11 @@ import (
 
 const notReadyWarning = "the task index is still being built, so the answer may be incomplete"
 
+// Vaults opens the tasks of the vault a call names.
+type Vaults interface {
+	GetTasks(ctx context.Context, vaultID string) (Tasks, error)
+}
+
 // Tasks lists the notes that hold a task a filter accepts.
 type Tasks interface {
 	ListPaths(today string, f filter.Filter) index.PathListing
@@ -25,11 +30,11 @@ type Tasks interface {
 // buildFilter returns the filter a call stands for, at today.
 type buildFilter func(call searchfunction.Call, today string) (filter.Filter, error)
 
-// New returns the registry of the query functions over the tasks of the index and the day of the clock.
-func New(tasks Tasks, clock ports.Clock) (*searchfunction.Registry, error) {
+// New returns the registry of the query functions over the tasks of the vault each call names and the day of the clock.
+func New(vaults Vaults, clock ports.Clock) (*searchfunction.Registry, error) {
 	registry := searchfunction.New()
 	for name, build := range builders() {
-		if err := registry.Add(name, newFunction(build, tasks, clock)); err != nil {
+		if err := registry.Add(name, newFunction(build, vaults, clock)); err != nil {
 			return nil, err
 		}
 	}
@@ -128,8 +133,12 @@ func invalid(format string, args ...any) error {
 	return fmt.Errorf("%w: %s", searchfunction.ErrInvalidArguments, fmt.Sprintf(format, args...))
 }
 
-func newFunction(build buildFilter, tasks Tasks, clock ports.Clock) searchfunction.Function {
-	list := func(call searchfunction.Call) ([]string, string, error) {
+func newFunction(build buildFilter, vaults Vaults, clock ports.Clock) searchfunction.Function {
+	list := func(ctx context.Context, call searchfunction.Call) ([]string, string, error) {
+		tasks, err := vaults.GetTasks(ctx, call.VaultID)
+		if err != nil {
+			return nil, "", err
+		}
 		today := clock.GetToday()
 		f, err := build(call, today)
 		if err != nil {
@@ -142,8 +151,8 @@ func newFunction(build buildFilter, tasks Tasks, clock ports.Clock) searchfuncti
 		return listing.Paths, "", nil
 	}
 	return searchfunction.Function{
-		Match: func(_ context.Context, call searchfunction.Call, asked []string) (searchfunction.Matched, error) {
-			paths, warning, err := list(call)
+		Match: func(ctx context.Context, call searchfunction.Call, asked []string) (searchfunction.Matched, error) {
+			paths, warning, err := list(ctx, call)
 			if err != nil {
 				return searchfunction.Matched{}, err
 			}
@@ -153,8 +162,8 @@ func newFunction(build buildFilter, tasks Tasks, clock ports.Clock) searchfuncti
 			})
 			return searchfunction.Matched{Paths: matched, Warning: warning}, nil
 		},
-		Find: func(_ context.Context, call searchfunction.Call, limit int) (searchfunction.Found, error) {
-			paths, warning, err := list(call)
+		Find: func(ctx context.Context, call searchfunction.Call, limit int) (searchfunction.Found, error) {
+			paths, warning, err := list(ctx, call)
 			if err != nil {
 				return searchfunction.Found{}, err
 			}

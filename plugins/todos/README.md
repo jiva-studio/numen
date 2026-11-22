@@ -37,7 +37,7 @@ A date that is not `YYYY-MM-DD`, negative `days`, an empty name or text, and a p
 
 ## Tools
 
-The plugin has the capability `tools`.
+The plugin has the capability `tools`. Tools and query functions work the vault of the call; a call that names no vault is refused, and the plugin keeps one index of tasks for each vault a call names.
 
 - `task_list`: Lists tasks with `path`, `line`, `text`, `status`, `due`, `priority`, `projects` and `contexts`. Filters: `status` (`open`, `done`, `all`), `due` (`any`, `none`, `overdue`, `today`, `thisWeek`, `range` with `from` and `to`), `project`, `context`, `priority`, `path` (a note, or a folder ending in `/`), `text` and `limit` (100, at most 500).
 - `task_add`: Appends `- [ ] text` to an existing note.

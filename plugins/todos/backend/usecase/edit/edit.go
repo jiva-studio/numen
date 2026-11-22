@@ -46,7 +46,6 @@ func New(files ports.FileReader, writer ports.FileWriter, store ports.NoteStore)
 	return &Editor{files: files, writer: writer, store: store, mu: sync.Mutex{}}
 }
 
-// Find returns the task at the line of the note.
 func (e *Editor) Find(ctx context.Context, path string, line int) (todo.Task, error) {
 	raw, _, err := e.files.Read(ctx, path)
 	if err != nil {
@@ -179,8 +178,6 @@ func findAt(raw []byte, path string, line int, expected string) (todo.Task, erro
 	return todo.Task{}, ErrNotTask
 }
 
-// replaceLine returns the note with the 1-based line replaced by text, keeping the line ending
-// the line had. An empty text removes the line and its ending.
 func replaceLine(raw []byte, line int, text string) []byte {
 	lines := bytes.SplitAfter(raw, []byte("\n"))
 	old := lines[line-1]

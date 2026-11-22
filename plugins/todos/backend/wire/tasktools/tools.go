@@ -33,7 +33,6 @@ type TaskListInput struct {
 	Limit    int    `json:"limit,omitempty" jsonschema:"the most tasks to return, 100 by default and at most 500"`
 }
 
-// TaskListOutput is the tasks of task_list.
 type TaskListOutput struct {
 	Tasks []TaskOutput `json:"tasks" jsonschema:"the tasks ordered by due date (none last), then priority, then path and line"`
 	Total int          `json:"total" jsonschema:"how many tasks match before the limit"`
@@ -45,7 +44,11 @@ func (t *Tools) addTaskList(registry *tools.Registry) error {
 		Title:       "List tasks",
 		Description: "List the tasks written in the notes of the vault, with their path, line, text, status, due date, priority, projects and contexts. The filters combine with AND. " + fieldsSentence,
 		Effect:      tools.ReadOnly,
-	}, func(_ context.Context, in TaskListInput) (TaskListOutput, error) {
+	}, func(ctx context.Context, in TaskListInput) (TaskListOutput, error) {
+		scope, err := t.getScope(ctx)
+		if err != nil {
+			return TaskListOutput{}, err
+		}
 		f, err := readFilter(in)
 		if err != nil {
 			return TaskListOutput{}, err
@@ -54,7 +57,7 @@ func (t *Tools) addTaskList(registry *tools.Registry) error {
 		if limit <= 0 {
 			limit = defaultLimit
 		}
-		listing := t.tasks.List(t.clock.GetToday(), f, min(limit, maxLimit))
+		listing := scope.Tasks.List(t.clock.GetToday(), f, min(limit, maxLimit))
 		out := TaskListOutput{Tasks: make([]TaskOutput, 0, len(listing.Tasks)), Total: listing.Total}
 		for _, task := range listing.Tasks {
 			out.Tasks = append(out.Tasks, encodeTask(task))
@@ -142,7 +145,11 @@ func (t *Tools) addTaskAdd(registry *tools.Registry) error {
 		Effect:       tools.ReadWrite,
 		Instructions: []string{fieldsSentence, conflictSentence},
 	}, func(ctx context.Context, in TaskAddInput) (TaskOutput, error) {
-		task, err := t.editor.Add(ctx, in.Path, in.Text)
+		scope, err := t.getScope(ctx)
+		if err != nil {
+			return TaskOutput{}, err
+		}
+		task, err := scope.Editor.Add(ctx, in.Path, in.Text)
 		return encodeTask(task), describe(in.Path, err)
 	})
 }
@@ -162,11 +169,15 @@ func (t *Tools) addTaskSetDone(registry *tools.Registry) error {
 		Effect:       tools.ReadWrite,
 		Instructions: []string{lineSentence, conflictSentence},
 	}, func(ctx context.Context, in TaskSetDoneInput) (TaskOutput, error) {
-		found, err := t.editor.Find(ctx, in.Path, in.Line)
+		scope, err := t.getScope(ctx)
+		if err != nil {
+			return TaskOutput{}, err
+		}
+		found, err := scope.Editor.Find(ctx, in.Path, in.Line)
 		if err != nil {
 			return TaskOutput{}, describe(in.Path, err)
 		}
-		result, err := t.completer.Execute(ctx, complete.Request{
+		result, err := scope.Completer.Execute(ctx, complete.Request{
 			Path: in.Path, Line: in.Line, Raw: found.Raw, IsDone: in.IsDone, Today: t.clock.GetToday(),
 		})
 		if err != nil {
@@ -196,12 +207,15 @@ func (t *Tools) addTaskEdit(registry *tools.Registry) error {
 		Effect:       tools.ReadWrite,
 		Instructions: []string{fieldsSentence, lineSentence, conflictSentence},
 	}, func(ctx context.Context, in TaskEditInput) (TaskOutput, error) {
-		task, err := t.editor.Edit(ctx, in.Path, in.Line, in.ExpectedText, in.Text)
+		scope, err := t.getScope(ctx)
+		if err != nil {
+			return TaskOutput{}, err
+		}
+		task, err := scope.Editor.Edit(ctx, in.Path, in.Line, in.ExpectedText, in.Text)
 		return encodeTask(task), describe(in.Path, err)
 	})
 }
 
-// TaskRemoveInput names the task to remove.
 type TaskRemoveInput struct {
 	Path         string `json:"path" jsonschema:"the path of the note"`
 	Line         int    `json:"line" jsonschema:"the line of the task from task_list"`
@@ -216,7 +230,11 @@ func (t *Tools) addTaskRemove(registry *tools.Registry) error {
 		Effect:       tools.ReadWrite,
 		Instructions: []string{lineSentence, conflictSentence},
 	}, func(ctx context.Context, in TaskRemoveInput) (TaskOutput, error) {
-		task, err := t.editor.Remove(ctx, in.Path, in.Line, in.ExpectedText)
+		scope, err := t.getScope(ctx)
+		if err != nil {
+			return TaskOutput{}, err
+		}
+		task, err := scope.Editor.Remove(ctx, in.Path, in.Line, in.ExpectedText)
 		return encodeTask(task), describe(in.Path, err)
 	})
 }

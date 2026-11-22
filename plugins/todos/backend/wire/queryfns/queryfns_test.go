@@ -1,6 +1,7 @@
 package queryfns_test
 
 import (
+	"context"
 	"net/http/httptest"
 	"slices"
 	"strings"
@@ -22,6 +23,11 @@ const (
 type fixedClock struct{}
 
 func (fixedClock) GetToday() string { return today }
+
+// oneVault answers every call with the tasks of one vault.
+type oneVault struct{ tasks *index.Index }
+
+func (o oneVault) GetTasks(context.Context, string) (queryfns.Tasks, error) { return o.tasks, nil }
 
 func getNotes() map[string]string {
 	return map[string]string{
@@ -49,7 +55,7 @@ func newClient(t *testing.T) *searchfunctiontest.Client {
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := queryfns.New(tasks, fixedClock{})
+	registry, err := queryfns.New(oneVault{tasks: tasks}, fixedClock{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +177,7 @@ func TestInvalidArgumentsFailTheQueryWithAMessage(t *testing.T) {
 
 func TestAnAnswerBeforeTheFirstScanCarriesAWarning(t *testing.T) {
 	vault := hosttest.New("notes")
-	registry, err := queryfns.New(index.NewForNotes(vault, vault, vault), fixedClock{})
+	registry, err := queryfns.New(oneVault{tasks: index.NewForNotes(vault, vault, vault)}, fixedClock{})
 	if err != nil {
 		t.Fatal(err)
 	}

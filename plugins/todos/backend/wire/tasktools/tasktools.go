@@ -37,17 +37,31 @@ type Completer interface {
 	Execute(ctx context.Context, req complete.Request) (complete.Result, error)
 }
 
-// Tools provides the task tools over the index, the editor and the tick of a checkbox.
+// Scope is what the tools use of one vault: its tasks, its editor and the tick of its checkboxes.
+type Scope struct {
+	Tasks     Tasks
+	Editor    Editor
+	Completer Completer
+}
+
+// Vaults opens the scope of the vault a call names. It refuses an empty identity.
+type Vaults interface {
+	GetScope(ctx context.Context, vaultID string) (Scope, error)
+}
+
+// Tools provides the task tools over the vault each call names.
 type Tools struct {
-	tasks     Tasks
-	editor    Editor
-	completer Completer
-	clock     ports.Clock
+	vaults Vaults
+	clock  ports.Clock
 }
 
 // New returns the tools; the clock gives the day the due filters compare with.
-func New(tasks Tasks, editor Editor, completer Completer, clock ports.Clock) *Tools {
-	return &Tools{tasks: tasks, editor: editor, completer: completer, clock: clock}
+func New(vaults Vaults, clock ports.Clock) *Tools {
+	return &Tools{vaults: vaults, clock: clock}
+}
+
+func (t *Tools) getScope(ctx context.Context) (Scope, error) {
+	return t.vaults.GetScope(ctx, tools.GetVault(ctx))
 }
 
 // Registry builds the registry of the five tools.

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/todos/backend/api"
 	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/clock"
@@ -16,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/snapshot"
 	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
-	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/edit"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
 	"github.com/jiva-studio/numen/plugins/todos/backend/wire/queryfns"
 	"github.com/jiva-studio/numen/plugins/todos/backend/wire/tasktools"
@@ -127,14 +127,12 @@ func setTaskDone(done *complete.SetTaskDone) func(context.Context, api.SetTaskDo
 	}
 }
 
-func mountAgentSurface(
-	s *server.Server, tasks *index.Index, done *complete.SetTaskDone, editor *edit.Editor, today ports.Clock,
-) error {
-	functions, err := queryfns.New(tasks, today)
+func mountAgentSurface(s *server.Server, vaults *Vaults, today ports.Clock) error {
+	functions, err := queryfns.New(vaults, today)
 	if err != nil {
 		return err
 	}
-	registry, err := tasktools.New(tasks, editor, done, today).Registry()
+	registry, err := tasktools.New(vaults, today).Registry()
 	if err != nil {
 		return err
 	}
@@ -143,7 +141,7 @@ func mountAgentSurface(
 	return nil
 }
 
-func mount(s *server.Server, tasks *index.Index, done *complete.SetTaskDone) error {
+func mount(s *server.Server, tasks *index.Index, done *complete.SetTaskDone, vaults *Vaults) error {
 	ctx := getClosedContext(s)
 	s.SetUpdateConfig(func(values map[string]string) {
 		folders, isSet := values[ignoredKey]
@@ -152,6 +150,9 @@ func mount(s *server.Server, tasks *index.Index, done *complete.SetTaskDone) err
 		}
 		// A failure leaves the folders set; the next full check of the index catches up.
 		ignore(tasks.SetIgnoredFolders(ctx, folders))
+		if vaults != nil {
+			vaults.SetIgnoredFolders(ctx, folders)
+		}
 	})
 	a := s.NewAPI(api.Service)
 	server.Handle(a, api.MethodGetSummary, getSummary(tasks))
@@ -171,11 +172,12 @@ func Mount(s *server.Server) error {
 	}
 	tasks := index.NewForNotes(vault, vault, vault)
 	tasks.Persist(index.Persistence{Snapshots: snapshot.New(""), Feed: vault, After: index.SystemAfter, Cursors: snapshot.NewCursorStore})
+	vaults := NewVaults(func(id domain.VaultID) Notes { return vault.With(id) })
 	done := complete.New(vault, vault, tasks)
-	if err := mount(s, tasks, done); err != nil {
+	if err := mount(s, tasks, done, vaults); err != nil {
 		return err
 	}
-	if err := mountAgentSurface(s, tasks, done, edit.New(vault, vault, tasks), clock.System{}); err != nil {
+	if err := mountAgentSurface(s, vaults, clock.System{}); err != nil {
 		return err
 	}
 	ctx := getClosedContext(s)

@@ -46,3 +46,8 @@ func (v *Vault) ListFileChanges(ctx context.Context, q sdkhost.FileChangeQuery) 
 func (v *Vault) ReadFrontmatter(ctx context.Context, q sdkhost.FrontmatterQuery) (sdkhost.FrontmatterPage, error) {
 	return v.client.ReadFrontmatter(ctx, q)
 }
+
+// With returns the notes of the vault with the given identity.
+func (v *Vault) With(id domain.VaultID) *Vault {
+	return &Vault{client: v.client.With(id)}
+}

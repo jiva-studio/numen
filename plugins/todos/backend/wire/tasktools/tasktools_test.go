@@ -1,6 +1,7 @@
 package tasktools_test
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"slices"
@@ -20,6 +21,11 @@ const today = "2026-11-14"
 type fixedClock struct{}
 
 func (fixedClock) GetToday() string { return today }
+
+// oneVault answers every call with the scope of one vault.
+type oneVault struct{ scope tasktools.Scope }
+
+func (o oneVault) GetScope(context.Context, string) (tasktools.Scope, error) { return o.scope, nil }
 
 const homeNote = "# Home\n" +
 	"- [ ] (A) call bank +money @phone due:2026-11-10\n" +
@@ -42,7 +48,7 @@ func newSession(t *testing.T) *session {
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := tasktools.New(tasks, edit.New(vault, vault, tasks), complete.New(vault, vault, tasks), fixedClock{}).Registry()
+	registry, err := tasktools.New(oneVault{scope: tasktools.Scope{Tasks: tasks, Editor: edit.New(vault, vault, tasks), Completer: complete.New(vault, vault, tasks)}}, fixedClock{}).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +61,7 @@ func (s *session) invoke(t *testing.T, name string, args any) (text string, stru
 	if err != nil {
 		t.Fatal(err)
 	}
-	res, err := s.registry.InvokeTool(t.Context(), tools.Call{Name: name, Arguments: raw})
+	res, err := s.registry.InvokeTool(t.Context(), tools.Call{Name: name, Arguments: raw, VaultID: "notes"})
 	if err != nil {
 		t.Fatalf("%s: %v", name, err)
 	}
