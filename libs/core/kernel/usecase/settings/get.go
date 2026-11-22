@@ -13,7 +13,6 @@ type Current struct {
 	Path    string
 	Plugins []plugin.Info
 	App     []plugin.Setting
-	// AppGroups are the groups the settings of the app name, in the order their islands are drawn.
 	AppGroups []manifest.SettingGroup
 }
 
