@@ -204,7 +204,7 @@ func newLazyPluginFrom(t *testing.T, dependencies *provision.Registry, manifest 
 func newLazyPlugin(t *testing.T, source *modelSource) lazyPlugin {
 	t.Helper()
 	t.Setenv(source.envName(sampleRuntime), "")
-	return newLazyPluginFrom(t, provision.NewRegistry(source), newBuiltInManifest(firstBuiltInID, sampleRuntime))
+	return newLazyPluginFrom(t, provision.NewObservedRegistry(nil, source), newBuiltInManifest(firstBuiltInID, sampleRuntime))
 }
 
 func (p lazyPlugin) listTools(t *testing.T) []string {
@@ -526,7 +526,7 @@ func newDownloadFixture(t *testing.T, data []byte, offline bool) (lazyPlugin, *a
 	}))
 	t.Cleanup(server.Close)
 	dir := t.TempDir()
-	registry := provision.NewRegistry(provision.NewFileProvisioner(provision.Config{
+	registry := provision.NewObservedRegistry(nil, provision.NewFileProvisioner(provision.Config{
 		Dir: dir, Offline: offline, Client: server.Client(), Clock: testsupport.NewClock(),
 	}))
 	t.Setenv("NUMEN_DEPENDENCY_SPEECH_MODEL", "")
@@ -590,7 +590,7 @@ func TestAModelWithAWrongChecksumFailsAtTheFirstUse(t *testing.T) {
 		}
 	}))
 	t.Cleanup(server.Close)
-	registry := provision.NewRegistry(provision.NewFileProvisioner(provision.Config{
+	registry := provision.NewObservedRegistry(nil, provision.NewFileProvisioner(provision.Config{
 		Dir: t.TempDir(), Client: server.Client(), Clock: testsupport.NewClock(),
 	}))
 	t.Setenv("NUMEN_DEPENDENCY_SPEECH_MODEL", "")
@@ -610,7 +610,7 @@ func TestAModelWithAWrongChecksumFailsAtTheFirstUse(t *testing.T) {
 }
 
 func TestAModelOfAnotherPlatformFailsAtTheFirstUse(t *testing.T) {
-	registry := provision.NewRegistry(provision.NewFileProvisioner(provision.Config{Dir: t.TempDir(), Clock: testsupport.NewClock()}))
+	registry := provision.NewObservedRegistry(nil, provision.NewFileProvisioner(provision.Config{Dir: t.TempDir(), Clock: testsupport.NewClock()}))
 	t.Setenv("NUMEN_DEPENDENCY_SPEECH_MODEL", "")
 	p := newLazyPluginFrom(t, registry, newModelManifest(fmt.Sprintf(
 		`{"id": "speech-model", "kind": "model", "version": "1", "sources": [{"platform": "plan9/mips64", "sourceUrl": "https://models.invalid/speech.bin", "checksumSha256": %q}]}`,
@@ -629,7 +629,7 @@ func TestAModelOfAnotherPlatformFailsAtTheFirstUse(t *testing.T) {
 
 func TestAPluginDeclaringARuntimeNothingProvisionsIsNotStartedForAQuestion(t *testing.T) {
 	t.Setenv("NUMEN_DEPENDENCY_SAMPLE_RUNTIME", "")
-	p := newLazyPluginFrom(t, provision.NewRegistry(), newBuiltInManifest(firstBuiltInID, sampleRuntime))
+	p := newLazyPluginFrom(t, provision.NewObservedRegistry(nil), newBuiltInManifest(firstBuiltInID, sampleRuntime))
 
 	_, err := p.host.Management.Activation.EnsureActiveForQuestion(t.Context(), firstBuiltInID, getTestHolder())
 
@@ -655,7 +655,7 @@ func TestAChangedModelSettingDownloadsTheNewModelAtTheNextUse(t *testing.T) {
 	source := newModelSource(t)
 	t.Setenv(source.envName("model-small"), "")
 	t.Setenv(source.envName("model-large"), "")
-	p := newLazyPluginFrom(t, provision.NewRegistry(source), newModelSettingManifest())
+	p := newLazyPluginFrom(t, provision.NewObservedRegistry(nil, source), newModelSettingManifest())
 	if err := p.use(t); err != nil {
 		t.Fatal(err)
 	}
@@ -685,7 +685,7 @@ func newEventPlugin(t *testing.T, source *modelSource) (*pluginhost.Host, *event
 	t.Helper()
 	t.Setenv(source.envName(sampleRuntime), "")
 	host := newBuiltInHost(t)
-	host.Supervision.Dependencies.Replace(provision.NewRegistry(source))
+	host.Supervision.Dependencies.Replace(provision.NewObservedRegistry(nil, source))
 	recorder := &eventRecorder{}
 	manifest := fmt.Appendf(nil, `{
 		"id": %q, "name": "Example Events", "version": "1.0.0", "targets": ["desktop.editor"], "permissions": [],
@@ -709,7 +709,7 @@ func newSpawnedLazyHost(t *testing.T, source *modelSource) *pluginhost.Host {
 		},
 		map[string]int{"md.test.lazy": servePlugin(t, nil)},
 	)
-	host.Supervision.Dependencies.Replace(provision.NewRegistry(source))
+	host.Supervision.Dependencies.Replace(provision.NewObservedRegistry(nil, source))
 	return host
 }
 
@@ -812,7 +812,7 @@ func TestAListenerConnectionDownloadsNothing(t *testing.T) {
 	}
 	host := pluginhost.New(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host.Management)
-	host.Supervision.Dependencies.Replace(provision.NewRegistry(source))
+	host.Supervision.Dependencies.Replace(provision.NewObservedRegistry(nil, source))
 	var started atomic.Int32
 	host.Supervision.Processes.SetLauncher(startRelayLauncher(t, &started, "listener.mcp="+strconv.Itoa(serveEcho(t))))
 	discover(t, host)
@@ -854,7 +854,7 @@ func TestCancelingTheDependenciesStopsTheDownloadInProgress(t *testing.T) {
 func TestCancelingTheDependenciesStopsEveryVersionOfOneDependency(t *testing.T) {
 	source := newModelSource(t)
 	source.holdDownloads(t)
-	registry := provision.NewRegistry(source)
+	registry := provision.NewObservedRegistry(nil, source)
 	p := newLazyPluginFrom(t, registry, newBuiltInManifest(firstBuiltInID, sampleRuntime))
 	p.host.Supervision.Services.ObserveDependencies(func(catalogmanifest.DependencyRequirement, plugindomain.DependencyStatus) {})
 	older := catalogmanifest.DependencyRequirement{ID: sampleRuntime, Kind: catalogmanifest.DependencyKindModel, Version: "1"}

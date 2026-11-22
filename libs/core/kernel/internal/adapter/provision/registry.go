@@ -23,11 +23,6 @@ type Registry struct {
 	observer     func(manifest.DependencyRequirement, plugin.DependencyStatus)
 }
 
-// NewRegistry returns a Registry that routes to the provisioners in order.
-func NewRegistry(provisioners ...DependencyProvisioner) *Registry {
-	return NewObservedRegistry(nil, provisioners...)
-}
-
 // NewObservedRegistry returns a Registry that sends every status reached by any provisioning to observer.
 // The observer is called from the goroutine that runs the provisioning.
 func NewObservedRegistry(observer func(manifest.DependencyRequirement, plugin.DependencyStatus), provisioners ...DependencyProvisioner) *Registry {

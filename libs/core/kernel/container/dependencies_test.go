@@ -28,7 +28,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	registry := provision.NewRegistry()
+	registry := provision.NewObservedRegistry(host.Supervision.Services.Observe)
 	host.Supervision.Dependencies.Replace(registry)
 	tasks := run.NewTasks()
 	execution, _, _ := AdaptPluginHost(host.Management, host.Supervision)
@@ -132,7 +132,7 @@ func startHeldDownload(t *testing.T) (*testPluginRoles, *run.Tasks, <-chan error
 	t.Helper()
 	host := newTestPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	provisioner := heldProvisioner{started: make(chan struct{})}
-	host.Supervision.Dependencies.Replace(provision.NewRegistry(provisioner))
+	host.Supervision.Dependencies.Replace(provision.NewObservedRegistry(host.Supervision.Services.Observe, provisioner))
 	tasks := run.NewTasks()
 	execution, _, _ := AdaptPluginHost(host.Management, host.Supervision)
 	reportDependencies(execution.Watch.dependencyReporter, tasks, nil)

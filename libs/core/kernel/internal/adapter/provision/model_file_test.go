@@ -74,7 +74,7 @@ func TestProfileWithoutPinsCachesTheObservedBytesByDigest(t *testing.T) {
 	defer server.Close()
 	files := newTestProvisioner(t, false)
 	files.cfg.Client = server.Client()
-	registry := NewRegistry(files)
+	registry := NewObservedRegistry(nil, files)
 	fetch := plugindependency.NewFetch(func() pluginport.DependencyRegistry { return registry })
 	saved, err := fetch.Execute(t.Context(), server.URL+"/plain", "")
 	if err != nil {
