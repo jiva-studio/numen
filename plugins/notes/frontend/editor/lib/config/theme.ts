@@ -197,6 +197,8 @@ export const theme = EditorView.theme({
     padding: '0.375rem',
   },
   '.cm-tooltip.cm-tooltip-autocomplete > ul > li': {
+    display: 'flex',
+    alignItems: 'center',
     color: 'var(--numen-ink)',
     padding: '0.125rem 0.5rem',
     borderRadius: 'var(--numen-radius)',
@@ -210,6 +212,10 @@ export const theme = EditorView.theme({
     fontWeight: '600',
     backgroundColor: 'var(--numen-highlight)',
     borderRadius: '2px',
+  },
+  '.cm-tooltip-autocomplete .cm-completionDetail': {
+    marginLeft: 'auto',
+    paddingLeft: '1em',
   },
   '.cm-tooltip-autocomplete .cm-completionDetail, .cm-tooltip-autocomplete .cm-completionIcon': {
     color: 'var(--numen-hushed)',
