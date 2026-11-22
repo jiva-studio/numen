@@ -29,4 +29,12 @@ describe('the island card', () => {
     expect(plain.find('header button').exists()).toBe(false)
     expect(aside.get('header button').text()).toBe('Reset')
   })
+
+  it('marks the body compact only when isCompact is set', () => {
+    const roomy = mount(IslandCard, { props: { title: 't' } })
+    const compact = mount(IslandCard, { props: { title: 't', isCompact: true } })
+
+    expect(roomy.get('.island-card__body').classes()).not.toContain('island-card__body--compact')
+    expect(compact.get('.island-card__body').classes()).toContain('island-card__body--compact')
+  })
 })

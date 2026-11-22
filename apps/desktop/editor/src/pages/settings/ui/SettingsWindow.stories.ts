@@ -231,6 +231,7 @@ export const SettingsInGroups: Story = {
       'Lines',
       'Layout',
     ])
+    await expect(canvasElement.querySelector('.settings-card')).toBeNull()
     await expect(canvas.getByText('Pill background')).toBeVisible()
     await expect(canvas.getByText('Line curvature')).toBeVisible()
   },

@@ -1061,6 +1061,24 @@ describe('PluginDetail setting groups', () => {
     expect(wrapper.findAll('section.island-card')).toHaveLength(1)
   })
 
+  it('draws no card when the only ungrouped setting is the slots', () => {
+    const slots: PluginSettingInfo = {
+      key: 'slots',
+      type: 'slots',
+      title: 'Slots',
+      description: '',
+      default: [],
+    }
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      settingGroups,
+      settings: [slots, toggle('a', 'look')],
+    })
+    const { wrapper } = createDetail(plugin)
+
+    expect(wrapper.find('.settings-card').exists()).toBe(false)
+    expect(wrapper.findAll('section.island-card')).toHaveLength(1)
+  })
+
   it('draws no island for a group whose settings are all hidden', () => {
     const hidden: PluginSettingInfo = {
       ...toggle('a', 'look'),

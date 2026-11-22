@@ -10,6 +10,7 @@ import type { InstallationSettings, MarkedSetting, PluginFieldsHost } from '../.
 import type { PluginInfo } from '@/entities/settings'
 import { useEnumFields } from '../../model/usePluginFields'
 import { getSettingSections } from '../../lib/settingSections'
+import { hasRowSettings } from '../../lib/pluginSettings'
 import PluginFields from './PluginFields.vue'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -28,11 +29,12 @@ const { getShownSettings } = useEnumFields({
   getPlugin: () => props.plugin,
 })
 const sections = computed(() => getSettingSections(getShownSettings(), props.plugin.settingGroups))
+const hasPlainRows = computed(() => hasRowSettings(sections.value.plain))
 const hasViews = computed(() => (props.plugin.settingsViews ?? []).length > 0)
 </script>
 
 <template>
-  <PluginSettingsCard v-if="sections.plain.length > 0 || hasViews">
+  <PluginSettingsCard v-if="hasPlainRows || hasViews">
     <PluginFields
       :settings="props.settings"
       :host="props.host"

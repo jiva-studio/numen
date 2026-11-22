@@ -1,6 +1,6 @@
 <script setup lang="ts">
-/** A titled group: the heading is above a card that holds only the rows, so a group of one row stays one row tall. The heading may carry an aside at its right. */
-defineProps<{ title: string }>()
+/** A titled group: the heading is above a card that holds only the rows, so a group of one row stays one row tall. The heading may carry an aside at its right. The card pads like a card of settings rows; compact draws the tighter pad of a list of draggable rows. */
+defineProps<{ title: string; isCompact?: boolean }>()
 </script>
 
 <template>
@@ -9,13 +9,14 @@ defineProps<{ title: string }>()
       <h3 class="island-card__title">{{ title }}</h3>
       <div v-if="$slots.aside" class="island-card__aside"><slot name="aside" /></div>
     </header>
-    <div class="island-card__body"><slot /></div>
+    <div class="island-card__body" :class="{ 'island-card__body--compact': isCompact }">
+      <slot />
+    </div>
   </section>
 </template>
 
 <style scoped>
 .island-card {
-  --body-pad: 0.25rem 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
@@ -48,9 +49,13 @@ defineProps<{ title: string }>()
 .island-card__body {
   overflow: hidden;
   box-sizing: border-box;
-  padding: var(--body-pad);
+  padding: var(--numen-card-inset) var(--numen-card-pad);
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius);
   background-color: var(--numen-raised);
+}
+
+.island-card__body--compact {
+  padding: 0.25rem 0.5rem;
 }
 </style>
