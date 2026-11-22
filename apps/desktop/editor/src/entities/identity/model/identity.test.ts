@@ -61,7 +61,7 @@ describe('the identity store', () => {
     fails = true
     await store.load()
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
-    expect(notify).toHaveBeenLastCalledWith(expect.stringContaining('the core is gone'), 'error')
+    expect(notify).toHaveBeenLastCalledWith(expect.stringContaining('Numen is not responding'), 'error')
   })
 
   it('gives the twelve words and keeps no identity', async () => {
@@ -75,7 +75,7 @@ describe('the identity store', () => {
     const { store } = createStore(createClient({ generateWords: () => Promise.reject(new Error('no random')) }))
     const answer = await store.generateWords()
     expect(answer.ok).toBe(false)
-    expect(!answer.ok && answer.error).toContain('no random')
+    expect(!answer.ok && answer.error).toContain('Numen is not responding')
   })
 
   it('holds the identity after it is created with the words', async () => {
