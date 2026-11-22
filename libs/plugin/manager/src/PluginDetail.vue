@@ -213,7 +213,7 @@ function onRunAction(key: string): void {
 .plugin-detail__panel {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1.25rem;
 }
 
 .plugin-detail__nothing {
