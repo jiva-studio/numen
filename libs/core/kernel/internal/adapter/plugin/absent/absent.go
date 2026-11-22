@@ -52,8 +52,6 @@ func (Runtime) GetPlugin(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{}, false
 }
 
-// GetPlugins lists no plugin.
-func (Runtime) GetPlugins() []manifest.Discovered { return nil }
 
 // ResolveNoteProfile finds no plugin that defines the type.
 func (Runtime) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
@@ -95,6 +93,12 @@ func (Runtime) IsPluginSuspended(string) bool { return false }
 
 // WatchPluginConfig never calls fn, and returns a stop that does nothing.
 func (Runtime) WatchPluginConfig(string, func()) func() { return func() {} }
+
+// Plugins is the lookup of the installed plugins of a core without a plugin host: it finds none and lists none.
+type Plugins struct{ Runtime }
+
+// GetPlugins lists no plugin.
+func (Plugins) GetPlugins() []manifest.Discovered { return nil }
 
 // Settings is the configuration and the watch of a plugin host that runs nothing: they accept and keep
 // nothing.

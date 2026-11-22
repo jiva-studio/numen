@@ -16,11 +16,12 @@ import (
 
 func newAbsentExecution(reason plugindomain.UnavailableReason, cause error) *PluginExecution {
 	runtime := absent.Runtime{Reason: reason, Cause: cause}
+	plugins := absent.Plugins{Runtime: runtime}
 	settings := absent.Settings{}
 	return &PluginExecution{
 		Runtime: pluginRuntime{
-			Activator: runtime, pluginRetrier: runtime, Listing: runtime, Resolver: runtime,
-			Manifests: pluginmanifest.Open(runtime, runtime, runtime), pluginEventEmitter: runtime, pluginBinding: runtime,
+			Activator: runtime, pluginRetrier: runtime, Listing: runtime, Resolver: plugins,
+			Manifests: pluginmanifest.Open(runtime, plugins, runtime), pluginEventEmitter: runtime, pluginBinding: runtime,
 			PluginFailures: runtime, ConfigWatcher: runtime, ClientLookup: transport.NewClientLookup(nil),
 		},
 		Watch:     PluginWatch{pluginShutdown: settings, dependencyReporter: settings, ContentTypeTable: contenttype.Open()},
