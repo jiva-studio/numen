@@ -9,7 +9,6 @@ import (
 	"time"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // Handler handles a dispatched event string.
@@ -30,6 +29,11 @@ type subscriber struct {
 	handler Handler
 }
 
+// Clock gives the time the debounce and throttle windows are measured from.
+type Clock interface {
+	Now() time.Time
+}
+
 // Trigger delivers an event to the plugins that take it.
 type Trigger interface {
 	TriggerEvent(ctx context.Context, event string) ([]string, error)
@@ -46,13 +50,13 @@ type Bus struct {
 	nextSubID        uint64
 	isClosed         bool
 	inFlight         sync.WaitGroup
-	clock            machineport.Clock
+	clock            Clock
 	errorHandler     ErrorHandler
 }
 
 // New creates a debouncing and throttling event bus. report receives the errors of the deliveries that run after
 // Publish returned; a nil report drops them.
-func New(host Trigger, clock machineport.Clock, debounceDelay, throttleInterval time.Duration, report ErrorHandler) *Bus {
+func New(host Trigger, clock Clock, debounceDelay, throttleInterval time.Duration, report ErrorHandler) *Bus {
 	if debounceDelay <= 0 {
 		debounceDelay = 50 * time.Millisecond
 	}

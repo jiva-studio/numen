@@ -9,10 +9,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
-func getRealClock() machineport.Clock { return testsupport.GetMachine() }
+func getRealClock() Clock { return testsupport.GetMachine() }
 
 func TestEventBusDebounceTyping(t *testing.T) {
 	bus := New(nil, getRealClock(), 50*time.Millisecond, 200*time.Millisecond, nil)
