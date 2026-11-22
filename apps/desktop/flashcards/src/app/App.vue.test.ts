@@ -2,7 +2,6 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
-import type * as CoreClient from '@numen/core-client'
 import { createCoreHandlerTransport } from '@numen/core-client/testing'
 import {
   VAULT_SUMMARY,
@@ -11,47 +10,27 @@ import {
   type HostServices,
   type PluginContext,
 } from '@numen/plugin-loader'
-import type * as Workbench from '@numen/workbench'
+import type * as PluginLoader from '@numen/plugin-loader'
 import type { VaultRow } from '@numen/workbench'
+import { APPEARANCE_WORDS } from '@/features/appearance'
 import { createRoot } from './createRoot'
 import { createWindow } from './window/createWindow'
 
+/** What the desktop shell does when the window asks it to minimize: the native edge. */
 const runtimeHooks = vi.hoisted(() => ({
   minimizeWindow: undefined as (() => Promise<void>) | undefined,
-  startAppearance: undefined as (() => Promise<void>) | undefined,
 }))
 
-vi.mock('@numen/workbench', async (importOriginal) => {
-  const actual = await importOriginal<typeof Workbench>()
+vi.mock('@numen/plugin-loader', async (importOriginal) => {
+  const actual = await importOriginal<typeof PluginLoader>()
   return {
     ...actual,
-    useWindowFrame: (
-      ...args: Parameters<typeof actual.useWindowFrame>
-    ): ReturnType<typeof actual.useWindowFrame> => {
-      const created = actual.useWindowFrame(...args)
-      return {
-        ...created,
-        minimizeWindow: () =>
-          runtimeHooks.minimizeWindow ? runtimeHooks.minimizeWindow() : created.minimizeWindow(),
-      }
-    },
-  }
-})
-
-vi.mock('@numen/core-client', async (importOriginal) => {
-  const actual = await importOriginal<typeof CoreClient>()
-  return {
-    ...actual,
-    createWindowAppearance: (
-      ...args: Parameters<typeof actual.createWindowAppearance>
-    ): ReturnType<typeof actual.createWindowAppearance> => {
-      const created = actual.createWindowAppearance(...args)
-      return {
-        ...created,
-        start: () =>
-          runtimeHooks.startAppearance ? runtimeHooks.startAppearance() : created.start(),
-      }
-    },
+    createWindowFrameControls: (...args: Parameters<typeof actual.createWindowFrameControls>) => ({
+      ...actual.createWindowFrameControls(...args),
+      minimize: async () => {
+        await runtimeHooks.minimizeWindow?.()
+      },
+    }),
   }
 })
 
@@ -196,7 +175,6 @@ afterEach(() => {
   wire.taskSignals.length = 0
   wire.themeSignals.length = 0
   runtimeHooks.minimizeWindow = undefined
-  runtimeHooks.startAppearance = undefined
   vi.useRealTimers()
 })
 
@@ -647,9 +625,7 @@ describe('the appearance palette', () => {
     )
     expect(shell?.appearance.isOpen.value).toBe(false)
 
-    runtimeHooks.startAppearance = async () => {
-      throw new Error('appearance start failed')
-    }
+    wire.listThemes.mockRejectedValue(new Error('appearance start failed'))
     let failedShell: ReturnType<typeof createWindow> | undefined
     const failedWrapper = mount(
       defineComponent({
@@ -662,7 +638,7 @@ describe('the appearance palette', () => {
     mounted.push(failedWrapper)
     await flushPromises()
     expect(failedShell?.notices.notices.value).toMatchObject([
-      { text: formatErrorMessage(new Error('appearance start failed')), severity: 'error' },
+      { text: APPEARANCE_WORDS.unlisted, severity: 'error' },
     ])
   })
 })

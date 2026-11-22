@@ -28,6 +28,6 @@ The whole of `libs/core/kernel` compiles for `android/arm64` with the NDK, OCR i
 
 ## What the page may load
 
-The policy is the `<meta http-equiv>` in `index.html`, checked by `src/App.policy.test.ts` against every address the page requests. The window on the desktop is served its policy as a header; here the package serves the page and sets none, so the page contains its own. This means `frame-ancestors` is not available, because a page cannot set it for itself. It also means the bridge that Capacitor injects (an inline script inserted directly after `<head>`) runs before the policy is parsed, so the policy does not apply to it.
+The policy is the `<meta http-equiv>` in `index.html`, pinned by the check `ts/window-sources` (`tools/checks`), and `src/app/App.policy.test.ts` runs what the page asks for. The window on the desktop is served its policy as a header; here the package serves the page and sets none, so the page contains its own. This means `frame-ancestors` is not available, because a page cannot set it for itself. It also means the bridge that Capacitor injects (an inline script inserted directly after `<head>`) runs before the policy is parsed, so the policy does not apply to it.
 
 Three things are still to be checked on a device: that the Ionic styles, injected at runtime, are drawn under `style-src 'unsafe-inline'`; that on a WebView too old for a message listener the bridge's reply, evaluated into the page from the native side, is not read as a script the policy refuses; and that every part of the application is shown.
