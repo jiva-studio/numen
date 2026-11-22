@@ -179,7 +179,8 @@ function onTick(task: Task) {
   position: absolute;
   top: calc(100% + var(--popover-offset));
   right: 0;
-  z-index: 50;
+  z-index: var(--numen-lift-menu);
+  will-change: transform;
   width: var(--popover-width);
   max-width: calc(100vw - 1rem);
   max-height: var(--popover-max-height);
