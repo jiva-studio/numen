@@ -15,9 +15,18 @@ const noIndexReason = "the index does not contain this vault"
 
 type IndexVault func(ctx context.Context, v domain.Vault) error
 
-// VaultIndexed reports whether the index already contains a vault.
-type VaultIndexed interface {
-	Execute(ctx context.Context, v domain.Vault) bool
+// VaultHolds checks the index for any note of a vault.
+type VaultHolds interface {
+	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
+}
+
+// Claimed is the answer to a claim: Read is the indexing to start, or nil where none starts, and Closing ends the
+// run. Underway says an indexing of the vault runs now, and Reason why the last one failed.
+type Claimed struct {
+	Read     IndexVault
+	Closing  <-chan struct{}
+	Underway bool
+	Reason   string
 }
 
 // RunState is which vaults a window has indexed: the ones indexed since it opened, the ones being indexed
@@ -25,7 +34,7 @@ type VaultIndexed interface {
 type RunState interface {
 	// Claim reserves the indexing of the vault for the caller, which starts it only when read is not nil.
 	// Otherwise underway says an indexing of the vault runs now, and reason why the last one failed.
-	Claim(v domain.Vault) (read IndexVault, closing <-chan struct{}, underway bool, reason string)
+	Claim(v domain.Vault) Claimed
 	// Record ends the indexing Claim reserved, with the error it ended with.
 	Record(v domain.Vault, err error)
 	// Clear forgets how the vault was indexed, so the next claim starts again.
@@ -36,14 +45,14 @@ type RunState interface {
 // state a plugin counting the vault receives. The indexing runs in the background and is shown as work.
 type EnsureIndexed struct {
 	runs    RunState
-	indexed VaultIndexed
+	indexed VaultHolds
 	tasks   windowport.Tasks
 	changes *Changes
 }
 
 // NewEnsureIndexed returns the use case over the state of the indexing runs, the question whether the
 // index holds a vault, the list of work and the notification of changes.
-func NewEnsureIndexed(runs RunState, indexed VaultIndexed, tasks windowport.Tasks, changes *Changes) *EnsureIndexed {
+func NewEnsureIndexed(runs RunState, indexed VaultHolds, tasks windowport.Tasks, changes *Changes) *EnsureIndexed {
 	return &EnsureIndexed{runs: runs, indexed: indexed, tasks: tasks, changes: changes}
 }
 
@@ -62,7 +71,7 @@ func (u *EnsureIndexed) Execute(ctx context.Context, v domain.Vault) (plugin.Ind
 	case reason != "":
 		return plugin.IndexState{Status: plugin.IndexFailed, Reason: reason}, nil
 	}
-	if !u.indexed.Execute(ctx, v) {
+	if !u.isIndexed(ctx, v) {
 		return plugin.IndexState{
 			Status: plugin.IndexFailed, Reason: noIndexReason,
 		}, nil
@@ -70,12 +79,19 @@ func (u *EnsureIndexed) Execute(ctx context.Context, v domain.Vault) (plugin.Ind
 	return plugin.IndexState{Status: plugin.Indexed}, nil
 }
 
+// isIndexed is false where the index cannot answer.
+func (u *EnsureIndexed) isIndexed(ctx context.Context, v domain.Vault) bool {
+	holds, err := u.indexed.Has(ctx, v.ID)
+	return err == nil && holds
+}
+
 func (u *EnsureIndexed) start(ctx context.Context, v domain.Vault) (underway bool, reason string) {
-	read, closing, running, reason := u.runs.Claim(v)
-	if read == nil {
-		return running, reason
+	claim := u.runs.Claim(v)
+	if claim.Read == nil {
+		return claim.Underway, claim.Reason
 	}
-	isIndexed := u.indexed.Execute(ctx, v)
+	read, closing := claim.Read, claim.Closing
+	isIndexed := u.isIndexed(ctx, v)
 	runCtx, cancel := context.WithCancel(plugin.WithBackground(context.WithoutCancel(ctx), plugin.WhoIndexing))
 	go func() {
 		defer cancel()
@@ -149,26 +165,26 @@ func (r *Runs) Clear(id domain.VaultID) {
 }
 
 // Claim implements RunState.
-func (r *Runs) Claim(v domain.Vault) (read IndexVault, closing <-chan struct{}, underway bool, reason string) {
+func (r *Runs) Claim(v domain.Vault) Claimed {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.indexed[v.ID] {
-		return nil, nil, false, ""
+		return Claimed{}
 	}
 	if why, hasFailure := r.failures[v.ID]; hasFailure {
-		return nil, nil, false, why
+		return Claimed{Reason: why}
 	}
 	if r.running[v.ID] {
-		return nil, nil, true, ""
+		return Claimed{Underway: true}
 	}
 	if r.indexVault == nil {
-		return nil, nil, false, ""
+		return Claimed{}
 	}
 	if r.running == nil {
 		r.running = make(map[domain.VaultID]bool)
 	}
 	r.running[v.ID] = true
-	return r.indexVault, r.closing, true, ""
+	return Claimed{Read: r.indexVault, Closing: r.closing, Underway: true}
 }
 
 // Record implements RunState.

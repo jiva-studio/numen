@@ -28,7 +28,7 @@ type VersionItems struct {
 
 // itemTexts finds the versions of a file and which one is live.
 type itemTexts interface {
-	FindLive(ctx context.Context, v domain.Vault, path string) ([]domain.TextVersion, domain.TextVersion, bool, error)
+	FindLive(ctx context.Context, v domain.Vault, path string) (LiveVersions, error)
 }
 
 // versionRemover deletes a version of a file.
@@ -42,10 +42,10 @@ func NewVersionItems(texts *Texts, versions *Versions, run pluginport.CommandRun
 	return &VersionItems{texts: texts, versions: versions, run: run, types: types, conditions: when.NewConditions()}
 }
 
-func listVersionItems(condition when.Condition, target plugin.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []text.VersionItem {
+func listVersionItems(condition when.Condition, target plugin.TargetValues, found LiveVersions) []text.VersionItem {
 	var items []text.VersionItem
-	for _, version := range versions {
-		isLive := hasLive && version.GetID() == live.GetID()
+	for _, version := range found.Versions {
+		isLive := found.HasLive && version.GetID() == found.Live.GetID()
 		if condition.Evaluate(target.WithVersion(string(version.Kind), isLive).Get()) == when.True {
 			items = append(items, text.VersionItem{
 				Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive,
@@ -63,24 +63,24 @@ func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, pat
 	if err != nil || !condition.HasItems() {
 		return nil, err
 	}
-	versions, live, hasLive, err := u.texts.FindLive(ctx, v, path)
+	found, err := u.texts.FindLive(ctx, v, path)
 	if err != nil {
 		return nil, err
 	}
 	values := plugin.NewTargetValues(path, false, u.types.GetContentType(path))
-	return listVersionItems(condition, values, versions, live, hasLive), nil
+	return listVersionItems(condition, values, found), nil
 }
 
 // ListEveryVersion lists every text version of the file at the path, as the items of the application
 // command text.DeleteCommand.
 func (u *VersionItems) ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]text.VersionItem, error) {
-	versions, live, hasLive, err := u.texts.FindLive(ctx, v, path)
+	found, err := u.texts.FindLive(ctx, v, path)
 	if err != nil {
 		return nil, err
 	}
-	items := make([]text.VersionItem, 0, len(versions))
-	for _, version := range versions {
-		isLive := hasLive && version.GetID() == live.GetID()
+	items := make([]text.VersionItem, 0, len(found.Versions))
+	for _, version := range found.Versions {
+		isLive := found.HasLive && version.GetID() == found.Live.GetID()
 		items = append(items, text.VersionItem{
 			Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive,
 			PluginID: version.PluginID, CreateTime: version.CreateTime,

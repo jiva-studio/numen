@@ -34,19 +34,26 @@ func NewTexts(
 	return &Texts{stores: stores, files: files, readers: readers, clock: clock, live: live{files: files, notes: notes}}
 }
 
+// LiveVersions is the versions recorded for a file and the live one among them, where there is one.
+type LiveVersions struct {
+	Versions []domain.TextVersion
+	Live     domain.TextVersion
+	HasLive  bool
+}
+
 // FindLive lists the versions recorded for the file at the path and finds the live one among them, for
 // the content the file has now. A file with no versions has none live and its content is not read.
-func (u *Texts) FindLive(ctx context.Context, v domain.Vault, path string) ([]domain.TextVersion, domain.TextVersion, bool, error) {
+func (u *Texts) FindLive(ctx context.Context, v domain.Vault, path string) (LiveVersions, error) {
 	versions, err := getVersions(ctx, u.stores, v, path)
 	if err != nil || len(versions) == 0 {
-		return versions, domain.TextVersion{}, false, err
+		return LiveVersions{Versions: versions}, err
 	}
 	contentHash, err := u.GetContentHash(ctx, v, path)
 	if err != nil {
-		return versions, domain.TextVersion{}, false, fmt.Errorf("read %s: %w", path, err)
+		return LiveVersions{Versions: versions}, fmt.Errorf("read %s: %w", path, err)
 	}
 	live, hasLive, err := u.live.find(ctx, v, path, versions, contentHash)
-	return versions, live, hasLive, err
+	return LiveVersions{Versions: versions, Live: live, HasLive: hasLive}, err
 }
 
 // GetLiveText is the text of the file's live version, or textdomain.ErrNoText.

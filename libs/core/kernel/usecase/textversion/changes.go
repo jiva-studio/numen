@@ -28,7 +28,7 @@ type Changes struct {
 
 // liveTexts finds the live version of a file.
 type liveTexts interface {
-	FindLive(ctx context.Context, v domain.Vault, path string) ([]domain.TextVersion, domain.TextVersion, bool, error)
+	FindLive(ctx context.Context, v domain.Vault, path string) (LiveVersions, error)
 }
 
 // NewChanges returns the reporter of the files whose versions changed, over the texts that tell
@@ -88,7 +88,8 @@ func (u *Changes) ReportFilesChanged(ctx context.Context, v domain.Vault, paths 
 }
 
 func (u *Changes) updateLiveVersion(ctx context.Context, v domain.Vault, path string) (bool, error) {
-	versions, live, hasLive, err := u.texts.FindLive(ctx, v, path)
+	found, err := u.texts.FindLive(ctx, v, path)
+	versions, live, hasLive := found.Versions, found.Live, found.HasLive
 	if err != nil && !errors.Is(err, textdomain.ErrFileUnreadable) {
 		return false, err
 	}
