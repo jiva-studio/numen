@@ -142,7 +142,7 @@ func TestFingerprint_IsEightGroupsOfFourUpperCaseHexDigits(t *testing.T) {
 	}
 	var one identity.Fingerprint
 	one[0], one[15] = 0x3F, 0xA9
-	if got := one.String(); got != "3FA0 0000 0000 0000 0000 0000 0000 00A9" {
+	if got := one.String(); got != "3F00 0000 0000 0000 0000 0000 0000 00A9" {
 		t.Errorf("fingerprint = %q", got)
 	}
 }
