@@ -1,6 +1,9 @@
 package identity
 
-import "crypto/ed25519"
+import (
+	"crypto/ed25519"
+	"strings"
+)
 
 const pluginSignPrefix = "numen/v1/plugin-sign/"
 
@@ -17,10 +20,10 @@ func (d DeviceKey) SignForPlugin(pluginID string, message []byte) [64]byte {
 	return [64]byte(d.signEntry(pluginSignMessage(pluginID, message)))
 }
 
-// VerifyForPlugin checks a signature made by SignForPlugin.
+// VerifyForPlugin checks a signature made by SignForPlugin; a plugin id with a zero byte never verifies, since the zero byte ends the id in the signed bytes.
 // ed25519.Verify rejects a non-canonical S.
 func VerifyForPlugin(sign ed25519.PublicKey, pluginID string, message []byte, signature [64]byte) bool {
-	if len(sign) != ed25519.PublicKeySize {
+	if len(sign) != ed25519.PublicKeySize || strings.IndexByte(pluginID, 0) >= 0 {
 		return false
 	}
 	return ed25519.Verify(sign, pluginSignMessage(pluginID, message), signature[:])

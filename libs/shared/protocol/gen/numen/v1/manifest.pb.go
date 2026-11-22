@@ -2220,8 +2220,12 @@ type ManifestBackend struct {
 	// idle_stop_seconds is how long the process may run without a lease before the host stops it,
 	// from 30 to 3600 seconds. Absent is 180.
 	IdleStopSeconds int32 `protobuf:"varint,3,opt,name=idle_stop_seconds,json=idleStopSeconds,proto3" json:"idle_stop_seconds,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// lifecycle is "onDemand", where the host starts the process when something uses the plugin and stops it
+	// after the idle limit, or "persistent", where the host keeps it running while the plugin is enabled and
+	// starts it again when it exits. Absent is "onDemand". A persistent backend sets no idle_stop_seconds.
+	Lifecycle     string `protobuf:"bytes,4,opt,name=lifecycle,proto3" json:"lifecycle,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ManifestBackend) Reset() {
@@ -2266,6 +2270,13 @@ func (x *ManifestBackend) GetIdleStopSeconds() int32 {
 		return x.IdleStopSeconds
 	}
 	return 0
+}
+
+func (x *ManifestBackend) GetLifecycle() string {
+	if x != nil {
+		return x.Lifecycle
+	}
+	return ""
 }
 
 // ManifestFrontend declares that the plugin has a frontend. The bundle is dist/index.js and the
@@ -3474,12 +3485,13 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x0earchive_member\x18\x04 \x01(\tR\rarchiveMember\x12#\n" +
 	"\rmember_sha256\x18\x05 \x01(\tR\fmemberSha256\x12\x1f\n" +
 	"\vsource_urls\x18\x06 \x03(\tR\n" +
-	"sourceUrls\"]\n" +
+	"sourceUrls\"{\n" +
 	"\x0fManifestBackend\x12\x1e\n" +
 	"\n" +
 	"entrypoint\x18\x02 \x01(\tR\n" +
 	"entrypoint\x12*\n" +
-	"\x11idle_stop_seconds\x18\x03 \x01(\x05R\x0fidleStopSeconds\"\x12\n" +
+	"\x11idle_stop_seconds\x18\x03 \x01(\x05R\x0fidleStopSeconds\x12\x1c\n" +
+	"\tlifecycle\x18\x04 \x01(\tR\tlifecycle\"\x12\n" +
 	"\x10ManifestFrontend\"\x93\x01\n" +
 	"\x15ManifestSettingOption\x12\x14\n" +
 	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
