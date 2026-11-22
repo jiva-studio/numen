@@ -5,3 +5,6 @@ const Version uint32 = 1
 
 // HeaderVersion is the header every request carries the protocol version in.
 const HeaderVersion = "Numen-Sync-Protocol"
+
+// SignInPluginID is the plugin id a sign-in message is signed under.
+const SignInPluginID = "md.numen.tools.sync"

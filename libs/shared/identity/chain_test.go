@@ -293,3 +293,57 @@ func TestParseChain_RejectsNoEntriesAndTruncatedBytes(t *testing.T) {
 		}
 	}
 }
+
+func TestLen_CountsEntries(t *testing.T) {
+	t.Parallel()
+	a := newChain(t)
+	longer, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := (identity.Chain{}).Len(); got != 0 {
+		t.Errorf("empty Len() = %d, want 0", got)
+	}
+	if got := a.chain.Len(); got != 1 {
+		t.Errorf("genesis Len() = %d, want 1", got)
+	}
+	if got := longer.Len(); got != 2 {
+		t.Errorf("Len() = %d, want 2", got)
+	}
+}
+
+func TestIsExtensionOf(t *testing.T) {
+	t.Parallel()
+	a := newChain(t)
+	laptop, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	phone, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Phone", epoch.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	other := newChain(t)
+	tests := []struct {
+		name   string
+		chain  identity.Chain
+		prefix identity.Chain
+		want   bool
+	}{
+		{"longer chain with the shorter as prefix", laptop, a.chain, true},
+		{"equal chains", laptop, laptop, true},
+		{"prefix longer than the chain", a.chain, laptop, false},
+		{"fork with a different entry", laptop, phone, false},
+		{"chain of another account", laptop, other.chain, false},
+		{"empty prefix", laptop, identity.Chain{}, false},
+		{"empty chain and empty prefix", identity.Chain{}, identity.Chain{}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := tt.chain.IsExtensionOf(tt.prefix); got != tt.want {
+				t.Errorf("IsExtensionOf() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
