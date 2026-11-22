@@ -140,7 +140,7 @@ function onTick(task: Task) {
 
 .todos-status__trigger {
   --chip-height: calc(1.25 * var(--numen-chrome-unit));
-  --chip-text: var(--numen-chrome-text-1);
+  --chip-text: var(--numen-chrome-text-2);
   --chip-pad: var(--numen-chrome-inset);
   display: inline-flex;
   align-items: center;
