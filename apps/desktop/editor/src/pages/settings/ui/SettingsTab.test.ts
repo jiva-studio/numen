@@ -16,7 +16,11 @@ import { NumberField, Select, Switch } from '@numen/ui'
 import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import type { LicenseInfo } from '@/entities/license'
 import { getSettingAt as at } from '@/pages/settings/testing/settingAt'
-import { createInstallation, createSettingsState, type InstallationOverrides } from '@/pages/settings/testing/installation'
+import {
+  createInstallation,
+  createSettingsState,
+  type InstallationOverrides,
+} from '@/pages/settings/testing/installation'
 import { asFailure, asValue } from '@numen/result'
 import SettingsTab from './SettingsTab.vue'
 import SettingRow from './setting-row/SettingRow.vue'

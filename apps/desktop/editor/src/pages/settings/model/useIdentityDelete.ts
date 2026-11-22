@@ -7,7 +7,11 @@ import type { InstallationIdentity } from '../types'
 
 type Run = <T>(call: () => Promise<Result<T, string>>) => Promise<Result<T, string>>
 
-export function useIdentityDelete(getIdentity: () => InstallationIdentity, run: Run, isBusy: () => boolean) {
+export function useIdentityDelete(
+  getIdentity: () => InstallationIdentity,
+  run: Run,
+  isBusy: () => boolean,
+) {
   const isAskingDelete = ref(false)
 
   const askDelete = (): void => {

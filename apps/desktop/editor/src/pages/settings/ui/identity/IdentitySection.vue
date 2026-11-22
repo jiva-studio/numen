@@ -16,7 +16,16 @@ const props = defineProps<{ identity: InstallationIdentity }>()
 
 /* --------------------------------- State ---------------------------------- */
 const section = useIdentitySection(() => props.identity)
-const { identity: current, step, recoveryWords, call, confirmation, typing, deletion, actions } = section
+const {
+  identity: current,
+  step,
+  recoveryWords,
+  call,
+  confirmation,
+  typing,
+  deletion,
+  actions,
+} = section
 </script>
 
 <template>
@@ -34,14 +43,26 @@ const { identity: current, step, recoveryWords, call, confirmation, typing, dele
     <template v-else>
       <div class="identity-section__empty">
         <p class="identity-section__title">{{ words.identityNone }}</p>
-        <p v-if="step === 'idle'" class="identity-section__detail">{{ words.identityNoneDetail }}</p>
+        <p v-if="step === 'idle'" class="identity-section__detail">
+          {{ words.identityNoneDetail }}
+        </p>
       </div>
 
       <div v-if="step === 'idle'" class="identity-section__actions">
-        <Button type="button" variant="solid" :disabled="call.isBusy.value" @click="actions.startSetup">
+        <Button
+          type="button"
+          variant="solid"
+          :disabled="call.isBusy.value"
+          @click="actions.startSetup"
+        >
           {{ words.identityCreate }}
         </Button>
-        <Button type="button" variant="outline" :disabled="call.isBusy.value" @click="actions.startRestore">
+        <Button
+          type="button"
+          variant="outline"
+          :disabled="call.isBusy.value"
+          @click="actions.startRestore"
+        >
           {{ words.identityRestore }}
         </Button>
       </div>
@@ -67,7 +88,9 @@ const { identity: current, step, recoveryWords, call, confirmation, typing, dele
       />
     </template>
 
-    <p v-if="call.problem.value !== ''" role="alert" class="identity-section__problem">{{ call.problem.value }}</p>
+    <p v-if="call.problem.value !== ''" role="alert" class="identity-section__problem">
+      {{ call.problem.value }}
+    </p>
   </section>
 </template>
 
