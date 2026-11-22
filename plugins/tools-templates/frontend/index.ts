@@ -44,7 +44,12 @@ export const activate = (
       const values =
         asked.value.fields.length > 0 ? await showForm(getTitle(itemId), asked.value.fields) : {}
       if (!values) return
-      const answer = await api.createNote({ template: itemId, folder, values })
+      const answer = await api.createNote({
+        template: itemId,
+        folder,
+        values,
+        etag: asked.value.etag,
+      })
       if (answer.ok) host.ui.workspace?.files.open(answer.value.path)
       else host.ui.workspace?.messages.showError(answer.error.message)
     },

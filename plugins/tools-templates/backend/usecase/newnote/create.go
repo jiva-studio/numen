@@ -3,6 +3,8 @@ package newnote
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	pathpkg "path"
@@ -35,6 +37,9 @@ var (
 	// ErrNoFreeName is a template whose name is taken in the folder, with every number tried.
 	ErrNoFreeName = errors.New("no free name for")
 
+	// ErrTemplateChanged is a template that is not the text its fields were listed from.
+	ErrTemplateChanged = errors.New("template changed, open the picker again")
+
 	// ErrNotIndexed is a note that was made but did not reach the index; Result still names it.
 	ErrNotIndexed = errors.New("note is made but not indexed")
 )
@@ -56,10 +61,12 @@ type IDs interface {
 }
 
 // Request names a template, the folder the note is made in and the values of the fields the template asks.
+// Etag is the one ListFields gave for the template.
 type Request struct {
 	Template string
 	Folder   string
 	Values   map[string]string
+	Etag     string
 }
 
 // Result names the note that was made.
@@ -86,6 +93,9 @@ func (u CreateFromTemplate) Execute(ctx context.Context, in Request) (Result, er
 	text, err := readTemplate(ctx, u.vault, u.getMasks(), in.Template)
 	if err != nil {
 		return Result{}, err
+	}
+	if Etag(text) != in.Etag {
+		return Result{}, ErrTemplateChanged
 	}
 	now := u.clock.Now()
 	id, err := u.ids.NewID(now)
@@ -151,6 +161,12 @@ func isTemplate(path string, masks mask.Set) bool {
 	}
 	_, isNamed := masks.Find(path)
 	return isNamed
+}
+
+// Etag is what tells a text of a template from another.
+func Etag(text string) string {
+	sum := sha256.Sum256([]byte(text))
+	return hex.EncodeToString(sum[:])
 }
 
 func getName(template string) string {

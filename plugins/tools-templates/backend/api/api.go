@@ -33,16 +33,20 @@ type Field struct {
 	Default string    `json:"default"`
 }
 
-// ListFieldsResponse lists the fields of a template, in the order they are asked.
+// ListFieldsResponse lists the fields of a template, in the order they are asked. Etag tells the template
+// they were read from, and CreateNote gives it back.
 type ListFieldsResponse struct {
 	Fields []Field `json:"fields"`
+	Etag   string  `json:"etag"`
 }
 
-// CreateNoteRequest asks for a note made from a template. Values answers the fields by label.
+// CreateNoteRequest asks for a note made from a template. Values answers the fields by label, and Etag is
+// the one ListFields gave for the template.
 type CreateNoteRequest struct {
 	Template string            `json:"template"`
 	Folder   string            `json:"folder"`
 	Values   map[string]string `json:"values"`
+	Etag     string            `json:"etag"`
 }
 
 // CreateNoteResponse names the note that was made.

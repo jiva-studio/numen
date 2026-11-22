@@ -56,11 +56,14 @@ const invented = {
   Models: [note('Models/Recipe.md')],
 }
 
-const noFields: Result<ListFieldsResponse, ApiError> = { ok: true, value: { fields: [] } }
+const noFields: Result<ListFieldsResponse, ApiError> = {
+  ok: true,
+  value: { fields: [], etag: 'etag-none' },
+}
 
 const askingFor = (fields: readonly Field[]): Result<ListFieldsResponse, ApiError> => ({
   ok: true,
-  value: { fields },
+  value: { fields, etag: 'etag-asked' },
 })
 
 const CLIENT: Field = { kind: 'text', label: 'Client', options: [], default: 'Acme' }
@@ -192,10 +195,10 @@ describe('the templates frontend', () => {
     await context.triggerCommand(COMMAND, targetOf('', false), 'Templates/Meeting.md')
 
     expect(createNote.mock.calls.map(([request]) => request)).toEqual([
-      { template: 'Templates/Meeting.md', folder: 'notes/People', values: {} },
-      { template: 'Templates/Meeting.md', folder: 'journal', values: {} },
-      { template: 'Templates/Meeting.md', folder: '', values: {} },
-      { template: 'Templates/Meeting.md', folder: '', values: {} },
+      { template: 'Templates/Meeting.md', folder: 'notes/People', values: {}, etag: 'etag-none' },
+      { template: 'Templates/Meeting.md', folder: 'journal', values: {}, etag: 'etag-none' },
+      { template: 'Templates/Meeting.md', folder: '', values: {}, etag: 'etag-none' },
+      { template: 'Templates/Meeting.md', folder: '', values: {}, etag: 'etag-none' },
     ])
   })
 
@@ -221,6 +224,7 @@ describe('the templates frontend', () => {
       template: 'Templates/Visit.md',
       folder: 'notes',
       values: { Client: 'Globex' },
+      etag: 'etag-asked',
     })
     expect(opened).toEqual(['notes/Visit.md'])
   })

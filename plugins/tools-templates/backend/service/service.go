@@ -26,7 +26,7 @@ func convertError(err error, template string) error {
 		return server.NewAPIError(server.CodeInvalidArgument, err.Error())
 	case errors.Is(err, host.ErrNotExist):
 		return server.NewAPIError(server.CodeNotFound, "template not found: "+template)
-	case errors.Is(err, newnote.ErrInvalidNote), errors.Is(err, newnote.ErrNoFreeName), errors.Is(err, host.ErrNoVault):
+	case errors.Is(err, newnote.ErrInvalidNote), errors.Is(err, newnote.ErrTemplateChanged), errors.Is(err, newnote.ErrNoFreeName), errors.Is(err, host.ErrNoVault):
 		return server.NewAPIError(server.CodeFailedPrecondition, err.Error())
 	case errors.Is(err, host.ErrPermissionDenied):
 		return server.NewAPIError(server.CodePermissionDenied, err.Error())
@@ -36,7 +36,7 @@ func convertError(err error, template string) error {
 
 func makeCreateNoteHandler(useCase newnote.CreateFromTemplate) func(context.Context, api.CreateNoteRequest) (api.CreateNoteResponse, error) {
 	return func(ctx context.Context, req api.CreateNoteRequest) (api.CreateNoteResponse, error) {
-		made, err := useCase.Execute(ctx, newnote.Request{Template: req.Template, Folder: req.Folder, Values: req.Values})
+		made, err := useCase.Execute(ctx, newnote.Request{Template: req.Template, Folder: req.Folder, Values: req.Values, Etag: req.Etag})
 		if err != nil && !errors.Is(err, newnote.ErrNotIndexed) {
 			return api.CreateNoteResponse{}, convertError(err, req.Template)
 		}
@@ -50,11 +50,11 @@ func makeListFieldsHandler(useCase newnote.ListFields) func(context.Context, api
 		if err != nil {
 			return api.ListFieldsResponse{}, convertError(err, req.Template)
 		}
-		fields := make([]api.Field, len(found))
-		for i, field := range found {
+		fields := make([]api.Field, len(found.Fields))
+		for i, field := range found.Fields {
 			fields[i] = api.Field{Kind: api.FieldKind(field.Kind), Label: field.Label, Options: field.Options, Default: field.Default}
 		}
-		return api.ListFieldsResponse{Fields: fields}, nil
+		return api.ListFieldsResponse{Fields: fields, Etag: found.Etag}, nil
 	}
 }
 

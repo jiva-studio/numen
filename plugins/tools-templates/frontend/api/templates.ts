@@ -20,16 +20,18 @@ export interface Field {
   readonly default: string
 }
 
-/** The fields of a template, in the order they are asked. */
+/** The fields of a template, in the order they are asked, and the etag of the template they were read from. */
 export interface ListFieldsResponse {
   readonly fields: readonly Field[]
+  readonly etag: string
 }
 
-/** Asks for a note made from a template; `values` answers its fields by label. */
+/** Asks for a note made from a template; `values` answers its fields by label and `etag` is the one the fields were listed with. */
 export interface CreateNoteRequest {
   readonly template: string
   readonly folder: string
   readonly values: Readonly<Record<string, string>>
+  readonly etag: string
 }
 
 /** Names the note that was made. */

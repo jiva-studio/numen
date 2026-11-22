@@ -15,6 +15,12 @@ type FieldsRequest struct {
 	Folder   string
 }
 
+// FieldsResult is the fields of a template with the etag of the text they were read from.
+type FieldsResult struct {
+	Fields []engine.Field
+	Etag   string
+}
+
 // ListFields lists what a template asks of the person before it is made into a note.
 type ListFields struct {
 	vault    Vault
@@ -29,15 +35,15 @@ func NewListFields(vault Vault, clock Clock, getMasks func() mask.Set) ListField
 }
 
 // Execute lists the fields of the template, in the order they are asked.
-func (u ListFields) Execute(ctx context.Context, in FieldsRequest) ([]engine.Field, error) {
+func (u ListFields) Execute(ctx context.Context, in FieldsRequest) (FieldsResult, error) {
 	text, err := readTemplate(ctx, u.vault, u.getMasks(), in.Template)
 	if err != nil {
-		return nil, err
+		return FieldsResult{}, err
 	}
 	data := engine.Data{Title: getName(in.Template), Folder: in.Folder, ID: "", Now: u.clock.Now(), Values: nil}
 	fields, err := u.renderer.Fields(ctx, pathpkg.Base(in.Template), text, data)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidNote, err)
+		return FieldsResult{}, fmt.Errorf("%w: %w", ErrInvalidNote, err)
 	}
-	return fields, nil
+	return FieldsResult{Fields: fields, Etag: Etag(text)}, nil
 }

@@ -28,7 +28,12 @@ const meeting = "---\ntype: meeting\n---\n# {{ .title }}\n\nAttendees\n"
 
 func getToday() time.Time { return time.Date(2026, 11, 14, 9, 5, 0, 0, time.UTC) }
 
-func newWeb(t *testing.T, vault *hosttest.Vault) *httptest.Server {
+type testWeb struct {
+	*httptest.Server
+	vault *hosttest.Vault
+}
+
+func newWeb(t *testing.T, vault *hosttest.Vault) *testWeb {
 	t.Helper()
 	source := new(clocktest.Fake)
 	source.Set(getToday())
@@ -40,7 +45,7 @@ func newWeb(t *testing.T, vault *hosttest.Vault) *httptest.Server {
 	}
 	web := httptest.NewServer(handler)
 	t.Cleanup(web.Close)
-	return web
+	return &testWeb{Server: web, vault: vault}
 }
 
 func post(t *testing.T, web *httptest.Server, path, body string) (int, []byte) {
@@ -67,27 +72,28 @@ func post(t *testing.T, web *httptest.Server, path, body string) (int, []byte) {
 	return res.StatusCode, data
 }
 
-func createNote(t *testing.T, web *httptest.Server, template, folder string) (int, []byte) {
+func createNote(t *testing.T, web *testWeb, template, folder string) (int, []byte) {
 	t.Helper()
 	return createNoteWith(t, web, template, folder, nil)
 }
 
-func listFields(t *testing.T, web *httptest.Server, template string) (int, []byte) {
+func listFields(t *testing.T, web *testWeb, template string) (int, []byte) {
 	t.Helper()
 	body, err := json.Marshal(api.ListFieldsRequest{Template: template, Folder: "work"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return post(t, web, "/"+api.Service+"/"+api.MethodListFields, string(body))
+	return post(t, web.Server, "/"+api.Service+"/"+api.MethodListFields, string(body))
 }
 
-func createNoteWith(t *testing.T, web *httptest.Server, template, folder string, values map[string]string) (int, []byte) {
+func createNoteWith(t *testing.T, web *testWeb, template, folder string, values map[string]string) (int, []byte) {
 	t.Helper()
-	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Values: values})
+	content, _ := web.vault.Content(template)
+	body, err := json.Marshal(api.CreateNoteRequest{Template: template, Folder: folder, Values: values, Etag: newnote.Etag(content)})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return post(t, web, "/"+api.Service+"/"+api.MethodCreateNote, string(body))
+	return post(t, web.Server, "/"+api.Service+"/"+api.MethodCreateNote, string(body))
 }
 
 func readFailure(t *testing.T, body []byte) server.APIError {
@@ -143,6 +149,33 @@ func TestListFieldsReturnsWhatTheTemplateAsks(t *testing.T) {
 	}
 	if status, body := listFields(t, web, "Notes/x.md"); status != http.StatusBadRequest {
 		t.Errorf("ListFields of a note that is no template = %d %s", status, body)
+	}
+}
+
+func TestCreateNoteRefusesATemplateThatChanged(t *testing.T) {
+	vault := hosttest.New("notes")
+	vault.File("Templates/Visit.md", asking)
+	web := newWeb(t, vault)
+	_, listed := listFields(t, web, "Templates/Visit.md")
+	var fields api.ListFieldsResponse
+	if err := json.Unmarshal(listed, &fields); err != nil {
+		t.Fatal(err)
+	}
+	body, err := json.Marshal(api.CreateNoteRequest{Template: "Templates/Visit.md", Folder: "work", Values: nil, Etag: fields.Etag})
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := "/" + api.Service + "/" + api.MethodCreateNote
+	vault.File("Templates/Visit.md", asking+"changed\n")
+
+	status, answer := post(t, web.Server, path, string(body))
+
+	failure := readFailure(t, answer)
+	if status != http.StatusPreconditionFailed || failure.Code != server.CodeFailedPrecondition || failure.Message != "template changed, open the picker again" {
+		t.Errorf("CreateNote of a changed template = %d %s", status, answer)
+	}
+	if _, isThere := vault.Content("work/Visit.md"); isThere {
+		t.Error("a note was made")
 	}
 }
 
@@ -226,7 +259,7 @@ func TestTheHostConfiguresTheMasksOfTheTemplates(t *testing.T) {
 	if status, body := createNote(t, web, "Models/Book.md", "work"); status != http.StatusBadRequest {
 		t.Errorf("before the setting: CreateNote = %d %s", status, body)
 	}
-	if status, body := post(t, web, "/numen.v1.PluginLifecycleService/Configure", `{"values":{"templates":" /Models/** , **/*.tpl.md "}}`); status != http.StatusOK {
+	if status, body := post(t, web.Server, "/numen.v1.PluginLifecycleService/Configure", `{"values":{"templates":" /Models/** , **/*.tpl.md "}}`); status != http.StatusOK {
 		t.Fatalf("Configure = %d %s", status, body)
 	}
 
@@ -247,7 +280,7 @@ func TestAnswerWithTheNoteWhenItCannotBeIndexed(t *testing.T) {
 	vault.File("Templates/Meeting.md", meeting)
 	useCase := newnote.NewCreateFromTemplate(unindexed{vault}, new(clocktest.Fake), ulid.NewGenerator(rand.Reader), func() mask.Set { return mask.Parse("") })
 
-	got, err := makeCreateNoteHandler(useCase)(t.Context(), api.CreateNoteRequest{Template: "Templates/Meeting.md", Folder: "work"})
+	got, err := makeCreateNoteHandler(useCase)(t.Context(), api.CreateNoteRequest{Template: "Templates/Meeting.md", Folder: "work", Values: nil, Etag: newnote.Etag(meeting)})
 
 	if err != nil || got.Path != "work/Meeting.md" {
 		t.Errorf("CreateNote = %q, %v", got.Path, err)

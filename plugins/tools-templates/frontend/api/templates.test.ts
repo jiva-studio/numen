@@ -35,6 +35,7 @@ const EXPECTED: [
         { kind: 'text', label: 'Client', options: [], default: 'Acme' },
         { kind: 'select', label: 'Kind', options: ['call', 'visit'], default: 'call' },
       ],
+      etag: '9f2c1a',
     },
   },
   {
@@ -43,6 +44,7 @@ const EXPECTED: [
       template: 'Templates/Meeting.md',
       folder: 'notes',
       values: { client: 'Acme', kind: 'visit' },
+      etag: '9f2c1a',
     },
     response: { path: 'notes/Meeting.md' },
   },
