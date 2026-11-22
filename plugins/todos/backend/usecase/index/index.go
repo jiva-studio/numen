@@ -81,11 +81,15 @@ type Index struct {
 
 // New returns an empty index over the notes the reader and the lister show.
 func New(files ports.FileReader, notes ports.NoteLister, front ports.Frontmatter, parse ParseFunc) *Index {
+	return build(files, notes, front, parse, nil)
+}
+
+func build(files ports.FileReader, notes ports.NoteLister, front ports.Frontmatter, parse ParseFunc, keeper *saver) *Index {
 	return &Index{
 		files: files, notes: notes, front: front, parse: parse,
 		mu: sync.Mutex{}, entries: map[string]entry{}, projects: map[string]int{}, contexts: map[string]int{},
 		tags: map[string]int{}, spelling: map[string]string{},
-		ignored: nil, revision: 0, isReady: false, changed: make(chan struct{}), saver: nil,
+		ignored: nil, revision: 0, isReady: false, changed: make(chan struct{}), saver: keeper,
 	}
 }
 
@@ -206,14 +210,38 @@ type PathListing struct {
 // ListPaths returns the paths of the notes with at least one task the filter accepts at today.
 func (i *Index) ListPaths(today string, f filter.Filter) PathListing {
 	i.mu.Lock()
-	listing := PathListing{Paths: []string{}, IsReady: i.isReady}
+	isReady := i.isReady
+	copies := make(map[string][]todo.Task, len(i.entries))
 	for path, one := range i.entries {
-		if len(filter.Apply(one.tasks, f, today)) > 0 {
+		copies[path] = one.tasks
+	}
+	i.mu.Unlock()
+	listing := PathListing{Paths: []string{}, IsReady: isReady}
+	for path, tasks := range copies {
+		if filter.Matches(tasks, f, today) {
 			listing.Paths = append(listing.Paths, path)
 		}
 	}
-	i.mu.Unlock()
 	slices.Sort(listing.Paths)
+	return listing
+}
+
+// MatchPaths returns the asked paths of the notes with at least one task the filter accepts at
+// today, in the order they were asked.
+func (i *Index) MatchPaths(today string, f filter.Filter, asked []string) PathListing {
+	i.mu.Lock()
+	isReady := i.isReady
+	copies := make([][]todo.Task, len(asked))
+	for n, path := range asked {
+		copies[n] = i.entries[path].tasks
+	}
+	i.mu.Unlock()
+	listing := PathListing{Paths: []string{}, IsReady: isReady}
+	for n, path := range asked {
+		if filter.Matches(copies[n], f, today) {
+			listing.Paths = append(listing.Paths, path)
+		}
+	}
 	return listing
 }
 

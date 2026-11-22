@@ -11,11 +11,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/todos/backend/api"
+	"github.com/jiva-studio/numen/plugins/todos/backend/filter"
 	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/clock"
 	hostadapter "github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/host"
 	logadapter "github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/log"
 	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/snapshot"
 	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
+	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/edit"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
@@ -47,7 +49,7 @@ func getSummary(tasks *index.Index) func(context.Context, api.GetSummaryRequest)
 
 func listTasks(tasks *index.Index) func(context.Context, api.ListTasksRequest) (api.ListTasksResponse, error) {
 	return func(_ context.Context, req api.ListTasksRequest) (api.ListTasksResponse, error) {
-		listing := tasks.List(req.Today, todos.DecodeFilter(req.Filter), getLimit(req.Limit))
+		listing := tasks.List(req.Today, todos.DecodeFilter(req.Filter), filter.ClampLimit(req.Limit, defaultLimit, maxLimit))
 		encoded := make([]api.Task, 0, len(listing.Tasks))
 		for _, task := range listing.Tasks {
 			encoded = append(encoded, todos.EncodeTask(task))
@@ -60,16 +62,6 @@ func listFields(tasks *index.Index) func(context.Context, api.ListFieldsRequest)
 	return func(_ context.Context, _ api.ListFieldsRequest) (api.ListFieldsResponse, error) {
 		return todos.EncodeFields(tasks.ListFields()), nil
 	}
-}
-
-func getLimit(asked int) int {
-	switch {
-	case asked <= 0:
-		return defaultLimit
-	case asked > maxLimit:
-		return maxLimit
-	}
-	return asked
 }
 
 func refreshIndex(tasks *index.Index) func(context.Context, api.RefreshIndexRequest) (api.RefreshIndexResponse, error) {
@@ -178,12 +170,15 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	tasks := index.NewForNotes(vault, vault, vault)
-	tasks.Persist(index.Persistence{Snapshots: snapshot.New(""), Feed: vault, After: index.SystemAfter, Cursors: snapshot.NewCursorStore})
-	done := complete.New(vault, vault, tasks)
-	vaults := NewVaults(vault.GetVaultID, tasks, tasktools.Scope{Tasks: tasks, Editor: edit.New(vault, vault, tasks), Completer: done})
+	log := logadapter.Slog{}
+	tasks := index.NewPersistent(vault, vault, vault, todo.ParseNote, index.Persistence{
+		Snapshots: snapshot.New(""), Feed: vault, After: index.SystemAfter, Cursors: snapshot.NewCursorStore, Log: log,
+	})
+	lock := ports.NewWriteLock()
+	done := complete.New(vault, vault, tasks, lock)
+	vaults := NewVaults(vault.GetVaultID, tasks, tasktools.Scope{Tasks: tasks, Editor: edit.New(vault, vault, tasks, lock), Completer: done})
 	ctx := getClosedContext(s)
-	if err := mount(ctx, s, tasks, done, logadapter.Slog{}); err != nil {
+	if err := mount(ctx, s, tasks, done, log); err != nil {
 		return err
 	}
 	if err := mountAgentSurface(s, vaults, clock.System{}); err != nil {
@@ -192,9 +187,8 @@ func Mount(s *server.Server) error {
 	s.OnClose(func() error {
 		flushCtx, stop := context.WithTimeout(context.Background(), flushTimeout)
 		defer stop()
-		tasks.Flush(flushCtx)
-		return nil
+		return tasks.Flush(flushCtx)
 	})
-	go startIndex(ctx, tasks, logadapter.Slog{})
+	go startIndex(ctx, tasks, log)
 	return nil
 }

@@ -3,6 +3,7 @@ package index
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"slices"
 	"sync"
 	"time"
@@ -30,6 +31,7 @@ type Persistence struct {
 	Feed      ports.ChangeFeed
 	After     After
 	Cursors   CursorStore
+	Log       ports.Log
 }
 
 // SystemAfter is the After of the plugin.
@@ -45,10 +47,11 @@ type saver struct {
 	cursor host.FileChangeCursor
 }
 
-// Persist makes the index keep a snapshot of itself: written SaveDelay after a change and by Flush,
-// read and brought up to date from the file change feed by Start.
-func (i *Index) Persist(p Persistence) {
-	i.saver = &saver{Persistence: p, mu: sync.Mutex{}, cancel: nil, cursor: host.FileChangeCursor{}}
+// NewPersistent returns an empty index that keeps a snapshot of itself: written SaveDelay after a
+// change and by Flush, read and brought up to date from the file change feed by Start. A write that
+// fails after the delay is reported to the log of the persistence.
+func NewPersistent(files ports.FileReader, notes ports.NoteLister, front ports.Frontmatter, parse ParseFunc, p Persistence) *Index {
+	return build(files, notes, front, parse, &saver{Persistence: p, mu: sync.Mutex{}, cancel: nil, cursor: host.FileChangeCursor{}})
 }
 
 // Start makes the index ready: from the snapshot of the last run and the changes made since, or by
@@ -74,16 +77,17 @@ func (i *Index) Start(ctx context.Context) error {
 }
 
 // Flush brings the index up to the end of the feed and writes its snapshot at once; a failure of the
-// feed still writes what the index has, with the cursor it reached.
-func (i *Index) Flush(ctx context.Context) {
+// feed still writes what the index has, with the cursor it reached. It returns the failures of both.
+func (i *Index) Flush(ctx context.Context) error {
 	if i.saver == nil {
-		return
+		return nil
 	}
 	i.saver.stop()
+	var followErr error
 	if i.GetState().IsReady {
-		ignore(i.follow(ctx))
+		followErr = i.follow(ctx)
 	}
-	i.save()
+	return errors.Join(followErr, i.save())
 }
 
 func (i *Index) follow(ctx context.Context) error {
@@ -178,9 +182,16 @@ func (i *Index) takeSnapshot() (ports.Snapshot, bool) {
 	return ports.Snapshot{Cursor: i.saver.cursor, Notes: notes}, true
 }
 
-func (i *Index) save() {
+func (i *Index) save() error {
 	if snapshot, isReady := i.takeSnapshot(); isReady {
-		ignore(i.saver.Snapshots.Save(snapshot))
+		return i.saver.Snapshots.Save(snapshot)
+	}
+	return nil
+}
+
+func (i *Index) saveInBackground() {
+	if err := i.save(); err != nil {
+		i.saver.Log.Error("save the task snapshot", err)
 	}
 }
 
@@ -188,7 +199,7 @@ func (i *Index) scheduleSave() {
 	if i.saver == nil {
 		return
 	}
-	i.saver.schedule(i.save)
+	i.saver.schedule(i.saveInBackground)
 }
 
 func (s *saver) schedule(save func()) {
@@ -229,8 +240,6 @@ func (s *saver) setCursor(cursor host.FileChangeCursor) {
 	defer s.mu.Unlock()
 	s.cursor = cursor
 }
-
-func ignore(_ error) {}
 
 func toSavedStat(stat domain.FileStat) ports.SavedStat {
 	return ports.SavedStat{

@@ -59,6 +59,31 @@ func Apply(tasks []todo.Task, f Filter, today string) []todo.Task {
 	return accepted
 }
 
+// Matches reports whether the filter accepts at least one of the tasks, without ordering them.
+func Matches(tasks []todo.Task, f Filter, today string) bool {
+	return slices.ContainsFunc(tasks, func(task todo.Task) bool { return f.accepts(task, today) })
+}
+
+// ClampLimit returns the count a caller asked for, the default when it asked for none and at most max.
+func ClampLimit(asked, defaultLimit, maxLimit int) int {
+	switch {
+	case asked <= 0:
+		return defaultLimit
+	case asked > maxLimit:
+		return maxLimit
+	}
+	return asked
+}
+
+// NormalizePriority returns the priority letter in upper case, or false when it is not one letter A to Z.
+func NormalizePriority(letter string) (string, bool) {
+	letter = strings.ToUpper(strings.TrimSpace(letter))
+	if len(letter) != 1 || letter[0] < 'A' || letter[0] > 'Z' {
+		return "", false
+	}
+	return letter, true
+}
+
 func (f Filter) accepts(task todo.Task, today string) bool {
 	return f.isStatusAccepted(task) &&
 		f.isDueAccepted(task, today) &&

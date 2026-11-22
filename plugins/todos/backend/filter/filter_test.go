@@ -205,3 +205,19 @@ func TestApplyKeepsTheOrderOfItsInput(t *testing.T) {
 		t.Errorf("the input was reordered: %v", got)
 	}
 }
+
+func TestMatchesReportsAnAcceptedTaskAndClampLimitAndNormalizePriorityFollowTheirRules(t *testing.T) {
+	tasks := []todo.Task{{Status: todo.StatusDone, Text: "a"}, {Status: todo.StatusOpen, Text: "b"}}
+
+	if !Matches(tasks, Filter{Text: "b"}, "2026-11-14") || Matches(tasks, Filter{Text: "a"}, "2026-11-14") {
+		t.Error("Matches must accept the open task and not the done one by default")
+	}
+	if got := []int{ClampLimit(0, 100, 500), ClampLimit(50, 100, 500), ClampLimit(900, 100, 500)}; got[0] != 100 || got[1] != 50 || got[2] != 500 {
+		t.Errorf("ClampLimit = %v, want [100 50 500]", got)
+	}
+	letter, isLetter := NormalizePriority(" b ")
+	_, isTwo := NormalizePriority("ab")
+	if letter != "B" || !isLetter || isTwo {
+		t.Errorf("NormalizePriority = %q %v, %v", letter, isLetter, isTwo)
+	}
+}

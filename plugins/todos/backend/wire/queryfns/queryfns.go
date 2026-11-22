@@ -5,7 +5,6 @@ package queryfns
 import (
 	"context"
 	"fmt"
-	"slices"
 	"strings"
 	"time"
 
@@ -26,6 +25,7 @@ type Vaults interface {
 // Tasks lists the notes that hold a task a filter accepts.
 type Tasks interface {
 	ListPaths(today string, f filter.Filter) index.PathListing
+	MatchPaths(today string, f filter.Filter, asked []string) index.PathListing
 }
 
 // buildFilter returns the filter a call stands for, at today.
@@ -111,12 +111,12 @@ func buildField(function, argument string, set func(*filter.Filter, string)) bui
 
 func buildPriority(call searchfunction.Call, _ string) (filter.Filter, error) {
 	letter, _ := call.Arguments.GetString("letter")
-	letter = strings.ToUpper(strings.TrimSpace(letter))
-	if len(letter) != 1 || letter[0] < 'A' || letter[0] > 'Z' {
-		return filter.Filter{}, invalid("hasTaskPriority needs letter, one letter from A to Z, got %q", letter)
+	normal, isLetter := filter.NormalizePriority(letter)
+	if !isLetter {
+		return filter.Filter{}, invalid("hasTaskPriority needs letter, one letter from A to Z, got %q", strings.TrimSpace(letter))
 	}
 	var f filter.Filter
-	f.Priorities = []string{letter}
+	f.Priorities = []string{normal}
 	return f, nil
 }
 
@@ -135,7 +135,7 @@ func invalid(format string, args ...any) error {
 }
 
 func newFunction(build buildFilter, vaults Vaults, clock ports.Clock) searchfunction.Function {
-	list := func(ctx context.Context, call searchfunction.Call) ([]string, string, error) {
+	list := func(ctx context.Context, call searchfunction.Call, query func(tasks Tasks, today string, f filter.Filter) index.PathListing) ([]string, string, error) {
 		tasks, err := vaults.GetTasks(ctx, call.VaultID)
 		if err != nil {
 			return nil, "", err
@@ -145,7 +145,7 @@ func newFunction(build buildFilter, vaults Vaults, clock ports.Clock) searchfunc
 		if err != nil {
 			return nil, "", err
 		}
-		listing := tasks.ListPaths(today, f)
+		listing := query(tasks, today, f)
 		if !listing.IsReady {
 			return listing.Paths, notReadyWarning, nil
 		}
@@ -153,18 +153,18 @@ func newFunction(build buildFilter, vaults Vaults, clock ports.Clock) searchfunc
 	}
 	return searchfunction.Function{
 		Match: func(ctx context.Context, call searchfunction.Call, asked []string) (searchfunction.Matched, error) {
-			paths, warning, err := list(ctx, call)
+			paths, warning, err := list(ctx, call, func(tasks Tasks, today string, f filter.Filter) index.PathListing {
+				return tasks.MatchPaths(today, f, asked)
+			})
 			if err != nil {
 				return searchfunction.Matched{}, err
 			}
-			matched := slices.DeleteFunc(slices.Clone(asked), func(path string) bool {
-				_, isHeld := slices.BinarySearch(paths, path)
-				return !isHeld
-			})
-			return searchfunction.Matched{Paths: matched, Warning: warning}, nil
+			return searchfunction.Matched{Paths: paths, Warning: warning}, nil
 		},
 		Find: func(ctx context.Context, call searchfunction.Call, limit int) (searchfunction.Found, error) {
-			paths, warning, err := list(ctx, call)
+			paths, warning, err := list(ctx, call, func(tasks Tasks, today string, f filter.Filter) index.PathListing {
+				return tasks.ListPaths(today, f)
+			})
 			if err != nil {
 				return searchfunction.Found{}, err
 			}

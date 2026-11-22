@@ -1,5 +1,5 @@
 // Package complete ticks or unticks one task line of a note and writes the note over the file
-// stat it had when it was read. It is the one write path of the plugin.
+// stat it had when it was read.
 package complete
 
 import (
@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -21,8 +20,8 @@ type Refusal string
 const (
 	// RefusalNotFound is a note with no line of the text the request names.
 	RefusalNotFound Refusal = "notFound"
-	// RefusalChanged is a note whose frontmatter can no longer be read.
-	RefusalChanged Refusal = "changed"
+	// RefusalUnreadable is a note whose frontmatter can no longer be read.
+	RefusalUnreadable Refusal = "unreadable"
 	// RefusalStale is a note that changed between the read and the write, twice.
 	RefusalStale Refusal = "stale"
 	// RefusalInvalidRecurrence is a tick of a task whose rec: cannot be read, and for now of any task
@@ -65,14 +64,13 @@ type SetTaskDone struct {
 	files  ports.FileReader
 	writer ports.FileWriter
 	store  ports.NoteStore
-
-	mu sync.Mutex
+	lock   *ports.WriteLock
 }
 
 // New returns the use case over the notes the reader and the writer reach; the store gets each
-// note written.
-func New(files ports.FileReader, writer ports.FileWriter, store ports.NoteStore) *SetTaskDone {
-	return &SetTaskDone{files: files, writer: writer, store: store, mu: sync.Mutex{}}
+// note written and the lock orders its writes with the other use cases that write notes.
+func New(files ports.FileReader, writer ports.FileWriter, store ports.NoteStore, lock *ports.WriteLock) *SetTaskDone {
+	return &SetTaskDone{files: files, writer: writer, store: store, lock: lock}
 }
 
 // Execute reads the note, finds the line, changes it and writes the note over the read baseline.
@@ -81,8 +79,8 @@ func (u *SetTaskDone) Execute(ctx context.Context, req Request) (Result, error) 
 	if !todo.IsDate(req.Today) {
 		return Result{}, fmt.Errorf("%w: %s", ErrInvalidToday, req.Today)
 	}
-	u.mu.Lock()
-	defer u.mu.Unlock()
+	u.lock.Lock()
+	defer u.lock.Unlock()
 	result, err := u.write(ctx, req)
 	if errors.Is(err, host.ErrStale) {
 		result, err = u.write(ctx, req)
@@ -106,7 +104,7 @@ func (u *SetTaskDone) write(ctx context.Context, req Request) (Result, error) {
 	}
 	tasks, err := todo.ParseNote(raw)
 	if errors.Is(err, todo.ErrUnreadable) {
-		return refuse(RefusalChanged), nil
+		return refuse(RefusalUnreadable), nil
 	}
 	if err != nil {
 		return Result{}, err
@@ -115,7 +113,7 @@ func (u *SetTaskDone) write(ctx context.Context, req Request) (Result, error) {
 	if req.IsProseLine {
 		hidden, err := todo.FrontmatterLines(raw)
 		if err != nil {
-			return refuse(RefusalChanged), nil
+			return refuse(RefusalUnreadable), nil
 		}
 		line += hidden
 	}

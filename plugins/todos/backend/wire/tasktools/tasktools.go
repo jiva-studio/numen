@@ -26,7 +26,7 @@ type Tasks interface {
 
 // Editor changes the task lines of a note.
 type Editor interface {
-	Find(ctx context.Context, path string, line int) (todo.Task, error)
+	Find(ctx context.Context, path string, line int, expected string) (todo.Task, error)
 	Add(ctx context.Context, path, text string) (todo.Task, error)
 	Edit(ctx context.Context, path string, line int, expected, text string) (todo.Task, error)
 	Remove(ctx context.Context, path string, line int, expected string) (todo.Task, error)
@@ -98,8 +98,8 @@ func refusalError(refusal complete.Refusal) error {
 	switch refusal {
 	case complete.RefusalNotFound:
 		return errors.New("the line is no longer that task; list the tasks again")
-	case complete.RefusalChanged:
-		return errors.New("the note cannot be read")
+	case complete.RefusalUnreadable:
+		return errors.New("the note frontmatter cannot be read")
 	case complete.RefusalStale:
 		return errors.New("the note changed while the task was written; try again")
 	case complete.RefusalInvalidRecurrence:

@@ -56,7 +56,7 @@ type Refusal string
 const (
 	RefusalUnspecified       Refusal = ""
 	RefusalNotFound          Refusal = "notFound"
-	RefusalChanged           Refusal = "changed"
+	RefusalUnreadable        Refusal = "unreadable"
 	RefusalStale             Refusal = "stale"
 	RefusalInvalidRecurrence Refusal = "invalidRecurrence"
 	RefusalNotOpen           Refusal = "notOpen"

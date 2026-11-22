@@ -73,7 +73,7 @@ func TestAWarmStartKeepsTheTagsAndReadsAFrontmatterChangeWithNoTaskChange(t *tes
 	snapshots, clock := new(memorySnapshots), new(timers)
 	first, _ := persisted(vault, snapshots, clock)
 	start(t, first)
-	first.Flush(t.Context())
+	flush(t, first)
 
 	vault.File("b.md", "---\ntags: [quay]\n---\n- [ ] two\n")
 	second, files := persisted(vault, snapshots, clock)
@@ -99,7 +99,7 @@ func TestTagsFollowANoteThatIsRemovedOrMoved(t *testing.T) {
 	if _, err := vault.MoveNotes(t.Context(), []string{"a.md"}, "inbox"); err != nil {
 		t.Fatal(err)
 	}
-	one.Flush(t.Context())
+	flush(t, one)
 
 	if got, want := formatCounts(one.ListFields().Tags), []string{"port=1"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("tags = %v, want %v", got, want)

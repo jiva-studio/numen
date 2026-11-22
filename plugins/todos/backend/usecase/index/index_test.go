@@ -567,3 +567,18 @@ func TestTheGroupsOfTheSummaryAreDisjointAndMatchTheListsOfTheirFilters(t *testi
 		t.Errorf("summary = %+v, want overdue 1, today 1, next seven days 2, no date 1", got)
 	}
 }
+
+func TestMatchPathsKeepsTheAskedOrderAndDropsNotesWithNoAcceptedTask(t *testing.T) {
+	f := newFixture(map[string]string{
+		"b.md": "- [ ] one due:2026-11-10\n",
+		"a.md": "- [ ] two\n",
+		"c.md": "- [x] four due:2026-11-10\n",
+	})
+	f.scan(t)
+
+	got := f.index.MatchPaths("2026-11-14", filter.Filter{Due: filter.DueOverdue}, []string{"c.md", "b.md", "a.md", "gone.md", "b.md"})
+
+	if want := []string{"b.md", "b.md"}; !got.IsReady || !slices.Equal(got.Paths, want) {
+		t.Errorf("MatchPaths = %+v, want %v", got, want)
+	}
+}

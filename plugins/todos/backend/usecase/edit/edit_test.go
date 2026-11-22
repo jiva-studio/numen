@@ -7,6 +7,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
+	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/edit"
 )
 
@@ -40,7 +42,7 @@ func setup(t *testing.T, note string) (*hosttest.Vault, *edit.Editor, *recording
 	vault := hosttest.New("notes")
 	vault.File("Home.md", note)
 	store := &recordingStore{}
-	return vault, edit.New(vault, vault, store), store
+	return vault, edit.New(vault, vault, store, ports.NewWriteLock()), store
 }
 
 func content(t *testing.T, vault *hosttest.Vault) string {
@@ -99,6 +101,7 @@ func TestAddRefusesWhatIsNotOneLineOrNoNote(t *testing.T) {
 		{"a line break", "Home.md", "a\nb", "", edit.ErrInvalidText},
 		{"a missing note", "Gone.md", "a", "", edit.ErrNoNote},
 		{"a note with a frontmatter never closed", "Home.md", "a", "---\ntitle: x\n", edit.ErrUnreadable},
+		{"a note with a code fence never closed", "Home.md", "a", "```\ncode\n", edit.ErrNotTask},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -134,10 +137,7 @@ func TestEditReplacesTheTextAfterTheCheckbox(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			vault, editor, _ := setup(t, c.note)
 
-			found, err := editor.Find(t.Context(), "Home.md", c.line)
-			if err != nil {
-				t.Fatal(err)
-			}
+			found := taskAt(t, c.note, c.line)
 
 			task, err := editor.Edit(t.Context(), "Home.md", c.line, found.Text, c.text)
 
@@ -240,7 +240,7 @@ func TestAWriteOverANoteChangedMeanwhileIsRetriedOnceThenRefused(t *testing.T) {
 			vault := hosttest.New("notes")
 			vault.File("Home.md", "- [ ] one\n")
 			writer := &racingWriter{vault: vault, stale: c.stale}
-			editor := edit.New(vault, writer, &recordingStore{})
+			editor := edit.New(vault, writer, &recordingStore{}, ports.NewWriteLock())
 
 			_, err := editor.Edit(t.Context(), "Home.md", 1, "one", "two")
 
@@ -254,8 +254,10 @@ func TestAWriteOverANoteChangedMeanwhileIsRetriedOnceThenRefused(t *testing.T) {
 func TestFindReturnsTheTaskAtTheLine(t *testing.T) {
 	_, editor, _ := setup(t, "# a\n- [ ] one +x\n")
 
-	task, err := editor.Find(t.Context(), "Home.md", 2)
-	_, missing := editor.Find(t.Context(), "Gone.md", 1)
+	task, err := editor.Find(t.Context(), "Home.md", 2, "one")
+	_, missing := editor.Find(t.Context(), "Gone.md", 1, "one")
+	_, stale := editor.Find(t.Context(), "Home.md", 2, "other")
+	_, empty := editor.Find(t.Context(), "Home.md", 2, "")
 
 	if err != nil || task.Raw != "- [ ] one +x" || task.Path != "Home.md" {
 		t.Errorf("Find() = %+v, %v, want the task at line 2", task, err)
@@ -263,4 +265,25 @@ func TestFindReturnsTheTaskAtTheLine(t *testing.T) {
 	if !errors.Is(missing, edit.ErrNoNote) {
 		t.Errorf("Find() of a missing note = %v, want ErrNoNote", missing)
 	}
+	if !errors.Is(stale, edit.ErrChanged) {
+		t.Errorf("Find() of other text = %v, want ErrChanged", stale)
+	}
+	if !errors.Is(empty, edit.ErrNoExpected) {
+		t.Errorf("Find() with no expected text = %v, want ErrNoExpected", empty)
+	}
+}
+
+func taskAt(t *testing.T, note string, line int) todo.Task {
+	t.Helper()
+	tasks, err := todo.ParseNote([]byte(note))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, task := range tasks {
+		if task.Line == line {
+			return task
+		}
+	}
+	t.Fatalf("no task at line %d of %q", line, note)
+	return todo.Task{}
 }

@@ -35,6 +35,7 @@ type TaskListInput struct {
 	Limit    int    `json:"limit,omitempty" jsonschema:"the most tasks to return, 100 by default and at most 500"`
 }
 
+// TaskListOutput is the page of tasks task_list returns.
 type TaskListOutput struct {
 	Tasks []TaskOutput `json:"tasks" jsonschema:"the tasks ordered by due date (none last), then priority, then path and line"`
 	Total int          `json:"total" jsonschema:"how many tasks match before the limit"`
@@ -55,11 +56,7 @@ func (t *Tools) addTaskList(registry *tools.Registry) error {
 		if err != nil {
 			return TaskListOutput{}, err
 		}
-		limit := in.Limit
-		if limit <= 0 {
-			limit = defaultLimit
-		}
-		listing := scope.Tasks.List(t.clock.Now().Format(time.DateOnly), f, min(limit, maxLimit))
+		listing := scope.Tasks.List(t.clock.Now().Format(time.DateOnly), f, filter.ClampLimit(in.Limit, defaultLimit, maxLimit))
 		out := TaskListOutput{Tasks: make([]TaskOutput, 0, len(listing.Tasks)), Total: listing.Total}
 		for _, task := range listing.Tasks {
 			out.Tasks = append(out.Tasks, encodeTask(task))
@@ -112,8 +109,8 @@ func readFields(f *filter.Filter, in TaskListInput) error {
 		f.Contexts = []string{strings.TrimPrefix(in.Context, "@")}
 	}
 	if in.Priority != "" {
-		letter := strings.ToUpper(in.Priority)
-		if len(letter) != 1 || letter[0] < 'A' || letter[0] > 'Z' {
+		letter, isLetter := filter.NormalizePriority(in.Priority)
+		if !isLetter {
 			return fmt.Errorf("priority %q is not one letter from A to Z", in.Priority)
 		}
 		f.Priorities = []string{letter}
@@ -158,9 +155,10 @@ func (t *Tools) addTaskAdd(registry *tools.Registry) error {
 
 // TaskSetDoneInput names the task and the state to set.
 type TaskSetDoneInput struct {
-	Path   string `json:"path" jsonschema:"the path of the note"`
-	Line   int    `json:"line" jsonschema:"the line of the task from task_list"`
-	IsDone bool   `json:"done" jsonschema:"true ticks an open task and adds done: today, false unticks a done task"`
+	Path         string `json:"path" jsonschema:"the path of the note"`
+	Line         int    `json:"line" jsonschema:"the line of the task from task_list"`
+	ExpectedText string `json:"expectedText" jsonschema:"required: the text of the task from task_list; the change is refused when the task now has other text"`
+	IsDone       bool   `json:"done" jsonschema:"true ticks an open task and adds done: today, false unticks a done task"`
 }
 
 func (t *Tools) addTaskSetDone(registry *tools.Registry) error {
@@ -169,13 +167,13 @@ func (t *Tools) addTaskSetDone(registry *tools.Registry) error {
 		Title:        "Tick or untick a task",
 		Description:  "Tick an open task, which adds done: with today's date, or untick a done one. Only the checkbox and the done: field change.",
 		Effect:       tools.ReadWrite,
-		Instructions: []string{lineSentence, conflictSentence},
+		Instructions: []string{lineSentence, expectedSentence, conflictSentence},
 	}, func(ctx context.Context, in TaskSetDoneInput) (TaskOutput, error) {
 		scope, err := t.getScope(ctx)
 		if err != nil {
 			return TaskOutput{}, err
 		}
-		found, err := scope.Editor.Find(ctx, in.Path, in.Line)
+		found, err := scope.Editor.Find(ctx, in.Path, in.Line, in.ExpectedText)
 		if err != nil {
 			return TaskOutput{}, describe(in.Path, err)
 		}
@@ -218,6 +216,7 @@ func (t *Tools) addTaskEdit(registry *tools.Registry) error {
 	})
 }
 
+// TaskRemoveInput names the task to delete and the text it must still have.
 type TaskRemoveInput struct {
 	Path         string `json:"path" jsonschema:"the path of the note"`
 	Line         int    `json:"line" jsonschema:"the line of the task from task_list"`

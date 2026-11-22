@@ -3,6 +3,7 @@ package ports
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -83,3 +84,19 @@ type Clock interface {
 type Log interface {
 	Error(message string, err error)
 }
+
+// WriteLock makes the writes of the notes run one after the other, whichever use case makes them.
+type WriteLock struct {
+	mu sync.Mutex
+}
+
+// NewWriteLock returns an unlocked lock.
+func NewWriteLock() *WriteLock {
+	return &WriteLock{mu: sync.Mutex{}}
+}
+
+// Lock waits until no other write holds the lock.
+func (l *WriteLock) Lock() { l.mu.Lock() }
+
+// Unlock lets the next write run.
+func (l *WriteLock) Unlock() { l.mu.Unlock() }

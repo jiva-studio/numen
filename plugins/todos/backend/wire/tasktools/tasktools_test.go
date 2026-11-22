@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/edit"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
@@ -49,7 +50,8 @@ func newSession(t *testing.T) *session {
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	registry, err := tasktools.New(oneVault{scope: tasktools.Scope{Tasks: tasks, Editor: edit.New(vault, vault, tasks), Completer: complete.New(vault, vault, tasks)}}, fixedClock{}).Registry()
+	lock := ports.NewWriteLock()
+	registry, err := tasktools.New(oneVault{scope: tasktools.Scope{Tasks: tasks, Editor: edit.New(vault, vault, tasks, lock), Completer: complete.New(vault, vault, tasks, lock)}}, fixedClock{}).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,7 +197,7 @@ func TestTaskAddAppendsALineTheIndexListsAtOnce(t *testing.T) {
 func TestTaskTickChangesTheCheckbox(t *testing.T) {
 	s := newSession(t)
 
-	ticked := call[tasktools.TaskOutput](t, s, "task_set_done", map[string]any{"path": "Home.md", "line": 3, "done": true})
+	ticked := call[tasktools.TaskOutput](t, s, "task_set_done", map[string]any{"path": "Home.md", "line": 3, "done": true, "expectedText": "water plants"})
 
 	if got, _ := s.vault.Content("Home.md"); !strings.Contains(got, "- [x] water plants due:2026-11-14 done:2026-11-14\n") {
 		t.Errorf("note = %q", got)
@@ -203,7 +205,7 @@ func TestTaskTickChangesTheCheckbox(t *testing.T) {
 	if ticked.Status != "done" || ticked.Path != "Home.md" || ticked.Line != 3 {
 		t.Errorf("ticked = %+v", ticked)
 	}
-	reopened := call[tasktools.TaskOutput](t, s, "task_set_done", map[string]any{"path": "Home.md", "line": 3, "done": false})
+	reopened := call[tasktools.TaskOutput](t, s, "task_set_done", map[string]any{"path": "Home.md", "line": 3, "done": false, "expectedText": "water plants"})
 	if got, _ := s.vault.Content("Home.md"); got != homeNote || reopened.Status != "open" {
 		t.Errorf("note = %q, task = %+v, want the first note back", got, reopened)
 	}
@@ -215,10 +217,12 @@ func TestTaskTickRejectsAChangeTheTaskDoesNotAllow(t *testing.T) {
 		args map[string]any
 		want string
 	}{
-		{"a done task ticked again", map[string]any{"path": "Home.md", "line": 4, "done": true}, "not open"},
-		{"an open task unticked", map[string]any{"path": "Home.md", "line": 3, "done": false}, "not done"},
-		{"a heading", map[string]any{"path": "Home.md", "line": 1, "done": true}, "not a task"},
-		{"a missing note", map[string]any{"path": "Gone.md", "line": 1, "done": true}, "not a note"},
+		{"a done task ticked again", map[string]any{"path": "Home.md", "line": 4, "done": true, "expectedText": "buy milk"}, "not open"},
+		{"an open task unticked", map[string]any{"path": "Home.md", "line": 3, "done": false, "expectedText": "water plants"}, "not done"},
+		{"a heading", map[string]any{"path": "Home.md", "line": 1, "done": true, "expectedText": "Home"}, "not a task"},
+		{"a missing note", map[string]any{"path": "Gone.md", "line": 1, "done": true, "expectedText": "x"}, "not a note"},
+		{"a stale line", map[string]any{"path": "Home.md", "line": 3, "done": true, "expectedText": "call bank"}, "not the expected text"},
+		{"no expected text", map[string]any{"path": "Home.md", "line": 3, "done": true, "expectedText": ""}, "expectedText is required"},
 	}
 	s := newSession(t)
 	for _, c := range cases {

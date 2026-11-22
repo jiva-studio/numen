@@ -52,8 +52,3 @@ func (v *Vault) GetVaultID(ctx context.Context) (domain.VaultID, error) {
 	shown, err := v.client.GetVault(ctx)
 	return shown.ID, err
 }
-
-// With returns the notes of the vault with the given identity.
-func (v *Vault) With(id domain.VaultID) *Vault {
-	return &Vault{client: v.client.With(id)}
-}

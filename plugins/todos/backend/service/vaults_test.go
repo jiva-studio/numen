@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server/servertest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/edit"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
@@ -48,7 +49,8 @@ func newTwoVaults(t *testing.T) *twoVaults {
 	if err := tasks.Scan(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	scope := tasktools.Scope{Tasks: tasks, Editor: edit.New(w.a, w.a, tasks), Completer: complete.New(w.a, w.a, tasks)}
+	lock := ports.NewWriteLock()
+	scope := tasktools.Scope{Tasks: tasks, Editor: edit.New(w.a, w.a, tasks, lock), Completer: complete.New(w.a, w.a, tasks, lock)}
 	w.vaults = NewVaults(func(context.Context) (domain.VaultID, error) { return "a", nil }, tasks, scope)
 	return w
 }
@@ -99,7 +101,7 @@ func TestToolsWriteOnlyTheShownVault(t *testing.T) {
 		want string
 	}{
 		{"add", "task_add", map[string]any{"path": "n.md", "text": "new"}, "- [ ] in a due:2026-11-01\n- [ ] new\n"},
-		{"tick", "task_set_done", map[string]any{"path": "n.md", "line": 1, "done": true}, "- [x] in a due:2026-11-01 done:2026-11-14\n"},
+		{"tick", "task_set_done", map[string]any{"path": "n.md", "line": 1, "done": true, "expectedText": "in a"}, "- [x] in a due:2026-11-01 done:2026-11-14\n"},
 		{"edit", "task_edit", map[string]any{"path": "n.md", "line": 1, "text": "changed", "expectedText": "in a"}, "- [ ] changed\n"},
 		{"remove", "task_remove", map[string]any{"path": "n.md", "line": 1, "expectedText": "in a"}, ""},
 	}
@@ -126,7 +128,7 @@ func TestToolsRefuseACallWithNoVaultAndTouchNothing(t *testing.T) {
 	calls := map[string]map[string]any{
 		"task_list":     {},
 		"task_add":      {"path": "n.md", "text": "new"},
-		"task_set_done": {"path": "n.md", "line": 1, "done": true},
+		"task_set_done": {"path": "n.md", "line": 1, "done": true, "expectedText": "in a"},
 		"task_edit":     {"path": "n.md", "line": 1, "text": "x", "expectedText": "in a"},
 		"task_remove":   {"path": "n.md", "line": 1, "expectedText": "in a"},
 	}

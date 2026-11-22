@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
@@ -26,7 +25,7 @@ var (
 	ErrChanged = errors.New("the task changed since it was listed")
 	// ErrStale is a note that changed between the read and the write, twice.
 	ErrStale = errors.New("the note changed while the task was written")
-	// ErrNoExpected is an edit or a removal that does not say the text of the task it targets.
+	// ErrNoExpected is a change that does not say the text of the task it targets.
 	ErrNoExpected = errors.New("the expected text of the task is required")
 	// ErrInvalidText is a task text that is empty or has a line break.
 	ErrInvalidText = errors.New("the task text must be one non-empty line")
@@ -38,23 +37,25 @@ type Editor struct {
 	files  ports.FileReader
 	writer ports.FileWriter
 	store  ports.NoteStore
-
-	mu sync.Mutex
+	lock   *ports.WriteLock
 }
 
 // New returns the editor over the notes the reader and the writer reach; the store gets each note
-// written.
-func New(files ports.FileReader, writer ports.FileWriter, store ports.NoteStore) *Editor {
-	return &Editor{files: files, writer: writer, store: store, mu: sync.Mutex{}}
+// written and the lock orders its writes with the other use cases that write notes.
+func New(files ports.FileReader, writer ports.FileWriter, store ports.NoteStore, lock *ports.WriteLock) *Editor {
+	return &Editor{files: files, writer: writer, store: store, lock: lock}
 }
 
-func (e *Editor) Find(ctx context.Context, path string, line int) (todo.Task, error) {
+// Find returns the task at the line when its text is the expected text, which is required.
+func (e *Editor) Find(ctx context.Context, path string, line int, expected string) (todo.Task, error) {
+	if expected == "" {
+		return todo.Task{}, ErrNoExpected
+	}
 	raw, _, err := e.files.Read(ctx, path)
 	if err != nil {
 		return todo.Task{}, convertReadError(err)
 	}
-	task, err := findAt(raw, path, line, "")
-	return task, err
+	return findAt(raw, path, line, expected)
 }
 
 // Add appends an open task line to the end of the note and returns the task written.
@@ -72,7 +73,11 @@ func (e *Editor) Add(ctx context.Context, path, text string) (todo.Task, error) 
 			content = append(bytes.Clone(content), '\n')
 		}
 		line := bytes.Count(content, []byte("\n")) + 1
-		return append(bytes.Clone(content), todo.NewLine(text)+"\n"...), line, nil
+		content = append(bytes.Clone(content), todo.NewLine(text)+"\n"...)
+		if _, err := findAt(content, path, line, ""); err != nil {
+			return nil, 0, ErrNotTask
+		}
+		return content, line, nil
 	})
 }
 
@@ -134,8 +139,8 @@ func (e *Editor) write(
 }
 
 func (e *Editor) run(ctx context.Context, path string, change func(raw []byte) ([]byte, error)) error {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	e.lock.Lock()
+	defer e.lock.Unlock()
 	err := e.attempt(ctx, path, change)
 	if errors.Is(err, host.ErrStale) {
 		err = e.attempt(ctx, path, change)

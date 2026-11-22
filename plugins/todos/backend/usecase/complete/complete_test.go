@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
 	"github.com/jiva-studio/numen/plugins/todos/backend/todo"
 )
 
@@ -54,7 +55,7 @@ func setup(t *testing.T, path, content string) (*hosttest.Vault, *writer, *SetTa
 	vault := hosttest.New("notes")
 	vault.File(path, content)
 	w := &writer{vault: vault}
-	return vault, w, New(vault, w, discardStore{})
+	return vault, w, New(vault, w, discardStore{}, ports.NewWriteLock())
 }
 
 func execute(t *testing.T, u *SetTaskDone, req Request) Result {
@@ -273,7 +274,7 @@ func TestExecuteRefusesAChangeTheNoteDoesNotAllowAndWritesNothing(t *testing.T) 
 			name: "a note whose frontmatter is never closed",
 			note: "---\ntitle: x\n- [ ] buy milk\n",
 			req:  tick("a.md", 3, "- [ ] buy milk"),
-			want: RefusalChanged,
+			want: RefusalUnreadable,
 		},
 		{
 			name: "a tick of a done task",
