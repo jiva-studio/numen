@@ -5,9 +5,11 @@ export const WORDS = {
   groupNextSevenDays: 'Next 7 days',
   groupNoDate: 'No date',
   chipLabel: 'Tasks due',
-  taskDone: 'Done',
   changedNote: 'The note changed. Open it to tick the task.',
   recurringNotTickable: 'Recurring tasks cannot be ticked here yet',
   taskBox: 'Task',
   tickFailed: 'The task could not be ticked',
 } as const
+
+/** The label of the checkbox that marks the task as done. */
+export const taskDoneLabel = (text: string): string => `Done: ${text}`

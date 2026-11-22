@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { createFakeApi, refuse, settle, SUMMARY, task } from '../../testing/fakeApi'
-import { WORDS } from '../../words'
+import { taskDoneLabel, WORDS } from '../../words'
 import type { Summary } from '../../types'
 import { ALL_SHOWN, type ShownGroups } from '../model/chip'
 import TodosStatus from './TodosStatus.vue'
@@ -146,7 +146,7 @@ describe('the todos popover', () => {
     const boxes = view.findAll('li input[type="checkbox"]')
     expect(boxes).toHaveLength(6)
     for (const box of boxes) {
-      expect(box.attributes('disabled')).toBeUndefined()
+      expect(box.attributes('aria-disabled')).toBe('false')
       expect((box.element as HTMLInputElement).checked).toBe(false)
     }
   })
@@ -343,12 +343,46 @@ describe('ticking a task in the todos popover', () => {
     await box.trigger('click')
     await settle()
 
-    expect(box.attributes('disabled')).toBeDefined()
-    box.element.dispatchEvent(new MouseEvent('mouseenter'))
+    expect(box.attributes('aria-disabled')).toBe('true')
+    box.element.parentElement?.dispatchEvent(new MouseEvent('mouseenter'))
     await settle()
     expect(document.body.textContent).toContain(WORDS.recurringNotTickable)
     expect(fake.calls.setTaskDone).toEqual([])
-    expect(boxOf(view, 'fix the tap').attributes('disabled')).toBeUndefined()
+    expect(boxOf(view, 'fix the tap').attributes('aria-disabled')).toBe('false')
+  })
+
+  it('shows why a recurring task cannot be ticked when its checkbox is focused', async () => {
+    const fake = createFakeApi({
+      tasks: {
+        ...TASKS,
+        overdue: {
+          tasks: [
+            task({ path: 'Home.md', line: 1, text: 'water the plants', recurrence: 'rec:1w' }),
+          ],
+          total: 1,
+          revision: 4,
+        },
+      },
+    })
+    const { wrapper: view } = draw(SUMMARY, fake)
+    await openPopover(view)
+
+    boxOf(view, 'water the plants').element.dispatchEvent(
+      new FocusEvent('focusin', { bubbles: true }),
+    )
+    await settle()
+
+    expect(document.body.textContent).toContain(WORDS.recurringNotTickable)
+  })
+
+  it('labels each checkbox by its task', async () => {
+    const { wrapper: view } = draw(SUMMARY)
+    await openPopover(view)
+
+    expect(boxOf(view, 'fix the tap').attributes('aria-label')).toBe(taskDoneLabel('fix the tap'))
+    expect(boxOf(view, 'call the bank').attributes('aria-label')).toBe(
+      taskDoneLabel('call the bank'),
+    )
   })
 
   it('asks to show that the note changed when the backend refuses the tick, and reads the lists again', async () => {
@@ -405,13 +439,13 @@ describe('a tick in flight in the todos popover', () => {
     await boxOf(view, 'call the bank').trigger('click')
     await settle()
 
-    expect(boxOf(view, 'call the bank').attributes('disabled')).toBeDefined()
-    expect(boxOf(view, 'fix the tap').attributes('disabled')).toBeUndefined()
+    expect(boxOf(view, 'call the bank').attributes('aria-disabled')).toBe('true')
+    expect(boxOf(view, 'fix the tap').attributes('aria-disabled')).toBe('false')
     expect(fake.calls.setTaskDone).toHaveLength(1)
 
     pending.answer?.()
     await settle()
 
-    expect(boxOf(view, 'call the bank').attributes('disabled')).toBeUndefined()
+    expect(boxOf(view, 'call the bank').attributes('aria-disabled')).toBe('false')
   })
 })

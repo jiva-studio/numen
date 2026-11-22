@@ -8,7 +8,7 @@ import { isPageMove, Tooltip, useMenuDismissal, useTooltip } from '@numen/ui'
 import { getChip, type ShownGroups } from '../model/chip'
 import { getNoteTitle, useTaskGroups } from '../model/useTaskGroups'
 import { useTaskTicks } from '../model/useTaskTicks'
-import { WORDS as words } from '../../words'
+import { taskDoneLabel, WORDS as words } from '../../words'
 import type { Summary, Task, TaskReader, TaskWriter } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -62,6 +62,7 @@ function onClose() {
 }
 
 function onTick(task: Task) {
+  if (!isTickable(task)) return
   ticks.tick(task).catch(() => emit('showError', words.tickFailed))
 }
 </script>
@@ -97,14 +98,20 @@ function onTick(task: Task) {
             :key="`${task.path}:${task.line}`"
             class="todos-status__row"
           >
-            <input
-              type="checkbox"
-              :disabled="!isTickable(task)"
-              :aria-label="words.taskDone"
+            <span
+              class="todos-status__tick"
               @mouseenter="tip.open($event, isRecurring(task) ? words.recurringNotTickable : '')"
               @mouseleave="tip.close"
-              @click.prevent="onTick(task)"
-            />
+              @focusin="tip.open($event, isRecurring(task) ? words.recurringNotTickable : '')"
+              @focusout="tip.close"
+            >
+              <input
+                type="checkbox"
+                :aria-disabled="!isTickable(task)"
+                :aria-label="taskDoneLabel(task.text)"
+                @click.prevent="onTick(task)"
+              />
+            </span>
             <button
               type="button"
               class="todos-status__text"
@@ -205,6 +212,21 @@ function onTick(task: Task) {
   gap: 0.5rem;
   padding: 0.25rem 0.5rem;
   font-size: var(--numen-text-2);
+  border-radius: var(--numen-radius);
+}
+
+.todos-status__popover .todos-status__row:hover {
+  background: var(--numen-selection-away);
+}
+
+.todos-status__popover .todos-status__tick {
+  display: inline-flex;
+  flex: none;
+}
+
+.todos-status__popover .todos-status__row input[type='checkbox'][aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .todos-status__popover .todos-status__row input[type='checkbox'] {
