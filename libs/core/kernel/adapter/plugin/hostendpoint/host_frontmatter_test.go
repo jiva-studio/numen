@@ -13,7 +13,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
@@ -51,14 +50,14 @@ func (r readingFrontmatter) ReadFrontmatter(ctx context.Context, q frontmatter.Q
 	return r.read.Execute(ctx, domain.Vault{ID: "v1"}, q)
 }
 
-func newFrontmatterClient(t *testing.T, token string, stored storedFrontmatter, limits query.FrontmatterLimits) testsupport.HostVaultClient {
+func newFrontmatterClient(t *testing.T, token string, stored storedFrontmatter, limits query.FrontmatterLimits) HostVaultClient {
 	t.Helper()
 	hosted := newCallers()
 	hosted.vault = vaultOf(readingFrontmatter{read: query.NewReadFrontmatter(stored, &memoryFeed{}, limits)})
 	return newVaultClient(t, hosted, token)
 }
 
-func readPages(t *testing.T, client testsupport.HostVaultClient, request *v1.ReadFrontmatterRequest) (paths []string, values map[string]map[string]any) {
+func readPages(t *testing.T, client HostVaultClient, request *v1.ReadFrontmatterRequest) (paths []string, values map[string]map[string]any) {
 	t.Helper()
 	values = map[string]map[string]any{}
 	for range 10 {

@@ -184,21 +184,33 @@ const writePreferredRow = (preferred: ConnectionCallPreferredRow | undefined) =>
         },
       }
 
+/** An aborted fetch does not end the call in the core, so the abort cancels it by its id. */
+const openCancellation = (
+  rpc: ConnectionCallRpc,
+  pluginId: string,
+  signal: AbortSignal | undefined,
+) => {
+  if (signal === undefined) {
+    return { callId: '', close: () => undefined }
+  }
+  const callId = crypto.randomUUID()
+  const cancel = () => {
+    rpc.cancelCall({ pluginId, callId }).catch(() => undefined)
+  }
+  signal.addEventListener('abort', cancel, { once: true })
+  return { callId, close: () => signal.removeEventListener('abort', cancel) }
+}
+
 /** The calls carried out through a ConnectionCallService client. */
 export const createConnectionCallClient = (rpc: ConnectionCallRpc): ConnectionCallClient => ({
   call: async function* (request, options) {
     const signal = options?.signal
-    const callId = signal === undefined ? '' : crypto.randomUUID()
-    // An aborted fetch does not end the call in the core, so the abort cancels it by its id.
-    const cancel = () => {
-      rpc.cancelCall({ pluginId: request.pluginId, callId }).catch(() => undefined)
-    }
-    signal?.addEventListener('abort', cancel, { once: true })
+    const cancellation = openCancellation(rpc, request.pluginId, signal)
     try {
       const stream = rpc.call(
         {
           ...request,
-          callId,
+          callId: cancellation.callId,
           priority: writePriority(options?.priority),
           ...writePreferredRow(options?.preferred),
         },
@@ -219,7 +231,7 @@ export const createConnectionCallClient = (rpc: ConnectionCallRpc): ConnectionCa
       }
       throw new Error('ConnectionCallService ended the stream before the call did')
     } finally {
-      signal?.removeEventListener('abort', cancel)
+      cancellation.close()
     }
   },
   listRows: async (pluginId, operation) => {

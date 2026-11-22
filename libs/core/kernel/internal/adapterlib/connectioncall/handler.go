@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 )
 
 // Calls carries out the operations plugins ask for. A nil Calls answers every call with
@@ -29,6 +28,14 @@ type Rows interface {
 	ListRowOptions(ctx context.Context, callerPluginID, operation, connectionID, field string, options map[string]string) ([]modelcall.Option, error)
 }
 
+// Cancels holds the cancel of each running call under its key.
+type Cancels interface {
+	// Start returns the context of the call, which Cancel with the same key cancels, and the function that
+	// ends the call.
+	Start(ctx context.Context, key string) (context.Context, func())
+	Cancel(key string)
+}
+
 // Identify tells the plugin a request is made for from its headers and the plugin_id it names, which is empty
 // where the request names none, and returns the context the request is answered in.
 type Identify func(ctx context.Context, header http.Header, requested string) (context.Context, string, error)
@@ -39,12 +46,12 @@ type Handler struct {
 	calls    func() Calls
 	rows     func() Rows
 	identify Identify
-	cancels  *searchcancel.Searches
+	cancels  Cancels
 }
 
 // NewHandler is the handler over the calls and rows its sources return, for the plugin identify names.
 // cancels holds the cancels of the calls it serves.
-func NewHandler(calls func() Calls, rows func() Rows, identify Identify, cancels *searchcancel.Searches) *Handler {
+func NewHandler(calls func() Calls, rows func() Rows, identify Identify, cancels Cancels) *Handler {
 	return &Handler{calls: calls, rows: rows, identify: identify, cancels: cancels}
 }
 

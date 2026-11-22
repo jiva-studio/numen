@@ -66,9 +66,6 @@ func (Runtime) ReleaseQuestion(string, string, plugindomain.Holder) {}
 // GetPluginInfos lists no plugin.
 func (Runtime) GetPluginInfos() []plugindomain.Info { return nil }
 
-// GetPlugins lists no plugin.
-func (Runtime) GetPlugins() []manifest.Discovered { return nil }
-
 // IsPluginEnabled reports that no plugin is enabled.
 func (Runtime) IsPluginEnabled(string) bool { return false }
 
@@ -140,3 +137,15 @@ func (Processes) ListProcesses() []plugindomain.Process { return nil }
 
 // WatchProcesses never signals: nothing runs to change.
 func (Processes) WatchProcesses(context.Context) <-chan struct{} { return nil }
+
+// Installed is the installed plugins of a plugin host that runs nothing.
+type Installed struct{}
+
+// GetPlugins lists no plugin.
+func (Installed) GetPlugins() []manifest.Discovered { return nil }
+
+// Listing lists the plugins of a plugin host that runs nothing: none are installed and none are enabled.
+type Listing struct {
+	Runtime
+	Installed
+}

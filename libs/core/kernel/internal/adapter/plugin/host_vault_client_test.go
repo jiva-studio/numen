@@ -1,4 +1,4 @@
-package testsupport
+package plugin_test
 
 import (
 	"connectrpc.com/connect"
@@ -6,8 +6,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// HostVaultClient calls the host vault services of one endpoint as a plugin does.
-type HostVaultClient struct {
+// hostVaultClient calls the host vault services of one endpoint as a plugin does.
+type hostVaultClient struct {
 	numenv1connect.HostVaultServiceClient
 	numenv1connect.HostFileServiceClient
 	numenv1connect.HostNoteServiceClient
@@ -16,8 +16,8 @@ type HostVaultClient struct {
 	numenv1connect.VaultsServiceClient
 }
 
-func NewHostVaultClient(httpClient connect.HTTPClient, url string, options ...connect.ClientOption) HostVaultClient {
-	return HostVaultClient{
+func newHostVaultClient(httpClient connect.HTTPClient, url string, options ...connect.ClientOption) hostVaultClient {
+	return hostVaultClient{
 		HostVaultServiceClient: numenv1connect.NewHostVaultServiceClient(httpClient, url, options...),
 		HostFileServiceClient:  numenv1connect.NewHostFileServiceClient(httpClient, url, options...),
 		HostNoteServiceClient:  numenv1connect.NewHostNoteServiceClient(httpClient, url, options...),

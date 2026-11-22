@@ -23,18 +23,18 @@ type Catalog interface {
 	FindByTabKind(ctx context.Context, kind string) (catalog.Entry, error)
 }
 
-// PluginDirs finds the folder of an installed plugin, enabled or not.
-type PluginDirs func(id string) (dir string, isInstalled bool)
+// InstalledPlugins lists the installed plugins, enabled or not.
+type InstalledPlugins func() []manifest.Discovered
 
-// Handler answers CatalogService over a catalog and the folders of the installed plugins.
+// Handler answers CatalogService over a catalog and the installed plugins.
 type Handler struct {
-	plugins Catalog
-	dirs    PluginDirs
+	plugins   Catalog
+	installed InstalledPlugins
 }
 
-// NewHandler returns the handler over the catalog. dirs is nil where the installation has no plugin folders.
-func NewHandler(plugins Catalog, dirs PluginDirs) *Handler {
-	return &Handler{plugins: plugins, dirs: dirs}
+// NewHandler returns the handler over the catalog. installed is nil where the installation has no plugin folders.
+func NewHandler(plugins Catalog, installed InstalledPlugins) *Handler {
+	return &Handler{plugins: plugins, installed: installed}
 }
 
 // readmeName is the file of a plugin's folder that describes the plugin.
@@ -45,10 +45,10 @@ const readmeName = "README.md"
 func (h *Handler) GetCatalogReadme(
 	ctx context.Context, r *connect.Request[v1.GetCatalogReadmeRequest],
 ) (*connect.Response[v1.GetCatalogReadmeResponse], error) {
-	if h.dirs == nil {
+	if h.installed == nil {
 		return connect.NewResponse(&v1.GetCatalogReadmeResponse{}), nil
 	}
-	dir, isInstalled := h.dirs(r.Msg.GetId())
+	dir, isInstalled := h.getPluginDir(r.Msg.GetId())
 	if !isInstalled {
 		return connect.NewResponse(&v1.GetCatalogReadmeResponse{}), nil
 	}
@@ -185,4 +185,13 @@ func newWireErrorCode(err error) v1.CatalogErrorCode {
 		return v1.CatalogErrorCode_CATALOG_ERROR_CODE_NOT_FOUND
 	}
 	return v1.CatalogErrorCode_CATALOG_ERROR_CODE_UNSPECIFIED
+}
+
+func (h *Handler) getPluginDir(id string) (string, bool) {
+	for _, one := range h.installed() {
+		if one.Manifest.ID == id {
+			return one.Dir, true
+		}
+	}
+	return "", false
 }

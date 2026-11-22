@@ -55,7 +55,7 @@ import (
 
 func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring) {
 	if plugins := getPluginCatalog(install.PluginCatalog, settingsDeps.ErrorHandler); plugins != nil {
-		handler := windowcatalog.NewHandler(plugins, func(id string) (string, bool) { return getInstalledPluginDir(exec.Runtime.Listing, id) })
+		handler := windowcatalog.NewHandler(plugins, exec.Runtime.Listing.GetPlugins)
 		path, served := windowcatalog.NewRoute(handler, w.page.Gate.CountQuestions())
 		w.Installation.Mount(editor.NewRoute(path, served, handler))
 	}
@@ -184,10 +184,7 @@ func openGetSettings(s settingsWiring) *settings.Get {
 }
 
 func mountSettings(w *windowRoutes, settingsDeps settingsWiring) {
-	values := windowsettings.NewValues(
-		openGetSettings(settingsDeps),
-		openWriteSettings(settingsDeps), openWatchSettings(settingsDeps), nil,
-	)
+	values := windowsettings.NewValues(openGetSettings(settingsDeps), openWriteSettings(settingsDeps), openWatchSettings(settingsDeps), nil)
 	handler := windowsettings.NewHandler(values)
 	w.Installation.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.SetPathChooser(openChoosePluginPath(settingsDeps, dialog))

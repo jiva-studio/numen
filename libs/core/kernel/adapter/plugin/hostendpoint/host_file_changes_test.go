@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/filechange"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/frontmatter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
@@ -76,7 +75,7 @@ func (s readingStored) ListFrontmatter(ctx context.Context, id domain.VaultID, q
 	return s.storedFrontmatter.ListFrontmatter(ctx, id, q)
 }
 
-func newFeedClient(t *testing.T, token string, feed *memoryFeed, stored storedFrontmatter) testsupport.HostVaultClient {
+func newFeedClient(t *testing.T, token string, feed *memoryFeed, stored storedFrontmatter) HostVaultClient {
 	t.Helper()
 	hosted := newCallers()
 	during := func() {
@@ -91,7 +90,7 @@ func newFeedClient(t *testing.T, token string, feed *memoryFeed, stored storedFr
 	return newVaultClient(t, hosted, token)
 }
 
-func listFileChanges(t *testing.T, client testsupport.HostVaultClient, request *v1.ListFileChangesRequest) *v1.ListFileChangesResponse {
+func listFileChanges(t *testing.T, client HostVaultClient, request *v1.ListFileChangesRequest) *v1.ListFileChangesResponse {
 	t.Helper()
 	res, err := client.ListFileChanges(t.Context(), connect.NewRequest(request))
 	if err != nil {

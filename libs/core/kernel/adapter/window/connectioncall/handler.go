@@ -16,16 +16,10 @@ import (
 
 var errPluginToken = errors.New("a window serves ConnectionCallService to no plugin process")
 
-// Calls carries out the operations plugins ask for.
-type Calls = shared.Calls
-
-// Rows lists the rows of the plugins and the values of their row fields.
-type Rows = shared.Rows
-
 // NewHandler is the handler over the calls and the rows of this installation. cancels holds the cancels of
 // the calls it serves.
-func NewHandler(calls Calls, rows Rows, cancels *searchcancel.Searches) *shared.Handler {
-	return shared.NewHandler(func() Calls { return calls }, func() Rows { return rows }, identify, cancels)
+func NewHandler(calls shared.Calls, rows shared.Rows, cancels *searchcancel.Searches) *shared.Handler {
+	return shared.NewHandler(func() shared.Calls { return calls }, func() shared.Rows { return rows }, identify, cancels)
 }
 
 func identify(ctx context.Context, header http.Header, requested string) (context.Context, string, error) {

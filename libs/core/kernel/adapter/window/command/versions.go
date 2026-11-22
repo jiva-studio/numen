@@ -12,16 +12,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
-// deleteTextID is the command of the application that lists and deletes the text versions of a file,
-// which the core serves with no plugin.
-var deleteTextID = plugincommand.CommandID{Command: text.DeleteCommand}
-
 // ListVersionItems lists every text version of the file over the shown vault. A file whose versions cannot
 // be listed is answered with the code and message of the error.
 func (h *Handler) ListVersionItems(
 	ctx context.Context, r *connect.Request[v1.ListVersionItemsRequest],
 ) (*connect.Response[v1.ListVersionItemsResponse], error) {
-	lists := h.listItems.Execute(ctx, h.vaults.GetCurrentVault(), r.Msg.GetPath(), []plugincommand.CommandID{deleteTextID})
+	lists := h.listItems.Execute(ctx, h.vaults.GetCurrentVault(), r.Msg.GetPath(), []plugincommand.CommandID{{Command: text.DeleteCommand}})
 	if err := ctx.Err(); err != nil {
 		return nil, connect.NewError(connect.CodeCanceled, err)
 	}

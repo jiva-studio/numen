@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"net/http"
 	"strings"
 	"sync"
@@ -23,7 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, testsupport.HostVaultClient) {
+func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, HostVaultClient) {
 	t.Helper()
 	hostCallers := newCallers()
 	hostCallers.vault = vaultOf(newFakeNoteVault())
@@ -32,7 +31,7 @@ func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, testsupport.
 		t.Fatal(err)
 	}
 	url := fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort())
-	return endpoint, testsupport.NewHostVaultClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return endpoint, NewHostVaultClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 }
 
 func TestOpenVaultWithUnsavedChangesReturnsUnsavedWithTheDetail(t *testing.T) {

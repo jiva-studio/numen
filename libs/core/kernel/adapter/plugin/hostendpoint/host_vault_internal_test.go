@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -50,7 +49,7 @@ func (b brokenVault) RenameNote(ctx context.Context, from, title string) (string
 	return b.fakeNoteVault.RenameNote(ctx, from, title)
 }
 
-func newBrokenClient(t *testing.T) (testsupport.HostVaultClient, *fakeNoteVault) {
+func newBrokenClient(t *testing.T) (HostVaultClient, *fakeNoteVault) {
 	t.Helper()
 	vault := newFakeNoteVault()
 	hostCallers := newCallers()
@@ -60,7 +59,7 @@ func newBrokenClient(t *testing.T) (testsupport.HostVaultClient, *fakeNoteVault)
 	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := testsupport.NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 	return client, vault
 }
 

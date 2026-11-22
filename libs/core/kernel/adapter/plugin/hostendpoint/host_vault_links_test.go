@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -147,7 +146,7 @@ func (l *linkingVault) readBaseline(t *testing.T, from string) *v1.HostFileStat 
 	return writeFileStat(now)
 }
 
-func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) testsupport.HostVaultClient {
+func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) HostVaultClient {
 	t.Helper()
 	hostCallers := newCallers()
 	if vault != nil {
@@ -158,7 +157,7 @@ func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) testsu
 	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return testsupport.NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 }
 
 func TestLinkEditsAreDeniedWithoutVaultWrite(t *testing.T) {

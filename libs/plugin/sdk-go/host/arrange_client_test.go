@@ -341,7 +341,7 @@ type addVaultErrorHost struct {
 func (a *addVaultErrorHost) AddVault(
 	context.Context, *connect.Request[v1.AddVaultRequest],
 ) (*connect.Response[v1.AddVaultResponse], error) {
-	return connect.NewResponse(&v1.AddVaultResponse{Error: vaultsErrorOf(v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE), Detail: a.detail}), nil
+	return connect.NewResponse(&v1.AddVaultResponse{Error: new(v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE), Detail: a.detail}), nil
 }
 
 func TestTheClientReturnsTheCoreMessageOfARejectedFolder(t *testing.T) {
@@ -370,7 +370,7 @@ type openVaultErrorHost struct {
 func (a *openVaultErrorHost) OpenVault(
 	context.Context, *connect.Request[v1.OpenVaultRequest],
 ) (*connect.Response[v1.OpenVaultResponse], error) {
-	return connect.NewResponse(&v1.OpenVaultResponse{Error: vaultsErrorOf(v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED), Detail: a.detail}), nil
+	return connect.NewResponse(&v1.OpenVaultResponse{Error: new(v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED), Detail: a.detail}), nil
 }
 
 func TestClientReturnsUnsavedChangesWithCoreMessageOfOpen(t *testing.T) {

@@ -3,7 +3,6 @@ package host_test
 import (
 	"net/http"
 
-	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -37,5 +36,3 @@ func handler(a hostServices) http.Handler {
 	mux.Handle(numenv1connect.NewVaultsServiceHandler(a))
 	return mux
 }
-
-func vaultsErrorOf(code v1.VaultsErrorCode) *v1.VaultsErrorCode { return &code }

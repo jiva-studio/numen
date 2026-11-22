@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -205,7 +204,7 @@ func (l *recordingList) IsMissing(v domain.Vault) bool {
 
 func newArrangeClient(
 	t *testing.T, list vaultapi.List, granted ...string,
-) (testsupport.HostVaultClient, *fakeNoteVault, *callers) {
+) (HostVaultClient, *fakeNoteVault, *callers) {
 	t.Helper()
 	vault := newFakeNoteVault()
 	hostCallers := newCallers()
@@ -215,7 +214,7 @@ func newArrangeClient(
 	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := testsupport.NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 	return client, vault, hostCallers
 }
 
@@ -224,7 +223,7 @@ func isDenied(err error) bool {
 	return errors.As(err, &failure) && failure.Code() == connect.CodePermissionDenied
 }
 
-func callNoteChanges(t *testing.T, client testsupport.HostVaultClient) map[string]error {
+func callNoteChanges(t *testing.T, client HostVaultClient) map[string]error {
 	t.Helper()
 	ctx := t.Context()
 	_, renameErr := client.RenameNote(ctx, connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
@@ -233,7 +232,7 @@ func callNoteChanges(t *testing.T, client testsupport.HostVaultClient) map[strin
 	return map[string]error{"RenameNote": renameErr, "MoveNotes": moveErr, "RemoveNotes": removeErr}
 }
 
-func callVaultChanges(t *testing.T, client testsupport.HostVaultClient) map[string]error {
+func callVaultChanges(t *testing.T, client HostVaultClient) map[string]error {
 	t.Helper()
 	ctx := t.Context()
 	_, addErr := client.AddVault(ctx, connect.NewRequest(&v1.AddVaultRequest{Path: "/vaults/Seas"}))
@@ -589,7 +588,7 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 			vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
-			client := testsupport.NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+			client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 
 			res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 			if err != nil {
@@ -721,7 +720,7 @@ func (o escapingPathVault) RenameNote(ctx context.Context, from, title string) (
 	return to, isFilenamed, moved, errors.New("the index could not be updated for the repaired notes")
 }
 
-func newEscapingPathClient(t *testing.T) (testsupport.HostVaultClient, *fakeNoteVault) {
+func newEscapingPathClient(t *testing.T) (HostVaultClient, *fakeNoteVault) {
 	t.Helper()
 	vault := newFakeNoteVault()
 	hostCallers := newCallers()
@@ -731,7 +730,7 @@ func newEscapingPathClient(t *testing.T) (testsupport.HostVaultClient, *fakeNote
 	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := testsupport.NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	client := NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 	return client, vault
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -231,17 +230,17 @@ func (m *memoryVault) GetProblems(context.Context, []domain.Check) ([]domain.Che
 	return nil, nil, errors.ErrUnsupported
 }
 
-func newVaultClient(t *testing.T, fakeCallers *callers, token string) testsupport.HostVaultClient {
+func newVaultClient(t *testing.T, fakeCallers *callers, token string) HostVaultClient {
 	t.Helper()
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
 	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return testsupport.NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
+	return NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
 }
 
-func newVaultFixture(t *testing.T) (testsupport.HostVaultClient, *memoryVault) {
+func newVaultFixture(t *testing.T) (HostVaultClient, *memoryVault) {
 	t.Helper()
 	vault := newMemoryVault(map[string]string{"samples/A.md": "body", "Animal.md": "form"})
 	hosted := newCallers()

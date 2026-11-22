@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"net/http"
 	"strings"
 	"testing"
@@ -33,7 +32,7 @@ func (readerIdentity) GetPluginIDByToken(token string) (string, bool) {
 
 func (readerIdentity) CheckPluginPermission(string, string) error { return nil }
 
-func openReadEndpoint(t *testing.T, access *vaultapi.Access) testsupport.HostVaultClient {
+func openReadEndpoint(t *testing.T, access *vaultapi.Access) hostendpoint.HostVaultClient {
 	t.Helper()
 	lent := hostendpoint.NewServices(func() hostendpoint.Lent { return hostendpoint.Lent{Vault: access} })
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, hostendpoint.Callers{
@@ -48,10 +47,10 @@ func openReadEndpoint(t *testing.T, access *vaultapi.Access) testsupport.HostVau
 		}
 	})
 	url := fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort())
-	return testsupport.NewHostVaultClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return hostendpoint.NewHostVaultClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 }
 
-func newDiskReadClient(t *testing.T) testsupport.HostVaultClient {
+func newDiskReadClient(t *testing.T) hostendpoint.HostVaultClient {
 	t.Helper()
 	v := vaulttest.NewVault(t, map[string]string{
 		"Rivers.txt":      "the Danube flows east",
@@ -72,7 +71,7 @@ func newDiskReadClient(t *testing.T) testsupport.HostVaultClient {
 	))
 }
 
-func readFileRange(t *testing.T, client testsupport.HostVaultClient, path string, start, length int64) *v1.ReadFileResponse {
+func readFileRange(t *testing.T, client hostendpoint.HostVaultClient, path string, start, length int64) *v1.ReadFileResponse {
 	t.Helper()
 	res, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: path, Start: start, Length: &length}))
 	if err != nil {

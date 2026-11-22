@@ -17,7 +17,6 @@ import (
 
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
 // cancelMode is what the canceling vault does on the call that cancels the batch.
@@ -83,7 +82,7 @@ func (c *cancelingVault) RemoveNote(ctx context.Context, target string) (string,
 	return trashPath, broken, err
 }
 
-func newCancelingEndpoint(t *testing.T, cancelIndex int, mode cancelMode) (testsupport.HostVaultClient, *cancelingVault, context.Context) {
+func newCancelingEndpoint(t *testing.T, cancelIndex int, mode cancelMode) (HostVaultClient, *cancelingVault, context.Context) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
@@ -335,7 +334,7 @@ func TestAddLinksCanceledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.T
 	}
 }
 
-func serveVaultCalls(t *testing.T, ctx context.Context, callers Callers) testsupport.HostVaultClient {
+func serveVaultCalls(t *testing.T, ctx context.Context, callers Callers) HostVaultClient {
 	t.Helper()
 	// Every call is served under ctx, so that a test ends the call from inside the vault the way a stopped plugin does.
 	mux := http.NewServeMux()
@@ -344,5 +343,5 @@ func serveVaultCalls(t *testing.T, ctx context.Context, callers Callers) testsup
 		mux.ServeHTTP(w, r.WithContext(ctx))
 	}))
 	t.Cleanup(server.Close)
-	return testsupport.NewHostVaultClient(server.Client(), server.URL)
+	return NewHostVaultClient(server.Client(), server.URL)
 }

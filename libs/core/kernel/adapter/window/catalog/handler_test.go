@@ -36,13 +36,13 @@ func newHandler(t *testing.T, sources ...catalog.Source) *windowcatalog.Handler 
 	return newHandlerOver(t, nil, sources...)
 }
 
-func newHandlerOver(t *testing.T, dirs windowcatalog.PluginDirs, sources ...catalog.Source) *windowcatalog.Handler {
+func newHandlerOver(t *testing.T, installed windowcatalog.InstalledPlugins, sources ...catalog.Source) *windowcatalog.Handler {
 	t.Helper()
 	service, err := catalog.NewService(catalog.Config{Target: "desktop.editor", Sources: sources, InstallDir: "", CacheDir: ""})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return windowcatalog.NewHandler(service, dirs)
+	return windowcatalog.NewHandler(service, installed)
 }
 
 func TestTheReadmeOfAnInstalledPluginIsReadFromItsFolder(t *testing.T) {
@@ -50,10 +50,12 @@ func TestTheReadmeOfAnInstalledPluginIsReadFromItsFolder(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(withReadme, "README.md"), []byte("# Peat\n\nBurns slowly.\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	folders := map[string]string{"org.example.on": withReadme, "org.example.off": withReadme, "org.example.bare": withoutReadme}
-	handler := newHandlerOver(t, func(id string) (string, bool) {
-		dir, isInstalled := folders[id]
-		return dir, isInstalled
+	handler := newHandlerOver(t, func() []manifest.Discovered {
+		return []manifest.Discovered{
+			{Manifest: manifest.Manifest{ID: "org.example.on"}, Dir: withReadme},
+			{Manifest: manifest.Manifest{ID: "org.example.off"}, Dir: withReadme},
+			{Manifest: manifest.Manifest{ID: "org.example.bare"}, Dir: withoutReadme},
+		}
 	})
 	for id, want := range map[string]string{
 		"org.example.on":      "# Peat\n\nBurns slowly.\n",
