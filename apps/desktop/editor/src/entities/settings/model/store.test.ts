@@ -30,6 +30,7 @@ const answerWith = (text: string, rest: Record<string, unknown> = {}) => ({
   path: '/numen.json',
   plugins: [],
   app: [],
+  appGroups: [],
   ...rest,
 })
 
@@ -269,6 +270,18 @@ describe('a setting written', () => {
     await store.write.writeSetting(['app', 'appearance', 'interfaceScale'], 1.2)
 
     expect(store.state.app.value.map((one) => one.value)).toEqual([1.2])
+  })
+
+  it('keeps the groups the core declares for the settings of the shell', async () => {
+    settings = createAnsweredSettings({
+      settingsService: {
+        getSettings: () => answerWith('{}', { appGroups: [{ id: 'font', title: 'Font' }] }),
+      },
+    })
+    const store = createSettingsStore(settings, words, vi.fn())
+    await store.start()
+
+    expect(store.state.appGroups.value).toEqual([{ id: 'font', title: 'Font' }])
   })
 
   it('says the settings could not be read where the vault answers text that is not JSON', async () => {

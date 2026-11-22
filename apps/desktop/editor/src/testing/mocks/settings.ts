@@ -36,6 +36,7 @@ export const settingsAnswers = {
       path: '/vaults/Physics/.numen/settings.json',
       plugins: [],
       app: mockVaultState.app.map(getSettingInForce).map(toWireSetting),
+      appGroups: [],
     }),
     writeSettings: (request: { settings: readonly { at: readonly string[]; value: string }[] }) => {
       if (mockVaultState.writeError) throw createLostConnection(mockVaultState.writeError)

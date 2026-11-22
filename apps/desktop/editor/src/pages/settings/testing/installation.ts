@@ -28,7 +28,15 @@ const SETTINGS_KEYS = [
   'write',
   'file',
 ]
-const PLUGIN_KEYS = ['plugins', 'app', 'catalog', 'retryPlugin', 'choosePath', 'getSettingsViews']
+const PLUGIN_KEYS = [
+  'plugins',
+  'app',
+  'appGroups',
+  'catalog',
+  'retryPlugin',
+  'choosePath',
+  'getSettingsViews',
+]
 const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
 const HEALTH_KEYS = ['items', 'canRunCommand', 'runCommand']
 const EDITS_KEYS = ['create', 'update', 'delete']
@@ -67,6 +75,7 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     choosePath: fn(() => Promise.resolve('')),
     plugins: ref([]),
     app: ref([]),
+    appGroups: ref([]),
     catalog: ref([]),
     health: {
       items: ref([]),

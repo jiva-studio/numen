@@ -173,6 +173,11 @@ function createInstallationSlots(deps: Pick<InstallationPluginDeps, 'rest' | 'ge
   }
 }
 
+function createInstallationDeclared(deps: Pick<InstallationPluginDeps, 'rest'>) {
+  const { app, appGroups } = deps.rest.state
+  return { app, appGroups }
+}
+
 function createInstallationPlugin(deps: InstallationPluginDeps) {
   const { settings, rest, retry, getSettingsViews, catalogEntries, reportError } = deps
   return {
@@ -192,7 +197,6 @@ function createInstallationPlugin(deps: InstallationPluginDeps) {
     },
     files: createInstallationPluginFiles(settings),
     plugins: rest.state.plugins,
-    app: rest.state.app,
     getSettingsViews,
   }
 }
@@ -237,7 +241,11 @@ function createInstallationLicenses(licenses: LicenseStore) {
 function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
   return {
     settings: createInstallationSettings(deps.settings),
-    plugin: { ...createInstallationPlugin(deps.plugin), ...createInstallationSlots(deps.plugin) },
+    plugin: {
+      ...createInstallationPlugin(deps.plugin),
+      ...createInstallationDeclared(deps.plugin),
+      ...createInstallationSlots(deps.plugin),
+    },
     connections: createInstallationConnections(deps.connections, deps.api),
     licenses: createInstallationLicenses(deps.licenses),
   }

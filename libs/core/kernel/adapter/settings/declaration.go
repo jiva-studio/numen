@@ -78,12 +78,21 @@ func AddDetectedConnectionIDs(values settingsdomain.Values, detected connectionp
 	}
 }
 
-func readAppDeclaration() []manifest.Setting {
+func readAppManifest() manifest.Manifest {
 	decoded, err := manifestjson.Decode(appDeclaration)
 	if err != nil {
-		return nil
+		return manifest.Manifest{}
 	}
-	return decoded.Settings
+	return decoded
+}
+
+func readAppDeclaration() []manifest.Setting {
+	return readAppManifest().Settings
+}
+
+// GetAppSettingGroups returns the groups the settings of the owner app name, in the order their islands are drawn.
+func GetAppSettingGroups() []manifest.SettingGroup {
+	return readAppManifest().SettingGroups
 }
 
 // GetAppDeclaration returns the settings of the owner app, declared in the format of a manifest

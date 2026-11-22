@@ -26,6 +26,7 @@ const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   version: 7n,
   plugins: [],
   app: [],
+  appGroups: [],
   ...overrides,
 })
 
@@ -351,6 +352,26 @@ describe('what the core resolved and declared', () => {
       activeOptions: [{ value: 'preset:numen', title: 'Numen', detail: '' }],
       value: 'preset:numen',
     })
+  })
+
+  it('arrives with the groups the core declares for the settings of the shell, in order', async () => {
+    const core = getCore()
+    request.getSettings.mockResolvedValue(
+      answer(
+        {},
+        {
+          appGroups: [
+            { id: 'font', title: 'Font' },
+            { id: 'display', title: 'Display' },
+          ],
+        },
+      ),
+    )
+
+    expect((await core.getSettings()).appGroups).toStrictEqual([
+      { id: 'font', title: 'Font' },
+      { id: 'display', title: 'Display' },
+    ])
   })
 
   it('arrives as nothing for the shell where the core declares none', async () => {

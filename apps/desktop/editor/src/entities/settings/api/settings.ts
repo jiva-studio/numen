@@ -191,6 +191,7 @@ export const createSettingsApi = (settingsService: WindowClients['settingsServic
           settings: p.settings.map(readPluginSetting),
         })),
         app: answer.app.map(readPluginSetting),
+        appGroups: answer.appGroups.map((one) => ({ id: one.id, title: one.title })),
       }
     },
 

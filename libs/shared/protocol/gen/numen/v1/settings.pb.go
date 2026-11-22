@@ -82,7 +82,9 @@ type GetSettingsResponse struct {
 	App []*PluginSetting `protobuf:"bytes,8,rep,name=app,proto3" json:"app,omitempty"`
 	// The version of the state `written` is read from. It grows with every write the core takes, so
 	// an answer with a smaller version than one already taken is older than it and is dropped.
-	Version       uint64 `protobuf:"varint,10,opt,name=version,proto3" json:"version,omitempty"`
+	Version uint64 `protobuf:"varint,10,opt,name=version,proto3" json:"version,omitempty"`
+	// The groups of the settings of the owner app, in the order their islands are drawn.
+	AppGroups     []*PluginSettingGroup `protobuf:"bytes,11,rep,name=app_groups,json=appGroups,proto3" json:"app_groups,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -150,6 +152,13 @@ func (x *GetSettingsResponse) GetVersion() uint64 {
 		return x.Version
 	}
 	return 0
+}
+
+func (x *GetSettingsResponse) GetAppGroups() []*PluginSettingGroup {
+	if x != nil {
+		return x.AppGroups
+	}
+	return nil
 }
 
 // Setting is one setting of the file and what to put there.
@@ -950,14 +959,16 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
 	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\xbe\x01\n" +
+	"\x12GetSettingsRequest\"\xfb\x01\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12.\n" +
 	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\x12)\n" +
 	"\x03app\x18\b \x03(\v2\x17.numen.v1.PluginSettingR\x03app\x12\x18\n" +
 	"\aversion\x18\n" +
-	" \x01(\x04R\aversionJ\x04\b\t\x10\n" +
+	" \x01(\x04R\aversion\x12;\n" +
+	"\n" +
+	"app_groups\x18\v \x03(\v2\x1c.numen.v1.PluginSettingGroupR\tappGroupsJ\x04\b\t\x10\n" +
 	"\"/\n" +
 	"\aSetting\x12\x0e\n" +
 	"\x02at\x18\x01 \x03(\tR\x02at\x12\x14\n" +
@@ -1047,32 +1058,34 @@ var file_numen_v1_settings_proto_goTypes = []any{
 	(*Option)(nil),                   // 17: numen.v1.Option
 	(*PluginInfo)(nil),               // 18: numen.v1.PluginInfo
 	(*PluginSetting)(nil),            // 19: numen.v1.PluginSetting
+	(*PluginSettingGroup)(nil),       // 20: numen.v1.PluginSettingGroup
 }
 var file_numen_v1_settings_proto_depIdxs = []int32{
 	18, // 0: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
 	19, // 1: numen.v1.GetSettingsResponse.app:type_name -> numen.v1.PluginSetting
-	2,  // 2: numen.v1.WatchSettingsResponse.changed:type_name -> numen.v1.Setting
-	2,  // 3: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
-	17, // 4: numen.v1.Options.options:type_name -> numen.v1.Option
-	0,  // 5: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
-	5,  // 6: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
-	7,  // 7: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
-	9,  // 8: numen.v1.SettingsService.ChoosePluginPath:input_type -> numen.v1.ChoosePluginPathRequest
-	11, // 9: numen.v1.SettingsService.GetPluginData:input_type -> numen.v1.GetPluginDataRequest
-	13, // 10: numen.v1.SettingsService.DeletePluginData:input_type -> numen.v1.DeletePluginDataRequest
-	3,  // 11: numen.v1.SettingsService.WatchSettings:input_type -> numen.v1.WatchSettingsRequest
-	1,  // 12: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
-	6,  // 13: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
-	8,  // 14: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
-	10, // 15: numen.v1.SettingsService.ChoosePluginPath:output_type -> numen.v1.ChoosePluginPathResponse
-	12, // 16: numen.v1.SettingsService.GetPluginData:output_type -> numen.v1.GetPluginDataResponse
-	14, // 17: numen.v1.SettingsService.DeletePluginData:output_type -> numen.v1.DeletePluginDataResponse
-	4,  // 18: numen.v1.SettingsService.WatchSettings:output_type -> numen.v1.WatchSettingsResponse
-	12, // [12:19] is the sub-list for method output_type
-	5,  // [5:12] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	20, // 2: numen.v1.GetSettingsResponse.app_groups:type_name -> numen.v1.PluginSettingGroup
+	2,  // 3: numen.v1.WatchSettingsResponse.changed:type_name -> numen.v1.Setting
+	2,  // 4: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
+	17, // 5: numen.v1.Options.options:type_name -> numen.v1.Option
+	0,  // 6: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest
+	5,  // 7: numen.v1.SettingsService.WriteSettings:input_type -> numen.v1.WriteSettingsRequest
+	7,  // 8: numen.v1.SettingsService.RetryPlugin:input_type -> numen.v1.RetryPluginRequest
+	9,  // 9: numen.v1.SettingsService.ChoosePluginPath:input_type -> numen.v1.ChoosePluginPathRequest
+	11, // 10: numen.v1.SettingsService.GetPluginData:input_type -> numen.v1.GetPluginDataRequest
+	13, // 11: numen.v1.SettingsService.DeletePluginData:input_type -> numen.v1.DeletePluginDataRequest
+	3,  // 12: numen.v1.SettingsService.WatchSettings:input_type -> numen.v1.WatchSettingsRequest
+	1,  // 13: numen.v1.SettingsService.GetSettings:output_type -> numen.v1.GetSettingsResponse
+	6,  // 14: numen.v1.SettingsService.WriteSettings:output_type -> numen.v1.WriteSettingsResponse
+	8,  // 15: numen.v1.SettingsService.RetryPlugin:output_type -> numen.v1.RetryPluginResponse
+	10, // 16: numen.v1.SettingsService.ChoosePluginPath:output_type -> numen.v1.ChoosePluginPathResponse
+	12, // 17: numen.v1.SettingsService.GetPluginData:output_type -> numen.v1.GetPluginDataResponse
+	14, // 18: numen.v1.SettingsService.DeletePluginData:output_type -> numen.v1.DeletePluginDataResponse
+	4,  // 19: numen.v1.SettingsService.WatchSettings:output_type -> numen.v1.WatchSettingsResponse
+	13, // [13:20] is the sub-list for method output_type
+	6,  // [6:13] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_settings_proto_init() }

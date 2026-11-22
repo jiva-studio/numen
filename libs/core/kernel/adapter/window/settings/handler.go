@@ -73,11 +73,12 @@ func (h *Values) GetSettings(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	reply := &v1.GetSettingsResponse{
-		Written: got.Written,
-		Version: got.Version,
-		Path:    got.Path,
-		Plugins: NewWirePluginInfos(got.Plugins),
-		App:     newWirePluginSettings(got.App),
+		Written:   got.Written,
+		Version:   got.Version,
+		Path:      got.Path,
+		Plugins:   NewWirePluginInfos(got.Plugins),
+		App:       newWirePluginSettings(got.App),
+		AppGroups: newWireSettingGroups(got.AppGroups),
 	}
 	return connect.NewResponse(reply), nil
 }

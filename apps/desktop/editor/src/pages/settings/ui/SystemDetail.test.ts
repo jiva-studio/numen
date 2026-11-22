@@ -10,7 +10,7 @@ import SystemDetail from './SystemDetail.vue'
 import SettingRow from './setting-row/SettingRow.vue'
 import ConnectionRows from './plugins/connection-rows/ConnectionRows.vue'
 import { createInstallation } from '@/pages/settings/testing/installation'
-import type { PluginSettingInfo, SettingEdit } from '@/entities/settings'
+import type { PluginSettingGroupInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 
 beforeEach(() => {
   vi.stubGlobal(
@@ -310,10 +310,12 @@ const DECLARATION: readonly PluginSettingInfo[] = [
 const createPage = (
   section: 'system' | 'appearance' | 'editor' | 'search',
   app: readonly PluginSettingInfo[] = DECLARATION,
+  appGroups: readonly PluginSettingGroupInfo[] = [],
 ) => {
   const writes: SettingEdit[] = []
   const installation = createInstallation({
     app: ref(app),
+    appGroups: ref(appGroups),
     write: (edits) => {
       writes.push(...edits)
     },
@@ -362,6 +364,34 @@ describe('the page of the shell settings', () => {
       ]
       for (const one of SEARCH) expect(drawn).not.toContain(one.title)
     }
+  })
+
+  it('draws the settings of a group in an island under its title and the others in the card above', () => {
+    const grouped = DECLARATION.map((one) =>
+      one.key === 'editor.fontSize' || one.key === 'editor.fontFamily'
+        ? { ...one, group: 'font' }
+        : one.key === 'editor.softWrap'
+          ? { ...one, group: 'display' }
+          : one,
+    )
+    const { wrapper } = createPage('editor', grouped, [
+      { id: 'font', title: 'Font' },
+      { id: 'display', title: 'Display' },
+      { id: 'unused', title: 'Unused' },
+    ])
+
+    const namesIn = (testId: string) => {
+      const island = wrapper.get(`[data-testid="${testId}"]`).element
+      return wrapper
+        .findAllComponents(SettingRow)
+        .filter((one) => island.contains(one.element))
+        .map((one) => one.props('name'))
+    }
+    expect(namesIn('setting-group-font')).toStrictEqual(['Font size', 'Font family'])
+    expect(namesIn('setting-group-display')).toStrictEqual(['Soft wrap'])
+    expect(wrapper.find('[data-testid="setting-group-unused"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Font')
+    expect(wrapper.findAllComponents(SettingRow)).toHaveLength(5)
   })
 
   it('draws no row where the core declares no setting for the shell', () => {

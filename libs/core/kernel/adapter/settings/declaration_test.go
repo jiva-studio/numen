@@ -48,7 +48,7 @@ func TestTheDeclarationOfTheShellBreaksNoRuleOfAManifest(t *testing.T) {
 		one.Key = strings.ReplaceAll(one.Key, ".", "")
 		flat = append(flat, one)
 	}
-	holder := manifest.Manifest{ID: "md.numen.app", Name: "App", Version: "1.0.0", Settings: flat}
+	holder := manifest.Manifest{ID: "md.numen.app", Name: "App", Version: "1.0.0", Settings: flat, SettingGroups: settings.GetAppSettingGroups()}
 	if issues := holder.ListIssues(); len(issues) != 0 {
 		t.Errorf("the declaration breaks %v", issues)
 	}
@@ -260,5 +260,62 @@ func TestTheReadingSizeKeepsItsKeyAndBoundsAndNamesBooksAndDocuments(t *testing.
 	}
 	if !strings.Contains(declared.Description, "book") || strings.Contains(declared.Description, "note") {
 		t.Errorf("the scale of the text is described as %q, want a scale of books and documents", declared.Description)
+	}
+}
+
+func TestTheShellDeclaresTheGroupsOfItsEditorAndSearchSettings(t *testing.T) {
+	groups := settings.GetAppSettingGroups()
+	titles := map[string]string{}
+	for _, one := range groups {
+		titles[one.ID] = one.Title
+	}
+	want := map[string]string{
+		"font":      "Font",
+		"display":   "Display",
+		"reranking": "Reranking",
+		"results":   "Results",
+		"limits":    "Query limits",
+	}
+	if len(groups) != len(want) {
+		t.Fatalf("the shell declares %d groups, want %d", len(groups), len(want))
+	}
+	for id, title := range want {
+		if titles[id] != title {
+			t.Errorf("the group %s is titled %q, want %q", id, titles[id], title)
+		}
+	}
+}
+
+func TestEverySettingOfTheShellNamesADeclaredGroupOrNone(t *testing.T) {
+	declared := map[string]bool{}
+	for _, one := range settings.GetAppSettingGroups() {
+		declared[one.ID] = true
+	}
+	grouped := map[string]string{
+		"editor.fontSize":               "font",
+		"editor.fontFamily":             "font",
+		"editor.lineHeight":             "font",
+		"editor.lineNumbers":            "display",
+		"editor.highlightActiveLine":    "display",
+		"editor.softWrap":               "display",
+		"search.reranking":              "reranking",
+		"search.rerankWindow":           "reranking",
+		"search.maxReranked":            "reranking",
+		"search.maxRerankedBytes":       "reranking",
+		"search.defaultLimit":           "results",
+		"search.maxLimit":               "results",
+		"search.candidatesPerCondition": "limits",
+		"search.maxCandidates":          "limits",
+		"search.maxPathPrefixes":        "limits",
+		"search.mergeGapBytes":          "limits",
+		"search.maxQueryBytes":          "limits",
+	}
+	for _, one := range settings.GetAppDeclaration() {
+		if one.Group != "" && !declared[one.Group] {
+			t.Errorf("%s names the group %q, which the shell does not declare", one.Key, one.Group)
+		}
+		if one.Group != grouped[one.Key] {
+			t.Errorf("%s is in the group %q, want %q", one.Key, one.Group, grouped[one.Key])
+		}
 	}
 }
