@@ -11,6 +11,7 @@ import { createFenceTracker, readTaskLine, type FieldKind, type TaskLine } from 
 interface TickRequest {
   readonly path: string
   readonly line: number
+  readonly isProseLine: boolean
   readonly raw: string
   readonly isDone: boolean
 }
@@ -55,6 +56,7 @@ class TaskBox extends WidgetType {
         .tick({
           path: view.state.facet(editorNotePath),
           line: line.number,
+          isProseLine: true,
           raw: line.text,
           isDone: !this.isDone,
         })

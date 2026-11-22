@@ -169,6 +169,7 @@ describe('ticking a task in the todos popover', () => {
       {
         path: 'Daily/2026-11-12.md',
         line: 3,
+        isProseLine: false,
         raw: '- [ ] call the bank',
         isDone: true,
         today: TODAY,

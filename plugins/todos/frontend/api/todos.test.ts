@@ -67,6 +67,7 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
         {
           path: 'Projects/Home.md',
           line: 7,
+          proseLine: 7,
           raw: '- [ ] (A) buy milk due:2026-11-13 rec:!1w +home @phone',
           text: 'buy milk',
           status: 'open',
@@ -82,6 +83,7 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
         {
           path: 'Daily/2026-11-12.md',
           line: 3,
+          proseLine: 3,
           raw: '  - [ ] call due:2026-02-30',
           text: 'call due:2026-02-30',
           status: 'open',
@@ -126,6 +128,7 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
     request: {
       path: 'Projects/Home.md',
       line: 7,
+      isProseLine: false,
       raw: '- [ ] fix the tap +home ^tap',
       isDone: true,
       today: '2026-11-14',
@@ -134,6 +137,7 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
       task: {
         path: 'Projects/Home.md',
         line: 7,
+        proseLine: 7,
         raw: '- [x] fix the tap +home done:2026-11-14 ^tap',
         text: 'fix the tap ^tap',
         status: 'done',

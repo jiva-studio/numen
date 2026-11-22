@@ -33,6 +33,7 @@ export function useTaskTicks(
       const result = await api.setTaskDone({
         path: task.path,
         line: task.line,
+        isProseLine: false,
         raw: task.raw,
         isDone: true,
         today: getToday(),

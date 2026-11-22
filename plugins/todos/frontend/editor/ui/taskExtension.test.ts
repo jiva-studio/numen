@@ -107,6 +107,7 @@ describe('the task extension', () => {
     expect(tick).toHaveBeenCalledWith({
       path: 'Projects/Home.md',
       line: 2,
+      isProseLine: true,
       raw: '- [ ] write due:2026-11-20',
       isDone: true,
     })

@@ -8,7 +8,6 @@ import {
   type Disposable,
   type HostServices,
   type PluginContext,
-  type VaultNotes,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import { todosApi, type TodosApi } from './api/wire'
@@ -16,7 +15,6 @@ import { createRefreshRelay } from './model/createRefreshRelay'
 import type { Timer } from './model/timer'
 import { createFieldCache } from './model/createFieldCache'
 import { freshTaskLine } from './model/freshTaskLine'
-import { proseLine } from './model/proseLine'
 import { useTaskFeed, type TaskFeed } from './model/useTaskFeed'
 import type { Filter, Task } from './types'
 import { TodosStatus } from './status'
@@ -68,28 +66,14 @@ async function currentTasks(
 /** The 1-based line the editor of the note counts the task on: from the prose, below the frontmatter. */
 async function editorLine(
   api: TodosApi,
-  notes: VaultNotes | undefined,
   today: string,
   target: { path: string; line: number; raw: string },
 ): Promise<number> {
   const tasks = await currentTasks(api, today, target)
-  const line = freshTaskLine(tasks, target)
-  if (!notes) return line
-  try {
-    const { body, error } = await notes.read(target.path)
-    if (error) return line
-    return proseLine(body, tasks, { line, raw: target.raw })
-  } catch {
-    return line
-  }
+  return freshTaskLine(tasks, target)?.proseLine ?? target.line
 }
 
-function createTodosView(
-  feed: TaskFeed,
-  api: TodosApi,
-  workspace: WorkspaceHost,
-  notes: VaultNotes | undefined,
-) {
+function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost) {
   return defineComponent({
     name: 'TodosView',
     setup: () => () =>
@@ -98,7 +82,7 @@ function createTodosView(
         api,
         getToday: () => workspace.window.getToday(),
         onOpen: async (target: { path: string; line: number; raw: string }) => {
-          const line = await editorLine(api, notes, workspace.window.getToday(), target)
+          const line = await editorLine(api, workspace.window.getToday(), target)
           return workspace.files.open(target.path, { line: line - 1 })
         },
         onShowError: (message: string) => workspace.messages.showError(message),
@@ -130,7 +114,7 @@ export const activate = (
 
   plugin.register.slotView({
     id: TODOS_VIEW,
-    component: createTodosView(feed, parts.api, workspace, host.vault.notes),
+    component: createTodosView(feed, parts.api, workspace),
   })
   const editorExtension = plugin.register.editorExtension?.bind(plugin.register)
   if (!editorExtension) {

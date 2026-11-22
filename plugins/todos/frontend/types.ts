@@ -15,6 +15,8 @@ type Issue = 'invalidDue' | 'invalidDone' | 'invalidRecurrence' | 'invalidPriori
 export interface Task {
   readonly path: string
   readonly line: number
+  /** The line counted from the first line below the frontmatter, as the note editor does. */
+  readonly proseLine: number
   readonly raw: string
   readonly text: string
   readonly status: Status
@@ -106,10 +108,14 @@ type Change = 'completed' | 'rescheduled' | 'reopened'
 /** Why a change was not written; the person can fix it by looking at the note. */
 type Refusal = 'notFound' | 'changed' | 'stale' | 'invalidRecurrence' | 'notOpen' | 'notDone'
 
-/** Ticks (isDone) or unticks the task at a line; raw is the text the line had when it was listed. */
+/**
+ * Ticks (isDone) or unticks the task at a line; raw is the text the line had when it was listed. The
+ * line counts the lines of the file, or from the first line below the frontmatter when isProseLine.
+ */
 export interface SetTaskDoneRequest {
   readonly path: string
   readonly line: number
+  readonly isProseLine: boolean
   readonly raw: string
   readonly isDone: boolean
   readonly today: string

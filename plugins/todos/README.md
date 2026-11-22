@@ -45,7 +45,7 @@ The plugin has the capability `tools`. Tools and query functions work the vault 
 - `task_edit`: Replaces the text of the task at a line, its fields included, and keeps its checkbox.
 - `task_remove`: Deletes the line of a task.
 
-A task is addressed by note path and line from `task_list`. The write tools refuse a line that is no longer a task, and `task_edit` and `task_remove` require `expectedText`, the text of the task, to refuse a task whose text changed. Every write reads the note, changes the line and writes the note over the file stat it was read with, as the checkbox tick does; a note that changed meanwhile is retried once, then refused.
+A task is addressed by note path and line from `task_list`. Lines count the lines of the file, frontmatter included; the note editor counts from the first line below the frontmatter, so a task also carries a `proseLine` and the checkbox tick names its line that way (`isProseLine`), which the backend converts with the frontmatter of the note it reads. The write tools refuse a line that is no longer a task, and `task_edit` and `task_remove` require `expectedText`, the text of the task, to refuse a task whose text changed. Every write reads the note, changes the line and writes the note over the file stat it was read with, as the checkbox tick does; a note that changed meanwhile is retried once, then refused.
 
 ## Settings
 

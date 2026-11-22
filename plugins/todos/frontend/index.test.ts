@@ -6,7 +6,7 @@ import {
   type CompletionSource,
 } from '@codemirror/autocomplete'
 import { EditorState, type Extension } from '@codemirror/state'
-import type { VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
+import type { WorkspaceHost } from '@numen/plugin-sdk'
 import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import {
   createFakeApi,
@@ -22,13 +22,19 @@ import { activate, TODOS_VIEW } from './index'
 
 const TODAY = '2026-11-14'
 
-const setup = (init: Pick<FakeInit, 'setTaskDone'> = {}, notes?: VaultNotes) => {
+const setup = (init: Pick<FakeInit, 'setTaskDone'> = {}) => {
   const fake = createFakeApi({
     ...init,
     tasks: {
       overdue: {
         tasks: [
-          task({ path: 'Projects/Home.md', line: 7, text: 'fix the tap', due: '2026-11-10' }),
+          task({
+            path: 'Projects/Home.md',
+            line: 7,
+            proseLine: 4,
+            text: 'fix the tap',
+            due: '2026-11-10',
+          }),
         ],
         total: 1,
         revision: 1,
@@ -44,7 +50,7 @@ const setup = (init: Pick<FakeInit, 'setTaskDone'> = {}, notes?: VaultNotes) => 
     messages: { showError },
   } as unknown as WorkspaceHost
   const context = createMockPluginContext({ pluginId: 'md.numen.todos' })
-  const host = createMockHostServices({ workspace, ...(notes ? { notes } : {}) })
+  const host = createMockHostServices({ workspace })
   activate(context, host, { api: fake.api, timer: clock.timer })
   return { context, host, fake, clock, open, showError }
 }
@@ -98,7 +104,7 @@ describe('the todos frontend', () => {
     expect(view.find('button').text()).toContain(String(SUMMARY.overdueCount + SUMMARY.todayCount))
   })
 
-  it('opens the note on the 0-based line of a task whose 1-based line is 7', async () => {
+  it('opens the note on the 0-based prose line of a task on file line 7 below 3 lines of frontmatter', async () => {
     const { context, fake, open } = setup()
     fake.push({ revision: 1, isReady: true })
     await settle()
@@ -108,11 +114,18 @@ describe('the todos frontend', () => {
     await view.find('button').trigger('click')
     await settle()
 
+    fake.setTasks({
+      any: {
+        tasks: [task({ path: 'Projects/Home.md', line: 7, proseLine: 4, text: 'fix the tap' })],
+        total: 1,
+        revision: 2,
+      },
+    })
     const text = view.findAll('li button').find((one) => one.text() === 'fix the tap')
     await text?.trigger('click')
     await settle()
 
-    expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 6 })
+    expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 3 })
   })
 
   const clickTask = async (
@@ -153,15 +166,6 @@ describe('the todos frontend', () => {
     expect(fake.calls.refreshIndex).toContainEqual({ paths: ['Projects/Home.md'], renamed: [] })
     expect(fake.calls.listTasks.at(-1)?.filter.path).toBe('Projects/Home.md')
     expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 10 })
-  })
-
-  it('opens on the line of the prose, which is counted below the frontmatter of the note', async () => {
-    const body = '# Heading\n\nprose\n- [ ] fix the tap\nafter'
-    const notes = { read: async () => ({ body }) } as unknown as VaultNotes
-    const { context, fake, open } = setup({}, notes)
-    await clickTask(fake, context)
-
-    expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 3 })
   })
 
   it('opens on the stored line where the note cannot be read again', async () => {
