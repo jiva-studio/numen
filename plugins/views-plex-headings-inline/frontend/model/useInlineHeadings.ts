@@ -1,7 +1,7 @@
 /** The headings one node writes under itself: those of its note, read while the node is shown. */
 import { computed, onScopeDispose, ref, shallowRef, watch, type ComputedRef } from 'vue'
 import { createRequestGuard } from '@numen/ui'
-import type { Caught, NoteHeading, VaultNotes } from '@numen/plugin-sdk'
+import type { NoteHeading, VaultNotes } from '@numen/plugin-sdk'
 import type { HeadingsSettings } from './settings'
 
 /** What the headings are read with, what chooses one, and when the notes of the vault change. */
@@ -10,7 +10,7 @@ export interface InlineSource {
   readonly settings: HeadingsSettings
   readonly open: (path: string, line: number) => void
   readonly onVaultChange: (listener: () => void) => { dispose: () => void }
-  readonly reportFailure: (error: Caught) => void
+  readonly reportFailure: (error: unknown) => void
 }
 
 /** The first headings of the note at `path`, whether their first read has ended, and `choose`, which opens the note at a line. */

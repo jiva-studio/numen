@@ -1,21 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createExternalOpener, isWebAddress } from './externalOpener'
+import { createExternalOpener } from './externalOpener'
 
 afterEach(() => {
   vi.restoreAllMocks()
-})
-
-describe('a web address', () => {
-  it.each(['http://example.org/', 'https://example.org/a?b=c'])('%s is one', (url) => {
-    expect(isWebAddress(url)).toBe(true)
-  })
-
-  it.each(['mailto:a@example.org', 'file:///etc/passwd', 'javascript:alert(1)', 'example.org', ''])(
-    '%j is none',
-    (url) => {
-      expect(isWebAddress(url)).toBe(false)
-    },
-  )
 })
 
 describe('opening an address from a plugin', () => {

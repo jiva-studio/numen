@@ -52,17 +52,7 @@ const CARRIES = new Set<Code>([
 // Other errors carry backend or platform text and are shown by their code.
 const REPORTED = 'ReportedError'
 
-/** Whatever a try block threw or a promise rejected with: anything can be thrown. */
-export type Caught = unknown
-
-/**
- * A value read from outside the program, such as a file, a message or a global, before a function
- * has checked its shape. Only the parameter of a parseX function or of a type guard has this type;
- * the function returns the typed value.
- */
-export type Unvalidated = unknown
-
-const isReportedError = (error: Caught): error is { readonly message: string } =>
+const isReportedError = (error: unknown): error is { readonly message: string } =>
   typeof error === 'object' &&
   error !== null &&
   'name' in error &&
@@ -73,7 +63,7 @@ const isReportedError = (error: Caught): error is { readonly message: string } =
 /**
  * The message for a caught error, shown to the user who awaited the result.
  */
-export const formatErrorMessage = (error: Caught): string => {
+export const formatErrorMessage = (error: unknown): string => {
   const reported = isReportedError(error) ? error.message.trim() : ''
   if (reported) return reported
   const fault = ConnectError.from(error)

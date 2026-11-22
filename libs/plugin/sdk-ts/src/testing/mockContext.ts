@@ -26,8 +26,8 @@ import type { PickerHost } from '../picker'
 import type { VaultTexts } from '../texts'
 import type { VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from '../workspace'
 import { asFailure, asValue, type Result } from '../result'
+import { isWebAddress } from '../webAddress'
 import type { MountedView, ViewCapability, ViewContexts, ViewRegistration } from '../views'
-import type { Caught } from '../errors'
 import type { DropRegistration } from '../drops'
 import type { EditorExtensionRegistration } from '../editorExtensions'
 import { createMockNoticeHost } from './mockNotices'
@@ -165,7 +165,7 @@ function addSetListener<T>(listeners: Set<T>, handler: T, subscriptions: Disposa
 }
 
 function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: T): void {
-  Promise.resolve(listener(event)).catch((error: Caught) => {
+  Promise.resolve(listener(event)).catch((error: unknown) => {
     queueMicrotask(() => {
       throw error
     })
@@ -181,15 +181,6 @@ const EMPTY_NOTE: CommandNote = {
   isFolder: false,
   others: [],
   tab: '',
-}
-
-function isWebAddress(url: string): boolean {
-  try {
-    const { protocol } = new URL(url)
-    return protocol === 'http:' || protocol === 'https:'
-  } catch {
-    return false
-  }
 }
 
 function pickDefinedParts<T extends object>(parts: { [K in keyof T]: T[K] | undefined }): T {

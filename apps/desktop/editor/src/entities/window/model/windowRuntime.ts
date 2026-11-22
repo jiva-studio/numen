@@ -2,7 +2,6 @@
  * Focus and close requests for the desktop window, sent through the Wails runtime.
  */
 import { watch, type Ref } from 'vue'
-import type { Caught } from '@/shared/api/errors'
 import { loadFrameRuntime, type FrameRuntimeLoader } from '../api/frameRuntime'
 
 export async function focusWindow(load: FrameRuntimeLoader = loadFrameRuntime): Promise<void> {
@@ -18,7 +17,7 @@ export interface EmptyWindowCloseDeps {
   readonly isLayoutReady: Readonly<Ref<boolean>>
   readonly tabCount: () => number
   readonly closeWindow: () => Promise<void>
-  readonly onError: (error: Caught) => void
+  readonly onError: (error: unknown) => void
 }
 
 /** Closes the window when the layout is ready and the tab count drops to zero. */

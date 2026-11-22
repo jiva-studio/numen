@@ -1,7 +1,7 @@
 /** The headings of the note of a node, read once the pointer rests on the node and put away once the pointer is off it. */
 import { getCurrentScope, onScopeDispose, shallowRef } from 'vue'
 import { createRequestGuard } from '@numen/ui'
-import type { Caught, NoteHeading, VaultNotes } from '@numen/plugin-sdk'
+import type { NoteHeading, VaultNotes } from '@numen/plugin-sdk'
 import type { HeadingsSettings } from './settings'
 
 /** How long the pointer rests on a node before its headings come out, in milliseconds. */
@@ -19,7 +19,7 @@ export interface HeadingsSource {
   readonly notes: Pick<VaultNotes, 'getHeadings'>
   readonly settings: HeadingsSettings
   readonly open: (path: string, line: number) => void
-  readonly reportFailure: (error: Caught) => void
+  readonly reportFailure: (error: unknown) => void
   readonly wait: Wait
   readonly hoverWait: number
   readonly leaveGrace: number

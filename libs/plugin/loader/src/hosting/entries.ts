@@ -9,7 +9,6 @@ import type {
   Selector,
   TabKindRegistration,
   TextRange,
-  Caught,
 } from '@numen/plugin-sdk'
 import { reportError } from './events'
 import { createReaderTabKind, createCustomTabKind, pickCustomTabParts } from './customTabKind'
@@ -77,7 +76,7 @@ function registerReaderExtensions(
               if (selector) state.selector = { ...selector }
               if (ranges) state.ranges = [...ranges]
             })
-            .catch((error: Caught) => reportError(deps, pluginId, error))
+            .catch((error: unknown) => reportError(deps, pluginId, error))
         },
         registration.icon,
       ),
@@ -166,7 +165,7 @@ export function registerTabKindEntry(
               { revealLine?: (line: number) => void } | undefined
             state?.revealLine?.(line)
           })
-          .catch((error: Caught) => reportError(deps, pluginId, error))
+          .catch((error: unknown) => reportError(deps, pluginId, error))
       })
       if (typeof unreg === 'function') cleanups.push(unreg)
     }

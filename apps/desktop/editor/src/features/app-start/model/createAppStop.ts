@@ -4,8 +4,6 @@
  */
 import { onUnmounted } from 'vue'
 import { runInBackground } from '@numen/ui'
-import type { Caught } from '@/shared/api/errors'
-
 export interface StopDeps {
   closeWindow(): void
   closeEditing(): void
@@ -13,7 +11,7 @@ export interface StopDeps {
   closeSettings(): void
   closePlugins?(): void | Promise<void>
   /** Receives the failure of a close that is not awaited. */
-  reportError(this: void, error: Caught): void
+  reportError(this: void, error: unknown): void
 }
 
 export function createAppStop(deps: StopDeps): void {

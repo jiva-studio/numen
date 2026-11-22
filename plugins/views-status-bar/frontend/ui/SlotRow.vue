@@ -4,7 +4,7 @@
  * drawn in place, and a submenu or a command with items is a button that opens its menu.
  */
 import type { Component } from 'vue'
-import type { CommandItem, SlotItem, Caught } from '@numen/plugin-sdk'
+import type { CommandItem, SlotItem } from '@numen/plugin-sdk'
 import { Tooltip, useTooltip } from '@numen/ui'
 import { formatTooltip } from '../lib/entries'
 import SlotMenuButton from './SlotMenuButton.vue'
@@ -14,7 +14,7 @@ defineProps<{
   place: string
   entries: readonly SlotItem[]
   listItems: (command: string) => Promise<readonly CommandItem[]>
-  reportError?: ((error: Caught) => void) | undefined
+  reportError?: ((error: unknown) => void) | undefined
 }>()
 
 /* --------------------------------- Events --------------------------------- */

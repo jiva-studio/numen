@@ -5,7 +5,7 @@ import type { HealthApi, PluginHealthItem } from '@/entities/plugin'
 import { isVaultSwapped, readShownVault, useShownVault, type VaultStateApi } from '@/entities/vault'
 import type { PathRename } from '@/shared/lib/paths'
 import type { TextRange } from '@/shared/lib/textRange'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
 import { createFollower } from '@/shared/api/stream'
 import {
@@ -73,7 +73,7 @@ interface StartDeps {
 }
 
 function startStreams(streams: StreamRunners, health: CoreHealth): void {
-  const onError = (error: Caught) => {
+  const onError = (error: unknown) => {
     health.failure.value = formatError(error)
   }
   runInBackground(streams.follow(), onError)

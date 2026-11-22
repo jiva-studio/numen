@@ -11,7 +11,7 @@ import {
   type CatalogEntry as CatalogEntryMessage,
   type CatalogSourceError as CatalogSourceErrorMessage,
 } from '@numen/protocol'
-import { formatErrorMessage, type Caught } from './errors'
+import { formatErrorMessage } from './errors'
 import { asFailure, asValue, type Result } from './result'
 
 /** One plugin as the catalog knows it. */
@@ -70,7 +70,7 @@ const readMatch = (answer: EntryAnswer): Result<CatalogMatch, CatalogFailure> =>
   return asValue({ entry: answer.entry, sourceErrors: answer.sourceErrors })
 }
 
-const readUnavailableFailure = (error: Caught): Result<never, CatalogFailure> =>
+const readUnavailableFailure = (error: unknown): Result<never, CatalogFailure> =>
   asFailure({ kind: 'unavailable', message: formatErrorMessage(error) })
 
 /** The catalog read through a CatalogService client. */

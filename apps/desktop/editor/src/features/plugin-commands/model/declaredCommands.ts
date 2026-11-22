@@ -26,7 +26,6 @@ import {
   type DeclaredSlot,
 } from '@/entities/plugin'
 import { createWhenAvailability, getWhenGroup, type WindowWhenContext } from '../lib/whenContext'
-import type { Caught } from '@/shared/api/errors'
 import { getConfirmation } from '../lib/confirmation'
 import { createPaletteNotes, type PaletteNotesDeps } from './paletteNotes'
 
@@ -191,7 +190,7 @@ export function createDeclaredState(deps: DeclaredStateDeps) {
     },
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load: (): Promise<void> =>
-      read().catch((error: Caught) => {
+      read().catch((error: unknown) => {
         isFirstListSettled.value = true
         throw error
       }),

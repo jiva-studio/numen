@@ -2,8 +2,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { waitWithinInterfaceLimit } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
 import type { PluginLister } from '@/entities/plugin'
-import { formatError, type Caught } from '@/shared/api/errors'
-
+import { formatError } from '@/shared/api/errors'
 /** What the start needs of the plugin loader. */
 export interface PluginStarter {
   readonly trackPlugins: (ids: readonly string[]) => Promise<void>
@@ -52,7 +51,7 @@ export function useAppStart(listPlugins: PluginLister, loader: PluginStarter) {
   })
   onUnmounted(() => {
     unmounting.abort()
-    loader.close().catch((error: Caught) => {
+    loader.close().catch((error: unknown) => {
       listError.value = formatError(error)
     })
   })

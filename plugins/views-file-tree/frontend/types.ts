@@ -11,10 +11,8 @@ import type {
   SlotView,
   CommandTarget,
   VaultEntry,
-  Caught,
   Disposable,
 } from '@numen/plugin-sdk'
-
 /** One file or folder of the vault, as represented by a row of the tree. */
 export type Entry = VaultEntry
 
@@ -189,5 +187,5 @@ export interface FilesTabState {
   readonly menu: FilesTabMenu
   readonly rowEnd: FilesTabRowEnd
   /** Shows the failure of an operation that runs in the background. */
-  reportFailure(error: Caught): void
+  reportFailure(error: unknown): void
 }

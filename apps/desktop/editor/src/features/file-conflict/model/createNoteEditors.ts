@@ -1,7 +1,7 @@
 /**
  * Editing, conflict handling, and flushing for open notes.
  */
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
 import {
   useOpenNotes,
@@ -39,7 +39,7 @@ type OpenNotes = Pick<
 function createNoteStore(
   notes: OpenNotes,
   windowTabs: Pick<WindowTabs, 'tabs'>,
-  reportError: (error: Caught) => void,
+  reportError: (error: unknown) => void,
 ) {
   return {
     has: (id: string) => notes.has(id),

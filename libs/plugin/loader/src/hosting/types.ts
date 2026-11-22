@@ -9,7 +9,6 @@ import type {
   CommandItem,
   CommandWarns,
   CommandsHost,
-  Caught,
   FilePlacement,
   JsonValue,
   LogHost,
@@ -111,7 +110,7 @@ export interface HostWindow {
   readonly target: string
   readonly app?: AppInfo
   readonly openExternal?: (url: string) => Promise<void>
-  readonly onError?: (pluginId: string, error: Caught) => void
+  readonly onError?: (pluginId: string, error: unknown) => void
   readonly getWorkspace?: () => WorkspaceHost | undefined
   readonly getCommands?: () => CommandsHost | undefined
   readonly getWindow?: () => WindowHost | undefined

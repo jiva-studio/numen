@@ -4,7 +4,7 @@ import {
   type CommandTarget,
   type VaultRef,
 } from '@/shared/model/command'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import { createInvocation } from '../../lib/entries/invocation'
 import { runInvocation } from '../handlers/handlers'
 
@@ -14,5 +14,5 @@ export const createVaultOpener =
   (vault: VaultRef): Promise<void> =>
     runInvocation(createInvocation(COMMAND.openVault, { ...getTarget(), vault }), deps).then(
       () => undefined,
-      (error: Caught) => deps.writeMessage(formatError(error), 'error'),
+      (error: unknown) => deps.writeMessage(formatError(error), 'error'),
     )

@@ -12,7 +12,6 @@ import type {
 import type { NoticeQueue, WindowPlatform } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowTabs } from '@/entities/tab'
-import type { Caught } from '@/shared/api/errors'
 import {
   createNoticeParts,
   createPluginCatalog,
@@ -38,8 +37,8 @@ export interface TestPluginSupportDeps {
   readonly readNote?: HostKinds['readNote']
   readonly writeNote?: HostKinds['writeNote']
   readonly resolveLink?: HostVault['resolveLink']
-  readonly reportError?: (pluginId: string, error: Caught) => void
-  readonly reportLoadError?: (pluginId: string, error: Caught) => void
+  readonly reportError?: (pluginId: string, error: unknown) => void
+  readonly reportLoadError?: (pluginId: string, error: unknown) => void
   readonly reportCommandIssue?: HostCommands['reportCommandIssue']
   readonly reportViewIssue?: HostSlots['reportViewIssue']
   readonly status?: PluginStatus

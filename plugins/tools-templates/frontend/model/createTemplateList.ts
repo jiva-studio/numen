@@ -1,4 +1,4 @@
-import { isNotePath, type Caught, type CommandItem, type VaultEntry } from '@numen/plugin-sdk'
+import { isNotePath, type CommandItem, type VaultEntry } from '@numen/plugin-sdk'
 import { createTemplateItems, type FoundTemplate } from '../lib/groupTemplates'
 import { couldHold, findGroup, type Mask } from '../lib/masks'
 
@@ -9,7 +9,7 @@ export interface TemplateFiles {
 
 /** A folder of the vault that could not be listed. */
 export class TemplateListError extends Error {
-  constructor(folder: string, cause: Caught) {
+  constructor(folder: string, cause: unknown) {
     const reason = cause instanceof Error ? cause.message : String(cause)
     super(`cannot list the folder "${folder}": ${reason}`, { cause })
     this.name = 'TemplateListError'
@@ -18,7 +18,7 @@ export class TemplateListError extends Error {
 
 const NOT_FOUND = new Set<string | number>(['not_found', 5])
 
-const isMissing = (error: Caught): boolean => {
+const isMissing = (error: unknown): boolean => {
   if (typeof error !== 'object' || error === null) return false
   const { code } = error as { code?: string | number }
   return code !== undefined && NOT_FOUND.has(code)

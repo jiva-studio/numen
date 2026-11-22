@@ -1,4 +1,3 @@
-import type { Caught } from '@numen/plugin-sdk'
 import { getCurrentDate, getNow } from '@numen/ui'
 import { computed, onUnmounted, ref } from 'vue'
 import { BAR_COUNT, openMicrophone, type Microphone } from '../api/microphone'
@@ -7,7 +6,7 @@ import type { RecorderTab } from '../api/saveRecording'
 export type RecordingStatus = 'idle' | 'starting' | 'recording' | 'paused' | 'saving' | 'stopped'
 export type RecordAction = 'start' | 'pause' | 'resume' | 'stop' | 'reset'
 
-function getErrorMessage(error: Caught): string {
+function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 

@@ -7,7 +7,6 @@
  */
 import { ref, type Ref, type ShallowRef } from 'vue'
 import { stepTo } from '@/shared/lib/dom/roving'
-import type { Unvalidated } from '@/shared/lib/async/types'
 import { canLandOn, type MenuItem } from '../items/item'
 import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from '../items/typeahead'
 
@@ -22,7 +21,7 @@ export interface MenuRowHandle extends RowHandle {
 }
 
 /** Whether the value is a menu row component, not an element or null. */
-export const isMenuRowHandle = (value: Unvalidated): value is MenuRowHandle =>
+export const isMenuRowHandle = (value: unknown): value is MenuRowHandle =>
   typeof value === 'object' &&
   value !== null &&
   'focus' in value &&

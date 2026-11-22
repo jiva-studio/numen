@@ -22,6 +22,18 @@ export const createKeepaliveTransport = (): Transport =>
     fetch: (input, init) => globalThis.fetch(input, { ...init, keepalive: true }),
   })
 
+/** Sends requests to the core at `baseUrl`, each with `token` as its bearer credential. */
+export const createBearerTransport = (baseUrl: string, token: string): Transport =>
+  createConnectTransport({
+    baseUrl,
+    interceptors: [
+      (next) => (request) => {
+        request.header.set('Authorization', `Bearer ${token}`)
+        return next(request)
+      },
+    ],
+  })
+
 /** The header that names the part of the window a request comes from, for the list of running plugins. */
 export const CALLER_HEADER = 'Numen-Caller'
 

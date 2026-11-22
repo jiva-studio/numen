@@ -9,8 +9,6 @@ import { getCurrentDate } from '@numen/ui'
 import { ref } from 'vue'
 import { getStretch as getHeatmapStretch } from '../../lib/heatmap/grid'
 import type { Tally as HeatmapTally } from '../../lib/heatmap/tally'
-import type { Caught } from '@numen/plugin-sdk'
-
 /** What the application answers about a vault's days. */
 interface ReviewDaysClient {
   listReviewDays(request: { vault: string; from: string; to: string }): Promise<ReviewDays>
@@ -41,7 +39,7 @@ interface Day {
 
 export interface ReviewDaysDeps {
   cards: ReviewDaysClient
-  reportError(error: Caught): void
+  reportError(error: unknown): void
   /**
    * The widest the grid of days can be rendered, in pixels. The requested days
    * are the days a grid of that width displays, and a vault has an entry for

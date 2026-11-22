@@ -9,8 +9,6 @@ import {
   type PluginStatus,
 } from '@numen/plugin-loader'
 import type { SettingEdit, SettingsStore } from '@/entities/settings'
-import type { Caught } from '@/shared/api/errors'
-
 const getPluginSetting = (
   rest: SettingsStore,
   pluginId: string,
@@ -48,7 +46,7 @@ export const createRowChangeSubscriber =
 /** The settings of a plugin as the plugin host reads them, and the handlers run when one changes. */
 export function createPluginSettingsAccessor(
   rest: SettingsStore,
-  reportError: (pluginId: string, error: Caught) => void,
+  reportError: (pluginId: string, error: unknown) => void,
 ) {
   const getSetting = (pluginId: string, key: string): JsonValue | undefined =>
     getPluginSetting(rest, pluginId, key)

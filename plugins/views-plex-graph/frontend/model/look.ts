@@ -3,7 +3,7 @@
  * focus, the lines, the movement and the room around a note.
  */
 import type { Ref } from 'vue'
-import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
+import type { PluginContext } from '@numen/plugin-sdk'
 import { followSetting } from './followSetting'
 import type { PlexLook, ReferenceMode } from '../types'
 
@@ -48,24 +48,22 @@ type LookNumber = (typeof LOOK_NUMBERS)[number][0]
 
 const REFERENCE_MODES: readonly ReferenceMode[] = ['off', 'outgoing', 'incoming', 'both']
 
-const parseReferences = (value: Unvalidated): ReferenceMode =>
+const parseReferences = (value: unknown): ReferenceMode =>
   typeof value === 'string' ? (REFERENCE_MODES.find((mode) => mode === value) ?? 'both') : 'both'
 
-const parseShowPills = (value: Unvalidated): boolean => (typeof value === 'boolean' ? value : true)
+const parseShowPills = (value: unknown): boolean => (typeof value === 'boolean' ? value : true)
 
-const parseActivateCreated = (value: Unvalidated): boolean =>
+const parseActivateCreated = (value: unknown): boolean =>
   typeof value === 'boolean' ? value : true
 
-const parseActivateLinked = (value: Unvalidated): boolean =>
+const parseActivateLinked = (value: unknown): boolean =>
   typeof value === 'boolean' ? value : false
 
-const parseHighlightLinks = (value: Unvalidated): boolean =>
-  typeof value === 'boolean' ? value : true
+const parseHighlightLinks = (value: unknown): boolean => (typeof value === 'boolean' ? value : true)
 
-const parseAlignToGrid = (value: Unvalidated): boolean =>
-  typeof value === 'boolean' ? value : false
+const parseAlignToGrid = (value: unknown): boolean => (typeof value === 'boolean' ? value : false)
 
-const parseNumber = (value: Unvalidated, range: NumberRange): number =>
+const parseNumber = (value: unknown, range: NumberRange): number =>
   typeof value === 'number' && Number.isFinite(value)
     ? Math.min(Math.max(value, range.min), range.max)
     : range.fallback
