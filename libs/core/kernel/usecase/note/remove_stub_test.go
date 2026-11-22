@@ -14,13 +14,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // trashSources is the index saying which sources sit under a path.
 type trashSources struct {
-	sourceport.SourcesUnder
+	note.SourcesUnder
 	underCtx []domain.FileStat
 	err      error
 }

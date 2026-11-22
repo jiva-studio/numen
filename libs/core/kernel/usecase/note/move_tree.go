@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -17,11 +16,11 @@ import (
 type MoveFile struct {
 	move      *MoveTree
 	admission vaultport.WriteAdmission
-	follow    indexport.IndexFollow
+	follow    IndexFollow
 }
 
 // NewMoveFile returns the use case over the moving of a file or a folder.
-func NewMoveFile(move *MoveTree, admission vaultport.WriteAdmission, follow indexport.IndexFollow) MoveFile {
+func NewMoveFile(move *MoveTree, admission vaultport.WriteAdmission, follow IndexFollow) MoveFile {
 	return MoveFile{move: move, admission: admission, follow: follow}
 }
 
@@ -42,11 +41,11 @@ func (u MoveFile) Execute(ctx context.Context, v domain.Vault, from, to string) 
 // reaching one is written again by its name. A note given a different name
 // inside its own folder is called by that name, where a title and a filename are one name.
 type MoveTree struct {
-	movers  vaultport.FileMovers
+	movers  FileMovers
 	links   noteport.LinkQueries
-	queries sourceport.SourcesUnder
+	queries SourcesUnder
 	sources sourceport.SourceRepository
-	notes   Move
+	notes   *Move
 }
 
 // NewMoveTree is what files anything the vault holds somewhere else: the vault it
@@ -54,13 +53,13 @@ type MoveTree struct {
 // holds about the files under the path and where it files them, and the one
 // Move every note that traveled settles through.
 func NewMoveTree(
-	movers vaultport.FileMovers,
+	movers FileMovers,
 	links noteport.LinkQueries,
-	queries sourceport.SourcesUnder,
+	queries SourcesUnder,
 	sources sourceport.SourceRepository,
 	notes Move,
 ) MoveTree {
-	return MoveTree{movers: movers, links: links, queries: queries, sources: sources, notes: notes}
+	return MoveTree{movers: movers, links: links, queries: queries, sources: sources, notes: &notes}
 }
 
 // Execute moves the path and repairs what pointed at the notes under it.

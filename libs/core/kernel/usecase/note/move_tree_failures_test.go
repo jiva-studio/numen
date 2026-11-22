@@ -21,7 +21,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // watchedLinks answers like the index, records each note whose backlinks were
@@ -50,7 +49,7 @@ func (w *watchedLinks) GetLinks(ctx context.Context, id domain.VaultID, from str
 
 // unknowing is an index that cannot say what the vault holds under a path.
 type unknowing struct {
-	sourceport.SourcesUnder
+	note.SourcesUnder
 	err error
 }
 
@@ -69,9 +68,9 @@ func (u unfiling) MoveSources(context.Context, domain.VaultID, string, string) e
 // wiring is everything a Move relies on that a test may replace.
 type wiring struct {
 	links   noteport.LinkQueries
-	queries sourceport.SourcesUnder
+	queries note.SourcesUnder
 	sources sourceport.SourceRepository
-	writers vaultport.FileMovers
+	writers note.FileMovers
 	index   func(context.Context, domain.Vault, []string) error
 }
 
