@@ -64,7 +64,7 @@ const directionByWire: Record<NoteLinkDirectionCode, LinkDirection | null> = {
 
 export const mapBaseline = (baseline: { prose: string; stat: string }) => ({
   prose: baseline.prose,
-  at: parseFingerprint(baseline.stat),
+  fileStat: parseFingerprint(baseline.stat),
 })
 
 export const mapNoteResult = (from: {

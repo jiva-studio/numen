@@ -38,7 +38,7 @@ describe('the file a save presents', () => {
       size: 4096n,
       mtime: 1_700_000_000_123n,
     }
-    request.readNote.mockResolvedValue({ body: 'prose', at: noteFile })
+    request.readNote.mockResolvedValue({ body: 'prose', fileStat: noteFile })
     request.writeNote.mockResolvedValue({})
 
     const read = await api.readNote(noteFile.path)
@@ -51,7 +51,7 @@ describe('the file a save presents', () => {
     expect(request.writeNote.mock.calls[0]?.[0]).toMatchObject({
       path: noteFile.path,
       body: 'prose and more',
-      baseline: { prose: 'prose', at: noteFile },
+      baseline: { prose: 'prose', fileStat: noteFile },
     })
   })
 
