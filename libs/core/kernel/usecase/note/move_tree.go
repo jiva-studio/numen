@@ -1,4 +1,4 @@
-package vault
+package note
 
 import (
 	"context"
@@ -15,13 +15,13 @@ import (
 )
 
 type MoveFile struct {
-	move      *Move
+	move      *MoveTree
 	admission vaultport.WriteAdmission
 	follow    indexport.IndexFollow
 }
 
 // NewMoveFile returns the use case over the moving of a file or a folder.
-func NewMoveFile(move *Move, admission vaultport.WriteAdmission, follow indexport.IndexFollow) MoveFile {
+func NewMoveFile(move *MoveTree, admission vaultport.WriteAdmission, follow indexport.IndexFollow) MoveFile {
 	return MoveFile{move: move, admission: admission, follow: follow}
 }
 
@@ -36,37 +36,31 @@ func (u MoveFile) Execute(ctx context.Context, v domain.Vault, from, to string) 
 	return moved, u.follow.IsIndexOutdated(err), err
 }
 
-// NoteMover settles each note that traveled in a vault move.
-type NoteMover interface {
-	WriteFilenameAsTitle(ctx context.Context, v domain.Vault, path string) error
-	RepairLinks(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (domain.MoveResult, error)
-}
-
-// Move files anything the vault holds somewhere else inside it: one file of any
+// MoveTree files anything the vault holds somewhere else inside it: one file of any
 // kind, or a folder with everything under it. Renaming is a move within one folder.
 // Every note that traveled is filed where it now is, and a link that stopped
 // reaching one is written again by its name. A note given a different name
 // inside its own folder is called by that name, where a title and a filename are one name.
-type Move struct {
+type MoveTree struct {
 	movers  vaultport.FileMovers
 	links   noteport.LinkQueries
 	queries sourceport.SourcesUnder
 	sources sourceport.SourceRepository
-	notes   NoteMover
+	notes   *Move
 }
 
-// NewMove is what files anything the vault holds somewhere else: the vault it
+// NewMoveTree is what files anything the vault holds somewhere else: the vault it
 // is moved within, the links that pointed at what traveled, what the index
 // holds about the files under the path and where it files them, and the one
-// NoteMover every note that traveled settles through.
-func NewMove(
+// Move every note that traveled settles through.
+func NewMoveTree(
 	movers vaultport.FileMovers,
 	links noteport.LinkQueries,
 	queries sourceport.SourcesUnder,
 	sources sourceport.SourceRepository,
-	notes NoteMover,
-) Move {
-	return Move{movers: movers, links: links, queries: queries, sources: sources, notes: notes}
+	notes *Move,
+) MoveTree {
+	return MoveTree{movers: movers, links: links, queries: queries, sources: sources, notes: notes}
 }
 
 // Execute moves the path and repairs what pointed at the notes under it.
@@ -74,7 +68,7 @@ func NewMove(
 // A folder is one rename, so its contents arrive whole or keep their position.
 // A link repair that fails afterwards leaves that link broken and visible as a
 // problem.
-func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {
+func (u MoveTree) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {
 	res := domain.MoveResult{From: from, To: to}
 	if from == to {
 		return res, nil
@@ -126,7 +120,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 	return res, called
 }
 
-func (u Move) getBacklinksByPath(
+func (u MoveTree) getBacklinksByPath(
 	ctx context.Context, v domain.Vault, sources []domain.FileStat,
 ) (map[string][]domain.ResolvedLink, error) {
 	linksBySource := make(map[string][]domain.ResolvedLink, len(sources))
@@ -143,7 +137,7 @@ func (u Move) getBacklinksByPath(
 	return linksBySource, nil
 }
 
-func (u Move) rewriteNoteLinks(
+func (u MoveTree) rewriteNoteLinks(
 	ctx context.Context,
 	v domain.Vault,
 	from, to string,

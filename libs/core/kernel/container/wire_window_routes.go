@@ -125,7 +125,7 @@ func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, l
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
-func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tabKinds, moving *vault.Move, placing *notePlacing) {
+func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tabKinds, placing *notePlacing) {
 	state := w.session
 	readers := vaultDeps.Readers
 	folders := filewindow.NewFolders(
@@ -134,7 +134,8 @@ func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tab
 		file.NewListFileKinds(kinds.files, kinds.chooser),
 		file.NewCreateFolder(vaultDeps.Writers, w.page.Writes.AdmitWrite),
 	)
-	moveFile := vault.NewMoveFile(moving, w.page.Writes.AdmitWrite, w.page.Writes)
+	moving := note.NewMoveTree(vaultDeps.Writers, db.NoteQueries(), db.Sources(), db.Sources(), &placing.Move)
+	moveFile := note.NewMoveFile(&moving, w.page.Writes.AdmitWrite, w.page.Writes)
 	removeFile := note.NewRemoveFile(&placing.Remove, w.page.Writes)
 	changes := filewindow.NewChanges(&state.Runtime, state.Notices, &moveFile, &removeFile, &placing.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)

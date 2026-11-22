@@ -167,7 +167,7 @@ func buildWindow(
 		return vaultMakeRefresh(v, db, db.Notes())
 	}}
 	notes, pluginNotes := newWindowNotes(vaultDeps, db, state, noteViews{Admission: page.Writes.AdmitWrite, Follow: page.Writes}, current)
-	moves := vaultVaults(vaultDeps, ports, db, notes.Place.Move)
+	moves := vaultVaults(vaultDeps, ports, db)
 
 	diag := windowsession.NewDiagnostics(opening.Out, page.Window)
 	runner := windowsession.NewPassRunner(windowsession.PassRunnerConfig{
@@ -192,7 +192,7 @@ func buildWindow(
 	mountVault(window)
 	mountWorkspace(window, db)
 	mountWindowState(window)
-	mountFile(window, vaultDeps, db, plugins.kinds, &moves.Tree.Move, &notes.Place)
+	mountFile(window, vaultDeps, db, plugins.kinds, &notes.Place)
 	mountNote(window, &notes, db, plugins.kinds.list, writeWake)
 	mountVaults(window, ports, vaultDeps.Readers, moves.Change, session.open)
 	return window, windowLaunch{

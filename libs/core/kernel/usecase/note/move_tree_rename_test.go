@@ -1,4 +1,4 @@
-package vault_test
+package note_test
 
 import (
 	"errors"
