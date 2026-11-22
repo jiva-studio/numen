@@ -188,7 +188,6 @@ export const theme = EditorView.theme({
     fontFamily: 'var(--numen-font-sans)',
     fontSize: 'var(--numen-font-size)',
     overflow: 'hidden',
-    pointerEvents: 'auto',
   },
   '.cm-tooltip.cm-tooltip-autocomplete': {
     fontSize: 'var(--numen-editor-font-size, var(--numen-font-size))',
