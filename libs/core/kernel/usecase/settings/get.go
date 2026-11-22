@@ -8,11 +8,11 @@ import (
 // Current is the settings file as JSON and at its current position, with the plugins and the app
 // settings that go with the settings.
 type Current struct {
-	Written string
-	Version uint64
-	Path    string
-	Plugins []plugin.Info
-	App     []plugin.Setting
+	Written   string
+	Version   uint64
+	Path      string
+	Plugins   []plugin.Info
+	App       []plugin.Setting
 	AppGroups []manifest.SettingGroup
 }
 
