@@ -167,7 +167,7 @@ func startSource(t *testing.T, mockServer *mockSourceServer) *pluginhost.Host {
 		"version": "1.0.0",
 		"capabilities": ["search.source"],
 		"targets": ["desktop.editor"],
-		"services": ["numen.v1.SearchSourceService"], "backend": {"entrypoint": "bin/embeddings"}
+		"backend": {"entrypoint": "bin/embeddings"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifestText), 0o600); err != nil {
 		t.Fatal(err)
