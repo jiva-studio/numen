@@ -98,7 +98,7 @@ describe('the todos frontend', () => {
     expect(view.find('button').text()).toContain(String(SUMMARY.overdueCount + SUMMARY.todayCount))
   })
 
-  it('opens the note at the line of a task clicked in the popover', async () => {
+  it('opens the note on the 0-based line of a task whose 1-based line is 7', async () => {
     const { context, fake, open } = setup()
     fake.push({ revision: 1, isReady: true })
     await settle()
@@ -111,7 +111,7 @@ describe('the todos frontend', () => {
     const text = view.findAll('li button').find((one) => one.text() === 'fix the tap')
     await text?.trigger('click')
 
-    expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 7 })
+    expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 6 })
   })
 
   it('ticks a task in the popover and reads the counts again when the backend reports the change', async () => {

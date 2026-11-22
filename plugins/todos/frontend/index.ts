@@ -44,7 +44,7 @@ function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost
         api,
         getToday: () => workspace.window.getToday(),
         onOpen: (target: { path: string; line: number }) =>
-          workspace.files.open(target.path, { line: target.line }),
+          workspace.files.open(target.path, { line: target.line - 1 }),
         onShowError: (message: string) => workspace.messages.showError(message),
       }),
   })
