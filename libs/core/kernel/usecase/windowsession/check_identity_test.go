@@ -1,4 +1,4 @@
-package windowsession
+package windowsession_test
 
 import (
 	"errors"
@@ -9,6 +9,7 @@ import (
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -29,7 +30,7 @@ func TestAVaultWhoseFolderCarriesItsIdentityIsReadable(t *testing.T) {
 	t.Parallel()
 	v := newFolderVault(t)
 
-	if err := NewCheckIdentity(vaultreader.Identity{}).Execute(v); err != nil {
+	if err := windowsession.NewCheckIdentity(vaultreader.Identity{}).Execute(v); err != nil {
 		t.Fatalf("a vault in its own folder failed: %v", err)
 	}
 }
@@ -39,7 +40,7 @@ func TestAFolderCarryingAnotherIdentityIsNotTheVault(t *testing.T) {
 	v := newFolderVault(t)
 	v.ID = "another"
 
-	if err := NewCheckIdentity(vaultreader.Identity{}).Execute(v); !errors.Is(err, vaultdomain.ErrUnreadable) {
+	if err := windowsession.NewCheckIdentity(vaultreader.Identity{}).Execute(v); !errors.Is(err, vaultdomain.ErrUnreadable) {
 		t.Fatalf("error is %v, want ErrUnreadable", err)
 	}
 }
@@ -51,7 +52,7 @@ func TestAFolderThatIsMissingIsNotReadable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := NewCheckIdentity(vaultreader.Identity{}).Execute(v); !errors.Is(err, vaultdomain.ErrUnreadable) {
+	if err := windowsession.NewCheckIdentity(vaultreader.Identity{}).Execute(v); !errors.Is(err, vaultdomain.ErrUnreadable) {
 		t.Fatalf("error is %v, want ErrUnreadable", err)
 	}
 }
