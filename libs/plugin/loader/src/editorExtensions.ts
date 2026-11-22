@@ -1,7 +1,7 @@
 /**
  * The CodeMirror extensions plugins add to the note editor. The registry keeps them in the order they
  * were registered and tells the editor which are on; an extension that failed stays off until the
- * window restarts.
+ * window restarts. Disposing a registration removes its extension.
  */
 import type { Caught, EditorExtensionEntry, EditorExtensionRegistry } from '@numen/plugin-sdk'
 
@@ -15,15 +15,11 @@ export function createEditorExtensionRegistry(
   deps: EditorExtensionRegistryDeps = {},
 ): EditorExtensionRegistry {
   const held: EditorExtensionEntry[] = []
-  const disabled = new Set<string>()
   const failed = new Set<string>()
   const handlers = new Set<(entries: readonly EditorExtensionEntry[]) => void>()
 
   const get = (): readonly EditorExtensionEntry[] =>
-    held.filter((one) => {
-      const key = getKey(one.pluginId, one.id)
-      return !disabled.has(key) && !failed.has(key)
-    })
+    held.filter((one) => !failed.has(getKey(one.pluginId, one.id)))
 
   const notify = (): void => {
     const entries = get()
@@ -56,17 +52,11 @@ export function createEditorExtensionRegistry(
       return { dispose: () => handlers.delete(handler) }
     },
     fail: (entry, error) => {
+      if (!held.includes(entry)) return
       const key = getKey(entry.pluginId, entry.id)
       if (failed.has(key)) return
       failed.add(key)
       deps.reportError?.(entry.pluginId, error)
-      notify()
-    },
-    setEnabled: (pluginId, id, isEnabled) => {
-      const key = getKey(pluginId, id)
-      if (disabled.has(key) === !isEnabled) return
-      if (isEnabled) disabled.delete(key)
-      else disabled.add(key)
       notify()
     },
   }

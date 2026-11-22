@@ -50,26 +50,6 @@ describe('createEditorExtensionRegistry', () => {
     expect(() => registry.registerEditorExtension('md.a', { id: 'one', extension })).not.toThrow()
   })
 
-  it('leaves out a disabled extension and brings it back when enabled', () => {
-    const registry = createEditorExtensionRegistry()
-    registry.registerEditorExtension('md.a', { id: 'one', extension })
-
-    registry.setEnabled('md.a', 'one', false)
-    expect(registry.get()).toEqual([])
-
-    registry.setEnabled('md.a', 'one', true)
-    expect(registry.get()).toHaveLength(1)
-  })
-
-  it('keeps an extension off that was disabled before it registered', () => {
-    const registry = createEditorExtensionRegistry()
-    registry.setEnabled('md.a', 'one', false)
-
-    registry.registerEditorExtension('md.a', { id: 'one', extension })
-
-    expect(registry.get()).toEqual([])
-  })
-
   it('switches off an extension that failed, reports it under its plugin and keeps the others', () => {
     const reportError = vi.fn()
     const registry = createEditorExtensionRegistry({ reportError })
@@ -84,6 +64,17 @@ describe('createEditorExtensionRegistry', () => {
     expect(registry.get().map((one) => one.id)).toEqual(['two'])
     expect(reportError).toHaveBeenCalledTimes(1)
     expect(reportError).toHaveBeenCalledWith('md.a', error)
+  })
+
+  it('ignores a failure of an entry that is not registered', () => {
+    const reportError = vi.fn()
+    const registry = createEditorExtensionRegistry({ reportError })
+    registry.registerEditorExtension('md.a', { id: 'one', extension })
+
+    registry.fail({ pluginId: 'md.a', id: 'one', extension }, new Error('forged'))
+
+    expect(registry.get()).toHaveLength(1)
+    expect(reportError).not.toHaveBeenCalled()
   })
 
   it('keeps a failed extension off when its plugin registers it again', () => {

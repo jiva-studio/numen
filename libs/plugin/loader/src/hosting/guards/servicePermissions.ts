@@ -130,7 +130,10 @@ export interface GuardedParts {
   readonly health: HealthHost
 }
 
-const EDITOR_LIST = requireNothing('it lists and follows the extensions the editor applies')
+const EDITOR_LIST = explain(
+  requirePermissions(WRITE),
+  'the extensions are code other plugins run in the editor, so the plugin that receives them can change the documents too',
+)
 
 export const SERVICE_RULES: RulesOf<GuardedParts> = {
   identity: {
@@ -149,7 +152,10 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       requirePermissions(READ),
       'dropped data is user content, and the handler receives it and the folder it was dropped into',
     ),
-    editorExtension: explain(requirePermissions(READ), 'it runs in the editor of every open note'),
+    editorExtension: explain(
+      requirePermissions(WRITE),
+      'it runs in the editor of every open note and can change the document',
+    ),
   },
   settings: {
     get: requireNothing('it reads the settings of the plugin itself'),

@@ -18,10 +18,10 @@ export interface EditorExtensionEntry extends EditorExtensionRegistration {
 export interface EditorExtensionHost {
   // The extensions that are on, in the order they were registered.
   get(this: void): readonly EditorExtensionEntry[]
-  // Calls the handler whenever an extension is registered, disposed, switched off or on again.
+  // Calls the handler whenever an extension is registered, disposed or switched off after a failure.
   onChange(this: void, handler: (entries: readonly EditorExtensionEntry[]) => void): Disposable
   // Switches an extension off for the rest of the session after it failed in the editor, and reports
-  // the error under the plugin that registered it.
+  // the error under the plugin that registered it. An entry that is not registered is ignored.
   fail(this: void, entry: EditorExtensionEntry, error: Caught): void
 }
 
@@ -32,8 +32,6 @@ export interface EditorExtensionRegistry extends EditorExtensionHost {
     pluginId: string,
     registration: EditorExtensionRegistration,
   ): Disposable
-  // Turns an extension of a plugin on or off, as the person chooses. A failed extension stays off.
-  setEnabled(this: void, pluginId: string, id: string, isEnabled: boolean): void
 }
 
 // editorNotePath is the path of the note an editor holds, which the editor provides to the extensions
