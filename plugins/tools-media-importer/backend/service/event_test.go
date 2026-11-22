@@ -31,7 +31,7 @@ func TestAFilesChangedEventDownloadsTheMissingCaptionsOfALinkNote(t *testing.T) 
 	texts.File("links/mill.md", []byte(note))
 	app := &App{links: links}
 
-	if err := app.HandleEvent(t.Context(), "onIndexChanged:"+string(vault.Vault().ID)); err != nil {
+	if err := app.HandleEvent(t.Context(), hosttest.GetIndexChangedEvent(string(vault.Vault().ID))); err != nil {
 		t.Fatal(err)
 	}
 	if err := app.HandleEvent(t.Context(), "onFilesChanged:"+string(vault.Vault().ID)); err != nil {

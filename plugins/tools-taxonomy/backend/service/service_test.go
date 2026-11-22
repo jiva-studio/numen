@@ -121,7 +121,7 @@ func TestAFilesChangedEventReadsTheChangedTagsWithoutATrigger(t *testing.T) {
 
 func TestAnEventOfAnotherKindReadsNothing(t *testing.T) {
 	p := newPlugin(t, map[string]string{"a.md": "---\ntags: river\n---\n"})
-	p.deliver(t, "onIndexChanged:garden")
+	p.deliver(t, hosttest.GetIndexChangedEvent("garden"))
 	if _, err := p.vault.Store().With("garden").Read(t.Context(), tagcache.FileName); err == nil {
 		t.Error("an onIndexChanged event read the tags")
 	}

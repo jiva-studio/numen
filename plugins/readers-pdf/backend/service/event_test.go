@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/usecase/extract"
@@ -15,7 +16,7 @@ func TestAFilesChangedEventWritesTheTextLayersTheFeedNames(t *testing.T) {
 	follower := f.NewFollower(t)
 	app := &App{follower: follower}
 
-	if err := app.HandleEvent(t.Context(), "onIndexChanged:vault"); err != nil {
+	if err := app.HandleEvent(t.Context(), hosttest.GetIndexChangedEvent("vault")); err != nil {
 		t.Fatal(err)
 	}
 	follower.Wait()

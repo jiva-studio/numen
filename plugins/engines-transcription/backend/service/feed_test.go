@@ -3,6 +3,7 @@ package service
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/usecase/feed"
 )
 
@@ -42,7 +43,7 @@ func TestAFilesChangedEventTranscribesNothingWhileTheSettingIsOff(t *testing.T) 
 	w := newWire(t)
 
 	w.deliver(t, "onFilesChanged:Lectures")
-	w.deliver(t, "onIndexChanged:Lectures")
+	w.deliver(t, hosttest.GetIndexChangedEvent("Lectures"))
 	w.transcriber.Close()
 
 	if opened := w.recognizer.opened.Load(); opened != 0 {
