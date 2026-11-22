@@ -147,7 +147,7 @@ describe('the slots of a plugin dragged by a real pointer', () => {
       'transitionrun',
       (event) =>
         event.target instanceof HTMLLIElement &&
-        event.propertyName === 'top' &&
+        event.propertyName === 'transform' &&
         runs.set(event.target, (runs.get(event.target) ?? 0) + 1),
     )
     for (let offset = 2; offset <= 140; offset += 2) await moveTo(offset)
