@@ -29,11 +29,10 @@ func TestModelFileRequestsShareVerifiedContentAcrossAddresses(t *testing.T) {
 	defer server.Close()
 	files := newTestProvisioner(t, false)
 	files.cfg.Client = server.Client()
-	registry := NewRegistry(files)
 	var downloaded atomic.Int64
-	registry.SetObserver(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
+	registry := NewObservedRegistry(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
 		downloaded.Add(status.BytesDownloaded)
-	})
+	}, files)
 	fetch := plugindependency.NewFetch(func() pluginport.DependencyRegistry { return registry })
 	digest := newModelRequirement(server.URL, []byte(body)).ChecksumSHA256
 	saved, err := fetch.Execute(t.Context(), server.URL+"/first.onnx", digest)
@@ -107,13 +106,12 @@ func TestModelDownloadStatusNamesTheModel(t *testing.T) {
 	defer server.Close()
 	files := newTestProvisioner(t, false)
 	files.cfg.Client = server.Client()
-	registry := NewRegistry(files)
 	var titles []string
-	registry.SetObserver(func(req manifest.DependencyRequirement, status plugin.DependencyStatus) {
+	registry := NewObservedRegistry(func(req manifest.DependencyRequirement, status plugin.DependencyStatus) {
 		if status.State == plugin.DependencyStateProvisioning && status.Message != "" {
 			titles = append(titles, req.GetTitle()+"|"+status.Message)
 		}
-	})
+	}, files)
 	fetch := plugindependency.NewFetch(func() pluginport.DependencyRegistry { return registry })
 	digest := newModelRequirement(server.URL, []byte(body)).ChecksumSHA256
 	if _, err := fetch.Execute(t.Context(), server.URL+"/rec/latin_rec.onnx", digest); err != nil {

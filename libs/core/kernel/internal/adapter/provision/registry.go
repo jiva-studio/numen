@@ -25,9 +25,13 @@ type Registry struct {
 
 // NewRegistry returns a Registry that routes to the provisioners in order.
 func NewRegistry(provisioners ...DependencyProvisioner) *Registry {
-	return &Registry{
-		provisioners: provisioners,
-	}
+	return NewObservedRegistry(nil, provisioners...)
+}
+
+// NewObservedRegistry returns a Registry that sends every status reached by any provisioning to observer.
+// The observer is called from the goroutine that runs the provisioning.
+func NewObservedRegistry(observer func(manifest.DependencyRequirement, plugin.DependencyStatus), provisioners ...DependencyProvisioner) *Registry {
+	return &Registry{provisioners: provisioners, observer: observer}
 }
 
 // Add appends a provisioner after those already routed to.
@@ -38,20 +42,9 @@ func (r *Registry) Add(provisioner DependencyProvisioner) {
 }
 
 func (r *Registry) Observe(req manifest.DependencyRequirement, status plugin.DependencyStatus) {
-	r.mu.Lock()
-	observer := r.observer
-	r.mu.Unlock()
-	if observer != nil {
-		observer(req, status)
+	if r.observer != nil {
+		r.observer(req, status)
 	}
-}
-
-// SetObserver sets the observer that receives every status reached by any
-// provisioning. The observer is called from the goroutine that runs the provisioning.
-func (r *Registry) SetObserver(observer func(manifest.DependencyRequirement, plugin.DependencyStatus)) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.observer = observer
 }
 
 // CanProvision reports whether a provisioner handles the requirement.
@@ -94,11 +87,8 @@ func (r *Registry) run(
 ) (plugin.ResolvedDependency, error) {
 	note := func(status plugin.DependencyStatus) {
 		status.ID = req.ID
-		r.mu.Lock()
-		observer := r.observer
-		r.mu.Unlock()
-		if observer != nil {
-			observer(req, status)
+		if r.observer != nil {
+			r.observer(req, status)
 		}
 		report(status)
 	}

@@ -471,16 +471,15 @@ func TestTwoFirstUsesAtOnceShareOneDownload(t *testing.T) {
 
 func TestTheProgressOfADownloadIsReportedAtTheFirstUseOnly(t *testing.T) {
 	source := newModelSource(t)
-	registry := provision.NewRegistry(source)
 	t.Setenv(source.envName(sampleRuntime), "")
 	p := newLazyPluginFrom(t, registry, newBuiltInManifest(firstBuiltInID, sampleRuntime))
 	var mu sync.Mutex
 	var seen []plugindomain.DependencyState
-	registry.SetObserver(func(_ catalogmanifest.DependencyRequirement, status plugindomain.DependencyStatus) {
+	registry := provision.NewObservedRegistry(func(_ catalogmanifest.DependencyRequirement, status plugindomain.DependencyStatus) {
 		mu.Lock()
 		defer mu.Unlock()
 		seen = append(seen, status.State)
-	})
+	}, source)
 	getSeen := func() []plugindomain.DependencyState {
 		mu.Lock()
 		defer mu.Unlock()

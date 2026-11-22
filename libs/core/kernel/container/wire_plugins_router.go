@@ -85,7 +85,7 @@ func InitializePluginRoles(indexPath string, res *Resources, management *PluginM
 	processes.Failures.SetOnFailure(supervision.ReportPluginFailure(record))
 	processes.Failures.SetErrorHandler(windowlogs.ReportError(record, report, "Plugin host failure"))
 	management.ContentTypes.SetContentTypeTable(contenttype.Open())
-	processes.Dependencies.Replace(newDependencyRegistry(processes.Clock, ""))
+	processes.Dependencies.Replace(newDependencyRegistry(processes.Clock, processes.Services.Observe, ""))
 	err := management.Discovery.Discover()
 	windowlogs.RecordError(record, "Plugin discovery failed", err)
 	return err
@@ -134,11 +134,21 @@ func setPluginVaultList(lender *hostendpoint.Lender, list pluginvault.List) {
 	lender.Update(func(l *hostendpoint.Lent) { l.VaultList = list })
 }
 
-func newDependencyRegistry(clock machineport.Clock, defaultDir string) pluginport.DependencyRegistry {
+func newDependencyRegistry(clock machineport.Clock, observe func(manifest.DependencyRequirement, plugindomain.DependencyStatus), defaultDir string) supervision.Dependencies {
 	if provision.IsMockML() {
-		return provision.NewRegistry(provision.NewPlaceholderProvisioner(provision.GetPlaceholderDir()))
+		return provision.NewObservedRegistry(observe, provision.NewPlaceholderProvisioner(provision.GetPlaceholderDir()))
 	}
-	return provision.NewRegistry(provision.NewFileProvisioner(provision.Config{
+	return provision.NewObservedRegistry(observe, provision.NewFileProvisioner(provision.Config{
 		Dir: provision.GetModelsDir(defaultDir), Offline: provision.IsOffline(), Clock: clock,
 	}))
+}
+
+// getDependencyProvisioner returns what provisions the dependencies as the use cases read it, or nil when nothing does.
+func getDependencyProvisioner(services *supervision.Services) func() pluginport.DependencyRegistry {
+	return func() pluginport.DependencyRegistry {
+		if dependencies := services.GetDependencies(); dependencies != nil {
+			return dependencies
+		}
+		return nil
+	}
 }

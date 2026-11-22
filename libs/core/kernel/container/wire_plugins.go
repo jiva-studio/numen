@@ -169,13 +169,15 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 			Follow: func(subscribe settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber { return subscribe },
 		},
 		SetStorage: func(cacheRoot, dataRoot string) {
-			setPluginStorage(supervision, cacheRoot, dataRoot, func(modelsDir string) pluginport.DependencyRegistry {
-				return newDependencyRegistry(supervision.Clock, modelsDir)
+			setPluginStorage(supervision, cacheRoot, dataRoot, func(modelsDir string) supervision.Dependencies {
+				return newDependencyRegistry(supervision.Clock, supervision.Services.Observe, modelsDir)
 			})
 			detection.SetFiles(supervision.Storage)
 		},
-		RefreshDependencies: func() { supervision.Dependencies.Replace(newDependencyRegistry(supervision.Clock, "")) },
-		Detection:           detection,
+		RefreshDependencies: func() {
+			supervision.Dependencies.Replace(newDependencyRegistry(supervision.Clock, supervision.Services.Observe, ""))
+		},
+		Detection: detection,
 	}
 	endpoints := &PluginEndpoints{
 		Endpoint: lent,
@@ -197,7 +199,7 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 	revision := getListingRevision(getSearchCatalog(manifests))
 	tools := toolbridge.NewCatalog(toolHost, toolHost, processes.Storage, revision, processes.Clock, toolbridge.GetErrorOutput())
 	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
-		Dependencies: plugindependency.NewFetch(processes.Services.GetDependencies),
+		Dependencies: plugindependency.NewFetch(getDependencyProvisioner(processes.Services)),
 		Identity:     management.Activation, Leases: management.Activation, Processes: management.Teardown, Files: management.ContentTypes,
 		Lent: services,
 		Tools: func() hostendpoint.PluginTools {
