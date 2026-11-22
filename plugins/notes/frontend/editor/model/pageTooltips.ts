@@ -3,7 +3,7 @@ import { EditorView, ViewPlugin, tooltips } from '@codemirror/view'
 import { doc } from '@numen/ui'
 import { StyleModule } from 'style-mod'
 
-type Modules = readonly (StyleModule | readonly unknown[])[]
+type Modules = readonly (StyleModule | readonly StyleModule[])[]
 
 function readModules(view: EditorView): Modules {
   return view.state.facet(EditorView.styleModule).slice().reverse()
