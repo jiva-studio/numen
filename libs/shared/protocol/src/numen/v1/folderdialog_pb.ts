@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/folderdialog.proto.
  */
 export const file_numen_v1_folderdialog: GenFile = /*@__PURE__*/
-  fileDesc("ChtudW1lbi92MS9mb2xkZXJkaWFsb2cucHJvdG8SCG51bWVuLnYxIjkKE0Nob29zZUZvbGRlclJlcXVlc3QSDQoFdGl0bGUYASABKAkSEwoLc3RhcnRpbmdfYXQYAiABKAkiNwoUQ2hvb3NlRm9sZGVyUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIRCglpc19jaG9zZW4YAiABKAgyZAoTRm9sZGVyRGlhbG9nU2VydmljZRJNCgxDaG9vc2VGb2xkZXISHS5udW1lbi52MS5DaG9vc2VGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ2hvb3NlRm9sZGVyUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChtudW1lbi92MS9mb2xkZXJkaWFsb2cucHJvdG8SCG51bWVuLnYxIjoKE0Nob29zZUZvbGRlclJlcXVlc3QSDQoFdGl0bGUYASABKAkSFAoMc3RhcnRfZm9sZGVyGAIgASgJIjcKFENob29zZUZvbGRlclJlc3BvbnNlEgwKBHBhdGgYASABKAkSEQoJaXNfY2hvc2VuGAIgASgIMmQKE0ZvbGRlckRpYWxvZ1NlcnZpY2USTQoMQ2hvb3NlRm9sZGVyEh0ubnVtZW4udjEuQ2hvb3NlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNob29zZUZvbGRlclJlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
  * @generated from message numen.v1.ChooseFolderRequest
@@ -27,9 +27,9 @@ export type ChooseFolderRequest = Message<"numen.v1.ChooseFolderRequest"> & {
    * The folder the dialog opens in. Empty opens wherever this machine opens a
    * dialog that received nothing.
    *
-   * @generated from field: string starting_at = 2;
+   * @generated from field: string start_folder = 2;
    */
-  startingAt: string;
+  startFolder: string;
 };
 
 /**

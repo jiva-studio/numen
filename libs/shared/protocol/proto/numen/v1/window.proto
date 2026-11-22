@@ -71,16 +71,16 @@ message Task {
   // Title is the work, in the words to show. About is what it is on, and is
   // empty for work that is on nothing in particular.
   string title = 2;
-  string about = 3;
+  string detail = 3;
 
   // Done and total are how far it has got, when there is a total to count
   // against. Both zero is work running with nothing to count, which is an
   // ordinary state and not an unknown one.
-  int64 done = 4;
-  int64 total = 5;
+  int64 completed_count = 4;
+  int64 total_count = 5;
 
   // Error is why the work stopped, when it stopped badly.
-  string error = 6;
+  string failure_reason = 6;
 
   // Set for work a person started and is waiting to be notified about.
   bool is_user_started = 7;
@@ -134,7 +134,7 @@ message WatchWindowCloseResponse {
   string token = 1;
 
   // Set when the window is going and this caller's unwritten work has to land.
-  bool flush = 2;
+  bool is_flush_required = 2;
 }
 
 // FlushResult is what a caller has left when it answers.

@@ -23,7 +23,7 @@ describe('a request of the editor', () => {
       settingsService: {
         getSettings: (_request, context) => {
           callers.push(context.requestHeader.get(CALLER_HEADER))
-          return { written: '{}', path: '', plugins: [], app: [] }
+          return { settingsJson: '{}', path: '', plugins: [], app: [] }
         },
       },
       pluginHealth: {

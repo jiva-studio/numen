@@ -252,8 +252,8 @@ describe('the wikilinks of a text', () => {
   it('are resolved in the vault named, from no note', async () => {
     const relations = getRelations()
     request.resolveAddresses.mockResolvedValue({
-      found: [{ raw: '[[Tides]]', address: 'name://Tides', text: 'Tides' }],
-      resolved: [{ written: 'name://Tides', path: 'Sea/Tides.md', isCrossed: false }],
+      links: [{ raw: '[[Tides]]', address: 'name://Tides', text: 'Tides' }],
+      resolved: [{ address: 'name://Tides', path: 'Sea/Tides.md', isCrossed: false }],
     })
 
     expect(await relations.resolveLinks('See [[Tides]].', 'v-sea')).toEqual([

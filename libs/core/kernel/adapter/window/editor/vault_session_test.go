@@ -160,8 +160,8 @@ func (f *showing) getFoundNames(t *testing.T, query string) []string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	out := make([]string, 0, len(found.Msg.GetFound()))
-	for _, one := range found.Msg.GetFound() {
+	out := make([]string, 0, len(found.Msg.GetMatches()))
+	for _, one := range found.Msg.GetMatches() {
 		out = append(out, one.GetNote().GetPath())
 	}
 	return out
@@ -216,7 +216,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	signalCh := make(chan bool, 1)
 	go func() {
 		for changes.Receive() {
-			if changes.Msg().GetReload() {
+			if changes.Msg().GetIsReloadRequired() {
 				signalCh <- true
 				return
 			}
@@ -448,7 +448,7 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	go func() {
 		defer close(request)
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
 			if _, err := f.canvas.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
@@ -495,7 +495,7 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 	go func() {
 		defer close(wrote)
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
 			close(signalCh)
@@ -578,7 +578,7 @@ func TestWriteNote_IndexFailureStillSucceeds(t *testing.T) {
 	}
 	// Without it the next save has no token to present and is rejected as a
 	// conflicting external change.
-	if answer.Msg.GetAt() == nil {
+	if answer.Msg.GetFileStat() == nil {
 		t.Error("the save landed and the client was handed no fingerprint")
 	}
 	if !answer.Msg.GetIsIndexOutdated() {
@@ -629,7 +629,7 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 
 	save()
 	pos := findUpdateIndexTask(t, f)
-	if pos == nil || pos.GetError() == "" {
+	if pos == nil || pos.GetFailureReason() == "" {
 		t.Fatalf("what the user is shown after a save search cannot see is %+v", pos)
 	}
 
@@ -1052,7 +1052,7 @@ func TestAWindowActiveOnNothingSearchesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the palette cannot be typed in: %v", err)
 	}
-	if found := named.Msg.GetFound(); len(found) != 0 {
+	if found := named.Msg.GetMatches(); len(found) != 0 {
 		t.Errorf("a window standing on nothing knows the names %+v", found)
 	}
 
@@ -1062,7 +1062,7 @@ func TestAWindowActiveOnNothingSearchesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the vault cannot be searched: %v", err)
 	}
-	if results := found.Msg.GetFound(); len(results) != 0 {
+	if results := found.Msg.GetResults(); len(results) != 0 {
 		t.Errorf("a window standing on nothing holds the text %+v", results)
 	}
 }
@@ -1124,7 +1124,7 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(named.Msg.GetFound()) == 0 {
+	if len(named.Msg.GetMatches()) == 0 {
 		t.Error("the vault that arrived does not answer for the note it holds")
 	}
 

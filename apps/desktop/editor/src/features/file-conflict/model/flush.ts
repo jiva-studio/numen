@@ -14,7 +14,7 @@ type FlushResult = 'written' | 'unsaved'
 
 /** What the flush needs of the core. */
 export interface FlushDeps {
-  watchWindowClose(signal: AbortSignal): AsyncIterable<{ token: string; flush: boolean }>
+  watchWindowClose(signal: AbortSignal): AsyncIterable<{ token: string; isFlushRequired: boolean }>
   reportPendingWork(token: string, result?: FlushResult): Promise<void>
 }
 
@@ -198,7 +198,7 @@ export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<v
     follows(
       () => core.watchWindowClose(abortController.signal),
       async (message) => {
-        if (message.flush) await reporter.answer(message.token)
+        if (message.isFlushRequired) await reporter.answer(message.token)
       },
     )
 

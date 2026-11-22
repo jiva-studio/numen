@@ -76,7 +76,7 @@ const answer = (streams: Streams) => {
               id: one.id,
               title: one.label,
               unit: TASK_UNIT.THINGS,
-              error: one.error,
+              failureReason: one.error,
             })),
           })),
         ),

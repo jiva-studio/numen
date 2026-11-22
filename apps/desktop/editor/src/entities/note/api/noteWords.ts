@@ -2,7 +2,18 @@
  * Note domain conversions between schema representations and window models.
  */
 import { formatFingerprint } from '@numen/plugin-loader'
-import { findErrorCode, isStaleAnswer, NAME_SOURCE, NOTE_LINK_DIRECTION, NOTE_RELATION, parseFingerprint, type NameSourceCode, type NoteErrorCodeValue, type NoteLinkDirectionCode, type NoteRelationCode } from '@numen/core-client'
+import {
+  findErrorCode,
+  isStaleAnswer,
+  NAME_SOURCE,
+  NOTE_LINK_DIRECTION,
+  NOTE_RELATION,
+  parseFingerprint,
+  type NameSourceCode,
+  type NoteErrorCodeValue,
+  type NoteLinkDirectionCode,
+  type NoteRelationCode,
+} from '@numen/core-client'
 import { asFailure, asValue } from '@numen/result'
 import type { LinkDirection, NoteGraph, NoteResult, NoteRelation, WriteResult } from '../lib/note'
 import { mapNoteType } from '@/shared/api/wire'
@@ -59,11 +70,11 @@ export const mapBaseline = (baseline: { prose: string; stat: string }) => ({
 export const mapNoteResult = (from: {
   body?: string | undefined
   error?: NoteErrorCodeValue | undefined
-  at?: { path: string; size: bigint; mtime: bigint } | undefined
+  fileStat?: { path: string; size: bigint; mtime: bigint } | undefined
 }): NoteResult => {
   const error = findErrorCode(from)
   if (error) return asFailure(error)
-  const stat = formatFingerprint(from.at)
+  const stat = formatFingerprint(from.fileStat)
   return asValue({
     body: from.body ?? '',
     ...(stat === undefined ? {} : { at: stat }),
@@ -74,7 +85,7 @@ export const mapNoteResult = (from: {
 export const mapWriteResult = (from: {
   body?: string | undefined
   error?: NoteErrorCodeValue | undefined
-  at?: { path: string; size: bigint; mtime: bigint } | undefined
+  fileStat?: { path: string; size: bigint; mtime: bigint } | undefined
   url?: string | undefined
   embed?: string | undefined
 }): WriteResult => (isStaleAnswer(from) ? asFailure('changed') : mapNoteResult(from))

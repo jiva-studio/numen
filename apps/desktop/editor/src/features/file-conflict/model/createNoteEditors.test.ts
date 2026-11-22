@@ -96,7 +96,7 @@ describe('the editors of a window', () => {
       windowService: {
         watchWindowClose: async function* (_req, context) {
           signals.push(context.signal)
-          yield { token: 'quit-1', flush: true }
+          yield { token: 'quit-1', isFlushRequired: true }
           await new Promise((resolve) => context.signal.addEventListener('abort', resolve))
         },
         reportPendingWork: async ({ token, result }) => {

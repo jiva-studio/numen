@@ -104,11 +104,11 @@ func (e *queueEndpoint) ReportTask(
 	work.ReportTask(pluginID, plugin.Task{
 		ID:            task.GetId(),
 		Title:         task.GetTitle(),
-		About:         task.GetAbout(),
-		Done:          task.GetDone(),
-		Total:         task.GetTotal(),
+		About:         task.GetDetail(),
+		Done:          task.GetCompletedCount(),
+		Total:         task.GetTotalCount(),
 		Unit:          readWireUnit(task.GetUnit()),
-		Error:         task.GetError(),
+		Error:         task.GetFailureReason(),
 		IsUserStarted: task.GetIsUserStarted(),
 	})
 	if task.GetId() != "" {
@@ -134,7 +134,7 @@ func (e *queueEndpoint) FinishTask(
 }
 
 func isTaskFinished(task *v1.Task) bool {
-	return task.GetError() != "" || (task.GetTotal() > 0 && task.GetDone() >= task.GetTotal())
+	return task.GetFailureReason() != "" || (task.GetTotalCount() > 0 && task.GetCompletedCount() >= task.GetTotalCount())
 }
 
 func readWireUnit(unit v1.Unit) plugin.TaskUnit {

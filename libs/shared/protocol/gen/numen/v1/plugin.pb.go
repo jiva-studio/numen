@@ -1759,9 +1759,9 @@ type PluginLeaseHolder struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Who took the lease: a part of Numen such as "Search" or "Indexing", or the
 	// name of the plugin or of the connection that asked.
-	Who string `protobuf:"bytes,1,opt,name=who,proto3" json:"who,omitempty"`
+	Requester string `protobuf:"bytes,1,opt,name=requester,proto3" json:"requester,omitempty"`
 	// What the lease is for, in a few plain words.
-	Why           string `protobuf:"bytes,2,opt,name=why,proto3" json:"why,omitempty"`
+	Reason        string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1796,16 +1796,16 @@ func (*PluginLeaseHolder) Descriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *PluginLeaseHolder) GetWho() string {
+func (x *PluginLeaseHolder) GetRequester() string {
 	if x != nil {
-		return x.Who
+		return x.Requester
 	}
 	return ""
 }
 
-func (x *PluginLeaseHolder) GetWhy() string {
+func (x *PluginLeaseHolder) GetReason() string {
 	if x != nil {
-		return x.Why
+		return x.Reason
 	}
 	return ""
 }
@@ -2036,10 +2036,10 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\n" +
 	"started_by\x18\n" +
 	" \x01(\v2\x1b.numen.v1.PluginLeaseHolderR\tstartedBy\x125\n" +
-	"\aholders\x18\v \x03(\v2\x1b.numen.v1.PluginLeaseHolderR\aholders\"7\n" +
-	"\x11PluginLeaseHolder\x12\x10\n" +
-	"\x03who\x18\x01 \x01(\tR\x03who\x12\x10\n" +
-	"\x03why\x18\x02 \x01(\tR\x03why\"+\n" +
+	"\aholders\x18\v \x03(\v2\x1b.numen.v1.PluginLeaseHolderR\aholders\"I\n" +
+	"\x11PluginLeaseHolder\x12\x1c\n" +
+	"\trequester\x18\x01 \x01(\tR\trequester\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"+\n" +
 	"\x13DeliverEventRequest\x12\x14\n" +
 	"\x05event\x18\x01 \x01(\tR\x05event\"d\n" +
 	"\x14DeliverEventResponse\x124\n" +

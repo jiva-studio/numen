@@ -32,7 +32,7 @@ func (f *showing) respondToFlushes(
 	go func() {
 		isFirst := true
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
 			if isFirst {
@@ -72,7 +72,7 @@ func (f *showing) startPromptingPage(
 	page := &promptingPage{}
 	go func() {
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
 			page.mu.Lock()
@@ -355,7 +355,7 @@ func watchFlushRequests(stream *connect.ServerStreamForClient[v1.WatchWindowClos
 	flushRequest := make(chan struct{}, 1)
 	go func() {
 		for stream.Receive() {
-			if stream.Msg().GetFlush() {
+			if stream.Msg().GetIsFlushRequired() {
 				select {
 				case flushRequest <- struct{}{}:
 				default:
@@ -524,7 +524,7 @@ func (f *showing) respondPromptUntil(
 	last := ""
 	go func() {
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
 			mu.Lock()
@@ -557,7 +557,7 @@ func (f *showing) respondToAllFlushes(t *testing.T, stream *connect.ServerStream
 	t.Helper()
 	go func() {
 		for stream.Receive() {
-			if !stream.Msg().GetFlush() {
+			if !stream.Msg().GetIsFlushRequired() {
 				continue
 			}
 			if f.reportPendingWork(t, stream.Msg().GetToken(), v1.FlushResult_FLUSH_RESULT_NOTHING) != nil {
@@ -708,7 +708,7 @@ func (f *showing) isFlushRequestedOfANewPage(t *testing.T, wait time.Duration) b
 	tokens := make(chan string, 1)
 	go func() {
 		for stream.Receive() {
-			if stream.Msg().GetFlush() {
+			if stream.Msg().GetIsFlushRequired() {
 				tokens <- stream.Msg().GetToken()
 				return
 			}

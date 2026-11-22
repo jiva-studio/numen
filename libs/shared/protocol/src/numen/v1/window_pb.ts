@@ -17,7 +17,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/window.proto.
  */
 export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIvUBCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg0KBWFib3V0GAMgASgJEgwKBGRvbmUYBCABKAMSDQoFdG90YWwYBSABKAMSDQoFZXJyb3IYBiABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0EhEKCXBsdWdpbl9pZBgJIAEoCRITCgtwbHVnaW5fbmFtZRgKIAEoCRIWCg5pc19jYW5jZWxsYWJsZRgLIAEoCBIgCgRraW5kGAwgASgOMhIubnVtZW4udjEuVGFza0tpbmQiKQoXV2F0Y2hXaW5kb3dDbG9zZVJlcXVlc3QSDgoGd2luZG93GAEgASgJIjgKGFdhdGNoV2luZG93Q2xvc2VSZXNwb25zZRINCgV0b2tlbhgBIAEoCRINCgVmbHVzaBgCIAEoCCJgChhSZXBvcnRQZW5kaW5nV29ya1JlcXVlc3QSDgoGd2luZG93GAEgASgJEg0KBXRva2VuGAIgASgJEiUKBnJlc3VsdBgDIAEoDjIVLm51bWVuLnYxLkZsdXNoUmVzdWx0IhsKGVJlcG9ydFBlbmRpbmdXb3JrUmVzcG9uc2UiKAoWR2V0Q3VycmVudFZhdWx0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiKAoXR2V0Q3VycmVudFZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkiLwoRQ2FuY2VsVGFza1JlcXVlc3QSDgoGd2luZG93GAEgASgJEgoKAmlkGAIgASgJIhQKEkNhbmNlbFRhc2tSZXNwb25zZSo7CghUYXNrS2luZBIZChVUQVNLX0tJTkRfVU5TUEVDSUZJRUQQABIUChBUQVNLX0tJTkRfTk9USUNFEAEqTwoEVW5pdBIUChBVTklUX1VOU1BFQ0lGSUVEEAASDwoLVU5JVF9USElOR1MQARIOCgpVTklUX0JZVEVTEAISEAoMVU5JVF9TRUNPTkRTEAMqeQoLRmx1c2hSZXN1bHQSHAoYRkxVU0hfUkVTVUxUX1VOU1BFQ0lGSUVEEAASGAoURkxVU0hfUkVTVUxUX05PVEhJTkcQARIYChRGTFVTSF9SRVNVTFRfV1JJVFRFThACEhgKFEZMVVNIX1JFU1VMVF9VTlNBVkVEEAMytgMKDVdpbmRvd1NlcnZpY2USSQoKV2F0Y2hUYXNrcxIbLm51bWVuLnYxLldhdGNoVGFza3NSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hUYXNrc1Jlc3BvbnNlMAESWwoQV2F0Y2hXaW5kb3dDbG9zZRIhLm51bWVuLnYxLldhdGNoV2luZG93Q2xvc2VSZXF1ZXN0GiIubnVtZW4udjEuV2F0Y2hXaW5kb3dDbG9zZVJlc3BvbnNlMAESXAoRUmVwb3J0UGVuZGluZ1dvcmsSIi5udW1lbi52MS5SZXBvcnRQZW5kaW5nV29ya1JlcXVlc3QaIy5udW1lbi52MS5SZXBvcnRQZW5kaW5nV29ya1Jlc3BvbnNlElYKD0dldEN1cnJlbnRWYXVsdBIgLm51bWVuLnYxLkdldEN1cnJlbnRWYXVsdFJlcXVlc3QaIS5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXNwb25zZRJHCgpDYW5jZWxUYXNrEhsubnVtZW4udjEuQ2FuY2VsVGFza1JlcXVlc3QaHC5udW1lbi52MS5DYW5jZWxUYXNrUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIpACCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg4KBmRldGFpbBgDIAEoCRIXCg9jb21wbGV0ZWRfY291bnQYBCABKAMSEwoLdG90YWxfY291bnQYBSABKAMSFgoOZmFpbHVyZV9yZWFzb24YBiABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0EhEKCXBsdWdpbl9pZBgJIAEoCRITCgtwbHVnaW5fbmFtZRgKIAEoCRIWCg5pc19jYW5jZWxsYWJsZRgLIAEoCBIgCgRraW5kGAwgASgOMhIubnVtZW4udjEuVGFza0tpbmQiKQoXV2F0Y2hXaW5kb3dDbG9zZVJlcXVlc3QSDgoGd2luZG93GAEgASgJIkQKGFdhdGNoV2luZG93Q2xvc2VSZXNwb25zZRINCgV0b2tlbhgBIAEoCRIZChFpc19mbHVzaF9yZXF1aXJlZBgCIAEoCCJgChhSZXBvcnRQZW5kaW5nV29ya1JlcXVlc3QSDgoGd2luZG93GAEgASgJEg0KBXRva2VuGAIgASgJEiUKBnJlc3VsdBgDIAEoDjIVLm51bWVuLnYxLkZsdXNoUmVzdWx0IhsKGVJlcG9ydFBlbmRpbmdXb3JrUmVzcG9uc2UiKAoWR2V0Q3VycmVudFZhdWx0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiKAoXR2V0Q3VycmVudFZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkiLwoRQ2FuY2VsVGFza1JlcXVlc3QSDgoGd2luZG93GAEgASgJEgoKAmlkGAIgASgJIhQKEkNhbmNlbFRhc2tSZXNwb25zZSo7CghUYXNrS2luZBIZChVUQVNLX0tJTkRfVU5TUEVDSUZJRUQQABIUChBUQVNLX0tJTkRfTk9USUNFEAEqTwoEVW5pdBIUChBVTklUX1VOU1BFQ0lGSUVEEAASDwoLVU5JVF9USElOR1MQARIOCgpVTklUX0JZVEVTEAISEAoMVU5JVF9TRUNPTkRTEAMqeQoLRmx1c2hSZXN1bHQSHAoYRkxVU0hfUkVTVUxUX1VOU1BFQ0lGSUVEEAASGAoURkxVU0hfUkVTVUxUX05PVEhJTkcQARIYChRGTFVTSF9SRVNVTFRfV1JJVFRFThACEhgKFEZMVVNIX1JFU1VMVF9VTlNBVkVEEAMytgMKDVdpbmRvd1NlcnZpY2USSQoKV2F0Y2hUYXNrcxIbLm51bWVuLnYxLldhdGNoVGFza3NSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hUYXNrc1Jlc3BvbnNlMAESWwoQV2F0Y2hXaW5kb3dDbG9zZRIhLm51bWVuLnYxLldhdGNoV2luZG93Q2xvc2VSZXF1ZXN0GiIubnVtZW4udjEuV2F0Y2hXaW5kb3dDbG9zZVJlc3BvbnNlMAESXAoRUmVwb3J0UGVuZGluZ1dvcmsSIi5udW1lbi52MS5SZXBvcnRQZW5kaW5nV29ya1JlcXVlc3QaIy5udW1lbi52MS5SZXBvcnRQZW5kaW5nV29ya1Jlc3BvbnNlElYKD0dldEN1cnJlbnRWYXVsdBIgLm51bWVuLnYxLkdldEN1cnJlbnRWYXVsdFJlcXVlc3QaIS5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXNwb25zZRJHCgpDYW5jZWxUYXNrEhsubnVtZW4udjEuQ2FuY2VsVGFza1JlcXVlc3QaHC5udW1lbi52MS5DYW5jZWxUYXNrUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.WatchTasksRequest
@@ -87,30 +87,30 @@ export type Task = Message<"numen.v1.Task"> & {
   title: string;
 
   /**
-   * @generated from field: string about = 3;
+   * @generated from field: string detail = 3;
    */
-  about: string;
+  detail: string;
 
   /**
    * Done and total are how far it has got, when there is a total to count
    * against. Both zero is work running with nothing to count, which is an
    * ordinary state and not an unknown one.
    *
-   * @generated from field: int64 done = 4;
+   * @generated from field: int64 completed_count = 4;
    */
-  done: bigint;
+  completedCount: bigint;
 
   /**
-   * @generated from field: int64 total = 5;
+   * @generated from field: int64 total_count = 5;
    */
-  total: bigint;
+  totalCount: bigint;
 
   /**
    * Error is why the work stopped, when it stopped badly.
    *
-   * @generated from field: string error = 6;
+   * @generated from field: string failure_reason = 6;
    */
-  error: string;
+  failureReason: string;
 
   /**
    * Set for work a person started and is waiting to be notified about.
@@ -196,9 +196,9 @@ export type WatchWindowCloseResponse = Message<"numen.v1.WatchWindowCloseRespons
   /**
    * Set when the window is going and this caller's unwritten work has to land.
    *
-   * @generated from field: bool flush = 2;
+   * @generated from field: bool is_flush_required = 2;
    */
-  flush: boolean;
+  isFlushRequired: boolean;
 };
 
 /**

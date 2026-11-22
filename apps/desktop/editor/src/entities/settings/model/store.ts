@@ -100,7 +100,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
   const requested = createRemoteValues<SettingEdit, SettingsWritten>(
     (values) => api.updateSettings([...values.values()]),
     (answer) => {
-      const file = parseSettingsText(answer.written)
+      const file = parseSettingsText(answer.settingsJson)
       if (file === undefined) {
         say(words.unreadSettings, 'error')
         return
@@ -133,7 +133,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
 
   const start = async (): Promise<void> => {
     const answer = await api.getSettings()
-    const file = parseSettingsText(answer.written)
+    const file = parseSettingsText(answer.settingsJson)
     if (file === undefined) throw new Error(words.unreadSettings)
     applySettings(answer, file)
   }
@@ -141,7 +141,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
   const refresh = async (): Promise<void> => {
     const answer = await askVault(api)
     if (answer === undefined) return
-    const file = parseSettingsText(answer.written)
+    const file = parseSettingsText(answer.settingsJson)
     if (file === undefined) say(words.unreadSettings, 'error')
     else applySettings(answer, file)
   }

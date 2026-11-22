@@ -58,12 +58,12 @@ func (h *Values) GetSettings(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	reply := &v1.GetSettingsResponse{
-		Written:   got.Written,
-		Version:   got.Version,
-		Path:      got.Path,
-		Plugins:   NewWirePluginInfos(got.Plugins),
-		App:       newWirePluginSettings(got.App),
-		AppGroups: newWireSettingGroups(got.AppGroups),
+		SettingsJson: got.Written,
+		Version:      got.Version,
+		Path:         got.Path,
+		Plugins:      NewWirePluginInfos(got.Plugins),
+		App:          newWirePluginSettings(got.App),
+		AppGroups:    newWireSettingGroups(got.AppGroups),
 	}
 	return connect.NewResponse(reply), nil
 }
@@ -88,7 +88,7 @@ func (h *Values) WriteSettings(
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.WriteSettingsResponse{Written: applied.Written, Version: applied.Version}), nil
+	return connect.NewResponse(&v1.WriteSettingsResponse{SettingsJson: applied.Written, Version: applied.Version}), nil
 }
 
 func newWireSettings(target []settingsdomain.Setting) []*v1.Setting {

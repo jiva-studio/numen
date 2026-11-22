@@ -43,7 +43,7 @@ describe('a vault requested for', () => {
     expect(await vaults.choose('Pick')).toBe('')
     expect(requestLog.chooseFolder.mock.calls.at(-1)?.[0]).toMatchObject({
       title: 'Pick',
-      startingAt: '',
+      startFolder: '',
     })
 
     requestLog.chooseFolder.mockResolvedValue({ isChosen: true, path: '/v2' })

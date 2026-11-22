@@ -18,7 +18,7 @@ describe('a call answered by the test', () => {
       search: {
         searchNames: (request) => {
           requests.push(request)
-          return { found: [{ note: { path: 'Llama.md', title: 'Llama' } }] }
+          return { matches: [{ note: { path: 'Llama.md', title: 'Llama' } }] }
         },
       },
     })
@@ -72,7 +72,7 @@ describe('a call answered by the test', () => {
 describe('handlers named by their method', () => {
   it('answer the call of the service that declares the method', async () => {
     const transport = createCoreHandlerTransport({
-      searchNames: () => ({ found: [{ note: { title: 'Llama' } }] }),
+      searchNames: () => ({ matches: [{ note: { title: 'Llama' } }] }),
       async *watchThemes() {
         yield { names: ['own/Dusk.css'] }
       },

@@ -173,14 +173,14 @@ describe('the wikilinks of a text', () => {
   it('resolve relative to the source note, and omit crossed links', async () => {
     const links = createLinks()
     request.resolveAddresses.mockResolvedValue({
-      found: [
+      links: [
         { raw: '[[B]]', address: 'name://B', text: 'B' },
         { raw: '[[C|see C]]', address: 'name://C', text: 'see C' },
         { raw: '[[D]]', address: 'name://D', text: 'D' },
       ],
       resolved: [
-        { written: 'name://B', path: 'b.md', isCrossed: false },
-        { written: 'name://C', path: 'c.md', isCrossed: true },
+        { address: 'name://B', path: 'b.md', isCrossed: false },
+        { address: 'name://C', path: 'c.md', isCrossed: true },
       ],
     })
 
@@ -201,12 +201,12 @@ describe('the wikilinks of a text', () => {
   it('resolves a name:// address to the path of the note, or empty when unresolved', async () => {
     const links = createLinks()
     request.resolveAddresses.mockResolvedValueOnce({
-      found: [{ raw: '[[B]]', address: 'name://B', text: 'B' }],
-      resolved: [{ written: 'name://B', path: 'b.md', isCrossed: false }],
+      links: [{ raw: '[[B]]', address: 'name://B', text: 'B' }],
+      resolved: [{ address: 'name://B', path: 'b.md', isCrossed: false }],
     })
     expect(await links.resolveNameLink('a.md', 'name://B')).toBe('b.md')
 
-    request.resolveAddresses.mockResolvedValueOnce({ found: [], resolved: [] })
+    request.resolveAddresses.mockResolvedValueOnce({ links: [], resolved: [] })
     expect(await links.resolveNameLink('a.md', 'name://Missing')).toBe('')
   })
 })

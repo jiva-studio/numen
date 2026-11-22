@@ -134,14 +134,14 @@ func (c *QueueClient) EnqueueWork(ctx context.Context, work Work) (Turn, error) 
 
 func (c *QueueClient) ReportTask(ctx context.Context, task Task) error {
 	_, err := c.rpc.ReportTask(ctx, connect.NewRequest(&v1.ReportTaskRequest{Task: &v1.Task{
-		Id:            task.ID,
-		Title:         task.Title,
-		About:         task.Detail,
-		Done:          task.CompletedCount,
-		Total:         task.TotalCount,
-		Unit:          writeUnit(task.Unit),
-		Error:         task.FailureReason,
-		IsUserStarted: task.IsUserStarted,
+		Id:             task.ID,
+		Title:          task.Title,
+		Detail:         task.Detail,
+		CompletedCount: task.CompletedCount,
+		TotalCount:     task.TotalCount,
+		Unit:           writeUnit(task.Unit),
+		FailureReason:  task.FailureReason,
+		IsUserStarted:  task.IsUserStarted,
 	}}))
 	return err
 }

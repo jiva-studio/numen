@@ -201,10 +201,10 @@ message ResolveAddressesRequest {
   // The addresses to answer about. A scheme written before `://` is read as
   // one — `name://Entropy`, `note://<identifier>` — and everything else is a
   // name, so what a file carries between its brackets is taken currently.
-  repeated string written = 2;
+  repeated string addresses = 2;
 
-  // A text whose wikilinks are answered about beside `written`. Each one is
-  // asked about by its address as `scheme://value`, the form `found` carries.
+  // A text whose wikilinks are answered about beside `addresses`. Each one is
+  // asked about by its address as `scheme://value`, the form `links` carries.
   string text = 3;
 
   // The id of the vault the addresses are written in. Empty is the vault the
@@ -219,7 +219,7 @@ message ResolveAddressesResponse {
 
   // The wikilinks in `text`, in the order they are written, each raw form
   // once, whether they reach a note or not.
-  repeated TextLink found = 2;
+  repeated TextLink links = 2;
 }
 
 // TextLink is one wikilink of a text.
@@ -237,7 +237,7 @@ message TextLink {
 // ResolvedAddress is one address and the note it reaches now.
 message ResolvedAddress {
   // The address as it was asked about, which is how the caller finds its answer.
-  string written = 1;
+  string address = 1;
 
   // Where the note it reaches is filed.
   string path = 2;
@@ -295,7 +295,7 @@ message ReadNoteResponse {
   // Set when the note was not read, and why.
   ErrorCode error = 2;
 
-  optional FileStat at = 3;
+  optional FileStat file_stat = 3;
 }
 
 // ReadBaseline is what a caller last saw of a note: the prose a read gave it, and
@@ -307,7 +307,7 @@ message ReadBaseline {
   string prose = 1;
 
   // The file the prose came out of.
-  FileStat at = 2;
+  FileStat file_stat = 2;
 }
 
 message WriteNoteRequest {
@@ -327,10 +327,10 @@ message WriteNoteResponse {
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional FileStat at = 2;
+  optional FileStat file_stat = 2;
 
   // Set when the prose is on disk and the index could not be updated for it.
-  // The write happened and `at` stands; search answers about this note as it
+  // The write happened and `file_stat` stands; search answers about this note as it
   // read it last, until a walk goes past.
   bool is_index_outdated = 3;
 }

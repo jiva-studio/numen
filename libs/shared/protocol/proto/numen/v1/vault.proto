@@ -61,11 +61,11 @@ message WatchVaultChangesResponse {
 
   // Set when the vault has to be read again and not followed — more
   // changed at once than could be reported.
-  bool reload = 2;
+  bool is_reload_required = 2;
 
   // The notes that were renamed by this application, each by where it was and
   // where it now is. A client showing one of them follows it there.
-  repeated MoveResult renamed = 3;
+  repeated MoveResult moves = 3;
 
   // Paths of the files whose text versions changed: a version was made or
   // deleted, or became live or no longer live.

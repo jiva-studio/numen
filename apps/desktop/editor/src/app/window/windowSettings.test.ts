@@ -25,7 +25,7 @@ const createSettings = (
   const writerFns: Record<string, ReturnType<typeof vi.fn<MessageWriter>>> = {}
   const core = {
     getSettings: vi.fn(async () => ({
-      written: '{}',
+      settingsJson: '{}',
       path: '/vault/.numen/settings.json',
     })),
     updateSettings: vi.fn(async () => undefined),
@@ -367,7 +367,7 @@ describe('the settings tab', () => {
       },
     ]
     vi.mocked(core.getSettings).mockImplementation(async () => ({
-      written: '{}',
+      settingsJson: '{}',
       path: '/vault/.numen/settings.json',
       plugins: ocrPlugins,
     }))

@@ -100,9 +100,9 @@ describe('the streams a window follows', () => {
 
   it('follows a quit requested of this window', async () => {
     request.watchWindowClose.mockImplementation(async function* (_req, context) {
-      yield { token: 'token-9', flush: true }
+      yield { token: 'token-9', isFlushRequired: true }
       if (!context.signal.aborted) {
-        yield { token: 'token-10', flush: false }
+        yield { token: 'token-10', isFlushRequired: false }
       }
     })
     const controller = new AbortController()
@@ -115,7 +115,7 @@ describe('the streams a window follows', () => {
       }
     })().catch(() => undefined)
 
-    expect(seen).toStrictEqual([{ token: 'token-9', flush: true }])
+    expect(seen).toStrictEqual([{ token: 'token-9', isFlushRequired: true }])
     expect(request.watchWindowClose.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
   })
 
@@ -126,11 +126,11 @@ describe('the streams a window follows', () => {
           {
             id: 'scan',
             title: 'Recognising a scan',
-            about: 'library/scan.pdf',
-            done: 3n,
-            total: 10n,
+            detail: 'library/scan.pdf',
+            completedCount: 3n,
+            totalCount: 10n,
             unit: TASK_UNIT.BYTES,
-            error: '',
+            failureReason: '',
             isUserStarted: true,
             pluginId: 'md.example.scans',
             pluginName: 'Scan reader',
@@ -140,11 +140,11 @@ describe('the streams a window follows', () => {
           {
             id: 'later',
             title: 'Later',
-            about: '',
-            done: 0n,
-            total: 0n,
+            detail: '',
+            completedCount: 0n,
+            totalCount: 0n,
             unit: 99,
-            error: 'stopped',
+            failureReason: 'stopped',
             isUserStarted: false,
             pluginId: '',
             pluginName: '',

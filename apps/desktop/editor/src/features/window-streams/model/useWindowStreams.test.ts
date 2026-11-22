@@ -102,8 +102,8 @@ const answerFrom = (core: Fake) => {
             tasks: list.map((one) => ({
               id: one.id,
               title: one.label,
-              done: BigInt(one.progress.completedCount),
-              total: BigInt(one.progress.total),
+              completedCount: BigInt(one.progress.completedCount),
+              totalCount: BigInt(one.progress.total),
               unit: TASK_UNIT.THINGS,
               kind: one.kind === 'notice' ? TASK_KIND.NOTICE : TASK_KIND.UNSPECIFIED,
             })),

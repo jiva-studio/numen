@@ -126,7 +126,7 @@ func (w *Window) WatchWindowClose(
 			if !isOpen {
 				return nil
 			}
-			if err := out.Send(&v1.WatchWindowCloseResponse{Token: request, Flush: true}); err != nil {
+			if err := out.Send(&v1.WatchWindowCloseResponse{Token: request, IsFlushRequired: true}); err != nil {
 				return err
 			}
 		}
@@ -239,18 +239,18 @@ func describeTasks(list []work.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
 	for _, item := range list {
 		out = append(out, &v1.Task{
-			Id:            item.ID,
-			Title:         item.Title,
-			About:         item.About,
-			Done:          item.Count,
-			Total:         item.Total,
-			Error:         item.Error,
-			IsUserStarted: item.IsUserStarted,
-			Unit:          convertUnit(item.Unit),
-			PluginId:      item.PluginID,
-			PluginName:    item.PluginName,
-			IsCancellable: item.Cancel != nil,
-			Kind:          convertKind(item.Kind),
+			Id:             item.ID,
+			Title:          item.Title,
+			Detail:         item.About,
+			CompletedCount: item.Count,
+			TotalCount:     item.Total,
+			FailureReason:  item.Error,
+			IsUserStarted:  item.IsUserStarted,
+			Unit:           convertUnit(item.Unit),
+			PluginId:       item.PluginID,
+			PluginName:     item.PluginName,
+			IsCancellable:  item.Cancel != nil,
+			Kind:           convertKind(item.Kind),
 		})
 	}
 	return out

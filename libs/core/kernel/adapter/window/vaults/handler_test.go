@@ -574,8 +574,8 @@ func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 	f := onAList(t)
 
 	out, err := f.dialogs.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{
-		Title:      "Where are your notes?",
-		StartingAt: f.first.Path,
+		Title:       "Where are your notes?",
+		StartFolder: f.first.Path,
 	}))
 	if err != nil {
 		t.Fatalf("a dialog that was closed answered %v", err)

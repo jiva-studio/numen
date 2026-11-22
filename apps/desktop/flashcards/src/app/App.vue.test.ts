@@ -154,7 +154,7 @@ beforeEach(() => {
   wire.writeAppearance.mockReset()
   wire.cancelTask.mockReset()
   wire.resolveAddresses.mockReset()
-  wire.resolveAddresses.mockResolvedValue({ found: [], resolved: [] })
+  wire.resolveAddresses.mockResolvedValue({ links: [], resolved: [] })
   wire.listPlugins.mockResolvedValue({ plugins: [] })
   wire.listVaults.mockResolvedValue({ vaults: [] })
   wire.listThemes.mockResolvedValue({

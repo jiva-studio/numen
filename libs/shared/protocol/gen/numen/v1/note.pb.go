@@ -750,9 +750,9 @@ type ResolveAddressesRequest struct {
 	// The addresses to answer about. A scheme written before `://` is read as
 	// one — `name://Entropy`, `note://<identifier>` — and everything else is a
 	// name, so what a file carries between its brackets is taken currently.
-	Written []string `protobuf:"bytes,2,rep,name=written,proto3" json:"written,omitempty"`
-	// A text whose wikilinks are answered about beside `written`. Each one is
-	// asked about by its address as `scheme://value`, the form `found` carries.
+	Addresses []string `protobuf:"bytes,2,rep,name=addresses,proto3" json:"addresses,omitempty"`
+	// A text whose wikilinks are answered about beside `addresses`. Each one is
+	// asked about by its address as `scheme://value`, the form `links` carries.
 	Text string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
 	// The id of the vault the addresses are written in. Empty is the vault the
 	// window shows; a window that shows no vault needs it.
@@ -798,9 +798,9 @@ func (x *ResolveAddressesRequest) GetFrom() string {
 	return ""
 }
 
-func (x *ResolveAddressesRequest) GetWritten() []string {
+func (x *ResolveAddressesRequest) GetAddresses() []string {
 	if x != nil {
-		return x.Written
+		return x.Addresses
 	}
 	return nil
 }
@@ -826,7 +826,7 @@ type ResolveAddressesResponse struct {
 	Resolved []*ResolvedAddress `protobuf:"bytes,1,rep,name=resolved,proto3" json:"resolved,omitempty"`
 	// The wikilinks in `text`, in the order they are written, each raw form
 	// once, whether they reach a note or not.
-	Found         []*TextLink `protobuf:"bytes,2,rep,name=found,proto3" json:"found,omitempty"`
+	Links         []*TextLink `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -868,9 +868,9 @@ func (x *ResolveAddressesResponse) GetResolved() []*ResolvedAddress {
 	return nil
 }
 
-func (x *ResolveAddressesResponse) GetFound() []*TextLink {
+func (x *ResolveAddressesResponse) GetLinks() []*TextLink {
 	if x != nil {
-		return x.Found
+		return x.Links
 	}
 	return nil
 }
@@ -943,7 +943,7 @@ func (x *TextLink) GetText() string {
 type ResolvedAddress struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The address as it was asked about, which is how the caller finds its answer.
-	Written string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
+	Address string `protobuf:"bytes,1,opt,name=address,proto3" json:"address,omitempty"`
 	// Where the note it reaches is filed.
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// The vault holding that note. An identifier names one note in the world, so
@@ -988,9 +988,9 @@ func (*ResolvedAddress) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *ResolvedAddress) GetWritten() string {
+func (x *ResolvedAddress) GetAddress() string {
 	if x != nil {
-		return x.Written
+		return x.Address
 	}
 	return ""
 }
@@ -1281,7 +1281,7 @@ type ReadNoteResponse struct {
 	Body string `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`
 	// Set when the note was not read, and why.
 	Error         ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
-	At            *FileStat `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	FileStat      *FileStat `protobuf:"bytes,3,opt,name=file_stat,json=fileStat,proto3,oneof" json:"file_stat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1330,9 +1330,9 @@ func (x *ReadNoteResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *ReadNoteResponse) GetAt() *FileStat {
+func (x *ReadNoteResponse) GetFileStat() *FileStat {
 	if x != nil {
-		return x.At
+		return x.FileStat
 	}
 	return nil
 }
@@ -1346,7 +1346,7 @@ type ReadBaseline struct {
 	// it.
 	Prose string `protobuf:"bytes,1,opt,name=prose,proto3" json:"prose,omitempty"`
 	// The file the prose came out of.
-	At            *FileStat `protobuf:"bytes,2,opt,name=at,proto3" json:"at,omitempty"`
+	FileStat      *FileStat `protobuf:"bytes,2,opt,name=file_stat,json=fileStat,proto3" json:"file_stat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1388,9 +1388,9 @@ func (x *ReadBaseline) GetProse() string {
 	return ""
 }
 
-func (x *ReadBaseline) GetAt() *FileStat {
+func (x *ReadBaseline) GetFileStat() *FileStat {
 	if x != nil {
-		return x.At
+		return x.FileStat
 	}
 	return nil
 }
@@ -1464,9 +1464,9 @@ type WriteNoteResponse struct {
 	Error ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At *FileStat `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	FileStat *FileStat `protobuf:"bytes,2,opt,name=file_stat,json=fileStat,proto3,oneof" json:"file_stat,omitempty"`
 	// Set when the prose is on disk and the index could not be updated for it.
-	// The write happened and `at` stands; search answers about this note as it
+	// The write happened and `file_stat` stands; search answers about this note as it
 	// read it last, until a walk goes past.
 	IsIndexOutdated bool `protobuf:"varint,3,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
 	unknownFields   protoimpl.UnknownFields
@@ -1510,9 +1510,9 @@ func (x *WriteNoteResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *WriteNoteResponse) GetAt() *FileStat {
+func (x *WriteNoteResponse) GetFileStat() *FileStat {
 	if x != nil {
-		return x.At
+		return x.FileStat
 	}
 	return nil
 }
@@ -3123,21 +3123,21 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\btab_kind\x18\a \x01(\tR\atabKind\x125\n" +
 	"\tdirection\x18\b \x01(\x0e2\x17.numen.v1.LinkDirectionR\tdirection\x12\x1d\n" +
 	"\n" +
-	"related_to\x18\t \x01(\tR\trelatedTo\"q\n" +
+	"related_to\x18\t \x01(\tR\trelatedTo\"u\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
-	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
-	"\awritten\x18\x02 \x03(\tR\awritten\x12\x12\n" +
+	"\x04from\x18\x01 \x01(\tR\x04from\x12\x1c\n" +
+	"\taddresses\x18\x02 \x03(\tR\taddresses\x12\x12\n" +
 	"\x04text\x18\x03 \x01(\tR\x04text\x12\x14\n" +
 	"\x05vault\x18\x04 \x01(\tR\x05vault\"{\n" +
 	"\x18ResolveAddressesResponse\x125\n" +
 	"\bresolved\x18\x01 \x03(\v2\x19.numen.v1.ResolvedAddressR\bresolved\x12(\n" +
-	"\x05found\x18\x02 \x03(\v2\x12.numen.v1.TextLinkR\x05found\"J\n" +
+	"\x05links\x18\x02 \x03(\v2\x12.numen.v1.TextLinkR\x05links\"J\n" +
 	"\bTextLink\x12\x10\n" +
 	"\x03raw\x18\x01 \x01(\tR\x03raw\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\tR\aaddress\x12\x12\n" +
 	"\x04text\x18\x03 \x01(\tR\x04text\"\x97\x01\n" +
 	"\x0fResolvedAddress\x12\x18\n" +
-	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
+	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05vault\x18\x03 \x01(\tR\x05vault\x12\x1d\n" +
 	"\n" +
@@ -3155,25 +3155,27 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x04line\x18\x02 \x01(\x05R\x04line\x12\x14\n" +
 	"\x05level\x18\x03 \x01(\x05R\x05level\"%\n" +
 	"\x0fReadNoteRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x81\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x95\x01\n" +
 	"\x10ReadNoteResponse\x12\x12\n" +
 	"\x04body\x18\x01 \x01(\tR\x04body\x12)\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12'\n" +
-	"\x02at\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x00R\x02at\x88\x01\x01B\x05\n" +
-	"\x03_at\"H\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x124\n" +
+	"\tfile_stat\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x00R\bfileStat\x88\x01\x01B\f\n" +
+	"\n" +
+	"_file_stat\"U\n" +
 	"\fReadBaseline\x12\x14\n" +
-	"\x05prose\x18\x01 \x01(\tR\x05prose\x12\"\n" +
-	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\x02at\"\x80\x01\n" +
+	"\x05prose\x18\x01 \x01(\tR\x05prose\x12/\n" +
+	"\tfile_stat\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\bfileStat\"\x80\x01\n" +
 	"\x10WriteNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x127\n" +
 	"\bbaseline\x18\x03 \x01(\v2\x16.numen.v1.ReadBaselineH\x00R\bbaseline\x88\x01\x01B\v\n" +
-	"\t_baseline\"\x9a\x01\n" +
+	"\t_baseline\"\xae\x01\n" +
 	"\x11WriteNoteResponse\x12)\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12'\n" +
-	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatH\x00R\x02at\x88\x01\x01\x12*\n" +
-	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdatedB\x05\n" +
-	"\x03_at\"\xa2\x01\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x124\n" +
+	"\tfile_stat\x18\x02 \x01(\v2\x12.numen.v1.FileStatH\x00R\bfileStat\x88\x01\x01\x12*\n" +
+	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdatedB\f\n" +
+	"\n" +
+	"_file_stat\"\xa2\x01\n" +
 	"\x04Link\x12\x0e\n" +
 	"\x02to\x18\x01 \x01(\tR\x02to\x12\"\n" +
 	"\x04role\x18\x02 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x14\n" +
@@ -3419,15 +3421,15 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	0,  // 6: numen.v1.RelatedNote.relation:type_name -> numen.v1.Relation
 	1,  // 7: numen.v1.RelatedNote.direction:type_name -> numen.v1.LinkDirection
 	15, // 8: numen.v1.ResolveAddressesResponse.resolved:type_name -> numen.v1.ResolvedAddress
-	14, // 9: numen.v1.ResolveAddressesResponse.found:type_name -> numen.v1.TextLink
+	14, // 9: numen.v1.ResolveAddressesResponse.links:type_name -> numen.v1.TextLink
 	18, // 10: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings
 	19, // 11: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
 	49, // 12: numen.v1.ReadNoteResponse.error:type_name -> numen.v1.ErrorCode
-	50, // 13: numen.v1.ReadNoteResponse.at:type_name -> numen.v1.FileStat
-	50, // 14: numen.v1.ReadBaseline.at:type_name -> numen.v1.FileStat
+	50, // 13: numen.v1.ReadNoteResponse.file_stat:type_name -> numen.v1.FileStat
+	50, // 14: numen.v1.ReadBaseline.file_stat:type_name -> numen.v1.FileStat
 	22, // 15: numen.v1.WriteNoteRequest.baseline:type_name -> numen.v1.ReadBaseline
 	49, // 16: numen.v1.WriteNoteResponse.error:type_name -> numen.v1.ErrorCode
-	50, // 17: numen.v1.WriteNoteResponse.at:type_name -> numen.v1.FileStat
+	50, // 17: numen.v1.WriteNoteResponse.file_stat:type_name -> numen.v1.FileStat
 	2,  // 18: numen.v1.Link.role:type_name -> numen.v1.Role
 	3,  // 19: numen.v1.Link.marker:type_name -> numen.v1.Marker
 	25, // 20: numen.v1.CreateNoteRequest.links:type_name -> numen.v1.Link

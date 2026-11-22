@@ -38,7 +38,7 @@ const DUSK = {
 const createWindow = () => {
   const core = {
     getSettings: vi.fn(async () => ({
-      written: '{"v":1}',
+      settingsJson: '{"v":1}',
       path: '/vault/numen.json',
       app: [
         {

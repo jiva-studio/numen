@@ -72,7 +72,7 @@ type GetSettingsResponse struct {
 	// Every setting currently, as JSON: what the file says, and what an
 	// installation without a configuration does under everything it does not. The first level is the
 	// version `v`, the owner `app` and one object per plugin id.
-	Written string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
+	SettingsJson string `protobuf:"bytes,1,opt,name=settings_json,json=settingsJson,proto3" json:"settings_json,omitempty"`
 	// The file itself, absolute on this machine.
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// Active plugins and their declarative settings schema.
@@ -80,7 +80,7 @@ type GetSettingsResponse struct {
 	// The settings of the owner app, declared by the core in the format of a manifest setting. The
 	// window reads their defaults, bounds and options from here.
 	App []*PluginSetting `protobuf:"bytes,8,rep,name=app,proto3" json:"app,omitempty"`
-	// The version of the state `written` is read from. It grows with every write the core takes, so
+	// The version of the state `settings_json` is read from. It grows with every write the core takes, so
 	// an answer with a smaller version than one already taken is older than it and is dropped.
 	Version uint64 `protobuf:"varint,10,opt,name=version,proto3" json:"version,omitempty"`
 	// The groups of the settings of the owner app, in the order their islands are drawn.
@@ -119,9 +119,9 @@ func (*GetSettingsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetSettingsResponse) GetWritten() string {
+func (x *GetSettingsResponse) GetSettingsJson() string {
 	if x != nil {
-		return x.Written
+		return x.SettingsJson
 	}
 	return ""
 }
@@ -346,9 +346,9 @@ func (x *WriteSettingsRequest) GetSettings() []*Setting {
 
 type WriteSettingsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Every setting after the write, in the shape of GetSettingsResponse.written.
-	Written string `protobuf:"bytes,1,opt,name=written,proto3" json:"written,omitempty"`
-	// The version of the state `written` stands for, as in GetSettingsResponse.version. It is greater
+	// Every setting after the write, in the shape of GetSettingsResponse.settings_json.
+	SettingsJson string `protobuf:"bytes,1,opt,name=settings_json,json=settingsJson,proto3" json:"settings_json,omitempty"`
+	// The version of the state `settings_json` stands for, as in GetSettingsResponse.version. It is greater
 	// than the version of any answer the core gave before the write.
 	Version       uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -385,9 +385,9 @@ func (*WriteSettingsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *WriteSettingsResponse) GetWritten() string {
+func (x *WriteSettingsResponse) GetSettingsJson() string {
 	if x != nil {
-		return x.Written
+		return x.SettingsJson
 	}
 	return ""
 }
@@ -693,9 +693,9 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
 	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\xf5\x01\n" +
-	"\x13GetSettingsResponse\x12\x18\n" +
-	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
+	"\x12GetSettingsRequest\"\x80\x02\n" +
+	"\x13GetSettingsResponse\x12#\n" +
+	"\rsettings_json\x18\x01 \x01(\tR\fsettingsJson\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12.\n" +
 	"\aplugins\x18\a \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\x12)\n" +
 	"\x03app\x18\b \x03(\v2\x17.numen.v1.PluginSettingR\x03app\x12\x18\n" +
@@ -710,9 +710,9 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\x15WatchSettingsResponse\x12+\n" +
 	"\achanged\x18\x01 \x03(\v2\x11.numen.v1.SettingR\achanged\"E\n" +
 	"\x14WriteSettingsRequest\x12-\n" +
-	"\bsettings\x18\x01 \x03(\v2\x11.numen.v1.SettingR\bsettings\"K\n" +
-	"\x15WriteSettingsResponse\x12\x18\n" +
-	"\awritten\x18\x01 \x01(\tR\awritten\x12\x18\n" +
+	"\bsettings\x18\x01 \x03(\v2\x11.numen.v1.SettingR\bsettings\"V\n" +
+	"\x15WriteSettingsResponse\x12#\n" +
+	"\rsettings_json\x18\x01 \x01(\tR\fsettingsJson\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\x04R\aversion\"H\n" +
 	"\x17ChoosePluginPathRequest\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x10\n" +

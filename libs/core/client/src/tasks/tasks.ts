@@ -71,13 +71,13 @@ export function createTaskClient(rpc: TaskRpc, window: string): TaskClient {
         yield update.tasks.map((task) => ({
           id: task.id,
           label: task.title,
-          about: task.about,
+          about: task.detail,
           progress: {
-            completedCount: Number(task.done),
-            total: Number(task.total),
+            completedCount: Number(task.completedCount),
+            total: Number(task.totalCount),
             counting: getCountingUnit(task.unit),
           },
-          error: task.error,
+          error: task.failureReason,
           source: {
             isUserStarted: task.isUserStarted,
             pluginId: task.pluginId,

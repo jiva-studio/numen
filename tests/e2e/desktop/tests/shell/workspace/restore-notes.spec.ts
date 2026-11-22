@@ -26,7 +26,7 @@ const flushFrames = (): Buffer => {
   }
   return Buffer.concat([
     frame(0, { token: 'flush-test' }),
-    frame(0, { token: 'flush-test', flush: true }),
+    frame(0, { token: 'flush-test', isFlushRequired: true }),
     frame(2, {}),
   ])
 }

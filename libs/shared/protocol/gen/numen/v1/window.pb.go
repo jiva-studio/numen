@@ -296,15 +296,15 @@ type Task struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Title is the work, in the words to show. About is what it is on, and is
 	// empty for work that is on nothing in particular.
-	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	About string `protobuf:"bytes,3,opt,name=about,proto3" json:"about,omitempty"`
+	Title  string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Detail string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	// Done and total are how far it has got, when there is a total to count
 	// against. Both zero is work running with nothing to count, which is an
 	// ordinary state and not an unknown one.
-	Done  int64 `protobuf:"varint,4,opt,name=done,proto3" json:"done,omitempty"`
-	Total int64 `protobuf:"varint,5,opt,name=total,proto3" json:"total,omitempty"`
+	CompletedCount int64 `protobuf:"varint,4,opt,name=completed_count,json=completedCount,proto3" json:"completed_count,omitempty"`
+	TotalCount     int64 `protobuf:"varint,5,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	// Error is why the work stopped, when it stopped badly.
-	Error string `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`
+	FailureReason string `protobuf:"bytes,6,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
 	// Set for work a person started and is waiting to be notified about.
 	IsUserStarted bool `protobuf:"varint,7,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
 	// Unit is what done and total are counted in.
@@ -365,30 +365,30 @@ func (x *Task) GetTitle() string {
 	return ""
 }
 
-func (x *Task) GetAbout() string {
+func (x *Task) GetDetail() string {
 	if x != nil {
-		return x.About
+		return x.Detail
 	}
 	return ""
 }
 
-func (x *Task) GetDone() int64 {
+func (x *Task) GetCompletedCount() int64 {
 	if x != nil {
-		return x.Done
+		return x.CompletedCount
 	}
 	return 0
 }
 
-func (x *Task) GetTotal() int64 {
+func (x *Task) GetTotalCount() int64 {
 	if x != nil {
-		return x.Total
+		return x.TotalCount
 	}
 	return 0
 }
 
-func (x *Task) GetError() string {
+func (x *Task) GetFailureReason() string {
 	if x != nil {
-		return x.Error
+		return x.FailureReason
 	}
 	return ""
 }
@@ -487,9 +487,9 @@ type WatchWindowCloseResponse struct {
 	// a caller knows it is listening before anything is asked of it.
 	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	// Set when the window is going and this caller's unwritten work has to land.
-	Flush         bool `protobuf:"varint,2,opt,name=flush,proto3" json:"flush,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	IsFlushRequired bool `protobuf:"varint,2,opt,name=is_flush_required,json=isFlushRequired,proto3" json:"is_flush_required,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *WatchWindowCloseResponse) Reset() {
@@ -529,9 +529,9 @@ func (x *WatchWindowCloseResponse) GetToken() string {
 	return ""
 }
 
-func (x *WatchWindowCloseResponse) GetFlush() bool {
+func (x *WatchWindowCloseResponse) GetIsFlushRequired() bool {
 	if x != nil {
-		return x.Flush
+		return x.IsFlushRequired
 	}
 	return false
 }
@@ -829,14 +829,15 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x11WatchTasksRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\":\n" +
 	"\x12WatchTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xdb\x02\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\x8e\x03\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
-	"\x05about\x18\x03 \x01(\tR\x05about\x12\x12\n" +
-	"\x04done\x18\x04 \x01(\x03R\x04done\x12\x14\n" +
-	"\x05total\x18\x05 \x01(\x03R\x05total\x12\x14\n" +
-	"\x05error\x18\x06 \x01(\tR\x05error\x12&\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\x12'\n" +
+	"\x0fcompleted_count\x18\x04 \x01(\x03R\x0ecompletedCount\x12\x1f\n" +
+	"\vtotal_count\x18\x05 \x01(\x03R\n" +
+	"totalCount\x12%\n" +
+	"\x0efailure_reason\x18\x06 \x01(\tR\rfailureReason\x12&\n" +
 	"\x0fis_user_started\x18\a \x01(\bR\risUserStarted\x12\"\n" +
 	"\x04unit\x18\b \x01(\x0e2\x0e.numen.v1.UnitR\x04unit\x12\x1b\n" +
 	"\tplugin_id\x18\t \x01(\tR\bpluginId\x12\x1f\n" +
@@ -846,10 +847,10 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x0eis_cancellable\x18\v \x01(\bR\risCancellable\x12&\n" +
 	"\x04kind\x18\f \x01(\x0e2\x12.numen.v1.TaskKindR\x04kind\"1\n" +
 	"\x17WatchWindowCloseRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\"F\n" +
+	"\x06window\x18\x01 \x01(\tR\x06window\"\\\n" +
 	"\x18WatchWindowCloseResponse\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\x12\x14\n" +
-	"\x05flush\x18\x02 \x01(\bR\x05flush\"w\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12*\n" +
+	"\x11is_flush_required\x18\x02 \x01(\bR\x0fisFlushRequired\"w\n" +
 	"\x18ReportPendingWorkRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12-\n" +

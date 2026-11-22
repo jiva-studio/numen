@@ -171,7 +171,7 @@ export const createSettingsApi = (
     getSettings: async (): Promise<Configuration> => {
       const answer = await settingsService.getSettings({})
       return {
-        written: answer.written,
+        written: answer.settingsJson,
         path: answer.path,
         version: answer.version,
         plugins: answer.plugins.map((p) => ({
@@ -200,7 +200,7 @@ export const createSettingsApi = (
       const answer = await settingsService.writeSettings({
         settings: edits.map((one) => ({ at: [...one.at], value: one.value })),
       })
-      return { written: answer.written, version: answer.version }
+      return { written: answer.settingsJson, version: answer.version }
     },
 
     /**

@@ -66,7 +66,7 @@ describe('the text a plugin could not write when the window quits', () => {
   /** A quit is requested once, and the stream then stays open. */
   const requestQuit = () => ({
     watchWindowClose: async function* () {
-      yield { token: '1', flush: true }
+      yield { token: '1', isFlushRequired: true }
       await new Promise(() => undefined)
     },
     reportPendingWork: vi.fn(() => Promise.resolve()),
