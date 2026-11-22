@@ -971,6 +971,22 @@
       "target": "use-case-fields"
     },
     {
+      "name": "go/use-case-ports",
+      "paths": [
+        "libs/core/kernel/**",
+        "go.work"
+      ],
+      "tags": [
+        "structure",
+        "go",
+        "core",
+        "slow"
+      ],
+      "selftest": "structure/go/use-case-ports/check_test.go",
+      "runner": "go",
+      "target": "use-case-ports"
+    },
+    {
       "name": "go/usecase-edges",
       "paths": [
         "libs/core/kernel/**",
