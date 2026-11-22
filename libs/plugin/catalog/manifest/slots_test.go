@@ -38,4 +38,3 @@ func TestTheSlotsAreTheOnesSlotsJSONLists(t *testing.T) {
 		t.Error("a name outside the list, or an inner slot, is taken for a slot of the window")
 	}
 }
-
