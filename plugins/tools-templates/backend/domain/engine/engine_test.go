@@ -8,7 +8,6 @@ import (
 	"testing"
 	"text/template"
 	"time"
-	"unicode/utf16"
 
 	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/engine"
 )
@@ -205,48 +204,12 @@ func TestMakeAnID(t *testing.T) {
 	}
 }
 
-func TestReportTheCursor(t *testing.T) {
-	cursorOf := func(in string) engine.Result {
-		t.Helper()
-		got, err := engine.New(nil).Render("T.md", in, getData())
-		if err != nil {
-			t.Fatal(err)
-		}
-		return got
-	}
+func TestKnowNoCursorFunction(t *testing.T) {
+	_, err := engine.New(nil).Render("T.md", "a{{ cursor }}b", getData())
 
-	t.Run("removes the cursor marker and reports its offset", func(t *testing.T) {
-		if got := cursorOf("ab{{ cursor }}cd"); got.Text != "abcd" || got.Cursor != 2 {
-			t.Errorf("result = %+v", got)
-		}
-	})
-	t.Run("reports the offset of the first marker and removes the others", func(t *testing.T) {
-		if got := cursorOf("x{{ cursor }}y{{ cursor }}z"); got.Text != "xyz" || got.Cursor != 1 {
-			t.Errorf("result = %+v", got)
-		}
-	})
-	t.Run("reports -1 when there is no marker", func(t *testing.T) {
-		for _, in := range []string{"", "plain text", "{{ .title }}"} {
-			if got := cursorOf(in); got.Cursor != -1 {
-				t.Errorf("Render(%q).Cursor = %d, want -1", in, got.Cursor)
-			}
-		}
-	})
-	t.Run("counts the offset in UTF-16 units after earlier replacements and astral characters", func(t *testing.T) {
-		for _, c := range []struct {
-			name, in, text string
-			want           int
-		}{
-			{"after a longer replacement", `{{ date "YYYY" }} {{ cursor }}`, "2026 ", 5},
-			{"after an astral character", "😀{{ .title }}{{ cursor }}", "😀Plan", 6},
-			{"after two BMP characters", "日本{{ cursor }}", "日本", 2},
-		} {
-			got := cursorOf(c.in)
-			if got.Text != c.text || got.Cursor != c.want {
-				t.Errorf("%s: result = %+v, want text %q and cursor %d", c.name, got, c.text, c.want)
-			}
-		}
-	})
+	if !errors.Is(err, engine.ErrTemplate) || !strings.Contains(err.Error(), "cursor") {
+		t.Errorf("error = %v", err)
+	}
 }
 
 func TestFailClearly(t *testing.T) {
@@ -369,14 +332,11 @@ func TestFillTheFieldsWithTheValues(t *testing.T) {
 }
 
 func FuzzRenderNeverPanics(f *testing.F) {
-	for _, seed := range []string{"", "{{", "}}", "{{ . }}", `{{ date "[" }}`, "{{ cursor }}{{ cursor }}", "{{{{{{", "\xff{{ cursor }}😀"} {
+	for _, seed := range []string{"", "{{", "}}", "{{ . }}", `{{ date "[" }}`, "{{{{{{", "\xff😀"} {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, in string) {
-		got, err := engine.New(nil).Render("T.md", in, getData())
-		if err == nil && got.Cursor > len(utf16.Encode([]rune(got.Text))) {
-			t.Errorf("Render(%q).Cursor = %d is beyond the text", in, got.Cursor)
-		}
+		_, _ = engine.New(nil).Render("T.md", in, getData())
 	})
 }
 
@@ -440,12 +400,12 @@ func TestRenderTheExamplesOfTheDocs(t *testing.T) {
 	t.Run("meeting note with prompts", func(t *testing.T) {
 		data := getData()
 		data.Values = map[string]string{"Client": "Globex", "Topic": "Budget"}
-		text := "{{ $client := prompt \"Client\" \"Acme\" }}# Meeting with {{ $client }}\n\nDate: {{ date \"YYYY-MM-DD\" }}\nTopic: {{ prompt \"Topic\" }}\nNotes on {{ $client }}: {{ cursor }}\n"
+		text := "{{ $client := prompt \"Client\" \"Acme\" }}# Meeting with {{ $client }}\n\nDate: {{ date \"YYYY-MM-DD\" }}\nTopic: {{ prompt \"Topic\" }}\nNotes on {{ $client }}: \n"
 
 		got, err := engine.New(nil).Render("T.md", text, data)
 
-		want := "# Meeting with Globex\n\nDate: 2026-11-14\nTopic: Budget\nNotes on Globex: "
-		if err != nil || got.Text != want+"\n" || got.Cursor != len([]rune(want)) {
+		want := "# Meeting with Globex\n\nDate: 2026-11-14\nTopic: Budget\nNotes on Globex: \n"
+		if err != nil || got.Text != want {
 			t.Errorf("result = %+v, %v", got, err)
 		}
 	})

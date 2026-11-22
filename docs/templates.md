@@ -74,7 +74,6 @@ Every other character is copied, and so is a letter that is not a token of this 
 | `replace old new s` | the text with every `old` replaced |
 | `trim s` | the text without the spaces at its ends |
 | `uuid` | a new random identifier |
-| `cursor` | nothing; marks the place for the cursor and is removed |
 
 These pipe as well: `{{ .title | slug }}`, `{{ .vars.Client | default "none" | upper }}`. Control comes with the language: `if`, `else`, `range`, `with`, variables (`{{ $d := addDays 1 }}`), `eq`, `ne`, `lt`, `and`, `or`, `not`, `list` and `dict`.
 
@@ -100,7 +99,6 @@ created: {{ date "YYYY-MM-DD" }}
 
 {{ if eq (select "Kind" "call" "visit") "visit" }}Address:{{ end }}
 Next week: {{ addDays 7 | date "dddd, D MMMM" }}
-{{ cursor }}
 ```
 
 ### More examples
@@ -112,7 +110,7 @@ A meeting note that asks who and what, and keeps the answer in a variable:
 
 Date: {{ date "YYYY-MM-DD" }}
 Topic: {{ prompt "Topic" }}
-Notes on {{ $client }}: {{ cursor }}
+Notes on {{ $client }}:
 ```
 
 A daily note with the days around today:

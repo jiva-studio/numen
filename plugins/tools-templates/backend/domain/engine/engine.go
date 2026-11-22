@@ -11,8 +11,6 @@ import (
 )
 
 const (
-	cursorMarker = "\x00cursor\x00"
-
 	// KindText is a field that asks for a line of text.
 	KindText = "text"
 	// KindSelect is a field that asks for one of its options.
@@ -39,11 +37,9 @@ type Data struct {
 	Values map[string]string
 }
 
-// Result is the text after rendering and the place of the first cursor marker.
-// Cursor is an offset into Text in UTF-16 code units, -1 for none.
+// Result is the text after rendering.
 type Result struct {
-	Text   string
-	Cursor int
+	Text string
 }
 
 // Field is a question a template asks before it is rendered.
@@ -86,7 +82,7 @@ func (r Renderer) Render(name, text string, data Data) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
-	return splitCursor(out), nil
+	return Result{Text: out}, nil
 }
 
 func resolve(fields []Field, given map[string]string) (map[string]string, error) {
@@ -120,23 +116,4 @@ func (r Renderer) execute(name, text string, p *pass, option string) (string, er
 		return "", fmt.Errorf("%w: %w", ErrTemplate, err)
 	}
 	return out.String(), nil
-}
-
-func splitCursor(text string) Result {
-	before, after, found := strings.Cut(text, cursorMarker)
-	if !found {
-		return Result{Text: text, Cursor: -1}
-	}
-	return Result{Text: before + strings.ReplaceAll(after, cursorMarker, ""), Cursor: getUTF16Length(before)}
-}
-
-func getUTF16Length(text string) int {
-	count := 0
-	for _, r := range text {
-		count++
-		if r >= 0x10000 {
-			count++
-		}
-	}
-	return count
 }

@@ -86,7 +86,6 @@ func getFuncs(p *pass) Funcs {
 		"replace":   func(old, replacement, text string) string { return strings.ReplaceAll(text, old, replacement) },
 		"trim":      strings.TrimSpace,
 		"uuid":      newUUID,
-		"cursor":    func() string { return cursorMarker },
 		"dict":      dict,
 		"list":      func(items ...any) []any { return items },
 		"prompt": func(label string, defaults ...string) string {
