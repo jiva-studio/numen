@@ -24,6 +24,7 @@ export function createTaskEditorExtension({
   hideFields,
   showError,
 }: TaskEditorDeps): Extension {
+  const source = createTaskCompletion({ getFields, getToday })
   return [
     createTaskExtension({
       hideFields,
@@ -34,8 +35,6 @@ export function createTaskEditorExtension({
       },
     }),
     autocompletion(),
-    EditorState.languageData.of(() => [
-      { autocomplete: createTaskCompletion({ getFields, getToday }) },
-    ]),
+    EditorState.languageData.of(() => [{ autocomplete: source }]),
   ]
 }
