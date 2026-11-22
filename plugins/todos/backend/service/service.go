@@ -11,10 +11,15 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/todos/backend/api"
+	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/clock"
 	hostadapter "github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/host"
 	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/snapshot"
+	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
+	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/edit"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/index"
+	"github.com/jiva-studio/numen/plugins/todos/backend/wire/queryfns"
+	"github.com/jiva-studio/numen/plugins/todos/backend/wire/tasktools"
 	"github.com/jiva-studio/numen/plugins/todos/backend/wire/todos"
 )
 
@@ -122,6 +127,22 @@ func setTaskDone(done *complete.SetTaskDone) func(context.Context, api.SetTaskDo
 	}
 }
 
+func mountAgentSurface(
+	s *server.Server, tasks *index.Index, done *complete.SetTaskDone, editor *edit.Editor, today ports.Clock,
+) error {
+	functions, err := queryfns.New(tasks, today)
+	if err != nil {
+		return err
+	}
+	registry, err := tasktools.New(tasks, editor, done, today).Registry()
+	if err != nil {
+		return err
+	}
+	functions.Mount(s)
+	registry.Mount(s)
+	return nil
+}
+
 func mount(s *server.Server, tasks *index.Index, done *complete.SetTaskDone) error {
 	ctx := getClosedContext(s)
 	s.SetUpdateConfig(func(values map[string]string) {
@@ -150,7 +171,11 @@ func Mount(s *server.Server) error {
 	}
 	tasks := index.NewForNotes(vault, vault, vault)
 	tasks.Persist(index.Persistence{Snapshots: snapshot.New(""), Feed: vault, After: index.SystemAfter, Cursors: snapshot.NewCursorStore})
-	if err := mount(s, tasks, complete.New(vault, vault, tasks)); err != nil {
+	done := complete.New(vault, vault, tasks)
+	if err := mount(s, tasks, done); err != nil {
+		return err
+	}
+	if err := mountAgentSurface(s, tasks, done, edit.New(vault, vault, tasks), clock.System{}); err != nil {
 		return err
 	}
 	ctx := getClosedContext(s)
