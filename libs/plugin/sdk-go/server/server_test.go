@@ -17,6 +17,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
@@ -529,7 +530,7 @@ func TestRunServesAndTerminatesCleanly(t *testing.T) {
 func TestServerReadsTokenFromEnvironment(t *testing.T) {
 	stdinReader, stdinWriter := io.Pipe()
 	token := "env-secret-token"
-	t.Setenv(tokenVar, token)
+	t.Setenv(hostcall.PluginTokenEnv, token)
 	s := New(
 		withPort(0),
 		withStdout(io.Discard),
@@ -570,7 +571,7 @@ func TestServerReadsTokenFromEnvironment(t *testing.T) {
 
 // A server fails to start when the auth token is empty.
 func TestServerRejectsEmptyToken(t *testing.T) {
-	t.Setenv(tokenVar, "")
+	t.Setenv(hostcall.PluginTokenEnv, "")
 	s := New(
 		withPort(0),
 		withStdout(io.Discard),
