@@ -30,7 +30,7 @@ func TestTwoFakesHoldTwoIdentities(t *testing.T) {
 	}
 }
 
-func TestTheFakeSignsWithTheKeyOfItsRecordUnderThePluginItWasMadeFor(t *testing.T) {
+func TestTheFakeSignsWithTheKeyOfItsRecordForThePluginItWasMadeFor(t *testing.T) {
 	fake := accounttest.NewFake(t, "md.numen.a")
 	client := newClient(t, fake)
 

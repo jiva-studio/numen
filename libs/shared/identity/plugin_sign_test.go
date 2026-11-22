@@ -95,7 +95,6 @@ func TestVerifyForPlugin_RefusesANonCanonicalS(t *testing.T) {
 	}
 }
 
-// addGroupOrder returns the signature whose S is S + L, the same point with a non-canonical scalar.
 func addGroupOrder(signature [64]byte) [64]byte {
 	order, _ := new(big.Int).SetString("7237005577332262213973186563042994240857116359379907606001950938285454250989", 10)
 	s := littleEndian(signature[32:])

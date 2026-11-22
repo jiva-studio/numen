@@ -1,6 +1,6 @@
 /**
- * The sync server a scenario names and what the application does about it: a program of the test that stands in
- * for the server on this computer, the plugin "Numen Sync" it signs in to, and the processes and warnings of
+ * The sync server a scenario names and what the application does about it: a program of the test that replaces
+ * the server on this computer, the plugin "Numen Sync" it signs in to, and the processes and warnings of
  * plugins that the application lists. The program is the fake sync server of the plugin "Numen Sync": the CI jobs
  * unpack it, and `make app_desktop_acceptance` builds it.
  */
@@ -20,7 +20,7 @@ const BINARY = path.join(PLUGIN, 'bin', 'fakesync')
 const SYNC_PLUGIN = 'md.numen.tools.sync'
 /** The server lets a session live this long, so the plugin signs in again 2 seconds after it signed in. */
 const SESSION_SECONDS = 62
-/** A protocol version no build of the application speaks. */
+/** A protocol version no build of the application implements. */
 const NEWER_PROTOCOL = 1000
 /** The plugin tries to sign in within this time of its start; a server that has no session after it has none to give. */
 const SETTLE_MS = 3_000
@@ -96,7 +96,7 @@ export class SyncDriver {
     this.scenario.setPluginSetting(SYNC_PLUGIN, 'server', this.running.address)
   }
 
-  /** Makes the sync server need a protocol no application speaks, where it listened before. */
+  /** Makes the sync server need a protocol no application implements, where it listened before. */
   async needNewerProtocol(): Promise<void> {
     const previous = this.requireRunning()
     this.stop()

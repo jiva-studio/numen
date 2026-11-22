@@ -31,7 +31,7 @@ func GetSignInMessage(challenge *syncv1.GetChallengeResponse, deviceSignKey []by
 }
 
 // CheckChallenge checks a challenge before the client signs it: its id and nonce have their sizes, its
-// audience is the address the client dialled, and it expires within 120 seconds of now, before or after.
+// audience is the address the client dialed, and it expires within 120 seconds of now, before or after.
 func CheckChallenge(challenge *syncv1.GetChallengeResponse, address string, now time.Time) error {
 	if len(challenge.GetChallengeId()) != challengeIDSize || len(challenge.GetNonce()) != challengeNonceSize {
 		return ErrMalformedChallenge

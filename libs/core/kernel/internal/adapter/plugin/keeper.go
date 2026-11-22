@@ -14,7 +14,6 @@ import (
 // persistentHolder is the holder of the lease the keeper takes on the process of a plugin it keeps.
 var persistentHolder = plugindomain.Holder{Who: plugindomain.WhoPersistent, Why: "stay running"}
 
-// heldStarter starts a plugin with a lease on it.
 type heldStarter interface {
 	ensureActiveDuringDiscovery(ctx context.Context, pluginID string, lease lifecycle.Lease) (transport.Endpoint, error)
 }

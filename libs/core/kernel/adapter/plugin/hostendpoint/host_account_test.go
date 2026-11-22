@@ -96,7 +96,7 @@ func TestAPluginWithTheIdentityPermissionSignsAsTheDevice(t *testing.T) {
 	}
 }
 
-func TestTheDeviceSignsUnderThePluginTheTokenNamesWhateverTheRequestSays(t *testing.T) {
+func TestTheDeviceSignsForThePluginOfTheTokenAndNotOfTheRequest(t *testing.T) {
 	h := newAccountHost(t)
 
 	if _, err := h.client("token-c").SignAsDevice(t.Context(), connect.NewRequest(&v1.SignAsDeviceRequest{Message: []byte("m")})); err != nil {
@@ -186,7 +186,7 @@ func TestAKeyStoreFailureIsInternalAndNamesNoReason(t *testing.T) {
 	}
 }
 
-func TestThePublicIdentityHoldsFingerprintsTheSignKeyAndTheChainAndNothingSecret(t *testing.T) {
+func TestThePublicIdentityHasFingerprintsTheSignKeyAndTheChainAndNothingSecret(t *testing.T) {
 	h := newAccountHost(t)
 
 	response, err := h.client("token-a").GetPublicIdentity(t.Context(), connect.NewRequest(&v1.GetPublicIdentityRequest{}))

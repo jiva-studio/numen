@@ -84,7 +84,6 @@ export interface ServerOptions {
   readonly environment: readonly EnvironmentSetting[]
   readonly programs: readonly string[]
   readonly isLive: boolean
-  /** The settings of plugins the application starts with, by plugin id. */
   readonly pluginSettings: Readonly<Record<string, Readonly<Record<string, string>>>>
 }
 

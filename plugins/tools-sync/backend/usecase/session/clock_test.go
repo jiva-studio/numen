@@ -62,7 +62,6 @@ func (c *manualClock) Advance(d time.Duration) {
 	c.waiters = kept
 }
 
-// awaitWait blocks until the use case starts its next wait, and returns how long it waits.
 func (c *manualClock) awaitWait(t *testing.T) time.Duration {
 	t.Helper()
 	select {

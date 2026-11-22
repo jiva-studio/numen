@@ -105,7 +105,7 @@ func (h keptHost) isRunning(id string) bool {
 	return state == lifecycle.StateActive || state == lifecycle.StateIdle
 }
 
-func (h keptHost) waitRunning(t *testing.T, id string) {
+func (h keptHost) waitForRunning(t *testing.T, id string) {
 	t.Helper()
 	wiretest.WaitUntil(t, id+" to run", func() bool { return h.isRunning(id) })
 }
@@ -126,7 +126,7 @@ func TestAPersistentPluginRunsOnceTheKeeperStarts(t *testing.T) {
 
 	host.Management.Keeper.KeepAll(t.Context())
 
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 	if got := host.launcher.launches.Load(); got != 1 {
 		t.Errorf("launches = %d, want 1", got)
 	}
@@ -136,7 +136,7 @@ func TestThePluginsThatAreNotPersistentAreNotStartedByTheKeeper(t *testing.T) {
 	host := newKeptHost(t)
 
 	host.Management.Keeper.KeepAll(t.Context())
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 
 	if host.isRunning(demandPlugin) {
 		t.Error("a plugin that starts on demand runs after the keeper started")
@@ -146,7 +146,7 @@ func TestThePluginsThatAreNotPersistentAreNotStartedByTheKeeper(t *testing.T) {
 	}
 }
 
-func TestTheKeeperStartDoesNotWaitForAPluginToHandshake(t *testing.T) {
+func TestTheKeeperStartDoesNotWaitForAPluginToConnect(t *testing.T) {
 	host := newKeptHost(t)
 	host.launcher.mode.Store(launchSilent)
 	returned := make(chan struct{})
@@ -163,10 +163,10 @@ func TestTheKeeperStartDoesNotWaitForAPluginToHandshake(t *testing.T) {
 	}
 }
 
-func TestAPersistentPluginHoldsALeaseForTheKeeperAndIsNotStoppedAsIdle(t *testing.T) {
+func TestAPersistentPluginHasALeaseForTheKeeperAndIsNotStoppedAsIdle(t *testing.T) {
 	host := newKeptHost(t)
 	host.Management.Keeper.KeepAll(t.Context())
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 
 	host.clock.Advance(supervision.IdleThreshold + time.Second)
 	evicted := host.Management.Teardown.EvictIdle(t.Context(), supervision.IdleThreshold, releaseGrace)
@@ -191,7 +191,7 @@ func TestAPersistentPluginHoldsALeaseForTheKeeperAndIsNotStoppedAsIdle(t *testin
 	}
 }
 
-func TestAStartThatDoesNotHandshakeIsStoppedAndNotRepeatedByATimer(t *testing.T) {
+func TestAStartThatDoesNotConnectIsStoppedAndNotRepeatedByATimer(t *testing.T) {
 	host := newKeptHost(t)
 	host.launcher.mode.Store(launchSilent)
 
@@ -221,25 +221,25 @@ func TestTheNextUseStartsAPersistentPluginWhoseStartFailed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 }
 
 func TestAPersistentPluginThatExitsAfterItWasUpIsStartedOnceAgain(t *testing.T) {
 	host := newKeptHost(t)
 	host.Management.Keeper.KeepAll(t.Context())
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 
 	host.launcher.killLast()
 
 	wiretest.WaitUntil(t, "a second start", func() bool { return host.launcher.launches.Load() == 2 })
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 	time.Sleep(quietPeriod)
 	if got := host.launcher.launches.Load(); got != 2 {
 		t.Errorf("launches = %d, want 2: one start for one exit", got)
 	}
 }
 
-func TestAProcessThatDiesBeforeItsHandshakeIsNotStartedAgain(t *testing.T) {
+func TestAProcessThatDiesBeforeItConnectsIsNotStartedAgain(t *testing.T) {
 	host := newKeptHost(t)
 	host.launcher.mode.Store(launchDiesBeforeHandshake)
 
@@ -252,10 +252,10 @@ func TestAProcessThatDiesBeforeItsHandshakeIsNotStartedAgain(t *testing.T) {
 	}
 }
 
-func TestADisabledPersistentPluginIsStoppedAndNotStartedAgainWhenItsProcessIsGone(t *testing.T) {
+func TestADisabledPersistentPluginIsStoppedAndNotStartedAgainWhenItsProcessHasEnded(t *testing.T) {
 	host := newKeptHost(t)
 	host.Management.Keeper.KeepAll(t.Context())
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 
 	host.setEnabled(t, keptPlugin, false)
 
@@ -269,13 +269,13 @@ func TestADisabledPersistentPluginIsStoppedAndNotStartedAgainWhenItsProcessIsGon
 func TestAnEnabledPersistentPluginRunsAgain(t *testing.T) {
 	host := newKeptHost(t)
 	host.Management.Keeper.KeepAll(t.Context())
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 	host.setEnabled(t, keptPlugin, false)
 	wiretest.WaitUntil(t, "the plugin to stop", func() bool { return !host.isRunning(keptPlugin) })
 
 	host.setEnabled(t, keptPlugin, true)
 
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 	if got := host.launcher.launches.Load(); got != 2 {
 		t.Errorf("launches = %d, want 2", got)
 	}
@@ -308,7 +308,7 @@ func TestTheKeeperStartsNoPluginInSafeMode(t *testing.T) {
 func TestAShutDownStopsAPersistentPluginAndStartsNoneAgain(t *testing.T) {
 	host := newKeptHost(t)
 	host.Management.Keeper.KeepAll(t.Context())
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 
 	if err := host.Management.Teardown.TeardownAll(t.Context(), releaseGrace); err != nil {
 		t.Fatal(err)
@@ -320,17 +320,17 @@ func TestAShutDownStopsAPersistentPluginAndStartsNoneAgain(t *testing.T) {
 	}
 }
 
-func TestAPersistentPluginOfAnotherVersionIsStartedAgainWhenItIsKeptAgain(t *testing.T) {
+func TestAPersistentPluginOfAnotherVersionIsStartedAgainWhenTheKeeperKeepsItAgain(t *testing.T) {
 	host := newKeptHost(t)
 	host.Management.Keeper.KeepAll(t.Context())
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 
 	if err := host.Management.Teardown.StopPlugin(t.Context(), keptPlugin); err != nil {
 		t.Fatal(err)
 	}
 	host.Management.Keeper.Keep(t.Context(), keptPlugin)
 
-	host.waitRunning(t, keptPlugin)
+	host.waitForRunning(t, keptPlugin)
 	if got := host.launcher.launches.Load(); got != 2 {
 		t.Errorf("launches = %d, want 2", got)
 	}

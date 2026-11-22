@@ -31,7 +31,7 @@ func newAccountKit(t *testing.T, withIdentity bool) accountKit {
 	return accountKit{kit: k, sign: identity.NewSignAsDevice(deps), read: identity.NewGetPublicIdentity(deps)}
 }
 
-func TestSignAsDevice_SignsUnderThePluginIDWithTheKeyOfThePublicIdentity(t *testing.T) {
+func TestSignAsDevice_SignsForThePluginIDWithTheKeyOfThePublicIdentity(t *testing.T) {
 	t.Parallel()
 	k := newAccountKit(t, true)
 
@@ -55,7 +55,7 @@ func TestSignAsDevice_SignsUnderThePluginIDWithTheKeyOfThePublicIdentity(t *test
 	}
 }
 
-func TestSignAsDevice_ReportsNoIdentityWhenTheKeyStoreHoldsNoRecord(t *testing.T) {
+func TestSignAsDevice_ReportsNoIdentityWhenTheKeyStoreHasNoRecord(t *testing.T) {
 	t.Parallel()
 	k := newAccountKit(t, false)
 
@@ -118,7 +118,7 @@ func TestGetPublicIdentity_ReportsTheFingerprintsOfTheIdentityOfThisDevice(t *te
 	}
 }
 
-func TestGetPublicIdentity_ReportsTheSignedChainThatHoldsTheDeviceKey(t *testing.T) {
+func TestGetPublicIdentity_ReportsTheSignedChainThatContainsTheDeviceKey(t *testing.T) {
 	t.Parallel()
 	k := newAccountKit(t, true)
 

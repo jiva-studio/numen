@@ -10,7 +10,7 @@ import (
 var (
 	// ErrNoIdentity means this device holds no identity yet.
 	ErrNoIdentity = errors.New("no identity on this device")
-	// ErrUpdateRequired means the server speaks another protocol version.
+	// ErrUpdateRequired means the server needs another protocol version.
 	ErrUpdateRequired = errors.New("the sync server needs another version of Numen")
 	// ErrUnauthenticated means the server refused the sign-in.
 	ErrUnauthenticated = errors.New("the sync server refused the sign-in")

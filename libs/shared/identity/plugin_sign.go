@@ -15,7 +15,7 @@ func pluginSignMessage(pluginID string, message []byte) []byte {
 	return append(signed, message...)
 }
 
-// SignForPlugin signs message with the device key under the plugin id.
+// SignForPlugin signs message under the plugin id, so a signature made for one plugin never verifies for another.
 func (d DeviceKey) SignForPlugin(pluginID string, message []byte) [64]byte {
 	return [64]byte(d.signEntry(pluginSignMessage(pluginID, message)))
 }

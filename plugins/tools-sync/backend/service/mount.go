@@ -32,8 +32,8 @@ func Mount(s *server.Server) error {
 		Clock:    clock.System{},
 	}
 	root, cancelRoot := context.WithCancel(context.Background())
-	keeper := &keeper{root: root, deps: deps}
-	s.SetUpdateConfig(keeper.configure)
+	keeper := &keeper{deps: deps}
+	s.SetUpdateConfig(func(values map[string]string) { keeper.configure(root, values) })
 	s.OnClose(func() error {
 		cancelRoot()
 		keeper.stop()

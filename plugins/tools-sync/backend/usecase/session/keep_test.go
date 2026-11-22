@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health/healthtest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/fakesync"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
@@ -35,7 +35,7 @@ type setup struct {
 type kit struct {
 	clock    *manualClock
 	identity *accounttest.Fake
-	server   *fakesync.Server
+	server   *fakeserver.Server
 	health   *healthtest.Host
 	requests atomic.Int32
 	done     chan error
@@ -46,9 +46,9 @@ func newKit(t *testing.T, s setup) *kit {
 	t.Helper()
 	k := &kit{clock: newManualClock(start), done: make(chan error, 1)}
 	if s.signAs == "" {
-		s.signAs = fakesync.PluginID
+		s.signAs = fakeserver.PluginID
 	}
-	k.server = fakesync.New(fakesync.Config{Protocol: s.protocol, Now: func() time.Time { return k.clock.Now().Add(s.serverSkew) }, SessionTTL: s.sessionTTL})
+	k.server = fakeserver.New(fakeserver.Config{Protocol: s.protocol, Now: func() time.Time { return k.clock.Now().Add(s.serverSkew) }, SessionTTL: s.sessionTTL})
 	served := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		k.requests.Add(1)
 		k.server.ServeHTTP(w, r)

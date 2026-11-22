@@ -12,7 +12,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/fakesync"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 )
 
 func main() {
@@ -26,7 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 	url := "http://" + listener.Addr().String()
-	fake := fakesync.New(fakesync.Config{Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl})
+	fake := fakeserver.New(fakeserver.Config{Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl})
 	if _, err := fmt.Fprintln(os.Stdout, url); err != nil {
 		log.Fatal(err)
 	}

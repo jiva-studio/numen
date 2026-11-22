@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/identityport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -19,8 +18,6 @@ type Account struct {
 	names DeviceName
 	clock machineport.Clock
 }
-
-var _ identityport.Operations = (*Account)(nil)
 
 // NewAccount returns the operations over the key store that keys returns at each call.
 func NewAccount(keys func() pluginport.KeyStore, names DeviceName, clock machineport.Clock) *Account {

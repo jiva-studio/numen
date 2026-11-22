@@ -6,12 +6,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
+	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/identityport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
@@ -46,6 +46,15 @@ type WorkQueue interface {
 	ClearPlugin(pluginID string)
 }
 
+// Account is what a plugin with the identity permission may ask of the identity of this device. Both
+// calls return identity.ErrNoIdentity when the device holds none.
+type Account interface {
+	// SignAsDevice signs message with the device key under the plugin id.
+	SignAsDevice(ctx context.Context, pluginID string, message []byte) ([]byte, error)
+	// GetPublicIdentity returns what is public of the identity of this device.
+	GetPublicIdentity(ctx context.Context) (identitydomain.Public, error)
+}
+
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
 // plugin may do, and what the host lends the plugin to work with. Account is what a plugin may ask of the
 // identity of this device, and is nil where the host holds none. Lent holds what exists only while a
@@ -54,7 +63,7 @@ type WorkQueue interface {
 type Callers struct {
 	Dependencies *plugindependency.Fetch
 	Identity     Identity
-	Account      identityport.Operations
+	Account      Account
 	Leases       Leases
 	Lent         *Services
 	Tools        func() PluginTools

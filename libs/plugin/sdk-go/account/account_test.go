@@ -60,7 +60,7 @@ func TestGetPublicIdentity_ReturnsWhatIsPublicOfTheIdentity(t *testing.T) {
 	}
 }
 
-func TestSignAsDevice_ReturnsASignatureThatVerifiesUnderThePluginID(t *testing.T) {
+func TestSignAsDevice_ReturnsASignatureThatVerifiesForThePluginID(t *testing.T) {
 	fake := accounttest.NewFake(t, pluginID)
 	client := newClient(t, fake)
 	public, err := client.GetPublicIdentity(t.Context())

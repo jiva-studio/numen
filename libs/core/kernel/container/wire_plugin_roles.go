@@ -5,9 +5,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/identityport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 )
 
@@ -38,7 +38,7 @@ type PluginSupervision struct {
 	Storage          *storage.Storage
 	Health           *pluginhealth.Items
 	Clock            machineport.Clock
-	Account          identityport.Operations
+	Account          *identity.Account
 }
 
 // NewPluginRoles shares one supervisor set and activation mode across discovery, execution and teardown.

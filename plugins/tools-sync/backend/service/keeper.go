@@ -10,7 +10,6 @@ import (
 // keeper runs the sign-in against the server of the setting server, and runs it again when that address
 // changes.
 type keeper struct {
-	root context.Context
 	deps session.Deps
 
 	mu      sync.Mutex
@@ -19,18 +18,18 @@ type keeper struct {
 	done    chan struct{}
 }
 
-func (k *keeper) configure(values map[string]string) {
+func (k *keeper) configure(ctx context.Context, values map[string]string) {
 	address := values[settingServer]
 	k.mu.Lock()
 	defer k.mu.Unlock()
 	if address == k.address && k.cancel != nil {
 		return
 	}
-	k.stopLocked()
+	k.stopWithLock()
 	if address == "" {
 		return
 	}
-	ctx, cancel := context.WithCancel(k.root)
+	ctx, cancel := context.WithCancel(ctx)
 	done := make(chan struct{})
 	deps := k.deps
 	deps.Server = newServer(address, deps.Clock.Now)
@@ -44,10 +43,10 @@ func (k *keeper) configure(values map[string]string) {
 func (k *keeper) stop() {
 	k.mu.Lock()
 	defer k.mu.Unlock()
-	k.stopLocked()
+	k.stopWithLock()
 }
 
-func (k *keeper) stopLocked() {
+func (k *keeper) stopWithLock() {
 	if k.cancel == nil {
 		return
 	}

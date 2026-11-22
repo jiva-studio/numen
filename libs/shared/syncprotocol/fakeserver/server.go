@@ -1,4 +1,4 @@
-package fakesync
+package fakeserver
 
 import (
 	"context"
@@ -29,16 +29,13 @@ const (
 	failedSignIn      = "sign-in failed"
 )
 
-// Config sets what the server answers. A zero Config speaks the protocol version of the package, reads
-// the clock of the machine and lets a session live an hour.
+// Config sets what the server answers: the protocol version (zero is syncprotocol.Version), the address it
+// tells itself by, the clock of its challenges and sessions (nil reads the clock of the machine) and how
+// long a session lives (zero is an hour).
 type Config struct {
-	// Protocol is the version the server speaks; zero is syncprotocol.Version.
-	Protocol uint32
-	// Audience is the address the server tells itself by.
-	Audience string
-	// Now reads the time of the challenges and the sessions.
-	Now func() time.Time
-	// SessionTTL is how long a session lives.
+	Protocol   uint32
+	Audience   string
+	Now        func() time.Time
 	SessionTTL time.Duration
 }
 
@@ -112,7 +109,7 @@ func (s *Server) ListSessions() []Session {
 	return slices.Clone(s.sessions)
 }
 
-// EndSessions ends the sessions of the device; a nil key ends every session.
+// EndSessions ends the sessions of the device. A nil key ends the sessions of every device.
 func (s *Server) EndSessions(deviceSignKey []byte) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
