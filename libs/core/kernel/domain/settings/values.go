@@ -38,4 +38,3 @@ func SplitPath(key string) []string { return strings.Split(key, pathSeparator) }
 func IsPluginSetting(path []string) bool {
 	return len(path) == 2 && path[0] != AppOwner
 }
-
