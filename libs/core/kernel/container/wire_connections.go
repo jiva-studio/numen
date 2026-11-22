@@ -118,7 +118,7 @@ func getForwardedCalls(types connectionport.Types, endpoint *hostendpoint.Servic
 	return connection.NewForwardedCalls(func() connectionport.ModelCalls { return endpoint.GetModelCalls() })
 }
 
-func openRowLists(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *modelcall.Rows {
+func openRowLists(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *connection.Rows {
 	deps, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return nil
