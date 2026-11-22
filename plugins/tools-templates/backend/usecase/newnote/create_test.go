@@ -840,3 +840,17 @@ func TestKeepTheNoteWhenItCannotBeIndexed(t *testing.T) {
 		t.Error("the note is not made")
 	}
 }
+
+func TestRefuseToListFieldsOfAFolderOutsideTheVault(t *testing.T) {
+	for _, folder := range []string{"../x", "..", "work/../../x", "/abs", "work//sub"} {
+		t.Run(folder, func(t *testing.T) {
+			vault := newVault(map[string]string{"Templates/Meeting.md": book})
+
+			_, err := newListFields(vault).Execute(t.Context(), newnote.FieldsRequest{Template: "Templates/Meeting.md", Folder: folder})
+
+			if !errors.Is(err, newnote.ErrInvalidFolder) {
+				t.Errorf("error = %v", err)
+			}
+		})
+	}
+}

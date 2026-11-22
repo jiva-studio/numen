@@ -40,6 +40,9 @@ func NewListFields(vault Vault, clock Clock, getMasks func() mask.Set) ListField
 // name of the template, then with 2, 3 and on up to 100 where a note of the folder has it, and with every number
 // taken the name of the template.
 func (u ListFields) Execute(ctx context.Context, in FieldsRequest) (FieldsResult, error) {
+	if !isFolder(in.Folder) {
+		return FieldsResult{}, fmt.Errorf("%w: %q", ErrInvalidFolder, in.Folder)
+	}
 	text, err := readTemplate(ctx, u.vault, u.getMasks(), in.Template)
 	if err != nil {
 		return FieldsResult{}, err
