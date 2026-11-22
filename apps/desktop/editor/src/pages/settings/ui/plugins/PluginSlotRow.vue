@@ -13,6 +13,7 @@ import { WORDS as words } from '../../words'
 const props = defineProps<{
   row: SlotRow
   isMovable: boolean
+  place: { readonly position: number; readonly total: number }
 }>()
 
 const emit = defineEmits<{
@@ -29,8 +30,11 @@ const emit = defineEmits<{
     class="plugin-slots__grip"
     :disabled="!props.isMovable"
     :aria-label="
-      props.row.kind === 'entry' ? words.slotsGrip(props.row.label) : words.slotsSeparatorGrip
+      props.row.kind === 'entry'
+        ? words.slotsGrip(props.row.label)
+        : words.slotsSeparatorGrip(props.place.position, props.place.total)
     "
+    aria-keyshortcuts="ArrowUp ArrowDown"
     @pointerdown="emit('grip-press', $event)"
     @keydown="emit('grip-key', $event)"
   >
@@ -53,7 +57,10 @@ const emit = defineEmits<{
   <template v-else>
     <hr class="plugin-slots__separator" />
     <span class="plugin-slots__trail" data-testid="slot-trail">
-      <RowAction :label="words.slotsRemoveSeparator" @click="emit('remove')">
+      <RowAction
+        :label="words.slotsRemoveSeparator(props.place.position, props.place.total)"
+        @click="emit('remove')"
+      >
         <X :size="14" aria-hidden="true" />
       </RowAction>
     </span>
@@ -79,7 +86,7 @@ const emit = defineEmits<{
 }
 
 .plugin-slots__grip:disabled {
-  opacity: 0.35;
+  color: var(--numen-edge);
   cursor: default;
 }
 

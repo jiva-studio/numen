@@ -18,8 +18,10 @@ export const WORDS = {
   slotsShow: (name: string) => `Show ${name}`,
   slotsGrip: (name: string) => `Reorder ${name}`,
   slotsAddSeparator: 'Add separator',
-  slotsRemoveSeparator: 'Remove separator',
-  slotsSeparatorGrip: 'Reorder separator',
+  slotsRemoveSeparator: (position: number, total: number) =>
+    total > 1 ? `Remove separator ${position} of ${total}` : 'Remove separator',
+  slotsSeparatorGrip: (position: number, total: number) =>
+    total > 1 ? `Reorder separator ${position} of ${total}` : 'Reorder separator',
   slotsReset: (title: string) => `Reset ${title} to its default`,
   /** The page of connections. */
   secretMasked: '••••••••',

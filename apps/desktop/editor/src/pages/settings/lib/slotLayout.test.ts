@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addSlotSeparator,
+  getSeparatorPlace,
   getSlotRows,
   hasSlotLayout,
   moveSlotRow,
@@ -249,5 +250,31 @@ describe('the stored list of a slot', () => {
     expect(next).toStrictEqual({ other: [{ id: 'x' }] })
     expect('plexGraph.nodeBelow' in (next as object)).toBe(false)
     expect(resetSlotRows(undefined, group.slot)).toStrictEqual({})
+  })
+})
+
+describe('the separators of a slot moved over one another', () => {
+  const layout = {
+    [group.slot]: [{ id: '---' }, { id: 'a/view/one' }, { id: '---' }],
+  }
+
+  it('are keyed after a move as they are keyed when the stored list is read back', () => {
+    const rows = getSlotRows(group, layout)
+    const moved = moveSlotRow(rows, 2, 0)
+
+    expect(keys(moved).filter((one) => one.startsWith('separator'))).toStrictEqual([
+      'separator:0',
+      'separator:1',
+    ])
+    expect(keys(moved)).toStrictEqual(
+      keys(getSlotRows(group, writeSlotRows(layout, group.slot, moved))),
+    )
+  })
+
+  it('tell each separator its place among the separators', () => {
+    const rows = getSlotRows(group, layout)
+
+    expect(getSeparatorPlace(rows, 0)).toStrictEqual({ position: 1, total: 2 })
+    expect(getSeparatorPlace(rows, 4)).toStrictEqual({ position: 2, total: 2 })
   })
 })

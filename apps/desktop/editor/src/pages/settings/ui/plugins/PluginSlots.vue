@@ -10,6 +10,7 @@ import { IslandCard } from '@numen/ui'
 import type { JsonValue } from '@/shared/api/json'
 import {
   addSlotSeparator,
+  getSeparatorPlace,
   getSlotRows,
   hasSlotLayout,
   moveSlotRow,
@@ -38,7 +39,11 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const { onGripPress, onRowTransitionEnd, isPressed, getRowClass, getRowStyle } = useSlotDrag({
   getRows: (group) => rowsOf(group),
-  move: (group, from, to) => onChange(group, moveSlotRow(rowsOf(group), from, to)),
+  move: (group, from, to) => {
+    const rows = moveSlotRow(rowsOf(group), from, to)
+    onChange(group, rows)
+    return rows
+  },
 })
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -93,11 +98,12 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
         class="plugin-slots__row"
         :class="getRowClass(group, row.key)"
         :style="getRowStyle(group, row.key, at)"
-        @transitionend="onRowTransitionEnd"
+        @transitionend="(event) => onRowTransitionEnd(event, row.key)"
       >
         <PluginSlotRow
           :row="row"
           :is-movable="rowsOf(group).length > 1"
+          :place="getSeparatorPlace(rowsOf(group), at)"
           @grip-press="(event) => onGripPress(group, at, event)"
           @grip-key="(event) => onGripKey(group, at, event)"
           @toggle="onChange(group, toggleSlotRow(rowsOf(group), at))"

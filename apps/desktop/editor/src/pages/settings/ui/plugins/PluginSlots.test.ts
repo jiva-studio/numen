@@ -71,6 +71,21 @@ describe('the slots of a plugin page', () => {
       },
     ]
 
+    it('tell two separators apart by their place among the separators', () => {
+      const page = mount(PluginSlots, {
+        props: {
+          groups: grouped,
+          layout: { 'titleBar.commands': [{ id: '---' }, { id: 'a/command/one' }, { id: '---' }] },
+        },
+      })
+
+      expect(page.find('[aria-label="Reorder separator 1 of 2"]').exists()).toBe(true)
+      expect(page.find('[aria-label="Remove separator 2 of 2"]').exists()).toBe(true)
+      expect(page.get('[aria-label="Reorder one"]').attributes('aria-keyshortcuts')).toBe(
+        'ArrowUp ArrowDown',
+      )
+    })
+
     it('draw a divider row with a handle and a remove button but no switch', () => {
       const page = mount(PluginSlots, { props: { groups: grouped, layout: undefined } })
 

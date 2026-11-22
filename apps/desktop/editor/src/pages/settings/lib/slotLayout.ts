@@ -51,13 +51,34 @@ export function getSlotRows(group: SlotGroup, layout: JsonValue | undefined): re
   let separators = 0
   const rows = arranged.map((one): SlotRow =>
     one === null
-      ? { kind: 'separator', key: `separator:${separators++}` }
+      ? { kind: 'separator', key: separatorKey(separators++) }
       : { kind: 'entry', ...one, isHidden: hidden.has(one.key) },
   )
   return rows
 }
 
-/** The rows with the one at `from` moved to `to`; the rows as they were for a place outside the list. */
+const separatorKey = (ordinal: number): string => `separator:${ordinal}`
+
+function keySeparators(rows: readonly SlotRow[]): readonly SlotRow[] {
+  let ordinal = 0
+  return rows.map((one) =>
+    one.kind === 'separator' ? { kind: 'separator', key: separatorKey(ordinal++) } : one,
+  )
+}
+
+/** Where the separator at `at` stands among the separators of the rows, counted from 1. */
+export function getSeparatorPlace(
+  rows: readonly SlotRow[],
+  at: number,
+): { readonly position: number; readonly total: number } {
+  const position = rows.slice(0, at + 1).filter((one) => one.kind === 'separator').length
+  return { position, total: rows.filter((one) => one.kind === 'separator').length }
+}
+
+/**
+ * The rows with the one at `from` moved to `to`; the rows as they were for a place outside the list.
+ * The separators are keyed as the rows read back from the stored list are, so each row has the key it will have there.
+ */
 export function moveSlotRow(
   rows: readonly SlotRow[],
   from: number,
@@ -67,7 +88,7 @@ export function moveSlotRow(
   if (!moved || from === to || to < 0 || to >= rows.length) return rows
   const next = rows.filter((_, at) => at !== from)
   next.splice(to, 0, moved)
-  return next
+  return keySeparators(next)
 }
 
 /** The rows with the visibility of the entry at `at` turned over. */
