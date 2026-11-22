@@ -193,6 +193,11 @@ func newLazyPluginFrom(t *testing.T, dependencies *provision.Registry, manifest 
 	t.Helper()
 	host := newBuiltInHost(t)
 	host.Supervision.Dependencies.Replace(dependencies)
+	return newLazyPluginOn(t, host, manifest)
+}
+
+func newLazyPluginOn(t *testing.T, host *pluginhost.Host, manifest []byte) lazyPlugin {
+	t.Helper()
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host.Management, manifest, serveReadOnlyTools(backend))
 	files := storage.New(func(err error) { t.Errorf("the storage reported %v", err) }, func(string) string { return "1.0.0" })
@@ -204,7 +209,9 @@ func newLazyPluginFrom(t *testing.T, dependencies *provision.Registry, manifest 
 func newLazyPlugin(t *testing.T, source *modelSource) lazyPlugin {
 	t.Helper()
 	t.Setenv(source.envName(sampleRuntime), "")
-	return newLazyPluginFrom(t, provision.NewObservedRegistry(nil, source), newBuiltInManifest(firstBuiltInID, sampleRuntime))
+	host := newBuiltInHost(t)
+	host.Supervision.Dependencies.Replace(provision.NewObservedRegistry(host.Supervision.Services.Observe, source))
+	return newLazyPluginOn(t, host, newBuiltInManifest(firstBuiltInID, sampleRuntime))
 }
 
 func (p lazyPlugin) listTools(t *testing.T) []string {
@@ -854,8 +861,10 @@ func TestCancelingTheDependenciesStopsTheDownloadInProgress(t *testing.T) {
 func TestCancelingTheDependenciesStopsEveryVersionOfOneDependency(t *testing.T) {
 	source := newModelSource(t)
 	source.holdDownloads(t)
-	registry := provision.NewObservedRegistry(nil, source)
-	p := newLazyPluginFrom(t, registry, newBuiltInManifest(firstBuiltInID, sampleRuntime))
+	host := newBuiltInHost(t)
+	registry := provision.NewObservedRegistry(host.Supervision.Services.Observe, source)
+	host.Supervision.Dependencies.Replace(registry)
+	p := newLazyPluginOn(t, host, newBuiltInManifest(firstBuiltInID, sampleRuntime))
 	p.host.Supervision.Services.ObserveDependencies(func(catalogmanifest.DependencyRequirement, plugindomain.DependencyStatus) {})
 	older := catalogmanifest.DependencyRequirement{ID: sampleRuntime, Kind: catalogmanifest.DependencyKindModel, Version: "1"}
 	newer := catalogmanifest.DependencyRequirement{ID: sampleRuntime, Kind: catalogmanifest.DependencyKindModel, Version: "2"}
