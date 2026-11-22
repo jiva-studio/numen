@@ -26,7 +26,7 @@ describe('a call answered by the test', () => {
     const answer = await search.searchNames({ query: 'lla', limit: 8 })
 
     expect(requests).toMatchObject([{ query: 'lla', limit: 8 }])
-    expect(answer.found[0]?.note?.title).toBe('Llama')
+    expect(answer.matches[0]?.note?.title).toBe('Llama')
   })
 
   it('rejects with the error the answer threw, code and message kept', async () => {
@@ -84,7 +84,7 @@ describe('handlers named by their method', () => {
     const changes: string[][] = []
     for await (const change of theme.watchThemes({})) changes.push([...change.names])
 
-    expect(answer.found[0]?.note?.title).toBe('Llama')
+    expect(answer.matches[0]?.note?.title).toBe('Llama')
     expect(changes).toEqual([['own/Dusk.css']])
   })
 
