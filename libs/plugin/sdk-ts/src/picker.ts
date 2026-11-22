@@ -22,9 +22,9 @@ export interface PickerOptions {
   readonly onCreate: (text: string) => Promise<PickerItem>
 }
 
-// AskOptions is a line of text a plugin asks the person for. The title names what is asked, and value is
+// PromptTextOptions is a line of text a plugin asks the person for. The title names what is asked, and value is
 // the text the line starts with.
-export interface AskOptions {
+export interface PromptTextOptions {
   readonly title: string
   readonly value?: string
 }
@@ -35,8 +35,8 @@ export interface ChoiceOption {
   readonly title: string
 }
 
-// ChooseOptions is the one answer a plugin asks the person to pick among options, listed in the order given.
-export interface ChooseOptions {
+// SelectOptionOptions is the one answer a plugin asks the person to pick among options, listed in the order given.
+export interface SelectOptionOptions {
   readonly title: string
   readonly options: readonly ChoiceOption[]
 }
@@ -46,7 +46,7 @@ export interface PickerHost {
   // Opens the list and resolves when the person closes it.
   open(options: PickerOptions): Promise<void>
   // Asks for a line of text and resolves with it, trimmed, or with undefined when the person dismisses it.
-  ask(options: AskOptions): Promise<string | undefined>
+  promptText(options: PromptTextOptions): Promise<string | undefined>
   // Asks for one of the options and resolves with its value, or with undefined when the person dismisses it.
-  choose(options: ChooseOptions): Promise<string | undefined>
+  selectOption(options: SelectOptionOptions): Promise<string | undefined>
 }

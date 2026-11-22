@@ -167,7 +167,7 @@ describe('a picker session', () => {
 describe('the questions of a picker session', () => {
   it('draws a question a plugin asks and settles it on dismiss', async () => {
     const session = createPickerSession()
-    const asking = session.ask({ title: 'Owner' })
+    const asking = session.promptText({ title: 'Owner' })
 
     expect(session.question.value?.placeholder).toBe('Owner')
 

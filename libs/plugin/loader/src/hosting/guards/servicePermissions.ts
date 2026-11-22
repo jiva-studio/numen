@@ -289,8 +289,8 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     },
     picker: {
       open: requireNothing('it draws the list the plugin gives and holds no vault data'),
-      ask: requireNothing('it draws the question the plugin gives and holds no vault data'),
-      choose: requireNothing('it draws the options the plugin gives and holds no vault data'),
+      promptText: requireNothing('it draws the question the plugin gives and holds no vault data'),
+      selectOption: requireNothing('it draws the options the plugin gives and holds no vault data'),
     },
     drops: {
       canDrop: requireNothing('it tells whether some plugin takes the types, nothing more'),

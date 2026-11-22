@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createQuestionSession } from './createQuestionSession'
+import { createPromptSession } from './createPromptSession'
 
 const OPTIONS = [
   { value: 'low', title: 'Low' },
@@ -16,12 +16,12 @@ afterEach(() => {
 
 describe('a question session', () => {
   it('draws nothing before a plugin asks', () => {
-    expect(createQuestionSession().view.value).toBeUndefined()
+    expect(createPromptSession().view.value).toBeUndefined()
   })
 
   it('starts the line with its value, names the question in the placeholder and lists no row', async () => {
-    const session = createQuestionSession()
-    const asking = session.ask({ title: 'Owner', value: 'Ann' })
+    const session = createPromptSession()
+    const asking = session.promptText({ title: 'Owner', value: 'Ann' })
 
     expect(session.view.value).toMatchObject({
       typed: 'Ann',
@@ -33,8 +33,8 @@ describe('a question session', () => {
   })
 
   it('starts an empty line with no row either', async () => {
-    const session = createQuestionSession()
-    const asking = session.ask({ title: 'Owner' })
+    const session = createPromptSession()
+    const asking = session.promptText({ title: 'Owner' })
 
     expect(session.view.value).toMatchObject({ typed: '', groups: [] })
     session.dismiss()
@@ -42,8 +42,8 @@ describe('a question session', () => {
   })
 
   it('resolves the line with the text typed, trimmed', async () => {
-    const session = createQuestionSession()
-    const asking = session.ask({ title: 'Owner', value: 'Ann' })
+    const session = createPromptSession()
+    const asking = session.promptText({ title: 'Owner', value: 'Ann' })
 
     session.view.value?.type('  Bob ')
     session.view.value?.submit()
@@ -52,8 +52,8 @@ describe('a question session', () => {
   })
 
   it('accepts an empty line', async () => {
-    const session = createQuestionSession()
-    const asking = session.ask({ title: 'Owner' })
+    const session = createPromptSession()
+    const asking = session.promptText({ title: 'Owner' })
 
     session.view.value?.submit()
 
@@ -61,8 +61,8 @@ describe('a question session', () => {
   })
 
   it('offers the options in order, with no row to clear, and filters them by what is typed', async () => {
-    const session = createQuestionSession()
-    const choosing = session.choose({ title: 'Level', options: OPTIONS })
+    const session = createPromptSession()
+    const choosing = session.selectOption({ title: 'Level', options: OPTIONS })
 
     expect(session.view.value?.groups[0]?.items.map((one) => one.id)).toStrictEqual(['low', 'high'])
     session.view.value?.type('hi')
@@ -72,8 +72,8 @@ describe('a question session', () => {
   })
 
   it('resolves a choice with the value of the option picked', async () => {
-    const session = createQuestionSession()
-    const choosing = session.choose({ title: 'Level', options: OPTIONS })
+    const session = createPromptSession()
+    const choosing = session.selectOption({ title: 'Level', options: OPTIONS })
 
     session.view.value?.answer('high')
 
@@ -81,9 +81,9 @@ describe('a question session', () => {
   })
 
   it('resolves with undefined when dismissed, and when another question replaces it', async () => {
-    const session = createQuestionSession()
-    const first = session.ask({ title: 'Owner' })
-    const second = session.choose({ title: 'Level', options: OPTIONS })
+    const session = createPromptSession()
+    const first = session.promptText({ title: 'Owner' })
+    const second = session.selectOption({ title: 'Level', options: OPTIONS })
 
     await expect(first).resolves.toBeUndefined()
     session.dismiss()
@@ -92,10 +92,10 @@ describe('a question session', () => {
   })
 
   it('gives each question a step of its own', async () => {
-    const session = createQuestionSession()
-    const first = session.ask({ title: 'Owner' })
+    const session = createPromptSession()
+    const first = session.promptText({ title: 'Owner' })
     const firstStep = session.view.value?.step
-    const second = session.ask({ title: 'Client' })
+    const second = session.promptText({ title: 'Client' })
 
     expect(session.view.value?.step).not.toBe(firstStep)
     session.dismiss()
@@ -104,13 +104,13 @@ describe('a question session', () => {
 
   describe('between two questions', () => {
     it('keeps the palette up until the next question arrives', async () => {
-      const session = createQuestionSession()
-      const first = session.ask({ title: 'Owner' })
+      const session = createPromptSession()
+      const first = session.promptText({ title: 'Owner' })
       session.view.value?.submit()
       await first
 
       expect(session.view.value).toBeDefined()
-      const second = session.ask({ title: 'Client' })
+      const second = session.promptText({ title: 'Client' })
       vi.runAllTimers()
 
       expect(session.view.value?.placeholder).toBe('Client')
@@ -119,8 +119,8 @@ describe('a question session', () => {
     })
 
     it('closes the palette once no question follows', async () => {
-      const session = createQuestionSession()
-      const asking = session.ask({ title: 'Owner' })
+      const session = createPromptSession()
+      const asking = session.promptText({ title: 'Owner' })
       session.view.value?.submit()
       await asking
 
@@ -130,8 +130,8 @@ describe('a question session', () => {
     })
 
     it('answers a question once', async () => {
-      const session = createQuestionSession()
-      const asking = session.ask({ title: 'Owner', value: 'Ann' })
+      const session = createPromptSession()
+      const asking = session.promptText({ title: 'Owner', value: 'Ann' })
       session.view.value?.submit()
       session.view.value?.type('Bob')
       session.view.value?.submit()

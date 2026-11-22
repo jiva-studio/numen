@@ -2,7 +2,7 @@ import type { PickerHost } from '@numen/plugin-sdk'
 import type { CreateNoteResponse } from '../api/templates'
 import type { TemplatesApi } from '../api/wire'
 import { getTitle } from '../lib/groupTemplates'
-import { askFields } from './askFields'
+import { collectFieldValues } from './collectFieldValues'
 
 /** What making a note from a template came to. */
 export type Outcome =
@@ -18,7 +18,7 @@ const NAME_REFUSALS: Readonly<Record<string, string>> = {
 /** What makes the note: the backend that lists the questions and makes it, and the palette that asks them. */
 export interface CreateFromTemplateDeps {
   readonly api: TemplatesApi
-  readonly picker: Pick<PickerHost, 'ask' | 'choose'> | undefined
+  readonly picker: Pick<PickerHost, 'promptText' | 'selectOption'> | undefined
 }
 
 const failed = (message: string): Outcome => ({ kind: 'failed', message })
@@ -39,11 +39,11 @@ export async function createFromTemplate(
   if (!picker) return failed('the window cannot ask the name of the note')
   const title = getTitle(template)
   const askName = (value: string, refusal: string): Promise<string | undefined> =>
-    picker.ask({ title: `${title} · Name${refusal ? ` · ${refusal}` : ''}`, value })
+    picker.promptText({ title: `${title} · Name${refusal ? ` · ${refusal}` : ''}`, value })
 
   let name = await askName(asked.value.name, '')
   if (name === undefined) return { kind: 'cancelled' }
-  const values = await askFields(picker, title, asked.value.fields)
+  const values = await collectFieldValues(picker, title, asked.value.fields)
   if (!values) return { kind: 'cancelled' }
   for (;;) {
     const answer = await api.createNote({ template, folder, name, values, etag: asked.value.etag })

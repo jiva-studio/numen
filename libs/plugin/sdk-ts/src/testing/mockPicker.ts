@@ -1,4 +1,10 @@
-import type { AskOptions, ChooseOptions, PickerHost, PickerItem, PickerOptions } from '../picker'
+import type {
+  PromptTextOptions,
+  SelectOptionOptions,
+  PickerHost,
+  PickerItem,
+  PickerOptions,
+} from '../picker'
 
 // MockPickerHost is a PickerHost that holds the list a plugin opened, so a test acts as the person
 // who toggles its rows and closes it.
@@ -16,7 +22,7 @@ export interface MockPickerHost extends PickerHost {
   // Chooses the create row for a text: asks the plugin, then adds the item it answers with.
   create(text: string): Promise<void>
   // The question asked and not yet answered.
-  getQuestion(): AskOptions | ChooseOptions | undefined
+  getQuestion(): PromptTextOptions | SelectOptionOptions | undefined
   // Answers the question asked, as the person who types or picks a value.
   answer(value: string): void
   // Dismisses the question asked, which resolves it with undefined.
@@ -31,7 +37,10 @@ export function createMockPickerHost(): MockPickerHost {
   let items: readonly PickerItem[] = []
   let settle: (() => void) | undefined
   let question:
-    | { options: AskOptions | ChooseOptions; resolve: (value: string | undefined) => void }
+    | {
+        options: PromptTextOptions | SelectOptionOptions
+        resolve: (value: string | undefined) => void
+      }
     | undefined
 
   const settleQuestion = (value: string | undefined): void => {
@@ -53,11 +62,11 @@ export function createMockPickerHost(): MockPickerHost {
         settle = resolve
       })
     },
-    ask: (options) =>
+    promptText: (options) =>
       new Promise((resolve) => {
         question = { options, resolve }
       }),
-    choose: (options) =>
+    selectOption: (options) =>
       new Promise((resolve) => {
         question = { options, resolve }
       }),

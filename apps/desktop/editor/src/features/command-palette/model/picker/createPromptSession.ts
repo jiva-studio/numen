@@ -4,10 +4,10 @@
  */
 import { computed, shallowRef, type ComputedRef } from 'vue'
 import type { PaletteGroup } from '@numen/workbench'
-import type { AskOptions, ChooseOptions, PickerHost } from '@numen/plugin-loader'
+import type { PromptTextOptions, SelectOptionOptions, PickerHost } from '@numen/plugin-loader'
 import { PALETTE_WORDS } from '../../words'
 
-interface QuestionView {
+interface PromptView {
   readonly step: string
   readonly typed: string
   readonly placeholder: string
@@ -17,18 +17,18 @@ interface QuestionView {
   readonly submit: () => void
 }
 
-export interface QuestionSession {
-  readonly ask: PickerHost['ask']
-  readonly choose: PickerHost['choose']
-  readonly view: ComputedRef<QuestionView | undefined>
+export interface PromptSession {
+  readonly promptText: PickerHost['promptText']
+  readonly selectOption: PickerHost['selectOption']
+  readonly view: ComputedRef<PromptView | undefined>
   readonly dismiss: () => void
 }
 
 type Question =
-  | { readonly kind: 'ask'; readonly options: AskOptions }
-  | { readonly kind: 'choose'; readonly options: ChooseOptions }
+  | { readonly kind: 'promptText'; readonly options: PromptTextOptions }
+  | { readonly kind: 'selectOption'; readonly options: SelectOptionOptions }
 
-export function createQuestionSession(): QuestionSession {
+export function createPromptSession(): PromptSession {
   const question = shallowRef<Question | undefined>(undefined)
   const typed = shallowRef('')
   const step = shallowRef('')
@@ -55,7 +55,7 @@ export function createQuestionSession(): QuestionSession {
     })
   }
 
-  const getChooseGroup = (options: ChooseOptions): PaletteGroup => {
+  const getOptionGroup = (options: SelectOptionOptions): PaletteGroup => {
     const word = typed.value.trim().toLowerCase()
     return {
       id: 'question',
@@ -89,27 +89,27 @@ export function createQuestionSession(): QuestionSession {
     }, 0)
   }
 
-  const view = computed<QuestionView | undefined>(() => {
+  const view = computed<PromptView | undefined>(() => {
     const current = question.value
     if (!current) return undefined
     return {
       step: step.value,
       typed: typed.value,
       placeholder: current.options.title,
-      groups: current.kind === 'ask' ? [] : [getChooseGroup(current.options)],
+      groups: current.kind === 'promptText' ? [] : [getOptionGroup(current.options)],
       type,
       answer: (id) => {
-        if (current.kind === 'choose') reply(id)
+        if (current.kind === 'selectOption') reply(id)
       },
       submit: () => {
-        if (current.kind === 'ask') reply(typed.value.trim())
+        if (current.kind === 'promptText') reply(typed.value.trim())
       },
     }
   })
 
   return {
-    ask: (options) => open({ kind: 'ask', options }, options.value ?? ''),
-    choose: (options) => open({ kind: 'choose', options }, ''),
+    promptText: (options) => open({ kind: 'promptText', options }, options.value ?? ''),
+    selectOption: (options) => open({ kind: 'selectOption', options }, ''),
     view,
     dismiss: () => finish(undefined),
   }

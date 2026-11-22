@@ -415,7 +415,7 @@ describe('the spinner of the search field', () => {
 describe('a question of a plugin', () => {
   it('opens the palette over its row, and answers with the row chosen, not a command', async () => {
     const { field, picker, choose, runChoice } = await mountField({}, '')
-    const choosing = picker.choose({
+    const choosing = picker.selectOption({
       title: 'Level',
       options: [{ value: 'high', title: 'High' }],
     })
@@ -433,7 +433,7 @@ describe('a question of a plugin', () => {
 
   it('leaves the question with undefined when the palette is dismissed', async () => {
     const { field, picker } = await mountField({}, '')
-    const asking = picker.ask({ title: 'Owner' })
+    const asking = picker.promptText({ title: 'Owner' })
     await flushPromises()
 
     field.findComponent(Palette).vm.$emit('dismiss')
@@ -445,7 +445,7 @@ describe('a question of a plugin', () => {
 describe('a text question of a plugin', () => {
   it('starts with the default typed, the question as placeholder, and no row', async () => {
     const { field, picker } = await mountField({}, '')
-    const asking = picker.ask({ title: 'Kickoff · Name', value: 'Meeting 2' })
+    const asking = picker.promptText({ title: 'Kickoff · Name', value: 'Meeting 2' })
     await flushPromises()
 
     const palette = field.findComponent(Palette)
@@ -461,7 +461,7 @@ describe('a text question of a plugin', () => {
 
   it('answers with the text typed when the palette submits', async () => {
     const { field, picker } = await mountField({}, '')
-    const asking = picker.ask({ title: 'Kickoff · Name', value: 'Meeting' })
+    const asking = picker.promptText({ title: 'Kickoff · Name', value: 'Meeting' })
     await flushPromises()
 
     const palette = field.findComponent(Palette)

@@ -174,7 +174,7 @@ describe('the mock host services', () => {
 describe('the questions of the mock picker host', () => {
   it('holds a line until a test answers it', async () => {
     const picker = createPicker()
-    const asking = picker.ask({ title: 'Owner', value: 'Ann' })
+    const asking = picker.promptText({ title: 'Owner', value: 'Ann' })
 
     expect(picker.getQuestion()).toStrictEqual({ title: 'Owner', value: 'Ann' })
     picker.answer('Bob')
@@ -186,7 +186,7 @@ describe('the questions of the mock picker host', () => {
   it('holds a choice with its options until a test answers it', async () => {
     const picker = createPicker()
     const options = [{ value: 'a', title: 'A' }]
-    const choosing = picker.choose({ title: 'Kind', options })
+    const choosing = picker.selectOption({ title: 'Kind', options })
 
     expect(picker.getQuestion()).toStrictEqual({ title: 'Kind', options })
     picker.answer('a')
@@ -196,7 +196,7 @@ describe('the questions of the mock picker host', () => {
 
   it('resolves with undefined when a test dismisses the question', async () => {
     const picker = createPicker()
-    const asking = picker.ask({ title: 'Owner' })
+    const asking = picker.promptText({ title: 'Owner' })
 
     picker.dismiss()
 
