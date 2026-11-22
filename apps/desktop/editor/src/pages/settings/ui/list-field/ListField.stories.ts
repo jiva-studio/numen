@@ -81,7 +81,8 @@ export const ItemRows: Story = {
 
     await expect(listItems()).toStrictEqual(['templates', 'archive/old'])
     await expect(field.getByText('templates')).toBeVisible()
-    await expect(field.getByText('archive/old')).toHaveAttribute('title', 'archive/old')
+    await userEvent.hover(field.getByText('archive/old'))
+    await expect(await within(document.body).findByRole('tooltip')).toHaveTextContent('archive/old')
     await expect(input()).toBeVisible()
     await expect(add()).toBeVisible()
   },
