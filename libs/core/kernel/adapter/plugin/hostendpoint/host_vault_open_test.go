@@ -46,7 +46,7 @@ func TestOpenVaultWithUnsavedChangesReturnsUnsavedWithTheDetail(t *testing.T) {
 		}
 	})
 
-	res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+	res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{Id: "v2"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestTwoOpenVaultCallsAtOnceBothReturnAndBothOpen(t *testing.T) {
 	var wg sync.WaitGroup
 	for range 2 {
 		wg.Go(func() {
-			res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+			res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{Id: "v2"}))
 			if err != nil || res.Msg.GetError() != 0 {
 				t.Errorf("OpenVault of v2 returned %v (%v)", res, err)
 			}
@@ -95,7 +95,7 @@ func TestOpenVaultWhileTheWindowFlushesIsUnavailable(t *testing.T) {
 		}
 	}()
 
-	_, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+	_, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{Id: "v2"}))
 
 	var failure *connect.Error
 	if !errors.As(err, &failure) || failure.Code() != connect.CodeUnavailable {
@@ -115,7 +115,7 @@ func TestCloseWithCallRunningPastShutdownToleranceReturnsError(t *testing.T) {
 	endpoint, client := openListEndpoint(t, list)
 	callResult := make(chan error, 1)
 	go func() {
-		_, err := client.OpenVault(context.WithoutCancel(t.Context()), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+		_, err := client.OpenVault(context.WithoutCancel(t.Context()), connect.NewRequest(&v1.OpenVaultRequest{Id: "v2"}))
 		callResult <- err
 	}()
 	select {

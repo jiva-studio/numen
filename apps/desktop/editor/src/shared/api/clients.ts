@@ -12,6 +12,7 @@ import {
   createConnectionClient,
   createContributionClient,
   createFileClient,
+  createFolderDialogClient,
   createLogClient,
   createLogServiceClient,
   createLicenseClient,
@@ -53,6 +54,7 @@ export const createVaultClients = (transport: Transport) => {
     texts: createTextClient(editor),
     search: createSearchClient(createCallerTransport('search', transport)),
     vaultsService: createVaultsClient(transport),
+    folderDialog: createFolderDialogClient(transport),
   }
 }
 

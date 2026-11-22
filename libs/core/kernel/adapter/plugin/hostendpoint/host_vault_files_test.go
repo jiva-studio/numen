@@ -297,7 +297,7 @@ func TestAHeaderNamesTheVaultACallWorks(t *testing.T) {
 func TestEveryVaultOfTheInstallationIsListed(t *testing.T) {
 	_, client := newDiskVaults(t, nil)
 
-	res, err := client.ListHostVaults(t.Context(), connect.NewRequest(&v1.ListHostVaultsRequest{}))
+	res, err := client.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

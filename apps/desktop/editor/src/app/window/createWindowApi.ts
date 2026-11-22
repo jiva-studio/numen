@@ -43,7 +43,7 @@ export function createWindowApi(transports: WindowTransports) {
   const settingsClients = createSettingsClients(transport)
   const pluginClients = createPluginHostClients(transport)
   const links = createLinkApi(vaultClients.notes)
-  const vaults = createVaults(vaultClients.vaultsService)
+  const vaults = createVaults(vaultClients.vaultsService, vaultClients.folderDialog)
   const shownVault = createShownVaultApi(workspaceClients.windowService)
   return {
     vault: {

@@ -2,17 +2,14 @@ syntax = "proto3";
 
 package numen.v1;
 
-import "numen/v1/vaults.proto";
-
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
 // HostVaultService is the vault itself, as a plugin works it: which vault the
-// host shows, the vaults of the installation, the index of a vault, its lock
-// and its checks.
+// host shows, the index of a vault, its lock and its checks. The vaults of the
+// installation are VaultsService, which the host endpoint serves as well.
 //
 // The endpoint checks the permission of each call: a call that reads needs
-// vault:read, one that changes anything needs vault:write, and one that changes
-// the list of vaults or the vault the window shows needs vault:manage.
+// vault:read and one that changes anything needs vault:write.
 //
 // Numen-Vault works the vault of that identity instead of the vault the host
 // shows.
@@ -20,9 +17,6 @@ service HostVaultService {
   // GetHostVault names the vault the host is showing. A host showing none answers
   // with the vault unset.
   rpc GetHostVault(GetHostVaultRequest) returns (GetHostVaultResponse);
-
-  // ListHostVaults lists every vault the installation knows.
-  rpc ListHostVaults(ListHostVaultsRequest) returns (ListHostVaultsResponse);
 
   // EnsureVaultIndexed brings the vault into the index when it is not there yet,
   // and says where that stands. The work goes on after the call returns, and the
@@ -43,21 +37,6 @@ service HostVaultService {
   // ambiguous, dangling), or every check that is not opt-in when none is named.
   // It needs vault:read.
   rpc GetVaultProblems(GetVaultProblemsRequest) returns (GetVaultProblemsResponse);
-
-  // AddVault adds a folder to the installation's list of vaults. It needs
-  // vault:manage.
-  rpc AddVault(HostVaultServiceAddVaultRequest) returns (HostVaultServiceAddVaultResponse);
-
-  // RenameVault changes the name of a vault on the list. It needs vault:manage.
-  rpc RenameVault(HostVaultServiceRenameVaultRequest) returns (HostVaultServiceRenameVaultResponse);
-
-  // RemoveVault removes a vault from the list and from the index. The folder
-  // stays. It needs vault:manage.
-  rpc RemoveVault(HostVaultServiceRemoveVaultRequest) returns (HostVaultServiceRemoveVaultResponse);
-
-  // OpenVault makes the window show another vault. It returns before the window
-  // changes vault. It needs vault:manage.
-  rpc OpenVault(HostVaultServiceOpenVaultRequest) returns (HostVaultServiceOpenVaultResponse);
 
   // WatchMoves tells that something moved in some vault of the installation,
   // until the caller disconnects. It says nothing of what moved. The first message is
@@ -116,21 +95,6 @@ enum HostVaultErrorCode {
 
   // The call was cancelled before this note was changed: the note is as it was.
   HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED = 18;
-}
-
-message ListHostVaultsRequest {}
-
-message HostVaultInfo {
-  string id = 1;
-  string name = 2;
-  string path = 3;
-  // Set when nothing is at the path.
-  bool is_missing = 4;
-}
-
-message ListHostVaultsResponse {
-  HostVaultErrorCode error = 1;
-  repeated HostVaultInfo vaults = 2;
 }
 
 enum HostIndexState {
@@ -216,52 +180,4 @@ message GetVaultProblemsResponse {
   repeated HostVaultProblem problems = 2;
   // The checks this result covers.
   repeated string checks = 3;
-}
-
-message HostVaultServiceAddVaultRequest {
-  // The folder, absolute on this machine.
-  string root = 1;
-  // Empty means the name of the folder.
-  string name = 2;
-}
-
-message HostVaultServiceAddVaultResponse {
-  VaultsErrorCode error = 1;
-  Vault vault = 2;
-  // The core's error text of a rejected call; empty on success.
-  string detail = 3;
-}
-
-message HostVaultServiceRenameVaultRequest {
-  string id = 1;
-  string name = 2;
-}
-
-message HostVaultServiceRenameVaultResponse {
-  VaultsErrorCode error = 1;
-  Vault vault = 2;
-  // The core's error text of a rejected call; empty on success.
-  string detail = 3;
-}
-
-message HostVaultServiceRemoveVaultRequest {
-  string id = 1;
-}
-
-message HostVaultServiceRemoveVaultResponse {
-  VaultsErrorCode error = 1;
-  // The folder of the vault, which stays on the disk.
-  string path = 2;
-  // The core's error text of a rejected call; empty on success.
-  string detail = 3;
-}
-
-message HostVaultServiceOpenVaultRequest {
-  string id = 1;
-}
-
-message HostVaultServiceOpenVaultResponse {
-  VaultsErrorCode error = 1;
-  // The core's error text of a rejected call; empty on success.
-  string detail = 2;
 }

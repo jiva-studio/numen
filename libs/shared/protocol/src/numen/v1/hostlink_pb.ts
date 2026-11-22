@@ -540,8 +540,7 @@ export const HostLinkServiceRemoveLinksResponseSchema: GenMessage<HostLinkServic
  * the links of its frontmatter.
  *
  * The endpoint checks the permission of each call: a call that reads needs
- * vault:read, one that changes anything needs vault:write, and one that changes
- * the list of vaults or the vault the window shows needs vault:manage.
+ * vault:read and one that changes anything needs vault:write.
  *
  * Numen-Vault works the vault of that identity instead of the vault the host
  * shows.

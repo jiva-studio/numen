@@ -11,6 +11,7 @@ import {
   ContributionService,
   ErrorCode as ProtoErrorCode,
   FileService,
+  FolderDialogService,
   FlushResult,
   LicenseService,
   LinkDirection,
@@ -51,6 +52,8 @@ export const createWorkspaceClient = (transport: Transport) =>
 export const createFileClient = (transport: Transport) => createClient(FileService, transport)
 export const createSearchClient = (transport: Transport) => createClient(SearchService, transport)
 export const createVaultsClient = (transport: Transport) => createClient(VaultsService, transport)
+export const createFolderDialogClient = (transport: Transport) =>
+  createClient(FolderDialogService, transport)
 export const createSettingsClient = (transport: Transport) =>
   createClient(SettingsService, transport)
 export const createWindowClient = (transport: Transport) => createClient(WindowService, transport)

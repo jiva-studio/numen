@@ -18,6 +18,7 @@ export { FailureReason, Priority, PrioritySchema } from './src/numen/v1/provider
 export * from './src/numen/v1/connectioncall_pb.js'
 export * from './src/numen/v1/media_pb.js'
 export * from './src/numen/v1/vaults_pb.js'
+export * from './src/numen/v1/folderdialog_pb.js'
 export * from './src/numen/v1/settings_pb.js'
 export * from './src/numen/v1/window_pb.js'
 export * from './src/numen/v1/theme_pb.js'

@@ -15,9 +15,10 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// Client calls the host vault services for the vault and HostWindowService for its window.
+// Client calls the host vault services and VaultsService for the vaults, and HostWindowService for its window.
 type Client struct {
 	vaults numenv1connect.HostVaultServiceClient
+	list   numenv1connect.VaultsServiceClient
 	files  numenv1connect.HostFileServiceClient
 	notes  numenv1connect.HostNoteServiceClient
 	links  numenv1connect.HostLinkServiceClient
@@ -70,6 +71,7 @@ func NewClient(endpoint hostcall.Endpoint) *Client {
 func NewClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
 	return &Client{
 		vaults: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
+		list:   numenv1connect.NewVaultsServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
 		files:  numenv1connect.NewHostFileServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
 		notes:  numenv1connect.NewHostNoteServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
 		links:  numenv1connect.NewHostLinkServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
@@ -389,12 +391,9 @@ func (c *Client) With(id domain.VaultID) *Client {
 }
 
 func (c *Client) GetVaults(ctx context.Context) ([]domain.Vault, error) {
-	res, err := c.vaults.ListHostVaults(ctx, request(c, &v1.ListHostVaultsRequest{}))
+	res, err := c.list.ListVaults(ctx, request(c, &v1.ListVaultsRequest{}))
 	if err != nil {
 		return nil, readError(err)
-	}
-	if err := fail(res.Msg.GetError()); err != nil {
-		return nil, err
 	}
 	out := make([]domain.Vault, 0, len(res.Msg.GetVaults()))
 	for _, one := range res.Msg.GetVaults() {

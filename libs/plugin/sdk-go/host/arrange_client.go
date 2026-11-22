@@ -145,12 +145,9 @@ func (c *Client) GetProblems(ctx context.Context, checks []string) (VaultProblem
 }
 
 func (c *Client) GetVaultList(ctx context.Context) ([]VaultEntry, error) {
-	res, err := c.vaults.ListHostVaults(ctx, request(c, &v1.ListHostVaultsRequest{}))
+	res, err := c.list.ListVaults(ctx, request(c, &v1.ListVaultsRequest{}))
 	if err != nil {
 		return nil, readError(err)
-	}
-	if err := fail(res.Msg.GetError()); err != nil {
-		return nil, err
 	}
 	out := make([]VaultEntry, 0, len(res.Msg.GetVaults()))
 	for _, one := range res.Msg.GetVaults() {
@@ -163,7 +160,7 @@ func (c *Client) GetVaultList(ctx context.Context) ([]VaultEntry, error) {
 }
 
 func (c *Client) AddVault(ctx context.Context, root, name string) (domain.Vault, error) {
-	res, err := c.vaults.AddVault(ctx, request(c, &v1.HostVaultServiceAddVaultRequest{Root: root, Name: name}))
+	res, err := c.list.AddVault(ctx, request(c, &v1.AddVaultRequest{Path: root, Name: name}))
 	if err != nil {
 		return domain.Vault{}, readError(err)
 	}
@@ -174,7 +171,7 @@ func (c *Client) AddVault(ctx context.Context, root, name string) (domain.Vault,
 }
 
 func (c *Client) RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error) {
-	res, err := c.vaults.RenameVault(ctx, request(c, &v1.HostVaultServiceRenameVaultRequest{Id: string(id), Name: name}))
+	res, err := c.list.RenameVault(ctx, request(c, &v1.RenameVaultRequest{Id: string(id), Name: name}))
 	if err != nil {
 		return domain.Vault{}, readError(err)
 	}
@@ -185,7 +182,7 @@ func (c *Client) RenameVault(ctx context.Context, id domain.VaultID, name string
 }
 
 func (c *Client) RemoveVault(ctx context.Context, id domain.VaultID) (string, error) {
-	res, err := c.vaults.RemoveVault(ctx, request(c, &v1.HostVaultServiceRemoveVaultRequest{Id: string(id)}))
+	res, err := c.list.RemoveVault(ctx, request(c, &v1.RemoveVaultRequest{Id: string(id)}))
 	if err != nil {
 		return "", readError(err)
 	}
@@ -196,7 +193,7 @@ func (c *Client) RemoveVault(ctx context.Context, id domain.VaultID) (string, er
 }
 
 func (c *Client) OpenVault(ctx context.Context, id domain.VaultID) error {
-	res, err := c.vaults.OpenVault(ctx, request(c, &v1.HostVaultServiceOpenVaultRequest{Id: string(id)}))
+	res, err := c.list.OpenVault(ctx, request(c, &v1.OpenVaultRequest{Id: string(id)}))
 	if err != nil {
 		return readError(err)
 	}

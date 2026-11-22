@@ -4,84 +4,13 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Vault, VaultsErrorCode } from "./vaults_pb.js";
-import { file_numen_v1_vaults } from "./vaults_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hostvault.proto.
  */
 export const file_numen_v1_hostvault: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9ob3N0dmF1bHQucHJvdG8SCG51bWVuLnYxIhcKFUxpc3RIb3N0VmF1bHRzUmVxdWVzdCJLCg1Ib3N0VmF1bHRJbmZvEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDAoEcGF0aBgDIAEoCRISCgppc19taXNzaW5nGAQgASgIIm4KFkxpc3RIb3N0VmF1bHRzUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSJwoGdmF1bHRzGAIgAygLMhcubnVtZW4udjEuSG9zdFZhdWx0SW5mbyIbChlFbnN1cmVWYXVsdEluZGV4ZWRSZXF1ZXN0IoIBChpFbnN1cmVWYXVsdEluZGV4ZWRSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRInCgVzdGF0ZRgCIAEoDjIYLm51bWVuLnYxLkhvc3RJbmRleFN0YXRlEg4KBnJlYXNvbhgDIAEoCSITChFXYXRjaE1vdmVzUmVxdWVzdCIUChJXYXRjaE1vdmVzUmVzcG9uc2UiFQoTR2V0SG9zdFZhdWx0UmVxdWVzdCJrChRHZXRIb3N0VmF1bHRSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIMCgRwYXRoGAIgASgJEgoKAmlkGAMgASgJEgwKBG5hbWUYBCABKAkiEgoQTG9ja1ZhdWx0UmVxdWVzdCJOChFMb2NrVmF1bHRSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIMCgRsb2NrGAIgASgJIiIKElVubG9ja1ZhdWx0UmVxdWVzdBIMCgRsb2NrGAEgASgJIhUKE1VubG9ja1ZhdWx0UmVzcG9uc2UiGQoXR2V0UGFyc2VQcm9ibGVtc1JlcXVlc3QiMAoQSG9zdFBhcnNlUHJvYmxlbRIMCgRwYXRoGAEgASgJEg4KBmRldGFpbBgCIAEoCSJ1ChhHZXRQYXJzZVByb2JsZW1zUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSLAoIcHJvYmxlbXMYAiADKAsyGi5udW1lbi52MS5Ib3N0UGFyc2VQcm9ibGVtIikKF0dldFZhdWx0UHJvYmxlbXNSZXF1ZXN0Eg4KBmNoZWNrcxgBIAMoCSKAAQoQSG9zdFZhdWx0UHJvYmxlbRIMCgRwYXRoGAEgASgJEg0KBWNoZWNrGAIgASgJEg4KBmRldGFpbBgDIAEoCRIVCg10YXJnZXRfc2NoZW1lGAQgASgJEhQKDHRhcmdldF92YWx1ZRgFIAEoCRISCgpjYW5kaWRhdGVzGAYgAygJIoUBChhHZXRWYXVsdFByb2JsZW1zUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSLAoIcHJvYmxlbXMYAiADKAsyGi5udW1lbi52MS5Ib3N0VmF1bHRQcm9ibGVtEg4KBmNoZWNrcxgDIAMoCSI9Ch9Ib3N0VmF1bHRTZXJ2aWNlQWRkVmF1bHRSZXF1ZXN0EgwKBHJvb3QYASABKAkSDAoEbmFtZRgCIAEoCSJ8CiBIb3N0VmF1bHRTZXJ2aWNlQWRkVmF1bHRSZXNwb25zZRIoCgVlcnJvchgBIAEoDjIZLm51bWVuLnYxLlZhdWx0c0Vycm9yQ29kZRIeCgV2YXVsdBgCIAEoCzIPLm51bWVuLnYxLlZhdWx0Eg4KBmRldGFpbBgDIAEoCSI+CiJIb3N0VmF1bHRTZXJ2aWNlUmVuYW1lVmF1bHRSZXF1ZXN0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkifwojSG9zdFZhdWx0U2VydmljZVJlbmFtZVZhdWx0UmVzcG9uc2USKAoFZXJyb3IYASABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGUSHgoFdmF1bHQYAiABKAsyDy5udW1lbi52MS5WYXVsdBIOCgZkZXRhaWwYAyABKAkiMAoiSG9zdFZhdWx0U2VydmljZVJlbW92ZVZhdWx0UmVxdWVzdBIKCgJpZBgBIAEoCSJtCiNIb3N0VmF1bHRTZXJ2aWNlUmVtb3ZlVmF1bHRSZXNwb25zZRIoCgVlcnJvchgBIAEoDjIZLm51bWVuLnYxLlZhdWx0c0Vycm9yQ29kZRIMCgRwYXRoGAIgASgJEg4KBmRldGFpbBgDIAEoCSIuCiBIb3N0VmF1bHRTZXJ2aWNlT3BlblZhdWx0UmVxdWVzdBIKCgJpZBgBIAEoCSJdCiFIb3N0VmF1bHRTZXJ2aWNlT3BlblZhdWx0UmVzcG9uc2USKAoFZXJyb3IYASABKA4yGS5udW1lbi52MS5WYXVsdHNFcnJvckNvZGUSDgoGZGV0YWlsGAIgASgJKtgEChJIb3N0VmF1bHRFcnJvckNvZGUSJQohSE9TVF9WQVVMVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeSE9TVF9WQVVMVF9FUlJPUl9DT0RFX05PX1ZBVUxUEAESIwofSE9TVF9WQVVMVF9FUlJPUl9DT0RFX05PVF9GT1VORBACEicKI0hPU1RfVkFVTFRfRVJST1JfQ09ERV9PVVRTSURFX1ZBVUxUEAMSIgoeSE9TVF9WQVVMVF9FUlJPUl9DT0RFX0NPTkZMSUNUEAQSKAokSE9TVF9WQVVMVF9FUlJPUl9DT0RFX0FMUkVBRFlfRVhJU1RTEAUSIAocSE9TVF9WQVVMVF9FUlJPUl9DT0RFX0xPQ0tFRBAGEiQKIEhPU1RfVkFVTFRfRVJST1JfQ09ERV9OT1RfQV9OT1RFEAgSIgoeSE9TVF9WQVVMVF9FUlJPUl9DT0RFX05PVF9URVhUEAwSIwofSE9TVF9WQVVMVF9FUlJPUl9DT0RFX1RPT19MQVJHRRANEikKJUhPU1RfVkFVTFRfRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQDhIkCiBIT1NUX1ZBVUxUX0VSUk9SX0NPREVfVU5SRUFEQUJMRRAPEiYKIkhPU1RfVkFVTFRfRVJST1JfQ09ERV9JTlZBTElEX05BTUUQEBIiCh5IT1NUX1ZBVUxUX0VSUk9SX0NPREVfSU5URVJOQUwQERInCiNIT1NUX1ZBVUxUX0VSUk9SX0NPREVfTk9UX0FUVEVNUFRFRBASIgQICRALKowBCg5Ib3N0SW5kZXhTdGF0ZRIgChxIT1NUX0lOREVYX1NUQVRFX1VOU1BFQ0lGSUVEEAASHAoYSE9TVF9JTkRFWF9TVEFURV9JTkRFWEVEEAESHQoZSE9TVF9JTkRFWF9TVEFURV9JTkRFWElORxACEhsKF0hPU1RfSU5ERVhfU1RBVEVfRkFJTEVEEAMyywgKEEhvc3RWYXVsdFNlcnZpY2USTQoMR2V0SG9zdFZhdWx0Eh0ubnVtZW4udjEuR2V0SG9zdFZhdWx0UmVxdWVzdBoeLm51bWVuLnYxLkdldEhvc3RWYXVsdFJlc3BvbnNlElMKDkxpc3RIb3N0VmF1bHRzEh8ubnVtZW4udjEuTGlzdEhvc3RWYXVsdHNSZXF1ZXN0GiAubnVtZW4udjEuTGlzdEhvc3RWYXVsdHNSZXNwb25zZRJfChJFbnN1cmVWYXVsdEluZGV4ZWQSIy5udW1lbi52MS5FbnN1cmVWYXVsdEluZGV4ZWRSZXF1ZXN0GiQubnVtZW4udjEuRW5zdXJlVmF1bHRJbmRleGVkUmVzcG9uc2USRAoJTG9ja1ZhdWx0EhoubnVtZW4udjEuTG9ja1ZhdWx0UmVxdWVzdBobLm51bWVuLnYxLkxvY2tWYXVsdFJlc3BvbnNlEkoKC1VubG9ja1ZhdWx0EhwubnVtZW4udjEuVW5sb2NrVmF1bHRSZXF1ZXN0Gh0ubnVtZW4udjEuVW5sb2NrVmF1bHRSZXNwb25zZRJZChBHZXRQYXJzZVByb2JsZW1zEiEubnVtZW4udjEuR2V0UGFyc2VQcm9ibGVtc1JlcXVlc3QaIi5udW1lbi52MS5HZXRQYXJzZVByb2JsZW1zUmVzcG9uc2USWQoQR2V0VmF1bHRQcm9ibGVtcxIhLm51bWVuLnYxLkdldFZhdWx0UHJvYmxlbXNSZXF1ZXN0GiIubnVtZW4udjEuR2V0VmF1bHRQcm9ibGVtc1Jlc3BvbnNlEmEKCEFkZFZhdWx0EikubnVtZW4udjEuSG9zdFZhdWx0U2VydmljZUFkZFZhdWx0UmVxdWVzdBoqLm51bWVuLnYxLkhvc3RWYXVsdFNlcnZpY2VBZGRWYXVsdFJlc3BvbnNlEmoKC1JlbmFtZVZhdWx0EiwubnVtZW4udjEuSG9zdFZhdWx0U2VydmljZVJlbmFtZVZhdWx0UmVxdWVzdBotLm51bWVuLnYxLkhvc3RWYXVsdFNlcnZpY2VSZW5hbWVWYXVsdFJlc3BvbnNlEmoKC1JlbW92ZVZhdWx0EiwubnVtZW4udjEuSG9zdFZhdWx0U2VydmljZVJlbW92ZVZhdWx0UmVxdWVzdBotLm51bWVuLnYxLkhvc3RWYXVsdFNlcnZpY2VSZW1vdmVWYXVsdFJlc3BvbnNlEmQKCU9wZW5WYXVsdBIqLm51bWVuLnYxLkhvc3RWYXVsdFNlcnZpY2VPcGVuVmF1bHRSZXF1ZXN0GisubnVtZW4udjEuSG9zdFZhdWx0U2VydmljZU9wZW5WYXVsdFJlc3BvbnNlEkkKCldhdGNoTW92ZXMSGy5udW1lbi52MS5XYXRjaE1vdmVzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoTW92ZXNSZXNwb25zZTABQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_vaults]);
-
-/**
- * @generated from message numen.v1.ListHostVaultsRequest
- */
-export type ListHostVaultsRequest = Message<"numen.v1.ListHostVaultsRequest"> & {
-};
-
-/**
- * Describes the message numen.v1.ListHostVaultsRequest.
- * Use `create(ListHostVaultsRequestSchema)` to create a new message.
- */
-export const ListHostVaultsRequestSchema: GenMessage<ListHostVaultsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 0);
-
-/**
- * @generated from message numen.v1.HostVaultInfo
- */
-export type HostVaultInfo = Message<"numen.v1.HostVaultInfo"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
-
-  /**
-   * @generated from field: string path = 3;
-   */
-  path: string;
-
-  /**
-   * Set when nothing is at the path.
-   *
-   * @generated from field: bool is_missing = 4;
-   */
-  isMissing: boolean;
-};
-
-/**
- * Describes the message numen.v1.HostVaultInfo.
- * Use `create(HostVaultInfoSchema)` to create a new message.
- */
-export const HostVaultInfoSchema: GenMessage<HostVaultInfo> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 1);
-
-/**
- * @generated from message numen.v1.ListHostVaultsResponse
- */
-export type ListHostVaultsResponse = Message<"numen.v1.ListHostVaultsResponse"> & {
-  /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
-   */
-  error: HostVaultErrorCode;
-
-  /**
-   * @generated from field: repeated numen.v1.HostVaultInfo vaults = 2;
-   */
-  vaults: HostVaultInfo[];
-};
-
-/**
- * Describes the message numen.v1.ListHostVaultsResponse.
- * Use `create(ListHostVaultsResponseSchema)` to create a new message.
- */
-export const ListHostVaultsResponseSchema: GenMessage<ListHostVaultsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 2);
+  fileDesc("ChhudW1lbi92MS9ob3N0dmF1bHQucHJvdG8SCG51bWVuLnYxIhsKGUVuc3VyZVZhdWx0SW5kZXhlZFJlcXVlc3QiggEKGkVuc3VyZVZhdWx0SW5kZXhlZFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEicKBXN0YXRlGAIgASgOMhgubnVtZW4udjEuSG9zdEluZGV4U3RhdGUSDgoGcmVhc29uGAMgASgJIhMKEVdhdGNoTW92ZXNSZXF1ZXN0IhQKEldhdGNoTW92ZXNSZXNwb25zZSIVChNHZXRIb3N0VmF1bHRSZXF1ZXN0ImsKFEdldEhvc3RWYXVsdFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSCgoCaWQYAyABKAkSDAoEbmFtZRgEIAEoCSISChBMb2NrVmF1bHRSZXF1ZXN0Ik4KEUxvY2tWYXVsdFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEgwKBGxvY2sYAiABKAkiIgoSVW5sb2NrVmF1bHRSZXF1ZXN0EgwKBGxvY2sYASABKAkiFQoTVW5sb2NrVmF1bHRSZXNwb25zZSIZChdHZXRQYXJzZVByb2JsZW1zUmVxdWVzdCIwChBIb3N0UGFyc2VQcm9ibGVtEgwKBHBhdGgYASABKAkSDgoGZGV0YWlsGAIgASgJInUKGEdldFBhcnNlUHJvYmxlbXNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIsCghwcm9ibGVtcxgCIAMoCzIaLm51bWVuLnYxLkhvc3RQYXJzZVByb2JsZW0iKQoXR2V0VmF1bHRQcm9ibGVtc1JlcXVlc3QSDgoGY2hlY2tzGAEgAygJIoABChBIb3N0VmF1bHRQcm9ibGVtEgwKBHBhdGgYASABKAkSDQoFY2hlY2sYAiABKAkSDgoGZGV0YWlsGAMgASgJEhUKDXRhcmdldF9zY2hlbWUYBCABKAkSFAoMdGFyZ2V0X3ZhbHVlGAUgASgJEhIKCmNhbmRpZGF0ZXMYBiADKAkihQEKGEdldFZhdWx0UHJvYmxlbXNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIsCghwcm9ibGVtcxgCIAMoCzIaLm51bWVuLnYxLkhvc3RWYXVsdFByb2JsZW0SDgoGY2hlY2tzGAMgAygJKtgEChJIb3N0VmF1bHRFcnJvckNvZGUSJQohSE9TVF9WQVVMVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeSE9TVF9WQVVMVF9FUlJPUl9DT0RFX05PX1ZBVUxUEAESIwofSE9TVF9WQVVMVF9FUlJPUl9DT0RFX05PVF9GT1VORBACEicKI0hPU1RfVkFVTFRfRVJST1JfQ09ERV9PVVRTSURFX1ZBVUxUEAMSIgoeSE9TVF9WQVVMVF9FUlJPUl9DT0RFX0NPTkZMSUNUEAQSKAokSE9TVF9WQVVMVF9FUlJPUl9DT0RFX0FMUkVBRFlfRVhJU1RTEAUSIAocSE9TVF9WQVVMVF9FUlJPUl9DT0RFX0xPQ0tFRBAGEiQKIEhPU1RfVkFVTFRfRVJST1JfQ09ERV9OT1RfQV9OT1RFEAgSIgoeSE9TVF9WQVVMVF9FUlJPUl9DT0RFX05PVF9URVhUEAwSIwofSE9TVF9WQVVMVF9FUlJPUl9DT0RFX1RPT19MQVJHRRANEikKJUhPU1RfVkFVTFRfRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQDhIkCiBIT1NUX1ZBVUxUX0VSUk9SX0NPREVfVU5SRUFEQUJMRRAPEiYKIkhPU1RfVkFVTFRfRVJST1JfQ09ERV9JTlZBTElEX05BTUUQEBIiCh5IT1NUX1ZBVUxUX0VSUk9SX0NPREVfSU5URVJOQUwQERInCiNIT1NUX1ZBVUxUX0VSUk9SX0NPREVfTk9UX0FUVEVNUFRFRBASIgQICRALKowBCg5Ib3N0SW5kZXhTdGF0ZRIgChxIT1NUX0lOREVYX1NUQVRFX1VOU1BFQ0lGSUVEEAASHAoYSE9TVF9JTkRFWF9TVEFURV9JTkRFWEVEEAESHQoZSE9TVF9JTkRFWF9TVEFURV9JTkRFWElORxACEhsKF0hPU1RfSU5ERVhfU1RBVEVfRkFJTEVEEAMy1QQKEEhvc3RWYXVsdFNlcnZpY2USTQoMR2V0SG9zdFZhdWx0Eh0ubnVtZW4udjEuR2V0SG9zdFZhdWx0UmVxdWVzdBoeLm51bWVuLnYxLkdldEhvc3RWYXVsdFJlc3BvbnNlEl8KEkVuc3VyZVZhdWx0SW5kZXhlZBIjLm51bWVuLnYxLkVuc3VyZVZhdWx0SW5kZXhlZFJlcXVlc3QaJC5udW1lbi52MS5FbnN1cmVWYXVsdEluZGV4ZWRSZXNwb25zZRJECglMb2NrVmF1bHQSGi5udW1lbi52MS5Mb2NrVmF1bHRSZXF1ZXN0GhsubnVtZW4udjEuTG9ja1ZhdWx0UmVzcG9uc2USSgoLVW5sb2NrVmF1bHQSHC5udW1lbi52MS5VbmxvY2tWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5VbmxvY2tWYXVsdFJlc3BvbnNlElkKEEdldFBhcnNlUHJvYmxlbXMSIS5udW1lbi52MS5HZXRQYXJzZVByb2JsZW1zUmVxdWVzdBoiLm51bWVuLnYxLkdldFBhcnNlUHJvYmxlbXNSZXNwb25zZRJZChBHZXRWYXVsdFByb2JsZW1zEiEubnVtZW4udjEuR2V0VmF1bHRQcm9ibGVtc1JlcXVlc3QaIi5udW1lbi52MS5HZXRWYXVsdFByb2JsZW1zUmVzcG9uc2USSQoKV2F0Y2hNb3ZlcxIbLm51bWVuLnYxLldhdGNoTW92ZXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hNb3Zlc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.EnsureVaultIndexedRequest
@@ -94,7 +23,7 @@ export type EnsureVaultIndexedRequest = Message<"numen.v1.EnsureVaultIndexedRequ
  * Use `create(EnsureVaultIndexedRequestSchema)` to create a new message.
  */
 export const EnsureVaultIndexedRequestSchema: GenMessage<EnsureVaultIndexedRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 3);
+  messageDesc(file_numen_v1_hostvault, 0);
 
 /**
  * @generated from message numen.v1.EnsureVaultIndexedResponse
@@ -121,7 +50,7 @@ export type EnsureVaultIndexedResponse = Message<"numen.v1.EnsureVaultIndexedRes
  * Use `create(EnsureVaultIndexedResponseSchema)` to create a new message.
  */
 export const EnsureVaultIndexedResponseSchema: GenMessage<EnsureVaultIndexedResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 4);
+  messageDesc(file_numen_v1_hostvault, 1);
 
 /**
  * @generated from message numen.v1.WatchMovesRequest
@@ -134,7 +63,7 @@ export type WatchMovesRequest = Message<"numen.v1.WatchMovesRequest"> & {
  * Use `create(WatchMovesRequestSchema)` to create a new message.
  */
 export const WatchMovesRequestSchema: GenMessage<WatchMovesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 5);
+  messageDesc(file_numen_v1_hostvault, 2);
 
 /**
  * @generated from message numen.v1.WatchMovesResponse
@@ -147,7 +76,7 @@ export type WatchMovesResponse = Message<"numen.v1.WatchMovesResponse"> & {
  * Use `create(WatchMovesResponseSchema)` to create a new message.
  */
 export const WatchMovesResponseSchema: GenMessage<WatchMovesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 6);
+  messageDesc(file_numen_v1_hostvault, 3);
 
 /**
  * @generated from message numen.v1.GetHostVaultRequest
@@ -160,7 +89,7 @@ export type GetHostVaultRequest = Message<"numen.v1.GetHostVaultRequest"> & {
  * Use `create(GetHostVaultRequestSchema)` to create a new message.
  */
 export const GetHostVaultRequestSchema: GenMessage<GetHostVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 7);
+  messageDesc(file_numen_v1_hostvault, 4);
 
 /**
  * @generated from message numen.v1.GetHostVaultResponse
@@ -194,7 +123,7 @@ export type GetHostVaultResponse = Message<"numen.v1.GetHostVaultResponse"> & {
  * Use `create(GetHostVaultResponseSchema)` to create a new message.
  */
 export const GetHostVaultResponseSchema: GenMessage<GetHostVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 8);
+  messageDesc(file_numen_v1_hostvault, 5);
 
 /**
  * @generated from message numen.v1.LockVaultRequest
@@ -207,7 +136,7 @@ export type LockVaultRequest = Message<"numen.v1.LockVaultRequest"> & {
  * Use `create(LockVaultRequestSchema)` to create a new message.
  */
 export const LockVaultRequestSchema: GenMessage<LockVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 9);
+  messageDesc(file_numen_v1_hostvault, 6);
 
 /**
  * @generated from message numen.v1.LockVaultResponse
@@ -231,7 +160,7 @@ export type LockVaultResponse = Message<"numen.v1.LockVaultResponse"> & {
  * Use `create(LockVaultResponseSchema)` to create a new message.
  */
 export const LockVaultResponseSchema: GenMessage<LockVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 10);
+  messageDesc(file_numen_v1_hostvault, 7);
 
 /**
  * @generated from message numen.v1.UnlockVaultRequest
@@ -248,7 +177,7 @@ export type UnlockVaultRequest = Message<"numen.v1.UnlockVaultRequest"> & {
  * Use `create(UnlockVaultRequestSchema)` to create a new message.
  */
 export const UnlockVaultRequestSchema: GenMessage<UnlockVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 11);
+  messageDesc(file_numen_v1_hostvault, 8);
 
 /**
  * @generated from message numen.v1.UnlockVaultResponse
@@ -261,7 +190,7 @@ export type UnlockVaultResponse = Message<"numen.v1.UnlockVaultResponse"> & {
  * Use `create(UnlockVaultResponseSchema)` to create a new message.
  */
 export const UnlockVaultResponseSchema: GenMessage<UnlockVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 12);
+  messageDesc(file_numen_v1_hostvault, 9);
 
 /**
  * @generated from message numen.v1.GetParseProblemsRequest
@@ -274,7 +203,7 @@ export type GetParseProblemsRequest = Message<"numen.v1.GetParseProblemsRequest"
  * Use `create(GetParseProblemsRequestSchema)` to create a new message.
  */
 export const GetParseProblemsRequestSchema: GenMessage<GetParseProblemsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 13);
+  messageDesc(file_numen_v1_hostvault, 10);
 
 /**
  * HostParseProblem is something parsing a file turned up.
@@ -298,7 +227,7 @@ export type HostParseProblem = Message<"numen.v1.HostParseProblem"> & {
  * Use `create(HostParseProblemSchema)` to create a new message.
  */
 export const HostParseProblemSchema: GenMessage<HostParseProblem> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 14);
+  messageDesc(file_numen_v1_hostvault, 11);
 
 /**
  * @generated from message numen.v1.GetParseProblemsResponse
@@ -320,7 +249,7 @@ export type GetParseProblemsResponse = Message<"numen.v1.GetParseProblemsRespons
  * Use `create(GetParseProblemsResponseSchema)` to create a new message.
  */
 export const GetParseProblemsResponseSchema: GenMessage<GetParseProblemsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 15);
+  messageDesc(file_numen_v1_hostvault, 12);
 
 /**
  * @generated from message numen.v1.GetVaultProblemsRequest
@@ -339,7 +268,7 @@ export type GetVaultProblemsRequest = Message<"numen.v1.GetVaultProblemsRequest"
  * Use `create(GetVaultProblemsRequestSchema)` to create a new message.
  */
 export const GetVaultProblemsRequestSchema: GenMessage<GetVaultProblemsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 16);
+  messageDesc(file_numen_v1_hostvault, 13);
 
 /**
  * HostVaultProblem is something a check found in a vault.
@@ -391,7 +320,7 @@ export type HostVaultProblem = Message<"numen.v1.HostVaultProblem"> & {
  * Use `create(HostVaultProblemSchema)` to create a new message.
  */
 export const HostVaultProblemSchema: GenMessage<HostVaultProblem> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 17);
+  messageDesc(file_numen_v1_hostvault, 14);
 
 /**
  * @generated from message numen.v1.GetVaultProblemsResponse
@@ -420,202 +349,7 @@ export type GetVaultProblemsResponse = Message<"numen.v1.GetVaultProblemsRespons
  * Use `create(GetVaultProblemsResponseSchema)` to create a new message.
  */
 export const GetVaultProblemsResponseSchema: GenMessage<GetVaultProblemsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 18);
-
-/**
- * @generated from message numen.v1.HostVaultServiceAddVaultRequest
- */
-export type HostVaultServiceAddVaultRequest = Message<"numen.v1.HostVaultServiceAddVaultRequest"> & {
-  /**
-   * The folder, absolute on this machine.
-   *
-   * @generated from field: string root = 1;
-   */
-  root: string;
-
-  /**
-   * Empty means the name of the folder.
-   *
-   * @generated from field: string name = 2;
-   */
-  name: string;
-};
-
-/**
- * Describes the message numen.v1.HostVaultServiceAddVaultRequest.
- * Use `create(HostVaultServiceAddVaultRequestSchema)` to create a new message.
- */
-export const HostVaultServiceAddVaultRequestSchema: GenMessage<HostVaultServiceAddVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 19);
-
-/**
- * @generated from message numen.v1.HostVaultServiceAddVaultResponse
- */
-export type HostVaultServiceAddVaultResponse = Message<"numen.v1.HostVaultServiceAddVaultResponse"> & {
-  /**
-   * @generated from field: numen.v1.VaultsErrorCode error = 1;
-   */
-  error: VaultsErrorCode;
-
-  /**
-   * @generated from field: numen.v1.Vault vault = 2;
-   */
-  vault?: Vault | undefined;
-
-  /**
-   * The core's error text of a rejected call; empty on success.
-   *
-   * @generated from field: string detail = 3;
-   */
-  detail: string;
-};
-
-/**
- * Describes the message numen.v1.HostVaultServiceAddVaultResponse.
- * Use `create(HostVaultServiceAddVaultResponseSchema)` to create a new message.
- */
-export const HostVaultServiceAddVaultResponseSchema: GenMessage<HostVaultServiceAddVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 20);
-
-/**
- * @generated from message numen.v1.HostVaultServiceRenameVaultRequest
- */
-export type HostVaultServiceRenameVaultRequest = Message<"numen.v1.HostVaultServiceRenameVaultRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-
-  /**
-   * @generated from field: string name = 2;
-   */
-  name: string;
-};
-
-/**
- * Describes the message numen.v1.HostVaultServiceRenameVaultRequest.
- * Use `create(HostVaultServiceRenameVaultRequestSchema)` to create a new message.
- */
-export const HostVaultServiceRenameVaultRequestSchema: GenMessage<HostVaultServiceRenameVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 21);
-
-/**
- * @generated from message numen.v1.HostVaultServiceRenameVaultResponse
- */
-export type HostVaultServiceRenameVaultResponse = Message<"numen.v1.HostVaultServiceRenameVaultResponse"> & {
-  /**
-   * @generated from field: numen.v1.VaultsErrorCode error = 1;
-   */
-  error: VaultsErrorCode;
-
-  /**
-   * @generated from field: numen.v1.Vault vault = 2;
-   */
-  vault?: Vault | undefined;
-
-  /**
-   * The core's error text of a rejected call; empty on success.
-   *
-   * @generated from field: string detail = 3;
-   */
-  detail: string;
-};
-
-/**
- * Describes the message numen.v1.HostVaultServiceRenameVaultResponse.
- * Use `create(HostVaultServiceRenameVaultResponseSchema)` to create a new message.
- */
-export const HostVaultServiceRenameVaultResponseSchema: GenMessage<HostVaultServiceRenameVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 22);
-
-/**
- * @generated from message numen.v1.HostVaultServiceRemoveVaultRequest
- */
-export type HostVaultServiceRemoveVaultRequest = Message<"numen.v1.HostVaultServiceRemoveVaultRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-};
-
-/**
- * Describes the message numen.v1.HostVaultServiceRemoveVaultRequest.
- * Use `create(HostVaultServiceRemoveVaultRequestSchema)` to create a new message.
- */
-export const HostVaultServiceRemoveVaultRequestSchema: GenMessage<HostVaultServiceRemoveVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 23);
-
-/**
- * @generated from message numen.v1.HostVaultServiceRemoveVaultResponse
- */
-export type HostVaultServiceRemoveVaultResponse = Message<"numen.v1.HostVaultServiceRemoveVaultResponse"> & {
-  /**
-   * @generated from field: numen.v1.VaultsErrorCode error = 1;
-   */
-  error: VaultsErrorCode;
-
-  /**
-   * The folder of the vault, which stays on the disk.
-   *
-   * @generated from field: string path = 2;
-   */
-  path: string;
-
-  /**
-   * The core's error text of a rejected call; empty on success.
-   *
-   * @generated from field: string detail = 3;
-   */
-  detail: string;
-};
-
-/**
- * Describes the message numen.v1.HostVaultServiceRemoveVaultResponse.
- * Use `create(HostVaultServiceRemoveVaultResponseSchema)` to create a new message.
- */
-export const HostVaultServiceRemoveVaultResponseSchema: GenMessage<HostVaultServiceRemoveVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 24);
-
-/**
- * @generated from message numen.v1.HostVaultServiceOpenVaultRequest
- */
-export type HostVaultServiceOpenVaultRequest = Message<"numen.v1.HostVaultServiceOpenVaultRequest"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
-};
-
-/**
- * Describes the message numen.v1.HostVaultServiceOpenVaultRequest.
- * Use `create(HostVaultServiceOpenVaultRequestSchema)` to create a new message.
- */
-export const HostVaultServiceOpenVaultRequestSchema: GenMessage<HostVaultServiceOpenVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 25);
-
-/**
- * @generated from message numen.v1.HostVaultServiceOpenVaultResponse
- */
-export type HostVaultServiceOpenVaultResponse = Message<"numen.v1.HostVaultServiceOpenVaultResponse"> & {
-  /**
-   * @generated from field: numen.v1.VaultsErrorCode error = 1;
-   */
-  error: VaultsErrorCode;
-
-  /**
-   * The core's error text of a rejected call; empty on success.
-   *
-   * @generated from field: string detail = 2;
-   */
-  detail: string;
-};
-
-/**
- * Describes the message numen.v1.HostVaultServiceOpenVaultResponse.
- * Use `create(HostVaultServiceOpenVaultResponseSchema)` to create a new message.
- */
-export const HostVaultServiceOpenVaultResponseSchema: GenMessage<HostVaultServiceOpenVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 26);
+  messageDesc(file_numen_v1_hostvault, 15);
 
 /**
  * means it was not.
@@ -776,12 +510,11 @@ export const HostIndexStateSchema: GenEnum<HostIndexState> = /*@__PURE__*/
 
 /**
  * HostVaultService is the vault itself, as a plugin works it: which vault the
- * host shows, the vaults of the installation, the index of a vault, its lock
- * and its checks.
+ * host shows, the index of a vault, its lock and its checks. The vaults of the
+ * installation are VaultsService, which the host endpoint serves as well.
  *
  * The endpoint checks the permission of each call: a call that reads needs
- * vault:read, one that changes anything needs vault:write, and one that changes
- * the list of vaults or the vault the window shows needs vault:manage.
+ * vault:read and one that changes anything needs vault:write.
  *
  * Numen-Vault works the vault of that identity instead of the vault the host
  * shows.
@@ -799,16 +532,6 @@ export const HostVaultService: GenService<{
     methodKind: "unary";
     input: typeof GetHostVaultRequestSchema;
     output: typeof GetHostVaultResponseSchema;
-  },
-  /**
-   * ListHostVaults lists every vault the installation knows.
-   *
-   * @generated from rpc numen.v1.HostVaultService.ListHostVaults
-   */
-  listHostVaults: {
-    methodKind: "unary";
-    input: typeof ListHostVaultsRequestSchema;
-    output: typeof ListHostVaultsResponseSchema;
   },
   /**
    * EnsureVaultIndexed brings the vault into the index when it is not there yet,
@@ -864,49 +587,6 @@ export const HostVaultService: GenService<{
     methodKind: "unary";
     input: typeof GetVaultProblemsRequestSchema;
     output: typeof GetVaultProblemsResponseSchema;
-  },
-  /**
-   * AddVault adds a folder to the installation's list of vaults. It needs
-   * vault:manage.
-   *
-   * @generated from rpc numen.v1.HostVaultService.AddVault
-   */
-  addVault: {
-    methodKind: "unary";
-    input: typeof HostVaultServiceAddVaultRequestSchema;
-    output: typeof HostVaultServiceAddVaultResponseSchema;
-  },
-  /**
-   * RenameVault changes the name of a vault on the list. It needs vault:manage.
-   *
-   * @generated from rpc numen.v1.HostVaultService.RenameVault
-   */
-  renameVault: {
-    methodKind: "unary";
-    input: typeof HostVaultServiceRenameVaultRequestSchema;
-    output: typeof HostVaultServiceRenameVaultResponseSchema;
-  },
-  /**
-   * RemoveVault removes a vault from the list and from the index. The folder
-   * stays. It needs vault:manage.
-   *
-   * @generated from rpc numen.v1.HostVaultService.RemoveVault
-   */
-  removeVault: {
-    methodKind: "unary";
-    input: typeof HostVaultServiceRemoveVaultRequestSchema;
-    output: typeof HostVaultServiceRemoveVaultResponseSchema;
-  },
-  /**
-   * OpenVault makes the window show another vault. It returns before the window
-   * changes vault. It needs vault:manage.
-   *
-   * @generated from rpc numen.v1.HostVaultService.OpenVault
-   */
-  openVault: {
-    methodKind: "unary";
-    input: typeof HostVaultServiceOpenVaultRequestSchema;
-    output: typeof HostVaultServiceOpenVaultResponseSchema;
   },
   /**
    * WatchMoves tells that something moved in some vault of the installation,

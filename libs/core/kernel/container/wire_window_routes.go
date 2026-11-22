@@ -104,6 +104,8 @@ func mountVaults(w *windowRoutes, listing *registry.Listing, change vaultChangin
 	})
 	path, served := vaults.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
+	path, served = vaults.NewDialogRoute(handler.Dialog, w.page.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, handler.Dialog))
 }
 
 func mountSearch(w *windowRoutes, session windowSearch, searchDeps textSearch, lender *hostendpoint.Lender, clock installationClock, runs *searchrun.SearchRuns) {

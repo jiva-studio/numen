@@ -36,9 +36,6 @@ const (
 	// HostVaultServiceGetHostVaultProcedure is the fully-qualified name of the HostVaultService's
 	// GetHostVault RPC.
 	HostVaultServiceGetHostVaultProcedure = "/numen.v1.HostVaultService/GetHostVault"
-	// HostVaultServiceListHostVaultsProcedure is the fully-qualified name of the HostVaultService's
-	// ListHostVaults RPC.
-	HostVaultServiceListHostVaultsProcedure = "/numen.v1.HostVaultService/ListHostVaults"
 	// HostVaultServiceEnsureVaultIndexedProcedure is the fully-qualified name of the HostVaultService's
 	// EnsureVaultIndexed RPC.
 	HostVaultServiceEnsureVaultIndexedProcedure = "/numen.v1.HostVaultService/EnsureVaultIndexed"
@@ -54,18 +51,6 @@ const (
 	// HostVaultServiceGetVaultProblemsProcedure is the fully-qualified name of the HostVaultService's
 	// GetVaultProblems RPC.
 	HostVaultServiceGetVaultProblemsProcedure = "/numen.v1.HostVaultService/GetVaultProblems"
-	// HostVaultServiceAddVaultProcedure is the fully-qualified name of the HostVaultService's AddVault
-	// RPC.
-	HostVaultServiceAddVaultProcedure = "/numen.v1.HostVaultService/AddVault"
-	// HostVaultServiceRenameVaultProcedure is the fully-qualified name of the HostVaultService's
-	// RenameVault RPC.
-	HostVaultServiceRenameVaultProcedure = "/numen.v1.HostVaultService/RenameVault"
-	// HostVaultServiceRemoveVaultProcedure is the fully-qualified name of the HostVaultService's
-	// RemoveVault RPC.
-	HostVaultServiceRemoveVaultProcedure = "/numen.v1.HostVaultService/RemoveVault"
-	// HostVaultServiceOpenVaultProcedure is the fully-qualified name of the HostVaultService's
-	// OpenVault RPC.
-	HostVaultServiceOpenVaultProcedure = "/numen.v1.HostVaultService/OpenVault"
 	// HostVaultServiceWatchMovesProcedure is the fully-qualified name of the HostVaultService's
 	// WatchMoves RPC.
 	HostVaultServiceWatchMovesProcedure = "/numen.v1.HostVaultService/WatchMoves"
@@ -76,8 +61,6 @@ type HostVaultServiceClient interface {
 	// GetHostVault names the vault the host is showing. A host showing none answers
 	// with the vault unset.
 	GetHostVault(context.Context, *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error)
-	// ListHostVaults lists every vault the installation knows.
-	ListHostVaults(context.Context, *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error)
 	// EnsureVaultIndexed brings the vault into the index when it is not there yet,
 	// and says where that stands. The work goes on after the call returns, and the
 	// caller asks again once WatchMoves tells it something moved.
@@ -93,17 +76,6 @@ type HostVaultServiceClient interface {
 	// ambiguous, dangling), or every check that is not opt-in when none is named.
 	// It needs vault:read.
 	GetVaultProblems(context.Context, *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error)
-	// AddVault adds a folder to the installation's list of vaults. It needs
-	// vault:manage.
-	AddVault(context.Context, *connect.Request[v1.HostVaultServiceAddVaultRequest]) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error)
-	// RenameVault changes the name of a vault on the list. It needs vault:manage.
-	RenameVault(context.Context, *connect.Request[v1.HostVaultServiceRenameVaultRequest]) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error)
-	// RemoveVault removes a vault from the list and from the index. The folder
-	// stays. It needs vault:manage.
-	RemoveVault(context.Context, *connect.Request[v1.HostVaultServiceRemoveVaultRequest]) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error)
-	// OpenVault makes the window show another vault. It returns before the window
-	// changes vault. It needs vault:manage.
-	OpenVault(context.Context, *connect.Request[v1.HostVaultServiceOpenVaultRequest]) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error)
 	// WatchMoves tells that something moved in some vault of the installation,
 	// until the caller disconnects. It says nothing of what moved. The first message is
 	// sent at once, so that the caller knows the watch is on.
@@ -125,12 +97,6 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			httpClient,
 			baseURL+HostVaultServiceGetHostVaultProcedure,
 			connect.WithSchema(hostVaultServiceMethods.ByName("GetHostVault")),
-			connect.WithClientOptions(opts...),
-		),
-		listHostVaults: connect.NewClient[v1.ListHostVaultsRequest, v1.ListHostVaultsResponse](
-			httpClient,
-			baseURL+HostVaultServiceListHostVaultsProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("ListHostVaults")),
 			connect.WithClientOptions(opts...),
 		),
 		ensureVaultIndexed: connect.NewClient[v1.EnsureVaultIndexedRequest, v1.EnsureVaultIndexedResponse](
@@ -163,30 +129,6 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("GetVaultProblems")),
 			connect.WithClientOptions(opts...),
 		),
-		addVault: connect.NewClient[v1.HostVaultServiceAddVaultRequest, v1.HostVaultServiceAddVaultResponse](
-			httpClient,
-			baseURL+HostVaultServiceAddVaultProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("AddVault")),
-			connect.WithClientOptions(opts...),
-		),
-		renameVault: connect.NewClient[v1.HostVaultServiceRenameVaultRequest, v1.HostVaultServiceRenameVaultResponse](
-			httpClient,
-			baseURL+HostVaultServiceRenameVaultProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("RenameVault")),
-			connect.WithClientOptions(opts...),
-		),
-		removeVault: connect.NewClient[v1.HostVaultServiceRemoveVaultRequest, v1.HostVaultServiceRemoveVaultResponse](
-			httpClient,
-			baseURL+HostVaultServiceRemoveVaultProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("RemoveVault")),
-			connect.WithClientOptions(opts...),
-		),
-		openVault: connect.NewClient[v1.HostVaultServiceOpenVaultRequest, v1.HostVaultServiceOpenVaultResponse](
-			httpClient,
-			baseURL+HostVaultServiceOpenVaultProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("OpenVault")),
-			connect.WithClientOptions(opts...),
-		),
 		watchMoves: connect.NewClient[v1.WatchMovesRequest, v1.WatchMovesResponse](
 			httpClient,
 			baseURL+HostVaultServiceWatchMovesProcedure,
@@ -199,27 +141,17 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 // hostVaultServiceClient implements HostVaultServiceClient.
 type hostVaultServiceClient struct {
 	getHostVault       *connect.Client[v1.GetHostVaultRequest, v1.GetHostVaultResponse]
-	listHostVaults     *connect.Client[v1.ListHostVaultsRequest, v1.ListHostVaultsResponse]
 	ensureVaultIndexed *connect.Client[v1.EnsureVaultIndexedRequest, v1.EnsureVaultIndexedResponse]
 	lockVault          *connect.Client[v1.LockVaultRequest, v1.LockVaultResponse]
 	unlockVault        *connect.Client[v1.UnlockVaultRequest, v1.UnlockVaultResponse]
 	getParseProblems   *connect.Client[v1.GetParseProblemsRequest, v1.GetParseProblemsResponse]
 	getVaultProblems   *connect.Client[v1.GetVaultProblemsRequest, v1.GetVaultProblemsResponse]
-	addVault           *connect.Client[v1.HostVaultServiceAddVaultRequest, v1.HostVaultServiceAddVaultResponse]
-	renameVault        *connect.Client[v1.HostVaultServiceRenameVaultRequest, v1.HostVaultServiceRenameVaultResponse]
-	removeVault        *connect.Client[v1.HostVaultServiceRemoveVaultRequest, v1.HostVaultServiceRemoveVaultResponse]
-	openVault          *connect.Client[v1.HostVaultServiceOpenVaultRequest, v1.HostVaultServiceOpenVaultResponse]
 	watchMoves         *connect.Client[v1.WatchMovesRequest, v1.WatchMovesResponse]
 }
 
 // GetHostVault calls numen.v1.HostVaultService.GetHostVault.
 func (c *hostVaultServiceClient) GetHostVault(ctx context.Context, req *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error) {
 	return c.getHostVault.CallUnary(ctx, req)
-}
-
-// ListHostVaults calls numen.v1.HostVaultService.ListHostVaults.
-func (c *hostVaultServiceClient) ListHostVaults(ctx context.Context, req *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error) {
-	return c.listHostVaults.CallUnary(ctx, req)
 }
 
 // EnsureVaultIndexed calls numen.v1.HostVaultService.EnsureVaultIndexed.
@@ -247,26 +179,6 @@ func (c *hostVaultServiceClient) GetVaultProblems(ctx context.Context, req *conn
 	return c.getVaultProblems.CallUnary(ctx, req)
 }
 
-// AddVault calls numen.v1.HostVaultService.AddVault.
-func (c *hostVaultServiceClient) AddVault(ctx context.Context, req *connect.Request[v1.HostVaultServiceAddVaultRequest]) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error) {
-	return c.addVault.CallUnary(ctx, req)
-}
-
-// RenameVault calls numen.v1.HostVaultService.RenameVault.
-func (c *hostVaultServiceClient) RenameVault(ctx context.Context, req *connect.Request[v1.HostVaultServiceRenameVaultRequest]) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error) {
-	return c.renameVault.CallUnary(ctx, req)
-}
-
-// RemoveVault calls numen.v1.HostVaultService.RemoveVault.
-func (c *hostVaultServiceClient) RemoveVault(ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveVaultRequest]) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error) {
-	return c.removeVault.CallUnary(ctx, req)
-}
-
-// OpenVault calls numen.v1.HostVaultService.OpenVault.
-func (c *hostVaultServiceClient) OpenVault(ctx context.Context, req *connect.Request[v1.HostVaultServiceOpenVaultRequest]) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
-	return c.openVault.CallUnary(ctx, req)
-}
-
 // WatchMoves calls numen.v1.HostVaultService.WatchMoves.
 func (c *hostVaultServiceClient) WatchMoves(ctx context.Context, req *connect.Request[v1.WatchMovesRequest]) (*connect.ServerStreamForClient[v1.WatchMovesResponse], error) {
 	return c.watchMoves.CallServerStream(ctx, req)
@@ -277,8 +189,6 @@ type HostVaultServiceHandler interface {
 	// GetHostVault names the vault the host is showing. A host showing none answers
 	// with the vault unset.
 	GetHostVault(context.Context, *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error)
-	// ListHostVaults lists every vault the installation knows.
-	ListHostVaults(context.Context, *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error)
 	// EnsureVaultIndexed brings the vault into the index when it is not there yet,
 	// and says where that stands. The work goes on after the call returns, and the
 	// caller asks again once WatchMoves tells it something moved.
@@ -294,17 +204,6 @@ type HostVaultServiceHandler interface {
 	// ambiguous, dangling), or every check that is not opt-in when none is named.
 	// It needs vault:read.
 	GetVaultProblems(context.Context, *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error)
-	// AddVault adds a folder to the installation's list of vaults. It needs
-	// vault:manage.
-	AddVault(context.Context, *connect.Request[v1.HostVaultServiceAddVaultRequest]) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error)
-	// RenameVault changes the name of a vault on the list. It needs vault:manage.
-	RenameVault(context.Context, *connect.Request[v1.HostVaultServiceRenameVaultRequest]) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error)
-	// RemoveVault removes a vault from the list and from the index. The folder
-	// stays. It needs vault:manage.
-	RemoveVault(context.Context, *connect.Request[v1.HostVaultServiceRemoveVaultRequest]) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error)
-	// OpenVault makes the window show another vault. It returns before the window
-	// changes vault. It needs vault:manage.
-	OpenVault(context.Context, *connect.Request[v1.HostVaultServiceOpenVaultRequest]) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error)
 	// WatchMoves tells that something moved in some vault of the installation,
 	// until the caller disconnects. It says nothing of what moved. The first message is
 	// sent at once, so that the caller knows the watch is on.
@@ -322,12 +221,6 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		HostVaultServiceGetHostVaultProcedure,
 		svc.GetHostVault,
 		connect.WithSchema(hostVaultServiceMethods.ByName("GetHostVault")),
-		connect.WithHandlerOptions(opts...),
-	)
-	hostVaultServiceListHostVaultsHandler := connect.NewUnaryHandler(
-		HostVaultServiceListHostVaultsProcedure,
-		svc.ListHostVaults,
-		connect.WithSchema(hostVaultServiceMethods.ByName("ListHostVaults")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostVaultServiceEnsureVaultIndexedHandler := connect.NewUnaryHandler(
@@ -360,30 +253,6 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("GetVaultProblems")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostVaultServiceAddVaultHandler := connect.NewUnaryHandler(
-		HostVaultServiceAddVaultProcedure,
-		svc.AddVault,
-		connect.WithSchema(hostVaultServiceMethods.ByName("AddVault")),
-		connect.WithHandlerOptions(opts...),
-	)
-	hostVaultServiceRenameVaultHandler := connect.NewUnaryHandler(
-		HostVaultServiceRenameVaultProcedure,
-		svc.RenameVault,
-		connect.WithSchema(hostVaultServiceMethods.ByName("RenameVault")),
-		connect.WithHandlerOptions(opts...),
-	)
-	hostVaultServiceRemoveVaultHandler := connect.NewUnaryHandler(
-		HostVaultServiceRemoveVaultProcedure,
-		svc.RemoveVault,
-		connect.WithSchema(hostVaultServiceMethods.ByName("RemoveVault")),
-		connect.WithHandlerOptions(opts...),
-	)
-	hostVaultServiceOpenVaultHandler := connect.NewUnaryHandler(
-		HostVaultServiceOpenVaultProcedure,
-		svc.OpenVault,
-		connect.WithSchema(hostVaultServiceMethods.ByName("OpenVault")),
-		connect.WithHandlerOptions(opts...),
-	)
 	hostVaultServiceWatchMovesHandler := connect.NewServerStreamHandler(
 		HostVaultServiceWatchMovesProcedure,
 		svc.WatchMoves,
@@ -394,8 +263,6 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		switch r.URL.Path {
 		case HostVaultServiceGetHostVaultProcedure:
 			hostVaultServiceGetHostVaultHandler.ServeHTTP(w, r)
-		case HostVaultServiceListHostVaultsProcedure:
-			hostVaultServiceListHostVaultsHandler.ServeHTTP(w, r)
 		case HostVaultServiceEnsureVaultIndexedProcedure:
 			hostVaultServiceEnsureVaultIndexedHandler.ServeHTTP(w, r)
 		case HostVaultServiceLockVaultProcedure:
@@ -406,14 +273,6 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 			hostVaultServiceGetParseProblemsHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetVaultProblemsProcedure:
 			hostVaultServiceGetVaultProblemsHandler.ServeHTTP(w, r)
-		case HostVaultServiceAddVaultProcedure:
-			hostVaultServiceAddVaultHandler.ServeHTTP(w, r)
-		case HostVaultServiceRenameVaultProcedure:
-			hostVaultServiceRenameVaultHandler.ServeHTTP(w, r)
-		case HostVaultServiceRemoveVaultProcedure:
-			hostVaultServiceRemoveVaultHandler.ServeHTTP(w, r)
-		case HostVaultServiceOpenVaultProcedure:
-			hostVaultServiceOpenVaultHandler.ServeHTTP(w, r)
 		case HostVaultServiceWatchMovesProcedure:
 			hostVaultServiceWatchMovesHandler.ServeHTTP(w, r)
 		default:
@@ -427,10 +286,6 @@ type UnimplementedHostVaultServiceHandler struct{}
 
 func (UnimplementedHostVaultServiceHandler) GetHostVault(context.Context, *connect.Request[v1.GetHostVaultRequest]) (*connect.Response[v1.GetHostVaultResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetHostVault is not implemented"))
-}
-
-func (UnimplementedHostVaultServiceHandler) ListHostVaults(context.Context, *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.ListHostVaults is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
@@ -451,22 +306,6 @@ func (UnimplementedHostVaultServiceHandler) GetParseProblems(context.Context, *c
 
 func (UnimplementedHostVaultServiceHandler) GetVaultProblems(context.Context, *connect.Request[v1.GetVaultProblemsRequest]) (*connect.Response[v1.GetVaultProblemsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetVaultProblems is not implemented"))
-}
-
-func (UnimplementedHostVaultServiceHandler) AddVault(context.Context, *connect.Request[v1.HostVaultServiceAddVaultRequest]) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.AddVault is not implemented"))
-}
-
-func (UnimplementedHostVaultServiceHandler) RenameVault(context.Context, *connect.Request[v1.HostVaultServiceRenameVaultRequest]) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.RenameVault is not implemented"))
-}
-
-func (UnimplementedHostVaultServiceHandler) RemoveVault(context.Context, *connect.Request[v1.HostVaultServiceRemoveVaultRequest]) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.RemoveVault is not implemented"))
-}
-
-func (UnimplementedHostVaultServiceHandler) OpenVault(context.Context, *connect.Request[v1.HostVaultServiceOpenVaultRequest]) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.OpenVault is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) WatchMoves(context.Context, *connect.Request[v1.WatchMovesRequest], *connect.ServerStream[v1.WatchMovesResponse]) error {

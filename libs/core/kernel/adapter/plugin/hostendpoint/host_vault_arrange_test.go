@@ -236,10 +236,10 @@ func callNoteChanges(t *testing.T, client testsupport.HostVaultClient) map[strin
 func callVaultChanges(t *testing.T, client testsupport.HostVaultClient) map[string]error {
 	t.Helper()
 	ctx := t.Context()
-	_, addErr := client.AddVault(ctx, connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas"}))
-	_, renameErr := client.RenameVault(ctx, connect.NewRequest(&v1.HostVaultServiceRenameVaultRequest{Id: "v2", Name: "Ponds"}))
-	_, removeErr := client.RemoveVault(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveVaultRequest{Id: "v2"}))
-	_, openErr := client.OpenVault(ctx, connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+	_, addErr := client.AddVault(ctx, connect.NewRequest(&v1.AddVaultRequest{Path: "/vaults/Seas"}))
+	_, renameErr := client.RenameVault(ctx, connect.NewRequest(&v1.RenameVaultRequest{Id: "v2", Name: "Ponds"}))
+	_, removeErr := client.RemoveVault(ctx, connect.NewRequest(&v1.RemoveVaultRequest{Id: "v2"}))
+	_, openErr := client.OpenVault(ctx, connect.NewRequest(&v1.OpenVaultRequest{Id: "v2"}))
 	return map[string]error{"AddVault": addErr, "RenameVault": renameErr, "RemoveVault": removeErr, "OpenVault": openErr}
 }
 
@@ -441,7 +441,7 @@ func TestARemovalReturnsTheTrashPathAndAFolderAsNotANote(t *testing.T) {
 func TestTheListOfVaultsMarksAMissingFolder(t *testing.T) {
 	client, _, _ := newArrangeClient(t, newRecordingList(), manifest.PermissionVaultRead)
 
-	res, err := client.ListHostVaults(t.Context(), connect.NewRequest(&v1.ListHostVaultsRequest{}))
+	res, err := client.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -482,10 +482,10 @@ func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) 
 			client, _, _ := newArrangeClient(t, list, manifest.PermissionVaultManage)
 			ctx := t.Context()
 
-			added, addErr := client.AddVault(ctx, connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas"}))
-			renamed, renameErr := client.RenameVault(ctx, connect.NewRequest(&v1.HostVaultServiceRenameVaultRequest{Id: "v2", Name: "Ponds"}))
-			removed, removeErr := client.RemoveVault(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveVaultRequest{Id: "v2"}))
-			opened, openErr := client.OpenVault(ctx, connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+			added, addErr := client.AddVault(ctx, connect.NewRequest(&v1.AddVaultRequest{Path: "/vaults/Seas"}))
+			renamed, renameErr := client.RenameVault(ctx, connect.NewRequest(&v1.RenameVaultRequest{Id: "v2", Name: "Ponds"}))
+			removed, removeErr := client.RemoveVault(ctx, connect.NewRequest(&v1.RemoveVaultRequest{Id: "v2"}))
+			opened, openErr := client.OpenVault(ctx, connect.NewRequest(&v1.OpenVaultRequest{Id: "v2"}))
 
 			for call, answer := range map[string]struct {
 				err    error
@@ -512,7 +512,7 @@ func TestOpenVaultOfAnUnknownIdReturnsNotFoundWithTheDetail(t *testing.T) {
 	list := newRecordingList()
 	client, _, _ := newArrangeClient(t, list, manifest.PermissionVaultManage)
 
-	res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v9"}))
+	res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{Id: "v9"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -531,7 +531,7 @@ func TestOpenVaultOfAnUnknownIdReturnsNotFoundWithTheDetail(t *testing.T) {
 func TestRemoveVaultOfAnUnknownIdReturnsNotFoundWithTheDetail(t *testing.T) {
 	client, _, _ := newArrangeClient(t, newRecordingList(), manifest.PermissionVaultManage)
 
-	res, err := client.RemoveVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveVaultRequest{Id: "v9"}))
+	res, err := client.RemoveVault(t.Context(), connect.NewRequest(&v1.RemoveVaultRequest{Id: "v9"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -545,9 +545,9 @@ func TestVaultListChangesThatSucceedReturnNoDetail(t *testing.T) {
 	client, _, _ := newArrangeClient(t, newRecordingList(), manifest.PermissionVaultManage)
 	ctx := t.Context()
 
-	added, addErr := client.AddVault(ctx, connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas"}))
-	renamed, renameErr := client.RenameVault(ctx, connect.NewRequest(&v1.HostVaultServiceRenameVaultRequest{Id: "v2", Name: "Ponds"}))
-	removed, removeErr := client.RemoveVault(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveVaultRequest{Id: "v2"}))
+	added, addErr := client.AddVault(ctx, connect.NewRequest(&v1.AddVaultRequest{Path: "/vaults/Seas"}))
+	renamed, renameErr := client.RenameVault(ctx, connect.NewRequest(&v1.RenameVaultRequest{Id: "v2", Name: "Ponds"}))
+	removed, removeErr := client.RemoveVault(ctx, connect.NewRequest(&v1.RemoveVaultRequest{Id: "v2"}))
 
 	if err := errors.Join(addErr, renameErr, removeErr); err != nil {
 		t.Fatal(err)
@@ -610,21 +610,21 @@ func TestVaultListChangesReturnTheVaultAndTheFolder(t *testing.T) {
 	client, _, _ := newArrangeClient(t, newRecordingList(), manifest.PermissionVaultManage)
 	ctx := t.Context()
 
-	added, err := client.AddVault(ctx, connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas", Name: "Seas"}))
+	added, err := client.AddVault(ctx, connect.NewRequest(&v1.AddVaultRequest{Path: "/vaults/Seas", Name: "Seas"}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if v := added.Msg.GetVault(); added.Msg.GetError() != 0 || v.GetId() != "v3" || v.GetName() != "Seas" || v.GetPath() != "/vaults/Seas" {
 		t.Errorf("AddVault returned %v", added.Msg)
 	}
-	renamed, err := client.RenameVault(ctx, connect.NewRequest(&v1.HostVaultServiceRenameVaultRequest{Id: "v2", Name: "Ponds"}))
+	renamed, err := client.RenameVault(ctx, connect.NewRequest(&v1.RenameVaultRequest{Id: "v2", Name: "Ponds"}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if v := renamed.Msg.GetVault(); renamed.Msg.GetError() != 0 || v.GetId() != "v2" || v.GetName() != "Ponds" {
 		t.Errorf("RenameVault returned %v", renamed.Msg)
 	}
-	removed, err := client.RemoveVault(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveVaultRequest{Id: "v2"}))
+	removed, err := client.RemoveVault(ctx, connect.NewRequest(&v1.RemoveVaultRequest{Id: "v2"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -654,12 +654,12 @@ func TestOpenVaultReturnsAfterTheWindowShowsTheVault(t *testing.T) {
 	defer cancel()
 
 	type openAnswer struct {
-		res *connect.Response[v1.HostVaultServiceOpenVaultResponse]
+		res *connect.Response[v1.OpenVaultResponse]
 		err error
 	}
 	answerResult := make(chan openAnswer, 1)
 	go func() {
-		res, err := client.OpenVault(ctx, connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v2"}))
+		res, err := client.OpenVault(ctx, connect.NewRequest(&v1.OpenVaultRequest{Id: "v2"}))
 		answerResult <- openAnswer{res: res, err: err}
 	}()
 	select {
@@ -854,7 +854,7 @@ func TestAddVaultOfARejectedFolderReturnsTheCoreMessage(t *testing.T) {
 			list.err = c.err
 			client, _, _ := newArrangeClient(t, list, manifest.PermissionVaultManage)
 
-			res, err := client.AddVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas"}))
+			res, err := client.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{Path: "/vaults/Seas"}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -880,7 +880,7 @@ func TestAddVaultOverlapReturnsOverlapsWithCoreTextAsDetail(t *testing.T) {
 			list.err = vaultList.CheckOverlap(root)
 			client, _, _ := newArrangeClient(t, list, manifest.PermissionVaultManage)
 
-			res, err := client.AddVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: root}))
+			res, err := client.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{Path: root}))
 			if err != nil {
 				t.Fatal(err)
 			}

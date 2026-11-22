@@ -98,48 +98,48 @@ func (a *fakeArrangeHost) GetNoteRefs(
 	return connect.NewResponse(&v1.GetNoteRefsResponse{Notes: notes}), nil
 }
 
-func (a *fakeArrangeHost) ListHostVaults(context.Context, *connect.Request[v1.ListHostVaultsRequest]) (*connect.Response[v1.ListHostVaultsResponse], error) {
-	return connect.NewResponse(&v1.ListHostVaultsResponse{Vaults: []*v1.HostVaultInfo{
+func (a *fakeArrangeHost) ListVaults(context.Context, *connect.Request[v1.ListVaultsRequest]) (*connect.Response[v1.ListVaultsResponse], error) {
+	return connect.NewResponse(&v1.ListVaultsResponse{Vaults: []*v1.Vault{
 		{Id: "v1", Name: "Rivers", Path: "/vaults/Rivers"},
 		{Id: "v2", Name: "Lakes", Path: "/vaults/Lakes", IsMissing: true},
 	}}), nil
 }
 
 func (a *fakeArrangeHost) AddVault(
-	_ context.Context, req *connect.Request[v1.HostVaultServiceAddVaultRequest],
-) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error) {
-	a.record("add " + req.Msg.GetRoot() + " " + req.Msg.GetName())
+	_ context.Context, req *connect.Request[v1.AddVaultRequest],
+) (*connect.Response[v1.AddVaultResponse], error) {
+	a.record("add " + req.Msg.GetPath() + " " + req.Msg.GetName())
 	if a.vaultsError != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Error: a.vaultsError, Detail: a.vaultsDetail}), nil
+		return connect.NewResponse(&v1.AddVaultResponse{Error: &a.vaultsError, Detail: a.vaultsDetail}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Vault: &v1.Vault{Id: "v3", Name: req.Msg.GetName(), Path: req.Msg.GetRoot()}}), nil
+	return connect.NewResponse(&v1.AddVaultResponse{Vault: &v1.Vault{Id: "v3", Name: req.Msg.GetName(), Path: req.Msg.GetPath()}}), nil
 }
 
 func (a *fakeArrangeHost) RenameVault(
-	_ context.Context, req *connect.Request[v1.HostVaultServiceRenameVaultRequest],
-) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error) {
+	_ context.Context, req *connect.Request[v1.RenameVaultRequest],
+) (*connect.Response[v1.RenameVaultResponse], error) {
 	a.record("rename vault " + req.Msg.GetId() + " " + req.Msg.GetName())
 	if a.vaultsError != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceRenameVaultResponse{Error: a.vaultsError, Detail: a.vaultsDetail}), nil
+		return connect.NewResponse(&v1.RenameVaultResponse{Error: &a.vaultsError, Detail: a.vaultsDetail}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceRenameVaultResponse{Vault: &v1.Vault{Id: req.Msg.GetId(), Name: req.Msg.GetName(), Path: "/vaults/Lakes"}}), nil
+	return connect.NewResponse(&v1.RenameVaultResponse{Vault: &v1.Vault{Id: req.Msg.GetId(), Name: req.Msg.GetName(), Path: "/vaults/Lakes"}}), nil
 }
 
 func (a *fakeArrangeHost) RemoveVault(
-	_ context.Context, req *connect.Request[v1.HostVaultServiceRemoveVaultRequest],
-) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error) {
+	_ context.Context, req *connect.Request[v1.RemoveVaultRequest],
+) (*connect.Response[v1.RemoveVaultResponse], error) {
 	a.record("remove vault " + req.Msg.GetId())
 	if a.vaultsError != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Error: a.vaultsError, Detail: a.vaultsDetail}), nil
+		return connect.NewResponse(&v1.RemoveVaultResponse{Error: &a.vaultsError, Detail: a.vaultsDetail}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceRemoveVaultResponse{Path: "/vaults/Lakes"}), nil
+	return connect.NewResponse(&v1.RemoveVaultResponse{Path: "/vaults/Lakes"}), nil
 }
 
 func (a *fakeArrangeHost) OpenVault(
-	_ context.Context, req *connect.Request[v1.HostVaultServiceOpenVaultRequest],
-) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
+	_ context.Context, req *connect.Request[v1.OpenVaultRequest],
+) (*connect.Response[v1.OpenVaultResponse], error) {
 	a.record("open vault " + req.Msg.GetId())
-	return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Error: a.vaultsError, Detail: a.vaultsDetail}), nil
+	return connect.NewResponse(&v1.OpenVaultResponse{Error: &a.vaultsError, Detail: a.vaultsDetail}), nil
 }
 
 func newFakeArrangeClient(t *testing.T, a *fakeArrangeHost) *host.Client {
@@ -339,9 +339,9 @@ type addVaultErrorHost struct {
 }
 
 func (a *addVaultErrorHost) AddVault(
-	context.Context, *connect.Request[v1.HostVaultServiceAddVaultRequest],
-) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error) {
-	return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Error: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE, Detail: a.detail}), nil
+	context.Context, *connect.Request[v1.AddVaultRequest],
+) (*connect.Response[v1.AddVaultResponse], error) {
+	return connect.NewResponse(&v1.AddVaultResponse{Error: vaultsErrorOf(v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE), Detail: a.detail}), nil
 }
 
 func TestTheClientReturnsTheCoreMessageOfARejectedFolder(t *testing.T) {
@@ -368,9 +368,9 @@ type openVaultErrorHost struct {
 }
 
 func (a *openVaultErrorHost) OpenVault(
-	context.Context, *connect.Request[v1.HostVaultServiceOpenVaultRequest],
-) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
-	return connect.NewResponse(&v1.HostVaultServiceOpenVaultResponse{Error: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED, Detail: a.detail}), nil
+	context.Context, *connect.Request[v1.OpenVaultRequest],
+) (*connect.Response[v1.OpenVaultResponse], error) {
+	return connect.NewResponse(&v1.OpenVaultResponse{Error: vaultsErrorOf(v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED), Detail: a.detail}), nil
 }
 
 func TestClientReturnsUnsavedChangesWithCoreMessageOfOpen(t *testing.T) {

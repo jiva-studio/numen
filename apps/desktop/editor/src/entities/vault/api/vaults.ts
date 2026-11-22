@@ -51,12 +51,16 @@ const mapNoValue = (from: { error?: VaultsErrorCodeValue | undefined }): VaultAc
 }
 
 /**
- * The vaults this installation holds over `vaultsService`, in the shape the window requests them.
+ * The vaults this installation holds over `vaultsService`, in the shape the window requests them, and
+ * the folder dialog of this machine over `folderDialog`.
  */
-export const createVaults = (vaultsService: WindowClients['vaultsService']): Vaults => ({
+export const createVaults = (
+  vaultsService: WindowClients['vaultsService'],
+  folderDialog: WindowClients['folderDialog'],
+): Vaults => ({
   list: async () => (await vaultsService.listVaults({})).vaults.map(mapVault),
   choose: async (title) => {
-    const answer = await vaultsService.chooseFolder({ title, startingAt: '' })
+    const answer = await folderDialog.chooseFolder({ title, startingAt: '' })
     return answer.isChosen ? answer.path : ''
   },
   add: async (path, called) => mapVaultResult(await vaultsService.addVault({ path, name: called })),
