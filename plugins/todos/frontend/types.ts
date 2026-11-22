@@ -107,7 +107,7 @@ export interface WatchMessage {
 type Change = 'completed' | 'rescheduled' | 'reopened'
 
 /** Why a change was not written; the person can fix it by looking at the note. */
-type Refusal = 'notFound' | 'changed' | 'stale' | 'invalidRecurrence' | 'notOpen' | 'notDone'
+type Refusal = 'notFound' | 'unreadable' | 'stale' | 'invalidRecurrence' | 'notOpen' | 'notDone'
 
 /**
  * Ticks (isDone) or unticks the task at a line; raw is the text the line had when it was listed. The
