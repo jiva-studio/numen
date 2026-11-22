@@ -66,12 +66,13 @@ function getRowIcon(id: string) {
     :is-busy="field.isBusy"
     :placeholder="picker.question.value?.placeholder ?? field.placeholder"
     :crumb="field.crumb"
-    :step="field.step"
+    :step="picker.question.value?.step ?? field.step"
     :opens-on="field.opensOn"
     :name="words.find"
     :action-words="actionWords"
     @update:model-value="onType"
     @choose="onChoose"
+    @submit="picker.question.value?.submit()"
     @light="commands.palette.previewItem"
     @back="goBack"
     @toggle="runInBackground(picker.toggle($event), reportFailure)"
@@ -81,7 +82,12 @@ function getRowIcon(id: string) {
     <template #icon="{ id }">
       <component :is="getRowIcon(id)" v-if="getRowIcon(id)" class="command-icon" />
     </template>
-    <template v-if="!commands.palette.open.value && search.status.isNothingFound.value" #silence>
+    <template
+      v-if="
+        !picker.question.value && !commands.palette.open.value && search.status.isNothingFound.value
+      "
+      #silence
+    >
       <span class="nothing-found">
         <Search class="nothing-found__icon" data-palette="nothing-icon" aria-hidden="true" />
         <span class="nothing-found__text" data-palette="nothing-text">

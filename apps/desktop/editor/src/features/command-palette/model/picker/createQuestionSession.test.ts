@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createQuestionSession } from './createQuestionSession'
 
 const OPTIONS = [
@@ -6,19 +6,37 @@ const OPTIONS = [
   { value: 'high', title: 'High' },
 ]
 
+beforeEach(() => {
+  vi.useFakeTimers()
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+})
+
 describe('a question session', () => {
   it('draws nothing before a plugin asks', () => {
     expect(createQuestionSession().view.value).toBeUndefined()
   })
 
-  it('starts the line with its value and offers it as the one row', async () => {
+  it('starts the line with its value, names the question in the placeholder and lists no row', async () => {
     const session = createQuestionSession()
     const asking = session.ask({ title: 'Owner', value: 'Ann' })
 
-    expect(session.view.value).toMatchObject({ typed: 'Ann', placeholder: 'Owner' })
-    expect(session.view.value?.groups[0]?.items.map((one) => one.title)).toStrictEqual([
-      'Owner: “Ann”',
-    ])
+    expect(session.view.value).toMatchObject({
+      typed: 'Ann',
+      placeholder: 'Owner',
+      groups: [],
+    })
+    session.dismiss()
+    await asking
+  })
+
+  it('starts an empty line with no row either', async () => {
+    const session = createQuestionSession()
+    const asking = session.ask({ title: 'Owner' })
+
+    expect(session.view.value).toMatchObject({ typed: '', groups: [] })
     session.dismiss()
     await asking
   })
@@ -28,22 +46,21 @@ describe('a question session', () => {
     const asking = session.ask({ title: 'Owner', value: 'Ann' })
 
     session.view.value?.type('  Bob ')
-    session.view.value?.answer('answer')
+    session.view.value?.submit()
 
     await expect(asking).resolves.toBe('Bob')
-    expect(session.view.value).toBeUndefined()
   })
 
   it('accepts an empty line', async () => {
     const session = createQuestionSession()
     const asking = session.ask({ title: 'Owner' })
 
-    session.view.value?.answer('answer')
+    session.view.value?.submit()
 
     await expect(asking).resolves.toBe('')
   })
 
-  it('offers the options in order and filters them by what is typed', async () => {
+  it('offers the options in order, with no row to clear, and filters them by what is typed', async () => {
     const session = createQuestionSession()
     const choosing = session.choose({ title: 'Level', options: OPTIONS })
 
@@ -72,5 +89,54 @@ describe('a question session', () => {
     session.dismiss()
     await expect(second).resolves.toBeUndefined()
     expect(session.view.value).toBeUndefined()
+  })
+
+  it('gives each question a step of its own', async () => {
+    const session = createQuestionSession()
+    const first = session.ask({ title: 'Owner' })
+    const firstStep = session.view.value?.step
+    const second = session.ask({ title: 'Client' })
+
+    expect(session.view.value?.step).not.toBe(firstStep)
+    session.dismiss()
+    await Promise.all([first, second])
+  })
+
+  describe('between two questions', () => {
+    it('keeps the palette up until the next question arrives', async () => {
+      const session = createQuestionSession()
+      const first = session.ask({ title: 'Owner' })
+      session.view.value?.submit()
+      await first
+
+      expect(session.view.value).toBeDefined()
+      const second = session.ask({ title: 'Client' })
+      vi.runAllTimers()
+
+      expect(session.view.value?.placeholder).toBe('Client')
+      session.dismiss()
+      await second
+    })
+
+    it('closes the palette once no question follows', async () => {
+      const session = createQuestionSession()
+      const asking = session.ask({ title: 'Owner' })
+      session.view.value?.submit()
+      await asking
+
+      vi.runAllTimers()
+
+      expect(session.view.value).toBeUndefined()
+    })
+
+    it('answers a question once', async () => {
+      const session = createQuestionSession()
+      const asking = session.ask({ title: 'Owner', value: 'Ann' })
+      session.view.value?.submit()
+      session.view.value?.type('Bob')
+      session.view.value?.submit()
+
+      await expect(asking).resolves.toBe('Ann')
+    })
   })
 })

@@ -441,3 +441,33 @@ describe('a question of a plugin', () => {
     await expect(asking).resolves.toBeUndefined()
   })
 })
+
+describe('a line of text asked by a plugin', () => {
+  it('starts with the default typed, the question as placeholder, and no row', async () => {
+    const { field, picker } = await mountField({}, '')
+    const asking = picker.ask({ title: 'Kickoff · Name', value: 'Meeting 2' })
+    await flushPromises()
+
+    const palette = field.findComponent(Palette)
+    expect(palette.props()).toMatchObject({
+      modelValue: 'Meeting 2',
+      placeholder: 'Kickoff · Name',
+      groups: [],
+    })
+
+    picker.dismiss()
+    await asking
+  })
+
+  it('answers with the text typed when the palette submits', async () => {
+    const { field, picker } = await mountField({}, '')
+    const asking = picker.ask({ title: 'Kickoff · Name', value: 'Meeting' })
+    await flushPromises()
+
+    const palette = field.findComponent(Palette)
+    palette.vm.$emit('update:modelValue', 'Retro')
+    palette.vm.$emit('submit', 'Retro')
+
+    await expect(asking).resolves.toBe('Retro')
+  })
+})

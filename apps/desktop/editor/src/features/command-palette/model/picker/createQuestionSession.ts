@@ -7,14 +7,14 @@ import type { PaletteGroup } from '@numen/workbench'
 import type { AskOptions, ChooseOptions, PickerHost } from '@numen/plugin-loader'
 import { PALETTE_WORDS } from '../../words'
 
-const ANSWER = 'answer'
-
 interface QuestionView {
+  readonly step: string
   readonly typed: string
   readonly placeholder: string
   readonly groups: readonly PaletteGroup[]
   readonly type: (text: string) => void
   readonly answer: (id: string) => void
+  readonly submit: () => void
 }
 
 export interface QuestionSession {
@@ -31,38 +31,28 @@ type Question =
 export function createQuestionSession(): QuestionSession {
   const question = shallowRef<Question | undefined>(undefined)
   const typed = shallowRef('')
+  const step = shallowRef('')
   let settle: ((value: string | undefined) => void) | undefined
+  let isAnswered = false
+  let count = 0
 
   const finish = (value: string | undefined): void => {
     question.value = undefined
     typed.value = ''
+    isAnswered = false
     settle?.(value)
     settle = undefined
   }
 
   const open = (next: Question, text: string): Promise<string | undefined> => {
     finish(undefined)
+    count += 1
+    step.value = `question-${count}`
     question.value = next
     typed.value = text
     return new Promise((resolve) => {
       settle = resolve
     })
-  }
-
-  const getAskGroup = (options: AskOptions): PaletteGroup => {
-    const value = typed.value.trim()
-    const title = options.title
-    return {
-      id: 'question',
-      title,
-      items: [
-        {
-          id: ANSWER,
-          title: value ? `${title}: “${value}”` : `${PALETTE_WORDS.leavesOut} ${title}`,
-          actions: [{ id: ANSWER, text: value ? PALETTE_WORDS.givesIt : PALETTE_WORDS.leavesOut }],
-        },
-      ],
-    }
   }
 
   const getChooseGroup = (options: ChooseOptions): PaletteGroup => {
@@ -85,23 +75,35 @@ export function createQuestionSession(): QuestionSession {
     typed.value = text
   }
 
-  const answer = (id: string): void => {
-    const current = question.value
-    if (!current) return
-    finish(current.kind === 'ask' ? typed.value.trim() : id)
+  /**
+   * The answer settles at once; the palette stays up for a turn of the clock so that a question
+   * asked right after it replaces this one without the palette closing and opening again.
+   */
+  const reply = (value: string): void => {
+    if (!question.value || isAnswered) return
+    isAnswered = true
+    settle?.(value)
+    settle = undefined
+    setTimeout(() => {
+      if (isAnswered) finish(undefined)
+    }, 0)
   }
 
   const view = computed<QuestionView | undefined>(() => {
     const current = question.value
     if (!current) return undefined
     return {
+      step: step.value,
       typed: typed.value,
       placeholder: current.options.title,
-      groups: [
-        current.kind === 'ask' ? getAskGroup(current.options) : getChooseGroup(current.options),
-      ],
+      groups: current.kind === 'ask' ? [] : [getChooseGroup(current.options)],
       type,
-      answer,
+      answer: (id) => {
+        if (current.kind === 'choose') reply(id)
+      },
+      submit: () => {
+        if (current.kind === 'ask') reply(typed.value.trim())
+      },
     }
   })
 
