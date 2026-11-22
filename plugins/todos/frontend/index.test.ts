@@ -114,6 +114,56 @@ describe('the todos frontend', () => {
     expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 6 })
   })
 
+  const clickTask = async (
+    fake: ReturnType<typeof setup>['fake'],
+    context: { getRegisteredSlotViews: () => { component: unknown }[] },
+  ) => {
+    fake.push({ revision: 1, isReady: true })
+    await settle()
+    view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
+    await view.find('button').trigger('click')
+    await settle()
+    await view
+      .findAll('li button')
+      .find((one) => one.text() === 'fix the tap')
+      ?.trigger('click')
+    await settle()
+  }
+
+  it('opens on the line the note holds the task on now, after reading the note again', async () => {
+    const { context, fake, open } = setup()
+    const tap = (line: number) => task({ path: 'Projects/Home.md', line, text: 'fix the tap' })
+    fake.push({ revision: 1, isReady: true })
+    await settle()
+    view = mount(context.getRegisteredSlotViews()[0]?.component as never, {
+      attachTo: document.body,
+    })
+    await view.find('button').trigger('click')
+    await settle()
+    fake.setTasks({ any: { tasks: [tap(2), tap(11), tap(40)], total: 3, revision: 2 } })
+    await view
+      .findAll('li button')
+      .find((one) => one.text() === 'fix the tap')
+      ?.trigger('click')
+    await settle()
+
+    expect(fake.calls.refreshIndex).toContainEqual({ paths: ['Projects/Home.md'], renamed: [] })
+    expect(fake.calls.listTasks.at(-1)?.filter.path).toBe('Projects/Home.md')
+    expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 10 })
+  })
+
+  it('opens on the stored line where the note cannot be read again', async () => {
+    const { context, fake, open } = setup()
+    fake.api.refreshIndex = async () => {
+      throw new Error('gone')
+    }
+    await clickTask(fake, context)
+
+    expect(open).toHaveBeenCalledWith('Projects/Home.md', { line: 6 })
+  })
+
   it('ticks a task in the popover and reads the counts again when the backend reports the change', async () => {
     const { context, fake } = setup()
     fake.push({ revision: 1, isReady: true })

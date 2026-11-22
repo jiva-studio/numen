@@ -20,7 +20,7 @@ const props = defineProps<{
 
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
-  (event: 'open', target: { path: string; line: number }): void
+  (event: 'open', target: { path: string; line: number; raw: string }): void
   (event: 'showError', message: string): void
 }>()
 
@@ -107,7 +107,7 @@ function onTick(task: Task) {
             <button
               type="button"
               class="todos-status__text"
-              @click="emit('open', { path: task.path, line: task.line })"
+              @click="emit('open', { path: task.path, line: task.line, raw: task.raw })"
             >
               {{ task.text }}
             </button>

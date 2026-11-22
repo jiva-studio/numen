@@ -14,7 +14,9 @@ import { todosApi, type TodosApi } from './api/wire'
 import { createRefreshRelay } from './model/createRefreshRelay'
 import type { Timer } from './model/timer'
 import { createFieldCache } from './model/createFieldCache'
+import { freshTaskLine } from './model/freshTaskLine'
 import { useTaskFeed, type TaskFeed } from './model/useTaskFeed'
+import type { Filter } from './types'
 import { TodosStatus } from './status'
 import { createTaskEditorExtension, TASKS_EXTENSION } from './editor'
 
@@ -35,6 +37,32 @@ const browserParts: TodosParts = {
   },
 }
 
+/** The line the note holds the task on now; the stored line where the note cannot be read again. */
+async function currentLine(
+  api: TodosApi,
+  today: string,
+  target: { path: string; line: number; raw: string },
+): Promise<number> {
+  try {
+    await api.refreshIndex([target.path], [])
+    const filter: Filter = {
+      status: ['open', 'done', 'other'],
+      due: 'any',
+      from: '',
+      to: '',
+      projects: [],
+      contexts: [],
+      priorities: [],
+      path: target.path,
+      text: '',
+    }
+    const result = await api.listTasks(today, filter, 2000)
+    return result.ok ? freshTaskLine(result.value.tasks, target) : target.line
+  } catch {
+    return target.line
+  }
+}
+
 function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost) {
   return defineComponent({
     name: 'TodosView',
@@ -43,8 +71,10 @@ function createTodosView(feed: TaskFeed, api: TodosApi, workspace: WorkspaceHost
         summary: feed.summary.value,
         api,
         getToday: () => workspace.window.getToday(),
-        onOpen: (target: { path: string; line: number }) =>
-          workspace.files.open(target.path, { line: target.line - 1 }),
+        onOpen: async (target: { path: string; line: number; raw: string }) => {
+          const line = await currentLine(api, workspace.window.getToday(), target)
+          return workspace.files.open(target.path, { line: line - 1 })
+        },
         onShowError: (message: string) => workspace.messages.showError(message),
       }),
   })
