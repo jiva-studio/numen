@@ -7,7 +7,7 @@
  * everywhere else.
  */
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
-import type { ErrorCode } from './errorCode'
+import type { ErrorCode } from '@numen/result'
 
 /**
  * The two first parts are the file as `<size>:<version>:<hash> <mtime>`: a path holds spaces, and everything

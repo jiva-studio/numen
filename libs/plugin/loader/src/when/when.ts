@@ -15,14 +15,8 @@ import {
   CelScalar,
   type CelType,
 } from '@bufbuild/cel'
-import {
-  asFailure,
-  asValue,
-  WHEN_VARIABLES,
-  type JsonObject,
-  type JsonValue,
-  type Result,
-} from '@numen/plugin-sdk'
+import { WHEN_VARIABLES, type JsonObject, type JsonValue } from '@numen/plugin-sdk'
+import { asFailure, asValue, type Result } from '@numen/result'
 
 /** The settings by their dotted keys, nested: config.editor.lineNumbers reads `{ editor: { lineNumbers } }`. */
 export type WhenSettings = JsonObject

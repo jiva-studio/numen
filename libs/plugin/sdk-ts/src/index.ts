@@ -186,15 +186,12 @@ export type {
 } from './editorExtensions'
 export { createApi, UNAVAILABLE } from './api'
 export type { Api, ApiError } from './api'
-export { asFailure, asValue } from './result'
-export type { Result } from './result'
+export { asFailure, asValue, formatErrorMessage, type ErrorCode, type Result } from '@numen/result'
 export {
-  formatErrorMessage,
   formatFingerprint,
   getAssetUrl,
   getBytesQuery,
   getRelationErrorWords,
-  type ErrorCode,
 } from './errors'
 export { isWebAddress } from './webAddress'
 export { resolveAddress, type AddressSource } from './media'

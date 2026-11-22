@@ -38,6 +38,14 @@ Imports nothing of this repository. Declared only by `@numen/plugin-sdk` and `@n
 
 Test: it is data that crosses the wire between Go and TypeScript. One service holds one subject, named in one word; a method is a verb and a noun (`GetSettings`, `ListReviewDays`); a reference field is named after the message it points at; an enum's zero value is documented. Generated code is never edited; `make generate-check` fails on a stale tree.
 
+## `@numen/result` (`libs/shared/result`)
+
+Holds `Result` with `asValue` and `asFailure`, the `ErrorCode` of a vault operation, `ReportedError` and the words of an error (`formatErrorMessage`, `formatErrorCodeMessage`).
+
+Imports nothing: not this repository, not Vue, not the transport. A connection fault is read by its shape, because each package holds its own copy of the transport. Imported by `@numen/core-client`, `@numen/plugin-sdk`, `@numen/plugin-loader` and the windows. A plugin takes `Result`, `asValue`, `asFailure`, `formatErrorMessage` and `ErrorCode` through the SDK, which exports them.
+
+Test: it is needed by more than one package, and it neither touches the wire nor the schema.
+
 ## `@numen/plugin-manager` (`libs/plugin/manager`)
 
 Holds the plugin list, the plugin page and the settings card, their view-model types (`PluginInfo`, `PluginListing`, `ManagedPlugin`), the query parser and filter, the plugin state words, and a `testing` entry with listings.

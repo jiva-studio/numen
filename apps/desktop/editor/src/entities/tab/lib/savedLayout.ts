@@ -1,6 +1,6 @@
 import { paneById, type Workspace } from '@numen/workbench'
 import type { JsonObject, JsonValue } from '@/shared/api/json'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 
 const isObject = (value: JsonValue | undefined): value is JsonObject =>
   typeof value === 'object' && value !== null && !Array.isArray(value)

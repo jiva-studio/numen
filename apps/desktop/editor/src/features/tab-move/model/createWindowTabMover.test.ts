@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ReportedError } from '@/shared/api/errors'
+import { ReportedError } from '@numen/result'
 import { TAB_MOVE_ERROR_CODE } from '@numen/core-client'
 import type { CoreAnswers } from '@numen/core-client/testing'
 import type { AnyTabKind } from '@/entities/tab'

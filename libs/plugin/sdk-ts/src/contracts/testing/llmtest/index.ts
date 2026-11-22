@@ -5,7 +5,7 @@
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import { RerankRequestSchema, RerankResultSchema, type RerankRequest } from '@numen/rerank'
 import type { ConnectionCallOptions, ConnectionError, ConnectionHost } from '../../../connections'
-import type { Result } from '../../../result'
+import type { Result } from '@numen/result'
 import {
   ChatFinishSchema,
   ChatFrameSchema,

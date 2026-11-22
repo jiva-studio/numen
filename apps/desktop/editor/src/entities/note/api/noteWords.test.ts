@@ -1,15 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
-import {
-  NOTE_ERROR_CODE,
-  NOTE_LINK_DIRECTION,
-  NOTE_MARKER,
-  NOTE_RELATION,
-  NOTE_ROLE,
-  NoteGraphSchema,
-  asFailure,
-  asValue,
-} from '@numen/core-client'
+import { NOTE_ERROR_CODE, NOTE_LINK_DIRECTION, NOTE_MARKER, NOTE_RELATION, NOTE_ROLE, NoteGraphSchema } from '@numen/core-client'
+import { asFailure, asValue } from '@numen/result'
 import { mapNoteGraph, mapNoteResult, mapWriteResult } from './noteWords'
 
 const file = { path: 'Note.md', size: 12n, mtime: 34n }

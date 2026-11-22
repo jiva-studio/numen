@@ -11,8 +11,7 @@ import {
   type CatalogEntry as CatalogEntryMessage,
   type CatalogSourceError as CatalogSourceErrorMessage,
 } from '@numen/protocol'
-import { formatErrorMessage } from './errors'
-import { asFailure, asValue, type Result } from './result'
+import { asFailure, asValue, formatErrorMessage, type Result } from '@numen/result'
 
 /** One plugin as the catalog knows it. */
 export type CatalogEntry = CatalogEntryMessage

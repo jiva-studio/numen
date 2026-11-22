@@ -1,10 +1,11 @@
 ---
 name: nm-place-library
-description: Decides which library a piece of shared frontend or protocol code belongs to (`@numen/ui`, `@numen/workbench`, `@numen/core-client`, `@numen/protocol`, `@numen/plugin-manager`, `@numen/plugin-loader`, `@numen/plugin-sdk`), or whether it stays in a window or a plugin, and states how a library and a component in it are shaped. Load it before adding or moving a component, composable, style token, wire type, service client, view-model or helper under `libs/**`, or when a window or plugin needs code that another window or plugin also needs. Trigger with "/nm-place-library", "where does this go", or "which library".
+description: Decides which library a piece of shared frontend or protocol code belongs to (`@numen/ui`, `@numen/workbench`, `@numen/core-client`, `@numen/protocol`, `@numen/result`, `@numen/plugin-manager`, `@numen/plugin-loader`, `@numen/plugin-sdk`), or whether it stays in a window or a plugin, and states how a library and a component in it are shaped. Load it before adding or moving a component, composable, style token, wire type, service client, view-model or helper under `libs/**`, or when a window or plugin needs code that another window or plugin also needs. Trigger with "/nm-place-library", "where does this go", or "which library".
 paths:
   - libs/ui/**
   - libs/core/client/**
   - libs/shared/protocol/**
+  - libs/shared/result/**
   - libs/plugin/manager/**
   - libs/plugin/loader/**
   - libs/plugin/sdk-ts/**
@@ -46,6 +47,7 @@ An arrow is a permitted import; the package matrix (`packages` in `tools/checks/
 | `@numen/workbench` (`libs/ui/workbench`) | The chrome every desktop window shares: the panes and tabs, the command palette, the notices, the window frame. Built from `@numen/ui` alone; it may hold domain words that every desktop window shares (the welcome page and its vault rows), and its frame takes platform queries and window controls from the application. The plugin loader adapts the desktop shell to those controls. |
 | `@numen/core-client` (`libs/core/client`) | The first-party client of the core: service clients, transport, enum codes, error words, the manifest reader, the catalog client. Private. |
 | `@numen/protocol` (`libs/shared/protocol`) | The `.proto` schema, and the Go and TypeScript generated from it. |
+| `@numen/result` (`libs/shared/result`) | `Result`, the error codes of a vault operation and the words of an error. Depends on nothing; the one copy every package takes. |
 | `@numen/plugin-manager` (`libs/plugin/manager`) | The plugin list and the plugin page, over view-model types it defines; data in by props, answers out by events. |
 | `@numen/plugin-loader` (`libs/plugin/loader`) | The loader of plugin frontends and the host side of the plugin contract, over the core client. |
 | `@numen/plugin-sdk` (`libs/plugin/sdk-ts`) | What a plugin frontend is built from. Holds only what at least one plugin imports. |

@@ -7,7 +7,7 @@ import { NOTE_ERROR_CODE, parseFingerprint, type NoteErrorCodeValue } from '@num
 import type { CoreAnswers } from '@numen/core-client/testing'
 import { formatFingerprint } from '@numen/plugin-loader'
 import { createNoteApi, type NoteApi } from '@/entities/note'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import { createAnsweredClients } from './coreAnswers'
 
 /** What a read or a write of a note returned: its prose and the file it is in, or why it is not. */

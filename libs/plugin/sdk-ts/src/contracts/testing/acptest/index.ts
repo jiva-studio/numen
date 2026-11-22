@@ -4,7 +4,7 @@
  */
 import { create, fromBinary, toBinary, type MessageInitShape } from '@bufbuild/protobuf'
 import type { ConnectionCallOptions, ConnectionError, ConnectionHost } from '../../../connections'
-import type { Result } from '../../../result'
+import type { Result } from '@numen/result'
 import {
   OPERATION_TASK,
   TaskDoneSchema,

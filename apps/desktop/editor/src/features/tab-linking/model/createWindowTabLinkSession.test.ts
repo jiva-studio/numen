@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ReportedError } from '@/shared/api/errors'
+import { ReportedError } from '@numen/result'
 import { nextTick } from 'vue'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'

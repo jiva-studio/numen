@@ -15,7 +15,8 @@ import type {
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { JsonValue } from '@/shared/api/json'
 import type { InstallationConnections } from '../../../types'
-import { asFailure, asValue, createInstallation } from '@/pages/settings/testing/installation'
+import { createInstallation } from '@/pages/settings/testing/installation'
+import { asFailure, asValue } from '@numen/result'
 import { click, dispose, findButton, findButtons, root } from '@/testing/dom'
 import ConnectionRows from './ConnectionRows.vue'
 

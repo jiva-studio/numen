@@ -1,6 +1,5 @@
-import type { Result } from '@/shared/lib/result'
+import type { ErrorCode, Result } from '@numen/result'
 import type { NoteGraph } from '@numen/plugin-loader'
-import type { ErrorCode } from '@/shared/api/errors'
 import type { TextRange } from '@/shared/lib/textRange'
 import type { MoveResult } from '@/shared/model/fileTypes'
 

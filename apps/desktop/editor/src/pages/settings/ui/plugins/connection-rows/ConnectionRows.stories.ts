@@ -17,7 +17,8 @@ import {
 } from '@/entities/connection'
 import type { JsonValue } from '@/shared/api/json'
 import type { PluginSettingInfo } from '@/entities/settings'
-import { asValue, createInstallation } from '@/pages/settings/testing/installation'
+import { createInstallation } from '@/pages/settings/testing/installation'
+import { asValue } from '@numen/result'
 import ConnectionRows from './ConnectionRows.vue'
 
 const rowField = (key: string, title: string, overrides: Partial<ConnectionFieldInfo> = {}) => ({

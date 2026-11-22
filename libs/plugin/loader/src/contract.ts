@@ -46,7 +46,6 @@ export type {
   ConnectionSide,
   Disposable,
   EditorSettings,
-  ErrorCode,
   FileBuffers,
   FileSelectEvent,
   UnsavedBuffer,

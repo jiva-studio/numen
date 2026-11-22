@@ -3,15 +3,10 @@
  * operations on a plugin that belong to its page. Each answer is mapped into the types of this
  * entity.
  */
-import {
-  PLUGIN_CONTRIBUTION_KIND,
-  asFailure,
-  asValue,
-  type PluginContributionKindValue,
-} from '@numen/core-client'
+import { PLUGIN_CONTRIBUTION_KIND, type PluginContributionKindValue } from '@numen/core-client'
+import { asFailure, asValue, type Result } from '@numen/result'
 import type { WindowClients } from '@/shared/api/clients'
 import type { JsonValue } from '@/shared/api/json'
-import type { Result } from '@/shared/lib/result'
 import type {
   Configuration,
   PluginContribution,

@@ -7,7 +7,7 @@ import type {
   RowDraft,
   RowOption,
 } from '@/entities/connection'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import type { SelectChoice } from '../../../types'
 
 /*

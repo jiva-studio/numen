@@ -6,7 +6,7 @@ import { win } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
 import { wait as waitMs } from '@/shared/model/wait'
 import { focusWindow } from '@/entities/window'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import {
   formatSavedState,
   parseSavedTab,

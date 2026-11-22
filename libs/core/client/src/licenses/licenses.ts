@@ -9,7 +9,7 @@ import {
   type LicenseInfo as ProtoLicenseInfo,
   type LicenseService,
 } from '@numen/protocol'
-import { asFailure, asValue, type Result } from '../result'
+import { asFailure, asValue, type Result } from '@numen/result'
 
 /** The state of a license on this machine. */
 type LicenseStatus = 'inactive' | 'active' | 'expired' | 'unverified'

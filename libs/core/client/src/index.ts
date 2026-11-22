@@ -20,14 +20,10 @@ export * from './health'
 export * from './processes'
 export * from './logs'
 export {
-  formatErrorCodeMessage,
-  formatErrorMessage,
-  ReportedError,
   findErrorCode,
   isStaleAnswer,
   parseFingerprint,
   ERRORS,
   getKnownErrorCode,
 } from './errors'
-export { asFailure, asValue, type Result } from './result'
 export { createFollower } from './stream'

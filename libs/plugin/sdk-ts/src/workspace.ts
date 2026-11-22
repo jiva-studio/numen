@@ -2,8 +2,7 @@ import type { Component, Ref } from 'vue'
 import type { JsonValue, TextRange } from './types'
 import type { Selector } from './texts'
 import type { Severity } from './notices'
-import type { ErrorCode } from './errors'
-import type { Result } from './result'
+import type { ErrorCode, Result } from '@numen/result'
 
 // NoteRef is one note of the vault: where it is filed, and what it is called.
 export interface NoteRef {

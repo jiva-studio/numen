@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { create, fromBinary, toBinary } from '@bufbuild/protobuf'
 import type { ConnectionCallOptions, ConnectionError, ConnectionHost } from '../../connections'
-import type { Result } from '../../result'
+import type { Result } from '@numen/result'
 import {
   chat,
   ChatFinishSchema,

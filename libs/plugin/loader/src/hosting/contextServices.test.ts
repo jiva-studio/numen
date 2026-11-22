@@ -3,17 +3,8 @@
  * handed: the reads need `vault:read`, the writes need `vault:write`.
  */
 import { describe, expect, it, vi } from 'vitest'
-import {
-  asValue,
-  isUnsavedBuffersError,
-  UnsavedBuffersError,
-  type BufferHost,
-  type HostServices,
-  type VaultFiles,
-  type VaultNotes,
-  type VaultRelations,
-  type WorkspaceHost,
-} from '@numen/plugin-sdk'
+import { isUnsavedBuffersError, UnsavedBuffersError, type BufferHost, type HostServices, type VaultFiles, type VaultNotes, type VaultRelations, type WorkspaceHost } from '@numen/plugin-sdk'
+import { asValue } from '@numen/result'
 import { createMockCommandsHost } from '@numen/plugin-sdk/testing'
 import { createPluginParts } from './context'
 import { disposeSubscriptions } from './guards/subscriptions'

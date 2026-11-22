@@ -3,7 +3,8 @@
  * wire is a stand-in for `fetch`, which answers in the protocol's JSON encoding.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { NOTE_ERROR_CODE, createBearerTransport, formatErrorCodeMessage } from '@numen/core-client'
+import { NOTE_ERROR_CODE, createBearerTransport } from '@numen/core-client'
+import { formatErrorCodeMessage } from '@numen/result'
 import { createNoteApi } from './notes'
 
 /** The file a note was read from, as the wire writes it. */

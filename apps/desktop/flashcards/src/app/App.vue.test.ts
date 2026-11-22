@@ -1,7 +1,8 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
+import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
+import { formatErrorMessage } from '@numen/result'
 import { createCoreHandlerTransport } from '@numen/core-client/testing'
 import {
   VAULT_SUMMARY,

@@ -1,35 +1,16 @@
 import { runInNewContext } from 'node:vm'
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import type { ErrorCode as ProtoErrorCode } from '@numen/protocol'
-import { ErrorCodeSchema } from '@numen/protocol'
 
-import { formatErrorCodeMessage, formatErrorMessage } from './error'
+import { ReportedError, formatErrorCodeMessage, formatErrorMessage } from './error'
 
 /** Past every error code the schema names today. */
-const UNNAMED_CODE = 999 as ProtoErrorCode
+const UNNAMED_CODE = 999
 
 /** Past every code connect's own enum names today. */
 const UNNAMED_CONNECT_CODE = 999 as Code
 
 describe('an error code', () => {
-  it.each(ErrorCodeSchema.values.map((value) => [value.name, value.number] as const))(
-    'has words of its own for %s',
-    (name, number) => {
-      expect(
-        formatErrorCodeMessage(number as ProtoErrorCode),
-        `${name} is drawn as nothing`,
-      ).toMatch(/\S/)
-    },
-  )
-
-  it('says none of them the same way as another', () => {
-    const formatted = ErrorCodeSchema.values.map((value) =>
-      formatErrorCodeMessage(value.number as ProtoErrorCode),
-    )
-    expect(new Set(formatted).size).toBe(formatted.length)
-  })
-
   it('says nothing where there was no error', () => {
     expect(formatErrorCodeMessage(undefined)).toBe('')
   })
@@ -54,12 +35,14 @@ describe('a fault', () => {
   })
 
   it('says the sentence the application wrote, where it wrote one', () => {
-    const message = formatErrorMessage(new ConnectError('request error', Code.FailedPrecondition))
+    const message = formatErrorMessage(
+      new ConnectError('  request error  ', Code.FailedPrecondition),
+    )
     expect(message).toBe('request error')
   })
 
   it('falls back on the code where the application sent no sentence', () => {
-    expect(formatErrorMessage(new ConnectError('', Code.Unavailable))).toBe(
+    expect(formatErrorMessage(new ConnectError('   ', Code.Unavailable))).toBe(
       'Numen is busy; try again',
     )
   })
@@ -81,25 +64,37 @@ describe('a fault', () => {
     expect(formatErrorMessage(undefined)).toMatch(/\S/)
   })
 
-  it('shows the text of an error named ReportedError from the core-client copy', () => {
-    const reported = Object.assign(new Error('The deck sample.deck could not be read: no cards'), {
-      name: 'ReportedError',
-    })
-    expect(formatErrorMessage(reported)).toBe('The deck sample.deck could not be read: no cards')
+  it('shows the text of a ReportedError', () => {
+    expect(
+      formatErrorMessage(
+        new ReportedError('The plugin source local failed: duplicate plugin id "sample.notes"'),
+      ),
+    ).toBe('The plugin source local failed: duplicate plugin id "sample.notes"')
+  })
+
+  it('shows the text of an error named ReportedError from the plugin SDK copy', () => {
+    const reported = Object.assign(
+      new Error('The plugin source local failed: duplicate plugin id "sample.notes"'),
+      { name: 'ReportedError' },
+    )
+    expect(formatErrorMessage(reported)).toBe(
+      'The plugin source local failed: duplicate plugin id "sample.notes"',
+    )
   })
 
   it('shows the text of a ReportedError built in another realm', () => {
     const reported: unknown = runInNewContext(
       'const error = new Error(text); error.name = "ReportedError"; error',
-      { text: 'The deck sample.deck could not be read: no cards' },
+      { text: 'The plugin source local failed: duplicate plugin id "sample.notes"' },
     )
     expect(reported).not.toBeInstanceOf(Error)
-    expect(formatErrorMessage(reported)).toBe('The deck sample.deck could not be read: no cards')
+    expect(formatErrorMessage(reported)).toBe(
+      'The plugin source local failed: duplicate plugin id "sample.notes"',
+    )
   })
 
   it('shows the generic text for a ReportedError with blank text', () => {
-    const reported = Object.assign(new Error('  '), { name: 'ReportedError' })
-    expect(formatErrorMessage(reported)).toBe('Numen is not responding; retrying')
+    expect(formatErrorMessage(new ReportedError('  '))).toBe('Numen is not responding; retrying')
   })
 
   it('shows the generic text for null', () => {
@@ -153,5 +148,16 @@ describe('a fault', () => {
   it('says something plain where the code is empty here yet', () => {
     const message = formatErrorMessage(new ConnectError('', UNNAMED_CONNECT_CODE))
     expect(message).toMatch(/\S/)
+  })
+})
+
+describe('a fault from another copy of the transport', () => {
+  it('is read by its code and its own message', () => {
+    const fault = Object.assign(new Error('[unavailable] the vault is closing'), {
+      name: 'ConnectError',
+      code: Code.Unavailable,
+      rawMessage: 'the vault is closing',
+    })
+    expect(formatErrorMessage(fault)).toBe('the vault is closing')
   })
 })

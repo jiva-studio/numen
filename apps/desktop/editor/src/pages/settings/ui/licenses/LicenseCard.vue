@@ -6,7 +6,7 @@
  */
 import { Button } from '@numen/ui'
 import type { LicenseInfo } from '@/entities/license'
-import type { Result } from '@/shared/lib/result'
+import type { Result } from '@numen/result'
 import { useLicenseCard } from '../../model/useLicensesPage'
 import { WORDS as words } from '../../words'
 import LicenseBuyMenu from './LicenseBuyMenu.vue'

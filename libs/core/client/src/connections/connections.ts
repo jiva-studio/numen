@@ -12,7 +12,7 @@ import {
   type ProviderConnection,
   type ProviderConnectionType,
 } from '@numen/protocol'
-import { asFailure, asValue, type Result } from '../result'
+import { asFailure, asValue, type Result } from '@numen/result'
 
 /** A value a field of a connection holds. */
 export type ConnectionValue = string | number | boolean

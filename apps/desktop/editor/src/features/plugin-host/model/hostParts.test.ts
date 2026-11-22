@@ -1,6 +1,6 @@
 /** The small parts the window makes the host of its plugins from. */
 import { describe, expect, it, vi } from 'vitest'
-import { ReportedError } from '@/shared/api/errors'
+import { ReportedError } from '@numen/result'
 import { ref } from 'vue'
 import { SLOT, type ProcessHost } from '@numen/plugin-loader'
 import type { Command } from '@/entities/command'

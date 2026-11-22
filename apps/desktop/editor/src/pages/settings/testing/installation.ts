@@ -1,6 +1,6 @@
 import { fn } from 'storybook/test'
 import { ref } from 'vue'
-import type { Result } from '@/shared/lib/result'
+import { asFailure, asValue } from '@numen/result'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
 import type { Installation, SettingsTabState } from '../types'
 import type { CatalogEntry } from '@/entities/plugin'
@@ -49,12 +49,6 @@ const CONNECTIONS_KEYS = [
   'listRowOptions',
   'countNotes',
 ]
-
-/** A call that failed, with the reason. */
-export const asFailure = <E>(error: E): Result<never, E> => ({ ok: false, error })
-
-/** A call that returned a value. */
-export const asValue = <T>(value: T): Result<T, never> => ({ ok: true, value })
 
 const pickOf = (source: object, keys: readonly string[]): object =>
   Object.fromEntries(Object.entries(source).filter(([key]) => keys.includes(key)))

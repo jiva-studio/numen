@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { NOTE_ERROR_CODE } from '../clients'
-import { formatErrorCodeMessage } from './error'
+import { formatErrorCodeMessage } from '@numen/result'
 import { ERRORS, getKnownErrorCode } from './codes'
 
 describe('the words of an error code', () => {

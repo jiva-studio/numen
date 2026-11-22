@@ -3,7 +3,8 @@
  * that plugin.
  */
 import type { ConnectionCallClient, ConnectionCallFailure } from '@numen/core-client'
-import type { ConnectionError, ConnectionHost, Result } from '@numen/plugin-sdk'
+import type { ConnectionError, ConnectionHost } from '@numen/plugin-sdk'
+import type { Result } from '@numen/result'
 
 const readError = (failure: ConnectionCallFailure): ConnectionError => ({
   error: failure.errorCode,
