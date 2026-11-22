@@ -29,12 +29,24 @@ func convertError(err error, template string) error {
 		return server.NewAPIError(server.CodeAlreadyExists, err.Error())
 	case errors.Is(err, host.ErrNotExist):
 		return server.NewAPIError(server.CodeNotFound, "template not found: "+template)
-	case errors.Is(err, newnote.ErrNotATemplate), errors.Is(err, newnote.ErrInvalidFolder), errors.Is(err, engine.ErrNotAnOption), errors.Is(err, newnote.ErrInvalidNote), errors.Is(err, newnote.ErrTemplateChanged), errors.Is(err, newnote.ErrDifferentQuestions), errors.Is(err, host.ErrNoVault):
+	case isRefusedRequest(err):
 		return server.NewAPIError(server.CodeFailedPrecondition, err.Error())
 	case errors.Is(err, host.ErrPermissionDenied):
 		return server.NewAPIError(server.CodePermissionDenied, err.Error())
 	}
 	return fmt.Errorf("make a note from a template: %w", err)
+}
+
+func isRefusedRequest(err error) bool {
+	for _, refusal := range []error{
+		newnote.ErrNotATemplate, newnote.ErrInvalidFolder, engine.ErrNotAnOption, newnote.ErrInvalidNote,
+		newnote.ErrTemplateChanged, newnote.ErrDifferentQuestions, host.ErrNoVault,
+	} {
+		if errors.Is(err, refusal) {
+			return true
+		}
+	}
+	return false
 }
 
 func makeCreateNoteHandler(useCase newnote.CreateFromTemplate) func(context.Context, api.CreateNoteRequest) (api.CreateNoteResponse, error) {
