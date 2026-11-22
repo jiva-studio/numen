@@ -79,7 +79,6 @@ func (u *EnsureIndexed) Execute(ctx context.Context, v domain.Vault) (plugin.Ind
 	return plugin.IndexState{Status: plugin.Indexed}, nil
 }
 
-// isIndexed is false where the index cannot answer.
 func (u *EnsureIndexed) isIndexed(ctx context.Context, v domain.Vault) bool {
 	holds, err := u.indexed.Has(ctx, v.ID)
 	return err == nil && holds

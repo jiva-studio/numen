@@ -45,7 +45,6 @@ type Searches struct {
 	Policy  searchrun.Policy
 }
 
-// getTaskID is the id of the task that shows the search.
 func getTaskID(id searchrun.ID) string {
 	return "search " + string(id)
 }

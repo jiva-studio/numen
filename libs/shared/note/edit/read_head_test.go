@@ -25,7 +25,7 @@ func TestReadHead_ReadsTheCurrentFile(t *testing.T) {
 }
 
 // A note with no frontmatter is an ordinary note with an empty set of properties, never none.
-func TestReadHead_GivesANoteWithoutFrontmatterNoProperties(t *testing.T) {
+func TestReadHead_NoteWithoutFrontmatterHasNoProperties(t *testing.T) {
 	t.Parallel()
 	noteType, properties, err := edit.ReadHead(t.Context(), newFiles(map[string]string{"Harbor.md": "# Harbor\n"}), "Harbor.md")
 	if err != nil || noteType != domain.TypeNote || properties == nil || len(properties) != 0 {

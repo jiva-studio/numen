@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-// ErrNoName is a call that names no vault.
 var ErrNoName = errors.New("the call names no vault")
 
 // ErrUnknown is a name, a path or an identity no vault on the list answers to.

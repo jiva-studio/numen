@@ -45,8 +45,6 @@ func listNamedTypes(pkg *packages.Package) []*types.Named {
 	return found
 }
 
-// listUseCasesBehindInterfaces returns a finding for each interface of a use case package or a port package that a use case of
-// another package implements, and the number of interfaces and use case types read.
 func listUseCasesBehindInterfaces(pkgs []*packages.Package) (found []load.Finding, interfaces, useCases int) {
 	var useCaseTypes []*types.Named
 	type declared struct {
@@ -96,8 +94,6 @@ func getUseCaseMethodValue(info *types.Info, expr ast.Expr) *types.Func {
 	return method
 }
 
-// listFunctionSeams returns a finding for each method value of a use case that is stored in a field of a type, or passed to a function,
-// of another use case package, directly or through a local variable.
 func listFunctionSeams(pkgs []*packages.Package) (found []load.Finding, values int) {
 	for _, pkg := range pkgs {
 		for _, file := range pkg.Syntax {

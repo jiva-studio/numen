@@ -143,7 +143,6 @@ func newDependencyRegistry(clock machineport.Clock, observe func(manifest.Depend
 	}))
 }
 
-// getDependencyProvisioner returns what provisions the dependencies as the use cases read it, or nil when nothing does.
 func getDependencyProvisioner(services *supervision.Services) func() pluginport.DependencyRegistry {
 	return func() pluginport.DependencyRegistry {
 		if dependencies := services.GetDependencies(); dependencies != nil {

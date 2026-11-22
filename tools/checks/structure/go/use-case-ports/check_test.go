@@ -125,7 +125,7 @@ func Wire() window.Start {
 	}
 }
 
-func TestNoUseCaseIsBehindAnInterface(t *testing.T) {
+func TestNoUseCaseImplementsAnInterfaceOfAnotherPackage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("loads and type-checks the kernel")
 	}

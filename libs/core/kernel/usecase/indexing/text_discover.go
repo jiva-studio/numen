@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// sourceQueries are the queries on the sources the index records.
 type sourceQueries struct {
 	records SourceRecords
 	backlog sourceport.SourceBacklog

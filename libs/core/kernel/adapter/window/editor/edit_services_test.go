@@ -35,7 +35,6 @@ func newNoteMover(db *index.DB) note.Move {
 		Links: db.NoteQueries(), Names: db.NoteQueries(), Sources: db.Sources(), Now: testsupport.NewClock()})
 }
 
-// newNoteMoverFailingToIndex files the note and then fails to index it, as a step after the move does.
 func newNoteMoverFailingToIndex(db *index.DB) note.Move {
 	return note.NewMove(note.MoveDeps{Readers: vaultreader.Readers{}, Writers: newVaultWriters(),
 		Links: db.NoteQueries(), Names: db.NoteQueries(), Sources: db.Sources(), Now: testsupport.NewClock(),

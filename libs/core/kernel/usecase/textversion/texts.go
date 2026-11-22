@@ -24,8 +24,6 @@ type Texts struct {
 	live    live
 }
 
-// NewTexts returns the reader of the versions of vault files over the version stores, the file stores,
-// the vault readers and the clock.
 func NewTexts(
 	stores VersionStores, files TextFileStores, readers vaultport.VaultReaders, clock machineport.Clock,
 ) *Texts {
