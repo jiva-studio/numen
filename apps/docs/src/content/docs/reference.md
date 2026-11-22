@@ -264,7 +264,7 @@ The settings of the plugin Plex Graph.
 | `lineCurvature` | a number | how far lines bend; 0 is straight. From 0 to 1. |
 | `focusSize` | a number | how much larger the note in the middle is drawn: its pill, title and icon. From 1 to 2.5. |
 | `noteRoom` | a number | empty space around every note. From 0 to 40. |
-| `alignToGrid` | yes or no | give every note of a side the room of the one with the most over its pill and the most under it, so the pills of a row line up when notes carry views of different heights. Off: a note keeps only the room its own views need. |
+| `alignToGrid` | yes or no | give every note of a side the room over its pill of the note with the most, so the pills of a row line up when notes carry views of different heights. Off: a note keeps only the room its own views need. |
 | `animationLength` | a number | time to move to another note, in ms; 0 is instant. From 0 to 2000. |
 | `slots` | text | choose which entries of each slot are shown, and in what order. |
 
