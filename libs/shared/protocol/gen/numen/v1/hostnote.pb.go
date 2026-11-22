@@ -129,7 +129,7 @@ func (x *GetNoteRefsRequest) GetPaths() []string {
 
 type GetNoteRefsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Notes         []*HostNoteRef         `protobuf:"bytes,2,rep,name=notes,proto3" json:"notes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -165,11 +165,11 @@ func (*GetNoteRefsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostnote_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GetNoteRefsResponse) GetError() HostVaultErrorCode {
+func (x *GetNoteRefsResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetNoteRefsResponse) GetNotes() []*HostNoteRef {
@@ -225,7 +225,7 @@ func (x *GetNoteTypesRequest) GetPaths() []string {
 
 type GetNoteTypesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The type of each note, by its path. A path with no note is left out.
 	Types         map[string]string `protobuf:"bytes,2,rep,name=types,proto3" json:"types,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
@@ -262,11 +262,11 @@ func (*GetNoteTypesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostnote_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetNoteTypesResponse) GetError() HostVaultErrorCode {
+func (x *GetNoteTypesResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetNoteTypesResponse) GetTypes() map[string]string {
@@ -322,7 +322,7 @@ func (x *GetNamedPathsRequest) GetName() string {
 
 type GetNamedPathsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Paths         []string               `protobuf:"bytes,2,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -358,11 +358,11 @@ func (*GetNamedPathsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostnote_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *GetNamedPathsResponse) GetError() HostVaultErrorCode {
+func (x *GetNamedPathsResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetNamedPathsResponse) GetPaths() []string {
@@ -418,7 +418,7 @@ func (x *GetPathsOfTypeRequest) GetType() string {
 
 type GetPathsOfTypeResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Paths         []string               `protobuf:"bytes,2,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -454,11 +454,11 @@ func (*GetPathsOfTypeResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostnote_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *GetPathsOfTypeResponse) GetError() HostVaultErrorCode {
+func (x *GetPathsOfTypeResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetPathsOfTypeResponse) GetPaths() []string {
@@ -543,7 +543,7 @@ func (x *ReadFrontmatterRequest) GetPageToken() string {
 
 type ReadFrontmatterResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Notes []*NoteFrontmatter     `protobuf:"bytes,2,rep,name=notes,proto3" json:"notes,omitempty"`
 	// next_page_token reads the next page; empty after the last.
 	NextPageToken string `protobuf:"bytes,3,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
@@ -585,11 +585,11 @@ func (*ReadFrontmatterResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostnote_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *ReadFrontmatterResponse) GetError() HostVaultErrorCode {
+func (x *ReadFrontmatterResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ReadFrontmatterResponse) GetNotes() []*NoteFrontmatter {
@@ -664,7 +664,7 @@ type NoteFrontmatterWrite struct {
 	Values []byte `protobuf:"bytes,2,opt,name=values,proto3" json:"values,omitempty"`
 	// baseline is the file state the caller read; a note changed since is left
 	// unchanged (stale).
-	Baseline      *HostFileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
+	Baseline      *FileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -713,7 +713,7 @@ func (x *NoteFrontmatterWrite) GetValues() []byte {
 	return nil
 }
 
-func (x *NoteFrontmatterWrite) GetBaseline() *HostFileStat {
+func (x *NoteFrontmatterWrite) GetBaseline() *FileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -722,7 +722,7 @@ func (x *NoteFrontmatterWrite) GetBaseline() *HostFileStat {
 
 type WriteFrontmatterResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// One result per note, in the order of the request.
 	Results       []*NoteFrontmatterWritten `protobuf:"bytes,2,rep,name=results,proto3" json:"results,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -759,11 +759,11 @@ func (*WriteFrontmatterResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostnote_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *WriteFrontmatterResponse) GetError() HostVaultErrorCode {
+func (x *WriteFrontmatterResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *WriteFrontmatterResponse) GetResults() []*NoteFrontmatterWritten {
@@ -776,9 +776,9 @@ func (x *WriteFrontmatterResponse) GetResults() []*NoteFrontmatterWritten {
 type NoteFrontmatterWritten struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note after the write; unset when nothing was written.
-	Stat          *HostFileStat      `protobuf:"bytes,1,opt,name=stat,proto3" json:"stat,omitempty"`
-	Error         HostVaultErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
-	Detail        string             `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	Stat          *FileStat `protobuf:"bytes,1,opt,name=stat,proto3" json:"stat,omitempty"`
+	Error         ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
+	Detail        string    `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -813,18 +813,18 @@ func (*NoteFrontmatterWritten) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostnote_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *NoteFrontmatterWritten) GetStat() *HostFileStat {
+func (x *NoteFrontmatterWritten) GetStat() *FileStat {
 	if x != nil {
 		return x.Stat
 	}
 	return nil
 }
 
-func (x *NoteFrontmatterWritten) GetError() HostVaultErrorCode {
+func (x *NoteFrontmatterWritten) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *NoteFrontmatterWritten) GetDetail() string {
@@ -954,7 +954,7 @@ type HostNoteServiceRenameNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Why the note was not renamed: NOT_FOUND, NOT_A_NOTE, INVALID_NAME,
 	// ALREADY_EXISTS, CONFLICT and the other per-note codes.
-	Error HostVaultErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The path of the note after the rename.
 	Path  string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	Title string `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
@@ -998,11 +998,11 @@ func (*HostNoteServiceRenameNoteResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostnote_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *HostNoteServiceRenameNoteResponse) GetError() HostVaultErrorCode {
+func (x *HostNoteServiceRenameNoteResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostNoteServiceRenameNoteResponse) GetPath() string {
@@ -1100,7 +1100,7 @@ type HostNoteMove struct {
 	// From is always set; to only when the note moved.
 	Move *MoveResult `protobuf:"bytes,1,opt,name=move,proto3" json:"move,omitempty"`
 	// Why this note did not move.
-	Error HostVaultErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The core's error text where this note did not move, empty on success.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1144,11 +1144,11 @@ func (x *HostNoteMove) GetMove() *MoveResult {
 	return nil
 }
 
-func (x *HostNoteMove) GetError() HostVaultErrorCode {
+func (x *HostNoteMove) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostNoteMove) GetDetail() string {
@@ -1160,7 +1160,7 @@ func (x *HostNoteMove) GetDetail() string {
 
 type HostNoteServiceMoveNotesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// One per path, in the order of the request.
 	Moves         []*HostNoteMove `protobuf:"bytes,2,rep,name=moves,proto3" json:"moves,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1197,11 +1197,11 @@ func (*HostNoteServiceMoveNotesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostnote_proto_rawDescGZIP(), []int{20}
 }
 
-func (x *HostNoteServiceMoveNotesResponse) GetError() HostVaultErrorCode {
+func (x *HostNoteServiceMoveNotesResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostNoteServiceMoveNotesResponse) GetMoves() []*HostNoteMove {
@@ -1266,7 +1266,7 @@ type HostNoteRemoval struct {
 	BrokenLinks []string `protobuf:"bytes,3,rep,name=broken_links,json=brokenLinks,proto3" json:"broken_links,omitempty"`
 	// Why this note was not removed: NOT_FOUND, NOT_A_NOTE for a folder or a
 	// file that is not a note, or INTERNAL.
-	Error HostVaultErrorCode `protobuf:"varint,4,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,4,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The core's error text where this note was not removed, empty on success.
 	Detail        string `protobuf:"bytes,5,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1324,11 +1324,11 @@ func (x *HostNoteRemoval) GetBrokenLinks() []string {
 	return nil
 }
 
-func (x *HostNoteRemoval) GetError() HostVaultErrorCode {
+func (x *HostNoteRemoval) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostNoteRemoval) GetDetail() string {
@@ -1340,7 +1340,7 @@ func (x *HostNoteRemoval) GetDetail() string {
 
 type HostNoteServiceRemoveNotesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// One per path, in the order of the request.
 	Removals      []*HostNoteRemoval `protobuf:"bytes,2,rep,name=removals,proto3" json:"removals,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1377,11 +1377,11 @@ func (*HostNoteServiceRemoveNotesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostnote_proto_rawDescGZIP(), []int{23}
 }
 
-func (x *HostNoteServiceRemoveNotesResponse) GetError() HostVaultErrorCode {
+func (x *HostNoteServiceRemoveNotesResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostNoteServiceRemoveNotesResponse) GetRemovals() []*HostNoteRemoval {
@@ -1395,58 +1395,58 @@ var File_numen_v1_hostnote_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostnote_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/hostnote.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x17numen/v1/hostfile.proto\x1a\x18numen/v1/hostvault.proto\x1a\x13numen/v1/note.proto\"G\n" +
+	"\x17numen/v1/hostnote.proto\x12\bnumen.v1\x1a\x13numen/v1/file.proto\x1a\x17numen/v1/hostfile.proto\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\"G\n" +
 	"\vHostNoteRef\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x0e\n" +
 	"\x02id\x18\x03 \x01(\tR\x02id\"*\n" +
 	"\x12GetNoteRefsRequest\x12\x14\n" +
-	"\x05paths\x18\x01 \x03(\tR\x05paths\"v\n" +
-	"\x13GetNoteRefsResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12+\n" +
+	"\x05paths\x18\x01 \x03(\tR\x05paths\"m\n" +
+	"\x13GetNoteRefsResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12+\n" +
 	"\x05notes\x18\x02 \x03(\v2\x15.numen.v1.HostNoteRefR\x05notes\"+\n" +
 	"\x13GetNoteTypesRequest\x12\x14\n" +
-	"\x05paths\x18\x01 \x03(\tR\x05paths\"\xc5\x01\n" +
-	"\x14GetNoteTypesResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12?\n" +
+	"\x05paths\x18\x01 \x03(\tR\x05paths\"\xbc\x01\n" +
+	"\x14GetNoteTypesResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12?\n" +
 	"\x05types\x18\x02 \x03(\v2).numen.v1.GetNoteTypesResponse.TypesEntryR\x05types\x1a8\n" +
 	"\n" +
 	"TypesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"*\n" +
 	"\x14GetNamedPathsRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"a\n" +
-	"\x15GetNamedPathsResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x14\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"X\n" +
+	"\x15GetNamedPathsResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x14\n" +
 	"\x05paths\x18\x02 \x03(\tR\x05paths\"+\n" +
 	"\x15GetPathsOfTypeRequest\x12\x12\n" +
-	"\x04type\x18\x01 \x01(\tR\x04type\"b\n" +
-	"\x16GetPathsOfTypeResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x14\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\"Y\n" +
+	"\x16GetPathsOfTypeResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x14\n" +
 	"\x05paths\x18\x02 \x03(\tR\x05paths\"~\n" +
 	"\x16ReadFrontmatterRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x12\n" +
 	"\x04keys\x18\x02 \x03(\tR\x04keys\x12\x1b\n" +
 	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1d\n" +
 	"\n" +
-	"page_token\x18\x04 \x01(\tR\tpageToken\"\xda\x01\n" +
-	"\x17ReadFrontmatterResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12/\n" +
+	"page_token\x18\x04 \x01(\tR\tpageToken\"\xd1\x01\n" +
+	"\x17ReadFrontmatterResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12/\n" +
 	"\x05notes\x18\x02 \x03(\v2\x19.numen.v1.NoteFrontmatterR\x05notes\x12&\n" +
 	"\x0fnext_page_token\x18\x03 \x01(\tR\rnextPageToken\x122\n" +
 	"\x06cursor\x18\x04 \x01(\v2\x1a.numen.v1.FileChangeCursorR\x06cursor\"O\n" +
 	"\x17WriteFrontmatterRequest\x124\n" +
-	"\x05notes\x18\x01 \x03(\v2\x1e.numen.v1.NoteFrontmatterWriteR\x05notes\"v\n" +
+	"\x05notes\x18\x01 \x03(\v2\x1e.numen.v1.NoteFrontmatterWriteR\x05notes\"r\n" +
 	"\x14NoteFrontmatterWrite\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
-	"\x06values\x18\x02 \x01(\fR\x06values\x122\n" +
-	"\bbaseline\x18\x03 \x01(\v2\x16.numen.v1.HostFileStatR\bbaseline\"\x8a\x01\n" +
-	"\x18WriteFrontmatterResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12:\n" +
-	"\aresults\x18\x02 \x03(\v2 .numen.v1.NoteFrontmatterWrittenR\aresults\"\x90\x01\n" +
-	"\x16NoteFrontmatterWritten\x12*\n" +
-	"\x04stat\x18\x01 \x01(\v2\x16.numen.v1.HostFileStatR\x04stat\x122\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x16\n" +
+	"\x06values\x18\x02 \x01(\fR\x06values\x12.\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x12.numen.v1.FileStatR\bbaseline\"\x81\x01\n" +
+	"\x18WriteFrontmatterResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12:\n" +
+	"\aresults\x18\x02 \x03(\v2 .numen.v1.NoteFrontmatterWrittenR\aresults\"\x83\x01\n" +
+	"\x16NoteFrontmatterWritten\x12&\n" +
+	"\x04stat\x18\x01 \x01(\v2\x12.numen.v1.FileStatR\x04stat\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail\"Z\n" +
 	"\x0fNoteFrontmatter\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
@@ -1454,9 +1454,9 @@ const file_numen_v1_hostnote_proto_rawDesc = "" +
 	"\tsource_id\x18\x03 \x01(\x03R\bsourceId\"L\n" +
 	" HostNoteServiceRenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\x88\x02\n" +
-	"!HostNoteServiceRenameNoteResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x12\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xff\x01\n" +
+	"!HostNoteServiceRenameNoteResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x125\n" +
 	"\vname_source\x18\x04 \x01(\x0e2\x14.numen.v1.NameSourceR\n" +
@@ -1466,25 +1466,25 @@ const file_numen_v1_hostnote_proto_rawDesc = "" +
 	"\x05_move\"O\n" +
 	"\x1fHostNoteServiceMoveNotesRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
-	"\x06folder\x18\x02 \x01(\tR\x06folder\"\x84\x01\n" +
+	"\x06folder\x18\x02 \x01(\tR\x06folder\"{\n" +
 	"\fHostNoteMove\x12(\n" +
-	"\x04move\x18\x01 \x01(\v2\x14.numen.v1.MoveResultR\x04move\x122\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x84\x01\n" +
-	" HostNoteServiceMoveNotesResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12,\n" +
+	"\x04move\x18\x01 \x01(\v2\x14.numen.v1.MoveResultR\x04move\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"{\n" +
+	" HostNoteServiceMoveNotesResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12,\n" +
 	"\x05moves\x18\x02 \x03(\v2\x16.numen.v1.HostNoteMoveR\x05moves\"9\n" +
 	"!HostNoteServiceRemoveNotesRequest\x12\x14\n" +
-	"\x05paths\x18\x01 \x03(\tR\x05paths\"\xb3\x01\n" +
+	"\x05paths\x18\x01 \x03(\tR\x05paths\"\xaa\x01\n" +
 	"\x0fHostNoteRemoval\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1d\n" +
 	"\n" +
 	"trash_path\x18\x02 \x01(\tR\ttrashPath\x12!\n" +
-	"\fbroken_links\x18\x03 \x03(\tR\vbrokenLinks\x122\n" +
-	"\x05error\x18\x04 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x05 \x01(\tR\x06detail\"\x8f\x01\n" +
-	"\"HostNoteServiceRemoveNotesResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x125\n" +
+	"\fbroken_links\x18\x03 \x03(\tR\vbrokenLinks\x12)\n" +
+	"\x05error\x18\x04 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x05 \x01(\tR\x06detail\"\x86\x01\n" +
+	"\"HostNoteServiceRemoveNotesResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x125\n" +
 	"\bremovals\x18\x02 \x03(\v2\x19.numen.v1.HostNoteRemovalR\bremovals2\xbb\x06\n" +
 	"\x0fHostNoteService\x12J\n" +
 	"\vGetNoteRefs\x12\x1c.numen.v1.GetNoteRefsRequest\x1a\x1d.numen.v1.GetNoteRefsResponse\x12M\n" +
@@ -1537,37 +1537,37 @@ var file_numen_v1_hostnote_proto_goTypes = []any{
 	(*HostNoteRemoval)(nil),                    // 22: numen.v1.HostNoteRemoval
 	(*HostNoteServiceRemoveNotesResponse)(nil), // 23: numen.v1.HostNoteServiceRemoveNotesResponse
 	nil,                      // 24: numen.v1.GetNoteTypesResponse.TypesEntry
-	(HostVaultErrorCode)(0),  // 25: numen.v1.HostVaultErrorCode
+	(ErrorCode)(0),           // 25: numen.v1.ErrorCode
 	(*FileChangeCursor)(nil), // 26: numen.v1.FileChangeCursor
-	(*HostFileStat)(nil),     // 27: numen.v1.HostFileStat
+	(*FileStat)(nil),         // 27: numen.v1.FileStat
 	(NameSource)(0),          // 28: numen.v1.NameSource
 	(*MoveResult)(nil),       // 29: numen.v1.MoveResult
 }
 var file_numen_v1_hostnote_proto_depIdxs = []int32{
-	25, // 0: numen.v1.GetNoteRefsResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	25, // 0: numen.v1.GetNoteRefsResponse.error:type_name -> numen.v1.ErrorCode
 	0,  // 1: numen.v1.GetNoteRefsResponse.notes:type_name -> numen.v1.HostNoteRef
-	25, // 2: numen.v1.GetNoteTypesResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	25, // 2: numen.v1.GetNoteTypesResponse.error:type_name -> numen.v1.ErrorCode
 	24, // 3: numen.v1.GetNoteTypesResponse.types:type_name -> numen.v1.GetNoteTypesResponse.TypesEntry
-	25, // 4: numen.v1.GetNamedPathsResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	25, // 5: numen.v1.GetPathsOfTypeResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	25, // 6: numen.v1.ReadFrontmatterResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	25, // 4: numen.v1.GetNamedPathsResponse.error:type_name -> numen.v1.ErrorCode
+	25, // 5: numen.v1.GetPathsOfTypeResponse.error:type_name -> numen.v1.ErrorCode
+	25, // 6: numen.v1.ReadFrontmatterResponse.error:type_name -> numen.v1.ErrorCode
 	15, // 7: numen.v1.ReadFrontmatterResponse.notes:type_name -> numen.v1.NoteFrontmatter
 	26, // 8: numen.v1.ReadFrontmatterResponse.cursor:type_name -> numen.v1.FileChangeCursor
 	12, // 9: numen.v1.WriteFrontmatterRequest.notes:type_name -> numen.v1.NoteFrontmatterWrite
-	27, // 10: numen.v1.NoteFrontmatterWrite.baseline:type_name -> numen.v1.HostFileStat
-	25, // 11: numen.v1.WriteFrontmatterResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	27, // 10: numen.v1.NoteFrontmatterWrite.baseline:type_name -> numen.v1.FileStat
+	25, // 11: numen.v1.WriteFrontmatterResponse.error:type_name -> numen.v1.ErrorCode
 	14, // 12: numen.v1.WriteFrontmatterResponse.results:type_name -> numen.v1.NoteFrontmatterWritten
-	27, // 13: numen.v1.NoteFrontmatterWritten.stat:type_name -> numen.v1.HostFileStat
-	25, // 14: numen.v1.NoteFrontmatterWritten.error:type_name -> numen.v1.HostVaultErrorCode
-	25, // 15: numen.v1.HostNoteServiceRenameNoteResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	27, // 13: numen.v1.NoteFrontmatterWritten.stat:type_name -> numen.v1.FileStat
+	25, // 14: numen.v1.NoteFrontmatterWritten.error:type_name -> numen.v1.ErrorCode
+	25, // 15: numen.v1.HostNoteServiceRenameNoteResponse.error:type_name -> numen.v1.ErrorCode
 	28, // 16: numen.v1.HostNoteServiceRenameNoteResponse.name_source:type_name -> numen.v1.NameSource
 	29, // 17: numen.v1.HostNoteServiceRenameNoteResponse.move:type_name -> numen.v1.MoveResult
 	29, // 18: numen.v1.HostNoteMove.move:type_name -> numen.v1.MoveResult
-	25, // 19: numen.v1.HostNoteMove.error:type_name -> numen.v1.HostVaultErrorCode
-	25, // 20: numen.v1.HostNoteServiceMoveNotesResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	25, // 19: numen.v1.HostNoteMove.error:type_name -> numen.v1.ErrorCode
+	25, // 20: numen.v1.HostNoteServiceMoveNotesResponse.error:type_name -> numen.v1.ErrorCode
 	19, // 21: numen.v1.HostNoteServiceMoveNotesResponse.moves:type_name -> numen.v1.HostNoteMove
-	25, // 22: numen.v1.HostNoteRemoval.error:type_name -> numen.v1.HostVaultErrorCode
-	25, // 23: numen.v1.HostNoteServiceRemoveNotesResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	25, // 22: numen.v1.HostNoteRemoval.error:type_name -> numen.v1.ErrorCode
+	25, // 23: numen.v1.HostNoteServiceRemoveNotesResponse.error:type_name -> numen.v1.ErrorCode
 	22, // 24: numen.v1.HostNoteServiceRemoveNotesResponse.removals:type_name -> numen.v1.HostNoteRemoval
 	1,  // 25: numen.v1.HostNoteService.GetNoteRefs:input_type -> numen.v1.GetNoteRefsRequest
 	3,  // 26: numen.v1.HostNoteService.GetNoteTypes:input_type -> numen.v1.GetNoteTypesRequest
@@ -1601,8 +1601,8 @@ func file_numen_v1_hostnote_proto_init() {
 	}
 	file_numen_v1_file_proto_init()
 	file_numen_v1_hostfile_proto_init()
-	file_numen_v1_hostvault_proto_init()
 	file_numen_v1_note_proto_init()
+	file_numen_v1_shared_proto_init()
 	file_numen_v1_hostnote_proto_msgTypes[17].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

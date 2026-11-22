@@ -19,11 +19,11 @@ import (
 // answering is a host that serves a few calls and records the callers.
 type answering struct {
 	unimplementedHost
-	code         v1.HostVaultErrorCode
+	code         v1.ErrorCode
 	authHeader   string
 	unlocked     string
 	named        string
-	baselines    []*v1.HostFileStat
+	baselines    []*v1.FileStat
 	watchFailure error
 }
 
@@ -31,7 +31,7 @@ func (a *answering) StatFile(_ context.Context, req *connect.Request[v1.StatFile
 	a.authHeader = req.Header().Get("Authorization")
 	return connect.NewResponse(&v1.StatFileResponse{
 		Error: a.code,
-		Stat:  &v1.HostFileStat{Path: req.Msg.GetPath(), Size: 7, ModTime: 1_700_000_000_123_456_789, Hash: "ab12", Version: 9},
+		Stat:  &v1.FileStat{Path: req.Msg.GetPath(), Size: 7, ModTime: 1_700_000_000_123_456_789, Hash: "ab12", Version: 9},
 	}), nil
 }
 
@@ -103,14 +103,14 @@ func TestTheClientPresentsItsTokenAndReadsTheFingerprint(t *testing.T) {
 }
 
 func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
-	cases := map[v1.HostVaultErrorCode]error{
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT:       host.ErrNoVault,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:      host.ErrNotExist,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT:  host.ErrOutside,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:       host.ErrStale,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS: host.ErrAlreadyExists,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED:         host.ErrLockedByAnother,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:     host.ErrNotANote,
+	cases := map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_NO_VAULT:       host.ErrNoVault,
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND:      host.ErrNotExist,
+		v1.ErrorCode_ERROR_CODE_OUTSIDE_VAULT:  host.ErrOutside,
+		v1.ErrorCode_ERROR_CODE_CONFLICT:       host.ErrStale,
+		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS: host.ErrAlreadyExists,
+		v1.ErrorCode_ERROR_CODE_LOCKED:         host.ErrLockedByAnother,
+		v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:     host.ErrNotANote,
 	}
 	for code, want := range cases {
 		_, err := clientTo(t, &answering{code: code}).StatFile(t.Context(), "n.md")
@@ -121,12 +121,12 @@ func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
 }
 
 func TestAWriteSendsTheBaselineAndReportsStale(t *testing.T) {
-	a := &answering{code: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT}
+	a := &answering{code: v1.ErrorCode_ERROR_CODE_CONFLICT}
 	baseline := domain.FileStat{Path: "n.md", Size: 3, ModTime: time.Unix(5, 6)}
 
 	_, err := clientTo(t, a).Write(t.Context(), "n.md", []byte("abc"), baseline)
 
-	if !errors.Is(err, host.ErrStale) || len(a.baselines) != 1 || a.baselines[0].GetModTime() != baseline.ModTime.UnixNano() {
+	if !errors.Is(err, host.ErrStale) || len(a.baselines) != 1 || a.baselines[0].GetMtime() != baseline.ModTime.UnixNano() {
 		t.Errorf("got %v and %v", err, a.baselines)
 	}
 }

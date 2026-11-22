@@ -81,7 +81,7 @@ func (c *calls) selectVault(pluginID string, header http.Header) (string, *Acces
 
 func serve[Q, R any](
 	ctx context.Context, c *calls, req *connect.Request[Q], permission string,
-	withCode func(code v1.HostVaultErrorCode) *R, work func(access *Access) (*R, error),
+	withCode func(code v1.ErrorCode) *R, work func(access *Access) (*R, error),
 ) (*connect.Response[R], error) {
 	access, err := c.begin(req.Header(), permission)
 	if err != nil {

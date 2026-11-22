@@ -21,9 +21,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 )
 
-func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
+func answer(ctx context.Context, err error) (v1.ErrorCode, error) {
 	if err == nil {
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED, nil
+		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, nil
 	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
@@ -34,7 +34,7 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	return 0, connect.NewError(connect.CodeInternal, err)
 }
 
-func getErrorCode(err error) (v1.HostVaultErrorCode, bool) {
+func getErrorCode(err error) (v1.ErrorCode, bool) {
 	for _, entry := range getErrorEntries() {
 		if errors.Is(err, entry.err) {
 			return entry.code, true
@@ -43,71 +43,52 @@ func getErrorCode(err error) (v1.HostVaultErrorCode, bool) {
 	return 0, false
 }
 
-func getNoteErrorCode(err error) (v1.HostVaultErrorCode, bool) {
+func getNoteErrorCode(err error) (v1.ErrorCode, bool) {
 	if code, ok := getErrorCode(err); ok {
 		return code, true
 	}
-	noteCode, ok := wire.GetErrorCode(err)
-	if !ok {
-		return 0, false
-	}
-	code, ok := getNoteErrorCodes()[noteCode]
-	return code, ok
+	return wire.GetErrorCode(err)
 }
 
 // errorEntry is an error of the core and the code a vault call answers it with.
 type errorEntry struct {
 	err  error
-	code v1.HostVaultErrorCode
+	code v1.ErrorCode
 }
 
 func getErrorEntries() []errorEntry {
 	return []errorEntry{
-		{plugin.ErrNoVault, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT},
-		{vaultdomain.ErrOutside, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT},
-		{edit.ErrStale, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
-		{vaultdomain.ErrAlreadyExists, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
-		{vaultdomain.ErrLockedByAnother, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED},
-		{edit.ErrNotANote, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
-		{fs.ErrNotExist, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
-		{plugin.ErrNotText, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT},
+		{plugin.ErrNoVault, v1.ErrorCode_ERROR_CODE_NO_VAULT},
+		{vaultdomain.ErrOutside, v1.ErrorCode_ERROR_CODE_OUTSIDE_VAULT},
+		{edit.ErrStale, v1.ErrorCode_ERROR_CODE_CONFLICT},
+		{vaultdomain.ErrAlreadyExists, v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS},
+		{vaultdomain.ErrLockedByAnother, v1.ErrorCode_ERROR_CODE_LOCKED},
+		{edit.ErrNotANote, v1.ErrorCode_ERROR_CODE_NOT_A_NOTE},
+		{fs.ErrNotExist, v1.ErrorCode_ERROR_CODE_NOT_FOUND},
+		{plugin.ErrNotText, v1.ErrorCode_ERROR_CODE_NOT_TEXT},
 	}
 }
 
-func getNoteErrorCodes() map[v1.ErrorCode]v1.HostVaultErrorCode {
-	return map[v1.ErrorCode]v1.HostVaultErrorCode{
-		v1.ErrorCode_ERROR_CODE_NOT_FOUND:       v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND,
-		v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:      v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE,
-		v1.ErrorCode_ERROR_CODE_NOT_TEXT:        v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT,
-		v1.ErrorCode_ERROR_CODE_TOO_LARGE:       v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_TOO_LARGE,
-		v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE,
-		v1.ErrorCode_ERROR_CODE_UNREADABLE:      v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNREADABLE,
-		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS:  v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS,
-		v1.ErrorCode_ERROR_CODE_INVALID_NAME:    v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME,
-		v1.ErrorCode_ERROR_CODE_CONFLICT:        v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT,
-	}
-}
+const noVault = v1.ErrorCode_ERROR_CODE_NO_VAULT
 
-const noVault = v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT
-
-func writeFileStat(f domain.FileStat) *v1.HostFileStat {
-	return &v1.HostFileStat{
-		Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote,
+func writeFileStat(f domain.FileStat) *v1.FileStat {
+	return &v1.FileStat{
+		Path: f.Path, Size: f.Size, Mtime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote,
 		Hash: f.Hash, Version: f.Version,
 	}
 }
 
-func readFileStat(f *v1.HostFileStat) domain.FileStat {
+func readFileStat(f *v1.FileStat) domain.FileStat {
 	if f == nil {
 		return domain.FileStat{}
 	}
 	return domain.FileStat{
-		Path: f.GetPath(), Kind: readKind(f), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
+		Path: f.GetPath(), Kind: readKind(f), Size: f.GetSize(), ModTime: time.Unix(0, f.GetMtime()),
 		Hash: f.GetHash(), Version: f.GetVersion(),
 	}
 }
 
-func readKind(f *v1.HostFileStat) domain.SourceKind {
+func readKind(f *v1.FileStat) domain.SourceKind {
 	switch {
 	case f.GetIsNote():
 		return domain.KindNote
@@ -139,7 +120,7 @@ func (e *filesCalls) EnsureVaultIndexed(
 	ctx context.Context, req *connect.Request[v1.EnsureVaultIndexedRequest],
 ) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
 	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
-		func(code v1.HostVaultErrorCode) *v1.EnsureVaultIndexedResponse {
+		func(code v1.ErrorCode) *v1.EnsureVaultIndexedResponse {
 			return &v1.EnsureVaultIndexedResponse{Error: code}
 		},
 		func(vault *Access) (*v1.EnsureVaultIndexedResponse, error) {
@@ -164,7 +145,7 @@ func (e *filesCalls) StatFile(
 	ctx context.Context, req *connect.Request[v1.StatFileRequest],
 ) (*connect.Response[v1.StatFileResponse], error) {
 	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
-		func(code v1.HostVaultErrorCode) *v1.StatFileResponse { return &v1.StatFileResponse{Error: code} },
+		func(code v1.ErrorCode) *v1.StatFileResponse { return &v1.StatFileResponse{Error: code} },
 		func(vault *Access) (*v1.StatFileResponse, error) {
 			pos, err := vault.Files.StatFile(ctx, req.Msg.GetPath())
 			if err != nil {
@@ -178,7 +159,7 @@ func (e *filesCalls) ReadFile(
 	ctx context.Context, req *connect.Request[v1.ReadFileRequest],
 ) (*connect.Response[v1.ReadFileResponse], error) {
 	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
-		func(code v1.HostVaultErrorCode) *v1.ReadFileResponse { return &v1.ReadFileResponse{Error: code} },
+		func(code v1.ErrorCode) *v1.ReadFileResponse { return &v1.ReadFileResponse{Error: code} },
 		func(vault *Access) (*v1.ReadFileResponse, error) {
 			if req.Msg.Length != nil {
 				return serveFileRange(ctx, vault.Files, req.Msg)
@@ -195,7 +176,7 @@ func (e *filesCalls) WriteFile(
 	ctx context.Context, req *connect.Request[v1.WriteFileRequest],
 ) (*connect.Response[v1.WriteFileResponse], error) {
 	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
-		func(code v1.HostVaultErrorCode) *v1.WriteFileResponse { return &v1.WriteFileResponse{Error: code} },
+		func(code v1.ErrorCode) *v1.WriteFileResponse { return &v1.WriteFileResponse{Error: code} },
 		func(vault *Access) (*v1.WriteFileResponse, error) {
 			pos, err := vault.Writer.WriteFile(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFileStat(req.Msg.GetBaseline()))
 			if err != nil {
@@ -209,7 +190,7 @@ func (e *filesCalls) CreateFile(
 	ctx context.Context, req *connect.Request[v1.CreateFileRequest],
 ) (*connect.Response[v1.CreateFileResponse], error) {
 	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
-		func(code v1.HostVaultErrorCode) *v1.CreateFileResponse { return &v1.CreateFileResponse{Error: code} },
+		func(code v1.ErrorCode) *v1.CreateFileResponse { return &v1.CreateFileResponse{Error: code} },
 		func(vault *Access) (*v1.CreateFileResponse, error) {
 			return &v1.CreateFileResponse{}, vault.Writer.CreateFile(ctx, req.Msg.GetPath(), req.Msg.GetContent())
 		})
@@ -219,7 +200,7 @@ func (e *filesCalls) LockVault(
 	ctx context.Context, req *connect.Request[v1.LockVaultRequest],
 ) (*connect.Response[v1.LockVaultResponse], error) {
 	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
-		func(code v1.HostVaultErrorCode) *v1.LockVaultResponse { return &v1.LockVaultResponse{Error: code} },
+		func(code v1.ErrorCode) *v1.LockVaultResponse { return &v1.LockVaultResponse{Error: code} },
 		func(vault *Access) (*v1.LockVaultResponse, error) {
 			v, showing := vault.Switch.GetVault()
 			locks := e.getLocks()
@@ -257,7 +238,7 @@ func (e *filesCalls) ScanFiles(
 	ctx context.Context, req *connect.Request[v1.ScanFilesRequest],
 ) (*connect.Response[v1.ScanFilesResponse], error) {
 	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
-		func(code v1.HostVaultErrorCode) *v1.ScanFilesResponse { return &v1.ScanFilesResponse{Error: code} },
+		func(code v1.ErrorCode) *v1.ScanFilesResponse { return &v1.ScanFilesResponse{Error: code} },
 		func(vault *Access) (*v1.ScanFilesResponse, error) {
 			return &v1.ScanFilesResponse{}, vault.Writer.ScanFiles(ctx, req.Msg.GetPaths())
 		})

@@ -52,6 +52,11 @@ const ERROR_CODE: Record<number, ErrorCode | null> = {
   [ProtoErrorCode.ALREADY_EXISTS]: 'alreadyExists',
   [ProtoErrorCode.INVALID_NAME]: 'invalidName',
   [ProtoErrorCode.CONFLICT]: null,
+  [ProtoErrorCode.NO_VAULT]: 'unreachable',
+  [ProtoErrorCode.OUTSIDE_VAULT]: 'unreadable',
+  [ProtoErrorCode.LOCKED]: 'unreadable',
+  [ProtoErrorCode.INTERNAL]: 'unreadable',
+  [ProtoErrorCode.NOT_ATTEMPTED]: 'unreadable',
 } satisfies Record<ProtoErrorCode, ErrorCode | null>
 
 /** What one answer encountered as an error, and nothing where it succeeded. */

@@ -104,7 +104,7 @@ func requireNotAttemptedMove(t *testing.T, entry *v1.HostNoteMove, from string) 
 	t.Helper()
 	want := "the call was canceled before " + from + " was moved"
 	if entry.GetMove().GetFrom() != from || entry.GetMove().GetTo() != "" ||
-		entry.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED || entry.GetDetail() != want {
+		entry.GetError() != v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED || entry.GetDetail() != want {
 		t.Errorf("the entry of %s is %v, want error NOT_ATTEMPTED with the detail %q", from, entry, want)
 	}
 }
@@ -113,7 +113,7 @@ func requireNotAttemptedRemoval(t *testing.T, entry *v1.HostNoteRemoval, target 
 	t.Helper()
 	want := "the call was canceled before " + target + " was removed"
 	if entry.GetPath() != target || entry.GetTrashPath() != "" ||
-		entry.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED || entry.GetDetail() != want {
+		entry.GetError() != v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED || entry.GetDetail() != want {
 		t.Errorf("the entry of %s is %v, want error NOT_ATTEMPTED with the detail %q", target, entry, want)
 	}
 }
@@ -143,7 +143,7 @@ func TestMoveCanceledAfterTwoNotesReturnsRestAsNotAttempted(t *testing.T) {
 	}
 
 	moves := res.Msg.GetMoves()
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED || len(moves) != 3 {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || len(moves) != 3 {
 		t.Fatalf("the move returned error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(moves))
 	}
 	requireMoved(t, moves[0], "Danube.md", "Archive/Danube.md")
@@ -211,7 +211,7 @@ func TestRemovalCanceledAfterOneNoteReturnsRestAsNotAttempted(t *testing.T) {
 	}
 
 	removals := res.Msg.GetRemovals()
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED || len(removals) != 3 {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || len(removals) != 3 {
 		t.Fatalf("the removal returned error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(removals))
 	}
 	requireRemoved(t, removals[0], "Danube.md")
@@ -320,7 +320,7 @@ func TestAddLinksCanceledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.T
 	}
 
 	results := res.Msg.GetResults()
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED || len(results) != 3 {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || len(results) != 3 {
 		t.Fatalf("AddLinks returned error %v with %d results, want no call error and 3 results", res.Msg.GetError(), len(results))
 	}
 	if r := results[0]; r.GetError() != 0 || r.GetDetail() != "" || r.GetStat().GetPath() != "Danube.md" || r.GetStat().GetSize() == 0 {
@@ -328,7 +328,7 @@ func TestAddLinksCanceledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.T
 	}
 	for i, from := range batch[1:] {
 		want := "the call was canceled before the links were added to " + from + ": " + plugin.ErrNotAttempted.Error()
-		if r := results[i+1]; r.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED || r.GetStat() != nil || r.GetDetail() != want {
+		if r := results[i+1]; r.GetError() != v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED || r.GetStat() != nil || r.GetDetail() != want {
 			t.Errorf("result %d is %v, want NOT_ATTEMPTED with the detail %q and no file stat", i+1, r, want)
 		}
 	}

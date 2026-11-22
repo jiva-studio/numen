@@ -4,13 +4,15 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hostvault.proto.
  */
 export const file_numen_v1_hostvault: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9ob3N0dmF1bHQucHJvdG8SCG51bWVuLnYxIhsKGUVuc3VyZVZhdWx0SW5kZXhlZFJlcXVlc3QiggEKGkVuc3VyZVZhdWx0SW5kZXhlZFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEicKBXN0YXRlGAIgASgOMhgubnVtZW4udjEuSG9zdEluZGV4U3RhdGUSDgoGcmVhc29uGAMgASgJIhMKEVdhdGNoTW92ZXNSZXF1ZXN0IhQKEldhdGNoTW92ZXNSZXNwb25zZSIVChNHZXRIb3N0VmF1bHRSZXF1ZXN0ImsKFEdldEhvc3RWYXVsdFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSCgoCaWQYAyABKAkSDAoEbmFtZRgEIAEoCSISChBMb2NrVmF1bHRSZXF1ZXN0Ik4KEUxvY2tWYXVsdFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEgwKBGxvY2sYAiABKAkiIgoSVW5sb2NrVmF1bHRSZXF1ZXN0EgwKBGxvY2sYASABKAkiFQoTVW5sb2NrVmF1bHRSZXNwb25zZSIZChdHZXRQYXJzZVByb2JsZW1zUmVxdWVzdCIwChBIb3N0UGFyc2VQcm9ibGVtEgwKBHBhdGgYASABKAkSDgoGZGV0YWlsGAIgASgJInUKGEdldFBhcnNlUHJvYmxlbXNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIsCghwcm9ibGVtcxgCIAMoCzIaLm51bWVuLnYxLkhvc3RQYXJzZVByb2JsZW0iKQoXR2V0VmF1bHRQcm9ibGVtc1JlcXVlc3QSDgoGY2hlY2tzGAEgAygJIoABChBIb3N0VmF1bHRQcm9ibGVtEgwKBHBhdGgYASABKAkSDQoFY2hlY2sYAiABKAkSDgoGZGV0YWlsGAMgASgJEhUKDXRhcmdldF9zY2hlbWUYBCABKAkSFAoMdGFyZ2V0X3ZhbHVlGAUgASgJEhIKCmNhbmRpZGF0ZXMYBiADKAkihQEKGEdldFZhdWx0UHJvYmxlbXNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIsCghwcm9ibGVtcxgCIAMoCzIaLm51bWVuLnYxLkhvc3RWYXVsdFByb2JsZW0SDgoGY2hlY2tzGAMgAygJKtIEChJIb3N0VmF1bHRFcnJvckNvZGUSJQohSE9TVF9WQVVMVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeSE9TVF9WQVVMVF9FUlJPUl9DT0RFX05PX1ZBVUxUEAESIwofSE9TVF9WQVVMVF9FUlJPUl9DT0RFX05PVF9GT1VORBACEicKI0hPU1RfVkFVTFRfRVJST1JfQ09ERV9PVVRTSURFX1ZBVUxUEAMSIgoeSE9TVF9WQVVMVF9FUlJPUl9DT0RFX0NPTkZMSUNUEAQSKAokSE9TVF9WQVVMVF9FUlJPUl9DT0RFX0FMUkVBRFlfRVhJU1RTEAUSIAocSE9TVF9WQVVMVF9FUlJPUl9DT0RFX0xPQ0tFRBAGEiQKIEhPU1RfVkFVTFRfRVJST1JfQ09ERV9OT1RfQV9OT1RFEAgSIgoeSE9TVF9WQVVMVF9FUlJPUl9DT0RFX05PVF9URVhUEAwSIwofSE9TVF9WQVVMVF9FUlJPUl9DT0RFX1RPT19MQVJHRRANEikKJUhPU1RfVkFVTFRfRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQDhIkCiBIT1NUX1ZBVUxUX0VSUk9SX0NPREVfVU5SRUFEQUJMRRAPEiYKIkhPU1RfVkFVTFRfRVJST1JfQ09ERV9JTlZBTElEX05BTUUQEBIiCh5IT1NUX1ZBVUxUX0VSUk9SX0NPREVfSU5URVJOQUwQERInCiNIT1NUX1ZBVUxUX0VSUk9SX0NPREVfTk9UX0FUVEVNUFRFRBASKowBCg5Ib3N0SW5kZXhTdGF0ZRIgChxIT1NUX0lOREVYX1NUQVRFX1VOU1BFQ0lGSUVEEAASHAoYSE9TVF9JTkRFWF9TVEFURV9JTkRFWEVEEAESHQoZSE9TVF9JTkRFWF9TVEFURV9JTkRFWElORxACEhsKF0hPU1RfSU5ERVhfU1RBVEVfRkFJTEVEEAMy1QQKEEhvc3RWYXVsdFNlcnZpY2USTQoMR2V0SG9zdFZhdWx0Eh0ubnVtZW4udjEuR2V0SG9zdFZhdWx0UmVxdWVzdBoeLm51bWVuLnYxLkdldEhvc3RWYXVsdFJlc3BvbnNlEl8KEkVuc3VyZVZhdWx0SW5kZXhlZBIjLm51bWVuLnYxLkVuc3VyZVZhdWx0SW5kZXhlZFJlcXVlc3QaJC5udW1lbi52MS5FbnN1cmVWYXVsdEluZGV4ZWRSZXNwb25zZRJECglMb2NrVmF1bHQSGi5udW1lbi52MS5Mb2NrVmF1bHRSZXF1ZXN0GhsubnVtZW4udjEuTG9ja1ZhdWx0UmVzcG9uc2USSgoLVW5sb2NrVmF1bHQSHC5udW1lbi52MS5VbmxvY2tWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5VbmxvY2tWYXVsdFJlc3BvbnNlElkKEEdldFBhcnNlUHJvYmxlbXMSIS5udW1lbi52MS5HZXRQYXJzZVByb2JsZW1zUmVxdWVzdBoiLm51bWVuLnYxLkdldFBhcnNlUHJvYmxlbXNSZXNwb25zZRJZChBHZXRWYXVsdFByb2JsZW1zEiEubnVtZW4udjEuR2V0VmF1bHRQcm9ibGVtc1JlcXVlc3QaIi5udW1lbi52MS5HZXRWYXVsdFByb2JsZW1zUmVzcG9uc2USSQoKV2F0Y2hNb3ZlcxIbLm51bWVuLnYxLldhdGNoTW92ZXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hNb3Zlc1Jlc3BvbnNlMAFCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChhudW1lbi92MS9ob3N0dmF1bHQucHJvdG8SCG51bWVuLnYxIhsKGUVuc3VyZVZhdWx0SW5kZXhlZFJlcXVlc3QieQoaRW5zdXJlVmF1bHRJbmRleGVkUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSJwoFc3RhdGUYAiABKA4yGC5udW1lbi52MS5Ib3N0SW5kZXhTdGF0ZRIOCgZyZWFzb24YAyABKAkiEwoRV2F0Y2hNb3Zlc1JlcXVlc3QiFAoSV2F0Y2hNb3Zlc1Jlc3BvbnNlIhUKE0dldEhvc3RWYXVsdFJlcXVlc3QiYgoUR2V0SG9zdFZhdWx0UmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDAoEcGF0aBgCIAEoCRIKCgJpZBgDIAEoCRIMCgRuYW1lGAQgASgJIhIKEExvY2tWYXVsdFJlcXVlc3QiRQoRTG9ja1ZhdWx0UmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDAoEbG9jaxgCIAEoCSIiChJVbmxvY2tWYXVsdFJlcXVlc3QSDAoEbG9jaxgBIAEoCSIVChNVbmxvY2tWYXVsdFJlc3BvbnNlIhkKF0dldFBhcnNlUHJvYmxlbXNSZXF1ZXN0IjAKEEhvc3RQYXJzZVByb2JsZW0SDAoEcGF0aBgBIAEoCRIOCgZkZXRhaWwYAiABKAkibAoYR2V0UGFyc2VQcm9ibGVtc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEiwKCHByb2JsZW1zGAIgAygLMhoubnVtZW4udjEuSG9zdFBhcnNlUHJvYmxlbSIpChdHZXRWYXVsdFByb2JsZW1zUmVxdWVzdBIOCgZjaGVja3MYASADKAkigAEKEEhvc3RWYXVsdFByb2JsZW0SDAoEcGF0aBgBIAEoCRINCgVjaGVjaxgCIAEoCRIOCgZkZXRhaWwYAyABKAkSFQoNdGFyZ2V0X3NjaGVtZRgEIAEoCRIUCgx0YXJnZXRfdmFsdWUYBSABKAkSEgoKY2FuZGlkYXRlcxgGIAMoCSJ8ChhHZXRWYXVsdFByb2JsZW1zUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSLAoIcHJvYmxlbXMYAiADKAsyGi5udW1lbi52MS5Ib3N0VmF1bHRQcm9ibGVtEg4KBmNoZWNrcxgDIAMoCSqMAQoOSG9zdEluZGV4U3RhdGUSIAocSE9TVF9JTkRFWF9TVEFURV9VTlNQRUNJRklFRBAAEhwKGEhPU1RfSU5ERVhfU1RBVEVfSU5ERVhFRBABEh0KGUhPU1RfSU5ERVhfU1RBVEVfSU5ERVhJTkcQAhIbChdIT1NUX0lOREVYX1NUQVRFX0ZBSUxFRBADMtUEChBIb3N0VmF1bHRTZXJ2aWNlEk0KDEdldEhvc3RWYXVsdBIdLm51bWVuLnYxLkdldEhvc3RWYXVsdFJlcXVlc3QaHi5udW1lbi52MS5HZXRIb3N0VmF1bHRSZXNwb25zZRJfChJFbnN1cmVWYXVsdEluZGV4ZWQSIy5udW1lbi52MS5FbnN1cmVWYXVsdEluZGV4ZWRSZXF1ZXN0GiQubnVtZW4udjEuRW5zdXJlVmF1bHRJbmRleGVkUmVzcG9uc2USRAoJTG9ja1ZhdWx0EhoubnVtZW4udjEuTG9ja1ZhdWx0UmVxdWVzdBobLm51bWVuLnYxLkxvY2tWYXVsdFJlc3BvbnNlEkoKC1VubG9ja1ZhdWx0EhwubnVtZW4udjEuVW5sb2NrVmF1bHRSZXF1ZXN0Gh0ubnVtZW4udjEuVW5sb2NrVmF1bHRSZXNwb25zZRJZChBHZXRQYXJzZVByb2JsZW1zEiEubnVtZW4udjEuR2V0UGFyc2VQcm9ibGVtc1JlcXVlc3QaIi5udW1lbi52MS5HZXRQYXJzZVByb2JsZW1zUmVzcG9uc2USWQoQR2V0VmF1bHRQcm9ibGVtcxIhLm51bWVuLnYxLkdldFZhdWx0UHJvYmxlbXNSZXF1ZXN0GiIubnVtZW4udjEuR2V0VmF1bHRQcm9ibGVtc1Jlc3BvbnNlEkkKCldhdGNoTW92ZXMSGy5udW1lbi52MS5XYXRjaE1vdmVzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoTW92ZXNSZXNwb25zZTABQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.EnsureVaultIndexedRequest
@@ -30,9 +32,9 @@ export const EnsureVaultIndexedRequestSchema: GenMessage<EnsureVaultIndexedReque
  */
 export type EnsureVaultIndexedResponse = Message<"numen.v1.EnsureVaultIndexedResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: numen.v1.HostIndexState state = 2;
@@ -96,9 +98,9 @@ export const GetHostVaultRequestSchema: GenMessage<GetHostVaultRequest> = /*@__P
  */
 export type GetHostVaultResponse = Message<"numen.v1.GetHostVaultResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The folder the vault is, on this machine.
@@ -143,9 +145,9 @@ export const LockVaultRequestSchema: GenMessage<LockVaultRequest> = /*@__PURE__*
  */
 export type LockVaultResponse = Message<"numen.v1.LockVaultResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The lock to return to UnlockVault.
@@ -234,9 +236,9 @@ export const HostParseProblemSchema: GenMessage<HostParseProblem> = /*@__PURE__*
  */
 export type GetParseProblemsResponse = Message<"numen.v1.GetParseProblemsResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated numen.v1.HostParseProblem problems = 2;
@@ -327,9 +329,9 @@ export const HostVaultProblemSchema: GenMessage<HostVaultProblem> = /*@__PURE__*
  */
 export type GetVaultProblemsResponse = Message<"numen.v1.GetVaultProblemsResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated numen.v1.HostVaultProblem problems = 2;
@@ -350,126 +352,6 @@ export type GetVaultProblemsResponse = Message<"numen.v1.GetVaultProblemsRespons
  */
 export const GetVaultProblemsResponseSchema: GenMessage<GetVaultProblemsResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostvault, 15);
-
-/**
- * means it was not.
- *
- * @generated from enum numen.v1.HostVaultErrorCode
- */
-export enum HostVaultErrorCode {
-  /**
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * The host is showing no vault.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_NO_VAULT = 1;
-   */
-  NO_VAULT = 1,
-
-  /**
-   * The file or the note is not there.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_NOT_FOUND = 2;
-   */
-  NOT_FOUND = 2,
-
-  /**
-   * The path is outside the vault or names no file.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT = 3;
-   */
-  OUTSIDE_VAULT = 3,
-
-  /**
-   * The file changed since the file stat given.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_CONFLICT = 4;
-   */
-  CONFLICT = 4,
-
-  /**
-   * A file is already there.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_ALREADY_EXISTS = 5;
-   */
-  ALREADY_EXISTS = 5,
-
-  /**
-   * Another program holds the file.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_LOCKED = 6;
-   */
-  LOCKED = 6,
-
-  /**
-   * The path is not a note this vault holds.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;
-   */
-  NOT_A_NOTE = 8,
-
-  /**
-   * The file is not valid note text.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_NOT_TEXT = 12;
-   */
-  NOT_TEXT = 12,
-
-  /**
-   * The file exceeds the maximum note size.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_TOO_LARGE = 13;
-   */
-  TOO_LARGE = 13,
-
-  /**
-   * The prose opens with a frontmatter delimiter, so writing it would put a
-   * second block inside the first.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_BODY_UNWRITABLE = 14;
-   */
-  BODY_UNWRITABLE = 14,
-
-  /**
-   * The frontmatter cannot be read, so the note can be neither read nor
-   * written.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_UNREADABLE = 15;
-   */
-  UNREADABLE = 15,
-
-  /**
-   * The title is invalid: it is empty after sanitising, spans lines, or parses
-   * as markup.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_INVALID_NAME = 16;
-   */
-  INVALID_NAME = 16,
-
-  /**
-   * The change of a note failed for a reason with no code of its own; the
-   * detail of that note contains the core's error text.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_INTERNAL = 17;
-   */
-  INTERNAL = 17,
-
-  /**
-   * The call was cancelled before this note was changed: the note is as it was.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED = 18;
-   */
-  NOT_ATTEMPTED = 18,
-}
-
-/**
- * Describes the enum numen.v1.HostVaultErrorCode.
- */
-export const HostVaultErrorCodeSchema: GenEnum<HostVaultErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_hostvault, 0);
 
 /**
  * @generated from enum numen.v1.HostIndexState
@@ -506,7 +388,7 @@ export enum HostIndexState {
  * Describes the enum numen.v1.HostIndexState.
  */
 export const HostIndexStateSchema: GenEnum<HostIndexState> = /*@__PURE__*/
-  enumDesc(file_numen_v1_hostvault, 1);
+  enumDesc(file_numen_v1_hostvault, 0);
 
 /**
  * HostVaultService is the vault itself, as a plugin works it: which vault the

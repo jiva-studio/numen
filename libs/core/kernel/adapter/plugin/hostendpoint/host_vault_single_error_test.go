@@ -100,7 +100,7 @@ func TestCreateFileOverAnExistingFileReturnsAlreadyExists(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS {
+	if res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("CreateFile returned %v, want error ALREADY_EXISTS", res.Msg)
 	}
 }
@@ -138,7 +138,7 @@ func TestMoveNotesReturnsTooLargeForTheNoteThatIsTooLarge(t *testing.T) {
 	if res.Msg.GetError() != 0 || len(moves) != 2 {
 		t.Fatalf("the move returned error %v with %d entries, want 2 entries", res.Msg.GetError(), len(moves))
 	}
-	if m := moves[0]; m.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_TOO_LARGE {
+	if m := moves[0]; m.GetError() != v1.ErrorCode_ERROR_CODE_TOO_LARGE {
 		t.Errorf("the entry of %s is %v, want error TOO_LARGE", tooLargePath, m)
 	}
 	if m := moves[1]; m.GetError() != 0 || m.GetMove().GetTo() == "" {

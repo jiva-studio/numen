@@ -4,8 +4,8 @@ package numen.v1;
 
 import "numen/v1/file.proto";
 import "numen/v1/hostfile.proto";
-import "numen/v1/hostvault.proto";
 import "numen/v1/note.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
@@ -69,7 +69,7 @@ message GetNoteRefsRequest {
 }
 
 message GetNoteRefsResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   repeated HostNoteRef notes = 2;
 }
 
@@ -78,7 +78,7 @@ message GetNoteTypesRequest {
 }
 
 message GetNoteTypesResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // The type of each note, by its path. A path with no note is left out.
   map<string, string> types = 2;
 }
@@ -88,7 +88,7 @@ message GetNamedPathsRequest {
 }
 
 message GetNamedPathsResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   repeated string paths = 2;
 }
 
@@ -97,7 +97,7 @@ message GetPathsOfTypeRequest {
 }
 
 message GetPathsOfTypeResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   repeated string paths = 2;
 }
 
@@ -114,7 +114,7 @@ message ReadFrontmatterRequest {
 }
 
 message ReadFrontmatterResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   repeated NoteFrontmatter notes = 2;
   // next_page_token reads the next page; empty after the last.
   string next_page_token = 3;
@@ -134,19 +134,19 @@ message NoteFrontmatterWrite {
   bytes values = 2;
   // baseline is the file state the caller read; a note changed since is left
   // unchanged (stale).
-  HostFileStat baseline = 3;
+  FileStat baseline = 3;
 }
 
 message WriteFrontmatterResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // One result per note, in the order of the request.
   repeated NoteFrontmatterWritten results = 2;
 }
 
 message NoteFrontmatterWritten {
   // The note after the write; unset when nothing was written.
-  HostFileStat stat = 1;
-  HostVaultErrorCode error = 2;
+  FileStat stat = 1;
+  ErrorCode error = 2;
   string detail = 3;
 }
 
@@ -168,7 +168,7 @@ message HostNoteServiceRenameNoteRequest {
 message HostNoteServiceRenameNoteResponse {
   // Why the note was not renamed: NOT_FOUND, NOT_A_NOTE, INVALID_NAME,
   // ALREADY_EXISTS, CONFLICT and the other per-note codes.
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // The path of the note after the rename.
   string path = 2;
   string title = 3;
@@ -192,13 +192,13 @@ message HostNoteMove {
   // From is always set; to only when the note moved.
   MoveResult move = 1;
   // Why this note did not move.
-  HostVaultErrorCode error = 2;
+  ErrorCode error = 2;
   // The core's error text where this note did not move, empty on success.
   string detail = 3;
 }
 
 message HostNoteServiceMoveNotesResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // One per path, in the order of the request.
   repeated HostNoteMove moves = 2;
 }
@@ -217,13 +217,13 @@ message HostNoteRemoval {
   repeated string broken_links = 3;
   // Why this note was not removed: NOT_FOUND, NOT_A_NOTE for a folder or a
   // file that is not a note, or INTERNAL.
-  HostVaultErrorCode error = 4;
+  ErrorCode error = 4;
   // The core's error text where this note was not removed, empty on success.
   string detail = 5;
 }
 
 message HostNoteServiceRemoveNotesResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // One per path, in the order of the request.
   repeated HostNoteRemoval removals = 2;
 }

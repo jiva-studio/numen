@@ -8,11 +8,11 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func writeFileStat(f domain.FileStat) *v1.HostFileStat {
-	return &v1.HostFileStat{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
+func writeFileStat(f domain.FileStat) *v1.FileStat {
+	return &v1.FileStat{Path: f.Path, Size: f.Size, Mtime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
 }
 
-func readFileStat(f *v1.HostFileStat) domain.FileStat {
+func readFileStat(f *v1.FileStat) domain.FileStat {
 	kind := domain.SourceKind("")
 	switch {
 	case f.GetIsNote():
@@ -20,5 +20,5 @@ func readFileStat(f *v1.HostFileStat) domain.FileStat {
 	case f.GetPath() != "":
 		kind = domain.KindFile
 	}
-	return domain.FileStat{Path: f.GetPath(), Kind: kind, Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime())}
+	return domain.FileStat{Path: f.GetPath(), Kind: kind, Size: f.GetSize(), ModTime: time.Unix(0, f.GetMtime())}
 }

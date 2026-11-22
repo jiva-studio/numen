@@ -45,7 +45,7 @@ func readVaultsError(code v1.VaultsErrorCode) error {
 	}
 }
 
-func getNoteError(code v1.HostVaultErrorCode, detail string) error {
+func getNoteError(code v1.ErrorCode, detail string) error {
 	return addDetail(fail(code), detail)
 }
 

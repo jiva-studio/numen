@@ -361,7 +361,7 @@ func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if missing.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
+	if missing.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("a rename of a missing note returned %v, want error NOT_FOUND", missing.Msg)
 	}
 }
@@ -383,10 +383,10 @@ func TestAMoveReturnsOneEntryPerPathInOrder(t *testing.T) {
 	if moves[0].GetError() != 0 || moves[0].GetMove().GetFrom() != "Danube.md" || moves[0].GetMove().GetTo() != "Rivers/Danube.md" {
 		t.Errorf("the first entry is %v, want Danube.md moved to Rivers/Danube.md", moves[0])
 	}
-	if moves[1].GetMove().GetFrom() != "Nowhere.md" || moves[1].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
+	if moves[1].GetMove().GetFrom() != "Nowhere.md" || moves[1].GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("the second entry is %v, want Nowhere.md with error NOT_FOUND", moves[1])
 	}
-	if moves[2].GetMove().GetFrom() != "Deltas.md" || moves[2].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS {
+	if moves[2].GetMove().GetFrom() != "Deltas.md" || moves[2].GetError() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("the third entry is %v, want Deltas.md with error ALREADY_EXISTS", moves[2])
 	}
 
@@ -426,10 +426,10 @@ func TestARemovalReturnsTheTrashPathAndAFolderAsNotANote(t *testing.T) {
 		!slices.Equal(removals[0].GetBrokenLinks(), []string{"Deltas.md"}) {
 		t.Errorf("the first entry is %v, want Danube.md in .trash with Deltas.md dangling", removals[0])
 	}
-	if removals[1].GetPath() != "Rivers" || removals[1].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE {
+	if removals[1].GetPath() != "Rivers" || removals[1].GetError() != v1.ErrorCode_ERROR_CODE_NOT_A_NOTE {
 		t.Errorf("the folder entry is %v, want error NOT_A_NOTE", removals[1])
 	}
-	if removals[2].GetPath() != "Nowhere.md" || removals[2].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
+	if removals[2].GetPath() != "Nowhere.md" || removals[2].GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("the third entry is %v, want error NOT_FOUND", removals[2])
 	}
 	if !slices.Equal(vault.removed, []string{"Danube.md", "Rivers", "Nowhere.md"}) {
@@ -573,12 +573,12 @@ func (r failingRenameVault) RenameNote(context.Context, string, string) (string,
 func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 	for name, c := range map[string]struct {
 		err  error
-		want v1.HostVaultErrorCode
+		want v1.ErrorCode
 	}{
-		"invalid name":   {err: domain.ErrInvalidName, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME},
-		"already exists": {err: vaultdomain.ErrAlreadyExists, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
-		"not found":      {err: edit.ErrNotExist, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
-		"conflict":       {err: edit.ErrStale, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
+		"invalid name":   {err: domain.ErrInvalidName, want: v1.ErrorCode_ERROR_CODE_INVALID_NAME},
+		"already exists": {err: vaultdomain.ErrAlreadyExists, want: v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS},
+		"not found":      {err: edit.ErrNotExist, want: v1.ErrorCode_ERROR_CODE_NOT_FOUND},
+		"conflict":       {err: edit.ErrStale, want: v1.ErrorCode_ERROR_CODE_CONFLICT},
 	} {
 		t.Run(name, func(t *testing.T) {
 			hostCallers := newCallers()

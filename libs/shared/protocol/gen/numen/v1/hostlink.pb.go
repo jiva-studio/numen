@@ -213,7 +213,7 @@ func (x *GetLinksRequest) GetPath() string {
 
 type GetLinksResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Links         []*HostLink            `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -249,11 +249,11 @@ func (*GetLinksResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostlink_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GetLinksResponse) GetError() HostVaultErrorCode {
+func (x *GetLinksResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetLinksResponse) GetLinks() []*HostLink {
@@ -309,7 +309,7 @@ func (x *GetBacklinksRequest) GetPath() string {
 
 type GetBacklinksResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Links         []*HostLink            `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -345,11 +345,11 @@ func (*GetBacklinksResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostlink_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetBacklinksResponse) GetError() HostVaultErrorCode {
+func (x *GetBacklinksResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *GetBacklinksResponse) GetLinks() []*HostLink {
@@ -415,7 +415,7 @@ func (x *ResolveLinksRequest) GetAddresses() []string {
 
 type ResolveLinksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// What each link reaches, by how it was written.
 	Links         map[string]*HostLink `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
@@ -452,11 +452,11 @@ func (*ResolveLinksResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostlink_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *ResolveLinksResponse) GetError() HostVaultErrorCode {
+func (x *ResolveLinksResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ResolveLinksResponse) GetLinks() map[string]*HostLink {
@@ -472,7 +472,7 @@ type HostLinkAddition struct {
 	// The note the link is written in.
 	From string `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	// The note as the caller read it.
-	Baseline *HostFileStat `protobuf:"bytes,2,opt,name=baseline,proto3" json:"baseline,omitempty"`
+	Baseline *FileStat `protobuf:"bytes,2,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	// The target as written, e.g. "Rivers" or "note://01H...".
 	To    string `protobuf:"bytes,3,opt,name=to,proto3" json:"to,omitempty"`
 	Role  Role   `protobuf:"varint,4,opt,name=role,proto3,enum=numen.v1.Role" json:"role,omitempty"`
@@ -521,7 +521,7 @@ func (x *HostLinkAddition) GetFrom() string {
 	return ""
 }
 
-func (x *HostLinkAddition) GetBaseline() *HostFileStat {
+func (x *HostLinkAddition) GetBaseline() *FileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -612,10 +612,10 @@ func (x *HostLinkServiceAddLinksRequest) GetLinks() []*HostLinkAddition {
 type HostLinkAdded struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The note after the write; unset when nothing was written.
-	Stat *HostFileStat `protobuf:"bytes,1,opt,name=stat,proto3" json:"stat,omitempty"`
+	Stat *FileStat `protobuf:"bytes,1,opt,name=stat,proto3" json:"stat,omitempty"`
 	// Why the link was not written: CONFLICT for a stale baseline, NOT_FOUND,
 	// NOT_A_NOTE, UNREADABLE, INTERNAL and the other per-note codes.
-	Error HostVaultErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The core's error text where the link was not written, empty on success.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -652,18 +652,18 @@ func (*HostLinkAdded) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostlink_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *HostLinkAdded) GetStat() *HostFileStat {
+func (x *HostLinkAdded) GetStat() *FileStat {
 	if x != nil {
 		return x.Stat
 	}
 	return nil
 }
 
-func (x *HostLinkAdded) GetError() HostVaultErrorCode {
+func (x *HostLinkAdded) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostLinkAdded) GetDetail() string {
@@ -675,7 +675,7 @@ func (x *HostLinkAdded) GetDetail() string {
 
 type HostLinkServiceAddLinksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// One per link, in the order of the request.
 	Results       []*HostLinkAdded `protobuf:"bytes,2,rep,name=results,proto3" json:"results,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -712,11 +712,11 @@ func (*HostLinkServiceAddLinksResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostlink_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *HostLinkServiceAddLinksResponse) GetError() HostVaultErrorCode {
+func (x *HostLinkServiceAddLinksResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *HostLinkServiceAddLinksResponse) GetResults() []*HostLinkAdded {
@@ -733,11 +733,11 @@ type HostLinkServiceUpdateLinksRequest struct {
 	// The target as written.
 	To string `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	// The note as the caller read it.
-	Baseline      *HostFileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
-	Role          Role          `protobuf:"varint,4,opt,name=role,proto3,enum=numen.v1.Role" json:"role,omitempty"`
-	Type          string        `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
-	Label         string        `protobuf:"bytes,6,opt,name=label,proto3" json:"label,omitempty"`
-	Note          string        `protobuf:"bytes,7,opt,name=note,proto3" json:"note,omitempty"`
+	Baseline      *FileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
+	Role          Role      `protobuf:"varint,4,opt,name=role,proto3,enum=numen.v1.Role" json:"role,omitempty"`
+	Type          string    `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
+	Label         string    `protobuf:"bytes,6,opt,name=label,proto3" json:"label,omitempty"`
+	Note          string    `protobuf:"bytes,7,opt,name=note,proto3" json:"note,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -786,7 +786,7 @@ func (x *HostLinkServiceUpdateLinksRequest) GetTo() string {
 	return ""
 }
 
-func (x *HostLinkServiceUpdateLinksRequest) GetBaseline() *HostFileStat {
+func (x *HostLinkServiceUpdateLinksRequest) GetBaseline() *FileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -823,9 +823,9 @@ func (x *HostLinkServiceUpdateLinksRequest) GetNote() string {
 
 type HostLinkServiceUpdateLinksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The note after the write.
-	Stat *HostFileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
+	Stat *FileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
 	// The core's error text where nothing was written, empty on success.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -862,14 +862,14 @@ func (*HostLinkServiceUpdateLinksResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostlink_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *HostLinkServiceUpdateLinksResponse) GetError() HostVaultErrorCode {
+func (x *HostLinkServiceUpdateLinksResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *HostLinkServiceUpdateLinksResponse) GetStat() *HostFileStat {
+func (x *HostLinkServiceUpdateLinksResponse) GetStat() *FileStat {
 	if x != nil {
 		return x.Stat
 	}
@@ -890,7 +890,7 @@ type HostLinkServiceRemoveLinksRequest struct {
 	// The target as written.
 	To string `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	// The note as the caller read it.
-	Baseline *HostFileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
+	Baseline *FileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	// Only the links of this role. ROLE_UNSPECIFIED removes the links of every
 	// role.
 	Role          Role `protobuf:"varint,4,opt,name=role,proto3,enum=numen.v1.Role" json:"role,omitempty"`
@@ -942,7 +942,7 @@ func (x *HostLinkServiceRemoveLinksRequest) GetTo() string {
 	return ""
 }
 
-func (x *HostLinkServiceRemoveLinksRequest) GetBaseline() *HostFileStat {
+func (x *HostLinkServiceRemoveLinksRequest) GetBaseline() *FileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -958,9 +958,9 @@ func (x *HostLinkServiceRemoveLinksRequest) GetRole() Role {
 
 type HostLinkServiceRemoveLinksResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
+	Error ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// The note after the write.
-	Stat *HostFileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
+	Stat *FileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
 	// The core's error text where nothing was written, empty on success.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -997,14 +997,14 @@ func (*HostLinkServiceRemoveLinksResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostlink_proto_rawDescGZIP(), []int{14}
 }
 
-func (x *HostLinkServiceRemoveLinksResponse) GetError() HostVaultErrorCode {
+func (x *HostLinkServiceRemoveLinksResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
+	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *HostLinkServiceRemoveLinksResponse) GetStat() *HostFileStat {
+func (x *HostLinkServiceRemoveLinksResponse) GetStat() *FileStat {
 	if x != nil {
 		return x.Stat
 	}
@@ -1022,7 +1022,7 @@ var File_numen_v1_hostlink_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostlink_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/hostlink.proto\x12\bnumen.v1\x1a\x17numen/v1/hostfile.proto\x1a\x18numen/v1/hostvault.proto\x1a\x13numen/v1/note.proto\"\xfa\x02\n" +
+	"\x17numen/v1/hostlink.proto\x12\bnumen.v1\x1a\x17numen/v1/hostfile.proto\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\"\xfa\x02\n" +
 	"\bHostLink\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x19\n" +
@@ -1039,62 +1039,62 @@ const file_numen_v1_hostlink_proto_rawDesc = "" +
 	"\vsource_role\x18\f \x01(\x0e2\x0e.numen.v1.RoleR\n" +
 	"sourceRole\"%\n" +
 	"\x0fGetLinksRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"p\n" +
-	"\x10GetLinksResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12(\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"g\n" +
+	"\x10GetLinksResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12(\n" +
 	"\x05links\x18\x02 \x03(\v2\x12.numen.v1.HostLinkR\x05links\")\n" +
 	"\x13GetBacklinksRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"t\n" +
-	"\x14GetBacklinksResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12(\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"k\n" +
+	"\x14GetBacklinksResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12(\n" +
 	"\x05links\x18\x02 \x03(\v2\x12.numen.v1.HostLinkR\x05links\"G\n" +
 	"\x13ResolveLinksRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1c\n" +
-	"\taddresses\x18\x02 \x03(\tR\taddresses\"\xd9\x01\n" +
-	"\x14ResolveLinksResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12?\n" +
+	"\taddresses\x18\x02 \x03(\tR\taddresses\"\xd0\x01\n" +
+	"\x14ResolveLinksResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12?\n" +
 	"\x05links\x18\x02 \x03(\v2).numen.v1.ResolveLinksResponse.LinksEntryR\x05links\x1aL\n" +
 	"\n" +
 	"LinksEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
-	"\x05value\x18\x02 \x01(\v2\x12.numen.v1.HostLinkR\x05value:\x028\x01\"\xcc\x01\n" +
+	"\x05value\x18\x02 \x01(\v2\x12.numen.v1.HostLinkR\x05value:\x028\x01\"\xc8\x01\n" +
 	"\x10HostLinkAddition\x12\x12\n" +
-	"\x04from\x18\x01 \x01(\tR\x04from\x122\n" +
-	"\bbaseline\x18\x02 \x01(\v2\x16.numen.v1.HostFileStatR\bbaseline\x12\x0e\n" +
+	"\x04from\x18\x01 \x01(\tR\x04from\x12.\n" +
+	"\bbaseline\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\bbaseline\x12\x0e\n" +
 	"\x02to\x18\x03 \x01(\tR\x02to\x12\"\n" +
 	"\x04role\x18\x04 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x12\n" +
 	"\x04type\x18\x05 \x01(\tR\x04type\x12\x14\n" +
 	"\x05label\x18\x06 \x01(\tR\x05label\x12\x12\n" +
 	"\x04note\x18\a \x01(\tR\x04note\"R\n" +
 	"\x1eHostLinkServiceAddLinksRequest\x120\n" +
-	"\x05links\x18\x01 \x03(\v2\x1a.numen.v1.HostLinkAdditionR\x05links\"\x87\x01\n" +
-	"\rHostLinkAdded\x12*\n" +
-	"\x04stat\x18\x01 \x01(\v2\x16.numen.v1.HostFileStatR\x04stat\x122\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x88\x01\n" +
-	"\x1fHostLinkServiceAddLinksResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x121\n" +
-	"\aresults\x18\x02 \x03(\v2\x17.numen.v1.HostLinkAddedR\aresults\"\xdd\x01\n" +
+	"\x05links\x18\x01 \x03(\v2\x1a.numen.v1.HostLinkAdditionR\x05links\"z\n" +
+	"\rHostLinkAdded\x12&\n" +
+	"\x04stat\x18\x01 \x01(\v2\x12.numen.v1.FileStatR\x04stat\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x7f\n" +
+	"\x1fHostLinkServiceAddLinksResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x121\n" +
+	"\aresults\x18\x02 \x03(\v2\x17.numen.v1.HostLinkAddedR\aresults\"\xd9\x01\n" +
 	"!HostLinkServiceUpdateLinksRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\x122\n" +
-	"\bbaseline\x18\x03 \x01(\v2\x16.numen.v1.HostFileStatR\bbaseline\x12\"\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\x12.\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x12.numen.v1.FileStatR\bbaseline\x12\"\n" +
 	"\x04role\x18\x04 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\x12\x12\n" +
 	"\x04type\x18\x05 \x01(\tR\x04type\x12\x14\n" +
 	"\x05label\x18\x06 \x01(\tR\x05label\x12\x12\n" +
-	"\x04note\x18\a \x01(\tR\x04note\"\x9c\x01\n" +
-	"\"HostLinkServiceUpdateLinksResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12*\n" +
-	"\x04stat\x18\x02 \x01(\v2\x16.numen.v1.HostFileStatR\x04stat\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x9f\x01\n" +
+	"\x04note\x18\a \x01(\tR\x04note\"\x8f\x01\n" +
+	"\"HostLinkServiceUpdateLinksResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12&\n" +
+	"\x04stat\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\x04stat\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x9b\x01\n" +
 	"!HostLinkServiceRemoveLinksRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\x122\n" +
-	"\bbaseline\x18\x03 \x01(\v2\x16.numen.v1.HostFileStatR\bbaseline\x12\"\n" +
-	"\x04role\x18\x04 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\"\x9c\x01\n" +
-	"\"HostLinkServiceRemoveLinksResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12*\n" +
-	"\x04stat\x18\x02 \x01(\v2\x16.numen.v1.HostFileStatR\x04stat\x12\x16\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\x12.\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x12.numen.v1.FileStatR\bbaseline\x12\"\n" +
+	"\x04role\x18\x04 \x01(\x0e2\x0e.numen.v1.RoleR\x04role\"\x8f\x01\n" +
+	"\"HostLinkServiceRemoveLinksResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12&\n" +
+	"\x04stat\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\x04stat\x12\x16\n" +
 	"\x06detail\x18\x03 \x01(\tR\x06detail2\xa7\x04\n" +
 	"\x0fHostLinkService\x12A\n" +
 	"\bGetLinks\x12\x19.numen.v1.GetLinksRequest\x1a\x1a.numen.v1.GetLinksResponse\x12M\n" +
@@ -1133,37 +1133,37 @@ var file_numen_v1_hostlink_proto_goTypes = []any{
 	(*HostLinkServiceUpdateLinksResponse)(nil), // 12: numen.v1.HostLinkServiceUpdateLinksResponse
 	(*HostLinkServiceRemoveLinksRequest)(nil),  // 13: numen.v1.HostLinkServiceRemoveLinksRequest
 	(*HostLinkServiceRemoveLinksResponse)(nil), // 14: numen.v1.HostLinkServiceRemoveLinksResponse
-	nil,                     // 15: numen.v1.ResolveLinksResponse.LinksEntry
-	(Role)(0),               // 16: numen.v1.Role
-	(Marker)(0),             // 17: numen.v1.Marker
-	(HostVaultErrorCode)(0), // 18: numen.v1.HostVaultErrorCode
-	(*HostFileStat)(nil),    // 19: numen.v1.HostFileStat
+	nil,              // 15: numen.v1.ResolveLinksResponse.LinksEntry
+	(Role)(0),        // 16: numen.v1.Role
+	(Marker)(0),      // 17: numen.v1.Marker
+	(ErrorCode)(0),   // 18: numen.v1.ErrorCode
+	(*FileStat)(nil), // 19: numen.v1.FileStat
 }
 var file_numen_v1_hostlink_proto_depIdxs = []int32{
 	16, // 0: numen.v1.HostLink.role:type_name -> numen.v1.Role
 	17, // 1: numen.v1.HostLink.marker:type_name -> numen.v1.Marker
 	16, // 2: numen.v1.HostLink.source_role:type_name -> numen.v1.Role
-	18, // 3: numen.v1.GetLinksResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	18, // 3: numen.v1.GetLinksResponse.error:type_name -> numen.v1.ErrorCode
 	0,  // 4: numen.v1.GetLinksResponse.links:type_name -> numen.v1.HostLink
-	18, // 5: numen.v1.GetBacklinksResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	18, // 5: numen.v1.GetBacklinksResponse.error:type_name -> numen.v1.ErrorCode
 	0,  // 6: numen.v1.GetBacklinksResponse.links:type_name -> numen.v1.HostLink
-	18, // 7: numen.v1.ResolveLinksResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	18, // 7: numen.v1.ResolveLinksResponse.error:type_name -> numen.v1.ErrorCode
 	15, // 8: numen.v1.ResolveLinksResponse.links:type_name -> numen.v1.ResolveLinksResponse.LinksEntry
-	19, // 9: numen.v1.HostLinkAddition.baseline:type_name -> numen.v1.HostFileStat
+	19, // 9: numen.v1.HostLinkAddition.baseline:type_name -> numen.v1.FileStat
 	16, // 10: numen.v1.HostLinkAddition.role:type_name -> numen.v1.Role
 	7,  // 11: numen.v1.HostLinkServiceAddLinksRequest.links:type_name -> numen.v1.HostLinkAddition
-	19, // 12: numen.v1.HostLinkAdded.stat:type_name -> numen.v1.HostFileStat
-	18, // 13: numen.v1.HostLinkAdded.error:type_name -> numen.v1.HostVaultErrorCode
-	18, // 14: numen.v1.HostLinkServiceAddLinksResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	19, // 12: numen.v1.HostLinkAdded.stat:type_name -> numen.v1.FileStat
+	18, // 13: numen.v1.HostLinkAdded.error:type_name -> numen.v1.ErrorCode
+	18, // 14: numen.v1.HostLinkServiceAddLinksResponse.error:type_name -> numen.v1.ErrorCode
 	9,  // 15: numen.v1.HostLinkServiceAddLinksResponse.results:type_name -> numen.v1.HostLinkAdded
-	19, // 16: numen.v1.HostLinkServiceUpdateLinksRequest.baseline:type_name -> numen.v1.HostFileStat
+	19, // 16: numen.v1.HostLinkServiceUpdateLinksRequest.baseline:type_name -> numen.v1.FileStat
 	16, // 17: numen.v1.HostLinkServiceUpdateLinksRequest.role:type_name -> numen.v1.Role
-	18, // 18: numen.v1.HostLinkServiceUpdateLinksResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	19, // 19: numen.v1.HostLinkServiceUpdateLinksResponse.stat:type_name -> numen.v1.HostFileStat
-	19, // 20: numen.v1.HostLinkServiceRemoveLinksRequest.baseline:type_name -> numen.v1.HostFileStat
+	18, // 18: numen.v1.HostLinkServiceUpdateLinksResponse.error:type_name -> numen.v1.ErrorCode
+	19, // 19: numen.v1.HostLinkServiceUpdateLinksResponse.stat:type_name -> numen.v1.FileStat
+	19, // 20: numen.v1.HostLinkServiceRemoveLinksRequest.baseline:type_name -> numen.v1.FileStat
 	16, // 21: numen.v1.HostLinkServiceRemoveLinksRequest.role:type_name -> numen.v1.Role
-	18, // 22: numen.v1.HostLinkServiceRemoveLinksResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	19, // 23: numen.v1.HostLinkServiceRemoveLinksResponse.stat:type_name -> numen.v1.HostFileStat
+	18, // 22: numen.v1.HostLinkServiceRemoveLinksResponse.error:type_name -> numen.v1.ErrorCode
+	19, // 23: numen.v1.HostLinkServiceRemoveLinksResponse.stat:type_name -> numen.v1.FileStat
 	0,  // 24: numen.v1.ResolveLinksResponse.LinksEntry.value:type_name -> numen.v1.HostLink
 	1,  // 25: numen.v1.HostLinkService.GetLinks:input_type -> numen.v1.GetLinksRequest
 	3,  // 26: numen.v1.HostLinkService.GetBacklinks:input_type -> numen.v1.GetBacklinksRequest
@@ -1190,8 +1190,8 @@ func file_numen_v1_hostlink_proto_init() {
 		return
 	}
 	file_numen_v1_hostfile_proto_init()
-	file_numen_v1_hostvault_proto_init()
 	file_numen_v1_note_proto_init()
+	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

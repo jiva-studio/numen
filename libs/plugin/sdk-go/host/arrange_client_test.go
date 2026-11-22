@@ -22,7 +22,7 @@ import (
 type fakeArrangeHost struct {
 	unimplementedHost
 	mu           sync.Mutex
-	noteError    v1.HostVaultErrorCode
+	noteError    v1.ErrorCode
 	vaultsError  v1.VaultsErrorCode
 	vaultsDetail string
 	requests     []string
@@ -59,9 +59,9 @@ func (a *fakeArrangeHost) MoveNotes(
 	a.record("move " + req.Msg.GetFolder())
 	return connect.NewResponse(&v1.HostNoteServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
 		{Move: &v1.MoveResult{From: "Danube.md", To: "Rivers/Danube.md", Repaired: []string{"Deltas.md"}}},
-		{Move: &v1.MoveResult{From: "Nowhere.md"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
-		{Move: &v1.MoveResult{From: "Rivers"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
-		{Move: &v1.MoveResult{From: "Deltas.md"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
+		{Move: &v1.MoveResult{From: "Nowhere.md"}, Error: v1.ErrorCode_ERROR_CODE_NOT_FOUND},
+		{Move: &v1.MoveResult{From: "Rivers"}, Error: v1.ErrorCode_ERROR_CODE_NOT_A_NOTE},
+		{Move: &v1.MoveResult{From: "Deltas.md"}, Error: v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS},
 	}}), nil
 }
 
@@ -71,8 +71,8 @@ func (a *fakeArrangeHost) RemoveNotes(
 	a.record("remove " + req.Msg.GetPaths()[0])
 	return connect.NewResponse(&v1.HostNoteServiceRemoveNotesResponse{Removals: []*v1.HostNoteRemoval{
 		{Path: "Danube.md", TrashPath: ".trash/Danube.md", BrokenLinks: []string{"Deltas.md"}},
-		{Path: "Rivers", Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
-		{Path: "Nowhere.md", Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
+		{Path: "Rivers", Error: v1.ErrorCode_ERROR_CODE_NOT_A_NOTE},
+		{Path: "Nowhere.md", Error: v1.ErrorCode_ERROR_CODE_NOT_FOUND},
 	}}), nil
 }
 
@@ -170,12 +170,12 @@ func TestTheClientRenamesANoteAndReadsTheMove(t *testing.T) {
 }
 
 func TestClientReturnsTheErrorCodeOfARejectedRename(t *testing.T) {
-	for code, want := range map[v1.HostVaultErrorCode]error{
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND:      host.ErrNotExist,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:     host.ErrNotANote,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS: host.ErrAlreadyExists,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT:       host.ErrStale,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME:   domain.ErrInvalidName,
+	for code, want := range map[v1.ErrorCode]error{
+		v1.ErrorCode_ERROR_CODE_NOT_FOUND:      host.ErrNotExist,
+		v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:     host.ErrNotANote,
+		v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS: host.ErrAlreadyExists,
+		v1.ErrorCode_ERROR_CODE_CONFLICT:       host.ErrStale,
+		v1.ErrorCode_ERROR_CODE_INVALID_NAME:   domain.ErrInvalidName,
 	} {
 		_, err := newFakeArrangeClient(t, &fakeArrangeHost{noteError: code}).RenameNote(t.Context(), "Danube.md", "Donau")
 		if !errors.Is(err, want) {

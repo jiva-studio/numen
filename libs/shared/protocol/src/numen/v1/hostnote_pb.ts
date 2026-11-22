@@ -6,19 +6,19 @@ import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegen
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { MoveResult } from "./file_pb.js";
 import { file_numen_v1_file } from "./file_pb.js";
-import type { FileChangeCursor, HostFileStat } from "./hostfile_pb.js";
+import type { FileChangeCursor } from "./hostfile_pb.js";
 import { file_numen_v1_hostfile } from "./hostfile_pb.js";
-import type { HostVaultErrorCode } from "./hostvault_pb.js";
-import { file_numen_v1_hostvault } from "./hostvault_pb.js";
 import type { NameSource } from "./note_pb.js";
 import { file_numen_v1_note } from "./note_pb.js";
+import type { ErrorCode, FileStat } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hostnote.proto.
  */
 export const file_numen_v1_hostnote: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0bm90ZS5wcm90bxIIbnVtZW4udjEiNgoLSG9zdE5vdGVSZWYSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIKCgJpZBgDIAEoCSIjChJHZXROb3RlUmVmc1JlcXVlc3QSDQoFcGF0aHMYASADKAkiaAoTR2V0Tm90ZVJlZnNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIkCgVub3RlcxgCIAMoCzIVLm51bWVuLnYxLkhvc3ROb3RlUmVmIiQKE0dldE5vdGVUeXBlc1JlcXVlc3QSDQoFcGF0aHMYASADKAkiqwEKFEdldE5vdGVUeXBlc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEjgKBXR5cGVzGAIgAygLMikubnVtZW4udjEuR2V0Tm90ZVR5cGVzUmVzcG9uc2UuVHlwZXNFbnRyeRosCgpUeXBlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiJAoUR2V0TmFtZWRQYXRoc1JlcXVlc3QSDAoEbmFtZRgBIAEoCSJTChVHZXROYW1lZFBhdGhzUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSDQoFcGF0aHMYAiADKAkiJQoVR2V0UGF0aHNPZlR5cGVSZXF1ZXN0EgwKBHR5cGUYASABKAkiVAoWR2V0UGF0aHNPZlR5cGVSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRINCgVwYXRocxgCIAMoCSJcChZSZWFkRnJvbnRtYXR0ZXJSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJEgwKBGtleXMYAiADKAkSEQoJcGFnZV9zaXplGAMgASgFEhIKCnBhZ2VfdG9rZW4YBCABKAkitQEKF1JlYWRGcm9udG1hdHRlclJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEigKBW5vdGVzGAIgAygLMhkubnVtZW4udjEuTm90ZUZyb250bWF0dGVyEhcKD25leHRfcGFnZV90b2tlbhgDIAEoCRIqCgZjdXJzb3IYBCABKAsyGi5udW1lbi52MS5GaWxlQ2hhbmdlQ3Vyc29yIkgKF1dyaXRlRnJvbnRtYXR0ZXJSZXF1ZXN0Ei0KBW5vdGVzGAEgAygLMh4ubnVtZW4udjEuTm90ZUZyb250bWF0dGVyV3JpdGUiXgoUTm90ZUZyb250bWF0dGVyV3JpdGUSDAoEcGF0aBgBIAEoCRIOCgZ2YWx1ZXMYAiABKAwSKAoIYmFzZWxpbmUYAyABKAsyFi5udW1lbi52MS5Ib3N0RmlsZVN0YXQiegoYV3JpdGVGcm9udG1hdHRlclJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEjEKB3Jlc3VsdHMYAiADKAsyIC5udW1lbi52MS5Ob3RlRnJvbnRtYXR0ZXJXcml0dGVuInsKFk5vdGVGcm9udG1hdHRlcldyaXR0ZW4SJAoEc3RhdBgBIAEoCzIWLm51bWVuLnYxLkhvc3RGaWxlU3RhdBIrCgVlcnJvchgCIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkiQgoPTm90ZUZyb250bWF0dGVyEgwKBHBhdGgYASABKAkSDgoGdmFsdWVzGAIgASgMEhEKCXNvdXJjZV9pZBgDIAEoAyI/CiBIb3N0Tm90ZVNlcnZpY2VSZW5hbWVOb3RlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJItoBCiFIb3N0Tm90ZVNlcnZpY2VSZW5hbWVOb3RlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSDAoEcGF0aBgCIAEoCRINCgV0aXRsZRgDIAEoCRIpCgtuYW1lX3NvdXJjZRgEIAEoDjIULm51bWVuLnYxLk5hbWVTb3VyY2USJwoEbW92ZRgFIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARIOCgZkZXRhaWwYBiABKAlCBwoFX21vdmUiQAofSG9zdE5vdGVTZXJ2aWNlTW92ZU5vdGVzUmVxdWVzdBINCgVwYXRocxgBIAMoCRIOCgZmb2xkZXIYAiABKAkibwoMSG9zdE5vdGVNb3ZlEiIKBG1vdmUYASABKAsyFC5udW1lbi52MS5Nb3ZlUmVzdWx0EisKBWVycm9yGAIgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEg4KBmRldGFpbBgDIAEoCSJ2CiBIb3N0Tm90ZVNlcnZpY2VNb3ZlTm90ZXNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIlCgVtb3ZlcxgCIAMoCzIWLm51bWVuLnYxLkhvc3ROb3RlTW92ZSIyCiFIb3N0Tm90ZVNlcnZpY2VSZW1vdmVOb3Rlc1JlcXVlc3QSDQoFcGF0aHMYASADKAkihgEKD0hvc3ROb3RlUmVtb3ZhbBIMCgRwYXRoGAEgASgJEhIKCnRyYXNoX3BhdGgYAiABKAkSFAoMYnJva2VuX2xpbmtzGAMgAygJEisKBWVycm9yGAQgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEg4KBmRldGFpbBgFIAEoCSJ+CiJIb3N0Tm90ZVNlcnZpY2VSZW1vdmVOb3Rlc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEisKCHJlbW92YWxzGAIgAygLMhkubnVtZW4udjEuSG9zdE5vdGVSZW1vdmFsMrsGCg9Ib3N0Tm90ZVNlcnZpY2USSgoLR2V0Tm90ZVJlZnMSHC5udW1lbi52MS5HZXROb3RlUmVmc1JlcXVlc3QaHS5udW1lbi52MS5HZXROb3RlUmVmc1Jlc3BvbnNlEk0KDEdldE5vdGVUeXBlcxIdLm51bWVuLnYxLkdldE5vdGVUeXBlc1JlcXVlc3QaHi5udW1lbi52MS5HZXROb3RlVHlwZXNSZXNwb25zZRJQCg1HZXROYW1lZFBhdGhzEh4ubnVtZW4udjEuR2V0TmFtZWRQYXRoc1JlcXVlc3QaHy5udW1lbi52MS5HZXROYW1lZFBhdGhzUmVzcG9uc2USUwoOR2V0UGF0aHNPZlR5cGUSHy5udW1lbi52MS5HZXRQYXRoc09mVHlwZVJlcXVlc3QaIC5udW1lbi52MS5HZXRQYXRoc09mVHlwZVJlc3BvbnNlElYKD1JlYWRGcm9udG1hdHRlchIgLm51bWVuLnYxLlJlYWRGcm9udG1hdHRlclJlcXVlc3QaIS5udW1lbi52MS5SZWFkRnJvbnRtYXR0ZXJSZXNwb25zZRJZChBXcml0ZUZyb250bWF0dGVyEiEubnVtZW4udjEuV3JpdGVGcm9udG1hdHRlclJlcXVlc3QaIi5udW1lbi52MS5Xcml0ZUZyb250bWF0dGVyUmVzcG9uc2USZQoKUmVuYW1lTm90ZRIqLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZVJlbmFtZU5vdGVSZXF1ZXN0GisubnVtZW4udjEuSG9zdE5vdGVTZXJ2aWNlUmVuYW1lTm90ZVJlc3BvbnNlEmIKCU1vdmVOb3RlcxIpLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZU1vdmVOb3Rlc1JlcXVlc3QaKi5udW1lbi52MS5Ib3N0Tm90ZVNlcnZpY2VNb3ZlTm90ZXNSZXNwb25zZRJoCgtSZW1vdmVOb3RlcxIrLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZVJlbW92ZU5vdGVzUmVxdWVzdBosLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZVJlbW92ZU5vdGVzUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file, file_numen_v1_hostfile, file_numen_v1_hostvault, file_numen_v1_note]);
+  fileDesc("ChdudW1lbi92MS9ob3N0bm90ZS5wcm90bxIIbnVtZW4udjEiNgoLSG9zdE5vdGVSZWYSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIKCgJpZBgDIAEoCSIjChJHZXROb3RlUmVmc1JlcXVlc3QSDQoFcGF0aHMYASADKAkiXwoTR2V0Tm90ZVJlZnNSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIkCgVub3RlcxgCIAMoCzIVLm51bWVuLnYxLkhvc3ROb3RlUmVmIiQKE0dldE5vdGVUeXBlc1JlcXVlc3QSDQoFcGF0aHMYASADKAkiogEKFEdldE5vdGVUeXBlc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEjgKBXR5cGVzGAIgAygLMikubnVtZW4udjEuR2V0Tm90ZVR5cGVzUmVzcG9uc2UuVHlwZXNFbnRyeRosCgpUeXBlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiJAoUR2V0TmFtZWRQYXRoc1JlcXVlc3QSDAoEbmFtZRgBIAEoCSJKChVHZXROYW1lZFBhdGhzUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDQoFcGF0aHMYAiADKAkiJQoVR2V0UGF0aHNPZlR5cGVSZXF1ZXN0EgwKBHR5cGUYASABKAkiSwoWR2V0UGF0aHNPZlR5cGVSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRINCgVwYXRocxgCIAMoCSJcChZSZWFkRnJvbnRtYXR0ZXJSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJEgwKBGtleXMYAiADKAkSEQoJcGFnZV9zaXplGAMgASgFEhIKCnBhZ2VfdG9rZW4YBCABKAkirAEKF1JlYWRGcm9udG1hdHRlclJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEigKBW5vdGVzGAIgAygLMhkubnVtZW4udjEuTm90ZUZyb250bWF0dGVyEhcKD25leHRfcGFnZV90b2tlbhgDIAEoCRIqCgZjdXJzb3IYBCABKAsyGi5udW1lbi52MS5GaWxlQ2hhbmdlQ3Vyc29yIkgKF1dyaXRlRnJvbnRtYXR0ZXJSZXF1ZXN0Ei0KBW5vdGVzGAEgAygLMh4ubnVtZW4udjEuTm90ZUZyb250bWF0dGVyV3JpdGUiWgoUTm90ZUZyb250bWF0dGVyV3JpdGUSDAoEcGF0aBgBIAEoCRIOCgZ2YWx1ZXMYAiABKAwSJAoIYmFzZWxpbmUYAyABKAsyEi5udW1lbi52MS5GaWxlU3RhdCJxChhXcml0ZUZyb250bWF0dGVyUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSMQoHcmVzdWx0cxgCIAMoCzIgLm51bWVuLnYxLk5vdGVGcm9udG1hdHRlcldyaXR0ZW4ibgoWTm90ZUZyb250bWF0dGVyV3JpdHRlbhIgCgRzdGF0GAEgASgLMhIubnVtZW4udjEuRmlsZVN0YXQSIgoFZXJyb3IYAiABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIkIKD05vdGVGcm9udG1hdHRlchIMCgRwYXRoGAEgASgJEg4KBnZhbHVlcxgCIAEoDBIRCglzb3VyY2VfaWQYAyABKAMiPwogSG9zdE5vdGVTZXJ2aWNlUmVuYW1lTm90ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCSLRAQohSG9zdE5vdGVTZXJ2aWNlUmVuYW1lTm90ZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEgwKBHBhdGgYAiABKAkSDQoFdGl0bGUYAyABKAkSKQoLbmFtZV9zb3VyY2UYBCABKA4yFC5udW1lbi52MS5OYW1lU291cmNlEicKBG1vdmUYBSABKAsyFC5udW1lbi52MS5Nb3ZlUmVzdWx0SACIAQESDgoGZGV0YWlsGAYgASgJQgcKBV9tb3ZlIkAKH0hvc3ROb3RlU2VydmljZU1vdmVOb3Rlc1JlcXVlc3QSDQoFcGF0aHMYASADKAkSDgoGZm9sZGVyGAIgASgJImYKDEhvc3ROb3RlTW92ZRIiCgRtb3ZlGAEgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdBIiCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkibQogSG9zdE5vdGVTZXJ2aWNlTW92ZU5vdGVzUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSJQoFbW92ZXMYAiADKAsyFi5udW1lbi52MS5Ib3N0Tm90ZU1vdmUiMgohSG9zdE5vdGVTZXJ2aWNlUmVtb3ZlTm90ZXNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIn0KD0hvc3ROb3RlUmVtb3ZhbBIMCgRwYXRoGAEgASgJEhIKCnRyYXNoX3BhdGgYAiABKAkSFAoMYnJva2VuX2xpbmtzGAMgAygJEiIKBWVycm9yGAQgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg4KBmRldGFpbBgFIAEoCSJ1CiJIb3N0Tm90ZVNlcnZpY2VSZW1vdmVOb3Rlc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEisKCHJlbW92YWxzGAIgAygLMhkubnVtZW4udjEuSG9zdE5vdGVSZW1vdmFsMrsGCg9Ib3N0Tm90ZVNlcnZpY2USSgoLR2V0Tm90ZVJlZnMSHC5udW1lbi52MS5HZXROb3RlUmVmc1JlcXVlc3QaHS5udW1lbi52MS5HZXROb3RlUmVmc1Jlc3BvbnNlEk0KDEdldE5vdGVUeXBlcxIdLm51bWVuLnYxLkdldE5vdGVUeXBlc1JlcXVlc3QaHi5udW1lbi52MS5HZXROb3RlVHlwZXNSZXNwb25zZRJQCg1HZXROYW1lZFBhdGhzEh4ubnVtZW4udjEuR2V0TmFtZWRQYXRoc1JlcXVlc3QaHy5udW1lbi52MS5HZXROYW1lZFBhdGhzUmVzcG9uc2USUwoOR2V0UGF0aHNPZlR5cGUSHy5udW1lbi52MS5HZXRQYXRoc09mVHlwZVJlcXVlc3QaIC5udW1lbi52MS5HZXRQYXRoc09mVHlwZVJlc3BvbnNlElYKD1JlYWRGcm9udG1hdHRlchIgLm51bWVuLnYxLlJlYWRGcm9udG1hdHRlclJlcXVlc3QaIS5udW1lbi52MS5SZWFkRnJvbnRtYXR0ZXJSZXNwb25zZRJZChBXcml0ZUZyb250bWF0dGVyEiEubnVtZW4udjEuV3JpdGVGcm9udG1hdHRlclJlcXVlc3QaIi5udW1lbi52MS5Xcml0ZUZyb250bWF0dGVyUmVzcG9uc2USZQoKUmVuYW1lTm90ZRIqLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZVJlbmFtZU5vdGVSZXF1ZXN0GisubnVtZW4udjEuSG9zdE5vdGVTZXJ2aWNlUmVuYW1lTm90ZVJlc3BvbnNlEmIKCU1vdmVOb3RlcxIpLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZU1vdmVOb3Rlc1JlcXVlc3QaKi5udW1lbi52MS5Ib3N0Tm90ZVNlcnZpY2VNb3ZlTm90ZXNSZXNwb25zZRJoCgtSZW1vdmVOb3RlcxIrLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZVJlbW92ZU5vdGVzUmVxdWVzdBosLm51bWVuLnYxLkhvc3ROb3RlU2VydmljZVJlbW92ZU5vdGVzUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_file, file_numen_v1_hostfile, file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * HostNoteRef is a note: at its current position and what it is called.
@@ -73,9 +73,9 @@ export const GetNoteRefsRequestSchema: GenMessage<GetNoteRefsRequest> = /*@__PUR
  */
 export type GetNoteRefsResponse = Message<"numen.v1.GetNoteRefsResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated numen.v1.HostNoteRef notes = 2;
@@ -112,9 +112,9 @@ export const GetNoteTypesRequestSchema: GenMessage<GetNoteTypesRequest> = /*@__P
  */
 export type GetNoteTypesResponse = Message<"numen.v1.GetNoteTypesResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The type of each note, by its path. A path with no note is left out.
@@ -153,9 +153,9 @@ export const GetNamedPathsRequestSchema: GenMessage<GetNamedPathsRequest> = /*@_
  */
 export type GetNamedPathsResponse = Message<"numen.v1.GetNamedPathsResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated string paths = 2;
@@ -192,9 +192,9 @@ export const GetPathsOfTypeRequestSchema: GenMessage<GetPathsOfTypeRequest> = /*
  */
 export type GetPathsOfTypeResponse = Message<"numen.v1.GetPathsOfTypeResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated string paths = 2;
@@ -255,9 +255,9 @@ export const ReadFrontmatterRequestSchema: GenMessage<ReadFrontmatterRequest> = 
  */
 export type ReadFrontmatterResponse = Message<"numen.v1.ReadFrontmatterResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated numen.v1.NoteFrontmatter notes = 2;
@@ -325,9 +325,9 @@ export type NoteFrontmatterWrite = Message<"numen.v1.NoteFrontmatterWrite"> & {
    * baseline is the file state the caller read; a note changed since is left
    * unchanged (stale).
    *
-   * @generated from field: numen.v1.HostFileStat baseline = 3;
+   * @generated from field: numen.v1.FileStat baseline = 3;
    */
-  baseline?: HostFileStat | undefined;
+  baseline?: FileStat | undefined;
 };
 
 /**
@@ -342,9 +342,9 @@ export const NoteFrontmatterWriteSchema: GenMessage<NoteFrontmatterWrite> = /*@_
  */
 export type WriteFrontmatterResponse = Message<"numen.v1.WriteFrontmatterResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * One result per note, in the order of the request.
@@ -368,14 +368,14 @@ export type NoteFrontmatterWritten = Message<"numen.v1.NoteFrontmatterWritten"> 
   /**
    * The note after the write; unset when nothing was written.
    *
-   * @generated from field: numen.v1.HostFileStat stat = 1;
+   * @generated from field: numen.v1.FileStat stat = 1;
    */
-  stat?: HostFileStat | undefined;
+  stat?: FileStat | undefined;
 
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: string detail = 3;
@@ -454,9 +454,9 @@ export type HostNoteServiceRenameNoteResponse = Message<"numen.v1.HostNoteServic
    * Why the note was not renamed: NOT_FOUND, NOT_A_NOTE, INVALID_NAME,
    * ALREADY_EXISTS, CONFLICT and the other per-note codes.
    *
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The path of the note after the rename.
@@ -541,9 +541,9 @@ export type HostNoteMove = Message<"numen.v1.HostNoteMove"> & {
   /**
    * Why this note did not move.
    *
-   * @generated from field: numen.v1.HostVaultErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The core's error text where this note did not move, empty on success.
@@ -565,9 +565,9 @@ export const HostNoteMoveSchema: GenMessage<HostNoteMove> = /*@__PURE__*/
  */
 export type HostNoteServiceMoveNotesResponse = Message<"numen.v1.HostNoteServiceMoveNotesResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * One per path, in the order of the request.
@@ -632,9 +632,9 @@ export type HostNoteRemoval = Message<"numen.v1.HostNoteRemoval"> & {
    * Why this note was not removed: NOT_FOUND, NOT_A_NOTE for a folder or a
    * file that is not a note, or INTERNAL.
    *
-   * @generated from field: numen.v1.HostVaultErrorCode error = 4;
+   * @generated from field: numen.v1.ErrorCode error = 4;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The core's error text where this note was not removed, empty on success.
@@ -656,9 +656,9 @@ export const HostNoteRemovalSchema: GenMessage<HostNoteRemoval> = /*@__PURE__*/
  */
 export type HostNoteServiceRemoveNotesResponse = Message<"numen.v1.HostNoteServiceRemoveNotesResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * One per path, in the order of the request.

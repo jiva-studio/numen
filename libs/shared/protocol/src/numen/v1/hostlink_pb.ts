@@ -4,19 +4,18 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { HostFileStat } from "./hostfile_pb.js";
 import { file_numen_v1_hostfile } from "./hostfile_pb.js";
-import type { HostVaultErrorCode } from "./hostvault_pb.js";
-import { file_numen_v1_hostvault } from "./hostvault_pb.js";
 import type { Marker, Role } from "./note_pb.js";
 import { file_numen_v1_note } from "./note_pb.js";
+import type { ErrorCode, FileStat } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hostlink.proto.
  */
 export const file_numen_v1_hostlink: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0bGluay5wcm90bxIIbnVtZW4udjEijgIKCEhvc3RMaW5rEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIdG9fdmF1bHQYAyABKAkSEQoJbGlua190eXBlGAQgASgJEhUKDXRhcmdldF9zY2hlbWUYBSABKAkSFAoMdGFyZ2V0X3ZhbHVlGAYgASgJEg0KBWxhYmVsGAcgASgJEhQKDGlzX2FtYmlndW91cxgIIAEoCBIcCgRyb2xlGAkgASgOMg4ubnVtZW4udjEuUm9sZRIMCgRub3RlGAogASgJEiAKBm1hcmtlchgLIAEoDjIQLm51bWVuLnYxLk1hcmtlchIjCgtzb3VyY2Vfcm9sZRgMIAEoDjIOLm51bWVuLnYxLlJvbGUiHwoPR2V0TGlua3NSZXF1ZXN0EgwKBHBhdGgYASABKAkiYgoQR2V0TGlua3NSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIhCgVsaW5rcxgCIAMoCzISLm51bWVuLnYxLkhvc3RMaW5rIiMKE0dldEJhY2tsaW5rc1JlcXVlc3QSDAoEcGF0aBgBIAEoCSJmChRHZXRCYWNrbGlua3NSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIhCgVsaW5rcxgCIAMoCzISLm51bWVuLnYxLkhvc3RMaW5rIjYKE1Jlc29sdmVMaW5rc1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIRCglhZGRyZXNzZXMYAiADKAkivwEKFFJlc29sdmVMaW5rc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEjgKBWxpbmtzGAIgAygLMikubnVtZW4udjEuUmVzb2x2ZUxpbmtzUmVzcG9uc2UuTGlua3NFbnRyeRpACgpMaW5rc0VudHJ5EgsKA2tleRgBIAEoCRIhCgV2YWx1ZRgCIAEoCzISLm51bWVuLnYxLkhvc3RMaW5rOgI4ASKfAQoQSG9zdExpbmtBZGRpdGlvbhIMCgRmcm9tGAEgASgJEigKCGJhc2VsaW5lGAIgASgLMhYubnVtZW4udjEuSG9zdEZpbGVTdGF0EgoKAnRvGAMgASgJEhwKBHJvbGUYBCABKA4yDi5udW1lbi52MS5Sb2xlEgwKBHR5cGUYBSABKAkSDQoFbGFiZWwYBiABKAkSDAoEbm90ZRgHIAEoCSJLCh5Ib3N0TGlua1NlcnZpY2VBZGRMaW5rc1JlcXVlc3QSKQoFbGlua3MYASADKAsyGi5udW1lbi52MS5Ib3N0TGlua0FkZGl0aW9uInIKDUhvc3RMaW5rQWRkZWQSJAoEc3RhdBgBIAEoCzIWLm51bWVuLnYxLkhvc3RGaWxlU3RhdBIrCgVlcnJvchgCIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIOCgZkZXRhaWwYAyABKAkieAofSG9zdExpbmtTZXJ2aWNlQWRkTGlua3NSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIoCgdyZXN1bHRzGAIgAygLMhcubnVtZW4udjEuSG9zdExpbmtBZGRlZCKwAQohSG9zdExpbmtTZXJ2aWNlVXBkYXRlTGlua3NSZXF1ZXN0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSKAoIYmFzZWxpbmUYAyABKAsyFi5udW1lbi52MS5Ib3N0RmlsZVN0YXQSHAoEcm9sZRgEIAEoDjIOLm51bWVuLnYxLlJvbGUSDAoEdHlwZRgFIAEoCRINCgVsYWJlbBgGIAEoCRIMCgRub3RlGAcgASgJIocBCiJIb3N0TGlua1NlcnZpY2VVcGRhdGVMaW5rc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEiQKBHN0YXQYAiABKAsyFi5udW1lbi52MS5Ib3N0RmlsZVN0YXQSDgoGZGV0YWlsGAMgASgJIoUBCiFIb3N0TGlua1NlcnZpY2VSZW1vdmVMaW5rc1JlcXVlc3QSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCRIoCghiYXNlbGluZRgDIAEoCzIWLm51bWVuLnYxLkhvc3RGaWxlU3RhdBIcCgRyb2xlGAQgASgOMg4ubnVtZW4udjEuUm9sZSKHAQoiSG9zdExpbmtTZXJ2aWNlUmVtb3ZlTGlua3NSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIkCgRzdGF0GAIgASgLMhYubnVtZW4udjEuSG9zdEZpbGVTdGF0Eg4KBmRldGFpbBgDIAEoCTKnBAoPSG9zdExpbmtTZXJ2aWNlEkEKCEdldExpbmtzEhkubnVtZW4udjEuR2V0TGlua3NSZXF1ZXN0GhoubnVtZW4udjEuR2V0TGlua3NSZXNwb25zZRJNCgxHZXRCYWNrbGlua3MSHS5udW1lbi52MS5HZXRCYWNrbGlua3NSZXF1ZXN0Gh4ubnVtZW4udjEuR2V0QmFja2xpbmtzUmVzcG9uc2USTQoMUmVzb2x2ZUxpbmtzEh0ubnVtZW4udjEuUmVzb2x2ZUxpbmtzUmVxdWVzdBoeLm51bWVuLnYxLlJlc29sdmVMaW5rc1Jlc3BvbnNlEl8KCEFkZExpbmtzEigubnVtZW4udjEuSG9zdExpbmtTZXJ2aWNlQWRkTGlua3NSZXF1ZXN0GikubnVtZW4udjEuSG9zdExpbmtTZXJ2aWNlQWRkTGlua3NSZXNwb25zZRJoCgtVcGRhdGVMaW5rcxIrLm51bWVuLnYxLkhvc3RMaW5rU2VydmljZVVwZGF0ZUxpbmtzUmVxdWVzdBosLm51bWVuLnYxLkhvc3RMaW5rU2VydmljZVVwZGF0ZUxpbmtzUmVzcG9uc2USaAoLUmVtb3ZlTGlua3MSKy5udW1lbi52MS5Ib3N0TGlua1NlcnZpY2VSZW1vdmVMaW5rc1JlcXVlc3QaLC5udW1lbi52MS5Ib3N0TGlua1NlcnZpY2VSZW1vdmVMaW5rc1Jlc3BvbnNlQkhaRmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9zaGFyZWQvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_hostfile, file_numen_v1_hostvault, file_numen_v1_note]);
+  fileDesc("ChdudW1lbi92MS9ob3N0bGluay5wcm90bxIIbnVtZW4udjEijgIKCEhvc3RMaW5rEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIdG9fdmF1bHQYAyABKAkSEQoJbGlua190eXBlGAQgASgJEhUKDXRhcmdldF9zY2hlbWUYBSABKAkSFAoMdGFyZ2V0X3ZhbHVlGAYgASgJEg0KBWxhYmVsGAcgASgJEhQKDGlzX2FtYmlndW91cxgIIAEoCBIcCgRyb2xlGAkgASgOMg4ubnVtZW4udjEuUm9sZRIMCgRub3RlGAogASgJEiAKBm1hcmtlchgLIAEoDjIQLm51bWVuLnYxLk1hcmtlchIjCgtzb3VyY2Vfcm9sZRgMIAEoDjIOLm51bWVuLnYxLlJvbGUiHwoPR2V0TGlua3NSZXF1ZXN0EgwKBHBhdGgYASABKAkiWQoQR2V0TGlua3NSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIhCgVsaW5rcxgCIAMoCzISLm51bWVuLnYxLkhvc3RMaW5rIiMKE0dldEJhY2tsaW5rc1JlcXVlc3QSDAoEcGF0aBgBIAEoCSJdChRHZXRCYWNrbGlua3NSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIhCgVsaW5rcxgCIAMoCzISLm51bWVuLnYxLkhvc3RMaW5rIjYKE1Jlc29sdmVMaW5rc1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIRCglhZGRyZXNzZXMYAiADKAkitgEKFFJlc29sdmVMaW5rc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEjgKBWxpbmtzGAIgAygLMikubnVtZW4udjEuUmVzb2x2ZUxpbmtzUmVzcG9uc2UuTGlua3NFbnRyeRpACgpMaW5rc0VudHJ5EgsKA2tleRgBIAEoCRIhCgV2YWx1ZRgCIAEoCzISLm51bWVuLnYxLkhvc3RMaW5rOgI4ASKbAQoQSG9zdExpbmtBZGRpdGlvbhIMCgRmcm9tGAEgASgJEiQKCGJhc2VsaW5lGAIgASgLMhIubnVtZW4udjEuRmlsZVN0YXQSCgoCdG8YAyABKAkSHAoEcm9sZRgEIAEoDjIOLm51bWVuLnYxLlJvbGUSDAoEdHlwZRgFIAEoCRINCgVsYWJlbBgGIAEoCRIMCgRub3RlGAcgASgJIksKHkhvc3RMaW5rU2VydmljZUFkZExpbmtzUmVxdWVzdBIpCgVsaW5rcxgBIAMoCzIaLm51bWVuLnYxLkhvc3RMaW5rQWRkaXRpb24iZQoNSG9zdExpbmtBZGRlZBIgCgRzdGF0GAEgASgLMhIubnVtZW4udjEuRmlsZVN0YXQSIgoFZXJyb3IYAiABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSDgoGZGV0YWlsGAMgASgJIm8KH0hvc3RMaW5rU2VydmljZUFkZExpbmtzUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSKAoHcmVzdWx0cxgCIAMoCzIXLm51bWVuLnYxLkhvc3RMaW5rQWRkZWQirAEKIUhvc3RMaW5rU2VydmljZVVwZGF0ZUxpbmtzUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJEiQKCGJhc2VsaW5lGAMgASgLMhIubnVtZW4udjEuRmlsZVN0YXQSHAoEcm9sZRgEIAEoDjIOLm51bWVuLnYxLlJvbGUSDAoEdHlwZRgFIAEoCRINCgVsYWJlbBgGIAEoCRIMCgRub3RlGAcgASgJInoKIkhvc3RMaW5rU2VydmljZVVwZGF0ZUxpbmtzUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSIAoEc3RhdBgCIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0Eg4KBmRldGFpbBgDIAEoCSKBAQohSG9zdExpbmtTZXJ2aWNlUmVtb3ZlTGlua3NSZXF1ZXN0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSJAoIYmFzZWxpbmUYAyABKAsyEi5udW1lbi52MS5GaWxlU3RhdBIcCgRyb2xlGAQgASgOMg4ubnVtZW4udjEuUm9sZSJ6CiJIb3N0TGlua1NlcnZpY2VSZW1vdmVMaW5rc1Jlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEiAKBHN0YXQYAiABKAsyEi5udW1lbi52MS5GaWxlU3RhdBIOCgZkZXRhaWwYAyABKAkypwQKD0hvc3RMaW5rU2VydmljZRJBCghHZXRMaW5rcxIZLm51bWVuLnYxLkdldExpbmtzUmVxdWVzdBoaLm51bWVuLnYxLkdldExpbmtzUmVzcG9uc2USTQoMR2V0QmFja2xpbmtzEh0ubnVtZW4udjEuR2V0QmFja2xpbmtzUmVxdWVzdBoeLm51bWVuLnYxLkdldEJhY2tsaW5rc1Jlc3BvbnNlEk0KDFJlc29sdmVMaW5rcxIdLm51bWVuLnYxLlJlc29sdmVMaW5rc1JlcXVlc3QaHi5udW1lbi52MS5SZXNvbHZlTGlua3NSZXNwb25zZRJfCghBZGRMaW5rcxIoLm51bWVuLnYxLkhvc3RMaW5rU2VydmljZUFkZExpbmtzUmVxdWVzdBopLm51bWVuLnYxLkhvc3RMaW5rU2VydmljZUFkZExpbmtzUmVzcG9uc2USaAoLVXBkYXRlTGlua3MSKy5udW1lbi52MS5Ib3N0TGlua1NlcnZpY2VVcGRhdGVMaW5rc1JlcXVlc3QaLC5udW1lbi52MS5Ib3N0TGlua1NlcnZpY2VVcGRhdGVMaW5rc1Jlc3BvbnNlEmgKC1JlbW92ZUxpbmtzEisubnVtZW4udjEuSG9zdExpbmtTZXJ2aWNlUmVtb3ZlTGlua3NSZXF1ZXN0GiwubnVtZW4udjEuSG9zdExpbmtTZXJ2aWNlUmVtb3ZlTGlua3NSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_hostfile, file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * HostLink is a link written in a note, and what it reaches now.
@@ -136,9 +135,9 @@ export const GetLinksRequestSchema: GenMessage<GetLinksRequest> = /*@__PURE__*/
  */
 export type GetLinksResponse = Message<"numen.v1.GetLinksResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated numen.v1.HostLink links = 2;
@@ -175,9 +174,9 @@ export const GetBacklinksRequestSchema: GenMessage<GetBacklinksRequest> = /*@__P
  */
 export type GetBacklinksResponse = Message<"numen.v1.GetBacklinksResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated numen.v1.HostLink links = 2;
@@ -223,9 +222,9 @@ export const ResolveLinksRequestSchema: GenMessage<ResolveLinksRequest> = /*@__P
  */
 export type ResolveLinksResponse = Message<"numen.v1.ResolveLinksResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * What each link reaches, by how it was written.
@@ -258,9 +257,9 @@ export type HostLinkAddition = Message<"numen.v1.HostLinkAddition"> & {
   /**
    * The note as the caller read it.
    *
-   * @generated from field: numen.v1.HostFileStat baseline = 2;
+   * @generated from field: numen.v1.FileStat baseline = 2;
    */
-  baseline?: HostFileStat | undefined;
+  baseline?: FileStat | undefined;
 
   /**
    * The target as written, e.g. "Rivers" or "note://01H...".
@@ -327,17 +326,17 @@ export type HostLinkAdded = Message<"numen.v1.HostLinkAdded"> & {
   /**
    * The note after the write; unset when nothing was written.
    *
-   * @generated from field: numen.v1.HostFileStat stat = 1;
+   * @generated from field: numen.v1.FileStat stat = 1;
    */
-  stat?: HostFileStat | undefined;
+  stat?: FileStat | undefined;
 
   /**
    * Why the link was not written: CONFLICT for a stale baseline, NOT_FOUND,
    * NOT_A_NOTE, UNREADABLE, INTERNAL and the other per-note codes.
    *
-   * @generated from field: numen.v1.HostVaultErrorCode error = 2;
+   * @generated from field: numen.v1.ErrorCode error = 2;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The core's error text where the link was not written, empty on success.
@@ -359,9 +358,9 @@ export const HostLinkAddedSchema: GenMessage<HostLinkAdded> = /*@__PURE__*/
  */
 export type HostLinkServiceAddLinksResponse = Message<"numen.v1.HostLinkServiceAddLinksResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * One per link, in the order of the request.
@@ -399,9 +398,9 @@ export type HostLinkServiceUpdateLinksRequest = Message<"numen.v1.HostLinkServic
   /**
    * The note as the caller read it.
    *
-   * @generated from field: numen.v1.HostFileStat baseline = 3;
+   * @generated from field: numen.v1.FileStat baseline = 3;
    */
-  baseline?: HostFileStat | undefined;
+  baseline?: FileStat | undefined;
 
   /**
    * @generated from field: numen.v1.Role role = 4;
@@ -436,16 +435,16 @@ export const HostLinkServiceUpdateLinksRequestSchema: GenMessage<HostLinkService
  */
 export type HostLinkServiceUpdateLinksResponse = Message<"numen.v1.HostLinkServiceUpdateLinksResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The note after the write.
    *
-   * @generated from field: numen.v1.HostFileStat stat = 2;
+   * @generated from field: numen.v1.FileStat stat = 2;
    */
-  stat?: HostFileStat | undefined;
+  stat?: FileStat | undefined;
 
   /**
    * The core's error text where nothing was written, empty on success.
@@ -483,9 +482,9 @@ export type HostLinkServiceRemoveLinksRequest = Message<"numen.v1.HostLinkServic
   /**
    * The note as the caller read it.
    *
-   * @generated from field: numen.v1.HostFileStat baseline = 3;
+   * @generated from field: numen.v1.FileStat baseline = 3;
    */
-  baseline?: HostFileStat | undefined;
+  baseline?: FileStat | undefined;
 
   /**
    * Only the links of this role. ROLE_UNSPECIFIED removes the links of every
@@ -508,16 +507,16 @@ export const HostLinkServiceRemoveLinksRequestSchema: GenMessage<HostLinkService
  */
 export type HostLinkServiceRemoveLinksResponse = Message<"numen.v1.HostLinkServiceRemoveLinksResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * The note after the write.
    *
-   * @generated from field: numen.v1.HostFileStat stat = 2;
+   * @generated from field: numen.v1.FileStat stat = 2;
    */
-  stat?: HostFileStat | undefined;
+  stat?: FileStat | undefined;
 
   /**
    * The core's error text where nothing was written, empty on success.
