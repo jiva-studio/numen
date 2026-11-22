@@ -260,17 +260,16 @@ func isHostDrawnSlot(name string) bool {
 	return name == SlotTabStripContext || name == SlotPaletteSearchResult || name == SlotPaletteNote
 }
 
-func (m Manifest) listSlotPointIssues() []error {
+func listSlotPointNameIssues(points []SlotPoint) []error {
 	var issues []error
 	named := map[string]bool{}
-	for _, point := range m.Contributes.SlotPoints {
+	for _, point := range points {
 		switch {
 		case !submenuIDPattern.MatchString(point.Slot):
 			issues = append(issues, fmt.Errorf("%w: %q is not words joined by dots", ErrInvalidSlotPoint, point.Slot))
 		case named[point.Slot]:
 			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidSlotPoint, point.Slot))
-		}
-		if isHostDrawnSlot(point.Slot) {
+		case isHostDrawnSlot(point.Slot):
 			issues = append(issues, fmt.Errorf("%w: %q is a slot only the application draws", ErrInvalidSlotPoint, point.Slot))
 		}
 		named[point.Slot] = true
@@ -278,12 +277,17 @@ func (m Manifest) listSlotPointIssues() []error {
 			issues = append(issues, fmt.Errorf("%w: %q has no title", ErrInvalidSlotPoint, point.Slot))
 		}
 	}
+	return issues
+}
+
+func (m Manifest) listSlotSettingIssues() []error {
 	settings := 0
 	for _, setting := range m.Settings {
 		if setting.Type == SettingTypeSlots {
 			settings++
 		}
 	}
+	var issues []error
 	if len(m.Contributes.SlotPoints) > 0 && settings == 0 {
 		issues = append(issues, fmt.Errorf("%w: the plugin declares slot points and no setting of the type %s to keep them in", ErrInvalidSlotPoint, SettingTypeSlots))
 	}
@@ -294,4 +298,8 @@ func (m Manifest) listSlotPointIssues() []error {
 		issues = append(issues, fmt.Errorf("%w: the plugin declares %d settings of the type %s, and keeps its slots in one", ErrInvalidSlotPoint, settings, SettingTypeSlots))
 	}
 	return issues
+}
+
+func (m Manifest) listSlotPointIssues() []error {
+	return append(listSlotPointNameIssues(m.Contributes.SlotPoints), m.listSlotSettingIssues()...)
 }
