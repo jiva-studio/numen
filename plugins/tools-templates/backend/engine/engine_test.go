@@ -435,3 +435,38 @@ func TestFallBackToTheDefaultWhenLeftEmpty(t *testing.T) {
 		t.Errorf("text = %q", got)
 	}
 }
+
+func TestRenderTheExamplesOfTheDocs(t *testing.T) {
+	t.Run("meeting note with prompts", func(t *testing.T) {
+		data := getData()
+		data.Values = map[string]string{"Client": "Globex", "Topic": "Budget"}
+		text := "{{ $client := prompt \"Client\" \"Acme\" }}# Meeting with {{ $client }}\n\nDate: {{ date \"YYYY-MM-DD\" }}\nTopic: {{ prompt \"Topic\" }}\nNotes on {{ $client }}: {{ cursor }}\n"
+
+		got, err := engine.New(nil).Render("T.md", text, data)
+
+		want := "# Meeting with Globex\n\nDate: 2026-11-14\nTopic: Budget\nNotes on Globex: "
+		if err != nil || got.Text != want+"\n" || got.Cursor != len([]rune(want)) {
+			t.Errorf("result = %+v, %v", got, err)
+		}
+	})
+	t.Run("daily note with date functions", func(t *testing.T) {
+		text := "# {{ date \"dddd, D MMMM YYYY\" }}\n\nYesterday: [[{{ addDays -1 | date \"YYYY-MM-DD\" }}]]\nTomorrow: [[{{ addDays 1 | date \"YYYY-MM-DD\" }}]]\n"
+
+		want := "# Saturday, 14 November 2026\n\nYesterday: [[2026-11-13]]\nTomorrow: [[2026-11-15]]\n"
+		if got := render(t, text); got != want {
+			t.Errorf("text = %q", got)
+		}
+	})
+	t.Run("note by select", func(t *testing.T) {
+		text := "# {{ .title }}\n{{ $kind := select \"Kind\" \"call\" \"visit\" }}Kind: {{ $kind }}\n{{ $where := prompt \"Address or phone\" }}{{ if eq $kind \"visit\" }}Address: {{ $where }}{{ else }}Phone: {{ $where }}{{ end }}\n"
+		visit := getData()
+		visit.Values = map[string]string{"Kind": "visit", "Address or phone": "Main St"}
+
+		if got := render(t, text); got != "# Plan\nKind: call\nPhone: \n" {
+			t.Errorf("call = %q", got)
+		}
+		if got := renderWith(t, text, visit); got != "# Plan\nKind: visit\nAddress: Main St\n" {
+			t.Errorf("visit = %q", got)
+		}
+	})
+}

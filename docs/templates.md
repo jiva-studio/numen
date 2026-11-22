@@ -102,3 +102,32 @@ created: {{ date "YYYY-MM-DD" }}
 Next week: {{ addDays 7 | date "dddd, D MMMM" }}
 {{ cursor }}
 ```
+
+### More examples
+
+A meeting note that asks who and what, and keeps the answer in a variable:
+
+```markdown
+{{ $client := prompt "Client" "Acme" }}# Meeting with {{ $client }}
+
+Date: {{ date "YYYY-MM-DD" }}
+Topic: {{ prompt "Topic" }}
+Notes on {{ $client }}: {{ cursor }}
+```
+
+A daily note with the days around today:
+
+```markdown
+# {{ date "dddd, D MMMM YYYY" }}
+
+Yesterday: [[{{ addDays -1 | date "YYYY-MM-DD" }}]]
+Tomorrow: [[{{ addDays 1 | date "YYYY-MM-DD" }}]]
+```
+
+A note that changes with a choice:
+
+```markdown
+# {{ .title }}
+{{ $kind := select "Kind" "call" "visit" }}Kind: {{ $kind }}
+{{ $where := prompt "Address or phone" }}{{ if eq $kind "visit" }}Address: {{ $where }}{{ else }}Phone: {{ $where }}{{ end }}
+```
