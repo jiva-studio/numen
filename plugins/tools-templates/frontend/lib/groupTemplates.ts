@@ -14,7 +14,7 @@ const compare = (left: string, right: string): number => {
 const compareText = (left: string, right: string): number =>
   compare(left.toLowerCase(), right.toLowerCase())
 
-const getTitle = (path: string): string => {
+export const getTitle = (path: string): string => {
   const stem = (path.split('/').pop() ?? path).replace(/\.md$/i, '')
   const title = stem.replace(/\.template$/, '')
   return title === '' ? stem : title

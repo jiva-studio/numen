@@ -13,8 +13,21 @@ const fixtures = import.meta.glob('../../testdata/api/*.json', {
 const read = (name: string): unknown => fixtures[`../../testdata/api/${name}.json`]
 
 const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
-  CreateNote: {
+  ListFields: {
     request: { template: 'Templates/Meeting.md', folder: 'notes' },
+    response: {
+      fields: [
+        { kind: 'text', label: 'Client', options: [], default: 'Acme' },
+        { kind: 'select', label: 'Kind', options: ['call', 'visit'], default: 'call' },
+      ],
+    },
+  },
+  CreateNote: {
+    request: {
+      template: 'Templates/Meeting.md',
+      folder: 'notes',
+      values: { Client: 'Acme', Kind: 'visit' },
+    },
     response: { path: 'notes/Meeting.md' },
   },
 }
