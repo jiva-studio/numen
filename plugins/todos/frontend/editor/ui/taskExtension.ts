@@ -26,13 +26,19 @@ class TaskBox extends WidgetType {
   constructor(
     readonly isDone: boolean,
     readonly label: string,
+    readonly isDisabled: boolean,
     readonly deps: TaskExtensionDeps,
   ) {
     super()
   }
 
   override eq(other: TaskBox) {
-    return other.isDone === this.isDone && other.label === this.label && other.deps === this.deps
+    return (
+      other.isDone === this.isDone &&
+      other.label === this.label &&
+      other.isDisabled === this.isDisabled &&
+      other.deps === this.deps
+    )
   }
 
   override ignoreEvent() {
@@ -45,7 +51,7 @@ class TaskBox extends WidgetType {
     box.className = 'cm-todo-box'
     box.setAttribute('aria-label', this.label)
     box.checked = this.isDone
-    box.disabled = view.state.readOnly || view.state.facet(editorNotePath) === ''
+    box.disabled = this.isDisabled
     box.addEventListener('mousedown', (event) => event.preventDefault())
     box.addEventListener('click', (event) => {
       event.preventDefault()
@@ -82,7 +88,7 @@ const FIELD_MARKS = Object.fromEntries(
     kind,
     Decoration.mark({ class: className }),
   ]),
-)
+) as Record<FieldKind, Decoration>
 const DONE_LINE = Decoration.line({ class: 'cm-todo-line-done' })
 const HIDDEN_FIELD = Decoration.replace({})
 
@@ -97,7 +103,7 @@ function addFields(
     let start = field.from
     while (isHidden && start > previousEnd && /[ \t]/.test(line.text[start - 1] ?? '')) start -= 1
     previousEnd = field.to
-    const mark = isHidden ? HIDDEN_FIELD : (FIELD_MARKS[field.kind] as Decoration)
+    const mark = isHidden ? HIDDEN_FIELD : FIELD_MARKS[field.kind]
     builder.add(line.from + start, line.from + field.to, mark)
   }
 }
@@ -107,8 +113,12 @@ function getLabel(text: string, task: TaskLine): string {
   return text.slice(task.textFrom, end).trim() || WORDS.taskBox
 }
 
+const isBoxDisabled = (state: EditorState): boolean =>
+  state.readOnly || state.facet(editorNotePath) === ''
+
 function buildTaskDecorations(state: EditorState, deps: TaskExtensionDeps): DecorationSet {
   const selection = state.selection.ranges
+  const isDisabled = isBoxDisabled(state)
   const builder = new RangeSetBuilder<Decoration>()
   const isFenced = createFenceTracker()
   let from = 0
@@ -123,7 +133,9 @@ function buildTaskDecorations(state: EditorState, deps: TaskExtensionDeps): Deco
     builder.add(
       lineFrom + task.markerFrom,
       lineFrom + task.textFrom,
-      Decoration.replace({ widget: new TaskBox(task.isDone, getLabel(text, task), deps) }),
+      Decoration.replace({
+        widget: new TaskBox(task.isDone, getLabel(text, task), isDisabled, deps),
+      }),
     )
     const isFocused = selection.some((range) => range.from <= to && range.to >= lineFrom)
     addFields(builder, { from: lineFrom, text }, task, deps.hideFields && !isFocused)
@@ -154,7 +166,9 @@ export function createTaskExtension(deps: TaskExtensionDeps): Extension {
   const decorations = StateField.define<DecorationSet>({
     create: (state) => buildTaskDecorations(state, deps),
     update: (value, tr) =>
-      tr.docChanged || (deps.hideFields && tr.selection)
+      tr.docChanged ||
+      (deps.hideFields && tr.selection) ||
+      isBoxDisabled(tr.startState) !== isBoxDisabled(tr.state)
         ? buildTaskDecorations(tr.state, deps)
         : value,
     provide: (field) => EditorView.decorations.from(field),

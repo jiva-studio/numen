@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { EditorState } from '@codemirror/state'
+import { Compartment, EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { editorNotePath } from '@numen/plugin-sdk'
 import { WORDS } from '../../words'
@@ -159,5 +159,27 @@ describe('the task extension', () => {
     const { view: editor } = open('- [ ] write', '')
 
     expect(boxes(editor)[0]?.disabled).toBe(true)
+  })
+
+  it('follows the editor when it turns read-only and back', () => {
+    const readOnly = new Compartment()
+    view = new EditorView({
+      state: EditorState.create({
+        doc: '- [ ] write',
+        extensions: [
+          editorNotePath.of('Home.md'),
+          readOnly.of(EditorState.readOnly.of(false)),
+          createTaskExtension({ tick: vi.fn(), hideFields: false, showError: vi.fn() }),
+        ],
+      }),
+      parent: document.body,
+    })
+    expect(boxes(view)[0]?.disabled).toBe(false)
+
+    view.dispatch({ effects: readOnly.reconfigure(EditorState.readOnly.of(true)) })
+    expect(boxes(view)[0]?.disabled).toBe(true)
+
+    view.dispatch({ effects: readOnly.reconfigure(EditorState.readOnly.of(false)) })
+    expect(boxes(view)[0]?.disabled).toBe(false)
   })
 })

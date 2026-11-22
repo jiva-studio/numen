@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { markdown } from '@codemirror/lang-markdown'
@@ -8,12 +8,17 @@ import { createTaskEditorExtension } from './index'
 
 let view: EditorView | undefined
 
+beforeEach(() => {
+  vi.useFakeTimers()
+})
+
 afterEach(() => {
+  vi.useRealTimers()
   view?.destroy()
   view = undefined
 })
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const wait = (ms: number) => vi.advanceTimersByTimeAsync(ms)
 
 const FIELDS = {
   projects: [{ name: 'work', count: 2 }],
@@ -28,7 +33,7 @@ function open(doc: string, late = false): EditorView {
     getToday: () => '2026-11-22',
     getFields: () => fields,
     loadFields: async () => {
-      await wait(60)
+      await Promise.resolve()
       fields = FIELDS
     },
     hideFields: false,
