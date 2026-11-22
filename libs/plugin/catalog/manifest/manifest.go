@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/protocol"
 )
 
 const (
@@ -53,9 +54,10 @@ const (
 	// calling the operation through every connection that serves it, and listing those connections and the
 	// values of their row fields. No setting of rows of the plugin lists the operation.
 	PermissionConnectionsUse = "connections:use:"
-
-	ProtocolVersion = 1
 )
+
+// ProtocolVersion is the plugin protocol version this host speaks.
+const ProtocolVersion = protocol.PluginProtocolVersion
 
 // PluginPermissions is every permission a manifest may declare, in its canonical spelling, besides the
 // permissions connections:use:<operation>.

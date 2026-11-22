@@ -1291,6 +1291,7 @@
         ".golangci*.yml",
         "libs/**/.golangci*.yml",
         "libs/plugin/**",
+        "libs/shared/protocol/version.go",
         "libs/ui/**",
         "plugins/**",
         "plugins/**/*.{ts,vue,js,mjs}",

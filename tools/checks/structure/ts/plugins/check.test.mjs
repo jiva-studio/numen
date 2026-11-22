@@ -7,6 +7,8 @@ import {
   findPluginBackendLayerInversions,
   findServiceImportsOffAllowList,
   findOversizedBackendPackages,
+  findProtocolMismatches,
+  readPluginProtocolVersion,
   MAX_FILE_LINES,
   findPluginEntryViolations,
   findPluginSliceShapeViolations,
@@ -484,10 +486,10 @@ test('a use case imports its ports and domain, the listed standard and SDK packa
 })
 
 test('a use case importing crypto/rand or runtime is refused: the entropy and the cores come through its inputs', () => {
-  assert.deepEqual(refusedImports('plugins/a/backend/usecase/cards/x.go', ['crypto/rand', 'runtime']), [
-    'use case usecase/cards imports crypto/rand',
-    'use case usecase/cards imports runtime',
-  ])
+  assert.deepEqual(
+    refusedImports('plugins/a/backend/usecase/cards/x.go', ['crypto/rand', 'runtime']),
+    ['use case usecase/cards imports crypto/rand', 'use case usecase/cards imports runtime'],
+  )
 })
 
 test('an adapter importing the api, wire, service, engine or another technology is refused', () => {
@@ -528,4 +530,25 @@ test('an adapter imports the machine, the SDK, its ports, domain and use case, a
     ]),
     [],
   )
+})
+
+test('the plugin protocol version is read from the constant of the protocol library', () => {
+  assert.equal(
+    readPluginProtocolVersion('package protocol\n\nconst PluginProtocolVersion = 3\n'),
+    3,
+  )
+  assert.throws(() => readPluginProtocolVersion('package protocol\n'), /not declared/)
+})
+
+test('a manifest that names another protocol version, or none, is reported', () => {
+  const manifests = [
+    { name: 'a', manifest: { protocol: 1 } },
+    { name: 'b', manifest: { protocol: 2 } },
+    { name: 'c', manifest: { protocol: 0 } },
+  ]
+
+  assert.deepEqual(findProtocolMismatches(manifests, 1), [
+    'b: protocol 2, want 1',
+    'c: protocol 0, want 1',
+  ])
 })
