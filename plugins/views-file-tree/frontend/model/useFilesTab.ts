@@ -9,7 +9,6 @@ import {
   NOTE_TYPE,
   useSlotMenu,
   type CommandTarget,
-  type Caught,
   type SlotView,
 } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
@@ -31,7 +30,7 @@ import * as create from './create'
 
 export type { FilesTabDeps, FilesTabState }
 
-const createFailureReporter = (deps: FilesTabDeps) => (error: Caught) => {
+const createFailureReporter = (deps: FilesTabDeps) => (error: unknown) => {
   deps.window.showError(formatErrorMessage(error))
 }
 

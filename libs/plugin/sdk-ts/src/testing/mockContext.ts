@@ -27,7 +27,6 @@ import type { VaultTexts } from '../texts'
 import type { VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from '../workspace'
 import { asFailure, asValue, type Result } from '../result'
 import type { MountedView, ViewCapability, ViewContexts, ViewRegistration } from '../views'
-import type { Caught } from '../errors'
 import type { DropRegistration } from '../drops'
 import type { EditorExtensionRegistration } from '../editorExtensions'
 import { createMockNoticeHost } from './mockNotices'
@@ -165,7 +164,7 @@ function addSetListener<T>(listeners: Set<T>, handler: T, subscriptions: Disposa
 }
 
 function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: T): void {
-  Promise.resolve(listener(event)).catch((error: Caught) => {
+  Promise.resolve(listener(event)).catch((error: unknown) => {
     queueMicrotask(() => {
       throw error
     })

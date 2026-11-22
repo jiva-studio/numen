@@ -21,7 +21,7 @@ import {
   type PluginHealthItem,
 } from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import { useSettingsTabKind } from '../useSettingsTabKind'
 import type { Installation, InstallationPlugin, InstallationSettings } from '../types'
 import type { MessageLog } from '@/shared/model/notices/messages'
@@ -79,7 +79,7 @@ interface InstallationSettingsDeps {
   appearance: ReturnType<typeof createWindowAppearance>
   rest: SettingsStore
   getPlatform: InstallationSettings['getPlatform']
-  reportError: (error: Caught) => void
+  reportError: (error: unknown) => void
 }
 
 interface InstallationPluginDeps {
@@ -89,7 +89,7 @@ interface InstallationPluginDeps {
   getSettingsViews: InstallationPlugin['getSettingsViews']
   getSlotGroups?: SlotGroupsReader
   catalogEntries: NonNullable<InstallationPlugin['catalog']>
-  reportError: (error: Caught) => void
+  reportError: (error: unknown) => void
   health: HealthDeps
 }
 
@@ -144,7 +144,7 @@ function createInstallationPluginFiles(settings: SettingsPageApi['settings']) {
 
 function createInstallationHealth(
   { items, commands }: HealthDeps,
-  reportError: (error: Caught) => void,
+  reportError: (error: unknown) => void,
 ) {
   return {
     items,
@@ -266,7 +266,7 @@ export function createSettingsPage({
 }: SettingsPageDeps) {
   const getPluginName = (pluginId: string): string =>
     rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
-  const reportError = (error: Caught) => log.getWriter('configured')(formatError(error), 'error')
+  const reportError = (error: unknown) => log.getWriter('configured')(formatError(error), 'error')
   const licenses = createLicenseStore(api.license, (text, level) =>
     log.getWriter('licenses')(text, level),
   )

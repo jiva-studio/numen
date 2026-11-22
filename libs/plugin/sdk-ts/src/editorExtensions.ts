@@ -1,5 +1,4 @@
 import { Facet, type Extension } from '@codemirror/state'
-import type { Caught } from './errors'
 import type { Disposable } from './types'
 
 // EditorExtensionRegistration is a CodeMirror extension a plugin adds to the note editor, under the id
@@ -22,7 +21,7 @@ export interface EditorExtensionHost {
   onChange(this: void, handler: (entries: readonly EditorExtensionEntry[]) => void): Disposable
   // Switches an extension off for the rest of the session after it failed in the editor, and reports
   // the error under the plugin that registered it. An entry that is not registered is ignored.
-  fail(this: void, entry: EditorExtensionEntry, error: Caught): void
+  fail(this: void, entry: EditorExtensionEntry, error: unknown): void
 }
 
 // EditorExtensionRegistry keeps the extensions plugins register and tells the editor which are on.

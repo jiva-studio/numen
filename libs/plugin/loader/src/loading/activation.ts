@@ -2,7 +2,6 @@
  * One start of a plugin frontend: its module is read and activated with a context of its own within
  * the start limit, and a start that fails or passes the limit takes back what it registered.
  */
-import type { Caught } from '@numen/plugin-sdk'
 import type { LoaderHost } from '../host'
 import {
   parseLifecycleHooks,
@@ -24,11 +23,11 @@ export interface ActivateContext extends ResolveModuleContext {
   readonly host: LoaderHost
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly failures: { value: ReadonlyMap<string, string> }
-  readonly reportError: (pluginId: string, error: Caught) => void
+  readonly reportError: (pluginId: string, error: unknown) => void
   readonly starts: Map<string, number>
 }
 
-function getFailureMessage(error: Caught): string {
+function getFailureMessage(error: unknown): string {
   return error instanceof Error ? error.message : `the plugin threw a ${typeof error}, not an Error`
 }
 

@@ -1668,20 +1668,6 @@
       "runner": "eslint"
     },
     {
-      "name": "eslint/no-unknown",
-      "paths": [
-        "tools/lint-layers/base-eslint.mjs",
-        "tools/lint-layers/numen-rules.mjs"
-      ],
-      "tags": [
-        "style",
-        "ts",
-        "fast"
-      ],
-      "selftest": "../lint-layers/noUnknown.test.mjs",
-      "runner": "eslint"
-    },
-    {
       "name": "eslint/pure-segment",
       "paths": [
         "tools/lint-layers/base-eslint.mjs",

@@ -22,8 +22,6 @@ export {
   formatErrorCodeMessage,
   formatErrorMessage,
   ReportedError,
-  type Caught,
-  type Unvalidated,
   findErrorCode,
   isStaleAnswer,
   parseFingerprint,

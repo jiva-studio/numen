@@ -6,7 +6,6 @@ import { defineComponent, h, onScopeDispose, watch } from 'vue'
 import {
   definePlugin,
   useSlotLoading,
-  type Caught,
   type HostServices,
   type PluginContext,
 } from '@numen/plugin-sdk'
@@ -50,7 +49,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     settings: readSettings(plugin),
     open: (path, line) => workspace.files.open(path, { placement: 'current', line }),
     onVaultChange: host.events.onVaultChange,
-    reportFailure: (error: Caught) =>
+    reportFailure: (error: unknown) =>
       notices.show(error instanceof Error ? error.message : String(error), 'error'),
   }
   plugin.register.slotView({ id: HEADINGS_VIEW, component: createHeadingsView(source) })

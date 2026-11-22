@@ -7,7 +7,7 @@ import {
   type SettingsStore,
   type ThemeClient,
 } from '@/entities/settings'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { runInBackground } from '@numen/ui'
 import { createAppearanceOutput } from '@numen/workbench'
@@ -46,7 +46,7 @@ export function createWindowSettings({
     words: APPEARANCE_WORDS,
     write: log.getWriter('appearance'),
   })
-  const reportError = (error: Caught) => writeSettingsMessage(formatError(error), 'error')
+  const reportError = (error: unknown) => writeSettingsMessage(formatError(error), 'error')
   watch(appearance.preview.display.sized, () => onSizeChanged())
   const settingPalette = createWindowSettingPalette({ rest, appearance, words })
   const changes = createChangeFollower({

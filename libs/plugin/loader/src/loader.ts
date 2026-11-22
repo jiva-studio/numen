@@ -5,7 +5,7 @@
  * Callers that start a plugin while its start goes on join that start, and the plugin counts as
  * starting until the last of them ends.
  */
-import type { Caught, Disposable, JsonValue } from '@numen/plugin-sdk'
+import type { Disposable, JsonValue } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import type { LoaderHost } from './host'
 import {
@@ -32,7 +32,7 @@ export interface PluginLoaderDeps {
   readonly baseUrl?: string
   readonly fetch?: typeof fetch
   readonly dynamicImport?: (url: string) => Promise<PluginModule>
-  readonly onError?: (pluginId: string, error: Caught) => void
+  readonly onError?: (pluginId: string, error: unknown) => void
 }
 
 export const DEFAULT_PLUGIN_ENABLED = true
@@ -46,7 +46,7 @@ interface DeactivateDeps {
   readonly host: LoaderHost
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly manifests: Map<string, Manifest>
-  readonly reportError: (pluginId: string, error: Caught) => void
+  readonly reportError: (pluginId: string, error: unknown) => void
 }
 
 async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<boolean> {
@@ -260,7 +260,7 @@ function createRuntime(
       if (!isRunning.value) return
       settings.listen(id)
       // Stryker disable next-line BlockStatement,CallExpression,OptionalChaining: activatePlugin handles its own errors inside activateEntry
-      startInterfacePlugin(id).catch((error: Caught) => deps.onError?.(id, error))
+      startInterfacePlugin(id).catch((error: unknown) => deps.onError?.(id, error))
     },
     trackPlugins: async (ids: readonly string[]): Promise<void> => {
       for (const id of ids) {

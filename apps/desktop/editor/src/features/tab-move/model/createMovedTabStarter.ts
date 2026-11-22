@@ -1,6 +1,6 @@
 import { runInBackground } from '@numen/ui'
 import type { MovedTab } from '@/entities/tab'
-import { formatError, type Caught } from '@/shared/api/errors'
+import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { createMovedTabOpener, type MovedTabOpenerDeps } from './tabMove'
 
@@ -11,7 +11,7 @@ export interface MovedTabStarterDeps extends Omit<MovedTabOpenerDeps, 'onError'>
 
 /** Opens a tab sent from another window without waiting; a failure is written as a message. */
 export function createMovedTabStarter(deps: MovedTabStarterDeps): (moved: MovedTab) => void {
-  const report = (error: Caught) =>
+  const report = (error: unknown) =>
     deps.writeMessage(`The moved tab did not open: ${formatError(error)}`, 'error')
   const open = createMovedTabOpener({
     windowTabs: deps.windowTabs,

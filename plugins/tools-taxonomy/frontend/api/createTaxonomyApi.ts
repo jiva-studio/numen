@@ -6,7 +6,6 @@ import {
   type ApiError,
   type JsonValue,
   type Result,
-  type Unvalidated,
 } from '@numen/plugin-sdk'
 import type { TagMapResponse } from '../types'
 
@@ -16,10 +15,10 @@ export const SERVICE = 'md.numen.tools.taxonomy'
 const isStringArray = (value: JsonValue | undefined): value is readonly string[] =>
   Array.isArray(value) && value.every((entry): entry is string => typeof entry === 'string')
 
-const isJsonObject = (value: Unvalidated): value is { readonly [key: string]: JsonValue } =>
+const isJsonObject = (value: unknown): value is { readonly [key: string]: JsonValue } =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
-const parseTagMap = (reply: Unvalidated): TagMapResponse | null => {
+const parseTagMap = (reply: unknown): TagMapResponse | null => {
   if (!isJsonObject(reply)) return null
   const rawTags = reply['tags']
   if (!isJsonObject(rawTags)) return null

@@ -3,7 +3,7 @@
  * Book tab view rendering reflowable book text and contents navigation.
  */
 import { ref, useTemplateRef, watchEffect, type ComponentPublicInstance } from 'vue'
-import type { ReaderTabState, Unvalidated } from '@numen/plugin-sdk'
+import type { ReaderTabState } from '@numen/plugin-sdk'
 import { LoadingIndicator } from '@numen/ui'
 import BookContent from './BookContent.vue'
 import { BookListing } from './book-contents'
@@ -98,7 +98,7 @@ function onFollow(destPath: string) {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function isBookTabState(s: Unvalidated): s is BookTabState {
+function isBookTabState(s: unknown): s is BookTabState {
   return typeof s === 'object' && s !== null && 'book' in s && 'setBookHandle' in s
 }
 </script>

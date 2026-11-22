@@ -194,8 +194,6 @@ export {
   getAssetUrl,
   getBytesQuery,
   getRelationErrorWords,
-  type Caught,
   type ErrorCode,
-  type Unvalidated,
 } from './errors'
 export { resolveAddress, type AddressSource } from './media'
