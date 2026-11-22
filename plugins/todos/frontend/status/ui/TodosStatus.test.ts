@@ -144,7 +144,9 @@ describe('the todos popover', () => {
     const text = row?.findAll('button').find((one) => one.text() === 'call the bank')
     await text?.trigger('click')
 
-    expect(view.emitted('open')).toEqual([[{ path: 'Daily/2026-11-12.md', line: 3 }]])
+    expect(view.emitted('open')).toEqual([
+      [{ path: 'Daily/2026-11-12.md', line: 3, raw: '- [ ] call the bank' }],
+    ])
   })
 })
 
