@@ -1,5 +1,6 @@
 /* Running plugins plugin styles */
 .plugin-stats {
+  --popover-offset: calc(0.25 * var(--numen-chrome-unit));
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -49,7 +50,6 @@
 }
 
 .plugin-popover {
-  --popover-offset: 0.25rem;
   --popover-width: 32rem;
   --popover-max-height: 32rem;
   --popover-edge-gap: 1rem;
