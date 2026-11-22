@@ -100,7 +100,7 @@ func createListenerPlugin(t *testing.T, root, name string, defaultPort int) {
 		"description": "test plugin with a listener",
 		"targets": ["desktop.editor"],
 		"backend": {"entrypoint": "bin/relay"},
-		"contributes": {"listeners": [{"name": %q, "portSetting": "port", "protocol": "tcp"}]},
+		"contributes": {"listeners": [{"name": %q, "portSetting": "port"}]},
 		"settings": [
 			{"key": "port", "type": "number", "title": "Port", "default": %d, "step": 1},
 			{"key": "greeting", "type": "string", "title": "Greeting", "default": "good morning"}
@@ -535,7 +535,7 @@ func writeFixedPortListenerPlugin(t *testing.T, root string, port int) {
 		"description": "test plugin with a listener on a fixed port",
 		"targets": ["desktop.editor"],
 		"backend": {"entrypoint": "bin/relay"},
-		"contributes": {"listeners": [{"name": "mcp", "port": %d, "protocol": "tcp"}]},
+		"contributes": {"listeners": [{"name": "mcp", "port": %d}]},
 		"settings": []
 	}`, listenerPlugin, port)
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(m), 0o600); err != nil {

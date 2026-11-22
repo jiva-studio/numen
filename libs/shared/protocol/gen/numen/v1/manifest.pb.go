@@ -1397,8 +1397,6 @@ type ManifestListener struct {
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// port is a fixed port the host binds, 1024 to 65535. Set exactly one of port and port_setting.
 	Port int32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	// protocol is the transport, "tcp".
-	Protocol string `protobuf:"bytes,3,opt,name=protocol,proto3" json:"protocol,omitempty"`
 	// port_setting is the key of the plugin's number setting that stores the port the host binds; the
 	// host binds again when the setting changes. Set exactly one of port and port_setting.
 	PortSetting   string `protobuf:"bytes,4,opt,name=port_setting,json=portSetting,proto3" json:"port_setting,omitempty"`
@@ -1448,13 +1446,6 @@ func (x *ManifestListener) GetPort() int32 {
 		return x.Port
 	}
 	return 0
-}
-
-func (x *ManifestListener) GetProtocol() string {
-	if x != nil {
-		return x.Protocol
-	}
-	return ""
 }
 
 func (x *ManifestListener) GetPortSetting() string {
@@ -3410,11 +3401,10 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\x05_step\"<\n" +
 	"\x10ManifestTextKind\x12\x12\n" +
 	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"y\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"]\n" +
 	"\x10ManifestListener\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
-	"\x04port\x18\x02 \x01(\x05R\x04port\x12\x1a\n" +
-	"\bprotocol\x18\x03 \x01(\tR\bprotocol\x12!\n" +
+	"\x04port\x18\x02 \x01(\x05R\x04port\x12!\n" +
 	"\fport_setting\x18\x04 \x01(\tR\vportSetting\"Q\n" +
 	"\x11ManifestSlotPoint\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\tR\x04slot\x12\x14\n" +
