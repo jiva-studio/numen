@@ -56,7 +56,7 @@ The shared directories hold one copy of what several plugins use, so a model of 
 
 Plugins communicating over Connect-RPC use loopback TCP:
 
-- The host supervisor launches the plugin executable with `--port=<port>` and `--token=<auth_token>`.
+- The host supervisor launches the plugin executable with `--port=<port>`, the token in `NUMEN_PLUGIN_TOKEN` of its environment and a pipe on its standard input that the plugin treats as the parent-death signal: it stops when the pipe closes.
 - The plugin process starts an HTTP/2 (`h2c`) server and announces readiness by writing to standard output:
   ```
   NUMEN_READY port=12345

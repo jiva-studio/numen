@@ -7,7 +7,7 @@ import (
 )
 
 // The options below set what New takes from the process: the tests serve on a port of their own, read
-// the ready line and hold the standard input.
+// the ready line, take the token and hold the standard input.
 
 func withPort(port int) Option {
 	return func(s *Server) { s.port = port }

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"sync"
 
 	"connectrpc.com/connect"
 )
@@ -16,7 +15,6 @@ var ErrUnauthorized = errors.New("unauthorized")
 
 // AuthInterceptor authenticates incoming Connect-RPC calls against an expected bearer token.
 type AuthInterceptor struct {
-	mu    sync.RWMutex
 	token string
 }
 
@@ -25,19 +23,8 @@ func NewAuthInterceptor(token string) *AuthInterceptor {
 	return &AuthInterceptor{token: token}
 }
 
-// SetToken updates the expected bearer token.
-func (a *AuthInterceptor) SetToken(token string) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.token = token
-}
-
 func (a *AuthInterceptor) checkToken(header http.Header) error {
-	a.mu.RLock()
-	token := a.token
-	a.mu.RUnlock()
-
-	if !HasBearerToken(header, token) {
+	if !HasBearerToken(header, a.token) {
 		return connect.NewError(connect.CodeUnauthenticated, ErrUnauthorized)
 	}
 	return nil

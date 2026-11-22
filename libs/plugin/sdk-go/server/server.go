@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"slices"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -91,7 +90,7 @@ type Server struct {
 // New constructs a plugin server using command flags, environment variables, and options.
 func New(opts ...Option) *Server {
 	port := parseDefaultFlags()
-	return newServer(port, "", opts, false)
+	return newServer(port, os.Getenv(tokenVar), opts, false)
 }
 
 // NewLinkedHandler returns the handler of a server that is not run as a process, for a host that links the
@@ -281,8 +280,8 @@ func (s *Server) ServeContext(ctx context.Context) (err error) {
 		err = errors.Join(err, s.Close())
 	}()
 
-	if err := s.authenticate(); err != nil {
-		return err
+	if s.token == "" {
+		return errors.New("empty auth token")
 	}
 	if _, err := s.listen(ctx); err != nil {
 		return err
@@ -374,24 +373,6 @@ func (s *Server) closeListener() error {
 	return nil
 }
 
-func (s *Server) authenticate() error {
-	if s.token == "" && s.stdin != nil {
-		line, err := readTokenLine(s.stdin)
-		if err != nil {
-			return fmt.Errorf("read auth token: %w", err)
-		}
-		s.token = line
-		s.interceptor.SetToken(s.token)
-	}
-	if s.token == "" {
-		return errors.New("empty auth token")
-	}
-	if err := os.Setenv(tokenVar, s.token); err != nil {
-		return fmt.Errorf("set %s: %w", tokenVar, err)
-	}
-	return nil
-}
-
 func (s *Server) announceReady() error {
 	if s.stdout == nil {
 		return nil
@@ -418,25 +399,4 @@ func (s *Server) watchStdin() <-chan struct{} {
 		}
 	}()
 	return stdinEOF
-}
-
-func readTokenLine(r io.Reader) (string, error) {
-	var buf []byte
-	b := make([]byte, 1)
-	for {
-		n, err := r.Read(b)
-		if n > 0 {
-			if b[0] == '\n' {
-				break
-			}
-			buf = append(buf, b[0])
-		}
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			return "", err
-		}
-	}
-	return strings.TrimSpace(string(buf)), nil
 }

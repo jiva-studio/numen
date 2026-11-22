@@ -329,11 +329,6 @@ func (p *Processes) launchDefault(ctx context.Context, launch Launch, port int, 
 	if err := process.SetNice(cmd.Process.Pid, p.getNice()); err != nil {
 		p.report(fmt.Errorf("set priority of %s: %w", plug.Manifest.ID, err))
 	}
-	if _, err := io.WriteString(stdin, token+"\n"); err != nil {
-		killProcess(p.report, cmd.Process, plug.Manifest.ID)
-		return nil, nil, errors.Join(fmt.Errorf("write token: %w", err), stdin.Close(), stdout.Close())
-	}
-
 	if err := process.ApplyLimits(cmd.Process.Pid, p.GetProcessLimits()); err != nil {
 		killProcess(p.report, cmd.Process, plug.Manifest.ID)
 		return nil, nil, errors.Join(fmt.Errorf("apply process limits: %w", err), stdin.Close(), stdout.Close())
