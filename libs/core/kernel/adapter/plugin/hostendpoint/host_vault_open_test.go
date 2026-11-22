@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"net/http"
 	"strings"
 	"sync"
@@ -16,14 +17,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, numenv1connect.HostVaultServiceClient) {
+func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, testsupport.HostVaultClient) {
 	t.Helper()
 	hostCallers := newCallers()
 	hostCallers.vault = vaultOf(newFakeNoteVault())
@@ -32,7 +32,7 @@ func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, numenv1conne
 		t.Fatal(err)
 	}
 	url := fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort())
-	return endpoint, numenv1connect.NewHostVaultServiceClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return endpoint, testsupport.NewHostVaultClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 }
 
 func TestOpenVaultWithUnsavedChangesReturnsUnsavedWithTheDetail(t *testing.T) {

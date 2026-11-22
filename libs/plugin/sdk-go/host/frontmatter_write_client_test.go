@@ -16,13 +16,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // frontmatterWriter answers WriteFrontmatter: the first note is written, the second is stale and the
 // third fails with no code. It records the request.
 type frontmatterWriter struct {
-	numenv1connect.UnimplementedHostVaultServiceHandler
+	unimplementedHost
 	asked     *v1.WriteFrontmatterRequest
 	vault     string
 	callError v1.HostVaultErrorCode

@@ -1,0 +1,230 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/file.proto";
+import "numen/v1/hostfile.proto";
+import "numen/v1/hostvault.proto";
+import "numen/v1/note.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// HostNoteService is the notes of the vault, as a plugin looks them up and
+// arranges them: their names, types and frontmatter, and the renaming, moving
+// and removing of a note with the links that stop resolving repaired.
+//
+// The endpoint checks the permission of each call: a call that reads needs
+// vault:read, one that changes anything needs vault:write, and one that changes
+// the list of vaults or the vault the window shows needs vault:manage.
+//
+// Numen-Vault works the vault of that identity instead of the vault the host
+// shows.
+//
+// Every path is relative to the vault root and written with forward slashes.
+service HostNoteService {
+  // GetNoteRefs names the notes at the paths given, and leaves out a path with
+  // no note.
+  rpc GetNoteRefs(GetNoteRefsRequest) returns (GetNoteRefsResponse);
+
+  // GetNoteTypes says what type each note at the paths given is.
+  rpc GetNoteTypes(GetNoteTypesRequest) returns (GetNoteTypesResponse);
+
+  // GetNamedPaths lists the notes filed under a name.
+  rpc GetNamedPaths(GetNamedPathsRequest) returns (GetNamedPathsResponse);
+
+  // GetPathsOfType lists the notes of a type.
+  rpc GetPathsOfType(GetPathsOfTypeRequest) returns (GetPathsOfTypeResponse);
+
+  // ReadFrontmatter returns the frontmatter of notes as the index holds it, in
+  // pages ordered by path. It needs vault:read.
+  rpc ReadFrontmatter(ReadFrontmatterRequest) returns (ReadFrontmatterResponse);
+
+  // WriteFrontmatter sets, replaces or removes top-level frontmatter keys of
+  // notes, keeps the other keys and the body. It needs vault:write. At most
+  // 1000 notes per call.
+  rpc WriteFrontmatter(WriteFrontmatterRequest) returns (WriteFrontmatterResponse);
+
+  // RenameNote renames a note and moves its file to the filename of
+  // that title, repairing the links that stop resolving. It needs vault:write.
+  rpc RenameNote(HostNoteServiceRenameNoteRequest) returns (HostNoteServiceRenameNoteResponse);
+
+  // MoveNotes moves notes to another folder, keeping their filenames, and
+  // repairs the links that stop resolving. It needs vault:write.
+  rpc MoveNotes(HostNoteServiceMoveNotesRequest) returns (HostNoteServiceMoveNotesResponse);
+
+  // RemoveNotes moves notes to the vault's trash. A folder returns
+  // NOT_A_NOTE. It needs vault:write.
+  rpc RemoveNotes(HostNoteServiceRemoveNotesRequest) returns (HostNoteServiceRemoveNotesResponse);
+}
+
+// HostNoteRef is a note: at its current position and what it is called.
+message HostNoteRef {
+  string path = 1;
+  string title = 2;
+  // The identifier written in the note's frontmatter, empty when it has none.
+  string id = 3;
+}
+
+message GetNoteRefsRequest {
+  repeated string paths = 1;
+}
+
+message GetNoteRefsResponse {
+  HostVaultErrorCode error = 1;
+  repeated HostNoteRef notes = 2;
+}
+
+message GetNoteTypesRequest {
+  repeated string paths = 1;
+}
+
+message GetNoteTypesResponse {
+  HostVaultErrorCode error = 1;
+  // The type of each note, by its path. A path with no note is left out.
+  map<string, string> types = 2;
+}
+
+message GetNamedPathsRequest {
+  string name = 1;
+}
+
+message GetNamedPathsResponse {
+  HostVaultErrorCode error = 1;
+  repeated string paths = 2;
+}
+
+message GetPathsOfTypeRequest {
+  string type = 1;
+}
+
+message GetPathsOfTypeResponse {
+  HostVaultErrorCode error = 1;
+  repeated string paths = 2;
+}
+
+message ReadFrontmatterRequest {
+  // paths are the notes to read; empty reads every note of the vault. At most
+  // 1000.
+  repeated string paths = 1;
+  // keys are the frontmatter keys returned; empty returns every key. At most 64.
+  repeated string keys = 2;
+  // page_size is the number of notes of a page: 0 reads 1000, the most.
+  int32 page_size = 3;
+  // page_token is the next_page_token of the page before, empty for the first.
+  string page_token = 4;
+}
+
+message ReadFrontmatterResponse {
+  HostVaultErrorCode error = 1;
+  repeated NoteFrontmatter notes = 2;
+  // next_page_token reads the next page; empty after the last.
+  string next_page_token = 3;
+  // cursor is the place in the file change feed taken before this page was
+  // read. A reader keeps the cursor of its first page and reads the feed from
+  // it, so a change made during the read is not lost.
+  FileChangeCursor cursor = 4;
+}
+
+message WriteFrontmatterRequest {
+  repeated NoteFrontmatterWrite notes = 1;
+}
+
+message NoteFrontmatterWrite {
+  string path = 1;
+  // values is a JSON object; a key with the value null is removed.
+  bytes values = 2;
+  // baseline is the file state the caller read; a note changed since is left
+  // unchanged (stale).
+  HostFileStat baseline = 3;
+}
+
+message WriteFrontmatterResponse {
+  HostVaultErrorCode error = 1;
+  // One result per note, in the order of the request.
+  repeated NoteFrontmatterWritten results = 2;
+}
+
+message NoteFrontmatterWritten {
+  // The note after the write; unset when nothing was written.
+  HostFileStat stat = 1;
+  HostVaultErrorCode error = 2;
+  string detail = 3;
+}
+
+// NoteFrontmatter is the frontmatter of one note.
+message NoteFrontmatter {
+  string path = 1;
+  // values is a JSON object of the requested keys the note has.
+  bytes values = 2;
+  // source_id is the number the index keeps the file under. It stays the same
+  // when the file moves.
+  int64 source_id = 3;
+}
+
+message HostNoteServiceRenameNoteRequest {
+  string path = 1;
+  string title = 2;
+}
+
+message HostNoteServiceRenameNoteResponse {
+  // Why the note was not renamed: NOT_FOUND, NOT_A_NOTE, INVALID_NAME,
+  // ALREADY_EXISTS, CONFLICT and the other per-note codes.
+  HostVaultErrorCode error = 1;
+  // The path of the note after the rename.
+  string path = 2;
+  string title = 3;
+  // Where the title is kept: the frontmatter or the filename.
+  NameSource name_source = 4;
+  // Unset when the file kept its path.
+  optional MoveResult move = 5;
+  // The core's error text where the note was not renamed, empty on success.
+  string detail = 6;
+}
+
+message HostNoteServiceMoveNotesRequest {
+  // At most 50 paths.
+  repeated string paths = 1;
+  // Relative to the vault root. Empty is the root.
+  string folder = 2;
+}
+
+// HostNoteMove is the outcome of moving one note.
+message HostNoteMove {
+  // From is always set; to only when the note moved.
+  MoveResult move = 1;
+  // Why this note did not move.
+  HostVaultErrorCode error = 2;
+  // The core's error text where this note did not move, empty on success.
+  string detail = 3;
+}
+
+message HostNoteServiceMoveNotesResponse {
+  HostVaultErrorCode error = 1;
+  // One per path, in the order of the request.
+  repeated HostNoteMove moves = 2;
+}
+
+message HostNoteServiceRemoveNotesRequest {
+  // At most 50 paths.
+  repeated string paths = 1;
+}
+
+// HostNoteRemoval is the outcome of removing one note.
+message HostNoteRemoval {
+  string path = 1;
+  // The path of the file in the trash.
+  string trash_path = 2;
+  // The notes whose links are now broken.
+  repeated string broken_links = 3;
+  // Why this note was not removed: NOT_FOUND, NOT_A_NOTE for a folder or a
+  // file that is not a note, or INTERNAL.
+  HostVaultErrorCode error = 4;
+  // The core's error text where this note was not removed, empty on success.
+  string detail = 5;
+}
+
+message HostNoteServiceRemoveNotesResponse {
+  HostVaultErrorCode error = 1;
+  // One per path, in the order of the request.
+  repeated HostNoteRemoval removals = 2;
+}

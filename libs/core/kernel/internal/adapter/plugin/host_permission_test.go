@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"connectrpc.com/connect"
@@ -32,7 +33,7 @@ func createManifestedHost(t *testing.T, manifests map[string]string) *pluginhost
 	return newRunningTestHost(t, plugins)
 }
 
-func createRawVaultClient(t *testing.T, host *pluginhost.Host, token string) numenv1connect.HostVaultServiceClient {
+func createRawVaultClient(t *testing.T, host *pluginhost.Host, token string) testsupport.HostVaultClient {
 	t.Helper()
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, lentCallers(host))
 	if err != nil {
@@ -43,7 +44,7 @@ func createRawVaultClient(t *testing.T, host *pluginhost.Host, token string) num
 			t.Error(err)
 		}
 	})
-	return numenv1connect.NewHostVaultServiceClient(
+	return testsupport.NewHostVaultClient(
 		&http.Client{Timeout: 5 * time.Second},
 		"http://127.0.0.1:"+strconv.Itoa(endpoint.GetPort()),
 		connect.WithInterceptors(transport.AuthInterceptor(token)),

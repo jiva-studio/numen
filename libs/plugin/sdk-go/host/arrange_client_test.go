@@ -15,13 +15,12 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // fakeArrangeHost is a host of a vault of rivers that serves the calls renaming, moving and removing
 // notes, running checks and changing the list of vaults, and records the requests.
 type fakeArrangeHost struct {
-	numenv1connect.UnimplementedHostVaultServiceHandler
+	unimplementedHost
 	mu           sync.Mutex
 	noteError    v1.HostVaultErrorCode
 	vaultsError  v1.VaultsErrorCode
@@ -42,23 +41,23 @@ func (a *fakeArrangeHost) getRequests() []string {
 }
 
 func (a *fakeArrangeHost) RenameNote(
-	_ context.Context, req *connect.Request[v1.HostVaultServiceRenameNoteRequest],
-) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error) {
+	_ context.Context, req *connect.Request[v1.HostNoteServiceRenameNoteRequest],
+) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error) {
 	a.record("rename " + req.Msg.GetPath() + " " + req.Msg.GetTitle())
 	if a.noteError != 0 {
-		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: a.noteError, Path: req.Msg.GetPath()}), nil
+		return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{Error: a.noteError, Path: req.Msg.GetPath()}), nil
 	}
-	return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{
+	return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{
 		Path: "Donau.md", Title: "Donau", NameSource: v1.NameSource_NAME_SOURCE_FILENAME,
 		Move: &v1.MoveResult{From: "Danube.md", To: "Donau.md", Repaired: []string{"Deltas.md"}, Dangling: []string{"Estuaries.md"}},
 	}), nil
 }
 
 func (a *fakeArrangeHost) MoveNotes(
-	_ context.Context, req *connect.Request[v1.HostVaultServiceMoveNotesRequest],
-) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error) {
+	_ context.Context, req *connect.Request[v1.HostNoteServiceMoveNotesRequest],
+) (*connect.Response[v1.HostNoteServiceMoveNotesResponse], error) {
 	a.record("move " + req.Msg.GetFolder())
-	return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
+	return connect.NewResponse(&v1.HostNoteServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
 		{Move: &v1.MoveResult{From: "Danube.md", To: "Rivers/Danube.md", Repaired: []string{"Deltas.md"}}},
 		{Move: &v1.MoveResult{From: "Nowhere.md"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
 		{Move: &v1.MoveResult{From: "Rivers"}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
@@ -67,10 +66,10 @@ func (a *fakeArrangeHost) MoveNotes(
 }
 
 func (a *fakeArrangeHost) RemoveNotes(
-	_ context.Context, req *connect.Request[v1.HostVaultServiceRemoveNotesRequest],
-) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error) {
+	_ context.Context, req *connect.Request[v1.HostNoteServiceRemoveNotesRequest],
+) (*connect.Response[v1.HostNoteServiceRemoveNotesResponse], error) {
 	a.record("remove " + req.Msg.GetPaths()[0])
-	return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Removals: []*v1.HostNoteRemoval{
+	return connect.NewResponse(&v1.HostNoteServiceRemoveNotesResponse{Removals: []*v1.HostNoteRemoval{
 		{Path: "Danube.md", TrashPath: ".trash/Danube.md", BrokenLinks: []string{"Deltas.md"}},
 		{Path: "Rivers", Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
 		{Path: "Nowhere.md", Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},

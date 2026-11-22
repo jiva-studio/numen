@@ -11,9 +11,9 @@ import (
 	"connectrpc.com/connect"
 
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -57,7 +57,7 @@ func (w *writingVault) checkBaseline(one plugin.FrontmatterWrite) error {
 	return w.checkNote(one.Path, one.Baseline)
 }
 
-func newWritingClient(t *testing.T, vault *writingVault, granted ...string) numenv1connect.HostVaultServiceClient {
+func newWritingClient(t *testing.T, vault *writingVault, granted ...string) testsupport.HostVaultClient {
 	t.Helper()
 	hostCallers := newCallers()
 	if vault != nil {
@@ -65,10 +65,10 @@ func newWritingClient(t *testing.T, vault *writingVault, granted ...string) nume
 	}
 	endpoint := &Endpoint{callers: hostCallers.over(nil, granted...)}
 	mux := http.NewServeMux()
-	mux.Handle(vaultapi.NewHandler(endpoint, endpoint.callers.Lent))
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	return testsupport.NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 }
 
 func TestWriteFrontmatterIsDeniedWithoutVaultWrite(t *testing.T) {

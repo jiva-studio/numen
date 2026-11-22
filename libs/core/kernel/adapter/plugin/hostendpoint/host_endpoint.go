@@ -65,7 +65,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostConnectionServiceHandler(&connectionEndpoint{endpoint: endpoint}))
-	mux.Handle(vault.NewHandler(endpoint, callers.Lent))
+	vault.Mount(mux, endpoint, callers.Lent)
 	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: endpoint}))

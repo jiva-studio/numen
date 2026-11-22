@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
@@ -129,7 +128,7 @@ func compareIDs(a, b domain.VaultID) int {
 	return 0
 }
 
-func newDiskVaults(t *testing.T, files map[string]string) (*diskVaults, numenv1connect.HostVaultServiceClient) {
+func newDiskVaults(t *testing.T, files map[string]string) (*diskVaults, testsupport.HostVaultClient) {
 	t.Helper()
 	physics := vaulttest.NewVault(t, files)
 	physics.ID, physics.Name = "v1", "Physics"

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -18,7 +19,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
@@ -205,17 +205,17 @@ func (l *recordingList) IsMissing(v domain.Vault) bool {
 
 func newArrangeClient(
 	t *testing.T, list vaultapi.List, granted ...string,
-) (numenv1connect.HostVaultServiceClient, *fakeNoteVault, *callers) {
+) (testsupport.HostVaultClient, *fakeNoteVault, *callers) {
 	t.Helper()
 	vault := newFakeNoteVault()
 	hostCallers := newCallers()
 	hostCallers.vault = vaultOf(vault)
 	endpoint := &Endpoint{callers: hostCallers.over(list, granted...)}
 	mux := http.NewServeMux()
-	mux.Handle(vaultapi.NewHandler(endpoint, endpoint.callers.Lent))
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	client := testsupport.NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 	return client, vault, hostCallers
 }
 
@@ -224,16 +224,16 @@ func isDenied(err error) bool {
 	return errors.As(err, &failure) && failure.Code() == connect.CodePermissionDenied
 }
 
-func callNoteChanges(t *testing.T, client numenv1connect.HostVaultServiceClient) map[string]error {
+func callNoteChanges(t *testing.T, client testsupport.HostVaultClient) map[string]error {
 	t.Helper()
 	ctx := t.Context()
-	_, renameErr := client.RenameNote(ctx, connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
-	_, moveErr := client.MoveNotes(ctx, connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{Paths: []string{"Rivers/Rhine.md"}}))
-	_, removeErr := client.RemoveNotes(ctx, connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{Paths: []string{"Deltas.md"}}))
+	_, renameErr := client.RenameNote(ctx, connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+	_, moveErr := client.MoveNotes(ctx, connect.NewRequest(&v1.HostNoteServiceMoveNotesRequest{Paths: []string{"Rivers/Rhine.md"}}))
+	_, removeErr := client.RemoveNotes(ctx, connect.NewRequest(&v1.HostNoteServiceRemoveNotesRequest{Paths: []string{"Deltas.md"}}))
 	return map[string]error{"RenameNote": renameErr, "MoveNotes": moveErr, "RemoveNotes": removeErr}
 }
 
-func callVaultChanges(t *testing.T, client numenv1connect.HostVaultServiceClient) map[string]error {
+func callVaultChanges(t *testing.T, client testsupport.HostVaultClient) map[string]error {
 	t.Helper()
 	ctx := t.Context()
 	_, addErr := client.AddVault(ctx, connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas"}))
@@ -345,7 +345,7 @@ func TestVaultChecksNeedVaultRead(t *testing.T) {
 func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 	client, _, _ := newArrangeClient(t, nil, manifest.PermissionVaultWrite)
 
-	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -358,7 +358,7 @@ func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 		t.Errorf("the move came out as %v", moved)
 	}
 
-	missing, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Nowhere.md", Title: "Elsewhere"}))
+	missing, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Nowhere.md", Title: "Elsewhere"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -370,7 +370,7 @@ func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 func TestAMoveReturnsOneEntryPerPathInOrder(t *testing.T) {
 	client, vault, _ := newArrangeClient(t, nil, manifest.PermissionVaultWrite)
 
-	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
+	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostNoteServiceMoveNotesRequest{
 		Paths: []string{"Danube.md", "Nowhere.md", "Deltas.md"}, Folder: "Rivers",
 	}))
 	if err != nil {
@@ -391,7 +391,7 @@ func TestAMoveReturnsOneEntryPerPathInOrder(t *testing.T) {
 		t.Errorf("the third entry is %v, want Deltas.md with error ALREADY_EXISTS", moves[2])
 	}
 
-	root, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{Paths: []string{"Rivers/Rhine.md"}}))
+	root, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostNoteServiceMoveNotesRequest{Paths: []string{"Rivers/Rhine.md"}}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -412,7 +412,7 @@ func TestAMoveReturnsOneEntryPerPathInOrder(t *testing.T) {
 func TestARemovalReturnsTheTrashPathAndAFolderAsNotANote(t *testing.T) {
 	client, vault, _ := newArrangeClient(t, nil, manifest.PermissionVaultWrite)
 
-	res, err := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
+	res, err := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostNoteServiceRemoveNotesRequest{
 		Paths: []string{"Danube.md", "Rivers", "Nowhere.md"},
 	}))
 	if err != nil {
@@ -586,12 +586,12 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 			hostCallers.vault = vaultOf(failingRenameVault{fakeNoteVault: newFakeNoteVault(), err: fmt.Errorf("rename Danube.md: %w", c.err)})
 			endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 			mux := http.NewServeMux()
-			mux.Handle(vaultapi.NewHandler(endpoint, endpoint.callers.Lent))
+			vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
-			client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+			client := testsupport.NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 
-			res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+			res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -721,24 +721,24 @@ func (o escapingPathVault) RenameNote(ctx context.Context, from, title string) (
 	return to, isFilenamed, moved, errors.New("the index could not be updated for the repaired notes")
 }
 
-func newEscapingPathClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *fakeNoteVault) {
+func newEscapingPathClient(t *testing.T) (testsupport.HostVaultClient, *fakeNoteVault) {
 	t.Helper()
 	vault := newFakeNoteVault()
 	hostCallers := newCallers()
 	hostCallers.vault = vaultOf(escapingPathVault{vault})
 	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
-	mux.Handle(vaultapi.NewHandler(endpoint, endpoint.callers.Lent))
+	vaultapi.Mount(mux, endpoint, endpoint.callers.Lent)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	client := testsupport.NewHostVaultClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
 	return client, vault
 }
 
 func TestAMoveReportsAPathOutsideTheVaultAndMovesTheOthers(t *testing.T) {
 	client, vault := newEscapingPathClient(t)
 
-	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
+	res, err := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostNoteServiceMoveNotesRequest{
 		Paths: []string{"Danube.md", "../Baikal.md", "Rivers/Rhine.md"}, Folder: "Archive",
 	}))
 	if err != nil {
@@ -768,7 +768,7 @@ func TestAMoveReportsAPathOutsideTheVaultAndMovesTheOthers(t *testing.T) {
 func TestARemovalReportsAPathOutsideTheVaultAndRemovesTheOthers(t *testing.T) {
 	client, vault := newEscapingPathClient(t)
 
-	res, err := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
+	res, err := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostNoteServiceRemoveNotesRequest{
 		Paths: []string{"Danube.md", "../Baikal.md", "Rivers/Rhine.md"},
 	}))
 	if err != nil {
@@ -802,8 +802,8 @@ func TestTheHostRejectsABatchOfMoreThanFiftyNotes(t *testing.T) {
 		paths[i] = fmt.Sprintf("Lake %d.md", i)
 	}
 
-	_, moveErr := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{Paths: paths}))
-	_, removeErr := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{Paths: paths}))
+	_, moveErr := client.MoveNotes(t.Context(), connect.NewRequest(&v1.HostNoteServiceMoveNotesRequest{Paths: paths}))
+	_, removeErr := client.RemoveNotes(t.Context(), connect.NewRequest(&v1.HostNoteServiceRemoveNotesRequest{Paths: paths}))
 
 	for call, err := range map[string]error{"MoveNotes": moveErr, "RemoveNotes": removeErr} {
 		var failure *connect.Error
@@ -819,7 +819,7 @@ func TestTheHostRejectsABatchOfMoreThanFiftyNotes(t *testing.T) {
 func TestARenameWhoseFileMovedReturnsTheMoveWhenTheFollowUpFails(t *testing.T) {
 	client, _ := newEscapingPathClient(t)
 
-	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostVaultServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 	if err != nil {
 		t.Fatalf("the rename returned %v, want the move", err)
 	}

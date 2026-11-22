@@ -15,9 +15,13 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// Client calls HostVaultService for the vault and HostWindowService for its window.
+// Client calls the host vault services for the vault and HostWindowService for its window.
 type Client struct {
-	rpc    numenv1connect.HostVaultServiceClient
+	vaults numenv1connect.HostVaultServiceClient
+	files  numenv1connect.HostFileServiceClient
+	notes  numenv1connect.HostNoteServiceClient
+	links  numenv1connect.HostLinkServiceClient
+	cache  numenv1connect.HostCacheServiceClient
 	window numenv1connect.HostWindowServiceClient
 	vault  string
 }
@@ -65,7 +69,11 @@ func NewClient(endpoint hostcall.Endpoint) *Client {
 
 func NewClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
 	return &Client{
-		rpc:    numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
+		vaults: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
+		files:  numenv1connect.NewHostFileServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
+		notes:  numenv1connect.NewHostNoteServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
+		links:  numenv1connect.NewHostLinkServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
+		cache:  numenv1connect.NewHostCacheServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
 		window: numenv1connect.NewHostWindowServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...),
 	}
 }
@@ -159,7 +167,7 @@ func readLinks(links []*v1.HostLink) []domain.ResolvedLink {
 }
 
 func (c *Client) GetVault(ctx context.Context) (domain.Vault, error) {
-	res, err := c.rpc.GetHostVault(ctx, request(c, &v1.GetHostVaultRequest{}))
+	res, err := c.vaults.GetHostVault(ctx, request(c, &v1.GetHostVaultRequest{}))
 	if err != nil {
 		return domain.Vault{}, readError(err)
 	}
@@ -170,7 +178,7 @@ func (c *Client) GetVault(ctx context.Context) (domain.Vault, error) {
 }
 
 func (c *Client) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
-	res, err := c.rpc.StatFile(ctx, request(c, &v1.StatFileRequest{Path: path}))
+	res, err := c.files.StatFile(ctx, request(c, &v1.StatFileRequest{Path: path}))
 	if err != nil {
 		return domain.FileStat{}, readError(err)
 	}
@@ -181,7 +189,7 @@ func (c *Client) StatFile(ctx context.Context, path string) (domain.FileStat, er
 }
 
 func (c *Client) Read(ctx context.Context, path string) ([]byte, domain.FileStat, error) {
-	res, err := c.rpc.ReadFile(ctx, request(c, &v1.ReadFileRequest{Path: path}))
+	res, err := c.files.ReadFile(ctx, request(c, &v1.ReadFileRequest{Path: path}))
 	if err != nil {
 		return nil, domain.FileStat{}, readError(err)
 	}
@@ -193,7 +201,7 @@ func (c *Client) Read(ctx context.Context, path string) ([]byte, domain.FileStat
 
 func (c *Client) ReadRange(ctx context.Context, path string, start, length int) (FileRange, error) {
 	size := int64(length)
-	res, err := c.rpc.ReadFile(ctx, request(c, &v1.ReadFileRequest{Path: path, Start: int64(start), Length: &size}))
+	res, err := c.files.ReadFile(ctx, request(c, &v1.ReadFileRequest{Path: path, Start: int64(start), Length: &size}))
 	if err != nil {
 		return FileRange{}, readError(err)
 	}
@@ -204,7 +212,7 @@ func (c *Client) ReadRange(ctx context.Context, path string, start, length int) 
 }
 
 func (c *Client) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
-	res, err := c.rpc.WriteFile(ctx, request(c, &v1.WriteFileRequest{
+	res, err := c.files.WriteFile(ctx, request(c, &v1.WriteFileRequest{
 		Path: path, Content: content, Baseline: writeFileStat(baseline),
 	}))
 	if err != nil {
@@ -217,7 +225,7 @@ func (c *Client) Write(ctx context.Context, path string, content []byte, baselin
 }
 
 func (c *Client) Create(ctx context.Context, path string, content []byte) error {
-	res, err := c.rpc.CreateFile(ctx, request(c, &v1.CreateFileRequest{Path: path, Content: content}))
+	res, err := c.files.CreateFile(ctx, request(c, &v1.CreateFileRequest{Path: path, Content: content}))
 	if err != nil {
 		return readError(err)
 	}
@@ -225,7 +233,7 @@ func (c *Client) Create(ctx context.Context, path string, content []byte) error 
 }
 
 func (c *Client) Lock(ctx context.Context) (func() error, error) {
-	res, err := c.rpc.LockVault(ctx, request(c, &v1.LockVaultRequest{}))
+	res, err := c.vaults.LockVault(ctx, request(c, &v1.LockVaultRequest{}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -234,7 +242,7 @@ func (c *Client) Lock(ctx context.Context) (func() error, error) {
 	}
 	lock := res.Msg.GetLock()
 	return func() error {
-		if _, err := c.rpc.UnlockVault(context.WithoutCancel(ctx), request(c, &v1.UnlockVaultRequest{Lock: lock})); err != nil {
+		if _, err := c.vaults.UnlockVault(context.WithoutCancel(ctx), request(c, &v1.UnlockVaultRequest{Lock: lock})); err != nil {
 			return fmt.Errorf("release vault lock: %w", err)
 		}
 		return nil
@@ -242,7 +250,7 @@ func (c *Client) Lock(ctx context.Context) (func() error, error) {
 }
 
 func (c *Client) Scan(ctx context.Context, paths []string) error {
-	res, err := c.rpc.ScanFiles(ctx, request(c, &v1.ScanFilesRequest{Paths: paths}))
+	res, err := c.files.ScanFiles(ctx, request(c, &v1.ScanFilesRequest{Paths: paths}))
 	if err != nil {
 		return readError(err)
 	}
@@ -250,7 +258,7 @@ func (c *Client) Scan(ctx context.Context, paths []string) error {
 }
 
 func (c *Client) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
-	res, err := c.rpc.GetNoteRefs(ctx, request(c, &v1.GetNoteRefsRequest{Paths: paths}))
+	res, err := c.notes.GetNoteRefs(ctx, request(c, &v1.GetNoteRefsRequest{Paths: paths}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -265,7 +273,7 @@ func (c *Client) GetNotes(ctx context.Context, paths []string) (map[string]domai
 }
 
 func (c *Client) GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error) {
-	res, err := c.rpc.GetNoteTypes(ctx, request(c, &v1.GetNoteTypesRequest{Paths: paths}))
+	res, err := c.notes.GetNoteTypes(ctx, request(c, &v1.GetNoteTypesRequest{Paths: paths}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -280,7 +288,7 @@ func (c *Client) GetTypes(ctx context.Context, paths []string) (map[string]domai
 }
 
 func (c *Client) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
-	res, err := c.rpc.GetNamedPaths(ctx, request(c, &v1.GetNamedPathsRequest{Name: name}))
+	res, err := c.notes.GetNamedPaths(ctx, request(c, &v1.GetNamedPathsRequest{Name: name}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -291,7 +299,7 @@ func (c *Client) GetNamedPaths(ctx context.Context, name string) ([]string, erro
 }
 
 func (c *Client) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
-	res, err := c.rpc.GetPathsOfType(ctx, request(c, &v1.GetPathsOfTypeRequest{Type: string(noteType)}))
+	res, err := c.notes.GetPathsOfType(ctx, request(c, &v1.GetPathsOfTypeRequest{Type: string(noteType)}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -302,7 +310,7 @@ func (c *Client) GetPathsOfType(ctx context.Context, noteType domain.NoteType) (
 }
 
 func (c *Client) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
-	res, err := c.rpc.GetLinks(ctx, request(c, &v1.GetLinksRequest{Path: from}))
+	res, err := c.links.GetLinks(ctx, request(c, &v1.GetLinksRequest{Path: from}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -313,7 +321,7 @@ func (c *Client) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLi
 }
 
 func (c *Client) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
-	res, err := c.rpc.GetBacklinks(ctx, request(c, &v1.GetBacklinksRequest{Path: to}))
+	res, err := c.links.GetBacklinks(ctx, request(c, &v1.GetBacklinksRequest{Path: to}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -324,7 +332,7 @@ func (c *Client) GetBacklinks(ctx context.Context, to string) ([]domain.Resolved
 }
 
 func (c *Client) ResolveLinks(ctx context.Context, from string, targets []string) (map[string]domain.ResolvedLink, error) {
-	res, err := c.rpc.ResolveLinks(ctx, request(c, &v1.ResolveLinksRequest{Path: from, Addresses: targets}))
+	res, err := c.links.ResolveLinks(ctx, request(c, &v1.ResolveLinksRequest{Path: from, Addresses: targets}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -339,7 +347,7 @@ func (c *Client) ResolveLinks(ctx context.Context, from string, targets []string
 }
 
 func (c *Client) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
-	res, err := c.rpc.GetParseProblems(ctx, request(c, &v1.GetParseProblemsRequest{}))
+	res, err := c.vaults.GetParseProblems(ctx, request(c, &v1.GetParseProblemsRequest{}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -354,7 +362,7 @@ func (c *Client) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, e
 }
 
 func (c *Client) ReadCache(ctx context.Context, name string) ([]byte, bool, error) {
-	res, err := c.rpc.ReadCache(ctx, request(c, &v1.ReadCacheRequest{Name: name}))
+	res, err := c.cache.ReadCache(ctx, request(c, &v1.ReadCacheRequest{Name: name}))
 	if err != nil {
 		return nil, false, readError(err)
 	}
@@ -365,7 +373,7 @@ func (c *Client) ReadCache(ctx context.Context, name string) ([]byte, bool, erro
 }
 
 func (c *Client) WriteCache(ctx context.Context, name string, content []byte) error {
-	res, err := c.rpc.WriteCache(ctx, request(c, &v1.WriteCacheRequest{Name: name, Content: content}))
+	res, err := c.cache.WriteCache(ctx, request(c, &v1.WriteCacheRequest{Name: name, Content: content}))
 	if err != nil {
 		return readError(err)
 	}
@@ -381,7 +389,7 @@ func (c *Client) With(id domain.VaultID) *Client {
 }
 
 func (c *Client) GetVaults(ctx context.Context) ([]domain.Vault, error) {
-	res, err := c.rpc.ListHostVaults(ctx, request(c, &v1.ListHostVaultsRequest{}))
+	res, err := c.vaults.ListHostVaults(ctx, request(c, &v1.ListHostVaultsRequest{}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -396,7 +404,7 @@ func (c *Client) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 }
 
 func (c *Client) EnsureIndexed(ctx context.Context) (IndexState, error) {
-	res, err := c.rpc.EnsureVaultIndexed(ctx, request(c, &v1.EnsureVaultIndexedRequest{}))
+	res, err := c.vaults.EnsureVaultIndexed(ctx, request(c, &v1.EnsureVaultIndexedRequest{}))
 	if err != nil {
 		return IndexState{}, readError(err)
 	}
@@ -417,7 +425,7 @@ func (c *Client) EnsureIndexed(ctx context.Context) (IndexState, error) {
 }
 
 func (c *Client) WatchMoves(ctx context.Context) (<-chan Move, error) {
-	stream, err := c.rpc.WatchMoves(ctx, request(c, &v1.WatchMovesRequest{}))
+	stream, err := c.vaults.WatchMoves(ctx, request(c, &v1.WatchMovesRequest{}))
 	if err != nil {
 		return nil, readError(err)
 	}

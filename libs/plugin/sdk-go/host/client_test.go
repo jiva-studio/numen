@@ -14,12 +14,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 // answering is a host that serves a few calls and records the callers.
 type answering struct {
-	numenv1connect.UnimplementedHostVaultServiceHandler
+	unimplementedHost
 	code         v1.HostVaultErrorCode
 	authHeader   string
 	unlocked     string
