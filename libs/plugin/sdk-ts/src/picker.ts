@@ -22,8 +22,31 @@ export interface PickerOptions {
   readonly onCreate: (text: string) => Promise<PickerItem>
 }
 
-// PickerHost is the list of items with check marks that a plugin opens in the window.
+// AskOptions is a line of text a plugin asks the person for. The title names what is asked, and value is
+// the text the line starts with.
+export interface AskOptions {
+  readonly title: string
+  readonly value?: string
+}
+
+// ChoiceOption is one answer of a choice: the value the plugin gets back and the title the person reads.
+export interface ChoiceOption {
+  readonly value: string
+  readonly title: string
+}
+
+// ChooseOptions is the one answer a plugin asks the person to pick among options, listed in the order given.
+export interface ChooseOptions {
+  readonly title: string
+  readonly options: readonly ChoiceOption[]
+}
+
+// PickerHost is what a plugin asks of the person in the palette of the window.
 export interface PickerHost {
   // Opens the list and resolves when the person closes it.
   open(options: PickerOptions): Promise<void>
+  // Asks for a line of text and resolves with it, trimmed, or with undefined when the person dismisses it.
+  ask(options: AskOptions): Promise<string | undefined>
+  // Asks for one of the options and resolves with its value, or with undefined when the person dismisses it.
+  choose(options: ChooseOptions): Promise<string | undefined>
 }

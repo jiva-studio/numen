@@ -170,3 +170,37 @@ describe('the mock host services', () => {
     expect(services.ui.picker).toBeUndefined()
   })
 })
+
+describe('the questions of the mock picker host', () => {
+  it('holds a line until a test answers it', async () => {
+    const picker = createPicker()
+    const asking = picker.ask({ title: 'Owner', value: 'Ann' })
+
+    expect(picker.getQuestion()).toStrictEqual({ title: 'Owner', value: 'Ann' })
+    picker.answer('Bob')
+
+    await expect(asking).resolves.toBe('Bob')
+    expect(picker.getQuestion()).toBeUndefined()
+  })
+
+  it('holds a choice with its options until a test answers it', async () => {
+    const picker = createPicker()
+    const options = [{ value: 'a', title: 'A' }]
+    const choosing = picker.choose({ title: 'Kind', options })
+
+    expect(picker.getQuestion()).toStrictEqual({ title: 'Kind', options })
+    picker.answer('a')
+
+    await expect(choosing).resolves.toBe('a')
+  })
+
+  it('resolves with undefined when a test dismisses the question', async () => {
+    const picker = createPicker()
+    const asking = picker.ask({ title: 'Owner' })
+
+    picker.dismiss()
+
+    await expect(asking).resolves.toBeUndefined()
+    expect(picker.getQuestion()).toBeUndefined()
+  })
+})
