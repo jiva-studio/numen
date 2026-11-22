@@ -36,8 +36,18 @@ const { field, type, choose, dismiss, goBack } = usePaletteInput({
 })
 
 /* -------------------------------- Handlers -------------------------------- */
+function onType(text: string): void {
+  if (props.picker.question.value) props.picker.question.value.type(text)
+  else type(text)
+}
+
+function onChoose(item: string, action: string): void {
+  if (props.picker.question.value) props.picker.question.value.answer(item)
+  else choose(item, action)
+}
+
 function onDismiss(): void {
-  if (props.picker.multi.value) props.picker.dismiss()
+  if (props.picker.multi.value || props.picker.question.value) props.picker.dismiss()
   else dismiss()
 }
 
@@ -49,19 +59,21 @@ function getRowIcon(id: string) {
 
 <template>
   <Palette
-    :model-value="field.typed"
-    :groups="field.groups"
-    :is-open="field.open || picker.multi.value !== undefined"
+    :model-value="picker.question.value?.typed ?? field.typed"
+    :groups="picker.question.value?.groups ?? field.groups"
+    :is-open="field.open || picker.multi.value !== undefined || picker.question.value !== undefined"
     :multi="picker.multi.value"
     :is-busy="field.isBusy"
-    :placeholder="field.placeholder"
+    :placeholder="picker.question.value?.placeholder ?? field.placeholder"
+    :heading="picker.question.value?.heading"
     :crumb="field.crumb"
-    :step="field.step"
+    :step="picker.question.value?.step ?? field.step"
     :opens-on="field.opensOn"
     :name="words.find"
     :action-words="actionWords"
-    @update:model-value="type"
-    @choose="choose"
+    @update:model-value="onType"
+    @choose="onChoose"
+    @submit="picker.question.value?.submit()"
     @light="commands.palette.previewItem"
     @back="goBack"
     @toggle="runInBackground(picker.toggle($event), reportFailure)"
@@ -71,7 +83,12 @@ function getRowIcon(id: string) {
     <template #icon="{ id }">
       <component :is="getRowIcon(id)" v-if="getRowIcon(id)" class="command-icon" />
     </template>
-    <template v-if="!commands.palette.open.value && search.status.isNothingFound.value" #silence>
+    <template
+      v-if="
+        !picker.question.value && !commands.palette.open.value && search.status.isNothingFound.value
+      "
+      #silence
+    >
       <span class="nothing-found">
         <Search class="nothing-found__icon" data-palette="nothing-icon" aria-hidden="true" />
         <span class="nothing-found__text" data-palette="nothing-text">

@@ -10,6 +10,11 @@
  * a toggle for the highlighted row, or a create for the row that makes an item from the typed text, and
  * the palette stays open.
  *
+ * A `heading` is the question the field answers: a label above the field, outside the list, that names
+ * the field and is read out when it changes.
+ *
+ * Enter with no row to choose emits `submit` with the text as typed, for a step that is a line of text.
+ *
  * `data-palette` marks each part of the panel by name: the backdrop, `panel`, `crumb`,
  * `field`, `announcement`, `nothing`, `key` and `more`. The list below the field marks
  * its own parts.
@@ -71,6 +76,8 @@ const emit = defineEmits<{
   (event: 'toggle', id: string): void
   /** In the multiple step, the row that creates an item was chosen, with the text as typed. */
   (event: 'create', text: string): void
+  /** Enter was pressed with no row to choose; the text is as typed. */
+  (event: 'submit', text: string): void
   /** Requests that the palette close. */
   (event: 'dismiss'): void
 }>()
@@ -135,6 +142,7 @@ const { onKey } = usePaletteKeys({
   getOpensOn: () => props.opensOn,
   getOpenedFrom: () => props.from,
   goBack: () => emit('back'),
+  submit: () => emit('submit', searchQuery.value),
   dismiss: () => emit('dismiss'),
 })
 
@@ -143,9 +151,7 @@ const onActionKey = (event: KeyboardEvent): void => {
   if (props.multi && isActionsChord(event)) {
     event.preventDefault()
     active.chooseAt(here.value, false)
-    return
-  }
-  onKey(event)
+  } else onKey(event)
 }
 
 const onOver = (pos: number, event: PointerEvent) => {
@@ -168,6 +174,15 @@ function reveal(): void {
     @ground="onBackdrop"
     @press="onPress"
   >
+    <p
+      v-if="heading"
+      :id="`${uid}-heading`"
+      class="palette__heading caps-numen text-small text-hushed"
+      data-palette="heading"
+    >
+      {{ heading }}
+    </p>
+
     <PaletteField
       ref="field"
       v-model="searchQuery"
@@ -178,12 +193,15 @@ function reveal(): void {
       :placeholder="multi?.placeholder ?? placeholder"
       :name="name"
       :crumb="crumb"
+      :heading-id="heading ? `${uid}-heading` : undefined"
     />
 
     <!-- What a search returned, where it returned nothing. It
          stands here for as long as the palette does, so what lands in it is
          read out. -->
-    <span class="sr-only" aria-live="polite" data-palette="announcement">{{ announcement }}</span>
+    <span class="sr-only" aria-live="polite" data-palette="announcement">
+      {{ [heading, announcement].filter(Boolean).join('. ') }}
+    </span>
 
     <PaletteResults
       v-if="placed.length"
@@ -231,6 +249,12 @@ function reveal(): void {
 </template>
 
 <style scoped>
+/* The question is small print over the field, as a group's name is over its rows. */
+.palette__heading {
+  margin: 0;
+  padding: 0.15rem 0.5rem;
+}
+
 /* The border below the field belongs to the element that follows it. */
 .palette__nothing {
   margin: 0;

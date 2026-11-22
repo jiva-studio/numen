@@ -1,4 +1,10 @@
-import type { PickerHost, PickerItem, PickerOptions } from '../picker'
+import type {
+  PromptTextOptions,
+  SelectOptionOptions,
+  PickerHost,
+  PickerItem,
+  PickerOptions,
+} from '../picker'
 
 // MockPickerHost is a PickerHost that holds the list a plugin opened, so a test acts as the person
 // who toggles its rows and closes it.
@@ -15,6 +21,12 @@ export interface MockPickerHost extends PickerHost {
   toggle(id: string): Promise<void>
   // Chooses the create row for a text: asks the plugin, then adds the item it answers with.
   create(text: string): Promise<void>
+  // The question asked and not yet answered.
+  getQuestion(): PromptTextOptions | SelectOptionOptions | undefined
+  // Answers the question asked, as the person who types or picks a value.
+  answer(value: string): void
+  // Dismisses the question asked, which resolves it with undefined.
+  dismiss(): void
   // Closes the list, which settles the open call.
   close(): void
 }
@@ -24,6 +36,18 @@ export function createMockPickerHost(): MockPickerHost {
   let opened: PickerOptions | undefined
   let items: readonly PickerItem[] = []
   let settle: (() => void) | undefined
+  let question:
+    | {
+        options: PromptTextOptions | SelectOptionOptions
+        resolve: (value: string | undefined) => void
+      }
+    | undefined
+
+  const settleQuestion = (value: string | undefined): void => {
+    const current = question
+    question = undefined
+    current?.resolve(value)
+  }
 
   const read = (): PickerOptions => {
     if (!opened) throw new Error('no list is open')
@@ -38,6 +62,17 @@ export function createMockPickerHost(): MockPickerHost {
         settle = resolve
       })
     },
+    promptText: (options) =>
+      new Promise((resolve) => {
+        question = { options, resolve }
+      }),
+    selectOption: (options) =>
+      new Promise((resolve) => {
+        question = { options, resolve }
+      }),
+    getQuestion: () => question?.options,
+    answer: (value) => settleQuestion(value),
+    dismiss: () => settleQuestion(undefined),
     getOpened: () => opened,
     getItems: () => items,
     getCreateTitle: (text) => read().getCreateTitle(text),

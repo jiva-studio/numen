@@ -632,8 +632,16 @@ describe('item with multiple actions', () => {
           id: 'names',
           title: 'Names',
           items: [
-            { id: 'chat', title: 'Open agent chat', keys: { icons: ['control', 'shift'], letter: 'A' } },
-            { id: 'graph', title: 'Open plex graph', keys: { icons: ['command', 'shift'], letter: 'X' } },
+            {
+              id: 'chat',
+              title: 'Open agent chat',
+              keys: { icons: ['control', 'shift'], letter: 'A' },
+            },
+            {
+              id: 'graph',
+              title: 'Open plex graph',
+              keys: { icons: ['command', 'shift'], letter: 'X' },
+            },
           ],
         },
       ],
@@ -962,6 +970,47 @@ describe('what the action panel is called', () => {
   })
 })
 
+describe('a heading over the field', () => {
+  it('draws it above the field, outside the list, and names the field with it', async () => {
+    mountPalette({ groups: AVAILABLE_GROUPS, heading: 'New name' })
+    await settle()
+
+    const heading = document.body.querySelector('[data-palette="heading"]')
+    expect(heading?.textContent?.trim()).toBe('New name')
+    expect(heading?.closest('[role="listbox"]')).toBeNull()
+    expect(field()?.getAttribute('aria-labelledby')).toBe(heading?.id)
+    expect(field()?.hasAttribute('aria-label')).toBe(false)
+  })
+
+  it('draws no title row for an untitled group', async () => {
+    mountPalette({ groups: [{ ...AVAILABLE_GROUPS[0]!, title: '' }] })
+    await settle()
+
+    expect(document.body.querySelector('[data-palette="title"]')).toBeNull()
+    expect(document.body.querySelector('[role="group"]')?.hasAttribute('aria-labelledby')).toBe(
+      false,
+    )
+  })
+
+  it('reads it out through the announcement', async () => {
+    mountPalette({ groups: [], heading: 'New name' })
+    await settle()
+
+    expect(document.body.querySelector('[data-palette="announcement"]')?.textContent).toBe(
+      'New name',
+    )
+  })
+
+  it('draws nothing and keeps the field named without one', async () => {
+    mountPalette({ groups: AVAILABLE_GROUPS })
+    await settle()
+
+    expect(document.body.querySelector('[data-palette="heading"]')).toBeNull()
+    expect(field()?.hasAttribute('aria-labelledby')).toBe(false)
+    expect(field()?.getAttribute('aria-label')).toBe('Palette')
+  })
+})
+
 describe('one step of several', () => {
   it('says which step the field is on, and says it describes the field', async () => {
     mountPalette({ groups: AVAILABLE_GROUPS, crumb: 'New name for «Entropy»' })
@@ -1060,5 +1109,27 @@ describe('the busy mark of the field', () => {
     await settle()
 
     expect(busy()).toBeNull()
+  })
+})
+
+describe('a line of text', () => {
+  it('emits the typed text on Enter when no row can be chosen', async () => {
+    const palette = mountPalette({ groups: [], modelValue: 'Kickoff' })
+    await settle()
+
+    await press('Enter')
+
+    expect(palette.emitted('submit')).toEqual([['Kickoff']])
+    expect(palette.emitted('choose')).toBeUndefined()
+  })
+
+  it('chooses the lit row on Enter and submits nothing', async () => {
+    const palette = mountPalette()
+    await settle()
+
+    await press('Enter')
+
+    expect(palette.emitted('choose')).toHaveLength(1)
+    expect(palette.emitted('submit')).toBeUndefined()
   })
 })

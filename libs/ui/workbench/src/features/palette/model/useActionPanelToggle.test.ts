@@ -205,7 +205,11 @@ describe('useActionPanel view model', () => {
       expect(scrollSpy).toHaveBeenCalledExactlyOnceWith({ block: 'nearest' })
 
       // Removing or replacing the row with non-RowHandle values removes it from the map.
-      for (const invalidRow of [null, document.createElement('div'), {} as ComponentPublicInstance]) {
+      for (const invalidRow of [
+        null,
+        document.createElement('div'),
+        {} as ComponentPublicInstance,
+      ]) {
         view.rows.holdRow('rename', createRow(elRename))
         view.rows.holdRow('rename', invalidRow)
         scrollSpy.mockClear()

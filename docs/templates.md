@@ -1,0 +1,141 @@
+# Templates
+
+A template is a note whose path matches a mask of the templates setting. The command "New note from template" makes a new note from one: it runs the template, asks what the template asks, and opens the result. The Templates plugin, `md.numen.tools.templates`, does this.
+
+## Making a template
+
+Put a note in a folder named `Templates` at the root of the vault, or give it a name that ends in `.template.md` anywhere in the vault: `Meeting.template.md`. Either is a template. Which notes are templates is the setting `templates` of the plugin (see [Settings](settings.md)): masks separated by commas, `Templates/**, **/*.template.md` by default. A note is a template when its path matches any of them.
+
+A mask is a path with wildcards. `*` stands for part of a name, `?` for one character, `[ab]` for one of the characters listed, and `**` for any number of folders, so `Templates/**` is every note under `Templates` at any depth and `Models/*` is the notes directly in `Models`. A mask is read from the root of the vault and tells capitals from small letters. A mask with a `..` segment is ignored, and a setting with no mask left is read as the default.
+
+The picker shows each template under a group. Where a mask starts with a folder, as `Templates/**` does, the group is the folder of the note below that folder: `Templates/Work/Meeting.md` is in the group `Work`, and `Templates/Meeting.md` in none. Otherwise the group is the folder of the note, so `Notes/Weekly.template.md` is in the group `Notes`. When no note is a template, the command is not listed anywhere.
+
+## Making a note from a template
+
+Right-click a folder in the file tree, open "New" and pick "New note from template", then pick a template. The note is made inside that folder. From the palette, the note is made in the folder of the note in front. A note that has no path makes it at the root of the vault.
+
+The first thing the palette asks after the template is picked is the name of the new note. The line starts with a suggestion, the name of the template with `.template` left out, so `Meeting.template.md` suggests `Meeting`, with a number added where that name is taken in the folder: `Meeting`, `Meeting 2`, `Meeting 3`. Enter accepts what is typed, and Escape makes no note. The name is the file name without `.md` and the title the template sees as `.title`. A name no note can have (empty, with a `/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|` or `#`, with a control character or more than one line, longer than 120 bytes, starting or ending with a dot or a space, or one of the device names `CON`, `PRN`, `AUX`, `NUL`, `COM1` to `COM9` and `LPT1` to `LPT9`, with an extension or without; `a..b` is a name) is refused, and so is a name a note of the folder has already, which is never overwritten, and a suggestion that is no name is cut to the name it reduces to, or left empty where the template has none or the numbers up to 100 are taken: the palette asks the name again, with the reason after it. The note opens in the current pane. The template is never changed.
+
+The new note holds the frontmatter of the template with its keys in their order, and its own `id`: an `id` the template has is replaced. A template without frontmatter gives a note with the `id` alone. When the template asks questions (see [Asking](#asking)), the palette asks them after the name, one after the other, with the answer typed or the first option at the start, and Escape on any of them makes no note.
+
+## The template language
+
+The text of a template is run by the Go template language, `text/template`, with actions between double braces: `{{ .title }}`. It runs in the frontmatter as well as in the text, and inside code too, so a literal `{{` is written `{{ "{{" }}`. A template that does not parse or does not run makes no note and says why, with the line: `template: Meeting.md:3: function "nope" not defined`. A name that does not exist, as `{{ .tittle }}`, is an error as well, and so is a frontmatter that is not valid after the run. A template reads no file, makes no network call and sees no environment variable: it knows the data and the functions below, and the functions of the language that only work on values (`len`, `index`, `slice`, `eq`, `not` and the like). `call`, `html`, `js`, `printf`, `print` and `println` are not available and fail with an error.
+
+### Limits
+
+A template is at most 256 KiB, the text it writes at most 1 MiB, and it runs for at most 5 seconds. A template over a limit makes no note and says which: `the template writes too much text`, `the template runs too long`. A loop that writes nothing is stopped as well: a template that takes more than two million steps (an iteration of a `range` or a call of a `template`) or nests its `template` calls more than a thousand deep runs too long.
+
+### What a template knows
+
+| Name | Is |
+| --- | --- |
+| `.title` | the name given to the new note |
+| `.folder` | the folder the note is made in, empty for the root of the vault |
+| `.id` | the `id` of the new note |
+| `.now` | the date and time of the call |
+| `.vars` | the answers to the questions, by label: `.vars.Client` |
+
+The date and the time are those of the machine at the call, in its time zone, and the names of months and days are in English.
+
+A name or a folder is pasted as it is, and a name such as `[x]`, `true`, `2024-01-01`, `{a` or `@a` is not a plain YAML text, so write them into the frontmatter with `yaml`, which quotes them: `title: {{ .title | yaml }}`, `folder: {{ .folder | yaml }}`. A folder has no control character.
+
+### Dates
+
+| Function | Gives |
+| --- | --- |
+| `date "YYYY-MM-DD"` | the date written as the format says |
+| `time "HH:mm"` | the time written as the format says |
+| `addDays n` | the instant `n` days on, or back when `n` is negative |
+| `addMonths n` | the instant `n` months on |
+| `weekday` | the name of the day of the week, `Saturday` |
+
+Each takes an instant as its last argument and takes `.now` where none is given, so they pipe: `{{ addDays 1 | date "YYYY-MM-DD" }}` is tomorrow, and `{{ addDays 2 | weekday }}` is the day after tomorrow's name. An empty format is the default one, `YYYY-MM-DD` for `date` and `HH:mm` for `time`. Moving by months keeps the day of the month, so a month on from the 31st of January is the 3rd of March.
+
+### Formats
+
+The tokens are those of Moment.js, a subset of them:
+
+| Token | Becomes | Token | Becomes |
+| --- | --- | --- | --- |
+| `YYYY` | 2026 | `HH`, `H` | 09, 9 (24-hour clock) |
+| `YY` | 26 | `hh`, `h` | 09, 9 (12-hour clock, 12 at midnight and noon) |
+| `MMMM`, `MMM` | November, Nov | `mm`, `m` | 05, 5 |
+| `MM`, `M` | 11, 11 | `ss`, `s` | 00, 0 |
+| `DD`, `D` | 14, 14 | `A`, `a` | AM or PM, am or pm |
+| `dddd`, `ddd` | Saturday, Sat | `[text]` | `text`, with no token read inside |
+
+Every other character is copied, and so is a letter that is not a token of this list: `{{ date "Do" }}` gives `14o`. A `[` that is never closed is copied.
+
+### Text
+
+| Function | Gives |
+| --- | --- |
+| `upper s`, `lower s` | the text in capitals, or in small letters |
+| `title s` | the text with each word starting with a capital |
+| `slug s` | small letters and digits joined by `-`: `Book review!` is `book-review` |
+| `default d v` | `v`, or `d` where `v` is empty |
+| `trunc n s` | the first `n` characters (the last ones where `n` is negative) |
+| `join sep items`, `split sep s` | a list written as text, and text cut into a list |
+| `replace old new s` | the text with every `old` replaced |
+| `trim s` | the text without the spaces at its ends |
+| `yaml s` | the text written as a double-quoted YAML value, safe in the frontmatter: `title: {{ prompt "Title" \| yaml }}` |
+| `uuid` | a random identifier for the text of the note, such as an id of a block; each call gives another one and a call gives the same one while the template is run for the questions and again for the note. The `id` of the note is `.id` and is not set by this |
+
+A piped value is the last argument of the function after the bar, so `{{ .title | trunc 5 }}` is `trunc 5 .title` and `{{ .vars.Client | default "none" }}` is `default "none" .vars.Client`; that is why `default`, `trunc`, `replace` and `join` take the text last. These pipe as well: `{{ .title | slug }}`, `{{ .vars.Client | default "none" | upper }}`. Control comes with the language: `if`, `else`, `range`, `with`, variables (`{{ $d := addDays 1 }}`), `eq`, `ne`, `lt`, `and`, `or`, `not`, `list` and `dict`.
+
+### Asking
+
+A template can ask before it is made into a note:
+
+- `{{ prompt "Client" }}` asks for a line of text called Client, and `{{ prompt "Client" "Acme" }}` starts it with Acme.
+- `{{ select "Kind" "call" "visit" }}` asks to pick one of the options, the first at the start.
+
+Each becomes the answer, and the answer is kept in `.vars` under the label, so `{{ .vars.Kind }}` repeats it where the label has no spaces. The questions are collected before the note is made, once for each label, in the order the template reaches them; to find them the template is run once with the defaults, so a question under an `if` is asked when the defaults reach it. A field given no answer takes its default; a text answer the person cleared stays empty. Asking one label again as the same kind with the same options is one question; asking it as another kind or with other options is an error, and so is a question that only an answer leads to: a `prompt` under an `if` that the defaults do not reach is never asked, so the note says the field was not met. The questions are found with the suggested name, a blank `.id` and the time of the listing, so do not let a question depend on `.title`, `.id` or `.now`: where the name typed leads to other questions, no note is made and the note says the template asks different questions for this name.
+
+An answer to a text question is one line: line breaks become a space and other control characters are dropped. An answer is pasted as it is, so write it into the frontmatter with `yaml`, which quotes it: `client: {{ prompt "Client" | yaml }}` stays one value for an answer such as `a: b`, `[x]` or `---`.
+
+A template with no question makes its note at once.
+
+### An example
+
+```markdown
+---
+type: meeting
+created: {{ date "YYYY-MM-DD" }}
+client: {{ prompt "Client" "Acme" | yaml }}
+---
+# {{ .title }} with {{ prompt "Client" "Acme" }}
+
+{{ if eq (select "Kind" "call" "visit") "visit" }}Address:{{ end }}
+Next week: {{ addDays 7 | date "dddd, D MMMM" }}
+```
+
+### More examples
+
+A meeting note that asks who and what, and keeps the answer in a variable:
+
+```markdown
+{{ $client := prompt "Client" "Acme" }}# Meeting with {{ $client }}
+
+Date: {{ date "YYYY-MM-DD" }}
+Topic: {{ prompt "Topic" }}
+Notes on {{ $client }}:
+```
+
+A daily note with the days around today:
+
+```markdown
+# {{ date "dddd, D MMMM YYYY" }}
+
+Yesterday: [[{{ addDays -1 | date "YYYY-MM-DD" }}]]
+Tomorrow: [[{{ addDays 1 | date "YYYY-MM-DD" }}]]
+```
+
+A note that changes with a choice:
+
+```markdown
+# {{ .title }}
+{{ $kind := select "Kind" "call" "visit" }}Kind: {{ $kind }}
+{{ $where := prompt "Address or phone" }}{{ if eq $kind "visit" }}Address: {{ $where }}{{ else }}Phone: {{ $where }}{{ end }}
+```

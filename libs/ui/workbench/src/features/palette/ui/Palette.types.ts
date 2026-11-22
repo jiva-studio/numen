@@ -8,6 +8,7 @@ export interface PaletteProps {
   isOpen?: boolean
   isBusy?: boolean
   placeholder?: string
+  heading?: string | undefined
   crumb?: string
   step?: string
   opensOn?: string

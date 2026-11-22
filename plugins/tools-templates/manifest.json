@@ -1,0 +1,38 @@
+{
+  "id": "md.numen.tools.templates",
+  "name": "Templates",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Makes a new note from a template",
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "tools",
+    "feature": "templates",
+    "commands": [
+      { "id": "note.createFromTemplate", "title": "New note from template", "icon": "file-plus" }
+    ],
+    "slots": [
+      {
+        "slot": "fileTree.new",
+        "command": "note.createFromTemplate",
+        "group": "2-templates",
+        "order": 10,
+        "when": "target.isFolder"
+      }
+    ]
+  },
+  "permissions": ["vault:read", "vault:write"],
+  "services": ["md.numen.tools.templates"],
+  "backend": { "entrypoint": "bin/tools-templates" },
+  "frontend": {},
+  "settings": [
+    {
+      "key": "templates",
+      "type": "string",
+      "title": "Template masks",
+      "description": "The masks of the paths that are templates, separated by commas",
+      "details": "A note whose path matches a mask is a template. * stands for part of a name, and ** for any number of folders. Under a mask that starts with a folder, each subfolder is a group.",
+      "default": "Templates/**, **/*.template.md"
+    }
+  ]
+}

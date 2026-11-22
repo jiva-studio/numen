@@ -81,6 +81,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
           getOpensOn: () => opensOn.value,
           getOpenedFrom: () => back,
           goBack,
+          submit: () => undefined,
           dismiss,
         })
         return () => null

@@ -114,6 +114,7 @@ async function mountField(
   await search.setTyped(text)
   await flushPromises()
   const runChoice = vi.fn()
+  const picker = createPickerSession()
   const field = mount(CommandPalette, {
     props: {
       commands,
@@ -122,7 +123,7 @@ async function mountField(
       getTarget: () => inFront,
       places: {},
       runChoice,
-      picker: createPickerSession(),
+      picker,
     },
     global: {
       stubs: { Palette: showSilence ? { template: '<div><slot name="silence" /></div>' } : true },
@@ -135,7 +136,7 @@ async function mountField(
   const rows = search.groups.value.flatMap((group) =>
     group.items.map((one) => ({ item: one.id, actions: one.actions?.map((a) => a.id) ?? [] })),
   )
-  return { search, commands, runChoice, choose, rows, field }
+  return { search, commands, runChoice, choose, rows, field, picker }
 }
 
 describe('choosing an action of a row of the search', () => {
@@ -408,5 +409,67 @@ describe('the spinner of the search field', () => {
     await flushPromises()
 
     expect(field.findComponent(Palette).props('isBusy')).toBe(false)
+  })
+})
+
+describe('a question of a plugin', () => {
+  it('opens the palette over its row, and answers with the row chosen, not a command', async () => {
+    const { field, picker, choose, runChoice } = await mountField({}, '')
+    const choosing = picker.selectOption({
+      title: 'Level',
+      options: [{ value: 'high', title: 'High' }],
+    })
+    await flushPromises()
+
+    const palette = field.findComponent(Palette)
+    expect(palette.props('placeholder')).toBe('Level')
+    expect(palette.props('heading')).toBe('Level')
+    expect(palette.props('groups')?.[0]?.items.map((one) => one.id)).toEqual(['high'])
+
+    await choose('high', 'high')
+
+    await expect(choosing).resolves.toBe('high')
+    expect(runChoice).not.toHaveBeenCalled()
+  })
+
+  it('leaves the question with undefined when the palette is dismissed', async () => {
+    const { field, picker } = await mountField({}, '')
+    const asking = picker.promptText({ title: 'Owner' })
+    await flushPromises()
+
+    field.findComponent(Palette).vm.$emit('dismiss')
+
+    await expect(asking).resolves.toBeUndefined()
+  })
+})
+
+describe('a text question of a plugin', () => {
+  it('starts with the default typed, the question as placeholder and heading, and no row', async () => {
+    const { field, picker } = await mountField({}, '')
+    const asking = picker.promptText({ title: 'Kickoff · Name', value: 'Meeting 2' })
+    await flushPromises()
+
+    const palette = field.findComponent(Palette)
+    expect(palette.props()).toMatchObject({
+      modelValue: 'Meeting 2',
+      placeholder: 'Kickoff · Name',
+      heading: 'Kickoff · Name',
+      groups: [],
+    })
+
+    picker.dismiss()
+    await asking
+  })
+
+  it('answers with the text typed when the palette submits', async () => {
+    const { field, picker } = await mountField({}, '')
+    const asking = picker.promptText({ title: 'Kickoff · Name', value: 'Meeting' })
+    await flushPromises()
+
+    const palette = field.findComponent(Palette)
+    palette.vm.$emit('update:modelValue', 'Retro')
+    palette.vm.$emit('submit', 'Retro')
+
+    await expect(asking).resolves.toBe('Retro')
   })
 })

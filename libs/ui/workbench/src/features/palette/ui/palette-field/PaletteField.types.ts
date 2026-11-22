@@ -5,5 +5,6 @@ export interface PaletteFieldProps {
   placeholder: string
   name: string
   crumb: string
+  headingId?: string | undefined
   isBusy?: boolean
 }
