@@ -332,7 +332,10 @@ describe('the templates frontend', () => {
     const { context, picker, createNote, errors } = setup(created('notes/Ok.md'))
     createNote.mockResolvedValueOnce({
       ok: false,
-      error: { code: 'failed_precondition', message: '"nap" is not one of the options of "Kind": call, visit' },
+      error: {
+        code: 'failed_precondition',
+        message: '"nap" is not one of the options of "Kind": call, visit',
+      },
     })
 
     const running = context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Meeting.md')
