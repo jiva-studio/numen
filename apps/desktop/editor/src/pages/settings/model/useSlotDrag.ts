@@ -20,6 +20,13 @@ interface Pressed {
   readonly row: HTMLElement | null
 }
 
+function measureSpans(list: Element | null | undefined): readonly RowSpan[] {
+  return Array.from(list?.children ?? [], (one) => {
+    const { top, height } = measureRect(one)
+    return { top, height }
+  })
+}
+
 /** What the drag of a row reads and writes: the rows of a slot and the place a row is moved to. */
 export interface SlotDragSource {
   readonly getRows: (group: SlotGroup) => readonly SlotRow[]
@@ -66,18 +73,12 @@ export function useSlotDrag(source: SlotDragSource) {
     },
   })
 
-  const hasMoved = (): boolean => drag.dragging.value?.hasMoved === true
-
   const onGripPress = (group: SlotGroup, at: number, event: PointerEvent): void => {
     if (event.button !== 0) return
     const grip = event.currentTarget as HTMLElement | null
-    const spans = Array.from(grip?.closest('ul')?.children ?? [], (one) => {
-      const { top, height } = measureRect(one)
-      return { top, height }
-    })
     pressed = {
       group,
-      spans,
+      spans: measureSpans(grip?.closest('ul')),
       key: source.getRows(group)[at]?.key ?? '',
       startY: event.clientY,
       row: grip?.closest('li') ?? null,
@@ -90,10 +91,18 @@ export function useSlotDrag(source: SlotDragSource) {
     if (event.target === event.currentTarget && event.propertyName === 'transform') finish()
   }
 
-  const isHeld = (group: SlotGroup, key: string): boolean =>
-    pressed?.group === group && pressed.key === key && hasMoved()
+  const isDragging = (group: SlotGroup): boolean =>
+    pressed?.group === group && drag.dragging.value?.hasMoved === true && drag.at.value !== null
 
-  const isShifting = (group: SlotGroup): boolean => pressed?.group === group && hasMoved()
+  const getRowClass = (group: SlotGroup, key: string): Record<string, boolean> => {
+    const isHeld = pressed?.key === key
+    const landing = settling.value?.key === key ? settling.value : null
+    return {
+      'plugin-slots__row--lifted': (isDragging(group) && isHeld) || landing?.isMoving === false,
+      'plugin-slots__row--shifting': isDragging(group) && !isHeld,
+      'plugin-slots__row--settling': landing?.isMoving === true,
+    }
+  }
 
   const getShift = (group: SlotGroup, key: string, at: number): number => {
     const from = drag.dragging.value?.item
@@ -113,5 +122,5 @@ export function useSlotDrag(source: SlotDragSource) {
     return offset === 0 ? undefined : { transform: `translateY(${offset}px)` }
   }
 
-  return { settling, onGripPress, onRowTransitionEnd, isHeld, isShifting, getRowStyle }
+  return { onGripPress, onRowTransitionEnd, isDragging, getRowClass, getRowStyle }
 }

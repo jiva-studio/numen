@@ -27,7 +27,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { settling, onGripPress, onRowTransitionEnd, isHeld, isShifting, getRowStyle } = useSlotDrag({
+const { onGripPress, onRowTransitionEnd, isDragging, getRowClass, getRowStyle } = useSlotDrag({
   getRows: (group) => rowsOf(group),
   move: (group, from, to) => onChange(group, moveSlotRow(rowsOf(group), from, to)),
 })
@@ -55,17 +55,12 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
     :title="group.title"
     :data-testid="`slots-${group.slot}`"
   >
-    <ul class="plugin-slots__list" :class="{ 'plugin-slots__list--dragging': isShifting(group) }">
+    <ul class="plugin-slots__list" :class="{ 'plugin-slots__list--dragging': isDragging(group) }">
       <li
         v-for="(row, at) in rowsOf(group)"
         :key="row.key"
         class="plugin-slots__row"
-        :class="{
-          'plugin-slots__row--held': isHeld(group, row.key),
-          'plugin-slots__row--lifted': isHeld(group, row.key),
-          'plugin-slots__row--shifting': isShifting(group) && !isHeld(group, row.key),
-          'plugin-slots__row--settling': settling?.key === row.key && settling.isMoving,
-        }"
+        :class="getRowClass(group, row.key)"
         :style="getRowStyle(group, row.key, at)"
         @transitionend="onRowTransitionEnd"
       >
@@ -101,25 +96,36 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
   padding-block: 0.125rem;
 }
 
-.plugin-slots__row--held {
+.plugin-slots__row--lifted,
+.plugin-slots__row--settling {
   position: relative;
   z-index: 1;
-  transition: none;
 }
 
 .plugin-slots__row--lifted {
   background: var(--numen-raised);
   box-shadow: var(--numen-shadow-card);
   opacity: 0.9;
-  transition: none;
+  transition:
+    background-color var(--numen-motion) var(--numen-easing),
+    box-shadow var(--numen-motion) var(--numen-easing),
+    opacity var(--numen-motion) var(--numen-easing);
 }
 
-.plugin-slots__row--shifting,
-.plugin-slots__row--settling {
+.plugin-slots__row--shifting {
   transition: transform var(--numen-motion) var(--numen-easing);
 }
 
+.plugin-slots__row--settling {
+  transition:
+    transform var(--numen-motion) var(--numen-easing),
+    background-color var(--numen-motion) var(--numen-easing),
+    box-shadow var(--numen-motion) var(--numen-easing),
+    opacity var(--numen-motion) var(--numen-easing);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .plugin-slots__row--lifted,
   .plugin-slots__row--shifting,
   .plugin-slots__row--settling {
     transition: none;
