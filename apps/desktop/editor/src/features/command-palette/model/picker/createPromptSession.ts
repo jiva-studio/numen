@@ -28,6 +28,13 @@ type Question =
   | { readonly kind: 'promptText'; readonly options: PromptTextOptions }
   | { readonly kind: 'selectOption'; readonly options: SelectOptionOptions }
 
+const getHeading = (options: PromptTextOptions): PaletteGroup => ({
+  id: 'question',
+  title: options.title,
+  items: [],
+  isHeading: true,
+})
+
 export function createPromptSession(): PromptSession {
   const question = shallowRef<Question | undefined>(undefined)
   const typed = shallowRef('')
@@ -96,7 +103,7 @@ export function createPromptSession(): PromptSession {
       step: step.value,
       typed: typed.value,
       placeholder: current.options.title,
-      groups: current.kind === 'promptText' ? [] : [getOptionGroup(current.options)],
+      groups: current.kind === 'promptText' ? [getHeading(current.options)] : [getOptionGroup(current.options)],
       type,
       answer: (id) => {
         if (current.kind === 'selectOption') reply(id)
