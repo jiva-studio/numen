@@ -4,29 +4,29 @@
   display: inline-flex;
   align-items: center;
   height: 100%;
-  padding-inline: calc(var(--numen-inset) / 4);
-  --popover-offset: 0.25rem;
-  --popover-width: 24rem;
-  --popover-max-height: 28rem;
-  --popover-edge-gap: 1rem;
-  --popover-pad: 0.5rem;
-  --popover-header-pad-inline: 0.75rem;
-  --close-size: 1.25rem;
-  --close-text: var(--numen-font-size);
-  --row-gap: 0.75rem;
-  --row-pad-block: 0.25rem;
-  --row-pad-inline: 0.5rem;
-  --row-nested-indent: 1.25rem;
+  padding-inline: calc(var(--numen-chrome-inset) / 4);
+  --popover-offset: calc(0.25 * var(--numen-chrome-unit));
+  --popover-width: calc(24 * var(--numen-chrome-unit));
+  --popover-max-height: calc(28 * var(--numen-chrome-unit));
+  --popover-edge-gap: var(--numen-chrome-unit);
+  --popover-pad: calc(0.5 * var(--numen-chrome-unit));
+  --popover-header-pad-inline: calc(0.75 * var(--numen-chrome-unit));
+  --close-size: calc(1.25 * var(--numen-chrome-unit));
+  --close-text: var(--numen-chrome-text-2);
+  --row-gap: calc(0.75 * var(--numen-chrome-unit));
+  --row-pad-block: calc(0.25 * var(--numen-chrome-unit));
+  --row-pad-inline: calc(0.5 * var(--numen-chrome-unit));
+  --row-nested-indent: calc(1.25 * var(--numen-chrome-unit));
   --figure-min-width: 4.2em;
 }
 
 /* The chip: flat, with a ground and no border. Height, text size, padding and mark size are the
    same in the three title bar chips; only the width follows the content. */
 .index-stats__trigger {
-  --chip-height: 1.25rem;
-  --chip-text: var(--numen-font-size);
-  --chip-pad: 0.5rem;
-  --chip-mark: 0.75rem;
+  --chip-height: calc(1.25 * var(--numen-chrome-unit));
+  --chip-text: var(--numen-chrome-text-2);
+  --chip-pad: calc(0.5 * var(--numen-chrome-unit));
+  --chip-mark: calc(0.75 * var(--numen-chrome-unit));
   display: inline-flex;
   align-items: center;
   gap: calc(var(--chip-pad) / 2);
@@ -35,7 +35,7 @@
   padding: 0 var(--chip-pad);
   background: var(--numen-surface);
   border: none;
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-chrome-radius);
   outline: none;
   color: var(--numen-ink);
   font: inherit;
@@ -76,7 +76,7 @@
   background: var(--numen-raised);
   color: var(--numen-ink);
   border: 1px solid var(--numen-panel-border);
-  border-radius: var(--numen-radius-popup);
+  border-radius: var(--numen-chrome-radius);
   box-shadow: var(--numen-panel-shadow);
   overflow: hidden;
   z-index: 50;
@@ -92,7 +92,7 @@
 }
 
 .index-popover__title {
-  font-size: var(--numen-text-2);
+  font-size: var(--numen-chrome-text-2);
   font-weight: 600;
   color: var(--numen-ink);
 }
@@ -106,7 +106,7 @@
   padding: 0;
   background: transparent;
   border: none;
-  border-radius: var(--numen-radius-tight);
+  border-radius: var(--numen-chrome-radius-tight);
   color: var(--numen-hushed);
   font-size: var(--close-text);
   cursor: pointer;
@@ -130,8 +130,8 @@
   justify-content: space-between;
   gap: var(--row-gap);
   padding: var(--row-pad-block) var(--row-pad-inline);
-  border-radius: var(--numen-radius);
-  font-size: var(--numen-text-2);
+  border-radius: var(--numen-chrome-radius);
+  font-size: var(--numen-chrome-text-2);
   line-height: 1.25;
 }
 
@@ -141,7 +141,7 @@
 
 .index-popover__row--nested {
   padding-inline-start: var(--row-nested-indent);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-chrome-text-1);
 }
 
 .index-popover__label {

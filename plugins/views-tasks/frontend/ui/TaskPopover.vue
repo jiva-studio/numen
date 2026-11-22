@@ -74,16 +74,16 @@ const taskList = computed(() => orderTasks(props.tasks))
 
 <style scoped>
 .task-popover {
-  --popover-width: 24rem;
-  --popover-edge-gap: 1rem;
-  --popover-max-height: 22rem;
-  --header-pad-block: 0.5rem;
-  --header-pad-inline: 0.75rem;
-  --close-size: 1.25rem;
-  --body-pad: 0.5rem;
-  --body-gap: 0.125rem;
-  --empty-pad-block: 1.5rem;
-  --empty-pad-inline: 1rem;
+  --popover-width: calc(24 * var(--numen-chrome-unit));
+  --popover-edge-gap: var(--numen-chrome-unit);
+  --popover-max-height: calc(22 * var(--numen-chrome-unit));
+  --header-pad-block: calc(0.5 * var(--numen-chrome-unit));
+  --header-pad-inline: calc(0.75 * var(--numen-chrome-unit));
+  --close-size: calc(1.25 * var(--numen-chrome-unit));
+  --body-pad: calc(0.5 * var(--numen-chrome-unit));
+  --body-gap: calc(0.125 * var(--numen-chrome-unit));
+  --empty-pad-block: calc(1.5 * var(--numen-chrome-unit));
+  --empty-pad-inline: var(--numen-chrome-unit);
   display: flex;
   flex-direction: column;
   width: var(--popover-width);
@@ -92,7 +92,7 @@ const taskList = computed(() => orderTasks(props.tasks))
   background: var(--numen-raised);
   color: var(--numen-ink);
   border: 1px solid var(--numen-panel-border);
-  border-radius: var(--numen-radius-popup);
+  border-radius: var(--numen-chrome-radius);
   box-shadow: var(--numen-panel-shadow);
   overflow: hidden;
 }
@@ -107,7 +107,7 @@ const taskList = computed(() => orderTasks(props.tasks))
 }
 
 .task-popover__title {
-  font-size: var(--numen-text-2);
+  font-size: var(--numen-chrome-text-2);
   font-weight: 600;
   color: var(--numen-ink);
 }
@@ -134,7 +134,7 @@ const taskList = computed(() => orderTasks(props.tasks))
 .task-popover__empty {
   padding: var(--empty-pad-block) var(--empty-pad-inline);
   text-align: center;
-  font-size: var(--numen-text-2);
+  font-size: var(--numen-chrome-text-2);
   color: var(--numen-hushed);
 }
 </style>

@@ -22,6 +22,11 @@ export default {
       rules: { "numen/no-bare-length": true },
     },
     {
+      // The window chrome keeps one size at every scale: the bars and the plugins that draw a view in a slot of a bar.
+      files: ["plugins/*/frontend/**/*.{css,vue}"],
+      rules: { "numen/chrome-fixed-size": [true, { slots: ["titleBar", "statusBar"] }] },
+    },
+    {
       files: ["**/tokens/**/*.css", "**/theme/**/*.css", "**/themes/**/*.css"],
       rules: {
         "color-no-hex": null,
