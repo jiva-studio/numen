@@ -101,18 +101,19 @@ func (s *Store) ReadCheckedAt(path string) (File, error) {
 
 // ReadJSON returns the checked settings as JSON, the path of the file and the version of the state read.
 // The version is taken before the file is read, so it is never newer than the content.
-func (s *Store) ReadJSON() (content, path string, version uint64, err error) {
-	version = s.files.GetVersion()
-	path, err = s.getPath()
+func (s *Store) ReadJSON() (settingsdomain.Snapshot, error) {
+	snapshot := settingsdomain.Snapshot{Version: s.files.GetVersion()}
+	path, err := s.getPath()
 	if err != nil {
-		return "", "", version, err
+		return snapshot, err
 	}
+	snapshot.Path = path
 	target, err := s.ReadCheckedAt(path)
 	if err != nil {
-		return "", path, version, err
+		return snapshot, err
 	}
-	content, err = target.WriteJSON()
-	return content, path, version, err
+	snapshot.Content, err = target.WriteJSON()
+	return snapshot, err
 }
 
 // WriteJSON puts each setting at its path in the file and returns the checked settings as JSON that
