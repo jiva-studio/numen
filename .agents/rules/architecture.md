@@ -34,7 +34,7 @@ numen/
 │   │   ├── loader/               # TypeScript: the loader of plugin frontends
 │   │   ├── manager/              # Vue: the plugin list and the plugin page, data in by props and results out by events
 │   │   └── catalog/              # Go: the plugin catalog, its manifests and their sources
-│   ├── shared/                   # Go libraries that plugins of more than one family import and that do not depend on numen: onnx (the ONNX Runtime layer), tokenizer (Hugging Face tokenizers)
+│   ├── shared/                   # Go libraries that plugins of more than one family import and that do not depend on numen: onnx (the ONNX Runtime layer), tokenizer (Hugging Face tokenizers), identity (keys and the device chain, shared with the sync server)
 │   └── ui/                       # Vue 3: `components` holds components that do not use the domain, `workbench` the window chrome
 ├── plugins/                      # one folder per plugin: manifest.json, backend/ (Go), frontend/ (Vue)
 └── apps/
@@ -240,7 +240,7 @@ graph LR
 
 **(d) No protocol inside a plugin.** A plugin has no `.proto` file and no protobuf code. Its backend serves its own frontend through JSON methods (`server.Handle` and `server.Stream` of the Go SDK, `createApi` of `@numen/plugin-sdk`).
 
-**(e) Code may be duplicated between plugins.** Code that several plugins use may be copied into each of them. No check pushes code into the SDK or `@numen/ui`; a check that does so is wrong and is corrected. The exception is `libs/shared`: code that two or more plugins, the SDK or the applications need and that does not depend on numen (no note, no vault, no host, no SDK, no plugin domain) may live there as a Go module of its own, `libs/shared/<name>`, which imports no module of this repository. A new `libs/shared/<name>` needs the owner's approval first. The SDK, the core and the applications (`apps/*`) may import `libs/shared`; a library there imports no module of this repository, so none of them is reached back.
+**(e) Code may be duplicated between plugins.** Code that several plugins use may be copied into each of them. No check pushes code into the SDK or `@numen/ui`; a check that does so is wrong and is corrected. The exception is `libs/shared`: code that two or more plugins, the SDK or the applications need, or that the core or a plugin shares with an external consumer such as the sync server, and that does not depend on numen (no note, no vault, no host, no SDK, no plugin domain) may live there as a Go module of its own, `libs/shared/<name>`, which imports no module of this repository. A new `libs/shared/<name>` needs the owner's approval first. The SDK, the core and the applications (`apps/*`) may import `libs/shared`; a library there imports no module of this repository, so none of them is reached back.
 
 **(f) Who may use `@numen/protocol` and `@numen/core-client`.** Plugins rely on the SDK and `@numen/ui`. `@numen/core-client` and the protocol are for the windows and the SDK:
 

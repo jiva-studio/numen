@@ -19,7 +19,7 @@ const ICONS: Readonly<Record<string, Component>> = {
   agents: Bot,
   connections: Plug,
   engines: Cpu,
-  licenses: KeyRound,
+  identity: KeyRound,
   readers: BookOpen,
   themes: Palette,
   tools: Wrench,

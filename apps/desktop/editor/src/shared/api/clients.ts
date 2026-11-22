@@ -13,6 +13,8 @@ import {
   createContributionClient,
   createFileClient,
   createFolderDialogClient,
+  createIdentityClient,
+  createIdentityServiceClient,
   createLogClient,
   createLogServiceClient,
   createLicenseClient,
@@ -66,13 +68,14 @@ export const createWorkspaceClients = ({ transport, keepalive }: WindowTransport
   logService: createLogServiceClient(transport),
 })
 
-/** The clients of the settings, the connections, the licenses and the themes. */
+/** The clients of the settings, the connections, the licenses, the identity and the themes. */
 export const createSettingsClients = (transport: Transport) => {
   const settings = createCallerTransport('settings', transport)
   return {
     settingsService: createSettingsClient(settings),
     connections: createConnectionClient(createProviderConnectionClient(settings)),
     licenses: createLicenseClient(createLicenseServiceClient(settings)),
+    identity: createIdentityClient(createIdentityServiceClient(settings)),
     pluginData: createPluginDataClient(settings),
     theme: createThemeServiceClient(transport),
   }

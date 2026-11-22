@@ -100,8 +100,8 @@ export const PLUGIN_WORDS = {
   searchSettingsDetail: 'Reranking, limits and results',
   connections: 'Connections',
   connectionsDetail: 'Services and programs for plugins',
-  licenses: 'Licenses',
-  licensesDetail: 'Subscriptions and license keys',
+  identityAndLicenses: 'Identity and licenses',
+  identityAndLicensesDetail: 'Account, this device and license keys',
   /** The sections of a plugin page, in the order of its tabs. */
   pluginTabs: {
     settings: 'Settings',

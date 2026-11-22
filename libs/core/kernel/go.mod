@@ -39,6 +39,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0
+	github.com/jiva-studio/numen/libs/shared/identity v0.0.0
 	github.com/jiva-studio/numen/libs/shared/note v0.0.0
 	github.com/jiva-studio/numen/libs/shared/protocol v0.0.0
 	github.com/jiva-studio/numen/libs/shared/rerank v0.0.0
@@ -60,3 +61,5 @@ replace github.com/jiva-studio/numen/libs/shared/note => ../../shared/note
 replace github.com/jiva-studio/numen/libs/plugin/catalog => ../../plugin/catalog
 
 replace github.com/jiva-studio/numen/libs/shared/atomicfile => ../../../libs/shared/atomicfile
+
+replace github.com/jiva-studio/numen/libs/shared/identity => ../../shared/identity

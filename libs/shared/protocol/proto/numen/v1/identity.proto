@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
+
+// IdentityService manages the account identity of this device. No secret key reaches the window; the
+// recovery words cross the wire only in GenerateRecoveryWords and CreateIdentity.
+service IdentityService {
+  // GetIdentity returns the identity of this device, or none when the device holds no identity.
+  rpc GetIdentity(GetIdentityRequest) returns (GetIdentityResponse);
+
+  // GenerateRecoveryWords returns 12 new recovery words and keeps nothing.
+  rpc GenerateRecoveryWords(GenerateRecoveryWordsRequest) returns (GenerateRecoveryWordsResponse);
+
+  // CreateIdentity keeps an identity on this device for the 12 recovery words. The same words give
+  // the same account fingerprint on every device.
+  rpc CreateIdentity(CreateIdentityRequest) returns (CreateIdentityResponse);
+
+  // DeleteIdentity removes the identity from this device. Without the 12 words it cannot be restored.
+  rpc DeleteIdentity(DeleteIdentityRequest) returns (DeleteIdentityResponse);
+}
+
+// IdentityErrorCode is why a CreateIdentity call was refused. The zero value is a call that
+// succeeded.
+enum IdentityErrorCode {
+  IDENTITY_ERROR_CODE_UNSPECIFIED = 0;
+  // IDENTITY_ERROR_CODE_INVALID_WORDS is a set of words that is not 12 recovery words, or whose
+  // checksum fails.
+  IDENTITY_ERROR_CODE_INVALID_WORDS = 1;
+  // IDENTITY_ERROR_CODE_IDENTITY_EXISTS is a device that already holds an identity.
+  IDENTITY_ERROR_CODE_IDENTITY_EXISTS = 2;
+  // IDENTITY_ERROR_CODE_KEY_STORE_FAILED is a key store that failed to read or keep the identity.
+  IDENTITY_ERROR_CODE_KEY_STORE_FAILED = 3;
+}
+
+// IdentityInfo is what a person can see of the identity of this device.
+message IdentityInfo {
+  // account_fingerprint is the fingerprint of the account, the same on every device with the same words.
+  string account_fingerprint = 1;
+  // device_fingerprint is the fingerprint of this device.
+  string device_fingerprint = 2;
+  string device_name = 3;
+  // device_added_at is when this device joined the account, RFC 3339 in UTC.
+  string device_added_at = 4;
+}
+
+message GetIdentityRequest {}
+
+message GetIdentityResponse {
+  // identity is unset when this device holds no identity.
+  IdentityInfo identity = 1;
+}
+
+message GenerateRecoveryWordsRequest {}
+
+message GenerateRecoveryWordsResponse {
+  repeated string words = 1 [debug_redact = true];
+}
+
+message CreateIdentityRequest {
+  repeated string words = 1 [debug_redact = true];
+}
+
+message CreateIdentityResponse {
+  IdentityInfo identity = 1;
+  IdentityErrorCode error = 2;
+  // detail names the first wrong position and never holds a word.
+  string detail = 3;
+}
+
+message DeleteIdentityRequest {}
+
+message DeleteIdentityResponse {}

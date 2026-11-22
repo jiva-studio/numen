@@ -13,6 +13,7 @@ import {
   FileService,
   FolderDialogService,
   FlushResult,
+  IdentityService,
   LicenseService,
   LinkDirection,
   LogService,
@@ -80,6 +81,8 @@ export const createConnectionCallServiceClient = (transport: Transport) =>
 export const createLogServiceClient = (transport: Transport) => createClient(LogService, transport)
 export const createLicenseServiceClient = (transport: Transport) =>
   createClient(LicenseService, transport)
+export const createIdentityServiceClient = (transport: Transport) =>
+  createClient(IdentityService, transport)
 
 export const NAME_SOURCE = NameSource
 export type NameSourceCode = NameSource

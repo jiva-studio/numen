@@ -4,6 +4,7 @@ export * from './manifest'
 export * from './connections'
 export * from './connectioncalls'
 export * from './licenses'
+export * from './identity'
 export * from './protocol'
 export {
   CALLER_HEADER,

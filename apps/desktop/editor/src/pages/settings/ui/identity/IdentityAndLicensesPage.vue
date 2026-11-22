@@ -1,17 +1,17 @@
 <script setup lang="ts">
 /**
- * The page of licenses: every license declared by the installed plugins, with the plugins that
- * share it, the providers where a key can be purchased, and the controls to activate or deactivate
- * this machine.
+ * The page of identity and licenses: the account identity of this device, then every license
+ * declared by the installed plugins with the controls to activate or deactivate this machine.
  */
 import { SettingsPage } from '@numen/plugin-manager'
-import type { InstallationLicenses } from '../../types'
+import type { InstallationIdentity, InstallationLicenses } from '../../types'
 import { useLicensesPage } from '../../model/useLicensesPage'
 import { WORDS as words } from '../../words'
-import LicenseCard from './LicenseCard.vue'
+import LicenseCard from '../licenses/LicenseCard.vue'
+import IdentitySection from './IdentitySection.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{ licenses: InstallationLicenses }>()
+const props = defineProps<{ identity: InstallationIdentity; licenses: InstallationLicenses }>()
 
 const emit = defineEmits<{
   (e: 'back'): void
@@ -27,11 +27,13 @@ function onBack(): void {
 </script>
 
 <template>
-  <SettingsPage :path="[words.settings, words.licenses]" @back="onBack" @open="onBack">
-    <div class="licenses-page">
-      <div v-if="page.licenses.value.length === 0" class="licenses-page__empty">
-        <p class="licenses-page__empty-title">{{ words.licensesEmpty }}</p>
-        <p class="licenses-page__empty-detail">{{ words.licensesEmptyDetail }}</p>
+  <SettingsPage :path="[words.settings, words.identityAndLicenses]" @back="onBack" @open="onBack">
+    <div class="identity-page">
+      <IdentitySection :identity="props.identity" />
+
+      <div v-if="page.licenses.value.length === 0" class="identity-page__empty">
+        <p class="identity-page__empty-title">{{ words.licensesEmpty }}</p>
+        <p class="identity-page__empty-detail">{{ words.licensesEmptyDetail }}</p>
       </div>
 
       <LicenseCard
@@ -46,7 +48,7 @@ function onBack(): void {
 </template>
 
 <style scoped>
-.licenses-page {
+.identity-page {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -55,19 +57,19 @@ function onBack(): void {
   margin-inline: auto;
 }
 
-.licenses-page__empty {
+.identity-page__empty {
   padding: 1.5rem 1rem;
   border: var(--numen-stroke) dashed var(--numen-rule);
   border-radius: var(--numen-radius);
   text-align: center;
 }
 
-.licenses-page__empty-title {
+.identity-page__empty-title {
   margin: 0 0 0.25rem;
   font-weight: 500;
 }
 
-.licenses-page__empty-detail {
+.identity-page__empty-detail {
   margin: 0;
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);

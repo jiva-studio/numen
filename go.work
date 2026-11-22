@@ -7,6 +7,7 @@ use (
 	./apps/mobile
 	./libs/shared/atomicfile
 	./libs/shared/licensing
+	./libs/shared/identity
 	./libs/core/kernel
 	./libs/shared/note
 	./libs/plugin/catalog
@@ -50,6 +51,7 @@ use (
 replace (
 	github.com/jiva-studio/numen/libs/shared/atomicfile v0.0.0 => ./libs/shared/atomicfile
 	github.com/jiva-studio/numen/libs/shared/licensing v0.0.0 => ./libs/shared/licensing
+	github.com/jiva-studio/numen/libs/shared/identity v0.0.0 => ./libs/shared/identity
 	github.com/jiva-studio/numen/libs/core/kernel v0.0.0 => ./libs/core/kernel
 	github.com/jiva-studio/numen/libs/shared/note v0.0.0 => ./libs/shared/note
 	github.com/jiva-studio/numen/libs/plugin/catalog v0.0.0 => ./libs/plugin/catalog
