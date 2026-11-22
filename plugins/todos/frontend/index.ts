@@ -41,7 +41,6 @@ const browserParts: TodosParts = {
 
 type OpenTarget = { path: string; line: number; raw: string }
 
-/** The tasks of the note as the backend reads it now; null where the note could not be read again. */
 async function currentTasks(
   api: TodosApi,
   today: string,
