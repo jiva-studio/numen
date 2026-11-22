@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
 
 // What stopped the application is reported in a window, with the state of the
@@ -308,7 +308,7 @@ func TestSizeResponse_MatchingOffset(t *testing.T) {
 
 // A vault named on the command line that the registry does not hold is reported by its name, without the Go error chain.
 func TestFatalReport_UnknownVault(t *testing.T) {
-	why := fmt.Errorf("open vault: %w", &registry.UnknownError{Name: "/home/someone/Notes"})
+	why := fmt.Errorf("open vault: %w", &vaultdomain.UnknownError{Name: "/home/someone/Notes"})
 	response := getFatalReport(container.Config{}, why)
 
 	if response.Heading != startingAtAll {
