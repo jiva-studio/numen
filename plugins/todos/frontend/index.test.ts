@@ -200,6 +200,26 @@ describe('the todos frontend', () => {
     expect(open).toHaveBeenCalledWith('Projects/Home.md', undefined)
   })
 
+  it('says so once where the note cannot be read again, and still opens it', async () => {
+    const { context, fake, open, showError } = setup()
+    fake.api.refreshIndex = async () => {
+      throw new Error('gone')
+    }
+    await clickTask(fake, context)
+
+    expect(showError).toHaveBeenCalledTimes(1)
+    expect(showError).toHaveBeenCalledWith(WORDS.taskNotRead)
+    expect(open).toHaveBeenCalledWith('Projects/Home.md', undefined)
+  })
+
+  it('says so where the note cannot be opened', async () => {
+    const { context, fake, open, showError } = setup()
+    open.mockRejectedValue(new Error('no such note'))
+    await clickTask(fake, context)
+
+    expect(showError).toHaveBeenCalledWith(WORDS.noteNotOpened)
+  })
+
   it('opens the note without a line where the task has no prose line', async () => {
     const { context, fake, open } = setup()
     fake.push({ revision: 1, isReady: true })

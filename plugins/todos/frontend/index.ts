@@ -19,6 +19,7 @@ import { useTaskFeed, type TaskFeed } from './model/useTaskFeed'
 import type { Filter, Task } from './types'
 import { TodosStatus } from './status'
 import type { ShownGroups } from './status/model/chip'
+import { WORDS } from './words'
 import { createTaskEditorExtension, TASKS_EXTENSION } from './editor'
 
 /** The id the manifest declares the title bar view under. */
@@ -38,55 +39,63 @@ const browserParts: TodosParts = {
   },
 }
 
+type OpenTarget = { path: string; line: number; raw: string }
+
+/** The tasks of the note as the backend reads it now; null where the note could not be read again. */
 async function currentTasks(
   api: TodosApi,
   today: string,
-  target: { path: string; line: number; raw: string },
-): Promise<readonly Task[]> {
-  try {
-    await api.refreshIndex([target.path], [])
-    const filter: Filter = {
-      status: ['open', 'done', 'other'],
-      due: 'any',
-      from: '',
-      to: '',
-      projects: [],
-      contexts: [],
-      priorities: [],
-      path: target.path,
-      text: '',
-    }
-    const result = await api.listTasks(today, filter, 2000)
-    return result.ok ? result.value.tasks : []
-  } catch {
-    return []
+  target: OpenTarget,
+): Promise<readonly Task[] | null> {
+  const refreshed = await api.refreshIndex([target.path], [])
+  if (!refreshed.ok) return null
+  const filter: Filter = {
+    status: ['open', 'done', 'other'],
+    due: 'any',
+    from: '',
+    to: '',
+    projects: [],
+    contexts: [],
+    priorities: [],
+    path: target.path,
+    text: '',
   }
+  const result = await api.listTasks(today, filter, 2000)
+  return result.ok ? result.value.tasks : null
 }
 
 async function editorLine(
   api: TodosApi,
   today: string,
-  target: { path: string; line: number; raw: string },
+  target: OpenTarget,
+  showError: (message: string) => void,
 ): Promise<number | undefined> {
-  const tasks = await currentTasks(api, today, target)
+  let tasks: readonly Task[] | null = null
+  try {
+    tasks = await currentTasks(api, today, target)
+  } catch {
+    // an unreachable backend is the same as a refused read: reported below, the note still opens
+  }
+  if (tasks === null) {
+    showError(WORDS.taskNotRead)
+    return undefined
+  }
   const proseLine = freshTaskLine(tasks, target)?.proseLine
   return Number.isInteger(proseLine) && proseLine !== undefined && proseLine >= 1
     ? proseLine
     : undefined
 }
 
-const SHOWN_SETTINGS: readonly (readonly [keyof ShownGroups, string])[] = [
-  ['overdue', 'showOverdue'],
-  ['today', 'showToday'],
-  ['nextSevenDays', 'showNextWeek'],
-  ['noDate', 'showNoDate'],
-]
+const SHOWN_SETTINGS = ['showOverdue', 'showToday', 'showNextWeek', 'showNoDate'] as const
 
 function readShownGroups(plugin: PluginContext): ShownGroups {
-  const isShown = (key: string): boolean => plugin.settings.get<boolean>(key) !== false
-  return Object.fromEntries(
-    SHOWN_SETTINGS.map(([group, key]) => [group, isShown(key)]),
-  ) as unknown as ShownGroups
+  const isShown = (setting: string): boolean => plugin.settings.get<boolean>(setting) !== false
+  return {
+    overdue: isShown('showOverdue'),
+    today: isShown('showToday'),
+    nextSevenDays: isShown('showNextWeek'),
+    noDate: isShown('showNoDate'),
+  }
 }
 
 function createTodosView(
@@ -103,12 +112,17 @@ function createTodosView(
         shown: shown.value,
         api,
         getToday: () => workspace.window.getToday(),
-        onOpen: async (target: { path: string; line: number; raw: string }) => {
-          const line = await editorLine(api, workspace.window.getToday(), target)
-          return workspace.files.open(
-            target.path,
-            line === undefined ? undefined : { line: line - 1 },
-          )
+        onOpen: async (target: OpenTarget) => {
+          const showError = (message: string) => workspace.messages.showError(message)
+          try {
+            const line = await editorLine(api, workspace.window.getToday(), target, showError)
+            await workspace.files.open(
+              target.path,
+              line === undefined ? undefined : { line: line - 1 },
+            )
+          } catch {
+            showError(WORDS.noteNotOpened)
+          }
         },
         onShowError: (message: string) => workspace.messages.showError(message),
       }),
@@ -131,18 +145,21 @@ export const activate = (
   const feed = useTaskFeed(parts.api, () => workspace.window.getToday(), parts.timer, refreshFields)
   const refreshSummary = (): void => {
     feed.refresh().catch(() => undefined) // the counts stay as last read; the next change or focus reads again
+  }
+  const refreshAll = (): void => {
+    refreshSummary()
     refreshFields()
   }
   // The counts are read again once the backend has checked the changed notes, so the chip does not
-  // depend on the stream alone.
+  // depend on the stream alone; the fields are read on the change the stream reports.
   const relay = createRefreshRelay(parts.api, parts.timer, refreshSummary)
 
   const shown = ref(readShownGroups(plugin))
-  for (const [, key] of SHOWN_SETTINGS) {
+  const settingWatches = SHOWN_SETTINGS.map((key) =>
     plugin.settings.onChange<boolean>(key, () => {
       shown.value = readShownGroups(plugin)
-    })
-  }
+    }),
+  )
 
   plugin.register.slotView({
     id: TODOS_VIEW,
@@ -168,7 +185,7 @@ export const activate = (
     })
   }
   registerTasks()
-  plugin.settings.onChange<boolean>('hideFields', registerTasks)
+  settingWatches.push(plugin.settings.onChange<boolean>('hideFields', registerTasks))
   const stopWatchingReady = watch(
     () => feed.summary.value?.isReady === true,
     (isReady) => {
@@ -176,10 +193,12 @@ export const activate = (
     },
   )
   host.events.onVaultChange((event) => relay.push(event))
-  window.addEventListener('focus', refreshSummary)
+  window.addEventListener('focus', refreshAll)
   plugin.identity.subscriptions.push({
     dispose: () => {
-      window.removeEventListener('focus', refreshSummary)
+      window.removeEventListener('focus', refreshAll)
+      for (const settingWatch of settingWatches) settingWatch.dispose()
+      registration?.dispose()
       stopWatchingReady()
       relay.dispose()
       feed.stop()
