@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -145,7 +146,7 @@ func groupByPath(found []domain.SearchResult) (map[string][]int, []string) {
 // the text version every other source was cut from.
 type sourceTexts struct {
 	files vaultport.VaultReader
-	texts textdomain.Texts
+	texts textport.Texts
 }
 
 func (s sourceTexts) getText(ctx context.Context, path, version string) (string, *domain.VersionText, error) {
@@ -215,4 +216,4 @@ func proseOpens(raw string) int {
 // noTextReaders is a vault where no file has text.
 type noTextReaders struct{}
 
-func (noTextReaders) Open(domain.Vault) (textdomain.VaultTexts, error) { return nil, nil }
+func (noTextReaders) Open(domain.Vault) (textport.VaultTexts, error) { return nil, nil }

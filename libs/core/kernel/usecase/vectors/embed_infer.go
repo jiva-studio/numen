@@ -13,6 +13,7 @@ import (
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -148,7 +149,7 @@ func packVector(q []int8) []byte {
 // chunks of one source are processed together.
 type extracted struct {
 	files     vaultport.VaultReader
-	texts     textdomain.Texts
+	texts     textport.Texts
 	path      string
 	text      string
 	isIndexed bool

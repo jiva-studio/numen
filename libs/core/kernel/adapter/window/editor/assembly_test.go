@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
@@ -32,6 +31,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -54,12 +54,12 @@ const derivedCoreFolder = "core"
 type readingParts struct {
 	indexPath          string
 	shouldRebuildIndex bool
-	texts              textdomain.Readers
+	texts              textport.Readers
 	chunks             *note.ChunkTokens
 	watches            *vaultwatch.Hub
 }
 
-func newReadingParts(indexPath string, shouldRebuildIndex bool, texts textdomain.Readers) readingParts {
+func newReadingParts(indexPath string, shouldRebuildIndex bool, texts textport.Readers) readingParts {
 	return readingParts{
 		indexPath:          indexPath,
 		shouldRebuildIndex: shouldRebuildIndex,

@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -25,7 +26,7 @@ type Index struct {
 	readers vaultport.VaultReaders
 	sources sourceport.SourceRepository
 	queries sourceQueries
-	texts   text.Readers
+	texts   textport.Readers
 
 	sizes              chunking.Sizes
 	legibility         chunking.Legibility
@@ -45,7 +46,7 @@ type IndexDeps struct {
 	Records SourceRecords
 	Backlog sourceport.SourceBacklog
 	Lookup  sourceport.RemovalLookup
-	Texts   text.Readers
+	Texts   textport.Readers
 
 	Sizes              chunking.Sizes
 	Legibility         chunking.Legibility
@@ -121,7 +122,7 @@ func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (vault
 // openVault is one vault as a cut reads it: its files and the text versions of them.
 type openVault struct {
 	files vaultport.VaultReader
-	texts text.VaultTexts
+	texts textport.VaultTexts
 }
 
 func (u Index) open(v domain.Vault) (openVault, error) {
@@ -176,7 +177,7 @@ type noTextReaders struct {
 	readers vaultport.VaultReaders
 }
 
-func (r noTextReaders) Open(v domain.Vault) (text.VaultTexts, error) {
+func (r noTextReaders) Open(v domain.Vault) (textport.VaultTexts, error) {
 	files, err := r.readers.Open(v)
 	if err != nil {
 		return nil, err

@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 )
 
@@ -38,7 +39,7 @@ func (s *suppliedTexts) supply(t *testing.T, v domain.Vault, path, content strin
 	s.texts[path] = domain.NewVersionText(version, []domain.TextSegment{{Text: content, Selector: `{"page":1}`}})
 }
 
-func (s *suppliedTexts) Open(v domain.Vault) (text.VaultTexts, error) {
+func (s *suppliedTexts) Open(v domain.Vault) (textport.VaultTexts, error) {
 	files, err := s.readers.Open(v)
 	if err != nil {
 		return nil, err

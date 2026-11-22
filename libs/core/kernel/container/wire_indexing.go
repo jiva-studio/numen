@@ -5,12 +5,12 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
@@ -34,7 +34,7 @@ type vaultIndexPlan struct {
 	ServiceDir         string
 	ShouldRebuildIndex bool
 	VaultReaders       vaultport.VaultReaders
-	TextReaders        textdomain.Readers
+	TextReaders        textport.Readers
 	ErrorHandler       func(error)
 }
 

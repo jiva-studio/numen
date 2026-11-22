@@ -39,11 +39,3 @@ func IsPluginSetting(path []string) bool {
 	return len(path) == 2 && path[0] != AppOwner
 }
 
-// Stored is the content of the settings file.
-type Stored interface {
-	// GetValue returns the value in force at a path: the stored value, else the default its owner
-	// declares. The first element of the path is the owner.
-	GetValue(path ...string) (any, bool)
-	// GetConnectionsJSON is the connections section as JSON, and empty where the file holds no connection.
-	GetConnectionsJSON() (string, error)
-}

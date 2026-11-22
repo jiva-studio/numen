@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -30,7 +30,7 @@ type Embed struct {
 	chunks  VectorQueries
 	vectors VectorRepository
 
-	texts  textdomain.Readers
+	texts  textport.Readers
 	claim  IndexClaim
 	source searchsourceport.Source
 
@@ -55,7 +55,7 @@ func (u Embed) inferWorkers() int {
 // Nil texts means no file has text.
 func NewEmbed(
 	readers vaultport.VaultReaders, chunks VectorQueries, vectors VectorRepository,
-	claim IndexClaim, texts textdomain.Readers, source searchsourceport.Source,
+	claim IndexClaim, texts textport.Readers, source searchsourceport.Source,
 ) Embed {
 	if texts == nil {
 		texts = noTextReaders{}
@@ -156,4 +156,4 @@ func (u Embed) claimIndex(ctx context.Context) (func() error, bool, error) {
 // noTextReaders is a vault where no file has text.
 type noTextReaders struct{}
 
-func (noTextReaders) Open(domain.Vault) (textdomain.VaultTexts, error) { return nil, nil }
+func (noTextReaders) Open(domain.Vault) (textport.VaultTexts, error) { return nil, nil }

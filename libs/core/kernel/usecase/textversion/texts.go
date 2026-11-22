@@ -11,6 +11,7 @@ import (
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -144,7 +145,7 @@ func (u *Texts) readText(ctx context.Context, v domain.Vault, version domain.Tex
 }
 
 // Open is the text of one vault, as the index, the search and the highlighting read it.
-func (u *Texts) Open(v domain.Vault) (textdomain.VaultTexts, error) {
+func (u *Texts) Open(v domain.Vault) (textport.VaultTexts, error) {
 	return vaultTexts{texts: u, vault: v}, nil
 }
 

@@ -1,11 +1,10 @@
 package container
 
 import (
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostsearch"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
@@ -13,7 +12,7 @@ import (
 
 type textSearch struct {
 	VaultReaders vaultport.VaultReaders
-	TextReaders  textdomain.Readers
+	TextReaders  textport.Readers
 	Workers      int
 }
 

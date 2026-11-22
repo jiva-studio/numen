@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -22,7 +22,7 @@ type wiring struct {
 	reading readingParts
 }
 
-func newWiring(indexPath string, shouldRebuild bool, texts textdomain.Readers) wiring {
+func newWiring(indexPath string, shouldRebuild bool, texts textport.Readers) wiring {
 	return wiring{reading: newReadingParts(indexPath, shouldRebuild, texts)}
 }
 

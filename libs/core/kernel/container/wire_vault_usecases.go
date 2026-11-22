@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
@@ -22,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -168,7 +168,7 @@ func newTextVersions(options vaultconfig.Options, plugins textversion.TextPlugin
 	return &textVersions{Versions: versions, Texts: texts, Changes: changes}
 }
 
-func getTextReaders(readers textdomain.Readers, versions *textVersions) textdomain.Readers {
+func getTextReaders(readers textport.Readers, versions *textVersions) textport.Readers {
 	if readers != nil {
 		return readers
 	}
