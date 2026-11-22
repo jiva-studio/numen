@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
@@ -86,7 +85,7 @@ func (f filing) wiring() wiring {
 	}
 }
 
-func (f filing) moveOver(w wiring) vaults.Move {
+func (f filing) moveOver(w wiring) note.MoveTree {
 	notes := note.NewMove(note.MoveDeps{
 		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		Links: w.links, Names: f.db.NoteQueries(), Sources: f.db.Sources(), Index: w.index, Now: testsupport.NewClock(),
@@ -96,7 +95,7 @@ func (f filing) moveOver(w wiring) vaults.Move {
 			return nil
 		},
 	})
-	return vaults.NewMove(w.writers, w.links, w.queries, w.sources, notes)
+	return note.NewMoveTree(w.writers, w.links, w.queries, w.sources, notes)
 }
 
 func (f filing) recordBooks(t *testing.T) {

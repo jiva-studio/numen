@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
 
 // The file tree renames a file, and the note in it is called by the name the
@@ -114,7 +114,7 @@ func TestMoveFile_PreservesNoteContentWhenNameAndTitleDiffer(t *testing.T) {
 // however the two are held.
 func TestAFileFiledBelowAnotherFolderKeepsTheNameItHad(t *testing.T) {
 	t.Parallel()
-	for name, moveFunc := range map[string]func(filing) vaults.Move{
+	for name, moveFunc := range map[string]func(filing) note.MoveTree{
 		"one name":   filing.move,
 		"told apart": filing.moveApart,
 	} {
@@ -141,7 +141,7 @@ func TestAFileFiledBelowAnotherFolderKeepsTheNameItHad(t *testing.T) {
 // however the two are held.
 func TestARenamedFolderWritesToNothingBelowIt(t *testing.T) {
 	t.Parallel()
-	for name, moveFunc := range map[string]func(filing) vaults.Move{
+	for name, moveFunc := range map[string]func(filing) note.MoveTree{
 		"one name":   filing.move,
 		"told apart": filing.moveApart,
 	} {
