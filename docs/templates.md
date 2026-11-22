@@ -20,7 +20,11 @@ The new note holds the frontmatter of the template with its keys in their order,
 
 ## The template language
 
-The text of a template is run by the Go template language, `text/template`, with actions between double braces: `{{ .title }}`. It runs in the frontmatter as well as in the text, and inside code too, so a literal `{{` is written `{{ "{{" }}`. A template that does not parse or does not run makes no note and says why, with the line: `template: Meeting.md:3: function "nope" not defined`. A name that does not exist, as `{{ .tittle }}`, is an error as well, and so is a frontmatter that is not valid after the run. The template reaches nothing but what is listed here.
+The text of a template is run by the Go template language, `text/template`, with actions between double braces: `{{ .title }}`. It runs in the frontmatter as well as in the text, and inside code too, so a literal `{{` is written `{{ "{{" }}`. A template that does not parse or does not run makes no note and says why, with the line: `template: Meeting.md:3: function "nope" not defined`. A name that does not exist, as `{{ .tittle }}`, is an error as well, and so is a frontmatter that is not valid after the run. A template reads no file, makes no network call and sees no environment variable: it knows the data and the functions below, and the functions of the language that only work on values (`len`, `index`, `slice`, `eq`, `not` and the like). `call`, `html`, `js`, `printf`, `print` and `println` are not available and fail with an error.
+
+### Limits
+
+A template is at most 256 KiB, the text it writes at most 1 MiB, and it runs for at most 5 seconds. A template over a limit makes no note and says which: `the template writes too much text`, `the template runs too long`. A `range` over a huge number is stopped by the last two.
 
 ### What a template knows
 
@@ -76,7 +80,7 @@ Every other character is copied, and so is a letter that is not a token of this 
 | `yaml s` | the text written as a double-quoted YAML value, safe in the frontmatter: `title: {{ prompt "Title" \| yaml }}` |
 | `uuid` | a new random identifier |
 
-These pipe as well: `{{ .title | slug }}`, `{{ .vars.Client | default "none" | upper }}`. Control comes with the language: `if`, `else`, `range`, `with`, variables (`{{ $d := addDays 1 }}`), `eq`, `ne`, `lt`, `and`, `or`, `not`, `list` and `dict`.
+A piped value is the last argument of the function after the bar, so `{{ .title | trunc 5 }}` is `trunc 5 .title` and `{{ .vars.Client | default "none" }}` is `default "none" .vars.Client`; that is why `default`, `trunc`, `replace` and `join` take the text last. These pipe as well: `{{ .title | slug }}`, `{{ .vars.Client | default "none" | upper }}`. Control comes with the language: `if`, `else`, `range`, `with`, variables (`{{ $d := addDays 1 }}`), `eq`, `ne`, `lt`, `and`, `or`, `not`, `list` and `dict`.
 
 ### Asking
 

@@ -35,7 +35,7 @@ func (u ListFields) Execute(ctx context.Context, in FieldsRequest) ([]engine.Fie
 		return nil, err
 	}
 	data := engine.Data{Title: getName(in.Template), Folder: in.Folder, ID: "", Now: u.clock.Now(), Values: nil}
-	fields, err := u.renderer.Fields(pathpkg.Base(in.Template), text, data)
+	fields, err := u.renderer.Fields(ctx, pathpkg.Base(in.Template), text, data)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidNote, err)
 	}

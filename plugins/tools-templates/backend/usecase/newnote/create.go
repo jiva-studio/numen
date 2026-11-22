@@ -22,6 +22,7 @@ const (
 	noteExtension     = ".md"
 	templateExtension = ".template"
 	maxNames          = 100
+	maxTemplateSize   = 256 << 10
 )
 
 var (
@@ -116,7 +117,7 @@ func (u CreateFromTemplate) createAs(ctx context.Context, path string, r render)
 	if err != nil || !isFree {
 		return "", false, err
 	}
-	content, err := r.getContent()
+	content, err := r.getContent(ctx)
 	if err != nil {
 		return "", false, err
 	}
@@ -168,8 +169,8 @@ type render struct {
 	data     engine.Data
 }
 
-func (r render) getContent() ([]byte, error) {
-	rendered, err := r.renderer.Render(pathpkg.Base(r.template), r.text, r.data)
+func (r render) getContent(ctx context.Context) ([]byte, error) {
+	rendered, err := r.renderer.Render(ctx, pathpkg.Base(r.template), r.text, r.data)
 	if err != nil {
 		return nil, wrapRenderError(err)
 	}
@@ -197,6 +198,9 @@ func readTemplate(ctx context.Context, vault Vault, masks mask.Set, path string)
 	raw, _, err := vault.Read(ctx, path)
 	if err != nil {
 		return "", fmt.Errorf("read the template %s: %w", path, err)
+	}
+	if len(raw) > maxTemplateSize {
+		return "", fmt.Errorf("%w: the template is larger than %d KiB", ErrInvalidNote, maxTemplateSize>>10)
 	}
 	if !utf8.Valid(raw) {
 		return "", fmt.Errorf("%w: it is not UTF-8 text", ErrInvalidNote)

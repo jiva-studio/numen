@@ -7,14 +7,18 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"text/template"
 	"time"
 	"unicode"
+	"unicode/utf8"
 )
 
 var errOddDict = errors.New("dict takes pairs of a name and a value")
 
 var errNoOptions = errors.New("select takes at least one option")
+
+var errDisabled = errors.New("this function is not available in a template")
 
 var errBadKey = errors.New("dict names are text")
 
@@ -25,10 +29,11 @@ type pass struct {
 	collecting bool
 	fields     []Field
 	asked      map[string]bool
+	stopped    atomic.Bool
 }
 
 func newPass(data Data, values map[string]string) *pass {
-	p := &pass{data: data, vars: values, collecting: values == nil, fields: nil, asked: make(map[string]bool)}
+	p := &pass{data: data, vars: values, collecting: values == nil, fields: nil, asked: make(map[string]bool), stopped: atomic.Bool{}}
 	if p.collecting {
 		p.vars = make(map[string]string)
 	}
@@ -39,23 +44,26 @@ func (p *pass) getData() map[string]any {
 	return map[string]any{"title": p.data.Title, "folder": p.data.Folder, "id": p.data.ID, "now": p.data.Now, "vars": p.vars}
 }
 
-func (p *pass) registerField(kind, label string, options []string, fallback string) string {
+func (p *pass) registerField(kind, label string, options []string, fallback string) (string, error) {
+	if p.stopped.Load() {
+		return "", ErrTooSlow
+	}
 	if !p.collecting {
 		if value, isKnown := p.vars[label]; isKnown {
-			return value
+			return value, nil
 		}
-		return fallback
+		return fallback, nil
 	}
 	key := strings.Join(append([]string{kind, label}, options...), "\x00")
 	if p.asked[key] {
-		return p.vars[label]
+		return p.vars[label], nil
 	}
 	p.asked[key] = true
 	if _, isKnown := p.vars[label]; !isKnown {
 		p.vars[label] = fallback
 	}
 	p.fields = append(p.fields, Field{Kind: kind, Label: label, Options: options, Default: fallback})
-	return fallback
+	return fallback, nil
 }
 
 func (p *pass) timeOrNow(given []time.Time) time.Time {
@@ -84,20 +92,26 @@ func getFuncs(p *pass) Funcs {
 		"trunc":     truncate,
 		"join":      join,
 		"split":     func(separator, text string) []string { return strings.Split(text, separator) },
-		"replace":   func(old, replacement, text string) string { return strings.ReplaceAll(text, old, replacement) },
+		"replace":   replace,
 		"trim":      strings.TrimSpace,
+		"call":      disabled,
+		"html":      disabled,
+		"js":        disabled,
+		"printf":    disabled,
+		"print":     disabled,
+		"println":   disabled,
 		"yaml":      quoteYAML,
 		"uuid":      newUUID,
 		"dict":      dict,
 		"list":      func(items ...any) []any { return items },
-		"prompt": func(label string, defaults ...string) string {
+		"prompt": func(label string, defaults ...string) (string, error) {
 			return p.registerField(KindText, label, []string{}, firstOrEmpty(defaults))
 		},
 		"select": func(label string, options ...string) (string, error) {
 			if len(options) == 0 {
 				return "", errNoOptions
 			}
-			return p.registerField(KindSelect, label, options, options[0]), nil
+			return p.registerField(KindSelect, label, options, options[0])
 		},
 	}
 }
@@ -106,6 +120,8 @@ const (
 	defaultDateFormat = "YYYY-MM-DD"
 	defaultTimeFormat = "HH:mm"
 )
+
+func disabled(...any) (string, error) { return "", errDisabled }
 
 func firstOrEmpty(items []string) string {
 	if len(items) == 0 {
@@ -175,16 +191,30 @@ func truncate(length int, text string) string {
 	return text
 }
 
-func join(separator string, items any) string {
+func replace(old, replacement, text string) (string, error) {
+	if old != "" && len(text)+strings.Count(text, old)*(len(replacement)-len(old)) > MaxOutput {
+		return "", ErrOutputTooLarge
+	}
+	if old == "" && len(text)+(utf8.RuneCountInString(text)+1)*len(replacement) > MaxOutput {
+		return "", ErrOutputTooLarge
+	}
+	return strings.ReplaceAll(text, old, replacement), nil
+}
+
+func join(separator string, items any) (string, error) {
 	reflected := reflect.ValueOf(items)
 	if reflected.Kind() != reflect.Slice {
-		return fmt.Sprint(items)
+		return fmt.Sprint(items), nil
 	}
 	parts := make([]string, reflected.Len())
+	size := max(len(parts)-1, 0) * len(separator)
 	for i := range parts {
 		parts[i] = fmt.Sprint(reflected.Index(i).Interface())
+		if size += len(parts[i]); size > MaxOutput {
+			return "", ErrOutputTooLarge
+		}
 	}
-	return strings.Join(parts, separator)
+	return strings.Join(parts, separator), nil
 }
 
 func dict(pairs ...any) (map[string]any, error) {

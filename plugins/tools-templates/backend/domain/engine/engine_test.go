@@ -25,7 +25,7 @@ func render(t *testing.T, text string) string {
 
 func renderWith(t *testing.T, text string, data engine.Data) string {
 	t.Helper()
-	got, err := engine.New(nil).Render("T.md", text, data)
+	got, err := engine.New(nil).Render(t.Context(), "T.md", text, data)
 	if err != nil {
 		t.Fatalf("Render(%q): %v", text, err)
 	}
@@ -205,7 +205,7 @@ func TestMakeAnID(t *testing.T) {
 }
 
 func TestKnowNoCursorFunction(t *testing.T) {
-	_, err := engine.New(nil).Render("T.md", "a{{ cursor }}b", getData())
+	_, err := engine.New(nil).Render(t.Context(), "T.md", "a{{ cursor }}b", getData())
 
 	if !errors.Is(err, engine.ErrTemplate) || !strings.Contains(err.Error(), "cursor") {
 		t.Errorf("error = %v", err)
@@ -279,7 +279,7 @@ func TestFailClearly(t *testing.T) {
 		{"an unclosed block", "{{ if true }}x", []string{"T.md"}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			_, err := engine.New(nil).Render("T.md", c.in, getData())
+			_, err := engine.New(nil).Render(t.Context(), "T.md", c.in, getData())
 
 			if !errors.Is(err, engine.ErrTemplate) {
 				t.Fatalf("error = %v", err)
@@ -292,7 +292,7 @@ func TestFailClearly(t *testing.T) {
 		})
 	}
 	t.Run("fails the same way when the fields are listed", func(t *testing.T) {
-		_, err := engine.New(nil).Fields("T.md", "{{ nope }}", getData())
+		_, err := engine.New(nil).Fields(t.Context(), "T.md", "{{ nope }}", getData())
 
 		if !errors.Is(err, engine.ErrTemplate) {
 			t.Errorf("error = %v", err)
@@ -302,7 +302,7 @@ func TestFailClearly(t *testing.T) {
 
 func TestReachNothingButTheFuncsAndTheData(t *testing.T) {
 	for _, in := range []string{`{{ template "x" }}`, `{{ call .title }}`, `{{ os.Getenv "HOME" }}`, `{{ .nothing }}`} {
-		if _, err := engine.New(nil).Render("T.md", in, getData()); !errors.Is(err, engine.ErrTemplate) {
+		if _, err := engine.New(nil).Render(t.Context(), "T.md", in, getData()); !errors.Is(err, engine.ErrTemplate) {
 			t.Errorf("Render(%q) error = %v", in, err)
 		}
 	}
@@ -311,7 +311,7 @@ func TestReachNothingButTheFuncsAndTheData(t *testing.T) {
 func TestTakeExtraFunctionsThroughOneSeam(t *testing.T) {
 	extra := template.FuncMap{"shout": func(s string) string { return strings.ToUpper(s) + "!" }}
 
-	got, err := engine.New(extra).Render("T.md", `{{ shout .title }}`, getData())
+	got, err := engine.New(extra).Render(t.Context(), "T.md", `{{ shout .title }}`, getData())
 
 	if err != nil || got.Text != "PLAN!" {
 		t.Errorf("result = %+v, %v", got, err)
@@ -321,7 +321,7 @@ func TestTakeExtraFunctionsThroughOneSeam(t *testing.T) {
 func TestListTheFields(t *testing.T) {
 	text := `{{ $c := prompt "Client" "Acme" }}{{ $k := select "Kind" "call" "visit" }}{{ prompt "Notes" }}{{ prompt "Client" "again" }}`
 
-	fields, err := engine.New(nil).Fields("T.md", text, getData())
+	fields, err := engine.New(nil).Fields(t.Context(), "T.md", text, getData())
 
 	want := []engine.Field{
 		{Kind: "text", Label: "Client", Options: []string{}, Default: "Acme"},
@@ -334,14 +334,14 @@ func TestListTheFields(t *testing.T) {
 		t.Errorf("fields = %+v, %v", fields, err)
 	}
 	t.Run("lists no field for a template that asks nothing", func(t *testing.T) {
-		fields, err := engine.New(nil).Fields("T.md", "# {{ .title }}", getData())
+		fields, err := engine.New(nil).Fields(t.Context(), "T.md", "# {{ .title }}", getData())
 
 		if err != nil || len(fields) != 0 {
 			t.Errorf("fields = %+v, %v", fields, err)
 		}
 	})
 	t.Run("lists the fields a branch reaches", func(t *testing.T) {
-		fields, err := engine.New(nil).Fields("T.md", `{{ if eq (select "A" "x" "y") "y" }}{{ prompt "B" }}{{ else }}{{ prompt "C" }}{{ end }}`, getData())
+		fields, err := engine.New(nil).Fields(t.Context(), "T.md", `{{ if eq (select "A" "x" "y") "y" }}{{ prompt "B" }}{{ else }}{{ prompt "C" }}{{ end }}`, getData())
 
 		if err != nil || len(fields) != 2 || fields[1].Label != "C" {
 			t.Errorf("fields = %+v, %v", fields, err)
@@ -377,7 +377,7 @@ func TestFillTheFieldsWithTheValues(t *testing.T) {
 		data := getData()
 		data.Values = map[string]string{"Kind": "nap"}
 
-		_, err := engine.New(nil).Render("T.md", text, data)
+		_, err := engine.New(nil).Render(t.Context(), "T.md", text, data)
 
 		if !errors.Is(err, engine.ErrNotAnOption) || !strings.Contains(err.Error(), "Kind") {
 			t.Errorf("error = %v", err)
@@ -390,14 +390,16 @@ func FuzzRenderNeverPanics(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, in string) {
-		_, _ = engine.New(nil).Render("T.md", in, getData())
+		if _, err := engine.New(nil).Render(t.Context(), "T.md", in, getData()); err != nil && !errors.Is(err, engine.ErrTemplate) {
+			t.Errorf("Render(%q) error = %v", in, err)
+		}
 	})
 }
 
 func TestAskOnceForTheSameField(t *testing.T) {
 	text := `{{ prompt "Client" }}|{{ prompt "Client" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "c" }}`
 
-	fields, err := engine.New(nil).Fields("T.md", text, getData())
+	fields, err := engine.New(nil).Fields(t.Context(), "T.md", text, getData())
 
 	if err != nil || len(fields) != 3 {
 		t.Fatalf("fields = %+v, %v", fields, err)
@@ -406,7 +408,7 @@ func TestAskOnceForTheSameField(t *testing.T) {
 		data := getData()
 		data.Values = map[string]string{"Client": "Globex", "Kind": "b"}
 
-		got, err := engine.New(nil).Render("T.md", `{{ prompt "Client" }}|{{ prompt "Client" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "b" }}`, data)
+		got, err := engine.New(nil).Render(t.Context(), "T.md", `{{ prompt "Client" }}|{{ prompt "Client" }}|{{ select "Kind" "a" "b" }}|{{ select "Kind" "a" "b" }}`, data)
 
 		if err != nil || got.Text != "Globex|Globex|b|b" {
 			t.Errorf("text = %q, %v", got.Text, err)
@@ -418,7 +420,7 @@ func TestUseAFieldAsAVariable(t *testing.T) {
 	text := `{{ $name := prompt "Имя" }}{{ if eq $name "" }}anon{{ else }}{{ $name | upper }}{{ end }}/{{ $name | default "none" }}/{{ $name }}`
 
 	t.Run("runs the collecting pass over the placeholder", func(t *testing.T) {
-		fields, err := engine.New(nil).Fields("T.md", text, getData())
+		fields, err := engine.New(nil).Fields(t.Context(), "T.md", text, getData())
 
 		if err != nil || len(fields) != 1 || fields[0].Label != "Имя" {
 			t.Errorf("fields = %+v, %v", fields, err)
@@ -456,7 +458,7 @@ func TestRenderTheExamplesOfTheDocs(t *testing.T) {
 		data.Values = map[string]string{"Client": "Globex", "Topic": "Budget"}
 		text := "{{ $client := prompt \"Client\" \"Acme\" }}# Meeting with {{ $client }}\n\nDate: {{ date \"YYYY-MM-DD\" }}\nTopic: {{ prompt \"Topic\" }}\nNotes on {{ $client }}: \n"
 
-		got, err := engine.New(nil).Render("T.md", text, data)
+		got, err := engine.New(nil).Render(t.Context(), "T.md", text, data)
 
 		want := "# Meeting with Globex\n\nDate: 2026-11-14\nTopic: Budget\nNotes on Globex: \n"
 		if err != nil || got.Text != want {

@@ -548,6 +548,42 @@ func TestKeepAnAnswerInsideItsFrontmatterValue(t *testing.T) {
 	})
 }
 
+func TestMakeNoNoteFromATemplateThatIsTooLarge(t *testing.T) {
+	const limit = 256 << 10
+	execute := func(vault *hosttest.Vault) (newnote.Result, error) {
+		return newUseCase(vault, newClock(getToday())).Execute(t.Context(), newnote.Request{Template: "Templates/Big.md", Folder: "work"})
+	}
+
+	t.Run("refuses a template over the limit", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Big.md": strings.Repeat("x", limit+1)})
+
+		_, err := execute(vault)
+
+		if !errors.Is(err, newnote.ErrInvalidNote) || !strings.Contains(err.Error(), "256 KiB") {
+			t.Errorf("error = %v", err)
+		}
+		if _, isThere := vault.Content("work/Big.md"); isThere {
+			t.Error("a note was made")
+		}
+	})
+	t.Run("takes a template of the size of the limit", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Big.md": strings.Repeat("x", limit)})
+
+		if _, err := execute(vault); err != nil {
+			t.Errorf("error = %v", err)
+		}
+	})
+	t.Run("refuses a template that runs for ever", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Big.md": "{{ range 1000000000 }}x{{ end }}"})
+
+		_, err := execute(vault)
+
+		if !errors.Is(err, newnote.ErrInvalidNote) || !errors.Is(err, engine.ErrOutputTooLarge) {
+			t.Errorf("error = %v", err)
+		}
+	})
+}
+
 func TestMakeNoNoteFromATemplateThatDoesNotRun(t *testing.T) {
 	for _, c := range []struct{ name, text, want string }{
 		{"a syntax error", "# {{ .title }}\n{{ if }}\n", "Broken.md:2"},

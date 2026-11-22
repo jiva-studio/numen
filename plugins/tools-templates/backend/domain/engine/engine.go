@@ -2,6 +2,7 @@
 package engine
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"slices"
@@ -9,6 +10,13 @@ import (
 	"text/template"
 	"time"
 	"unicode"
+)
+
+const (
+	// MaxOutput is the most bytes a template may write.
+	MaxOutput = 1 << 20
+
+	runLimit = 5 * time.Second
 )
 
 const (
@@ -24,6 +32,12 @@ var (
 
 	// ErrNotAnOption is a value given for a select field that is none of its options.
 	ErrNotAnOption = errors.New("not one of the options")
+
+	// ErrOutputTooLarge is a template that writes more than MaxOutput bytes.
+	ErrOutputTooLarge = errors.New("the template writes too much text")
+
+	// ErrTooSlow is a template that does not finish in time.
+	ErrTooSlow = errors.New("the template runs too long")
 )
 
 // Funcs are functions a template may call besides the built-in ones.
@@ -60,17 +74,17 @@ type Renderer struct {
 func New(extra Funcs) Renderer { return Renderer{extra: extra} }
 
 // Fields lists the fields a template asks, in the order the first pass reaches them.
-func (r Renderer) Fields(name, text string, data Data) ([]Field, error) {
+func (r Renderer) Fields(ctx context.Context, name, text string, data Data) ([]Field, error) {
 	pass := newPass(data, nil)
-	if _, err := r.execute(name, text, pass, "missingkey=zero"); err != nil {
+	if _, err := r.execute(ctx, name, text, pass, "missingkey=zero"); err != nil {
 		return nil, err
 	}
 	return pass.fields, nil
 }
 
 // Render renders a template. A field with no value takes its default.
-func (r Renderer) Render(name, text string, data Data) (Result, error) {
-	fields, err := r.Fields(name, text, data)
+func (r Renderer) Render(ctx context.Context, name, text string, data Data) (Result, error) {
+	fields, err := r.Fields(ctx, name, text, data)
 	if err != nil {
 		return Result{}, err
 	}
@@ -79,7 +93,7 @@ func (r Renderer) Render(name, text string, data Data) (Result, error) {
 		return Result{}, err
 	}
 	data.Values = values
-	out, err := r.execute(name, text, newPass(data, values), "missingkey=error")
+	out, err := r.execute(ctx, name, text, newPass(data, values), "missingkey=error")
 	if err != nil {
 		return Result{}, err
 	}
@@ -118,7 +132,7 @@ func isBreak(r rune) bool {
 	return r == '\n' || r == '\r' || r == '\u0085' || r == '\u2028' || r == '\u2029'
 }
 
-func (r Renderer) execute(name, text string, p *pass, option string) (string, error) {
+func (r Renderer) execute(ctx context.Context, name, text string, p *pass, option string) (string, error) {
 	funcs := getFuncs(p)
 	for key, fn := range r.extra {
 		if _, isBuiltin := funcs[key]; !isBuiltin {
@@ -129,9 +143,52 @@ func (r Renderer) execute(name, text string, p *pass, option string) (string, er
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrTemplate, err)
 	}
-	var out strings.Builder
-	if err := parsed.Execute(&out, p.getData()); err != nil {
-		return "", fmt.Errorf("%w: %w", ErrTemplate, err)
+	return run(ctx, parsed, p)
+}
+
+type outcome struct {
+	text string
+	err  error
+}
+
+func run(ctx context.Context, parsed *template.Template, p *pass) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, runLimit)
+	defer cancel()
+	data := p.getData()
+	done := make(chan outcome, 1)
+	go func() {
+		out := limitedWriter{check: ctx.Err, text: strings.Builder{}}
+		err := parsed.Execute(&out, data)
+		done <- outcome{text: out.text.String(), err: err}
+	}()
+	select {
+	case finished := <-done:
+		if finished.err == nil {
+			return finished.text, nil
+		}
+		if ctx.Err() == nil {
+			return "", fmt.Errorf("%w: %w", ErrTemplate, finished.err)
+		}
+	case <-ctx.Done():
 	}
-	return out.String(), nil
+	p.stopped.Store(true)
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		return "", fmt.Errorf("%w: %w", ErrTemplate, ErrTooSlow)
+	}
+	return "", ctx.Err()
+}
+
+type limitedWriter struct {
+	check func() error
+	text  strings.Builder
+}
+
+func (w *limitedWriter) Write(data []byte) (int, error) {
+	if err := w.check(); err != nil {
+		return 0, err
+	}
+	if w.text.Len()+len(data) > MaxOutput {
+		return 0, ErrOutputTooLarge
+	}
+	return w.text.Write(data)
 }
