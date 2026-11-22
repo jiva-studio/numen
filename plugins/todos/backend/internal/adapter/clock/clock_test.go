@@ -8,8 +8,8 @@ import (
 )
 
 func TestSystemGetTodayReturnsALocalDate(t *testing.T) {
-	today := clock.System{}.GetToday()
+	today := clock.System{}.Now().Format(time.DateOnly)
 	if _, err := time.Parse(time.DateOnly, today); err != nil {
-		t.Fatalf("GetToday() = %q, want a YYYY-MM-DD date: %v", today, err)
+		t.Fatalf("Now() = %q, want a YYYY-MM-DD date: %v", today, err)
 	}
 }

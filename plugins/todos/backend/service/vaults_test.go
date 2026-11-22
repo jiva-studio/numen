@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
@@ -23,7 +24,10 @@ import (
 
 type testClock struct{}
 
-func (testClock) GetToday() string { return today }
+func (testClock) Now() time.Time {
+	now, _ := time.Parse(time.DateOnly, today)
+	return now
+}
 
 // twoVaults is vault a, which the host shows and the plugin keeps the index of, and vault b, which it does not.
 type twoVaults struct {

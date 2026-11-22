@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchfunction"
 	"github.com/jiva-studio/numen/plugins/todos/backend/filter"
@@ -139,7 +140,7 @@ func newFunction(build buildFilter, vaults Vaults, clock ports.Clock) searchfunc
 		if err != nil {
 			return nil, "", err
 		}
-		today := clock.GetToday()
+		today := clock.Now().Format(time.DateOnly)
 		f, err := build(call, today)
 		if err != nil {
 			return nil, "", err

@@ -11,7 +11,3 @@ func (System) Now() time.Time {
 	return time.Now()
 }
 
-// GetToday returns the local date as YYYY-MM-DD.
-func (c System) GetToday() string {
-	return c.Now().Format(time.DateOnly)
-}

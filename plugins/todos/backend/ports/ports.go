@@ -74,8 +74,7 @@ type Snapshots interface {
 	Save(snapshot Snapshot) error
 }
 
-// Clock tells the day the query functions and the tools compare due dates with.
+// Clock tells the time the query functions and the tools compare due dates with.
 type Clock interface {
-	// GetToday returns the local date as YYYY-MM-DD.
-	GetToday() string
+	Now() time.Time
 }

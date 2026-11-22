@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/todos/backend/filter"
@@ -57,7 +58,7 @@ func (t *Tools) addTaskList(registry *tools.Registry) error {
 		if limit <= 0 {
 			limit = defaultLimit
 		}
-		listing := scope.Tasks.List(t.clock.GetToday(), f, min(limit, maxLimit))
+		listing := scope.Tasks.List(t.clock.Now().Format(time.DateOnly), f, min(limit, maxLimit))
 		out := TaskListOutput{Tasks: make([]TaskOutput, 0, len(listing.Tasks)), Total: listing.Total}
 		for _, task := range listing.Tasks {
 			out.Tasks = append(out.Tasks, encodeTask(task))
@@ -178,7 +179,7 @@ func (t *Tools) addTaskSetDone(registry *tools.Registry) error {
 			return TaskOutput{}, describe(in.Path, err)
 		}
 		result, err := scope.Completer.Execute(ctx, complete.Request{
-			Path: in.Path, Line: in.Line, Raw: found.Raw, IsDone: in.IsDone, Today: t.clock.GetToday(),
+			Path: in.Path, Line: in.Line, Raw: found.Raw, IsDone: in.IsDone, Today: t.clock.Now().Format(time.DateOnly),
 		})
 		if err != nil {
 			return TaskOutput{}, err

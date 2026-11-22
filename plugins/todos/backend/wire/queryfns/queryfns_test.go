@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/searchfunction/searchfunctiontest"
@@ -22,7 +23,10 @@ const (
 
 type fixedClock struct{}
 
-func (fixedClock) GetToday() string { return today }
+func (fixedClock) Now() time.Time {
+	now, _ := time.Parse(time.DateOnly, today)
+	return now
+}
 
 // oneVault answers every call with the tasks of one vault.
 type oneVault struct{ tasks *index.Index }

@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
@@ -20,7 +21,10 @@ const today = "2026-11-14"
 
 type fixedClock struct{}
 
-func (fixedClock) GetToday() string { return today }
+func (fixedClock) Now() time.Time {
+	now, _ := time.Parse(time.DateOnly, today)
+	return now
+}
 
 // oneVault answers every call with the scope of one vault.
 type oneVault struct{ scope tasktools.Scope }
