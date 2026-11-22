@@ -34,7 +34,8 @@ import {
   type RegistrationGuard,
   type Track,
 } from './guards/registrations'
-import { guardService, SERVICE_RULES } from './guards/servicePermissions'
+import { guardService } from './guards/guardService'
+import { SERVICE_RULES } from './guards/servicePermissions'
 import { createSubscriptionList, type SubscriptionList } from './guards/subscriptions'
 import { createSlotViewRegistration } from './guards/slotContext'
 import type { PluginParts } from '../host'
