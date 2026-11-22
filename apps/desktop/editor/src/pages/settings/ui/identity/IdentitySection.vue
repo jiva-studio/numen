@@ -7,10 +7,9 @@ import { Button } from '@numen/ui'
 import type { InstallationIdentity } from '../../types'
 import { useIdentitySection } from '../../model/useIdentitySection'
 import { WORDS as words } from '../../words'
-import { ConfirmDialog } from '../confirm-dialog'
-import ConfirmWords from './ConfirmWords.vue'
-import RecoveryWords from './RecoveryWords.vue'
-import RestoreWords from './RestoreWords.vue'
+import IdentityDetails from './IdentityDetails.vue'
+import IdentityRestore from './IdentityRestore.vue'
+import IdentitySetup from './IdentitySetup.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ identity: InstallationIdentity }>()
@@ -19,38 +18,20 @@ const props = defineProps<{ identity: InstallationIdentity }>()
 const section = useIdentitySection(() => props.identity)
 const { step, recoveryWords, positions, entered, restoreText, problem, isBusy, isAskingDelete } =
   section.state
-const { identity } = section.view
-const actions = section.actions
+const { identity: current, actions } = section
 </script>
 
 <template>
   <section class="settings-card identity-section" :aria-label="words.identitySection">
-    <template v-if="identity">
-      <dl class="identity-section__facts">
-        <dt>{{ words.identityAccount }}</dt>
-        <dd class="identity-section__fingerprint">{{ identity.accountFingerprint }}</dd>
-        <dt>{{ words.identityThisDevice }}</dt>
-        <dd>
-          <span class="identity-section__device">{{ identity.deviceName }}</span>
-          <span class="identity-section__fingerprint">{{ identity.deviceFingerprint }}</span>
-        </dd>
-      </dl>
-      <div class="identity-section__actions">
-        <Button type="button" variant="outline" :disabled="isBusy" @click="actions.askDelete">
-          {{ words.identityDelete }}
-        </Button>
-      </div>
-      <ConfirmDialog
-        v-if="isAskingDelete"
-        tone="danger"
-        :text="words.identityDeleteWarning"
-        :label="words.identityDeleteTitle"
-        :confirm-text="words.identityDeleteConfirm"
-        :cancel-text="words.identityDeleteCancel"
-        @confirm="actions.confirmDelete"
-        @cancel="actions.cancelDelete"
-      />
-    </template>
+    <IdentityDetails
+      v-if="current"
+      :info="current"
+      :is-busy="isBusy"
+      :is-asking-delete="isAskingDelete"
+      @ask="actions.askDelete"
+      @confirm="actions.confirmDelete"
+      @cancel="actions.cancelDelete"
+    />
 
     <template v-else>
       <div class="identity-section__empty">
@@ -67,40 +48,25 @@ const actions = section.actions
         </Button>
       </div>
 
-      <template v-else-if="step === 'setup'">
-        <RecoveryWords :recovery-words="recoveryWords" />
-        <ConfirmWords
-          :positions="positions"
-          :entered="entered"
-          :is-disabled="isBusy"
-          @change="actions.setEntered"
-          @submit="actions.keep"
-        />
-        <div class="identity-section__actions">
-          <Button type="button" variant="solid" :disabled="isBusy" @click="actions.keep">
-            {{ isBusy ? words.identityKeeping : words.identityKeep }}
-          </Button>
-          <Button type="button" variant="outline" :disabled="isBusy" @click="actions.cancel">
-            {{ words.identityCancel }}
-          </Button>
-        </div>
-      </template>
+      <IdentitySetup
+        v-else-if="step === 'setup'"
+        :recovery-words="recoveryWords"
+        :positions="positions"
+        :entered="entered"
+        :is-busy="isBusy"
+        @change="actions.setEntered"
+        @keep="actions.keep"
+        @cancel="actions.cancel"
+      />
 
-      <template v-else>
-        <RestoreWords
-          :text="restoreText"
-          :is-disabled="isBusy"
-          @change="actions.setRestoreText"
-        />
-        <div class="identity-section__actions">
-          <Button type="button" variant="solid" :disabled="isBusy" @click="actions.restore">
-            {{ isBusy ? words.identityRestoring : words.identityRestoreAction }}
-          </Button>
-          <Button type="button" variant="outline" :disabled="isBusy" @click="actions.cancel">
-            {{ words.identityCancel }}
-          </Button>
-        </div>
-      </template>
+      <IdentityRestore
+        v-else
+        :text="restoreText"
+        :is-busy="isBusy"
+        @change="actions.setRestoreText"
+        @restore="actions.restore"
+        @cancel="actions.cancel"
+      />
     </template>
 
     <p v-if="problem !== ''" role="alert" class="identity-section__problem">{{ problem }}</p>
@@ -113,28 +79,6 @@ const actions = section.actions
   flex-direction: column;
   gap: 0.75rem;
   padding: var(--settings-card-pad);
-}
-
-.identity-section__facts {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.375rem 1rem;
-  margin: 0;
-}
-
-.identity-section__facts dt {
-  color: var(--numen-hushed);
-}
-
-.identity-section__facts dd {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.75rem;
-  margin: 0;
-}
-
-.identity-section__fingerprint {
-  font-family: var(--numen-font-mono);
 }
 
 .identity-section__empty {

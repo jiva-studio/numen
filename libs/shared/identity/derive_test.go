@@ -11,17 +11,64 @@ import (
 	"strings"
 	"testing"
 	"testing/iotest"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
 )
 
 func abandonWords(t *testing.T) identity.RecoveryWords {
 	t.Helper()
-	words, err := identity.ParseRecoveryWords(strings.Fields(bip39Vectors[0].words))
+	return parseWords(t, bip39Vectors()[0].words)
+}
+
+type failer interface {
+	Helper()
+	Fatal(args ...any)
+}
+
+func deriveRecovery(t failer, words identity.RecoveryWords) identity.RecoveryKey {
+	t.Helper()
+	key, err := words.DeriveRecoveryKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return key
+}
+
+func parseWords(t *testing.T, text string) identity.RecoveryWords {
+	t.Helper()
+	words, err := identity.ParseRecoveryWords(strings.Fields(text))
 	if err != nil {
 		t.Fatal(err)
 	}
 	return words
+}
+
+func deviceFromSeed(t *testing.T, seed []byte) identity.DeviceKey {
+	t.Helper()
+	device, err := identity.NewDeviceKey(bytes.NewReader(seed))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return device
+}
+
+func wrapForRecovery(t *testing.T, account identity.AccountKeys, to identity.RecoveryPublicKey) identity.WrappedAccountKeys {
+	t.Helper()
+	wrapped, err := account.WrapForRecovery(to)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return wrapped
+}
+
+func mustAppend(t *testing.T, c identity.Chain, by identity.Signer, device identity.DevicePublicKey, name string, at time.Time) identity.Chain {
+	t.Helper()
+	next, err := appended(c, by, device, name, at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return next
 }
 
 func expand(t *testing.T, secret []byte, info string) []byte {
@@ -61,9 +108,9 @@ func TestDeriveRecoveryKey_FollowsTheFrozenLabels(t *testing.T) {
 	t.Parallel()
 	entropy := make([]byte, 16)
 	secret := expand(t, entropy, "numen/v1/recovery")
-	public := abandonWords(t).DeriveRecoveryKey().Public()
+	public := deriveRecovery(t, abandonWords(t)).Public()
 
-	wantSign := ed25519.NewKeyFromSeed(expand(t, secret, "numen/v1/recovery/sign")).Public().(ed25519.PublicKey)
+	wantSign := ed25519.PublicKey(ed25519.NewKeyFromSeed(expand(t, secret, "numen/v1/recovery/sign"))[32:])
 	if !bytes.Equal(public.Sign, wantSign) {
 		t.Errorf("recovery signing key = %x, want %x", public.Sign, wantSign)
 	}
@@ -77,13 +124,13 @@ func TestDeriveRecoveryKey_FollowsTheFrozenLabels(t *testing.T) {
 
 func TestDeriveRecoveryKey_IsDeterministicForTheSameWords(t *testing.T) {
 	t.Parallel()
-	first := abandonWords(t).DeriveRecoveryKey().Public()
-	second := abandonWords(t).DeriveRecoveryKey().Public()
+	first := deriveRecovery(t, abandonWords(t)).Public()
+	second := deriveRecovery(t, abandonWords(t)).Public()
 	if !bytes.Equal(first.Sign, second.Sign) || first.Box != second.Box {
 		t.Error("the same words derive two keys")
 	}
-	other, _ := identity.ParseRecoveryWords(strings.Fields(bip39Vectors[1].words))
-	if bytes.Equal(first.Sign, other.DeriveRecoveryKey().Public().Sign) {
+	other := parseWords(t, bip39Vectors()[1].words)
+	if bytes.Equal(first.Sign, deriveRecovery(t, other).Public().Sign) {
 		t.Error("different words derive the same key")
 	}
 }
@@ -96,7 +143,7 @@ func TestNewDeviceKey_FollowsTheFrozenLabels(t *testing.T) {
 		t.Fatal(err)
 	}
 	public := device.Public()
-	wantSign := ed25519.NewKeyFromSeed(expand(t, seed, "numen/v1/device/sign")).Public().(ed25519.PublicKey)
+	wantSign := ed25519.PublicKey(ed25519.NewKeyFromSeed(expand(t, seed, "numen/v1/device/sign"))[32:])
 	if !bytes.Equal(public.Sign, wantSign) {
 		t.Errorf("device signing key = %x, want %x", public.Sign, wantSign)
 	}
@@ -110,8 +157,8 @@ func TestNewDeviceKey_FollowsTheFrozenLabels(t *testing.T) {
 
 func TestNewDeviceKey_DiffersForEachRandomSeed(t *testing.T) {
 	t.Parallel()
-	first, _ := identity.NewDeviceKey(bytes.NewReader(bytes.Repeat([]byte{1}, 32)))
-	second, _ := identity.NewDeviceKey(bytes.NewReader(bytes.Repeat([]byte{2}, 32)))
+	first := deviceFromSeed(t, bytes.Repeat([]byte{1}, 32))
+	second := deviceFromSeed(t, bytes.Repeat([]byte{2}, 32))
 	if bytes.Equal(first.Public().Sign, second.Public().Sign) {
 		t.Error("two seeds give one key")
 	}
@@ -132,7 +179,7 @@ var fingerprintFormat = regexp.MustCompile(`^([0-9A-F]{4} ){7}[0-9A-F]{4}$`)
 
 func TestFingerprint_IsEightGroupsOfFourUpperCaseHexDigits(t *testing.T) {
 	t.Parallel()
-	public := abandonWords(t).DeriveRecoveryKey().Public()
+	public := deriveRecovery(t, abandonWords(t)).Public()
 	if got := public.Fingerprint().String(); !fingerprintFormat.MatchString(got) {
 		t.Errorf("account fingerprint %q has the wrong format", got)
 	}
@@ -149,8 +196,8 @@ func TestFingerprint_IsEightGroupsOfFourUpperCaseHexDigits(t *testing.T) {
 
 func TestFingerprint_SeparatesAnAccountFromADeviceOfTheSameKey(t *testing.T) {
 	t.Parallel()
-	recovery := abandonWords(t).DeriveRecoveryKey().Public()
-	asDevice := identity.DevicePublicKey{Sign: recovery.Sign, Box: recovery.Box}
+	recovery := deriveRecovery(t, abandonWords(t)).Public()
+	asDevice := identity.DevicePublicKey(recovery)
 	if recovery.Fingerprint() == asDevice.Fingerprint() {
 		t.Error("the account and the device fingerprint of one key are equal")
 	}

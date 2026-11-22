@@ -31,7 +31,7 @@ func newDevice(t *testing.T) identity.DeviceKey {
 func TestWrapForRecovery_IsOpenedByTheRecoveryKeyOfTheWords(t *testing.T) {
 	t.Parallel()
 	account := newAccount(t)
-	recovery := abandonWords(t).DeriveRecoveryKey()
+	recovery := deriveRecovery(t, abandonWords(t))
 	wrapped, err := account.WrapForRecovery(recovery.Public())
 	if err != nil {
 		t.Fatal(err)
@@ -71,9 +71,9 @@ func TestWrapForDevice_IsOpenedByThatDeviceOnly(t *testing.T) {
 func TestUnwrapAccountKeys_RefusesAnotherKey(t *testing.T) {
 	t.Parallel()
 	account := newAccount(t)
-	wrapped, _ := account.WrapForRecovery(abandonWords(t).DeriveRecoveryKey().Public())
-	other, _ := identity.ParseRecoveryWords(strings.Fields(bip39Vectors[1].words))
-	if _, err := other.DeriveRecoveryKey().UnwrapAccountKeys(wrapped); !errors.Is(err, identity.ErrUnwrap) {
+	wrapped := wrapForRecovery(t, account, deriveRecovery(t, abandonWords(t)).Public())
+	other := parseWords(t, bip39Vectors()[1].words)
+	if _, err := deriveRecovery(t, other).UnwrapAccountKeys(wrapped); !errors.Is(err, identity.ErrUnwrap) {
 		t.Errorf("error = %v, want ErrUnwrap", err)
 	}
 	if _, err := newDevice(t).UnwrapAccountKeys(wrapped); !errors.Is(err, identity.ErrUnwrap) {
@@ -83,8 +83,8 @@ func TestUnwrapAccountKeys_RefusesAnotherKey(t *testing.T) {
 
 func TestUnwrapAccountKeys_RefusesAnyChangedByte(t *testing.T) {
 	t.Parallel()
-	recovery := abandonWords(t).DeriveRecoveryKey()
-	wrapped, _ := newAccount(t).WrapForRecovery(recovery.Public())
+	recovery := deriveRecovery(t, abandonWords(t))
+	wrapped := wrapForRecovery(t, newAccount(t), recovery.Public())
 	sealed := wrapped.Bytes()
 	for i := range sealed {
 		changed := append([]byte(nil), sealed...)
@@ -101,7 +101,7 @@ func TestUnwrapAccountKeys_RefusesAnyChangedByte(t *testing.T) {
 
 func TestWrappedAccountKeys_ParseOnlyTheRightLength(t *testing.T) {
 	t.Parallel()
-	wrapped, _ := newAccount(t).WrapForRecovery(abandonWords(t).DeriveRecoveryKey().Public())
+	wrapped := wrapForRecovery(t, newAccount(t), deriveRecovery(t, abandonWords(t)).Public())
 	parsed, err := identity.ParseWrappedAccountKeys(wrapped.Bytes())
 	if err != nil || string(parsed.Bytes()) != string(wrapped.Bytes()) {
 		t.Fatalf("round trip = %v", err)
@@ -116,9 +116,9 @@ func TestWrappedAccountKeys_ParseOnlyTheRightLength(t *testing.T) {
 func TestWrapForRecovery_ReturnsADifferentCiphertextEachTime(t *testing.T) {
 	t.Parallel()
 	account := newAccount(t)
-	public := abandonWords(t).DeriveRecoveryKey().Public()
-	first, _ := account.WrapForRecovery(public)
-	second, _ := account.WrapForRecovery(public)
+	public := deriveRecovery(t, abandonWords(t)).Public()
+	first := wrapForRecovery(t, account, public)
+	second := wrapForRecovery(t, account, public)
 	if string(first.Bytes()) == string(second.Bytes()) {
 		t.Error("two wraps of the same keys are equal")
 	}
@@ -126,7 +126,8 @@ func TestWrapForRecovery_ReturnsADifferentCiphertextEachTime(t *testing.T) {
 
 func TestNewAccountKeys_AreNewEachTime(t *testing.T) {
 	t.Parallel()
-	if newAccount(t).BoxPublicKey() == newAccount(t).BoxPublicKey() {
+	first, second := newAccount(t).BoxPublicKey(), newAccount(t).BoxPublicKey()
+	if first == second {
 		t.Error("two account keys are equal")
 	}
 }

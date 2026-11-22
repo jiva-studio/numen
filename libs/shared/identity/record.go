@@ -28,12 +28,17 @@ func ParseRecord(b []byte) (Record, error) {
 	if version := r.byte(); r.err == nil && version != recordVersion {
 		return Record{}, fmt.Errorf("%w: record version %d", ErrUnsupportedVersion, version)
 	}
-	var record Record
-	copy(record.Device.seed[:], r.take(32))
+	var seed [32]byte
+	copy(seed[:], r.take(32))
 	sealed := r.sized()
 	if r.err != nil {
 		return Record{}, r.err
 	}
+	device, err := newDeviceKey(seed)
+	if err != nil {
+		return Record{}, err
+	}
+	record := Record{Device: device}
 	wrapped, err := ParseWrappedAccountKeys(sealed)
 	if err != nil {
 		return Record{}, err
@@ -44,7 +49,7 @@ func ParseRecord(b []byte) (Record, error) {
 		return Record{}, err
 	}
 	record.Chain = chain
-	own := record.Device.Public().Sign
+	own := record.Device.SignerKey()
 	for _, device := range chain.ListDevices() {
 		if bytes.Equal(device.Public.Sign, own) {
 			return record, nil

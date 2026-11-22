@@ -15,16 +15,18 @@ import (
 )
 
 // The official BIP-39 English vectors for 128 bits of entropy (trezor vectors.json).
-var bip39Vectors = []struct{ entropy, words string }{
-	{"00000000000000000000000000000000", "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"},
-	{"7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f", "legal winner thank year wave sausage worth useful legal winner thank yellow"},
-	{"80808080808080808080808080808080", "letter advice cage absurd amount doctor acoustic avoid letter advice cage above"},
-	{"ffffffffffffffffffffffffffffffff", "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong"},
+func bip39Vectors() []struct{ entropy, words string } {
+	return []struct{ entropy, words string }{
+		{"00000000000000000000000000000000", "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"},
+		{"7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f", "legal winner thank year wave sausage worth useful legal winner thank yellow"},
+		{"80808080808080808080808080808080", "letter advice cage absurd amount doctor acoustic avoid letter advice cage above"},
+		{"ffffffffffffffffffffffffffffffff", "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong"},
+	}
 }
 
 func TestNewRecoveryWords_MapsEntropyToBIP39Words(t *testing.T) {
 	t.Parallel()
-	for _, vector := range bip39Vectors {
+	for _, vector := range bip39Vectors() {
 		entropy, err := hex.DecodeString(vector.entropy)
 		if err != nil {
 			t.Fatal(err)
@@ -41,14 +43,20 @@ func TestNewRecoveryWords_MapsEntropyToBIP39Words(t *testing.T) {
 
 func TestParseRecoveryWords_AcceptsTheBIP39Vectors(t *testing.T) {
 	t.Parallel()
-	for _, vector := range bip39Vectors {
+	for _, vector := range bip39Vectors() {
 		parsed, err := identity.ParseRecoveryWords(strings.Fields(vector.words))
 		if err != nil {
 			t.Fatalf("ParseRecoveryWords(%q) error = %v", vector.words, err)
 		}
-		entropy, _ := hex.DecodeString(vector.entropy)
-		same, _ := identity.NewRecoveryWords(bytes.NewReader(entropy))
-		if parsed.DeriveRecoveryKey().Public().Fingerprint() != same.DeriveRecoveryKey().Public().Fingerprint() {
+		entropy, err := hex.DecodeString(vector.entropy)
+		if err != nil {
+			t.Fatal(err)
+		}
+		same, err := identity.NewRecoveryWords(bytes.NewReader(entropy))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if deriveRecovery(t, parsed).Public().Fingerprint() != deriveRecovery(t, same).Public().Fingerprint() {
 			t.Errorf("parsed words of %s give another key than the entropy", vector.entropy)
 		}
 	}
@@ -81,7 +89,7 @@ func TestNewRecoveryWords_FailsWhenTheRandomSourceFails(t *testing.T) {
 func TestParseRecoveryWords_RefusesWordsWithAMistake(t *testing.T) {
 	t.Parallel()
 	abandon := strings.Fields(strings.Repeat("abandon ", 12))
-	valid := strings.Fields(bip39Vectors[0].words)
+	valid := strings.Fields(bip39Vectors()[0].words)
 	withWord := func(position int, word string) []string {
 		out := append([]string(nil), valid...)
 		out[position-1] = word
@@ -113,7 +121,7 @@ func TestParseRecoveryWords_RefusesWordsWithAMistake(t *testing.T) {
 
 func TestParseRecoveryWords_NamesThePositionAndNotTheWord(t *testing.T) {
 	t.Parallel()
-	words := strings.Fields(bip39Vectors[0].words)
+	words := strings.Fields(bip39Vectors()[0].words)
 	words[3] = "numen"
 	_, err := identity.ParseRecoveryWords(words)
 	if !errors.Is(err, identity.ErrUnknownWord) {
@@ -129,26 +137,26 @@ func TestParseRecoveryWords_NamesThePositionAndNotTheWord(t *testing.T) {
 
 func TestParseRecoveryWords_TrimsAndLowerCasesEachWord(t *testing.T) {
 	t.Parallel()
-	words := strings.Fields(bip39Vectors[1].words)
+	words := strings.Fields(bip39Vectors()[1].words)
 	words[0] = "  LEGAL\n"
 	words[5] = "Sausage"
 	parsed, err := identity.ParseRecoveryWords(words)
 	if err != nil {
 		t.Fatalf("error = %v", err)
 	}
-	if got := strings.Join(parsed.List(), " "); got != bip39Vectors[1].words {
-		t.Errorf("List() = %q, want %q", got, bip39Vectors[1].words)
+	if got := strings.Join(parsed.List(), " "); got != bip39Vectors()[1].words {
+		t.Errorf("List() = %q, want %q", got, bip39Vectors()[1].words)
 	}
 }
 
 func TestRecoveryWords_PrintNoWord(t *testing.T) {
 	t.Parallel()
-	words, _ := identity.ParseRecoveryWords(strings.Fields(bip39Vectors[1].words))
+	words := parseWords(t, bip39Vectors()[1].words)
 	if words.String() != "[recovery words]" {
 		t.Errorf("String() = %q", words.String())
 	}
 	for _, text := range []string{
-		fmt.Sprintf("%v", words), fmt.Sprintf("%+v", words), fmt.Sprintf("[%s]", words),
+		fmt.Sprint(words), fmt.Sprintf("%+v", words), fmt.Sprintf("[%s]", words),
 		fmt.Sprint(fmt.Errorf("failed with %v", words)),
 	} {
 		for _, word := range words.List() {
@@ -174,7 +182,7 @@ func TestParseRecoveryWords_ReturnsTheWordsOfAnyEntropy(t *testing.T) {
 		if strings.Join(parsed.List(), " ") != strings.Join(made.List(), " ") {
 			t.Fatalf("parsed words %v differ from %v", parsed.List(), made.List())
 		}
-		if parsed.DeriveRecoveryKey().Public().Fingerprint() != made.DeriveRecoveryKey().Public().Fingerprint() {
+		if deriveRecovery(t, parsed).Public().Fingerprint() != deriveRecovery(t, made).Public().Fingerprint() {
 			t.Fatal("parsed words derive another key")
 		}
 	})
