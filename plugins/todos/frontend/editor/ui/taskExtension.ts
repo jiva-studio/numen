@@ -5,7 +5,7 @@
 import { EditorView, Decoration, WidgetType, type DecorationSet } from '@codemirror/view'
 import { EditorState, RangeSetBuilder, StateField, Prec, type Extension } from '@codemirror/state'
 import { editorNotePath } from '@numen/plugin-sdk'
-import { findFencedLines, readTaskLine, type FieldKind } from '../lib/taskLine'
+import { findFencedLines, readTaskLine, type FieldKind, type TaskLine } from '../lib/taskLine'
 
 interface TickRequest {
   readonly path: string
@@ -16,6 +16,7 @@ interface TickRequest {
 
 export interface TaskExtensionDeps {
   readonly tick: (request: TickRequest) => Promise<void>
+  readonly hideFields: boolean
 }
 
 class TaskBox extends WidgetType {
@@ -64,6 +65,7 @@ const FIELD_CLASSES: Readonly<Record<FieldKind, string>> = {
   recurrence: 'cm-todo-recurrence',
   project: 'cm-todo-project',
   context: 'cm-todo-context',
+  tag: 'cm-todo-tag',
 }
 
 const FIELD_MARKS = Object.fromEntries(
@@ -73,14 +75,33 @@ const FIELD_MARKS = Object.fromEntries(
   ]),
 )
 const DONE_LINE = Decoration.line({ class: 'cm-todo-line-done' })
+const HIDDEN_FIELD = Decoration.replace({})
+
+function addFields(
+  builder: RangeSetBuilder<Decoration>,
+  line: { readonly from: number; readonly text: string },
+  task: TaskLine,
+  isHidden: boolean,
+): void {
+  let previousEnd = task.textFrom
+  for (const field of task.fields) {
+    let start = field.from
+    while (isHidden && start > previousEnd && /[ \t]/.test(line.text[start - 1] ?? '')) start -= 1
+    previousEnd = field.to
+    const mark = isHidden ? HIDDEN_FIELD : (FIELD_MARKS[field.kind] as Decoration)
+    builder.add(line.from + start, line.from + field.to, mark)
+  }
+}
 
 function buildTaskDecorations(state: EditorState, deps: TaskExtensionDeps): DecorationSet {
+  const selection = state.selection.ranges
   const builder = new RangeSetBuilder<Decoration>()
   const lines = state.doc.toString().split('\n')
   const fenced = findFencedLines(lines)
   let offset = 0
   lines.forEach((text, at) => {
     const from = offset
+    const to = from + text.length
     offset += text.length + 1
     if (fenced[at]) return
     const task = readTaskLine(text)
@@ -91,9 +112,8 @@ function buildTaskDecorations(state: EditorState, deps: TaskExtensionDeps): Deco
       from + task.textFrom,
       Decoration.replace({ widget: new TaskBox(task.isDone, deps) }),
     )
-    for (const field of task.fields) {
-      builder.add(from + field.from, from + field.to, FIELD_MARKS[field.kind] as Decoration)
-    }
+    const isFocused = selection.some((range) => range.from <= to && range.to >= from)
+    addFields(builder, { from, text }, task, deps.hideFields && !isFocused)
   })
   return builder.finish()
 }
@@ -114,12 +134,16 @@ const theme = EditorView.baseTheme({
   '.cm-todo-recurrence': { color: 'var(--numen-hushed)' },
   '.cm-todo-project': { color: 'var(--numen-syntax-type)' },
   '.cm-todo-context': { color: 'var(--numen-positive)' },
+  '.cm-todo-tag': { color: 'var(--numen-syntax-type)' },
 })
 
 export function createTaskExtension(deps: TaskExtensionDeps): Extension {
   const decorations = StateField.define<DecorationSet>({
     create: (state) => buildTaskDecorations(state, deps),
-    update: (value, tr) => (tr.docChanged ? buildTaskDecorations(tr.state, deps) : value),
+    update: (value, tr) =>
+      tr.docChanged || (deps.hideFields && tr.selection)
+        ? buildTaskDecorations(tr.state, deps)
+        : value,
     provide: (field) => EditorView.decorations.from(field),
   })
   return [Prec.high(decorations), theme]

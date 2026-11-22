@@ -11,12 +11,12 @@ afterEach(() => {
   view = undefined
 })
 
-function open(doc: string, path = 'Projects/Home.md') {
+function open(doc: string, path = 'Projects/Home.md', hideFields = false) {
   const tick = vi.fn<(request: Parameters<TaskExtensionDeps['tick']>[0]) => Promise<void>>(async () => undefined)
   view = new EditorView({
     state: EditorState.create({
       doc,
-      extensions: [editorNotePath.of(path), createTaskExtension({ tick })],
+      extensions: [editorNotePath.of(path), createTaskExtension({ tick, hideFields })],
     }),
     parent: document.body,
   })
@@ -53,6 +53,28 @@ describe('the task extension', () => {
     expect(has('cm-todo-recurrence')).toBe('rec:1m')
     expect(has('cm-todo-done-on')).toBe('done:2026-11-19')
     expect(editor.dom.querySelector('.cm-todo-line-done')).not.toBeNull()
+  })
+
+  it('hides the fields of a task line the cursor is not on and shows them on the line it is on', () => {
+    const doc = '- [ ] plain\n- [ ] pay due:2026-11-20 +home @bank #port rec:1m pri:A done:2026-11-19'
+    const { view: editor } = open(doc, 'Projects/Home.md', true)
+    const content = () => editor.dom.querySelector('.cm-content')?.textContent
+
+    expect(content()).toBe('plainpay')
+
+    editor.dispatch({ selection: { anchor: doc.length } })
+    expect(content()).toBe('plainpay due:2026-11-20 +home @bank #port rec:1m pri:A done:2026-11-19')
+    expect(editor.state.doc.toString()).toBe(doc)
+
+    editor.dispatch({ selection: { anchor: 0 } })
+    expect(content()).toBe('plainpay')
+  })
+
+  it('keeps the fields in view when the fields are not hidden', () => {
+    const { view: editor } = open('- [ ] pay due:2026-11-20 #port')
+
+    expect(editor.dom.querySelector('.cm-content')?.textContent).toBe('pay due:2026-11-20 #port')
+    expect(editor.dom.querySelector('.cm-todo-tag')?.textContent).toBe('#port')
   })
 
   it('does not dim an open task', () => {

@@ -5,6 +5,7 @@
 import { defineComponent, h, watch } from 'vue'
 import {
   definePlugin,
+  type Disposable,
   type HostServices,
   type PluginContext,
   type WorkspaceHost,
@@ -75,18 +76,26 @@ export const activate = (
     id: TODOS_VIEW,
     component: createTodosView(feed, parts.api, workspace),
   })
-  if (!plugin.register.editorExtension) {
+  const editorExtension = plugin.register.editorExtension?.bind(plugin.register)
+  if (!editorExtension) {
     throw new Error('the todos plugin needs the editor extensions of the host')
   }
-  plugin.register.editorExtension({
-    id: TASKS_EXTENSION,
-    extension: createTaskEditorExtension({
-      api: parts.api,
-      getFields: fields.get,
-      getToday: () => workspace.window.getToday(),
-      showError: (message) => workspace.messages.showError(message),
-    }),
-  })
+  let registration: Disposable | undefined
+  const registerTasks = (): void => {
+    registration?.dispose()
+    registration = editorExtension({
+      id: TASKS_EXTENSION,
+      extension: createTaskEditorExtension({
+        api: parts.api,
+        getFields: fields.get,
+        hideFields: plugin.settings.get<boolean>('hideFields') === true,
+        getToday: () => workspace.window.getToday(),
+        showError: (message) => workspace.messages.showError(message),
+      }),
+    })
+  }
+  registerTasks()
+  plugin.settings.onChange<boolean>('hideFields', registerTasks)
   const stopWatchingReady = watch(
     () => feed.summary.value?.isReady === true,
     (isReady) => {

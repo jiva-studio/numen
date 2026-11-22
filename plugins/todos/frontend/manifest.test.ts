@@ -45,10 +45,10 @@ describe('the manifest of the todos plugin', () => {
     ])
   })
 
-  it('declares no tab kind, no command and the ignored folders setting only', () => {
+  it('declares no tab kind, no command and the two settings only', () => {
     expect(manifest.contributes.tabKinds ?? []).toEqual([])
     expect(manifest.contributes.commands ?? []).toEqual([])
-    expect(manifest.settings?.map((one) => one.key)).toEqual(['ignoredFolders'])
+    expect(manifest.settings?.map((one) => one.key)).toEqual(['ignoredFolders', 'hideFields'])
   })
 
   it('has the version of the package', () => {

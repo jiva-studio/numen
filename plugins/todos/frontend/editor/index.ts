@@ -13,6 +13,7 @@ export interface TaskEditorDeps {
   readonly api: TodosApi
   readonly getToday: () => string
   readonly getFields: () => ListFieldsResponse
+  readonly hideFields: boolean
   readonly showError: (message: string) => void
 }
 
@@ -20,10 +21,12 @@ export function createTaskEditorExtension({
   api,
   getToday,
   getFields,
+  hideFields,
   showError,
 }: TaskEditorDeps): Extension {
   return [
     createTaskExtension({
+      hideFields,
       tick: async (request) => {
         const result = await api.setTaskDone({ ...request, today: getToday() })
         if (!result.ok) showError(WORDS.tickFailed)

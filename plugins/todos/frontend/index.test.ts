@@ -239,7 +239,7 @@ describe('the task completion of the todos plugin', () => {
   }
 
   it('reads the fields once at activation, before the stream sends a message', async () => {
-    const fake = createFakeApi({ fields: { projects, contexts: [] } })
+    const fake = createFakeApi({ fields: { projects, contexts: [], tags: [] } })
     const context = createMockPluginContext({ pluginId: 'md.numen.todos' })
     const workspace = {
       window: { getToday: () => TODAY },
@@ -270,13 +270,44 @@ describe('the task completion of the todos plugin', () => {
       timer: createFakeTimer().timer,
     })
     await settle()
-    fake.setFields({ projects, contexts: [] })
+    fake.setFields({ projects, contexts: [], tags: [] })
     fake.setSummary({ ...SUMMARY, isReady: true })
     fake.push({ revision: 1, isReady: true })
     await settle()
 
     const extension = context.getRegisteredEditorExtensions()[0]?.extension as Extension
     expect(complete(extension, '- [ ] pay +')?.options).toHaveLength(1)
+  })
+
+  it('offers the tags after a hash', async () => {
+    const fake = createFakeApi({
+      fields: { projects: [], contexts: [], tags: [{ name: 'port', count: 3 }] },
+    })
+    const context = createMockPluginContext({ pluginId: 'md.numen.todos' })
+    const workspace = {
+      window: { getToday: () => TODAY },
+      files: { open: vi.fn() },
+      messages: { showError: vi.fn() },
+    } as unknown as WorkspaceHost
+    activate(context, createMockHostServices({ workspace }), {
+      api: fake.api,
+      timer: createFakeTimer().timer,
+    })
+    await settle()
+
+    const extension = context.getRegisteredEditorExtensions()[0]?.extension as Extension
+    expect(complete(extension, '- [ ] pay #')?.options.map((one) => one.label)).toEqual(['port'])
+  })
+
+  it('registers the extension again when the hideFields setting changes', () => {
+    const { context } = setup()
+    const before = context.getRegisteredEditorExtensions()[0]?.extension
+
+    context.setSetting('hideFields', true)
+
+    const after = context.getRegisteredEditorExtensions()
+    expect(after).toHaveLength(1)
+    expect(after[0]?.extension).not.toBe(before)
   })
 
   it('refuses to activate in a host without editor extensions', () => {
