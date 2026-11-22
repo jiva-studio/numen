@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { autocompletion, currentCompletions, startCompletion } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
+import { theme } from '../lib/config/theme'
 import { pageTooltips } from './pageTooltips'
 
 const views: EditorView[] = []
@@ -17,6 +18,7 @@ function open(parent: HTMLElement): EditorView {
     state: EditorState.create({
       doc: 'one',
       extensions: [
+        theme,
         pageTooltips(),
         autocompletion(),
         EditorState.languageData.of(() => [{ autocomplete: source }]),
@@ -55,5 +57,17 @@ describe('the page tooltips', () => {
       .map((one) => one.textContent ?? '')
       .join('')
     expect(pageStyles).toContain('cm-tooltip-autocomplete')
+  })
+
+  it('mount no height for the bare root of the theme, which the container of the tooltips in the page also carries', async () => {
+    const view = open(document.body)
+
+    await showList(view)
+
+    const pageStyles = Array.from(document.querySelectorAll('style'))
+      .map((one) => one.textContent ?? '')
+      .join('')
+    expect(pageStyles).toMatch(/\.cm-editor\s*\{[^}]*height:\s*100%/)
+    expect(pageStyles).not.toMatch(/\.\u037c\d+\s*\{[^}]*height:/)
   })
 })

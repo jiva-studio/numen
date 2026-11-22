@@ -48,8 +48,8 @@ export const theme = EditorView.theme({
     fontFamily: 'var(--numen-editor-font-family, var(--numen-font-sans))',
     fontSize: 'var(--numen-editor-font-size)',
     lineHeight: 'var(--numen-editor-line-height)',
-    height: '100%',
   },
+  '&.cm-editor': { height: '100%' },
   '&.cm-focused': { outline: 'none' },
   /* The text is centred within the available width; a measure narrower than that
      width leaves equal space on both sides. */
