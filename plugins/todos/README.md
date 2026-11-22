@@ -1,12 +1,12 @@
 # Todos
 
-Lists the tasks written in notes: the title bar shows how many are due or overdue, and a popover lists them.
+Lists the tasks written in notes: a widget shows how many are due or overdue, and a popover lists them.
 
 <!-- more -->
 
 ## What You Can Do
 
-- **See what is due**: The title bar shows the count of overdue tasks and tasks due today. Click it for the lists Overdue, Today and No date.
+- **See what is due**: The widget, in the title bar by default, shows the count of overdue tasks and tasks due today. Click it for the lists Overdue, Today and No date.
 - **Open the note of a task**: Click the text of a task to open its note at its line.
 - **Find notes by task in a query**: A query of the search language takes the functions below. A note holds when it has at least one task that satisfies the condition, and they combine with `&&`, `||` and `!` like `kind`.
 - **Ask an agent about your tasks**: An agent lists, adds, ticks, edits and removes tasks with the tools below.
@@ -51,4 +51,4 @@ A task is addressed by note path and line from `task_list`. Lines count the line
 
 - **Ignored folders**: Folders whose notes are not searched for tasks, comma separated.
 - **Hide task fields until the line is focused**: Shows due, done, rec, pri, +, @ and # only on the line you edit.
-- **Overdue**, **Today**, **Next 7 days**, **No date**: Which groups the title bar popup lists and the chip counts. All four are on by default. Next 7 days holds the open tasks due in the six days after today; a task due today is only in Today.
+- **Overdue**, **Today**, **Next 7 days**, **No date**: Which groups the popup of the widget lists and the chip counts. All four are on by default. Next 7 days holds the open tasks due in the six days after today; a task due today is only in Today.

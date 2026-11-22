@@ -3,7 +3,7 @@
   "name": "Todos",
   "version": "2026.11.1",
   "protocol": 1,
-  "description": "Lists the tasks written in notes, in the title bar and in a tab",
+  "description": "Lists the tasks written in notes, in a widget and in a tab",
   "capabilities": ["tools"],
   "targets": ["desktop.editor"],
   "contributes": {
@@ -161,33 +161,33 @@
       "key": "showOverdue",
       "type": "boolean",
       "title": "Overdue",
-      "description": "Open tasks due before today, in the title bar",
+      "description": "Open tasks due before today, in the widget",
       "default": true,
-      "details": "Lists and counts the open tasks due before today in the title bar popup."
+      "details": "Lists and counts the open tasks due before today in the popup of the widget."
     },
     {
       "key": "showToday",
       "type": "boolean",
       "title": "Today",
-      "description": "Open tasks due today, in the title bar",
+      "description": "Open tasks due today, in the widget",
       "default": true,
-      "details": "Lists and counts the open tasks due today in the title bar popup."
+      "details": "Lists and counts the open tasks due today in the popup of the widget."
     },
     {
       "key": "showNextWeek",
       "type": "boolean",
       "title": "Next 7 days",
-      "description": "Open tasks due in the next days, in the title bar",
-      "details": "Lists and counts the open tasks due in the six days after today in the title bar popup.",
+      "description": "Open tasks due in the next days, in the widget",
+      "details": "Lists and counts the open tasks due in the six days after today in the popup of the widget.",
       "default": true
     },
     {
       "key": "showNoDate",
       "type": "boolean",
       "title": "No date",
-      "description": "Open tasks with no due date, in the title bar",
+      "description": "Open tasks with no due date, in the widget",
       "default": true,
-      "details": "Lists and counts the open tasks with no due date in the title bar popup."
+      "details": "Lists and counts the open tasks with no due date in the popup of the widget."
     }
   ],
   "backend": {
