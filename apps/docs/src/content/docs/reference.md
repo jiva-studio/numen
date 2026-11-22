@@ -183,7 +183,7 @@ The settings of the plugin Todos.
 | | | |
 | --- | --- | --- |
 | `ignoredFolders` | text | paths from the vault root, such as templates, archive/old. A note below one of them is skipped. |
-| `hideFields` | yes or no | shows due, done, rec, pri, +, @ and # only on the line you edit. |
+| `hideFields` | yes or no | a task line keeps its markers (due:, done:, pri:, +project, @context, #tag), but they are drawn only while the cursor is on that line. |
 | `showOverdue` | yes or no | lists and counts the open tasks due before today in the popup of the widget. |
 | `showToday` | yes or no | lists and counts the open tasks due today in the popup of the widget. |
 | `showNextWeek` | yes or no | lists and counts the open tasks due in the six days after today in the popup of the widget. |

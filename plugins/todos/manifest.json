@@ -153,9 +153,10 @@
     {
       "key": "hideFields",
       "type": "boolean",
-      "title": "Hide task fields until the line is focused",
-      "description": "Shows due, done, rec, pri, +, @ and # only on the line you edit",
-      "default": false
+      "title": "Hide task markers until the line is edited",
+      "description": "Hides due:, pri:, +, @ and # until the cursor is on the line",
+      "default": false,
+      "details": "A task line keeps its markers (due:, done:, pri:, +project, @context, #tag), but they are drawn only while the cursor is on that line."
     },
     {
       "key": "showOverdue",
