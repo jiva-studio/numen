@@ -14,7 +14,7 @@
    the width of "10 of 10" so a growing count does not move the neighbours. */
 .tasks-status__trigger {
   --chip-height: calc(1.25 * var(--numen-chrome-unit));
-  --chip-text: calc(0.75 * var(--numen-chrome-unit));
+  --chip-text: var(--numen-chrome-text-2);
   --chip-pad: calc(0.5 * var(--numen-chrome-unit));
   --chip-mark: calc(0.75 * var(--numen-chrome-unit));
   --summary-min-width: 4.8em;
@@ -146,7 +146,7 @@
 /*
  * The ring and the action button are stacked in one grid cell of one size. The row decides which
  * one shows, and only their opacity changes, so the hit area under the pointer never moves.
- * The slot keeps its size at every interface scale because the ring is an SVG drawn in pixels.
+ * The slot is 20px at every interface scale because the ring is an SVG drawn at 20 pixels.
  */
 .tasks-status__popover-container .task-item__slot {
   display: grid;
