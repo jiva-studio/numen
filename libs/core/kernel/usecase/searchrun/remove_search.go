@@ -4,13 +4,12 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
 )
 
 // RemoveSearch releases a search the caller started. The search is canceled and forgotten when no other
 // caller that started an equal search still holds it.
 type RemoveSearch struct {
-	kept *searchkept.Searches
+	kept *Searches
 }
 
 // Execute returns searchrun.ErrNotFound for a search that is unknown, expired, removed or of another plugin.

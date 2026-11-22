@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
 	"github.com/jiva-studio/numen/libs/shared/note/ulid"
 )
 
@@ -23,7 +22,7 @@ const (
 // StartSearch starts a search, or returns the id of an equal search of the same plugin that is still
 // running.
 type StartSearch struct {
-	kept        *searchkept.Searches
+	kept        *Searches
 	generations IndexGenerations
 	run         RunQuery
 	names       PluginNames
@@ -48,7 +47,7 @@ func (u *StartSearch) Execute(ctx context.Context, start searchrun.Start) (searc
 	if len(kept) >= u.kept.Policy.MaxKept {
 		return "", searchrun.ErrTooManySearches
 	}
-	now := u.kept.Timer.Now()
+	now := u.kept.Clock.Now()
 	id, err := ulid.NewGenerator(rand.Reader).NewID(now)
 	if err != nil {
 		return "", err
@@ -74,7 +73,7 @@ func (u *StartSearch) Execute(ctx context.Context, start searchrun.Start) (searc
 
 func (u *StartSearch) newTask(r searchrun.Record) work.Task {
 	return work.Task{
-		ID: searchkept.GetTaskID(r.ID), Title: taskTitle, About: getAbout(r.Start.Query), IsUserStarted: true,
+		ID: getTaskID(r.ID), Title: taskTitle, About: getAbout(r.Start.Query), IsUserStarted: true,
 		PluginID: r.Start.Owner, PluginName: u.names(r.Start.Owner),
 		Cancel: func() { u.kept.Cancels.Cancel(string(r.ID)) },
 	}
@@ -90,7 +89,7 @@ func getAbout(query string) string {
 
 func (u *StartSearch) runSearch(ctx context.Context, end func(), r searchrun.Record) {
 	defer end()
-	defer u.kept.Tasks.Remove(searchkept.GetTaskID(r.ID))
+	defer u.kept.Tasks.Remove(getTaskID(r.ID))
 	if err := u.slots.Acquire(ctx, r.Start.Priority); err != nil {
 		u.finish(r.ID, searchquery.SearchResults{}, err)
 		return

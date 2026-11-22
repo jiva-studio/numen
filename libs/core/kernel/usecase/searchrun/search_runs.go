@@ -1,18 +1,21 @@
 package searchrun
 
 import (
+	"time"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // Deps is what the searches read. MaxResults is the most results one search holds, and Slots is shared by
 // every search that runs.
 type Deps struct {
-	Store       searchkept.Store
-	Cancels     searchkept.Cancels
-	Tasks       searchkept.Tasks
-	Timer       searchkept.Timer
+	Store       Store
+	Cancels     Cancels
+	Tasks       Tasks
+	Clock       machineport.Clock
+	After       func(d time.Duration) <-chan time.Time
 	Policy      searchrun.Policy
 	Slots       SearchSlots
 	Generations IndexGenerations
@@ -32,7 +35,7 @@ type SearchRuns struct {
 
 // NewSearchRuns creates the use cases of the searches over deps.
 func NewSearchRuns(deps Deps) SearchRuns {
-	kept := &searchkept.Searches{Store: deps.Store, Cancels: deps.Cancels, Tasks: deps.Tasks, Timer: deps.Timer, Policy: deps.Policy}
+	kept := &Searches{Store: deps.Store, Cancels: deps.Cancels, Tasks: deps.Tasks, Clock: deps.Clock, After: deps.After, Policy: deps.Policy}
 	return SearchRuns{
 		Start: &StartSearch{
 			kept: kept, generations: deps.Generations, run: deps.Run, names: deps.Names,

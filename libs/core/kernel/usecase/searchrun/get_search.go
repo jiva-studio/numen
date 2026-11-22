@@ -5,12 +5,11 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/searchkept"
 )
 
 // GetSearch returns the state of a search and one page of its results, waiting a while for it to stop.
 type GetSearch struct {
-	kept        *searchkept.Searches
+	kept        *Searches
 	generations IndexGenerations
 }
 
@@ -51,7 +50,7 @@ func (u *GetSearch) Execute(ctx context.Context, r Read) (Page, error) {
 func (u *GetSearch) wait(ctx context.Context, r Read, stopped <-chan struct{}) (searchrun.Record, error) {
 	select {
 	case <-stopped:
-	case <-u.kept.Timer.After(min(r.Wait, u.kept.Policy.MaxWait)):
+	case <-u.kept.After(min(r.Wait, u.kept.Policy.MaxWait)):
 	case <-ctx.Done():
 		return searchrun.Record{}, ctx.Err()
 	}

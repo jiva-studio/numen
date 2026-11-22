@@ -1,6 +1,4 @@
-// Package searchkept holds what the searches of the core share: the store of their records, the cancels
-// of the running ones, the tasks that show them and the policy that expires them.
-package searchkept
+package searchrun
 
 import (
 	"context"
@@ -9,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // Store keeps the searches in memory.
@@ -36,22 +35,18 @@ type Tasks interface {
 	Remove(id string)
 }
 
-// Timer reads the time and waits.
-type Timer interface {
-	Now() time.Time
-	After(d time.Duration) <-chan time.Time
-}
-
 // Searches is the kept searches with the cancels, tasks and policy that go with them.
 type Searches struct {
 	Store   Store
 	Cancels Cancels
 	Tasks   Tasks
-	Timer   Timer
+	Clock   machineport.Clock
+	After   func(d time.Duration) <-chan time.Time
 	Policy  searchrun.Policy
 }
 
-func GetTaskID(id searchrun.ID) string {
+// getTaskID is the id of the task that shows the search.
+func getTaskID(id searchrun.ID) string {
 	return "search " + string(id)
 }
 
@@ -59,7 +54,7 @@ func GetTaskID(id searchrun.ID) string {
 func (s *Searches) Drop(ids []searchrun.ID) {
 	for _, id := range ids {
 		s.Cancels.Cancel(string(id))
-		s.Tasks.Remove(GetTaskID(id))
+		s.Tasks.Remove(getTaskID(id))
 	}
 	s.Store.RemoveSearches(ids)
 }
@@ -67,7 +62,7 @@ func (s *Searches) Drop(ids []searchrun.ID) {
 // DropExpired drops the searches the policy expires to make room for incoming more, and returns the rest.
 func (s *Searches) DropExpired(incoming int) []searchrun.Record {
 	records := s.Store.ListSearches()
-	expired := searchrun.SelectExpired(records, s.Timer.Now(), s.Policy, incoming)
+	expired := searchrun.SelectExpired(records, s.Clock.Now(), s.Policy, incoming)
 	s.Drop(expired)
 	kept := records[:0]
 	for _, r := range records {
@@ -90,6 +85,6 @@ func (s *Searches) Find(owner string, id searchrun.ID) (searchrun.Record, <-chan
 
 // Touch records that the search was read now.
 func (s *Searches) Touch(id searchrun.ID) {
-	now := s.Timer.Now()
+	now := s.Clock.Now()
 	s.Store.ChangeSearch(id, func(r *searchrun.Record) { r.AccessedAt = now })
 }

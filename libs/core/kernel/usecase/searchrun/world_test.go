@@ -126,7 +126,7 @@ func newWorld(t *testing.T, policy searchrundomain.Policy) world {
 	shown := &tasks{shown: map[string]work.Task{}}
 	generations := indexgeneration.New("epoch")
 	runs := searchrun.NewSearchRuns(searchrun.Deps{
-		Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: shown, Timer: clock, Policy: policy,
+		Store: searchstore.New(), Cancels: searchcancel.NewSearches(clock), Tasks: shown, Clock: clock, After: clock.After, Policy: policy,
 		Slots: searchslot.New(policy.MaxRunning), Generations: generations, Run: x.run, Names: func(id string) string { return "Plugin " + id },
 		Catalog: searchquery.GetBuiltinCatalog, MaxResults: 100,
 	})
