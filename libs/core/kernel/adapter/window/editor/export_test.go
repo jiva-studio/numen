@@ -196,7 +196,7 @@ func ViewOf(notices *Notices) windowsession.View {
 }
 
 func newEmptyCommandHandler(state *testWindow) *command.Handler {
-	list := plugincommand.NewList(noCommands{}, when.NewConditions())
+	list := plugincommand.NewList(noCommands{}, nil, when.NewConditions())
 	run := plugincommand.NewRun(noCommands{}, noCommands{}, noContentTypes{}, nil, nil, when.NewConditions())
 	return command.NewHandler(state, plugincommand.NewListCommands(list, noContentTypes{}), plugincommand.NewRunCommand(list, run, nil), plugincommand.NewListItems(list, nil))
 }
