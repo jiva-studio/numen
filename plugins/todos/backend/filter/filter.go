@@ -23,6 +23,8 @@ const (
 	DueToday DueFilter = "today"
 	// DueThisWeek accepts open tasks due in the seven days from today.
 	DueThisWeek DueFilter = "thisWeek"
+	// DueUpcoming accepts open tasks due after today within the seven days from today.
+	DueUpcoming DueFilter = "upcoming"
 	// DueRange accepts tasks due from From to To, both included.
 	DueRange DueFilter = "range"
 )
@@ -76,8 +78,8 @@ func (f Filter) isStatusAccepted(task todo.Task) bool {
 
 func (f Filter) isDueAccepted(task todo.Task, today string) bool {
 	switch f.Due {
-	case DueNone, DueOverdue, DueToday, DueThisWeek:
-		return task.Status == todo.StatusOpen && isDueMatched(f.Due, task.Due, today)
+	case DueNone, DueOverdue, DueToday, DueThisWeek, DueUpcoming:
+		return task.Status == todo.StatusOpen && IsDueMatched(f.Due, task.Due, today)
 	case DueRange:
 		return task.Due != "" && (f.From == "" || task.Due >= f.From) && (f.To == "" || task.Due <= f.To)
 	case DueAny:
@@ -85,7 +87,8 @@ func (f Filter) isDueAccepted(task todo.Task, today string) bool {
 	return true
 }
 
-func isDueMatched(kind DueFilter, due, today string) bool {
+// IsDueMatched reports whether a due date, empty for none, falls in the group kind names at today.
+func IsDueMatched(kind DueFilter, due, today string) bool {
 	switch kind {
 	case DueNone:
 		return due == ""
@@ -94,6 +97,9 @@ func isDueMatched(kind DueFilter, due, today string) bool {
 	case DueToday:
 		return due == today
 	case DueThisWeek:
+		return due >= today && due <= todo.AddDays(today, daysOfWeek-1)
+	case DueUpcoming:
+		return due > today && due <= todo.AddDays(today, daysOfWeek-1)
 		return due >= today && due <= todo.AddDays(today, daysOfWeek-1)
 	case DueAny, DueRange:
 	}

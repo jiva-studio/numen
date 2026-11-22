@@ -19,10 +19,6 @@ const SaveDelay = 5 * time.Second
 
 const cursorFile = "cursor"
 
-// SnapshotVersion is the format of the kept snapshot. It changes with the shape of what the
-// snapshot holds, so a snapshot of another version is not trusted and every note is read again.
-const SnapshotVersion = 2
-
 // After runs fn once after the delay and returns what cancels it. It is time.AfterFunc outside of
 // tests.
 type After func(delay time.Duration, fn func()) (cancel func())
@@ -62,7 +58,7 @@ func (i *Index) Start(ctx context.Context) error {
 	if i.saver == nil {
 		return i.Scan(ctx)
 	}
-	if snapshot, isFound := i.saver.Snapshots.Load(ctx); isFound && snapshot.Version == SnapshotVersion {
+	if snapshot, isFound := i.saver.Snapshots.Load(ctx); isFound {
 		i.restore(snapshot)
 	}
 	if err := i.follow(ctx); err != nil {
@@ -179,7 +175,7 @@ func (i *Index) takeSnapshot() (ports.Snapshot, bool) {
 	}
 	i.saver.mu.Lock()
 	defer i.saver.mu.Unlock()
-	return ports.Snapshot{Version: SnapshotVersion, Cursor: i.saver.cursor, Notes: notes}, true
+	return ports.Snapshot{Cursor: i.saver.cursor, Notes: notes}, true
 }
 
 func (i *Index) save() {

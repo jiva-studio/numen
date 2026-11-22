@@ -63,9 +63,8 @@ type SavedNote struct {
 
 // Snapshot is the index of a run and the place of the file change feed it was brought up to.
 type Snapshot struct {
-	Version int                   `json:"version"`
-	Cursor  host.FileChangeCursor `json:"cursor"`
-	Notes   map[string]SavedNote  `json:"notes"`
+	Cursor host.FileChangeCursor `json:"cursor"`
+	Notes  map[string]SavedNote  `json:"notes"`
 }
 
 // Snapshots keeps the snapshot of the index between runs. It holds nothing that cannot be
