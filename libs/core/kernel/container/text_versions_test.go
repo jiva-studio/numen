@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
 const (
@@ -155,7 +154,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	readIntoIndex(t, s, db, v)
 
 	const renamed = "talks/Heron talk.mp3"
-	move := vault.NewMove(vaultDeps.Writers, db.NoteQueries(), db.Sources(), db.Sources(), note.NewMove(note.MoveDeps{}))
+	move := note.NewMoveTree(vaultDeps.Writers, db.NoteQueries(), db.Sources(), db.Sources(), note.NewMove(note.MoveDeps{}))
 	if _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
 		t.Fatal(err)
 	}

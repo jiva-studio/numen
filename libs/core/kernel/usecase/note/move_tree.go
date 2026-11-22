@@ -46,7 +46,7 @@ type MoveTree struct {
 	links   noteport.LinkQueries
 	queries sourceport.SourcesUnder
 	sources sourceport.SourceRepository
-	notes   *Move
+	notes   Move
 }
 
 // NewMoveTree is what files anything the vault holds somewhere else: the vault it
@@ -58,7 +58,7 @@ func NewMoveTree(
 	links noteport.LinkQueries,
 	queries sourceport.SourcesUnder,
 	sources sourceport.SourceRepository,
-	notes *Move,
+	notes Move,
 ) MoveTree {
 	return MoveTree{movers: movers, links: links, queries: queries, sources: sources, notes: notes}
 }
