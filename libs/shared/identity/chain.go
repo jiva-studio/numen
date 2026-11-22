@@ -73,6 +73,23 @@ func NewChain(root RecoveryKey, account AccountKeys, at time.Time) (Chain, error
 	return Chain{entries: []Entry{entry}}, nil
 }
 
+// Len returns the number of entries in the chain.
+func (c Chain) Len() int { return len(c.entries) }
+
+// IsExtensionOf reports whether the first prefix.Len() entries of c equal the entries of prefix.
+// An empty prefix is not a prefix of anything.
+func (c Chain) IsExtensionOf(prefix Chain) bool {
+	if len(prefix.entries) == 0 || len(prefix.entries) > len(c.entries) {
+		return false
+	}
+	for i, entry := range prefix.entries {
+		if hashEntry(entry) != hashEntry(c.entries[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 // AppendDevice returns a new chain; the receiver is not changed.
 func (c Chain) AppendDevice(by Signer, device DevicePublicKey, name string, at time.Time) (Chain, error) {
 	if len(c.entries) == 0 {

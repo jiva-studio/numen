@@ -20,9 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 )
 
-// PluginID is the plugin id the server expects a sign-in to be signed under.
-const PluginID = "md.numen.tools.sync"
-
 const (
 	challengeLife     = 60 * time.Second
 	defaultSessionTTL = time.Hour
@@ -156,7 +153,7 @@ func (s *Server) openSession(req *syncv1.SignInRequest) (Session, bool) {
 		return Session{}, false
 	}
 	message := syncprotocol.GetSignInMessage(&syncv1.GetChallengeResponse{Nonce: pending.nonce, ExpiresAt: pending.expiresAt, Audience: s.audience}, key, s.protocol)
-	if !identity.VerifyForPlugin(key, PluginID, message, [64]byte(req.GetSignature())) {
+	if !identity.VerifyForPlugin(key, syncprotocol.SignInPluginID, message, [64]byte(req.GetSignature())) {
 		return Session{}, false
 	}
 	chain, err := identity.ParseChain(req.GetChain())

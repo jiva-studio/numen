@@ -89,7 +89,7 @@ func (w world) signIn(ctx context.Context, t *testing.T, challenge *syncv1.GetCh
 }
 
 func TestASignInSignedUnderThePluginOfTheServerOpensASessionOfTheAccount(t *testing.T) {
-	w := newWorld(t, fakeserver.PluginID, fakeserver.Config{})
+	w := newWorld(t, syncprotocol.SignInPluginID, fakeserver.Config{})
 
 	if err := w.signIn(t.Context(), t, w.getChallenge(t.Context(), t)); err != nil {
 		t.Fatal(err)
@@ -112,7 +112,7 @@ func TestASignInSignedUnderAnotherPluginIsUnauthenticated(t *testing.T) {
 }
 
 func TestAChallengeIsUsedOnceWhateverTheResult(t *testing.T) {
-	w := newWorld(t, fakeserver.PluginID, fakeserver.Config{})
+	w := newWorld(t, syncprotocol.SignInPluginID, fakeserver.Config{})
 	challenge := w.getChallenge(t.Context(), t)
 
 	first := w.signIn(t.Context(), t, challenge)
@@ -124,7 +124,7 @@ func TestAChallengeIsUsedOnceWhateverTheResult(t *testing.T) {
 }
 
 func TestAServerOfAnotherProtocolVersionAsksTheClientToUpdate(t *testing.T) {
-	w := newWorld(t, fakeserver.PluginID, fakeserver.Config{Protocol: syncprotocol.Version + 1})
+	w := newWorld(t, syncprotocol.SignInPluginID, fakeserver.Config{Protocol: syncprotocol.Version + 1})
 
 	_, err := w.service.GetChallenge(t.Context(), connect.NewRequest(&syncv1.GetChallengeRequest{DeviceSignKey: w.deviceSignKey()}))
 
@@ -134,7 +134,7 @@ func TestAServerOfAnotherProtocolVersionAsksTheClientToUpdate(t *testing.T) {
 }
 
 func TestEndingTheSessionsOfTheDeviceRemovesThem(t *testing.T) {
-	w := newWorld(t, fakeserver.PluginID, fakeserver.Config{})
+	w := newWorld(t, syncprotocol.SignInPluginID, fakeserver.Config{})
 	if err := w.signIn(t.Context(), t, w.getChallenge(t.Context(), t)); err != nil {
 		t.Fatal(err)
 	}
