@@ -5,9 +5,13 @@
 import { computed, shallowRef, type ComputedRef } from 'vue'
 import type { PaletteMultiProps } from '@numen/workbench'
 import type { PickerHost, PickerItem, PickerOptions } from '@numen/plugin-loader'
+import { createQuestionSession, type QuestionSession } from './createQuestionSession'
 
 export interface PickerSession {
   readonly open: PickerHost['open']
+  readonly ask: PickerHost['ask']
+  readonly choose: PickerHost['choose']
+  readonly question: QuestionSession['view']
   readonly multi: ComputedRef<PaletteMultiProps | undefined>
   readonly toggle: (id: string) => Promise<void>
   readonly create: (text: string) => Promise<void>
@@ -18,8 +22,10 @@ export function createPickerSession(): PickerSession {
   const options = shallowRef<PickerOptions | undefined>(undefined)
   const items = shallowRef<readonly PickerItem[]>([])
   let settle: (() => void) | undefined
+  const questions = createQuestionSession()
 
   const dismiss = (): void => {
+    questions.dismiss()
     options.value = undefined
     items.value = []
     settle?.()
@@ -64,5 +70,14 @@ export function createPickerSession(): PickerSession {
     if (current) replace(await current.onCreate(text))
   }
 
-  return { open, multi, toggle, create, dismiss }
+  return {
+    open,
+    ask: questions.ask,
+    choose: questions.choose,
+    question: questions.view,
+    multi,
+    toggle,
+    create,
+    dismiss,
+  }
 }

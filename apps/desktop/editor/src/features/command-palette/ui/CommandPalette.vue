@@ -36,8 +36,18 @@ const { field, type, choose, dismiss, goBack } = usePaletteInput({
 })
 
 /* -------------------------------- Handlers -------------------------------- */
+function onType(text: string): void {
+  if (props.picker.question.value) props.picker.question.value.type(text)
+  else type(text)
+}
+
+function onChoose(item: string, action: string): void {
+  if (props.picker.question.value) props.picker.question.value.answer(item)
+  else choose(item, action)
+}
+
 function onDismiss(): void {
-  if (props.picker.multi.value) props.picker.dismiss()
+  if (props.picker.multi.value || props.picker.question.value) props.picker.dismiss()
   else dismiss()
 }
 
@@ -49,19 +59,19 @@ function getRowIcon(id: string) {
 
 <template>
   <Palette
-    :model-value="field.typed"
-    :groups="field.groups"
-    :is-open="field.open || picker.multi.value !== undefined"
+    :model-value="picker.question.value?.typed ?? field.typed"
+    :groups="picker.question.value?.groups ?? field.groups"
+    :is-open="field.open || picker.multi.value !== undefined || picker.question.value !== undefined"
     :multi="picker.multi.value"
     :is-busy="field.isBusy"
-    :placeholder="field.placeholder"
+    :placeholder="picker.question.value?.placeholder ?? field.placeholder"
     :crumb="field.crumb"
     :step="field.step"
     :opens-on="field.opensOn"
     :name="words.find"
     :action-words="actionWords"
-    @update:model-value="type"
-    @choose="choose"
+    @update:model-value="onType"
+    @choose="onChoose"
     @light="commands.palette.previewItem"
     @back="goBack"
     @toggle="runInBackground(picker.toggle($event), reportFailure)"

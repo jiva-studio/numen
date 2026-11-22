@@ -163,3 +163,16 @@ describe('a picker session', () => {
     await second
   })
 })
+
+describe('the questions of a picker session', () => {
+  it('draws a question a plugin asks and settles it on dismiss', async () => {
+    const session = createPickerSession()
+    const asking = session.ask({ title: 'Owner' })
+
+    expect(session.question.value?.placeholder).toBe('Owner')
+
+    session.dismiss()
+    await expect(asking).resolves.toBeUndefined()
+    expect(session.question.value).toBeUndefined()
+  })
+})
