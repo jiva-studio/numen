@@ -65,6 +65,8 @@ func Run(opts ...*Options) error {
 		return err
 	}
 
+	applyWebviewEnvironment()
+
 	cfg := platform.GetConfig()
 	services := makeServices(os.Stderr)
 	if opt.IndexPath != "" {

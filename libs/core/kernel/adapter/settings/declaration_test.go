@@ -270,11 +270,12 @@ func TestTheShellDeclaresTheGroupsOfItsEditorAndSearchSettings(t *testing.T) {
 		titles[one.ID] = one.Title
 	}
 	want := map[string]string{
-		"font":      "Font",
-		"display":   "Display",
-		"reranking": "Reranking",
-		"results":   "Results",
-		"limits":    "Query limits",
+		"font":        "Font",
+		"display":     "Display",
+		"reranking":   "Reranking",
+		"results":     "Results",
+		"limits":      "Query limits",
+		"performance": "Performance",
 	}
 	if len(groups) != len(want) {
 		t.Fatalf("the shell declares %d groups, want %d", len(groups), len(want))
@@ -292,23 +293,25 @@ func TestEverySettingOfTheShellNamesADeclaredGroupOrNone(t *testing.T) {
 		declared[one.ID] = true
 	}
 	grouped := map[string]string{
-		"editor.fontSize":               "font",
-		"editor.fontFamily":             "font",
-		"editor.lineHeight":             "font",
-		"editor.lineNumbers":            "display",
-		"editor.highlightActiveLine":    "display",
-		"editor.softWrap":               "display",
-		"search.reranking":              "reranking",
-		"search.rerankWindow":           "reranking",
-		"search.maxReranked":            "reranking",
-		"search.maxRerankedBytes":       "reranking",
-		"search.defaultLimit":           "results",
-		"search.maxLimit":               "results",
-		"search.candidatesPerCondition": "limits",
-		"search.maxCandidates":          "limits",
-		"search.maxPathPrefixes":        "limits",
-		"search.mergeGapBytes":          "limits",
-		"search.maxQueryBytes":          "limits",
+		"editor.fontSize":                   "font",
+		"editor.fontFamily":                 "font",
+		"editor.lineHeight":                 "font",
+		"editor.lineNumbers":                "display",
+		"editor.highlightActiveLine":        "display",
+		"editor.softWrap":                   "display",
+		"search.reranking":                  "reranking",
+		"search.rerankWindow":               "reranking",
+		"search.maxReranked":                "reranking",
+		"search.maxRerankedBytes":           "reranking",
+		"search.defaultLimit":               "results",
+		"search.maxLimit":                   "results",
+		"search.candidatesPerCondition":     "limits",
+		"search.maxCandidates":              "limits",
+		"search.maxPathPrefixes":            "limits",
+		"search.mergeGapBytes":              "limits",
+		"search.maxQueryBytes":              "limits",
+		"performance.profile":               "performance",
+		"performance.disableDmabufRenderer": "performance",
 	}
 	for _, one := range settings.GetAppDeclaration() {
 		if one.Group != "" && !declared[one.Group] {
@@ -317,5 +320,18 @@ func TestEverySettingOfTheShellNamesADeclaredGroupOrNone(t *testing.T) {
 		if one.Group != grouped[one.Key] {
 			t.Errorf("%s is in the group %q, want %q", one.Key, one.Group, grouped[one.Key])
 		}
+	}
+}
+
+func TestDmabufDefaultsToDisabledAndNamesRestart(t *testing.T) {
+	declared := findDeclaredSetting(t, "performance.disableDmabufRenderer")
+	if declared.Default != true {
+		t.Errorf("the default is %v, want true", declared.Default)
+	}
+	if !strings.Contains(declared.Description, "restart") || !strings.Contains(declared.Description, "Linux") {
+		t.Errorf("the description %q names no restart or no Linux", declared.Description)
+	}
+	if !settings.DefaultPerformance().DisableDmabufRenderer {
+		t.Error("the default performance leaves the renderer on")
 	}
 }

@@ -4,7 +4,8 @@
     { "id": "display", "title": "Display" },
     { "id": "reranking", "title": "Reranking" },
     { "id": "results", "title": "Results" },
-    { "id": "limits", "title": "Query limits" }
+    { "id": "limits", "title": "Query limits" },
+    { "id": "performance", "title": "Performance" }
   ],
   "settings": [
     {
@@ -143,6 +144,7 @@
     },
     {
       "key": "performance.profile",
+      "group": "performance",
       "type": "enum",
       "title": "Performance profile",
       "description": "How much of the hardware indexing and models may use.",
@@ -176,6 +178,16 @@
           "detail": "All performance cores and 90% of the memory."
         }
       ]
+    },
+    {
+      "key": "performance.disableDmabufRenderer",
+      "group": "performance",
+      "type": "boolean",
+      "title": "Draw without GPU buffer sharing",
+      "description": "Draw without GPU buffers. Linux only; applies after a restart.",
+      "details": "On Linux the webview can pass finished frames to the screen through GPU buffers (DMABUF, the fastest way) or through ordinary memory. With this on, ordinary memory is used, which avoids drawing faults some graphics drivers and webview versions show, such as flicker, stale frames and vanishing elements, at the cost of a little more processor time on large repaints. Applies after a restart; has effect on Linux only.",
+      "default": true,
+      "icon": "monitor"
     },
     {
       "key": "search.reranking",
