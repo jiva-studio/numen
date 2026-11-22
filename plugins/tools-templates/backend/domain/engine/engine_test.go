@@ -212,6 +212,60 @@ func TestKnowNoCursorFunction(t *testing.T) {
 	}
 }
 
+func TestQuoteAValueForYAML(t *testing.T) {
+	for _, c := range []struct{ name, in, want string }{
+		{"plain text", "Acme", `"Acme"`},
+		{"a colon", "a: b", `"a: b"`},
+		{"a hash", "a # b", `"a # b"`},
+		{"a bracket", "[a]", `"[a]"`},
+		{"a brace", "{a: 1}", `"{a: 1}"`},
+		{"a document marker", "---", `"---"`},
+		{"a quote and a backslash", `say "hi" \ now`, `"say \"hi\" \\ now"`},
+		{"a line break", "a\nid: x", `"a\nid: x"`},
+		{"markup characters", "<a & b>", `"<a & b>"`},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			data := getData()
+			data.Title = c.in
+
+			if got := renderWith(t, `{{ yaml .title }}`, data); got != c.want {
+				t.Errorf("yaml(%q) = %s, want %s", c.in, got, c.want)
+			}
+		})
+	}
+}
+
+func TestKeepAnAnswerOnOneLine(t *testing.T) {
+	for _, c := range []struct{ name, in, want string }{
+		{"a line feed", "a\nid: x", "a id: x"},
+		{"a carriage return and a line feed", "a\r\nb", "a b"},
+		{"a lone carriage return", "a\rb", "a b"},
+		{"a run of breaks", "a\n\n\nb", "a b"},
+		{"the unicode line separators", "a b c\u0085d", "a b c d"},
+		{"a control character", "a\x00b\x07c", "abc"},
+		{"the old cursor marker", "a\x00cursor\x00b", "acursorb"},
+		{"a tab", "a\tb", "a\tb"},
+		{"text with no break", "---: [x] #y {z}", "---: [x] #y {z}"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			data := getData()
+			data.Values = map[string]string{"V": c.in}
+
+			if got := renderWith(t, `{{ prompt "V" }}`, data); got != c.want {
+				t.Errorf("answer %q gives %q, want %q", c.in, got, c.want)
+			}
+		})
+	}
+	t.Run("takes the default for an answer that is only breaks", func(t *testing.T) {
+		data := getData()
+		data.Values = map[string]string{"V": "\n\x00"}
+
+		if got := renderWith(t, `{{ prompt "V" "Acme" }}`, data); got != "Acme" {
+			t.Errorf("text = %q", got)
+		}
+	})
+}
+
 func TestFailClearly(t *testing.T) {
 	for _, c := range []struct {
 		name, in string

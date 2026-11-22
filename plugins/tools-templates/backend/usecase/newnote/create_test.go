@@ -503,6 +503,51 @@ func TestFillTheFieldsOfTheTemplate(t *testing.T) {
 	})
 }
 
+func TestKeepAnAnswerInsideItsFrontmatterValue(t *testing.T) {
+	const quoting = "---\ntitle: {{ prompt \"Title\" | yaml }}\ntags: [x]\n---\nbody\n"
+	for _, c := range []struct{ name, answer, line string }{
+		{"a line break and a key", "a\nid: evil", `title: "a id: evil"`},
+		{"a document marker", "---", `title: "---"`},
+		{"a colon and a space", "a: b", `title: "a: b"`},
+		{"a hash", "a #b", `title: "a #b"`},
+		{"an opening bracket", "[a, b", `title: "[a, b"`},
+		{"an opening brace", "{a: b}", `title: "{a: b}"`},
+		{"a quote", `say "hi"`, `title: "say \"hi\""`},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			vault := newVault(map[string]string{"Templates/Quoted.md": quoting})
+			request := newnote.Request{Template: "Templates/Quoted.md", Folder: "work", Values: map[string]string{"Title": c.answer}}
+
+			made, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), request)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+			content := getContent(t, vault, made.Path)
+			doc := openNote(t, content)
+			if id, _ := doc.Identifier(); id == "evil" || len(id) != 26 {
+				t.Errorf("id = %q", id)
+			}
+			if !strings.Contains(content, c.line+"\n") || !slices.Equal(getKeys(t, content), []string{"title", "tags", "id"}) {
+				t.Errorf("the answer broke the frontmatter:\n%s", content)
+			}
+		})
+	}
+	t.Run("keeps the id of the note whatever the template or the answer says", func(t *testing.T) {
+		vault := newVault(map[string]string{"Templates/Raw.md": "---\nid: fixed\nname: {{ prompt \"Name\" | yaml }}\n---\nbody\n"})
+		request := newnote.Request{Template: "Templates/Raw.md", Folder: "work", Values: map[string]string{"Name": "x\nid: other"}}
+
+		made, err := newUseCase(vault, newClock(getToday())).Execute(t.Context(), request)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+		if id, _ := openNote(t, getContent(t, vault, made.Path)).Identifier(); id == "fixed" || id == "other" || len(id) != 26 {
+			t.Errorf("id = %q", id)
+		}
+	})
+}
+
 func TestMakeNoNoteFromATemplateThatDoesNotRun(t *testing.T) {
 	for _, c := range []struct{ name, text, want string }{
 		{"a syntax error", "# {{ .title }}\n{{ if }}\n", "Broken.md:2"},

@@ -2,6 +2,7 @@ package engine
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -85,6 +86,7 @@ func getFuncs(p *pass) Funcs {
 		"split":     func(separator, text string) []string { return strings.Split(text, separator) },
 		"replace":   func(old, replacement, text string) string { return strings.ReplaceAll(text, old, replacement) },
 		"trim":      strings.TrimSpace,
+		"yaml":      quoteYAML,
 		"uuid":      newUUID,
 		"dict":      dict,
 		"list":      func(items ...any) []any { return items },
@@ -198,6 +200,16 @@ func dict(pairs ...any) (map[string]any, error) {
 		out[key] = pairs[i+1]
 	}
 	return out, nil
+}
+
+func quoteYAML(text string) (string, error) {
+	var out strings.Builder
+	encoder := json.NewEncoder(&out)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(text); err != nil {
+		return "", fmt.Errorf("quote a value: %w", err)
+	}
+	return strings.TrimSuffix(out.String(), "\n"), nil
 }
 
 func newUUID() (string, error) {

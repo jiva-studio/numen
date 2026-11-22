@@ -73,6 +73,7 @@ Every other character is copied, and so is a letter that is not a token of this 
 | `join sep items`, `split sep s` | a list written as text, and text cut into a list |
 | `replace old new s` | the text with every `old` replaced |
 | `trim s` | the text without the spaces at its ends |
+| `yaml s` | the text written as a double-quoted YAML value, safe in the frontmatter: `title: {{ prompt "Title" \| yaml }}` |
 | `uuid` | a new random identifier |
 
 These pipe as well: `{{ .title | slug }}`, `{{ .vars.Client | default "none" | upper }}`. Control comes with the language: `if`, `else`, `range`, `with`, variables (`{{ $d := addDays 1 }}`), `eq`, `ne`, `lt`, `and`, `or`, `not`, `list` and `dict`.
@@ -86,6 +87,8 @@ A template can ask before it is made into a note:
 
 Each becomes the answer, and the answer is kept in `.vars` under the label, so `{{ .vars.Kind }}` repeats it where the label has no spaces. The questions are collected before the note is made, once for each label, in the order the template reaches them; to find them the template is run once with the defaults, so a question under an `if` is asked when the defaults reach it. A field left as it is takes its default.
 
+An answer to a text question is one line: line breaks become a space and other control characters are dropped. An answer is pasted as it is, so write it into the frontmatter with `yaml`, which quotes it: `client: {{ prompt "Client" | yaml }}` stays one value for an answer such as `a: b`, `[x]` or `---`.
+
 A template with no question makes its note at once.
 
 ### An example
@@ -94,6 +97,7 @@ A template with no question makes its note at once.
 ---
 type: meeting
 created: {{ date "YYYY-MM-DD" }}
+client: {{ prompt "Client" "Acme" | yaml }}
 ---
 # {{ .title }} with {{ prompt "Client" "Acme" }}
 

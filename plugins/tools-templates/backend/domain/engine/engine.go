@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 	"time"
+	"unicode"
 )
 
 const (
@@ -89,6 +90,9 @@ func resolve(fields []Field, given map[string]string) (map[string]string, error)
 	values := make(map[string]string, len(fields))
 	for _, field := range fields {
 		value, isGiven := given[field.Label]
+		if field.Kind == KindText {
+			value = keepOnOneLine(value)
+		}
 		switch {
 		case !isGiven, value == "" && field.Kind == KindText:
 			value = field.Default
@@ -98,6 +102,20 @@ func resolve(fields []Field, given map[string]string) (map[string]string, error)
 		values[field.Label] = value
 	}
 	return values, nil
+}
+
+func keepOnOneLine(text string) string {
+	clean := strings.Map(func(r rune) rune {
+		if isBreak(r) || r == '\t' || !unicode.IsControl(r) {
+			return r
+		}
+		return -1
+	}, text)
+	return strings.Join(strings.FieldsFunc(clean, isBreak), " ")
+}
+
+func isBreak(r rune) bool {
+	return r == '\n' || r == '\r' || r == '\u0085' || r == '\u2028' || r == '\u2029'
 }
 
 func (r Renderer) execute(name, text string, p *pass, option string) (string, error) {
