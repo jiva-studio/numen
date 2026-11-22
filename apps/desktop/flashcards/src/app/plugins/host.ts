@@ -17,6 +17,7 @@ import {
   type CommandsHost,
   type createPluginConnections,
   type Manifest,
+  type SlotLayout,
   type VaultRelations,
   type VaultsHost,
   type WindowHost,
@@ -48,6 +49,7 @@ interface ShellHostDeps {
   readonly notices: NoticeQueue
   readonly services?: Partial<ShellServices>
   readonly getPlatform?: () => WindowPlatform
+  readonly getSlotLayout?: (pluginId: string) => SlotLayout | undefined
 }
 
 const readSlotEntries = (manifests: ReadonlyMap<string, Manifest>) =>
@@ -79,6 +81,7 @@ export function createShellHost(deps: ShellHostDeps) {
     slots: {
       getSlotEntries: readSlotEntries,
       getSlotPoints: readSlotPoints,
+      ...(deps.getSlotLayout ? { getSlotLayout: deps.getSlotLayout } : {}),
       reportViewIssue: createViewIssueReporter(notices),
     },
     vault: { getVaults: () => services.vaults, getRelations: () => deps.relations },
