@@ -7,16 +7,16 @@ import {
   type RowSpan,
 } from './slotDrag'
 
-describe('the shifts of the rows while one is held', () => {
-  it('leave every row in place while the held row is over its own place', () => {
+describe('getRowShifts', () => {
+  it('leaves every row in place while the dragged row is over its own place', () => {
     expect(getRowShifts(3, 1, 1, 24)).toStrictEqual([0, 0, 0])
   })
 
-  it('lift the rows passed when the held row goes down', () => {
+  it('lifts the rows passed when the dragged row goes down', () => {
     expect(getRowShifts(4, 0, 2, 24)).toStrictEqual([0, -24, -24, 0])
   })
 
-  it('lower the rows passed when the held row goes up', () => {
+  it('lowers the rows passed when the dragged row goes up', () => {
     expect(getRowShifts(4, 3, 1, 24)).toStrictEqual([0, 24, 24, 0])
   })
 })
@@ -27,7 +27,7 @@ const spans: readonly RowSpan[] = [
   { top: 148, height: 24 },
 ]
 
-describe('the place a held row is over', () => {
+describe('getDropIndex', () => {
   it('stays on the own place for a small move', () => {
     expect(getDropIndex(spans, 1, 5)).toBe(1)
   })

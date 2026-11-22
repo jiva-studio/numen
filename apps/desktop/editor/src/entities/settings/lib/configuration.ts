@@ -7,7 +7,6 @@ export type {
   PluginSettingCondition,
   PluginSettingInfo,
   PluginSettingOption,
-  PluginSettingGroupInfo,
   PluginSettingsViewInfo,
 } from '@numen/plugin-manager'
 

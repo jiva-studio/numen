@@ -42,7 +42,7 @@ describe('getSettingSections', () => {
     expect(keys(sections.plain)).toStrictEqual(['b'])
   })
 
-  it('draws a setting of a group nobody declared in the plain island', () => {
+  it('draws a setting of a group that is not declared in the plain island', () => {
     const sections = getSettingSections([setting('a', 'gone')], GROUPS)
 
     expect(keys(sections.plain)).toStrictEqual(['a'])

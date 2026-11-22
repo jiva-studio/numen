@@ -254,17 +254,17 @@ The settings of the plugin Plex Graph.
 | `references` | text | show the notes linked in the text: the ones this note links to, the ones that link to it, both, or none. One of `off`, `outgoing`, `incoming`, `both`. |
 | `activateCreated` | yes or no | a note created from the plex through the quick link or the menu becomes the note in the middle. Off: the plex stays on the note it was on. |
 | `activateLinked` | yes or no | a note linked from the plex becomes the note in the middle. Off: the plex stays on the note the link was drawn from. |
+| `highlightLinks` | yes or no | highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted. |
 | `showPills` | yes or no | draw a pill behind each title. Off: the title alone. |
 | `pillPaddingSides` | a number | space beside the title inside its pill. From 0 to 24. |
 | `pillPaddingEnds` | a number | space above and below the title inside its pill. From 0 to 16. |
-| `focusSize` | a number | how much larger the note in the middle is drawn: its pill, title and icon. From 1 to 2.5. |
 | `lineThickness` | a number | width of the lines between notes, in pixels. From 0.5 to 4. |
 | `outlineThickness` | a number | width of the outline of a pill, in pixels. From 0.5 to 4. |
 | `lineCurvature` | a number | how far lines bend; 0 is straight. From 0 to 1. |
-| `highlightLinks` | yes or no | highlight every line that joins a note while the pointer is over it. Off: only a line the pointer is over is highlighted. |
-| `animationLength` | a number | time to move to another note, in ms; 0 is instant. From 0 to 2000. |
+| `focusSize` | a number | how much larger the note in the middle is drawn: its pill, title and icon. From 1 to 2.5. |
 | `noteRoom` | a number | empty space around every note. From 0 to 40. |
 | `alignToGrid` | yes or no | give every note of a side the room of the one with the most over its pill and the most under it, so the pills of a row line up when notes carry views of different heights. Off: a note keeps only the room its own views need. |
+| `animationLength` | a number | time to move to another note, in ms; 0 is instant. From 0 to 2000. |
 | `slots` | text | choose which entries of each slot are shown, and in what order. |
 
 ### `md.numen.views.plex.headings.dropdown`

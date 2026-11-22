@@ -39,10 +39,17 @@ const detailDeps = {
   getManager: () => props.manager,
   getPlugin: () => props.plugin,
 }
-const { managed, hasSettings, isApple, fileCount, deleteProblem, readmeText, deleteData } =
-  usePluginDetail(detailDeps)
+const {
+  managed,
+  hasSettings,
+  slotGroups,
+  isApple,
+  fileCount,
+  deleteProblem,
+  readmeText,
+  deleteData,
+} = usePluginDetail(detailDeps)
 const { isEnabled, isPending, setEnabled, retry } = usePluginSwitch(detailDeps)
-const slotGroups = computed(() => props.manager.getSlotGroups?.(props.plugin.id) ?? [])
 const slotsKey = computed(() => props.plugin.settings.find((one) => one.type === 'slots')?.key)
 const hasSlots = computed(() => slotsKey.value !== undefined && slotGroups.value.length > 0)
 const fields = usePluginFields({

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** A titled group: the heading sits above a card that holds only the rows, so a group of one row stays one row tall. The heading may carry an aside at its right. */
+/** A titled group: the heading is above a card that holds only the rows, so a group of one row stays one row tall. The heading may carry an aside at its right. */
 defineProps<{ title: string }>()
 </script>
 

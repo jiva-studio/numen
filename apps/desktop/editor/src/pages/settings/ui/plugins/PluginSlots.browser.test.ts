@@ -71,7 +71,7 @@ async function grab(root: HTMLElement) {
 }
 
 describe('the slots of a plugin dragged by a real pointer', () => {
-  it('render the list once for each place the held row takes, not once for each move', async () => {
+  it('renders the list once for each place the dragged row takes', async () => {
     const root = mountSlots()
     await nextFrame()
     const { moveTo } = await grab(root)
@@ -83,7 +83,7 @@ describe('the slots of a plugin dragged by a real pointer', () => {
     expect(renders).toBeLessThanOrEqual(3)
   })
 
-  it('leave every neighbour untouched by the moves of the held row within one place', async () => {
+  it('leaves every neighbour untouched by the moves of the dragged row within one place', async () => {
     const root = mountSlots()
     await nextFrame()
     const { moveTo } = await grab(root)
