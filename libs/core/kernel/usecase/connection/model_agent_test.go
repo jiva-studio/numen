@@ -1,30 +1,30 @@
-package modelcall_test
+package connection_test
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 )
 
 type agentSetup struct {
 	world *modelcalltest.World
-	calls *modelcall.Calls
+	calls *connection.Calls
 }
 
 func newAgentSetup(t *testing.T) *agentSetup {
 	t.Helper()
 	w := modelcalltest.New()
 	entry := w.AddAgent(t, "Claude Code")
-	w.Rows.Set(consumerID, modelcalltest.CompleteOperation, connection.Row{ConnectionID: entry.ID, Options: map[string]string{"model": "sonnet", "reasoning": "high"}})
+	w.Rows.Set(consumerID, modelcalltest.CompleteOperation, connectiondomain.Row{ConnectionID: entry.ID, Options: map[string]string{"model": "sonnet", "reasoning": "high"}})
 	return &agentSetup{
 		world: w,
-		calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
+		calls: connection.NewCalls(connection.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
 	}
 }
 

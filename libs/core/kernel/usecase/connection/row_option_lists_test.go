@@ -1,4 +1,4 @@
-package rowoptions_test
+package connection_test
 
 import (
 	"context"
@@ -8,26 +8,26 @@ import (
 	"testing"
 	"testing/synctest"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 )
 
 // memoryLists keeps the option lists in memory, as the cache files of the plugins do across processes.
 type memoryLists struct {
 	mu       sync.Mutex
-	byPlugin map[string][]connection.OptionList
+	byPlugin map[string][]connectiondomain.OptionList
 }
 
-func (m *memoryLists) ReadOptionLists(pluginID string) ([]connection.OptionList, bool) {
+func (m *memoryLists) ReadOptionLists(pluginID string) ([]connectiondomain.OptionList, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	lists, isKept := m.byPlugin[pluginID]
 	return slices.Clone(lists), isKept
 }
 
-func (m *memoryLists) WriteOptionLists(pluginID string, lists []connection.OptionList) {
+func (m *memoryLists) WriteOptionLists(pluginID string, lists []connectiondomain.OptionList) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.byPlugin[pluginID] = slices.Clone(lists)
@@ -88,20 +88,20 @@ func (r *revisions) getGrantRevision(pluginID string) (string, bool, error) {
 	return revision, isSet, nil
 }
 
-func (s *setup) restart() *rowoptions.Options {
+func (s *optionsSetup) restart() *connection.Options {
 	return s.openOver(s.world.Source)
 }
 
-func (s *setup) openOver(source connectionport.ProviderSource) *rowoptions.Options {
-	return rowoptions.NewOptions(rowoptions.Deps{
+func (s *optionsSetup) openOver(source connectionport.ProviderSource) *connection.Options {
+	return connection.NewOptions(connection.OptionsDeps{
 		Resolve: s.world.Resolve, ReadSecrets: s.world.ReadSecrets, Source: source, Running: s.running,
-		Lists: rowoptions.NewLists(s.files, s.configs), Grants: s.grants.getGrantRevision,
+		Lists: connection.NewLists(s.files, s.configs), Grants: s.grants.getGrantRevision,
 	})
 }
 
-func (s *setup) countCalls() int { return len(s.world.Provider.Calls()) }
+func (s *optionsSetup) countCalls() int { return len(s.world.Provider.Calls()) }
 
-func (s *setup) mustListModels(t *testing.T) {
+func (s *optionsSetup) mustListModels(t *testing.T) {
 	t.Helper()
 	if _, err := s.listModels(t.Context(), modelcalltest.EmbedOperation); err != nil {
 		t.Fatal(err)
@@ -109,7 +109,7 @@ func (s *setup) mustListModels(t *testing.T) {
 }
 
 func TestListOptionsAnswersAStoredListWithoutOpeningTheProvider(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 	s.mustListModels(t)
 	s.world.Source.FailOpen(modelcalltest.ProviderPluginID, errors.New("the plugin must not start"))
 
@@ -124,16 +124,16 @@ func TestListOptionsAnswersAStoredListWithoutOpeningTheProvider(t *testing.T) {
 }
 
 func TestListOptionsAsksTheProviderWhenNoListIsStored(t *testing.T) {
-	for name, between := range map[string]func(*testing.T, *setup){
-		"for a connection that changed": func(t *testing.T, s *setup) {
+	for name, between := range map[string]func(*testing.T, *optionsSetup){
+		"for a connection that changed": func(t *testing.T, s *optionsSetup) {
 			t.Helper()
 			s.entry = s.world.Edit(t, s.entry, "First renamed")
 		},
-		"for another version of its plugin": func(_ *testing.T, s *setup) {
+		"for another version of its plugin": func(_ *testing.T, s *optionsSetup) {
 			s.world.SetPluginVersion(modelcalltest.ProviderPluginID, "2.0.0")
 		},
 	} {
-		s := newSetup(t)
+		s := newOptionsSetup(t)
 		s.mustListModels(t)
 		between(t, s)
 
@@ -146,7 +146,7 @@ func TestListOptionsAsksTheProviderWhenNoListIsStored(t *testing.T) {
 }
 
 func TestRefreshOptionsAsksTheProviderAndKeepsTheAnswer(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 	s.mustListModels(t)
 
 	if _, err := s.options.RefreshOptions(t.Context(), s.entry.ID, modelcalltest.ModelOption, map[string]string{"reasoning": "low"}, []string{modelcalltest.EmbedOperation}); err != nil {
@@ -161,7 +161,7 @@ func TestRefreshOptionsAsksTheProviderAndKeepsTheAnswer(t *testing.T) {
 
 func TestRefreshRunningAsksARunningPluginAndKeepsTheAnswerForTheConnectionAsItIsNow(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		s := newSetup(t)
+		s := newOptionsSetup(t)
 		s.mustListModels(t)
 		s.entry = s.world.Edit(t, s.entry, "First renamed")
 		s.running.setRunning(true)
@@ -181,7 +181,7 @@ func TestRefreshRunningAsksARunningPluginAndKeepsTheAnswerForTheConnectionAsItIs
 
 func TestRefreshRunningDoesNotStartAPluginThatDoesNotRun(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		s := newSetup(t)
+		s := newOptionsSetup(t)
 		s.mustListModels(t)
 
 		s.options.RefreshRunning(s.entry.ID)
@@ -195,10 +195,10 @@ func TestRefreshRunningDoesNotStartAPluginThatDoesNotRun(t *testing.T) {
 
 func TestAFailedRefreshPreservesTheStoredList(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		s := newSetup(t)
+		s := newOptionsSetup(t)
 		s.mustListModels(t)
 		s.running.setRunning(true)
-		s.world.Provider.Fail(address, &connection.TryNextError{Reason: connection.FailureReasonUnavailable})
+		s.world.Provider.Fail(address, &connectiondomain.TryNextError{Reason: connectiondomain.FailureReasonUnavailable})
 
 		s.options.RefreshRunning(s.entry.ID)
 		synctest.Wait()
@@ -212,7 +212,7 @@ func TestAFailedRefreshPreservesTheStoredList(t *testing.T) {
 
 func TestRefreshConnectionAsksTheProviderForTheChangedConnection(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		s := newSetup(t)
+		s := newOptionsSetup(t)
 		s.mustListModels(t)
 		s.entry = s.world.Edit(t, s.entry, "First renamed")
 
@@ -228,7 +228,7 @@ func TestRefreshConnectionAsksTheProviderForTheChangedConnection(t *testing.T) {
 
 func TestRefreshOfAConnectionWithNoStoredListAsksNothing(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		s := newSetup(t)
+		s := newOptionsSetup(t)
 		s.running.setRunning(true)
 
 		s.options.RefreshConnection(s.entry.ID)
@@ -242,7 +242,7 @@ func TestRefreshOfAConnectionWithNoStoredListAsksNothing(t *testing.T) {
 }
 
 func TestAListingForAnotherValueOfAFieldBeforeAsksTheProvider(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 	for _, model := range []string{"model-1", "model-2"} {
 		if _, err := s.listReasoningLevels(t.Context(), model); err != nil {
 			t.Fatal(err)
@@ -255,7 +255,7 @@ func TestAListingForAnotherValueOfAFieldBeforeAsksTheProvider(t *testing.T) {
 }
 
 func TestAStoredListIsAnsweredForAnyValueOfTheFieldAndTheFieldsAfterIt(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 	s.mustListModels(t)
 
 	options, err := s.options.ListOptions(t.Context(), s.entry.ID, modelcalltest.ModelOption,

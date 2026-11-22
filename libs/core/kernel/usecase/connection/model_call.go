@@ -1,4 +1,4 @@
-package modelcall
+package connection
 
 import (
 	"context"

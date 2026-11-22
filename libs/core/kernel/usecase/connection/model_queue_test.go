@@ -1,4 +1,4 @@
-package modelcall_test
+package connection_test
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 
 type queueSetup struct {
 	world *modelcalltest.World
-	calls *modelcall.Calls
+	calls *connection.Calls
 	entry modelcalltest.Entry
 }
 
@@ -34,7 +34,7 @@ func newQueueSetup(t *testing.T, parallelRequests int) *queueSetup {
 	}
 	return &queueSetup{
 		world: w, entry: entry,
-		calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
+		calls: connection.NewCalls(connection.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
 	}
 }
 
@@ -184,8 +184,8 @@ func TestACallOfAConnectionWithNoLimitIsNeverQueued(t *testing.T) {
 	w := modelcalltest.New()
 	entry := w.AddServer(t, "First", addressOne, keyOne)
 	w.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.Row(entry, "m"))
-	connections := modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}
-	s := &queueSetup{world: w, calls: modelcall.NewCalls(connections, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside)}
+	connections := connection.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}
+	s := &queueSetup{world: w, calls: connection.NewCalls(connections, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside)}
 	w.Provider.Block(addressOne)
 	var calls []<-chan error
 	for _, text := range []string{"a", "b", "c", "d", "e"} {
@@ -321,7 +321,7 @@ func TestATimedOutWaitSetsNoCooldown(t *testing.T) {
 	s.world.Waits.AwaitCount(t, 1)
 	s.world.Waits.Elapse(time.Minute)
 
-	var all *connection.AllFailedError
+	var all *connectiondomain.AllFailedError
 	if err := awaitDone(t, queued); !errors.As(err, &all) || len(all.Failures) != 1 ||
 		all.Failures[0].ConnectionName != "Limited" || all.Failures[0].Reason != "busy" {
 		t.Fatalf("err = %v, want Limited: busy", err)

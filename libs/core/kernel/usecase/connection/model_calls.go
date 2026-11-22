@@ -1,4 +1,4 @@
-package modelcall
+package connection
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
@@ -17,7 +17,7 @@ import (
 type Calls struct {
 	resolve     connectionport.ResolveConnection
 	readSecrets connectionport.ReadConnectionSecrets
-	rows        ListRows
+	rows        RowLister
 	titles      connectionport.OperationTitles
 	source      connectionport.ProviderSource
 	clock       machineport.Clock
@@ -31,7 +31,7 @@ type Calls struct {
 type Connections struct {
 	Resolve     connectionport.ResolveConnection
 	ReadSecrets connectionport.ReadConnectionSecrets
-	Rows        ListRows
+	Rows        RowLister
 	Titles      connectionport.OperationTitles
 }
 

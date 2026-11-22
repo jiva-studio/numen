@@ -1,4 +1,4 @@
-package modelcall_test
+package connection_test
 
 import (
 	"context"
@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 )
 
 func (s *setup) stream(t *testing.T) (answer, error) {
@@ -36,7 +36,7 @@ func TestTheFramesOfACallAreStreamedFromTheFirstRowThatAnswers(t *testing.T) {
 
 func TestAFailureBeforeTheFirstFrameGoesToTheNextRow(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonRateLimited, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connectiondomain.FailureReasonRateLimited, 0))
 
 	got, err := s.stream(t)
 
@@ -50,12 +50,12 @@ func TestAFailureBeforeTheFirstFrameGoesToTheNextRow(t *testing.T) {
 
 func TestAFailureAfterTheFirstFrameIsPassedOnAndNothingIsRepeated(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, tryNext(connection.FailureReasonUnavailable, 0), "partial", "more")
+	s.world.Provider.Script(addressOne, tryNext(connectiondomain.FailureReasonUnavailable, 0), "partial", "more")
 
 	got, err := s.stream(t)
 
-	var failed *connection.AllFailedError
-	if !errors.As(err, &failed) || !slices.Equal(failed.Failures, []connection.Failure{{ConnectionName: "First", Reason: "unavailable"}}) {
+	var failed *connectiondomain.AllFailedError
+	if !errors.As(err, &failed) || !slices.Equal(failed.Failures, []connectiondomain.Failure{{ConnectionName: "First", Reason: "unavailable"}}) {
 		t.Fatalf("err = %v, want a failure naming First and its reason", err)
 	}
 	if !slices.Equal(got.Frames, []string{"partial", "more"}) {
@@ -79,11 +79,11 @@ func TestAPlainErrorAfterTheFirstFrameCountsAsUnavailable(t *testing.T) {
 
 func TestAStopAfterTheFirstFrameNamesTheConnection(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, stop(connection.FailureReasonInvalidRequest), "partial")
+	s.world.Provider.Script(addressOne, stop(connectiondomain.FailureReasonInvalidRequest), "partial")
 
 	_, err := s.stream(t)
 
-	var failed *connection.AllFailedError
+	var failed *connectiondomain.AllFailedError
 	if !errors.As(err, &failed) || failed.Failures[0].Reason != "invalid request" {
 		t.Errorf("err = %v", err)
 	}
@@ -91,7 +91,7 @@ func TestAStopAfterTheFirstFrameNamesTheConnection(t *testing.T) {
 
 func TestAFailureAfterTheFirstFrameSetsTheConnectionAside(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, tryNext(connection.FailureReasonRateLimited, 0), "partial")
+	s.world.Provider.Script(addressOne, tryNext(connectiondomain.FailureReasonRateLimited, 0), "partial")
 	if _, err := s.stream(t); err == nil {
 		t.Fatal("the first call did not fail")
 	}
@@ -205,6 +205,6 @@ func newQueueSetupFor(t *testing.T, operation string, parallelRequests int) *que
 	}
 	return &queueSetup{
 		world: w, entry: entry,
-		calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
+		calls: connection.NewCalls(connection.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
 	}
 }

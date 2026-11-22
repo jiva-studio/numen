@@ -12,12 +12,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginprocess"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
@@ -111,7 +111,7 @@ type PluginPreferences struct {
 // pluginProviders connects plugin providers to search and model clients.
 type pluginProviders struct {
 	Detection          *providerbridge.Detection
-	RowOptions         *rowoptions.Lists
+	RowOptions         *connection.Lists
 	RunningProviders   *providerbridge.RunningSource
 	SourceDescriptions *sourcebridge.Descriptions
 }
@@ -184,7 +184,7 @@ func AdaptPluginHost(management *PluginManagement, supervision *PluginSupervisio
 		Lender:   lender,
 		pluginProviders: pluginProviders{
 			Detection:          detection,
-			RowOptions:         rowoptions.NewLists(supervision.Storage, management.Config),
+			RowOptions:         connection.NewLists(supervision.Storage, management.Config),
 			RunningProviders:   providerbridge.NewRunningSource(management.Activation, management.Activation.ClientLookup()),
 			SourceDescriptions: sourcebridge.NewDescriptions(supervision.Storage, management.Config),
 		},

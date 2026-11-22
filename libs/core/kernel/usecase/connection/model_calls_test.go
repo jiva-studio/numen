@@ -1,4 +1,4 @@
-package modelcall_test
+package connection_test
 
 import (
 	"context"
@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 )
 
 const (
@@ -25,7 +25,7 @@ const (
 
 type setup struct {
 	world *modelcalltest.World
-	calls *modelcall.Calls
+	calls *connection.Calls
 	one   modelcalltest.Entry
 	two   modelcalltest.Entry
 }
@@ -38,7 +38,7 @@ func newSetup(t *testing.T, operation string) *setup {
 	w.Rows.Set(consumerID, operation, modelcalltest.Row(one, "model-one"), modelcalltest.Row(two, "model-two"))
 	return &setup{
 		world: w, one: one, two: two,
-		calls: modelcall.NewCalls(modelcall.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
+		calls: connection.NewCalls(connection.Connections{Resolve: w.Resolve, ReadSecrets: w.ReadSecrets, Rows: w.Rows.ListRows}, w.Source, w.Clock, w.Waits.Wait, w.Notices.ReportSetAside),
 	}
 }
 
@@ -65,12 +65,12 @@ func (s *setup) callAs(ctx context.Context, pluginID, operation string) (answer,
 	return received, err
 }
 
-func tryNext(reason connection.FailureReason, retryAfter time.Duration) error {
-	return &connection.TryNextError{Reason: reason, RetryAfter: retryAfter}
+func tryNext(reason connectiondomain.FailureReason, retryAfter time.Duration) error {
+	return &connectiondomain.TryNextError{Reason: reason, RetryAfter: retryAfter}
 }
 
-func stop(reason connection.FailureReason) error {
-	return &connection.StopError{Reason: reason}
+func stop(reason connectiondomain.FailureReason) error {
+	return &connectiondomain.StopError{Reason: reason}
 }
 
 func TestTheFirstRowThatAnswersServesTheCall(t *testing.T) {
@@ -88,7 +88,7 @@ func TestTheFirstRowThatAnswersServesTheCall(t *testing.T) {
 
 func TestTheCallCarriesTheSnapshotOfTheRow(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, connection.Row{ConnectionID: s.one.ID, Options: map[string]string{"model": "model-one", "reasoning": "low"}})
+	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, connectiondomain.Row{ConnectionID: s.one.ID, Options: map[string]string{"model": "model-one", "reasoning": "low"}})
 
 	request := modelcalldomain.Request{Operation: modelcalltest.CompleteOperation, Payload: []byte("fix this"), Priority: modelcalldomain.PriorityInteractive}
 	if _, err := s.calls.Call(t.Context(), consumerID, request, func([]byte) error { return nil }); err != nil {
@@ -104,7 +104,7 @@ func TestTheCallCarriesTheSnapshotOfTheRow(t *testing.T) {
 
 func TestAFailureToTryTheNextGoesToTheNextRow(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonRateLimited, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connectiondomain.FailureReasonRateLimited, 0))
 
 	result, err := s.complete(t)
 
@@ -118,11 +118,11 @@ func TestAFailureToTryTheNextGoesToTheNextRow(t *testing.T) {
 
 func TestAStopEndsTheCallAndNamesTheConnection(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.Fail(addressOne, stop(connection.FailureReasonInvalidRequest))
+	s.world.Provider.Fail(addressOne, stop(connectiondomain.FailureReasonInvalidRequest))
 
 	_, err := s.complete(t)
 
-	var rejected *connection.StoppedError
+	var rejected *connectiondomain.StoppedError
 	if !errors.As(err, &rejected) || rejected.ConnectionName != "First" || rejected.Reason != "invalid request" {
 		t.Fatalf("err = %v, want a rejection by First for an invalid request", err)
 	}
@@ -133,7 +133,7 @@ func TestAStopEndsTheCallAndNamesTheConnection(t *testing.T) {
 
 func TestAStopSetsNoCooldown(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.Fail(addressOne, stop(connection.FailureReasonInvalidRequest))
+	s.world.Provider.Fail(addressOne, stop(connectiondomain.FailureReasonInvalidRequest))
 	s.attempt(t)
 
 	if _, err := s.complete(t); err != nil {
@@ -146,12 +146,12 @@ func TestAStopSetsNoCooldown(t *testing.T) {
 }
 
 func TestEveryReasonOfAFailureIsNamedForThePerson(t *testing.T) {
-	for reason, want := range map[connection.FailureReason]string{
-		connection.FailureReasonRejectedKey:     "key rejected",
-		connection.FailureReasonPaymentRequired: "payment required",
-		connection.FailureReasonRateLimited:     "rate limited",
-		connection.FailureReasonUnavailable:     "unavailable",
-		connection.FailureReasonInvalidRequest:  "invalid request",
+	for reason, want := range map[connectiondomain.FailureReason]string{
+		connectiondomain.FailureReasonRejectedKey:     "key rejected",
+		connectiondomain.FailureReasonPaymentRequired: "payment required",
+		connectiondomain.FailureReasonRateLimited:     "rate limited",
+		connectiondomain.FailureReasonUnavailable:     "unavailable",
+		connectiondomain.FailureReasonInvalidRequest:  "invalid request",
 	} {
 		s := newSetup(t, modelcalltest.CompleteOperation)
 		s.world.Provider.FailAlways(addressOne, tryNext(reason, 0))
@@ -159,7 +159,7 @@ func TestEveryReasonOfAFailureIsNamedForThePerson(t *testing.T) {
 
 		_, err := s.complete(t)
 
-		var rejected *connection.StoppedError
+		var rejected *connectiondomain.StoppedError
 		if !errors.As(err, &rejected) || rejected.Reason != want {
 			t.Errorf("reason %v: err = %v, want a rejection for %q", reason, err, want)
 		}
@@ -168,18 +168,18 @@ func TestEveryReasonOfAFailureIsNamedForThePerson(t *testing.T) {
 
 func TestWhenEveryRowFailsTheErrorNamesEachConnectionAndReason(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonPaymentRequired, 0))
-	s.world.Provider.FailAlways(addressTwo, tryNext(connection.FailureReasonRateLimited, 0))
+	s.world.Provider.FailAlways(addressOne, tryNext(connectiondomain.FailureReasonPaymentRequired, 0))
+	s.world.Provider.FailAlways(addressTwo, tryNext(connectiondomain.FailureReasonRateLimited, 0))
 
 	_, err := s.complete(t)
 
-	var failed *connection.AllFailedError
+	var failed *connectiondomain.AllFailedError
 	if !errors.As(err, &failed) {
 		t.Fatalf("err = %v, want *AllFailedError", err)
 	}
-	want := []connection.Failure{
-		{ConnectionName: "First", Reason: "payment required", Code: connection.FailureReasonPaymentRequired},
-		{ConnectionName: "Second", Reason: "rate limited", Code: connection.FailureReasonRateLimited},
+	want := []connectiondomain.Failure{
+		{ConnectionName: "First", Reason: "payment required", Code: connectiondomain.FailureReasonPaymentRequired},
+		{ConnectionName: "Second", Reason: "rate limited", Code: connectiondomain.FailureReasonRateLimited},
 	}
 	if !slices.Equal(failed.Failures, want) {
 		t.Errorf("failures = %v, want %v", failed.Failures, want)
@@ -191,8 +191,8 @@ func TestWhenEveryRowFailsTheErrorNamesEachConnectionAndReason(t *testing.T) {
 
 func TestARowSetAsideEarlierStillAppearsInTheErrorWithItsReason(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonPaymentRequired, 0))
-	s.world.Provider.FailAlways(addressTwo, tryNext(connection.FailureReasonRateLimited, 0))
+	s.world.Provider.FailAlways(addressOne, tryNext(connectiondomain.FailureReasonPaymentRequired, 0))
+	s.world.Provider.FailAlways(addressTwo, tryNext(connectiondomain.FailureReasonRateLimited, 0))
 	s.attempt(t)
 
 	_, err := s.complete(t)
@@ -210,7 +210,7 @@ func TestAPluginWithNoRowGetsNoConnection(t *testing.T) {
 
 	_, err := s.callAs(t.Context(), "md.example.stranger", modelcalltest.CompleteOperation)
 
-	if !errors.Is(err, connection.ErrNoConnection) {
+	if !errors.Is(err, connectiondomain.ErrNoConnection) {
 		t.Errorf("err = %v, want ErrNoConnection", err)
 	}
 	if len(s.world.Source.Opened()) != 0 {
@@ -223,7 +223,7 @@ func TestTheRowsOfAnotherOperationAreNotUsed(t *testing.T) {
 
 	_, err := s.complete(t)
 
-	if !errors.Is(err, connection.ErrNoConnection) {
+	if !errors.Is(err, connectiondomain.ErrNoConnection) {
 		t.Errorf("err = %v, want ErrNoConnection", err)
 	}
 }
@@ -245,7 +245,7 @@ func TestAPluginReachesOnlyTheConnectionsOfItsOwnRows(t *testing.T) {
 	if first.Text != "answer from "+addressOne || second.Text != "answer from "+addressTwo {
 		t.Errorf("first = %q, second = %q", first.Text, second.Text)
 	}
-	if _, err := s.callAs(t.Context(), "md.example.third", modelcalltest.CompleteOperation); !errors.Is(err, connection.ErrNoConnection) {
+	if _, err := s.callAs(t.Context(), "md.example.third", modelcalltest.CompleteOperation); !errors.Is(err, connectiondomain.ErrNoConnection) {
 		t.Errorf("a plugin with no row reached a connection: %v", err)
 	}
 }
@@ -254,7 +254,7 @@ func TestTheKeysGoOnlyToThePluginThatProvidesTheType(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	other := s.world.Add(t, modelcalltest.OtherServerTypeID, "Other", "https://other.test/v1", "sk-other")
 	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, modelcalltest.Row(other, "m"), modelcalltest.Row(s.one, "m"))
-	s.world.Provider.FailAlways("https://other.test/v1", tryNext(connection.FailureReasonUnavailable, 0))
+	s.world.Provider.FailAlways("https://other.test/v1", tryNext(connectiondomain.FailureReasonUnavailable, 0))
 
 	if _, err := s.complete(t); err != nil {
 		t.Fatal(err)
@@ -270,10 +270,12 @@ func TestNothingTheConsumerReceivesContainsAKey(t *testing.T) {
 	for name, arrange := range map[string]func(*setup){
 		"an answer": func(*setup) {},
 		"every row failed": func(s *setup) {
-			s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonRejectedKey, 0))
-			s.world.Provider.FailAlways(addressTwo, tryNext(connection.FailureReasonPaymentRequired, 0))
+			s.world.Provider.FailAlways(addressOne, tryNext(connectiondomain.FailureReasonRejectedKey, 0))
+			s.world.Provider.FailAlways(addressTwo, tryNext(connectiondomain.FailureReasonPaymentRequired, 0))
 		},
-		"a rejection": func(s *setup) { s.world.Provider.FailAlways(addressOne, stop(connection.FailureReasonInvalidRequest)) },
+		"a rejection": func(s *setup) {
+			s.world.Provider.FailAlways(addressOne, stop(connectiondomain.FailureReasonInvalidRequest))
+		},
 		"a plain error of the provider": func(s *setup) {
 			s.world.Provider.FailAlways(addressOne, errors.New("HTTP 401: Authorization: Bearer "+keyOne))
 			s.world.Provider.FailAlways(addressTwo, errors.New("HTTP 401: Authorization: Bearer "+keyTwo))
@@ -337,10 +339,10 @@ func TestAProviderRestartedInTheMiddleOfACallIsStartedAgainForTheRetry(t *testin
 
 func TestEveryProviderOpenedIsReleased(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonUnavailable, 0))
+	s.world.Provider.FailAlways(addressOne, tryNext(connectiondomain.FailureReasonUnavailable, 0))
 
 	s.attempt(t)
-	s.world.Provider.FailAlways(addressTwo, stop(connection.FailureReasonInvalidRequest))
+	s.world.Provider.FailAlways(addressTwo, stop(connectiondomain.FailureReasonInvalidRequest))
 	s.attempt(t)
 
 	if opened, released := len(s.world.Source.Opened()), s.world.Source.Released(); opened != released {
@@ -430,7 +432,7 @@ func TestARowWhoseTypeDoesNotHaveTheOperationIsSkippedWithTheReason(t *testing.T
 
 func TestARowThatNamesNoConnectionIsSkipped(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, connection.Row{ConnectionID: "c0000dead", Options: map[string]string{"model": "m"}}, modelcalltest.Row(s.two, "m"))
+	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation, connectiondomain.Row{ConnectionID: "c0000dead", Options: map[string]string{"model": "m"}}, modelcalltest.Row(s.two, "m"))
 
 	result, err := s.complete(t)
 
@@ -477,14 +479,14 @@ func TestACallFailsWhenTheListOfRowsCannotBeRead(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Rows.Err = errors.New("the settings are unreadable")
 
-	if _, err := s.complete(t); err == nil || errors.Is(err, connection.ErrNoConnection) {
+	if _, err := s.complete(t); err == nil || errors.Is(err, connectiondomain.ErrNoConnection) {
 		t.Errorf("err = %v, want the failure to read the rows", err)
 	}
 }
 
 func TestTheOperationAndThePayloadReachTheProviderWhole(t *testing.T) {
 	s := newSetup(t, modelcalltest.EmbedOperation)
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonPaymentRequired, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connectiondomain.FailureReasonPaymentRequired, 0))
 
 	if _, err := s.callAs(t.Context(), consumerID, modelcalltest.EmbedOperation); err != nil {
 		t.Fatal(err)

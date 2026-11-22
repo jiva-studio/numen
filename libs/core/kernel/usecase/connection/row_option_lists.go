@@ -1,4 +1,4 @@
-package rowoptions
+package connection
 
 import (
 	"context"

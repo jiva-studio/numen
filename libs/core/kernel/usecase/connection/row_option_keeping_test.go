@@ -1,4 +1,4 @@
-package rowoptions_test
+package connection_test
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 )
 
 func TestAnEmptyOrPartialListIsReturnedAndNotStored(t *testing.T) {
@@ -19,7 +19,7 @@ func TestAnEmptyOrPartialListIsReturnedAndNotStored(t *testing.T) {
 		"empty":   {},
 		"partial": {Options: []modelcalldomain.Option{{Value: "model-1"}}, IsPartial: true},
 	} {
-		s := newSetup(t)
+		s := newOptionsSetup(t)
 		s.world.Provider.ScriptOptions(address, listed)
 
 		first, err := s.listModels(t.Context(), modelcalltest.EmbedOperation)
@@ -35,7 +35,7 @@ func TestAnEmptyOrPartialListIsReturnedAndNotStored(t *testing.T) {
 }
 
 func TestAListIsReadAgainOnceItsPluginIsConfiguredOtherwise(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 	s.mustListModels(t)
 
 	s.configs.set(modelcalltest.ProviderPluginID, "executable at another path")
@@ -47,7 +47,7 @@ func TestAListIsReadAgainOnceItsPluginIsConfiguredOtherwise(t *testing.T) {
 }
 
 func TestAListOfAProviderWithAGrantIsReadAgainOnceTheConnectionsItReachesChange(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 	s.grants.set(modelcalltest.ProviderPluginID, "c0000wren@1")
 	s.mustListModels(t)
 	s.mustListModels(t)
@@ -62,7 +62,7 @@ func TestAListOfAProviderWithAGrantIsReadAgainOnceTheConnectionsItReachesChange(
 
 func TestARefreshAsksThePluginPastItsOwnList(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		s := newSetup(t)
+		s := newOptionsSetup(t)
 		s.mustListModels(t)
 		if _, err := s.options.RefreshOptions(t.Context(), s.entry.ID, modelcalltest.ModelOption, nil, []string{modelcalltest.EmbedOperation}); err != nil {
 			t.Fatal(err)
@@ -83,7 +83,7 @@ func TestARefreshAsksThePluginPastItsOwnList(t *testing.T) {
 
 func TestAProviderWithAGrantHasTheLongerReadTimeout(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		s := newSetup(t)
+		s := newOptionsSetup(t)
 		s.grants.set(modelcalltest.ProviderPluginID, "")
 		s.world.Provider.Block(address)
 		result := make(chan error, 1)
@@ -92,12 +92,12 @@ func TestAProviderWithAGrantHasTheLongerReadTimeout(t *testing.T) {
 			result <- err
 		}()
 
-		time.Sleep(rowoptions.ReadTimeout + time.Second)
+		time.Sleep(connection.ReadTimeout + time.Second)
 		synctest.Wait()
 		if len(result) != 0 {
 			t.Fatalf("the read ended within the read timeout of a provider without a grant: %v", <-result)
 		}
-		time.Sleep(rowoptions.GrantedReadTimeout)
+		time.Sleep(connection.GrantedReadTimeout)
 		synctest.Wait()
 		if len(result) == 0 {
 			t.Error("the read did not give up after the read timeout of a provider with a grant")
@@ -128,7 +128,7 @@ func (s *firstHeldSource) ListOptions(
 
 func TestAListOfAnEarlierRevisionDoesNotReplaceTheStoredListOfTheNewRevision(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		s := newSetup(t)
+		s := newOptionsSetup(t)
 		source := &firstHeldSource{Provider: s.world.Provider, release: make(chan struct{})}
 		s.options = s.openOver(source)
 		done := make(chan error, 1)

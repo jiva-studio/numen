@@ -1,4 +1,4 @@
-package modelcall
+package connection
 
 import (
 	"context"
@@ -15,13 +15,13 @@ import (
 // Rows lists the rows plugins call operations through, for a plugin view to offer a choice of them.
 type Rows struct {
 	resolve     connectionport.ResolveConnection
-	rows        ListRows
+	rows        RowLister
 	listOptions ListRowOptions
 }
 
 // NewRows returns the listing over the rows of the plugins, the connections they name and the providers
 // that list the values of their row fields.
-func NewRows(resolve connectionport.ResolveConnection, rows ListRows, listOptions ListRowOptions) *Rows {
+func NewRows(resolve connectionport.ResolveConnection, rows RowLister, listOptions ListRowOptions) *Rows {
 	return &Rows{resolve: resolve, rows: rows, listOptions: listOptions}
 }
 

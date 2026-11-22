@@ -1,4 +1,4 @@
-package rowoptions_test
+package connection_test
 
 import (
 	"context"
@@ -8,12 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/rowoptions"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 )
 
 const (
@@ -22,22 +22,22 @@ const (
 	reasoningOperation = "llm.reasoning"
 )
 
-type setup struct {
+type optionsSetup struct {
 	world   *modelcalltest.World
 	files   *memoryLists
 	running *runningProviders
 	configs *revisions
 	grants  *revisions
-	options *rowoptions.Options
+	options *connection.Options
 	entry   modelcalltest.Entry
 }
 
-func newSetup(t *testing.T) *setup {
+func newOptionsSetup(t *testing.T) *optionsSetup {
 	t.Helper()
 	w := modelcalltest.New()
-	s := &setup{
+	s := &optionsSetup{
 		world: w, entry: w.AddServer(t, "First", address, "sk-one"),
-		files: &memoryLists{byPlugin: map[string][]connection.OptionList{}}, running: &runningProviders{provider: w.Provider},
+		files: &memoryLists{byPlugin: map[string][]connectiondomain.OptionList{}}, running: &runningProviders{provider: w.Provider},
 		configs: &revisions{byPlugin: map[string]string{}}, grants: &revisions{byPlugin: map[string]string{}},
 	}
 	w.AddRowField(modelcalltest.ServerTypeID, manifest.ConnectionField{Key: reasoningField, Type: "enum", Title: "Reasoning", OptionsFrom: reasoningOperation})
@@ -45,17 +45,17 @@ func newSetup(t *testing.T) *setup {
 	return s
 }
 
-func (s *setup) listModels(ctx context.Context, operations ...string) ([]modelcalldomain.Option, error) {
+func (s *optionsSetup) listModels(ctx context.Context, operations ...string) ([]modelcalldomain.Option, error) {
 	return s.options.ListOptions(ctx, s.entry.ID, modelcalltest.ModelOption, map[string]string{modelcalltest.ModelOption: "model-1", reasoningField: "low"}, operations)
 }
 
-func (s *setup) listReasoningLevels(ctx context.Context, model string) ([]modelcalldomain.Option, error) {
+func (s *optionsSetup) listReasoningLevels(ctx context.Context, model string) ([]modelcalldomain.Option, error) {
 	row := map[string]string{modelcalltest.ModelOption: model, reasoningField: "low"}
 	return s.options.ListOptions(ctx, s.entry.ID, reasoningField, row, []string{modelcalltest.EmbedOperation})
 }
 
 func TestListOptionsReturnsTheOptionsTheProviderListsForTheField(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 
 	options, err := s.listModels(t.Context(), modelcalltest.EmbedOperation)
 
@@ -66,7 +66,7 @@ func TestListOptionsReturnsTheOptionsTheProviderListsForTheField(t *testing.T) {
 }
 
 func TestListOptionsCallsTheOperationOfTheFieldWithTheConnectionItsKeyAndTheRowSoFar(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 
 	if _, err := s.listReasoningLevels(t.Context(), "model-1"); err != nil {
 		t.Fatal(err)
@@ -84,67 +84,67 @@ func TestListOptionsCallsTheOperationOfTheFieldWithTheConnectionItsKeyAndTheRowS
 }
 
 func TestAFieldTheTypeListsNoOptionsForHasNone(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 
 	_, err := s.options.ListOptions(t.Context(), s.entry.ID, "temperature", nil, nil)
 
-	if !errors.Is(err, rowoptions.ErrNoOptions) || len(s.world.Provider.Calls()) != 0 {
+	if !errors.Is(err, connection.ErrNoOptions) || len(s.world.Provider.Calls()) != 0 {
 		t.Errorf("err = %v, calls = %v, want ErrNoOptions and no call", err, s.world.Provider.Calls())
 	}
 }
 
 func TestAConnectionThatIsNotInTheListIsNotFound(t *testing.T) {
-	s := newSetup(t)
-	if _, err := s.options.ListOptions(t.Context(), "c0000dead", modelcalltest.ModelOption, nil, nil); !errors.Is(err, connection.ErrNotFound) {
+	s := newOptionsSetup(t)
+	if _, err := s.options.ListOptions(t.Context(), "c0000dead", modelcalltest.ModelOption, nil, nil); !errors.Is(err, connectiondomain.ErrNotFound) {
 		t.Errorf("err = %v, want ErrNotFound", err)
 	}
 }
 
 func TestAConnectionWhoseTypeIsNotProvidedHasNoOptions(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 	s.world.SetAvailable(modelcalltest.ProviderPluginID, false)
-	if _, err := s.listModels(t.Context()); !errors.Is(err, connection.ErrTypeUnavailable) {
+	if _, err := s.listModels(t.Context()); !errors.Is(err, connectiondomain.ErrTypeUnavailable) {
 		t.Errorf("err = %v, want ErrTypeUnavailable", err)
 	}
 }
 
 func TestAFailureOfTheProviderIsAProviderUnavailableWithTheReason(t *testing.T) {
-	for name, arrange := range map[string]func(*setup) string{
-		"a rejected key": func(s *setup) string {
-			s.world.Provider.FailAlways(address, &connection.TryNextError{Reason: connection.FailureReasonRejectedKey})
+	for name, arrange := range map[string]func(*optionsSetup) string{
+		"a rejected key": func(s *optionsSetup) string {
+			s.world.Provider.FailAlways(address, &connectiondomain.TryNextError{Reason: connectiondomain.FailureReasonRejectedKey})
 			return "key rejected"
 		},
-		"a stop": func(s *setup) string {
-			s.world.Provider.FailAlways(address, &connection.StopError{Reason: connection.FailureReasonInvalidRequest})
+		"a stop": func(s *optionsSetup) string {
+			s.world.Provider.FailAlways(address, &connectiondomain.StopError{Reason: connectiondomain.FailureReasonInvalidRequest})
 			return "invalid request"
 		},
-		"an error of no kind": func(s *setup) string {
+		"an error of no kind": func(s *optionsSetup) string {
 			s.world.Provider.FailAlways(address, errors.New("rpc error: connection reset"))
 			return "unavailable"
 		},
-		"a plugin that does not start": func(s *setup) string {
+		"a plugin that does not start": func(s *optionsSetup) string {
 			s.world.Source.FailOpen(modelcalltest.ProviderPluginID, errors.New("missing program"))
 			return "unavailable"
 		},
-		"a key that is missing": func(s *setup) string {
+		"a key that is missing": func(s *optionsSetup) string {
 			clear(s.world.Keys.Values)
 			return "key missing"
 		},
 	} {
-		s := newSetup(t)
+		s := newOptionsSetup(t)
 		want := arrange(s)
 
 		_, err := s.listModels(t.Context())
 
-		if !errors.Is(err, rowoptions.ErrProviderUnavailable) || !strings.HasSuffix(err.Error(), want) {
+		if !errors.Is(err, connection.ErrProviderUnavailable) || !strings.HasSuffix(err.Error(), want) {
 			t.Errorf("%s: err = %v, want a provider unavailable for %q", name, err, want)
 		}
 	}
 }
 
 func TestAFailureSetsNoCooldownBecauseAPersonAskedForTheList(t *testing.T) {
-	s := newSetup(t)
-	s.world.Provider.Fail(address, &connection.TryNextError{Reason: connection.FailureReasonPaymentRequired})
+	s := newOptionsSetup(t)
+	s.world.Provider.Fail(address, &connectiondomain.TryNextError{Reason: connectiondomain.FailureReasonPaymentRequired})
 	if _, err := s.listModels(t.Context()); err == nil {
 		t.Fatal("the ask that the provider failed succeeded")
 	}
@@ -155,7 +155,7 @@ func TestAFailureSetsNoCooldownBecauseAPersonAskedForTheList(t *testing.T) {
 }
 
 func TestACanceledAskReturnsTheContextError(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := s.listModels(ctx); !errors.Is(err, context.Canceled) {
@@ -164,7 +164,7 @@ func TestACanceledAskReturnsTheContextError(t *testing.T) {
 }
 
 func TestTheKeyDoesNotLeaveInTheErrorText(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 	s.world.Provider.FailAlways(address, errors.New("HTTP 401 for Bearer sk-one"))
 	_, err := s.listModels(t.Context())
 	if err == nil || strings.Contains(err.Error(), "sk-one") {
@@ -173,12 +173,12 @@ func TestTheKeyDoesNotLeaveInTheErrorText(t *testing.T) {
 }
 
 func TestAReadLongerThanTheReadTimeoutFailsOnceAsUnavailable(t *testing.T) {
-	s := newSetup(t)
+	s := newOptionsSetup(t)
 	s.world.Provider.Block(address)
 
 	_, err := s.listModels(t.Context())
 
-	if !errors.Is(err, rowoptions.ErrProviderUnavailable) || !strings.Contains(err.Error(), connection.FailureReasonUnavailable.String()) {
+	if !errors.Is(err, connection.ErrProviderUnavailable) || !strings.Contains(err.Error(), connectiondomain.FailureReasonUnavailable.String()) {
 		t.Errorf("err = %v, want unavailable", err)
 	}
 	if calls := len(s.world.Provider.Calls()); calls != 1 {

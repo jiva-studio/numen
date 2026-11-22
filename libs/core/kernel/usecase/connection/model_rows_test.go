@@ -1,4 +1,4 @@
-package modelcall_test
+package connection_test
 
 import (
 	"context"
@@ -6,11 +6,11 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	modelcalldomain "github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 )
 
 func (s *setup) completePreferring(t *testing.T, preferred *modelcalldomain.PreferredRow) (string, error) {
@@ -42,7 +42,7 @@ func TestAPreferredRowIsAskedFirstWithItsOptions(t *testing.T) {
 
 func TestTheRowsAfterAPreferredRowThatFailsAreAskedInOrder(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.Fail(addressTwo, tryNext(connection.FailureReasonRateLimited, 0))
+	s.world.Provider.Fail(addressTwo, tryNext(connectiondomain.FailureReasonRateLimited, 0))
 
 	text, err := s.completePreferring(t, &modelcalldomain.PreferredRow{ConnectionID: s.two.ID})
 
@@ -70,15 +70,15 @@ func TestAPreferredConnectionOutsideTheRowsKeepsTheirOrder(t *testing.T) {
 
 func TestAnExclusiveRowThatFailsEndsTheCallWithItsFailure(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.FailAlways(addressTwo, tryNext(connection.FailureReasonRateLimited, 0))
+	s.world.Provider.FailAlways(addressTwo, tryNext(connectiondomain.FailureReasonRateLimited, 0))
 
 	_, err := s.completePreferring(t, &modelcalldomain.PreferredRow{ConnectionID: s.two.ID, IsExclusive: true})
 
-	var failed *connection.AllFailedError
+	var failed *connectiondomain.AllFailedError
 	if !errors.As(err, &failed) {
 		t.Fatalf("err = %v, want *AllFailedError", err)
 	}
-	want := []connection.Failure{{ConnectionName: "Second", Reason: "rate limited", Code: connection.FailureReasonRateLimited}}
+	want := []connectiondomain.Failure{{ConnectionName: "Second", Reason: "rate limited", Code: connectiondomain.FailureReasonRateLimited}}
 	if !slices.Equal(failed.Failures, want) {
 		t.Errorf("failures = %v, want %v", failed.Failures, want)
 	}
@@ -108,7 +108,7 @@ func TestAnExclusiveConnectionOutsideTheRowsGetsNoConnection(t *testing.T) {
 
 	_, err := s.completePreferring(t, &modelcalldomain.PreferredRow{ConnectionID: other.ID, IsExclusive: true})
 
-	if !errors.Is(err, connection.ErrNoConnection) {
+	if !errors.Is(err, connectiondomain.ErrNoConnection) {
 		t.Fatalf("err = %v, want ErrNoConnection", err)
 	}
 	if len(s.world.Provider.CallsTo(addressOne)) != 0 || len(s.world.Provider.CallsTo(addressTwo)) != 0 {
@@ -156,8 +156,8 @@ type listedOptions struct {
 	operations   []string
 }
 
-func newRows(w *modelcalltest.World, asked *listedOptions) *modelcall.Rows {
-	return modelcall.NewRows(w.Resolve, w.Rows.ListRows,
+func newRows(w *modelcalltest.World, asked *listedOptions) *connection.Rows {
+	return connection.NewRows(w.Resolve, w.Rows.ListRows,
 		func(_ context.Context, connectionID, field string, options map[string]string, operations []string) ([]modelcalldomain.Option, error) {
 			*asked = listedOptions{connectionID, field, options, operations}
 			return []modelcalldomain.Option{{Value: "model-one", Title: "Model one"}}, nil
@@ -189,7 +189,7 @@ func TestTheValuesOfARowFieldOfAConnectionOutsideTheRowsAreNotFound(t *testing.T
 
 	_, err := listing.ListRowOptions(t.Context(), consumerID, modelcalltest.ChatOperation, other.ID, "model", nil)
 
-	if !errors.Is(err, connection.ErrNotFound) {
+	if !errors.Is(err, connectiondomain.ErrNotFound) {
 		t.Fatalf("err = %v, want not found", err)
 	}
 	if asked.connectionID != "" {

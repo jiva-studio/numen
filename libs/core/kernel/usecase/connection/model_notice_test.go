@@ -1,25 +1,25 @@
-package modelcall_test
+package connection_test
 
 import (
 	"slices"
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
-	connectionuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	connectiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 )
 
 func TestThePersonIsNotifiedWhenARowIsSetAsideAndTheNextOneAnswersWithBothNames(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonPaymentRequired, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connectiondomain.FailureReasonPaymentRequired, 0))
 
 	if _, err := s.complete(t); err != nil {
 		t.Fatal(err)
 	}
 
-	want := []connection.SetAside{{ConnectionID: s.one.ID, ConnectionName: "First", Reason: connection.FailureReasonPaymentRequired, NextName: "Second"}}
+	want := []connectiondomain.SetAside{{ConnectionID: s.one.ID, ConnectionName: "First", Reason: connectiondomain.FailureReasonPaymentRequired, NextName: "Second"}}
 	if got := s.world.Notices.List(); !slices.Equal(got, want) {
 		t.Errorf("notices = %v, want %v", got, want)
 	}
@@ -27,7 +27,7 @@ func TestThePersonIsNotifiedWhenARowIsSetAsideAndTheNextOneAnswersWithBothNames(
 
 func TestThePersonIsNotifiedOncePerCooldownOfAConnection(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonRateLimited, 0))
+	s.world.Provider.FailAlways(addressOne, tryNext(connectiondomain.FailureReasonRateLimited, 0))
 
 	for range 2 {
 		if _, err := s.complete(t); err != nil {
@@ -50,25 +50,25 @@ func TestThePersonIsNotifiedOncePerCooldownOfAConnection(t *testing.T) {
 
 func TestAnotherReasonOfTheSameConnectionIsNotifiedAgain(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonRateLimited, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connectiondomain.FailureReasonRateLimited, 0))
 	s.attempt(t)
 	s.world.Clock.Advance(2 * time.Minute)
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonPaymentRequired, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connectiondomain.FailureReasonPaymentRequired, 0))
 	s.attempt(t)
 
 	got := s.world.Notices.List()
 
-	if len(got) != 2 || got[0].Reason != connection.FailureReasonRateLimited || got[1].Reason != connection.FailureReasonPaymentRequired {
+	if len(got) != 2 || got[0].Reason != connectiondomain.FailureReasonRateLimited || got[1].Reason != connectiondomain.FailureReasonPaymentRequired {
 		t.Errorf("notices = %v", got)
 	}
 }
 
 func TestAnEditedConnectionIsNotifiedAgain(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonRejectedKey, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connectiondomain.FailureReasonRejectedKey, 0))
 	s.attempt(t)
 	s.world.Edit(t, s.one, "First, new key")
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonRejectedKey, 0))
+	s.world.Provider.Fail(addressOne, tryNext(connectiondomain.FailureReasonRejectedKey, 0))
 
 	s.attempt(t)
 
@@ -79,8 +79,8 @@ func TestAnEditedConnectionIsNotifiedAgain(t *testing.T) {
 
 func TestThePersonIsNotNotifiedWhenEveryRowFails(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.FailAlways(addressOne, tryNext(connection.FailureReasonPaymentRequired, 0))
-	s.world.Provider.FailAlways(addressTwo, tryNext(connection.FailureReasonPaymentRequired, 0))
+	s.world.Provider.FailAlways(addressOne, tryNext(connectiondomain.FailureReasonPaymentRequired, 0))
+	s.world.Provider.FailAlways(addressTwo, tryNext(connectiondomain.FailureReasonPaymentRequired, 0))
 
 	s.attempt(t)
 
@@ -91,7 +91,7 @@ func TestThePersonIsNotNotifiedWhenEveryRowFails(t *testing.T) {
 
 func TestThePersonIsNotNotifiedAboutARowThatWasOnlySkipped(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	delete(s.world.Keys.Values, connectionuse.GetEntryName(s.one.ID, "apiKey"))
+	delete(s.world.Keys.Values, connection.GetEntryName(s.one.ID, "apiKey"))
 
 	result, err := s.complete(t)
 
@@ -106,7 +106,7 @@ func TestThePersonIsNotNotifiedAboutARowThatWasOnlySkipped(t *testing.T) {
 
 func TestThePersonIsNotNotifiedAboutAStop(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
-	s.world.Provider.Fail(addressOne, stop(connection.FailureReasonInvalidRequest))
+	s.world.Provider.Fail(addressOne, stop(connectiondomain.FailureReasonInvalidRequest))
 
 	s.attempt(t)
 
@@ -118,9 +118,9 @@ func TestThePersonIsNotNotifiedAboutAStop(t *testing.T) {
 func TestThePersonIsNotNotifiedAboutADiscoveredRow(t *testing.T) {
 	s := newSetup(t, modelcalltest.CompleteOperation)
 	s.world.Rows.Set(consumerID, modelcalltest.CompleteOperation,
-		connection.Row{ConnectionID: s.one.ID, Options: map[string]string{"model": "m"}, IsDiscovered: true},
-		connection.Row{ConnectionID: s.two.ID, Options: map[string]string{"model": "m"}, IsDiscovered: true})
-	s.world.Provider.Fail(addressOne, tryNext(connection.FailureReasonPaymentRequired, 0))
+		connectiondomain.Row{ConnectionID: s.one.ID, Options: map[string]string{"model": "m"}, IsDiscovered: true},
+		connectiondomain.Row{ConnectionID: s.two.ID, Options: map[string]string{"model": "m"}, IsDiscovered: true})
+	s.world.Provider.Fail(addressOne, tryNext(connectiondomain.FailureReasonPaymentRequired, 0))
 
 	result, err := s.complete(t)
 

@@ -1,4 +1,4 @@
-package rowoptions
+package connection
 
 import (
 	"context"
@@ -45,11 +45,11 @@ type ConfigRevisions interface {
 // false where the plugin holds no grant.
 type GrantRevision func(pluginID string) (string, bool, error)
 
-// Deps is what Options lists from: the connections and their secrets, the providers Source opens, the
+// OptionsDeps is what Options lists from: the connections and their secrets, the providers Source opens, the
 // providers Running opens while their plugins run, the Lists the answers are kept in, the Titles of the
 // operations for the list of running plugins (nil names them by their ids), and the connections a provider
 // reaches through its grants.
-type Deps struct {
+type OptionsDeps struct {
 	Resolve     connectionport.ResolveConnection
 	ReadSecrets connectionport.ReadConnectionSecrets
 	Source      connectionport.ProviderSource
@@ -66,11 +66,11 @@ type Deps struct {
 // and for a provider that holds a grant, only for the connections the grant reached then. An empty listing
 // and one the provider marks partial are not kept.
 type Options struct {
-	deps Deps
+	deps OptionsDeps
 }
 
 // NewOptions returns the listing over deps.
-func NewOptions(deps Deps) *Options {
+func NewOptions(deps OptionsDeps) *Options {
 	return &Options{deps: deps}
 }
 

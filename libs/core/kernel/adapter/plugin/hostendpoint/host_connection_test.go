@@ -20,8 +20,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	modelcalls "github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall/modelcalltest"
+	connectionusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection/modelcalltest"
 )
 
 // scriptedCalls is a ModelCalls that sends the frames the test sets, answers done, and records who asked.
@@ -257,7 +257,7 @@ func TestAConsumerReceivesNoKeyInAnyAnswer(t *testing.T) {
 		world.Rows.Set("md.numen.b", modelcalltest.CompleteOperation, modelcalltest.Row(one, "m"), modelcalltest.Row(two, "m"))
 		world.Rows.Set("md.numen.b", modelcalltest.ChatOperation, modelcalltest.Row(one, "m"), modelcalltest.Row(two, "m"))
 		arrange(world)
-		client, recording := newConnectionClient(t, modelcalls.NewCalls(lookupsOf(world), world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside), "token-b")
+		client, recording := newConnectionClient(t, connectionusecase.NewCalls(lookupsOf(world), world.Source, world.Clock, world.Waits.Wait, world.Notices.ReportSetAside), "token-b")
 
 		_, completeErr := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: modelcalltest.CompleteOperation})
 		_, chatErr := call(t.Context(), client, &v1.HostConnectionServiceCallRequest{Operation: modelcalltest.ChatOperation})
@@ -317,6 +317,6 @@ func TestThePluginEndpointDoesNotMountConnectionCallService(t *testing.T) {
 	}
 }
 
-func lookupsOf(world *modelcalltest.World) modelcalls.Connections {
-	return modelcalls.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows}
+func lookupsOf(world *modelcalltest.World) connectionusecase.Connections {
+	return connectionusecase.Connections{Resolve: world.Resolve, ReadSecrets: world.ReadSecrets, Rows: world.Rows.ListRows}
 }
