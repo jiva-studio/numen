@@ -3,7 +3,12 @@
  * encode to, and they are read here as the TypeScript messages.
  */
 import { describe, expect, it } from 'vitest'
-import type { Methods } from './templates'
+import type {
+  CreateNoteRequest,
+  CreateNoteResponse,
+  ListFieldsRequest,
+  ListFieldsResponse,
+} from './templates'
 
 const fixtures = import.meta.glob('../../testdata/api/*.json', {
   eager: true,
@@ -12,8 +17,18 @@ const fixtures = import.meta.glob('../../testdata/api/*.json', {
 
 const read = (name: string): unknown => fixtures[`../../testdata/api/${name}.json`]
 
-const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
-  ListFields: {
+interface Exchange<Request, Response> {
+  method: string
+  request: Request
+  response: Response
+}
+
+const EXPECTED: [
+  Exchange<ListFieldsRequest, ListFieldsResponse>,
+  Exchange<CreateNoteRequest, CreateNoteResponse>,
+] = [
+  {
+    method: 'ListFields',
     request: { template: 'Templates/Meeting.md', folder: 'notes' },
     response: {
       fields: [
@@ -22,18 +37,19 @@ const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
       ],
     },
   },
-  CreateNote: {
+  {
+    method: 'CreateNote',
     request: {
       template: 'Templates/Meeting.md',
       folder: 'notes',
-      values: { Client: 'Acme', Kind: 'visit' },
+      values: { client: 'Acme', kind: 'visit' },
     },
     response: { path: 'notes/Meeting.md' },
   },
-}
+]
 
 describe('the templates service contract', () => {
-  for (const [method, expected] of Object.entries(EXPECTED)) {
+  for (const { method, ...expected } of EXPECTED) {
     it(`${method} fixtures equal the typed messages`, () => {
       expect(read(`${method}.request`)).toEqual(expected.request)
       expect(read(`${method}.response`)).toEqual(expected.response)
@@ -42,6 +58,6 @@ describe('the templates service contract', () => {
 
   it('has a fixture pair for every method', () => {
     const names = Object.keys(fixtures).map((path) => path.split('/').pop())
-    expect(names).toHaveLength(Object.keys(EXPECTED).length * 2)
+    expect(names).toHaveLength(EXPECTED.length * 2)
   })
 })

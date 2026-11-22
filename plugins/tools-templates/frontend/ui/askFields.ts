@@ -3,7 +3,7 @@ import type { Field } from '../api/templates'
 import FieldsForm from './FieldsForm.vue'
 
 /** The values the person gave by label, and nothing when the person cancelled. */
-export type Answers = Readonly<Record<string, string>> | undefined
+type Answers = Readonly<Record<string, string>> | undefined
 
 /** What asks the person for the fields of a template. */
 export type AskFields = (title: string, fields: readonly Field[]) => Promise<Answers>

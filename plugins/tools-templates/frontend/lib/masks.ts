@@ -26,9 +26,6 @@ export function parseMasks(raw: string): readonly Mask[] {
   return DEFAULTS.flatMap((entry) => parseEntry(entry) ?? [])
 }
 
-/** The mask as written. */
-export const maskToText = (mask: Mask): string => mask.segments.join('/')
-
 const escapeLiteral = (text: string): string => text.replace(/[.+^${}()|\\\]]/g, '\\$&')
 
 const toExpression = (segment: string): RegExp => {

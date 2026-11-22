@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { couldHold, findGroup, maskToText, parseMasks } from './masks'
+import { couldHold, findGroup, parseMasks } from './masks'
 
 interface Table {
   readonly parse: readonly { raw: string; masks: readonly string[] }[]
@@ -17,7 +17,7 @@ const fixtures = import.meta.glob('../../testdata/masks.json', {
 const table = fixtures['../../testdata/masks.json']
 if (!table) throw new Error('no testdata/masks.json')
 
-const texts = (raw: string) => parseMasks(raw).map(maskToText)
+const texts = (raw: string) => parseMasks(raw).map((mask) => mask.segments.join('/'))
 
 describe('the masks setting', () => {
   it('is read as the Go side reads it', () => {

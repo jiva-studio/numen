@@ -21,6 +21,6 @@ export interface TemplatesApi {
 const api = createApi(SERVICE)
 
 export const templatesApi: TemplatesApi = {
-  listFields: (request) => api.call('ListFields', request),
-  createNote: (request) => api.call('CreateNote', request),
+  listFields: (request) => api.call<ListFieldsRequest, ListFieldsResponse>('ListFields', request),
+  createNote: (request) => api.call<CreateNoteRequest, CreateNoteResponse>('CreateNote', request),
 }

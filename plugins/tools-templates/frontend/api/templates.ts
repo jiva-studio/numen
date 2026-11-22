@@ -6,13 +6,6 @@
 /** The service name the manifest declares. */
 export const SERVICE = 'md.numen.tools.templates'
 
-/** The error codes of a failed method that this plugin reads. */
-export const ErrorCode = {
-  invalidArgument: 'invalid_argument',
-  notFound: 'not_found',
-  failedPrecondition: 'failed_precondition',
-} as const
-
 /** Asks what a template asks of the person who makes a note from it. */
 export interface ListFieldsRequest {
   readonly template: string
@@ -42,10 +35,4 @@ export interface CreateNoteRequest {
 /** Names the note that was made. */
 export interface CreateNoteResponse {
   readonly path: string
-}
-
-/** The request and response of each method by name. */
-export interface Methods {
-  ListFields: { request: ListFieldsRequest; response: ListFieldsResponse }
-  CreateNote: { request: CreateNoteRequest; response: CreateNoteResponse }
 }

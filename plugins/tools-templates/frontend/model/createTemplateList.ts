@@ -18,10 +18,11 @@ export class TemplateListError extends Error {
 
 const NOT_FOUND = new Set<string | number>(['not_found', 5])
 
-const isMissing = (error: Caught): boolean =>
-  typeof error === 'object' &&
-  error !== null &&
-  NOT_FOUND.has((error as { code?: string | number }).code)
+const isMissing = (error: Caught): boolean => {
+  if (typeof error !== 'object' || error === null) return false
+  const { code } = error as { code?: string | number }
+  return code !== undefined && NOT_FOUND.has(code)
+}
 
 /** Lists the notes the masks of the setting name. */
 export function createTemplateList(deps: {

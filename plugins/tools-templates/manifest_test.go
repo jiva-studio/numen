@@ -2,10 +2,11 @@ package templates
 
 import (
 	"encoding/json"
+	"reflect"
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/plugins/tools-templates/backend/mask"
+	"github.com/jiva-studio/numen/plugins/tools-templates/backend/domain/mask"
 )
 
 type manifestShape struct {
@@ -64,7 +65,7 @@ func TestTheManifestDeclaresTheCommandTheMasksSettingTheFolderEntryAndTheService
 	if len(shape.Settings) != 1 || shape.Settings[0].Key != "templates" || shape.Settings[0].Type != "string" {
 		t.Errorf("settings = %+v", shape.Settings)
 	}
-	if got, want := mask.Parse(shape.Settings[0].Default).String(), mask.Parse("").String(); got != want {
+	if got, want := mask.Parse(shape.Settings[0].Default), mask.Parse(""); !reflect.DeepEqual(got, want) {
 		t.Errorf("the default of the setting reads as %v, not as the defaults %v", got, want)
 	}
 	slots := shape.Contributes.Slots

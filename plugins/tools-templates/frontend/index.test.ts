@@ -7,7 +7,6 @@ import type {
   Field,
   ListFieldsResponse,
 } from './api/templates'
-import type { Answers } from './ui/askFields'
 import { activate } from './index'
 
 const PLUGIN_ID = 'md.numen.tools.templates'
@@ -71,7 +70,7 @@ const setup = (
   folders: Record<string, readonly VaultEntry[]> = invented,
   options: {
     fields?: Result<ListFieldsResponse, ApiError>
-    answers?: Answers
+    answers?: Readonly<Record<string, string>> | undefined
     isDenied?: boolean
   } = {},
 ) => {
@@ -140,7 +139,7 @@ describe('the templates frontend', () => {
     expect(items).toEqual([])
   })
 
-  it('tells the user when the templates cannot be listed', async () => {
+  it('reports a folder that cannot be listed', async () => {
     const { context, errors } = setup(created('notes/Meeting.md'), invented, { isDenied: true })
 
     const items = await context.getRegisteredCommands()[0]?.listItems?.(targetOf('a.md', false))
