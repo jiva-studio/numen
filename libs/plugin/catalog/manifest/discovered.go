@@ -117,10 +117,8 @@ func collectPluginContributionClaims(
 	for _, reader := range c.Readers {
 		claim("reader", "tab", getReaderTabKind(reader.ID))
 	}
-	for _, capability := range c.ViewCapabilities {
-		if slices.Contains(GetApplicationViewCapabilities(), capability) {
-			claim("view capability", viewCapabilitySpace, capability)
-		}
+	for _, capability := range listApplicationViewCapabilities(c.ViewCapabilities) {
+		claim("view capability", viewCapabilitySpace, capability)
 	}
 	for _, f := range c.SearchFunctions.Functions {
 		claim("search function", searchFunctionSpace, f.Name)
@@ -208,4 +206,10 @@ func getReaderTabKind(id string) string {
 		return id
 	}
 	return readerTabKindPrefix + id
+}
+
+func listApplicationViewCapabilities(capabilities []string) []string {
+	return slices.DeleteFunc(slices.Clone(capabilities), func(capability string) bool {
+		return !slices.Contains(GetApplicationViewCapabilities(), capability)
+	})
 }
