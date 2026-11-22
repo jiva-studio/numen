@@ -17,7 +17,6 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -151,12 +150,8 @@ func openTriggers(install pluginInstall, exec *PluginExecution, settingsDeps set
 	config := getWhenConfig(settingsDeps, exec.Runtime.Listing)
 	return trigger.NewTriggers(trigger.TriggersDeps{
 		Plugins: running.Runtime.Manifests, Run: newPluginCommands(config, vaultDeps, running, nil).Run, Readers: vaultDeps.Readers,
-		Notes: pluginsNewNoteReader(vaultDeps), Types: running.Watch.ContentTypeTable, Versions: vaultDeps.TextVersions.Texts, Config: config,
+		Types: running.Watch.ContentTypeTable, Versions: vaultDeps.TextVersions.Texts, Config: config,
 	})
-}
-
-func pluginsNewNoteReader(v vaultWiring) noteport.NoteReader {
-	return note.NewReadFrontmatter(v.Readers)
 }
 
 func getWhenConfig(settingsDeps settingsWiring, plugins pluginmanifest.PluginLister) pluginport.WhenConfig {

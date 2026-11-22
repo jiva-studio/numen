@@ -7,16 +7,17 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // live finds the live version of a file among its versions.
 type live struct {
-	files TextFileStores
-	notes noteport.NoteReader
+	files   TextFileStores
+	readers vaultport.VaultReaders
 }
 
 func (u live) find(
@@ -46,7 +47,11 @@ func (u live) readSourceProperties(
 	if !slices.ContainsFunc(versions, domain.TextVersion.IsFromProperty) {
 		return nil, nil
 	}
-	_, properties, err := u.notes.Execute(ctx, v, path)
+	reader, err := u.readers.Open(v)
+	if err != nil {
+		return nil, fmt.Errorf("read the properties of %s: %w", path, err)
+	}
+	_, properties, err := edit.ReadHead(ctx, reader, path)
 	if err != nil {
 		return nil, fmt.Errorf("read the properties of %s: %w", path, err)
 	}

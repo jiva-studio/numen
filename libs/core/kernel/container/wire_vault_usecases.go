@@ -122,8 +122,7 @@ func vaultQueries(db *vaultIndex) query.UseCases {
 			ResolveLinks: query.NewResolveLinks(links),
 		},
 		Browse: query.Browsing{
-			Connection:     query.NewGetConnection(links),
-			IsVaultIndexed: query.NewIsVaultIndexed(links),
+			Connection: query.NewGetConnection(links),
 		},
 	}
 }
@@ -162,7 +161,7 @@ func vaultMakeRefresh(c vaultWiring, db *vaultIndex, notes noteport.NoteReposito
 func newTextVersions(options vaultconfig.Options, plugins textversion.TextPlugins, clock machineport.Clock, db *vaultIndex) *textVersions {
 	files := derivedfile.TextStores{Options: options, Decoded: derivedfile.NewDecodedTexts(derivedfile.DefaultDecodedBudget)}
 	stores, readers := db.Versions, vaultreader.Readers{Options: options}
-	texts := textversion.NewTexts(stores, files, readers, note.NewReadFrontmatter(readers), clock)
+	texts := textversion.NewTexts(stores, files, readers, clock)
 	changes := textversion.NewChanges(texts)
 	versions := textversion.NewVersions(stores, files, plugins, clock, changes)
 	return &textVersions{Versions: versions, Texts: texts, Changes: changes}
@@ -218,5 +217,5 @@ func openVaults(c vaultWiring, db *vaultIndex, out io.Writer, label string, reco
 
 func setShellNotes(api *shell.API, db *vaultIndex) {
 	queries := vaultQueries(db)
-	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, queries.Browse.IsVaultIndexed, api.Window, &api.Changes)
+	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, db.NoteQueries(), api.Window, &api.Changes)
 }

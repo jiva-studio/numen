@@ -2,8 +2,8 @@ package plugincommand_test
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -20,14 +20,14 @@ type useCases struct {
 
 func newUseCases(
 	commands plugincommand.PluginCommands, runs plugincommand.PluginCommandRuns, types contenttypeport.ContentTypeTable,
-	notes noteport.NoteReader, config pluginport.WhenConfig,
+	readers vaultport.VaultReaders, config pluginport.WhenConfig,
 ) useCases {
 	if types == nil {
 		types = noTypes{}
 	}
 	conditions := when.NewConditions()
 	list := plugincommand.NewList(commands, nil, conditions)
-	run := plugincommand.NewRun(commands, runs, types, notes, config, conditions)
+	run := plugincommand.NewRun(commands, runs, types, readers, config, conditions)
 	return useCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, types),
