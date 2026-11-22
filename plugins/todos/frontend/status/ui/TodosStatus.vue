@@ -166,29 +166,29 @@ function onTick(task: Task) {
 }
 
 .todos-status__popover {
-  --popover-width: calc(24 * var(--numen-chrome-unit));
-  --popover-max-height: calc(22 * var(--numen-chrome-unit));
-  --popover-pad: var(--numen-chrome-inset);
+  --popover-width: 24rem;
+  --popover-max-height: 22rem;
+  --popover-pad: 0.5rem;
   position: absolute;
   top: calc(100% + var(--popover-offset));
   right: 0;
   z-index: 50;
   width: var(--popover-width);
-  max-width: calc(100vw - var(--numen-chrome-unit));
+  max-width: calc(100vw - 1rem);
   max-height: var(--popover-max-height);
   padding: var(--popover-pad);
   overflow-y: auto;
   background: var(--numen-raised);
   color: var(--numen-ink);
   border: 1px solid var(--numen-panel-border);
-  border-radius: var(--numen-chrome-radius);
+  border-radius: var(--numen-radius-popup);
   box-shadow: var(--numen-panel-shadow);
 }
 
 .todos-status__heading {
   margin: 0;
-  padding: calc(var(--numen-chrome-inset) / 2) var(--numen-chrome-inset);
-  font-size: var(--numen-chrome-text-1);
+  padding: 0.25rem 0.5rem;
+  font-size: var(--numen-text-1);
   font-weight: 600;
   color: var(--numen-hushed);
 }
@@ -202,15 +202,15 @@ function onTick(task: Task) {
 .todos-status__row {
   display: flex;
   align-items: center;
-  gap: var(--numen-chrome-inset);
-  padding: calc(var(--numen-chrome-inset) / 2) var(--numen-chrome-inset);
-  font-size: var(--numen-chrome-text-2);
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: var(--numen-text-2);
 }
 
 .todos-status__row input[type='checkbox'] {
   flex: none;
-  inline-size: calc(0.75 * var(--numen-chrome-unit));
-  block-size: calc(0.75 * var(--numen-chrome-unit));
+  inline-size: 1em;
+  block-size: 1em;
   margin: 0;
   accent-color: var(--numen-accent);
 }
