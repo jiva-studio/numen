@@ -56,6 +56,8 @@ const (
 	// TOOLS lists the tools the plugin last offered an agent, which a manifest does not declare. It
 	// is absent until the host has listed them once.
 	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_TOOLS PluginContributionKind = 24
+	// EDITOR_EXTENSIONS lists the extensions of contributes.editor.extensions, with the id as the detail.
+	PluginContributionKind_PLUGIN_CONTRIBUTION_KIND_EDITOR_EXTENSIONS PluginContributionKind = 25
 )
 
 // Enum value maps for PluginContributionKind.
@@ -86,6 +88,7 @@ var (
 		21: "PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS",
 		23: "PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS",
 		24: "PLUGIN_CONTRIBUTION_KIND_TOOLS",
+		25: "PLUGIN_CONTRIBUTION_KIND_EDITOR_EXTENSIONS",
 	}
 	PluginContributionKind_value = map[string]int32{
 		"PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED":       0,
@@ -113,6 +116,7 @@ var (
 		"PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS": 21,
 		"PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS":  23,
 		"PLUGIN_CONTRIBUTION_KIND_TOOLS":             24,
+		"PLUGIN_CONTRIBUTION_KIND_EDITOR_EXTENSIONS": 25,
 	}
 )
 
@@ -2084,7 +2088,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x05event\x18\x01 \x01(\tR\x05event\"d\n" +
 	"\x14DeliverEventResponse\x124\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.v1.PluginEventErrorCodeR\x05error\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason*\xa3\b\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason*\xd3\b\n" +
 	"\x16PluginContributionKind\x12(\n" +
 	"$PLUGIN_CONTRIBUTION_KIND_UNSPECIFIED\x10\x00\x12%\n" +
 	"!PLUGIN_CONTRIBUTION_KIND_COMMANDS\x10\x01\x12(\n" +
@@ -2111,7 +2115,8 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"%PLUGIN_CONTRIBUTION_KIND_CAPABILITIES\x10\x14\x12.\n" +
 	"*PLUGIN_CONTRIBUTION_KIND_ACTIVATION_EVENTS\x10\x15\x12-\n" +
 	")PLUGIN_CONTRIBUTION_KIND_SEARCH_FUNCTIONS\x10\x17\x12\"\n" +
-	"\x1ePLUGIN_CONTRIBUTION_KIND_TOOLS\x10\x18*d\n" +
+	"\x1ePLUGIN_CONTRIBUTION_KIND_TOOLS\x10\x18\x12.\n" +
+	"*PLUGIN_CONTRIBUTION_KIND_EDITOR_EXTENSIONS\x10\x19*d\n" +
 	"\x14PluginEventErrorCode\x12'\n" +
 	"#PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fPLUGIN_EVENT_ERROR_CODE_REFUSED\x10\x012\xd8\x01\n" +

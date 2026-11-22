@@ -1,0 +1,172 @@
+/**
+ * The contract of the todos service: the fixtures in testdata/api are the JSON the Go messages
+ * encode to, and they are read here as the TypeScript messages.
+ */
+import { describe, expect, it } from 'vitest'
+import type {
+  GetSummaryRequest,
+  ListFieldsRequest,
+  ListFieldsResponse,
+  ListTasksRequest,
+  ListTasksResponse,
+  RefreshIndexRequest,
+  RefreshIndexResponse,
+  SetTaskDoneRequest,
+  SetTaskDoneResponse,
+  Summary,
+  WatchMessage,
+  WatchTasksRequest,
+} from '../types'
+
+/** The request and response of each method by name. */
+interface Methods {
+  GetSummary: { request: GetSummaryRequest; response: Summary }
+  ListTasks: { request: ListTasksRequest; response: ListTasksResponse }
+  ListFields: { request: ListFieldsRequest; response: ListFieldsResponse }
+  RefreshIndex: { request: RefreshIndexRequest; response: RefreshIndexResponse }
+  WatchTasks: { request: WatchTasksRequest; response: WatchMessage }
+  SetTaskDone: { request: SetTaskDoneRequest; response: SetTaskDoneResponse }
+}
+
+const fixtures = import.meta.glob('../../testdata/api/*.json', {
+  eager: true,
+  import: 'default',
+}) as Record<string, unknown>
+
+const read = (name: string): unknown => fixtures[`../../testdata/api/${name}.json`]
+
+const EXPECTED: { [M in keyof Methods]: Methods[M] } = {
+  GetSummary: {
+    request: { today: '2026-11-14' },
+    response: {
+      isReady: true,
+      overdueCount: 2,
+      todayCount: 1,
+      nextSevenDaysCount: 4,
+      noDateCount: 3,
+      unreadableCount: 1,
+    },
+  },
+  ListTasks: {
+    request: {
+      today: '2026-11-14',
+      filter: {
+        status: ['open'],
+        due: 'overdue',
+        from: '',
+        to: '',
+        projects: ['home'],
+        contexts: ['phone'],
+        priorities: ['A'],
+        path: 'Projects/',
+        text: 'milk',
+      },
+      limit: 20,
+    },
+    response: {
+      tasks: [
+        {
+          path: 'Projects/Home.md',
+          line: 7,
+          proseLine: 7,
+          raw: '- [ ] (A) buy milk due:2026-11-13 rec:!1w +home @phone',
+          text: 'buy milk',
+          status: 'open',
+          priority: 'A',
+          due: '2026-11-13',
+          doneOn: '',
+          recurrence: 'rec:!1w',
+          projects: ['home'],
+          contexts: ['phone'],
+          issues: [],
+          depth: 0,
+        },
+        {
+          path: 'Daily/2026-11-12.md',
+          line: 3,
+          proseLine: 3,
+          raw: '  - [ ] call due:2026-02-30',
+          text: 'call due:2026-02-30',
+          status: 'open',
+          priority: '',
+          due: '',
+          doneOn: '',
+          recurrence: '',
+          projects: [],
+          contexts: [],
+          issues: ['invalidDue'],
+          depth: 1,
+        },
+      ],
+      total: 31,
+      revision: 12,
+    },
+  },
+  ListFields: {
+    request: {},
+    response: {
+      projects: [
+        { name: 'home', count: 4 },
+        { name: 'work', count: 4 },
+        { name: 'garden', count: 1 },
+      ],
+      contexts: [{ name: 'phone', count: 2 }],
+      tags: [
+        { name: 'Projects/Web', count: 3 },
+        { name: 'port', count: 1 },
+      ],
+    },
+  },
+  RefreshIndex: {
+    request: {
+      paths: ['Daily/2026-11-14.md', 'Projects/Home.md'],
+      renamed: [{ from: 'Inbox.md', to: 'Projects/Inbox.md' }],
+    },
+    response: {},
+  },
+  WatchTasks: { request: {}, response: { revision: 12, isReady: true } },
+  SetTaskDone: {
+    request: {
+      path: 'Projects/Home.md',
+      line: 7,
+      isProseLine: false,
+      raw: '- [ ] fix the tap +home ^tap',
+      isDone: true,
+      today: '2026-11-14',
+    },
+    response: {
+      task: {
+        path: 'Projects/Home.md',
+        line: 7,
+        proseLine: 7,
+        raw: '- [x] fix the tap +home done:2026-11-14 ^tap',
+        text: 'fix the tap ^tap',
+        status: 'done',
+        priority: '',
+        due: '',
+        doneOn: '2026-11-14',
+        recurrence: '',
+        projects: ['home'],
+        contexts: [],
+        issues: [],
+        depth: 0,
+      },
+      change: 'completed',
+      error: '',
+    },
+  },
+}
+
+describe('todos service contract', () => {
+  for (const [method, expected] of Object.entries(EXPECTED)) {
+    it(`${method} fixtures equal the typed messages`, () => {
+      expect(read(`${method}.request`)).toEqual(expected.request)
+      expect(read(`${method}.response`)).toEqual(expected.response)
+    })
+  }
+
+  it('has a fixture pair for every method', () => {
+    const names = Object.keys(fixtures).map((path) => path.split('/').pop())
+    expect(names).toHaveLength(Object.keys(EXPECTED).length * 2)
+  })
+})

@@ -1,0 +1,209 @@
+{
+  "id": "md.numen.todos",
+  "name": "Todos",
+  "version": "2026.11.1",
+  "protocol": 1,
+  "description": "Lists the tasks written in notes, in a widget and in a tab",
+  "capabilities": ["tools"],
+  "targets": ["desktop.editor"],
+  "contributes": {
+    "category": "views",
+    "feature": "todos",
+    "editor": {
+      "extensions": [
+        {
+          "id": "tasks",
+          "title": "Task lines",
+          "description": "Draws a checkbox on task lines of a note, colours their due, done, rec and pri dates, priority, projects, contexts and tags, dims completed tasks, and completes projects, contexts, tags, dates and priority as you type them"
+        }
+      ]
+    },
+    "slots": [
+      {
+        "slot": "titleBar.status",
+        "view": "status",
+        "order": 30,
+        "when": "window.isVaultOpen"
+      }
+    ],
+    "searchFunctions": {
+      "version": 1,
+      "functions": [
+        {
+          "name": "hasOpenTask",
+          "args": [],
+          "level": "document",
+          "description": "notes with at least one open task, a - [ ] line",
+          "example": "hasOpenTask() && path(\"Projects/\")"
+        },
+        {
+          "name": "hasDoneTask",
+          "args": [],
+          "level": "document",
+          "description": "notes with at least one done task, a - [x] line",
+          "example": "hasDoneTask() && meaning(\"release\")"
+        },
+        {
+          "name": "hasTaskOverdue",
+          "args": [],
+          "level": "document",
+          "description": "notes with an open task whose due: date is before today",
+          "example": "hasTaskOverdue()"
+        },
+        {
+          "name": "hasTaskDueToday",
+          "args": [],
+          "level": "document",
+          "description": "notes with an open task whose due: date is today",
+          "example": "hasTaskDueToday()"
+        },
+        {
+          "name": "hasTaskDueWithin",
+          "args": [
+            {
+              "name": "days",
+              "type": "int"
+            }
+          ],
+          "level": "document",
+          "description": "notes with an open task due from today to the given number of days ahead, 0 or more",
+          "example": "hasTaskDueWithin(7)"
+        },
+        {
+          "name": "hasTaskDueBefore",
+          "args": [
+            {
+              "name": "date",
+              "type": "string"
+            }
+          ],
+          "level": "document",
+          "description": "notes with an open or done task whose due: date is on or before the date, written YYYY-MM-DD",
+          "example": "hasTaskDueBefore(\"2026-12-31\")"
+        },
+        {
+          "name": "hasTaskWithoutDue",
+          "args": [],
+          "level": "document",
+          "description": "notes with an open task that has no due: date",
+          "example": "hasTaskWithoutDue() && !hasTaskOverdue()"
+        },
+        {
+          "name": "hasTaskProject",
+          "args": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ],
+          "level": "document",
+          "description": "notes with an open task of the +project, given without the plus sign",
+          "example": "hasTaskProject(\"launch\")"
+        },
+        {
+          "name": "hasTaskContext",
+          "args": [
+            {
+              "name": "name",
+              "type": "string"
+            }
+          ],
+          "level": "document",
+          "description": "notes with an open task of the @context, given without the at sign",
+          "example": "hasTaskContext(\"phone\")"
+        },
+        {
+          "name": "hasTaskPriority",
+          "args": [
+            {
+              "name": "letter",
+              "type": "string"
+            }
+          ],
+          "level": "document",
+          "description": "notes with an open task of the priority, one letter A to Z",
+          "example": "hasTaskPriority(\"A\")"
+        },
+        {
+          "name": "hasTaskText",
+          "args": [
+            {
+              "name": "text",
+              "type": "string"
+            }
+          ],
+          "level": "document",
+          "description": "notes with an open task whose text contains the text, compared without case",
+          "example": "hasTaskText(\"invoice\")"
+        }
+      ]
+    }
+  },
+  "permissions": ["vault:read", "vault:write"],
+  "services": ["md.numen.todos"],
+  "settingGroups": [
+    { "id": "tasks", "title": "Tasks" },
+    { "id": "editor", "title": "Editor" },
+    { "id": "widget", "title": "Widget" }
+  ],
+  "settings": [
+    {
+      "key": "ignoredFolders",
+      "group": "tasks",
+      "type": "list",
+      "title": "Ignored folders",
+      "description": "Folders whose notes are not searched for tasks",
+      "details": "Paths from the vault root, such as templates, archive/old. A note below one of them is skipped.",
+      "default": []
+    },
+    {
+      "key": "hideFields",
+      "group": "editor",
+      "type": "boolean",
+      "title": "Hide task markers until the line is edited",
+      "description": "Hides due:, pri:, +, @ and # until the cursor is on the line",
+      "default": false,
+      "details": "A task line keeps its markers (due:, done:, pri:, +project, @context, #tag), but they are drawn only while the cursor is on that line."
+    },
+    {
+      "key": "showOverdue",
+      "group": "widget",
+      "type": "boolean",
+      "title": "Overdue",
+      "description": "Open tasks due before today, in the widget",
+      "default": true,
+      "details": "Lists and counts the open tasks due before today in the popup of the widget."
+    },
+    {
+      "key": "showToday",
+      "group": "widget",
+      "type": "boolean",
+      "title": "Today",
+      "description": "Open tasks due today, in the widget",
+      "default": true,
+      "details": "Lists and counts the open tasks due today in the popup of the widget."
+    },
+    {
+      "key": "showNextWeek",
+      "group": "widget",
+      "type": "boolean",
+      "title": "Next 7 days",
+      "description": "Open tasks due in the next days, in the widget",
+      "details": "Lists and counts the open tasks due in the six days after today in the popup of the widget.",
+      "default": true
+    },
+    {
+      "key": "showNoDate",
+      "group": "widget",
+      "type": "boolean",
+      "title": "No date",
+      "description": "Open tasks with no due date, in the widget",
+      "default": true,
+      "details": "Lists and counts the open tasks with no due date in the popup of the widget."
+    }
+  ],
+  "backend": {
+    "entrypoint": "bin/todos"
+  },
+  "frontend": {}
+}

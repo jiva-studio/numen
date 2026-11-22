@@ -177,6 +177,19 @@ The settings of the plugin PDF Reader.
 | --- | --- | --- |
 | `defaultZoom` | text | zoom a PDF opens at. One of `page`, `width`, `100%`. |
 
+### `md.numen.todos`
+
+The settings of the plugin Todos.
+
+| | | |
+| --- | --- | --- |
+| `ignoredFolders` | a list of text | paths from the vault root, such as templates, archive/old. A note below one of them is skipped. |
+| `hideFields` | yes or no | a task line keeps its markers (due:, done:, pri:, +project, @context, #tag), but they are drawn only while the cursor is on that line. |
+| `showOverdue` | yes or no | lists and counts the open tasks due before today in the popup of the widget. |
+| `showToday` | yes or no | lists and counts the open tasks due today in the popup of the widget. |
+| `showNextWeek` | yes or no | lists and counts the open tasks due in the six days after today in the popup of the widget. |
+| `showNoDate` | yes or no | lists and counts the open tasks with no due date in the popup of the widget. |
+
 ### `md.numen.tools.media.importer`
 
 The settings of the plugin Media Importer.

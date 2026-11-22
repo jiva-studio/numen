@@ -11,6 +11,7 @@
  */
 import type {
   HealthHost,
+  EditorExtensionHost,
   PluginEvents,
   PluginIdentity,
   PluginLicenses,
@@ -21,13 +22,12 @@ import type {
   PluginVault,
   PluginWork,
 } from '@numen/plugin-sdk'
-import type { RequirePermission } from './permission'
 
 /** What a member of a service holds: the guard passes members on without knowing their type. */
-type Value = object | string | number | bigint | boolean | symbol | null | undefined | void
+export type Value = object | string | number | bigint | boolean | symbol | null | undefined | void
 
-const READ = 'vault:read'
-const WRITE = 'vault:write'
+export const READ = 'vault:read'
+export const WRITE = 'vault:write'
 const MANAGE = 'vault:manage'
 /** Consent to open external links; it does not restrict the requests a plugin makes itself, as plugins are trusted code. */
 const LINK_OPEN = 'link:open'
@@ -45,7 +45,7 @@ const CONNECTION_GRANT = `the rows of the plugin's own settings are the grant`
 type Mode = 'sync' | 'async' | 'none'
 
 /** What a member needs: every permission listed, and whether a refusal throws or rejects. */
-class Rule<M extends Mode = Mode> {
+export class Rule<M extends Mode = Mode> {
   readonly reason: string
   readonly isReadOnly: (args: readonly Value[]) => boolean
 
@@ -121,12 +121,18 @@ export interface GuardedParts {
   readonly settings: PluginSettings
   readonly licenses: PluginLicenses
   readonly events: PluginEvents
+  readonly editor: EditorExtensionHost
   readonly tabs: PluginTabs
   readonly vault: PluginVault
   readonly ui: Omit<PluginUi, 'mountView'>
   readonly work: PluginWork
   readonly health: HealthHost
 }
+
+const EDITOR_LIST = explain(
+  requirePermissions(WRITE),
+  'the extensions are code other plugins run in the editor, so the plugin that receives them can change the documents too',
+)
 
 export const SERVICE_RULES: RulesOf<GuardedParts> = {
   identity: {
@@ -144,6 +150,10 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     dropHandler: explain(
       requirePermissions(READ),
       'dropped data is user content, and the handler receives it and the folder it was dropped into',
+    ),
+    editorExtension: explain(
+      requirePermissions(WRITE),
+      'it runs in the editor of every open note and can change the document',
     ),
   },
   settings: {
@@ -285,6 +295,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       drop: requirePermissionsAsync(WRITE),
     },
   },
+  editor: { get: EDITOR_LIST, onChange: EDITOR_LIST, fail: EDITOR_LIST },
   work: {
     connections: {
       call: requireNothing(CONNECTION_GRANT),
@@ -317,84 +328,4 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     report: requireNothing('the item is filed under the id of the plugin'),
     clear: requireNothing('it clears an item of the plugin itself'),
   },
-}
-
-type Members = Record<string, Value>
-
-/** What a refusal needs: the check of the permissions, and the path of the service for the message. */
-export interface Guard {
-  readonly check: RequirePermission
-  readonly path?: string
-}
-
-function requireAll(
-  rule: Rule,
-  call: { readonly operation: string; readonly args: readonly Value[] },
-  check: RequirePermission,
-): void {
-  const { operation, args } = call
-  if (rule.isReadOnly(args)) {
-    try {
-      check(READ, operation)
-    } catch {
-      check(WRITE, operation)
-    }
-    return
-  }
-  for (const permission of rule.permissions) check(permission, operation)
-}
-
-function guardMember(
-  service: Members,
-  entry: { readonly key: string; readonly rule: Rule },
-  guard: { readonly check: RequirePermission; readonly operation: string },
-): PropertyDescriptor {
-  const { key, rule } = entry
-  const { check, operation } = guard
-  if (typeof service[key] === 'function') {
-    return {
-      enumerable: true,
-      value: (...args: never[]) => {
-        try {
-          requireAll(rule, { operation, args }, check)
-        } catch (error) {
-          if (rule.isAsync) return Promise.reject(error)
-          throw error
-        }
-        return Reflect.apply(service[key] as () => Value, service, args)
-      },
-    }
-  }
-  return {
-    enumerable: true,
-    get: () => {
-      requireAll(rule, { operation, args: [] }, check)
-      return service[key]
-    },
-  }
-}
-
-/**
- * The service as the plugin may use it: only the members the rules list, each checked when it is
- * used. A member the service has and the rules do not list is not reachable; a member the service
- * lacks is absent. `guard.path` prefixes the operation named in a refusal.
- */
-export function guardService<S extends object>(service: S, rules: RulesOf<S>, guard: Guard): S {
-  const source = service as Members
-  const guarded: Members = {}
-  for (const [key, rule] of Object.entries<Rule | object>(rules)) {
-    const member = source[key]
-    if (member === undefined) continue
-    const operation = guard.path === undefined ? key : `${guard.path}.${key}`
-    if (rule instanceof Rule) {
-      const descriptor = guardMember(source, { key, rule }, { check: guard.check, operation })
-      Object.defineProperty(guarded, key, descriptor)
-    } else if (typeof member === 'object' && member !== null) {
-      guarded[key] = guardService(member, rule, {
-        check: guard.check,
-        path: operation,
-      })
-    }
-  }
-  return guarded as S
 }

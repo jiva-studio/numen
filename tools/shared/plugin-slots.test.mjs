@@ -276,13 +276,16 @@ test('every slot entry of a manifest of the tree is in a known place and names a
       (document.contributes?.slots ?? []).filter((one) => one.submenu).map((one) => one.submenu),
     ),
   )
+  const slotPoints = new Set(
+    manifests.flatMap(({ document }) => (document.contributes?.slotPoints ?? []).map((one) => one.slot)),
+  )
   for (const { name, document } of manifests) {
     const declared = new Map((document.contributes?.commands ?? []).map((one) => [one.id, one]))
     for (const entry of document.contributes?.slots ?? []) {
       const where = `${name}: ${entry.slot} ${entry.command ?? entry.view ?? entry.submenu}`
       assert.ok(
-        SLOTS.includes(entry.slot) || submenus.has(entry.slot),
-        `${where} is neither in a slot of the window nor in a submenu a plugin declares`,
+        SLOTS.includes(entry.slot) || submenus.has(entry.slot) || slotPoints.has(entry.slot),
+        `${where} is neither in a slot of the window, nor in a slot point nor in a submenu a plugin declares`,
       )
       if (!entry.command) continue
       if (entry.command.startsWith(APP_PREFIX)) {
@@ -370,13 +373,12 @@ test('the docs say how the title bar draws an entry', () => {
   assert.match(titleBar, /hover text.*\bkey\b/i, 'the section does not say the key is in the hover text')
 })
 
-test('the plex graph owns a slot over its nodes, a slot under them and a slot over the whole of each', () => {
-  const listed = JSON.parse(readFileSync(join(ROOT, 'libs/shared/protocol/slots.json'), 'utf8')).slots
+test('the plex graph declares a slot point over its nodes, one under them and one over the whole of each', () => {
+  const plex = readPluginManifests().find(({ document }) => document.id === 'md.numen.views.plex.graph')
+  const declared = new Set((plex?.document.contributes?.slotPoints ?? []).map((one) => one.slot))
   for (const name of ['plexGraph.nodeAbove', 'plexGraph.nodeBelow', 'plexGraph.node', 'plexGraph.boardTop', 'plexGraph.boardBottom']) {
-    const slot = listed.find((one) => one.name === name)
-    assert.ok(slot, `${name} is not in slots.json`)
-    assert.equal(slot.owner, 'the plugin of the plex graph')
-    assert.notEqual(slot.isWindow, true)
+    assert.ok(declared.has(name), `${name} is not a slot point of the plex graph`)
+    assert.ok(!SLOTS.includes(name), `${name} is in slots.json, which lists only the slots of the application`)
   }
 })
 
@@ -394,7 +396,7 @@ test('the docs say a view over the whole of a node is given its size, position a
   const readme = readFileSync(join(ROOT, 'docs/plugins/README.md'), 'utf8')
   const slots = readme.slice(readme.indexOf('\n## Slots'))
   const section = slots.slice(0, slots.indexOf('\n## ', 4))
-  const owner = section.split('\n').filter((one) => one.includes('The owner of `plexGraph.node`')).join('\n')
+  const owner = section.split('\n').filter((one) => one.includes('The plugin that draws `plexGraph.node`')).join('\n')
   for (const prop of ['path', 'x', 'y', 'width', 'height', 'scale']) {
     assert.match(owner, new RegExp(`\\\`${prop}\\\``), `the section does not name the prop ${prop}`)
   }

@@ -8,6 +8,7 @@ import { createNoteEditorView } from './ui/noteEditorView'
 import { createWikilinkExtension, type WikilinkOption, type WikilinkOptions } from './lib/wikilinks'
 import { parseFrontmatter, type FrontmatterResult } from './lib/frontmatter'
 import { editorPreferences } from './model/preferences'
+import { followPluginExtensions } from './model/pluginExtensions'
 
 export { MarkdownNoteEditor, createWikilinkExtension, parseFrontmatter }
 export type { WikilinkOption, WikilinkOptions, FrontmatterResult }
@@ -17,6 +18,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   plugin.settings.onEditorChange((settings) => {
     editorPreferences.value = settings
   })
+  if (host.editor) followPluginExtensions(host.editor)
   const icon = createNamedIcon('file-text')
 
   plugin.register.reader({

@@ -9,6 +9,7 @@ import { createEditorSettingsContext } from '../testing/editorSettings'
 const loadEditorSettings = () =>
   activate(createEditorSettingsContext({ lineNumbers: false, softWrap: true }).context, {
     vault: {},
+    ui: {},
   } as unknown as HostServices)
 
 beforeEach(loadEditorSettings)
@@ -270,8 +271,8 @@ describe('MarkdownNoteEditor in a reader tab', () => {
     try {
       const wrapper = mount(MarkdownNoteEditor, {
         props: {
-          filePath: 'notes/todo.txt',
-          state: { path: 'notes/todo.txt', file: 'notes/todo.txt' } as unknown as NoteTabState,
+          filePath: 'notes/plain.txt',
+          state: { path: 'notes/plain.txt', file: 'notes/plain.txt' } as unknown as NoteTabState,
         },
       })
       await flushPromises()

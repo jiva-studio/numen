@@ -27,6 +27,8 @@ const IDLE: PluginContextHost = {
   views: {
     registerDropHandler: () => NOTHING,
     drops: { canDrop: () => false, drop: () => Promise.resolve([]) },
+    registerEditorExtension: () => NOTHING,
+    editorExtensions: { get: () => [], onChange: () => NOTHING, fail: () => undefined },
     registerView: () => NOTHING,
     registerSlotView: () => NOTHING,
     mountView: () => ({ focus: () => undefined, dispose: () => undefined }),

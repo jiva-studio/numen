@@ -35,6 +35,7 @@ export {
   type StyleRoot,
 } from './styles'
 export { createDropRegistry } from './drops'
+export { createEditorExtensionRegistry } from './editorExtensions'
 export {
   findSlotView,
   getDeclaredSlots,

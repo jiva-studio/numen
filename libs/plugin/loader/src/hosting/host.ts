@@ -1,23 +1,18 @@
 /**
  * Plugin host managing dynamic registration of readers, tab kinds, and commands.
  */
-import type {
-  SettingsViewRegistration,
-  VaultChangeEvent,
-  DropRegistry,
-  JsonValue,
-  SlotHost,
-} from '@numen/plugin-sdk'
+import type { SettingsViewRegistration, VaultChangeEvent } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { formatCommandId } from '../commandId'
 import { createDropRegistry } from '../drops'
-import { createSlotRegistry, type DeclaredSlotEntry } from '../slots'
-import { createSlotViewRegistry, type SlotViewRegistry } from '../slot-views'
-import { createViewRegistry, type ViewRegistry } from '../views'
+import { createEditorExtensionRegistry } from '../editorExtensions'
+import { createSlotRegistry } from '../slots'
+import { createSlotViewRegistry } from '../slot-views'
+import { createViewRegistry } from '../views'
 import type { PluginParts } from '../host'
 import { createPluginParts } from './context'
 import { isNoteEditorKind } from './customTabBuffer'
-import { addListener, notifyListeners, requestPluginStart } from './events'
+import { addListener, notifyListeners, reportError, requestPluginStart } from './events'
 import { createCommandApi } from './commandApi'
 import { createWhenReader } from '../when'
 import { APP_KEYBINDINGS, isSharedCommand } from '@numen/plugin-sdk'
@@ -34,19 +29,20 @@ import {
   type HostRegistry,
 } from './registry'
 import {
-  createLicenseServiceBridge,
   createUiServiceBridge,
   createVaultServiceBridge,
   createWorkServiceBridge,
 } from './bridge/services'
+import {
+  createSettingBridge,
+  createTabBridge,
+  createViewBridge,
+  type SharedRegistries,
+} from './bridge/contextHosts'
 import type {
   ContextEventHost,
   ContextRegistrationHost,
-  ContextSettingHost,
-  ContextTabHost,
-  ContextViewHost,
   HostDeps,
-  HostPlugins,
   HostSlots,
   PluginContextHost,
   PluginHostDeps,
@@ -109,70 +105,7 @@ function createRegistrationBridge(
   }
 }
 
-const NO_PLUGINS: HostPlugins = {}
-
 const NO_SLOTS: HostSlots = {}
-
-function createSettingBridge({
-  plugins = NO_PLUGINS,
-}: Pick<PluginHostDeps, 'plugins'>): ContextSettingHost {
-  const licenses = createLicenseServiceBridge({ plugins })
-  return {
-    getSetting: <T extends JsonValue = JsonValue>(pluginId: string, key: string) =>
-      plugins.getSetting ? (plugins.getSetting(pluginId, key) as T | undefined) : undefined,
-    onSettingChange: <T extends JsonValue = JsonValue>(
-      pluginId: string,
-      key: string,
-      handler: (value: T) => void | Promise<void>,
-    ) => {
-      // Without a host subscription there is nothing to unsubscribe.
-      if (!plugins.onSettingChange) return { dispose: () => undefined }
-      return {
-        dispose: plugins.onSettingChange(
-          pluginId,
-          key,
-          handler as (v: JsonValue | undefined) => void | Promise<void>,
-        ),
-      }
-    },
-    getEditorSettings: () => plugins.getEditorSettings?.(),
-    onEditorSettingsChange: (pluginId, handler) => {
-      if (!plugins.onEditorSettingsChange) return { dispose: () => undefined }
-      return { dispose: plugins.onEditorSettingsChange(pluginId, handler) }
-    },
-    hasLicense: licenses.hasLicense,
-    getLicenseKey: licenses.getLicenseKey,
-    onLicenseChange: licenses.onLicenseChange,
-  }
-}
-
-function createViewBridge(shared: SharedRegistries): ContextViewHost {
-  const { views, drops, slotViews } = shared
-  return {
-    registerSlotView: slotViews.registerSlotView,
-    registerView: views.registerView,
-    mountView: views.mountView,
-    registerDropHandler: drops.registerDropHandler,
-    drops: { canDrop: drops.canDrop, drop: drops.drop },
-  }
-}
-
-function createTabBridge({ tabs }: Pick<PluginHostDeps, 'tabs'>): ContextTabHost {
-  return {
-    openTab: (kind, target) => tabs?.openTab?.(kind, target),
-    navigateTab: (kind, target) => tabs?.navigateTab?.(kind, target),
-    closeTab: (id) => tabs?.closeTab?.(id),
-  }
-}
-
-/** The registries other than the host's own, which the context bridge delegates to. */
-interface SharedRegistries {
-  readonly views: ViewRegistry
-  readonly drops: DropRegistry
-  readonly slotViews: SlotViewRegistry
-  readonly slots: SlotHost
-  readonly readSlotEntries: () => readonly DeclaredSlotEntry[] | undefined
-}
 
 function createHostContextBridge(
   deps: PluginHostDeps,
@@ -355,6 +288,9 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
   const contextHost = createHostContextBridge(deps, registry, {
     views: createViewRegistry(deps.plugins),
     drops: createDropRegistry(deps.plugins),
+    editorExtensions: createEditorExtensionRegistry({
+      reportError: (pluginId, error) => reportError(deps, pluginId, error),
+    }),
     slotViews,
     slots,
     readSlotEntries,

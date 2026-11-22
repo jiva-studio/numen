@@ -97,6 +97,25 @@ message ManifestContributes {
   ManifestSearchFunctions search_functions = 24;
   // licenses are the licenses the plugin declares and the features it unlocks for each.
   repeated ManifestLicense licenses = 25;
+  // editor is what the plugin adds to the note editor.
+  ManifestEditor editor = 27;
+}
+
+// ManifestEditor lists the additions of a plugin to the note editor.
+message ManifestEditor {
+  // extensions are the CodeMirror extensions the plugin's frontend registers. The frontend registers
+  // an extension only under an id listed here.
+  repeated ManifestEditorExtension extensions = 1;
+}
+
+// ManifestEditorExtension is one CodeMirror extension a plugin adds to the note editor.
+message ManifestEditorExtension {
+  // id names the extension in the plugin; a lowercase letter, then letters and digits in camelCase, declared once.
+  string id = 1;
+  // title is what the extension does, in words a person reads.
+  string title = 2;
+  // description is one line that says what the person sees in the editor.
+  string description = 3;
 }
 
 // ManifestLicenseProvider is a service through which a license is bought and verified.

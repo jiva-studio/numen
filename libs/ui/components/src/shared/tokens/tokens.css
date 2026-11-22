@@ -115,10 +115,9 @@
   font-size: calc(16px * var(--numen-interface-scale));
 }
 
-/* The window chrome: the title bar, the status bar and every widget a plugin puts in their slots,
-   with the popovers those widgets open. Like the native window buttons beside it, the chrome keeps
-   its size at every interface scale and every text scale, so it is set in these lengths and not in
-   `rem` or a token that follows the root font size. */
+/* The window chrome: the title bar, the status bar and the widgets in their slots keep their size at every
+   interface scale and text scale, so they are set in these lengths. The popups they open follow the
+   interface scale. How the rule tells them apart is in docs/typography.md. */
 :where(:root) {
   --numen-chrome-unit: 16px;
   --numen-chrome-text-1: 10px;

@@ -5,6 +5,7 @@ import type {
   BufferHost,
   ConnectionHost,
   Disposable,
+  EditorExtensionHost,
   EditorSettings,
   FileBuffers,
   FileSelectEvent,
@@ -33,7 +34,8 @@ import {
   type RegistrationGuard,
   type Track,
 } from './guards/registrations'
-import { guardService, SERVICE_RULES } from './guards/servicePermissions'
+import { guardService } from './guards/guardService'
+import { SERVICE_RULES } from './guards/servicePermissions'
 import { createSubscriptionList, type SubscriptionList } from './guards/subscriptions'
 import { createSlotViewRegistration } from './guards/slotContext'
 import type { PluginParts } from '../host'
@@ -147,6 +149,10 @@ function createVault(pluginId: string, host: PluginContextHost, add: Track): Plu
     buffers: buffers && createBuffers(pluginId, buffers, add),
     vaults: vault.getVaults(),
   })
+}
+
+function trackEditorExtensions(extensions: EditorExtensionHost, add: Track): EditorExtensionHost {
+  return { ...extensions, onChange: (handler) => add(extensions.onChange(handler)) }
 }
 
 function createUi(
@@ -271,6 +277,9 @@ function createHostServices(scope: PartsScope, host: PluginContextHost): HostSer
     ui: createUiService(pluginId, host, { guard: scope, check }),
     work: guardService(createWork(pluginId, host, add), rules.work, { check }),
     events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
+    editor: guardService(trackEditorExtensions(host.views.editorExtensions, add), rules.editor, {
+      check,
+    }),
   }
 }
 

@@ -1,19 +1,21 @@
 <script setup lang="ts">
 /**
  * Declarative settings fields for a plugin: switches, number inputs, sliders,
- * selects, paths, and text fields. A setting whose condition fails is not shown,
+ * selects, paths, lists, and text fields. A setting whose condition fails is not shown,
  * and keeps its value. Without a group the fields are the settings that name none, with the views
  * of the plugin; with one, the settings of that group.
  */
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
+import { ListField } from '../list-field'
 import SettingsViews from './SettingsViews.vue'
 import type { InstallationSettings, MarkedSetting, PluginFieldsHost } from '../../types'
 import type { PluginInfo } from '@/entities/settings'
 import {
   useEnumFields,
   usePluginFields,
+  getPluginLists,
   usePluginPaths,
   useSettingDefaults,
 } from '../../model/usePluginFields'
@@ -51,6 +53,11 @@ const {
   choosePath: onPathChoose,
   clearPath: onPathClear,
 } = usePluginPaths(fieldDeps, fields)
+const {
+  getListSetting,
+  addItem: onListAdd,
+  removeItem: onListRemove,
+} = getPluginLists(fieldDeps, fields)
 const { isChanged, resetSetting: onReset } = useSettingDefaults(fieldDeps)
 
 function getDrawnSettings() {
@@ -153,6 +160,16 @@ function getDrawnSettings() {
         :words="words"
         @choose="onPathChoose(setting)"
         @clear="(targetPath) => onPathClear(setting, targetPath)"
+      />
+
+      <ListField
+        v-else-if="setting.type === 'list'"
+        :items="getListSetting(setting.key, setting.default)"
+        :labelled-by="labelledBy"
+        :described-by="describedBy"
+        :words="words"
+        @add="(item) => onListAdd(setting, item)"
+        @remove="(item) => onListRemove(setting, item)"
       />
 
       <Select

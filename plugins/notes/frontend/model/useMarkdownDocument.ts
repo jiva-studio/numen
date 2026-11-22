@@ -1,10 +1,16 @@
 import { computed, onMounted, ref, watch, type Ref } from 'vue'
-import type { EditorHandle, NoteTabState, Caught } from '@numen/plugin-sdk'
+import {
+  editorNotePath,
+  type EditorHandle,
+  type NoteTabState,
+  type Caught,
+} from '@numen/plugin-sdk'
 import { readTextAsset } from '../api/readTextAsset'
 import { parseFrontmatter, type FrontmatterResult } from '../lib/frontmatter'
 import { getFrontmatterError } from '../lib/frontmatterError'
 import { createWikilinkExtension } from '../lib/wikilinks'
 import type { Extension } from '@codemirror/state'
+import { getPluginExtensions, pluginExtensionEntries } from './pluginExtensions'
 
 export interface DocumentOptions {
   readonly modelValue?: string
@@ -35,14 +41,20 @@ export function getEditorLanguage(props: DocumentOptions): 'markdown' | 'json' |
   return 'markdown'
 }
 
-/** The extensions the caller passes, else the wikilink completion over the notes the host offers. */
-export function getEditorExtensions(props: {
-  readonly extensions?: Extension | readonly Extension[] | undefined
-  readonly state?: NoteTabState | undefined
-}): Extension | undefined {
-  if (props.extensions) return props.extensions as Extension
+/** The extensions the caller passes, else the wikilink completion over the notes the host offers, then those other plugins add. */
+export function getEditorExtensions(
+  props: DocumentOptions & { readonly extensions?: Extension | readonly Extension[] | undefined },
+): Extension | undefined {
   const links = props.state?.wikilinks
-  return links ? createWikilinkExtension(links) : undefined
+  const own = props.extensions
+    ? (props.extensions as Extension)
+    : links
+      ? createWikilinkExtension(links)
+      : undefined
+  const added = getPluginExtensions(pluginExtensionEntries.value)
+  if (added.length === 0) return own
+  const withPath = [editorNotePath.of(getDocumentPath(props)), ...added]
+  return own ? [own, ...withPath] : withPath
 }
 
 export function useMarkdownDocument(

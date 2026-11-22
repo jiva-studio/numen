@@ -92,7 +92,7 @@ The title-bar chips moved from 12px to 13px and the pills from 10px to 13px; the
 
 ## The window chrome
 
-The title bar, the status bar and every widget a plugin draws in one of their slots (`titleBar.*`, `statusBar.*`), with the popovers those widgets open, keep one size at every interface scale and every text scale, like the native window buttons beside them. They are set in the chrome tokens, which hold `px`, and never in `rem` or a token that follows the root font size.
+The title bar, the status bar and every widget a plugin draws in one of their slots (`titleBar.*`, `statusBar.*`) keep one size at every interface scale and every text scale, like the native window buttons beside them. The popups those widgets open (dropdown lists, popovers and their content) are not chrome: they follow the interface scale like the rest of the application UI. The bar and its widgets are set in the chrome tokens, which hold `px`, and never in `rem` or a token that follows the root font size.
 
 | Token                         | Value  |
 | ----------------------------- | ------ |
@@ -103,7 +103,7 @@ The title bar, the status bar and every widget a plugin draws in one of their sl
 | `--numen-chrome-radius`       | `6px`  |
 | `--numen-chrome-radius-tight` | `3px`  |
 
-A length is a multiple of the unit: `calc(1.25 * var(--numen-chrome-unit))`. The stylelint rule `numen/chrome-fixed-size` rejects `rem`, `--numen-interface-scale`, `--numen-text-scale` and every token whose value follows them in the frontends of `views-title-bar`, `views-status-bar` and each plugin whose manifest draws a view in a chrome slot. The shared `Tooltip` and `Menu` of `@numen/ui` are not chrome and follow the interface scale.
+A length is a multiple of the unit: `calc(1.25 * var(--numen-chrome-unit))`. The stylelint rule `numen/chrome-fixed-size` rejects `rem`, `--numen-interface-scale`, `--numen-text-scale` and every token whose value follows them in the frontends of `views-title-bar`, `views-status-bar` and each plugin whose manifest draws a view in a chrome slot. A popup is recognised by its selector, never by a list of names. A class is a popup root when its name ends in the word `popover` or in `popover-container`, words being delimited by `-` or `_` (`.index-popover`, `.todos-status__popover`, `.tasks-status__popover-container`); `.x__popover-trigger`, `.x__popover-btn` and `.popover-anchor` are parts of the bar and are not. A compound selector is a popup part when a popup root is its own class or an ancestor in its chain of descendant (` `) or child (`>`) combinators; a root named inside `:has()`, `:not()` or `:is()`, or before a sibling combinator, does not count. A rule is exempt when every comma-part of its selector is a popup part, or when it is nested in an exempt rule. The parts drawn inside the popup carry their own class names, so a plugin writes them under the popover selector (`.todos-status__popover .todos-status__row`), never as standalone selectors. A length that places the popup against the chip, such as `--popover-offset`, belongs to the widget root and is written in the chrome unit. The shared `Tooltip` and `Menu` of `@numen/ui` are not chrome and follow the interface scale.
 
 ## Acceptance
 

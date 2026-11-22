@@ -7,7 +7,7 @@ import { activate, deactivate } from './index'
 import { createEditorSettingsContext } from './testing/editorSettings'
 
 /** Host services whose vault offers no notes. */
-const NO_NOTES = { vault: {} } as unknown as HostServices
+const NO_NOTES = { vault: {}, ui: {} } as unknown as HostServices
 
 const ICON_LOAD_TIMEOUT = 30_000
 
@@ -95,7 +95,10 @@ describe('notes plugin lifecycle', () => {
 
   it('registers the note-editor view where the host offers the notes of the vault', () => {
     const { context } = createEditorSettingsContext({ lineNumbers: false, softWrap: true })
-    const host = { vault: { notes: { read: vi.fn(), write: vi.fn() } } } as unknown as HostServices
+    const host = {
+      vault: { notes: { read: vi.fn(), write: vi.fn() } },
+      ui: {},
+    } as unknown as HostServices
 
     activate(context, host)
 

@@ -1,0 +1,151 @@
+import type { ApiError, Result } from '@numen/plugin-sdk'
+
+/**
+ * What the frontend reads of the backend: the messages of the todos service. Keys and meaning match
+ * the Go messages in backend/api.
+ */
+
+/** What the character of a checkbox says: a space is open, x is done, any other character is other. */
+type Status = 'open' | 'done' | 'other'
+
+/** A field of a task line that is written but cannot be read. */
+type Issue = 'invalidDue' | 'invalidDone' | 'invalidRecurrence' | 'invalidPriority'
+
+/** One task line of a note. Dates are `YYYY-MM-DD` or empty. */
+export interface Task {
+  readonly path: string
+  readonly line: number
+  readonly proseLine: number
+  readonly raw: string
+  readonly text: string
+  readonly status: Status
+  readonly priority: string
+  readonly due: string
+  readonly doneOn: string
+  readonly recurrence: string
+  readonly projects: readonly string[]
+  readonly contexts: readonly string[]
+  readonly issues: readonly Issue[]
+  readonly depth: number
+}
+
+export type DueFilter =
+  'any' | 'none' | 'overdue' | 'today' | 'thisWeek' | 'nextSevenDays' | 'range'
+
+/** What ListTasks selects by; its fields combine with AND. */
+export interface Filter {
+  readonly status: readonly Status[]
+  readonly due: DueFilter
+  readonly from: string
+  readonly to: string
+  readonly projects: readonly string[]
+  readonly contexts: readonly string[]
+  readonly priorities: readonly string[]
+  readonly path: string
+  readonly text: string
+}
+
+/** What the lists of the popover and the tab ask of the backend. */
+export interface TaskReader {
+  /** Reads the tasks a filter accepts at a day, limited to a count. */
+  listTasks(
+    today: string,
+    filter: Filter,
+    limit: number,
+  ): Promise<Result<ListTasksResponse, ApiError>>
+}
+
+export interface GetSummaryRequest {
+  readonly today: string
+}
+
+/** The counts of the open tasks. */
+export interface Summary {
+  readonly isReady: boolean
+  readonly overdueCount: number
+  readonly todayCount: number
+  readonly nextSevenDaysCount: number
+  readonly noDateCount: number
+  readonly unreadableCount: number
+}
+
+export interface ListTasksRequest {
+  readonly today: string
+  readonly filter: Filter
+  readonly limit: number
+}
+
+/** The total is the count before the limit. */
+export interface ListTasksResponse {
+  readonly tasks: readonly Task[]
+  readonly total: number
+  readonly revision: number
+}
+
+export interface Rename {
+  readonly from: string
+  readonly to: string
+}
+
+/** No path and no rename is a full check. */
+export interface RefreshIndexRequest {
+  readonly paths: readonly string[]
+  readonly renamed: readonly Rename[]
+}
+
+export type RefreshIndexResponse = Record<string, never>
+
+export type WatchTasksRequest = Record<string, never>
+
+/** Sent once at the start of the stream and after each change of the index. */
+export interface WatchMessage {
+  readonly revision: number
+  readonly isReady: boolean
+}
+
+/** What a tick or an untick did to the line. */
+type Change = 'completed' | 'rescheduled' | 'reopened'
+
+/** Why a change was not written; the person can fix it by looking at the note. */
+type Refusal = 'notFound' | 'unreadable' | 'stale' | 'invalidRecurrence' | 'notOpen' | 'notDone'
+
+/**
+ * Ticks (isDone) or unticks the task at a line; raw is the text the line had when it was listed. The
+ * line counts the lines of the file, or from the first line below the frontmatter when isProseLine.
+ */
+export interface SetTaskDoneRequest {
+  readonly path: string
+  readonly line: number
+  readonly isProseLine: boolean
+  readonly raw: string
+  readonly isDone: boolean
+  readonly today: string
+}
+
+/** The task after the change; error is empty when the change was written. */
+export interface SetTaskDoneResponse {
+  readonly task: Task
+  readonly change: Change | ''
+  readonly error: Refusal | ''
+}
+
+/** What the lists that tick a task ask of the backend. */
+export interface TaskWriter {
+  /** Ticks or unticks one task line of a note. */
+  setTaskDone(request: SetTaskDoneRequest): Promise<Result<SetTaskDoneResponse, ApiError>>
+}
+
+export type ListFieldsRequest = Record<string, never>
+
+/** A project, a context or a tag, written without its +, @ or #, and the number of tasks that carry it. */
+export interface FieldCount {
+  readonly name: string
+  readonly count: number
+}
+
+/** The most used projects and contexts of the tasks and tags of the notes, at most 200 of each, by count and then by name. */
+export interface ListFieldsResponse {
+  readonly projects: readonly FieldCount[]
+  readonly contexts: readonly FieldCount[]
+  readonly tags: readonly FieldCount[]
+}
