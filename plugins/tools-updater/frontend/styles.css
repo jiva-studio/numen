@@ -5,14 +5,6 @@
   align-items: center;
   height: 100%;
   padding-inline: calc(var(--numen-chrome-inset) / 4);
-  --popover-offset: calc(0.25 * var(--numen-chrome-unit));
-  --popover-width: calc(20 * var(--numen-chrome-unit));
-  --popover-edge-gap: var(--numen-chrome-unit);
-  --popover-gap: calc(0.5 * var(--numen-chrome-unit));
-  --popover-pad: calc(0.75 * var(--numen-chrome-unit));
-  --header-pad-block: calc(0.5 * var(--numen-chrome-unit));
-  --close-size: calc(1.25 * var(--numen-chrome-unit));
-  --body-gap: calc(0.25 * var(--numen-chrome-unit));
 }
 
 /* The chip: flat, with a ground and no border. Height, text size and padding are the same in the
@@ -51,6 +43,14 @@ button.update-indicator__trigger[aria-expanded='true'] {
 
 /* The panel of the Background tasks popover: raised ground, rule border, panel radius and shadow. */
 .update-popover {
+  --popover-offset: 0.25rem;
+  --popover-width: 20rem;
+  --popover-edge-gap: 1rem;
+  --popover-gap: 0.5rem;
+  --popover-pad: 0.75rem;
+  --header-pad-block: 0.5rem;
+  --close-size: 1.25rem;
+  --body-gap: 0.25rem;
   position: absolute;
   top: calc(100% + var(--popover-offset));
   right: 0;
@@ -61,13 +61,13 @@ button.update-indicator__trigger[aria-expanded='true'] {
   background: var(--numen-raised);
   color: var(--numen-ink);
   border: 1px solid var(--numen-panel-border);
-  border-radius: var(--numen-chrome-radius);
+  border-radius: var(--numen-radius-popup);
   box-shadow: var(--numen-panel-shadow);
   overflow: hidden;
   z-index: 50;
 }
 
-.update-popover__header {
+.update-popover .update-popover__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -77,48 +77,48 @@ button.update-indicator__trigger[aria-expanded='true'] {
   border-bottom: 1px solid var(--numen-rule);
 }
 
-.update-popover__title {
-  font-size: var(--numen-chrome-text-2);
+.update-popover .update-popover__title {
+  font-size: var(--numen-text-2);
   font-weight: 600;
 }
 
-.update-popover__close-btn {
+.update-popover .update-popover__close-btn {
   width: var(--close-size);
   height: var(--close-size);
   padding: 0;
   color: var(--numen-hushed);
 }
 
-.update-popover__close-btn:hover {
+.update-popover .update-popover__close-btn:hover {
   color: var(--numen-ink);
 }
 
-.update-popover__body {
+.update-popover .update-popover__body {
   display: flex;
   flex-direction: column;
   gap: var(--body-gap);
   padding: var(--popover-pad);
 }
 
-.update-popover__desc {
+.update-popover .update-popover__desc {
   margin: 0;
-  font-size: var(--numen-chrome-text-2);
+  font-size: var(--numen-text-2);
   line-height: 1.35;
 }
 
-.update-popover__release {
+.update-popover .update-popover__release {
   margin: 0;
-  font-size: var(--numen-chrome-text-1);
+  font-size: var(--numen-text-1);
   color: var(--numen-hushed);
 }
 
-.update-popover__actions {
+.update-popover .update-popover__actions {
   display: flex;
   align-items: center;
   gap: var(--popover-gap);
   padding: 0 var(--popover-pad) var(--popover-pad);
 }
 
-.update-popover__dismiss-btn {
+.update-popover .update-popover__dismiss-btn {
   margin-left: auto;
 }
