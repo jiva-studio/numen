@@ -191,6 +191,19 @@ describe('the layout of a slot of commands in several groups', () => {
     ])
   })
 
+  it('draws an entry the list does not name before the separators that close the list, which draw nothing', () => {
+    const extra: DeclaredSlotEntry[] = [
+      { pluginId: 'org.example.d', slot: BUTTONS, command: 'four', group: '0-navigate' },
+    ]
+    expect(readBar([one, SEPARATOR, two, three, SEPARATOR, SEPARATOR], extra)).toStrictEqual([
+      'one',
+      '|',
+      'two',
+      'three',
+      'four',
+    ])
+  })
+
   it('ignores a repeated entry and an id no plugin places', () => {
     expect(readBar([two, { id: 'gone' }, two, one])).toStrictEqual(['two', 'one', 'three'])
   })

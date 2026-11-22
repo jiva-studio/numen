@@ -67,11 +67,10 @@ const isFlipped = (list: readonly Frame[], at: number, name: string): boolean =>
   return false
 }
 
-const isPopped = (now: Frame, prev: Frame): boolean =>
-  now.classes.has(LIFTED) !== prev.classes.has(LIFTED) &&
-  LIFT_FADES.some((property) => !now.fades.has(property))
+const isFading = (now: Frame): boolean =>
+  now.classes.has(LIFTED) && LIFT_FADES.some((property) => now.fades.has(property))
 
-/** Every frame where a row jumps, pops without a fade, is replaced, or has a state class flipped on and straight off. */
+/** Every frame where a row jumps, fades a property while lifted, is replaced, or has a state class flipped on and straight off. */
 export function findDiscontinuities(frames: Map<string, Frame[]>): string[] {
   const found: string[] = []
   frames.forEach((list, label) => {
@@ -80,7 +79,7 @@ export function findDiscontinuities(frames: Map<string, Frame[]>): string[] {
       if (!prev) return
       const report = (what: string): number => found.push(`${label} f${now.n}: ${what}`)
       if (Math.abs(now.top - prev.top) > JUMP_OF_TOP) report(`top ${prev.top} -> ${now.top}`)
-      if (isPopped(now, prev)) report('lift or drop without a fade')
+      if (isFading(now)) report('lifted row fades a property')
       if (now.isSameNode !== prev.isSameNode) report('element replaced')
       if (STATE_CLASSES.some((name) => isFlipped(list, at, name))) report('state class flips back')
     })

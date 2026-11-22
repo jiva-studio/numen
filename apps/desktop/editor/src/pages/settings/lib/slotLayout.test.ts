@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { getSlotRows, moveSlotRow, toggleSlotRow, writeSlotRows } from './slotLayout'
+import {
+  addSlotSeparator,
+  getSlotRows,
+  hasSlotLayout,
+  moveSlotRow,
+  removeSlotSeparator,
+  resetSlotRows,
+  toggleSlotRow,
+  writeSlotRows,
+} from './slotLayout'
 
 const group = {
   slot: 'plexGraph.nodeBelow',
@@ -108,7 +117,7 @@ describe('the rows of a slot with groups', () => {
     ])
   })
 
-  it('pass a row over a separator like a neighbour, and store every separator on the first write', () => {
+  it('pass a row over a separator like a neighbour, and store every separator on the first write, a group left empty included', () => {
     const rows = getSlotRows(grouped, undefined)
 
     expect(describeRows(moveSlotRow(rows, 0, 1))).toStrictEqual([
@@ -123,6 +132,7 @@ describe('the rows of a slot with groups', () => {
         { id: 'a/command/one' },
         { id: 'b/command/two' },
         { id: '---' },
+        { id: '---' },
         { id: 'c/command/three' },
       ],
     })
@@ -132,5 +142,112 @@ describe('the rows of a slot with groups', () => {
     const rows = getSlotRows(grouped, undefined)
 
     expect(toggleSlotRow(rows, 1)).toStrictEqual(rows)
+  })
+})
+
+describe('the separators a person makes', () => {
+  const describeRows = (rows: readonly { kind: string; key: string }[]) =>
+    rows.map((one) => (one.kind === 'separator' ? '|' : one.key))
+
+  it('are added after the first row, and numbered apart from those that are there', () => {
+    const once = addSlotSeparator(getSlotRows(group, undefined))
+    const twice = addSlotSeparator(once)
+
+    expect(describeRows(once)).toStrictEqual(['a/view/one', '|', 'b/view/two', 'c/view/three'])
+    expect(describeRows(twice)).toStrictEqual([
+      'a/view/one',
+      '|',
+      '|',
+      'b/view/two',
+      'c/view/three',
+    ])
+    expect(new Set(twice.map((one) => one.key)).size).toBe(twice.length)
+    expect(addSlotSeparator([])).toStrictEqual([])
+  })
+
+  it('are removed alone, and an entry stays', () => {
+    const rows = addSlotSeparator(getSlotRows(group, undefined))
+
+    expect(describeRows(removeSlotSeparator(rows, 1))).toStrictEqual([
+      'a/view/one',
+      'b/view/two',
+      'c/view/three',
+    ])
+    expect(removeSlotSeparator(rows, 0)).toBe(rows)
+  })
+
+  it('keep every leading, trailing and repeated one, in the tab and in the stored list', () => {
+    const layout = {
+      [group.slot]: [
+        { id: '---' },
+        { id: 'a/view/one' },
+        { id: '---' },
+        { id: '---' },
+        { id: 'b/view/two' },
+        { id: '---' },
+      ],
+    }
+    const rows = getSlotRows(group, layout)
+
+    expect(describeRows(rows)).toStrictEqual([
+      '|',
+      'a/view/one',
+      '|',
+      '|',
+      'b/view/two',
+      'c/view/three',
+      '|',
+    ])
+    expect(writeSlotRows(layout, group.slot, rows)).toStrictEqual({
+      [group.slot]: [
+        { id: '---' },
+        { id: 'a/view/one' },
+        { id: '---' },
+        { id: '---' },
+        { id: 'b/view/two' },
+        { id: 'c/view/three' },
+        { id: '---' },
+      ],
+    })
+  })
+
+  it('keep an entry no list names before the separators that close the list', () => {
+    const layout = { [group.slot]: [{ id: 'a/view/one' }, { id: '---' }] }
+
+    expect(describeRows(getSlotRows(group, layout))).toStrictEqual([
+      'a/view/one',
+      'b/view/two',
+      'c/view/three',
+      '|',
+    ])
+  })
+
+  it('move like entries', () => {
+    const rows = addSlotSeparator(getSlotRows(group, undefined))
+
+    expect(describeRows(moveSlotRow(rows, 1, 3))).toStrictEqual([
+      'a/view/one',
+      'b/view/two',
+      'c/view/three',
+      '|',
+    ])
+  })
+})
+
+describe('the stored list of a slot', () => {
+  const layout = { [group.slot]: [{ id: 'a/view/one' }], other: [{ id: 'x' }] }
+
+  it('is there when its key holds a list', () => {
+    expect(hasSlotLayout(layout, group.slot)).toBe(true)
+    expect(hasSlotLayout(layout, 'missing')).toBe(false)
+    expect(hasSlotLayout(undefined, group.slot)).toBe(false)
+  })
+
+  it('is reset by deleting its key and leaving the other slots', () => {
+    const next = resetSlotRows(layout, group.slot)
+
+    expect(next).toStrictEqual({ other: [{ id: 'x' }] })
+    expect('plexGraph.nodeBelow' in (next as object)).toBe(false)
+    expect(resetSlotRows(undefined, group.slot)).toStrictEqual({})
   })
 })

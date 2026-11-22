@@ -71,12 +71,14 @@ describe('the slots of a plugin page', () => {
       },
     ]
 
-    it('draw a divider row with no handle and no switch', () => {
+    it('draw a divider row with a handle and a remove button but no switch', () => {
       const page = mount(PluginSlots, { props: { groups: grouped, layout: undefined } })
 
       expect(page.findAll('li')).toHaveLength(4)
       expect(page.findAll('li hr')).toHaveLength(1)
-      expect(page.findAll('[aria-label^="Reorder"]')).toHaveLength(3)
+      expect(page.findAll('[aria-label^="Reorder"]')).toHaveLength(4)
+      expect(page.findAll('[aria-label="Reorder separator"]')).toHaveLength(1)
+      expect(page.findAll('[aria-label="Remove separator"]')).toHaveLength(1)
       expect(page.findAll('[aria-label^="Show"]')).toHaveLength(3)
     })
 
@@ -99,7 +101,7 @@ describe('the slots of a plugin page', () => {
       ])
     })
 
-    it('drop the separator of a group a row leaves empty', async () => {
+    it('keep the separator of a group a row leaves empty, as the first row', async () => {
       const page = mount(PluginSlots, {
         props: {
           groups: grouped,
@@ -120,6 +122,7 @@ describe('the slots of a plugin page', () => {
         [
           {
             'titleBar.commands': [
+              { id: '---' },
               { id: 'a/command/one' },
               { id: 'b/command/two' },
               { id: 'c/command/three' },
@@ -128,5 +131,70 @@ describe('the slots of a plugin page', () => {
         ],
       ])
     })
+
+    it('store a move of the separator by its grip', async () => {
+      const page = mount(PluginSlots, { props: { groups: grouped, layout: undefined } })
+
+      await page.get('[aria-label="Reorder separator"]').trigger('keydown', { key: 'ArrowDown' })
+
+      expect(page.emitted('change')).toStrictEqual([
+        [
+          {
+            'titleBar.commands': [
+              { id: 'a/command/one' },
+              { id: 'b/command/two' },
+              { id: '---' },
+              { id: 'c/command/three' },
+            ],
+          },
+        ],
+      ])
+    })
+
+    it('store the list without the separator its button removes', async () => {
+      const page = mount(PluginSlots, { props: { groups: grouped, layout: undefined } })
+
+      await page.get('[aria-label="Remove separator"]').trigger('click')
+
+      expect(page.emitted('change')).toStrictEqual([
+        [
+          {
+            'titleBar.commands': [
+              { id: 'a/command/one' },
+              { id: 'b/command/two' },
+              { id: 'c/command/three' },
+            ],
+          },
+        ],
+      ])
+    })
+  })
+
+  it('add a separator after the first row from the heading of the island', async () => {
+    const page = mount(PluginSlots, { props: { groups, layout: undefined } })
+
+    await page
+      .get('[data-testid="slots-plexGraph.nodeBelow"] [aria-label="Add separator"]')
+      .trigger('click')
+
+    expect(page.emitted('change')).toStrictEqual([
+      [{ 'plexGraph.nodeBelow': [{ id: 'a/view/one' }, { id: '---' }, { id: 'b/view/two' }] }],
+    ])
+  })
+
+  it('offer Reset only on a slot with a stored list, and drop the key of that slot', async () => {
+    const layout = { 'plexGraph.nodeBelow': [{ id: 'b/view/two' }], other: [{ id: 'x' }] }
+    const page = mount(PluginSlots, { props: { groups, layout } })
+
+    expect(page.findAll('[aria-label^="Reset"]')).toHaveLength(1)
+    await page.get('[aria-label="Reset Below a node to its default"]').trigger('click')
+
+    expect(page.emitted('change')).toStrictEqual([[{ other: [{ id: 'x' }] }]])
+  })
+
+  it('offer no Reset while nothing is stored', () => {
+    const page = mount(PluginSlots, { props: { groups, layout: undefined } })
+
+    expect(page.find('[aria-label^="Reset"]').exists()).toBe(false)
   })
 })

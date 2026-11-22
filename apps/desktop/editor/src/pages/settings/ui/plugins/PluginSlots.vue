@@ -1,19 +1,28 @@
 <script setup lang="ts">
 /**
  * The slots a plugin draws, each an island with the views placed in it. A switch hides a view, and a
- * grip drags it to a new place in its slot; the plugin keeps the result in its setting of the type slots.
+ * grip drags it to a new place in its slot; a separator is added from the heading of the island, dragged
+ * like a view and removed from its row, and a slot with a stored list can be given back to the manifests.
+ * The plugin keeps the result in its setting of the type slots.
  */
+import { RotateCcw, SeparatorHorizontal } from '@lucide/vue'
 import { IslandCard } from '@numen/ui'
 import type { JsonValue } from '@/shared/api/json'
 import {
+  addSlotSeparator,
   getSlotRows,
+  hasSlotLayout,
   moveSlotRow,
+  removeSlotSeparator,
+  resetSlotRows,
   toggleSlotRow,
   writeSlotRows,
   type SlotRow,
 } from '../../lib/slotLayout'
 import type { SlotGroup } from '../../types'
 import { useSlotDrag } from '../../model/useSlotDrag'
+import { WORDS as words } from '../../words'
+import RowAction from '../setting-row/RowAction.vue'
 import PluginSlotRow from './PluginSlotRow.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -27,7 +36,7 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { onGripPress, onRowTransitionEnd, isDragging, getRowClass, getRowStyle } = useSlotDrag({
+const { onGripPress, onRowTransitionEnd, isPressed, getRowClass, getRowStyle } = useSlotDrag({
   getRows: (group) => rowsOf(group),
   move: (group, from, to) => onChange(group, moveSlotRow(rowsOf(group), from, to)),
 })
@@ -38,6 +47,10 @@ function onGripKey(group: SlotGroup, at: number, event: KeyboardEvent): void {
   if (by === 0) return
   event.preventDefault()
   onChange(group, moveSlotRow(rowsOf(group), at, at + by))
+}
+
+function onReset(group: SlotGroup): void {
+  emit('change', resetSlotRows(props.layout, group.slot))
 }
 
 function onChange(group: SlotGroup, rows: readonly SlotRow[]): void {
@@ -55,7 +68,24 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
     :title="group.title"
     :data-testid="`slots-${group.slot}`"
   >
-    <ul class="plugin-slots__list" :class="{ 'plugin-slots__list--dragging': isDragging(group) }">
+    <template #aside>
+      <RowAction
+        :label="words.slotsAddSeparator"
+        class="plugin-slots__action"
+        @click="onChange(group, addSlotSeparator(rowsOf(group)))"
+      >
+        <SeparatorHorizontal :size="14" aria-hidden="true" />
+      </RowAction>
+      <RowAction
+        v-if="hasSlotLayout(props.layout, group.slot)"
+        class="plugin-slots__action"
+        :label="words.slotsReset(group.title)"
+        @click="onReset(group)"
+      >
+        <RotateCcw :size="14" aria-hidden="true" />
+      </RowAction>
+    </template>
+    <ul class="plugin-slots__list" :class="{ 'plugin-slots__list--pressed': isPressed(group) }">
       <li
         v-for="(row, at) in rowsOf(group)"
         :key="row.key"
@@ -64,14 +94,13 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
         :style="getRowStyle(group, row.key, at)"
         @transitionend="onRowTransitionEnd"
       >
-        <hr v-if="row.kind === 'separator'" class="plugin-slots__separator" />
         <PluginSlotRow
-          v-else
           :row="row"
-          :is-movable="group.contributors.length > 1"
+          :is-movable="rowsOf(group).length > 1"
           @grip-press="(event) => onGripPress(group, at, event)"
           @grip-key="(event) => onGripKey(group, at, event)"
           @toggle="onChange(group, toggleSlotRow(rowsOf(group), at))"
+          @remove="onChange(group, removeSlotSeparator(rowsOf(group), at))"
         />
       </li>
     </ul>
@@ -87,8 +116,16 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
   list-style: none;
 }
 
-.plugin-slots__list--dragging {
+.plugin-slots__list--pressed {
   user-select: none;
+}
+
+.plugin-slots__list--pressed .plugin-slots__row {
+  will-change: transform;
+}
+
+.plugin-slots__action {
+  margin-block: -0.25rem;
 }
 
 .plugin-slots__row {
@@ -100,43 +137,24 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
   padding-block: 0.125rem;
 }
 
-.plugin-slots__separator {
-  flex: 1 1 auto;
-  margin: 0;
-  border: none;
-  border-block-start: var(--numen-stroke) solid var(--numen-rule);
-}
-
 .plugin-slots__row--lifted,
 .plugin-slots__row--settling {
   position: relative;
   z-index: 1;
+  will-change: transform;
 }
 
 .plugin-slots__row--lifted {
   background: var(--numen-raised);
-  box-shadow: var(--numen-shadow-card);
-  opacity: 0.9;
-  transition:
-    background-color var(--numen-motion) var(--numen-easing),
-    box-shadow var(--numen-motion) var(--numen-easing),
-    opacity var(--numen-motion) var(--numen-easing);
+  box-shadow: 0 0.0625rem 0.375rem color-mix(in oklab, var(--numen-ink), transparent 80%);
 }
 
-.plugin-slots__row--shifting {
+.plugin-slots__row--shifting,
+.plugin-slots__row--settling {
   transition: transform var(--numen-motion) var(--numen-easing);
 }
 
-.plugin-slots__row--settling {
-  transition:
-    transform var(--numen-motion) var(--numen-easing),
-    background-color var(--numen-motion) var(--numen-easing),
-    box-shadow var(--numen-motion) var(--numen-easing),
-    opacity var(--numen-motion) var(--numen-easing);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .plugin-slots__row--lifted,
   .plugin-slots__row--shifting,
   .plugin-slots__row--settling {
     transition: none;

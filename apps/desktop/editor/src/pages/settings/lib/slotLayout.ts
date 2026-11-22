@@ -1,9 +1,9 @@
-import { arrangeByLayout, collapseSeparators, SLOT_SEPARATOR_ID } from '@numen/plugin-loader'
+import { arrangeByLayout, SLOT_SEPARATOR_ID } from '@numen/plugin-loader'
 import type { JsonValue } from '@/shared/api/json'
 import type { SlotContributor, SlotGroup } from '../types'
 
 /** One entry of a slot as the settings page draws it, in the order the slot draws it. */
-export interface EntryRow {
+interface EntryRow {
   readonly kind: 'entry'
   readonly key: string
   readonly label: string
@@ -39,9 +39,11 @@ function getDefaults(contributors: readonly SlotContributor[]): (SlotContributor
   )
 }
 
-const isSeparator = (row: SlotRow): boolean => row.kind === 'separator'
-
-/** The rows of a slot: its entries and the separators between groups, as the stored layout arranges them, else as the manifests do. */
+/**
+ * The rows of a slot: its entries and the separators between groups, as the stored layout arranges them,
+ * else as the manifests do. Every stored separator is a row, even one the bar does not draw because it
+ * opens the slot, closes it, follows another or has only hidden entries around it.
+ */
 export function getSlotRows(group: SlotGroup, layout: JsonValue | undefined): readonly SlotRow[] {
   const stored = getStoredEntries(layout, group.slot)
   const hidden = new Set(stored.filter((one) => one.hidden === true).map((one) => one.id))
@@ -52,7 +54,7 @@ export function getSlotRows(group: SlotGroup, layout: JsonValue | undefined): re
       ? { kind: 'separator', key: `separator:${separators++}` }
       : { kind: 'entry', ...one, isHidden: hidden.has(one.key) },
   )
-  return collapseSeparators(rows, isSeparator)
+  return rows
 }
 
 /** The rows with the one at `from` moved to `to`; the rows as they were for a place outside the list. */
@@ -75,6 +77,31 @@ export function toggleSlotRow(rows: readonly SlotRow[], at: number): readonly Sl
   )
 }
 
+/** The rows with a separator placed after the first row, where a person finds it to drag it on. */
+export function addSlotSeparator(rows: readonly SlotRow[]): readonly SlotRow[] {
+  if (rows.length === 0) return rows
+  const used = new Set(rows.map((one) => one.key))
+  let n = 0
+  while (used.has(`separator:${n}`)) n += 1
+  return [rows[0] as SlotRow, { kind: 'separator', key: `separator:${n}` }, ...rows.slice(1)]
+}
+
+/** The rows without the separator at `at`; the rows as they were for an entry. */
+export function removeSlotSeparator(rows: readonly SlotRow[], at: number): readonly SlotRow[] {
+  return rows[at]?.kind === 'separator' ? rows.filter((_, index) => index !== at) : rows
+}
+
+/** Whether the layout keeps a list for the slot. */
+export function hasSlotLayout(layout: JsonValue | undefined, slot: string): boolean {
+  return isRecord(layout) && Array.isArray(layout[slot])
+}
+
+/** The layout without the list of one slot, the other slots as they were, so the slot goes back to its manifests. */
+export function resetSlotRows(layout: JsonValue | undefined, slot: string): JsonValue {
+  const { [slot]: _dropped, ...others } = isRecord(layout) ? layout : {}
+  return others
+}
+
 /** The layout with the entries of one slot replaced by the rows, the other slots as they were. */
 export function writeSlotRows(
   layout: JsonValue | undefined,
@@ -84,7 +111,7 @@ export function writeSlotRows(
   const others = isRecord(layout) ? layout : {}
   return {
     ...others,
-    [slot]: collapseSeparators(rows, isSeparator).map((one) =>
+    [slot]: rows.map((one) =>
       one.kind === 'separator'
         ? { id: SLOT_SEPARATOR_ID }
         : { id: one.key, ...(one.isHidden ? { hidden: true } : {}) },

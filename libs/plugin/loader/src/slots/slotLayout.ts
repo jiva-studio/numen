@@ -21,7 +21,7 @@ export type SlotLayout = Readonly<
 /** The id a stored layout names a group separator by; no entry key is written this way. */
 export const SLOT_SEPARATOR_ID = '---'
 
-/** The entries a stored list names in its order, with its separators, then those it does not name in their order. */
+/** The entries a stored list names in its order, with its separators exactly as stored, then those it does not name in their order, before the separators that close the list. */
 export function arrangeByLayout<T>(
   defaults: readonly (T | null)[],
   getKey: (one: T) => string,
@@ -36,8 +36,9 @@ export function arrangeByLayout<T>(
     named.delete(id)
     return one === undefined ? [] : [one]
   })
-  while (out.at(-1) === null) out.pop()
-  return [...out, ...named.values()]
+  let tail = out.length
+  while (tail > 0 && out[tail - 1] === null) tail -= 1
+  return [...out.slice(0, tail), ...named.values(), ...out.slice(tail)]
 }
 
 /** The list without the separators that open it, close it or follow another. */

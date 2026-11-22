@@ -1,12 +1,17 @@
 <script setup lang="ts">
-/** One entry of a slot: the grip that drags it where the slot holds more than one, its name, the plugin it comes from and the switch that shows it. */
-import { GripVertical } from '@lucide/vue'
+/**
+ * One row of a slot. An entry has the grip that drags it where the slot holds more than one row, its name,
+ * the plugin it comes from and the switch that shows it; a separator has its grip, the line and a button
+ * that removes it.
+ */
+import { GripVertical, X } from '@lucide/vue'
 import { Switch } from '@numen/ui'
-import type { EntryRow } from '../../lib/slotLayout'
+import type { SlotRow } from '../../lib/slotLayout'
+import RowAction from '../setting-row/RowAction.vue'
 import { WORDS as words } from '../../words'
 
 const props = defineProps<{
-  row: EntryRow
+  row: SlotRow
   isMovable: boolean
 }>()
 
@@ -14,6 +19,7 @@ const emit = defineEmits<{
   (e: 'grip-press', event: PointerEvent): void
   (e: 'grip-key', event: KeyboardEvent): void
   (e: 'toggle'): void
+  (e: 'remove'): void
 }>()
 </script>
 
@@ -22,22 +28,32 @@ const emit = defineEmits<{
     type="button"
     class="plugin-slots__grip"
     :disabled="!props.isMovable"
-    :aria-label="words.slotsGrip(props.row.label)"
+    :aria-label="
+      props.row.kind === 'entry' ? words.slotsGrip(props.row.label) : words.slotsSeparatorGrip
+    "
     @pointerdown="emit('grip-press', $event)"
     @keydown="emit('grip-key', $event)"
   >
     <GripVertical class="plugin-slots__grip-icon" aria-hidden="true" />
   </button>
-  <span class="plugin-slots__name">
-    <span class="plugin-slots__label">{{ props.row.label }}</span>
-    <span class="plugin-slots__owner" aria-hidden="true">·</span>
-    <span class="plugin-slots__owner">{{ props.row.pluginName }}</span>
-  </span>
-  <Switch
-    :model-value="!props.row.isHidden"
-    :aria-label="words.slotsShow(props.row.label)"
-    @update:model-value="emit('toggle')"
-  />
+  <template v-if="props.row.kind === 'entry'">
+    <span class="plugin-slots__name">
+      <span class="plugin-slots__label">{{ props.row.label }}</span>
+      <span class="plugin-slots__owner" aria-hidden="true">·</span>
+      <span class="plugin-slots__owner">{{ props.row.pluginName }}</span>
+    </span>
+    <Switch
+      :model-value="!props.row.isHidden"
+      :aria-label="words.slotsShow(props.row.label)"
+      @update:model-value="emit('toggle')"
+    />
+  </template>
+  <template v-else>
+    <hr class="plugin-slots__separator" />
+    <RowAction :label="words.slotsRemoveSeparator" @click="emit('remove')">
+      <X :size="12" aria-hidden="true" />
+    </RowAction>
+  </template>
 </template>
 
 <style scoped>
@@ -70,6 +86,13 @@ const emit = defineEmits<{
 .plugin-slots__grip-icon {
   inline-size: var(--icon);
   block-size: var(--icon);
+}
+
+.plugin-slots__separator {
+  flex: 1 1 auto;
+  margin: 0;
+  border: none;
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .plugin-slots__name {

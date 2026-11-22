@@ -229,6 +229,38 @@ describe('the slots of a plugin with a separator between two groups', () => {
     })
   })
 
+  it('move the separator itself like a row, and store it at its new place', async () => {
+    const root = mountSlots(withSeparator)
+    await nextFrame()
+    const { pitch, moveTo } = await grab(root, 2)
+    for (let offset = 2; offset <= pitch * 1.6; offset += 2) await moveTo(offset)
+    await commands.pointer('up')
+    for (let frame = 0; frame < 40; frame++) await nextFrame()
+
+    expect(labelsOf(root)).toStrictEqual(['one', 'two', 'three', '|', 'four'])
+    expect(stored).toStrictEqual({
+      [withSeparator[0]!.slot]: [
+        { id: 'a/command/one' },
+        { id: 'a/command/two' },
+        { id: 'a/command/three' },
+        { id: '---' },
+        { id: 'a/command/four' },
+      ],
+    })
+  })
+
+  it('show no jump, flash or replaced row on any frame of a drag of the separator', async () => {
+    const root = mountSlots(withSeparator)
+    await nextFrame()
+    const probe = startProbe(root)
+    const { pitch, moveTo } = await grab(root, 2)
+    for (let offset = 1; offset <= pitch * 1.6; offset += 2) await moveTo(offset)
+    await commands.pointer('up')
+    for (let frame = 0; frame < 40; frame++) await nextFrame()
+
+    expect(findDiscontinuities(probe.stop())).toStrictEqual([])
+  })
+
   it('show no jump, flash or replaced row on any frame of a drag across the separator', async () => {
     const root = mountSlots(withSeparator)
     await nextFrame()

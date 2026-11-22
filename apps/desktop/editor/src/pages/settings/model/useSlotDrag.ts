@@ -36,7 +36,8 @@ export interface SlotDragSource {
 /**
  * The drag of a row of a slot. The held row follows the pointer by its own element, so a move of the
  * pointer renders nothing; the list renders when the place the row is over changes, and the rows
- * between slide aside.
+ * between slide aside. The list is marked from the press, before the first move, so the rows are on
+ * their own layers by the time one of them is lifted.
  */
 export function useSlotDrag(source: SlotDragSource) {
   const { settling, settle, finish } = useRowSettle()
@@ -59,7 +60,7 @@ export function useSlotDrag(source: SlotDragSource) {
     move: (from, point) => {
       if (!pressed?.row) return
       const offset = clampRowOffset(pressed.spans, from, point.y - pressed.startY)
-      pressed.row.style.transform = `translateY(${offset}px)`
+      pressed.row.style.transform = `translate3d(0, ${offset}px, 0)`
     },
     cancel: clearHeldRow,
     commit: (from, to, point) => {
@@ -91,6 +92,9 @@ export function useSlotDrag(source: SlotDragSource) {
     if (event.target === event.currentTarget && event.propertyName === 'transform') finish()
   }
 
+  const isPressed = (group: SlotGroup): boolean =>
+    pressed?.group === group && drag.dragging.value !== null
+
   const isDragging = (group: SlotGroup): boolean =>
     pressed?.group === group && drag.dragging.value?.hasMoved === true && drag.at.value !== null
 
@@ -119,8 +123,8 @@ export function useSlotDrag(source: SlotDragSource) {
     const landing = settling.value
     const offset =
       landing?.key === key ? (landing.isMoving ? 0 : landing.offset) : getShift(group, key, at)
-    return offset === 0 ? undefined : { transform: `translateY(${offset}px)` }
+    return offset === 0 ? undefined : { transform: `translate3d(0, ${offset}px, 0)` }
   }
 
-  return { onGripPress, onRowTransitionEnd, isDragging, getRowClass, getRowStyle }
+  return { onGripPress, onRowTransitionEnd, isPressed, getRowClass, getRowStyle }
 }
