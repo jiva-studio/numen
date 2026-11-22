@@ -131,6 +131,7 @@ export function createDeclaredState(deps: DeclaredStateDeps) {
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
   const declaredSlots = shallowRef<readonly DeclaredSlot[] | undefined>(undefined)
   const declaredSlotPoints = shallowRef<readonly DeclaredSlotPoint[] | undefined>(undefined)
+  const everySlotPoint = shallowRef<readonly string[] | undefined>(undefined)
   const declaredHandlers = shallowRef<readonly HandlerDeclaration[] | undefined>(undefined)
   const declaredKeybindings = shallowRef<readonly DeclaredKeybinding[] | undefined>(undefined)
   const contentTypes = shallowRef<Readonly<Record<string, string>>>({})
@@ -170,6 +171,7 @@ export function createDeclaredState(deps: DeclaredStateDeps) {
     hold(declared, commands.commands)
     hold(declaredSlots, commands.slots)
     hold(declaredSlotPoints, commands.slotPoints ?? [])
+    hold(everySlotPoint, commands.declaredSlotPoints ?? [])
     hold(declaredHandlers, handlers)
     hold(declaredKeybindings, commands.keybindings ?? [])
     if (commands.contentTypes) contentTypes.value = commands.contentTypes
@@ -188,6 +190,7 @@ export function createDeclaredState(deps: DeclaredStateDeps) {
       handlers: computed(() => declaredHandlers.value),
       keybindings: computed(() => declaredKeybindings.value),
       slotPoints: computed(() => declaredSlotPoints.value),
+      declaredSlotPoints: computed(() => everySlotPoint.value),
     },
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load: (): Promise<void> =>

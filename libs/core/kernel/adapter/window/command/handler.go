@@ -79,6 +79,7 @@ func (h *Handler) ListCommands(
 	return connect.NewResponse(&v1.ListCommandsResponse{
 		Commands: commands, Slots: slots, ContentTypeByExtension: listing.ContentTypeByExtension, Handlers: handlers,
 		Keybindings: newWireKeybindings(listing.Keybindings), SlotPoints: points,
+		DeclaredSlotPoints: listing.DeclaredSlotPoints,
 	}), nil
 }
 

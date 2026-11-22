@@ -528,3 +528,35 @@ describe('an entry drawn before its plugin has started', () => {
     expect(requestPlugin.mock.calls).toStrictEqual([[HARBOR]])
   })
 })
+
+describe('the places no manifest declares', () => {
+  const DRAWERS = {
+    getPoints: () => [{ pluginId: LEDGER, slot: 'ledger.new', title: 'New', menu: false }],
+  }
+
+  it('are not reported for a slot of a plugin that is disabled', () => {
+    const { registry, reportIssue } = setup(
+      [{ pluginId: HARBOR, slot: 'tide.board', command: 'harbor.open' }],
+      { drawers: { ...DRAWERS, getDeclared: () => ['ledger.new', 'tide.board'] } },
+    )
+
+    registry.getEntries('tide.board')
+
+    expect(reportIssue).not.toHaveBeenCalled()
+  })
+
+  it('are reported for an entry of the application too', () => {
+    const { registry, reportIssue } = setup(
+      [{ pluginId: 'app', slot: 'tide.bord', command: 'app:settings.open' }],
+      { drawers: { ...DRAWERS, getDeclared: () => ['tide.board'] } },
+    )
+
+    registry.getEntries('tide.bord')
+
+    expect(reportIssue).toHaveBeenCalledWith(
+      'app',
+      'slots: "app:settings.open" is placed in "tide.bord", which is neither a slot of the window, a slot a plugin draws, nor a submenu a plugin declares',
+      'warning',
+    )
+  })
+})

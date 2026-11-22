@@ -38,6 +38,8 @@ func (h *downEmbeddingHost) GetPlugin(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{}, false
 }
 
+func (h *downEmbeddingHost) GetPlugins() []manifest.Discovered { return nil }
+
 func (h *downEmbeddingHost) ResolveService(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{}, false
 }

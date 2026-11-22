@@ -17,6 +17,8 @@ type SlotPoints interface {
 	// ListSlotPoints lists the slots every enabled plugin draws, in the order of the plugins' ids and
 	// then of each manifest.
 	ListSlotPoints() []plugin.SlotPointEntry
+	// ListDeclaredSlotPoints lists the names of the slots every installed plugin draws, enabled or not.
+	ListDeclaredSlotPoints() []string
 }
 
 // PluginCommands is what the manifests of the enabled plugins declare, whether or not a plugin is

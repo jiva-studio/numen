@@ -27,6 +27,7 @@ export interface WindowSlotsDeps {
     readonly contributions: {
       readonly handlers: Readonly<Ref<readonly HandlerDeclaration[] | undefined>>
       readonly slotPoints: Readonly<Ref<readonly DeclaredSlotPoint[] | undefined>>
+      readonly declaredSlotPoints: Readonly<Ref<readonly string[] | undefined>>
     }
     readonly whenContext: {
       readonly getContentTypes: () => Readonly<Record<string, string>>
@@ -46,6 +47,7 @@ interface WindowSlotParts {
       HostSlots,
       | 'getSlotEntries'
       | 'getSlotPoints'
+      | 'getDeclaredSlotPoints'
       | 'createSlotCommandFinder'
       | 'reportSlotIssue'
       | 'getSlotWhenValues'
@@ -90,6 +92,7 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
     slots: {
       getSlotEntries: () => readSlotEntries(deps.declaredCommands.slots.value),
       getSlotPoints: () => deps.declaredCommands.contributions.slotPoints.value,
+      getDeclaredSlotPoints: () => deps.declaredCommands.contributions.declaredSlotPoints.value,
       ...(deps.getSlotLayout ? { getSlotLayout: deps.getSlotLayout } : {}),
       createSlotCommandFinder: createFinder,
       reportSlotIssue: deps.writeIssue,

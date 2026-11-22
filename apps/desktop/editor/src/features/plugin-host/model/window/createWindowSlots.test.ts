@@ -82,6 +82,7 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
         slotPoints: computed(() => [
           { pluginId: TREE, slot: 'fileTree.context', title: 'Row menu' },
         ]),
+        declaredSlotPoints: computed(() => ['fileTree.context', 'off.board']),
         handlers: computed(() => [
           {
             pluginId: HARBOR,
@@ -195,6 +196,7 @@ describe('the buttons of the title bar while no vault is open', () => {
         contributions: {
           handlers: computed(() => undefined),
           slotPoints: computed(() => undefined),
+          declaredSlotPoints: computed(() => undefined),
         },
         whenContext: {
           getContentTypes: () => ({}),
@@ -290,5 +292,34 @@ describe('the when values of a target', () => {
       'target.noteType': 'link',
       'target.properties': { media: 'plugin://md.importer/a.mp4' },
     })
+  })
+})
+
+describe('the names of the slots every installed plugin draws', () => {
+  const create = (names: readonly string[] | undefined) =>
+    createWindowSlots({
+      declaredCommands: {
+        slots: computed(() => []),
+        commands: computed(() => []),
+        contributions: {
+          handlers: computed(() => []),
+          slotPoints: computed(() => []),
+          declaredSlotPoints: computed(() => names),
+        },
+        whenContext: {
+          getContentTypes: () => ({}),
+          getConfig: () => ({}),
+          whenReader: createWhenReader(),
+        },
+      },
+      facts: { getAppCommands: () => [], getValues: () => ({}) },
+      writeIssue: vi.fn(),
+    })
+
+  it('are read as the core lists them, and undefined until it has', () => {
+    expect(create(['off.board']).hostDeps.slots.getDeclaredSlotPoints()).toStrictEqual([
+      'off.board',
+    ])
+    expect(create(undefined).hostDeps.slots.getDeclaredSlotPoints()).toBeUndefined()
   })
 })

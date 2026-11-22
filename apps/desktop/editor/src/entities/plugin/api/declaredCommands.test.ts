@@ -28,6 +28,7 @@ const createApi = () =>
             handlers: [],
             keybindings: [],
             slotPoints: [],
+            declaredSlotPoints: [],
             ...answer,
             slots: (answer.slots ?? []).map((one) =>
               one.entry ? { ...one, entry: { values: {}, ...one.entry } } : one,
@@ -198,6 +199,19 @@ describe('the slots the plugins draw', () => {
       { pluginId: 'org.example.plex', slot: 'plexGraph.node', title: 'Over a node', menu: false },
       { pluginId: 'org.example.plex', slot: 'plexGraph.context', title: 'Menu', menu: true },
     ])
+  })
+})
+
+describe('the slot names of every installed plugin', () => {
+  it('are read as the core lists them', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [],
+      declaredSlotPoints: ['plexGraph.node', 'plexGraph.boardTop'],
+    })
+
+    const { declaredSlotPoints } = await listDeclaredCommands()
+
+    expect(declaredSlotPoints).toStrictEqual(['plexGraph.node', 'plexGraph.boardTop'])
   })
 })
 

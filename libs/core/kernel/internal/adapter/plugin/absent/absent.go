@@ -52,6 +52,9 @@ func (Runtime) GetPlugin(string) (manifest.Discovered, bool) {
 	return manifest.Discovered{}, false
 }
 
+// GetPlugins lists no plugin.
+func (Runtime) GetPlugins() []manifest.Discovered { return nil }
+
 // ResolveNoteProfile finds no plugin that defines the type.
 func (Runtime) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 	return domain.NoteProfile{}, false

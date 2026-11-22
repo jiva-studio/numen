@@ -14,12 +14,15 @@ import (
 // PluginLookup finds the installed plugin by ID.
 type PluginLookup interface {
 	GetPlugin(id string) (manifest.Discovered, bool)
+	// GetPlugins returns every installed plugin, enabled or not.
+	GetPlugins() []manifest.Discovered
 }
 
 // Host provides the plugins, their manifests and whether the host holds one suspended.
 type Host interface {
 	GetPluginInfos() []plugindomain.Info
 	GetPlugin(id string) (manifest.Discovered, bool)
+	GetPlugins() []manifest.Discovered
 	PluginSuspensions
 }
 
@@ -217,6 +220,18 @@ func (m Manifests) ListSearchFunctions() []searchquery.Function {
 	var found []searchquery.Function
 	for _, plugin := range m.listUncontestedPlugins() {
 		found = append(found, searchquery.ConvertManifestFunctions(plugin.Manifest.ID, plugin.Manifest.Contributes.SearchFunctions)...)
+	}
+	return found
+}
+
+// ListDeclaredSlotPoints lists the names of the slots the manifests of every installed plugin draw, enabled
+// or not. No plugin is started.
+func (m Manifests) ListDeclaredSlotPoints() []string {
+	var found []string
+	for _, plugin := range m.host.GetPlugins() {
+		for _, point := range plugin.Manifest.Contributes.SlotPoints {
+			found = append(found, point.Slot)
+		}
 	}
 	return found
 }

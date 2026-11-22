@@ -16,6 +16,7 @@ type Listing struct {
 	Commands               []ListedCommand
 	Slots                  []plugin.SlotEntry
 	SlotPoints             []plugin.SlotPointEntry
+	DeclaredSlotPoints     []string
 	Keybindings            []plugin.KeybindingEntry
 	Handlers               []ListedCommand
 	ContentTypeByExtension map[string]string
@@ -40,6 +41,7 @@ func (u ListCommands) Execute() Listing {
 		Commands:               u.mark(u.list.ExecuteAll()),
 		Slots:                  u.list.ExecuteSlots(),
 		SlotPoints:             u.list.ExecuteSlotPoints(),
+		DeclaredSlotPoints:     u.list.ExecuteDeclaredSlotPoints(),
 		Keybindings:            u.list.ExecuteKeybindings(),
 		Handlers:               u.mark(u.list.ExecuteHandlers()),
 		ContentTypeByExtension: u.types.Execute(),

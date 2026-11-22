@@ -79,3 +79,5 @@ func TestListCommands_ReadsManifestsWithoutStartingPlugins(t *testing.T) {
 		t.Errorf("got %v, want %v", ids, want)
 	}
 }
+
+func (h *manifestHost) GetPlugins() []catalogmanifest.Discovered { return h.plugins }
