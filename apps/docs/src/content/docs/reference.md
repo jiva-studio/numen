@@ -230,7 +230,7 @@ The settings of the plugin Templates.
 
 | | | |
 | --- | --- | --- |
-| `folder` | text | each note in the folder is a template, and each subfolder is a group. |
+| `templates` | text | a note whose path matches a mask is a template. * stands for part of a name, and ** for any number of folders. Under a mask that starts with a folder, each subfolder is a group. |
 
 ### `md.numen.tools.updater`
 

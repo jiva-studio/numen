@@ -237,7 +237,7 @@ How a link's address is fetched is set by the Media Importer plugin's settings, 
 
 ## Templates
 
-The Templates plugin, `md.numen.tools.templates`, has one setting, `folder`, the folder of the vault that holds the templates (`Templates`). A value with a `..` segment, or one that is empty, is read as `Templates`. How a template is written and used is [Templates](templates.md).
+The Templates plugin, `md.numen.tools.templates`, has one setting, `templates`, the masks of the paths that are templates, separated by commas (`Templates/**, **/*.template.md`). A mask with a `..` segment is ignored, and a value with no mask left is read as the default. How a template is written and used is [Templates](templates.md).
 
 ## Which agent answers
 

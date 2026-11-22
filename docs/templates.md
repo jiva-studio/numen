@@ -1,16 +1,20 @@
 # Templates
 
-A template is a note in the templates folder. The command "New note from template" makes a new note from one: it copies the template, fills in the variables and opens the result. The Templates plugin, `md.numen.tools.templates`, does this.
+A template is a note whose path matches a mask of the templates setting. The command "New note from template" makes a new note from one: it copies the template, fills in the variables and opens the result. The Templates plugin, `md.numen.tools.templates`, does this.
 
 ## Making a template
 
-Make a folder named `Templates` at the root of the vault and put notes in it. Each note is a template, and each subfolder is a group that the picker shows its templates under. The folder is the setting `folder` of the plugin (see [Settings](settings.md)). When the folder holds no note, the command is not listed anywhere, so a vault that has no `Templates` folder shows no "New note from template".
+Put a note in a folder named `Templates` at the root of the vault, or give it a name that ends in `.template.md` anywhere in the vault: `Meeting.template.md`. Either is a template. Which notes are templates is the setting `templates` of the plugin (see [Settings](settings.md)): masks separated by commas, `Templates/**, **/*.template.md` by default. A note is a template when its path matches any of them.
+
+A mask is a path with wildcards. `*` stands for part of a name, `?` for one character, `[ab]` for one of the characters listed, and `**` for any number of folders, so `Templates/**` is every note under `Templates` at any depth and `Models/*` is the notes directly in `Models`. A mask is read from the root of the vault and tells capitals from small letters. A mask with a `..` segment is ignored, and a setting with no mask left is read as the default.
+
+The picker shows each template under a group. Where a mask starts with a folder, as `Templates/**` does, the group is the folder of the note below that folder: `Templates/Work/Meeting.md` is in the group `Work`, and `Templates/Meeting.md` in none. Otherwise the group is the folder of the note, so `Notes/Weekly.template.md` is in the group `Notes`. When no note is a template, the command is not listed anywhere.
 
 ## Making a note from a template
 
 Right-click a folder in the file tree, open "New" and pick "New note from template", then pick a template. The note is made inside that folder. From the palette, the note is made in the folder of the note in front. A note that has no path makes it at the root of the vault.
 
-The new note is named after the template, and a number is added where the name is taken: `Meeting.md`, `Meeting 2.md`, `Meeting 3.md`. The note opens in the current pane. Rename it as any note. The template is never changed.
+The new note is named after the template with `.template` left out, so `Meeting.template.md` makes `Meeting.md`, and a number is added where the name is taken: `Meeting.md`, `Meeting 2.md`, `Meeting 3.md`. The note opens in the current pane. Rename it as any note. The template is never changed.
 
 The new note holds the frontmatter of the template with its keys in their order, and its own `id`. A template without frontmatter gives a note with the `id` alone.
 
