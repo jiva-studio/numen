@@ -22,7 +22,7 @@ func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
 			}
 		},
 		func() []manifest.SettingGroup { return []manifest.SettingGroup{{ID: "look", Title: "Look"}} },
-	), nil, nil, nil), PluginFolders{})
+	), nil, nil, nil))
 
 	response, err := handler.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {

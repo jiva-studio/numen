@@ -228,7 +228,8 @@ func newFileServer(vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks 
 }
 
 func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	mountSettings(w, exec, settingsDeps, vaultDeps)
+	mountPluginData(w, vaultDeps)
+	mountSettings(w, settingsDeps)
 	mountMedia(w, vaultDeps)
 	mountCommand(w, install, exec, settingsDeps, vaultDeps)
 	mountConnection(w, install, exec, settingsDeps, vaultDeps)

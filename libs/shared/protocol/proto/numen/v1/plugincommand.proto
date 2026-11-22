@@ -90,50 +90,6 @@ message ListCommandsRequest {}
 
 message ListCommandsResponse {
   repeated PluginCommand commands = 1;
-  // The slot entries of every enabled plugin, in the order of the plugins' ids and then of each
-  // manifest.
-  repeated PluginSlotEntry slots = 2;
-  // The content type of a file by its extension, lowercase and without the dot, for every extension
-  // the core knows a type of. The window derives target.contentType from it.
-  map<string, string> content_type_by_extension = 3;
-  // The handlers of shared commands of every enabled plugin, in the order of the plugins' ids and
-  // then of each manifest.
-  repeated PluginHandler handlers = 4;
-  // The keybindings of every enabled plugin, in the order of the plugins' ids and then of each
-  // manifest. They work before a plugin starts.
-  repeated PluginKeybinding keybindings = 5;
-  // The slot points of every enabled plugin, in the order of the plugins' ids and then of each
-  // manifest.
-  repeated PluginSlotPoint slot_points = 6;
-}
-
-// PluginSlotPoint is one entry of contributes.slotPoints of a plugin.
-message PluginSlotPoint {
-  string plugin_id = 1;
-  ManifestSlotPoint point = 2;
-}
-
-// PluginKeybinding is one entry of contributes.keybindings of a plugin.
-message PluginKeybinding {
-  string plugin_id = 1;
-  ManifestKeybinding keybinding = 2;
-}
-
-// PluginHandler is one entry of contributes.handlers of a plugin. A handler runs with
-// RunPluginCommand under the full id of its shared command, and lists its items with
-// ListCommandItems.
-message PluginHandler {
-  string plugin_id = 1;
-  ManifestHandler handler = 2;
-  // has_items is set for a handler whose when names version.*: it offers the text versions of the
-  // file over which it holds.
-  bool has_items = 3;
-}
-
-// PluginSlotEntry is one entry of contributes.slots of a plugin.
-message PluginSlotEntry {
-  string plugin_id = 1;
-  ManifestSlotEntry entry = 2;
 }
 
 // PluginCommand is one command as a manifest declares it.
@@ -179,10 +135,7 @@ message CommandArgument {
 }
 
 // RunPluginCommandRequest runs a command of a plugin or a plugin's handler of a
-// shared command. With no plugin_id it runs the application command
-// app:version.delete, which the core serves: it deletes the text version
-// item_id names, its record and its file, and reports the file in
-// WatchVaultChangesResponse.version_paths.
+// shared command.
 message RunPluginCommandRequest {
   string plugin_id = 1;
 
@@ -207,8 +160,7 @@ message ListCommandItemsRequest {
 }
 
 // PluginCommandId is one command of a plugin: a command it declares, or its
-// handler of a shared command. With no plugin_id it is the application command
-// app:version.delete, whose items are every text version of the file.
+// handler of a shared command.
 message PluginCommandId {
   string plugin_id = 1;
 

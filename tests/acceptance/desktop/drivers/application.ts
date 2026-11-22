@@ -19,7 +19,6 @@ import { hasMadeText } from './text-versions.js'
 
 const COMMAND_PLACEHOLDER = 'Type a command'
 const DELETE_TEXT = 'Delete text'
-const DELETE_TEXT_ID = 'app:version.delete'
 const PROOFREAD_TEXT = 'Proofread text'
 /** A plugin may take this long to start before the first command of it answers. */
 const PLUGIN_START_LIMIT_MS = 35_000
@@ -154,12 +153,8 @@ export class ApplicationDriver {
     await expect
       .poll(async () => {
         const notePath = await readActivePath(page.request)
-        const answer = await callRPC(page.request, 'CommandService/ListCommandItems', {
-          path: notePath,
-          commands: [{ command: DELETE_TEXT_ID }],
-        })
-        const lists = (answer['lists'] as { items?: JsonValue[] }[] | undefined) ?? []
-        return lists.flatMap((one) => one.items ?? []).length
+        const answer = await callRPC(page.request, 'TextVersionService/ListVersionItems', { path: notePath })
+        return ((answer['items'] as JsonValue[] | undefined) ?? []).length
       })
       .toBeGreaterThan(0)
   }

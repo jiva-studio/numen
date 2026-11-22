@@ -10,6 +10,7 @@ import {
   createConnectionCallClient,
   createConnectionCallServiceClient,
   createConnectionClient,
+  createContributionClient,
   createFileClient,
   createLogClient,
   createLogServiceClient,
@@ -17,12 +18,14 @@ import {
   createLicenseServiceClient,
   createNoteClient,
   createPluginCatalog,
-  createPluginClient,
+  createPluginDataClient,
   createPluginHealthClient,
+  createPluginProcessClient,
   createProviderConnectionClient,
   createSearchClient,
   createSettingsClient,
   createTextClient,
+  createTextVersionClient,
   createThemeServiceClient,
   createVaultClient,
   createVaultsClient,
@@ -68,6 +71,7 @@ export const createSettingsClients = (transport: Transport) => {
     settingsService: createSettingsClient(settings),
     connections: createConnectionClient(createProviderConnectionClient(settings)),
     licenses: createLicenseClient(createLicenseServiceClient(settings)),
+    pluginData: createPluginDataClient(settings),
     theme: createThemeServiceClient(transport),
   }
 }
@@ -75,9 +79,12 @@ export const createSettingsClients = (transport: Transport) => {
 /** The clients the window runs and lists the plugins through. */
 export const createPluginHostClients = (transport: Transport) => {
   const plugins = createCallerTransport('plugins', transport)
+  const commands = createCallerTransport('commands', transport)
   return {
-    pluginCommands: createCommandClient(createCallerTransport('commands', transport)),
-    pluginService: createPluginClient(plugins),
+    pluginCommands: createCommandClient(commands),
+    contributions: createContributionClient(commands),
+    textVersions: createTextVersionClient(commands),
+    pluginProcessService: createPluginProcessClient(plugins),
     pluginHealth: createPluginHealthClient(plugins),
     pluginCatalog: createPluginCatalog(createCatalogClient(transport)),
     connectionCalls: createConnectionCallClient(createConnectionCallServiceClient(transport)),

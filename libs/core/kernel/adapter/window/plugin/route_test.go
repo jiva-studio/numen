@@ -47,12 +47,12 @@ func TestAWindowGetsThePluginsThatRunAndEachChange(t *testing.T) {
 		Process:    plugindomain.Process{PluginID: "org.example.maps", StartTime: start, LastUseTime: start, LeaseCount: 1},
 		PluginName: "Maps", Health: plugindomain.HealthOK,
 	}}}
-	path, served, _ := plugin.NewRoute(plugin.NewHandler(processes{lists: lists}), connect.WithInterceptors())
+	path, served, _ := plugin.NewRoute(plugin.NewHandler(processes{lists: lists}, nil), connect.WithInterceptors())
 	mux := http.NewServeMux()
 	mux.Handle(path, served)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	client := numenv1connect.NewPluginServiceClient(server.Client(), server.URL)
+	client := numenv1connect.NewPluginProcessServiceClient(server.Client(), server.URL)
 
 	stream, err := client.WatchPluginProcesses(t.Context(), connect.NewRequest(&v1.WatchPluginProcessesRequest{}))
 	if err != nil {

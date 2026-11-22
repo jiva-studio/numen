@@ -8,6 +8,7 @@ import {
   CommandErrorCode,
   CommandService,
   ConnectionCallService,
+  ContributionService,
   ErrorCode as ProtoErrorCode,
   FileService,
   FlushResult,
@@ -19,7 +20,9 @@ import {
   NameSource,
   NoteService,
   Origin,
+  PluginDataService,
   PluginHealthService,
+  PluginProcessService,
   PluginService,
   ProviderConnectionService,
   Relation,
@@ -31,6 +34,7 @@ import {
   TabMoveErrorCode,
   TextErrorCode,
   TextService,
+  TextVersionService,
   ThemeService,
   Unit,
   VaultService,
@@ -55,6 +59,14 @@ export const createThemeServiceClient = (transport: Transport) =>
 export const createTextClient = (transport: Transport) => createClient(TextService, transport)
 export const createCommandClient = (transport: Transport) => createClient(CommandService, transport)
 export const createPluginClient = (transport: Transport) => createClient(PluginService, transport)
+export const createPluginProcessClient = (transport: Transport) =>
+  createClient(PluginProcessService, transport)
+export const createPluginDataClient = (transport: Transport) =>
+  createClient(PluginDataService, transport)
+export const createContributionClient = (transport: Transport) =>
+  createClient(ContributionService, transport)
+export const createTextVersionClient = (transport: Transport) =>
+  createClient(TextVersionService, transport)
 export const createPluginHealthClient = (transport: Transport) =>
   createClient(PluginHealthService, transport)
 export const createCatalogClient = (transport: Transport) => createClient(CatalogService, transport)

@@ -11,32 +11,60 @@ const request = {
   listCommands: vi.fn(),
   runPluginCommand: vi.fn(),
   listCommandItems: vi.fn(),
+  listVersionItems: vi.fn(),
+  deleteVersion: vi.fn(),
 }
 
-const createApi = () =>
-  createDeclaredCommandsApi(
-    createAnsweredClients({
-      pluginCommands: {
-        ...request,
-        listCommands: async (...asked: unknown[]) => {
-          const answer = (await request.listCommands(...asked)) as {
-            slots?: { entry?: object }[]
-          }
-          // A message from the core always carries its maps and lists, empty where it has none.
-          return {
-            contentTypeByExtension: {},
-            handlers: [],
-            keybindings: [],
-            slotPoints: [],
-            ...answer,
-            slots: (answer.slots ?? []).map((one) =>
-              one.entry ? { ...one, entry: { values: {}, ...one.entry } } : one,
-            ),
-          }
-        },
+interface Listed {
+  commands?: object[]
+  slots?: { entry?: object }[]
+  contentTypeByExtension?: object
+  handlers?: object[]
+  keybindings?: object[]
+  slotPoints?: object[]
+}
+
+// A test sets what the core lists in one object, and the core answers each service with its part.
+const readListed = async (asked: unknown[]) => (await request.listCommands(...asked)) as Listed
+
+const createApi = () => {
+  const clients = createAnsweredClients({
+    pluginCommands: {
+      runPluginCommand: request.runPluginCommand,
+      listCommandItems: request.listCommandItems,
+      listCommands: async (...asked: unknown[]) => ({
+        commands: (await readListed(asked)).commands ?? [],
+      }),
+    },
+    contributions: {
+      // A message from the core always carries its maps and lists, empty where it has none.
+      listContributions: async (...asked: unknown[]) => {
+        const answer = await readListed(asked)
+        return {
+          handlers: [],
+          keybindings: [],
+          slotPoints: [],
+          ...answer,
+          slots: (answer.slots ?? []).map((one) =>
+            one.entry ? { ...one, entry: { values: {}, ...one.entry } } : one,
+          ),
+        }
       },
-    }).pluginCommands,
+      listContentTypes: async (...asked: unknown[]) => ({
+        contentTypeByExtension: (await readListed(asked)).contentTypeByExtension ?? {},
+      }),
+    },
+    textVersions: {
+      listVersionItems: request.listVersionItems,
+      deleteVersion: request.deleteVersion,
+    },
+  })
+  return createDeclaredCommandsApi(
+    clients.pluginCommands,
+    clients.contributions,
+    clients.textVersions,
   )
+}
 
 const listDeclaredCommands = (
   ...args: Parameters<ReturnType<typeof createApi>['listDeclaredCommands']>
@@ -527,6 +555,89 @@ describe('the handlers of shared commands', () => {
         { path: 'a.mp3', values: {} },
       ),
     ).toStrictEqual({ ok: false, error: 'no such version' })
+  })
+})
+
+describe('the commands the application serves itself', () => {
+  it('list the text versions of the file through the text versions, with the commands of the plugins', async () => {
+    request.listCommandItems.mockResolvedValue({
+      lists: [
+        {
+          pluginId: 'org.example.ink',
+          command: 'ink.proofread',
+          items: [{ id: 'org.example.ears/ears', title: 'transcript (live)' }],
+          error: COMMAND_ERROR_CODE.UNSPECIFIED,
+          message: '',
+        },
+      ],
+    })
+    request.listVersionItems.mockResolvedValue({
+      items: [{ id: 'org.example.viewer/edit-1', title: 'transcript', detail: 'edited' }],
+      error: COMMAND_ERROR_CODE.UNSPECIFIED,
+      message: '',
+    })
+
+    const lists = await listDeclaredItemLists('talks/a.mp3', [
+      { pluginId: '', command: 'app:version.delete' },
+      { pluginId: 'org.example.ink', command: 'ink.proofread' },
+    ])
+
+    expect(lists).toStrictEqual([
+      {
+        pluginId: '',
+        command: 'app:version.delete',
+        result: {
+          ok: true,
+          value: [{ id: 'org.example.viewer/edit-1', title: 'transcript', detail: 'edited' }],
+        },
+      },
+      {
+        pluginId: 'org.example.ink',
+        command: 'ink.proofread',
+        result: { ok: true, value: [{ id: 'org.example.ears/ears', title: 'transcript (live)' }] },
+      },
+    ])
+    expect(request.listVersionItems.mock.lastCall?.[0]).toMatchObject({ path: 'talks/a.mp3' })
+    expect(request.listCommandItems.mock.lastCall?.[0]).toMatchObject({
+      commands: [{ pluginId: 'org.example.ink', command: 'ink.proofread' }],
+    })
+  })
+
+  it('send no request to the commands of the plugins where they name none', async () => {
+    request.listCommandItems.mockClear()
+    request.listVersionItems.mockResolvedValue({
+      items: [],
+      error: COMMAND_ERROR_CODE.FAILED,
+      message: 'talks/a.mp3 is not in the vault',
+    })
+
+    expect(
+      await listDeclaredItemLists('talks/a.mp3', [{ pluginId: '', command: 'app:version.delete' }]),
+    ).toStrictEqual([
+      {
+        pluginId: '',
+        command: 'app:version.delete',
+        result: { ok: false, error: 'talks/a.mp3 is not in the vault' },
+      },
+    ])
+    expect(request.listCommandItems).not.toHaveBeenCalled()
+  })
+
+  it('delete the version picked through the text versions', async () => {
+    request.runPluginCommand.mockClear()
+    request.deleteVersion.mockResolvedValue({ error: COMMAND_ERROR_CODE.UNSPECIFIED, message: '' })
+
+    const outcome = await runDeclaredHandler(
+      { pluginId: '', command: 'app:version.delete' },
+      { path: 'talks/a.mp3', values: {}, itemId: 'org.example.viewer/edit-1' },
+    )
+
+    expect(outcome).toStrictEqual({ ok: true, value: { message: '', openedPath: '' } })
+    expect(request.deleteVersion.mock.lastCall?.[0]).toMatchObject({
+      path: 'talks/a.mp3',
+      versionId: 'org.example.viewer/edit-1',
+    })
+    expect(request.runPluginCommand).not.toHaveBeenCalled()
   })
 })
 

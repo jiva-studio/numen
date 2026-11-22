@@ -69,13 +69,17 @@ export function createWindowApi(transports: WindowTransports) {
       tabMove: createTabMoveApi(workspaceClients.workspace),
     },
     plugins: {
-      declaredCommands: createDeclaredCommandsApi(pluginClients.pluginCommands),
+      declaredCommands: createDeclaredCommandsApi(
+        pluginClients.pluginCommands,
+        pluginClients.contributions,
+        pluginClients.textVersions,
+      ),
       pluginHost: createPluginHostApi({
         texts: vaultClients.texts,
         connectionCalls: pluginClients.connectionCalls,
       }),
       health: createHealthApi(pluginClients.pluginHealth),
-      processes: createProcessHost(pluginClients.pluginService),
+      processes: createProcessHost(pluginClients.pluginProcessService),
       logs: createLogHost(workspaceClients.logService),
       listCatalog: createCatalogReader(pluginClients.pluginCatalog),
       findTabKindPlugin: createTabKindPluginFinder(pluginClients.pluginCatalog),
@@ -83,7 +87,11 @@ export function createWindowApi(transports: WindowTransports) {
     configuration: {
       connection: createConnectionApi(settingsClients.connections),
       license: createLicenseApi(settingsClients.licenses),
-      settings: createSettingsApi(settingsClients.settingsService),
+      settings: createSettingsApi(
+        settingsClients.settingsService,
+        pluginClients.pluginProcessService,
+        settingsClients.pluginData,
+      ),
       themes: createThemes(settingsClients.theme),
     },
   }

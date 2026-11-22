@@ -76,6 +76,8 @@ func mountCommand(w *windowRoutes, install pluginInstall, exec *PluginExecution,
 	commands := newPluginCommands(getWhenConfig(settingsDeps, exec.Runtime.Listing), vaultDeps, exec, versions)
 	handler := command.NewHandler(&w.session.Runtime, commands.Listing, commands.RunCommand, commands.ListItems)
 	w.Installation.Mount(editor.NewRoute(command.NewRoute(w.page.Gate.CountQuestions(), handler)))
+	w.Installation.Mount(editor.NewRoute(command.NewContributionRoute(w.page.Gate.CountQuestions(), handler)))
+	w.Installation.Mount(editor.NewRoute(command.NewVersionRoute(w.page.Gate.CountQuestions(), handler)))
 }
 
 func mountText(w *windowRoutes, vaultDeps vaultWiring) {
@@ -179,18 +181,12 @@ func openGetSettings(s settingsWiring) *settings.Get {
 	return settings.NewGet(readSettings(s), s.Infos.GetPluginInfos, func() []plugin.Setting { return listAppSettings(s) }, settingsadapter.GetAppSettingGroups)
 }
 
-func mountSettings(w *windowRoutes, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
-	state := w.session
-	retry := settings.NewRetryPlugin(exec.Runtime.RetryPlugin)
-	folders := windowsettings.NewPluginFolders(retry, nil, nil)
-	if data := openPluginData(vaultDeps.Options, vaultDeps.TextVersions); data != nil {
-		folders = windowsettings.NewPluginFolders(retry, data, &state.Runtime)
-	}
+func mountSettings(w *windowRoutes, settingsDeps settingsWiring) {
 	values := windowsettings.NewValues(
 		openGetSettings(settingsDeps),
 		openWriteSettings(settingsDeps), openWatchSettings(settingsDeps), nil,
 	)
-	handler := windowsettings.NewHandler(values, folders)
+	handler := windowsettings.NewHandler(values)
 	w.Installation.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.SetPathChooser(openChoosePluginPath(settingsDeps, dialog))
 	})
@@ -198,11 +194,20 @@ func mountSettings(w *windowRoutes, exec *PluginExecution, settingsDeps settings
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
+func mountPluginData(w *windowRoutes, vaultDeps vaultWiring) {
+	folders := windowsettings.NewPluginFolders(nil, nil)
+	if data := openPluginData(vaultDeps.Options, vaultDeps.TextVersions); data != nil {
+		folders = windowsettings.NewPluginFolders(data, &w.session.Runtime)
+	}
+	path, served := windowsettings.NewPluginDataRoute(folders, w.page.Gate.CountQuestions())
+	w.Installation.Mount(editor.NewRoute(path, served, folders))
+}
+
 func mountPlugin(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
 	w.Installation.SetPlugins(servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver, exec.Runtime.Listing), func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) })
 	host := exec
 	watch := pluginprocess.NewWatchProcesses(host.Processes, host.Health, host.Runtime.Resolver, getConnectionResolve(install, exec, settingsDeps, vaultDeps), vaultDeps.Clock)
-	handler := windowplugin.NewHandler(watch)
+	handler := windowplugin.NewHandler(watch, settings.NewRetryPlugin(exec.Runtime.RetryPlugin))
 	w.Installation.Mount(editor.NewRoute(windowplugin.NewRoute(handler, w.page.Gate.CountQuestions())))
 }
 

@@ -229,20 +229,21 @@ message PluginReader {
   repeated string extensions = 2;
 }
 
-// PluginService allows querying discovered plugins and their settings schemas.
+// PluginService lists the plugins the application has.
 service PluginService {
   rpc GetPlugins(GetPluginsRequest) returns (GetPluginsResponse);
+}
 
+// PluginProcessService is the processes of the plugins, as a window shows and starts them.
+service PluginProcessService {
   // WatchPluginProcesses sends the plugin processes that run at once and again
   // on every change, at most once a second, for as long as the caller listens.
   rpc WatchPluginProcesses(WatchPluginProcessesRequest) returns (stream WatchPluginProcessesResponse);
 
-  // ReleaseProcess tells the core that the process of a plugin has finished
-  // its work. The core stops a process that holds no lease at once, and one
-  // that holds a lease as soon as it returns the last. A lease taken after
-  // the call cancels it. A plugin calls it through the host endpoint, which
-  // names the plugin by its token. A plugin with no process answers success.
-  rpc ReleaseProcess(ReleaseProcessRequest) returns (ReleaseProcessResponse);
+  // RetryPlugin forgets the failures of a plugin the host suspends, and starts
+  // it once. A plugin that fails again is suspended again, and the call answers
+  // the reason.
+  rpc RetryPlugin(RetryPluginRequest) returns (RetryPluginResponse);
 }
 
 message GetPluginsRequest {}
@@ -253,9 +254,15 @@ message GetPluginsResponse {
 
 message WatchPluginProcessesRequest {}
 
-message ReleaseProcessRequest {}
+message RetryPluginRequest {
+  // The plugin, by its id.
+  string plugin_id = 1;
+}
 
-message ReleaseProcessResponse {}
+message RetryPluginResponse {
+  // Set when the plugin failed to start again, in words a person reads.
+  string failure = 1;
+}
 
 message WatchPluginProcessesResponse {
   // The processes that run, in the order of the plugin ids.
