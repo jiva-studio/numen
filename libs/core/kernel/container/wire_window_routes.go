@@ -53,9 +53,9 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func mountCatalog(w *windowRoutes, install pluginInstall, settingsDeps settingsWiring) {
+func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring) {
 	if plugins := getPluginCatalog(install.PluginCatalog, settingsDeps.ErrorHandler); plugins != nil {
-		handler := windowcatalog.NewHandler(plugins)
+		handler := windowcatalog.NewHandler(plugins, func(id string) (string, bool) { return getInstalledPluginDir(exec.Runtime.Listing, id) })
 		path, served := windowcatalog.NewRoute(handler, w.page.Gate.CountQuestions())
 		w.Installation.Mount(editor.NewRoute(path, served, handler))
 	}

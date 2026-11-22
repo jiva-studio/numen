@@ -1,11 +1,14 @@
-/** The README.md a plugin serves, and an empty text where none can be fetched or the server answers a page. */
-export async function readPluginReadme(pluginId: string): Promise<string> {
-  try {
-    const response = await fetch(`/plugin/${pluginId}/README.md`)
-    if (!response.ok) return ''
-    if (response.headers.get('content-type')?.includes('text/html')) return ''
-    return await response.text()
-  } catch {
-    return ''
+import type { WindowClients } from '@/shared/api/clients'
+
+/**
+ * The README.md of an installed plugin over `pluginCatalog`, and an empty text where the plugin has
+ * none or the core cannot answer.
+ */
+export const createReadmeReader =
+  (pluginCatalog: WindowClients['pluginCatalog']) =>
+  async (pluginId: string): Promise<string> => {
+    const answer = await pluginCatalog.getReadme(pluginId)
+    return answer.ok ? answer.value : ''
   }
-}
+
+export type ReadmeReader = ReturnType<typeof createReadmeReader>

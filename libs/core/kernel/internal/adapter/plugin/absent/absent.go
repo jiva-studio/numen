@@ -66,6 +66,9 @@ func (Runtime) ReleaseQuestion(string, string, plugindomain.Holder) {}
 // GetPluginInfos lists no plugin.
 func (Runtime) GetPluginInfos() []plugindomain.Info { return nil }
 
+// GetPlugins lists no plugin.
+func (Runtime) GetPlugins() []manifest.Discovered { return nil }
+
 // IsPluginEnabled reports that no plugin is enabled.
 func (Runtime) IsPluginEnabled(string) bool { return false }
 

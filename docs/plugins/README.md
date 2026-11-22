@@ -142,6 +142,8 @@ plugins/<name>/
     └── vite.config.ts  # Vite build configuration
 ```
 
+The About page of a plugin shows its `README.md`. The core reads it from the folder of the installed plugin, enabled or not, through `GetCatalogReadme` of `CatalogService`, and starts no plugin to do so; a plugin without a `README.md` has an empty About page.
+
 ---
 
 ## 3. The Plugin Manifest (`manifest.json`)

@@ -238,7 +238,7 @@ func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution
 	mountText(w, vaultDeps)
 	mountPlugin(w, install, exec, settingsDeps, vaultDeps)
 	mountHealth(w, exec)
-	mountCatalog(w, install, settingsDeps)
+	mountCatalog(w, install, exec, settingsDeps)
 }
 
 func windowView(notices *editor.Notices) windowsession.View {

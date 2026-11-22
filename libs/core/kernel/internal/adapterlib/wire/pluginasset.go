@@ -82,6 +82,20 @@ func ServePluginFile(w http.ResponseWriter, r *http.Request, getPluginDir func(i
 	return true
 }
 
+// ReadPluginFile returns the content of a file of a plugin's folder. A name that is no file of the folder is
+// os.ErrNotExist, and one that leads out of the folder is an error.
+func ReadPluginFile(ctx context.Context, pluginDir, name string) (_ []byte, err error) {
+	if !filepath.IsLocal(name) {
+		return nil, errPluginAssetEscapes
+	}
+	file, _, err := openPluginAsset(ctx, pluginDir, name)
+	if err != nil {
+		return nil, err
+	}
+	defer closeAndJoin(&err, file)
+	return io.ReadAll(file)
+}
+
 func answerPluginAssetError(w http.ResponseWriter, err error) bool {
 	switch {
 	case errors.Is(err, os.ErrNotExist):

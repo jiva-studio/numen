@@ -9,6 +9,7 @@ import { createLicenseApi } from '@/entities/license'
 import { createLinkApi, createNoteApi, createRelations } from '@/entities/note'
 import {
   createCatalogReader,
+  createReadmeReader,
   createDeclaredCommandsApi,
   createHealthApi,
   createLogHost,
@@ -82,6 +83,7 @@ export function createWindowApi(transports: WindowTransports) {
       processes: createProcessHost(pluginClients.pluginProcessService),
       logs: createLogHost(workspaceClients.logService),
       listCatalog: createCatalogReader(pluginClients.pluginCatalog),
+      readReadme: createReadmeReader(pluginClients.pluginCatalog),
       findTabKindPlugin: createTabKindPluginFinder(pluginClients.pluginCatalog),
     },
     configuration: {
