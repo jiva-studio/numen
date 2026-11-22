@@ -29,19 +29,14 @@ type Rename struct {
 	index     edit.IndexUpdater
 	now       machineport.Clock
 	sync      naming.SyncSetting
-	moving    fileMoving
+	moving    Move
 	admission vaultport.WriteAdmission
 }
 
-// fileMoving files a note at another path. A note that traveled because it was
-// renamed and one that traveled because it was filed elsewhere settle the same
-// way, so both go through the one mover.
-type fileMoving interface {
-	Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error)
-}
-
-// NewRename builds the use case that updates a note title and its path.
-func NewRename(d MoveDeps, moving fileMoving, admission vaultport.WriteAdmission) Rename {
+// NewRename builds the use case that updates a note title and its path. A note that traveled because it was
+// renamed and one that traveled because it was filed elsewhere settle the same way, so both go through
+// the one Move.
+func NewRename(d MoveDeps, moving Move, admission vaultport.WriteAdmission) Rename {
 	return Rename{readers: d.Readers, writers: d.Writers, index: d.Index, now: d.Now, sync: d.Sync, moving: moving, admission: admission}
 }
 
