@@ -37,7 +37,6 @@ const browserParts: TodosParts = {
   },
 }
 
-/** The tasks of the note as it is now, and the stored ones where the note cannot be read again. */
 async function currentTasks(
   api: TodosApi,
   today: string,
@@ -63,7 +62,6 @@ async function currentTasks(
   }
 }
 
-/** The 1-based line the editor of the note counts the task on: from the prose, below the frontmatter. */
 async function editorLine(
   api: TodosApi,
   today: string,

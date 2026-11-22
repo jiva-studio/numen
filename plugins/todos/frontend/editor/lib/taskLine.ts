@@ -138,9 +138,3 @@ export function createFenceTracker(): (line: string) => boolean {
     return false
   }
 }
-
-/** Tells which lines of a body sit inside a fenced code block, fence lines included. */
-export function findFencedLines(lines: readonly string[]): boolean[] {
-  const isFenced = createFenceTracker()
-  return lines.map(isFenced)
-}

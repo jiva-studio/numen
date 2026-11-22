@@ -78,3 +78,8 @@ type Snapshots interface {
 type Clock interface {
 	Now() time.Time
 }
+
+// Log records the failures the plugin carries on after.
+type Log interface {
+	Error(message string, err error)
+}

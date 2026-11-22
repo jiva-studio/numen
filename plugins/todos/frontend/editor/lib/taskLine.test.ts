@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findFencedLines, readTaskLine } from './taskLine'
+import { createFenceTracker, readTaskLine } from './taskLine'
 
 const kinds = (line: string) =>
   readTaskLine(line)?.fields.map((one) => [one.kind, line.slice(one.from, one.to)])
@@ -45,7 +45,9 @@ describe('readTaskLine', () => {
   })
 })
 
-describe('findFencedLines', () => {
+const findFencedLines = (lines: string[]) => lines.map(createFenceTracker())
+
+describe('createFenceTracker', () => {
   it('marks the lines of a fenced block and its fences', () => {
     const lines = ['a', '```ts', '- [ ] x', '```', 'b', '~~~', 'c', '~~~~', 'd']
     expect(findFencedLines(lines)).toEqual([

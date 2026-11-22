@@ -15,7 +15,6 @@ type Issue = 'invalidDue' | 'invalidDone' | 'invalidRecurrence' | 'invalidPriori
 export interface Task {
   readonly path: string
   readonly line: number
-  /** The line counted from the first line below the frontmatter, as the note editor does. */
   readonly proseLine: number
   readonly raw: string
   readonly text: string

@@ -48,7 +48,6 @@ func New(files ports.FileReader, writer ports.FileWriter, store ports.NoteStore)
 	return &Editor{files: files, writer: writer, store: store, mu: sync.Mutex{}}
 }
 
-// Find returns the task at the line of the note.
 func (e *Editor) Find(ctx context.Context, path string, line int) (todo.Task, error) {
 	raw, _, err := e.files.Read(ctx, path)
 	if err != nil {
@@ -118,7 +117,6 @@ func (e *Editor) Remove(ctx context.Context, path string, line int, expected str
 	return removed, err
 }
 
-// write changes the note and returns the task found at the line the change reports.
 func (e *Editor) write(
 	ctx context.Context, path string, change func(raw []byte) ([]byte, int, error),
 ) (todo.Task, error) {
@@ -135,8 +133,6 @@ func (e *Editor) write(
 	return findAt(content, path, line, "")
 }
 
-// run reads the note, writes what change returns over the stat it was read with, and retries once
-// when the note changed meanwhile.
 func (e *Editor) run(ctx context.Context, path string, change func(raw []byte) ([]byte, error)) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()

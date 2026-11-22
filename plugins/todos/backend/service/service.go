@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -14,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/todos/backend/api"
 	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/clock"
 	hostadapter "github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/host"
+	logadapter "github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/log"
 	"github.com/jiva-studio/numen/plugins/todos/backend/internal/adapter/snapshot"
 	"github.com/jiva-studio/numen/plugins/todos/backend/ports"
 	"github.com/jiva-studio/numen/plugins/todos/backend/usecase/complete"
@@ -140,14 +140,14 @@ func mountAgentSurface(s *server.Server, vaults *Vaults, today ports.Clock) erro
 	return nil
 }
 
-func mount(ctx context.Context, s *server.Server, tasks *index.Index, done *complete.SetTaskDone) error {
+func mount(ctx context.Context, s *server.Server, tasks *index.Index, done *complete.SetTaskDone, log ports.Log) error {
 	s.SetUpdateConfig(func(values map[string]string) {
 		folders, isSet := values[ignoredKey]
 		if !isSet {
 			return
 		}
 		if err := tasks.SetIgnoredFolders(ctx, folders); err != nil {
-			slog.Error("apply the ignored folders", "error", err)
+			log.Error("apply the ignored folders", err)
 		}
 	})
 	a := s.NewAPI(api.Service)
@@ -160,16 +160,14 @@ func mount(ctx context.Context, s *server.Server, tasks *index.Index, done *comp
 	return a.Err()
 }
 
-// startIndex runs the index; a failed start is logged and falls back to one scan, so the tools stop
-// answering that the notes are still being read.
-func startIndex(ctx context.Context, tasks *index.Index) {
+func startIndex(ctx context.Context, tasks *index.Index, log ports.Log) {
 	err := tasks.Start(ctx)
 	if err == nil || ctx.Err() != nil {
 		return
 	}
-	slog.Error("start the task index", "error", err)
+	log.Error("start the task index", err)
 	if err := tasks.Scan(ctx); err != nil && ctx.Err() == nil {
-		slog.Error("scan the notes for tasks", "error", err)
+		log.Error("scan the notes for tasks", err)
 	}
 }
 
@@ -184,7 +182,7 @@ func Mount(s *server.Server) error {
 	done := complete.New(vault, vault, tasks)
 	vaults := NewVaults(vault.GetVaultID, tasks, tasktools.Scope{Tasks: tasks, Editor: edit.New(vault, vault, tasks), Completer: done})
 	ctx := getClosedContext(s)
-	if err := mount(ctx, s, tasks, done); err != nil {
+	if err := mount(ctx, s, tasks, done, logadapter.Slog{}); err != nil {
 		return err
 	}
 	if err := mountAgentSurface(s, vaults, clock.System{}); err != nil {
@@ -196,6 +194,6 @@ func Mount(s *server.Server) error {
 		tasks.Flush(flushCtx)
 		return nil
 	})
-	go startIndex(ctx, tasks)
+	go startIndex(ctx, tasks, logadapter.Slog{})
 	return nil
 }
