@@ -23,13 +23,13 @@ const settingTemplates = "templates"
 
 func convertError(err error, template string) error {
 	switch {
-	case errors.Is(err, newnote.ErrNotATemplate), errors.Is(err, newnote.ErrInvalidFolder), errors.Is(err, engine.ErrNotAnOption), errors.Is(err, domain.ErrInvalidName):
+	case errors.Is(err, domain.ErrInvalidName):
 		return server.NewAPIError(server.CodeInvalidArgument, err.Error())
 	case errors.Is(err, newnote.ErrNameTaken):
 		return server.NewAPIError(server.CodeAlreadyExists, err.Error())
 	case errors.Is(err, host.ErrNotExist):
 		return server.NewAPIError(server.CodeNotFound, "template not found: "+template)
-	case errors.Is(err, newnote.ErrInvalidNote), errors.Is(err, newnote.ErrTemplateChanged), errors.Is(err, newnote.ErrDifferentQuestions), errors.Is(err, host.ErrNoVault):
+	case errors.Is(err, newnote.ErrNotATemplate), errors.Is(err, newnote.ErrInvalidFolder), errors.Is(err, engine.ErrNotAnOption), errors.Is(err, newnote.ErrInvalidNote), errors.Is(err, newnote.ErrTemplateChanged), errors.Is(err, newnote.ErrDifferentQuestions), errors.Is(err, host.ErrNoVault):
 		return server.NewAPIError(server.CodeFailedPrecondition, err.Error())
 	case errors.Is(err, host.ErrPermissionDenied):
 		return server.NewAPIError(server.CodePermissionDenied, err.Error())

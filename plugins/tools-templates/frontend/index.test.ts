@@ -291,7 +291,7 @@ describe('the templates frontend', () => {
     picker.answer('Globex')
     await vi.waitFor(() =>
       expect(picker.getQuestion()).toEqual({
-        title: 'Visit · Name · already exists',
+        title: 'Visit · Name · a note of that name exists: notes/Visit.md',
         value: 'Visit',
       }),
     )
@@ -318,7 +318,7 @@ describe('the templates frontend', () => {
     picker.answer('a/b')
     await vi.waitFor(() =>
       expect(picker.getQuestion()).toEqual({
-        title: 'Meeting · Name · not a name for a note',
+        title: 'Meeting · Name · a note cannot be given this title',
         value: 'a/b',
       }),
     )
@@ -326,6 +326,23 @@ describe('the templates frontend', () => {
     await running
 
     expect(createNote).toHaveBeenCalledTimes(1)
+  })
+
+  it('ends with the backend message when an answer is refused instead of asking the name again', async () => {
+    const { context, picker, createNote, errors } = setup(created('notes/Ok.md'))
+    createNote.mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'failed_precondition', message: '"nap" is not one of the options of "Kind": call, visit' },
+    })
+
+    const running = context.triggerCommand(COMMAND, targetOf('notes', true), 'Templates/Meeting.md')
+    await vi.waitFor(() => expect(picker.getQuestion()).toBeDefined())
+    picker.answer('Meeting')
+    await running
+
+    expect(picker.getQuestion()).toBeUndefined()
+    expect(createNote).toHaveBeenCalledTimes(1)
+    expect(errors).toEqual(['"nap" is not one of the options of "Kind": call, visit'])
   })
 
   it('asks the fields of the template after the name and makes the note with the answers', async () => {

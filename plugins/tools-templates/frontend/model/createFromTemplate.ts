@@ -10,10 +10,7 @@ export type Outcome =
   | { readonly kind: 'cancelled' }
   | { readonly kind: 'failed'; readonly message: string }
 
-const NAME_REFUSALS: Readonly<Record<string, string>> = {
-  already_exists: 'already exists',
-  invalid_argument: 'not a name for a note',
-}
+const NAME_REFUSAL_CODES: ReadonlySet<string> = new Set(['already_exists', 'invalid_argument'])
 
 /** What makes the note: the backend that lists the questions and makes it, and the palette that asks them. */
 export interface CreateFromTemplateDeps {
@@ -48,9 +45,8 @@ export async function createFromTemplate(
   for (;;) {
     const answer = await api.createNote({ template, folder, name, values, etag: asked.value.etag })
     if (answer.ok) return { kind: 'made', answer: answer.value }
-    const refusal = NAME_REFUSALS[answer.error.code]
-    if (refusal === undefined) return failed(answer.error.message)
-    name = await askName(name, refusal)
+    if (!NAME_REFUSAL_CODES.has(answer.error.code)) return failed(answer.error.message)
+    name = await askName(name, answer.error.message)
     if (name === undefined) return { kind: 'cancelled' }
   }
 }

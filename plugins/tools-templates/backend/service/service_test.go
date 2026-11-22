@@ -159,7 +159,7 @@ func TestListFieldsReturnsWhatTheTemplateAsks(t *testing.T) {
 	if status, body := listFields(t, web, "Templates/Plain.md"); status != http.StatusOK || !strings.Contains(string(body), `"fields":[]`) || !strings.Contains(string(body), `"name":"Plain 2"`) {
 		t.Errorf("ListFields of a plain template = %d %s", status, body)
 	}
-	if status, body := listFields(t, web, "Notes/x.md"); status != http.StatusBadRequest {
+	if status, body := listFields(t, web, "Notes/x.md"); status != http.StatusPreconditionFailed {
 		t.Errorf("ListFields of a note that is no template = %d %s", status, body)
 	}
 }
@@ -203,7 +203,7 @@ func TestCreateNoteWritesTheValues(t *testing.T) {
 	}
 	vault.File("Templates/Other.md", asking)
 	status, body = createNoteWith(t, web, "Templates/Other.md", "work", map[string]string{"Kind": "nap"})
-	if failure := readFailure(t, body); status != http.StatusBadRequest || failure.Code != server.CodeInvalidArgument || !strings.Contains(failure.Message, "Kind") {
+	if failure := readFailure(t, body); status != http.StatusPreconditionFailed || failure.Code != server.CodeFailedPrecondition || !strings.Contains(failure.Message, "Kind") {
 		t.Errorf("CreateNote with a bad option = %d %s", status, body)
 	}
 }
@@ -216,7 +216,7 @@ func TestCreateNoteRefusesAFolderOutsideTheVault(t *testing.T) {
 	status, body := createNote(t, web, "Templates/Meeting.md", "../x")
 
 	failure := readFailure(t, body)
-	if status != http.StatusBadRequest || failure.Code != server.CodeInvalidArgument || !strings.Contains(failure.Message, "not a folder of the vault") {
+	if status != http.StatusPreconditionFailed || failure.Code != server.CodeFailedPrecondition || !strings.Contains(failure.Message, "not a folder of the vault") {
 		t.Errorf("CreateNote = %d %s", status, body)
 	}
 }
@@ -250,9 +250,9 @@ func TestMapTheErrorsOfTheUseCaseToTheirCodes(t *testing.T) {
 			code     server.ErrorCode
 			message  string
 		}{
-			{"a path no mask names", plain, "Notes/Meeting.md", 400, server.CodeInvalidArgument, "not a template: Notes/Meeting.md"},
-			{"a parent segment", plain, "Templates/../Notes/Meeting.md", 400, server.CodeInvalidArgument, "not a template: Templates/../Notes/Meeting.md"},
-			{"a path that is not a note", plain, "Templates/Meeting.txt", 400, server.CodeInvalidArgument, "not a template: Templates/Meeting.txt"},
+			{"a path no mask names", plain, "Notes/Meeting.md", 412, server.CodeFailedPrecondition, "not a template: Notes/Meeting.md"},
+			{"a parent segment", plain, "Templates/../Notes/Meeting.md", 412, server.CodeFailedPrecondition, "not a template: Templates/../Notes/Meeting.md"},
+			{"a path that is not a note", plain, "Templates/Meeting.txt", 412, server.CodeFailedPrecondition, "not a template: Templates/Meeting.txt"},
 			{"a missing template", plain, "Templates/Nothing.md", 404, server.CodeNotFound, "template not found: Templates/Nothing.md"},
 			{"frontmatter that is invalid after substitution", invalid, "Templates/@draft.md", 412, server.CodeFailedPrecondition, "template does not produce a valid note: "},
 			{"a template that is not text", binary, "Templates/Binary.md", 412, server.CodeFailedPrecondition, "template does not produce a valid note: "},
@@ -306,7 +306,7 @@ func TestTheHostConfiguresTheMasksOfTheTemplates(t *testing.T) {
 	vault.File("Models/Book.md", meeting)
 	web := newWeb(t, vault)
 
-	if status, body := createNote(t, web, "Models/Book.md", "work"); status != http.StatusBadRequest {
+	if status, body := createNote(t, web, "Models/Book.md", "work"); status != http.StatusPreconditionFailed {
 		t.Errorf("before the setting: CreateNote = %d %s", status, body)
 	}
 	if status, body := post(t, web.Server, "/numen.v1.PluginLifecycleService/Configure", `{"values":{"templates":" /Models/** , **/*.tpl.md "}}`); status != http.StatusOK {
@@ -316,7 +316,7 @@ func TestTheHostConfiguresTheMasksOfTheTemplates(t *testing.T) {
 	if status, body := createNote(t, web, "Models/Book.md", "work"); status != http.StatusOK {
 		t.Errorf("after the setting: CreateNote = %d %s", status, body)
 	}
-	if status, body := createNote(t, web, "Templates/Meeting.md", "work"); status != http.StatusBadRequest {
+	if status, body := createNote(t, web, "Templates/Meeting.md", "work"); status != http.StatusPreconditionFailed {
 		t.Errorf("the old masks: CreateNote = %d %s", status, body)
 	}
 }
