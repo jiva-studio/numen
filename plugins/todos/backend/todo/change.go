@@ -150,3 +150,23 @@ func isBlockID(word string) bool {
 	}
 	return strings.Trim(id, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-") == ""
 }
+
+// ReplaceText returns the task line with everything after its checkbox replaced by text. The
+// indentation, the quote marks, the list marker and the checkbox are kept. It gives ErrNotTask when
+// the line is not a task line or the result is not one.
+func ReplaceText(line, text string) (string, error) {
+	cut, err := cutTaskLine(line)
+	if err != nil {
+		return line, err
+	}
+	changed := line[:cut.mark+cut.markSize+1] + " " + text
+	if _, err := cutTaskLine(changed); err != nil {
+		return line, err
+	}
+	return changed, nil
+}
+
+// NewLine returns the open task line that holds text.
+func NewLine(text string) string {
+	return "- [ ] " + text
+}

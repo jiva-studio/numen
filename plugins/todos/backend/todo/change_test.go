@@ -267,3 +267,37 @@ func FuzzChangeLineChangesOnlyTheCheckboxAndTheCompletionDate(f *testing.F) {
 		}
 	})
 }
+
+func TestReplaceTextKeepsEverythingBeforeTheText(t *testing.T) {
+	cases := []struct {
+		name string
+		line string
+		text string
+		want string
+		err  error
+	}{
+		{"an open task", "- [ ] old +x", "new", "- [ ] new", nil},
+		{"a done task", "- [x] old", "new due:2026-12-01", "- [x] new due:2026-12-01", nil},
+		{"an indented numbered task", "  1. [ ] old", "new", "  1. [ ] new", nil},
+		{"a quoted task", "> - [ ] old", "new", "> - [ ] new", nil},
+		{"not a task", "- plain", "new", "- plain", ErrNotTask},
+		{"an empty text", "- [ ] old", "", "- [ ] old", ErrNotTask},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got, err := ReplaceText(c.line, c.text)
+
+			if got != c.want || !errors.Is(err, c.err) {
+				t.Errorf("ReplaceText(%q, %q) = %q, %v, want %q, %v", c.line, c.text, got, err, c.want, c.err)
+			}
+		})
+	}
+}
+
+func TestNewLineWritesAnOpenTask(t *testing.T) {
+	tasks, err := ParseNote([]byte(NewLine("buy milk due:2026-11-20") + "\n"))
+
+	if err != nil || len(tasks) != 1 || tasks[0].Status != StatusOpen || tasks[0].Due != "2026-11-20" {
+		t.Errorf("tasks = %+v, %v", tasks, err)
+	}
+}
