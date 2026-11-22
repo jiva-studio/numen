@@ -128,20 +128,20 @@ function onTick(task: Task) {
 
 <style scoped>
 .todos-status {
-  --popover-offset: 0.25rem;
+  --popover-offset: calc(0.25 * var(--numen-chrome-unit));
   position: relative;
   display: inline-flex;
   align-items: center;
   height: 100%;
-  padding-inline: calc(var(--numen-inset) / 4);
+  padding-inline: calc(var(--numen-chrome-inset) / 4);
   color: var(--numen-ink);
   user-select: none;
 }
 
 .todos-status__trigger {
-  --chip-height: 1.25rem;
-  --chip-text: 0.75rem;
-  --chip-pad: 0.5rem;
+  --chip-height: calc(1.25 * var(--numen-chrome-unit));
+  --chip-text: var(--numen-chrome-text-1);
+  --chip-pad: var(--numen-chrome-inset);
   display: inline-flex;
   align-items: center;
   gap: calc(var(--chip-pad) / 2);
@@ -150,7 +150,7 @@ function onTick(task: Task) {
   padding: 0 var(--chip-pad);
   background: var(--numen-surface);
   border: none;
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-chrome-radius);
   outline: none;
   color: var(--numen-ink);
   font: inherit;
@@ -166,29 +166,29 @@ function onTick(task: Task) {
 }
 
 .todos-status__popover {
-  --popover-width: 24rem;
-  --popover-max-height: 22rem;
-  --popover-pad: 0.5rem;
+  --popover-width: calc(24 * var(--numen-chrome-unit));
+  --popover-max-height: calc(22 * var(--numen-chrome-unit));
+  --popover-pad: var(--numen-chrome-inset);
   position: absolute;
   top: calc(100% + var(--popover-offset));
   right: 0;
   z-index: 50;
   width: var(--popover-width);
-  max-width: calc(100vw - 1rem);
+  max-width: calc(100vw - var(--numen-chrome-unit));
   max-height: var(--popover-max-height);
   padding: var(--popover-pad);
   overflow-y: auto;
   background: var(--numen-raised);
   color: var(--numen-ink);
   border: 1px solid var(--numen-panel-border);
-  border-radius: var(--numen-radius-popup);
+  border-radius: var(--numen-chrome-radius);
   box-shadow: var(--numen-panel-shadow);
 }
 
 .todos-status__heading {
   margin: 0;
-  padding: 0.25rem 0.5rem;
-  font-size: var(--numen-text-1);
+  padding: calc(var(--numen-chrome-inset) / 2) var(--numen-chrome-inset);
+  font-size: var(--numen-chrome-text-1);
   font-weight: 600;
   color: var(--numen-hushed);
 }
@@ -202,15 +202,15 @@ function onTick(task: Task) {
 .todos-status__row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  font-size: var(--numen-text-2);
+  gap: var(--numen-chrome-inset);
+  padding: calc(var(--numen-chrome-inset) / 2) var(--numen-chrome-inset);
+  font-size: var(--numen-chrome-text-2);
 }
 
 .todos-status__row input[type='checkbox'] {
   flex: none;
-  inline-size: 1em;
-  block-size: 1em;
+  inline-size: calc(0.75 * var(--numen-chrome-unit));
+  block-size: calc(0.75 * var(--numen-chrome-unit));
   margin: 0;
   accent-color: var(--numen-accent);
 }
