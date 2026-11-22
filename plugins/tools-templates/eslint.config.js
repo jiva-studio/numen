@@ -73,6 +73,23 @@ const slicePolicies = [
   },
 ]
 
+// A later `no-restricted-imports` replaces the option instead of merging it, so every override spreads these.
+const basePatterns = [
+  {
+    group: ['@/**', '@/pages/**', '@/shared/**', '@/entities/**', '@/features/**', '@/app/**'],
+    message:
+      'plugins must not import host internals (@/*); use @numen/plugin-sdk or @numen/ui instead',
+  },
+  {
+    group: ['@plugins', '@plugins/**'],
+    message: 'a plugin names no other plugin; share through @numen/plugin-sdk',
+  },
+  {
+    group: ['@numen/*', ...contract.flatMap((name) => [`!@numen/${name}`, `!@numen/${name}/**`])],
+    message: 'a plugin names only @numen/plugin-sdk, @numen/ui and its own directory',
+  },
+]
+
 export default [
   {
     ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'stories/.storybook/**'],
@@ -116,36 +133,7 @@ export default [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: [
-                '@/**',
-                '@/pages/**',
-                '@/shared/**',
-                '@/entities/**',
-                '@/features/**',
-                '@/app/**',
-              ],
-              message:
-                'plugins must not import host internals (@/*); use @numen/plugin-sdk or @numen/ui instead',
-            },
-            {
-              group: ['@plugins', '@plugins/**'],
-              message: 'a plugin names no other plugin; share through @numen/plugin-sdk',
-            },
-            {
-              group: [
-                '@numen/*',
-                ...contract.flatMap((name) => [`!@numen/${name}`, `!@numen/${name}/**`]),
-              ],
-              message: 'a plugin names only @numen/plugin-sdk, @numen/ui and its own directory',
-            },
-          ],
-        },
-      ],
+      'no-restricted-imports': ['error', { patterns: basePatterns }],
     },
   },
   {
@@ -221,6 +209,7 @@ export default [
             { name: 'pinia', message: 'lib/ is pure TypeScript and must not depend on Pinia' },
           ],
           patterns: [
+            ...basePatterns,
             { group: ['@vue/*'], message: 'lib/ is pure TypeScript and must not depend on @vue/*' },
             {
               group: ['ui', 'model', 'api'].flatMap((segment) => [
@@ -249,6 +238,7 @@ export default [
         'error',
         {
           patterns: [
+            ...basePatterns,
             {
               group: ['../ui/*', '../ui/**', './ui/*'],
               message: 'model/ must not import upward from ui/',
@@ -281,6 +271,7 @@ export default [
         'error',
         {
           patterns: [
+            ...basePatterns,
             {
               group: [
                 '**/api/wire*',

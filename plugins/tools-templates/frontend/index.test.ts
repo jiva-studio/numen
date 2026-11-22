@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import type { ApiError, CommandNote, Result, VaultEntry, VaultFiles } from '@numen/plugin-sdk'
 import type { CreateNoteRequest, CreateNoteResponse } from './api/templates'
 import { activate } from './index'
@@ -49,14 +49,16 @@ const setup = (
   const createNote = vi.fn(async (_request: CreateNoteRequest) => answer)
   const context = createMockPluginContext({
     pluginId: PLUGIN_ID,
-    files: createFiles(folders),
     initialSettings: { folder: 'Templates' },
+  })
+  const host = createMockHostServices({
+    files: createFiles(folders),
     workspace: {
       files: { open: (path: string) => opened.push(path) },
       messages: { showError: (text: string) => errors.push(text) },
     } as never,
   })
-  activate(context, { createNote })
+  activate(context, host, { createNote })
   return { context, createNote, opened, errors }
 }
 
@@ -155,7 +157,9 @@ describe('the templates frontend', () => {
     const context = createMockPluginContext({ pluginId: PLUGIN_ID })
 
     expect(() =>
-      activate(context, { createNote: () => Promise.reject(new Error('unused')) }),
+      activate(context, createMockHostServices(), {
+        createNote: () => Promise.reject(new Error('unused')),
+      }),
     ).toThrow()
   })
 })
