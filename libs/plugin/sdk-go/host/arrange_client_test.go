@@ -49,7 +49,7 @@ func (a *fakeArrangeHost) RenameNote(
 	}
 	return connect.NewResponse(&v1.RenameNoteResponse{
 		Path: "Donau.md", Title: "Donau", NameSource: v1.NameSource_NAME_SOURCE_FILENAME,
-		Move: &v1.MoveResult{From: "Danube.md", To: "Donau.md", Repaired: []string{"Deltas.md"}, Dangling: []string{"Estuaries.md"}},
+		Moved: &v1.MoveResult{From: "Danube.md", To: "Donau.md", Repaired: []string{"Deltas.md"}, Dangling: []string{"Estuaries.md"}},
 	}), nil
 }
 
