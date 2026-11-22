@@ -78,7 +78,11 @@ func (g *Gateway) Chat(
 			g.report(ctx, "/chat/completions", "stream", response.StatusCode)
 			return nil, failure.err
 		}
-		g.report(ctx, "/chat/completions", "stream", response.StatusCode)
+		if errors.Is(err, errSilent) {
+			g.report(ctx, "/chat/completions", "timeout", response.StatusCode)
+		} else {
+			g.report(ctx, "/chat/completions", "stream", response.StatusCode)
+		}
 		return nil, connection.NewTryNextError(connection.ReasonUnavailable, 0)
 	}
 	return finish, nil
