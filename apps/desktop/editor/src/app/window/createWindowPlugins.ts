@@ -5,7 +5,12 @@
  */
 import { createCommandTitleReader } from '@/entities/command'
 import { useDeclaredCommands } from '@/features/plugin-commands'
-import { createHostPort, createPluginNotes, isCommandListed } from '@/features/plugin-host'
+import {
+  createHostPort,
+  createPluginNotes,
+  createSlotGroups,
+  isCommandListed,
+} from '@/features/plugin-host'
 import { syncKeybindings } from '@/features/hotkeys'
 import type { createWindowBase } from './createWindowBase'
 import { createPluginDeclarations } from './createPluginDeclarations'
@@ -140,5 +145,6 @@ export function createWindowPlugins(deps: WindowPluginsDeps) {
     declaredCommands.contributions.keybindings,
     rest.state.plugins,
   )
-  return { hostPort, pluginHost, pluginLoader, declaredCommands, picker }
+  const slotGroups = createSlotGroups(declaredCommands)
+  return { hostPort, pluginHost, pluginLoader, declaredCommands, slotGroups, picker }
 }

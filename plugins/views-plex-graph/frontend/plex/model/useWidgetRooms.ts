@@ -45,9 +45,9 @@ export function useWidgetRooms(
   const loaded = shallowRef<ReadonlyMap<string, boolean>>(new Map())
 
   const setHeight = (key: string, height: number | undefined) => {
-    if (heights.value.get(key) === height) return
+    if (heights.value.get(key) === (height || undefined)) return
     const next = new Map(heights.value)
-    if (height === undefined) next.delete(key)
+    if (!height) next.delete(key)
     else next.set(key, height)
     heights.value = next
   }

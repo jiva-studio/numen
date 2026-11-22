@@ -392,7 +392,7 @@ func isReadByCondition(manifest manifest.Manifest, key string) bool {
 func listUnreadSettings(declaring manifest.Manifest, sources []string) []string {
 	var unread []string
 	for _, setting := range declaring.Settings {
-		if setting.Type == manifest.SettingTypeConnections {
+		if setting.Type == manifest.SettingTypeConnections || setting.Type == manifest.SettingTypeSlots {
 			continue
 		}
 		if isReadByCondition(declaring, setting.Key) {

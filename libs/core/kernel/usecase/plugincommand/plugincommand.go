@@ -34,10 +34,11 @@ var (
 	ErrBadArguments = errors.New("the arguments do not meet the command")
 )
 
-// NewList makes the scenario that lists the commands the plugins declare. conditions parses the condition of
-// a command; it is shared with the scenarios that run commands, so one condition is parsed once.
-func NewList(commands PluginCommands, conditions *when.Conditions) List {
-	return List{commands: commands, conditions: conditions}
+// NewList makes the scenario that lists the commands the plugins declare and, over points, the slots they
+// draw; points may be nil, which lists none. conditions parses the condition of a command; it is shared
+// with the scenarios that run commands, so one condition is parsed once.
+func NewList(commands PluginCommands, points SlotPoints, conditions *when.Conditions) List {
+	return List{commands: commands, points: points, conditions: conditions}
 }
 
 // NewRun makes the scenario that runs a command in the backend that declares it, over the backends that run
@@ -62,6 +63,7 @@ func NewRun(
 type List struct {
 	commands   PluginCommands
 	conditions *when.Conditions
+	points     SlotPoints
 }
 
 // Execute lists the commands that a plugin backend runs.
@@ -93,6 +95,18 @@ func (u List) ExecuteHandlers() []plugin.CommandEntry {
 // holds suspended and of a plugin with neither a frontend nor a backend.
 func (u List) ExecuteSlots() []plugin.SlotEntry {
 	return slices.DeleteFunc(u.commands.ListSlots(), func(one plugin.SlotEntry) bool {
+		parts := u.commands.GetParts(one.PluginID)
+		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
+	})
+}
+
+// ExecuteSlotPoints lists the slots the enabled plugins draw, leaving out those of a plugin the host
+// holds suspended and of a plugin with neither a frontend nor a backend.
+func (u List) ExecuteSlotPoints() []plugin.SlotPointEntry {
+	if u.points == nil {
+		return nil
+	}
+	return slices.DeleteFunc(u.points.ListSlotPoints(), func(one plugin.SlotPointEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})

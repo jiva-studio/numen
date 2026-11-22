@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/manifest.proto.
  */
 export const file_numen_v1_manifest: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9tYW5pZmVzdC5wcm90bxIIbnVtZW4udjEihwQKCE1hbmlmZXN0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDwoHdmVyc2lvbhgDIAEoCRIQCghwcm90b2NvbBgEIAEoBRITCgtkZXNjcmlwdGlvbhgFIAEoCRIUCgxjYXBhYmlsaXRpZXMYBiADKAkSDwoHdGFyZ2V0cxgHIAMoCRIZChFhY3RpdmF0aW9uX2V2ZW50cxgIIAMoCRITCgtwZXJtaXNzaW9ucxgJIAMoCRIyCgxkZXBlbmRlbmNpZXMYCyADKAsyHC5udW1lbi52MS5NYW5pZmVzdERlcGVuZGVuY3kSKgoHYmFja2VuZBgNIAEoCzIZLm51bWVuLnYxLk1hbmlmZXN0QmFja2VuZBIsCghmcm9udGVuZBgOIAEoCzIaLm51bWVuLnYxLk1hbmlmZXN0RnJvbnRlbmQSKwoIc2V0dGluZ3MYDyADKAsyGS5udW1lbi52MS5NYW5pZmVzdFNldHRpbmcSEAoIc2VydmljZXMYESADKAkSNgoOc2V0dGluZ3Nfdmlld3MYGCADKAsyHi5udW1lbi52MS5NYW5pZmVzdFNldHRpbmdzVmlldxIyCgtjb250cmlidXRlcxgaIAEoCzIdLm51bWVuLnYxLk1hbmlmZXN0Q29udHJpYnV0ZXMSGQoRaXNfb2ZmX2J5X2RlZmF1bHQYGyABKAgi7gYKE01hbmlmZXN0Q29udHJpYnV0ZXMSLAoJdGFiX2tpbmRzGAEgAygLMhkubnVtZW4udjEuTWFuaWZlc3RUYWJLaW5kEg8KB2ZlYXR1cmUYAiABKAkSEAoIY2F0ZWdvcnkYAyABKAkSJwoGdGhlbWVzGAUgAygLMhcubnVtZW4udjEuTWFuaWZlc3RUaGVtZRIpCgdyZWFkZXJzGAkgAygLMhgubnVtZW4udjEuTWFuaWZlc3RSZWFkZXISLgoKbm90ZV90eXBlcxgKIAMoCzIaLm51bWVuLnYxLk1hbmlmZXN0Tm90ZVR5cGUSFQoNZnJhbWVfb3JpZ2lucxgLIAMoCRIrCghjb21tYW5kcxgMIAMoCzIZLm51bWVuLnYxLk1hbmlmZXN0Q29tbWFuZBIqCgVzbG90cxgPIAMoCzIbLm51bWVuLnYxLk1hbmlmZXN0U2xvdEVudHJ5EisKCGhhbmRsZXJzGBAgAygLMhkubnVtZW4udjEuTWFuaWZlc3RIYW5kbGVyEisKCHRyaWdnZXJzGBEgAygLMhkubnVtZW4udjEuTWFuaWZlc3RUcmlnZ2VyEi4KCnRleHRfa2luZHMYEiADKAsyGi5udW1lbi52MS5NYW5pZmVzdFRleHRLaW5kEi0KCWxpc3RlbmVycxgOIAMoCzIaLm51bWVuLnYxLk1hbmlmZXN0TGlzdGVuZXISOgoQY29ubmVjdGlvbl90eXBlcxgWIAMoCzIgLm51bWVuLnYxLk1hbmlmZXN0Q29ubmVjdGlvblR5cGUSLwoKb3BlcmF0aW9ucxgXIAMoCzIbLm51bWVuLnYxLk1hbmlmZXN0T3BlcmF0aW9uEjEKC2tleWJpbmRpbmdzGBMgAygLMhwubnVtZW4udjEuTWFuaWZlc3RLZXliaW5kaW5nEhkKEXZpZXdfY2FwYWJpbGl0aWVzGBQgAygJEjQKDWRyb3BfaGFuZGxlcnMYFSADKAsyHS5udW1lbi52MS5NYW5pZmVzdERyb3BIYW5kbGVyEjsKEHNlYXJjaF9mdW5jdGlvbnMYGCABKAsyIS5udW1lbi52MS5NYW5pZmVzdFNlYXJjaEZ1bmN0aW9ucxIrCghsaWNlbnNlcxgZIAMoCzIZLm51bWVuLnYxLk1hbmlmZXN0TGljZW5zZSJMChdNYW5pZmVzdExpY2Vuc2VQcm92aWRlchIQCghwcm92aWRlchgBIAEoCRISCgpwcm9kdWN0X2lkGAIgASgJEgsKA3VybBgDIAEoCSKvAQoPTWFuaWZlc3RMaWNlbnNlEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJEjQKCXByb3ZpZGVycxgEIAMoCzIhLm51bWVuLnYxLk1hbmlmZXN0TGljZW5zZVByb3ZpZGVyEh8KEm9mZmxpbmVfZ3JhY2VfZGF5cxgFIAEoBUgAiAEBQhUKE19vZmZsaW5lX2dyYWNlX2RheXMiXwoXTWFuaWZlc3RTZWFyY2hGdW5jdGlvbnMSDwoHdmVyc2lvbhgBIAEoBRIzCglmdW5jdGlvbnMYAiADKAsyIC5udW1lbi52MS5NYW5pZmVzdFNlYXJjaEZ1bmN0aW9uIo4BChZNYW5pZmVzdFNlYXJjaEZ1bmN0aW9uEgwKBG5hbWUYASABKAkSMQoEYXJncxgCIAMoCzIjLm51bWVuLnYxLk1hbmlmZXN0U2VhcmNoRnVuY3Rpb25BcmcSDQoFbGV2ZWwYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSDwoHZXhhbXBsZRgFIAEoCSI3ChlNYW5pZmVzdFNlYXJjaEZ1bmN0aW9uQXJnEgwKBG5hbWUYASABKAkSDAoEdHlwZRgCIAEoCSIkChNNYW5pZmVzdERyb3BIYW5kbGVyEg0KBXR5cGVzGAEgAygJIqkBChJNYW5pZmVzdEtleWJpbmRpbmcSCwoDa2V5GAEgASgJEg8KB2NvbW1hbmQYAiABKAkSOAoGdmFsdWVzGAMgAygLMigubnVtZW4udjEuTWFuaWZlc3RLZXliaW5kaW5nLlZhbHVlc0VudHJ5EgwKBHdoZW4YBCABKAkaLQoLVmFsdWVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASLGAQoWTWFuaWZlc3RDb25uZWN0aW9uVHlwZRIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRISCgpvcGVyYXRpb25zGAQgAygJEjEKBmZpZWxkcxgFIAMoCzIhLm51bWVuLnYxLk1hbmlmZXN0Q29ubmVjdGlvbkZpZWxkEjUKCnJvd19maWVsZHMYBiADKAsyIS5udW1lbi52MS5NYW5pZmVzdENvbm5lY3Rpb25GaWVsZCIwChFNYW5pZmVzdE9wZXJhdGlvbhIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJIvECChdNYW5pZmVzdENvbm5lY3Rpb25GaWVsZBILCgNrZXkYASABKAkSDAoEdHlwZRgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRInCgdkZWZhdWx0GAUgASgLMhYuZ29vZ2xlLnByb3RvYnVmLlZhbHVlEhgKC2ZpeGVkX3ZhbHVlGAYgASgJSACIAQESHQoLaXNfcmVxdWlyZWQYByABKAhSCHJlcXVpcmVkEhIKCmlzX2FkZHJlc3MYCCABKAgSKwoHb3B0aW9ucxgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5MaXN0VmFsdWUSEAoDbWluGAogASgBSAGIAQESEAoDbWF4GAsgASgBSAKIAQESEQoEc3RlcBgMIAEoAUgDiAEBEhQKDG9wdGlvbnNfZnJvbRgNIAEoCUIOCgxfZml4ZWRfdmFsdWVCBgoEX21pbkIGCgRfbWF4QgcKBV9zdGVwIi8KEE1hbmlmZXN0VGV4dEtpbmQSDAoEa2luZBgBIAEoCRINCgV0aXRsZRgCIAEoCSJWChBNYW5pZmVzdExpc3RlbmVyEgwKBG5hbWUYASABKAkSDAoEcG9ydBgCIAEoBRIQCghwcm90b2NvbBgDIAEoCRIUCgxwb3J0X3NldHRpbmcYBCABKAkioQIKEU1hbmlmZXN0U2xvdEVudHJ5EgwKBHNsb3QYASABKAkSEQoHY29tbWFuZBgCIAEoCUgAEg4KBHZpZXcYAyABKAlIABIRCgdzdWJtZW51GAQgASgJSAASDQoFdGl0bGUYBSABKAkSDAoEaWNvbhgGIAEoCRINCgVncm91cBgHIAEoCRISCgVvcmRlchgIIAEoBUgBiAEBEgwKBHdoZW4YCSABKAkSNwoGdmFsdWVzGAogAygLMicubnVtZW4udjEuTWFuaWZlc3RTbG90RW50cnkuVmFsdWVzRW50cnkaLQoLVmFsdWVzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIICgZwbGFjZWRCCAoGX29yZGVyIj8KD01hbmlmZXN0SGFuZGxlchIPCgdjb21tYW5kGAEgASgJEg0KBXRpdGxlGAIgASgJEgwKBHdoZW4YAyABKAkiPwoPTWFuaWZlc3RUcmlnZ2VyEg0KBWV2ZW50GAEgASgJEg8KB2NvbW1hbmQYAiABKAkSDAoEd2hlbhgDIAEoCSJLCg1NYW5pZmVzdFRoZW1lEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSEgoKYXBwZWFyYW5jZRgDIAEoCRIMCgRmaWxlGAQgASgJInAKD01hbmlmZXN0VGFiS2luZBIMCgRraW5kGAEgASgJEg0KBXRpdGxlGAIgASgJEgwKBGljb24YAyABKAkSDAoEd2hlbhgEIAEoCRIMCgRyYW5rGAUgASgJEhYKDmlzX25vdGVfZWRpdG9yGAYgASgIIsoCChJNYW5pZmVzdERlcGVuZGVuY3kSCgoCaWQYASABKAkSDAoEa2luZBgCIAEoCRIPCgd2ZXJzaW9uGAMgASgJEhIKCnNvdXJjZV91cmwYBCABKAkSFwoPY2hlY2tzdW1fc2hhMjU2GAUgASgJEjwKCG1ldGFkYXRhGAYgAygLMioubnVtZW4udjEuTWFuaWZlc3REZXBlbmRlbmN5Lk1ldGFkYXRhRW50cnkSMwoHc291cmNlcxgHIAMoCzIiLm51bWVuLnYxLk1hbmlmZXN0RGVwZW5kZW5jeVNvdXJjZRITCgtlbnZpcm9ubWVudBgIIAMoCRIOCgZzZWFyY2gYCSADKAkSEwoLc291cmNlX3VybHMYCiADKAkaLwoNTWV0YWRhdGFFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIp0BChhNYW5pZmVzdERlcGVuZGVuY3lTb3VyY2USEAoIcGxhdGZvcm0YASABKAkSEgoKc291cmNlX3VybBgCIAEoCRIXCg9jaGVja3N1bV9zaGEyNTYYAyABKAkSFgoOYXJjaGl2ZV9tZW1iZXIYBCABKAkSFQoNbWVtYmVyX3NoYTI1NhgFIAEoCRITCgtzb3VyY2VfdXJscxgGIAMoCSJACg9NYW5pZmVzdEJhY2tlbmQSEgoKZW50cnlwb2ludBgCIAEoCRIZChFpZGxlX3N0b3Bfc2Vjb25kcxgDIAEoBSISChBNYW5pZmVzdEZyb250ZW5kImkKFU1hbmlmZXN0U2V0dGluZ09wdGlvbhINCgV2YWx1ZRgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZkZXRhaWwYAyABKAkSFAoMZGVwZW5kZW5jaWVzGAQgAygJEgwKBHdoZW4YBSABKAkiqwEKEU1hbmlmZXN0T3B0aW9uc0J5Eg8KB3NldHRpbmcYASABKAkSOQoHb3B0aW9ucxgCIAMoCzIoLm51bWVuLnYxLk1hbmlmZXN0T3B0aW9uc0J5Lk9wdGlvbnNFbnRyeRpKCgxPcHRpb25zRW50cnkSCwoDa2V5GAEgASgJEikKBXZhbHVlGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLkxpc3RWYWx1ZToCOAEiMAoRTWFuaWZlc3RDb25kaXRpb24SDwoHc2V0dGluZxgBIAEoCRIKCgJpcxgCIAMoCSKJBAoPTWFuaWZlc3RTZXR0aW5nEgsKA2tleRgBIAEoCRIMCgR0eXBlGAIgASgJEg0KBXRpdGxlGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEg8KB2RldGFpbHMYGCABKAkSJwoHZGVmYXVsdBgFIAEoCzIWLmdvb2dsZS5wcm90b2J1Zi5WYWx1ZRIPCgdwYWxldHRlGAYgASgIEgwKBGljb24YByABKAkSKwoHb3B0aW9ucxgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5MaXN0VmFsdWUSEAoDbWluGAkgASgBSACIAQESEAoDbWF4GAogASgBSAGIAQESEQoEc3RlcBgLIAEoAUgCiAEBEi8KCm9wdGlvbnNfYnkYDiABKAsyGy5udW1lbi52MS5NYW5pZmVzdE9wdGlvbnNCeRIpCgR3aGVuGA8gASgLMhsubnVtZW4udjEuTWFuaWZlc3RDb25kaXRpb24SDgoGYWNjZXB0GBAgAygJEhAKCG11bHRpcGxlGBEgASgIEg8KB3ByZXZpZXcYEiABKAgSFAoMb3B0aW9uc19mcm9tGBMgASgJEhAKCGdlbmVyYXRlGBQgASgJEhIKCm9wZXJhdGlvbnMYFiADKAkSEAoIZGlzY292ZXIYFyABKAhCBgoEX21pbkIGCgRfbWF4QgcKBV9zdGVwSgQIFRAWIp0BChBNYW5pZmVzdE5vdGVUeXBlEgwKBHR5cGUYASABKAkSEwoGY2h1bmtzGAIgASgISACIAQESLAoIaGVhZGluZ3MYAyABKAsyGi5nb29nbGUucHJvdG9idWYuTGlzdFZhbHVlEhkKEWlkX2hlYWRpbmdfbGV2ZWxzGAQgAygFEhIKCmlkX3BhdHRlcm4YBSABKAlCCQoHX2NodW5rcyJjChdNYW5pZmVzdENvbW1hbmRBcmd1bWVudBIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEgwKBHR5cGUYAyABKAkSHQoLaXNfcmVxdWlyZWQYBCABKAhSCHJlcXVpcmVkImAKFk1hbmlmZXN0Q29tbWFuZEFuc3dlcnMSDQoFa2VlcHMYASABKAkSFwoPcmV0YWluZWRfbm90aWNlGAIgASgJEg4KBmFjdGlvbhgDIAEoCRIOCgZkZXRhaWwYBCABKAkiRAoUTWFuaWZlc3RDb21tYW5kV2FybnMSDgoGYWN0aW9uGAEgASgJEg4KBmRldGFpbBgCIAEoCRIMCgRiYWNrGAMgASgJIvoBCg9NYW5pZmVzdENvbW1hbmQSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkSDAoEaWNvbhgDIAEoCRI0Cglhcmd1bWVudHMYByADKAsyIS5udW1lbi52MS5NYW5pZmVzdENvbW1hbmRBcmd1bWVudBIMCgR3aGVuGAsgASgJEhIKCnBlcm1pc3Npb24YDCABKAkSMQoHYW5zd2VycxgNIAEoCzIgLm51bWVuLnYxLk1hbmlmZXN0Q29tbWFuZEFuc3dlcnMSLQoFd2FybnMYDiABKAsyHi5udW1lbi52MS5NYW5pZmVzdENvbW1hbmRXYXJuc0oECAoQCyJBCg5NYW5pZmVzdFJlYWRlchIKCgJpZBgBIAEoCRIVCg1jb250ZW50X3R5cGVzGAIgAygJEgwKBHJhbmsYAyABKAkiMQoUTWFuaWZlc3RTZXR0aW5nc1ZpZXcSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAlCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_google_protobuf_struct]);
+  fileDesc("ChdudW1lbi92MS9tYW5pZmVzdC5wcm90bxIIbnVtZW4udjEivwQKCE1hbmlmZXN0EgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDwoHdmVyc2lvbhgDIAEoCRIQCghwcm90b2NvbBgEIAEoBRITCgtkZXNjcmlwdGlvbhgFIAEoCRIUCgxjYXBhYmlsaXRpZXMYBiADKAkSDwoHdGFyZ2V0cxgHIAMoCRIZChFhY3RpdmF0aW9uX2V2ZW50cxgIIAMoCRITCgtwZXJtaXNzaW9ucxgJIAMoCRIyCgxkZXBlbmRlbmNpZXMYCyADKAsyHC5udW1lbi52MS5NYW5pZmVzdERlcGVuZGVuY3kSKgoHYmFja2VuZBgNIAEoCzIZLm51bWVuLnYxLk1hbmlmZXN0QmFja2VuZBIsCghmcm9udGVuZBgOIAEoCzIaLm51bWVuLnYxLk1hbmlmZXN0RnJvbnRlbmQSKwoIc2V0dGluZ3MYDyADKAsyGS5udW1lbi52MS5NYW5pZmVzdFNldHRpbmcSEAoIc2VydmljZXMYESADKAkSNgoOc2V0dGluZ3Nfdmlld3MYGCADKAsyHi5udW1lbi52MS5NYW5pZmVzdFNldHRpbmdzVmlldxI2Cg5zZXR0aW5nX2dyb3VwcxgcIAMoCzIeLm51bWVuLnYxLk1hbmlmZXN0U2V0dGluZ0dyb3VwEjIKC2NvbnRyaWJ1dGVzGBogASgLMh0ubnVtZW4udjEuTWFuaWZlc3RDb250cmlidXRlcxIZChFpc19vZmZfYnlfZGVmYXVsdBgbIAEoCCKgBwoTTWFuaWZlc3RDb250cmlidXRlcxIsCgl0YWJfa2luZHMYASADKAsyGS5udW1lbi52MS5NYW5pZmVzdFRhYktpbmQSDwoHZmVhdHVyZRgCIAEoCRIQCghjYXRlZ29yeRgDIAEoCRInCgZ0aGVtZXMYBSADKAsyFy5udW1lbi52MS5NYW5pZmVzdFRoZW1lEikKB3JlYWRlcnMYCSADKAsyGC5udW1lbi52MS5NYW5pZmVzdFJlYWRlchIuCgpub3RlX3R5cGVzGAogAygLMhoubnVtZW4udjEuTWFuaWZlc3ROb3RlVHlwZRIVCg1mcmFtZV9vcmlnaW5zGAsgAygJEisKCGNvbW1hbmRzGAwgAygLMhkubnVtZW4udjEuTWFuaWZlc3RDb21tYW5kEioKBXNsb3RzGA8gAygLMhsubnVtZW4udjEuTWFuaWZlc3RTbG90RW50cnkSMAoLc2xvdF9wb2ludHMYGiADKAsyGy5udW1lbi52MS5NYW5pZmVzdFNsb3RQb2ludBIrCghoYW5kbGVycxgQIAMoCzIZLm51bWVuLnYxLk1hbmlmZXN0SGFuZGxlchIrCgh0cmlnZ2VycxgRIAMoCzIZLm51bWVuLnYxLk1hbmlmZXN0VHJpZ2dlchIuCgp0ZXh0X2tpbmRzGBIgAygLMhoubnVtZW4udjEuTWFuaWZlc3RUZXh0S2luZBItCglsaXN0ZW5lcnMYDiADKAsyGi5udW1lbi52MS5NYW5pZmVzdExpc3RlbmVyEjoKEGNvbm5lY3Rpb25fdHlwZXMYFiADKAsyIC5udW1lbi52MS5NYW5pZmVzdENvbm5lY3Rpb25UeXBlEi8KCm9wZXJhdGlvbnMYFyADKAsyGy5udW1lbi52MS5NYW5pZmVzdE9wZXJhdGlvbhIxCgtrZXliaW5kaW5ncxgTIAMoCzIcLm51bWVuLnYxLk1hbmlmZXN0S2V5YmluZGluZxIZChF2aWV3X2NhcGFiaWxpdGllcxgUIAMoCRI0Cg1kcm9wX2hhbmRsZXJzGBUgAygLMh0ubnVtZW4udjEuTWFuaWZlc3REcm9wSGFuZGxlchI7ChBzZWFyY2hfZnVuY3Rpb25zGBggASgLMiEubnVtZW4udjEuTWFuaWZlc3RTZWFyY2hGdW5jdGlvbnMSKwoIbGljZW5zZXMYGSADKAsyGS5udW1lbi52MS5NYW5pZmVzdExpY2Vuc2UiTAoXTWFuaWZlc3RMaWNlbnNlUHJvdmlkZXISEAoIcHJvdmlkZXIYASABKAkSEgoKcHJvZHVjdF9pZBgCIAEoCRILCgN1cmwYAyABKAkirwEKD01hbmlmZXN0TGljZW5zZRIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCRI0Cglwcm92aWRlcnMYBCADKAsyIS5udW1lbi52MS5NYW5pZmVzdExpY2Vuc2VQcm92aWRlchIfChJvZmZsaW5lX2dyYWNlX2RheXMYBSABKAVIAIgBAUIVChNfb2ZmbGluZV9ncmFjZV9kYXlzIl8KF01hbmlmZXN0U2VhcmNoRnVuY3Rpb25zEg8KB3ZlcnNpb24YASABKAUSMwoJZnVuY3Rpb25zGAIgAygLMiAubnVtZW4udjEuTWFuaWZlc3RTZWFyY2hGdW5jdGlvbiKOAQoWTWFuaWZlc3RTZWFyY2hGdW5jdGlvbhIMCgRuYW1lGAEgASgJEjEKBGFyZ3MYAiADKAsyIy5udW1lbi52MS5NYW5pZmVzdFNlYXJjaEZ1bmN0aW9uQXJnEg0KBWxldmVsGAMgASgJEhMKC2Rlc2NyaXB0aW9uGAQgASgJEg8KB2V4YW1wbGUYBSABKAkiNwoZTWFuaWZlc3RTZWFyY2hGdW5jdGlvbkFyZxIMCgRuYW1lGAEgASgJEgwKBHR5cGUYAiABKAkiJAoTTWFuaWZlc3REcm9wSGFuZGxlchINCgV0eXBlcxgBIAMoCSKpAQoSTWFuaWZlc3RLZXliaW5kaW5nEgsKA2tleRgBIAEoCRIPCgdjb21tYW5kGAIgASgJEjgKBnZhbHVlcxgDIAMoCzIoLm51bWVuLnYxLk1hbmlmZXN0S2V5YmluZGluZy5WYWx1ZXNFbnRyeRIMCgR3aGVuGAQgASgJGi0KC1ZhbHVlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEixgEKFk1hbmlmZXN0Q29ubmVjdGlvblR5cGUSCgoCaWQYASABKAkSDQoFdGl0bGUYAiABKAkSEwoLZGVzY3JpcHRpb24YAyABKAkSEgoKb3BlcmF0aW9ucxgEIAMoCRIxCgZmaWVsZHMYBSADKAsyIS5udW1lbi52MS5NYW5pZmVzdENvbm5lY3Rpb25GaWVsZBI1Cgpyb3dfZmllbGRzGAYgAygLMiEubnVtZW4udjEuTWFuaWZlc3RDb25uZWN0aW9uRmllbGQiMAoRTWFuaWZlc3RPcGVyYXRpb24SDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCSLxAgoXTWFuaWZlc3RDb25uZWN0aW9uRmllbGQSCwoDa2V5GAEgASgJEgwKBHR5cGUYAiABKAkSDQoFdGl0bGUYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSJwoHZGVmYXVsdBgFIAEoCzIWLmdvb2dsZS5wcm90b2J1Zi5WYWx1ZRIYCgtmaXhlZF92YWx1ZRgGIAEoCUgAiAEBEh0KC2lzX3JlcXVpcmVkGAcgASgIUghyZXF1aXJlZBISCgppc19hZGRyZXNzGAggASgIEisKB29wdGlvbnMYCSABKAsyGi5nb29nbGUucHJvdG9idWYuTGlzdFZhbHVlEhAKA21pbhgKIAEoAUgBiAEBEhAKA21heBgLIAEoAUgCiAEBEhEKBHN0ZXAYDCABKAFIA4gBARIUCgxvcHRpb25zX2Zyb20YDSABKAlCDgoMX2ZpeGVkX3ZhbHVlQgYKBF9taW5CBgoEX21heEIHCgVfc3RlcCIvChBNYW5pZmVzdFRleHRLaW5kEgwKBGtpbmQYASABKAkSDQoFdGl0bGUYAiABKAkiVgoQTWFuaWZlc3RMaXN0ZW5lchIMCgRuYW1lGAEgASgJEgwKBHBvcnQYAiABKAUSEAoIcHJvdG9jb2wYAyABKAkSFAoMcG9ydF9zZXR0aW5nGAQgASgJIj4KEU1hbmlmZXN0U2xvdFBvaW50EgwKBHNsb3QYASABKAkSDQoFdGl0bGUYAiABKAkSDAoEbWVudRgDIAEoCCKhAgoRTWFuaWZlc3RTbG90RW50cnkSDAoEc2xvdBgBIAEoCRIRCgdjb21tYW5kGAIgASgJSAASDgoEdmlldxgDIAEoCUgAEhEKB3N1Ym1lbnUYBCABKAlIABINCgV0aXRsZRgFIAEoCRIMCgRpY29uGAYgASgJEg0KBWdyb3VwGAcgASgJEhIKBW9yZGVyGAggASgFSAGIAQESDAoEd2hlbhgJIAEoCRI3CgZ2YWx1ZXMYCiADKAsyJy5udW1lbi52MS5NYW5pZmVzdFNsb3RFbnRyeS5WYWx1ZXNFbnRyeRotCgtWYWx1ZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBQggKBnBsYWNlZEIICgZfb3JkZXIiPwoPTWFuaWZlc3RIYW5kbGVyEg8KB2NvbW1hbmQYASABKAkSDQoFdGl0bGUYAiABKAkSDAoEd2hlbhgDIAEoCSI/Cg9NYW5pZmVzdFRyaWdnZXISDQoFZXZlbnQYASABKAkSDwoHY29tbWFuZBgCIAEoCRIMCgR3aGVuGAMgASgJIksKDU1hbmlmZXN0VGhlbWUSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRISCgphcHBlYXJhbmNlGAMgASgJEgwKBGZpbGUYBCABKAkicAoPTWFuaWZlc3RUYWJLaW5kEgwKBGtpbmQYASABKAkSDQoFdGl0bGUYAiABKAkSDAoEaWNvbhgDIAEoCRIMCgR3aGVuGAQgASgJEgwKBHJhbmsYBSABKAkSFgoOaXNfbm90ZV9lZGl0b3IYBiABKAgiygIKEk1hbmlmZXN0RGVwZW5kZW5jeRIKCgJpZBgBIAEoCRIMCgRraW5kGAIgASgJEg8KB3ZlcnNpb24YAyABKAkSEgoKc291cmNlX3VybBgEIAEoCRIXCg9jaGVja3N1bV9zaGEyNTYYBSABKAkSPAoIbWV0YWRhdGEYBiADKAsyKi5udW1lbi52MS5NYW5pZmVzdERlcGVuZGVuY3kuTWV0YWRhdGFFbnRyeRIzCgdzb3VyY2VzGAcgAygLMiIubnVtZW4udjEuTWFuaWZlc3REZXBlbmRlbmN5U291cmNlEhMKC2Vudmlyb25tZW50GAggAygJEg4KBnNlYXJjaBgJIAMoCRITCgtzb3VyY2VfdXJscxgKIAMoCRovCg1NZXRhZGF0YUVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEinQEKGE1hbmlmZXN0RGVwZW5kZW5jeVNvdXJjZRIQCghwbGF0Zm9ybRgBIAEoCRISCgpzb3VyY2VfdXJsGAIgASgJEhcKD2NoZWNrc3VtX3NoYTI1NhgDIAEoCRIWCg5hcmNoaXZlX21lbWJlchgEIAEoCRIVCg1tZW1iZXJfc2hhMjU2GAUgASgJEhMKC3NvdXJjZV91cmxzGAYgAygJIkAKD01hbmlmZXN0QmFja2VuZBISCgplbnRyeXBvaW50GAIgASgJEhkKEWlkbGVfc3RvcF9zZWNvbmRzGAMgASgFIhIKEE1hbmlmZXN0RnJvbnRlbmQiaQoVTWFuaWZlc3RTZXR0aW5nT3B0aW9uEg0KBXZhbHVlGAEgASgJEg0KBXRpdGxlGAIgASgJEg4KBmRldGFpbBgDIAEoCRIUCgxkZXBlbmRlbmNpZXMYBCADKAkSDAoEd2hlbhgFIAEoCSKrAQoRTWFuaWZlc3RPcHRpb25zQnkSDwoHc2V0dGluZxgBIAEoCRI5CgdvcHRpb25zGAIgAygLMigubnVtZW4udjEuTWFuaWZlc3RPcHRpb25zQnkuT3B0aW9uc0VudHJ5GkoKDE9wdGlvbnNFbnRyeRILCgNrZXkYASABKAkSKQoFdmFsdWUYAiABKAsyGi5nb29nbGUucHJvdG9idWYuTGlzdFZhbHVlOgI4ASIwChFNYW5pZmVzdENvbmRpdGlvbhIPCgdzZXR0aW5nGAEgASgJEgoKAmlzGAIgAygJIpgECg9NYW5pZmVzdFNldHRpbmcSCwoDa2V5GAEgASgJEgwKBHR5cGUYAiABKAkSDQoFdGl0bGUYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSDwoHZGV0YWlscxgYIAEoCRInCgdkZWZhdWx0GAUgASgLMhYuZ29vZ2xlLnByb3RvYnVmLlZhbHVlEg8KB3BhbGV0dGUYBiABKAgSDAoEaWNvbhgHIAEoCRIrCgdvcHRpb25zGAggASgLMhouZ29vZ2xlLnByb3RvYnVmLkxpc3RWYWx1ZRIQCgNtaW4YCSABKAFIAIgBARIQCgNtYXgYCiABKAFIAYgBARIRCgRzdGVwGAsgASgBSAKIAQESLwoKb3B0aW9uc19ieRgOIAEoCzIbLm51bWVuLnYxLk1hbmlmZXN0T3B0aW9uc0J5EikKBHdoZW4YDyABKAsyGy5udW1lbi52MS5NYW5pZmVzdENvbmRpdGlvbhIOCgZhY2NlcHQYECADKAkSEAoIbXVsdGlwbGUYESABKAgSDwoHcHJldmlldxgSIAEoCBIUCgxvcHRpb25zX2Zyb20YEyABKAkSEAoIZ2VuZXJhdGUYFCABKAkSEgoKb3BlcmF0aW9ucxgWIAMoCRIQCghkaXNjb3ZlchgXIAEoCBINCgVncm91cBgZIAEoCUIGCgRfbWluQgYKBF9tYXhCBwoFX3N0ZXBKBAgVEBYinQEKEE1hbmlmZXN0Tm90ZVR5cGUSDAoEdHlwZRgBIAEoCRITCgZjaHVua3MYAiABKAhIAIgBARIsCghoZWFkaW5ncxgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5MaXN0VmFsdWUSGQoRaWRfaGVhZGluZ19sZXZlbHMYBCADKAUSEgoKaWRfcGF0dGVybhgFIAEoCUIJCgdfY2h1bmtzImMKF01hbmlmZXN0Q29tbWFuZEFyZ3VtZW50EgwKBG5hbWUYASABKAkSDQoFdGl0bGUYAiABKAkSDAoEdHlwZRgDIAEoCRIdCgtpc19yZXF1aXJlZBgEIAEoCFIIcmVxdWlyZWQiYAoWTWFuaWZlc3RDb21tYW5kQW5zd2VycxINCgVrZWVwcxgBIAEoCRIXCg9yZXRhaW5lZF9ub3RpY2UYAiABKAkSDgoGYWN0aW9uGAMgASgJEg4KBmRldGFpbBgEIAEoCSJEChRNYW5pZmVzdENvbW1hbmRXYXJucxIOCgZhY3Rpb24YASABKAkSDgoGZGV0YWlsGAIgASgJEgwKBGJhY2sYAyABKAki+gEKD01hbmlmZXN0Q29tbWFuZBIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCRIMCgRpY29uGAMgASgJEjQKCWFyZ3VtZW50cxgHIAMoCzIhLm51bWVuLnYxLk1hbmlmZXN0Q29tbWFuZEFyZ3VtZW50EgwKBHdoZW4YCyABKAkSEgoKcGVybWlzc2lvbhgMIAEoCRIxCgdhbnN3ZXJzGA0gASgLMiAubnVtZW4udjEuTWFuaWZlc3RDb21tYW5kQW5zd2VycxItCgV3YXJucxgOIAEoCzIeLm51bWVuLnYxLk1hbmlmZXN0Q29tbWFuZFdhcm5zSgQIChALIkEKDk1hbmlmZXN0UmVhZGVyEgoKAmlkGAEgASgJEhUKDWNvbnRlbnRfdHlwZXMYAiADKAkSDAoEcmFuaxgDIAEoCSIxChRNYW5pZmVzdFNldHRpbmdHcm91cBIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCSIxChRNYW5pZmVzdFNldHRpbmdzVmlldxIKCgJpZBgBIAEoCRINCgV0aXRsZRgCIAEoCUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_google_protobuf_struct]);
 
 /**
  * Manifest is the schema of a plugin's manifest.json. The file is the proto3 JSON
@@ -106,6 +106,13 @@ export type Manifest = Message<"numen.v1.Manifest"> & {
    * @generated from field: repeated numen.v1.ManifestSettingsView settings_views = 24;
    */
   settingsViews: ManifestSettingsView[];
+
+  /**
+   * setting_groups are the islands the settings page draws the settings in, in the order they are shown.
+   *
+   * @generated from field: repeated numen.v1.ManifestSettingGroup setting_groups = 28;
+   */
+  settingGroups: ManifestSettingGroup[];
 
   /**
    * contributes is what the plugin adds to the application, known before its
@@ -203,6 +210,15 @@ export type ManifestContributes = Message<"numen.v1.ManifestContributes"> & {
    * @generated from field: repeated numen.v1.ManifestSlotEntry slots = 15;
    */
   slots: ManifestSlotEntry[];
+
+  /**
+   * slot_points are the slots the plugin draws and lets a person order and hide the entries of: a name
+   * slots.json lists is a slot of the application the plugin draws, any other is a slot the plugin
+   * declares for other plugins to fill.
+   *
+   * @generated from field: repeated numen.v1.ManifestSlotPoint slot_points = 26;
+   */
+  slotPoints: ManifestSlotPoint[];
 
   /**
    * handlers are the plugin's handlers of shared commands, see commands.json for the list of shared
@@ -801,6 +817,43 @@ export const ManifestListenerSchema: GenMessage<ManifestListener> = /*@__PURE__*
   messageDesc(file_numen_v1_manifest, 13);
 
 /**
+ * ManifestSlotPoint names a slot the plugin draws. The plugin keeps the order and the visibility of the
+ * entries of the slot in its own settings, in the setting of the type slots.
+ *
+ * @generated from message numen.v1.ManifestSlotPoint
+ */
+export type ManifestSlotPoint = Message<"numen.v1.ManifestSlotPoint"> & {
+  /**
+   * slot is the name of the slot, words joined by dots, such as plexGraph.nodeBelow.
+   *
+   * @generated from field: string slot = 1;
+   */
+  slot: string;
+
+  /**
+   * title is what the settings page of the plugin calls the slot.
+   *
+   * @generated from field: string title = 2;
+   */
+  title: string;
+
+  /**
+   * menu marks a slot that draws its entries as the rows of a context menu: the settings page does not
+   * list it, and its order comes from the manifests.
+   *
+   * @generated from field: bool menu = 3;
+   */
+  menu: boolean;
+};
+
+/**
+ * Describes the message numen.v1.ManifestSlotPoint.
+ * Use `create(ManifestSlotPointSchema)` to create a new message.
+ */
+export const ManifestSlotPointSchema: GenMessage<ManifestSlotPoint> = /*@__PURE__*/
+  messageDesc(file_numen_v1_manifest, 14);
+
+/**
  * ManifestSlotEntry places one thing in a slot of a window, or in a submenu a plugin declares. The
  * owner of the slot draws a command, as a button in a bar and as a row in a menu; a view draws
  * itself; a submenu becomes a place other entries name as their slot.
@@ -846,7 +899,8 @@ export type ManifestSlotEntry = Message<"numen.v1.ManifestSlotEntry"> & {
   } | { case: undefined; value?: undefined };
 
   /**
-   * title is the title of a submenu.
+   * title is the title of a submenu. On a view or a command it is the name the settings page of the plugin
+   * that draws the slot gives the entry; a command without one is named by its own title.
    *
    * @generated from field: string title = 5;
    */
@@ -899,7 +953,7 @@ export type ManifestSlotEntry = Message<"numen.v1.ManifestSlotEntry"> & {
  * Use `create(ManifestSlotEntrySchema)` to create a new message.
  */
 export const ManifestSlotEntrySchema: GenMessage<ManifestSlotEntry> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 14);
+  messageDesc(file_numen_v1_manifest, 15);
 
 /**
  * ManifestHandler is the plugin's handler of a shared command of commands.json. The plugin's code
@@ -936,7 +990,7 @@ export type ManifestHandler = Message<"numen.v1.ManifestHandler"> & {
  * Use `create(ManifestHandlerSchema)` to create a new message.
  */
 export const ManifestHandlerSchema: GenMessage<ManifestHandler> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 15);
+  messageDesc(file_numen_v1_manifest, 16);
 
 /**
  * ManifestTrigger runs the plugin's own handler of a shared command over the file of an event.
@@ -972,7 +1026,7 @@ export type ManifestTrigger = Message<"numen.v1.ManifestTrigger"> & {
  * Use `create(ManifestTriggerSchema)` to create a new message.
  */
 export const ManifestTriggerSchema: GenMessage<ManifestTrigger> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 16);
+  messageDesc(file_numen_v1_manifest, 17);
 
 /**
  * ManifestTheme is a theme a plugin adds to the list of themes.
@@ -1015,7 +1069,7 @@ export type ManifestTheme = Message<"numen.v1.ManifestTheme"> & {
  * Use `create(ManifestThemeSchema)` to create a new message.
  */
 export const ManifestThemeSchema: GenMessage<ManifestTheme> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 17);
+  messageDesc(file_numen_v1_manifest, 18);
 
 /**
  * ManifestTabKind is a kind of tab the plugin registers.
@@ -1072,7 +1126,7 @@ export type ManifestTabKind = Message<"numen.v1.ManifestTabKind"> & {
  * Use `create(ManifestTabKindSchema)` to create a new message.
  */
 export const ManifestTabKindSchema: GenMessage<ManifestTabKind> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 18);
+  messageDesc(file_numen_v1_manifest, 19);
 
 /**
  * @generated from message numen.v1.ManifestDependency
@@ -1150,7 +1204,7 @@ export type ManifestDependency = Message<"numen.v1.ManifestDependency"> & {
  * Use `create(ManifestDependencySchema)` to create a new message.
  */
 export const ManifestDependencySchema: GenMessage<ManifestDependency> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 19);
+  messageDesc(file_numen_v1_manifest, 20);
 
 /**
  * ManifestDependencySource is the file a dependency is fetched from on one platform.
@@ -1204,7 +1258,7 @@ export type ManifestDependencySource = Message<"numen.v1.ManifestDependencySourc
  * Use `create(ManifestDependencySourceSchema)` to create a new message.
  */
 export const ManifestDependencySourceSchema: GenMessage<ManifestDependencySource> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 20);
+  messageDesc(file_numen_v1_manifest, 21);
 
 /**
  * ManifestBackend declares that the plugin has a backend process.
@@ -1233,7 +1287,7 @@ export type ManifestBackend = Message<"numen.v1.ManifestBackend"> & {
  * Use `create(ManifestBackendSchema)` to create a new message.
  */
 export const ManifestBackendSchema: GenMessage<ManifestBackend> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 21);
+  messageDesc(file_numen_v1_manifest, 22);
 
 /**
  * ManifestFrontend declares that the plugin has a frontend. The bundle is dist/index.js and the
@@ -1249,7 +1303,7 @@ export type ManifestFrontend = Message<"numen.v1.ManifestFrontend"> & {
  * Use `create(ManifestFrontendSchema)` to create a new message.
  */
 export const ManifestFrontendSchema: GenMessage<ManifestFrontend> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 22);
+  messageDesc(file_numen_v1_manifest, 23);
 
 /**
  * ManifestSettingOption is one value an enum setting holds. A list of options
@@ -1293,7 +1347,7 @@ export type ManifestSettingOption = Message<"numen.v1.ManifestSettingOption"> & 
  * Use `create(ManifestSettingOptionSchema)` to create a new message.
  */
 export const ManifestSettingOptionSchema: GenMessage<ManifestSettingOption> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 23);
+  messageDesc(file_numen_v1_manifest, 24);
 
 /**
  * @generated from message numen.v1.ManifestOptionsBy
@@ -1318,7 +1372,7 @@ export type ManifestOptionsBy = Message<"numen.v1.ManifestOptionsBy"> & {
  * Use `create(ManifestOptionsBySchema)` to create a new message.
  */
 export const ManifestOptionsBySchema: GenMessage<ManifestOptionsBy> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 24);
+  messageDesc(file_numen_v1_manifest, 25);
 
 /**
  * @generated from message numen.v1.ManifestCondition
@@ -1340,7 +1394,7 @@ export type ManifestCondition = Message<"numen.v1.ManifestCondition"> & {
  * Use `create(ManifestConditionSchema)` to create a new message.
  */
 export const ManifestConditionSchema: GenMessage<ManifestCondition> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 25);
+  messageDesc(file_numen_v1_manifest, 26);
 
 /**
  * @generated from message numen.v1.ManifestSetting
@@ -1472,6 +1526,13 @@ export type ManifestSetting = Message<"numen.v1.ManifestSetting"> & {
    * @generated from field: bool discover = 23;
    */
   discover: boolean;
+
+  /**
+   * group is the id of the entry of the manifest's setting_groups the setting is drawn under. Empty draws it in a card without a heading above the islands.
+   *
+   * @generated from field: string group = 25;
+   */
+  group: string;
 };
 
 /**
@@ -1479,7 +1540,7 @@ export type ManifestSetting = Message<"numen.v1.ManifestSetting"> & {
  * Use `create(ManifestSettingSchema)` to create a new message.
  */
 export const ManifestSettingSchema: GenMessage<ManifestSetting> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 26);
+  messageDesc(file_numen_v1_manifest, 27);
 
 /**
  * @generated from message numen.v1.ManifestNoteType
@@ -1519,7 +1580,7 @@ export type ManifestNoteType = Message<"numen.v1.ManifestNoteType"> & {
  * Use `create(ManifestNoteTypeSchema)` to create a new message.
  */
 export const ManifestNoteTypeSchema: GenMessage<ManifestNoteType> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 27);
+  messageDesc(file_numen_v1_manifest, 28);
 
 /**
  * @generated from message numen.v1.ManifestCommandArgument
@@ -1551,7 +1612,7 @@ export type ManifestCommandArgument = Message<"numen.v1.ManifestCommandArgument"
  * Use `create(ManifestCommandArgumentSchema)` to create a new message.
  */
 export const ManifestCommandArgumentSchema: GenMessage<ManifestCommandArgument> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 28);
+  messageDesc(file_numen_v1_manifest, 29);
 
 /**
  * ManifestCommandAnswers is the confirmation a command asks for before it runs: two answers, the
@@ -1588,7 +1649,7 @@ export type ManifestCommandAnswers = Message<"numen.v1.ManifestCommandAnswers"> 
  * Use `create(ManifestCommandAnswersSchema)` to create a new message.
  */
 export const ManifestCommandAnswersSchema: GenMessage<ManifestCommandAnswers> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 29);
+  messageDesc(file_numen_v1_manifest, 30);
 
 /**
  * ManifestCommandWarns is the confirmation a command asks for by having the name of what it acts on
@@ -1618,7 +1679,7 @@ export type ManifestCommandWarns = Message<"numen.v1.ManifestCommandWarns"> & {
  * Use `create(ManifestCommandWarnsSchema)` to create a new message.
  */
 export const ManifestCommandWarnsSchema: GenMessage<ManifestCommandWarns> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 30);
+  messageDesc(file_numen_v1_manifest, 31);
 
 /**
  * @generated from message numen.v1.ManifestCommand
@@ -1679,7 +1740,7 @@ export type ManifestCommand = Message<"numen.v1.ManifestCommand"> & {
  * Use `create(ManifestCommandSchema)` to create a new message.
  */
 export const ManifestCommandSchema: GenMessage<ManifestCommand> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 31);
+  messageDesc(file_numen_v1_manifest, 32);
 
 /**
  * @generated from message numen.v1.ManifestReader
@@ -1706,7 +1767,31 @@ export type ManifestReader = Message<"numen.v1.ManifestReader"> & {
  * Use `create(ManifestReaderSchema)` to create a new message.
  */
 export const ManifestReaderSchema: GenMessage<ManifestReader> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 32);
+  messageDesc(file_numen_v1_manifest, 33);
+
+/**
+ * ManifestSettingGroup is an island of the settings page, with the heading over it.
+ *
+ * @generated from message numen.v1.ManifestSettingGroup
+ */
+export type ManifestSettingGroup = Message<"numen.v1.ManifestSettingGroup"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string title = 2;
+   */
+  title: string;
+};
+
+/**
+ * Describes the message numen.v1.ManifestSettingGroup.
+ * Use `create(ManifestSettingGroupSchema)` to create a new message.
+ */
+export const ManifestSettingGroupSchema: GenMessage<ManifestSettingGroup> = /*@__PURE__*/
+  messageDesc(file_numen_v1_manifest, 34);
 
 /**
  * @generated from message numen.v1.ManifestSettingsView
@@ -1728,5 +1813,5 @@ export type ManifestSettingsView = Message<"numen.v1.ManifestSettingsView"> & {
  * Use `create(ManifestSettingsViewSchema)` to create a new message.
  */
 export const ManifestSettingsViewSchema: GenMessage<ManifestSettingsView> = /*@__PURE__*/
-  messageDesc(file_numen_v1_manifest, 33);
+  messageDesc(file_numen_v1_manifest, 35);
 

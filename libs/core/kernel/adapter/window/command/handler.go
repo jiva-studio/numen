@@ -62,6 +62,12 @@ func (h *Handler) ListCommands(
 	for _, one := range listing.Slots {
 		slots = append(slots, newWireSlotEntry(one))
 	}
+	points := make([]*v1.PluginSlotPoint, 0, len(listing.SlotPoints))
+	for _, one := range listing.SlotPoints {
+		points = append(points, &v1.PluginSlotPoint{
+			PluginId: one.PluginID, Point: &v1.ManifestSlotPoint{Slot: one.Point.Slot, Title: one.Point.Title, Menu: one.Point.Menu},
+		})
+	}
 	handlers := make([]*v1.PluginHandler, 0, len(listing.Handlers))
 	for _, one := range listing.Handlers {
 		handlers = append(handlers, &v1.PluginHandler{
@@ -72,7 +78,7 @@ func (h *Handler) ListCommands(
 	}
 	return connect.NewResponse(&v1.ListCommandsResponse{
 		Commands: commands, Slots: slots, ContentTypeByExtension: listing.ContentTypeByExtension, Handlers: handlers,
-		Keybindings: newWireKeybindings(listing.Keybindings),
+		Keybindings: newWireKeybindings(listing.Keybindings), SlotPoints: points,
 	}), nil
 }
 

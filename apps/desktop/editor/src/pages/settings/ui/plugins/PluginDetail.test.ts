@@ -2,7 +2,7 @@ import type { Component } from 'vue'
 import type { JsonObject } from '@/shared/api/json'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
-import { flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount, type DOMWrapper } from '@vue/test-utils'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import PluginDetail from './PluginDetail.vue'
 import SettingRow from '../setting-row/SettingRow.vue'
@@ -1001,5 +1001,107 @@ describe('the choice to discover the connections of a plugin', () => {
     expect(recordedWrites.map((one) => [one.at, JSON.parse(one.value)])).toStrictEqual([
       [['org.example.chat', 'discover'], { agents: true }],
     ])
+  })
+})
+
+describe('PluginDetail setting groups', () => {
+  const toggle = (key: string, group?: string): PluginSettingInfo => ({
+    key,
+    type: 'boolean',
+    title: key,
+    description: '',
+    default: false,
+    ...(group ? { group } : {}),
+  })
+  const namesIn = (root: Pick<DOMWrapper<Element>, 'findAllComponents'> | undefined): string[] =>
+    (root?.findAllComponents(SettingRow) ?? []).map((one: { props(key: string): unknown }) =>
+      String(one.props('name')),
+    )
+  const settingGroups = [
+    { id: 'look', title: 'Look' },
+    { id: 'feel', title: 'Feel' },
+  ]
+
+  it('draws each group as an island under its title, in the order of the groups', () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      settingGroups,
+      settings: [toggle('a', 'feel'), toggle('b', 'look'), toggle('c', 'feel')],
+    })
+    const { wrapper } = createDetail(plugin)
+
+    const islands = wrapper.findAll('section.island-card')
+    expect(islands.map((one) => one.get('h3').text())).toStrictEqual(['Look', 'Feel'])
+    expect(namesIn(islands[0])).toStrictEqual(['b'])
+    expect(namesIn(islands[1])).toStrictEqual(['a', 'c'])
+  })
+
+  it('keeps the settings of no group in a card without a heading above the islands', () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      settingGroups,
+      settings: [toggle('a', 'look'), toggle('plain')],
+    })
+    const { wrapper } = createDetail(plugin)
+
+    const card = wrapper.get('.settings-card')
+    expect(namesIn(card)).toStrictEqual(['plain'])
+    expect(card.find('h3').exists()).toBe(false)
+    expect(card.element.compareDocumentPosition(wrapper.get('section.island-card').element)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
+  })
+
+  it('draws no card when every setting names a group', () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      settingGroups,
+      settings: [toggle('a', 'look')],
+    })
+    const { wrapper } = createDetail(plugin)
+
+    expect(wrapper.find('.settings-card').exists()).toBe(false)
+    expect(wrapper.findAll('section.island-card')).toHaveLength(1)
+  })
+
+  it('draws no card when the only ungrouped setting is the slots', () => {
+    const slots: PluginSettingInfo = {
+      key: 'slots',
+      type: 'slots',
+      title: 'Slots',
+      description: '',
+      default: [],
+    }
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      settingGroups,
+      settings: [slots, toggle('a', 'look')],
+    })
+    const { wrapper } = createDetail(plugin)
+
+    expect(wrapper.find('.settings-card').exists()).toBe(false)
+    expect(wrapper.findAll('section.island-card')).toHaveLength(1)
+  })
+
+  it('draws no island for a group whose settings are all hidden', () => {
+    const hidden: PluginSettingInfo = {
+      ...toggle('a', 'look'),
+      isShown: false,
+    }
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      settingGroups,
+      settings: [hidden, toggle('b', 'feel')],
+    })
+    const { wrapper } = createDetail(plugin)
+
+    expect(wrapper.findAll('section.island-card h3').map((one) => one.text())).toStrictEqual([
+      'Feel',
+    ])
+  })
+
+  it('draws no island when the plugin declares no group', () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      settings: [toggle('a'), toggle('b')],
+    })
+    const { wrapper } = createDetail(plugin)
+
+    expect(wrapper.find('section.island-card').exists()).toBe(false)
+    expect(wrapper.get('.settings-card').findAllComponents(SettingRow)).toHaveLength(2)
   })
 })

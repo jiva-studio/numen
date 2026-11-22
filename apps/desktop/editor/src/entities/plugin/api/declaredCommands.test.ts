@@ -27,6 +27,7 @@ const createApi = () =>
             contentTypeByExtension: {},
             handlers: [],
             keybindings: [],
+            slotPoints: [],
             ...answer,
             slots: (answer.slots ?? []).map((one) =>
               one.entry ? { ...one, entry: { values: {}, ...one.entry } } : one,
@@ -174,6 +175,28 @@ describe('the values of a slot entry', () => {
         values: { placement: 'split' },
       },
       { pluginId: 'org.example.ledger', slot: 'titleBar.commands', command: 'ledger.sum' },
+    ])
+  })
+})
+
+describe('the slots the plugins draw', () => {
+  it('are read with the plugin and the title', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [],
+      slotPoints: [
+        { pluginId: 'org.example.plex', point: { slot: 'plexGraph.node', title: 'Over a node' } },
+        {
+          pluginId: 'org.example.plex',
+          point: { slot: 'plexGraph.context', title: 'Menu', menu: true },
+        },
+      ],
+    })
+
+    const { slotPoints } = await listDeclaredCommands()
+
+    expect(slotPoints).toStrictEqual([
+      { pluginId: 'org.example.plex', slot: 'plexGraph.node', title: 'Over a node', menu: false },
+      { pluginId: 'org.example.plex', slot: 'plexGraph.context', title: 'Menu', menu: true },
     ])
   })
 })

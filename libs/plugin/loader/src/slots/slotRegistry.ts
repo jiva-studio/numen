@@ -14,9 +14,18 @@ import {
   type CommandTarget,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
-import { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from '../commandId'
+import { APP_COMMAND_OWNER, getCommandOwner } from '../commandId'
 import { getTargetValues, type WhenValues, createWhenReader, type WhenReader } from '../when'
 import { WINDOW_SLOTS } from './windowSlots'
+import { applyLayout, type DeclaredSlotPoint, type SlotLayout } from './slotLayout'
+import {
+  compareText,
+  formatItemKey,
+  getFullCommand,
+  getValuesKey,
+  orderSlotEntries,
+  separateGroups,
+} from './slotKeys'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
 export interface DeclaredSlotEntry {
@@ -46,23 +55,24 @@ export interface SlotRegistryDeps {
     values?: Readonly<Record<string, string>>,
   ) => string | undefined
   readonly getEntries: () => readonly DeclaredSlotEntry[] | undefined
+  readonly drawers?: {
+    readonly getPoints: () => readonly DeclaredSlotPoint[] | undefined
+    readonly getLayout?: (pluginId: string) => SlotLayout | undefined
+  }
   readonly findCommand: (
     command: string,
     target: CommandTarget | undefined,
   ) => SlotCommandLook | undefined
   readonly findView: (pluginId: string, view: string) => Component | undefined
   readonly reportIssue?: (pluginId: string, message: string, severity: 'warning' | 'error') => void
-  readonly getWhenValues?: (target: CommandTarget | undefined) => WhenValues
-  readonly whenReader?: WhenReader
+  readonly when?: {
+    readonly getValues?: (target: CommandTarget | undefined) => WhenValues
+    readonly reader?: WhenReader
+  }
   readonly requestPlugin?: (pluginId: string) => void
 }
 
 const KNOWN_SLOTS: ReadonlySet<string> = new Set(Object.values(SLOT))
-
-const compareText = (a: string, b: string): number => {
-  if (a === b) return 0
-  return a < b ? -1 : 1
-}
 
 /** An entry with the item it draws, in the order a slot sorts them. */
 interface Placed {
@@ -70,57 +80,18 @@ interface Placed {
   readonly item: SlotItem
 }
 
-const compareInGroup = (a: Placed, b: Placed): number => {
-  if (a.entry.order !== b.entry.order) {
-    if (a.entry.order === undefined) return 1
-    if (b.entry.order === undefined) return -1
-    return a.entry.order - b.entry.order
-  }
-  return compareText(a.entry.pluginId, b.entry.pluginId) || compareText(a.item.key, b.item.key)
-}
-
-const compareGroups = (a: string, b: string): number => {
-  if (a === b) return 0
-  if (a === '') return 1
-  if (b === '') return -1
-  return compareText(a, b)
-}
-
-const compareInSlot = (a: Placed, b: Placed): number =>
-  compareGroups(a.entry.group ?? '', b.entry.group ?? '') || compareInGroup(a, b)
-
-const getRunKey = (placed: Placed): string =>
-  `${placed.item.kind === 'command' ? placed.item.command : ''}${getValuesKey(placed.entry.values)}`
-
-function keepFirstOfEachCommand(placed: readonly Placed[]): Placed[] {
-  const first = new Map<string, Placed>()
-  for (const one of placed) {
-    if (one.item.kind !== 'command') continue
-    const current = first.get(getRunKey(one))
-    if (current === undefined || compareInSlot(one, current) < 0) first.set(getRunKey(one), one)
-  }
-  return placed.filter((one) => one.item.kind !== 'command' || first.get(getRunKey(one)) === one)
-}
-
 const isWindowPlace = (slot: string): boolean =>
   WINDOW_SLOTS.some((one) => slot === one || slot.startsWith(`${one}.`))
 
-const getFullCommand = (entry: DeclaredSlotEntry, command: string): string =>
-  command.includes(':') ? command : formatCommandId(entry.pluginId, command)
-
-function layOut(slot: string, placed: readonly Placed[]): SlotItem[] {
-  const groups = new Map<string, Placed[]>()
-  for (const one of keepFirstOfEachCommand(placed)) {
-    const name = one.entry.group ?? ''
-    groups.set(name, [...(groups.get(name) ?? []), one])
-  }
-  const items: SlotItem[] = []
-  for (const name of [...groups.keys()].sort(compareGroups)) {
-    if (items.length > 0) items.push({ kind: 'separator', key: `${slot}/separator/${name}` })
-    items.push(...(groups.get(name) ?? []).sort(compareInGroup).map((one) => one.item))
-  }
-  return items
-}
+const layOut = (slot: string, placed: readonly Placed[]): SlotItem[] =>
+  separateGroups(
+    orderSlotEntries(placed, (one) => one.entry),
+    {
+      group: (one) => one.entry.group,
+      row: (one) => one.item,
+      separator: (group) => ({ kind: 'separator', key: `${slot}/separator/${group}` }),
+    },
+  )
 
 function findSubmenuOwners(entries: readonly DeclaredSlotEntry[]) {
   const owners = new Map<string, DeclaredSlotEntry>()
@@ -167,18 +138,32 @@ interface Declared {
 
 function reportUnknownPlaces(
   entries: readonly DeclaredSlotEntry[],
-  owners: ReadonlyMap<string, DeclaredSlotEntry>,
+  known: {
+    readonly owners: ReadonlyMap<string, DeclaredSlotEntry>
+    readonly drawn: ReadonlySet<string>
+  },
   report: Report,
 ): void {
   for (const entry of entries) {
-    if (KNOWN_SLOTS.has(entry.slot) || owners.has(entry.slot)) continue
+    if (
+      entry.pluginId !== APP_COMMAND_OWNER ||
+      KNOWN_SLOTS.has(entry.slot) ||
+      known.drawn.has(entry.slot) ||
+      known.owners.has(entry.slot)
+    ) {
+      continue
+    }
     const id = entry.command ?? entry.view ?? entry.submenu ?? ''
-    const message = `slots: "${id}" is placed in "${entry.slot}", which is neither a slot of the window nor a submenu a plugin declares`
+    const message = `slots: "${id}" is placed in "${entry.slot}", which is neither a slot of the window, a slot a plugin draws, nor a submenu a plugin declares`
     report(entry.pluginId, message, 'warning')
   }
 }
 
-function readDeclaredSlots(entries: readonly DeclaredSlotEntry[], report: Report): Declared {
+function readDeclaredSlots(
+  entries: readonly DeclaredSlotEntry[],
+  drawn: ReadonlySet<string>,
+  report: Report,
+): Declared {
   const { owners, second } = findSubmenuOwners(entries)
   for (const one of second) {
     const owner = owners.get(one.submenu as string)
@@ -194,17 +179,8 @@ function readDeclaredSlots(entries: readonly DeclaredSlotEntry[], report: Report
     const message = `slots: the submenu "${first}" holds itself through ${loop.join(', ')}`
     report(owners.get(first)?.pluginId ?? '', message, 'error')
   }
-  reportUnknownPlaces(entries, owners, report)
+  reportUnknownPlaces(entries, { owners, drawn }, report)
   return { entries, owners, inCycle: new Set(cycles.flat()) }
-}
-
-const getValuesKey = (values: DeclaredSlotEntry['values']): string => {
-  const names = Object.keys(values ?? {}).sort(compareText)
-  if (names.length === 0) return ''
-  const pairs = names.map(
-    (name) => `${encodeURIComponent(name)}=${encodeURIComponent(values?.[name] ?? '')}`,
-  )
-  return `?${pairs.join('&')}`
 }
 
 function toCommandItem(
@@ -217,7 +193,7 @@ function toCommandItem(
   const icon = entry.icon ?? look.icon
   return {
     kind: 'command',
-    key: `${entry.pluginId}/command/${command}${getValuesKey(entry.values)}`,
+    key: formatItemKey(entry, 'command', `${command}${getValuesKey(entry.values)}`),
     pluginId: entry.pluginId,
     command,
     title: entry.title || look.title,
@@ -236,7 +212,7 @@ function toViewItem(
   if (component === undefined) return undefined
   return {
     kind: 'view',
-    key: `${entry.pluginId}/view/${view}`,
+    key: formatItemKey(entry, 'view', view),
     pluginId: entry.pluginId,
     view,
     component,
@@ -251,7 +227,7 @@ function toSubmenuItem(
   if (inner.length === 0) return undefined
   return {
     kind: 'submenu',
-    key: `${entry.pluginId}/submenu/${submenu}`,
+    key: formatItemKey(entry, 'submenu', submenu),
     pluginId: entry.pluginId,
     submenu,
     title: entry.title ?? '',
@@ -294,9 +270,14 @@ function createReport(sink: SlotRegistryDeps['reportIssue']): Report {
 
 export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
   const report = createReport(deps.reportIssue)
-  const declared = computed(() => readDeclaredSlots(deps.getEntries() ?? [], report))
+  const drawers = computed(
+    () => new Map((deps.drawers?.getPoints() ?? []).map((one) => [one.slot, one.pluginId])),
+  )
+  const declared = computed(() =>
+    readDeclaredSlots(deps.getEntries() ?? [], new Set(drawers.value.keys()), report),
+  )
 
-  const whenReader = deps.whenReader ?? createWhenReader()
+  const whenReader = deps.when?.reader ?? createWhenReader()
   const isDrawnOver = (entry: DeclaredSlotEntry, target: CommandTarget | undefined): boolean => {
     if (!entry.when) return true
     const parsed = whenReader.read(entry.when)
@@ -309,7 +290,7 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
       )
       return false
     }
-    return parsed.value.evaluate(deps.getWhenValues?.(target) ?? getTargetValues(target, {}))
+    return parsed.value.evaluate(deps.when?.getValues?.(target) ?? getTargetValues(target, {}))
   }
 
   const toItem = (
@@ -332,7 +313,10 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
       const item = toItem(entry, target)
       if (item) items.push({ entry, item })
     }
-    return layOut(place, items)
+    return applyLayout(
+      layOut(place, items),
+      deps.drawers?.getLayout?.(drawers.value.get(place) ?? '')?.[place],
+    )
   }
 
   return {

@@ -12,6 +12,7 @@ import { createRemoteValues } from './remoteValues'
 import type {
   Configuration,
   PluginInfo,
+  PluginSettingGroupInfo,
   PluginSettingInfo,
   SettingEdit,
 } from '../lib/configuration'
@@ -79,6 +80,11 @@ const parseSettingsText = (text: string): JsonValue | undefined => {
   }
 }
 
+const createAppDeclared = () => ({
+  app: shallowRef<readonly PluginSettingInfo[]>([]),
+  appGroups: shallowRef<readonly PluginSettingGroupInfo[]>([]),
+})
+
 export function createSettingsStore(api: SettingsStoreApi, words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
   const target = shallowRef<JsonValue>({})
@@ -86,7 +92,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
   /** The file the settings stand in. */
   const path = ref('')
   const plugins = shallowRef<readonly PluginInfo[]>([])
-  const app = shallowRef<readonly PluginSettingInfo[]>([])
+  const { app, appGroups } = createAppDeclared()
 
   /** Whether a read has declared the settings and the file they stand in. */
   let hasDeclarations = false
@@ -114,6 +120,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
       app.value = answer.app ?? []
       hasDeclarations = true
     })
+    if (isTaken || !hasDeclarations) appGroups.value = answer.appGroups ?? []
     if (isTaken || hasDeclarations) return
     // An older read still declares the settings the window has not seen; their values come from
     // the newer file already shown.
@@ -139,12 +146,6 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
     else applySettings(answer, file)
   }
 
-  const getSetting = (path: readonly string[]): JsonValue | undefined => {
-    const edit = requested.getRequestedValue(getPathKey(path))?.value
-    const value = (edit && parseEditValue(edit)) ?? getSettingAt(target.value, path)
-    return value !== undefined ? value : getDeclaredDefault(app.value, plugins.value, path)
-  }
-
   /** Whether a value requested at a path has not been answered by the vault yet. */
   const isRequested = (path: readonly string[]): boolean =>
     requested.getRequestedValue(getPathKey(path)) !== undefined
@@ -159,6 +160,11 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
   const getCommittedSetting = (path: readonly string[]): JsonValue | undefined => {
     const value = getSettingAt(target.value, path)
     return value !== undefined ? value : getDeclaredDefault(app.value, plugins.value, path)
+  }
+
+  const getSetting = (path: readonly string[]): JsonValue | undefined => {
+    const edit = requested.getRequestedValue(getPathKey(path))?.value
+    return (edit && parseEditValue(edit)) ?? getCommittedSetting(path)
   }
 
   const writeSettings = async (edits: readonly SettingEdit[]): Promise<void> => {
@@ -181,7 +187,7 @@ export function createSettingsStore(api: SettingsStoreApi, words: Words, say: Me
     refresh,
     /** The batches of the stream of changes of the settings, emitted as the window follows them. */
     changes: createEmitter<readonly SettingEdit[]>(),
-    state: { target, path, plugins, app },
+    state: { target, path, plugins, app, appGroups },
     read: { getSetting, getCommittedSetting, isPending, isRequested },
     write: { writeSettings, writeSetting },
   }

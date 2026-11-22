@@ -6,7 +6,9 @@
 import { computed } from 'vue'
 import { PluginDetail as PluginDetailView } from '@numen/plugin-manager'
 import type { PluginInfo } from '@/entities/settings'
+import type { JsonValue } from '@/shared/api/json'
 import { usePluginDetail, usePluginSwitch } from '../../model/usePluginDetail'
+import { usePluginFields } from '../../model/usePluginFields'
 import type {
   InstallationConnections,
   InstallationPlugin,
@@ -14,8 +16,10 @@ import type {
   MarkedSetting,
 } from '../../types'
 import PluginConnectionSections from './PluginConnectionSections.vue'
-import PluginFields from './PluginFields.vue'
+import PluginSettings from './PluginSettings.vue'
+import PluginSlots from './PluginSlots.vue'
 import { getManagedHealth, getMarkedSettings } from '../../lib/pluginHealth'
+import { keepEqual } from '../../lib/keepEqual'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
@@ -37,9 +41,27 @@ const detailDeps = {
   getManager: () => props.manager,
   getPlugin: () => props.plugin,
 }
-const { managed, hasSettings, isApple, fileCount, deleteProblem, readmeText, deleteData } =
-  usePluginDetail(detailDeps)
+const {
+  managed,
+  hasSettings,
+  slotGroups,
+  isApple,
+  fileCount,
+  deleteProblem,
+  readmeText,
+  deleteData,
+} = usePluginDetail(detailDeps)
 const { isEnabled, isPending, setEnabled, retry } = usePluginSwitch(detailDeps)
+const slotsKey = computed(() => props.plugin.settings.find((one) => one.type === 'slots')?.key)
+const slotsLayout = computed<JsonValue | undefined>((held) =>
+  keepEqual(held, slotsKey.value === undefined ? undefined : fields.getValue(slotsKey.value)),
+)
+const hasSlots = computed(() => slotsKey.value !== undefined && slotGroups.value.length > 0)
+const fields = usePluginFields({
+  getSettings: () => props.settings,
+  getHost: () => props.manager,
+  getPlugin: () => props.plugin,
+})
 const items = computed(() =>
   props.manager.health.items.value.filter((item) => item.pluginId === props.plugin.id),
 )
@@ -73,6 +95,7 @@ function onRunAction(key: string): void {
     :problem="deleteProblem"
     :can-install="false"
     :has-settings="hasSettings"
+    :has-slots="hasSlots"
     :health="health"
     :is-apple="isApple"
     @back="onBack"
@@ -82,13 +105,21 @@ function onRunAction(key: string): void {
     @run-action="onRunAction"
   >
     <template #settings>
-      <PluginFields
+      <PluginSettings
         v-if="hasSettings"
         :settings="props.settings"
         :host="props.manager"
         :plugin="props.plugin"
         :marked="marked"
         :focused="props.markedSetting ?? null"
+      />
+    </template>
+    <template #slots>
+      <PluginSlots
+        v-if="slotsKey !== undefined"
+        :groups="slotGroups"
+        :layout="slotsLayout"
+        @change="(layout) => fields.setSetting(slotsKey ?? '', layout)"
       />
     </template>
     <template #sections>

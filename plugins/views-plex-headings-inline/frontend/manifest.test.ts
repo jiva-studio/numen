@@ -23,7 +23,7 @@ describe('the manifest', () => {
 
   it('places its view under a node', () => {
     expect(manifest.contributes.slots).toStrictEqual([
-      { slot: 'plexGraph.nodeBelow', view: 'headings' },
+      { slot: 'plexGraph.nodeBelow', view: 'headings', title: 'Headings under a note' },
     ])
   })
 

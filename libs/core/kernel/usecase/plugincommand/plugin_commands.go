@@ -12,6 +12,13 @@ type PluginCommandRuns interface {
 	RunCommand(ctx context.Context, call plugin.CommandCall) (plugin.CommandResult, error)
 }
 
+// SlotPoints is what the manifests of the enabled plugins declare of the slots they draw.
+type SlotPoints interface {
+	// ListSlotPoints lists the slots every enabled plugin draws, in the order of the plugins' ids and
+	// then of each manifest.
+	ListSlotPoints() []plugin.SlotPointEntry
+}
+
 // PluginCommands is what the manifests of the enabled plugins declare, whether or not a plugin is
 // running, and what each plugin has.
 type PluginCommands interface {

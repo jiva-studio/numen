@@ -26,6 +26,7 @@ export type {
   SettingValue,
   PluginSettingOption,
   PluginSettingOptionsBy,
+  PluginSettingGroupInfo,
   PluginSettingsViewInfo,
   PluginSettingType,
 } from './pluginInfo'

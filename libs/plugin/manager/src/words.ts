@@ -103,7 +103,13 @@ export const PLUGIN_WORDS = {
   licenses: 'Licenses',
   licensesDetail: 'Subscriptions and license keys',
   /** The sections of a plugin page, in the order of its tabs. */
-  pluginTabs: { settings: 'Settings', about: 'About', contributions: 'Contributes', data: 'Data' },
+  pluginTabs: {
+    settings: 'Settings',
+    slots: 'Slots',
+    about: 'About',
+    contributions: 'Contributes',
+    data: 'Data',
+  },
   pluginSections: 'Sections',
   contributionKinds: CONTRIBUTION_KINDS,
   noContributions: 'Contributes nothing.',

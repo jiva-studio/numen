@@ -40,3 +40,22 @@ func TestListSlots_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 		t.Errorf("the third entry came out as %+v", entries[2])
 	}
 }
+
+func TestListSlotPoints_ReadsEnabledPluginsOnly(t *testing.T) {
+	points := func(slot string) manifest.Contributes {
+		return manifest.Contributes{SlotPoints: []manifest.SlotPoint{{Slot: slot, Title: "T"}}}
+	}
+	host := &manifestHost{
+		plugins: []manifest.Discovered{
+			{Manifest: manifest.Manifest{ID: "org.example.atlas", Frontend: &manifest.Frontend{}, Contributes: points("atlas.row")}},
+			{Manifest: manifest.Manifest{ID: "org.example.off", Frontend: &manifest.Frontend{}, Contributes: points("off.row")}},
+		},
+		disabled: map[string]bool{"org.example.off": true},
+	}
+
+	found := New(host).ListSlotPoints()
+
+	if len(found) != 1 || found[0].PluginID != "org.example.atlas" || found[0].Point.Slot != "atlas.row" {
+		t.Errorf("got %+v", found)
+	}
+}

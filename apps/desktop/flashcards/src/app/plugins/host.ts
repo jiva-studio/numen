@@ -11,11 +11,13 @@ import {
   createPluginHost,
   createPluginNotices,
   readManifestSlotEntries,
+  readManifestSlotPoints,
   requireMountAccess,
   type BackgroundTaskHost,
   type CommandsHost,
   type createPluginConnections,
   type Manifest,
+  type SlotLayout,
   type VaultRelations,
   type VaultsHost,
   type WindowHost,
@@ -47,12 +49,16 @@ interface ShellHostDeps {
   readonly notices: NoticeQueue
   readonly services?: Partial<ShellServices>
   readonly getPlatform?: () => WindowPlatform
+  readonly getSlotLayout?: (pluginId: string) => SlotLayout | undefined
 }
 
 const readSlotEntries = (manifests: ReadonlyMap<string, Manifest>) =>
   [...manifests].flatMap(([pluginId, manifest]) =>
     readManifestSlotEntries(pluginId, manifest, createNamedIcon),
   )
+
+const readSlotPoints = (manifests: ReadonlyMap<string, Manifest>) =>
+  [...manifests].flatMap(([pluginId, manifest]) => readManifestSlotPoints(pluginId, manifest))
 
 export function createShellHost(deps: ShellHostDeps) {
   const { tabs, notices, services = {}, getPlatform = () => 'windows' } = deps
@@ -74,6 +80,8 @@ export function createShellHost(deps: ShellHostDeps) {
     tabs: { closeTab: (id) => tabs.closeTab(id) },
     slots: {
       getSlotEntries: readSlotEntries,
+      getSlotPoints: readSlotPoints,
+      ...(deps.getSlotLayout ? { getSlotLayout: deps.getSlotLayout } : {}),
       reportViewIssue: createViewIssueReporter(notices),
     },
     vault: { getVaults: () => services.vaults, getRelations: () => deps.relations },

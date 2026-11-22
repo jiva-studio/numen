@@ -45,9 +45,22 @@ interface SettingsPageApi {
   readonly listRowOptions: ConnectionApi['listRowOptions']
 }
 
-/** What the settings tab reads of the plugins: the views they draw in it, and their health. */
+/** The slots a plugin draws, and the plugin each entry of them comes from. */
+type SlotGroupsReader = (pluginId: string) => readonly {
+  readonly slot: string
+  readonly title: string
+  readonly contributors: readonly {
+    readonly key: string
+    readonly label: string
+    readonly pluginId: string
+    readonly group?: string | undefined
+  }[]
+}[]
+
+/** What the settings tab reads of the plugins: the views they draw in it, the slots, and their health. */
 interface SettingsPagePlugins {
   readonly getSettingsViews: InstallationPlugin['getSettingsViews']
+  readonly getSlotGroups?: SlotGroupsReader
   readonly health: HealthDeps
 }
 
@@ -74,6 +87,7 @@ interface InstallationPluginDeps {
   rest: SettingsStore
   retry: ReturnType<typeof createPluginRetry>
   getSettingsViews: InstallationPlugin['getSettingsViews']
+  getSlotGroups?: SlotGroupsReader
   catalogEntries: NonNullable<InstallationPlugin['catalog']>
   reportError: (error: Caught) => void
   health: HealthDeps
@@ -140,6 +154,32 @@ function createInstallationHealth(
   }
 }
 
+function createInstallationSlots(deps: Pick<InstallationPluginDeps, 'rest' | 'getSlotGroups'>) {
+  const { rest, getSlotGroups } = deps
+  if (!getSlotGroups) return {}
+  const getPluginName = (pluginId: string): string =>
+    pluginId === 'app'
+      ? 'Numen'
+      : (rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId)
+  return {
+    getSlotGroups: (pluginId: string) =>
+      getSlotGroups(pluginId).map((group) => ({
+        ...group,
+        contributors: group.contributors.map((one) => ({
+          key: one.key,
+          label: one.label,
+          group: one.group,
+          pluginName: getPluginName(one.pluginId),
+        })),
+      })),
+  }
+}
+
+function createInstallationDeclared(deps: Pick<InstallationPluginDeps, 'rest'>) {
+  const { app, appGroups } = deps.rest.state
+  return { app, appGroups }
+}
+
 function createInstallationPlugin(deps: InstallationPluginDeps) {
   const { settings, rest, retry, getSettingsViews, catalogEntries, reportError } = deps
   return {
@@ -159,7 +199,6 @@ function createInstallationPlugin(deps: InstallationPluginDeps) {
     },
     files: createInstallationPluginFiles(settings),
     plugins: rest.state.plugins,
-    app: rest.state.app,
     getSettingsViews,
   }
 }
@@ -204,7 +243,11 @@ function createInstallationLicenses(licenses: LicenseStore) {
 function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
   return {
     settings: createInstallationSettings(deps.settings),
-    plugin: createInstallationPlugin(deps.plugin),
+    plugin: {
+      ...createInstallationPlugin(deps.plugin),
+      ...createInstallationDeclared(deps.plugin),
+      ...createInstallationSlots(deps.plugin),
+    },
     connections: createInstallationConnections(deps.connections, deps.api),
     licenses: createInstallationLicenses(deps.licenses),
   }
@@ -246,6 +289,7 @@ export function createSettingsPage({
         rest,
         retry,
         getSettingsViews: plugins.getSettingsViews,
+        ...(plugins.getSlotGroups ? { getSlotGroups: plugins.getSlotGroups } : {}),
         catalogEntries,
         reportError,
         health: plugins.health,

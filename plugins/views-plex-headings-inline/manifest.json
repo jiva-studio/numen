@@ -9,7 +9,9 @@
   "contributes": {
     "feature": "plex headings inline",
     "category": "views",
-    "slots": [{ "slot": "plexGraph.nodeBelow", "view": "headings" }]
+    "slots": [
+      { "slot": "plexGraph.nodeBelow", "view": "headings", "title": "Headings under a note" }
+    ]
   },
   "permissions": ["vault:read"],
   "settings": [

@@ -184,13 +184,17 @@ const SettingTypeFile = "file"
 // connection and holds the values of the row fields of its type.
 const SettingTypeConnections = "connections"
 
+// SettingTypeSlots is the type of the setting that keeps the order and the visibility of the entries of
+// the slots a plugin draws: an object by slot name, each a list of { id, hidden }.
+const SettingTypeSlots = "slots"
+
 const settingTypeNumber = "number"
 
 // settingTypeBoolean is the type of a setting that stores true or false.
 const settingTypeBoolean = CommandArgumentBoolean
 
 func listSettingTypes() []string {
-	return []string{settingTypeBoolean, SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile, SettingTypeConnections}
+	return []string{settingTypeBoolean, SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile, SettingTypeConnections, SettingTypeSlots}
 }
 
 // Backend describes the server-side executable of a plugin. A zero IdleStopSeconds takes the idle limit
@@ -234,6 +238,7 @@ type Setting struct {
 	Title       string
 	Description string
 	Details     string
+	Group       string
 	Default     any
 	Palette     bool
 	Icon        string
@@ -269,6 +274,7 @@ type Manifest struct {
 	Settings         []Setting
 	Services         []string
 	SettingsViews    []SettingsView
+	SettingGroups    []SettingGroup
 	Contributes      Contributes
 	IsOffByDefault   bool
 	Warnings         []string
@@ -297,6 +303,7 @@ func (m Manifest) ListIssues() []error {
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listCommandIssues()...)
 	issues = append(issues, m.listSettingsViewIssues()...)
+	issues = append(issues, m.listSettingGroupIssues()...)
 	issues = append(issues, m.listContributionIssues()...)
 	issues = append(issues, m.listSettingLinkIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)

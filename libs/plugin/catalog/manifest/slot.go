@@ -15,6 +15,9 @@ import (
 // ErrInvalidSlotEntry is an entry of contributes.slots a manifest declares wrongly.
 var ErrInvalidSlotEntry = errors.New("invalid slot entry")
 
+// ErrInvalidSlotPoint is an entry of contributes.slotPoints a manifest declares wrongly.
+var ErrInvalidSlotPoint = errors.New("invalid slot point")
+
 var (
 	// submenuIDPattern is the id of a submenu: words joined by dots, such as fileTree.new.
 	submenuIDPattern = regexp.MustCompile(`^[a-z][a-zA-Z0-9]*(\.[a-z][a-zA-Z0-9]*)+$`)
@@ -29,6 +32,14 @@ type AppCommandArgument struct {
 	Title   string
 	Type    string
 	Options []string
+}
+
+// SlotPoint is a slot the plugin draws: the plugin keeps the order and the visibility of its entries,
+// and its settings page shows the slot under Title.
+type SlotPoint struct {
+	Slot  string
+	Title string
+	Menu  bool
 }
 
 // SlotEntry places one thing of the plugin in a slot of a window, or in a submenu a plugin declares.
@@ -243,4 +254,52 @@ func (c Contributes) hasSlotViews() bool {
 		}
 	}
 	return false
+}
+
+func isHostDrawnSlot(name string) bool {
+	return name == SlotTabStripContext || name == SlotPaletteSearchResult || name == SlotPaletteNote
+}
+
+func listSlotPointNameIssues(points []SlotPoint) []error {
+	var issues []error
+	named := map[string]bool{}
+	for _, point := range points {
+		switch {
+		case !submenuIDPattern.MatchString(point.Slot):
+			issues = append(issues, fmt.Errorf("%w: %q is not words joined by dots", ErrInvalidSlotPoint, point.Slot))
+		case named[point.Slot]:
+			issues = append(issues, fmt.Errorf("%w: %q is declared twice", ErrInvalidSlotPoint, point.Slot))
+		case isHostDrawnSlot(point.Slot):
+			issues = append(issues, fmt.Errorf("%w: %q is a slot only the application draws", ErrInvalidSlotPoint, point.Slot))
+		}
+		named[point.Slot] = true
+		if strings.TrimSpace(point.Title) == "" {
+			issues = append(issues, fmt.Errorf("%w: %q has no title", ErrInvalidSlotPoint, point.Slot))
+		}
+	}
+	return issues
+}
+
+func (m Manifest) listSlotSettingIssues() []error {
+	settings := 0
+	for _, setting := range m.Settings {
+		if setting.Type == SettingTypeSlots {
+			settings++
+		}
+	}
+	var issues []error
+	if len(m.Contributes.SlotPoints) > 0 && settings == 0 {
+		issues = append(issues, fmt.Errorf("%w: the plugin declares slot points and no setting of the type %s to keep them in", ErrInvalidSlotPoint, SettingTypeSlots))
+	}
+	if len(m.Contributes.SlotPoints) == 0 && settings > 0 {
+		issues = append(issues, fmt.Errorf("%w: the plugin declares a setting of the type %s and no slot point", ErrInvalidSlotPoint, SettingTypeSlots))
+	}
+	if settings > 1 {
+		issues = append(issues, fmt.Errorf("%w: the plugin declares %d settings of the type %s, and keeps its slots in one", ErrInvalidSlotPoint, settings, SettingTypeSlots))
+	}
+	return issues
+}
+
+func (m Manifest) listSlotPointIssues() []error {
+	return append(listSlotPointNameIssues(m.Contributes.SlotPoints), m.listSlotSettingIssues()...)
 }

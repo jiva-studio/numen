@@ -24,7 +24,7 @@ func openFileSettings(t *testing.T) fileSettings {
 	store := settingsadapter.NewStore(settingsadapter.NewFiles(), func() (string, error) { return path, nil }, nil, nil)
 	check := settings.NewCheckSettings(jsonCodec{}, declare([]string{"app", "appearance", "mode"}), nil, none.PluginSettings{})
 	return fileSettings{
-		get:   settings.NewGet(store.ReadJSON, nil, nil),
+		get:   settings.NewGet(store.ReadJSON, nil, nil, nil),
 		write: settings.NewWriteSettings(check, store, noRefresh{}),
 	}
 }

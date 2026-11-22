@@ -9,6 +9,7 @@ import { createAnsweredApi } from './coreAnswers'
 import type { PluginSettingCondition } from '@numen/plugin-manager'
 import type {
   PluginInfo,
+  PluginSettingGroupInfo,
   PluginSettingInfo,
   PluginSettingOption,
   SettingEdit,
@@ -23,6 +24,7 @@ interface Configuration {
   readonly path: string
   readonly plugins?: readonly PluginInfo[] | undefined
   readonly app?: readonly PluginSettingInfo[] | undefined
+  readonly appGroups?: readonly PluginSettingGroupInfo[] | undefined
 }
 
 const toWireOption = (option: PluginSettingOption) => ({
@@ -71,6 +73,7 @@ export const toWireSetting = (setting: PluginSettingInfo) => ({
   type: setting.type,
   title: setting.title,
   description: setting.description,
+  group: setting.group ?? '',
   defaultJson: JSON.stringify(setting.default),
   palette: Boolean(setting.palette),
   icon: setting.icon ?? '',
@@ -109,6 +112,7 @@ const toWirePlugin = (plugin: PluginInfo) => ({
   hasBackend: plugin.hasBackend,
   readers: (plugin.readers ?? []).map((one) => ({ id: one.id, extensions: [...one.extensions] })),
   settingsViews: plugin.settingsViews ?? [],
+  settingGroups: plugin.settingGroups ?? [],
   contributions: toWireContributions(plugin),
   settings: plugin.settings.map(toWireSetting),
 })
@@ -118,6 +122,7 @@ const toWireConfiguration = (answer: Configuration) => ({
   path: answer.path,
   plugins: (answer.plugins ?? []).map(toWirePlugin),
   app: (answer.app ?? []).map(toWireSetting),
+  appGroups: answer.appGroups ?? [],
 })
 
 /** What the core does with the settings, in the window's types. A call left out is unanswered. */

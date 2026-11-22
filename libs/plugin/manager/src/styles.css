@@ -2,8 +2,8 @@
    application draws beside them. */
 :where(:root) {
   --settings-measure: 45rem;
-  --settings-card-pad: 1rem;
-  --settings-card-inset: 0.25rem;
+  --settings-card-pad: var(--numen-card-pad);
+  --settings-card-inset: var(--numen-card-inset);
   --settings-row-min: 3.25rem;
   --settings-row-pad: 0.75rem;
   --settings-control: 16.25rem;

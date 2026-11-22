@@ -169,6 +169,11 @@
   /* The air at the edge of a box, between its contents and the line round it. */
   --numen-box-air: 0.625rem;
 
+  /* The padding of a card of rows: the inset above the first row and below the last, and the
+     inset of the text and the dividers from the sides. */
+  --numen-card-inset: 0.25rem;
+  --numen-card-pad: 1rem;
+
   /* The corner of a box drawn in the page: a button, an item in a list, a
      block of code, the tab a gesture would drop where it is held. */
   --numen-radius: 0.375rem;

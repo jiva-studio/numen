@@ -8,8 +8,21 @@
   "permissions": ["vault:read", "vault:write"],
   "contributes": {
     "category": "views",
-    "slots": [{ "slot": "statusBar", "view": "bar" }]
+    "slotPoints": [
+      { "slot": "statusBar.left", "title": "Left side" },
+      { "slot": "statusBar.right", "title": "Right side" }
+    ],
+    "slots": [{ "slot": "statusBar", "view": "bar", "title": "Status bar" }]
   },
   "frontend": {},
-  "isOffByDefault": true
+  "isOffByDefault": true,
+  "settings": [
+    {
+      "key": "slots",
+      "type": "slots",
+      "title": "Slots",
+      "description": "Order and visibility of what plugins place here",
+      "details": "Choose which entries of each slot are shown, and in what order."
+    }
+  ]
 }

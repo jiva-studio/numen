@@ -29,7 +29,7 @@ func newUseCases(
 		types = noTypes{}
 	}
 	conditions := when.NewConditions()
-	list := plugincommand.NewList(commands, conditions)
+	list := plugincommand.NewList(commands, nil, conditions)
 	run := plugincommand.NewRun(commands, runs, types, notes, config, conditions)
 	return useCases{
 		List:       list,

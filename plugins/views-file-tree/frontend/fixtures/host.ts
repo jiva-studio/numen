@@ -5,7 +5,6 @@
 import { defineComponent, h, ref, type Component } from 'vue'
 import {
   NOTE_TYPE,
-  SLOT,
   type OpenFileOptions,
   type SlotCommand,
   type SlotItem,
@@ -15,6 +14,7 @@ import {
   type VaultEntry,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
+import { FILE_TREE_SLOT } from '../model/slotNames'
 import { createMockCommandsHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
 import type { FileTreeHost } from '../model/tabDeps'
 
@@ -152,7 +152,7 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
   }
 
   const slots = createMockSlotHost()
-  slots.setEntries(SLOT.fileTreeContext, ROW_MENU)
+  slots.setEntries(FILE_TREE_SLOT.context, ROW_MENU)
 
   const commands = createMockCommandsHost()
 

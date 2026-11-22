@@ -26,6 +26,7 @@ import {
 } from '@/entities/vault'
 import { createThemes, useAppearance } from '@/features/appearance'
 import { useAppStart } from '@/features/app-start'
+import { useSlotLayouts } from '@/features/slot-layouts'
 import { useWindowKeys } from '@/features/window-keys'
 import { createTaskApi, useWindowTasks } from '@/features/window-tasks'
 import { createWindowClients, type Transport } from '@/shared/api/clients'
@@ -46,12 +47,14 @@ export function createWindow(transport: Transport, deps: WindowDeps = {}) {
     notices.show(WINDOW_SOURCE, text, 'error'),
   )
   const backgroundTasks = useWindowTasks(createTaskApi(clients.windowService), notices)
+  const { getSlotLayout } = useSlotLayouts(clients.settingsService)
   const { host, mountView, titleBarView } = createShellHost({
     relations: createWindowRelations(clients.notes),
     getConnections: createPluginConnectionFinder(clients.connectionCalls),
     tabs,
     notices,
     getPlatform: () => frame.platform.value,
+    getSlotLayout,
     services: {
       commands: createWindowCommands(),
       vaults: createVaultsHost({

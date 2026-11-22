@@ -56,8 +56,8 @@ describe('the manifest', () => {
 
   it('places the parents above a node of the plex and the related notes under it', () => {
     expect(manifest.contributes.slots).toStrictEqual([
-      { slot: 'plexGraph.nodeAbove', view: 'parents' },
-      { slot: 'plexGraph.nodeBelow', view: 'related' },
+      { slot: 'plexGraph.nodeAbove', view: 'parents', title: 'Parent notes' },
+      { slot: 'plexGraph.nodeBelow', view: 'related', title: 'Related notes' },
     ])
   })
 

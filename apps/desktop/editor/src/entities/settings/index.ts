@@ -2,6 +2,7 @@
 export type {
   SettingEdit,
   PluginInfo,
+  PluginSettingGroupInfo,
   PluginSettingInfo,
   PluginSettingsViewInfo,
   PluginSettingOption,

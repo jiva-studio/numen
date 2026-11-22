@@ -8,7 +8,9 @@ import {
   type CommandTarget,
   type HandlerDeclaration,
   type HostCommands,
+  type DeclaredSlotPoint,
   type HostSlots,
+  type SlotLayout,
   type WhenReader,
   type WhenSettings,
   type WhenValues,
@@ -24,6 +26,7 @@ export interface WindowSlotsDeps {
     readonly commands: Readonly<Ref<readonly DeclaredCommand[] | undefined>>
     readonly contributions: {
       readonly handlers: Readonly<Ref<readonly HandlerDeclaration[] | undefined>>
+      readonly slotPoints: Readonly<Ref<readonly DeclaredSlotPoint[] | undefined>>
     }
     readonly whenContext: {
       readonly getContentTypes: () => Readonly<Record<string, string>>
@@ -32,6 +35,7 @@ export interface WindowSlotsDeps {
     }
   }
   readonly facts: WindowFactsSource
+  readonly getSlotLayout?: (pluginId: string) => SlotLayout | undefined
   readonly writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') => void
 }
 
@@ -40,9 +44,14 @@ interface WindowSlotParts {
   readonly slots: Required<
     Pick<
       HostSlots,
-      'getSlotEntries' | 'createSlotCommandFinder' | 'reportSlotIssue' | 'getSlotWhenValues'
+      | 'getSlotEntries'
+      | 'getSlotPoints'
+      | 'createSlotCommandFinder'
+      | 'reportSlotIssue'
+      | 'getSlotWhenValues'
     >
-  >
+  > &
+    Pick<HostSlots, 'getSlotLayout'>
   readonly commands: Required<
     Pick<HostCommands, 'getWindowValues' | 'getContentTypes' | 'whenReader'>
   >
@@ -80,6 +89,8 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
   const hostDeps: WindowSlotParts = {
     slots: {
       getSlotEntries: () => readSlotEntries(deps.declaredCommands.slots.value),
+      getSlotPoints: () => deps.declaredCommands.contributions.slotPoints.value,
+      ...(deps.getSlotLayout ? { getSlotLayout: deps.getSlotLayout } : {}),
       createSlotCommandFinder: createFinder,
       reportSlotIssue: deps.writeIssue,
       getSlotWhenValues: getWhenValues,

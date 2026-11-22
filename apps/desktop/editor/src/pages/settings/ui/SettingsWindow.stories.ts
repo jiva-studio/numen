@@ -206,3 +206,33 @@ export const SettingsToolbarOfAPluginPage: Story = {
     )
   },
 }
+
+/** The settings of Plex Graph in four islands, each under its heading, in the order the manifest lists them. */
+export const SettingsInGroups: Story = {
+  render: () => ({
+    components: { SettingsTab },
+    setup: () => ({
+      state: createSettingsState(createShippedInstallation(), {
+        initialPluginId: ref('md.numen.views.plex.graph'),
+      }),
+    }),
+    template: `
+      <div class="numen" style="block-size: 60rem; background: var(--numen-surface)">
+        <SettingsTab :state="state" />
+      </div>
+    `,
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const headings = await canvas.findAllByRole('heading', { level: 3 })
+    await expect(headings.map((one) => one.textContent)).toStrictEqual([
+      'Behavior',
+      'Pills',
+      'Lines',
+      'Layout',
+    ])
+    await expect(canvasElement.querySelector('.settings-card')).toBeNull()
+    await expect(canvas.getByText('Pill background')).toBeVisible()
+    await expect(canvas.getByText('Line curvature')).toBeVisible()
+  },
+}

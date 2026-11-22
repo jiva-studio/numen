@@ -97,6 +97,17 @@ export {
   type DeclaredSlotEntry,
   type SlotCommandLook,
   type SlotRegistryDeps,
+  applyLayout,
+  arrangeByLayout,
+  collapseSeparators,
+  SLOT_SEPARATOR_ID,
+  getEntryKey,
+  orderSlotEntries,
+  separateGroups,
+  type GroupedRows,
+  readManifestSlotPoints,
+  type DeclaredSlotPoint,
+  type SlotLayout,
 } from './slots'
 export {
   createWhenReader,

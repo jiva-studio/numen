@@ -31,6 +31,8 @@ message Manifest {
   repeated ManifestSetting settings = 15;
   repeated string services = 17;
   repeated ManifestSettingsView settings_views = 24;
+  // setting_groups are the islands the settings page draws the settings in, in the order they are shown.
+  repeated ManifestSettingGroup setting_groups = 28;
   // contributes is what the plugin adds to the application, known before its
   // frontend is loaded.
   ManifestContributes contributes = 26;
@@ -63,6 +65,10 @@ message ManifestContributes {
   // slots place the commands, views and submenus of the plugin in the slots of a window and in
   // submenus, see slots.json for the list of slots.
   repeated ManifestSlotEntry slots = 15;
+  // slot_points are the slots the plugin draws and lets a person order and hide the entries of: a name
+  // slots.json lists is a slot of the application the plugin draws, any other is a slot the plugin
+  // declares for other plugins to fill.
+  repeated ManifestSlotPoint slot_points = 26;
   // handlers are the plugin's handlers of shared commands, see commands.json for the list of shared
   // commands.
   repeated ManifestHandler handlers = 16;
@@ -244,6 +250,18 @@ message ManifestListener {
   string port_setting = 4;
 }
 
+// ManifestSlotPoint names a slot the plugin draws. The plugin keeps the order and the visibility of the
+// entries of the slot in its own settings, in the setting of the type slots.
+message ManifestSlotPoint {
+  // slot is the name of the slot, words joined by dots, such as plexGraph.nodeBelow.
+  string slot = 1;
+  // title is what the settings page of the plugin calls the slot.
+  string title = 2;
+  // menu marks a slot that draws its entries as the rows of a context menu: the settings page does not
+  // list it, and its order comes from the manifests.
+  bool menu = 3;
+}
+
 // ManifestSlotEntry places one thing in a slot of a window, or in a submenu a plugin declares. The
 // owner of the slot draws a command, as a button in a bar and as a row in a menu; a view draws
 // itself; a submenu becomes a place other entries name as their slot.
@@ -259,7 +277,8 @@ message ManifestSlotEntry {
     // submenu is the id of the submenu the entry declares. It is unique among all plugins.
     string submenu = 4;
   }
-  // title is the title of a submenu.
+  // title is the title of a submenu. On a view or a command it is the name the settings page of the plugin
+  // that draws the slot gives the entry; a command without one is named by its own title.
   string title = 5;
   // icon is the kebab-case icon name of a submenu. Empty for none.
   string icon = 6;
@@ -446,6 +465,8 @@ message ManifestSetting {
   // discover makes a setting of type connections that holds no row use every connection whose type
   // serves the operation, in the order of the connections, while the person leaves it on.
   bool discover = 23;
+  // group is the id of the entry of the manifest's setting_groups the setting is drawn under. Empty draws it in a card without a heading above the islands.
+  string group = 25;
   reserved 21;
 }
 
@@ -507,6 +528,12 @@ message ManifestReader {
   string id = 1;
   repeated string content_types = 2;
   string rank = 3;
+}
+
+// ManifestSettingGroup is an island of the settings page, with the heading over it.
+message ManifestSettingGroup {
+  string id = 1;
+  string title = 2;
 }
 
 message ManifestSettingsView {

@@ -14,6 +14,15 @@ export const WORDS = {
   resetSettingOf: (name: string) => `Reset ${name} to its default`,
   /** The info button of a setting with details, and the popover it opens. */
   aboutSetting: (name: string) => `About ${name}`,
+  /** The slots a plugin draws: what is placed in each, and how a person orders and hides it. */
+  slotsShow: (name: string) => `Show ${name}`,
+  slotsGrip: (name: string) => `Reorder ${name}`,
+  slotsAddSeparator: 'Add separator',
+  slotsRemoveSeparator: (position: number, total: number) =>
+    total > 1 ? `Remove separator ${position} of ${total}` : 'Remove separator',
+  slotsSeparatorGrip: (position: number, total: number) =>
+    total > 1 ? `Reorder separator ${position} of ${total}` : 'Reorder separator',
+  slotsReset: (title: string) => `Reset ${title} to its default`,
   /** The page of connections. */
   secretMasked: '••••••••',
   connectionAdd: 'Add connection',

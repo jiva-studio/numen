@@ -18,6 +18,7 @@ const answerWith = (written: string, version = 0n) => ({
   path: '/f',
   plugins: [],
   app: [],
+  appGroups: [],
   secretSections: [],
   secretMenus: [],
   credentialsPath: '',

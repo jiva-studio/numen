@@ -2,8 +2,8 @@
 /**
  * The page of one plugin: the toolbar with the path Settings, the category and the plugin and with
  * the state and the enabled switch or the install button, the header, the failure of a suspended
- * plugin or the bar of its worst health item, then the tabs Settings (only where the plugin has settings, then the tab the page opens on), About,
- * Contributes and Data. The application draws the settings in the `settings` and `sections` slots;
+ * plugin or the bar of its worst health item, then the tabs Settings (only where the plugin has settings, then the tab the page opens on), Slots (only where views are placed in its slots), About,
+ * Contributes and Data. The application draws the card or the islands of the settings in the `settings` slot and the sections under them in `sections`;
  * Data is there only while the plugin keeps files in the vault or their deletion failed.
  */
 import { computed, ref, watch, type VNode } from 'vue'
@@ -13,7 +13,6 @@ import PluginContributions from './PluginContributions.vue'
 import PluginData from './PluginData.vue'
 import type { PluginDetailProps } from './PluginDetail.types'
 import PluginHeader from './PluginHeader.vue'
-import PluginSettingsCard from './PluginSettingsCard.vue'
 import PluginNotice from './PluginNotice.vue'
 import PluginTabs from './PluginTabs.vue'
 import { isInstalled } from './plugins'
@@ -38,6 +37,8 @@ const emit = defineEmits<{
 defineSlots<{
   /** The settings of the plugin, drawn by the application. */
   settings?(): VNode[]
+  /** The islands of the Slots tab, drawn by the application. */
+  slots?(): VNode[]
   /** Sections of the settings tab under the card of the settings, drawn by the application. */
   sections?(): VNode[]
 }>()
@@ -61,6 +62,7 @@ const hasSettingsTab = computed(() => props.hasSettings || hasConnections.value)
 const tabs = computed(() =>
   getPluginTabs({
     hasSettings: hasSettingsTab.value,
+    hasSlots: props.hasSlots === true,
     hasData: props.dataFileCount > 0 || props.problem !== '',
   }),
 )
@@ -155,10 +157,9 @@ function onRunAction(key: string): void {
       role="tabpanel"
       :aria-labelledby="getTabElementId(idBase, activeTab)"
     >
-      <PluginSettingsCard v-if="activeTab === 'settings' && props.hasSettings">
-        <slot name="settings" />
-      </PluginSettingsCard>
+      <slot v-if="activeTab === 'settings' && props.hasSettings" name="settings" />
       <slot v-if="activeTab === 'settings'" name="sections" />
+      <slot v-if="activeTab === 'slots'" name="slots" />
 
       <div v-if="activeTab === 'about' && readmeText" class="settings-card plugin-detail__readme">
         <Prose :text="readmeText" />
@@ -212,7 +213,7 @@ function onRunAction(key: string): void {
 .plugin-detail__panel {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1.25rem;
 }
 
 .plugin-detail__nothing {
