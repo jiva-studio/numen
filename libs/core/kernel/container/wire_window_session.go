@@ -78,6 +78,6 @@ func newWindowSession(
 			),
 			showTab: windowsession.NewShowTab(&state.Tabs, &state.Notices.TabIDs, 0),
 		},
-		open: windowsession.NewOpenVault(lookup, switching),
+		open: windowsession.NewOpenVault(parts.lookup, switching),
 	}
 }
