@@ -17,15 +17,17 @@ export function followPluginExtensions(host: EditorExtensionHost): void {
   })
 }
 
-const broken = new WeakSet<EditorExtensionEntry>()
+const buildable = new WeakMap<object, boolean>()
 
 function canBuild(entry: EditorExtensionEntry): boolean {
-  if (broken.has(entry)) return false
+  const known = buildable.get(entry.extension)
+  if (known !== undefined) return known
   try {
     EditorState.create({ extensions: entry.extension })
+    buildable.set(entry.extension, true)
     return true
   } catch (error) {
-    broken.add(entry)
+    buildable.set(entry.extension, false)
     failEntry?.(entry, error)
     return false
   }

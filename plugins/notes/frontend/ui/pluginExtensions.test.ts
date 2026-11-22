@@ -9,7 +9,7 @@ import { activate } from '../index'
 import { createEditorSettingsContext } from '../testing/editorSettings'
 import { pluginExtensionEntries } from '../model/pluginExtensions'
 
-const TASK_NOTE = '- [ ] write the report\n- [x] send it\n\nelsewhere'
+const NOTE = 'first line\nsecond line\n\nelsewhere'
 
 function createHost(initial: readonly EditorExtensionEntry[] = []) {
   let entries = initial
@@ -44,7 +44,7 @@ const entry = (id: string, extension: Extension): EditorExtensionEntry => ({
 
 const mountEditor = () =>
   mount(MarkdownNoteEditor, {
-    props: { modelValue: TASK_NOTE, filePath: 'a.md' },
+    props: { modelValue: NOTE, filePath: 'a.md' },
     attachTo: document.body,
   })
 
@@ -54,13 +54,13 @@ afterEach(() => {
 })
 
 describe('the extensions other plugins add to the editor', () => {
-  it('draws no checkbox on a task line while no plugin adds an extension', async () => {
+  it('draws no widget while no plugin adds an extension', async () => {
     createHost()
     const wrapper = mountEditor()
     await flushPromises()
 
-    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain('[ ] write the report')
+    expect(wrapper.find('[data-added]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('first line')
   })
 
   it('applies a registered extension and drops it when the plugin disposes it', async () => {
@@ -93,6 +93,6 @@ describe('the extensions other plugins add to the editor', () => {
     await flushPromises()
 
     expect(host.fail).toHaveBeenCalledTimes(1)
-    expect(wrapper.text()).toContain('write the report')
+    expect(wrapper.text()).toContain('first line')
   })
 })
