@@ -1,8 +1,8 @@
 .status-bar {
-  --bar-height: 1.375rem;
-  --group-gap: 0.5rem;
-  --entry-gap: 0.25rem;
-  --entry-pad-inline: 0.5rem;
+  --bar-height: calc(1.375 * var(--numen-chrome-unit));
+  --group-gap: calc(0.5 * var(--numen-chrome-unit));
+  --entry-gap: calc(0.25 * var(--numen-chrome-unit));
+  --entry-pad-inline: calc(0.5 * var(--numen-chrome-unit));
   position: relative;
   display: flex;
   align-items: center;
@@ -11,7 +11,7 @@
   background: var(--numen-surface);
   border-top: 1px solid var(--numen-rule);
   color: var(--numen-ink);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-chrome-text-1);
   user-select: none;
   z-index: 30;
 }
@@ -38,7 +38,7 @@
   padding: 0 var(--entry-pad-inline);
   background: transparent;
   border: none;
-  border-radius: var(--numen-radius-tight);
+  border-radius: var(--numen-chrome-radius-tight);
   color: var(--numen-hushed);
   font: inherit;
   cursor: pointer;

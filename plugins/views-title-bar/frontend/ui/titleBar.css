@@ -1,13 +1,13 @@
-/* The bar keeps its size at every interface scale, like the native title bar beside it: each length is
-   divided by the scale, which the root font size multiplies back in. */
+/* The bar keeps its size at every interface scale, like the native title bar beside it: every length is
+   a window chrome token. */
 .title-bar {
-  --bar-height: calc(2rem / var(--numen-interface-scale));
-  --bar-text: calc(0.8125rem / var(--numen-interface-scale));
-  --group-gap: calc(0.5rem / var(--numen-interface-scale));
-  --button-width: calc(2rem / var(--numen-interface-scale));
-  --button-pad-inline: calc(0.5rem / var(--numen-interface-scale));
-  --title-pad-inline: calc(0.75rem / var(--numen-interface-scale));
-  --focus-ring-width: calc(0.0625rem / var(--numen-interface-scale));
+  --bar-height: calc(2 * var(--numen-chrome-unit));
+  --bar-text: var(--numen-chrome-text-2);
+  --group-gap: calc(0.5 * var(--numen-chrome-unit));
+  --button-width: calc(2 * var(--numen-chrome-unit));
+  --button-pad-inline: calc(0.5 * var(--numen-chrome-unit));
+  --title-pad-inline: calc(0.75 * var(--numen-chrome-unit));
+  --focus-ring-width: calc(0.0625 * var(--numen-chrome-unit));
   display: flex;
   align-items: stretch;
   box-sizing: border-box;

@@ -71,11 +71,11 @@ The typed message, its hidden mirror and its placeholder inherit `--numen-prose-
 | `plugins/views-media-viewer/.../MediaRecordingActions.vue`, `MediaRecordingPreview.vue`       | buttons 0.9375rem, save 0.8125rem, time 0.8125rem, title 0.9375rem | `--numen-font-size`                       |
 | `plugins/views-media-viewer/.../MediaRecordingTab.vue`                                        | title 1.25rem, status 0.75rem, error 0.875rem                      | `--numen-title-size`, `--numen-font-size` |
 | `plugins/views-plex-related-names/.../RelatedNames.vue`                                       | 0.7rem                                                             | `--numen-text-1`                          |
-| `plugins/tools-index-stats`, `tools-plugin-stats`, `tools-sync`, `tools-updater` `styles.css` | chip and close 0.75rem                                             | `--numen-font-size`                       |
+| `plugins/tools-index-stats`, `tools-plugin-stats`, `tools-sync`, `tools-updater` `styles.css` | chip and close 0.75rem                                             | `--numen-chrome-text-2` (see the chrome)  |
 | `plugins/readers-pdf/.../DocumentTab.vue`                                                     | message 0.875rem                                                   | `--numen-font-size`                       |
 | `plugins/notes/.../MarkdownNoteEditor.vue`                                                    | dismiss glyph 1.125rem                                             | `--numen-title-size`                      |
 
-The status-bar chips moved from 12px to 13px and the pills from 10px to 13px; these are the visible changes. The sizes were picked to the nearest step of the scale.
+The title-bar chips moved from 12px to 13px and the pills from 10px to 13px; these are the visible changes. The sizes were picked to the nearest step of the scale.
 
 ### Follow-ups
 
@@ -90,9 +90,24 @@ The status-bar chips moved from 12px to 13px and the pills from 10px to 13px; th
 | 3        | `apps/landing` (37) and `apps/docs` (7): give each site its own scale tokens.                                                                           |
 | 3        | `--numen-reading-size` (0.8125rem) and `--numen-prose-size` (0.875rem) differ by a shade; decide whether reading and prose are one role.                |
 
+## The window chrome
+
+The title bar, the status bar and every widget a plugin draws in one of their slots (`titleBar.*`, `statusBar.*`), with the popovers those widgets open, keep one size at every interface scale and every text scale, like the native window buttons beside them. They are set in the chrome tokens, which hold `px`, and never in `rem` or a token that follows the root font size.
+
+| Token                         | Value  |
+| ----------------------------- | ------ |
+| `--numen-chrome-unit`         | `16px` |
+| `--numen-chrome-text-1`       | `10px` |
+| `--numen-chrome-text-2`       | `13px` |
+| `--numen-chrome-inset`        | `8px`  |
+| `--numen-chrome-radius`       | `6px`  |
+| `--numen-chrome-radius-tight` | `3px`  |
+
+A length is a multiple of the unit: `calc(1.25 * var(--numen-chrome-unit))`. The stylelint rule `numen/chrome-fixed-size` rejects `rem`, `--numen-interface-scale`, `--numen-text-scale` and every token whose value follows them in the frontends of `views-title-bar`, `views-status-bar` and each plugin whose manifest draws a view in a chrome slot. The shared `Tooltip` and `Menu` of `@numen/ui` are not chrome and follow the interface scale.
+
 ## Acceptance
 
 - Where components diverge from the roles and the scale: the audit above.
-- Reading and interface stay distinct: reading and prose carry the text multiplier on top of the interface scale; control, caption and title carry the interface scale alone.
+- Reading and interface stay distinct: reading and prose carry the text multiplier on top of the interface scale; control, caption and title carry the interface scale alone; the window chrome carries neither.
 - Control text is covered: the chat input is prose, the pills are controls, and each is a named role.
 - Not every element is one size: eight roles, five sizes.

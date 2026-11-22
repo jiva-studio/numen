@@ -1,10 +1,10 @@
 .tasks-status {
-  --popover-offset: 0.25rem;
+  --popover-offset: calc(0.25 * var(--numen-chrome-unit));
   position: relative;
   display: inline-flex;
   align-items: center;
   height: 100%;
-  padding-inline: calc(var(--numen-inset) / 4);
+  padding-inline: calc(var(--numen-chrome-inset) / 4);
   color: var(--numen-ink);
   user-select: none;
 }
@@ -13,10 +13,10 @@
    same in the three title bar chips; only the width follows the content. The text cell reserves
    the width of "10 of 10" so a growing count does not move the neighbours. */
 .tasks-status__trigger {
-  --chip-height: 1.25rem;
-  --chip-text: 0.75rem;
-  --chip-pad: 0.5rem;
-  --chip-mark: 0.75rem;
+  --chip-height: calc(1.25 * var(--numen-chrome-unit));
+  --chip-text: calc(0.75 * var(--numen-chrome-unit));
+  --chip-pad: calc(0.5 * var(--numen-chrome-unit));
+  --chip-mark: calc(0.75 * var(--numen-chrome-unit));
   --summary-min-width: 4.8em;
   display: inline-flex;
   align-items: center;
@@ -26,7 +26,7 @@
   padding: 0 var(--chip-pad);
   background: var(--numen-surface);
   border: none;
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-chrome-radius);
   outline: none;
   color: var(--numen-ink);
   font: inherit;
@@ -84,22 +84,22 @@
 
 /* -------------------------------- Task Item -------------------------------- */
 .task-item {
-  --item-gap: 0.625rem;
-  --item-pad-block: 0.375rem;
-  --item-pad-inline: 0.5rem;
-  --content-gap: 0.125rem;
-  --failure-row-offset: 0.25rem;
-  --action-link-gap: 0.25rem;
-  --action-link-pad-block: 0.125rem;
-  --action-link-pad-inline: 0.375rem;
-  --slot-size: calc(1.25rem / var(--numen-interface-scale));
+  --item-gap: calc(0.625 * var(--numen-chrome-unit));
+  --item-pad-block: calc(0.375 * var(--numen-chrome-unit));
+  --item-pad-inline: calc(0.5 * var(--numen-chrome-unit));
+  --content-gap: calc(0.125 * var(--numen-chrome-unit));
+  --failure-row-offset: calc(0.25 * var(--numen-chrome-unit));
+  --action-link-gap: calc(0.25 * var(--numen-chrome-unit));
+  --action-link-pad-block: calc(0.125 * var(--numen-chrome-unit));
+  --action-link-pad-inline: calc(0.375 * var(--numen-chrome-unit));
+  --slot-size: calc(1.25 * var(--numen-chrome-unit));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--item-gap);
   padding: var(--item-pad-block) var(--item-pad-inline);
-  border-radius: var(--numen-radius);
-  font-size: var(--numen-text-2);
+  border-radius: var(--numen-chrome-radius);
+  font-size: var(--numen-chrome-text-2);
   line-height: 1.25;
 }
 
@@ -129,7 +129,7 @@
 }
 
 .task-item__detail {
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-chrome-text-1);
   color: var(--numen-hushed);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -215,9 +215,9 @@
   padding: var(--action-link-pad-block) var(--action-link-pad-inline);
   background: var(--numen-surface);
   border: 1px solid var(--numen-rule);
-  border-radius: var(--numen-radius-tight);
+  border-radius: var(--numen-chrome-radius-tight);
   color: var(--numen-accent);
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-chrome-text-1);
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;

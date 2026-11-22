@@ -3,7 +3,8 @@
  * declares no `--numen-` token, and every `var(--numen-…)` names a token a token file declares. A fourth
  * keeps a border on one side of a box from sharing a rule with a radius. A fifth keeps the lengths to the scale:
  * a `rem` or `em` literal may stand on a property, a custom property outside the token files holds only a
- * length the token files declare, and only a 1px hairline border is written in `px`.
+ * length the token files declare, and only a 1px hairline border is written in `px`. A sixth keeps the window
+ * chrome at one size: its stylesheets write no `rem` and read neither scale nor a token that follows the root font size.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -60,6 +61,46 @@ function readRootTokens(root) {
     declaredByRoot.set(root, declared);
   }
   return declaredByRoot.get(root);
+}
+
+/** The values of the tokens the token files below `root` declare, read once per root. */
+const valuesByRoot = new Map();
+function readRootTokenValues(root) {
+  if (!valuesByRoot.has(root)) {
+    const values = new Map();
+    for (const file of findTokenFiles(root)) {
+      postcss.parse(fs.readFileSync(file, "utf8")).walkDecls((decl) => {
+        if (decl.prop.startsWith(TOKEN_PREFIX)) values.set(decl.prop, [...(values.get(decl.prop) ?? []), decl.value]);
+      });
+    }
+    valuesByRoot.set(root, values);
+  }
+  return valuesByRoot.get(root);
+}
+
+/** The tokens whose size follows a scale: a scale itself, a token holding a `rem` length, and a token reading one of those. */
+export function findScaledTokens(values) {
+  const scaled = new Set(["--numen-interface-scale", "--numen-text-scale"]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const [name, list] of values) {
+      if (scaled.has(name)) continue;
+      const follows = list.some((value) => {
+        let found = false;
+        valueParser(value).walk((node) => {
+          if (node.type === "word" && String(valueParser.unit(node.value).unit ?? "").toLowerCase() === "rem") found = true;
+          if (node.type === "function" && node.value.toLowerCase() === "var" && scaled.has(node.nodes[0]?.value)) found = true;
+        });
+        return found;
+      });
+      if (follows) {
+        scaled.add(name);
+        grew = true;
+      }
+    }
+  }
+  return scaled;
 }
 
 /** The `var()` calls of a declaration value, each as `{ name, hasFallback, index }`. */
@@ -240,10 +281,42 @@ const noBareLength = (primary) => (root, result) => {
 noBareLength.ruleName = NO_BARE_LENGTH;
 noBareLength.messages = noBareLengthMessages;
 
+const CHROME_FIXED_SIZE = "numen/chrome-fixed-size";
+
+const chromeFixedSizeMessages = ruleMessages(CHROME_FIXED_SIZE, {
+  rem: (length, prop) => `${length} in ${prop}: the window chrome keeps its size at every interface scale; write it with --numen-chrome-unit`,
+  token: (name, prop) => `${name} in ${prop} follows the interface scale; the window chrome reads a --numen-chrome- token`,
+});
+
+const chromeFixedSize = (primary, secondary) => (root, result) => {
+  const isValid = validateOptions(
+    result,
+    CHROME_FIXED_SIZE,
+    { actual: primary },
+    { actual: secondary, possible: { root: [(value) => typeof value === "string"] }, optional: true },
+  );
+  if (!isValid) return;
+  const scaled = findScaledTokens(readRootTokenValues(path.resolve(secondary?.root ?? process.cwd())));
+  root.walkDecls((decl) => {
+    for (const length of findLengths(decl.value)) {
+      if (length.unit !== "rem") continue;
+      report({ ruleName: CHROME_FIXED_SIZE, result, node: decl, message: chromeFixedSizeMessages.rem(length.text, decl.prop), word: length.text });
+    }
+    for (const { name } of findVarCalls(decl.value)) {
+      if (!scaled.has(name)) continue;
+      report({ ruleName: CHROME_FIXED_SIZE, result, node: decl, message: chromeFixedSizeMessages.token(name, decl.prop), word: name });
+    }
+  });
+};
+
+chromeFixedSize.ruleName = CHROME_FIXED_SIZE;
+chromeFixedSize.messages = chromeFixedSizeMessages;
+
 export default [
   createPlugin(NO_FALLBACK, noFallback),
   createPlugin(NO_TOKEN_DECLARATION, noTokenDeclaration),
   createPlugin(KNOWN_TOKEN, knownToken),
   createPlugin(NO_ROUNDED_SIDE_BORDER, noRoundedSideBorder),
   createPlugin(NO_BARE_LENGTH, noBareLength),
+  createPlugin(CHROME_FIXED_SIZE, chromeFixedSize),
 ];

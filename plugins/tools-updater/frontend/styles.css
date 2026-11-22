@@ -4,23 +4,23 @@
   display: inline-flex;
   align-items: center;
   height: 100%;
-  padding-inline: calc(var(--numen-inset) / 4);
-  --popover-offset: 0.25rem;
-  --popover-width: 20rem;
-  --popover-edge-gap: 1rem;
-  --popover-gap: 0.5rem;
-  --popover-pad: 0.75rem;
-  --header-pad-block: 0.5rem;
-  --close-size: 1.25rem;
-  --body-gap: 0.25rem;
+  padding-inline: calc(var(--numen-chrome-inset) / 4);
+  --popover-offset: calc(0.25 * var(--numen-chrome-unit));
+  --popover-width: calc(20 * var(--numen-chrome-unit));
+  --popover-edge-gap: var(--numen-chrome-unit);
+  --popover-gap: calc(0.5 * var(--numen-chrome-unit));
+  --popover-pad: calc(0.75 * var(--numen-chrome-unit));
+  --header-pad-block: calc(0.5 * var(--numen-chrome-unit));
+  --close-size: calc(1.25 * var(--numen-chrome-unit));
+  --body-gap: calc(0.25 * var(--numen-chrome-unit));
 }
 
 /* The chip: flat, with a ground and no border. Height, text size and padding are the same in the
    three title bar chips; only the width follows the content. */
 .update-indicator__trigger {
-  --chip-height: 1.25rem;
-  --chip-text: var(--numen-font-size);
-  --chip-pad: 0.5rem;
+  --chip-height: calc(1.25 * var(--numen-chrome-unit));
+  --chip-text: var(--numen-chrome-text-2);
+  --chip-pad: calc(0.5 * var(--numen-chrome-unit));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -29,7 +29,7 @@
   padding: 0 var(--chip-pad);
   background: var(--numen-accent);
   border: none;
-  border-radius: var(--numen-radius);
+  border-radius: var(--numen-chrome-radius);
   outline: none;
   color: var(--numen-accent-ink);
   font: inherit;
@@ -61,7 +61,7 @@ button.update-indicator__trigger[aria-expanded='true'] {
   background: var(--numen-raised);
   color: var(--numen-ink);
   border: 1px solid var(--numen-panel-border);
-  border-radius: var(--numen-radius-popup);
+  border-radius: var(--numen-chrome-radius);
   box-shadow: var(--numen-panel-shadow);
   overflow: hidden;
   z-index: 50;
@@ -78,7 +78,7 @@ button.update-indicator__trigger[aria-expanded='true'] {
 }
 
 .update-popover__title {
-  font-size: var(--numen-text-2);
+  font-size: var(--numen-chrome-text-2);
   font-weight: 600;
 }
 
@@ -102,13 +102,13 @@ button.update-indicator__trigger[aria-expanded='true'] {
 
 .update-popover__desc {
   margin: 0;
-  font-size: var(--numen-text-2);
+  font-size: var(--numen-chrome-text-2);
   line-height: 1.35;
 }
 
 .update-popover__release {
   margin: 0;
-  font-size: var(--numen-text-1);
+  font-size: var(--numen-chrome-text-1);
   color: var(--numen-hushed);
 }
 
