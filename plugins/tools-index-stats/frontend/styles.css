@@ -1,5 +1,6 @@
 /* Index stats plugin styles */
 .index-stats {
+  --popover-offset: calc(0.25 * var(--numen-chrome-unit));
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -53,7 +54,6 @@
 }
 
 .index-popover {
-  --popover-offset: 0.25rem;
   --popover-width: 24rem;
   --popover-max-height: 28rem;
   --popover-edge-gap: 1rem;
