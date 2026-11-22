@@ -1,6 +1,5 @@
 import type { PluginInfo, PluginSettingInfo } from '@/entities/settings'
 
-/** Whether the settings page draws a row for the setting: connections and slots have pages of their own. */
 function isRowSetting(setting: PluginSettingInfo): boolean {
   return setting.type !== 'connections' && setting.type !== 'slots'
 }
