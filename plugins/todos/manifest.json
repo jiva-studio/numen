@@ -144,11 +144,11 @@
   "settings": [
     {
       "key": "ignoredFolders",
-      "type": "string",
+      "type": "list",
       "title": "Ignored folders",
-      "description": "Folders whose notes are not searched for tasks, comma separated",
+      "description": "Folders whose notes are not searched for tasks",
       "details": "Paths from the vault root, such as templates, archive/old. A note below one of them is skipped.",
-      "default": ""
+      "default": []
     },
     {
       "key": "hideFields",

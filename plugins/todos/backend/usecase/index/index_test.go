@@ -354,14 +354,14 @@ func TestANoteInAnIgnoredFolderIsSkippedAndIsIndexedAgainWhenTheFolderIsRemovedF
 	})
 	f.scan(t)
 
-	if err := f.index.SetIgnoredFolders(t.Context(), " templates, archive/old/ ,,"); err != nil {
+	if err := f.index.SetIgnoredFolders(t.Context(), []string{" templates", "archive/old/ ", "", "/"}); err != nil {
 		t.Fatal(err)
 	}
 	if got, want := texts(f.list()), []string{"Daily.md: daily", "templates-two/Own.md: not ignored"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("tasks with the folders ignored = %v, want %v", got, want)
 	}
 
-	if err := f.index.SetIgnoredFolders(t.Context(), ""); err != nil {
+	if err := f.index.SetIgnoredFolders(t.Context(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(f.list().Tasks); got != 4 {
@@ -371,7 +371,7 @@ func TestANoteInAnIgnoredFolderIsSkippedAndIsIndexedAgainWhenTheFolderIsRemovedF
 
 func TestAFolderIgnoredBeforeTheScanIsNotRead(t *testing.T) {
 	f := newFixture(map[string]string{"Daily.md": "- [ ] daily", "templates/Weekly.md": "- [ ] template"})
-	if err := f.index.SetIgnoredFolders(t.Context(), "templates"); err != nil {
+	if err := f.index.SetIgnoredFolders(t.Context(), []string{"templates"}); err != nil {
 		t.Fatal(err)
 	}
 

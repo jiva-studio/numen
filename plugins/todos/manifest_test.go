@@ -20,7 +20,8 @@ type manifestShape struct {
 		} `json:"slots"`
 	} `json:"contributes"`
 	Settings []struct {
-		Key string `json:"key"`
+		Key  string `json:"key"`
+		Type string `json:"type"`
 	} `json:"settings"`
 }
 
@@ -73,5 +74,8 @@ func TestTheManifestDeclaresTheSettings(t *testing.T) {
 	want := []string{"ignoredFolders", "hideFields", "showOverdue", "showToday", "showNextWeek", "showNoDate"}
 	if !slices.Equal(keys, want) {
 		t.Errorf("setting keys = %v, want %v", keys, want)
+	}
+	if settings[0].Type != "list" {
+		t.Errorf("ignoredFolders type = %q, want list", settings[0].Type)
 	}
 }

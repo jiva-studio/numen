@@ -149,10 +149,10 @@ func (i *Index) Refresh(ctx context.Context, paths []string, renames []Rename) e
 	return i.refreshTags(ctx, checked)
 }
 
-// SetIgnoredFolders sets the folders, separated by commas, whose notes are not searched.
-func (i *Index) SetIgnoredFolders(ctx context.Context, folders string) error {
+// SetIgnoredFolders sets the folders whose notes are not searched.
+func (i *Index) SetIgnoredFolders(ctx context.Context, folders []string) error {
 	var prefixes []string
-	for folder := range strings.SplitSeq(folders, ",") {
+	for _, folder := range folders {
 		folder = strings.TrimSuffix(strings.TrimSpace(folder), "/")
 		if folder != "" {
 			prefixes = append(prefixes, folder)

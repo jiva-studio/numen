@@ -4,6 +4,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -135,8 +136,13 @@ func mountAgentSurface(s *server.Server, vaults *Vaults, today ports.Clock) erro
 
 func mount(ctx context.Context, s *server.Server, tasks *index.Index, done *complete.SetTaskDone, log ports.Log) error {
 	s.SetUpdateConfig(func(values map[string]string) {
-		folders, isSet := values[ignoredKey]
+		encoded, isSet := values[ignoredKey]
 		if !isSet {
+			return
+		}
+		var folders []string
+		if err := json.Unmarshal([]byte(encoded), &folders); err != nil {
+			log.Error("read the ignored folders", err)
 			return
 		}
 		if err := tasks.SetIgnoredFolders(ctx, folders); err != nil {

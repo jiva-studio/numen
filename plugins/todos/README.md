@@ -33,22 +33,24 @@ Each function is a condition on a note. The day is the local date of the machine
 | `hasTaskPriority("A")`           | an open task of the priority, one letter A to Z                    |
 | `hasTaskText("text")`            | an open task whose text contains the text, without case            |
 
+Statuses: `hasOpenTask`, `hasTaskOverdue`, `hasTaskDueToday`, `hasTaskDueWithin`, `hasTaskWithoutDue`, `hasTaskProject`, `hasTaskContext`, `hasTaskPriority` and `hasTaskText` match open tasks only, `hasDoneTask` matches done tasks only, and `hasTaskDueBefore` matches open and done tasks that have a due date. A task with another checkbox character matches none of them.
+
 A date that is not `YYYY-MM-DD`, negative `days`, an empty name or text, and a priority that is not a letter fail the query with a message at the call. While the plugin is still reading the notes, an answer carries a warning that it may be incomplete.
 
 ## Tools
 
-The plugin has the capability `tools`. Tools and query functions work the vault of the call; a call that names no vault is refused, and the plugin keeps one index of tasks for each vault a call names.
+The plugin has the capability `tools`. Tools and query functions serve only the vault the window shows, with the one index the plugin persists. A call that names no vault, or a vault other than the one shown, is refused with an error, and so is a call while the tasks are still being read.
 
 - `task_list`: Lists tasks with `path`, `line`, `text`, `status`, `due`, `priority`, `projects` and `contexts`. Filters: `status` (`open`, `done`, `all`), `due` (`any`, `none`, `overdue`, `today`, `thisWeek`, `range` with `from` and `to`), `project`, `context`, `priority`, `path` (a note, or a folder ending in `/`), `text` and `limit` (100, at most 500).
 - `task_add`: Appends `- [ ] text` to an existing note.
-- `task_set_done`: Ticks or unticks the task at a line. A tick adds `done:` with today's date.
+- `task_set_done`: Ticks or unticks the task at a line, which must still have the `expectedText` given. A tick adds `done:` with today's date.
 - `task_edit`: Replaces the text of the task at a line, its fields included, and keeps its checkbox.
 - `task_remove`: Deletes the line of a task.
 
-A task is addressed by note path and line from `task_list`. Lines count the lines of the file, frontmatter included; the note editor counts from the first line below the frontmatter, so a task also carries a `proseLine` and the checkbox tick names its line that way (`isProseLine`), which the backend converts with the frontmatter of the note it reads. The write tools refuse a line that is no longer a task, and `task_edit` and `task_remove` require `expectedText`, the text of the task, to refuse a task whose text changed. Every write reads the note, changes the line and writes the note over the file stat it was read with, as the checkbox tick does; a note that changed meanwhile is retried once, then refused.
+A task is addressed by note path and line from `task_list`. Lines count the lines of the file, frontmatter included; the note editor counts from the first line below the frontmatter, so a task also carries a `proseLine` and the checkbox tick names its line that way (`isProseLine`), which the backend converts with the frontmatter of the note it reads. The write tools refuse a line that is no longer a task, and `task_set_done`, `task_edit` and `task_remove` require `expectedText`, the text of the task from `task_list`, and refuse a line whose task now has other text, so a stale line number never changes another task. Every write reads the note, changes the line and writes the note over the file stat it was read with, as the checkbox tick does; a note that changed meanwhile is retried once, then refused.
 
 ## Settings
 
-- **Ignored folders**: Folders whose notes are not searched for tasks, comma separated.
+- **Ignored folders**: Folders whose notes are not searched for tasks, as a list.
 - **Hide task markers until the line is edited**: A task keeps its markers (`due:`, `done:`, `pri:`, `+project`, `@context`, `#tag`), but they are drawn only while the cursor is on its line.
 - **Overdue**, **Today**, **Next 7 days**, **No date**: Which groups the popup of the widget lists and the chip counts. All four are on by default. Next 7 days holds the open tasks due in the six days after today; a task due today is only in Today.
