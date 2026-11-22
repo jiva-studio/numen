@@ -2,7 +2,7 @@
 /**
  * One row of a slot. An entry has the grip that drags it where the slot holds more than one row, its name,
  * the plugin it comes from and the switch that shows it; a separator has its grip, the line and a button
- * that removes it.
+ * that removes it, centred in the cell the switch fills.
  */
 import { GripVertical, X } from '@lucide/vue'
 import { Switch } from '@numen/ui'
@@ -42,17 +42,21 @@ const emit = defineEmits<{
       <span class="plugin-slots__owner" aria-hidden="true">·</span>
       <span class="plugin-slots__owner">{{ props.row.pluginName }}</span>
     </span>
-    <Switch
-      :model-value="!props.row.isHidden"
-      :aria-label="words.slotsShow(props.row.label)"
-      @update:model-value="emit('toggle')"
-    />
+    <span class="plugin-slots__trail" data-testid="slot-trail">
+      <Switch
+        :model-value="!props.row.isHidden"
+        :aria-label="words.slotsShow(props.row.label)"
+        @update:model-value="emit('toggle')"
+      />
+    </span>
   </template>
   <template v-else>
     <hr class="plugin-slots__separator" />
-    <RowAction :label="words.slotsRemoveSeparator" @click="emit('remove')">
-      <X :size="12" aria-hidden="true" />
-    </RowAction>
+    <span class="plugin-slots__trail" data-testid="slot-trail">
+      <RowAction :label="words.slotsRemoveSeparator" @click="emit('remove')">
+        <X :size="14" aria-hidden="true" />
+      </RowAction>
+    </span>
   </template>
 </template>
 
@@ -93,6 +97,14 @@ const emit = defineEmits<{
   margin: 0;
   border: none;
   border-block-start: var(--numen-stroke) solid var(--numen-rule);
+}
+
+.plugin-slots__trail {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.25rem;
 }
 
 .plugin-slots__name {

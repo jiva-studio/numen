@@ -45,13 +45,13 @@ afterEach(() => {
   host = null
 })
 
-function mountSlots(shown: typeof groups = groups): HTMLElement {
+function mountSlots(shown: typeof groups = groups, initial?: JsonValue): HTMLElement {
   host = document.createElement('div')
   host.style.width = '420px'
   document.body.append(host)
   renders = 0
   stored = undefined
-  const layout = shallowRef<JsonValue | undefined>(undefined)
+  const layout = shallowRef<JsonValue | undefined>(initial)
   const app = createApp({
     render: () =>
       h(PluginSlots, {
@@ -207,6 +207,30 @@ describe('the slots of a plugin with a separator between two groups', () => {
     const heights = rowsOf(root).map((one) => one.getBoundingClientRect().height)
 
     expect(new Set(heights).size).toBe(1)
+  })
+
+  it('centre the remove button of a separator on the switch of the rows around it', async () => {
+    const root = mountSlots(withSeparator)
+    await nextFrame()
+    const remove = root.querySelector('[aria-label="Remove separator"]')!.getBoundingClientRect()
+    const toggle = root.querySelector('[role="switch"]')!.getBoundingClientRect()
+    const trails = [...root.querySelectorAll('[data-testid="slot-trail"]')].map(
+      (one) => one.getBoundingClientRect().right,
+    )
+
+    expect(remove.left + remove.width / 2).toBeCloseTo(toggle.left + toggle.width / 2, 1)
+    expect(new Set(trails).size).toBe(1)
+  })
+
+  it('run the line of a separator from its grip to its remove button', async () => {
+    const root = mountSlots(withSeparator)
+    await nextFrame()
+    const line = root.querySelector('hr')!.getBoundingClientRect()
+    const grip = rowsOf(root)[2]!.querySelector('button')!.getBoundingClientRect()
+    const trail = root.querySelector('hr + [data-testid="slot-trail"]')!.getBoundingClientRect()
+
+    expect(line.left - grip.right).toBeLessThan(8)
+    expect(trail.left - line.right).toBeLessThan(8)
   })
 
   it('move a row into the other group when it is dragged across the separator', async () => {
