@@ -3,7 +3,7 @@
  * that identifies the failing item (a note title, a row), and a caller that
  * needs a full sentence composes one from it.
  *
- * A connection fault is told by its shape and not by its class: every package that holds the
+ * A connection fault is recognized by its shape and not by its class: every package that holds the
  * transport has its own copy of it, and an `instanceof` of this package's copy would miss the
  * faults of the others.
  */
@@ -94,7 +94,6 @@ const isConnectFault = (
   'rawMessage' in error &&
   typeof error.rawMessage === 'string'
 
-/** The status code of a thrown value: the code of a connection fault, canceled for an aborted fetch and unknown for the rest. */
 const getStatus = (error: unknown): { code: number; rawMessage: string } => {
   if (isConnectFault(error)) return error
   return { code: hasName(error, ABORT_ERROR) ? STATUS.Canceled : STATUS.Unknown, rawMessage: '' }

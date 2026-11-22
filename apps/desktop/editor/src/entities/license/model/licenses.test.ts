@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { LicenseClient } from '@numen/core-client'
 import { asFailure, asValue } from '@numen/result'
-import type { LicenseFailure, LicenseInfo } from '../lib/types'
+import type { LicenseInfo } from '../lib/types'
 import { createLicenseApi } from '../api/licenses'
 import { createLicenseStore } from './licenses'
 
