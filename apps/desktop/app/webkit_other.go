@@ -2,4 +2,6 @@
 
 package app
 
-func applyWebviewEnvironment() {}
+import "github.com/jiva-studio/numen/libs/core/kernel/container"
+
+func applyWebviewEnvironment(container.Config) {}

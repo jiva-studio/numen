@@ -65,10 +65,7 @@ func Run(opts ...*Options) error {
 		return err
 	}
 
-	applyWebviewEnvironment()
-
 	cfg := platform.GetConfig()
-	services := makeServices(os.Stderr)
 	if opt.IndexPath != "" {
 		cfg.IndexPath = opt.IndexPath
 	}
@@ -77,6 +74,8 @@ func Run(opts ...*Options) error {
 	}
 	cfg.ShouldRebuildIndex = opt.RebuildIndex
 	cfg.SafeMode = opt.SafeMode
+	applyWebviewEnvironment(cfg)
+	services := makeServices(os.Stderr)
 	services.Execution, services.Preferences, services.Endpoints = container.PreparePluginHost(
 		services.Execution, services.Preferences, services.Endpoints, cfg.SafeMode,
 	)
