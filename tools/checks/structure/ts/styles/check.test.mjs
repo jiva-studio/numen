@@ -161,6 +161,33 @@ describe("the rule on the window chrome", () => {
     assert.deepEqual(await lint("plugins/tools-sync/frontend/a.css", ".sync__popover, .sync__chip { gap: 1rem; }"), rejected);
   });
 
+  it("flags the parts of a bar that only mention a popover, and exempts the popup however it is nested", async () => {
+    const at = "plugins/tools-sync/frontend/a.css";
+    for (const css of [
+      ".sync__popover-trigger { gap: 1rem; }",
+      ".sync__popover-btn { gap: 1rem; }",
+      ".sync__chip:has(.sync__popover) { gap: 1rem; }",
+      ".sync__chip:not(.sync__popover) { gap: 1rem; }",
+      ".popover-anchor .sync__chip { gap: 1rem; }",
+      ".sync__chip[aria-expanded] { gap: 1rem; }",
+      ".sync__popover ~ .sync__chip { gap: 1rem; }",
+      ".sync { --popover-offset: 0.25rem; }",
+      ".sync__chip { font-size: var(--numen-text-1); }",
+      ".sync__popover, .sync__chip { gap: 1rem; }",
+    ]) {
+      assert.deepEqual(await lint(at, css), rejected, css);
+    }
+    for (const css of [
+      ".sync__popover { & .sync__row { gap: 1rem; } &:hover { gap: 1rem; } }",
+      "@media (width > 10px) { .sync__popover { gap: 1rem; } }",
+      ".sync__popover-container .sync__row > .sync__cell { gap: 1rem; }",
+      ".sync__popover .sync__row { font-size: var(--numen-text-1); }",
+      ".sync { --popover-offset: calc(0.25 * var(--numen-chrome-unit)); }",
+    ]) {
+      assert.deepEqual(await lint(at, css), [], css);
+    }
+  });
+
   it("accepts the chrome tokens, em and the colors", async () => {
     const css = "a { --h: calc(1.25 * var(--numen-chrome-unit)); --gap: 0.5em; font-size: var(--numen-chrome-text-2); color: var(--numen-ink); border-radius: var(--numen-radius-pill); }";
     assert.deepEqual(await lint("plugins/tools-sync/frontend/a.css", css), []);

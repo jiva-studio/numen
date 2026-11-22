@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import postcss from "postcss";
+import selectorParser from "postcss-selector-parser";
 import valueParser from "postcss-value-parser";
 import stylelint from "stylelint";
 
@@ -307,12 +308,28 @@ function isChromePlugin(file, bars) {
   return chromePlugins.get(key);
 }
 
-const POPOVER_CLASS = /\.[\w-]*popover[\w-]*/;
+const POPOVER_CLASS = /(?:^|[-_])popover(?:-container)?$/;
 
-/** True when every selector of the rule, or of a rule it is nested in, names a class containing "popover": the popup a widget opens. */
+/** True when a selector draws inside a popup: a popup root class is in its compound chain, joined by descendant or child combinators; pseudo-class arguments do not count. */
+function isPopoverSelector(selector) {
+  let found = false;
+  try {
+    const ast = selectorParser().astSync(selector);
+    if (ast.nodes.length !== 1) return false;
+    for (const node of ast.nodes[0].nodes) {
+      if (node.type === "class" && POPOVER_CLASS.test(node.value)) found = true;
+      else if (node.type === "combinator" && (node.value === "+" || node.value === "~")) found = false;
+    }
+  } catch {
+    return false;
+  }
+  return found;
+}
+
+/** True when every selector of the rule, or of a rule it is nested in, is drawn inside a popup root class. */
 function isInPopover(decl) {
   for (let node = decl.parent; node; node = node.parent) {
-    if (node.type === "rule" && node.selectors?.length && node.selectors.every((selector) => POPOVER_CLASS.test(selector))) return true;
+    if (node.type === "rule" && node.selectors?.length && node.selectors.every(isPopoverSelector)) return true;
   }
   return false;
 }
