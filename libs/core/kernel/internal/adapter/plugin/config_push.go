@@ -211,16 +211,11 @@ func (c *ConfigPush) GetSnapshot(pluginID string) (delivery.Snapshot, bool, erro
 		return delivery.Snapshot{}, false, nil
 	}
 	rawSettings := c.set.getPluginSettings(pluginID)
-	cfgJSON, err := json.Marshal(rawSettings)
-	if err != nil {
-		return delivery.Snapshot{}, true, fmt.Errorf("marshal plugin %s settings: %w", pluginID, err)
-	}
 	values := plugindomain.FormatSettingValues(rawSettings)
 	maps.Copy(values, performance.GetConfigValues())
 	return delivery.Snapshot{
-		PluginID:   pluginID,
-		Endpoint:   endpoint,
-		ConfigJSON: string(cfgJSON),
-		Values:     values,
+		PluginID: pluginID,
+		Endpoint: endpoint,
+		Values:   values,
 	}, true, nil
 }

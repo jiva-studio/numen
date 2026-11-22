@@ -42,7 +42,7 @@ type chunkingPlugin struct {
 func (*chunkingPlugin) Configure(
 	_ context.Context, _ *connect.Request[v1.ConfigureRequest],
 ) (*connect.Response[v1.ConfigureResponse], error) {
-	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
+	return connect.NewResponse(&v1.ConfigureResponse{}), nil
 }
 
 func (p *chunkingPlugin) DescribeSearchSource(

@@ -1122,14 +1122,14 @@ const file_numen_v1_providerconnection_proto_rawDesc = "" +
 	"\x04path\x18\v \x01(\tR\x04path\x1aQ\n" +
 	"\vFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
-	"\x05value\x18\x02 \x01(\v2\x16.google.protobuf.ValueR\x05value:\x028\x01\"{\n" +
+	"\x05value\x18\x02 \x01(\v2\x16.google.protobuf.ValueR\x05value:\x028\x01\"u\n" +
 	"\x15ProviderConnectionUse\x12\x1b\n" +
 	"\tplugin_id\x18\x01 \x01(\tR\bpluginId\x12\x1f\n" +
 	"\vplugin_name\x18\x02 \x01(\tR\n" +
 	"pluginName\x12\x1e\n" +
 	"\n" +
 	"operations\x18\x04 \x03(\tR\n" +
-	"operationsJ\x04\b\x03\x10\x04\"$\n" +
+	"operations\"$\n" +
 	"\"ListProviderConnectionTypesRequest\"\x9a\x01\n" +
 	"#ListProviderConnectionTypesResponse\x126\n" +
 	"\x05types\x18\x01 \x03(\v2 .numen.v1.ProviderConnectionTypeR\x05types\x12;\n" +

@@ -16,28 +16,18 @@ service PluginLifecycleService {
 message PingRequest {}
 
 message PingResponse {
-  string status = 1;
-  int32 protocol = 2;
+  int32 protocol = 1;
 }
 
-message ShutdownRequest {
-  int32 timeout_seconds = 1;
-}
+message ShutdownRequest {}
 
-message ShutdownResponse {
-  bool success = 1;
-}
+message ShutdownResponse {}
 
 message ConfigureRequest {
-  string plugin_id = 1;
-  string configuration_json = 2;
-  map<string, string> values = 3;
+  map<string, string> values = 1;
 }
 
-message ConfigureResponse {
-  bool success = 1;
-  string error = 2;
-}
+message ConfigureResponse {}
 
 // PluginSetting declares one setting in the plugin's declarative settings schema.
 message PluginSetting {
@@ -86,7 +76,6 @@ message PluginSetting {
   bool discover = 24;
   // The id of the group the setting is drawn under. Empty draws it in a card without a heading above the islands.
   string group = 26;
-  reserved 22;
 }
 
 // PluginSettingOption is one value an enum setting can hold.
@@ -145,7 +134,6 @@ message PluginInfo {
   bool is_off_by_default = 16;
   // The islands the settings page draws the settings in, in the order they are shown.
   repeated PluginSettingGroup setting_groups = 17;
-  reserved 10;
 }
 
 // PluginContribution is one section of a plugin's manifest and the entries it declares, in the

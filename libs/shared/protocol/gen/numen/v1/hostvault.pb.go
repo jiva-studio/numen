@@ -1004,7 +1004,7 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x18GetVaultProblemsResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x126\n" +
 	"\bproblems\x18\x02 \x03(\v2\x1a.numen.v1.HostVaultProblemR\bproblems\x12\x16\n" +
-	"\x06checks\x18\x03 \x03(\tR\x06checks*\xd8\x04\n" +
+	"\x06checks\x18\x03 \x03(\tR\x06checks*\xd2\x04\n" +
 	"\x12HostVaultErrorCode\x12%\n" +
 	"!HOST_VAULT_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eHOST_VAULT_ERROR_CODE_NO_VAULT\x10\x01\x12#\n" +
@@ -1020,7 +1020,7 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	" HOST_VAULT_ERROR_CODE_UNREADABLE\x10\x0f\x12&\n" +
 	"\"HOST_VAULT_ERROR_CODE_INVALID_NAME\x10\x10\x12\"\n" +
 	"\x1eHOST_VAULT_ERROR_CODE_INTERNAL\x10\x11\x12'\n" +
-	"#HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED\x10\x12\"\x04\b\t\x10\v*\x8c\x01\n" +
+	"#HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED\x10\x12*\x8c\x01\n" +
 	"\x0eHostIndexState\x12 \n" +
 	"\x1cHOST_INDEX_STATE_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18HOST_INDEX_STATE_INDEXED\x10\x01\x12\x1d\n" +

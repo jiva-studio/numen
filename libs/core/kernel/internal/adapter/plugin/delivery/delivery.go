@@ -22,10 +22,9 @@ const ConfigureTimeout = 3 * time.Second
 
 // Snapshot is what a Configure call to one plugin is made of, read while the table of plugins is locked.
 type Snapshot struct {
-	PluginID   string
-	Endpoint   transport.Endpoint
-	ConfigJSON string
-	Values     map[string]string
+	PluginID string
+	Endpoint transport.Endpoint
+	Values   map[string]string
 }
 
 // Host is what the delivery asks the plugin host for. RecordConfigureAnswer is given the answer of the
@@ -195,9 +194,7 @@ func (d *Delivery) sendConfigure(ctx context.Context, snapshot Snapshot) (bool, 
 		connect.WithInterceptors(transport.AuthInterceptor(snapshot.Endpoint.Token)),
 	)
 	req := connect.NewRequest(&v1.ConfigureRequest{
-		PluginId:          snapshot.PluginID,
-		ConfigurationJson: snapshot.ConfigJSON,
-		Values:            snapshot.Values,
+		Values: snapshot.Values,
 	})
 	callCtx, cancel := context.WithTimeout(ctx, ConfigureTimeout)
 	defer cancel()

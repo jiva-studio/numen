@@ -693,7 +693,7 @@ var File_numen_v1_settings_proto protoreflect.FileDescriptor
 const file_numen_v1_settings_proto_rawDesc = "" +
 	"\n" +
 	"\x17numen/v1/settings.proto\x12\bnumen.v1\x1a\x15numen/v1/plugin.proto\"\x14\n" +
-	"\x12GetSettingsRequest\"\xfb\x01\n" +
+	"\x12GetSettingsRequest\"\xf5\x01\n" +
 	"\x13GetSettingsResponse\x12\x18\n" +
 	"\awritten\x18\x01 \x01(\tR\awritten\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12.\n" +
@@ -702,8 +702,7 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\aversion\x18\n" +
 	" \x01(\x04R\aversion\x12;\n" +
 	"\n" +
-	"app_groups\x18\v \x03(\v2\x1c.numen.v1.PluginSettingGroupR\tappGroupsJ\x04\b\t\x10\n" +
-	"\"/\n" +
+	"app_groups\x18\v \x03(\v2\x1c.numen.v1.PluginSettingGroupR\tappGroups\"/\n" +
 	"\aSetting\x12\x0e\n" +
 	"\x02at\x18\x01 \x03(\tR\x02at\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\"\x16\n" +

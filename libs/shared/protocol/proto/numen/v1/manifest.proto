@@ -484,7 +484,6 @@ message ManifestSetting {
   bool discover = 23;
   // group is the id of the entry of the manifest's setting_groups the setting is drawn under. Empty draws it in a card without a heading above the islands.
   string group = 25;
-  reserved 21;
 }
 
 message ManifestNoteType {
@@ -538,7 +537,6 @@ message ManifestCommand {
   ManifestCommandAnswers answers = 13;
   // warns makes the palette ask for the name of the note typed again before the command runs.
   ManifestCommandWarns warns = 14;
-  reserved 10;
 }
 
 message ManifestReader {

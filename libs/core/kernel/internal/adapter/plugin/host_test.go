@@ -631,23 +631,21 @@ type testLifecycleHandler struct {
 	wiretest.PluginLifecycle
 	mu             sync.Mutex
 	shutdownCalled bool
-	timeoutSecs    int32
 	onShutdown     func()
 }
 
 func (h *testLifecycleHandler) Shutdown(
 	_ context.Context,
-	req *connect.Request[v1.ShutdownRequest],
+	_ *connect.Request[v1.ShutdownRequest],
 ) (*connect.Response[v1.ShutdownResponse], error) {
 	h.mu.Lock()
 	h.shutdownCalled = true
-	h.timeoutSecs = req.Msg.GetTimeoutSeconds()
 	onShutdown := h.onShutdown
 	h.mu.Unlock()
 	if onShutdown != nil {
 		onShutdown()
 	}
-	return connect.NewResponse(&v1.ShutdownResponse{Success: true}), nil
+	return connect.NewResponse(&v1.ShutdownResponse{}), nil
 }
 
 func (h *testLifecycleHandler) isShutdownCalled() bool {

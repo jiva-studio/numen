@@ -687,7 +687,7 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\tsearch_id\x18\x01 \x01(\tR\bsearchId\"\x16\n" +
 	"\x14CancelSearchResponse\"B\n" +
 	"\x12SearchTextResponse\x12,\n" +
-	"\x05found\x18\x01 \x03(\v2\x16.numen.v1.SearchResultR\x05found\"\x90\x04\n" +
+	"\x05found\x18\x01 \x03(\v2\x16.numen.v1.SearchResultR\x05found\"\xca\x03\n" +
 	"\fSearchResult\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
@@ -708,10 +708,7 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05score\x18\x12 \x01(\x01H\x01R\x05score\x88\x01\x01\x12\"\n" +
 	"\ris_whole_file\x18\x13 \x01(\bR\visWholeFileB\a\n" +
 	"\x05_noteB\b\n" +
-	"\x06_scoreJ\x04\b\f\x10\rJ\x04\b\r\x10\x0eJ\x04\b\x0e\x10\x0fJ\x04\b\x0f\x10\x10R\bchunk_idR\n" +
-	"similarityR\n" +
-	"word_scoreR\n" +
-	"whole_text*\x88\x01\n" +
+	"\x06_score*\x88\x01\n" +
 	"\n" +
 	"SearchMode\x12\x1b\n" +
 	"\x17SEARCH_MODE_UNSPECIFIED\x10\x00\x12\x15\n" +

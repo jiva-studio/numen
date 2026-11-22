@@ -39,9 +39,7 @@ func createRPCShutdown(endpoint transport.Endpoint, client *http.Client, gracePe
 			transport.GetBaseURL(endpoint),
 			connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token)),
 		)
-		req := connect.NewRequest(&v1.ShutdownRequest{
-			TimeoutSeconds: int32(gracePeriod.Seconds()),
-		})
+		req := connect.NewRequest(&v1.ShutdownRequest{})
 		_, err := client.Shutdown(rpcCtx, req)
 		return err
 	}

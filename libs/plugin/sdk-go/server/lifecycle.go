@@ -11,9 +11,6 @@ import (
 // ProtocolVersion is the protocol version the SDK uses.
 const ProtocolVersion = protocol.PluginProtocolVersion
 
-// statusOK is the status a healthy plugin answers a ping with.
-const statusOK = "ok"
-
 // LifecycleOption configures a LifecycleServer instance.
 type LifecycleOption func(*LifecycleServer)
 
@@ -113,11 +110,6 @@ func (s *LifecycleServer) AllConfigs() map[string]string {
 	res := make(map[string]string, len(s.config))
 	maps.Copy(res, s.config)
 	return res
-}
-
-// CheckStatus returns the status a ping answers with.
-func (s *LifecycleServer) CheckStatus(context.Context) (string, error) {
-	return statusOK, nil
 }
 
 // ApplyConfig stores the configuration values and runs the configure callback with the values.

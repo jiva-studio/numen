@@ -69,7 +69,6 @@ enum HostVaultErrorCode {
   // The path is not a note this vault holds.
   HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;
 
-  reserved 9 to 11;
 
   // The file is not valid note text.
   HOST_VAULT_ERROR_CODE_NOT_TEXT = 12;
