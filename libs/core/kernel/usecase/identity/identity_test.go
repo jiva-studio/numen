@@ -47,7 +47,7 @@ func newKit(name string) kit {
 	}
 }
 
-func TestGetIdentity_ReportsNoIdentityWhenTheKeyStoreHoldsNoRecord(t *testing.T) {
+func TestGetIdentity_NoRecord(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	if _, err := k.get.Execute(t.Context()); !errors.Is(err, identitydomain.ErrNoIdentity) {
@@ -100,7 +100,7 @@ func TestGetIdentity_ReportsAKeyStoreFailure(t *testing.T) {
 	}
 }
 
-func TestGenerateRecoveryWords_GivesTwelveWordsThatParseAndKeepsNothing(t *testing.T) {
+func TestGenerateRecoveryWords_ReturnsTwelveParsableWordsAndStoresNothing(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	first, err := k.generate.Execute(t.Context())
@@ -239,7 +239,7 @@ func TestCreateIdentity_ReportsAKeyStoreThatRefusesAndKeepsNothing(t *testing.T)
 	}
 }
 
-func TestCreateIdentity_CutsALongDeviceNameAtACharacter(t *testing.T) {
+func TestCreateIdentity_TruncatesALongDeviceNameAtACharacter(t *testing.T) {
 	t.Parallel()
 	k := newKit(strings.Repeat("€", 30))
 	created, err := k.create.Execute(t.Context(), legal)
@@ -251,7 +251,7 @@ func TestCreateIdentity_CutsALongDeviceNameAtACharacter(t *testing.T) {
 	}
 }
 
-func TestCreateIdentity_GivesTheSameAccountFromTheSameWordsOnAnotherDevice(t *testing.T) {
+func TestCreateIdentity_SameWordsOnAnotherDeviceGiveTheSameAccount(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	first, err := k.create.Execute(t.Context(), legal)

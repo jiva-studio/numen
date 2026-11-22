@@ -75,7 +75,7 @@ func TestDeriveRecoveryKey_FollowsTheFrozenLabels(t *testing.T) {
 	}
 }
 
-func TestDeriveRecoveryKey_GivesTheSameKeyForTheSameWords(t *testing.T) {
+func TestDeriveRecoveryKey_IsDeterministicForTheSameWords(t *testing.T) {
 	t.Parallel()
 	first := abandonWords(t).DeriveRecoveryKey().Public()
 	second := abandonWords(t).DeriveRecoveryKey().Public()
@@ -108,7 +108,7 @@ func TestNewDeviceKey_FollowsTheFrozenLabels(t *testing.T) {
 	}
 }
 
-func TestNewDeviceKey_GivesAnotherKeyForEachRandomSeed(t *testing.T) {
+func TestNewDeviceKey_DiffersForEachRandomSeed(t *testing.T) {
 	t.Parallel()
 	first, _ := identity.NewDeviceKey(bytes.NewReader(bytes.Repeat([]byte{1}, 32)))
 	second, _ := identity.NewDeviceKey(bytes.NewReader(bytes.Repeat([]byte{2}, 32)))

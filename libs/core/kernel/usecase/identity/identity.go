@@ -39,8 +39,6 @@ func NewDeps(keys pluginport.KeyStore, names DeviceName, clock machineport.Clock
 	return Deps{keys: keys, names: names, clock: clock, random: rand.Reader}
 }
 
-// readRecord returns the record in the key store, plugindomain.ErrNoKey when there is none, or the
-// failure of the key store. A value that does not parse wraps identitylib.ErrMalformed.
 func (d Deps) readRecord(ctx context.Context) (identitylib.Record, error) {
 	value, err := d.keys.GetKey(ctx, keyName)
 	if err != nil {
@@ -72,8 +70,6 @@ func identityOf(record identitylib.Record) (identitydomain.Identity, error) {
 	return identitydomain.Identity{}, fmt.Errorf("%w: the device is not in its chain", identitylib.ErrMalformed)
 }
 
-// entryName makes the name of this machine fit the chain: valid UTF-8 without control characters,
-// at most 64 bytes, cut at a character.
 func entryName(name string) string {
 	name = strings.ToValidUTF8(name, "")
 	name = strings.TrimSpace(strings.Map(func(r rune) rune {

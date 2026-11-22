@@ -22,7 +22,7 @@ var bip39Vectors = []struct{ entropy, words string }{
 	{"ffffffffffffffffffffffffffffffff", "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong"},
 }
 
-func TestNewRecoveryWords_GivesTheBIP39WordsOfTheEntropy(t *testing.T) {
+func TestNewRecoveryWords_MapsEntropyToBIP39Words(t *testing.T) {
 	t.Parallel()
 	for _, vector := range bip39Vectors {
 		entropy, err := hex.DecodeString(vector.entropy)
@@ -54,7 +54,7 @@ func TestParseRecoveryWords_AcceptsTheBIP39Vectors(t *testing.T) {
 	}
 }
 
-func TestNewRecoveryWords_GivesTwelveWordsThatParse(t *testing.T) {
+func TestNewRecoveryWords_ReturnsTwelveParsableWords(t *testing.T) {
 	t.Parallel()
 	words, err := identity.NewRecoveryWords(bytes.NewReader(bytes.Repeat([]byte{0x42}, 16)))
 	if err != nil {
@@ -148,7 +148,7 @@ func TestRecoveryWords_PrintNoWord(t *testing.T) {
 		t.Errorf("String() = %q", words.String())
 	}
 	for _, text := range []string{
-		fmt.Sprintf("%v", words), fmt.Sprintf("%+v", words), fmt.Sprintf("%s", words), //nolint:gosimple
+		fmt.Sprintf("%v", words), fmt.Sprintf("%+v", words), fmt.Sprintf("[%s]", words),
 		fmt.Sprint(fmt.Errorf("failed with %v", words)),
 	} {
 		for _, word := range words.List() {

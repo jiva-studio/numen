@@ -10,7 +10,7 @@ export const IDENTITY_WORDS = {
   }): string => {
     switch (failure.errorCode) {
       case 'invalid_words':
-        return 'These are words that are not valid.'
+        return 'Some words are not valid.'
       case 'identity_exists':
         return 'This device already has an identity.'
       case 'key_store_failed':

@@ -15,7 +15,7 @@ describe('readPosition', () => {
 })
 
 describe('planAnswers', () => {
-  it('gives the word of each place that is asked for', () => {
+  it('returns the word at each requested position', () => {
     expect(planAnswers([3, 4, 12], WORDS)).toStrictEqual(['cat', 'dog', 'yak'])
   })
 
@@ -28,7 +28,7 @@ describe('planAnswers', () => {
     expect(() => planAnswers([13], WORDS)).toThrow('word 13 of 12')
   })
 
-  it('refuses a mistake when every word asked for is that word', () => {
+  it('rejects a wrong word at every requested position', () => {
     expect(() => planAnswers([1, 2, 5], WORDS, 'zoo')).toThrow('nothing can take its place')
   })
 })

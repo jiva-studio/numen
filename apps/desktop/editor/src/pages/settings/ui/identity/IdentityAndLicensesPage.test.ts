@@ -58,11 +58,11 @@ afterEach(() => {
 })
 
 const createPage = async (
-  held: IdentityInfo | undefined = undefined,
+  initial: IdentityInfo | undefined = undefined,
   create: (words: readonly string[]) => Promise<Result<IdentityInfo, string>> = () =>
     Promise.resolve(asValue(IDENTITY)),
 ) => {
-  const identity: Ref<IdentityInfo | undefined> = ref(held)
+  const identity: Ref<IdentityInfo | undefined> = ref(initial)
   const calls = {
     load: vi.fn(() => Promise.resolve()),
     generateWords: vi.fn(() => Promise.resolve(asValue<readonly string[]>(RECOVERY_WORDS))),
@@ -135,7 +135,7 @@ describe('the page "Identity and licenses"', () => {
     expect(load).toHaveBeenCalled()
   })
 
-  it('tells that this device has no identity and offers to create or restore one', async () => {
+  it('offers to create or restore an identity when the device has none', async () => {
     const { tab } = await createPage()
     expect(tab.text()).toContain('No identity on this device')
     expect(findButton(tab, 'Create identity')).toBeDefined()
@@ -143,7 +143,7 @@ describe('the page "Identity and licenses"', () => {
     expect(tab.text()).not.toContain('Account fingerprint')
   })
 
-  it('shows the account fingerprint and this device when an identity is held', async () => {
+  it('shows the account fingerprint and this device when the device has an identity', async () => {
     const { tab } = await createPage(IDENTITY)
     expect(tab.text()).toContain('Account fingerprint')
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
@@ -183,7 +183,7 @@ describe('the page "Identity and licenses"', () => {
     await fillConfirmations(tab, { word: 'zoo' })
     await press(tab, 'Keep identity')
     expect(create).not.toHaveBeenCalled()
-    expect(tab.get('[role="alert"]').text()).toBe('These are words that are not valid.')
+    expect(tab.get('[role="alert"]').text()).toBe('Some words are not valid.')
     expect(tab.text()).toContain('No identity on this device')
   })
 
@@ -223,12 +223,12 @@ describe('the page "Identity and licenses"', () => {
 
   it('says the words are not valid and holds no identity when the core refuses the words', async () => {
     const { tab, identity } = await createPage(undefined, () =>
-      Promise.resolve(asFailure('These are words that are not valid.')),
+      Promise.resolve(asFailure('Some words are not valid.')),
     )
     await press(tab, 'Restore from words')
     await tab.get('textarea[aria-label="Your 12 recovery words"]').setValue('abandon '.repeat(12))
     await press(tab, 'Restore')
-    expect(tab.get('[role="alert"]').text()).toBe('These are words that are not valid.')
+    expect(tab.get('[role="alert"]').text()).toBe('Some words are not valid.')
     expect(identity.value).toBeUndefined()
     expect(tab.text()).toContain('No identity on this device')
   })

@@ -113,7 +113,7 @@ func TestWrappedAccountKeys_ParseOnlyTheRightLength(t *testing.T) {
 	}
 }
 
-func TestWrapForRecovery_GivesAnotherCiphertextEachTime(t *testing.T) {
+func TestWrapForRecovery_ReturnsADifferentCiphertextEachTime(t *testing.T) {
 	t.Parallel()
 	account := newAccount(t)
 	public := abandonWords(t).DeriveRecoveryKey().Public()

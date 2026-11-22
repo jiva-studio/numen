@@ -16,7 +16,6 @@ export interface IdentityInfo {
   readonly accountFingerprint: string
   readonly deviceFingerprint: string
   readonly deviceName: string
-  /** When this device joined the account, RFC 3339 in UTC. */
   readonly deviceAddedAt: string
 }
 

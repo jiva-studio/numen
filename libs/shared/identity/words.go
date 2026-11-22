@@ -63,7 +63,6 @@ func ParseRecoveryWords(words []string) (RecoveryWords, error) {
 	return parsed, nil
 }
 
-// packed returns the entropy followed by its 4-bit checksum in the top half of the last byte.
 func (w RecoveryWords) packed() [entropySize + 1]byte {
 	var packed [entropySize + 1]byte
 	copy(packed[:], w.entropy[:])

@@ -2,7 +2,6 @@ package identity
 
 import "context"
 
-// DeleteIdentity removes the identity of this device.
 type DeleteIdentity struct{ deps Deps }
 
 // NewDeleteIdentity returns the use case that removes the identity of this device.

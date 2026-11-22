@@ -6,7 +6,6 @@ import (
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 )
 
-// GetIdentity reads the identity of this device.
 type GetIdentity struct{ deps Deps }
 
 // NewGetIdentity returns the use case that reads the identity of this device.

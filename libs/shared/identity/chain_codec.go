@@ -139,7 +139,6 @@ func (r *reader) take(n int) []byte {
 	return out
 }
 
-// fixed returns n bytes, or n zero bytes after an error, so the caller can index it.
 func (r *reader) fixed(n int) []byte {
 	if out := r.take(n); out != nil {
 		return out

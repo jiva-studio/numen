@@ -79,7 +79,6 @@ func (h *Handler) CreateIdentity(
 	return connect.NewResponse(&v1.CreateIdentityResponse{Identity: writeIdentity(created)}), nil
 }
 
-// DeleteIdentity removes the identity from this device.
 func (h *Handler) DeleteIdentity(
 	ctx context.Context,
 	_ *connect.Request[v1.DeleteIdentityRequest],

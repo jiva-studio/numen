@@ -15,7 +15,6 @@ import (
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	windowhealth "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/health"
-	windowidentity "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/identity"
 	windowlicense "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/license"
 	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
@@ -401,10 +400,4 @@ func getFeedStart(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps 
 		After: vaultDeps.Clock.After,
 	}
 	return events.Start
-}
-
-func mountIdentity(w *windowRoutes, install pluginInstall, vaultDeps vaultWiring) {
-	handler := windowidentity.NewService(openIdentityUseCases(install, vaultDeps))
-	path, served := windowidentity.NewRoute(handler, w.page.Gate.CountQuestions())
-	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }

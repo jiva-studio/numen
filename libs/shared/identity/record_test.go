@@ -26,7 +26,7 @@ func newRecord(t *testing.T, name string) (identity.Record, account) {
 	return identity.Record{Device: device, Wrapped: wrapped, Chain: chain}, a
 }
 
-func TestParseRecord_ReturnsWhatWasWritten(t *testing.T) {
+func TestParseRecord_RoundTripsAWrittenRecord(t *testing.T) {
 	t.Parallel()
 	record, a := newRecord(t, "Laptop")
 	parsed, err := identity.ParseRecord(record.Bytes())
@@ -57,7 +57,7 @@ func TestParseRecord_RefusesADeviceThatIsNotInItsChain(t *testing.T) {
 	}
 }
 
-func TestParseRecord_RefusesAnotherVersionAndCutBytes(t *testing.T) {
+func TestParseRecord_RejectsAnotherVersionAndTruncatedBytes(t *testing.T) {
 	t.Parallel()
 	record, _ := newRecord(t, "Laptop")
 	b := record.Bytes()
@@ -94,7 +94,7 @@ func TestRecord_FitsTheKeyStoreWithTheLongestDeviceName(t *testing.T) {
 	}
 }
 
-func TestRecord_HoldsNoWord(t *testing.T) {
+func TestRecord_ContainsNoWord(t *testing.T) {
 	t.Parallel()
 	words := abandonWords(t)
 	record, _ := newRecord(t, "Laptop")

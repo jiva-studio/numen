@@ -32,7 +32,6 @@ export const planAnswers = (positions: readonly number[], words: readonly string
 }
 
 export class IdentityDriver {
-  /** The words of the last identity this person set up, kept to enter them again; the page shows them once. */
   private words: readonly string[] = []
   private account = ''
 

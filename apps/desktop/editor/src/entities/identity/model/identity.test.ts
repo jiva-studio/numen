@@ -33,7 +33,7 @@ const createStore = (client: IdentityClient) => {
 }
 
 describe('the identity store', () => {
-  it('holds no identity before the core is asked', () => {
+  it('has no identity before the first load', () => {
     const { store } = createStore(createClient())
     expect(store.identity.value).toBeUndefined()
   })
@@ -50,7 +50,7 @@ describe('the identity store', () => {
     expect(store.identity.value).toBeUndefined()
   })
 
-  it('keeps what it held and tells the person when a load fails', async () => {
+  it('retains the loaded identity and exposes the error when a load fails', async () => {
     let fails = false
     const { store, notify } = createStore(
       createClient({
@@ -94,7 +94,7 @@ describe('the identity store', () => {
       }),
     )
     const answer = await store.create(WORDS)
-    expect(answer).toStrictEqual({ ok: false, error: 'These are words that are not valid.' })
+    expect(answer).toStrictEqual({ ok: false, error: 'Some words are not valid.' })
     expect(store.identity.value).toBeUndefined()
   })
 
@@ -117,7 +117,7 @@ describe('the identity store', () => {
     )
     expect(new Set(texts).size).toBe(3)
     expect(texts.every((text) => text !== '')).toBe(true)
-    expect(texts[0]).toBe('These are words that are not valid.')
+    expect(texts[0]).toBe('Some words are not valid.')
   })
 
   it('reads a failed create as a text and holds no identity', async () => {

@@ -15,7 +15,6 @@ type Step = 'idle' | 'setup' | 'restore'
 const WORD_COUNT = 12
 const CONFIRMED_COUNT = 3
 
-/** A number in [0, limit) from the random source of the browser, without modulo bias. */
 function getRandomBelow(limit: number): number {
   const range = 0x100000000
   const largest = range - (range % limit)
@@ -28,7 +27,6 @@ function getRandomBelow(limit: number): number {
   return value % limit
 }
 
-/** `count` distinct positions in 1..`total`, in ascending order. */
 function pickPositions(count: number, total: number): readonly number[] {
   const pool = Array.from({ length: total }, (_, index) => index + 1)
   const picked: number[] = []

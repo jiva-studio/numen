@@ -35,8 +35,6 @@ func newChain(t *testing.T) account {
 	return account{recovery: recovery, keys: keys, chain: chain}
 }
 
-// appended returns the chain after the append, or the error of the append or of the verification that follows it:
-// a chain that is wrong is refused at one of the two.
 func appended(c identity.Chain, by identity.Signer, device identity.DevicePublicKey, name string, at time.Time) (identity.Chain, error) {
 	next, err := c.AppendDevice(by, device, name, at)
 	if err != nil {
@@ -45,7 +43,6 @@ func appended(c identity.Chain, by identity.Signer, device identity.DevicePublic
 	return next, next.Verify()
 }
 
-// split reads the frozen framing of a chain: uvarint count, then uvarint length and bytes of each entry.
 func split(t *testing.T, b []byte) [][]byte {
 	t.Helper()
 	count, n := binary.Uvarint(b)
@@ -71,7 +68,7 @@ func join(entries [][]byte) []byte {
 	return out
 }
 
-func TestNewChain_HoldsTheGenesisOfTheAccount(t *testing.T) {
+func TestNewChain_StartsWithTheAccountGenesis(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
 	if err := a.chain.Verify(); err != nil {
@@ -176,7 +173,7 @@ func TestAppendDevice_RefusesABadName(t *testing.T) {
 	}
 }
 
-func TestParseChain_ReturnsTheChainThatWasWritten(t *testing.T) {
+func TestParseChain_RoundTripsAWrittenChain(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
 	chain, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch)
@@ -287,7 +284,7 @@ func TestParseChain_RefusesAnotherVersion(t *testing.T) {
 	}
 }
 
-func TestParseChain_RefusesNoEntriesAndCutBytes(t *testing.T) {
+func TestParseChain_RejectsNoEntriesAndTruncatedBytes(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
 	for name, b := range map[string][]byte{"no bytes": nil, "no entries": {0}, "cut chain": a.chain.Bytes()[:40]} {

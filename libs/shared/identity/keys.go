@@ -21,7 +21,6 @@ func signWith(seed [32]byte, message []byte) []byte {
 	return ed25519.Sign(ed25519.NewKeyFromSeed(seed[:]), message)
 }
 
-// boxPublicKey cannot fail for a 32-byte X25519 private key.
 func boxPublicKey(private [32]byte) [32]byte {
 	key, err := ecdh.X25519().NewPrivateKey(private[:])
 	if err != nil {
