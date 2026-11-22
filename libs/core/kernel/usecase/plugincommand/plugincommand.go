@@ -34,10 +34,11 @@ var (
 	ErrBadArguments = errors.New("the arguments do not meet the command")
 )
 
-// NewList makes the scenario that lists the commands the plugins declare. conditions parses the condition of
-// a command; it is shared with the scenarios that run commands, so one condition is parsed once.
-func NewList(commands PluginCommands, conditions *when.Conditions) List {
-	return List{commands: commands, conditions: conditions}
+// NewList makes the scenario that lists the commands the plugins declare and, over points, the slots they
+// draw; points may be nil, which lists none. conditions parses the condition of a command; it is shared
+// with the scenarios that run commands, so one condition is parsed once.
+func NewList(commands PluginCommands, points SlotPoints, conditions *when.Conditions) List {
+	return List{commands: commands, points: points, conditions: conditions}
 }
 
 // NewRun makes the scenario that runs a command in the backend that declares it, over the backends that run
@@ -63,12 +64,6 @@ type List struct {
 	commands   PluginCommands
 	conditions *when.Conditions
 	points     SlotPoints
-}
-
-// WithSlotPoints makes the list also tell the slots the enabled plugins draw.
-func (u List) WithSlotPoints(points SlotPoints) List {
-	u.points = points
-	return u
 }
 
 // Execute lists the commands that a plugin backend runs.
