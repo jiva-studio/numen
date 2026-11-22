@@ -80,7 +80,7 @@ export function useLinkInspector(
       return
     }
 
-    const removed = await editor.removeConnection(
+    const removed = await editor.deleteConnection(
       open.nodeA.path,
       open.nodeB.path,
       open.connection.type,

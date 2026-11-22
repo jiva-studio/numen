@@ -349,8 +349,8 @@ func (c *Client) ResolveLinks(ctx context.Context, from string, targets []string
 	return out, nil
 }
 
-func (c *Client) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
-	res, err := c.vaults.GetParseProblems(ctx, request(c, &v1.GetParseProblemsRequest{}))
+func (c *Client) ListParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
+	res, err := c.vaults.ListParseProblems(ctx, request(c, &v1.ListParseProblemsRequest{}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -404,7 +404,7 @@ func (c *Client) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 }
 
 func (c *Client) EnsureIndexed(ctx context.Context) (IndexState, error) {
-	res, err := c.vaults.EnsureVaultIndexed(ctx, request(c, &v1.EnsureVaultIndexedRequest{}))
+	res, err := c.vaults.IndexVault(ctx, request(c, &v1.IndexVaultRequest{}))
 	if err != nil {
 		return IndexState{}, readError(err)
 	}
@@ -424,8 +424,8 @@ func (c *Client) EnsureIndexed(ctx context.Context) (IndexState, error) {
 	return out, nil
 }
 
-func (c *Client) WatchMoves(ctx context.Context) (<-chan Move, error) {
-	stream, err := c.vaults.WatchMoves(ctx, request(c, &v1.WatchMovesRequest{}))
+func (c *Client) WatchIndexChanges(ctx context.Context) (<-chan Move, error) {
+	stream, err := c.vaults.WatchIndexChanges(ctx, request(c, &v1.WatchIndexChangesRequest{}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -437,7 +437,7 @@ func (c *Client) WatchMoves(ctx context.Context) (<-chan Move, error) {
 		return nil, errors.Join(fmt.Errorf("host: the watch ended before it began"), closeErr)
 	}
 	moves := make(chan Move)
-	go followStream(ctx, stream, moves, func(*v1.WatchMovesResponse) Move { return Move{Err: nil} },
+	go followStream(ctx, stream, moves, func(*v1.WatchIndexChangesResponse) Move { return Move{Err: nil} },
 		func(err error) Move { return Move{Err: err} })
 	return moves, nil
 }

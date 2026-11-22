@@ -42,11 +42,12 @@ const (
 	// WindowServiceWatchTasksProcedure is the fully-qualified name of the WindowService's WatchTasks
 	// RPC.
 	WindowServiceWatchTasksProcedure = "/numen.v1.WindowService/WatchTasks"
-	// WindowServiceWatchQuitProcedure is the fully-qualified name of the WindowService's WatchQuit RPC.
-	WindowServiceWatchQuitProcedure = "/numen.v1.WindowService/WatchQuit"
-	// WindowServiceReportFlushProcedure is the fully-qualified name of the WindowService's ReportFlush
-	// RPC.
-	WindowServiceReportFlushProcedure = "/numen.v1.WindowService/ReportFlush"
+	// WindowServiceWatchWindowCloseProcedure is the fully-qualified name of the WindowService's
+	// WatchWindowClose RPC.
+	WindowServiceWatchWindowCloseProcedure = "/numen.v1.WindowService/WatchWindowClose"
+	// WindowServiceReportPendingWorkProcedure is the fully-qualified name of the WindowService's
+	// ReportPendingWork RPC.
+	WindowServiceReportPendingWorkProcedure = "/numen.v1.WindowService/ReportPendingWork"
 	// WindowServiceGetCurrentVaultProcedure is the fully-qualified name of the WindowService's
 	// GetCurrentVault RPC.
 	WindowServiceGetCurrentVaultProcedure = "/numen.v1.WindowService/GetCurrentVault"
@@ -67,13 +68,13 @@ type WindowServiceClient interface {
 	// the window asking for it — an agent is instructed to read a document, and this is
 	// where the person watching sees it happen.
 	WatchTasks(context.Context, *connect.Request[v1.WatchTasksRequest]) (*connect.ServerStreamForClient[v1.WatchTasksResponse], error)
-	// WatchQuit says the window is going, for as long as the caller listens. A
+	// WatchWindowClose says the window is going, for as long as the caller listens. A
 	// caller holding work that is only in its own memory writes it now and
-	// answers with ReportFlush.
-	WatchQuit(context.Context, *connect.Request[v1.WatchQuitRequest]) (*connect.ServerStreamForClient[v1.WatchQuitResponse], error)
-	// ReportFlush says what a caller has left. Nothing left lets the window go;
+	// answers with ReportPendingWork.
+	WatchWindowClose(context.Context, *connect.Request[v1.WatchWindowCloseRequest]) (*connect.ServerStreamForClient[v1.WatchWindowCloseResponse], error)
+	// ReportPendingWork says what a caller has left. Nothing left lets the window go;
 	// work a person is being asked about keeps it open. A caller that never says
-	ReportFlush(context.Context, *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error)
+	ReportPendingWork(context.Context, *connect.Request[v1.ReportPendingWorkRequest]) (*connect.Response[v1.ReportPendingWorkResponse], error)
 	// GetCurrentVault is which vault this window has in front of the person. Two
 	// windows are open on one installation and each shows what it shows, so it is
 	// the window that is asked and not the list of vaults.
@@ -102,16 +103,16 @@ func NewWindowServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(windowServiceMethods.ByName("WatchTasks")),
 			connect.WithClientOptions(opts...),
 		),
-		watchQuit: connect.NewClient[v1.WatchQuitRequest, v1.WatchQuitResponse](
+		watchWindowClose: connect.NewClient[v1.WatchWindowCloseRequest, v1.WatchWindowCloseResponse](
 			httpClient,
-			baseURL+WindowServiceWatchQuitProcedure,
-			connect.WithSchema(windowServiceMethods.ByName("WatchQuit")),
+			baseURL+WindowServiceWatchWindowCloseProcedure,
+			connect.WithSchema(windowServiceMethods.ByName("WatchWindowClose")),
 			connect.WithClientOptions(opts...),
 		),
-		reportFlush: connect.NewClient[v1.ReportFlushRequest, v1.ReportFlushResponse](
+		reportPendingWork: connect.NewClient[v1.ReportPendingWorkRequest, v1.ReportPendingWorkResponse](
 			httpClient,
-			baseURL+WindowServiceReportFlushProcedure,
-			connect.WithSchema(windowServiceMethods.ByName("ReportFlush")),
+			baseURL+WindowServiceReportPendingWorkProcedure,
+			connect.WithSchema(windowServiceMethods.ByName("ReportPendingWork")),
 			connect.WithClientOptions(opts...),
 		),
 		getCurrentVault: connect.NewClient[v1.GetCurrentVaultRequest, v1.GetCurrentVaultResponse](
@@ -131,11 +132,11 @@ func NewWindowServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // windowServiceClient implements WindowServiceClient.
 type windowServiceClient struct {
-	watchTasks      *connect.Client[v1.WatchTasksRequest, v1.WatchTasksResponse]
-	watchQuit       *connect.Client[v1.WatchQuitRequest, v1.WatchQuitResponse]
-	reportFlush     *connect.Client[v1.ReportFlushRequest, v1.ReportFlushResponse]
-	getCurrentVault *connect.Client[v1.GetCurrentVaultRequest, v1.GetCurrentVaultResponse]
-	cancelTask      *connect.Client[v1.CancelTaskRequest, v1.CancelTaskResponse]
+	watchTasks        *connect.Client[v1.WatchTasksRequest, v1.WatchTasksResponse]
+	watchWindowClose  *connect.Client[v1.WatchWindowCloseRequest, v1.WatchWindowCloseResponse]
+	reportPendingWork *connect.Client[v1.ReportPendingWorkRequest, v1.ReportPendingWorkResponse]
+	getCurrentVault   *connect.Client[v1.GetCurrentVaultRequest, v1.GetCurrentVaultResponse]
+	cancelTask        *connect.Client[v1.CancelTaskRequest, v1.CancelTaskResponse]
 }
 
 // WatchTasks calls numen.v1.WindowService.WatchTasks.
@@ -143,14 +144,14 @@ func (c *windowServiceClient) WatchTasks(ctx context.Context, req *connect.Reque
 	return c.watchTasks.CallServerStream(ctx, req)
 }
 
-// WatchQuit calls numen.v1.WindowService.WatchQuit.
-func (c *windowServiceClient) WatchQuit(ctx context.Context, req *connect.Request[v1.WatchQuitRequest]) (*connect.ServerStreamForClient[v1.WatchQuitResponse], error) {
-	return c.watchQuit.CallServerStream(ctx, req)
+// WatchWindowClose calls numen.v1.WindowService.WatchWindowClose.
+func (c *windowServiceClient) WatchWindowClose(ctx context.Context, req *connect.Request[v1.WatchWindowCloseRequest]) (*connect.ServerStreamForClient[v1.WatchWindowCloseResponse], error) {
+	return c.watchWindowClose.CallServerStream(ctx, req)
 }
 
-// ReportFlush calls numen.v1.WindowService.ReportFlush.
-func (c *windowServiceClient) ReportFlush(ctx context.Context, req *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error) {
-	return c.reportFlush.CallUnary(ctx, req)
+// ReportPendingWork calls numen.v1.WindowService.ReportPendingWork.
+func (c *windowServiceClient) ReportPendingWork(ctx context.Context, req *connect.Request[v1.ReportPendingWorkRequest]) (*connect.Response[v1.ReportPendingWorkResponse], error) {
+	return c.reportPendingWork.CallUnary(ctx, req)
 }
 
 // GetCurrentVault calls numen.v1.WindowService.GetCurrentVault.
@@ -175,13 +176,13 @@ type WindowServiceHandler interface {
 	// the window asking for it — an agent is instructed to read a document, and this is
 	// where the person watching sees it happen.
 	WatchTasks(context.Context, *connect.Request[v1.WatchTasksRequest], *connect.ServerStream[v1.WatchTasksResponse]) error
-	// WatchQuit says the window is going, for as long as the caller listens. A
+	// WatchWindowClose says the window is going, for as long as the caller listens. A
 	// caller holding work that is only in its own memory writes it now and
-	// answers with ReportFlush.
-	WatchQuit(context.Context, *connect.Request[v1.WatchQuitRequest], *connect.ServerStream[v1.WatchQuitResponse]) error
-	// ReportFlush says what a caller has left. Nothing left lets the window go;
+	// answers with ReportPendingWork.
+	WatchWindowClose(context.Context, *connect.Request[v1.WatchWindowCloseRequest], *connect.ServerStream[v1.WatchWindowCloseResponse]) error
+	// ReportPendingWork says what a caller has left. Nothing left lets the window go;
 	// work a person is being asked about keeps it open. A caller that never says
-	ReportFlush(context.Context, *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error)
+	ReportPendingWork(context.Context, *connect.Request[v1.ReportPendingWorkRequest]) (*connect.Response[v1.ReportPendingWorkResponse], error)
 	// GetCurrentVault is which vault this window has in front of the person. Two
 	// windows are open on one installation and each shows what it shows, so it is
 	// the window that is asked and not the list of vaults.
@@ -206,16 +207,16 @@ func NewWindowServiceHandler(svc WindowServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(windowServiceMethods.ByName("WatchTasks")),
 		connect.WithHandlerOptions(opts...),
 	)
-	windowServiceWatchQuitHandler := connect.NewServerStreamHandler(
-		WindowServiceWatchQuitProcedure,
-		svc.WatchQuit,
-		connect.WithSchema(windowServiceMethods.ByName("WatchQuit")),
+	windowServiceWatchWindowCloseHandler := connect.NewServerStreamHandler(
+		WindowServiceWatchWindowCloseProcedure,
+		svc.WatchWindowClose,
+		connect.WithSchema(windowServiceMethods.ByName("WatchWindowClose")),
 		connect.WithHandlerOptions(opts...),
 	)
-	windowServiceReportFlushHandler := connect.NewUnaryHandler(
-		WindowServiceReportFlushProcedure,
-		svc.ReportFlush,
-		connect.WithSchema(windowServiceMethods.ByName("ReportFlush")),
+	windowServiceReportPendingWorkHandler := connect.NewUnaryHandler(
+		WindowServiceReportPendingWorkProcedure,
+		svc.ReportPendingWork,
+		connect.WithSchema(windowServiceMethods.ByName("ReportPendingWork")),
 		connect.WithHandlerOptions(opts...),
 	)
 	windowServiceGetCurrentVaultHandler := connect.NewUnaryHandler(
@@ -234,10 +235,10 @@ func NewWindowServiceHandler(svc WindowServiceHandler, opts ...connect.HandlerOp
 		switch r.URL.Path {
 		case WindowServiceWatchTasksProcedure:
 			windowServiceWatchTasksHandler.ServeHTTP(w, r)
-		case WindowServiceWatchQuitProcedure:
-			windowServiceWatchQuitHandler.ServeHTTP(w, r)
-		case WindowServiceReportFlushProcedure:
-			windowServiceReportFlushHandler.ServeHTTP(w, r)
+		case WindowServiceWatchWindowCloseProcedure:
+			windowServiceWatchWindowCloseHandler.ServeHTTP(w, r)
+		case WindowServiceReportPendingWorkProcedure:
+			windowServiceReportPendingWorkHandler.ServeHTTP(w, r)
 		case WindowServiceGetCurrentVaultProcedure:
 			windowServiceGetCurrentVaultHandler.ServeHTTP(w, r)
 		case WindowServiceCancelTaskProcedure:
@@ -255,12 +256,12 @@ func (UnimplementedWindowServiceHandler) WatchTasks(context.Context, *connect.Re
 	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.WatchTasks is not implemented"))
 }
 
-func (UnimplementedWindowServiceHandler) WatchQuit(context.Context, *connect.Request[v1.WatchQuitRequest], *connect.ServerStream[v1.WatchQuitResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.WatchQuit is not implemented"))
+func (UnimplementedWindowServiceHandler) WatchWindowClose(context.Context, *connect.Request[v1.WatchWindowCloseRequest], *connect.ServerStream[v1.WatchWindowCloseResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.WatchWindowClose is not implemented"))
 }
 
-func (UnimplementedWindowServiceHandler) ReportFlush(context.Context, *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.ReportFlush is not implemented"))
+func (UnimplementedWindowServiceHandler) ReportPendingWork(context.Context, *connect.Request[v1.ReportPendingWorkRequest]) (*connect.Response[v1.ReportPendingWorkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.WindowService.ReportPendingWork is not implemented"))
 }
 
 func (UnimplementedWindowServiceHandler) GetCurrentVault(context.Context, *connect.Request[v1.GetCurrentVaultRequest]) (*connect.Response[v1.GetCurrentVaultResponse], error) {

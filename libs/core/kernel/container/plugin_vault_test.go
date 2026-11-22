@@ -167,7 +167,7 @@ func TestAPluginLooksUpTheNotesAndTheLinksOfTheVault(t *testing.T) {
 		t.Errorf("Rhine resolved to %+v (%v)", resolved, err)
 	}
 
-	problems, err := shared.Arranger.GetParseProblems(ctx)
+	problems, err := shared.Arranger.ListParseProblems(ctx)
 	if err != nil || len(problems) != 1 || problems[0].Path != "Lakes.md" {
 		t.Errorf("the parse problems were %+v (%v)", problems, err)
 	}

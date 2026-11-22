@@ -75,12 +75,12 @@ func Mount(mux *http.ServeMux, auth Authority, source Source, options ...connect
 
 	vault := newRouter(v1.File_numen_v1_hostvault_proto, numenv1connect.HostVaultServiceName, options)
 	addUnary(vault, numenv1connect.HostVaultServiceGetHostVaultProcedure, "GetHostVault", files.GetHostVault)
-	addUnary(vault, numenv1connect.HostVaultServiceEnsureVaultIndexedProcedure, "EnsureVaultIndexed", files.EnsureVaultIndexed)
-	addStream(vault, numenv1connect.HostVaultServiceWatchMovesProcedure, "WatchMoves", watch.WatchMoves)
+	addUnary(vault, numenv1connect.HostVaultServiceIndexVaultProcedure, "IndexVault", files.IndexVault)
+	addStream(vault, numenv1connect.HostVaultServiceWatchIndexChangesProcedure, "WatchIndexChanges", watch.WatchIndexChanges)
 	addUnary(vault, numenv1connect.HostVaultServiceLockVaultProcedure, "LockVault", files.LockVault)
 	addUnary(vault, numenv1connect.HostVaultServiceUnlockVaultProcedure, "UnlockVault", files.UnlockVault)
-	addUnary(vault, numenv1connect.HostVaultServiceGetParseProblemsProcedure, "GetParseProblems", arrange.GetParseProblems)
-	addUnary(vault, numenv1connect.HostVaultServiceGetVaultProblemsProcedure, "GetVaultProblems", arrange.GetVaultProblems)
+	addUnary(vault, numenv1connect.HostVaultServiceListParseProblemsProcedure, "ListParseProblems", arrange.ListParseProblems)
+	addUnary(vault, numenv1connect.HostVaultServiceListVaultProblemsProcedure, "ListVaultProblems", arrange.ListVaultProblems)
 	vault.mount(mux)
 
 	list := newRouter(v1.File_numen_v1_vaults_proto, numenv1connect.VaultsServiceName, options)

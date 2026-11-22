@@ -8,7 +8,7 @@ import {
   getNextDirection,
   getRows,
   isConnectionEmpty,
-  removeSide,
+  deleteConnectionSide,
   setSideLabel,
 } from './connectionDraft'
 
@@ -159,11 +159,13 @@ describe('addReverseSide', () => {
   })
 })
 
-describe('removeSide and setSideLabel', () => {
+describe('deleteConnectionSide and setSideLabel', () => {
   it('removes the record of one note and keeps the other', () => {
     const both = addReverseSide(forward)
-    expect(removeSide(both, 'second')).toStrictEqual(forward)
-    expect(getRows(removeSide(both, 'first')).map((row) => row.direction)).toEqual(['backward'])
+    expect(deleteConnectionSide(both, 'second')).toStrictEqual(forward)
+    expect(getRows(deleteConnectionSide(both, 'first')).map((row) => row.direction)).toEqual([
+      'backward',
+    ])
   })
 
   it('replaces the label of one record and ignores a note that writes none', () => {

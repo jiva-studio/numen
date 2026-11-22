@@ -31,11 +31,11 @@ type notePlacing struct {
 
 // noteConnecting changes the relationships between notes.
 type noteConnecting struct {
-	SaveConnection   note.SaveConnection
-	RemoveSide       note.RemoveSide
-	RemoveConnection note.RemoveConnection
-	Join             note.Join
-	CreateInRelation note.CreateInRelation
+	SaveConnection       note.SaveConnection
+	DeleteConnectionSide note.DeleteConnectionSide
+	DeleteConnection     note.DeleteConnection
+	Join                 note.Join
+	CreateInRelation     note.CreateInRelation
 }
 
 // noteProperties changes the frontmatter keys of notes.

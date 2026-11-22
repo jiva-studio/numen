@@ -114,7 +114,7 @@ func (u *UseCase) Results(ctx context.Context, in ResultsRequest) (Output, error
 func (u *UseCase) remove(ctx context.Context, id string) error {
 	detached, cancel := context.WithTimeout(context.WithoutCancel(ctx), removeTime)
 	defer cancel()
-	return u.runner.RemoveSearch(detached, id)
+	return u.runner.DeleteSearch(detached, id)
 }
 
 func getWait(seconds *float64) time.Duration {

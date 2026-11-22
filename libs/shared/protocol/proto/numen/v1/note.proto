@@ -57,16 +57,16 @@ service NoteService {
   // itself in the hierarchy is not saved.
   rpc SaveConnection(SaveConnectionRequest) returns (SaveConnectionResponse);
 
-  // RemoveSide removes the record one note writes about another. The other note
+  // DeleteConnectionSide removes the record one note writes about another. The other note
   // is left alone.
-  rpc RemoveSide(RemoveSideRequest) returns (RemoveSideResponse);
+  rpc DeleteConnectionSide(DeleteConnectionSideRequest) returns (DeleteConnectionSideResponse);
 
-  // RemoveConnection removes the records two notes write about each other.
-  rpc RemoveConnection(RemoveConnectionRequest) returns (RemoveConnectionResponse);
+  // DeleteConnection removes the records two notes write about each other.
+  rpc DeleteConnection(DeleteConnectionRequest) returns (DeleteConnectionResponse);
 
-  // JoinNotes makes one note write a record about another and keeps the record
+  // CreateConnectionSide makes one note write a record about another and keeps the record
   // the other note already writes.
-  rpc JoinNotes(JoinNotesRequest) returns (JoinNotesResponse);
+  rpc CreateConnectionSide(CreateConnectionSideRequest) returns (CreateConnectionSideResponse);
 
   // CreateRelatedNote makes a note joined to an existing one. The new note
   // writes the record about the existing note, with the inverse role, and is
@@ -456,7 +456,7 @@ message SaveConnectionResponse {
   bool is_cycle = 3;
 }
 
-message RemoveSideRequest {
+message DeleteConnectionSideRequest {
   // The note the record is written in.
   string path = 1;
   // The note the record is about.
@@ -465,21 +465,21 @@ message RemoveSideRequest {
   string type = 3;
 }
 
-message RemoveSideResponse {
+message DeleteConnectionSideResponse {
   ErrorCode error = 1;
 }
 
-message RemoveConnectionRequest {
+message DeleteConnectionRequest {
   string first = 1;
   string second = 2;
   string type = 3;
 }
 
-message RemoveConnectionResponse {
+message DeleteConnectionResponse {
   ErrorCode error = 1;
 }
 
-message JoinNotesRequest {
+message CreateConnectionSideRequest {
   // The note that writes the record.
   string from = 1;
   // The note the record is about.
@@ -487,7 +487,7 @@ message JoinNotesRequest {
   ConnectionSide side = 3;
 }
 
-message JoinNotesResponse {
+message CreateConnectionSideResponse {
   ErrorCode error = 1;
 
   // Set when the record was not written because the connection is not valid,

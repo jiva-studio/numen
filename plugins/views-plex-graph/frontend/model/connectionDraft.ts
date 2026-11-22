@@ -118,7 +118,7 @@ export function addReverseSide(draft: Connection): Connection {
 }
 
 /** The draft without the record of one note. */
-export const removeSide = (draft: Connection, key: SideKey): Connection =>
+export const deleteConnectionSide = (draft: Connection, key: SideKey): Connection =>
   withSide(draft, key, null)
 
 /** The draft with the label of one record replaced. A note that writes no record has no label. */

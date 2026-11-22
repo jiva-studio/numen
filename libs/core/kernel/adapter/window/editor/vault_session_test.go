@@ -388,11 +388,11 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 	}
 }
 
-func (f *showing) watchQuit(t *testing.T) (*connect.ServerStreamForClient[v1.WatchQuitResponse], func()) {
+func (f *showing) watchWindowClose(t *testing.T) (*connect.ServerStreamForClient[v1.WatchWindowCloseResponse], func()) {
 	t.Helper()
 
 	listening, hangUp := context.WithCancel(t.Context())
-	stream, err := f.canvas.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{
+	stream, err := f.canvas.WatchWindowClose(listening, connect.NewRequest(&v1.WatchWindowCloseRequest{
 		Window: wire.Editor,
 	}))
 	if err != nil {
@@ -416,7 +416,7 @@ func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 	f := openTwoVaults(t)
 
 	// A page that subscribes and never answers.
-	_, isDone := f.watchQuit(t)
+	_, isDone := f.watchWindowClose(t)
 	defer isDone()
 
 	swapped := make(chan error, 1)
@@ -441,7 +441,7 @@ func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 	f := openTwoVaults(t)
 
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 
 	request := make(chan struct{})
@@ -451,7 +451,7 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 			if !stream.Msg().GetFlush() {
 				continue
 			}
-			if _, err := f.canvas.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
+			if _, err := f.canvas.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Result: v1.FlushResult_FLUSH_RESULT_UNSAVED,
@@ -486,7 +486,7 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 	f := openTwoVaults(t)
 
-	stream, isDone := f.watchQuit(t)
+	stream, isDone := f.watchWindowClose(t)
 	defer isDone()
 
 	signalCh := make(chan struct{})
@@ -500,7 +500,7 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 			}
 			close(signalCh)
 			<-release
-			if _, err := f.canvas.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
+			if _, err := f.canvas.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Result: v1.FlushResult_FLUSH_RESULT_NOTHING,

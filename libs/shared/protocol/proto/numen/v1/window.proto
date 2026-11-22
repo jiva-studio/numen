@@ -24,14 +24,14 @@ service WindowService {
   // where the person watching sees it happen.
   rpc WatchTasks(WatchTasksRequest) returns (stream WatchTasksResponse);
 
-  // WatchQuit says the window is going, for as long as the caller listens. A
+  // WatchWindowClose says the window is going, for as long as the caller listens. A
   // caller holding work that is only in its own memory writes it now and
-  // answers with ReportFlush.
-  rpc WatchQuit(WatchQuitRequest) returns (stream WatchQuitResponse);
+  // answers with ReportPendingWork.
+  rpc WatchWindowClose(WatchWindowCloseRequest) returns (stream WatchWindowCloseResponse);
 
-  // ReportFlush says what a caller has left. Nothing left lets the window go;
+  // ReportPendingWork says what a caller has left. Nothing left lets the window go;
   // work a person is being asked about keeps it open. A caller that never says
-  rpc ReportFlush(ReportFlushRequest) returns (ReportFlushResponse);
+  rpc ReportPendingWork(ReportPendingWorkRequest) returns (ReportPendingWorkResponse);
 
   // GetCurrentVault is which vault this window has in front of the person. Two
   // windows are open on one installation and each shows what it shows, so it is
@@ -122,14 +122,14 @@ enum Unit {
   UNIT_SECONDS = 3;
 }
 
-message WatchQuitRequest {
+message WatchWindowCloseRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
   string window = 1;
 }
 
-message WatchQuitResponse {
-  // What this caller answers ReportFlush with. The stream opens by saying it, so
+message WatchWindowCloseResponse {
+  // What this caller answers ReportPendingWork with. The stream opens by saying it, so
   // a caller knows it is listening before anything is asked of it.
   string token = 1;
 
@@ -152,7 +152,7 @@ enum FlushResult {
   FLUSH_RESULT_UNSAVED = 3;
 }
 
-message ReportFlushRequest {
+message ReportPendingWorkRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
   string window = 1;
@@ -165,7 +165,7 @@ message ReportFlushRequest {
   FlushResult result = 3;
 }
 
-message ReportFlushResponse {}
+message ReportPendingWorkResponse {}
 
 message GetCurrentVaultRequest {
   // The window this is asked of. A question naming another window than the one

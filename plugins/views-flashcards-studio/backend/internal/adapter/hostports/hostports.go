@@ -187,8 +187,8 @@ type Problems struct {
 	Vaults func(domain.VaultID) ports.HostVault
 }
 
-func (p Problems) GetParseProblems(ctx context.Context, id domain.VaultID) ([]domain.VaultProblem, error) {
-	return p.Vaults(id).Index.GetParseProblems(ctx)
+func (p Problems) ListParseProblems(ctx context.Context, id domain.VaultID) ([]domain.VaultProblem, error) {
+	return p.Vaults(id).Index.ListParseProblems(ctx)
 }
 
 // Logs opens the plugin's folder of a vault's store, which the answers are kept in.

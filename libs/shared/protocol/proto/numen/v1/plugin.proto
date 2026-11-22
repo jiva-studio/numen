@@ -219,7 +219,7 @@ message PluginReader {
 
 // PluginService lists the plugins the application has.
 service PluginService {
-  rpc GetPlugins(GetPluginsRequest) returns (GetPluginsResponse);
+  rpc ListPlugins(ListPluginsRequest) returns (ListPluginsResponse);
 }
 
 // PluginProcessService is the processes of the plugins, as a window shows and starts them.
@@ -234,9 +234,9 @@ service PluginProcessService {
   rpc RetryPlugin(RetryPluginRequest) returns (RetryPluginResponse);
 }
 
-message GetPluginsRequest {}
+message ListPluginsRequest {}
 
-message GetPluginsResponse {
+message ListPluginsResponse {
   repeated PluginInfo plugins = 1;
 }
 

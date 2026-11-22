@@ -78,12 +78,12 @@ type VaultIndex interface {
 	// EnsureIndexed starts reading the vault into the index when it is not there, and returns the index
 	// state. The work continues after it returns.
 	EnsureIndexed(ctx context.Context) (IndexState, error)
-	// WatchMoves signals that something moved in some vault, until ctx is done. It returns once the
+	// WatchIndexChanges signals that something moved in some vault, until ctx is done. It returns once the
 	// watch is active, and the channel closes when the watch ends.
-	WatchMoves(ctx context.Context) (<-chan Move, error)
+	WatchIndexChanges(ctx context.Context) (<-chan Move, error)
 	// Scan updates the index for the files named.
 	Scan(ctx context.Context, paths []string) error
-	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
+	ListParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 }
 
 // FileRange is a ranged read of a file: the text, where it begins in the file, and the file stat of

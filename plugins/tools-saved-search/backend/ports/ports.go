@@ -13,7 +13,7 @@ import (
 type Search interface {
 	StartSearch(ctx context.Context, start host.SearchStart) (string, error)
 	GetSearch(ctx context.Context, id string, read host.SearchRead) (host.SearchState, error)
-	RemoveSearch(ctx context.Context, id string) error
+	DeleteSearch(ctx context.Context, id string) error
 	ListSearchFunctions(ctx context.Context) (host.SearchFunctions, error)
 }
 

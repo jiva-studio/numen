@@ -508,7 +508,7 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	stream, err := f.canvas.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchWindowClose(listening, connect.NewRequest(&v1.WatchWindowCloseRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -539,7 +539,7 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			if _, err := f.canvas.ReportFlush(t.Context(), connect.NewRequest(&v1.ReportFlushRequest{
+			if _, err := f.canvas.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
 				Window: wire.Editor,
 				Token:  stream.Msg().GetToken(),
 				Result: v1.FlushResult_FLUSH_RESULT_WRITTEN,
@@ -586,7 +586,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	stream, err := f.canvas.WatchQuit(listening, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchWindowClose(listening, connect.NewRequest(&v1.WatchWindowCloseRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -635,7 +635,7 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 	t.Helper()
 
 	ctx, hangUp := context.WithCancel(t.Context())
-	stream, err := f.canvas.WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchWindowClose(ctx, connect.NewRequest(&v1.WatchWindowCloseRequest{Window: wire.Editor}))
 	if err != nil {
 		hangUp()
 		t.Fatal(err)
@@ -679,7 +679,7 @@ func (p *speaking) answerFlushes(handler func(token string) v1.FlushResult) {
 }
 
 func (p *speaking) sendFlush(token string, response v1.FlushResult) {
-	_, err := p.f.canvas.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
+	_, err := p.f.canvas.ReportPendingWork(context.Background(), connect.NewRequest(&v1.ReportPendingWorkRequest{
 		Window: wire.Editor,
 		Token:  token,
 		Result: response,

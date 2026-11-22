@@ -14,7 +14,7 @@ import {
 } from '../../support/vault.js'
 
 const NOTES_PLUGIN_MANIFEST = '**/md.numen.notes/manifest.json'
-const WATCH_QUIT = '**/numen.v1.WindowService/WatchQuit'
+const WATCH_QUIT = '**/numen.v1.WindowService/WatchWindowClose'
 
 const flushFrames = (): Buffer => {
   const frame = (flags: number, message: object): Buffer => {
@@ -124,7 +124,7 @@ test.describe('The note tabs of the window after a restart', () => {
       await page.route(WATCH_QUIT, (route) =>
         route.fulfill({ contentType: 'application/connect+json', body: flushFrames() }),
       )
-      const reported = page.waitForRequest('**/numen.v1.WindowService/ReportFlush')
+      const reported = page.waitForRequest('**/numen.v1.WindowService/ReportPendingWork')
       await page.reload()
       await reported
       await expect(getNoteTab(page, path)).toBeVisible()

@@ -94,12 +94,12 @@ describe('the editors of a window', () => {
         createNote: async () => ({ error: NOTE_ERROR_CODE.INVALID_NAME }),
       },
       windowService: {
-        watchQuit: async function* (_req, context) {
+        watchWindowClose: async function* (_req, context) {
           signals.push(context.signal)
           yield { token: 'quit-1', flush: true }
           await new Promise((resolve) => context.signal.addEventListener('abort', resolve))
         },
-        reportFlush: async ({ token, result }) => {
+        reportPendingWork: async ({ token, result }) => {
           reported.push(`${token}:${result}`)
           return {}
         },

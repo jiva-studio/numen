@@ -34,7 +34,7 @@ export function createTabsPart(deps: TabsPartDeps) {
   const { tabLinks: tabLinksApi, tabMove } = api.tabs
   const pluginStarts = createTabPluginStarts({
     status,
-    getPlugins: () => deps.rest.state.plugins.value,
+    listPlugins: () => deps.rest.state.plugins.value,
     writeMessage,
   })
   const windowTabs = createWindowTabs(

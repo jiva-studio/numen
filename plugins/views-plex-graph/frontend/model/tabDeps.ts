@@ -43,7 +43,7 @@ export function createPlexTabDeps(
       join: (from, to, side) => relations.join(from, to, side),
       getConnection: (first, second, type) => relations.getConnection(first, second, type),
       saveConnection: (connection) => relations.saveConnection(connection),
-      removeConnection: (first, second, type) => relations.removeConnection(first, second, type),
+      deleteConnection: (first, second, type) => relations.deleteConnection(first, second, type),
     },
     creatable: relations.roles,
     window: {

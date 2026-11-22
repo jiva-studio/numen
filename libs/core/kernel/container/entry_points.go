@@ -97,7 +97,7 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	api.Vaults = &vaultList
 	api.ResolveLinks = query.NewResolveVaultLinks(ports.Vaults, query.NewResolveLinks(db.NoteQueries()))
 	api.SetVaultIndexer(ctx, vaults.IndexVault)
-	hooks := pluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
+	hooks := pluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchIndexChanges}
 	if err := installPluginVault(install, vaultDeps, ports, db, getNoShownVault, hooks); err != nil {
 		return closers, err
 	}

@@ -11,11 +11,11 @@ import { createFocusApi } from './focus'
 import { createShownVaultApi } from './shownVault'
 
 const request = {
-  reportFlush: vi.fn(),
+  reportPendingWork: vi.fn(),
   watchFocus: vi.fn(),
   watchTasks: vi.fn(),
   cancelTask: vi.fn(),
-  watchQuit: vi.fn(),
+  watchWindowClose: vi.fn(),
   getCurrentVault: vi.fn(),
 }
 
@@ -33,9 +33,9 @@ beforeEach(() => {
 
 describe('a flush reported', () => {
   it('says nothing was left where the window had nothing unsaved', async () => {
-    await getApi().reportFlush('token-1')
+    await getApi().reportPendingWork('token-1')
 
-    expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
+    expect(request.reportPendingWork.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
       token: 'token-1',
       result: FLUSH_RESULT.NOTHING,
@@ -43,9 +43,9 @@ describe('a flush reported', () => {
   })
 
   it('says what the window wrote', async () => {
-    await getApi().reportFlush('token-1', 'written')
+    await getApi().reportPendingWork('token-1', 'written')
 
-    expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
+    expect(request.reportPendingWork.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
       token: 'token-1',
       result: FLUSH_RESULT.WRITTEN,
@@ -99,7 +99,7 @@ describe('the streams a window follows', () => {
   })
 
   it('follows a quit requested of this window', async () => {
-    request.watchQuit.mockImplementation(async function* (_req, context) {
+    request.watchWindowClose.mockImplementation(async function* (_req, context) {
       yield { token: 'token-9', flush: true }
       if (!context.signal.aborted) {
         yield { token: 'token-10', flush: false }
@@ -109,14 +109,14 @@ describe('the streams a window follows', () => {
     const seen: object[] = []
 
     await (async () => {
-      for await (const item of getApi().watchQuit(controller.signal)) {
+      for await (const item of getApi().watchWindowClose(controller.signal)) {
         seen.push(item)
         controller.abort()
       }
     })().catch(() => undefined)
 
     expect(seen).toStrictEqual([{ token: 'token-9', flush: true }])
-    expect(request.watchQuit.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
+    expect(request.watchWindowClose.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
   })
 
   it('notifies the work under way, counted in what each counts', async () => {

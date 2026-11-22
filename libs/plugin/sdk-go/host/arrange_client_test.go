@@ -76,10 +76,10 @@ func (a *fakeArrangeHost) RemoveNotes(
 	}}), nil
 }
 
-func (a *fakeArrangeHost) GetVaultProblems(
-	_ context.Context, req *connect.Request[v1.GetVaultProblemsRequest],
-) (*connect.Response[v1.GetVaultProblemsResponse], error) {
-	return connect.NewResponse(&v1.GetVaultProblemsResponse{
+func (a *fakeArrangeHost) ListVaultProblems(
+	_ context.Context, req *connect.Request[v1.ListVaultProblemsRequest],
+) (*connect.Response[v1.ListVaultProblemsResponse], error) {
+	return connect.NewResponse(&v1.ListVaultProblemsResponse{
 		Checks: req.Msg.GetChecks(),
 		Problems: []*v1.HostVaultProblem{{
 			Path: "Deltas.md", Check: "ambiguous", Detail: "Danube matches two notes",
