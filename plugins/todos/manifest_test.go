@@ -2,6 +2,7 @@ package viewstodos
 
 import (
 	"encoding/json"
+	"maps"
 	"slices"
 	"testing"
 )
@@ -20,8 +21,9 @@ type manifestShape struct {
 		} `json:"slots"`
 	} `json:"contributes"`
 	Settings []struct {
-		Key  string `json:"key"`
-		Type string `json:"type"`
+		Key   string `json:"key"`
+		Type  string `json:"type"`
+		Group string `json:"group"`
 	} `json:"settings"`
 }
 
@@ -77,5 +79,23 @@ func TestTheManifestDeclaresTheSettings(t *testing.T) {
 	}
 	if settings[0].Type != "list" {
 		t.Errorf("ignoredFolders type = %q, want list", settings[0].Type)
+	}
+}
+
+func TestTheSettingsAreGroupedForTheSettingsPage(t *testing.T) {
+	got := map[string]string{}
+	for _, setting := range readManifest(t).Settings {
+		got[setting.Key] = setting.Group
+	}
+	want := map[string]string{
+		"ignoredFolders": "tasks",
+		"hideFields":     "editor",
+		"showOverdue":    "widget",
+		"showToday":      "widget",
+		"showNextWeek":   "widget",
+		"showNoDate":     "widget",
+	}
+	if !maps.Equal(got, want) {
+		t.Errorf("setting groups = %v, want %v", got, want)
 	}
 }

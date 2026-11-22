@@ -141,9 +141,15 @@
   },
   "permissions": ["vault:read", "vault:write"],
   "services": ["md.numen.todos"],
+  "settingGroups": [
+    { "id": "tasks", "title": "Tasks" },
+    { "id": "editor", "title": "Editor" },
+    { "id": "widget", "title": "Widget" }
+  ],
   "settings": [
     {
       "key": "ignoredFolders",
+      "group": "tasks",
       "type": "list",
       "title": "Ignored folders",
       "description": "Folders whose notes are not searched for tasks",
@@ -152,6 +158,7 @@
     },
     {
       "key": "hideFields",
+      "group": "editor",
       "type": "boolean",
       "title": "Hide task markers until the line is edited",
       "description": "Hides due:, pri:, +, @ and # until the cursor is on the line",
@@ -160,6 +167,7 @@
     },
     {
       "key": "showOverdue",
+      "group": "widget",
       "type": "boolean",
       "title": "Overdue",
       "description": "Open tasks due before today, in the widget",
@@ -168,6 +176,7 @@
     },
     {
       "key": "showToday",
+      "group": "widget",
       "type": "boolean",
       "title": "Today",
       "description": "Open tasks due today, in the widget",
@@ -176,6 +185,7 @@
     },
     {
       "key": "showNextWeek",
+      "group": "widget",
       "type": "boolean",
       "title": "Next 7 days",
       "description": "Open tasks due in the next days, in the widget",
@@ -184,6 +194,7 @@
     },
     {
       "key": "showNoDate",
+      "group": "widget",
       "type": "boolean",
       "title": "No date",
       "description": "Open tasks with no due date, in the widget",

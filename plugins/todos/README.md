@@ -73,8 +73,18 @@ Assistants connected to your vault can list, add, tick, edit and remove tasks (`
 
 ## Settings
 
+The settings page shows them in three groups.
+
+**Tasks**
+
 - **Ignored folders**: Folders whose notes are not searched for tasks. Empty by default.
+
+**Editor**
+
 - **Hide task markers until the line is edited**: Shows `due:`, `done:`, `pri:`, `+project`, `@context` and `#tag` only while the cursor is on the line. Off by default.
+
+**Widget**
+
 - **Overdue**: List and count open tasks due before today in the widget. On by default.
 - **Today**: List and count open tasks due today. On by default.
 - **Next 7 days**: List and count open tasks due in the six days after today. On by default.
