@@ -128,7 +128,7 @@ func TestRemovalReturnsUncodedErrorAsInternalAndRemovesOthers(t *testing.T) {
 func TestRenameReturnsUncodedErrorAsInternalWithTheDetail(t *testing.T) {
 	client, _ := newBrokenClient(t)
 
-	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{Path: brokenPath, Title: "Mended"}))
+	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: brokenPath, Title: "Mended"}))
 	if err != nil {
 		t.Fatalf("the rename failed as a whole: %v", err)
 	}
@@ -141,7 +141,7 @@ func TestRenameReturnsUncodedErrorAsInternalWithTheDetail(t *testing.T) {
 func TestRejectedRenameReturnsTheCoreTextInDetail(t *testing.T) {
 	client, _ := newBrokenClient(t)
 
-	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{Path: "Nowhere.md", Title: "Elsewhere"}))
+	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Nowhere.md", Title: "Elsewhere"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func TestRejectedRenameReturnsTheCoreTextInDetail(t *testing.T) {
 func TestRenameThatSucceedsReturnsNoDetail(t *testing.T) {
 	client, _ := newBrokenClient(t)
 
-	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
+	res, err := client.RenameNote(t.Context(), connect.NewRequest(&v1.HostNoteServiceRenameNoteRequest{Path: "Danube.md", Title: "Donau"}))
 	if err != nil {
 		t.Fatal(err)
 	}

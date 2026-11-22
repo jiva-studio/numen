@@ -1022,7 +1022,7 @@ var File_numen_v1_hostlink_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostlink_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/hostlink.proto\x12\bnumen.v1\x1a\x17numen/v1/hostfile.proto\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\"\xfa\x02\n" +
+	"\x17numen/v1/hostlink.proto\x12\bnumen.v1\x1a\x13numen/v1/note.proto\x1a\x15numen/v1/shared.proto\"\xfa\x02\n" +
 	"\bHostLink\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\x12\x19\n" +
@@ -1189,7 +1189,6 @@ func file_numen_v1_hostlink_proto_init() {
 	if File_numen_v1_hostlink_proto != nil {
 		return
 	}
-	file_numen_v1_hostfile_proto_init()
 	file_numen_v1_note_proto_init()
 	file_numen_v1_shared_proto_init()
 	type x struct{}

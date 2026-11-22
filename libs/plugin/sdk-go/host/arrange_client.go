@@ -64,7 +64,7 @@ func readVault(v *v1.Vault) domain.Vault {
 }
 
 func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename, error) {
-	res, err := c.notes.RenameNote(ctx, request(c, &v1.RenameNoteRequest{Path: path, Title: title}))
+	res, err := c.notes.RenameNote(ctx, request(c, &v1.HostNoteServiceRenameNoteRequest{Path: path, Title: title}))
 	if err != nil {
 		return NoteRename{}, readError(err)
 	}

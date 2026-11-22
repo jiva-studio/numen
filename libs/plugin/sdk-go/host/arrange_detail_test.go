@@ -23,9 +23,9 @@ type noCodeErrorHost struct {
 }
 
 func (a *noCodeErrorHost) RenameNote(
-	context.Context, *connect.Request[v1.RenameNoteRequest],
-) (*connect.Response[v1.RenameNoteResponse], error) {
-	return connect.NewResponse(&v1.RenameNoteResponse{
+	context.Context, *connect.Request[v1.HostNoteServiceRenameNoteRequest],
+) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error) {
+	return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{
 		Error: v1.ErrorCode_ERROR_CODE_INTERNAL, Path: "Broken.md", Detail: diskFull,
 	}), nil
 }
@@ -161,9 +161,9 @@ type detailedRenaming struct {
 }
 
 func (a *detailedRenaming) RenameNote(
-	_ context.Context, req *connect.Request[v1.RenameNoteRequest],
-) (*connect.Response[v1.RenameNoteResponse], error) {
-	return connect.NewResponse(&v1.RenameNoteResponse{Error: a.code, Path: req.Msg.GetPath(), Detail: a.detail}), nil
+	_ context.Context, req *connect.Request[v1.HostNoteServiceRenameNoteRequest],
+) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error) {
+	return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{Error: a.code, Path: req.Msg.GetPath(), Detail: a.detail}), nil
 }
 
 func TestANoteErrorWithADetailHasTheDetailAsItsText(t *testing.T) {

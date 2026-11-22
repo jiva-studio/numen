@@ -45,7 +45,7 @@ service HostNoteService {
 
   // RenameNote renames a note and moves its file to the filename of
   // that title, repairing the links that stop resolving. It needs vault:write.
-  rpc RenameNote(RenameNoteRequest) returns (RenameNoteResponse);
+  rpc RenameNote(HostNoteServiceRenameNoteRequest) returns (HostNoteServiceRenameNoteResponse);
 
   // MoveNotes moves notes to another folder, keeping their filenames, and
   // repairs the links that stop resolving. It needs vault:write.
@@ -150,6 +150,27 @@ message NoteFrontmatter {
   // source_id is the number the index keeps the file under. It stays the same
   // when the file moves.
   int64 source_id = 3;
+}
+
+message HostNoteServiceRenameNoteRequest {
+  // The note to rename.
+  string path = 1;
+  // What the note is called from now on. The file is named after it.
+  string title = 2;
+}
+
+message HostNoteServiceRenameNoteResponse {
+  ErrorCode error = 1;
+  // Where the note is filed after the rename.
+  string path = 2;
+  // What the note is called.
+  string title = 3;
+  // Which of the three names the note, and so which the rename brought into line.
+  NameSource name_source = 4;
+  // What the file did. Absent when it kept its position.
+  optional MoveResult moved = 5;
+  // The text of the error where it carries more than the code does.
+  string detail = 6;
 }
 
 message HostNoteServiceMoveNotesRequest {

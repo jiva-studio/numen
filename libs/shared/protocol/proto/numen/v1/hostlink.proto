@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package numen.v1;
 
-import "numen/v1/hostfile.proto";
 import "numen/v1/note.proto";
 import "numen/v1/shared.proto";
 

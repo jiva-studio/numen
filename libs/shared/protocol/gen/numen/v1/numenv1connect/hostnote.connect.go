@@ -82,7 +82,7 @@ type HostNoteServiceClient interface {
 	WriteFrontmatter(context.Context, *connect.Request[v1.WriteFrontmatterRequest]) (*connect.Response[v1.WriteFrontmatterResponse], error)
 	// RenameNote renames a note and moves its file to the filename of
 	// that title, repairing the links that stop resolving. It needs vault:write.
-	RenameNote(context.Context, *connect.Request[v1.RenameNoteRequest]) (*connect.Response[v1.RenameNoteResponse], error)
+	RenameNote(context.Context, *connect.Request[v1.HostNoteServiceRenameNoteRequest]) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error)
 	// MoveNotes moves notes to another folder, keeping their filenames, and
 	// repairs the links that stop resolving. It needs vault:write.
 	MoveNotes(context.Context, *connect.Request[v1.HostNoteServiceMoveNotesRequest]) (*connect.Response[v1.HostNoteServiceMoveNotesResponse], error)
@@ -138,7 +138,7 @@ func NewHostNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(hostNoteServiceMethods.ByName("WriteFrontmatter")),
 			connect.WithClientOptions(opts...),
 		),
-		renameNote: connect.NewClient[v1.RenameNoteRequest, v1.RenameNoteResponse](
+		renameNote: connect.NewClient[v1.HostNoteServiceRenameNoteRequest, v1.HostNoteServiceRenameNoteResponse](
 			httpClient,
 			baseURL+HostNoteServiceRenameNoteProcedure,
 			connect.WithSchema(hostNoteServiceMethods.ByName("RenameNote")),
@@ -167,7 +167,7 @@ type hostNoteServiceClient struct {
 	getPathsOfType   *connect.Client[v1.GetPathsOfTypeRequest, v1.GetPathsOfTypeResponse]
 	readFrontmatter  *connect.Client[v1.ReadFrontmatterRequest, v1.ReadFrontmatterResponse]
 	writeFrontmatter *connect.Client[v1.WriteFrontmatterRequest, v1.WriteFrontmatterResponse]
-	renameNote       *connect.Client[v1.RenameNoteRequest, v1.RenameNoteResponse]
+	renameNote       *connect.Client[v1.HostNoteServiceRenameNoteRequest, v1.HostNoteServiceRenameNoteResponse]
 	moveNotes        *connect.Client[v1.HostNoteServiceMoveNotesRequest, v1.HostNoteServiceMoveNotesResponse]
 	removeNotes      *connect.Client[v1.HostNoteServiceRemoveNotesRequest, v1.HostNoteServiceRemoveNotesResponse]
 }
@@ -203,7 +203,7 @@ func (c *hostNoteServiceClient) WriteFrontmatter(ctx context.Context, req *conne
 }
 
 // RenameNote calls numen.v1.HostNoteService.RenameNote.
-func (c *hostNoteServiceClient) RenameNote(ctx context.Context, req *connect.Request[v1.RenameNoteRequest]) (*connect.Response[v1.RenameNoteResponse], error) {
+func (c *hostNoteServiceClient) RenameNote(ctx context.Context, req *connect.Request[v1.HostNoteServiceRenameNoteRequest]) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error) {
 	return c.renameNote.CallUnary(ctx, req)
 }
 
@@ -237,7 +237,7 @@ type HostNoteServiceHandler interface {
 	WriteFrontmatter(context.Context, *connect.Request[v1.WriteFrontmatterRequest]) (*connect.Response[v1.WriteFrontmatterResponse], error)
 	// RenameNote renames a note and moves its file to the filename of
 	// that title, repairing the links that stop resolving. It needs vault:write.
-	RenameNote(context.Context, *connect.Request[v1.RenameNoteRequest]) (*connect.Response[v1.RenameNoteResponse], error)
+	RenameNote(context.Context, *connect.Request[v1.HostNoteServiceRenameNoteRequest]) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error)
 	// MoveNotes moves notes to another folder, keeping their filenames, and
 	// repairs the links that stop resolving. It needs vault:write.
 	MoveNotes(context.Context, *connect.Request[v1.HostNoteServiceMoveNotesRequest]) (*connect.Response[v1.HostNoteServiceMoveNotesResponse], error)
@@ -360,7 +360,7 @@ func (UnimplementedHostNoteServiceHandler) WriteFrontmatter(context.Context, *co
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostNoteService.WriteFrontmatter is not implemented"))
 }
 
-func (UnimplementedHostNoteServiceHandler) RenameNote(context.Context, *connect.Request[v1.RenameNoteRequest]) (*connect.Response[v1.RenameNoteResponse], error) {
+func (UnimplementedHostNoteServiceHandler) RenameNote(context.Context, *connect.Request[v1.HostNoteServiceRenameNoteRequest]) (*connect.Response[v1.HostNoteServiceRenameNoteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostNoteService.RenameNote is not implemented"))
 }
 
