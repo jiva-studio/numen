@@ -43,9 +43,9 @@ func (s *scriptedCalls) Call(_ context.Context, pluginID string, request modelca
 
 func newClient(t *testing.T, calls *scriptedCalls, options ...connect.ClientOption) numenv1connect.ConnectionCallServiceClient {
 	t.Helper()
-	service := connectioncall.NewService(nil, nil, searchcancel.NewSearches(testsupport.GetMachine()))
+	var service numenv1connect.ConnectionCallServiceHandler = connectioncall.NewService(nil, nil, searchcancel.NewSearches(testsupport.GetMachine()))
 	if calls != nil {
-		service = connectioncall.NewService(calls, calls, searchcancel.NewSearches(testsupport.GetMachine()))
+		service = connectioncall.NewHandler(calls, calls, searchcancel.NewSearches(testsupport.GetMachine()))
 	}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(service))
@@ -254,7 +254,7 @@ func (b *blockingCalls) Call(ctx context.Context, _ string, _ modelcall.Request,
 
 func TestCancelCallEndsTheRunningCallOfThePluginWithTheId(t *testing.T) {
 	calls := &blockingCalls{started: make(chan struct{})}
-	service := connectioncall.NewService(calls, calls, searchcancel.NewSearches(testsupport.GetMachine()))
+	service := connectioncall.NewHandler(calls, calls, searchcancel.NewSearches(testsupport.GetMachine()))
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(service))
 	server := httptest.NewServer(mux)

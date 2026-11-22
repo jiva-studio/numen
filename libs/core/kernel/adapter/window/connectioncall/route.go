@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 
 	shared "github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/connectioncall"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 )
 
@@ -19,7 +20,7 @@ func NewRoute(handler numenv1connect.ConnectionCallServiceHandler, counted conne
 
 // NewService returns the handler over the calls and the rows, or the handler that answers every call as
 // unimplemented where the installation has no calls.
-func NewService(calls shared.Calls, rows shared.Rows, cancels *searchcancel.Searches) numenv1connect.ConnectionCallServiceHandler {
+func NewService(calls shared.Calls, rows *modelcall.Rows, cancels *searchcancel.Searches) numenv1connect.ConnectionCallServiceHandler {
 	if calls == nil || rows == nil {
 		return numenv1connect.UnimplementedConnectionCallServiceHandler{}
 	}

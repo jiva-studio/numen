@@ -8,7 +8,6 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	windowconnection "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/connectioncall"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
@@ -121,7 +120,7 @@ func getForwardedCalls(types connectionport.Types, endpoint *hostendpoint.Servic
 	return modelcall.NewForwardedCalls(func() connectionport.ModelCalls { return endpoint.GetModelCalls() })
 }
 
-func openRowLists(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) connectioncall.Rows {
+func openRowLists(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) *modelcall.Rows {
 	deps, ok := openConnectionDeps(install, exec, settingsDeps, vaultDeps)
 	if !ok {
 		return nil
