@@ -632,8 +632,16 @@ describe('item with multiple actions', () => {
           id: 'names',
           title: 'Names',
           items: [
-            { id: 'chat', title: 'Open agent chat', keys: { icons: ['control', 'shift'], letter: 'A' } },
-            { id: 'graph', title: 'Open plex graph', keys: { icons: ['command', 'shift'], letter: 'X' } },
+            {
+              id: 'chat',
+              title: 'Open agent chat',
+              keys: { icons: ['control', 'shift'], letter: 'A' },
+            },
+            {
+              id: 'graph',
+              title: 'Open plex graph',
+              keys: { icons: ['command', 'shift'], letter: 'X' },
+            },
           ],
         },
       ],
@@ -1060,5 +1068,27 @@ describe('the busy mark of the field', () => {
     await settle()
 
     expect(busy()).toBeNull()
+  })
+})
+
+describe('a line of text', () => {
+  it('emits the typed text on Enter when no row can be chosen', async () => {
+    const palette = mountPalette({ groups: [], modelValue: 'Kickoff' })
+    await settle()
+
+    await press('Enter')
+
+    expect(palette.emitted('submit')).toEqual([['Kickoff']])
+    expect(palette.emitted('choose')).toBeUndefined()
+  })
+
+  it('chooses the lit row on Enter and submits nothing', async () => {
+    const palette = mountPalette()
+    await settle()
+
+    await press('Enter')
+
+    expect(palette.emitted('choose')).toHaveLength(1)
+    expect(palette.emitted('submit')).toBeUndefined()
   })
 })

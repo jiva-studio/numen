@@ -10,6 +10,8 @@
  * a toggle for the highlighted row, or a create for the row that makes an item from the typed text, and
  * the palette stays open.
  *
+ * Enter with no row to choose emits `submit` with the text as typed, for a step that is a line of text.
+ *
  * `data-palette` marks each part of the panel by name: the backdrop, `panel`, `crumb`,
  * `field`, `announcement`, `nothing`, `key` and `more`. The list below the field marks
  * its own parts.
@@ -71,6 +73,8 @@ const emit = defineEmits<{
   (event: 'toggle', id: string): void
   /** In the multiple step, the row that creates an item was chosen, with the text as typed. */
   (event: 'create', text: string): void
+  /** Enter was pressed with no row to choose; the text is as typed. */
+  (event: 'submit', text: string): void
   /** Requests that the palette close. */
   (event: 'dismiss'): void
 }>()
@@ -135,6 +139,7 @@ const { onKey } = usePaletteKeys({
   getOpensOn: () => props.opensOn,
   getOpenedFrom: () => props.from,
   goBack: () => emit('back'),
+  submit: () => emit('submit', searchQuery.value),
   dismiss: () => emit('dismiss'),
 })
 
@@ -143,9 +148,7 @@ const onActionKey = (event: KeyboardEvent): void => {
   if (props.multi && isActionsChord(event)) {
     event.preventDefault()
     active.chooseAt(here.value, false)
-    return
-  }
-  onKey(event)
+  } else onKey(event)
 }
 
 const onOver = (pos: number, event: PointerEvent) => {

@@ -26,6 +26,7 @@ export interface PaletteKeysOptions {
   readonly getOpensOn: () => string
   readonly getOpenedFrom: () => HTMLElement | null
   readonly goBack: () => void
+  readonly submit: () => void
   readonly dismiss: () => void
 }
 
@@ -51,6 +52,16 @@ interface KeyContext {
   readonly openActions: (event: KeyboardEvent) => void
 }
 
+/** Chooses the lit item, or the first one that can be chosen; with none to choose, the line is submitted. */
+function pressEnter(event: KeyboardEvent, context: KeyContext): void {
+  const pos =
+    context.active.here.value >= 0
+      ? context.active.here.value
+      : stepTo(context.places.places.value, { from: -1, by: 1 }, canLandOn)
+  if (pos < 0) context.options.submit()
+  else context.active.chooseAt(pos, event.shiftKey)
+}
+
 function handlePaletteKey(event: KeyboardEvent, context: KeyContext): void {
   if (isActionsChord(event)) {
     context.openActions(event)
@@ -66,11 +77,7 @@ function handlePaletteKey(event: KeyboardEvent, context: KeyContext): void {
 
   if (event.key === 'Enter') {
     event.preventDefault()
-    const pos =
-      context.active.here.value >= 0
-        ? context.active.here.value
-        : stepTo(context.places.places.value, { from: -1, by: 1 }, canLandOn)
-    context.active.chooseAt(pos, event.shiftKey)
+    pressEnter(event, context)
     return
   }
 
