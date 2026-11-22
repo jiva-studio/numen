@@ -112,8 +112,11 @@ func (u *SetTaskDone) write(ctx context.Context, req Request) (Result, error) {
 	line := req.Line
 	if req.IsProseLine {
 		hidden, err := todo.FrontmatterLines(raw)
-		if err != nil {
+		if errors.Is(err, todo.ErrUnreadable) {
 			return refuse(RefusalUnreadable), nil
+		}
+		if err != nil {
+			return Result{}, err
 		}
 		line += hidden
 	}
