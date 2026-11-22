@@ -1,4 +1,4 @@
-import { browserClock, measureRect, usePressDrag } from '@numen/ui'
+import { browserClock, measureRect, usePressDrag, type Clock } from '@numen/ui'
 import {
   clampRowOffset,
   getDropIndex,
@@ -16,6 +16,7 @@ interface Pressed {
   readonly group: SlotGroup
   readonly spans: readonly RowSpan[]
   readonly key: string
+  readonly keys: readonly string[]
   readonly startY: number
   readonly row: HTMLElement | null
 }
@@ -33,7 +34,7 @@ function measureSpans(list: Element | null | undefined): readonly RowSpan[] {
 /** What the drag of a row reads and writes: the rows of a slot and the place a row is moved to. */
 export interface SlotDragSource {
   readonly getRows: (group: SlotGroup) => readonly SlotRow[]
-  readonly move: (group: SlotGroup, from: number, to: number) => void
+  readonly move: (group: SlotGroup, from: number, to: number) => readonly SlotRow[]
 }
 
 /**
@@ -42,10 +43,16 @@ export interface SlotDragSource {
  * between slide aside. The list is marked from the press, before the first move, so the rows are on
  * their own layers by the time one of them is lifted.
  */
-export function useSlotDrag(source: SlotDragSource) {
-  const { settling, settle, finish } = useRowSettle()
+export function useSlotDrag(source: SlotDragSource, clock: Clock = browserClock) {
+  const { settling, settle, finish } = useRowSettle(clock)
   let pressed: Pressed | null = null
   let target = 0
+
+  const isStale = (): boolean => {
+    if (!pressed) return true
+    const keys = source.getRows(pressed.group).map((one) => one.key)
+    return keys.length !== pressed.keys.length || keys.some((one, at) => one !== pressed?.keys[at])
+  }
 
   const clearHeldRow = (): void => {
     pressed?.row?.style.removeProperty('transform')
@@ -53,7 +60,7 @@ export function useSlotDrag(source: SlotDragSource) {
 
   const drag = usePressDrag<number, number>({
     getThreshold: () => DRAG_THRESHOLD,
-    getClock: () => browserClock,
+    getClock: () => clock,
     getDropTargetAt: (from, point) => {
       if (!pressed) return null
       target = getDropIndex(pressed.spans, from, point.y - pressed.startY, target) ?? from
@@ -61,6 +68,10 @@ export function useSlotDrag(source: SlotDragSource) {
     },
     isPositionTracked: () => false,
     move: (from, point) => {
+      if (isStale()) {
+        drag.abort()
+        return
+      }
       if (!pressed?.row) return
       const offset = clampRowOffset(pressed.spans, from, point.y - pressed.startY)
       pressed.row.style.transform = `translate3d(0, ${offset}px, 0)`
@@ -68,22 +79,26 @@ export function useSlotDrag(source: SlotDragSource) {
     cancel: clearHeldRow,
     commit: (from, to, point) => {
       clearHeldRow()
-      if (!pressed || to === null) return
+      if (!pressed || to === null || isStale()) return
       const { group, spans, key, startY } = pressed
+      const moved = source.move(group, from, to)
+      const landed = moved.findIndex((one) => one.key === key)
       const offset =
-        clampRowOffset(spans, from, point.y - startY) - getLandingShift(spans, from, to)
+        clampRowOffset(spans, from, point.y - startY) -
+        getLandingShift(spans, from, landed < 0 ? to : landed)
       settle(key, offset)
-      source.move(group, from, to)
     },
   })
 
   const onGripPress = (group: SlotGroup, at: number, event: PointerEvent): void => {
     if (event.button !== 0) return
     const grip = event.currentTarget as HTMLElement | null
+    const keys = source.getRows(group).map((one) => one.key)
     pressed = {
       group,
       spans: measureSpans(grip?.closest('ul')),
-      key: source.getRows(group)[at]?.key ?? '',
+      key: keys[at] ?? '',
+      keys,
       startY: event.clientY,
       row: grip?.closest('li') ?? null,
     }
@@ -91,8 +106,8 @@ export function useSlotDrag(source: SlotDragSource) {
     drag.startPress(at, event)
   }
 
-  const onRowTransitionEnd = (event: TransitionEvent): void => {
-    if (event.target === event.currentTarget && event.propertyName === 'transform') finish()
+  const onRowTransitionEnd = (event: TransitionEvent, key: string): void => {
+    if (event.target === event.currentTarget && event.propertyName === 'transform') finish(key)
   }
 
   const isPressed = (group: SlotGroup): boolean =>
