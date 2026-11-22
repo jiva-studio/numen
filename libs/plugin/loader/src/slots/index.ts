@@ -7,6 +7,9 @@ export {
 } from './slotRegistry'
 export {
   applyLayout,
+  arrangeByLayout,
+  collapseSeparators,
+  SLOT_SEPARATOR_ID,
   readManifestSlotPoints,
   type DeclaredSlotPoint,
   type SlotLayout,

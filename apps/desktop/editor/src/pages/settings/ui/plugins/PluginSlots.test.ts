@@ -57,4 +57,76 @@ describe('the slots of a plugin page', () => {
       [{ 'plexGraph.nodeBelow': [{ id: 'a/view/one' }, { id: 'b/view/two', hidden: true }] }],
     ])
   })
+
+  describe('with a separator between two groups', () => {
+    const grouped = [
+      {
+        slot: 'titleBar.commands',
+        title: 'Actions',
+        contributors: [
+          { key: 'a/command/one', label: 'one', pluginName: 'Alpha', group: 'navigate' },
+          { key: 'b/command/two', label: 'two', pluginName: 'Beta', group: 'settings' },
+          { key: 'c/command/three', label: 'three', pluginName: 'Gamma', group: 'settings' },
+        ],
+      },
+    ]
+
+    it('draw a divider row with no handle and no switch', () => {
+      const page = mount(PluginSlots, { props: { groups: grouped, layout: undefined } })
+
+      expect(page.findAll('li')).toHaveLength(4)
+      expect(page.findAll('li hr')).toHaveLength(1)
+      expect(page.findAll('[aria-label^="Reorder"]')).toHaveLength(3)
+      expect(page.findAll('[aria-label^="Show"]')).toHaveLength(3)
+    })
+
+    it('store the whole arrangement when a grip moves a row across the separator', async () => {
+      const page = mount(PluginSlots, { props: { groups: grouped, layout: undefined } })
+
+      await page.get('[aria-label="Reorder two"]').trigger('keydown', { key: 'ArrowUp' })
+
+      expect(page.emitted('change')).toStrictEqual([
+        [
+          {
+            'titleBar.commands': [
+              { id: 'a/command/one' },
+              { id: 'b/command/two' },
+              { id: '---' },
+              { id: 'c/command/three' },
+            ],
+          },
+        ],
+      ])
+    })
+
+    it('drop the separator of a group a row leaves empty', async () => {
+      const page = mount(PluginSlots, {
+        props: {
+          groups: grouped,
+          layout: {
+            'titleBar.commands': [
+              { id: 'a/command/one' },
+              { id: '---' },
+              { id: 'b/command/two' },
+              { id: 'c/command/three' },
+            ],
+          },
+        },
+      })
+
+      await page.get('[aria-label="Reorder one"]').trigger('keydown', { key: 'ArrowDown' })
+
+      expect(page.emitted('change')).toStrictEqual([
+        [
+          {
+            'titleBar.commands': [
+              { id: 'a/command/one' },
+              { id: 'b/command/two' },
+              { id: 'c/command/three' },
+            ],
+          },
+        ],
+      ])
+    })
+  })
 })

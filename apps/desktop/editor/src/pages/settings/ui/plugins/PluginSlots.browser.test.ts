@@ -18,7 +18,26 @@ const groups = [
   },
 ]
 
+const withSeparator = [
+  {
+    slot: 'titleBar.commands',
+    title: 'Actions',
+    contributors: [
+      ['one', 'a'],
+      ['two', 'a'],
+      ['three', 'b'],
+      ['four', 'b'],
+    ].map(([label, group]) => ({
+      key: `a/command/${label}`,
+      label: label!,
+      pluginName: 'Alpha',
+      group,
+    })),
+  },
+]
+
 let host: HTMLElement | null = null
+let stored: JsonValue | undefined
 let renders = 0
 
 afterEach(() => {
@@ -26,19 +45,21 @@ afterEach(() => {
   host = null
 })
 
-function mountSlots(): HTMLElement {
+function mountSlots(shown: typeof groups = groups): HTMLElement {
   host = document.createElement('div')
   host.style.width = '420px'
   document.body.append(host)
   renders = 0
+  stored = undefined
   const layout = shallowRef<JsonValue | undefined>(undefined)
   const app = createApp({
     render: () =>
       h(PluginSlots, {
-        groups,
+        groups: shown,
         layout: layout.value,
         onChange: (next: JsonValue) => {
           layout.value = next
+          stored = next
         },
       }),
   })
@@ -56,9 +77,9 @@ const rowsOf = (root: HTMLElement): HTMLElement[] =>
 
 const nextFrame = (): Promise<void> => new Promise((done) => requestAnimationFrame(() => done()))
 
-async function grab(root: HTMLElement) {
+async function grab(root: HTMLElement, at = 0) {
   const rows = rowsOf(root)
-  const grip = rows[0]!.querySelector('button')!.getBoundingClientRect()
+  const grip = rows[at]!.querySelector('button')!.getBoundingClientRect()
   const x = grip.left + grip.width / 2
   const y = grip.top + grip.height / 2
   const pitch = rows[1]!.getBoundingClientRect().top - rows[0]!.getBoundingClientRect().top
@@ -174,4 +195,49 @@ describe('the slots of a plugin dragged by a real pointer', () => {
       expect(findDiscontinuities(probe.stop())).toStrictEqual([])
     },
   )
+})
+
+describe('the slots of a plugin with a separator between two groups', () => {
+  const labelsOf = (root: HTMLElement): string[] =>
+    rowsOf(root).map((one) => one.querySelector('.plugin-slots__label')?.textContent ?? '|')
+
+  it('draw the separator as tall as a row', async () => {
+    const root = mountSlots(withSeparator)
+    await nextFrame()
+    const heights = rowsOf(root).map((one) => one.getBoundingClientRect().height)
+
+    expect(new Set(heights).size).toBe(1)
+  })
+
+  it('move a row into the other group when it is dragged across the separator', async () => {
+    const root = mountSlots(withSeparator)
+    await nextFrame()
+    const { pitch, moveTo } = await grab(root, 1)
+    for (let offset = 2; offset <= pitch * 1.6; offset += 2) await moveTo(offset)
+    await commands.pointer('up')
+    for (let frame = 0; frame < 40; frame++) await nextFrame()
+
+    expect(labelsOf(root)).toStrictEqual(['one', '|', 'two', 'three', 'four'])
+    expect(stored).toStrictEqual({
+      [withSeparator[0]!.slot]: [
+        { id: 'a/command/one' },
+        { id: '---' },
+        { id: 'a/command/two' },
+        { id: 'a/command/three' },
+        { id: 'a/command/four' },
+      ],
+    })
+  })
+
+  it('show no jump, flash or replaced row on any frame of a drag across the separator', async () => {
+    const root = mountSlots(withSeparator)
+    await nextFrame()
+    const probe = startProbe(root)
+    const { pitch, moveTo } = await grab(root, 1)
+    for (let offset = 1; offset <= pitch * 2 + 10; offset += 2) await moveTo(offset)
+    await commands.pointer('up')
+    for (let frame = 0; frame < 40; frame++) await nextFrame()
+
+    expect(findDiscontinuities(probe.stop())).toStrictEqual([])
+  })
 })

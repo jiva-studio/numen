@@ -41,12 +41,18 @@ describe('the slots a plugin draws', () => {
         slot: 'plexGraph.nodeBelow',
         title: 'Below a node',
         contributors: [
-          { key: 'org.example.names/view/names', label: 'Names', pluginId: 'org.example.names' },
-          { key: `${TAGS}/view/tags`, label: 'Tags', pluginId: TAGS },
+          {
+            key: 'org.example.names/view/names',
+            label: 'Names',
+            pluginId: 'org.example.names',
+            group: '',
+          },
+          { key: `${TAGS}/view/tags`, label: 'Tags', pluginId: TAGS, group: '' },
           {
             key: 'org.example.bare/view/bareView',
             label: 'Bare view',
             pluginId: 'org.example.bare',
+            group: '',
           },
         ],
       },
@@ -61,6 +67,11 @@ describe('the slots a plugin draws', () => {
       'Settings open',
       'Set tags',
     ])
+  })
+
+  it('carry the group of each entry', () => {
+    const buttons = groups(PLEX).find((one) => one.slot === 'titleBar.commands')
+    expect(buttons?.contributors.map((one) => one.group)).toContain('settings')
   })
 
   it('leave out a menu slot and a slot with no entries', () => {

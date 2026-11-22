@@ -53,6 +53,7 @@ type SlotGroupsReader = (pluginId: string) => readonly {
     readonly key: string
     readonly label: string
     readonly pluginId: string
+    readonly group?: string | undefined
   }[]
 }[]
 
@@ -167,6 +168,7 @@ function createInstallationSlots(deps: Pick<InstallationPluginDeps, 'rest' | 'ge
         contributors: group.contributors.map((one) => ({
           key: one.key,
           label: one.label,
+          group: one.group,
           pluginName: getPluginName(one.pluginId),
         })),
       })),

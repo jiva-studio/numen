@@ -18,10 +18,44 @@ export type SlotLayout = Readonly<
   Record<string, readonly { readonly id: string; readonly hidden?: boolean }[]>
 >
 
+/** The id a stored layout names a group separator by; no entry key is written this way. */
+export const SLOT_SEPARATOR_ID = '---'
+
+/** The entries a stored list names in its order, with its separators, then those it does not name in their order. */
+export function arrangeByLayout<T>(
+  defaults: readonly (T | null)[],
+  getKey: (one: T) => string,
+  stored: SlotLayout[string],
+): (T | null)[] {
+  if (stored.length === 0) return [...defaults]
+  const named = new Map<string, T>()
+  for (const one of defaults) if (one !== null) named.set(getKey(one), one)
+  const out = stored.flatMap(({ id }) => {
+    if (id === SLOT_SEPARATOR_ID) return [null]
+    const one = named.get(id)
+    named.delete(id)
+    return one === undefined ? [] : [one]
+  })
+  while (out.at(-1) === null) out.pop()
+  return [...out, ...named.values()]
+}
+
+/** The list without the separators that open it, close it or follow another. */
+export function collapseSeparators<T>(list: readonly T[], isSeparator: (one: T) => boolean): T[] {
+  const out: T[] = []
+  for (const one of list) {
+    if (isSeparator(one) && (out.length === 0 || isSeparator(out[out.length - 1] as T))) continue
+    out.push(one)
+  }
+  while (out.length > 0 && isSeparator(out[out.length - 1] as T)) out.pop()
+  return out
+}
+
 /**
- * What the plugin that draws a slot keeps of it: the hidden entries are left out, and the others are
- * drawn in the order of the list, within the group they are in. An entry the list does not name keeps
- * its place after those it names.
+ * What the plugin that draws a slot keeps of it. With no list, the entries stay as the groups draw them,
+ * separators between the groups. With a list, the entries and the separators it holds are drawn in its
+ * order and the hidden entries are left out; an entry the list does not name follows those it names, in
+ * its place among the others. A separator that opens the slot, closes it or follows another is not drawn.
  */
 export function applyLayout(
   items: readonly SlotItem[],
@@ -29,30 +63,14 @@ export function applyLayout(
 ): SlotItem[] {
   if (layout === undefined || layout.length === 0) return [...items]
   const hidden = new Set(layout.filter((one) => one.hidden).map((one) => one.id))
-  const position = new Map(layout.map((one, at) => [one.id, at]))
-  const rank = (item: SlotItem): number => position.get(item.key) ?? layout.length
-  const out: SlotItem[] = []
-  let run: SlotItem[] = []
-  const flush = () => {
-    out.push(...run.sort((a, b) => rank(a) - rank(b)))
-    run = []
-  }
-  for (const item of items) {
-    if (item.kind === 'separator') {
-      flush()
-      out.push(item)
-    } else if (!hidden.has(item.key)) {
-      run.push(item)
-    }
-  }
-  flush()
-  return out.filter((one, at) => one.kind !== 'separator' || isBetweenItems(out, at))
+  const defaults = items.map((one) => (one.kind === 'separator' ? null : one))
+  const arranged = arrangeByLayout(defaults, (one) => one.key, layout).filter(
+    (one) => one === null || !hidden.has(one.key),
+  )
+  return collapseSeparators(arranged, (one) => one === null).map(
+    (one, at): SlotItem => one ?? { kind: 'separator', key: `layout/separator/${at}` },
+  )
 }
-
-const isBetweenItems = (items: readonly SlotItem[], at: number): boolean =>
-  items.slice(0, at).some((one) => one.kind !== 'separator') &&
-  items.slice(at + 1).some((one) => one.kind !== 'separator') &&
-  items[at - 1]?.kind !== 'separator'
 
 export function readManifestSlotPoints(pluginId: string, manifest: Manifest): DeclaredSlotPoint[] {
   return (manifest.contributes?.slotPoints ?? []).map((one) => ({

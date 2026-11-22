@@ -60,7 +60,8 @@ export interface InstallationSettings {
 }
 
 /** One entry a slot holds, named by the key a stored layout refers to it by. */
-interface SlotContributor {
+export interface SlotContributor {
+  readonly group?: string | undefined
   readonly key: string
   readonly label: string
   readonly pluginName: string
@@ -166,7 +167,7 @@ export interface SelectChoice {
   readonly id: string
   readonly text: string
   readonly detail?: string
-  readonly group?: string
+  readonly group?: string | undefined
   readonly isDisabled?: boolean
 }
 

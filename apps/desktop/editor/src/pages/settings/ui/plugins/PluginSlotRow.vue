@@ -2,11 +2,11 @@
 /** One entry of a slot: the grip that drags it where the slot holds more than one, its name, the plugin it comes from and the switch that shows it. */
 import { GripVertical } from '@lucide/vue'
 import { Switch } from '@numen/ui'
-import type { SlotRow } from '../../lib/slotLayout'
+import type { EntryRow } from '../../lib/slotLayout'
 import { WORDS as words } from '../../words'
 
 const props = defineProps<{
-  row: SlotRow
+  row: EntryRow
   isMovable: boolean
 }>()
 

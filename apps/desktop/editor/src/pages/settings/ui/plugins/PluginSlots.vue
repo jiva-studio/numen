@@ -64,7 +64,9 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
         :style="getRowStyle(group, row.key, at)"
         @transitionend="onRowTransitionEnd"
       >
+        <hr v-if="row.kind === 'separator'" class="plugin-slots__separator" />
         <PluginSlotRow
+          v-else
           :row="row"
           :is-movable="group.contributors.length > 1"
           @grip-press="(event) => onGripPress(group, at, event)"
@@ -93,7 +95,16 @@ const rowsOf = (group: SlotGroup): readonly SlotRow[] => getSlotRows(group, prop
   display: flex;
   align-items: center;
   gap: 0.375rem;
+  box-sizing: border-box;
+  block-size: 1.75rem;
   padding-block: 0.125rem;
+}
+
+.plugin-slots__separator {
+  flex: 1 1 auto;
+  margin: 0;
+  border: none;
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
 }
 
 .plugin-slots__row--lifted,

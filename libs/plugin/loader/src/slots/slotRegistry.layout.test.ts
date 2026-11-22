@@ -114,3 +114,84 @@ describe('the layout of a slot while it is watched', () => {
     ])
   })
 })
+
+describe('the layout of a slot of commands in several groups', () => {
+  const BUTTONS = 'titleBar.commands'
+  const SEPARATOR = { id: '---' }
+  const one = { id: 'org.example.a/command/org.example.a:one' }
+  const two = { id: 'org.example.b/command/org.example.b:two' }
+  const three = { id: 'org.example.c/command/org.example.c:three' }
+  const grouped: readonly DeclaredSlotEntry[] = [
+    { pluginId: 'org.example.a', slot: BUTTONS, command: 'one', group: '0-navigate' },
+    { pluginId: 'org.example.b', slot: BUTTONS, command: 'two', group: '1-new' },
+    { pluginId: 'org.example.c', slot: BUTTONS, command: 'three', group: '2-settings' },
+  ]
+  const readBar = (
+    list: SlotLayout[string] | undefined,
+    extra: readonly DeclaredSlotEntry[] = [],
+  ) =>
+    createSlotRegistry({
+      getEntries: () => [...grouped, ...extra],
+      drawers: {
+        getPoints: () => [{ pluginId: DRAWER, slot: BUTTONS, title: 'Buttons', menu: false }],
+        getLayout: () => (list ? { [BUTTONS]: list } : undefined),
+      },
+      findCommand: (command) => ({ title: command }),
+      findView: () => undefined,
+    })
+      .getEntries(BUTTONS)
+      .map((entry) => (entry.kind === 'command' ? entry.command.split(':')[1] : '|'))
+
+  it('draws the groups with separators when nothing is stored', () => {
+    expect(readBar(undefined)).toStrictEqual(['one', '|', 'two', '|', 'three'])
+  })
+
+  it('draws the entries and the separators in the order of the list', () => {
+    expect(readBar([three, SEPARATOR, one, two])).toStrictEqual(['three', '|', 'one', 'two'])
+    expect(readBar([one, SEPARATOR, two, SEPARATOR, three])).toStrictEqual([
+      'one',
+      '|',
+      'two',
+      '|',
+      'three',
+    ])
+  })
+
+  it('moves an entry into another group by where the list puts it', () => {
+    expect(readBar([one, two, SEPARATOR, three])).toStrictEqual(['one', 'two', '|', 'three'])
+  })
+
+  it('draws no separator that opens the slot, closes it or follows another', () => {
+    expect(readBar([SEPARATOR, one, SEPARATOR, SEPARATOR, two, three, SEPARATOR])).toStrictEqual([
+      'one',
+      '|',
+      'two',
+      'three',
+    ])
+  })
+
+  it('leaves no separator for a group whose entries are all hidden', () => {
+    expect(readBar([one, SEPARATOR, { ...two, hidden: true }, SEPARATOR, three])).toStrictEqual([
+      'one',
+      '|',
+      'three',
+    ])
+  })
+
+  it('puts an entry the list does not name after the last group, in its order', () => {
+    const extra: DeclaredSlotEntry[] = [
+      { pluginId: 'org.example.d', slot: BUTTONS, command: 'four', group: '0-navigate' },
+    ]
+    expect(readBar([one, SEPARATOR, two, three, SEPARATOR], extra)).toStrictEqual([
+      'one',
+      '|',
+      'two',
+      'three',
+      'four',
+    ])
+  })
+
+  it('ignores a repeated entry and an id no plugin places', () => {
+    expect(readBar([two, { id: 'gone' }, two, one])).toStrictEqual(['two', 'one', 'three'])
+  })
+})

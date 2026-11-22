@@ -14,6 +14,7 @@ interface SlotContributor {
   readonly key: string
   readonly label: string
   readonly pluginId: string
+  readonly group: string
 }
 
 /** A slot a plugin draws and the views placed in it, in the order it draws them when nothing is stored. */
@@ -63,7 +64,16 @@ export function createSlotGroups(source: SlotGroupsSource) {
         contributors: sortSlotEntries(entries.filter((one) => one.slot === point.slot)).flatMap(
           (entry) => {
             const key = getEntryKey(entry)
-            return key ? [{ key, label: getLabel(entry), pluginId: entry.pluginId }] : []
+            return key
+              ? [
+                  {
+                    key,
+                    label: getLabel(entry),
+                    pluginId: entry.pluginId,
+                    group: entry.group ?? '',
+                  },
+                ]
+              : []
           },
         ),
       }))

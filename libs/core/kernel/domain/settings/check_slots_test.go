@@ -14,6 +14,7 @@ func TestSlotLayoutAccepted(t *testing.T) {
 		"plexGraph.nodeBelow": []any{
 			map[string]any{"id": "a/view/headings"},
 			map[string]any{"id": "b/view/related", "hidden": true},
+			map[string]any{"id": "---"},
 		},
 	}
 	if err := settings.CheckDeclared(declared, nil, layout); err != nil {
