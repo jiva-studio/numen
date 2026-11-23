@@ -27,16 +27,19 @@ type position struct {
 	state  []byte
 }
 
-// counted counts the bytes a body gave, to tell a body that ended early from a body that does not open.
+// counted counts the bytes a body gave and notes that it ended, to tell a body that ended early from a body that
+// does not open.
 type counted struct {
-	source io.Reader
-	count  int64
-	want   int64
+	source  io.Reader
+	count   int64
+	want    int64
+	isEnded bool
 }
 
 func (c *counted) Read(p []byte) (int, error) {
 	n, err := c.source.Read(p)
 	c.count += int64(n)
+	c.isEnded = c.isEnded || err != nil
 	return n, err
 }
 
@@ -52,7 +55,7 @@ func (r *run) stageStream(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	err = r.stageBody(ctx, &counted{source: body, count: 0, want: int64(r.in.BlobSize) - offset}, at)
+	err = r.stageBody(ctx, &counted{source: body, count: 0, want: int64(r.in.BlobSize) - offset, isEnded: false}, at)
 	return errors.Join(err, body.Close())
 }
 
@@ -174,7 +177,7 @@ func (r *run) getReadFailure(err error, body *counted) error {
 	if !errors.Is(err, blobcipher.ErrCannotOpen) {
 		return err
 	}
-	if body.count < body.want {
+	if body.isEnded && body.count < body.want {
 		return fmt.Errorf("the sync server stopped sending the file: %w", io.ErrUnexpectedEOF)
 	}
 	return fmt.Errorf("%w: %w", ErrIntegrity, err)

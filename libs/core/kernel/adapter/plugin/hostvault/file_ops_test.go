@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -278,5 +279,42 @@ func TestMoveFileAndRemoveFileRefuseAMissingPathAndAChangedFileBeforeTheyChangeA
 		if _, err := os.Stat(filepath.Join(v.Path, name)); err != nil {
 			t.Errorf("a refused call changed %s: %v", name, err)
 		}
+	}
+}
+
+func TestPlaceFileNeverShowsAReaderAFileThatIsNotWhole(t *testing.T) {
+	access, v, _ := fileOpsVault(t, nil)
+	content := strings.Repeat("0123456789abcdef", 1<<19)
+	stage(t, v, "ab.part", content)
+	target := filepath.Join(v.Path, "Delta.pdf")
+	var partial atomic.Int64
+	done := make(chan struct{})
+	stopped := make(chan struct{})
+	go func() {
+		defer close(stopped)
+		for {
+			select {
+			case <-done:
+				return
+			default:
+			}
+			if got, err := os.ReadFile(target); err == nil && string(got) != content {
+				partial.Add(1)
+			}
+		}
+	}()
+
+	_, err := access.Ops.PlaceFile(t.Context(), syncer, "ab.part", "Delta.pdf", domain.HashContent([]byte(content)), nil)
+	close(done)
+	<-stopped
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := partial.Load(); got != 0 {
+		t.Errorf("a reader saw a file that was not whole %d times while it was placed", got)
+	}
+	if got, readErr := os.ReadFile(target); readErr != nil || string(got) != content {
+		t.Errorf("the placed file holds %d bytes (%v), want the %d bytes of the staged file", len(got), readErr, len(content))
 	}
 }

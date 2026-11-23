@@ -269,6 +269,9 @@ const RemovalDelay = time.Second
 
 // Spy makes the host of this computer a host that writes down the calls that move the bytes of files, and returns it.
 func (c *Computer) Spy() *SpyHost {
+	if spy, isSpy := c.Host.(*SpyHost); isSpy {
+		return spy
+	}
 	spy := NewSpyHost(c.Host)
 	c.Host = spy
 	return spy
