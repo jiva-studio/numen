@@ -10,12 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/slowwatchtest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
 )
@@ -200,7 +199,7 @@ func TestCloud_ReadsNoChangesOfANewVaultAndRejectsAnInvalidRevision(t *testing.T
 }
 
 func TestCloud_WatchKeepsAStreamAliveLongerThanTheTimeoutOfTheRequestClient(t *testing.T) {
-	served := httptest.NewServer(newSlowWatchHandler(500 * time.Millisecond))
+	served := httptest.NewServer(slowwatchtest.NewHandler(500 * time.Millisecond))
 	t.Cleanup(served.Close)
 	hints := cloud.New(cloud.Config{
 		Address: served.URL, HTTP: &http.Client{Timeout: 100 * time.Millisecond}, Stream: &http.Client{},
@@ -300,30 +299,4 @@ func TestCloud_WatchSignsInOnceAndOpensAgainAfterAnUnauthenticatedOpen(t *testin
 	if refreshes != 1 {
 		t.Errorf("sign-ins = %d, want 1", refreshes)
 	}
-}
-
-type slowWatch struct {
-	syncv1connect.UnimplementedWatchServiceHandler
-
-	delay time.Duration
-}
-
-func newSlowWatchHandler(delay time.Duration) http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle(syncv1connect.NewWatchServiceHandler(slowWatch{delay: delay}))
-	return mux
-}
-
-func (s slowWatch) WatchChanges(ctx context.Context, _ *connect.Request[syncv1.WatchChangesRequest], stream *connect.ServerStream[syncv1.WatchChangesResponse]) error {
-	started := &syncv1.WatchChangesResponse{Event: &syncv1.WatchChangesResponse_Started{Started: &syncv1.Started{HeartbeatSeconds: 1}}}
-	if err := stream.Send(started); err != nil {
-		return err
-	}
-	select {
-	case <-time.After(s.delay):
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-	hint := &syncv1.WatchChangesResponse{Event: &syncv1.WatchChangesResponse_Hint{Hint: &syncv1.ChangeHint{VaultId: []byte("vault-of-16-byte"), Seq: 4}}}
-	return stream.Send(hint)
 }
