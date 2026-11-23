@@ -14,9 +14,7 @@ import (
 )
 
 var (
-	_ host.FileMover       = (*Vault)(nil)
-	_ host.FileRangeReader = (*Vault)(nil)
-	_ host.FilePlacer      = (*Vault)(nil)
+	_ host.FileMover = (*Vault)(nil)
 )
 
 type fileMove struct{ from, target string }

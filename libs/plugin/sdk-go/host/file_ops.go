@@ -36,20 +36,8 @@ type FileMover interface {
 	RemoveFile(ctx context.Context, path string, baseline *domain.FileStat) (RemoveFileResult, error)
 }
 
-// FileRangeReader reads bytes of any file as they are.
-type FileRangeReader interface {
-	ReadBytes(ctx context.Context, path string, start, length int64) (ByteRange, error)
-}
-
-// FilePlacer moves a file of the plugin's own store folder to a path of the vault in one atomic rename.
-type FilePlacer interface {
-	PlaceFile(ctx context.Context, name, path, expectedHash string, baseline *domain.FileStat) (domain.FileStat, error)
-}
-
 var (
-	_ FileMover       = (*Client)(nil)
-	_ FileRangeReader = (*Client)(nil)
-	_ FilePlacer      = (*Client)(nil)
+	_ FileMover = (*Client)(nil)
 )
 
 func (c *Client) MoveFile(ctx context.Context, from, to string, baseline *domain.FileStat) (MoveFileResult, error) {
