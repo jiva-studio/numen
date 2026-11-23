@@ -199,7 +199,7 @@ type ShareReader struct {
 }
 
 // GetShareResponse is the sharing of a folder: its state and its readers, the removed ones too. Error is why a share
-// does not take readers, empty when nothing is wrong.
+// accepts no readers, empty when nothing is wrong.
 type GetShareResponse struct {
 	State   ShareState    `json:"state"`
 	Readers []ShareReader `json:"readers"`

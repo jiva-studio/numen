@@ -17,7 +17,7 @@ const (
 )
 
 // executeReceived brings the changes of the owner into a received vault. It pushes nothing and asks the server for no
-// write. A share the owner ended is reported and comes back as share.ErrEnded.
+// write. A share the owner ended is reported and returned as share.ErrEnded.
 func (u *SyncVault) executeReceived(ctx context.Context, id domain.VaultID) error {
 	previous, err := u.deps.Progress.ReadStatus(ctx, id)
 	if err != nil {

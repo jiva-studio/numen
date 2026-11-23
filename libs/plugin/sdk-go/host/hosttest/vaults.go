@@ -276,7 +276,7 @@ func (v *Vault) find(id domain.VaultID) *Vault {
 	return &Vault{unknown: true, world: v.world}
 }
 
-// GetManagedBy returns the id of the plugin that manages the vault, and an empty string for a vault nobody manages.
+// GetManagedBy returns the id of the plugin that manages the vault, and an empty string for an unmanaged vault.
 func (v *Vault) GetManagedBy(id domain.VaultID) string {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()

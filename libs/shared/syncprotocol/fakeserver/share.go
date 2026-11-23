@@ -92,7 +92,7 @@ func (s *Server) checkShareKind(share *shareState, entry *syncv1.ShareLogEntry) 
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_REMOVE_READER:
 		problem = getRemoveReaderProblem(share, entry)
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_ROTATE:
-		if entry.GetEpoch() != share.epoch+1 || !hasSealsFor(entry, share.listActive(), nil) {
+		if entry.GetEpoch() != share.epoch+1 || !hasSealsFor(entry, share.listActiveMembers(), nil) {
 			problem = "a rotation is the next epoch with a seal for each reader"
 		}
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE, syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE,
@@ -114,7 +114,7 @@ func getRemoveReaderProblem(share *shareState, entry *syncv1.ShareLogEntry) stri
 		return "a removal is the next epoch"
 	case subject == nil || !subject.isActive():
 		return "the subject is not a reader"
-	case !hasSealsFor(entry, share.listActive(), subject):
+	case !hasSealsFor(entry, share.listActiveMembers(), subject):
 		return "a removal has a seal for each remaining reader"
 	}
 	return ""
@@ -135,7 +135,7 @@ func (s *Server) checkAddReader(share *shareState, entry *syncv1.ShareLogEntry) 
 		problem = "the owner is not a reader"
 	case member != nil && member.isActive():
 		problem = "the reader is a member"
-	case len(share.listActive()) >= syncprotocol.MaxShareSeals:
+	case len(share.listActiveMembers()) >= syncprotocol.MaxShareSeals:
 		problem = "the share has the most readers"
 	}
 	if problem != "" {
@@ -179,7 +179,7 @@ func applyShareEntry(share *shareState, entry *syncv1.ShareLogEntry) {
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_REMOVE_READER:
 		share.findMemberByRoot(entry.GetSubjectRootSignKey()).Removed = version
 	case syncv1.ShareLogKind_SHARE_LOG_KIND_CLOSE:
-		for _, member := range share.listActive() {
+		for _, member := range share.listActiveMembers() {
 			member.Removed = version
 		}
 		share.isClosed = true

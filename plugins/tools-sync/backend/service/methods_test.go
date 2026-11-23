@@ -29,7 +29,7 @@ func TestGetCode_MapsTheErrorsOfTheSubscriptionMethodsToTheCodesTheFrontendReads
 	}
 }
 
-func TestGetCodeAndGetText_TellTheRefusalsOfSharingFromTheOtherErrors(t *testing.T) {
+func TestGetCodeAndGetText_DistinguishShareErrorsFromOtherErrors(t *testing.T) {
 	for name, one := range map[string]struct {
 		err      error
 		wantCode server.ErrorCode
@@ -42,7 +42,7 @@ func TestGetCodeAndGetText_TellTheRefusalsOfSharingFromTheOtherErrors(t *testing
 		"no such share":         {err: share.ErrUnknownShare, wantCode: server.CodeNotFound, wantText: share.ErrUnknownShare.Error()},
 		"another error":         {err: errors.New("broken"), wantCode: server.CodeInternal, wantText: "broken"},
 		"changed identity":      {err: share.ErrChangedIdentity, wantCode: server.CodeFailedPrecondition, wantText: "This person has another identity than before"},
-		"refused by the server": {err: share.ErrReaderNotAdded, wantCode: server.CodeFailedPrecondition, wantText: "The reader could not be added; the person may not have signed in to Numen Sync yet"},
+		"refused by the server": {err: share.ErrReaderNotAdded, wantCode: server.CodeFailedPrecondition, wantText: "The reader could not be added; the reader may not have signed in to Numen Sync yet"},
 	} {
 		if got := getCode(one.err); got != one.wantCode {
 			t.Errorf("%s: code = %q, want %q", name, got, one.wantCode)

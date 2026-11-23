@@ -228,7 +228,7 @@ func TestGetShareBlobUrls_ReturnsOneDownloadForEachId(t *testing.T) {
 	}
 }
 
-func TestShareClient_MapsTheRefusalsOfTheServer(t *testing.T) {
+func TestShareClient_MapsServerErrors(t *testing.T) {
 	t.Parallel()
 	cases := map[string]struct {
 		err  error

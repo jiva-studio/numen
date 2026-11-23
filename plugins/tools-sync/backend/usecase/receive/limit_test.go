@@ -18,7 +18,7 @@ func (limitedShares) GetShareBlobUrls(_ context.Context, _ []byte, _ [][]byte) (
 	return nil, syncprotocol.RateLimitedError{RetryAfter: time.Minute}
 }
 
-func TestPullShare_StopsQuietlyWhenTheServerLimitsTheDownloadsAndTakesTheNoteOnTheNextPass(t *testing.T) {
+func TestPullShare_StopsOnDownloadLimitAndPullsNoteOnNextPass(t *testing.T) {
 	w := newWorld(t)
 	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
 	w.syncOwner(t)

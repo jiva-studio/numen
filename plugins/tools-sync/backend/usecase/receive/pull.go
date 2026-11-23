@@ -47,7 +47,7 @@ func NewPullShare(deps Deps) *PullShare { return &PullShare{base: base{deps: dep
 // the rule of three hashes: a file that differs from its base is left as it is and counted. It writes nothing to the
 // server. A share the owner ended stops the pass with ErrEnded and keeps the files.
 func (u *PullShare) Execute(ctx context.Context, id domain.VaultID) (transfer.PullResult, error) {
-	link, isReceived, err := u.readReceived(ctx, id)
+	link, isReceived, err := u.readReceivedLink(ctx, id)
 	if err != nil {
 		return transfer.PullResult{}, err
 	}
@@ -281,7 +281,7 @@ func (r *pullRun) verify(change *syncv1.ShareChange) error {
 	if !r.isSigned(change.GetChange(), metaHash) {
 		return errUnverified
 	}
-	return r.checkBelonging(change)
+	return r.checkMembership(change)
 }
 
 func getMetaHash(change *syncv1.ShareChange) ([32]byte, error) {
@@ -304,9 +304,9 @@ func (r *pullRun) isSigned(stored *syncv1.StoredRevision, metaHash [32]byte) boo
 		identity.VerifyForPlugin(author, syncprotocol.SignInPluginID, syncprotocol.GetRevisionMessageWithMetaHash(rev, metaHash), [64]byte(rev.GetSignature()))
 }
 
-// checkBelonging requires a change that left the share not to name it, and any other change to name it with an epoch
+// checkMembership requires a change that left the share not to name it, and any other change to name it with an epoch
 // the reader knows.
-func (r *pullRun) checkBelonging(change *syncv1.ShareChange) error {
+func (r *pullRun) checkMembership(change *syncv1.ShareChange) error {
 	rev := change.GetChange().GetRevision()
 	isOfShare := bytes.Equal(rev.GetShareRootId(), r.shareID)
 	if change.GetLeft() == isOfShare {

@@ -71,7 +71,7 @@ func (w *world) shareFolder(t *testing.T) {
 	}
 }
 
-func TestCreateShare_RewrapsOnlyTheFilesUnderTheFolderAndKeepsTheirBlobs(t *testing.T) {
+func TestCreateShare_RewrapsOnlyFilesInFolderAndReusesBlobs(t *testing.T) {
 	w := newWorld(t)
 	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
 	w.owner.WriteNote(owned, "Food/Dinner/Stew.md", "beef")
@@ -106,7 +106,7 @@ func TestCreateShare_RewrapsOnlyTheFilesUnderTheFolderAndKeepsTheirBlobs(t *test
 	}
 }
 
-func TestCreateShare_LeavesTheFilesOfTheOwnerAsTheyAreAndTheNextPassWritesNothing(t *testing.T) {
+func TestCreateShare_PreservesOwnerFilesAndNextPassWritesNothing(t *testing.T) {
 	w := newWorld(t)
 	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
 	w.syncOwner(t)
@@ -170,7 +170,7 @@ func TestCreateShare_RefusesTheWholeVaultNestingAReceivedVaultAndAVaultThatIsNot
 	}
 }
 
-func TestCreateShare_RefusesAFolderThatHoldsASharedFolderOnASecondComputerToo(t *testing.T) {
+func TestCreateShare_RejectsFolderContainingSharedFolderOnSecondComputer(t *testing.T) {
 	words := synctest.NewWords(t)
 	clock := synctest.NewClock(synctest.GetStart())
 	server := synctest.NewServer(t, clock, fakeserver.Config{})
@@ -208,7 +208,7 @@ func TestCreateShare_RefusesAReceivedVault(t *testing.T) {
 	}
 }
 
-func TestAFileWrittenUnderTheFolderAfterTheShareIsCommittedAsAShareRevisionAtTheCurrentEpoch(t *testing.T) {
+func TestFileAddedToFolderAfterShareIsCommittedAsShareRevisionAtCurrentEpoch(t *testing.T) {
 	w := newWorld(t)
 	w.shareFolder(t)
 	w.owner.WriteNote(owned, "Food/Bread.md", "flour")

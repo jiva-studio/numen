@@ -12,7 +12,7 @@ const (
 	otherPlugin = "md.numen.tools.link"
 )
 
-func TestCheckWrite_AllowsAnyCallerToAVaultNobodyManages(t *testing.T) {
+func TestCheckWrite_AllowsAnyCallerToUnmanagedVault(t *testing.T) {
 	t.Parallel()
 	for _, caller := range []string{"", syncPlugin, otherPlugin} {
 		if err := vaultdomain.CheckWrite("", caller); err != nil {

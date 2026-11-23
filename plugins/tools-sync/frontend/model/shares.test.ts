@@ -123,7 +123,7 @@ describe('the dialog of a shared folder', () => {
     view.setLabel('Anna')
     await view.add(false)
 
-    await view.stopSharing()
+    await view.stopShare()
 
     expect(view.invitation).toBe('')
   })
@@ -155,7 +155,7 @@ describe('the page of the shares received', () => {
     expect([view.shareName, view.ownerFingerprint]).toStrictEqual(['Food', 'EEEE FFFF'])
   })
 
-  it('tells why an invitation of another person is refused', async () => {
+  it('reports why an invitation for another reader is refused', async () => {
     const client = createClient({
       readInvitation: () => Promise.reject(new Error('This invitation is for another person')),
     })

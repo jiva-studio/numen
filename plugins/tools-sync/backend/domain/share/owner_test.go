@@ -108,7 +108,7 @@ func TestFindRoot_SkipsAClosedShareAndFindsTheShareOfAFileByItsFolder(t *testing
 	}
 }
 
-func TestCleanName_KeepsAVaultNameFromHoldingASeparator(t *testing.T) {
+func TestCleanName_RemovesSeparatorFromVaultName(t *testing.T) {
 	for name, want := range map[string]string{"Food": "Food", "a/b": "a_b", "": "Shared", "..": "Shared", " Food ": "Food"} {
 		if got := share.CleanName(name); got != want {
 			t.Errorf("CleanName(%q) = %q, want %q", name, got, want)

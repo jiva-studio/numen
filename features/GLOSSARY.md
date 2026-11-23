@@ -582,7 +582,7 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Is: A folder of a synced vault that its owner lets other people read. The folder is chosen with "Share..." on a folder of the file tree; the readers get changes of the folder only, never the rest of the vault.
 - States: shared with its readers; ended (the owner stopped sharing, or removed the reader).
 - Actions: "Share...", "Share", "Remove", "Stop sharing".
-- Texts: "A folder inside a shared folder cannot be shared", "A folder that holds a shared folder cannot be shared" (plugins/tools-sync/frontend/words.ts).
+- Texts: "A folder inside a shared folder cannot be shared", "A folder containing a shared folder cannot be shared" (plugins/tools-sync/frontend/words.ts).
 - Not: not a synced vault and not a copy. A person removed from a share keeps what they already have.
 
 ### reader

@@ -37,7 +37,7 @@ func TestOpenSealedBox_ReturnsThePlainSealedToTheBoxKey(t *testing.T) {
 	}
 }
 
-func TestSealToAccountBox_StaysUnderTheSealLimitForAnEpochKey(t *testing.T) {
+func TestSealToAccountBox_EpochKeyFitsSealLimit(t *testing.T) {
 	t.Parallel()
 	account := newAccount(t)
 	plain := make([]byte, 4+32)

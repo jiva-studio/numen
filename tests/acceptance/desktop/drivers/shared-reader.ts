@@ -153,11 +153,11 @@ export class SharedReaderDriver {
   }
 
   async expectNoVault(name: ReaderName, vault: string): Promise<void> {
-    const names = (await listVaults(this.require(name).scenario.page.request)).map((one) => one.name)
-    expect(names).not.toContain(vault)
+    const vaultNames = (await listVaults(this.require(name).scenario.page.request)).map((one) => one.name)
+    expect(vaultNames).not.toContain(vault)
   }
 
-  /** Makes a note in the vault through the window, as the editor does; the refusal of the core is what the reader is told. */
+  /** Makes a note in the vault through the window, as the editor does; the core refuses the write and the reader receives that refusal. */
   async createNote(name: ReaderName, vault: string, title: string): Promise<void> {
     const reader = this.require(name)
     const { request } = reader.scenario.page

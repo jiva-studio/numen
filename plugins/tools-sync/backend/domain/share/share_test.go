@@ -65,7 +65,7 @@ func TestCheckNesting_AcceptsAFolderApartFromTheSharedOnes(t *testing.T) {
 	}
 }
 
-func TestCheckNesting_RefusesTheWholeVaultTheFolderInsideAShareAndTheFolderThatHoldsOne(t *testing.T) {
+func TestCheckNesting_RejectsWholeVaultAndFolderNestedWithShare(t *testing.T) {
 	t.Parallel()
 	cases := map[string]struct {
 		folder string
@@ -89,7 +89,7 @@ func TestCheckNesting_RefusesTheWholeVaultTheFolderInsideAShareAndTheFolderThatH
 	}
 }
 
-func TestGetRelativePath_CutsTheFolderOffAFileUnderIt(t *testing.T) {
+func TestGetRelativePath_TrimsFolderPrefix(t *testing.T) {
 	t.Parallel()
 	for path, want := range map[string]string{"Food/Soup.md": "Soup.md", "Food/Dinner/Soup.md": "Dinner/Soup.md"} {
 		got, ok := share.GetRelativePath("Food", path)
@@ -192,7 +192,7 @@ func TestSealBody_OpensWithTheKeyTheShareAndTheEpochOnly(t *testing.T) {
 	}
 }
 
-func TestSealPreviousKey_GivesTheOlderKeyToTheHolderOfTheNewerOne(t *testing.T) {
+func TestSealPreviousKey_SealsOlderKeyForNewerKeyHolder(t *testing.T) {
 	t.Parallel()
 	older, newer, shareID := newKey(1), newKey(2), bytes.Repeat([]byte{3}, 16)
 	sealed, err := share.SealPreviousKey(rand.Reader, newer, older, shareID, 3)
@@ -283,7 +283,7 @@ func TestParseReaderCode_RefusesWhatIsNotACodeOfAVerifiedChain(t *testing.T) {
 	}
 }
 
-func TestInvitation_HoldsTheShareTheReaderFingerprintAndTheChainOfTheOwner(t *testing.T) {
+func TestInvitation_ContainsShareReaderFingerprintAndOwnerChain(t *testing.T) {
 	t.Parallel()
 	owner, reader := newChain(t), newChain(t)
 	want := share.Invitation{ShareRootID: bytes.Repeat([]byte{4}, 16), ReaderFingerprint: reader.Root().Fingerprint(), OwnerChain: owner.Bytes()}

@@ -112,7 +112,7 @@ func (c *Cloud) CreateCheckout(ctx context.Context) (string, error) {
 	return call(ctx, c, func() (string, error) { return c.subscription.CreateCheckout(ctx) })
 }
 
-// AppendShareLogEntry adds an entry to the member log of a share. A refused entry comes back not committed, with the
+// AppendShareLogEntry adds an entry to the member log of a share. A refused entry is returned uncommitted, with the
 // entry at the head of the log.
 func (c *Cloud) AppendShareLogEntry(ctx context.Context, entry *syncv1.ShareLogEntry) (*syncv1.AppendShareLogEntryResponse, error) {
 	return call(ctx, c, func() (*syncv1.AppendShareLogEntryResponse, error) { return c.shares.AppendShareLogEntry(ctx, entry) })

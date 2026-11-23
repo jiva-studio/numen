@@ -110,7 +110,7 @@ function report(work: Promise<unknown>): void {
       </li>
     </ul>
     <div v-if="isActive" class="share__actions">
-      <Button variant="outline" :disabled="state.isBusy" @click="report(state.stopSharing())">
+      <Button variant="outline" :disabled="state.isBusy" @click="report(state.stopShare())">
         {{ words.stopSharing }}
       </Button>
       <p class="share__note">{{ words.removedKeeps }}</p>

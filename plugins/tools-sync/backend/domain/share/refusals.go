@@ -16,7 +16,7 @@ var (
 	// ErrChangedIdentity means a label is used by a reader with another root and the caller has not confirmed.
 	ErrChangedIdentity = errors.New("this person has another identity than before")
 	// ErrReaderNotAdded means the server refused to add the reader and gave no reason: the root may have no account.
-	ErrReaderNotAdded = errors.New("the reader could not be added; the person may not have signed in to Numen Sync yet")
+	ErrReaderNotAdded = errors.New("the reader could not be added; the reader may not have signed in to Numen Sync yet")
 	// ErrNotForThisAccount means an invitation names the fingerprint of another reader.
 	ErrNotForThisAccount = errors.New("this invitation is for another person")
 	// ErrAlreadyReceived means this device holds the share already.

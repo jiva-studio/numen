@@ -146,7 +146,7 @@ func clone(entries []*syncv1.ShareLogEntry) []*syncv1.ShareLogEntry {
 	return copied
 }
 
-func TestFollower_TakesTheKeysOfEveryEpochTheReaderIsSealedAndTheNameOfTheShare(t *testing.T) {
+func TestFollower_ReadsEveryEpochKeyAndShareName(t *testing.T) {
 	w := newWorld(t)
 
 	position, err := w.follow(t, w.entries)

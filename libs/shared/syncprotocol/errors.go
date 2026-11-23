@@ -63,7 +63,7 @@ var (
 	// ErrShareExists means a share root with this id exists already.
 	ErrShareExists = errors.New("the share exists on the sync server")
 	// ErrReaderRefused means the server refused to add a reader. It gives no reason: the same answer covers a root no
-	// account has, the owner itself, a member already and a share that holds the most readers, so the call tells nobody
+	// account has, the owner itself, a member already and a share that holds the most readers, so the call does not reveal
 	// whether an account has a root key.
 	ErrReaderRefused = errors.New("the sync server refused to add the reader")
 )

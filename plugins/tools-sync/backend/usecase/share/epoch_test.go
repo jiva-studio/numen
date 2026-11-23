@@ -40,7 +40,7 @@ func (w *world) removeAfterReading(t *testing.T) []domainshare.Root {
 	return stale
 }
 
-func TestCommitRevisions_AnswersANoteSealedUnderAnOldEpochOfAShareWithAStaleEpoch(t *testing.T) {
+func TestCommitRevisions_ReturnsStaleEpochForNoteSealedAtOldEpoch(t *testing.T) {
 	w := newWorld(t)
 	stale := w.removeAfterReading(t)
 	in := transfer.CommitInput{
@@ -59,7 +59,7 @@ func TestCommitRevisions_AnswersANoteSealedUnderAnOldEpochOfAShareWithAStaleEpoc
 	}
 }
 
-func TestAPassThatSealedUnderAnOldEpochReadsTheSharesAgainAndCommitsAtTheNewEpoch(t *testing.T) {
+func TestPassSealedAtOldEpochReloadsSharesAndCommitsAtNewEpoch(t *testing.T) {
 	w := newWorld(t)
 	stale := w.removeAfterReading(t)
 	w.owner.WriteNote(owned, "Food/Bread.md", "flour")

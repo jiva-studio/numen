@@ -19,7 +19,7 @@ func (c changeFixture) managedVault() domain.Vault {
 	return managed
 }
 
-func TestAWriteToAVaultAnotherPluginManagesIsRefusedAndLeavesTheFileAsItWas(t *testing.T) {
+func TestWriteToVaultManagedByOtherPluginIsRefused(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Milk.md": "# Milk\n"})
 	managed := c.managedVault()
@@ -73,7 +73,7 @@ func TestTheManagingPluginWritesToItsVault(t *testing.T) {
 	}
 }
 
-func TestAnyCallerWritesToAVaultNobodyManages(t *testing.T) {
+func TestAnyCallerWritesToUnmanagedVault(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, nil)
 

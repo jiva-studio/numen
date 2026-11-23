@@ -93,7 +93,7 @@ export const ActiveWithReaders: Story = {
     await expect(within(readers).getByText('Anna')).toBeVisible()
     await expect(within(readers).getByRole('button', { name: 'Remove' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Stop sharing' })).toBeVisible()
-    await expect(canvas.getByText('A person you remove keeps what they already have.')).toBeVisible()
+    await expect(canvas.getByText('A removed reader keeps what the reader already has.')).toBeVisible()
   },
 }
 
@@ -106,7 +106,7 @@ export const FolderInsideSharedFolder: Story = {
 }
 
 export const ReaderNotSignedIn: Story = {
-  args: { state: createState({ refusal: 'The reader could not be added; the person may not have signed in to Numen Sync yet' }) },
+  args: { state: createState({ refusal: 'The reader could not be added; the reader may not have signed in to Numen Sync yet' }) },
   play: async ({ canvasElement }) => {
     const canvas = await fillAndShare(canvasElement)
     await expect(await canvas.findByRole('alert')).toHaveTextContent('could not be added')

@@ -1,4 +1,4 @@
-/** The person who shares folders with readers: the dialog of the owner, the pages of the readers and what the owner was told. */
+/** The person who shares folders with readers: the dialog of the owner, the pages of the readers and the messages the owner receives. */
 import { expect } from 'playwright/test'
 import type { IdentityDriver } from './identity.js'
 import type { Scenario } from './scenario.js'
@@ -19,7 +19,7 @@ export class SharingDriver {
 
   /**
    * The person copies the code of the reader, adds the reader in the dialog, compares the fingerprint of the reader on both
-   * sides, copies the invitation and the reader receives it. A dialog that refuses stops there and the person is told why.
+   * sides, copies the invitation and the reader receives it. A dialog that refuses stops there and shows the reason.
    */
   async shareFolder(folder: string, reader: ReaderName): Promise<void> {
     this.refusal = undefined

@@ -61,7 +61,7 @@ func TestOpenSealedBox_ReturnsErrCannotOpenForAnotherPluginContextAndChangedByte
 	}
 }
 
-func TestOpenSealedBox_ReturnsErrNoIdentityWhereTheDeviceHoldsNone(t *testing.T) {
+func TestOpenSealedBox_ReturnsErrNoIdentityWhenDeviceHasNoIdentity(t *testing.T) {
 	fake := accounttest.NewFake(t, pluginID)
 	fake.NoIdentity()
 	client := newClient(t, fake)

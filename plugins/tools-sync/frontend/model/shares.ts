@@ -150,7 +150,7 @@ export function createShareView(options: ShareViewOptions) {
       await load()
     })
 
-  const stopSharing = (): Promise<void> =>
+  const stopShare = (): Promise<void> =>
     guard(async () => {
       await client.stopShare(target)
       invitation.value = ''
@@ -177,7 +177,7 @@ export function createShareView(options: ShareViewOptions) {
     },
     add,
     removeReader,
-    stopSharing,
+    stopShare,
     stop: repeater.stop,
     close,
   })

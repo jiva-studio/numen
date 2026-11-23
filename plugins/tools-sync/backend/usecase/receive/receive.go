@@ -89,7 +89,7 @@ func (u *ListReceived) Execute(ctx context.Context) ([]Received, error) {
 	}
 	var listed []Received
 	for _, vault := range vaults {
-		link, isReceived, err := u.readReceived(ctx, vault.ID)
+		link, isReceived, err := u.readReceivedLink(ctx, vault.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -127,8 +127,8 @@ func (u *ListReceived) describe(ctx context.Context, vault domain.Vault, link va
 	}, nil
 }
 
-// readReceived returns the link of the vault when it is a received share.
-func (b base) readReceived(ctx context.Context, id domain.VaultID) (vaultlink.Link, bool, error) {
+// readReceivedLink returns the link of the vault when it is a received share.
+func (b base) readReceivedLink(ctx context.Context, id domain.VaultID) (vaultlink.Link, bool, error) {
 	link, err := b.deps.Links.ReadLink(ctx, id)
 	if err != nil {
 		if errors.Is(err, vaultlink.ErrNotConnected) {

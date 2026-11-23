@@ -52,14 +52,14 @@ func (b base) open(ctx context.Context, text string) (opened, error) {
 	return opened{invitation: invitation, ownerChain: ownerChain, reader: reader}, nil
 }
 
-// findReceived returns the vault that holds the share, when this computer received it already.
-func (b base) findReceived(ctx context.Context, shareID []byte) (domain.VaultID, vaultlink.Link, bool, error) {
+// findReceivedLink returns the vault that holds the share, when this computer received it already.
+func (b base) findReceivedLink(ctx context.Context, shareID []byte) (domain.VaultID, vaultlink.Link, bool, error) {
 	vaults, err := b.deps.Host.GetVaults(ctx)
 	if err != nil {
 		return "", vaultlink.Link{}, false, err
 	}
 	for _, vault := range vaults {
-		link, isReceived, err := b.readReceived(ctx, vault.ID)
+		link, isReceived, err := b.readReceivedLink(ctx, vault.ID)
 		if err != nil {
 			return "", vaultlink.Link{}, false, err
 		}
@@ -120,7 +120,7 @@ func (u *ReadInvitation) Execute(ctx context.Context, text string) (Preview, err
 	if err != nil {
 		return Preview{}, err
 	}
-	_, link, isReceived, err := u.findReceived(ctx, o.invitation.ShareRootID)
+	_, link, isReceived, err := u.findReceivedLink(ctx, o.invitation.ShareRootID)
 	if err != nil {
 		return Preview{}, err
 	}
@@ -168,11 +168,11 @@ func (u *AcceptInvitation) Execute(ctx context.Context, text string) (Accepted, 
 	if err != nil {
 		return Accepted{}, err
 	}
-	vaultID, link, isReceived, err := u.findReceived(ctx, o.invitation.ShareRootID)
+	vaultID, link, isReceived, err := u.findReceivedLink(ctx, o.invitation.ShareRootID)
 	if err != nil {
 		return Accepted{}, err
 	}
-	if err := checkReceived(link, isReceived, o); err != nil {
+	if err := checkReceivedLink(link, isReceived, o); err != nil {
 		return Accepted{}, err
 	}
 	read, err := u.follow(ctx, o)
@@ -185,9 +185,9 @@ func (u *AcceptInvitation) Execute(ctx context.Context, text string) (Accepted, 
 	return u.receive(ctx, o, read)
 }
 
-// checkReceived refuses a share received already and still running, and a share of another owner root than the
+// checkReceivedLink refuses a share received already and still running, and a share of another owner root than the
 // pinned one.
-func checkReceived(link vaultlink.Link, isReceived bool, o opened) error {
+func checkReceivedLink(link vaultlink.Link, isReceived bool, o opened) error {
 	if !isReceived {
 		return nil
 	}

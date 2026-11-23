@@ -48,4 +48,4 @@ Feature: Read a shared folder
 
     Scenario: A folder that holds a shared folder cannot be shared
       When the person shares the folder "Home" of the vault "Test" with the second reader
-      Then the person is told "A folder that holds a shared folder cannot be shared"
+      Then the person is told "A folder containing a shared folder cannot be shared"

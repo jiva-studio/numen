@@ -31,7 +31,7 @@ func newShareClientOf(e *env) *syncclient.ShareClient {
 	return syncclient.NewShareClient(e.address, http.DefaultClient, func() string { return e.token })
 }
 
-func newSharing(tb testing.TB) *sharing {
+func newSharingHarness(tb testing.TB) *sharing {
 	tb.Helper()
 	server, address := newServer(tb)
 	account := newOwnedAccount(tb)
@@ -111,7 +111,7 @@ func (s *sharing) commitShared(path string, epoch uint32, body []byte) (*syncv1.
 
 func TestShareService_CreateMakesAShareThatTheOwnerListsAtEpochZero(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 
 	s.create()
 
@@ -130,7 +130,7 @@ func TestShareService_CreateMakesAShareThatTheOwnerListsAtEpochZero(t *testing.T
 
 func TestShareService_CreateRefusesAnExistingIdAndAVaultOfAnotherAccount(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	again := s.newEntry(syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE, 0, nil)
 	again.Version, again.PrevHash = 1, nil
@@ -140,7 +140,7 @@ func TestShareService_CreateRefusesAnExistingIdAndAVaultOfAnotherAccount(t *test
 		t.Errorf("a second CREATE error = %v, want ErrShareExists", err)
 	}
 
-	foreign := newSharing(t)
+	foreign := newSharingHarness(t)
 	foreign.vault = s.vault
 	if _, err := foreign.tryAppend(foreign.newEntry(syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE, 0, nil)); !errors.Is(err, syncprotocol.ErrNoVault) {
 		t.Errorf("CREATE for a vault of another account: error = %v, want ErrNoVault", err)
@@ -149,7 +149,7 @@ func TestShareService_CreateRefusesAnExistingIdAndAVaultOfAnotherAccount(t *test
 
 func TestShareService_AnswersAStaleVersionWithTheHeadAndStoresNothing(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	stale := s.newEntry(syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE, 0, nil)
 	stale.Version, stale.PrevHash = 1, nil
@@ -168,7 +168,7 @@ func TestShareService_AnswersAStaleVersionWithTheHeadAndStoresNothing(t *testing
 
 func TestShareService_RefusesAnEntryNotSignedByADeviceOfTheOwner(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	entry := s.newEntry(syncv1.ShareLogKind_SHARE_LOG_KIND_CREATE, 0, nil)
 	entry.Signature[0] ^= 1
 
@@ -179,7 +179,7 @@ func TestShareService_RefusesAnEntryNotSignedByADeviceOfTheOwner(t *testing.T) {
 
 func TestShareService_AddReaderNeedsAnAccountOfTheRootAndExactlyOneSealForIt(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	stranger := bytes.Repeat([]byte{9}, 32)
 
@@ -197,7 +197,7 @@ func TestShareService_AddReaderNeedsAnAccountOfTheRootAndExactlyOneSealForIt(t *
 
 func TestShareService_AMemberReadsTheLogWithTheChainOfTheOwnerAndAStrangerGetsNoShare(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	s.addReader()
 
@@ -219,7 +219,7 @@ func TestShareService_AMemberReadsTheLogWithTheChainOfTheOwnerAndAStrangerGetsNo
 
 func TestShareService_ReaderReadsAShareWithoutASubscriptionAndMakesNoWriteCall(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	s.addReader()
 
@@ -242,7 +242,7 @@ func TestShareService_ReaderReadsAShareWithoutASubscriptionAndMakesNoWriteCall(t
 
 func TestShareService_RemoveReaderNeedsTheNextEpochAndASealForEachRemainingReader(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	s.addReader()
 	second := newSecondAccountOn(t, s.owner.address)
@@ -265,7 +265,7 @@ func TestShareService_RemoveReaderNeedsTheNextEpochAndASealForEachRemainingReade
 
 func TestShareService_ARemovedReaderGetsTheLogUpToItsRemovalAndShareEndedAfter(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	s.addReader()
 	s.removeReader()
@@ -287,7 +287,7 @@ func TestShareService_ARemovedReaderGetsTheLogUpToItsRemovalAndShareEndedAfter(t
 
 func TestShareService_CloseEndsEveryReaderAndTheLogAcceptsNothingAfterIt(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	s.addReader()
 	s.mustAppend(s.newEntry(syncv1.ShareLogKind_SHARE_LOG_KIND_CLOSE, 0, nil))
@@ -308,7 +308,7 @@ func TestShareService_CloseEndsEveryReaderAndTheLogAcceptsNothingAfterIt(t *test
 
 func TestShareService_ReaderFeedHasOnlyRevisionsOfTheShareAndNoVaultSeq(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	s.addReader()
 	shared, _ := s.commitShared("Food/milk.md", 0, []byte("milk"))
@@ -334,7 +334,7 @@ func TestShareService_ReaderFeedHasOnlyRevisionsOfTheShareAndNoVaultSeq(t *testi
 
 func TestShareService_AFileThatLeftIsServedAsItsSignedHeadWithoutMetaAndWithItsHash(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	s.addReader()
 	shared, _ := s.commitShared("Food/milk.md", 0, []byte("milk"))
@@ -373,7 +373,7 @@ func TestShareService_AFileThatLeftIsServedAsItsSignedHeadWithoutMetaAndWithItsH
 
 func TestShareService_ABlobUrlIsGivenForTheHeadOfAShareFileOnly(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	s.addReader()
 	shared, _ := s.commitShared("Food/milk.md", 0, []byte("milk"))
@@ -395,7 +395,7 @@ func TestShareService_ABlobUrlIsGivenForTheHeadOfAShareFileOnly(t *testing.T) {
 
 func TestCommitRevisions_RefusesAShareIdThatIsNotAnOpenShareOfTheVault(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	revision := s.owner.newFile(s.vault, newID(16), nil, "Food/milk.md", []byte("milk"))
 	revision.ShareRootId = newID(16)
 	s.owner.signRevision(revision)
@@ -417,7 +417,7 @@ func TestCommitRevisions_RefusesAShareIdThatIsNotAnOpenShareOfTheVault(t *testin
 
 func TestCommitRevisions_AnswersShareEpochForARevisionOfAnotherEpochAndStoresNothing(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	s.addReader()
 	s.removeReader()
@@ -441,7 +441,7 @@ func TestCommitRevisions_AnswersShareEpochForARevisionOfAnotherEpochAndStoresNot
 
 func TestCommitRevisions_KeepsTheBlobOfTheParentWithoutAReservation(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	s.create()
 	file := newID(16)
 	first := s.owner.newFile(s.vault, file, nil, "Food/milk.md", []byte("milk"))
@@ -464,9 +464,9 @@ func TestCommitRevisions_KeepsTheBlobOfTheParentWithoutAReservation(t *testing.T
 	}
 }
 
-func TestCommitRevisions_RefusesAKeptBlobWithAStaleParent(t *testing.T) {
+func TestCommitRevisions_RejectsRetainedBlobWithStaleParent(t *testing.T) {
 	t.Parallel()
-	s := newSharing(t)
+	s := newSharingHarness(t)
 	file := newID(16)
 	first := s.owner.newFile(s.vault, file, nil, "Food/milk.md", []byte("milk"))
 	s.owner.commit(s.vault, first)

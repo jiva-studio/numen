@@ -66,7 +66,7 @@ func (sh *shareState) findMemberByRoot(root []byte) *shareMember {
 	return nil
 }
 
-func (sh *shareState) listActive() []*shareMember {
+func (sh *shareState) listActiveMembers() []*shareMember {
 	var active []*shareMember
 	for _, member := range sh.members {
 		if member.isActive() {

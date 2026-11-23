@@ -69,7 +69,7 @@ func (w *world) pullWith(t *testing.T, id domain.VaultID, shares ports.Shares) e
 	return err
 }
 
-func TestPullShare_RefusesALogThatLacksTheLastEntryTheReaderHolds(t *testing.T) {
+func TestPullShare_RejectsLogMissingReaderLastEntry(t *testing.T) {
 	w := newWorld(t)
 	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
 	w.syncOwner(t)
@@ -90,7 +90,7 @@ func TestPullShare_RefusesALogThatLacksTheLastEntryTheReaderHolds(t *testing.T) 
 	}
 }
 
-func TestPullShare_RefusesALogWithAnotherEntryInPlaceOfTheOneTheReaderHolds(t *testing.T) {
+func TestPullShare_RejectsLogWithDifferentEntryAtReaderPosition(t *testing.T) {
 	w := newWorld(t)
 	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
 	w.syncOwner(t)
@@ -104,7 +104,7 @@ func TestPullShare_RefusesALogWithAnotherEntryInPlaceOfTheOneTheReaderHolds(t *t
 	}
 }
 
-func TestPullShare_ErrorsOnARevisionOfAnEpochAboveTheLogItHolds(t *testing.T) {
+func TestPullShare_ErrorsOnRevisionOfEpochAboveKnownLog(t *testing.T) {
 	w := newWorld(t)
 	w.owner.WriteNote(owned, "Food/Soup.md", "carrots")
 	w.syncOwner(t)

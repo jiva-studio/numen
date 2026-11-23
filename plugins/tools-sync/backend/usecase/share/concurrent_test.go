@@ -27,7 +27,7 @@ func (r *racingShares) AppendShareLogEntry(ctx context.Context, entry *syncv1.Sh
 	return r.Shares.AppendShareLogEntry(ctx, entry)
 }
 
-func TestRemoveReader_TheDeviceThatLosesTheRaceForTheNextEpochTakesTheKeyOfTheWinnerAndSealsAnewKeyOfItsOwn(t *testing.T) {
+func TestRemoveReader_LosingDeviceAdoptsWinnerKeyAndSealsNewKey(t *testing.T) {
 	words := synctest.NewWords(t)
 	clock := synctest.NewClock(synctest.GetStart())
 	server := synctest.NewServer(t, clock, fakeserver.Config{})
