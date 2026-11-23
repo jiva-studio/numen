@@ -16,7 +16,6 @@ import {
 import { asValue } from '@numen/result'
 import { createMockCommandsHost } from '@numen/plugin-sdk/testing'
 import { createPluginParts } from './context'
-import { disposeSubscriptions } from './guards/subscriptions'
 import type { PluginContextHost } from './types'
 import { createTestContextHost } from '../testing/contextHost'
 
@@ -352,7 +351,7 @@ describe('the registrations of a plugin in the open files', () => {
     context.host.vault.buffers!.track({} as never)
     context.host.vault.buffers!.addFlushHandler(vi.fn(() => Promise.resolve()))
     expect(context.plugin.identity.subscriptions).toHaveLength(2)
-    disposeSubscriptions(context.plugin.identity.subscriptions)
+    context.subscriptions.disposeAll()
 
     expect(released).toHaveBeenCalledTimes(2)
   })

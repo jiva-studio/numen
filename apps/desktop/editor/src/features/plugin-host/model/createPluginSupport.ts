@@ -1,6 +1,5 @@
 import {
   createAppInfo,
-  openExternalUrl,
   createPluginHost,
   NO_COMMANDS,
   NO_KINDS,
@@ -65,7 +64,6 @@ export function createPluginSupport(deps: PluginSupportDeps) {
         build: import.meta.env.VITE_NUMEN_BUILD,
         getPlatform: deps.getPlatform,
       }),
-      openExternal: openExternalUrl,
       onError: deps.reports.reportError,
     },
     plugins: {
@@ -97,6 +95,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   const pluginLoader = createPluginLoader({
     host: pluginHost.lifecycle,
     status,
+    styles: pluginHost.slotViews.styles,
     onError: deps.reports.reportLoadError,
   })
   return { pluginHost, pluginLoader }

@@ -2,8 +2,10 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, type Component } from 'vue'
-import { clearPluginStyles, registerPluginStyle } from '../styles'
+import { createPluginStyles } from '../styles'
 import { createSlotViewRegistry } from '../slot-views'
+
+const styles = createPluginStyles()
 
 const LEDGER = 'org.example.ledger'
 const BALANCE = defineComponent({
@@ -12,14 +14,14 @@ const BALANCE = defineComponent({
 })
 
 afterEach(() => {
-  clearPluginStyles()
+  styles.clear()
   document.head.innerHTML = ''
 })
 
 describe('a view a slot serves', () => {
   it('is drawn with the stylesheet of the plugin that registered it, until it is taken away', () => {
-    registerPluginStyle(LEDGER, '/plugins/org.example.ledger/dist/styles.css')
-    const registry = createSlotViewRegistry()
+    styles.register(LEDGER, '/plugins/org.example.ledger/dist/styles.css')
+    const registry = createSlotViewRegistry({ styles })
     registry.registerSlotView(LEDGER, 'titleBar.status', { id: 'balance', component: BALANCE })
 
     const wrapper = mount(registry.findView(LEDGER, 'balance') as Component, {
@@ -35,14 +37,14 @@ describe('a view a slot serves', () => {
   })
 
   it('is the same component on every read, so that its owner does not draw it again', () => {
-    const registry = createSlotViewRegistry()
+    const registry = createSlotViewRegistry({ styles })
     registry.registerSlotView(LEDGER, 'titleBar.status', { id: 'balance', component: BALANCE })
 
     expect(registry.findView(LEDGER, 'balance')).toBe(registry.findView(LEDGER, 'balance'))
   })
 
   it('draws without a stylesheet where its plugin has none', () => {
-    const registry = createSlotViewRegistry()
+    const registry = createSlotViewRegistry({ styles })
     registry.registerSlotView(LEDGER, 'titleBar.status', { id: 'balance', component: BALANCE })
 
     const wrapper = mount(registry.findView(LEDGER, 'balance') as Component)
