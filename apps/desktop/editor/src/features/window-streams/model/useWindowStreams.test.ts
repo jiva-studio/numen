@@ -70,8 +70,8 @@ const answerFrom = (core: Fake) => {
         for await (const change of core.watchVaultChanges(context.signal)) {
           yield {
             paths: change.paths,
-            reload: change.shouldReload,
-            renamed: change.renamed,
+            isReloadRequired: change.shouldReload,
+            moves: change.renamed,
             versionPaths: change.versionPaths ?? [],
           }
         }

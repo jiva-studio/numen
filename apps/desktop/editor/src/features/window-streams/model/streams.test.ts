@@ -57,8 +57,8 @@ const answer = (streams: Streams) => {
         yielding(
           ...(streams.changes ?? []).map((one) => ({
             paths: one.paths,
-            reload: one.shouldReload,
-            renamed: one.renamed,
+            isReloadRequired: one.shouldReload,
+            moves: one.renamed,
             versionPaths: one.versionPaths ?? [],
           })),
         ),
