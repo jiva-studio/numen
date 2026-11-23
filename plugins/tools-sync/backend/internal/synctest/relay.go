@@ -30,7 +30,7 @@ func NewRelay(t *testing.T, address string) *Relay {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := &Relay{URL: "http://" + listener.Addr().String(), listen: listener}
+	r := &Relay{URL: "http://" + listener.Addr().String(), mu: sync.Mutex{}, conns: nil, listen: listener}
 	t.Cleanup(func() {
 		if err := listener.Close(); err != nil {
 			t.Error(err)
@@ -62,7 +62,7 @@ func (r *Relay) accept(target string) {
 			closeQuietly(client)
 			continue
 		}
-		state := &relayConn{}
+		state := &relayConn{isFrozen: false, mu: sync.Mutex{}}
 		r.mu.Lock()
 		r.conns = append(r.conns, state)
 		r.mu.Unlock()
@@ -91,9 +91,8 @@ func (c *relayConn) copy(to, from net.Conn) {
 	}
 }
 
-// closeQuietly closes a connection of the relay whose peer may have closed it first; the error of a second
-// close says nothing, as the copy ends either way.
 func closeQuietly(conn net.Conn) {
+	// the peer may have closed first, and the copy ends either way
 	if err := conn.Close(); err != nil {
 		return
 	}

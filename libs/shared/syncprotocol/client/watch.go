@@ -47,12 +47,10 @@ func (c *WatchClient) WatchChanges(ctx context.Context) (*WatchStream, error) {
 	opened := &WatchStream{stream: stream, cancel: cancel}
 	first, err := opened.Receive()
 	if err != nil && !errors.Is(err, io.EOF) {
-		_ = opened.Close()
-		return nil, err
+		return nil, errors.Join(err, opened.Close())
 	}
 	if first.GetStarted() == nil {
-		_ = opened.Close()
-		return nil, errNotStarted
+		return nil, errors.Join(errNotStarted, opened.Close())
 	}
 	opened.heartbeat = time.Duration(first.GetStarted().GetHeartbeatSeconds()) * time.Second
 	return opened, nil

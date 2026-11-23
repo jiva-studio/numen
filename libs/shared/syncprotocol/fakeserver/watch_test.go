@@ -54,7 +54,11 @@ func (e *env) openWatch() *watcher {
 	if err != nil {
 		e.tb.Fatal(err)
 	}
-	e.tb.Cleanup(func() { _ = stream.Close() })
+	e.tb.Cleanup(func() {
+		if err := stream.Close(); err != nil {
+			e.tb.Error(err)
+		}
+	})
 	return &watcher{tb: e.tb, stream: stream}
 }
 
@@ -298,8 +302,15 @@ func TestAdminStreams_ReportsTheCountAsText(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = response.Body.Close() }()
-	body, _ := io.ReadAll(response.Body)
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if got := strings.TrimSpace(string(body)); got != "1" {
 		t.Errorf("body = %q, want 1", got)
@@ -319,7 +330,9 @@ func TestAdminStreamsEnd_EndsEveryStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_ = response.Body.Close()
+	if err := response.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	for {
 		got := watch.receive()

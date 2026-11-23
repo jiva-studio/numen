@@ -72,7 +72,11 @@ func TestWatchChanges_ReadsStartedAndReturnsTheAnnouncedHeartbeat(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = stream.Close() }()
+	defer func() {
+		if err := stream.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	if got := stream.Heartbeat(); got != 7*time.Second {
 		t.Errorf("heartbeat = %v, want 7s", got)
@@ -87,7 +91,11 @@ func TestWatchChanges_ReturnsTheMessagesAfterStartedInOrderAndEOFAtACleanEnd(t *
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = stream.Close() }()
+	defer func() {
+		if err := stream.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	for _, want := range []uint64{3, 4} {
 		message, err := stream.Receive()
@@ -112,7 +120,11 @@ func TestWatchChanges_SendsTheVersionAndTheBearerOnceWhenItOpens(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = stream.Close() }()
+	defer func() {
+		if err := stream.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	stub.mu.Lock()
 	defer stub.mu.Unlock()

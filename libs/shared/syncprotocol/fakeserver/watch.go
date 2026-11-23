@@ -202,7 +202,9 @@ func (s *Server) serveStreams(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain")
-	_, _ = fmt.Fprintf(w, "%d\n", s.CountStreams())
+	if _, err := fmt.Fprintf(w, "%d\n", s.CountStreams()); err != nil {
+		return
+	}
 }
 
 func (s *Server) serveStreamsEnd(w http.ResponseWriter, r *http.Request) {

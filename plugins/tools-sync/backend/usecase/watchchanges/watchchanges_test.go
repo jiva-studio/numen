@@ -43,7 +43,8 @@ func newWorld(t *testing.T) *world {
 
 type running struct {
 	cancel context.CancelFunc
-	done   chan error
+	done   chan struct{}
+	err    error
 }
 
 func start(t *testing.T, c *synctest.Computer, hints ports.Hints, waker ports.Waker) *running {
@@ -51,15 +52,19 @@ func start(t *testing.T, c *synctest.Computer, hints ports.Hints, waker ports.Wa
 	deps := c.WatchDeps(waker)
 	deps.Hints = hints
 	ctx, cancel := context.WithCancel(t.Context())
-	done := make(chan error, 1)
-	go func() { done <- watchchanges.NewWatchChanges(deps).Execute(ctx) }()
+	run := &running{cancel: cancel, done: make(chan struct{}), err: nil}
+	go func() {
+		run.err = watchchanges.NewWatchChanges(deps).Execute(ctx)
+		close(run.done)
+	}()
 	t.Cleanup(func() {
 		cancel()
-		if err := <-done; !errors.Is(err, context.Canceled) {
-			t.Errorf("Execute ended with %v, want context.Canceled", err)
+		<-run.done
+		if !errors.Is(run.err, context.Canceled) {
+			t.Errorf("Execute ended with %v, want context.Canceled", run.err)
 		}
 	})
-	return &running{cancel: cancel, done: done}
+	return run
 }
 
 func (w *world) streams() int { return w.server.Fake.CountStreams() }
@@ -253,8 +258,9 @@ func TestWatchChanges_ReturnsAndClosesTheStreamWhenItsContextEnds(t *testing.T) 
 
 	run.cancel()
 
-	if err := <-run.done; err != nil && !errors.Is(err, context.Canceled) {
-		t.Errorf("error = %v, want none or the error of the context", err)
+	<-run.done
+	if run.err != nil && !errors.Is(run.err, context.Canceled) {
+		t.Errorf("error = %v, want none or the error of the context", run.err)
 	}
 	synctest.Eventually(t, "no open stream", func() bool { return w.streams() == 0 })
 }
