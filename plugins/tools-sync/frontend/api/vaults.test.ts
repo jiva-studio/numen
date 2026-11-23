@@ -12,6 +12,8 @@ type ListVaultsResponse = Awaited<ReturnType<VaultsClient['listVaults']>>
 type ListRemoteVaultsResponse = Awaited<ReturnType<VaultsClient['listRemoteVaults']>>
 type ConnectVaultRequest = Parameters<VaultsClient['connectVault']>[0]
 type GetStatusResponse = Awaited<ReturnType<VaultsClient['getStatus']>>
+type PreviewConnectRequest = Parameters<VaultsClient['previewConnect']>[0]
+type PreviewConnectResponse = Awaited<ReturnType<VaultsClient['previewConnect']>>
 
 const fixtures = import.meta.glob('../../testdata/api/*.json', {
   eager: true,
@@ -76,6 +78,17 @@ describe('the fixtures of the vaults service', () => {
     expect(read('ConnectVault.response')).toStrictEqual({})
   })
 
+  it('reads the PreviewConnect fixture as PreviewConnectRequest and PreviewConnectResponse', () => {
+    const request: PreviewConnectRequest = {
+      vaultId: '01JCX6Q4ZB3W8N2V7T5R9K1M0Q',
+      remoteId: '00112233445566778899aabbccddeeff',
+    }
+    const response: PreviewConnectResponse = { differCount: 2 }
+
+    expect(read('PreviewConnect.request')).toStrictEqual(request)
+    expect(read('PreviewConnect.response')).toStrictEqual(response)
+  })
+
   it('reads the GetStatus fixture as GetStatusResponse', () => {
     const response: GetStatusResponse = {
       hasIdentity: true,
@@ -116,6 +129,17 @@ describe('the vaults client', () => {
     await client.connectVault(request)
 
     expect(sent).toStrictEqual([{ url: `${ORIGIN}/${SERVICE}/ConnectVault`, body: request }])
+  })
+
+  it('asks PreviewConnect and answers its response', async () => {
+    const request = read('PreviewConnect.request') as PreviewConnectRequest
+    const answer = read('PreviewConnect.response') as PreviewConnectResponse
+    const { client, sent } = createClient(() => Response.json(answer))
+
+    const response = await client.previewConnect(request)
+
+    expect(sent).toStrictEqual([{ url: `${ORIGIN}/${SERVICE}/PreviewConnect`, body: request }])
+    expect(response).toStrictEqual(answer)
   })
 
   it('asks GetStatus and answers its response', async () => {

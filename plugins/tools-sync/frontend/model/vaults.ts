@@ -20,6 +20,12 @@ export interface UseVaultsOptions {
   readonly now: () => Date
 }
 
+export interface PendingConfirm {
+  readonly vaultId: string
+  readonly remoteId: string
+  readonly text: string
+}
+
 export type VaultsStatus = 'loading' | 'ready' | 'error'
 
 const STATE_LABELS: Record<VaultState, string> = {
@@ -55,6 +61,7 @@ export function useVaults(options: UseVaultsOptions) {
   const error = ref('')
   const hasIdentity = ref(true)
   const openFor = ref('')
+  const pendingConfirm = shallowRef<PendingConfirm | null>(null)
 
   const rows = computed(() => vaults.value.map((vault) => getRow(vault, now())))
   const warning = computed(() => (hasIdentity.value ? '' : words.noIdentity))
@@ -100,12 +107,28 @@ export function useVaults(options: UseVaultsOptions) {
     }
   }
 
+  function confirmConnect(): Promise<void> {
+    return Promise.reject(new Error('not implemented'))
+  }
+
+  function cancelConnect(): void {
+    throw new Error('not implemented')
+  }
+
   const connectNew = (vaultId: string): Promise<void> => connect({ vaultId, mode: 'new' })
   const connectExisting = (vaultId: string, remoteId: string): Promise<void> =>
     connect({ vaultId, mode: 'existing', remoteId })
 
   return {
-    state: { status, error, hasIdentity, warning, rows, openFor, remote },
-    actions: { load, openRemote, closeRemote, connectNew, connectExisting },
+    state: { status, error, hasIdentity, warning, rows, openFor, remote, pendingConfirm },
+    actions: {
+      load,
+      openRemote,
+      closeRemote,
+      connectNew,
+      connectExisting,
+      confirmConnect,
+      cancelConnect,
+    },
   }
 }

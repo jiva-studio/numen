@@ -34,11 +34,13 @@ interface Setup {
   readonly remote?: RemoteVault[]
   readonly hasIdentity?: boolean
   readonly refusal?: string
+  readonly differCount?: number
 }
 
 const createClient = (setup: Setup): VaultsClient => ({
   listVaults: () => Promise.resolve({ vaults: setup.vaults }),
   listRemoteVaults: () => Promise.resolve({ vaults: setup.remote ?? [] }),
+  previewConnect: () => Promise.resolve({ differCount: setup.differCount ?? 0 }),
   connectVault: () =>
     setup.refusal === undefined ? Promise.resolve() : Promise.reject(new Error(setup.refusal)),
   getStatus: () =>

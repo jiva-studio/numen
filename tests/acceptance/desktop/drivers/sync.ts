@@ -147,6 +147,12 @@ export class SyncDriver {
     this.running = await startProgram(this.listen, this.getStateFlags())
   }
 
+  /** Makes the server drop the removals it keeps, as it does for removals older than its retention. */
+  async forgetRemovals(): Promise<void> {
+    const answer = await fetch(`${this.requireRunning().address}/admin/forget-removals`, { method: 'POST' })
+    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the forgetting of removals`)
+  }
+
   /** Reads what the server stores of every blob and expects the text to be in none of it. */
   async expectNoStoredText(text: string): Promise<void> {
     const answer = await fetch(`${this.requireRunning().address}/admin/blobs`)

@@ -4,6 +4,7 @@
  */
 import { expect, type ViewportSize } from 'playwright/test'
 import { ApplicationDriver } from './application.js'
+import { findConflictNotes } from './conflict-notes.js'
 import { IdentityDriver } from './identity.js'
 import { Scenario } from './scenario.js'
 import { SettingsDriver } from './settings.js'
@@ -14,6 +15,8 @@ import { SyncVaultsDriver } from './sync-vaults.js'
 const SECOND_VAULT = 'Copy'
 /** A note arrives within a few passes of the plugin on both computers. */
 const ARRIVAL_LIMIT_MS = 30_000
+/** How long the plugin has to make a conflict note before a scenario may say there is none: a few passes. */
+const QUIET_MS = 6_000
 const ADDRESS_PATTERN = /^(?:the|its) vault "([^"]+)"$/
 
 export type ComputerName = 'first' | 'second'
@@ -87,7 +90,7 @@ export class ComputerDriver {
     return this.second
   }
 
-  private getScenario(computer: ComputerName): Scenario {
+  getScenario(computer: ComputerName): Scenario {
     return computer === 'first' ? this.first : this.requireSecond().scenario
   }
 
@@ -158,6 +161,52 @@ export class ComputerDriver {
   async expectSubscription(computer: ComputerName, text: string): Promise<void> {
     const identity = computer === 'first' ? this.identity : this.requireSecond().identity
     await identity.expectSubscription(text)
+  }
+
+  /** Expects the note to have a conflict note with the text, the copy of what the folder held. */
+  async expectConflictNote(computer: ComputerName, title: string, text: string, vault: string): Promise<void> {
+    const world = this.getScenario(computer).getWorld()
+    const name = this.resolveVault(computer, vault)
+    await expect.poll(() => findConflictNotes(world.listNoteFiles(name), title), { timeout: ARRIVAL_LIMIT_MS }).toContain(text)
+  }
+
+  /** The notes arrive within a few passes, so the check waits for the passes to end before it looks. */
+  async expectNoConflictNote(computer: ComputerName, title: string, vault: string): Promise<void> {
+    const world = this.getScenario(computer).getWorld()
+    const name = this.resolveVault(computer, vault)
+    await new Promise((resolve) => setTimeout(resolve, QUIET_MS))
+    expect(findConflictNotes(world.listNoteFiles(name), title)).toEqual([])
+  }
+
+  removeNote(computer: ComputerName, title: string, vault: string): void {
+    this.getScenario(computer).getWorld().removeFile(this.resolveVault(computer, vault), getNotePath(title))
+  }
+
+  async expectNoNote(computer: ComputerName, title: string, vault: string): Promise<void> {
+    const world = this.getScenario(computer).getWorld()
+    const name = this.resolveVault(computer, vault)
+    await expect.poll(() => world.getEntryKind(name, getNotePath(title)), { timeout: ARRIVAL_LIMIT_MS }).toBeUndefined()
+  }
+
+  /** Makes the computer unable to reach the sync server, or able again. Waits for the gate of the conflict scenarios, which keeps the plugin of each computer behind a gate of its own. */
+  setOnline(_computer: ComputerName, _isOnline: boolean): Promise<void> {
+    return Promise.reject(new Error('not implemented: the gate between a computer and the sync server comes with the conflict scenarios'))
+  }
+
+  async answerConfirmation(computer: ComputerName, vault: string, synced: string, answer: 'Connect' | 'Cancel'): Promise<void> {
+    await this.getVaults(computer).connectExistingAndAnswer(vault, synced, answer)
+  }
+
+  async expectAskedToConfirm(computer: ComputerName, text: string): Promise<void> {
+    await this.getVaults(computer).expectAskedToConfirm(text)
+  }
+
+  async expectNotAsked(computer: ComputerName): Promise<void> {
+    await this.getVaults(computer).expectNotAsked()
+  }
+
+  async expectNotConnected(computer: ComputerName, vault: string): Promise<void> {
+    await this.getVaults(computer).expectNotConnected(vault)
   }
 
   /** Ends the second computer: its window, its application and its folders. */
