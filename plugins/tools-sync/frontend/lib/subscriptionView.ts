@@ -25,7 +25,7 @@ export interface PlanOffer {
   readonly label: string
 }
 
-/** A product the person can buy: its id, its slug and the label of the button, such as "Link, $20". */
+/** A product the person can buy: its id, its slug and the label of the button, such as "Extra, $20". */
 export interface ProductOffer {
   readonly id: string
   readonly slug: string
