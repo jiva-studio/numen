@@ -8,17 +8,15 @@
  */
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
-import { getFailureText, type AppearanceWriter } from './appearanceOutput'
-import type { ThemeMode as Mode, ThemeScales } from './themes'
-import { HELD, onto } from './appearanceValues'
-import type { ScaleKind } from './appearanceValues'
+import { getFailureText, type AppearanceWriter, type Mode, type Sizes } from '../lib/appearance'
+import { HELD, onto, type ScaleKind } from '../lib/appearanceValues'
 
 /** What previewing reads, and what it applies. */
 export interface PreviewDeps {
   readonly write: AppearanceWriter
   readonly applied: Ref<string>
   readonly mode: Ref<Mode>
-  readonly settings: Ref<ThemeScales<number>>
+  readonly settings: Ref<Sizes>
   readonly applyTheme: (theme: string, half: Mode) => Promise<void>
 }
 
@@ -37,7 +35,7 @@ export function createAppearancePreview(on: PreviewDeps) {
 
   const current = computed(() => theme.value || applied.value)
   const shownHalf = computed<Mode>(() => half.value || mode.value)
-  const sized = computed<ThemeScales<number>>(() => {
+  const sized = computed<Sizes>(() => {
     const previewed = pendingSize.value
     return previewed ? onto(settings.value, previewed.which, previewed.size) : settings.value
   })

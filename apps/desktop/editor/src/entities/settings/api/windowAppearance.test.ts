@@ -7,12 +7,9 @@
  * after the keyboard focus has stayed on its row.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  createWindowAppearance,
-  type ThemeAppearance as Appearance,
-  type ThemeClient,
-} from '@numen/core-client'
+import type { ThemeAppearance as Appearance, ThemeClient } from '@numen/core-client'
 import { createAppearanceOutput } from '@numen/workbench'
+import { createWindowAppearance } from './theme'
 
 type Themes = Pick<ThemeClient, 'getAppearance' | 'readTheme' | 'watchThemes'>
 

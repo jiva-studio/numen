@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { ref } from 'vue'
-import type { ThemeMode as Mode, ThemeScales } from './themes'
+import type { Mode, Sizes } from '../lib/appearance'
 import { createAppearancePreview } from './preview'
 
 it('reports an error when applying a previewed theme rejects', async () => {
@@ -9,7 +9,7 @@ it('reports an error when applying a previewed theme rejects', async () => {
     write: (text, kind) => messages.push([text, kind]),
     applied: ref('preset:numen'),
     mode: ref<Mode>('system'),
-    settings: ref<ThemeScales<number>>({ interfaceScale: 1, textScale: 1 }),
+    settings: ref<Sizes>({ interfaceScale: 1, textScale: 1 }),
     applyTheme: async () => {
       throw new Error('apply failed')
     },
