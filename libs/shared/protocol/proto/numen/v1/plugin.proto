@@ -204,6 +204,10 @@ message PluginSettingsView {
 
   // What the component is called.
   string title = 2;
+
+  // Where the component is drawn: empty for the settings of the plugin, "identity" for the page "Identity and
+  // licenses".
+  string page = 3;
 }
 
 // PluginReader is a tab of a plugin's frontend that opens files.

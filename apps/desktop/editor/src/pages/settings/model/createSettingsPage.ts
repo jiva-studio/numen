@@ -23,6 +23,7 @@ import {
 } from '@/entities/plugin'
 import { runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
+import { getIdentityViews } from '../lib/settingsViews'
 import { useSettingsTabKind } from '../useSettingsTabKind'
 import type { Installation, InstallationPlugin, InstallationSettings } from '../types'
 import type { MessageLog } from '@/shared/model/notices/messages'
@@ -208,6 +209,7 @@ function createInstallationPlugin(deps: InstallationPluginDeps) {
     files: createInstallationPluginFiles(settings, readReadme),
     plugins: rest.state.plugins,
     getSettingsViews,
+    getIdentityViews: () => getIdentityViews(rest.state.plugins.value, getSettingsViews),
   }
 }
 

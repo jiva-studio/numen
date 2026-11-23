@@ -1,4 +1,5 @@
 import type { PluginInfo, PluginSettingInfo } from '@/entities/settings'
+import { IDENTITY_PAGE } from './settingsViews'
 
 function isRowSetting(setting: PluginSettingInfo): boolean {
   return setting.type !== 'connections' && setting.type !== 'slots'
@@ -13,6 +14,6 @@ export function hasRowSettings(settings: readonly PluginSettingInfo[]): boolean 
 export function hasPluginSettings(plugin: PluginInfo): boolean {
   return (
     hasRowSettings(plugin.settings.filter((one) => one.isShown !== false)) ||
-    (plugin.settingsViews ?? []).length > 0
+    (plugin.settingsViews ?? []).some((one) => one.page !== IDENTITY_PAGE)
   )
 }

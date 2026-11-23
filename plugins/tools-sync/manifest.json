@@ -8,22 +8,9 @@
   "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools",
-    "licenses": [
-      {
-        "id": "sync",
-        "title": "Numen Sync",
-        "description": "Synchronizes your vaults across devices",
-        "providers": [
-          {
-            "provider": "creem",
-            "url": "https://www.creem.io/test/payment/prod_5YckdJcFG6a0eH2aETTOAz"
-          }
-        ]
-      }
-    ],
     "slots": [{ "slot": "titleBar.status", "view": "sync", "title": "Sync status", "order": 5 }]
   },
-  "permissions": ["identity", "vault:read", "vault:write"],
+  "permissions": ["identity", "link:open", "vault:read", "vault:write"],
   "services": ["md.numen.tools.sync"],
   "backend": {
     "entrypoint": "bin/tools-sync",
@@ -46,6 +33,9 @@
       "min": 1
     }
   ],
-  "settingsViews": [{ "id": "vaults", "title": "Vaults" }],
+  "settingsViews": [
+    { "id": "vaults", "title": "Vaults" },
+    { "id": "subscription", "title": "Subscription", "page": "identity" }
+  ],
   "frontend": {}
 }

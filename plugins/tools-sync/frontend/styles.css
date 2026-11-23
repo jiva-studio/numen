@@ -111,3 +111,64 @@
   flex-basis: 100%;
   overflow-wrap: anywhere;
 }
+
+.subscription {
+  display: flex;
+  flex-direction: column;
+  gap: var(--numen-chrome-inset);
+  padding: var(--settings-card-pad);
+  color: var(--numen-ink);
+  font-size: var(--numen-chrome-text-2);
+}
+
+.subscription__header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: calc(var(--numen-chrome-unit) / 2);
+}
+
+.subscription__title {
+  margin: 0;
+  font-size: calc(1.25 * var(--numen-chrome-unit));
+  font-weight: 600;
+}
+
+.subscription__badge {
+  margin-inline-start: auto;
+  padding: calc(var(--numen-chrome-unit) / 8) calc(var(--numen-chrome-unit) / 2);
+  border-radius: var(--numen-radius-tight);
+  background-color: var(--numen-bubble-bg);
+  color: var(--numen-hushed);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.subscription__badge--positive {
+  background-color: color-mix(in oklab, var(--numen-positive), transparent 82%);
+  color: var(--numen-ink);
+}
+
+.subscription__badge--warning {
+  background-color: var(--numen-alarm-bg);
+  color: var(--numen-alarm);
+}
+
+.subscription__text,
+.subscription__problem {
+  margin: 0;
+}
+
+.subscription__text {
+  color: var(--numen-hushed);
+}
+
+.subscription__problem {
+  color: var(--numen-alarm);
+}
+
+.subscription__controls {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--numen-chrome-unit) / 2);
+}

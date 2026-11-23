@@ -1,8 +1,10 @@
 import { ref, type Ref } from 'vue'
-import type { Disposable, PluginLicenses } from '@numen/plugin-sdk'
+import { runInBackground } from '@numen/ui'
+import type { VaultsClient } from '../api/vaults'
 
-export const SYNC_LICENSE_ID = 'sync'
-const DEFAULT_SYNC_DURATION_MS = 2000
+const DEFAULT_POLL_EVERY_MS = 10_000
+
+const ignore = (): void => undefined
 
 export type SyncPhase = 'hidden' | 'syncing' | 'synced'
 
@@ -13,45 +15,38 @@ export interface SyncState {
 }
 
 export function createSyncState(
-  licenses: PluginLicenses,
-  syncDurationMs: number = DEFAULT_SYNC_DURATION_MS,
+  client: Pick<VaultsClient, 'getStatus'>,
+  pollEveryMs: number = DEFAULT_POLL_EVERY_MS,
 ): SyncState {
   const phase = ref<SyncPhase>('hidden')
-  let watching: Disposable | undefined
   let timer: ReturnType<typeof setTimeout> | undefined
+  let isRunning = false
 
-  const clearTimer = (): void => {
-    if (timer !== undefined) {
-      clearTimeout(timer)
-      timer = undefined
+  const update = async (): Promise<void> => {
+    try {
+      const status = await client.getStatus()
+      phase.value = status.hasIdentity ? 'synced' : 'hidden'
+    } catch {
+      // The status is asked again at the next poll; the badge keeps what it showed.
     }
   }
 
-  const updateSyncPhase = (isActive: boolean): void => {
-    clearTimer()
-    if (!isActive) {
-      phase.value = 'hidden'
-      return
-    }
-    phase.value = 'syncing'
-    timer = setTimeout(() => {
-      timer = undefined
-      phase.value = 'synced'
-    }, syncDurationMs)
+  const poll = async (): Promise<void> => {
+    await update()
+    if (isRunning) timer = setTimeout(() => runInBackground(poll(), ignore), pollEveryMs)
   }
 
   return {
     phase,
     start: () => {
-      updateSyncPhase(licenses.has(SYNC_LICENSE_ID))
-      watching = licenses.onChange(SYNC_LICENSE_ID, (next) => {
-        updateSyncPhase(next)
-      })
+      isRunning = true
+      phase.value = 'syncing'
+      runInBackground(poll(), ignore)
     },
     stop: () => {
-      clearTimer()
-      watching?.dispose()
-      watching = undefined
+      isRunning = false
+      clearTimeout(timer)
+      timer = undefined
     },
   }
 }

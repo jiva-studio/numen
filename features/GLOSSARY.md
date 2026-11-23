@@ -562,6 +562,14 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Texts: page "Identity and licenses" ("Account, this device and license keys"); "Recovery words", "Account fingerprint", "This device"; "words that are not valid" (editor/src/pages/settings/words.ts, libs/plugin/manager/src/words.ts).
 - Not: not a login and not a password. The words are not kept anywhere after they are shown; a lost identity without its words cannot be restored. A license key is not part of the identity.
 
+### subscription
+
+- Is: What the person buys to sync their vaults with Numen Sync, for the account and not for one computer. The sync server tells where it stands: no subscription, active, ended with changes still sent, read only, or deleted; the app only shows it.
+- States: No subscription, Active, Ended (changes are sent until a date), Read only (changes stay on this device, the cloud deletes the vaults on a date), Deleted.
+- Actions: "Buy" on the card "Numen Sync" of the page "Identity and licenses"; it opens the payment page in the system browser and the card follows the payment.
+- Texts: "Sync needs a subscription", "Subscription ended: changes are sent until <date>", "Subscription ended: changes stay on this device" (plugins/tools-sync/backend/usecase/subscription/warn.go, plugins/tools-sync/frontend/words.ts).
+- Not: not a license key; there is no key to enter. Nothing about a payment or a card is kept in the app.
+
 ### sync server and session
 
 - Is: The sync server is the program plugin "Numen Sync" signs in to with the identity of this device; its address is the setting "Sync server" of the plugin. A session is what the server gives a device that signed in. Numen Sync keeps it in memory, signs in again before it ends, and signs in again at once when the server ends it.

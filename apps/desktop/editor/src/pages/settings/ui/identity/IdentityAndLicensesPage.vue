@@ -1,17 +1,27 @@
 <script setup lang="ts">
 /**
- * The page of identity and licenses: the account identity of this device, then every license
- * declared by the installed plugins with the controls to activate or deactivate this machine.
+ * The page of identity and licenses: the account identity of this device, the views plugins registered for
+ * this page, then every license declared by the installed plugins with the controls to activate or
+ * deactivate this machine.
  */
+import { computed } from 'vue'
 import { SettingsPage } from '@numen/plugin-manager'
-import type { InstallationIdentity, InstallationLicenses } from '../../types'
+import type {
+  InstallationIdentity,
+  InstallationLicenses,
+  InstallationPlugin,
+} from '../../types'
 import { useLicensesPage } from '../../model/useLicensesPage'
 import { WORDS as words } from '../../words'
 import LicenseCard from '../licenses/LicenseCard.vue'
 import IdentitySection from './IdentitySection.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{ identity: InstallationIdentity; licenses: InstallationLicenses }>()
+const props = defineProps<{
+  identity: InstallationIdentity
+  licenses: InstallationLicenses
+  plugin: Pick<InstallationPlugin, 'getIdentityViews'>
+}>()
 
 const emit = defineEmits<{
   (e: 'back'): void
@@ -19,6 +29,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const page = useLicensesPage(() => props.licenses)
+const views = computed(() => props.plugin.getIdentityViews())
 
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
@@ -31,7 +42,17 @@ function onBack(): void {
     <div class="identity-page">
       <IdentitySection :identity="props.identity" />
 
-      <div v-if="page.licenses.value.length === 0" class="identity-page__empty">
+      <component
+        :is="view.component"
+        v-for="view in views"
+        :key="view.pluginId + '/' + view.id"
+        :plugin-id="view.pluginId"
+      />
+
+      <div
+        v-if="page.licenses.value.length === 0 && views.length === 0"
+        class="identity-page__empty"
+      >
         <p class="identity-page__empty-title">{{ words.licensesEmpty }}</p>
         <p class="identity-page__empty-detail">{{ words.licensesEmptyDetail }}</p>
       </div>

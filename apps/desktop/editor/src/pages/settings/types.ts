@@ -45,6 +45,12 @@ export interface ViewComponent {
   readonly component: Component
 }
 
+/** A view a plugin registered for the page "Identity and licenses", and the plugin it belongs to. */
+export interface IdentityView extends ViewComponent {
+  readonly pluginId: string
+  readonly id: string
+}
+
 export interface InstallationSettings {
   getSetting(at: readonly string[]): JsonValue | undefined
   /** A setting as the vault last answered it, never a value asked for and not yet answered. */
@@ -96,6 +102,8 @@ export interface InstallationPlugin {
    */
   choosePath(pluginId: string, key: string): Promise<string>
   getSettingsViews(pluginId: string): ReadonlyMap<string, ViewComponent>
+  /** The views of the enabled plugins that belong to the page "Identity and licenses", in the order of the plugins. */
+  getIdentityViews(): readonly IdentityView[]
   /** The slots a plugin draws, with what is placed in each; absent where the window offers none. */
   getSlotGroups?(pluginId: string): readonly SlotGroup[]
   readonly files: InstallationPluginFiles

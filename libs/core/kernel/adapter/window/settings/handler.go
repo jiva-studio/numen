@@ -225,7 +225,7 @@ func newWireSettingGroups(groups []manifest.SettingGroup) []*v1.PluginSettingGro
 func newWireSettingsViews(views []manifest.SettingsView) []*v1.PluginSettingsView {
 	out := make([]*v1.PluginSettingsView, 0, len(views))
 	for _, one := range views {
-		out = append(out, &v1.PluginSettingsView{Id: one.ID, Title: one.Title})
+		out = append(out, &v1.PluginSettingsView{Id: one.ID, Title: one.Title, Page: one.Page})
 	}
 	return out
 }

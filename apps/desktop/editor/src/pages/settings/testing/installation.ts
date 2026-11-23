@@ -37,6 +37,7 @@ const PLUGIN_KEYS = [
   'retryPlugin',
   'choosePath',
   'getSettingsViews',
+  'getIdentityViews',
   'getSlotGroups',
 ]
 const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
@@ -80,6 +81,7 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
       ...pickOf(overrides, HEALTH_KEYS),
     },
     getSettingsViews: () => new Map(),
+    getIdentityViews: () => [],
     files: {
       getPluginData: () => Promise.resolve(0),
       deletePluginData: () => Promise.resolve(''),

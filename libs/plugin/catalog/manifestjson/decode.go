@@ -290,7 +290,7 @@ func newOptionsBy(wire *v1.ManifestOptionsBy) (*manifest.OptionsBy, error) {
 func newSettingsViews(wire []*v1.ManifestSettingsView) []manifest.SettingsView {
 	var out []manifest.SettingsView
 	for _, one := range wire {
-		out = append(out, manifest.SettingsView{ID: one.GetId(), Title: one.GetTitle()})
+		out = append(out, manifest.SettingsView{ID: one.GetId(), Title: one.GetTitle(), Page: one.GetPage()})
 	}
 	return out
 }

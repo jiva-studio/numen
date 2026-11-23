@@ -558,4 +558,6 @@ message ManifestSettingGroup {
 message ManifestSettingsView {
   string id = 1;
   string title = 2;
+  // page is empty for the form of the plugin, or "identity" for the page "Identity and licenses".
+  string page = 3;
 }
