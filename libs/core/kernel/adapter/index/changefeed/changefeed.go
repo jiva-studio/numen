@@ -184,7 +184,7 @@ func (f *Feed) ListFileChanges(
 	for rows.Next() {
 		var c filechange.Change
 		var noteTypes []byte
-		if err := rows.Scan(&c.SourceID, &c.Path, &c.Event, &c.Seq, &noteTypes); err != nil {
+		if err := rows.Scan(&c.SourceID, &c.Path, &c.Event, &c.Seq, &c.Hash, &c.Size, &c.ModifiedAt, &noteTypes); err != nil {
 			return nil, err
 		}
 		if err := json.Unmarshal(noteTypes, &c.NoteTypes); err != nil {

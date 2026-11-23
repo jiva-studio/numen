@@ -2,6 +2,7 @@
 -- order they were stored, with the path of the source now. A removal, whose number another source may
 -- have now, has the path the source had when it was removed.
 SELECT c.source_id, CASE WHEN c.event = ?1 THEN c.path ELSE coalesce(s.path, c.path) END, c.event, c.seq,
+       coalesce(s.content_hash, ''), coalesce(s.size, 0), coalesce(s.modified_at, 0),
        (SELECT json_group_array(key) FROM json_each(c.note_types) WHERE value > ?3)
 FROM file_changes c
 JOIN vaults v ON v.id = c.vault_id

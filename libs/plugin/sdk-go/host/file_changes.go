@@ -25,12 +25,16 @@ type FileChangeCursor struct {
 
 // FileChange is the latest event of one kind of one file: the number the index keeps the file under,
 // which stays the same when the file moves, its path now, or where it was for file.removed, and the
-// number of the change.
+// number of the change. Hash, Size and ModifiedAt (nanoseconds since the Unix epoch) are those of the
+// file now, empty and 0 for file.removed.
 type FileChange struct {
-	SourceID int64
-	Path     string
-	Event    string
-	Seq      int64
+	SourceID   int64
+	Path       string
+	Event      string
+	Hash       string
+	Seq        int64
+	Size       int64
+	ModifiedAt int64
 }
 
 // FileChangeQuery names the changes a read returns: those after Since of the Events, at most Limit,
@@ -73,6 +77,7 @@ func (c *Client) ListFileChanges(ctx context.Context, q FileChangeQuery) (FileCh
 	for _, one := range res.Msg.GetChanges() {
 		page.Changes = append(page.Changes, FileChange{
 			SourceID: one.GetSourceId(), Path: one.GetPath(), Event: one.GetEvent(), Seq: one.GetSeq(),
+			Hash: one.GetHash(), Size: one.GetSize(), ModifiedAt: one.GetMtime(),
 		})
 	}
 	return page, nil

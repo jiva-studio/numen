@@ -52,13 +52,17 @@ type SourceID int64
 
 // Change is the latest event of one kind of one file: the source the index keeps the file as, which
 // stays the same when the file moves, its path now, or where it was for a removal, and the number of the
-// change.
+// change. Hash, Size and ModifiedAt are those of the source now, empty and 0 for a removal and for a
+// source without a hash.
 type Change struct {
-	NoteTypes []domain.NoteType
-	SourceID  SourceID
-	Path      string
-	Event     string
-	Seq       int64
+	NoteTypes  []domain.NoteType
+	SourceID   SourceID
+	Path       string
+	Event      string
+	Hash       string
+	Seq        int64
+	Size       int64
+	ModifiedAt int64
 }
 
 // File identifies a changed file by its path and its indexed note type at the time of the event.
