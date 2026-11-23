@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -139,8 +140,8 @@ func TestShareClient_SendsTheVersionAndTheBearerOfTheTokenInEachRequest(t *testi
 		if got := header.Get("Authorization"); got != "Bearer token-of-the-session" {
 			t.Errorf("request %d: Authorization = %q, want the bearer of the token", i, got)
 		}
-		if got := header.Get(syncprotocol.HeaderVersion); got != "1" {
-			t.Errorf("request %d: %s = %q, want 1", i, syncprotocol.HeaderVersion, got)
+		if got := header.Get(syncprotocol.HeaderVersion); got != strconv.Itoa(int(syncprotocol.Version)) {
+			t.Errorf("request %d: %s = %q, want %d", i, syncprotocol.HeaderVersion, got, syncprotocol.Version)
 		}
 	}
 }

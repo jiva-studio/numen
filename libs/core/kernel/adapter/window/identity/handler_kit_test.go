@@ -105,6 +105,7 @@ type kitFixture struct {
 	keys    *keyStore
 	saver   *kitSaver
 	kit     identitydomain.Kit
+	words   []string
 }
 
 func newKitFixture(t *testing.T) kitFixture {
@@ -112,12 +113,12 @@ func newKitFixture(t *testing.T) kitFixture {
 	keys := newKeys()
 	saver := &kitSaver{}
 	h := newHandlerWith(keys, saver)
-	create(t, h, getLegalWords())
-	answer := saveKit(t, h, wordsProof(getLegalWords()))
+	words := createWithGeneratedWords(t, h)
+	answer := saveKit(t, h, wordsProof(words))
 	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED || !answer.GetIsSaved() {
 		t.Fatalf("SaveRecoveryKit() = %v", answer)
 	}
-	return kitFixture{handler: h, keys: keys, saver: saver, kit: saver.getLast(t)}
+	return kitFixture{handler: h, keys: keys, saver: saver, kit: saver.getLast(t), words: words}
 }
 
 func TestSaveRecoveryKit_SavesThreeSheetsOf33WordsForTheAccount(t *testing.T) {
@@ -156,7 +157,7 @@ func TestSaveRecoveryKit_AnswersNotSavedWhenNoFileIsChosen(t *testing.T) {
 	t.Parallel()
 	f := newKitFixture(t)
 	f.saver.isRefused = true
-	answer := saveKit(t, f.handler, wordsProof(getLegalWords()))
+	answer := saveKit(t, f.handler, wordsProof(f.words))
 	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED || answer.GetIsSaved() {
 		t.Errorf("answer = %v", answer)
 	}
@@ -167,8 +168,8 @@ func TestSaveRecoveryKit_AnswersUnavailableWithoutASaveDialog(t *testing.T) {
 	for _, failure := range []error{machine.ErrNoFolderDialog, machine.ErrChoosing} {
 		keys := newKeys()
 		h := newHandlerWith(keys, &kitSaver{fails: failure})
-		create(t, h, getLegalWords())
-		_, err := h.SaveRecoveryKit(t.Context(), connect.NewRequest(wordsProof(getLegalWords())))
+		words := createWithGeneratedWords(t, h)
+		_, err := h.SaveRecoveryKit(t.Context(), connect.NewRequest(wordsProof(words)))
 		if connect.CodeOf(err) != connect.CodeUnavailable {
 			t.Errorf("%v: error = %v, want Unavailable", failure, err)
 		}
@@ -179,7 +180,7 @@ func TestSaveRecoveryKit_WritesNothingToTheKeyStore(t *testing.T) {
 	t.Parallel()
 	f := newKitFixture(t)
 	before := f.keys.keys["identity"]
-	saveKit(t, f.handler, wordsProof(getLegalWords()))
+	saveKit(t, f.handler, wordsProof(f.words))
 	if len(f.keys.keys) != 1 || f.keys.keys["identity"] != before {
 		t.Errorf("the key store changed: %d entries", len(f.keys.keys))
 	}
@@ -202,7 +203,7 @@ func TestSaveRecoveryKit_RefusesWordsOfAnotherAccountAndSavesNothing(t *testing.
 func TestSaveRecoveryKit_RefusesWordsThatAreNotValid(t *testing.T) {
 	t.Parallel()
 	f := newKitFixture(t)
-	words := getLegalWords()
+	words := append([]string(nil), f.words...)
 	words[3] = "numen"
 	answer := saveKit(t, f.handler, wordsProof(words))
 	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS || answer.GetIsSaved() {
@@ -259,8 +260,8 @@ func TestStartRestoreFromKit_RestoresTheSameAccountAfterADelete(t *testing.T) {
 	saver := &kitSaver{}
 	clock := testsupport.NewClockAt(time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC))
 	h := newHandlerOf(keys, saver, clock)
-	create(t, h, getLegalWords())
-	saveKit(t, h, wordsProof(getLegalWords()))
+	words := createWithGeneratedWords(t, h)
+	saveKit(t, h, wordsProof(words))
 	made := saver.getLast(t)
 	if _, err := h.DeleteIdentity(t.Context(), connect.NewRequest(&v1.DeleteIdentityRequest{})); err != nil {
 		t.Fatal(err)
@@ -333,4 +334,15 @@ func TestNewService_AnswersUnimplementedForTheKitCallsWithoutAKeyStore(t *testin
 	if _, err := service.StartRestoreFromKit(t.Context(), connect.NewRequest(&v1.StartRestoreFromKitRequest{})); connect.CodeOf(err) != connect.CodeUnimplemented {
 		t.Errorf("StartRestoreFromKit error = %v, want Unimplemented", err)
 	}
+}
+
+func createWithGeneratedWords(t *testing.T, h *windowidentity.Handler) []string {
+	t.Helper()
+	generated, err := h.GenerateRecoveryWords(t.Context(), connect.NewRequest(&v1.GenerateRecoveryWordsRequest{}))
+	if err != nil {
+		t.Fatalf("GenerateRecoveryWords() error = %v", err)
+	}
+	words := generated.Msg.GetWords()
+	create(t, h, words)
+	return words
 }

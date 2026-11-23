@@ -63,7 +63,7 @@ func TestStartRestore_RefusesWordsThatAreNotValidWithoutEchoingAWord(t *testing.
 func TestStartRestore_RefusesADeviceThatHasAnIdentity(t *testing.T) {
 	t.Parallel()
 	h := newHandler(newKeys())
-	create(t, h, getLegalWords())
+	createGenerated(t, h)
 
 	answer := startRestore(t, h, getLegalWords())
 
