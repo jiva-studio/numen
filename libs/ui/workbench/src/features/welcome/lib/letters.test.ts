@@ -5,7 +5,7 @@
  * is text.
  */
 import { describe, expect, it } from 'vitest'
-import { getVaultForKey, vaultLetter } from './letters'
+import { getVaultForKey, getVaultLetter } from './letters'
 import { VAULT_LETTERS } from './vaultLetters'
 
 const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
@@ -25,14 +25,14 @@ const createTarget = (tag: string, isEditable = false): Partial<KeyboardEvent> =
 
 describe('the letter a vault is drawn with', () => {
   it('is the alphabet in capitals, from the top of the list down', () => {
-    expect(vaultLetter(0)).toBe('A')
-    expect(vaultLetter(1)).toBe('B')
-    expect(vaultLetter(25)).toBe('Z')
+    expect(getVaultLetter(0)).toBe('A')
+    expect(getVaultLetter(1)).toBe('B')
+    expect(getVaultLetter(25)).toBe('Z')
   })
 
   it('is nothing at all past the alphabet', () => {
-    expect(vaultLetter(VAULT_LETTERS.length)).toBe('')
-    expect(vaultLetter(99)).toBe('')
+    expect(getVaultLetter(VAULT_LETTERS.length)).toBe('')
+    expect(getVaultLetter(99)).toBe('')
   })
 })
 

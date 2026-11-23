@@ -109,7 +109,7 @@ export const TabNamedByTooltip: Story = {
           choose: fn(),
           close: fn(),
           startTabPress: fn(),
-          menu: fn(),
+          openMenu: fn(),
           claim: fn(),
           resize: fn(),
           show: fn(),

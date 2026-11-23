@@ -36,7 +36,7 @@ func (d *Document) put(key string, value *yaml.Node) error {
 		return err
 	}
 	name := &yaml.Node{Kind: yaml.ScalarNode, Value: key}
-	pair(node, key).copyLineComment(name, value)
+	findPair(node, key).copyLineComment(name, value)
 	rendered, err := render(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{name, value}})
 	// gomutants:disable-next-line BRANCH_IF reason="render on an in-memory key-value MappingNode cannot fail"
 	if err != nil {
@@ -49,7 +49,7 @@ func (d *Document) put(key string, value *yaml.Node) error {
 // empty when the mapping has no such key.
 type nodePair struct{ name, value *yaml.Node }
 
-func pair(node *yaml.Node, key string) nodePair {
+func findPair(node *yaml.Node, key string) nodePair {
 	if node == nil || node.Kind != yaml.MappingNode {
 		return nodePair{}
 	}
@@ -88,9 +88,9 @@ func (d *Document) set(key string, rendered []byte) error {
 	if err != nil {
 		return err
 	}
-	rendered = indentLines(rendered, d.indent(node))
+	rendered = addIndentToLines(rendered, d.getNodeIndent(node))
 
-	start, end, found := d.span(node, key)
+	start, end, found := d.findSpan(node, key)
 	if !found {
 		return d.appendKey(node, rendered)
 	}
@@ -107,7 +107,7 @@ func (d *Document) appendKey(node *yaml.Node, rendered []byte) error {
 		return nil
 	}
 	front := append([]byte(nil), d.front...)
-	if len(front) > 0 && !endsWithBreak(front) {
+	if len(front) > 0 && !hasTrailingBreak(front) {
 		front = append(front, d.eol...)
 	}
 	if err := d.commit(append(front, rendered...)); err != nil {
@@ -131,7 +131,7 @@ func (d *Document) commit(front []byte) error {
 	return nil
 }
 
-func (d *Document) splice(start, end int, rendered []byte) {
+func (d *Document) replaceRange(start, end int, rendered []byte) {
 	// gomutants:disable-next-line ARITHMETIC_BASE,INVERT_NEGATIVES reason="slice capacity hint does not alter the appended frontmatter bytes"
 	front := make([]byte, 0, len(d.front)-(end-start)+len(rendered))
 	front = append(front, d.front[:start]...)
@@ -139,11 +139,11 @@ func (d *Document) splice(start, end int, rendered []byte) {
 	d.front, d.mapping = append(front, d.front[end:]...), nil
 }
 
-func (d *Document) indent(node *yaml.Node) string {
+func (d *Document) getNodeIndent(node *yaml.Node) string {
 	if node == nil || len(node.Content) == 0 {
 		return ""
 	}
-	lines := lineOffsets(d.front)
+	lines := getLineOffsets(d.front)
 	targetLine := node.Content[0].Line
 	if targetLine < 1 || targetLine >= len(lines) {
 		return ""
@@ -151,7 +151,7 @@ func (d *Document) indent(node *yaml.Node) string {
 	return getIndent(string(d.front[lines[targetLine-1]:lines[targetLine]]))
 }
 
-func indentLines(rendered []byte, indent string) []byte {
+func addIndentToLines(rendered []byte, indent string) []byte {
 	// gomutants:disable-next-line EXPRESSION_REMOVE,INVERT_LOGICAL,INTEGER_DECREMENT,BRANCH_IF reason="empty indent or empty input produces the same byte sequence through the loop"
 	if indent == "" || len(rendered) == 0 {
 		return rendered
@@ -172,7 +172,7 @@ func indentLines(rendered []byte, indent string) []byte {
 	return out
 }
 
-func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool) {
+func (d *Document) findSpan(node *yaml.Node, key string) (start, end int, found bool) {
 	if node == nil {
 		return 0, 0, false
 	}
@@ -188,7 +188,7 @@ func (d *Document) span(node *yaml.Node, key string) (start, end int, found bool
 		return 0, 0, false
 	}
 
-	lines := lineOffsets(d.front)
+	lines := getLineOffsets(d.front)
 	keyLine := node.Content[keyIdx].Line
 	if keyLine < 1 || keyLine >= len(lines) {
 		return 0, 0, false

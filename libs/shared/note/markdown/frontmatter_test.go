@@ -941,10 +941,10 @@ func TestFrontmatterInternalHelpersAndBoundaries(t *testing.T) {
 		t.Fatalf("render(nested) = (%q, %v), want %q", rendered, err, "outer:\n  inner: val\n")
 	}
 
-	if got := pair(&yaml.Node{Kind: yaml.SequenceNode, Content: []*yaml.Node{{Value: "k"}, {Value: "v"}}}, "k"); got.name != nil || got.value != nil {
+	if got := findPair(&yaml.Node{Kind: yaml.SequenceNode, Content: []*yaml.Node{{Value: "k"}, {Value: "v"}}}, "k"); got.name != nil || got.value != nil {
 		t.Fatalf("pair on SequenceNode = %+v, want empty", got)
 	}
-	if got := pair(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "k"}}}, "k"); got.name != nil {
+	if got := findPair(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "k"}}}, "k"); got.name != nil {
 		t.Fatalf("pair on odd Content = %+v, want empty", got)
 	}
 	pairMap := &yaml.Node{
@@ -956,7 +956,7 @@ func TestFrontmatterInternalHelpersAndBoundaries(t *testing.T) {
 			{Kind: yaml.ScalarNode, Value: "v2"},
 		},
 	}
-	if got := pair(pairMap, "k2"); got.value == nil || got.value.Value != "v2" {
+	if got := findPair(pairMap, "k2"); got.value == nil || got.value.Value != "v2" {
 		t.Fatalf("pair(pairMap, k2) = %+v, want v2", got)
 	}
 
@@ -1023,36 +1023,36 @@ func TestFrontmatterInternalHelpersAndBoundaries(t *testing.T) {
 	}
 
 	indentDoc := &Document{front: []byte("  a: 1\n")}
-	if got := indentDoc.indent(&yaml.Node{Kind: yaml.MappingNode}); got != "" {
+	if got := indentDoc.getNodeIndent(&yaml.Node{Kind: yaml.MappingNode}); got != "" {
 		t.Fatalf("indent empty Content = %q, want empty", got)
 	}
-	if got := indentDoc.indent(&yaml.Node{Content: []*yaml.Node{{Line: 1}}}); got != "  " {
+	if got := indentDoc.getNodeIndent(&yaml.Node{Content: []*yaml.Node{{Line: 1}}}); got != "  " {
 		t.Fatalf("indent 1-item Content = %q, want 2 spaces", got)
 	}
-	if got := indentDoc.indent(&yaml.Node{Content: []*yaml.Node{{Line: 0}}}); got != "" {
+	if got := indentDoc.getNodeIndent(&yaml.Node{Content: []*yaml.Node{{Line: 0}}}); got != "" {
 		t.Fatalf("indent Line 0 = %q, want empty", got)
 	}
-	if got := indentDoc.indent(&yaml.Node{Content: []*yaml.Node{{Line: 2}}}); got != "" {
+	if got := indentDoc.getNodeIndent(&yaml.Node{Content: []*yaml.Node{{Line: 2}}}); got != "" {
 		t.Fatalf("indent Line==len(lines) = %q, want empty", got)
 	}
 
-	if got := string(indentLines([]byte("x"), "  ")); got != "  x" {
+	if got := string(addIndentToLines([]byte("x"), "  ")); got != "  x" {
 		t.Fatalf("indentLines 1-byte = %q, want %q", got, "  x")
 	}
-	if got := string(indentLines([]byte("\na\n \nb"), "  ")); got != "\n  a\n \n  b" {
+	if got := string(addIndentToLines([]byte("\na\n \nb"), "  ")); got != "\n  a\n \n  b" {
 		t.Fatalf("indentLines multi = %q, want %q", got, "\n  a\n \n  b")
 	}
 }
 
 func TestSpanAndEndLineBoundaries(t *testing.T) {
 	d := &Document{front: []byte("a: 1\nb: 2\n")}
-	if s, e, ok := d.span(nil, "a"); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findSpan(nil, "a"); s != 0 || e != 0 || ok {
 		t.Fatalf("span(nil) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.span(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "a"}}}, "a"); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findSpan(&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "a"}}}, "a"); s != 0 || e != 0 || ok {
 		t.Fatalf("span(odd Content) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.span(
+	if s, e, ok := d.findSpan(
 		&yaml.Node{Kind: yaml.MappingNode, Content: []*yaml.Node{{Value: "a", Line: 1, Column: 1}, {Value: "1", Line: 1}}},
 		"missing",
 	); s != 0 || e != 0 ||
@@ -1071,14 +1071,14 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 			{Value: "2", Line: 2, Column: 4},
 		},
 	}
-	if s, e, ok := d.span(dupSpanNode, "k"); !ok || s != 0 || e != 5 {
+	if s, e, ok := d.findSpan(dupSpanNode, "k"); !ok || s != 0 || e != 5 {
 		t.Fatalf("span(dupSpanNode, k) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
 	}
 
-	if s, e, ok := d.span(&yaml.Node{Content: []*yaml.Node{{Value: "a", Line: 0}, {Value: "1", Line: 1}}}, "a"); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findSpan(&yaml.Node{Content: []*yaml.Node{{Value: "a", Line: 0}, {Value: "1", Line: 1}}}, "a"); s != 0 || e != 0 || ok {
 		t.Fatalf("span(keyLine 0) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.span(&yaml.Node{Content: []*yaml.Node{{Value: "a", Line: 3}, {Value: "1", Line: 3}}}, "a"); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findSpan(&yaml.Node{Content: []*yaml.Node{{Value: "a", Line: 3}, {Value: "1", Line: 3}}}, "a"); s != 0 || e != 0 || ok {
 		t.Fatalf("span(keyLine>=len(lines)) = (%d, %d, %v)", s, e, ok)
 	}
 
@@ -1090,7 +1090,7 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 	if err != nil {
 		t.Fatalf("readMapping seqDoc: %v", err)
 	}
-	if s, e, ok := seqDoc.span(seqMap, "tags"); !ok || s != 0 || e != len(seqDoc.front) {
+	if s, e, ok := seqDoc.findSpan(seqMap, "tags"); !ok || s != 0 || e != len(seqDoc.front) {
 		t.Fatalf("span(seqDoc, tags) = (%d, %d, %v), want (0, %d, true)", s, e, ok, len(seqDoc.front))
 	}
 
@@ -1100,7 +1100,7 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 			{Kind: yaml.ScalarNode, Line: 0},
 		},
 	}
-	if s, e, ok := d.span(zeroValNode, "a"); !ok || s != 0 || e != 5 {
+	if s, e, ok := d.findSpan(zeroValNode, "a"); !ok || s != 0 || e != 5 {
 		t.Fatalf("span(zeroValNode) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
 	}
 
@@ -1112,7 +1112,7 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 			{Kind: yaml.ScalarNode, Line: 2},
 		},
 	}
-	if s, e, ok := d.span(clampNextNode, "a"); !ok || s != 0 || e != 5 {
+	if s, e, ok := d.findSpan(clampNextNode, "a"); !ok || s != 0 || e != 5 {
 		t.Fatalf("span(clampNextNode) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
 	}
 
@@ -1125,7 +1125,7 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 			{Kind: yaml.ScalarNode, Line: 3, Column: 4},
 		},
 	}
-	if s, e, ok := withCommentDoc.span(withCommentNode, "a"); !ok || s != 0 || e != 5 {
+	if s, e, ok := withCommentDoc.findSpan(withCommentNode, "a"); !ok || s != 0 || e != 5 {
 		t.Fatalf("span(withCommentNode) = (%d, %d, %v), want (0, 5, true)", s, e, ok)
 	}
 
@@ -1135,11 +1135,11 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 			{Kind: yaml.MappingNode, Line: 10},
 		},
 	}
-	if s, e, ok := d.span(clampLinesNode, "a"); !ok || s != 0 || e != 10 {
+	if s, e, ok := d.findSpan(clampLinesNode, "a"); !ok || s != 0 || e != 10 {
 		t.Fatalf("span(clampLinesNode) = (%d, %d, %v), want (0, 10, true)", s, e, ok)
 	}
 
-	lines := lineOffsets(d.front)
+	lines := getLineOffsets(d.front)
 	if got := d.endLine(lines, nil, 1); got != 0 {
 		t.Fatalf("endLine(nil) = %d, want 0", got)
 	}
@@ -1172,12 +1172,12 @@ func TestSpanAndEndLineBoundaries(t *testing.T) {
 	}
 
 	scalarDoc := &Document{front: []byte("a: |\n  x\n\n b\nc: 2\n  d: 3\n")}
-	scalarLines := lineOffsets(scalarDoc.front)
+	scalarLines := getLineOffsets(scalarDoc.front)
 	if got := scalarDoc.endLineOfScalar(scalarLines, &yaml.Node{Kind: yaml.ScalarNode, Line: 1}, 1); got != 4 {
 		t.Fatalf("endLineOfScalar = %d, want 4", got)
 	}
 	twoLineDoc := &Document{front: []byte("a: |\n  x\n")}
-	twoLines := lineOffsets(twoLineDoc.front)
+	twoLines := getLineOffsets(twoLineDoc.front)
 	if got := twoLineDoc.endLineOfScalar(twoLines, &yaml.Node{Kind: yaml.ScalarNode, Line: 1}, 1); got != 2 {
 		t.Fatalf("endLineOfScalar(twoLineDoc) = %d, want 2", got)
 	}
@@ -1325,7 +1325,7 @@ func TestKeysMethodsAndBoundaries(t *testing.T) {
 		t.Fatalf("mixedListDoc.List() = (%v, %v), want [keep]", list, ok)
 	}
 
-	if got := emptyDoc.entries(nil, "load"); got == nil || got.Kind != yaml.MappingNode {
+	if got := emptyDoc.findEntries(nil, "load"); got == nil || got.Kind != yaml.MappingNode {
 		t.Fatalf("entries(nil) = %+v, want MappingNode", got)
 	}
 	nullEntryDoc, err := Open([]byte("---\nload:\nscalar: 1\n---\n"))
@@ -1677,13 +1677,13 @@ func TestLinkblockHelpersAndBoundaries(t *testing.T) {
 
 func TestScalarHelpersAndBoundaries(t *testing.T) {
 	d := &Document{front: []byte("\"actual\"\n")}
-	if s, e, ok := d.scalarSpan(&yaml.Node{Kind: yaml.MappingNode}); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findScalarSpan(&yaml.Node{Kind: yaml.MappingNode}); s != 0 || e != 0 || ok {
 		t.Fatalf("scalarSpan(MappingNode) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.scalarSpan(&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.LiteralStyle, Line: 1, Column: 1}); s != 0 || e != 0 || ok {
+	if s, e, ok := d.findScalarSpan(&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.LiteralStyle, Line: 1, Column: 1}); s != 0 || e != 0 || ok {
 		t.Fatalf("scalarSpan(LiteralStyle) = (%d, %d, %v)", s, e, ok)
 	}
-	if s, e, ok := d.scalarSpan(
+	if s, e, ok := d.findScalarSpan(
 		&yaml.Node{Kind: yaml.ScalarNode, Style: yaml.DoubleQuotedStyle, Line: 1, Column: 1, Value: "mismatch"},
 	); s != 0 || e != 0 ||
 		ok {
@@ -1764,13 +1764,13 @@ func TestScalarHelpersAndBoundaries(t *testing.T) {
 		t.Fatalf("findQuotedEnd(multiline) = (%d, %v)", end, ok)
 	}
 
-	if got, err := scalarLike("true", 0); err != nil || got != `"true"` {
+	if got, err := encodeScalarLike("true", 0); err != nil || got != `"true"` {
 		t.Fatalf("scalarLike(true, 0) = (%q, %v), want \"true\"", got, err)
 	}
-	if got, err := scalarLike("true", yaml.TaggedStyle); err != nil || got != "true" {
+	if got, err := encodeScalarLike("true", yaml.TaggedStyle); err != nil || got != "true" {
 		t.Fatalf("scalarLike(true, TaggedStyle) = (%q, %v), want true", got, err)
 	}
-	if got, err := scalarLike("a\r\nb", yaml.SingleQuotedStyle); err != nil || got != `"a\r\nb"` {
+	if got, err := encodeScalarLike("a\r\nb", yaml.SingleQuotedStyle); err != nil || got != `"a\r\nb"` {
 		t.Fatalf("scalarLike(CRLF, SingleQuotedStyle) = (%q, %v), want \"a\\r\\nb\"", got, err)
 	}
 }

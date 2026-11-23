@@ -71,7 +71,7 @@ func BenchmarkHeadings(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		_ = headings(body)
+		_ = findHeadings(body)
 	}
 }
 
@@ -96,6 +96,6 @@ func BenchmarkBodyLinks(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		_ = bodyLinks(body)
+		_ = getBodyLinks(body)
 	}
 }

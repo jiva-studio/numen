@@ -22,7 +22,7 @@ const createContext = (marks: Readonly<Record<string, string>> = {}): WorkspaceC
   choose: vi.fn(),
   close: vi.fn(),
   startTabPress: vi.fn(),
-  menu: vi.fn(),
+  openMenu: vi.fn(),
   claim: vi.fn(),
   resize: vi.fn(),
   show: vi.fn(),

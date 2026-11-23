@@ -1,7 +1,7 @@
 /** Shares sum to one, whatever went in, and no children take none. */
 import { describe, expect, it } from 'vitest'
-import { even } from './even'
-import { atLeast, fit, insert } from './shares'
+import { getEvenShares } from './getEvenShares'
+import { getMinimumShare, fit, insert } from './shares'
 
 const sums = (sizes: readonly number[]) => sizes.reduce((total, size) => total + size, 0)
 
@@ -22,7 +22,7 @@ describe('fit', () => {
 
   it('divides evenly when nothing usable was given', () => {
     expect(fit([], 4)).toStrictEqual([0.25, 0.25, 0.25, 0.25])
-    expect(fit([0, -1, Number.NaN], 3)).toStrictEqual(even(3))
+    expect(fit([0, -1, Number.NaN], 3)).toStrictEqual(getEvenShares(3))
   })
 
   it('treats a negative or infinite share as missing', () => {
@@ -62,26 +62,26 @@ describe('insert', () => {
   })
 })
 
-describe('atLeast', () => {
+describe('getMinimumShare', () => {
   it('is the minimum as a share of the length', () => {
-    expect(atLeast(200, 1000, 2)).toBeCloseTo(0.2)
+    expect(getMinimumShare(200, 1000, 2)).toBeCloseTo(0.2)
   })
 
   it('never asks for more than an equal share', () => {
-    expect(atLeast(400, 1000, 3)).toBeCloseTo(1 / 3)
-    expect(atLeast(900, 1000, 2)).toBeCloseTo(0.5)
+    expect(getMinimumShare(400, 1000, 3)).toBeCloseTo(1 / 3)
+    expect(getMinimumShare(900, 1000, 2)).toBeCloseTo(0.5)
   })
 
   it('asks for nothing for a negative minimum', () => {
-    expect(atLeast(-200, 1000, 2)).toBe(0)
+    expect(getMinimumShare(-200, 1000, 2)).toBe(0)
   })
 
   it('asks for nothing before the branch has been measured', () => {
-    expect(atLeast(200, 0, 2)).toBe(0)
-    expect(atLeast(0, 1000, 2)).toBe(0)
+    expect(getMinimumShare(200, 0, 2)).toBe(0)
+    expect(getMinimumShare(0, 1000, 2)).toBe(0)
   })
 
   it('has nothing to ask of no children', () => {
-    expect(atLeast(200, 1000, 0)).toBe(0)
+    expect(getMinimumShare(200, 1000, 0)).toBe(0)
   })
 })

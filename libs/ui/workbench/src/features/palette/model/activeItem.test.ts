@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { computed, nextTick, ref } from 'vue'
-import { orderGroups, flatten } from '../lib/item'
+import { arrangeGroups, flatten } from '../lib/item'
 import { useActiveItem } from './activeItem'
 import type { PaletteAction, PaletteGroup, PaletteItem } from '../lib/item'
 
@@ -33,7 +33,7 @@ const setUp = (initial: PaletteGroup[]) => {
   const searchQuery = ref('')
   const onItemActive = vi.fn<(item: string) => void>()
   const tellChoice = vi.fn<(item: string, action: string) => void>()
-  const places = computed(() => flatten(orderGroups(groups.value)))
+  const places = computed(() => flatten(arrangeGroups(groups.value)))
   const state = useActiveItem({
     places,
     typed: searchQuery,
@@ -96,44 +96,44 @@ describe('useActiveItem', () => {
 
     it('lights the row it first moves over', () => {
       const { state } = list()
-      state.lightAt(1, move(5, 5))
+      state.highlightAt(1, move(5, 5))
       expect(state.activeItem.value?.id).toBe('b')
     })
 
     it('does not light a row for a pointer that has never been seen to move', () => {
       const { state } = list()
-      state.lightAt(1, move(-1, -1))
+      state.highlightAt(1, move(-1, -1))
       expect(state.here.value).toBe(-1)
     })
 
     it('lights nothing for a pointer standing still', () => {
       const { state } = list()
-      state.lightAt(1, move(5, 5))
+      state.highlightAt(1, move(5, 5))
       state.goTo(0)
-      state.lightAt(1, move(5, 5))
+      state.highlightAt(1, move(5, 5))
       expect(state.activeItem.value?.id).toBe('a')
     })
 
     it('lights a row when only one coordinate has moved', () => {
       const { state } = list()
-      state.lightAt(0, move(5, 5))
-      state.lightAt(1, move(5, 6))
+      state.highlightAt(0, move(5, 5))
+      state.highlightAt(1, move(5, 6))
       expect(state.activeItem.value?.id).toBe('b')
-      state.lightAt(0, move(6, 6))
+      state.highlightAt(0, move(6, 6))
       expect(state.activeItem.value?.id).toBe('a')
     })
 
     it('passes over a row that cannot be chosen', () => {
       const { state } = list()
       state.goTo(0)
-      state.lightAt(2, move(5, 5))
+      state.highlightAt(2, move(5, 5))
       expect(state.activeItem.value?.id).toBe('a')
     })
 
     it('ignores a row that is not in the list', () => {
       const { state } = list()
       state.goTo(0)
-      expect(() => state.lightAt(9, move(5, 5))).not.toThrow()
+      expect(() => state.highlightAt(9, move(5, 5))).not.toThrow()
       expect(state.activeItem.value?.id).toBe('a')
     })
   })
