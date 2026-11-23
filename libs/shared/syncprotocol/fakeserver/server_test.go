@@ -22,14 +22,15 @@ type world struct {
 	url     string
 	signAs  string
 	record  identity.Record
+	chain   identity.Chain
 	service syncv1connect.SignInServiceClient
 }
 
 func (w world) deviceSignKey() []byte { return w.record.Device.Public().Sign }
 
-func (w world) accountFingerprint() string { return w.record.Chain.Root().Fingerprint().String() }
+func (w world) accountFingerprint() string { return w.chain.Root().Fingerprint().String() }
 
-func newRecord(t *testing.T) identity.Record {
+func newRecord(t *testing.T) (identity.Record, identity.Chain) {
 	t.Helper()
 	words, err := identity.NewRecoveryWords(rand.Reader)
 	if err != nil {
@@ -60,7 +61,7 @@ func newRecord(t *testing.T) identity.Record {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return identity.Record{Device: device, Wrapped: wrapped, Chain: chain}
+	return identity.Record{Device: device, Wrapped: wrapped}, chain
 }
 
 func newWorld(t *testing.T, signAs string, config fakeserver.Config) world {
@@ -70,7 +71,8 @@ func newWorld(t *testing.T, signAs string, config fakeserver.Config) world {
 	t.Cleanup(served.Close)
 	server.SetAudience(served.URL)
 	service := syncv1connect.NewSignInServiceClient(http.DefaultClient, served.URL, connect.WithInterceptors(syncprotocol.NewVersionInterceptor()))
-	return world{server: server, url: served.URL, signAs: signAs, record: newRecord(t), service: service}
+	record, chain := newRecord(t)
+	return world{server: server, url: served.URL, signAs: signAs, record: record, chain: chain, service: service}
 }
 
 func (w world) getChallenge(ctx context.Context, t *testing.T) *syncv1.GetChallengeResponse {
@@ -86,7 +88,7 @@ func (w world) signIn(ctx context.Context, t *testing.T, challenge *syncv1.GetCh
 	t.Helper()
 	signature := w.record.Device.SignForPlugin(w.signAs, syncprotocol.GetSignInMessage(challenge, w.deviceSignKey(), syncprotocol.Version))
 	_, err := w.service.SignIn(ctx, connect.NewRequest(&syncv1.SignInRequest{
-		ChallengeId: challenge.GetChallengeId(), DeviceSignKey: w.deviceSignKey(), Signature: signature[:], Chain: w.record.Chain.Bytes(),
+		ChallengeId: challenge.GetChallengeId(), DeviceSignKey: w.deviceSignKey(), Signature: signature[:], Chain: w.chain.Bytes(),
 	}))
 	return err
 }
