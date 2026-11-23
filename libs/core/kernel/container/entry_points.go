@@ -33,7 +33,7 @@ func (c Config) OpenEditor(
 }
 
 func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultregistry.Ports, *vaultIndex, error) {
-	ports, err := c.openRegistry()
+	ports, err := openVaultRegistry(c.RegistryPath)
 	if err != nil {
 		return ports, nil, err
 	}
@@ -85,22 +85,23 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 	settingsDeps, _, vaultDeps := buildVaultSearch(c, exec, prefs, res, nil)
 
 	log := opening.Log
+	calls := getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
 	api := &shell.API{
 		Window:          shell.NewWindow(opening.Target, nil),
 		Frontends:       shell.NewFrontendPlugins(exec.Runtime.Manifests.ListFrontendPluginIDs, func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) }),
 		PluginServices:  servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver, exec.Runtime.Listing),
-		ConnectionCalls: connectioncall.NewService(getConnectionCalls(prefs, endpoints), openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(GetClock(res))),
+		ConnectionCalls: connectioncall.NewService(calls, openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(GetClock(res))),
 	}
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
 	vaults := openVaults(vaultDeps, db, log.Out, log.Label, func(v domain.Vault) { ensureindexed.NewReportRead(api.Runs, &api.Changes).Execute(v) })
 	closers := Shell{API: api, CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
 	api.Runs = ensureindexed.NewRuns(ctx, vaults.IndexVault)
-	setShellNotes(api, db)
+	api.Ensure = ensureindexed.New(api.Runs, db.NoteQueries(), api.Window, &api.Changes)
 	vaultList := vaultregistry.NewList(ports.Vaults)
 	api.Vaults = &vaultList
 	api.ResolveLinks = query.NewResolveVaultLinks(ports.Vaults, query.NewResolveLinks(db.NoteQueries()))
 	hooks := pluginVaultHooks{IndexState: api.EnsureIndexed, WatchMoves: api.WatchIndexChanges}
-	if err := installPluginVault(install, vaultDeps, ports, db, getNoShownVault, hooks); err != nil {
+	if err := installPluginVault(install, vaultDeps, ports, db, func() (domain.Vault, bool) { return domain.Vault{}, false }, hooks); err != nil {
 		return closers, err
 	}
 	closers.Themes = followShell(settingsDeps, vaultDeps, ctx, api, log.Label, log.Notify)
@@ -130,8 +131,6 @@ func followShell(settingsDeps settingsWiring, vaultDeps vaultWiring, ctx context
 	api.Themes = service
 	return themesErr
 }
-
-func getNoShownVault() (domain.Vault, bool) { return domain.Vault{}, false }
 
 // FlushTimeout is how long a page may take to write its unsaved data when the vault closes.
 func FlushTimeout() time.Duration { return windowsession.FlushTimeout }
