@@ -65,7 +65,6 @@ func (g *Gate) Close() {
 	<-g.questions.seal()
 }
 
-// openStream returns the context of a stream that Close cancels, and the function that releases it.
 func (g *Gate) openStream(ctx context.Context) (context.Context, func()) {
 	ctx, cancel := context.WithCancel(ctx)
 	g.mu.Lock()
