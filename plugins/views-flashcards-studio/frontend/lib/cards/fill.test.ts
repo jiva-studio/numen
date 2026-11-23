@@ -3,7 +3,7 @@
  * out is the same text on any machine on any day.
  */
 import { describe, expect, it } from 'vitest'
-import { braceField, getSlots } from './braces'
+import { wrapBraces, getSlots } from './braces'
 import { insert, renderPreview, sampleValues, getUndeclaredSlots } from './fill'
 
 /**
@@ -210,6 +210,6 @@ describe('sampleValues', () => {
 
 describe('braceField', () => {
   it('is what a slot is written as', () => {
-    expect(getSlots(braceField('Life span'))[0]?.field).toBe('Life span')
+    expect(getSlots(wrapBraces('Life span'))[0]?.field).toBe('Life span')
   })
 })

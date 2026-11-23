@@ -1,17 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import {
+  CatalogErrorCode,
   FindCatalogEntryByTabKindResponseSchema,
   GetCatalogEntryResponseSchema,
   GetCatalogReadmeResponseSchema,
   ListCatalogResponseSchema,
 } from '@numen/protocol'
-import {
-  CATALOG_ERROR_CODE,
-  CATALOG_STATE,
-  createPluginCatalog,
-  type CatalogClient,
-} from './catalog'
+import { CATALOG_STATE, createPluginCatalog, type CatalogClient } from './catalog'
 import { createMockCatalogEntry, createMockPluginCatalog } from './testing/mockCatalog'
 
 const notes = createMockCatalogEntry('notes', { tabKinds: ['note'], feature: 'Markdown notes' })
@@ -91,7 +87,7 @@ describe('createPluginCatalog', () => {
       findCatalogEntryByTabKind: () =>
         Promise.resolve(
           create(FindCatalogEntryByTabKindResponseSchema, {
-            error: CATALOG_ERROR_CODE.NOT_FOUND,
+            error: CatalogErrorCode.NOT_FOUND,
             entry: notes,
           }),
         ),
@@ -99,14 +95,17 @@ describe('createPluginCatalog', () => {
 
     const answer = await createPluginCatalog(client).findByTabKind('missing')
 
-    expect(answer).toStrictEqual({ ok: false, error: { kind: 'not-found', sourceErrors: [] } })
+    expect(answer).toStrictEqual({
+      ok: false,
+      error: { error: 'notFound', message: 'not found', sourceErrors: [] },
+    })
   })
 
   it('reports not-found for an id no source lists', async () => {
     const client = createClient({
       getCatalogEntry: () =>
         Promise.resolve(
-          create(GetCatalogEntryResponseSchema, { error: CATALOG_ERROR_CODE.UNSPECIFIED }),
+          create(GetCatalogEntryResponseSchema, { error: CatalogErrorCode.UNSPECIFIED }),
         ),
     })
 
@@ -129,7 +128,7 @@ describe('createPluginCatalog', () => {
       await catalog.findByTabKind('note'),
     ]) {
       expect(answer.ok).toBe(false)
-      if (!answer.ok) expect(answer.error.kind).toBe('unavailable')
+      if (!answer.ok) expect(answer.error.error).toBe('unavailable')
     }
   })
 })

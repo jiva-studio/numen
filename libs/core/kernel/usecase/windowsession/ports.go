@@ -48,7 +48,7 @@ type CloseFunc func(ctx context.Context) error
 // ModelSource is the embedder of the window: the model it reads under and its announcements.
 type ModelSource interface {
 	Describe() (name, recipe string)
-	OnModelChange(fn func(isChunkSizeChanged bool))
+	SubscribeModelChange(fn func(isChunkSizeChanged bool))
 }
 
 // IndexWake wakes the worker that indexes the vaults of the window.
@@ -77,8 +77,8 @@ type TextVersions interface {
 
 // Reporters are what the passes behind a vault call back.
 type Reporters struct {
-	Changed func(paths, assets []string, reload bool)
-	Failed  window.ErrorHandler
+	NotifyChanged func(paths, assets []string, reload bool)
+	Failed        window.ErrorHandler
 }
 
 // Started is the passes behind one vault. Publish makes the refresh of this run the one requests

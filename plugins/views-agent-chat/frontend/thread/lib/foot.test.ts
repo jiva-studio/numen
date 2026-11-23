@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { atFoot, getFoot } from './foot'
+import { isAtFoot, getFoot } from './foot'
 import { SLACK } from './slack'
 
 const area = (scrollTop: number, scrollHeight = 500, clientHeight = 100) => ({
@@ -20,22 +20,22 @@ describe('where the foot is', () => {
 
 describe('whether the foot is in view', () => {
   it('it is, at the foot', () => {
-    expect(atFoot(area(400))).toBe(true)
+    expect(isAtFoot(area(400))).toBe(true)
   })
 
   it('it is, within the slack of it', () => {
-    expect(atFoot(area(400 - SLACK))).toBe(true)
+    expect(isAtFoot(area(400 - SLACK))).toBe(true)
   })
 
   it('it is not, a hair further up', () => {
-    expect(atFoot(area(400 - SLACK - 1))).toBe(false)
+    expect(isAtFoot(area(400 - SLACK - 1))).toBe(false)
   })
 
   it('it is not, halfway up a long conversation', () => {
-    expect(atFoot(area(200))).toBe(false)
+    expect(isAtFoot(area(200))).toBe(false)
   })
 
   it('it is, in an area with nothing to scroll', () => {
-    expect(atFoot(area(0, 40, 100))).toBe(true)
+    expect(isAtFoot(area(0, 40, 100))).toBe(true)
   })
 })

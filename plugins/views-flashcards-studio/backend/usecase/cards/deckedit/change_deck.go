@@ -29,13 +29,13 @@ func changeDeck(
 	if err := change(contents, file); err != nil {
 		return deckChange{}, err
 	}
-	wrote, err := write.Deck(ctx, v, pos.Path, file.Body(), pos.FileStat)
+	wrote, err := write.WriteDeck(ctx, v, pos.Path, file.Body(), pos.FileStat)
 	if err != nil && !errors.Is(err, edit.ErrIndexOutdated) {
 		return deckChange{}, err
 	}
 	return deckChange{
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="Zero-valued FileStat Size is unused when counting deck cards."
-		result:  EditResult{FileStat: wrote.FileStat, Cards: len(file.Deck(domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}).Cards)},
+		result:  EditResult{FileStat: wrote.FileStat, Cards: len(file.BuildDeck(domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}).Cards)},
 		cardIDs: wrote.Given,
 	}, nil
 }

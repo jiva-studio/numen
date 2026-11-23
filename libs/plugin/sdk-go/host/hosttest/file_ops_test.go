@@ -14,9 +14,9 @@ const pdfBody = "%PDF-1.7\n\x00\xff\xfe binary \x80 tail"
 
 func newDocuments() *hosttest.Vault {
 	v := hosttest.New("Documents")
-	v.File("Papers/Report.pdf", pdfBody)
-	v.File("Papers/Notes/One.md", "one")
-	v.File("Papers/Notes/Two.md", "two")
+	v.WriteFile("Papers/Report.pdf", pdfBody)
+	v.WriteFile("Papers/Notes/One.md", "one")
+	v.WriteFile("Papers/Notes/Two.md", "two")
 	return v
 }
 
@@ -28,10 +28,10 @@ func TestMoveFileMovesAFileOfAnyKindWithItsBytes(t *testing.T) {
 	if err != nil || got.Count != 1 {
 		t.Fatalf("moved %+v, error = %v, want one file", got, err)
 	}
-	if content, there := v.Content("Archive/Old report.pdf"); !there || content != pdfBody {
+	if content, there := v.ReadContent("Archive/Old report.pdf"); !there || content != pdfBody {
 		t.Errorf("the target holds %q (there %v), want the bytes of the file", content, there)
 	}
-	if _, there := v.Content("Papers/Report.pdf"); there {
+	if _, there := v.ReadContent("Papers/Report.pdf"); there {
 		t.Error("the source is still there")
 	}
 }
@@ -45,18 +45,18 @@ func TestMoveFileMovesAFolderWithEveryFileInsideItAndCountsTheFiles(t *testing.T
 		t.Fatalf("moved %+v, error = %v, want three files", got, err)
 	}
 	for _, name := range []string{"Archive/Papers/Report.pdf", "Archive/Papers/Notes/One.md", "Archive/Papers/Notes/Two.md"} {
-		if _, there := v.Content(name); !there {
+		if _, there := v.ReadContent(name); !there {
 			t.Errorf("%s is missing under the new folder", name)
 		}
 	}
-	if _, there := v.Content("Papers/Notes/One.md"); there {
+	if _, there := v.ReadContent("Papers/Notes/One.md"); there {
 		t.Error("a file is left under the old folder")
 	}
 }
 
 func TestMoveFileRefusesAMissingSourceATakenTargetAndAPathOutsideTheVault(t *testing.T) {
 	v := newDocuments()
-	v.File("Archive/Taken.pdf", "x")
+	v.WriteFile("Archive/Taken.pdf", "x")
 
 	for _, one := range []struct {
 		name     string
@@ -72,7 +72,7 @@ func TestMoveFileRefusesAMissingSourceATakenTargetAndAPathOutsideTheVault(t *tes
 			t.Errorf("%s: error = %v, want %v", one.name, err, one.want)
 		}
 	}
-	if content, there := v.Content("Papers/Report.pdf"); !there || content != pdfBody {
+	if content, there := v.ReadContent("Papers/Report.pdf"); !there || content != pdfBody {
 		t.Error("a refused move changed the source")
 	}
 }
@@ -80,12 +80,12 @@ func TestMoveFileRefusesAMissingSourceATakenTargetAndAPathOutsideTheVault(t *tes
 func TestMoveFileWithABaselineRefusesAFileThatChangedSinceAndMovesOneThatDidNot(t *testing.T) {
 	v := newDocuments()
 	seen := statOf(t, v, "Papers/Report.pdf")
-	v.File("Papers/Report.pdf", pdfBody+" edited")
+	v.WriteFile("Papers/Report.pdf", pdfBody+" edited")
 
 	if _, err := v.MoveFile(t.Context(), "Papers/Report.pdf", "Archive/Report.pdf", &seen); !errors.Is(err, host.ErrStale) {
 		t.Errorf("a changed file: error = %v, want ErrStale", err)
 	}
-	if _, there := v.Content("Papers/Report.pdf"); !there {
+	if _, there := v.ReadContent("Papers/Report.pdf"); !there {
 		t.Error("a refused move took the file")
 	}
 	current := statOf(t, v, "Papers/Report.pdf")
@@ -102,10 +102,10 @@ func TestRemoveFileMovesAFileToTheTrashAndDestroysNothing(t *testing.T) {
 	if err != nil || got.Count != 1 {
 		t.Fatalf("removed %+v, error = %v, want one file", got, err)
 	}
-	if _, there := v.Content("Papers/Report.pdf"); there {
+	if _, there := v.ReadContent("Papers/Report.pdf"); there {
 		t.Error("the file is still in the vault")
 	}
-	if content, there := v.Content(".trash/Papers/Report.pdf"); !there || content != pdfBody {
+	if content, there := v.ReadContent(".trash/Papers/Report.pdf"); !there || content != pdfBody {
 		t.Errorf("the trash holds %q (there %v), want the bytes of the file", content, there)
 	}
 }
@@ -118,7 +118,7 @@ func TestRemoveFileTrashesAFolderWithEveryFileInsideItAndRefusesAMissingPath(t *
 	if err != nil || got.Count != 3 {
 		t.Fatalf("removed %+v, error = %v, want three files", got, err)
 	}
-	if content, there := v.Content(".trash/Papers/Notes/Two.md"); !there || content != "two" {
+	if content, there := v.ReadContent(".trash/Papers/Notes/Two.md"); !there || content != "two" {
 		t.Errorf("the trash holds %q (there %v) of a file under the folder", content, there)
 	}
 	if _, err := v.RemoveFile(t.Context(), "Papers", nil); !errors.Is(err, host.ErrNotExist) {
@@ -132,14 +132,14 @@ func TestRemoveFileTrashesAFolderWithEveryFileInsideItAndRefusesAMissingPath(t *
 func TestRemoveFileWithABaselineKeepsAFileThatChangedSince(t *testing.T) {
 	v := newDocuments()
 	seen := statOf(t, v, "Papers/Report.pdf")
-	v.File("Papers/Report.pdf", pdfBody+" edited")
+	v.WriteFile("Papers/Report.pdf", pdfBody+" edited")
 
 	_, err := v.RemoveFile(t.Context(), "Papers/Report.pdf", &seen)
 
 	if !errors.Is(err, host.ErrStale) {
 		t.Errorf("error = %v, want ErrStale", err)
 	}
-	if _, there := v.Content("Papers/Report.pdf"); !there {
+	if _, there := v.ReadContent("Papers/Report.pdf"); !there {
 		t.Error("a refused removal took the file")
 	}
 }
@@ -205,14 +205,14 @@ func TestReadBytesRefusesAFolderAMissingFileAnOutsidePathAndALengthOutsideTheLim
 
 func TestPlaceFileMovesAStagedFileToTheVaultAndEmptiesTheStoreName(t *testing.T) {
 	v := hosttest.New("Documents")
-	v.Store().File("0a1b.part", []byte(pdfBody))
+	v.Store().WriteFile("0a1b.part", []byte(pdfBody))
 
 	stat, err := v.PlaceFile(t.Context(), "0a1b.part", "Papers/Report.pdf", domain.HashContent([]byte(pdfBody)), nil)
 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if content, there := v.Content("Papers/Report.pdf"); !there || content != pdfBody {
+	if content, there := v.ReadContent("Papers/Report.pdf"); !there || content != pdfBody {
 		t.Errorf("the vault holds %q (there %v), want the staged bytes", content, there)
 	}
 	if stat.Hash != domain.HashContent([]byte(pdfBody)) || stat.Size != int64(len(pdfBody)) {
@@ -225,16 +225,16 @@ func TestPlaceFileMovesAStagedFileToTheVaultAndEmptiesTheStoreName(t *testing.T)
 
 func TestPlaceFileRefusesTheWrongHashAndChangesNeitherTheVaultNorTheStagedFile(t *testing.T) {
 	v := hosttest.New("Documents")
-	v.File("Papers/Report.pdf", "old")
+	v.WriteFile("Papers/Report.pdf", "old")
 	seen := statOf(t, v, "Papers/Report.pdf")
-	v.Store().File("0a1b.part", []byte(pdfBody))
+	v.Store().WriteFile("0a1b.part", []byte(pdfBody))
 
 	_, err := v.PlaceFile(t.Context(), "0a1b.part", "Papers/Report.pdf", domain.HashContent([]byte("another")), &seen)
 
 	if !errors.Is(err, host.ErrHashMismatch) {
 		t.Errorf("error = %v, want ErrHashMismatch", err)
 	}
-	if content, _ := v.Content("Papers/Report.pdf"); content != "old" {
+	if content, _ := v.ReadContent("Papers/Report.pdf"); content != "old" {
 		t.Errorf("the vault holds %q, want the old file", content)
 	}
 	if _, err := v.Store().Read(t.Context(), "0a1b.part"); err != nil {
@@ -244,15 +244,15 @@ func TestPlaceFileRefusesTheWrongHashAndChangesNeitherTheVaultNorTheStagedFile(t
 
 func TestPlaceFileWithoutABaselineNeedsAFreePathAndWithOneNeedsAnUnchangedFile(t *testing.T) {
 	v := hosttest.New("Documents")
-	v.File("Papers/Report.pdf", "old")
+	v.WriteFile("Papers/Report.pdf", "old")
 	seen := statOf(t, v, "Papers/Report.pdf")
 	hash := domain.HashContent([]byte(pdfBody))
-	v.Store().File("a.part", []byte(pdfBody))
+	v.Store().WriteFile("a.part", []byte(pdfBody))
 
 	if _, err := v.PlaceFile(t.Context(), "a.part", "Papers/Report.pdf", hash, nil); !errors.Is(err, host.ErrAlreadyExists) {
 		t.Errorf("a taken path without a baseline: error = %v, want ErrAlreadyExists", err)
 	}
-	v.File("Papers/Report.pdf", "old, then edited")
+	v.WriteFile("Papers/Report.pdf", "old, then edited")
 	if _, err := v.PlaceFile(t.Context(), "a.part", "Papers/Report.pdf", hash, &seen); !errors.Is(err, host.ErrStale) {
 		t.Errorf("a changed file: error = %v, want ErrStale", err)
 	}
@@ -260,14 +260,14 @@ func TestPlaceFileWithoutABaselineNeedsAFreePathAndWithOneNeedsAnUnchangedFile(t
 	if _, err := v.PlaceFile(t.Context(), "a.part", "Papers/Report.pdf", hash, &current); err != nil {
 		t.Fatalf("an unchanged file: error = %v, want none", err)
 	}
-	if content, _ := v.Content("Papers/Report.pdf"); content != pdfBody {
+	if content, _ := v.ReadContent("Papers/Report.pdf"); content != pdfBody {
 		t.Errorf("the vault holds %q, want the placed bytes", content)
 	}
 }
 
 func TestPlaceFileRefusesAMissingStagedFileAndAPathOutsideTheVault(t *testing.T) {
 	v := hosttest.New("Documents")
-	v.Store().File("a.part", []byte("x"))
+	v.Store().WriteFile("a.part", []byte("x"))
 	hash := domain.HashContent([]byte("x"))
 
 	if _, err := v.PlaceFile(t.Context(), "missing.part", "Papers/A.pdf", hash, nil); !errors.Is(err, host.ErrNotExist) {

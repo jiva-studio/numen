@@ -19,7 +19,7 @@ func openTranscriber(t *testing.T) (*Transcriber, []byte) {
 		t.Skip("NUMEN_MODELS and NUMEN_RECORDING name no models and no recording")
 	}
 
-	cfg := settings.Defaults()
+	cfg := settings.NewDefaultConfig()
 	if name := os.Getenv("NUMEN_MODEL"); name != "" {
 		model, ok := settings.FindModel(name)
 		if !ok {

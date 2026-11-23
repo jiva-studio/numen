@@ -75,7 +75,7 @@ func TestSetBodyAndSpliceBodyBranches(t *testing.T) {
 	if err := unterm.SetBody("x"); !errors.Is(err, ErrUnterminated) {
 		t.Errorf("SetBody on unterminated = %v", err)
 	}
-	if err := unterm.SpliceBody(0, 0, "x"); !errors.Is(err, ErrUnterminated) {
+	if err := unterm.ReplaceBody(0, 0, "x"); !errors.Is(err, ErrUnterminated) {
 		t.Errorf("SpliceBody on unterminated = %v", err)
 	}
 
@@ -87,19 +87,19 @@ func TestSetBodyAndSpliceBodyBranches(t *testing.T) {
 		t.Errorf("SetBody no newline = %q, %v", d.Body(), err)
 	}
 
-	if err := d.SpliceBody(-1, 0, "x"); err == nil {
+	if err := d.ReplaceBody(-1, 0, "x"); err == nil {
 		t.Error("expected error for start < 0")
 	}
-	if err := d.SpliceBody(2, 1, "x"); err == nil {
+	if err := d.ReplaceBody(2, 1, "x"); err == nil {
 		t.Error("expected error for end < start")
 	}
-	if err := d.SpliceBody(0, len(d.Body())+1, "x"); err == nil {
+	if err := d.ReplaceBody(0, len(d.Body())+1, "x"); err == nil {
 		t.Error("expected error for end > len(body)")
 	}
-	if err := d.SpliceBody(0, 0, "prefix "); err != nil || d.Body() != "prefix no newline\n" {
+	if err := d.ReplaceBody(0, 0, "prefix "); err != nil || d.Body() != "prefix no newline\n" {
 		t.Errorf("SpliceBody at 0,0 = %q, %v", d.Body(), err)
 	}
-	if err := d.SpliceBody(7, len(d.Body()), "tail\n"); err != nil || d.Body() != "prefix tail\n" {
+	if err := d.ReplaceBody(7, len(d.Body()), "tail\n"); err != nil || d.Body() != "prefix tail\n" {
 		t.Errorf("SpliceBody to end = %q, %v", d.Body(), err)
 	}
 
@@ -107,7 +107,7 @@ func TestSetBodyAndSpliceBodyBranches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := crlfDoc.SpliceBody(6, 11, "a\nb"); err != nil || crlfDoc.Body() != "hello a\r\nb\r\n" {
+	if err := crlfDoc.ReplaceBody(6, 11, "a\nb"); err != nil || crlfDoc.Body() != "hello a\r\nb\r\n" {
 		t.Errorf("SpliceBody CRLF = %q, %v", crlfDoc.Body(), err)
 	}
 }

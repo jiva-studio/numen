@@ -69,7 +69,7 @@ func (o *ownership) moveClaimedTabs(ownerID string) {
 				return false
 			}
 			o.setOwner(claimerID, tab)
-			s.roster.setTabIDs(claimerID, append(s.roster.tabIDsOf(claimerID), tab.ID))
+			s.roster.setTabIDs(claimerID, append(s.roster.listTabIDs(claimerID), tab.ID))
 			return true
 		})
 	}

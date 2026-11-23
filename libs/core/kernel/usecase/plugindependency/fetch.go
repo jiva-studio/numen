@@ -12,11 +12,11 @@ import (
 
 // Fetch resolves model files through the installation's current dependency registry.
 type Fetch struct {
-	registry func() pluginport.DependencyRegistry
+	getRegistry func() pluginport.DependencyRegistry
 }
 
 func NewFetch(registry func() pluginport.DependencyRegistry) *Fetch {
-	return &Fetch{registry: registry}
+	return &Fetch{getRegistry: registry}
 }
 
 func (f *Fetch) Execute(ctx context.Context, address, digest string) (string, error) {
@@ -24,7 +24,7 @@ func (f *Fetch) Execute(ctx context.Context, address, digest string) (string, er
 	if err != nil {
 		return "", err
 	}
-	registry := f.registry()
+	registry := f.getRegistry()
 	if registry == nil {
 		return "", errors.New("the installation has no dependency registry")
 	}

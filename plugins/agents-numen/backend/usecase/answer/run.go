@@ -36,7 +36,7 @@ func (r *run) answer(ctx context.Context, messages []conversation.Message) ([]co
 			isDone bool
 			err    error
 		)
-		messages, reason, isDone, err = r.turn(ctx, messages, "message-"+strconv.Itoa(index+1))
+		messages, reason, isDone, err = r.runTurn(ctx, messages, "message-"+strconv.Itoa(index+1))
 		if err != nil {
 			return messages, acp.StopReason_STOP_REASON_UNSPECIFIED, err
 		}
@@ -47,7 +47,7 @@ func (r *run) answer(ctx context.Context, messages []conversation.Message) ([]co
 	return messages, acp.StopReason_STOP_REASON_MAX_TURN_REQUESTS, nil
 }
 
-func (r *run) turn(ctx context.Context, messages []conversation.Message, messageID string) ([]conversation.Message, acp.StopReason, bool, error) {
+func (r *run) runTurn(ctx context.Context, messages []conversation.Message, messageID string) ([]conversation.Message, acp.StopReason, bool, error) {
 	var unsent error
 	emit := func(text string) error {
 		if text == "" {

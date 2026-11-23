@@ -26,14 +26,14 @@ type graph struct {
 	err     error
 }
 
-func (g graph) GetLinks(_ context.Context, _ domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (g graph) ListLinks(_ context.Context, _ domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	if from == g.failOut {
 		return nil, g.err
 	}
 	return g.out[from], nil
 }
 
-func (g graph) GetBacklinks(_ context.Context, _ domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (g graph) ListBacklinks(_ context.Context, _ domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	if to == g.failIn {
 		return nil, g.err
 	}
@@ -227,10 +227,10 @@ func TestTheFirstOfTwoEqualLinksIsTheOneGenerated(t *testing.T) {
 	}
 }
 
-func (g graph) GetLinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
+func (g graph) ListLinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
 	out := make(map[string][]domain.ResolvedLink, len(paths))
 	for _, p := range paths {
-		links, err := g.GetLinks(ctx, v, p)
+		links, err := g.ListLinks(ctx, v, p)
 		if err != nil {
 			return nil, err
 		}
@@ -239,10 +239,10 @@ func (g graph) GetLinksOf(ctx context.Context, v domain.VaultID, paths []string)
 	return out, nil
 }
 
-func (g graph) GetBacklinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
+func (g graph) ListBacklinksOf(ctx context.Context, v domain.VaultID, paths []string) (map[string][]domain.ResolvedLink, error) {
 	out := make(map[string][]domain.ResolvedLink, len(paths))
 	for _, p := range paths {
-		links, err := g.GetBacklinks(ctx, v, p)
+		links, err := g.ListBacklinks(ctx, v, p)
 		if err != nil {
 			return nil, err
 		}

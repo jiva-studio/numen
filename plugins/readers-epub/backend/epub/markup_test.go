@@ -13,7 +13,7 @@ import (
 // takes every offset it needs off the markup it was handed.
 func TestMarkup(t *testing.T) {
 	book := read(t, tinyBook(t, map[string]string{secondDoc: "variant/drawn.xhtml"}))
-	rendered, err := book.Markup(secondDoc)
+	rendered, err := book.ParseMarkup(secondDoc)
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}
@@ -114,7 +114,7 @@ func TestMarkup(t *testing.T) {
 	})
 
 	t.Run("a document the book was not read from", func(t *testing.T) {
-		if _, err := book.Markup("OEBPS/gone.xhtml"); !errors.Is(err, epub.ErrNoDocument) {
+		if _, err := book.ParseMarkup("OEBPS/gone.xhtml"); !errors.Is(err, epub.ErrNoDocument) {
 			t.Errorf("err = %v, want %v", err, epub.ErrNoDocument)
 		}
 	})
@@ -128,7 +128,7 @@ func TestASpineDocumentThatIsACoverGeneratedAroundAPicture(t *testing.T) {
 		xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 600 800">
 		<image width="600" height="800" xlink:href="pictures/plate.png"/></svg>`))
 
-	rendered, err := book.Markup("OEBPS/cover.svg")
+	rendered, err := book.ParseMarkup("OEBPS/cover.svg")
 	if err != nil {
 		t.Fatalf("markup: %v", err)
 	}
@@ -138,7 +138,7 @@ func TestASpineDocumentThatIsACoverGeneratedAroundAPicture(t *testing.T) {
 	if got := attribute(&rendered.Nodes[0], "src"); got != "OEBPS/pictures/plate.png" {
 		t.Errorf("the cover is drawn from %q", got)
 	}
-	if _, err := book.Entry(attribute(&rendered.Nodes[0], "src")); err != nil {
+	if _, err := book.ReadEntry(attribute(&rendered.Nodes[0], "src")); err != nil {
 		t.Errorf("the cover is drawn from an address the archive answers with %v", err)
 	}
 	doc := document(t, book, "OEBPS/cover.svg")
@@ -162,7 +162,7 @@ func TestCover_WithoutImageReferenceYieldsNoImage(t *testing.T) {
 			<image title="pictures/plate.png"/></svg>`},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			rendered, err := read(t, coverBook(t, one.svg)).Markup("OEBPS/cover.svg")
+			rendered, err := read(t, coverBook(t, one.svg)).ParseMarkup("OEBPS/cover.svg")
 			if err != nil {
 				t.Fatalf("markup: %v", err)
 			}
@@ -188,7 +188,7 @@ func TestCover_ResolvesImageHref(t *testing.T) {
 			<svg xmlns="http://www.w3.org/2000/svg"><image href="pictures/plate.png"/></svg>`,
 			"OEBPS/pictures/plate.png"},
 	} {
-		rendered, err := read(t, coverBook(t, one.svg)).Markup("OEBPS/cover.svg")
+		rendered, err := read(t, coverBook(t, one.svg)).ParseMarkup("OEBPS/cover.svg")
 		if err != nil {
 			t.Fatalf("markup: %v", err)
 		}
@@ -403,7 +403,7 @@ func TestRunsInATable(t *testing.T) {
 // What the book holds beside its spine is not a document of it.
 func TestAnEntryAdjacentTheSpineIsNoDocument(t *testing.T) {
 	book := read(t, coverBook(t, `<svg xmlns="http://www.w3.org/2000/svg"/>`))
-	if _, err := book.Markup("OEBPS/pictures/plate.png"); !errors.Is(err, epub.ErrNoDocument) {
+	if _, err := book.ParseMarkup("OEBPS/pictures/plate.png"); !errors.Is(err, epub.ErrNoDocument) {
 		t.Errorf("err = %v, want %v", err, epub.ErrNoDocument)
 	}
 }

@@ -9,20 +9,20 @@ import { createNodeIdFactory } from './identity'
 
 describe('the identities a workspace gives its nodes', () => {
   it('are what the randomness passes over', () => {
-    const createId = createNodeIdFactory({ uuid: () => 'from-the-machine' })
+    const createId = createNodeIdFactory({ createUuid: () => 'from-the-machine' })
 
     expect(createId()).toBe('from-the-machine')
   })
 
   it('are counted where the machine makes none', () => {
-    const createId = createNodeIdFactory({ uuid: () => null })
+    const createId = createNodeIdFactory({ createUuid: () => null })
 
     expect([createId(), createId(), createId()]).toStrictEqual(['node-1', 'node-2', 'node-3'])
   })
 
   it('are counted apart, so two factories never meet', () => {
-    const one = createNodeIdFactory({ uuid: () => null })
-    const other = createNodeIdFactory({ uuid: () => null })
+    const one = createNodeIdFactory({ createUuid: () => null })
+    const other = createNodeIdFactory({ createUuid: () => null })
 
     expect(one()).toBe(other())
     expect(one()).not.toBe(other() + 'x')

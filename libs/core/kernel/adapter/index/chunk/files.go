@@ -21,7 +21,7 @@ func NewFiles(db *sql.DB) *Files { return &Files{db: db} }
 // GetFileStats is what the index believes about each file of one kind, keyed by
 // path, so a scan can decide what to read again without opening anything.
 func (q *Files) GetFileStats(ctx context.Context, vaultID domain.VaultID, kind string) (_ map[string]domain.FileStat, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return map[string]domain.FileStat{}, nil
 	}
@@ -51,7 +51,7 @@ func (q *Files) GetFileStats(ctx context.Context, vaultID domain.VaultID, kind s
 // GetSourcesUnder is every source the vault holds at a path and beneath it, by
 // path: the one file, or everything a folder holds.
 func (q *Files) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) (_ []domain.FileStat, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -82,7 +82,7 @@ func (q *Files) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, pat
 // GetRecord is where one chunk's text is read from. False when the vault holds no
 // such chunk.
 func (q *Files) GetRecord(ctx context.Context, vaultID domain.VaultID, chunk int64) (Record, bool, error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return Record{}, false, nil
 	}
@@ -108,7 +108,7 @@ func scanRecord(row *sql.Row, chunk int64) (Record, bool, error) {
 // GetUnchunkedSources is the sources of one kind with no small chunk: the file
 // changed, or it has never been cut.
 func (q *Files) GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind string, limit int) ([]string, error) {
-	return q.paths(ctx, vaultID, "unchunked", unchunkedSQL, limit, func(vault int64) []any {
+	return q.listPaths(ctx, vaultID, "unchunked", unchunkedSQL, limit, func(vault int64) []any {
 		return []any{vault, kind, limit}
 	})
 }
@@ -120,16 +120,16 @@ func (q *Files) GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.Va
 	if err != nil {
 		return nil, err
 	}
-	return q.paths(ctx, vaultID, "stale_recipe", staleRecipeSQL, limit, func(vault int64) []any {
+	return q.listPaths(ctx, vaultID, "stale_recipe", staleRecipeSQL, limit, func(vault int64) []any {
 		return []any{vault, kind, string(named), limit}
 	})
 }
 
-func (q *Files) paths(ctx context.Context, vaultID domain.VaultID, name, query string, limit int, args func(vault int64) []any) (_ []string, err error) {
+func (q *Files) listPaths(ctx context.Context, vaultID domain.VaultID, name, query string, limit int, args func(vault int64) []any) (_ []string, err error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("%s needs a positive limit, got %d", name, limit)
 	}
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}
@@ -167,7 +167,7 @@ type SourceText struct {
 // GetSourceText is what one source's text came from, and false where the index holds
 // no source at that path.
 func (q *Files) GetSourceText(ctx context.Context, vaultID domain.VaultID, path string) (SourceText, bool, error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return SourceText{}, false, nil
 	}
@@ -191,7 +191,7 @@ func (q *Files) GetSourceText(ctx context.Context, vaultID domain.VaultID, path 
 // the user may empty.
 // search results.
 func (q *Files) GetRecognizedSources(ctx context.Context, vaultID domain.VaultID, kind string) (_ []SourceText, err error) {
-	vault, err := vaultRow(ctx, q.db, vaultID)
+	vault, err := getVaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
 	}

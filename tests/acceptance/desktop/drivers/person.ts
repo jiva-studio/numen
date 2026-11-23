@@ -91,7 +91,7 @@ export class Person {
     this.identity = new IdentityDriver(this.scenario, this.settings)
     this.sync = new SyncDriver(this.scenario, this.identity)
     this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings)
-    this.computers = new ComputerDriver({ first: this.scenario, viewport, identity: this.identity, sync: this.sync, firstVaults: this.syncVaults })
+    this.computers = new ComputerDriver(this.scenario, viewport, { identity: this.identity, sync: this.sync, vaults: this.syncVaults })
     this.files = new SyncedFilesDriver(this.computers, this.sync, this.syncVaults)
   }
 

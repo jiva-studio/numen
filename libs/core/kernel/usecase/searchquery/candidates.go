@@ -15,11 +15,11 @@ type placeKey struct {
 type scopeFilter func(ctx context.Context, s searchquery.Scope, ids []domain.ChunkID) (map[domain.ChunkID]bool, error)
 
 type placeCache struct {
-	source   ChunkPlaces
-	vaultID  domain.VaultID
-	found    map[domain.ChunkID]domain.SearchResult
-	document func(path string, sourceKind domain.SourceKind) searchquery.Document
-	load     func(ctx context.Context, paths []string) error
+	source      ChunkPlaces
+	vaultID     domain.VaultID
+	found       map[domain.ChunkID]domain.SearchResult
+	getDocument func(path string, sourceKind domain.SourceKind) searchquery.Document
+	load        func(ctx context.Context, paths []string) error
 }
 
 func (c *placeCache) getPlaces(ctx context.Context, ids []domain.ChunkID) (map[domain.ChunkID]domain.SearchResult, error) {
@@ -58,12 +58,12 @@ func (c *placeCache) filterScope(ctx context.Context, s searchquery.Scope, ids [
 	inScope := make(map[domain.ChunkID]bool, len(ids))
 	for _, id := range ids {
 		place, found := places[id]
-		inScope[id] = found && s.IsDocumentMatch(c.document(place.Path, place.Kind))
+		inScope[id] = found && s.IsDocumentMatch(c.getDocument(place.Path, place.Kind))
 	}
 	return inScope, nil
 }
 
-func (c *placeCache) unite(ctx context.Context, lists [][]domain.ChunkID, limit int) ([]domain.SearchResult, bool, error) {
+func (c *placeCache) mergeLists(ctx context.Context, lists [][]domain.ChunkID, limit int) ([]domain.SearchResult, bool, error) {
 	var all []domain.ChunkID
 	for _, list := range lists {
 		all = append(all, list...)

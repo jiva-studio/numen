@@ -93,4 +93,4 @@ export const createName = (stem: string, index: number): string =>
  * typing is needed to finish a gesture. The final name of a new node is the
  * application's decision; stories use this in its place.
  */
-export const nameNow = (): string => createName(String(getNow()), 0)
+export const createNowName = (): string => createName(String(getNow()), 0)

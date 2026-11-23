@@ -136,5 +136,5 @@ export interface Presets {
   scheduleDeck(deck: string, preset: string, observed: string): Promise<PresetWriteResult>
   getDeckPreset(deck: string): Promise<PresetReadResult>
   write(path: string, settings: Settings, observed: string): Promise<PresetWriteResult>
-  curve(path: string, settings: Settings): Promise<Curve>
+  getCurve(path: string, settings: Settings): Promise<Curve>
 }

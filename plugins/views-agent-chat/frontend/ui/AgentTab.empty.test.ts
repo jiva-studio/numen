@@ -11,7 +11,7 @@ import { useAgentConversation } from '../model/useAgentConversation'
 import { createAgentConnections, failWith, say, type TaskScript } from '../fixtures'
 import { WORDS } from '../words'
 
-const NO_AGENT: TaskScript = { end: failWith('no_connection', 'no connection serves acp.task') }
+const NO_AGENT: TaskScript = { end: failWith('noConnection', 'no connection serves acp.task') }
 
 const mountTab = (script: TaskScript = NO_AGENT) => {
   let settingsOpened = 0

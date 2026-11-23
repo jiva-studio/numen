@@ -322,11 +322,11 @@ const callCore = (method, body, isStream) =>
 /** Whether the vault is read and no task of the window is running. */
 const readIdleState = async () => {
   const state = await callCore('VaultService/GetVaultState', {}, false)
-  const window = await callCore('WindowService/WatchTasks', { window: 'editor' }, true)
+  const window = await callCore('WindowService/WatchTasks', { windowId: 'editor' }, true)
   return (
     state?.scan?.isReady === true &&
     window !== undefined &&
-    (window.tasks ?? []).every((task) => task.error)
+    (window.tasks ?? []).every((task) => task.failureReason)
   )
 }
 

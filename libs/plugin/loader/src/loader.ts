@@ -8,8 +8,8 @@
 import type { Disposable, JsonValue } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import type { LoaderHost } from './host'
+import type { PluginStyles } from './styles'
 import {
-  removePluginStyles,
   isWindowSlotManifest,
   readPluginManifest,
   resolveModule,
@@ -29,9 +29,10 @@ import {
 export interface PluginLoaderDeps {
   readonly host: LoaderHost
   readonly status?: PluginStatus
+  readonly styles: PluginStyles
   readonly baseUrl?: string
   readonly fetch?: typeof fetch
-  readonly dynamicImport?: (url: string) => Promise<PluginModule>
+  readonly importModule?: (url: string) => Promise<PluginModule>
   readonly onError?: (pluginId: string, error: unknown) => void
 }
 
@@ -44,6 +45,7 @@ export function isPluginEnabledValue(value: JsonValue | undefined): boolean {
 
 interface DeactivateDeps {
   readonly host: LoaderHost
+  readonly styles: PluginStyles
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly manifests: Map<string, Manifest>
   readonly reportError: (pluginId: string, error: unknown) => void
@@ -52,7 +54,7 @@ interface DeactivateDeps {
 async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<boolean> {
   const entry = deps.activePlugins.value.get(pluginId)
   if (!entry) {
-    removePluginStyles(pluginId)
+    deps.styles.unregister(pluginId)
     deps.manifests.delete(pluginId)
     deps.host.disposePlugin(pluginId)
     return false
@@ -62,7 +64,7 @@ async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<
   } catch (error) {
     deps.reportError(pluginId, error)
   } finally {
-    removePluginStyles(pluginId)
+    deps.styles.unregister(pluginId)
     deps.manifests.delete(pluginId)
     deps.host.disposePlugin(pluginId)
     const next = new Map(deps.activePlugins.value)
@@ -82,8 +84,8 @@ function createSettingSubscriptions(deps: ListenerDeps) {
   const subscriptions = new Map<string, Disposable>()
   return {
     listen: (id: string) => {
-      if (subscriptions.has(id) || !deps.host.onSettingChange) return
-      const sub = deps.host.onSettingChange<boolean>(id, 'enabled', async (enabled) => {
+      if (subscriptions.has(id) || !deps.host.watchSetting) return
+      const sub = deps.host.watchSetting<boolean>(id, 'enabled', async (enabled) => {
         if (isPluginEnabledValue(enabled)) await deps.activate(id)
         else await deps.deactivate(id)
       })
@@ -104,19 +106,20 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
       // Stryker disable next-line ArrowFunction: default globalThis.fetch wrapper is overridden in unit tests
       ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init)),
     // Stryker disable next-line ArrowFunction: default dynamic import wrapper is overridden in unit tests
-    importFn: deps.dynamicImport ?? ((url: string) => import(/* @vite-ignore */ url)),
+    importFn: deps.importModule ?? ((url: string) => import(/* @vite-ignore */ url)),
     // Without a reporter the failure is already recorded in the failures map.
     reportError: deps.onError ?? (() => undefined),
+    styles: deps.styles,
   }
 }
 
 function createStartRuns(starting: LoaderState['starting']) {
-  const runs = new Map<string, number>()
+  const startRuns = new Map<string, number>()
   const going = new Map<string, Promise<boolean>>()
   const count = (id: string, step: number): void => {
-    const total = (runs.get(id) ?? 0) + step
-    if (total > 0) runs.set(id, total)
-    else runs.delete(id)
+    const total = (startRuns.get(id) ?? 0) + step
+    if (total > 0) startRuns.set(id, total)
+    else startRuns.delete(id)
     const next = new Set(starting.value)
     if (total > 0) next.add(id)
     else next.delete(id)
@@ -148,7 +151,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState, lifetime: 
   const defaults = resolveDefaultDeps(deps)
   const { activePlugins, failures, manifests, moduleLoaders } = state
   const queues = new Map<string, Promise<void>>()
-  const runs = createStartRuns(state.starting)
+  const startRuns = createStartRuns(state.starting)
 
   const enqueue = <T>(id: string, task: () => Promise<T>): Promise<T> => {
     const run = (queues.get(id) ?? lifetime.previous ?? Promise.resolve()).then(task)
@@ -180,7 +183,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState, lifetime: 
       limit?.stop()
       return Promise.resolve(false)
     }
-    return runs.track(id, () =>
+    return startRuns.track(id, () =>
       enqueue(id, () => activateEntry(activateContext, id, { module, limit })),
     )
   }
@@ -201,8 +204,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState, lifetime: 
         return manifest !== undefined && isWindowSlotManifest(manifest)
       },
       activatePlugin,
-      /** Starts the plugin once for every caller that asks while its start goes on. */
-      startPlugin: (id: string): Promise<boolean> => runs.startOnce(id, () => activatePlugin(id)),
+      startPlugin: (id: string): Promise<boolean> => startRuns.startOnce(id, () => activatePlugin(id)),
       deactivatePlugin: (id: string) => (signal.aborted ? Promise.resolve(false) : deactivate(id)),
     },
   }
@@ -213,14 +215,16 @@ type LoaderState = Pick<
   'activePlugins' | 'failures' | 'moduleLoaders' | 'manifests' | 'starting'
 >
 
-function createLoaderStatus(status: PluginStatus, waitForInterface: () => Promise<void>) {
+function createLoaderStatus(
+  status: PluginStatus,
+  waitForInterface: () => Promise<void>,
+): LoaderStatus {
   const { failures } = status.state
   return {
     getFailedPlugins: (): { id: string; error: string }[] =>
       [...failures.value].map(([id, error]) => ({ id, error })),
     startPlugin: status.startPlugin,
     startTabPlugins: status.startTabPlugins,
-    /** Settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
     waitForInterface,
   }
 }
@@ -293,7 +297,7 @@ function createRuntime(
       isRunning.value = false
       settings.close()
       await run.closePlugins()
-      for (const id of status.state.manifests.keys()) removePluginStyles(id)
+      for (const id of status.state.manifests.keys()) deps.styles.unregister(id)
       host.disposeAll()
     },
   }
@@ -318,7 +322,39 @@ function createLoaderRun(deps: PluginLoaderDeps, status: PluginStatus, previous?
   }
 }
 
-export function createPluginLoader(deps: PluginLoaderDeps) {
+/** `startPlugin` starts the plugin once for every caller that asks while its start goes on. */
+interface PluginActivation {
+  readonly loadModule: (id: string) => Promise<PluginModule | undefined>
+  readonly readManifest: (id: string) => Promise<Manifest | undefined>
+  readonly isInterface: (id: string) => Promise<boolean>
+  readonly activatePlugin: (
+    id: string,
+    module?: PluginModule,
+    limit?: StartLimit,
+  ) => Promise<boolean>
+  readonly startPlugin: (id: string) => Promise<boolean>
+  readonly deactivatePlugin: (id: string) => Promise<boolean>
+}
+
+/** `waitForInterface` settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
+interface LoaderStatus {
+  readonly getFailedPlugins: () => { id: string; error: string }[]
+  readonly startPlugin: PluginStatus['startPlugin']
+  readonly startTabPlugins: PluginStatus['startTabPlugins']
+  readonly waitForInterface: () => Promise<void>
+}
+
+export interface PluginLoader {
+  readonly registerPluginModule: (id: string, loader: () => Promise<PluginModule>) => void
+  readonly registerPluginManifest: (id: string, manifest: Manifest) => void
+  readonly trackPlugins: (ids: readonly string[]) => Promise<void>
+  readonly start: () => Promise<void>
+  readonly close: () => Promise<void>
+  readonly activation: PluginActivation
+  readonly status: LoaderStatus
+}
+
+export function createPluginLoader(deps: PluginLoaderDeps): PluginLoader {
   const { host } = deps
   const status =
     deps.status ??
@@ -349,4 +385,3 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
     status: createLoaderStatus(status, () => run.runtime.waitForInterface()),
   }
 }
-export type PluginLoader = ReturnType<typeof createPluginLoader>

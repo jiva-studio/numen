@@ -125,10 +125,10 @@ func (u *WatchProcesses) listStatuses(items []plugin.HealthItem) []plugin.Proces
 	statuses := make([]plugin.ProcessStatus, 0, len(processes))
 	for _, process := range processes {
 		status := plugin.ProcessStatus{Process: process, Health: plugin.HealthOK}
-		status.StartedBy = u.nameHolder(process.StartedBy)
+		status.StartedBy = u.fillHolderName(process.StartedBy)
 		status.Holders = make([]plugin.Holder, 0, len(process.Holders))
 		for _, holder := range process.Holders {
-			status.Holders = append(status.Holders, u.nameHolder(holder))
+			status.Holders = append(status.Holders, u.fillHolderName(holder))
 		}
 		if found, ok := u.plugins.GetPlugin(process.PluginID); ok {
 			status.PluginName = found.Manifest.Name
@@ -155,7 +155,7 @@ func waitInterval(ctx context.Context, interval time.Duration) bool {
 	}
 }
 
-func (u *WatchProcesses) nameHolder(holder plugin.Holder) plugin.Holder {
+func (u *WatchProcesses) fillHolderName(holder plugin.Holder) plugin.Holder {
 	if holder.ConnectionID != "" {
 		if resolved, err := u.resolve(holder.ConnectionID); err == nil && resolved.Name != "" {
 			holder.Who = resolved.Name

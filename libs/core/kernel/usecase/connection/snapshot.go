@@ -60,7 +60,7 @@ func formatFields(declared manifest.ConnectionType, stored map[string]any) map[s
 }
 
 func formatValue(value any) string {
-	if number, isNumber := toFloat(value); isNumber {
+	if number, isNumber := readFloat(value); isNumber {
 		return strconv.FormatFloat(number, 'f', -1, 64)
 	}
 	if text, isText := value.(string); isText {
@@ -114,18 +114,18 @@ func readSecret(entry, fingerprint string) (string, bool) {
 }
 
 func getParallelRequests(declared manifest.ConnectionType, stored map[string]any) int {
-	if limit, isSet := toLimit(stored[manifest.ConnectionParallelRequests]); isSet {
+	if limit, isSet := readLimit(stored[manifest.ConnectionParallelRequests]); isSet {
 		return limit
 	}
 	if field, isDeclared := declared.GetField(manifest.ConnectionParallelRequests); isDeclared {
-		limit, _ := toLimit(field.Default)
+		limit, _ := readLimit(field.Default)
 		return limit
 	}
 	return 0
 }
 
-func toLimit(value any) (int, bool) {
-	number, isNumber := toFloat(value)
+func readLimit(value any) (int, bool) {
+	number, isNumber := readFloat(value)
 	if !isNumber || number < 1 || number != math.Trunc(number) {
 		return 0, false
 	}

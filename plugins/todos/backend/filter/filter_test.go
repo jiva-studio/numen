@@ -209,7 +209,7 @@ func TestApplyKeepsTheOrderOfItsInput(t *testing.T) {
 func TestMatchesReportsAnAcceptedTaskAndClampLimitAndNormalizePriorityFollowTheirRules(t *testing.T) {
 	tasks := []todo.Task{{Status: todo.StatusDone, Text: "a"}, {Status: todo.StatusOpen, Text: "b"}}
 
-	if !Matches(tasks, Filter{Text: "b"}, "2026-11-14") || Matches(tasks, Filter{Text: "a"}, "2026-11-14") {
+	if !IsMatch(tasks, Filter{Text: "b"}, "2026-11-14") || IsMatch(tasks, Filter{Text: "a"}, "2026-11-14") {
 		t.Error("Matches must accept the open task and not the done one by default")
 	}
 	if got := []int{ClampLimit(0, 100, 500), ClampLimit(50, 100, 500), ClampLimit(900, 100, 500)}; got[0] != 100 || got[1] != 50 || got[2] != 500 {

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -90,9 +90,9 @@ func TestVaultOpener_ReportsFollowErrorsAndEnd(t *testing.T) {
 	watcher := makeWatcher()
 	opening := cfg.VaultOpenerWith(db, container.VaultReaders(cfg), watcher)
 	received := make(chan error, 4)
-	changesCh := make(chan vault.VaultChanges, 4)
+	changesCh := make(chan indexing.VaultChanges, 4)
 
-	open := opening.Begin(t.Context(), v, func(m vault.VaultChanges) { changesCh <- m }, func(err error) { received <- err })
+	open := opening.Begin(t.Context(), v, func(m indexing.VaultChanges) { changesCh <- m }, func(err error) { received <- err })
 	go open.Run(t.Context())
 
 	watcher.lostChan <- struct{}{}
@@ -151,13 +151,13 @@ func TestAnIndexReturnsWhereItsFileIs(t *testing.T) {
 func TestCompact_SucceedsOpenAndFailsClosed(t *testing.T) {
 	_, db, _ := openVault(t, getNote())
 
-	if err := db.VectorIndex().Compact(t.Context()); err != nil {
+	if err := db.VectorIndex().Shrink(t.Context()); err != nil {
 		t.Fatalf("an open index rejected: %v", err)
 	}
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.VectorIndex().Compact(t.Context()); err == nil {
+	if err := db.VectorIndex().Shrink(t.Context()); err == nil {
 		t.Error("a closed index made room")
 	}
 }
@@ -184,14 +184,14 @@ func TestWatchingAnIndexWithNoFolderReturnsSo(t *testing.T) {
 func TestShouldReadAssets_TrueForAssetsOrReload(t *testing.T) {
 	for _, one := range []struct {
 		what string
-		got  vault.VaultChanges
+		got  indexing.VaultChanges
 		want bool
 	}{
-		{"nothing", vault.VaultChanges{}, false},
-		{"a note", vault.VaultChanges{Paths: []string{"a.md"}}, false},
-		{"an asset", vault.VaultChanges{Assets: []string{"a.png"}}, true},
-		{"everything", vault.VaultChanges{ShouldReload: true}, true},
-		{"both", vault.VaultChanges{ShouldReload: true, Assets: []string{"a.png"}}, true},
+		{"nothing", indexing.VaultChanges{}, false},
+		{"a note", indexing.VaultChanges{Paths: []string{"a.md"}}, false},
+		{"an asset", indexing.VaultChanges{Assets: []string{"a.png"}}, true},
+		{"everything", indexing.VaultChanges{ShouldReload: true}, true},
+		{"both", indexing.VaultChanges{ShouldReload: true, Assets: []string{"a.png"}}, true},
 	} {
 		if got := one.got.ShouldReadAssets(); got != one.want {
 			t.Errorf("%s: %v", one.what, got)

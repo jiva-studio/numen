@@ -43,7 +43,7 @@ func (s sources) SaveSource(ctx context.Context, vaultID domain.VaultID, src dom
 // SaveExtraction records the source and replaces its chunks in one write, so a
 // recipe is never recorded for chunks that are not there.
 func (s sources) SaveExtraction(ctx context.Context, vaultID domain.VaultID, e domain.SourceChunks) error {
-	return s.write.SaveExtraction(ctx, vaultID, newChunkSource(e.Source), chunk.FromDomain(e.Chunks))
+	return s.write.SaveExtraction(ctx, vaultID, newChunkSource(e.Source), chunk.ConvertChunks(e.Chunks))
 }
 
 // RemoveSources takes out the sources at the paths given, and their chunks and
@@ -90,7 +90,7 @@ func (s queries) GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.V
 func (s sources) SaveVectors(ctx context.Context, vectors []vector.Stored) error {
 	out := make([]chunk.Vector, 0, len(vectors))
 	for _, v := range vectors {
-		row, err := chunk.Row(v.ChunkID)
+		row, err := chunk.ParseRow(v.ChunkID)
 		if err != nil {
 			return err
 		}
@@ -117,7 +117,7 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 	out := make([]domain.SearchResult, 0, len(found))
 	for _, p := range found {
 		out = append(out, domain.SearchResult{
-			ChunkID:    chunk.ID(p.Chunk),
+			ChunkID:    chunk.FormatID(p.Chunk),
 			Path:       p.Path,
 			VersionID:  p.Producer,
 			FileHash:   p.ContentHash,

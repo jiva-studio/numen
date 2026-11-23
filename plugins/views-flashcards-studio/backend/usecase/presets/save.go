@@ -39,7 +39,7 @@ func (u Point) Execute(
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	return u.linkWriter.PointAt(ctx, v, deck, ports.LinkEntry{Type: review.PresetLinkType, To: to, Role: domain.RoleRef}, stat)
+	return u.linkWriter.UpdateLink(ctx, v, deck, ports.LinkEntry{Type: review.PresetLinkType, To: to, Role: domain.RoleRef}, stat)
 }
 
 func (u Point) getPresetAddress(ctx context.Context, v domain.Vault, preset string) (domain.Address, error) {
@@ -187,7 +187,7 @@ func writeSettings(doc *markdown.Document, p, was review.Preset) error {
 	if maps.Equal(p.Load, was.Load) {
 		return nil
 	}
-	entries, mapping := doc.EntryNames(loadKey)
+	entries, mapping := doc.ListEntryNames(loadKey)
 	// A `load` written in any form other than a week of days belongs to the user
 	// and is kept unchanged.
 	if !mapping {
@@ -211,7 +211,7 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 	dayEntries := getDayEntries(entries, read)
 	content := make(map[time.Weekday]bool, len(load))
 	for _, name := range entries {
-		weekday, isDay := review.Weekday(name)
+		weekday, isDay := review.ParseWeekday(name)
 		_, could := read[weekday]
 		if !isDay || !could {
 			out = append(out, markdown.Entry{Key: name, Value: nil, IsVerbatim: true})
@@ -226,7 +226,7 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 	}
 	for _, weekday := range getWeek() {
 		if share, named := load[weekday]; named && !content[weekday] {
-			out = append(out, markdown.Entry{Key: review.DayName(weekday), Value: share, IsVerbatim: false})
+			out = append(out, markdown.Entry{Key: review.GetDayName(weekday), Value: share, IsVerbatim: false})
 		}
 	}
 	return out
@@ -235,7 +235,7 @@ func readShares(entries []string, load, read map[time.Weekday]int) []markdown.En
 func getDayEntries(entries []string, read map[time.Weekday]int) map[time.Weekday]string {
 	out := make(map[time.Weekday]string, len(entries))
 	for _, name := range entries {
-		weekday, isDay := review.Weekday(name)
+		weekday, isDay := review.ParseWeekday(name)
 		if _, could := read[weekday]; !isDay || !could {
 			continue
 		}
@@ -281,7 +281,7 @@ func checkBounds(p review.Preset) error {
 		{intervalKey, float64(p.Interval), review.GetIntervalBounds()},
 		{backlogKey, float64(p.Backlog), review.GetBacklogBounds()},
 	} {
-		if !one.bounds.Contains(one.value) {
+		if !one.bounds.IsWithin(one.value) {
 			return fmt.Errorf("%w: %s %g is outside %g to %g",
 				review.ErrOutOfBounds, one.key, one.value, one.bounds.Min, one.bounds.Max)
 		}
@@ -292,9 +292,9 @@ func checkBounds(p review.Preset) error {
 func checkLoad(load map[time.Weekday]int) error {
 	for _, weekday := range getWeek() {
 		share, named := load[weekday]
-		if named && !review.GetLoadBounds().Contains(float64(share)) {
+		if named && !review.GetLoadBounds().IsWithin(float64(share)) {
 			return fmt.Errorf("%w: the load of %s, %d, is outside %g to %g",
-				review.ErrOutOfBounds, review.DayName(weekday), share,
+				review.ErrOutOfBounds, review.GetDayName(weekday), share,
 				review.GetLoadBounds().Min, review.GetLoadBounds().Max)
 		}
 	}

@@ -36,13 +36,13 @@ func Parse(output []byte) []Model {
 	return models
 }
 
-// Fold groups the models that differ only in their reasoning level into one family.
-func Fold(items []Model) []reasoning.Family {
+// GroupFamilies groups the models that differ only in their reasoning level into one family.
+func GroupFamilies(items []Model) []reasoning.Family {
 	entries := make([]reasoning.Listed, 0, len(items))
 	for _, one := range items {
 		entries = append(entries, reasoning.Listed{Name: one.Name, Title: one.Title})
 	}
-	return reasoning.Fold(entries)
+	return reasoning.GroupFamilies(entries)
 }
 
 func cutLine(line string) (string, string, bool) {

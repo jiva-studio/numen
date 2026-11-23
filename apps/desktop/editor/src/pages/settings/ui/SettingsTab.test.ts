@@ -578,8 +578,8 @@ describe('the settings tab', () => {
         keyHint: '',
         activeProvider: '',
         instanceName: '',
-        expiresAt: '',
-        verifiedAt: '',
+        expiresUnixMs: 0,
+        verifiedUnixMs: 0,
       }
       const list = ref<readonly LicenseInfo[]>([sync])
       const activate = vi.fn(async (licenseId: string, key: string) => {

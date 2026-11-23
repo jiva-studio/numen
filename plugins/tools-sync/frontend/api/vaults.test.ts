@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import { createApi } from '@numen/plugin-sdk'
 import { createVaultsClient, SERVICE } from './vaults'
-import type { VaultsClient } from './vaults'
+type VaultsClient = ReturnType<typeof createVaultsClient>
 
 type ListVaultsResponse = Awaited<ReturnType<VaultsClient['listVaults']>>
 type ListRemoteVaultsResponse = Awaited<ReturnType<VaultsClient['listRemoteVaults']>>

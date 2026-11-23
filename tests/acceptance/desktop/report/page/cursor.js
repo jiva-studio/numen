@@ -17,16 +17,16 @@ const createCursor = () => {
   const pointer = createPointer()
   const ripple = createElement('span', { class: 'cursor-ripple' })
   const press = createElement('span', { class: 'cursor-press' })
-  const highlights = createElement('div', { class: 'input-highlights' })
+  const highlightLayer = createElement('div', { class: 'input-highlights' })
   const badge = createElement('div', { class: 'key-badge' })
   const element = createElement('div', { class: 'cursor-layer', 'aria-hidden': 'true' }, [
-    highlights,
+    highlightLayer,
     ripple,
     press,
     pointer,
     badge,
   ])
-  return { element, pointer, ripple, press, highlights, badge }
+  return { element, pointer, ripple, press, highlights: highlightLayer, badge }
 }
 
 const getContentBox = (player) => {

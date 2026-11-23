@@ -103,14 +103,14 @@ func (model RepositoryModel) isMember(name string, names []string) bool {
 	if _, pinned := model.Sums[name]; !pinned && model.SelectExternal != nil && !model.SelectExternal(name) {
 		return false
 	}
-	return !model.belongsToOtherGraph(name, names)
+	return !model.isInOtherGraph(name, names)
 }
 
 func isRepositoryPath(name string) bool {
 	return fs.ValidPath(name) && name != "." && !strings.ContainsAny(name, "\\?#")
 }
 
-func (model RepositoryModel) belongsToOtherGraph(name string, names []string) bool {
+func (model RepositoryModel) isInOtherGraph(name string, names []string) bool {
 	for _, other := range names {
 		if other != model.Graph && strings.HasSuffix(other, ".onnx") && strings.HasPrefix(name, other) {
 			return true

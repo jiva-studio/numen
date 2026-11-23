@@ -29,7 +29,7 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	plugins := host.Management.Registry.GetPlugins()
+	plugins := host.Management.Registry.ListPlugins()
 	if len(plugins) == 0 {
 		t.Fatal("expected to discover embedding plugin in real plugins/")
 	}

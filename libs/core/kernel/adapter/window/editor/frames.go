@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/csp"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -22,12 +23,6 @@ func (s pageSet) getPolicy(played []string) string {
 	return csp.Sources{Media: played, Frames: frames}.Policy()
 }
 
-func pluginPagePolicy(frames []string) string {
-	return "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
-		"frame-src " + strings.Join(append([]string{"'self'"}, frames...), " ") +
-		"; object-src 'none'; base-uri 'none'; form-action 'none'"
-}
-
 // pluginPageReferrer is the Referrer-Policy of a file of a plugin's store on the loopback socket. A
 // site that checks which page frames its player is sent the origin of the socket.
 const pluginPageReferrer = "strict-origin-when-cross-origin"
@@ -36,10 +31,10 @@ const pluginPageReferrer = "strict-origin-when-cross-origin"
 // vault.
 const pluginFileSegment = "plugin"
 
-// PluginFileAddress is where the file of a plugin's store of the vault is loaded from on the loopback
+// BuildPluginFileAddress is where the file of a plugin's store of the vault is loaded from on the loopback
 // socket, and nowhere where the socket is not answering. The address names the size of the file, so a
 // file written again with another size is a different address.
-func (l *Loopback) PluginFileAddress(vault domain.Vault, address file.Address, size int64) string {
+func (l *Loopback) BuildPluginFileAddress(vault domain.Vault, address file.Address, size int64) string {
 	if l == nil || l.stopped.Load() {
 		return ""
 	}
@@ -62,10 +57,6 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		http.Error(w, "not a file of a plugin", http.StatusBadRequest)
 		return
 	}
-	if l.files.open == nil {
-		refuse(w, errNoVault)
-		return
-	}
 	opened, err := l.files.open.ExecutePluginFile(r.Context(), l.files.vaults.GetCurrentVault(), vaultID, pluginID, path)
 	if errors.Is(err, file.ErrNoVaultNamed) {
 		http.Error(w, errNoVaultNamed, http.StatusNotFound)
@@ -76,7 +67,7 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		return
 	}
 	if errors.Is(err, file.ErrNoPluginFiles) {
-		refuse(w, errNoVault)
+		refuse(w, wire.ErrNoVault)
 		return
 	}
 	if err != nil {
@@ -93,7 +84,7 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		frames = plugins.GetFrameOrigins(pluginID)
 	}
 	w.Header().Set("Cache-Control", immutable)
-	w.Header().Set("Content-Security-Policy", pluginPagePolicy(frames))
+	w.Header().Set("Content-Security-Policy", csp.GetPluginPagePolicy(frames))
 	w.Header().Set("Referrer-Policy", pluginPageReferrer)
 	if opened.MediaType != "" {
 		w.Header().Set("Content-Type", opened.MediaType)

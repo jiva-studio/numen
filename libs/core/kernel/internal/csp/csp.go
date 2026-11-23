@@ -34,3 +34,17 @@ type Sources struct {
 func listSources(also []string) string {
 	return strings.Join(append([]string{"'self'"}, also...), " ")
 }
+
+// GetPluginPagePolicy is what a page of a plugin's store may load: its own files and the frames named. It
+// runs scripts of its own files, which the window's policy forbids.
+func GetPluginPagePolicy(frames []string) string {
+	return "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
+		"frame-src " + listSources(frames) +
+		"; object-src 'none'; base-uri 'none'; form-action 'none'"
+}
+
+// GetPictureOnlyPolicy is what a file served as a picture may load: nothing. An SVG opened as a page runs
+// its scripts; under this policy it does not.
+func GetPictureOnlyPolicy() string {
+	return "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+}

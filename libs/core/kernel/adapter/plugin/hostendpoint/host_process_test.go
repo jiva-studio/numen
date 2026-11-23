@@ -41,7 +41,7 @@ func newProcessClient(t *testing.T, released *releasedProcesses, token string) n
 	mux.Handle(numenv1connect.NewHostProcessServiceHandler(&processEndpoint{endpoint: &Endpoint{callers: callers}}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewHostProcessServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
+	return numenv1connect.NewHostProcessServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.CreateAuthInterceptor(token)))
 }
 
 // A plugin releases its own process: the token names the plugin.

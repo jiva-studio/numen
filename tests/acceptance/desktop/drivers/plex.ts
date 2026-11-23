@@ -74,7 +74,7 @@ export class PlexDriver {
     await this.scenario.page.mouse.move(at.x, at.y)
   }
 
-  async restPointerOn(title: string): Promise<void> {
+  async placePointerOn(title: string): Promise<void> {
     await this.hoverNote(title)
   }
 
@@ -337,7 +337,7 @@ export class PlexDriver {
   }
 
   async removeLink({ kind, first, second }: Extent): Promise<void> {
-    if (kind === 'connection') await this.removeConnection(first, second)
+    if (kind === 'connection') await this.deleteConnection(first, second)
     else await this.removeDirection(first, second)
   }
 
@@ -347,7 +347,7 @@ export class PlexDriver {
     await this.finish(inspector)
   }
 
-  private async removeConnection(first: string, second: string): Promise<void> {
+  private async deleteConnection(first: string, second: string): Promise<void> {
     const inspector = await this.openInspector(first, second)
     const trashes = inspector.getByRole('button', { name: 'Remove link' })
     while ((await trashes.count()) > 0) await trashes.first().click()

@@ -19,15 +19,15 @@ const (
 
 func newRockVault(basaltFrontmatter string) *hosttest.Vault {
 	v := hosttest.New("Geology")
-	v.File(basaltPath, "---\ntitle: Basalt\n"+basaltFrontmatter+"---\n"+basaltBody)
-	v.File("Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
-	v.File(mineralsPath, "---\ntitle: Minerals\n---\nQuartz and feldspar.\n")
+	v.WriteFile(basaltPath, "---\ntitle: Basalt\n"+basaltFrontmatter+"---\n"+basaltBody)
+	v.WriteFile("Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
+	v.WriteFile(mineralsPath, "---\ntitle: Minerals\n---\nQuartz and feldspar.\n")
 	return v
 }
 
 func linksOf(t *testing.T, v *hosttest.Vault, notePath string) []domain.Link {
 	t.Helper()
-	content, ok := v.Content(notePath)
+	content, ok := v.ReadContent(notePath)
 	if !ok {
 		t.Fatalf("%s is not in the vault", notePath)
 	}
@@ -79,7 +79,7 @@ func TestAddLinksWritesTheLinksIntoTheFrontmatterAndKeepsTheBody(t *testing.T) {
 	if !ok || link.Type != "relative" || link.Label != "cousin" || link.Why != "both are igneous" {
 		t.Errorf("the links of %s are %+v, want a jump to Granite of type relative labeled cousin with its note", basaltPath, linksOf(t, v, basaltPath))
 	}
-	if content, _ := v.Content(basaltPath); !strings.HasSuffix(content, basaltBody) || !strings.Contains(content, "title: Basalt") {
+	if content, _ := v.ReadContent(basaltPath); !strings.HasSuffix(content, basaltBody) || !strings.Contains(content, "title: Basalt") {
 		t.Errorf("%s contains %q, want the title and the body kept", basaltPath, content)
 	}
 }
@@ -126,7 +126,7 @@ func TestAddLinksRejectsStaleBaselineNoteAndWritesTheOthers(t *testing.T) {
 	basalt := statOf(t, v, basaltPath)
 	minerals := statOf(t, v, mineralsPath)
 	makeNoteStale(t, v, basaltPath)
-	before, _ := v.Content(basaltPath)
+	before, _ := v.ReadContent(basaltPath)
 
 	results, err := v.AddLinks(t.Context(), []host.LinkAddition{
 		{From: basaltPath, Baseline: basalt, Link: domain.Link{Target: nameAddress("Granite"), Role: domain.RoleJump}},
@@ -148,7 +148,7 @@ func TestAddLinksRejectsStaleBaselineNoteAndWritesTheOthers(t *testing.T) {
 	if results[1].Err != nil {
 		t.Errorf("the link into %s is %+v, want it written", mineralsPath, results[1])
 	}
-	if after, _ := v.Content(basaltPath); after != before {
+	if after, _ := v.ReadContent(basaltPath); after != before {
 		t.Errorf("%s contains %q after a stale write, want it unchanged: %q", basaltPath, after, before)
 	}
 }
@@ -212,7 +212,7 @@ func TestRemoveLinksRemovesEveryLinkToTheTarget(t *testing.T) {
 	if len(links) != 1 || links[0].Target.Value != "Minerals" {
 		t.Errorf("the links of %s are %+v, want only the parent link to Minerals", basaltPath, links)
 	}
-	if content, _ := v.Content(basaltPath); !strings.HasSuffix(content, basaltBody) {
+	if content, _ := v.ReadContent(basaltPath); !strings.HasSuffix(content, basaltBody) {
 		t.Errorf("%s contains %q, want the body kept", basaltPath, content)
 	}
 }
@@ -235,7 +235,7 @@ func TestRemoveLinksOfARoleRemovesOnlyTheLinksOfThatRole(t *testing.T) {
 
 func TestRemoveLinksToATargetTheNoteDoesNotLinkIsAnError(t *testing.T) {
 	v := newRockVault(graniteTwice)
-	before, _ := v.Content(basaltPath)
+	before, _ := v.ReadContent(basaltPath)
 
 	_, err := v.RemoveLinks(t.Context(), basaltPath, nameAddress("Obsidian"), "", statOf(t, v, basaltPath))
 
@@ -243,7 +243,7 @@ func TestRemoveLinksToATargetTheNoteDoesNotLinkIsAnError(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), want) {
 		t.Errorf("the removal returned %v, want an error containing %q", err, want)
 	}
-	if after, _ := v.Content(basaltPath); after != before {
+	if after, _ := v.ReadContent(basaltPath); after != before {
 		t.Errorf("%s contains %q, want it unchanged", basaltPath, after)
 	}
 }
@@ -251,14 +251,14 @@ func TestRemoveLinksToATargetTheNoteDoesNotLinkIsAnError(t *testing.T) {
 func TestRemoveLinksOfARoleTheNoteDoesNotLinkWithIsAnError(t *testing.T) {
 	v := newRockVault(graniteTwice)
 
-	before, _ := v.Content(basaltPath)
+	before, _ := v.ReadContent(basaltPath)
 
 	_, err := v.RemoveLinks(t.Context(), basaltPath, nameAddress("Granite"), domain.RoleChild, statOf(t, v, basaltPath))
 
 	if err == nil || !strings.Contains(err.Error(), "no link to Granite is written here") {
 		t.Errorf("the removal of a child link to Granite returned %v, want an error containing %q", err, "no link to Granite is written here")
 	}
-	if after, _ := v.Content(basaltPath); after != before {
+	if after, _ := v.ReadContent(basaltPath); after != before {
 		t.Errorf("%s contains %q after the rejected removal, want it unchanged", basaltPath, after)
 	}
 }
@@ -267,7 +267,7 @@ func TestUpdateLinksAndRemoveLinksRejectAStaleBaseline(t *testing.T) {
 	v := newRockVault(granitePair)
 	outdated := statOf(t, v, basaltPath)
 	makeNoteStale(t, v, basaltPath)
-	before, _ := v.Content(basaltPath)
+	before, _ := v.ReadContent(basaltPath)
 
 	_, updateErr := v.UpdateLinks(t.Context(), basaltPath, nameAddress("Granite"), domain.Link{Label: "kin"}, outdated)
 	_, removeErr := v.RemoveLinks(t.Context(), basaltPath, nameAddress("Granite"), "", outdated)
@@ -277,7 +277,7 @@ func TestUpdateLinksAndRemoveLinksRejectAStaleBaseline(t *testing.T) {
 			t.Errorf("%s returned %v, want ErrStale", call, err)
 		}
 	}
-	if after, _ := v.Content(basaltPath); after != before {
+	if after, _ := v.ReadContent(basaltPath); after != before {
 		t.Errorf("%s contains %q after stale edits, want it unchanged", basaltPath, after)
 	}
 }

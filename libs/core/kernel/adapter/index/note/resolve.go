@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func (q *Queries) GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (q *Queries) ListLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	return runResolution(ctx, q.db, q.cache, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
 		return r.getLinks(ctx, from)
 	})
@@ -47,7 +47,7 @@ func (r *resolution) getLinks(ctx context.Context, from string) (_ []domain.Reso
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	if err := r.prefetchCandidates(ctx, out); err != nil {
+	if err := r.preloadCandidates(ctx, out); err != nil {
 		return nil, err
 	}
 
@@ -176,7 +176,7 @@ func (r *resolution) queryCandidates(ctx context.Context, name string) (_ []stri
 	// Three shapes of the same question, so one query answers all of them: the
 	// name as a path, as a path with an extension added, and as a filename.
 	withExt := name + domain.NoteExtension
-	base := domain.FoldName(domain.LinkName(name))
+	base := domain.NormalizeName(domain.LinkName(name))
 
 	rows, err := r.statements.QueryContext(ctx, candidatesSQL,
 		r.vault, name, r.vault, withExt, r.vault, base)
@@ -196,8 +196,8 @@ func (r *resolution) queryCandidates(ctx context.Context, name string) (_ []stri
 	return out, rows.Err()
 }
 
-func (r *resolution) prefetchCandidates(ctx context.Context, links []domain.ResolvedLink) (err error) {
-	if err := r.prefetchIdentifiers(ctx, links); err != nil {
+func (r *resolution) preloadCandidates(ctx context.Context, links []domain.ResolvedLink) (err error) {
+	if err := r.preloadIdentifiers(ctx, links); err != nil {
 		return err
 	}
 	requested := getRequestedNames(links, r.named)
@@ -285,7 +285,7 @@ func createCandidateNames(missing []string, named map[string][]string) candidate
 
 func (c *candidateNames) add(name string) {
 	withExt := name + domain.NoteExtension
-	base := domain.FoldName(domain.LinkName(name))
+	base := domain.NormalizeName(domain.LinkName(name))
 	c.paths = append(c.paths, name, withExt)
 	c.byPath[name] = append(c.byPath[name], name)
 	c.byPath[withExt] = append(c.byPath[withExt], name)
@@ -317,7 +317,7 @@ func appendCandidatePath(path, folded string, candidates candidateNames, named m
 	}
 }
 
-func (r *resolution) prefetchIdentifiers(ctx context.Context, links []domain.ResolvedLink) (err error) {
+func (r *resolution) preloadIdentifiers(ctx context.Context, links []domain.ResolvedLink) (err error) {
 	var missing []string
 	seen := map[string]bool{}
 	for _, l := range links {
@@ -359,12 +359,12 @@ func (r *resolution) prefetchIdentifiers(ctx context.Context, links []domain.Res
 	return rows.Err()
 }
 
-// GetBacklinks returns the notes that point at one note.
+// ListBacklinks returns the notes that point at one note.
 // A link is a backlink because it resolves here, not because its text looks
 // like this note: a path link is also filed under its last segment, and a bare
 // name may resolve to a nearer note of the same name. Every candidate goes
 // through the forward resolution and only those that land here are kept.
-func (q *Queries) GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (q *Queries) ListBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	return runResolution(ctx, q.db, q.cache, vaultID, nil, func(r *resolution) ([]domain.ResolvedLink, error) {
 		return r.getBacklinks(ctx, to)
 	})
@@ -386,7 +386,7 @@ func (r *resolution) getBacklinks(ctx context.Context, to string) ([]domain.Reso
 	if err != nil {
 		return nil, err
 	}
-	if err := r.prefetchCandidates(ctx, candidates); err != nil {
+	if err := r.preloadCandidates(ctx, candidates); err != nil {
 		return nil, err
 	}
 

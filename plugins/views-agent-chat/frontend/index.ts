@@ -42,7 +42,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
   const hasChangeSignal = connections.onChange !== undefined
   connections.onChange?.(reloadAgents)
   if (hasChangeSignal) reloadAgents()
-  const chats = createAgentKind(
+  const agentKind = createAgentKind(
     {
       workspace,
       relations,
@@ -61,7 +61,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     },
     AgentTab,
   )
-  plugin.register.tabKind(chats.kind)
+  plugin.register.tabKind(agentKind.kind)
 
   plugin.register.command({
     id: 'chat.open',
@@ -74,7 +74,7 @@ export function activate(plugin: PluginContext, host: HostServices): void {
     id: 'note.ask',
     handler: async (note) => {
       const id = await host.tabs.navigate?.(AGENT, note.path)
-      if (id) chats.setDraft(id, `${note.path} — `)
+      if (id) agentKind.setDraft(id, `${note.path} — `)
     },
   })
 }

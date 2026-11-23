@@ -187,11 +187,11 @@ func getModelsQuery(typeID string, operations []string) (path string, isKept fun
 	}
 	switch {
 	case slices.Contains(operations, llm.OperationComplete) || slices.Contains(operations, llm.OperationChat):
-		return "/models", makesText, true
+		return "/models", canGenerateText, true
 	case slices.Contains(operations, llm.OperationEmbed):
 		return "/embeddings/models", isAnyModel, true
 	case slices.Contains(operations, llm.OperationRerank):
-		return "/models?output_modalities=rerank", makesRerank, true
+		return "/models?output_modalities=rerank", canRerank, true
 	default:
 		return "", nil, false
 	}
@@ -199,10 +199,10 @@ func getModelsQuery(typeID string, operations []string) (path string, isKept fun
 
 func isAnyModel([]string) bool { return true }
 
-func makesText(modalities []string) bool {
+func canGenerateText(modalities []string) bool {
 	return len(modalities) == 0 || slices.Contains(modalities, "text")
 }
 
-func makesRerank(modalities []string) bool {
+func canRerank(modalities []string) bool {
 	return slices.Contains(modalities, "rerank")
 }

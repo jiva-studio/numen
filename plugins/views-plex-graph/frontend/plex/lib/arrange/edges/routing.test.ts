@@ -535,8 +535,10 @@ describe('the run of a line between two boxes', () => {
 
     expect(routeEdges([{ from: 'a', to: 'b' }], byId, edgeRouting)[0]!.opacity).toBe(1)
     expect(
-      routeEdges([{ from: 'a', to: 'b' }], byId, { routing: edgeRouting, opacity: () => 0.25 })[0]!
-        .opacity,
+      routeEdges([{ from: 'a', to: 'b' }], byId, {
+        routing: edgeRouting,
+        getOpacity: () => 0.25,
+      })[0]!.opacity,
     ).toBe(0.25)
   })
 })

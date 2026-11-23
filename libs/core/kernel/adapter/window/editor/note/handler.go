@@ -3,11 +3,10 @@
 package note
 
 import (
-	"errors"
-
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -23,15 +22,12 @@ type Edits interface {
 	SubscribeEdits() (<-chan domain.Edit, func())
 }
 
-var (
-	errClosing = broadcast.ErrClosing
-	errNoVault = errors.New("the window has no vault")
-)
+var errClosing = broadcast.ErrClosing
 
 func getShownVault(window Vault) (domain.Vault, error) {
 	v := window.GetCurrentVault()
 	if v.ID == "" {
-		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
+		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, wire.ErrNoVault)
 	}
 	return v, nil
 }
@@ -89,14 +85,14 @@ type Links struct {
 	vault           Vault
 	resolveLinks    *query.ResolveLinks
 	createRelated   *note.CreateInRelation
-	getBacklinks    *query.GetBacklinks
+	getBacklinks    *query.ListBacklinks
 	isIndexOutdated func(error) bool
 }
 
 // NewLinks is the part of NoteService that works the links of notes.
 func NewLinks(
 	window Vault,
-	resolve *query.ResolveLinks, create *note.CreateInRelation, backlinks *query.GetBacklinks,
+	resolve *query.ResolveLinks, create *note.CreateInRelation, backlinks *query.ListBacklinks,
 	isIndexOutdated func(error) bool,
 ) *Links {
 	return &Links{
@@ -106,22 +102,22 @@ func NewLinks(
 
 // Connections reads and changes the relationship between two notes.
 type Connections struct {
-	vault            Vault
-	getConnection    *query.GetConnection
-	saveConnection   *note.SaveConnection
-	removeSide       *note.RemoveSide
-	removeConnection *note.RemoveConnection
-	join             *note.Join
+	vault                Vault
+	getConnection        *query.GetConnection
+	saveConnection       *note.SaveConnection
+	deleteConnectionSide *note.DeleteConnectionSide
+	deleteConnection     *note.DeleteConnection
+	join                 *note.Join
 }
 
 // NewConnections is the part of NoteService that works the connections between notes.
 func NewConnections(
 	window Vault,
-	get *query.GetConnection, save *note.SaveConnection, removeSide *note.RemoveSide,
-	remove *note.RemoveConnection, join *note.Join,
+	get *query.GetConnection, save *note.SaveConnection, deleteConnectionSide *note.DeleteConnectionSide,
+	remove *note.DeleteConnection, join *note.Join,
 ) *Connections {
 	return &Connections{
-		vault: window, getConnection: get, saveConnection: save, removeSide: removeSide,
-		removeConnection: remove, join: join,
+		vault: window, getConnection: get, saveConnection: save, deleteConnectionSide: deleteConnectionSide,
+		deleteConnection: remove, join: join,
 	}
 }

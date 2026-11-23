@@ -48,12 +48,12 @@ type Document struct {
 // OpenBody holds prose alone open for changing. There is no frontmatter to
 // read, so the whole of it is body, and the line ending is the prose's own.
 func OpenBody(body []byte) *Document {
-	return &Document{eol: lineEnding(body), body: body}
+	return &Document{eol: detectLineEnding(body), body: body}
 }
 
 // Open reads a note for changing.
 func Open(raw []byte) (*Document, error) {
-	d := &Document{eol: lineEnding(raw)}
+	d := &Document{eol: detectLineEnding(raw)}
 
 	rest := raw
 	if after, found := bytes.CutPrefix(rest, []byte("\xef\xbb\xbf")); found {
@@ -142,10 +142,10 @@ func (d *Document) SetBody(body string) error {
 	return nil
 }
 
-// SpliceBody replaces one run of the prose, addressed by byte offsets into the
+// ReplaceBody replaces one run of the prose, addressed by byte offsets into the
 // body as returned by Body. Every byte outside the run is unchanged, and the
 // replacement text uses the file's own line ending.
-func (d *Document) SpliceBody(start, end int, text string) error {
+func (d *Document) ReplaceBody(start, end int, text string) error {
 	if d.isUnterminated {
 		return ErrUnterminated
 	}

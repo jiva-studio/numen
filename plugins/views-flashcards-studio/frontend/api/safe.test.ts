@@ -5,12 +5,12 @@
  * attempt below must be removed before it is rendered.
  */
 import { describe, expect, it } from 'vitest'
-import { safe } from './safe'
+import { sanitizeHtml } from './safe'
 
-const cleanHtml = (html: string): string => safe(html).toLowerCase()
+const cleanHtml = (html: string): string => sanitizeHtml(html).toLowerCase()
 
 const elements = (html: string): readonly Element[] => [
-  ...new DOMParser().parseFromString(safe(html), 'text/html').body.querySelectorAll('*'),
+  ...new DOMParser().parseFromString(sanitizeHtml(html), 'text/html').body.querySelectorAll('*'),
 ]
 
 const tags = (html: string): readonly string[] =>
@@ -23,25 +23,25 @@ const attributes = (html: string): readonly string[] =>
 
 describe('safe, what a card may be drawn with', () => {
   it('keeps the tags a card is written with', () => {
-    expect(safe('<p>a <strong>bold</strong> and <em>slanted</em> word</p>')).toBe(
+    expect(sanitizeHtml('<p>a <strong>bold</strong> and <em>slanted</em> word</p>')).toBe(
       '<p>a <strong>bold</strong> and <em>slanted</em> word</p>',
     )
   })
 
   it('keeps a table whole', () => {
     const table = '<table><tbody><tr><th colspan="2">a</th><td>b</td></tr></tbody></table>'
-    expect(safe(table)).toBe(table)
+    expect(sanitizeHtml(table)).toBe(table)
   })
 
   it('keeps ruby, which is what a card of another script is written with', () => {
-    expect(safe('<ruby>漢<rt>kan</rt></ruby>')).toBe('<ruby>漢<rt>kan</rt></ruby>')
+    expect(sanitizeHtml('<ruby>漢<rt>kan</rt></ruby>')).toBe('<ruby>漢<rt>kan</rt></ruby>')
   })
 
   it('keeps a link that points somewhere a link may point', () => {
-    expect(safe('<a href="https://example.org">there</a>')).toBe(
+    expect(sanitizeHtml('<a href="https://example.org">there</a>')).toBe(
       '<a href="https://example.org">there</a>',
     )
-    expect(safe('<a href="llama.md">there</a>')).toBe('<a href="llama.md">there</a>')
+    expect(sanitizeHtml('<a href="llama.md">there</a>')).toBe('<a href="llama.md">there</a>')
   })
 
   it('keeps the words of a tag it does not draw, and drops the tag', () => {
@@ -101,7 +101,7 @@ describe('safe, what does not survive', () => {
 
   it('keeps an image standing in the text that is one', () => {
     const response = 'data:image/png;base64,iVBORw0KGgo='
-    expect(safe(`<img src="${response}">`)).toBe(`<img src="${response}">`)
+    expect(sanitizeHtml(`<img src="${response}">`)).toBe(`<img src="${response}">`)
   })
 
   // A deck may come from another author. An image fetched from a remote host is a
@@ -119,20 +119,20 @@ describe('safe, what does not survive', () => {
   })
 
   it('keeps a link and an image whose path holds a colon after a slash', () => {
-    expect(safe('<a href="notes/to:do.md">a</a>')).toBe('<a href="notes/to:do.md">a</a>')
-    expect(safe('<img src="img/a:b.png">')).toBe('<img src="img/a:b.png">')
+    expect(sanitizeHtml('<a href="notes/to:do.md">a</a>')).toBe('<a href="notes/to:do.md">a</a>')
+    expect(sanitizeHtml('<img src="img/a:b.png">')).toBe('<img src="img/a:b.png">')
   })
 
   it('keeps an image served from a path of this window, however many slashes it holds', () => {
-    expect(safe('<img src="/files/a.png">')).toBe('<img src="/files/a.png">')
-    expect(safe('<img src="files//a.png">')).toBe('<img src="files//a.png">')
+    expect(sanitizeHtml('<img src="/files/a.png">')).toBe('<img src="/files/a.png">')
+    expect(sanitizeHtml('<img src="files//a.png">')).toBe('<img src="files//a.png">')
   })
 
   it('reads an address only where it is a link or a source', () => {
-    expect(safe('<img src="a.png" alt="note: a llama">')).toBe(
+    expect(sanitizeHtml('<img src="a.png" alt="note: a llama">')).toBe(
       '<img src="a.png" alt="note: a llama">',
     )
-    expect(safe('<p title="//a llama">a</p>')).toBe('<p title="//a llama">a</p>')
+    expect(sanitizeHtml('<p title="//a llama">a</p>')).toBe('<p title="//a llama">a</p>')
   })
 
   it('drops a comment, which is read differently by every parser', () => {
@@ -228,32 +228,32 @@ describe('safe, a card is not markdown', () => {
     ['[a link](https://example.org)', '[a link](https://example.org)'],
     ['![[llama.jpg]]', '![[llama.jpg]]'],
   ])('draws %s as the characters a person typed', (content, rendered) => {
-    expect(safe(content)).toBe(rendered)
+    expect(sanitizeHtml(content)).toBe(rendered)
   })
 
   it('wraps a line of prose in nothing', () => {
-    expect(safe('A llama is a camelid.')).toBe('A llama is a camelid.')
+    expect(sanitizeHtml('A llama is a camelid.')).toBe('A llama is a camelid.')
   })
 
   /* Nothing is wrapped and nothing is joined: what keeps two bare lines apart
      on the screen is the card's own container, which keeps the breaks. */
   it('keeps the breaks between the lines a person wrote', () => {
-    expect(safe('about 45"\nabout 20 years')).toBe('about 45"\nabout 20 years')
+    expect(sanitizeHtml('about 45"\nabout 20 years')).toBe('about 45"\nabout 20 years')
   })
 
   it('draws an angle bracket that opens no tag as the character it is', () => {
-    expect(safe('a < b and c > d')).toBe('a &lt; b and c &gt; d')
+    expect(sanitizeHtml('a < b and c > d')).toBe('a &lt; b and c &gt; d')
   })
 
   it('draws a tag a person wrote as the tag it is', () => {
-    expect(safe('a <u>marked</u> word')).toBe('a <u>marked</u> word')
+    expect(sanitizeHtml('a <u>marked</u> word')).toBe('a <u>marked</u> word')
   })
 
   it('draws text that is not Latin as it was written', () => {
-    expect(safe('बगीचे की खाद और हरी खाद')).toBe('बगीचे की खाद और हरी खाद')
+    expect(sanitizeHtml('बगीचे की खाद और हरी खाद')).toBe('बगीचे की खाद और हरी खाद')
   })
 
   it('draws nothing for text with nothing in it', () => {
-    expect(safe('')).toBe('')
+    expect(sanitizeHtml('')).toBe('')
   })
 })

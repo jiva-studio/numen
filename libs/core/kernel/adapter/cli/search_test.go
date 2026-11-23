@@ -121,7 +121,7 @@ func TestEachResultIsNamedByItsSourceAndItsPlace(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	folder := testsupport.TempDir(t)
+	folder := testsupport.CreateTempDir(t)
 	for name, body := range map[string]string{
 		"Bees.md":  "Bees fly\n\n   far",
 		"Hives.md": "Hives  hum",

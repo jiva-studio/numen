@@ -17,7 +17,7 @@ import type { JsonValue } from '@/shared/api/json'
 import type { InstallationConnections } from '../../../types'
 import { createInstallation } from '@/pages/settings/testing/installation'
 import { asFailure, asValue } from '@numen/result'
-import { click, dispose, findButton, findButtons, root } from '@/testing/dom'
+import { click, dispose, findButton, findButtons, getRoot } from '@/testing/dom'
 import ConnectionRows from './ConnectionRows.vue'
 
 const rowField = (
@@ -153,9 +153,9 @@ const changes = (wrapper: VueWrapper): unknown[] =>
   (wrapper.emitted('change') ?? []).map((one) => one[0])
 
 const problemOf = (label: string): string =>
-  root().querySelector(`button[aria-label="${label}"]`)?.getAttribute('aria-description') ?? ''
+  getRoot().querySelector(`button[aria-label="${label}"]`)?.getAttribute('aria-description') ?? ''
 
-const grips = (): HTMLElement[] => Array.from(root().querySelectorAll<HTMLElement>('[data-grip]'))
+const grips = (): HTMLElement[] => Array.from(getRoot().querySelectorAll<HTMLElement>('[data-grip]'))
 
 const press = (element: HTMLElement, key: string): void => {
   element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
@@ -170,7 +170,7 @@ describe('the rows of a setting of connections', () => {
     const { wrapper } = mountRows({ value: [row(WORK.id, 'alpha'), row(HOME.id, 'beta')] })
     await flushPromises()
 
-    const items = root().querySelectorAll('li')
+    const items = getRoot().querySelectorAll('li')
     expect(items).toHaveLength(2)
     expect(items[0]?.textContent).toContain('Work')
     expect(items[1]?.textContent).toContain('Home')
@@ -181,7 +181,7 @@ describe('the rows of a setting of connections', () => {
     const { wrapper } = mountRows({ max: 1, value: [row(WORK.id, 'alpha')] })
     await flushPromises()
 
-    expect(root().querySelectorAll('li')).toHaveLength(1)
+    expect(getRoot().querySelectorAll('li')).toHaveLength(1)
     expect(grips()).toHaveLength(0)
     expect(findButtons(/remove row/i)).toHaveLength(0)
     dispose(wrapper)
@@ -191,7 +191,7 @@ describe('the rows of a setting of connections', () => {
     const { wrapper } = mountRows()
     await flushPromises()
 
-    expect(root().querySelectorAll('li')).toHaveLength(0)
+    expect(getRoot().querySelectorAll('li')).toHaveLength(0)
     expect(findButton(/add connection/i)).toBeTruthy()
     dispose(wrapper)
   })
@@ -200,7 +200,7 @@ describe('the rows of a setting of connections', () => {
     const { wrapper } = mountRows({ max: 1, value: [row(WORK.id, 'alpha')] })
     await flushPromises()
 
-    expect(root().textContent).not.toContain('Add connection')
+    expect(getRoot().textContent).not.toContain('Add connection')
     dispose(wrapper)
   })
 
@@ -209,7 +209,7 @@ describe('the rows of a setting of connections', () => {
     await flushPromises()
 
     expect(findButtons(/add connection/i)).toHaveLength(0)
-    expect(root().textContent).toContain('No connections yet. Add a connection first.')
+    expect(getRoot().textContent).toContain('No connections yet. Add a connection first.')
     dispose(wrapper)
   })
 
@@ -227,7 +227,7 @@ describe('the rows of a setting of connections', () => {
     const { wrapper } = mountRows({ value: [row(WORK.id, 'alpha')] })
     await flushPromises()
 
-    expect(root().textContent).not.toContain('Open Connections')
+    expect(getRoot().textContent).not.toContain('Open Connections')
     dispose(wrapper)
   })
 
@@ -243,7 +243,7 @@ describe('the rows of a setting of connections', () => {
     const { wrapper } = mountRows()
     await click(findButton(/add connection/i))
 
-    expect(root().querySelectorAll('li')).toHaveLength(1)
+    expect(getRoot().querySelectorAll('li')).toHaveLength(1)
     expect(changes(wrapper)).toStrictEqual([])
     dispose(wrapper)
   })
@@ -276,7 +276,7 @@ describe('the rows of a setting of connections', () => {
     await flushPromises()
 
     expect(changes(wrapper)).toStrictEqual([])
-    expect(root().querySelectorAll('li')).toHaveLength(2)
+    expect(getRoot().querySelectorAll('li')).toHaveLength(2)
 
     wrapper.findAllComponents(Select)[1]?.vm.$emit('update:modelValue', 'alpha')
     await flushPromises()
@@ -334,10 +334,10 @@ describe('the rows of a setting of connections', () => {
 
     wrapper.findAllComponents(Select)[0]?.vm.$emit('update:modelValue', 'new-connection')
     await flushPromises()
-    expect(root().querySelector('[role="dialog"]')).not.toBeNull()
-    await click(findButton(/^cancel$/i, root().querySelector('[role="dialog"]')!))
+    expect(getRoot().querySelector('[role="dialog"]')).not.toBeNull()
+    await click(findButton(/^cancel$/i, getRoot().querySelector('[role="dialog"]')!))
 
-    expect(root().querySelector('[role="dialog"]')).toBeNull()
+    expect(getRoot().querySelector('[role="dialog"]')).toBeNull()
     expect(wrapper.findAllComponents(Select)[0]?.props('modelValue')).toBe(WORK.id)
     expect(changes(wrapper)).toStrictEqual([])
     dispose(wrapper)
@@ -360,11 +360,11 @@ describe('the rows of a setting of connections', () => {
 
     wrapper.findAllComponents(Select)[0]?.vm.$emit('update:modelValue', 'new-connection')
     await flushPromises()
-    await click(findButton(/^save$/i, root().querySelector('[role="dialog"]')!))
+    await click(findButton(/^save$/i, getRoot().querySelector('[role="dialog"]')!))
     await flushPromises()
 
     expect(create).toHaveBeenCalledOnce()
-    expect(root().querySelector('[role="dialog"]')).toBeNull()
+    expect(getRoot().querySelector('[role="dialog"]')).toBeNull()
     expect(wrapper.findAllComponents(Select)[0]?.props('modelValue')).toBe(fresh.id)
     expect(wrapper.findAllComponents(Select)[1]?.props('modelValue')).toBe('')
     expect(problemOf('Model')).toBe('Choose a model')
@@ -473,7 +473,7 @@ describe('the rows of a setting of connections', () => {
     expect(changes(wrapper)).toStrictEqual([
       [stored(HOME.id, 'beta'), stored(WORK.id, 'alpha'), stored(WORK.id, 'beta')],
     ])
-    expect(root().querySelector('[role="status"]')?.textContent).toBe('Dropped at position 2 of 3.')
+    expect(getRoot().querySelector('[role="status"]')?.textContent).toBe('Dropped at position 2 of 3.')
     dispose(wrapper)
   })
 
@@ -487,7 +487,7 @@ describe('the rows of a setting of connections', () => {
     press(grips()[1]!, 'Escape')
     await flushPromises()
 
-    const items = root().querySelectorAll('li')
+    const items = getRoot().querySelectorAll('li')
     expect(items[0]?.textContent).toContain('Work')
     expect(changes(wrapper)).toStrictEqual([])
     dispose(wrapper)
@@ -500,7 +500,7 @@ describe('the rows of a setting of connections', () => {
     press(grips()[0]!, 'ArrowDown')
     await flushPromises()
 
-    expect(root().querySelectorAll('li')[0]?.textContent).toContain('Work')
+    expect(getRoot().querySelectorAll('li')[0]?.textContent).toContain('Work')
     dispose(wrapper)
   })
 
@@ -512,7 +512,7 @@ describe('the rows of a setting of connections', () => {
     press(grips()[0]!, 'ArrowUp')
     await flushPromises()
 
-    expect(root().querySelectorAll('li')[0]?.textContent).toContain('Work')
+    expect(getRoot().querySelectorAll('li')[0]?.textContent).toContain('Work')
     dispose(wrapper)
   })
 
@@ -522,7 +522,7 @@ describe('the rows of a setting of connections', () => {
 
     await wrapper.setProps({ value: [row(HOME.id, 'beta')] })
 
-    expect(root().querySelectorAll('li')).toHaveLength(1)
+    expect(getRoot().querySelectorAll('li')).toHaveLength(1)
     dispose(wrapper)
   })
 })
@@ -534,9 +534,9 @@ describe('the rows of a setting that discovers', () => {
     const { wrapper } = mountRows({ discover: true, isDiscovering: true })
     await flushPromises()
 
-    expect(root().textContent).toContain('Discover automatically')
+    expect(getRoot().textContent).toContain('Discover automatically')
     expect(discoverSwitch(wrapper).props('modelValue')).toBe(true)
-    expect(root().textContent).not.toContain('Automatic:')
+    expect(getRoot().textContent).not.toContain('Automatic:')
     dispose(wrapper)
   })
 
@@ -548,8 +548,8 @@ describe('the rows of a setting that discovers', () => {
     })
     await flushPromises()
 
-    expect(root().querySelectorAll('li')).toHaveLength(1)
-    expect(root().textContent).not.toContain('Automatic:')
+    expect(getRoot().querySelectorAll('li')).toHaveLength(1)
+    expect(getRoot().textContent).not.toContain('Automatic:')
     dispose(wrapper)
   })
 
@@ -558,7 +558,7 @@ describe('the rows of a setting that discovers', () => {
     await flushPromises()
 
     expect(discoverSwitch(wrapper).props('modelValue')).toBe(false)
-    expect(root().textContent).not.toContain('Automatic:')
+    expect(getRoot().textContent).not.toContain('Automatic:')
     dispose(wrapper)
   })
 
@@ -577,7 +577,7 @@ describe('the rows of a setting that discovers', () => {
     await flushPromises()
 
     expect(discoverSwitch(wrapper).exists()).toBe(false)
-    expect(root().textContent).not.toContain('Discover automatically')
+    expect(getRoot().textContent).not.toContain('Discover automatically')
     dispose(wrapper)
   })
 })
@@ -608,7 +608,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
 
     await choose(wrapper, 0, HOME.id)
 
-    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    expect(getRoot().querySelector('[role="alertdialog"]')).toBeNull()
     expect(changes(wrapper)).toStrictEqual([])
     expect(wrapper.findAllComponents(Select)[1]?.props('modelValue')).toBe('')
     dispose(wrapper)
@@ -621,7 +621,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     await choose(wrapper, 0, HOME.id)
     await choose(wrapper, 1, 'alpha')
 
-    expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
+    expect(getRoot().querySelector('[role="alertdialog"]')?.textContent).toContain(
       'The vault will be indexed again: 120 notes through Home. This can take a while and may cost money.',
     )
     expect(changes(wrapper)).toStrictEqual([])
@@ -637,7 +637,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     await click(findButton(/^index$/i))
 
     expect(changes(wrapper)).toStrictEqual([[stored(HOME.id, 'alpha')]])
-    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    expect(getRoot().querySelector('[role="alertdialog"]')).toBeNull()
     dispose(wrapper)
   })
 
@@ -650,8 +650,8 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     await click(findButton(/^cancel$/i))
 
     expect(changes(wrapper)).toStrictEqual([])
-    expect(root().querySelector('li')?.textContent).toContain('Work')
-    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    expect(getRoot().querySelector('li')?.textContent).toContain('Work')
+    expect(getRoot().querySelector('[role="alertdialog"]')).toBeNull()
     dispose(wrapper)
   })
 
@@ -664,8 +664,8 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     await click(findButton(/^cancel$/i))
 
     expect(changes(wrapper)).toStrictEqual([])
-    expect(root().querySelectorAll('li')).toHaveLength(1)
-    expect(root().querySelector('li')?.textContent).toContain('Home')
+    expect(getRoot().querySelectorAll('li')).toHaveLength(1)
+    expect(getRoot().querySelector('li')?.textContent).toContain('Home')
     dispose(wrapper)
   })
 
@@ -676,7 +676,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     wrapper.findAllComponents(Select)[1]?.vm.$emit('update:modelValue', 'beta')
     await flushPromises()
 
-    expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
+    expect(getRoot().querySelector('[role="alertdialog"]')?.textContent).toContain(
       'The vault will be indexed again: 120 notes through Work.',
     )
     expect(changes(wrapper)).toStrictEqual([])
@@ -689,7 +689,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
 
     await click(findButton(/remove row 1/i))
 
-    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    expect(getRoot().querySelector('[role="alertdialog"]')).toBeNull()
     expect(changes(wrapper)).toStrictEqual([[]])
     dispose(wrapper)
   })
@@ -704,7 +704,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     await choose(wrapper, 0, HOME.id)
     await choose(wrapper, 1, 'alpha')
 
-    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    expect(getRoot().querySelector('[role="alertdialog"]')).toBeNull()
     expect(changes(wrapper)).toStrictEqual([[stored(HOME.id, 'alpha')]])
     dispose(wrapper)
   })
@@ -718,7 +718,7 @@ describe('the rows of embeddings, whose change indexes the vault again', () => {
     await choose(wrapper, 0, HOME.id)
     await choose(wrapper, 1, 'alpha')
 
-    expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
+    expect(getRoot().querySelector('[role="alertdialog"]')?.textContent).toContain(
       'The vault will be indexed again through Home. This can take a while and may cost money.',
     )
     dispose(wrapper)

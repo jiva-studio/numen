@@ -43,7 +43,7 @@ func FuzzWhole(f *testing.F) {
 			"empty":   {},
 		}
 
-		out, provided := format.Whole(body, cardModels, createIDs())
+		out, provided := format.AssignCardIDs(body, cardModels, createIDs())
 		was := format.ReadDeck(domain.Note{Body: body})
 		now := format.ReadDeck(domain.Note{Body: out})
 		if len(now.Cards) != len(was.Cards) {
@@ -71,7 +71,7 @@ func FuzzWhole(f *testing.F) {
 			}
 		}
 
-		again, second := format.Whole(out, cardModels, createIDs())
+		again, second := format.AssignCardIDs(out, cardModels, createIDs())
 		if again != out {
 			t.Fatalf("a second pass rewrote the deck\n was %q\n now %q", out, again)
 		}

@@ -167,27 +167,27 @@ func (x *HostLink) GetSourceRole() Role {
 	return Role_ROLE_UNSPECIFIED
 }
 
-type GetLinksRequest struct {
+type ListLinksRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetLinksRequest) Reset() {
-	*x = GetLinksRequest{}
+func (x *ListLinksRequest) Reset() {
+	*x = ListLinksRequest{}
 	mi := &file_numen_v1_hostlink_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetLinksRequest) String() string {
+func (x *ListLinksRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetLinksRequest) ProtoMessage() {}
+func (*ListLinksRequest) ProtoMessage() {}
 
-func (x *GetLinksRequest) ProtoReflect() protoreflect.Message {
+func (x *ListLinksRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostlink_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -199,19 +199,19 @@ func (x *GetLinksRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetLinksRequest.ProtoReflect.Descriptor instead.
-func (*GetLinksRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListLinksRequest.ProtoReflect.Descriptor instead.
+func (*ListLinksRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostlink_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *GetLinksRequest) GetPath() string {
+func (x *ListLinksRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-type GetLinksResponse struct {
+type ListLinksResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Links         []*HostLink            `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty"`
@@ -219,20 +219,20 @@ type GetLinksResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetLinksResponse) Reset() {
-	*x = GetLinksResponse{}
+func (x *ListLinksResponse) Reset() {
+	*x = ListLinksResponse{}
 	mi := &file_numen_v1_hostlink_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetLinksResponse) String() string {
+func (x *ListLinksResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetLinksResponse) ProtoMessage() {}
+func (*ListLinksResponse) ProtoMessage() {}
 
-func (x *GetLinksResponse) ProtoReflect() protoreflect.Message {
+func (x *ListLinksResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostlink_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -244,46 +244,46 @@ func (x *GetLinksResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetLinksResponse.ProtoReflect.Descriptor instead.
-func (*GetLinksResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListLinksResponse.ProtoReflect.Descriptor instead.
+func (*ListLinksResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostlink_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GetLinksResponse) GetError() ErrorCode {
+func (x *ListLinksResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *GetLinksResponse) GetLinks() []*HostLink {
+func (x *ListLinksResponse) GetLinks() []*HostLink {
 	if x != nil {
 		return x.Links
 	}
 	return nil
 }
 
-type GetBacklinksRequest struct {
+type HostLinkServiceListBacklinksRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetBacklinksRequest) Reset() {
-	*x = GetBacklinksRequest{}
+func (x *HostLinkServiceListBacklinksRequest) Reset() {
+	*x = HostLinkServiceListBacklinksRequest{}
 	mi := &file_numen_v1_hostlink_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetBacklinksRequest) String() string {
+func (x *HostLinkServiceListBacklinksRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetBacklinksRequest) ProtoMessage() {}
+func (*HostLinkServiceListBacklinksRequest) ProtoMessage() {}
 
-func (x *GetBacklinksRequest) ProtoReflect() protoreflect.Message {
+func (x *HostLinkServiceListBacklinksRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostlink_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -295,19 +295,19 @@ func (x *GetBacklinksRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetBacklinksRequest.ProtoReflect.Descriptor instead.
-func (*GetBacklinksRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostLinkServiceListBacklinksRequest.ProtoReflect.Descriptor instead.
+func (*HostLinkServiceListBacklinksRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostlink_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetBacklinksRequest) GetPath() string {
+func (x *HostLinkServiceListBacklinksRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-type GetBacklinksResponse struct {
+type HostLinkServiceListBacklinksResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Error         ErrorCode              `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	Links         []*HostLink            `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty"`
@@ -315,20 +315,20 @@ type GetBacklinksResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetBacklinksResponse) Reset() {
-	*x = GetBacklinksResponse{}
+func (x *HostLinkServiceListBacklinksResponse) Reset() {
+	*x = HostLinkServiceListBacklinksResponse{}
 	mi := &file_numen_v1_hostlink_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetBacklinksResponse) String() string {
+func (x *HostLinkServiceListBacklinksResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetBacklinksResponse) ProtoMessage() {}
+func (*HostLinkServiceListBacklinksResponse) ProtoMessage() {}
 
-func (x *GetBacklinksResponse) ProtoReflect() protoreflect.Message {
+func (x *HostLinkServiceListBacklinksResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostlink_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -340,19 +340,19 @@ func (x *GetBacklinksResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetBacklinksResponse.ProtoReflect.Descriptor instead.
-func (*GetBacklinksResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostLinkServiceListBacklinksResponse.ProtoReflect.Descriptor instead.
+func (*HostLinkServiceListBacklinksResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostlink_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetBacklinksResponse) GetError() ErrorCode {
+func (x *HostLinkServiceListBacklinksResponse) GetError() ErrorCode {
 	if x != nil {
 		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *GetBacklinksResponse) GetLinks() []*HostLink {
+func (x *HostLinkServiceListBacklinksResponse) GetLinks() []*HostLink {
 	if x != nil {
 		return x.Links
 	}
@@ -1037,15 +1037,15 @@ const file_numen_v1_hostlink_proto_rawDesc = "" +
 	" \x01(\tR\x04note\x12(\n" +
 	"\x06marker\x18\v \x01(\x0e2\x10.numen.v1.MarkerR\x06marker\x12/\n" +
 	"\vsource_role\x18\f \x01(\x0e2\x0e.numen.v1.RoleR\n" +
-	"sourceRole\"%\n" +
-	"\x0fGetLinksRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"g\n" +
-	"\x10GetLinksResponse\x12)\n" +
+	"sourceRole\"&\n" +
+	"\x10ListLinksRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"h\n" +
+	"\x11ListLinksResponse\x12)\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12(\n" +
-	"\x05links\x18\x02 \x03(\v2\x12.numen.v1.HostLinkR\x05links\")\n" +
-	"\x13GetBacklinksRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"k\n" +
-	"\x14GetBacklinksResponse\x12)\n" +
+	"\x05links\x18\x02 \x03(\v2\x12.numen.v1.HostLinkR\x05links\"9\n" +
+	"#HostLinkServiceListBacklinksRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"{\n" +
+	"$HostLinkServiceListBacklinksResponse\x12)\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12(\n" +
 	"\x05links\x18\x02 \x03(\v2\x12.numen.v1.HostLinkR\x05links\"G\n" +
 	"\x13ResolveLinksRequest\x12\x12\n" +
@@ -1095,10 +1095,10 @@ const file_numen_v1_hostlink_proto_rawDesc = "" +
 	"\"HostLinkServiceRemoveLinksResponse\x12)\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12&\n" +
 	"\x04stat\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\x04stat\x12\x16\n" +
-	"\x06detail\x18\x03 \x01(\tR\x06detail2\xa7\x04\n" +
-	"\x0fHostLinkService\x12A\n" +
-	"\bGetLinks\x12\x19.numen.v1.GetLinksRequest\x1a\x1a.numen.v1.GetLinksResponse\x12M\n" +
-	"\fGetBacklinks\x12\x1d.numen.v1.GetBacklinksRequest\x1a\x1e.numen.v1.GetBacklinksResponse\x12M\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail2\xcb\x04\n" +
+	"\x0fHostLinkService\x12D\n" +
+	"\tListLinks\x12\x1a.numen.v1.ListLinksRequest\x1a\x1b.numen.v1.ListLinksResponse\x12n\n" +
+	"\rListBacklinks\x12-.numen.v1.HostLinkServiceListBacklinksRequest\x1a..numen.v1.HostLinkServiceListBacklinksResponse\x12M\n" +
 	"\fResolveLinks\x12\x1d.numen.v1.ResolveLinksRequest\x1a\x1e.numen.v1.ResolveLinksResponse\x12_\n" +
 	"\bAddLinks\x12(.numen.v1.HostLinkServiceAddLinksRequest\x1a).numen.v1.HostLinkServiceAddLinksResponse\x12h\n" +
 	"\vUpdateLinks\x12+.numen.v1.HostLinkServiceUpdateLinksRequest\x1a,.numen.v1.HostLinkServiceUpdateLinksResponse\x12h\n" +
@@ -1118,21 +1118,21 @@ func file_numen_v1_hostlink_proto_rawDescGZIP() []byte {
 
 var file_numen_v1_hostlink_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_numen_v1_hostlink_proto_goTypes = []any{
-	(*HostLink)(nil),                           // 0: numen.v1.HostLink
-	(*GetLinksRequest)(nil),                    // 1: numen.v1.GetLinksRequest
-	(*GetLinksResponse)(nil),                   // 2: numen.v1.GetLinksResponse
-	(*GetBacklinksRequest)(nil),                // 3: numen.v1.GetBacklinksRequest
-	(*GetBacklinksResponse)(nil),               // 4: numen.v1.GetBacklinksResponse
-	(*ResolveLinksRequest)(nil),                // 5: numen.v1.ResolveLinksRequest
-	(*ResolveLinksResponse)(nil),               // 6: numen.v1.ResolveLinksResponse
-	(*HostLinkAddition)(nil),                   // 7: numen.v1.HostLinkAddition
-	(*HostLinkServiceAddLinksRequest)(nil),     // 8: numen.v1.HostLinkServiceAddLinksRequest
-	(*HostLinkAdded)(nil),                      // 9: numen.v1.HostLinkAdded
-	(*HostLinkServiceAddLinksResponse)(nil),    // 10: numen.v1.HostLinkServiceAddLinksResponse
-	(*HostLinkServiceUpdateLinksRequest)(nil),  // 11: numen.v1.HostLinkServiceUpdateLinksRequest
-	(*HostLinkServiceUpdateLinksResponse)(nil), // 12: numen.v1.HostLinkServiceUpdateLinksResponse
-	(*HostLinkServiceRemoveLinksRequest)(nil),  // 13: numen.v1.HostLinkServiceRemoveLinksRequest
-	(*HostLinkServiceRemoveLinksResponse)(nil), // 14: numen.v1.HostLinkServiceRemoveLinksResponse
+	(*HostLink)(nil),                             // 0: numen.v1.HostLink
+	(*ListLinksRequest)(nil),                     // 1: numen.v1.ListLinksRequest
+	(*ListLinksResponse)(nil),                    // 2: numen.v1.ListLinksResponse
+	(*HostLinkServiceListBacklinksRequest)(nil),  // 3: numen.v1.HostLinkServiceListBacklinksRequest
+	(*HostLinkServiceListBacklinksResponse)(nil), // 4: numen.v1.HostLinkServiceListBacklinksResponse
+	(*ResolveLinksRequest)(nil),                  // 5: numen.v1.ResolveLinksRequest
+	(*ResolveLinksResponse)(nil),                 // 6: numen.v1.ResolveLinksResponse
+	(*HostLinkAddition)(nil),                     // 7: numen.v1.HostLinkAddition
+	(*HostLinkServiceAddLinksRequest)(nil),       // 8: numen.v1.HostLinkServiceAddLinksRequest
+	(*HostLinkAdded)(nil),                        // 9: numen.v1.HostLinkAdded
+	(*HostLinkServiceAddLinksResponse)(nil),      // 10: numen.v1.HostLinkServiceAddLinksResponse
+	(*HostLinkServiceUpdateLinksRequest)(nil),    // 11: numen.v1.HostLinkServiceUpdateLinksRequest
+	(*HostLinkServiceUpdateLinksResponse)(nil),   // 12: numen.v1.HostLinkServiceUpdateLinksResponse
+	(*HostLinkServiceRemoveLinksRequest)(nil),    // 13: numen.v1.HostLinkServiceRemoveLinksRequest
+	(*HostLinkServiceRemoveLinksResponse)(nil),   // 14: numen.v1.HostLinkServiceRemoveLinksResponse
 	nil,              // 15: numen.v1.ResolveLinksResponse.LinksEntry
 	(Role)(0),        // 16: numen.v1.Role
 	(Marker)(0),      // 17: numen.v1.Marker
@@ -1143,10 +1143,10 @@ var file_numen_v1_hostlink_proto_depIdxs = []int32{
 	16, // 0: numen.v1.HostLink.role:type_name -> numen.v1.Role
 	17, // 1: numen.v1.HostLink.marker:type_name -> numen.v1.Marker
 	16, // 2: numen.v1.HostLink.source_role:type_name -> numen.v1.Role
-	18, // 3: numen.v1.GetLinksResponse.error:type_name -> numen.v1.ErrorCode
-	0,  // 4: numen.v1.GetLinksResponse.links:type_name -> numen.v1.HostLink
-	18, // 5: numen.v1.GetBacklinksResponse.error:type_name -> numen.v1.ErrorCode
-	0,  // 6: numen.v1.GetBacklinksResponse.links:type_name -> numen.v1.HostLink
+	18, // 3: numen.v1.ListLinksResponse.error:type_name -> numen.v1.ErrorCode
+	0,  // 4: numen.v1.ListLinksResponse.links:type_name -> numen.v1.HostLink
+	18, // 5: numen.v1.HostLinkServiceListBacklinksResponse.error:type_name -> numen.v1.ErrorCode
+	0,  // 6: numen.v1.HostLinkServiceListBacklinksResponse.links:type_name -> numen.v1.HostLink
 	18, // 7: numen.v1.ResolveLinksResponse.error:type_name -> numen.v1.ErrorCode
 	15, // 8: numen.v1.ResolveLinksResponse.links:type_name -> numen.v1.ResolveLinksResponse.LinksEntry
 	19, // 9: numen.v1.HostLinkAddition.baseline:type_name -> numen.v1.FileStat
@@ -1165,14 +1165,14 @@ var file_numen_v1_hostlink_proto_depIdxs = []int32{
 	18, // 22: numen.v1.HostLinkServiceRemoveLinksResponse.error:type_name -> numen.v1.ErrorCode
 	19, // 23: numen.v1.HostLinkServiceRemoveLinksResponse.stat:type_name -> numen.v1.FileStat
 	0,  // 24: numen.v1.ResolveLinksResponse.LinksEntry.value:type_name -> numen.v1.HostLink
-	1,  // 25: numen.v1.HostLinkService.GetLinks:input_type -> numen.v1.GetLinksRequest
-	3,  // 26: numen.v1.HostLinkService.GetBacklinks:input_type -> numen.v1.GetBacklinksRequest
+	1,  // 25: numen.v1.HostLinkService.ListLinks:input_type -> numen.v1.ListLinksRequest
+	3,  // 26: numen.v1.HostLinkService.ListBacklinks:input_type -> numen.v1.HostLinkServiceListBacklinksRequest
 	5,  // 27: numen.v1.HostLinkService.ResolveLinks:input_type -> numen.v1.ResolveLinksRequest
 	8,  // 28: numen.v1.HostLinkService.AddLinks:input_type -> numen.v1.HostLinkServiceAddLinksRequest
 	11, // 29: numen.v1.HostLinkService.UpdateLinks:input_type -> numen.v1.HostLinkServiceUpdateLinksRequest
 	13, // 30: numen.v1.HostLinkService.RemoveLinks:input_type -> numen.v1.HostLinkServiceRemoveLinksRequest
-	2,  // 31: numen.v1.HostLinkService.GetLinks:output_type -> numen.v1.GetLinksResponse
-	4,  // 32: numen.v1.HostLinkService.GetBacklinks:output_type -> numen.v1.GetBacklinksResponse
+	2,  // 31: numen.v1.HostLinkService.ListLinks:output_type -> numen.v1.ListLinksResponse
+	4,  // 32: numen.v1.HostLinkService.ListBacklinks:output_type -> numen.v1.HostLinkServiceListBacklinksResponse
 	6,  // 33: numen.v1.HostLinkService.ResolveLinks:output_type -> numen.v1.ResolveLinksResponse
 	10, // 34: numen.v1.HostLinkService.AddLinks:output_type -> numen.v1.HostLinkServiceAddLinksResponse
 	12, // 35: numen.v1.HostLinkService.UpdateLinks:output_type -> numen.v1.HostLinkServiceUpdateLinksResponse

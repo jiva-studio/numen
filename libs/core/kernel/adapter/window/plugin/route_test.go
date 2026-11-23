@@ -47,7 +47,7 @@ func TestAWindowGetsThePluginsThatRunAndEachChange(t *testing.T) {
 		Process:    plugindomain.Process{PluginID: "org.example.maps", StartTime: start, LastUseTime: start, LeaseCount: 1},
 		PluginName: "Maps", Health: plugindomain.HealthOK,
 	}}}
-	path, served, _ := plugin.NewRoute(plugin.NewHandler(processes{lists: lists}, nil), connect.WithInterceptors())
+	path, served := plugin.NewRoute(plugin.NewHandler(processes{lists: lists}, nil), connect.WithInterceptors())
 	mux := http.NewServeMux()
 	mux.Handle(path, served)
 	server := httptest.NewServer(mux)

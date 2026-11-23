@@ -75,7 +75,7 @@ func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (doma
 	t.Helper()
 	cfg := container.NewTestInstallation(container.Config{
 		Paths: container.Paths{
-			IndexPath:       indexfile.Path(t),
+			IndexPath:       indexfile.GetPath(t),
 			PluginCachePath: t.TempDir(),
 			RegistryPath:    filepath.Join(t.TempDir(), "vaults.json"),
 		},
@@ -142,7 +142,7 @@ func (w *vaultMoveRecordingWindow) ShowMove(ctx context.Context, move domain.Mov
 func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 	cfg := container.NewTestInstallation(container.Config{
 		Paths: container.Paths{
-			IndexPath:       indexfile.Path(t),
+			IndexPath:       indexfile.GetPath(t),
 			PluginCachePath: t.TempDir(),
 			RegistryPath:    filepath.Join(t.TempDir(), "vaults.json"),
 		},

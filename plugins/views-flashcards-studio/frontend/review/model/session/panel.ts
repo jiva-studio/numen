@@ -8,8 +8,8 @@ import type { ReviewCard } from '../../lib/card/cards'
 /** What the panel requires from the host window. */
 export interface AgentPanelDeps {
   readonly connections: ConnectionHost
-  readonly card: () => ReviewCard | null
-  readonly vault: () => string
+  readonly getCard: () => ReviewCard | null
+  readonly getVault: () => string
   readonly open: () => boolean
   readonly showPanel: (open: boolean) => void
 }
@@ -50,7 +50,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
       context: {
         connections: deps.connections,
         toolContext: getCardToolContext(targetCard),
-        vault: deps.vault(),
+        vault: deps.getVault(),
         placeholder: words.ask,
       },
     }
@@ -58,7 +58,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
 
   /** Opens the panel on the current card. */
   const openPanel = () => {
-    const card = deps.card()
+    const card = deps.getCard()
     if (!card) return
     startConversation(card)
     deps.showPanel(true)

@@ -73,8 +73,8 @@ type Renderer struct {
 // New returns a renderer whose templates may also call extra. A built-in function is not replaced by one of the same name.
 func New(extra Funcs) Renderer { return Renderer{extra: extra} }
 
-// Fields lists the fields a template asks, in the order the first pass reaches them.
-func (r Renderer) Fields(ctx context.Context, name, text string, data Data) ([]Field, error) {
+// ListFields lists the fields a template asks, in the order the first pass reaches them.
+func (r Renderer) ListFields(ctx context.Context, name, text string, data Data) ([]Field, error) {
 	return r.collect(ctx, name, text, data, new(ids))
 }
 

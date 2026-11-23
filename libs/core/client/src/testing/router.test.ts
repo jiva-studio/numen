@@ -3,12 +3,12 @@
  */
 import { describe, expect, it } from 'vitest'
 import { Code, ConnectError } from '@connectrpc/connect'
-import { createSearchClient, createThemeServiceClient } from '../clients'
+import { createSearchRpc, createThemeRpc } from '../clients'
 import { createCoreHandlerTransport, createCoreTransport, type CoreAnswers } from './router'
 
 const createClients = (answers: CoreAnswers) => {
   const transport = createCoreTransport(answers)
-  return { search: createSearchClient(transport), theme: createThemeServiceClient(transport) }
+  return { search: createSearchRpc(transport), theme: createThemeRpc(transport) }
 }
 
 describe('a call answered by the test', () => {
@@ -18,7 +18,7 @@ describe('a call answered by the test', () => {
       search: {
         searchNames: (request) => {
           requests.push(request)
-          return { found: [{ note: { path: 'Llama.md', title: 'Llama' } }] }
+          return { matches: [{ note: { path: 'Llama.md', title: 'Llama' } }] }
         },
       },
     })
@@ -26,7 +26,7 @@ describe('a call answered by the test', () => {
     const answer = await search.searchNames({ query: 'lla', limit: 8 })
 
     expect(requests).toMatchObject([{ query: 'lla', limit: 8 }])
-    expect(answer.found[0]?.note?.title).toBe('Llama')
+    expect(answer.matches[0]?.note?.title).toBe('Llama')
   })
 
   it('rejects with the error the answer threw, code and message kept', async () => {
@@ -72,19 +72,19 @@ describe('a call answered by the test', () => {
 describe('handlers named by their method', () => {
   it('answer the call of the service that declares the method', async () => {
     const transport = createCoreHandlerTransport({
-      searchNames: () => ({ found: [{ note: { title: 'Llama' } }] }),
+      searchNames: () => ({ matches: [{ note: { title: 'Llama' } }] }),
       async *watchThemes() {
         yield { names: ['own/Dusk.css'] }
       },
     })
-    const search = createSearchClient(transport)
-    const theme = createThemeServiceClient(transport)
+    const search = createSearchRpc(transport)
+    const theme = createThemeRpc(transport)
 
     const answer = await search.searchNames({ query: 'lla', limit: 8 })
     const changes: string[][] = []
     for await (const change of theme.watchThemes({})) changes.push([...change.names])
 
-    expect(answer.found[0]?.note?.title).toBe('Llama')
+    expect(answer.matches[0]?.note?.title).toBe('Llama')
     expect(changes).toEqual([['own/Dusk.css']])
   })
 

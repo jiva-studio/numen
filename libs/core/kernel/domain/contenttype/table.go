@@ -65,7 +65,7 @@ func parseTable(text string) Table {
 	return table
 }
 
-func (g glob) matches(subject string) bool {
+func (g glob) isMatch(subject string) bool {
 	matched, err := path.Match(g.pattern, subject)
 	return err == nil && matched
 }
@@ -123,7 +123,7 @@ func (t Table) GetContentType(name string) domain.ContentType {
 		if one.isCaseSensitive {
 			subject = name
 		}
-		if one.matches(subject) {
+		if one.isMatch(subject) {
 			return one.contentType
 		}
 	}
@@ -154,7 +154,7 @@ func (t Table) ListExtensions(mask domain.ContentType) []string {
 		if extension == "" || strings.Contains(extension, ".") || slices.Contains(out, extension) {
 			continue
 		}
-		if mask.Matches(t.GetContentType("file." + extension)) {
+		if mask.IsMatch(t.GetContentType("file." + extension)) {
 			out = append(out, extension)
 		}
 	}

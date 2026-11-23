@@ -22,11 +22,11 @@ import (
 // The agent's tasks end when s closes. The models, the connections that serve them and the tools are
 // those of the host the environment names.
 func Mount(s *server.Server) error {
-	chat, connections, err := hostchat.FromEnvironment()
+	chat, connections, err := hostchat.NewFromEnvironment()
 	if err != nil {
 		return err
 	}
-	tools, err := hosttools.FromEnvironment()
+	tools, err := hosttools.NewFromEnvironment()
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func mount(s *server.Server, reach host) error {
 	}
 	s.SetUpdateConfig(agent.settings.Configure)
 	connection.Mount(s, agent.provider)
-	s.OnClose(agent.answerer.Close)
+	s.AddCloser(agent.answerer.Close)
 	return nil
 }
 

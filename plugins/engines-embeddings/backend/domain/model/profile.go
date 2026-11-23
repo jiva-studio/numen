@@ -290,7 +290,7 @@ func (t *Profiles) readUserFile(data []byte) ([]Profile, error) {
 	}
 	out := make([]Profile, 0, len(raw))
 	for _, one := range raw {
-		p, err := t.layer(one)
+		p, err := t.parseLayer(one)
 		if err != nil {
 			return nil, err
 		}
@@ -299,7 +299,7 @@ func (t *Profiles) readUserFile(data []byte) ([]Profile, error) {
 	return out, nil
 }
 
-func (t *Profiles) layer(entry json.RawMessage) (Profile, error) {
+func (t *Profiles) parseLayer(entry json.RawMessage) (Profile, error) {
 	var head struct {
 		ID string `json:"id"`
 	}

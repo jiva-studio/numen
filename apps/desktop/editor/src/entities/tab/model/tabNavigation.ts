@@ -1,9 +1,9 @@
-import type { fileOpeners } from './openers'
+import type { createFileOpeners } from './openers'
 import type { WindowTabs } from './windowTabs'
 
 /** What the navigation of notes between the tabs of the window uses of them. */
 export interface TabNavigationDeps {
-  readonly tabOpeners: Pick<ReturnType<typeof fileOpeners>, 'openFile'>
+  readonly tabOpeners: Pick<ReturnType<typeof createFileOpeners>, 'openFile'>
   readonly windowTabs: Pick<WindowTabs, 'tabs'>
   readonly tabSync: { setShownPath(tabId: string, path: string): void }
 }

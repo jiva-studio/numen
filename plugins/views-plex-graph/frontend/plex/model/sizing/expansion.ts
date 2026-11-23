@@ -51,8 +51,8 @@ function interpolateBox(node: PlacedNode, expanded: ExpandedBox | null, open: nu
 }
 
 export interface OpenBoxOptions {
-  readonly node: () => PlacedNode
-  readonly expanded: () => ExpandedBox | null
+  readonly getNode: () => PlacedNode
+  readonly getExpanded: () => ExpandedBox | null
   readonly on: () => string | null
   readonly delay: () => number
   readonly hasPill?: (() => boolean) | undefined
@@ -67,8 +67,8 @@ export interface OpenBoxOptions {
  */
 export function useOpenBox(options: OpenBoxOptions) {
   const {
-    node,
-    expanded,
+    getNode: node,
+    getExpanded: expanded,
     on,
     delay,
     hasPill = () => true,

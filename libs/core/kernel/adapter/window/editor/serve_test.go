@@ -16,10 +16,10 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire/wiretest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
@@ -45,7 +45,7 @@ import (
 // noTabKinds gives no note a kind of tab.
 type noTabKinds struct{}
 
-func (noTabKinds) Execute(context.Context, domain.Vault, []string) (map[string]string, error) {
+func (noTabKinds) ListTabKinds(context.Context, domain.Vault, []string) (map[string]string, error) {
 	return map[string]string{}, nil
 }
 
@@ -175,7 +175,7 @@ type behind struct {
 	recordedVal <-chan window.Change
 }
 
-func opening(t *testing.T, notes map[string]string, watcher vault.VaultWatcher, readers vaultport.VaultReaders) *behind {
+func opening(t *testing.T, notes map[string]string, watcher indexing.VaultWatcher, readers vaultport.VaultReaders) *behind {
 	t.Helper()
 	return openingWith(t, notes, watcher, readers, nil, indexing.QuietPeriod)
 }
@@ -183,7 +183,7 @@ func opening(t *testing.T, notes map[string]string, watcher vault.VaultWatcher, 
 func openingWith(
 	t *testing.T,
 	notes map[string]string,
-	watcher vault.VaultWatcher,
+	watcher indexing.VaultWatcher,
 	readers vaultport.VaultReaders,
 	embedder sourcefake.Embedder,
 	idleDuration time.Duration,
@@ -565,12 +565,12 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 		},
 		"quitting": func(ctx context.Context, http connect.HTTPClient, targetPath string) error {
 			_, err := numenv1connect.NewWindowServiceClient(http, targetPath).
-				WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
+				WatchWindowClose(ctx, connect.NewRequest(&v1.WatchWindowCloseRequest{WindowId: wire.Editor}))
 			return err
 		},
 		"tasks": func(ctx context.Context, http connect.HTTPClient, targetOffset string) error {
 			_, err := numenv1connect.NewWindowServiceClient(http, targetOffset).
-				WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
+				WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{WindowId: wire.Editor}))
 			return err
 		},
 	}
@@ -642,15 +642,15 @@ func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetApplied() != adapterSettings.DefaultTheme {
-		t.Errorf("applied %q", answer.Msg.GetApplied())
+	if answer.Msg.GetAppliedTheme() != adapterSettings.DefaultTheme {
+		t.Errorf("applied %q", answer.Msg.GetAppliedTheme())
 	}
 	if len(answer.Msg.GetThemes()) == 0 {
 		t.Error("no themes")
 	}
 
 	text, err := client.ReadTheme(t.Context(),
-		connect.NewRequest(&v1.ReadThemeRequest{Name: answer.Msg.GetApplied()}))
+		connect.NewRequest(&v1.ReadThemeRequest{Name: answer.Msg.GetAppliedTheme()}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -700,8 +700,8 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetApplied() != "mine:nord" || answer.Msg.GetMode() != v1.Mode_MODE_DARK {
-		t.Errorf("applied %q, read as %v", answer.Msg.GetApplied(), answer.Msg.GetMode())
+	if answer.Msg.GetAppliedTheme() != "mine:nord" || answer.Msg.GetMode() != v1.Mode_MODE_DARK {
+		t.Errorf("applied %q, read as %v", answer.Msg.GetAppliedTheme(), answer.Msg.GetMode())
 	}
 }
 
@@ -834,7 +834,7 @@ func (p *routedPlugins) ListFrameOrigins() []string {
 
 func (p *routedPlugins) GetFrameOrigins(pluginID string) []string { return p.frames[pluginID] }
 
-func (p *routedPlugins) Serves(string) bool { return false }
+func (p *routedPlugins) CanServe(string) bool { return false }
 
 func (p *routedPlugins) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	http.Error(w, "no plugin serves this service", http.StatusNotFound)

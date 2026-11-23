@@ -46,7 +46,7 @@ func TestSameTitleGetsSuffixes(t *testing.T) {
 func TestNoTitleFallsBackToTheAddress(t *testing.T) {
 	l, _, _, _, _, _, sf, _ := createTestLinks()
 	sf.metaErr = errors.New("503")
-	name, _, err := domain.Filename("https://mills.test/a")
+	name, _, err := domain.CreateFilename("https://mills.test/a")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func TestTitleIsSanitized(t *testing.T) {
 	if len(paths) != 1 || strings.Count(paths[0], "/") != 1 {
 		t.Fatalf("paths = %v, want one note directly in talks", paths)
 	}
-	content, _ := v.Content(paths[0])
+	content, _ := v.ReadContent(paths[0])
 	if !strings.Contains(content, "Mills: wind/water?") {
 		t.Errorf("note = %q, want the page title in its frontmatter", content)
 	}

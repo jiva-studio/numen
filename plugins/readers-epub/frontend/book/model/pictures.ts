@@ -14,7 +14,7 @@ export function findPendingImages(text: HTMLElement): HTMLImageElement[] {
  * Calls `run` once every picture in `pictures` has arrived or failed, or after `PICTURES_WAIT`,
  * and once only.
  */
-export function whenArrived(pictures: readonly HTMLImageElement[], run: () => void): void {
+export function waitForPictures(pictures: readonly HTMLImageElement[], run: () => void): void {
   let remaining = pictures.length
   let isDone = false
   const finish = () => {

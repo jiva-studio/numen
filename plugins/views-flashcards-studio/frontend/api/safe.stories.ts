@@ -10,8 +10,8 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
-import { safe } from './safe'
-import { scheme } from '../lib/cards/links'
+import { sanitizeHtml } from './safe'
+import { getScheme } from '../lib/cards/links'
 
 /** How many arrangements one run measures. */
 const ARRANGEMENTS = 2_000
@@ -255,17 +255,17 @@ const wrong = (element: Element): string | null => {
 
   const href = element.getAttribute('href')
   if (href !== null) {
-    const response = scheme(href)
+    const response = getScheme(href)
     if (response !== null && !LEADS.includes(response)) return `a link leads to ${response}`
   }
 
   const src = element.getAttribute('src')
   if (src !== null) {
     const response = stripControls(src)
-    if (scheme(response) === 'data:') {
+    if (getScheme(response) === 'data:') {
       if (!INLINE_IMAGE.test(response))
         return `a picture is in the text as ${response.slice(0, 30)}`
-    } else if (scheme(response) !== null || /^[\\/]{2}/.test(response)) {
+    } else if (getScheme(response) !== null || /^[\\/]{2}/.test(response)) {
       return `a picture would be fetched from ${response.slice(0, 40)}`
     }
   }
@@ -286,13 +286,13 @@ const measureArrangements = (): Tally => {
 
   for (let i = 0; i < ARRANGEMENTS; i++) {
     const content = createArrangement(next, i)
-    const once = safe(content)
+    const once = sanitizeHtml(content)
     tally.arrangements += 1
 
     // Read twice is the whole of the measuring: what one reading writes out is
     // what the next parser is handed, and the second reading has to find
     // nothing left to take out.
-    if (safe(once) !== once) {
+    if (sanitizeHtml(once) !== once) {
       throw new Error(`read twice, ${JSON.stringify(content)} came to ${JSON.stringify(once)}`)
     }
 
@@ -363,7 +363,7 @@ export const NothingRuns: Story = {
 
     const next = numbers(SEED)
     for (let i = 0; i < ARRANGEMENTS; i++) {
-      element.innerHTML = safe(createArrangement(next, i))
+      element.innerHTML = sanitizeHtml(createArrangement(next, i))
     }
     await new Promise((settle) => view.requestAnimationFrame(() => view.setTimeout(settle, 0)))
 

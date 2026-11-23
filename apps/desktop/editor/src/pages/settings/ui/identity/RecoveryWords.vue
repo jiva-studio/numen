@@ -9,43 +9,41 @@ defineProps<{ recoveryWords: readonly string[] }>()
 </script>
 
 <template>
-  <div class="recovery-words">
-    <p class="recovery-words__note">{{ words.identityWriteDown }}</p>
-    <ol class="recovery-words__list" :aria-label="words.identityRecoveryWords">
-      <li v-for="(word, index) in recoveryWords" :key="index" class="recovery-words__word">
-        {{ word }}
-      </li>
-    </ol>
-  </div>
+  <ol class="words" :aria-label="words.identityRecoveryWords">
+    <li v-for="(word, index) in recoveryWords" :key="index">{{ word }}</li>
+  </ol>
 </template>
 
 <style scoped>
-.recovery-words {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.recovery-words__note {
-  margin: 0;
-  font-size: var(--numen-text-1);
-  color: var(--numen-hushed);
-}
-
-.recovery-words__list {
+.words {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
-  gap: 0.375rem 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.375rem;
   margin: 0;
-  padding: 0.75rem 0.75rem 0.75rem 2.5rem;
-  background-color: var(--numen-bubble-bg);
+  padding: 0;
+  list-style: none;
+  counter-reset: word;
+}
+
+.words li {
+  counter-increment: word;
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);
+  background: var(--numen-field-bg);
   font-family: var(--numen-font-mono);
   font-size: var(--numen-text-2);
-  color: var(--numen-ink);
 }
 
-.recovery-words__word {
-  padding-inline-start: 0.25rem;
+.words li::before {
+  content: counter(word);
+  min-inline-size: 1.1em;
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
 }
 </style>

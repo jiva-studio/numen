@@ -14,7 +14,7 @@ import (
 
 func newMigratedTemplate() *vaulttest.Template {
 	return vaulttest.NewTemplate(func(ctx context.Context, path string) error {
-		db, err := index.Open(ctx, path, index.Unsynchronized())
+		db, err := index.Open(ctx, path, index.DisableSync())
 		if err != nil {
 			return err
 		}
@@ -22,8 +22,8 @@ func newMigratedTemplate() *vaulttest.Template {
 	})
 }
 
-// Path is a migrated index of the test's own, at a path nothing else uses.
-func Path(tb testing.TB) string {
+// GetPath is a migrated index of the test's own, at a path nothing else uses.
+func GetPath(tb testing.TB) string {
 	tb.Helper()
-	return newMigratedTemplate().Path(tb)
+	return newMigratedTemplate().GetPath(tb)
 }

@@ -48,11 +48,11 @@ const createSample: Command = {
 
 const createPalette = () => {
   const commands = createCommandPalette({
-    core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+    core: { searchNames: async () => [], listVaults: async () => ({ vaults: [], showing: '' }) },
     words,
-    at: () => front,
+    getTarget: () => front,
     knows: { getTitle: () => '', getTabAt: () => null },
-    lists: { getStepGroups: () => [], previewItem: vi.fn() },
+    lists: { getStepGroups: () => [], applyItemPreview: vi.fn() },
     runs: runSupport(),
     getCommands: () => [createSample],
   })
@@ -124,11 +124,11 @@ describe('a command that arrives after the palette is made', () => {
   it('is offered from then on', () => {
     const extra = shallowRef<readonly Command[]>([])
     const commands = createCommandPalette({
-      core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+      core: { searchNames: async () => [], listVaults: async () => ({ vaults: [], showing: '' }) },
       words,
-      at: () => front,
+      getTarget: () => front,
       knows: { getTitle: () => '', getTabAt: () => null },
-      lists: { getStepGroups: () => [], previewItem: vi.fn() },
+      lists: { getStepGroups: () => [], applyItemPreview: vi.fn() },
       runs: runSupport(),
       getCommands: () => extra.value,
     })
@@ -148,11 +148,11 @@ describe('a command that arrives after the palette is made', () => {
 
   it('falls back to an empty command list and creates invocations for unlisted commands', () => {
     const session = createPaletteSession({
-      core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+      core: { searchNames: async () => [], listVaults: async () => ({ vaults: [], showing: '' }) },
       words,
-      at: () => front,
+      getTarget: () => front,
       knows: { getTitle: () => '', getTabAt: () => null },
-      lists: { getStepGroups: () => [], previewItem: vi.fn() },
+      lists: { getStepGroups: () => [], applyItemPreview: vi.fn() },
       runs: runSupport(),
     })
 

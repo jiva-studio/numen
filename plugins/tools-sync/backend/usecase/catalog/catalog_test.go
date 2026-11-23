@@ -198,7 +198,7 @@ func TestConnectVault_RefusesACopyOfAConnectedVault(t *testing.T) {
 	w := newWorld(t)
 	w.first.Connect(t, "Test")
 	w.first.AddVault(t, "Test copy")
-	w.first.Vaults.Store().With("Test copy").File(synctest.LinkFile, w.first.ReadStoreFile(t, "Test", synctest.LinkFile))
+	w.first.Vaults.Store().With("Test copy").WriteFile(synctest.LinkFile, w.first.ReadStoreFile(t, "Test", synctest.LinkFile))
 
 	asNew := catalog.NewConnectVault(w.first.CatalogDeps()).Execute(t.Context(), catalog.ConnectInput{VaultID: "Test copy", Mode: catalog.ModeNew})
 	asExisting := catalog.NewConnectVault(w.first.CatalogDeps()).Execute(t.Context(),

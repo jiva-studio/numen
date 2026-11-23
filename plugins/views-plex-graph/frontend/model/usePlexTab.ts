@@ -304,7 +304,7 @@ function usePlexWidgets(
   map: ReturnType<typeof createNodeIdMap>,
   board: PlexBoardContext,
 ): PlexWidgetsState {
-  const watching = (side: PlexWidgetSide) => {
+  const watchSide = (side: PlexWidgetSide) => {
     const entries = shallowRef<readonly PlexWidget[]>([])
     const handle = deps.watchWidgets?.(side, (items) => {
       entries.value = items.flatMap((item) =>
@@ -315,11 +315,11 @@ function usePlexWidgets(
     return entries
   }
   return {
-    above: watching('above'),
-    below: watching('below'),
-    over: watching('over'),
-    boardTop: watching('boardTop'),
-    boardBottom: watching('boardBottom'),
+    above: watchSide('above'),
+    below: watchSide('below'),
+    over: watchSide('over'),
+    boardTop: watchSide('boardTop'),
+    boardBottom: watchSide('boardBottom'),
     board,
     getPath: map.getNodePath,
   }

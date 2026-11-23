@@ -8,7 +8,7 @@ import type { MountView } from '../views'
 
 export interface MountedConversationDeps {
   readonly element: Readonly<Ref<HTMLElement | null>>
-  readonly context: () => ConversationContext | null
+  readonly getContext: () => ConversationContext | null
   readonly open: () => boolean
   readonly mountView: MountView
 }
@@ -22,7 +22,7 @@ export function useMountedConversation(deps: MountedConversationDeps): void {
   }
 
   watch(
-    [deps.element, deps.context],
+    [deps.element, deps.getContext],
     ([element, context]) => {
       unmount()
       if (element && context) view = deps.mountView(CONVERSATION, element, context)

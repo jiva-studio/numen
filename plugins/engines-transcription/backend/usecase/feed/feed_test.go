@@ -106,7 +106,7 @@ func newScene(t *testing.T, files ...string) *scene {
 	t.Helper()
 	v := hosttest.New("Lectures")
 	for _, path := range files {
-		v.File(path, "the bytes of "+path)
+		v.WriteFile(path, "the bytes of "+path)
 	}
 	s := &scene{vault: v, feed: &readFeed{Vault: v}, store: v.Store()}
 	s.restart(newRuns())
@@ -141,7 +141,7 @@ func TestANewRecordingIsStartedOnce(t *testing.T) {
 	s.update(t)
 	s.runs.finish("lectures/ohm.mp3", true)
 	s.update(t)
-	s.vault.File("interviews/board.wav", "an interview at the board")
+	s.vault.WriteFile("interviews/board.wav", "an interview at the board")
 	s.update(t)
 
 	s.checkStartedPaths(t, "lectures/ohm.mp3", "interviews/board.wav")
@@ -153,7 +153,7 @@ func TestAChangedRecordingIsStartedAgain(t *testing.T) {
 	s.runs.finish("lectures/ohm.mp3", false)
 	s.update(t)
 
-	s.vault.File("lectures/ohm.mp3", "the second edition")
+	s.vault.WriteFile("lectures/ohm.mp3", "the second edition")
 	s.update(t)
 
 	s.checkStartedPaths(t, "lectures/ohm.mp3", "lectures/ohm.mp3")
@@ -202,13 +202,13 @@ func TestABatchAppliedTwiceStartsNothingMore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.vault.File("lectures/faraday.mp3", "the bytes of Faraday")
+	s.vault.WriteFile("lectures/faraday.mp3", "the bytes of Faraday")
 	s.update(t)
 
-	s.store.File(feed.CursorFile, cursor)
+	s.store.WriteFile(feed.CursorFile, cursor)
 	s.update(t)
 	s.runs.finish("lectures/faraday.mp3", true)
-	s.store.File(feed.CursorFile, cursor)
+	s.store.WriteFile(feed.CursorFile, cursor)
 	s.update(t)
 
 	s.checkStartedPaths(t, "lectures/ohm.mp3", "lectures/faraday.mp3")
@@ -217,7 +217,7 @@ func TestABatchAppliedTwiceStartsNothingMore(t *testing.T) {
 func TestAnUpdateThatFailedIsRetriedOnTheNextUpdate(t *testing.T) {
 	s := newScene(t, "lectures/ohm.mp3")
 	s.update(t)
-	s.vault.File("lectures/faraday.mp3", "the bytes of Faraday")
+	s.vault.WriteFile("lectures/faraday.mp3", "the bytes of Faraday")
 	s.store.Refuse(feed.CursorFile, errors.New("disk full"))
 
 	if err := s.follower.Execute(t.Context(), "Lectures"); err == nil {
@@ -250,7 +250,7 @@ func TestARestartReadsOnlyTheChangesAfterTheCursor(t *testing.T) {
 	s.update(t)
 
 	s.restart(newRuns("lectures/ohm.mp3"))
-	s.vault.File("lectures/faraday.mp3", "the bytes of Faraday")
+	s.vault.WriteFile("lectures/faraday.mp3", "the bytes of Faraday")
 	s.feed.take()
 	s.update(t)
 
@@ -276,7 +276,7 @@ func TestATranscriptionThatEndedWithoutTextIsNotStartedAgain(t *testing.T) {
 	s.runs.finish("lectures/ohm.mp3", false)
 
 	s.update(t)
-	s.vault.File("interviews/board.wav", "an interview at the board")
+	s.vault.WriteFile("interviews/board.wav", "an interview at the board")
 	s.update(t)
 
 	s.checkStartedPaths(t, "lectures/ohm.mp3", "interviews/board.wav")

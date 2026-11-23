@@ -9,7 +9,7 @@
  */
 import { computed, ref, watch, type HTMLAttributes } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
-import { cn } from '@/shared/lib/dom/classes'
+import { joinClasses } from '@/shared/lib/dom/classes'
 import { clamp, type Bounds } from '@/shared/lib/math/bounds'
 import { isWalkingKey, stepForKey } from './track'
 
@@ -129,7 +129,7 @@ const onPointerEnd = () => {
     :step="step"
     :disabled="isDisabled"
     :class="
-      cn(
+      joinClasses(
         'relative flex w-full touch-none items-center select-none',
         'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
         props.class,
@@ -148,7 +148,7 @@ const onPointerEnd = () => {
     <SliderThumb
       v-bind="$attrs"
       :class="
-        cn(
+        joinClasses(
           'rounded-pill border-rule bg-raised block size-4 shrink-0 border',
           'duration-hover ease-numen cursor-pointer transition-colors',
           'ring-numen outline-none',

@@ -8,7 +8,7 @@ import type { NodeIdFactory } from './splice'
 
 /** What a name is drawn from. */
 export interface Randomness {
-  readonly uuid: () => string | null
+  readonly createUuid: () => string | null
 }
 
 /**
@@ -17,5 +17,5 @@ export interface Randomness {
  */
 export function createNodeIdFactory(random: Randomness): NodeIdFactory {
   let createdItem = 0
-  return () => random.uuid() ?? `node-${++createdItem}`
+  return () => random.createUuid() ?? `node-${++createdItem}`
 }
