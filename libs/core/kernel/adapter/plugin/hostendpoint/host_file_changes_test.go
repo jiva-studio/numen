@@ -203,3 +203,28 @@ func TestReadFrontmatterReturnsTheCursorTakenBeforeTheRead(t *testing.T) {
 		t.Errorf("the feed after the cursor holds %v, want the change made during the read", got)
 	}
 }
+
+func TestListFileChangesReturnsTheHashSizeAndModificationTimeOfEachChange(t *testing.T) {
+	feed := &memoryFeed{feedID: "feed-1"}
+	feed.add(manifest.EventFileChanged, "a.md")
+	feed.changes[0].Hash = domain.HashContent([]byte("A"))
+	feed.changes[0].Size = 1
+	feed.changes[0].ModifiedAt = 1_700_000_000_000_000_123
+	feed.add(manifest.EventFileRemoved, "b.md")
+	client := newFeedClient(t, "token-a", feed, storedFrontmatter{})
+
+	res := listFileChanges(t, client, &v1.ListFileChangesRequest{
+		Since: &v1.FileChangeCursor{FeedId: "feed-1"}, Events: []string{manifest.EventFileChanged, manifest.EventFileRemoved},
+	})
+
+	if len(res.GetChanges()) != 2 {
+		t.Fatalf("the read returned %v, want two changes", res.GetChanges())
+	}
+	changed, removed := res.GetChanges()[0], res.GetChanges()[1]
+	if changed.GetHash() != domain.HashContent([]byte("A")) || changed.GetSize() != 1 || changed.GetMtime() != 1_700_000_000_000_000_123 {
+		t.Errorf("the change of a.md has hash %q, size %d, mtime %d", changed.GetHash(), changed.GetSize(), changed.GetMtime())
+	}
+	if removed.GetHash() != "" || removed.GetSize() != 0 || removed.GetMtime() != 0 {
+		t.Errorf("the removal of b.md has hash %q, size %d, mtime %d, want empty values", removed.GetHash(), removed.GetSize(), removed.GetMtime())
+	}
+}
