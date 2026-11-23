@@ -285,12 +285,9 @@ export interface HostDeps extends PluginHostDeps {
 
 export type {
   ContextEventHost,
-  ContextLicenseHost,
   ContextRegistrationHost,
   ContextSettingHost,
-  ContextTabHost,
   ContextUiHost,
-  ContextVaultHost,
   ContextViewHost,
   ContextWorkHost,
   PluginContextHost,
