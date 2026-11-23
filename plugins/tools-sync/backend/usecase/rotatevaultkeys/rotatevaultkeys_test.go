@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/chaincourier"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
 )
 
@@ -74,5 +76,44 @@ func TestExecute_RotatesOncePerEpoch(t *testing.T) {
 
 	if err != nil || rotated != 0 || len(c.ReadCatalog(t)) != entries {
 		t.Errorf("second run: rotated = %d, error = %v, entries %d -> %d, want nothing", rotated, err, entries, len(c.ReadCatalog(t)))
+	}
+}
+
+func TestExecute_ASecondDeviceRotatesOnceAndTheFirstTakesItsKeyInsteadOfMakingAnother(t *testing.T) {
+	t.Parallel()
+	clock := synctest.NewClock(synctest.GetStart())
+	server := synctest.NewServer(t, clock, fakeserver.Config{})
+	words := synctest.NewWords(t)
+	first := synctest.NewFirstComputer(t, server, clock, vault, words)
+	first.Connect(t, vault)
+	if err := first.Fake.AdvanceEpoch(); err != nil {
+		t.Fatal(err)
+	}
+	if published, err := chaincourier.NewPublish(first.ChainDeps()).Execute(t.Context()); err != nil || !published {
+		t.Fatalf("published = %v, error = %v", published, err)
+	}
+	second := synctest.NewSecondComputer(t, server, clock, "Copy", words)
+	second.ConnectExisting(t, "Copy", first.Link(t, vault).RemoteVaultID)
+
+	rotatedBySecond, err := rotatevaultkeys.NewRotateVaultKeys(second.RotateDeps()).Execute(t.Context())
+	if err != nil || rotatedBySecond != 1 {
+		t.Fatalf("second device rotated = %d, error = %v, want 1", rotatedBySecond, err)
+	}
+	entries := len(first.ReadCatalog(t))
+	rotatedByFirst, err := rotatevaultkeys.NewRotateVaultKeys(first.RotateDeps()).Execute(t.Context())
+
+	if err != nil || rotatedByFirst != 0 || len(first.ReadCatalog(t)) != entries {
+		t.Fatalf("first device rotated = %d, error = %v, entries %d -> %d, want the entry of the second device kept", rotatedByFirst, err, entries, len(first.ReadCatalog(t)))
+	}
+	keysOfFirst, err := vaultlink.OpenKeys(t.Context(), first.Account, first.Link(t, vault))
+	if err != nil {
+		t.Fatal(err)
+	}
+	keysOfSecond, err := vaultlink.OpenKeys(t.Context(), second.Account, second.Link(t, "Copy"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(keysOfFirst) != 2 || len(keysOfSecond) != 2 || !bytes.Equal(keysOfFirst[1].Key, keysOfSecond[1].Key) || keysOfFirst[1].Epoch != 1 {
+		t.Errorf("keys of the first = %d, of the second = %d, want the same key of epoch 1 on both", len(keysOfFirst), len(keysOfSecond))
 	}
 }
