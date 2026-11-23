@@ -54,7 +54,6 @@ func (w Writer) RemoveFile(ctx context.Context, path string, baseline *domain.Fi
 	return count, nil
 }
 
-// checkEntry counts the files at the path and refuses a baseline the file no longer matches. A folder has no baseline.
 func (w Writer) checkEntry(ctx context.Context, v domain.Vault, path string, baseline *domain.FileStat) (int, error) {
 	count, err := w.Count.Execute(ctx, v, path)
 	if err != nil {

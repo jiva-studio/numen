@@ -25,8 +25,6 @@ import (
 
 const syncer = "md.numen.syncer"
 
-// fileOpsVault is a vault on disk with the calls for files of any kind. Moves and removals run through the
-// use cases the window runs, which these tests do not build: they reach the checks that come first.
 func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.Vault, *atomic.Int32) {
 	t.Helper()
 	v := vaulttest.NewVault(t, files)

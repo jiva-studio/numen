@@ -77,7 +77,6 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 		return stores.OpenWriter(v, pluginID)
 	}
 	stat := file.NewHashFile(vaultDeps.Readers, vaultDeps.Writers)
-	follow := indexfollow.Follow{}
 	return hostvault.NewAccess(
 		hostvault.Session{
 			Current:    current,
@@ -98,8 +97,8 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 			Create: file.NewCreateFile(vaultDeps.Writers, index),
 			Index:  file.NewScanFiles(index),
 			Locks:  hold.NewLocks(vaultDeps.Writers, hold.LockHold),
-			Move:   note.NewMoveFile(useCases.Place.Move, db.Sources(), nil, follow),
-			Remove: note.NewRemoveFile(&useCases.Place.Remove, follow),
+			Move:   note.NewMoveFile(useCases.Place.Move, db.Sources(), nil, nil),
+			Remove: note.NewRemoveFile(&useCases.Place.Remove, nil),
 			Stat:   stat,
 			Count:  file.NewCountFiles(vaultDeps.Readers), Import: file.NewImportFile(vaultDeps.Writers),
 			StoreReaders: storeReaders, StoreWriters: storeWriters,
