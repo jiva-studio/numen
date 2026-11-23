@@ -59,10 +59,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 		return nil, errors.Join(err, db.Close())
 	}
 	plugins := openWindowPlugins(install, exec, settingsDeps, vaultDeps, db, newSourceBinding(exec, c.SafeMode, install.Endpoints, res))
-	themes, themesErr := settingsThemes(settingsDeps, startup.opening.Scales, getThemeWarning(plugins.tasks))
-	if startup.opening.ReportThemes != nil {
-		startup.opening.ReportThemes(themesErr)
-	}
+	themes := c.openThemes(settingsDeps, plugins.tasks)
 	pluginServices := servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver, exec.Runtime.Listing)
 	pluginDir := func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) }
 	opened, launch := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps, editor.WithThemes(themes), editor.WithPlugins(pluginServices, pluginDir))
@@ -73,7 +70,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	query := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, search, db, launch.source, status.ReportFloorError)
 	runs := newSearchRuns(plugins.tasks, launch.generations, query, exec.Runtime.Resolver, exec.Runtime.Manifests, vaultDeps.Clock)
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
-	mountServices(opened, install, exec, settingsDeps, vaultDeps, startup.opening.Dialog)
+	mountServices(opened, install, exec, settingsDeps, vaultDeps, editor.GetFrameDialog(startup.opening.Frame))
 	mountLogs(opened, getLogEntries(res), install, settingsDeps, vaultDeps)
 	if err := opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out); err != nil {
 		return nil, errors.Join(err, launch.closeSource(), db.Close())
@@ -89,14 +86,11 @@ func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup 
 	return newTextVersions(vaultconfig.Options{ServiceDir: c.ServiceDir}, running.Runtime.Listing, GetClock(res), startup.db)
 }
 
-// WindowOpening names the vault to show, the output, the optional editor frame, the scales the themes are applied at, where the fault of loading them is reported once, and the optional native dialog.
+// WindowOpening names the vault to show, the output and the optional editor frame.
 type WindowOpening struct {
-	Named        string
-	Out          io.Writer
-	Frame        editor.Frame
-	Scales       Scales
-	ReportThemes func(error)
-	Dialog       editor.PathDialog
+	Named string
+	Out   io.Writer
+	Frame editor.Frame
 }
 
 type windowRoutes struct {
@@ -207,7 +201,7 @@ func buildWindow(
 	mountWindowState(window)
 	mountFile(window, vaultDeps, db, plugins.kinds, &notes.Place)
 	mountNote(window, &notes, db, plugins.kinds.list, writeWake)
-	mountVaults(window, ports, vaultDeps.Readers, moves.Change, session.open, opening.Dialog)
+	mountVaults(window, ports, vaultDeps.Readers, moves.Change, session.open, editor.GetFrameDialog(opening.Frame))
 	return window, windowLaunch{
 		start:  session.cases.start,
 		server: editor.NewFileServer(&state.Runtime, page.Window, openFile), closeSource: closeEmbedder, source: source, generations: generations,

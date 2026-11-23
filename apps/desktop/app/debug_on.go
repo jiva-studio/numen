@@ -59,12 +59,14 @@ func (d *DebugOptions) serveHTTP(
 	return debugserve.Serve(ctx, container.GetClock(res), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)
 }
 
-func (d *DebugOptions) getDialog(window editor.PathDialog) editor.PathDialog {
-	if !d.isServingHTTP() {
-		return window
+type folderFileFrame struct {
+	editor.Frame
+	editor.PathDialog
+}
+
+func (d *DebugOptions) getFrame(frame editor.Frame) editor.Frame {
+	if !d.isServingHTTP() || d.FolderFile == "" {
+		return frame
 	}
-	if d.FolderFile == "" {
-		return nil
-	}
-	return debugserve.NewFolderFileDialog(d.FolderFile)
+	return folderFileFrame{Frame: frame, PathDialog: debugserve.NewFolderFileDialog(d.FolderFile)}
 }

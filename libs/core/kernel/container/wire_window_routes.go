@@ -22,6 +22,7 @@ import (
 	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vaults"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/windowstate"
@@ -51,7 +52,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
 func mountCatalog(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring) {
@@ -66,7 +66,7 @@ func mountMedia(w *windowRoutes, vaultDeps vaultWiring) {
 	state := w.session
 	resolve := file.NewResolveAddress(file.NewStatFile(vaultDeps.Readers), openPluginFile(vaultDeps.Options), getMediaType())
 	handler := mediawindow.NewHandler(&state.Runtime, &w.page.Media, resolve)
-	path, served := numenv1connect.NewMediaServiceHandler(handler, w.page.Gate.CountQuestions())
+	path, served := mediawindow.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
@@ -139,7 +139,7 @@ func mountFile(w *windowRoutes, vaultDeps vaultWiring, db *vaultIndex, kinds tab
 	removeFile := note.NewRemoveFile(&placing.Remove, w.page.Writes)
 	changes := filewindow.NewChanges(&state.Runtime, state.Notices, &moveFile, &removeFile, &placing.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
-	path, served := numenv1connect.NewFileServiceHandler(handler, w.page.Gate.CountQuestions())
+	path, served := filewindow.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
@@ -179,7 +179,7 @@ func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds windo
 		&state.Runtime, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.DeleteConnectionSide, &notes.Connect.DeleteConnection, &notes.Connect.Join,
 	)
 	handler := notewindow.NewHandler(state.Notices, prose, outlining, links, connections)
-	path, served := numenv1connect.NewNoteServiceHandler(handler, w.page.Gate.CountQuestions())
+	path, served := notewindow.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }
 
@@ -400,7 +400,7 @@ func getFeedStart(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps 
 	return events.Start
 }
 
-func mountTheme(w *windowRoutes, themes numenv1connect.ThemeServiceHandler) {
-	path, served := numenv1connect.NewThemeServiceHandler(themes, w.page.Gate.CountQuestions())
+func mountTheme(w *windowRoutes, themes *theme.Service) {
+	path, served := theme.NewRoute(themes, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, themes))
 }

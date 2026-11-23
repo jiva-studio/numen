@@ -82,14 +82,7 @@ func (c *Core) Start(dir string) (int, error) {
 	// folder cannot be created, only the default theme is loaded. A theme
 	// named in the settings that is missing from the catalog is reported on
 	// the platform log.
-	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, ctx, container.WindowOpening{
-		Named: filed, Out: os.Stderr,
-		ReportThemes: func(wrong error) {
-			if wrong != nil {
-				fmt.Fprintln(os.Stderr, "themes:", wrong)
-			}
-		},
-	})
+	opened, err := cfg.OpenWindow(execution, preferences, endpoints, res, ctx, container.WindowOpening{Named: filed, Out: os.Stderr})
 	if err != nil {
 		stop()
 		return 0, err

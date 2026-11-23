@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
-	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
@@ -141,11 +140,8 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 	applyMemoryLimit(cfg.GetMachine().ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 
 	frame := &windowFrame{}
-	scales := container.Scales{InterfaceScale: scaleFlags.interfaceScale, TextScale: scaleFlags.textScale}
-	displayed, err := openInstallation(ctx, cfg, services, container.WindowOpening{
-		Named: vault, Out: os.Stdout, Frame: frame, Scales: scales, Dialog: debugOpts.getDialog(frame),
-		ReportThemes: func(err error) { themes.Report(err, os.Stdout) },
-	})
+	cfg.Scales = container.Scales{InterfaceScale: scaleFlags.interfaceScale, TextScale: scaleFlags.textScale}
+	displayed, err := openInstallation(ctx, cfg, services, vault, debugOpts.getFrame(frame))
 	if err != nil {
 		return err
 	}
@@ -196,13 +192,13 @@ type shownInstallation struct {
 }
 
 func openInstallation(
-	ctx context.Context, cfg container.Config, services platform.Installation, opening container.WindowOpening,
+	ctx context.Context, cfg container.Config, services platform.Installation, vault string, frame editor.Frame,
 ) (shownInstallation, error) {
 	pages, err := editor.Pages()
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	opened, err := cfg.OpenEditor(services.Execution, services.Preferences, services.Endpoints, services.Resources, ctx, opening)
+	opened, err := cfg.OpenEditor(services.Execution, services.Preferences, services.Endpoints, services.Resources, ctx, container.WindowOpening{Named: vault, Out: os.Stdout, Frame: frame})
 	if err != nil {
 		return shownInstallation{}, err
 	}
@@ -304,7 +300,6 @@ func (f *windowFrame) ShowOpenTabs(open windowdomain.OpenTabs) {
 	}
 }
 
-// ChooseFolder opens the folder dialog over the window, once there is one.
 func (f *windowFrame) ChooseFolder(ctx context.Context, title, startingAt string) (string, bool, error) {
 	if f.dialog == nil {
 		return "", false, machine.ErrNoFolderDialog
@@ -312,7 +307,6 @@ func (f *windowFrame) ChooseFolder(ctx context.Context, title, startingAt string
 	return f.dialog.ChooseFolder(ctx, title, startingAt)
 }
 
-// ChooseFile opens the file dialog over the window, once there is one.
 func (f *windowFrame) ChooseFile(ctx context.Context, title, startingAt string, accept []string) (string, bool, error) {
 	if f.dialog == nil {
 		return "", false, machine.ErrNoFolderDialog

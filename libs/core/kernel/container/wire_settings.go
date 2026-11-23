@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	domainlogs "github.com/jiva-studio/numen/libs/core/kernel/domain/logs"
 	machinedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
@@ -14,7 +15,6 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	machineadapter "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
@@ -42,17 +42,6 @@ func applySettingsFile(c Config, exec *PluginExecution, prefs *PluginPreferences
 	prefs = getPluginPreferences(prefs)
 	configurePluginHost(settingsOf(c, exec, prefs, res), prefs, &res.subscribedHosts, s, c.machine.ResolvedCompute)
 	return c
-}
-
-func getThemeWarning(tasks *run.Tasks) func(message string) {
-	return func(message string) {
-		const applyingTheme = "apply theme"
-		if message == "" {
-			tasks.Remove(applyingTheme)
-			return
-		}
-		tasks.Set(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
-	}
 }
 
 // settingsWiring wires the settings, setting change events and themes of an installation.
@@ -287,4 +276,12 @@ func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
 
 func getPluginPerformance(compute machinedomain.ResolvedCompute) plugindomain.Performance {
 	return plugindomain.Performance{Profile: compute.Profile, Threads: compute.CoreBudget, Nice: compute.Nice}
+}
+
+func (c Config) openThemes(settingsDeps settingsWiring, tasks *run.Tasks) *theme.Service {
+	service, err := settingsThemes(settingsDeps, c.Scales, editor.NewThemeWarning(tasks))
+	if err != nil {
+		settingsDeps.ErrorHandler(err)
+	}
+	return service
 }

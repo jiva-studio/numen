@@ -32,6 +32,4 @@ func (d *DebugOptions) serveHTTP(
 	return nil
 }
 
-func (d *DebugOptions) getDialog(window editor.PathDialog) editor.PathDialog {
-	return window
-}
+func (d *DebugOptions) getFrame(frame editor.Frame) editor.Frame { return frame }

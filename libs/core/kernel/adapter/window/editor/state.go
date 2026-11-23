@@ -71,3 +71,9 @@ func (s *Session) OpenTabWindow(ctx context.Context, tab window.DetachedTab) err
 
 // GetOpenTabs returns the last tab report from the window.
 func (s *Session) GetOpenTabs() window.OpenTabs { return s.Tabs.GetOpenTabs() }
+
+// GetFrameDialog returns the native dialog of the frame, and nothing when the frame has none.
+func GetFrameDialog(frame Frame) PathDialog {
+	dialog, _ := frame.(PathDialog)
+	return dialog
+}
