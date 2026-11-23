@@ -6,7 +6,7 @@ import (
 )
 
 func newTestStore(dir string) *Store {
-	return NewStore(dir, func(ctx context.Context, d time.Duration) error {
+	store := NewStore(dir, func(ctx context.Context, d time.Duration) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -14,4 +14,6 @@ func newTestStore(dir string) *Store {
 			return nil
 		}
 	})
+	store.UsePlaintextFile()
+	return store
 }
