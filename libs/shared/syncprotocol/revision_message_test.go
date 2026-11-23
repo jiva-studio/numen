@@ -351,7 +351,7 @@ func TestLimits_HaveTheValuesOfTheProtocol(t *testing.T) {
 
 	for name, got := range map[string][2]int{
 		"MaxBlobSize":       {syncprotocol.MaxBlobSize, 64 << 20},
-		"MaxBatchRevisions": {syncprotocol.MaxBatchRevisions, 500},
+		"MaxBatchRevisions": {syncprotocol.MaxBatchRevisions, 5000},
 		"MaxReserveBlobs":   {syncprotocol.MaxReserveBlobs, 100},
 		"MaxBlobURLs":       {syncprotocol.MaxBlobURLs, 100},
 		"MaxEncSize":        {syncprotocol.MaxEncSize, 16 << 10},

@@ -63,3 +63,15 @@ func closeBody(response *http.Response, err *error) {
 		*err = errors.Join(*err, closeErr)
 	}
 }
+
+// PutPart uploads one part of a multipart upload to a presigned URL with one PUT. It sends no bearer and no
+// protocol version.
+func PutPart(ctx context.Context, httpClient *http.Client, url string, body []byte) error {
+	return errors.New("not implemented")
+}
+
+// GetBlobRange starts a presigned GET at the byte from and returns the streamed body; the caller closes it. It
+// accepts 206, or 200 when from is 0.
+func GetBlobRange(ctx context.Context, httpClient *http.Client, url string, from int64) (io.ReadCloser, error) {
+	return nil, errors.New("not implemented")
+}
