@@ -60,9 +60,9 @@ describe('createIdentityClient', () => {
 
   it('reads each served error code as a failure', async () => {
     const codes: Array<[IdentityErrorCode, string]> = [
-      [IdentityErrorCode.INVALID_WORDS, 'invalid_words'],
-      [IdentityErrorCode.IDENTITY_EXISTS, 'identity_exists'],
-      [IdentityErrorCode.KEY_STORE_FAILED, 'key_store_failed'],
+      [IdentityErrorCode.INVALID_WORDS, 'invalidWords'],
+      [IdentityErrorCode.IDENTITY_EXISTS, 'identityExists'],
+      [IdentityErrorCode.KEY_STORE_FAILED, 'keyStoreFailed'],
     ]
     for (const [code, expected] of codes) {
       const client = createClient({
@@ -70,7 +70,7 @@ describe('createIdentityClient', () => {
       })
       expect(await client.create(WORDS)).toStrictEqual({
         ok: false,
-        error: { errorCode: expected, detail: 'refused' },
+        error: { error: expected, message: 'refused' },
       })
     }
   })
