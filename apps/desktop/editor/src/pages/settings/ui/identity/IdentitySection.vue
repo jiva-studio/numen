@@ -71,6 +71,7 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
     </template>
     <div class="identity-section__body">
       <p class="identity-section__detail">{{ words.identityNoneDetail }}</p>
+      <p class="identity-section__detail">{{ words.identityNoneWords }}</p>
 
       <IdentityRestore
         v-if="step === 'restore'"
