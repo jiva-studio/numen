@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/share"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -37,8 +38,8 @@ type PullChanges struct{ deps Deps }
 func NewPullChanges(deps Deps) *PullChanges { return &PullChanges{deps: deps} }
 
 // Execute applies every change after the position kept in the link. The position stops before the first note
-// that is left as it was, so the next pull reads it again.
-func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput) (transfer.PullResult, error) {
+// that is left as it was, so the next pull reads it again. The revisions of a share open with the keys of the share.
+func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput, shares []share.Root) (transfer.PullResult, error) {
 	link, err := u.deps.State.ReadLink(ctx, in.VaultID)
 	if err != nil {
 		return transfer.PullResult{}, err
@@ -56,7 +57,7 @@ func (u *PullChanges) Execute(ctx context.Context, in transfer.PullInput) (trans
 		return transfer.PullResult{}, fmt.Errorf("open the vault key: %w", err)
 	}
 	r := &run{
-		deps: u.deps, in: in, files: u.deps.Host.Files(in.VaultID), remote: remote, key: [32]byte(key), link: link, records: records,
+		deps: u.deps, in: in, shares: shares, files: u.deps.Host.Files(in.VaultID), remote: remote, key: [32]byte(key), link: link, records: records,
 		result: transfer.PullResult{Applied: nil, Conflicts: nil, Unverified: 0}, holdSeq: 0, isHeld: false,
 	}
 	err = r.execute(ctx)

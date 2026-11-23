@@ -16,7 +16,7 @@ import (
 
 const (
 	owned  domain.VaultID = "Test"
-	folder                = "Food"
+	folder string         = "Food"
 )
 
 type world struct {

@@ -65,7 +65,7 @@ type Renamer interface {
 
 // Puller brings the changes of the server into the vault.
 type Puller interface {
-	Execute(ctx context.Context, in transfer.PullInput) (transfer.PullResult, error)
+	Execute(ctx context.Context, in transfer.PullInput, shares []share.Root) (transfer.PullResult, error)
 }
 
 // Scanner lists the notes that changed on this device.
@@ -75,7 +75,7 @@ type Scanner interface {
 
 // Committer commits notes to the server.
 type Committer interface {
-	Execute(ctx context.Context, in transfer.CommitInput) ([]transfer.Outcome, error)
+	Execute(ctx context.Context, in transfer.CommitInput, shares []share.Root) ([]transfer.Outcome, error)
 }
 
 // SubscriptionReader reads the subscription of the account from the server.

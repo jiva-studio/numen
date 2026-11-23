@@ -8,7 +8,6 @@ import (
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -37,7 +36,7 @@ func TestCreateFolder_AllowsTheManagingPlugin(t *testing.T) {
 	managed := domain.Vault{ID: "01JTESTVAULT", Name: "Food", Path: root, ManagedBy: managingPlugin}
 	create := file.NewCreateFolder(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, nil)
 
-	if err := create.Execute(vaultport.WithCaller(t.Context(), managingPlugin), managed, "Dinner"); err != nil {
+	if err := create.Execute(vaultdomain.WithCaller(t.Context(), managingPlugin), managed, "Dinner"); err != nil {
 		t.Errorf("error = %v", err)
 	}
 }

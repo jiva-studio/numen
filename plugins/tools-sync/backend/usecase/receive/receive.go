@@ -127,7 +127,6 @@ func (u *ListReceived) describe(ctx context.Context, vault domain.Vault, link va
 	}, nil
 }
 
-// readReceivedLink returns the link of the vault when it is a received share.
 func (b base) readReceivedLink(ctx context.Context, id domain.VaultID) (vaultlink.Link, bool, error) {
 	link, err := b.deps.Links.ReadLink(ctx, id)
 	if err != nil {

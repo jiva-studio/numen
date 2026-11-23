@@ -26,7 +26,6 @@ func (b *Backend) AddReader(ctx context.Context, request api.AddReaderRequest) (
 	return b.shares.AddReader(ctx, request)
 }
 
-// RemoveReader removes a reader from a folder.
 func (b *Backend) RemoveReader(ctx context.Context, request api.RemoveReaderRequest) (api.RemoveReaderResponse, error) {
 	return b.shares.RemoveReader(ctx, request)
 }

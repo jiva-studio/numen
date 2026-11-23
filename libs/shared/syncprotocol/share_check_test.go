@@ -63,7 +63,7 @@ func TestCheckShareLogEntry_AcceptsTheLimits(t *testing.T) {
 	rotate.Seals = nil
 	for i := range syncprotocol.MaxShareSeals {
 		seal := newSeal(1)
-		seal.ReaderRootSignKey = append([]byte{byte(i), byte(i >> 8)}, seal.ReaderRootSignKey[2:]...)
+		seal.ReaderRootSignKey = append([]byte{byte(i), byte(i >> 8)}, seal.GetReaderRootSignKey()[2:]...)
 		rotate.Seals = append(rotate.Seals, seal)
 	}
 	rotate.EncOwnerBody = make([]byte, syncprotocol.MaxEncSize)
@@ -86,18 +86,18 @@ func TestCheckShareLogEntry_RefusesAShapeThatIsNotTheProtocol(t *testing.T) {
 		"unspecified kind": func() *syncv1.ShareLogEntry { e := newEntryOfKind(kindUpdate); e.Kind = 0; return e },
 		"short share root": func() *syncv1.ShareLogEntry {
 			e := newEntryOfKind(kindUpdate)
-			e.ShareRootId = e.ShareRootId[:15]
+			e.ShareRootId = e.GetShareRootId()[:15]
 			return e
 		},
 		"version zero": func() *syncv1.ShareLogEntry { e := newEntryOfKind(kindUpdate); e.Version = 0; return e },
 		"short author key": func() *syncv1.ShareLogEntry {
 			e := newEntryOfKind(kindUpdate)
-			e.AuthorDeviceSignKey = e.AuthorDeviceSignKey[:31]
+			e.AuthorDeviceSignKey = e.GetAuthorDeviceSignKey()[:31]
 			return e
 		},
 		"short signature": func() *syncv1.ShareLogEntry {
 			e := newEntryOfKind(kindUpdate)
-			e.Signature = e.Signature[:63]
+			e.Signature = e.GetSignature()[:63]
 			return e
 		},
 		"create without vault":  func() *syncv1.ShareLogEntry { e := newEntryOfKind(kindCreate); e.VaultId = nil; return e },
@@ -208,11 +208,15 @@ func TestCheckShareRevision_AcceptsAHeadAndAStrippedHeadOfAFileThatLeft(t *testi
 func TestCheckShareRevision_RefusesWhatCheckRevisionRefusesAndAMissingHash(t *testing.T) {
 	t.Parallel()
 	for name, change := range map[string]func() *syncv1.ShareChange{
-		"nil":                 func() *syncv1.ShareChange { return nil },
-		"no revision":         func() *syncv1.ShareChange { c := newShareChange(false); c.Change = nil; return c },
-		"short blob hash":     func() *syncv1.ShareChange { c := newShareChange(false); c.Change.Revision.BlobHash = nil; return c },
-		"no meta hash":        func() *syncv1.ShareChange { c := newShareChange(false); c.EncMetaHash = nil; return c },
-		"short meta hash":     func() *syncv1.ShareChange { c := newShareChange(true); c.EncMetaHash = c.EncMetaHash[:31]; return c },
+		"nil":             func() *syncv1.ShareChange { return nil },
+		"no revision":     func() *syncv1.ShareChange { c := newShareChange(false); c.Change = nil; return c },
+		"short blob hash": func() *syncv1.ShareChange { c := newShareChange(false); c.Change.Revision.BlobHash = nil; return c },
+		"no meta hash":    func() *syncv1.ShareChange { c := newShareChange(false); c.EncMetaHash = nil; return c },
+		"short meta hash": func() *syncv1.ShareChange {
+			c := newShareChange(true)
+			c.EncMetaHash = c.GetEncMetaHash()[:31]
+			return c
+		},
 		"empty meta not left": func() *syncv1.ShareChange { c := newShareChange(false); c.Change.Revision.EncMeta = nil; return c },
 		"short signature":     func() *syncv1.ShareChange { c := newShareChange(true); c.Change.Revision.Signature = nil; return c },
 	} {

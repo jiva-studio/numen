@@ -12,7 +12,7 @@ import { getErrorMessage } from './vaults'
 
 const REFRESH_MS = 2000
 
-export interface ShareTarget {
+interface ShareTarget {
   readonly vaultId: string
   readonly folder: string
 }
@@ -30,7 +30,7 @@ const RECEIVED_LABELS: Record<ReceivedState, string> = {
   ended: words.receivedEnded,
 }
 
-export const getReceivedRow = (share: ReceivedShare): ReceivedRow => ({
+const getReceivedRow = (share: ReceivedShare): ReceivedRow => ({
   vaultId: share.vaultId,
   name: share.name,
   ownerFingerprint: share.ownerFingerprint,
@@ -40,7 +40,6 @@ export const getReceivedRow = (share: ReceivedShare): ReceivedRow => ({
 /** Whether a refusal is the warning the person must confirm before the reader is added. */
 export const isIdentityWarning = (message: string): boolean => message === words.otherIdentity
 
-/** A timer that runs one task again after a pause and is stopped with the scope that made it. */
 function createRepeater(delayMs: number) {
   let timer: ReturnType<typeof setTimeout> | undefined
   const stop = (): void => {
@@ -55,7 +54,6 @@ function createRepeater(delayMs: number) {
   return { stop, again }
 }
 
-/** The text of a field that is read by the backend on every change; an answer of an older text is dropped. */
 function createReadField<Info>(read: (text: string) => Promise<Info>) {
   const text = ref('')
   const info = ref<Info | undefined>(undefined)

@@ -173,8 +173,6 @@ func (r *rewrap) readHeads(ctx context.Context) ([]*syncv1.StoredRevision, error
 	}
 }
 
-// build returns the share revision of a head that is a live file of the folder with no share yet, and nil for any
-// other head, including one that does not verify.
 func (r *rewrap) build(head *syncv1.StoredRevision) (*syncv1.Revision, error) {
 	rev := head.GetRevision()
 	if rev == nil || rev.GetDeleted() || len(rev.GetShareRootId()) > 0 || !r.isVerified(head) {
@@ -235,8 +233,6 @@ func (r *rewrap) commit(ctx context.Context, batch []*syncv1.Revision) error {
 	return domainshare.ErrLogBusy
 }
 
-// resolve returns the batch without the files that are share revisions already and with the files whose head moved
-// built again from the new head.
 func (r *rewrap) resolve(batch []*syncv1.Revision, conflicts []*syncv1.Conflict) ([]*syncv1.Revision, error) {
 	var next []*syncv1.Revision
 	for _, revision := range batch {

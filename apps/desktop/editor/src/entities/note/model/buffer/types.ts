@@ -24,7 +24,6 @@ export interface OpenNote {
   readonly body: string
   readonly state: State
   readonly error: NoteErrorCode | null
-  /** True where the vault the note is in cannot be written: the editor shows it and does not change it. */
   readonly isReadOnly: boolean
 }
 

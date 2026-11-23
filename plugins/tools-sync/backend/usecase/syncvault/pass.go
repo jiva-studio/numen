@@ -56,7 +56,7 @@ func (p *pass) run(ctx context.Context) error {
 }
 
 func (p *pass) pull(ctx context.Context) error {
-	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, Authors: p.authors.IsTrusted, Shares: p.shares})
+	result, err := p.use.steps.Pull.Execute(ctx, transfer.PullInput{VaultID: p.id, Authors: p.authors.IsTrusted}, p.shares)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (p *pass) push(ctx context.Context) (retry, error) {
 	if err != nil {
 		return retry{}, err
 	}
-	outcomes, err := p.use.steps.Commit.Execute(ctx, transfer.CommitInput{Vault: vault, Files: files, Shares: p.shares})
+	outcomes, err := p.use.steps.Commit.Execute(ctx, transfer.CommitInput{Vault: vault, Files: files}, p.shares)
 	if err != nil {
 		return retry{}, err
 	}
@@ -163,8 +163,6 @@ func setRecord(records []note.FileRecord, record note.FileRecord) []note.FileRec
 	return records
 }
 
-// pushAgain pushes, and pushes once more after reading the shares again when a share moved to another epoch. It
-// returns whether the head of a note moved.
 func (p *pass) pushAgain(ctx context.Context) (retry, error) {
 	again, err := p.push(ctx)
 	if err != nil || !again.isEpoch {
@@ -178,7 +176,6 @@ func (p *pass) pushAgain(ctx context.Context) (retry, error) {
 	return next, err
 }
 
-// rewrap continues the rewrap of every share this device made whose files are not all rewrapped.
 func (p *pass) rewrap(ctx context.Context) error {
 	for _, root := range p.shares {
 		if root.IsClosed || root.Phase != share.PhaseCreated {

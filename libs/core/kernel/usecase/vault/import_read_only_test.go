@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
@@ -38,7 +37,7 @@ func TestImportAllowsThePluginThatManagesTheVault(t *testing.T) {
 	from := createOutsideFolder(t, map[string]string{"Notes.md": "# Notes\n"})
 	bring := vaults.NewImport(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, filesystem.ImportedFiles{})
 
-	_, err := bring.Execute(vaultport.WithCaller(t.Context(), managingPlugin), v, "", []string{filepath.Join(from, "Notes.md")})
+	_, err := bring.Execute(vaultdomain.WithCaller(t.Context(), managingPlugin), v, "", []string{filepath.Join(from, "Notes.md")})
 
 	if err != nil || readArrivedFile(t, v.Path, "Notes.md") != "# Notes\n" {
 		t.Errorf("error = %v, want the file to arrive", err)

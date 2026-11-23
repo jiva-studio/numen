@@ -4,7 +4,7 @@
  */
 import type { Api, ApiError } from '@numen/plugin-sdk'
 
-export type ShareState = 'notShared' | 'creating' | 'active'
+type ShareState = 'notShared' | 'creating' | 'active'
 
 export interface ShareReader {
   readonly label: string
@@ -18,17 +18,17 @@ export interface Share {
   readonly error?: string
 }
 
-export interface ReaderCode {
+interface ReaderCode {
   readonly code: string
   readonly fingerprint: string
 }
 
-export interface ReaderCodeInfo {
+interface ReaderCodeInfo {
   readonly fingerprint: string
   readonly label?: string
 }
 
-export interface InvitationInfo {
+interface InvitationInfo {
   readonly shareName: string
   readonly ownerFingerprint: string
   readonly isForThisAccount: boolean
@@ -45,22 +45,22 @@ export interface ReceivedShare {
   readonly lastSyncedAt: string
 }
 
-export interface FolderRequest {
+interface FolderRequest {
   readonly vaultId: string
   readonly folder: string
 }
 
-export interface AddReaderRequest extends FolderRequest {
+interface AddReaderRequest extends FolderRequest {
   readonly code: string
   readonly label: string
   readonly confirmChange?: boolean
 }
 
-export interface RemoveReaderRequest extends FolderRequest {
+interface RemoveReaderRequest extends FolderRequest {
   readonly fingerprint: string
 }
 
-export interface AddedReader {
+interface AddedReader {
   readonly invitation: string
   readonly fingerprint: string
 }

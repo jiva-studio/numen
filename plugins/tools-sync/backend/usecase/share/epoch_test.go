@@ -44,12 +44,11 @@ func TestCommitRevisions_ReturnsStaleEpochForNoteSealedAtOldEpoch(t *testing.T) 
 	w := newWorld(t)
 	stale := w.removeAfterReading(t)
 	in := transfer.CommitInput{
-		Vault:  transfer.Vault{ID: w.owner.GetRemoteID(t, owned), Key: w.owner.GetVaultKey(t, owned)},
-		Files:  []transfer.File{{Path: "Food/Bread.md", Content: []byte("flour")}},
-		Shares: stale,
+		Vault: transfer.Vault{ID: w.owner.GetRemoteID(t, owned), Key: w.owner.GetVaultKey(t, owned)},
+		Files: []transfer.File{{Path: "Food/Bread.md", Content: []byte("flour")}},
 	}
 
-	outcomes, err := commit.NewCommitRevisions(w.owner.CommitDeps()).Execute(t.Context(), in)
+	outcomes, err := commit.NewCommitRevisions(w.owner.CommitDeps()).Execute(t.Context(), in, stale)
 
 	if err != nil {
 		t.Fatal(err)

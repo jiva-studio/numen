@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -24,7 +23,7 @@ func TestWriteToVaultManagedByOtherPluginIsRefused(t *testing.T) {
 	c := openChangeFixture(t, map[string]string{"Milk.md": "# Milk\n"})
 	managed := c.managedVault()
 	window := t.Context()
-	other := vaultport.WithCaller(t.Context(), "md.numen.tools.link")
+	other := vaultdomain.WithCaller(t.Context(), "md.numen.tools.link")
 
 	for name, run := range map[string]func(context.Context) error{
 		"save": func(ctx context.Context) error {
@@ -63,7 +62,7 @@ func TestTheManagingPluginWritesToItsVault(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Milk.md": "# Milk\n"})
 	managed := c.managedVault()
-	ctx := vaultport.WithCaller(t.Context(), managingPlugin)
+	ctx := vaultdomain.WithCaller(t.Context(), managingPlugin)
 
 	if _, err := c.create().Execute(ctx, managed, note.NewNote{Title: "Bread"}); err != nil {
 		t.Errorf("create by the managing plugin: error = %v", err)

@@ -141,7 +141,6 @@ func (c *Cloud) GetShareChanges(ctx context.Context, shareRootID []byte, sinceSe
 	})
 }
 
-// GetShareBlobUrls returns a download for each blob of the share.
 func (c *Cloud) GetShareBlobUrls(ctx context.Context, shareRootID []byte, blobIDs [][]byte) ([]*syncv1.BlobDownload, error) {
 	return call(ctx, c, func() ([]*syncv1.BlobDownload, error) { return c.shares.GetShareBlobUrls(ctx, shareRootID, blobIDs) })
 }

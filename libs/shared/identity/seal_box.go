@@ -57,8 +57,6 @@ func SealToAccountBox(random io.Reader, box [32]byte, pluginID string, context, 
 	return aead.Seal(enc, nonce, plain, nil), nil
 }
 
-// OpenSealedBox opens a box sealed to the box key of these account keys, for that plugin and context.
-// Any failure is ErrUnwrap.
 func (a AccountKeys) OpenSealedBox(pluginID string, context, sealed []byte) ([]byte, error) {
 	if len(sealed) < hpkeEncSize+chacha20poly1305.Overhead {
 		return nil, ErrUnwrap

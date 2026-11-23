@@ -27,6 +27,7 @@ var errBlobMissing = errors.New("the server has no blob for a revision")
 type run struct {
 	deps    Deps
 	in      transfer.PullInput
+	shares  []share.Root
 	files   ports.Files
 	remote  []byte
 	key     [32]byte
@@ -88,13 +89,11 @@ var (
 	errUnknownShare = errors.New("the revision belongs to a share this device does not know")
 )
 
-// openMeta opens the metadata of a revision with the vault key, or with the key of its share for a revision under a
-// shared folder, and returns the path from the root of the vault.
 func (r *run) openMeta(rev *syncv1.Revision) (note.Meta, error) {
 	if len(rev.GetShareRootId()) == 0 {
 		return note.OpenMeta(r.key, rev.GetVaultId(), rev.GetFileId(), rev.GetEncMeta())
 	}
-	root, isFound := share.FindRootByID(r.in.Shares, rev.GetShareRootId())
+	root, isFound := share.FindRootByID(r.shares, rev.GetShareRootId())
 	if !isFound {
 		return note.Meta{}, errUnknownShare
 	}
@@ -102,7 +101,7 @@ func (r *run) openMeta(rev *syncv1.Revision) (note.Meta, error) {
 	if !isKnown {
 		return note.Meta{}, errUnverified
 	}
-	meta, err := share.OpenMeta(key, root.ID, rev.GetFileId(), rev.GetEpoch(), rev.GetEncMeta())
+	meta, err := share.OpenMeta[note.Meta](key, root.ID, rev.GetFileId(), rev.GetEpoch(), rev.GetEncMeta())
 	if err != nil {
 		return note.Meta{}, err
 	}

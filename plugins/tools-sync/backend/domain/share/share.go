@@ -15,7 +15,6 @@ import (
 	"golang.org/x/crypto/chacha20poly1305"
 
 	"github.com/jiva-studio/numen/libs/shared/identity"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 )
 
 const (
@@ -111,7 +110,6 @@ func CheckNesting(folder string, shared []string) error {
 	return nil
 }
 
-// GetRelativePath returns the path of a file relative to the shared folder, and false when the file is not under it.
 func GetRelativePath(folder, filePath string) (string, bool) {
 	prefix := getSegments(folder)
 	segments := strings.Split(filePath, "/")
@@ -177,7 +175,7 @@ func getMetaData(shareID, fileID []byte, epoch uint32) []byte {
 
 // SealMeta returns the metadata of a file under a share sealed with the key of the epoch, bound to the share, the
 // file and the epoch. The path in meta is relative to the shared folder.
-func SealMeta(random io.Reader, key [32]byte, shareID, fileID []byte, epoch uint32, meta note.Meta) ([]byte, error) {
+func SealMeta[M any](random io.Reader, key [32]byte, shareID, fileID []byte, epoch uint32, meta M) ([]byte, error) {
 	plain, err := json.Marshal(meta)
 	if err != nil {
 		return nil, fmt.Errorf("encode the metadata: %w", err)
@@ -186,14 +184,15 @@ func SealMeta(random io.Reader, key [32]byte, shareID, fileID []byte, epoch uint
 }
 
 // OpenMeta opens what SealMeta sealed. Any other key, share, file or epoch is ErrCannotOpen.
-func OpenMeta(key [32]byte, shareID, fileID []byte, epoch uint32, sealed []byte) (note.Meta, error) {
+func OpenMeta[M any](key [32]byte, shareID, fileID []byte, epoch uint32, sealed []byte) (M, error) {
+	var zero M
 	plain, err := open(key, getMetaData(shareID, fileID, epoch), sealed)
 	if err != nil {
-		return note.Meta{}, err
+		return zero, err
 	}
-	var meta note.Meta
+	var meta M
 	if err := json.Unmarshal(plain, &meta); err != nil {
-		return note.Meta{}, ErrCannotOpen
+		return zero, ErrCannotOpen
 	}
 	return meta, nil
 }
@@ -202,7 +201,6 @@ func getBodyData(shareID []byte, epoch uint32) []byte {
 	return bytes.Join([][]byte{[]byte(bodyLabel), shareID, getBigEndian(epoch)}, nil)
 }
 
-// SealBody returns the share body sealed with the key of the epoch.
 func SealBody(random io.Reader, key [32]byte, shareID []byte, epoch uint32, body Body) ([]byte, error) {
 	plain, err := json.Marshal(body)
 	if err != nil {
@@ -236,7 +234,6 @@ func SealPreviousKey(random io.Reader, newer, older [32]byte, shareID []byte, ep
 	return seal(random, newer, getPreviousKeyData(shareID, epoch), older[:])
 }
 
-// OpenPreviousKey opens what SealPreviousKey sealed with the key of the epoch.
 func OpenPreviousKey(newer [32]byte, shareID []byte, epoch uint32, sealed []byte) ([32]byte, error) {
 	if epoch == 0 {
 		return [32]byte{}, errNoPreviousEpoch
@@ -289,7 +286,6 @@ func NewInvitation(invitation Invitation) string {
 	return invitationPrefix + base64.RawURLEncoding.EncodeToString(raw)
 }
 
-// ParseInvitation reads the text of an invitation.
 func ParseInvitation(text string) (Invitation, error) {
 	encoded, ok := strings.CutPrefix(strings.TrimSpace(text), invitationPrefix)
 	if !ok {

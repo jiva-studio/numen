@@ -76,7 +76,6 @@ func getRefusals() []error {
 
 func isRefusal(err error) bool { return findRefusal(err) != nil }
 
-// findRefusal returns the refusal of sharing that err is, and nil for any other error.
 func findRefusal(err error) error {
 	for _, refusal := range getRefusals() {
 		if errors.Is(err, refusal) {
@@ -86,7 +85,6 @@ func findRefusal(err error) error {
 	return nil
 }
 
-// getText returns what the person reads of an error: a refusal of sharing is a sentence that starts with a capital.
 func getText(err error) string {
 	refusal := findRefusal(err)
 	if refusal == nil {

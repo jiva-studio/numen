@@ -28,7 +28,6 @@ export interface NoteEditorsDeps {
   readonly api: NoteEditorsApi
   readonly log: MessageLog
   readonly windowTabs: Pick<WindowTabs, 'tabs'>
-  /** Whether the vault the window shows cannot be written. */
   readonly isReadOnly?: (() => boolean) | undefined
 }
 

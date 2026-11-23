@@ -92,19 +92,17 @@ const (
 // Received is what a received vault knows of its share: the share, the pinned root of the owner, the sealed keys and
 // the last entry of the share log it verified.
 type Received struct {
-	ShareRootID   string `json:"shareRootId"`
-	OwnerRoot     []byte `json:"ownerRoot"`
-	OwnerChain    []byte `json:"ownerChain"`
-	SealedKeys    []byte `json:"sealedKeys"`
-	ServerVersion uint64 `json:"serverVersion"`
-	HeadID        []byte `json:"headId"`
-	VaultID       []byte `json:"vaultId"`
-	Epoch         uint32 `json:"epoch"`
-	Name          string `json:"name"`
-	IsEnded       bool   `json:"isEnded"`
-	// Seen holds, for each file (the hex of its id), the last revisions of it this reader was served, the newest last.
-	// A revision served again that is not the newest is the server taking the file back.
-	Seen map[string][][]byte `json:"seen,omitempty"`
+	ShareRootID   string              `json:"shareRootId"`
+	OwnerRoot     []byte              `json:"ownerRoot"`
+	OwnerChain    []byte              `json:"ownerChain"`
+	SealedKeys    []byte              `json:"sealedKeys"`
+	ServerVersion uint64              `json:"serverVersion"`
+	HeadID        []byte              `json:"headId"`
+	VaultID       []byte              `json:"vaultId"`
+	Epoch         uint32              `json:"epoch"`
+	Name          string              `json:"name"`
+	IsEnded       bool                `json:"isEnded"`
+	Seen          map[string][][]byte `json:"seen,omitempty"`
 }
 
 // maxSeen is how many revisions of a file a received share remembers.

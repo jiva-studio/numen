@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Share, SharesClient } from '../api/shares'
-import { createReceivedView, createShareView, getReceivedRow, isIdentityWarning } from './shares'
+import { createReceivedView, createShareView, isIdentityWarning } from './shares'
 
 const TARGET = { vaultId: 'v1', folder: 'Food' }
 
@@ -191,11 +191,25 @@ describe('the page of the shares received', () => {
     expect(view.text).toBe('numen-invitation-1.xyz')
   })
 
-  it('words the three states of a received share', () => {
-    const base = { vaultId: 'r1', name: 'Food', ownerFingerprint: 'E', lastSyncedAt: '' }
+  it('words the three states of a received share', async () => {
+    const base = { ownerFingerprint: 'E', lastSyncedAt: '' }
+    const client = createClient({
+      listReceived: () =>
+        Promise.resolve([
+          { ...base, vaultId: 'r1', name: 'One', state: 'receiving' },
+          { ...base, vaultId: 'r2', name: 'Two', state: 'ready' },
+          { ...base, vaultId: 'r3', name: 'Three', state: 'ended' },
+        ]),
+    })
+    const view = createReceivedView({ client, refreshMs: 1_000_000 })
 
-    expect(
-      (['receiving', 'ready', 'ended'] as const).map((state) => getReceivedRow({ ...base, state }).stateLabel),
-    ).toStrictEqual(['Receiving…', 'Up to date', 'The owner ended this share'])
+    await view.load()
+    view.stop()
+
+    expect(view.rows.map((row) => row.stateLabel)).toStrictEqual([
+      'Receiving…',
+      'Up to date',
+      'The owner ended this share',
+    ])
   })
 })

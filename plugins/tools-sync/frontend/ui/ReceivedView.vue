@@ -3,42 +3,31 @@
  * The page "Shares" of the plugin's settings: the code this account gives to a person who shares a folder,
  * the field where an invitation is received, and the folders received.
  */
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { Button } from '@numen/ui'
-import type { SharesClient } from '../api/shares'
-import { createReceivedView } from '../model/shares'
+import type { ReceivedView } from '../model/shares'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  client?: SharesClient
-  refreshMs?: number
+  view: ReceivedView
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const view = createReceivedView({ client: props.client, refreshMs: props.refreshMs })
-const problem = computed(() => view.error || view.invitationError)
-const canReceive = computed(() => !view.isBusy && view.text.trim() !== '')
-
-/* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => {
-  report(view.load())
-})
+const problem = computed(() => props.view.error || props.view.invitationError)
+const canReceive = computed(() => !props.view.isBusy && props.view.text.trim() !== '')
 
 /* -------------------------------- Handlers -------------------------------- */
 function onInvitationInput(event: Event): void {
-  report(view.setText((event.target as HTMLTextAreaElement).value))
+  props.view.setText((event.target as HTMLTextAreaElement).value).catch(props.view.fail)
+}
+
+function onReceive(): void {
+  props.view.receive().catch(props.view.fail)
 }
 
 function onCopy(): void {
-  report(navigator.clipboard.writeText(view.code))
-}
-
-/* --------------------------------- Helpers -------------------------------- */
-function report(work: Promise<unknown>): void {
-  work.catch((failure: unknown) => {
-    view.fail(failure)
-  })
+  navigator.clipboard.writeText(props.view.code).catch(props.view.fail)
 }
 </script>
 
@@ -66,7 +55,7 @@ function report(work: Promise<unknown>): void {
         <span>{{ words.ownerFingerprint }}:</span>
         <output>{{ view.ownerFingerprint }}</output>
       </p>
-      <Button variant="outline" :disabled="!canReceive" @click="report(view.receive())">
+      <Button variant="outline" :disabled="!canReceive" @click="onReceive">
         {{ words.receive }}
       </Button>
     </div>

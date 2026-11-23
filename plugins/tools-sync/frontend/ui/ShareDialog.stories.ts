@@ -34,8 +34,11 @@ const createClient = (setup: Setup): SharesClient => ({
   listReceived: () => Promise.resolve([]),
 })
 
-const createState = (setup: Setup) =>
-  createShareView({ client: createClient(setup), target: TARGET, close: () => undefined })
+const createState = (setup: Setup) => {
+  const state = createShareView({ client: createClient(setup), target: TARGET, close: () => undefined })
+  state.load().catch(state.fail)
+  return state
+}
 
 const meta = {
   title: 'NumenSync/ShareDialog',

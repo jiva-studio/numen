@@ -38,7 +38,7 @@ func newSetup(t *testing.T, cfg fakeserver.Config) *setup {
 
 func (s *setup) run(t *testing.T, files ...transfer.File) []transfer.Outcome {
 	t.Helper()
-	outcomes, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: s.vault, Files: files})
+	outcomes, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: s.vault, Files: files}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,7 +238,7 @@ func TestCommitRevisions_ReturnsTheQuotaTheServerRefusesOn(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{QuotaBytes: 4000})
 
 	_, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(),
-		transfer.CommitInput{Vault: s.vault, Files: []transfer.File{{Path: "Shopping list.md", Content: []byte("milk")}}})
+		transfer.CommitInput{Vault: s.vault, Files: []transfer.File{{Path: "Shopping list.md", Content: []byte("milk")}}}, nil)
 
 	var quota syncprotocol.QuotaExceededError
 	if !errors.As(err, &quota) || quota.Limit != 4000 {
@@ -254,7 +254,7 @@ func TestCommitRevisions_ReturnsUnreachableWhenTheServerIsDown(t *testing.T) {
 	s.server.SetDown(true)
 
 	_, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(),
-		transfer.CommitInput{Vault: s.vault, Files: []transfer.File{{Path: "Shopping list.md", Content: []byte("milk")}}})
+		transfer.CommitInput{Vault: s.vault, Files: []transfer.File{{Path: "Shopping list.md", Content: []byte("milk")}}}, nil)
 
 	if !errors.Is(err, syncprotocol.ErrUnreachable) {
 		t.Errorf("error = %v, want ErrUnreachable", err)
@@ -266,7 +266,7 @@ func TestCommitRevisions_KeepsTheTextOfTheNoteOutOfTheError(t *testing.T) {
 	s.server.SetDown(true)
 
 	_, err := commit.NewCommitRevisions(s.c.CommitDeps()).Execute(t.Context(),
-		transfer.CommitInput{Vault: s.vault, Files: []transfer.File{{Path: "Shopping list.md", Content: []byte("milk")}}})
+		transfer.CommitInput{Vault: s.vault, Files: []transfer.File{{Path: "Shopping list.md", Content: []byte("milk")}}}, nil)
 
 	if err == nil || strings.Contains(err.Error(), "milk") || strings.Contains(err.Error(), hex.EncodeToString(s.vault.Key[:])) {
 		t.Errorf("error = %v, want an error with neither the text nor the vault key", err)

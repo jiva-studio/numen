@@ -94,7 +94,6 @@ func (s *Shares) AddReader(ctx context.Context, request api.AddReaderRequest) (a
 	return api.AddReaderResponse{Invitation: invited.Text, Fingerprint: invited.Fingerprint}, nil
 }
 
-// RemoveReader removes a reader from the folder.
 func (s *Shares) RemoveReader(ctx context.Context, request api.RemoveReaderRequest) (api.RemoveReaderResponse, error) {
 	return api.RemoveReaderResponse{}, s.remove.Execute(ctx, domain.VaultID(request.VaultID), request.Folder, request.Fingerprint)
 }
@@ -122,7 +121,6 @@ func (s *Shares) AcceptInvitation(ctx context.Context, request api.AcceptInvitat
 	return api.AcceptInvitationResponse{}, err
 }
 
-// ListReceived lists the shares this computer received.
 func (s *Shares) ListReceived(ctx context.Context, _ api.ListReceivedRequest) (api.ListReceivedResponse, error) {
 	received, err := s.listing.Execute(ctx)
 	if err != nil {

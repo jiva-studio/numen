@@ -194,8 +194,6 @@ func getStatus(kind syncv1.ConflictKind) transfer.CommitStatus {
 	}
 }
 
-// sealMeta seals the metadata under the key of the share whose folder holds the path, at the epoch of the share, with
-// the path relative to the folder. A path outside every share is sealed under the vault key.
 func (r *batchRun) sealMeta(path string, fileID []byte, meta note.Meta) (sealedMeta, error) {
 	root, isShared := share.FindRootOf(r.shares, path)
 	if !isShared {

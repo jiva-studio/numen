@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import type { ReceivedShare, SharesClient } from '../api/shares'
-import ReceivedView from './ReceivedView.vue'
+import { createReceivedPage } from './receivedView'
 import '../styles.css'
 
 const OWNER = 'EEEE FFFF GGGG'
@@ -36,21 +36,21 @@ const createClient = (setup: Setup): SharesClient => ({
   listReceived: () => Promise.resolve(setup.received ?? []),
 })
 
+const createPage = (setup: Setup) => createReceivedPage({ client: createClient(setup) })
+
 const meta = {
   title: 'NumenSync/Shares',
-  component: ReceivedView,
   render: (args) => ({
-    components: { ReceivedView },
-    setup: () => ({ args }),
-    template: '<ReceivedView v-bind="args" />',
+    components: { Page: args.page },
+    template: '<Page />',
   }),
-} satisfies Meta<typeof ReceivedView>
+} satisfies Meta<{ page: ReturnType<typeof createReceivedPage> }>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
 export const NothingReceived: Story = {
-  args: { client: createClient({}) },
+  args: { page: createPage({}) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByRole('textbox', { name: 'Your code' })).toHaveValue('numen-reader-1.abc')
@@ -59,7 +59,7 @@ export const NothingReceived: Story = {
 }
 
 export const Ready: Story = {
-  args: { client: createClient({ received: [food('ready')] }) },
+  args: { page: createPage({ received: [food('ready')] }) },
   play: async ({ canvasElement }) => {
     const list = await within(canvasElement).findByRole('list', { name: 'Received shares' })
     await expect(within(list).getByText('Up to date')).toBeVisible()
@@ -67,14 +67,14 @@ export const Ready: Story = {
 }
 
 export const Ended: Story = {
-  args: { client: createClient({ received: [food('ended')] }) },
+  args: { page: createPage({ received: [food('ended')] }) },
   play: async ({ canvasElement }) => {
     await expect(await within(canvasElement).findByText('The owner ended this share')).toBeVisible()
   },
 }
 
 export const InvitationPasted: Story = {
-  args: { client: createClient({}) },
+  args: { page: createPage({}) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.type(await canvas.findByRole('textbox', { name: 'Invitation' }), 'numen-invitation-1.xyz')
@@ -84,7 +84,7 @@ export const InvitationPasted: Story = {
 }
 
 export const InvitationOfAnotherPerson: Story = {
-  args: { client: createClient({ invitationRefusal: 'This invitation is for another person' }) },
+  args: { page: createPage({ invitationRefusal: 'This invitation is for another person' }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.type(await canvas.findByRole('textbox', { name: 'Invitation' }), 'numen-invitation-1.xyz')
@@ -93,7 +93,7 @@ export const InvitationOfAnotherPerson: Story = {
 }
 
 export const OwnerIdentityChanged: Story = {
-  args: { client: createClient({ acceptRefusal: 'The owner identity changed' }) },
+  args: { page: createPage({ acceptRefusal: 'The owner identity changed' }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.type(await canvas.findByRole('textbox', { name: 'Invitation' }), 'numen-invitation-1.xyz')

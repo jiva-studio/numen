@@ -98,7 +98,7 @@ func (noTrashedVersions) DeleteUnder(context.Context, domain.Vault, string, []st
 func TestEmptyTrashRefusesAVaultAnotherPluginManagesAndDeletesNothing(t *testing.T) {
 	t.Parallel()
 	managed := domain.Vault{ID: "01JTESTVAULT", ManagedBy: managingPlugin}
-	other := vaultport.WithCaller(t.Context(), "md.numen.tools.link")
+	other := vaultdomain.WithCaller(t.Context(), "md.numen.tools.link")
 
 	for name, ctx := range map[string]context.Context{"window": t.Context(), "other plugin": other} {
 		calls := 0
@@ -118,7 +118,7 @@ func TestEmptyTrashAllowsThePluginThatManagesTheVault(t *testing.T) {
 	writers := trashWriterProviderStub{writer: trashWriterStub{calls: &calls}}
 	managed := domain.Vault{ID: "01JTESTVAULT", ManagedBy: managingPlugin}
 
-	_, err := note.NewEmptyTrash(writers, noTrashedVersions{}, nil).Execute(vaultport.WithCaller(t.Context(), managingPlugin), managed)
+	_, err := note.NewEmptyTrash(writers, noTrashedVersions{}, nil).Execute(vaultdomain.WithCaller(t.Context(), managingPlugin), managed)
 
 	if err != nil || calls != 1 {
 		t.Errorf("error = %v, trash emptied %d times, want none and one", err, calls)

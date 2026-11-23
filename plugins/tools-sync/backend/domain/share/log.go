@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/trust"
 )
 
 const sealedKeySize = 4 + keySize
@@ -20,11 +19,16 @@ const sealedKeySize = 4 + keySize
 // Opener opens a box sealed to the account of this device for the sync plugin.
 type Opener func(ctx context.Context, boxContext, sealed []byte) ([]byte, error)
 
+// Authors tells the signing keys of the devices of the account that wrote the log.
+type Authors interface {
+	IsTrusted(signKey []byte) bool
+}
+
 // Rules are what a reader checks a share log against.
 type Rules struct {
 	ShareRootID []byte
 	Reader      []byte
-	Authors     trust.Authors
+	Authors     Authors
 	Open        Opener
 }
 
@@ -184,8 +188,6 @@ func (f *Follower) readName(entry *syncv1.ShareLogEntry) {
 	}
 }
 
-// walkBack opens the keys of the epochs before the oldest one a reader holds, from the previous key seals of the
-// entries that started each epoch.
 func (f *Follower) walkBack() error {
 	for epoch := f.position.Epoch; epoch >= 1; epoch-- {
 		newer, isNewer := f.position.Keys.Get(epoch)

@@ -72,7 +72,6 @@ func (c *ShareClient) GetShareChanges(ctx context.Context, shareRootID []byte, s
 	return response.Msg, nil
 }
 
-// GetShareBlobUrls returns one download for each blob id, in the order of the ids.
 func (c *ShareClient) GetShareBlobUrls(ctx context.Context, shareRootID []byte, blobIDs [][]byte) ([]*syncv1.BlobDownload, error) {
 	response, err := c.rpc.GetShareBlobUrls(ctx, connect.NewRequest(&syncv1.GetShareBlobUrlsRequest{ShareRootId: shareRootID, BlobIds: blobIDs}))
 	if err != nil {

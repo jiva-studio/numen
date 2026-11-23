@@ -374,7 +374,6 @@ export interface NoteTabState {
   readonly isLoading: Readonly<Ref<boolean>>
   readonly errorMessage: Readonly<Ref<string>>
   readonly fileConflict?: Readonly<Ref<FileConflict>>
-  // True where the vault of the note is read only: the editor shows the text and does not change it.
   readonly isReadOnly?: Readonly<Ref<boolean>>
   readonly wikilinks?: {
     search(query: string): Promise<readonly WikilinkChoice[]>

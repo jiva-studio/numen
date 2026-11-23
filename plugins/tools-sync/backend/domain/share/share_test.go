@@ -125,22 +125,22 @@ func TestSealMeta_OpensWithTheKeyTheShareTheFileAndTheEpochOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	opened, err := share.OpenMeta(key, shareID, fileID, 2, sealed)
+	opened, err := share.OpenMeta[note.Meta](key, shareID, fileID, 2, sealed)
 	if err != nil || opened.Path != "Dinner/Soup.md" || !bytes.Equal(opened.Key, newMeta().Key) {
 		t.Fatalf("opened = %+v, error = %v, want the meta that was sealed", opened, err)
 	}
 	for name, call := range map[string]func() error{
-		"another key": func() error { _, err := share.OpenMeta(newKey(9), shareID, fileID, 2, sealed); return err },
+		"another key": func() error { _, err := share.OpenMeta[note.Meta](newKey(9), shareID, fileID, 2, sealed); return err },
 		"another share": func() error {
-			_, err := share.OpenMeta(key, bytes.Repeat([]byte{8}, 16), fileID, 2, sealed)
+			_, err := share.OpenMeta[note.Meta](key, bytes.Repeat([]byte{8}, 16), fileID, 2, sealed)
 			return err
 		},
 		"another file": func() error {
-			_, err := share.OpenMeta(key, shareID, bytes.Repeat([]byte{8}, 16), 2, sealed)
+			_, err := share.OpenMeta[note.Meta](key, shareID, bytes.Repeat([]byte{8}, 16), 2, sealed)
 			return err
 		},
-		"another epoch": func() error { _, err := share.OpenMeta(key, shareID, fileID, 3, sealed); return err },
-		"no bytes":      func() error { _, err := share.OpenMeta(key, shareID, fileID, 2, nil); return err },
+		"another epoch": func() error { _, err := share.OpenMeta[note.Meta](key, shareID, fileID, 3, sealed); return err },
+		"no bytes":      func() error { _, err := share.OpenMeta[note.Meta](key, shareID, fileID, 2, nil); return err },
 	} {
 		if err := call(); !errors.Is(err, share.ErrCannotOpen) {
 			t.Errorf("%s: error = %v, want ErrCannotOpen", name, err)

@@ -3,8 +3,9 @@
  * The dialog of the command "Share...": gives a folder to a reader by the code of the reader, shows the
  * invitation to send, and lists the readers of a shared folder.
  */
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { Button } from '@numen/ui'
+import type { ShareReader } from '../api/shares'
 import { isIdentityWarning, type ShareView } from '../model/shares'
 import { WORDS as words } from '../words'
 
@@ -23,14 +24,9 @@ const hasReaders = computed(() => props.state.share.readers.length > 0)
 const isCreating = computed(() => props.state.share.state === 'creating')
 const isActive = computed(() => props.state.share.state === 'active')
 
-/* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => {
-  report(props.state.load())
-})
-
 /* -------------------------------- Handlers -------------------------------- */
 function onCodeInput(event: Event): void {
-  report(props.state.setCode((event.target as HTMLInputElement).value))
+  props.state.setCode((event.target as HTMLInputElement).value).catch(props.state.fail)
 }
 
 function onLabelInput(event: Event): void {
@@ -38,18 +34,19 @@ function onLabelInput(event: Event): void {
 }
 
 function onShare(isConfirmed: boolean): void {
-  report(props.state.add(isConfirmed))
+  props.state.add(isConfirmed).catch(props.state.fail)
+}
+
+function onRemoveReader(reader: ShareReader): void {
+  props.state.removeReader(reader).catch(props.state.fail)
+}
+
+function onStopShare(): void {
+  props.state.stopShare().catch(props.state.fail)
 }
 
 function onCopy(): void {
-  report(navigator.clipboard.writeText(props.state.invitation))
-}
-
-/* --------------------------------- Helpers -------------------------------- */
-function report(work: Promise<unknown>): void {
-  work.catch((failure: unknown) => {
-    props.state.fail(failure)
-  })
+  navigator.clipboard.writeText(props.state.invitation).catch(props.state.fail)
 }
 </script>
 
@@ -104,13 +101,13 @@ function report(work: Promise<unknown>): void {
       <li v-for="reader in state.share.readers" :key="reader.fingerprint" class="share__reader">
         <span class="share__name">{{ reader.label }}</span>
         <span class="share__fingerprint">{{ reader.fingerprint }}</span>
-        <Button variant="ghost" :disabled="state.isBusy" @click="report(state.removeReader(reader))">
+        <Button variant="ghost" :disabled="state.isBusy" @click="onRemoveReader(reader)">
           {{ words.remove }}
         </Button>
       </li>
     </ul>
     <div v-if="isActive" class="share__actions">
-      <Button variant="outline" :disabled="state.isBusy" @click="report(state.stopShare())">
+      <Button variant="outline" :disabled="state.isBusy" @click="onStopShare">
         {{ words.stopSharing }}
       </Button>
       <p class="share__note">{{ words.removedKeeps }}</p>

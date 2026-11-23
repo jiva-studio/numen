@@ -178,7 +178,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--numen-chrome-inset);
-  padding: var(--settings-card-pad, var(--numen-chrome-inset));
+  padding: var(--settings-card-pad);
   color: var(--numen-ink);
   font-size: var(--numen-chrome-text-2);
 }
@@ -221,7 +221,7 @@
 .share__input--invitation,
 .shares__input--invitation {
   min-block-size: calc(6 * var(--numen-chrome-unit));
-  font-family: var(--numen-font-mono, monospace);
+  font-family: var(--numen-font-mono);
   overflow-wrap: anywhere;
 }
 

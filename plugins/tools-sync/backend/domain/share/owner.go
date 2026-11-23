@@ -49,7 +49,6 @@ type KeyEntry struct {
 // Keys are the keys of the epochs of a share.
 type Keys []KeyEntry
 
-// Get returns the key of the epoch.
 func (k Keys) Get(epoch uint32) ([32]byte, bool) {
 	for _, one := range k {
 		if one.Epoch == epoch && len(one.Key) == keySize {
@@ -162,7 +161,6 @@ func (r Root) FindReaderByFingerprint(fingerprint string) (Reader, bool) {
 	return Reader{}, false
 }
 
-// GetState returns the state of the sharing the root is.
 func (r Root) GetState() string {
 	if r.Phase == PhaseCreated {
 		return StateCreating
@@ -170,7 +168,6 @@ func (r Root) GetState() string {
 	return StateActive
 }
 
-// FindRoot returns the open share of the folder.
 func FindRoot(roots []Root, folder string) (Root, bool) {
 	for _, one := range roots {
 		if !one.IsClosed && isSameFolder(one.Folder, folder) {
@@ -195,7 +192,6 @@ func FindRootOf(roots []Root, filePath string) (Root, bool) {
 	return Root{}, false
 }
 
-// FindRootByID returns the share, closed or not, with the id.
 func FindRootByID(roots []Root, id []byte) (Root, bool) {
 	for _, one := range roots {
 		if bytes.Equal(one.ID, id) {
@@ -246,7 +242,6 @@ func SetReader(readers []Reader, reader Reader) []Reader {
 	return append(next, reader)
 }
 
-// MarkReaderRemoved returns the readers with the reader of the root key marked removed at the time.
 func MarkReaderRemoved(readers []Reader, root []byte, at time.Time) []Reader {
 	next := make([]Reader, len(readers))
 	for i, one := range readers {

@@ -45,7 +45,7 @@ func (p *pair) push(t *testing.T, path, text string, previous *transfer.Outcome)
 	if previous != nil {
 		file.FileID, file.ParentRev = previous.FileID, previous.RevID
 	}
-	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: p.vault, Files: []transfer.File{file}})
+	outcomes, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: p.vault, Files: []transfer.File{file}}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func trustAll([]byte) bool { return true }
 
 func (p *pair) pull(t *testing.T, authors func([]byte) bool) transfer.PullResult {
 	t.Helper()
-	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: authors})
+	result, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: authors}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,7 +192,7 @@ func TestPullChanges_RejectsABlobThatDiffersFromItsHash(t *testing.T) {
 	p.push(t, "Shopping list.md", "milk", nil)
 	p.server.CorruptBlobs(true)
 
-	_, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: trustAll})
+	_, err := pull.NewPullChanges(p.b.PullDeps()).Execute(t.Context(), transfer.PullInput{VaultID: target, Authors: trustAll}, nil)
 
 	if !errors.Is(err, pull.ErrCorruptBlob) {
 		t.Errorf("error = %v, want ErrCorruptBlob", err)
@@ -211,7 +211,7 @@ func TestPullChanges_ReadsEveryPageOfChanges(t *testing.T) {
 	for i := range files {
 		files[i] = transfer.File{Path: fmt.Sprintf("n%03d.md", i), Content: []byte(fmt.Sprintf("note %d", i))}
 	}
-	if _, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: p.vault, Files: files}); err != nil {
+	if _, err := commit.NewCommitRevisions(p.a.CommitDeps()).Execute(t.Context(), transfer.CommitInput{Vault: p.vault, Files: files}, nil); err != nil {
 		t.Fatal(err)
 	}
 

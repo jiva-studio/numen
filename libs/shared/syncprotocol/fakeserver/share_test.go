@@ -100,7 +100,6 @@ func (s *sharing) removeReader(remaining ...*syncv1.ShareSeal) {
 	s.mustAppend(s.newEntry(syncv1.ShareLogKind_SHARE_LOG_KIND_REMOVE_READER, s.epoch+1, s.readerRoot(), remaining...))
 }
 
-// commitShared commits a file of the share at the given epoch and returns its revision.
 func (s *sharing) commitShared(path string, epoch uint32, body []byte) (*syncv1.Revision, *syncv1.CommitRevisionsResponse) {
 	s.owner.tb.Helper()
 	revision := s.owner.newFile(s.vault, newID(16), nil, path, body)
@@ -152,17 +151,20 @@ func TestShareService_AnswersAStaleVersionWithTheHeadAndStoresNothing(t *testing
 	s := newSharingHarness(t)
 	s.create()
 	stale := s.newEntry(syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE, 0, nil)
-	stale.Version, stale.PrevHash = 1, nil
+	stale.EncShareBody = []byte("share body of another computer")
 	signature := s.owner.device.SignForPlugin(syncprotocol.SignInPluginID, syncprotocol.GetShareLogEntryMessage(stale))
 	stale.Signature = signature[:]
+	if _, err := s.tryAppend(s.newEntry(syncv1.ShareLogKind_SHARE_LOG_KIND_UPDATE, 0, nil)); err != nil {
+		t.Fatal(err)
+	}
 
 	response, err := s.owned.AppendShareLogEntry(t.Context(), stale)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if response.GetCommitted() || response.GetHead().GetVersion() != 1 {
-		t.Errorf("response = %v, want not committed with the head at version 1", response)
+	if response.GetCommitted() || response.GetHead().GetVersion() != 2 {
+		t.Errorf("response = %v, want not committed with the head at version 2", response)
 	}
 }
 

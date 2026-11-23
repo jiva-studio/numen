@@ -10,7 +10,6 @@ export interface Vault {
   readonly name: string
   readonly path: string
   readonly isMissing: boolean
-  /** True where another plugin manages the vault: it can be read and not written. */
   readonly isReadOnly: boolean
 }
 

@@ -104,7 +104,6 @@ func (u Add) add(root, name, managedBy string) (domain.Vault, error) {
 	return v, nil
 }
 
-// checkNew refuses a folder that carries a vault identity: only a folder that is no vault yet can be given to a plugin.
 func (u Add) checkNew(root, managedBy string) error {
 	if managedBy == "" {
 		return nil
@@ -132,7 +131,6 @@ func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {
 	return nil
 }
 
-// getManager keeps the manager of a vault that is on the list already: adding the folder again does not free it.
 func getManager(existing domain.Vault, found bool, managedBy string) string {
 	if managedBy == "" && found {
 		return existing.ManagedBy

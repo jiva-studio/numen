@@ -70,7 +70,6 @@ func NewUnsignedComputer(t *testing.T, server *Server, clock *Clock, vault strin
 	return c
 }
 
-// GetReaderCode returns the reader code of this computer.
 func (c *Computer) GetReaderCode(ctx context.Context) (ReaderCode, error) {
 	code, err := receive.NewGetReaderCode(c.ReceiveDeps()).Execute(ctx)
 	return ReaderCode{Code: code.Code, Fingerprint: code.Fingerprint}, err
@@ -94,7 +93,6 @@ func (c *Computer) RemoveReader(ctx context.Context, id domain.VaultID, folder, 
 	return share.NewRemoveReader(c.ShareDeps()).Execute(ctx, id, folder, fingerprint)
 }
 
-// StopShare stops the sharing of the folder.
 func (c *Computer) StopShare(ctx context.Context, id domain.VaultID, folder string) error {
 	return share.NewStopShare(c.ShareDeps()).Execute(ctx, id, folder)
 }
@@ -124,7 +122,6 @@ func (c *Computer) AcceptInvitation(ctx context.Context, text string) (ReceivedS
 	return ReceivedShare{VaultID: accepted.VaultID, Name: accepted.Name, OwnerFingerprint: "", State: "", ConflictCount: 0}, err
 }
 
-// ListReceived lists the shares this computer received.
 func (c *Computer) ListReceived(ctx context.Context) ([]ReceivedShare, error) {
 	listed, err := receive.NewListReceived(c.ReceiveDeps()).Execute(ctx)
 	shares := make([]ReceivedShare, len(listed))

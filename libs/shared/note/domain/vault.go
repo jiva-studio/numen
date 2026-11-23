@@ -13,10 +13,9 @@ type VaultID string
 // Vault is a folder the user has added to the application. Its identity is a
 // ULID carried inside the vault itself.
 type Vault struct {
-	ID   VaultID
-	Name string
-	Path string
-	// ManagedBy is the id of the plugin that alone writes this vault; empty for a vault anyone may write.
+	ID        VaultID
+	Name      string
+	Path      string
 	ManagedBy string
 }
 

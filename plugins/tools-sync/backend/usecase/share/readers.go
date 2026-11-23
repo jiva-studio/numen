@@ -28,7 +28,6 @@ type Invited struct {
 	Fingerprint string
 }
 
-// AddReader adds a reader to a share.
 type AddReader struct{ base }
 
 // NewAddReader returns the use case over the dependencies.
@@ -93,7 +92,6 @@ func (u *AddReader) draftAdd(root domainshare.Root, chain identity.Chain, in Add
 	}, nil
 }
 
-// RemoveReader removes a reader from a share.
 type RemoveReader struct{ base }
 
 // NewRemoveReader returns the use case over the dependencies.
@@ -114,8 +112,6 @@ func (u *RemoveReader) Execute(ctx context.Context, id domain.VaultID, folder, f
 	return err
 }
 
-// newRotation returns the entry that starts the epoch after the one of the root with a new key, sealed to each
-// active reader of readers. A subject makes it the removal of that reader.
 func (b base) newRotation(root domainshare.Root, subject []byte, readers []domainshare.Reader) (draft, error) {
 	current, isKnown := root.GetKey()
 	if !isKnown {
@@ -187,7 +183,6 @@ type ShareFolder struct{ deps Deps }
 // NewShareFolder returns the use case over the dependencies.
 func NewShareFolder(deps Deps) *ShareFolder { return &ShareFolder{deps: deps} }
 
-// Execute makes the share of the folder when it is not shared, then adds the reader.
 func (u *ShareFolder) Execute(ctx context.Context, in AddReaderInput) (Invited, error) {
 	overview, err := NewGetShare(u.deps).Execute(ctx, in.VaultID, in.Folder)
 	if err != nil {

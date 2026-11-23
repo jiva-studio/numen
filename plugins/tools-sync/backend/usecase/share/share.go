@@ -55,7 +55,6 @@ type ref struct {
 	missing error
 }
 
-// getRemote returns the id the server knows the vault by, and refuses a vault that is not connected or is received.
 func (b base) getRemote(ctx context.Context, id domain.VaultID) ([]byte, error) {
 	link, err := b.deps.Links.ReadLink(ctx, id)
 	if errors.Is(err, vaultlink.ErrNotConnected) {
@@ -182,7 +181,6 @@ func checkHead(entry *syncv1.ShareLogEntry, id []byte, authors trust.Authors) er
 	return nil
 }
 
-// getRoot returns the open share of the folder.
 func (b base) getRoot(ctx context.Context, at ref) (domainshare.Root, error) {
 	if _, err := b.getRemote(ctx, at.vault); err != nil {
 		return domainshare.Root{}, err
@@ -209,7 +207,6 @@ type draft struct {
 	previous []byte
 }
 
-// sign returns the entry of the share log that follows the entry with the id prev, signed by this device.
 func (b base) sign(ctx context.Context, id []byte, version uint64, prev [32]byte, d draft) (*syncv1.ShareLogEntry, error) {
 	key, isKnown := d.body.Keys.Get(d.epoch)
 	if !isKnown {
@@ -245,7 +242,6 @@ func (b base) sign(ctx context.Context, id []byte, version uint64, prev [32]byte
 	return entry, nil
 }
 
-// appendEntry adds the entry to the log. It returns errMoved when another device was first.
 func (b base) appendEntry(ctx context.Context, entry *syncv1.ShareLogEntry) error {
 	response, err := b.deps.Shares.AppendShareLogEntry(ctx, entry)
 	if errors.Is(err, syncprotocol.ErrReaderRefused) {
@@ -260,8 +256,6 @@ func (b base) appendEntry(ctx context.Context, entry *syncv1.ShareLogEntry) erro
 	return nil
 }
 
-// change appends the entry build makes from the share of the folder as it is now. Another device that appended
-// first makes it read the share again, a few times.
 func (b base) change(ctx context.Context, at ref, build func(root domainshare.Root) (draft, error)) (domainshare.Root, error) {
 	for range maxTries {
 		root, err := b.getRoot(ctx, at)
@@ -287,7 +281,6 @@ func (b base) change(ctx context.Context, at ref, build func(root domainshare.Ro
 	return domainshare.Root{}, domainshare.ErrLogBusy
 }
 
-// setPhase records where this device stands with the share.
 func (b base) setPhase(ctx context.Context, id domain.VaultID, shareID []byte, phase domainshare.Phase) error {
 	states, err := b.deps.States.ReadShareStates(ctx, id)
 	if err != nil {
@@ -303,7 +296,6 @@ func (b base) setPhase(ctx context.Context, id domain.VaultID, shareID []byte, p
 	return b.deps.States.WriteShareStates(ctx, id, append(kept, domainshare.Progress{ShareRootID: key, Phase: phase}))
 }
 
-// dropPhase forgets where this device stands with the share.
 func (b base) dropPhase(ctx context.Context, id domain.VaultID, shareID []byte) error {
 	states, err := b.deps.States.ReadShareStates(ctx, id)
 	if err != nil {

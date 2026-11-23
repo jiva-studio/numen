@@ -62,7 +62,6 @@ func (u *ConnectVault) Execute(ctx context.Context, in ConnectInput) error {
 	return u.connectExisting(ctx, in, name)
 }
 
-// checkNotReceived refuses a vault that is the share of another person, which is not synced as an own vault.
 func (u *ConnectVault) checkNotReceived(ctx context.Context, id domain.VaultID) error {
 	link, err := u.reader.deps.State.ReadLink(ctx, id)
 	if errors.Is(err, vaultlink.ErrNotConnected) {

@@ -90,7 +90,6 @@ func (w *world) seal(t *testing.T, epoch uint32) *syncv1.ShareSeal {
 	return &syncv1.ShareSeal{ReaderRootSignKey: root, Sealed: sealed}
 }
 
-// append completes the entry as the next of the log and signs it with the device of the owner.
 func (w *world) append(t *testing.T, entry *syncv1.ShareLogEntry) {
 	t.Helper()
 	entry.ShareRootId, entry.Version = getLogShareID(), uint64(len(w.entries))+1

@@ -116,8 +116,6 @@ func (u *RunSync) passOne(ctx context.Context, id domain.VaultID) error {
 	return u.finish(ctx, err, isConnected)
 }
 
-// pass runs the pass over a vault that is connected. It returns true for a vault of the person; a received vault is
-// synced without asking the subscription, and a share the owner ended is not a failure.
 func (u *RunSync) pass(ctx context.Context, id domain.VaultID) (bool, error) {
 	link, err := u.deps.State.ReadLink(ctx, id)
 	if errors.Is(err, vaultlink.ErrNotConnected) {

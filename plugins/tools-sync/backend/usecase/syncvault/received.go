@@ -16,8 +16,6 @@ const (
 	textShareEnded     = "The owner ended this share"
 )
 
-// executeReceived brings the changes of the owner into a received vault. It pushes nothing and asks the server for no
-// write. A share the owner ended is reported and returned as share.ErrEnded.
 func (u *SyncVault) executeReceived(ctx context.Context, id domain.VaultID) error {
 	previous, err := u.deps.Progress.ReadStatus(ctx, id)
 	if err != nil {
@@ -47,7 +45,6 @@ func (r reporter) reportShared(ctx context.Context, id domain.VaultID, conflicts
 	return r.toggle(ctx, keyUnverified+":"+string(id), unverified > 0, unverified, "Some changes of this shared vault could not be verified")
 }
 
-// getSharedConflictText is what the warning of notes of a shared vault that the reader changed says.
 func getSharedConflictText(count int) string {
 	if count == 1 {
 		return "1 note of this shared vault was changed here"

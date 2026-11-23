@@ -52,7 +52,6 @@ func (b base) open(ctx context.Context, text string) (opened, error) {
 	return opened{invitation: invitation, ownerChain: ownerChain, reader: reader}, nil
 }
 
-// findReceivedLink returns the vault that holds the share, when this computer received it already.
 func (b base) findReceivedLink(ctx context.Context, shareID []byte) (domain.VaultID, vaultlink.Link, bool, error) {
 	vaults, err := b.deps.Host.GetVaults(ctx)
 	if err != nil {
@@ -185,8 +184,6 @@ func (u *AcceptInvitation) Execute(ctx context.Context, text string) (Accepted, 
 	return u.receive(ctx, o, read)
 }
 
-// checkReceivedLink refuses a share received already and still running, and a share of another owner root than the
-// pinned one.
 func checkReceivedLink(link vaultlink.Link, isReceived bool, o opened) error {
 	if !isReceived {
 		return nil
@@ -218,7 +215,6 @@ func (u *AcceptInvitation) receive(ctx context.Context, o opened, read followed)
 	return Accepted{VaultID: vault.ID, Name: vault.Name}, nil
 }
 
-// rejoin gives the vault of an ended share the new position in the log. The revisions it saw stay remembered.
 func (u *AcceptInvitation) rejoin(ctx context.Context, id domain.VaultID, link vaultlink.Link, o opened, read followed) (Accepted, error) {
 	if err := u.writeLink(ctx, id, o, read, link.Received.Seen); err != nil {
 		return Accepted{}, err

@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import { activate } from './index'
-import ReceivedView from './ui/ReceivedView.vue'
 import VaultsView from './ui/VaultsView.vue'
 
 describe('the settings views of the sync plugin', () => {
@@ -16,7 +15,7 @@ describe('the settings views of the sync plugin', () => {
     const views = context.getRegisteredSettingsViews()
     expect(views.map((one) => one.id)).toStrictEqual(['vaults', 'shares', 'subscription'])
     expect(views.at(0)).toMatchObject({ component: VaultsView })
-    expect(views.at(1)).toMatchObject({ component: ReceivedView })
+    expect(views.at(1)).toMatchObject({ component: { name: 'ReceivedPage' } })
     context.dispose()
     vi.unstubAllGlobals()
   })

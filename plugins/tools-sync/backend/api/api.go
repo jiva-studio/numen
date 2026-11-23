@@ -180,8 +180,7 @@ type ReaderState string
 
 const (
 	// ReaderActive is a reader of the folder.
-	ReaderActive ReaderState = "active"
-	// ReaderRemoved is a reader the owner removed.
+	ReaderActive  ReaderState = "active"
 	ReaderRemoved ReaderState = "removed"
 )
 
@@ -191,7 +190,6 @@ type GetShareRequest struct {
 	Folder  string `json:"folder"`
 }
 
-// ShareReader is a reader of a shared folder.
 type ShareReader struct {
 	Label       string      `json:"label"`
 	Fingerprint string      `json:"fingerprint"`
@@ -238,7 +236,6 @@ type StopShareRequest struct {
 	Folder  string `json:"folder"`
 }
 
-// StopShareResponse is the answer to a share that stopped.
 type StopShareResponse struct{}
 
 // ReadInvitationRequest holds an invitation a person pasted.
@@ -277,7 +274,6 @@ const (
 // ListReceivedRequest asks for the shares this computer received.
 type ListReceivedRequest struct{}
 
-// ReceivedShare is a share this computer received.
 type ReceivedShare struct {
 	VaultID          string        `json:"vaultId"`
 	Name             string        `json:"name"`

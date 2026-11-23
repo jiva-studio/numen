@@ -62,8 +62,7 @@ func (u *PullShare) Execute(ctx context.Context, id domain.VaultID) (transfer.Pu
 		return transfer.PullResult{}, err
 	}
 	err = r.execute(ctx)
-	var ended syncprotocol.ShareEndedError
-	if errors.As(err, &ended) {
+	if _, isEnded := errors.AsType[syncprotocol.ShareEndedError](err); isEnded {
 		err = r.end(ctx)
 	}
 	return r.result, err
@@ -152,7 +151,6 @@ func (r *pullRun) applyPage(ctx context.Context, page *syncv1.GetShareChangesRes
 	return false, nil
 }
 
-// followLog verifies the entries of the share log after the last one verified and keeps the keys they bring.
 func (r *pullRun) followLog(ctx context.Context) error {
 	received := r.link.Received
 	headID, err := toEntryID(received.HeadID)
@@ -208,7 +206,6 @@ func (r *pullRun) sealKeys(ctx context.Context, keys domainshare.Keys) error {
 	return nil
 }
 
-// end marks the share ended in the link and returns ErrEnded.
 func (r *pullRun) end(ctx context.Context) error {
 	r.link.Received.IsEnded = true
 	if err := r.deps.Links.WriteLink(ctx, r.id, r.link); err != nil {
@@ -268,8 +265,6 @@ func (r *pullRun) apply(ctx context.Context, change *syncv1.ShareChange) error {
 	return r.place(ctx, stored)
 }
 
-// verify checks that the change is what the owner signed: the id and the signature of the revision, with the hash of
-// the metadata the owner signed, and that it belongs to this share.
 func (r *pullRun) verify(change *syncv1.ShareChange) error {
 	if err := syncprotocol.CheckShareRevision(change); err != nil {
 		return err
@@ -304,8 +299,6 @@ func (r *pullRun) isSigned(stored *syncv1.StoredRevision, metaHash [32]byte) boo
 		identity.VerifyForPlugin(author, syncprotocol.SignInPluginID, syncprotocol.GetRevisionMessageWithMetaHash(rev, metaHash), [64]byte(rev.GetSignature()))
 }
 
-// checkMembership requires a change that left the share not to name it, and any other change to name it with an epoch
-// the reader knows.
 func (r *pullRun) checkMembership(change *syncv1.ShareChange) error {
 	rev := change.GetChange().GetRevision()
 	isOfShare := bytes.Equal(rev.GetShareRootId(), r.shareID)
@@ -318,25 +311,25 @@ func (r *pullRun) checkMembership(change *syncv1.ShareChange) error {
 	return nil
 }
 
-func (r *pullRun) openMeta(rev *syncv1.Revision) (note.Meta, error) {
+func (r *pullRun) openMeta(rev *syncv1.Revision) (note.Meta, bool) {
 	key, isKnown := r.keys.Get(rev.GetEpoch())
 	if !isKnown {
-		return note.Meta{}, errUnverified
+		return note.Meta{}, false
 	}
-	meta, err := domainshare.OpenMeta(key, r.shareID, rev.GetFileId(), rev.GetEpoch(), rev.GetEncMeta())
+	meta, err := domainshare.OpenMeta[note.Meta](key, r.shareID, rev.GetFileId(), rev.GetEpoch(), rev.GetEncMeta())
 	if err != nil || len(meta.Key) != len([32]byte{}) {
-		return note.Meta{}, errUnverified
+		return note.Meta{}, false
 	}
 	if meta.Path, err = note.NormalizePath(meta.Path); err != nil {
-		return note.Meta{}, errUnverified
+		return note.Meta{}, false
 	}
-	return meta, nil
+	return meta, true
 }
 
 func (r *pullRun) place(ctx context.Context, stored *syncv1.StoredRevision) error {
 	rev := stored.GetRevision()
-	meta, err := r.openMeta(rev)
-	if err != nil {
+	meta, isOpened := r.openMeta(rev)
+	if !isOpened {
 		r.result.Unverified++
 		return nil
 	}
@@ -357,7 +350,6 @@ func (r *pullRun) place(ctx context.Context, stored *syncv1.StoredRevision) erro
 	return nil
 }
 
-// retire removes the file a note had before it was moved inside the share, when the reader did not change it.
 func (r *pullRun) retire(ctx context.Context, previous note.FileRecord, isKnown bool, path string, seq uint64) error {
 	if !isKnown || previous.Path == path {
 		return nil
@@ -443,8 +435,7 @@ func (r *pullRun) removeRecord(fileID []byte) {
 func (r *pullRun) download(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, stat domain.FileStat, isAbsent bool) error {
 	rev := stored.GetRevision()
 	plain, err := r.fetch(ctx, rev, meta)
-	var limited syncprotocol.RateLimitedError
-	if errors.As(err, &limited) {
+	if _, isLimited := errors.AsType[syncprotocol.RateLimitedError](err); isLimited {
 		r.hold(stored.GetSeq())
 		return errRateLimited
 	}
