@@ -21,7 +21,7 @@ func (u *SetLinkChannel) Execute(_ context.Context, id []byte) error {
 	defer store.mu.Unlock()
 	store.expireLocked(u.deps.clock.Now())
 	link := store.current
-	if link == nil || link.isEnded() || !link.wantsChannel {
+	if link == nil || link.isEnded() || !link.relay.wantsChannel {
 		return identitydomain.ErrNoLink
 	}
 	if len(id) != len(identitylib.LinkPayload{}.Channel) {
@@ -32,9 +32,9 @@ func (u *SetLinkChannel) Execute(_ context.Context, id []byte) error {
 		return err
 	}
 	link.hs.displayer = displayer
-	link.channelID = append([]byte(nil), id...)
+	link.relay.channelID = append([]byte(nil), id...)
 	link.qrText = payload.Text()
-	link.wantsChannel = false
+	link.relay.wantsChannel = false
 	store.setPhaseLocked(link, identitydomain.LinkPhaseWaitingForPeer)
 	return nil
 }

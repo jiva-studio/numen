@@ -57,22 +57,27 @@ type ownIdentity struct {
 	account     string
 }
 
-type pendingLink struct {
-	role         identitydomain.LinkRole
-	mode         identitydomain.LinkMode
-	phase        identitydomain.LinkPhase
-	reason       identitydomain.LinkReason
-	startedAt    time.Time
-	qrText       string
+// relayState is what a link keeps of its channel on the relay and of the blobs the courier has not yet carried.
+type relayState struct {
 	server       string
 	channelID    []byte
 	wantsChannel bool
 	isClosed     bool
 	items        []outboxItem
-	own          ownIdentity
-	hs           handshake
-	host         hostSide
-	joiner       joinerSide
+}
+
+type pendingLink struct {
+	role      identitydomain.LinkRole
+	mode      identitydomain.LinkMode
+	phase     identitydomain.LinkPhase
+	reason    identitydomain.LinkReason
+	startedAt time.Time
+	qrText    string
+	relay     relayState
+	own       ownIdentity
+	hs        handshake
+	host      hostSide
+	joiner    joinerSide
 }
 
 // LinkStore keeps the one link in progress and the revoke that waits for the server. Its keys stay in memory.
@@ -109,7 +114,7 @@ func (s *LinkStore) expireLocked(now time.Time) {
 }
 
 func (s *LinkStore) queueLocked(l *pendingLink, blob []byte) {
-	l.items = append(l.items, outboxItem{version: s.bumpLocked(), blob: blob})
+	l.relay.items = append(l.relay.items, outboxItem{version: s.bumpLocked(), blob: blob})
 }
 
 // sendLocked seals a message of the application for the other side; before the handshake there is nothing to seal it with.
@@ -120,7 +125,7 @@ func (s *LinkStore) sendLocked(l *pendingLink, plain []byte) {
 }
 
 func (s *LinkStore) endLocked(l *pendingLink, phase identitydomain.LinkPhase, reason identitydomain.LinkReason) {
-	l.phase, l.reason, l.isClosed = phase, reason, true
+	l.phase, l.reason, l.relay.isClosed = phase, reason, true
 	s.bumpLocked()
 }
 
@@ -131,7 +136,7 @@ func (s *LinkStore) setPhaseLocked(l *pendingLink, phase identitydomain.LinkPhas
 
 // acknowledge drops the blobs the courier has carried: those of a version up to the one it names.
 func (l *pendingLink) acknowledge(version uint64) {
-	l.items = slices.DeleteFunc(l.items, func(item outboxItem) bool { return item.version <= version })
+	l.relay.items = slices.DeleteFunc(l.relay.items, func(item outboxItem) bool { return item.version <= version })
 }
 
 type pendingRevoke struct {

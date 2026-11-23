@@ -34,7 +34,7 @@ func (u *StartLink) Execute(ctx context.Context, role identitydomain.LinkRole, m
 	if mode == identitydomain.LinkModeScan {
 		err = u.deps.readQRText(store, link, scanned)
 	} else {
-		link.wantsChannel = true
+		link.relay.wantsChannel = true
 		link.phase = identitydomain.LinkPhaseWaitingForChannel
 	}
 	if err != nil {
@@ -81,8 +81,8 @@ func (d Deps) readQRText(store *LinkStore, link *pendingLink, scanned string) er
 		return fmt.Errorf("start the link: %w", err)
 	}
 	link.hs.scanner = scanner
-	link.channelID = append([]byte(nil), payload.Channel[:]...)
-	link.server = payload.Server
+	link.relay.channelID = append([]byte(nil), payload.Channel[:]...)
+	link.relay.server = payload.Server
 	link.phase = identitydomain.LinkPhaseWaitingForPeer
 	if link.role == identitydomain.LinkRoleJoiner {
 		link.phase = identitydomain.LinkPhaseWaitingForAccept

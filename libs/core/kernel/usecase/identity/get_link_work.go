@@ -48,12 +48,12 @@ func (u *GetLinkWork) read(sinceVersion uint64) (identitydomain.LinkWork, <-chan
 		return work, store.changed
 	}
 	link.acknowledge(sinceVersion)
-	work.IsActive = !link.isClosed || len(link.items) > 0
-	work.WantsChannel = link.wantsChannel
-	work.ChannelID = append([]byte(nil), link.channelID...)
-	work.Server = link.server
-	work.IsClosed = link.isClosed
-	for _, item := range link.items {
+	work.IsActive = !link.relay.isClosed || len(link.relay.items) > 0
+	work.WantsChannel = link.relay.wantsChannel
+	work.ChannelID = append([]byte(nil), link.relay.channelID...)
+	work.Server = link.relay.server
+	work.IsClosed = link.relay.isClosed
+	for _, item := range link.relay.items {
 		work.Outbound = append(work.Outbound, append([]byte(nil), item.blob...))
 	}
 	return work, store.changed
