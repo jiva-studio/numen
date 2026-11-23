@@ -1,11 +1,11 @@
-package indexing_test
+package ensureindexed_test
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -15,7 +15,7 @@ func getUnreadVault() domain.Vault {
 
 // A vault forgotten after a clean indexing is claimable again.
 func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
-	r := &indexing.Runs{}
+	r := &ensureindexed.Runs{}
 	r.SetIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 
 	r.Record(getUnreadVault(), nil)
@@ -35,7 +35,7 @@ func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
 // failed indexing returns why and begins nothing, and a vault indexed cleanly
 // begins nothing and is not underway.
 func TestAVaultIsClaimedForOneIndexingAtATime(t *testing.T) {
-	r := &indexing.Runs{}
+	r := &ensureindexed.Runs{}
 	r.SetIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
 	v := domain.Vault{ID: "one"}
 
@@ -64,7 +64,7 @@ func TestAVaultIsClaimedForOneIndexingAtATime(t *testing.T) {
 }
 
 func TestAWindowThatReadsNothingClaimsNothing(t *testing.T) {
-	r := &indexing.Runs{}
+	r := &ensureindexed.Runs{}
 	claim := r.Claim(domain.Vault{ID: "one"})
 	if claim.Read != nil || claim.Underway || claim.Reason != "" {
 		t.Errorf("the claim came back %v %v %q", claim.Read != nil, claim.Underway, claim.Reason)

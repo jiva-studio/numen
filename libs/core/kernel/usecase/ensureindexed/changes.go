@@ -1,4 +1,4 @@
-package indexing
+package ensureindexed
 
 import "sync"
 

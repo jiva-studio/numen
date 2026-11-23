@@ -6,6 +6,8 @@ import (
 	"io"
 	"slices"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/fitindex"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 
@@ -90,7 +92,7 @@ func (w readingParts) OpenIndex(ctx context.Context) (*testIndex, error) {
 // testIndex is the part of an open index the tests of the window read and write.
 type testIndex struct {
 	closer  io.Closer
-	vectors indexing.VectorIndex
+	vectors fitindex.VectorIndex
 	walks   indexing.Walks
 	ledger  *indexing.Ledger
 
@@ -130,7 +132,7 @@ func (i *testIndex) Walks() *indexing.Walks { return &i.walks }
 
 func (i *testIndex) Ledger() *indexing.Ledger { return i.ledger }
 
-func (i *testIndex) VectorIndex() indexing.VectorIndex { return i.vectors }
+func (i *testIndex) VectorIndex() fitindex.VectorIndex { return i.vectors }
 
 func (w readingParts) GetVaultReaders() vaultport.VaultReaders { return vaultreader.Readers{} }
 
@@ -186,7 +188,7 @@ func (w readingParts) OpenVaultWith(
 func (w readingParts) ReadWholeVault(
 	ctx context.Context, db *testIndex, embedder searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
-	fit := indexing.NewFitIndex(db.VectorIndex(), nil, rebuild)
+	fit := fitindex.New(db.VectorIndex(), nil, rebuild)
 	if err := fit.Execute(ctx, embedder); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}

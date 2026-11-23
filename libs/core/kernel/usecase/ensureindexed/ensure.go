@@ -1,4 +1,4 @@
-package indexing
+package ensureindexed
 
 import (
 	"context"
@@ -41,26 +41,26 @@ type RunState interface {
 	Clear(id domain.VaultID)
 }
 
-// EnsureIndexed brings a vault into the index when it is missing and reports its state, which is the
+// Ensure brings a vault into the index when it is missing and reports its state, which is the
 // state a plugin counting the vault receives. The indexing runs in the background and is shown as work.
-type EnsureIndexed struct {
+type Ensure struct {
 	runs    RunState
 	indexed VaultHolds
 	tasks   windowport.Tasks
 	changes *Changes
 }
 
-// NewEnsureIndexed returns the use case over the state of the indexing runs, the question whether the
+// New returns the use case over the state of the indexing runs, the question whether the
 // index holds a vault, the list of work and the notification of changes.
-func NewEnsureIndexed(runs RunState, indexed VaultHolds, tasks windowport.Tasks, changes *Changes) *EnsureIndexed {
-	return &EnsureIndexed{runs: runs, indexed: indexed, tasks: tasks, changes: changes}
+func New(runs RunState, indexed VaultHolds, tasks windowport.Tasks, changes *Changes) *Ensure {
+	return &Ensure{runs: runs, indexed: indexed, tasks: tasks, changes: changes}
 }
 
 // Execute starts the indexing of the vault when the index lacks it and no run has failed or is underway,
 // and reports the state: indexing while it runs, failed with the reason of the failed run or when the index
 // does not contain the vault, indexed otherwise. A window that reads no vault reports that the index does
 // not carry the vaults it does not read.
-func (u *EnsureIndexed) Execute(ctx context.Context, v domain.Vault) (plugin.IndexState, error) {
+func (u *Ensure) Execute(ctx context.Context, v domain.Vault) (plugin.IndexState, error) {
 	if u == nil {
 		return plugin.IndexState{Status: plugin.IndexFailed, Reason: noIndexReason}, nil
 	}
@@ -79,12 +79,12 @@ func (u *EnsureIndexed) Execute(ctx context.Context, v domain.Vault) (plugin.Ind
 	return plugin.IndexState{Status: plugin.Indexed}, nil
 }
 
-func (u *EnsureIndexed) isIndexed(ctx context.Context, v domain.Vault) bool {
+func (u *Ensure) isIndexed(ctx context.Context, v domain.Vault) bool {
 	holds, err := u.indexed.Has(ctx, v.ID)
 	return err == nil && holds
 }
 
-func (u *EnsureIndexed) start(ctx context.Context, v domain.Vault) (underway bool, reason string) {
+func (u *Ensure) start(ctx context.Context, v domain.Vault) (underway bool, reason string) {
 	claim := u.runs.Claim(v)
 	if claim.Read == nil {
 		return claim.Underway, claim.Reason
@@ -108,7 +108,7 @@ func (u *EnsureIndexed) start(ctx context.Context, v domain.Vault) (underway boo
 	return true, ""
 }
 
-func (u *EnsureIndexed) run(ctx context.Context, read IndexVault, v domain.Vault, target bool) {
+func (u *Ensure) run(ctx context.Context, read IndexVault, v domain.Vault, target bool) {
 	pos := work.Task{
 		ID:            "indexing\t" + string(v.ID),
 		Title:         "Indexing the vault",

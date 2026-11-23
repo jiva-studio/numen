@@ -4,6 +4,8 @@ import (
 	"cmp"
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/fitindex"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
@@ -69,7 +71,7 @@ func searchScan(c vaultIndexPlan, db *vaultIndex) indexing.Scan {
 func readWholeVault(c vaultIndexPlan,
 	ctx context.Context, db *vaultIndex, source searchsourceport.Source, v domain.Vault, refresh indexing.Refresh,
 ) (indexing.ReadWholeVault, error) {
-	fit := indexing.NewFitIndex(db.VectorIndex(), c.ErrorHandler, c.ShouldRebuildIndex)
+	fit := fitindex.New(db.VectorIndex(), c.ErrorHandler, c.ShouldRebuildIndex)
 	if err := fit.Execute(ctx, source); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}

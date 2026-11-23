@@ -1,4 +1,4 @@
-package indexing
+package embedqueries
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func describeSource() searchsource.Description {
 
 func TestEmbedTextsAsksTheQueriesOfTheSourceAndNamesItsRecipe(t *testing.T) {
 	queries := &queriesOnly{}
-	got, err := NewEmbedQueries(queries).EmbedTexts(t.Context(), describeSource, []string{"entropy", "heat"})
+	got, err := New(queries).EmbedTexts(t.Context(), describeSource, []string{"entropy", "heat"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestEmbedTextsAsksTheQueriesOfTheSourceAndNamesItsRecipe(t *testing.T) {
 
 func TestEmbedTextsRefusesMoreTextsThanOneCallEmbeds(t *testing.T) {
 	texts := make([]string, plugin.MaxEmbeddedTexts+1)
-	if _, err := NewEmbedQueries(&queriesOnly{}).EmbedTexts(t.Context(), describeSource, texts); !errors.Is(err, plugin.ErrLimitExceeded) {
+	if _, err := New(&queriesOnly{}).EmbedTexts(t.Context(), describeSource, texts); !errors.Is(err, plugin.ErrLimitExceeded) {
 		t.Errorf("err = %v, want ErrLimitExceeded", err)
 	}
 }

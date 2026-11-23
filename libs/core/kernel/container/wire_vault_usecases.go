@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
@@ -214,5 +216,5 @@ func openVaults(c vaultWiring, db *vaultIndex, out io.Writer, label string, reco
 }
 
 func setShellNotes(api *shell.API, db *vaultIndex) {
-	api.Ensure = indexing.NewEnsureIndexed(&api.Runs, db.NoteQueries(), api.Window, &api.Changes)
+	api.Ensure = ensureindexed.New(&api.Runs, db.NoteQueries(), api.Window, &api.Changes)
 }

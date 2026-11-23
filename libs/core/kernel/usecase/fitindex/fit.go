@@ -1,4 +1,4 @@
-package indexing
+package fitindex
 
 import (
 	"context"
@@ -6,27 +6,27 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
-// FitIndex sets the vector index to the search source: the width of its
+// Fit sets the vector index to the search source: the width of its
 // vectors, and on a rebuild only the vectors of its recipe.
-type FitIndex struct {
+type Fit struct {
 	index VectorIndex
 
 	shouldRebuildIndex bool
 	errorHandler       func(error)
 }
 
-// NewFitIndex returns the use case over the vector index given. A nil errorHandler ignores the error of the
+// New returns the use case over the vector index given. A nil errorHandler ignores the error of the
 // compaction after a rebuild. With shouldRebuildIndex the vectors of other recipes are deleted.
-func NewFitIndex(index VectorIndex, errorHandler func(error), shouldRebuildIndex bool) FitIndex {
+func New(index VectorIndex, errorHandler func(error), shouldRebuildIndex bool) Fit {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}
-	return FitIndex{index: index, errorHandler: errorHandler, shouldRebuildIndex: shouldRebuildIndex}
+	return Fit{index: index, errorHandler: errorHandler, shouldRebuildIndex: shouldRebuildIndex}
 }
 
 // Execute fits the index to the description of the source. Without a source, or with one that has not
 // described itself, the index is left as it is and search answers by words.
-func (u FitIndex) Execute(ctx context.Context, source searchsourceport.Source) error {
+func (u Fit) Execute(ctx context.Context, source searchsourceport.Source) error {
 	if source == nil {
 		return nil
 	}

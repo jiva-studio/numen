@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/fitindex"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
@@ -601,7 +603,7 @@ type WorkerIndex struct {
 	FileStats   FileStats
 	Maintenance IndexMaintenance
 	Progress    IndexProgress
-	Vectors     VectorIndex
+	Vectors     fitindex.VectorIndex
 	Closer      io.Closer
 }
 

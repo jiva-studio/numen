@@ -2,11 +2,12 @@ package textversion_test
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textversiontest"
 	"slices"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textversiontest"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/textfile"

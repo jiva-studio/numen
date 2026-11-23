@@ -1,7 +1,10 @@
 package indexing
 
 import (
+	"context"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/fitindex"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
@@ -45,8 +48,8 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 		t.Fatal(err)
 	}
 
-	fit := &vectorIndex{}
-	fitter := NewFitIndex(fit, nil, true)
+	fit := &fitRecorder{}
+	fitter := fitindex.New(fit, nil, true)
 	if err := fitter.Execute(ctx, sourcefake.Wrap(large)); err != nil {
 		t.Fatal(err)
 	}
@@ -72,3 +75,25 @@ func TestEmbeddingWithAnotherWidthAndAddressWritesNewVectorsAndKeepsTheOldOnes(t
 		}
 	}
 }
+
+// fitRecorder records how the index was fitted.
+type fitRecorder struct {
+	calls  []string
+	dims   int
+	recipe string
+}
+
+func (x *fitRecorder) FitVectors(_ context.Context, dims int, recipe string) error {
+	x.calls = append(x.calls, "fit")
+	x.dims, x.recipe = dims, recipe
+	return nil
+}
+
+func (x *fitRecorder) DeleteVectorsOfOtherRecipes(_ context.Context, recipe string) (int64, error) {
+	x.calls = append(x.calls, "delete "+recipe)
+	return 0, nil
+}
+
+func (x *fitRecorder) ApplyMinChunkLength(context.Context, int) (int64, error) { return 0, nil }
+
+func (x *fitRecorder) Compact(context.Context) error { return nil }

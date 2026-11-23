@@ -1,4 +1,4 @@
-package indexing
+package embedqueries
 
 import (
 	"context"
@@ -9,23 +9,23 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 )
 
-// EmbedQueries makes the vectors of queries the way the search source compares a query with its place.
-type EmbedQueries struct {
+// Embed makes the vectors of queries the way the search source compares a query with its place.
+type Embed struct {
 	queries searchsourceport.QueryEmbedder
 }
 
-func NewEmbedQueries(queries searchsourceport.QueryEmbedder) *EmbedQueries {
-	return &EmbedQueries{queries: queries}
+func New(queries searchsourceport.QueryEmbedder) *Embed {
+	return &Embed{queries: queries}
 }
 
 // Execute returns one vector per query, made for searching with the query as the question.
-func (u *EmbedQueries) Execute(ctx context.Context, queries []string) ([][]float32, error) {
+func (u *Embed) Execute(ctx context.Context, queries []string) ([][]float32, error) {
 	return u.queries.EmbedQueries(ctx, queries)
 }
 
 // EmbedTexts embeds the texts with the search source in use. More than MaxEmbeddedTexts texts, or a text
 // longer than MaxEmbeddedBytes, returns ErrLimitExceeded.
-func (u *EmbedQueries) EmbedTexts(
+func (u *Embed) EmbedTexts(
 	ctx context.Context, describe func() searchsource.Description, texts []string,
 ) (plugin.EmbeddedTexts, error) {
 	recipe := describe().Recipe()

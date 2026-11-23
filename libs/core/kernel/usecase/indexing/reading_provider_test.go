@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/fitindex"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
@@ -37,7 +39,7 @@ func TestWorker(t *testing.T) {
 		read := func(
 			ctx context.Context, source searchsourceport.Source, v domain.Vault, rebuild bool,
 		) (indexing.ReadWholeVault, error) {
-			if err := indexing.NewFitIndex(db.VectorIndex(), nil, rebuild).Execute(ctx, source); err != nil {
+			if err := fitindex.New(db.VectorIndex(), nil, rebuild).Execute(ctx, source); err != nil {
 				return indexing.ReadWholeVault{}, err
 			}
 			return createReadWholeVault(db, &walks, ledger, source, v, rebuild)

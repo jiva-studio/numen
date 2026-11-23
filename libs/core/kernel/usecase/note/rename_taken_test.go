@@ -2,8 +2,9 @@ package note_test
 
 import (
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
 
 func TestRenameOntoTakenFilenameReturnsTheNoteUnchanged(t *testing.T) {

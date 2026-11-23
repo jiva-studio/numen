@@ -1,13 +1,32 @@
-package indexing
+package fitindex
 
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 	"slices"
 	"strconv"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
 )
+
+// embedder is a search source that describes a model of a width and a shortest text.
+type embedder struct {
+	dims   int
+	minLen int
+}
+
+func (e *embedder) Describe() searchsource.Description {
+	return searchsource.Description{Name: "fake", Width: e.dims, MinTextLength: e.minLen}
+}
+
+func (*embedder) Close() error { return nil }
+
+func (*embedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
+	return make([][]float32, len(texts)), nil
+}
 
 // vectorIndex records the calls made to it, in order.
 type vectorIndex struct {
@@ -44,7 +63,7 @@ func TestFitIndexSetsTheWidthOfTheModel(t *testing.T) {
 	index := &vectorIndex{}
 	model := &embedder{dims: 8}
 
-	if err := NewFitIndex(index, nil, false).Execute(t.Context(), sourcefake.Wrap(model)); err != nil {
+	if err := New(index, nil, false).Execute(t.Context(), sourcefake.Wrap(model)); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(index.calls, []string{"fit", "min 0"}) {
@@ -58,7 +77,7 @@ func TestFitIndexSetsTheWidthOfTheModel(t *testing.T) {
 func TestFitIndexWithoutEmbedderChangesNothing(t *testing.T) {
 	index := &vectorIndex{}
 
-	if err := NewFitIndex(index, nil, false).Execute(t.Context(), nil); err != nil {
+	if err := New(index, nil, false).Execute(t.Context(), nil); err != nil {
 		t.Fatal(err)
 	}
 	if len(index.calls) != 0 {
@@ -71,7 +90,7 @@ func TestFitIndexOnRebuildDeletesOtherRecipesAndReportsCompaction(t *testing.T) 
 	index := &vectorIndex{compactErr: failed}
 	model := &embedder{dims: 8}
 	var reported error
-	fit := NewFitIndex(index, nil, true)
+	fit := New(index, nil, true)
 	fit.errorHandler = func(err error) { reported = err }
 
 	if err := fit.Execute(t.Context(), sourcefake.Wrap(model)); err != nil {
@@ -92,7 +111,7 @@ func TestFitIndexAppliesTheMinimumChunkLengthOfTheModel(t *testing.T) {
 	index := &vectorIndex{}
 	model := &embedder{dims: 8, minLen: 40}
 
-	if err := NewFitIndex(index, nil, false).Execute(t.Context(), sourcefake.Wrap(model)); err != nil {
+	if err := New(index, nil, false).Execute(t.Context(), sourcefake.Wrap(model)); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(index.calls, []string{"fit", "min 40"}) {
