@@ -123,7 +123,7 @@ func TestACallOfAPreferringCallerNamesThePreferredRow(t *testing.T) {
 		t.Fatalf("done = %q, %v", done, err)
 	}
 
-	preferred := host.received.GetPreferred()
+	preferred := host.received.GetPreferredRow()
 	if preferred.GetConnectionId() != "c-meadow" || preferred.GetOptions()["model"] != "wren-2" ||
 		host.received.GetOperation() != "llm.chat" || host.received.GetPriority() != v1.Priority_PRIORITY_INTERACTIVE {
 		t.Errorf("request = %v", host.received)
@@ -142,8 +142,8 @@ func TestACallOfAPreferringCallerNamesAnExclusiveRow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !host.received.GetPreferred().GetIsExclusive() {
-		t.Errorf("preferred = %v, want an exclusive row", host.received.GetPreferred())
+	if !host.received.GetPreferredRow().GetIsExclusive() {
+		t.Errorf("preferred = %v, want an exclusive row", host.received.GetPreferredRow())
 	}
 }
 
@@ -158,7 +158,7 @@ func TestACallOfTheClientNamesNoPreferredRow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if host.received.GetPreferred() != nil {
-		t.Errorf("preferred = %v, want none", host.received.GetPreferred())
+	if host.received.GetPreferredRow() != nil {
+		t.Errorf("preferred = %v, want none", host.received.GetPreferredRow())
 	}
 }

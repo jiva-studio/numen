@@ -43,10 +43,10 @@ interface MenuSubmenuState {
 }
 
 export interface MenuNavigationOptions {
-  readonly items: () => readonly MenuItem[]
+  readonly getItems: () => readonly MenuItem[]
   readonly trigger: () => MenuTrigger
-  readonly current: () => string | null
-  readonly clock: () => number
+  readonly getCurrent: () => string | null
+  readonly getTime: () => number
   readonly menuRef: Readonly<ShallowRef<HTMLElement | null>>
   readonly getFallbackPosition: () => Position
   readonly getSubmenuPosition: (element: HTMLElement | null) => Position | null
@@ -63,7 +63,7 @@ export interface MenuNavigationState {
   readonly here: Ref<number>
   readonly submenu: MenuSubmenuState
   readonly focusInitial: () => void
-  readonly pointTo: (pos: number) => void
+  readonly highlightRow: (pos: number) => void
   readonly onKey: (event: KeyboardEvent) => void
   readonly onResetNavigation: () => void
 }
@@ -95,7 +95,7 @@ function useSubmenuActions(options: MenuNavigationOptions) {
   }
 
   const aim = createSubmenuAim({
-    clock: options.clock,
+    getTime: options.getTime,
     getActiveId: () => active.value?.id ?? null,
     getSubmenuBox: () => options.getSubmenuBox?.() ?? null,
     isInsideSubmenu: (event) => isInside(options.getSubmenuElement?.() ?? null, event),
@@ -146,7 +146,7 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     submenuActions.rowElements.set(id, handle)
   }
 
-  const visibleItems = computed(() => options.items())
+  const visibleItems = computed(() => options.getItems())
 
   const rows = computed(() => groupItems(visibleItems.value))
 
@@ -154,9 +154,9 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     here,
     holdRow,
     goTo,
-    pointTo,
+    highlightRow,
     onKey: onRowKey,
-  } = useMenuKeys(() => visibleItems.value, options.menuRef, options.clock, {
+  } = useMenuKeys(() => visibleItems.value, options.menuRef, options.getTime, {
     onOpenSubmenu: (item) => onOpenSubmenu(item, 'keyboard'),
     onDismissSubmenu: options.hasFrom() ? options.onEmitDismiss : undefined,
   })
@@ -183,9 +183,9 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     here,
     submenu,
     focusInitial: () =>
-      goTo(getInitialIndex(options.trigger(), options.items(), options.current())),
+      goTo(getInitialIndex(options.trigger(), options.getItems(), options.getCurrent())),
     onKey: onRowKey,
-    pointTo,
+    highlightRow,
     onResetNavigation,
   }
 }

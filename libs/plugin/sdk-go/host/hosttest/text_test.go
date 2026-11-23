@@ -15,7 +15,7 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 	ctx := t.Context()
 	file := []byte("%PDF")
 	ocr := hosttest.NewTexts("v1", "org.example.ocr")
-	ocr.File("a.pdf", file)
+	ocr.WriteFile("a.pdf", file)
 	if err := host.WriteText(ctx, ocr.GetStore("org.example.ocr"), "k.jsonl", []domain.TextSegment{
 		{Text: "the "}, {Text: "end", Selector: domain.Selector(`{"page":2}`)},
 	}); err != nil {
@@ -26,7 +26,7 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fixer := ocr.As("org.example.fixer")
+	fixer := ocr.UsePlugin("org.example.fixer")
 	listing, err := fixer.ListVersions(ctx, "a.pdf")
 	if err != nil || listing.Live != a.GetID() {
 		t.Fatalf("live %q (%v), want %q", listing.Live, err, a.GetID())
@@ -46,7 +46,7 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 		t.Fatalf("live %q, want the proofreading", listing.Live)
 	}
 
-	ocr.GetStore("org.example.fixer").File("b.jsonl", []byte(`{"text":"changed"}`+"\n"))
+	ocr.GetStore("org.example.fixer").WriteFile("b.jsonl", []byte(`{"text":"changed"}`+"\n"))
 	if listing, err := fixer.ListVersions(ctx, "a.pdf"); err != nil || listing.Live != a.GetID() {
 		t.Fatalf("live %q with the proofreading's file changed, want the recognition", listing.Live)
 	}
@@ -103,7 +103,7 @@ func TestHostTestTextsWithKeepEachVaultApart(t *testing.T) {
 func putFiveSegments(t *testing.T, texts *hosttest.Texts) domain.TextVersion {
 	t.Helper()
 	file := []byte("%PDF")
-	texts.File("a.pdf", file)
+	texts.WriteFile("a.pdf", file)
 	segments := make([]domain.TextSegment, 5)
 	for i := range segments {
 		segments[i] = domain.TextSegment{Text: "s" + string(rune('0'+i)) + " "}
@@ -153,7 +153,7 @@ func TestReadTextReturnsPagesOfThePageSizeWithTheCursorOfTheNextSegment(t *testi
 func TestReadTextReturnsUpToAThousandSegmentsInOnePageByDefault(t *testing.T) {
 	texts := hosttest.NewTexts("v1", "org.example.ocr")
 	file := []byte("%PDF")
-	texts.File("a.pdf", file)
+	texts.WriteFile("a.pdf", file)
 	segments := make([]domain.TextSegment, 1001)
 	for i := range segments {
 		segments[i] = domain.TextSegment{Text: "w "}

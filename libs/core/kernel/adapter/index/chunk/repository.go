@@ -77,8 +77,8 @@ type Chunk struct {
 	Small    []Chunk
 }
 
-// FromDomain is the chunks of a source as the index holds them.
-func FromDomain(in []domain.Chunk) []Chunk {
+// ConvertChunks is the chunks of a source as the index holds them.
+func ConvertChunks(in []domain.Chunk) []Chunk {
 	out := make([]Chunk, 0, len(in))
 	for _, c := range in {
 		out = append(out, Chunk{
@@ -87,7 +87,7 @@ func FromDomain(in []domain.Chunk) []Chunk {
 			Location: c.Location,
 			Text:     c.Text,
 			Opens:    c.Opens,
-			Small:    FromDomain(c.Small),
+			Small:    ConvertChunks(c.Small),
 		})
 	}
 	return out
@@ -101,13 +101,13 @@ type Repository struct {
 
 func NewRepository(db *sql.DB) *Repository { return &Repository{db: db} }
 
-// ReportingTo returns the repository that tells feed of each committed write that can change the file change feed.
-func (r *Repository) ReportingTo(feed *changefeed.Changes) *Repository {
+// SetChangeFeed returns the repository that tells feed of each committed write that can change the file change feed.
+func (r *Repository) SetChangeFeed(feed *changefeed.Changes) *Repository {
 	return &Repository{db: r.db, feed: feed}
 }
 
 func (r *Repository) writeFeed(ctx context.Context, vaultID domain.VaultID, run func(tx *sqlwrite.Transaction) error) error {
-	if err := sqlwrite.InTransaction(ctx, r.db, run); err != nil {
+	if err := sqlwrite.RunInTransaction(ctx, r.db, run); err != nil {
 		return err
 	}
 	r.feed.Publish(vaultID)
@@ -117,7 +117,7 @@ func (r *Repository) writeFeed(ctx context.Context, vaultID domain.VaultID, run 
 // SaveSource records one file of one kind and what reading it produced.
 func (r *Repository) SaveSource(ctx context.Context, vaultID domain.VaultID, s Source) error {
 	return r.writeFeed(ctx, vaultID, func(tx *sqlwrite.Transaction) error {
-		vault, err := vaultRow(ctx, tx, vaultID)
+		vault, err := getVaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
 		}
@@ -146,7 +146,7 @@ func saveSourceRow(ctx context.Context, tx *sqlwrite.Transaction, vault int64, s
 // the recipe and the chunks it describes are recorded together.
 func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID, s Source, chunks []Chunk) error {
 	return r.writeFeed(ctx, vaultID, func(tx *sqlwrite.Transaction) error {
-		vault, err := vaultRow(ctx, tx, vaultID)
+		vault, err := getVaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
 		}
@@ -165,8 +165,8 @@ func (r *Repository) SaveExtraction(ctx context.Context, vaultID domain.VaultID,
 // its chunks, in a transaction of its own. The source is already recorded or
 // there is nothing to replace the chunks of.
 func (r *Repository) ReplaceChunks(ctx context.Context, vaultID domain.VaultID, kind, path string, chunks []Chunk) error {
-	return sqlwrite.InTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
-		vault, err := vaultRow(ctx, tx, vaultID)
+	return sqlwrite.RunInTransaction(ctx, r.db, func(tx *sqlwrite.Transaction) error {
+		vault, err := getVaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
 		}
@@ -191,7 +191,7 @@ func (r *Repository) RemoveSources(ctx context.Context, vaultID domain.VaultID, 
 		return nil
 	}
 	return r.writeFeed(ctx, vaultID, func(tx *sqlwrite.Transaction) error {
-		vault, err := vaultRow(ctx, tx, vaultID)
+		vault, err := getVaultRow(ctx, tx, vaultID)
 		if err != nil {
 			return err
 		}
@@ -228,7 +228,7 @@ func removeSource(ctx context.Context, tx *sqlwrite.Transaction, vault int64, ki
 // folder keeps its name.
 func (r *Repository) MoveSources(ctx context.Context, vaultID domain.VaultID, from, to string) error {
 	return r.writeFeed(ctx, vaultID, func(tx *sqlwrite.Transaction) error {
-		vault, err := vaultRow(ctx, tx, vaultID)
+		vault, err := getVaultRow(ctx, tx, vaultID)
 		if errors.Is(err, errNoVault) {
 			return nil
 		}
@@ -367,7 +367,7 @@ func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, 
 	if !isRenamed {
 		return nil
 	}
-	if err := exec(ctx, tx, "rename_note", domain.FoldName(domain.Basename(to)), displayName, vault, from); err != nil {
+	if err := exec(ctx, tx, "rename_note", domain.NormalizeName(domain.GetBasename(to)), displayName, vault, from); err != nil {
 		return err
 	}
 	return exec(ctx, tx, "rename_title", vault, from, displayName)
@@ -392,7 +392,7 @@ type querier interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
-func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64, error) {
+func getVaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64, error) {
 	var row int64
 	err := db.QueryRowContext(ctx, vaultRowSQL, string(identifier)).Scan(&row)
 	if errors.Is(err, sql.ErrNoRows) {

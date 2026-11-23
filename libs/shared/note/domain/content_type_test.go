@@ -44,7 +44,7 @@ func TestContentTypeMatches(t *testing.T) {
 		{"application/*", "applications/pdf", false},
 	}
 	for _, c := range cases {
-		if got := c.mask.Matches(c.of); got != c.want {
+		if got := c.mask.IsMatch(c.of); got != c.want {
 			t.Errorf("%q.Matches(%q) = %v; want %v", c.mask, c.of, got, c.want)
 		}
 	}

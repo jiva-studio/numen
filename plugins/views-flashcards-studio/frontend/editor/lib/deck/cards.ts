@@ -95,7 +95,7 @@ const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDec
   const { card, left, target } = params
   const rank = (section: string | null): number =>
     deck.sections.findIndex((each) => each.id === section)
-  const head = (section: string | null): number => {
+  const findHead = (section: string | null): number => {
     const seat = left.findIndex((each) => rank(each.section) >= rank(section))
     return seat === -1 ? left.length : seat
   }
@@ -107,7 +107,7 @@ const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDec
   const getSection = (each: BufferCard): string | null =>
     deck.sections.some((section) => section.id === each.section) ? each.section : null
 
-  const last = (section: string | null): number => {
+  const findLast = (section: string | null): number => {
     let seat = -1
     left.forEach((each, index) => {
       if (getSection(each) === section) seat = index
@@ -119,12 +119,12 @@ const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDec
   if (run !== null) {
     const section = run === CARD_HEAD ? null : run
     if (section !== null && !deck.sections.some((each) => each.id === section)) return deck
-    const seat = last(section)
-    return placeCard(section, seat === -1 ? head(section) : seat + 1)
+    const seat = findLast(section)
+    return placeCard(section, seat === -1 ? findHead(section) : seat + 1)
   }
 
   if (!deck.sections.some((section) => section.id === target)) return deck
-  return placeCard(target, head(target))
+  return placeCard(target, findHead(target))
 }
 
 export interface ReplaceValueTarget {

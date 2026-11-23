@@ -7,24 +7,24 @@ const toUpperFirst = (text: string): string => text.charAt(0).toUpperCase() + te
 
 export const CONNECTION_WORDS = {
   loadFailed: 'The connections could not be read.',
-  describeFailure: (failure: { readonly errorCode: string; readonly detail: string }): string => {
-    switch (failure.errorCode) {
-      case 'name_taken':
+  describeFailure: (failure: { readonly error: string; readonly message: string }): string => {
+    switch (failure.error) {
+      case 'nameTaken':
         return 'Another connection has this name.'
-      case 'invalid_field':
-        return failure.detail === ''
+      case 'invalidField':
+        return failure.message === ''
           ? 'A value is not accepted.'
-          : `${toUpperFirst(failure.detail)}.`
-      case 'type_unavailable':
+          : `${toUpperFirst(failure.message)}.`
+      case 'typeUnavailable':
         return 'No installed plugin provides this type of connection.'
-      case 'key_store_failed':
+      case 'keyStoreFailed':
         return 'The key could not be stored or removed. Check the system keychain.'
-      case 'stale_revision':
+      case 'staleRevision':
         return 'Another window changed this connection. Save again to replace its changes.'
-      case 'not_found':
+      case 'notFound':
         return 'This connection no longer exists.'
       default:
-        return failure.detail
+        return failure.message
     }
   },
 }

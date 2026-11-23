@@ -94,7 +94,7 @@ func (namingPlugins) GetParts(pluginID string) plugin.Parts {
 }
 
 func TestListVersionItems_OfDeleteTextNamesAVersionByItsDeclaredKindAndDetailsItsPluginAndDate(t *testing.T) {
-	handler := newHandler(newUseCases(namingPlugins{}, namingPlugins{}, fileTypes{}, nil, nil).withVersions(&namedVersions{}))
+	handler := newHandler(newUseCases(namingPlugins{}, namingPlugins{}, fileTypes{}, nil).withVersions(&namedVersions{}))
 
 	list := listVersionItems(t, handler, "talks/a.mp3")
 

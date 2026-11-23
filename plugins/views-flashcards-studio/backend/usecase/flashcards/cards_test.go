@@ -502,8 +502,8 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 
 	want := review.PresetCardsDue{
 		Preset: "", Decks: 2, Cards: 40, New: 40,
-		Budget: review.Defaults().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Keeps,
-		Limits: review.Defaults().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Limits,
+		Budget: review.NewDefaultPreset().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Keeps,
+		Limits: review.NewDefaultPreset().GetAllowance(getToday(), getSaturday(), review.Spent{}, 0, 0).Limits,
 	}
 	if len(counts.Presets) != 1 {
 		t.Fatalf("the vault came to %+v, want the defaults alone", counts.Presets)
@@ -606,7 +606,7 @@ func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	answer(t, s.run(t, getSaturday()), "k7m2xq9fzp", 6*time.Second)
 
 	replayed := 0
-	s.schedules.At = func(retention float64) review.Scheduler {
+	s.schedules.GetScheduler = func(retention float64) review.Scheduler {
 		return replaying{Scheduler: review.NewFSRSAt(retention), answers: &replayed}
 	}
 	counter := s.newCountCardsDueAt(getToday(), newFakeClock(getSaturday().Add(time.Hour)))
@@ -945,7 +945,7 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.env.Store.File(target[0], spaces(len(was)))
+	s.env.Store.WriteFile(target[0], spaces(len(was)))
 
 	got, err := s.counted.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -1025,7 +1025,7 @@ func writeConflictedCopies(t *testing.T, s vaulted) {
 		}
 		stem := strings.TrimSuffix(name, ".jsonl") +
 			" (conflicted copy).jsonl"
-		s.env.Store.File(stem, raw)
+		s.env.Store.WriteFile(stem, raw)
 	}
 }
 

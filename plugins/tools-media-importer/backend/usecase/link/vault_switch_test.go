@@ -44,8 +44,8 @@ func (v currentVault) Scan(ctx context.Context, paths []string) error {
 	return v.current.Load().Scan(ctx, paths)
 }
 
-func (v currentVault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
-	return v.current.Load().GetPathsOfType(ctx, noteType)
+func (v currentVault) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	return v.current.Load().ListPathsOfType(ctx, noteType)
 }
 
 // currentStore is the plugin's store of the vault the host shows, switched with it.
@@ -80,14 +80,14 @@ func (s currentStore) Rename(ctx context.Context, from, to string) error {
 
 func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 	mills, harbor := hosttest.New("Mills"), hosttest.New("Harbor")
-	mills.Beside(harbor)
+	mills.LinkBeside(harbor)
 	current := &atomic.Pointer[hosttest.Vault]{}
 	current.Store(mills)
 	texts := hosttest.NewTexts(mills.Vault().ID, pluginID)
 	fetched := &sites{clip: bytes.Repeat([]byte("frame "), 100), started: make(chan struct{}), gate: make(chan struct{})}
 	tasks := queuetest.NewLog()
 	links := link.New(link.Host{
-		PluginID: pluginID, Vaults: func(id domain.VaultID) link.Vault {
+		PluginID: pluginID, GetVault: func(id domain.VaultID) link.Vault {
 			if id == "" {
 				current := currentVault{Vault: mills, current: current}
 				return link.Vault{Files: current, Writer: current}
@@ -102,7 +102,7 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 			other := mills.Store().With(id)
 			return link.Folder{Files: other, Writer: other}
 		},
-		Texts: textsOf(texts), Queue: tasks, Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{},
+		GetTexts: textsOf(texts), Queue: tasks, Clock: newFakeClock(time.Unix(1_700_000_000, 0)), Entropy: random.Entropy{},
 	}, func() ports.Fetcher { return fetched }, func() fetch.Settings { return fetch.Settings{} })
 	t.Cleanup(links.Close)
 	made, err := links.Create(t.Context(), "", "", videoAddress)
@@ -119,20 +119,20 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 	<-fetched.started
 
 	current.Store(harbor)
-	harbor.File(made.Path, "---\ntype: link\nurl: "+videoAddress+"\n---\n")
+	harbor.WriteFile(made.Path, "---\ntype: link\nurl: "+videoAddress+"\n---\n")
 	close(fetched.gate)
 	tasks.WaitForEnd(t, link.GetCopyTaskID(found.Vault, found.Path))
 
 	if files, err := harbor.Store().List(t.Context()); err != nil || len(files) != 0 {
 		t.Errorf("the vault current after the switch holds %+v in the store (%v)", files, err)
 	}
-	if content, _ := harbor.Content(made.Path); bytes.Contains([]byte(content), []byte("media:")) {
+	if content, _ := harbor.ReadContent(made.Path); bytes.Contains([]byte(content), []byte("media:")) {
 		t.Errorf("the note of the vault current after the switch reads %q", content)
 	}
 	if _, err := mills.Store().Read(t.Context(), found.Key+".video.mp4"); err != nil {
 		t.Errorf("the vault the download started in holds no copy: %v", err)
 	}
-	content, _ := mills.Content(made.Path)
+	content, _ := mills.ReadContent(made.Path)
 	if !bytes.Contains([]byte(content), []byte("media: plugin://"+pluginID+"/"+found.Key+".video.mp4")) {
 		t.Errorf("the note of the vault the download started in reads %q", content)
 	}

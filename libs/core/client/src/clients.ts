@@ -45,41 +45,38 @@ import {
   WorkspaceService,
 } from '@numen/protocol'
 /** The clients of the core's services, each sending its requests over the transport it is given. */
-export const createVaultClient = (transport: Transport) => createClient(VaultService, transport)
-export const createNoteClient = (transport: Transport) => createClient(NoteService, transport)
-export const createWorkspaceClient = (transport: Transport) =>
+export const createVaultRpc = (transport: Transport) => createClient(VaultService, transport)
+export const createNoteRpc = (transport: Transport) => createClient(NoteService, transport)
+export const createWorkspaceRpc = (transport: Transport) =>
   createClient(WorkspaceService, transport)
-export const createFileClient = (transport: Transport) => createClient(FileService, transport)
-export const createSearchClient = (transport: Transport) => createClient(SearchService, transport)
-export const createVaultsClient = (transport: Transport) => createClient(VaultsService, transport)
-export const createFolderDialogClient = (transport: Transport) =>
+export const createFileRpc = (transport: Transport) => createClient(FileService, transport)
+export const createSearchRpc = (transport: Transport) => createClient(SearchService, transport)
+export const createVaultsRpc = (transport: Transport) => createClient(VaultsService, transport)
+export const createFolderDialogRpc = (transport: Transport) =>
   createClient(FolderDialogService, transport)
-export const createSettingsClient = (transport: Transport) =>
-  createClient(SettingsService, transport)
-export const createWindowClient = (transport: Transport) => createClient(WindowService, transport)
-export const createThemeServiceClient = (transport: Transport) =>
-  createClient(ThemeService, transport)
-export const createTextClient = (transport: Transport) => createClient(TextService, transport)
-export const createCommandClient = (transport: Transport) => createClient(CommandService, transport)
-export const createPluginClient = (transport: Transport) => createClient(PluginService, transport)
-export const createPluginProcessClient = (transport: Transport) =>
+export const createSettingsRpc = (transport: Transport) => createClient(SettingsService, transport)
+export const createWindowRpc = (transport: Transport) => createClient(WindowService, transport)
+export const createThemeRpc = (transport: Transport) => createClient(ThemeService, transport)
+export const createTextRpc = (transport: Transport) => createClient(TextService, transport)
+export const createCommandRpc = (transport: Transport) => createClient(CommandService, transport)
+export const createPluginRpc = (transport: Transport) => createClient(PluginService, transport)
+export const createPluginProcessRpc = (transport: Transport) =>
   createClient(PluginProcessService, transport)
-export const createPluginDataClient = (transport: Transport) =>
+export const createPluginDataRpc = (transport: Transport) =>
   createClient(PluginDataService, transport)
-export const createContributionClient = (transport: Transport) =>
+export const createContributionRpc = (transport: Transport) =>
   createClient(ContributionService, transport)
-export const createTextVersionClient = (transport: Transport) =>
+export const createTextVersionRpc = (transport: Transport) =>
   createClient(TextVersionService, transport)
-export const createPluginHealthClient = (transport: Transport) =>
+export const createPluginHealthRpc = (transport: Transport) =>
   createClient(PluginHealthService, transport)
-export const createCatalogClient = (transport: Transport) => createClient(CatalogService, transport)
-export const createProviderConnectionClient = (transport: Transport) =>
+export const createCatalogRpc = (transport: Transport) => createClient(CatalogService, transport)
+export const createProviderConnectionRpc = (transport: Transport) =>
   createClient(ProviderConnectionService, transport)
-export const createConnectionCallServiceClient = (transport: Transport) =>
+export const createConnectionCallRpc = (transport: Transport) =>
   createClient(ConnectionCallService, transport)
-export const createLogServiceClient = (transport: Transport) => createClient(LogService, transport)
-export const createLicenseServiceClient = (transport: Transport) =>
-  createClient(LicenseService, transport)
+export const createLogRpc = (transport: Transport) => createClient(LogService, transport)
+export const createLicenseRpc = (transport: Transport) => createClient(LicenseService, transport)
 
 export const NAME_SOURCE = NameSource
 export type NameSourceCode = NameSource

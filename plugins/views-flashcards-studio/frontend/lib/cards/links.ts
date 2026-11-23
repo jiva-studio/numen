@@ -16,20 +16,20 @@ const stripControls = (url: string): string =>
     .join('')
 
 /** The scheme a URL names, and nothing where it names none. */
-export const scheme = (url: string): string | null =>
+export const getScheme = (url: string): string | null =>
   /^[a-zA-Z][a-zA-Z0-9+.-]*:/.exec(stripControls(url))?.[0].toLowerCase() ?? null
 
 const canLinkTo = (url: string): boolean => {
-  const named = scheme(url)
+  const named = getScheme(url)
   return named === null || SCHEMES.has(named)
 }
 
 const canShow = (url: string): boolean => {
   const cleaned = stripControls(url)
-  if (scheme(cleaned) === 'data:') return INLINE_IMAGE.test(cleaned)
+  if (getScheme(cleaned) === 'data:') return INLINE_IMAGE.test(cleaned)
   // An address starting with two slashes names a host and inherits the window's
   // scheme, so it has no scheme of its own and still addresses a remote resource.
-  return scheme(cleaned) === null && !/^[\\/]{2}/.test(cleaned)
+  return getScheme(cleaned) === null && !/^[\\/]{2}/.test(cleaned)
 }
 
 export const filterStyles = (value: string): string =>

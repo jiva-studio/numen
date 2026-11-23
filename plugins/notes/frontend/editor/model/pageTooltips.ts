@@ -19,7 +19,7 @@ function isSame(a: Modules, b: Modules): boolean {
  * are mounted in the shadow root of the pane, so they are mounted in the page too, in the order the
  * editor mounts them, or a base rule wins over a rule of the theme.
  */
-export function pageTooltips(): Extension {
+export function createPageTooltips(): Extension {
   return [
     tooltips({ parent: doc.body }),
     ViewPlugin.define((view) => {

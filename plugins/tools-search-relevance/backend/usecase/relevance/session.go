@@ -37,7 +37,7 @@ func NewSession() *Session {
 
 // StartOver validates the hosts and starts the calibration over them with the clock.
 func (c *Session) StartOver(hosts Hosts, clk Clock) error {
-	if hosts.Floors.Search == nil || hosts.Floors.Vaults == nil || hosts.Floors.Store == nil || hosts.Queue == nil {
+	if hosts.Floors.Search == nil || hosts.Floors.GetVault == nil || hosts.Floors.Store == nil || hosts.Queue == nil {
 		return errIncompleteHost
 	}
 	c.Start(New(hosts.Floors, clk), hosts.Queue)

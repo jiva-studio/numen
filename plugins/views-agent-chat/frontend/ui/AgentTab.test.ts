@@ -53,7 +53,7 @@ const mountTab = (
   }
   const { host } = createAgentConnections({
     frames,
-    pace: async (index) => {
+    delay: async (index) => {
       await waitTask()
       onFrame(index, sample)
     },

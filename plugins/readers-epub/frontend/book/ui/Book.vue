@@ -94,7 +94,7 @@ const { spreadCount, front, leftInChapter } = layout.position
 const hand = useBookPointer({
   area,
   paper,
-  turn: layout.turn,
+  navigatePage: layout.turn,
   getEdge,
 })
 

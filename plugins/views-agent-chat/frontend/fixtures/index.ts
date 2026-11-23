@@ -8,7 +8,7 @@ export {
   say,
   showPlan,
   stopFor,
-  think,
+  createThought as think,
   writeTool,
 } from './connections'
 export type { AgentListing, FrameInit, TaskScript } from './connections'

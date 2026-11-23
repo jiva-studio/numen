@@ -41,14 +41,14 @@ func (u AssignCardIDs) Execute(ctx context.Context, v domain.Vault) (AssignCardI
 	if u.notes == nil {
 		return AssignCardIDsResult{Unwritten: nil}, nil
 	}
-	paths, err := u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
+	paths, err := u.notes.ListPathsOfType(ctx, v.ID, format.TypeDeck)
 	if err != nil {
 		return AssignCardIDsResult{}, err
 	}
 
 	var out AssignCardIDsResult
 	for _, path := range paths {
-		deck, err := u.read.Deck(ctx, v, path)
+		deck, err := u.read.ReadDeck(ctx, v, path)
 		if err != nil || deck.Outcome != edit.Ok || !hasCardWithoutID(deck.Body) {
 			continue
 		}
@@ -56,7 +56,7 @@ func (u AssignCardIDs) Execute(ctx context.Context, v domain.Vault) (AssignCardI
 		// The body goes back exactly as it was read. What the write is for is
 		// the deck being made whole on the way past, which is where a card id is
 		// minted.
-		body, err := format.DeckBody(deck.Body)
+		body, err := format.BuildDeckBody(deck.Body)
 		// gomutants:disable-next-line BRANCH_IF reason="Parsed decks always have valid section indices and card model links."
 		if err != nil {
 			out.Unwritten = append(out.Unwritten, path)
@@ -64,7 +64,7 @@ func (u AssignCardIDs) Execute(ctx context.Context, v domain.Vault) (AssignCardI
 		}
 		// A deck the index could not be updated for carries its card ids all
 		// the same, and its cards stand in this session.
-		if _, err := u.write.Deck(ctx, v, path, body, deck.FileStat); err != nil &&
+		if _, err := u.write.WriteDeck(ctx, v, path, body, deck.FileStat); err != nil &&
 			!errors.Is(err, edit.ErrIndexOutdated) {
 			out.Unwritten = append(out.Unwritten, path)
 		}

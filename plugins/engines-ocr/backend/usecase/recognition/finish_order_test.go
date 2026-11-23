@@ -33,7 +33,7 @@ func TestIsRunningIsFalseWhenTheTaskEnds(t *testing.T) {
 	letGo := sync.OnceFunc(func() { close(queue.let) })
 	t.Cleanup(letGo)
 	run, err := recognition.New(
-		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return s.vault.With(id) }, Store: foldersOf(s.store), Texts: s.textsOf, Queue: queue, Documents: document.NewReader()},
+		recognition.Host{GetVault: func(id domain.VaultID) recognition.Files { return s.vault.With(id) }, Store: foldersOf(s.store), GetTexts: s.textsOf, Queue: queue, Documents: document.NewReader()},
 		func(context.Context) (ports.Recognizer, error) { return s.recognizer, nil },
 	)
 	if err != nil {

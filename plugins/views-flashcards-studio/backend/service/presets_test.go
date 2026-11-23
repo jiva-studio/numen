@@ -29,7 +29,7 @@ func newScheduling(t *testing.T, notes map[string]string) *scheduling {
 	t.Helper()
 
 	env := vaulttest.New(t, notes)
-	backend := service.New(service.Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
+	backend := service.New(service.Config{GetVault: vaulttest.NewVaults(env.Host), Store: vaulttest.NewFolders(env.Host), Now: vaulttest.NewClock()})
 
 	return &scheduling{
 		reads:  backend.Handlers().PresetReads,

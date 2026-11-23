@@ -20,7 +20,7 @@ describe('the show of the window handle', () => {
 
     window.handle.show(first)
 
-    expect(window.handle.front()?.id).toBe(first)
+    expect(window.handle.getFrontTab()?.id).toBe(first)
   })
 
   it('changes nothing for an id of no open tab', async () => {

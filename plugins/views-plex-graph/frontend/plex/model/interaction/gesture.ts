@@ -39,10 +39,10 @@ export function getPosition(svg: SVGSVGElement, event: PointerEvent): Position |
 }
 
 export interface PlexGestureDeps {
-  readonly frame: () => PlexFrame
-  readonly options: () => PlexOptions
-  readonly relations: () => readonly PlexRelation[]
-  readonly threshold: () => number
+  readonly getFrame: () => PlexFrame
+  readonly getOptions: () => PlexOptions
+  readonly getRelations: () => readonly PlexRelation[]
+  readonly getThreshold: () => number
   readonly commit: (drop: Drop) => void
 }
 
@@ -119,18 +119,18 @@ function useGestureOutcome(points: GesturePoints, deps: PlexGestureDeps): Comput
     if (!source || !now) return null
 
     const began = points.start.value
-    const travelled = !!began && Math.hypot(now.x - began.x, now.y - began.y) >= deps.threshold()
+    const travelled = !!began && Math.hypot(now.x - began.x, now.y - began.y) >= deps.getThreshold()
     if (!travelled) {
-      const relation = getRelationWithoutDirection(deps.relations())
+      const relation = getRelationWithoutDirection(deps.getRelations())
       return relation ? { kind: 'create', from: source, relation } : null
     }
 
     return resolveDrop({
-      frame: deps.frame(),
-      options: deps.options(),
+      frame: deps.getFrame(),
+      options: deps.getOptions(),
       from: source,
       point: now,
-      relations: deps.relations(),
+      relations: deps.getRelations(),
     })
   })
 }
@@ -194,7 +194,7 @@ export function usePlexGesture(deps: PlexGestureDeps): Gesture & GestureHandlers
   }
 
   const ask = (source: string) => {
-    const relation = getRelationWithoutDirection(deps.relations())
+    const relation = getRelationWithoutDirection(deps.getRelations())
     if (relation) deps.commit({ kind: 'create', from: source, relation })
   }
 

@@ -24,12 +24,12 @@ type vaultFiles struct {
 	root string
 }
 
-func inMemory() vaultFiles {
+func createMemoryFiles() vaultFiles {
 	m := newMemory()
 	return vaultFiles{fileReader: m, fileWriter: m}
 }
 
-func onDisk(root string) vaultFiles {
+func createDiskFiles(root string) vaultFiles {
 	d := disk{root: root}
 	return vaultFiles{fileReader: d, fileWriter: d, root: root}
 }
@@ -39,8 +39,8 @@ type fileReader interface {
 	// stat returns what the file is, or fs.ErrNotExist.
 	stat(filePath string) (domain.FileStat, error)
 	read(filePath string) ([]byte, error)
-	// paths lists every file, with forward slashes.
-	paths() ([]string, error)
+	// listPaths lists every file, with forward slashes.
+	listPaths() ([]string, error)
 }
 
 // fileWriter changes the files of a vault.
@@ -103,7 +103,7 @@ func (m *memory) remove(filePath string) error {
 	return nil
 }
 
-func (m *memory) paths() ([]string, error) {
+func (m *memory) listPaths() ([]string, error) {
 	out := make([]string, 0, len(m.files))
 	for p := range m.files {
 		out = append(out, p)
@@ -118,7 +118,7 @@ type disk struct {
 	root string
 }
 
-func (d disk) at(filePath string) (string, error) {
+func (d disk) resolvePath(filePath string) (string, error) {
 	rel := filepath.FromSlash(filePath)
 	if !filepath.IsLocal(rel) {
 		return "", fs.ErrInvalid
@@ -132,7 +132,7 @@ func (d disk) at(filePath string) (string, error) {
 }
 
 func (d disk) stat(filePath string) (domain.FileStat, error) {
-	target, err := d.at(filePath)
+	target, err := d.resolvePath(filePath)
 	if err != nil {
 		return domain.FileStat{}, err
 	}
@@ -147,7 +147,7 @@ func (d disk) stat(filePath string) (domain.FileStat, error) {
 }
 
 func (d disk) read(filePath string) ([]byte, error) {
-	target, err := d.at(filePath)
+	target, err := d.resolvePath(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (d disk) read(filePath string) ([]byte, error) {
 }
 
 func (d disk) write(filePath string, content []byte) (domain.FileStat, error) {
-	target, err := d.at(filePath)
+	target, err := d.resolvePath(filePath)
 	if err != nil {
 		return domain.FileStat{}, err
 	}
@@ -170,7 +170,7 @@ func (d disk) write(filePath string, content []byte) (domain.FileStat, error) {
 }
 
 func (d disk) create(filePath string, content []byte) (domain.FileStat, error) {
-	target, err := d.at(filePath)
+	target, err := d.resolvePath(filePath)
 	if err != nil {
 		return domain.FileStat{}, err
 	}
@@ -192,14 +192,14 @@ func (d disk) create(filePath string, content []byte) (domain.FileStat, error) {
 }
 
 func (d disk) remove(filePath string) error {
-	target, err := d.at(filePath)
+	target, err := d.resolvePath(filePath)
 	if err != nil {
 		return err
 	}
 	return os.Remove(target)
 }
 
-func (d disk) paths() ([]string, error) {
+func (d disk) listPaths() ([]string, error) {
 	var out []string
 	err := filepath.WalkDir(d.root, func(p string, entry fs.DirEntry, err error) error {
 		if err != nil {

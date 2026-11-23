@@ -13,6 +13,10 @@ const notesDomain = load.NotesModule + "/domain"
 // never imports the core.
 const catalogManifest = load.NumenRoot + "libs/plugin/catalog/manifest"
 
+// catalogWhen is the condition language of the plugin catalog, which a domain package of the core may
+// import as it imports the manifest; it never imports the core either.
+const catalogWhen = load.NumenRoot + "libs/plugin/catalog/when"
+
 func isStandardLibrary(path string) bool {
 	first, _, _ := strings.Cut(path, "/")
 	return !strings.Contains(first, ".")
@@ -20,12 +24,12 @@ func isStandardLibrary(path string) bool {
 
 func getDomainImportRefusal(to string) string {
 	switch {
-	case isStandardLibrary(to), to == notesDomain, to == catalogManifest, strings.HasPrefix(to, load.Module+"domain/"):
+	case isStandardLibrary(to), to == notesDomain, to == catalogManifest, to == catalogWhen, strings.HasPrefix(to, load.Module+"domain/"):
 		return ""
 	case strings.HasPrefix(to, load.Module):
 		return "a domain package names no layer of the core other than the domain"
 	}
-	return "a domain package imports the standard library, the notes domain, the manifest of the plugin catalog and the domain packages, and no third-party code"
+	return "a domain package imports the standard library, the notes domain, the manifest and the condition language of the plugin catalog and the domain packages, and no third-party code"
 }
 
 func getCoreImportRefusal(to string) string {

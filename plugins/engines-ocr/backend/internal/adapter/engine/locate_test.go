@@ -114,11 +114,11 @@ func TestMissingModelIsNamedWithItsAddress(t *testing.T) {
 	fetch := func(context.Context, string, string) (string, error) { return "", refused }
 	files := modelFiles{dir: t.TempDir(), shouldDownload: true, fetch: fetch}
 	_, err := files.resolve(t.Context(), "", address, "pp-ocr-rec.onnx")
-	got := modelError("recognize", address, "", err)
+	got := newModelError("recognize", address, "", err)
 	if !errors.Is(got, refused) || !strings.Contains(got.Error(), address) || !strings.Contains(got.Error(), "run Recognize again") {
 		t.Fatalf("error = %v", got)
 	}
-	if shown := modelError("detect", address, "/models/det.onnx", refused).Error(); !strings.Contains(shown, "/models/det.onnx") {
+	if shown := newModelError("detect", address, "/models/det.onnx", refused).Error(); !strings.Contains(shown, "/models/det.onnx") {
 		t.Fatalf("error = %v", shown)
 	}
 }

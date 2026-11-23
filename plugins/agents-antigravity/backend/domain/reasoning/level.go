@@ -45,8 +45,8 @@ func IsKnown(name string) bool {
 	return slices.Contains(listLevelNames(), strings.ToLower(strings.TrimSpace(name)))
 }
 
-// Contains reports whether the levels hold one of the name.
-func Contains(levels []Level, name string) bool {
+// HasLevel reports whether the levels hold one of the name.
+func HasLevel(levels []Level, name string) bool {
 	return slices.ContainsFunc(levels, func(one Level) bool { return one.Name == name })
 }
 
@@ -68,7 +68,7 @@ func GetDefault(levels []Level) string {
 	switch {
 	case len(levels) == 0:
 		return ""
-	case Contains(levels, "medium"):
+	case HasLevel(levels, "medium"):
 		return "medium"
 	}
 	return levels[0].Name
@@ -76,7 +76,7 @@ func GetDefault(levels []Level) string {
 
 // Normalize returns the requested level if levels contain it, else the default level.
 func Normalize(levels []Level, requested string) string {
-	if Contains(levels, requested) {
+	if HasLevel(levels, requested) {
 		return requested
 	}
 	return GetDefault(levels)

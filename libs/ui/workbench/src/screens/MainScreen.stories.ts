@@ -11,7 +11,7 @@ import { ref } from 'vue'
 import {
   WorkspaceLayout,
   branch,
-  pane,
+  createPane,
   type Tab,
   type Workspace as State,
 } from '@/features/workspace'
@@ -25,7 +25,7 @@ const TABS: readonly Tab[] = [
 ]
 
 const opening = (): State => ({
-  root: branch('root', [pane('main', [VIEW]), pane('aside', [AGENT])], [0.72, 0.28]),
+  root: branch('root', [createPane('main', [VIEW]), createPane('aside', [AGENT])], [0.72, 0.28]),
   axis: 'horizontal',
   focus: 'main',
 })

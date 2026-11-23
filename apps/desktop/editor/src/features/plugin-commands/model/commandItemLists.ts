@@ -12,7 +12,7 @@ export interface CommandItemListsDeps {
     path: string,
     commands: readonly ItemListRequest[],
   ) => Promise<readonly ItemListAnswer[]>
-  readonly fileKinds: (paths: readonly string[]) => Promise<ReadonlyMap<string, FileKind>>
+  readonly readFileKinds: (paths: readonly string[]) => Promise<ReadonlyMap<string, FileKind>>
   readonly schedule?: (run: () => void) => void
 }
 
@@ -88,11 +88,11 @@ export function createCommandItemLists(deps: CommandItemListsDeps) {
       return answer.result.value
     },
     /** The kinds of the files; the kind of one file is read once for the lists read over it. */
-    fileKinds: (paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>> => {
+    readFileKinds: (paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>> => {
       const [only] = paths
-      if (only === undefined || paths.length > 1) return deps.fileKinds(paths)
+      if (only === undefined || paths.length > 1) return deps.readFileKinds(paths)
       const session = getSession(only)
-      session.kinds ??= deps.fileKinds([only])
+      session.kinds ??= deps.readFileKinds([only])
       return session.kinds
     },
   }

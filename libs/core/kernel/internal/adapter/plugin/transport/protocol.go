@@ -22,7 +22,7 @@ func CheckPluginProtocol(ctx context.Context, httpClient *http.Client, m manifes
 	client := numenv1connect.NewPluginLifecycleServiceClient(
 		httpClient,
 		GetBaseURL(endpoint),
-		connect.WithInterceptors(AuthInterceptor(endpoint.Token)),
+		connect.WithInterceptors(CreateAuthInterceptor(endpoint.Token)),
 	)
 	pingCtx, cancel := context.WithTimeout(ctx, pingTimeout)
 	defer cancel()

@@ -29,7 +29,7 @@ func (p *plainRun) Supervise(*exec.Cmd) {
 }
 
 func TestHomeSetupAndMCPConfigEdgeCases(t *testing.T) {
-	if err := noRelease(); err != nil {
+	if err := releaseNothing(); err != nil {
 		t.Errorf("noRelease() = %v, want nil", err)
 	}
 

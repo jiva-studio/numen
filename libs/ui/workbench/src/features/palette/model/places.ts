@@ -4,7 +4,7 @@
  * Nothing here draws anything.
  */
 import { computed, type ComputedRef } from 'vue'
-import { flatten, orderGroups, type PaletteGroup, type PalettePlace } from '../lib/item'
+import { flatten, arrangeGroups, type PaletteGroup, type PalettePlace } from '../lib/item'
 import { placePalette, type PlacedGroup } from '../lib/place'
 
 export interface PalettePlacesState {
@@ -14,11 +14,11 @@ export interface PalettePlacesState {
 }
 
 export interface PalettePlacesOptions {
-  readonly groups: () => readonly PaletteGroup[]
+  readonly getGroups: () => readonly PaletteGroup[]
 }
 
 export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesState {
-  const visibleGroups = computed(() => orderGroups(options.groups()))
+  const visibleGroups = computed(() => arrangeGroups(options.getGroups()))
 
   const places = computed(() => flatten(visibleGroups.value))
   const groupsInOrder = computed(() => placePalette(visibleGroups.value))

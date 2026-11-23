@@ -1,5 +1,5 @@
 /** The tabs a window keeps: what kinds there are, what opens one, and what each is called. */
-export { fileOpeners } from './model/openers'
+export { createFileOpeners } from './model/openers'
 export type { FileOpeners } from './model/openers'
 export type { Tab } from './lib/tab'
 export type { Writable } from './lib/writable'

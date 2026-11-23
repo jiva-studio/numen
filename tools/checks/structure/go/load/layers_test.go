@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// NamesHandler counts a package that names a handler type or constructor of the connect package, and
+// HasHandlerName counts a package that names a handler type or constructor of the connect package, and
 // lets through one that only builds messages or calls a client.
 func TestHandlerRule_SeparatesServingFromCalling(t *testing.T) {
 	for _, tc := range []struct {
@@ -23,7 +23,7 @@ func TestHandlerRule_SeparatesServingFromCalling(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got := NamesHandler(file); got != tc.isServing {
+		if got := HasHandlerName(file); got != tc.isServing {
 			t.Errorf("%s: serving is %v, want %v", tc.what, got, tc.isServing)
 		}
 	}

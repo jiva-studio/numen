@@ -20,7 +20,7 @@ import (
 
 // pluginViews reads the set of plugins.
 type pluginViews interface {
-	view() (setView, func())
+	getView() (setView, func())
 }
 
 // Events sends the events of the application to the plugins that declare an activation event for them.
@@ -102,7 +102,7 @@ func (e *Events) listActivatedBy(event string) []string {
 	if _, isFilesChanged := protocol.ReadFilesChangedEvent(event); isFilesChanged && !isFiltered {
 		return nil
 	}
-	v, release := e.set.view()
+	v, release := e.set.getView()
 	defer release()
 	candidates := make([]string, 0)
 	for _, p := range v.enabled() {

@@ -90,8 +90,8 @@ func NewIdleCommand(ctx context.Context) *exec.Cmd {
 	return cmd
 }
 
-// IdleChild is the body of the child process newIdleCommand starts; it does nothing in a normal run.
-func IdleChild(t *testing.T) {
+// RunIdleChild is the body of the child process newIdleCommand starts; it does nothing in a normal run.
+func RunIdleChild(t *testing.T) {
 	t.Helper()
 	if os.Getenv(helperProcessEnv) != "idle" {
 		return

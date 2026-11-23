@@ -17,5 +17,5 @@ export const getFoot = ({ scrollHeight, clientHeight }: ScrollMetrics): number =
   Math.max(0, scrollHeight - clientHeight)
 
 /** Whether the foot is in view, within the slack. */
-export const atFoot = (area: ScrollMetrics, slack = SLACK): boolean =>
+export const isAtFoot = (area: ScrollMetrics, slack = SLACK): boolean =>
   getFoot(area) - area.scrollTop <= slack

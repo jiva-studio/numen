@@ -48,11 +48,11 @@ func TestRegisterTools(t *testing.T) {
 
 func TestConnectHostReturnsClientsOnlyWithoutError(t *testing.T) {
 	endpoint := hostcall.Endpoint{BaseURL: "http://127.0.0.1:1", Token: "window-token"}
-	if on := connectHost(endpoint, errors.New("no host")); on.Files != nil || on.Window != nil {
+	if on := connectHost(endpoint, errors.New("no host")); on.GetFiles != nil || on.Window != nil {
 		t.Errorf("connectHost with error = %+v, want zero Host", on)
 	}
 	on := connectHost(endpoint, nil)
-	if on.Files == nil || on.Window == nil || on.Files("vault") == nil {
+	if on.GetFiles == nil || on.Window == nil || on.GetFiles("vault") == nil {
 		t.Errorf("connectHost without error = %+v, want Files and Window", on)
 	}
 }
@@ -141,7 +141,7 @@ func TestNoteEditPreviewReadsTheNoteFromTheVault(t *testing.T) {
 	}
 
 	registry := tools.New()
-	if err := RegisterTools(registry, Host{Files: filesOf(vault)}); err != nil {
+	if err := RegisterTools(registry, Host{GetFiles: filesOf(vault)}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
@@ -209,7 +209,7 @@ func TestNoteEditPreviewAcceptsADiff(t *testing.T) {
 		t.Fatalf("create vault file: %v", err)
 	}
 	registryWithVault := tools.New()
-	if err := RegisterTools(registryWithVault, Host{Files: filesOf(vault)}); err != nil {
+	if err := RegisterTools(registryWithVault, Host{GetFiles: filesOf(vault)}); err != nil {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 	respOverride, err := registryWithVault.InvokeTool(t.Context(), tools.Call{

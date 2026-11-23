@@ -102,18 +102,18 @@ export interface ConnectionChange extends Omit<ConnectionDraft, 'typeId'> {
 
 /** Why the core did not do what a call asked. */
 type ConnectionErrorCode =
-  | 'not_found'
-  | 'name_taken'
-  | 'invalid_field'
-  | 'type_unavailable'
-  | 'key_store_failed'
-  | 'stale_revision'
-  | 'provider_unavailable'
+  | 'notFound'
+  | 'nameTaken'
+  | 'invalidField'
+  | 'typeUnavailable'
+  | 'keyStoreFailed'
+  | 'staleRevision'
+  | 'providerUnavailable'
 
 /** A served refusal with the reason the core gives. */
 export interface ConnectionFailure {
-  readonly errorCode: ConnectionErrorCode
-  readonly detail: string
+  readonly error: ConnectionErrorCode
+  readonly message: string
 }
 
 /** One value a row field can take, as the provider of the connection lists it. */

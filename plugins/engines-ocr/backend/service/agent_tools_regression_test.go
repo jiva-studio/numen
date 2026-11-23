@@ -16,8 +16,8 @@ func TestRecognitionCreateOfAChangedScanStartsARun(t *testing.T) {
 		t.Fatal(err)
 	}
 	changed := append(append([]byte{}, raw...), []byte("\n% a page added later\n")...)
-	s.vault.File(scanPath, string(changed))
-	s.texts.File(scanPath, changed)
+	s.vault.WriteFile(scanPath, string(changed))
+	s.texts.WriteFile(scanPath, changed)
 
 	out := s.recognize(t, "Physics", scanPath)
 
@@ -34,7 +34,7 @@ func TestRecognitionCreateOverOtherPluginsKeyStartsARun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	other := s.texts.As("md.numen.other")
+	other := s.texts.UsePlugin("md.numen.other")
 	if err := host.WriteText(t.Context(), other.GetStore("md.numen.other"), "r.jsonl",
 		[]domain.TextSegment{{Text: "other words\n"}}); err != nil {
 		t.Fatal(err)
@@ -57,7 +57,7 @@ func TestRecognitionCreateOverOtherPluginsKeyStartsARun(t *testing.T) {
 func TestRecognitionCreateInChemistryReadsChemistryVersions(t *testing.T) {
 	s := newToolFixture(t)
 	s.putRecognition(t) // Physics has a recognition of books/scan.pdf; Chemistry has none.
-	s.chemistry.File(scanPath, "x")
+	s.chemistry.WriteFile(scanPath, "x")
 
 	res := s.recognize(t, "Chemistry", scanPath)
 

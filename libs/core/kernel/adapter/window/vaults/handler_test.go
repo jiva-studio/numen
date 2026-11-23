@@ -64,7 +64,7 @@ type bin struct {
 	moved []string
 }
 
-func (b *bin) Trash(path string) error {
+func (b *bin) MoveToTrash(path string) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.fails != nil {
@@ -174,8 +174,7 @@ func onAList(t *testing.T) *onTheList {
 		f,
 		vaults.NewListVaults(registry, readers), vaults.NewAddVault(adding, readers),
 		vaults.NewRenameVault(registry, rename, readers), windowsession.NewOpenVault(registry, f), remove,
-	)
-	handler.SetFolderChooser(chooseFolder)
+	).WithFolderChooser(chooseFolder)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewVaultsServiceHandler(handler))
 	mux.Handle(numenv1connect.NewFolderDialogServiceHandler(handler))
@@ -387,7 +386,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 	}
 
 	erased, err := f.client.RemoveVault(t.Context(),
-		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.first.ID), Trash: true}))
+		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.first.ID), IsFolderTrashed: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -448,7 +447,7 @@ func TestAnIdentityOnNoListIsUnknown(t *testing.T) {
 		t.Fatal(err)
 	}
 	erase, err := f.client.RemoveVault(t.Context(),
-		connect.NewRequest(&v1.RemoveVaultRequest{Id: nobody, Trash: true}))
+		connect.NewRequest(&v1.RemoveVaultRequest{Id: nobody, IsFolderTrashed: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -477,7 +476,7 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 	f := onAList(t)
 
 	out, err := f.client.RemoveVault(t.Context(),
-		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID), Trash: true}))
+		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID), IsFolderTrashed: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -500,7 +499,7 @@ func TestAMachineWithNowhereToInsertWhatIsDeletedErasesNothing(t *testing.T) {
 	f.bin.refuse(machine.ErrNoTrash)
 
 	out, err := f.client.RemoveVault(t.Context(),
-		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID), Trash: true}))
+		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID), IsFolderTrashed: true}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -574,8 +573,8 @@ func TestAPersonWhoClosedTheFolderDialogChoseNothing(t *testing.T) {
 	f := onAList(t)
 
 	out, err := f.dialogs.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{
-		Title:      "Where are your notes?",
-		StartingAt: f.first.Path,
+		Title:       "Where are your notes?",
+		StartFolder: f.first.Path,
 	}))
 	if err != nil {
 		t.Fatalf("a dialog that was closed answered %v", err)

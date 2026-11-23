@@ -23,7 +23,7 @@ func TestWithQueryLogRecordsExecutedQueriesAndArguments(t *testing.T) {
 	db, err := index.Open(
 		t.Context(),
 		filepath.Join(t.TempDir(), "index.db"),
-		index.Unsynchronized(),
+		index.DisableSync(),
 		index.WithQueryLog(traceClock{}, func(entry logs.Entry) {
 			mu.Lock()
 			recorded = append(recorded, entry)

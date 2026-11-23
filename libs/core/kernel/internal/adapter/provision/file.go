@@ -32,7 +32,7 @@ type Config struct {
 	Discovery discovery
 	Backoff   backoff
 	Clock     machineport.Clock
-	Getenv    func(string) string
+	GetEnv    func(string) string
 }
 
 // FileProvisioner provisions a dependency that is one downloadable file with a
@@ -46,14 +46,14 @@ func NewFileProvisioner(cfg Config) *FileProvisioner {
 	if cfg.Client == nil {
 		cfg.Client = newClient()
 	}
-	if cfg.Discovery.dirs == nil && cfg.Discovery.ldconfig == nil {
+	if cfg.Discovery.dirs == nil && cfg.Discovery.runLdconfig == nil {
 		cfg.Discovery = newDiscovery()
 	}
 	if cfg.Backoff.attempts == 0 {
 		cfg.Backoff = newDefaultBackoff()
 	}
-	if cfg.Getenv == nil {
-		cfg.Getenv = os.Getenv
+	if cfg.GetEnv == nil {
+		cfg.GetEnv = os.Getenv
 	}
 	return &FileProvisioner{cfg: cfg}
 }
@@ -81,7 +81,7 @@ func (p *FileProvisioner) Provision(
 	if onProgress == nil {
 		onProgress = func(plugin.DependencyStatus) {}
 	}
-	if found := findInSearch(req.Search, p.cfg.Getenv); found != "" {
+	if found := findInSearch(req.Search, p.cfg.GetEnv); found != "" {
 		return newResolvedDependency(req, filepath.Dir(found), found), nil
 	}
 	if found := p.cfg.Discovery.find(req); found != "" {
@@ -159,9 +159,9 @@ func (p *FileProvisioner) fetch(
 	var errs []error
 	for _, address := range source.GetURLs() {
 		err = transfer{
-			onDigest: func(sum string) { actual = sum },
-			client:   p.cfg.Client, address: address, dest: primary, sum: source.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
-			onProgress: func(done, total int64) {
+			handleDigest: func(sum string) { actual = sum },
+			client:       p.cfg.Client, address: address, dest: primary, sum: source.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
+			handleProgress: func(done, total int64) {
 				onProgress(plugin.DependencyStatus{
 					ID: req.ID, State: plugin.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
 					ProgressPercent: getPercent(done, total), Message: title,
@@ -262,7 +262,7 @@ func GetEnvName(req manifest.DependencyRequirement) string {
 // machine and the folder only: it takes no lock, fetches nothing and leaves the errors of a missing
 // source, an offline machine and a failed download to Provision.
 func (p *FileProvisioner) Resolve(req manifest.DependencyRequirement) (plugin.ResolvedDependency, plugin.DependencyState, error) {
-	if found := findInSearch(req.Search, p.cfg.Getenv); found != "" {
+	if found := findInSearch(req.Search, p.cfg.GetEnv); found != "" {
 		return newResolvedDependency(req, filepath.Dir(found), found), plugin.DependencyStateReady, nil
 	}
 	if found := p.cfg.Discovery.find(req); found != "" {

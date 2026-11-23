@@ -50,12 +50,12 @@ func mount(s *server.Server, connected *hostclient.Host) (*texts.Follower, error
 	writer := texts.NewWriter(connected.OpenVault, connected.OpenTexts, connected.OpenStore, connected.GetQueue(), connected.ReportError)
 	follower := texts.NewFollower(writer, connected.OpenFeed, connected.ReportError)
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server close hook releases cached books"
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		reader.Close()
 		return nil
 	})
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server close hook stops running text extraction jobs"
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		follower.Close()
 		writer.Close()
 		return nil
@@ -84,7 +84,7 @@ func followShownVault(s *server.Server, shown ShownVault, follower *texts.Follow
 			follower.Wake(ctx, v.ID)
 		}
 	}()
-	s.OnClose(func() error {
+	s.AddCloser(func() error {
 		cancel()
 		<-done
 		return nil

@@ -144,7 +144,7 @@ func (h *Hub) place(dir string, isRecursive bool, one *follower) error {
 	// The watches inner over stop before the new one is placed: notify takes the new watch away
 	// when one nested inside it stops.
 	for _, p := range inner {
-		h.unplace(p)
+		h.removePlacement(p)
 	}
 	next := &placed{dir: dir, isRecursive: isRecursive, followers: make(map[*follower]struct{})}
 	if err := h.start(next); err != nil {
@@ -196,7 +196,7 @@ func (h *Hub) start(p *placed) error {
 	return nil
 }
 
-func (h *Hub) unplace(p *placed) {
+func (h *Hub) removePlacement(p *placed) {
 	h.system.Stop(p.raw)
 	if p.inner != nil {
 		h.system.Stop(p.inner)
@@ -217,7 +217,7 @@ func (h *Hub) newStop(one *follower) func() {
 			isEmpty := len(p.followers) == 0
 			p.mu.Unlock()
 			if isEmpty {
-				h.unplace(p)
+				h.removePlacement(p)
 			}
 		})
 	}

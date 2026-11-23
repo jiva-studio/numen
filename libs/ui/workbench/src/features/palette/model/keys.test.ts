@@ -61,7 +61,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
   const wrapper = mount(
     defineComponent({
       setup() {
-        const places = usePalettePlaces({ groups: () => setUpOptions.groups ?? GROUPS })
+        const places = usePalettePlaces({ getGroups: () => setUpOptions.groups ?? GROUPS })
         active = useActiveItem({
           places: places.places,
           typed: searchQuery,

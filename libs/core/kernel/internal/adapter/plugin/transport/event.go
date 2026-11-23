@@ -24,7 +24,7 @@ func DeliverPluginEvent(ctx context.Context, httpClient *http.Client, endpoint E
 	client := numenv1connect.NewPluginEventServiceClient(
 		httpClient,
 		GetBaseURL(endpoint),
-		connect.WithInterceptors(AuthInterceptor(endpoint.Token)),
+		connect.WithInterceptors(CreateAuthInterceptor(endpoint.Token)),
 	)
 	eventCtx, cancel := context.WithTimeout(ctx, eventTimeout)
 	defer cancel()

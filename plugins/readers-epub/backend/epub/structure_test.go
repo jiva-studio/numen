@@ -168,14 +168,14 @@ func TestAnEntryIsNamedOrItIsNotThere(t *testing.T) {
 		"./": "",
 	}))
 
-	if raw, err := book.Entry("OEBPS/a.png"); err != nil || string(raw) != "picture" {
+	if raw, err := book.ReadEntry("OEBPS/a.png"); err != nil || string(raw) != "picture" {
 		t.Errorf("entry = %q, %v", raw, err)
 	}
 	for _, c := range []struct{ name, want string }{
 		{"", "not named"},
 		{"OEBPS/gone.png", "OEBPS/gone.png"},
 	} {
-		raw, err := book.Entry(c.name)
+		raw, err := book.ReadEntry(c.name)
 		if !errors.Is(err, epub.ErrNoEntry) {
 			t.Errorf("entry %q: err = %v, want %v (bytes %q)", c.name, err, epub.ErrNoEntry, raw)
 			continue

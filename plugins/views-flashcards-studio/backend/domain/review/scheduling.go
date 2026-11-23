@@ -49,7 +49,7 @@ func (s *DueByDay) GetDayNumber(pos time.Time) int {
 	return int(s.day.GetDate(pos).Unix() / int64(24*time.Hour/time.Second))
 }
 
-func weekday(number int) time.Weekday {
+func getWeekday(number int) time.Weekday {
 	return time.Weekday(((number+int(time.Thursday))%7 + 7) % 7)
 }
 
@@ -76,7 +76,7 @@ func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 	if s == nil {
 		return due
 	}
-	first, last, opens := window(due.Sub(pos))
+	first, last, opens := computeWindow(due.Sub(pos))
 	if !p.ShouldBalanceLoad() || !opens {
 		return due
 	}
@@ -103,7 +103,7 @@ func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 }
 
 func (p Preset) getWeight(s *DueByDay, day int) float64 {
-	return p.GetShare(weekday(day)) / float64(1+s.on[day])
+	return p.GetShare(getWeekday(day)) / float64(1+s.on[day])
 }
 
 // slack is the tolerance on either side of an interval within which a card may be moved, for the
@@ -118,7 +118,7 @@ func getSlacks() []slack {
 	}
 }
 
-func window(away time.Duration) (first, last int, opens bool) {
+func computeWindow(away time.Duration) (first, last int, opens bool) {
 	days := away.Hours() / 24
 	if days < EvenFrom || days > EvenTo {
 		return 0, 0, false

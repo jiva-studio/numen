@@ -21,8 +21,8 @@ const getHandleOf = (options: { hasPill: boolean; viewportWidth?: number }) =>
   effectScope().run(
     () =>
       useOpenBox({
-        node: () => node,
-        expanded: () => null,
+        getNode: () => node,
+        getExpanded: () => null,
         on: () => null,
         delay: () => 500,
         hasPill: () => options.hasPill,

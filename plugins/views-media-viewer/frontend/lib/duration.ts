@@ -1,5 +1,5 @@
 /** A length of time in milliseconds, written as a clock. */
-export const clock = (ms: number): string => {
+export const formatClock = (ms: number): string => {
   const whole = Math.max(0, Math.floor(ms / 1000))
   const hours = Math.floor(whole / 3600)
   const minutes = Math.floor(whole / 60) % 60

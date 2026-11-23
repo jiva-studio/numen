@@ -14,20 +14,20 @@ type endpoint struct {
 	Token string
 }
 
-func noRelease() error { return nil }
+func releaseNothing() error { return nil }
 
 func setupAntigravityHome(tools *endpoint) (string, func() error, error) {
 	tempHome, cleanup, err := createTempDir("numen-antigravity-*")
 	if err != nil {
-		return "", noRelease, err
+		return "", releaseNothing, err
 	}
 
 	realHome, err := os.UserHomeDir()
 	if err != nil {
-		return "", noRelease, errors.Join(err, cleanup())
+		return "", releaseNothing, errors.Join(err, cleanup())
 	}
 	if err := linkEntries(realHome, tempHome, ".gemini"); err != nil {
-		return "", noRelease, errors.Join(err, cleanup())
+		return "", releaseNothing, errors.Join(err, cleanup())
 	}
 
 	realGemini := filepath.Join(realHome, ".gemini")
@@ -36,13 +36,13 @@ func setupAntigravityHome(tools *endpoint) (string, func() error, error) {
 	tempConfig := filepath.Join(tempGemini, "config")
 	// gomutants:disable-next-line BRANCH_IF reason="Creating a subdirectory inside a freshly created temporary directory fails only on OS filesystem exhaustion."
 	if err := os.MkdirAll(tempConfig, 0o700); err != nil {
-		return "", noRelease, errors.Join(fmt.Errorf("create %s: %w", tempConfig, err), cleanup())
+		return "", releaseNothing, errors.Join(fmt.Errorf("create %s: %w", tempConfig, err), cleanup())
 	}
 	if err := linkEntries(realGemini, tempGemini, "config"); err != nil {
-		return "", noRelease, errors.Join(err, cleanup())
+		return "", releaseNothing, errors.Join(err, cleanup())
 	}
 	if err := linkEntries(realConfig, tempConfig, "mcp_config.json"); err != nil {
-		return "", noRelease, errors.Join(err, cleanup())
+		return "", releaseNothing, errors.Join(err, cleanup())
 	}
 
 	mcpConfig := map[string]any{"mcpServers": map[string]any{}}
@@ -52,12 +52,12 @@ func setupAntigravityHome(tools *endpoint) (string, func() error, error) {
 	encoded, err := json.MarshalIndent(mcpConfig, "", "  ")
 	// gomutants:disable-next-line BRANCH_IF reason="json.MarshalIndent on a map of decoded JSON values and string maps cannot fail."
 	if err != nil {
-		return "", noRelease, errors.Join(fmt.Errorf("encode the MCP configuration: %w", err), cleanup())
+		return "", releaseNothing, errors.Join(fmt.Errorf("encode the MCP configuration: %w", err), cleanup())
 	}
 	configPath := filepath.Join(tempConfig, "mcp_config.json")
 	// gomutants:disable-next-line BRANCH_IF reason="Writing a small file inside a freshly created temporary directory fails only on OS filesystem exhaustion."
 	if err := os.WriteFile(configPath, append(encoded, '\n'), 0o600); err != nil {
-		return "", noRelease, errors.Join(fmt.Errorf("write %s: %w", configPath, err), cleanup())
+		return "", releaseNothing, errors.Join(fmt.Errorf("write %s: %w", configPath, err), cleanup())
 	}
 
 	return tempHome, cleanup, nil

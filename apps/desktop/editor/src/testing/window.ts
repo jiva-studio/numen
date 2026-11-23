@@ -23,14 +23,14 @@ import { WorkspaceLayout } from '@numen/workbench'
 import type { PluginHost } from '@numen/plugin-loader'
 import { requests, forgetRequests } from './requests'
 import {
-  changed,
+  vaultChanges,
   forgetAnswers,
   mockVaultList,
-  nameAnswer,
-  outside,
+  createNameAnswer,
+  focusRequests,
   searchResultAnswer,
   mockVaultState,
-  sourceAnswer,
+  createSourceAnswer,
 } from './answers'
 import { book, editor, reader } from './stubs'
 import { openNoteTab, registerNoteTabs } from './mocks/noteTabs'
@@ -120,7 +120,7 @@ async function mountWindowWithPalette(transport: Transport = createWindowTranspo
 /** The plugin host of the window mounted last, whose tasks the cards of the window list. */
 let lastHost: PluginHost | undefined
 
-const cards = (): readonly string[] =>
+const listCards = (): readonly string[] =>
   readWindowTasks(lastHost)
     .filter((task) => task.state === 'failed')
     .map((task) => [task.label, task.about].filter(Boolean).join(' '))
@@ -144,7 +144,7 @@ const getWindowParts = (window: VueWrapper) => {
 const getPaletteField = (): HTMLInputElement | null =>
   document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 
-const typeInPalette = async (text: string): Promise<void> => {
+const enterPaletteText = async (text: string): Promise<void> => {
   const into = getPaletteField()
   if (!into) return
   into.value = text
@@ -165,23 +165,23 @@ const getTabs = (window: VueWrapper): readonly { id: string; title: string }[] =
 export {
   createWindowTransport,
   requests,
-  cards,
-  changed,
+  listCards,
+  vaultChanges,
   getWindowParts,
   submitPalette,
-  typeInPalette,
+  enterPaletteText,
   DEBOUNCE,
   mountWindow,
   mountStartingWindow,
   mountWindowWithPalette,
-  nameAnswer,
-  outside,
+  createNameAnswer,
+  focusRequests,
   searchResultAnswer,
   mockVaultState,
   mockVaultState as vaultState,
   mockVaultList as listed,
   settle,
-  sourceAnswer,
+  createSourceAnswer,
   getTabs,
   openNoteTab,
   registerNoteTabs,

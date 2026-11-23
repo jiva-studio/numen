@@ -45,7 +45,7 @@ export interface ReviewDaysDeps {
    * are the days a grid of that width displays, and a vault has an entry for
    * every day on which it has been reviewed.
    */
-  widest(): number
+  getWidest(): number
   /** What day it is. The machine's own, where a caller names none. */
   now?(): Date
 }
@@ -77,7 +77,10 @@ export function useReviewDays(deps: ReviewDaysDeps) {
     }
     of.value = vault
     try {
-      const { from, to } = getHeatmapStretch({ width: deps.widest(), cell: CELL, gap: GAP }, now())
+      const { from, to } = getHeatmapStretch(
+        { width: deps.getWidest(), cell: CELL, gap: GAP },
+        now(),
+      )
       const reviewData = await deps.cards.listReviewDays({ vault, from, to })
       // If the user switched to another vault while this request was pending, the
       // result belongs to the previous vault and is discarded.

@@ -24,7 +24,7 @@ const measureTitles = (room: () => TitleRoom) => {
 
 const METRICS: PlexMetrics = {
   node: () => 1000,
-  label: () => 0,
+  measureLabel: () => 0,
   labelType: { ascent: 8, descent: 2, xHeight: 5 },
 }
 

@@ -4,7 +4,7 @@ import {
   isLeading,
   getOrientation,
   findSideOrientation,
-  pane,
+  createPane,
   type Branch,
   type NodeId,
   type Orientation,
@@ -15,7 +15,15 @@ import {
   type WorkspaceNode,
 } from './node'
 import { normalize } from './normalize'
-import { isPane, findNode, paneWithTab, getPanes, pathTo, replaceAt, withChildren } from './tree'
+import {
+  isPane,
+  findNode,
+  findPaneWithTab,
+  getPanes,
+  findPath,
+  replaceAt,
+  withChildren,
+} from './tree'
 import { insert } from './shares'
 
 /** Where an identity for a pane or a branch a gesture makes comes from. */
@@ -51,18 +59,18 @@ export function putAdjacent(
 ): SplitResult {
   const { onto, tab, side, axis } = placement
   const wanted = findSideOrientation(side)
-  const path = pathTo(root, onto)
+  const path = findPath(root, onto)
   if (!wanted || !path) return { root, axis, focus: onto }
 
-  const createdItem = pane(id(), [tab])
+  const newPane = createPane(id(), [tab])
   const index = path[path.length - 1]
   const above = path.slice(0, -1)
 
   if (index === undefined) {
     return {
-      root: branch(id(), orderPair(createdItem, root, side), [0.5, 0.5]),
+      root: branch(id(), arrangePair(newPane, root, side), [0.5, 0.5]),
       axis: wanted,
-      focus: createdItem.id,
+      focus: newPane.id,
     }
   }
 
@@ -70,22 +78,22 @@ export function putAdjacent(
 
   if (getOrientation(axis, above.length) === wanted) {
     return {
-      root: replaceAt(root, above, joinAdjacent(parent, createdItem, { index, side })),
+      root: replaceAt(root, above, joinAdjacent(parent, newPane, { index, side })),
       axis,
-      focus: createdItem.id,
+      focus: newPane.id,
     }
   }
 
   const target = findNode(root, path) as WorkspaceNode
 
   return {
-    root: replaceAt(root, path, branch(id(), orderPair(createdItem, target, side), [0.5, 0.5])),
+    root: replaceAt(root, path, branch(id(), arrangePair(newPane, target, side), [0.5, 0.5])),
     axis,
-    focus: createdItem.id,
+    focus: newPane.id,
   }
 }
 
-function orderPair(newPane: Pane, node: WorkspaceNode, side: Side): WorkspaceNode[] {
+function arrangePair(newPane: Pane, node: WorkspaceNode, side: Side): WorkspaceNode[] {
   return isLeading(side) ? [newPane, node] : [node, newPane]
 }
 
@@ -105,7 +113,7 @@ function joinAdjacent(parent: Branch, newPane: Pane, join: JoinAdjacent): Worksp
  * empty if that was its last tab, and `commit` is what clears it away.
  */
 export function detach(root: WorkspaceNode, tab: TabId): WorkspaceNode {
-  const holder = paneWithTab(root, tab)
+  const holder = findPaneWithTab(root, tab)
   if (!holder) return root
 
   return mapPane(root, holder.id, (target) => {
@@ -134,7 +142,7 @@ export function mapPane(
   id: NodeId,
   change: (pane: Pane) => Pane,
 ): WorkspaceNode {
-  const path = pathTo(root, id)
+  const path = findPath(root, id)
   if (!path) return root
 
   const node = findNode(root, path)

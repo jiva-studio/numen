@@ -18,7 +18,7 @@ func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func(
 	t.Helper()
 	cfg := container.NewTestInstallation(container.Config{
 		Paths: container.Paths{
-			IndexPath:       indexfile.Path(t),
+			IndexPath:       indexfile.GetPath(t),
 			PluginCachePath: t.TempDir(),
 			RegistryPath:    filepath.Join(t.TempDir(), "vaults.json"),
 		},
@@ -144,21 +144,21 @@ func TestAPluginLooksUpTheNotesAndTheLinksOfTheVault(t *testing.T) {
 	if err != nil || types["Rhine.md"] != "river" {
 		t.Errorf("the types were %v (%v)", types, err)
 	}
-	named, err := shared.Notes.GetNamedPaths(ctx, "Danube")
+	named, err := shared.Notes.ListNamedPaths(ctx, "Danube")
 	slices.Sort(named)
 	if want := []string{"Rivers/Danube.md", "Ships/Danube.md"}; err != nil || !slices.Equal(named, want) {
 		t.Errorf("the notes named Danube were %v (%v), want %v", named, err, want)
 	}
-	typed, err := shared.Notes.GetPathsOfType(ctx, "river")
+	typed, err := shared.Notes.ListPathsOfType(ctx, "river")
 	if err != nil || !slices.Equal(typed, []string{"Rhine.md"}) {
 		t.Errorf("the rivers were %v (%v)", typed, err)
 	}
 
-	links, err := shared.Links.GetLinks(ctx, "Deltas.md")
+	links, err := shared.Links.ListLinks(ctx, "Deltas.md")
 	if err != nil || len(links) != 1 || links[0].To != "Rhine.md" {
 		t.Errorf("the links of Deltas were %+v (%v)", links, err)
 	}
-	backlinks, err := shared.Links.GetBacklinks(ctx, "Rhine.md")
+	backlinks, err := shared.Links.ListBacklinks(ctx, "Rhine.md")
 	if err != nil || len(backlinks) != 1 || backlinks[0].From != "Deltas.md" || backlinks[0].Role != domain.RoleParent {
 		t.Errorf("the backlinks of Rhine were %+v (%v)", backlinks, err)
 	}
@@ -167,7 +167,7 @@ func TestAPluginLooksUpTheNotesAndTheLinksOfTheVault(t *testing.T) {
 		t.Errorf("Rhine resolved to %+v (%v)", resolved, err)
 	}
 
-	problems, err := shared.Arranger.GetParseProblems(ctx)
+	problems, err := shared.Arranger.ListParseProblems(ctx)
 	if err != nil || len(problems) != 1 || problems[0].Path != "Lakes.md" {
 		t.Errorf("the parse problems were %+v (%v)", problems, err)
 	}

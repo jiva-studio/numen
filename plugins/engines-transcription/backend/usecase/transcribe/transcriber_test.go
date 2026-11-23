@@ -163,9 +163,9 @@ type scene struct {
 func newScene(t *testing.T) *scene {
 	t.Helper()
 	vault := hosttest.New("Lectures")
-	vault.File(lecture, lectureSound)
+	vault.WriteFile(lecture, lectureSound)
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
-	texts.File(lecture, []byte(lectureSound))
+	texts.WriteFile(lecture, []byte(lectureSound))
 	s := &scene{
 		vault: vault, store: vault.Store(), texts: texts, queue: hosttest.NewQueue(),
 		model: &heardModel{
@@ -343,11 +343,11 @@ func TestTranscribeWaitsForQueueTurn(t *testing.T) {
 func TestTranscribeRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
-	s.vault.Beside(chemistry)
-	chemistry.File(lecture, lectureSound)
+	s.vault.LinkBeside(chemistry)
+	chemistry.WriteFile(lecture, lectureSound)
 	other := s.texts.With("Chemistry")
 	other.SetStore(PluginID, chemistry.Store())
-	other.File(lecture, []byte(lectureSound))
+	other.WriteFile(lecture, []byte(lectureSound))
 
 	if err := transcribeNow(t.Context(), s.transcriber, "Chemistry", lecture); err != nil {
 		t.Fatal(err)
@@ -722,7 +722,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	// hearSegments errors: readReachedPosition error, GetSegments error, Transcribe error, appendBatch error, putVersion error, yieldTurn error.
 	s2 := newScene(t)
 	s2.model.segmentErr = errBoom
-	if _, reached, err := hearBatch(ctx, s2.model, heardRecording{model: s2.model}, lecture, 500); !errors.Is(err, errBoom) || reached != 500 {
+	if _, reached, err := recognizeBatch(ctx, s2.model, heardRecording{model: s2.model}, lecture, 500); !errors.Is(err, errBoom) || reached != 500 {
 		t.Fatalf("expected (500, segmentErr), got (%d, %v)", reached, err)
 	}
 	if err := transcribeNow(ctx, s2.transcriber, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {
@@ -730,7 +730,7 @@ func TestTranscriberErrorPathsAndProgressBoundaries(t *testing.T) {
 	}
 	s2.model.segmentErr = nil
 	s2.model.transcribeErr = errBoom
-	if _, reached, err := hearBatch(ctx, s2.model, heardRecording{model: s2.model}, lecture, 500); !errors.Is(err, errBoom) || reached != 500 {
+	if _, reached, err := recognizeBatch(ctx, s2.model, heardRecording{model: s2.model}, lecture, 500); !errors.Is(err, errBoom) || reached != 500 {
 		t.Fatalf("expected (500, transcribeErr), got (%d, %v)", reached, err)
 	}
 	if err := transcribeNow(ctx, s2.transcriber, s2.vault.Vault().ID, lecture); !errors.Is(err, errBoom) {

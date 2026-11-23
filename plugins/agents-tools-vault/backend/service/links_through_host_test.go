@@ -84,7 +84,7 @@ func newLinkHostVault(t *testing.T) (*hosttest.Vault, *linkCalls, *tools.Registr
 	t.Helper()
 	v, _ := newLinkedGeologyVault(t)
 	calls := &linkCalls{}
-	registry, err := service.New(linkHostVault{Vault: v, calls: calls}.vaults()).Registry()
+	registry, err := service.New(linkHostVault{Vault: v, calls: calls}.vaults()).BuildRegistry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -159,9 +159,9 @@ func TestLinkAddSendsOneHostCallPerNoteAndWritesNoFile(t *testing.T) {
 func TestLinkAddReportsStaleNotePerLinkAndWritesTheOthers(t *testing.T) {
 	v, calls, registry := newLinkHostVault(t)
 	oldFingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
-	content, _ := v.Content("Rocks/Basalt.md")
-	v.File("Rocks/Basalt.md", content+"Changed by another program.\n")
-	before, _ := v.Content("Rocks/Basalt.md")
+	content, _ := v.ReadContent("Rocks/Basalt.md")
+	v.WriteFile("Rocks/Basalt.md", content+"Changed by another program.\n")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 	minerals := readFingerprint(t, registry, "Minerals.md")
 
 	arguments := fmt.Sprintf(`{"links":[
@@ -211,7 +211,7 @@ func TestLinkAddRejectsAnUnknownRoleBeforeCallingTheHost(t *testing.T) {
 func TestLinkAddSendsAnEmptyFromOrToToTheHostAndReturnsItsErrors(t *testing.T) {
 	v, calls, registry := newLinkHostVault(t)
 	basalt := readFingerprint(t, registry, "Rocks/Basalt.md")
-	before, _ := v.Content("Rocks/Basalt.md")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 
 	arguments := fmt.Sprintf(`{"links":[
 		{"from":"","fingerprint":%q,"address":"Fossils","role":"jump"},
@@ -271,9 +271,9 @@ func TestLinkUpdateSendsTheChangeToTheHostAndWritesNoFile(t *testing.T) {
 func TestLinkUpdateOfAStaleNoteIsRejectedWithThePath(t *testing.T) {
 	v, calls, registry := newLinkHostVault(t)
 	oldFingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
-	content, _ := v.Content("Rocks/Basalt.md")
-	v.File("Rocks/Basalt.md", content+"Changed by another program.\n")
-	before, _ := v.Content("Rocks/Basalt.md")
+	content, _ := v.ReadContent("Rocks/Basalt.md")
+	v.WriteFile("Rocks/Basalt.md", content+"Changed by another program.\n")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 
 	failure := getErrorText(t, registry, "link_update", fmt.Sprintf(
 		`{"from":"Rocks/Basalt.md","address":"Minerals","fingerprint":%q,"label":"made of"}`, oldFingerprint))
@@ -289,7 +289,7 @@ func TestLinkUpdateOfAStaleNoteIsRejectedWithThePath(t *testing.T) {
 func TestLinkUpdateRejectsAnUnknownRoleBeforeCallingTheHost(t *testing.T) {
 	v, calls, registry := newLinkHostVault(t)
 	fingerprint := readFingerprint(t, registry, "Rocks/Basalt.md")
-	before, _ := v.Content("Rocks/Basalt.md")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 
 	failure := getErrorText(t, registry, "link_update", fmt.Sprintf(
 		`{"from":"Rocks/Basalt.md","address":"Minerals","fingerprint":%q,"role":"sideways"}`, fingerprint))
@@ -358,9 +358,9 @@ func TestLinkRemoveOfStaleNoteOrMissingLinkIsRejectedWithPath(t *testing.T) {
 		t.Errorf("the error of a missing link is %q, want the host's text", failure)
 	}
 
-	content, _ := v.Content("Rocks/Basalt.md")
-	v.File("Rocks/Basalt.md", content+"Changed by another program.\n")
-	before, _ := v.Content("Rocks/Basalt.md")
+	content, _ := v.ReadContent("Rocks/Basalt.md")
+	v.WriteFile("Rocks/Basalt.md", content+"Changed by another program.\n")
+	before, _ := v.ReadContent("Rocks/Basalt.md")
 	failure = getErrorText(t, registry, "link_remove", fmt.Sprintf(
 		`{"from":"Rocks/Basalt.md","address":"Granite","fingerprint":%q}`, fingerprint))
 	if !strings.Contains(failure, "Rocks/Basalt.md") {
