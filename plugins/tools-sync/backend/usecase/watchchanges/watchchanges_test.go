@@ -55,14 +55,16 @@ func start(t *testing.T, c *synctest.Computer, hints ports.Hints, waker ports.Wa
 	go func() { done <- watchchanges.NewWatchChanges(deps).Execute(ctx) }()
 	t.Cleanup(func() {
 		cancel()
-		<-done
+		if err := <-done; !errors.Is(err, context.Canceled) {
+			t.Errorf("Execute ended with %v, want context.Canceled", err)
+		}
 	})
 	return &running{cancel: cancel, done: done}
 }
 
 func (w *world) streams() int { return w.server.Fake.CountStreams() }
 
-func (w *world) opens() int {
+func (w *world) countOpenings() int {
 	return w.server.Fake.CountCalls(syncv1connect.WatchServiceWatchChangesProcedure)
 }
 
@@ -141,14 +143,14 @@ func TestWatchChanges_WakesAfterTheReopenForACommitMadeWhileTheStreamWasDown(t *
 	w.awaitStream(t)
 	w.server.Fake.EndStreams()
 	awaitWaitOf(t, w.b.Clock, retryWait)
-	if got := w.opens(); got != 1 {
+	if got := w.countOpenings(); got != 1 {
 		t.Fatalf("opens before the retry wait ended = %d, want 1", got)
 	}
 	w.commitOnA(t, "milk")
 
 	w.b.Clock.Advance(retryWait)
 
-	synctest.Eventually(t, "the second open", func() bool { return w.opens() == 2 })
+	synctest.Eventually(t, "the second open", func() bool { return w.countOpenings() == 2 })
 	synctest.Eventually(t, "the wake of the catch-up", func() bool { return w.wakes.Count(target) >= 1 })
 }
 
@@ -190,7 +192,7 @@ func TestWatchChanges_ReopensTheStreamAfterAThreeHeartbeatsOfSilence(t *testing.
 
 	synctest.Eventually(t, "the second open", func() bool {
 		w.b.Clock.Advance(silenceWait)
-		return w.opens() == 2
+		return w.countOpenings() == 2
 	})
 }
 
@@ -205,7 +207,7 @@ func TestWatchChanges_ARealHeartbeatStartsTheSilenceWaitAgain(t *testing.T) {
 	w.b.Clock.Advance(4 * time.Second)
 
 	awaitWaitOf(t, w.b.Clock, silenceWait)
-	if got := w.opens(); got != 1 {
+	if got := w.countOpenings(); got != 1 {
 		t.Errorf("opens = %d, want the one stream kept after a heartbeat", got)
 	}
 }

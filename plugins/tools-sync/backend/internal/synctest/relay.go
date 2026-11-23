@@ -31,12 +31,16 @@ func NewRelay(t *testing.T, address string) *Relay {
 		t.Fatal(err)
 	}
 	r := &Relay{URL: "http://" + listener.Addr().String(), listen: listener}
-	t.Cleanup(func() { _ = listener.Close() })
+	t.Cleanup(func() {
+		if err := listener.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	go r.accept(target)
 	return r
 }
 
-// Pause makes every open connection swallow what it carries.
+// Pause makes every open connection discard the bytes it receives.
 func (r *Relay) Pause() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -55,7 +59,7 @@ func (r *Relay) accept(target string) {
 		}
 		upstream, err := (&net.Dialer{}).DialContext(context.Background(), "tcp", target)
 		if err != nil {
-			_ = client.Close()
+			closeQuietly(client)
 			continue
 		}
 		state := &relayConn{}
@@ -68,8 +72,8 @@ func (r *Relay) accept(target string) {
 }
 
 func (c *relayConn) copy(to, from net.Conn) {
-	defer func() { _ = to.Close() }()
-	defer func() { _ = from.Close() }()
+	defer closeQuietly(to)
+	defer closeQuietly(from)
 	buffer := make([]byte, 4096)
 	for {
 		n, err := from.Read(buffer)
@@ -84,5 +88,13 @@ func (c *relayConn) copy(to, from net.Conn) {
 		if err != nil {
 			return
 		}
+	}
+}
+
+// closeQuietly closes a connection of the relay whose peer may have closed it first; the error of a second
+// close says nothing, as the copy ends either way.
+func closeQuietly(conn net.Conn) {
+	if err := conn.Close(); err != nil {
+		return
 	}
 }

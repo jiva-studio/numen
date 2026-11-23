@@ -4,8 +4,6 @@ package watchchanges
 import (
 	"context"
 	"errors"
-	"io"
-	"log/slog"
 	"sync"
 	"time"
 
@@ -16,14 +14,6 @@ const (
 	retryWait    = 3 * time.Second
 	silenceBeats = 3
 	minHeartbeat = time.Second
-)
-
-// Why a stream ended, for the debug log.
-const (
-	reasonRefused = "refused"
-	reasonClosed  = "closed"
-	reasonDropped = "dropped"
-	reasonSilent  = "silent"
 )
 
 // Deps are the ports WatchChanges needs.
@@ -47,25 +37,26 @@ func NewWatchChanges(deps Deps) *WatchChanges { return &WatchChanges{deps: deps}
 // writes nothing and raises no health item: a stream that does not work only costs the speed, and the pass at
 // the interval reports a server that is away.
 func (u *WatchChanges) Execute(ctx context.Context) error {
+	var closeErr error
 	for {
-		reason := u.runOnce(ctx)
+		closeErr = u.runOnce(ctx)
 		if err := ctx.Err(); err != nil {
-			return err
+			return errors.Join(err, closeErr)
 		}
-		slog.Debug("the change stream ended", "reason", reason)
 		if err := u.deps.Clock.Wait(ctx, retryWait); err != nil {
 			return err
 		}
 	}
 }
 
-func (u *WatchChanges) runOnce(ctx context.Context) string {
+func (u *WatchChanges) runOnce(ctx context.Context) (closeErr error) {
 	watch, err := u.deps.Hints.Watch(ctx)
 	if err != nil {
-		return reasonRefused
+		return nil
 	}
-	defer func() { _ = watch.Close() }()
-	return u.read(ctx, watch)
+	defer func() { closeErr = watch.Close() }()
+	u.read(ctx, watch)
+	return nil
 }
 
 type received struct {
@@ -73,7 +64,7 @@ type received struct {
 	err   error
 }
 
-func (u *WatchChanges) read(ctx context.Context, watch ports.Watch) string {
+func (u *WatchChanges) read(ctx context.Context, watch ports.Watch) {
 	readCtx, stop := context.WithCancel(ctx)
 	var group sync.WaitGroup
 	defer func() {
@@ -88,12 +79,12 @@ func (u *WatchChanges) read(ctx context.Context, watch ports.Watch) string {
 	for {
 		select {
 		case <-ctx.Done():
-			return reasonClosed
+			return
 		case <-silence.fired:
-			return reasonSilent
+			return
 		case got := <-events:
 			if got.err != nil {
-				return readReason(got.err)
+				return
 			}
 			silence.cancel()
 			silence = u.startSilence(readCtx, &group, beat)
@@ -114,13 +105,6 @@ func pump(ctx context.Context, watch ports.Watch, events chan<- received) {
 			return
 		}
 	}
-}
-
-func readReason(err error) string {
-	if errors.Is(err, io.EOF) {
-		return reasonClosed
-	}
-	return reasonDropped
 }
 
 type silence struct {

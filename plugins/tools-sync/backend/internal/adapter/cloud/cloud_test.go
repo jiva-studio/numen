@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
@@ -199,30 +198,8 @@ func TestCloud_ReadsNoChangesOfANewVaultAndRejectsAnInvalidRevision(t *testing.T
 	}
 }
 
-type slowWatch struct {
-	syncv1connect.UnimplementedWatchServiceHandler
-
-	delay time.Duration
-}
-
-func (s slowWatch) WatchChanges(ctx context.Context, _ *connect.Request[syncv1.WatchChangesRequest], stream *connect.ServerStream[syncv1.WatchChangesResponse]) error {
-	started := &syncv1.WatchChangesResponse{Event: &syncv1.WatchChangesResponse_Started{Started: &syncv1.Started{HeartbeatSeconds: 1}}}
-	if err := stream.Send(started); err != nil {
-		return err
-	}
-	select {
-	case <-time.After(s.delay):
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-	hint := &syncv1.WatchChangesResponse{Event: &syncv1.WatchChangesResponse_Hint{Hint: &syncv1.ChangeHint{VaultId: []byte("vault-of-16-byte"), Seq: 4}}}
-	return stream.Send(hint)
-}
-
 func TestCloud_WatchKeepsAStreamAliveLongerThanTheTimeoutOfTheRequestClient(t *testing.T) {
-	mux := http.NewServeMux()
-	mux.Handle(syncv1connect.NewWatchServiceHandler(slowWatch{delay: 500 * time.Millisecond}))
-	served := httptest.NewServer(mux)
+	served := httptest.NewServer(fakeserver.NewSlowWatchHandler(500 * time.Millisecond))
 	t.Cleanup(served.Close)
 	hints := cloud.New(cloud.Config{
 		Address: served.URL, HTTP: &http.Client{Timeout: 100 * time.Millisecond}, Stream: &http.Client{},
@@ -232,7 +209,11 @@ func TestCloud_WatchKeepsAStreamAliveLongerThanTheTimeoutOfTheRequestClient(t *t
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = watch.Close() }()
+	t.Cleanup(func() {
+		if err := watch.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	event, err := watch.Receive(t.Context())
 
@@ -257,7 +238,11 @@ func TestCloud_WatchReturnsTheHeartbeatTheServerAnnouncedAndTheVaultIDAsTheLinkW
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = watch.Close() }()
+	t.Cleanup(func() {
+		if err := watch.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	event, err := watch.Receive(t.Context())
 
 	if err != nil {
@@ -277,7 +262,11 @@ func TestCloud_WatchReturnsTheErrorOfItsContextFromReceive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = watch.Close() }()
+	t.Cleanup(func() {
+		if err := watch.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
@@ -301,7 +290,11 @@ func TestCloud_WatchSignsInOnceAndOpensAgainAfterAnUnauthenticatedOpen(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = watch.Close() }()
+	t.Cleanup(func() {
+		if err := watch.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	if refreshes != 1 {
 		t.Errorf("sign-ins = %d, want 1", refreshes)
