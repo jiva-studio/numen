@@ -20,6 +20,7 @@ import (
 	domainsession "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/conflict"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
@@ -220,6 +221,7 @@ func (c *Computer) PullDeps() pull.Deps {
 	return pull.Deps{
 		Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Downloads: downloads,
 		Guard: syncwire.NewGuard(wired), Health: c.NewHealth(),
+		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}), Clock: c.Clock,
 	}
 }
 

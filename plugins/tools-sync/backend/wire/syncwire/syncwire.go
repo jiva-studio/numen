@@ -4,6 +4,7 @@ package syncwire
 import (
 	"time"
 
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/conflict"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
@@ -67,6 +68,7 @@ func NewSyncVault(deps Deps) *syncvault.SyncVault {
 		Pull: pull.NewPullChanges(pull.Deps{
 			Revisions: deps.Revisions, Blobs: deps.Blobs, Crypto: deps.Crypto, Host: deps.Host, State: deps.State,
 			Downloads: downloads, Guard: guard, Health: deps.Health,
+			Conflicts: conflict.New(conflict.Deps{Host: deps.Host, Log: nil}), Clock: deps.Clock,
 		}),
 		Scan:         localchanges.NewScanLocalChanges(localchanges.Deps{Host: deps.Host, State: deps.Progress, Clock: deps.Clock}),
 		Detect:       localchanges.NewDetectMoves(localchanges.DetectDeps{Host: deps.Host, State: deps.Absences, Clock: deps.Clock, Delay: deps.RemovalDelay}),

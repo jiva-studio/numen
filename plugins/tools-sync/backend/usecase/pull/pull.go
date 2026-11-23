@@ -52,6 +52,8 @@ type Deps struct {
 	State     State
 	Downloads Downloader
 	Guard     Guard
+	Conflicts ports.ConflictResolver
+	Clock     ports.Clock
 	Health    ports.Health
 }
 

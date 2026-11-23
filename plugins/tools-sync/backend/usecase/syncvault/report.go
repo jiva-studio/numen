@@ -71,6 +71,9 @@ func GetConflictText(count int) string {
 	return fmt.Sprintf("%d notes changed on two computers", count)
 }
 
+// GetCaseClashText is what the warning of files whose names match other names says.
+func GetCaseClashText(_ int) string { return "" }
+
 func (r reporter) getRefusedText(ctx context.Context) string {
 	state, err := r.subscription.Execute(ctx)
 	if err == nil {
