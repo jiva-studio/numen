@@ -146,3 +146,70 @@ Then('the page does not offer to buy the subscription', async ({ person }) => {
 Then('the page says {string}', async ({ person }, text: string) => {
   await person.identity.expectPageSays(text)
 })
+
+Then('{holder} has the same file {string}{inside}', async ({ person }, holder: Holder, filePath: string, vault: string | undefined) => {
+  await person.files.expectSameFile(holder, filePath, vault)
+})
+
+Then('the vault {string} has the same file {string} as the second computer', async ({ person }, vault: string, filePath: string) => {
+  await person.files.expectSameFileAsSecond(vault, filePath)
+})
+
+When('{computer} writes the file {string} of {int} MB in {owned}', ({ person }, computer: ComputerName, filePath: string, megabytes: number, vault: string) => {
+  person.files.writeFile(computer, filePath, megabytes, vault)
+})
+
+When('{computer} writes {int} files in the folder {string} in {owned}', ({ person }, computer: ComputerName, count: number, folder: string, vault: string) => {
+  person.files.writeFiles(computer, count, folder, vault)
+})
+
+When('{computer} changes the file {string} in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+  person.files.changeFile(computer, filePath, vault)
+})
+
+When('{computer} moves the file {string} to {string} in {owned}', ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {
+  person.files.moveEntry(computer, 'file', from, to, vault)
+})
+
+When('{computer} moves the folder {string} to {string} in {owned}', ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {
+  person.files.moveEntry(computer, 'folder', from, to, vault)
+})
+
+When('{computer} removes the file {string} in {owned}', ({ person }, computer: ComputerName, filePath: string, vault: string) => {
+  person.files.removeEntry(computer, 'file', filePath, vault)
+})
+
+When('{computer} removes the folder {string} in {owned}', ({ person }, computer: ComputerName, folder: string, vault: string) => {
+  person.files.removeEntry(computer, 'folder', folder, vault)
+})
+
+Then(
+  '{holder} has {int} files in its folder {string}{inside}',
+  async ({ person }, holder: Holder, count: number, folder: string, vault: string | undefined) => {
+    await person.files.expectFileCount(holder, count, folder, vault)
+  },
+)
+
+Then('the second computer never showed files in both folders {string} and {string}', async ({ person }, first: string, second: string) => {
+  await person.files.expectNeverBothFolders(first, second)
+})
+
+Given('the sync server stops after {int} MB of the file {string}', async ({ person }, megabytes: number, filePath: string) => {
+  await person.files.stopServerAfterBytes(megabytes, filePath)
+})
+
+Given('the sync server stops while the second computer loads the file {string}', async ({ person }, filePath: string) => {
+  await person.files.stopServerWhileLoading(filePath)
+})
+
+Then('the sync server received no part of the file {string} twice', async ({ person }, filePath: string) => {
+  await person.files.expectNoRepeatedPart(filePath, 'received')
+})
+
+Then('the sync server sent no part of the file {string} twice', async ({ person }, filePath: string) => {
+  await person.files.expectNoRepeatedPart(filePath, 'sent')
+})
+
+When('the person chooses {string}', async ({ person }, action: string) => {
+  await person.files.choose(action)
+})
