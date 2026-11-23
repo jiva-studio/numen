@@ -37,11 +37,11 @@ type faultyVault struct {
 	emptyGetNotesCalls    int
 }
 
-func (f *faultyVault) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
+func (f *faultyVault) ListLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
 	if f.getLinksErr != nil {
 		return nil, f.getLinksErr
 	}
-	return f.Vault.GetLinks(ctx, from)
+	return f.Vault.ListLinks(ctx, from)
 }
 
 func (f *faultyVault) With(id domain.VaultID) *faultyVault {
@@ -64,11 +64,11 @@ func (f *faultyVault) Scan(ctx context.Context, paths []string) error {
 	return f.Vault.Scan(ctx, paths)
 }
 
-func (f *faultyVault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+func (f *faultyVault) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
 	if f.getPathsErr != nil {
 		return nil, f.getPathsErr
 	}
-	return f.Vault.GetPathsOfType(ctx, noteType)
+	return f.Vault.ListPathsOfType(ctx, noteType)
 }
 
 func (f *faultyVault) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {

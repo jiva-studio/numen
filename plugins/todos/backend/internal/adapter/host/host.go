@@ -31,8 +31,8 @@ func (v *Vault) Read(ctx context.Context, path string) ([]byte, domain.FileStat,
 	return v.client.Read(ctx, path)
 }
 
-func (v *Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
-	return v.client.GetPathsOfType(ctx, noteType)
+func (v *Vault) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	return v.client.ListPathsOfType(ctx, noteType)
 }
 
 func (v *Vault) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {

@@ -453,7 +453,7 @@ func TestTheListOfVaultsMarksAMissingFolder(t *testing.T) {
 func TestNoteRefsHaveTheIdentifier(t *testing.T) {
 	client, _, _ := newArrangeClient(t, nil, manifest.PermissionVaultRead)
 
-	res, err := client.GetNoteRefs(t.Context(), connect.NewRequest(&v1.GetNoteRefsRequest{Paths: []string{"Danube.md"}}))
+	res, err := client.ListNoteRefs(t.Context(), connect.NewRequest(&v1.ListNoteRefsRequest{Paths: []string{"Danube.md"}}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -376,18 +376,18 @@ type failingLinks struct {
 	links, backlinks error
 }
 
-func (f failingLinks) GetLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+func (f failingLinks) ListLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
 	if f.links != nil {
 		return nil, f.links
 	}
-	return f.LinkQueries.GetLinks(ctx, id, from)
+	return f.LinkQueries.ListLinks(ctx, id, from)
 }
 
-func (f failingLinks) GetBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+func (f failingLinks) ListBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
 	if f.backlinks != nil {
 		return nil, f.backlinks
 	}
-	return f.LinkQueries.GetBacklinks(ctx, id, to)
+	return f.LinkQueries.ListBacklinks(ctx, id, to)
 }
 
 func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {

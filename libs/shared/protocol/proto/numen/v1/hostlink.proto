@@ -19,11 +19,11 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 //
 // Every path is relative to the vault root and written with forward slashes.
 service HostLinkService {
-  // GetLinks lists the links written in a note, with what each reaches now.
-  rpc GetLinks(GetLinksRequest) returns (GetLinksResponse);
+  // ListLinks lists the links written in a note, with what each reaches now.
+  rpc ListLinks(ListLinksRequest) returns (ListLinksResponse);
 
-  // GetBacklinks lists the links that reach a note.
-  rpc GetBacklinks(GetBacklinksRequest) returns (GetBacklinksResponse);
+  // ListBacklinks lists the links that reach a note.
+  rpc ListBacklinks(HostLinkServiceListBacklinksRequest) returns (HostLinkServiceListBacklinksResponse);
 
   // ResolveLinks says what each link written in a note reaches now.
   rpc ResolveLinks(ResolveLinksRequest) returns (ResolveLinksResponse);
@@ -73,20 +73,20 @@ message HostLink {
   Role source_role = 12;
 }
 
-message GetLinksRequest {
+message ListLinksRequest {
   string path = 1;
 }
 
-message GetLinksResponse {
+message ListLinksResponse {
   ErrorCode error = 1;
   repeated HostLink links = 2;
 }
 
-message GetBacklinksRequest {
+message HostLinkServiceListBacklinksRequest {
   string path = 1;
 }
 
-message GetBacklinksResponse {
+message HostLinkServiceListBacklinksResponse {
   ErrorCode error = 1;
   repeated HostLink links = 2;
 }

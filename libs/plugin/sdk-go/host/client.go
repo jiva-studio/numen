@@ -261,7 +261,7 @@ func (c *Client) Scan(ctx context.Context, paths []string) error {
 }
 
 func (c *Client) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
-	res, err := c.notes.GetNoteRefs(ctx, request(c, &v1.GetNoteRefsRequest{Paths: paths}))
+	res, err := c.notes.ListNoteRefs(ctx, request(c, &v1.ListNoteRefsRequest{Paths: paths}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -276,7 +276,7 @@ func (c *Client) GetNotes(ctx context.Context, paths []string) (map[string]domai
 }
 
 func (c *Client) GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error) {
-	res, err := c.notes.GetNoteTypes(ctx, request(c, &v1.GetNoteTypesRequest{Paths: paths}))
+	res, err := c.notes.ListNoteTypes(ctx, request(c, &v1.ListNoteTypesRequest{Paths: paths}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -290,8 +290,8 @@ func (c *Client) GetTypes(ctx context.Context, paths []string) (map[string]domai
 	return out, nil
 }
 
-func (c *Client) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
-	res, err := c.notes.GetNamedPaths(ctx, request(c, &v1.GetNamedPathsRequest{Name: name}))
+func (c *Client) ListNamedPaths(ctx context.Context, name string) ([]string, error) {
+	res, err := c.notes.ListNamedPaths(ctx, request(c, &v1.ListNamedPathsRequest{Name: name}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -301,8 +301,8 @@ func (c *Client) GetNamedPaths(ctx context.Context, name string) ([]string, erro
 	return res.Msg.GetPaths(), nil
 }
 
-func (c *Client) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
-	res, err := c.notes.GetPathsOfType(ctx, request(c, &v1.GetPathsOfTypeRequest{Type: string(noteType)}))
+func (c *Client) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+	res, err := c.notes.ListPathsOfType(ctx, request(c, &v1.ListPathsOfTypeRequest{Type: string(noteType)}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -312,8 +312,8 @@ func (c *Client) GetPathsOfType(ctx context.Context, noteType domain.NoteType) (
 	return res.Msg.GetPaths(), nil
 }
 
-func (c *Client) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
-	res, err := c.links.GetLinks(ctx, request(c, &v1.GetLinksRequest{Path: from}))
+func (c *Client) ListLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
+	res, err := c.links.ListLinks(ctx, request(c, &v1.ListLinksRequest{Path: from}))
 	if err != nil {
 		return nil, readError(err)
 	}
@@ -323,8 +323,8 @@ func (c *Client) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLi
 	return readLinks(res.Msg.GetLinks()), nil
 }
 
-func (c *Client) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
-	res, err := c.links.GetBacklinks(ctx, request(c, &v1.GetBacklinksRequest{Path: to}))
+func (c *Client) ListBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
+	res, err := c.links.ListBacklinks(ctx, request(c, &v1.HostLinkServiceListBacklinksRequest{Path: to}))
 	if err != nil {
 		return nil, readError(err)
 	}

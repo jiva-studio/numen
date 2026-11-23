@@ -123,7 +123,7 @@ func (u Create) createTitledNote(ctx context.Context, v domain.Vault, in NewNote
 	if err := u.updateIndex(ctx, v, path); err != nil {
 		return made, err
 	}
-	shares, err := u.names.GetNamedPaths(ctx, v.ID, domain.Basename(path))
+	shares, err := u.names.ListNamedPaths(ctx, v.ID, domain.Basename(path))
 	if err != nil {
 		return made, err
 	}

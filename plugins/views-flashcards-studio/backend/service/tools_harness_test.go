@@ -165,11 +165,11 @@ func (e *errHostVault) GetVault(ctx context.Context) (domain.Vault, error) {
 	return e.Vault.GetVault(ctx)
 }
 
-func (e *errHostVault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+func (e *errHostVault) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
 	if e.opErr != nil {
 		return nil, e.opErr
 	}
-	return e.Vault.GetPathsOfType(ctx, noteType)
+	return e.Vault.ListPathsOfType(ctx, noteType)
 }
 
 func (e *errHostVault) StatFile(ctx context.Context, path string) (domain.FileStat, error) {

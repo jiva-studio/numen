@@ -270,7 +270,7 @@ func (r *Runner) runQueuedSearch(ctx context.Context, vault domain.VaultID, v Va
 }
 
 func listSearches(ctx context.Context, v Vault) ([]search, error) {
-	paths, err := v.Notes.GetPathsOfType(ctx, searchnote.NoteType)
+	paths, err := v.Notes.ListPathsOfType(ctx, searchnote.NoteType)
 	if err != nil {
 		return nil, err
 	}

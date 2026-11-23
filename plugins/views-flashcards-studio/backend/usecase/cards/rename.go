@@ -56,10 +56,10 @@ type RenameField struct {
 // under the vault's write lock, so the queries it makes are limited: one query per
 // note of the vault would block every other write behind it.
 type TypeQueries interface {
-	// 	// GetPathsOfType returns every note of one type in the vault, by path. A
+	// 	// ListPathsOfType returns every note of one type in the vault, by path. A
 	// 	// caller that needs the decks or the card models of a vault uses it, and no
 	// 	// file is opened to determine the type of each note.
-	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
+	ListPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
 // NewRenameField renames a card model's field across its decks. A vault of more than maxDecks decks is
@@ -211,7 +211,7 @@ func (u RenameField) writeIdentifier(into func(string) (bool, error)) error {
 }
 
 func (u RenameField) getDeckPaths(ctx context.Context, v domain.Vault) ([]string, error) {
-	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
+	return u.notes.ListPathsOfType(ctx, v.ID, format.TypeDeck)
 }
 
 // deckWriter is the read and write of one deck. A failure on one deck is reported

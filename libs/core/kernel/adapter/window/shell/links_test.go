@@ -20,11 +20,11 @@ type linkIndex struct {
 	queried []domain.VaultID
 }
 
-func (*linkIndex) GetLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (*linkIndex) ListLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, nil
 }
 
-func (*linkIndex) GetBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (*linkIndex) ListBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, nil
 }
 

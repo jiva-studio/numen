@@ -89,14 +89,14 @@ type Links struct {
 	vault           Vault
 	resolveLinks    *query.ResolveLinks
 	createRelated   *note.CreateInRelation
-	getBacklinks    *query.GetBacklinks
+	getBacklinks    *query.ListBacklinks
 	isIndexOutdated func(error) bool
 }
 
 // NewLinks is the part of NoteService that works the links of notes.
 func NewLinks(
 	window Vault,
-	resolve *query.ResolveLinks, create *note.CreateInRelation, backlinks *query.GetBacklinks,
+	resolve *query.ResolveLinks, create *note.CreateInRelation, backlinks *query.ListBacklinks,
 	isIndexOutdated func(error) bool,
 ) *Links {
 	return &Links{

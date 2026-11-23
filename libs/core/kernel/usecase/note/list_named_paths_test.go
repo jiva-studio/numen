@@ -11,7 +11,7 @@ import (
 func TestGetNamedPathsAnswersEveryNoteFiledBelowAName(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"a/Heat.md": "# Heat\n", "b/Heat.md": "# Heat\n", "Cold.md": "# Cold\n"})
-	u := query.NewGetNamedPaths(c.db.NoteQueries())
+	u := query.NewListNamedPaths(c.db.NoteQueries())
 
 	got, err := u.Execute(t.Context(), c.vault, "Heat")
 	if err != nil {
@@ -41,10 +41,10 @@ func TestGetNamedPathsAnswersNothingWhereNoIndexIsBound(t *testing.T) {
 	t.Parallel()
 	c := openChangeFixture(t, map[string]string{"Heat.md": "# Heat\n"})
 
-	if got, err := query.NewGetNamedPaths(testsupport.EmptyNoteQueries{}).Execute(t.Context(), c.vault, "Heat"); err != nil || len(got) != 0 {
+	if got, err := query.NewListNamedPaths(testsupport.EmptyNoteQueries{}).Execute(t.Context(), c.vault, "Heat"); err != nil || len(got) != 0 {
 		t.Errorf("an unbound index answered %v, %v", got, err)
 	}
-	var unmade *query.GetNamedPaths
+	var unmade *query.ListNamedPaths
 	if got, err := unmade.Execute(t.Context(), c.vault, "Heat"); err != nil || len(got) != 0 {
 		t.Errorf("a use case not made answered %v, %v", got, err)
 	}

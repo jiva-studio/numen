@@ -13,14 +13,14 @@ import (
 // can ask.
 type named map[string][]string
 
-func (n named) GetNamedPaths(_ context.Context, _ domain.VaultID, name string) ([]string, error) {
+func (n named) ListNamedPaths(_ context.Context, _ domain.VaultID, name string) ([]string, error) {
 	return n[name], nil
 }
 
 // unreachable is a vault that cannot answer at all.
 type unreachable struct{}
 
-func (unreachable) GetNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
+func (unreachable) ListNamedPaths(context.Context, domain.VaultID, string) ([]string, error) {
 	return nil, errors.New("the index could not be read")
 }
 

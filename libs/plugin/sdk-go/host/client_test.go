@@ -69,8 +69,8 @@ func (a *answering) WriteFile(_ context.Context, req *connect.Request[v1.WriteFi
 	return connect.NewResponse(&v1.WriteFileResponse{Error: a.code}), nil
 }
 
-func (a *answering) GetLinks(context.Context, *connect.Request[v1.GetLinksRequest]) (*connect.Response[v1.GetLinksResponse], error) {
-	return connect.NewResponse(&v1.GetLinksResponse{Links: []*v1.HostLink{{
+func (a *answering) ListLinks(context.Context, *connect.Request[v1.ListLinksRequest]) (*connect.Response[v1.ListLinksResponse], error) {
+	return connect.NewResponse(&v1.ListLinksResponse{Links: []*v1.HostLink{{
 		From: "a.md", To: "b.md", ToVault: "v", LinkType: "cites", TargetScheme: "name", TargetValue: "B", Label: "see", IsAmbiguous: true,
 	}}}), nil
 }
@@ -153,7 +153,7 @@ func TestAWriteWithTheZeroBaselineSendsNoBaseline(t *testing.T) {
 }
 
 func TestGetLink_PreservesHostFields(t *testing.T) {
-	links, err := clientTo(t, &answering{}).GetLinks(t.Context(), "a.md")
+	links, err := clientTo(t, &answering{}).ListLinks(t.Context(), "a.md")
 
 	want := domain.ResolvedLink{
 		Link:        domain.Link{Target: domain.Address{Scheme: "name", Value: "B"}, Type: "cites", Label: "see"},

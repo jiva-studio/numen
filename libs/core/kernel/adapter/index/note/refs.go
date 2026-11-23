@@ -136,8 +136,8 @@ func (q *Queries) GetTypes(ctx context.Context, vaultID domain.VaultID, paths []
 	return out, nil
 }
 
-// GetPathsOfType is every note of one type the vault holds, by path.
-func (q *Queries) GetPathsOfType(ctx context.Context, vaultID domain.VaultID, of domain.NoteType) (_ []string, err error) {
+// ListPathsOfType is every note of one type the vault holds, by path.
+func (q *Queries) ListPathsOfType(ctx context.Context, vaultID domain.VaultID, of domain.NoteType) (_ []string, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil

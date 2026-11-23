@@ -88,14 +88,14 @@ func (a *fakeArrangeHost) ListVaultProblems(
 	}), nil
 }
 
-func (a *fakeArrangeHost) GetNoteRefs(
-	_ context.Context, req *connect.Request[v1.GetNoteRefsRequest],
-) (*connect.Response[v1.GetNoteRefsResponse], error) {
+func (a *fakeArrangeHost) ListNoteRefs(
+	_ context.Context, req *connect.Request[v1.ListNoteRefsRequest],
+) (*connect.Response[v1.ListNoteRefsResponse], error) {
 	notes := make([]*v1.Note, 0, len(req.Msg.GetPaths()))
 	for _, one := range req.Msg.GetPaths() {
 		notes = append(notes, &v1.Note{Path: one, Title: "Danube", Identifier: "01JRIVERDANUBE"})
 	}
-	return connect.NewResponse(&v1.GetNoteRefsResponse{Notes: notes}), nil
+	return connect.NewResponse(&v1.ListNoteRefsResponse{Notes: notes}), nil
 }
 
 func (a *fakeArrangeHost) ListVaults(context.Context, *connect.Request[v1.ListVaultsRequest]) (*connect.Response[v1.ListVaultsResponse], error) {
