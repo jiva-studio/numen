@@ -58,7 +58,7 @@ func (p Preset) GetPlacing() string {
 	var out strings.Builder
 	fmt.Fprintf(&out, "even=%t", p.ShouldBalanceLoad())
 	for day := time.Sunday; day <= time.Saturday; day++ {
-		fmt.Fprintf(&out, " %s=%d", DayName(day), int(math.Round(p.GetShare(day)*FullLoad)))
+		fmt.Fprintf(&out, " %s=%d", GetDayName(day), int(math.Round(p.GetShare(day)*FullLoad)))
 	}
 	return out.String()
 }
@@ -127,15 +127,15 @@ func (p Preset) IsLearned(s Schedule, target time.Time) bool {
 // A preset naming no rule counts by the default rule, and a value the rule
 // to the threshold in Defaults.
 func (p Preset) GetLearnedRule() (LearnedRule, int, float64) {
-	defaults := Defaults()
+	defaults := NewDefaultPreset()
 	rule, interval, retention := p.Rule, p.Interval, p.Retention
 	if !IsKnownRule(rule) {
 		rule = defaults.Rule
 	}
-	if !GetIntervalBounds().Contains(float64(interval)) {
+	if !GetIntervalBounds().IsWithin(float64(interval)) {
 		interval = defaults.Interval
 	}
-	if !GetRetentionBounds().Contains(retention) {
+	if !GetRetentionBounds().IsWithin(retention) {
 		retention = defaults.Retention
 	}
 	return rule, interval, retention
@@ -173,8 +173,8 @@ func IsKnownBudgetUnit(u BudgetUnit) bool {
 // Bounds is how far a setting goes, at each end.
 type Bounds struct{ Min, Max float64 }
 
-// Contains reports whether a value is within the bounds.
-func (b Bounds) Contains(value float64) bool { return value >= b.Min && value <= b.Max }
+// IsWithin reports whether a value is within the bounds.
+func (b Bounds) IsWithin(value float64) bool { return value >= b.Min && value <= b.Max }
 
 // What each setting of a preset may be. A day holds no more minutes than it
 // has, a retention target outside these is a scheduler asking for what memory
@@ -196,9 +196,9 @@ func GetBacklogBounds() Bounds { return Bounds{Min: 0, Max: 100} }
 
 func GetLoadBounds() Bounds { return Bounds{Min: 0, Max: FullLoad} }
 
-// Defaults is a preset naming nothing, and how a deck pointing at no preset is
+// NewDefaultPreset is a preset naming nothing, and how a deck pointing at no preset is
 // scheduled.
-func Defaults() Preset {
+func NewDefaultPreset() Preset {
 	return Preset{
 		Goal:        GoalMinutes,
 		MinutesADay: 20,

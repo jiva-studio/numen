@@ -105,7 +105,7 @@ func (t *Tools) readCardCardModel(ctx context.Context, in cardModelReadInput) (c
 	if err != nil {
 		return cardModelReadOutput{}, err
 	}
-	s, err := t.cards.Read.CardModel(ctx, v, in.Path)
+	s, err := t.cards.Read.ReadCardModel(ctx, v, in.Path)
 	if err != nil {
 		return cardModelReadOutput{}, err
 	}
@@ -132,7 +132,7 @@ func (t *Tools) readCardCardModel(ctx context.Context, in cardModelReadInput) (c
 		Title:       title,
 		Fields:      fields,
 		Templates:   newTemplates(s.Body.Templates),
-		Fingerprint: fingerprintOf(s.FileStat),
+		Fingerprint: buildFingerprint(s.FileStat),
 	}, nil
 }
 
@@ -190,7 +190,7 @@ func (t *Tools) readCards(ctx context.Context, in cardReadInput) (cardReadOutput
 		Sections:    read.Sections,
 		Total:       read.Total,
 		Problems:    getProblems(read.Problems),
-		Fingerprint: fingerprintOf(read.FileStat),
+		Fingerprint: buildFingerprint(read.FileStat),
 	}
 	for _, card := range read.Cards {
 		res.Cards = append(res.Cards, newCard(card))

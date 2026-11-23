@@ -117,7 +117,7 @@ func TestADeckReadAndSavedBackIsTheFileItWas(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "decks/Mammals.md")
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Mammals.md")
+	got, err := cards.NewRead(vs.ports.Readers, nil).ReadDeck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -131,7 +131,7 @@ func TestADeckReadAndSavedBackIsTheFileItWas(t *testing.T) {
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
 		vaulttest.NewClock(), machineclock.Entropy{})
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.FileStat); err != nil {
+	if _, err := w.WriteDeck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.FileStat); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	if after := read(t, vs.first, "decks/Mammals.md"); after != before {
@@ -158,7 +158,7 @@ func TestACardWritingItsFirstFieldTwiceIsOneFieldSavedTwice(t *testing.T) {
 	}
 
 	u := cards.NewRead(vs.ports.Readers, vs.queries)
-	got, err := u.Deck(t.Context(), vs.first, "decks/Mammals.md")
+	got, err := u.ReadDeck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -198,7 +198,7 @@ func TestACardNamingANoteThatIsNotACardModelIsReported(t *testing.T) {
 	}
 
 	u := cards.NewRead(vs.ports.Readers, vs.queries)
-	got, err := u.Deck(t.Context(), vs.first, "decks/Loose.md")
+	got, err := u.ReadDeck(t.Context(), vs.first, "decks/Loose.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -247,7 +247,7 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 	}
 
 	counted := &counting{VaultReaders: vs.ports.Readers}
-	got, err := cards.NewRead(counted, nil).Deck(t.Context(), vs.first, "decks/Mammals.md")
+	got, err := cards.NewRead(counted, nil).ReadDeck(t.Context(), vs.first, "decks/Mammals.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -275,7 +275,7 @@ func TestACardModelIsBoundedAsANote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).CardModel(t.Context(), vs.first, "Animal.md")
+	got, err := cards.NewRead(vs.ports.Readers, nil).ReadCardModel(t.Context(), vs.first, "Animal.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -292,18 +292,18 @@ func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
 		vaulttest.NewClock(), machineclock.Entropy{})
 
-	first, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
+	first, err := cards.NewRead(vs.ports.Readers, nil).ReadDeck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Birds.md",
+	if _, err := w.WriteDeck(t.Context(), vs.first, "decks/Birds.md",
 		"## Wren\n\n[[Animal]]\n\n### Height\n\nabout 5\"\n", first.FileStat); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	content := read(t, vs.first, "decks/Birds.md")
 
 	// The same file stat again is an outdated read of a file that has since changed.
-	_, err = w.Deck(t.Context(), vs.first, "decks/Birds.md",
+	_, err = w.WriteDeck(t.Context(), vs.first, "decks/Birds.md",
 		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.FileStat)
 	if !errors.Is(err, ports.ErrStale) {
 		t.Fatalf("write = %v, want it rejected", err)
@@ -320,7 +320,7 @@ func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock(), machineclock.Entropy{})
 
-	deck, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Birds of prey", Path: "decks"})
+	deck, err := u.CreateDeck(t.Context(), vs.first, cards.New{Title: "Birds of prey", Path: "decks"})
 	if err != nil {
 		t.Fatalf("make a deck: %v", err)
 	}
@@ -331,7 +331,7 @@ func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 		t.Errorf("no stamp: %q", got)
 	}
 
-	cardModel, err := u.CardModel(t.Context(), vs.first, cards.New{
+	cardModel, err := u.CreateCardModel(t.Context(), vs.first, cards.New{
 		Title: "Bird", Fields: []string{"Wingspan", "Call"},
 	})
 	if err != nil {
@@ -357,7 +357,7 @@ func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock(), machineclock.Entropy{})
 
-	made, err := u.Preset(t.Context(), vs.first, cards.New{Title: "Prosody", Path: "presets"})
+	made, err := u.CreatePreset(t.Context(), vs.first, cards.New{Title: "Prosody", Path: "presets"})
 	if err != nil {
 		t.Fatalf("make a preset: %v", err)
 	}
@@ -389,7 +389,7 @@ func TestACardModelIsMadeWithAFirstField(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewCreate(vs.ports.Writers, vs.index(t), vaulttest.NewClock(), machineclock.Entropy{})
 
-	if _, err := u.CardModel(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
+	if _, err := u.CreateCardModel(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
 		err, cards.ErrNoFields,
 	) {
 		t.Fatalf("make a card model of no fields = %v, want it rejected", err)
@@ -399,7 +399,7 @@ func TestACardModelIsMadeWithAFirstField(t *testing.T) {
 	}
 
 	// A deck declares none, and is made all the same.
-	if _, err := u.Deck(t.Context(), vs.first, cards.New{Title: "Buntings", Path: "decks"}); err != nil {
+	if _, err := u.CreateDeck(t.Context(), vs.first, cards.New{Title: "Buntings", Path: "decks"}); err != nil {
 		t.Errorf("make a deck: %v", err)
 	}
 }

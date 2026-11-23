@@ -200,7 +200,7 @@ describe('a write answered after a newer read was taken', () => {
           bounds: {},
         }),
       write: () => late.promise,
-      curve: async () => {
+      getCurve: async () => {
         throw new Error('no curve')
       },
     } as unknown as Presets

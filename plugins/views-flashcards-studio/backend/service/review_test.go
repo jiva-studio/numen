@@ -57,7 +57,7 @@ func newAPIOn(tb testing.TB, notes ...map[string]string) (*API, []domain.Vault, 
 	for _, one := range notes {
 		target = append(target, installation.Add(tb, one))
 	}
-	backend := New(Config{Vaults: vaulttest.Vaults(installation.Host), Store: vaulttest.Folders(installation.Host), Now: vaulttest.NewClock()})
+	backend := New(Config{GetVault: vaulttest.NewVaults(installation.Host), Store: vaulttest.NewFolders(installation.Host), Now: vaulttest.NewClock()})
 	if backend.getFlashConfig().Day != (review.Day{Starts: 0, In: nil}) {
 		tb.Fatalf("unexpected default day: %+v", backend.getFlashConfig().Day)
 	}
@@ -311,7 +311,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 // index has nothing to show, and its numbers arrive with the count that follows.
 func TestAVaultIsIndexedBeforeItIsCounted(t *testing.T) {
 	handler, target, installation := newAPIOn(t, getDeck(), getDeck())
-	installation.Of(target[1].ID).SetIndexState(host.IndexState{Status: host.Indexing})
+	installation.GetVault(target[1].ID).SetIndexState(host.IndexState{Status: host.Indexing})
 
 	// A vault whose index walk is incomplete has no count, and its row reports that.
 	rows := map[string]*api.VaultCardsDue{}
@@ -326,7 +326,7 @@ func TestAVaultIsIndexedBeforeItIsCounted(t *testing.T) {
 	}
 
 	// The reading finishes and the count that follows it holds the cards.
-	installation.Of(target[1].ID).SetIndexState(host.IndexState{Status: host.Indexed})
+	installation.GetVault(target[1].ID).SetIndexState(host.IndexState{Status: host.Indexed})
 	for _, one := range front(t, handler).Vaults {
 		if one.Unread != "" || one.New == 0 {
 			t.Errorf("a vault came back %+v", one)
@@ -337,7 +337,7 @@ func TestAVaultIsIndexedBeforeItIsCounted(t *testing.T) {
 // A vault the index could not read is uncounted, and the row reports why.
 func TestAVaultTheIndexCouldNotReadIsUncountedAndReturnsWhy(t *testing.T) {
 	handler, target, installation := newAPIOn(t, getDeck())
-	installation.Of(target[0].ID).SetIndexState(host.IndexState{Status: host.IndexFailed, Reason: "the disk is full"})
+	installation.GetVault(target[0].ID).SetIndexState(host.IndexState{Status: host.IndexFailed, Reason: "the disk is full"})
 
 	one := front(t, handler).Vaults[0]
 
@@ -349,7 +349,7 @@ func TestAVaultTheIndexCouldNotReadIsUncountedAndReturnsWhy(t *testing.T) {
 // A session opened on a vault the index does not carry fails with an error.
 func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	handler, target, installation := newAPIOn(t, getDeck())
-	installation.Of(target[0].ID).SetIndexState(host.IndexState{Status: host.Indexing})
+	installation.GetVault(target[0].ID).SetIndexState(host.IndexState{Status: host.Indexing})
 
 	_, err := handler.StartSession(t.Context(),
 		&api.StartSessionRequest{Vault: string(target[0].ID)})
@@ -404,7 +404,7 @@ func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 
 	// A deck nothing may write is a deck that keeps its cards out of the
 	// session, and it is named.
-	installation.Of(v.ID).RefuseWriting("decks/Own.md", fs.ErrPermission)
+	installation.GetVault(v.ID).RefuseWriting("decks/Own.md", fs.ErrPermission)
 
 	session := startSession(t, handler, v)
 	if len(session.Unwritten) != 1 || session.Unwritten[0] != "decks/Own.md" {
@@ -504,7 +504,7 @@ func TestADeckNamingNoPresetReachesBelowTheDefaults(t *testing.T) {
 	if len(presets) != 1 {
 		t.Fatalf("the vault came to %+v, want the defaults alone", presets)
 	}
-	one, defaults := presets[0], review.Defaults()
+	one, defaults := presets[0], review.NewDefaultPreset()
 	if one.Preset != "" || one.Reviewed != 0 {
 		t.Errorf("the day came to %+v", one)
 	}
@@ -829,7 +829,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	rows := make(map[string]*api.DeckCardsDue, len(response.Decks))
 	for _, one := range response.Decks {
 		rows[one.Deck] = one
-		p, err := handler.flash().Schedules.Presets.GetForDeck.Execute(t.Context(), v, one.Deck)
+		p, err := handler.getFlashReview().Schedules.Presets.GetForDeck.Execute(t.Context(), v, one.Deck)
 		if err != nil {
 			t.Fatal(err)
 		}

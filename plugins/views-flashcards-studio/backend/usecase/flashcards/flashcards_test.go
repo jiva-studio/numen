@@ -79,10 +79,10 @@ func openVault(tb testing.TB, notes map[string]string) vaulted {
 	// Each card is scheduled with the share of cards its own preset specifies, as
 	// the application builds it.
 	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), getToday(), standings, deckPresets)
-	schedules.Cache = env.Ports.Schedules("schedules")
+	schedules.Cache = env.Ports.GetScheduleStore("schedules")
 
 	counted := flashcards.NewCountReviews(logs, schedules, getToday(), vaulttest.NewClock())
-	counted.Cache = env.Ports.Schedules("days")
+	counted.Cache = env.Ports.GetScheduleStore("days")
 
 	return vaulted{
 		vault:         env.Vault,
@@ -701,7 +701,7 @@ func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	replayed := review.OrderAnswers(target.Answers).Replay(getToday(), review.ScheduleBy(review.NewFSRS()))
+	replayed := review.SortAnswers(target.Answers).Replay(getToday(), review.ScheduleBy(review.NewFSRS()))
 
 	if len(cached) != len(replayed) {
 		t.Fatalf("the cache holds %d review cards and the answers say %d", len(cached), len(replayed))
@@ -1048,7 +1048,7 @@ func TestReviewsBudgetDividesAcrossDecksAndColdCacheSkipsExtraStat(t *testing.T)
 		Now:     vaulttest.NewClock(),
 	})
 	curves := flashcards.NewProjectCurve(s.standings, s.schedules, flakyCurvePresets, getToday(), vaulttest.NewClock())
-	if _, err := curves.Execute(t.Context(), s.vault, "", review.Defaults()); err == nil {
+	if _, err := curves.Execute(t.Context(), s.vault, "", review.NewDefaultPreset()); err == nil {
 		t.Fatal("expected error from ProjectCurve when GetForDeck fails")
 	}
 }

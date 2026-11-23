@@ -171,12 +171,12 @@ func TestOnlyTheFourAreRatings(t *testing.T) {
 	for _, r := range []review.Rating{
 		review.Again, review.Hard, review.Good, review.Easy,
 	} {
-		if !r.Valid() {
+		if !r.IsValid() {
 			t.Errorf("%s is not one of the four", r)
 		}
 	}
 	for _, r := range []review.Rating{0, review.Easy + 1, 255} {
-		if r.Valid() {
+		if r.IsValid() {
 			t.Errorf("%d passed as one of the four", r)
 		}
 	}
@@ -213,7 +213,7 @@ func TestOrderAnswers_SingleOrderingServesAllQueries(t *testing.T) {
 		{Card: "zpqrstvwxy", Template: "Say it"}: "Sanskrit.md",
 	}
 
-	provided := review.OrderAnswers(answers)
+	provided := review.SortAnswers(answers)
 	if len(provided) != 2 {
 		t.Fatalf("the history came to %d answers, want 2", len(provided))
 	}
@@ -266,7 +266,7 @@ func FuzzReadLog(f *testing.F) {
 			if a.IsUndo() {
 				continue
 			}
-			if a.ReviewCard.Card == "" || a.ReviewCard.Template == "" || !a.Rating.Valid() {
+			if a.ReviewCard.Card == "" || a.ReviewCard.Template == "" || !a.Rating.IsValid() {
 				t.Fatalf("%q was read as %+v, which answers nothing", raw, a)
 			}
 		}
@@ -340,7 +340,7 @@ func FuzzWriteAnswer(f *testing.F) {
 		// identifier, or it has a rating that is not one of the four.
 		shouldFail := want.ID == "" ||
 			(!want.IsUndo() && (want.ReviewCard.Card == "" ||
-				want.ReviewCard.Template == "" || !want.Rating.Valid()))
+				want.ReviewCard.Template == "" || !want.Rating.IsValid()))
 		if shouldFail {
 			if len(answers) != 0 || skipped != 1 {
 				t.Fatalf("%+v was read back as %d answers and %d skipped",

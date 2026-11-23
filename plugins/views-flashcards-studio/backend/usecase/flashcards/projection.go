@@ -19,7 +19,7 @@ func NewProjectionScheduler(by review.Scheduler, day review.Day) ProjectionSched
 }
 
 func (s ProjectionScheduler) GetEndings(c projection.Card, at time.Time) (recalled, forgotten projection.Card) {
-	good, again := s.by.Endings(convertCardToSchedule(c), at)
+	good, again := s.by.ComputeEndings(convertCardToSchedule(c), at)
 	return convertScheduleToCard(good), convertScheduleToCard(again)
 }
 

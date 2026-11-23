@@ -70,11 +70,11 @@ func (r *cardModelReader) readTemplateSides(template *CardTemplate, sides []sect
 }
 
 func (r *cardModelReader) validateTemplatePlaceholders(pos int, template CardTemplate) {
-	for _, name := range placeholders(template.Front + "\n" + template.Back) {
+	for _, name := range findPlaceholders(template.Front + "\n" + template.Back) {
 		if r.declared[name] {
 			continue
 		}
-		problem := onTemplate(pos, FaultPlaceholder, "this template places "+name+", which the card model does not declare")
+		problem := newTemplateProblem(pos, FaultPlaceholder, "this template places "+name+", which the card model does not declare")
 		problem.Field = name
 		r.cardModel.Problems = append(r.cardModel.Problems, problem)
 	}
@@ -86,7 +86,7 @@ func (r *cardModelReader) validateTemplate(pos int, has map[string]bool, templat
 		if has[frontHeading] {
 			missing = backHeading
 		}
-		r.cardModel.Problems = append(r.cardModel.Problems, onTemplate(pos, FaultTemplateSide,
+		r.cardModel.Problems = append(r.cardModel.Problems, newTemplateProblem(pos, FaultTemplateSide,
 			"this template has no "+missing+", and lays out nothing"))
 		return
 	}
@@ -128,7 +128,7 @@ func (r *cardModelReader) addTemplate(sec section, secsAfter []section) {
 // declared are problems of the card model, and everything else in the file is read.
 func ReadCardModel(n domain.Note) CardModel {
 	body := []byte(n.Body)
-	declaredFields, problems := fields(n.Frontmatter)
+	declaredFields, problems := readFields(n.Frontmatter)
 	declared := make(map[string]bool, len(declaredFields))
 	for _, f := range declaredFields {
 		declared[f] = true
@@ -149,7 +149,7 @@ func ReadCardModel(n domain.Note) CardModel {
 		},
 	}
 
-	secs := sections(body, 2, 3)
+	secs := splitSections(body, 2, 3)
 	firstTemplate := len(body)
 	for _, sec := range secs {
 		if sec.level == 2 {
@@ -172,7 +172,7 @@ func ReadCardModel(n domain.Note) CardModel {
 	return r.cardModel
 }
 
-func fields(frontmatter map[string]any) ([]string, []Problem) {
+func readFields(frontmatter map[string]any) ([]string, []Problem) {
 	var list []any
 	if declared, isList := frontmatter[fieldsKey].([]any); isList {
 		list = declared
@@ -188,7 +188,7 @@ func fields(frontmatter map[string]any) ([]string, []Problem) {
 		}
 		switch {
 		case observed[name]:
-			problems = append(problems, onField(name, FaultTwoFields,
+			problems = append(problems, newFieldProblem(name, FaultTwoFields,
 				"two fields are called "+name+", and the first stands"))
 		default:
 			observed[name] = true
@@ -196,7 +196,7 @@ func fields(frontmatter map[string]any) ([]string, []Problem) {
 		}
 	}
 	if len(out) == 0 {
-		problems = append(problems, OnFile(FaultNoFields,
+		problems = append(problems, NewFileProblem(FaultNoFields,
 			"this card model declares no field, so a card cut by it has nothing to be named by"))
 	}
 	return out, problems

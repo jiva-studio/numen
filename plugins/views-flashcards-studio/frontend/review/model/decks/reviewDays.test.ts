@@ -39,7 +39,7 @@ describe('what a vault was answered on', () => {
         )
       },
     }
-    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, getWidest: () => 640 })
 
     await one.read('01VAULT')
 
@@ -63,7 +63,7 @@ describe('what a vault was answered on', () => {
         return Promise.resolve(createReviewDays([['2026-08-29', 1]], 1))
       },
     }
-    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, getWidest: () => 640 })
 
     const slow = one.read('01SLOW')
     await one.read('01OTHER')
@@ -84,7 +84,7 @@ describe('what a vault was answered on', () => {
         ])
       },
     }
-    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, getWidest: () => 640 })
 
     await one.read('01VAULT')
 
@@ -97,7 +97,7 @@ describe('what a vault was answered on', () => {
     const cards: ReviewDaysClient = {
       listReviewDays: () => Promise.reject(new Error('never asked')),
     }
-    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, getWidest: () => 640 })
 
     await one.read('')
 
@@ -110,7 +110,11 @@ describe('what a vault was answered on', () => {
     const cards: ReviewDaysClient = {
       listReviewDays: () => Promise.reject(new Error('no such vault')),
     }
-    const one = useReviewDays({ cards, reportError: (why) => errors.push(why), widest: () => 640 })
+    const one = useReviewDays({
+      cards,
+      reportError: (why) => errors.push(why),
+      getWidest: () => 640,
+    })
 
     await one.read('01VAULT')
 
@@ -131,7 +135,7 @@ describe('the days requested about', () => {
         return Promise.resolve({ days: [], due: [], streak: 0, reviewed: 0 })
       },
     }
-    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, getWidest: () => 640 })
 
     await one.read('01VAULT')
 
@@ -142,7 +146,7 @@ describe('the days requested about', () => {
     expect(response.from < response.to).toBe(true)
 
     // A grid with less space requests a shorter range.
-    const narrow = useReviewDays({ cards, reportError: () => undefined, widest: () => 200 })
+    const narrow = useReviewDays({ cards, reportError: () => undefined, getWidest: () => 200 })
     await narrow.read('01VAULT')
     const less = request as unknown as { from: string; to: string }
     expect(less.from > response.from).toBe(true)
@@ -159,7 +163,11 @@ describe('what is retained of a vault after another answer', () => {
         return createReviewDays([['2026-08-29', 3]], 1, [['2026-08-31', 12]])
       },
     }
-    const one = useReviewDays({ cards, reportError: (why) => errors.push(why), widest: () => 640 })
+    const one = useReviewDays({
+      cards,
+      reportError: (why) => errors.push(why),
+      getWidest: () => 640,
+    })
     await one.read('01VAULT')
 
     await one.read('')
@@ -181,7 +189,7 @@ describe('what is retained of a vault after another answer', () => {
         return createReviewDays([['2026-08-29', 3]], 1, [['2026-08-31', 12]])
       },
     }
-    const one = useReviewDays({ cards, reportError: () => undefined, widest: () => 640 })
+    const one = useReviewDays({ cards, reportError: () => undefined, getWidest: () => 640 })
     await one.read('01VAULT')
 
     fails = true
@@ -206,7 +214,11 @@ describe('what is retained of a vault after another answer', () => {
         return Promise.resolve(createReviewDays([['2026-08-29', 1]], 1))
       },
     }
-    const one = useReviewDays({ cards, reportError: (why) => errors.push(why), widest: () => 640 })
+    const one = useReviewDays({
+      cards,
+      reportError: (why) => errors.push(why),
+      getWidest: () => 640,
+    })
 
     const slow = one.read('01SLOW')
     await one.read('01OTHER')

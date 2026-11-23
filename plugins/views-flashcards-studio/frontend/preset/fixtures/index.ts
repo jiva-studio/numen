@@ -54,16 +54,16 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-const rows = (tab: ReturnType<typeof mount>): readonly string[] =>
+const readRows = (tab: ReturnType<typeof mount>): readonly string[] =>
   tab.findAll('[data-preset-row] [data-preset="name"]').map((one) => one.text())
 
-const heights = (d: string): readonly number[] =>
+const buildHeights = (d: string): readonly number[] =>
   d
     .split(/[ML]/)
     .slice(1)
     .map((one) => Number(one.trim().split(' ')[1]))
 
-const point = (overrides: Partial<Point> = {}): Point => ({
+const createPoint = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -78,15 +78,15 @@ const point = (overrides: Partial<Point> = {}): Point => ({
   ...overrides,
 })
 
-const curve = (overrides: Partial<Curve> = {}): Curve => ({
+const createCurve = (overrides: Partial<Curve> = {}): Curve => ({
   goal: 'minutes',
   grid: [0, 10, 20, 30],
   days: [],
   at: [
-    point(),
-    point({ reviews: 40, retained: 0.8 }),
-    point({ reviews: 80, retained: 0.88 }),
-    point({ reviews: 120, retained: 0.93 }),
+    createPoint(),
+    createPoint({ reviews: 40, retained: 0.8 }),
+    createPoint({ reviews: 80, retained: 0.88 }),
+    createPoint({ reviews: 120, retained: 0.93 }),
   ],
   now: { index: 2, value: 20, day: '' },
   suggested: { index: 3, value: 30, day: '' },
@@ -121,8 +121,8 @@ const createTab = (
     settings: shallowRef({ ...DEFAULTS, ...settings }),
     bounds: shallowRef(BOUNDS),
     curves: {
-      curve: shallowRef(curve(overrides)),
-      material: shallowRef(counts === undefined ? getCounts(curve(overrides)) : counts),
+      curve: shallowRef(createCurve(overrides)),
+      material: shallowRef(counts === undefined ? getCounts(createCurve(overrides)) : counts),
       place,
       isWaiting: ref(isWaiting),
     },
@@ -164,4 +164,11 @@ const mountPresetTab = (
   return { ...one, tab: mount(PresetTab, { props: { state: one.state } }) }
 }
 
-export { curve, mountPresetTab, heights, point, rows, createTab }
+export {
+  createCurve as curve,
+  mountPresetTab,
+  buildHeights as heights,
+  createPoint as point,
+  readRows as rows,
+  createTab,
+}

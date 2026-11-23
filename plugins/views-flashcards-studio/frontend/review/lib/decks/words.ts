@@ -3,7 +3,7 @@
 import { StopReason } from '../../../lib/stop'
 import { formatStopReasonMessage } from '../../../lib/wire/stop'
 import { many, percent } from '@numen/ui'
-import { parseDay, daysBetween } from '../../../lib/day'
+import { parseDay, countDays } from '../../../lib/day'
 
 import { isSpent } from './progress'
 import type { Preset, Settings } from './types'
@@ -69,7 +69,7 @@ export const getGoalWords = (settings: Settings, today: string): string => {
       return `${percent(settings.retention)} remembered`
     case 'date': {
       if (!settings.byDate) return formatStopReasonMessage(StopReason.NO_DAY)
-      const daysLeft = daysBetween(today, settings.byDate)
+      const daysLeft = countDays(today, settings.byDate)
       if (daysLeft <= 0) return `by ${getDayWords(settings.byDate)}`
       return `${many(daysLeft, 'day')} to ${getDayWords(settings.byDate)}`
     }

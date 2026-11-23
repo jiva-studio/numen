@@ -42,7 +42,7 @@ func TestOnCardFilesAProblemAgainstOneCard(t *testing.T) {
 	if NoPosition != -1 {
 		t.Fatalf("NoPosition = %d, want -1", NoPosition)
 	}
-	got := OnCard(3, FaultDuplicateCardID, "detail")
+	got := NewCardProblem(3, FaultDuplicateCardID, "detail")
 	want := Problem{
 		Fault: FaultDuplicateCardID, Card: 3, Template: NoPosition, Detail: "detail",
 	}
@@ -52,25 +52,25 @@ func TestOnCardFilesAProblemAgainstOneCard(t *testing.T) {
 }
 
 func TestSectionAndLinkHelpers(t *testing.T) {
-	if got := sections(nil, SectionLevel, FieldLevel); len(got) != 0 {
+	if got := splitSections(nil, SectionLevel, FieldLevel); len(got) != 0 {
 		t.Fatalf("expected empty sections, got %+v", got)
 	}
-	if lvl, name, ok := heading([]byte("##\tTabbed ###"), SectionLevel, FieldLevel); !ok || lvl != 2 || name != "Tabbed" {
+	if lvl, name, ok := parseHeading([]byte("##\tTabbed ###"), SectionLevel, FieldLevel); !ok || lvl != 2 || name != "Tabbed" {
 		t.Fatalf("unexpected tabbed heading: %d %q %v", lvl, name, ok)
 	}
-	if lvl, name, ok := heading([]byte("## ###"), SectionLevel, FieldLevel); !ok || lvl != 2 || name != "" {
+	if lvl, name, ok := parseHeading([]byte("## ###"), SectionLevel, FieldLevel); !ok || lvl != 2 || name != "" {
 		t.Fatalf("unexpected empty closed heading: %d %q %v", lvl, name, ok)
 	}
-	if _, _, ok := heading([]byte("##a"), SectionLevel, FieldLevel); ok {
+	if _, _, ok := parseHeading([]byte("##a"), SectionLevel, FieldLevel); ok {
 		t.Fatal("expected single-letter suffix without space not to be a heading")
 	}
 	if text, carried := ReadHeading(" ^k7m2xq9fzp"); text != "" || carried != "k7m2xq9fzp" {
 		t.Fatalf("unexpected ReadHeading with leading space: %q %q", text, carried)
 	}
-	if line, next := lineAt([]byte("no-newline\r"), 0, 11); string(line) != "no-newline" || next != 11 {
+	if line, next := readLine([]byte("no-newline\r"), 0, 11); string(line) != "no-newline" || next != 11 {
 		t.Fatalf("unexpected lineAt: %q %d", string(line), next)
 	}
-	if from := lineFrom([]byte("first\nsecond"), 0, 12); from != 6 {
+	if from := findLineStart([]byte("first\nsecond"), 0, 12); from != 6 {
 		t.Fatalf("expected lineFrom 6, got %d", from)
 	}
 	if target, leadFrom := readCardModelLink([]byte("prefix [[Animal]]\n\n"), 3, 19); target != "" || leadFrom != 3 {
@@ -79,19 +79,19 @@ func TestSectionAndLinkHelpers(t *testing.T) {
 	if target, leadFrom := readCardModelLink([]byte("   \n"), 2, 4); target != "" || leadFrom != 2 {
 		t.Fatalf("expected empty link at offset 2, got %q %d", target, leadFrom)
 	}
-	if got := oneLine("\nsecond"); got != "" {
+	if got := collapseToLine("\nsecond"); got != "" {
 		t.Fatalf("expected empty first line, got %q", got)
 	}
-	if got := links("![[embed]] [single] [[a ] b]] [[unclosed"); len(got) != 2 ||
+	if got := findLinks("![[embed]] [single] [[a ] b]] [[unclosed"); len(got) != 2 ||
 		got[0][0] != 0 || got[0][1] != 10 || got[1][0] != 20 || got[1][1] != 29 {
 		t.Fatalf("unexpected links: %v", got)
 	}
-	if got := links("[[a[b]] [[[c]] [[]] [[outer [[inner]] end]] [[unclosed["); len(got) != 4 ||
+	if got := findLinks("[[a[b]] [[[c]] [[]] [[outer [[inner]] end]] [[unclosed["); len(got) != 4 ||
 		got[0][0] != 0 || got[0][1] != 7 || got[1][0] != 8 || got[1][1] != 14 ||
 		got[2][0] != 15 || got[2][1] != 19 || got[3][0] != 20 || got[3][1] != 43 {
 		t.Fatalf("unexpected nested/bracketed links: %v", got)
 	}
-	if got := links("plain["); len(got) != 0 {
+	if got := findLinks("plain["); len(got) != 0 {
 		t.Fatalf("expected no links in plain[, got %v", got)
 	}
 }
@@ -141,7 +141,7 @@ func BenchmarkSections(b *testing.B) {
 		b.SetBytes(int64(len(small)))
 		b.ResetTimer()
 		for range b.N {
-			_ = sections(small, SectionLevel, FieldLevel)
+			_ = splitSections(small, SectionLevel, FieldLevel)
 		}
 	})
 
@@ -150,7 +150,7 @@ func BenchmarkSections(b *testing.B) {
 		b.SetBytes(int64(len(large)))
 		b.ResetTimer()
 		for range b.N {
-			_ = sections(large, SectionLevel, FieldLevel)
+			_ = splitSections(large, SectionLevel, FieldLevel)
 		}
 	})
 
@@ -159,7 +159,7 @@ func BenchmarkSections(b *testing.B) {
 		b.SetBytes(int64(len(prose)))
 		b.ResetTimer()
 		for range b.N {
-			_ = sections(prose, SectionLevel, FieldLevel)
+			_ = splitSections(prose, SectionLevel, FieldLevel)
 		}
 	})
 }

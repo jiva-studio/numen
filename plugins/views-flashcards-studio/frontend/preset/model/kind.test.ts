@@ -138,7 +138,7 @@ const openPresetTab = async (
       stored += 1n
       return writeAs(await writing(writes++), stored)
     },
-    curve: async (_path, params) => {
+    getCurve: async (_path, params) => {
       request.push(params.goal)
       return typeof answers === 'function' ? answers(params) : answers
     },
@@ -154,7 +154,7 @@ const openPresetTab = async (
     writeMessage: (text, severity) => {
       messages.push([text, severity])
     },
-    today: () => NOW,
+    getToday: () => NOW,
   })
   const state = kind.kind.open?.('Steady.md', 'preset:Steady.md')
   if (!state) throw new Error('review card missing')
@@ -214,7 +214,7 @@ const opening = async (file: Partial<Settings>) => {
       stored += 1n
       return asValue({ at: 'two', version: stored })
     },
-    curve: async () => curve,
+    getCurve: async () => curve,
   }
   const kind = usePresetTab({
     component: PresetTab,
@@ -222,7 +222,7 @@ const opening = async (file: Partial<Settings>) => {
     buffers: createMockBufferHost(),
     closeTab: () => undefined,
     writeMessage: () => undefined,
-    today: () => NOW,
+    getToday: () => NOW,
   })
   return {
     tab: kind.kind.open?.('Steady.md', 'preset:Steady.md') as PresetTabState,

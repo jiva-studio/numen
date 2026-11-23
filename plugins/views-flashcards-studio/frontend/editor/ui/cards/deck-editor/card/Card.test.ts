@@ -24,7 +24,7 @@ const WORDS: CardWords = {
   cut: 'Card model',
   cardStem: 'Card',
   nothing: 'Nothing in it',
-  unknown: (cardModel) =>
+  describeUnknown: (cardModel) =>
     cardModel === null ? 'Cut by no card model' : `No card model called ${cardModel}`,
   wrong: 'What is wrong',
 }

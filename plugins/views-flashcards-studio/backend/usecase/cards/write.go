@@ -40,12 +40,12 @@ func NewWrite(
 	return Write{readers: readers, writers: writers, links: links, index: index, now: now, entropy: entropy}
 }
 
-// Deck puts body in the deck at path.
+// WriteDeck puts body in the deck at path.
 //
 // The deck is made whole on the way past: every card carrying no card id is given
 // one, and every stale heading is put back in step. Every caller therefore gets
 // the same file, and none of them has to know the rules.
-func (u Write) Deck(
+func (u Write) WriteDeck(
 	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
 ) (format.DeckWriteResult, error) {
 	if err := edit.CheckSize(path, len(body), format.MaxDeckBytes); err != nil {
@@ -71,7 +71,7 @@ func (u Write) createWholeBody(
 	if err != nil {
 		return "", nil, err
 	}
-	whole, provided := format.Whole(body, delta, newCardIDs(u.entropy))
+	whole, provided := format.AssignCardIDs(body, delta, newCardIDs(u.entropy))
 	return whole, provided, nil
 }
 
@@ -87,11 +87,11 @@ func (u Write) writeBody(
 	return written, errors.Join(err, getReleaseError())
 }
 
-// CardModel puts the templates and the fields into the card model at path, bounded as a note.
+// WriteCardModel puts the templates and the fields into the card model at path, bounded as a note.
 // The templates are the body and the fields are one key of the frontmatter, so one write carries
 // both. The read, the change and the write are made under this vault's write lock, from before
 // the read until after the file is replaced.
-func (u Write) CardModel(
+func (u Write) WriteCardModel(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
 	stat domain.FileStat,
 ) (domain.FileStat, error) {
@@ -120,14 +120,14 @@ func (u Write) CardModel(
 }
 
 func newBodyNote(body string) domain.Note {
-	n := emptyNote()
+	n := newEmptyNote()
 	n.Body = body
 	return n
 }
 
-// PointAt points the entry of the `links:` block of the note at path that carries the type of entry
+// UpdateLink points the entry of the `links:` block of the note at path that carries the type of entry
 // at its address, over the file stat the caller read. An empty address takes that entry out.
-func (u Write) PointAt(
+func (u Write) UpdateLink(
 	ctx context.Context, v domain.Vault, path string, entry ports.LinkEntry, stat domain.FileStat,
 ) (domain.FileStat, error) {
 	e, getReleaseError := newEdit(u.readers, u.writers, u.index, u.now, u.entropy)

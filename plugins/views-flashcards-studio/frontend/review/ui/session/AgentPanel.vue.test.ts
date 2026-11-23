@@ -31,8 +31,8 @@ const createPanel = (): AgentPanelState => {
   const open = ref(false)
   return useAgentPanel({
     connections,
-    card: () => card,
-    vault: () => 'garden',
+    getCard: () => card,
+    getVault: () => 'garden',
     open: () => open.value,
     showPanel: (isOpen) => {
       open.value = isOpen

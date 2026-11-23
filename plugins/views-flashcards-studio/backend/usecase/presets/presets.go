@@ -300,7 +300,7 @@ func (u Read) Execute(ctx context.Context, v domain.Vault, path string) (review.
 }
 
 func (u Read) readPreset(ctx context.Context, v domain.Vault, path string) (review.PresetNote, error) {
-	out := review.PresetNote{Path: path, Outcome: "", Type: "", Settings: review.Defaults(), Stops: "", StopsToday: "", Problems: nil,
+	out := review.PresetNote{Path: path, Outcome: "", Type: "", Settings: review.NewDefaultPreset(), Stops: "", StopsToday: "", Problems: nil,
 		FileStat: domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}}}
 
 	reader, err := u.readers.Open(v)

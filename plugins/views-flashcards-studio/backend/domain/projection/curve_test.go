@@ -13,8 +13,8 @@ func getRetentionBounds() Bounds { return Bounds{Min: 0.7, Max: 0.99} }
 func TestACurveOfMinutesContainsThePresetMinutes(t *testing.T) {
 	t.Parallel()
 	p := Settings{Goal: GoalMinutes, MinutesADay: 7, Rule: RuleInterval, Interval: 4, Backlog: wholeBacklog}
-	got, err := newTestSimulation(5).Curve(t.Context(), getTestNow(), p, CurveInputs{
-		Cards: getOverdueCards(20), UnbegunCount: 5, Scheduler: nil, Places: nil, RetentionBounds: getRetentionBounds(),
+	got, err := newTestSimulation(5).ComputeCurve(t.Context(), getTestNow(), p, CurveInputs{
+		Cards: getOverdueCards(20), UnbegunCount: 5, GetScheduler: nil, VisitPlaces: nil, RetentionBounds: getRetentionBounds(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -40,9 +40,9 @@ func TestACurveOfRetentionRunsTheSchedulerOfEachPlace(t *testing.T) {
 	var asked []float64
 	p := getRetentionSettings(5, 50)
 	p.Retention = 0.85
-	got, err := newTestSimulation(5).Curve(t.Context(), getTestNow(), p, CurveInputs{
-		Cards: getOverdueCards(10), UnbegunCount: 2, Places: nil, RetentionBounds: getRetentionBounds(),
-		Scheduler: func(retention float64) Scheduler {
+	got, err := newTestSimulation(5).ComputeCurve(t.Context(), getTestNow(), p, CurveInputs{
+		Cards: getOverdueCards(10), UnbegunCount: 2, VisitPlaces: nil, RetentionBounds: getRetentionBounds(),
+		GetScheduler: func(retention float64) Scheduler {
 			asked = append(asked, retention)
 			return fakeScheduler{placed: nil}
 		},
@@ -66,8 +66,8 @@ func TestACurveOfADateRunsToTwiceItsDay(t *testing.T) {
 	open := getTestOpen()
 	by := open.AddDate(0, 0, 4)
 	p := Settings{Goal: GoalDate, By: by, MinutesADay: 30, Retention: 0.9, Rule: RuleInterval, Interval: 3}
-	got, err := newTestSimulation(5).Curve(t.Context(), getTestNow(), p, CurveInputs{
-		Cards: getOverdueCards(1), UnbegunCount: 2, Scheduler: nil, Places: nil, RetentionBounds: getRetentionBounds(),
+	got, err := newTestSimulation(5).ComputeCurve(t.Context(), getTestNow(), p, CurveInputs{
+		Cards: getOverdueCards(1), UnbegunCount: 2, GetScheduler: nil, VisitPlaces: nil, RetentionBounds: getRetentionBounds(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -84,7 +84,7 @@ func TestACurveOfADateRunsToTwiceItsDay(t *testing.T) {
 
 	for _, past := range []time.Time{{}, open.AddDate(0, 0, -1)} {
 		p.By = past
-		empty, err := newTestSimulation(5).Curve(t.Context(), getTestNow(), p, CurveInputs{RetentionBounds: getRetentionBounds()})
+		empty, err := newTestSimulation(5).ComputeCurve(t.Context(), getTestNow(), p, CurveInputs{RetentionBounds: getRetentionBounds()})
 		if err != nil || len(empty.Grid) != 0 || empty.Now != GetOutsideGrid() {
 			t.Errorf("a date of %v draws %+v, %v", past, empty, err)
 		}
@@ -94,9 +94,9 @@ func TestACurveOfADateRunsToTwiceItsDay(t *testing.T) {
 func TestACurveOfADateBeyondTheRangeEndsAtTheRange(t *testing.T) {
 	t.Parallel()
 	p := Settings{Goal: GoalDate, By: getTestOpen().AddDate(0, 0, MostAhead+5), Rule: RuleInterval, Interval: 3}
-	got, err := newTestSimulation(5).Curve(t.Context(), getTestNow(), p, CurveInputs{
+	got, err := newTestSimulation(5).ComputeCurve(t.Context(), getTestNow(), p, CurveInputs{
 		RetentionBounds: getRetentionBounds(),
-		Places: func(count int, each func(index int) error) error {
+		VisitPlaces: func(count int, each func(index int) error) error {
 			if err := each(0); err != nil {
 				return err
 			}
@@ -120,13 +120,13 @@ func TestACurveReturnsTheErrorOfAPlace(t *testing.T) {
 		p := getRetentionSettings(5, 5)
 		p.Goal, p.MinutesADay, p.By = goal, 10, getTestOpen().AddDate(0, 0, 4)
 		run := newTestSimulation(2)
-		if _, err := run.Curve(t.Context(), getTestNow(), p, CurveInputs{
+		if _, err := run.ComputeCurve(t.Context(), getTestNow(), p, CurveInputs{
 			RetentionBounds: getRetentionBounds(),
-			Places:          func(int, func(int) error) error { return errPlace },
+			VisitPlaces:     func(int, func(int) error) error { return errPlace },
 		}); !errors.Is(err, errPlace) {
 			t.Errorf("%s: a failing place returns %v", goal, err)
 		}
-		if _, err := run.Curve(canceled, getTestNow(), p, CurveInputs{RetentionBounds: getRetentionBounds()}); !errors.Is(err, context.Canceled) {
+		if _, err := run.ComputeCurve(canceled, getTestNow(), p, CurveInputs{RetentionBounds: getRetentionBounds()}); !errors.Is(err, context.Canceled) {
 			t.Errorf("%s: a canceled curve returns %v", goal, err)
 		}
 	}
@@ -143,7 +143,7 @@ func TestACurveOfADateNamesTheDaysAcrossAClockChange(t *testing.T) {
 	sim.Day = zonedDays{starts: 2*time.Hour + 30*time.Minute, in: zone}
 	now := time.Date(2026, 3, 6, 12, 0, 0, 0, zone)
 	by := time.Date(2026, 3, 9, 12, 0, 0, 0, zone)
-	got, err := sim.Curve(t.Context(), now, Settings{
+	got, err := sim.ComputeCurve(t.Context(), now, Settings{
 		Goal: GoalDate, By: by, MinutesADay: 30, Retention: 0.9, Rule: RuleInterval, Interval: 7,
 	}, CurveInputs{UnbegunCount: 2, RetentionBounds: getRetentionBounds()})
 	if err != nil {

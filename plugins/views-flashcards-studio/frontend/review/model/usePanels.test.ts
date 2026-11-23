@@ -40,8 +40,8 @@ const panels = (more: { card?: ReviewCard | null } = {}) => {
   const notices: string[] = []
   const target = usePanels({
     connections,
-    card: () => (more.card === undefined ? card() : more.card),
-    vault: () => 'garden',
+    getCard: () => (more.card === undefined ? card() : more.card),
+    getVault: () => 'garden',
     showNotice: (text) => notices.push(text),
     resolveLinks: async () => [],
   })

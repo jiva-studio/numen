@@ -17,7 +17,7 @@ const element = useTemplateRef<HTMLElement>('element')
 
 useMountedConversation({
   element,
-  context: () => props.panel.context.value,
+  getContext: () => props.panel.context.value,
   open: () => props.panel.open.value,
   mountView: inject(MOUNT_VIEW, mountEmptyView),
 })

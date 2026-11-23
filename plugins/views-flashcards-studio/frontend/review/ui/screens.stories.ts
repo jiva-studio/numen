@@ -6,7 +6,7 @@
  * taken from, so every piece renders in its settled state.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { dayAfter, getDayName } from '../../lib/day'
+import { addDays, getDayName } from '../../lib/day'
 import type { Tally as HeatmapTally } from '../lib/heatmap/tally'
 import { h, type VNode } from 'vue'
 import Decks from './decks/Decks.vue'
@@ -15,7 +15,7 @@ import type { Preset, Settings } from '../lib/decks/types'
 import type { ReviewCard } from '../lib/card/cards'
 import type { BudgetKeys, DeckCardsDue, VaultCardsDue } from '../lib/vault/types'
 
-const dayBefore = (day: string, back: number): string => dayAfter(day, -back)
+const dayBefore = (day: string, back: number): string => addDays(day, -back)
 
 /**
  * The day this window is rendered on. The grid of weeks ends at the current
