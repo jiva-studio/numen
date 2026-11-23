@@ -28,6 +28,7 @@ type Deps struct {
 	Absences        localchanges.DetectState
 	RemovalDelay    func() time.Duration
 	Digests         ports.Digests
+	Conflicts       ports.ConflictResolver
 }
 
 // NewResolveDeletions returns the use case that takes the answer of the person to a pause.
@@ -68,6 +69,7 @@ func NewSyncVault(deps Deps) *syncvault.SyncVault {
 		Pull: pull.NewPullChanges(pull.Deps{
 			Revisions: deps.Revisions, Blobs: deps.Blobs, Crypto: deps.Crypto, Host: deps.Host, State: deps.State,
 			Downloads: downloads, Guard: guard, Health: deps.Health,
+			Conflicts: deps.Conflicts, Clock: deps.Clock,
 		}),
 		Scan:         localchanges.NewScanLocalChanges(localchanges.Deps{Host: deps.Host, State: deps.Progress, Clock: deps.Clock}),
 		Detect:       localchanges.NewDetectMoves(localchanges.DetectDeps{Host: deps.Host, State: deps.Absences, Clock: deps.Clock, Delay: deps.RemovalDelay}),

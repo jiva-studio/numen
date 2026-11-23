@@ -20,6 +20,8 @@ const (
 	ParentMismatch
 	// PathTaken means another file of the vault has the path.
 	PathTaken
+	// CaseClash means another file of the vault has a name that differs from the path in letter case only.
+	CaseClash
 	// TooLarge means the sealed file is larger than the server stores.
 	TooLarge
 )
@@ -108,14 +110,15 @@ type PullInput struct {
 	IsAuthor func(deviceSignKey []byte) bool
 }
 
-// PullResult is the files written, the files left as they were because both computers changed them, the number
-// of revisions skipped because their author or their content could not be verified, whether the server asked for
-// a full comparison.
+// PullResult is the files written, the files whose conflict kept the other text in a copy, the files left as they were
+// because a conflict could not be settled, the number of revisions skipped because their author or their content could
+// not be verified, whether the server asked for a full comparison.
 type PullResult struct {
 	Applied    []string
 	Conflicts  []string
 	Unverified int
 	IsReset    bool
+	Resolved   []string
 }
 
 // NewEmptyRecord returns the record of a file that has none.

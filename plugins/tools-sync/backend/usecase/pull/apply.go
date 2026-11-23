@@ -78,7 +78,7 @@ func (r *run) applyContent(ctx context.Context, stored *syncv1.StoredRevision, m
 		return err
 	}
 	if isKnown && record.Path != meta.Path && isMetadataOnly(stored.GetRevision(), record, meta) {
-		isHandled, err := r.applyMove(ctx, stored, meta, record, local)
+		isHandled, err := r.applyMove(ctx, stored, meta, record, local, stat)
 		if isHandled || err != nil {
 			return err
 		}
@@ -90,8 +90,7 @@ func (r *run) applyContent(ctx context.Context, stored *syncv1.StoredRevision, m
 		return r.download(ctx, stored, meta, stat, local == "")
 	case note.Conflict:
 	}
-	r.addConflict(meta.Path, stored.GetSeq())
-	return nil
+	return r.resolve(ctx, stored, meta, local, stat)
 }
 
 func (r *run) adopt(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, previous transfer.FileRecord, isKnown bool) error {
@@ -194,14 +193,19 @@ func (r *run) makeRecord(ctx context.Context, stored *syncv1.StoredRevision, met
 	return record, nil
 }
 
-// body is the writing of a file into the vault, made ready before the record is moved to the new base.
-type body func(ctx context.Context) error
+// body is the writing of a file into the vault over the baseline, made ready before the record is moved to the new base.
+// A nil baseline writes a file that is not there yet.
+type body func(ctx context.Context, baseline *domain.FileStat) error
 
 func (r *run) download(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, stat domain.FileStat, isAbsent bool) error {
 	rev := stored.GetRevision()
-	write, err := r.prepare(ctx, stored, meta, stat, isAbsent)
+	write, err := r.prepare(ctx, stored, meta)
 	if err != nil {
 		return r.settleFailure(ctx, stored, meta, err)
+	}
+	var baseline *domain.FileStat
+	if !isAbsent {
+		baseline = &stat
 	}
 	previous, isKnown := r.getRecord(rev.GetFileId())
 	record, err := r.makeRecord(ctx, stored, meta, previous, isKnown)
@@ -212,7 +216,7 @@ func (r *run) download(ctx context.Context, stored *syncv1.StoredRevision, meta 
 	if err := r.deps.State.WriteRecords(ctx, r.in.VaultID, r.records); err != nil {
 		return err
 	}
-	err = write(ctx)
+	err = write(ctx, baseline)
 	if err == nil {
 		r.result.Applied = append(r.result.Applied, meta.Path)
 		return r.deps.Downloads.Forget(ctx, r.in.VaultID, rev.GetFileId())
@@ -232,8 +236,7 @@ func (r *run) settleFailure(ctx context.Context, stored *syncv1.StoredRevision, 
 	rev := stored.GetRevision()
 	switch {
 	case errors.Is(err, host.ErrStale), errors.Is(err, host.ErrAlreadyExists):
-		r.addConflict(meta.Path, stored.GetSeq())
-		return r.deps.Downloads.Discard(ctx, r.in.VaultID, rev.GetFileId())
+		return r.settleRace(ctx, stored, meta)
 	case errors.Is(err, host.ErrHashMismatch), errors.Is(err, transfer.ErrIntegrity):
 		r.hold(stored.GetSeq())
 		return errors.Join(r.deps.Downloads.Discard(ctx, r.in.VaultID, rev.GetFileId()), r.deps.Health.Report(ctx, health.Item{
@@ -243,14 +246,16 @@ func (r *run) settleFailure(ctx context.Context, stored *syncv1.StoredRevision, 
 	return err
 }
 
-func (r *run) prepare(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, stat domain.FileStat, isAbsent bool) (body, error) {
+func (r *run) prepare(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta) (body, error) {
 	rev := stored.GetRevision()
 	if meta.Kind == note.KindMarkdown && meta.Size <= note.SmallFileLimit {
 		plain, err := r.fetch(ctx, rev, meta)
 		if err != nil {
 			return nil, err
 		}
-		return func(ctx context.Context) error { return r.write(ctx, meta.Path, plain, stat, isAbsent) }, nil
+		return func(ctx context.Context, baseline *domain.FileStat) error {
+			return r.write(ctx, meta.Path, plain, baseline)
+		}, nil
 	}
 	in := transfer.DownloadInput{
 		Vault: r.in.VaultID, RemoteID: r.remote, FileID: rev.GetFileId(), Path: meta.Path, BlobID: rev.GetBlobId(), BlobHash: rev.GetBlobHash(),
@@ -260,21 +265,17 @@ func (r *run) prepare(ctx context.Context, stored *syncv1.StoredRevision, meta n
 	if err != nil {
 		return nil, err
 	}
-	var baseline *domain.FileStat
-	if !isAbsent {
-		baseline = &stat
-	}
-	return func(ctx context.Context) error {
+	return func(ctx context.Context, baseline *domain.FileStat) error {
 		_, err := r.moves.PlaceFile(ctx, name, meta.Path, meta.Hash, baseline)
 		return err
 	}, nil
 }
 
-func (r *run) write(ctx context.Context, path string, plain []byte, stat domain.FileStat, isAbsent bool) error {
-	if isAbsent {
+func (r *run) write(ctx context.Context, path string, plain []byte, baseline *domain.FileStat) error {
+	if baseline == nil {
 		return r.files.Create(ctx, path, plain)
 	}
-	_, err := r.files.Write(ctx, path, plain, stat)
+	_, err := r.files.Write(ctx, path, plain, *baseline)
 	return err
 }
 

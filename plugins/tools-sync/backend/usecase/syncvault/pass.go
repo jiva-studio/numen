@@ -21,6 +21,8 @@ type pass struct {
 	id         domain.VaultID
 	authors    trust.Authors
 	conflicts  []string
+	resolved   int
+	clashes    []string
 	unverified int
 	isReset    bool
 }
@@ -48,10 +50,12 @@ func (p *pass) run(ctx context.Context) error {
 			return err
 		}
 	}
-	if err := p.use.reports.report(ctx, len(p.conflicts), previous.ConflictCount, p.unverified); err != nil {
+	conflicts := len(p.conflicts) + p.resolved
+	found := tally{conflicts: conflicts, previousConflicts: previous.ConflictCount, unverified: p.unverified, clashes: len(p.clashes)}
+	if err := p.use.reports.report(ctx, found); err != nil {
 		return err
 	}
-	return p.use.deps.Progress.WriteStatus(ctx, p.id, ports.Status{LastSyncedAt: p.use.deps.Clock.Now(), ConflictCount: len(p.conflicts)})
+	return p.use.deps.Progress.WriteStatus(ctx, p.id, ports.Status{LastSyncedAt: p.use.deps.Clock.Now(), ConflictCount: conflicts})
 }
 
 func (p *pass) pull(ctx context.Context) error {
@@ -60,6 +64,7 @@ func (p *pass) pull(ctx context.Context) error {
 		return err
 	}
 	p.conflicts = result.Conflicts
+	p.resolved += len(result.Resolved)
 	p.unverified = result.Unverified
 	p.isReset = result.IsReset
 	return nil
@@ -167,12 +172,15 @@ func (p *pass) sendRemovals(ctx context.Context, vault transfer.Vault, records, 
 	if err != nil {
 		return records, false, err
 	}
+	isRetry := false
 	for _, outcome := range outcomes {
-		if outcome.Status == transfer.Committed {
+		if outcome.Status == transfer.Committed || isRemoved(outcome) {
 			records = slices.DeleteFunc(records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, outcome.FileID) })
+			continue
 		}
+		isRetry = isRetry || outcome.Status == transfer.ParentMismatch || outcome.Status == transfer.PathTaken
 	}
-	return records, hasMismatch(outcomes), nil
+	return records, isRetry, nil
 }
 
 func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []transfer.FileRecord, changes []transfer.Change) ([]transfer.FileRecord, bool, error) {
@@ -198,7 +206,16 @@ func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []tr
 			outcomes[one.index] = second[i]
 		}
 	}
+	p.noteClashes(outcomes)
 	return p.apply(records, outcomes), hasMismatch(outcomes), nil
+}
+
+func (p *pass) noteClashes(outcomes []transfer.Outcome) {
+	for _, outcome := range outcomes {
+		if outcome.Status == transfer.CaseClash && !slices.Contains(p.clashes, outcome.Path) {
+			p.clashes = append(p.clashes, outcome.Path)
+		}
+	}
 }
 
 // repeat is a file whose revision the server refused because the head of the file is a removal, or is gone, with the
@@ -226,6 +243,10 @@ func getEditsOverRemovals(files []transfer.File, outcomes []transfer.Outcome) []
 		again = append(again, repeat{index: i, file: file})
 	}
 	return again
+}
+
+func isRemoved(outcome transfer.Outcome) bool {
+	return outcome.Status == transfer.ParentMismatch && outcome.Head != nil && outcome.Head.GetRevision().GetDeleted()
 }
 
 func hasMismatch(outcomes []transfer.Outcome) bool {

@@ -9,6 +9,7 @@ import (
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/conflict"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/digest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
@@ -87,7 +88,7 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 	wired := syncwire.Deps{
 		Deps: deps, Uploads: cloud.NewUploader(cloudSide, p.clock.Now), UploadEntries: p.state, DownloadBlobs: cloud.NewBlobs(cloudSide),
 		DownloadEntries: p.state, Pending: p.state, Approvals: p.state, Absences: p.state, RemovalDelay: r.removal.Get,
-		Digests: digest.Sha256{},
+		Digests: digest.Sha256{}, Conflicts: conflict.New(conflict.Deps{Host: p.vaults, Log: nil}),
 	}
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
 		Pass: syncwire.NewSyncVault(wired), Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,

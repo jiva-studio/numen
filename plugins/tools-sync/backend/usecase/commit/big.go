@@ -58,6 +58,7 @@ func (r *batchRun) executeBig(ctx context.Context, vaultID domain.VaultID, file 
 	}
 	outcome := done[0]
 	outcome.Path = file.Path
+	outcome = r.settleClash(outcome)
 	if outcome.Status == transfer.Committed {
 		outcome.Record = transfer.FileRecord{
 			FileID: fileID, Path: path, BaseHash: file.Stat.Hash, HeadRev: outcome.RevID, Size: file.Stat.Size, ModifiedAt: file.ModifiedAt, Kind: kind,

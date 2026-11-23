@@ -12,6 +12,7 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { expect } from 'playwright/test'
+import { Gate } from './gate.js'
 import type { IdentityDriver } from './identity.js'
 import { freeFromRemoval, holdForRemoval } from './reaper.js'
 import type { Scenario } from './scenario.js'
@@ -33,6 +34,8 @@ const RETENTION_DAYS = 60
 const NEWER_PROTOCOL = 1000
 /** The plugin tries to sign in within this time of its start; a server that has no session after it has none to give. */
 const SETTLE_MS = 3_000
+/** The computer that reaches the server first commits its changes within a few passes, which come every second. */
+const LEAD_MS = 5_000
 
 /** The plugins a scenario names, by the name a person reads: the id of the manifest and the file of the backend. */
 const PLUGINS: Readonly<Partial<Record<string, { readonly id: string; readonly backend: string }>>> = {
@@ -128,6 +131,8 @@ export class SyncDriver {
   private listen: string | undefined
   private heldGigabytes = 0
   private trial: { readonly plan: string; readonly endsAt: Date } | undefined
+  private readonly gates = new Map<Scenario, Gate>()
+  private held: readonly Gate[] = []
 
   constructor(
     private readonly scenario: Scenario,
@@ -202,14 +207,28 @@ export class SyncDriver {
     holdForRemoval('dir', this.stateDir)
     this.running = await startProgram('127.0.0.1:0', this.getStateFlags())
     this.listen = new URL(this.running.address).host
-    this.setPlugin(this.scenario)
+    await this.setPlugin(this.scenario)
   }
 
-  /** Tells the plugin of a scenario where the sync server is and how often to ask it. */
-  setPlugin(scenario: Scenario): void {
-    scenario.setPluginSetting(SYNC_PLUGIN, 'server', this.requireRunning().address)
+  /** Tells the plugin of a scenario where the sync server is and how often to ask it. The plugin reaches the server through a gate of its computer. */
+  async setPlugin(scenario: Scenario): Promise<void> {
+    const gate = await Gate.listen(() => this.getTarget())
+    this.gates.set(scenario, gate)
+    scenario.setPluginSetting(SYNC_PLUGIN, 'server', gate.getAddress())
     scenario.setPluginSetting(SYNC_PLUGIN, 'syncIntervalSeconds', SYNC_INTERVAL_SECONDS)
     scenario.setPluginSetting(SYNC_PLUGIN, 'removalDelaySeconds', REMOVAL_DELAY_SECONDS)
+  }
+
+  /** Makes the other computers unable to reach the sync server until it runs again and this computer had time to send its changes. */
+  holdOthers(lead: Scenario): void {
+    this.held = [...this.gates].filter(([scenario]) => scenario !== lead).map(([, gate]) => gate)
+    for (const gate of this.held) gate.close()
+  }
+
+  private getTarget(): { readonly host: string; readonly port: number } {
+    if (this.listen === undefined) throw new Error('no sync server ran: begin with a sync server runs')
+    const url = new URL(`http://${this.listen}`)
+    return { host: url.hostname, port: Number(url.port) }
   }
 
   /** Ends the sync server and keeps its state and its address, as a server that goes away does. */
@@ -234,6 +253,11 @@ export class SyncDriver {
       await once(previous.child, 'exit')
     }
     this.running = await startProgram(this.listen, this.getStateFlags())
+    if (this.held.length > 0) {
+      await new Promise((resolve) => setTimeout(resolve, LEAD_MS))
+      for (const gate of this.held) gate.reopen()
+      this.held = []
+    }
   }
 
   /** Reads what the server stores of every blob and expects the text to be in none of it. */
@@ -269,6 +293,8 @@ export class SyncDriver {
 
   /** Ends the server for good and removes the folder of its state. */
   remove(): void {
+    for (const gate of this.gates.values()) gate.stop()
+    this.gates.clear()
     this.stop()
     if (this.stateDir === undefined) return
     fs.rmSync(this.stateDir, { recursive: true, force: true })

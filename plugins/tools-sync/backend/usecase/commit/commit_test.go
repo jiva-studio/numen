@@ -188,10 +188,21 @@ func TestCommitRevisions_ReportsAPathThatAnotherFileUses(t *testing.T) {
 	s := newSetup(t, fakeserver.Config{})
 	first := s.run(t, transfer.File{Path: "Plan.md", Content: []byte("tea")})[0]
 
-	outcome := s.run(t, transfer.File{Path: "plan.md", Content: []byte("coffee")})[0]
+	outcome := s.run(t, transfer.File{Path: "Plan.md", Content: []byte("coffee")})[0]
 
 	if outcome.Status != transfer.PathTaken || !bytes.Equal(outcome.ExistingFileID, first.FileID) || outcome.Head == nil || !bytes.Equal(outcome.Head.GetRevId(), first.RevID) {
-		t.Errorf("outcome = %+v, want PathTaken by the first file, with its revision as head, for a path that differs in case only", outcome)
+		t.Errorf("outcome = %+v, want PathTaken by the first file, with its revision as head", outcome)
+	}
+}
+
+func TestCommitRevisions_ReportsAPathOfAnotherFileThatDiffersInCaseOnlyAsACaseClash(t *testing.T) {
+	s := newSetup(t, fakeserver.Config{})
+	s.run(t, transfer.File{Path: "Plan.md", Content: []byte("tea")})
+
+	outcome := s.run(t, transfer.File{Path: "plan.md", Content: []byte("coffee")})[0]
+
+	if outcome.Status != transfer.CaseClash {
+		t.Errorf("outcome = %+v, want CaseClash", outcome)
 	}
 }
 

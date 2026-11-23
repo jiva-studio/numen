@@ -170,12 +170,24 @@ func (r *batchRun) recordConflicts(items []*prepared, files []transfer.File, out
 		if conflict.GetKind() == syncv1.ConflictKind_CONFLICT_KIND_PATH_TAKEN {
 			status = transfer.PathTaken
 		}
-		outcomes[item.index] = transfer.Outcome{
+		outcomes[item.index] = r.settleClash(transfer.Outcome{
 			Path: files[item.index].Path, Status: status, FileID: item.revision.GetFileId(), RevID: nil,
 			Head: conflict.GetHead(), ExistingFileID: conflict.GetExistingFileId(), Record: transfer.NewEmptyRecord(),
-		}
+		})
 	}
 	return rest, nil
+}
+
+func (r *batchRun) settleClash(outcome transfer.Outcome) transfer.Outcome {
+	if outcome.Status != transfer.PathTaken || outcome.Head == nil {
+		return outcome
+	}
+	head := outcome.Head.GetRevision()
+	meta, err := note.OpenMeta(r.vault.Key, r.vault.ID, head.GetFileId(), head.GetEncMeta())
+	if err == nil && note.IsCaseClash(outcome.Path, meta.Path) {
+		outcome.Status = transfer.CaseClash
+	}
+	return outcome
 }
 
 func findConflict(conflicts []*syncv1.Conflict, fileID []byte) *syncv1.Conflict {

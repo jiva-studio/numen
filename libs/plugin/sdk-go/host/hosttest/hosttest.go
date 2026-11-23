@@ -272,7 +272,11 @@ func (v *Vault) Write(ctx context.Context, filePath string, content []byte, base
 	if stale {
 		return domain.FileStat{}, host.ErrStale
 	}
-	return v.put(filePath, content)
+	written, err := v.put(filePath, content)
+	if err == nil {
+		v.rescan(filePath)
+	}
+	return written, err
 }
 
 func (v *Vault) Create(ctx context.Context, filePath string, content []byte) error {
@@ -284,8 +288,11 @@ func (v *Vault) Create(ctx context.Context, filePath string, content []byte) err
 	if failErr := v.unwritable[filePath]; failErr != nil {
 		return failErr
 	}
-	_, err := v.files.create(filePath, content)
-	return err
+	if _, err := v.files.create(filePath, content); err != nil {
+		return err
+	}
+	v.rescan(filePath)
+	return nil
 }
 
 func (v *Vault) Lock(ctx context.Context) (func() error, error) {

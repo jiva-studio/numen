@@ -163,3 +163,37 @@ type Shop interface {
 type Pauses interface {
 	HasPending(ctx context.Context, id domain.VaultID) (bool, error)
 }
+
+// FileSide is the local file of a conflict: its hash and the stat the host gave it.
+type FileSide struct {
+	Hash string
+	Stat domain.FileStat
+}
+
+// HeadSide is the head of a conflict: its hash and size, and Replace, which writes the head over the file at the path
+// of the conflict when the file still has the baseline.
+type HeadSide struct {
+	Hash    string
+	Size    int64
+	Replace func(ctx context.Context, baseline domain.FileStat) error
+}
+
+// ConflictInput is a file both computers changed.
+type ConflictInput struct {
+	Vault domain.VaultID
+	Path  string
+	Local FileSide
+	Head  HeadSide
+	Day   time.Time
+}
+
+// ConflictOutcome is the paths a resolve wrote, and the path of the copy, empty when there is none.
+type ConflictOutcome struct {
+	Applied []string
+	Copy    string
+}
+
+// ConflictResolver settles a file both computers changed.
+type ConflictResolver interface {
+	Resolve(ctx context.Context, in ConflictInput) (ConflictOutcome, error)
+}

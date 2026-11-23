@@ -20,6 +20,7 @@ import (
 	domainsession "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	accountadapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/account"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/conflict"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/digest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
@@ -199,6 +200,7 @@ func (c *Computer) WireDeps() syncwire.Deps {
 	return syncwire.Deps{
 		Deps: c.SyncDeps(), Uploads: uploader, UploadEntries: c.State, DownloadBlobs: cloud.NewBlobs(c.Cloud), DownloadEntries: c.State,
 		Pending: c.State, Approvals: c.State, Absences: c.State, RemovalDelay: func() time.Duration { return RemovalDelay }, Digests: digest.Sha256{},
+		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}),
 	}
 }
 
@@ -218,6 +220,7 @@ func (c *Computer) PullDeps() pull.Deps {
 	return pull.Deps{
 		Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Downloads: downloads,
 		Guard: syncwire.NewGuard(wired), Health: c.NewHealth(),
+		Conflicts: conflict.New(conflict.Deps{Host: c.Host, Log: nil}), Clock: c.Clock,
 	}
 }
 

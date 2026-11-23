@@ -8,12 +8,13 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
-func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, record transfer.FileRecord, localAtNew string) (bool, error) {
+func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, record transfer.FileRecord, localAtNew string, newStat domain.FileStat) (bool, error) {
 	if localAtNew == meta.Hash {
 		return true, r.adopt(ctx, stored, meta, record, true)
 	}
@@ -21,9 +22,8 @@ func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta
 	if err != nil || oldHash == "" {
 		return false, err
 	}
-	if oldHash != record.BaseHash || localAtNew != "" {
-		r.addConflict(meta.Path, stored.GetSeq())
-		return true, nil
+	if localAtNew != "" {
+		return true, r.resolveTaken(ctx, stored, meta, localAtNew, newStat, moveSource{record: record, stat: oldStat})
 	}
 	if _, err := r.moves.MoveFile(ctx, record.Path, meta.Path, &oldStat); err != nil {
 		if errors.Is(err, host.ErrStale) || errors.Is(err, host.ErrAlreadyExists) {
@@ -34,6 +34,25 @@ func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta
 	}
 	r.result.Applied = append(r.result.Applied, meta.Path)
 	return true, r.adopt(ctx, stored, meta, record, true)
+}
+
+func (r *run) resolveTaken(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, local string, stat domain.FileStat, from moveSource) error {
+	if err := r.resolve(ctx, stored, meta, local, stat); err != nil {
+		return err
+	}
+	if moved, isKnown := r.getRecord(from.record.FileID); !isKnown || moved.Path != meta.Path || from.stat.Hash != from.record.BaseHash {
+		return nil
+	}
+	_, err := r.moves.RemoveFile(ctx, from.record.Path, &from.stat)
+	if errors.Is(err, host.ErrNotExist) || errors.Is(err, host.ErrStale) {
+		return nil
+	}
+	return err
+}
+
+type moveSource struct {
+	record transfer.FileRecord
+	stat   domain.FileStat
 }
 
 type folderMove struct{ from, to string }
