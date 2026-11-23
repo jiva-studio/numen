@@ -178,7 +178,9 @@ func (s *Server) sendBlobBody(w http.ResponseWriter, r *http.Request, id string)
 		return
 	}
 	w.Header().Set("Content-Type", "application/octet-stream")
-	_, _ = w.Write(body)
+	if _, err := w.Write(body); err != nil {
+		return
+	}
 }
 
 func (s *Server) serveStoredBlobs(w http.ResponseWriter, r *http.Request) {
@@ -187,7 +189,9 @@ func (s *Server) serveStoredBlobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/octet-stream")
-	_, _ = w.Write(s.listStoredBlobs())
+	if _, err := w.Write(s.listStoredBlobs()); err != nil {
+		return
+	}
 }
 
 func (s *Server) listStoredBlobs() []byte {

@@ -80,7 +80,7 @@ const readAnswer = (answer: {
   return asValue(readInfo(answer.identity))
 }
 
-const readStarted = (answer: {
+const readStartAnswer = (answer: {
   error: ProtoIdentityErrorCode
   detail: string
 }): Result<undefined, IdentityFailure> => {
@@ -98,7 +98,7 @@ export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
   },
   generateWords: async () => [...(await rpc.generateRecoveryWords({})).words],
   create: async (words) => readAnswer(await rpc.createIdentity({ words: [...words] })),
-  startRestore: async (words) => readStarted(await rpc.startRestore({ words: [...words] })),
+  startRestore: async (words) => readStartAnswer(await rpc.startRestore({ words: [...words] })),
   delete: async () => {
     await rpc.deleteIdentity({})
   },

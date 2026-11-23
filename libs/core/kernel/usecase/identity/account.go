@@ -62,7 +62,7 @@ func (a *Account) SealData(ctx context.Context, pluginID string, dataContext, pl
 	return NewSealData(deps).Execute(ctx, pluginID, dataContext, plain)
 }
 
-// OpenData opens what SealData sealed for the plugin and the context.
+// OpenData fails with ErrCannotOpen for a value sealed for another plugin or context, or with other keys.
 func (a *Account) OpenData(ctx context.Context, pluginID string, dataContext, sealed []byte) ([]byte, error) {
 	deps, err := a.open()
 	if err != nil {

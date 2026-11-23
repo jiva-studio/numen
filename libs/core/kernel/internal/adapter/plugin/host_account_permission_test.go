@@ -26,6 +26,26 @@ func (signingAccount) GetPublicIdentity(context.Context) (identitydomain.Public,
 	return identitydomain.Public{DeviceSignKey: make([]byte, 32)}, nil
 }
 
+func (signingAccount) SealData(_ context.Context, _ string, _, plain []byte) ([]byte, error) {
+	return plain, nil
+}
+
+func (signingAccount) OpenData(_ context.Context, _ string, _, sealed []byte) ([]byte, error) {
+	return sealed, nil
+}
+
+func (signingAccount) GetPendingRestore(context.Context) (identitydomain.PendingRestore, error) {
+	return identitydomain.PendingRestore{}, nil
+}
+
+func (signingAccount) SignAsRecovery(context.Context, string, []byte) ([]byte, error) {
+	return make([]byte, 64), nil
+}
+
+func (signingAccount) CompleteRestore(context.Context, string, []byte) error {
+	return nil
+}
+
 // The core refuses an account call of a plugin whose manifest does not declare identity.
 func TestAnAccountCallWithoutTheIdentityPermissionIsRefusedByTheCore(t *testing.T) {
 	host := createManifestedHost(t, map[string]string{

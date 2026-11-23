@@ -60,7 +60,7 @@ func serveStorage(tb testing.TB) (*storage, string) {
 	return store, server.URL + "/object"
 }
 
-func TestPutBlob_SendsTheBodyWithItsLengthAndNoBearerOrVersionHeader(t *testing.T) {
+func TestUploadBlob_SendsTheBodyWithItsLengthAndNoBearerOrVersionHeader(t *testing.T) {
 	t.Parallel()
 	store, url := serveStorage(t)
 	body := bytes.Repeat([]byte{0x5A}, 4168)
@@ -100,7 +100,7 @@ func TestGetBlob_ReturnsTheBodyAndSendsNoBearerOrVersionHeader(t *testing.T) {
 	}
 }
 
-func TestPutBlobAndGetBlob_ReportAnAnswerThatIsNotASuccess(t *testing.T) {
+func TestUploadBlobAndDownloadBlob_ReportAnAnswerThatIsNotASuccess(t *testing.T) {
 	t.Parallel()
 	for _, status := range []int{http.StatusForbidden, http.StatusNotFound, http.StatusInternalServerError} {
 		store, url := serveStorage(t)
@@ -115,7 +115,7 @@ func TestPutBlobAndGetBlob_ReportAnAnswerThatIsNotASuccess(t *testing.T) {
 	}
 }
 
-func TestPutBlobAndGetBlob_StopWhenTheContextEnds(t *testing.T) {
+func TestUploadBlobAndDownloadBlob_StopWhenTheContextEnds(t *testing.T) {
 	t.Parallel()
 	_, url := serveStorage(t)
 	canceled, cancel := context.WithCancel(t.Context())

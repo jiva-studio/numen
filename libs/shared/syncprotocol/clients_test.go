@@ -151,7 +151,7 @@ func (c stubCalls) callAll(ctx context.Context) map[string]error {
 	vault := bytes.Repeat([]byte{1}, 16)
 	errs := map[string]error{}
 	_, errs["AppendCatalogEntry"] = c.catalog.AppendCatalogEntry(ctx, newCatalogEntry())
-	_, errs["GetCatalog"] = c.catalog.GetCatalog(ctx, 0)
+	_, errs["GetCatalog"] = c.catalog.GetCatalog(ctx, 4)
 	_, errs["CommitRevisions"] = c.revision.CommitRevisions(ctx, vault, []*syncv1.Revision{newRevision()})
 	_, errs["GetChanges"] = c.revision.GetChanges(ctx, vault, 0, 0)
 	_, errs["ReserveBlobs"] = c.blob.ReserveBlobs(ctx, vault, []uint64{4096})
@@ -226,7 +226,7 @@ func TestEveryClientReportsAServerOfAnotherVersionAsUpdateRequired(t *testing.T)
 	}
 }
 
-func TestTheClientsMapTheRefusalsOfTheServerToTheErrorsOfThePackage(t *testing.T) {
+func TestTheClientsMapServerFailuresToTheErrorsOfThePackage(t *testing.T) {
 	t.Parallel()
 	quotaDetail, err := connect.NewErrorDetail(&syncv1.QuotaExceeded{UsedBytes: 7, LimitBytes: 5})
 	if err != nil {
@@ -253,8 +253,8 @@ func TestTheClientsMapTheRefusalsOfTheServerToTheErrorsOfThePackage(t *testing.T
 		"no vault":         {err: connect.NewError(connect.CodeNotFound, errors.New("no")), want: syncprotocol.ErrNoVault},
 		"vault exists":     {err: connect.NewError(connect.CodeAlreadyExists, errors.New("no")), want: syncprotocol.ErrVaultExists},
 		"invalid revision": {err: connect.NewError(connect.CodeInvalidArgument, errors.New("invalid revision")), want: nil},
-		"quota":            {err: withDetail(connect.CodeResourceExhausted, quotaDetail), want: syncprotocol.ErrQuotaExceeded{Used: 7, Limit: 5}},
-		"blob not ready":   {err: withDetail(connect.CodeFailedPrecondition, notReadyDetail), want: syncprotocol.ErrBlobNotReady{Index: 3}},
+		"quota":            {err: withDetail(connect.CodeResourceExhausted, quotaDetail), want: syncprotocol.QuotaExceededError{Used: 7, Limit: 5}},
+		"blob not ready":   {err: withDetail(connect.CodeFailedPrecondition, notReadyDetail), want: syncprotocol.BlobNotReadyError{Index: 3}},
 	} {
 		stub, address := serveStub(t, syncprotocol.Version)
 		stub.fail = one.err
@@ -287,12 +287,11 @@ func TestErrQuotaExceededCarriesTheUsedAndTheLimitOfTheServer(t *testing.T) {
 
 	_, got := syncprotocol.NewBlobClient(address, http.DefaultClient, func() string { return "t" }).ReserveBlobs(t.Context(), bytes.Repeat([]byte{1}, 16), []uint64{4096})
 
-	var quota syncprotocol.ErrQuotaExceeded
+	var quota syncprotocol.QuotaExceededError
 	if !errors.As(got, &quota) || quota.Used != 700 || quota.Limit != 500 {
 		t.Errorf("error = %v, quota = %+v, want used 700 and limit 500", got, quota)
 	}
-	var notReady syncprotocol.ErrBlobNotReady
-	if errors.As(got, &notReady) {
+	if _, ok := errors.AsType[syncprotocol.BlobNotReadyError](got); ok {
 		t.Error("a quota refusal reads as a blob that is not ready")
 	}
 }

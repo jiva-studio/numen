@@ -16,8 +16,6 @@ func newClientOptions(token func() string) connect.ClientOption {
 	return connect.WithInterceptors(NewVersionInterceptor(), NewBearerInterceptor(token))
 }
 
-// readCallError maps what a server refuses to the errors of this package. A refusal with no error of its own
-// is returned as the server sent it.
 func readCallError(err error) error {
 	err = readError(err)
 	var failure *connect.Error
@@ -26,11 +24,11 @@ func readCallError(err error) error {
 	}
 	switch failure.Code() {
 	case connect.CodePermissionDenied:
-		return ErrWriteNotAllowed
+		return refusalError{sentinel: ErrWriteNotAllowed, cause: failure}
 	case connect.CodeNotFound:
-		return ErrNoVault
+		return refusalError{sentinel: ErrNoVault, cause: failure}
 	case connect.CodeAlreadyExists:
-		return ErrVaultExists
+		return refusalError{sentinel: ErrVaultExists, cause: failure}
 	}
 	for _, detail := range failure.Details() {
 		value, valueErr := detail.Value()
@@ -39,9 +37,9 @@ func readCallError(err error) error {
 		}
 		switch refusal := value.(type) {
 		case *syncv1.QuotaExceeded:
-			return ErrQuotaExceeded{Used: refusal.GetUsedBytes(), Limit: refusal.GetLimitBytes()}
+			return QuotaExceededError{Used: refusal.GetUsedBytes(), Limit: refusal.GetLimitBytes()}
 		case *syncv1.BlobNotReady:
-			return ErrBlobNotReady{Index: refusal.GetRevisionIndex()}
+			return BlobNotReadyError{Index: refusal.GetRevisionIndex()}
 		}
 	}
 	return err
@@ -100,7 +98,7 @@ func NewRevisionClient(address string, httpClient *http.Client, token func() str
 }
 
 // CommitRevisions commits a batch of revisions of one vault, all of them or none. A batch that is not
-// committed answers with its conflicts; a batch whose blob is not uploaded is ErrBlobNotReady.
+// committed answers with its conflicts; a batch whose blob is not uploaded is BlobNotReadyError.
 func (c *RevisionClient) CommitRevisions(ctx context.Context, vaultID []byte, revisions []*syncv1.Revision) (*syncv1.CommitRevisionsResponse, error) {
 	response, err := c.rpc.CommitRevisions(ctx, connect.NewRequest(&syncv1.CommitRevisionsRequest{VaultId: vaultID, Revisions: revisions}))
 	if err != nil {

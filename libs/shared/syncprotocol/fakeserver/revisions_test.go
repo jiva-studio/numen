@@ -264,9 +264,9 @@ func TestCommitRevisions_ReportsABlobThatWasNeverUploadedWithItsPositionInTheBat
 
 	_, err := e.revision.CommitRevisions(t.Context(), vault, []*syncv1.Revision{uploaded, missing})
 
-	var notReady syncprotocol.ErrBlobNotReady
+	var notReady syncprotocol.BlobNotReadyError
 	if !errors.As(err, &notReady) || notReady.Index != 1 {
-		t.Errorf("error = %v, want ErrBlobNotReady at index 1", err)
+		t.Errorf("error = %v, want BlobNotReadyError at index 1", err)
 	}
 	if len(e.readAllChanges(vault)) != 0 {
 		t.Error("a revision of the refused batch was stored")
@@ -284,7 +284,7 @@ func TestCommitRevisions_RefusesABlobOfAnotherSizeThanTheOneReserved(t *testing.
 
 	_, err := e.revision.CommitRevisions(t.Context(), vault, []*syncv1.Revision{revision})
 
-	var notReady syncprotocol.ErrBlobNotReady
+	var notReady syncprotocol.BlobNotReadyError
 	if putErr == nil && !errors.As(err, &notReady) {
 		t.Errorf("a body of 4 bytes for a reservation of 100: put error = %v, commit error = %v, want one of them to refuse it", putErr, err)
 	}
@@ -301,9 +301,8 @@ func TestCommitRevisions_RefusesABlobThatAnotherRevisionAlreadyCommitted(t *test
 
 	_, err := e.revision.CommitRevisions(t.Context(), vault, []*syncv1.Revision{reuse})
 
-	var notReady syncprotocol.ErrBlobNotReady
-	if !errors.As(err, &notReady) {
-		t.Errorf("error = %v, want ErrBlobNotReady", err)
+	if _, ok := errors.AsType[syncprotocol.BlobNotReadyError](err); !ok {
+		t.Errorf("error = %v, want BlobNotReadyError", err)
 	}
 }
 
@@ -351,7 +350,8 @@ func TestGetChanges_ReadsInPagesWithACursorAndNeverSplitsABatch(t *testing.T) {
 	}
 
 	if len(first.GetChanges()) != 4 || first.GetNextSeq() != 2 || !first.GetHasMore() || first.GetHeadSeq() != 3 {
-		t.Errorf("first page = %d changes, next %d, more %v, head %d; want the first file and the whole batch of three, next 2, more, head 3", len(first.GetChanges()), first.GetNextSeq(), first.GetHasMore(), first.GetHeadSeq())
+		t.Errorf("first page = %d changes, next %d, more %v, head %d; want the first file and the whole batch of three, next 2, more, head 3",
+			len(first.GetChanges()), first.GetNextSeq(), first.GetHasMore(), first.GetHeadSeq())
 	}
 	if len(second.GetChanges()) != 1 || second.GetNextSeq() != 3 || second.GetHasMore() {
 		t.Errorf("second page = %d changes, next %d, more %v; want one change, next 3, no more", len(second.GetChanges()), second.GetNextSeq(), second.GetHasMore())
@@ -485,7 +485,11 @@ func TestTheAdminBlobsPathReturnsEveryStoredBodyAsRawBytes(t *testing.T) {
 	e.upload(vault, first)
 	e.upload(vault, second)
 
-	response, err := http.Get(address + "/admin/blobs")
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet, address+"/admin/blobs", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		t.Fatal(err)
 	}

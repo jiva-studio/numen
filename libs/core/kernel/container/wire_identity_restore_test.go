@@ -8,6 +8,7 @@ import (
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
@@ -17,8 +18,9 @@ func TestTheAccountOfThePluginsSeesTheRestoreTheWindowStarted(t *testing.T) {
 	t.Parallel()
 	keys := memoryKeys{}
 	clock := testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: clock})
-	account := openAccount(&Resources{KeyStore: keys, Now: clock})
+	res := &Resources{KeyStore: keys, Now: clock, restore: identity.NewPendingStore()}
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys, Restore: res.restore}, vaultWiring{Clock: clock})
+	account := openAccount(res)
 	words := strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
 	if use == nil || use.StartRestore == nil {
 		t.Fatalf("openIdentityUseCases() = %+v, want a use case that starts a restore", use)
@@ -45,8 +47,9 @@ func TestACompleteRestoreOfThePluginsMakesTheIdentityOfTheWindowAndTheKeysOfTheP
 	t.Parallel()
 	keys := memoryKeys{}
 	clock := testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: clock})
-	account := openAccount(&Resources{KeyStore: keys, Now: clock})
+	res := &Resources{KeyStore: keys, Now: clock, restore: identity.NewPendingStore()}
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys, Restore: res.restore}, vaultWiring{Clock: clock})
+	account := openAccount(res)
 	words := strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
 	if err := use.StartRestore.Execute(t.Context(), words); err != nil {
 		t.Fatal(err)

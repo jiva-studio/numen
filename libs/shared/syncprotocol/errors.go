@@ -22,22 +22,32 @@ var (
 	ErrVaultExists = errors.New("the vault exists on the sync server")
 )
 
-// ErrQuotaExceeded means the account has no room for the bytes asked for.
-type ErrQuotaExceeded struct {
+// QuotaExceededError means the account has no room for the bytes asked for.
+type QuotaExceededError struct {
 	Used  uint64
 	Limit uint64
 }
 
-func (e ErrQuotaExceeded) Error() string {
+func (e QuotaExceededError) Error() string {
 	return fmt.Sprintf("the sync quota is exceeded: %d of %d bytes used", e.Used, e.Limit)
 }
 
-// ErrBlobNotReady means the blob of a revision of a batch was not uploaded. Index is the position of the
+// BlobNotReadyError means the blob of a revision of a batch was not uploaded. Index is the position of the
 // revision in the batch.
-type ErrBlobNotReady struct {
+type BlobNotReadyError struct {
 	Index uint32
 }
 
-func (e ErrBlobNotReady) Error() string {
+func (e BlobNotReadyError) Error() string {
 	return fmt.Sprintf("the blob of revision %d is not uploaded", e.Index)
 }
+
+// refusalError reads as its sentinel and keeps the Connect error of the server, so connect.CodeOf still answers.
+type refusalError struct {
+	sentinel error
+	cause    error
+}
+
+func (r refusalError) Error() string { return r.sentinel.Error() }
+
+func (r refusalError) Unwrap() []error { return []error{r.sentinel, r.cause} }

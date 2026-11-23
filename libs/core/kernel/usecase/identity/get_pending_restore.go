@@ -9,7 +9,7 @@ import (
 // GetPendingRestore reads the public keys of the pending restore.
 type GetPendingRestore struct{ deps Deps }
 
-// NewGetPendingRestore returns the use case that reads the pending restore.
+// NewGetPendingRestore reads the pending restore held in d, shared with the windows and plugins of the same installation.
 func NewGetPendingRestore(d Deps) *GetPendingRestore { return &GetPendingRestore{deps: d} }
 
 // Execute returns the public keys of the pending restore, or a value with IsPending false.

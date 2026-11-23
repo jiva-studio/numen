@@ -166,14 +166,6 @@ func (e *env) newVault() []byte {
 	return vault
 }
 
-func newID(size int) []byte {
-	id := make([]byte, size)
-	if _, err := rand.Read(id); err != nil {
-		panic(err)
-	}
-	return id
-}
-
 func hashOf(data []byte) []byte {
 	sum := sha256.Sum256(data)
 	return sum[:]
@@ -243,4 +235,9 @@ func (e *env) readAllChanges(vault []byte) []*syncv1.StoredRevision {
 
 func isUnauthenticated(err error) bool {
 	return errors.Is(err, syncprotocol.ErrUnauthenticated) || connect.CodeOf(err) == connect.CodeUnauthenticated
+}
+
+// newID returns a random id of size bytes, at most 26.
+func newID(size int) []byte {
+	return []byte(rand.Text())[:size]
 }

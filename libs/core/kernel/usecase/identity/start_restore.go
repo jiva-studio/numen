@@ -38,16 +38,18 @@ func (u *StartRestore) Execute(ctx context.Context, words []string) error {
 	}
 	restore := &pendingRestore{recovery: recovery, device: device, startedAt: u.deps.clock.Now(), replaced: make(chan struct{})}
 	u.deps.pending.replace(restore)
-	go u.completeAfterFallback(restore, u.deps.clock.After(restoreFallback))
+	go u.completeAfterFallback(context.WithoutCancel(ctx), restore, u.deps.clock.After(restoreFallback))
 	return nil
 }
 
-func (u *StartRestore) completeAfterFallback(restore *pendingRestore, fired <-chan time.Time) {
+func (u *StartRestore) completeAfterFallback(ctx context.Context, restore *pendingRestore, fired <-chan time.Time) {
 	select {
 	case <-restore.replaced:
 	case <-fired:
 		if u.deps.pending.isCurrent(restore) {
-			_ = completeRestore(context.Background(), u.deps, restore, nil)
+			if err := completeRestore(ctx, u.deps, restore, nil); err != nil {
+				return // the restore stays pending, so a window or a plugin can complete it
+			}
 		}
 	}
 }

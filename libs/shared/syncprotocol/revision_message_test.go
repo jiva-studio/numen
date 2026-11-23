@@ -121,7 +121,7 @@ func TestGetRevisionMessage_IgnoresTheSignature(t *testing.T) {
 	}
 }
 
-func TestGetRevisionMessage_KeepsTheBoundaryBetweenNeighbouringFields(t *testing.T) {
+func TestGetRevisionMessage_KeepsTheBoundaryBetweenNeighboringFields(t *testing.T) {
 	t.Parallel()
 	first := newRevision()
 	first.ParentRev = bytes.Repeat([]byte{3}, 32)

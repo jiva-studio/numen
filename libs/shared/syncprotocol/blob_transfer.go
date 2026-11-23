@@ -3,6 +3,7 @@ package syncprotocol
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 
 // PutBlob uploads the body to a presigned URL with one PUT. It sends no bearer and no protocol version: the
 // URL carries the permission.
-func PutBlob(ctx context.Context, httpClient *http.Client, url string, body []byte) error {
+func PutBlob(ctx context.Context, httpClient *http.Client, url string, body []byte) (err error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("prepare the upload of a blob: %w", err)
@@ -19,13 +20,13 @@ func PutBlob(ctx context.Context, httpClient *http.Client, url string, body []by
 	if err != nil {
 		return fmt.Errorf("upload a blob: %w", err)
 	}
-	defer func() { _ = response.Body.Close() }()
+	defer closeBody(response, &err)
 	return checkTransferStatus("upload", response)
 }
 
 // GetBlob downloads the body from a presigned URL with one GET, with no bearer and no protocol version. It
 // refuses a body larger than MaxBlobSize.
-func GetBlob(ctx context.Context, httpClient *http.Client, url string) ([]byte, error) {
+func GetBlob(ctx context.Context, httpClient *http.Client, url string) (blob []byte, err error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("prepare the download of a blob: %w", err)
@@ -34,7 +35,7 @@ func GetBlob(ctx context.Context, httpClient *http.Client, url string) ([]byte, 
 	if err != nil {
 		return nil, fmt.Errorf("download a blob: %w", err)
 	}
-	defer func() { _ = response.Body.Close() }()
+	defer closeBody(response, &err)
 	if err := checkTransferStatus("download", response); err != nil {
 		return nil, err
 	}
@@ -53,4 +54,10 @@ func checkTransferStatus(action string, response *http.Response) error {
 		return fmt.Errorf("%s a blob: the storage answered %s", action, response.Status)
 	}
 	return nil
+}
+
+func closeBody(response *http.Response, err *error) {
+	if closeErr := response.Body.Close(); closeErr != nil {
+		*err = errors.Join(*err, closeErr)
+	}
 }

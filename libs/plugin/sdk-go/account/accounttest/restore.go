@@ -45,7 +45,7 @@ func refuse(code connect.Code, reason string) error {
 	return failure
 }
 
-func (f *Fake) readPending() (*pendingRestore, error) {
+func (f *Fake) readPendingRestore() (*pendingRestore, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.failure != nil {
@@ -90,7 +90,7 @@ func (s *service) OpenData(_ context.Context, req *connect.Request[v1.OpenDataRe
 }
 
 func (s *service) GetPendingRestore(context.Context, *connect.Request[v1.GetPendingRestoreRequest]) (*connect.Response[v1.GetPendingRestoreResponse], error) {
-	restore, err := s.fake.readPending()
+	restore, err := s.fake.readPendingRestore()
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeInternal {
 			return nil, err
@@ -105,7 +105,7 @@ func (s *service) GetPendingRestore(context.Context, *connect.Request[v1.GetPend
 }
 
 func (s *service) SignAsRecovery(_ context.Context, req *connect.Request[v1.SignAsRecoveryRequest]) (*connect.Response[v1.SignAsRecoveryResponse], error) {
-	restore, err := s.fake.readPending()
+	restore, err := s.fake.readPendingRestore()
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (s *service) SignAsRecovery(_ context.Context, req *connect.Request[v1.Sign
 }
 
 func (s *service) CompleteRestore(_ context.Context, req *connect.Request[v1.CompleteRestoreRequest]) (*connect.Response[v1.CompleteRestoreResponse], error) {
-	restore, err := s.fake.readPending()
+	restore, err := s.fake.readPendingRestore()
 	if err != nil {
 		return nil, err
 	}

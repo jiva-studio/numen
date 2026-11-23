@@ -193,7 +193,7 @@ describe('the identity store restoring from words', () => {
     const markDone = () => {
       isDone = true
     }
-    void answer.then(markDone, markDone)
+    answer.then(markDone, markDone)
     for (let second = 0; second < 70 && !isDone; second += 1) {
       await vi.advanceTimersByTimeAsync(1000)
     }
@@ -230,9 +230,14 @@ describe('the identity store restoring from words', () => {
     let isDone = false
     const { store } = createStore(createClient({ get: () => Promise.resolve(undefined) }))
 
-    void store.restore(WORDS).then(() => {
-      isDone = true
-    })
+    store.restore(WORDS).then(
+      () => {
+        isDone = true
+      },
+      (error: unknown) => {
+        throw error
+      },
+    )
     await vi.advanceTimersByTimeAsync(10_000)
 
     expect(isDone).toBe(false)
