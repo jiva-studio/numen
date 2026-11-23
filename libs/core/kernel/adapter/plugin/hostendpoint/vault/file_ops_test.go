@@ -84,10 +84,13 @@ func createFileCalls(caller holder, access *Access) *filesCalls {
 	return &filesCalls{&calls{auth: caller, source: shownAccess{access: access}}}
 }
 
-var (
-	writer = holder{id: "md.numen.syncer", permissions: []string{manifest.PermissionVaultWrite}}
-	reader = holder{id: "md.numen.syncer", permissions: []string{manifest.PermissionVaultRead}}
-)
+func getWriter() holder {
+	return holder{id: "md.numen.syncer", permissions: []string{manifest.PermissionVaultWrite}}
+}
+
+func getReader() holder {
+	return holder{id: "md.numen.syncer", permissions: []string{manifest.PermissionVaultRead}}
+}
 
 type failure struct {
 	err  error
@@ -110,7 +113,7 @@ func getBaseline() *v1.FileStat {
 
 func TestMoveFileMovesThroughTheOperationsWithTheBaselineAndCountsTheFiles(t *testing.T) {
 	ops := &recordedOps{count: 4}
-	calls := createFileCalls(writer, &Access{Ops: ops})
+	calls := createFileCalls(getWriter(), &Access{Ops: ops})
 
 	res, err := calls.MoveFile(t.Context(), connect.NewRequest(&v1.HostFileServiceMoveFileRequest{From: "Maps", To: "Atlas", Baseline: getBaseline()}))
 
@@ -125,7 +128,7 @@ func TestMoveFileMovesThroughTheOperationsWithTheBaselineAndCountsTheFiles(t *te
 func TestMoveFileWithoutABaselinePassesNone(t *testing.T) {
 	ops := &recordedOps{count: 1}
 
-	_, err := createFileCalls(writer, &Access{Ops: ops}).MoveFile(t.Context(), connect.NewRequest(&v1.HostFileServiceMoveFileRequest{From: "a.pdf", To: "b.pdf"}))
+	_, err := createFileCalls(getWriter(), &Access{Ops: ops}).MoveFile(t.Context(), connect.NewRequest(&v1.HostFileServiceMoveFileRequest{From: "a.pdf", To: "b.pdf"}))
 
 	if err != nil || ops.baseline != nil {
 		t.Errorf("the move without a baseline passed %+v (%v), want none", ops.baseline, err)
@@ -134,7 +137,7 @@ func TestMoveFileWithoutABaselinePassesNone(t *testing.T) {
 
 func TestMoveFileAnswersTheFailuresOfTheOperationsWithTheirCodes(t *testing.T) {
 	for _, one := range getFailures() {
-		calls := createFileCalls(writer, &Access{Ops: &recordedOps{err: one.err}})
+		calls := createFileCalls(getWriter(), &Access{Ops: &recordedOps{err: one.err}})
 
 		res, err := calls.MoveFile(t.Context(), connect.NewRequest(&v1.HostFileServiceMoveFileRequest{From: "a", To: "b"}))
 
@@ -146,12 +149,12 @@ func TestMoveFileAnswersTheFailuresOfTheOperationsWithTheirCodes(t *testing.T) {
 
 func TestRemoveFileTrashesThroughTheOperationsAndAnswersTheFailuresWithTheirCodes(t *testing.T) {
 	ops := &recordedOps{count: 3}
-	res, err := createFileCalls(writer, &Access{Ops: ops}).RemoveFile(t.Context(), connect.NewRequest(&v1.HostFileServiceRemoveFileRequest{Path: "Maps", Baseline: getBaseline()}))
+	res, err := createFileCalls(getWriter(), &Access{Ops: ops}).RemoveFile(t.Context(), connect.NewRequest(&v1.HostFileServiceRemoveFileRequest{Path: "Maps", Baseline: getBaseline()}))
 	if err != nil || res.Msg.GetRemovedCount() != 3 || ops.path != "Maps" || ops.baseline == nil || ops.baseline.Hash != "h1" {
 		t.Fatalf("the removal answered %v (%v) after %q over %+v", res.Msg, err, ops.path, ops.baseline)
 	}
 	for _, one := range getFailures() {
-		calls := createFileCalls(writer, &Access{Ops: &recordedOps{err: one.err}})
+		calls := createFileCalls(getWriter(), &Access{Ops: &recordedOps{err: one.err}})
 
 		res, err := calls.RemoveFile(t.Context(), connect.NewRequest(&v1.HostFileServiceRemoveFileRequest{Path: "a"}))
 
@@ -163,7 +166,7 @@ func TestRemoveFileTrashesThroughTheOperationsAndAnswersTheFailuresWithTheirCode
 
 func TestPlaceFileWorksAsThePluginTheTokenNamesAndReturnsTheStatOfTheFile(t *testing.T) {
 	ops := &recordedOps{}
-	calls := createFileCalls(writer, &Access{Ops: ops})
+	calls := createFileCalls(getWriter(), &Access{Ops: ops})
 
 	res, err := calls.PlaceFile(t.Context(), connect.NewRequest(&v1.PlaceFileRequest{Name: "ab.part", Path: "Scans/Delta.pdf", ExpectedHash: "feed", Baseline: getBaseline()}))
 
@@ -181,7 +184,7 @@ func TestPlaceFileWorksAsThePluginTheTokenNamesAndReturnsTheStatOfTheFile(t *tes
 func TestPlaceFileAnswersAHashThatDiffersWithHashMismatchAndTheOtherFailuresWithTheirCodes(t *testing.T) {
 	failures := append(getFailures(), failure{fmt.Errorf("a: %w", plugin.ErrHashMismatch), v1.ErrorCode_ERROR_CODE_HASH_MISMATCH})
 	for _, one := range failures {
-		calls := createFileCalls(writer, &Access{Ops: &recordedOps{err: one.err}})
+		calls := createFileCalls(getWriter(), &Access{Ops: &recordedOps{err: one.err}})
 
 		res, err := calls.PlaceFile(t.Context(), connect.NewRequest(&v1.PlaceFileRequest{Name: "a.part", Path: "a"}))
 
@@ -192,7 +195,7 @@ func TestPlaceFileAnswersAHashThatDiffersWithHashMismatchAndTheOtherFailuresWith
 }
 
 func TestPlaceFileWithoutAVaultAnswersNoVault(t *testing.T) {
-	res, err := createFileCalls(writer, nil).PlaceFile(t.Context(), connect.NewRequest(&v1.PlaceFileRequest{Name: "a.part", Path: "a"}))
+	res, err := createFileCalls(getWriter(), nil).PlaceFile(t.Context(), connect.NewRequest(&v1.PlaceFileRequest{Name: "a.part", Path: "a"}))
 
 	if err != nil || res.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NO_VAULT {
 		t.Errorf("the placement with no vault answered %v (%v)", res.Msg, err)
@@ -202,7 +205,7 @@ func TestPlaceFileWithoutAVaultAnswersNoVault(t *testing.T) {
 func TestReadFileRangeReturnsTheBytesAndTheStatAndPassesTheRange(t *testing.T) {
 	ranges := &recordedRanges{content: []byte("DELTA")}
 
-	res, err := createFileCalls(reader, &Access{Ranges: ranges}).ReadFileRange(t.Context(), connect.NewRequest(&v1.ReadFileRangeRequest{Path: "Maps/Delta.pdf", Start: 5, Length: 5}))
+	res, err := createFileCalls(getReader(), &Access{Ranges: ranges}).ReadFileRange(t.Context(), connect.NewRequest(&v1.ReadFileRangeRequest{Path: "Maps/Delta.pdf", Start: 5, Length: 5}))
 
 	if err != nil || res.Msg.GetError() != 0 || string(res.Msg.GetContent()) != "DELTA" || res.Msg.GetStat().GetHash() != "abc" {
 		t.Fatalf("the read answered %v (%v)", res.Msg, err)
@@ -218,7 +221,7 @@ func TestReadFileRangeAnswersAFolderAndARangeOutsideTheLimitsWithTheirCodes(t *t
 		{fmt.Errorf("a: %w", vaultdomain.ErrOutside), v1.ErrorCode_ERROR_CODE_OUTSIDE_VAULT},
 		{fmt.Errorf("a: %w", plugin.ErrInvalidRange), v1.ErrorCode_ERROR_CODE_INVALID_RANGE},
 	} {
-		calls := createFileCalls(reader, &Access{Ranges: &recordedRanges{err: one.err}})
+		calls := createFileCalls(getReader(), &Access{Ranges: &recordedRanges{err: one.err}})
 
 		res, err := calls.ReadFileRange(t.Context(), connect.NewRequest(&v1.ReadFileRangeRequest{Path: "Maps", Length: 1}))
 
@@ -234,19 +237,19 @@ func TestTheFileCallsNeedTheirPermission(t *testing.T) {
 		caller holder
 		call   func(*filesCalls) error
 	}{
-		"move needs write": {reader, func(c *filesCalls) error {
+		"move needs write": {getReader(), func(c *filesCalls) error {
 			_, err := c.MoveFile(t.Context(), connect.NewRequest(&v1.HostFileServiceMoveFileRequest{From: "a", To: "b"}))
 			return err
 		}},
-		"remove needs write": {reader, func(c *filesCalls) error {
+		"remove needs write": {getReader(), func(c *filesCalls) error {
 			_, err := c.RemoveFile(t.Context(), connect.NewRequest(&v1.HostFileServiceRemoveFileRequest{Path: "a"}))
 			return err
 		}},
-		"place needs write": {reader, func(c *filesCalls) error {
+		"place needs write": {getReader(), func(c *filesCalls) error {
 			_, err := c.PlaceFile(t.Context(), connect.NewRequest(&v1.PlaceFileRequest{Name: "a.part", Path: "a"}))
 			return err
 		}},
-		"range read needs read": {writer, func(c *filesCalls) error {
+		"range read needs read": {getWriter(), func(c *filesCalls) error {
 			_, err := c.ReadFileRange(t.Context(), connect.NewRequest(&v1.ReadFileRangeRequest{Path: "a", Length: 1}))
 			return err
 		}},
@@ -260,7 +263,7 @@ func TestTheFileCallsNeedTheirPermission(t *testing.T) {
 func TestAFailureOfTheContextIsNotAnErrorCode(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	calls := createFileCalls(writer, &Access{Ops: &recordedOps{err: errors.New("stopped")}})
+	calls := createFileCalls(getWriter(), &Access{Ops: &recordedOps{err: errors.New("stopped")}})
 
 	_, err := calls.MoveFile(ctx, connect.NewRequest(&v1.HostFileServiceMoveFileRequest{From: "a", To: "b"}))
 

@@ -61,7 +61,11 @@ func (e *env) getAdmin(path string) []byte {
 	if err != nil {
 		e.tb.Fatal(err)
 	}
-	defer func() { _ = response.Body.Close() }()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			e.tb.Error(err)
+		}
+	}()
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		e.tb.Fatal(err)
@@ -165,8 +169,11 @@ func TestAdmin_StopAfterDownloadBytesEndsTheBodyAndLogsWhatWasSent(t *testing.T)
 
 	stream, err := syncclient.GetBlobRange(t.Context(), http.DefaultClient, downloads[0].GetUrl(), 10)
 	if err == nil {
-		got, _ := io.ReadAll(stream)
-		_ = stream.Close()
+		got, readErr := io.ReadAll(stream)
+		t.Logf("the stream ended as planned: %v", readErr)
+		if err := stream.Close(); err != nil {
+			t.Logf("closing the cut stream: %v", err)
+		}
 		if len(got) > budget || !bytes.Equal(got, body[10:10+len(got)]) {
 			t.Errorf("read %d bytes, want at most %d of the right bytes", len(got), budget)
 		}
