@@ -67,7 +67,7 @@ func buildRestoredRecord(deps Deps, restore *pendingRestore, chainBytes []byte) 
 	if err != nil {
 		return identitylib.Record{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}
-	chain, err = chain.AppendDevice(restore.recovery, restore.device.Public(), entryName(deps.names.GetInstanceName()), deps.clock.Now())
+	chain, err = chain.AppendDevice(restore.recovery, restore.device.Public(), normalizeEntryName(deps.names.GetInstanceName()), deps.clock.Now())
 	if err != nil {
 		return identitylib.Record{}, err
 	}

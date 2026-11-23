@@ -22,6 +22,11 @@ export const WORDS = {
   syncServerUnreachable: 'Could not reach the sync server',
   buy: 'Buy',
   waitingForPayment: 'Waiting for the payment…',
+  checkoutNotOpened: {
+    notWebAddress: 'The payment page has an address the browser cannot open.',
+    openFailed: 'The browser did not open the payment page.',
+    permissionDenied: 'Numen Sync may not open the browser.',
+  },
   paymentNotSeen: 'The payment is not seen yet. Open this page again after you pay.',
   vaultsTitle: 'Vaults',
   connectNew: 'Connect as a new synced vault',

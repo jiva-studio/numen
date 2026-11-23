@@ -70,7 +70,7 @@ func TestCommitMoves_CommitsAMetadataOnlyRevisionThatNamesTheBlobOfTheHead(t *te
 	if !bytes.Equal(revision.GetParentRev(), first.RevID) || revision.GetDeleted() {
 		t.Errorf("revision parent %x, deleted %v; want the first revision as parent and no removal", revision.GetParentRev(), revision.GetDeleted())
 	}
-	if !bytes.Equal(revision.GetPathHash(), note.PathHash(s.vault.Key, "Papers/Old report.pdf")) {
+	if !bytes.Equal(revision.GetPathHash(), note.HashPath(s.vault.Key, "Papers/Old report.pdf")) {
 		t.Error("the path hash is not the hash of the new path")
 	}
 	if !identity.VerifyForPlugin(revision.GetAuthorDeviceSignKey(), syncprotocol.SignInPluginID, syncprotocol.GetRevisionMessage(revision), [64]byte(revision.GetSignature())) {
@@ -176,7 +176,7 @@ func TestCommitRemovals_CommitsATombstoneWithNoBlobAndNoMetadata(t *testing.T) {
 	if !bytes.Equal(revision.GetParentRev(), first.RevID) || !bytes.Equal(revision.GetFileId(), first.FileID) {
 		t.Error("the tombstone is not a child of the head of the file it removes")
 	}
-	if !bytes.Equal(revision.GetPathHash(), note.PathHash(s.vault.Key, "Papers/Report.pdf")) {
+	if !bytes.Equal(revision.GetPathHash(), note.HashPath(s.vault.Key, "Papers/Report.pdf")) {
 		t.Error("the path hash of the tombstone is not the hash of the removed path")
 	}
 	if !identity.VerifyForPlugin(revision.GetAuthorDeviceSignKey(), syncprotocol.SignInPluginID, syncprotocol.GetRevisionMessage(revision), [64]byte(revision.GetSignature())) {
