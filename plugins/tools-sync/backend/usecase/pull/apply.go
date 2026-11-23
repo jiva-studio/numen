@@ -63,6 +63,9 @@ func (r *run) apply(ctx context.Context, stored *syncv1.StoredRevision) error {
 	}
 	rev := stored.GetRevision()
 	record, isKnown := r.getRecord(rev.GetFileId())
+	if isKnown && bytes.Equal(record.HeadRev, stored.GetRevId()) {
+		return nil
+	}
 	if rev.GetDeleted() {
 		return r.applyDeletion(ctx, stored, record, isKnown)
 	}

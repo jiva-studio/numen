@@ -119,7 +119,7 @@ func (s *Server) checkAuthors(account string, revs []*syncv1.Revision) error {
 func (s *Server) checkBlobs(b *batch) error {
 	claimed := map[string]bool{}
 	for i, rev := range b.revs {
-		if rev.GetDeleted() || b.isApplied(i) || b.isMetadataOnly(i) {
+		if rev.GetDeleted() || b.isApplied(i) || b.isMetadataOnly(i) || b.isStale(i) {
 			continue
 		}
 		if !s.isBlobReady(b, rev) || !addOnce(claimed, rev.GetBlobId()) {
@@ -127,6 +127,13 @@ func (s *Server) checkBlobs(b *batch) error {
 		}
 	}
 	return nil
+}
+
+// isStale says whether revision i names a parent that is not the head of its file: the batch is answered with that
+// conflict, whatever the state of its blob.
+func (b *batch) isStale(i int) bool {
+	rev, head := b.revs[i], b.heads[i]
+	return head != nil && !bytes.Equal(rev.GetParentRev(), head.GetRevId())
 }
 
 // isMetadataOnly says whether revision i names the blob of the head of its own file, with the same hash and size, and

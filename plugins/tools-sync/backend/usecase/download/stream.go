@@ -111,7 +111,7 @@ func (r *run) restore(ctx context.Context, kept transfer.DownloadEntry) (*positi
 	}
 	hasher := sha256.New()
 	unmarshaler, ok := hasher.(encoding.BinaryUnmarshaler)
-	if !ok || unmarshaler.UnmarshalBinary(kept.StoredHashState) != nil {
+	if !ok || !isStateValid(unmarshaler, kept.StoredHashState) {
 		return nil, false, nil
 	}
 	return &position{header: [56]byte(kept.Header), next: kept.NextChunk, hasher: hasher, state: kept.StoredHashState}, true, nil
@@ -231,3 +231,6 @@ func (r *run) keep(ctx context.Context, at *position) error {
 	}
 	return r.deps.Entries.WriteDownloads(ctx, r.in.Vault, append(withoutFile(entries, r.in.FileID), entry))
 }
+
+// isStateValid says whether the hash accepts the state a download kept; a state it does not accept starts the download over.
+func isStateValid(hasher encoding.BinaryUnmarshaler, state []byte) bool { return hasher.UnmarshalBinary(state) == nil }
