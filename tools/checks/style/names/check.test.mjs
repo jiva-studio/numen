@@ -335,9 +335,15 @@ describe('function names', () => {
 describe('function names that do not start with a verb or a predicate', () => {
   it('flags an exported Go function, method and interface method named by a noun', () => {
     assertFlagged('n/a.go', 'package a\n\nfunc Recipe() string { return "" }\n', 'functionNames')
-    assertFlagged('n/b.go', 'package a\n\ntype t struct{}\n\nfunc (t) Synopsis() string { return "" }\n', 'functionNames')
-    assertFlagged('n/c.go', 'package a\n\ntype Source interface {\n\tVaults() []string\n}\n', 'functionNames')
+    assertFlagged('n/b.go', 'package a\n\ntype t struct{}\n\nfunc (t) Synopsis(root string) string { return root }\n', 'functionNames')
+    assertFlagged('n/c.go', 'package a\n\ntype Source interface {\n\tVaults(root string) []string\n}\n', 'functionNames')
     assertFlagged('n/d.go', 'package a\n\ntype Hooks struct {\n\tendpoint func() string\n}\n', 'functionNames')
+  })
+  it('accepts a Go accessor, a method with no parameters that answers one value', () => {
+    assertClean('n/acc.go', 'package a\n\ntype t struct{}\n\nfunc (t) Synopsis() string { return "" }\n\nfunc (t) Bytes() []byte { return nil }\n\ntype Source interface {\n\tVaults() []string\n}\n')
+  })
+  it('flags a Go method with no parameters that answers a bool or an error', () => {
+    assertFlagged('n/pred.go', 'package a\n\ntype t struct{}\n\nfunc (t) Enabled() bool { return true }\n', 'functionNames')
   })
   it('flags a participle, a third-person verb and a preposition as the first word', () => {
     assertFlagged('n/e.go', 'package a\n\nfunc Opened() bool { return true }\n', 'functionNames: participle')
