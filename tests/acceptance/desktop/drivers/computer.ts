@@ -16,6 +16,8 @@ import { SyncVaultsDriver } from './sync-vaults.js'
 const SECOND_VAULT = 'Copy'
 /** A note arrives within a few passes of the plugin on both computers. */
 const ARRIVAL_LIMIT_MS = 30_000
+/** How long the plugin has to make a copy before a scenario may say there is none: a few passes. */
+const QUIET_MS = 6_000
 const ADDRESS_PATTERN = /^(?:the|its) vault "([^"]+)"$/
 
 /** The folders of a computer and the name of one vault in them. */
@@ -58,6 +60,14 @@ export const parseInside = (text: string): string | undefined => {
 
 /** The path of a note a scenario names by its title. */
 export const getNotePath = (title: string): string => `${title}.md`
+
+const escapePattern = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/** The texts of the conflict copies of a note: the files named "Title (conflict 2026-11-23).md", with a number after the date once that name is taken. */
+export const findConflictCopies = (files: readonly { path: string; text: string }[], title: string): string[] => {
+  const pattern = new RegExp(`^${escapePattern(title)} \\(conflict \\d{4}-\\d{2}-\\d{2}(?: \\d+)?\\)\\.md$`)
+  return files.filter((file) => pattern.test(file.path)).map((file) => file.text.trimEnd())
+}
 
 interface SecondComputer {
   readonly scenario: Scenario
@@ -108,7 +118,7 @@ export class ComputerDriver {
     const words = this.identity.getWords()
     const scenario = new Scenario(this.first.page, this.viewport)
     scenario.createVault(SECOND_VAULT)
-    this.sync.setPlugin(scenario)
+    await this.sync.setPlugin(scenario)
     const application = new ApplicationDriver(scenario)
     const settings = new SettingsDriver(scenario, application)
     const identity = new IdentityDriver(scenario, settings)
@@ -143,6 +153,27 @@ export class ComputerDriver {
     await expect
       .poll(() => world.readText(name, getNotePath(title))?.trimEnd(), { timeout: ARRIVAL_LIMIT_MS })
       .toBe(text)
+  }
+
+  async expectConflictCopy(holder: Holder, title: string, text: string, vault: string | undefined): Promise<void> {
+    const world = this.getScenario(holder.computer).getWorld()
+    const name = this.resolveVault(holder.computer, holder.vault ?? vault)
+    await expect
+      .poll(() => findConflictCopies(world.listNoteFiles(name), title), { timeout: ARRIVAL_LIMIT_MS })
+      .toContain(text)
+  }
+
+  /** The copies a conflict makes arrive within a few passes, so the check waits for the passes to end before it looks. */
+  async expectNoConflictCopy(holder: Holder, title: string, vault: string | undefined): Promise<void> {
+    const world = this.getScenario(holder.computer).getWorld()
+    const name = this.resolveVault(holder.computer, holder.vault ?? vault)
+    await new Promise((resolve) => setTimeout(resolve, QUIET_MS))
+    expect(findConflictCopies(world.listNoteFiles(name), title)).toEqual([])
+  }
+
+  /** Makes the other computer reach the sync server only after this one sent its changes. */
+  leadToServer(computer: ComputerName): void {
+    this.sync.holdOthers(this.getScenario(computer))
   }
 
   async expectNoFile(computer: ComputerName, filePath: string, vault: string): Promise<void> {

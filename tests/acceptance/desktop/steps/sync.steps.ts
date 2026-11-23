@@ -115,6 +115,21 @@ Then('{computer} does not have the file {string} in {owned}', async ({ person },
   await person.computers.expectNoFile(computer, filePath, vault)
 })
 
+When('{computer} is the first to reach the sync server', ({ person }, computer: ComputerName) => {
+  person.computers.leadToServer(computer)
+})
+
+Then(
+  '{holder} has a conflict copy of the note {string} with the text {string}{inside}',
+  async ({ person }, holder: Holder, title: string, text: string, vault: string | undefined) => {
+    await person.computers.expectConflictCopy(holder, title, text, vault)
+  },
+)
+
+Then('{holder} has no conflict copy of the note {string}{inside}', async ({ person }, holder: Holder, title: string, vault: string | undefined) => {
+  await person.computers.expectNoConflictCopy(holder, title, vault)
+})
+
 Given('a sync server that sells subscriptions runs', async ({ person }) => {
   await person.sync.startSellingSubscriptions()
 })
@@ -189,6 +204,10 @@ Then(
     await person.files.expectFileCount(holder, count, folder, vault)
   },
 )
+
+Then('{holder} has 1 file in its folder {string}{inside}', async ({ person }, holder: Holder, folder: string, vault: string | undefined) => {
+  await person.files.expectFileCount(holder, 1, folder, vault)
+})
 
 Given('the connection breaks while the file {string} is sent', async ({ person }, filePath: string) => {
   await person.files.breakConnectionWhileSending(filePath)
