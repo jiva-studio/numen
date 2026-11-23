@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"strings"
+
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"connectrpc.com/connect"
 
@@ -29,7 +30,7 @@ func (h *Prose) ReadNote(
 	}
 	found, err := h.read.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	out := &v1.ReadNoteResponse{Body: found.Body}
 	if reason, ok := wire.ConvertOutcomeToErrorCode(found.Outcome); ok {
@@ -69,7 +70,7 @@ func (h *Prose) WriteNote(
 	}
 	reason, ok := wire.GetErrorCode(err)
 	if !ok {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.WriteNoteResponse{Error: reason}), nil
 }
@@ -114,7 +115,7 @@ func (h *Prose) CreateNote(
 	}
 	reason, ok := wire.GetErrorCode(err)
 	if !ok {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.CreateNoteResponse{Error: reason}), nil
 }
@@ -130,7 +131,7 @@ func (h *Outline) GetOpeningNote(
 
 	ref, found, err := h.getOpeningNote.Execute(ctx, showing)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	out := &v1.GetOpeningNoteResponse{}
 	if found {
@@ -155,7 +156,7 @@ func (h *Outline) ListRelatedNotes(
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	out := &v1.ListRelatedNotesResponse{Graphs: make([]*v1.NoteGraph, 0, len(views))}
 	for _, found := range views {
@@ -204,7 +205,7 @@ func (h *Links) ResolveAddresses(
 	}
 	out, err := wire.ResolveAddresses(ctx, h.resolveLinks, showing.ID, r.Msg)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -304,13 +305,13 @@ func (h *Outline) ListHeadings(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListHeadingsResponse{}), nil
 	}
-	paths, err := eachOnce(r.Msg.GetPaths())
+	paths, err := wire.GetDistinctPaths(r.Msg.GetPaths())
 	if err != nil {
 		return nil, err
 	}
 	found, err := h.listHeadings.Execute(ctx, showing, paths)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 
 	out := &v1.ListHeadingsResponse{Headings: make([]*v1.NoteHeadings, 0, len(found))}
@@ -394,7 +395,7 @@ func (h *Prose) RenameNote(
 		case ok:
 			out.Error = reason
 		case out.GetPath() == "":
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		// The note was opened and its name was written, so the response is
 		// returned as is. A later failure of the rename does not undo it.

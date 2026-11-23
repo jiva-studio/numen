@@ -59,7 +59,7 @@ func (h *Handler) RetryPlugin(
 		if errors.As(err, &unavailable) && unavailable.Reason == plugindomain.NotInstalled {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	reply := &v1.RetryPluginResponse{}
 	if failure != nil {

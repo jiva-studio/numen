@@ -101,7 +101,7 @@ func (h *Handler) WriteOpenTabs(
 	h.window.ReportOpenTabs(open)
 	if v := h.window.GetCurrentVault(); v.Path != "" {
 		if err := h.write.Execute(ctx, v, open); err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 	}
 	return connect.NewResponse(&v1.WriteOpenTabsResponse{}), nil
@@ -117,7 +117,7 @@ func (h *Handler) ReadOpenTabs(
 	}
 	open, err := h.read.Execute(ctx, v)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	out := &v1.ReadOpenTabsResponse{ActiveId: open.ActiveID, Layout: open.Layout}
 	for _, one := range open.Tabs {

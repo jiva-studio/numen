@@ -4,41 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/fs"
 
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
-
-// errTooManyPaths is a filter naming more paths than are answered at once.
-var errTooManyPaths = errors.New("that is more paths than are answered at once")
-
-const maxQueryLength = 200
-
-func eachOnce(paths []string) ([]string, error) {
-	observed := make(map[string]bool, len(paths))
-	out := make([]string, 0, len(paths))
-	for _, path := range paths {
-		if observed[path] {
-			continue
-		}
-		observed[path] = true
-		out = append(out, path)
-	}
-	if len(out) > maxQueryLength {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyPaths)
-	}
-	return out, nil
-}
 
 // ListFiles is what one folder of the vault holds. The vault settles the order
 // the entries come in, and they cross in it.
@@ -51,7 +28,7 @@ func (h *Folders) ListFiles(
 	}
 	listing, err := h.listFolder.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(getListCode(err), err)
+		return nil, wire.NewListError(err)
 	}
 
 	out := &v1.ListFilesResponse{Entries: make([]*v1.Entry, 0, len(listing.Entries))}
@@ -85,13 +62,13 @@ func (h *Folders) ListFileKinds(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListFileKindsResponse{}), nil
 	}
-	paths, err := eachOnce(r.Msg.GetPaths())
+	paths, err := wire.GetDistinctPaths(r.Msg.GetPaths())
 	if err != nil {
 		return nil, err
 	}
 	listing, err := h.listKinds.Execute(ctx, showing, paths)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	out := &v1.ListFileKindsResponse{Kinds: make([]*v1.FileKind, 0, len(listing.Entries))}
 	for _, one := range listing.Entries {
@@ -128,7 +105,7 @@ func (h *Folders) CreateFolder(
 		}
 		reason, ok := wire.GetErrorCode(err)
 		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		out.Error = reason
 	}
@@ -157,23 +134,12 @@ func (h *Changes) MoveFile(
 		case ok:
 			out.Error = reason
 		case !moved.IsMoved:
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		// The file is where it was sent, so where it went and which links were
 		// repaired is the answer, whatever came apart after it landed.
 	}
 	return connect.NewResponse(out), nil
-}
-
-func getListCode(err error) connect.Code {
-	switch {
-	case errors.Is(err, vault.ErrOutside):
-		return connect.CodeInvalidArgument
-	case errors.Is(err, fs.ErrNotExist):
-		return connect.CodeNotFound
-	default:
-		return connect.CodeInternal
-	}
 }
 
 func convertNoteTypeToWire(noteType domain.NoteType) string {
@@ -198,7 +164,7 @@ func (h *Changes) RemoveFile(
 	if err != nil {
 		reason, ok := wire.GetErrorCode(err)
 		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.RemoveFileResponse{Error: reason}), nil
 	}
@@ -226,7 +192,7 @@ func (h *Changes) EmptyTrash(
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	h.tree.PublishChange(note.TrashDir)
 	return connect.NewResponse(&v1.EmptyTrashResponse{FailedPaths: undeleted}), nil

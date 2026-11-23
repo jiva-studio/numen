@@ -3,11 +3,10 @@
 package note
 
 import (
-	"errors"
-
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -23,15 +22,12 @@ type Edits interface {
 	SubscribeEdits() (<-chan domain.Edit, func())
 }
 
-var (
-	errClosing = broadcast.ErrClosing
-	errNoVault = errors.New("the window has no vault")
-)
+var errClosing = broadcast.ErrClosing
 
 func getShownVault(window Vault) (domain.Vault, error) {
 	v := window.GetCurrentVault()
 	if v.ID == "" {
-		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
+		return domain.Vault{}, connect.NewError(connect.CodeFailedPrecondition, wire.ErrNoVault)
 	}
 	return v, nil
 }

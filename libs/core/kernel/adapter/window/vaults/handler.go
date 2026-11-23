@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
@@ -87,7 +88,7 @@ func (s *Handler) ListVaults(
 ) (*connect.Response[v1.ListVaultsResponse], error) {
 	target, err := s.list.Execute()
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	out := &v1.ListVaultsResponse{Vaults: make([]*v1.Vault, 0, len(target))}
 	for _, v := range target {
@@ -109,7 +110,7 @@ func (s *Dialog) ChooseFolder(
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	// A closed dialog is a valid response with IsChosen false.
 	return connect.NewResponse(&v1.ChooseFolderResponse{Path: selected.Path, IsChosen: selected.IsChosen}), nil
@@ -128,7 +129,7 @@ func (s *Handler) AddVault(
 	if err != nil {
 		reason, ok := getErrorCode(err)
 		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.AddVaultResponse{Error: &reason}), nil
 	}
@@ -145,7 +146,7 @@ func (s *Handler) RenameVault(
 	if err != nil {
 		reason, ok := getErrorCode(err)
 		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.RenameVaultResponse{Error: &reason}), nil
 	}
@@ -162,7 +163,7 @@ func (s *Handler) RemoveVault(
 	if err != nil {
 		reason, ok := getErrorCode(err)
 		if !ok {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		return connect.NewResponse(&v1.RemoveVaultResponse{Error: &reason}), nil
 	}
@@ -185,7 +186,7 @@ func (s *Handler) OpenVault(
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil
 }
