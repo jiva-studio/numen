@@ -198,7 +198,7 @@ func TestSyncVault_ANoteMadeOnBothComputersWithOtherTextAtOnePathKeepsTheHeadAnd
 func TestSyncVault_ANoteWithAPathUsedBetweenThePullAndThePushIsSettledWithACopy(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.b.WriteNote(target, "Daily/Monday.md", "rice")
-	p.server.AfterNext("/GetChanges", func() {
+	p.server.RunAfterNext("/GetChanges", func() {
 		p.a.WriteNote(source, "Daily/Monday.md", "tea")
 		sync(t, p.a, source)
 	})

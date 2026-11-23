@@ -247,7 +247,7 @@ func TestPullChanges_SettlesAFileThatAppearedBeforeItsPlacementWithTheHead(t *te
 	p := newPair(t)
 	spy := p.b.Spy()
 	isFirst := true
-	spy.BeforePlace(func(call synctest.PlaceCall) {
+	spy.RunBeforePlace(func(call synctest.PlaceCall) {
 		if isFirst {
 			isFirst = false
 			p.b.WriteNote(target, call.Path, "written meanwhile")

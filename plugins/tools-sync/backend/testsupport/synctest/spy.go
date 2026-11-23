@@ -36,18 +36,18 @@ type RemoveCall struct {
 type SpyHost struct {
 	inner ports.Host
 
-	mu      sync.Mutex
-	sources map[string]*Source
-	places  []PlaceCall
-	moves   []MoveCall
-	removes []RemoveCall
-	maxRead int64
-	before  func(PlaceCall)
+	mu            sync.Mutex
+	sources       map[string]*Source
+	places        []PlaceCall
+	moves         []MoveCall
+	removes       []RemoveCall
+	maxRead       int64
+	placeCallback func(PlaceCall)
 }
 
 // NewSpyHost returns the host over the inner host.
 func NewSpyHost(inner ports.Host) *SpyHost {
-	return &SpyHost{inner: inner, mu: sync.Mutex{}, sources: map[string]*Source{}, places: nil, moves: nil, removes: nil, maxRead: 0, before: nil}
+	return &SpyHost{inner: inner, mu: sync.Mutex{}, sources: map[string]*Source{}, places: nil, moves: nil, removes: nil, maxRead: 0, placeCallback: nil}
 }
 
 // Serve makes the host read the file at the path of the source from the source, not from the vault.
@@ -135,7 +135,7 @@ func (t *spyTransfers) PlaceFile(ctx context.Context, name, path, expectedHash s
 	t.spy.mu.Lock()
 	call := PlaceCall{Name: name, Path: path, Hash: expectedHash, Baseline: baseline}
 	t.spy.places = append(t.spy.places, call)
-	before := t.spy.before
+	before := t.spy.placeCallback
 	t.spy.mu.Unlock()
 	if before != nil {
 		before(call)
@@ -143,10 +143,10 @@ func (t *spyTransfers) PlaceFile(ctx context.Context, name, path, expectedHash s
 	return t.inner.PlaceFile(ctx, name, path, expectedHash, baseline)
 }
 
-// BeforePlace runs the hook in every call of PlaceFile before the host gets it, as a change of the vault does that
+// RunBeforePlace runs the hook in every call of PlaceFile before the host gets it, as a change of the vault does that
 // lands between the staging of a file and its placement.
-func (h *SpyHost) BeforePlace(hook func(PlaceCall)) {
+func (h *SpyHost) RunBeforePlace(hook func(PlaceCall)) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.before = hook
+	h.placeCallback = hook
 }

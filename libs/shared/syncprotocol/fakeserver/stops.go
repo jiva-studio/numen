@@ -13,7 +13,7 @@ type stopAfter struct {
 	left    int64
 }
 
-func (a *stopAfter) arm(bytes int64) {
+func (a *stopAfter) start(bytes int64) {
 	a.isArmed, a.left = true, bytes
 }
 
@@ -54,7 +54,7 @@ func (s *Server) serveStopAfter(direction *stopAfter) http.HandlerFunc {
 			return
 		}
 		s.mu.Lock()
-		direction.arm(bytes)
+		direction.start(bytes)
 		s.mu.Unlock()
 		w.WriteHeader(http.StatusNoContent)
 	}

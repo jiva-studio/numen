@@ -29,13 +29,13 @@ func (r *batchRun) executeBig(ctx context.Context, vaultID domain.VaultID, file 
 	})
 	if errors.Is(err, blobcipher.ErrTooLarge) {
 		return transfer.Outcome{
-			Path: file.Path, Status: transfer.TooLarge, FileID: nil, RevID: nil, Head: nil, ExistingFileID: nil, Record: transfer.NoRecord(),
+			Path: file.Path, Status: transfer.TooLarge, FileID: nil, RevID: nil, Head: nil, ExistingFileID: nil, Record: transfer.NewEmptyRecord(),
 		}, nil
 	}
 	if err != nil {
 		return transfer.Outcome{}, err
 	}
-	kind := note.Kind(path)
+	kind := note.GetKind(path)
 	meta := note.Meta{Path: path, Size: file.Stat.Size, MTime: file.ModifiedAt, Hash: file.Stat.Hash, Key: sent.Key[:], Kind: kind}
 	sealed, err := note.SealMeta(r.deps.Random, r.vault.Key, r.vault.ID, fileID, meta)
 	if err != nil {

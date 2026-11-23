@@ -20,12 +20,12 @@ type Server struct {
 	Fake *fakeserver.Server
 	URL  string
 
-	mu          sync.Mutex
-	isDown      bool
-	lostPath    string
-	isCorrupted bool
-	afterPath   string
-	after       func()
+	mu           sync.Mutex
+	isDown       bool
+	lostPath     string
+	isCorrupted  bool
+	hookPath     string
+	hookCallback func()
 }
 
 // NewServer starts the server on the clock and stops it when the test ends. An admin stop budget that ends makes the
@@ -33,7 +33,7 @@ type Server struct {
 func NewServer(t *testing.T, clock *Clock, cfg fakeserver.Config) *Server {
 	t.Helper()
 	cfg.Now = clock.Now
-	s := &Server{Fake: nil, URL: "", mu: sync.Mutex{}, isDown: false, lostPath: "", isCorrupted: false, afterPath: "", after: nil}
+	s := &Server{Fake: nil, URL: "", mu: sync.Mutex{}, isDown: false, lostPath: "", isCorrupted: false, hookPath: "", hookCallback: nil}
 	cfg.Stop = func() { s.SetDown(true) }
 	s.Fake = fakeserver.New(cfg)
 	served := httptest.NewServer(http.HandlerFunc(s.serve))
@@ -55,16 +55,16 @@ type PartLogEntry struct {
 // StopAfterUploadBytes makes the server unreachable once it received n bytes of parts from now on.
 func (s *Server) StopAfterUploadBytes(t *testing.T, n int64) {
 	t.Helper()
-	s.post(t, fmt.Sprintf("/admin/stop-after-bytes?n=%d", n))
+	s.callAdmin(t, fmt.Sprintf("/admin/stop-after-bytes?n=%d", n))
 }
 
 // StopAfterDownloadBytes makes the server unreachable once it sent n bytes of blobs from now on.
 func (s *Server) StopAfterDownloadBytes(t *testing.T, n int64) {
 	t.Helper()
-	s.post(t, fmt.Sprintf("/admin/stop-after-download-bytes?n=%d", n))
+	s.callAdmin(t, fmt.Sprintf("/admin/stop-after-download-bytes?n=%d", n))
 }
 
-func (s *Server) post(t *testing.T, path string) {
+func (s *Server) callAdmin(t *testing.T, path string) {
 	t.Helper()
 	request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, s.URL+path, nil)
 	if err != nil {
@@ -150,12 +150,12 @@ func (s *Server) GetStoredBlobs(t *testing.T) []byte {
 	return body
 }
 
-// AfterNext runs the hook once the server has computed its answer to the next request whose path ends with the
+// RunAfterNext runs the hook once the server has computed its answer to the next request whose path ends with the
 // suffix and before the caller gets it, as another computer does that acts between two calls of a pass.
-func (s *Server) AfterNext(suffix string, hook func()) {
+func (s *Server) RunAfterNext(suffix string, hook func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.afterPath, s.after = suffix, hook
+	s.hookPath, s.hookCallback = suffix, hook
 }
 
 func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
@@ -182,8 +182,8 @@ func (s *Server) takeFaults(path string) (isDown, isCorrupted, isLost bool, hook
 	if isLost {
 		s.lostPath = ""
 	}
-	if s.afterPath != "" && strings.HasSuffix(path, s.afterPath) {
-		hook, s.afterPath, s.after = s.after, "", nil
+	if s.hookPath != "" && strings.HasSuffix(path, s.hookPath) {
+		hook, s.hookPath, s.hookCallback = s.hookCallback, "", nil
 	}
 	return s.isDown, s.isCorrupted, isLost, hook
 }
