@@ -12,12 +12,16 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring) *windowi
 	}
 	deps := identity.NewDeps(install.KeyStore, licensingadapter.NewAdapter(nil), vaultDeps.Clock)
 	return &windowidentity.UseCases{
-		Get:            identity.NewGetIdentity(deps),
-		GenerateWords:  identity.NewGenerateRecoveryWords(deps),
-		Create:         identity.NewCreateIdentity(deps),
-		Delete:         identity.NewDeleteIdentity(deps),
-		CreateKit:      identity.NewCreateRecoveryKit(deps),
-		CheckKit:       identity.NewCheckRecoveryKit(deps),
-		RestoreFromKit: identity.NewRestoreIdentityFromKit(deps),
+		Identity: windowidentity.IdentityUseCases{
+			Get:           identity.NewGetIdentity(deps),
+			GenerateWords: identity.NewGenerateRecoveryWords(deps),
+			Create:        identity.NewCreateIdentity(deps),
+			Delete:        identity.NewDeleteIdentity(deps),
+		},
+		Kit: windowidentity.KitUseCases{
+			Create:  identity.NewCreateRecoveryKit(deps),
+			Check:   identity.NewCheckRecoveryKit(deps),
+			Restore: identity.NewRestoreIdentityFromKit(deps),
+		},
 	}
 }

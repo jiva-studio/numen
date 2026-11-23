@@ -26,13 +26,23 @@ var (
 
 // UseCases are the use cases IdentityService is answered through.
 type UseCases struct {
-	Get            *identity.GetIdentity
-	GenerateWords  *identity.GenerateRecoveryWords
-	Create         *identity.CreateIdentity
-	Delete         *identity.DeleteIdentity
-	CreateKit      *identity.CreateRecoveryKit
-	CheckKit       *identity.CheckRecoveryKit
-	RestoreFromKit *identity.RestoreIdentityFromKit
+	Identity IdentityUseCases
+	Kit      KitUseCases
+}
+
+// IdentityUseCases are the use cases that read, create and delete the identity.
+type IdentityUseCases struct {
+	Get           *identity.GetIdentity
+	GenerateWords *identity.GenerateRecoveryWords
+	Create        *identity.CreateIdentity
+	Delete        *identity.DeleteIdentity
+}
+
+// KitUseCases are the use cases that make, check and restore from a recovery kit.
+type KitUseCases struct {
+	Create  *identity.CreateRecoveryKit
+	Check   *identity.CheckRecoveryKit
+	Restore *identity.RestoreIdentityFromKit
 }
 
 // Handler serves IdentityService over the identity use cases.
@@ -50,7 +60,7 @@ func (h *Handler) GetIdentity(
 	ctx context.Context,
 	_ *connect.Request[v1.GetIdentityRequest],
 ) (*connect.Response[v1.GetIdentityResponse], error) {
-	found, err := h.identity.Get.Execute(ctx)
+	found, err := h.identity.Identity.Get.Execute(ctx)
 	if errors.Is(err, identitydomain.ErrNoIdentity) {
 		return connect.NewResponse(&v1.GetIdentityResponse{}), nil
 	}
@@ -65,7 +75,7 @@ func (h *Handler) GenerateRecoveryWords(
 	ctx context.Context,
 	_ *connect.Request[v1.GenerateRecoveryWordsRequest],
 ) (*connect.Response[v1.GenerateRecoveryWordsResponse], error) {
-	words, err := h.identity.GenerateWords.Execute(ctx)
+	words, err := h.identity.Identity.GenerateWords.Execute(ctx)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -77,7 +87,7 @@ func (h *Handler) CreateIdentity(
 	ctx context.Context,
 	r *connect.Request[v1.CreateIdentityRequest],
 ) (*connect.Response[v1.CreateIdentityResponse], error) {
-	created, err := h.identity.Create.Execute(ctx, r.Msg.GetWords())
+	created, err := h.identity.Identity.Create.Execute(ctx, r.Msg.GetWords())
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
@@ -95,7 +105,7 @@ func (h *Handler) DeleteIdentity(
 	ctx context.Context,
 	_ *connect.Request[v1.DeleteIdentityRequest],
 ) (*connect.Response[v1.DeleteIdentityResponse], error) {
-	if err := h.identity.Delete.Execute(ctx); err != nil {
+	if err := h.identity.Identity.Delete.Execute(ctx); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.DeleteIdentityResponse{}), nil
@@ -121,7 +131,7 @@ func (h *Handler) CreateRecoveryKit(
 	if len(words) == 0 && len(sheets) == 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoProof)
 	}
-	made, err := h.identity.CreateKit.Execute(ctx, words, sheets)
+	made, err := h.identity.Kit.Create.Execute(ctx, words, sheets)
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
@@ -141,7 +151,7 @@ func (h *Handler) CheckRecoveryKit(
 	if len(sheets) == 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoSheets)
 	}
-	fingerprint, err := h.identity.CheckKit.Execute(ctx, sheets)
+	fingerprint, err := h.identity.Kit.Check.Execute(ctx, sheets)
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {
@@ -161,7 +171,7 @@ func (h *Handler) RestoreIdentityFromKit(
 	if len(sheets) == 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoSheets)
 	}
-	restored, err := h.identity.RestoreFromKit.Execute(ctx, sheets)
+	restored, err := h.identity.Kit.Restore.Execute(ctx, sheets)
 	if err != nil {
 		code, served := getErrorCode(err)
 		if !served {

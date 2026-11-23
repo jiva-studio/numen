@@ -39,15 +39,15 @@ func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *t
 	t.Parallel()
 	keys := memoryKeys{}
 	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))})
-	if use == nil || use.Get == nil || use.GenerateWords == nil || use.Create == nil || use.Delete == nil ||
-		use.CreateKit == nil || use.CheckKit == nil || use.RestoreFromKit == nil {
+	if use == nil || use.Identity.Get == nil || use.Identity.GenerateWords == nil || use.Identity.Create == nil || use.Identity.Delete == nil ||
+		use.Kit.Create == nil || use.Kit.Check == nil || use.Kit.Restore == nil {
 		t.Fatalf("openIdentityUseCases() = %+v, want all seven use cases", use)
 	}
-	words, err := use.GenerateWords.Execute(t.Context())
+	words, err := use.Identity.GenerateWords.Execute(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	created, err := use.Create.Execute(t.Context(), words)
+	created, err := use.Identity.Create.Execute(t.Context(), words)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,15 +66,15 @@ func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t
 	if use == nil {
 		t.Fatal("openIdentityUseCases() = nil")
 	}
-	words, err := use.GenerateWords.Execute(t.Context())
+	words, err := use.Identity.GenerateWords.Execute(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	created, err := use.Create.Execute(t.Context(), words)
+	created, err := use.Identity.Create.Execute(t.Context(), words)
 	if err != nil {
 		t.Fatal(err)
 	}
-	made, err := use.CreateKit.Execute(t.Context(), words, nil)
+	made, err := use.Kit.Create.Execute(t.Context(), words, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,14 +82,14 @@ func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t
 		t.Fatalf("kit has %d sheets, want 3", len(made.Sheets))
 	}
 	sheets := [][]string{made.Sheets[2].Words, made.Sheets[0].Words}
-	fits, err := use.CheckKit.Execute(t.Context(), sheets)
+	fits, err := use.Kit.Check.Execute(t.Context(), sheets)
 	if err != nil || fits != created.AccountFingerprint {
 		t.Fatalf("CheckKit() = %q, %v; want %q", fits, err, created.AccountFingerprint)
 	}
-	if err := use.Delete.Execute(t.Context()); err != nil {
+	if err := use.Identity.Delete.Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	restored, err := use.RestoreFromKit.Execute(t.Context(), sheets)
+	restored, err := use.Kit.Restore.Execute(t.Context(), sheets)
 	if err != nil {
 		t.Fatal(err)
 	}

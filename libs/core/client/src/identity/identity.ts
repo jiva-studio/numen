@@ -107,9 +107,7 @@ const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefi
 
 const readAnswer = <T, U>(
   answer: { error: ProtoIdentityErrorCode; detail: string },
-  value: U | undefined,
-  read: (value: U) => T,
-  missing: string,
+  { value, read, missing }: { value: U | undefined; read: (value: U) => T; missing: string },
 ): Result<T, IdentityFailure> => {
   const errorCode = readErrorCode(answer.error)
   if (errorCode !== undefined) {
@@ -146,22 +144,38 @@ export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
   generateWords: async () => [...(await rpc.generateRecoveryWords({})).words],
   create: async (words) => {
     const answer = await rpc.createIdentity({ words: [...words] })
-    return readAnswer(answer, answer.identity, readInfo, 'The core returned no identity.')
+    return readAnswer(answer, {
+      value: answer.identity,
+      read: readInfo,
+      missing: 'The core returned no identity.',
+    })
   },
   delete: async () => {
     await rpc.deleteIdentity({})
   },
   createKit: async (proof) => {
     const answer = await rpc.createRecoveryKit({ proof: writeProof(proof) })
-    return readAnswer(answer, answer.kit, readKit, 'The core returned no kit.')
+    return readAnswer(answer, {
+      value: answer.kit,
+      read: readKit,
+      missing: 'The core returned no kit.',
+    })
   },
   checkKit: async (sheets) => {
     const answer = await rpc.checkRecoveryKit({ sheets: writeSheets(sheets) })
     const account = answer.accountFingerprint === '' ? undefined : answer.accountFingerprint
-    return readAnswer(answer, account, readAccount, 'The core returned no account.')
+    return readAnswer(answer, {
+      value: account,
+      read: readAccount,
+      missing: 'The core returned no account.',
+    })
   },
   restoreFromKit: async (sheets) => {
     const answer = await rpc.restoreIdentityFromKit({ sheets: writeSheets(sheets) })
-    return readAnswer(answer, answer.identity, readInfo, 'The core returned no identity.')
+    return readAnswer(answer, {
+      value: answer.identity,
+      read: readInfo,
+      missing: 'The core returned no identity.',
+    })
   },
 })

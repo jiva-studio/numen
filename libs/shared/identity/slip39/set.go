@@ -78,7 +78,7 @@ func recoverGroup(members []Share) (rawShare, error) {
 			return rawShare{}, fmt.Errorf("%w: member thresholds differ", ErrMixedSets)
 		}
 		if seen[member.MemberIndex] {
-			return rawShare{}, ErrDuplicateMember
+			return rawShare{}, fmt.Errorf("%v: %w", member, ErrDuplicateMember)
 		}
 		seen[member.MemberIndex] = true
 		raw[i] = rawShare{x: member.MemberIndex, data: member.Value}

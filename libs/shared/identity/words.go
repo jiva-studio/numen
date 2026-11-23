@@ -57,7 +57,7 @@ func ParseRecoveryWords(words []string) (RecoveryWords, error) {
 	var parsed RecoveryWords
 	copy(parsed.entropy[:], packed[:entropySize])
 	if parsed.packed()[entropySize] != packed[entropySize] {
-		return RecoveryWords{}, ErrChecksum
+		return RecoveryWords{}, fmt.Errorf("%v: %w", parsed, ErrChecksum)
 	}
 	return parsed, nil
 }

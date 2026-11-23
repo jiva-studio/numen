@@ -90,7 +90,7 @@ func RestoreSecret(sheets []Sheet) (RecoverySecret, error) {
 		if position == 1 {
 			copy(restored.bytes[:], secret)
 		} else if !bytes.Equal(restored.bytes[:], secret) {
-			return RecoverySecret{}, &SheetError{Position: position + 1, Err: fmt.Errorf("%w: %w", ErrSheetInvalid, slip39.ErrMixedSets)}
+			return RecoverySecret{}, &SheetError{Position: position + 1, Err: fmt.Errorf("%w: %v: %w", ErrSheetInvalid, sheets[position], slip39.ErrMixedSets)}
 		}
 	}
 	return restored, nil
