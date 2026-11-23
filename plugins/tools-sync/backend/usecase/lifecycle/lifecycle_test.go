@@ -2,8 +2,6 @@ package lifecycle_test
 
 import (
 	"context"
-	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -14,33 +12,13 @@ import (
 
 const interval = 30 * time.Second
 
-// stream is the stream of hints of the server: the network edge of the phone. It counts the streams that are
-// open and hands out the callbacks the use case gave it.
-type stream struct {
-	open   atomic.Int32
-	opened atomic.Int32
-	mu     sync.Mutex
-	hints  []func(domain.VaultID)
-}
-
-func (s *stream) Watch(ctx context.Context, changed func(domain.VaultID)) error {
-	s.open.Add(1)
-	s.opened.Add(1)
-	defer s.open.Add(-1)
-	s.mu.Lock()
-	s.hints = append(s.hints, changed)
-	s.mu.Unlock()
-	<-ctx.Done()
-	return ctx.Err()
-}
-
-func newLifecycle(w *synctest.PhoneWorld, s *stream) *lifecycle.Lifecycle {
+func newLifecycle(w *synctest.PhoneWorld, s *synctest.Stream) *lifecycle.Lifecycle {
 	return lifecycle.NewLifecycle(w.Phone.LifecycleDeps(interval, s, make(chan domain.VaultID)))
 }
 
 func TestResume_RunsAPassAtOnceAndOpensTheStream(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
-	s := &stream{}
+	s := &synctest.Stream{}
 	w.Computer.WriteNote(synctest.ComputerVault, "Shopping list.md", "milk")
 	w.Clock.Advance(time.Minute)
 	w.ComputerSync(t)
@@ -59,12 +37,12 @@ func TestResume_RunsAPassAtOnceAndOpensTheStream(t *testing.T) {
 		text, ok := w.Phone.ReadNote(synctest.PhoneVault, "Shopping list.md")
 		return ok && text == "milk"
 	})
-	synctest.Eventually(t, "an open stream", func() bool { return s.open.Load() == 1 })
+	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 }
 
 func TestResume_IsIdempotent(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
-	s := &stream{}
+	s := &synctest.Stream{}
 	life := newLifecycle(w, s)
 	for range 2 {
 		if err := life.Resume(t.Context()); err != nil {
@@ -77,26 +55,26 @@ func TestResume_IsIdempotent(t *testing.T) {
 		}
 	})
 
-	synctest.Eventually(t, "an open stream", func() bool { return s.open.Load() >= 1 })
-	if got := s.opened.Load(); got != 1 {
+	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() >= 1 })
+	if got := s.CountOpened(); got != 1 {
 		t.Errorf("%d streams were opened by two calls, want 1", got)
 	}
 }
 
 func TestSuspend_ClosesTheStreamAndAsksForNothingMore(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
-	s := &stream{}
+	s := &synctest.Stream{}
 	life := newLifecycle(w, s)
 	if err := life.Resume(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	synctest.Eventually(t, "an open stream", func() bool { return s.open.Load() == 1 })
+	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 
 	if err := life.Suspend(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 
-	if open := s.open.Load(); open != 0 {
+	if open := s.CountOpen(); open != 0 {
 		t.Errorf("%d streams are open after Suspend, want 0", open)
 	}
 	asked := w.Server.CountRequests()
@@ -108,7 +86,7 @@ func TestSuspend_ClosesTheStreamAndAsksForNothingMore(t *testing.T) {
 
 func TestSuspend_IsIdempotent(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
-	life := newLifecycle(w, &stream{})
+	life := newLifecycle(w, &synctest.Stream{})
 	for range 2 {
 		if err := life.Suspend(t.Context()); err != nil {
 			t.Fatal(err)
@@ -118,7 +96,7 @@ func TestSuspend_IsIdempotent(t *testing.T) {
 
 func TestResume_OpensTheStreamAgainAfterSuspend(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
-	s := &stream{}
+	s := &synctest.Stream{}
 	life := newLifecycle(w, s)
 	if err := life.Resume(t.Context()); err != nil {
 		t.Fatal(err)
@@ -136,12 +114,12 @@ func TestResume_OpensTheStreamAgainAfterSuspend(t *testing.T) {
 		}
 	})
 
-	synctest.Eventually(t, "an open stream", func() bool { return s.open.Load() == 1 })
+	synctest.Eventually(t, "an open stream", func() bool { return s.CountOpen() == 1 })
 }
 
 func TestSuspend_SendsTheNoteWrittenOnThePhoneBeforeItStops(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
-	life := newLifecycle(w, &stream{})
+	life := newLifecycle(w, &synctest.Stream{})
 	if err := life.Resume(t.Context()); err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +150,7 @@ func (p slowPass) Execute(ctx context.Context, _ domain.VaultID) error {
 
 func TestSuspend_StopsAfterTheGraceWhenThePassDoesNotEnd(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
-	deps := w.Phone.LifecycleDeps(interval, &stream{}, make(chan domain.VaultID))
+	deps := w.Phone.LifecycleDeps(interval, &synctest.Stream{}, make(chan domain.VaultID))
 	pass := slowPass{started: make(chan struct{}, 1)}
 	deps.Pass = pass
 	life := lifecycle.NewLifecycle(deps)
@@ -196,7 +174,7 @@ func TestResume_SendsTheNoteWrittenWhileTheApplicationWasClosed(t *testing.T) {
 	w := synctest.NewPhoneWorld(t)
 	w.Phone.WriteNote(synctest.PhoneVault, "Shopping list.md", "eggs")
 	w.Clock.Advance(time.Minute)
-	life := newLifecycle(w, &stream{})
+	life := newLifecycle(w, &synctest.Stream{})
 	if err := life.Resume(t.Context()); err != nil {
 		t.Fatal(err)
 	}

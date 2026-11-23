@@ -3,6 +3,8 @@ package synctest
 import (
 	"context"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -143,4 +145,41 @@ func (w *PhoneWorld) WriteGuide(t *testing.T, path string) string {
 	w.ComputerSync(t)
 	w.PhoneSync(t)
 	return content
+}
+
+// Stream is the stream of hints of the server, the network edge of a phone: it counts the streams that are open
+// and lets a test send a hint down them.
+type Stream struct {
+	open   atomic.Int32
+	opened atomic.Int32
+	mu     sync.Mutex
+	hints  []func(domain.VaultID)
+}
+
+// Watch holds a stream open until ctx ends.
+func (s *Stream) Watch(ctx context.Context, changed func(domain.VaultID)) error {
+	s.open.Add(1)
+	s.opened.Add(1)
+	defer s.open.Add(-1)
+	s.mu.Lock()
+	s.hints = append(s.hints, changed)
+	s.mu.Unlock()
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+// CountOpen returns how many streams are open now.
+func (s *Stream) CountOpen() int { return int(s.open.Load()) }
+
+// CountOpened returns how many streams were opened in all.
+func (s *Stream) CountOpened() int { return int(s.opened.Load()) }
+
+// Hint tells every open stream that the vault changed on the server.
+func (s *Stream) Hint(id domain.VaultID) {
+	s.mu.Lock()
+	calls := append([]func(domain.VaultID){}, s.hints...)
+	s.mu.Unlock()
+	for _, call := range calls {
+		call(id)
+	}
 }
