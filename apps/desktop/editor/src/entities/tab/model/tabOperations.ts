@@ -110,7 +110,9 @@ const openInIsolation = (store: TabStore, saved: SavedTab, one: AnyTabKind) => {
     return [
       restoreFailedKind,
       placeholderScope,
-      openInScope(placeholderScope, () => restoreFailedKind.open(saved.path, saved.id, saved.saved)),
+      openInScope(placeholderScope, () =>
+        restoreFailedKind.open(saved.path, saved.id, saved.saved),
+      ),
     ] as const
   }
 }

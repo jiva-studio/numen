@@ -32,7 +32,7 @@ export type { ListItem } from './shared/ui/searchable-list'
 /** Whether a key was pressed into something being written in. */
 export { isTyping } from './shared/lib/dom/typing'
 
-export { KeyCap, createKeyChord } from './shared/ui/key-cap'
+export { KeyCap, getKeyChord } from './shared/ui/key-cap'
 export type { Keystroke } from './shared/ui/key-cap'
 
 export {

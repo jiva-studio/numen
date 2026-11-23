@@ -47,7 +47,9 @@ describe('what does not draw is cleared away', () => {
   })
 
   it('keeps the first pane of a branch that holds nothing at all, so there is a root', () => {
-    const after = normalize(createWorkspace(split('root', [createPane('x', []), createPane('y', [])])))
+    const after = normalize(
+      createWorkspace(split('root', [createPane('x', []), createPane('y', [])])),
+    )
 
     expect(after.root).toStrictEqual(createPane('x', []))
   })

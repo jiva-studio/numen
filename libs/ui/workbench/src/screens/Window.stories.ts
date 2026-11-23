@@ -14,7 +14,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import { Book, BookOpen, Bot, FileText, Folder, FolderOpen, FolderTree } from '@lucide/vue'
 import { ref } from 'vue'
-import { Tree, createKeyChord } from '@numen/ui'
+import { Tree, getKeyChord } from '@numen/ui'
 import type { Keystroke, Row, TextRange } from '@numen/ui'
 import {
   WorkspaceLayout,
@@ -332,9 +332,9 @@ const OVER_WINDOW: PaletteGroup = {
   id: 'window',
   title: 'General',
   items: [
-    command('note', 'New note', createKeyChord('n', KEYBOARD)),
+    command('note', 'New note', getKeyChord('n', KEYBOARD)),
     command('plex', 'New plex'),
-    command('agent', 'New agent', createKeyChord('a', KEYBOARD, true)),
+    command('agent', 'New agent', getKeyChord('a', KEYBOARD, true)),
     command('appearance', 'Change theme'),
   ],
 }
@@ -344,7 +344,7 @@ const OVER_VAULT: PaletteGroup = {
   id: 'vault',
   title: 'Vault',
   items: [
-    command('goto', 'Go to a note', createKeyChord('g', KEYBOARD)),
+    command('goto', 'Go to a note', getKeyChord('g', KEYBOARD)),
     command('openVault', 'Open vault'),
   ],
 }
@@ -357,8 +357,8 @@ const COMMANDS: readonly PaletteGroup[] = [
     items: [
       command('read', 'Open note'),
       command('beside', 'Open beside'),
-      command('travel', 'Show in plex', createKeyChord('p', KEYBOARD, true)),
-      command('child', 'New child note', createKeyChord('c', KEYBOARD, true)),
+      command('travel', 'Show in plex', getKeyChord('p', KEYBOARD, true)),
+      command('child', 'New child note', getKeyChord('c', KEYBOARD, true)),
       command('parent', 'New parent note'),
       command('ask', 'Ask the agent'),
     ],
@@ -493,7 +493,10 @@ export const Writing: Story = {
             // two notes stand one above the other.
             branch(
               'beside',
-              [createPane('upper', [NOTE, BOOK], NOTE), createPane('lower', [OTHER_NOTE], OTHER_NOTE)],
+              [
+                createPane('upper', [NOTE, BOOK], NOTE),
+                createPane('lower', [OTHER_NOTE], OTHER_NOTE),
+              ],
               [0.5, 0.5],
             ),
           ],
@@ -575,7 +578,11 @@ export const Asking: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [createPane('source', [BOOK], BOOK), createPane('middle', [NOTE], NOTE), createPane('aside', [AGENT])],
+          [
+            createPane('source', [BOOK], BOOK),
+            createPane('middle', [NOTE], NOTE),
+            createPane('aside', [AGENT]),
+          ],
           [0.4, 0.3, 0.3],
         ),
         axis: 'horizontal',

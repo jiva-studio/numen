@@ -227,7 +227,10 @@ describe('show event', () => {
       onScreen.push(panel?.hasAttribute('data-showing') ?? false)
     }
 
-    const target = mountPane({ pane: createPane('later', ['plex', 'chat', 'notes'], 'chat'), onShow })
+    const target = mountPane({
+      pane: createPane('later', ['plex', 'chat', 'notes'], 'chat'),
+      onShow,
+    })
     await target.setProps({ pane: createPane('later', ['plex', 'chat', 'notes'], 'notes') })
 
     expect(onScreen).toStrictEqual([true, true])

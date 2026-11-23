@@ -42,7 +42,7 @@ Pattern for a domain view: the library defines its own view-model and takes it b
 
 ## Window chrome in the shell: the palette
 
-`libs/ui/workbench/src/features/palette/` is a slice with `ui/`, `model/`, `lib/`, `fixtures/`, `types.ts` and `index.ts`. It takes `PaletteItem`s and `PaletteGroup`s and emits identifiers; `src/index.ts` exports `Palette`, `createCommandKeyChord` and the types. It builds on `@numen/ui` (`createKeyChord`, `stepTo`, `Spinner`, `runInBackground`) and imports no wire type. The window supplies the commands and runs what the palette returns.
+`libs/ui/workbench/src/features/palette/` is a slice with `ui/`, `model/`, `lib/`, `fixtures/`, `types.ts` and `index.ts`. It takes `PaletteItem`s and `PaletteGroup`s and emits identifiers; `src/index.ts` exports `Palette`, `getCommandKeyChord` and the types. It builds on `@numen/ui` (`getKeyChord`, `stepTo`, `Spinner`, `runInBackground`) and imports no wire type. The window supplies the commands and runs what the palette returns.
 
 ## Where the code in `main` differs from the target
 

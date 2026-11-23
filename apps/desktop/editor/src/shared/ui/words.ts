@@ -6,7 +6,7 @@
  * palette, commands, status corner, and quit.
  */
 // Stryker disable StringLiteral: interface copy
-import { createCommandKeyChord } from '@numen/workbench'
+import { getCommandKeyChord } from '@numen/workbench'
 import { ERRORS } from '../api/errors'
 
 export { ERRORS }
@@ -44,7 +44,7 @@ export const WORDS = {
   /** The note that points at a web address. */
   close: 'Close tab',
   settings: 'Settings',
-  findKeys: createCommandKeyChord(navigator.userAgent),
+  findKeys: getCommandKeyChord(navigator.userAgent),
   /** The commands, under the second of the two keystrokes the window keeps for itself. */
   commands: 'Show commands',
   goto: 'Go to note',

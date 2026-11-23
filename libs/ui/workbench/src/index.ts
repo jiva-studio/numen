@@ -25,15 +25,10 @@ export {
   MODES,
   TEXT_SCALE,
 } from './features/appearance'
-export type {
-  AppearanceWords,
-  Mode,
-  ThemeSource,
-  WindowAppearance,
-} from './features/appearance'
+export type { AppearanceWords, Mode, ThemeSource, WindowAppearance } from './features/appearance'
 
 export { Palette } from './features/palette'
-export { createCommandKeyChord } from './features/palette'
+export { getCommandKeyChord } from './features/palette'
 export type { ActionWords, PaletteItem, PaletteGroup, PaletteMultiProps } from './features/palette'
 
 /** One list of notices for a window, given by the parts it hosts. */

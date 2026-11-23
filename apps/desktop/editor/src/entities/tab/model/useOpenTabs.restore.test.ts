@@ -142,7 +142,11 @@ describe('saved pane layouts', () => {
         'root',
         [
           createPane('stack', ['reader', 'note'], 'reader'),
-          branch('lower', [createPane('file-pane', ['files']), createPane('last', ['missing'])], [0.2, 0.8]),
+          branch(
+            'lower',
+            [createPane('file-pane', ['files']), createPane('last', ['missing'])],
+            [0.2, 0.8],
+          ),
         ],
         [0.45, 0.55],
       ),

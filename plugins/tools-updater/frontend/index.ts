@@ -81,7 +81,10 @@ export const activate = (
     getIntervalHours: () => plugin.settings.get('checkIntervalHours'),
     timer: parts.timer,
   })
-  plugin.register.slotView({ id: UPDATE_VIEW, component: createStatusView(plugin, host, updateModel) })
+  plugin.register.slotView({
+    id: UPDATE_VIEW,
+    component: createStatusView(plugin, host, updateModel),
+  })
   plugin.settings.onChange('checkIntervalHours', () => updateModel.schedule.reschedule())
   const warnOfMissingAddress = () => showMissingAddress(plugin, host)
   plugin.settings.onChange('endpoint', () => {

@@ -1077,9 +1077,7 @@ describe('the kinds the window holds', () => {
     window.kinds.registerKind(kind().one)
     window.kinds.registerKind(kind({ kind: 'chat', receiveText: vi.fn() }).one)
 
-    expect(window.kinds.findKind((one) => one.events?.receiveText !== undefined)?.kind).toBe(
-      'chat',
-    )
+    expect(window.kinds.findKind((one) => one.events?.receiveText !== undefined)?.kind).toBe('chat')
     expect(window.kinds.findKind((one) => one.display?.isTool === true)).toBeUndefined()
   })
 })
