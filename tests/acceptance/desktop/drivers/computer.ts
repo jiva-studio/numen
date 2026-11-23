@@ -7,13 +7,19 @@ import { ApplicationDriver } from './application.js'
 import { IdentityDriver } from './identity.js'
 import { Scenario } from './scenario.js'
 import { SettingsDriver } from './settings.js'
-import type { SyncDriver } from './sync.js'
+import { getIntervalSeconds, type SyncDriver } from './sync.js'
 import { SyncVaultsDriver } from './sync-vaults.js'
 
 /** The vault of the second computer: a scenario names it, and the computer has no other. */
 const SECOND_VAULT = 'Copy'
 /** A note arrives within a few passes of the plugin on both computers. */
 const ARRIVAL_LIMIT_MS = 30_000
+/** The plugin of the sync, by the name its settings page has. */
+const SYNC_PLUGIN_NAME = 'Numen Sync'
+/** The setting that says how often a computer asks the sync server for changes. */
+const INTERVAL_SETTING = 'Sync interval'
+/** Both computers hold a stream open to the server once their plugin runs. */
+const STREAMS_OF_BOTH = 2
 const ADDRESS_PATTERN = /^(?:the|its) vault "([^"]+)"$/
 
 export type ComputerName = 'first' | 'second'
@@ -55,6 +61,7 @@ interface SecondComputer {
   readonly scenario: Scenario
   readonly identity: IdentityDriver
   readonly vaults: SyncVaultsDriver
+  readonly settings: SettingsDriver
 }
 
 interface ComputerParts {
@@ -63,6 +70,7 @@ interface ComputerParts {
   readonly identity: IdentityDriver
   readonly sync: SyncDriver
   readonly firstVaults: SyncVaultsDriver
+  readonly firstSettings: SettingsDriver
 }
 
 export class ComputerDriver {
@@ -73,6 +81,7 @@ export class ComputerDriver {
   private readonly identity: IdentityDriver
   private readonly sync: SyncDriver
   private readonly firstVaults: SyncVaultsDriver
+  private readonly firstSettings: SettingsDriver
 
   constructor(parts: ComputerParts) {
     this.first = parts.first
@@ -80,6 +89,7 @@ export class ComputerDriver {
     this.identity = parts.identity
     this.sync = parts.sync
     this.firstVaults = parts.firstVaults
+    this.firstSettings = parts.firstSettings
   }
 
   private requireSecond(): SecondComputer {
@@ -104,7 +114,7 @@ export class ComputerDriver {
     const application = new ApplicationDriver(scenario)
     const settings = new SettingsDriver(scenario, application)
     const identity = new IdentityDriver(scenario, settings)
-    this.second = { scenario, identity, vaults: new SyncVaultsDriver(scenario, settings) }
+    this.second = { scenario, identity, vaults: new SyncVaultsDriver(scenario, settings), settings }
     await application.startApplication('editor')
     await identity.restoreFromWords(words.join(' '))
     await identity.expectIdentity(true)
@@ -124,16 +134,21 @@ export class ComputerDriver {
   }
 
   async expectNote(holder: Holder, title: string, text: string, vault: string | undefined): Promise<void> {
+    await this.expectNoteBy({ ...holder, vault: holder.vault ?? vault }, title, text, ARRIVAL_LIMIT_MS)
+  }
+
+  private async expectNoteBy(holder: Holder, title: string, text: string, timeout: number): Promise<void> {
     const world = this.getScenario(holder.computer).getWorld()
-    const name = this.resolveVault(holder.computer, holder.vault ?? vault)
-    await expect
-      .poll(() => world.readText(name, getNotePath(title))?.trimEnd(), { timeout: ARRIVAL_LIMIT_MS })
-      .toBe(text)
+    const name = this.resolveVault(holder.computer, holder.vault)
+    await expect.poll(() => world.readText(name, getNotePath(title))?.trimEnd(), { timeout }).toBe(text)
   }
 
   /** Asks every computer for changes only after the interval the text names. */
-  async setInterval(_text: string): Promise<void> {
-    throw new Error('not implemented')
+  async setInterval(text: string): Promise<void> {
+    const seconds = String(getIntervalSeconds(text))
+    await this.firstSettings.set(INTERVAL_SETTING, seconds, SYNC_PLUGIN_NAME)
+    await this.requireSecond().settings.set(INTERVAL_SETTING, seconds, SYNC_PLUGIN_NAME)
+    await this.sync.expectStreams(STREAMS_OF_BOTH)
   }
 
   /** Cuts the connection of the second computer to the sync server and waits until the server holds none. */
@@ -142,8 +157,8 @@ export class ComputerDriver {
   }
 
   /** Expects the note within the seconds the scenario names, with the settings the plugin has now. */
-  async expectNoteWithin(_holder: Holder, _title: string, _text: string, _seconds: number, _vault: string | undefined): Promise<void> {
-    throw new Error('not implemented')
+  async expectNoteWithin(holder: Holder, title: string, text: string, seconds: number, vault: string | undefined): Promise<void> {
+    await this.expectNoteBy({ ...holder, vault: holder.vault ?? vault }, title, text, seconds * 1000)
   }
 
   async expectNoFile(computer: ComputerName, filePath: string, vault: string): Promise<void> {
