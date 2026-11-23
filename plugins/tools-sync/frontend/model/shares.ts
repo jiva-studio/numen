@@ -142,7 +142,12 @@ export function createShareView(options: ShareViewOptions) {
   const add = (confirmChange: boolean): Promise<void> =>
     guard(async () => {
       const code = field.text.value.trim()
-      const added = await client.addReader({ ...target, code, label: label.value.trim(), confirmChange })
+      const added = await client.addReader({
+        ...target,
+        code,
+        label: label.value.trim(),
+        confirmChange,
+      })
       invitation.value = added.invitation
       field.clear()
       label.value = ''

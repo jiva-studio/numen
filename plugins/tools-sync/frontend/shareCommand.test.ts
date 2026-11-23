@@ -3,7 +3,9 @@ import { createMockHostServices, createMockPluginContext } from '@numen/plugin-s
 import { activate, SHARE_COMMAND, SHARE_KIND } from './index'
 
 const setup = () => {
-  vi.stubGlobal('fetch', () => Promise.resolve(Response.json({ hasIdentity: false, isReachable: true, items: [] })))
+  vi.stubGlobal('fetch', () =>
+    Promise.resolve(Response.json({ hasIdentity: false, isReachable: true, items: [] })),
+  )
   const opened: [string, string | undefined][] = []
   const closed: string[] = []
   const host = createMockHostServices({
@@ -36,8 +38,12 @@ describe('the command "Share..."', () => {
     const state = kind?.open?.('Food', 'tab-1')
 
     expect(kind?.identity?.('Food')).not.toBe(kind?.identity?.('Drinks'))
-    expect(kind?.onKeyPress?.(state as never, new KeyboardEvent('keydown', { key: 'a' }))).toBe(false)
-    expect(kind?.onKeyPress?.(state as never, new KeyboardEvent('keydown', { key: 'Escape' }))).toBe(true)
+    expect(kind?.onKeyPress?.(state as never, new KeyboardEvent('keydown', { key: 'a' }))).toBe(
+      false,
+    )
+    expect(
+      kind?.onKeyPress?.(state as never, new KeyboardEvent('keydown', { key: 'Escape' })),
+    ).toBe(true)
     expect(closed).toStrictEqual(['tab-1'])
     context.dispose()
     vi.unstubAllGlobals()

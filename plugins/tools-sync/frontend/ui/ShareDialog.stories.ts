@@ -23,7 +23,10 @@ type SharesClient = FolderSharesClient & ReceivedSharesClient
 const createClient = (setup: Setup): SharesClient => ({
   getReaderCode: () => Promise.resolve({ code: CODE, fingerprint: 'AAAA' }),
   readReaderCode: () =>
-    Promise.resolve({ fingerprint: FINGERPRINT, ...(setup.label === undefined ? {} : { label: setup.label }) }),
+    Promise.resolve({
+      fingerprint: FINGERPRINT,
+      ...(setup.label === undefined ? {} : { label: setup.label }),
+    }),
   getShare: () => Promise.resolve(setup.share ?? { state: 'notShared', readers: [] }),
   addReader: () =>
     setup.refusal === undefined
@@ -37,7 +40,11 @@ const createClient = (setup: Setup): SharesClient => ({
 })
 
 const createState = (setup: Setup) => {
-  const state = createShareView({ client: createClient(setup), target: TARGET, close: () => undefined })
+  const state = createShareView({
+    client: createClient(setup),
+    target: TARGET,
+    close: () => undefined,
+  })
   state.load().catch(state.fail)
   return state
 }
@@ -58,7 +65,9 @@ type Story = StoryObj<typeof meta>
 const fillAndShare = async (canvasElement: HTMLElement): Promise<ReturnType<typeof within>> => {
   const canvas = within(canvasElement)
   await userEvent.type(await canvas.findByRole('textbox', { name: 'Reader code' }), CODE)
-  await expect(await canvas.findByLabelText('Reader account fingerprint')).toHaveTextContent(FINGERPRINT)
+  await expect(await canvas.findByLabelText('Reader account fingerprint')).toHaveTextContent(
+    FINGERPRINT,
+  )
   await userEvent.type(canvas.getByRole('textbox', { name: 'Label' }), 'Anna')
   await userEvent.click(canvas.getByRole('button', { name: 'Share' }))
   return canvas
@@ -77,7 +86,9 @@ export const NotShared: Story = {
 export const Creating: Story = {
   args: { state: createState({ share: { state: 'creating', readers: [] } }) },
   play: async ({ canvasElement }) => {
-    await expect(await within(canvasElement).findByText('Preparing the shared folder…')).toBeVisible()
+    await expect(
+      await within(canvasElement).findByText('Preparing the shared folder…'),
+    ).toBeVisible()
   },
 }
 
@@ -98,7 +109,9 @@ export const ActiveWithReaders: Story = {
     await expect(within(readers).getByText('Anna')).toBeVisible()
     await expect(within(readers).getByRole('button', { name: 'Remove' })).toBeVisible()
     await expect(canvas.getByRole('button', { name: 'Stop sharing' })).toBeVisible()
-    await expect(canvas.getByText('A removed reader keeps what the reader already has.')).toBeVisible()
+    await expect(
+      canvas.getByText('A removed reader keeps what the reader already has.'),
+    ).toBeVisible()
   },
 }
 
@@ -106,12 +119,18 @@ export const FolderInsideSharedFolder: Story = {
   args: { state: createState({ refusal: 'A folder inside a shared folder cannot be shared' }) },
   play: async ({ canvasElement }) => {
     const canvas = await fillAndShare(canvasElement)
-    await expect(await canvas.findByRole('alert')).toHaveTextContent('A folder inside a shared folder cannot be shared')
+    await expect(await canvas.findByRole('alert')).toHaveTextContent(
+      'A folder inside a shared folder cannot be shared',
+    )
   },
 }
 
 export const ReaderNotSignedIn: Story = {
-  args: { state: createState({ refusal: 'The reader could not be added; the reader may not have signed in to Numen Sync yet' }) },
+  args: {
+    state: createState({
+      refusal: 'The reader could not be added; the reader may not have signed in to Numen Sync yet',
+    }),
+  },
   play: async ({ canvasElement }) => {
     const canvas = await fillAndShare(canvasElement)
     await expect(await canvas.findByRole('alert')).toHaveTextContent('could not be added')

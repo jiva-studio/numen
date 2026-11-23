@@ -208,7 +208,6 @@ describe('MarkdownNoteEditor over a note whose file changed on disk', () => {
   })
 })
 
-
 describe('MarkdownNoteEditor over a note of a vault that is read only', () => {
   it('shows the text and takes no typing, and is writable where the vault is not read only', async () => {
     const isReadOnly = ref(true)

@@ -39,7 +39,8 @@ function onCopy(): void {
       <Button variant="outline" @click="onCopy">{{ words.copy }}</Button>
       <p class="shares__note">{{ words.yourCodeHint }}</p>
       <p v-if="view.fingerprint !== ''" class="shares__note">
-        {{ words.yourFingerprint }}: <output>{{ view.fingerprint }}</output>
+        {{ words.yourFingerprint }}:
+        <output>{{ view.fingerprint }}</output>
       </p>
     </div>
     <div class="shares__block">

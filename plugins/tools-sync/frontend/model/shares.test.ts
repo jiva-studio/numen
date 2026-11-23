@@ -7,10 +7,14 @@ const TARGET = { vaultId: 'v1', folder: 'Food' }
 type SharesClient = FolderSharesClient & ReceivedSharesClient
 
 const createClient = (patch: Partial<SharesClient> = {}): SharesClient => ({
-  getReaderCode: vi.fn(() => Promise.resolve({ code: 'numen-reader-1.abc', fingerprint: 'AAAA BBBB' })),
+  getReaderCode: vi.fn(() =>
+    Promise.resolve({ code: 'numen-reader-1.abc', fingerprint: 'AAAA BBBB' }),
+  ),
   readReaderCode: vi.fn(() => Promise.resolve({ fingerprint: 'CCCC DDDD' })),
   getShare: vi.fn((): Promise<Share> => Promise.resolve({ state: 'notShared', readers: [] })),
-  addReader: vi.fn(() => Promise.resolve({ invitation: 'numen-invitation-1.xyz', fingerprint: 'CCCC DDDD' })),
+  addReader: vi.fn(() =>
+    Promise.resolve({ invitation: 'numen-invitation-1.xyz', fingerprint: 'CCCC DDDD' }),
+  ),
   removeReader: vi.fn(() => Promise.resolve()),
   stopShare: vi.fn(() => Promise.resolve()),
   readInvitation: vi.fn(() =>
@@ -26,7 +30,8 @@ const createClient = (patch: Partial<SharesClient> = {}): SharesClient => ({
   ...patch,
 })
 
-const createShare = (client: SharesClient) => createShareView({ client, target: TARGET, close: vi.fn() })
+const createShare = (client: SharesClient) =>
+  createShareView({ client, target: TARGET, close: vi.fn() })
 
 describe('the dialog of a shared folder', () => {
   it('shows the fingerprint of the reader code that was typed', async () => {
@@ -96,7 +101,9 @@ describe('the dialog of a shared folder', () => {
       { state: 'creating', readers: [] },
       { state: 'active', readers: [{ label: 'Anna', fingerprint: 'CCCC DDDD', state: 'active' }] },
     ]
-    const client = createClient({ getShare: vi.fn(() => Promise.resolve(states.shift() ?? states[0] as Share)) })
+    const client = createClient({
+      getShare: vi.fn(() => Promise.resolve(states.shift() ?? (states[0] as Share))),
+    })
     const view = createShareView({ client, target: TARGET, close: vi.fn(), refreshMs: 1000 })
 
     await view.load()
@@ -136,7 +143,13 @@ describe('the page of the shares received', () => {
     const client = createClient({
       listReceived: () =>
         Promise.resolve([
-          { vaultId: 'r1', name: 'Food', ownerFingerprint: 'EEEE FFFF', state: 'ready', lastSyncedAt: '' },
+          {
+            vaultId: 'r1',
+            name: 'Food',
+            ownerFingerprint: 'EEEE FFFF',
+            state: 'ready',
+            lastSyncedAt: '',
+          },
         ]),
     })
     const view = createReceivedView({ client })

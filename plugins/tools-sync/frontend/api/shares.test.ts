@@ -30,15 +30,31 @@ describe('the client of the sharing methods', () => {
       Response.json({ invitation: 'numen-invitation-1.xyz', fingerprint: 'CCCC DDDD' }),
     )
 
-    const added = await folder.addReader({ vaultId: 'v1', folder: 'Food', code: 'c', label: 'Anna' })
+    const added = await folder.addReader({
+      vaultId: 'v1',
+      folder: 'Food',
+      code: 'c',
+      label: 'Anna',
+    })
 
     expect(added).toStrictEqual({ invitation: 'numen-invitation-1.xyz', fingerprint: 'CCCC DDDD' })
     expect(sent.at(0)?.url).toMatch(/AddReader$/)
-    expect(sent.at(0)?.body).toStrictEqual({ vaultId: 'v1', folder: 'Food', code: 'c', label: 'Anna' })
+    expect(sent.at(0)?.body).toStrictEqual({
+      vaultId: 'v1',
+      folder: 'Food',
+      code: 'c',
+      label: 'Anna',
+    })
   })
 
   it('lists the shares received', async () => {
-    const share = { vaultId: 'r1', name: 'Food', ownerFingerprint: 'E', state: 'ready', lastSyncedAt: '' }
+    const share = {
+      vaultId: 'r1',
+      name: 'Food',
+      ownerFingerprint: 'E',
+      state: 'ready',
+      lastSyncedAt: '',
+    }
     const { received } = createClient(() => Response.json({ shares: [share] }))
 
     expect(await received.listReceived()).toStrictEqual([share])
@@ -46,9 +62,14 @@ describe('the client of the sharing methods', () => {
 
   it('throws the message of the backend when a call fails', async () => {
     const { received } = createClient(() =>
-      Response.json({ code: 'failed_precondition', message: 'This invitation is for another person' }, { status: 400 }),
+      Response.json(
+        { code: 'failed_precondition', message: 'This invitation is for another person' },
+        { status: 400 },
+      ),
     )
 
-    await expect(received.acceptInvitation('text')).rejects.toThrow('This invitation is for another person')
+    await expect(received.acceptInvitation('text')).rejects.toThrow(
+      'This invitation is for another person',
+    )
   })
 })

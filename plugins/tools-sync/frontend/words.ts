@@ -50,7 +50,8 @@ export const WORDS = {
   shareAnyway: 'Share anyway',
   invitation: 'Invitation',
   copy: 'Copy',
-  invitationHint: 'Send this invitation to the reader. It is not secret, but only the reader can use it.',
+  invitationHint:
+    'Send this invitation to the reader. It is not secret, but only the reader can use it.',
   readers: 'Readers',
   remove: 'Remove',
   stopSharing: 'Stop sharing',
@@ -76,5 +77,6 @@ export const WORDS = {
   holdsShared: 'A folder containing a shared folder cannot be shared',
   chooseFolder: 'Choose a folder, not the whole vault',
   ownerIdentityChanged: 'The owner identity changed',
-  readerNotAdded: 'The reader could not be added; the reader may not have signed in to Numen Sync yet',
+  readerNotAdded:
+    'The reader could not be added; the reader may not have signed in to Numen Sync yet',
 } as const
