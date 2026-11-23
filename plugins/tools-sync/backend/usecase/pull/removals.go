@@ -7,20 +7,19 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
 // removal is a file another computer removed, waiting for the guard.
 type removal struct {
-	record note.FileRecord
+	record transfer.FileRecord
 	stat   domain.FileStat
 	revID  []byte
 }
 
 // applyDeletion queues the removal of an unedited file, keeps an edited one with the tombstone as the head so the
 // next push is an edit that beats the removal, and drops the record of a file that is gone.
-func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, record note.FileRecord, isKnown bool) error {
+func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, record transfer.FileRecord, isKnown bool) error {
 	if !isKnown {
 		return nil
 	}

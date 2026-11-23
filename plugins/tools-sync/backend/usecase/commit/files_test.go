@@ -36,7 +36,7 @@ func (s *setup) move(t *testing.T, moves ...transfer.Move) []transfer.Outcome {
 	return outcomes
 }
 
-func (s *setup) remove(t *testing.T, records ...note.FileRecord) []transfer.Outcome {
+func (s *setup) remove(t *testing.T, records ...transfer.FileRecord) []transfer.Outcome {
 	t.Helper()
 	outcomes, err := commit.NewCommitRemovals(s.c.CommitDeps()).Execute(t.Context(), transfer.RemoveInput{Vault: s.vault, Records: records})
 	if err != nil {
@@ -208,7 +208,7 @@ func TestCommitRemovals_CommitsManyRemovalsInOneCall(t *testing.T) {
 	for i := range files {
 		files[i] = transfer.File{Path: fmt.Sprintf("n%03d.pdf", i), Content: []byte(fmt.Sprintf("file %d", i))}
 	}
-	records := make([]note.FileRecord, 0, len(files))
+	records := make([]transfer.FileRecord, 0, len(files))
 	for _, one := range s.run(t, files...) {
 		records = append(records, one.Record)
 	}

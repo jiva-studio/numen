@@ -20,13 +20,6 @@ const (
 	maxPathBytes = 1000
 )
 
-var (
-	skippedFolders = []string{".numen", ".git", ".trash"}
-	skippedNames   = []string{".ds_store", "thumbs.db", "desktop.ini"}
-	skippedEnds    = []string{".part", ".tmp", "~"}
-	textExtensions = []string{".txt", ".json", ".csv", ".xml", ".html", ".svg", ".yaml", ".yml", ".toml", ".log"}
-)
-
 // IsSyncable reports whether a file at the path of the vault goes to the sync server.
 func IsSyncable(filePath string) bool {
 	if len(filePath) > maxPathBytes {
@@ -34,16 +27,16 @@ func IsSyncable(filePath string) bool {
 	}
 	segments := strings.Split(filePath, "/")
 	for _, folder := range segments[:len(segments)-1] {
-		if slices.Contains(skippedFolders, folder) {
+		if isSkippedFolder(folder) {
 			return false
 		}
 	}
 	name := segments[len(segments)-1]
 	lower := strings.ToLower(name)
-	if slices.Contains(skippedFolders, name) || slices.Contains(skippedNames, lower) || strings.HasPrefix(name, "~$") {
+	if isSkippedFolder(name) || isSkippedName(lower) || strings.HasPrefix(name, "~$") {
 		return false
 	}
-	return !slices.ContainsFunc(skippedEnds, func(end string) bool { return strings.HasSuffix(lower, end) })
+	return !hasSkippedEnd(lower)
 }
 
 // Kind returns "markdown", "text" or "binary" for the extension of the path.
@@ -52,7 +45,7 @@ func Kind(filePath string) string {
 	switch {
 	case extension == ".md":
 		return KindMarkdown
-	case slices.Contains(textExtensions, extension):
+	case isTextExtension(extension):
 		return KindText
 	}
 	return KindBinary
@@ -71,3 +64,17 @@ func GetRecordKeyContext(remoteID, fileID []byte) []byte {
 
 // StoredName returns the name of the staged file of a download in the store folder.
 func StoredName(fileID []byte) string { return hex.EncodeToString(fileID) + ".part" }
+
+func isSkippedFolder(name string) bool { return slices.Contains([]string{".numen", ".git", ".trash"}, name) }
+
+func isSkippedName(lower string) bool {
+	return slices.Contains([]string{".ds_store", "thumbs.db", "desktop.ini"}, lower)
+}
+
+func hasSkippedEnd(lower string) bool {
+	return slices.ContainsFunc([]string{".part", ".tmp", "~"}, func(end string) bool { return strings.HasSuffix(lower, end) })
+}
+
+func isTextExtension(extension string) bool {
+	return slices.Contains([]string{".txt", ".json", ".csv", ".xml", ".html", ".svg", ".yaml", ".yml", ".toml", ".log"}, extension)
+}

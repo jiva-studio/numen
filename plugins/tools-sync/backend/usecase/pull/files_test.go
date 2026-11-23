@@ -27,7 +27,7 @@ const (
 	bigSize = 65 << 20
 )
 
-func (p *pair) remove(t *testing.T, records ...note.FileRecord) []transfer.Outcome {
+func (p *pair) remove(t *testing.T, records ...transfer.FileRecord) []transfer.Outcome {
 	t.Helper()
 	outcomes, err := commit.NewCommitRemovals(p.a.CommitDeps()).Execute(t.Context(), transfer.RemoveInput{Vault: p.vault, Records: records})
 	if err != nil {
@@ -292,7 +292,7 @@ func TestPullChanges_DefersManyRemovalsToTheGuardAndStopsThePosition(t *testing.
 	spy := p.b.Spy()
 	pushed := p.pushMany(t, "Papers", 10)
 	p.pull(t, trustAll)
-	records := make([]note.FileRecord, len(pushed))
+	records := make([]transfer.FileRecord, len(pushed))
 	for i, one := range pushed {
 		records[i] = one.Record
 	}
@@ -324,7 +324,7 @@ func TestPullChanges_RemovesTheFilesOnceThePersonConfirmsTheRemoval(t *testing.T
 	spy := p.b.Spy()
 	pushed := p.pushMany(t, "Papers", 10)
 	p.pull(t, trustAll)
-	records := make([]note.FileRecord, len(pushed))
+	records := make([]transfer.FileRecord, len(pushed))
 	for i, one := range pushed {
 		records[i] = one.Record
 	}
@@ -355,7 +355,7 @@ func TestPullChanges_KeepsTheFilesWhenThePersonKeepsThemAndSendsThemAsEdits(t *t
 	spy := p.b.Spy()
 	pushed := p.pushMany(t, "Papers", 10)
 	p.pull(t, trustAll)
-	records := make([]note.FileRecord, len(pushed))
+	records := make([]transfer.FileRecord, len(pushed))
 	for i, one := range pushed {
 		records[i] = one.Record
 	}

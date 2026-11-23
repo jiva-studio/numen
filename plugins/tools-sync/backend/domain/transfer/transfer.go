@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 )
 
 // CommitStatus is how the server took a file.
@@ -32,7 +31,7 @@ type Vault struct {
 }
 
 // File is a file to commit. A file the server knows has its FileID and the revision it was changed from. A file up
-// to note.SmallFileLimit comes with its Content; a bigger one has Stat and is read in ranges.
+// to the small file limit of the note package comes with its Content; a bigger one has Stat and is read in ranges.
 type File struct {
 	FileID     []byte
 	ParentRev  []byte
@@ -51,7 +50,7 @@ type CommitInput struct {
 
 // Move is a file that has another path now: its record and the path it moved to.
 type Move struct {
-	Record note.FileRecord
+	Record FileRecord
 	To     string
 }
 
@@ -64,7 +63,7 @@ type MoveInput struct {
 // RemoveInput is the records of the files removed from the vault, to commit as removals.
 type RemoveInput struct {
 	Vault   Vault
-	Records []note.FileRecord
+	Records []FileRecord
 }
 
 // Outcome is what became of one file. Head is the head of the file the server holds for ParentMismatch and for
@@ -77,14 +76,14 @@ type Outcome struct {
 	RevID          []byte
 	Head           *syncv1.StoredRevision
 	ExistingFileID []byte
-	Record         note.FileRecord
+	Record         FileRecord
 }
 
 // ScanInput is the vault, the hash each synced file had when both computers last agreed, by path, and the records.
 type ScanInput struct {
 	VaultID domain.VaultID
 	Bases   map[string]string
-	Records []note.FileRecord
+	Records []FileRecord
 }
 
 // Change is a file that differs from its base.
@@ -100,7 +99,7 @@ type Change struct {
 type Scan struct {
 	Changes  []Change
 	Moves    []Move
-	Removals []note.FileRecord
+	Removals []FileRecord
 }
 
 // PullInput is the vault and the check of the author of a revision.
@@ -269,3 +268,20 @@ var (
 	// ErrBlobMissing means the server has no blob for a revision.
 	ErrBlobMissing = errors.New("the server has no blob for a revision")
 )
+
+// FileRecord is what this device knows of a synced file: the file on the server, where it is, the hash both
+// computers last agreed on, the revision that is its head and what the head's blob is, so that a move can be
+// sent without reading the file. SealedKey is the revision key of the head, sealed with the vault key.
+type FileRecord struct {
+	FileID     []byte `json:"fileId"`
+	Path       string `json:"path"`
+	BaseHash   string `json:"baseHash"`
+	HeadRev    []byte `json:"headRev"`
+	Size       int64  `json:"size"`
+	ModifiedAt int64  `json:"mtime"`
+	Kind       string `json:"kind"`
+	BlobID     []byte `json:"blobId"`
+	BlobHash   []byte `json:"blobHash"`
+	BlobSize   uint64 `json:"blobSize"`
+	SealedKey  []byte `json:"revKey"`
+}
