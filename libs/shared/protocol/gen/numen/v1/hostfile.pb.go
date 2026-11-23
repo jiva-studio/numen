@@ -757,9 +757,17 @@ type FileChange struct {
 	// source_id is the number the index keeps the file under.
 	SourceId int64 `protobuf:"varint,1,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
 	// path is where the file is now, or for file.removed where it was.
-	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	Event         string `protobuf:"bytes,3,opt,name=event,proto3" json:"event,omitempty"`
-	Seq           int64  `protobuf:"varint,4,opt,name=seq,proto3" json:"seq,omitempty"`
+	Path  string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	Event string `protobuf:"bytes,3,opt,name=event,proto3" json:"event,omitempty"`
+	Seq   int64  `protobuf:"varint,4,opt,name=seq,proto3" json:"seq,omitempty"`
+	// hash is the content hash of the file as the index has it now, empty for file.removed
+	// and for a file the index has no hash of.
+	Hash string `protobuf:"bytes,5,opt,name=hash,proto3" json:"hash,omitempty"`
+	// size is the size of the file in bytes as the index has it now, 0 for file.removed.
+	Size int64 `protobuf:"varint,6,opt,name=size,proto3" json:"size,omitempty"`
+	// mtime is the modification time of the file as the index has it now, in nanoseconds
+	// since the Unix epoch, 0 for file.removed.
+	Mtime         int64 `protobuf:"varint,7,opt,name=mtime,proto3" json:"mtime,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -822,6 +830,27 @@ func (x *FileChange) GetSeq() int64 {
 	return 0
 }
 
+func (x *FileChange) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
+}
+
+func (x *FileChange) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *FileChange) GetMtime() int64 {
+	if x != nil {
+		return x.Mtime
+	}
+	return 0
+}
+
 var File_numen_v1_hostfile_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostfile_proto_rawDesc = "" +
@@ -870,13 +899,16 @@ const file_numen_v1_hostfile_proto_rawDesc = "" +
 	"\achanges\x18\x02 \x03(\v2\x14.numen.v1.FileChangeR\achanges\x12.\n" +
 	"\x04next\x18\x03 \x01(\v2\x1a.numen.v1.FileChangeCursorR\x04next\x12\x19\n" +
 	"\bis_reset\x18\x04 \x01(\bR\aisReset\x12\x19\n" +
-	"\bhas_more\x18\x05 \x01(\bR\ahasMore\"e\n" +
+	"\bhas_more\x18\x05 \x01(\bR\ahasMore\"\xa3\x01\n" +
 	"\n" +
 	"FileChange\x12\x1b\n" +
 	"\tsource_id\x18\x01 \x01(\x03R\bsourceId\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05event\x18\x03 \x01(\tR\x05event\x12\x10\n" +
-	"\x03seq\x18\x04 \x01(\x03R\x03seq2\xc4\x03\n" +
+	"\x03seq\x18\x04 \x01(\x03R\x03seq\x12\x12\n" +
+	"\x04hash\x18\x05 \x01(\tR\x04hash\x12\x12\n" +
+	"\x04size\x18\x06 \x01(\x03R\x04size\x12\x14\n" +
+	"\x05mtime\x18\a \x01(\x03R\x05mtime2\xc4\x03\n" +
 	"\x0fHostFileService\x12A\n" +
 	"\bStatFile\x12\x19.numen.v1.StatFileRequest\x1a\x1a.numen.v1.StatFileResponse\x12A\n" +
 	"\bReadFile\x12\x19.numen.v1.ReadFileRequest\x1a\x1a.numen.v1.ReadFileResponse\x12D\n" +
