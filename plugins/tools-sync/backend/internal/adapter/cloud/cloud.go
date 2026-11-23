@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
 // Config is where the server is, what reaches it, the session token of each call and how to sign in again.
@@ -112,9 +111,4 @@ func (c *Cloud) GetSubscription(ctx context.Context) (syncprotocol.Subscription,
 // CreateCheckout returns the address of a payment page.
 func (c *Cloud) CreateCheckout(ctx context.Context) (string, error) {
 	return call(ctx, c, func() (string, error) { return c.subscription.CreateCheckout(ctx) })
-}
-
-// Watch opens the stream of change hints.
-func (c *Cloud) Watch(context.Context) (ports.Watch, error) {
-	return nil, errors.New("not implemented")
 }

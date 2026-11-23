@@ -4,8 +4,26 @@ package watchchanges
 import (
 	"context"
 	"errors"
+	"io"
+	"log/slog"
+	"sync"
+	"time"
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+)
+
+const (
+	retryWait    = 3 * time.Second
+	silenceBeats = 3
+	minHeartbeat = time.Second
+)
+
+// Why a stream ended, for the debug log.
+const (
+	reasonRefused = "refused"
+	reasonClosed  = "closed"
+	reasonDropped = "dropped"
+	reasonSilent  = "silent"
 )
 
 // Deps are the ports WatchChanges needs.
@@ -25,5 +43,124 @@ type WatchChanges struct {
 // NewWatchChanges returns the use case over deps.
 func NewWatchChanges(deps Deps) *WatchChanges { return &WatchChanges{deps: deps} }
 
-// Execute opens the stream, wakes the vaults it names and opens it again after each end, until ctx ends.
-func (u *WatchChanges) Execute(context.Context) error { return errors.New("not implemented") }
+// Execute opens the stream, wakes the vaults it names and opens it again after each end, until ctx ends. It
+// writes nothing and raises no health item: a stream that does not work only costs the speed, and the pass at
+// the interval reports a server that is away.
+func (u *WatchChanges) Execute(ctx context.Context) error {
+	for {
+		reason := u.runOnce(ctx)
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		slog.Debug("the change stream ended", "reason", reason)
+		if err := u.deps.Clock.Wait(ctx, retryWait); err != nil {
+			return err
+		}
+	}
+}
+
+func (u *WatchChanges) runOnce(ctx context.Context) string {
+	watch, err := u.deps.Hints.Watch(ctx)
+	if err != nil {
+		return reasonRefused
+	}
+	defer func() { _ = watch.Close() }()
+	return u.read(ctx, watch)
+}
+
+type received struct {
+	event ports.HintEvent
+	err   error
+}
+
+// read returns why the stream ended: it ends on an error or a clean end of the stream, and on a silence of
+// silenceBeats heartbeats, which only the clock of the plugin can tell from a quiet but healthy stream.
+func (u *WatchChanges) read(ctx context.Context, watch ports.Watch) string {
+	readCtx, stop := context.WithCancel(ctx)
+	var group sync.WaitGroup
+	defer func() {
+		stop()
+		group.Wait()
+	}()
+	events := make(chan received)
+	group.Go(func() { pump(readCtx, watch, events) })
+	beat := silenceBeats * max(watch.GetHeartbeat(), minHeartbeat)
+	silence := u.startSilence(readCtx, &group, beat)
+	for {
+		select {
+		case <-ctx.Done():
+			return reasonClosed
+		case <-silence.fired:
+			return reasonSilent
+		case got := <-events:
+			if got.err != nil {
+				return readReason(got.err)
+			}
+			silence.cancel()
+			silence = u.startSilence(readCtx, &group, beat)
+			u.wakeFor(ctx, got.event)
+		}
+	}
+}
+
+func pump(ctx context.Context, watch ports.Watch, events chan<- received) {
+	for {
+		event, err := watch.Receive(ctx)
+		select {
+		case events <- received{event: event, err: err}:
+		case <-ctx.Done():
+			return
+		}
+		if err != nil {
+			return
+		}
+	}
+}
+
+func readReason(err error) string {
+	if errors.Is(err, io.EOF) {
+		return reasonClosed
+	}
+	return reasonDropped
+}
+
+type silence struct {
+	fired  <-chan struct{}
+	cancel context.CancelFunc
+}
+
+func (u *WatchChanges) startSilence(ctx context.Context, group *sync.WaitGroup, d time.Duration) silence {
+	silenceCtx, cancel := context.WithCancel(ctx)
+	fired := make(chan struct{})
+	group.Go(func() {
+		if u.deps.Clock.Wait(silenceCtx, d) != nil {
+			return
+		}
+		select {
+		case fired <- struct{}{}:
+		case <-silenceCtx.Done():
+		}
+	})
+	return silence{fired: fired, cancel: cancel}
+}
+
+// wakeFor wakes each vault linked to the vault of the hint whose cursor is behind the seq of the hint. A hint is
+// a level, not an event: the pass reads the changes from the cursor of the link and trusts nothing else.
+func (u *WatchChanges) wakeFor(ctx context.Context, event ports.HintEvent) {
+	if event.IsHeartbeat() {
+		return
+	}
+	vaults, err := u.deps.Host.GetVaults(ctx)
+	if err != nil {
+		return
+	}
+	for _, vault := range vaults {
+		link, err := u.deps.Links.ReadLink(ctx, vault.ID)
+		if err != nil {
+			continue
+		}
+		if link.RemoteVaultID == event.RemoteVaultID && link.ServerSeq < event.Seq {
+			u.deps.Waker.Wake(vault.ID)
+		}
+	}
+}

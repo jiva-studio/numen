@@ -39,3 +39,7 @@ The plugin connects a vault to a synced vault of the account and keeps its markd
 A pass over a vault pulls the changes of the server, applies each by the rule of three hashes (local, base, head) and never overwrites a note that both computers changed, then pushes the notes that changed here. The server holds only sealed blobs and sealed metadata.
 
 State lives in the store folder of the plugin in each vault: `link.json` (the synced vault and its sealed key), `files.json` (the base and the head revision of each note), `feed.json` (the position in the file change feed), `notes.json` (the notes as the last look found them) and `status.json` (when the last pass ended and how many notes wait on a conflict).
+
+## How fast changes arrive
+
+The plugin keeps one stream open to the server (`WatchService.WatchChanges`) that carries only hints: the id of a vault and the seq it reached. A hint above the cursor of a connected vault starts a pass over that vault at once, so a note written on one computer reaches the others in seconds. The stream never carries a note and never writes; the pass reads the changes from its own cursor and trusts nothing else. When the stream ends, drops, or is silent for three heartbeats, the plugin opens it again after 3 seconds, and the first hints name every vault that changed meanwhile. A stream that does not work raises no warning: the pass at the interval (`syncIntervalSeconds`, 30 seconds by default) still runs and still warns about a server that is away.

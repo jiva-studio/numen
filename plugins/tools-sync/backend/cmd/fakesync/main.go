@@ -1,5 +1,5 @@
 // Command fakesync serves the fake sync server on a local port for the end-to-end tests. It prints the
-// address it listens on, then serves until it is stopped. With -state-dir it keeps the data of the server in
+// address it listens on, then serves until it is stopped. With -heartbeat a stream of change hints sends a heartbeat after that silence. With -state-dir it keeps the data of the server in
 // a file there and reads it again at start, so the process can stop and run again. With -subscriptions a new account has no
 // subscription and its writes are refused until it pays at the address CreateCheckout returns.
 package main
@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 )
 
@@ -75,6 +76,7 @@ func main() {
 	protocol := flag.Uint("protocol", 0, "protocol version the server needs; 0 is the version of this build")
 	ttl := flag.Duration("session-ttl", time.Hour, "how long a session lives")
 	subscriptions := flag.Bool("subscriptions", false, "make a new account have no subscription, so it must pay before it writes")
+	heartbeat := flag.Duration("heartbeat", syncprotocol.WatchHeartbeat, "silence after which a stream of change hints sends a heartbeat")
 	stateDir := flag.String("state-dir", "", "folder that keeps the data of the server between runs; empty keeps it in memory")
 	flag.Parse()
 
@@ -83,7 +85,9 @@ func main() {
 		log.Fatal(err)
 	}
 	url := "http://" + listener.Addr().String()
-	fake := fakeserver.New(fakeserver.Config{Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl, NeedsSubscription: *subscriptions})
+	fake := fakeserver.New(fakeserver.Config{
+		Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl, NeedsSubscription: *subscriptions, Heartbeat: *heartbeat,
+	})
 	var handler http.Handler = fake
 	if *stateDir != "" {
 		path := filepath.Join(*stateDir, stateFile)

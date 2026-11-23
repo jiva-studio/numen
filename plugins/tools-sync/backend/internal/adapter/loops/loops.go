@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"strconv"
 	"sync"
@@ -15,6 +16,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
+
+const streamConnectTimeout = 10 * time.Second
 
 // Random reads the entropy of the machine.
 func Random() io.Reader { return rand.Reader }
@@ -50,7 +53,7 @@ type Wakes struct{ vaults chan domain.VaultID }
 // NewWakes returns wakes that hold up to buffer vaults.
 func NewWakes(buffer int) *Wakes { return &Wakes{vaults: make(chan domain.VaultID, buffer)} }
 
-// Wake names a vault whose files changed. A vault named while the buffer is full is dropped.
+// Wake names a vault to pass over now. A vault named while the buffer is full is dropped.
 func (w *Wakes) Wake(vault domain.VaultID) {
 	select {
 	case w.vaults <- vault:
@@ -145,4 +148,13 @@ func report(ctx context.Context, name string, err error) {
 
 // NewStreamHTTP returns the client of a long response: it has no Timeout, which would end the read of the body,
 // and ends an open whose headers do not come within headerTimeout.
-func NewStreamHTTP(time.Duration) *http.Client { return &http.Client{} }
+func NewStreamHTTP(headerTimeout time.Duration) *http.Client {
+	dialer := &net.Dialer{Timeout: streamConnectTimeout}
+	return &http.Client{Transport: &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
+		ForceAttemptHTTP2:     true,
+		TLSHandshakeTimeout:   streamConnectTimeout,
+		ResponseHeaderTimeout: headerTimeout,
+	}}
+}

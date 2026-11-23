@@ -256,4 +256,3 @@ func TestWatchChanges_ReturnsAndClosesTheStreamWhenItsContextEnds(t *testing.T) 
 	}
 	synctest.Eventually(t, "no open stream", func() bool { return w.streams() == 0 })
 }
-

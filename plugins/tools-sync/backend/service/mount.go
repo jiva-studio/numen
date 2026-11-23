@@ -14,12 +14,14 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/clock"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hoststore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/hostvault"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
 )
 
 const (
-	settingServer   = "server"
-	settingInterval = "syncIntervalSeconds"
-	requestTimeout  = 30 * time.Second
+	settingServer       = "server"
+	settingInterval     = "syncIntervalSeconds"
+	requestTimeout      = 30 * time.Second
+	streamHeaderTimeout = 30 * time.Second
 )
 
 // App is the backend of Numen Sync: Mount registers its methods and keeps the sync running, and HandleEvent wakes
@@ -72,3 +74,7 @@ func (a *App) HandleEvent(_ context.Context, event string) error {
 }
 
 func newHTTPClient() *http.Client { return &http.Client{Timeout: requestTimeout} }
+
+// newStreamHTTPClient returns the client of the stream of change hints, which has no Timeout: a Timeout ends the
+// read of the body, and the stream lives as long as the connection.
+func newStreamHTTPClient() *http.Client { return loops.NewStreamHTTP(streamHeaderTimeout) }
