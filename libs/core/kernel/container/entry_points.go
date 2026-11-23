@@ -41,21 +41,14 @@ func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultreg
 	return ports, db, err
 }
 
-// windowLink is what connectWindow joins to the plugins: how the window was started and what the plugins reach in it.
-type windowLink struct {
-	startup windowStartup
-	access  windowPluginAccess
-}
-
-func connectWindow(
+func (startup windowStartup) connect(
 	ctx context.Context,
 	install pluginInstall,
 	exec *PluginExecution,
 	vaultDeps vaultWiring,
 	opened *windowRoutes,
-	link windowLink,
+	access windowPluginAccess,
 ) (*editor.Installation, error) {
-	startup, access := link.startup, link.access
 	if !startup.isEditor {
 		return opened.Installation, nil
 	}

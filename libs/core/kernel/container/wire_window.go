@@ -70,7 +70,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	if err := opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out); err != nil {
 		return nil, errors.Join(err, launch.closeSource(), db.Close())
 	}
-	return connectWindow(ctx, install, exec, vaultDeps, opened, windowLink{startup: startup, access: launch.plugins})
+	return startup.connect(ctx, install, exec, vaultDeps, opened, launch.plugins)
 }
 
 func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup windowStartup) *textVersions {
