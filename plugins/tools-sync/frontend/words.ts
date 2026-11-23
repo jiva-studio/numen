@@ -32,8 +32,7 @@ export const WORDS = {
   unreachableText: (server: string): string =>
     server === ''
       ? 'Check that the sync server is running and that its address in the settings is right.'
-      : `Could not connect to ${server}. Check that the server is running, or change its address in the settings.`,
-  unreachableRetry: 'The card tries again every 30 seconds.',
+      : `Could not connect to ${server}. Check that it is running, or change the address in the settings.`,
   openSettings: 'Open the settings',
   paymentNotSeen: 'The payment is not seen yet. Open this page again after you pay.',
   vaultsTitle: 'Vaults',

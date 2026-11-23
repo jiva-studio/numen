@@ -1,5 +1,6 @@
 import { computed, ref, shallowRef } from 'vue'
 import type { RemoteVault, Vault, VaultsClient, VaultState } from '../api/vaults'
+import { getFailureCode } from '../api/subscription'
 import { vaultsClient } from '../api/wire'
 import { WORDS as words } from '../words'
 
@@ -28,8 +29,11 @@ const STATE_LABELS: Record<VaultState, string> = {
   copy: words.stateCopy,
 }
 
+const isServerAway = (failure: unknown): boolean => getFailureCode(failure) === 'unavailable'
+
+/** The text of a failure; empty for an unreachable server, which the subscription card says. */
 export const getErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error)
+  isServerAway(error) ? '' : error instanceof Error ? error.message : String(error)
 
 const getSyncedLabel = (vault: Vault, now: Date): string => {
   if (vault.state !== 'connected' || vault.lastSyncedAt === '') return ''
@@ -54,6 +58,7 @@ export function useVaults(options: UseVaultsOptions) {
   const status = ref<VaultsStatus>('loading')
   const error = ref('')
   const hasIdentity = ref(true)
+  const isReachable = ref(true)
   const openFor = ref('')
 
   const rows = computed(() => vaults.value.map((vault) => getRow(vault, now())))
@@ -62,6 +67,7 @@ export function useVaults(options: UseVaultsOptions) {
   async function read(): Promise<void> {
     const state = await client.getStatus()
     hasIdentity.value = state.hasIdentity
+    isReachable.value = state.isReachable
     vaults.value = state.hasIdentity ? (await client.listVaults()).vaults : []
   }
 
@@ -71,6 +77,7 @@ export function useVaults(options: UseVaultsOptions) {
       status.value = 'ready'
     } catch (failure) {
       status.value = 'error'
+      if (isServerAway(failure)) isReachable.value = false
       error.value = getErrorMessage(failure)
     }
   }
@@ -81,6 +88,7 @@ export function useVaults(options: UseVaultsOptions) {
       openFor.value = vaultId
       error.value = ''
     } catch (failure) {
+      if (isServerAway(failure)) isReachable.value = false
       error.value = getErrorMessage(failure)
     }
   }
@@ -96,6 +104,7 @@ export function useVaults(options: UseVaultsOptions) {
       closeRemote()
       await read()
     } catch (failure) {
+      if (isServerAway(failure)) isReachable.value = false
       error.value = getErrorMessage(failure)
     }
   }
@@ -105,7 +114,7 @@ export function useVaults(options: UseVaultsOptions) {
     connect({ vaultId, mode: 'existing', remoteId })
 
   return {
-    state: { status, error, hasIdentity, warning, rows, openFor, remote },
+    state: { status, error, hasIdentity, isReachable, warning, rows, openFor, remote },
     actions: { load, openRemote, closeRemote, connectNew, connectExisting },
   }
 }

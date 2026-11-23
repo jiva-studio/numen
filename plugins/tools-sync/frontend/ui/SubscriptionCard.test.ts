@@ -226,7 +226,8 @@ describe('SubscriptionCard', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('https://sync.numen.md')
-    expect(wrapper.text()).toContain('every 30 seconds')
+    expect(wrapper.text()).toContain('Check that it is running')
+    expect(wrapper.text()).not.toContain('30 seconds')
     await wrapper
       .findAll('button')
       .find((one) => one.text() === 'Open the settings')

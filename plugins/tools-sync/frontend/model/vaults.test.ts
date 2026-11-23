@@ -150,6 +150,19 @@ describe('useVaults', () => {
     expect(model.state.error.value).toBe('the sync backend is not running')
   })
 
+  it('says nothing and offers no connection when the server is unreachable', async () => {
+    const client = createClient()
+    client.listVaults.mockRejectedValue(
+      Object.assign(new Error('the sync server is unreachable'), { code: 'unavailable' }),
+    )
+    const model = createModel(client)
+
+    await model.actions.load()
+
+    expect(model.state.error.value).toBe('')
+    expect(model.state.isReachable.value).toBe(false)
+  })
+
   it('opens the list of synced vaults of the account for one vault', async () => {
     const client = createClient()
     const model = createModel(client)

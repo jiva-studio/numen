@@ -90,7 +90,7 @@ export function getSubscriptionView(snapshot: SubscriptionSnapshot): Subscriptio
     case 'unreachable':
       return {
         badge: words.syncServerUnreachable,
-        text: `${words.unreachableText(snapshot.server ?? '')} ${words.unreachableRetry}`,
+        text: words.unreachableText(snapshot.server ?? ''),
         tone: 'warning',
       }
     case 'noIdentity':

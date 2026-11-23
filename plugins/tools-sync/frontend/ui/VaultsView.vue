@@ -20,7 +20,7 @@ const model = useVaults({
   client: props.client,
   now: props.now ?? getCurrentDate,
 })
-const { status, error, warning, rows, openFor, remote } = model.state
+const { status, error, isReachable, warning, rows, openFor, remote } = model.state
 const { load, openRemote, closeRemote, connectNew, connectExisting } = model.actions
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -65,10 +65,20 @@ function report(failure: unknown): void {
           <span v-if="row.conflictLabel !== ''" class="vaults__detail vaults__detail--alarm">
             {{ row.conflictLabel }}
           </span>
-          <Button v-if="row.canConnect" variant="outline" @click="onConnectNew(row.id)">
+          <Button
+            v-if="row.canConnect"
+            variant="outline"
+            :disabled="!isReachable"
+            @click="onConnectNew(row.id)"
+          >
             {{ words.connectNew }}
           </Button>
-          <Button v-if="row.canConnect" variant="outline" @click="onOpenRemote(row.id)">
+          <Button
+            v-if="row.canConnect"
+            variant="outline"
+            :disabled="!isReachable"
+            @click="onOpenRemote(row.id)"
+          >
             {{ words.connectExisting }}
           </Button>
         </li>
