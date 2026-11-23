@@ -79,6 +79,7 @@ func (u *RotateVaultKeys) rotate(ctx context.Context, id domain.VaultID, own ses
 	if err != nil {
 		return false, fmt.Errorf("read the remote id of the link: %w", err)
 	}
+	target := connected{id: id, remote: remote, link: link}
 	for range maxTries {
 		entries, err := u.deps.Catalog.GetCatalog(ctx, 0)
 		if err != nil {
@@ -92,15 +93,45 @@ func (u *RotateVaultKeys) rotate(ctx context.Context, id domain.VaultID, own ses
 		if err != nil {
 			return false, err
 		}
-		if getNewestEpoch(body) >= own.KeyEpoch {
+		if err := u.store(ctx, &target, body.GetKeys()); err != nil {
+			return false, err
+		}
+		if vaultlink.GetNewestEpoch(body.GetKeys()) >= own.KeyEpoch {
 			return false, nil
 		}
-		committed, err := u.append(ctx, entries, last, body, own)
-		if err != nil || committed {
-			return committed, err
+		keys, err := u.append(ctx, entries, last, body, own)
+		if err != nil {
+			return false, err
+		}
+		if keys != nil {
+			return true, u.store(ctx, &target, keys)
 		}
 	}
 	return false, ErrCatalogBusy
+}
+
+// connected is a connected vault with the link it keeps.
+type connected struct {
+	id     domain.VaultID
+	remote []byte
+	link   vaultlink.Link
+}
+
+// store writes the keys the catalog lists into the link when they reach a later epoch than the ones the link holds, so the notes of the new epoch open and the next commit uses the new key.
+func (u *RotateVaultKeys) store(ctx context.Context, target *connected, keys []vaultlink.VaultKey) error {
+	known := uint32(0)
+	if len(target.link.LaterKeys) > 0 {
+		known = target.link.LaterKeys[len(target.link.LaterKeys)-1].Epoch
+	}
+	if vaultlink.GetNewestEpoch(keys) <= known {
+		return nil
+	}
+	first, later, err := vaultlink.SealKeys(ctx, u.deps.Crypto, target.remote, keys)
+	if err != nil {
+		return err
+	}
+	target.link.SealedKey, target.link.LaterKeys = first, later
+	return u.deps.State.WriteLink(ctx, target.id, target.link)
 }
 
 func getLastEntry(entries []*syncv1.CatalogEntry, vaultID []byte) *syncv1.CatalogEntry {
@@ -112,14 +143,6 @@ func getLastEntry(entries []*syncv1.CatalogEntry, vaultID []byte) *syncv1.Catalo
 	return nil
 }
 
-func getNewestEpoch(body vaultlink.CatalogBody) uint32 {
-	var newest uint32
-	for _, key := range body.GetKeys() {
-		newest = max(newest, key.Epoch)
-	}
-	return newest
-}
-
 func (u *RotateVaultKeys) openBody(ctx context.Context, entry *syncv1.CatalogEntry) (vaultlink.CatalogBody, error) {
 	plain, err := u.deps.Crypto.OpenData(ctx, vaultlink.GetCatalogContext(entry.GetVaultId(), entry.GetVersion()), entry.GetEncBody())
 	if err != nil {
@@ -128,11 +151,11 @@ func (u *RotateVaultKeys) openBody(ctx context.Context, entry *syncv1.CatalogEnt
 	return vaultlink.ParseCatalogBody(plain)
 }
 
-// append adds the entry that carries every earlier key of the vault and a new one for the epoch. It returns whether the server committed it.
-func (u *RotateVaultKeys) append(ctx context.Context, entries []*syncv1.CatalogEntry, last *syncv1.CatalogEntry, body vaultlink.CatalogBody, own session.Identity) (bool, error) {
+// append adds the entry that carries every earlier key of the vault and a new one for the epoch. It returns the keys of the entry when the server committed it, none when it did not.
+func (u *RotateVaultKeys) append(ctx context.Context, entries []*syncv1.CatalogEntry, last *syncv1.CatalogEntry, body vaultlink.CatalogBody, own session.Identity) ([]vaultlink.VaultKey, error) {
 	fresh := make([]byte, keySize)
 	if _, err := io.ReadFull(u.deps.Random, fresh); err != nil {
-		return false, fmt.Errorf("make a vault key: %w", err)
+		return nil, fmt.Errorf("make a vault key: %w", err)
 	}
 	next := vaultlink.CatalogBody{
 		LocalID: body.LocalID, Name: body.Name, Key: body.Key,
@@ -140,13 +163,16 @@ func (u *RotateVaultKeys) append(ctx context.Context, entries []*syncv1.CatalogE
 	}
 	entry, err := u.newEntry(ctx, entries, last.GetVaultId(), next, own)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	response, err := u.deps.Catalog.AppendCatalogEntry(ctx, entry)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	return response.GetCommitted(), nil
+	if !response.GetCommitted() {
+		return nil, nil
+	}
+	return next.Keys, nil
 }
 
 func (u *RotateVaultKeys) newEntry(ctx context.Context, entries []*syncv1.CatalogEntry, vaultID []byte, body vaultlink.CatalogBody, own session.Identity) (*syncv1.CatalogEntry, error) {

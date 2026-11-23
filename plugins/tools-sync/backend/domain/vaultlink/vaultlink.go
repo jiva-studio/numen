@@ -3,6 +3,7 @@
 package vaultlink
 
 import (
+	"context"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
@@ -20,10 +21,13 @@ const (
 // ErrNotConnected means a vault has no link.
 var ErrNotConnected = errors.New("the vault is not connected to a synced vault")
 
+var errNoKeys = errors.New("the vault has no key")
+
 // Link is link.json of a connected vault.
 type Link struct {
 	RemoteVaultID string                `json:"remoteVaultId"`
 	SealedKey     []byte                `json:"sealedKey"`
+	LaterKeys     []SealedKey           `json:"laterKeys"`
 	CatalogName   string                `json:"catalogName"`
 	ServerSeq     uint64                `json:"serverSeq"`
 	FeedCursor    host.FileChangeCursor `json:"feedCursor"`
@@ -92,4 +96,71 @@ func GetStateKeyContext(remoteID []byte) []byte {
 func IsRemoteID(text string) bool {
 	_, err := hex.DecodeString(text)
 	return err == nil
+}
+
+// SealedKey is a vault key of an epoch after the first, sealed by the core.
+type SealedKey struct {
+	Epoch  uint32 `json:"epoch"`
+	Sealed []byte `json:"sealed"`
+}
+
+// GetEpochKeyContext returns the context the vault key of an epoch after the first is sealed under in link.json.
+func GetEpochKeyContext(remoteID []byte, epoch uint32) []byte {
+	return binary.BigEndian.AppendUint32(GetStateKeyContext(remoteID), epoch)
+}
+
+// Sealer seals and opens data under the keys of the account.
+type Sealer interface {
+	SealData(ctx context.Context, dataContext, plain []byte) ([]byte, error)
+	OpenData(ctx context.Context, dataContext, sealed []byte) ([]byte, error)
+}
+
+// SealKeys returns the key of the first epoch sealed for link.json, and the keys after it each sealed under its epoch. The first key is epoch 0.
+func SealKeys(ctx context.Context, sealer Sealer, remoteID []byte, keys []VaultKey) ([]byte, []SealedKey, error) {
+	if len(keys) == 0 {
+		return nil, nil, errNoKeys
+	}
+	first, err := sealer.SealData(ctx, GetStateKeyContext(remoteID), keys[0].Key)
+	if err != nil {
+		return nil, nil, fmt.Errorf("seal the vault key: %w", err)
+	}
+	var later []SealedKey
+	for _, key := range keys[1:] {
+		sealed, err := sealer.SealData(ctx, GetEpochKeyContext(remoteID, key.Epoch), key.Key)
+		if err != nil {
+			return nil, nil, fmt.Errorf("seal the vault key of epoch %d: %w", key.Epoch, err)
+		}
+		later = append(later, SealedKey{Epoch: key.Epoch, Sealed: sealed})
+	}
+	return first, later, nil
+}
+
+// OpenKeys returns the keys of the link by epoch. The first key is epoch 0.
+func OpenKeys(ctx context.Context, sealer Sealer, link Link) ([]VaultKey, error) {
+	remote, err := hex.DecodeString(link.RemoteVaultID)
+	if err != nil {
+		return nil, fmt.Errorf("read the remote id of the link: %w", err)
+	}
+	first, err := sealer.OpenData(ctx, GetStateKeyContext(remote), link.SealedKey)
+	if err != nil {
+		return nil, fmt.Errorf("open the vault key: %w", err)
+	}
+	keys := []VaultKey{{Epoch: 0, Key: first}}
+	for _, one := range link.LaterKeys {
+		key, err := sealer.OpenData(ctx, GetEpochKeyContext(remote, one.Epoch), one.Sealed)
+		if err != nil {
+			return nil, fmt.Errorf("open the vault key of epoch %d: %w", one.Epoch, err)
+		}
+		keys = append(keys, VaultKey{Epoch: one.Epoch, Key: key})
+	}
+	return keys, nil
+}
+
+// GetNewestEpoch returns the highest epoch of the keys, 0 for none.
+func GetNewestEpoch(keys []VaultKey) uint32 {
+	var newest uint32
+	for _, key := range keys {
+		newest = max(newest, key.Epoch)
+	}
+	return newest
 }

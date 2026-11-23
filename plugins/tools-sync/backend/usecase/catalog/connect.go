@@ -100,7 +100,7 @@ func (u *ConnectVault) connectNew(ctx context.Context, id domain.VaultID, name s
 	if err := u.reader.appendEntry(ctx, entryInput{vaultID: remoteID, isCreating: true, body: body}); err != nil {
 		return err
 	}
-	return u.writeLink(ctx, id, remoteID, name, key)
+	return u.writeLink(ctx, id, remoteID, name, body.GetKeys())
 }
 
 func (u *ConnectVault) connectExisting(ctx context.Context, in ConnectInput, name string) error {
@@ -118,17 +118,20 @@ func (u *ConnectVault) connectExisting(ctx context.Context, in ConnectInput, nam
 	}
 	for _, one := range vaults {
 		if string(one.vaultID) == string(remoteID) {
-			return u.writeLink(ctx, in.VaultID, remoteID, name, one.body.Key)
+			return u.writeLink(ctx, in.VaultID, remoteID, name, one.body.GetKeys())
 		}
 	}
 	return ErrUnknownRemoteVault
 }
 
-func (u *ConnectVault) writeLink(ctx context.Context, id domain.VaultID, remoteID []byte, name string, key []byte) error {
-	sealed, err := u.reader.deps.Crypto.SealData(ctx, vaultlink.GetStateKeyContext(remoteID), key)
+func (u *ConnectVault) writeLink(ctx context.Context, id domain.VaultID, remoteID []byte, name string, keys []vaultlink.VaultKey) error {
+	first, later, err := vaultlink.SealKeys(ctx, u.reader.deps.Crypto, remoteID, keys)
 	if err != nil {
-		return fmt.Errorf("seal the vault key: %w", err)
+		return err
 	}
-	link := vaultlink.Link{RemoteVaultID: hex.EncodeToString(remoteID), SealedKey: sealed, CatalogName: name, ServerSeq: 0, FeedCursor: host.FileChangeCursor{FeedID: "", Seq: 0}}
+	link := vaultlink.Link{
+		RemoteVaultID: hex.EncodeToString(remoteID), SealedKey: first, LaterKeys: later, CatalogName: name, ServerSeq: 0,
+		FeedCursor: host.FileChangeCursor{FeedID: "", Seq: 0},
+	}
 	return u.reader.deps.State.WriteLink(ctx, id, link)
 }

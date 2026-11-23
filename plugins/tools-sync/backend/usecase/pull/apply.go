@@ -27,7 +27,7 @@ type run struct {
 	in      transfer.PullInput
 	files   ports.Files
 	remote  []byte
-	key     [32]byte
+	keys    []vaultlink.VaultKey
 	link    vaultlink.Link
 	records []note.FileRecord
 	result  transfer.PullResult
@@ -88,7 +88,11 @@ func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
 		!r.in.Authors(rev.GetAuthorDeviceSignKey()) {
 		return note.Meta{}, errUnverified
 	}
-	meta, err := note.OpenMeta(r.key, rev.GetVaultId(), rev.GetFileId(), rev.GetEncMeta())
+	key, isKnown := r.getKey(rev.GetEpoch())
+	if !isKnown {
+		return note.Meta{}, errUnverified
+	}
+	meta, err := note.OpenMeta(key, rev.GetVaultId(), rev.GetFileId(), rev.GetEncMeta())
 	if err != nil || len(meta.Key) != 32 {
 		return note.Meta{}, errUnverified
 	}
@@ -190,4 +194,12 @@ func (r *run) fetch(ctx context.Context, rev *syncv1.Revision, meta note.Meta) (
 		return nil, fmt.Errorf("%w: it does not open to the note", ErrCorruptBlob)
 	}
 	return plain, nil
+}
+
+func (r *run) getKey(epoch uint32) ([32]byte, bool) {
+	at := slices.IndexFunc(r.keys, func(one vaultlink.VaultKey) bool { return one.Epoch == epoch })
+	if at < 0 || len(r.keys[at].Key) != 32 {
+		return [32]byte{}, false
+	}
+	return [32]byte(r.keys[at].Key), true
 }

@@ -42,15 +42,15 @@ func (u *RenameRemoteVault) rename(ctx context.Context, vault domain.Vault, link
 	if err != nil {
 		return fmt.Errorf("read the remote id of the link: %w", err)
 	}
-	key, err := u.reader.deps.Crypto.OpenData(ctx, vaultlink.GetStateKeyContext(remoteID), link.SealedKey)
+	opened, err := vaultlink.OpenKeys(ctx, u.reader.deps.Crypto, link)
 	if err != nil {
-		return fmt.Errorf("open the vault key: %w", err)
+		return err
 	}
 	keys, err := u.readKeys(ctx, remoteID)
 	if err != nil {
 		return err
 	}
-	body := vaultlink.CatalogBody{LocalID: string(vault.ID), Name: vault.Name, Key: key, Keys: keys}
+	body := vaultlink.CatalogBody{LocalID: string(vault.ID), Name: vault.Name, Key: opened[0].Key, Keys: keys}
 	if err := u.reader.appendEntry(ctx, entryInput{vaultID: remoteID, isCreating: false, body: body}); err != nil {
 		return err
 	}
