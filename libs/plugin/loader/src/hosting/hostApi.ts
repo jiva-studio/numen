@@ -15,12 +15,12 @@ import type { ContextSettingHost, PluginContextHost } from './contextHostTypes'
 
 /** How a plugin is created, marked and taken away, and the settings it reads. */
 export interface PluginLifecycle {
-  createContext(pluginId: string, manifest?: Manifest): PluginParts
-  markPluginStarting(pluginId: string): void
-  markPluginStarted(pluginId: string): void
-  registerManifest(pluginId: string, manifest: Manifest): void
-  disposePlugin(pluginId: string): void
-  disposeAll(): void
+  readonly createContext: (pluginId: string, manifest?: Manifest) => PluginParts
+  readonly markPluginStarting: (pluginId: string) => void
+  readonly markPluginStarted: (pluginId: string) => void
+  readonly registerManifest: (pluginId: string, manifest: Manifest) => void
+  readonly disposePlugin: (pluginId: string) => void
+  readonly disposeAll: () => void
   readonly getSetting: ContextSettingHost['getSetting']
   readonly watchSetting: ContextSettingHost['watchSetting']
 }
@@ -28,25 +28,26 @@ export interface PluginLifecycle {
 /** The keybindings of the application and of the plugins, by owner. */
 export interface KeybindingApi {
   readonly registry: KeybindingRegistry
-  registerKeybindings(pluginId: string, sources: readonly KeybindingSource[]): void
-  unregisterKeybindings(pluginId: string): void
-  unregisterAllKeybindings(): void
-  /** The key of a command as declared, such as `mod+p`, for a hint; undefined where none is bound. */
+  readonly registerKeybindings: (pluginId: string, sources: readonly KeybindingSource[]) => void
+  readonly unregisterKeybindings: (pluginId: string) => void
+  readonly unregisterAllKeybindings: () => void
   readonly getKeyFor: KeybindingRegistry['getKeyFor']
 }
 
 /** What the plugins registered, for the windows that list it. */
 export interface RegisteredApi {
   /** The settings views a plugin registered, by view id; reactive. */
-  getRegisteredSettingsViews(pluginId: string): ReadonlyMap<string, SettingsViewRegistration>
+  readonly getRegisteredSettingsViews: (
+    pluginId: string,
+  ) => ReadonlyMap<string, SettingsViewRegistration>
   /**
    * The settings views of a plugin for its settings page, by view id; reactive. A plugin that
    * declares settings views and has registered none starts, and its views follow once it has.
    */
-  getSettingsViews(pluginId: string): ReadonlyMap<string, SettingsViewRegistration>
-  getRegisteredReaders(): ReaderRegistration[]
-  getRegisteredTabKinds(): TabKindRegistration[]
-  getRegisteredCommands(): CommandRegistration[]
+  readonly getSettingsViews: (pluginId: string) => ReadonlyMap<string, SettingsViewRegistration>
+  readonly getRegisteredReaders: () => ReaderRegistration[]
+  readonly getRegisteredTabKinds: () => TabKindRegistration[]
+  readonly getRegisteredCommands: () => CommandRegistration[]
 }
 
 export interface PluginHost {
@@ -54,10 +55,9 @@ export interface PluginHost {
   readonly commands: CommandApi
   readonly keybindings: KeybindingApi
   readonly registered: RegisteredApi
-  /** The entries of the slots of the window, as their owners read them. */
   readonly slots: SlotHost
   readonly slotViews: SlotViewRegistry
   readonly contextHost: PluginContextHost
   /** A change to the vault, delivered to every plugin that subscribed to vault changes. */
-  notifyVaultChange(event: VaultChangeEvent): void
+  readonly notifyVaultChange: (event: VaultChangeEvent) => void
 }

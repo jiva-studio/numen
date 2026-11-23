@@ -4,7 +4,6 @@ export { requireMountAccess } from './guards/viewPermissions'
 export { createCustomTabKind, pickCustomTabParts } from './customTabKind'
 export type {
   NoteBuffer,
-  PluginContextHost,
   PluginHostDeps,
   HostCommands,
   HostSlots,
