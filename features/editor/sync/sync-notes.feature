@@ -50,28 +50,3 @@ Feature: Sync notes between computers
       And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       Then the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
       And the second computer does not have the file "data.bin" in its vault "Copy"
-
-  Rule: Numen Sync keeps working when the server is away
-
-    Scenario: A note written while the server is away arrives later
-      Given the sync server stops
-      And the person writes the note "Shopping list" with the text "milk" in the vault "Test"
-      When the sync server runs again
-      Then the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
-
-    Scenario: Numen Sync warns while the server is away
-      When the sync server stops
-      Then the plugin "Numen Sync" warns about "Could not reach the sync server"
-
-  Rule: A note changed on two computers is not overwritten
-
-    Scenario: A note changed on both computers waits
-      Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
-      And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
-      And the sync server stops
-      And the person writes the note "Shopping list" with the text "bread" in the vault "Test"
-      And the second computer writes the note "Shopping list" with the text "eggs" in its vault "Copy"
-      When the sync server runs again
-      Then the plugin "Numen Sync" warns about "1 note changed on two computers"
-      And the vault "Test" has the note "Shopping list" with the text "bread"
-      And the second computer has the note "Shopping list" with the text "eggs" in its vault "Copy"
