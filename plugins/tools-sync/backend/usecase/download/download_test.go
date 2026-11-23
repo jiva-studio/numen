@@ -14,7 +14,7 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/wire/syncwire"
@@ -38,7 +38,6 @@ func newWorld(t *testing.T) *world {
 	return &world{p: p, vault: p.GetVault(t), use: syncwire.NewDownloads(p.B.WireDeps())}
 }
 
-// publish commits the file as the first computer would and returns the revision the second computer reads.
 func (w *world) publish(t *testing.T, file transfer.File) (*syncv1.StoredRevision, synctest.Meta) {
 	t.Helper()
 	outcomes, err := commit.NewCommitRevisions(w.p.A.CommitDeps()).Execute(t.Context(), transfer.CommitInput{VaultID: synctest.FirstVault, Vault: w.vault, Files: []transfer.File{file}})
@@ -116,7 +115,7 @@ func (w *world) getRanges(t *testing.T) []synctest.PartLogEntry {
 	return ranges
 }
 
-func TestDownloadFile_StagesASmallFileOfAnyKindUnderItsNameAndDoesNotPlaceIt(t *testing.T) {
+func TestDownloadFile_StagesASmallFileOfAnyKindByItsNameAndDoesNotPlaceIt(t *testing.T) {
 	w := newWorld(t)
 	content := make([]byte, 300_000)
 	if _, err := rand.Read(content); err != nil {
@@ -255,7 +254,7 @@ func TestDownloadFile_ContinuesFromTheChunkItReachedAfterABreak(t *testing.T) {
 	}
 }
 
-func TestDownloadFile_StartsAgainWhenTheStagedFileIsNotTheSizeTheStateSays(t *testing.T) {
+func TestDownloadFile_StartsAgainWhenTheStagedFileIsNotTheSizeTheStateRecords(t *testing.T) {
 	w := newWorld(t)
 	stored, meta, source := w.publishBig(t, "Videos/Trip.bin", 4)
 	input := w.input(stored, meta)

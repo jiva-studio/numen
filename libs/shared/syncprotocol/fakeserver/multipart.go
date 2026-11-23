@@ -183,21 +183,21 @@ func (s *Server) CompleteMultipartBlob(_ context.Context, req *connect.Request[s
 }
 
 func listIncomplete(row *blobRow) *syncv1.MultipartIncomplete {
-	incomplete := &syncv1.MultipartIncomplete{}
+	var missing, wrongSize []uint32
 	for number := uint32(1); number <= row.multipart.partCount; number++ {
 		size, held := row.multipart.parts[number]
 		switch {
-		case !held && len(incomplete.Missing) < maxListedNumber:
-			incomplete.Missing = append(incomplete.Missing, number)
+		case !held && len(missing) < maxListedNumber:
+			missing = append(missing, number)
 		case !held:
-		case size != row.multipart.getPartSize(number, row.size) && len(incomplete.WrongSize) < maxListedNumber:
-			incomplete.WrongSize = append(incomplete.WrongSize, number)
+		case size != row.multipart.getPartSize(number, row.size) && len(wrongSize) < maxListedNumber:
+			wrongSize = append(wrongSize, number)
 		}
 	}
-	if len(incomplete.Missing) == 0 && len(incomplete.WrongSize) == 0 {
+	if len(missing) == 0 && len(wrongSize) == 0 {
 		return nil
 	}
-	return incomplete
+	return &syncv1.MultipartIncomplete{Missing: missing, WrongSize: wrongSize}
 }
 
 func (s *Server) joinParts(id string, row *blobRow) error {
@@ -245,7 +245,6 @@ func (s *Server) AbortMultipartBlob(_ context.Context, req *connect.Request[sync
 	return connect.NewResponse(&syncv1.AbortMultipartBlobResponse{}), nil
 }
 
-// storePart takes the PUT of one part to /blobs/<id>/parts/<number>.
 func (s *Server) storePart(w http.ResponseWriter, r *http.Request, id string, number uint32) {
 	s.mu.Lock()
 	row, found := s.blobs[id]
@@ -279,7 +278,7 @@ func (s *Server) storePart(w http.ResponseWriter, r *http.Request, id string, nu
 		}
 		row.multipart.parts[number] = expected
 		s.partLog = append(s.partLog, partLogEntry{Blob: hex.EncodeToString([]byte(id)), Part: number, Direction: "put", Bytes: int64(len(body))})
-		s.countReceived(int64(len(body)))
+		s.countReceivedBytes(int64(len(body)))
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -301,7 +300,6 @@ func (s *Server) servePartLog(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getPartNumber reads the number of a part from the rest of a blob path, "<id hex>/parts/<n>".
 func getPartNumber(rest string) (id string, number uint32, ok bool) {
 	idText, tail, found := strings.Cut(rest, partFolder)
 	if !found {

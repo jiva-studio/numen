@@ -23,7 +23,7 @@ describe('buildFixture', () => {
     expect(buildFixture('Papers/Report.pdf').equals(buildFixture('Papers/Plan.pdf'))).toBe(false)
   })
 
-  it('gives exactly the megabytes it is asked for', () => {
+  it('writes exactly the number of megabytes requested', () => {
     expect(buildFixture('Videos/Trip.bin', 70).length).toBe(70 * 1024 * 1024)
   })
 

@@ -117,7 +117,6 @@ func (r *run) discard(ctx context.Context) error {
 	return errors.Join(r.store.Delete(ctx, r.name), r.deps.Entries.WriteDownloads(ctx, r.in.Vault, withoutFile(entries, r.in.FileID)))
 }
 
-// stageWhole downloads a blob of up to note.BigFileLimit bytes in one request and opens it whole.
 func (r *run) stageWhole(ctx context.Context) error {
 	blob, err := r.deps.Blobs.GetBlob(ctx, r.in.RemoteID, r.in.BlobID)
 	if err != nil {

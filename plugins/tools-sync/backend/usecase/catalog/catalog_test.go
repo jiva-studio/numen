@@ -14,10 +14,11 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/libs/shared/syncprotocol/wiretest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/cloud"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 )
 
@@ -78,7 +79,7 @@ func (r *tamperedCatalog) GetCatalog(ctx context.Context, since uint64) ([]*sync
 	}
 	cloned := make([]*syncv1.CatalogEntry, len(entries))
 	for i, entry := range entries {
-		cloned[i] = synctest.CloneCatalogEntry(entry)
+		cloned[i] = wiretest.CloneCatalogEntry(entry)
 	}
 	return r.change(cloned), nil
 }

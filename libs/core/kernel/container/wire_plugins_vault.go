@@ -77,7 +77,8 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 		return stores.OpenWriter(v, pluginID)
 	}
 	stat := file.NewHashFile(vaultDeps.Readers, vaultDeps.Writers)
-	follow := hostvault.IndexFollow{}
+	count := file.NewCountFiles(vaultDeps.Readers)
+	scan := file.NewScanFiles(index)
 	return hostvault.NewAccess(
 		hostvault.Session{
 			Current:    current,
@@ -96,15 +97,12 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 		hostvault.Writer{
 			Write:        file.NewWriteFile(vaultDeps.Writers, index),
 			Create:       file.NewCreateFile(vaultDeps.Writers, index),
-			Index:        file.NewScanFiles(index),
+			Index:        scan,
 			Locks:        hold.NewLocks(vaultDeps.Writers, hold.LockHold),
-			Move:         note.NewMoveFile(useCases.Place.Move, db.Sources(), nil, follow),
-			Remove:       note.NewRemoveFile(&useCases.Place.Remove, follow),
-			Stat:         stat,
-			Readers:      vaultDeps.Readers,
-			Folders:      vaultDeps.Writers,
-			StoreReaders: storeReaders,
-			StoreWriters: storeWriters,
+			Move:         note.NewMoveChecked(note.NewMoveFile(useCases.Place.Move, db.Sources(), nil, nil), count, stat),
+			Remove:       note.NewRemoveChecked(note.NewRemoveFile(&useCases.Place.Remove, nil), count, stat),
+			Place:        file.NewPlaceStaged(stat, scan, vaultDeps.Writers),
+			StoreReaders: storeReaders, StoreWriters: storeWriters,
 		},
 		getPluginLookups(db),
 		arranger,

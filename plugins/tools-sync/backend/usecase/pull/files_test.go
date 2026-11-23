@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
@@ -27,7 +27,7 @@ const (
 	bigSize = 65 << 20
 )
 
-func (p *pair) remove(t *testing.T, records ...note.FileRecord) []transfer.Outcome {
+func (p *pair) remove(t *testing.T, records ...transfer.FileRecord) []transfer.Outcome {
 	t.Helper()
 	outcomes, err := commit.NewCommitRemovals(p.a.CommitDeps()).Execute(t.Context(), transfer.RemoveInput{Vault: p.vault, Records: records})
 	if err != nil {
@@ -252,7 +252,7 @@ func TestPullChanges_DefersManyRemovalsToTheGuardAndStopsThePosition(t *testing.
 	spy := p.b.Spy()
 	pushed := p.pushMany(t, "Papers", 10)
 	p.pull(t, trustAll)
-	records := make([]note.FileRecord, len(pushed))
+	records := make([]transfer.FileRecord, len(pushed))
 	for i, one := range pushed {
 		records[i] = one.Record
 	}
@@ -284,7 +284,7 @@ func TestPullChanges_RemovesTheFilesOnceThePersonConfirmsTheRemoval(t *testing.T
 	spy := p.b.Spy()
 	pushed := p.pushMany(t, "Papers", 10)
 	p.pull(t, trustAll)
-	records := make([]note.FileRecord, len(pushed))
+	records := make([]transfer.FileRecord, len(pushed))
 	for i, one := range pushed {
 		records[i] = one.Record
 	}
@@ -315,7 +315,7 @@ func TestPullChanges_KeepsTheFilesWhenThePersonKeepsThemAndSendsThemAsEdits(t *t
 	spy := p.b.Spy()
 	pushed := p.pushMany(t, "Papers", 10)
 	p.pull(t, trustAll)
-	records := make([]note.FileRecord, len(pushed))
+	records := make([]transfer.FileRecord, len(pushed))
 	for i, one := range pushed {
 		records[i] = one.Record
 	}
@@ -372,7 +372,7 @@ func TestPullChanges_MovesAFileToItsNewPathWithTheStatItReadAndDownloadsNothing(
 	}
 }
 
-func TestPullChanges_MovesAFolderWholeWhenTheBatchMovesEveryFileUnderIt(t *testing.T) {
+func TestPullChanges_MovesAFolderWholeWhenTheBatchMovesEveryFileInsideIt(t *testing.T) {
 	p := newPair(t)
 	spy := p.b.Spy()
 	pushed := p.pushMany(t, "Food", 3)

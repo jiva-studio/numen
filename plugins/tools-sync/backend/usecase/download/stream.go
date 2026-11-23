@@ -43,8 +43,6 @@ func (c *counted) Read(p []byte) (int, error) {
 	return n, err
 }
 
-// stageStream downloads a big blob chunk by chunk, appending each chunk to the staged file after it is
-// authenticated, and keeps the position every few chunks and when the body breaks.
 func (r *run) stageStream(ctx context.Context) error {
 	at, err := r.findPosition(ctx)
 	if err != nil {
@@ -74,8 +72,6 @@ func chunkLog2(header [56]byte) byte {
 	return parsed.ChunkLog2
 }
 
-// findPosition returns the position a kept download reached when its staged file is the size it must be, and the
-// start of a download else.
 func (r *run) findPosition(ctx context.Context) (*position, error) {
 	fresh := &position{header: [56]byte{}, next: 0, hasher: sha256.New(), state: nil}
 	entries, err := r.deps.Entries.ReadDownloads(ctx, r.in.Vault)
@@ -111,7 +107,7 @@ func (r *run) restore(ctx context.Context, kept transfer.DownloadEntry) (*positi
 	}
 	hasher := sha256.New()
 	unmarshaler, ok := hasher.(encoding.BinaryUnmarshaler)
-	if !ok || unmarshaler.UnmarshalBinary(kept.StoredHashState) != nil {
+	if !ok || !isStateValid(unmarshaler, kept.StoredHashState) {
 		return nil, false, nil
 	}
 	return &position{header: [56]byte(kept.Header), next: kept.NextChunk, hasher: hasher, state: kept.StoredHashState}, true, nil
@@ -162,7 +158,6 @@ func (r *run) copyChunks(ctx context.Context, plain *blobcipher.PlainReader, at 
 	}
 }
 
-// settleReadFailure keeps the position of the last whole chunk when the body broke, and not when it did not open.
 func (r *run) settleReadFailure(ctx context.Context, err error, at *position, body *counted) error {
 	failure := r.getReadFailure(err, body)
 	if errors.Is(failure, ErrIntegrity) {
@@ -171,8 +166,6 @@ func (r *run) settleReadFailure(ctx context.Context, err error, at *position, bo
 	return errors.Join(failure, r.keepStarted(ctx, at))
 }
 
-// getReadFailure says whether a failed read is a body that does not open, which is damage, or a body that ended before
-// the blob did, which is a break.
 func (r *run) getReadFailure(err error, body *counted) error {
 	if !errors.Is(err, blobcipher.ErrCannotOpen) {
 		return err
@@ -190,8 +183,6 @@ func (r *run) finish(at *position, total int64) error {
 	return nil
 }
 
-// advance notes the chunks taken and the hash of them once a whole chunk is in the staged file, and keeps the
-// position every saveEvery chunks.
 func (r *run) advance(ctx context.Context, plain *blobcipher.PlainReader, at *position) error {
 	if !plain.IsAtChunkBoundary() {
 		return nil
@@ -211,7 +202,6 @@ func (r *run) advance(ctx context.Context, plain *blobcipher.PlainReader, at *po
 	return r.keep(ctx, at)
 }
 
-// keepStarted writes the position of the last whole chunk after a break, when there is one.
 func (r *run) keepStarted(ctx context.Context, at *position) error {
 	if at.next == 0 {
 		return nil
@@ -219,7 +209,6 @@ func (r *run) keepStarted(ctx context.Context, at *position) error {
 	return r.keep(ctx, at)
 }
 
-// keep writes the position after the chunks taken so far.
 func (r *run) keep(ctx context.Context, at *position) error {
 	entries, err := r.deps.Entries.ReadDownloads(ctx, r.in.Vault)
 	if err != nil {
@@ -230,4 +219,8 @@ func (r *run) keep(ctx context.Context, at *position) error {
 		StoredHashState: at.state, StagedName: r.name, MetaHash: r.in.Hash, HeadRev: r.in.HeadRev,
 	}
 	return r.deps.Entries.WriteDownloads(ctx, r.in.Vault, append(withoutFile(entries, r.in.FileID), entry))
+}
+
+func isStateValid(hasher encoding.BinaryUnmarshaler, state []byte) bool {
+	return hasher.UnmarshalBinary(state) == nil
 }

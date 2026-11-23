@@ -135,17 +135,37 @@ type CreateCheckoutResponse struct {
 // MethodResolveDeletions answers the pause before many removals.
 const MethodResolveDeletions = "ResolveDeletions"
 
-// PausedDeletions is the removals of a vault that wait for an answer. Direction is "send" or "apply".
+// Direction is which way the removals that wait for an answer go.
+type Direction string
+
+const (
+	// DirectionSend is removals of this device that wait to be sent.
+	DirectionSend Direction = "send"
+	// DirectionApply is removals of another device that wait to be applied here.
+	DirectionApply Direction = "apply"
+)
+
+// Choice is the answer to the removals that wait.
+type Choice string
+
+const (
+	// ChoiceRemove goes on with the removals.
+	ChoiceRemove Choice = "remove"
+	// ChoiceKeep restores the files.
+	ChoiceKeep Choice = "keep"
+)
+
+// PausedDeletions is the removals of a vault that wait for an answer. Direction says which way they go.
 type PausedDeletions struct {
-	Count     int    `json:"count"`
-	Tracked   int    `json:"tracked"`
-	Direction string `json:"direction"`
+	Count     int       `json:"count"`
+	Tracked   int       `json:"tracked"`
+	Direction Direction `json:"direction"`
 }
 
-// ResolveDeletionsRequest answers for a vault: Choice is "remove" or "keep".
+// ResolveDeletionsRequest answers for a vault.
 type ResolveDeletionsRequest struct {
 	VaultID string `json:"vaultId"`
-	Choice  string `json:"choice"`
+	Choice  Choice `json:"choice"`
 }
 
 // ResolveDeletionsResponse is the answer to a choice that was taken.

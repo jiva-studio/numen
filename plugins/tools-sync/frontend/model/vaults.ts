@@ -5,7 +5,7 @@ import { WORDS as words } from '../words'
 
 const MS_PER_MINUTE = 60_000
 
-export interface VaultRow {
+interface VaultRow {
   readonly id: string
   readonly name: string
   readonly path: string
@@ -16,12 +16,12 @@ export interface VaultRow {
   readonly pausedLabel: string
 }
 
-export interface UseVaultsOptions {
+interface UseVaultsOptions {
   readonly client?: VaultsClient | undefined
   readonly now: () => Date
 }
 
-export type VaultsStatus = 'loading' | 'ready' | 'error'
+type VaultsStatus = 'loading' | 'ready' | 'error'
 
 const STATE_LABELS: Record<VaultState, string> = {
   notConnected: words.stateNotConnected,

@@ -15,7 +15,6 @@ var (
 	ErrInvalidRange = errors.New("the range is invalid")
 )
 
-// MaxReadBytes is the most bytes one ReadBytes returns.
 const MaxReadBytes = 4 << 20
 
 // MoveFileResult is the count of files under the new path.
@@ -29,29 +28,6 @@ type ByteRange struct {
 	Content []byte
 	Stat    domain.FileStat
 }
-
-// FileMover files a file of any kind, or a folder with everything under it, somewhere else, or in the trash.
-// A baseline that names a file the caller last saw yields ErrStale when the file changed; a folder has none.
-type FileMover interface {
-	MoveFile(ctx context.Context, from, to string, baseline *domain.FileStat) (MoveFileResult, error)
-	RemoveFile(ctx context.Context, path string, baseline *domain.FileStat) (RemoveFileResult, error)
-}
-
-// FileRangeReader reads bytes of any file as they are.
-type FileRangeReader interface {
-	ReadBytes(ctx context.Context, path string, start, length int64) (ByteRange, error)
-}
-
-// FilePlacer moves a file of the plugin's own store folder to a path of the vault in one atomic rename.
-type FilePlacer interface {
-	PlaceFile(ctx context.Context, name, path, expectedHash string, baseline *domain.FileStat) (domain.FileStat, error)
-}
-
-var (
-	_ FileMover       = (*Client)(nil)
-	_ FileRangeReader = (*Client)(nil)
-	_ FilePlacer      = (*Client)(nil)
-)
 
 func (c *Client) MoveFile(ctx context.Context, from, to string, baseline *domain.FileStat) (MoveFileResult, error) {
 	res, err := c.files.MoveFile(ctx, request(c, &v1.HostFileServiceMoveFileRequest{From: from, To: to, Baseline: writeFileStat(readBaseline(baseline))}))

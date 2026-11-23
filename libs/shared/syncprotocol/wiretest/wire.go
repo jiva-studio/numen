@@ -1,4 +1,5 @@
-package synctest
+// Package wiretest is test support: what a test needs to look at the protocol messages as the server holds them.
+package wiretest
 
 import (
 	"google.golang.org/protobuf/proto"

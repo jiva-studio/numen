@@ -10,11 +10,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
-// applyMove moves the local file to the new path of a metadata-only revision. It reports whether the revision is
-// dealt with; a file that is not there to move is left to the download.
-func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, record note.FileRecord, localAtNew string) (bool, error) {
+func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, record transfer.FileRecord, localAtNew string) (bool, error) {
 	if localAtNew == meta.Hash {
 		return true, r.adopt(ctx, stored, meta, record, true)
 	}
@@ -39,10 +38,8 @@ func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta
 
 type folderMove struct{ from, to string }
 
-// applyFolderMoves moves a folder whole when the page moves every file under it to one other folder, so the folder
-// never shows half of itself.
 func (r *run) applyFolderMoves(ctx context.Context, page []*syncv1.StoredRevision) error {
-	groups := map[folderMove][]note.FileRecord{}
+	groups := map[folderMove][]transfer.FileRecord{}
 	for _, stored := range page {
 		meta, checkErr := r.check(stored)
 		record, isKnown := r.getRecord(stored.GetRevision().GetFileId())
@@ -60,7 +57,6 @@ func (r *run) applyFolderMoves(ctx context.Context, page []*syncv1.StoredRevisio
 	return nil
 }
 
-// getFolderMove strips the longest common tail of segments from both paths.
 func getFolderMove(from, to string) folderMove {
 	a, b := strings.Split(from, "/"), strings.Split(to, "/")
 	for len(a) > 1 && len(b) > 1 && a[len(a)-1] == b[len(b)-1] {
@@ -69,7 +65,7 @@ func getFolderMove(from, to string) folderMove {
 	return folderMove{from: path.Join(a...), to: path.Join(b...)}
 }
 
-func (r *run) moveFolder(ctx context.Context, group folderMove, moved []note.FileRecord) error {
+func (r *run) moveFolder(ctx context.Context, group folderMove, moved []transfer.FileRecord) error {
 	under := 0
 	for _, record := range r.records {
 		if strings.HasPrefix(record.Path, group.from+"/") {
@@ -96,8 +92,8 @@ func (r *run) moveFolder(ctx context.Context, group folderMove, moved []note.Fil
 	}
 	r.records = slices.Clone(r.records)
 	for i, record := range r.records {
-		if strings.HasPrefix(record.Path, group.from+"/") {
-			r.records[i].Path = path.Join(group.to, strings.TrimPrefix(record.Path, group.from+"/"))
+		if rest, isUnder := strings.CutPrefix(record.Path, group.from+"/"); isUnder {
+			r.records[i].Path = path.Join(group.to, rest)
 		}
 	}
 	return nil

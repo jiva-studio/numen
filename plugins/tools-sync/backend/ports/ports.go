@@ -12,6 +12,7 @@ import (
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
 
@@ -104,8 +105,8 @@ type Links interface {
 
 // Records keeps what is known of the synced notes of each vault.
 type Records interface {
-	ReadRecords(ctx context.Context, id domain.VaultID) ([]note.FileRecord, error)
-	WriteRecords(ctx context.Context, id domain.VaultID, records []note.FileRecord) error
+	ReadRecords(ctx context.Context, id domain.VaultID) ([]transfer.FileRecord, error)
+	WriteRecords(ctx context.Context, id domain.VaultID, records []transfer.FileRecord) error
 }
 
 // Status is how the last pass over a vault ended.
@@ -151,7 +152,7 @@ type Subscriptions interface {
 	CreateCheckout(ctx context.Context) (string, error)
 }
 
-// Pauses says whether the removals of a vault wait for an answer.
+// Pauses reports whether the removals of a vault wait for an answer.
 type Pauses interface {
 	HasPending(ctx context.Context, id domain.VaultID) (bool, error)
 }

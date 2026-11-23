@@ -78,7 +78,7 @@ func TestSealer_StoresTheBytesTheFormatDefinesForPlainBodiesOfEverySizeAroundASt
 	}
 }
 
-func TestSealer_GivesTheBytesOfSealForTheSameSaltKeyAndPlainWhenNothingIsCompressed(t *testing.T) {
+func TestSealer_ReturnsTheBytesOfSealForTheSameSaltKeyAndPlainWhenNothingIsCompressed(t *testing.T) {
 	t.Parallel()
 	l := newLayout()
 	plain := newPlain(2*mebibyte + 5)
@@ -188,7 +188,7 @@ func TestSealer_NeverAsksTheSourceForMoreThanOneChunkAtOnceForAFileOfSeventyMebi
 	}
 }
 
-func TestSealer_GivesTheSameBytesForTheSameSaltAndOtherBytesForAnotherSalt(t *testing.T) {
+func TestSealer_ReturnsTheSameBytesForTheSameSaltAndOtherBytesForAnotherSalt(t *testing.T) {
 	t.Parallel()
 	l := newLayout()
 	plain := newPlain(mebibyte + 1)

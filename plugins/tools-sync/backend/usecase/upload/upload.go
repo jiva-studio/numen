@@ -52,18 +52,16 @@ func (u *UploadFile) Forget(ctx context.Context, vault domain.VaultID, fileID []
 
 // plainReader reads a file by ranges and ends with ErrFileChanged when its stat is not the one it began with.
 type plainReader struct {
-	ctx    context.Context
-	source rangeReader
-	path   string
-	stat   domain.FileStat
-	size   int64
+	read func(start, length int64) (host.ByteRange, error)
+	stat domain.FileStat
+	size int64
 }
 
 func (r *plainReader) ReadAt(p []byte, off int64) (int, error) {
 	count := 0
 	for count < len(p) && off+int64(count) < r.size {
 		length := min(int64(len(p)-count), host.MaxReadBytes)
-		got, err := r.source.ReadBytes(r.ctx, r.path, off+int64(count), length)
+		got, err := r.read(off+int64(count), length)
 		if err != nil {
 			return count, err
 		}
@@ -92,9 +90,4 @@ func readAll(r io.ReaderAt, size int64) ([]byte, error) {
 		return nil, err
 	}
 	return whole, nil
-}
-
-// rangeReader reads bytes of any file as they are.
-type rangeReader interface {
-	ReadBytes(ctx context.Context, path string, start, length int64) (host.ByteRange, error)
 }

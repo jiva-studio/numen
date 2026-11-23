@@ -19,14 +19,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
 const syncer = "md.numen.syncer"
 
-// fileOpsVault is a vault on disk with the calls for files of any kind. Moves and removals run through the
-// use cases the window runs, which these tests do not build: they reach the checks that come first.
 func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.Vault, *atomic.Int32) {
 	t.Helper()
 	v := vaulttest.NewVault(t, files)
@@ -37,15 +36,17 @@ func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.
 		indexed.Add(int32(len(paths)))
 		return nil
 	}
+	scan := file.NewScanFiles(index)
+	count := file.NewCountFiles(vaultreader.Readers{})
 	stores := derivedfile.PluginStores{}
 	return NewAccess(
 		Session{Current: func() (domain.Vault, bool) { return v, true }},
 		Files{Stat: stat, Bytes: file.NewReadBytes(vaultreader.Readers{}, stat)},
 		Writer{
-			Index:   file.NewScanFiles(index),
-			Stat:    stat,
-			Readers: vaultreader.Readers{},
-			Folders: writers,
+			Index:  scan,
+			Place:  file.NewPlaceStaged(stat, scan, writers),
+			Move:   note.NewMoveChecked(note.MoveFile{}, count, stat),
+			Remove: note.NewRemoveChecked(note.RemoveFile{}, count, stat),
 			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
 				return stores.Open(v, pluginID)
 			},
@@ -147,7 +148,7 @@ func TestReadFileRangeHashesAgainWhenTheFileChanged(t *testing.T) {
 	}
 }
 
-func TestPlaceFileMakesTheStagedFileTheFileOfThePathAndIndexesItAndTakesTheStagedFileAway(t *testing.T) {
+func TestPlaceFileMakesTheStagedFileTheFileOfThePathAndIndexesItAndRemovesTheStagedFile(t *testing.T) {
 	access, v, indexed := fileOpsVault(t, nil)
 	stage(t, v, "ab.part", "the whole file")
 
@@ -229,7 +230,7 @@ func TestPlaceFileWithABaselineReplacesTheFileItNamesAndRefusesOneThatChanged(t 
 	}
 }
 
-func TestPlaceFileWithABaselineOfAFileThatIsGoneIsStale(t *testing.T) {
+func TestPlaceFileWithABaselineOfAFileThatIsMissingIsStale(t *testing.T) {
 	access, v, _ := fileOpsVault(t, nil)
 	stage(t, v, "ab.part", "x")
 	baseline := domain.FileStat{Path: "Gone.pdf", Hash: "h", Size: 1, ModTime: time.Unix(1, 0)}

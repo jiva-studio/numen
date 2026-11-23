@@ -73,7 +73,6 @@ func (u *Uploader) Resume(ctx context.Context, vault, blob []byte) (transfer.Upl
 	return transfer.Upload{Vault: vault, URL: "", Blob: blob, PartSize: 0, PartCount: 0, Done: done}, nil
 }
 
-// PutPart sends the body as part number of the upload.
 func (u *Uploader) PutPart(ctx context.Context, up transfer.Upload, number int, body []byte) error {
 	if up.URL != "" {
 		return syncclient.PutBlob(ctx, u.cloud.http, up.URL, body)
@@ -137,7 +136,6 @@ func (u *Uploader) Abort(ctx context.Context, up transfer.Upload) error {
 // Blobs reads blobs from the sync server whole or from a byte on.
 type Blobs struct{ cloud *Cloud }
 
-// NewBlobs returns the blobs of the server.
 func NewBlobs(cloud *Cloud) *Blobs { return &Blobs{cloud: cloud} }
 
 func (b *Blobs) getURL(ctx context.Context, vault, blob []byte) (string, error) {
@@ -160,7 +158,6 @@ func (b *Blobs) GetBlob(ctx context.Context, vault, blob []byte) ([]byte, error)
 	return b.cloud.GetBlob(ctx, url)
 }
 
-// OpenBlob streams a blob from the byte from.
 func (b *Blobs) OpenBlob(ctx context.Context, vault, blob []byte, from int64) (io.ReadCloser, error) {
 	url, err := b.getURL(ctx, vault, blob)
 	if err != nil {

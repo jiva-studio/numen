@@ -81,7 +81,7 @@ func (u *DetectMoves) Execute(ctx context.Context, in transfer.ScanInput) (trans
 	return scan, u.deps.State.WriteAbsences(ctx, in.VaultID, kept)
 }
 
-func (u *DetectMoves) isGone(ctx context.Context, in transfer.ScanInput, record note.FileRecord) (bool, error) {
+func (u *DetectMoves) isGone(ctx context.Context, in transfer.ScanInput, record transfer.FileRecord) (bool, error) {
 	_, err := u.deps.Host.Files(in.VaultID).StatFile(ctx, record.Path)
 	if errors.Is(err, host.ErrNotExist) {
 		return true, nil
@@ -89,8 +89,7 @@ func (u *DetectMoves) isGone(ctx context.Context, in transfer.ScanInput, record 
 	return false, err
 }
 
-// split returns the records whose file is not in the vault and the settled files that have no record.
-func (u *DetectMoves) split(seen map[string]note.Seen, records []note.FileRecord) (gone []note.FileRecord, fresh map[string]note.Seen) {
+func (u *DetectMoves) split(seen map[string]note.Seen, records []transfer.FileRecord) (gone []transfer.FileRecord, fresh map[string]note.Seen) {
 	byPath := map[string]bool{}
 	for _, record := range records {
 		byPath[record.Path] = true
@@ -108,7 +107,7 @@ func (u *DetectMoves) split(seen map[string]note.Seen, records []note.FileRecord
 	return gone, fresh
 }
 
-func pairMoves(gone []note.FileRecord, fresh map[string]note.Seen) []transfer.Move {
+func pairMoves(gone []transfer.FileRecord, fresh map[string]note.Seen) []transfer.Move {
 	goneCount, freshCount := map[key]int{}, map[key]int{}
 	for _, record := range gone {
 		goneCount[key{record.BaseHash, record.Size}]++

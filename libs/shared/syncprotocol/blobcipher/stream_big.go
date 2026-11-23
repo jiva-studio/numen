@@ -52,7 +52,6 @@ func NewSealer(revisionKey [32]byte, fileID [16]byte, salt [16]byte, plainSize i
 	return s, nil
 }
 
-// GenerateSalt reads a salt from random.
 func GenerateSalt(random io.Reader) ([16]byte, error) {
 	var salt [16]byte
 	if _, err := io.ReadFull(random, salt[:]); err != nil {
@@ -133,7 +132,6 @@ func ParseHeader(header []byte) (Header, error) {
 	return Header{Flags: flags, ChunkLog2: chunkLog2}, nil
 }
 
-// GetChunkOffset is the stored offset of a chunk.
 func GetChunkOffset(chunkLog2 byte, chunkIndex uint64) int64 {
 	return headerSize + int64(chunkIndex)*(int64(1)<<chunkLog2+tagSize)
 }

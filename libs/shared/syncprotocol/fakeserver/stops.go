@@ -16,7 +16,6 @@ func (a *stopAfter) arm(bytes int64) {
 	a.isArmed, a.left = true, bytes
 }
 
-// take counts bytes and returns how many may pass and whether the budget ended with them.
 func (a *stopAfter) take(bytes int64) (allowed int64, isEnd bool) {
 	if !a.isArmed {
 		return bytes, false
@@ -30,7 +29,7 @@ func (a *stopAfter) take(bytes int64) (allowed int64, isEnd bool) {
 	return allowed, true
 }
 
-func (s *Server) countReceived(bytes int64) {
+func (s *Server) countReceivedBytes(bytes int64) {
 	if _, isEnd := s.stopUpload.take(bytes); isEnd {
 		s.requestStop()
 	}
@@ -60,7 +59,6 @@ func (s *Server) serveStopAfter(direction *stopAfter) http.HandlerFunc {
 	}
 }
 
-// sendBody answers a GET of a stored body, from the byte of a "Range: bytes=<from>-" header when there is one.
 func (s *Server) sendBody(w http.ResponseWriter, r *http.Request, id string, body []byte) {
 	from, status := int64(0), http.StatusOK
 	if header := r.Header.Get("Range"); header != "" {
@@ -88,6 +86,7 @@ func (s *Server) sendBody(w http.ResponseWriter, r *http.Request, id string, bod
 		return
 	}
 	if isEnd {
+		_ = http.NewResponseController(w).Flush()
 		s.requestStop()
 		panic(http.ErrAbortHandler)
 	}

@@ -79,7 +79,6 @@ func getPauseText(state transfer.PausedRemovals) string {
 	return fmt.Sprintf("Sync is paused: %d of %d files are removed", len(state.Files), state.Tracked)
 }
 
-// takeAnswer returns the answer the person gave to a pause of this direction, once.
 func (u *GuardDeletions) takeAnswer(ctx context.Context, in transfer.GuardInput) (transfer.Verdict, bool, error) {
 	if u.deps.Approvals == nil {
 		return 0, false, nil

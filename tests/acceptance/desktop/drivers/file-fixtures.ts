@@ -7,7 +7,6 @@ const DEFAULT_SIZE = 64 * 1024
 const PDF_HEADER = '%PDF-1.7\n%âãÏÓ\n'
 const PNG_HEADER = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 
-/** Fills a buffer from the position `from` with the bytes of a generator seeded by the text, so a longer buffer starts with a shorter one. */
 const fillFrom = (target: Buffer, from: number, seed: Buffer | string): void => {
   const digest = createHash('sha256').update(seed).digest()
   let a = digest.readUInt32LE(0) || 1
@@ -37,7 +36,7 @@ const getHeader = (filePath: string): Buffer => {
   return Buffer.alloc(0)
 }
 
-/** The bytes of a file of the path: a PDF header and bytes for ".pdf", a PNG for ".png", other bytes otherwise, all seeded by the path. */
+/** The bytes of a file of the path: a PDF header and bytes for ".pdf", a PNG for ".png", other bytes otherwise, all seeded by the path. A longer fixture of the same path starts with the bytes of a shorter one. */
 export const buildFixture = (filePath: string, megabytes?: number): Buffer => {
   const size = megabytes === undefined ? DEFAULT_SIZE : megabytes * MEGABYTE
   const header = getHeader(filePath)

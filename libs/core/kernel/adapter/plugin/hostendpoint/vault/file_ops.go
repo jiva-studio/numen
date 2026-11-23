@@ -26,7 +26,7 @@ func (e *filesCalls) MoveFile(
 			return &v1.HostFileServiceMoveFileResponse{Error: code}
 		},
 		func(vault *Access) (*v1.HostFileServiceMoveFileResponse, error) {
-			count, err := vault.Ops.MoveFile(ctx, req.Msg.GetFrom(), req.Msg.GetTo(), readBaseline(req.Msg.Baseline))
+			count, err := vault.Ops.MoveFile(ctx, req.Msg.GetFrom(), req.Msg.GetTo(), readBaseline(req.Msg.GetBaseline()))
 			if err != nil {
 				return nil, err
 			}
@@ -42,7 +42,7 @@ func (e *filesCalls) RemoveFile(
 			return &v1.HostFileServiceRemoveFileResponse{Error: code}
 		},
 		func(vault *Access) (*v1.HostFileServiceRemoveFileResponse, error) {
-			count, err := vault.Ops.RemoveFile(ctx, req.Msg.GetPath(), readBaseline(req.Msg.Baseline))
+			count, err := vault.Ops.RemoveFile(ctx, req.Msg.GetPath(), readBaseline(req.Msg.GetBaseline()))
 			if err != nil {
 				return nil, err
 			}
@@ -74,7 +74,7 @@ func (e *filesCalls) PlaceFile(
 	if vault == nil {
 		return connect.NewResponse(&v1.PlaceFileResponse{Error: noVault}), nil
 	}
-	stat, err := vault.Ops.PlaceFile(ctx, pluginID, req.Msg.GetName(), req.Msg.GetPath(), req.Msg.GetExpectedHash(), readBaseline(req.Msg.Baseline))
+	stat, err := vault.Ops.PlaceFile(ctx, pluginID, req.Msg.GetName(), req.Msg.GetPath(), req.Msg.GetExpectedHash(), readBaseline(req.Msg.GetBaseline()))
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.PlaceFileResponse{Error: code}), err

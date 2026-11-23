@@ -208,7 +208,7 @@ func serveRangeStorage(tb testing.TB, object []byte, ignoresRange bool) (*rangeS
 	return store, server.URL + "/object"
 }
 
-func TestPutPart_SendsTheBodyWithItsLengthAndNoBearerOrVersionHeader(t *testing.T) {
+func TestUploadPart_SendsTheBodyWithItsLengthAndNoBearerOrVersionHeader(t *testing.T) {
 	t.Parallel()
 	store, url := serveStorage(t)
 	body := bytes.Repeat([]byte{0x33}, 5<<20)
@@ -226,7 +226,7 @@ func TestPutPart_SendsTheBodyWithItsLengthAndNoBearerOrVersionHeader(t *testing.
 	}
 }
 
-func TestPutPart_ReportsAnAnswerThatIsNotASuccess(t *testing.T) {
+func TestUploadPart_ReportsAnAnswerThatIsNotASuccess(t *testing.T) {
 	t.Parallel()
 	store, url := serveStorage(t)
 	store.status = http.StatusForbidden

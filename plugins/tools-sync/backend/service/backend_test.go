@@ -6,8 +6,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/service"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 )
 
 type world struct {

@@ -123,7 +123,7 @@ func TestGuardDeletions_PausesAtFiveFilesAndMoreThanThirtyPercent(t *testing.T) 
 	}
 }
 
-func TestGuardDeletions_KeepsTheFilesTheCountAndTheDirectionOfAPauseAndSaysSoInTheHealthItem(t *testing.T) {
+func TestGuardDeletions_KeepsTheFilesTheCountAndTheDirectionOfAPauseAndReportsThemInTheHealthItem(t *testing.T) {
 	t.Parallel()
 	s := newSetup()
 
@@ -139,7 +139,7 @@ func TestGuardDeletions_KeepsTheFilesTheCountAndTheDirectionOfAPauseAndSaysSoInT
 	}
 }
 
-func TestGuardDeletions_SaysThatFilesWereRemovedOnAnotherComputerForAnApply(t *testing.T) {
+func TestGuardDeletions_ReportsThatFilesWereRemovedOnAnotherComputerForAnApply(t *testing.T) {
 	t.Parallel()
 	s := newSetup()
 
@@ -169,7 +169,7 @@ func TestGuardDeletions_KeepsPausingWithoutAskingAgainOrChangingThePendingList(t
 	}
 }
 
-func TestGuardDeletions_PausesAVaultAndLeavesAnotherVaultGoing(t *testing.T) {
+func TestGuardDeletions_PausesAVaultAndDoesNotPauseAnotherVault(t *testing.T) {
 	t.Parallel()
 	s := newSetup()
 	s.check(t, transfer.DirectionSend, 6, 10)

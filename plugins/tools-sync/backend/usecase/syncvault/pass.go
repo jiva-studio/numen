@@ -91,14 +91,14 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 		return true, p.rewind(ctx)
 	}
 	isRetry := false
-	for _, step := range []func(context.Context, transfer.Vault, []note.FileRecord) ([]note.FileRecord, bool, error){
-		func(ctx context.Context, v transfer.Vault, r []note.FileRecord) ([]note.FileRecord, bool, error) {
+	for _, step := range []func(context.Context, transfer.Vault, []transfer.FileRecord) ([]transfer.FileRecord, bool, error){
+		func(ctx context.Context, v transfer.Vault, r []transfer.FileRecord) ([]transfer.FileRecord, bool, error) {
 			return p.sendMoves(ctx, v, r, scan.Moves)
 		},
-		func(ctx context.Context, v transfer.Vault, r []note.FileRecord) ([]note.FileRecord, bool, error) {
+		func(ctx context.Context, v transfer.Vault, r []transfer.FileRecord) ([]transfer.FileRecord, bool, error) {
 			return p.sendRemovals(ctx, v, r, removals)
 		},
-		func(ctx context.Context, v transfer.Vault, r []note.FileRecord) ([]note.FileRecord, bool, error) {
+		func(ctx context.Context, v transfer.Vault, r []transfer.FileRecord) ([]transfer.FileRecord, bool, error) {
 			return p.sendFiles(ctx, v, r, withoutMoved(changes, scan.Moves))
 		},
 	} {
@@ -117,8 +117,7 @@ func withoutMoved(changes []transfer.Change, moves []transfer.Move) []transfer.C
 	})
 }
 
-// guard asks whether the removals may be sent. A pause leaves the whole pass of the vault where it is.
-func (p *pass) guard(ctx context.Context, removals []note.FileRecord, tracked int) ([]note.FileRecord, transfer.Verdict, error) {
+func (p *pass) guard(ctx context.Context, removals []transfer.FileRecord, tracked int) ([]transfer.FileRecord, transfer.Verdict, error) {
 	if len(removals) == 0 {
 		return nil, transfer.Go, nil
 	}
@@ -130,7 +129,6 @@ func (p *pass) guard(ctx context.Context, removals []note.FileRecord, tracked in
 	return removals, verdict, err
 }
 
-// rewind makes the next pull read the vault from the start, so the files the person chose to keep are downloaded again.
 func (p *pass) rewind(ctx context.Context) error {
 	link, err := p.use.deps.State.ReadLink(ctx, p.id)
 	if err != nil {
@@ -140,7 +138,7 @@ func (p *pass) rewind(ctx context.Context) error {
 	return p.use.deps.State.WriteLink(ctx, p.id, link)
 }
 
-func (p *pass) sendMoves(ctx context.Context, vault transfer.Vault, records []note.FileRecord, moves []transfer.Move) ([]note.FileRecord, bool, error) {
+func (p *pass) sendMoves(ctx context.Context, vault transfer.Vault, records []transfer.FileRecord, moves []transfer.Move) ([]transfer.FileRecord, bool, error) {
 	if len(moves) == 0 {
 		return records, false, nil
 	}
@@ -151,7 +149,7 @@ func (p *pass) sendMoves(ctx context.Context, vault transfer.Vault, records []no
 	return p.apply(records, outcomes), hasMismatch(outcomes), nil
 }
 
-func (p *pass) sendRemovals(ctx context.Context, vault transfer.Vault, records, removals []note.FileRecord) ([]note.FileRecord, bool, error) {
+func (p *pass) sendRemovals(ctx context.Context, vault transfer.Vault, records, removals []transfer.FileRecord) ([]transfer.FileRecord, bool, error) {
 	if len(removals) == 0 {
 		return records, false, nil
 	}
@@ -161,13 +159,13 @@ func (p *pass) sendRemovals(ctx context.Context, vault transfer.Vault, records, 
 	}
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
-			records = slices.DeleteFunc(records, func(one note.FileRecord) bool { return bytes.Equal(one.FileID, outcome.FileID) })
+			records = slices.DeleteFunc(records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, outcome.FileID) })
 		}
 	}
 	return records, hasMismatch(outcomes), nil
 }
 
-func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []note.FileRecord, changes []transfer.Change) ([]note.FileRecord, bool, error) {
+func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []transfer.FileRecord, changes []transfer.Change) ([]transfer.FileRecord, bool, error) {
 	files, err := p.readFiles(ctx, records, changes)
 	if err != nil || len(files) == 0 {
 		return records, false, err
@@ -200,9 +198,6 @@ type repeat struct {
 	file  transfer.File
 }
 
-// getEditsOverRemovals lists the files a person changed that the server refused for a head that is a removal, to be
-// committed again as children of the removal, and the files whose removal the server has pruned, to be committed
-// again with no parent: a change wins over a removal.
 func getEditsOverRemovals(files []transfer.File, outcomes []transfer.Outcome) []repeat {
 	var again []repeat
 	for i, outcome := range outcomes {
@@ -229,7 +224,7 @@ func hasMismatch(outcomes []transfer.Outcome) bool {
 	})
 }
 
-func (p *pass) apply(records []note.FileRecord, outcomes []transfer.Outcome) []note.FileRecord {
+func (p *pass) apply(records []transfer.FileRecord, outcomes []transfer.Outcome) []transfer.FileRecord {
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.Committed {
 			records = setRecord(records, outcome.Record)
@@ -238,7 +233,7 @@ func (p *pass) apply(records []note.FileRecord, outcomes []transfer.Outcome) []n
 	return records
 }
 
-func getBases(records []note.FileRecord) map[string]string {
+func getBases(records []transfer.FileRecord) map[string]string {
 	bases := make(map[string]string, len(records))
 	for _, record := range records {
 		bases[record.Path] = record.BaseHash
@@ -246,7 +241,7 @@ func getBases(records []note.FileRecord) map[string]string {
 	return bases
 }
 
-func (p *pass) readFiles(ctx context.Context, records []note.FileRecord, changes []transfer.Change) ([]transfer.File, error) {
+func (p *pass) readFiles(ctx context.Context, records []transfer.FileRecord, changes []transfer.Change) ([]transfer.File, error) {
 	var files []transfer.File
 	reader := p.use.deps.Host.Transfers(p.id)
 	for _, change := range changes {
@@ -273,7 +268,7 @@ func (p *pass) readFiles(ctx context.Context, records []note.FileRecord, changes
 			}
 			file.Content = part.Content
 		}
-		if at := slices.IndexFunc(records, func(one note.FileRecord) bool { return one.Path == change.Path }); at >= 0 {
+		if at := slices.IndexFunc(records, func(one transfer.FileRecord) bool { return one.Path == change.Path }); at >= 0 {
 			file.FileID, file.ParentRev = records[at].FileID, records[at].HeadRev
 		}
 		files = append(files, file)
@@ -297,8 +292,8 @@ func (p *pass) openVault(ctx context.Context) (transfer.Vault, error) {
 	return transfer.Vault{ID: remote, Key: [32]byte(key)}, nil
 }
 
-func setRecord(records []note.FileRecord, record note.FileRecord) []note.FileRecord {
-	at := slices.IndexFunc(records, func(one note.FileRecord) bool { return bytes.Equal(one.FileID, record.FileID) })
+func setRecord(records []transfer.FileRecord, record transfer.FileRecord) []transfer.FileRecord {
+	at := slices.IndexFunc(records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, record.FileID) })
 	if at < 0 {
 		return append(records, record)
 	}

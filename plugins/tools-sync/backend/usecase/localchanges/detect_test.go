@@ -7,18 +7,18 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/testsupport/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 )
 
-func newRecord(number byte, path, content string) note.FileRecord {
-	return note.FileRecord{
+func newRecord(number byte, path, content string) transfer.FileRecord {
+	return transfer.FileRecord{
 		FileID: bytes.Repeat([]byte{number}, 16), Path: path, BaseHash: note.Hash([]byte(content)), HeadRev: []byte{number}, Size: int64(len(content)),
 		ModifiedAt: 0, Kind: note.Kind(path), BlobID: nil, BlobHash: nil, BlobSize: 0, SealedKey: nil,
 	}
 }
 
-func getBases(records []note.FileRecord) map[string]string {
+func getBases(records []transfer.FileRecord) map[string]string {
 	bases := map[string]string{}
 	for _, record := range records {
 		bases[record.Path] = record.BaseHash
@@ -26,8 +26,7 @@ func getBases(records []note.FileRecord) map[string]string {
 	return bases
 }
 
-// detect looks at the vault as a pass does: the scan of changes first, then the search for moved and removed files.
-func detect(t *testing.T, c *synctest.Computer, records []note.FileRecord) transfer.Scan {
+func detect(t *testing.T, c *synctest.Computer, records []transfer.FileRecord) transfer.Scan {
 	t.Helper()
 	in := transfer.ScanInput{VaultID: vault, Bases: getBases(records), Records: records}
 	if _, err := localchanges.NewScanLocalChanges(c.LocalChangesDeps()).Execute(t.Context(), in); err != nil {
@@ -50,7 +49,7 @@ func getRemovedPaths(scan transfer.Scan) []string {
 
 func TestDetectMoves_FindsAFileThatIsMissingAndAFileWithItsHashAndSizeAsAMove(t *testing.T) {
 	c := newComputer(t)
-	records := []note.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
+	records := []transfer.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 	c.WriteNote(vault, "Papers/Old report.pdf", "pdf bytes")
 
 	found := detect(t, c, records)
@@ -65,7 +64,7 @@ func TestDetectMoves_FindsAFileThatIsMissingAndAFileWithItsHashAndSizeAsAMove(t 
 
 func TestDetectMoves_FindsNoMoveWhenTwoNewFilesHaveTheHashOfTheMissingFile(t *testing.T) {
 	c := newComputer(t)
-	records := []note.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
+	records := []transfer.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 	c.WriteNote(vault, "Papers/Copy 1.pdf", "pdf bytes")
 	c.WriteNote(vault, "Papers/Copy 2.pdf", "pdf bytes")
 
@@ -78,7 +77,7 @@ func TestDetectMoves_FindsNoMoveWhenTwoNewFilesHaveTheHashOfTheMissingFile(t *te
 
 func TestDetectMoves_FindsNoMoveWhenTwoMissingFilesHaveTheHashOfTheNewFile(t *testing.T) {
 	c := newComputer(t)
-	records := []note.FileRecord{newRecord(1, "Papers/A.pdf", "pdf bytes"), newRecord(2, "Papers/B.pdf", "pdf bytes")}
+	records := []transfer.FileRecord{newRecord(1, "Papers/A.pdf", "pdf bytes"), newRecord(2, "Papers/B.pdf", "pdf bytes")}
 	c.WriteNote(vault, "Papers/C.pdf", "pdf bytes")
 
 	found := detect(t, c, records)
@@ -90,7 +89,7 @@ func TestDetectMoves_FindsNoMoveWhenTwoMissingFilesHaveTheHashOfTheNewFile(t *te
 
 func TestDetectMoves_FindsNoMoveForAFileWithTheSizeButNotTheHash(t *testing.T) {
 	c := newComputer(t)
-	records := []note.FileRecord{newRecord(1, "Papers/Report.pdf", "aaaa")}
+	records := []transfer.FileRecord{newRecord(1, "Papers/Report.pdf", "aaaa")}
 	c.WriteNote(vault, "Papers/Other.pdf", "bbbb")
 
 	found := detect(t, c, records)
@@ -102,7 +101,7 @@ func TestDetectMoves_FindsNoMoveForAFileWithTheSizeButNotTheHash(t *testing.T) {
 
 func TestDetectMoves_FindsNoMoveToAFileThatIsNotThePersons(t *testing.T) {
 	c := newComputer(t)
-	records := []note.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
+	records := []transfer.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 	c.WriteNote(vault, "Papers/Report.pdf.part", "pdf bytes")
 
 	found := detect(t, c, records)
@@ -114,7 +113,7 @@ func TestDetectMoves_FindsNoMoveToAFileThatIsNotThePersons(t *testing.T) {
 
 func TestDetectMoves_WaitsForAFileYoungerThanTenSecondsBeforeItCallsItAMove(t *testing.T) {
 	c := newComputer(t)
-	records := []note.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
+	records := []transfer.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 	c.WriteNote(vault, "Papers/Old report.pdf", "pdf bytes")
 	stat, err := c.Vaults.With(vault).StatFile(t.Context(), "Papers/Old report.pdf")
 	if err != nil {
@@ -136,7 +135,7 @@ func TestDetectMoves_WaitsForAFileYoungerThanTenSecondsBeforeItCallsItAMove(t *t
 
 func TestDetectMoves_ListsAFileAsRemovedOnlyOnceItStayedMissingForTheDelay(t *testing.T) {
 	c := newComputer(t)
-	records := []note.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
+	records := []transfer.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 
 	first := detect(t, c, records)
 	c.Clock.Advance(synctest.RemovalDelay / 2)
@@ -152,9 +151,9 @@ func TestDetectMoves_ListsAFileAsRemovedOnlyOnceItStayedMissingForTheDelay(t *te
 	}
 }
 
-func TestDetectMoves_CountsTheDelayAgainForAFileThatCameBackAndWentAgain(t *testing.T) {
+func TestDetectMoves_CountsTheDelayAgainForAFileThatWasRestoredAndRemovedAgain(t *testing.T) {
 	c := newComputer(t)
-	records := []note.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
+	records := []transfer.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 	detect(t, c, records)
 	c.Clock.Advance(600 * time.Millisecond)
 	c.WriteNote(vault, "Papers/Report.pdf", "pdf bytes edited")
@@ -178,7 +177,7 @@ func TestDetectMoves_CountsTheDelayAgainForAFileThatCameBackAndWentAgain(t *test
 
 func TestDetectMoves_DoesNotListAFileThatIsInTheVaultAsRemoved(t *testing.T) {
 	c := newComputer(t)
-	records := []note.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
+	records := []transfer.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 	c.WriteNote(vault, "Papers/Report.pdf", "pdf bytes")
 	in := transfer.ScanInput{VaultID: vault, Bases: getBases(records), Records: records}
 	detectOnly := localchanges.NewDetectMoves(c.DetectDeps())

@@ -53,7 +53,6 @@ func (k *keeper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// exitWhenStopped ends the process once a request ended after the server asked to stop, so the data is saved.
 func (k *keeper) exitWhenStopped() {
 	if k.stopped.Load() {
 		k.once.Do(func() { close(k.exit) })

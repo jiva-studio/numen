@@ -13,12 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
-var (
-	_ host.FileMover       = (*Vault)(nil)
-	_ host.FileRangeReader = (*Vault)(nil)
-	_ host.FilePlacer      = (*Vault)(nil)
-)
-
 type fileMove struct{ from, target string }
 
 // MoveFile files a file, or a folder with everything under it, somewhere else. It repairs no link.
@@ -83,7 +77,6 @@ func (v *Vault) checkBaseline(filePath string, baseline *domain.FileStat) error 
 	return nil
 }
 
-// listEntry returns the file at the path, or the files under the folder at it.
 func (v *Vault) listEntry(entry string) (files []string, isFolder bool, err error) {
 	if v.isPresent(entry) {
 		return []string{entry}, false, nil
@@ -104,7 +97,7 @@ func (v *Vault) listEntry(entry string) (files []string, isFolder bool, err erro
 }
 
 // RemoveFile moves a file, or a folder with everything under it, to the trash. The trash is the folder
-// ".trash" of the vault, and Trashed lists what it holds.
+// ".trash" of the vault, and Trashed lists the paths of the trash.
 func (v *Vault) RemoveFile(ctx context.Context, filePath string, baseline *domain.FileStat) (host.RemoveFileResult, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()

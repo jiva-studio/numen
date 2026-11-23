@@ -24,7 +24,8 @@ func NewAccess(
 	files.session, writer.session, lookups.Notes.session, lookups.Changes.session, lookups.Links.session, arranger.session, stores.session =
 		&session, &session, &session, &session, &session, &session, &session
 	return &vault.Access{
-		Notes: lookups.Notes, Frontmatter: lookups.Changes, FileChanges: lookups.Changes, Links: lookups.Links, Files: files, Ranges: files, Ops: writer, Writer: writer, Arranger: arranger, LinkEditor: LinkEditor{arranger},
+		Notes: lookups.Notes, Frontmatter: lookups.Changes, FileChanges: lookups.Changes, Links: lookups.Links,
+		Files: files, Ranges: files, Ops: writer, Writer: writer, Arranger: arranger, LinkEditor: LinkEditor{arranger},
 		Watch: &session, Switch: &session, Stores: stores, Cache: stores,
 		Locks: writer.Locks,
 	}

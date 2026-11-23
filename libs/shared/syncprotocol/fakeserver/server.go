@@ -40,7 +40,8 @@ func (systemClock) Now() time.Time { return time.Now() }
 // Config sets what the server answers: the protocol version (zero is syncprotocol.Version), the address it
 // tells itself by, the clock of its challenges and sessions (nil reads the clock of the machine), how long a
 // session lives (zero is an hour), the bytes an account may store (zero is 10 GiB) and whether an account needs a
-// subscription to write.
+// subscription to write. BodyDir is the folder that keeps the parts and the objects of multipart uploads in files (empty keeps them in
+// memory); Stop is called when an admin stop-after budget ends, so the host program can exit once it saved the data.
 type Config struct {
 	Protocol   uint32
 	Audience   string
@@ -50,10 +51,8 @@ type Config struct {
 
 	NeedsSubscription bool
 
-	// BodyDir keeps the parts and the objects of multipart uploads in files of this folder; empty keeps them in memory.
 	BodyDir string
-	// Stop is called when an admin stop-after budget ends, so the host program can exit once it saved the data.
-	Stop func()
+	Stop    func()
 }
 
 // Session is a session the server issued and has not ended.

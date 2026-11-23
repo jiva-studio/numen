@@ -36,7 +36,7 @@ func TestMoveFileMovesAFileOfAnyKindWithItsBytes(t *testing.T) {
 	}
 }
 
-func TestMoveFileMovesAFolderWithEverythingUnderItAndCountsTheFiles(t *testing.T) {
+func TestMoveFileMovesAFolderWithEveryFileInsideItAndCountsTheFiles(t *testing.T) {
 	v := newDocuments()
 
 	got, err := v.MoveFile(t.Context(), "Papers", "Archive/Papers", nil)
@@ -110,7 +110,7 @@ func TestRemoveFileMovesAFileToTheTrashAndDestroysNothing(t *testing.T) {
 	}
 }
 
-func TestRemoveFileTakesAFolderWithEverythingUnderItAndRefusesAMissingPath(t *testing.T) {
+func TestRemoveFileTrashesAFolderWithEveryFileInsideItAndRefusesAMissingPath(t *testing.T) {
 	v := newDocuments()
 
 	got, err := v.RemoveFile(t.Context(), "Papers", nil)
@@ -223,7 +223,7 @@ func TestPlaceFileMovesAStagedFileToTheVaultAndEmptiesTheStoreName(t *testing.T)
 	}
 }
 
-func TestPlaceFileRefusesTheWrongHashAndLeavesTheVaultAndTheStagedFileAlone(t *testing.T) {
+func TestPlaceFileRefusesTheWrongHashAndChangesNeitherTheVaultNorTheStagedFile(t *testing.T) {
 	v := hosttest.New("Documents")
 	v.File("Papers/Report.pdf", "old")
 	seen := statOf(t, v, "Papers/Report.pdf")

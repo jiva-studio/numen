@@ -16,7 +16,7 @@ func (b *Backend) WithDeletions(pending ports.PausedStore, resolve *deletions.Re
 	return b
 }
 
-func (b *Backend) getPaused(ctx context.Context, id domain.VaultID) (*api.PausedDeletions, error) {
+func (b *Backend) getPausedRemovals(ctx context.Context, id domain.VaultID) (*api.PausedDeletions, error) {
 	if b.pending == nil {
 		return nil, nil
 	}
@@ -24,7 +24,7 @@ func (b *Backend) getPaused(ctx context.Context, id domain.VaultID) (*api.Paused
 	if err != nil || state == nil {
 		return nil, err
 	}
-	return &api.PausedDeletions{Count: len(state.Files), Tracked: state.Tracked, Direction: string(state.Direction)}, nil
+	return &api.PausedDeletions{Count: len(state.Files), Tracked: state.Tracked, Direction: api.Direction(state.Direction)}, nil
 }
 
 // ResolveDeletions takes the answer of the person to the removals of a vault that wait for it.

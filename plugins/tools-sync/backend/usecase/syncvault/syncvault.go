@@ -78,17 +78,15 @@ type Detector interface {
 	Execute(ctx context.Context, in transfer.ScanInput) (transfer.Scan, error)
 }
 
-// MoveCommitter commits moves to the server.
 type MoveCommitter interface {
 	Execute(ctx context.Context, in transfer.MoveInput) ([]transfer.Outcome, error)
 }
 
-// RemovalCommitter commits removals to the server.
 type RemovalCommitter interface {
 	Execute(ctx context.Context, in transfer.RemoveInput) ([]transfer.Outcome, error)
 }
 
-// Guard says whether a pass may send removals.
+// Guard reports whether a pass may send removals.
 type Guard interface {
 	Execute(ctx context.Context, in transfer.GuardInput) (transfer.Verdict, error)
 }

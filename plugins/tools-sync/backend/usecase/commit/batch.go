@@ -25,7 +25,7 @@ type prepared struct {
 	index    int
 	blob     []byte
 	revision *syncv1.Revision
-	record   note.FileRecord
+	record   transfer.FileRecord
 }
 
 func (r *batchRun) execute(ctx context.Context, files []transfer.File) ([]transfer.Outcome, error) {
@@ -88,7 +88,7 @@ func (r *batchRun) seal(ctx context.Context, file transfer.File, index int) (*pr
 	if err != nil {
 		return nil, err
 	}
-	record := note.FileRecord{
+	record := transfer.FileRecord{
 		FileID: fileID, Path: path, BaseHash: meta.Hash, HeadRev: nil, Size: meta.Size, ModifiedAt: meta.MTime, Kind: kind,
 		BlobID: nil, BlobHash: hash[:], BlobSize: uint64(len(blob)), SealedKey: sealedKey,
 	}

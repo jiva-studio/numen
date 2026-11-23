@@ -89,10 +89,8 @@ func (h *SpyHost) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 	return h.inner.GetVaults(ctx)
 }
 
-// Files returns the files of the vault.
 func (h *SpyHost) Files(id domain.VaultID) ports.Files { return h.inner.Files(id) }
 
-// Indexer returns the index of the vault.
 func (h *SpyHost) Indexer(id domain.VaultID) ports.Indexer { return h.inner.Indexer(id) }
 
 // Store returns the store folder of the plugin in the vault.

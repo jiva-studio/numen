@@ -112,8 +112,6 @@ func (u *CommitRemovals) Execute(ctx context.Context, in transfer.RemoveInput) (
 	return outcomes, nil
 }
 
-// commitBatch commits revisions in one call. A batch the server does not commit gives every revision the status of
-// its conflict, or ParentMismatch for the revisions the conflict did not name.
 func commitBatch(ctx context.Context, deps Deps, vault transfer.Vault, revisions []*syncv1.Revision) ([]transfer.Outcome, error) {
 	response, err := deps.Revisions.CommitRevisions(ctx, vault.ID, revisions)
 	if err != nil {
