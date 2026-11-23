@@ -75,7 +75,7 @@ func TestSignAsDevice_ReturnsASignatureThatVerifiesForThePluginID(t *testing.T) 
 
 func TestAHostWithoutAnIdentityAnswersErrNoIdentityToBothCalls(t *testing.T) {
 	fake := accounttest.NewFake(t, pluginID)
-	fake.NoIdentity()
+	fake.RemoveIdentity()
 	client := newClient(t, fake)
 
 	_, signErr := client.SignAsDevice(t.Context(), []byte("challenge"))
@@ -88,7 +88,7 @@ func TestAHostWithoutAnIdentityAnswersErrNoIdentityToBothCalls(t *testing.T) {
 
 func TestAnIdentityCreatedAfterwardsIsFoundByTheNextCall(t *testing.T) {
 	fake := accounttest.NewFake(t, pluginID)
-	fake.NoIdentity()
+	fake.RemoveIdentity()
 	client := newClient(t, fake)
 	if _, err := client.GetPublicIdentity(t.Context()); !errors.Is(err, account.ErrNoIdentity) {
 		t.Fatalf("error = %v, want ErrNoIdentity", err)

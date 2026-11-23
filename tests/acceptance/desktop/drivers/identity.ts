@@ -6,7 +6,7 @@ import type { SettingsDriver } from './settings.js'
 const PAGE = 'Identity and licenses'
 const CONFIRMATIONS = 3
 const ACCOUNT_FINGERPRINT = 'Account fingerprint'
-const NO_IDENTITY = 'Not created'
+const NO_IDENTITY = 'An identity is a key kept only on your devices.'
 
 /** The place a field of the confirmation asks for: "Word 4" asks for the 4th word. */
 export const readPosition = (label: string): number => {

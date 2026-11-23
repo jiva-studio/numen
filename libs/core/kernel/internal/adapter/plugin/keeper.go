@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 )
 
-func persistentHolder() plugindomain.Holder {
+func newPersistentHolder() plugindomain.Holder {
 	return plugindomain.Holder{Who: plugindomain.WhoPersistent, Why: "stay running"}
 }
 
@@ -120,7 +120,7 @@ func (k *Keeper) start(ctx context.Context, pluginID string) {
 	if k.isHolding(pluginID) {
 		return
 	}
-	lease := lifecycle.Lease{Kind: lifecycle.OwnLease, Holder: persistentHolder()}
+	lease := lifecycle.Lease{Kind: lifecycle.OwnLease, Holder: newPersistentHolder()}
 	if _, err := k.starter.ensureActiveDuringDiscovery(withoutProvisioning(ctx), pluginID, lease); err != nil {
 		// The activation has recorded the failure in the state of the plugin. The keeper does not repeat the start
 		// until the next exit, use or enabling.
@@ -153,5 +153,5 @@ func (k *Keeper) isHolding(pluginID string) bool {
 	if !isRunning {
 		return false
 	}
-	return slices.Contains(usage.Holders, persistentHolder())
+	return slices.Contains(usage.Holders, newPersistentHolder())
 }
