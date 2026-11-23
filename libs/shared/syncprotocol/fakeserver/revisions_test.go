@@ -310,8 +310,7 @@ func TestRevisionCallsOfAnotherAccountAreRefusedAsNoVault(t *testing.T) {
 	t.Parallel()
 	owner := newEnv(t)
 	vault := owner.newVault()
-	_, address := newServer(t)
-	stranger := newSecondAccountOn(t, address)
+	stranger := newSecondAccountOn(t, owner.address)
 	revision := stranger.newFile(stranger.newVault(), newID(16), nil, "milk.md", []byte("milk"))
 	revision.VaultId = vault
 	stranger.signRevision(revision)
