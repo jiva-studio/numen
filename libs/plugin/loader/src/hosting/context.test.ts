@@ -1,12 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { Manifest } from '@numen/core-client'
-import {
-  createLicenseServiceBridge,
-  createUiServiceBridge,
-  createVaultServiceBridge,
-  createWorkServiceBridge,
-} from './bridge/services'
+import { createUiServiceBridge, createWorkServiceBridge } from './bridge/services'
+import { createSettingBridge } from './bridge/contextHosts'
 import { createPluginParts } from './context'
 import type { PluginContextHost } from './types'
 import { createTestContextHost } from '../testing/contextHost'
@@ -398,21 +394,13 @@ describe('PluginContext', () => {
 
 describe('host service bridges', () => {
   it('bridges vault, ui, and work services with fallbacks when optional parts are absent', async () => {
-    const emptyVault = createVaultServiceBridge(fillHostDeps())
-    expect(emptyVault.getNotes()).toBeUndefined()
-    expect(emptyVault.getRelations()).toBeUndefined()
-    expect(emptyVault.getFiles()).toBeUndefined()
-    expect(emptyVault.getTexts('p')).toBeUndefined()
-    expect(emptyVault.getBuffers()).toBeUndefined()
-    expect(emptyVault.getVaults()).toBeUndefined()
-
-    const emptyLicenses = createLicenseServiceBridge(fillHostDeps())
+    const emptyLicenses = createSettingBridge(fillHostDeps())
     expect(emptyLicenses.hasLicense('p', 'sync')).toBe(false)
     expect(emptyLicenses.getLicenseKey('p', 'sync')).toBeUndefined()
     expect(() => emptyLicenses.watchLicense('p', 'sync', vi.fn()).dispose()).not.toThrow()
 
     const unsubscribeLicense = vi.fn()
-    const fullLicenses = createLicenseServiceBridge(
+    const fullLicenses = createSettingBridge(
       fillHostDeps({
         plugins: {
           hasLicense: (_p, id) => id === 'sync',

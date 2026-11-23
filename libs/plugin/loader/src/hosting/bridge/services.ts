@@ -3,24 +3,7 @@ import type { SlotHost } from '@numen/plugin-sdk'
 import { formatCommandId } from '../../commandId'
 import { createPluginHealth } from '../../pluginHealth'
 import type { DeclaredSlotEntry } from '../../slots'
-import type {
-  ContextLicenseHost,
-  ContextUiHost,
-  ContextVaultHost,
-  ContextWorkHost,
-  HostCommands,
-  PluginHostDeps,
-} from '../types'
-
-export function createLicenseServiceBridge({
-  plugins,
-}: Pick<PluginHostDeps, 'plugins'>): ContextLicenseHost {
-  return {
-    hasLicense: plugins.hasLicense,
-    getLicenseKey: plugins.getLicenseKey,
-    watchLicense: plugins.watchLicense,
-  }
-}
+import type { ContextUiHost, ContextWorkHost, HostCommands, PluginHostDeps } from '../types'
 
 function findManifestCommandPermission(
   command: string,
@@ -33,20 +16,6 @@ function findManifestCommandPermission(
     if (match?.permission) return match.permission
   }
   return undefined
-}
-
-/** The vault services of the window as a plugin context reads them, each read at the moment a plugin asks. */
-export function createVaultServiceBridge({
-  vault,
-}: Pick<PluginHostDeps, 'vault'>): ContextVaultHost {
-  return {
-    getNotes: vault.getNotes,
-    getRelations: vault.getRelations,
-    getFiles: vault.getFiles,
-    getTexts: vault.getTexts,
-    getBuffers: vault.getBuffers,
-    getVaults: vault.getVaults,
-  }
 }
 
 /** What the window a plugin draws in reads of the host: its slots, the manifests registered and the slot entries. */

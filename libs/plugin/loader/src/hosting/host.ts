@@ -27,17 +27,8 @@ import {
   setStarting,
   type HostRegistry,
 } from './registry'
-import {
-  createUiServiceBridge,
-  createVaultServiceBridge,
-  createWorkServiceBridge,
-} from './bridge/services'
-import {
-  createSettingBridge,
-  createTabBridge,
-  createViewBridge,
-  type SharedRegistries,
-} from './bridge/contextHosts'
+import { createUiServiceBridge, createWorkServiceBridge } from './bridge/services'
+import { createSettingBridge, createViewBridge, type SharedRegistries } from './bridge/contextHosts'
 import type {
   ContextEventHost,
   ContextRegistrationHost,
@@ -111,8 +102,8 @@ function createHostContextBridge(
     views: createViewBridge(shared),
     settings: createSettingBridge(deps),
     events: createEventBridge(deps, registry),
-    tabs: createTabBridge(deps),
-    vault: createVaultServiceBridge(deps),
+    tabs: deps.tabs,
+    vault: deps.vault,
     ui: createUiServiceBridge(deps, {
       slots: shared.slots,
       manifests: registry.plugins.manifests,

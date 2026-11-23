@@ -2,8 +2,7 @@
  * The calls of the core that the plugin host makes for plugins: the texts they read, and the
  * operations their rows of connections carry out.
  */
-import { createPluginConnections, createPluginTexts } from '@numen/plugin-loader'
-import type { Disposable } from '@numen/plugin-sdk'
+import { createPluginConnections, createPluginTexts, type Disposable } from '@numen/plugin-loader'
 import type { WindowClients } from '@/shared/api/clients'
 
 /** The texts and the connections a plugin reaches, over the clients of the window. */

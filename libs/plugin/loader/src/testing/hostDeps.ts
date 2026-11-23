@@ -133,11 +133,11 @@ export function createTestHostDeps(deps: TestHostDeps): PluginHostDeps {
     return picked as TestHostDeps
   }
   return {
-    window: { ...NO_WINDOW, ...pick(MEMBERS.window) } as PluginHostDeps['window'],
+    window: { ...NO_WINDOW, ...pick(MEMBERS.window) },
     plugins: { ...NO_PLUGINS, ...pick(MEMBERS.plugins) },
     commands: { ...NO_COMMANDS, ...pick(MEMBERS.commands) },
     slots: { ...NO_SLOTS, ...pick(MEMBERS.slots) },
-    kinds: { ...NO_KINDS, ...pick(MEMBERS.kinds) } as PluginHostDeps['kinds'],
+    kinds: { ...NO_KINDS, ...pick(MEMBERS.kinds) },
     tabs: { ...NO_TABS, ...pick(MEMBERS.tabs) },
     vault: { ...NO_VAULT, ...pick(MEMBERS.vault) },
     work: { ...NO_WORK, ...pick(MEMBERS.work) },

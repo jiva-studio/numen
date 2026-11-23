@@ -66,7 +66,7 @@ export function listAvailableCommands(
       commands.push({ id, declaration, entry })
       continue
     }
-    const state = getBeforeHandlerState(deps.plugins ?? {}, registry, declaration)
+    const state = getBeforeHandlerState(deps.plugins, registry, declaration)
     if (state === 'available') commands.push({ id, declaration })
     if (state === 'unbound') {
       addIssue({ pluginId: declaration.pluginId, id: declaration.id, kind: 'unbound' })

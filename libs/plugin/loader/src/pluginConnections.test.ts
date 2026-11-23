@@ -176,7 +176,11 @@ describe('the connections of a plugin', () => {
     const handlers = new Set<() => void>()
     const subscribe = (handler: () => void) => {
       handlers.add(handler)
-      return { dispose: () => void handlers.delete(handler) }
+      return {
+        dispose: () => {
+          handlers.delete(handler)
+        },
+      }
     }
     const connections = createPluginConnections(
       { ...NO_LISTS, call: vi.fn() },

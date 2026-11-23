@@ -2,13 +2,11 @@ import type { DropRegistry, EditorExtensionRegistry, JsonValue, SlotHost } from 
 import type { DeclaredSlotEntry } from '../../slots'
 import type { SlotViewRegistry } from '../../slot-views'
 import type { ViewRegistry } from '../../views'
-import type { ContextSettingHost, ContextTabHost, ContextViewHost, PluginHostDeps } from '../types'
-import { createLicenseServiceBridge } from './services'
+import type { ContextSettingHost, ContextViewHost, PluginHostDeps } from '../types'
 
 export function createSettingBridge({
   plugins,
 }: Pick<PluginHostDeps, 'plugins'>): ContextSettingHost {
-  const licenses = createLicenseServiceBridge({ plugins })
   return {
     getSetting: <T extends JsonValue = JsonValue>(pluginId: string, key: string) =>
       plugins.getSetting(pluginId, key) as T | undefined,
@@ -25,9 +23,9 @@ export function createSettingBridge({
     },
     getEditorSettings: plugins.getEditorSettings,
     watchEditorSettings: plugins.watchEditorSettings,
-    hasLicense: licenses.hasLicense,
-    getLicenseKey: licenses.getLicenseKey,
-    watchLicense: licenses.watchLicense,
+    hasLicense: plugins.hasLicense,
+    getLicenseKey: plugins.getLicenseKey,
+    watchLicense: plugins.watchLicense,
   }
 }
 
@@ -45,14 +43,6 @@ export function createViewBridge(shared: SharedRegistries): ContextViewHost {
       onChange: editorExtensions.onChange,
       fail: editorExtensions.fail,
     },
-  }
-}
-
-export function createTabBridge({ tabs }: Pick<PluginHostDeps, 'tabs'>): ContextTabHost {
-  return {
-    openTab: tabs.openTab,
-    navigateTab: tabs.navigateTab,
-    closeTab: tabs.closeTab,
   }
 }
 
