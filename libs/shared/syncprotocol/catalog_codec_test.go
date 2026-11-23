@@ -47,7 +47,7 @@ func TestEncodeCatalogEntry_ReturnsTheSameBytesForTheSameEntry(t *testing.T) {
 func TestDecodeCatalogEntry_RefusesBytesThatAreNotAnEntryAndAnEntryOfAWrongSize(t *testing.T) {
 	t.Parallel()
 	short := newCodecEntry()
-	short.VaultId = short.VaultId[:15]
+	short.VaultId = short.GetVaultId()[:15]
 	raw, err := syncprotocol.EncodeCatalogEntry(short)
 	if err != nil {
 		t.Fatal(err)

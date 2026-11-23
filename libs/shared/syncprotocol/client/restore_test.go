@@ -107,7 +107,7 @@ func TestRestoreClient_RefusesAnEpochWhoseSignatureDoesNotVerify(t *testing.T) {
 func TestRestoreClient_RefusesAKeyThatIsNotThirtyTwoBytes(t *testing.T) {
 	t.Parallel()
 	response, _ := newEpochOf(t, 1)
-	response.EpochSignKey = response.EpochSignKey[:31]
+	response.EpochSignKey = response.GetEpochSignKey()[:31]
 	_, client := serveRestoreStub(t, response)
 
 	_, _, err := client.GetRestoreEpoch(t.Context())
