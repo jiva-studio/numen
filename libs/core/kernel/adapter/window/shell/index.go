@@ -3,18 +3,9 @@ package shell
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
-
-// SetVaultIndexer sets how a vault is brought up to date in the index, and the lifecycle of
-// those runs. A window without an indexer counts a vault from the index as it
-// currently is.
-func (a *API) SetVaultIndexer(ctx context.Context, read ensureindexed.IndexVault) {
-	a.Runs.SetIndexer(ctx, read)
-}
 
 // ClearIndexFailure releases the reason why a vault could not be indexed. A vault that moved
 // underneath the window is indexed again.

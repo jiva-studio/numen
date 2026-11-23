@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
@@ -41,14 +42,6 @@ func applySettingsFile(c Config, exec *PluginExecution, prefs *PluginPreferences
 	prefs = getPluginPreferences(prefs)
 	configurePluginHost(settingsOf(c, exec, prefs, res), prefs, &res.subscribedHosts, s, c.machine.ResolvedCompute)
 	return c
-}
-
-// SetThemes gives the window the themes it can use: the catalog of themes, and the settings file that
-// stores the selection. The window keeps the themes the binary ships when the answer is a fault.
-func (c Config) SetThemes(exec *PluginExecution, prefs *PluginPreferences, res *Resources, inst *editor.Installation, scales Scales, say func(string)) error {
-	service, err := settingsThemes(settingsOf(c, exec, prefs, res), scales, say)
-	inst.SetThemes(service)
-	return err
 }
 
 // settingsWiring wires the settings, setting change events and themes of an installation.
@@ -283,4 +276,12 @@ func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
 
 func getPluginPerformance(compute machinedomain.ResolvedCompute) plugindomain.Performance {
 	return plugindomain.Performance{Profile: compute.Profile, Threads: compute.CoreBudget, Nice: compute.Nice}
+}
+
+func (c Config) openThemes(settingsDeps settingsWiring, tasks *run.Tasks) *theme.Service {
+	service, err := settingsThemes(settingsDeps, c.Scales, editor.NewThemeWarning(tasks))
+	if err != nil {
+		settingsDeps.ErrorHandler(err)
+	}
+	return service
 }

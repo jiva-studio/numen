@@ -216,5 +216,5 @@ func openVaults(c vaultWiring, db *vaultIndex, out io.Writer, label string, reco
 }
 
 func setShellNotes(api *shell.API, db *vaultIndex) {
-	api.Ensure = ensureindexed.New(&api.Runs, db.NoteQueries(), api.Window, &api.Changes)
+	api.Ensure = ensureindexed.New(api.Runs, db.NoteQueries(), api.Window, &api.Changes)
 }

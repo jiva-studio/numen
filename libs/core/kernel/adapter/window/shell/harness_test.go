@@ -26,14 +26,14 @@ func (c carrying) Has(_ context.Context, id domain.VaultID) (bool, error) {
 // testWindow is the name the window under test answers to.
 const testWindow = "test"
 
-func newAPI(tb testing.TB, target ...domain.Vault) *API {
+func newAPI(tb testing.TB, read ensureindexed.IndexVault, target ...domain.Vault) *API {
 	tb.Helper()
 	index := carrying{targetVault: map[domain.VaultID]bool{}}
 	for _, v := range target {
 		index.targetVault[v.ID] = true
 	}
-	api := &API{Window: NewWindow(testWindow, run.NewTasks())}
-	api.Ensure = ensureindexed.New(&api.Runs, index, api.Window, &api.Changes)
+	api := &API{Window: NewWindow(testWindow, run.NewTasks()), Runs: ensureindexed.NewRuns(tb.Context(), read)}
+	api.Ensure = ensureindexed.New(api.Runs, index, api.Window, &api.Changes)
 	return api
 }
 

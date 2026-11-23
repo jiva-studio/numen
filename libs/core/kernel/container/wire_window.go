@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
@@ -58,14 +59,18 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 		return nil, errors.Join(err, db.Close())
 	}
 	plugins := openWindowPlugins(install, exec, settingsDeps, vaultDeps, db, newSourceBinding(exec, c.SafeMode, install.Endpoints, res))
-	opened, launch := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps)
+	themes := c.openThemes(settingsDeps, plugins.tasks)
+	pluginServices := servicebridge.Open(exec.Runtime.Activator, exec.Runtime.Resolver, exec.Runtime.Listing)
+	pluginDir := func(id string) (string, bool) { return getPluginDir(exec.Runtime.Resolver, id) }
+	opened, launch := buildWindow(startup, ctx, plugins, searchDeps, vaultDeps, editor.WithThemes(themes), editor.WithPlugins(pluginServices, pluginDir))
+	mountTheme(opened, themes)
 	search := newTextSearch(searchDeps, c.machine.ResolvedCompute.Workers)
 	session := windowSearch{index: db, source: launch.source, kinds: plugins.kinds.list}
 	status := editor.SearchTasks{Tasks: opened.page.Window}
 	query := newFindSearchResults(openQueryPorts(install, exec, settingsDeps, vaultDeps), settingsDeps, search, db, launch.source, status.ReportFloorError)
 	runs := newSearchRuns(plugins.tasks, launch.generations, query, exec.Runtime.Resolver, exec.Runtime.Manifests, vaultDeps.Clock)
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
-	mountServices(opened, install, exec, settingsDeps, vaultDeps)
+	mountServices(opened, install, exec, settingsDeps, vaultDeps, editor.GetFrameDialog(startup.opening.Frame))
 	mountLogs(opened, getLogEntries(res), install, settingsDeps, vaultDeps)
 	if err := opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out); err != nil {
 		return nil, errors.Join(err, launch.closeSource(), db.Close())
@@ -141,7 +146,7 @@ func openWindowPlugins(install pluginInstall, exec *PluginExecution, settingsDep
 }
 
 func buildWindow(
-	s windowStartup, ctx context.Context, plugins windowPlugins, searchDeps vaultIndexPlan, vaultDeps vaultWiring,
+	s windowStartup, ctx context.Context, plugins windowPlugins, searchDeps vaultIndexPlan, vaultDeps vaultWiring, pages ...editor.Option,
 ) (*windowRoutes, windowLaunch) {
 	db, opening, ports := s.db, s.opening, s.ports
 	tasks := plugins.tasks
@@ -184,10 +189,11 @@ func buildWindow(
 		embedderError: why, closeEmbedder: closeEmbedder, closeIndex: db.Close,
 	}
 	session := newWindowSession(parts, plugins.vault, runner, vaultDeps, state, page)
+	openFile := newOpenVaultFile(vaultDeps, ports.Lookup)
 	inst := editor.NewInstallation(page, editor.Lifecycle{
 		Show:  session.cases.show,
 		Flush: session.cases.flush, Close: session.cases.close,
-	}, session.tools.importFiles, getMediaType())
+	}, session.tools.importFiles, openFile, pages...)
 
 	window := &windowRoutes{Installation: inst, session: state, page: page}
 	mountVault(window)
@@ -195,10 +201,10 @@ func buildWindow(
 	mountWindowState(window)
 	mountFile(window, vaultDeps, db, plugins.kinds, &notes.Place)
 	mountNote(window, &notes, db, plugins.kinds.list, writeWake)
-	mountVaults(window, ports, vaultDeps.Readers, moves.Change, session.open)
+	mountVaults(window, ports, vaultDeps.Readers, moves.Change, session.open, editor.GetFrameDialog(opening.Frame))
 	return window, windowLaunch{
 		start:  session.cases.start,
-		server: newFileServer(vaultDeps, &state.Runtime, page.Window, ports.Lookup), closeSource: closeEmbedder, source: source, generations: generations,
+		server: editor.NewFileServer(&state.Runtime, page.Window, openFile), closeSource: closeEmbedder, source: source, generations: generations,
 		plugins: windowPluginAccess{
 			writeWake: writeWake, notes: pluginNotes, vaults: newPluginVaultList(&state.Runtime, moves.Change, ports.Lookup, vaultDeps.Readers, session.cases.openPlugin), showTab: session.tools.showTab,
 		},
@@ -222,18 +228,15 @@ func newTabKinds(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps v
 	return tabKinds{files: files, choice: choice, list: indexnote.NewTabKinds(db.NoteQueries(), choice)}
 }
 
-func newFileServer(vaultDeps vaultWiring, runtime *windowsession.Runtime, tasks windowport.Tasks, find vaultport.VaultLookup) *editor.FileServer {
-	return editor.NewFileServer(
-		runtime, tasks,
-		file.NewOpenVaultFile(
-			find, file.NewOpenFile(vaultDeps.Readers), openPluginFile(vaultDeps.Options), getMediaType(),
-		),
+func newOpenVaultFile(vaultDeps vaultWiring, find vaultport.VaultLookup) *file.OpenVaultFile {
+	return file.NewOpenVaultFile(
+		find, file.NewOpenFile(vaultDeps.Readers), openPluginFile(vaultDeps.Options), getMediaType(),
 	)
 }
 
-func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring) {
+func mountServices(w *windowRoutes, install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, dialog editor.PathDialog) {
 	mountPluginData(w, vaultDeps)
-	mountSettings(w, settingsDeps)
+	mountSettings(w, settingsDeps, dialog)
 	mountMedia(w, vaultDeps)
 	mountCommand(w, install, exec, settingsDeps, vaultDeps)
 	mountConnection(w, install, exec, settingsDeps, vaultDeps)

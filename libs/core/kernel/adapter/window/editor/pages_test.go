@@ -107,7 +107,7 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 	}
 
 	// A frame is what widens, and a script is not: what runs in the window is
-	// what the window served, which is `default-src`.
+	// what the window served.
 	if strings.Contains(response, "script-src") {
 		t.Errorf("the policy names where a script comes from: %q", response)
 	}

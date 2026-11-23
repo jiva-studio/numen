@@ -11,7 +11,7 @@ import {
   type CatalogEntry as CatalogEntryMessage,
   type CatalogSourceError as CatalogSourceErrorMessage,
 } from '@numen/protocol'
-import { asFailure, asValue, formatErrorMessage, type Result } from '@numen/result'
+import { asFailure, asValue, formatErrorMessage, type Failure, type Result } from '@numen/result'
 
 /** One plugin as the catalog knows it. */
 export type CatalogEntry = CatalogEntryMessage
@@ -44,8 +44,8 @@ export interface CatalogMatch {
 
 /** Why no entry was returned: the catalog has none, or the call failed. */
 export type CatalogFailure =
-  | { readonly kind: 'not-found'; readonly sourceErrors: readonly CatalogSourceError[] }
-  | { readonly kind: 'unavailable'; readonly message: string }
+  | (Failure<'notFound'> & { readonly sourceErrors: readonly CatalogSourceError[] })
+  | Failure<'unavailable'>
 
 /** The plugin catalog of the application. */
 export interface PluginCatalog {
@@ -64,13 +64,17 @@ interface EntryAnswer {
 
 const readMatch = (answer: EntryAnswer): Result<CatalogMatch, CatalogFailure> => {
   if (answer.error === CatalogErrorCode.NOT_FOUND || answer.entry === undefined) {
-    return asFailure({ kind: 'not-found', sourceErrors: answer.sourceErrors })
+    return asFailure({
+      error: 'notFound',
+      message: 'not found',
+      sourceErrors: answer.sourceErrors,
+    })
   }
   return asValue({ entry: answer.entry, sourceErrors: answer.sourceErrors })
 }
 
 const readUnavailableFailure = (error: unknown): Result<never, CatalogFailure> =>
-  asFailure({ kind: 'unavailable', message: formatErrorMessage(error) })
+  asFailure({ error: 'unavailable', message: formatErrorMessage(error) })
 
 /** The catalog read through a CatalogService client. */
 export const createPluginCatalog = (client: CatalogClient): PluginCatalog => ({

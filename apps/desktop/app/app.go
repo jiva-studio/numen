@@ -16,10 +16,10 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
-	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -140,14 +140,12 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 	applyMemoryLimit(cfg.GetMachine().ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 
 	frame := &windowFrame{}
-	displayed, err := openInstallation(ctx, cfg, services, vault, frame)
+	cfg.Scales = container.Scales{InterfaceScale: scaleFlags.interfaceScale, TextScale: scaleFlags.textScale}
+	displayed, err := openInstallation(ctx, cfg, services, vault, debugOpts.getFrame(frame))
 	if err != nil {
 		return err
 	}
 	pages, installation := displayed.pages, displayed.opened
-	scales := container.Scales{InterfaceScale: scaleFlags.interfaceScale, TextScale: scaleFlags.textScale}
-	themes.Report(cfg.SetThemes(services.Execution, services.Preferences, services.Resources, installation, scales, installation.RecordThemeWarning), os.Stdout)
-
 	installation.Report(notices)
 
 	going := &vaultFlush{flush: installation.FlushPending}
@@ -292,6 +290,7 @@ type windowHooks struct {
 type windowFrame struct {
 	window *application.WebviewWindow
 	opened *editor.Installation
+	dialog *folderdialog.Dialog
 	detach func(tab windowdomain.DetachedTab) error
 }
 
@@ -299,6 +298,20 @@ func (f *windowFrame) ShowOpenTabs(open windowdomain.OpenTabs) {
 	if f.window != nil {
 		f.window.SetTitle(getWindowTitle(f.opened.GetCurrentVault(), open))
 	}
+}
+
+func (f *windowFrame) ChooseFolder(ctx context.Context, title, startingAt string) (string, bool, error) {
+	if f.dialog == nil {
+		return "", false, machine.ErrNoFolderDialog
+	}
+	return f.dialog.ChooseFolder(ctx, title, startingAt)
+}
+
+func (f *windowFrame) ChooseFile(ctx context.Context, title, startingAt string, accept []string) (string, bool, error) {
+	if f.dialog == nil {
+		return "", false, machine.ErrNoFolderDialog
+	}
+	return f.dialog.ChooseFile(ctx, title, startingAt, accept)
 }
 
 func (f *windowFrame) DetachTab(_ context.Context, tab windowdomain.DetachedTab) error {
@@ -334,9 +347,8 @@ func connectWindow(
 	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *editor.Installation,
 	frame *windowFrame, hooks windowHooks,
 ) {
-	opened.SetFolderDialog(folderdialog.New(window))
 	*frame = windowFrame{
-		window: window, opened: opened,
+		window: window, opened: opened, dialog: folderdialog.New(window),
 		detach: func(tab windowdomain.DetachedTab) error { return detachTab(ctx, app, opened, hooks, tab) },
 	}
 

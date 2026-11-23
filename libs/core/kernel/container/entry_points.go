@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
 	"io"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/connectionlog"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -91,13 +91,13 @@ func (c Config) OpenShell(exec *PluginExecution, prefs *PluginPreferences, endpo
 		ConnectionCalls: connectioncall.NewService(getConnectionCalls(prefs, endpoints), openRowLists(install, exec, settingsDeps, vaultDeps), searchcancel.NewSearches(GetClock(res))),
 	}
 	setModelCalls(install, exec, settingsDeps, vaultDeps, connectionlog.NewLogNotices().ReportSetAside)
-	vaults := openVaults(vaultDeps, db, log.Out, log.Label, ensureindexed.NewReportRead(&api.Runs, &api.Changes).Execute)
+	vaults := openVaults(vaultDeps, db, log.Out, log.Label, func(v domain.Vault) { ensureindexed.NewReportRead(api.Runs, &api.Changes).Execute(v) })
 	closers := Shell{API: api, CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
+	api.Runs = ensureindexed.NewRuns(ctx, vaults.IndexVault)
 	setShellNotes(api, db)
 	vaultList := vaultregistry.NewList(ports.Vaults)
 	api.Vaults = &vaultList
 	api.ResolveLinks = query.NewResolveVaultLinks(ports.Vaults, query.NewResolveLinks(db.NoteQueries()))
-	api.SetVaultIndexer(ctx, vaults.IndexVault)
 	hooks := pluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchIndexChanges}
 	if err := installPluginVault(install, vaultDeps, ports, db, getNoShownVault, hooks); err != nil {
 		return closers, err

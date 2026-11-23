@@ -1,9 +1,6 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -19,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
@@ -126,7 +124,7 @@ func TestTheFlashcardsPageIsGivenTheLinksOfItsVaults(t *testing.T) {
 }
 
 // The window binds the indexer of its vaults: a vault is read into the index, and the read is reported
-// as a change. An indexer set after that is the one a vault not read yet is read with.
+// as a change.
 func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	install, target := makeConfigWithVaults(t)
 	api := openShell(t, install)
@@ -149,26 +147,13 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ensureindexed.NewReportRead(&api.Runs, &api.Changes).Execute(target[0])
+	ensureindexed.NewReportRead(api.Runs, &api.Changes).Execute(target[0])
 	select {
 	case <-moved:
 	case <-time.After(time.Second):
 		t.Error("a vault read did not report a change")
 	}
 
-	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
-		return errors.New("boom")
-	})
-	for {
-		state, err := api.EnsureIndexed(t.Context(), target[1])
-		if err != nil {
-			t.Fatal(err)
-		}
-		if state.Reason == "boom" {
-			break
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
 }
 
 // The plugins receive every vault the installation holds, each keyed by its
@@ -181,8 +166,7 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 		t.Fatal(err)
 	}
 	install.services.Execution, install.services.Preferences, install.services.Endpoints = execution, preferences, endpoints
-	api := openShell(t, install)
-	api.SetVaultIndexer(t.Context(), nil)
+	openShell(t, install)
 	lent := endpoints.Endpoint.GetPluginVault()
 
 	recognized, listErr := lent.Switch.GetVaults()
@@ -193,8 +177,8 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	if listErr != nil || len(recognized) != 2 || withErr != nil || hasVault {
 		t.Fatalf("got %v (%v), %v and the window showing a vault: %v", recognized, listErr, withErr, hasVault)
 	}
-	if stateErr != nil || state.Status != plugin.IndexFailed {
-		t.Errorf("a vault nothing reads into the index stands as %+v (%v)", state, stateErr)
+	if stateErr != nil || state.Status == plugin.IndexFailed {
+		t.Errorf("a vault the window reads into the index stands as %+v (%v)", state, stateErr)
 	}
 }
 

@@ -22,12 +22,12 @@ func getUnreadVault() domain.Vault {
 // A vault being read is work the window reports, named by the vault it is on
 // and by how far it has got. A window session on a blank frame reads as broken.
 func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
-	api := newAPI(t)
 	blockCh := make(chan struct{})
-	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
+	indexer := func(context.Context, domain.Vault) error {
 		<-blockCh
 		return nil
-	})
+	}
+	api := newAPI(t, indexer)
 
 	state, err := api.EnsureIndexed(t.Context(), getUnreadVault())
 	if err != nil || state.Status != plugin.Indexing || state.Reason != "" {
@@ -51,12 +51,12 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 // it is displayed only once it has lasted. An instant walk is not reported.
 func TestEnsureIndexed_ShortReindexCreatesNoTask(t *testing.T) {
 	target := domain.Vault{ID: "member", Name: "Member"}
-	api := newAPI(t, target)
 	blockCh := make(chan struct{})
-	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
+	indexer := func(context.Context, domain.Vault) error {
 		<-blockCh
 		return nil
-	})
+	}
+	api := newAPI(t, indexer, target)
 
 	if _, err := api.EnsureIndexed(t.Context(), target); err != nil {
 		t.Fatal(err)
@@ -72,12 +72,12 @@ func TestEnsureIndexed_ShortReindexCreatesNoTask(t *testing.T) {
 // A failed indexing reports why in the vault's own state, and is not restarted
 // repeatedly by the counts that follow.
 func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
-	api := newAPI(t)
 	var tried atomic.Int64
-	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
+	indexer := func(context.Context, domain.Vault) error {
 		tried.Add(1)
 		return errors.New("the folder is not there")
-	})
+	}
+	api := newAPI(t, indexer)
 	ask := func() plugin.IndexState {
 		state, err := api.EnsureIndexed(t.Context(), getUnreadVault())
 		if err != nil {
@@ -102,7 +102,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 
 // A window that reads no vault reports that the index does not hold a vault it lacks.
 func TestAVaultTheIndexDoesNotCarryIsUnreadWhereNothingReadsIt(t *testing.T) {
-	api := newAPI(t)
+	api := newAPI(t, nil)
 
 	state, err := api.EnsureIndexed(t.Context(), getUnreadVault())
 
@@ -114,7 +114,7 @@ func TestAVaultTheIndexDoesNotCarryIsUnreadWhereNothingReadsIt(t *testing.T) {
 // The list of work is answered whether or not the window keeps one, so the page
 // has one thing to listen to.
 func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
-	api := newAPI(t)
+	api := newAPI(t, nil)
 	api.Window.Tasks = nil
 
 	stream, err := newWindowClient(t, api).WatchTasks(
@@ -134,10 +134,10 @@ func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
 }
 
 func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
-	api := newAPI(t)
-	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
+	indexer := func(context.Context, domain.Vault) error {
 		return errors.New("the folder is not there")
-	})
+	}
+	api := newAPI(t, indexer)
 
 	if _, err := api.EnsureIndexed(t.Context(), getUnreadVault()); err != nil {
 		t.Fatal(err)
@@ -154,8 +154,8 @@ func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
 
 // A vault read wakes every waiter notified of a move.
 func TestAVaultReadWakesTheListeners(t *testing.T) {
-	api := newAPI(t)
-	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error { return nil })
+	indexer := func(context.Context, domain.Vault) error { return nil }
+	api := newAPI(t, indexer)
 	moves, err := api.WatchIndexChanges(t.Context())
 	if err != nil {
 		t.Fatal(err)

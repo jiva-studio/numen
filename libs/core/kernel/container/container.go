@@ -60,6 +60,7 @@ type Config struct {
 	Paths
 	ShouldRebuildIndex bool
 	SafeMode           bool
+	Scales             Scales
 	machine            Machine
 }
 
