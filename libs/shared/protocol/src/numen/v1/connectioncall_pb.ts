@@ -230,8 +230,6 @@ export const ConnectionCallServiceCallRequestSchema: GenMessage<ConnectionCallSe
   messageDesc(file_numen_v1_connectioncall, 5);
 
 /**
- * ConnectionCallServiceCallResponse is one frame of a call.
- *
  * @generated from message numen.v1.ConnectionCallServiceCallResponse
  */
 export type ConnectionCallServiceCallResponse = Message<"numen.v1.ConnectionCallServiceCallResponse"> & {

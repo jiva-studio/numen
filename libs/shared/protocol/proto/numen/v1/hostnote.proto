@@ -31,7 +31,6 @@ service HostNoteService {
   // ListNamedPaths lists the notes filed under a name.
   rpc ListNamedPaths(ListNamedPathsRequest) returns (ListNamedPathsResponse);
 
-  // ListPathsOfType lists the notes of a type.
   rpc ListPathsOfType(ListPathsOfTypeRequest) returns (ListPathsOfTypeResponse);
 
   // ReadFrontmatter returns the frontmatter of notes as the index holds it, in
@@ -142,7 +141,6 @@ message NoteFrontmatterWritten {
   string detail = 3;
 }
 
-// NoteFrontmatter is the frontmatter of one note.
 message NoteFrontmatter {
   string path = 1;
   // values is a JSON object of the requested keys the note has.

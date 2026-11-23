@@ -255,7 +255,7 @@ message ResolvedAddress {
 }
 
 message ListHeadingsRequest {
-  // Only the notes filed under these paths. A filter naming none passes none,
+  // The notes to list the headings of, by path. A path with no note is left out.
   repeated string paths = 1;
 }
 

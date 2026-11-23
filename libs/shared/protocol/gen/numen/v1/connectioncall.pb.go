@@ -495,7 +495,6 @@ func (x *ConnectionCallServiceCallRequest) GetCallId() string {
 	return ""
 }
 
-// ConnectionCallServiceCallResponse is one frame of a call.
 type ConnectionCallServiceCallResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Frame:

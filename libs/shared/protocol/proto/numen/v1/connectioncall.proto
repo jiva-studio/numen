@@ -105,7 +105,6 @@ message ConnectionCallServiceCallRequest {
   string call_id = 6;
 }
 
-// ConnectionCallServiceCallResponse is one frame of a call.
 message ConnectionCallServiceCallResponse {
   oneof frame {
     bytes data = 1;

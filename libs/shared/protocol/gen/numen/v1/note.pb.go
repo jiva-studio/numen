@@ -1025,7 +1025,7 @@ func (x *ResolvedAddress) GetIsAmbiguous() bool {
 
 type ListHeadingsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Only the notes filed under these paths. A filter naming none passes none,
+	// The notes to list the headings of, by path. A path with no note is left out.
 	Paths         []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

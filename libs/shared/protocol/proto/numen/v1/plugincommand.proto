@@ -123,7 +123,6 @@ message PluginCommand {
   ManifestCommandWarns warns = 13;
 }
 
-// CommandArgument is one argument a command takes.
 message CommandArgument {
   string name = 1;
 

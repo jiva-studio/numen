@@ -772,7 +772,6 @@ func (x *NoteFrontmatterWritten) GetDetail() string {
 	return ""
 }
 
-// NoteFrontmatter is the frontmatter of one note.
 type NoteFrontmatter struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`

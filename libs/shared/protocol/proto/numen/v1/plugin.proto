@@ -90,7 +90,6 @@ message PluginSettingOption {
   string when = 4;
 }
 
-// PluginSettingOptions is one list of options.
 message PluginSettingOptions {
   repeated PluginSettingOption options = 1;
 }
@@ -243,7 +242,6 @@ message ListPluginsResponse {
 message WatchPluginProcessesRequest {}
 
 message RetryPluginRequest {
-  // The plugin, by its id.
   string plugin_id = 1;
 }
 
@@ -261,7 +259,6 @@ message WatchPluginProcessesResponse {
   int64 time_unix_ms = 2;
 }
 
-// PluginProcess is the process of one plugin that runs.
 message PluginProcess {
   string plugin_id = 1;
 

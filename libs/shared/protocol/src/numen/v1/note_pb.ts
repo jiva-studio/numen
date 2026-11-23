@@ -419,7 +419,7 @@ export const ResolvedAddressSchema: GenMessage<ResolvedAddress> = /*@__PURE__*/
  */
 export type ListHeadingsRequest = Message<"numen.v1.ListHeadingsRequest"> & {
   /**
-   * Only the notes filed under these paths. A filter naming none passes none,
+   * The notes to list the headings of, by path. A path with no note is left out.
    *
    * @generated from field: repeated string paths = 1;
    */

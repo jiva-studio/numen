@@ -71,7 +71,6 @@ type HostNoteServiceClient interface {
 	ListNoteTypes(context.Context, *connect.Request[v1.ListNoteTypesRequest]) (*connect.Response[v1.ListNoteTypesResponse], error)
 	// ListNamedPaths lists the notes filed under a name.
 	ListNamedPaths(context.Context, *connect.Request[v1.ListNamedPathsRequest]) (*connect.Response[v1.ListNamedPathsResponse], error)
-	// ListPathsOfType lists the notes of a type.
 	ListPathsOfType(context.Context, *connect.Request[v1.ListPathsOfTypeRequest]) (*connect.Response[v1.ListPathsOfTypeResponse], error)
 	// ReadFrontmatter returns the frontmatter of notes as the index holds it, in
 	// pages ordered by path. It needs vault:read.
@@ -226,7 +225,6 @@ type HostNoteServiceHandler interface {
 	ListNoteTypes(context.Context, *connect.Request[v1.ListNoteTypesRequest]) (*connect.Response[v1.ListNoteTypesResponse], error)
 	// ListNamedPaths lists the notes filed under a name.
 	ListNamedPaths(context.Context, *connect.Request[v1.ListNamedPathsRequest]) (*connect.Response[v1.ListNamedPathsResponse], error)
-	// ListPathsOfType lists the notes of a type.
 	ListPathsOfType(context.Context, *connect.Request[v1.ListPathsOfTypeRequest]) (*connect.Response[v1.ListPathsOfTypeResponse], error)
 	// ReadFrontmatter returns the frontmatter of notes as the index holds it, in
 	// pages ordered by path. It needs vault:read.

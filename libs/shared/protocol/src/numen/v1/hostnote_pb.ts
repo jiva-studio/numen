@@ -360,8 +360,6 @@ export const NoteFrontmatterWrittenSchema: GenMessage<NoteFrontmatterWritten> = 
   messageDesc(file_numen_v1_hostnote, 13);
 
 /**
- * NoteFrontmatter is the frontmatter of one note.
- *
  * @generated from message numen.v1.NoteFrontmatter
  */
 export type NoteFrontmatter = Message<"numen.v1.NoteFrontmatter"> & {
@@ -695,8 +693,6 @@ export const HostNoteService: GenService<{
     output: typeof ListNamedPathsResponseSchema;
   },
   /**
-   * ListPathsOfType lists the notes of a type.
-   *
    * @generated from rpc numen.v1.HostNoteService.ListPathsOfType
    */
   listPathsOfType: {
