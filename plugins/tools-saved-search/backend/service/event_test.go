@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/tools-saved-search/backend/domain/resultcache"
 )
 
@@ -98,7 +99,7 @@ func TestHandleEventReturnsBeforeTheBatchEnds(t *testing.T) {
 	defer release()
 
 	returned := make(chan error, 1)
-	go func() { returned <- f.app.HandleEvent(t.Context(), "onIndexChanged:"+testVault) }()
+	go func() { returned <- f.app.HandleEvent(t.Context(), hosttest.GetIndexChangedEvent(testVault)) }()
 
 	select {
 	case err := <-returned:

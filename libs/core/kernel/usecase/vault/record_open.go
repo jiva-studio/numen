@@ -7,6 +7,7 @@ package vault
 
 import (
 	"context"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
@@ -33,18 +34,18 @@ func (u RecordOpen) Execute(id domain.VaultID) error {
 }
 
 type RecordOpenByName struct {
-	find   VaultFinding
+	lookup vaultport.VaultLookup
 	record RecordOpen
 }
 
 // NewRecordOpenByName creates the use case that resolves the vault with find and records it with record.
-func NewRecordOpenByName(find VaultFinding, record RecordOpen) RecordOpenByName {
-	return RecordOpenByName{find: find, record: record}
+func NewRecordOpenByName(lookup vaultport.VaultLookup, record RecordOpen) RecordOpenByName {
+	return RecordOpenByName{lookup: lookup, record: record}
 }
 
 // ExecuteByName resolves the vault and records it as the vault opened last.
 func (u RecordOpenByName) ExecuteByName(nameOrPath string) (domain.Vault, error) {
-	v, err := u.find(nameOrPath)
+	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
 		return domain.Vault{}, err
 	}

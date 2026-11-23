@@ -9,7 +9,20 @@ import { createIdentityStore } from './identity'
 const asValue = <T>(value: T): Result<T, IdentityFailure> => ({ ok: true, value })
 const asFailure = (error: IdentityFailure): Result<never, IdentityFailure> => ({ ok: false, error })
 
-const WORDS = ['legal', 'winner', 'thank', 'year', 'wave', 'sausage', 'worth', 'useful', 'legal', 'winner', 'thank', 'yellow']
+const WORDS = [
+  'legal',
+  'winner',
+  'thank',
+  'year',
+  'wave',
+  'sausage',
+  'worth',
+  'useful',
+  'legal',
+  'winner',
+  'thank',
+  'yellow',
+]
 
 const createSampleIdentity = (overrides: Partial<IdentityInfo> = {}): IdentityInfo => ({
   accountFingerprint: '3F2A 91C0 0000 1111 2222 3333 4444 5555',
@@ -39,7 +52,9 @@ describe('the identity store', () => {
   })
 
   it('loads the identity of this device', async () => {
-    const { store } = createStore(createClient({ get: () => Promise.resolve(createSampleIdentity()) }))
+    const { store } = createStore(
+      createClient({ get: () => Promise.resolve(createSampleIdentity()) }),
+    )
     await store.load()
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
   })
@@ -54,14 +69,20 @@ describe('the identity store', () => {
     let fails = false
     const { store, notify } = createStore(
       createClient({
-        get: () => (fails ? Promise.reject(new Error('the core is gone')) : Promise.resolve(createSampleIdentity())),
+        get: () =>
+          fails
+            ? Promise.reject(new Error('the core is gone'))
+            : Promise.resolve(createSampleIdentity()),
       }),
     )
     await store.load()
     fails = true
     await store.load()
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
-    expect(notify).toHaveBeenLastCalledWith(expect.stringContaining('Numen is not responding'), 'error')
+    expect(notify).toHaveBeenLastCalledWith(
+      expect.stringContaining('Numen is not responding'),
+      'error',
+    )
   })
 
   it('gives the twelve words and keeps no identity', async () => {
@@ -72,7 +93,9 @@ describe('the identity store', () => {
   })
 
   it('reads a failed generation as a text', async () => {
-    const { store } = createStore(createClient({ generateWords: () => Promise.reject(new Error('no random')) }))
+    const { store } = createStore(
+      createClient({ generateWords: () => Promise.reject(new Error('no random')) }),
+    )
     const answer = await store.generateWords()
     expect(answer.ok).toBe(false)
     expect(!answer.ok && answer.error).toContain('Numen is not responding')
@@ -90,7 +113,10 @@ describe('the identity store', () => {
   it('says that the words are not valid and holds no identity', async () => {
     const { store } = createStore(
       createClient({
-        create: () => Promise.resolve(asFailure({ errorCode: 'invalid_words', detail: 'word 4 is not a recovery word' })),
+        create: () =>
+          Promise.resolve(
+            asFailure({ errorCode: 'invalid_words', detail: 'word 4 is not a recovery word' }),
+          ),
       }),
     )
     const answer = await store.create(WORDS)
@@ -112,8 +138,8 @@ describe('the identity store', () => {
   })
 
   it('describes each failure with its own words', () => {
-    const texts = (['invalid_words', 'identity_exists', 'key_store_failed'] as const).map((errorCode) =>
-      IDENTITY_WORDS.describeFailure({ errorCode, detail: '' }),
+    const texts = (['invalid_words', 'identity_exists', 'key_store_failed'] as const).map(
+      (errorCode) => IDENTITY_WORDS.describeFailure({ errorCode, detail: '' }),
     )
     expect(new Set(texts).size).toBe(3)
     expect(texts.every((text) => text !== '')).toBe(true)
@@ -121,7 +147,9 @@ describe('the identity store', () => {
   })
 
   it('reads a failed create as a text and holds no identity', async () => {
-    const { store } = createStore(createClient({ create: () => Promise.reject(new Error('offline')) }))
+    const { store } = createStore(
+      createClient({ create: () => Promise.reject(new Error('offline')) }),
+    )
     const answer = await store.create(WORDS)
     expect(answer.ok).toBe(false)
     expect(store.identity.value).toBeUndefined()
@@ -129,7 +157,9 @@ describe('the identity store', () => {
 
   it('holds no identity after it is deleted', async () => {
     const remove = vi.fn(() => Promise.resolve())
-    const { store } = createStore(createClient({ get: () => Promise.resolve(createSampleIdentity()), delete: remove }))
+    const { store } = createStore(
+      createClient({ get: () => Promise.resolve(createSampleIdentity()), delete: remove }),
+    )
     await store.load()
     const answer = await store.delete()
     expect(answer.ok).toBe(true)
@@ -139,7 +169,10 @@ describe('the identity store', () => {
 
   it('keeps the identity when the delete fails', async () => {
     const { store } = createStore(
-      createClient({ get: () => Promise.resolve(createSampleIdentity()), delete: () => Promise.reject(new Error('refused')) }),
+      createClient({
+        get: () => Promise.resolve(createSampleIdentity()),
+        delete: () => Promise.reject(new Error('refused')),
+      }),
     )
     await store.load()
     const answer = await store.delete()

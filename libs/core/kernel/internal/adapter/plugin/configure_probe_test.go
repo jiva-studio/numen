@@ -58,7 +58,7 @@ func (c *configured) Configure(
 	if req.Msg.GetValues()["model"] == refusedModel {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errors.New(refusalText))
 	}
-	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
+	return connect.NewResponse(&v1.ConfigureResponse{}), nil
 }
 
 // Shutdown counts the shutdown requests the plugin receives.
@@ -68,7 +68,7 @@ func (c *configured) Shutdown(
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.shutdowns++
-	return connect.NewResponse(&v1.ShutdownResponse{Success: true}), nil
+	return connect.NewResponse(&v1.ShutdownResponse{}), nil
 }
 
 func (c *configured) last(t *testing.T) *v1.ConfigureRequest {

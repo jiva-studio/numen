@@ -1,7 +1,7 @@
 package identity
 
 import (
-	"crypto/hkdf"
+	"crypto/hmac"
 	"crypto/sha256"
 )
 
@@ -18,9 +18,10 @@ const (
 )
 
 func deriveKey(secret []byte, label string) [32]byte {
-	key, err := hkdf.Key(sha256.New, secret, nil, label, 32)
-	if err != nil {
-		panic("identity: HKDF-SHA256 refused a 32-byte output: " + err.Error())
-	}
-	return [32]byte(key)
+	extract := hmac.New(sha256.New, make([]byte, sha256.Size))
+	extract.Write(secret)
+	expand := hmac.New(sha256.New, extract.Sum(nil))
+	expand.Write([]byte(label))
+	expand.Write([]byte{1})
+	return [32]byte(expand.Sum(nil))
 }

@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery/searchquerytest"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -86,7 +85,7 @@ func newQuerySession(t *testing.T, change func(db *index.DB, deps *searchqueryte
 		Vaults: createVaultList(v),
 		Indexed: func(context.Context, cli.IndexOptions) (cli.Indexed, error) {
 			return cli.Indexed{Query: searchquery.NewFindSearchResultsByName(
-				registry.NewFind(singleVaultList{v}).Execute,
+				singleVaultList{v},
 				func(context.Context, domain.Vault) (*searchquery.FindSearchResults, error) { return find, nil },
 			), OperationResults: operationresult.NewClearOperationResults(db.OperationResults(100))}, nil
 		},

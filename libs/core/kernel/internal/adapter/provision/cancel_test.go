@@ -70,17 +70,16 @@ func TestCancelStopsADownloadAndKeepsTheBytesForTheNextRun(t *testing.T) {
 		Dir: t.TempDir(), Discovery: discovery{dirs: []string{}}, Clock: &tickingClock{}, Client: server.Client(),
 		Backoff: backoff{attempts: 3, first: time.Millisecond, sleep: func(context.Context, time.Duration) error { return nil }},
 	})
-	registry := NewRegistry(provisioner)
 	req := newModelRequirement(server.URL+"/w.bin", data)
 	seen := &statusLog{}
 	started := make(chan struct{})
 	var once sync.Once
-	registry.SetObserver(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
+	registry := NewObservedRegistry(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
 		seen.add(status)
 		if status.BytesDownloaded > 0 {
 			once.Do(func() { close(started) })
 		}
-	})
+	}, provisioner)
 	answer := make(chan error, 1)
 	go func() {
 		_, err := registry.Provision(t.Context(), req, nil)
@@ -134,16 +133,15 @@ func TestCancelStopsADownloadAndKeepsTheBytesForTheNextRun(t *testing.T) {
 
 func TestCancelAllStopsEveryRun(t *testing.T) {
 	provisioner := &fakeProvisioner{kind: manifest.DependencyKindModel, gate: make(chan struct{})}
-	registry := NewRegistry(provisioner)
 	reqs := []manifest.DependencyRequirement{
 		{ID: "a", Kind: manifest.DependencyKindModel}, {ID: "b", Kind: manifest.DependencyKindModel},
 	}
 	progressed := make(chan struct{}, 2)
-	registry.SetObserver(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
+	registry := NewObservedRegistry(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
 		if status.BytesDownloaded > 0 {
 			progressed <- struct{}{}
 		}
-	})
+	}, provisioner)
 	answers := make(chan error, len(reqs))
 	for _, req := range reqs {
 		go func() {
@@ -164,17 +162,16 @@ func TestCancelAllStopsEveryRun(t *testing.T) {
 
 func TestAJoiningCallerMayCallTheRegistryFromItsProgressReplay(t *testing.T) {
 	provisioner := &fakeProvisioner{kind: manifest.DependencyKindModel, gate: make(chan struct{})}
-	registry := NewRegistry(provisioner)
 	req := manifest.DependencyRequirement{ID: "a", Kind: manifest.DependencyKindModel}
 	progressed := make(chan struct{}, 1)
-	registry.SetObserver(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
+	registry := NewObservedRegistry(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
 		if status.BytesDownloaded > 0 {
 			select {
 			case progressed <- struct{}{}:
 			default:
 			}
 		}
-	})
+	}, provisioner)
 	first := make(chan error, 1)
 	go func() {
 		_, err := registry.Provision(t.Context(), req, nil)
@@ -280,14 +277,13 @@ func TestProvisionAfterCancelStartsANewDownloadInsteadOfJoiningTheCanceledOne(t 
 		}),
 		resolved: make(chan struct{}, 1),
 	}
-	registry := NewRegistry(provisioner)
 	req := newModelRequirement(server.URL+"/w.bin", data)
 	started := make(chan struct{})
 	var startOnce sync.Once
 	canceling := make(chan struct{})
 	finish := make(chan struct{})
 	var cancelOnce sync.Once
-	registry.SetObserver(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
+	registry := NewObservedRegistry(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
 		if status.BytesDownloaded > 0 {
 			startOnce.Do(func() { close(started) })
 		}
@@ -297,7 +293,7 @@ func TestProvisionAfterCancelStartsANewDownloadInsteadOfJoiningTheCanceledOne(t 
 				<-finish
 			})
 		}
-	})
+	}, provisioner)
 	first := make(chan error, 1)
 	go func() {
 		_, err := registry.Provision(t.Context(), req, nil)
@@ -338,15 +334,15 @@ func TestProvisionAfterCancelStartsANewDownloadInsteadOfJoiningTheCanceledOne(t 
 
 func TestACancelFromTheLastProgressReportStillCancelsTheRun(t *testing.T) {
 	provisioner := &fakeProvisioner{kind: manifest.DependencyKindModel}
-	registry := NewRegistry(provisioner)
 	req := manifest.DependencyRequirement{ID: "a", Kind: manifest.DependencyKindModel}
 	seen := &statusLog{}
-	registry.SetObserver(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
+	var registry *Registry
+	registry = NewObservedRegistry(func(_ manifest.DependencyRequirement, status plugin.DependencyStatus) {
 		seen.add(status)
 		if status.BytesDownloaded == status.BytesTotal && status.BytesTotal > 0 {
 			registry.Cancel(req)
 		}
-	})
+	}, provisioner)
 
 	if _, err := registry.Provision(t.Context(), req, nil); !errors.Is(err, context.Canceled) {
 		t.Fatalf("the caller received %v, want the cancellation", err)

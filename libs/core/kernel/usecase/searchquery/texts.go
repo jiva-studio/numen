@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
@@ -17,7 +18,7 @@ import (
 
 type textReader struct {
 	readers vaultport.VaultReaders
-	texts   textdomain.Readers
+	texts   textport.Readers
 	vault   domain.Vault
 }
 
@@ -38,7 +39,7 @@ func (r textReader) readTexts(ctx context.Context, candidates []domain.SearchRes
 	if err != nil {
 		return nil, err
 	}
-	var texts textdomain.Texts
+	var texts textport.Texts
 	if r.texts != nil {
 		if texts, err = r.texts.Open(r.vault); err != nil {
 			return nil, err
@@ -77,7 +78,7 @@ func listTextPaths(candidates []domain.SearchResult, documents []searchquery.Doc
 }
 
 func readText(
-	ctx context.Context, read func(ctx context.Context, path string) ([]byte, error), texts textdomain.Texts, path, version string,
+	ctx context.Context, read func(ctx context.Context, path string) ([]byte, error), texts textport.Texts, path, version string,
 ) (fileText, error) {
 	if version == "" {
 		raw, err := read(ctx, path)

@@ -6,7 +6,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -92,7 +92,7 @@ func getWholeText(result searchquery.SearchResult, text fileText) string {
 // unitFiles reads the text of each file once.
 type unitFiles struct {
 	readFile func(ctx context.Context, path string) ([]byte, error)
-	texts    textdomain.Texts
+	texts    textport.Texts
 	cache    map[string]fileText
 }
 

@@ -135,7 +135,12 @@ const ERROR_CODE_MESSAGES: Readonly<Partial<Record<number, string>>> = {
   6: 'frontmatter unreadable',
   7: 'a file with this name exists',
   8: 'invalid note name',
-  13: 'not saved: the note changed on disk',
+  9: 'not saved: the note changed on disk',
+  10: 'no vault is open',
+  11: 'the path is outside the vault',
+  12: 'another program holds the file',
+  13: 'the note could not be changed',
+  14: 'the note was not changed',
 }
 
 /** The message for one error code; empty when there was no error. */

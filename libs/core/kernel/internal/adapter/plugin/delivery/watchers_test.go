@@ -17,7 +17,7 @@ type stoppedHost struct{ revision string }
 func (h *stoppedHost) GetPluginConfigRevision(string) string { return h.revision }
 
 func (*stoppedHost) GetSnapshot(string) (Snapshot, bool, error) {
-	return Snapshot{PluginID: "", Endpoint: transport.Endpoint{Host: "", Port: 0, Token: ""}, ConfigJSON: "", Values: nil}, false, nil
+	return Snapshot{PluginID: "", Endpoint: transport.Endpoint{Host: "", Port: 0, Token: ""}, Values: nil}, false, nil
 }
 
 func (*stoppedHost) ListPluginIDs() []string { return []string{orchardPlugin} }

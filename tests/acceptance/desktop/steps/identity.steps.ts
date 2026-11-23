@@ -43,9 +43,12 @@ When('the person restores the identity from its recovery words', async ({ person
   await person.identity.restoreFromRecoveryWords()
 })
 
-When('the person restores an identity from the words {string}', async ({ person }, words: string) => {
-  await person.identity.restoreFromWords(words)
-})
+When(
+  'the person restores an identity from the word {string} written {int} times',
+  async ({ person }, word: string, count: number) => {
+    await person.identity.restoreFromWords(Array.from({ length: count }, () => word).join(' '))
+  },
+)
 
 Then('the account fingerprint is the same as before', async ({ person }) => {
   await person.identity.expectSameAccount()

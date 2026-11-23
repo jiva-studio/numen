@@ -6,7 +6,9 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -20,17 +22,22 @@ var errNoVaultSwitch = errors.New("the window cannot switch vaults")
 // cancels it with ErrUnavailable. An open ASKING prompt returns ErrUnsavedChanges without a flush.
 type OpenPluginVault struct {
 	guard    *Guard
-	identity IdentityCheck
+	lookup   vaultport.VaultLookup
+	identity CheckIdentity
 	pages    Pages
 	switcher VaultSwitch
 }
 
-func NewOpenPluginVault(guard *Guard, identity IdentityCheck, pages Pages, switcher VaultSwitch) OpenPluginVault {
-	return OpenPluginVault{guard: guard, identity: identity, pages: pages, switcher: switcher}
+func NewOpenPluginVault(guard *Guard, lookup vaultport.VaultLookup, identity CheckIdentity, pages Pages, switcher VaultSwitch) OpenPluginVault {
+	return OpenPluginVault{guard: guard, lookup: lookup, identity: identity, pages: pages, switcher: switcher}
 }
 
-// Execute opens v on behalf of a plugin; the vault switch decides whether the window can switch.
-func (u OpenPluginVault) Execute(ctx context.Context, v domain.Vault) error {
+// Execute opens the vault the id names on behalf of a plugin; the vault switch decides whether the window can switch.
+func (u OpenPluginVault) Execute(ctx context.Context, id domain.VaultID) error {
+	v, err := vaultdomain.FindByName(string(id), u.lookup.FindVault)
+	if err != nil {
+		return err
+	}
 	if err := u.identity.Execute(v); err != nil {
 		return err
 	}

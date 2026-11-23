@@ -16,6 +16,5 @@ type Referring struct {
 
 // Browsing answers questions about the notes of a vault.
 type Browsing struct {
-	Connection     GetConnection
-	IsVaultIndexed *IsVaultIndexed
+	Connection GetConnection
 }

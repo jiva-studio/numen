@@ -141,7 +141,7 @@ func (h *Folders) CreateFolder(
 		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		out.Error = &reason
+		out.Error = reason
 	}
 	return connect.NewResponse(out), nil
 }
@@ -166,7 +166,7 @@ func (h *Changes) MoveFile(
 		reason, ok := wire.GetErrorCode(err)
 		switch {
 		case ok:
-			out.Error = &reason
+			out.Error = reason
 		case !moved.IsMoved:
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -211,7 +211,7 @@ func (h *Changes) RemoveFile(
 		if !ok {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		return connect.NewResponse(&v1.RemoveFileResponse{Error: &reason}), nil
+		return connect.NewResponse(&v1.RemoveFileResponse{Error: reason}), nil
 	}
 	// The watcher reports only the paths the vault holds a source for. The removal is
 	// published here, so the tree drops the row whatever it held.

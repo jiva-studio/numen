@@ -4,70 +4,15 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { HostVaultErrorCode } from "./hostvault_pb.js";
-import { file_numen_v1_hostvault } from "./hostvault_pb.js";
+import type { ErrorCode, FileStat } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hostfile.proto.
  */
 export const file_numen_v1_hostfile: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0ZmlsZS5wcm90bxIIbnVtZW4udjEibAoMSG9zdEZpbGVTdGF0EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxIQCghtb2RfdGltZRgDIAEoAxIPCgdpc19ub3RlGAUgASgIEgwKBGhhc2gYBiABKAkSDwoHdmVyc2lvbhgHIAEoBCIfCg9TdGF0RmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCSJlChBTdGF0RmlsZVJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEiQKBHN0YXQYAiABKAsyFi5udW1lbi52MS5Ib3N0RmlsZVN0YXQiTgoPUmVhZEZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAMSEwoGbGVuZ3RoGAMgASgDSACIAQFCCQoHX2xlbmd0aCKFAQoQUmVhZEZpbGVSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIPCgdjb250ZW50GAIgASgMEiQKBHN0YXQYAyABKAsyFi5udW1lbi52MS5Ib3N0RmlsZVN0YXQSDQoFc3RhcnQYBCABKAMiWwoQV3JpdGVGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg8KB2NvbnRlbnQYAiABKAwSKAoIYmFzZWxpbmUYAyABKAsyFi5udW1lbi52MS5Ib3N0RmlsZVN0YXQiZgoRV3JpdGVGaWxlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSJAoEc3RhdBgCIAEoCzIWLm51bWVuLnYxLkhvc3RGaWxlU3RhdCIyChFDcmVhdGVGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg8KB2NvbnRlbnQYAiABKAwiQQoSQ3JlYXRlRmlsZVJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlIiEKEFNjYW5GaWxlc1JlcXVlc3QSDQoFcGF0aHMYASADKAkiQAoRU2NhbkZpbGVzUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUiMAoQRmlsZUNoYW5nZUN1cnNvchIPCgdmZWVkX2lkGAEgASgJEgsKA3NlcRgCIAEoAyJiChZMaXN0RmlsZUNoYW5nZXNSZXF1ZXN0EikKBXNpbmNlGAEgASgLMhoubnVtZW4udjEuRmlsZUNoYW5nZUN1cnNvchIOCgZldmVudHMYAiADKAkSDQoFbGltaXQYAyABKAUiuwEKF0xpc3RGaWxlQ2hhbmdlc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEiUKB2NoYW5nZXMYAiADKAsyFC5udW1lbi52MS5GaWxlQ2hhbmdlEigKBG5leHQYAyABKAsyGi5udW1lbi52MS5GaWxlQ2hhbmdlQ3Vyc29yEhAKCGlzX3Jlc2V0GAQgASgIEhAKCGhhc19tb3JlGAUgASgIIkkKCkZpbGVDaGFuZ2USEQoJc291cmNlX2lkGAEgASgDEgwKBHBhdGgYAiABKAkSDQoFZXZlbnQYAyABKAkSCwoDc2VxGAQgASgDMsQDCg9Ib3N0RmlsZVNlcnZpY2USQQoIU3RhdEZpbGUSGS5udW1lbi52MS5TdGF0RmlsZVJlcXVlc3QaGi5udW1lbi52MS5TdGF0RmlsZVJlc3BvbnNlEkEKCFJlYWRGaWxlEhkubnVtZW4udjEuUmVhZEZpbGVSZXF1ZXN0GhoubnVtZW4udjEuUmVhZEZpbGVSZXNwb25zZRJECglXcml0ZUZpbGUSGi5udW1lbi52MS5Xcml0ZUZpbGVSZXF1ZXN0GhsubnVtZW4udjEuV3JpdGVGaWxlUmVzcG9uc2USRwoKQ3JlYXRlRmlsZRIbLm51bWVuLnYxLkNyZWF0ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuQ3JlYXRlRmlsZVJlc3BvbnNlEkQKCVNjYW5GaWxlcxIaLm51bWVuLnYxLlNjYW5GaWxlc1JlcXVlc3QaGy5udW1lbi52MS5TY2FuRmlsZXNSZXNwb25zZRJWCg9MaXN0RmlsZUNoYW5nZXMSIC5udW1lbi52MS5MaXN0RmlsZUNoYW5nZXNSZXF1ZXN0GiEubnVtZW4udjEuTGlzdEZpbGVDaGFuZ2VzUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_hostvault]);
-
-/**
- * HostFileStat is what a file was at a moment: at its current position, how large it
- * was, when it last changed and what it held. As a baseline, a hash is compared with the content
- * of the file at the write; a baseline without a hash matches no file, so the write is stale.
- *
- * @generated from message numen.v1.HostFileStat
- */
-export type HostFileStat = Message<"numen.v1.HostFileStat"> & {
-  /**
-   * @generated from field: string path = 1;
-   */
-  path: string;
-
-  /**
-   * @generated from field: int64 size = 2;
-   */
-  size: bigint;
-
-  /**
-   * Nanoseconds since the epoch.
-   *
-   * @generated from field: int64 mod_time = 3;
-   */
-  modTime: bigint;
-
-  /**
-   * Whether the file is a note.
-   *
-   * @generated from field: bool is_note = 5;
-   */
-  isNote: boolean;
-
-  /**
-   * The SHA-256 of the content, in lowercase hex. Empty where the answer did not read the content.
-   *
-   * @generated from field: string hash = 6;
-   */
-  hash: string;
-
-  /**
-   * The number of writes the vault had taken when the answer was made. Zero where the answer
-   * does not say.
-   *
-   * @generated from field: uint64 version = 7;
-   */
-  version: bigint;
-};
-
-/**
- * Describes the message numen.v1.HostFileStat.
- * Use `create(HostFileStatSchema)` to create a new message.
- */
-export const HostFileStatSchema: GenMessage<HostFileStat> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 0);
+  fileDesc("ChdudW1lbi92MS9ob3N0ZmlsZS5wcm90bxIIbnVtZW4udjEiHwoPU3RhdEZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkiWAoQU3RhdEZpbGVSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIgCgRzdGF0GAIgASgLMhIubnVtZW4udjEuRmlsZVN0YXQiTgoPUmVhZEZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDQoFc3RhcnQYAiABKAMSEwoGbGVuZ3RoGAMgASgDSACIAQFCCQoHX2xlbmd0aCJ4ChBSZWFkRmlsZVJlc3BvbnNlEiIKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlEg8KB2NvbnRlbnQYAiABKAwSIAoEc3RhdBgDIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0Eg0KBXN0YXJ0GAQgASgDIlcKEFdyaXRlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdjb250ZW50GAIgASgMEiQKCGJhc2VsaW5lGAMgASgLMhIubnVtZW4udjEuRmlsZVN0YXQiWQoRV3JpdGVGaWxlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSIAoEc3RhdBgCIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0IjIKEUNyZWF0ZUZpbGVSZXF1ZXN0EgwKBHBhdGgYASABKAkSDwoHY29udGVudBgCIAEoDCI4ChJDcmVhdGVGaWxlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUiIQoQU2NhbkZpbGVzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI3ChFTY2FuRmlsZXNSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZSIwChBGaWxlQ2hhbmdlQ3Vyc29yEg8KB2ZlZWRfaWQYASABKAkSCwoDc2VxGAIgASgDImIKFkxpc3RGaWxlQ2hhbmdlc1JlcXVlc3QSKQoFc2luY2UYASABKAsyGi5udW1lbi52MS5GaWxlQ2hhbmdlQ3Vyc29yEg4KBmV2ZW50cxgCIAMoCRINCgVsaW1pdBgDIAEoBSKyAQoXTGlzdEZpbGVDaGFuZ2VzUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUSJQoHY2hhbmdlcxgCIAMoCzIULm51bWVuLnYxLkZpbGVDaGFuZ2USKAoEbmV4dBgDIAEoCzIaLm51bWVuLnYxLkZpbGVDaGFuZ2VDdXJzb3ISEAoIaXNfcmVzZXQYBCABKAgSEAoIaGFzX21vcmUYBSABKAgiSQoKRmlsZUNoYW5nZRIRCglzb3VyY2VfaWQYASABKAMSDAoEcGF0aBgCIAEoCRINCgVldmVudBgDIAEoCRILCgNzZXEYBCABKAMyxAMKD0hvc3RGaWxlU2VydmljZRJBCghTdGF0RmlsZRIZLm51bWVuLnYxLlN0YXRGaWxlUmVxdWVzdBoaLm51bWVuLnYxLlN0YXRGaWxlUmVzcG9uc2USQQoIUmVhZEZpbGUSGS5udW1lbi52MS5SZWFkRmlsZVJlcXVlc3QaGi5udW1lbi52MS5SZWFkRmlsZVJlc3BvbnNlEkQKCVdyaXRlRmlsZRIaLm51bWVuLnYxLldyaXRlRmlsZVJlcXVlc3QaGy5udW1lbi52MS5Xcml0ZUZpbGVSZXNwb25zZRJHCgpDcmVhdGVGaWxlEhsubnVtZW4udjEuQ3JlYXRlRmlsZVJlcXVlc3QaHC5udW1lbi52MS5DcmVhdGVGaWxlUmVzcG9uc2USRAoJU2NhbkZpbGVzEhoubnVtZW4udjEuU2NhbkZpbGVzUmVxdWVzdBobLm51bWVuLnYxLlNjYW5GaWxlc1Jlc3BvbnNlElYKD0xpc3RGaWxlQ2hhbmdlcxIgLm51bWVuLnYxLkxpc3RGaWxlQ2hhbmdlc1JlcXVlc3QaIS5udW1lbi52MS5MaXN0RmlsZUNoYW5nZXNSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.StatFileRequest
@@ -84,21 +29,21 @@ export type StatFileRequest = Message<"numen.v1.StatFileRequest"> & {
  * Use `create(StatFileRequestSchema)` to create a new message.
  */
 export const StatFileRequestSchema: GenMessage<StatFileRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 1);
+  messageDesc(file_numen_v1_hostfile, 0);
 
 /**
  * @generated from message numen.v1.StatFileResponse
  */
 export type StatFileResponse = Message<"numen.v1.StatFileResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
-   * @generated from field: numen.v1.HostFileStat stat = 2;
+   * @generated from field: numen.v1.FileStat stat = 2;
    */
-  stat?: HostFileStat | undefined;
+  stat?: FileStat | undefined;
 };
 
 /**
@@ -106,7 +51,7 @@ export type StatFileResponse = Message<"numen.v1.StatFileResponse"> & {
  * Use `create(StatFileResponseSchema)` to create a new message.
  */
 export const StatFileResponseSchema: GenMessage<StatFileResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 2);
+  messageDesc(file_numen_v1_hostfile, 1);
 
 /**
  * @generated from message numen.v1.ReadFileRequest
@@ -140,16 +85,16 @@ export type ReadFileRequest = Message<"numen.v1.ReadFileRequest"> & {
  * Use `create(ReadFileRequestSchema)` to create a new message.
  */
 export const ReadFileRequestSchema: GenMessage<ReadFileRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 3);
+  messageDesc(file_numen_v1_hostfile, 2);
 
 /**
  * @generated from message numen.v1.ReadFileResponse
  */
 export type ReadFileResponse = Message<"numen.v1.ReadFileResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: bytes content = 2;
@@ -157,9 +102,9 @@ export type ReadFileResponse = Message<"numen.v1.ReadFileResponse"> & {
   content: Uint8Array;
 
   /**
-   * @generated from field: numen.v1.HostFileStat stat = 3;
+   * @generated from field: numen.v1.FileStat stat = 3;
    */
-  stat?: HostFileStat | undefined;
+  stat?: FileStat | undefined;
 
   /**
    * The start of content in the file: start moved forward to a whole
@@ -175,7 +120,7 @@ export type ReadFileResponse = Message<"numen.v1.ReadFileResponse"> & {
  * Use `create(ReadFileResponseSchema)` to create a new message.
  */
 export const ReadFileResponseSchema: GenMessage<ReadFileResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 4);
+  messageDesc(file_numen_v1_hostfile, 3);
 
 /**
  * @generated from message numen.v1.WriteFileRequest
@@ -194,9 +139,9 @@ export type WriteFileRequest = Message<"numen.v1.WriteFileRequest"> & {
   /**
    * What the file was when the caller read it.
    *
-   * @generated from field: numen.v1.HostFileStat baseline = 3;
+   * @generated from field: numen.v1.FileStat baseline = 3;
    */
-  baseline?: HostFileStat | undefined;
+  baseline?: FileStat | undefined;
 };
 
 /**
@@ -204,23 +149,23 @@ export type WriteFileRequest = Message<"numen.v1.WriteFileRequest"> & {
  * Use `create(WriteFileRequestSchema)` to create a new message.
  */
 export const WriteFileRequestSchema: GenMessage<WriteFileRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 5);
+  messageDesc(file_numen_v1_hostfile, 4);
 
 /**
  * @generated from message numen.v1.WriteFileResponse
  */
 export type WriteFileResponse = Message<"numen.v1.WriteFileResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * What the file is now.
    *
-   * @generated from field: numen.v1.HostFileStat stat = 2;
+   * @generated from field: numen.v1.FileStat stat = 2;
    */
-  stat?: HostFileStat | undefined;
+  stat?: FileStat | undefined;
 };
 
 /**
@@ -228,7 +173,7 @@ export type WriteFileResponse = Message<"numen.v1.WriteFileResponse"> & {
  * Use `create(WriteFileResponseSchema)` to create a new message.
  */
 export const WriteFileResponseSchema: GenMessage<WriteFileResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 6);
+  messageDesc(file_numen_v1_hostfile, 5);
 
 /**
  * @generated from message numen.v1.CreateFileRequest
@@ -250,16 +195,16 @@ export type CreateFileRequest = Message<"numen.v1.CreateFileRequest"> & {
  * Use `create(CreateFileRequestSchema)` to create a new message.
  */
 export const CreateFileRequestSchema: GenMessage<CreateFileRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 7);
+  messageDesc(file_numen_v1_hostfile, 6);
 
 /**
  * @generated from message numen.v1.CreateFileResponse
  */
 export type CreateFileResponse = Message<"numen.v1.CreateFileResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 };
 
 /**
@@ -267,7 +212,7 @@ export type CreateFileResponse = Message<"numen.v1.CreateFileResponse"> & {
  * Use `create(CreateFileResponseSchema)` to create a new message.
  */
 export const CreateFileResponseSchema: GenMessage<CreateFileResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 8);
+  messageDesc(file_numen_v1_hostfile, 7);
 
 /**
  * @generated from message numen.v1.ScanFilesRequest
@@ -284,16 +229,16 @@ export type ScanFilesRequest = Message<"numen.v1.ScanFilesRequest"> & {
  * Use `create(ScanFilesRequestSchema)` to create a new message.
  */
 export const ScanFilesRequestSchema: GenMessage<ScanFilesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 9);
+  messageDesc(file_numen_v1_hostfile, 8);
 
 /**
  * @generated from message numen.v1.ScanFilesResponse
  */
 export type ScanFilesResponse = Message<"numen.v1.ScanFilesResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 };
 
 /**
@@ -301,7 +246,7 @@ export type ScanFilesResponse = Message<"numen.v1.ScanFilesResponse"> & {
  * Use `create(ScanFilesResponseSchema)` to create a new message.
  */
 export const ScanFilesResponseSchema: GenMessage<ScanFilesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 10);
+  messageDesc(file_numen_v1_hostfile, 9);
 
 /**
  * FileChangeCursor is a place in the file change feed of a vault. The empty
@@ -330,7 +275,7 @@ export type FileChangeCursor = Message<"numen.v1.FileChangeCursor"> & {
  * Use `create(FileChangeCursorSchema)` to create a new message.
  */
 export const FileChangeCursorSchema: GenMessage<FileChangeCursor> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 11);
+  messageDesc(file_numen_v1_hostfile, 10);
 
 /**
  * @generated from message numen.v1.ListFileChangesRequest
@@ -364,16 +309,16 @@ export type ListFileChangesRequest = Message<"numen.v1.ListFileChangesRequest"> 
  * Use `create(ListFileChangesRequestSchema)` to create a new message.
  */
 export const ListFileChangesRequestSchema: GenMessage<ListFileChangesRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 12);
+  messageDesc(file_numen_v1_hostfile, 11);
 
 /**
  * @generated from message numen.v1.ListFileChangesResponse
  */
 export type ListFileChangesResponse = Message<"numen.v1.ListFileChangesResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * @generated from field: repeated numen.v1.FileChange changes = 2;
@@ -409,7 +354,7 @@ export type ListFileChangesResponse = Message<"numen.v1.ListFileChangesResponse"
  * Use `create(ListFileChangesResponseSchema)` to create a new message.
  */
 export const ListFileChangesResponseSchema: GenMessage<ListFileChangesResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 13);
+  messageDesc(file_numen_v1_hostfile, 12);
 
 /**
  * FileChange is the latest event of one kind of one file.
@@ -447,7 +392,7 @@ export type FileChange = Message<"numen.v1.FileChange"> & {
  * Use `create(FileChangeSchema)` to create a new message.
  */
 export const FileChangeSchema: GenMessage<FileChange> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostfile, 14);
+  messageDesc(file_numen_v1_hostfile, 13);
 
 /**
  * HostFileService is the files of the vault, as a plugin reads and writes them

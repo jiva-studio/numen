@@ -44,7 +44,7 @@ func startPlugin(t *testing.T) string {
 func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	pos := startPlugin(t)
 
-	_, protocol, err := servertest.NewLifecycleClient(http.DefaultClient, pos, testToken).Ping(t.Context())
+	protocol, err := servertest.NewLifecycleClient(http.DefaultClient, pos, testToken).Ping(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

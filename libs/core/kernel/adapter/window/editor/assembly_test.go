@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/none"
@@ -32,8 +31,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
@@ -41,7 +40,6 @@ import (
 
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -54,12 +52,12 @@ const derivedCoreFolder = "core"
 type readingParts struct {
 	indexPath          string
 	shouldRebuildIndex bool
-	texts              textdomain.Readers
+	texts              textport.Readers
 	chunks             *note.ChunkTokens
 	watches            *vaultwatch.Hub
 }
 
-func newReadingParts(indexPath string, shouldRebuildIndex bool, texts textdomain.Readers) readingParts {
+func newReadingParts(indexPath string, shouldRebuildIndex bool, texts textport.Readers) readingParts {
 	return readingParts{
 		indexPath:          indexPath,
 		shouldRebuildIndex: shouldRebuildIndex,
@@ -92,7 +90,7 @@ func (w readingParts) OpenIndex(ctx context.Context) (*testIndex, error) {
 // testIndex is the part of an open index the tests of the window read and write.
 type testIndex struct {
 	closer  io.Closer
-	vectors vectors.VectorIndex
+	vectors indexing.VectorIndex
 	walks   vault.Walks
 	ledger  *vault.Ledger
 
@@ -115,12 +113,12 @@ type testIndex struct {
 		Lexical       search.LexicalQueries
 		Nearest       search.NearestQueries
 		Progress      indexing.IndexProgress
-		Vectors       vectors.VectorRepository
-		VectorQueries vectors.VectorQueries
+		Vectors       indexing.VectorRepository
+		VectorQueries indexing.VectorQueries
 	}
 	Source struct {
 		Sources       sourceport.SourceRepository
-		SourceRecords filetext.SourceRecords
+		SourceRecords indexing.SourceRecords
 		SourceBacklog sourceport.SourceBacklog
 		RemovalLookup sourceport.RemovalLookup
 	}
@@ -132,7 +130,7 @@ func (i *testIndex) Walks() *vault.Walks { return &i.walks }
 
 func (i *testIndex) Ledger() *vault.Ledger { return i.ledger }
 
-func (i *testIndex) VectorIndex() vectors.VectorIndex { return i.vectors }
+func (i *testIndex) VectorIndex() indexing.VectorIndex { return i.vectors }
 
 func (w readingParts) GetVaultReaders() vaultport.VaultReaders { return vaultreader.Readers{} }
 
@@ -188,7 +186,7 @@ func (w readingParts) OpenVaultWith(
 func (w readingParts) ReadWholeVault(
 	ctx context.Context, db *testIndex, embedder searchsourceport.Source, v domain.Vault, rebuild bool,
 ) (indexing.ReadWholeVault, error) {
-	fit := vectors.NewFitIndex(db.VectorIndex(), nil, rebuild)
+	fit := indexing.NewFitIndex(db.VectorIndex(), nil, rebuild)
 	if err := fit.Execute(ctx, embedder); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
@@ -208,11 +206,11 @@ func (w readingParts) ReadWholeVault(
 		return nil
 	}
 	cutter := w.cutNotes()
-	base := filetext.NewIndex(filetext.IndexDeps{
+	base := indexing.NewIndex(indexing.IndexDeps{
 		Readers: w.GetVaultReaders(), Sources: db.Source.Sources, Records: db.Source.SourceRecords, Backlog: db.Source.SourceBacklog, Lookup: db.Source.RemovalLookup,
 		Texts: w.texts, Sizes: cutter.Sizes, Legibility: cutter.Legibility, ShouldRebuildIndex: rebuild,
 	})
-	texts := filetext.NewHandlingIndex(base, nil, readNote)
+	texts := indexing.NewHandlingIndex(base, nil, readNote)
 	store, err := derivedfile.OpenDerived(v.Path, vaultconfig.Options{}, derivedCoreFolder)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
@@ -220,7 +218,7 @@ func (w readingParts) ReadWholeVault(
 	if embedder == nil {
 		embedder = none.SearchSource{}
 	}
-	embed := vectors.NewEmbed(w.GetVaultReaders(), db.Chunks.VectorQueries, db.Chunks.Vectors, store.NewIndexClaim(derivedCoreFolder+"/indexing"), w.texts, embedder)
+	embed := indexing.NewEmbed(w.GetVaultReaders(), db.Chunks.VectorQueries, db.Chunks.Vectors, store.NewIndexClaim(derivedCoreFolder+"/indexing"), w.texts, embedder)
 	return indexing.NewReadWholeVault(w.scan(db, rebuild), texts, embed), nil
 }
 

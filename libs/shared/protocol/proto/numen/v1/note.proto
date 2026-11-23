@@ -293,7 +293,7 @@ message ReadNoteResponse {
   string body = 1;
 
   // Set when the note was not read, and why.
-  optional ErrorCode error = 2;
+  ErrorCode error = 2;
 
   optional FileStat at = 3;
 }
@@ -323,7 +323,7 @@ message WriteNoteRequest {
 
 message WriteNoteResponse {
   // Set when nothing was written, and why.
-  optional ErrorCode error = 1;
+  ErrorCode error = 1;
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
@@ -390,7 +390,7 @@ message CreateNoteResponse {
   string path = 1;
 
   // Set when nothing was made, and why.
-  optional ErrorCode error = 2;
+  ErrorCode error = 2;
 
   // Set when the note is on disk and the index could not be updated for it.
   // The note was made and `path` stands; search does not answer about it until
@@ -436,7 +436,7 @@ message GetConnectionRequest {
 
 message GetConnectionResponse {
   Connection connection = 1;
-  optional ErrorCode error = 2;
+  ErrorCode error = 2;
 }
 
 message SaveConnectionRequest {
@@ -444,7 +444,7 @@ message SaveConnectionRequest {
 }
 
 message SaveConnectionResponse {
-  optional ErrorCode error = 1;
+  ErrorCode error = 1;
 
   // Set when the connection was not saved because it is not one: a role no
   // connection carries, roles that are not inverse of each other, or a note
@@ -466,7 +466,7 @@ message RemoveSideRequest {
 }
 
 message RemoveSideResponse {
-  optional ErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 message RemoveConnectionRequest {
@@ -476,7 +476,7 @@ message RemoveConnectionRequest {
 }
 
 message RemoveConnectionResponse {
-  optional ErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 message JoinNotesRequest {
@@ -488,7 +488,7 @@ message JoinNotesRequest {
 }
 
 message JoinNotesResponse {
-  optional ErrorCode error = 1;
+  ErrorCode error = 1;
 
   // Set when the record was not written because the connection is not valid,
   // as in SaveConnectionResponse.
@@ -521,7 +521,7 @@ message CreateRelatedNoteResponse {
   string path = 1;
 
   // Set when nothing was made, and why.
-  optional ErrorCode error = 2;
+  ErrorCode error = 2;
 
   // Set when the note is on disk and the index could not be updated for it.
   bool is_index_outdated = 3;
@@ -592,12 +592,15 @@ message RenameNoteResponse {
   // Set when the rename did not finish, and why. The note may already have been
   // written: `path`, `title` and `by` say what stands. A note holding prose the
   // caller never saw is ERROR_CODE_CONFLICT, and nothing was written at all.
-  optional ErrorCode error = 5;
+  ErrorCode error = 5;
 
   // Set when the rename reached the vault and the index could not be updated
   // with it. Search answers about these files as it read them last, until a
   // walk goes past.
   bool is_index_outdated = 6;
+
+  // The text of the error where it carries more than the code does.
+  string detail = 7;
 }
 
 message WatchEditsRequest {}

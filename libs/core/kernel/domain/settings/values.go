@@ -39,6 +39,13 @@ func IsPluginSetting(path []string) bool {
 	return len(path) == 2 && path[0] != AppOwner
 }
 
+// Snapshot is the checked settings as JSON, the path of the file and the version of the state read.
+type Snapshot struct {
+	Content string
+	Path    string
+	Version uint64
+}
+
 // Stored is the content of the settings file.
 type Stored interface {
 	// GetValue returns the value in force at a path: the stored value, else the default its owner

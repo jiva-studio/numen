@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -179,13 +180,35 @@ func (l *eventLog) all() []string {
 	return append([]string(nil), l.events...)
 }
 
+// knownVaults is the list the vaults of the tests are on.
+type knownVaults struct{}
+
+func (knownVaults) FindVault(nameOrPath string) (domain.Vault, bool, error) {
+	for _, v := range []domain.Vault{garden(), studio()} {
+		if nameOrPath == string(v.ID) || nameOrPath == v.Name || nameOrPath == v.Path {
+			return v, true, nil
+		}
+	}
+	return domain.Vault{}, false, nil
+}
+
+// identity is the identity of the folders of the tests: each carries the identity of its vault, unless mismatched says the folder cannot be read.
 type identity struct{ mismatched error }
 
-func (i identity) Execute(domain.Vault) error { return i.mismatched }
+func (identity) GetName(root string) string { return root }
+
+func (i identity) CheckReadable(string) error { return i.mismatched }
+
+func (identity) GetVaultID(root string) (domain.VaultID, bool, error) {
+	v, isFound, err := knownVaults{}.FindVault(root)
+	return v.ID, isFound, err
+}
+
+func (identity) EnsureIdentity(string, time.Time) (domain.VaultID, error) { return "", nil }
 
 type openRecord struct{ log *eventLog }
 
-func (r openRecord) Execute(id domain.VaultID) error {
+func (r openRecord) RecordOpened(id domain.VaultID) error {
 	r.log.add("recorded " + string(id))
 	return nil
 }
@@ -284,9 +307,8 @@ type WindowPorts struct {
 }
 
 type VaultPorts struct {
-	Import   FileImport
-	Identity IdentityCheck
-	Recorded OpenRecord
+	Identity vaultport.VaultIdentity
+	Recorded vaultport.VaultRecorder
 	Passes   VaultPasses
 	Texts    TextVersions
 }
@@ -316,10 +338,9 @@ type UseCases struct {
 		Close CloseWindow
 	}
 	guard    *Guard
-	identity IdentityCheck
+	identity CheckIdentity
 	Start    StartWindow
 	ShowTab  ShowTab
-	Import   ImportFiles
 }
 
 // NewUseCases builds the use cases of the window the way the container does.
@@ -335,15 +356,17 @@ func NewUseCases(rt *Runtime, tabs *TabReports, deps Deps) *UseCases {
 	flush := NewPageFlush(deps.Window.Pages, deps.Window.Writes)
 	var s UseCases
 	s.Switching.Rebuild = NewRebuildSession(guard, session)
-	s.Switching.Show = NewShowVault(guard, session, deps.Vault.Identity, flush, deps.Window.Changes)
-	s.Switching.OpenPlugin = NewOpenPluginVault(guard, deps.Vault.Identity, deps.Window.Pages, switchFunc(func(context.Context, domain.Vault, *PluginOpen) error { return errNoVaultSwitch }))
-	s.guard, s.identity = guard, deps.Vault.Identity
+	s.Switching.Show = NewShowVault(guard, session, NewCheckIdentity(deps.Vault.Identity), flush, deps.Window.Changes)
+	s.Switching.OpenPlugin = NewOpenPluginVault(
+		guard, knownVaults{}, NewCheckIdentity(deps.Vault.Identity), deps.Window.Pages,
+		switchFunc(func(context.Context, domain.Vault, *PluginOpen) error { return errNoVaultSwitch }),
+	)
+	s.guard, s.identity = guard, NewCheckIdentity(deps.Vault.Identity)
 	s.Closing.Flush = NewFlushPending(guard, flush)
 	s.Closing.Close = NewCloseWindow(deps.Shutdown.Door, session, deps.Shutdown.Closers...)
 	follow := NewModelFollow(deps.Index.Model, deps.Index.Wake, rt, s.Switching.Rebuild)
 	s.Start = NewStartWindow(diag, deps.EmbedderError, follow, session, deps.IsRebuilding)
 	s.ShowTab = NewShowTab(tabs, deps.Window.TabFront, deps.TabBound)
-	s.Import = NewImportFiles(deps.Vault.Import, deps.Window.Writes, deps.Window.Tasks, deps.Window.Changes)
 	return &s
 }
 

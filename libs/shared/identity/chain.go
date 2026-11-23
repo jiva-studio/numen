@@ -130,32 +130,52 @@ func (c Chain) Verify() error {
 			return err
 		}
 		if i == 0 {
-			if entry.Genesis == nil || !bytes.Equal(entry.Signer, entry.Genesis.Recovery.Sign) {
-				return fmt.Errorf("%w: the genesis is not signed by its recovery key", ErrMalformed)
+			var err error
+			if root, err = verifyGenesis(entry); err != nil {
+				return err
 			}
-			root = entry.Genesis.Recovery.Sign
-		} else if _, ok := known[string(entry.Signer)]; !ok && !bytes.Equal(entry.Signer, root) {
-			return fmt.Errorf("%w: entry %d", ErrUnknownSigner, i)
-		}
-		if len(entry.Signer) != ed25519.PublicKeySize || !ed25519.Verify(entry.Signer, signedMessage(entry), entry.Signature[:]) {
-			return fmt.Errorf("%w: entry %d", ErrBadSignature, i)
-		}
-		if i == 0 {
 			continue
 		}
-		if entry.AddDevice == nil {
-			return fmt.Errorf("%w: entry %d has no device", ErrMalformed, i)
-		}
-		if err := checkDeviceName(entry.AddDevice.Name); err != nil {
+		if err := verifyAddDevice(entry, i, root, known); err != nil {
 			return err
 		}
-		added := string(entry.AddDevice.Device.Sign)
-		if _, ok := known[added]; ok || bytes.Equal(entry.AddDevice.Device.Sign, root) {
-			return fmt.Errorf("%w: entry %d", ErrDuplicateDevice, i)
-		}
-		known[added] = struct{}{}
 	}
 	return nil
+}
+
+func verifyGenesis(entry Entry) (ed25519.PublicKey, error) {
+	if entry.Genesis == nil || !bytes.Equal(entry.Signer, entry.Genesis.Recovery.Sign) {
+		return nil, fmt.Errorf("%w: the genesis is not signed by its recovery key", ErrMalformed)
+	}
+	if !hasValidSignature(entry) {
+		return nil, fmt.Errorf("%w: entry 0", ErrBadSignature)
+	}
+	return entry.Genesis.Recovery.Sign, nil
+}
+
+func verifyAddDevice(entry Entry, i int, root ed25519.PublicKey, known map[string]struct{}) error {
+	if _, ok := known[string(entry.Signer)]; !ok && !bytes.Equal(entry.Signer, root) {
+		return fmt.Errorf("%w: entry %d", ErrUnknownSigner, i)
+	}
+	if !hasValidSignature(entry) {
+		return fmt.Errorf("%w: entry %d", ErrBadSignature, i)
+	}
+	if entry.AddDevice == nil {
+		return fmt.Errorf("%w: entry %d has no device", ErrMalformed, i)
+	}
+	if err := checkDeviceName(entry.AddDevice.Name); err != nil {
+		return err
+	}
+	added := string(entry.AddDevice.Device.Sign)
+	if _, ok := known[added]; ok || bytes.Equal(entry.AddDevice.Device.Sign, root) {
+		return fmt.Errorf("%w: entry %d", ErrDuplicateDevice, i)
+	}
+	known[added] = struct{}{}
+	return nil
+}
+
+func hasValidSignature(entry Entry) bool {
+	return len(entry.Signer) == ed25519.PublicKeySize && ed25519.Verify(entry.Signer, signedMessage(entry), entry.Signature[:])
 }
 
 func checkLink(entries []Entry, i int) error {

@@ -30,7 +30,7 @@ const (
 // Adapter wraps the Creem and Dodo licensing providers and reads the machine fingerprint and
 // instance name.
 type Adapter struct {
-	providers map[string]sharedlicensing.Provider
+	providers map[string]provider
 
 	mu          sync.Mutex
 	subscribers map[int]chan struct{}
@@ -47,7 +47,7 @@ func NewAdapter(onChange func(ctx context.Context)) *Adapter {
 	dodo.Configure(os.Getenv(envDodoBaseURL), nil)
 
 	return &Adapter{
-		providers: map[string]sharedlicensing.Provider{
+		providers: map[string]provider{
 			sharedlicensing.ProviderIDCreem: creem,
 			sharedlicensing.ProviderIDDodo:  dodo,
 		},
@@ -315,4 +315,13 @@ func mapSharedError(err error) error {
 	default:
 		return fmt.Errorf("%w: %s", license.ErrProviderUnavailable, err.Error())
 	}
+}
+
+// provider activates, validates and deactivates machine license instances for one service.
+type provider interface {
+	GetInfo() sharedlicensing.ProviderInfo
+	BuildCheckoutURL(productID, rawURL string) (string, error)
+	Activate(ctx context.Context, req sharedlicensing.ActivationRequest) (sharedlicensing.ActivationResult, error)
+	Validate(ctx context.Context, key, instanceID string) (sharedlicensing.ValidationResult, error)
+	Deactivate(ctx context.Context, key, instanceID string) error
 }

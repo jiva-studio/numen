@@ -15,7 +15,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
 var (
@@ -37,7 +36,7 @@ func getVaultsErrorCode(err error) (v1.VaultsErrorCode, bool) {
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
 	case errors.Is(err, vaultdomain.ErrShowing):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT, true
-	case errors.Is(err, registry.ErrUnknown), errors.Is(err, registry.ErrNoName):
+	case errors.Is(err, vaultdomain.ErrUnknown), errors.Is(err, vaultdomain.ErrNoName):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, plugin.ErrUnsavedChanges):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED, true
@@ -73,7 +72,7 @@ func (e *vaultsCalls) beginList(header http.Header) (List, error) {
 func (e *vaultsCalls) findVault(id domain.VaultID) (domain.Vault, error) {
 	vault := e.source.GetPluginVault()
 	if vault == nil {
-		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), registry.ErrUnknown)
+		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), vaultdomain.ErrUnknown)
 	}
 	known, err := vault.Switch.GetVaults()
 	if err != nil {
@@ -84,7 +83,7 @@ func (e *vaultsCalls) findVault(id domain.VaultID) (domain.Vault, error) {
 			return one, nil
 		}
 	}
-	return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), registry.ErrUnknown)
+	return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), vaultdomain.ErrUnknown)
 }
 
 func writeVault(v domain.Vault) *v1.Vault {

@@ -158,7 +158,7 @@ func (f *fixture) getStartCount() int {
 
 func (f *fixture) handleIndexChange(t *testing.T) {
 	t.Helper()
-	if err := f.app.HandleEvent(t.Context(), "onIndexChanged:"+testVault); err != nil {
+	if err := f.app.HandleEvent(t.Context(), hosttest.GetIndexChangedEvent(testVault)); err != nil {
 		t.Fatalf("HandleEvent = %v", err)
 	}
 	f.app.Wait()

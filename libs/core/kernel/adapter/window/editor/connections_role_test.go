@@ -20,7 +20,7 @@ func TestAConnectionRoleFillsTheRecordsThatCarryNone(t *testing.T) {
 			SecondSide: &v1.ConnectionSide{Label: "measures"},
 		},
 	}))
-	if err != nil || saved.Msg.Error != nil || saved.Msg.GetIsInvalid() {
+	if err != nil || saved.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED || saved.Msg.GetIsInvalid() {
 		t.Fatalf("answer = %v (%v)", saved.Msg, err)
 	}
 

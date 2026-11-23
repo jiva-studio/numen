@@ -17,12 +17,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 )
 
 func newListHandler(open window, readers vaultport.VaultReaders) *filewindow.Handler {
 	fileKinds := file.NewGetFileKinds(readers, nil)
-	choose := tabkind.NewChoose(tabKinds{}, notesOnly{}, nil)
+	choose := file.NewChooseTabKind(tabKinds{}, notesOnly{}, nil)
 	return filewindow.NewHandler(
 		filewindow.NewFolders(
 			open,

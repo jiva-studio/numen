@@ -17,7 +17,9 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
 
-var legal = strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
+func getLegalWords() []string {
+	return strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
+}
 
 type keyStore struct {
 	mu       sync.Mutex
@@ -86,7 +88,7 @@ func TestGetIdentity_AnswersNothingWithoutAnIdentityAndTheInfoAfterCreate(t *tes
 	if err != nil || none.Msg.GetIdentity() != nil {
 		t.Fatalf("GetIdentity() = %v, %v; want no identity", none, err)
 	}
-	created := create(t, h, legal)
+	created := create(t, h, getLegalWords())
 	if created.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("CreateIdentity() refused: %v %q", created.GetError(), created.GetDetail())
 	}
@@ -121,7 +123,7 @@ func TestGenerateRecoveryWords_AnswersTwelveWords(t *testing.T) {
 func TestCreateIdentity_RefusesWordsThatAreNotValidWithoutEchoingAWord(t *testing.T) {
 	t.Parallel()
 	h := newHandler(newKeys())
-	words := append([]string(nil), legal...)
+	words := getLegalWords()
 	words[3] = "numen"
 	answer := create(t, h, words)
 	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS || answer.GetIdentity() != nil {
@@ -144,8 +146,8 @@ func TestCreateIdentity_RefusesWordsThatAreNotValidWithoutEchoingAWord(t *testin
 func TestCreateIdentity_RefusesASecondIdentity(t *testing.T) {
 	t.Parallel()
 	h := newHandler(newKeys())
-	create(t, h, legal)
-	if answer := create(t, h, legal); answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS {
+	create(t, h, getLegalWords())
+	if answer := create(t, h, getLegalWords()); answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS {
 		t.Errorf("answer = %v", answer)
 	}
 }
@@ -154,7 +156,7 @@ func TestCreateIdentity_AnswersAKeyStoreFailureAsACode(t *testing.T) {
 	t.Parallel()
 	keys := newKeys()
 	keys.setFails = errors.New("the keychain refuses")
-	answer := create(t, newHandler(keys), legal)
+	answer := create(t, newHandler(keys), getLegalWords())
 	if answer.GetError() != v1.IdentityErrorCode_IDENTITY_ERROR_CODE_KEY_STORE_FAILED || len(keys.keys) != 0 {
 		t.Errorf("answer = %v, keys = %v", answer, keys.keys)
 	}
@@ -166,11 +168,14 @@ func TestDeleteIdentity_RemovesTheIdentityAndAnswersWithoutOne(t *testing.T) {
 	if _, err := h.DeleteIdentity(t.Context(), connect.NewRequest(&v1.DeleteIdentityRequest{})); err != nil {
 		t.Fatalf("delete without identity = %v", err)
 	}
-	create(t, h, legal)
+	create(t, h, getLegalWords())
 	if _, err := h.DeleteIdentity(t.Context(), connect.NewRequest(&v1.DeleteIdentityRequest{})); err != nil {
 		t.Fatal(err)
 	}
-	got, _ := h.GetIdentity(t.Context(), connect.NewRequest(&v1.GetIdentityRequest{}))
+	got, err := h.GetIdentity(t.Context(), connect.NewRequest(&v1.GetIdentityRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if got.Msg.GetIdentity() != nil {
 		t.Error("the identity is still there")
 	}

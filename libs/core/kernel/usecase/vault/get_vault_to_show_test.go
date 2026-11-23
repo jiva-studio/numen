@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
@@ -32,7 +33,7 @@ func TestAVaultNamedAndNotOnTheListIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := vaultregistry.NewGetVaultToShow(registry, registry, registry).Execute("elsewhere"); !errors.Is(err, vaultregistry.ErrUnknown) {
+	if _, err := vaultregistry.NewGetVaultToShow(registry, registry, registry).Execute("elsewhere"); !errors.Is(err, vaultdomain.ErrUnknown) {
 		t.Fatalf("error is %v, want ErrUnknown", err)
 	}
 }

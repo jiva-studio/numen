@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-var epoch = time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)
+func epoch() time.Time { return time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC) }
 
 var (
 	_ identity.Signer = identity.RecoveryKey{}
@@ -26,9 +26,9 @@ type account struct {
 
 func newChain(t *testing.T) account {
 	t.Helper()
-	recovery := abandonWords(t).DeriveRecoveryKey()
+	recovery := deriveRecovery(t, abandonWords(t))
 	keys := newAccount(t)
-	chain, err := identity.NewChain(recovery, keys, epoch)
+	chain, err := identity.NewChain(recovery, keys, epoch())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestAppendDevice_ListsTheDeviceWithItsNameAndTime(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
 	device := newDevice(t)
-	at := epoch.Add(1500 * time.Millisecond)
+	at := epoch().Add(1500 * time.Millisecond)
 	chain, err := appended(a.chain, a.recovery, device.Public(), "Laptop", at)
 	if err != nil {
 		t.Fatal(err)
@@ -104,7 +104,7 @@ func TestAppendDevice_ListsTheDeviceWithItsNameAndTime(t *testing.T) {
 	if len(devices) != 1 || devices[0].Name != "Laptop" || !bytes.Equal(devices[0].Public.Sign, device.Public().Sign) {
 		t.Fatalf("ListDevices() = %+v", devices)
 	}
-	if want := epoch.Add(time.Second); !devices[0].AddedAt.Equal(want) {
+	if want := epoch().Add(time.Second); !devices[0].AddedAt.Equal(want) {
 		t.Errorf("AddedAt = %v, want %v (whole seconds)", devices[0].AddedAt, want)
 	}
 	if len(a.chain.ListDevices()) != 0 {
@@ -116,11 +116,11 @@ func TestAppendDevice_AcceptsADeviceAddedBeforeAsSigner(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
 	first, second := newDevice(t), newDevice(t)
-	chain, err := appended(a.chain, a.recovery, first.Public(), "First", epoch)
+	chain, err := appended(a.chain, a.recovery, first.Public(), "First", epoch())
 	if err != nil {
 		t.Fatal(err)
 	}
-	chain, err = appended(chain, first, second.Public(), "Second", epoch.Add(time.Minute))
+	chain, err = appended(chain, first, second.Public(), "Second", epoch().Add(time.Minute))
 	if err != nil {
 		t.Fatalf("an entry signed by an added device: %v", err)
 	}
@@ -133,11 +133,11 @@ func TestAppendDevice_RefusesTheSameDeviceTwice(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
 	device := newDevice(t)
-	chain, err := appended(a.chain, a.recovery, device.Public(), "Laptop", epoch)
+	chain, err := appended(a.chain, a.recovery, device.Public(), "Laptop", epoch())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := appended(chain, a.recovery, device.Public(), "Laptop again", epoch); !errors.Is(err, identity.ErrDuplicateDevice) {
+	if _, err := appended(chain, a.recovery, device.Public(), "Laptop again", epoch()); !errors.Is(err, identity.ErrDuplicateDevice) {
 		t.Errorf("error = %v, want ErrDuplicateDevice", err)
 	}
 }
@@ -146,11 +146,11 @@ func TestAppendDevice_RefusesASignerThatIsNotInTheChain(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
 	stranger := newDevice(t)
-	if _, err := appended(a.chain, stranger, newDevice(t).Public(), "Phone", epoch); !errors.Is(err, identity.ErrUnknownSigner) {
+	if _, err := appended(a.chain, stranger, newDevice(t).Public(), "Phone", epoch()); !errors.Is(err, identity.ErrUnknownSigner) {
 		t.Errorf("a device that was never added signs: error = %v, want ErrUnknownSigner", err)
 	}
-	other, _ := identity.ParseRecoveryWords(strings.Fields(bip39Vectors[1].words))
-	if _, err := appended(a.chain, other.DeriveRecoveryKey(), newDevice(t).Public(), "Phone", epoch); !errors.Is(err, identity.ErrUnknownSigner) {
+	other := parseWords(t, bip39Vectors()[1].words)
+	if _, err := appended(a.chain, deriveRecovery(t, other), newDevice(t).Public(), "Phone", epoch()); !errors.Is(err, identity.ErrUnknownSigner) {
 		t.Errorf("another recovery key signs: error = %v, want ErrUnknownSigner", err)
 	}
 }
@@ -164,11 +164,11 @@ func TestAppendDevice_RefusesABadName(t *testing.T) {
 		"invalid UTF-8":   "lap\xfftop",
 		"a tab character": "lap\ttop",
 	} {
-		if _, err := appended(a.chain, a.recovery, newDevice(t).Public(), text, epoch); !errors.Is(err, identity.ErrDeviceName) {
+		if _, err := appended(a.chain, a.recovery, newDevice(t).Public(), text, epoch()); !errors.Is(err, identity.ErrDeviceName) {
 			t.Errorf("%s: error = %v, want ErrDeviceName", name, err)
 		}
 	}
-	if _, err := appended(a.chain, a.recovery, newDevice(t).Public(), strings.Repeat("н", 32), epoch); err != nil {
+	if _, err := appended(a.chain, a.recovery, newDevice(t).Public(), strings.Repeat("н", 32), epoch()); err != nil {
 		t.Errorf("a name of 64 bytes is refused: %v", err)
 	}
 }
@@ -176,7 +176,7 @@ func TestAppendDevice_RefusesABadName(t *testing.T) {
 func TestParseChain_RoundTrip(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
-	chain, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch)
+	chain, err := appended(a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,7 +195,7 @@ func TestParseChain_RoundTrip(t *testing.T) {
 func TestParseChain_RefusesAnyChangedByte(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
-	chain, _ := appended(a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch)
+	chain := mustAppend(t, a.chain, a.recovery, newDevice(t).Public(), "Laptop", epoch())
 	b := chain.Bytes()
 	for i := range b {
 		changed := bytes.Clone(b)
@@ -210,9 +210,9 @@ func TestParseChain_NamesABadSignatureWhereTheSignedFieldsChange(t *testing.T) {
 	t.Parallel()
 	a := newChain(t)
 	device := newDevice(t)
-	chain, _ := appended(a.chain, a.recovery, device.Public(), "Laptop", epoch)
+	chain := mustAppend(t, a.chain, a.recovery, device.Public(), "Laptop", epoch())
 	b := chain.Bytes()
-	seconds := binary.BigEndian.AppendUint64(nil, uint64(epoch.Unix()))
+	seconds := binary.BigEndian.AppendUint64(nil, uint64(epoch().Unix()))
 	places := map[string]int{
 		"the device name":     bytes.Index(b, []byte("Laptop")),
 		"the time":            bytes.LastIndex(b, seconds),
@@ -234,11 +234,11 @@ func TestParseChain_NamesABadSignatureWhereTheSignedFieldsChange(t *testing.T) {
 func threeEntries(t *testing.T) ([][]byte, account) {
 	t.Helper()
 	a := newChain(t)
-	chain, err := appended(a.chain, a.recovery, newDevice(t).Public(), "One", epoch)
+	chain, err := appended(a.chain, a.recovery, newDevice(t).Public(), "One", epoch())
 	if err != nil {
 		t.Fatal(err)
 	}
-	chain, err = appended(chain, a.recovery, newDevice(t).Public(), "Two", epoch)
+	chain, err = appended(chain, a.recovery, newDevice(t).Public(), "Two", epoch())
 	if err != nil {
 		t.Fatal(err)
 	}

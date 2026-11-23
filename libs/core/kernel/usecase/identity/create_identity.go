@@ -51,7 +51,10 @@ func (u *CreateIdentity) checkAbsent(ctx context.Context) error {
 }
 
 func (u *CreateIdentity) buildRecord(recovery identitylib.RecoveryWords) (identitylib.Record, error) {
-	root := recovery.DeriveRecoveryKey()
+	root, err := recovery.DeriveRecoveryKey()
+	if err != nil {
+		return identitylib.Record{}, err
+	}
 	account, err := identitylib.NewAccountKeys(u.deps.random)
 	if err != nil {
 		return identitylib.Record{}, err

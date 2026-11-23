@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/searchsourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -602,7 +601,7 @@ type WorkerIndex struct {
 	FileStats   vault.FileStats
 	Maintenance vault.IndexMaintenance
 	Progress    IndexProgress
-	Vectors     vectors.VectorIndex
+	Vectors     VectorIndex
 	Closer      io.Closer
 }
 

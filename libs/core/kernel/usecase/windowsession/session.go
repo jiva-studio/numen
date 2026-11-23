@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -27,7 +28,7 @@ type vaultRunner interface {
 type Session struct {
 	runtime       *Runtime
 	running       atomic.Pointer[runningVault]
-	recorded      OpenRecord
+	recorded      vaultport.VaultRecorder
 	diag          *Diagnostics
 	embedderError error
 	runner        vaultRunner
@@ -36,7 +37,7 @@ type Session struct {
 // NewSession makes the session of a window over its runtime. embedderError is why the window has no
 // embedder, or nil.
 func NewSession(
-	runtime *Runtime, recorded OpenRecord, diag *Diagnostics, embedderError error, runner *PassRunner,
+	runtime *Runtime, recorded vaultport.VaultRecorder, diag *Diagnostics, embedderError error, runner *PassRunner,
 ) *Session {
 	return &Session{runtime: runtime, recorded: recorded, diag: diag, embedderError: embedderError, runner: runner}
 }
@@ -52,7 +53,7 @@ func (s *Session) startVault(ctx context.Context, v domain.Vault, rebuild bool) 
 	s.runtime.SetVault(v)
 	// Recorded before the vault is built, so the next window opens on it. A failure
 	// to write the list is reported and does not stop the vault from opening.
-	if err := s.recorded.Execute(v.ID); err != nil {
+	if err := s.recorded.RecordOpened(v.ID); err != nil {
 		s.diag.say("not recording %s as the vault opened: %v\n", v.Name, err)
 	}
 	// Published last, so a request that reads a run reads the one belonging to the vault in front of it.

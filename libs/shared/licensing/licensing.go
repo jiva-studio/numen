@@ -1,7 +1,6 @@
 package licensing
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -78,15 +77,6 @@ type ActivationResult struct {
 type ValidationResult struct {
 	Status    Status
 	ExpiresAt *time.Time
-}
-
-// Provider activates, validates and deactivates machine license instances for one service.
-type Provider interface {
-	GetInfo() ProviderInfo
-	BuildCheckoutURL(productID, rawURL string) (string, error)
-	Activate(ctx context.Context, req ActivationRequest) (ActivationResult, error)
-	Validate(ctx context.Context, key, instanceID string) (ValidationResult, error)
-	Deactivate(ctx context.Context, key, instanceID string) error
 }
 
 // HTTPDoer executes an HTTP request.

@@ -458,7 +458,7 @@ type MoveFileResponse struct {
 	// What the file did. Absent when nothing was moved.
 	Moved *MoveResult `protobuf:"bytes,1,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
 	// Set when nothing was moved, and why.
-	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the move reached the vault and the index could not be updated for
 	// it. Search answers about these files as it read them last, until a walk
 	// goes past.
@@ -505,8 +505,8 @@ func (x *MoveFileResponse) GetMoved() *MoveResult {
 }
 
 func (x *MoveFileResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -728,7 +728,7 @@ type RemoveFileResponse struct {
 	// The notes whose links pointed at what was removed and now reach nothing.
 	Dangling []string `protobuf:"bytes,2,rep,name=dangling,proto3" json:"dangling,omitempty"`
 	// Set when nothing was removed, and why.
-	Error *ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error ErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	// Set when the file no longer exists and the index could not be updated for it.
 	// Search answers about it as it read it last, until a walk goes past.
 	IsIndexOutdated bool `protobuf:"varint,4,opt,name=is_index_outdated,json=isIndexOutdated,proto3" json:"is_index_outdated,omitempty"`
@@ -781,8 +781,8 @@ func (x *RemoveFileResponse) GetDangling() []string {
 }
 
 func (x *RemoveFileResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -843,7 +843,7 @@ func (x *CreateFolderRequest) GetPath() string {
 type CreateFolderResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Set when nothing was made, and why.
-	Error         *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
+	Error         ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -879,8 +879,8 @@ func (*CreateFolderResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *CreateFolderResponse) GetError() ErrorCode {
-	if x != nil && x.Error != nil {
-		return *x.Error
+	if x != nil {
+		return x.Error
 	}
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
@@ -916,13 +916,12 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\btab_kind\x18\a \x01(\tR\atabKind\"5\n" +
 	"\x0fMoveFileRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x02 \x01(\tR\x02to\"\xb3\x01\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\"\xa4\x01\n" +
 	"\x10MoveFileResponse\x12/\n" +
-	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12.\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12*\n" +
+	"\x05moved\x18\x01 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12)\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12*\n" +
 	"\x11is_index_outdated\x18\x03 \x01(\bR\x0fisIndexOutdatedB\b\n" +
-	"\x06_movedB\b\n" +
-	"\x06_error\"h\n" +
+	"\x06_moved\"h\n" +
 	"\n" +
 	"MoveResult\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
@@ -933,18 +932,16 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"\x13\n" +
 	"\x11EmptyTrashRequest\"2\n" +
 	"\x12EmptyTrashResponse\x12\x1c\n" +
-	"\tundeleted\x18\x01 \x03(\tR\tundeleted\"\xb0\x01\n" +
+	"\tundeleted\x18\x01 \x03(\tR\tundeleted\"\xa1\x01\n" +
 	"\x12RemoveFileResponse\x12\x18\n" +
 	"\atrashed\x18\x01 \x01(\tR\atrashed\x12\x1a\n" +
-	"\bdangling\x18\x02 \x03(\tR\bdangling\x12.\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12*\n" +
-	"\x11is_index_outdated\x18\x04 \x01(\bR\x0fisIndexOutdatedB\b\n" +
-	"\x06_error\")\n" +
+	"\bdangling\x18\x02 \x03(\tR\bdangling\x12)\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12*\n" +
+	"\x11is_index_outdated\x18\x04 \x01(\bR\x0fisIndexOutdated\")\n" +
 	"\x13CreateFolderRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"P\n" +
-	"\x14CreateFolderResponse\x12.\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
-	"\x06_error2\xc9\x03\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"A\n" +
+	"\x14CreateFolderResponse\x12)\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error2\xc9\x03\n" +
 	"\vFileService\x12D\n" +
 	"\tListFiles\x12\x1a.numen.v1.ListFilesRequest\x1a\x1b.numen.v1.ListFilesResponse\x12P\n" +
 	"\rListFileKinds\x12\x1e.numen.v1.ListFileKindsRequest\x1a\x1f.numen.v1.ListFileKindsResponse\x12A\n" +
@@ -1021,8 +1018,6 @@ func file_numen_v1_file_proto_init() {
 	}
 	file_numen_v1_shared_proto_init()
 	file_numen_v1_file_proto_msgTypes[7].OneofWrappers = []any{}
-	file_numen_v1_file_proto_msgTypes[12].OneofWrappers = []any{}
-	file_numen_v1_file_proto_msgTypes[14].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

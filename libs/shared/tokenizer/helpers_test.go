@@ -72,7 +72,7 @@ func getModel(t *testing.T, file map[string]any) map[string]any {
 	return getObject(t, file["model"])
 }
 
-func loadTokenizer(t *testing.T, path string) tokenizer.Tokenizer {
+func loadTokenizer(t *testing.T, path string) *tokenizer.Tokenizer {
 	t.Helper()
 	tok, err := tokenizer.Load(path)
 	if err != nil {
@@ -81,7 +81,7 @@ func loadTokenizer(t *testing.T, path string) tokenizer.Tokenizer {
 	return tok
 }
 
-func loadFixture(t *testing.T) tokenizer.Tokenizer {
+func loadFixture(t *testing.T) *tokenizer.Tokenizer {
 	t.Helper()
 	return loadTokenizer(t, fixturePath)
 }
@@ -105,7 +105,7 @@ func getSingleIDs(t *testing.T, pieces ...string) []int {
 	return slices.Concat([]int{bosID}, getPieceIDs(t, pieces...), []int{eosID})
 }
 
-func checkEncode(t *testing.T, tok tokenizer.Tokenizer, text string, want []int) {
+func checkEncode(t *testing.T, tok *tokenizer.Tokenizer, text string, want []int) {
 	t.Helper()
 	if got := tok.Encode(text); !slices.Equal(got, want) {
 		t.Errorf("Encode(%q) = %v, want %v", text, got, want)

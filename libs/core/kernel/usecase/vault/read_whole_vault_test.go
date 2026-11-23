@@ -13,9 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
@@ -59,11 +57,11 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 
 	var order []string
 	notes := scanner(readers, db)
-	books := filetext.NewIndex(filetext.IndexDeps{
+	books := indexing.NewIndex(indexing.IndexDeps{
 		Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: readers},
 	})
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
+	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	if _, err := making.Execute(t.Context(), v, indexing.Reporting{
@@ -97,11 +95,11 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 
 	notes := scanner(refusing{}, db)
 	counted := &counting{VaultReaders: readers}
-	books := filetext.NewIndex(filetext.IndexDeps{
+	books := indexing.NewIndex(indexing.IndexDeps{
 		Readers: counted, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: counted},
 	})
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{})
+	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{})
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
@@ -124,11 +122,11 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	}
 
 	notes := scanner(readers, db)
-	books := filetext.NewIndex(filetext.IndexDeps{
+	books := indexing.NewIndex(indexing.IndexDeps{
 		Readers: refusing{}, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: refusing{}},
 	})
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
+	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(t.Context(), v, indexing.Reporting{})
@@ -157,12 +155,12 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 
 	limitCtx := limit(t.Context())
 	notes := scanner(readers, db)
-	books := filetext.NewIndex(filetext.IndexDeps{
+	books := indexing.NewIndex(indexing.IndexDeps{
 		Readers: timedOut{limit: limitCtx}, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: timedOut{limit: limitCtx}},
 	})
 	counted := &counting{VaultReaders: readers}
-	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
+	embed := indexing.NewEmbed(counted, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(unwilling{}))
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(limitCtx, v, indexing.Reporting{})
@@ -280,10 +278,10 @@ func (c *counting) Open(v domain.Vault) (vaultport.VaultReader, error) {
 func newWholeVaultRead(readers vaultport.VaultReaders, db *scanIndex) indexing.ReadWholeVault {
 	return indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(filetext.IndexDeps{
+		indexing.NewIndex(indexing.IndexDeps{
 			Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 			Texts: testsupport.Texts{Readers: readers},
 		}),
-		vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}),
+		indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}),
 	)
 }

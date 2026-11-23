@@ -30,7 +30,7 @@ func (m memoryKeys) DeleteKey(_ context.Context, name string) error {
 
 func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *testing.T) {
 	t.Parallel()
-	if got := openIdentityUseCases(pluginInstall{}, vaultWiring{Clock: testsupport.NewClockAt(time.Now())}); got != nil {
+	if got := openIdentityUseCases(pluginInstall{}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}); got != nil {
 		t.Errorf("openIdentityUseCases() = %+v, want nil", got)
 	}
 }
@@ -38,7 +38,7 @@ func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *
 func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *testing.T) {
 	t.Parallel()
 	keys := memoryKeys{}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: testsupport.NewClockAt(time.Now())})
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))})
 	if use == nil || use.Get == nil || use.GenerateWords == nil || use.Create == nil || use.Delete == nil {
 		t.Fatalf("openIdentityUseCases() = %+v, want all four use cases", use)
 	}

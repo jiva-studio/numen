@@ -2,32 +2,31 @@ package searchquery
 
 import (
 	"context"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
-
-// VaultFinding resolves a vault from the name or the path a person gives.
-type VaultFinding = func(nameOrPath string) (domain.Vault, error)
 
 // SearchPreparing creates the use case over the index of one vault.
 type SearchPreparing = func(ctx context.Context, v domain.Vault) (*FindSearchResults, error)
 
 // FindSearchResultsByName runs a query within the vault a person names.
 type FindSearchResultsByName struct {
-	find    VaultFinding
+	lookup  vaultport.VaultLookup
 	prepare SearchPreparing
 }
 
 // NewFindSearchResultsByName creates the use case that resolves the vault with find and runs the query
 // with the use case prepare returns.
-func NewFindSearchResultsByName(find VaultFinding, prepare SearchPreparing) FindSearchResultsByName {
-	return FindSearchResultsByName{find: find, prepare: prepare}
+func NewFindSearchResultsByName(lookup vaultport.VaultLookup, prepare SearchPreparing) FindSearchResultsByName {
+	return FindSearchResultsByName{lookup: lookup, prepare: prepare}
 }
 
 // ExecuteByName resolves the vault, prepares the search over it and returns the results of the query.
 func (u FindSearchResultsByName) ExecuteByName(ctx context.Context, nameOrPath string, r searchquery.Request) (searchquery.SearchResults, error) {
-	v, err := u.find(nameOrPath)
+	v, err := vaultdomain.FindByName(nameOrPath, u.lookup.FindVault)
 	if err != nil {
 		return searchquery.SearchResults{}, err
 	}

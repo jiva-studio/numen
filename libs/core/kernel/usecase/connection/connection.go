@@ -111,7 +111,7 @@ func NewList(deps Deps) *List { return &List{operation: deps.base} }
 
 // NewListTypes returns the use case that lists the kinds of connection and the titles the plugins give
 // their operations.
-func NewListTypes(deps Deps, titles connectionport.OperationTitles) *ListTypes {
+func NewListTypes(deps Deps, titles OperationTitles) *ListTypes {
 	return &ListTypes{operation: deps.base, titles: titles}
 }
 

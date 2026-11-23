@@ -4,15 +4,15 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { HostVaultErrorCode } from "./hostvault_pb.js";
-import { file_numen_v1_hostvault } from "./hostvault_pb.js";
+import type { ErrorCode } from "./shared_pb.js";
+import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/hostcache.proto.
  */
 export const file_numen_v1_hostcache: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9ob3N0Y2FjaGUucHJvdG8SCG51bWVuLnYxIiAKEFJlYWRDYWNoZVJlcXVlc3QSDAoEbmFtZRgBIAEoCSJjChFSZWFkQ2FjaGVSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIQCghpc19mb3VuZBgCIAEoCBIPCgdjb250ZW50GAMgASgMIjIKEVdyaXRlQ2FjaGVSZXF1ZXN0EgwKBG5hbWUYASABKAkSDwoHY29udGVudBgCIAEoDCJBChJXcml0ZUNhY2hlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUyoQEKEEhvc3RDYWNoZVNlcnZpY2USRAoJUmVhZENhY2hlEhoubnVtZW4udjEuUmVhZENhY2hlUmVxdWVzdBobLm51bWVuLnYxLlJlYWRDYWNoZVJlc3BvbnNlEkcKCldyaXRlQ2FjaGUSGy5udW1lbi52MS5Xcml0ZUNhY2hlUmVxdWVzdBocLm51bWVuLnYxLldyaXRlQ2FjaGVSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_hostvault]);
+  fileDesc("ChhudW1lbi92MS9ob3N0Y2FjaGUucHJvdG8SCG51bWVuLnYxIiAKEFJlYWRDYWNoZVJlcXVlc3QSDAoEbmFtZRgBIAEoCSJaChFSZWFkQ2FjaGVSZXNwb25zZRIiCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZRIQCghpc19mb3VuZBgCIAEoCBIPCgdjb250ZW50GAMgASgMIjIKEVdyaXRlQ2FjaGVSZXF1ZXN0EgwKBG5hbWUYASABKAkSDwoHY29udGVudBgCIAEoDCI4ChJXcml0ZUNhY2hlUmVzcG9uc2USIgoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGUyoQEKEEhvc3RDYWNoZVNlcnZpY2USRAoJUmVhZENhY2hlEhoubnVtZW4udjEuUmVhZENhY2hlUmVxdWVzdBobLm51bWVuLnYxLlJlYWRDYWNoZVJlc3BvbnNlEkcKCldyaXRlQ2FjaGUSGy5udW1lbi52MS5Xcml0ZUNhY2hlUmVxdWVzdBocLm51bWVuLnYxLldyaXRlQ2FjaGVSZXNwb25zZUJIWkZnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvc2hhcmVkL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ReadCacheRequest
@@ -36,9 +36,9 @@ export const ReadCacheRequestSchema: GenMessage<ReadCacheRequest> = /*@__PURE__*
  */
 export type ReadCacheResponse = Message<"numen.v1.ReadCacheResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 
   /**
    * Whether anything is kept under the name. A cache with nothing in it is the
@@ -88,9 +88,9 @@ export const WriteCacheRequestSchema: GenMessage<WriteCacheRequest> = /*@__PURE_
  */
 export type WriteCacheResponse = Message<"numen.v1.WriteCacheResponse"> & {
   /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
+   * @generated from field: numen.v1.ErrorCode error = 1;
    */
-  error: HostVaultErrorCode;
+  error: ErrorCode;
 };
 
 /**

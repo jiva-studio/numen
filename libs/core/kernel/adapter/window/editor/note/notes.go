@@ -34,7 +34,7 @@ func (h *Prose) ReadNote(
 	}
 	out := &v1.ReadNoteResponse{Body: found.Body}
 	if reason, ok := wire.ConvertOutcomeToErrorCode(found.Outcome); ok {
-		out.Error = &reason
+		out.Error = reason
 	} else {
 		// What the file was when this prose came out of it, for the client to
 		// present when it puts prose back.
@@ -72,7 +72,7 @@ func (h *Prose) WriteNote(
 	if !ok {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.WriteNoteResponse{Error: &reason}), nil
+	return connect.NewResponse(&v1.WriteNoteResponse{Error: reason}), nil
 }
 
 // CreateNote creates a note named after the given title and linked as the
@@ -117,7 +117,7 @@ func (h *Prose) CreateNote(
 	if !ok {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.CreateNoteResponse{Error: &reason}), nil
+	return connect.NewResponse(&v1.CreateNoteResponse{Error: reason}), nil
 }
 
 func (h *Outline) GetOpeningNote(
@@ -401,7 +401,7 @@ func (h *Prose) RenameNote(
 		reason, ok := wire.GetErrorCode(err)
 		switch {
 		case ok:
-			out.Error = &reason
+			out.Error = reason
 		case out.GetPath() == "":
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}

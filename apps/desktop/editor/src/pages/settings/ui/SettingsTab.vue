@@ -76,11 +76,7 @@ const {
           @back="goBack"
           @open-connections="selectPlugin('connections')"
         />
-        <AvailablePluginDetail
-          v-else-if="uninstalled"
-          :plugin="uninstalled"
-          @back="goBack"
-        />
+        <AvailablePluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="goBack" />
         <PluginsList
           v-else
           :settings="installation.settings"

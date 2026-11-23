@@ -23,7 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -352,7 +351,7 @@ func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 		res.Msg.GetNameSource() != v1.NameSource_NAME_SOURCE_FILENAME {
 		t.Errorf("the rename returned %v", res.Msg)
 	}
-	moved := res.Msg.GetMove()
+	moved := res.Msg.GetMoved()
 	if moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" || !slices.Equal(moved.GetRepaired(), []string{"Deltas.md"}) {
 		t.Errorf("the move came out as %v", moved)
 	}
@@ -361,7 +360,7 @@ func TestARenameReturnsTheNewPathAndTheMove(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if missing.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
+	if missing.Msg.GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("a rename of a missing note returned %v, want error NOT_FOUND", missing.Msg)
 	}
 }
@@ -383,10 +382,10 @@ func TestAMoveReturnsOneEntryPerPathInOrder(t *testing.T) {
 	if moves[0].GetError() != 0 || moves[0].GetMove().GetFrom() != "Danube.md" || moves[0].GetMove().GetTo() != "Rivers/Danube.md" {
 		t.Errorf("the first entry is %v, want Danube.md moved to Rivers/Danube.md", moves[0])
 	}
-	if moves[1].GetMove().GetFrom() != "Nowhere.md" || moves[1].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
+	if moves[1].GetMove().GetFrom() != "Nowhere.md" || moves[1].GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("the second entry is %v, want Nowhere.md with error NOT_FOUND", moves[1])
 	}
-	if moves[2].GetMove().GetFrom() != "Deltas.md" || moves[2].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS {
+	if moves[2].GetMove().GetFrom() != "Deltas.md" || moves[2].GetError() != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("the third entry is %v, want Deltas.md with error ALREADY_EXISTS", moves[2])
 	}
 
@@ -426,10 +425,10 @@ func TestARemovalReturnsTheTrashPathAndAFolderAsNotANote(t *testing.T) {
 		!slices.Equal(removals[0].GetBrokenLinks(), []string{"Deltas.md"}) {
 		t.Errorf("the first entry is %v, want Danube.md in .trash with Deltas.md dangling", removals[0])
 	}
-	if removals[1].GetPath() != "Rivers" || removals[1].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE {
+	if removals[1].GetPath() != "Rivers" || removals[1].GetError() != v1.ErrorCode_ERROR_CODE_NOT_A_NOTE {
 		t.Errorf("the folder entry is %v, want error NOT_A_NOTE", removals[1])
 	}
-	if removals[2].GetPath() != "Nowhere.md" || removals[2].GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
+	if removals[2].GetPath() != "Nowhere.md" || removals[2].GetError() != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("the third entry is %v, want error NOT_FOUND", removals[2])
 	}
 	if !slices.Equal(vault.removed, []string{"Danube.md", "Rivers", "Nowhere.md"}) {
@@ -459,7 +458,7 @@ func TestNoteRefsHaveTheIdentifier(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if notes := res.Msg.GetNotes(); len(notes) != 1 || notes[0].GetId() != "01JRIVERDanube" {
+	if notes := res.Msg.GetNotes(); len(notes) != 1 || notes[0].GetIdentifier() != "01JRIVERDanube" {
 		t.Errorf("the notes were %v, want Danube.md with id 01JRIVERDanube", notes)
 	}
 }
@@ -472,7 +471,7 @@ func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) 
 		"name taken":      {err: vaultdomain.ErrNameTaken, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN},
 		"last vault":      {err: vaultdomain.ErrLastVault, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT},
 		"current vault":   {err: vaultdomain.ErrShowing, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT},
-		"no such vault":   {err: registry.ErrUnknown, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND},
+		"no such vault":   {err: vaultdomain.ErrUnknown, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND},
 		"unsaved changes": {err: plugin.ErrUnsavedChanges, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -573,12 +572,12 @@ func (r failingRenameVault) RenameNote(context.Context, string, string) (string,
 func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 	for name, c := range map[string]struct {
 		err  error
-		want v1.HostVaultErrorCode
+		want v1.ErrorCode
 	}{
-		"invalid name":   {err: domain.ErrInvalidName, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME},
-		"already exists": {err: vaultdomain.ErrAlreadyExists, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
-		"not found":      {err: edit.ErrNotExist, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
-		"conflict":       {err: edit.ErrStale, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
+		"invalid name":   {err: domain.ErrInvalidName, want: v1.ErrorCode_ERROR_CODE_INVALID_NAME},
+		"already exists": {err: vaultdomain.ErrAlreadyExists, want: v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS},
+		"not found":      {err: edit.ErrNotExist, want: v1.ErrorCode_ERROR_CODE_NOT_FOUND},
+		"conflict":       {err: edit.ErrStale, want: v1.ErrorCode_ERROR_CODE_CONFLICT},
 	} {
 		t.Run(name, func(t *testing.T) {
 			hostCallers := newCallers()
@@ -598,8 +597,8 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 			if res.Msg.GetError() != c.want {
 				t.Errorf("the rejected rename returned %v, want error %s", res.Msg, c.want)
 			}
-			if res.Msg.GetMove() != nil {
-				t.Errorf("the rejected rename returned the move %v", res.Msg.GetMove())
+			if res.Msg.GetMoved() != nil {
+				t.Errorf("the rejected rename returned the move %v", res.Msg.GetMoved())
 			}
 		})
 	}
@@ -826,7 +825,7 @@ func TestARenameWhoseFileMovedReturnsTheMoveWhenTheFollowUpFails(t *testing.T) {
 	if res.Msg.GetError() != 0 || res.Msg.GetPath() != "Donau.md" {
 		t.Errorf("the rename returned %v, want Donau.md with no error", res.Msg)
 	}
-	if moved := res.Msg.GetMove(); moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" {
+	if moved := res.Msg.GetMoved(); moved.GetFrom() != "Danube.md" || moved.GetTo() != "Donau.md" {
 		t.Errorf("the move came out as %v, want Danube.md to Donau.md", moved)
 	}
 }

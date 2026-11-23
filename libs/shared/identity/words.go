@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync"
 )
 
 const (
@@ -18,17 +17,17 @@ const (
 //go:embed english.txt
 var englishText string
 
-var englishWords = sync.OnceValue(func() []string {
+func englishWords() []string {
 	return strings.Split(strings.TrimSuffix(englishText, "\n"), "\n")
-})
+}
 
-var englishIndex = sync.OnceValue(func() map[string]int {
+func englishIndex() map[string]int {
 	index := make(map[string]int, 2048)
 	for i, word := range englishWords() {
 		index[word] = i
 	}
 	return index
-})
+}
 
 // RecoveryWords holds the entropy of the 12 words. It prints no word.
 type RecoveryWords struct{ entropy [entropySize]byte }
@@ -85,12 +84,9 @@ func (w RecoveryWords) String() string { return "[recovery words]" }
 
 func (w RecoveryWords) GoString() string { return w.String() }
 
-func (w RecoveryWords) DeriveRecoveryKey() RecoveryKey {
+func (w RecoveryWords) DeriveRecoveryKey() (RecoveryKey, error) {
 	secret := deriveKey(w.entropy[:], labelRecovery)
-	return RecoveryKey{
-		signSeed: deriveKey(secret[:], labelRecoverySign),
-		boxKey:   deriveKey(secret[:], labelRecoveryBox),
-	}
+	return newRecoveryKey(deriveKey(secret[:], labelRecoverySign), deriveKey(secret[:], labelRecoveryBox))
 }
 
 func readBits(b []byte, offset, count int) int {

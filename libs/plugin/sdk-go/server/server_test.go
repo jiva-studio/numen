@@ -106,22 +106,16 @@ func TestServerLifecycleRPC(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Ping failed: %v", err)
 	}
-	if pingResp.Msg.GetStatus() != "ok" {
-		t.Errorf("status = %q, want 'ok'", pingResp.Msg.GetStatus())
-	}
 	if got := pingResp.Msg.GetProtocol(); got != ProtocolVersion || ProtocolVersion != 1 {
 		t.Errorf("protocol = %d, want %d (1)", got, ProtocolVersion)
 	}
 
 	// 2. Configure
-	confResp, err := client.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{
+	_, err = client.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{
 		Values: map[string]string{"theme": "dark", "zoom": "120"},
 	}))
 	if err != nil {
 		t.Fatalf("Configure failed: %v", err)
-	}
-	if !confResp.Msg.GetSuccess() {
-		t.Errorf("Configure success = false, want true")
 	}
 
 	configureMu.Lock()
@@ -148,12 +142,9 @@ func TestServerLifecycleRPC(t *testing.T) {
 	}
 
 	// 4. Shutdown
-	shutResp, err := client.Shutdown(ctx, connect.NewRequest(&v1.ShutdownRequest{}))
+	_, err = client.Shutdown(ctx, connect.NewRequest(&v1.ShutdownRequest{}))
 	if err != nil {
 		t.Fatalf("Shutdown failed: %v", err)
-	}
-	if !shutResp.Msg.GetSuccess() {
-		t.Errorf("Shutdown success = false, want true")
 	}
 
 	select {
@@ -216,12 +207,9 @@ func TestAuthInterceptor(t *testing.T) {
 		baseURL,
 		connect.WithInterceptors(&bearerAuthInterceptor{token: testToken}),
 	)
-	resp, err := validClient.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
+	_, err = validClient.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
-	}
-	if resp.Msg.GetStatus() != "ok" {
-		t.Errorf("status = %q, want 'ok'", resp.Msg.GetStatus())
 	}
 }
 
@@ -302,25 +290,25 @@ func TestLifecycleUnitMethods(t *testing.T) {
 
 	// Ping
 	pingResp, err := handler.Ping(ctx, connect.NewRequest(&v1.PingRequest{}))
-	if err != nil || pingResp.Msg.GetStatus() != "ok" {
+	if err != nil || pingResp.Msg.GetProtocol() != ProtocolVersion {
 		t.Fatalf("Ping failed: %v, %v", pingResp, err)
 	}
 
 	// Configure
-	confResp, err := handler.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{
+	_, err = handler.Configure(ctx, connect.NewRequest(&v1.ConfigureRequest{
 		Values: map[string]string{"foo": "bar"},
 	}))
-	if err != nil || !confResp.Msg.GetSuccess() {
-		t.Fatalf("Configure failed: %v, %v", confResp, err)
+	if err != nil {
+		t.Fatalf("Configure failed: %v", err)
 	}
 	if updated["foo"] != "bar" {
 		t.Fatalf("updated[foo] = %q, want bar", updated["foo"])
 	}
 
 	// Shutdown
-	shutResp, err := handler.Shutdown(ctx, connect.NewRequest(&v1.ShutdownRequest{}))
-	if err != nil || !shutResp.Msg.GetSuccess() {
-		t.Fatalf("Shutdown failed: %v, %v", shutResp, err)
+	_, err = handler.Shutdown(ctx, connect.NewRequest(&v1.ShutdownRequest{}))
+	if err != nil {
+		t.Fatalf("Shutdown failed: %v", err)
 	}
 
 	select {
@@ -451,12 +439,9 @@ func TestServerAnswersHTTP1AndUnencryptedHTTP2(t *testing.T) {
 			fmt.Sprintf("http://127.0.0.1:%d", port),
 			connect.WithInterceptors(&bearerAuthInterceptor{token: testToken}),
 		)
-		resp, err := client.Ping(t.Context(), connect.NewRequest(&v1.PingRequest{}))
+		_, err := client.Ping(t.Context(), connect.NewRequest(&v1.PingRequest{}))
 		if err != nil {
 			t.Fatalf("Ping over HTTP/%d failed: %v", want, err)
-		}
-		if resp.Msg.GetStatus() != "ok" {
-			t.Errorf("Ping over HTTP/%d status = %q, want ok", want, resp.Msg.GetStatus())
 		}
 		recorder.mu.Lock()
 		if len(recorder.majors) != 1 || recorder.majors[0] != want {
@@ -560,12 +545,9 @@ func TestServerReadsTokenFromEnvironment(t *testing.T) {
 		fmt.Sprintf("http://127.0.0.1:%d", port),
 		connect.WithInterceptors(&bearerAuthInterceptor{token: token}),
 	)
-	resp, err := client.Ping(t.Context(), connect.NewRequest(&v1.PingRequest{}))
+	_, err = client.Ping(t.Context(), connect.NewRequest(&v1.PingRequest{}))
 	if err != nil {
 		t.Fatalf("Ping: %v", err)
-	}
-	if resp.Msg.GetStatus() != "ok" {
-		t.Errorf("status = %q, want 'ok'", resp.Msg.GetStatus())
 	}
 }
 

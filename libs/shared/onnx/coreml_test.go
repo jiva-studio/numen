@@ -94,8 +94,8 @@ func TestAProvisionedModelIsKeyedByItsPinnedSum(t *testing.T) {
 
 func TestDeleteCoreMLCache_EmptiesDirAndReportsContent(t *testing.T) {
 	root, model := grantModel(t)
-	if DeleteCoreMLCache(root, model) {
-		t.Error("an empty cache held something")
+	if isDeleted, err := DeleteCoreMLCache(root, model); isDeleted || err != nil {
+		t.Errorf("an empty cache held something: %v, %v", isDeleted, err)
 	}
 	dir, err := GetCoreMLCacheDir(root, model)
 	if err != nil {
@@ -107,8 +107,8 @@ func TestDeleteCoreMLCache_EmptiesDirAndReportsContent(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, lockName), nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if !DeleteCoreMLCache(root, model) {
-		t.Error("a cache with a compiled model held nothing")
+	if isDeleted, err := DeleteCoreMLCache(root, model); !isDeleted || err != nil {
+		t.Errorf("a cache with a compiled model held nothing: %v, %v", isDeleted, err)
 	}
 	if entries, err := os.ReadDir(dir); err != nil || len(entries) != 1 || entries[0].Name() != lockName {
 		t.Errorf("the cache holds %v, %v after it was emptied, want only the lock", entries, err)
@@ -142,8 +142,8 @@ func TestCoreMLCacheErrors(t *testing.T) {
 	if _, err := GetCoreMLCacheDir(root, missingModel); err == nil {
 		t.Fatal("GetCoreMLCacheDir with missing model succeeded, want error")
 	}
-	if DeleteCoreMLCache(root, missingModel) {
-		t.Fatal("DeleteCoreMLCache with missing model returned true, want false")
+	if isDeleted, err := DeleteCoreMLCache(root, missingModel); isDeleted || err == nil {
+		t.Fatalf("DeleteCoreMLCache with missing model returned %v, %v, want false and an error", isDeleted, err)
 	}
 	if _, err := GetCoreMLCacheDir(model, model); err == nil {
 		t.Fatal("GetCoreMLCacheDir with a file as the cache root succeeded, want error")
@@ -153,7 +153,7 @@ func TestCoreMLCacheErrors(t *testing.T) {
 	}
 }
 
-func TestDeleteCoreMLCacheReturnsFalseWhenRemoveFails(t *testing.T) {
+func TestDeleteCoreMLCacheReturnsTheErrorWhenRemoveFails(t *testing.T) {
 	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
 		t.Skip("chmod permission check requires non-root unix")
 	}
@@ -177,7 +177,7 @@ func TestDeleteCoreMLCacheReturnsFalseWhenRemoveFails(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	if DeleteCoreMLCache(root, model) {
-		t.Fatal("DeleteCoreMLCache returned true when removing an entry failed")
+	if isDeleted, err := DeleteCoreMLCache(root, model); isDeleted || err == nil {
+		t.Fatalf("DeleteCoreMLCache returned %v, %v when removing an entry failed, want false and an error", isDeleted, err)
 	}
 }

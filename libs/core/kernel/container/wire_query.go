@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/modelcall"
 
 	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 )
@@ -86,7 +85,7 @@ func openQueryPorts(install pluginInstall, exec *PluginExecution, settingsDeps s
 	}
 	resolve := connection.NewResolve(connections).Execute
 	ports.resolve = resolve
-	ports.rows = modelcall.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, nil)
+	ports.rows = connection.NewRows(resolve, connection.NewListRows(connections, openConnectionRows(install, exec, settingsDeps, vaultDeps)).Execute, nil)
 	ports.calls = openModelCalls(install, settingsDeps)
 	return ports
 }

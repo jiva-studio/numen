@@ -274,7 +274,7 @@ func TestPlaceholderResolveReturnsItsPlaceholderFileAsReady(t *testing.T) {
 func TestRegistryResolveAsksTheRoutedProvisionerWithoutRunningIt(t *testing.T) {
 	models := &fakeProvisioner{kind: manifest.DependencyKindModel}
 	other := &fakeProvisioner{kind: manifest.DependencyKindDataset}
-	registry := NewRegistry(other, models)
+	registry := NewObservedRegistry(nil, other, models)
 	req := manifest.DependencyRequirement{ID: "m", Kind: manifest.DependencyKindModel}
 
 	resolved, state, err := registry.Resolve(req)
@@ -294,7 +294,7 @@ func TestRegistryResolveAsksTheRoutedProvisionerWithoutRunningIt(t *testing.T) {
 }
 
 func TestRegistryResolveFailsWhereNothingProvisionsTheKind(t *testing.T) {
-	registry := NewRegistry(&fakeProvisioner{kind: manifest.DependencyKindModel})
+	registry := NewObservedRegistry(nil, &fakeProvisioner{kind: manifest.DependencyKindModel})
 
 	_, _, err := registry.Resolve(manifest.DependencyRequirement{ID: "d", Kind: manifest.DependencyKindDataset})
 
@@ -305,7 +305,7 @@ func TestRegistryResolveFailsWhereNothingProvisionsTheKind(t *testing.T) {
 
 func TestRegistryResolveDoesNotWaitForARunningDownload(t *testing.T) {
 	provisioner := &fakeProvisioner{kind: manifest.DependencyKindModel, gate: make(chan struct{})}
-	registry := NewRegistry(provisioner)
+	registry := NewObservedRegistry(nil, provisioner)
 	req := manifest.DependencyRequirement{ID: "m", Kind: manifest.DependencyKindModel, Version: "1"}
 	downloading := make(chan error, 1)
 	go func() {

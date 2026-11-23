@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package numen.v1;
 
-import "numen/v1/hostvault.proto";
+import "numen/v1/shared.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1;numenv1";
 
@@ -44,30 +44,13 @@ service HostFileService {
   rpc ListFileChanges(ListFileChangesRequest) returns (ListFileChangesResponse);
 }
 
-// HostFileStat is what a file was at a moment: at its current position, how large it
-// was, when it last changed and what it held. As a baseline, a hash is compared with the content
-// of the file at the write; a baseline without a hash matches no file, so the write is stale.
-message HostFileStat {
-  string path = 1;
-  int64 size = 2;
-  // Nanoseconds since the epoch.
-  int64 mod_time = 3;
-  // Whether the file is a note.
-  bool is_note = 5;
-  // The SHA-256 of the content, in lowercase hex. Empty where the answer did not read the content.
-  string hash = 6;
-  // The number of writes the vault had taken when the answer was made. Zero where the answer
-  // does not say.
-  uint64 version = 7;
-}
-
 message StatFileRequest {
   string path = 1;
 }
 
 message StatFileResponse {
-  HostVaultErrorCode error = 1;
-  HostFileStat stat = 2;
+  ErrorCode error = 1;
+  FileStat stat = 2;
 }
 
 message ReadFileRequest {
@@ -82,9 +65,9 @@ message ReadFileRequest {
 }
 
 message ReadFileResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   bytes content = 2;
-  HostFileStat stat = 3;
+  FileStat stat = 3;
   // The start of content in the file: start moved forward to a whole
   // character. Zero for a whole read.
   int64 start = 4;
@@ -94,13 +77,13 @@ message WriteFileRequest {
   string path = 1;
   bytes content = 2;
   // What the file was when the caller read it.
-  HostFileStat baseline = 3;
+  FileStat baseline = 3;
 }
 
 message WriteFileResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   // What the file is now.
-  HostFileStat stat = 2;
+  FileStat stat = 2;
 }
 
 message CreateFileRequest {
@@ -109,7 +92,7 @@ message CreateFileRequest {
 }
 
 message CreateFileResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 message ScanFilesRequest {
@@ -117,7 +100,7 @@ message ScanFilesRequest {
 }
 
 message ScanFilesResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
 }
 
 // FileChangeCursor is a place in the file change feed of a vault. The empty
@@ -140,7 +123,7 @@ message ListFileChangesRequest {
 }
 
 message ListFileChangesResponse {
-  HostVaultErrorCode error = 1;
+  ErrorCode error = 1;
   repeated FileChange changes = 2;
   // next is the cursor the next read starts from.
   FileChangeCursor next = 3;

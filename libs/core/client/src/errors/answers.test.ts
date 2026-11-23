@@ -66,7 +66,7 @@ describe('what an error is called', () => {
     expect(findErrorCode({ error: undefined })).toBeNull()
   })
 
-  it('calls an error it has no word of its own for unreadable', () => {
-    expect(findErrorCode({ error: NOTE_ERROR_CODE.UNSPECIFIED })).toBe('unreadable')
+  it('has no error for an answer that carries none', () => {
+    expect(findErrorCode({ error: NOTE_ERROR_CODE.UNSPECIFIED })).toBeNull()
   })
 })

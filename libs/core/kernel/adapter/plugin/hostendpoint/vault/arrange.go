@@ -22,7 +22,7 @@ const batchLimit = 50
 
 var errBatchTooLarge = fmt.Errorf("too many notes: at most %d per call", batchLimit)
 
-func splitNoteError(ctx context.Context, err error) (noteCode, callCode v1.HostVaultErrorCode, callErr error) {
+func splitNoteError(ctx context.Context, err error) (noteCode, callCode v1.ErrorCode, callErr error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
@@ -31,7 +31,7 @@ func splitNoteError(ctx context.Context, err error) (noteCode, callCode v1.HostV
 	}
 	code, ok := getNoteErrorCode(err)
 	if !ok {
-		return v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INTERNAL, 0, nil
+		return v1.ErrorCode_ERROR_CODE_INTERNAL, 0, nil
 	}
 	return code, 0, nil
 }
@@ -113,7 +113,7 @@ func (e *arrangeCalls) RenameNote(
 		out.NameSource = v1.NameSource_NAME_SOURCE_FILENAME
 	}
 	if move != nil {
-		out.Move = writeMove(*move)
+		out.Moved = writeMove(*move)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -142,9 +142,9 @@ func (e *arrangeCalls) MoveNotes(
 	return connect.NewResponse(out), nil
 }
 
-func moveNote(ctx context.Context, vault Arranger, from, folder string) (*v1.HostNoteMove, v1.HostVaultErrorCode, error) {
+func moveNote(ctx context.Context, vault Arranger, from, folder string) (*v1.HostNoteMove, v1.ErrorCode, error) {
 	notAttempted := &v1.HostNoteMove{
-		Move: &v1.MoveResult{From: from}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
+		Move: &v1.MoveResult{From: from}, Error: v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED,
 		Detail: fmt.Sprintf("the call was canceled before %s was moved", from),
 	}
 	if isCanceled(ctx) {
@@ -188,9 +188,9 @@ func (e *arrangeCalls) RemoveNotes(
 	return connect.NewResponse(out), nil
 }
 
-func removeNote(ctx context.Context, vault Arranger, target string) (*v1.HostNoteRemoval, v1.HostVaultErrorCode, error) {
+func removeNote(ctx context.Context, vault Arranger, target string) (*v1.HostNoteRemoval, v1.ErrorCode, error) {
 	notAttempted := &v1.HostNoteRemoval{
-		Path: target, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
+		Path: target, Error: v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED,
 		Detail: fmt.Sprintf("the call was canceled before %s was removed", target),
 	}
 	if isCanceled(ctx) {

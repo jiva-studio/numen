@@ -2,6 +2,7 @@ package settings
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -18,14 +19,14 @@ type Current struct {
 
 // Get reads every setting, the plugins and the settings the app declares.
 type Get struct {
-	read    func() (content, path string, version uint64, err error)
+	read    func() (settingsdomain.Snapshot, error)
 	plugins func() []plugin.Info
 	app     func() []plugin.Setting
 	groups  func() []manifest.SettingGroup
 }
 
 func NewGet(
-	read func() (content, path string, version uint64, err error),
+	read func() (settingsdomain.Snapshot, error),
 	plugins func() []plugin.Info,
 	app func() []plugin.Setting,
 	groups func() []manifest.SettingGroup,
@@ -48,16 +49,16 @@ func NewGet(
 }
 
 func (u *Get) Execute() (Current, error) {
-	content, path, version, err := u.read()
+	snapshot, err := u.read()
 	if err != nil {
 		return Current{}, err
 	}
 	pluginInfos := u.plugins()
 	app := u.app()
 	return Current{
-		Written:   content,
-		Version:   version,
-		Path:      path,
+		Written:   snapshot.Content,
+		Version:   snapshot.Version,
+		Path:      snapshot.Path,
 		Plugins:   pluginInfos,
 		App:       app,
 		AppGroups: u.groups(),

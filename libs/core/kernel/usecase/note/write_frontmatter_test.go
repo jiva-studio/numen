@@ -64,15 +64,15 @@ func TestWriteFrontmatterSetsAListAndKeepsTheOtherKeysAndTheBodyAsTheyWere(t *te
 		{Path: "River.md", Values: map[string]any{"tags": []string{"lake", "river"}}},
 	})
 
-	if err != nil || len(written) != 1 || written[0].Error != nil {
+	if err != nil || len(written) != 1 || written[0].Err != nil {
 		t.Fatalf("Execute returned %+v (%v), want one written note", written, err)
 	}
 	want := strings.Replace(riverNote, "  - lake\n", "  - lake\n  - river\n", 1)
 	if body := withoutStampedID(c.read(t, "River.md")); body != want {
 		t.Errorf("the note without its stamped id is\n%q\nwant\n%q", body, want)
 	}
-	if now := c.statOf(t, "River.md"); written[0].FileStat.Size != now.Size || !written[0].FileStat.ModTime.Equal(now.ModTime) {
-		t.Errorf("the result has the stat %+v, want the stat of the note now, %+v", written[0].FileStat, now)
+	if now := c.statOf(t, "River.md"); written[0].Stat.Size != now.Size || !written[0].Stat.ModTime.Equal(now.ModTime) {
+		t.Errorf("the result has the stat %+v, want the stat of the note now, %+v", written[0].Stat, now)
 	}
 }
 
@@ -84,7 +84,7 @@ func TestWriteFrontmatterWritesATextANumberAndABooleanAsTheirOwnTypes(t *testing
 		{Path: "River.md", Values: map[string]any{"status": "open", "rating": float64(3), "starred": true}},
 	})
 
-	if err != nil || len(written) != 1 || written[0].Error != nil {
+	if err != nil || len(written) != 1 || written[0].Err != nil {
 		t.Fatalf("Execute returned %+v (%v), want one written note", written, err)
 	}
 	body := c.read(t, "River.md")
@@ -103,7 +103,7 @@ func TestWriteFrontmatterRemovesKeysWithNilValues(t *testing.T) {
 		{Path: "River.md", Values: map[string]any{"tags": nil, "mine": nil, "absent": nil}},
 	})
 
-	if err != nil || len(written) != 1 || written[0].Error != nil {
+	if err != nil || len(written) != 1 || written[0].Err != nil {
 		t.Fatalf("Execute returned %+v (%v), want one written note", written, err)
 	}
 	want := "---\n# kept as written\ntitle: River\n---\n\nThe river runs.\n"
@@ -120,7 +120,7 @@ func TestWriteFrontmatterAddsABlockToANoteWithoutFrontmatter(t *testing.T) {
 		{Path: "Plain.md", Values: map[string]any{"tags": []string{"river"}}},
 	})
 
-	if err != nil || len(written) != 1 || written[0].Error != nil {
+	if err != nil || len(written) != 1 || written[0].Err != nil {
 		t.Fatalf("Execute returned %+v (%v), want one written note", written, err)
 	}
 	body := c.read(t, "Plain.md")
@@ -161,7 +161,7 @@ func TestWriteFrontmatterKeepsAStaleNoteUnchanged(t *testing.T) {
 		{Path: "River.md", FileStat: domain.FileStat{Size: 1}, Values: map[string]any{"tags": "river"}},
 	})
 
-	if err != nil || len(written) != 1 || !errors.Is(written[0].Error, edit.ErrStale) {
+	if err != nil || len(written) != 1 || !errors.Is(written[0].Err, edit.ErrStale) {
 		t.Fatalf("Execute returned %+v (%v), want one stale result", written, err)
 	}
 	if body := c.read(t, "River.md"); body != riverNote {
@@ -177,7 +177,7 @@ func TestWriteFrontmatterWritesANoteWhoseBaselineIsTheStateOnDisk(t *testing.T) 
 		{Path: "River.md", FileStat: c.statOf(t, "River.md"), Values: map[string]any{"title": "Rivers"}},
 	})
 
-	if err != nil || len(written) != 1 || written[0].Error != nil {
+	if err != nil || len(written) != 1 || written[0].Err != nil {
 		t.Fatalf("Execute returned %+v (%v), want one written note", written, err)
 	}
 	if title, _ := readKeys(t, c.read(t, "River.md")).Title(); title != "Rivers" {
@@ -198,10 +198,10 @@ func TestAFailedWriteFrontmatterCostsTheOtherNotesNothing(t *testing.T) {
 	if err != nil || len(written) != 3 {
 		t.Fatalf("Execute returned %+v (%v), want one result for each note", written, err)
 	}
-	if written[0].Error != nil || written[2].Error != nil {
-		t.Errorf("the notes that exist failed: %v, %v", written[0].Error, written[2].Error)
+	if written[0].Err != nil || written[2].Err != nil {
+		t.Errorf("the notes that exist failed: %v, %v", written[0].Err, written[2].Err)
 	}
-	if written[1].Error == nil {
+	if written[1].Err == nil {
 		t.Error("a note that is not there was written")
 	}
 	for _, path := range []string{"River.md", "Lake.md"} {
@@ -224,7 +224,7 @@ func TestAWriteFrontmatterCanceledBeforeTheFirstNoteWritesNothingAndIsNotAttempt
 	if err != nil {
 		t.Fatalf("Execute returned %v, want the results and no error", err)
 	}
-	if len(written) != 1 || !errors.Is(written[0].Error, plugin.ErrNotAttempted) {
+	if len(written) != 1 || !errors.Is(written[0].Err, plugin.ErrNotAttempted) {
 		t.Fatalf("Execute returned %+v, want one result with ErrNotAttempted", written)
 	}
 	if body := c.read(t, "River.md"); body != riverNote {
@@ -253,12 +253,12 @@ func TestAWriteFrontmatterCanceledAfterTheFirstNoteKeepsItsResultAndIsNotAttempt
 	if err != nil || len(written) != 3 {
 		t.Fatalf("Execute returned %+v (%v), want one result for each note", written, err)
 	}
-	if written[0].Error != nil {
-		t.Errorf("the first note failed with %v", written[0].Error)
+	if written[0].Err != nil {
+		t.Errorf("the first note failed with %v", written[0].Err)
 	}
 	for _, i := range []int{1, 2} {
-		if !errors.Is(written[i].Error, plugin.ErrNotAttempted) {
-			t.Errorf("note %d returned %v, want ErrNotAttempted", i, written[i].Error)
+		if !errors.Is(written[i].Err, plugin.ErrNotAttempted) {
+			t.Errorf("note %d returned %v, want ErrNotAttempted", i, written[i].Err)
 		}
 	}
 	if body := c.read(t, "Sea.md"); body != "# Sea\n" {

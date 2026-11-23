@@ -28,7 +28,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	registry := provision.NewRegistry()
+	registry := provision.NewObservedRegistry(host.Supervision.Services.Observe)
 	host.Supervision.Dependencies.Replace(registry)
 	tasks := run.NewTasks()
 	execution, _, _ := AdaptPluginHost(host.Management, host.Supervision)
@@ -55,7 +55,7 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 	t.Setenv(provision.EnvMockML, "true")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	registry := newDependencyRegistry(GetClock(NewResources()), "")
+	registry := newDependencyRegistry(GetClock(NewResources()), nil, "")
 
 	model := manifest.DependencyRequirement{
 		ID: "pp-ocr-det", Kind: manifest.DependencyKindModel,
@@ -101,7 +101,7 @@ func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
 		SourceURL: server.URL + "/model.onnx", ChecksumSHA256: hex.EncodeToString(sum[:]),
 	}
 
-	resolved, err := newDependencyRegistry(GetClock(NewResources()), models).Provision(t.Context(), req, nil)
+	resolved, err := newDependencyRegistry(GetClock(NewResources()), nil, models).Provision(t.Context(), req, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +132,7 @@ func startHeldDownload(t *testing.T) (*testPluginRoles, *run.Tasks, <-chan error
 	t.Helper()
 	host := newTestPluginRoles(testsupport.GetMachine(), "desktop.editor")
 	provisioner := heldProvisioner{started: make(chan struct{})}
-	host.Supervision.Dependencies.Replace(provision.NewRegistry(provisioner))
+	host.Supervision.Dependencies.Replace(provision.NewObservedRegistry(host.Supervision.Services.Observe, provisioner))
 	tasks := run.NewTasks()
 	execution, _, _ := AdaptPluginHost(host.Management, host.Supervision)
 	reportDependencies(execution.Watch.dependencyReporter, tasks, nil)

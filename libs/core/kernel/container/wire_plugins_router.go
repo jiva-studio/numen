@@ -18,9 +18,9 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -40,7 +40,7 @@ func reportDependencies(watch dependencyReporter, tasks *run.Tasks, record func(
 type pluginInstall struct {
 	Licenses        license.Declarations
 	Configuration   configRefresher
-	OperationTitles connectionport.OperationTitles
+	OperationTitles connection.OperationTitles
 	PluginCachePath string
 	ServiceDir      string
 	SafeMode        bool
@@ -85,7 +85,7 @@ func InitializePluginRoles(indexPath string, res *Resources, management *PluginM
 	processes.Failures.SetOnFailure(supervision.ReportPluginFailure(record))
 	processes.Failures.SetErrorHandler(windowlogs.ReportError(record, report, "Plugin host failure"))
 	management.ContentTypes.SetContentTypeTable(contenttype.Open())
-	processes.Dependencies.Replace(newDependencyRegistry(processes.Clock, ""))
+	processes.Dependencies.Replace(newDependencyRegistry(processes.Clock, processes.Services.Observe, ""))
 	err := management.Discovery.Discover()
 	windowlogs.RecordError(record, "Plugin discovery failed", err)
 	return err
@@ -101,7 +101,7 @@ func newPluginCommands(config pluginport.WhenConfig, vaultDeps vaultWiring, host
 	// versions are the text versions that a command with items lists and runs over, nil where the window has none.
 	commands, conditions := host.Runtime.Manifests, when.NewConditions()
 	list := plugincommand.NewList(commands, commands, conditions)
-	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch.ContentTypeTable, pluginsNewNoteReader(vaultDeps), config, conditions)
+	run := plugincommand.NewRun(commands, commandbridge.Open(host.Runtime.Activator), host.Watch.ContentTypeTable, vaultDeps.Readers, config, conditions)
 	return pluginCommandUseCases{
 		List:       list,
 		Listing:    plugincommand.NewListCommands(list, host.Watch.ContentTypeTable),
@@ -126,11 +126,20 @@ func pluginsGetPluginName(resolver pluginResolver, pluginID string) string {
 	return pluginID
 }
 
-func newDependencyRegistry(clock machineport.Clock, defaultDir string) pluginport.DependencyRegistry {
+func newDependencyRegistry(clock machineport.Clock, observe func(manifest.DependencyRequirement, plugindomain.DependencyStatus), defaultDir string) supervision.Dependencies {
 	if provision.IsMockML() {
-		return provision.NewRegistry(provision.NewPlaceholderProvisioner(provision.GetPlaceholderDir()))
+		return provision.NewObservedRegistry(observe, provision.NewPlaceholderProvisioner(provision.GetPlaceholderDir()))
 	}
-	return provision.NewRegistry(provision.NewFileProvisioner(provision.Config{
+	return provision.NewObservedRegistry(observe, provision.NewFileProvisioner(provision.Config{
 		Dir: provision.GetModelsDir(defaultDir), Offline: provision.IsOffline(), Clock: clock,
 	}))
+}
+
+func getDependencyProvisioner(services *supervision.Services) func() pluginport.DependencyRegistry {
+	return func() pluginport.DependencyRegistry {
+		if dependencies := services.GetDependencies(); dependencies != nil {
+			return dependencies
+		}
+		return nil
+	}
 }

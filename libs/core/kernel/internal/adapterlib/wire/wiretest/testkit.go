@@ -109,7 +109,7 @@ func (p protocolLifecycle) Ping(
 	_ context.Context,
 	_ *connect.Request[v1.PingRequest],
 ) (*connect.Response[v1.PingResponse], error) {
-	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: p.protocol}), nil
+	return connect.NewResponse(&v1.PingResponse{Protocol: p.protocol}), nil
 }
 
 // ServePing starts a server answering Ping with the given protocol and returns its port.

@@ -15,7 +15,7 @@ func newRecord(t *testing.T, name string) (identity.Record, account) {
 	t.Helper()
 	a := newChain(t)
 	device := newDevice(t)
-	chain, err := appended(a.chain, a.recovery, device.Public(), name, epoch.Add(time.Hour))
+	chain, err := appended(a.chain, a.recovery, device.Public(), name, epoch().Add(time.Hour))
 	if err != nil {
 		t.Fatal(err)
 	}

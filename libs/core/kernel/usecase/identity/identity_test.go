@@ -18,12 +18,13 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-var now = time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)
+func getNow() time.Time { return time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC) }
 
 const keyName = "identity"
 
-// legal is a BIP-39 vector with entropy 7f7f...7f.
-var legal = strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
+func getLegalWords() []string {
+	return strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
+}
 
 var fingerprint = regexp.MustCompile(`^([0-9A-F]{4} ){7}[0-9A-F]{4}$`)
 
@@ -37,7 +38,7 @@ type kit struct {
 
 func newKit(name string) kit {
 	keys := newFakeKeyStore()
-	deps := identity.NewDeps(keys, fakeNames{name: name}, testsupport.NewClockAt(now))
+	deps := identity.NewDeps(keys, fakeNames{name: name}, testsupport.NewClockAt(getNow()))
 	return kit{
 		keys:     keys,
 		get:      identity.NewGetIdentity(deps),
@@ -63,7 +64,7 @@ func TestGetIdentity_ReportsARecordThatDoesNotParseAndNeverCallsItAbsent(t *test
 	if !errors.Is(err, identitylib.ErrMalformed) || errors.Is(err, identitydomain.ErrNoIdentity) {
 		t.Fatalf("error = %v, want ErrMalformed and not ErrNoIdentity", err)
 	}
-	if _, err := k.create.Execute(t.Context(), legal); !errors.Is(err, identitydomain.ErrIdentityExists) {
+	if _, err := k.create.Execute(t.Context(), getLegalWords()); !errors.Is(err, identitydomain.ErrIdentityExists) {
 		t.Errorf("create over a broken record: error = %v, want ErrIdentityExists", err)
 	}
 	if k.keys.keys[keyName] != "not-a-record" {
@@ -74,15 +75,21 @@ func TestGetIdentity_ReportsARecordThatDoesNotParseAndNeverCallsItAbsent(t *test
 func TestGetIdentity_ReportsARecordWhoseDeviceIsNotInItsChain(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
-	if _, err := k.create.Execute(t.Context(), legal); err != nil {
+	if _, err := k.create.Execute(t.Context(), getLegalWords()); err != nil {
 		t.Fatal(err)
 	}
-	raw, _ := base64.RawURLEncoding.DecodeString(k.keys.keys[keyName])
+	raw, err := base64.RawURLEncoding.DecodeString(k.keys.keys[keyName])
+	if err != nil {
+		t.Fatal(err)
+	}
 	record, err := identitylib.ParseRecord(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	stranger, _ := identitylib.NewDeviceKey(bytes.NewReader(bytes.Repeat([]byte{9}, 32)))
+	stranger, err := identitylib.NewDeviceKey(bytes.NewReader(bytes.Repeat([]byte{9}, 32)))
+	if err != nil {
+		t.Fatal(err)
+	}
 	record.Device = stranger
 	k.keys.keys[keyName] = base64.RawURLEncoding.EncodeToString(record.Bytes())
 	if _, err := k.get.Execute(t.Context()); !errors.Is(err, identitylib.ErrMalformed) {
@@ -107,7 +114,10 @@ func TestGenerateRecoveryWords_ReturnsTwelveParsableWordsAndStoresNothing(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, _ := k.generate.Execute(t.Context())
+	second, err := k.generate.Execute(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(first) != 12 {
 		t.Fatalf("got %d words, want 12", len(first))
 	}
@@ -125,7 +135,7 @@ func TestGenerateRecoveryWords_ReturnsTwelveParsableWordsAndStoresNothing(t *tes
 func TestCreateIdentity_KeepsOneRecordThatGetIdentityReads(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
-	created, err := k.create.Execute(t.Context(), legal)
+	created, err := k.create.Execute(t.Context(), getLegalWords())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +160,7 @@ func TestCreateIdentity_KeepsOneRecordThatGetIdentityReads(t *testing.T) {
 	if created.DeviceFingerprint != record.Device.Public().Fingerprint().String() {
 		t.Error("the device fingerprint is not the one of the device key of the record")
 	}
-	if created.DeviceName != "Laptop" || !created.DeviceAddedAt.Equal(now) {
+	if created.DeviceName != "Laptop" || !created.DeviceAddedAt.Equal(getNow()) {
 		t.Errorf("device = %q added %v", created.DeviceName, created.DeviceAddedAt)
 	}
 	got, err := k.get.Execute(t.Context())
@@ -162,7 +172,7 @@ func TestCreateIdentity_KeepsOneRecordThatGetIdentityReads(t *testing.T) {
 func TestCreateIdentity_KeepsNoWordNoEntropyNoRecoverySecret(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
-	if _, err := k.create.Execute(t.Context(), legal); err != nil {
+	if _, err := k.create.Execute(t.Context(), getLegalWords()); err != nil {
 		t.Fatal(err)
 	}
 	entropy := bytes.Repeat([]byte{0x7f}, 16)
@@ -171,8 +181,11 @@ func TestCreateIdentity_KeepsNoWordNoEntropyNoRecoverySecret(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, value := range k.keys.snapshot() {
-		raw, _ := base64.RawURLEncoding.DecodeString(value)
-		for _, word := range legal {
+		raw, err := base64.RawURLEncoding.DecodeString(value)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, word := range getLegalWords() {
 			if strings.Contains(value, word) || bytes.Contains(raw, []byte(word)) {
 				t.Errorf("%s holds the word %q", name, word)
 			}
@@ -187,9 +200,9 @@ func TestCreateIdentity_RefusesWordsThatAreNotValidAndKeepsNothing(t *testing.T)
 	t.Parallel()
 	k := newKit("Laptop")
 	abandon := strings.Fields(strings.Repeat("abandon ", 12))
-	unknown := slices.Clone(legal)
+	unknown := slices.Clone(getLegalWords())
 	unknown[3] = "numen"
-	for name, words := range map[string][]string{"checksum": abandon, "count": legal[:11], "unknown word": unknown} {
+	for name, words := range map[string][]string{"checksum": abandon, "count": getLegalWords()[:11], "unknown word": unknown} {
 		_, err := k.create.Execute(t.Context(), words)
 		if !errors.Is(err, identitydomain.ErrInvalidWords) {
 			t.Fatalf("%s: error = %v, want ErrInvalidWords", name, err)
@@ -209,7 +222,7 @@ func TestCreateIdentity_RefusesWordsThatAreNotValidAndKeepsNothing(t *testing.T)
 func TestCreateIdentity_NeverOverwritesARecord(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
-	if _, err := k.create.Execute(t.Context(), legal); err != nil {
+	if _, err := k.create.Execute(t.Context(), getLegalWords()); err != nil {
 		t.Fatal(err)
 	}
 	before := k.keys.snapshot()[keyName]
@@ -226,7 +239,7 @@ func TestCreateIdentity_ReportsAKeyStoreThatRefusesAndKeepsNothing(t *testing.T)
 	t.Parallel()
 	k := newKit("Laptop")
 	k.keys.setFails = errBroken
-	_, err := k.create.Execute(t.Context(), legal)
+	_, err := k.create.Execute(t.Context(), getLegalWords())
 	if !errors.Is(err, identitydomain.ErrKeyStore) || !errors.Is(err, errBroken) {
 		t.Fatalf("error = %v, want ErrKeyStore wrapping the failure", err)
 	}
@@ -234,7 +247,7 @@ func TestCreateIdentity_ReportsAKeyStoreThatRefusesAndKeepsNothing(t *testing.T)
 		t.Errorf("the key store holds %v", got)
 	}
 	k.keys.getFails = errBroken
-	if _, err := k.create.Execute(t.Context(), legal); !errors.Is(err, identitydomain.ErrKeyStore) {
+	if _, err := k.create.Execute(t.Context(), getLegalWords()); !errors.Is(err, identitydomain.ErrKeyStore) {
 		t.Errorf("a refused read: error = %v, want ErrKeyStore", err)
 	}
 }
@@ -242,7 +255,7 @@ func TestCreateIdentity_ReportsAKeyStoreThatRefusesAndKeepsNothing(t *testing.T)
 func TestCreateIdentity_TruncatesALongDeviceNameAtACharacter(t *testing.T) {
 	t.Parallel()
 	k := newKit(strings.Repeat("€", 30))
-	created, err := k.create.Execute(t.Context(), legal)
+	created, err := k.create.Execute(t.Context(), getLegalWords())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,14 +267,14 @@ func TestCreateIdentity_TruncatesALongDeviceNameAtACharacter(t *testing.T) {
 func TestCreateIdentity_SameWordsOnAnotherDeviceGiveTheSameAccount(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
-	first, err := k.create.Execute(t.Context(), legal)
+	first, err := k.create.Execute(t.Context(), getLegalWords())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := k.delete.Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	second, err := k.create.Execute(t.Context(), legal)
+	second, err := k.create.Execute(t.Context(), getLegalWords())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +285,10 @@ func TestCreateIdentity_SameWordsOnAnotherDeviceGiveTheSameAccount(t *testing.T)
 		t.Error("the new identity has the device key of the old one")
 	}
 	other := newKit("Phone")
-	third, _ := other.create.Execute(t.Context(), legal)
+	third, err := other.create.Execute(t.Context(), getLegalWords())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if third.AccountFingerprint != first.AccountFingerprint {
 		t.Error("another installation with the same words has another account")
 	}
@@ -284,7 +300,7 @@ func TestDeleteIdentity_RemovesTheRecordAndAMissingRecordIsNotAnError(t *testing
 	if err := k.delete.Execute(t.Context()); err != nil {
 		t.Errorf("delete without a record = %v, want nil", err)
 	}
-	if _, err := k.create.Execute(t.Context(), legal); err != nil {
+	if _, err := k.create.Execute(t.Context(), getLegalWords()); err != nil {
 		t.Fatal(err)
 	}
 	if err := k.delete.Execute(t.Context()); err != nil {

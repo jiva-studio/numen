@@ -18,7 +18,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -46,13 +45,12 @@ type Triggers struct {
 }
 
 // TriggersDeps is what Triggers is made of: Run runs the triggers of the Plugins over the files the
-// Readers open, Notes gives the type and properties of a note, Types gives a file its type, Versions
+// Readers open, Types gives a file its type, Versions
 // gives target.versions and Config gives the settings.
 type TriggersDeps struct {
 	Plugins  Plugins
 	Run      pluginport.CommandRun
 	Readers  vaultport.VaultReaders
-	Notes    noteport.NoteReader
 	Types    contenttypeport.ContentTypeTable
 	Versions Versions
 	Config   pluginport.WhenConfig
@@ -155,7 +153,7 @@ func (u *Triggers) execute(
 		return nil, err
 	}
 	p := &pass{
-		types: u.deps.Types, run: u.deps.Run, notes: u.deps.Notes, versions: u.deps.Versions, vault: v, list: triggers,
+		types: u.deps.Types, run: u.deps.Run, reader: reader, versions: u.deps.Versions, vault: v, list: triggers,
 		config: u.deps.Config.GetWhenConfig(), skipped: map[string]bool{}, retry: map[string]bool{},
 	}
 	if isBatched {
@@ -214,7 +212,7 @@ func (u *Triggers) readTriggers(isEvent func(string) bool) []trigger {
 type pass struct {
 	types    contenttypeport.ContentTypeTable
 	run      pluginport.CommandRun
-	notes    noteport.NoteReader
+	reader   vaultport.VaultReader
 	versions Versions
 	vault    domain.Vault
 	list     []trigger
@@ -300,7 +298,7 @@ func (p *pass) keepRetry(paths []string) {
 func (p *pass) isTrue(ctx context.Context, current *file, one trigger) (bool, error) {
 	result := evaluate(current.values, one)
 	if result == when.Unknown && current.values.IsNote() && !current.isNoteRead {
-		noteType, properties, err := p.notes.Execute(ctx, p.vault, current.path)
+		noteType, properties, err := edit.ReadHead(ctx, p.reader, current.path)
 		if err != nil {
 			return false, err
 		}

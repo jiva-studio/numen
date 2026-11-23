@@ -28,7 +28,7 @@ func TestAFingerprintCarriesWhetherTheFileIsANote(t *testing.T) {
 			t.Errorf("got %+v, want the kind %q", got, kind)
 		}
 	}
-	if got := readFileStat(&v1.HostFileStat{}); got.Kind != "" {
+	if got := readFileStat(&v1.FileStat{}); got.Kind != "" {
 		t.Errorf("got %+v, want a fingerprint naming no file to have no kind", got)
 	}
 }

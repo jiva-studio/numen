@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -101,7 +101,7 @@ func (f filing) moveOver(w wiring) vaults.Move {
 
 func (f filing) recordBooks(t *testing.T) {
 	t.Helper()
-	extract := filetext.NewIndex(filetext.IndexDeps{
+	extract := indexing.NewIndex(indexing.IndexDeps{
 		Readers: vaultreader.Readers{}, Sources: f.db.Sources(), Records: f.db.Sources(), Backlog: f.db.Sources(), Lookup: f.db.Sources(),
 		Texts: testsupport.Texts{Readers: vaultreader.Readers{}},
 	})

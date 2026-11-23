@@ -15,7 +15,20 @@ import { createInstallation, createSettingsState } from '@/pages/settings/testin
 import SettingsTab from '../SettingsTab.vue'
 import { WORDS as words } from '../../words'
 
-const RECOVERY_WORDS = ['legal', 'winner', 'thank', 'year', 'wave', 'sausage', 'worth', 'useful', 'exact', 'glove', 'honey', 'yellow']
+const RECOVERY_WORDS = [
+  'legal',
+  'winner',
+  'thank',
+  'year',
+  'wave',
+  'sausage',
+  'worth',
+  'useful',
+  'exact',
+  'glove',
+  'honey',
+  'yellow',
+]
 
 const IDENTITY: IdentityInfo = {
   accountFingerprint: '3F2A 91C0 0000 1111 2222 3333 4444 5555',
@@ -98,7 +111,8 @@ const createPage = async (
 
 type Page = Awaited<ReturnType<typeof createPage>>['tab']
 
-const findButton = (tab: Page, text: string) => tab.findAll('button').find((one) => one.text() === text)
+const findButton = (tab: Page, text: string) =>
+  tab.findAll('button').find((one) => one.text() === text)
 
 const press = async (tab: Page, text: string) => {
   const button = findButton(tab, text)
@@ -215,7 +229,9 @@ describe('the page "Identity and licenses"', () => {
   it('sends the words that are typed to create when the person restores', async () => {
     const { tab, create } = await createPage()
     await press(tab, 'Restore from words')
-    await tab.get('textarea[aria-label="Your 12 recovery words"]').setValue(`  ${RECOVERY_WORDS.join('  ')}\n`)
+    await tab
+      .get('textarea[aria-label="Your 12 recovery words"]')
+      .setValue(`  ${RECOVERY_WORDS.join('  ')}\n`)
     await press(tab, 'Restore')
     expect(create).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
@@ -245,9 +261,9 @@ describe('the page "Identity and licenses"', () => {
   it('keeps the identity when the person cancels the delete', async () => {
     const { tab, delete: remove } = await createPage(IDENTITY)
     await press(tab, 'Delete from this device')
-    const cancel = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="alertdialog"] button')).find(
-      (one) => one.textContent?.trim() === 'Cancel',
-    )
+    const cancel = Array.from(
+      document.body.querySelectorAll<HTMLButtonElement>('[role="alertdialog"] button'),
+    ).find((one) => one.textContent?.trim() === 'Cancel')
     cancel?.click()
     await flushPromises()
     expect(remove).not.toHaveBeenCalled()
@@ -257,9 +273,9 @@ describe('the page "Identity and licenses"', () => {
   it('deletes the identity once the person confirms', async () => {
     const { tab, delete: remove } = await createPage(IDENTITY)
     await press(tab, 'Delete from this device')
-    const confirm = Array.from(document.body.querySelectorAll<HTMLButtonElement>('[role="alertdialog"] button')).find(
-      (one) => one.textContent?.trim() === 'Delete',
-    )
+    const confirm = Array.from(
+      document.body.querySelectorAll<HTMLButtonElement>('[role="alertdialog"] button'),
+    ).find((one) => one.textContent?.trim() === 'Delete')
     confirm?.click()
     await flushPromises()
     expect(remove).toHaveBeenCalledOnce()

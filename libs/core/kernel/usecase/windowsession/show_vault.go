@@ -18,7 +18,7 @@ const FlushTimeout = 3 * time.Second
 // pending state; a page awaiting confirmation aborts the swap.
 type ShowVault struct {
 	guard    *Guard
-	identity IdentityCheck
+	identity CheckIdentity
 	flush    *PageFlush
 	changes  Changes
 	session  vaultSession
@@ -26,7 +26,7 @@ type ShowVault struct {
 
 // NewShowVault makes the use case over the guard and the session of the window, the check of the
 // identity of a vault, the flush of the pages and the feed of the changes.
-func NewShowVault(guard *Guard, session *Session, identity IdentityCheck, flush *PageFlush, changes Changes) ShowVault {
+func NewShowVault(guard *Guard, session *Session, identity CheckIdentity, flush *PageFlush, changes Changes) ShowVault {
 	return ShowVault{guard: guard, identity: identity, flush: flush, changes: changes, session: session}
 }
 

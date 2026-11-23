@@ -11,10 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/sourcefake"
@@ -79,10 +77,10 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	if err := db.VectorIndex().FitVectors(t.Context(), width, pointing{}.Describe().Recipe()); err != nil {
 		t.Fatal(err)
 	}
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
+	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(filetext.IndexDeps{
+		indexing.NewIndex(indexing.IndexDeps{
 			Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 			Texts: testsupport.Texts{Readers: readers},
 		}),
@@ -124,11 +122,11 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	notes.Walks = &db.walks
 	making := indexing.NewReadWholeVault(
 		notes,
-		filetext.NewIndex(filetext.IndexDeps{
+		indexing.NewIndex(indexing.IndexDeps{
 			Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 			Texts: testsupport.Texts{Readers: readers},
 		}),
-		vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}),
+		indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}),
 	)
 
 	result, err := making.Execute(t.Context(), v, indexing.Reporting{})
@@ -149,11 +147,11 @@ func TestBooksThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	stopErr := errors.New("the books cannot be cut")
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(filetext.IndexDeps{
+		indexing.NewIndex(indexing.IndexDeps{
 			Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: uncuttable{SourceBacklog: db.Sources(), err: stopErr}, Lookup: db.Sources(),
 			Texts: testsupport.Texts{Readers: readers},
 		}),
-		vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}),
+		indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}),
 	)
 
 	if _, err := scanner(readers, db).Execute(t.Context(), v); err != nil {
@@ -178,10 +176,10 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 		t.Fatal(err)
 	}
 	stopErr := errors.New("the model has stopped")
-	embed := vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(failing{err: stopErr}))
+	embed := indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(failing{err: stopErr}))
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(filetext.IndexDeps{
+		indexing.NewIndex(indexing.IndexDeps{
 			Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 			Texts: testsupport.Texts{Readers: readers},
 		}),
@@ -207,10 +205,10 @@ func TestReadWholeVault_ReportsCompletedTextsOnBookError(t *testing.T) {
 	stopErr := errors.New("the books cannot be cut")
 	uncutter := uncuttable{SourceBacklog: db.Sources(), err: stopErr, onUnchunked: cancel}
 	counted := &counting{VaultReaders: readers}
-	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
+	embed := indexing.NewEmbed(counted, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
 	making := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(filetext.IndexDeps{
+		indexing.NewIndex(indexing.IndexDeps{
 			Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: uncutter, Lookup: db.Sources(),
 			Texts: testsupport.Texts{Readers: readers},
 		}),
@@ -238,12 +236,12 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	uncutter := uncuttable{SourceBacklog: db.Sources(), onRecipe: cancel}
-	books := filetext.NewIndex(filetext.IndexDeps{
+	books := indexing.NewIndex(indexing.IndexDeps{
 		Readers: readers, Sources: db.Sources(), Records: db.Sources(), Backlog: uncutter, Lookup: db.Sources(),
 		Texts: testsupport.Texts{Readers: readers},
 	})
 	counted := &counting{VaultReaders: readers}
-	embed := vectors.NewEmbed(counted, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
+	embed := indexing.NewEmbed(counted, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, sourcefake.Wrap(pointing{}))
 	making := indexing.NewReadWholeVault(scanner(readers, db), books, embed)
 
 	_, executeErr := making.Execute(ctx, v, indexing.Reporting{})
@@ -277,11 +275,11 @@ func TestOneSourceIsSplitAgain(t *testing.T) {
 	stopErr := errors.New("the vault cannot be read")
 	cutting := indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(filetext.IndexDeps{
+		indexing.NewIndex(indexing.IndexDeps{
 			Readers: unreadable{err: stopErr}, Sources: db.Sources(), Records: db.Sources(), Backlog: db.Sources(), Lookup: db.Sources(),
 			Texts: testsupport.Texts{Readers: unreadable{err: stopErr}},
 		}),
-		vectors.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}),
+		indexing.NewEmbed(readers, db.Sources(), db.Sources(), testsupport.FreeIndexClaim{}, nil, none.SearchSource{}),
 	)
 	_, err := cutting.CutOne(t.Context(), v, "library/A Book.epub")
 	if !errors.Is(err, stopErr) {

@@ -10,7 +10,7 @@ import (
 // pairTokenizer encodes a (query, document) pair as the pair template of the tokenizer of a model says,
 // cut to the tokens of the profile.
 type pairTokenizer struct {
-	tokens    tokenizer.Tokenizer
+	tokens    *tokenizer.Tokenizer
 	maxTokens int
 	pad       int
 }

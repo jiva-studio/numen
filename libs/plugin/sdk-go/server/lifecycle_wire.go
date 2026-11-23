@@ -19,7 +19,7 @@ type lifecycleHandler struct {
 func (h lifecycleHandler) Ping(
 	context.Context, *connect.Request[v1.PingRequest],
 ) (*connect.Response[v1.PingResponse], error) {
-	return connect.NewResponse(&v1.PingResponse{Status: statusOK, Protocol: ProtocolVersion}), nil
+	return connect.NewResponse(&v1.PingResponse{Protocol: ProtocolVersion}), nil
 }
 
 func (h lifecycleHandler) Shutdown(
@@ -28,7 +28,7 @@ func (h lifecycleHandler) Shutdown(
 	if err := h.state.shutdown(); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.ShutdownResponse{Success: true}), nil
+	return connect.NewResponse(&v1.ShutdownResponse{}), nil
 }
 
 func (h lifecycleHandler) Configure(
@@ -37,5 +37,5 @@ func (h lifecycleHandler) Configure(
 	if err := h.state.configureWith(ctx, req.Msg.GetValues()); err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
+	return connect.NewResponse(&v1.ConfigureResponse{}), nil
 }
