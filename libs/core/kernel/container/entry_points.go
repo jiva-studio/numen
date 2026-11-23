@@ -42,7 +42,6 @@ func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultreg
 }
 
 func connectWindow(
-	ctx context.Context,
 	install pluginInstall,
 	exec *PluginExecution,
 	vaultDeps vaultWiring,
@@ -62,7 +61,6 @@ func connectWindow(
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.VaultList = access.vaults })
 	setPluginTexts(install.Endpoints.Lender, vaultDeps.TextVersions)
 	shareEditorWindow(startup.db, opened, access.showTab, install, vaultDeps)
-	exec.Watch.KeepAll(ctx)
 	return opened.Installation, nil
 }
 

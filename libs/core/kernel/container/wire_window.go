@@ -69,7 +69,14 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	if err := opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out); err != nil {
 		return nil, errors.Join(err, launch.closeSource(), db.Close())
 	}
-	return connectWindow(ctx, install, exec, vaultDeps, opened, startup, launch.plugins)
+	installation, err := connectWindow(install, exec, vaultDeps, opened, startup, launch.plugins)
+	if err != nil {
+		return nil, err
+	}
+	if startup.isEditor {
+		exec.Watch.KeepAll(ctx)
+	}
+	return installation, nil
 }
 
 func getWindowVersions(c Config, exec *PluginExecution, res *Resources, startup windowStartup) *textVersions {
