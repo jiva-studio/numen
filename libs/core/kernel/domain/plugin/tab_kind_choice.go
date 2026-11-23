@@ -11,19 +11,19 @@ import (
 
 // TabKindChoice gives a note the kind of tab it opens in, from the tab kinds of the enabled plugins.
 type TabKindChoice struct {
-	kinds       func() []TabKindEntry
-	contentType func(path string) domain.ContentType
-	config      func() map[string]any
-	conditions  *when.Conditions
+	listKinds      func() []TabKindEntry
+	getContentType func(path string) domain.ContentType
+	getConfig      func() map[string]any
+	conditions     *when.Conditions
 }
 
 // NewTabKindChoice makes the choice over the tab kinds the function lists, with the function that gives a
 // file its content type and the function that gives the settings as the config variable of a condition.
 // A nil config leaves a condition over config undecided.
 func NewTabKindChoice(
-	kinds func() []TabKindEntry, contentType func(path string) domain.ContentType, config func() map[string]any,
+	listKinds func() []TabKindEntry, getContentType func(path string) domain.ContentType, getConfig func() map[string]any,
 ) *TabKindChoice {
-	return &TabKindChoice{kinds: kinds, contentType: contentType, config: config, conditions: when.NewConditions()}
+	return &TabKindChoice{listKinds: listKinds, getContentType: getContentType, getConfig: getConfig, conditions: when.NewConditions()}
 }
 
 type parsedTabKind struct {
@@ -61,7 +61,7 @@ func (c *TabKindChoice) ChooseMany(heads map[string]frontmatter.Head) map[string
 }
 
 func (c *TabKindChoice) parseTabKinds() []parsedTabKind {
-	entries := c.kinds()
+	entries := c.listKinds()
 	out := make([]parsedTabKind, 0, len(entries))
 	for _, one := range entries {
 		if one.TabKind.When == "" {
@@ -83,7 +83,7 @@ func (c *TabKindChoice) parseTabKinds() []parsedTabKind {
 func (c *TabKindChoice) chooseForNote(
 	kinds []parsedTabKind, cachedConfig *map[string]any, path string, noteType domain.NoteType, properties map[string]any,
 ) string {
-	contentType := c.contentType(path)
+	contentType := c.getContentType(path)
 	values := NewTargetValues(path, false, contentType).WithNote(noteType, properties).Get()
 	var matching []domain.ContentHandler
 	for _, one := range kinds {
@@ -106,18 +106,18 @@ func (c *TabKindChoice) chooseForNote(
 }
 
 func (c *TabKindChoice) addConfig(values map[string]any, cachedConfig *map[string]any, needsConfig bool) {
-	if !needsConfig || c.config == nil {
+	if !needsConfig || c.getConfig == nil {
 		return
 	}
 	if _, isRead := values["config"]; isRead {
 		return
 	}
 	if cachedConfig == nil {
-		values["config"] = c.config()
+		values["config"] = c.getConfig()
 		return
 	}
 	if *cachedConfig == nil {
-		*cachedConfig = c.config()
+		*cachedConfig = c.getConfig()
 	}
 	if *cachedConfig != nil {
 		values["config"] = *cachedConfig
