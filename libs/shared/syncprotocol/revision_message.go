@@ -27,7 +27,7 @@ func GetRevisionMessage(revision *syncv1.Revision) []byte {
 	}
 	message = binary.BigEndian.AppendUint64(message, revision.GetBlobSize())
 	message = binary.BigEndian.AppendUint32(message, revision.GetEpoch())
-	return append(message, boolByte(revision.GetDeleted()))
+	return append(message, encodeBool(revision.GetDeleted()))
 }
 
 // GetRevisionID returns the id of a revision: the SHA-256 of GetRevisionMessage. The parent_rev of the next
@@ -45,7 +45,7 @@ func GetCatalogEntryMessage(entry *syncv1.CatalogEntry) []byte {
 	message = binary.BigEndian.AppendUint64(message, entry.GetVersion())
 	message = appendField(message, entry.GetPrevHash())
 	message = appendField(message, entry.GetVaultId())
-	message = append(message, boolByte(entry.GetCreatesVault()))
+	message = append(message, encodeBool(entry.GetCreatesVault()))
 	message = appendField(message, bodyHash[:])
 	return appendField(message, entry.GetAuthorDeviceSignKey())
 }
@@ -60,7 +60,7 @@ func appendField(message, field []byte) []byte {
 	return append(binary.AppendUvarint(message, uint64(len(field))), field...)
 }
 
-func boolByte(value bool) byte {
+func encodeBool(value bool) byte {
 	if value {
 		return 1
 	}
