@@ -286,3 +286,28 @@ func TestFeedKeepsChangedNoteTypesSinceTheCursor(t *testing.T) {
 		t.Fatalf("changes since the note was retyped = %+v", page)
 	}
 }
+
+func TestARemovalHasNoMetadataOfASourceThatTookItsNumber(t *testing.T) {
+	db := openDB(t)
+	v := getFirstVault()
+	saveNoteWithFrontmatter(t, db, v, "notes/river.md", map[string]any{"tags": "water"}, "River")
+	id := getSourceID(t, db, v, "notes/river.md")
+	if err := db.Notes().Remove(t.Context(), v.ID, []string{"notes/river.md"}); err != nil {
+		t.Fatal(err)
+	}
+	saveNoteWithFrontmatter(t, db, v, "notes/lake.md", map[string]any{"tags": "water"}, "Lake")
+	if got := getSourceID(t, db, v, "notes/lake.md"); got != id {
+		t.Skipf("the new source took number %d, not %d", got, id)
+	}
+
+	var removal filechange.Change
+	for _, one := range listChanges(t, db, v, 0) {
+		if one.Event == manifest.EventFileRemoved {
+			removal = one
+		}
+	}
+
+	if removal.Path != "notes/river.md" || removal.Hash != "" || removal.Size != 0 || removal.ModifiedAt != 0 {
+		t.Errorf("the removal is %+v, want the removed path with no hash, size or modification time", removal)
+	}
+}

@@ -153,10 +153,15 @@ func TestAChangeAfterARewriteHasTheLatestContent(t *testing.T) {
 
 func TestAnEarlierChangeHasTheLatestContentOfItsFile(t *testing.T) {
 	v := hosttest.New("garden")
+	start := readFeed(t, v, host.FileChangeCursor{}).Next
 	v.WriteFile("a.md", "A\n")
 	v.WriteFile("a.md", "A, longer\n")
 
-	for _, one := range readFeed(t, v, host.FileChangeCursor{}).Changes {
+	changes := readFeed(t, v, start).Changes
+	if len(changes) != 2 {
+		t.Fatalf("the feed holds %+v, want two changes", changes)
+	}
+	for _, one := range changes {
 		if one.Hash != domain.HashContent([]byte("A, longer\n")) || one.Size != int64(len("A, longer\n")) {
 			t.Errorf("%s of %s has hash %q, size %d, want the latest content", one.Event, one.Path, one.Hash, one.Size)
 		}
