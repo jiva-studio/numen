@@ -1,8 +1,7 @@
 /**
  * The state of the identity section: showing the recovery words of a new identity and checking
- * three of them in two steps, opening a restore, and deleting the identity from this device. The
- * words live in this state only while a setup is open; leaving the page or cancelling drops them,
- * and a kept identity hands them on to the recovery kit once.
+ * three of them in two steps, restoring from the twelve words in a dialog, and deleting the identity from this device. The words
+ * live in this state only while a setup is open; leaving the page or cancelling drops them.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
@@ -10,32 +9,22 @@ import { formatError } from '@/shared/api/errors'
 import type { InstallationIdentity } from '../types'
 import { WORDS as words } from '../words'
 import { useIdentityDelete } from './useIdentityDelete'
-import type { useIdentityCall } from './useIdentityCall'
-import { useIdentityRestore } from './useIdentityRestore'
+import { useIdentityCall } from './useIdentityCall'
+import { useRestoreWords } from './useRestoreWords'
 import { useWordsConfirmation } from './useWordsConfirmation'
 import { useSetupStage } from './useSetupStage'
 
-type Step = 'idle' | 'setup' | 'restore' | 'restoreSheets'
+type Step = 'idle' | 'setup' | 'restore'
 
-interface SheetFields {
-  setText(index: number, value: string): void
-  readSheets(): string[][]
-  clear(): void
-}
-
-export function useIdentitySection(
-  getIdentity: () => InstallationIdentity,
-  call: ReturnType<typeof useIdentityCall>,
-  fields: SheetFields,
-  onKept: (recoveryWords: readonly string[]) => Promise<void>,
-) {
+export function useIdentitySection(getIdentity: () => InstallationIdentity) {
   const identity = computed(() => getIdentity().identity.value)
   const step = ref<Step>('idle')
+  const call = useIdentityCall()
   const { problem, isBusy, run } = call
   const setup = useSetupStage(problem)
   const { stage, recoveryWords } = setup
   const confirmation = useWordsConfirmation(recoveryWords)
-  const restoring = useIdentityRestore(getIdentity, call, fields, reset)
+  const restoring = useRestoreWords(problem)
   const deletion = useIdentityDelete(getIdentity, run, () => isBusy.value)
 
   onMounted(() => {
@@ -67,9 +56,9 @@ export function useIdentitySection(
     step.value = 'setup'
   }
 
-  const startRestore = (kind: 'restore' | 'restoreSheets'): void => {
+  const startRestore = (): void => {
     reset()
-    step.value = kind
+    step.value = 'restore'
   }
 
   const setEntered = (position: number, value: string): void => {
@@ -84,17 +73,21 @@ export function useIdentitySection(
       problem.value = words.identityNotValid
       return
     }
-    const kept = recoveryWords.value
-    const answer = await run(() => getIdentity().create(kept))
-    if (!answer.ok) return
-    reset()
-    await onKept(kept)
+    const answer = await run(() => getIdentity().create(recoveryWords.value))
+    if (answer.ok) reset()
+  }
+
+  const restore = async (): Promise<void> => {
+    if (isBusy.value) return
+    const answer = await run(() => getIdentity().create(restoring.readWords()))
+    if (answer.ok) reset()
   }
 
   return {
     identity,
     step,
     setup,
+    call,
     confirmation,
     restoring,
     deletion,
@@ -106,6 +99,7 @@ export function useIdentitySection(
       cancel: reset,
       setEntered,
       keep,
+      restore,
     },
   }
 }

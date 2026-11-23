@@ -1,68 +1,45 @@
 <script setup lang="ts">
 /**
- * The identity of this device: its fingerprints, devices and recovery kit when it has one, and
- * otherwise the way to make one (a dialog of two steps: write down twelve words, check three of
- * them) or to restore one from its words or from two sheets of a kit.
+ * The identity of this device: its fingerprints and devices when it has one, and otherwise the way
+ * to make one (a dialog of two steps: write down twelve words, check three of them) or to restore
+ * one from its words in a dialog.
  */
-import { computed } from 'vue'
-import { FileText, KeyRound, Plus } from '@lucide/vue'
+import { KeyRound, Plus } from '@lucide/vue'
 import { IslandCard } from '@numen/ui'
-import type { Printer } from '@/pages/settings/api/print'
 import type { InstallationIdentity } from '../../types'
-import { useIdentityCall } from '../../model/useIdentityCall'
 import { useIdentitySection } from '../../model/useIdentitySection'
-import { useRecoveryKit } from '../../model/useRecoveryKit'
-import { useSheetFields } from '../../model/useSheetFields'
 import { WORDS as words } from '../../words'
 import CardAction from './CardAction.vue'
 import IdentityDetails from './IdentityDetails.vue'
-import IdentityRestore from './IdentityRestore.vue'
-import IdentityRestoreSheets from './IdentityRestoreSheets.vue'
+import IdentityRestoreDialog from './IdentityRestoreDialog.vue'
 import IdentitySetup from './IdentitySetup.vue'
-import RecoveryKitSection from './RecoveryKitSection.vue'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ identity: InstallationIdentity; printer: Printer }>()
+const props = defineProps<{ identity: InstallationIdentity }>()
 
 /* --------------------------------- State ---------------------------------- */
-const call = useIdentityCall()
-const fields = useSheetFields()
-const kit = useRecoveryKit(
-  () => props.identity,
-  () => props.printer,
-  call,
-  fields,
-)
-const section = useIdentitySection(() => props.identity, call, fields, kit.actions.showAfterSetup)
-const { identity: current, step, setup, confirmation, restoring, deletion, actions } = section
+const section = useIdentitySection(() => props.identity)
+const { identity: current, step, setup, call, confirmation, restoring, deletion, actions } = section
 const { stage, recoveryWords } = setup
-const isRestoring = computed(() => step.value === 'restore' || step.value === 'restoreSheets')
 </script>
 
 <template>
-  <template v-if="current">
-    <IdentityDetails
-      :info="current"
-      :problem="call.problem.value"
-      :is-busy="call.isBusy.value"
-      :is-asking-delete="deletion.isAskingDelete.value"
-      @ask="deletion.askDelete"
-      @confirm="deletion.confirmDelete"
-      @cancel="deletion.cancelDelete"
-    />
-
-    <RecoveryKitSection :model="kit" :texts="fields.texts.value" :is-busy="call.isBusy.value" />
-  </template>
+  <IdentityDetails
+    v-if="current"
+    :info="current"
+    :problem="call.problem.value"
+    :is-busy="call.isBusy.value"
+    :is-asking-delete="deletion.isAskingDelete.value"
+    @ask="deletion.askDelete"
+    @confirm="deletion.confirmDelete"
+    @cancel="deletion.cancelDelete"
+  />
 
   <IslandCard v-else :title="words.identitySection">
-    <template v-if="!isRestoring" #aside>
-      <CardAction :is-disabled="call.isBusy.value" @click="actions.startRestore('restore')">
+    <template #aside>
+      <CardAction :is-disabled="call.isBusy.value" @click="actions.startRestore">
         <KeyRound :size="14" aria-hidden="true" />
         {{ words.identityRestore }}
-      </CardAction>
-      <CardAction :is-disabled="call.isBusy.value" @click="actions.startRestore('restoreSheets')">
-        <FileText :size="14" aria-hidden="true" />
-        {{ words.identityRestoreSheets }}
       </CardAction>
       <CardAction is-primary :is-disabled="call.isBusy.value" @click="actions.startSetup">
         <Plus :size="14" aria-hidden="true" />
@@ -73,26 +50,8 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
       <p class="identity-section__detail">{{ words.identityNoneDetail }}</p>
       <p class="identity-section__detail">{{ words.identityNoneWords }}</p>
 
-      <IdentityRestore
-        v-if="step === 'restore'"
-        :text="restoring.typing.restoreText.value"
-        :is-busy="call.isBusy.value"
-        @change="restoring.typing.setRestoreText"
-        @restore="restoring.restoreWords"
-        @cancel="actions.cancel"
-      />
-
-      <IdentityRestoreSheets
-        v-else-if="step === 'restoreSheets'"
-        :texts="fields.texts.value"
-        :is-busy="call.isBusy.value"
-        @change="restoring.setSheetText"
-        @restore="restoring.restoreSheets"
-        @cancel="actions.cancel"
-      />
-
       <p
-        v-if="call.problem.value !== '' && step !== 'setup'"
+        v-if="call.problem.value !== '' && step === 'idle'"
         role="alert"
         class="identity-section__problem"
       >
@@ -114,6 +73,16 @@ const isRestoring = computed(() => step.value === 'restore' || step.value === 'r
       @check="actions.showCheck"
       @back="actions.showWords"
       @keep="actions.keep"
+      @cancel="actions.cancel"
+    />
+
+    <IdentityRestoreDialog
+      v-if="step === 'restore'"
+      :entered="restoring.entered.value"
+      :problem="call.problem.value"
+      :is-busy="call.isBusy.value"
+      @change="restoring.setWord"
+      @restore="actions.restore"
       @cancel="actions.cancel"
     />
   </IslandCard>
