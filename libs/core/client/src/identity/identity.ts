@@ -57,8 +57,7 @@ export interface RecoveryKit {
 
 /** What proves the account when a kit is made: the 12 words or two sheets of an earlier kit. */
 export type KitProof =
-  | { readonly words: readonly string[] }
-  | { readonly sheets: readonly (readonly string[])[] }
+  { readonly words: readonly string[] } | { readonly sheets: readonly (readonly string[])[] }
 
 /** The identity of this device. */
 export interface IdentityClient {

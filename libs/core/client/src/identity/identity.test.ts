@@ -14,7 +14,20 @@ import { createIdentityServiceClient } from '../clients'
 import { createCoreTransport, type CoreAnswers } from '../testing'
 import { createIdentityClient, type IdentityInfo } from './identity'
 
-const WORDS = ['legal', 'winner', 'thank', 'year', 'wave', 'sausage', 'worth', 'useful', 'legal', 'winner', 'thank', 'yellow']
+const WORDS = [
+  'legal',
+  'winner',
+  'thank',
+  'year',
+  'wave',
+  'sausage',
+  'worth',
+  'useful',
+  'legal',
+  'winner',
+  'thank',
+  'yellow',
+]
 
 const INFO = {
   accountFingerprint: '3F2A 91C0 0000 1111 2222 3333 4444 5555',
@@ -69,7 +82,8 @@ describe('createIdentityClient', () => {
     ]
     for (const [code, expected] of codes) {
       const client = createClient({
-        createIdentity: () => create(CreateIdentityResponseSchema, { error: code, detail: 'refused' }),
+        createIdentity: () =>
+          create(CreateIdentityResponseSchema, { error: code, detail: 'refused' }),
       })
       expect(await client.create(WORDS)).toStrictEqual({
         ok: false,
