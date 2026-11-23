@@ -16,7 +16,7 @@ import (
 func writeBook(t *testing.T) (files *hosttest.Vault, name string, size, mtime int64) {
 	t.Helper()
 	name = "pictured.epub"
-	files = hosttest.OnDisk(t, "vault", map[string]string{name: string(testsupport.CreateImageEpub(t))})
+	files = hosttest.CreateOnDisk(t, "vault", map[string]string{name: string(testsupport.CreateImageEpub(t))})
 	info, err := files.StatFile(t.Context(), name)
 	if err != nil {
 		t.Fatal(err)
@@ -91,7 +91,7 @@ func TestReadBookEntry_ErrorsOnPathOutsideVault(t *testing.T) {
 
 func TestReadBookEntry_ErrorsOnInvalidBook(t *testing.T) {
 	files, _, _, _ := writeBook(t)
-	files.File("junk.epub", "junk")
+	files.WriteFile("junk.epub", "junk")
 	_, err := readEntry(t, files, "junk.epub", "EPUB/cover.png", nil)
 	if codeOf(err) != KindInvalidArgument {
 		t.Fatalf("code = %v (%v), want invalid argument", codeOf(err), err)

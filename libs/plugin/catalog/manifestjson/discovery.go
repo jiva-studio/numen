@@ -37,7 +37,7 @@ func Discover(dirs []string) ([]manifest.Discovered, []DiscoveryProblem) {
 		if dir == "" {
 			continue
 		}
-		cleanDir := absolutePath(dir)
+		cleanDir := getAbsolutePath(dir)
 		if seenDirs[cleanDir] {
 			continue
 		}
@@ -50,7 +50,7 @@ func Discover(dirs []string) ([]manifest.Discovered, []DiscoveryProblem) {
 	return found, problems
 }
 
-func absolutePath(path string) string {
+func getAbsolutePath(path string) string {
 	clean := filepath.Clean(path)
 	if abs, err := filepath.Abs(clean); err == nil {
 		return abs
@@ -102,7 +102,7 @@ func scanPluginDir(pluginDir string, seenCount map[string]string) (manifest.Disc
 		}
 	}
 
-	cleanPluginDir := absolutePath(pluginDir)
+	cleanPluginDir := getAbsolutePath(pluginDir)
 	if existingDir, ok := seenCount[m.ID]; ok {
 		return manifest.Discovered{}, fmt.Errorf("duplicate plugin id %q in %s and %s", m.ID, existingDir, cleanPluginDir)
 	}

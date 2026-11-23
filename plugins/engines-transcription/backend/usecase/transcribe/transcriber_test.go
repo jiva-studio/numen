@@ -163,9 +163,9 @@ type scene struct {
 func newScene(t *testing.T) *scene {
 	t.Helper()
 	vault := hosttest.New("Lectures")
-	vault.File(lecture, lectureSound)
+	vault.WriteFile(lecture, lectureSound)
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
-	texts.File(lecture, []byte(lectureSound))
+	texts.WriteFile(lecture, []byte(lectureSound))
 	s := &scene{
 		vault: vault, store: vault.Store(), texts: texts, queue: hosttest.NewQueue(),
 		model: &heardModel{
@@ -343,11 +343,11 @@ func TestTranscribeWaitsForQueueTurn(t *testing.T) {
 func TestTranscribeRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
-	s.vault.Beside(chemistry)
-	chemistry.File(lecture, lectureSound)
+	s.vault.LinkBeside(chemistry)
+	chemistry.WriteFile(lecture, lectureSound)
 	other := s.texts.With("Chemistry")
 	other.SetStore(PluginID, chemistry.Store())
-	other.File(lecture, []byte(lectureSound))
+	other.WriteFile(lecture, []byte(lectureSound))
 
 	if err := transcribeNow(t.Context(), s.transcriber, "Chemistry", lecture); err != nil {
 		t.Fatal(err)

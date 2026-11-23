@@ -34,7 +34,7 @@ func ResolveAddresses(
 			continue
 		}
 		observed[content] = true
-		resolvedVault, crossed := one.InVault(vault)
+		resolvedVault, crossed := one.ResolveVault(vault)
 		out.ResolvedAddresses = append(out.ResolvedAddresses, &v1.ResolvedAddress{
 			Address:     content,
 			Path:        one.To,
@@ -51,7 +51,7 @@ func getTextLinks(text string) ([]*v1.TextLink, []string) {
 	var addresses []string
 	isListed := map[string]bool{}
 	isAddressed := map[string]bool{}
-	for _, link := range markdown.WikilinksInText(text) {
+	for _, link := range markdown.FindTextWikilinks(text) {
 		raw := text[link.At:link.To]
 		if isListed[raw] {
 			continue

@@ -84,7 +84,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 		return Result{}, fmt.Errorf("read %s of %s: %w", source.GetID(), req.Path, err)
 	}
 
-	turn, err := p.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: nil})
+	turn, err := p.host.Queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, NotifyWaiting: nil})
 	if err != nil {
 		return Result{}, fmt.Errorf("wait for a turn to proofread %s: %w", req.Path, err)
 	}

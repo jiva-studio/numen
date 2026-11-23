@@ -50,7 +50,7 @@ func (v *switchableVault) StatFile(ctx context.Context, path string) (domain.Fil
 func TestStartKeepsTheVaultActiveOnEntry(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
-	s.vault.Beside(chemistry)
+	s.vault.LinkBeside(chemistry)
 	files := &switchableVault{Vault: s.vault, active: "Physics"}
 	documents := document.NewReader()
 	run, err := recognition.New(
@@ -72,7 +72,7 @@ func TestStartKeepsTheVaultActiveOnEntry(t *testing.T) {
 		}
 	})
 	documents.SetCompilationCache(compilation)
-	held, err := s.queue.EnqueueWork(t.Context(), host.Work{IsUserStarted: true, OnWaiting: nil})
+	held, err := s.queue.EnqueueWork(t.Context(), host.Work{IsUserStarted: true, NotifyWaiting: nil})
 	if err != nil {
 		t.Fatal(err)
 	}

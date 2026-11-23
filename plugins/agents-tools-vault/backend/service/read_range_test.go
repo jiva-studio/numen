@@ -188,7 +188,7 @@ func TestFileReadOfARangeThatIsNotTextNamesLibraryRead(t *testing.T) {
 
 func TestFileReadMovesAStartInsideACharacterToTheNextCharacter(t *testing.T) {
 	l := newLibrary(t)
-	l.vault.File("notes/Moor.txt", "Öl und Ödland")
+	l.vault.WriteFile("notes/Moor.txt", "Öl und Ödland")
 
 	var out fileReadAnswer
 	if failure := l.call(t, "file_read", `{"path":"notes/Moor.txt","start":1,"length":5}`, &out); failure != "" {
@@ -211,7 +211,7 @@ func TestLibraryReadOfNonTextFileStatesThatARecognitionOrTranscriptionCreatesOne
 func TestLibraryReadOfLargeBinaryStatesThatARecognitionOrTranscriptionCreatesOne(t *testing.T) {
 	const archivePath = "recordings/Long Night.wav"
 	l, vault, _, registry := newRangeLibrary(t)
-	l.vault.File(archivePath, "RIFF\x00\x00wave body")
+	l.vault.WriteFile(archivePath, "RIFF\x00\x00wave body")
 	vault.readRefused[archivePath] = errors.New("the host refused the call with the code ERROR_CODE_TOO_LARGE")
 	vault.rangeErrors[archivePath] = fmt.Errorf("read %s: %w", archivePath, host.ErrNotText)
 

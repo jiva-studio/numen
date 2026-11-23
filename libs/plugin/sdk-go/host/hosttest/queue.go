@@ -45,8 +45,8 @@ func (q *Queue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, err
 	q.watchers = nil
 	q.mu.Unlock()
 
-	if work.OnWaiting != nil {
-		work.OnWaiting()
+	if work.NotifyWaiting != nil {
+		work.NotifyWaiting()
 	}
 	select {
 	case <-turn:

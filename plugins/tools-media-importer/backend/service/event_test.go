@@ -27,8 +27,8 @@ func TestAFilesChangedEventDownloadsTheMissingCaptionsOfALinkNote(t *testing.T) 
 		func() fetch.Settings { return fetch.Settings{IsTextDownloadAutomatic: true} })
 	t.Cleanup(links.Close)
 	note := "---\ntype: link\nurl: " + videoAddress + "\n---\n"
-	vault.File("links/mill.md", note)
-	texts.File("links/mill.md", []byte(note))
+	vault.WriteFile("links/mill.md", note)
+	texts.WriteFile("links/mill.md", []byte(note))
 	app := &App{links: links}
 
 	if err := app.HandleEvent(t.Context(), hosttest.GetIndexChangedEvent(string(vault.Vault().ID))); err != nil {

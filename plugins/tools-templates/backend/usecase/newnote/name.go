@@ -33,7 +33,7 @@ func suggestName(ctx context.Context, vault Vault, folder, template string) (str
 }
 
 func validateName(name string) string {
-	reduced, _, err := domain.Filename(name)
+	reduced, _, err := domain.CreateFilename(name)
 	if err != nil {
 		return ""
 	}
@@ -41,7 +41,7 @@ func validateName(name string) string {
 }
 
 func checkName(name string) error {
-	reduced, isExact, err := domain.Filename(name)
+	reduced, isExact, err := domain.CreateFilename(name)
 	if err != nil {
 		return err
 	}

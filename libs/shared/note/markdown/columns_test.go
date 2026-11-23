@@ -214,7 +214,7 @@ func TestKeysAndLinkEntryBounds(t *testing.T) {
 			Content: []*yaml.Node{{Value: "title"}},
 		},
 	}
-	if got, ok := d.Title(); ok || got != "" {
+	if got, ok := d.GetTitle(); ok || got != "" {
 		t.Errorf("Title on odd Content = %q, %v", got, ok)
 	}
 
@@ -227,7 +227,7 @@ func TestKeysAndLinkEntryBounds(t *testing.T) {
 			},
 		},
 	}
-	if names, ok := dOdd.EntryNames("meta"); !ok || len(names) != 0 {
+	if names, ok := dOdd.ListEntryNames("meta"); !ok || len(names) != 0 {
 		t.Errorf("EntryNames on odd Content = %v, %v", names, ok)
 	}
 
@@ -235,7 +235,7 @@ func TestKeysAndLinkEntryBounds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	if names, ok := doc.EntryNames("meta"); !ok || !slices.Equal(names, []string{"a", "b", "c"}) {
+	if names, ok := doc.ListEntryNames("meta"); !ok || !slices.Equal(names, []string{"a", "b", "c"}) {
 		t.Errorf("EntryNames = %v, %v, want [a b c]", names, ok)
 	}
 
@@ -406,7 +406,7 @@ func TestParseRangesScalarAndWikilinksBounds(t *testing.T) {
 		t.Errorf("scalarLike folded roundtrip = %q (%v), want \"a\\nb\"", roundtrip, err)
 	}
 
-	links := WikilinksIn("[[]][[A]]")
+	links := FindWikilinks("[[]][[A]]")
 	if len(links) != 1 || links[0].Inside != "A" {
 		t.Errorf("WikilinksIn(\"[[]][[A]]\") = %+v", links)
 	}

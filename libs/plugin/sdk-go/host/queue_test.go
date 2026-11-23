@@ -80,7 +80,7 @@ func TestQueueClientKeepsTheTurnUntilRelease(t *testing.T) {
 	client, q := newQueueClient(t)
 
 	var waited int
-	turn, err := client.EnqueueWork(t.Context(), host.Work{IsUserStarted: true, OnWaiting: func() { waited++ }})
+	turn, err := client.EnqueueWork(t.Context(), host.Work{IsUserStarted: true, NotifyWaiting: func() { waited++ }})
 	if err != nil {
 		t.Fatal(err)
 	}

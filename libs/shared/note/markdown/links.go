@@ -26,11 +26,11 @@ func getBodyLinks(body []byte) []domain.Link {
 			// A link inside a code fence is an example of a link, not one.
 			continue
 		}
-		// gomutants:disable-next-line BRANCH_IF reason="WikilinksIn returns no links when the line contains no opening brackets"
+		// gomutants:disable-next-line BRANCH_IF reason="FindWikilinks returns no links when the line contains no opening brackets"
 		if !bytes.Contains(line, []byte("[[")) {
 			continue
 		}
-		for _, found := range WikilinksIn(strings.TrimRight(string(line), "\r")) {
+		for _, found := range FindWikilinks(strings.TrimRight(string(line), "\r")) {
 			if observed[found.Target.String()] {
 				continue
 			}

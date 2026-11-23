@@ -132,6 +132,6 @@ func (u Write) PointAt(
 ) (domain.FileStat, error) {
 	e, getReleaseError := newEdit(u.readers, u.writers, u.index, u.now, u.entropy)
 	e.FileStat = stat
-	written, err := e.PointAt(ctx, v, path, entry.Type, entry.To, entry.Role)
+	written, err := e.SetLink(ctx, v, path, entry.Type, entry.To, entry.Role)
 	return written, errors.Join(err, getReleaseError())
 }
