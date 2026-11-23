@@ -2,10 +2,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { SLOT } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
-import type { CommandDeclaration, HostCommands } from './types'
+import type { CommandDeclaration, HostSlots } from './types'
 import { createTestPluginHost } from '../testing/hostDeps'
 
-type CreateFinder = NonNullable<HostCommands['createSlotCommandFinder']>
+type CreateFinder = NonNullable<HostSlots['createSlotCommandFinder']>
 type SlotCommandFinder = ReturnType<CreateFinder>
 type HostCommandReads = Parameters<CreateFinder>[0]
 
