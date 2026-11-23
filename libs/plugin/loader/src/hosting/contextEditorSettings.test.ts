@@ -55,7 +55,7 @@ describe('the editor settings of a plugin context', () => {
     }[] = []
     const host = createTestContextHost({
       settings: {
-        onEditorSettingsChange: (id, handler) => {
+        watchEditorSettings: (id, handler) => {
           subscribed.push({ id, handler })
           return { dispose: () => undefined }
         },
@@ -74,7 +74,7 @@ describe('the editor settings of a plugin context', () => {
   it('stop being followed when the plugin disposes the subscription', () => {
     const stopped = vi.fn()
     const host = createTestContextHost({
-      settings: { onEditorSettingsChange: () => ({ dispose: stopped }) },
+      settings: { watchEditorSettings: () => ({ dispose: stopped }) },
     })
     const context = createPluginParts('md.numen.sample', host, MANIFEST([]))
 

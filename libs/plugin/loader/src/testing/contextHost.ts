@@ -35,12 +35,12 @@ const IDLE: PluginContextHost = {
   },
   settings: {
     getSetting: () => undefined,
-    onSettingChange: () => NOTHING,
+    watchSetting: () => NOTHING,
     getEditorSettings: () => undefined,
-    onEditorSettingsChange: () => NOTHING,
+    watchEditorSettings: () => NOTHING,
     hasLicense: () => false,
     getLicenseKey: () => undefined,
-    onLicenseChange: () => NOTHING,
+    watchLicense: () => NOTHING,
   },
   events: {
     onVaultChange: () => NOTHING,

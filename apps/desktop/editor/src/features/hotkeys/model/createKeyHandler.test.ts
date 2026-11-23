@@ -1,7 +1,18 @@
 /** The keys of the window: the tabs take a key first, then the keybindings the plugins declare. */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { createPluginHost, getWhenValues } from '@numen/plugin-loader'
+import {
+  createPluginHost,
+  getWhenValues,
+  NO_COMMANDS,
+  NO_KINDS,
+  NO_PLUGINS,
+  NO_SLOTS,
+  NO_TABS,
+  NO_VAULT,
+  NO_WINDOW,
+  NO_WORK,
+} from '@numen/plugin-loader'
 import { COMMAND, type CommandTarget } from '@/shared/model/command'
 import type { DeclaredKeybinding } from '@/entities/plugin'
 import { createAppKeyRunner, createKeyHandler } from './createKeyHandler'
@@ -30,15 +41,17 @@ const bind = (
 
 const setup = (keybindings: readonly DeclaredKeybinding[], takesKey = false) => {
   const host = createPluginHost({
-    window: { target: 'desktop.editor' },
-    kinds: {
-      registerKind: () => () => undefined,
-      registerExtensionReader: () => () => undefined,
-    },
-    tabs: { openTab: () => Promise.resolve('tab-1') },
+    window: { ...NO_WINDOW, target: 'desktop.editor' },
+    plugins: NO_PLUGINS,
+    commands: NO_COMMANDS,
+    kinds: { ...NO_KINDS, registerKind: () => () => undefined },
+    tabs: { ...NO_TABS, openTab: () => Promise.resolve('tab-1') },
     slots: {
+      ...NO_SLOTS,
       getSlotWhenValues: (target) => getWhenValues({ window: {}, target, contentTypes: {} }),
     },
+    vault: NO_VAULT,
+    work: NO_WORK,
   })
   const calls = {
     toggleSearch: vi.fn(),

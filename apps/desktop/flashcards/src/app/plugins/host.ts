@@ -9,6 +9,14 @@ import {
   createAppInfo,
   openExternalUrl,
   createPluginHost,
+  NO_COMMANDS,
+  NO_KINDS,
+  NO_PLUGINS,
+  NO_SLOTS,
+  NO_TABS,
+  NO_VAULT,
+  NO_WINDOW,
+  NO_WORK,
   createPluginNotices,
   readManifestSlotEntries,
   readManifestSlotPoints,
@@ -65,6 +73,7 @@ export function createShellHost(deps: ShellHostDeps) {
   const { tabs, notices, services = {}, getPlatform = () => 'windows' } = deps
   const pluginHost = createPluginHost({
     window: {
+      ...NO_WINDOW,
       target: TARGET,
       app: createAppInfo({
         version: import.meta.env.VITE_NUMEN_VERSION,
@@ -77,16 +86,24 @@ export function createShellHost(deps: ShellHostDeps) {
       getCommands: () => services.commands,
       getWindow: () => services.window,
     },
-    kinds: { registerKind: tabs.registerKind, closeTabsForPlugin: tabs.closePluginTab },
-    tabs: { closeTab: (id) => tabs.closeTab(id) },
+    plugins: NO_PLUGINS,
+    commands: NO_COMMANDS,
+    kinds: {
+      ...NO_KINDS,
+      registerKind: tabs.registerKind,
+      closeTabsForPlugin: tabs.closePluginTab,
+    },
+    tabs: { ...NO_TABS, closeTab: (id) => tabs.closeTab(id) },
     slots: {
+      ...NO_SLOTS,
       getSlotEntries: readSlotEntries,
       getSlotPoints: readSlotPoints,
       ...(deps.getSlotLayout ? { getSlotLayout: deps.getSlotLayout } : {}),
       reportViewIssue: createViewIssueReporter(notices),
     },
-    vault: { getVaults: () => services.vaults, getRelations: () => deps.relations },
+    vault: { ...NO_VAULT, getVaults: () => services.vaults, getRelations: () => deps.relations },
     work: {
+      ...NO_WORK,
       getBackgroundTasks: () => services.backgroundTasks,
       getConnections: (pluginId) => deps.getConnections(pluginId),
     },

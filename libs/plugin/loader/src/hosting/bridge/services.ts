@@ -1,37 +1,9 @@
 import { type Manifest } from '@numen/core-client'
-import { ReportedError } from '@numen/result'
-import type { NoticeHost, SlotHost } from '@numen/plugin-sdk'
-import { createAppInfo } from '../../appInfo'
+import type { SlotHost } from '@numen/plugin-sdk'
 import { formatCommandId } from '../../commandId'
 import { createPluginHealth } from '../../pluginHealth'
 import type { DeclaredSlotEntry } from '../../slots'
-import type {
-  ContextLicenseHost,
-  ContextUiHost,
-  ContextVaultHost,
-  ContextWorkHost,
-  HostCommands,
-  HostPlugins,
-  PluginHostDeps,
-} from '../types'
-
-const NO_PLUGINS: HostPlugins = {}
-
-export function createLicenseServiceBridge({
-  plugins = NO_PLUGINS,
-}: Pick<PluginHostDeps, 'plugins'>): ContextLicenseHost {
-  return {
-    hasLicense: (pluginId, licenseId) => plugins.hasLicense?.(pluginId, licenseId) ?? false,
-    getLicenseKey: (pluginId, licenseId) => plugins.getLicenseKey?.(pluginId, licenseId),
-    onLicenseChange: (pluginId, licenseId, handler) => {
-      if (!plugins.onLicenseChange) return { dispose: () => undefined }
-      return { dispose: plugins.onLicenseChange(pluginId, licenseId, handler) }
-    },
-  }
-}
-
-/** The notices of a window that shows none: what a plugin reports is dropped. */
-const DISCARDING_NOTICES: NoticeHost = { show: () => undefined, setTasks: () => undefined }
+import type { ContextUiHost, ContextWorkHost, HostCommands, PluginHostDeps } from '../types'
 
 function findManifestCommandPermission(
   command: string,
@@ -44,20 +16,6 @@ function findManifestCommandPermission(
     if (match?.permission) return match.permission
   }
   return undefined
-}
-
-/** The vault services of the window as a plugin context reads them, each read at the moment a plugin asks. */
-export function createVaultServiceBridge({
-  vault,
-}: Pick<PluginHostDeps, 'vault'>): ContextVaultHost {
-  return {
-    getNotes: () => vault?.getNotes?.(),
-    getRelations: () => vault?.getRelations?.(),
-    getFiles: () => vault?.getFiles?.(),
-    getTexts: (pluginId) => vault?.getTexts?.(pluginId),
-    getBuffers: () => vault?.getBuffers?.(),
-    getVaults: () => vault?.getVaults?.(),
-  }
 }
 
 /** What the window a plugin draws in reads of the host: its slots, the manifests registered and the slot entries. */
@@ -76,11 +34,11 @@ const isListedIn = (entries: readonly DeclaredSlotEntry[], command: string): boo
   )
 
 const findCommandPermission = (
-  commands: HostCommands | undefined,
+  commands: HostCommands,
   manifests: ReadonlyMap<string, Manifest>,
   command: string,
 ): string | undefined =>
-  (commands?.getCommandDeclarations?.() ?? []).find(
+  (commands.getCommandDeclarations() ?? []).find(
     (one) => formatCommandId(one.pluginId, one.id) === command,
   )?.permission ||
   findManifestCommandPermission(command, manifests) ||
@@ -92,21 +50,18 @@ export function createUiServiceBridge(
   { slots, manifests, readSlotEntries }: UiServiceParts,
 ): ContextUiHost {
   return {
-    app: window.app ?? createAppInfo({ getPlatform: () => 'linux' }),
+    app: window.app,
     target: window.target,
-    openExternal: (url) =>
-      window.openExternal
-        ? window.openExternal(url)
-        : Promise.reject(new ReportedError('This window cannot open web links')),
-    getWorkspace: () => window.getWorkspace?.(),
-    getCommands: () => window.getCommands?.(),
+    openExternal: window.openExternal,
+    getWorkspace: window.getWorkspace,
+    getCommands: window.getCommands,
     commandAccess: {
       isListed: (command) => isListedIn(readSlotEntries() ?? [], command),
       getPermission: (command) => findCommandPermission(commands, manifests, command),
     },
-    getWindow: () => window.getWindow?.(),
-    getNotices: (pluginId) => window.getNotices?.(pluginId) ?? DISCARDING_NOTICES,
-    getPicker: () => window.getPicker?.(),
+    getWindow: window.getWindow,
+    getNotices: window.getNotices,
+    getPicker: window.getPicker,
     getSlots: () => slots,
   }
 }
@@ -114,11 +69,11 @@ export function createUiServiceBridge(
 /** The background work of the window as a plugin context reads it, each service read at the moment a plugin asks. */
 export function createWorkServiceBridge({ work }: Pick<PluginHostDeps, 'work'>): ContextWorkHost {
   return {
-    getTasks: (pluginId) => work?.getTasks?.(pluginId),
-    getBackgroundTasks: () => work?.getBackgroundTasks?.(),
-    getProcesses: () => work?.getProcesses?.(),
-    getLogs: (pluginId) => work?.getLogs?.(pluginId),
-    getHealth: (pluginId) => work?.health && createPluginHealth(work.health, pluginId),
-    getConnections: (pluginId) => work?.getConnections?.(pluginId),
+    getTasks: work.getTasks,
+    getBackgroundTasks: work.getBackgroundTasks,
+    getProcesses: work.getProcesses,
+    getLogs: work.getLogs,
+    getHealth: (pluginId) => createPluginHealth(work.health, pluginId),
+    getConnections: work.getConnections,
   }
 }

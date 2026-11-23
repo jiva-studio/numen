@@ -45,7 +45,7 @@ export interface TestPluginSupportDeps {
   readonly getServices?: () => Partial<PluginServices>
   readonly notices?: NoticeQueue
   readonly getCommandDeclarations?: HostCommands['getCommandDeclarations']
-  readonly handlers?: HostCommands
+  readonly handlers?: Partial<HostCommands>
   readonly slots?: HostParts
 }
 
