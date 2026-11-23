@@ -11,12 +11,12 @@ func TestLimits_HaveTheValuesOfTheMultipartContract(t *testing.T) {
 	t.Parallel()
 
 	for name, one := range map[string]struct{ got, want int64 }{
-		"MinPartSize":       {syncprotocol.MinPartSize, 5242880},
-		"MaxPartSize":       {syncprotocol.MaxPartSize, 5368709120},
-		"MaxParts":          {syncprotocol.MaxParts, 10000},
-		"DefaultPartSize":   {syncprotocol.DefaultPartSize, 16 << 20},
-		"MaxPartURLs":       {syncprotocol.MaxPartURLs, 100},
-		"MaxMultipartSize":  {syncprotocol.MaxMultipartSize, 5497558138880 - 5242880},
+		"MinPartSize":      {syncprotocol.MinPartSize, 5242880},
+		"MaxPartSize":      {syncprotocol.MaxPartSize, 5368709120},
+		"MaxParts":         {syncprotocol.MaxParts, 10000},
+		"DefaultPartSize":  {syncprotocol.DefaultPartSize, 16 << 20},
+		"MaxPartURLs":      {syncprotocol.MaxPartURLs, 100},
+		"MaxMultipartSize": {syncprotocol.MaxMultipartSize, 5497558138880 - 5242880},
 	} {
 		if one.got != one.want {
 			t.Errorf("%s = %d, want %d", name, one.got, one.want)

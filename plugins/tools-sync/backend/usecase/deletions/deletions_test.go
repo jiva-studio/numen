@@ -14,7 +14,9 @@ import (
 
 const vaultID domain.VaultID = "vault-1"
 
-type pendingStore struct{ states map[domain.VaultID]deletions.State }
+type pendingStore struct {
+	states map[domain.VaultID]deletions.State
+}
 
 func (p *pendingStore) ReadPending(_ context.Context, id domain.VaultID) (*deletions.State, error) {
 	state, ok := p.states[id]
