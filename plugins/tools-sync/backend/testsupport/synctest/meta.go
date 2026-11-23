@@ -74,6 +74,11 @@ func (c *Computer) FindBlob(t *testing.T, vaultKey [32]byte, revision *syncv1.Re
 	}
 	blob, err := c.Cloud.GetBlob(t.Context(), downloads[0].GetUrl())
 	if err != nil {
+		// A pass running in the background replaces the head and the server drops the blob of the revision read above.
+		again, urlErr := c.Cloud.GetBlobUrls(t.Context(), revision.GetVaultId(), [][]byte{revision.GetBlobId()})
+		if urlErr == nil && len(again) == 1 && !again[0].GetFound() {
+			return nil, false
+		}
 		t.Fatal(err)
 	}
 	plain, err := blobcipher.Open([32]byte(meta.Key), [16]byte(revision.GetFileId()), blob)
