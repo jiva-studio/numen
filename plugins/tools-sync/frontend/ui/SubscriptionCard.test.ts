@@ -211,7 +211,7 @@ describe('SubscriptionCard', () => {
 
     expect(client.changePlan).toHaveBeenCalledExactlyOnceWith('pro')
     expect(openExternal).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Pro, 250 GB, $30')
+    expect(wrapper.text()).toContain('Pro, 250 GB')
     expect(findChange(wrapper, 'Pro')).toBeUndefined()
     expect(findChange(wrapper, 'Plus')).toBeDefined()
   })

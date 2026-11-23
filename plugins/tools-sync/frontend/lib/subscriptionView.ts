@@ -25,11 +25,11 @@ export interface PlanOffer {
   readonly label: string
 }
 
+/** What the card shows. isTrial is true while a trial runs that no payment has followed; the end of the period is then the end of the trial. */
 export interface SubscriptionSnapshot {
   readonly status: SubscriptionStatus
   readonly phase: SubscriptionPhase | ''
   readonly dates: SubscriptionDates
-  /** True while a trial runs that no payment has followed; the end of the period is then the end of the trial. */
   readonly isTrial?: boolean | undefined
 }
 
@@ -45,7 +45,7 @@ function formatDate(time: string): string {
   if (Number.isNaN(at)) return ''
   const parts = new Map(NUMERIC_DATE.formatToParts(at).map((one) => [one.type, one.value]))
   const month = MONTHS.at(Number(parts.get('month')) - 1) ?? ''
-  return `${parts.get('day') ?? ''} ${month} ${parts.get('year') ?? ''}`
+  return `${Number(parts.get('day'))} ${month} ${parts.get('year') ?? ''}`
 }
 
 const getPhaseView = (
@@ -115,7 +115,7 @@ export function formatSize(bytes: number): string {
 }
 
 /** The price for one period, such as "$5", "$4.99", "€10" or "7 CHF"; empty when the plan has no price. */
-export function formatPrice(cents: number, currency: string): string {
+function formatPrice(cents: number, currency: string): string {
   if (cents === 0) return ''
   const units = cents / CENTS_IN_UNIT
   const amount = Number.isInteger(units) ? String(units) : units.toFixed(2)

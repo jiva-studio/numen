@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  formatPrice,
   formatSize,
   getOfferLabel,
   getPlanLabel,
@@ -25,25 +24,6 @@ describe('formatSize', () => {
   })
 })
 
-describe('formatPrice', () => {
-  it('shows whole dollars without cents', () => {
-    expect(formatPrice(500, 'USD')).toBe('$5')
-  })
-
-  it('shows cents when there are some', () => {
-    expect(formatPrice(499, 'USD')).toBe('$4.99')
-  })
-
-  it('shows the symbol of euro and the code of another currency', () => {
-    expect(formatPrice(1000, 'EUR')).toBe('€10')
-    expect(formatPrice(700, 'CHF')).toBe('7 CHF')
-  })
-
-  it('shows nothing for a plan with no price', () => {
-    expect(formatPrice(0, 'USD')).toBe('')
-  })
-})
-
 describe('getPlanLabel', () => {
   it('joins the name and the size of a plan', () => {
     expect(getPlanLabel(PLUS)).toBe('Plus, 100 GB')
@@ -61,6 +41,16 @@ describe('getOfferLabel', () => {
 
   it('has no price part for a plan with no price', () => {
     expect(getOfferLabel({ ...PLUS, priceCents: 0 })).toBe('Plus, 100 GB')
+  })
+
+  it('shows whole dollars without cents and cents when there are some', () => {
+    expect(getOfferLabel({ ...PLUS, priceCents: 500 })).toBe('Plus, 100 GB, $5')
+    expect(getOfferLabel({ ...PLUS, priceCents: 499 })).toBe('Plus, 100 GB, $4.99')
+  })
+
+  it('shows the symbol of euro and the code of another currency', () => {
+    expect(getOfferLabel({ ...PLUS, priceCents: 1000, currency: 'EUR' })).toBe('Plus, 100 GB, €10')
+    expect(getOfferLabel({ ...PLUS, priceCents: 700, currency: 'CHF' })).toBe('Plus, 100 GB, 7 CHF')
   })
 })
 
