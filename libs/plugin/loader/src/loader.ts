@@ -32,7 +32,7 @@ export interface PluginLoaderDeps {
   readonly styles: PluginStyles
   readonly baseUrl?: string
   readonly fetch?: typeof fetch
-  readonly dynamicImport?: (url: string) => Promise<PluginModule>
+  readonly importModule?: (url: string) => Promise<PluginModule>
   readonly onError?: (pluginId: string, error: unknown) => void
 }
 
@@ -106,7 +106,7 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
       // Stryker disable next-line ArrowFunction: default globalThis.fetch wrapper is overridden in unit tests
       ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init)),
     // Stryker disable next-line ArrowFunction: default dynamic import wrapper is overridden in unit tests
-    importFn: deps.dynamicImport ?? ((url: string) => import(/* @vite-ignore */ url)),
+    importFn: deps.importModule ?? ((url: string) => import(/* @vite-ignore */ url)),
     // Without a reporter the failure is already recorded in the failures map.
     reportError: deps.onError ?? (() => undefined),
     styles: deps.styles,
@@ -114,12 +114,12 @@ function resolveDefaultDeps(deps: PluginLoaderDeps) {
 }
 
 function createStartRuns(starting: LoaderState['starting']) {
-  const runs = new Map<string, number>()
+  const startRuns = new Map<string, number>()
   const going = new Map<string, Promise<boolean>>()
   const count = (id: string, step: number): void => {
-    const total = (runs.get(id) ?? 0) + step
-    if (total > 0) runs.set(id, total)
-    else runs.delete(id)
+    const total = (startRuns.get(id) ?? 0) + step
+    if (total > 0) startRuns.set(id, total)
+    else startRuns.delete(id)
     const next = new Set(starting.value)
     if (total > 0) next.add(id)
     else next.delete(id)
@@ -151,7 +151,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState, lifetime: 
   const defaults = resolveDefaultDeps(deps)
   const { activePlugins, failures, manifests, moduleLoaders } = state
   const queues = new Map<string, Promise<void>>()
-  const runs = createStartRuns(state.starting)
+  const startRuns = createStartRuns(state.starting)
 
   const enqueue = <T>(id: string, task: () => Promise<T>): Promise<T> => {
     const run = (queues.get(id) ?? lifetime.previous ?? Promise.resolve()).then(task)
@@ -183,7 +183,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState, lifetime: 
       limit?.stop()
       return Promise.resolve(false)
     }
-    return runs.track(id, () =>
+    return startRuns.track(id, () =>
       enqueue(id, () => activateEntry(activateContext, id, { module, limit })),
     )
   }
@@ -204,7 +204,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState, lifetime: 
         return manifest !== undefined && isWindowSlotManifest(manifest)
       },
       activatePlugin,
-      startPlugin: (id: string): Promise<boolean> => runs.startOnce(id, () => activatePlugin(id)),
+      startPlugin: (id: string): Promise<boolean> => startRuns.startOnce(id, () => activatePlugin(id)),
       deactivatePlugin: (id: string) => (signal.aborted ? Promise.resolve(false) : deactivate(id)),
     },
   }

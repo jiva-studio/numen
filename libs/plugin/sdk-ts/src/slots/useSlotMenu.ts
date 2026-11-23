@@ -185,12 +185,12 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
       close()
       options.onError?.(error)
     }
-    const proceed = (request: SlotMenuRequest<T>): void => {
+    const handleRequest = (request: SlotMenuRequest<T>): void => {
       if (!opening.isCurrent) return
       if (request.entries.length === 0) close()
       else readLists(opening, request)
     }
-    runRead(read, proceed, fail)
+    runRead(read, handleRequest, fail)
   }
 
   const pick = (id: string): SlotMenuChoice<T> | undefined => {

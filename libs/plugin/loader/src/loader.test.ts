@@ -304,7 +304,7 @@ describe('createPluginLoader', () => {
 
     const loader = createTestLoader(host, {
       fetch: mockFetch as unknown as typeof fetch,
-      dynamicImport: mockDynamicImport,
+      importModule: mockDynamicImport,
     })
 
     const success = await loader.activation.activatePlugin('dynamic.sample')
@@ -337,7 +337,7 @@ describe('createPluginLoader', () => {
 
     const loader = createTestLoader(host, {
       fetch: frontendManifestFetch,
-      dynamicImport: mockDynamicImport,
+      importModule: mockDynamicImport,
     })
 
     const success = await loader.activation.activatePlugin('failing.plugin')
@@ -356,7 +356,7 @@ describe('createPluginLoader', () => {
 
     const loader = createTestLoader(host, {
       fetch: frontendManifestFetch,
-      dynamicImport: mockDynamicImport,
+      importModule: mockDynamicImport,
     })
 
     const success = await loader.activation.activatePlugin('throwing.plugin')
@@ -713,7 +713,7 @@ describe('createPluginLoader failures, order and toggles', () => {
           ok: true,
           text: async () => JSON.stringify({ id: 'dyn', frontend: {} }),
         }) as Response) as unknown as typeof fetch,
-      dynamicImport: async (url) => {
+      importModule: async (url) => {
         imports.push(url)
         return { activate: () => undefined }
       },
@@ -744,7 +744,7 @@ describe('createPluginLoader failures, order and toggles', () => {
 
   it('neither imports nor fails a plugin whose manifest has no frontend', async () => {
     const { host } = createHost()
-    const dynamicImport = vi.fn()
+    const importModule = vi.fn()
     const loader = createTestPluginLoader({
       host,
       fetch: (async () =>
@@ -752,10 +752,10 @@ describe('createPluginLoader failures, order and toggles', () => {
           ok: true,
           text: async () => JSON.stringify({ id: 'ocr' }),
         }) as Response) as unknown as typeof fetch,
-      dynamicImport,
+      importModule,
     })
     await expect(loader.activation.activatePlugin('ocr')).resolves.toBe(false)
-    expect(dynamicImport).not.toHaveBeenCalled()
+    expect(importModule).not.toHaveBeenCalled()
     expect(loader.status.getPluginFailure('ocr')).toBeUndefined()
   })
 
@@ -801,7 +801,7 @@ describe('createPluginLoader failures, order and toggles', () => {
           ok: true,
           text: async () => JSON.stringify({ id: 'styled.bad', frontend: {} }),
         }) as Response) as unknown as typeof fetch,
-      dynamicImport: async () => ({
+      importModule: async () => ({
         activate: () => {
           throw 'string fault'
         },
@@ -838,7 +838,7 @@ describe('createPluginLoader failures, order and toggles', () => {
           text: async () => JSON.stringify({ id: 'dyn.throw', frontend: {} }),
         } as Response
       }) as unknown as typeof fetch,
-      dynamicImport: async () => ({
+      importModule: async () => ({
         deactivate: () => {
           throw deactivateFault
         },
@@ -886,7 +886,7 @@ describe('createPluginLoader failures, order and toggles', () => {
             ),
         } as Response
       }) as unknown as typeof fetch,
-      dynamicImport: async () => ({ activate: () => undefined }),
+      importModule: async () => ({ activate: () => undefined }),
     })
 
     await loader.trackPlugins(['tracked.one', 'tracked.one', 'backend.only'])

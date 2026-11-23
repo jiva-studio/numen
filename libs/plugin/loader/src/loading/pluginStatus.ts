@@ -54,7 +54,7 @@ export function createPluginStatus(deps: PluginStatusDeps): PluginStatus {
   const tracked = shallowRef<ReadonlySet<string>>(new Set())
   const isRunning = shallowRef(false)
   const listPlugins = (): string[] => [...new Set([...moduleLoaders.keys(), ...tracked.value])]
-  const starts = createPluginStarts({
+  const pluginStarts = createPluginStarts({
     isRunning,
     listPlugins,
     isEnabled: deps.isEnabled,
@@ -76,11 +76,11 @@ export function createPluginStatus(deps: PluginStatusDeps): PluginStatus {
       isEnabled: deps.isEnabled,
       listPlugins,
     },
-    startPlugin: starts.startPlugin,
-    startPluginsOf: starts.startPluginsOf,
-    startTabPlugins: starts.startTabPlugins,
-    findPluginsOf: starts.findPluginsOf,
-    isPluginStarting: starts.isPluginStarting,
+    startPlugin: pluginStarts.startPlugin,
+    startPluginsOf: pluginStarts.startPluginsOf,
+    startTabPlugins: pluginStarts.startTabPlugins,
+    findPluginsOf: pluginStarts.findPluginsOf,
+    isPluginStarting: pluginStarts.isPluginStarting,
     getPluginFailure: (id: string): string | undefined => failures.value.get(id),
   }
 }
