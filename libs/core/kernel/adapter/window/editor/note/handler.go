@@ -86,21 +86,21 @@ func NewOutline(
 
 // Links writes the links of notes and answers where links land and which notes link to a note.
 type Links struct {
-	vault         Vault
-	resolveLinks  *query.ResolveLinks
-	createRelated *note.CreateInRelation
-	getBacklinks  *query.ListBacklinks
-	classify      *note.ClassifyWriteError
+	vault           Vault
+	resolveLinks    *query.ResolveLinks
+	createRelated   *note.CreateInRelation
+	getBacklinks    *query.ListBacklinks
+	isIndexOutdated func(error) bool
 }
 
 // NewLinks is the part of NoteService that works the links of notes.
 func NewLinks(
 	window Vault,
 	resolve *query.ResolveLinks, create *note.CreateInRelation, backlinks *query.ListBacklinks,
-	classify *note.ClassifyWriteError,
+	isIndexOutdated func(error) bool,
 ) *Links {
 	return &Links{
-		vault: window, resolveLinks: resolve, createRelated: create, getBacklinks: backlinks, classify: classify,
+		vault: window, resolveLinks: resolve, createRelated: create, getBacklinks: backlinks, isIndexOutdated: isIndexOutdated,
 	}
 }
 

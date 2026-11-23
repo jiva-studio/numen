@@ -7,7 +7,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
@@ -53,9 +52,9 @@ func instant(nanos int64) time.Time {
 	return time.Unix(0, nanos)
 }
 
-// Writes classifies the error of a write by whether the index followed it, and wakes the embedder when a note
+// Writes tells what a write of the window did: whether the index followed it, and the embedder that a note
 // holds new prose.
 type Writes struct {
-	Classify *note.ClassifyWriteError
+	IsIndexOutdated func(error) bool
 	indexing.WriteWake
 }

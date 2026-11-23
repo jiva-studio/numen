@@ -54,7 +54,7 @@ func TestRenamingANoteChangedElsewhereAnswersWithAConflict(t *testing.T) {
 	}
 	rename := notecase.NewRename(deps, notecase.NewMove(deps), nil)
 	session := openSession{vault: domain.Vault{ID: "v1", Name: "v1", Path: root}}
-	prose := NewProse(session, nil, nil, nil, &rename, &Writes{Classify: notecase.NewClassifyWriteError(session)})
+	prose := NewProse(session, nil, nil, nil, &rename, &Writes{IsIndexOutdated: session.IsIndexOutdated})
 
 	out, err := prose.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{Path: "Old.md", Title: "New"}))
 	if err != nil {
