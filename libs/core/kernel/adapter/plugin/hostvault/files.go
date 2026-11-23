@@ -22,6 +22,11 @@ type Files struct {
 	session sessionAccess
 }
 
+// fileStatter is the stat of a file with its hash, which the use case file.HashFile gives.
+type fileStatter interface {
+	Execute(ctx context.Context, v domain.Vault, path string) (domain.FileStat, error)
+}
+
 // Writer writes the files of the vault and indexes them. Locks, where set, holds the writers of the vault
 // apart while a call writes.
 type Writer struct {
@@ -33,7 +38,7 @@ type Writer struct {
 	// The files of any kind: moved and removed as the window does, and placed from the store folder of a plugin.
 	Move         note.MoveFile
 	Remove       note.RemoveFile
-	Stat         *file.HashFile
+	Stat         fileStatter
 	Readers      vaultport.VaultReaders
 	Folders      vaultport.FolderWriters
 	StoreReaders func(v domain.Vault, pluginID string) (vault.StoreReader, error)
