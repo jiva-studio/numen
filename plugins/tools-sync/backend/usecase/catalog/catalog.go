@@ -43,6 +43,7 @@ type Deps struct {
 	Identity ports.Identity
 	Host     ports.Host
 	State    ports.Links
+	Journals ports.Journals
 	Random   io.Reader
 }
 

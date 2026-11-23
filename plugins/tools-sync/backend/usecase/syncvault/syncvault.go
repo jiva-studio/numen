@@ -77,13 +77,25 @@ type SubscriptionReader interface {
 	Execute(ctx context.Context) (subscriptiondomain.State, error)
 }
 
+// AccountRecoverer recovers the logs of the account after the server was restored.
+type AccountRecoverer interface {
+	Execute(ctx context.Context) error
+}
+
+// VaultRecoverer recovers the notes of one vault after the server was restored.
+type VaultRecoverer interface {
+	Execute(ctx context.Context, id domain.VaultID) error
+}
+
 // Steps are the use cases a pass runs.
 type Steps struct {
-	Rename       Renamer
-	Pull         Puller
-	Scan         Scanner
-	Commit       Committer
-	Subscription SubscriptionReader
+	Rename         Renamer
+	Pull           Puller
+	Scan           Scanner
+	Commit         Committer
+	Subscription   SubscriptionReader
+	RecoverAccount AccountRecoverer
+	RecoverVault   VaultRecoverer
 }
 
 // SyncVault runs one pass over one vault.

@@ -5,6 +5,7 @@ package transfer
 import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 )
 
 // CommitStatus is how the server took a note.
@@ -76,6 +77,10 @@ type PullInput struct {
 // PullResult is the notes written, the notes left as they were because both computers changed them, and the
 // number of revisions skipped because their author or their content could not be verified.
 type PullResult struct {
+	// Verdict is what the look at the server said about its history. A pull applies nothing unless it is Same.
+	Verdict restore.Verdict
+	// EpochID is the restore epoch id the server answered with.
+	EpochID    []byte
 	Applied    []string
 	Conflicts  []string
 	Unverified int

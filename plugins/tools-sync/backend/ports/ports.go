@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 )
@@ -130,4 +131,21 @@ type Clock interface {
 type Subscriptions interface {
 	GetSubscription(ctx context.Context) (syncprotocol.Subscription, error)
 	CreateCheckout(ctx context.Context) (string, error)
+}
+
+// Epochs is the restore epoch of the server.
+type Epochs interface {
+	GetRestoreEpoch(ctx context.Context) (*syncv1.RestoreEpoch, []byte, error)
+}
+
+// Pins keeps the key that signs the restore epochs of each server, by the address of the server.
+type Pins interface {
+	ReadPin(ctx context.Context, address string) ([]byte, error)
+	WritePin(ctx context.Context, address string, key []byte) error
+}
+
+// Journals keeps the last verified entries of the logs of the account.
+type Journals interface {
+	ReadJournal(ctx context.Context, kind restore.Kind) (restore.Journal, error)
+	WriteJournal(ctx context.Context, journal restore.Journal) error
 }

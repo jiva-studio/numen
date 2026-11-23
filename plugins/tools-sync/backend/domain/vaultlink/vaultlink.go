@@ -27,6 +27,10 @@ type Link struct {
 	CatalogName   string                `json:"catalogName"`
 	ServerSeq     uint64                `json:"serverSeq"`
 	FeedCursor    host.FileChangeCursor `json:"feedCursor"`
+	// RestoreEpochID is the restore epoch this device ran last, empty when the server announced none.
+	RestoreEpochID []byte `json:"restoreEpochId,omitempty"`
+	// Recovery is set while a recovery of the vault runs and holds what is left of it.
+	Recovery *RecoveryProgress `json:"recovery,omitempty"`
 }
 
 // RemoteVault is a synced vault of the account, with its last name.
@@ -77,4 +81,9 @@ func GetStateKeyContext(remoteID []byte) []byte {
 func IsRemoteID(text string) bool {
 	_, err := hex.DecodeString(text)
 	return err == nil
+}
+
+// RecoveryProgress is what a recovery of one vault has still to examine: the ids of the files, 16 bytes each.
+type RecoveryProgress struct {
+	Pending [][]byte `json:"pending"`
 }

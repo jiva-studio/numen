@@ -1,6 +1,7 @@
 package pull_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"slices"
@@ -10,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1/syncv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/synctest"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
@@ -238,5 +240,61 @@ func TestPullChanges_DownloadsNothingWhenNothingChanged(t *testing.T) {
 	}
 	if len(result.Applied) != 0 {
 		t.Errorf("applied = %v, want none", result.Applied)
+	}
+}
+
+func TestPullChanges_ReportsSameWhenTheServerAnnouncedNoRestore(t *testing.T) {
+	p := newPair(t)
+	p.push(t, "Shopping list.md", "milk", nil)
+
+	result := p.pull(t, trustAll)
+
+	if result.Verdict != restore.Same || len(result.EpochID) != 0 {
+		t.Errorf("result = %+v, want Same and no epoch id", result)
+	}
+}
+
+func TestPullChanges_AppliesNoPageUnderAnEpochThatThisDeviceHasNotRun(t *testing.T) {
+	p := newPair(t)
+	p.push(t, "Shopping list.md", "milk", nil)
+	id, err := p.server.Fake.IssueRestoreEpoch()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result := p.pull(t, trustAll)
+
+	if result.Verdict != restore.Changed || !bytes.Equal(result.EpochID, id) {
+		t.Errorf("result = %+v, want Changed with the epoch id %x", result, id)
+	}
+	if _, ok := p.b.ReadNote(target, "Shopping list.md"); ok || len(result.Applied) != 0 {
+		t.Error("a note of a page under the new epoch was applied")
+	}
+	if link := p.b.Link(t, target); link.ServerSeq != 0 || len(link.RestoreEpochID) != 0 {
+		t.Errorf("link = %+v, want the position and the epoch id as they were", link)
+	}
+}
+
+func TestPullChanges_AppliesNothingWhenTheHeadOfTheServerIsBelowThePosition(t *testing.T) {
+	p := newPair(t)
+	kept, err := p.server.Fake.Snapshot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.push(t, "Shopping list.md", "milk", nil)
+	p.push(t, "Food.md", "eggs", nil)
+	p.pull(t, trustAll)
+	if err := p.server.Fake.Restore(kept); err != nil {
+		t.Fatal(err)
+	}
+	p.push(t, "Plan.md", "tea", nil)
+
+	result := p.pull(t, trustAll)
+
+	if result.Verdict != restore.WentBack || len(result.Applied) != 0 {
+		t.Errorf("result = %+v, want WentBack and nothing applied", result)
+	}
+	if _, ok := p.b.ReadNote(target, "Plan.md"); ok {
+		t.Error("a note of a server that went back was applied")
 	}
 }

@@ -28,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/restore"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
 )
@@ -64,6 +65,7 @@ type Computer struct {
 	Sessions *serveradapter.Server
 	State    *hoststore.State
 
+	network        *link
 	healthEndpoint hostcall.Endpoint
 	token          atomic.Value
 }
@@ -122,16 +124,18 @@ func newComputer(t *testing.T, server *Server, clock *Clock, vault string) *Comp
 	}
 	client := account.NewClient(accountEndpoint)
 	root := hosttest.New(vault)
+	network := &link{}
+	web := &http.Client{Transport: network}
 	c := &Computer{
 		Clock: clock, Server: server, Fake: fake, Client: client, Health: healthHost, Vaults: root, Host: Host{Root: root},
-		Cloud: nil, State: nil, token: atomic.Value{},
+		Cloud: nil, State: nil, token: atomic.Value{}, network: network,
 		Account:        accountadapter.New(client),
-		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: http.DefaultClient, Now: clock.Now}),
+		Sessions:       serveradapter.New(serveradapter.Config{Address: server.URL, HTTP: web, Now: clock.Now}),
 		healthEndpoint: healthEndpoint,
 	}
 	c.State = hoststore.New(c.Host)
 	c.token.Store("")
-	c.Cloud = cloud.New(cloud.Config{Address: server.URL, HTTP: http.DefaultClient, Token: c.getToken, Refresh: c.SignIn})
+	c.Cloud = cloud.New(cloud.Config{Address: server.URL, HTTP: web, Token: c.getToken, Refresh: c.SignIn})
 	return c
 }
 
@@ -180,7 +184,7 @@ func (c *Computer) NewHealth() *health.Client { return health.NewClient(c.health
 // CatalogDeps are the dependencies of the catalog use cases.
 func (c *Computer) CatalogDeps() catalog.Deps {
 	return catalog.Deps{
-		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Random: rand.Reader,
+		Catalog: c.Cloud, Chain: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Journals: c.State, Random: rand.Reader,
 	}
 }
 
@@ -215,11 +219,13 @@ func (c *Computer) SyncDeps() syncvault.Deps {
 // NewSyncVault returns the pass over one vault with the use cases of its steps.
 func (c *Computer) NewSyncVault() *syncvault.SyncVault {
 	return syncvault.NewSyncVault(c.SyncDeps(), syncvault.Steps{
-		Rename:       catalog.NewRenameRemoteVault(c.CatalogDeps()),
-		Pull:         pull.NewPullChanges(c.PullDeps()),
-		Scan:         localchanges.NewScanLocalChanges(c.LocalChangesDeps()),
-		Commit:       commit.NewCommitRevisions(c.CommitDeps()),
-		Subscription: subscription.NewReadSubscription(subscription.Deps{Subscriptions: c.Cloud}),
+		Rename:         catalog.NewRenameRemoteVault(c.CatalogDeps()),
+		Pull:           pull.NewPullChanges(c.PullDeps()),
+		Scan:           localchanges.NewScanLocalChanges(c.LocalChangesDeps()),
+		Commit:         commit.NewCommitRevisions(c.CommitDeps()),
+		Subscription:   subscription.NewReadSubscription(subscription.Deps{Subscriptions: c.Cloud}),
+		RecoverAccount: restore.NewRecoverAccount(c.RestoreDeps()),
+		RecoverVault:   restore.NewRecoverVault(c.RestoreDeps()),
 	})
 }
 
@@ -243,5 +249,13 @@ func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID
 		Pass: c.NewSyncVault(), Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock,
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: c.Cloud, Health: c.NewHealth()}),
 		Interval: func() time.Duration { return interval }, Changed: changed,
+	}
+}
+
+// RestoreDeps are the dependencies of the recovery after the server was restored.
+func (c *Computer) RestoreDeps() restore.Deps {
+	return restore.Deps{
+		Address: c.Server.URL, Epochs: c.Cloud, Pins: c.State, Journals: c.State, Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud,
+		Uploader: c.Cloud, Crypto: c.Account, Identity: c.Account, Host: c.Host, State: c.State, Health: c.NewHealth(), Random: rand.Reader,
 	}
 }

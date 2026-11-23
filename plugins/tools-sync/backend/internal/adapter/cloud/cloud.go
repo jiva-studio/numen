@@ -109,3 +109,8 @@ func (c *Cloud) GetSubscription(ctx context.Context) (syncprotocol.Subscription,
 func (c *Cloud) CreateCheckout(ctx context.Context) (string, error) {
 	return call(ctx, c, func() (string, error) { return c.subscription.CreateCheckout(ctx) })
 }
+
+// GetRestoreEpoch returns the current restore epoch, nil before the first restore, and the key that signs epochs.
+func (c *Cloud) GetRestoreEpoch(ctx context.Context) (*syncv1.RestoreEpoch, []byte, error) {
+	return nil, nil, errors.New("not implemented")
+}
