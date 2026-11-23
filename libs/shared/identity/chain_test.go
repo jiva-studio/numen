@@ -301,3 +301,20 @@ func TestAppendDevice_RefusesADeviceWithoutASigningKey(t *testing.T) {
 		t.Errorf("error = %v, want ErrMalformed", err)
 	}
 }
+
+func TestChain_KeepsItsKeysWhenACallerChangesTheSlicesItGaveOrTook(t *testing.T) {
+	t.Parallel()
+	a := newChain(t)
+	device := newDevice(t)
+	public := device.Public()
+	chain, err := appended(a.chain, a.recovery, public, "Laptop", epoch().Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	public.Sign[0] ^= 0xff
+	chain.Root().Sign[0] ^= 0xff
+	chain.ListDevices()[0].Public.Sign[0] ^= 0xff
+	if err := chain.Verify(); err != nil {
+		t.Fatalf("Verify() after the callers changed their slices = %v", err)
+	}
+}
