@@ -29,7 +29,7 @@ function listMatchingHandlers(
   command: string,
   note: CommandNote,
 ) {
-  return (deps.commands.getHandlerDeclarations?.() ?? [])
+  return (deps.commands.getHandlerDeclarations() ?? [])
     .filter((one) => one.command === command && !registry.plugins.disposed.has(one.pluginId))
     .filter((one) =>
       one.hasItems ? note.path !== '' : isCommandAvailable(one, note, deps.commands),
@@ -43,8 +43,8 @@ const findEntry = ({ registry }: HandlerParts, handler: HandlerDeclaration) =>
 async function findStartedEntry(parts: HandlerParts, handler: HandlerDeclaration) {
   const entry = findEntry(parts, handler)
   const { plugins } = parts.deps
-  if (entry || plugins?.hasPluginFrontend?.(handler.pluginId) === false) return entry
-  await plugins?.startPlugin?.(handler.pluginId)
+  if (entry || plugins.hasPluginFrontend(handler.pluginId) === false) return entry
+  await plugins.startPlugin(handler.pluginId)
   return findEntry(parts, handler)
 }
 
@@ -57,12 +57,10 @@ async function listOwnItems(
   try {
     if (entry?.reg.listItems) return await entry.reg.listItems(note)
     if (!entry && handler.hasItems) {
-      return (
-        (await parts.deps.commands.listBackendHandlerItems?.(
-          handler.pluginId,
-          handler.command,
-          note,
-        )) ?? []
+      return await parts.deps.commands.listBackendHandlerItems(
+        handler.pluginId,
+        handler.command,
+        note,
       )
     }
   } catch (error) {
@@ -89,7 +87,7 @@ async function runHandler(
     return
   }
   try {
-    await deps.commands.runBackendHandler?.({
+    await deps.commands.runBackendHandler({
       pluginId: handler.pluginId,
       command: handler.command,
       target: run.note,

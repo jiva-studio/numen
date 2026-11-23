@@ -322,7 +322,7 @@ export function createCustomTabKind(
     kind: registration.kind,
     pluginId,
     open: (targetPath, id) => {
-      const buffer = deps?.isNoteEditor ? deps.kinds.getNoteBuffer?.() : undefined
+      const buffer = deps?.isNoteEditor ? deps.kinds.getNoteBuffer() : undefined
       if (!buffer) return createCustomTabState(targetPath, { pluginId, hostDeps: deps })
       return createBufferedNoteState(
         { targetPath, id, buffer },

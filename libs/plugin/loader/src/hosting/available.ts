@@ -35,11 +35,11 @@ function getBeforeHandlerState(
   registry: HostRegistry,
   declaration: CommandDeclaration,
 ): 'available' | 'unbound' | 'left' {
-  if (plugins.hasPluginFrontend?.(declaration.pluginId) === false) return 'left'
-  if (plugins.isPluginFailed?.(declaration.pluginId)) return 'left'
+  if (plugins.hasPluginFrontend(declaration.pluginId) === false) return 'left'
+  if (plugins.isPluginFailed(declaration.pluginId)) return 'left'
   if (!registry.plugins.activated.value.has(declaration.pluginId)) return 'available'
   if (registry.plugins.starting?.value.has(declaration.pluginId)) return 'available'
-  return plugins.hasPluginBackend?.(declaration.pluginId) === true ? 'left' : 'unbound'
+  return plugins.hasPluginBackend(declaration.pluginId) === true ? 'left' : 'unbound'
 }
 
 /**
@@ -53,7 +53,7 @@ export function listAvailableCommands(
   deps: Pick<PluginHostDeps, 'plugins' | 'commands'>,
   registry: HostRegistry,
 ): AvailableList {
-  const declarations = deps.commands?.getCommandDeclarations?.()
+  const declarations = deps.commands.getCommandDeclarations()
   if (declarations === undefined) return { commands: [], issues: [] }
   const commands: AvailableCommand[] = []
   const issues = new Map<string, CommandIssue>()

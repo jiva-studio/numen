@@ -10,6 +10,7 @@ import {
 import { createPluginParts } from './context'
 import type { PluginContextHost } from './types'
 import { createTestContextHost } from '../testing/contextHost'
+import { fillHostDeps } from '../testing/hostDeps'
 import { STUB_COMPONENT } from '../testing/stubComponent'
 
 describe('PluginContext', () => {
@@ -397,7 +398,7 @@ describe('PluginContext', () => {
 
 describe('host service bridges', () => {
   it('bridges vault, ui, and work services with fallbacks when optional parts are absent', async () => {
-    const emptyVault = createVaultServiceBridge({})
+    const emptyVault = createVaultServiceBridge(fillHostDeps())
     expect(emptyVault.getNotes()).toBeUndefined()
     expect(emptyVault.getRelations()).toBeUndefined()
     expect(emptyVault.getFiles()).toBeUndefined()
@@ -405,39 +406,42 @@ describe('host service bridges', () => {
     expect(emptyVault.getBuffers()).toBeUndefined()
     expect(emptyVault.getVaults()).toBeUndefined()
 
-    const emptyLicenses = createLicenseServiceBridge({})
+    const emptyLicenses = createLicenseServiceBridge(fillHostDeps())
     expect(emptyLicenses.hasLicense('p', 'sync')).toBe(false)
     expect(emptyLicenses.getLicenseKey('p', 'sync')).toBeUndefined()
     expect(() => emptyLicenses.watchLicense('p', 'sync', vi.fn()).dispose()).not.toThrow()
 
     const unsubscribeLicense = vi.fn()
-    const fullLicenses = createLicenseServiceBridge({
-      plugins: {
-        hasLicense: (_p, id) => id === 'sync',
-        getLicenseKey: (_p, id) => (id === 'sync' ? 'K1' : undefined),
-        watchLicense: () => ({ dispose: unsubscribeLicense }),
-      },
-    })
+    const fullLicenses = createLicenseServiceBridge(
+      fillHostDeps({
+        plugins: {
+          hasLicense: (_p, id) => id === 'sync',
+          getLicenseKey: (_p, id) => (id === 'sync' ? 'K1' : undefined),
+          watchLicense: () => ({ dispose: unsubscribeLicense }),
+        },
+      }),
+    )
     expect(fullLicenses.hasLicense('p', 'sync')).toBe(true)
     expect(fullLicenses.getLicenseKey('p', 'sync')).toBe('K1')
     fullLicenses.watchLicense('p', 'sync', vi.fn()).dispose()
     expect(unsubscribeLicense).toHaveBeenCalledOnce()
 
-    const emptyWork = createWorkServiceBridge({})
+    const emptyWork = createWorkServiceBridge(fillHostDeps())
     expect(emptyWork.getTasks('p')).toBeUndefined()
     expect(emptyWork.getBackgroundTasks()).toBeUndefined()
     expect(emptyWork.getProcesses()).toBeUndefined()
-    expect(emptyWork.getHealth('p')).toBeUndefined()
     expect(emptyWork.getConnections('p')).toBeUndefined()
 
     const processes = {} as never
     const connections = {} as never
-    const fullWork = createWorkServiceBridge({
-      work: {
-        getProcesses: () => processes,
-        getConnections: () => connections,
-      },
-    })
+    const fullWork = createWorkServiceBridge(
+      fillHostDeps({
+        work: {
+          getProcesses: () => processes,
+          getConnections: () => connections,
+        },
+      }),
+    )
     expect(fullWork.getProcesses()).toBe(processes)
     expect(fullWork.getConnections('p')).toBe(connections)
 
@@ -460,7 +464,7 @@ describe('host service bridges', () => {
       }[]
     } = {}
     const uiNoCommands = createUiServiceBridge(
-      { window: { target: 'desktop.editor' } },
+      fillHostDeps({ window: { target: 'desktop.editor' } }),
       { slots, manifests, readSlotEntries: () => slotState.entries as never },
     )
     expect(uiNoCommands.getNotices('p').show('info')).toBeUndefined()
@@ -481,7 +485,7 @@ describe('host service bridges', () => {
     expect(uiNoCommands.commandAccess.getPermission?.('md.other:open')).toBeUndefined()
 
     const uiWithCommands = createUiServiceBridge(
-      {
+      fillHostDeps({
         window: { target: 'desktop.editor' },
         commands: {
           getCommandDeclarations: () => [
@@ -489,7 +493,7 @@ describe('host service bridges', () => {
             { pluginId: 'md.decl', id: 'run', title: 'Run', permission: 'vault:read' },
           ],
         },
-      },
+      }),
       { slots, manifests, readSlotEntries: () => undefined },
     )
     expect(uiWithCommands.commandAccess.getPermission?.('md.decl:run')).toBe('vault:read')

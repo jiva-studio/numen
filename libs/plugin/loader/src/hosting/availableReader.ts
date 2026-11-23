@@ -20,7 +20,7 @@ export function readAvailableCommands(
     const key = getIssueKey(issue)
     if (registry.reportedIssues.has(key)) continue
     registry.reportedIssues.add(key)
-    deps.commands?.reportCommandIssue?.(issue.pluginId, getIssueMessage(issue))
+    deps.commands.reportCommandIssue(issue.pluginId, getIssueMessage(issue))
   }
   return commands
 }

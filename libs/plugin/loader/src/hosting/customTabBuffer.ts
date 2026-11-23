@@ -49,12 +49,12 @@ export interface BufferedNoteTarget {
 function createWikilinks(deps: LinkDeps | undefined, getPath: () => string) {
   return {
     search: async (query: string): Promise<readonly LinkChoice[]> =>
-      ((await deps?.vault?.getNotes?.()?.findNotes(query, 20)) ?? []).map((one) => ({
+      ((await deps?.vault.getNotes()?.findNotes(query, 20)) ?? []).map((one) => ({
         title: one.title,
         type: 'note' as const,
       })),
     headings: async (noteTitle: string): Promise<readonly string[]> => {
-      const notes = deps?.vault?.getNotes?.()
+      const notes = deps?.vault.getNotes()
       if (!notes) return []
       const found = noteTitle
         ? (await notes.findNotes(noteTitle, 5)).find(
@@ -69,10 +69,10 @@ function createWikilinks(deps: LinkDeps | undefined, getPath: () => string) {
 
 function createLinkFollower(deps: LinkDeps | undefined, getPath: () => string) {
   return (address: string): void => {
-    const resolve = deps?.vault?.resolveLink
-    const workspace = deps?.window.getWorkspace?.()
-    if (!resolve || !workspace) return
-    resolve(getPath(), address)
+    const workspace = deps?.window.getWorkspace()
+    if (!deps || !workspace) return
+    deps.vault
+      .resolveLink(getPath(), address)
       .then((path) => {
         if (path) workspace.files.open(path, { placement: 'split' })
       })

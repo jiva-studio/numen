@@ -3,6 +3,14 @@
  * the groups the host takes made from it.
  */
 import {
+  NO_COMMANDS,
+  NO_KINDS,
+  NO_PLUGINS,
+  NO_SLOTS,
+  NO_TABS,
+  NO_VAULT,
+  NO_WINDOW,
+  NO_WORK,
   createPluginHost,
   type HostCommands,
   type HostKinds,
@@ -15,19 +23,19 @@ import {
 } from '../hosting'
 
 /** Every member of every group of the deps of a plugin host, in one object. */
-export type TestHostDeps = PluginHostDeps['window'] &
-  NonNullable<PluginHostDeps['plugins']> &
-  HostCommands &
-  HostSlots &
-  HostKinds &
-  HostTabs &
-  HostVault &
-  HostWork
+export type TestHostDeps = Pick<PluginHostDeps['window'], 'target'> &
+  Partial<PluginHostDeps['window']> &
+  Partial<PluginHostDeps['plugins']> &
+  Partial<HostCommands> &
+  Partial<HostSlots> &
+  Pick<HostKinds, 'registerKind'> &
+  Partial<HostKinds> &
+  Partial<HostTabs> &
+  Partial<HostVault> &
+  Partial<HostWork>
 
 type GroupMembers = {
-  readonly [G in keyof PluginHostDeps]-?: Readonly<
-    Record<keyof NonNullable<PluginHostDeps[G]>, true>
-  >
+  readonly [G in keyof PluginHostDeps]: Readonly<Record<keyof PluginHostDeps[G], true>>
 }
 
 const MEMBERS: GroupMembers = {
@@ -125,17 +133,33 @@ export function createTestHostDeps(deps: TestHostDeps): PluginHostDeps {
     return picked as TestHostDeps
   }
   return {
-    window: pick(MEMBERS.window),
-    plugins: pick(MEMBERS.plugins),
-    commands: pick(MEMBERS.commands),
-    slots: pick(MEMBERS.slots),
-    kinds: pick(MEMBERS.kinds),
-    tabs: pick(MEMBERS.tabs),
-    vault: pick(MEMBERS.vault),
-    work: pick(MEMBERS.work),
+    window: { ...NO_WINDOW, ...pick(MEMBERS.window) } as PluginHostDeps['window'],
+    plugins: { ...NO_PLUGINS, ...pick(MEMBERS.plugins) },
+    commands: { ...NO_COMMANDS, ...pick(MEMBERS.commands) },
+    slots: { ...NO_SLOTS, ...pick(MEMBERS.slots) },
+    kinds: { ...NO_KINDS, ...pick(MEMBERS.kinds) } as PluginHostDeps['kinds'],
+    tabs: { ...NO_TABS, ...pick(MEMBERS.tabs) },
+    vault: { ...NO_VAULT, ...pick(MEMBERS.vault) },
+    work: { ...NO_WORK, ...pick(MEMBERS.work) },
   }
 }
 
 /** A plugin host made from flat deps. */
 export const createTestPluginHost = (deps: TestHostDeps): PluginHost =>
   createPluginHost(createTestHostDeps(deps))
+
+type GroupsOf<D> = { readonly [G in keyof D]?: Partial<D[G]> }
+
+/** The deps of a plugin host from the members a test names, grouped as the host takes them; the rest is the null object of its group. */
+export function fillHostDeps(groups: GroupsOf<PluginHostDeps> = {}): PluginHostDeps {
+  return {
+    window: { ...NO_WINDOW, target: 'desktop.editor', ...groups.window },
+    plugins: { ...NO_PLUGINS, ...groups.plugins },
+    commands: { ...NO_COMMANDS, ...groups.commands },
+    slots: { ...NO_SLOTS, ...groups.slots },
+    kinds: { ...NO_KINDS, registerKind: () => () => undefined, ...groups.kinds },
+    tabs: { ...NO_TABS, ...groups.tabs },
+    vault: { ...NO_VAULT, ...groups.vault },
+    work: { ...NO_WORK, ...groups.work },
+  }
+}

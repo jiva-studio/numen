@@ -352,9 +352,6 @@ describe('createPluginHost', () => {
     await health?.clear('connection')
 
     expect(filed).toStrictEqual(['org.example.atlas connection', 'org.example.atlas -connection'])
-    expect(
-      createTestPluginHost(deps).lifecycle.createContext('org.example.atlas').plugin.health,
-    ).toBe(undefined)
   })
 
   it('delegates getSetting and watchSetting through host', () => {
@@ -366,11 +363,7 @@ describe('createPluginHost', () => {
 
     const handler = vi.fn()
     const sub = host.lifecycle.watchSetting('test.plugin', 'fontSize', handler)
-    expect(deps.watchSetting).toHaveBeenCalledWith(
-      'test.plugin',
-      'fontSize',
-      expect.any(Function),
-    )
+    expect(deps.watchSetting).toHaveBeenCalledWith('test.plugin', 'fontSize', expect.any(Function))
     expect(sub).toHaveProperty('dispose')
   })
 

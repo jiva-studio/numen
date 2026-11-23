@@ -17,3 +17,13 @@ export type {
 } from './types'
 export type { AnyTabKind, OpenTab, SourceReader, TabKind } from './tabKinds'
 export { createWindowHost, type WindowControls } from './windowHost'
+export {
+  NO_COMMANDS,
+  NO_KINDS,
+  NO_PLUGINS,
+  NO_SLOTS,
+  NO_TABS,
+  NO_VAULT,
+  NO_WINDOW,
+  NO_WORK,
+} from './nullDeps'
