@@ -104,7 +104,7 @@ type Leaf =
   | boolean
 
 /** The failure a refusal answers with where the member answers a Result. */
-export type PermissionDenied = Failure<'permissionDenied'>
+type PermissionDenied = Failure<'permissionDenied'>
 
 /**
  * The rule a member can have, from its type: a member that answers a promise of a Result whose failure
