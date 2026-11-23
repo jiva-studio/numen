@@ -319,23 +319,30 @@ func TestDeleteIdentity_RemovesTheRecordAndAMissingRecordIsNotAnError(t *testing
 func TestCreateIdentity_TwoCreatesAtOnceKeepOneIdentity(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
-	other := identity.NewCreateIdentity(identity.NewDeps(k.keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())))
+	lock := &sync.Mutex{}
+	newDeps := func() identity.Deps {
+		return identity.NewDeps(k.keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithCreateLock(lock)
+	}
+	first := identity.NewCreateIdentity(newDeps())
+	second := identity.NewCreateIdentity(newDeps())
 	var arrived atomic.Int32
+	both := make(chan struct{})
 	k.keys.onGet = func() {
-		arrived.Add(1)
-		for deadline := time.Now().Add(300 * time.Millisecond); arrived.Load() < 2 && time.Now().Before(deadline); {
-			time.Sleep(time.Millisecond)
+		if arrived.Add(1) == 2 {
+			close(both)
+		}
+		select {
+		case <-both:
+		case <-time.After(300 * time.Millisecond):
 		}
 	}
-	creates := []*identity.CreateIdentity{k.create, other}
+	creates := []*identity.CreateIdentity{first, second}
 	errs := make([]error, len(creates))
 	var wg sync.WaitGroup
 	for i, create := range creates {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			_, errs[i] = create.Execute(t.Context(), getLegalWords())
-		}()
+		})
 	}
 	wg.Wait()
 	created, exists := 0, 0

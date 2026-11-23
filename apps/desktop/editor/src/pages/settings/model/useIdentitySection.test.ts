@@ -23,7 +23,7 @@ const RECOVERY_WORDS = [
 
 describe('the identity section', () => {
   it('drops the words generated after the section left the page', async () => {
-    let finish: (answer: Result<readonly string[], string>) => void = () => {}
+    let finish = undefined as ((answer: Result<readonly string[], string>) => void) | undefined
     const installation: InstallationIdentity = {
       identity: ref<IdentityInfo | undefined>(undefined),
       load: vi.fn(() => Promise.resolve()),
@@ -42,7 +42,7 @@ describe('the identity section', () => {
     )
     const starting = section?.actions.startSetup()
     host.unmount()
-    finish(asValue<readonly string[]>(RECOVERY_WORDS))
+    finish?.(asValue<readonly string[]>(RECOVERY_WORDS))
     await starting
     await flushPromises()
     expect(section?.setup.recoveryWords.value).toStrictEqual([])

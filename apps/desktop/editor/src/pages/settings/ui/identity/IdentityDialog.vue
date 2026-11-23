@@ -18,10 +18,14 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const titleId = useId()
 const dialog = useTemplateRef<HTMLElement>('dialog')
-const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+let opener: HTMLElement | null = null
 
 /* ---------------------------------- Hooks --------------------------------- */
-onMounted(focusFirst)
+onMounted(() => {
+  const active = dialog.value?.ownerDocument.activeElement
+  opener = active instanceof HTMLElement ? active : null
+  focusFirst()
+})
 watch(() => props.step, focusFirst, { flush: 'post' })
 onBeforeUnmount(() => {
   if (opener?.isConnected) opener.focus()

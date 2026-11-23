@@ -6,6 +6,8 @@
 package container
 
 import (
+	"sync"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
@@ -80,6 +82,7 @@ type Resources struct {
 	pluginChanges   *settingsusecase.PluginChanges
 	subscribedHosts settingsusecase.HostSubscriptions
 	logEntries      *logsusecase.Entries
+	identityLock    *sync.Mutex
 }
 
 func NewResources() *Resources {
@@ -91,6 +94,7 @@ func NewResources() *Resources {
 		settingEvents: settingevents.New(),
 		pluginChanges: &settingsusecase.PluginChanges{},
 		logEntries:    logsusecase.NewEntries(),
+		identityLock:  &sync.Mutex{},
 	}
 }
 
@@ -230,5 +234,6 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
 		KeyStore:        res.KeyStore,
+		IdentityLock:    res.identityLock,
 	}
 }

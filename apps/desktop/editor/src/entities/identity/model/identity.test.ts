@@ -181,25 +181,25 @@ describe('the identity store', () => {
   })
 
   it('drops a read started before a creation and answered after it', async () => {
-    let answer: (found: IdentityInfo | undefined) => void = () => {}
+    let answer = undefined as ((found: IdentityInfo | undefined) => void) | undefined
     const { store } = createStore(
       createClient({ get: () => new Promise((resolve) => (answer = resolve)) }),
     )
     const reading = store.load()
     await store.create(WORDS)
-    answer(undefined)
+    answer?.(undefined)
     await reading
     expect(store.identity.value).toStrictEqual(createSampleIdentity())
   })
 
   it('drops a read started before a deletion and answered after it', async () => {
-    let answer: (found: IdentityInfo | undefined) => void = () => {}
+    let answer = undefined as ((found: IdentityInfo | undefined) => void) | undefined
     const { store } = createStore(
       createClient({ get: () => new Promise((resolve) => (answer = resolve)) }),
     )
     const reading = store.load()
     await store.delete()
-    answer(createSampleIdentity())
+    answer?.(createSampleIdentity())
     await reading
     expect(store.identity.value).toBeUndefined()
   })

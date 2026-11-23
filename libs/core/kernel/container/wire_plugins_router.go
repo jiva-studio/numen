@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
@@ -47,6 +48,7 @@ type pluginInstall struct {
 	Endpoints       *PluginEndpoints
 	PluginCatalog   catalog.Config
 	KeyStore        pluginport.KeyStore
+	IdentityLock    *sync.Mutex
 }
 
 func getPluginCatalog(cfg catalog.Config, report func(error)) *catalog.Service {

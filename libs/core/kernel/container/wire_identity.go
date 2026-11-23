@@ -10,7 +10,7 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring) *windowi
 	if install.KeyStore == nil {
 		return nil
 	}
-	deps := identity.NewDeps(install.KeyStore, licensingadapter.NewAdapter(nil), vaultDeps.Clock)
+	deps := identity.NewDeps(install.KeyStore, licensingadapter.NewAdapter(nil), vaultDeps.Clock).WithCreateLock(install.IdentityLock)
 	return &windowidentity.UseCases{
 		Get:           identity.NewGetIdentity(deps),
 		GenerateWords: identity.NewGenerateRecoveryWords(deps),

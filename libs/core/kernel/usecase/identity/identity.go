@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -32,11 +33,23 @@ type Deps struct {
 	names  DeviceName
 	clock  machineport.Clock
 	random io.Reader
+
+	createLock *sync.Mutex
 }
 
 // NewDeps constructs the shared identity use case dependencies. Keys are drawn from crypto/rand.
 func NewDeps(keys pluginport.KeyStore, names DeviceName, clock machineport.Clock) Deps {
-	return Deps{keys: keys, names: names, clock: clock, random: rand.Reader}
+	return Deps{keys: keys, names: names, clock: clock, random: rand.Reader, createLock: &sync.Mutex{}}
+}
+
+// WithCreateLock makes the use cases over one key store create the identity one at a time. Every
+// window builds its own deps, so the windows of an installation pass the same lock. A nil lock keeps
+// the lock the deps have.
+func (d Deps) WithCreateLock(lock *sync.Mutex) Deps {
+	if lock != nil {
+		d.createLock = lock
+	}
+	return d
 }
 
 func (d Deps) readRecord(ctx context.Context) (identitylib.Record, error) {
