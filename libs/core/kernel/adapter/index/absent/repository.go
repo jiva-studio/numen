@@ -49,9 +49,9 @@ func (r *Repository) ListAbsentFiles(ctx context.Context, v domain.Vault) (files
 	}
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
 	for rows.Next() {
-		f, err := scan(rows)
-		if err != nil {
-			return nil, fmt.Errorf("list absent files of %s: %w", v.ID, err)
+		f, scanErr := scan(rows)
+		if scanErr != nil {
+			return nil, fmt.Errorf("list absent files of %s: %w", v.ID, scanErr)
 		}
 		files = append(files, f)
 	}

@@ -21,5 +21,12 @@ const NumenCore = registerPlugin<CorePlugin>('NumenCore')
 export async function startCore(): Promise<Core> {
   const { port, dir, token } = await NumenCore.start()
   const transport = createBearerTransport(`http://127.0.0.1:${port}`, token)
-  return { port, dir, ...createVaultApi(transport), ...createNoteApi(transport), ...createFileApi(transport) }
+  const sync = { baseUrl: `http://127.0.0.1:${port}`, token }
+  return {
+    port,
+    dir,
+    ...createVaultApi(transport),
+    ...createNoteApi(transport),
+    ...createFileApi(transport, sync),
+  }
 }
