@@ -121,7 +121,7 @@ func TestHandler_MountsEveryVaultService(t *testing.T) {
 	services := newBareServices()
 	vaultHandler := windowvault.NewHandler(services.state, services.state.Notices)
 	vaultPath, vaultServed := windowvault.NewRoute(vaultHandler, services.state.Gate.CountQuestions())
-	services.Extra = append(services.Extra, NewRoute(vaultPath, vaultServed, vaultHandler))
+	services.Extra = append(services.Extra, NewRoute(vaultPath, vaultServed))
 	handler := services.NewHandler(http.NotFoundHandler())
 	for _, route := range []string{
 		numenv1connect.VaultServiceGetVaultStateProcedure,
@@ -366,7 +366,7 @@ func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	api := newBareServices()
 	vaultsHandler := windowvaults.NewHandler(api.state, vault.NewListVaults(b, vaultreader.Readers{}), nil, nil, nil, nil)
 	vaultsPath, vaultsServed := windowvaults.NewRoute(vaultsHandler, api.state.Gate.CountQuestions())
-	api.Extra = append(api.Extra, NewRoute(vaultsPath, vaultsServed, vaultsHandler))
+	api.Extra = append(api.Extra, NewRoute(vaultsPath, vaultsServed))
 	handler := api.NewHandler(http.NotFoundHandler())
 
 	reply := make(chan struct{})

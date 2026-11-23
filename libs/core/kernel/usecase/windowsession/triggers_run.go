@@ -1,7 +1,4 @@
-// Package trigger runs the triggers the enabled plugins declare: the plugin's own handler of the
-// trigger's command runs over each file where the trigger's condition and the handler's own condition
-// hold. Whether the work is done is read from the data, as target.versions, and nothing is recorded.
-package trigger
+package windowsession
 
 import (
 	"context"

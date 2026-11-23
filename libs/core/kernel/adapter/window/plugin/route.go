@@ -35,11 +35,10 @@ func NewHandler(processes Processes, retry *setting.RetryPlugin) *Handler {
 	return &Handler{processes: processes, retry: retry}
 }
 
-// NewRoute is where PluginProcessService is mounted, what the schema generated to answer it, and the
-// handler it answers through.
-func NewRoute(handler *Handler, options connect.HandlerOption) (path string, served http.Handler, service any) {
+// NewRoute is where PluginProcessService is mounted, and what the schema generated to answer it.
+func NewRoute(handler *Handler, options connect.HandlerOption) (path string, served http.Handler) {
 	path, served = numenv1connect.NewPluginProcessServiceHandler(handler, options)
-	return path, served, handler
+	return path, served
 }
 
 // errNoRetry is what a build that cannot start a plugin again answers.

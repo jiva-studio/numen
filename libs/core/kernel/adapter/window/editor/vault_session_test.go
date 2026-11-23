@@ -751,7 +751,9 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	installation, db := openInstallation(t)
 
 	const body = "tetragrammaton is a word nothing else in this vault holds"
-	content, err := editor.ServicesOf(installation).Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+	server := httptest.NewServer(installation.NewHandler(http.NotFoundHandler(), numenv1connect.NoteServiceName))
+	t.Cleanup(server.Close)
+	content, err := numenv1connect.NewNoteServiceClient(server.Client(), server.URL).WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Kept.md",
 		Body: body,
 	}))
