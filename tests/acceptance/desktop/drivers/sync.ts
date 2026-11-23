@@ -225,6 +225,14 @@ export class SyncDriver {
     for (const gate of this.held) gate.close()
   }
 
+  /** Makes the sync server unreachable from the computer of the scenario, or reachable again. */
+  setReachable(scenario: Scenario, isReachable: boolean): void {
+    const gate = this.gates.get(scenario)
+    if (gate === undefined) throw new Error('the computer has no way to the sync server')
+    if (isReachable) gate.reopen()
+    else gate.close()
+  }
+
   private getTarget(): { readonly host: string; readonly port: number } {
     if (this.listen === undefined) throw new Error('no sync server ran: begin with a sync server runs')
     const url = new URL(`http://${this.listen}`)
@@ -258,6 +266,12 @@ export class SyncDriver {
       for (const gate of this.held) gate.reopen()
       this.held = []
     }
+  }
+
+  /** Makes the server drop the removals it keeps, as it does for removals older than its retention. */
+  async forgetRemovals(): Promise<void> {
+    const answer = await fetch(`${this.requireRunning().address}/admin/prune-tombstones`, { method: 'POST' })
+    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the forgetting of removals`)
   }
 
   /** Reads what the server stores of every blob and expects the text to be in none of it. */

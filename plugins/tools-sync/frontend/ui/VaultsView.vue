@@ -20,9 +20,17 @@ const model = useVaults({
   client: props.client,
   now: props.now ?? getCurrentDate,
 })
-const { status, error, isReachable, warning, rows, openFor, remote } = model.state
-const { load, openRemote, closeRemote, connectNew, connectExisting, resolveDeletions } =
-  model.actions
+const { status, error, isReachable, warning, rows, openFor, remote, pendingConfirm } = model.state
+const {
+  load,
+  openRemote,
+  closeRemote,
+  connectNew,
+  connectExisting,
+  resolveDeletions,
+  confirmConnect,
+  cancelConnect,
+} = model.actions
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
@@ -40,6 +48,10 @@ function onOpenRemote(vaultId: string): void {
 
 function onChooseRemote(vaultId: string, remoteId: string): void {
   connectExisting(vaultId, remoteId).catch(report)
+}
+
+function onConfirm(): void {
+  confirmConnect().catch(report)
 }
 
 function onResolve(vaultId: string, choice: 'remove' | 'keep'): void {
@@ -111,6 +123,16 @@ function report(failure: unknown): void {
             {{ one.name }}
           </Button>
           <Button variant="ghost" @click="closeRemote">{{ words.closeRemote }}</Button>
+        </li>
+        <li
+          v-if="pendingConfirm !== null && pendingConfirm.vaultId === row.id"
+          class="vaults__row vaults__row--confirm"
+        >
+          <span class="vaults__detail vaults__detail--alarm" role="status">
+            {{ pendingConfirm.text }}
+          </span>
+          <Button variant="outline" @click="onConfirm">{{ words.confirmConnect }}</Button>
+          <Button variant="ghost" @click="cancelConnect">{{ words.cancelConnect }}</Button>
         </li>
       </template>
     </ul>

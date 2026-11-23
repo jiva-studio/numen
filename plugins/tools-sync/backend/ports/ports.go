@@ -159,6 +159,17 @@ type Shop interface {
 	CreatePortalSession(ctx context.Context) (string, error)
 }
 
+// Head is the head of a live note of a synced vault: its path and the hash of its text.
+type Head struct {
+	Path string
+	Hash string
+}
+
+// Heads lists the verified heads of the live notes of a synced vault of the account.
+type Heads interface {
+	ListHeads(ctx context.Context, remoteID string) ([]Head, error)
+}
+
 // Pauses reports whether the removals of a vault wait for an answer.
 type Pauses interface {
 	HasPending(ctx context.Context, id domain.VaultID) (bool, error)

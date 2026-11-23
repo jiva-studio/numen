@@ -24,7 +24,6 @@ type pass struct {
 	resolved   int
 	clashes    []string
 	unverified int
-	isReset    bool
 }
 
 func (p *pass) run(ctx context.Context) error {
@@ -38,7 +37,7 @@ func (p *pass) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := p.pull(ctx); err != nil || p.isReset {
+	if err := p.pull(ctx); err != nil {
 		return err
 	}
 	isRetry, err := p.push(ctx)
@@ -66,7 +65,6 @@ func (p *pass) pull(ctx context.Context) error {
 	p.conflicts = result.Conflicts
 	p.resolved += len(result.Resolved)
 	p.unverified = result.Unverified
-	p.isReset = result.IsReset
 	return nil
 }
 

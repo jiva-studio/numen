@@ -19,6 +19,7 @@ interface Setup {
   readonly vaults?: Vault[]
   readonly remote?: RemoteVault[]
   readonly hasIdentity?: boolean
+  readonly differCount?: number
 }
 
 const createClient = (setup: Setup = {}) => ({
@@ -29,6 +30,9 @@ const createClient = (setup: Setup = {}) => ({
     Promise.resolve({
       vaults: setup.remote ?? [{ remoteId: 'aa11', name: 'Work', isConnected: false }],
     }),
+  ),
+  previewConnect: vi.fn<VaultsClient['previewConnect']>(() =>
+    Promise.resolve({ differCount: setup.differCount ?? 0 }),
   ),
   resolveDeletions: vi.fn<VaultsClient['resolveDeletions']>(() => Promise.resolve()),
   connectVault: vi.fn<VaultsClient['connectVault']>(() => Promise.resolve()),
@@ -169,6 +173,58 @@ describe('VaultsView', () => {
     expect(wrapper.text()).toContain('No identity on this device')
     expect(findButton(wrapper, 'Connect as a new synced vault')).toBeUndefined()
     expect(findButton(wrapper, 'Connect to an existing synced vault')).toBeUndefined()
+  })
+
+  describe('a synced vault with notes that differ', () => {
+    const choose = async (setup: Setup) => {
+      const rendered = await render(setup)
+      await findButton(rendered.wrapper, 'Connect to an existing synced vault')?.trigger('click')
+      await flushPromises()
+      await findButton(rendered.wrapper, 'Work')?.trigger('click')
+      await flushPromises()
+      return rendered
+    }
+
+    it('asks with the number of notes that differ before it connects', async () => {
+      const { wrapper, client } = await choose({ differCount: 2 })
+
+      expect(wrapper.text()).toContain('2 notes differ from the synced vault')
+      expect(findButton(wrapper, 'Connect')).toBeDefined()
+      expect(findButton(wrapper, 'Cancel')).toBeDefined()
+      expect(client.connectVault).not.toHaveBeenCalled()
+    })
+
+    it('connects when the person answers Connect', async () => {
+      const { wrapper, client } = await choose({ differCount: 2 })
+
+      await findButton(wrapper, 'Connect')?.trigger('click')
+      await flushPromises()
+
+      expect(client.connectVault).toHaveBeenCalledWith({
+        vaultId: 'Test',
+        mode: 'existing',
+        remoteId: 'aa11',
+      })
+      expect(wrapper.text()).not.toContain('differ from the synced vault')
+    })
+
+    it('connects nothing when the person answers Cancel', async () => {
+      const { wrapper, client } = await choose({ differCount: 1 })
+
+      await findButton(wrapper, 'Cancel')?.trigger('click')
+      await flushPromises()
+
+      expect(client.connectVault).not.toHaveBeenCalled()
+      expect(wrapper.text()).not.toContain('differs from the synced vault')
+      expect(wrapper.text()).toContain('Not connected')
+    })
+
+    it('asks nothing when no note differs', async () => {
+      const { wrapper, client } = await choose({ differCount: 0 })
+
+      expect(wrapper.text()).not.toContain('from the synced vault')
+      expect(client.connectVault).toHaveBeenCalledTimes(1)
+    })
   })
 
   it('shows the paused removals of a vault and sends the answer chosen', async () => {

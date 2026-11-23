@@ -181,6 +181,10 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ForgetRemovals makes the server drop every removal it keeps, as it does when they are older than its
+// retention.
+func (s *Server) ForgetRemovals() { s.Fake.PruneTombstones() }
+
 func (s *Server) takeFaults(path string) (isDown, isCorrupted, isLost bool, hook func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

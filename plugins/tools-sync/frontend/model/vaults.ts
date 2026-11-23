@@ -29,6 +29,12 @@ interface UseVaultsOptions {
   readonly now: () => Date
 }
 
+export interface PendingConfirm {
+  readonly vaultId: string
+  readonly remoteId: string
+  readonly text: string
+}
+
 type VaultsStatus = 'loading' | 'ready' | 'error'
 
 const STATE_LABELS: Record<VaultState, string> = {
@@ -76,6 +82,7 @@ export function useVaults(options: UseVaultsOptions) {
   const hasIdentity = ref(true)
   const isReachable = ref(true)
   const openFor = ref('')
+  const pendingConfirm = shallowRef<PendingConfirm | null>(null)
 
   const rows = computed(() => vaults.value.map((vault) => getRow(vault, now())))
   const warning = computed(() => (hasIdentity.value ? '' : words.noIdentity))
@@ -135,12 +142,56 @@ export function useVaults(options: UseVaultsOptions) {
     }
   }
 
+  async function confirmConnect(): Promise<void> {
+    const pending = pendingConfirm.value
+    if (pending === null) return
+    pendingConfirm.value = null
+    await connect({ vaultId: pending.vaultId, mode: 'existing', remoteId: pending.remoteId })
+  }
+
+  function cancelConnect(): void {
+    pendingConfirm.value = null
+  }
+
+  async function connectExisting(vaultId: string, remoteId: string): Promise<void> {
+    try {
+      const { differCount } = await client.previewConnect({ vaultId, remoteId })
+      error.value = ''
+      if (differCount === 0) {
+        await connect({ vaultId, mode: 'existing', remoteId })
+        return
+      }
+      pendingConfirm.value = { vaultId, remoteId, text: words.notesDiffer(differCount) }
+      closeRemote()
+    } catch (failure) {
+      if (isServerAway(failure)) isReachable.value = false
+      error.value = getErrorMessage(failure)
+    }
+  }
+
   const connectNew = (vaultId: string): Promise<void> => connect({ vaultId, mode: 'new' })
-  const connectExisting = (vaultId: string, remoteId: string): Promise<void> =>
-    connect({ vaultId, mode: 'existing', remoteId })
 
   return {
-    state: { status, error, hasIdentity, isReachable, warning, rows, openFor, remote },
-    actions: { load, openRemote, closeRemote, connectNew, connectExisting, resolveDeletions },
+    state: {
+      status,
+      error,
+      hasIdentity,
+      isReachable,
+      warning,
+      rows,
+      openFor,
+      remote,
+      pendingConfirm,
+    },
+    actions: {
+      load,
+      openRemote,
+      closeRemote,
+      connectNew,
+      connectExisting,
+      resolveDeletions,
+      confirmConnect,
+      cancelConnect,
+    },
   }
 }

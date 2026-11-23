@@ -206,6 +206,37 @@ export class ComputerDriver {
     await identity.expectActive()
   }
 
+  removeNote(computer: ComputerName, title: string, vault: string): void {
+    this.getScenario(computer).getWorld().removeFile(this.resolveVault(computer, vault), getNotePath(title))
+  }
+
+  async expectNoNote(holder: Holder, title: string, vault: string | undefined): Promise<void> {
+    const world = this.getScenario(holder.computer).getWorld()
+    const name = this.resolveVault(holder.computer, holder.vault ?? vault)
+    await expect.poll(() => world.getEntryKind(name, getNotePath(title)), { timeout: ARRIVAL_LIMIT_MS }).toBeUndefined()
+  }
+
+  /** Makes the computer unable to reach the sync server, or able again. */
+  setOnline(computer: ComputerName, isOnline: boolean): void {
+    this.sync.setReachable(this.getScenario(computer), isOnline)
+  }
+
+  async answerConfirmation(computer: ComputerName, answer: 'Connect' | 'Cancel'): Promise<void> {
+    await this.getVaults(computer).answerConfirmation(answer)
+  }
+
+  async expectAskedToConfirm(computer: ComputerName, text: string): Promise<void> {
+    await this.getVaults(computer).expectAskedToConfirm(text)
+  }
+
+  async expectNotAsked(computer: ComputerName): Promise<void> {
+    await this.getVaults(computer).expectNotAsked()
+  }
+
+  async expectNotConnected(computer: ComputerName, vault: string): Promise<void> {
+    await this.getVaults(computer).expectNotConnected(vault)
+  }
+
   /** Ends the second computer: its window, its application and its folders. */
   async remove(): Promise<void> {
     const second = this.second

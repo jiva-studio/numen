@@ -112,12 +112,11 @@ type PullInput struct {
 
 // PullResult is the files written, the files whose conflict kept the other text in a copy, the files left as they were
 // because a conflict could not be settled, the number of revisions skipped because their author or their content could
-// not be verified, whether the server asked for a full comparison.
+// not be verified.
 type PullResult struct {
 	Applied    []string
 	Conflicts  []string
 	Unverified int
-	IsReset    bool
 	Resolved   []string
 }
 

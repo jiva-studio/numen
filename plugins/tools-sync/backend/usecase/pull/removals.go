@@ -32,16 +32,13 @@ func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, 
 		record.HeadRev = stored.GetRevId()
 		r.setRecord(record)
 	default:
-		r.removals = append(r.removals, removal{record: record, stat: stat, revID: stored.GetRevId()})
-		if !r.hasRemovals {
-			r.removalSeq, r.hasRemovals = stored.GetSeq(), true
-		}
+		r.queueRemoval(removal{record: record, stat: stat, revID: stored.GetRevId()}, stored.GetSeq())
 	}
 	return nil
 }
 
 func (r *run) settleRemovals(ctx context.Context) error {
-	if !r.hasRemovals {
+	if len(r.removals) == 0 {
 		return nil
 	}
 	candidates := make([]transfer.Removal, len(r.removals))
@@ -59,7 +56,7 @@ func (r *run) settleRemovals(ctx context.Context) error {
 			return err
 		}
 	}
-	r.removals, r.hasRemovals = nil, false
+	r.removals = nil
 	return r.save(ctx)
 }
 
@@ -74,10 +71,21 @@ func (r *run) settleRemoval(ctx context.Context, one removal, isKept bool) error
 			return err
 		}
 	}
+	if len(one.revID) == 0 {
+		r.removeRecord(one.record.FileID)
+		return nil
+	}
 	one.record.HeadRev = one.revID
 	if isKept {
 		one.record.BaseHash = ""
 	}
 	r.setRecord(one.record)
 	return nil
+}
+
+func (r *run) queueRemoval(one removal, seq uint64) {
+	if len(r.removals) == 0 || seq < r.removalSeq {
+		r.removalSeq = seq
+	}
+	r.removals = append(r.removals, one)
 }

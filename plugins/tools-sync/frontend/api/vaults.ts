@@ -56,6 +56,15 @@ interface ConnectVaultRequest {
   readonly remoteId?: string
 }
 
+interface PreviewConnectRequest {
+  readonly vaultId: string
+  readonly remoteId: string
+}
+
+interface PreviewConnectResponse {
+  readonly differCount: number
+}
+
 interface ResolveDeletionsRequest {
   readonly vaultId: string
   readonly choice: DeletionsChoice
@@ -70,6 +79,7 @@ interface GetStatusResponse {
 export interface VaultsClient {
   listVaults(): Promise<ListVaultsResponse>
   listRemoteVaults(): Promise<ListRemoteVaultsResponse>
+  previewConnect(request: PreviewConnectRequest): Promise<PreviewConnectResponse>
   connectVault(request: ConnectVaultRequest): Promise<void>
   resolveDeletions(request: ResolveDeletionsRequest): Promise<void>
   getStatus(): Promise<GetStatusResponse>
@@ -87,6 +97,8 @@ export function createVaultsClient(api: Api): VaultsClient {
   return {
     listVaults: () => call<Empty, ListVaultsResponse>('ListVaults', {}),
     listRemoteVaults: () => call<Empty, ListRemoteVaultsResponse>('ListRemoteVaults', {}),
+    previewConnect: (request) =>
+      call<PreviewConnectRequest, PreviewConnectResponse>('PreviewConnect', request),
     connectVault: async (request) => {
       await call<ConnectVaultRequest, Empty>('ConnectVault', request)
     },

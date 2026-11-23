@@ -48,6 +48,10 @@ func NormalizePath(notePath string) (string, error) {
 	return norm.NFC.String(notePath), nil
 }
 
+// GetPathKey returns the path folded to one case in normal form C: two paths that differ in case or composition only have
+// the same key.
+func GetPathKey(notePath string) string { return cases.Fold().String(norm.NFC.String(notePath)) }
+
 // HashPath returns the keyed hash of the path folded to one case in normal form C, so two paths that differ in
 // case or composition only hash alike.
 func HashPath(vaultKey [32]byte, notePath string) []byte {
@@ -56,7 +60,7 @@ func HashPath(vaultKey [32]byte, notePath string) []byte {
 		return nil
 	}
 	mac := hmac.New(sha256.New, derived)
-	mac.Write([]byte(cases.Fold().String(norm.NFC.String(notePath))))
+	mac.Write([]byte(GetPathKey(notePath)))
 	return mac.Sum(nil)
 }
 
