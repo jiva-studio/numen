@@ -57,7 +57,7 @@ func (s *Service) ListThemes(
 	}
 	return connect.NewResponse(&v1.ListThemesResponse{
 		Themes:               items,
-		Applied:              answer.Applied,
+		AppliedTheme:         answer.Applied,
 		Mode:                 wire.ConvertModeToWire(answer.Appearance.Mode),
 		InterfaceScale:       answer.Appearance.InterfaceScale,
 		TextScale:            answer.Appearance.TextScale,

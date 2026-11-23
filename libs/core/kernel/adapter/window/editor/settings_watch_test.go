@@ -32,7 +32,7 @@ func (f *going) watchSettings(t *testing.T) *watcher {
 	one := &watcher{stream: stream, next: make(chan []*v1.Setting, 16)}
 	go func() {
 		for stream.Receive() {
-			one.next <- stream.Msg().GetChanged()
+			one.next <- stream.Msg().GetSettings()
 		}
 		close(one.next)
 	}()

@@ -115,7 +115,7 @@ export const destroyNote = async (request: APIRequestContext, notePath: string):
   if (error && error !== 'ERROR_CODE_NOT_FOUND') {
     throw new Error(`RemoveFile ${notePath} refused: ${JSON.stringify(answer)}`)
   }
-  const trashed = answer['trashed']
+  const trashed = answer['trashPath']
   if (typeof trashed !== 'string' || !trashed) return
   try {
     fs.rmSync(path.join(getVaultPath(), trashed), { recursive: true, force: true })
@@ -126,7 +126,7 @@ export const destroyNote = async (request: APIRequestContext, notePath: string):
 
 const isIndexedNote = async (request: APIRequestContext, notePath: string): Promise<boolean> => {
   const answer = await callRPC(request, 'NoteService/ResolveAddresses', { addresses: [notePath] })
-  const resolved = (answer['resolved'] as { path?: string }[] | undefined) ?? []
+  const resolved = (answer['resolvedAddresses'] as { path?: string }[] | undefined) ?? []
   return resolved.some((one) => one.path === notePath)
 }
 

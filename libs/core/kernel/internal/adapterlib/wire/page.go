@@ -94,7 +94,7 @@ func readAppearanceSettings(
 		InterfaceScale: current.Msg.GetInterfaceScale(),
 		TextScale:      current.Msg.GetTextScale(),
 	}
-	text, err := themes.ReadTheme(ctx, connect.NewRequest(&v1.ReadThemeRequest{Name: current.Msg.GetApplied()}))
+	text, err := themes.ReadTheme(ctx, connect.NewRequest(&v1.ReadThemeRequest{Name: current.Msg.GetAppliedTheme()}))
 	if err == nil {
 		out.Theme = text.Msg.GetCss()
 	}

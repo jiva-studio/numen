@@ -54,7 +54,7 @@ func TestAConnectionIsSavedWithAnArrowAndNoLabelAndReadBack(t *testing.T) {
 	related, err := f.client.ListRelatedNotes(t.Context(), connect.NewRequest(&v1.ListRelatedNotesRequest{
 		Paths: []string{"Heat.md"},
 	}))
-	if err != nil || len(graphOf(t, related.Msg).GetRelated()) != 1 || len(graphOf(t, related.Msg).GetConnections()) != 1 {
+	if err != nil || len(graphOf(t, related.Msg).GetRelatedNotes()) != 1 || len(graphOf(t, related.Msg).GetConnections()) != 1 {
 		t.Fatalf("related %v (%v)", related.Msg, err)
 	}
 	// A line of jumps runs from the note drawn later (Entropy) to the focus.

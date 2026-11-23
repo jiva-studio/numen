@@ -104,7 +104,7 @@ export function createThemeClient(rpc: ThemeRpc): ThemeClient {
           pluginId: one.pluginId,
           isPinned: one.isPinned,
         })),
-        applied: answer.applied,
+        applied: answer.appliedTheme,
         mode: WORDED[answer.mode] ?? 'system',
         sizes: { interfaceScale: answer.interfaceScale, textScale: answer.textScale },
         bounds: {

@@ -129,7 +129,7 @@ message NoteGraph {
   // the focus and a reference is an item of that reference. The focus is never an item, and
   // a note is not an item of itself. One note can be an item of several notes, so `note.path`
   // is not unique here, `(related_to, note.path)` is.
-  repeated RelatedNote related = 2;
+  repeated RelatedNote related_notes = 2;
 
   // The `type` key of the frontmatter of the note in focus, so a client draws a note as
   // what it is. Empty for an ordinary note.
@@ -209,13 +209,13 @@ message ResolveAddressesRequest {
 
   // The id of the vault the addresses are written in. Empty is the vault the
   // window shows; a window that shows no vault needs it.
-  string vault = 4;
+  string vault_id = 4;
 }
 
 message ResolveAddressesResponse {
   // Where each address lands, in the order they were asked about. One that
   // reaches nothing is absent, and so is one asked about twice.
-  repeated ResolvedAddress resolved = 1;
+  repeated ResolvedAddress resolved_addresses = 1;
 
   // The wikilinks in `text`, in the order they are written, each raw form
   // once, whether they reach a note or not.
@@ -244,7 +244,7 @@ message ResolvedAddress {
 
   // The vault holding that note. An identifier names one note in the world, so
   // an address may land outside the vault it was written in.
-  string vault = 3;
+  string vault_id = 3;
 
   // Set where that vault is not the one this call was answered about.
   bool is_crossed = 4;
@@ -587,7 +587,7 @@ message RenameNoteResponse {
   NameSource name_source = 3;
 
   // What the file did. Absent when it kept its position.
-  optional MoveResult moved = 4;
+  optional MoveResult move_result = 4;
 
   // Set when the rename did not finish, and why. The note may already have been
   // written: `path`, `title` and `by` say what stands. A note holding prose the

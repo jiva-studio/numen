@@ -8,7 +8,7 @@ import { mockVaultList, outside, pendingStream } from '../answers'
 
 export const windowAnswers = {
   windowService: {
-    getCurrentVault: () => ({ vault: mockVaultList.showing }),
+    getCurrentVault: () => ({ vaultId: mockVaultList.showing }),
     watchTasks: pendingStream,
     watchWindowClose: pendingStream,
     reportPendingWork: () => ({}),

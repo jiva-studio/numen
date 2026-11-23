@@ -118,7 +118,7 @@ export const createNoteApi = (notes: WindowClients['notes']) => {
         path: answer.path,
         title: answer.title,
         hasFrontmatter: writes[answer.nameSource],
-        moved: answer.moved ? mapMoveResult(answer.moved) : null,
+        moved: answer.moveResult ? mapMoveResult(answer.moveResult) : null,
       })
     },
 

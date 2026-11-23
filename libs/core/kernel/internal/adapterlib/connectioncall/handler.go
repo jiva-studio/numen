@@ -76,7 +76,7 @@ func (h *Handler) Call(
 		done, err = calls.Call(ctx, pluginID, modelcall.Request{
 			Operation: request.Msg.GetOperation(), Payload: request.Msg.GetPayload(),
 			Priority:  wire.ConvertPriorityFromWire(request.Msg.GetPriority()),
-			Preferred: wire.ConvertPreferredRowFromWire(request.Msg.GetPreferred()),
+			Preferred: wire.ConvertPreferredRowFromWire(request.Msg.GetPreferredRow()),
 		}, func(data []byte) error {
 			return stream.Send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Data{Data: data}})
 		})

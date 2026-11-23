@@ -42,8 +42,8 @@ export interface LicenseInfo {
   readonly keyHint: string
   readonly activeProvider: string
   readonly instanceName: string
-  readonly expiresAt: string
-  readonly verifiedAt: string
+  readonly expiresUnixMs: number
+  readonly verifiedUnixMs: number
 }
 
 /** Why an activation or deactivation call was refused. */
@@ -112,8 +112,8 @@ const readLicense = (info: ProtoLicenseInfo): LicenseInfo => ({
   keyHint: info.keyHint,
   activeProvider: info.activeProvider,
   instanceName: info.instanceName,
-  expiresAt: info.expiresAt,
-  verifiedAt: info.verifiedAt,
+  expiresUnixMs: Number(info.expiresUnixMs),
+  verifiedUnixMs: Number(info.verifiedUnixMs),
 })
 
 const readErrorCode = (code: ProtoLicenseErrorCode): LicenseErrorCode | undefined => {
@@ -157,10 +157,8 @@ const readAnswer = (answer: {
 /** The licenses managed through a LicenseService client. */
 export const createLicenseClient = (rpc: LicenseRpc): LicenseClient => ({
   list: async () => (await rpc.listLicenses({})).licenses.map(readLicense),
-  activate: async (licenseId, key) =>
-    readAnswer(await rpc.activateLicense({ licenseId, key })),
-  deactivate: async (licenseId) =>
-    readAnswer(await rpc.deactivateLicense({ licenseId })),
+  activate: async (licenseId, key) => readAnswer(await rpc.activateLicense({ licenseId, key })),
+  deactivate: async (licenseId) => readAnswer(await rpc.deactivateLicense({ licenseId })),
   watch: async function* (signal: AbortSignal): AsyncGenerator<readonly LicenseInfo[]> {
     for await (const update of rpc.watchLicenses({}, { signal })) {
       yield update.licenses.map(readLicense)

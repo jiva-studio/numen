@@ -35,10 +35,10 @@ func ResolveAddresses(
 		}
 		observed[content] = true
 		resolvedVault, crossed := one.InVault(vault)
-		out.Resolved = append(out.Resolved, &v1.ResolvedAddress{
+		out.ResolvedAddresses = append(out.ResolvedAddresses, &v1.ResolvedAddress{
 			Address:     content,
 			Path:        one.To,
-			Vault:       string(resolvedVault),
+			VaultId:     string(resolvedVault),
 			IsCrossed:   crossed,
 			IsAmbiguous: one.IsAmbiguous,
 		})

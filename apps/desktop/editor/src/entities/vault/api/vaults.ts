@@ -66,6 +66,7 @@ export const createVaults = (
   add: async (path, called) => mapVaultResult(await vaultsService.addVault({ path, name: called })),
   rename: async (id, called) =>
     mapVaultResult(await vaultsService.renameVault({ id, name: called })),
-  remove: async (id, trash) => mapNoValue(await vaultsService.removeVault({ id, trash })),
+  remove: async (id, trash) =>
+    mapNoValue(await vaultsService.removeVault({ id, isFolderTrashed: trash })),
   open: async (id) => mapNoValue(await vaultsService.openVault({ id })),
 })

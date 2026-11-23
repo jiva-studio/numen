@@ -23,7 +23,7 @@ interface NoteGraphWire {
   readonly focus?: { readonly path: string; readonly title: string } | undefined
   readonly focusType: string
   readonly focusTabKind?: string
-  readonly related: readonly {
+  readonly relatedNotes: readonly {
     readonly note?: { readonly path: string; readonly title: string } | undefined
     readonly type: string
     readonly tabKind?: string
@@ -97,7 +97,7 @@ export const mapNoteGraph = (answer: NoteGraphWire): NoteGraph => ({
   focus: { path: answer.focus?.path ?? '', title: answer.focus?.title ?? '' },
   focusType: mapNoteType(answer.focusType),
   ...(answer.focusTabKind ? { focusTabKind: answer.focusTabKind } : {}),
-  related: answer.related.flatMap((one) => {
+  related: answer.relatedNotes.flatMap((one) => {
     const relation = relationByWire[one.relation] ?? null
     if (relation === null || one.note === undefined) return []
     const direction =

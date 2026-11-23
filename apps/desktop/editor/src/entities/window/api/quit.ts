@@ -21,7 +21,7 @@ export const createQuitApi = (windowService: WindowClients['windowService']) => 
    * client replies under.
    */
   async function* watchWindowClose(signal: AbortSignal): AsyncGenerator<QuitRequest> {
-    for await (const request of windowService.watchWindowClose({ window: WINDOW }, { signal })) {
+    for await (const request of windowService.watchWindowClose({ windowId: WINDOW }, { signal })) {
       yield { token: request.token, flush: request.isFlushRequired }
     }
   }
@@ -32,7 +32,7 @@ export const createQuitApi = (windowService: WindowClients['windowService']) => 
     outcome?: 'written' | 'unsaved',
   ): Promise<void> => {
     await windowService.reportPendingWork({
-      window: WINDOW,
+      windowId: WINDOW,
       token,
       result: flushResults[outcome ?? 'nothing'],
     })

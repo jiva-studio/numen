@@ -40,7 +40,7 @@ func writeMove(m domain.MoveResult) *v1.MoveResult {
 	if !m.IsMoved {
 		return &v1.MoveResult{From: m.From}
 	}
-	return &v1.MoveResult{From: m.From, To: m.To, Repaired: m.Repaired, Dangling: m.Dangling}
+	return &v1.MoveResult{From: m.From, To: m.To, RepairedNotes: m.Repaired, DanglingNotes: m.Dangling}
 }
 
 func checkBatch(paths []string) error {
@@ -113,7 +113,7 @@ func (e *arrangeCalls) RenameNote(
 		out.NameSource = v1.NameSource_NAME_SOURCE_FILENAME
 	}
 	if move != nil {
-		out.Moved = writeMove(*move)
+		out.MoveResult = writeMove(*move)
 	}
 	return connect.NewResponse(out), nil
 }

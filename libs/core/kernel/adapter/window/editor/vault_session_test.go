@@ -188,7 +188,7 @@ func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 
 	// The query targets this window, so another window's name matches nothing here.
 	_, err := f.canvas.GetCurrentVault(t.Context(),
-		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: "another"}))
+		connect.NewRequest(&v1.GetCurrentVaultRequest{WindowId: "another"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("err = %v, want the question about another window turned away", err)
 	}
@@ -198,11 +198,11 @@ func (f *showing) getShownVault(t *testing.T, window string) string {
 	t.Helper()
 
 	out, err := f.canvas.GetCurrentVault(t.Context(),
-		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: window}))
+		connect.NewRequest(&v1.GetCurrentVaultRequest{WindowId: window}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return out.Msg.GetVault()
+	return out.Msg.GetVaultId()
 }
 
 // TestAnotherVaultOpensInTheWindowThatIsOpen. Afterwards the window reports
@@ -393,7 +393,7 @@ func (f *showing) watchWindowClose(t *testing.T) (*connect.ServerStreamForClient
 
 	listening, hangUp := context.WithCancel(t.Context())
 	stream, err := f.canvas.WatchWindowClose(listening, connect.NewRequest(&v1.WatchWindowCloseRequest{
-		Window: wire.Editor,
+		WindowId: wire.Editor,
 	}))
 	if err != nil {
 		hangUp()
@@ -452,9 +452,9 @@ func TestAPageContainingAnUnansweredQuestionCallsTheSwapOff(t *testing.T) {
 				continue
 			}
 			if _, err := f.canvas.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
-				Window: wire.Editor,
-				Token:  stream.Msg().GetToken(),
-				Result: v1.FlushResult_FLUSH_RESULT_UNSAVED,
+				WindowId: wire.Editor,
+				Token:    stream.Msg().GetToken(),
+				Result:   v1.FlushResult_FLUSH_RESULT_UNSAVED,
 			})); err != nil {
 				t.Error(err)
 			}
@@ -501,9 +501,9 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 			close(signalCh)
 			<-release
 			if _, err := f.canvas.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
-				Window: wire.Editor,
-				Token:  stream.Msg().GetToken(),
-				Result: v1.FlushResult_FLUSH_RESULT_NOTHING,
+				WindowId: wire.Editor,
+				Token:    stream.Msg().GetToken(),
+				Result:   v1.FlushResult_FLUSH_RESULT_NOTHING,
 			})); err != nil {
 				t.Error(err)
 			}
@@ -649,7 +649,7 @@ func findUpdateIndexTask(t *testing.T, f *going) *v1.Task {
 	listening, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	tasks, err := f.canvas.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{
-		Window: wire.Editor,
+		WindowId: wire.Editor,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -708,14 +708,14 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the note is in the trash and the client received %v", err)
 	}
-	if answer.Msg.GetTrashed() == "" {
+	if answer.Msg.GetTrashPath() == "" {
 		t.Error("the note went to the trash and the client received nothing of where")
 	}
 	if !answer.Msg.GetIsIndexOutdated() {
 		t.Error("the removal is answered as followed and search still holds the note")
 	}
-	if len(answer.Msg.GetDangling()) != 1 {
-		t.Errorf("the links now reaching nothing are %q", answer.Msg.GetDangling())
+	if len(answer.Msg.GetDanglingNotes()) != 1 {
+		t.Errorf("the links now reaching nothing are %q", answer.Msg.GetDanglingNotes())
 	}
 }
 
@@ -880,11 +880,11 @@ func TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 	}
 
 	displayed, err := f.canvas.GetCurrentVault(t.Context(),
-		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: wire.Editor}))
+		connect.NewRequest(&v1.GetCurrentVaultRequest{WindowId: wire.Editor}))
 	if err != nil {
 		t.Fatalf("the window cannot say which vault it is showing: %v", err)
 	}
-	if got := displayed.Msg.GetVault(); got != "" {
+	if got := displayed.Msg.GetVaultId(); got != "" {
 		t.Errorf("the window says it is showing %q", got)
 	}
 
@@ -924,7 +924,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 		t.Fatalf("the editing stream never opened: %v", editing.Err())
 	}
 
-	tasks, err := f.canvas.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
+	tasks, err := f.canvas.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{WindowId: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}

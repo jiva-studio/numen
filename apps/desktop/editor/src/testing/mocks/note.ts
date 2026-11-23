@@ -16,7 +16,7 @@ export const noteAnswers = {
       graphs: request.paths.map((path) => ({
         focus: { path, title: path.replace(/\.md$/, '') },
         focusType: 'note',
-        related: [],
+        relatedNotes: [],
         connections: [],
       })),
     }),

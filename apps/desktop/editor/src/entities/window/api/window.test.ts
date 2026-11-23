@@ -36,7 +36,7 @@ describe('a flush reported', () => {
     await getApi().reportPendingWork('token-1')
 
     expect(request.reportPendingWork.mock.lastCall?.[0]).toMatchObject({
-      window: 'editor',
+      windowId: 'editor',
       token: 'token-1',
       result: FLUSH_RESULT.NOTHING,
     })
@@ -46,7 +46,7 @@ describe('a flush reported', () => {
     await getApi().reportPendingWork('token-1', 'written')
 
     expect(request.reportPendingWork.mock.lastCall?.[0]).toMatchObject({
-      window: 'editor',
+      windowId: 'editor',
       token: 'token-1',
       result: FLUSH_RESULT.WRITTEN,
     })
@@ -61,10 +61,10 @@ const readAll = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {
 
 describe('the vault the window shows', () => {
   it('is the vault the core names for this window', async () => {
-    request.getCurrentVault.mockResolvedValue({ vault: 'physics' })
+    request.getCurrentVault.mockResolvedValue({ vaultId: 'physics' })
 
     expect(await getApi().getShownVault()).toBe('physics')
-    expect(request.getCurrentVault.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
+    expect(request.getCurrentVault.mock.lastCall?.[0]).toMatchObject({ windowId: 'editor' })
   })
 })
 
@@ -116,7 +116,7 @@ describe('the streams a window follows', () => {
     })().catch(() => undefined)
 
     expect(seen).toStrictEqual([{ token: 'token-9', flush: true }])
-    expect(request.watchWindowClose.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
+    expect(request.watchWindowClose.mock.lastCall?.[0]).toMatchObject({ windowId: 'editor' })
   })
 
   it('notifies the work under way, counted in what each counts', async () => {
@@ -179,7 +179,7 @@ describe('the streams a window follows', () => {
         },
       ],
     ])
-    expect(request.watchTasks.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
+    expect(request.watchTasks.mock.lastCall?.[0]).toMatchObject({ windowId: 'editor' })
   })
 
   it('asks the core of this window to cancel a task by its id', async () => {
@@ -188,7 +188,7 @@ describe('the streams a window follows', () => {
     await getApi().cancelTask('making the vectors')
 
     expect(request.cancelTask.mock.lastCall?.[0]).toMatchObject({
-      window: 'editor',
+      windowId: 'editor',
       id: 'making the vectors',
     })
   })

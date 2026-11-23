@@ -49,7 +49,7 @@ func (a *fakeArrangeHost) RenameNote(
 	}
 	return connect.NewResponse(&v1.HostNoteServiceRenameNoteResponse{
 		Path: "Donau.md", Title: "Donau", NameSource: v1.NameSource_NAME_SOURCE_FILENAME,
-		Moved: &v1.MoveResult{From: "Danube.md", To: "Donau.md", Repaired: []string{"Deltas.md"}, Dangling: []string{"Estuaries.md"}},
+		MoveResult: &v1.MoveResult{From: "Danube.md", To: "Donau.md", RepairedNotes: []string{"Deltas.md"}, DanglingNotes: []string{"Estuaries.md"}},
 	}), nil
 }
 
@@ -58,7 +58,7 @@ func (a *fakeArrangeHost) MoveNotes(
 ) (*connect.Response[v1.HostNoteServiceMoveNotesResponse], error) {
 	a.record("move " + req.Msg.GetFolder())
 	return connect.NewResponse(&v1.HostNoteServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
-		{Move: &v1.MoveResult{From: "Danube.md", To: "Rivers/Danube.md", Repaired: []string{"Deltas.md"}}},
+		{Move: &v1.MoveResult{From: "Danube.md", To: "Rivers/Danube.md", RepairedNotes: []string{"Deltas.md"}}},
 		{Move: &v1.MoveResult{From: "Nowhere.md"}, Error: v1.ErrorCode_ERROR_CODE_NOT_FOUND},
 		{Move: &v1.MoveResult{From: "Rivers"}, Error: v1.ErrorCode_ERROR_CODE_NOT_A_NOTE},
 		{Move: &v1.MoveResult{From: "Deltas.md"}, Error: v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS},

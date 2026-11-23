@@ -508,7 +508,7 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	stream, err := f.canvas.WatchWindowClose(listening, connect.NewRequest(&v1.WatchWindowCloseRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchWindowClose(listening, connect.NewRequest(&v1.WatchWindowCloseRequest{WindowId: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -540,9 +540,9 @@ func TestQuit_WaitsForPageFlush(t *testing.T) {
 				return
 			}
 			if _, err := f.canvas.ReportPendingWork(t.Context(), connect.NewRequest(&v1.ReportPendingWorkRequest{
-				Window: wire.Editor,
-				Token:  stream.Msg().GetToken(),
-				Result: v1.FlushResult_FLUSH_RESULT_WRITTEN,
+				WindowId: wire.Editor,
+				Token:    stream.Msg().GetToken(),
+				Result:   v1.FlushResult_FLUSH_RESULT_WRITTEN,
 			})); err != nil {
 				t.Error(err)
 			}
@@ -586,7 +586,7 @@ func TestAPageThatNeverAnswersDoesNotHoldTheQuitPastTheBound(t *testing.T) {
 	listening, hangUp := context.WithCancel(t.Context())
 	defer hangUp()
 
-	stream, err := f.canvas.WatchWindowClose(listening, connect.NewRequest(&v1.WatchWindowCloseRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchWindowClose(listening, connect.NewRequest(&v1.WatchWindowCloseRequest{WindowId: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -635,7 +635,7 @@ func openQuitStream(t *testing.T, f *going) *speaking {
 	t.Helper()
 
 	ctx, hangUp := context.WithCancel(t.Context())
-	stream, err := f.canvas.WatchWindowClose(ctx, connect.NewRequest(&v1.WatchWindowCloseRequest{Window: wire.Editor}))
+	stream, err := f.canvas.WatchWindowClose(ctx, connect.NewRequest(&v1.WatchWindowCloseRequest{WindowId: wire.Editor}))
 	if err != nil {
 		hangUp()
 		t.Fatal(err)
@@ -680,9 +680,9 @@ func (p *speaking) answerFlushes(handler func(token string) v1.FlushResult) {
 
 func (p *speaking) sendFlush(token string, response v1.FlushResult) {
 	_, err := p.f.canvas.ReportPendingWork(context.Background(), connect.NewRequest(&v1.ReportPendingWorkRequest{
-		Window: wire.Editor,
-		Token:  token,
-		Result: response,
+		WindowId: wire.Editor,
+		Token:    token,
+		Result:   response,
 	}))
 	if err != nil {
 		p.mu.Lock()
@@ -1401,7 +1401,7 @@ func TestRelatedNotesReturnWhichOfThreeEachNoteIs(t *testing.T) {
 		t.Errorf("the note in focus is drawn as %v", is)
 	}
 	types := map[string]string{}
-	for _, one := range graphOf(t, center.Msg).GetRelated() {
+	for _, one := range graphOf(t, center.Msg).GetRelatedNotes() {
 		types[one.GetNote().GetPath()] = one.GetType()
 	}
 	want := map[string]string{

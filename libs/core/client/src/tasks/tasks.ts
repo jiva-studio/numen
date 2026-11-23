@@ -64,10 +64,10 @@ const getCountingUnit = (unit: number): CoreTaskUnit =>
   (COUNTED as Partial<Record<number, CoreTaskUnit>>)[unit] ?? 'items'
 
 /** The tasks of the window of that name, over the window service. */
-export function createTaskClient(rpc: TaskRpc, window: string): TaskClient {
+export function createTaskClient(rpc: TaskRpc, windowId: string): TaskClient {
   return {
     watchTasks: async function* (signal) {
-      for await (const update of rpc.watchTasks({ window }, { signal })) {
+      for await (const update of rpc.watchTasks({ windowId }, { signal })) {
         yield update.tasks.map((task) => ({
           id: task.id,
           label: task.title,
@@ -89,7 +89,7 @@ export function createTaskClient(rpc: TaskRpc, window: string): TaskClient {
       }
     },
     cancelTask: async (id) => {
-      await rpc.cancelTask({ window, id })
+      await rpc.cancelTask({ windowId, id })
     },
   }
 }

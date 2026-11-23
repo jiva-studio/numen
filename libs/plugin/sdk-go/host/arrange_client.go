@@ -54,8 +54,8 @@ func readMove(m *v1.MoveResult) domain.MoveResult {
 		From:     m.GetFrom(),
 		To:       m.GetTo(),
 		IsMoved:  m.GetTo() != "",
-		Repaired: m.GetRepaired(),
-		Dangling: m.GetDangling(),
+		Repaired: m.GetRepairedNotes(),
+		Dangling: m.GetDanglingNotes(),
 	}
 }
 
@@ -77,8 +77,8 @@ func (c *Client) RenameNote(ctx context.Context, path, title string) (NoteRename
 		IsFilenamed: res.Msg.GetNameSource() == v1.NameSource_NAME_SOURCE_FILENAME,
 		Move:        nil,
 	}
-	if res.Msg.GetMoved() != nil {
-		move := readMove(res.Msg.GetMoved())
+	if res.Msg.GetMoveResult() != nil {
+		move := readMove(res.Msg.GetMoveResult())
 		out.Move = &move
 	}
 	return out, nil

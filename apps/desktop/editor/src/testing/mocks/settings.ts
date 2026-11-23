@@ -57,7 +57,7 @@ export const settingsAnswers = {
         { name: 'preset:numen', title: 'numen', origin: THEME_ORIGIN.PRESET },
         { name: 'mine:sea', title: 'sea', origin: THEME_ORIGIN.MINE },
       ],
-      applied: mockVaultState.applied,
+      appliedTheme: mockVaultState.applied,
       mode: MODE_CODES[mockVaultState.mode],
       interfaceScale: mockVaultState.sizes.interfaceScale,
       textScale: mockVaultState.sizes.textScale,

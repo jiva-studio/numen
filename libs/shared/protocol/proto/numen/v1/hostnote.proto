@@ -168,7 +168,7 @@ message HostNoteServiceRenameNoteResponse {
   // Which of the three names the note, and so which the rename brought into line.
   NameSource name_source = 4;
   // What the file did. Absent when it kept its position.
-  optional MoveResult moved = 5;
+  optional MoveResult move_result = 5;
   // The text of the error where it carries more than the code does.
   string detail = 6;
 }

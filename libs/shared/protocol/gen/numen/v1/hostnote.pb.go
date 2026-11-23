@@ -900,7 +900,7 @@ type HostNoteServiceRenameNoteResponse struct {
 	// Which of the three names the note, and so which the rename brought into line.
 	NameSource NameSource `protobuf:"varint,4,opt,name=name_source,json=nameSource,proto3,enum=numen.v1.NameSource" json:"name_source,omitempty"`
 	// What the file did. Absent when it kept its position.
-	Moved *MoveResult `protobuf:"bytes,5,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
+	MoveResult *MoveResult `protobuf:"bytes,5,opt,name=move_result,json=moveResult,proto3,oneof" json:"move_result,omitempty"`
 	// The text of the error where it carries more than the code does.
 	Detail        string `protobuf:"bytes,6,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -965,9 +965,9 @@ func (x *HostNoteServiceRenameNoteResponse) GetNameSource() NameSource {
 	return NameSource_NAME_SOURCE_UNSPECIFIED
 }
 
-func (x *HostNoteServiceRenameNoteResponse) GetMoved() *MoveResult {
+func (x *HostNoteServiceRenameNoteResponse) GetMoveResult() *MoveResult {
 	if x != nil {
-		return x.Moved
+		return x.MoveResult
 	}
 	return nil
 }
@@ -1389,16 +1389,17 @@ const file_numen_v1_hostnote_proto_rawDesc = "" +
 	"\tsource_id\x18\x03 \x01(\x03R\bsourceId\"L\n" +
 	" HostNoteServiceRenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\x82\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\x93\x02\n" +
 	"!HostNoteServiceRenameNoteResponse\x12)\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x125\n" +
 	"\vname_source\x18\x04 \x01(\x0e2\x14.numen.v1.NameSourceR\n" +
-	"nameSource\x12/\n" +
-	"\x05moved\x18\x05 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12\x16\n" +
-	"\x06detail\x18\x06 \x01(\tR\x06detailB\b\n" +
-	"\x06_moved\"O\n" +
+	"nameSource\x12:\n" +
+	"\vmove_result\x18\x05 \x01(\v2\x14.numen.v1.MoveResultH\x00R\n" +
+	"moveResult\x88\x01\x01\x12\x16\n" +
+	"\x06detail\x18\x06 \x01(\tR\x06detailB\x0e\n" +
+	"\f_move_result\"O\n" +
 	"\x1fHostNoteServiceMoveNotesRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
 	"\x06folder\x18\x02 \x01(\tR\x06folder\"{\n" +
@@ -1496,7 +1497,7 @@ var file_numen_v1_hostnote_proto_depIdxs = []int32{
 	24, // 14: numen.v1.NoteFrontmatterWritten.error:type_name -> numen.v1.ErrorCode
 	24, // 15: numen.v1.HostNoteServiceRenameNoteResponse.error:type_name -> numen.v1.ErrorCode
 	28, // 16: numen.v1.HostNoteServiceRenameNoteResponse.name_source:type_name -> numen.v1.NameSource
-	29, // 17: numen.v1.HostNoteServiceRenameNoteResponse.moved:type_name -> numen.v1.MoveResult
+	29, // 17: numen.v1.HostNoteServiceRenameNoteResponse.move_result:type_name -> numen.v1.MoveResult
 	29, // 18: numen.v1.HostNoteMove.move:type_name -> numen.v1.MoveResult
 	24, // 19: numen.v1.HostNoteMove.error:type_name -> numen.v1.ErrorCode
 	24, // 20: numen.v1.HostNoteServiceMoveNotesResponse.error:type_name -> numen.v1.ErrorCode

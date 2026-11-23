@@ -24,7 +24,7 @@ func (a *canceledArranging) MoveNotes(
 	context.Context, *connect.Request[v1.HostNoteServiceMoveNotesRequest],
 ) (*connect.Response[v1.HostNoteServiceMoveNotesResponse], error) {
 	return connect.NewResponse(&v1.HostNoteServiceMoveNotesResponse{Moves: []*v1.HostNoteMove{
-		{Move: &v1.MoveResult{From: "Danube.md", To: "Archive/Danube.md", Repaired: []string{"Deltas.md"}}},
+		{Move: &v1.MoveResult{From: "Danube.md", To: "Archive/Danube.md", RepairedNotes: []string{"Deltas.md"}}},
 		{
 			Move: &v1.MoveResult{From: "Rivers/Rhine.md"}, Error: v1.ErrorCode_ERROR_CODE_NOT_ATTEMPTED,
 			Detail: "the call was canceled before Rivers/Rhine.md was moved",

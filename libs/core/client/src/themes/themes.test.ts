@@ -22,7 +22,7 @@ beforeEach(() => {
 
 const createAnswer = (overrides: Record<string, unknown> = {}) => ({
   themes: [],
-  applied: 'preset:numen',
+  appliedTheme: 'preset:numen',
   mode: THEME_MODE.SYSTEM,
   interfaceScale: 1,
   textScale: 1,
@@ -85,7 +85,7 @@ describe('which half of a color pair is read', () => {
 
 describe('how far a size goes', () => {
   it('is the two ends the application named', async () => {
-    request.listThemes.mockResolvedValue(createAnswer({ applied: 'mine:sea' }))
+    request.listThemes.mockResolvedValue(createAnswer({ appliedTheme: 'mine:sea' }))
     const { applied, sizes, bounds } = await themes.getAppearance()
 
     expect(applied).toBe('mine:sea')

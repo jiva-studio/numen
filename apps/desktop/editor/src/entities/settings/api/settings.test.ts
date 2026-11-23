@@ -397,9 +397,9 @@ describe('the settings that change', () => {
   it('are the settings of each response, named by their path and holding their value', async () => {
     const core = getCore()
     request.watchSettings.mockImplementation(async function* () {
-      yield { changed: [] }
+      yield { settings: [] }
       yield {
-        changed: [
+        settings: [
           { keyPath: ['app', 'appearance', 'mode'], value: '"dark"' },
           { keyPath: ['md.numen.sample', 'indent'], value: 'false' },
         ],
@@ -423,9 +423,9 @@ describe('the settings that change', () => {
   it('follow the core until the signal of the window aborts', async () => {
     const core = getCore()
     request.watchSettings.mockImplementation(async function* (_req, context) {
-      yield { changed: [] }
+      yield { settings: [] }
       if (!context.signal.aborted) {
-        yield { changed: [{ keyPath: ['app', 'appearance', 'mode'], value: '"dark"' }] }
+        yield { settings: [{ keyPath: ['app', 'appearance', 'mode'], value: '"dark"' }] }
       }
     })
     const controller = new AbortController()

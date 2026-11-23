@@ -511,7 +511,7 @@ func (f *showing) reportPendingWork(t *testing.T, token string, result v1.FlushR
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(t.Context()), 5*time.Second)
 	defer cancel()
 	_, err := f.canvas.ReportPendingWork(ctx, connect.NewRequest(&v1.ReportPendingWorkRequest{
-		Window: wire.Editor, Token: token, Result: result,
+		WindowId: wire.Editor, Token: token, Result: result,
 	}))
 	return err
 }

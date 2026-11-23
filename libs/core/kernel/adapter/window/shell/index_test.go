@@ -118,7 +118,7 @@ func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
 	api.Window.Tasks = nil
 
 	stream, err := newWindowClient(t, api).WatchTasks(
-		t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: testWindow}),
+		t.Context(), connect.NewRequest(&v1.WatchTasksRequest{WindowId: testWindow}),
 	)
 	if err != nil {
 		t.Fatal(err)

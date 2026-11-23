@@ -140,7 +140,7 @@ describe('a note renamed', () => {
       path: 'b.md',
       title: 'B',
       nameSource: NAME_SOURCE.FILENAME,
-      moved: { from: 'a.md', to: 'b.md', repaired: ['c.md'] },
+      moveResult: { from: 'a.md', to: 'b.md', repairedNotes: ['c.md'] },
     })
 
     expect(await api.renameNote('a.md', 'B')).toEqual({
@@ -178,7 +178,7 @@ describe('the wikilinks of a text', () => {
         { raw: '[[C|see C]]', address: 'name://C', text: 'see C' },
         { raw: '[[D]]', address: 'name://D', text: 'D' },
       ],
-      resolved: [
+      resolvedAddresses: [
         { address: 'name://B', path: 'b.md', isCrossed: false },
         { address: 'name://C', path: 'c.md', isCrossed: true },
       ],
@@ -189,7 +189,7 @@ describe('the wikilinks of a text', () => {
     expect(request.resolveAddresses.mock.calls.at(-1)?.[0]).toMatchObject({
       from: 'a.md',
       text: '[[B]] [[C|see C]] [[D]]',
-      vault: '',
+      vaultId: '',
     })
     expect(resolved).toEqual([
       { raw: '[[B]]', address: 'name://B', text: 'B', path: 'b.md' },
@@ -202,11 +202,11 @@ describe('the wikilinks of a text', () => {
     const links = createLinks()
     request.resolveAddresses.mockResolvedValueOnce({
       links: [{ raw: '[[B]]', address: 'name://B', text: 'B' }],
-      resolved: [{ address: 'name://B', path: 'b.md', isCrossed: false }],
+      resolvedAddresses: [{ address: 'name://B', path: 'b.md', isCrossed: false }],
     })
     expect(await links.resolveNameLink('a.md', 'name://B')).toBe('b.md')
 
-    request.resolveAddresses.mockResolvedValueOnce({ links: [], resolved: [] })
+    request.resolveAddresses.mockResolvedValueOnce({ links: [], resolvedAddresses: [] })
     expect(await links.resolveNameLink('a.md', 'name://Missing')).toBe('')
   })
 })
@@ -280,8 +280,8 @@ describe('a noteGraph', () => {
     request.listRelatedNotes.mockClear()
     request.listRelatedNotes.mockResolvedValue({
       graphs: [
-        { focus: { path: 'b.md', title: 'B' }, related: [] },
-        { focus: { path: 'a.md', title: 'A' }, related: [] },
+        { focus: { path: 'b.md', title: 'B' }, relatedNotes: [] },
+        { focus: { path: 'a.md', title: 'A' }, relatedNotes: [] },
       ],
     })
 
@@ -295,9 +295,9 @@ describe('a noteGraph', () => {
   it('maps a graph whose focus is unset to an empty path and leaves the others whole', async () => {
     request.listRelatedNotes.mockResolvedValue({
       graphs: [
-        { focus: { path: 'a.md', title: 'A' }, related: [] },
-        { related: [] },
-        { focus: { path: 'c.md', title: 'C' }, related: [] },
+        { focus: { path: 'a.md', title: 'A' }, relatedNotes: [] },
+        { relatedNotes: [] },
+        { focus: { path: 'c.md', title: 'C' }, relatedNotes: [] },
       ],
     })
 
@@ -311,7 +311,7 @@ describe('a noteGraph', () => {
       graphs: [
         {
           focus: { path: 'a.md', title: 'A' },
-          related: [],
+          relatedNotes: [],
           connections: [],
         },
       ],
@@ -345,7 +345,7 @@ describe('a noteGraph', () => {
       graphs: [
         {
           focus: { path: 'Rota.md', title: 'The rota' },
-          related: [
+          relatedNotes: [
             {
               note: { path: 'Plots.md', title: 'Plots' },
               relation: NOTE_RELATION.CHILD,
@@ -373,7 +373,7 @@ describe('a noteGraph', () => {
         {
           focus: { path: 'Rota.md', title: 'The rota' },
           focusType: 'sample',
-          related: [
+          relatedNotes: [
             {
               note: { path: 'Allotments.md', title: 'Allotments' },
               relation: NOTE_RELATION.PARENT,
@@ -420,7 +420,7 @@ describe('a noteGraph', () => {
       graphs: [
         {
           focus: { path: 'Rota.md', title: 'The rota' },
-          related: [
+          relatedNotes: [
             { note: { path: 'Odd.md', title: 'Odd' }, relation: NOTE_RELATION.UNSPECIFIED },
             { relation: NOTE_RELATION.CHILD },
           ],
@@ -432,7 +432,7 @@ describe('a noteGraph', () => {
   })
 
   it('relies on nothing where the vault no longer holds the note', async () => {
-    request.listRelatedNotes.mockResolvedValue({ graphs: [{ related: [] }] })
+    request.listRelatedNotes.mockResolvedValue({ graphs: [{ relatedNotes: [] }] })
 
     expect((await api.listRelatedNotes(['Gone.md']))[0]!.focus.path).toBe('')
   })
