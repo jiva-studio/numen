@@ -8,7 +8,6 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-// ListDevices lists the devices of the account.
 type ListDevices struct{ deps Deps }
 
 // NewListDevices returns the use case that lists the devices of the account.

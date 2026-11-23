@@ -35,7 +35,6 @@ type Vault struct {
 	Later []EpochKey
 }
 
-// GetNewest returns the newest key of the vault and its epoch.
 func (v Vault) GetNewest() EpochKey {
 	if len(v.Later) == 0 {
 		return EpochKey{Epoch: 0, Key: v.Key}

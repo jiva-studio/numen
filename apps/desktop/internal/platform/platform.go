@@ -77,7 +77,6 @@ func reportPluginFailure(stage string, err error) {
 	}
 }
 
-// getChainStore keeps the device chain in the folder of the key store file.
 func getChainStore() *identityfile.Chain {
 	path, err := settings.Path()
 	if err != nil {

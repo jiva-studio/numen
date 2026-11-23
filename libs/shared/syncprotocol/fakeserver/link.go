@@ -47,7 +47,6 @@ func (c *linkChannel) wake() {
 	c.changed = make(chan struct{})
 }
 
-// getOpenChannel returns the channel that is there and has not ended; the caller holds the lock.
 func (s *Server) getOpenChannel(id []byte) (*linkChannel, error) {
 	found, ok := s.links[string(id)]
 	if !ok || found.isClosed || !s.now().Before(found.expiresAt) {
@@ -129,7 +128,6 @@ func (s *Server) WaitMessages(ctx context.Context, req *connect.Request[syncv1.W
 	}
 }
 
-// takeSide marks the side as waited on. A side that is waited on already is ABORTED, and the wait that holds it stays.
 func (s *Server) takeSide(id []byte, side syncv1.LinkSide) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -152,7 +150,6 @@ func (s *Server) freeSide(id []byte, side syncv1.LinkSide) {
 	}
 }
 
-// readMessages returns what the reader has not read, and tells a closed channel once.
 func (s *Server) readMessages(req *syncv1.WaitMessagesRequest) (*syncv1.WaitMessagesResponse, <-chan struct{}, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

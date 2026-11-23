@@ -280,8 +280,6 @@ func listChanges(vault *vaultState, since uint64, limit int) []*syncv1.StoredRev
 	return rows[:end]
 }
 
-// checkEpochs refuses a revision whose key epoch is below the highest epoch the vault holds, so a revoked device that
-// still holds the old keys cannot write with them.
 func checkEpochs(vault *vaultState, revs []*syncv1.Revision) error {
 	var highest uint32
 	for _, stored := range vault.files {
@@ -295,7 +293,6 @@ func checkEpochs(vault *vaultState, revs []*syncv1.Revision) error {
 	return nil
 }
 
-// asInvalid is err where it is a refusal with a code of its own, and INVALID_ARGUMENT otherwise.
 func asInvalid(err error) error {
 	if _, ok := errors.AsType[*connect.Error](err); ok {
 		return err

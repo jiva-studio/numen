@@ -21,7 +21,7 @@ func (l linked) fingerprintOf(tb testing.TB, d *linkDevice) string {
 
 func TestListDevices_ListsActiveDevicesFirstAndFlagsThisDevice(t *testing.T) {
 	t.Parallel()
-	l := newLinked(t)
+	l := newLinkPair(t)
 	devices, err := l.joiner.devices().Execute(t.Context())
 	if err != nil || len(devices) != 2 {
 		t.Fatalf("ListDevices() = %+v, %v, want 2 devices", devices, err)
@@ -36,7 +36,7 @@ func TestListDevices_ListsActiveDevicesFirstAndFlagsThisDevice(t *testing.T) {
 
 func TestRevokeDevice_TheNewKeysReplaceTheRecordOnlyAfterTheServerAcceptedTheChain(t *testing.T) {
 	t.Parallel()
-	l := newLinked(t)
+	l := newLinkPair(t)
 	before := l.host.readRecord(t).Wrapped.Bytes()
 	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {
 		t.Fatalf("RevokeDevice() = %v", err)
@@ -60,9 +60,9 @@ func TestRevokeDevice_TheNewKeysReplaceTheRecordOnlyAfterTheServerAcceptedTheCha
 	}
 }
 
-func TestRevokeDevice_TheRevokedDeviceLeavesTheListAndTheNextSealUsesTheNewEpoch(t *testing.T) {
+func TestRevokeDevice_RemovesDeviceFromListAndNextSealUsesNewEpoch(t *testing.T) {
 	t.Parallel()
-	l := newLinked(t)
+	l := newLinkPair(t)
 	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestRevokeDevice_TheRevokedDeviceLeavesTheListAndTheNextSealUsesTheNewEpoch
 
 func TestRevokeDevice_RefusesThisDeviceAndAnUnknownDevice(t *testing.T) {
 	t.Parallel()
-	l := newLinked(t)
+	l := newLinkPair(t)
 	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.host)); !errors.Is(err, identitylib.ErrSelfRevoke) {
 		t.Errorf("this device: error = %v, want ErrSelfRevoke", err)
 	}
@@ -120,9 +120,9 @@ func TestRevokeDevice_RefusesToLeaveTheAccountWithoutADevice(t *testing.T) {
 	}
 }
 
-func TestPutChainPublished_ARevokeAbortsWhenTheRevokedDeviceAddedADeviceMeanwhile(t *testing.T) {
+func TestChainPublished_RevokeAbortsWhenRevokedDeviceAddedDeviceMeanwhile(t *testing.T) {
 	t.Parallel()
-	l := newLinked(t)
+	l := newLinkPair(t)
 	l.relay.staleOnce = func(head identitylib.Chain) identitylib.Chain {
 		next, err := head.AppendDevice(l.joiner.readRecord(t).Device, newDeviceKey(t).Public(), "Stolen", getNow().Add(time.Hour))
 		if err != nil {
@@ -152,9 +152,9 @@ func TestPutChainPublished_ARevokeAbortsWhenTheRevokedDeviceAddedADeviceMeanwhil
 	}
 }
 
-func TestPutChainPublished_ARevokeRebuildsOnTheNewHeadWhenAnotherDeviceAppended(t *testing.T) {
+func TestChainPublished_RevokeRebuildsOnNewHeadWhenAnotherDeviceAppended(t *testing.T) {
 	t.Parallel()
-	l := newLinked(t)
+	l := newLinkPair(t)
 	l.relay.staleOnce = func(head identitylib.Chain) identitylib.Chain {
 		next, err := head.AppendDevice(l.host.readRecord(t).Device, newDeviceKey(t).Public(), "Tablet", getNow().Add(time.Hour))
 		if err != nil {
@@ -174,7 +174,7 @@ func TestPutChainPublished_ARevokeRebuildsOnTheNewHeadWhenAnotherDeviceAppended(
 
 func TestAdoptChain_ARevokedDeviceLearnsItWasRevokedAndKeepsItsRecord(t *testing.T) {
 	t.Parallel()
-	l := newLinked(t)
+	l := newLinkPair(t)
 	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {
 		t.Fatal(err)
 	}
@@ -200,9 +200,9 @@ func TestAdoptChain_ARevokedDeviceLearnsItWasRevokedAndKeepsItsRecord(t *testing
 	}
 }
 
-func TestAdoptChain_ARemainingDeviceTakesTheNewKeysOfTheEpoch(t *testing.T) {
+func TestAdoptChain_RemainingDeviceAdoptsNewKeysOfEpoch(t *testing.T) {
 	t.Parallel()
-	l := newLinked(t)
+	l := newLinkPair(t)
 	if err := l.host.revoke().Execute(t.Context(), l.fingerprintOf(t, l.joiner)); err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +223,7 @@ func TestAdoptChain_ARemainingDeviceTakesTheNewKeysOfTheEpoch(t *testing.T) {
 
 func TestAdoptChain_RefusesBytesThatAreNotAChain(t *testing.T) {
 	t.Parallel()
-	l := newLinked(t)
+	l := newLinkPair(t)
 	if err := l.host.adopt().Execute(t.Context(), []byte("not a chain")); !errors.Is(err, identitylib.ErrMalformed) {
 		t.Errorf("error = %v, want ErrMalformed", err)
 	}

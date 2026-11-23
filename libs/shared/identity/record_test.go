@@ -39,7 +39,7 @@ func TestParseRecord_RoundTrip(t *testing.T) {
 	}
 }
 
-func TestRecord_HoldsTheSeedAndTheWrappedKeysOnly(t *testing.T) {
+func TestRecord_ContainsOnlySeedAndWrappedKeys(t *testing.T) {
 	t.Parallel()
 	record, _ := newRecord(t)
 	b := record.Bytes()

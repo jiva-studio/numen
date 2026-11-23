@@ -122,7 +122,7 @@ describe('the link dialog', () => {
     expect(dialog.get('[role="alert"]').text()).toBe('Too many wrong codes. The link is closed.')
   })
 
-  it('cancels the link and tells the page when it closes', async () => {
+  it('cancels the link and notifies the page when it closes', async () => {
     const cancelLink = vi.fn(() => ok(undefined))
     const dialog = await mountDialog('host', createLinkInfo(), { cancelLink })
     await click(findButton(/^Show a QR code$/))

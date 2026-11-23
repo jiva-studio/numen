@@ -36,7 +36,6 @@ func (r *roster) isSigner(sign ed25519.PublicKey) bool {
 	return bytes.Equal(sign, r.root) || r.indexOf(sign) >= 0
 }
 
-// apply adds the effect of an entry that was verified or is trusted.
 func (r *roster) apply(entry Entry) {
 	switch {
 	case entry.Kind == KindAddDevice && entry.AddDevice != nil:

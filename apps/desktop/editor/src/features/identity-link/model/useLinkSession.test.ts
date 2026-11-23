@@ -64,7 +64,7 @@ describe('useLinkSession', () => {
     expect(session.isChoosing.value).toBe(true)
   })
 
-  it('cancels a link that is still going when the dialog goes away', async () => {
+  it('cancels an active link when the dialog closes', async () => {
     const cancelLink = vi.fn(() => ok(undefined))
     const { session, wrapper } = mountSession({ startLink: () => ok(createLinkInfo()), getLink: () => ok(createLinkInfo()), cancelLink })
     await session.start('show')

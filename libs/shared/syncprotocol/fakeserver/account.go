@@ -47,7 +47,6 @@ func (s *Server) isChainReadProven(req *syncv1.GetAccountChainByRootRequest) boo
 	return identity.VerifyForRecovery(root, syncprotocol.SignInPluginID, message, [64]byte(req.GetSignature()))
 }
 
-// isRevoked reports whether the chain once listed the device and lists it no more.
 func isRevoked(chain identity.Chain, deviceSignKey []byte) bool {
 	return chain.IsKnownDevice(deviceSignKey) && !chain.IsActiveDevice(deviceSignKey)
 }
@@ -71,8 +70,6 @@ func (s *Server) AppendChain(_ context.Context, req *connect.Request[syncv1.Appe
 	return connect.NewResponse(&syncv1.AppendChainResponse{Accepted: true, Chain: s.chains[session.AccountFingerprint].Bytes()}), nil
 }
 
-// checkAppend applies the rules of an append: the root of the account, the session device active in the chain, a chain that
-// extends the stored one, and each new entry signed by the session device or by the root.
 func checkAppend(stored, presented identity.Chain, session Session) error {
 	if presented.Root().Fingerprint().String() != session.AccountFingerprint {
 		return connect.NewError(connect.CodeInvalidArgument, errInvalidRequest)
@@ -99,7 +96,6 @@ func newChainStale(head identity.Chain) error {
 	return failure
 }
 
-// applyChain stores the chain and ends the sessions of the devices it revokes, in one step. The caller holds the lock.
 func (s *Server) applyChain(account string, chain identity.Chain) {
 	stored := s.chains[account]
 	s.chains[account] = chain

@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-// growChain adds a device and revokes it again until the chain would pass the limit, and returns the last chain that fits and the error that stopped it.
 func growChain(tb testing.TB) (identity.Chain, error) {
 	tb.Helper()
 	a := newChainOf(tb)

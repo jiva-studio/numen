@@ -1,4 +1,4 @@
-/** The scanner says why a camera did not open, and stops a camera it opened when it goes away. */
+/** The scanner reports why a camera did not open, and stops a camera it opened when it unmounts. */
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import QrScanner from './QrScanner.vue'
@@ -9,7 +9,7 @@ const makeStream = () => {
 }
 
 describe('a QR scanner', () => {
-  it('says the camera is not allowed and tells whoever listens', async () => {
+  it('reports a camera that is not allowed to the listener', async () => {
     const scanner = mount(QrScanner, {
       props: { camera: () => Promise.reject(new DOMException('no', 'NotAllowedError')) },
     })
@@ -31,7 +31,7 @@ describe('a QR scanner', () => {
     expect(scanner.text()).toContain('Waiting for the camera.')
   })
 
-  it('stops the camera when it goes away', async () => {
+  it('stops the camera when the scanner unmounts', async () => {
     const { stream, stop } = makeStream()
     const scanner = mount(QrScanner, { props: { camera: () => Promise.resolve(stream) } })
     await flushPromises()

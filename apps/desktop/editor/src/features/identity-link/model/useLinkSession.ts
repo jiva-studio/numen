@@ -17,7 +17,7 @@ export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole) {
   const isBusy = ref(false)
   let timer: ReturnType<typeof setInterval> | undefined
 
-  const stopPolling = (): void => {
+  const stopPoll = (): void => {
     if (timer !== undefined) clearInterval(timer)
     timer = undefined
   }
@@ -26,7 +26,7 @@ export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole) {
     const answer = await getCalls().get()
     if (!answer.ok) return
     link.value = answer.value
-    if (isEnded(answer.value)) stopPolling()
+    if (isEnded(answer.value)) stopPoll()
   }
 
   const start = async (mode: LinkMode, scannedText = ''): Promise<void> => {
@@ -39,7 +39,7 @@ export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole) {
       return
     }
     link.value = answer.value
-    stopPolling()
+    stopPoll()
     timer = setInterval(() => void poll(), POLL_MS)
   }
 
@@ -52,7 +52,7 @@ export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole) {
   }
 
   const cancel = async (): Promise<void> => {
-    stopPolling()
+    stopPoll()
     if (link.value !== undefined && !isEnded(link.value)) await getCalls().cancel()
   }
 

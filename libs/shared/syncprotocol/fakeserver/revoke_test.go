@@ -33,7 +33,7 @@ func TestAppendChain_ARevokeEndsTheSessionsOfTheRevokedDeviceAtOnce(t *testing.T
 	}
 }
 
-func TestSignIn_ARevokedDeviceIsToldItWasRevokedWithTheStoredChain(t *testing.T) {
+func TestSignIn_RevokedDeviceReceivesRevocationWithStoredChain(t *testing.T) {
 	t.Parallel()
 	_, address := newServer(t)
 	account := newOwnedAccount(t)
@@ -62,7 +62,7 @@ func TestSignIn_ADeviceThatWasNeverInTheChainGetsNoDetail(t *testing.T) {
 	stranger, _ := account.extend(t, account.root, "Stranger")
 	_, err := trySignIn(t, address, stranger, account.chain)
 	if _, ok := errors.AsType[syncprotocol.DeviceRevokedError](err); ok {
-		t.Error("a stranger was told the stored chain")
+		t.Error("a stranger received the stored chain")
 	}
 	if err == nil {
 		t.Error("a stranger signed in")

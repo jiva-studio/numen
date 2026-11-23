@@ -70,7 +70,6 @@ func (d Deps) newLink(ctx context.Context, role identitydomain.LinkRole, mode id
 	return link, nil
 }
 
-// readQRText makes the scanner of the QR code and queues its first message.
 func (d Deps) readQRText(store *LinkStore, link *pendingLink, scanned string) error {
 	payload, err := identitylib.ParseLinkPayload(scanned)
 	if err != nil {

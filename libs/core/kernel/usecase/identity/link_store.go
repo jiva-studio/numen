@@ -92,7 +92,6 @@ type LinkStore struct {
 // NewLinkStore returns a store with no link and no revoke pending.
 func NewLinkStore() *LinkStore { return &LinkStore{changed: make(chan struct{})} }
 
-// bumpLocked records a change: a new version and a wake-up for every waiting courier.
 func (s *LinkStore) bumpLocked() uint64 {
 	s.version++
 	close(s.changed)
@@ -106,7 +105,6 @@ func (l *pendingLink) isEnded() bool {
 	}, l.phase)
 }
 
-// expireLocked ends the link that ran for its whole lifetime.
 func (s *LinkStore) expireLocked(now time.Time) {
 	if l := s.current; l != nil && !l.isEnded() && !now.Before(l.startedAt.Add(linkLifetime)) {
 		s.endLocked(l, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonExpired)
@@ -117,7 +115,6 @@ func (s *LinkStore) queueLocked(l *pendingLink, blob []byte) {
 	l.relay.items = append(l.relay.items, outboxItem{version: s.bumpLocked(), blob: blob})
 }
 
-// sendLocked seals a message of the application for the other side; before the handshake there is nothing to seal it with.
 func (s *LinkStore) sendLocked(l *pendingLink, plain []byte) {
 	if l.hs.channel != nil {
 		s.queueLocked(l, l.hs.channel.Seal(plain))
@@ -134,7 +131,6 @@ func (s *LinkStore) setPhaseLocked(l *pendingLink, phase identitydomain.LinkPhas
 	s.bumpLocked()
 }
 
-// acknowledge drops the blobs the courier has carried: those of a version up to the one it names.
 func (l *pendingLink) acknowledge(version uint64) {
 	l.relay.items = slices.DeleteFunc(l.relay.items, func(item outboxItem) bool { return item.version <= version })
 }

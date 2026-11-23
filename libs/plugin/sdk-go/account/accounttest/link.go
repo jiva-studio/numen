@@ -39,7 +39,6 @@ func newFakeLink() *fakeLink {
 	return &fakeLink{wantsChannel: true, inbound: make(chan []byte, 64), changed: make(chan struct{})}
 }
 
-// bump records a change and wakes the callers that wait for one. The caller holds the lock of the fake.
 func (l *fakeLink) bump() uint64 {
 	l.version++
 	close(l.changed)
@@ -124,7 +123,7 @@ func (f *Fake) CloseLink() error {
 }
 
 // AdvanceEpoch makes the host revoke a device that never signed in: the chain of the host grows by that
-// device and its revoke, and the account keys of the host are the new ones. The server does not hear of it
+// device and its revoke, and the account keys of the host are the new ones. The server is not notified of it
 // until the plugin publishes the chain.
 func (f *Fake) AdvanceEpoch() error {
 	stranger, err := identity.NewDeviceKey(rand.Reader)
@@ -146,7 +145,7 @@ func (f *Fake) AdvanceEpoch() error {
 }
 
 // RevokeDevice makes the host revoke the device with the signing key, which its chain lists since the plugin adopted the chain of
-// the server. The account keys of the host are the new ones, and the server does not hear of it until the plugin publishes the chain.
+// the server. The account keys of the host are the new ones, and the server is not notified of it until the plugin publishes the chain.
 func (f *Fake) RevokeDevice(deviceSignKey []byte) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()

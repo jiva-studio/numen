@@ -1,8 +1,8 @@
 
 <script setup lang="ts">
 /**
- * Reads QR codes from the camera at eight frames a second and says the text of the first valid one it sees.
- * The stream stops when the scanner goes away. The decoder is plain JavaScript, so no worker and no wasm is needed.
+ * Reads QR codes from the camera at eight frames a second and reports the text of the first valid one it finds.
+ * The stream stops when the scanner unmounts. The decoder is plain JavaScript, so no worker and no wasm is needed.
  */
 import jsQR from 'jsqr'
 import { onBeforeUnmount, onMounted, ref } from 'vue'

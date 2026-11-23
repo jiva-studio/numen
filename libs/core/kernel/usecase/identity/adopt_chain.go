@@ -33,7 +33,6 @@ func (u *AdoptChain) Execute(ctx context.Context, chainBytes []byte) error {
 	return err
 }
 
-// adoptState keeps the state over the chain when the chain is longer than the one of the state.
 func (d Deps) adoptState(ctx context.Context, state identitylib.State, chain identitylib.Chain) (identitylib.State, error) {
 	next, err := state.Adopt(chain)
 	if err != nil {

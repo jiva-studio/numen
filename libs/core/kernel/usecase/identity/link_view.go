@@ -7,7 +7,6 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-// view is what a window shows of the link. The code is shown to the host that reads the QR code of a new device, and the QR text to the side that shows it.
 func (l *pendingLink) view() identitydomain.Link {
 	link := identitydomain.Link{
 		Phase:              l.phase,
@@ -34,7 +33,6 @@ func (l *pendingLink) view() identitydomain.Link {
 	return link
 }
 
-// getCurrentLocked returns the link a window may see: none when there is none or the person cancelled it.
 func (s *LinkStore) getCurrentLocked() (*pendingLink, error) {
 	if s.current == nil || s.current.phase == identitydomain.LinkPhaseCancelled {
 		return nil, identitydomain.ErrNoLink

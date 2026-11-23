@@ -10,7 +10,6 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-// receiveAsHostLocked takes a message of the new device.
 func (d Deps) receiveAsHostLocked(ctx context.Context, link *pendingLink, kind byte, body []byte) error {
 	store := d.links
 	switch kind {
@@ -49,7 +48,6 @@ func (d Deps) receiveJoinLocked(link *pendingLink, body []byte) error {
 	return nil
 }
 
-// makeCode returns six digits, each value of a million equally likely: a value above the largest multiple of a million is drawn again.
 func (d Deps) makeCode() (string, error) {
 	const limit = 4_294_000_000
 	for {
@@ -81,7 +79,6 @@ func (d Deps) receiveCodeLocked(ctx context.Context, link *pendingLink, body []b
 	return nil
 }
 
-// publishLinkLocked builds the chain that lists the new device and waits for the server to accept it.
 func (d Deps) publishLinkLocked(ctx context.Context, link *pendingLink) error {
 	state, err := d.readState(ctx)
 	if err != nil {

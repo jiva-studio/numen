@@ -79,7 +79,6 @@ func ReadSubscriptionError(err error) error {
 	return ReadError(err)
 }
 
-// readDeviceRevoked finds the DeviceRevoked detail of a refused sign-in.
 func readDeviceRevoked(err error) (error, bool) {
 	failure, ok := errors.AsType[*connect.Error](err)
 	if !ok {

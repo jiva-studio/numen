@@ -45,7 +45,7 @@ func newRun(t *testing.T, serverURLOf func(*synctest.Server) string) *run {
 	return &run{computer: computer, relay: relay, stop: stop, done: done, finished: finished}
 }
 
-func TestExecute_MakesAChannelWhenTheCoreWantsOneAndGivesItBack(t *testing.T) {
+func TestExecute_CreatesChannelWhenCoreRequestsOneAndReturnsIt(t *testing.T) {
 	t.Parallel()
 	r := newRun(t, nil)
 	if err := r.computer.Fake.ShowLink(); err != nil {
@@ -62,7 +62,7 @@ func TestExecute_MakesAChannelWhenTheCoreWantsOneAndGivesItBack(t *testing.T) {
 	}
 }
 
-func TestExecute_PostsWhatTheCoreHandsOverToTheOtherSideOfTheChannel(t *testing.T) {
+func TestExecute_PostsCoreOutputToOtherSideOfChannel(t *testing.T) {
 	t.Parallel()
 	r := newRun(t, nil)
 	if err := r.computer.Fake.ShowLink(); err != nil {
@@ -127,7 +127,7 @@ func TestExecute_ClosesTheChannelWhenTheCoreEndsTheLink(t *testing.T) {
 	t.Error("the channel of an ended link is still open on the relay")
 }
 
-func TestExecute_SaysLinkingNeedsTheSyncServerWhenTheRelayIsNotThere(t *testing.T) {
+func TestExecute_ReportsLinkNeedsSyncServerWhenRelayIsMissing(t *testing.T) {
 	t.Parallel()
 	r := newRun(t, func(*synctest.Server) string { return "http://127.0.0.1:1" })
 	if err := r.computer.Fake.ShowLink(); err != nil {

@@ -175,7 +175,6 @@ export class DevicesDriver {
     await expect.poll(async () => (await shown.count()) > 0 && (await shown.innerText()).trim(), { timeout: STEP_LIMIT_MS }).toBe(account)
   }
 
-  /** Waits until the dialog asks to join and answers it, or until no dialog is open. A page that never asks is left for the next check to fail. */
   private async joinWhereAsked(): Promise<void> {
     const dialog = this.getDialog()
     const join = dialog.getByRole('button', { name: JOIN, exact: true })

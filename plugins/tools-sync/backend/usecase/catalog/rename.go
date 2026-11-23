@@ -58,7 +58,6 @@ func (u *RenameRemoteVault) rename(ctx context.Context, vault domain.Vault, link
 	return u.reader.deps.State.WriteLink(ctx, vault.ID, link)
 }
 
-// readKeys returns the keys by epoch the last entry of the vault lists, so a new name does not drop the keys a revoke gave it.
 func (u *RenameRemoteVault) readKeys(ctx context.Context, remoteID []byte) ([]vaultlink.VaultKey, error) {
 	entries, err := u.reader.read(ctx)
 	if err != nil {

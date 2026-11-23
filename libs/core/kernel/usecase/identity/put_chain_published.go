@@ -55,7 +55,6 @@ func (d Deps) answerLinkLocked(ctx context.Context, link *pendingLink, accepted 
 	return d.extendLocked(link, state)
 }
 
-// grantLocked keeps the chain the server accepted and sends the new device the keys of the account and the chain.
 func (d Deps) grantLocked(ctx context.Context, link *pendingLink, state identitylib.State) error {
 	next, err := d.adoptState(ctx, state, link.host.extended)
 	if err != nil {

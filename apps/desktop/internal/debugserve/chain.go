@@ -37,7 +37,6 @@ func (s *ChainStore) Write(_ context.Context, chain []byte) error {
 	return nil
 }
 
-// Delete removes the chain.
 func (s *ChainStore) Delete(_ context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

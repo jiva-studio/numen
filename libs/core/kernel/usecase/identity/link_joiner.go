@@ -5,7 +5,6 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-// receiveAsJoinerLocked takes a message of the host.
 func (d Deps) receiveAsJoinerLocked(link *pendingLink, kind byte, body []byte) error {
 	store := d.links
 	switch kind {
@@ -31,8 +30,6 @@ func (d Deps) receiveRefuseLocked(link *pendingLink, body []byte) {
 	d.links.endLocked(link, identitydomain.LinkPhaseFailed, reason)
 }
 
-// receiveGrantLocked checks what the host granted: a chain of the account that lists this device and keys that open with its device key.
-// Nothing is kept until the person confirms the account.
 func (d Deps) receiveGrantLocked(link *pendingLink, body []byte) {
 	if link.phase != identitydomain.LinkPhaseWaitingForAccept {
 		return

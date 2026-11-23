@@ -54,7 +54,6 @@ const QUIET = 4
 const REFRESH_MS = 100
 const FRAME_RATE = 8
 
-/** A camera that films a printed QR code of the text: one fixed frame, painted again so the stream keeps delivering it. */
 const filmCode = (text: string) => (): Promise<MediaStream> => {
   const modules = encode(text, { ecc: 'M', border: 0 })
   const canvas = document.createElement('canvas')

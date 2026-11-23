@@ -40,7 +40,6 @@ func (u *PutLinkInbound) Execute(ctx context.Context, blob []byte) error {
 	return u.deps.receiveAsJoinerLocked(link, plain[0], plain[1:])
 }
 
-// completeHandshakeLocked takes the first blob of the other side: the first message of a scanner, or the reply of a displayer.
 func (d Deps) completeHandshakeLocked(link *pendingLink, blob []byte) {
 	store := d.links
 	switch {

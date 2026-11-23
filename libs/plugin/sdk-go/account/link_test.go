@@ -20,7 +20,7 @@ func TestGetPublicIdentity_ReportsTheEpochTheChainLengthAndThatTheDeviceIsNotRev
 	}
 }
 
-func TestGetLinkWork_SaysNothingToDoWhenNoLinkWasStarted(t *testing.T) {
+func TestGetLinkWork_ReturnsNoWorkWhenNoLinkWasStarted(t *testing.T) {
 	fake := accounttest.NewFake(t, pluginID)
 
 	work, err := newClient(t, fake).GetLinkWork(t.Context(), 0, 0)
@@ -64,7 +64,7 @@ func TestGetLinkWork_ReturnsAtOnceWhenTheVersionDiffers(t *testing.T) {
 	}
 }
 
-func TestPutLinkInbound_RefusesABlobWhenNoLinkIsActive(t *testing.T) {
+func TestLinkInbound_RejectsBlobWhenNoLinkIsActive(t *testing.T) {
 	fake := accounttest.NewFake(t, pluginID)
 
 	err := newClient(t, fake).PutLinkInbound(t.Context(), []byte("blob"))

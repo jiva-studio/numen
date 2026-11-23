@@ -220,7 +220,7 @@ type linked struct {
 	clock        *testsupport.ManualClock
 }
 
-func newLinked(tb testing.TB) linked {
+func newLinkPair(tb testing.TB) linked {
 	tb.Helper()
 	clock := testsupport.NewClockAt(getNow())
 	host, joiner := newLinkDevice("Laptop", clock), newLinkDevice("Phone", clock)

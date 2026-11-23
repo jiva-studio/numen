@@ -199,7 +199,6 @@ func isRevoked(cause error) bool {
 	return ok
 }
 
-// adopt gives the core the chain the server sent with the refusal, so the core marks this device revoked.
 func (u *Keep) adopt(ctx context.Context, cause error) {
 	revoked, ok := errors.AsType[domain.DeviceRevokedError](cause)
 	if ok && u.deps.Chains != nil {

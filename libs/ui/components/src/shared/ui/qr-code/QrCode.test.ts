@@ -7,7 +7,6 @@ import QrCode from './QrCode.vue'
 const TEXT = 'numen://link?v=1&c=AAAAAAAAAAAAAAAAAAAAAA&k=BBBB&s=CCCC'
 const SCALE = 6
 
-/** Rasterizes the squares of the drawn code, as a camera would see them. */
 const readPixels = (wrapper: ReturnType<typeof mount>): { data: Uint8ClampedArray; side: number } => {
   const box = wrapper.get('svg').attributes('viewBox')?.split(' ') ?? []
   const span = Number(box[2])

@@ -21,7 +21,6 @@ const (
 	labelPluginSealAD = "numen/v1/plugin-seal/"
 )
 
-// getKEK returns the key encryption key of an epoch the keys hold.
 func (a AccountKeys) getKEK(epoch uint32) ([32]byte, bool) {
 	if epoch == a.epoch {
 		return a.kek, true

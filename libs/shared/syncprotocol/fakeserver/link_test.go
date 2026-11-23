@@ -195,7 +195,7 @@ func TestPostMessage_TheTwentyFourthMessageClosesTheChannel(t *testing.T) {
 	}
 }
 
-func TestLinkChannel_IsGoneTenMinutesAfterItWasCreated(t *testing.T) {
+func TestLinkChannel_ExpiresTenMinutesAfterCreation(t *testing.T) {
 	t.Parallel()
 	relay, clock := newRelayOn(t)
 	id := newChannel(t, relay)
@@ -212,7 +212,7 @@ func TestLinkChannel_IsGoneTenMinutesAfterItWasCreated(t *testing.T) {
 	}
 }
 
-func TestLinkChannel_AnUnknownIdIsGoneForEveryCallWithNoDetail(t *testing.T) {
+func TestLinkChannel_UnknownIdIsExpiredForEveryCallWithNoDetail(t *testing.T) {
 	t.Parallel()
 	relay, _ := newRelayOn(t)
 	unknown := bytes.Repeat([]byte{7}, 16)

@@ -29,7 +29,7 @@ type Publish struct{ deps Deps }
 // NewPublish returns the use case over the dependencies.
 func NewPublish(deps Deps) *Publish { return &Publish{deps: deps} }
 
-// Execute publishes the pending chain of the core: an accepted chain is told as accepted; where another device appended
+// Execute publishes the pending chain of the core: an accepted chain is reported as accepted; where another device appended
 // first, the core gets the chain the server holds. It returns whether a chain was pending.
 func (u *Publish) Execute(ctx context.Context) (bool, error) {
 	pending, err := u.deps.Core.GetChainPublish(ctx)

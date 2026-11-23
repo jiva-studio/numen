@@ -15,7 +15,6 @@ export interface LinkCalls {
 
 /** The devices of the account, the revoke of one and the link of a new one. */
 export interface DeviceCalls {
-  /** The devices of the account: the active ones, then the revoked ones. */
   readonly devices: Readonly<Ref<readonly DeviceInfo[]>>
   loadDevices(): Promise<void>
   revoke(fingerprint: string): Promise<Result<undefined, string>>

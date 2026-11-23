@@ -68,7 +68,6 @@ func decodeGrant(body []byte) (wrapped, chain []byte, err error) {
 	return body[n : n+int(size)], body[n+int(size):], nil
 }
 
-// encodeRefuse names why the link ends; a wrong code adds the tries that are left.
 func encodeRefuse(reason identitydomain.LinkReason, triesLeft int) []byte {
 	out := []byte{messageRefuse, getReasonCode(reason)}
 	if reason == identitydomain.LinkReasonWrongCode {

@@ -170,7 +170,6 @@ func (c Chain) OpenKeyHistory(current AccountKeys) (AccountKeys, error) {
 	return c.openHistoryFrom(current, c.Epoch())
 }
 
-// openHistoryFrom opens the history below epoch with the keys of that epoch.
 func (c Chain) openHistoryFrom(current AccountKeys, epoch uint32) (AccountKeys, error) {
 	keys := current
 	keys.epoch = epoch
@@ -191,7 +190,6 @@ func (c Chain) openHistoryFrom(current AccountKeys, epoch uint32) (AccountKeys, 
 	return keys, nil
 }
 
-// heldEpoch returns the epoch of the keys wrapped for the device: the epoch it was added in, or the last revoke that wrapped for it.
 func (c Chain) heldEpoch(sign ed25519.PublicKey) uint32 {
 	var epoch, held uint32
 	for _, entry := range c.entries[min(1, len(c.entries)):] {

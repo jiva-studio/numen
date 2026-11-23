@@ -19,8 +19,7 @@ type scanned struct {
 	clock        *testsupport.ManualClock
 }
 
-// newScanned is a host and a new device where the new device shows the QR code and the host scans it.
-func newScanned(tb testing.TB) scanned {
+func newScanPair(tb testing.TB) scanned {
 	tb.Helper()
 	clock := testsupport.NewClockAt(getNow())
 	host, joiner := newLinkDevice("Laptop", clock), newLinkDevice("Phone", clock)
@@ -65,9 +64,9 @@ func TestStartLink_ShowsAQRTextOnceTheChannelIsKnown(t *testing.T) {
 	}
 }
 
-func TestLink_ByTheQRCodeOfTheHostGivesTheNewDeviceTheAccount(t *testing.T) {
+func TestLink_ByQRCodeOfHostSendsAccountToNewDevice(t *testing.T) {
 	t.Parallel()
-	l := newLinked(t)
+	l := newLinkPair(t)
 	hostIdentity, err := l.host.get().Execute(t.Context())
 	if err != nil {
 		t.Fatal(err)
@@ -278,7 +277,7 @@ func TestLink_ADeclinedDeviceDoesNotJoinAndTheChainStaysTheSame(t *testing.T) {
 
 func TestLink_TheHostScansTheQRCodeOfTheNewDeviceAndTheNewDeviceTypesTheCode(t *testing.T) {
 	t.Parallel()
-	s := newScanned(t)
+	s := newScanPair(t)
 	seen := s.host.getLink(t)
 	if seen.Phase != identitydomain.LinkPhaseConfirmPeer || seen.PeerName != "Phone" || !sixDigits.MatchString(seen.Code) {
 		t.Fatalf("host link = %+v, want CONFIRM_PEER with the name Phone and a 6 digit code", seen)
@@ -317,7 +316,7 @@ func TestLink_TheCodeIsNotTheSameForTwoLinks(t *testing.T) {
 	t.Parallel()
 	codes := make(map[string]bool)
 	for range 5 {
-		codes[newScanned(t).host.getLink(t).Code] = true
+		codes[newScanPair(t).host.getLink(t).Code] = true
 	}
 	if len(codes) < 2 {
 		t.Errorf("five links showed %d different codes", len(codes))
@@ -331,9 +330,9 @@ func wrongCode(code string) string {
 	return "0" + code[1:]
 }
 
-func TestEnterLinkCode_AWrongCodeSaysHowManyTriesAreLeft(t *testing.T) {
+func TestEnterLinkCode_WrongCodeReportsRemainingTries(t *testing.T) {
 	t.Parallel()
-	s := newScanned(t)
+	s := newScanPair(t)
 	code := s.host.getLink(t).Code
 	if err := s.host.decide().Execute(t.Context(), true); err != nil {
 		t.Fatal(err)
@@ -354,7 +353,7 @@ func TestEnterLinkCode_AWrongCodeSaysHowManyTriesAreLeft(t *testing.T) {
 
 func TestEnterLinkCode_ThreeWrongCodesCloseTheLinkEvenForTheRightCode(t *testing.T) {
 	t.Parallel()
-	s := newScanned(t)
+	s := newScanPair(t)
 	code := s.host.getLink(t).Code
 	if err := s.host.decide().Execute(t.Context(), true); err != nil {
 		t.Fatal(err)
@@ -425,7 +424,7 @@ func TestStartLink_RefusesASecondLinkAndATextThatIsNotAQRCode(t *testing.T) {
 
 func TestCancelLink_EndsTheLinkOnBothDevices(t *testing.T) {
 	t.Parallel()
-	s := newScanned(t)
+	s := newScanPair(t)
 	if err := s.host.cancel().Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
@@ -464,7 +463,7 @@ func TestGetLink_ALinkEndsTenMinutesAfterItStarted(t *testing.T) {
 	}
 }
 
-func TestGetLinkWork_SaysNothingToDoWhenNoLinkIsActive(t *testing.T) {
+func TestGetLinkWork_ReturnsNoWorkWhenNoLinkIsActive(t *testing.T) {
 	t.Parallel()
 	host := newLinkDevice("Laptop", testsupport.NewClockAt(getNow()))
 	host.createAccount(t)

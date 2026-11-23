@@ -117,7 +117,6 @@ type connected struct {
 	link   vaultlink.Link
 }
 
-// store writes the keys the catalog lists into the link when they reach a later epoch than the ones the link holds, so the notes of the new epoch open and the next commit uses the new key.
 func (u *RotateVaultKeys) store(ctx context.Context, target *connected, keys []vaultlink.VaultKey) error {
 	known := uint32(0)
 	if len(target.link.LaterKeys) > 0 {
@@ -151,7 +150,6 @@ func (u *RotateVaultKeys) openBody(ctx context.Context, entry *syncv1.CatalogEnt
 	return vaultlink.ParseCatalogBody(plain)
 }
 
-// append adds the entry that carries every earlier key of the vault and a new one for the epoch. It returns the keys of the entry when the server committed it, none when it did not.
 func (u *RotateVaultKeys) append(ctx context.Context, entries []*syncv1.CatalogEntry, last *syncv1.CatalogEntry, body vaultlink.CatalogBody, own session.Identity) ([]vaultlink.VaultKey, error) {
 	fresh := make([]byte, keySize)
 	if _, err := io.ReadFull(u.deps.Random, fresh); err != nil {

@@ -29,7 +29,6 @@ type AccountUseCases struct {
 	Revoke      *identity.RevokeDevice
 }
 
-// StartLink starts a link of this device.
 func (h *Handler) StartLink(
 	ctx context.Context,
 	r *connect.Request[v1.StartLinkRequest],
@@ -45,7 +44,6 @@ func (h *Handler) StartLink(
 	return connect.NewResponse(&v1.StartLinkResponse{Link: writeLink(link)}), nil
 }
 
-// GetLink returns the link in progress.
 func (h *Handler) GetLink(
 	ctx context.Context,
 	_ *connect.Request[v1.GetLinkRequest],
@@ -106,7 +104,6 @@ func (h *Handler) RevokeDevice(
 	return connect.NewResponse(&v1.RevokeDeviceResponse{Error: code, Detail: detail}), err
 }
 
-// ListDevices lists the devices of the account.
 func (h *Handler) ListDevices(
 	ctx context.Context,
 	_ *connect.Request[v1.ListDevicesRequest],
@@ -132,7 +129,6 @@ func (h *Handler) ListDevices(
 	return connect.NewResponse(&v1.ListDevicesResponse{Devices: listed}), nil
 }
 
-// serveLinkCall turns the failure of a call that returns nothing into the code the window reads; a failure with no code is an internal error.
 func serveLinkCall(err error) (v1.IdentityErrorCode, string, error) {
 	if err == nil {
 		return v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED, "", nil

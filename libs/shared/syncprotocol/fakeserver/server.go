@@ -286,8 +286,6 @@ func isDeviceOf(chain identity.Chain, deviceSignKey []byte) bool {
 	return slices.ContainsFunc(chain.ListDevices(), func(d identity.Device) bool { return bytes.Equal(d.Public.Sign, deviceSignKey) })
 }
 
-// mergeChain keeps the longer of the presented chain and the stored one when one extends the other, and ends the sessions of the
-// devices a longer presented chain revokes. It returns the chain the server holds then.
 func (s *Server) mergeChain(chain identity.Chain) (identity.Chain, bool) {
 	account := chain.Root().Fingerprint().String()
 	stored, known := s.chains[account]

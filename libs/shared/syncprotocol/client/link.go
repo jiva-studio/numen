@@ -106,7 +106,6 @@ func writeLinkSide(side LinkSide) syncv1.LinkSide {
 	return syncv1.LinkSide_LINK_SIDE_UNSPECIFIED
 }
 
-// readLinkError maps the refusals of the relay to the errors of the protocol, keeping the Connect error.
 func readLinkError(err error) error {
 	failure, ok := errors.AsType[*connect.Error](err)
 	if !ok {

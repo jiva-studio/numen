@@ -68,12 +68,11 @@ type Config struct {
 type Resources struct {
 	PluginCatalog catalog.Config
 	KeyStore      pluginport.KeyStore
-	// ChainStore keeps the device chain next to the key store; an installation with a key store and no chain store has no identity.
-	ChainStore   identity.ChainStore
-	ErrorHandler window.ErrorHandler
-	Now          installationClock
-	Chunks       *note.ChunkTokens
-	TextReaders  textport.Readers
+	ChainStore    identity.ChainStore
+	ErrorHandler  window.ErrorHandler
+	Now           installationClock
+	Chunks        *note.ChunkTokens
+	TextReaders   textport.Readers
 
 	vaultLocks      *vaultwriter.Locks
 	watches         *vaultwatch.Hub

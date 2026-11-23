@@ -9,7 +9,6 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-// readState joins the record of the key store to the chain file. A device with no record is ErrNoIdentity; a record with no chain file is ErrNoChain.
 func (d Deps) readState(ctx context.Context) (identitylib.State, error) {
 	record, err := readExistingRecord(ctx, d)
 	if err != nil {
@@ -38,7 +37,6 @@ func (d Deps) readChain(ctx context.Context) (identitylib.Chain, error) {
 	return chain, nil
 }
 
-// writeChain keeps the chain file.
 func (d Deps) writeChain(ctx context.Context, chain identitylib.Chain) error {
 	if err := d.chains.Write(ctx, chain.Bytes()); err != nil {
 		return fmt.Errorf("%w: keep the chain: %w", identitydomain.ErrKeyStore, err)
@@ -46,7 +44,6 @@ func (d Deps) writeChain(ctx context.Context, chain identitylib.Chain) error {
 	return nil
 }
 
-// writeRecord keeps the record in the key store.
 func (d Deps) writeRecord(ctx context.Context, record identitylib.Record) error {
 	if err := d.keys.SetKey(ctx, keyName, encodeRecord(record)); err != nil {
 		return fmt.Errorf("%w: keep the identity: %w", identitydomain.ErrKeyStore, err)
@@ -54,7 +51,6 @@ func (d Deps) writeRecord(ctx context.Context, record identitylib.Record) error 
 	return nil
 }
 
-// writeNewState keeps the chain, then the record, so a record is never without its chain.
 func (d Deps) writeNewState(ctx context.Context, record identitylib.Record, chain identitylib.Chain) error {
 	if err := d.writeChain(ctx, chain); err != nil {
 		return err
@@ -62,7 +58,6 @@ func (d Deps) writeNewState(ctx context.Context, record identitylib.Record, chai
 	return d.writeRecord(ctx, record)
 }
 
-// writeAdoptedState keeps the record, then the chain, so a stop between the two leaves the keys of the new epoch under the old chain, which the next adopt completes.
 func (d Deps) writeAdoptedState(ctx context.Context, state identitylib.State) error {
 	if err := d.writeRecord(ctx, state.Record); err != nil {
 		return err

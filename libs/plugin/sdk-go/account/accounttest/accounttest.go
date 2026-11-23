@@ -220,7 +220,6 @@ type held struct {
 	keys  identity.AccountKeys
 }
 
-// isRevoked reports whether the chain of the record lists the device as revoked.
 func isRevoked(record held) bool {
 	return slices.ContainsFunc(record.Chain.ListRevokedDevices(), func(device identity.Device) bool {
 		return bytes.Equal(device.Public.Sign, record.Device.SignerKey())

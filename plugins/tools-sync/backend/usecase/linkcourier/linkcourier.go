@@ -47,7 +47,7 @@ type channelState struct {
 }
 
 // Execute carries work until ctx ends. The core holds every key and decides when the link ends; the courier posts what
-// the core hands over, passes what the other side posts, and closes the channel when the core says the link ended.
+// the core passes on, passes what the other side posts, and closes the channel when the core says the link ended.
 func (u *Courier) Execute(ctx context.Context) error {
 	var (
 		since   uint64
@@ -83,7 +83,6 @@ func stopWaits(current *channelState) {
 	}
 }
 
-// carry does what one answer of the core asks. It returns whether the answer was carried out whole, so the core may drop its blobs.
 func (u *Courier) carry(ctx context.Context, work account.LinkWork, created *[]byte, current *channelState) bool {
 	if work.WantsChannel && len(work.ChannelID) == 0 {
 		return u.makeChannel(ctx, created)
@@ -161,7 +160,6 @@ func (u *Courier) close(ctx context.Context, current *channelState) bool {
 	return true
 }
 
-// startWaits reads the messages of the other side in the background and hands each to the core, until the channel ends.
 func (u *Courier) startWaits(ctx context.Context, current *channelState) {
 	if current.stopWaits != nil || current.isClosed {
 		return

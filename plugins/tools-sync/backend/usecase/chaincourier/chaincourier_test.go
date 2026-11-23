@@ -31,7 +31,7 @@ func parseWords(t *testing.T, words []string) identity.RecoveryKey {
 	return root
 }
 
-func TestPublish_DoesNothingWhenTheCoreHoldsNoPendingChain(t *testing.T) {
+func TestPublish_DoesNothingWhenCoreHasNoPendingChain(t *testing.T) {
 	t.Parallel()
 	c, _ := newComputer(t)
 
@@ -42,7 +42,7 @@ func TestPublish_DoesNothingWhenTheCoreHoldsNoPendingChain(t *testing.T) {
 	}
 }
 
-func TestAdopt_GivesTheCoreTheLongerChainOfTheServer(t *testing.T) {
+func TestAdopt_PassesLongerServerChainToCore(t *testing.T) {
 	t.Parallel()
 	c, words := newComputer(t)
 	own, err := identity.ParseChain(c.Fake.Public().Chain)

@@ -227,7 +227,7 @@ func (v linkVector) seal(tb testing.TB, key []byte, n uint64, plain string) []by
 	return aead.Seal(counter, nonce, []byte(plain), associated)
 }
 
-func TestLinkHandshake_FollowsTheFrozenKeySchedule(t *testing.T) {
+func TestLinkKeyExchange_MatchesPinnedKeySchedule(t *testing.T) {
 	t.Parallel()
 	_, payload, err := identity.NewLinkDisplayer(fixedBytes(1, 64), linkChannelID(), "")
 	if err != nil {

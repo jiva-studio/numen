@@ -79,7 +79,7 @@ func TestExecute_RotatesOncePerEpoch(t *testing.T) {
 	}
 }
 
-func TestExecute_ASecondDeviceRotatesOnceAndTheFirstTakesItsKeyInsteadOfMakingAnother(t *testing.T) {
+func TestExecute_SecondDeviceRotatesOnceAndFirstAdoptsItsKey(t *testing.T) {
 	t.Parallel()
 	clock := synctest.NewClock(synctest.GetStart())
 	server := synctest.NewServer(t, clock, fakeserver.Config{})

@@ -148,7 +148,7 @@ func newRevokeSetup(t *testing.T) *revokeSetup {
 	return &revokeSetup{chains: chains, client: client, root: root, phone: phone, account: withPhone, clock: clock}
 }
 
-func (s *revokeSetup) getPending(t *testing.T) *v1.GetChainPublishResponse {
+func (s *revokeSetup) getPendingChain(t *testing.T) *v1.GetChainPublishResponse {
 	t.Helper()
 	answer, err := s.client.GetChainPublish(t.Context(), connect.NewRequest(&v1.GetChainPublishRequest{}))
 	if err != nil {
@@ -187,7 +187,7 @@ func (s *revokeSetup) addDevice(t *testing.T, by identitylib.Signer) []byte {
 
 func TestAPluginPublishesTheChainOfARevokeAndTheCoreKeepsItOnceTheServerAcceptedIt(t *testing.T) {
 	s := newRevokeSetup(t)
-	pending := s.getPending(t)
+	pending := s.getPendingChain(t)
 	if !pending.GetIsPending() || s.readChain(t, pending.GetChain()).IsActiveDevice(s.phone.Public().Sign) {
 		t.Fatalf("pending = %v, want a chain that revokes the phone", pending)
 	}
@@ -201,7 +201,7 @@ func TestAPluginPublishesTheChainOfARevokeAndTheCoreKeepsItOnceTheServerAccepted
 	}
 
 	stored, _ = s.chains.Read(t.Context())
-	if s.readChain(t, stored).IsActiveDevice(s.phone.Public().Sign) || s.getPending(t).GetIsPending() {
+	if s.readChain(t, stored).IsActiveDevice(s.phone.Public().Sign) || s.getPendingChain(t).GetIsPending() {
 		t.Error("after the answer the phone is still active or the chain is still pending")
 	}
 }
@@ -214,7 +214,7 @@ func TestAStaleRevokeIsBuiltAgainOnTheChainOfTheServerWhenAnotherDeviceAddedADev
 		t.Fatalf("PutChainPublished(stale) = %v", err)
 	}
 
-	pending := s.getPending(t)
+	pending := s.getPendingChain(t)
 	rebuilt := s.readChain(t, pending.GetChain())
 	if !pending.GetIsPending() || rebuilt.Len() <= s.readChain(t, head).Len() || rebuilt.IsActiveDevice(s.phone.Public().Sign) {
 		t.Errorf("pending = %v, want the chain of the server with the revoke of the phone on it", pending)
@@ -232,7 +232,7 @@ func TestARevokeIsEndedWithoutAnErrorWhenTheRevokedDeviceAddedADeviceMeanwhile(t
 		t.Fatalf("PutChainPublished(raced) = %v, want an answer that is not a failure", err)
 	}
 
-	if s.getPending(t).GetIsPending() {
+	if s.getPendingChain(t).GetIsPending() {
 		t.Error("the aborted revoke is still pending")
 	}
 	stored, _ := s.chains.Read(t.Context())

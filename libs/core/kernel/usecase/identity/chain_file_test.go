@@ -53,7 +53,7 @@ func TestDeleteIdentity_RemovesTheRecordAndTheChainFile(t *testing.T) {
 
 func TestGetPublicIdentity_ReportsTheEpochTheChainLengthAndThatItIsNotRevoked(t *testing.T) {
 	t.Parallel()
-	l := newLinked(t)
+	l := newLinkPair(t)
 	public, err := l.host.public().Execute(t.Context())
 	if err != nil || public.KeyEpoch != 0 || public.ChainLength != l.host.readChain(t).Len() || public.IsRevoked {
 		t.Errorf("public identity = %+v, %v", public, err)

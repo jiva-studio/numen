@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/rotatevaultkeys"
 )
 
-// advanceEpoch makes the first computer revoke a device, tells the server and gives its vault the key of the new epoch.
 func advanceEpoch(t *testing.T, c *synctest.Computer) {
 	t.Helper()
 	if err := c.Fake.AdvanceEpoch(); err != nil {
@@ -34,7 +33,7 @@ func readKeys(t *testing.T, c *synctest.Computer, link vaultlink.Link) []vaultli
 	return keys
 }
 
-func TestSyncVault_ANoteWrittenAfterANewEpochIsCommittedUnderTheKeyOfTheEpoch(t *testing.T) {
+func TestSyncVault_NoteAddedAfterNewEpochIsCommittedWithKeyOfEpoch(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.a.WriteNote(source, "Eggs.md", "eggs")
 	sync(t, p.a, source)

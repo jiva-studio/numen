@@ -103,7 +103,6 @@ export class ComputerDriver {
     return computer === 'first' ? this.firstVaults : this.requireSecond().vaults
   }
 
-  /** Starts the second application over a vault of its own, once, with no identity. */
   private async ensureSecond(): Promise<SecondComputer> {
     if (this.second !== undefined) return this.second
     const scenario = new Scenario(this.first.page, this.viewport)

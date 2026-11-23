@@ -62,7 +62,7 @@ func TestNewState_ReportsARevokedDeviceAsRevoked(t *testing.T) {
 	}
 }
 
-func TestAdopt_TakesTheNewKeysOfALongerChain(t *testing.T) {
+func TestAdopt_AdoptsNewKeysOfLongerChain(t *testing.T) {
 	t.Parallel()
 	m := newTeam(t)
 	state, err := identity.NewState(m.firstRecord(t), m.chain)

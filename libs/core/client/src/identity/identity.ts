@@ -23,9 +23,7 @@ export interface IdentityInfo {
   readonly deviceFingerprint: string
   readonly deviceName: string
   readonly deviceAddedAt: string
-  /** True when the account revoked this device. */
   readonly isRevoked: boolean
-  /** The epoch of the account keys of this device, 0 until a device is revoked. */
   readonly keyEpoch: number
 }
 
@@ -85,19 +83,15 @@ export interface LinkInfo {
   readonly phase: LinkPhase
   readonly mode: LinkMode
   readonly role: LinkRole
-  /** The text of the QR code, set on the device that shows it. */
   readonly qrText: string
-  /** The confirmation code, set on the host that reads the QR code of a new device. */
   readonly code: string
   readonly peerName: string
   readonly peerFingerprint: string
   readonly accountFingerprint: string
   readonly triesLeft: number
   readonly reason: LinkReason | undefined
-  /** The name and the fingerprint of this device. */
   readonly deviceName: string
   readonly deviceFingerprint: string
-  /** True once the person approved the new device and the host waits for the code. */
   readonly isApproved: boolean
 }
 

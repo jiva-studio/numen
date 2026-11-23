@@ -54,7 +54,7 @@ func TestAServerEndsTheSessionOfARevokedDeviceAndRefusesItsSignIn(t *testing.T) 
 	}
 }
 
-func TestKeep_ARevokedDeviceRaisesTheItemAndGivesTheCoreTheChainOfTheServer(t *testing.T) {
+func TestKeep_RevokedDeviceRaisesItemAndPassesServerChainToCore(t *testing.T) {
 	p := newRevokedPair(t)
 	keep := session.NewKeep(session.Deps{
 		Identity: p.second.Account, Server: p.second.Sessions, Health: p.second.NewHealth(), Clock: p.second.Clock, Chains: p.second.Client,
