@@ -265,8 +265,7 @@ describe('the identity store restoring from words', () => {
     const { store } = createStore(
       createClient({
         get: () => Promise.resolve(createSampleIdentity()),
-        startRestore: () =>
-          Promise.resolve(asFailure({ error: 'identityExists', message: '' })),
+        startRestore: () => Promise.resolve(asFailure({ error: 'identityExists', message: '' })),
       }),
     )
     await store.load()

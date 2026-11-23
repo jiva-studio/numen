@@ -82,9 +82,7 @@ const readStartAnswer = (answer: {
   detail: string
 }): Result<undefined, IdentityFailure> => {
   const error = readErrorCode(answer.error)
-  return error === undefined
-    ? asValue(undefined)
-    : asFailure({ error, message: answer.detail })
+  return error === undefined ? asValue(undefined) : asFailure({ error, message: answer.detail })
 }
 
 /** The identity managed through an IdentityService client. */
