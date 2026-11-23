@@ -191,6 +191,8 @@ func readError(err error) error {
 		return ErrNoPendingRestore
 	case invalidChainReason:
 		return ErrInvalidChain
+	case syncUnavailableReason:
+		return ErrSyncUnavailable
 	}
 	return err
 }
@@ -224,6 +226,17 @@ type Entitlement struct {
 // GetEntitlements returns the products the account of this device owns right now, ordered by product, as the sync server of the account tells it.
 // The host asks the server with the identity of this device; the plugin names no server and holds no session. It returns ErrNoIdentity where the device
 // holds no identity and ErrSyncUnavailable where the server cannot be reached.
-func (c *Client) GetEntitlements(_ context.Context) ([]Entitlement, error) {
-	return nil, errors.New("not implemented")
+func (c *Client) GetEntitlements(ctx context.Context) ([]Entitlement, error) {
+	response, err := c.rpc.GetEntitlements(ctx, connect.NewRequest(&v1.GetEntitlementsRequest{}))
+	if err != nil {
+		return nil, readError(err)
+	}
+	entitlements := make([]Entitlement, 0, len(response.Msg.GetEntitlements()))
+	for _, one := range response.Msg.GetEntitlements() {
+		entitlements = append(entitlements, Entitlement{
+			Product: one.GetProduct(), ValidUntil: time.Unix(one.GetValidUntil(), 0), Phase: one.GetPhase(),
+			QuotaBytes: one.GetQuotaBytes(), IsTrial: one.GetIsTrial(),
+		})
+	}
+	return entitlements, nil
 }

@@ -22,6 +22,7 @@ const (
 	noPendingRestoreReason = "NO_PENDING_RESTORE"
 	invalidChainReason     = "INVALID_CHAIN"
 	identityExistsReason   = "IDENTITY_EXISTS"
+	syncUnavailableReason  = "SYNC_UNAVAILABLE"
 )
 
 var (
@@ -95,6 +96,7 @@ func getAccountRefusals() []accountRefusal {
 		{identitydomain.ErrNoPendingRestore, connect.CodeFailedPrecondition, noPendingRestoreReason},
 		{identitydomain.ErrInvalidChain, connect.CodeInvalidArgument, invalidChainReason},
 		{identitydomain.ErrIdentityExists, connect.CodeFailedPrecondition, identityExistsReason},
+		{identitydomain.ErrSyncUnavailable, connect.CodeUnavailable, syncUnavailableReason},
 	}
 }
 
@@ -109,4 +111,27 @@ func getAccountError(err error) error {
 		}
 	}
 	return connect.NewError(connect.CodeInternal, errAccountFailure)
+}
+
+func (e *accountEndpoint) GetEntitlements(
+	ctx context.Context, req *connect.Request[v1.GetEntitlementsRequest],
+) (*connect.Response[v1.GetEntitlementsResponse], error) {
+	if _, err := e.endpoint.Authorize(req.Header().Get("Authorization"), manifest.PermissionIdentity); err != nil {
+		return nil, err
+	}
+	source := e.endpoint.callers.Entitlements
+	if source == nil {
+		return nil, connect.NewError(connect.CodeUnavailable, errNoAccount)
+	}
+	rows, err := source.GetEntitlements(ctx)
+	if err != nil {
+		return nil, getAccountError(err)
+	}
+	entitlements := make([]*v1.HostEntitlement, 0, len(rows))
+	for _, row := range rows {
+		entitlements = append(entitlements, &v1.HostEntitlement{
+			Product: row.Product, ValidUntil: row.ValidUntil.Unix(), Phase: row.Phase, QuotaBytes: row.QuotaBytes, IsTrial: row.IsTrial,
+		})
+	}
+	return connect.NewResponse(&v1.GetEntitlementsResponse{Entitlements: entitlements}), nil
 }
