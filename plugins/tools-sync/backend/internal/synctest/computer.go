@@ -203,7 +203,7 @@ func (c *Computer) JoinDeps() join.Deps {
 func (c *Computer) SyncDeps() syncvault.Deps {
 	return syncvault.Deps{
 		Catalog: c.Cloud, Chain: c.Cloud, Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Identity: c.Account,
-		Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader,
+		Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock, Random: rand.Reader, Subscriptions: c.Cloud,
 	}
 }
 
@@ -225,6 +225,7 @@ func NewPendingComputer(t *testing.T, server *Server, clock *Clock, vault string
 func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID) syncvault.RunDeps {
 	return syncvault.RunDeps{
 		Pass: syncvault.NewSyncVault(c.SyncDeps()), Host: c.Host, State: c.State, Health: c.NewHealth(), Clock: c.Clock,
-		Interval: func() time.Duration { return interval }, Changed: changed,
+		Subscriptions: c.Cloud,
+		Interval:      func() time.Duration { return interval }, Changed: changed,
 	}
 }

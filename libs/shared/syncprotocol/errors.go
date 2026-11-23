@@ -20,6 +20,10 @@ var (
 	ErrNoVault = errors.New("the sync server has no such vault")
 	// ErrVaultExists means the account has a vault with this id already.
 	ErrVaultExists = errors.New("the vault exists on the sync server")
+	// ErrAlreadySubscribed means the account has an active subscription, so there is nothing to buy.
+	ErrAlreadySubscribed = errors.New("the account has an active subscription")
+	// ErrBillingUnavailable means the sync server does not sell subscriptions.
+	ErrBillingUnavailable = errors.New("the sync server does not sell subscriptions")
 )
 
 // QuotaExceededError means the account has no room for the bytes asked for.

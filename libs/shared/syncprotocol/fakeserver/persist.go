@@ -12,11 +12,12 @@ import (
 )
 
 type snapshot struct {
-	Chains   map[string][]byte        `json:"chains"`
-	Catalogs map[string][][]byte      `json:"catalogs"`
-	Vaults   map[string]vaultSnapshot `json:"vaults"`
-	Blobs    map[string]blobSnapshot  `json:"blobs"`
-	Used     map[string]uint64        `json:"used"`
+	Chains        map[string][]byte        `json:"chains"`
+	Catalogs      map[string][][]byte      `json:"catalogs"`
+	Vaults        map[string]vaultSnapshot `json:"vaults"`
+	Blobs         map[string]blobSnapshot  `json:"blobs"`
+	Used          map[string]uint64        `json:"used"`
+	Subscriptions map[string]time.Time     `json:"subscriptions"`
 }
 
 type vaultSnapshot struct {
@@ -36,14 +37,14 @@ type blobSnapshot struct {
 	IsUploaded bool      `json:"isUploaded"`
 }
 
-// Snapshot returns the accounts, catalogs, vaults and blobs of the server as bytes that Restore reads, so a test
-// process can stop and run again over the same data. Sessions and challenges are not part of it.
+// Snapshot returns the accounts, catalogs, vaults, blobs and subscriptions of the server as bytes that Restore
+// reads, so a test process can stop and run again over the same data. Sessions and challenges are not part of it.
 func (s *Server) Snapshot() ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	out := snapshot{
 		Chains: map[string][]byte{}, Catalogs: map[string][][]byte{}, Vaults: map[string]vaultSnapshot{},
-		Blobs: map[string]blobSnapshot{}, Used: s.used,
+		Blobs: map[string]blobSnapshot{}, Used: s.used, Subscriptions: s.subscriptions,
 	}
 	for account, chain := range s.chains {
 		out.Chains[account] = chain.Bytes()
@@ -85,7 +86,7 @@ func snapshotVault(vault *vaultState) (vaultSnapshot, error) {
 	return kept, nil
 }
 
-// Restore replaces the accounts, catalogs, vaults and blobs of the server with what Snapshot returned.
+// Restore replaces the accounts, catalogs, vaults, blobs and subscriptions of the server with what Snapshot returned.
 func (s *Server) Restore(raw []byte) error {
 	var in snapshot
 	if err := json.Unmarshal(raw, &in); err != nil {
@@ -108,6 +109,10 @@ func (s *Server) Restore(raw []byte) error {
 	s.chains, s.catalogs, s.vaults, s.blobs, s.used = chains, catalogs, vaults, restoreBlobs(in.Blobs), in.Used
 	if s.used == nil {
 		s.used = map[string]uint64{}
+	}
+	s.subscriptions = in.Subscriptions
+	if s.subscriptions == nil {
+		s.subscriptions = map[string]time.Time{}
 	}
 	return nil
 }

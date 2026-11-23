@@ -20,6 +20,9 @@ func (s *Server) AppendCatalogEntry(_ context.Context, req *connect.Request[sync
 	entry := req.Msg.GetEntry()
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.checkWriteAllowed(account); err != nil {
+		return nil, err
+	}
 	if err := s.checkEntry(account, entry); err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}

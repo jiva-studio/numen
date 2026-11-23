@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 )
 
 // ErrNotConnected means the vault has no synced vault to sync with.
@@ -35,17 +36,18 @@ type Blobs interface {
 
 // Deps are what a pass needs.
 type Deps struct {
-	Catalog   ports.Catalog
-	Chain     ports.Chain
-	Revisions ports.Revisions
-	Blobs     Blobs
-	Crypto    ports.Crypto
-	Identity  ports.Identity
-	Host      ports.Host
-	State     State
-	Health    ports.Health
-	Clock     ports.Clock
-	Random    io.Reader
+	Catalog       ports.Catalog
+	Chain         ports.Chain
+	Revisions     ports.Revisions
+	Blobs         Blobs
+	Crypto        ports.Crypto
+	Identity      ports.Identity
+	Host          ports.Host
+	State         State
+	Health        ports.Health
+	Clock         ports.Clock
+	Random        io.Reader
+	Subscriptions ports.Subscriptions
 }
 
 // SyncVault runs one pass over one vault.
@@ -71,7 +73,7 @@ func NewSyncVault(deps Deps) *SyncVault {
 		}),
 		scan:    localchanges.NewScanLocalChanges(localchanges.Deps{Host: deps.Host, State: deps.State, Clock: deps.Clock}),
 		commit:  commit.NewCommitRevisions(commit.Deps{Revisions: deps.Revisions, Blobs: deps.Blobs, Identity: deps.Identity, Random: deps.Random}),
-		reports: reporter{health: deps.Health},
+		reports: reporter{health: deps.Health, subscription: subscription.NewReadSubscription(subscription.Deps{Subscriptions: deps.Subscriptions})},
 	}
 }
 

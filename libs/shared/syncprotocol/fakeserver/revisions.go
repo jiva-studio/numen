@@ -34,6 +34,9 @@ func (s *Server) CommitRevisions(_ context.Context, req *connect.Request[syncv1.
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.checkWriteAllowed(account); err != nil {
+		return nil, err
+	}
 	b, err := s.newBatch(account, req.Msg)
 	if err != nil {
 		return nil, err

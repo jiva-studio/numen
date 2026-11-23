@@ -30,13 +30,18 @@ const (
 
 // Config sets what the server answers: the protocol version (zero is syncprotocol.Version), the address it
 // tells itself by, the clock of its challenges and sessions (nil reads the clock of the machine), how long a
-// session lives (zero is an hour) and the bytes an account may store (zero is 10 GiB).
+// session lives (zero is an hour), the bytes an account may store (zero is 10 GiB) and whether an account needs a
+// subscription to write.
 type Config struct {
 	Protocol   uint32
 	Audience   string
 	Now        func() time.Time
 	SessionTTL time.Duration
 	QuotaBytes uint64
+
+	// NeedsSubscription makes a new account have no subscription, so it may not write until it pays. False makes
+	// every account active, and nothing is refused.
+	NeedsSubscription bool
 }
 
 // Session is a session the server issued and has not ended.
@@ -56,34 +61,40 @@ type challenge struct {
 // Server serves the sign-in, account, catalog, revision and blob services from memory, the presigned blob
 // URLs at /blobs/, and the admin paths /admin/sessions (GET lists, POST /admin/sessions/end ends every
 // session, or the ones of the device in the query deviceSignKey, a hex string) and /admin/blobs (GET returns
-// the id and the body of every stored blob, raw). Every account may write.
+// the id and the body of every stored blob, raw). The subscription service has the pay page at /pay/ and the admin
+// path /admin/subscription (POST, phase=none|active|grace|read_only|deleted and an optional account). An account
+// may write when its subscription allows it, and every account does unless the config sets NeedsSubscription.
 type Server struct {
 	syncv1connect.UnimplementedSignInServiceHandler
 
-	protocol uint32
-	now      func() time.Time
-	ttl      time.Duration
-	quota    uint64
-	handler  http.Handler
+	protocol          uint32
+	now               func() time.Time
+	ttl               time.Duration
+	quota             uint64
+	needsSubscription bool
+	handler           http.Handler
 
-	mu         sync.Mutex
-	audience   string
-	challenges map[string]challenge
-	chains     map[string]identity.Chain
-	sessions   []Session
-	catalogs   map[string][]*syncv1.CatalogEntry
-	vaults     map[string]*vaultState
-	blobs      map[string]*blobRow
-	used       map[string]uint64
-	calls      map[string]int
+	mu            sync.Mutex
+	audience      string
+	challenges    map[string]challenge
+	chains        map[string]identity.Chain
+	sessions      []Session
+	catalogs      map[string][]*syncv1.CatalogEntry
+	vaults        map[string]*vaultState
+	blobs         map[string]*blobRow
+	used          map[string]uint64
+	calls         map[string]int
+	subscriptions map[string]time.Time
+	checkouts     map[string]string
 }
 
 // New returns the server for the config.
 func New(cfg Config) *Server {
 	s := &Server{
-		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, quota: cfg.QuotaBytes, audience: cfg.Audience,
+		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, quota: cfg.QuotaBytes, audience: cfg.Audience, needsSubscription: cfg.NeedsSubscription,
 		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
+		subscriptions: map[string]time.Time{}, checkouts: map[string]string{},
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -109,6 +120,9 @@ func (s *Server) newMux() http.Handler {
 	mux.Handle(syncv1connect.NewCatalogServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewRevisionServiceHandler(s, options))
 	mux.Handle(syncv1connect.NewBlobServiceHandler(s, options))
+	mux.Handle(syncv1connect.NewSubscriptionServiceHandler(s, options))
+	mux.HandleFunc(payFolder, s.servePay)
+	mux.HandleFunc("/admin/subscription", s.serveSubscription)
 	mux.HandleFunc("/blobs/", s.serveBlob)
 	mux.HandleFunc("/admin/sessions", s.serveSessions)
 	mux.HandleFunc("/admin/sessions/end", s.serveEnd)

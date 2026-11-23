@@ -1,4 +1,4 @@
-// Package cloud is the catalog, the revisions, the blobs and the chain of the account on the sync server,
+// Package cloud is the catalog, the revisions, the blobs, the chain and the subscription of the account on the sync server,
 // reached through the protocol library. A call the server refuses for want of a session signs in again once.
 package cloud
 
@@ -21,23 +21,25 @@ type Config struct {
 
 // Cloud is the sync server at an address.
 type Cloud struct {
-	http      *http.Client
-	refresh   func(ctx context.Context) error
-	catalog   *syncprotocol.CatalogClient
-	revisions *syncprotocol.RevisionClient
-	blobs     *syncprotocol.BlobClient
-	account   *syncprotocol.AccountClient
+	http         *http.Client
+	refresh      func(ctx context.Context) error
+	catalog      *syncprotocol.CatalogClient
+	revisions    *syncprotocol.RevisionClient
+	blobs        *syncprotocol.BlobClient
+	account      *syncprotocol.AccountClient
+	subscription *syncprotocol.SubscriptionClient
 }
 
 // New returns the server of the config.
 func New(cfg Config) *Cloud {
 	return &Cloud{
-		http:      cfg.HTTP,
-		refresh:   cfg.Refresh,
-		catalog:   syncprotocol.NewCatalogClient(cfg.Address, cfg.HTTP, cfg.Token),
-		revisions: syncprotocol.NewRevisionClient(cfg.Address, cfg.HTTP, cfg.Token),
-		blobs:     syncprotocol.NewBlobClient(cfg.Address, cfg.HTTP, cfg.Token),
-		account:   syncprotocol.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
+		http:         cfg.HTTP,
+		refresh:      cfg.Refresh,
+		catalog:      syncprotocol.NewCatalogClient(cfg.Address, cfg.HTTP, cfg.Token),
+		revisions:    syncprotocol.NewRevisionClient(cfg.Address, cfg.HTTP, cfg.Token),
+		blobs:        syncprotocol.NewBlobClient(cfg.Address, cfg.HTTP, cfg.Token),
+		account:      syncprotocol.NewAccountClient(cfg.Address, cfg.HTTP, cfg.Token),
+		subscription: syncprotocol.NewSubscriptionClient(cfg.Address, cfg.HTTP, cfg.Token),
 	}
 }
 
@@ -96,4 +98,14 @@ func (c *Cloud) PutBlob(ctx context.Context, url string, body []byte) error {
 
 func (c *Cloud) GetBlob(ctx context.Context, url string) ([]byte, error) {
 	return syncprotocol.GetBlob(ctx, c.http, url)
+}
+
+// GetSubscription returns the subscription of the account.
+func (c *Cloud) GetSubscription(ctx context.Context) (syncprotocol.Subscription, error) {
+	return call(ctx, c, func() (syncprotocol.Subscription, error) { return c.subscription.GetSubscription(ctx) })
+}
+
+// CreateCheckout returns the address of a payment page.
+func (c *Cloud) CreateCheckout(ctx context.Context) (string, error) {
+	return call(ctx, c, func() (string, error) { return c.subscription.CreateCheckout(ctx) })
 }

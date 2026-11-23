@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package numen.sync.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1;syncv1";
+
+// SubscriptionService tells the subscription of the account of the session and starts a payment.
+service SubscriptionService {
+  // GetSubscription returns the phase of the subscription of the account of the session and its times.
+  rpc GetSubscription(GetSubscriptionRequest) returns (GetSubscriptionResponse);
+
+  // CreateCheckout returns the address of a payment page for the account of the session. It is ALREADY_EXISTS
+  // while the subscription is ACTIVE.
+  rpc CreateCheckout(CreateCheckoutRequest) returns (CreateCheckoutResponse);
+}
+
+enum SubscriptionPhase {
+  SUBSCRIPTION_PHASE_UNSPECIFIED = 0;
+  // NONE: the account never had a subscription.
+  SUBSCRIPTION_PHASE_NONE = 1;
+  // ACTIVE: the paid period runs and writes are allowed.
+  SUBSCRIPTION_PHASE_ACTIVE = 2;
+  // GRACE: the period ended and writes are allowed until writes_end_at.
+  SUBSCRIPTION_PHASE_GRACE = 3;
+  // READ_ONLY: writes are refused and reads are allowed until delete_at.
+  SUBSCRIPTION_PHASE_READ_ONLY = 4;
+  // DELETED: the server deleted the vaults of the account.
+  SUBSCRIPTION_PHASE_DELETED = 5;
+}
+
+message GetSubscriptionRequest {}
+
+// The times are unix seconds, and 0 is none.
+message GetSubscriptionResponse {
+  SubscriptionPhase phase = 1;
+  int64 period_end_at = 2;
+  int64 writes_end_at = 3;
+  int64 delete_at = 4;
+}
+
+message CreateCheckoutRequest {}
+
+message CreateCheckoutResponse {
+  // checkout_url is an https address, or http for a server on a loopback host.
+  string checkout_url = 1;
+}

@@ -24,6 +24,9 @@ func (s *Server) ReserveBlobs(_ context.Context, req *connect.Request[syncv1.Res
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.checkWriteAllowed(account); err != nil {
+		return nil, err
+	}
 	if _, err := s.getOwnedVault(account, req.Msg.GetVaultId()); err != nil {
 		return nil, err
 	}

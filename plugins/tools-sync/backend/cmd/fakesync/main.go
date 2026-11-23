@@ -1,6 +1,7 @@
 // Command fakesync serves the fake sync server on a local port for the end-to-end tests. It prints the
 // address it listens on, then serves until it is stopped. With -state-dir it keeps the data of the server in
-// a file there and reads it again at start, so the process can stop and run again.
+// a file there and reads it again at start, so the process can stop and run again. With -subscriptions a new account has no
+// subscription and its writes are refused until it pays at the address CreateCheckout returns.
 package main
 
 import (
@@ -13,15 +14,20 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
 )
 
-const stateFile = "server.json"
+const (
+	stateFile = "server.json"
+	payFolder = "/pay/"
+)
 
-// keeper saves the data of the server after every request that may have changed it.
+// keeper saves the data of the server after every request that may have changed it: any but a GET, and the
+// GET of a pay page.
 type keeper struct {
 	next http.Handler
 	fake *fakeserver.Server
@@ -31,7 +37,7 @@ type keeper struct {
 
 func (k *keeper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	k.next.ServeHTTP(w, r)
-	if r.Method == http.MethodGet {
+	if r.Method == http.MethodGet && !strings.HasPrefix(r.URL.Path, payFolder) {
 		return
 	}
 	k.mu.Lock()
@@ -68,6 +74,7 @@ func main() {
 	address := flag.String("addr", "127.0.0.1:0", "address to listen on")
 	protocol := flag.Uint("protocol", 0, "protocol version the server needs; 0 is the version of this build")
 	ttl := flag.Duration("session-ttl", time.Hour, "how long a session lives")
+	subscriptions := flag.Bool("subscriptions", false, "make a new account have no subscription, so it must pay before it writes")
 	stateDir := flag.String("state-dir", "", "folder that keeps the data of the server between runs; empty keeps it in memory")
 	flag.Parse()
 
@@ -76,7 +83,7 @@ func main() {
 		log.Fatal(err)
 	}
 	url := "http://" + listener.Addr().String()
-	fake := fakeserver.New(fakeserver.Config{Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl})
+	fake := fakeserver.New(fakeserver.Config{Protocol: uint32(*protocol), Audience: url, SessionTTL: *ttl, NeedsSubscription: *subscriptions})
 	var handler http.Handler = fake
 	if *stateDir != "" {
 		path := filepath.Join(*stateDir, stateFile)

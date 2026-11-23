@@ -23,6 +23,12 @@ func mountMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodGetStatus, func(ctx context.Context, request api.GetStatusRequest) (api.GetStatusResponse, error) {
 		return handle(r, func(b *Backend) (api.GetStatusResponse, error) { return b.GetStatus(ctx, request) })
 	})
+	server.Handle(service, api.MethodGetSubscription, func(ctx context.Context, request api.GetSubscriptionRequest) (api.GetSubscriptionResponse, error) {
+		return handle(r, func(b *Backend) (api.GetSubscriptionResponse, error) { return b.GetSubscription(ctx, request) })
+	})
+	server.Handle(service, api.MethodCreateCheckout, func(ctx context.Context, request api.CreateCheckoutRequest) (api.CreateCheckoutResponse, error) {
+		return handle(r, func(b *Backend) (api.CreateCheckoutResponse, error) { return b.CreateCheckout(ctx, request) })
+	})
 }
 
 func handle[T any](r *runtime, call func(b *Backend) (T, error)) (T, error) {
@@ -42,7 +48,9 @@ func getCode(err error) server.ErrorCode {
 	switch {
 	case errors.Is(err, syncprotocol.ErrUnreachable), errors.Is(err, sessiondomain.ErrUnreachable):
 		return server.CodeUnavailable
-	case errors.Is(err, sessiondomain.ErrNoIdentity):
+	case errors.Is(err, syncprotocol.ErrAlreadySubscribed):
+		return server.CodeAlreadyExists
+	case errors.Is(err, sessiondomain.ErrNoIdentity), errors.Is(err, syncprotocol.ErrBillingUnavailable):
 		return server.CodeFailedPrecondition
 	}
 	return server.CodeInternal

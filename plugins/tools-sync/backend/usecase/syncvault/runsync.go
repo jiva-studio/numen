@@ -11,6 +11,7 @@ import (
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 )
 
 const (
@@ -25,20 +26,26 @@ type Pass interface {
 
 // RunDeps are what the loop needs. Interval is read before each wait. Changed names a vault whose files changed.
 type RunDeps struct {
-	Pass     Pass
-	Host     ports.Host
-	State    ports.Links
-	Health   ports.Health
-	Clock    ports.Clock
-	Interval func() time.Duration
-	Changed  <-chan domain.VaultID
+	Pass          Pass
+	Host          ports.Host
+	State         ports.Links
+	Health        ports.Health
+	Clock         ports.Clock
+	Subscriptions ports.Subscriptions
+	Interval      func() time.Duration
+	Changed       <-chan domain.VaultID
 }
 
 // RunSync passes over every connected vault at a fixed interval, and at once over a vault whose files changed.
-type RunSync struct{ deps RunDeps }
+type RunSync struct {
+	deps RunDeps
+	warn *subscription.Warn
+}
 
 // NewRunSync returns the use case over the dependencies.
-func NewRunSync(deps RunDeps) *RunSync { return &RunSync{deps: deps} }
+func NewRunSync(deps RunDeps) *RunSync {
+	return &RunSync{deps: deps, warn: subscription.NewWarn(subscription.WarnDeps{Subscriptions: deps.Subscriptions, Health: deps.Health})}
+}
 
 // Execute runs until ctx ends and returns its error. A server that is away raises a warning and the loop waits the
 // same interval again.
@@ -82,31 +89,41 @@ func (u *RunSync) wait(ctx context.Context) (domain.VaultID, bool, error) {
 func (u *RunSync) passAll(ctx context.Context) error {
 	vaults, err := u.deps.Host.GetVaults(ctx)
 	if err != nil {
-		return u.finish(ctx, err)
+		return u.finish(ctx, err, false)
 	}
 	var failure error
+	isConnected := false
 	for _, vault := range vaults {
-		if err := u.pass(ctx, vault.ID); err != nil {
+		isPassed, err := u.pass(ctx, vault.ID)
+		isConnected = isConnected || isPassed
+		if err != nil {
 			failure = err
 		}
 	}
-	return u.finish(ctx, failure)
+	return u.finish(ctx, failure, isConnected)
 }
 
 func (u *RunSync) passOne(ctx context.Context, id domain.VaultID) error {
-	return u.finish(ctx, u.pass(ctx, id))
+	isConnected, err := u.pass(ctx, id)
+	return u.finish(ctx, err, isConnected)
 }
 
-func (u *RunSync) pass(ctx context.Context, id domain.VaultID) error {
+// pass runs a pass over the vault and returns whether the vault is connected.
+func (u *RunSync) pass(ctx context.Context, id domain.VaultID) (bool, error) {
 	if _, err := u.deps.State.ReadLink(ctx, id); errors.Is(err, vaultlink.ErrNotConnected) {
-		return nil
+		return false, nil
 	}
-	return u.deps.Pass.Execute(ctx, id)
+	return true, u.deps.Pass.Execute(ctx, id)
 }
 
-func (u *RunSync) finish(ctx context.Context, failure error) error {
+// finish settles the warnings of the round. A round that passed over a connected vault reads the subscription
+// once, after the passes, so that the warning of the grace phase outlives the clearing of a pass that went well.
+func (u *RunSync) finish(ctx context.Context, failure error, isConnected bool) error {
 	if err := ctx.Err(); err != nil {
 		return err
+	}
+	if failure == nil && isConnected {
+		failure = u.warn.Execute(ctx)
 	}
 	switch {
 	case failure == nil:

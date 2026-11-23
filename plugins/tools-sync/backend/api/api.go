@@ -10,6 +10,8 @@ const (
 	MethodListRemoteVaults = "ListRemoteVaults"
 	MethodConnectVault     = "ConnectVault"
 	MethodGetStatus        = "GetStatus"
+	MethodGetSubscription  = "GetSubscription"
+	MethodCreateCheckout   = "CreateCheckout"
 )
 
 // State is how a vault of this device stands to the synced vaults.
@@ -90,4 +92,41 @@ type GetStatusResponse struct {
 	HasIdentity bool         `json:"hasIdentity"`
 	IsReachable bool         `json:"isReachable"`
 	Items       []StatusItem `json:"items"`
+}
+
+// Phase is where the subscription of the account stands, as the sync server tells it.
+type Phase string
+
+const (
+	// PhaseNone is an account that never had a subscription.
+	PhaseNone Phase = "none"
+	// PhaseActive is a paid period that runs.
+	PhaseActive Phase = "active"
+	// PhaseGrace is a period that ended and whose changes are still sent.
+	PhaseGrace Phase = "grace"
+	// PhaseReadOnly is an account whose vaults in the cloud can only be read.
+	PhaseReadOnly Phase = "readOnly"
+	// PhaseDeleted is an account whose vaults the cloud deleted.
+	PhaseDeleted Phase = "deleted"
+)
+
+// GetSubscriptionRequest asks for the subscription of the account.
+type GetSubscriptionRequest struct{}
+
+// GetSubscriptionResponse is the subscription of the account. HasIdentity is false when this device has none;
+// then the server is not asked and Phase is empty. A time is RFC 3339, and empty when the server sent none.
+type GetSubscriptionResponse struct {
+	HasIdentity bool   `json:"hasIdentity"`
+	Phase       Phase  `json:"phase"`
+	PeriodEndAt string `json:"periodEndAt"`
+	WritesEndAt string `json:"writesEndAt"`
+	DeleteAt    string `json:"deleteAt"`
+}
+
+// CreateCheckoutRequest asks for a payment page.
+type CreateCheckoutRequest struct{}
+
+// CreateCheckoutResponse is the address of the payment page.
+type CreateCheckoutResponse struct {
+	CheckoutURL string `json:"checkoutUrl"`
 }
