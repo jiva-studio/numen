@@ -2,6 +2,7 @@ package indexing
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/fitindex"
@@ -94,6 +95,12 @@ func (x *fitRecorder) DeleteVectorsOfOtherRecipes(_ context.Context, recipe stri
 	return 0, nil
 }
 
-func (x *fitRecorder) ApplyMinChunkLength(context.Context, int) (int64, error) { return 0, nil }
+func (x *fitRecorder) ApplyMinChunkLength(_ context.Context, length int) (int64, error) {
+	x.calls = append(x.calls, "min "+strconv.Itoa(length))
+	return 0, nil
+}
 
-func (x *fitRecorder) Compact(context.Context) error { return nil }
+func (x *fitRecorder) Compact(context.Context) error {
+	x.calls = append(x.calls, "compact")
+	return nil
+}
