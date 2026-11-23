@@ -185,7 +185,7 @@ func PlanRecovery(records []Known, heads map[string]Head, local map[string]strin
 func planRecord(record Known, head Head, isFound bool, hash string, isLocal bool) Action {
 	action := Action{Kind: Keep, FileID: record.FileID, Path: record.Path, ParentRev: nil}
 	isUsable := isFound && !head.IsBlobMissing
-	if isUsable && isHeadKnown(head, record) {
+	if isUsable && isHeadKept(head, record, isLocal) {
 		return action
 	}
 	switch {
@@ -202,8 +202,11 @@ func planRecord(record Known, head Head, isFound bool, hash string, isLocal bool
 	return action
 }
 
-func isHeadKnown(head Head, record Known) bool {
-	return bytes.Equal(head.Rev, record.HeadRev) || len(head.ParentRev) > 0 && bytes.Equal(head.ParentRev, record.HeadRev)
+func isHeadKept(head Head, record Known, isLocal bool) bool {
+	if len(head.ParentRev) > 0 && bytes.Equal(head.ParentRev, record.HeadRev) {
+		return true
+	}
+	return bytes.Equal(head.Rev, record.HeadRev) && (isLocal || head.IsDeleted)
 }
 
 func isSameContent(head Head, hash string) bool {

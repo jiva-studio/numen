@@ -94,7 +94,7 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 	if verdict == transfer.Keep {
 		return true, p.restore(ctx, records, removals)
 	}
-	p.isSent = len(scan.Moves) > 0 || len(removals) > 0 || len(changes) > 0
+	p.isSent = hasWork(changes, scan.Moves, removals)
 	isRetry := false
 	for _, step := range []func(context.Context, transfer.Vault, []transfer.FileRecord) ([]transfer.FileRecord, bool, error){
 		func(ctx context.Context, v transfer.Vault, r []transfer.FileRecord) ([]transfer.FileRecord, bool, error) {
@@ -114,6 +114,10 @@ func (p *pass) push(ctx context.Context) (bool, error) {
 		isRetry = isRetry || retry
 	}
 	return isRetry, p.use.deps.State.WriteRecords(ctx, p.id, records)
+}
+
+func hasWork(changes []transfer.Change, moves []transfer.Move, removals []transfer.FileRecord) bool {
+	return len(changes)+len(moves)+len(removals) > 0
 }
 
 func withoutMoved(changes []transfer.Change, moves []transfer.Move) []transfer.Change {

@@ -65,7 +65,7 @@ func (u *RecoverVault) Execute(ctx context.Context, id domain.VaultID) error {
 	if run.hashes, err = run.readHashes(ctx, found); err != nil {
 		return err
 	}
-	work := run.getWork(domainrestore.PlanRecovery(run.getKnown(), found.byFile, run.hashes))
+	work := run.getWork(domainrestore.PlanRecovery(run.getKnownFiles(), found.byFile, run.hashes))
 	if err := run.execute(ctx, work); err != nil {
 		return err
 	}
@@ -237,7 +237,7 @@ func (r *recovery) setRecord(record transfer.FileRecord) {
 	r.records[at] = record
 }
 
-func (r *recovery) getKnown() []domainrestore.Known {
+func (r *recovery) getKnownFiles() []domainrestore.Known {
 	known := make([]domainrestore.Known, len(r.records), len(r.records)+len(r.link.Removed))
 	for i, record := range r.records {
 		known[i] = domainrestore.Known{FileID: record.FileID, Path: record.Path, BaseHash: record.BaseHash, HeadRev: record.HeadRev}
