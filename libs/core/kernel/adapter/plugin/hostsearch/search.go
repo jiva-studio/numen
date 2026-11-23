@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/embedqueries"
+
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
@@ -14,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchsource"
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	searchqueryusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/searchquery"
 )
@@ -52,7 +53,7 @@ type Progress interface {
 // hostendpoint.SearchAccess.
 type Search struct {
 	Source     Source
-	Queries    *indexing.EmbedQueries
+	Queries    *embedqueries.Embed
 	Samples    Samples
 	Nearest    Nearest
 	Places     search.FindNearest

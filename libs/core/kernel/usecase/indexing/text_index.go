@@ -44,8 +44,8 @@ type IndexDeps struct {
 	Readers vaultport.VaultReaders
 	Sources sourceport.SourceRepository
 	Records SourceRecords
-	Backlog sourceport.SourceBacklog
-	Lookup  sourceport.RemovalLookup
+	Backlog SourceBacklog
+	Lookup  RemovalLookup
 	Texts   textport.Readers
 
 	Sizes              chunking.Sizes

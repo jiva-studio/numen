@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -125,10 +125,10 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 
 		opening := vaultOpener(cfg.buildVaultWiring(), db)
 		broken := errors.New("index unavailable")
-		opening.Refresh = vault.NewRefreshFrom(vault.RefreshDeps{
+		opening.Refresh = indexing.NewRefreshFrom(indexing.RefreshDeps{
 			Readers: cfg.buildVaultWiring().Readers, Vaults: db.Vaults(), Notes: repositoryAnswering{err: broken},
 			Queries: db.Sources(), Sources: db.Sources(), Now: GetClock(cfg.Resources),
-			Ledger: vault.NewLedger(),
+			Ledger: indexing.NewLedger(),
 		})
 
 		var received []error

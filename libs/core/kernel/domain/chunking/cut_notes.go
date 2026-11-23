@@ -141,3 +141,29 @@ func isIDWord(word string, pattern *regexp.Regexp) bool {
 		return !(r >= '0' && r <= '9' || r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r == '-')
 	})
 }
+
+// CutVersion cuts a version of a note into the chunks the index stores. A large chunk carries the name of the
+// section it begins, and no other chunk does.
+func CutVersion(doc domain.VersionText, sizes Sizes, reads Legibility) []domain.Chunk {
+	return Chunks(doc.Text, doc.GetHeadings(), sizes, reads, func(c Chunk, isLarge bool) domain.Chunk {
+		out := domain.Chunk{
+			Start:    c.Start,
+			Length:   c.Length,
+			Location: doc.Locate(c.Start),
+			Text:     c.ExtractText(doc.Text),
+		}
+		if isLarge {
+			out.Opens = doc.GetHeadingsAt(c.Start)
+		}
+		return out
+	})
+}
+
+// CountChunks counts the chunks and the small chunks inside them.
+func CountChunks(chunks []domain.Chunk) int {
+	n := len(chunks)
+	for _, c := range chunks {
+		n += len(c.Small)
+	}
+	return n
+}

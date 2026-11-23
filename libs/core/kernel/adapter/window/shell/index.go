@@ -3,15 +3,16 @@ package shell
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
 // SetVaultIndexer sets how a vault is brought up to date in the index, and the lifecycle of
 // those runs. A window without an indexer counts a vault from the index as it
 // currently is.
-func (a *API) SetVaultIndexer(ctx context.Context, read indexing.IndexVault) {
+func (a *API) SetVaultIndexer(ctx context.Context, read ensureindexed.IndexVault) {
 	a.Runs.SetIndexer(ctx, read)
 }
 

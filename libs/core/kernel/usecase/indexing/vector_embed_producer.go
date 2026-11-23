@@ -110,7 +110,7 @@ func (u producer) sendBatches(
 	out chan<- preparedBatch,
 ) error {
 	pos := 0
-	for _, batch := range splitBatches(texts, u.batchCharacters) {
+	for _, batch := range vector.SplitBatches(texts, u.batchCharacters) {
 		prep, err := u.prepareBatch(ctx, target.model, target.place, chunks[pos:pos+len(batch)], batch)
 		if err != nil {
 			return err

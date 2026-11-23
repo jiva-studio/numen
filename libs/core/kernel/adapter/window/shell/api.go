@@ -10,8 +10,9 @@ package shell
 import (
 	"net/http"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -20,8 +21,8 @@ import (
 
 // API is what the page may ask of the window itself.
 type API struct {
-	Ensure          *indexing.EnsureIndexed
-	Runs            indexing.Runs
+	Ensure          *ensureindexed.Ensure
+	Runs            ensureindexed.Runs
 	Themes          numenv1connect.ThemeServiceHandler
 	Window          *wire.Window
 	Frontends       FrontendPlugins
@@ -30,7 +31,7 @@ type API struct {
 	Vaults          *registry.List
 	ResolveLinks    *query.ResolveVaultLinks
 
-	Changes indexing.Changes
+	Changes ensureindexed.Changes
 }
 
 // PluginServices is where the calls for the services plugins serve are forwarded.

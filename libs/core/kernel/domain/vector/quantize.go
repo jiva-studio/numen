@@ -137,3 +137,12 @@ func SimilarityBytes(query []float32, stored []byte) float64 {
 	}
 	return dot / math.Sqrt(remaining*right)
 }
+
+// Pack returns the stored bytes of a quantized vector.
+func Pack(q []int8) []byte {
+	out := make([]byte, len(q))
+	for i, x := range q {
+		out[i] = byte(x)
+	}
+	return out
+}
