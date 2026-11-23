@@ -51,7 +51,7 @@ interface GetStatusResponse {
   readonly items: readonly StatusItem[]
 }
 
-interface VaultsClient {
+export interface VaultsClient {
   listVaults(): Promise<ListVaultsResponse>
   listRemoteVaults(): Promise<ListRemoteVaultsResponse>
   connectVault(request: ConnectVaultRequest): Promise<void>
