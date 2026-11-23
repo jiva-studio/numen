@@ -72,7 +72,7 @@ Feature: Numen Sync after the server is restored from a backup
     Scenario: A subscription bought after the backup is active
       Given the operator makes a backup of the sync server
       And the person opens the page "Identity and licenses"
-      And the person buys the subscription again
+      And the person buys the subscription
       When the operator restores the sync server from the backup
       And the operator announces the restore
       Then the subscription shows "Active"
