@@ -45,8 +45,6 @@ func newSetup(t *testing.T) *setup {
 	}
 }
 
-// input makes the conflict of a path whose local text is already in the vault, and whose head, once replaced, holds
-// the text. replaced counts the calls of Replace.
 func (s *setup) input(t *testing.T, path, headText string, replaced *int) ports.ConflictInput {
 	t.Helper()
 	stat, err := s.host.Files(vaultID).StatFile(t.Context(), path)

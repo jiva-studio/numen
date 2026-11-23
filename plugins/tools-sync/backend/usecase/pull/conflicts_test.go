@@ -51,7 +51,6 @@ func (p *pair) count() *countingResolver {
 	return &countingResolver{inner: p.b.PullDeps().Conflicts, calls: 0}
 }
 
-// conflictOn makes a note both computers changed, the head being the text of the first.
 func (p *pair) conflictOn(t *testing.T, path, there, here string) {
 	t.Helper()
 	first := p.push(t, path, "milk", nil)

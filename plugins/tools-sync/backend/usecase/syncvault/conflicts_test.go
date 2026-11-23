@@ -12,8 +12,6 @@ const (
 	listCopy = "Shopping list (conflict 2026-11-23).md"
 )
 
-// conflict makes the first computer the one whose text reaches the server first, with both computers holding the note
-// before they change it.
 func (p *pair) conflict(t *testing.T, path, first, second string) {
 	t.Helper()
 	p.a.WriteNote(source, path, "milk")

@@ -210,7 +210,6 @@ func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []tr
 	return p.apply(records, outcomes), hasMismatch(outcomes), nil
 }
 
-// noteClashes remembers the files the server refused because another name matches theirs in letter case only.
 func (p *pass) noteClashes(outcomes []transfer.Outcome) {
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.CaseClash && !slices.Contains(p.clashes, outcome.Path) {
@@ -246,7 +245,6 @@ func getEditsOverRemovals(files []transfer.File, outcomes []transfer.Outcome) []
 	return again
 }
 
-// isRemoved reports whether the server already holds a removal as the head of the file, so removing it again is done.
 func isRemoved(outcome transfer.Outcome) bool {
 	return outcome.Status == transfer.ParentMismatch && outcome.Head != nil && outcome.Head.GetRevision().GetDeleted()
 }

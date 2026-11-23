@@ -12,8 +12,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
-// resolve settles a file both computers changed with the resolver, then moves the record to the head. A resolver that
-// fails leaves the file as it is and holds the position, so no edit is lost.
 func (r *run) resolve(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, local string, stat domain.FileStat) error {
 	write, err := r.prepare(ctx, stored, meta)
 	if err != nil {
@@ -54,8 +52,6 @@ func (r *run) holdUnresolved(ctx context.Context, stored *syncv1.StoredRevision,
 	return r.deps.Downloads.Discard(ctx, r.in.VaultID, stored.GetRevision().GetFileId())
 }
 
-// settleRace handles a file that changed between the read of the local file and the write of the head: it reads the
-// file again and settles what is there now.
 func (r *run) settleRace(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta) error {
 	if err := r.deps.Downloads.Discard(ctx, r.in.VaultID, stored.GetRevision().GetFileId()); err != nil {
 		return err
