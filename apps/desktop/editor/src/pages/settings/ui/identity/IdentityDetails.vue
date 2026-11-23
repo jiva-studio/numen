@@ -1,37 +1,82 @@
 <script setup lang="ts">
 /**
- * The identity of this device: its fingerprints and the way to delete it, after a confirmation.
+ * The identity of this device as two cards: its fingerprints with the way to delete it, after a
+ * confirmation, and the list of devices it is linked to.
  */
-import { Button } from '@numen/ui'
+import { computed } from 'vue'
+import { Button, IslandCard } from '@numen/ui'
+import { NavigationRow } from '@numen/plugin-manager'
 import type { IdentityInfo } from '@/entities/identity'
 import { WORDS as words } from '../../words'
 import { ConfirmDialog } from '../confirm-dialog'
+import SettingRow from '../setting-row/SettingRow.vue'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{ info: IdentityInfo; isBusy: boolean; isAskingDelete: boolean }>()
+const props = defineProps<{
+  info: IdentityInfo
+  problem: string
+  isBusy: boolean
+  isAskingDelete: boolean
+}>()
 
 const emit = defineEmits<{
   (e: 'ask'): void
   (e: 'confirm'): void
   (e: 'cancel'): void
 }>()
+
+/* --------------------------------- State ---------------------------------- */
+const date = computed(() => {
+  const added = new Date(props.info.deviceAddedAt)
+  if (Number.isNaN(added.getTime())) return ''
+  return new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' }).format(added)
+})
 </script>
 
 <template>
-  <dl class="identity-details__facts">
-    <dt>{{ words.identityAccount }}</dt>
-    <dd class="identity-details__fingerprint">{{ info.accountFingerprint }}</dd>
-    <dt>{{ words.identityThisDevice }}</dt>
-    <dd>
-      <span>{{ info.deviceName }}</span>
-      <span class="identity-details__fingerprint">{{ info.deviceFingerprint }}</span>
-    </dd>
-  </dl>
-  <div class="identity-details__actions">
-    <Button type="button" variant="outline" :disabled="isBusy" @click="emit('ask')">
-      {{ words.identityDelete }}
-    </Button>
-  </div>
+  <IslandCard :title="words.identitySection">
+    <template v-if="date !== ''" #aside>{{ words.identityCreatedOn(date) }}</template>
+    <SettingRow
+      at="identity-account"
+      :name="words.identityAccount"
+      :detail="words.identityAccountDetail"
+    >
+      <span class="identity-details__mono">{{ info.accountFingerprint }}</span>
+    </SettingRow>
+    <SettingRow
+      at="identity-device"
+      :name="words.identityThisDevice"
+      :detail="date === '' ? info.deviceName : `${info.deviceName} · ${date}`"
+    >
+      <span class="identity-details__mono">{{ info.deviceFingerprint }}</span>
+    </SettingRow>
+    <SettingRow
+      at="identity-remove"
+      :name="words.identityRemoveName"
+      :detail="words.identityRemoveDetail"
+    >
+      <Button type="button" variant="outline" :disabled="isBusy" @click="emit('ask')">
+        {{ words.identityDelete }}
+      </Button>
+    </SettingRow>
+    <p v-if="problem !== ''" role="alert" class="identity-details__problem">{{ problem }}</p>
+  </IslandCard>
+
+  <IslandCard class="identity-details__devices" :title="words.identityDevices">
+    <template #aside>{{ words.identityDeviceCount(1) }}</template>
+    <NavigationRow
+      class="identity-details__current"
+      category="device"
+      is-static
+      :name="info.deviceName"
+      :detail="words.identityDeviceDetail(date, info.deviceFingerprint)"
+    >
+      <template #trail>
+        <span class="identity-details__state">{{ words.identityDeviceNow }}</span>
+      </template>
+    </NavigationRow>
+  </IslandCard>
+
   <ConfirmDialog
     v-if="isAskingDelete"
     tone="danger"
@@ -45,31 +90,30 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.identity-details__facts {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.375rem 1rem;
-  margin: 0;
+.identity-details__mono {
+  font-family: var(--numen-font-mono);
+  font-size: var(--numen-text-2);
+  color: var(--numen-ink);
+  letter-spacing: 0.02em;
 }
 
-.identity-details__facts dt {
+.identity-details__devices :deep(.island-card__body) {
+  padding: 0;
+}
+
+.identity-details__current,
+.identity-details__current:hover {
+  background-color: var(--settings-hover-bg);
+}
+
+.identity-details__state {
   color: var(--numen-hushed);
 }
 
-.identity-details__facts dd {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.75rem;
+.identity-details__problem {
   margin: 0;
-}
-
-.identity-details__fingerprint {
-  font-family: var(--numen-font-mono);
-}
-
-.identity-details__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  padding-block: 0.5rem;
+  font-size: var(--numen-text-1);
+  color: var(--numen-alarm);
 }
 </style>

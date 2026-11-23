@@ -90,16 +90,30 @@ export const WORDS = {
   pathClear: 'Clear',
   /** The identity section of the page of identity and licenses. */
   identitySection: 'Identity',
-  identityNone: 'No identity on this device',
+  identityNone: 'Not created',
+  identityCreatedOn: (date: string) => `Created ${date}`,
   identityNoneDetail:
-    'An identity ties this device to your account. Make a new one, or restore the one you wrote down.',
+    'An identity is the key your devices recognize each other by and your subscription knows whose it is. The key is kept only on your devices; Numen does not have it.',
   identityCreate: 'Create identity',
   identityRestore: 'Restore from words',
+  identitySetupTitle: 'Recovery words',
+  identityWriteDown: 'Write the 12 words down in order. We show them once.',
+  identityNobodyRecovers:
+    'Nobody can recover these words: neither Numen nor support. If you lose the words and all your devices, you lose access to your cloud vaults.',
+  identityWordsWritten: 'I wrote the words down',
   identityRecoveryWords: 'Recovery words',
-  identityWriteDown: 'Write down these 12 words. They are shown only now.',
-  identityConfirmHint: 'Type three words to confirm you wrote them down.',
-  identityConfirmWord: (position: number) => `Confirm word ${position}`,
-  identityKeep: 'Keep identity',
+  identityCheckTitle: 'Check the words',
+  identityConfirmHint: (positions: readonly number[]) =>
+    `Enter words ${positions
+      .slice(0, -1)
+      .map((position) => `#${position}`)
+      .join(', ')} and #${positions.at(-1)} from your record.`,
+  identityConfirmCase: 'Case does not matter.',
+  identityConfirmWord: (position: number) => `Word ${position}`,
+  identityConfirmPlaceholder: 'word',
+  identityShowWords: 'Show the words again',
+  identityBack: 'Back',
+  identityContinue: 'Continue',
   identityKeeping: 'Keeping…',
   identityCancel: 'Cancel',
   identityRestoreLabel: 'Your 12 recovery words',
@@ -108,7 +122,15 @@ export const WORDS = {
   identityRestoring: 'Restoring…',
   identityNotValid: 'Some words are not valid.',
   identityAccount: 'Account fingerprint',
+  identityAccountDetail: 'Compare it when you link a device',
   identityThisDevice: 'This device',
+  identityDevices: 'Devices',
+  identityDeviceCount: (count: number) => (count === 1 ? '1 device' : `${count} devices`),
+  identityDeviceNow: 'Now',
+  identityDeviceDetail: (date: string, fingerprint: string) =>
+    `This device · linked ${date} · fingerprint ${fingerprint}`,
+  identityRemoveName: 'Identity on this device',
+  identityRemoveDetail: 'Remove the key from this device',
   identityDelete: 'Delete from this device',
   identityDeleteTitle: 'Delete the identity from this device?',
   identityDeleteWarning: 'Without the 12 words this identity cannot be restored.',

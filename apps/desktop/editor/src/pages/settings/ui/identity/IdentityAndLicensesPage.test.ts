@@ -1,6 +1,6 @@
 /**
- * The page "Identity and licenses" inside the settings tab: a person sets up an identity, checks
- * three of its twelve words, restores it from words and deletes it from this device. The core is
+ * The page "Identity and licenses" inside the settings tab: a person sets up an identity in a dialog
+ * of two steps (twelve words, then three of them to check), restores it from words and deletes it from this device. The core is
  * replaced by the calls of the installation; the page, its model and the settings tab are real.
  *
  * Every value here is invented.
@@ -124,10 +124,19 @@ const press = async (tab: Page, text: string) => {
 const getShownWords = (tab: Page): string[] =>
   tab.findAll('ol[aria-label="Recovery words"] li').map((one) => one.text())
 
-const getConfirmInputs = (tab: Page) => tab.findAll('input[aria-label^="Confirm word "]')
+const getConfirmInputs = (tab: Page) => tab.findAll('label.word-check input')
 
-const getPosition = (input: { attributes: (name: string) => string | undefined }): number =>
-  Number(/^Confirm word (\d+)$/.exec(input.attributes('aria-label') ?? '')?.[1])
+const getPosition = (input: { element: Element }): number =>
+  Number(
+    /^Word (\d+)$/.exec(
+      (input.element as HTMLInputElement).labels?.[0]?.textContent?.trim() ?? '',
+    )?.[1],
+  )
+
+const startSetup = async (tab: Page) => {
+  await press(tab, 'Create identity')
+  await press(tab, 'I wrote the words down')
+}
 
 const fillConfirmations = async (tab: Page, mistake?: { word: string }) => {
   const inputs = getConfirmInputs(tab)
@@ -151,7 +160,7 @@ describe('the page "Identity and licenses"', () => {
 
   it('offers to create or restore an identity when the device has none', async () => {
     const { tab } = await createPage()
-    expect(tab.text()).toContain('No identity on this device')
+    expect(tab.text()).toContain('Not created')
     expect(findButton(tab, 'Create identity')).toBeDefined()
     expect(findButton(tab, 'Restore from words')).toBeDefined()
     expect(tab.text()).not.toContain('Account fingerprint')
@@ -163,58 +172,101 @@ describe('the page "Identity and licenses"', () => {
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
     expect(tab.text()).toContain('This device')
     expect(tab.text()).toContain('Laptop')
+    expect(tab.text()).toContain('Created November 22, 2026')
+    expect(tab.text()).toContain('Devices')
+    expect(tab.text()).toContain('1 device')
     expect(tab.text()).toContain(IDENTITY.deviceFingerprint)
     expect(findButton(tab, 'Create identity')).toBeUndefined()
   })
 
-  it('shows twelve recovery words and asks for the check of three of them', async () => {
+  it('shows the twelve numbered recovery words alone in the first step', async () => {
     const { tab, generateWords } = await createPage()
     await press(tab, 'Create identity')
     expect(generateWords).toHaveBeenCalledOnce()
     expect(getShownWords(tab)).toStrictEqual(RECOVERY_WORDS)
-    expect(tab.text()).toContain('Write down these 12 words. They are shown only now.')
+    expect(tab.text()).toContain('Write the 12 words down in order. We show them once.')
+    expect(tab.text()).toContain('Nobody can recover these words')
+    expect(getConfirmInputs(tab)).toHaveLength(0)
+    expect(findButton(tab, 'Cancel')).toBeDefined()
+  })
+
+  it('asks for three labelled words in the second step and shows no word', async () => {
+    const { tab } = await createPage()
+    await startSetup(tab)
     const positions = getConfirmInputs(tab).map(getPosition)
     expect(positions).toHaveLength(3)
     expect(new Set(positions).size).toBe(3)
     expect(positions.every((position) => position >= 1 && position <= 12)).toBe(true)
+    expect(tab.get('[role="dialog"] h2').text()).toBe('Check the words')
+    expect(tab.text()).toContain('from your record.')
+    expect(tab.text()).toContain('Case does not matter.')
+    expect(getShownWords(tab)).toStrictEqual([])
   })
 
   it('keeps the identity once the three words are right and shows no word again', async () => {
     const { tab, create } = await createPage()
-    await press(tab, 'Create identity')
+    await startSetup(tab)
     await fillConfirmations(tab)
-    await press(tab, 'Keep identity')
+    await press(tab, 'Continue')
     expect(create).toHaveBeenCalledExactlyOnceWith(RECOVERY_WORDS)
     expect(tab.text()).toContain(IDENTITY.accountFingerprint)
     expect(tab.find('ol[aria-label="Recovery words"]').exists()).toBe(false)
     expect(getConfirmInputs(tab)).toHaveLength(0)
+    expect(tab.find('[role="dialog"]').exists()).toBe(false)
     for (const word of RECOVERY_WORDS) expect(tab.text()).not.toContain(word)
+  })
+
+  it('does not continue until all three words are typed', async () => {
+    const { tab, create } = await createPage()
+    await startSetup(tab)
+    await getConfirmInputs(tab)[0]?.setValue('legal')
+    const next = findButton(tab, 'Continue')
+    expect(next?.attributes('disabled')).toBeDefined()
+    expect(create).not.toHaveBeenCalled()
   })
 
   it('calls nothing and says the words are not valid when a confirmed word is wrong', async () => {
     const { tab, create } = await createPage()
-    await press(tab, 'Create identity')
+    await startSetup(tab)
     await fillConfirmations(tab, { word: 'zoo' })
-    await press(tab, 'Keep identity')
+    await press(tab, 'Continue')
     expect(create).not.toHaveBeenCalled()
     expect(tab.get('[role="alert"]').text()).toBe('Some words are not valid.')
-    expect(tab.text()).toContain('No identity on this device')
+    expect(tab.text()).toContain('Not created')
   })
 
-  it('draws the words again after a wrong confirmation so the person can look at them', async () => {
+  it('shows the words again from the second step so the person can look at them', async () => {
     const { tab } = await createPage()
-    await press(tab, 'Create identity')
+    await startSetup(tab)
     await fillConfirmations(tab, { word: 'zoo' })
-    await press(tab, 'Keep identity')
+    await press(tab, 'Continue')
+    await press(tab, 'Show the words again')
+    expect(getShownWords(tab)).toStrictEqual(RECOVERY_WORDS)
+    expect(tab.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('goes back to the words with the Back button', async () => {
+    const { tab } = await createPage()
+    await startSetup(tab)
+    await press(tab, 'Back')
     expect(getShownWords(tab)).toStrictEqual(RECOVERY_WORDS)
   })
 
-  it('drops the words from the page when the person cancels', async () => {
+  it('drops the words from the page when the person cancels the first step', async () => {
     const { tab, create } = await createPage()
     await press(tab, 'Create identity')
     await press(tab, 'Cancel')
     expect(create).not.toHaveBeenCalled()
     for (const word of RECOVERY_WORDS) expect(tab.text()).not.toContain(word)
+    expect(findButton(tab, 'Create identity')).toBeDefined()
+  })
+
+  it('drops the words from the page when the person presses Escape in the second step', async () => {
+    const { tab, create } = await createPage()
+    await startSetup(tab)
+    await tab.get('[role="dialog"]').trigger('keydown.esc')
+    expect(create).not.toHaveBeenCalled()
+    expect(tab.find('[role="dialog"]').exists()).toBe(false)
     expect(findButton(tab, 'Create identity')).toBeDefined()
   })
 
@@ -246,7 +298,7 @@ describe('the page "Identity and licenses"', () => {
     await press(tab, 'Restore')
     expect(tab.get('[role="alert"]').text()).toBe('Some words are not valid.')
     expect(identity.value).toBeUndefined()
-    expect(tab.text()).toContain('No identity on this device')
+    expect(tab.text()).toContain('Not created')
   })
 
   it('warns that the identity cannot be restored without the words before it deletes', async () => {
@@ -279,6 +331,6 @@ describe('the page "Identity and licenses"', () => {
     confirm?.click()
     await flushPromises()
     expect(remove).toHaveBeenCalledOnce()
-    expect(tab.text()).toContain('No identity on this device')
+    expect(tab.text()).toContain('Not created')
   })
 })

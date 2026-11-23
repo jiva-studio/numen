@@ -1,6 +1,6 @@
 /**
  * The state of the identity section: showing the recovery words of a new identity and checking
- * three of them, restoring from typed words, and deleting the identity from this device. The words
+ * three of them in two steps, restoring from typed words, and deleting the identity from this device. The words
  * live in this state only while a setup is open; leaving the page or cancelling drops them.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
@@ -14,10 +14,12 @@ import { useRestoreText } from './useRestoreText'
 import { useWordsConfirmation } from './useWordsConfirmation'
 
 type Step = 'idle' | 'setup' | 'restore'
+type SetupStage = 'words' | 'check'
 
 export function useIdentitySection(getIdentity: () => InstallationIdentity) {
   const identity = computed(() => getIdentity().identity.value)
   const step = ref<Step>('idle')
+  const stage = ref<SetupStage>('words')
   const recoveryWords = ref<readonly string[]>([])
   const call = useIdentityCall()
   const { problem, isBusy, run } = call
@@ -37,6 +39,7 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
 
   function reset(): void {
     step.value = 'idle'
+    stage.value = 'words'
     recoveryWords.value = []
     confirmation.clear()
     typing.restoreText.value = ''
@@ -50,7 +53,18 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
     if (!answer.ok) return
     recoveryWords.value = answer.value
     confirmation.pick()
+    stage.value = 'words'
     step.value = 'setup'
+  }
+
+  const showCheck = (): void => {
+    problem.value = ''
+    stage.value = 'check'
+  }
+
+  const showWords = (): void => {
+    problem.value = ''
+    stage.value = 'words'
   }
 
   const startRestore = (): void => {
@@ -83,11 +97,21 @@ export function useIdentitySection(getIdentity: () => InstallationIdentity) {
   return {
     identity,
     step,
+    stage,
     recoveryWords,
     call,
     confirmation,
     typing,
     deletion,
-    actions: { startSetup, startRestore, cancel: reset, setEntered, keep, restore },
+    actions: {
+      startSetup,
+      startRestore,
+      showCheck,
+      showWords,
+      cancel: reset,
+      setEntered,
+      keep,
+      restore,
+    },
   }
 }
