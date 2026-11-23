@@ -57,7 +57,7 @@ func createPayload(plain []byte, isText bool) (payload []byte, flags byte, err e
 	if !isText {
 		return plain, 0, nil
 	}
-	if len(plain) > maxPlainSize {
+	if ComputePaddedLength(len(plain)) > maxPlainSize {
 		return nil, 0, ErrTooLarge
 	}
 	payload, err = compress(plain)
