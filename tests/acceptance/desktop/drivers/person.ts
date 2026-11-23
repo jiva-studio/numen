@@ -26,6 +26,9 @@ import { type Recording, Scenario } from './scenario.js'
 import { ServiceDriver } from './services.js'
 import { SearchDriver } from './search.js'
 import { SettingsDriver } from './settings.js'
+import { ShareDriver } from './share.js'
+import { SharedReaderDriver } from './shared-reader.js'
+import { SharingDriver } from './sharing.js'
 import { TabDriver } from './tabs.js'
 import { TextDriver } from './text.js'
 import { VaultDriver } from './vault.js'
@@ -57,6 +60,8 @@ export class Person {
   readonly sync: SyncDriver
   readonly syncVaults: SyncVaultsDriver
   readonly computers: ComputerDriver
+  readonly readers: SharedReaderDriver
+  readonly sharing: SharingDriver
   readonly scenario: Scenario
 
   constructor(page: Page, viewport: ViewportSize | null, recording?: Recording, isLive = false) {
@@ -90,6 +95,8 @@ export class Person {
     this.sync = new SyncDriver(this.scenario, this.identity)
     this.syncVaults = new SyncVaultsDriver(this.scenario, this.settings)
     this.computers = new ComputerDriver({ first: this.scenario, viewport, identity: this.identity, sync: this.sync, firstVaults: this.syncVaults })
+    this.readers = new SharedReaderDriver({ first: this.scenario, viewport, sync: this.sync })
+    this.sharing = new SharingDriver(new ShareDriver(this.scenario, this.fileTree, this.application), this.readers, this.identity, this.scenario)
   }
 
   /** Sets the environment of the application; a release that comes out while the window is open is looked for again. */
@@ -108,6 +115,7 @@ export class Person {
     this.services.stopAll()
     this.sync.remove()
     await this.computers.remove()
+    await this.readers.remove()
     if (this.scenario.hasWorld) return this.scenario.removeWorld()
     try {
       await this.plugin.enableDisabled()

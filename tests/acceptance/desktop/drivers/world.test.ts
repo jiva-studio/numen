@@ -184,6 +184,15 @@ describe('World', () => {
     expect(() => world.makeFolder('Test', '../outside')).toThrow('is not a path inside the vault')
   })
 
+  it('moves a file to another folder of the same vault', () => {
+    const world = create()
+    world.addVault('Test')
+    world.writeNote('Test', 'Food/Shopping list.md', 'milk')
+    world.moveFile('Test', 'Food/Shopping list.md', 'Plans/Shopping list.md')
+    expect(world.getEntryKind('Test', 'Food/Shopping list.md')).toBeUndefined()
+    expect(world.readText('Test', 'Plans/Shopping list.md')).toBe('milk\n')
+  })
+
   it('removes the folder of the world with every vault', () => {
     const world = create()
     world.addVault('Test')
