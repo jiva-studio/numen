@@ -18,11 +18,11 @@ export const IDENTITY_WORDS = {
       case 'not_enough_sheets':
         return 'One more sheet is needed.'
       case 'invalid_sheets':
-        return 'These are sheets that are not valid.'
+        return 'Some sheets are not valid.'
       case 'other_account':
         return proves === 'words'
-          ? 'These are words of another account.'
-          : 'These are sheets of another account.'
+          ? 'The words belong to another account.'
+          : 'The sheets belong to another account.'
       case 'no_identity':
         return 'This device has no identity to make a kit for.'
       default:

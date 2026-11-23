@@ -455,12 +455,12 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
 
   it('shows the refusal and no sheet when the proof is refused', async () => {
     const { tab } = await createPage(IDENTITY, undefined, {
-      createKit: asFailure('These are words of another account.'),
+      createKit: asFailure('The words belong to another account.'),
     })
     await press(tab, 'Print recovery kit')
     await tab.get('textarea[aria-label="Recovery words"]').setValue(RECOVERY_WORDS.join(' '))
     await press(tab, 'Make kit')
-    expect(tab.get('[role="alert"]').text()).toBe('These are words of another account.')
+    expect(tab.get('[role="alert"]').text()).toBe('The words belong to another account.')
     expect(getSheets(tab)).toHaveLength(0)
   })
 
@@ -488,13 +488,13 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
 
   it('shows a refusal of the check as an alert and no confirmation', async () => {
     const { tab } = await createPage(IDENTITY, undefined, {
-      checkKit: asFailure('These are sheets that are not valid.'),
+      checkKit: asFailure('Some sheets are not valid.'),
     })
     await press(tab, 'Check two sheets')
     await getSheetField(tab, 1).setValue(KIT.sheets[0]?.join(' ') ?? '')
     await getSheetField(tab, 2).setValue(KIT.sheets[1]?.join(' ') ?? '')
     await press(tab, 'Check')
-    expect(tab.get('[role="alert"]').text()).toBe('These are sheets that are not valid.')
+    expect(tab.get('[role="alert"]').text()).toBe('Some sheets are not valid.')
     expect(tab.text()).not.toContain('The sheets fit this account.')
   })
 

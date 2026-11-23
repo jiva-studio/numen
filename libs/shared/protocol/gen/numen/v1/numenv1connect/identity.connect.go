@@ -45,6 +45,15 @@ const (
 	// IdentityServiceDeleteIdentityProcedure is the fully-qualified name of the IdentityService's
 	// DeleteIdentity RPC.
 	IdentityServiceDeleteIdentityProcedure = "/numen.v1.IdentityService/DeleteIdentity"
+	// IdentityServiceCreateRecoveryKitProcedure is the fully-qualified name of the IdentityService's
+	// CreateRecoveryKit RPC.
+	IdentityServiceCreateRecoveryKitProcedure = "/numen.v1.IdentityService/CreateRecoveryKit"
+	// IdentityServiceCheckRecoveryKitProcedure is the fully-qualified name of the IdentityService's
+	// CheckRecoveryKit RPC.
+	IdentityServiceCheckRecoveryKitProcedure = "/numen.v1.IdentityService/CheckRecoveryKit"
+	// IdentityServiceRestoreIdentityFromKitProcedure is the fully-qualified name of the
+	// IdentityService's RestoreIdentityFromKit RPC.
+	IdentityServiceRestoreIdentityFromKitProcedure = "/numen.v1.IdentityService/RestoreIdentityFromKit"
 )
 
 // IdentityServiceClient is a client for the numen.v1.IdentityService service.
@@ -58,6 +67,13 @@ type IdentityServiceClient interface {
 	CreateIdentity(context.Context, *connect.Request[v1.CreateIdentityRequest]) (*connect.Response[v1.CreateIdentityResponse], error)
 	// DeleteIdentity removes the identity from this device. Without the 12 words it cannot be restored.
 	DeleteIdentity(context.Context, *connect.Request[v1.DeleteIdentityRequest]) (*connect.Response[v1.DeleteIdentityResponse], error)
+	// CreateRecoveryKit makes a new kit of three sheets for the account of this device. The caller proves
+	// the account with the 12 words or with two sheets of an earlier kit. Nothing is kept.
+	CreateRecoveryKit(context.Context, *connect.Request[v1.CreateRecoveryKitRequest]) (*connect.Response[v1.CreateRecoveryKitResponse], error)
+	// CheckRecoveryKit reports whether two sheets restore the account of this device.
+	CheckRecoveryKit(context.Context, *connect.Request[v1.CheckRecoveryKitRequest]) (*connect.Response[v1.CheckRecoveryKitResponse], error)
+	// RestoreIdentityFromKit keeps an identity on this device from two sheets of a kit.
+	RestoreIdentityFromKit(context.Context, *connect.Request[v1.RestoreIdentityFromKitRequest]) (*connect.Response[v1.RestoreIdentityFromKitResponse], error)
 }
 
 // NewIdentityServiceClient constructs a client for the numen.v1.IdentityService service. By
@@ -95,15 +111,36 @@ func NewIdentityServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(identityServiceMethods.ByName("DeleteIdentity")),
 			connect.WithClientOptions(opts...),
 		),
+		createRecoveryKit: connect.NewClient[v1.CreateRecoveryKitRequest, v1.CreateRecoveryKitResponse](
+			httpClient,
+			baseURL+IdentityServiceCreateRecoveryKitProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("CreateRecoveryKit")),
+			connect.WithClientOptions(opts...),
+		),
+		checkRecoveryKit: connect.NewClient[v1.CheckRecoveryKitRequest, v1.CheckRecoveryKitResponse](
+			httpClient,
+			baseURL+IdentityServiceCheckRecoveryKitProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("CheckRecoveryKit")),
+			connect.WithClientOptions(opts...),
+		),
+		restoreIdentityFromKit: connect.NewClient[v1.RestoreIdentityFromKitRequest, v1.RestoreIdentityFromKitResponse](
+			httpClient,
+			baseURL+IdentityServiceRestoreIdentityFromKitProcedure,
+			connect.WithSchema(identityServiceMethods.ByName("RestoreIdentityFromKit")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // identityServiceClient implements IdentityServiceClient.
 type identityServiceClient struct {
-	getIdentity           *connect.Client[v1.GetIdentityRequest, v1.GetIdentityResponse]
-	generateRecoveryWords *connect.Client[v1.GenerateRecoveryWordsRequest, v1.GenerateRecoveryWordsResponse]
-	createIdentity        *connect.Client[v1.CreateIdentityRequest, v1.CreateIdentityResponse]
-	deleteIdentity        *connect.Client[v1.DeleteIdentityRequest, v1.DeleteIdentityResponse]
+	getIdentity            *connect.Client[v1.GetIdentityRequest, v1.GetIdentityResponse]
+	generateRecoveryWords  *connect.Client[v1.GenerateRecoveryWordsRequest, v1.GenerateRecoveryWordsResponse]
+	createIdentity         *connect.Client[v1.CreateIdentityRequest, v1.CreateIdentityResponse]
+	deleteIdentity         *connect.Client[v1.DeleteIdentityRequest, v1.DeleteIdentityResponse]
+	createRecoveryKit      *connect.Client[v1.CreateRecoveryKitRequest, v1.CreateRecoveryKitResponse]
+	checkRecoveryKit       *connect.Client[v1.CheckRecoveryKitRequest, v1.CheckRecoveryKitResponse]
+	restoreIdentityFromKit *connect.Client[v1.RestoreIdentityFromKitRequest, v1.RestoreIdentityFromKitResponse]
 }
 
 // GetIdentity calls numen.v1.IdentityService.GetIdentity.
@@ -126,6 +163,21 @@ func (c *identityServiceClient) DeleteIdentity(ctx context.Context, req *connect
 	return c.deleteIdentity.CallUnary(ctx, req)
 }
 
+// CreateRecoveryKit calls numen.v1.IdentityService.CreateRecoveryKit.
+func (c *identityServiceClient) CreateRecoveryKit(ctx context.Context, req *connect.Request[v1.CreateRecoveryKitRequest]) (*connect.Response[v1.CreateRecoveryKitResponse], error) {
+	return c.createRecoveryKit.CallUnary(ctx, req)
+}
+
+// CheckRecoveryKit calls numen.v1.IdentityService.CheckRecoveryKit.
+func (c *identityServiceClient) CheckRecoveryKit(ctx context.Context, req *connect.Request[v1.CheckRecoveryKitRequest]) (*connect.Response[v1.CheckRecoveryKitResponse], error) {
+	return c.checkRecoveryKit.CallUnary(ctx, req)
+}
+
+// RestoreIdentityFromKit calls numen.v1.IdentityService.RestoreIdentityFromKit.
+func (c *identityServiceClient) RestoreIdentityFromKit(ctx context.Context, req *connect.Request[v1.RestoreIdentityFromKitRequest]) (*connect.Response[v1.RestoreIdentityFromKitResponse], error) {
+	return c.restoreIdentityFromKit.CallUnary(ctx, req)
+}
+
 // IdentityServiceHandler is an implementation of the numen.v1.IdentityService service.
 type IdentityServiceHandler interface {
 	// GetIdentity returns the identity of this device, or none when the device holds no identity.
@@ -137,6 +189,13 @@ type IdentityServiceHandler interface {
 	CreateIdentity(context.Context, *connect.Request[v1.CreateIdentityRequest]) (*connect.Response[v1.CreateIdentityResponse], error)
 	// DeleteIdentity removes the identity from this device. Without the 12 words it cannot be restored.
 	DeleteIdentity(context.Context, *connect.Request[v1.DeleteIdentityRequest]) (*connect.Response[v1.DeleteIdentityResponse], error)
+	// CreateRecoveryKit makes a new kit of three sheets for the account of this device. The caller proves
+	// the account with the 12 words or with two sheets of an earlier kit. Nothing is kept.
+	CreateRecoveryKit(context.Context, *connect.Request[v1.CreateRecoveryKitRequest]) (*connect.Response[v1.CreateRecoveryKitResponse], error)
+	// CheckRecoveryKit reports whether two sheets restore the account of this device.
+	CheckRecoveryKit(context.Context, *connect.Request[v1.CheckRecoveryKitRequest]) (*connect.Response[v1.CheckRecoveryKitResponse], error)
+	// RestoreIdentityFromKit keeps an identity on this device from two sheets of a kit.
+	RestoreIdentityFromKit(context.Context, *connect.Request[v1.RestoreIdentityFromKitRequest]) (*connect.Response[v1.RestoreIdentityFromKitResponse], error)
 }
 
 // NewIdentityServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -170,6 +229,24 @@ func NewIdentityServiceHandler(svc IdentityServiceHandler, opts ...connect.Handl
 		connect.WithSchema(identityServiceMethods.ByName("DeleteIdentity")),
 		connect.WithHandlerOptions(opts...),
 	)
+	identityServiceCreateRecoveryKitHandler := connect.NewUnaryHandler(
+		IdentityServiceCreateRecoveryKitProcedure,
+		svc.CreateRecoveryKit,
+		connect.WithSchema(identityServiceMethods.ByName("CreateRecoveryKit")),
+		connect.WithHandlerOptions(opts...),
+	)
+	identityServiceCheckRecoveryKitHandler := connect.NewUnaryHandler(
+		IdentityServiceCheckRecoveryKitProcedure,
+		svc.CheckRecoveryKit,
+		connect.WithSchema(identityServiceMethods.ByName("CheckRecoveryKit")),
+		connect.WithHandlerOptions(opts...),
+	)
+	identityServiceRestoreIdentityFromKitHandler := connect.NewUnaryHandler(
+		IdentityServiceRestoreIdentityFromKitProcedure,
+		svc.RestoreIdentityFromKit,
+		connect.WithSchema(identityServiceMethods.ByName("RestoreIdentityFromKit")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.IdentityService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case IdentityServiceGetIdentityProcedure:
@@ -180,6 +257,12 @@ func NewIdentityServiceHandler(svc IdentityServiceHandler, opts ...connect.Handl
 			identityServiceCreateIdentityHandler.ServeHTTP(w, r)
 		case IdentityServiceDeleteIdentityProcedure:
 			identityServiceDeleteIdentityHandler.ServeHTTP(w, r)
+		case IdentityServiceCreateRecoveryKitProcedure:
+			identityServiceCreateRecoveryKitHandler.ServeHTTP(w, r)
+		case IdentityServiceCheckRecoveryKitProcedure:
+			identityServiceCheckRecoveryKitHandler.ServeHTTP(w, r)
+		case IdentityServiceRestoreIdentityFromKitProcedure:
+			identityServiceRestoreIdentityFromKitHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -203,4 +286,16 @@ func (UnimplementedIdentityServiceHandler) CreateIdentity(context.Context, *conn
 
 func (UnimplementedIdentityServiceHandler) DeleteIdentity(context.Context, *connect.Request[v1.DeleteIdentityRequest]) (*connect.Response[v1.DeleteIdentityResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.DeleteIdentity is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) CreateRecoveryKit(context.Context, *connect.Request[v1.CreateRecoveryKitRequest]) (*connect.Response[v1.CreateRecoveryKitResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.CreateRecoveryKit is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) CheckRecoveryKit(context.Context, *connect.Request[v1.CheckRecoveryKitRequest]) (*connect.Response[v1.CheckRecoveryKitResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.CheckRecoveryKit is not implemented"))
+}
+
+func (UnimplementedIdentityServiceHandler) RestoreIdentityFromKit(context.Context, *connect.Request[v1.RestoreIdentityFromKitRequest]) (*connect.Response[v1.RestoreIdentityFromKitResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.IdentityService.RestoreIdentityFromKit is not implemented"))
 }

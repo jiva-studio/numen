@@ -225,7 +225,7 @@ describe('the identity store and the recovery kit', () => {
     )
     expect(await store.createKit({ words: WORDS })).toStrictEqual({
       ok: false,
-      error: 'These are words of another account.',
+      error: 'The words belong to another account.',
     })
   })
 
@@ -237,7 +237,7 @@ describe('the identity store and the recovery kit', () => {
     )
     expect(await store.createKit({ sheets: SHEETS })).toStrictEqual({
       ok: false,
-      error: 'These are sheets of another account.',
+      error: 'The sheets belong to another account.',
     })
   })
 
@@ -268,8 +268,8 @@ describe('the identity store and the recovery kit', () => {
   it('says what is wrong with the sheets in the words of the page', async () => {
     const texts: Array<[IdentityFailure['errorCode'], string]> = [
       ['not_enough_sheets', 'One more sheet is needed.'],
-      ['invalid_sheets', 'These are sheets that are not valid.'],
-      ['other_account', 'These are sheets of another account.'],
+      ['invalid_sheets', 'Some sheets are not valid.'],
+      ['other_account', 'The sheets belong to another account.'],
     ]
     for (const [errorCode, text] of texts) {
       const { store } = createStore(
