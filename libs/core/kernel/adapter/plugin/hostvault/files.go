@@ -7,7 +7,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
 
 // Files reads the files of the vault.
@@ -15,6 +17,7 @@ type Files struct {
 	Stat        *file.HashFile
 	ReadFile    *file.ReadFile
 	RangeReader file.Read
+	Bytes       *file.ReadBytes
 
 	session sessionAccess
 }
@@ -26,6 +29,15 @@ type Writer struct {
 	Create file.CreateFile
 	Index  file.ScanFiles
 	Locks  vault.Locks
+
+	// The files of any kind: moved and removed as the window does, and placed from the store folder of a plugin.
+	Move         note.MoveFile
+	Remove       note.RemoveFile
+	Stat         *file.HashFile
+	Readers      vaultport.VaultReaders
+	Folders      vaultport.FolderWriters
+	StoreReaders func(v domain.Vault, pluginID string) (vault.StoreReader, error)
+	StoreWriters func(v domain.Vault, pluginID string) (vault.StoreWriter, error)
 
 	session sessionAccess
 }
@@ -88,4 +100,13 @@ func (w Writer) ScanFiles(ctx context.Context, paths []string) error {
 	err = w.Index.Execute(ctx, v, paths)
 	w.session.ReportWrites(v.ID, err)
 	return err
+}
+
+// ReadFileRange reads bytes of any file as they are, with the file stat taken before them.
+func (f Files) ReadFileRange(ctx context.Context, path string, start, length int64) ([]byte, domain.FileStat, error) {
+	v, err := f.session.open()
+	if err != nil {
+		return nil, domain.FileStat{}, err
+	}
+	return f.Bytes.Execute(ctx, v, path, start, length)
 }
