@@ -466,15 +466,15 @@ type ReadTextRequest struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Path      string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	VersionId string                 `protobuf:"bytes,2,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
-	// cursor is the next_cursor of the page before, and empty for the first. Not
+	// page_token is the next_page_token of the page before, and empty for the first. Not
 	// used with a length.
-	Cursor string `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	// The start of a ranged read in the whole text, in bytes.
 	Start int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
 	// Set: read the range from start of this many bytes, zero to the end,
 	// truncated at whole characters, as the segments it covers, each truncated to
 	// the range. Unset:
-	// read one page by cursor.
+	// read one page by page_token.
 	Length        *int64 `protobuf:"varint,5,opt,name=length,proto3,oneof" json:"length,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -524,9 +524,9 @@ func (x *ReadTextRequest) GetVersionId() string {
 	return ""
 }
 
-func (x *ReadTextRequest) GetCursor() string {
+func (x *ReadTextRequest) GetPageToken() string {
 	if x != nil {
-		return x.Cursor
+		return x.PageToken
 	}
 	return ""
 }
@@ -548,9 +548,9 @@ func (x *ReadTextRequest) GetLength() int64 {
 type ReadTextResponse struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Segments []*TextSegment         `protobuf:"bytes,1,rep,name=segments,proto3" json:"segments,omitempty"`
-	// next_cursor is empty on the last page.
-	NextCursor string        `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
-	Error      TextErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
+	// next_page_token is empty on the last page.
+	NextPageToken string        `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	Error         TextErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
 	// For a ranged read: the start of the first segment returned in the whole
 	// text, and the size of the whole text in bytes.
 	Start         int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
@@ -596,9 +596,9 @@ func (x *ReadTextResponse) GetSegments() []*TextSegment {
 	return nil
 }
 
-func (x *ReadTextResponse) GetNextCursor() string {
+func (x *ReadTextResponse) GetNextPageToken() string {
 	if x != nil {
-		return x.NextCursor
+		return x.NextPageToken
 	}
 	return ""
 }
@@ -663,19 +663,19 @@ const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"\x18ListTextVersionsResponse\x121\n" +
 	"\bversions\x18\x01 \x03(\v2\x15.numen.v1.TextVersionR\bversions\x12&\n" +
 	"\x0flive_version_id\x18\x02 \x01(\tR\rliveVersionId\x12-\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"\x9a\x01\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"\xa1\x01\n" +
 	"\x0fReadTextRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1d\n" +
 	"\n" +
-	"version_id\x18\x02 \x01(\tR\tversionId\x12\x16\n" +
-	"\x06cursor\x18\x03 \x01(\tR\x06cursor\x12\x14\n" +
+	"version_id\x18\x02 \x01(\tR\tversionId\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\x12\x14\n" +
 	"\x05start\x18\x04 \x01(\x03R\x05start\x12\x1b\n" +
 	"\x06length\x18\x05 \x01(\x03H\x00R\x06length\x88\x01\x01B\t\n" +
-	"\a_length\"\xbf\x01\n" +
+	"\a_length\"\xc6\x01\n" +
 	"\x10ReadTextResponse\x121\n" +
-	"\bsegments\x18\x01 \x03(\v2\x15.numen.v1.TextSegmentR\bsegments\x12\x1f\n" +
-	"\vnext_cursor\x18\x02 \x01(\tR\n" +
-	"nextCursor\x12-\n" +
+	"\bsegments\x18\x01 \x03(\v2\x15.numen.v1.TextSegmentR\bsegments\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12-\n" +
 	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\x12\x14\n" +
 	"\x05start\x18\x04 \x01(\x03R\x05start\x12\x12\n" +
 	"\x04size\x18\x05 \x01(\x03R\x04size2\x84\x02\n" +

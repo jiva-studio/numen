@@ -750,7 +750,6 @@ func (x *PluginSettingOption) GetWhen() string {
 	return ""
 }
 
-// PluginSettingOptions is one list of options.
 type PluginSettingOptions struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Options       []*PluginSettingOption `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
@@ -1469,9 +1468,8 @@ func (*WatchPluginProcessesRequest) Descriptor() ([]byte, []int) {
 }
 
 type RetryPluginRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The plugin, by its id.
-	PluginId      string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PluginId      string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1613,7 +1611,6 @@ func (x *WatchPluginProcessesResponse) GetTimeUnixMs() int64 {
 	return 0
 }
 
-// PluginProcess is the process of one plugin that runs.
 type PluginProcess struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	PluginId string                 `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`

@@ -16,11 +16,11 @@ export const createFileApi = (files: WindowClients['files']) => ({
     const answer = await files.removeFile({ path })
     const error = findErrorCode(answer)
     if (error) return asFailure(error)
-    return asValue({ trashed: answer.trashed, dangling: answer.dangling })
+    return asValue({ trashed: answer.trashPath, dangling: answer.danglingNotes })
   },
 
   /** Deletes everything the vault's trash holds for good; how many paths could not be deleted. */
-  emptyTrash: async (): Promise<number> => (await files.emptyTrash({})).undeleted.length,
+  emptyTrash: async (): Promise<number> => (await files.emptyTrash({})).failedPaths.length,
 
   /**
    * What one folder of the vault holds, in the order to draw it: folders first and then files, each
@@ -38,7 +38,7 @@ export const createFileApi = (files: WindowClients['files']) => ({
     const answer = await files.moveFile({ from, to })
     const error = findErrorCode(answer)
     if (error) return asFailure(error)
-    return asValue(answer.moved ? mapMoveResult(answer.moved) : null)
+    return asValue(answer.moveResult ? mapMoveResult(answer.moveResult) : null)
   },
 
   /** An empty folder. The folders above it are made with it. */

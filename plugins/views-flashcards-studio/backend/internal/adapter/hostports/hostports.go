@@ -112,8 +112,8 @@ func (n Notes) GetTypes(ctx context.Context, id domain.VaultID, paths []string) 
 	return n.Vaults(id).Notes.GetTypes(ctx, paths)
 }
 
-func (n Notes) GetPathsOfType(ctx context.Context, id domain.VaultID, noteType domain.NoteType) ([]string, error) {
-	return n.Vaults(id).Notes.GetPathsOfType(ctx, noteType)
+func (n Notes) ListPathsOfType(ctx context.Context, id domain.VaultID, noteType domain.NoteType) ([]string, error) {
+	return n.Vaults(id).Notes.ListPathsOfType(ctx, noteType)
 }
 
 // GetTitle returns the title of the note at path, or "" for an empty path or a note the index does not know.
@@ -131,7 +131,7 @@ func (n Notes) GetTitle(ctx context.Context, id domain.VaultID, path string) str
 // GetCardModels lists the notes of the card model type with their titles, by path.
 func (n Notes) GetCardModels(ctx context.Context, id domain.VaultID) ([]ports.CardModel, error) {
 	vault := n.Vaults(id).Notes
-	paths, err := vault.GetPathsOfType(ctx, format.TypeCardModel)
+	paths, err := vault.ListPathsOfType(ctx, format.TypeCardModel)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +146,8 @@ func (n Notes) GetCardModels(ctx context.Context, id domain.VaultID) ([]ports.Ca
 	return out, nil
 }
 
-func (n Notes) GetNamedPaths(ctx context.Context, id domain.VaultID, name string) ([]string, error) {
-	return n.Vaults(id).Notes.GetNamedPaths(ctx, name)
+func (n Notes) ListNamedPaths(ctx context.Context, id domain.VaultID, name string) ([]string, error) {
+	return n.Vaults(id).Notes.ListNamedPaths(ctx, name)
 }
 
 // Has reports whether the index contains the vault.
@@ -167,14 +167,14 @@ type Links struct {
 	Vaults func(domain.VaultID) ports.HostVault
 }
 
-// GetLinks returns the links that the note at from contains.
-func (l Links) GetLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
-	return l.Vaults(id).Links.GetLinks(ctx, from)
+// ListLinks returns the links that the note at from contains.
+func (l Links) ListLinks(ctx context.Context, id domain.VaultID, from string) ([]domain.ResolvedLink, error) {
+	return l.Vaults(id).Links.ListLinks(ctx, from)
 }
 
-// GetBacklinks returns the links that point at the note at to.
-func (l Links) GetBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
-	return l.Vaults(id).Links.GetBacklinks(ctx, to)
+// ListBacklinks returns the links that point at the note at to.
+func (l Links) ListBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
+	return l.Vaults(id).Links.ListBacklinks(ctx, to)
 }
 
 // ResolveLinks resolves rawLinks as written in the note at from.

@@ -74,7 +74,7 @@ func (e connectionEditor) getAddresses(
 		return nil, err
 	}
 	out := []domain.Address{canonical}
-	links, err := e.links.GetLinks(ctx, v.ID, from)
+	links, err := e.links.ListLinks(ctx, v.ID, from)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (e connectionEditor) getAddresses(
 }
 
 func (e connectionEditor) getParents(ctx context.Context, v domain.Vault, path string) ([]string, error) {
-	links, err := e.links.GetLinks(ctx, v.ID, path)
+	links, err := e.links.ListLinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (e connectionEditor) getParents(ctx context.Context, v domain.Vault, path s
 			parents = append(parents, l.To)
 		}
 	}
-	backlinks, err := e.links.GetBacklinks(ctx, v.ID, path)
+	backlinks, err := e.links.ListBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +341,7 @@ func (u Join) Execute(ctx context.Context, v domain.Vault, from, to string, side
 		if err := c.Validate(); err != nil {
 			return err
 		}
-		links, err := u.editor.links.GetLinks(ctx, v.ID, to)
+		links, err := u.editor.links.ListLinks(ctx, v.ID, to)
 		if err != nil {
 			return err
 		}

@@ -257,7 +257,7 @@ type WatchSettingsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The settings that changed together, with the value each now holds. A write of several settings
 	// arrives as one response.
-	Changed       []*Setting `protobuf:"bytes,1,rep,name=changed,proto3" json:"changed,omitempty"`
+	Settings      []*Setting `protobuf:"bytes,1,rep,name=settings,proto3" json:"settings,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -292,9 +292,9 @@ func (*WatchSettingsResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_settings_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *WatchSettingsResponse) GetChanged() []*Setting {
+func (x *WatchSettingsResponse) GetSettings() []*Setting {
 	if x != nil {
-		return x.Changed
+		return x.Settings
 	}
 	return nil
 }
@@ -706,9 +706,9 @@ const file_numen_v1_settings_proto_rawDesc = "" +
 	"\aSetting\x12\x19\n" +
 	"\bkey_path\x18\x01 \x03(\tR\akeyPath\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\"\x16\n" +
-	"\x14WatchSettingsRequest\"D\n" +
-	"\x15WatchSettingsResponse\x12+\n" +
-	"\achanged\x18\x01 \x03(\v2\x11.numen.v1.SettingR\achanged\"E\n" +
+	"\x14WatchSettingsRequest\"F\n" +
+	"\x15WatchSettingsResponse\x12-\n" +
+	"\bsettings\x18\x01 \x03(\v2\x11.numen.v1.SettingR\bsettings\"E\n" +
 	"\x14WriteSettingsRequest\x12-\n" +
 	"\bsettings\x18\x01 \x03(\v2\x11.numen.v1.SettingR\bsettings\"V\n" +
 	"\x15WriteSettingsResponse\x12#\n" +
@@ -774,7 +774,7 @@ var file_numen_v1_settings_proto_depIdxs = []int32{
 	12, // 0: numen.v1.GetSettingsResponse.plugins:type_name -> numen.v1.PluginInfo
 	13, // 1: numen.v1.GetSettingsResponse.app:type_name -> numen.v1.PluginSetting
 	14, // 2: numen.v1.GetSettingsResponse.app_groups:type_name -> numen.v1.PluginSettingGroup
-	2,  // 3: numen.v1.WatchSettingsResponse.changed:type_name -> numen.v1.Setting
+	2,  // 3: numen.v1.WatchSettingsResponse.settings:type_name -> numen.v1.Setting
 	2,  // 4: numen.v1.WriteSettingsRequest.settings:type_name -> numen.v1.Setting
 	11, // 5: numen.v1.Options.options:type_name -> numen.v1.Option
 	0,  // 6: numen.v1.SettingsService.GetSettings:input_type -> numen.v1.GetSettingsRequest

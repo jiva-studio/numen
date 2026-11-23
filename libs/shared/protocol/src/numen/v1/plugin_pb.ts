@@ -312,8 +312,6 @@ export const PluginSettingOptionSchema: GenMessage<PluginSettingOption> = /*@__P
   messageDesc(file_numen_v1_plugin, 7);
 
 /**
- * PluginSettingOptions is one list of options.
- *
  * @generated from message numen.v1.PluginSettingOptions
  */
 export type PluginSettingOptions = Message<"numen.v1.PluginSettingOptions"> & {
@@ -677,8 +675,6 @@ export const WatchPluginProcessesRequestSchema: GenMessage<WatchPluginProcessesR
  */
 export type RetryPluginRequest = Message<"numen.v1.RetryPluginRequest"> & {
   /**
-   * The plugin, by its id.
-   *
    * @generated from field: string plugin_id = 1;
    */
   pluginId: string;
@@ -738,8 +734,6 @@ export const WatchPluginProcessesResponseSchema: GenMessage<WatchPluginProcesses
   messageDesc(file_numen_v1_plugin, 22);
 
 /**
- * PluginProcess is the process of one plugin that runs.
- *
  * @generated from message numen.v1.PluginProcess
  */
 export type PluginProcess = Message<"numen.v1.PluginProcess"> & {

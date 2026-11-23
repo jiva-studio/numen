@@ -68,9 +68,9 @@ func TestTheListIsAnsweredWithTheOriginsTheModeAndTheBounds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := answer.Msg; got.GetApplied() != themedomain.Default || got.GetMode() != v1.Mode_MODE_DARK ||
+	if got := answer.Msg; got.GetAppliedTheme() != themedomain.Default || got.GetMode() != v1.Mode_MODE_DARK ||
 		got.GetInterfaceScale() != 1.25 || got.GetTextScale() != 1.5 {
-		t.Errorf("applied %q, read as %v, drawn at %v and %v", got.GetApplied(), got.GetMode(), got.GetInterfaceScale(), got.GetTextScale())
+		t.Errorf("applied %q, read as %v, drawn at %v and %v", got.GetAppliedTheme(), got.GetMode(), got.GetInterfaceScale(), got.GetTextScale())
 	}
 	if answer.Msg.GetInterfaceScaleBounds().GetMax() != 2 || answer.Msg.GetTextScaleBounds().GetMax() != 1.75 {
 		t.Errorf("the sizes go %v and %v", answer.Msg.GetInterfaceScaleBounds(), answer.Msg.GetTextScaleBounds())

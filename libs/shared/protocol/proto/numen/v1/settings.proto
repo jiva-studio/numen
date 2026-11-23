@@ -80,7 +80,7 @@ message WatchSettingsRequest {}
 message WatchSettingsResponse {
   // The settings that changed together, with the value each now holds. A write of several settings
   // arrives as one response.
-  repeated Setting changed = 1;
+  repeated Setting settings = 1;
 }
 
 message WriteSettingsRequest {

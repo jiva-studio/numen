@@ -11,16 +11,16 @@ func getPluginLookups(db *vaultIndex) hostvault.Lookups {
 		Notes: hostvault.Notes{
 			Notes:      query.NewGetNotes(queries),
 			Types:      query.NewGetTypes(queries),
-			NamedPaths: query.NewGetNamedPaths(queries),
-			TypedPaths: query.NewGetPathsOfType(queries),
+			NamedPaths: query.NewListNamedPaths(queries),
+			TypedPaths: query.NewListPathsOfType(queries),
 		},
 		Changes: hostvault.Changes{
 			Frontmatter: query.NewReadFrontmatter(frontmatter, feed, query.GetFrontmatterLimits()),
 			FileChanges: query.NewListFileChanges(feed),
 		},
 		Links: hostvault.Links{
-			Links:     query.NewGetLinks(queries),
-			Backlinks: query.NewGetBacklinks(queries),
+			Links:     query.NewListLinks(queries),
+			Backlinks: query.NewListBacklinks(queries),
 			Targets:   query.NewResolveLinks(queries),
 		},
 	}

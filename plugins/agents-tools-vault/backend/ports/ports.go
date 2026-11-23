@@ -31,14 +31,14 @@ type Indexer interface {
 
 type NoteLookup interface {
 	GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
-	GetNamedPaths(ctx context.Context, name string) ([]string, error)
-	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
+	ListNamedPaths(ctx context.Context, name string) ([]string, error)
+	ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }
 
 // LinkLookup finds the links of the notes of one vault.
 type LinkLookup interface {
-	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
-	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
+	ListLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
+	ListBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
 }
 
 // NoteArranger renames, moves and removes notes, and checks the vault for problems.

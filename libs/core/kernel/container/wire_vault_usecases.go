@@ -117,7 +117,7 @@ func vaultQueries(db *vaultIndex) query.UseCases {
 	return query.UseCases{
 		Refer: query.Referring{
 			Links:        query.NewShowLinks(links),
-			Backlinks:    query.NewGetBacklinks(links),
+			Backlinks:    query.NewListBacklinks(links),
 			ResolveLinks: query.NewResolveLinks(links),
 		},
 		Browse: query.Browsing{

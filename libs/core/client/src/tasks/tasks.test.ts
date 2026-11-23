@@ -77,7 +77,7 @@ describe('the work under way', () => {
         },
       ],
     ])
-    expect(request.watchTasks.mock.lastCall?.[0]).toMatchObject({ window: 'desktop.example' })
+    expect(request.watchTasks.mock.lastCall?.[0]).toMatchObject({ windowId: 'desktop.example' })
   })
 
   it('forwards the abort signal to watchTasks', async () => {
@@ -89,7 +89,7 @@ describe('the work under way', () => {
 
     await readAll(createTaskClient(rpc, 'desktop.example').watchTasks(signal))
 
-    expect(watchTasks).toHaveBeenCalledWith({ window: 'desktop.example' }, { signal })
+    expect(watchTasks).toHaveBeenCalledWith({ windowId: 'desktop.example' }, { signal })
   })
 })
 
@@ -100,7 +100,7 @@ describe('a cancel', () => {
     await tasks.cancelTask('making the vectors')
 
     expect(request.cancelTask.mock.lastCall?.[0]).toMatchObject({
-      window: 'desktop.example',
+      windowId: 'desktop.example',
       id: 'making the vectors',
     })
   })

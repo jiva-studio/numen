@@ -20,11 +20,11 @@ type linkIndex struct {
 	queried []domain.VaultID
 }
 
-func (*linkIndex) GetLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (*linkIndex) ListLinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, nil
 }
 
-func (*linkIndex) GetBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
+func (*linkIndex) ListBacklinks(context.Context, domain.VaultID, string) ([]domain.ResolvedLink, error) {
 	return nil, nil
 }
 
@@ -59,8 +59,8 @@ func TestResolveAddressesAnswersInTheNamedVault(t *testing.T) {
 	client := newNoteClient(t, index)
 
 	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-		Vault: "garden",
-		Text:  "Made like [[Compost|compost]], unlike [[Peat]].",
+		VaultId: "garden",
+		Text:    "Made like [[Compost|compost]], unlike [[Peat]].",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -73,7 +73,7 @@ func TestResolveAddressesAnswersInTheNamedVault(t *testing.T) {
 	if len(raws) != 2 || raws[0] != "[[Compost|compost]]" || raws[1] != "[[Peat]]" {
 		t.Errorf("found %q", raws)
 	}
-	resolved := answer.Msg.GetResolved()
+	resolved := answer.Msg.GetResolvedAddresses()
 	if len(resolved) != 1 || resolved[0].GetAddress() != "name://Compost" || resolved[0].GetPath() != "Compost.md" {
 		t.Errorf("resolved %v", resolved)
 	}
@@ -96,7 +96,7 @@ func TestResolveAddressesRejectsAnUnknownVault(t *testing.T) {
 	client := newNoteClient(t, &linkIndex{})
 
 	_, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-		Vault: "elsewhere", Text: "[[A]]",
+		VaultId: "elsewhere", Text: "[[A]]",
 	}))
 
 	if connect.CodeOf(err) != connect.CodeNotFound {

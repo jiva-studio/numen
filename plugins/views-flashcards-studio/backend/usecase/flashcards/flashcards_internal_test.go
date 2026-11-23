@@ -57,7 +57,7 @@ type stubLinkQueries struct {
 	backlinks    map[string][]domain.ResolvedLink
 }
 
-func (s stubLinkQueries) GetLinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
+func (s stubLinkQueries) ListLinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
 	if s.linksErr != nil {
 		return nil, s.linksErr
 	}
@@ -68,7 +68,7 @@ func (s stubLinkQueries) ResolveLinks(context.Context, domain.VaultID, string, [
 	return nil, nil
 }
 
-func (s stubLinkQueries) GetBacklinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
+func (s stubLinkQueries) ListBacklinks(_ context.Context, _ domain.VaultID, path string) ([]domain.ResolvedLink, error) {
 	if s.backlinksErr != nil {
 		return nil, s.backlinksErr
 	}
@@ -92,7 +92,7 @@ func (s stubNoteQueries) Has(_ context.Context, _ domain.VaultID) (bool, error) 
 	return s.has, s.hasErr
 }
 
-func (s stubNoteQueries) GetPathsOfType(
+func (s stubNoteQueries) ListPathsOfType(
 	_ context.Context, _ domain.VaultID, kind domain.NoteType,
 ) ([]string, error) {
 	if err := s.pathsErr[kind]; err != nil {
@@ -119,7 +119,7 @@ func (s stubNoteQueries) GetTypes(
 	return s.types, nil
 }
 
-func (s stubNoteQueries) GetNamedPaths(
+func (s stubNoteQueries) ListNamedPaths(
 	_ context.Context, _ domain.VaultID, name string,
 ) ([]string, error) {
 	if s.namesErr != nil {
@@ -620,13 +620,13 @@ type cancelingNoteQueries struct {
 	cancel context.CancelFunc
 }
 
-func (c cancelingNoteQueries) GetPathsOfType(
+func (c cancelingNoteQueries) ListPathsOfType(
 	ctx context.Context, id domain.VaultID, kind domain.NoteType,
 ) ([]string, error) {
 	if c.cancel != nil {
 		c.cancel()
 	}
-	return c.stubNoteQueries.GetPathsOfType(ctx, id, kind)
+	return c.stubNoteQueries.ListPathsOfType(ctx, id, kind)
 }
 
 type cancelingScheduleStore struct {
@@ -1123,7 +1123,7 @@ func TestAssignCardIDsInternalsAndErrors(t *testing.T) {
 	v := domain.Vault{ID: "v1"}
 	errBoom := errors.New("boom")
 
-	// Test AssignCardIDs: nil notes, GetPathsOfType error, deck read error followed by valid deck.
+	// Test AssignCardIDs: nil notes, ListPathsOfType error, deck read error followed by valid deck.
 	ac := NewAssignCardIDs(nil, nil, nil)
 	resNil, err := ac.Execute(ctx, v)
 	if err != nil || len(resNil.Unwritten) != 0 {
@@ -1131,7 +1131,7 @@ func TestAssignCardIDsInternalsAndErrors(t *testing.T) {
 	}
 	acErr := NewAssignCardIDs(stubNoteQueries{pathsErr: map[domain.NoteType]error{format.TypeDeck: errBoom}}, nil, nil)
 	if _, err := acErr.Execute(ctx, v); !errors.Is(err, errBoom) {
-		t.Fatalf("expected GetPathsOfType error from AssignCardIDs, got %v", err)
+		t.Fatalf("expected ListPathsOfType error from AssignCardIDs, got %v", err)
 	}
 	acReadErr := NewAssignCardIDs(
 		stubNoteQueries{paths: map[domain.NoteType][]string{format.TypeDeck: {"Broken.md"}}},

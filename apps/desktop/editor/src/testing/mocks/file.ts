@@ -9,7 +9,7 @@ export const fileAnswers = {
   files: {
     removeFile: (request) => {
       requests.removed.push(request.path)
-      return { trashed: `.trash/${request.path}`, dangling: [] }
+      return { trashPath: `.trash/${request.path}`, danglingNotes: [] }
     },
     listFiles: (request) => ({ entries: [...(folders[request.path] ?? [])] }),
     moveFile: (request) => {

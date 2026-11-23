@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/window.proto.
  */
 export const file_numen_v1_window: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiMKEVdhdGNoVGFza3NSZXF1ZXN0Eg4KBndpbmRvdxgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIpACCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg4KBmRldGFpbBgDIAEoCRIXCg9jb21wbGV0ZWRfY291bnQYBCABKAMSEwoLdG90YWxfY291bnQYBSABKAMSFgoOZmFpbHVyZV9yZWFzb24YBiABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0EhEKCXBsdWdpbl9pZBgJIAEoCRITCgtwbHVnaW5fbmFtZRgKIAEoCRIWCg5pc19jYW5jZWxsYWJsZRgLIAEoCBIgCgRraW5kGAwgASgOMhIubnVtZW4udjEuVGFza0tpbmQiKQoXV2F0Y2hXaW5kb3dDbG9zZVJlcXVlc3QSDgoGd2luZG93GAEgASgJIkQKGFdhdGNoV2luZG93Q2xvc2VSZXNwb25zZRINCgV0b2tlbhgBIAEoCRIZChFpc19mbHVzaF9yZXF1aXJlZBgCIAEoCCJgChhSZXBvcnRQZW5kaW5nV29ya1JlcXVlc3QSDgoGd2luZG93GAEgASgJEg0KBXRva2VuGAIgASgJEiUKBnJlc3VsdBgDIAEoDjIVLm51bWVuLnYxLkZsdXNoUmVzdWx0IhsKGVJlcG9ydFBlbmRpbmdXb3JrUmVzcG9uc2UiKAoWR2V0Q3VycmVudFZhdWx0UmVxdWVzdBIOCgZ3aW5kb3cYASABKAkiKAoXR2V0Q3VycmVudFZhdWx0UmVzcG9uc2USDQoFdmF1bHQYASABKAkiLwoRQ2FuY2VsVGFza1JlcXVlc3QSDgoGd2luZG93GAEgASgJEgoKAmlkGAIgASgJIhQKEkNhbmNlbFRhc2tSZXNwb25zZSo7CghUYXNrS2luZBIZChVUQVNLX0tJTkRfVU5TUEVDSUZJRUQQABIUChBUQVNLX0tJTkRfTk9USUNFEAEqTwoEVW5pdBIUChBVTklUX1VOU1BFQ0lGSUVEEAASDwoLVU5JVF9USElOR1MQARIOCgpVTklUX0JZVEVTEAISEAoMVU5JVF9TRUNPTkRTEAMqeQoLRmx1c2hSZXN1bHQSHAoYRkxVU0hfUkVTVUxUX1VOU1BFQ0lGSUVEEAASGAoURkxVU0hfUkVTVUxUX05PVEhJTkcQARIYChRGTFVTSF9SRVNVTFRfV1JJVFRFThACEhgKFEZMVVNIX1JFU1VMVF9VTlNBVkVEEAMytgMKDVdpbmRvd1NlcnZpY2USSQoKV2F0Y2hUYXNrcxIbLm51bWVuLnYxLldhdGNoVGFza3NSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hUYXNrc1Jlc3BvbnNlMAESWwoQV2F0Y2hXaW5kb3dDbG9zZRIhLm51bWVuLnYxLldhdGNoV2luZG93Q2xvc2VSZXF1ZXN0GiIubnVtZW4udjEuV2F0Y2hXaW5kb3dDbG9zZVJlc3BvbnNlMAESXAoRUmVwb3J0UGVuZGluZ1dvcmsSIi5udW1lbi52MS5SZXBvcnRQZW5kaW5nV29ya1JlcXVlc3QaIy5udW1lbi52MS5SZXBvcnRQZW5kaW5nV29ya1Jlc3BvbnNlElYKD0dldEN1cnJlbnRWYXVsdBIgLm51bWVuLnYxLkdldEN1cnJlbnRWYXVsdFJlcXVlc3QaIS5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXNwb25zZRJHCgpDYW5jZWxUYXNrEhsubnVtZW4udjEuQ2FuY2VsVGFza1JlcXVlc3QaHC5udW1lbi52MS5DYW5jZWxUYXNrUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChVudW1lbi92MS93aW5kb3cucHJvdG8SCG51bWVuLnYxIiYKEVdhdGNoVGFza3NSZXF1ZXN0EhEKCXdpbmRvd19pZBgBIAEoCSIzChJXYXRjaFRhc2tzUmVzcG9uc2USHQoFdGFza3MYASADKAsyDi5udW1lbi52MS5UYXNrIpACCgRUYXNrEgoKAmlkGAEgASgJEg0KBXRpdGxlGAIgASgJEg4KBmRldGFpbBgDIAEoCRIXCg9jb21wbGV0ZWRfY291bnQYBCABKAMSEwoLdG90YWxfY291bnQYBSABKAMSFgoOZmFpbHVyZV9yZWFzb24YBiABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAcgASgIEhwKBHVuaXQYCCABKA4yDi5udW1lbi52MS5Vbml0EhEKCXBsdWdpbl9pZBgJIAEoCRITCgtwbHVnaW5fbmFtZRgKIAEoCRIWCg5pc19jYW5jZWxsYWJsZRgLIAEoCBIgCgRraW5kGAwgASgOMhIubnVtZW4udjEuVGFza0tpbmQiLAoXV2F0Y2hXaW5kb3dDbG9zZVJlcXVlc3QSEQoJd2luZG93X2lkGAEgASgJIkQKGFdhdGNoV2luZG93Q2xvc2VSZXNwb25zZRINCgV0b2tlbhgBIAEoCRIZChFpc19mbHVzaF9yZXF1aXJlZBgCIAEoCCJjChhSZXBvcnRQZW5kaW5nV29ya1JlcXVlc3QSEQoJd2luZG93X2lkGAEgASgJEg0KBXRva2VuGAIgASgJEiUKBnJlc3VsdBgDIAEoDjIVLm51bWVuLnYxLkZsdXNoUmVzdWx0IhsKGVJlcG9ydFBlbmRpbmdXb3JrUmVzcG9uc2UiKwoWR2V0Q3VycmVudFZhdWx0UmVxdWVzdBIRCgl3aW5kb3dfaWQYASABKAkiKwoXR2V0Q3VycmVudFZhdWx0UmVzcG9uc2USEAoIdmF1bHRfaWQYASABKAkiMgoRQ2FuY2VsVGFza1JlcXVlc3QSEQoJd2luZG93X2lkGAEgASgJEgoKAmlkGAIgASgJIhQKEkNhbmNlbFRhc2tSZXNwb25zZSo7CghUYXNrS2luZBIZChVUQVNLX0tJTkRfVU5TUEVDSUZJRUQQABIUChBUQVNLX0tJTkRfTk9USUNFEAEqTwoEVW5pdBIUChBVTklUX1VOU1BFQ0lGSUVEEAASDwoLVU5JVF9USElOR1MQARIOCgpVTklUX0JZVEVTEAISEAoMVU5JVF9TRUNPTkRTEAMqeQoLRmx1c2hSZXN1bHQSHAoYRkxVU0hfUkVTVUxUX1VOU1BFQ0lGSUVEEAASGAoURkxVU0hfUkVTVUxUX05PVEhJTkcQARIYChRGTFVTSF9SRVNVTFRfV1JJVFRFThACEhgKFEZMVVNIX1JFU1VMVF9VTlNBVkVEEAMytgMKDVdpbmRvd1NlcnZpY2USSQoKV2F0Y2hUYXNrcxIbLm51bWVuLnYxLldhdGNoVGFza3NSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hUYXNrc1Jlc3BvbnNlMAESWwoQV2F0Y2hXaW5kb3dDbG9zZRIhLm51bWVuLnYxLldhdGNoV2luZG93Q2xvc2VSZXF1ZXN0GiIubnVtZW4udjEuV2F0Y2hXaW5kb3dDbG9zZVJlc3BvbnNlMAESXAoRUmVwb3J0UGVuZGluZ1dvcmsSIi5udW1lbi52MS5SZXBvcnRQZW5kaW5nV29ya1JlcXVlc3QaIy5udW1lbi52MS5SZXBvcnRQZW5kaW5nV29ya1Jlc3BvbnNlElYKD0dldEN1cnJlbnRWYXVsdBIgLm51bWVuLnYxLkdldEN1cnJlbnRWYXVsdFJlcXVlc3QaIS5udW1lbi52MS5HZXRDdXJyZW50VmF1bHRSZXNwb25zZRJHCgpDYW5jZWxUYXNrEhsubnVtZW4udjEuQ2FuY2VsVGFza1JlcXVlc3QaHC5udW1lbi52MS5DYW5jZWxUYXNrUmVzcG9uc2VCSFpGZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3NoYXJlZC9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * @generated from message numen.v1.WatchTasksRequest
@@ -26,9 +26,9 @@ export type WatchTasksRequest = Message<"numen.v1.WatchTasksRequest"> & {
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
-   * @generated from field: string window = 1;
+   * @generated from field: string window_id = 1;
    */
-  window: string;
+  windowId: string;
 };
 
 /**
@@ -164,9 +164,9 @@ export type WatchWindowCloseRequest = Message<"numen.v1.WatchWindowCloseRequest"
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
-   * @generated from field: string window = 1;
+   * @generated from field: string window_id = 1;
    */
-  window: string;
+  windowId: string;
 };
 
 /**
@@ -211,9 +211,9 @@ export type ReportPendingWorkRequest = Message<"numen.v1.ReportPendingWorkReques
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
-   * @generated from field: string window = 1;
+   * @generated from field: string window_id = 1;
    */
-  window: string;
+  windowId: string;
 
   /**
    * The token this caller was given when it began listening.
@@ -259,9 +259,9 @@ export type GetCurrentVaultRequest = Message<"numen.v1.GetCurrentVaultRequest"> 
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
-   * @generated from field: string window = 1;
+   * @generated from field: string window_id = 1;
    */
-  window: string;
+  windowId: string;
 };
 
 /**
@@ -280,9 +280,9 @@ export type GetCurrentVaultResponse = Message<"numen.v1.GetCurrentVaultResponse"
    * showing none, and in one that is open on the installation and not on
    * any one vault.
    *
-   * @generated from field: string vault = 1;
+   * @generated from field: string vault_id = 1;
    */
-  vault: string;
+  vaultId: string;
 };
 
 /**
@@ -300,9 +300,9 @@ export type CancelTaskRequest = Message<"numen.v1.CancelTaskRequest"> & {
    * The window this is asked of. A question naming another window than the one
    * answering it is not answered.
    *
-   * @generated from field: string window = 1;
+   * @generated from field: string window_id = 1;
    */
-  window: string;
+  windowId: string;
 
   /**
    * The id that WatchTasks lists the task under.

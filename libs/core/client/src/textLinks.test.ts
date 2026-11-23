@@ -11,7 +11,7 @@ const createClient = () => {
         { raw: '[[C|see C]]', address: 'name://C', text: 'see C' },
         { raw: '[[D]]', address: 'name://D', text: 'D' },
       ],
-      resolved: [
+      resolvedAddresses: [
         { address: 'name://B', path: 'b.md', isCrossed: false },
         { address: 'name://C', path: 'c.md', isCrossed: true },
       ],
@@ -38,8 +38,8 @@ describe('resolveTextLinks', () => {
     await resolveTextLinks(client, { text: 'y' })
 
     expect(client.resolveAddresses.mock.calls).toEqual([
-      [{ from: 'a.md', text: 'x', vault: 'garden' }],
-      [{ from: '', text: 'y', vault: '' }],
+      [{ from: 'a.md', text: 'x', vaultId: 'garden' }],
+      [{ from: '', text: 'y', vaultId: '' }],
     ])
   })
 })

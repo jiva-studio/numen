@@ -227,7 +227,7 @@ describe('createConnectionCallClient', () => {
   })
 
   it('sends the row the call prefers with whether it is exclusive, and none where it prefers none', async () => {
-    const requests: Array<{ preferred?: unknown }> = []
+    const requests: Array<{ preferredRow?: unknown }> = []
     const rpc: ConnectionCallRpc = {
       ...NO_LISTS,
       call: (request) => {
@@ -249,13 +249,13 @@ describe('createConnectionCallClient', () => {
       }),
     )
 
-    expect(requests[0]?.preferred).toStrictEqual({
+    expect(requests[0]?.preferredRow).toStrictEqual({
       connectionId: 'c-claude',
       options: { model: 'opus' },
       isExclusive: false,
     })
-    expect(requests[1]?.preferred).toBeUndefined()
-    expect(requests[2]?.preferred).toStrictEqual({
+    expect(requests[1]?.preferredRow).toBeUndefined()
+    expect(requests[2]?.preferredRow).toStrictEqual({
       connectionId: 'c-claude',
       options: {},
       isExclusive: true,

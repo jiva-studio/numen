@@ -11,9 +11,9 @@ import (
 
 // NameQueries is the query that writing a link, or naming a new note, makes of the vault.
 type NameQueries interface {
-	// GetNamedPaths returns the paths of every note with one name. More than one
+	// ListNamedPaths returns the paths of every note with one name. More than one
 	// path makes a link written by that name ambiguous.
-	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
+	ListNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 }
 
 // ErrUnaddressable reports a note no link can address: its name contains a
@@ -35,7 +35,7 @@ func GetAddress(ctx context.Context, names NameQueries, vaultID domain.VaultID, 
 	if strings.ContainsAny(name, "#|") {
 		return domain.Address{}, fmt.Errorf("%w: %s", ErrUnaddressable, name)
 	}
-	shares, err := names.GetNamedPaths(ctx, vaultID, name)
+	shares, err := names.ListNamedPaths(ctx, vaultID, name)
 	if err != nil {
 		return domain.Address{}, err
 	}

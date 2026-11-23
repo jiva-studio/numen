@@ -322,13 +322,13 @@ type LicenseInfo struct {
 	ActiveProvider string `protobuf:"bytes,9,opt,name=active_provider,json=activeProvider,proto3" json:"active_provider,omitempty"`
 	// instance_name is the machine name recorded when the key was activated.
 	InstanceName string `protobuf:"bytes,10,opt,name=instance_name,json=instanceName,proto3" json:"instance_name,omitempty"`
-	// expires_at is the RFC 3339 UTC timestamp when the current period ends, or empty when the provider
+	// expires_unix_ms is the Unix time in milliseconds when the current period ends, or zero when the provider
 	// does not report one.
-	ExpiresAt string `protobuf:"bytes,11,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	// verified_at is the RFC 3339 UTC timestamp when the key was last verified online.
-	VerifiedAt    string `protobuf:"bytes,12,opt,name=verified_at,json=verifiedAt,proto3" json:"verified_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	ExpiresUnixMs int64 `protobuf:"varint,11,opt,name=expires_unix_ms,json=expiresUnixMs,proto3" json:"expires_unix_ms,omitempty"`
+	// verified_unix_ms is the Unix time in milliseconds when the key was last verified online, or zero when never.
+	VerifiedUnixMs int64 `protobuf:"varint,12,opt,name=verified_unix_ms,json=verifiedUnixMs,proto3" json:"verified_unix_ms,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *LicenseInfo) Reset() {
@@ -431,18 +431,18 @@ func (x *LicenseInfo) GetInstanceName() string {
 	return ""
 }
 
-func (x *LicenseInfo) GetExpiresAt() string {
+func (x *LicenseInfo) GetExpiresUnixMs() int64 {
 	if x != nil {
-		return x.ExpiresAt
+		return x.ExpiresUnixMs
 	}
-	return ""
+	return 0
 }
 
-func (x *LicenseInfo) GetVerifiedAt() string {
+func (x *LicenseInfo) GetVerifiedUnixMs() int64 {
 	if x != nil {
-		return x.VerifiedAt
+		return x.VerifiedUnixMs
 	}
-	return ""
+	return 0
 }
 
 type ListLicensesRequest struct {
@@ -837,7 +837,7 @@ const file_numen_v1_license_proto_rawDesc = "" +
 	"\n" +
 	"product_id\x18\x03 \x01(\tR\tproductId\x12!\n" +
 	"\fcheckout_url\x18\x04 \x01(\tR\vcheckoutUrl\x12'\n" +
-	"\x0fpayment_methods\x18\x05 \x03(\tR\x0epaymentMethods\"\xc4\x03\n" +
+	"\x0fpayment_methods\x18\x05 \x03(\tR\x0epaymentMethods\"\xd6\x03\n" +
 	"\vLicenseInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12@\n" +
@@ -849,11 +849,9 @@ const file_numen_v1_license_proto_rawDesc = "" +
 	"\bkey_hint\x18\b \x01(\tR\akeyHint\x12'\n" +
 	"\x0factive_provider\x18\t \x01(\tR\x0eactiveProvider\x12#\n" +
 	"\rinstance_name\x18\n" +
-	" \x01(\tR\finstanceName\x12\x1d\n" +
-	"\n" +
-	"expires_at\x18\v \x01(\tR\texpiresAt\x12\x1f\n" +
-	"\vverified_at\x18\f \x01(\tR\n" +
-	"verifiedAt\"\x15\n" +
+	" \x01(\tR\finstanceName\x12&\n" +
+	"\x0fexpires_unix_ms\x18\v \x01(\x03R\rexpiresUnixMs\x12(\n" +
+	"\x10verified_unix_ms\x18\f \x01(\x03R\x0everifiedUnixMs\"\x15\n" +
 	"\x13ListLicensesRequest\"I\n" +
 	"\x14ListLicensesResponse\x121\n" +
 	"\blicenses\x18\x01 \x03(\v2\x15.numen.v1.LicenseInfoR\blicenses\"N\n" +

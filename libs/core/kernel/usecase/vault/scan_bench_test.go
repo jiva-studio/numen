@@ -239,7 +239,7 @@ func BenchmarkLinks(b *testing.B) {
 
 			b.ResetTimer()
 			for range b.N {
-				resolved, err := links.GetLinks(b.Context(), v.ID, of)
+				resolved, err := links.ListLinks(b.Context(), v.ID, of)
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -266,7 +266,7 @@ func BenchmarkBacklinks(b *testing.B) {
 
 			b.ResetTimer()
 			for range b.N {
-				if _, err := links.GetBacklinks(b.Context(), v.ID, to); err != nil {
+				if _, err := links.ListBacklinks(b.Context(), v.ID, to); err != nil {
 					b.Fatal(err)
 				}
 			}

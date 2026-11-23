@@ -26,7 +26,7 @@ type noteLinks struct {
 func (l noteLinks) ResolveAddresses(
 	ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
 ) (*connect.Response[v1.ResolveAddressesResponse], error) {
-	named := r.Msg.GetVault()
+	named := r.Msg.GetVaultId()
 	if named == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoVault)
 	}

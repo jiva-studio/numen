@@ -253,7 +253,7 @@ describe('the wikilinks of a text', () => {
     const relations = getRelations()
     request.resolveAddresses.mockResolvedValue({
       links: [{ raw: '[[Tides]]', address: 'name://Tides', text: 'Tides' }],
-      resolved: [{ address: 'name://Tides', path: 'Sea/Tides.md', isCrossed: false }],
+      resolvedAddresses: [{ address: 'name://Tides', path: 'Sea/Tides.md', isCrossed: false }],
     })
 
     expect(await relations.resolveLinks('See [[Tides]].', 'v-sea')).toEqual([
@@ -262,7 +262,7 @@ describe('the wikilinks of a text', () => {
     expect(request.resolveAddresses.mock.lastCall?.[0]).toMatchObject({
       from: '',
       text: 'See [[Tides]].',
-      vault: 'v-sea',
+      vaultId: 'v-sea',
     })
   })
 })

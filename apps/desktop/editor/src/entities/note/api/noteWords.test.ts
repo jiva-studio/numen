@@ -59,7 +59,7 @@ describe('mapNoteGraph', () => {
       focus: { path: 'Here.md', title: 'Here' },
       focusType: 'sample',
       focusTabKind: 'samples',
-      related: [
+      relatedNotes: [
         {
           note: { path: 'Up.md', title: 'Up' },
           type: 'sheet',
@@ -115,7 +115,7 @@ describe('mapNoteGraph references', () => {
     mapNoteGraph(
       create(NoteGraphSchema, {
         focus: { path: 'Here.md', title: 'Here' },
-        related: [
+        relatedNotes: [
           {
             note: { path: 'Cited.md', title: 'Cited' },
             relation: NOTE_RELATION.REFERENCE,
@@ -147,7 +147,7 @@ describe('mapNoteGraph references', () => {
     const [note] = mapNoteGraph(
       create(NoteGraphSchema, {
         focus: { path: 'Here.md', title: 'Here' },
-        related: [
+        relatedNotes: [
           {
             note: { path: 'Up.md', title: 'Up' },
             relation: NOTE_RELATION.PARENT,

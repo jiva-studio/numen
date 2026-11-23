@@ -129,7 +129,7 @@ type noteTitle struct {
 }
 
 func readTitles(ctx context.Context, notes host.NoteLookup) ([]noteTitle, error) {
-	paths, err := notes.GetPathsOfType(ctx, domain.TypeNote)
+	paths, err := notes.ListPathsOfType(ctx, domain.TypeNote)
 	if err != nil {
 		return nil, fmt.Errorf("list the notes: %w", err)
 	}

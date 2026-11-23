@@ -53,7 +53,7 @@ func (w *Window) WatchTasks(
 	r *connect.Request[v1.WatchTasksRequest],
 	out *connect.ServerStream[v1.WatchTasksResponse],
 ) error {
-	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindowId()); err != nil {
 		return err
 	}
 	if w.Tasks == nil {
@@ -96,7 +96,7 @@ func (w *Window) WatchWindowClose(
 	r *connect.Request[v1.WatchWindowCloseRequest],
 	out *connect.ServerStream[v1.WatchWindowCloseResponse],
 ) error {
-	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindowId()); err != nil {
 		return err
 	}
 	token, notified, isDone := w.clients.registerClient()
@@ -138,7 +138,7 @@ func (w *Window) ReportPendingWork(
 	_ context.Context,
 	r *connect.Request[v1.ReportPendingWorkRequest],
 ) (*connect.Response[v1.ReportPendingWorkResponse], error) {
-	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindowId()); err != nil {
 		return nil, err
 	}
 	w.clients.recordFlush(r.Msg.GetToken(), parseFlushResult(r.Msg.GetResult()))
@@ -150,12 +150,12 @@ func (w *Window) GetCurrentVault(
 	_ context.Context,
 	r *connect.Request[v1.GetCurrentVaultRequest],
 ) (*connect.Response[v1.GetCurrentVaultResponse], error) {
-	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindowId()); err != nil {
 		return nil, err
 	}
 	out := &v1.GetCurrentVaultResponse{}
 	if w.Vault != nil {
-		out.Vault = w.Vault()
+		out.VaultId = w.Vault()
 	}
 	return connect.NewResponse(out), nil
 }
@@ -165,7 +165,7 @@ func (w *Window) CancelTask(
 	_ context.Context,
 	r *connect.Request[v1.CancelTaskRequest],
 ) (*connect.Response[v1.CancelTaskResponse], error) {
-	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
+	if err := w.checkWindowName(r.Msg.GetWindowId()); err != nil {
 		return nil, err
 	}
 	if w.Tasks == nil || !w.Tasks.Cancel(r.Msg.GetId()) {

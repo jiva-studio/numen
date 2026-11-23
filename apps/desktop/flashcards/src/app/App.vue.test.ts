@@ -154,7 +154,7 @@ beforeEach(() => {
   wire.writeAppearance.mockReset()
   wire.cancelTask.mockReset()
   wire.resolveAddresses.mockReset()
-  wire.resolveAddresses.mockResolvedValue({ links: [], resolved: [] })
+  wire.resolveAddresses.mockResolvedValue({ links: [], resolvedAddresses: [] })
   wire.listPlugins.mockResolvedValue({ plugins: [] })
   wire.listVaults.mockResolvedValue({ vaults: [] })
   wire.listThemes.mockResolvedValue({
@@ -423,7 +423,7 @@ describe('the work behind the window', () => {
     expect(initialListed).toStrictEqual([])
     await flushPromises()
 
-    expect(wire.requestedTasks).toMatchObject([{ window: 'desktop.flashcards' }])
+    expect(wire.requestedTasks).toMatchObject([{ windowId: 'desktop.flashcards' }])
     expect(shell?.notices.notices.value).toMatchObject([
       {
         text: 'lost touch with numen — the window keeps trying',

@@ -140,7 +140,7 @@ func (v *Vault) editLinks(
 	return stat, nil
 }
 
-func (v *Vault) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
+func (v *Vault) ListLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {
@@ -160,7 +160,7 @@ func (v *Vault) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLin
 	return dedupe(out), nil
 }
 
-func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
+func (v *Vault) ListBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {

@@ -299,7 +299,7 @@ func (i *Index) bump() {
 }
 
 func (i *Index) listPaths(ctx context.Context) ([]string, error) {
-	listed, err := i.notes.GetPathsOfType(ctx, domain.TypeNote)
+	listed, err := i.notes.ListPathsOfType(ctx, domain.TypeNote)
 	if err != nil {
 		return nil, err
 	}

@@ -35,7 +35,9 @@ const createWindow = (answers: Answers = {}) => {
   const api = createHandledApi({
     moveFile: (request: { from: string; to: string }) => {
       actions.push(`move ${request.from} ${request.to}`)
-      return answers.move ?? { moved: { from: request.from, to: request.to, repaired: [] } }
+      return (
+        answers.move ?? { moveResult: { from: request.from, to: request.to, repairedNotes: [] } }
+      )
     },
     listFiles: (request: { path: string }) => {
       actions.push(`listNames ${request.path || '—'}`)

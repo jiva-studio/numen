@@ -564,7 +564,7 @@ type NoteGraph struct {
 	// the focus and a reference is an item of that reference. The focus is never an item, and
 	// a note is not an item of itself. One note can be an item of several notes, so `note.path`
 	// is not unique here, `(related_to, note.path)` is.
-	Related []*RelatedNote `protobuf:"bytes,2,rep,name=related,proto3" json:"related,omitempty"`
+	RelatedNotes []*RelatedNote `protobuf:"bytes,2,rep,name=related_notes,json=relatedNotes,proto3" json:"related_notes,omitempty"`
 	// The `type` key of the frontmatter of the note in focus, so a client draws a note as
 	// what it is. Empty for an ordinary note.
 	FocusType string `protobuf:"bytes,3,opt,name=focus_type,json=focusType,proto3" json:"focus_type,omitempty"`
@@ -618,9 +618,9 @@ func (x *NoteGraph) GetFocus() *Note {
 	return nil
 }
 
-func (x *NoteGraph) GetRelated() []*RelatedNote {
+func (x *NoteGraph) GetRelatedNotes() []*RelatedNote {
 	if x != nil {
-		return x.Related
+		return x.RelatedNotes
 	}
 	return nil
 }
@@ -756,7 +756,7 @@ type ResolveAddressesRequest struct {
 	Text string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
 	// The id of the vault the addresses are written in. Empty is the vault the
 	// window shows; a window that shows no vault needs it.
-	Vault         string `protobuf:"bytes,4,opt,name=vault,proto3" json:"vault,omitempty"`
+	VaultId       string `protobuf:"bytes,4,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -812,9 +812,9 @@ func (x *ResolveAddressesRequest) GetText() string {
 	return ""
 }
 
-func (x *ResolveAddressesRequest) GetVault() string {
+func (x *ResolveAddressesRequest) GetVaultId() string {
 	if x != nil {
-		return x.Vault
+		return x.VaultId
 	}
 	return ""
 }
@@ -823,7 +823,7 @@ type ResolveAddressesResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where each address lands, in the order they were asked about. One that
 	// reaches nothing is absent, and so is one asked about twice.
-	Resolved []*ResolvedAddress `protobuf:"bytes,1,rep,name=resolved,proto3" json:"resolved,omitempty"`
+	ResolvedAddresses []*ResolvedAddress `protobuf:"bytes,1,rep,name=resolved_addresses,json=resolvedAddresses,proto3" json:"resolved_addresses,omitempty"`
 	// The wikilinks in `text`, in the order they are written, each raw form
 	// once, whether they reach a note or not.
 	Links         []*TextLink `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty"`
@@ -861,9 +861,9 @@ func (*ResolveAddressesResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *ResolveAddressesResponse) GetResolved() []*ResolvedAddress {
+func (x *ResolveAddressesResponse) GetResolvedAddresses() []*ResolvedAddress {
 	if x != nil {
-		return x.Resolved
+		return x.ResolvedAddresses
 	}
 	return nil
 }
@@ -948,7 +948,7 @@ type ResolvedAddress struct {
 	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// The vault holding that note. An identifier names one note in the world, so
 	// an address may land outside the vault it was written in.
-	Vault string `protobuf:"bytes,3,opt,name=vault,proto3" json:"vault,omitempty"`
+	VaultId string `protobuf:"bytes,3,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
 	// Set where that vault is not the one this call was answered about.
 	IsCrossed bool `protobuf:"varint,4,opt,name=is_crossed,json=isCrossed,proto3" json:"is_crossed,omitempty"`
 	// Set where several notes answer to the name. It reaches the nearest of them,
@@ -1002,9 +1002,9 @@ func (x *ResolvedAddress) GetPath() string {
 	return ""
 }
 
-func (x *ResolvedAddress) GetVault() string {
+func (x *ResolvedAddress) GetVaultId() string {
 	if x != nil {
-		return x.Vault
+		return x.VaultId
 	}
 	return ""
 }
@@ -1025,7 +1025,7 @@ func (x *ResolvedAddress) GetIsAmbiguous() bool {
 
 type ListHeadingsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Only the notes filed under these paths. A filter naming none passes none,
+	// The notes to list the headings of, by path. A path with no note is left out.
 	Paths         []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2876,7 +2876,7 @@ type RenameNoteResponse struct {
 	// line. NAME_SOURCE_UNSPECIFIED when the note was never opened.
 	NameSource NameSource `protobuf:"varint,3,opt,name=name_source,json=nameSource,proto3,enum=numen.v1.NameSource" json:"name_source,omitempty"`
 	// What the file did. Absent when it kept its position.
-	Moved *MoveResult `protobuf:"bytes,4,opt,name=moved,proto3,oneof" json:"moved,omitempty"`
+	MoveResult *MoveResult `protobuf:"bytes,4,opt,name=move_result,json=moveResult,proto3,oneof" json:"move_result,omitempty"`
 	// Set when the rename did not finish, and why. The note may already have been
 	// written: `path`, `title` and `by` say what stands. A note holding prose the
 	// caller never saw is ERROR_CODE_CONFLICT, and nothing was written at all.
@@ -2942,9 +2942,9 @@ func (x *RenameNoteResponse) GetNameSource() NameSource {
 	return NameSource_NAME_SOURCE_UNSPECIFIED
 }
 
-func (x *RenameNoteResponse) GetMoved() *MoveResult {
+func (x *RenameNoteResponse) GetMoveResult() *MoveResult {
 	if x != nil {
-		return x.Moved
+		return x.MoveResult
 	}
 	return nil
 }
@@ -3108,10 +3108,10 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x14\n" +
 	"\x05depth\x18\x02 \x01(\rR\x05depth\"G\n" +
 	"\x18ListRelatedNotesResponse\x12+\n" +
-	"\x06graphs\x18\x01 \x03(\v2\x13.numen.v1.NoteGraphR\x06graphs\"\xdf\x01\n" +
+	"\x06graphs\x18\x01 \x03(\v2\x13.numen.v1.NoteGraphR\x06graphs\"\xea\x01\n" +
 	"\tNoteGraph\x12$\n" +
-	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12/\n" +
-	"\arelated\x18\x02 \x03(\v2\x15.numen.v1.RelatedNoteR\arelated\x12\x1d\n" +
+	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12:\n" +
+	"\rrelated_notes\x18\x02 \x03(\v2\x15.numen.v1.RelatedNoteR\frelatedNotes\x12\x1d\n" +
 	"\n" +
 	"focus_type\x18\x03 \x01(\tR\tfocusType\x126\n" +
 	"\vconnections\x18\x04 \x03(\v2\x14.numen.v1.ConnectionR\vconnections\x12$\n" +
@@ -3123,23 +3123,23 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\btab_kind\x18\a \x01(\tR\atabKind\x125\n" +
 	"\tdirection\x18\b \x01(\x0e2\x17.numen.v1.LinkDirectionR\tdirection\x12\x1d\n" +
 	"\n" +
-	"related_to\x18\t \x01(\tR\trelatedTo\"u\n" +
+	"related_to\x18\t \x01(\tR\trelatedTo\"z\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x1c\n" +
 	"\taddresses\x18\x02 \x03(\tR\taddresses\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04text\x12\x14\n" +
-	"\x05vault\x18\x04 \x01(\tR\x05vault\"{\n" +
-	"\x18ResolveAddressesResponse\x125\n" +
-	"\bresolved\x18\x01 \x03(\v2\x19.numen.v1.ResolvedAddressR\bresolved\x12(\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\x12\x19\n" +
+	"\bvault_id\x18\x04 \x01(\tR\avaultId\"\x8e\x01\n" +
+	"\x18ResolveAddressesResponse\x12H\n" +
+	"\x12resolved_addresses\x18\x01 \x03(\v2\x19.numen.v1.ResolvedAddressR\x11resolvedAddresses\x12(\n" +
 	"\x05links\x18\x02 \x03(\v2\x12.numen.v1.TextLinkR\x05links\"J\n" +
 	"\bTextLink\x12\x10\n" +
 	"\x03raw\x18\x01 \x01(\tR\x03raw\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\tR\aaddress\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04text\"\x97\x01\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\"\x9c\x01\n" +
 	"\x0fResolvedAddress\x12\x18\n" +
 	"\aaddress\x18\x01 \x01(\tR\aaddress\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
-	"\x05vault\x18\x03 \x01(\tR\x05vault\x12\x1d\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x19\n" +
+	"\bvault_id\x18\x03 \x01(\tR\avaultId\x12\x1d\n" +
 	"\n" +
 	"is_crossed\x18\x04 \x01(\bR\tisCrossed\x12!\n" +
 	"\fis_ambiguous\x18\x05 \x01(\bR\visAmbiguous\"+\n" +
@@ -3274,17 +3274,18 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\tbacklinks\x18\x01 \x03(\v2\x12.numen.v1.BacklinkR\tbacklinks\"=\n" +
 	"\x11RenameNoteRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title\"\x9f\x02\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\"\xb0\x02\n" +
 	"\x12RenameNoteResponse\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x125\n" +
 	"\vname_source\x18\x03 \x01(\x0e2\x14.numen.v1.NameSourceR\n" +
-	"nameSource\x12/\n" +
-	"\x05moved\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\x05moved\x88\x01\x01\x12)\n" +
+	"nameSource\x12:\n" +
+	"\vmove_result\x18\x04 \x01(\v2\x14.numen.v1.MoveResultH\x00R\n" +
+	"moveResult\x88\x01\x01\x12)\n" +
 	"\x05error\x18\x05 \x01(\x0e2\x13.numen.v1.ErrorCodeR\x05error\x12*\n" +
 	"\x11is_index_outdated\x18\x06 \x01(\bR\x0fisIndexOutdated\x12\x16\n" +
-	"\x06detail\x18\a \x01(\tR\x06detailB\b\n" +
-	"\x06_moved\"\x13\n" +
+	"\x06detail\x18\a \x01(\tR\x06detailB\x0e\n" +
+	"\f_move_result\"\x13\n" +
 	"\x11WatchEditsRequest\"\x96\x01\n" +
 	"\x12WatchEditsResponse\x12\x16\n" +
 	"\x06change\x18\x01 \x01(\tR\x06change\x12\x12\n" +
@@ -3415,12 +3416,12 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	5,  // 0: numen.v1.GetOpeningNoteResponse.note:type_name -> numen.v1.Note
 	10, // 1: numen.v1.ListRelatedNotesResponse.graphs:type_name -> numen.v1.NoteGraph
 	5,  // 2: numen.v1.NoteGraph.focus:type_name -> numen.v1.Note
-	11, // 3: numen.v1.NoteGraph.related:type_name -> numen.v1.RelatedNote
+	11, // 3: numen.v1.NoteGraph.related_notes:type_name -> numen.v1.RelatedNote
 	29, // 4: numen.v1.NoteGraph.connections:type_name -> numen.v1.Connection
 	5,  // 5: numen.v1.RelatedNote.note:type_name -> numen.v1.Note
 	0,  // 6: numen.v1.RelatedNote.relation:type_name -> numen.v1.Relation
 	1,  // 7: numen.v1.RelatedNote.direction:type_name -> numen.v1.LinkDirection
-	15, // 8: numen.v1.ResolveAddressesResponse.resolved:type_name -> numen.v1.ResolvedAddress
+	15, // 8: numen.v1.ResolveAddressesResponse.resolved_addresses:type_name -> numen.v1.ResolvedAddress
 	14, // 9: numen.v1.ResolveAddressesResponse.links:type_name -> numen.v1.TextLink
 	18, // 10: numen.v1.ListHeadingsResponse.headings:type_name -> numen.v1.NoteHeadings
 	19, // 11: numen.v1.NoteHeadings.headings:type_name -> numen.v1.Heading
@@ -3456,7 +3457,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	3,  // 41: numen.v1.Backlink.marker:type_name -> numen.v1.Marker
 	43, // 42: numen.v1.ListBacklinksResponse.backlinks:type_name -> numen.v1.Backlink
 	4,  // 43: numen.v1.RenameNoteResponse.name_source:type_name -> numen.v1.NameSource
-	51, // 44: numen.v1.RenameNoteResponse.moved:type_name -> numen.v1.MoveResult
+	51, // 44: numen.v1.RenameNoteResponse.move_result:type_name -> numen.v1.MoveResult
 	49, // 45: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
 	52, // 46: numen.v1.WatchEditsResponse.range:type_name -> numen.v1.Range
 	6,  // 47: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest

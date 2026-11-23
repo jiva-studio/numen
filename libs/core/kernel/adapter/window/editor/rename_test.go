@@ -66,7 +66,7 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 	if delta := answer.Msg.GetNameSource(); delta != v1.NameSource_NAME_SOURCE_FRONTMATTER {
 		t.Errorf("the frontmatter named the note and the answer says %v", delta)
 	}
-	moved := answer.Msg.GetMoved()
+	moved := answer.Msg.GetMoveResult()
 	if moved.GetFrom() != "Old.md" || moved.GetTo() != "Entropy.md" {
 		t.Errorf("what the file did came back as %+v", moved)
 	}
@@ -223,7 +223,7 @@ func TestRenamingPreservesALinkThatMeansAnotherNoteNow(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the rename failed: %v", code)
 	}
-	if repaired := answer.Msg.GetMoved().GetRepaired(); len(repaired) != 0 {
+	if repaired := answer.Msg.GetMoveResult().GetRepairedNotes(); len(repaired) != 0 {
 		t.Errorf("a link that resolves is not repaired: %v", repaired)
 	}
 	if now := fileAt(t, f.root, "Heat.md"); now != heat {
@@ -349,10 +349,10 @@ func TestRemoveFile_TrashesAndReturnsDanglingLinks(t *testing.T) {
 			if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 				t.Fatalf("the %s failed: %v", c.name, code)
 			}
-			if trashed := answer.Msg.GetTrashed(); trashed != c.trashed {
+			if trashed := answer.Msg.GetTrashPath(); trashed != c.trashed {
 				t.Errorf("the %s is at %q", c.name, trashed)
 			}
-			dangling := answer.Msg.GetDangling()
+			dangling := answer.Msg.GetDanglingNotes()
 			if len(dangling) != 1 || dangling[0] != "Heat.md" {
 				t.Errorf("what now reaches nothing came back as %v", dangling)
 			}
@@ -388,7 +388,7 @@ func TestEmptyTrash_DeletesTrashContent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if undeleted := answer.Msg.GetUndeleted(); len(undeleted) != 0 {
+	if undeleted := answer.Msg.GetFailedPaths(); len(undeleted) != 0 {
 		t.Errorf("undeleted: %v", undeleted)
 	}
 	for _, path := range []string{".trash/Entropy.md", ".trash/physics/Heat.md", ".trash/physics"} {
@@ -435,7 +435,7 @@ func TestRemovingARemadeNote(t *testing.T) {
 	if code := answer2.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("second removal failed: %v", code)
 	}
-	if trashed := answer2.Msg.GetTrashed(); trashed != ".trash/Entropy-2.md" {
+	if trashed := answer2.Msg.GetTrashPath(); trashed != ".trash/Entropy-2.md" {
 		t.Errorf("second removal trashed: %q, want .trash/Entropy-2.md", trashed)
 	}
 }
@@ -590,7 +590,7 @@ func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the rename failed: %v", code)
 	}
-	repaired := answer.Msg.GetMoved().GetRepaired()
+	repaired := answer.Msg.GetMoveResult().GetRepairedNotes()
 	if len(repaired) != 1 || repaired[0] != "Heat.md" {
 		t.Fatalf("want the note whose link broke repaired, got %v", repaired)
 	}
@@ -627,7 +627,7 @@ func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("file moved to new path but client received error: %v", err)
 	}
-	if to := answer.Msg.GetMoved().GetTo(); to != "notes/Entropy.md" {
+	if to := answer.Msg.GetMoveResult().GetTo(); to != "notes/Entropy.md" {
 		t.Errorf("the file the vault holds at notes/Entropy.md is answered for as %q", to)
 	}
 	if target := onDisk(t, f.root, "notes/Entropy.md"); target == "" {
@@ -677,7 +677,7 @@ const identified = "01M02ACGM0FYMSXNDP29C90JNR"
 func getResolvedAddresses(t *testing.T, answer *v1.ResolveAddressesResponse) map[string]*v1.ResolvedAddress {
 	t.Helper()
 	delta := map[string]*v1.ResolvedAddress{}
-	for _, one := range answer.GetResolved() {
+	for _, one := range answer.GetResolvedAddresses() {
 		delta[one.GetAddress()] = one
 	}
 	return delta
@@ -703,8 +703,8 @@ func TestResolveAddresses_ReturnsTargetNote(t *testing.T) {
 		if one.GetPath() != "physics/Entropy.md" {
 			t.Errorf("%q lands at %q", content, one.GetPath())
 		}
-		if one.GetVault() == "" || one.GetIsCrossed() {
-			t.Errorf("%q lands in vault %q, crossed %v", content, one.GetVault(), one.GetIsCrossed())
+		if one.GetVaultId() == "" || one.GetIsCrossed() {
+			t.Errorf("%q lands in vault %q, crossed %v", content, one.GetVaultId(), one.GetIsCrossed())
 		}
 		if one.GetIsAmbiguous() {
 			t.Errorf("%q is called ambiguous", content)
@@ -831,7 +831,7 @@ func TestResolveAddresses_DeduplicatesAddresses(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := answer.Msg.GetResolved(); len(got) != 1 {
+	if got := answer.Msg.GetResolvedAddresses(); len(got) != 1 {
 		t.Fatalf("reached = %+v, want the one address asked about", got)
 	}
 }
@@ -1033,7 +1033,7 @@ func TestANoteIsMadeBelowTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 		t.Fatal(err)
 	}
 	var children []string
-	for _, related := range graphOf(t, center.Msg).GetRelated() {
+	for _, related := range graphOf(t, center.Msg).GetRelatedNotes() {
 		if related.GetRelation() == v1.Relation_RELATION_CHILD {
 			children = append(children, related.GetNote().GetPath())
 		}
@@ -1206,7 +1206,7 @@ func TestEverythingTheVaultContainsMoves(t *testing.T) {
 		if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 			t.Fatalf("moving %s failed: %v", one.from, code)
 		}
-		moved := answer.Msg.GetMoved()
+		moved := answer.Msg.GetMoveResult()
 		if moved.GetFrom() != one.from || moved.GetTo() != one.to {
 			t.Errorf("what the file did came back as %+v", moved)
 		}
@@ -1241,7 +1241,7 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the folder failed: %v", code)
 	}
-	if repaired := answer.Msg.GetMoved().GetRepaired(); len(repaired) != 0 {
+	if repaired := answer.Msg.GetMoveResult().GetRepairedNotes(); len(repaired) != 0 {
 		t.Errorf("a link written by name was repaired: %v", repaired)
 	}
 	if now := fileAt(t, f.root, "Heat.md"); now != pointing {
@@ -1257,7 +1257,7 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	related := graphOf(t, center.Msg).GetRelated()
+	related := graphOf(t, center.Msg).GetRelatedNotes()
 	if len(related) != 1 {
 		t.Fatalf("want the one note the link reaches, got %+v", related)
 	}
@@ -1285,7 +1285,7 @@ func TestAMoveOntoATakenNamePreservesBothWhereTheyAre(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS {
 		t.Errorf("a name already taken was answered with %v", code)
 	}
-	if moved := answer.Msg.GetMoved(); moved != nil {
+	if moved := answer.Msg.GetMoveResult(); moved != nil {
 		t.Errorf("a rejected move said the file did %+v", moved)
 	}
 	if now := fileAt(t, f.root, "Entropy.md"); now != "# Entropy\n" {
@@ -1310,7 +1310,7 @@ func TestAMoveOfAPathWithNothingAtItPreservesNothingPrior(t *testing.T) {
 	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_NOT_FOUND {
 		t.Errorf("a path with nothing at it was answered with %v", code)
 	}
-	if answer.Msg.GetMoved() != nil {
+	if answer.Msg.GetMoveResult() != nil {
 		t.Error("a move that did not happen came back with a file under a different name")
 	}
 	if folder(t, f.root, "science") {
@@ -1563,7 +1563,7 @@ func TestImports_ExistingNameKeepsFileAndReportsTask(t *testing.T) {
 		t.Errorf("the note that was there is now %q", target)
 	}
 
-	answer, err := rendered.WatchTasks(t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
+	answer, err := rendered.WatchTasks(t.Context(), connect.NewRequest(&v1.WatchTasksRequest{WindowId: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1590,7 +1590,7 @@ func TestResolveAddressesRejectsAVaultTheWindowDoesNotShow(t *testing.T) {
 	client, _ := openVault(t, map[string]string{"Entropy.md": "heat\n"})
 
 	_, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-		Vault: "elsewhere", Text: "[[Entropy]]",
+		VaultId: "elsewhere", Text: "[[Entropy]]",
 	}))
 
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {

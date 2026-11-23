@@ -264,7 +264,7 @@ func (h *Values) WatchSettings(
 			if !open {
 				return nil
 			}
-			if err := out.Send(&v1.WatchSettingsResponse{Changed: newWireSettings(batch)}); err != nil {
+			if err := out.Send(&v1.WatchSettingsResponse{Settings: newWireSettings(batch)}); err != nil {
 				return err
 			}
 		}

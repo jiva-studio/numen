@@ -43,7 +43,7 @@ service WindowService {
 message WatchTasksRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
-  string window = 1;
+  string window_id = 1;
 }
 
 message WatchTasksResponse {
@@ -116,7 +116,7 @@ enum Unit {
 message WatchWindowCloseRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
-  string window = 1;
+  string window_id = 1;
 }
 
 message WatchWindowCloseResponse {
@@ -146,7 +146,7 @@ enum FlushResult {
 message ReportPendingWorkRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
-  string window = 1;
+  string window_id = 1;
 
   // The token this caller was given when it began listening.
   string token = 2;
@@ -161,20 +161,20 @@ message ReportPendingWorkResponse {}
 message GetCurrentVaultRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
-  string window = 1;
+  string window_id = 1;
 }
 
 message GetCurrentVaultResponse {
   // The identity the list of vaults holds that vault under. Empty in a window
   // showing none, and in one that is open on the installation and not on
   // any one vault.
-  string vault = 1;
+  string vault_id = 1;
 }
 
 message CancelTaskRequest {
   // The window this is asked of. A question naming another window than the one
   // answering it is not answered.
-  string window = 1;
+  string window_id = 1;
 
   // The id that WatchTasks lists the task under.
   string id = 2;

@@ -210,7 +210,7 @@ describe('the notes of the vault a plugin is handed', () => {
       graphs: request.paths.map((path) => ({
         focus: { path, title: 'Root' },
         focusType: 'note',
-        related: [
+        relatedNotes: [
           { note: { path: 'Child.md', title: 'Child' }, relation: 2, relatedTo: '' },
           { note: { path: 'Leaf.md', title: 'Leaf' }, relation: 2, relatedTo: 'Child.md' },
         ],

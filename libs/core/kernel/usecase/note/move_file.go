@@ -108,7 +108,7 @@ func (u MoveFile) getBacklinksByPath(
 		if source.Kind != domain.KindNote {
 			continue
 		}
-		links, err := u.notes.links.GetBacklinks(ctx, v.ID, source.Path)
+		links, err := u.notes.links.ListBacklinks(ctx, v.ID, source.Path)
 		if err != nil {
 			return nil, err
 		}

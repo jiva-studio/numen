@@ -194,7 +194,7 @@ type WatchTasksRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
-	Window        string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	WindowId      string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -229,9 +229,9 @@ func (*WatchTasksRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *WatchTasksRequest) GetWindow() string {
+func (x *WatchTasksRequest) GetWindowId() string {
 	if x != nil {
-		return x.Window
+		return x.WindowId
 	}
 	return ""
 }
@@ -434,7 +434,7 @@ type WatchWindowCloseRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
-	Window        string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	WindowId      string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -469,9 +469,9 @@ func (*WatchWindowCloseRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *WatchWindowCloseRequest) GetWindow() string {
+func (x *WatchWindowCloseRequest) GetWindowId() string {
 	if x != nil {
-		return x.Window
+		return x.WindowId
 	}
 	return ""
 }
@@ -535,7 +535,7 @@ type ReportPendingWorkRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
-	Window string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	WindowId string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	// The token this caller was given when it began listening.
 	Token string `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
 	// What this caller has left. A request naming none has said nothing, and is
@@ -575,9 +575,9 @@ func (*ReportPendingWorkRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ReportPendingWorkRequest) GetWindow() string {
+func (x *ReportPendingWorkRequest) GetWindowId() string {
 	if x != nil {
-		return x.Window
+		return x.WindowId
 	}
 	return ""
 }
@@ -636,7 +636,7 @@ type GetCurrentVaultRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
-	Window        string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	WindowId      string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -671,9 +671,9 @@ func (*GetCurrentVaultRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *GetCurrentVaultRequest) GetWindow() string {
+func (x *GetCurrentVaultRequest) GetWindowId() string {
 	if x != nil {
-		return x.Window
+		return x.WindowId
 	}
 	return ""
 }
@@ -683,7 +683,7 @@ type GetCurrentVaultResponse struct {
 	// The identity the list of vaults holds that vault under. Empty in a window
 	// showing none, and in one that is open on the installation and not on
 	// any one vault.
-	Vault         string `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
+	VaultId       string `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -718,9 +718,9 @@ func (*GetCurrentVaultResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *GetCurrentVaultResponse) GetVault() string {
+func (x *GetCurrentVaultResponse) GetVaultId() string {
 	if x != nil {
-		return x.Vault
+		return x.VaultId
 	}
 	return ""
 }
@@ -729,7 +729,7 @@ type CancelTaskRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The window this is asked of. A question naming another window than the one
 	// answering it is not answered.
-	Window string `protobuf:"bytes,1,opt,name=window,proto3" json:"window,omitempty"`
+	WindowId string `protobuf:"bytes,1,opt,name=window_id,json=windowId,proto3" json:"window_id,omitempty"`
 	// The id that WatchTasks lists the task under.
 	Id            string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -766,9 +766,9 @@ func (*CancelTaskRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_window_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *CancelTaskRequest) GetWindow() string {
+func (x *CancelTaskRequest) GetWindowId() string {
 	if x != nil {
-		return x.Window
+		return x.WindowId
 	}
 	return ""
 }
@@ -820,9 +820,9 @@ var File_numen_v1_window_proto protoreflect.FileDescriptor
 
 const file_numen_v1_window_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/window.proto\x12\bnumen.v1\"+\n" +
-	"\x11WatchTasksRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\":\n" +
+	"\x15numen/v1/window.proto\x12\bnumen.v1\"0\n" +
+	"\x11WatchTasksRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\":\n" +
 	"\x12WatchTasksResponse\x12$\n" +
 	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\x8e\x03\n" +
 	"\x04Task\x12\x0e\n" +
@@ -840,23 +840,23 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	" \x01(\tR\n" +
 	"pluginName\x12%\n" +
 	"\x0eis_cancellable\x18\v \x01(\bR\risCancellable\x12&\n" +
-	"\x04kind\x18\f \x01(\x0e2\x12.numen.v1.TaskKindR\x04kind\"1\n" +
-	"\x17WatchWindowCloseRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\"\\\n" +
+	"\x04kind\x18\f \x01(\x0e2\x12.numen.v1.TaskKindR\x04kind\"6\n" +
+	"\x17WatchWindowCloseRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\"\\\n" +
 	"\x18WatchWindowCloseResponse\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12*\n" +
-	"\x11is_flush_required\x18\x02 \x01(\bR\x0fisFlushRequired\"w\n" +
-	"\x18ReportPendingWorkRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\x12\x14\n" +
+	"\x11is_flush_required\x18\x02 \x01(\bR\x0fisFlushRequired\"|\n" +
+	"\x18ReportPendingWorkRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12-\n" +
 	"\x06result\x18\x03 \x01(\x0e2\x15.numen.v1.FlushResultR\x06result\"\x1b\n" +
-	"\x19ReportPendingWorkResponse\"0\n" +
-	"\x16GetCurrentVaultRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\"/\n" +
-	"\x17GetCurrentVaultResponse\x12\x14\n" +
-	"\x05vault\x18\x01 \x01(\tR\x05vault\";\n" +
-	"\x11CancelTaskRequest\x12\x16\n" +
-	"\x06window\x18\x01 \x01(\tR\x06window\x12\x0e\n" +
+	"\x19ReportPendingWorkResponse\"5\n" +
+	"\x16GetCurrentVaultRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\"4\n" +
+	"\x17GetCurrentVaultResponse\x12\x19\n" +
+	"\bvault_id\x18\x01 \x01(\tR\avaultId\"@\n" +
+	"\x11CancelTaskRequest\x12\x1b\n" +
+	"\twindow_id\x18\x01 \x01(\tR\bwindowId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\"\x14\n" +
 	"\x12CancelTaskResponse*;\n" +
 	"\bTaskKind\x12\x19\n" +

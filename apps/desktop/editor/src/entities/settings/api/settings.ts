@@ -160,7 +160,7 @@ export const createSettingsApi = (
    */
   async function* watchSettings(signal: AbortSignal): AsyncGenerator<readonly SettingEdit[]> {
     for await (const update of settingsService.watchSettings({}, { signal })) {
-      yield update.changed.map((one) => ({ at: [...one.keyPath], value: one.value }))
+      yield update.settings.map((one) => ({ at: [...one.keyPath], value: one.value }))
     }
   }
 

@@ -62,7 +62,7 @@ type Clock interface {
 type Files interface {
 	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
 	GetVault(ctx context.Context) (domain.Vault, error)
-	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
+	ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 	Scan(ctx context.Context, paths []string) error
 }
 
@@ -295,7 +295,7 @@ func (l *Links) findOrCreate(ctx context.Context, vault domain.VaultID, folder, 
 }
 
 func (l *Links) findByAddress(ctx context.Context, vault Files, parsed address.URL) (Link, bool, error) {
-	paths, err := vault.GetPathsOfType(ctx, NoteType)
+	paths, err := vault.ListPathsOfType(ctx, NoteType)
 	if err != nil {
 		return Link{}, false, err
 	}

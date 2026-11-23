@@ -94,22 +94,22 @@ message ListTextVersionsResponse {
 message ReadTextRequest {
   string path = 1;
   string version_id = 2;
-  // cursor is the next_cursor of the page before, and empty for the first. Not
+  // page_token is the next_page_token of the page before, and empty for the first. Not
   // used with a length.
-  string cursor = 3;
+  string page_token = 3;
   // The start of a ranged read in the whole text, in bytes.
   int64 start = 4;
   // Set: read the range from start of this many bytes, zero to the end,
   // truncated at whole characters, as the segments it covers, each truncated to
   // the range. Unset:
-  // read one page by cursor.
+  // read one page by page_token.
   optional int64 length = 5;
 }
 
 message ReadTextResponse {
   repeated TextSegment segments = 1;
-  // next_cursor is empty on the last page.
-  string next_cursor = 2;
+  // next_page_token is empty on the last page.
+  string next_page_token = 2;
   TextErrorCode error = 3;
   // For a ranged read: the start of the first segment returned in the whole
   // text, and the size of the whole text in bytes.

@@ -125,13 +125,13 @@ type FileWriter interface {
 type NoteLookup interface {
 	GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
 	GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error)
-	GetNamedPaths(ctx context.Context, name string) ([]string, error)
-	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
+	ListNamedPaths(ctx context.Context, name string) ([]string, error)
+	ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }
 
 type LinkLookup interface {
-	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
-	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
+	ListLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
+	ListBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
 	ResolveLinks(ctx context.Context, from string, targets []string) (map[string]domain.ResolvedLink, error)
 }
 

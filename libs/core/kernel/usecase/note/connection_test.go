@@ -501,7 +501,7 @@ func TestBacklinksCarryTheirRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
 		"Idea.md": "---\ntitle: Idea\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n    marker: arrow\n---\n# Idea\n",
 	})
 
-	got, err := query.NewGetBacklinks(c.db.NoteQueries()).Execute(t.Context(), c.vault, "Area.md")
+	got, err := query.NewListBacklinks(c.db.NoteQueries()).Execute(t.Context(), c.vault, "Area.md")
 	if err != nil {
 		t.Fatal(err)
 	}

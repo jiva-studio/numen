@@ -28,7 +28,7 @@ type Notes interface {
 	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 	Create(ctx context.Context, path string, content []byte) error
 	Scan(ctx context.Context, paths []string) error
-	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
+	ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 }
 
 // Store is the plugin's folder of one vault.

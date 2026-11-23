@@ -33,9 +33,9 @@ export const resolveTextLinks = async (
   client: TextLinkRpc,
   { text, from = '', vault = '' }: TextLinkRequest,
 ): Promise<readonly ResolvedTextLink[]> => {
-  const answer = await client.resolveAddresses({ from, text, vault })
+  const answer = await client.resolveAddresses({ from, text, vaultId: vault })
   const paths = new Map(
-    answer.resolved.filter((one) => !one.isCrossed).map((one) => [one.address, one.path]),
+    answer.resolvedAddresses.filter((one) => !one.isCrossed).map((one) => [one.address, one.path]),
   )
   return answer.links.map((one) => ({
     raw: one.raw,

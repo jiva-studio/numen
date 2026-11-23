@@ -14,7 +14,6 @@ option go_package = "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen
 // Numen-Vault works the vault of that identity; without it a call works the
 // vault the host is showing.
 service HostStoreService {
-  // ReadStoreFile reads a whole file.
   rpc ReadStoreFile(ReadStoreFileRequest) returns (ReadStoreFileResponse);
 
   // AppendStoreFile adds to the end of a file, making it when it is not there.
@@ -29,7 +28,7 @@ service HostStoreService {
   // content lands whole or not at all.
   rpc WriteStoreFile(WriteStoreFileRequest) returns (WriteStoreFileResponse);
 
-  // DeleteStoreFile removes a file. A file that is not there is removed.
+  // DeleteStoreFile succeeds for a file that is not there.
   rpc DeleteStoreFile(DeleteStoreFileRequest) returns (DeleteStoreFileResponse);
 
   // RenameStoreFile moves a file to another name of the folder, replacing what

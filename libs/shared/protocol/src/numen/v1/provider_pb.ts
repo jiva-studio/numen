@@ -206,8 +206,6 @@ export const DetectedConnectionSchema: GenMessage<DetectedConnection> = /*@__PUR
   messageDesc(file_numen_v1_provider, 5);
 
 /**
- * ProviderServiceCallResponse is one frame of a call.
- *
  * @generated from message numen.v1.ProviderServiceCallResponse
  */
 export type ProviderServiceCallResponse = Message<"numen.v1.ProviderServiceCallResponse"> & {
