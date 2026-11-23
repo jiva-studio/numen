@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * The check of a new identity: one labelled input for each of three positions among the twelve
- * words, so the person shows they wrote the words down before the identity is kept.
+ * words, so the person shows they wrote the words down before the identity is kept. A wrong word
+ * marks its input.
  */
 import { useId } from 'vue'
 import { WORDS as words } from '../../words'
@@ -10,6 +11,7 @@ import { WORDS as words } from '../../words'
 const props = defineProps<{
   positions: readonly number[]
   entered: Readonly<Record<number, string>>
+  wrong: readonly number[]
   isDisabled: boolean
 }>()
 
@@ -39,6 +41,7 @@ function onInput(position: number, event: Event): void {
         autocomplete="off"
         autocapitalize="off"
         spellcheck="false"
+        :aria-invalid="props.wrong.includes(position) || undefined"
         :value="props.entered[position] ?? ''"
         :disabled="props.isDisabled"
         :placeholder="words.identityConfirmPlaceholder"
@@ -89,5 +92,9 @@ function onInput(position: number, event: Event): void {
 
 .confirm-words__input:focus {
   outline: var(--numen-stroke) solid var(--numen-accent);
+}
+
+.confirm-words__input[aria-invalid='true'] {
+  border-color: var(--numen-alarm);
 }
 </style>
