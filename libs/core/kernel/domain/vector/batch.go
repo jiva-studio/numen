@@ -1,13 +1,14 @@
-package indexing
+package vector
 
 import "unicode/utf8"
 
-// defaultBatchCharacters is the budget used when configuration names none.
-const defaultBatchCharacters = 32000
+// DefaultBatchCharacters is the budget used when configuration names none.
+const DefaultBatchCharacters = 32000
 
-func splitBatches(texts []string, maxChars int) [][]string {
+// SplitBatches groups texts in order into batches of at most maxChars characters, never splitting a text.
+func SplitBatches(texts []string, maxChars int) [][]string {
 	if maxChars <= 0 {
-		maxChars = defaultBatchCharacters
+		maxChars = DefaultBatchCharacters
 	}
 	var batches [][]string
 	start, chars := 0, 0
