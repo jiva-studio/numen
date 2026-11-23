@@ -152,7 +152,7 @@ type Subscriptions interface {
 	CreateCheckout(ctx context.Context) (string, error)
 }
 
-// Pauses says whether the removals of a vault wait for an answer.
+// Pauses reports whether the removals of a vault wait for an answer.
 type Pauses interface {
 	HasPending(ctx context.Context, id domain.VaultID) (bool, error)
 }

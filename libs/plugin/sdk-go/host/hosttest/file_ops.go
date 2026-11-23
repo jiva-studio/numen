@@ -104,7 +104,7 @@ func (v *Vault) listEntry(entry string) (files []string, isFolder bool, err erro
 }
 
 // RemoveFile moves a file, or a folder with everything under it, to the trash. The trash is the folder
-// ".trash" of the vault, and Trashed lists what it holds.
+// ".trash" of the vault, and Trashed lists the paths of the trash.
 func (v *Vault) RemoveFile(ctx context.Context, filePath string, baseline *domain.FileStat) (host.RemoveFileResult, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()

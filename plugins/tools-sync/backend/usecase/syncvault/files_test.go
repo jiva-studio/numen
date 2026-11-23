@@ -231,7 +231,7 @@ func TestSyncVault_ARemovedNoteAndARemovedFolderAreRemovedOnTheSecondComputer(t 
 	}
 }
 
-func TestSyncVault_AFileRemovedAndWrittenAgainAtItsPathIsANewFile(t *testing.T) {
+func TestSyncVault_AFileRemovedAndCreatedAgainAtItsPathIsANewFile(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)
@@ -254,7 +254,7 @@ func TestSyncVault_AFileRemovedAndWrittenAgainAtItsPathIsANewFile(t *testing.T) 
 	}
 }
 
-func TestSyncVault_AFileRemovedAndWrittenAgainWithinTheDelayIsAChangeAndNotARemoval(t *testing.T) {
+func TestSyncVault_AFileRemovedAndCreatedAgainWithinTheDelayIsAChangeAndNotARemoval(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.a.WriteNote(source, pdf, pdfText)
 	sync(t, p.a, source)

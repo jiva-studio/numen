@@ -171,7 +171,7 @@ func (r *run) settleReadFailure(ctx context.Context, err error, at *position, bo
 	return errors.Join(failure, r.keepStarted(ctx, at))
 }
 
-// getReadFailure says whether a failed read is a body that does not open, which is damage, or a body that ended before
+// getReadFailure reports whether a failed read is a body that does not open, which is damage, or a body that ended before
 // the blob did, which is a break.
 func (r *run) getReadFailure(err error, body *counted) error {
 	if !errors.Is(err, blobcipher.ErrCannotOpen) {
@@ -232,5 +232,5 @@ func (r *run) keep(ctx context.Context, at *position) error {
 	return r.deps.Entries.WriteDownloads(ctx, r.in.Vault, append(withoutFile(entries, r.in.FileID), entry))
 }
 
-// isStateValid says whether the hash accepts the state a download kept; a state it does not accept starts the download over.
+// isStateValid reports whether the hash accepts the state a download kept; a state it does not accept starts the download over.
 func isStateValid(hasher encoding.BinaryUnmarshaler, state []byte) bool { return hasher.UnmarshalBinary(state) == nil }

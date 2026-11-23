@@ -116,7 +116,7 @@ func (w *world) getRanges(t *testing.T) []synctest.PartLogEntry {
 	return ranges
 }
 
-func TestDownloadFile_StagesASmallFileOfAnyKindUnderItsNameAndDoesNotPlaceIt(t *testing.T) {
+func TestDownloadFile_StagesASmallFileOfAnyKindByItsNameAndDoesNotPlaceIt(t *testing.T) {
 	w := newWorld(t)
 	content := make([]byte, 300_000)
 	if _, err := rand.Read(content); err != nil {
@@ -255,7 +255,7 @@ func TestDownloadFile_ContinuesFromTheChunkItReachedAfterABreak(t *testing.T) {
 	}
 }
 
-func TestDownloadFile_StartsAgainWhenTheStagedFileIsNotTheSizeTheStateSays(t *testing.T) {
+func TestDownloadFile_StartsAgainWhenTheStagedFileIsNotTheSizeTheStateRecords(t *testing.T) {
 	w := newWorld(t)
 	stored, meta, source := w.publishBig(t, "Videos/Trip.bin", 4)
 	input := w.input(stored, meta)

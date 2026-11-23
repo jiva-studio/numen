@@ -115,7 +115,7 @@ func (w Writer) copyStaged(
 		return err
 	}
 	defer func() { err = errors.Join(err, staged.Close()) }()
-	if err := checkStaged(staged, expectedHash); err != nil {
+	if err := checkStagedFile(staged, expectedHash); err != nil {
 		return err
 	}
 	if err := w.checkTarget(ctx, v, path, baseline); err != nil {
@@ -124,7 +124,7 @@ func (w Writer) copyStaged(
 	return w.Import.Execute(ctx, v, path, staged, baseline != nil)
 }
 
-func checkStaged(staged io.ReadSeeker, expectedHash string) error {
+func checkStagedFile(staged io.ReadSeeker, expectedHash string) error {
 	hash, err := domain.HashReader(staged)
 	if err != nil {
 		return err
@@ -160,8 +160,3 @@ func (w Writer) finishPlacing(ctx context.Context, v domain.Vault, pluginID, nam
 	}
 	return w.Stat.Execute(ctx, v, path)
 }
-
-// IndexFollow says whether a write reached the vault and the index did not follow.
-type IndexFollow struct{}
-
-func (IndexFollow) IsIndexOutdated(err error) bool { return errors.Is(err, edit.ErrIndexOutdated) }

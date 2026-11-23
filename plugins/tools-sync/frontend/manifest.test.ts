@@ -38,9 +38,9 @@ describe('the manifest of the sync plugin', () => {
     )
   })
 
-  it('serves its own service and wakes on a change of a markdown file', () => {
+  it('serves its own service and wakes on a change of any file', () => {
     expect(manifest.services).toStrictEqual(['md.numen.tools.sync'])
-    expect(manifest.activationEvents).toStrictEqual(['onFilesChanged:text/markdown'])
+    expect(manifest.activationEvents).toStrictEqual(['onFilesChanged'])
   })
 
   it('has a setting of how often this device asks the server for changes', () => {

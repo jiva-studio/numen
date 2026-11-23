@@ -38,7 +38,7 @@ type Downloader interface {
 	Sweep(ctx context.Context, vault domain.VaultID) error
 }
 
-// Guard says whether a pass may remove files in the vault.
+// Guard reports whether a pass may remove files in the vault.
 type Guard interface {
 	Execute(ctx context.Context, in transfer.GuardInput) (transfer.Verdict, error)
 }

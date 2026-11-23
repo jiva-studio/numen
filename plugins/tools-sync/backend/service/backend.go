@@ -89,7 +89,7 @@ func (b *Backend) getVault(ctx context.Context, vault domain.Vault, holders map[
 		one.LastSyncedAt = status.LastSyncedAt.UTC().Format(time.RFC3339)
 	}
 	one.ConflictCount = status.ConflictCount
-	one.PausedDeletions, err = b.getPaused(ctx, vault.ID)
+	one.PausedDeletions, err = b.getPausedRemovals(ctx, vault.ID)
 	return one, err
 }
 

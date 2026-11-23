@@ -150,7 +150,7 @@ func TestAdmin_StopAfterBytesRefusesWhatIsNotACount(t *testing.T) {
 	}
 }
 
-func TestAdmin_StopAfterDownloadBytesCutsTheBodyAndLogsWhatWasSent(t *testing.T) {
+func TestAdmin_StopAfterDownloadBytesEndsTheBodyAndLogsWhatWasSent(t *testing.T) {
 	t.Parallel()
 	e, stops := newStoppingEnv(t)
 	vault := e.newVault()

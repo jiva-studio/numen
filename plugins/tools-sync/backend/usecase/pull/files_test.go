@@ -412,7 +412,7 @@ func TestPullChanges_MovesAFileToItsNewPathWithTheStatItReadAndDownloadsNothing(
 	}
 }
 
-func TestPullChanges_MovesAFolderWholeWhenTheBatchMovesEveryFileUnderIt(t *testing.T) {
+func TestPullChanges_MovesAFolderWholeWhenTheBatchMovesEveryFileInsideIt(t *testing.T) {
 	p := newPair(t)
 	spy := p.b.Spy()
 	pushed := p.pushMany(t, "Food", 3)

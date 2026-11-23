@@ -147,7 +147,7 @@ func TestReadFileRangeHashesAgainWhenTheFileChanged(t *testing.T) {
 	}
 }
 
-func TestPlaceFileMakesTheStagedFileTheFileOfThePathAndIndexesItAndTakesTheStagedFileAway(t *testing.T) {
+func TestPlaceFileMakesTheStagedFileTheFileOfThePathAndIndexesItAndRemovesTheStagedFile(t *testing.T) {
 	access, v, indexed := fileOpsVault(t, nil)
 	stage(t, v, "ab.part", "the whole file")
 
@@ -229,7 +229,7 @@ func TestPlaceFileWithABaselineReplacesTheFileItNamesAndRefusesOneThatChanged(t 
 	}
 }
 
-func TestPlaceFileWithABaselineOfAFileThatIsGoneIsStale(t *testing.T) {
+func TestPlaceFileWithABaselineOfAFileThatIsMissingIsStale(t *testing.T) {
 	access, v, _ := fileOpsVault(t, nil)
 	stage(t, v, "ab.part", "x")
 	baseline := domain.FileStat{Path: "Gone.pdf", Hash: "h", Size: 1, ModTime: time.Unix(1, 0)}

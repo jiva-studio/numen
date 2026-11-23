@@ -279,7 +279,7 @@ func (s *Server) storePart(w http.ResponseWriter, r *http.Request, id string, nu
 		}
 		row.multipart.parts[number] = expected
 		s.partLog = append(s.partLog, partLogEntry{Blob: hex.EncodeToString([]byte(id)), Part: number, Direction: "put", Bytes: int64(len(body))})
-		s.countReceived(int64(len(body)))
+		s.countReceivedBytes(int64(len(body)))
 		w.WriteHeader(http.StatusOK)
 	}
 }

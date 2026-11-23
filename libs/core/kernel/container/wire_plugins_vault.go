@@ -77,7 +77,7 @@ func pluginsOpenPluginVault(install pluginInstall, vaultDeps vaultWiring,
 		return stores.OpenWriter(v, pluginID)
 	}
 	stat := file.NewHashFile(vaultDeps.Readers, vaultDeps.Writers)
-	follow := hostvault.IndexFollow{}
+	follow := indexfollow.Follow{}
 	return hostvault.NewAccess(
 		hostvault.Session{
 			Current:    current,

@@ -30,7 +30,7 @@ func (a *stopAfter) take(bytes int64) (allowed int64, isEnd bool) {
 	return allowed, true
 }
 
-func (s *Server) countReceived(bytes int64) {
+func (s *Server) countReceivedBytes(bytes int64) {
 	if _, isEnd := s.stopUpload.take(bytes); isEnd {
 		s.requestStop()
 	}
