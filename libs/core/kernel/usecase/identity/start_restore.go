@@ -2,6 +2,7 @@ package identity
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -19,7 +20,8 @@ func NewStartRestore(d Deps) *StartRestore { return &StartRestore{deps: d} }
 
 // Execute parses the words (ErrInvalidWords), refuses when an identity exists (ErrIdentityExists), derives the
 // recovery key, makes a device key and keeps both in memory, replacing an earlier pending restore. Nothing is
-// written. When no plugin completes the restore within 30 seconds, it completes as a restore with no chain.
+// written. When no plugin completes the restore within 30 seconds, it completes as a restore with no chain; when the
+// key store refuses that write, the restore stays pending and the completion is tried again after 30 seconds.
 func (u *StartRestore) Execute(ctx context.Context, words []string) error {
 	parsed, err := identitylib.ParseRecoveryWords(words)
 	if err != nil {
@@ -43,13 +45,19 @@ func (u *StartRestore) Execute(ctx context.Context, words []string) error {
 }
 
 func (u *StartRestore) completeAfterFallback(ctx context.Context, restore *pendingRestore, fired <-chan time.Time) {
-	select {
-	case <-restore.replaced:
-	case <-fired:
-		if u.deps.pending.isCurrent(restore) {
-			if err := completeRestore(ctx, u.deps, restore, nil); err != nil {
-				return // the restore stays pending, so a window or a plugin can complete it
-			}
+	for {
+		select {
+		case <-restore.replaced:
+			return
+		case <-fired:
 		}
+		if !u.deps.pending.isCurrent(restore) {
+			return
+		}
+		err := completeRestore(ctx, u.deps, restore, nil)
+		if !errors.Is(err, identitydomain.ErrKeyStore) {
+			return
+		}
+		fired = u.deps.clock.After(restoreFallback)
 	}
 }

@@ -72,3 +72,15 @@ type fakeNames struct{ name string }
 func (n fakeNames) GetInstanceName() string { return n.name }
 
 var errBroken = errors.New("the keychain refuses")
+
+func (s *fakeKeyStore) writes() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.setCalled
+}
+
+func (s *fakeKeyStore) failSets(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.setFails = err
+}

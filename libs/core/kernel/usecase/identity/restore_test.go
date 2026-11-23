@@ -576,3 +576,28 @@ func TestCompleteRestore_ACreateAtTheSameTimeLeavesOneIdentity(t *testing.T) {
 		t.Errorf("succeeded = %d, refused = %d, writes = %d, want 1, 1, 1", succeeded, refused, k.keys.setCalled)
 	}
 }
+
+func TestStartRestore_TriesTheFallbackAgainWhenTheKeyStoreRefusedIt(t *testing.T) {
+	t.Parallel()
+	expected, err := newKit("Desktop").create.Execute(t.Context(), getLegalWords())
+	if err != nil {
+		t.Fatal(err)
+	}
+	k := newRestoreKit(t, "Phone")
+	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
+		t.Fatal(err)
+	}
+	k.keys.failSets(errBroken)
+	k.clock.Advance(restoreFallback)
+	testsupport.WaitFor(t, func() bool {
+		pending, err := k.pending.Execute(t.Context())
+		return err == nil && pending.IsPending && k.keys.writes() == 1
+	})
+	k.keys.failSets(nil)
+
+	testsupport.WaitFor(t, func() bool {
+		k.clock.Advance(restoreFallback)
+		got, err := k.get.Execute(t.Context())
+		return err == nil && got.AccountFingerprint == expected.AccountFingerprint
+	})
+}
