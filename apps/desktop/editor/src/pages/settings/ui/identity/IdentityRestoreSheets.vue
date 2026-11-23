@@ -24,7 +24,7 @@ const emit = defineEmits<{
   />
   <div class="identity-restore-sheets__actions">
     <Button type="button" variant="solid" :disabled="isBusy" @click="emit('restore')">
-      {{ isBusy ? words.identityRestoring : words.identityRestoreAction }}
+      {{ isBusy ? words.identityRestoring : words.identityRestore }}
     </Button>
     <Button type="button" variant="outline" :disabled="isBusy" @click="emit('cancel')">
       {{ words.identityCancel }}
