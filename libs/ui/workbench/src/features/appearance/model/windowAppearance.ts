@@ -8,27 +8,25 @@
  * list offers and what choosing a row writes belong to the adapter of the settings.
  */
 import { ref, shallowRef, watch, type Ref } from 'vue'
-import { createFollower } from '../stream'
 import {
   getFailureText,
   type AppearanceOutput,
   type AppearanceWords,
   type AppearanceWriter,
-} from './appearanceOutput'
-import type {
-  ThemeClient,
-  ThemeEntry as Theme,
-  ThemeAppearance as Appearance,
-  ThemeMode as Mode,
-  ThemeScales,
-} from './themes'
+  type CreateFollower,
+  type Mode,
+  type Sizes,
+  type Theme,
+  type ThemeSource,
+  type ThemeState as Appearance,
+} from '../lib/appearance'
 import { createAppearancePreview } from './preview'
 
-type Sizes = ThemeScales<number>
-type Themes = Pick<ThemeClient, 'getAppearance' | 'readTheme' | 'watchThemes'>
+type Themes = ThemeSource
 
 interface WindowAppearanceDeps {
   core: Themes
+  createFollower: CreateFollower
   words: AppearanceWords
   write: AppearanceWriter
   output: AppearanceOutput
@@ -103,20 +101,21 @@ function createAppearanceLoader(deps: LoaderDeps) {
 
 function createThemeWatcher(deps: {
   core: WindowAppearanceDeps['core']
+  createFollower: CreateFollower
   files: Map<string, string>
   preview: ReturnType<typeof createAppearancePreview>
   applyAppearance: () => Promise<void>
   loadAppearance: () => Promise<void>
-  getChoice: () => string
-  lost: Ref<string>
+  state: ReturnType<typeof initAppearanceState>
   wait: (ms: number) => Promise<void>
 }) {
   let open = true
   const abortController = new AbortController()
-  const follows = createFollower({
+  const getChoice = () => `${deps.state.applied.value} ${deps.state.mode.value}`
+  const follows = deps.createFollower({
     isOpen: () => open,
     setLost: (removed) => {
-      deps.lost.value = removed
+      deps.state.lost.value = removed
     },
     wait: deps.wait,
   })
@@ -127,10 +126,10 @@ function createThemeWatcher(deps: {
       async (names) => {
         if (!names.length) return
         for (const name of names) deps.files.delete(name)
-        const before = deps.getChoice()
+        const before = getChoice()
         await deps.loadAppearance()
         // A theme that vanished takes the settings to another one without a write of them.
-        const isChanged = deps.getChoice() !== before
+        const isChanged = getChoice() !== before
         if (isChanged || names.includes(deps.preview.display.current.value)) {
           await deps.applyAppearance()
         }
@@ -155,7 +154,7 @@ function initAppearanceState() {
 }
 
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
-  const { core, words, write, output, wait = sleep } = deps
+  const { core, createFollower, words, write, output, wait = sleep } = deps
   const state = initAppearanceState()
   const { files, applyTheme } = createThemeApplier(deps, state.applied)
 
@@ -185,12 +184,12 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
 
   const watcher = createThemeWatcher({
     core,
+    createFollower,
     files,
     preview,
     applyAppearance,
     loadAppearance,
-    getChoice: () => `${state.applied.value} ${state.mode.value}`,
-    lost: state.lost,
+    state,
     wait,
   })
 

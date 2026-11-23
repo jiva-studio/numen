@@ -2,47 +2,30 @@ import type { DropRegistry, EditorExtensionRegistry, JsonValue, SlotHost } from 
 import type { DeclaredSlotEntry } from '../../slots'
 import type { SlotViewRegistry } from '../../slot-views'
 import type { ViewRegistry } from '../../views'
-import type {
-  ContextSettingHost,
-  ContextTabHost,
-  ContextViewHost,
-  HostPlugins,
-  PluginHostDeps,
-} from '../types'
-import { createLicenseServiceBridge } from './services'
-
-const NO_PLUGINS: HostPlugins = {}
+import type { ContextSettingHost, ContextViewHost, PluginHostDeps } from '../types'
 
 export function createSettingBridge({
-  plugins = NO_PLUGINS,
+  plugins,
 }: Pick<PluginHostDeps, 'plugins'>): ContextSettingHost {
-  const licenses = createLicenseServiceBridge({ plugins })
   return {
     getSetting: <T extends JsonValue = JsonValue>(pluginId: string, key: string) =>
-      plugins.getSetting ? (plugins.getSetting(pluginId, key) as T | undefined) : undefined,
-    onSettingChange: <T extends JsonValue = JsonValue>(
+      plugins.getSetting(pluginId, key) as T | undefined,
+    watchSetting: <T extends JsonValue = JsonValue>(
       pluginId: string,
       key: string,
       handler: (value: T) => void | Promise<void>,
     ) => {
-      // Without a host subscription there is nothing to unsubscribe.
-      if (!plugins.onSettingChange) return { dispose: () => undefined }
-      return {
-        dispose: plugins.onSettingChange(
-          pluginId,
-          key,
-          handler as (v: JsonValue | undefined) => void | Promise<void>,
-        ),
-      }
+      return plugins.watchSetting(
+        pluginId,
+        key,
+        handler as (v: JsonValue | undefined) => void | Promise<void>,
+      )
     },
-    getEditorSettings: () => plugins.getEditorSettings?.(),
-    onEditorSettingsChange: (pluginId, handler) => {
-      if (!plugins.onEditorSettingsChange) return { dispose: () => undefined }
-      return { dispose: plugins.onEditorSettingsChange(pluginId, handler) }
-    },
-    hasLicense: licenses.hasLicense,
-    getLicenseKey: licenses.getLicenseKey,
-    onLicenseChange: licenses.onLicenseChange,
+    getEditorSettings: plugins.getEditorSettings,
+    watchEditorSettings: plugins.watchEditorSettings,
+    hasLicense: plugins.hasLicense,
+    getLicenseKey: plugins.getLicenseKey,
+    watchLicense: plugins.watchLicense,
   }
 }
 
@@ -60,14 +43,6 @@ export function createViewBridge(shared: SharedRegistries): ContextViewHost {
       onChange: editorExtensions.onChange,
       fail: editorExtensions.fail,
     },
-  }
-}
-
-export function createTabBridge({ tabs }: Pick<PluginHostDeps, 'tabs'>): ContextTabHost {
-  return {
-    openTab: (kind, target) => tabs?.openTab?.(kind, target),
-    navigateTab: (kind, target) => tabs?.navigateTab?.(kind, target),
-    closeTab: (id) => tabs?.closeTab?.(id),
   }
 }
 

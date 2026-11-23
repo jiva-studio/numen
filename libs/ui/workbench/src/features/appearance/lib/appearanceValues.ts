@@ -1,5 +1,5 @@
 /** The two sizes the window is drawn at, and how long the keyboard rests on one before it is applied. */
-import type { ThemeScales as Scales } from './themes'
+import type { Sizes } from './appearance'
 
 /** The names the two sizes are declared under. */
 export const INTERFACE_SCALE = 'interfaceScale'
@@ -16,7 +16,7 @@ export type ScaleKind = typeof INTERFACE_SCALE | typeof TEXT_SCALE
 export const HELD = 150
 
 /** Returns the pair with the value of one of the two sizes replaced. */
-export const onto = <T>(both: Scales<T>, which: ScaleKind, one: T): Scales<T> => ({
+export const onto = (both: Sizes, which: ScaleKind, one: number): Sizes => ({
   ...both,
   [which]: one,
 })

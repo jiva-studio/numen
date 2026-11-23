@@ -19,7 +19,7 @@ import type { HealthApi, PluginHostApi } from '@/entities/plugin'
 import type { SettingsStore } from '@/entities/settings'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { PluginServices } from './pluginServices'
-import { createRowChangeSubscriber } from './pluginSettings'
+import { createRowChangeWatcher } from './pluginSettings'
 
 /** The host dependencies of one concern, by group; the host reads the ones it is given. */
 export type HostParts = {
@@ -115,7 +115,7 @@ export function createTaskServiceParts(deps: {
   readonly rest: SettingsStore
 }): HostParts {
   const { services } = deps
-  const subscribeRowChanges = createRowChangeSubscriber(deps.rest)
+  const watchRowChanges = createRowChangeWatcher(deps.rest)
   return {
     work: {
       getTasks: (pluginId) => createPluginTasks(services.taskList, pluginId),
@@ -123,7 +123,7 @@ export function createTaskServiceParts(deps: {
       getProcesses: () => deps.processes,
       ...(deps.getLogs ? { getLogs: deps.getLogs } : {}),
       health: deps.healthReports,
-      getConnections: (pluginId) => deps.api.getPluginConnections(pluginId, subscribeRowChanges),
+      getConnections: (pluginId) => deps.api.getPluginConnections(pluginId, watchRowChanges),
     },
   }
 }
