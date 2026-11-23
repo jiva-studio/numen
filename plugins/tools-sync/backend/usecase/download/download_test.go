@@ -38,7 +38,6 @@ func newWorld(t *testing.T) *world {
 	return &world{p: p, vault: p.GetVault(t), use: syncwire.NewDownloads(p.B.WireDeps())}
 }
 
-// publish commits the file as the first computer would and returns the revision the second computer reads.
 func (w *world) publish(t *testing.T, file transfer.File) (*syncv1.StoredRevision, synctest.Meta) {
 	t.Helper()
 	outcomes, err := commit.NewCommitRevisions(w.p.A.CommitDeps()).Execute(t.Context(), transfer.CommitInput{VaultID: synctest.FirstVault, Vault: w.vault, Files: []transfer.File{file}})

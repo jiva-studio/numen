@@ -117,7 +117,6 @@ func withoutMoved(changes []transfer.Change, moves []transfer.Move) []transfer.C
 	})
 }
 
-// guard asks whether the removals may be sent. A pause leaves the whole pass of the vault where it is.
 func (p *pass) guard(ctx context.Context, removals []transfer.FileRecord, tracked int) ([]transfer.FileRecord, transfer.Verdict, error) {
 	if len(removals) == 0 {
 		return nil, transfer.Go, nil
@@ -130,7 +129,6 @@ func (p *pass) guard(ctx context.Context, removals []transfer.FileRecord, tracke
 	return removals, verdict, err
 }
 
-// rewind makes the next pull read the vault from the start, so the files the person chose to keep are downloaded again.
 func (p *pass) rewind(ctx context.Context) error {
 	link, err := p.use.deps.State.ReadLink(ctx, p.id)
 	if err != nil {
@@ -200,9 +198,6 @@ type repeat struct {
 	file  transfer.File
 }
 
-// getEditsOverRemovals lists the files a person changed that the server refused for a head that is a removal, to be
-// committed again as children of the removal, and the files whose removal the server has pruned, to be committed
-// again with no parent: a change wins over a removal.
 func getEditsOverRemovals(files []transfer.File, outcomes []transfer.Outcome) []repeat {
 	var again []repeat
 	for i, outcome := range outcomes {

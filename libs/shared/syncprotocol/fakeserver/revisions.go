@@ -129,15 +129,11 @@ func (s *Server) checkBlobs(b *batch) error {
 	return nil
 }
 
-// isStale reports whether revision i names a parent that is not the head of its file: the batch is answered with that
-// conflict, whatever the state of its blob.
 func (b *batch) isStale(i int) bool {
 	rev, head := b.revs[i], b.heads[i]
 	return head != nil && !bytes.Equal(rev.GetParentRev(), head.GetRevId())
 }
 
-// isMetadataOnly reports whether revision i names the blob of the head of its own file, with the same hash and size, and
-// the head as its parent.
 func (b *batch) isMetadataOnly(i int) bool {
 	rev, head := b.revs[i], b.heads[i]
 	if head == nil || head.GetRevision().GetDeleted() || rev.GetDeleted() {

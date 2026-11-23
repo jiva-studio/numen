@@ -98,7 +98,6 @@ func (r *run) sendParts(ctx context.Context, key [32]byte, salt [16]byte) (trans
 	return result, err
 }
 
-// open takes up the kept upload of the file when the file is the one it began with, and starts a new one else.
 func (r *run) open(ctx context.Context, key [32]byte, salt [16]byte) (*session, error) {
 	entries, err := r.deps.Entries.ReadUploads(ctx, r.in.Vault)
 	if err != nil {
@@ -181,8 +180,6 @@ func (r *run) start(ctx context.Context, entries []transfer.UploadEntry, key [32
 	return &session{up: up, entry: entry, key: key, sealer: sealer, hasher: sha256.New()}, nil
 }
 
-// restoreHash brings the hash of the stored bytes to the parts the server holds in a row from the first: the state kept
-// when it covers no more of them, else a hash rebuilt from the file, which asks the network for nothing.
 func (r *run) restoreHash(s *session) error {
 	held := 0
 	for slices.Contains(s.up.Done, held+1) {
@@ -219,7 +216,6 @@ func (r *run) getPartLength(s *session, number int) int64 {
 	return min(s.up.PartSize, s.sealer.StoredSize()-int64(number-1)*s.up.PartSize)
 }
 
-// readPart fills the buffer with the stored bytes of the part and advances the hash by them.
 func (r *run) readPart(s *session, number int, buffer []byte) ([]byte, error) {
 	if _, err := s.sealer.ReadStoredAt(buffer, int64(number-1)*s.up.PartSize, r.plain); err != nil && !errors.Is(err, io.EOF) {
 		return nil, err
@@ -248,7 +244,6 @@ func (r *run) sendRest(ctx context.Context, s *session) (transfer.UploadResult, 
 	return transfer.UploadResult{BlobID: s.up.Blob, BlobHash: [32]byte(s.hasher.Sum(nil)), BlobSize: uint64(s.sealer.StoredSize()), Key: s.key}, nil
 }
 
-// keep writes the state of the upload after a part, with the hash of what was sent.
 func (r *run) keep(ctx context.Context, s *session, number int) error {
 	marshaler, ok := s.hasher.(encoding.BinaryMarshaler)
 	if !ok {
@@ -266,7 +261,6 @@ func (r *run) keep(ctx context.Context, s *session, number int) error {
 	return r.deps.Entries.WriteUploads(ctx, r.in.Vault, append(withoutFile(entries, s.entry.FileID), s.entry))
 }
 
-// drop ends an upload of a file that changed: the reservation is aborted and the state forgotten.
 func (r *run) drop(ctx context.Context, s *session) error {
 	return errors.Join(r.deps.Uploads.Abort(ctx, s.up), r.removeEntry(ctx, s.entry))
 }

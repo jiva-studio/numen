@@ -89,7 +89,6 @@ func (u *DetectMoves) isGone(ctx context.Context, in transfer.ScanInput, record 
 	return false, err
 }
 
-// split returns the records whose file is not in the vault and the settled files that have no record.
 func (u *DetectMoves) split(seen map[string]note.Seen, records []transfer.FileRecord) (gone []transfer.FileRecord, fresh map[string]note.Seen) {
 	byPath := map[string]bool{}
 	for _, record := range records {

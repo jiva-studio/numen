@@ -17,8 +17,6 @@ type removal struct {
 	revID  []byte
 }
 
-// applyDeletion queues the removal of an unedited file, keeps an edited one with the tombstone as the head so the
-// next push is an edit that beats the removal, and drops the record of a file that is gone.
 func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, record transfer.FileRecord, isKnown bool) error {
 	if !isKnown {
 		return nil
@@ -42,7 +40,6 @@ func (r *run) applyDeletion(ctx context.Context, stored *syncv1.StoredRevision, 
 	return nil
 }
 
-// settleRemovals asks the guard about the queued removals and carries out its answer.
 func (r *run) settleRemovals(ctx context.Context) error {
 	if !r.hasRemovals {
 		return nil

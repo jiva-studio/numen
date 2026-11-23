@@ -34,7 +34,6 @@ func (p *pair) getLive(t *testing.T) []*syncv1.StoredRevision {
 
 func (p *pair) countCalls(procedure string) int { return p.server.Fake.CountCalls(procedure) }
 
-// afterDelay lets a removed file wait the time the passes of the tests watch it for.
 func (p *pair) afterDelay() { p.a.Clock.Advance(synctest.RemovalDelay) }
 
 func (p *pair) writeMany(t *testing.T, count int) {

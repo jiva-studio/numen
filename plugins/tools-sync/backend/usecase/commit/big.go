@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
-// executeBig uploads a file read in ranges and commits its revision alone.
 func (r *batchRun) executeBig(ctx context.Context, vaultID domain.VaultID, file transfer.File) (transfer.Outcome, error) {
 	path, err := note.NormalizePath(file.Path)
 	if err != nil {

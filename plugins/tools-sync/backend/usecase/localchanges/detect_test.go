@@ -26,7 +26,6 @@ func getBases(records []transfer.FileRecord) map[string]string {
 	return bases
 }
 
-// detect looks at the vault as a pass does: the scan of changes first, then the search for moved and removed files.
 func detect(t *testing.T, c *synctest.Computer, records []transfer.FileRecord) transfer.Scan {
 	t.Helper()
 	in := transfer.ScanInput{VaultID: vault, Bases: getBases(records), Records: records}

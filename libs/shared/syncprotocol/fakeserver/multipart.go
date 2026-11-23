@@ -245,7 +245,6 @@ func (s *Server) AbortMultipartBlob(_ context.Context, req *connect.Request[sync
 	return connect.NewResponse(&syncv1.AbortMultipartBlobResponse{}), nil
 }
 
-// storePart takes the PUT of one part to /blobs/<id>/parts/<number>.
 func (s *Server) storePart(w http.ResponseWriter, r *http.Request, id string, number uint32) {
 	s.mu.Lock()
 	row, found := s.blobs[id]
@@ -301,7 +300,6 @@ func (s *Server) servePartLog(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getPartNumber reads the number of a part from the rest of a blob path, "<id hex>/parts/<n>".
 func getPartNumber(rest string) (id string, number uint32, ok bool) {
 	idText, tail, found := strings.Cut(rest, partFolder)
 	if !found {

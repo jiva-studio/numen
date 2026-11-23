@@ -23,7 +23,6 @@ type partLogRow struct {
 	Bytes     int64  `json:"bytes"`
 }
 
-// newStoppingEnv returns an environment on a server that counts how often it asked its host program to stop.
 func newStoppingEnv(tb testing.TB) (*env, *atomic.Int32) {
 	tb.Helper()
 	var stops atomic.Int32

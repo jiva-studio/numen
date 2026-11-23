@@ -99,7 +99,6 @@ func (r *run) adopt(ctx context.Context, stored *syncv1.StoredRevision, meta not
 	return nil
 }
 
-// isMetadataOnly reports whether the revision names the blob and the content the record already has.
 func isMetadataOnly(rev *syncv1.Revision, record transfer.FileRecord, meta note.Meta) bool {
 	return len(record.BlobID) > 0 && bytes.Equal(rev.GetBlobId(), record.BlobID) && meta.Hash == record.BaseHash
 }
@@ -141,7 +140,6 @@ func (r *run) check(stored *syncv1.StoredRevision) (note.Meta, error) {
 	return meta, nil
 }
 
-// readLocal returns the hash and the stat of the file at the path, with an empty hash when the file is not there.
 func (r *run) readLocal(ctx context.Context, path string) (string, domain.FileStat, error) {
 	stat, err := r.files.StatFile(ctx, path)
 	if errors.Is(err, host.ErrNotExist) {
@@ -174,8 +172,6 @@ func (r *run) removeRecord(fileID []byte) {
 	r.records = slices.DeleteFunc(r.records, func(one transfer.FileRecord) bool { return bytes.Equal(one.FileID, fileID) })
 }
 
-// makeRecord returns the record of the head the revision is. The key of the revision is kept sealed, and the sealed
-// key of the record before it is reused while the blob is the same.
 func (r *run) makeRecord(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, previous transfer.FileRecord, isKnown bool) (transfer.FileRecord, error) {
 	rev := stored.GetRevision()
 	record := transfer.FileRecord{
@@ -228,7 +224,6 @@ func (r *run) download(ctx context.Context, stored *syncv1.StoredRevision, meta 
 	return r.settleFailure(ctx, stored, meta, err)
 }
 
-// settleFailure turns a refusal of the host into a conflict or a health item, and returns any other failure.
 func (r *run) settleFailure(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, err error) error {
 	rev := stored.GetRevision()
 	switch {
@@ -244,8 +239,6 @@ func (r *run) settleFailure(ctx context.Context, stored *syncv1.StoredRevision, 
 	return err
 }
 
-// prepare brings the body of the revision to where the vault can take it: a note up to the small file limit is read
-// whole and written with the host, any other file is staged in the store folder and placed in one rename.
 func (r *run) prepare(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, stat domain.FileStat, isAbsent bool) (body, error) {
 	rev := stored.GetRevision()
 	if meta.Kind == note.KindMarkdown && meta.Size <= note.SmallFileLimit {

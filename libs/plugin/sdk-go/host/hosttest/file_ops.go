@@ -83,7 +83,6 @@ func (v *Vault) checkBaseline(filePath string, baseline *domain.FileStat) error 
 	return nil
 }
 
-// listEntry returns the file at the path, or the files under the folder at it.
 func (v *Vault) listEntry(entry string) (files []string, isFolder bool, err error) {
 	if v.isPresent(entry) {
 		return []string{entry}, false, nil

@@ -111,7 +111,6 @@ func (s sourceAt) ReadAt(p []byte, off int64) (int, error) {
 	return len(got), nil
 }
 
-// getStoredHash is the SHA-256 of the stored bytes of the source under the key and the salt of an upload.
 func getStoredHash(t *testing.T, source *synctest.Source, key [32]byte, fileID, salt []byte) [32]byte {
 	t.Helper()
 	sealer, err := blobcipher.NewSealer(key, [16]byte(fileID), [16]byte(salt), source.GetStat().Size)
@@ -171,8 +170,6 @@ func TestUploadFile_SendsASmallFileInOneBodyThatOpensToTheFile(t *testing.T) {
 	}
 }
 
-// readUploadedBody returns the body of the only blob the server holds, from the dump its admin path serves: the id of
-// the blob, then its body.
 func (w *world) readUploadedBody(t *testing.T, blobID []byte) []byte {
 	t.Helper()
 	dump := w.server.GetStoredBlobs(t)

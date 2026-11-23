@@ -13,8 +13,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
-// applyMove moves the local file to the new path of a metadata-only revision. It reports whether the revision is
-// dealt with; a file that is not there to move is left to the download.
 func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, record transfer.FileRecord, localAtNew string) (bool, error) {
 	if localAtNew == meta.Hash {
 		return true, r.adopt(ctx, stored, meta, record, true)
@@ -40,8 +38,6 @@ func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta
 
 type folderMove struct{ from, to string }
 
-// applyFolderMoves moves a folder whole when the page moves every file under it to one other folder, so the folder
-// never shows half of itself.
 func (r *run) applyFolderMoves(ctx context.Context, page []*syncv1.StoredRevision) error {
 	groups := map[folderMove][]transfer.FileRecord{}
 	for _, stored := range page {
@@ -61,7 +57,6 @@ func (r *run) applyFolderMoves(ctx context.Context, page []*syncv1.StoredRevisio
 	return nil
 }
 
-// getFolderMove strips the longest common tail of segments from both paths.
 func getFolderMove(from, to string) folderMove {
 	a, b := strings.Split(from, "/"), strings.Split(to, "/")
 	for len(a) > 1 && len(b) > 1 && a[len(a)-1] == b[len(b)-1] {

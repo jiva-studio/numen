@@ -45,7 +45,6 @@ type Writer struct {
 	Index  file.ScanFiles
 	Locks  vault.Locks
 
-	// The files of any kind: moved and removed as the window does, and placed from the store folder of a plugin.
 	Move         note.MoveFile
 	Remove       note.RemoveFile
 	Stat         fileStatter
