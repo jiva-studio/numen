@@ -1,5 +1,12 @@
 import { computed, ref, shallowRef } from 'vue'
-import type { DeletionsChoice, PausedDeletions, RemoteVault, Vault, VaultsClient, VaultState } from '../api/vaults'
+import type {
+  DeletionsChoice,
+  PausedDeletions,
+  RemoteVault,
+  Vault,
+  VaultsClient,
+  VaultState,
+} from '../api/vaults'
 import { vaultsClient } from '../api/wire'
 import { WORDS as words } from '../words'
 

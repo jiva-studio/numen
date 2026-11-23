@@ -27,7 +27,7 @@ Feature: Sync a file removed on one computer and changed on the other
       Then the vault "Test" has the note "Shopping list" with the text "bread"
       And the second computer has the note "Shopping list" with the text "bread" in its vault "Copy"
 
-    Scenario: A note removed on one computer and changed on the other stays without a conflict copy
+    Scenario: A note removed on one computer and changed on the other stays
       Given the person writes the note "Shopping list" with the text "milk" in the vault "Test"
       And the second computer has the note "Shopping list" with the text "milk" in its vault "Copy"
       And the sync server stops

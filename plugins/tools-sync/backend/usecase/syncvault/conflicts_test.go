@@ -12,8 +12,6 @@ const (
 	listCopy = "Shopping list (conflict 2026-11-23).md"
 )
 
-// conflict makes the first computer the one whose text reaches the server first, with both computers holding the note
-// before they change it.
 func (p *pair) conflict(t *testing.T, path, first, second string) {
 	t.Helper()
 	p.a.WriteNote(source, path, "milk")
@@ -127,7 +125,7 @@ func TestSyncVault_ANoteChangedOnOneComputerOnlyMakesNoCopy(t *testing.T) {
 	}
 }
 
-func TestSyncVault_ASecondConflictKeepsTheFirstCopyAndMakesAnotherUnderANumber(t *testing.T) {
+func TestSyncVault_ASecondConflictKeepsTheFirstCopyAndCreatesAnotherWithANumber(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.conflict(t, list, "bread", "eggs")
 	sync(t, p.b, target)
@@ -197,7 +195,7 @@ func TestSyncVault_ANoteMadeOnBothComputersWithOtherTextAtOnePathKeepsTheHeadAnd
 	}
 }
 
-func TestSyncVault_ANoteThatTakesAPathBetweenThePullAndThePushIsSettledWithACopy(t *testing.T) {
+func TestSyncVault_ANoteWithAPathUsedBetweenThePullAndThePushIsSettledWithACopy(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.b.WriteNote(target, "Daily/Monday.md", "rice")
 	p.server.AfterNext("/GetChanges", func() {
@@ -231,7 +229,7 @@ func TestSyncVault_ANameThatMatchesAnotherNameInCaseOnlyIsNotSyncedAndRaisesAWar
 	wantNoFile(t, p.a, source, "Papers/report.pdf")
 }
 
-func TestSyncVault_AWarningOfANameThatMatchesAnotherNameClearsOnceTheFileIsGone(t *testing.T) {
+func TestSyncVault_AWarningOfANameThatMatchesAnotherNameClearsOnceTheFileIsRemoved(t *testing.T) {
 	p := newPair(t, fakeserver.Config{})
 	p.a.WriteNote(source, "Papers/Report.pdf", pdfText)
 	sync(t, p.a, source)

@@ -21,10 +21,10 @@ import (
 
 const (
 	vaultID   domain.VaultID = "Copy"
-	list                     = "Shopping list.md"
-	listCopy                 = "Shopping list (conflict 2026-11-23).md"
-	listCopy2                = "Shopping list (conflict 2026-11-23 2).md"
-	pdf                      = "Papers/Report.pdf"
+	list      string         = "Shopping list.md"
+	listCopy  string         = "Shopping list (conflict 2026-11-23).md"
+	listCopy2 string         = "Shopping list (conflict 2026-11-23 2).md"
+	pdf       string         = "Papers/Report.pdf"
 )
 
 type setup struct {
@@ -45,8 +45,6 @@ func newSetup(t *testing.T) *setup {
 	}
 }
 
-// input makes the conflict of a path whose local text is already in the vault, and whose head, once replaced, holds
-// the text. replaced counts the calls of Replace.
 func (s *setup) input(t *testing.T, path, headText string, replaced *int) ports.ConflictInput {
 	t.Helper()
 	stat, err := s.host.Files(vaultID).StatFile(t.Context(), path)
@@ -130,7 +128,7 @@ func TestResolve_ReplacesTheNoteWithTheBaselineOfTheLocalStat(t *testing.T) {
 	}
 }
 
-func TestResolve_AbortsWhenTheCopyCannotBeWritten(t *testing.T) {
+func TestResolve_FailsWhenTheCopyCannotBeCreated(t *testing.T) {
 	s := newSetup(t)
 	s.root.File(list, "eggs")
 	s.root.RefuseWriting(listCopy, host.ErrStale)

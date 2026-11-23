@@ -36,8 +36,6 @@ func (s markdown) Resolve(ctx context.Context, in ports.ConflictInput) (ports.Co
 	return ports.ConflictOutcome{Applied: []string{in.Path, copyPath}, Copy: copyPath}, nil
 }
 
-// findCopy returns the first name for the copy that is free or already holds the text, and whether the copy with the
-// text is there.
 func findCopy(ctx context.Context, files ports.Files, notePath string, day time.Time, hash string) (string, bool, error) {
 	for number := 1; ; number++ {
 		name := note.GetConflictCopyPath(notePath, day, number)

@@ -41,27 +41,26 @@ func (c Config) openRegistryIndex(res *Resources, ctx context.Context) (vaultreg
 	return ports, db, err
 }
 
-func connectWindow(
+func (s windowStartup) connect(
 	ctx context.Context,
 	install pluginInstall,
 	exec *PluginExecution,
 	vaultDeps vaultWiring,
 	opened *windowRoutes,
-	startup windowStartup,
 	access windowPluginAccess,
 ) (*editor.Installation, error) {
-	if !startup.isEditor {
+	if !s.isEditor {
 		return opened.Installation, nil
 	}
 	state := opened.session
 	exec.Runtime.pluginBinding.SetVaultPath(state.GetCurrentVault().Path)
 	hooks := pluginVaultHooks{WriteWake: access.writeWake, Notes: &access.notes}
-	if err := installPluginVault(install, vaultDeps, startup.ports, startup.db, state.GetShownVault, hooks); err != nil {
+	if err := installPluginVault(install, vaultDeps, s.ports, s.db, state.GetShownVault, hooks); err != nil {
 		return nil, err
 	}
 	install.Endpoints.Lender.Update(func(l *hostendpoint.Lent) { l.VaultList = access.vaults })
 	setPluginTexts(install.Endpoints.Lender, vaultDeps.TextVersions)
-	shareEditorWindow(startup.db, opened, access.showTab, install, vaultDeps)
+	shareEditorWindow(s.db, opened, access.showTab, install, vaultDeps)
 	exec.Watch.KeepAll(ctx)
 	return opened.Installation, nil
 }

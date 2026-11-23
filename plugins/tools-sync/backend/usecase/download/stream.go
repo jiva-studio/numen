@@ -3,17 +3,15 @@ package download
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding"
 	"errors"
 	"fmt"
-	"hash"
 	"io"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
 const lengthPrefix = 8
@@ -23,7 +21,7 @@ const lengthPrefix = 8
 type position struct {
 	header [56]byte
 	next   uint64
-	hasher hash.Hash
+	hasher ports.Digest
 	state  []byte
 }
 
@@ -73,7 +71,7 @@ func chunkLog2(header [56]byte) byte {
 }
 
 func (r *run) findPosition(ctx context.Context) (*position, error) {
-	fresh := &position{header: [56]byte{}, next: 0, hasher: sha256.New(), state: nil}
+	fresh := &position{header: [56]byte{}, next: 0, hasher: r.deps.Digests.Create(), state: nil}
 	entries, err := r.deps.Entries.ReadDownloads(ctx, r.in.Vault)
 	if err != nil {
 		return nil, err
@@ -105,9 +103,9 @@ func (r *run) restore(ctx context.Context, kept transfer.DownloadEntry) (*positi
 	if staged < 0 || files[staged].Size != wantSize {
 		return nil, false, nil
 	}
-	hasher := sha256.New()
-	unmarshaler, ok := hasher.(encoding.BinaryUnmarshaler)
-	if !ok || !isStateValid(unmarshaler, kept.StoredHashState) {
+	hasher := r.deps.Digests.Create()
+	restored := hasher.Restore(kept.StoredHashState) == nil
+	if !restored {
 		return nil, false, nil
 	}
 	return &position{header: [56]byte(kept.Header), next: kept.NextChunk, hasher: hasher, state: kept.StoredHashState}, true, nil
@@ -126,7 +124,9 @@ func (r *run) stageBody(ctx context.Context, body *counted, at *position) error 
 	}
 	if at.next == 0 {
 		at.header = plain.Header()
-		at.hasher.Write(at.header[:])
+		if _, err := at.hasher.Write(at.header[:]); err != nil {
+			return fmt.Errorf("hash the stored bytes: %w", err)
+		}
 	}
 	plain.SetStoredSink(at.hasher)
 	return r.copyChunks(ctx, plain, at, body)
@@ -177,7 +177,7 @@ func (r *run) getReadFailure(err error, body *counted) error {
 }
 
 func (r *run) finish(at *position, total int64) error {
-	if !bytes.Equal(at.hasher.Sum(nil), r.in.BlobHash) || total != r.in.Size {
+	if !bytes.Equal(at.hasher.Sum(), r.in.BlobHash) || total != r.in.Size {
 		return ErrIntegrity
 	}
 	return nil
@@ -187,11 +187,7 @@ func (r *run) advance(ctx context.Context, plain *blobcipher.PlainReader, at *po
 	if !plain.IsAtChunkBoundary() {
 		return nil
 	}
-	marshaler, ok := at.hasher.(encoding.BinaryMarshaler)
-	if !ok {
-		return errors.New("the hash of the stored bytes cannot be kept")
-	}
-	state, err := marshaler.MarshalBinary()
+	state, err := at.hasher.Save()
 	if err != nil {
 		return fmt.Errorf("keep the hash of the stored bytes: %w", err)
 	}
@@ -219,8 +215,4 @@ func (r *run) keep(ctx context.Context, at *position) error {
 		StoredHashState: at.state, StagedName: r.name, MetaHash: r.in.Hash, HeadRev: r.in.HeadRev,
 	}
 	return r.deps.Entries.WriteDownloads(ctx, r.in.Vault, append(withoutFile(entries, r.in.FileID), entry))
-}
-
-func isStateValid(hasher encoding.BinaryUnmarshaler, state []byte) bool {
-	return hasher.UnmarshalBinary(state) == nil
 }

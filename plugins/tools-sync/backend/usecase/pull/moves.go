@@ -36,8 +36,6 @@ func (r *run) applyMove(ctx context.Context, stored *syncv1.StoredRevision, meta
 	return true, r.adopt(ctx, stored, meta, record, true)
 }
 
-// resolveTaken settles a note moved onto a path the local file has, and removes the file at the old path unless it
-// changed.
 func (r *run) resolveTaken(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, local string, stat domain.FileStat, from transfer.FileRecord, oldStat domain.FileStat) error {
 	if err := r.resolve(ctx, stored, meta, local, stat); err != nil {
 		return err

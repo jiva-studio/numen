@@ -51,7 +51,6 @@ func (p *pair) count() *countingResolver {
 	return &countingResolver{inner: p.b.PullDeps().Conflicts, calls: 0}
 }
 
-// conflictOn makes a note both computers changed, the head being the text of the first.
 func (p *pair) conflictOn(t *testing.T, path, there, here string) {
 	t.Helper()
 	first := p.push(t, path, "milk", nil)
@@ -187,7 +186,7 @@ func TestPullChanges_AdoptsAHeadThatHasTheContentOfTheBaseAndKeepsTheLocalChange
 	}
 }
 
-func TestPullChanges_HoldsTheNoteAndWarnsWhenTheResolverFails(t *testing.T) {
+func TestPullChanges_KeepsTheNoteAndWarnsWhenTheResolverFails(t *testing.T) {
 	p := newPair(t)
 	p.conflictOn(t, list, "bread", "eggs")
 
@@ -316,7 +315,7 @@ func TestPullChanges_MovesAFileChangedHereToTheNewPathWithItsChange(t *testing.T
 	}
 }
 
-func TestPullChanges_KeepsTheEditOfAMovedFileForThePushByLeavingTheBaseAtTheContentOfTheHead(t *testing.T) {
+func TestPullChanges_KeepsTheEditOfAMovedFileForThePushBySettingTheBaseToTheContentOfTheHead(t *testing.T) {
 	p := newPair(t)
 	first := p.push(t, pdf, pdfText, nil)
 	p.pull(t, trustAll)
@@ -389,7 +388,7 @@ func TestPullChanges_KeepsANoteChangedHereAndRemovedThereWithNoResolveAndNoCopy(
 	}
 }
 
-func TestPullChanges_BringsBackANoteRemovedHereAndChangedThereWithNoResolveAndNoCopy(t *testing.T) {
+func TestPullChanges_RestoresANoteRemovedHereAndChangedThereWithNoResolveAndNoCopy(t *testing.T) {
 	p := newPair(t)
 	resolver := p.count()
 	first := p.push(t, list, "milk", nil)
@@ -407,7 +406,7 @@ func TestPullChanges_BringsBackANoteRemovedHereAndChangedThereWithNoResolveAndNo
 	}
 }
 
-func TestPullChanges_MakesNoSecondCopyWhenARunBrokeAfterTheCopyWasWritten(t *testing.T) {
+func TestPullChanges_CreatesNoSecondCopyWhenARunFailedAfterTheCopyWasCreated(t *testing.T) {
 	p := newPair(t)
 	p.conflictOn(t, list, "bread", "eggs")
 	p.b.WriteNote(target, listCopy, "eggs")

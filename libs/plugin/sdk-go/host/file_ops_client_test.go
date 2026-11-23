@@ -85,8 +85,8 @@ func TestTheClientMovesAFolderWithNoBaseline(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if h.moved.Baseline != nil {
-		t.Errorf("the host received the baseline %v, want none", h.moved.Baseline)
+	if h.moved.GetBaseline() != nil {
+		t.Errorf("the host received the baseline %v, want none", h.moved.GetBaseline())
 	}
 }
 
@@ -95,7 +95,7 @@ func TestTheClientRemovesAFileAndReturnsTheCount(t *testing.T) {
 
 	got, err := fileOpsClient(t, h).RemoveFile(t.Context(), "Scans", nil)
 
-	if err != nil || got.Count != 3 || h.gone.GetPath() != "Scans" || h.gone.Baseline != nil {
+	if err != nil || got.Count != 3 || h.gone.GetPath() != "Scans" || h.gone.GetBaseline() != nil {
 		t.Errorf("the removal returned %+v (%v) after %v, want 3 and no baseline", got, err, h.gone)
 	}
 	if _, err := fileOpsClient(t, h).RemoveFile(t.Context(), "Delta.pdf", getBaselineStat()); err != nil || h.gone.GetBaseline().GetHash() != "h1" {
@@ -130,8 +130,8 @@ func TestTheClientPlacesAStagedFileAndReturnsTheStatOfTheFile(t *testing.T) {
 	if h.placed.GetName() != "ab.part" || h.placed.GetPath() != "Scans/Delta.pdf" || h.placed.GetExpectedHash() != "feed" || h.placed.GetBaseline().GetHash() != "h1" {
 		t.Errorf("the host received %v", h.placed)
 	}
-	if _, err := fileOpsClient(t, h).PlaceFile(t.Context(), "ab.part", "New.pdf", "feed", nil); err != nil || h.placed.Baseline != nil {
-		t.Errorf("a placement with no baseline sent %v (%v)", h.placed.Baseline, err)
+	if _, err := fileOpsClient(t, h).PlaceFile(t.Context(), "ab.part", "New.pdf", "feed", nil); err != nil || h.placed.GetBaseline() != nil {
+		t.Errorf("a placement with no baseline sent %v (%v)", h.placed.GetBaseline(), err)
 	}
 }
 

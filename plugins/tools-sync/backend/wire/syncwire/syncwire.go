@@ -4,7 +4,6 @@ package syncwire
 import (
 	"time"
 
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/conflict"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
@@ -28,6 +27,8 @@ type Deps struct {
 	Approvals       ports.Approvals
 	Absences        localchanges.DetectState
 	RemovalDelay    func() time.Duration
+	Digests         ports.Digests
+	Conflicts       ports.ConflictResolver
 }
 
 // NewResolveDeletions returns the use case that takes the answer of the person to a pause.
@@ -42,7 +43,7 @@ func NewGuard(deps Deps) *deletions.GuardDeletions {
 
 // NewDownloads returns the use case that stages the files the pull brings down.
 func NewDownloads(deps Deps) *download.DownloadFile {
-	return download.NewDownloadFile(download.Deps{Blobs: deps.DownloadBlobs, Entries: deps.DownloadEntries, Host: deps.Host})
+	return download.NewDownloadFile(download.Deps{Blobs: deps.DownloadBlobs, Entries: deps.DownloadEntries, Host: deps.Host, Digests: deps.Digests})
 }
 
 func newDeletionsDeps(deps Deps) deletions.Deps {
@@ -53,7 +54,7 @@ func newDeletionsDeps(deps Deps) deletions.Deps {
 func NewSyncVault(deps Deps) *syncvault.SyncVault {
 	downloads := NewDownloads(deps)
 	uploads := upload.NewUploadFile(upload.Deps{
-		Uploads: deps.Uploads, Entries: deps.UploadEntries, Crypto: deps.Crypto, Host: deps.Host, Random: deps.Random,
+		Uploads: deps.Uploads, Entries: deps.UploadEntries, Crypto: deps.Crypto, Host: deps.Host, Random: deps.Random, Digests: deps.Digests,
 	})
 	guard := NewGuard(deps)
 	commitDeps := commit.Deps{
@@ -68,7 +69,7 @@ func NewSyncVault(deps Deps) *syncvault.SyncVault {
 		Pull: pull.NewPullChanges(pull.Deps{
 			Revisions: deps.Revisions, Blobs: deps.Blobs, Crypto: deps.Crypto, Host: deps.Host, State: deps.State,
 			Downloads: downloads, Guard: guard, Health: deps.Health,
-			Conflicts: conflict.New(conflict.Deps{Host: deps.Host, Log: nil}), Clock: deps.Clock,
+			Conflicts: deps.Conflicts, Clock: deps.Clock,
 		}),
 		Scan:         localchanges.NewScanLocalChanges(localchanges.Deps{Host: deps.Host, State: deps.Progress, Clock: deps.Clock}),
 		Detect:       localchanges.NewDetectMoves(localchanges.DetectDeps{Host: deps.Host, State: deps.Absences, Clock: deps.Clock, Delay: deps.RemovalDelay}),

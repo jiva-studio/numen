@@ -178,8 +178,6 @@ func (r *batchRun) recordConflicts(items []*prepared, files []transfer.File, out
 	return rest, nil
 }
 
-// settleClash turns a path taken by a file of another spelling of the name into a case clash, which a pull does not
-// settle.
 func (r *batchRun) settleClash(outcome transfer.Outcome) transfer.Outcome {
 	if outcome.Status != transfer.PathTaken || outcome.Head == nil {
 		return outcome

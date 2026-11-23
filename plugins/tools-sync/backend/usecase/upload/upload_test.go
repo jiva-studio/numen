@@ -43,7 +43,7 @@ func newWorld(t *testing.T) *world {
 	c := synctest.NewFirstComputer(t, server, clock, string(vaultID), synctest.NewWords(t))
 	c.Connect(t, vaultID)
 	spy := c.Spy()
-	use := upload.NewUploadFile(upload.Deps{Uploads: c.WireDeps().Uploads, Entries: c.State, Crypto: c.Account, Host: c.Host, Random: rand.Reader})
+	use := upload.NewUploadFile(upload.Deps{Uploads: c.WireDeps().Uploads, Entries: c.State, Crypto: c.Account, Host: c.Host, Random: rand.Reader, Digests: c.WireDeps().Digests})
 	return &world{c: c, server: server, spy: spy, remote: c.GetRemoteID(t, vaultID), use: use}
 }
 
