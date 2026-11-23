@@ -71,8 +71,8 @@ func (r *run) sendWhole(ctx context.Context, key [32]byte) (transfer.UploadResul
 
 // session is the upload of a big file in progress: its reservation, its key and what is sent of it.
 type session struct {
-	up     Upload
-	entry  Entry
+	up     transfer.Upload
+	entry  transfer.UploadEntry
 	key    [32]byte
 	sealer *blobcipher.Sealer
 	hasher hash.Hash
@@ -96,12 +96,12 @@ func (r *run) open(ctx context.Context, key [32]byte, salt [16]byte) (*session, 
 	if err != nil {
 		return nil, err
 	}
-	if at := slices.IndexFunc(entries, func(e Entry) bool { return bytes.Equal(e.FileID, r.in.FileID) }); at >= 0 {
+	if at := slices.IndexFunc(entries, func(e transfer.UploadEntry) bool { return bytes.Equal(e.FileID, r.in.FileID) }); at >= 0 {
 		kept, err := r.resume(ctx, entries[at])
 		if err == nil {
 			return kept, nil
 		}
-		if !errors.Is(err, ErrUploadGone) {
+		if !errors.Is(err, transfer.ErrUploadGone) {
 			return nil, err
 		}
 		entries = slices.Delete(entries, at, at+1)
@@ -109,18 +109,18 @@ func (r *run) open(ctx context.Context, key [32]byte, salt [16]byte) (*session, 
 	return r.start(ctx, entries, key, salt)
 }
 
-func (r *run) isSame(e Entry) bool {
+func (r *run) isSame(e transfer.UploadEntry) bool {
 	return e.PlainHash == r.in.Stat.Hash && e.PlainSize == r.in.Stat.Size && e.MTime == r.in.Stat.ModTime.UnixNano()
 }
 
-func (r *run) resume(ctx context.Context, e Entry) (*session, error) {
+func (r *run) resume(ctx context.Context, e transfer.UploadEntry) (*session, error) {
 	up, err := r.deps.Uploads.Resume(ctx, r.in.RemoteID, e.BlobID)
 	if err != nil {
 		return nil, err
 	}
 	up.PartSize, up.PartCount = e.PartSize, e.PartCount
 	if !r.isSame(e) {
-		return nil, errors.Join(ErrUploadGone, r.deps.Uploads.Abort(ctx, up), r.removeEntry(ctx, e))
+		return nil, errors.Join(transfer.ErrUploadGone, r.deps.Uploads.Abort(ctx, up), r.removeEntry(ctx, e))
 	}
 	opened, err := r.deps.Crypto.OpenData(ctx, r.getKeyContext(), e.SealedKey)
 	if err != nil {
@@ -130,14 +130,14 @@ func (r *run) resume(ctx context.Context, e Entry) (*session, error) {
 	if s.sealer, err = blobcipher.NewSealer(s.key, [16]byte(r.in.FileID), [16]byte(e.Salt), e.PlainSize); err != nil {
 		return nil, err
 	}
-	return s, r.restoreHash(ctx, s)
+	return s, r.restoreHash(s)
 }
 
 func (r *run) getKeyContext() []byte {
 	return slices.Concat([]byte(keyContext), r.in.RemoteID, r.in.FileID)
 }
 
-func (r *run) removeEntry(ctx context.Context, gone Entry) error {
+func (r *run) removeEntry(ctx context.Context, gone transfer.UploadEntry) error {
 	entries, err := r.deps.Entries.ReadUploads(ctx, r.in.Vault)
 	if err != nil {
 		return err
@@ -145,11 +145,11 @@ func (r *run) removeEntry(ctx context.Context, gone Entry) error {
 	return r.deps.Entries.WriteUploads(ctx, r.in.Vault, withoutFile(entries, gone.FileID))
 }
 
-func withoutFile(entries []Entry, fileID []byte) []Entry {
-	return slices.DeleteFunc(slices.Clone(entries), func(e Entry) bool { return bytes.Equal(e.FileID, fileID) })
+func withoutFile(entries []transfer.UploadEntry, fileID []byte) []transfer.UploadEntry {
+	return slices.DeleteFunc(slices.Clone(entries), func(e transfer.UploadEntry) bool { return bytes.Equal(e.FileID, fileID) })
 }
 
-func (r *run) start(ctx context.Context, entries []Entry, key [32]byte, salt [16]byte) (*session, error) {
+func (r *run) start(ctx context.Context, entries []transfer.UploadEntry, key [32]byte, salt [16]byte) (*session, error) {
 	sealer, err := blobcipher.NewSealer(key, [16]byte(r.in.FileID), salt, r.in.Stat.Size)
 	if err != nil {
 		return nil, err
@@ -162,10 +162,10 @@ func (r *run) start(ctx context.Context, entries []Entry, key [32]byte, salt [16
 	if err != nil {
 		return nil, fmt.Errorf("seal the key of an upload: %w", err)
 	}
-	entry := Entry{
+	entry := transfer.UploadEntry{
 		FileID: r.in.FileID, Path: r.in.Path, PlainSize: r.in.Stat.Size, PlainHash: r.in.Stat.Hash, MTime: r.in.Stat.ModTime.UnixNano(),
 		ParentRev: r.in.ParentRev, BlobID: up.Blob, PartSize: up.PartSize, PartCount: up.PartCount, StoredSize: sealer.StoredSize(),
-		Salt: salt[:], SealedKey: sealed,
+		Salt: salt[:], SealedKey: sealed, PartsDone: 0, StoredHashState: nil,
 	}
 	if err := r.deps.Entries.WriteUploads(ctx, r.in.Vault, append(entries, entry)); err != nil {
 		return nil, err
@@ -175,7 +175,7 @@ func (r *run) start(ctx context.Context, entries []Entry, key [32]byte, salt [16
 
 // restoreHash brings the hash of the stored bytes to the parts the server holds in a row from the first: the state kept
 // when it covers no more of them, else a hash rebuilt from the file, which asks the network for nothing.
-func (r *run) restoreHash(ctx context.Context, s *session) error {
+func (r *run) restoreHash(s *session) error {
 	held := 0
 	for slices.Contains(s.up.Done, held+1) {
 		held++

@@ -58,6 +58,11 @@ type Renamer interface {
 	Execute(ctx context.Context, id domain.VaultID) (bool, error)
 }
 
+// Sweeper deletes the staged files of the vault that no download names.
+type Sweeper interface {
+	Sweep(ctx context.Context, vault domain.VaultID) error
+}
+
 // Puller brings the changes of the server into the vault.
 type Puller interface {
 	Execute(ctx context.Context, in transfer.PullInput) (transfer.PullResult, error)
@@ -101,6 +106,7 @@ type SubscriptionReader interface {
 // Steps are the use cases a pass runs.
 type Steps struct {
 	Rename       Renamer
+	Sweep        Sweeper
 	Pull         Puller
 	Scan         Scanner
 	Commit       Committer

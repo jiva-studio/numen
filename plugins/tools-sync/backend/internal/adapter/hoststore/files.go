@@ -7,9 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/upload"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
 const (
@@ -21,11 +19,11 @@ const (
 )
 
 type uploadsDocument struct {
-	Uploads []upload.Entry `json:"uploads"`
+	Uploads []transfer.UploadEntry `json:"uploads"`
 }
 
 type downloadsDocument struct {
-	Downloads []download.Entry `json:"downloads"`
+	Downloads []transfer.DownloadEntry `json:"downloads"`
 }
 
 type absencesDocument struct {
@@ -33,32 +31,32 @@ type absencesDocument struct {
 }
 
 // ReadUploads returns the uploads of the vault that are not finished.
-func (s *State) ReadUploads(ctx context.Context, id domain.VaultID) ([]upload.Entry, error) {
+func (s *State) ReadUploads(ctx context.Context, id domain.VaultID) ([]transfer.UploadEntry, error) {
 	var document uploadsDocument
 	_, err := s.read(ctx, id, uploadsFile, &document)
 	return document.Uploads, err
 }
 
 // WriteUploads replaces the uploads of the vault that are not finished.
-func (s *State) WriteUploads(ctx context.Context, id domain.VaultID, entries []upload.Entry) error {
+func (s *State) WriteUploads(ctx context.Context, id domain.VaultID, entries []transfer.UploadEntry) error {
 	return s.write(ctx, id, uploadsFile, uploadsDocument{Uploads: entries})
 }
 
 // ReadDownloads returns the downloads of the vault that are not finished.
-func (s *State) ReadDownloads(ctx context.Context, id domain.VaultID) ([]download.Entry, error) {
+func (s *State) ReadDownloads(ctx context.Context, id domain.VaultID) ([]transfer.DownloadEntry, error) {
 	var document downloadsDocument
 	_, err := s.read(ctx, id, downloadsFile, &document)
 	return document.Downloads, err
 }
 
 // WriteDownloads replaces the downloads of the vault that are not finished.
-func (s *State) WriteDownloads(ctx context.Context, id domain.VaultID, entries []download.Entry) error {
+func (s *State) WriteDownloads(ctx context.Context, id domain.VaultID, entries []transfer.DownloadEntry) error {
 	return s.write(ctx, id, downloadsFile, downloadsDocument{Downloads: entries})
 }
 
 // ReadPending returns the removals of the vault that wait for an answer, or nil.
-func (s *State) ReadPending(ctx context.Context, id domain.VaultID) (*deletions.State, error) {
-	var state deletions.State
+func (s *State) ReadPending(ctx context.Context, id domain.VaultID) (*transfer.PausedRemovals, error) {
+	var state transfer.PausedRemovals
 	found, err := s.read(ctx, id, pendingFile, &state)
 	if err != nil || !found {
 		return nil, err
@@ -67,7 +65,7 @@ func (s *State) ReadPending(ctx context.Context, id domain.VaultID) (*deletions.
 }
 
 // WritePending keeps the removals of the vault that wait for an answer.
-func (s *State) WritePending(ctx context.Context, id domain.VaultID, state deletions.State) error {
+func (s *State) WritePending(ctx context.Context, id domain.VaultID, state transfer.PausedRemovals) error {
 	return s.write(ctx, id, pendingFile, state)
 }
 
@@ -77,8 +75,8 @@ func (s *State) DeletePending(ctx context.Context, id domain.VaultID) error {
 }
 
 // ReadApproval returns the answer to the paused removals of the vault, or nil.
-func (s *State) ReadApproval(ctx context.Context, id domain.VaultID) (*deletions.Approval, error) {
-	var approval deletions.Approval
+func (s *State) ReadApproval(ctx context.Context, id domain.VaultID) (*transfer.Approval, error) {
+	var approval transfer.Approval
 	found, err := s.read(ctx, id, answerFile, &approval)
 	if err != nil || !found {
 		return nil, err
@@ -87,7 +85,7 @@ func (s *State) ReadApproval(ctx context.Context, id domain.VaultID) (*deletions
 }
 
 // WriteApproval keeps the answer to the paused removals of the vault.
-func (s *State) WriteApproval(ctx context.Context, id domain.VaultID, approval deletions.Approval) error {
+func (s *State) WriteApproval(ctx context.Context, id domain.VaultID, approval transfer.Approval) error {
 	return s.write(ctx, id, answerFile, approval)
 }
 

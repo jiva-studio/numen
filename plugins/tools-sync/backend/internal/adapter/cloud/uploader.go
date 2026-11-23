@@ -11,8 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	syncclient "github.com/jiva-studio/numen/libs/shared/syncprotocol/client"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/upload"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
 const (
@@ -35,47 +34,47 @@ func NewUploader(cloud *Cloud, now func() time.Time) *Uploader {
 }
 
 // Start reserves the blob of a body of the stored size.
-func (u *Uploader) Start(ctx context.Context, vault []byte, storedSize int64) (upload.Upload, error) {
+func (u *Uploader) Start(ctx context.Context, vault []byte, storedSize int64) (transfer.Upload, error) {
 	if storedSize <= syncprotocol.MaxBlobSize {
 		reserved, err := u.cloud.ReserveBlobs(ctx, vault, []uint64{uint64(storedSize)})
 		if err != nil {
-			return upload.Upload{}, err
+			return transfer.Upload{}, err
 		}
 		if len(reserved) != 1 {
-			return upload.Upload{}, fmt.Errorf("reserve a blob: the server made %d reservations for one", len(reserved))
+			return transfer.Upload{}, fmt.Errorf("reserve a blob: the server made %d reservations for one", len(reserved))
 		}
-		return upload.Upload{Vault: vault, URL: reserved[0].GetUrl(), Blob: reserved[0].GetBlobId(), PartSize: storedSize, PartCount: 1, Done: nil}, nil
+		return transfer.Upload{Vault: vault, URL: reserved[0].GetUrl(), Blob: reserved[0].GetBlobId(), PartSize: storedSize, PartCount: 1, Done: nil}, nil
 	}
 	partSize := syncprotocol.GetPartSize(storedSize)
 	reserved, err := call(ctx, u.cloud, func() (*syncv1.ReserveMultipartBlobResponse, error) {
 		return u.cloud.blobs.ReserveMultipartBlob(ctx, vault, uint64(storedSize), uint64(partSize))
 	})
 	if err != nil {
-		return upload.Upload{}, err
+		return transfer.Upload{}, err
 	}
-	return upload.Upload{
+	return transfer.Upload{
 		Vault: vault, URL: "", Blob: reserved.GetBlobId(), PartSize: int64(reserved.GetPartSize()), PartCount: int(reserved.GetPartCount()), Done: nil,
 	}, nil
 }
 
-// Resume asks the server which parts of the blob it holds. A blob the server does not know is upload.ErrUploadGone.
-func (u *Uploader) Resume(ctx context.Context, vault, blob []byte) (upload.Upload, error) {
+// Resume asks the server which parts of the blob it holds. A blob the server does not know is transfer.ErrUploadGone.
+func (u *Uploader) Resume(ctx context.Context, vault, blob []byte) (transfer.Upload, error) {
 	parts, err := call(ctx, u.cloud, func() ([]*syncv1.PartInfo, error) { return u.cloud.blobs.ListParts(ctx, vault, blob) })
 	if errors.Is(err, syncprotocol.ErrNoVault) {
-		return upload.Upload{}, upload.ErrUploadGone
+		return transfer.Upload{}, transfer.ErrUploadGone
 	}
 	if err != nil {
-		return upload.Upload{}, err
+		return transfer.Upload{}, err
 	}
 	done := make([]int, len(parts))
 	for i, part := range parts {
 		done[i] = int(part.GetPartNumber())
 	}
-	return upload.Upload{Vault: vault, URL: "", Blob: blob, PartSize: 0, PartCount: 0, Done: done}, nil
+	return transfer.Upload{Vault: vault, URL: "", Blob: blob, PartSize: 0, PartCount: 0, Done: done}, nil
 }
 
 // PutPart sends the body as part number of the upload.
-func (u *Uploader) PutPart(ctx context.Context, up upload.Upload, number int, body []byte) error {
+func (u *Uploader) PutPart(ctx context.Context, up transfer.Upload, number int, body []byte) error {
 	if up.URL != "" {
 		return syncclient.PutBlob(ctx, u.cloud.http, up.URL, body)
 	}
@@ -86,7 +85,7 @@ func (u *Uploader) PutPart(ctx context.Context, up upload.Upload, number int, bo
 	return syncclient.PutPart(ctx, u.cloud.http, url, body)
 }
 
-func (u *Uploader) getPartURL(ctx context.Context, up upload.Upload, number int) (string, error) {
+func (u *Uploader) getPartURL(ctx context.Context, up transfer.Upload, number int) (string, error) {
 	key := fmt.Sprintf("%x/%d", up.Blob, number)
 	u.mu.Lock()
 	defer u.mu.Unlock()
@@ -114,7 +113,7 @@ func (u *Uploader) getPartURL(ctx context.Context, up upload.Upload, number int)
 }
 
 // Finish joins the parts into the blob. A body sent in one request needs nothing.
-func (u *Uploader) Finish(ctx context.Context, up upload.Upload) error {
+func (u *Uploader) Finish(ctx context.Context, up transfer.Upload) error {
 	if up.URL != "" {
 		return nil
 	}
@@ -125,7 +124,7 @@ func (u *Uploader) Finish(ctx context.Context, up upload.Upload) error {
 }
 
 // Abort drops the blob the upload reserved.
-func (u *Uploader) Abort(ctx context.Context, up upload.Upload) error {
+func (u *Uploader) Abort(ctx context.Context, up transfer.Upload) error {
 	if up.URL != "" {
 		return nil
 	}
@@ -147,7 +146,7 @@ func (b *Blobs) getURL(ctx context.Context, vault, blob []byte) (string, error) 
 		return "", err
 	}
 	if len(downloads) != 1 || !downloads[0].GetFound() {
-		return "", download.ErrBlobMissing
+		return "", transfer.ErrBlobMissing
 	}
 	return downloads[0].GetUrl(), nil
 }

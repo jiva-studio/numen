@@ -4,6 +4,7 @@ package transfer
 
 import (
 	"errors"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	syncv1 "github.com/jiva-studio/numen/libs/shared/syncprotocol/gen/numen/sync/v1"
@@ -178,10 +179,10 @@ const (
 // Removal is a file a pass is about to remove on the server or in the vault. RevID is the revision of the
 // removal for Direction apply.
 type Removal struct {
-	FileID   []byte
-	Path     string
-	BaseHash string
-	RevID    []byte
+	FileID   []byte `json:"fileId"`
+	Path     string `json:"path"`
+	BaseHash string `json:"baseHash"`
+	RevID    []byte `json:"revId"`
 }
 
 // GuardInput is the removals a pass is about to make and the number of files it tracks.
@@ -192,7 +193,77 @@ type GuardInput struct {
 	Tracked    int
 }
 
+// PausedRemovals is the removals of one vault that wait for an answer, kept in the store of the plugin.
+type PausedRemovals struct {
+	Direction Direction `json:"direction"`
+	Files     []Removal `json:"files"`
+	Tracked   int       `json:"tracked"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+// Choice is the answer of the person to paused removals.
+type Choice string
+
+const (
+	// ChoiceRemove lets the removals go on.
+	ChoiceRemove Choice = "remove"
+	// ChoiceKeep drops the removals and keeps the files.
+	ChoiceKeep Choice = "keep"
+)
+
+// Approval is the answer of the person to a pause, kept until the next pass over the vault takes it.
+type Approval struct {
+	Direction Direction `json:"direction"`
+	Choice    Choice    `json:"choice"`
+}
+
+// Upload is one reservation on the server: its blob, the size of its parts and the parts the server holds. URL is
+// set for a body sent in one request.
+type Upload struct {
+	Vault     []byte
+	URL       string
+	Blob      []byte
+	PartSize  int64
+	PartCount int
+	Done      []int
+}
+
+// UploadEntry is an upload of a big file that is not finished, kept between runs. Its key is sealed and its hash
+// state is the state of the hash of ciphertext only.
+type UploadEntry struct {
+	FileID          []byte `json:"fileId"`
+	Path            string `json:"path"`
+	PlainSize       int64  `json:"plainSize"`
+	PlainHash       string `json:"plainHash"`
+	MTime           int64  `json:"mtime"`
+	ParentRev       []byte `json:"parentRev"`
+	BlobID          []byte `json:"blobId"`
+	PartSize        int64  `json:"partSize"`
+	PartCount       int    `json:"partCount"`
+	StoredSize      int64  `json:"storedSize"`
+	Salt            []byte `json:"salt"`
+	SealedKey       []byte `json:"sealedKey"`
+	PartsDone       int    `json:"partsDone"`
+	StoredHashState []byte `json:"storedHashState"`
+}
+
+// DownloadEntry is a download that is not finished, kept between runs. Its hash state is the state of the hash of
+// the stored bytes, never of the plain ones.
+type DownloadEntry struct {
+	FileID          []byte `json:"fileId"`
+	Path            string `json:"path"`
+	BlobID          []byte `json:"blobId"`
+	Header          []byte `json:"header"`
+	NextChunk       uint64 `json:"nextChunk"`
+	StoredHashState []byte `json:"storedHashState"`
+	StagedName      string `json:"stagedName"`
+	MetaHash        string `json:"metaHash"`
+	HeadRev         []byte `json:"headRev"`
+}
+
 var (
+	// ErrUploadGone means the server has no such reservation any more.
+	ErrUploadGone = errors.New("the upload does not exist on the sync server")
 	// ErrIntegrity means the bytes the server sent are not the blob its revision names.
 	ErrIntegrity = errors.New("a file from the sync server is damaged")
 	// ErrBlobMissing means the server has no blob for a revision.

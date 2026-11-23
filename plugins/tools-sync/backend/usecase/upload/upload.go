@@ -14,68 +14,14 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 )
 
-var (
-	// ErrFileChanged means the file changed while it was read; the pass tries it again later.
-	ErrFileChanged = errors.New("the file changed while it was sent")
-	// ErrUploadGone means the server has no such reservation any more.
-	ErrUploadGone = errors.New("the upload does not exist on the sync server")
-)
-
-// Upload is one reservation on the server: its blob, the size of its parts and the parts the server holds.
-type Upload struct {
-	Vault     []byte
-	URL       string
-	Blob      []byte
-	PartSize  int64
-	PartCount int
-	Done      []int
-}
-
-// Uploads is one way to upload: a body that fits one request is one part of one.
-type Uploads interface {
-	Start(ctx context.Context, vault []byte, storedSize int64) (Upload, error)
-	Resume(ctx context.Context, vault, blob []byte) (Upload, error)
-	PutPart(ctx context.Context, up Upload, number int, body []byte) error
-	Finish(ctx context.Context, up Upload) error
-	Abort(ctx context.Context, up Upload) error
-}
-
-// Entry is an upload of a big file that is not finished, kept between runs. Its key is sealed and its hash state is
-// the state of the hash of ciphertext only.
-type Entry struct {
-	FileID          []byte `json:"fileId"`
-	Path            string `json:"path"`
-	PlainSize       int64  `json:"plainSize"`
-	PlainHash       string `json:"plainHash"`
-	MTime           int64  `json:"mtime"`
-	ParentRev       []byte `json:"parentRev"`
-	BlobID          []byte `json:"blobId"`
-	PartSize        int64  `json:"partSize"`
-	PartCount       int    `json:"partCount"`
-	StoredSize      int64  `json:"storedSize"`
-	Salt            []byte `json:"salt"`
-	SealedKey       []byte `json:"sealedKey"`
-	PartsDone       int    `json:"partsDone"`
-	StoredHashState []byte `json:"storedHashState"`
-}
-
-// Entries keeps the unfinished uploads of each vault.
-type Entries interface {
-	ReadUploads(ctx context.Context, id domain.VaultID) ([]Entry, error)
-	WriteUploads(ctx context.Context, id domain.VaultID, entries []Entry) error
-}
-
-// Crypto seals and opens the key of an upload with the keys of the account.
-type Crypto interface {
-	SealData(ctx context.Context, dataContext, plain []byte) ([]byte, error)
-	OpenData(ctx context.Context, dataContext, sealed []byte) ([]byte, error)
-}
+// ErrFileChanged means the file changed while it was read; the pass tries it again later.
+var ErrFileChanged = errors.New("the file changed while it was sent")
 
 // Deps are what the use case needs.
 type Deps struct {
-	Uploads Uploads
-	Entries Entries
-	Crypto  Crypto
+	Uploads ports.Uploads
+	Entries ports.UploadEntries
+	Crypto  ports.Crypto
 	Host    ports.Host
 	Random  io.Reader
 }
@@ -83,11 +29,12 @@ type Deps struct {
 // UploadFile sends one file.
 type UploadFile struct{ deps Deps }
 
+// NewUploadFile returns the use case over the dependencies.
 func NewUploadFile(deps Deps) *UploadFile { return &UploadFile{deps: deps} }
 
 // Execute sends the file whole or in parts and returns what its revision names.
 func (u *UploadFile) Execute(ctx context.Context, in transfer.UploadInput) (transfer.UploadResult, error) {
-	return (&run{deps: u.deps, in: in}).execute(ctx)
+	return (&run{deps: u.deps, in: in, plain: nil}).execute(ctx)
 }
 
 // Forget drops the kept state of the upload of a file once its revision is committed.
@@ -137,7 +84,7 @@ func isText(path string) bool { return note.Kind(path) != note.KindBinary }
 func readAll(r io.ReaderAt, size int64) ([]byte, error) {
 	whole := make([]byte, size)
 	n, err := r.ReadAt(whole, 0)
-	if err != nil && !(errors.Is(err, io.EOF) && int64(n) == size) {
+	if err != nil && (!errors.Is(err, io.EOF) || int64(n) != size) {
 		return nil, err
 	}
 	return whole, nil

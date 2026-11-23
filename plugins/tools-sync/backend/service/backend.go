@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/api"
 	sessiondomain "github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/vaultlink"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
@@ -28,7 +29,7 @@ const (
 type Backend struct {
 	deps    syncvault.Deps
 	catalog catalog.Deps
-	pending deletions.Pending
+	pending ports.PausedStore
 	resolve *deletions.ResolveDeletions
 }
 

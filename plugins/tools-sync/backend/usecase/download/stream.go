@@ -13,29 +13,46 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
 
 const lengthPrefix = 8
 
-// position is where a download stands: the chunks taken and the hash of the stored bytes of them.
+// position is where a download stands: the chunks taken and the hash of the stored bytes of them. state is the
+// marshaled hash after next chunks, so a break can keep the position of the last whole chunk.
 type position struct {
 	header [56]byte
 	next   uint64
 	hasher hash.Hash
+	state  []byte
+}
+
+// counted counts the bytes a body gave, to tell a body that ended early from a body that does not open.
+type counted struct {
+	source io.Reader
+	count  int64
+	want   int64
+}
+
+func (c *counted) Read(p []byte) (int, error) {
+	n, err := c.source.Read(p)
+	c.count += int64(n)
+	return n, err
 }
 
 // stageStream downloads a big blob chunk by chunk, appending each chunk to the staged file after it is
-// authenticated, and keeps the position every few chunks.
+// authenticated, and keeps the position every few chunks and when the body breaks.
 func (r *run) stageStream(ctx context.Context) error {
 	at, err := r.findPosition(ctx)
 	if err != nil {
 		return err
 	}
-	body, err := r.deps.Blobs.OpenBlob(ctx, r.in.RemoteID, r.in.BlobID, r.getOffset(at))
+	offset := r.getOffset(at)
+	body, err := r.deps.Blobs.OpenBlob(ctx, r.in.RemoteID, r.in.BlobID, offset)
 	if err != nil {
 		return err
 	}
-	err = r.stageBody(ctx, body, at)
+	err = r.stageBody(ctx, &counted{source: body, count: 0, want: int64(r.in.BlobSize) - offset}, at)
 	return errors.Join(err, body.Close())
 }
 
@@ -57,17 +74,16 @@ func chunkLog2(header [56]byte) byte {
 // findPosition returns the position a kept download reached when its staged file is the size it must be, and the
 // start of a download else.
 func (r *run) findPosition(ctx context.Context) (*position, error) {
-	fresh := &position{hasher: sha256.New()}
+	fresh := &position{header: [56]byte{}, next: 0, hasher: sha256.New(), state: nil}
 	entries, err := r.deps.Entries.ReadDownloads(ctx, r.in.Vault)
 	if err != nil {
 		return nil, err
 	}
-	at := slices.IndexFunc(entries, func(e Entry) bool { return bytes.Equal(e.FileID, r.in.FileID) })
+	at := slices.IndexFunc(entries, func(e transfer.DownloadEntry) bool { return bytes.Equal(e.FileID, r.in.FileID) })
 	if at < 0 {
 		return fresh, r.store.Delete(ctx, r.name)
 	}
-	kept := entries[at]
-	restored, isUsable, err := r.restore(ctx, kept)
+	restored, isUsable, err := r.restore(ctx, entries[at])
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +93,7 @@ func (r *run) findPosition(ctx context.Context) (*position, error) {
 	return fresh, errors.Join(r.store.Delete(ctx, r.name), r.deps.Entries.WriteDownloads(ctx, r.in.Vault, withoutFile(entries, r.in.FileID)))
 }
 
-func (r *run) restore(ctx context.Context, kept Entry) (*position, bool, error) {
+func (r *run) restore(ctx context.Context, kept transfer.DownloadEntry) (*position, bool, error) {
 	if !bytes.Equal(kept.BlobID, r.in.BlobID) || kept.MetaHash != r.in.Hash || len(kept.Header) != 56 || kept.NextChunk == 0 {
 		return nil, false, nil
 	}
@@ -95,10 +111,10 @@ func (r *run) restore(ctx context.Context, kept Entry) (*position, bool, error) 
 	if !ok || unmarshaler.UnmarshalBinary(kept.StoredHashState) != nil {
 		return nil, false, nil
 	}
-	return &position{header: [56]byte(kept.Header), next: kept.NextChunk, hasher: hasher}, true, nil
+	return &position{header: [56]byte(kept.Header), next: kept.NextChunk, hasher: hasher, state: kept.StoredHashState}, true, nil
 }
 
-func (r *run) stageBody(ctx context.Context, body io.Reader, at *position) error {
+func (r *run) stageBody(ctx context.Context, body *counted, at *position) error {
 	var plain *blobcipher.PlainReader
 	var err error
 	if at.next == 0 {
@@ -107,17 +123,17 @@ func (r *run) stageBody(ctx context.Context, body io.Reader, at *position) error
 		plain, err = blobcipher.OpenStreamFrom(r.in.Key, [16]byte(r.in.FileID), at.header, at.next, r.in.Size, body)
 	}
 	if err != nil {
-		return fmt.Errorf("%w: %w", ErrIntegrity, err)
+		return r.getReadFailure(err, body)
 	}
 	if at.next == 0 {
 		at.header = plain.Header()
 		at.hasher.Write(at.header[:])
 	}
 	plain.SetStoredSink(at.hasher)
-	return r.copyChunks(ctx, plain, at)
+	return r.copyChunks(ctx, plain, at, body)
 }
 
-func (r *run) copyChunks(ctx context.Context, plain *blobcipher.PlainReader, at *position) error {
+func (r *run) copyChunks(ctx context.Context, plain *blobcipher.PlainReader, at *position, body *counted) error {
 	buffer := make([]byte, 1<<20+lengthPrefix)
 	total := int64(0)
 	if at.next > 0 {
@@ -130,26 +146,38 @@ func (r *run) copyChunks(ctx context.Context, plain *blobcipher.PlainReader, at 
 				return appendErr
 			}
 			total += int64(n)
+			if advanceErr := r.advance(ctx, plain, at); advanceErr != nil {
+				return advanceErr
+			}
 		}
 		if errors.Is(err, io.EOF) {
 			return r.finish(at, total)
 		}
 		if err != nil {
-			return r.readFailure(err)
-		}
-		if plain.IsAtChunkBoundary() && plain.ChunkIndex()%saveEvery == 0 {
-			if err := r.keep(ctx, plain, at); err != nil {
-				return err
-			}
+			return r.settleReadFailure(ctx, err, at, body)
 		}
 	}
 }
 
-func (r *run) readFailure(err error) error {
-	if errors.Is(err, blobcipher.ErrCannotOpen) {
-		return fmt.Errorf("%w: %w", ErrIntegrity, err)
+// settleReadFailure keeps the position of the last whole chunk when the body broke, and not when it did not open.
+func (r *run) settleReadFailure(ctx context.Context, err error, at *position, body *counted) error {
+	failure := r.getReadFailure(err, body)
+	if errors.Is(failure, ErrIntegrity) {
+		return failure
 	}
-	return err
+	return errors.Join(failure, r.keepStarted(ctx, at))
+}
+
+// getReadFailure says whether a failed read is a body that does not open, which is damage, or a body that ended before
+// the blob did, which is a break.
+func (r *run) getReadFailure(err error, body *counted) error {
+	if !errors.Is(err, blobcipher.ErrCannotOpen) {
+		return err
+	}
+	if body.count < body.want {
+		return fmt.Errorf("the sync server stopped sending the file: %w", io.ErrUnexpectedEOF)
+	}
+	return fmt.Errorf("%w: %w", ErrIntegrity, err)
 }
 
 func (r *run) finish(at *position, total int64) error {
@@ -159,8 +187,12 @@ func (r *run) finish(at *position, total int64) error {
 	return nil
 }
 
-// keep writes the position after the chunks taken so far.
-func (r *run) keep(ctx context.Context, plain *blobcipher.PlainReader, at *position) error {
+// advance notes the chunks taken and the hash of them once a whole chunk is in the staged file, and keeps the
+// position every saveEvery chunks.
+func (r *run) advance(ctx context.Context, plain *blobcipher.PlainReader, at *position) error {
+	if !plain.IsAtChunkBoundary() {
+		return nil
+	}
 	marshaler, ok := at.hasher.(encoding.BinaryMarshaler)
 	if !ok {
 		return errors.New("the hash of the stored bytes cannot be kept")
@@ -169,14 +201,30 @@ func (r *run) keep(ctx context.Context, plain *blobcipher.PlainReader, at *posit
 	if err != nil {
 		return fmt.Errorf("keep the hash of the stored bytes: %w", err)
 	}
+	at.next, at.state = plain.ChunkIndex(), state
+	if at.next%saveEvery != 0 {
+		return nil
+	}
+	return r.keep(ctx, at)
+}
+
+// keepStarted writes the position of the last whole chunk after a break, when there is one.
+func (r *run) keepStarted(ctx context.Context, at *position) error {
+	if at.next == 0 {
+		return nil
+	}
+	return r.keep(ctx, at)
+}
+
+// keep writes the position after the chunks taken so far.
+func (r *run) keep(ctx context.Context, at *position) error {
 	entries, err := r.deps.Entries.ReadDownloads(ctx, r.in.Vault)
 	if err != nil {
 		return err
 	}
-	header := plain.Header()
-	entry := Entry{
-		FileID: r.in.FileID, Path: r.in.Path, BlobID: r.in.BlobID, Header: header[:], NextChunk: plain.ChunkIndex(),
-		StoredHashState: state, StagedName: r.name, MetaHash: r.in.Hash, HeadRev: r.in.HeadRev,
+	entry := transfer.DownloadEntry{
+		FileID: r.in.FileID, Path: r.in.Path, BlobID: r.in.BlobID, Header: at.header[:], NextChunk: at.next,
+		StoredHashState: at.state, StagedName: r.name, MetaHash: r.in.Hash, HeadRev: r.in.HeadRev,
 	}
 	return r.deps.Entries.WriteDownloads(ctx, r.in.Vault, append(withoutFile(entries, r.in.FileID), entry))
 }

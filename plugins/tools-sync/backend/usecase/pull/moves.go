@@ -44,9 +44,9 @@ type folderMove struct{ from, to string }
 func (r *run) applyFolderMoves(ctx context.Context, page []*syncv1.StoredRevision) error {
 	groups := map[folderMove][]note.FileRecord{}
 	for _, stored := range page {
-		meta, isVerified := r.verify(stored)
+		meta, checkErr := r.check(stored)
 		record, isKnown := r.getRecord(stored.GetRevision().GetFileId())
-		if !isVerified || !isKnown || stored.GetRevision().GetDeleted() || record.Path == meta.Path || !isMetadataOnly(stored.GetRevision(), record, meta) {
+		if checkErr != nil || !isKnown || stored.GetRevision().GetDeleted() || record.Path == meta.Path || !isMetadataOnly(stored.GetRevision(), record, meta) {
 			continue
 		}
 		group := getFolderMove(record.Path, meta.Path)

@@ -26,6 +26,9 @@ type pass struct {
 }
 
 func (p *pass) run(ctx context.Context) error {
+	if err := p.use.steps.Sweep.Sweep(ctx, p.id); err != nil {
+		return err
+	}
 	if isPaused, err := p.use.deps.Pauses.HasPending(ctx, p.id); isPaused || err != nil {
 		return err
 	}
@@ -169,11 +172,55 @@ func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []no
 	if err != nil || len(files) == 0 {
 		return records, false, err
 	}
-	outcomes, err := p.use.steps.Commit.Execute(ctx, transfer.CommitInput{VaultID: p.id, Vault: vault, Files: files})
+	input := transfer.CommitInput{VaultID: p.id, Vault: vault, Files: files}
+	outcomes, err := p.use.steps.Commit.Execute(ctx, input)
 	if err != nil {
 		return records, false, err
 	}
+	if again := getEditsOverRemovals(files, outcomes); len(again) > 0 {
+		input.Files = make([]transfer.File, len(again))
+		for i, one := range again {
+			input.Files[i] = one.file
+		}
+		second, err := p.use.steps.Commit.Execute(ctx, input)
+		if err != nil {
+			return records, false, err
+		}
+		for i, one := range again {
+			outcomes[one.index] = second[i]
+		}
+	}
 	return p.apply(records, outcomes), hasMismatch(outcomes), nil
+}
+
+// repeat is a file whose revision the server refused because the head of the file is a removal, or is gone, with the
+// parent the file is committed under the second time.
+type repeat struct {
+	index int
+	file  transfer.File
+}
+
+// getEditsOverRemovals lists the files a person changed that the server refused for a head that is a removal, to be
+// committed again as children of the removal, and the files whose removal the server has pruned, to be committed
+// again with no parent: a change wins over a removal.
+func getEditsOverRemovals(files []transfer.File, outcomes []transfer.Outcome) []repeat {
+	var again []repeat
+	for i, outcome := range outcomes {
+		if outcome.Status != transfer.ParentMismatch {
+			continue
+		}
+		file := files[i]
+		switch {
+		case outcome.Head == nil:
+			file.ParentRev = nil
+		case outcome.Head.GetRevision().GetDeleted():
+			file.ParentRev = outcome.Head.GetRevId()
+		default:
+			continue
+		}
+		again = append(again, repeat{index: i, file: file})
+	}
+	return again
 }
 
 func hasMismatch(outcomes []transfer.Outcome) bool {
@@ -251,7 +298,7 @@ func (p *pass) openVault(ctx context.Context) (transfer.Vault, error) {
 }
 
 func setRecord(records []note.FileRecord, record note.FileRecord) []note.FileRecord {
-	at := slices.IndexFunc(records, func(one note.FileRecord) bool { return one.Path == record.Path })
+	at := slices.IndexFunc(records, func(one note.FileRecord) bool { return bytes.Equal(one.FileID, record.FileID) })
 	if at < 0 {
 		return append(records, record)
 	}

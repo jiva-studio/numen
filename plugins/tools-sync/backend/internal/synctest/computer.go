@@ -25,7 +25,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/ports"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/catalog"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/commit"
-	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/download"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/deletions"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/localchanges"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/pull"
@@ -64,7 +64,7 @@ type Computer struct {
 	Client   *account.Client
 	Health   *healthtest.Host
 	Vaults   *hosttest.Vault
-	Host     Host
+	Host     ports.Host
 	Cloud    *cloud.Cloud
 	Account  *accountadapter.Account
 	Sessions *serveradapter.Server
@@ -200,7 +200,7 @@ func (c *Computer) WireDeps() syncwire.Deps {
 	uploader := cloud.NewUploader(c.Cloud, c.Clock.Now)
 	return syncwire.Deps{
 		Deps: c.SyncDeps(), Uploads: uploader, UploadEntries: c.State, DownloadBlobs: cloud.NewBlobs(c.Cloud), DownloadEntries: c.State,
-		Pending: c.State, Approvals: c.State, Absences: c.State, RemovalDelay: func() time.Duration { return time.Second },
+		Pending: c.State, Approvals: c.State, Absences: c.State, RemovalDelay: func() time.Duration { return RemovalDelay },
 	}
 }
 
@@ -216,7 +216,7 @@ func (c *Computer) CommitDeps() commit.Deps {
 // PullDeps are the dependencies of the pull of changes.
 func (c *Computer) PullDeps() pull.Deps {
 	wired := c.WireDeps()
-	downloads := download.NewDownloadFile(download.Deps{Blobs: wired.DownloadBlobs, Entries: c.State, Host: c.Host})
+	downloads := syncwire.NewDownloads(wired)
 	return pull.Deps{
 		Revisions: c.Cloud, Blobs: c.Cloud, Crypto: c.Account, Host: c.Host, State: c.State, Downloads: downloads,
 		Guard: syncwire.NewGuard(wired), Health: c.NewHealth(),
@@ -262,4 +262,24 @@ func (c *Computer) RunDeps(interval time.Duration, changed <-chan domain.VaultID
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: c.Cloud, Health: c.NewHealth()}),
 		Interval: func() time.Duration { return interval }, Changed: changed,
 	}
+}
+
+// RemovalDelay is how long a removed file is watched before its removal is sent, in the passes of the tests.
+const RemovalDelay = time.Second
+
+// Spy makes the host of this computer a host that writes down the calls that move the bytes of files, and returns it.
+func (c *Computer) Spy() *SpyHost {
+	spy := NewSpyHost(c.Host)
+	c.Host = spy
+	return spy
+}
+
+// DetectDeps are the dependencies of the search for moved and removed files.
+func (c *Computer) DetectDeps() localchanges.DetectDeps {
+	return localchanges.DetectDeps{Host: c.Host, State: c.State, Clock: c.Clock, Delay: func() time.Duration { return RemovalDelay }}
+}
+
+// DeleteDeps are the dependencies of the guard of removals and of the answer to it.
+func (c *Computer) DeleteDeps() deletions.Deps {
+	return deletions.Deps{Pending: c.State, Approvals: c.State, Health: c.NewHealth(), Clock: c.Clock}
 }

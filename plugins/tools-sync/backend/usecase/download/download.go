@@ -7,8 +7,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
-	"io"
 	"slices"
+	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
@@ -29,38 +29,10 @@ const (
 	stageSize = 1 << 20
 )
 
-// Blobs reads the blobs on the server.
-type Blobs interface {
-	// GetBlob returns a whole blob of up to note.BigFileLimit bytes.
-	GetBlob(ctx context.Context, vault, blob []byte) ([]byte, error)
-	// OpenBlob streams the blob from the byte from; the caller closes it.
-	OpenBlob(ctx context.Context, vault, blob []byte, from int64) (io.ReadCloser, error)
-}
-
-// Entry is a download that is not finished, kept between runs. Its hash state is the state of the hash of the stored
-// bytes, never of the plain ones.
-type Entry struct {
-	FileID          []byte `json:"fileId"`
-	Path            string `json:"path"`
-	BlobID          []byte `json:"blobId"`
-	Header          []byte `json:"header"`
-	NextChunk       uint64 `json:"nextChunk"`
-	StoredHashState []byte `json:"storedHashState"`
-	StagedName      string `json:"stagedName"`
-	MetaHash        string `json:"metaHash"`
-	HeadRev         []byte `json:"headRev"`
-}
-
-// Entries keeps the unfinished downloads of each vault.
-type Entries interface {
-	ReadDownloads(ctx context.Context, id domain.VaultID) ([]Entry, error)
-	WriteDownloads(ctx context.Context, id domain.VaultID, entries []Entry) error
-}
-
 // Deps are what the use case needs.
 type Deps struct {
-	Blobs   Blobs
-	Entries Entries
+	Blobs   ports.BlobReader
+	Entries ports.DownloadEntries
 	Host    ports.Host
 }
 
@@ -114,16 +86,16 @@ func (u *DownloadFile) Sweep(ctx context.Context, vault domain.VaultID) error {
 	}
 	var failure error
 	for _, file := range files {
-		isStaged := len(file.Name) > len(".part") && file.Name[len(file.Name)-len(".part"):] == ".part"
-		if isStaged && !slices.ContainsFunc(entries, func(e Entry) bool { return e.StagedName == file.Name }) {
+		isStaged := strings.HasSuffix(file.Name, ".part")
+		if isStaged && !slices.ContainsFunc(entries, func(e transfer.DownloadEntry) bool { return e.StagedName == file.Name }) {
 			failure = errors.Join(failure, store.Delete(ctx, file.Name))
 		}
 	}
 	return failure
 }
 
-func withoutFile(entries []Entry, fileID []byte) []Entry {
-	return slices.DeleteFunc(slices.Clone(entries), func(e Entry) bool { return bytes.Equal(e.FileID, fileID) })
+func withoutFile(entries []transfer.DownloadEntry, fileID []byte) []transfer.DownloadEntry {
+	return slices.DeleteFunc(slices.Clone(entries), func(e transfer.DownloadEntry) bool { return bytes.Equal(e.FileID, fileID) })
 }
 
 type run struct {
