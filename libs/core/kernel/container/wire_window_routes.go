@@ -37,7 +37,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	logsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -392,8 +391,8 @@ func getFeedStart(exec *PluginExecution, settingsDeps settingsWiring, vaultDeps 
 	return events.Start
 }
 
-func mountIdentity(w *windowRoutes, install pluginInstall, vaultDeps vaultWiring, pending *identity.PendingStore) {
-	handler := windowidentity.NewService(openIdentityUseCases(install, vaultDeps, pending))
+func mountIdentity(w *windowRoutes, install pluginInstall, vaultDeps vaultWiring, res *Resources) {
+	handler := windowidentity.NewService(openIdentityUseCases(install, vaultDeps, res))
 	path, served := windowidentity.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 }

@@ -36,17 +36,23 @@ var (
 type accountEndpoint struct {
 	numenv1connect.UnimplementedHostAccountServiceHandler
 
-	endpoint *Endpoint
+	auth  authority
+	calls AccountCalls
+}
+
+// authority tells which plugin made a call and refuses a call of a plugin without the permission.
+type authority interface {
+	Authorize(header, permission string) (string, error)
 }
 
 func (e *accountEndpoint) SignAsDevice(
 	ctx context.Context, req *connect.Request[v1.SignAsDeviceRequest],
 ) (*connect.Response[v1.SignAsDeviceResponse], error) {
-	pluginID, err := e.endpoint.Authorize(req.Header().Get("Authorization"), manifest.PermissionIdentity)
+	pluginID, err := e.auth.Authorize(req.Header().Get("Authorization"), manifest.PermissionIdentity)
 	if err != nil {
 		return nil, err
 	}
-	account := e.endpoint.callers.Account
+	account := e.calls.Account
 	if account == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errNoAccount)
 	}
@@ -64,10 +70,10 @@ func (e *accountEndpoint) SignAsDevice(
 func (e *accountEndpoint) GetPublicIdentity(
 	ctx context.Context, req *connect.Request[v1.GetPublicIdentityRequest],
 ) (*connect.Response[v1.GetPublicIdentityResponse], error) {
-	if _, err := e.endpoint.Authorize(req.Header().Get("Authorization"), manifest.PermissionIdentity); err != nil {
+	if _, err := e.auth.Authorize(req.Header().Get("Authorization"), manifest.PermissionIdentity); err != nil {
 		return nil, err
 	}
-	account := e.endpoint.callers.Account
+	account := e.calls.Account
 	if account == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errNoAccount)
 	}

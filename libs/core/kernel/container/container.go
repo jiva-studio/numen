@@ -81,8 +81,7 @@ type Resources struct {
 	pluginChanges   *settingsusecase.PluginChanges
 	subscribedHosts settingsusecase.HostSubscriptions
 	logEntries      *logsusecase.Entries
-	restore         *identity.PendingStore
-	links           *identity.LinkStore
+	progress        *identity.Progress
 }
 
 func NewResources() *Resources {
@@ -94,8 +93,7 @@ func NewResources() *Resources {
 		settingEvents: settingevents.New(),
 		pluginChanges: &settingsusecase.PluginChanges{},
 		logEntries:    logsusecase.NewEntries(),
-		restore:       identity.NewPendingStore(),
-		links:         identity.NewLinkStore(),
+		progress:      identity.NewProgress(),
 	}
 }
 
@@ -236,7 +234,5 @@ func newPluginInstall(c Config, prefs *PluginPreferences, endpoints *PluginEndpo
 		Endpoints:       getPluginEndpoints(endpoints),
 		PluginCatalog:   res.PluginCatalog,
 		KeyStore:        res.KeyStore,
-		ChainStore:      res.ChainStore,
-		Links:           res.links,
 	}
 }

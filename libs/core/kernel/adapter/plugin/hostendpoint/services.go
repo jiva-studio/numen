@@ -102,23 +102,31 @@ type Activation interface {
 }
 
 // Callers is what the host endpoint queries the host for about a call: who made it, what that
-// plugin may do, and what the host lends the plugin to work with. Account and Restore are what a plugin may ask of the
-// identity of this device, and are nil where the host holds none. Lent holds what exists only while a
+// plugin may do, and what the host lends the plugin to work with. Lent holds what exists only while a
 // window shows a vault; the tools are read at each call. Files tells which files a plugin takes; without it a plugin takes
 // every file. CallCancels holds the cancels of the calls of connections.
 type Callers struct {
 	Dependencies *plugindependency.Fetch
 	Activation   Activation
-	Account      Account
-	Restore      AccountRestore
-	Link         AccountLink
-	Chain        AccountChain
 	Lent         *Services
 	Tools        func() PluginTools
 	Health       HealthCalls
 	Processes    ProcessRelease
 	Files        FileTypes
 	CallCancels  *searchcancel.Searches
+}
+
+// AccountCalls is what a plugin with the identity permission may ask of the identity of this device. Each part is nil
+// where the host holds no identity.
+type AccountCalls struct {
+	Account Account
+	Restore AccountRestore
+	Link    AccountLink
+	Chain   AccountChain
+}
+
+func (c AccountCalls) isServed() bool {
+	return c.Account != nil || c.Restore != nil || c.Link != nil || c.Chain != nil
 }
 
 // LogWriter records a structured log entry reported by a plugin backend.

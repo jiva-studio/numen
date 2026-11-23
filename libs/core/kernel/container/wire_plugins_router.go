@@ -21,7 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -48,8 +47,6 @@ type pluginInstall struct {
 	Endpoints       *PluginEndpoints
 	PluginCatalog   catalog.Config
 	KeyStore        pluginport.KeyStore
-	ChainStore      identity.ChainStore
-	Links           *identity.LinkStore
 }
 
 func getPluginCatalog(cfg catalog.Config, report func(error)) *catalog.Service {

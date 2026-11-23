@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/connection"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/license"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugindependency"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginhealth"
@@ -214,12 +215,11 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 			Clear:  pluginhealth.NewClear(processes.Health),
 		},
 	}
+	var accounts hostendpoint.AccountCalls
 	if processes.Account != nil {
-		callers.Account = processes.Account
-		callers.Restore = processes.Account
-		callers.Link = processes.Account
-		callers.Chain = processes.Account
+		link := identity.NewAccountLink(processes.Account)
+		accounts = hostendpoint.AccountCalls{Account: processes.Account, Restore: processes.Account, Link: link, Chain: link}
 	}
-	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, callers))
+	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, callers, accounts))
 	return services
 }

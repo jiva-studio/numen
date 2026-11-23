@@ -7,16 +7,16 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-type GetPublicIdentity struct{ deps Deps }
+type GetPublicIdentity struct{ records records }
 
 // NewGetPublicIdentity returns the use case that reads what is public of the identity of this device.
-func NewGetPublicIdentity(d Deps) *GetPublicIdentity { return &GetPublicIdentity{deps: d} }
+func NewGetPublicIdentity(d Deps) *GetPublicIdentity { return &GetPublicIdentity{records: d.records} }
 
 // Execute returns the fingerprints, the public signing key of the device, the signed chain, the epoch of the
 // keys, the length of the chain and whether the account revoked this device. It returns identity.ErrNoIdentity
 // when the key store holds no record.
 func (u *GetPublicIdentity) Execute(ctx context.Context) (identitydomain.Public, error) {
-	state, err := u.deps.readState(ctx)
+	state, err := u.records.readState(ctx)
 	if err != nil {
 		return identitydomain.Public{}, err
 	}

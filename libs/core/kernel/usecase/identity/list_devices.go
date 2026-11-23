@@ -8,15 +8,15 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-type ListDevices struct{ deps Deps }
+type ListDevices struct{ records records }
 
 // NewListDevices returns the use case that lists the devices of the account.
-func NewListDevices(d Deps) *ListDevices { return &ListDevices{deps: d} }
+func NewListDevices(d Deps) *ListDevices { return &ListDevices{records: d.records} }
 
 // Execute returns the devices of the chain of this device: the active ones in the order they were added, then the revoked ones.
 // It returns ErrNoIdentity when this device holds none.
 func (u *ListDevices) Execute(ctx context.Context) ([]identitydomain.Device, error) {
-	state, err := u.deps.readState(ctx)
+	state, err := u.records.readState(ctx)
 	if err != nil {
 		return nil, err
 	}

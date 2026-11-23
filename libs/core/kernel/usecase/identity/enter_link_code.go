@@ -11,19 +11,23 @@ import (
 var ErrCodeFormat = errors.New("the confirmation code has six digits")
 
 // EnterLinkCode sends the confirmation code the person read on the host.
-type EnterLinkCode struct{ deps Deps }
+type EnterLinkCode struct {
+	links linkHold
+	clock Clock
+}
 
 // NewEnterLinkCode returns the use case that sends the confirmation code.
-func NewEnterLinkCode(d Deps) *EnterLinkCode { return &EnterLinkCode{deps: d} }
+func NewEnterLinkCode(d Deps) *EnterLinkCode {
+	return &EnterLinkCode{links: d.progress.links, clock: d.clock}
+}
 
 // Execute sends the code of six digits to the host. It returns ErrNoLink when this device does not ask for a code.
 func (u *EnterLinkCode) Execute(_ context.Context, code string) error {
-	store := u.deps.links
-	store.mu.Lock()
-	defer store.mu.Unlock()
-	store.expireLocked(u.deps.clock.Now())
+	store, release := u.links.hold()
+	defer release()
+	store.expireLocked(u.clock.Now())
 	link := store.current
-	if link == nil || link.role != identitydomain.LinkRoleJoiner || link.phase != identitydomain.LinkPhaseEnterCode {
+	if link == nil || link.progress.Role != identitydomain.LinkRoleJoiner || link.progress.Phase != identitydomain.LinkPhaseEnterCode {
 		return identitydomain.ErrNoLink
 	}
 	if !isCode(code) {

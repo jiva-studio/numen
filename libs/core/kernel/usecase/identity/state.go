@@ -2,19 +2,62 @@ package identity
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"time"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-func (d Deps) readState(ctx context.Context) (identitylib.State, error) {
-	record, err := readExistingRecord(ctx, d)
+// records keeps the identity of this device: the record in the key store and the device chain in its file.
+type records struct {
+	keys   pluginport.KeyStore
+	chains ChainStore
+}
+
+func (r records) readRecord(ctx context.Context) (identitylib.Record, error) {
+	value, err := r.keys.GetKey(ctx, keyName)
+	if err != nil {
+		return identitylib.Record{}, err
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(value)
+	if err != nil {
+		return identitylib.Record{}, fmt.Errorf("%w: the record is not base64: %w", identitylib.ErrMalformed, err)
+	}
+	record, err := identitylib.ParseRecord(raw)
+	if err != nil {
+		return identitylib.Record{}, fmt.Errorf("%w: the record is not valid: %w", identitylib.ErrMalformed, err)
+	}
+	return record, nil
+}
+
+func (r records) readExistingRecord(ctx context.Context) (identitylib.Record, error) {
+	record, err := r.readRecord(ctx)
+	if isNoKey(err) {
+		return identitylib.Record{}, identitydomain.ErrNoIdentity
+	}
+	return record, err
+}
+
+func (r records) checkAbsent(ctx context.Context) error {
+	_, err := r.keys.GetKey(ctx, keyName)
+	switch {
+	case err == nil:
+		return identitydomain.ErrIdentityExists
+	case isNoKey(err):
+		return nil
+	}
+	return fmt.Errorf("%w: read the identity: %w", identitydomain.ErrKeyStore, err)
+}
+
+func (r records) readState(ctx context.Context) (identitylib.State, error) {
+	record, err := r.readExistingRecord(ctx)
 	if err != nil {
 		return identitylib.State{}, err
 	}
-	chain, err := d.readChain(ctx)
+	chain, err := r.readChain(ctx)
 	if err != nil {
 		return identitylib.State{}, err
 	}
@@ -25,8 +68,8 @@ func (d Deps) readState(ctx context.Context) (identitylib.State, error) {
 	return state, nil
 }
 
-func (d Deps) readChain(ctx context.Context) (identitylib.Chain, error) {
-	raw, err := d.chains.Read(ctx)
+func (r records) readChain(ctx context.Context) (identitylib.Chain, error) {
+	raw, err := r.chains.Read(ctx)
 	if err != nil {
 		return identitylib.Chain{}, err
 	}
@@ -37,32 +80,55 @@ func (d Deps) readChain(ctx context.Context) (identitylib.Chain, error) {
 	return chain, nil
 }
 
-func (d Deps) writeChain(ctx context.Context, chain identitylib.Chain) error {
-	if err := d.chains.Write(ctx, chain.Bytes()); err != nil {
+func (r records) writeChain(ctx context.Context, chain identitylib.Chain) error {
+	if err := r.chains.Write(ctx, chain.Bytes()); err != nil {
 		return fmt.Errorf("%w: keep the chain: %w", identitydomain.ErrKeyStore, err)
 	}
 	return nil
 }
 
-func (d Deps) writeRecord(ctx context.Context, record identitylib.Record) error {
-	if err := d.keys.SetKey(ctx, keyName, encodeRecord(record)); err != nil {
+func (r records) writeRecord(ctx context.Context, record identitylib.Record) error {
+	if err := r.keys.SetKey(ctx, keyName, encodeRecord(record)); err != nil {
 		return fmt.Errorf("%w: keep the identity: %w", identitydomain.ErrKeyStore, err)
 	}
 	return nil
 }
 
-func (d Deps) writeNewState(ctx context.Context, record identitylib.Record, chain identitylib.Chain) error {
-	if err := d.writeChain(ctx, chain); err != nil {
+func (r records) writeNewState(ctx context.Context, record identitylib.Record, chain identitylib.Chain) error {
+	if err := r.writeChain(ctx, chain); err != nil {
 		return err
 	}
-	return d.writeRecord(ctx, record)
+	return r.writeRecord(ctx, record)
 }
 
-func (d Deps) writeAdoptedState(ctx context.Context, state identitylib.State) error {
-	if err := d.writeRecord(ctx, state.Record); err != nil {
+func (r records) writeAdoptedState(ctx context.Context, state identitylib.State) error {
+	if err := r.writeRecord(ctx, state.Record); err != nil {
 		return err
 	}
-	return d.writeChain(ctx, state.Chain)
+	return r.writeChain(ctx, state.Chain)
+}
+
+func (r records) adoptState(ctx context.Context, state identitylib.State, chain identitylib.Chain) (identitylib.State, error) {
+	next, err := state.Adopt(chain)
+	if err != nil {
+		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
+	}
+	if next.Chain.Len() == state.Chain.Len() {
+		return next, nil
+	}
+	if err := r.writeAdoptedState(ctx, next); err != nil {
+		return identitylib.State{}, err
+	}
+	return next, nil
+}
+
+func (r records) adoptLatest(ctx context.Context, state identitylib.State, latest []byte) (identitylib.State, bool) {
+	head, err := identitylib.ParseChain(latest)
+	if err != nil {
+		return state, false
+	}
+	adopted, err := r.adoptState(ctx, state, head)
+	return adopted, err == nil
 }
 
 func identityOf(state identitylib.State) (identitydomain.Identity, error) {

@@ -1,7 +1,6 @@
 package identity
 
 import (
-	"slices"
 	"sync"
 	"time"
 
@@ -10,129 +9,21 @@ import (
 )
 
 const (
-	linkLifetime = 10 * time.Minute
 	maxLinkWait  = 20 * time.Second
 	maxCodeTries = 3
 	codeDigits   = 6
 )
 
-type outboxItem struct {
-	version uint64
-	blob    []byte
-}
-
-// handshake is the key exchange of one link: the side that shows the QR code holds a displayer, the side that reads it a scanner.
-type handshake struct {
-	displayer *identitylib.LinkDisplayer
-	scanner   *identitylib.LinkScanner
-	channel   *identitylib.LinkChannel
-}
-
-type joinRequest struct {
-	device identitylib.DevicePublicKey
-	name   string
-}
-
-// hostSide is what the device that has the account holds about the new device.
-type hostSide struct {
-	join       joinRequest
-	code       string
-	triesLeft  int
-	isApproved bool
-	isRebuilt  bool
-	extended   identitylib.Chain
-}
-
-// joinerSide is what the new device holds until the person confirms the account.
-type joinerSide struct {
-	device    identitylib.DeviceKey
-	wrapped   identitylib.WrappedAccountKeys
-	chain     identitylib.Chain
-	triesLeft int
-}
-
-type ownIdentity struct {
-	name        string
-	fingerprint string
-	account     string
-}
-
-// relayState is what a link keeps of its channel on the relay and of the blobs the courier has not yet carried.
-type relayState struct {
-	server       string
-	channelID    []byte
-	wantsChannel bool
-	isClosed     bool
-	items        []outboxItem
-}
-
+// pendingLink is the link in progress. peer and chain are of the host: the device that joins and the chain that
+// lists it. record and chain are of the new device: its device key with, once granted, the account keys wrapped for
+// it, and the chain of the account.
 type pendingLink struct {
-	role      identitydomain.LinkRole
-	mode      identitydomain.LinkMode
-	phase     identitydomain.LinkPhase
-	reason    identitydomain.LinkReason
-	startedAt time.Time
-	qrText    string
-	relay     relayState
-	own       ownIdentity
-	hs        handshake
-	host      hostSide
-	joiner    joinerSide
-}
-
-// LinkStore keeps the one link in progress and the revoke that waits for the server. Its keys stay in memory.
-type LinkStore struct {
-	mu      sync.Mutex
-	version uint64
-	changed chan struct{}
-	current *pendingLink
-	revoke  *pendingRevoke
-}
-
-// NewLinkStore returns a store with no link and no revoke pending.
-func NewLinkStore() *LinkStore { return &LinkStore{changed: make(chan struct{})} }
-
-func (s *LinkStore) bumpLocked() uint64 {
-	s.version++
-	close(s.changed)
-	s.changed = make(chan struct{})
-	return s.version
-}
-
-func (l *pendingLink) isEnded() bool {
-	return slices.Contains([]identitydomain.LinkPhase{
-		identitydomain.LinkPhaseFailed, identitydomain.LinkPhaseLinked, identitydomain.LinkPhaseCanceled,
-	}, l.phase)
-}
-
-func (s *LinkStore) expireLocked(now time.Time) {
-	if l := s.current; l != nil && !l.isEnded() && !now.Before(l.startedAt.Add(linkLifetime)) {
-		s.endLocked(l, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonExpired)
-	}
-}
-
-func (s *LinkStore) queueLocked(l *pendingLink, blob []byte) {
-	l.relay.items = append(l.relay.items, outboxItem{version: s.bumpLocked(), blob: blob})
-}
-
-func (s *LinkStore) sendLocked(l *pendingLink, plain []byte) {
-	if l.hs.channel != nil {
-		s.queueLocked(l, l.hs.channel.Seal(plain))
-	}
-}
-
-func (s *LinkStore) endLocked(l *pendingLink, phase identitydomain.LinkPhase, reason identitydomain.LinkReason) {
-	l.phase, l.reason, l.relay.isClosed = phase, reason, true
-	s.bumpLocked()
-}
-
-func (s *LinkStore) setPhaseLocked(l *pendingLink, phase identitydomain.LinkPhase) {
-	l.phase = phase
-	s.bumpLocked()
-}
-
-func (l *pendingLink) acknowledge(version uint64) {
-	l.relay.items = slices.DeleteFunc(l.relay.items, func(item outboxItem) bool { return item.version <= version })
+	progress identitydomain.LinkProgress
+	outbox   identitydomain.LinkOutbox
+	end      linkEnd
+	peer     identitylib.DevicePublicKey
+	chain    identitylib.Chain
+	record   identitylib.Record
 }
 
 type pendingRevoke struct {
@@ -140,3 +31,68 @@ type pendingRevoke struct {
 	device   []byte
 	attempts int
 }
+
+// linkHold is the link in progress and the revoke that waits for the server, which the use cases take under the lock
+// of the store: hold waits for the lock and returns the store with the function that gives it back.
+type linkHold interface {
+	hold() (*linkStore, func())
+}
+
+// linkStore keeps the one link in progress and the revoke that waits for the server. Its keys stay in memory. Each
+// change takes the next version, which the courier waits on.
+type linkStore struct {
+	mu      sync.Mutex
+	version uint64
+	changed chan struct{}
+	current *pendingLink
+	revoke  *pendingRevoke
+}
+
+func newLinkStore() *linkStore { return &linkStore{changed: make(chan struct{})} }
+
+func (s *linkStore) hold() (*linkStore, func()) {
+	s.mu.Lock()
+	return s, s.mu.Unlock
+}
+
+func (s *linkStore) bumpLocked() uint64 {
+	s.version++
+	close(s.changed)
+	s.changed = make(chan struct{})
+	return s.version
+}
+
+func (s *linkStore) expireLocked(now time.Time) {
+	if l := s.current; l != nil && l.progress.IsExpired(now) {
+		s.endLocked(l, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonExpired)
+	}
+}
+
+func (s *linkStore) queueLocked(l *pendingLink, blob []byte) {
+	l.outbox.Items = append(l.outbox.Items, identitydomain.LinkBlob{Version: s.bumpLocked(), Blob: blob})
+}
+
+func (s *linkStore) sendLocked(l *pendingLink, plain []byte) {
+	if l.end != nil && l.end.isOpen() {
+		s.queueLocked(l, l.end.seal(plain))
+	}
+}
+
+func (s *linkStore) endLocked(l *pendingLink, phase identitydomain.LinkPhase, reason identitydomain.LinkReason) {
+	l.progress.Phase, l.progress.Reason, l.outbox.IsClosed = phase, reason, true
+	s.bumpLocked()
+}
+
+func (s *linkStore) setPhaseLocked(l *pendingLink, phase identitydomain.LinkPhase) {
+	l.progress.Phase = phase
+	s.bumpLocked()
+}
+
+func (s *linkStore) getCurrentLocked() (*pendingLink, error) {
+	if s.current == nil || s.current.progress.Phase == identitydomain.LinkPhaseCanceled {
+		return nil, identitydomain.ErrNoLink
+	}
+	return s.current, nil
+}
+
+func (l *pendingLink) isEnded() bool { return l.progress.IsEnded() }

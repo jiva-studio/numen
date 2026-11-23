@@ -20,10 +20,10 @@ const (
 )
 
 func (e *accountEndpoint) getLinkOf(header http.Header) (AccountLink, error) {
-	if _, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionIdentity); err != nil {
+	if _, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentity); err != nil {
 		return nil, err
 	}
-	link := e.endpoint.callers.Link
+	link := e.calls.Link
 	if link == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errNoAccount)
 	}
@@ -31,10 +31,10 @@ func (e *accountEndpoint) getLinkOf(header http.Header) (AccountLink, error) {
 }
 
 func (e *accountEndpoint) getChainOf(header http.Header) (AccountChain, error) {
-	if _, err := e.endpoint.Authorize(header.Get("Authorization"), manifest.PermissionIdentity); err != nil {
+	if _, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionIdentity); err != nil {
 		return nil, err
 	}
-	chain := e.endpoint.callers.Chain
+	chain := e.calls.Chain
 	if chain == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errNoAccount)
 	}

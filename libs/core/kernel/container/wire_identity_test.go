@@ -9,6 +9,7 @@ import (
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
 )
 
 type memoryKeys map[string]string
@@ -32,7 +33,7 @@ func (m memoryKeys) DeleteKey(_ context.Context, name string) error {
 
 func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *testing.T) {
 	t.Parallel()
-	if got := openIdentityUseCases(pluginInstall{}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, nil); got != nil {
+	if got := openIdentityUseCases(pluginInstall{}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, &Resources{}); got != nil {
 		t.Errorf("openIdentityUseCases() = %+v, want nil", got)
 	}
 }
@@ -40,7 +41,8 @@ func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *
 func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *testing.T) {
 	t.Parallel()
 	keys := memoryKeys{}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys, ChainStore: &memoryChain{}}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, nil)
+	res := &Resources{ChainStore: &memoryChain{}, progress: identity.NewProgress()}
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, res)
 	if use == nil || use.Get == nil || use.GenerateWords == nil || use.Create == nil || use.Delete == nil {
 		t.Fatalf("openIdentityUseCases() = %+v, want all four use cases", use)
 	}

@@ -38,7 +38,7 @@ func openReadEndpoint(t *testing.T, access *vaultapi.Access) hostendpoint.HostVa
 	lent := hostendpoint.NewServices(func() hostendpoint.Lent { return hostendpoint.Lent{Vault: access} })
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, hostendpoint.Callers{
 		Activation: readerIdentity{}, Lent: lent,
-	})
+	}, hostendpoint.AccountCalls{})
 	if err != nil {
 		t.Fatal(err)
 	}

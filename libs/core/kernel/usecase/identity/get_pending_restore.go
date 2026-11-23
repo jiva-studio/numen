@@ -7,14 +7,16 @@ import (
 )
 
 // GetPendingRestore reads the public keys of the pending restore.
-type GetPendingRestore struct{ deps Deps }
+type GetPendingRestore struct{ restores *pendingStore }
 
 // NewGetPendingRestore reads the pending restore held in d, shared with the windows and plugins of the same installation.
-func NewGetPendingRestore(d Deps) *GetPendingRestore { return &GetPendingRestore{deps: d} }
+func NewGetPendingRestore(d Deps) *GetPendingRestore {
+	return &GetPendingRestore{restores: d.progress.restores}
+}
 
 // Execute returns the public keys of the pending restore, or a value with IsPending false.
 func (u *GetPendingRestore) Execute(context.Context) (identitydomain.PendingRestore, error) {
-	restore := u.deps.pending.read()
+	restore := u.restores.read()
 	if restore == nil {
 		return identitydomain.PendingRestore{}, nil
 	}

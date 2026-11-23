@@ -22,6 +22,11 @@ const (
 
 var errBadMessage = errors.New("not a link message")
 
+type joinRequest struct {
+	device identitylib.DevicePublicKey
+	name   string
+}
+
 func encodeJoin(device identitylib.DevicePublicKey, name string) []byte {
 	out := append([]byte{messageJoin}, device.Sign...)
 	out = append(out, device.Box[:]...)

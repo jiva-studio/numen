@@ -26,7 +26,7 @@ func openListEndpoint(t *testing.T, list vaultapi.List) (*Endpoint, HostVaultCli
 	t.Helper()
 	hostCallers := newCallers()
 	hostCallers.vault = vaultOf(newFakeNoteVault())
-	endpoint, err := Open(t.Context(), Address, hostCallers.over(list, manifest.PermissionVaultManage))
+	endpoint, err := Open(t.Context(), Address, hostCallers.over(list, manifest.PermissionVaultManage), AccountCalls{})
 	if err != nil {
 		t.Fatal(err)
 	}

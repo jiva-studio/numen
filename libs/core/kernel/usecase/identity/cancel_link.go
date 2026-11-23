@@ -7,18 +7,20 @@ import (
 )
 
 // CancelLink ends the link at the person's request.
-type CancelLink struct{ deps Deps }
+type CancelLink struct {
+	links linkHold
+	clock Clock
+}
 
 // NewCancelLink returns the use case that cancels the link.
-func NewCancelLink(d Deps) *CancelLink { return &CancelLink{deps: d} }
+func NewCancelLink(d Deps) *CancelLink { return &CancelLink{links: d.progress.links, clock: d.clock} }
 
 // Execute tells the other side, closes the channel and forgets the link. A link that already ended is forgotten without a word;
 // ErrNoLink means there was none.
 func (u *CancelLink) Execute(_ context.Context) error {
-	store := u.deps.links
-	store.mu.Lock()
-	defer store.mu.Unlock()
-	store.expireLocked(u.deps.clock.Now())
+	store, release := u.links.hold()
+	defer release()
+	store.expireLocked(u.clock.Now())
 	link, err := store.getCurrentLocked()
 	if err != nil {
 		return err

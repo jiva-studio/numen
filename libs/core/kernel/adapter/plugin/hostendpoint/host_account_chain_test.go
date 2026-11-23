@@ -98,8 +98,8 @@ type revokeSetup struct {
 func newRevokeSetup(t *testing.T) *revokeSetup {
 	t.Helper()
 	clock := testsupport.NewClockAt(time.Date(2026, time.November, 23, 12, 0, 0, 0, time.UTC))
-	keys, chains, links := &memoryKeys{keys: map[string]string{}}, &memoryChain{}, identity.NewLinkStore()
-	deps := identity.NewDeps(keys, deviceNames{}, clock).WithChains(chains).WithLinks(links)
+	keys, chains, progress := &memoryKeys{keys: map[string]string{}}, &memoryChain{}, identity.NewProgress()
+	deps := identity.NewDeps(keys, deviceNames{}, clock).WithChains(chains).WithProgress(progress)
 	words := strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
 	if _, err := identity.NewCreateIdentity(deps).Execute(t.Context(), words); err != nil {
 		t.Fatal(err)
@@ -134,14 +134,14 @@ func newRevokeSetup(t *testing.T) *revokeSetup {
 	if err := identity.NewRevokeDevice(deps).Execute(t.Context(), phone.Public().Fingerprint().String()); err != nil {
 		t.Fatal(err)
 	}
-	account := identity.NewAccount(func() pluginport.KeyStore { return keys }, deviceNames{}, clock, nil, chains, links)
+	account := identity.NewAccount(func() pluginport.KeyStore { return keys }, deviceNames{}, clock, progress, chains)
 	fake := newCallers()
 	fake.confined = true
 	fake.granted = []string{manifest.PermissionIdentity}
-	hosted := fake.asCallers()
-	hosted.Chain = account
+	endpoint := &Endpoint{callers: fake.asCallers()}
+	calls := AccountCalls{Chain: identity.NewAccountLink(account)}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{endpoint: &Endpoint{callers: hosted}}))
+	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{auth: endpoint, calls: calls}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewHostAccountServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))

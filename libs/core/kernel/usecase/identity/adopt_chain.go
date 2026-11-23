@@ -9,10 +9,15 @@ import (
 )
 
 // AdoptChain takes a chain the server holds.
-type AdoptChain struct{ deps Deps }
+type AdoptChain struct {
+	links   linkHold
+	records records
+}
 
 // NewAdoptChain returns the use case that adopts a chain.
-func NewAdoptChain(d Deps) *AdoptChain { return &AdoptChain{deps: d} }
+func NewAdoptChain(d Deps) *AdoptChain {
+	return &AdoptChain{links: d.progress.links, records: d.records}
+}
 
 // Execute takes the chain when it is the chain of this device or a longer one that extends it (identitylib.ErrNotExtension otherwise).
 // When the epoch grew the record takes the keys the chain wraps for this device; when the chain revokes this device the record stays as it is
@@ -22,27 +27,12 @@ func (u *AdoptChain) Execute(ctx context.Context, chainBytes []byte) error {
 	if err != nil {
 		return fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
 	}
-	store := u.deps.links
-	store.mu.Lock()
-	defer store.mu.Unlock()
-	state, err := u.deps.readState(ctx)
+	_, release := u.links.hold()
+	defer release()
+	state, err := u.records.readState(ctx)
 	if err != nil {
 		return err
 	}
-	_, err = u.deps.adoptState(ctx, state, chain)
+	_, err = u.records.adoptState(ctx, state, chain)
 	return err
-}
-
-func (d Deps) adoptState(ctx context.Context, state identitylib.State, chain identitylib.Chain) (identitylib.State, error) {
-	next, err := state.Adopt(chain)
-	if err != nil {
-		return identitylib.State{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChain, err)
-	}
-	if next.Chain.Len() == state.Chain.Len() {
-		return next, nil
-	}
-	if err := d.writeAdoptedState(ctx, next); err != nil {
-		return identitylib.State{}, err
-	}
-	return next, nil
 }

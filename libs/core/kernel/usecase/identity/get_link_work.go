@@ -8,10 +8,15 @@ import (
 )
 
 // GetLinkWork tells the courier what to carry.
-type GetLinkWork struct{ deps Deps }
+type GetLinkWork struct {
+	links linkHold
+	clock Clock
+}
 
 // NewGetLinkWork returns the use case that tells the courier what to carry.
-func NewGetLinkWork(d Deps) *GetLinkWork { return &GetLinkWork{deps: d} }
+func NewGetLinkWork(d Deps) *GetLinkWork {
+	return &GetLinkWork{links: d.progress.links, clock: d.clock}
+}
 
 // Execute drops the blobs the version sinceVersion covers and returns the work: the channel to make or use, the blobs to post to the other side
 // and whether the link ended. It returns at once when the version differs from sinceVersion; otherwise it waits up to wait, at most 20 seconds,
@@ -19,7 +24,7 @@ func NewGetLinkWork(d Deps) *GetLinkWork { return &GetLinkWork{deps: d} }
 func (u *GetLinkWork) Execute(ctx context.Context, sinceVersion uint64, wait time.Duration) (identitydomain.LinkWork, error) {
 	var timeout <-chan time.Time
 	if wait > 0 {
-		timeout = u.deps.clock.After(min(wait, maxLinkWait))
+		timeout = u.clock.After(min(wait, maxLinkWait))
 	}
 	for {
 		work, changed := u.read(sinceVersion)
@@ -38,23 +43,13 @@ func (u *GetLinkWork) Execute(ctx context.Context, sinceVersion uint64, wait tim
 }
 
 func (u *GetLinkWork) read(sinceVersion uint64) (identitydomain.LinkWork, <-chan struct{}) {
-	store := u.deps.links
-	store.mu.Lock()
-	defer store.mu.Unlock()
-	store.expireLocked(u.deps.clock.Now())
-	work := identitydomain.LinkWork{Version: store.version}
+	store, release := u.links.hold()
+	defer release()
+	store.expireLocked(u.clock.Now())
 	link := store.current
 	if link == nil {
-		return work, store.changed
+		return identitydomain.LinkWork{Version: store.version}, store.changed
 	}
-	link.acknowledge(sinceVersion)
-	work.IsActive = !link.relay.isClosed || len(link.relay.items) > 0
-	work.WantsChannel = link.relay.wantsChannel
-	work.ChannelID = append([]byte(nil), link.relay.channelID...)
-	work.Server = link.relay.server
-	work.IsClosed = link.relay.isClosed
-	for _, item := range link.relay.items {
-		work.Outbound = append(work.Outbound, append([]byte(nil), item.blob...))
-	}
-	return work, store.changed
+	link.outbox.Acknowledge(sinceVersion)
+	return link.outbox.GetWork(store.version), store.changed
 }

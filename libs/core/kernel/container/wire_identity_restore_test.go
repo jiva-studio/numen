@@ -19,8 +19,8 @@ func TestTheAccountOfThePluginsSeesTheRestoreTheWindowStarted(t *testing.T) {
 	keys := memoryKeys{}
 	clock := testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))
 	chains := &memoryChain{}
-	res := &Resources{KeyStore: keys, ChainStore: chains, Now: clock, restore: identity.NewPendingStore()}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys, ChainStore: chains}, vaultWiring{Clock: clock}, res.restore)
+	res := &Resources{KeyStore: keys, ChainStore: chains, Now: clock, progress: identity.NewProgress()}
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: clock}, res)
 	account := openAccount(res)
 	words := strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
 	if use == nil || use.StartRestore == nil {
@@ -49,8 +49,8 @@ func TestACompleteRestoreOfThePluginsMakesTheIdentityOfTheWindowAndTheKeysOfTheP
 	keys := memoryKeys{}
 	clock := testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))
 	chains := &memoryChain{}
-	res := &Resources{KeyStore: keys, ChainStore: chains, Now: clock, restore: identity.NewPendingStore()}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys, ChainStore: chains}, vaultWiring{Clock: clock}, res.restore)
+	res := &Resources{KeyStore: keys, ChainStore: chains, Now: clock, progress: identity.NewProgress()}
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: clock}, res)
 	account := openAccount(res)
 	words := strings.Fields("legal winner thank year wave sausage worth useful legal winner thank yellow")
 	if err := use.StartRestore.Execute(t.Context(), words); err != nil {

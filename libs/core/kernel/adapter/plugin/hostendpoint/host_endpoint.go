@@ -47,8 +47,8 @@ type Endpoint struct {
 }
 
 // Open starts serving the host service on the address, which is a
-// free loopback port by default.
-func Open(ctx context.Context, address string, callers Callers) (*Endpoint, error) {
+// free loopback port by default, with the identity calls of accounts.
+func Open(ctx context.Context, address string, callers Callers, accounts AccountCalls) (*Endpoint, error) {
 	if err := checkLoopback(address); err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	mux.Handle(numenv1connect.NewHostDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewConnectionCallServiceHandler(newConnectionCalls(endpoint, callers.CallCancels)))
 	vault.Mount(mux, endpoint, callers.Lent)
-	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewHostAccountServiceHandler(&accountEndpoint{auth: endpoint, calls: accounts}))
 	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: endpoint}))

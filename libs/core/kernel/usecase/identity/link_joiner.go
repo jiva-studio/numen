@@ -5,57 +5,55 @@ import (
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
 
-func (d Deps) receiveAsJoinerLocked(link *pendingLink, kind byte, body []byte) error {
-	store := d.links
+func receiveAsJoinerLocked(store *linkStore, link *pendingLink, kind byte, body []byte) {
 	switch kind {
 	case messageAccept:
-		if link.phase == identitydomain.LinkPhaseWaitingForAccept && len(body) == 1 && body[0] == 1 {
+		if link.progress.Phase == identitydomain.LinkPhaseWaitingForAccept && len(body) == 1 && body[0] == 1 {
 			store.setPhaseLocked(link, identitydomain.LinkPhaseEnterCode)
 		}
 	case messageRefuse:
-		d.receiveRefuseLocked(link, body)
+		receiveRefuseLocked(store, link, body)
 	case messageGrant:
-		d.receiveGrantLocked(link, body)
+		receiveGrantLocked(store, link, body)
 	}
-	return nil
 }
 
-func (d Deps) receiveRefuseLocked(link *pendingLink, body []byte) {
+func receiveRefuseLocked(store *linkStore, link *pendingLink, body []byte) {
 	reason, tries := decodeRefuse(body)
 	if reason == identitydomain.LinkReasonWrongCode {
-		link.joiner.triesLeft = tries
-		d.links.setPhaseLocked(link, identitydomain.LinkPhaseEnterCode)
+		link.progress.TriesLeft = tries
+		store.setPhaseLocked(link, identitydomain.LinkPhaseEnterCode)
 		return
 	}
-	d.links.endLocked(link, identitydomain.LinkPhaseFailed, reason)
+	store.endLocked(link, identitydomain.LinkPhaseFailed, reason)
 }
 
-func (d Deps) receiveGrantLocked(link *pendingLink, body []byte) {
-	if link.phase != identitydomain.LinkPhaseWaitingForAccept {
+func receiveGrantLocked(store *linkStore, link *pendingLink, body []byte) {
+	if link.progress.Phase != identitydomain.LinkPhaseWaitingForAccept {
 		return
 	}
 	wrapped, chain, err := decodeGrant(body)
-	if err != nil || !d.readGrantLocked(link, wrapped, chain) {
-		d.links.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain, 0))
-		d.links.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonInvalid)
+	if err != nil || !readGrant(link, wrapped, chain) {
+		store.sendLocked(link, encodeRefuse(identitydomain.LinkReasonStaleChain, 0))
+		store.endLocked(link, identitydomain.LinkPhaseFailed, identitydomain.LinkReasonInvalid)
 		return
 	}
-	link.own.account = link.joiner.chain.Root().Fingerprint().String()
-	d.links.setPhaseLocked(link, identitydomain.LinkPhaseConfirmAccount)
+	link.progress.AccountFingerprint = link.chain.Root().Fingerprint().String()
+	store.setPhaseLocked(link, identitydomain.LinkPhaseConfirmAccount)
 }
 
-func (d Deps) readGrantLocked(link *pendingLink, wrappedBytes, chainBytes []byte) bool {
+func readGrant(link *pendingLink, wrappedBytes, chainBytes []byte) bool {
 	chain, err := identitylib.ParseChain(chainBytes)
-	if err != nil || !chain.IsActiveDevice(link.joiner.device.SignerKey()) {
+	if err != nil || !chain.IsActiveDevice(link.record.Device.SignerKey()) {
 		return false
 	}
 	wrapped, err := identitylib.ParseWrappedAccountKeys(wrappedBytes)
 	if err != nil {
 		return false
 	}
-	if _, err := link.joiner.device.UnwrapAccountKeys(wrapped); err != nil {
+	if _, err := link.record.Device.UnwrapAccountKeys(wrapped); err != nil {
 		return false
 	}
-	link.joiner.wrapped, link.joiner.chain = wrapped, chain
+	link.record.Wrapped, link.chain = wrapped, chain
 	return true
 }

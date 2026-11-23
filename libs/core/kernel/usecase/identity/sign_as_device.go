@@ -9,10 +9,10 @@ import (
 
 var errNoPluginID = errors.New("a signature needs the id of the plugin")
 
-type SignAsDevice struct{ deps Deps }
+type SignAsDevice struct{ records records }
 
 // NewSignAsDevice returns the use case that signs a message of a plugin with the device key.
-func NewSignAsDevice(d Deps) *SignAsDevice { return &SignAsDevice{deps: d} }
+func NewSignAsDevice(d Deps) *SignAsDevice { return &SignAsDevice{records: d.records} }
 
 // Execute signs message under the plugin id, so a signature made for one plugin never verifies for
 // another. It returns identity.ErrNoIdentity when the key store holds no record.
@@ -20,7 +20,7 @@ func (u *SignAsDevice) Execute(ctx context.Context, pluginID string, message []b
 	if pluginID == "" {
 		return nil, errNoPluginID
 	}
-	record, err := u.deps.readRecord(ctx)
+	record, err := u.records.readRecord(ctx)
 	if isNoKey(err) {
 		return nil, identitydomain.ErrNoIdentity
 	}

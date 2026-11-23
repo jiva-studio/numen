@@ -12,10 +12,10 @@ import (
 const restoreFallback = 30 * time.Second
 
 // StartRestore starts to restore the account of recovery words on this device.
-type StartRestore struct{ deps Deps }
+type StartRestore struct{ completion restoreCompletion }
 
 // NewStartRestore returns the use case that starts a restore.
-func NewStartRestore(d Deps) *StartRestore { return &StartRestore{deps: d} }
+func NewStartRestore(d Deps) *StartRestore { return &StartRestore{completion: d.getCompletion()} }
 
 // Execute parses the words (ErrInvalidWords), refuses when an identity exists (ErrIdentityExists), derives the
 // recovery key, makes a device key and keeps both in memory, replacing an earlier pending restore. Nothing is
@@ -25,20 +25,21 @@ func (u *StartRestore) Execute(ctx context.Context, words []string) error {
 	if err != nil {
 		return fmt.Errorf("%w: %w", identitydomain.ErrInvalidWords, err)
 	}
-	if err := checkAbsent(ctx, u.deps); err != nil {
+	if err := u.completion.records.checkAbsent(ctx); err != nil {
 		return err
 	}
 	recovery, err := parsed.DeriveRecoveryKey()
 	if err != nil {
 		return err
 	}
-	device, err := identitylib.NewDeviceKey(u.deps.random)
+	clock := u.completion.builder.clock
+	device, err := identitylib.NewDeviceKey(u.completion.builder.random)
 	if err != nil {
 		return err
 	}
-	restore := &pendingRestore{recovery: recovery, device: device, startedAt: u.deps.clock.Now(), replaced: make(chan struct{})}
-	u.deps.pending.replace(restore)
-	go u.completeAfterFallback(context.WithoutCancel(ctx), restore, u.deps.clock.After(restoreFallback))
+	restore := &pendingRestore{recovery: recovery, device: device, startedAt: clock.Now(), replaced: make(chan struct{})}
+	u.completion.restores.replace(restore)
+	go u.completeAfterFallback(context.WithoutCancel(ctx), restore, clock.After(restoreFallback))
 	return nil
 }
 
@@ -46,8 +47,8 @@ func (u *StartRestore) completeAfterFallback(ctx context.Context, restore *pendi
 	select {
 	case <-restore.replaced:
 	case <-fired:
-		if u.deps.pending.isCurrent(restore) {
-			if err := completeRestore(ctx, u.deps, restore, nil); err != nil {
+		if u.completion.restores.isCurrent(restore) {
+			if err := u.completion.complete(ctx, restore, nil); err != nil {
 				return // the restore stays pending, so a window or a plugin can complete it
 			}
 		}
