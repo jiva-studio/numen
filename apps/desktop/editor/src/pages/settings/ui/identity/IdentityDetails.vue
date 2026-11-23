@@ -5,13 +5,15 @@
  * another. A revoked device shows only itself.
  */
 import { computed } from 'vue'
-import { Button, IslandCard } from '@numen/ui'
+import { Trash2 } from '@lucide/vue'
+import { IslandCard } from '@numen/ui'
 import { NavigationRow } from '@numen/plugin-manager'
 import type { DeviceInfo, IdentityInfo } from '@/entities/identity'
 import { DevicesSection, type DeviceCalls } from '@/features/identity-link'
 import { WORDS as words } from '../../words'
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog'
 import SettingRow from '../setting-row/SettingRow.vue'
+import CardAction from './CardAction.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -48,6 +50,12 @@ const count = computed(() =>
 
 <template>
   <IslandCard :title="words.identitySection">
+    <template #aside>
+      <CardAction :is-disabled="isBusy" @click="emit('ask')">
+        <Trash2 :size="14" aria-hidden="true" />
+        {{ info.isRevoked ? words.deviceDeleteRevoked : words.identityDelete }}
+      </CardAction>
+    </template>
     <SettingRow
       class="identity-details__fact"
       at="identity-account"
@@ -55,15 +63,6 @@ const count = computed(() =>
       :detail="words.identityAccountDetail"
     >
       <span class="identity-details__mono">{{ info.accountFingerprint }}</span>
-    </SettingRow>
-    <SettingRow
-      at="identity-remove"
-      :name="words.identityRemoveName"
-      :detail="words.identityRemoveDetail"
-    >
-      <Button type="button" variant="outline" :disabled="isBusy" @click="emit('ask')">
-        {{ info.isRevoked ? words.deviceDeleteRevoked : words.identityDelete }}
-      </Button>
     </SettingRow>
     <p v-if="info.isRevoked" role="alert" class="identity-details__revoked">
       {{ words.deviceRevokedNotice }}

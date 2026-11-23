@@ -6,7 +6,7 @@ import type { SettingsDriver } from './settings.js'
 const PAGE = 'Identity and licenses'
 const CONFIRMATIONS = 3
 const ACCOUNT_FINGERPRINT = 'Account fingerprint'
-const NO_IDENTITY = 'An identity is a key kept only on your devices.'
+const NO_IDENTITY = 'An identity is your Numen account.'
 const SUBSCRIPTION_TITLE = 'Numen Sync'
 const BUY = 'Buy'
 const PAYMENT_RECEIVED = 'Payment received'
@@ -147,8 +147,9 @@ export class IdentityDriver {
   private async restore(text: string): Promise<void> {
     const panel = await this.showPage()
     await panel.getByRole('button', { name: 'Restore', exact: true }).click()
-    await panel.getByRole('textbox', { name: 'Your 12 recovery words' }).fill(text)
-    await panel.getByRole('button', { name: 'Restore', exact: true }).click()
+    const dialog = panel.getByRole('dialog', { name: 'Restore identity' })
+    await dialog.getByRole('textbox', { name: 'Recovery word 1', exact: true }).fill(text)
+    await dialog.getByRole('button', { name: 'Restore', exact: true }).click()
   }
 
   async restoreFromRecoveryWords(): Promise<void> {
