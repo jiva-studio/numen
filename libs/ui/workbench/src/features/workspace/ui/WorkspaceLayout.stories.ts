@@ -14,12 +14,12 @@ import TabStub from '../fixtures/TabStub.vue'
 import type { Tab, Workspace as State } from '../lib/node'
 import { getPanes } from '../lib/tree'
 import {
-  manyTabs,
-  deep,
-  empty,
-  oneStack,
-  sideBySide,
-  stack,
+  createManyTabsWorkspace,
+  createDeepWorkspace,
+  createEmptyWorkspace,
+  createOneStack,
+  createSideBySide,
+  createStack,
   createWorkspace,
 } from '../fixtures/build'
 
@@ -44,12 +44,12 @@ const createTabs = (state: State, marks: Readonly<Record<string, string>>): read
 
 /** The arrangements a reader can start from. */
 const ARRANGEMENTS = {
-  'side by side': sideBySide,
-  'one stack': oneStack,
-  nested: deep,
-  crowded: manyTabs,
-  empty,
-  alone: () => createWorkspace(stack('main', 'plex')),
+  'side by side': createSideBySide,
+  'one stack': createOneStack,
+  nested: createDeepWorkspace,
+  crowded: createManyTabsWorkspace,
+  empty: createEmptyWorkspace,
+  alone: () => createWorkspace(createStack('main', 'plex')),
 } satisfies Record<string, () => State>
 
 type Arrangement = keyof typeof ARRANGEMENTS

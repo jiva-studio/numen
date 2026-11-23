@@ -22,9 +22,9 @@ func (a *API) ReportChangesFrom(ctx context.Context, moved <-chan struct{}) {
 	}()
 }
 
-// WatchMoves signals that something moved, until ctx is done. Plugins of the
+// WatchIndexChanges signals that something moved, until ctx is done. Plugins of the
 // installation receive it through the host.
-func (a *API) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
+func (a *API) WatchIndexChanges(ctx context.Context) (<-chan struct{}, error) {
 	line, isDone := a.Changes.Subscribe()
 	out := make(chan struct{}, 1)
 	go func() {

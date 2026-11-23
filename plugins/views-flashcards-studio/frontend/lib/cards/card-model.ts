@@ -41,9 +41,9 @@ export interface CardModelWords {
   readonly fieldStem: string
   readonly templateStem: string
   readonly pinned: string
-  readonly stray: (fields: readonly string[]) => string
-  readonly objection: (objection: Objection) => string
-  readonly templateObjection: (objection: HeadingObjection) => string
+  readonly describeStray: (fields: readonly string[]) => string
+  readonly describeObjection: (objection: Objection) => string
+  readonly describeTemplateObjection: (objection: HeadingObjection) => string
   readonly wrong: string
 }
 
@@ -63,13 +63,13 @@ export const CARD_MODEL_WORDS: CardModelWords = {
   fieldStem: 'Field',
   templateStem: 'Template',
   pinned: 'The first field names every card, and stays first',
-  stray: (fields) => `Not a field: ${fields.join(', ')}`,
-  objection: (objection) => {
+  describeStray: (fields) => `Not a field: ${fields.join(', ')}`,
+  describeObjection: (objection) => {
     if (objection === 'blank') return 'A field needs a name'
     if (objection === 'taken') return 'That name is taken'
     return 'A name cannot hold a brace'
   },
-  templateObjection: (objection) =>
+  describeTemplateObjection: (objection) =>
     objection === 'blank' ? 'A template needs a name' : 'That name is taken',
   wrong: 'What is wrong',
 }
@@ -98,7 +98,7 @@ export interface FieldRow {
 }
 
 /** The rows a card model's fields are drawn as, one to a field. */
-export function fieldRows(
+export function buildFieldRows(
   fields: readonly string[],
   dragField: string | null,
 ): readonly FieldRow[] {
@@ -131,7 +131,7 @@ export interface TemplateRow {
  * A card model's templates as they are drawn, each carrying what its preview shows and
  * what is wrong in each half of it.
  */
-export function templateRows(
+export function buildTemplateRows(
   templates: readonly CardModelTemplate[],
   fields: readonly string[],
   sample: readonly FieldValue[],

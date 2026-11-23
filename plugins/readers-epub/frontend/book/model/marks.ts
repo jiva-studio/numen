@@ -8,7 +8,7 @@
 import { onBeforeUnmount, shallowRef, watch } from 'vue'
 import type { ShallowRef } from 'vue'
 
-import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, unhighlight } from './highlight'
+import { HIGHLIGHT, OTHER_HIGHLIGHT, highlight, removeHighlight } from './highlight'
 import { createMarks, findOffset, createRangesOver, getRuns, type Run } from './runs'
 import type { Mark } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
@@ -63,14 +63,14 @@ export function useBookMarks(
 
   /** Removes the highlights of a copy given to `markCopy`. */
   const unmarkCopy = (copy: HTMLElement) => {
-    if (markedCopies.delete(copy)) unhighlight(copy)
+    if (markedCopies.delete(copy)) removeHighlight(copy)
   }
 
   watch([() => props.highlights, () => props.otherHighlights], markRuns)
 
   onBeforeUnmount(() => {
-    unhighlight(props)
-    for (const copy of markedCopies) unhighlight(copy)
+    removeHighlight(props)
+    for (const copy of markedCopies) removeHighlight(copy)
     markedCopies.clear()
   })
 

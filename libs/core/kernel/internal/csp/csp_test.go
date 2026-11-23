@@ -63,3 +63,18 @@ func TestAWindowConnectingOutsideReturnsSoAndNoMore(t *testing.T) {
 		t.Errorf("the policy reads %q", with)
 	}
 }
+
+func TestAPluginPageRunsOnlyItsOwnScriptsAndFramesWhatIsNamed(t *testing.T) {
+	const target = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
+		"frame-src 'self' https://player.example; object-src 'none'; base-uri 'none'; form-action 'none'"
+	if got := csp.GetPluginPagePolicy([]string{"https://player.example"}); got != target {
+		t.Errorf("the policy reads %q", got)
+	}
+}
+
+func TestAPictureLoadsNothing(t *testing.T) {
+	got := csp.GetPictureOnlyPolicy()
+	if !strings.Contains(got, "default-src 'none'") || !strings.Contains(got, "sandbox") {
+		t.Errorf("the policy reads %q", got)
+	}
+}

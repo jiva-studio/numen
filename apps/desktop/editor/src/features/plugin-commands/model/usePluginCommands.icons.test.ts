@@ -22,7 +22,7 @@ describe('the palette entry of a command a plugin declares', () => {
 
     const [entry] = usePluginCommands(
       createCommandRegistry(),
-      createCommandNoteReader({ fileKinds: getFileKinds }),
+      createCommandNoteReader({ readFileKinds: getFileKinds }),
       host,
     ).getPaletteEntries()
 
@@ -47,7 +47,7 @@ describe('the palette entry of a command a plugin registers with a confirmation 
     } as unknown as PluginHost
     return usePluginCommands(
       createCommandRegistry(),
-      createCommandNoteReader({ fileKinds: getFileKinds }),
+      createCommandNoteReader({ readFileKinds: getFileKinds }),
       host,
     ).getPaletteEntries()[0]
   }
@@ -84,7 +84,7 @@ describe('the palette group of a command a plugin declares', () => {
     } as unknown as PluginHost
     return usePluginCommands(
       createCommandRegistry(),
-      createCommandNoteReader({ fileKinds: getFileKinds }),
+      createCommandNoteReader({ readFileKinds: getFileKinds }),
       host,
     ).getPaletteEntries()[0]?.group
   }

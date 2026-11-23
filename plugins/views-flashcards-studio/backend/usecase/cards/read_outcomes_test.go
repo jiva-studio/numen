@@ -18,7 +18,7 @@ func TestAPathTheVaultPreservesAloneIsNotADeckWhenItIsLookedAt(t *testing.T) {
 		read: map[string]error{"decks/Birds.md": errOutOfReach},
 	}
 
-	got, err := cards.NewRead(remaining, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
+	got, err := cards.NewRead(remaining, nil).ReadDeck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -34,7 +34,7 @@ func TestADeckMissingBetweenBeingLookedAtAndReadReturnsWhatItWas(t *testing.T) {
 	vs := newVaults(t)
 	removed := faulty{inner: vs.ports.Readers, read: map[string]error{"decks/Birds.md": fs.ErrNotExist}}
 
-	got, err := cards.NewRead(removed, nil).Deck(t.Context(), vs.first, "decks/Birds.md")
+	got, err := cards.NewRead(removed, nil).ReadDeck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestADeckMissingBetweenBeingLookedAtAndReadReturnsWhatItWas(t *testing.T) {
 func TestADeckNamingNoCardModelIsSplitByNone(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewRead(vs.ports.Readers, nil)
-	deck, err := u.Deck(t.Context(), vs.first, "decks/Birds.md")
+	deck, err := u.ReadDeck(t.Context(), vs.first, "decks/Birds.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}

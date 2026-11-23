@@ -55,7 +55,7 @@ export function createWindowBase(api: WindowApi) {
       files: { files: api.vault.file, notes, writeMessage },
       vaults: {
         vaults: api.vault.vaults,
-        emptyTrash: api.vault.file.emptyTrash,
+        clearTrash: api.vault.file.emptyTrash,
         tabsHold: tabParts.openTabs,
         setVaultName: vaults.setVaultName,
         reload: vaults.reload,

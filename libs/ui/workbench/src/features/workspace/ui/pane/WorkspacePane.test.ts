@@ -3,11 +3,11 @@ import { computed } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import WorkspacePane from './WorkspacePane.vue'
 import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
-import { pane, type Tab } from '../../lib/node'
+import { createPane, type Tab } from '../../lib/node'
 
 enableAutoUnmount(afterEach)
 
-const three = () => pane('main', ['plex', 'chat', 'notes'], 'chat')
+const three = () => createPane('main', ['plex', 'chat', 'notes'], 'chat')
 
 const TITLES: Readonly<Record<string, string>> = { plex: 'Plex', chat: 'Chat', notes: 'Notes' }
 
@@ -22,7 +22,7 @@ const createContext = (marks: Readonly<Record<string, string>> = {}): WorkspaceC
   choose: vi.fn(),
   close: vi.fn(),
   startTabPress: vi.fn(),
-  menu: vi.fn(),
+  openMenu: vi.fn(),
   claim: vi.fn(),
   resize: vi.fn(),
   show: vi.fn(),
@@ -110,7 +110,7 @@ describe('tab strip', () => {
 
   it('omits the strip when the pane has no tabs', () => {
     expect(
-      mountPane({ pane: pane('main', []) })
+      mountPane({ pane: createPane('main', []) })
         .find('[data-workspace-strip]')
         .exists(),
     ).toBe(false)
@@ -119,7 +119,7 @@ describe('tab strip', () => {
 
 describe('empty pane', () => {
   const mountEmptyPane = (slots: Record<string, string> = {}) =>
-    mountPane({ pane: pane('main', []) }, slots)
+    mountPane({ pane: createPane('main', []) }, slots)
 
   it('renders default empty text when no silence slot is provided', () => {
     expect(mountEmptyPane().text()).toContain('Nothing open')
@@ -147,7 +147,7 @@ describe('strip keyboard navigation', () => {
   })
 
   it('wraps around from the first tab to the last on ArrowLeft', async () => {
-    const target = mountPane({ pane: pane('main', ['plex', 'chat', 'notes'], 'plex') })
+    const target = mountPane({ pane: createPane('main', ['plex', 'chat', 'notes'], 'plex') })
     await strip(target)[0]?.trigger('keydown', { key: 'ArrowLeft' })
 
     expect(target.emitted('choose')).toStrictEqual([['notes']])
@@ -186,7 +186,7 @@ describe('panel Escape key', () => {
 
   it('focuses the active tab after a preceding tab is removed', async () => {
     const tab = mountPane({}, { tab: inside })
-    await tab.setProps({ pane: pane('main', ['chat', 'notes'], 'chat') })
+    await tab.setProps({ pane: createPane('main', ['chat', 'notes'], 'chat') })
 
     const first = tab.findAll<HTMLButtonElement>('.inside')[0]
     first?.element.focus()
@@ -214,7 +214,7 @@ describe('show event', () => {
 
   it('emits show when the active tab changes', async () => {
     const target = mountPane()
-    await target.setProps({ pane: pane('main', ['plex', 'chat', 'notes'], 'notes') })
+    await target.setProps({ pane: createPane('main', ['plex', 'chat', 'notes'], 'notes') })
 
     expect(target.emitted('show')).toStrictEqual([['chat'], ['notes']])
   })
@@ -227,13 +227,16 @@ describe('show event', () => {
       onScreen.push(panel?.hasAttribute('data-showing') ?? false)
     }
 
-    const target = mountPane({ pane: pane('later', ['plex', 'chat', 'notes'], 'chat'), onShow })
-    await target.setProps({ pane: pane('later', ['plex', 'chat', 'notes'], 'notes') })
+    const target = mountPane({
+      pane: createPane('later', ['plex', 'chat', 'notes'], 'chat'),
+      onShow,
+    })
+    await target.setProps({ pane: createPane('later', ['plex', 'chat', 'notes'], 'notes') })
 
     expect(onScreen).toStrictEqual([true, true])
   })
 
   it('does not emit show when the pane has no active tab', () => {
-    expect(mountPane({ pane: pane('main', []) }).emitted('show')).toBeUndefined()
+    expect(mountPane({ pane: createPane('main', []) }).emitted('show')).toBeUndefined()
   })
 })

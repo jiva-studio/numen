@@ -19,7 +19,7 @@ func TestClientWritesEntriesToTheHostAcrossAllLevels(t *testing.T) {
 	}
 
 	host := logstest.NewHost(t)
-	for name, value := range host.Vars("token-of-the-plugin") {
+	for name, value := range host.BuildVars("token-of-the-plugin") {
 		t.Setenv(name, value)
 	}
 	client, err := logs.NewClientFromEnv()

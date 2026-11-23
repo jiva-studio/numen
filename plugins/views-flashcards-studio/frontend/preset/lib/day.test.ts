@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '../../lib/stop'
 import { asValue } from '@numen/plugin-sdk'
-import { dayAfter } from '../../lib/day'
+import { addDays } from '../../lib/day'
 
 import { usePresetTab } from '../model/kind'
 import {
@@ -55,7 +55,7 @@ const createHonestCurve = (): Curve => {
   return {
     goal: 'date',
     grid,
-    days: grid.map((one) => dayAfter(DAY, one)),
+    days: grid.map((one) => addDays(DAY, one)),
     at: grid.map(() => point),
     now: { index: grid.indexOf(8), value: 8, day: BY },
     suggested: { index: -1, value: 0, day: '' },
@@ -94,7 +94,7 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
     },
     // A curve that is never answered keeps the local estimate, which is what the
     // arithmetic here is read from.
-    curve: async () => answer ?? new Promise<Curve>(() => undefined),
+    getCurve: async () => answer ?? new Promise<Curve>(() => undefined),
   }
   const kind = usePresetTab({
     component: PresetTab,
@@ -102,7 +102,7 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
     buffers: createMockBufferHost(),
     closeTab: () => undefined,
     writeMessage: () => undefined,
-    today: () => DAY,
+    getToday: () => DAY,
   })
   const state = kind.kind.open?.('Sanskrit.md', 'preset:Sanskrit.md') as PresetTabState
   for (let i = 0; i < 10; i += 1) await Promise.resolve()

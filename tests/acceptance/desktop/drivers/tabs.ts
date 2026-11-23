@@ -47,18 +47,18 @@ export class TabDriver {
   private async getTab(kind: TabKindChoice, reference: string, name: string, preferNote = false): Promise<Locator> {
     if (kind !== ANY_TAB) {
       const one = await this.requireKind(kind, reference, name)
-      return this.strip.tabById(one.id)
+      return this.strip.getTabById(one.id)
     }
     if (parseReference(reference, name).reference === 'at') {
-      if (name.endsWith('.md')) return this.strip.noteTab(getTabName(name))
-      return this.strip.tabOfFile(name)
+      if (name.endsWith('.md')) return this.strip.getNoteTab(getTabName(name))
+      return this.strip.getTabOfFile(name)
     }
-    const tabs = this.strip.tabTitled(this.getTitle(reference, name))
+    const tabs = this.strip.getTabTitled(this.getTitle(reference, name))
     await expect(tabs.first()).toBeVisible()
     const count = await tabs.count()
     // A note and its plex carry one title: a command run on the tab of that title is meant for the note.
     if (preferNote && count > 1) {
-      const notes = tabs.and(this.strip.noteTabs())
+      const notes = tabs.and(this.strip.getNoteTabs())
       if ((await notes.count()) === 1) return notes
     }
     assertSingleTab(name, count)
@@ -79,7 +79,7 @@ export class TabDriver {
     if (kind === ANY_TAB) throw new Error('no kind is named')
     // The core keeps the tabs of the vault; the Settings tab belongs to the window alone.
     if (kind === 'Settings') {
-      await expect(this.strip.tabById(SETTINGS_TAB_ID)).toBeVisible()
+      await expect(this.strip.getTabById(SETTINGS_TAB_ID)).toBeVisible()
       return { id: SETTINGS_TAB_ID, kind: TAB_KINDS.Settings.id, path: '', title: TAB_KINDS.Settings.title }
     }
     let found: OpenTab | undefined
@@ -91,7 +91,7 @@ export class TabDriver {
             const listed = pickKindTab(kind, await this.listCandidates(kind, reference, name), reference, name)
             found = listed
             // The core lists the tabs the window wrote last: after a vault switch that is still the old window.
-            if (listed !== undefined && (await this.strip.tabById(listed.id).count()) === 0) throw new Error(`the tab ${reference} "${name}" is not shown yet`)
+            if (listed !== undefined && (await this.strip.getTabById(listed.id).count()) === 0) throw new Error(`the tab ${reference} "${name}" is not shown yet`)
             problem = undefined
           } catch (error) {
             found = undefined
@@ -120,7 +120,7 @@ export class TabDriver {
   private async getShownPanel(kind: TabKindChoice, reference: string, name: string): Promise<Locator> {
     await this.requireKindIfNamed(kind, reference, name)
     await this.scenario.closePalette()
-    return this.panels.shownFor(await this.getTab(kind, reference, name))
+    return this.panels.waitForShown(await this.getTab(kind, reference, name))
   }
 
   /** The panel of the tab, once the tab is open as the kind the step names. */
@@ -145,7 +145,7 @@ export class TabDriver {
 
   async expectHasRecording(kind: TabKindChoice, reference: string, name: string, has: boolean): Promise<void> {
     const panel = await this.getTabPanel(kind, reference, name)
-    await expect(new TabPanel(panel).playButton()).toHaveCount(has ? 1 : 0)
+    await expect(new TabPanel(panel).getPlayButton()).toHaveCount(has ? 1 : 0)
   }
 
   async close(kind: TabKindChoice, reference: string, name: string): Promise<void> {
@@ -161,11 +161,11 @@ export class TabDriver {
   private async isFileOpened(filePath: string): Promise<boolean> {
     const { tabs, activeId } = await readOpenTabs(this.scenario.page.request)
     // A Plex tab carries the path of the note it follows, so it does not show that the note opened.
-    const holdsFile = (one: OpenTab): boolean => one.path === filePath && one.kind !== TAB_KINDS.Plex.id
+    const isFileHeld = (one: OpenTab): boolean => one.path === filePath && one.kind !== TAB_KINDS.Plex.id
     const active = tabs.find((one) => one.id === activeId)
-    if (active !== undefined && holdsFile(active)) return true
+    if (active !== undefined && isFileHeld(active)) return true
     // A file opened from a file tree that is linked to another tab shows in that tab, and the tree stays in front.
-    return active?.kind === TAB_KINDS.Files.id && tabs.some(holdsFile)
+    return active?.kind === TAB_KINDS.Files.id && tabs.some(isFileHeld)
   }
 
   private async listNotePaths(): Promise<string[]> {
@@ -189,7 +189,7 @@ export class TabDriver {
     } else if (this.isNote(reference, name)) {
       await expect.poll(() => this.listNotePaths()).not.toContain(name)
     } else {
-      await expect(this.strip.tabTitled(this.getTitle(reference, name))).toHaveCount(0)
+      await expect(this.strip.getTabTitled(this.getTitle(reference, name))).toHaveCount(0)
     }
   }
 
@@ -201,7 +201,7 @@ export class TabDriver {
   async expectHasText(kind: TabKindChoice, reference: string, name: string, text: string): Promise<void> {
     const panel = await this.getShownPanel(kind, reference, name)
     if (this.getTitle(reference, name) === FILES_TITLE) {
-      await expect(new TabPanel(panel).treeRow(text)).toBeVisible()
+      await expect(new TabPanel(panel).getTreeRow(text)).toBeVisible()
       return
     }
     await expect(panel).toContainText(text)
@@ -229,9 +229,9 @@ export class TabDriver {
     if (!(await this.isFileOpened(filePath))) await this.openFile(filePath)
   }
 
-  async playRecording(kind: TabKindChoice, reference: string, name: string): Promise<void> {
+  async pressPlay(kind: TabKindChoice, reference: string, name: string): Promise<void> {
     const panel = await this.getShownPanel(kind, reference, name)
-    await new TabPanel(panel).playButton().click()
+    await new TabPanel(panel).getPlayButton().click()
   }
 
   async expectPlaying(kind: TabKindChoice, reference: string, name: string): Promise<void> {

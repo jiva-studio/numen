@@ -162,8 +162,8 @@ func (f *showing) findMeaning(t *testing.T, query string) []string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	paths := make([]string, 0, len(found.Msg.GetFound()))
-	for _, one := range found.Msg.GetFound() {
+	paths := make([]string, 0, len(found.Msg.GetResults()))
+	for _, one := range found.Msg.GetResults() {
 		paths = append(paths, one.GetPath())
 	}
 	return paths
@@ -187,7 +187,7 @@ func TestASourceThatDescribesItselfAfterASettingJoinsTheOpenWindow(t *testing.T)
 			RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 		},
 	})
-	cfg.Execution, cfg.Preferences, cfg.Endpoints = container.AdaptPluginHost(host.Management, host.Supervision)
+	cfg.Execution, cfg.Preferences, cfg.Endpoints = container.CreatePluginHost(host.Management, host.Supervision)
 	newListedVault(t, cfg, "garden", map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})
 
 	installation, err := openRegisteredWindow(cfg, t.Context(), "garden", os.Stderr)

@@ -1,18 +1,10 @@
 /**
  * The notices of one plugin, in the window's one list.
  */
-import type { NoticeHost } from '@numen/plugin-sdk'
+import type { NoticeHost, NoticeTask } from '@numen/plugin-sdk'
 
-/** The work a window's notice list holds for a source. */
-export interface NoticeListTask {
-  readonly id: string
-  readonly label: string
-  readonly about: string
-  readonly error: string
-  readonly isUserStarted: boolean
-  readonly done?: number
-  readonly total?: number
-}
+/** The work a window's notice list holds for a source: a plugin's task with its defaults filled in. */
+type NoticeListTask = Required<Omit<NoticeTask, 'done' | 'total'>> & Pick<NoticeTask, 'done' | 'total'>
 
 /** The window's one list of notices, each held under the name of the source that gave it. */
 export interface NoticeList {

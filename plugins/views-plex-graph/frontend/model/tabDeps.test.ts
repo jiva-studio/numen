@@ -104,7 +104,7 @@ describe('what else a plex tab asks of the window', () => {
       ok: true,
       value: undefined,
     })
-    expect(await deps.editor.removeConnection('One.md', 'Two.md')).toStrictEqual({
+    expect(await deps.editor.deleteConnection('One.md', 'Two.md')).toStrictEqual({
       ok: true,
       value: undefined,
     })

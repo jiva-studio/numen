@@ -98,7 +98,7 @@ func (v textVault) Create(ctx context.Context, path string, content []byte) erro
 		return err
 	}
 	if v.texts != nil {
-		v.texts.File(path, content)
+		v.texts.WriteFile(path, content)
 	}
 	return nil
 }
@@ -135,17 +135,17 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
 	chemistry := hosttest.New("Chemistry")
-	vault.Beside(chemistry)
+	vault.LinkBeside(chemistry)
 	chemTexts := texts.With("Chemistry")
 	chemTexts.SetStore(PluginID, chemistry.Store())
 
 	sites := fakeSites{video: download.NewMock(webpage.New()), release: release}
 	tasks := queuetest.NewLog()
 	hosted := link.Host{
-		Vaults: textVault{
+		GetVault: textVault{
 			Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts, "Chemistry": chemTexts},
 		}.vaults(),
-		Store: foldersOf(vault), Texts: textsOf(texts), Queue: tasks,
+		Store: foldersOf(vault), GetTexts: textsOf(texts), Queue: tasks,
 		Clock:   newFakeClock(time.Unix(1_700_000_000, 0)),
 		Entropy: random.Entropy{},
 	}
@@ -153,7 +153,7 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 		func() ports.Fetcher { return sites },
 		func() fetch.Settings { return fetch.Settings{IsAutomatic: true} })
 	t.Cleanup(links.Close)
-	registry, err := NewTools(links).Registry()
+	registry, err := NewTools(links).BuildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,7 +237,7 @@ func (s *importFixture) importURL(t *testing.T, vault string, in importArguments
 func getLinkNotes(t *testing.T, vault *hosttest.Vault) []string {
 	t.Helper()
 	vault.Reindex()
-	paths, err := vault.GetPathsOfType(t.Context(), link.NoteType)
+	paths, err := vault.ListPathsOfType(t.Context(), link.NoteType)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -347,7 +347,7 @@ func TestURLImportReportsAFailedFetchAndKeepsTheNote(t *testing.T) {
 	if !strings.Contains(out.Error, "503") || out.HasText {
 		t.Errorf("url_import returned %+v, want the failure of the fetch", out)
 	}
-	if _, isKept := s.vault.Content(out.Path); out.Path == "" || !isKept {
+	if _, isKept := s.vault.ReadContent(out.Path); out.Path == "" || !isKept {
 		t.Errorf("the note %q is not in the vault after the failed fetch", out.Path)
 	}
 }

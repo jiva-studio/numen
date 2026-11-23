@@ -11,7 +11,7 @@ import (
 )
 
 func readExistingDeck(ctx context.Context, read ports.DeckReader, v domain.Vault, path string) (format.DeckContents, error) {
-	contents, err := read.Deck(ctx, v, path)
+	contents, err := read.ReadDeck(ctx, v, path)
 	if err != nil {
 		return format.DeckContents{}, err
 	}

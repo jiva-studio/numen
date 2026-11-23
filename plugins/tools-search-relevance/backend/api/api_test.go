@@ -11,10 +11,10 @@ const fixtureDir = "../../testdata/api"
 
 func getContracts() map[string]plugintest.MessageContract {
 	return map[string]plugintest.MessageContract{
-		MethodGetFloor:       {Request: func() any { return &GetFloorRequest{} }, Response: func() any { return &GetFloorResponse{} }},
-		MethodCalibrateFloor: {Request: func() any { return &CalibrateFloorRequest{} }, Response: func() any { return &CalibrateFloorResponse{} }},
-		MethodSetFloor:       {Request: func() any { return &SetFloorRequest{} }, Response: func() any { return &SetFloorResponse{} }},
-		MethodProbeFloor:     {Request: func() any { return &ProbeFloorRequest{} }, Response: func() any { return &ProbeFloorResponse{} }},
+		MethodGetFloor:       {CreateRequest: func() any { return &GetFloorRequest{} }, CreateResponse: func() any { return &GetFloorResponse{} }},
+		MethodCalibrateFloor: {CreateRequest: func() any { return &CalibrateFloorRequest{} }, CreateResponse: func() any { return &CalibrateFloorResponse{} }},
+		MethodSetFloor:       {CreateRequest: func() any { return &SetFloorRequest{} }, CreateResponse: func() any { return &SetFloorResponse{} }},
+		MethodProbeFloor:     {CreateRequest: func() any { return &ProbeFloorRequest{} }, CreateResponse: func() any { return &ProbeFloorResponse{} }},
 	}
 }
 

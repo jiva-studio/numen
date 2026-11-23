@@ -23,7 +23,7 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 		{review.GoalRetention, false},
 		{review.GoalDate, false},
 	} {
-		p := review.Defaults()
+		p := review.NewDefaultPreset()
 		p.Goal, p.By, p.Backlog = one.goal, getTestEpoch().AddDate(0, 0, 30), 40
 		admits := p.GetAllowance(day, getTestEpoch(), review.Spent{}, 0, 0)
 
@@ -45,7 +45,7 @@ func TestWhichSettingsAGoalReads(t *testing.T) {
 // second session takes up where the first left off.
 func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime}
-	p := review.Defaults()
+	p := review.NewDefaultPreset()
 	p.Goal, p.MinutesADay = review.GoalMinutes, 1
 	p.NewADay, p.ReviewsADay = 20, 20
 

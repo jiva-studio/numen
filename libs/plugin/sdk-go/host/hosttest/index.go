@@ -72,14 +72,14 @@ func (v *Vault) Reindex() {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	v.indexed = map[string]domain.Note{}
-	paths, err := v.files.paths()
+	paths, err := v.files.listPaths()
 	if err != nil {
 		v.report(fmt.Errorf("list files: %w", err))
 	}
 	v.rescan(paths...)
 }
 
-func sortedPaths(notes map[string]domain.Note) []string {
+func listSortedPaths(notes map[string]domain.Note) []string {
 	paths := make([]string, 0, len(notes))
 	for path := range notes {
 		paths = append(paths, path)
@@ -88,11 +88,11 @@ func sortedPaths(notes map[string]domain.Note) []string {
 	return paths
 }
 
-func candidates(notes map[string]domain.Note, name string) []string {
-	base := notesdomain.FoldName(notesdomain.LinkName(name))
+func findCandidates(notes map[string]domain.Note, name string) []string {
+	base := notesdomain.NormalizeName(notesdomain.LinkName(name))
 	var out []string
-	for _, path := range sortedPaths(notes) {
-		if path == name || path == name+domain.NoteExtension || notesdomain.FoldName(domain.Basename(path)) == base {
+	for _, path := range listSortedPaths(notes) {
+		if path == name || path == name+domain.NoteExtension || notesdomain.NormalizeName(domain.GetBasename(path)) == base {
 			out = append(out, path)
 		}
 	}
@@ -111,7 +111,7 @@ func (v *Vault) resolve(notes map[string]domain.Note, from string, r *domain.Res
 			}
 		}
 	case domain.SchemeName:
-		r.To, r.IsAmbiguous = notesdomain.ChooseMatch(from, r.Target.Value, candidates(notes, r.Target.Value))
+		r.To, r.IsAmbiguous = notesdomain.ChooseMatch(from, r.Target.Value, findCandidates(notes, r.Target.Value))
 		if r.To != "" {
 			r.ToVault = v.vault.ID
 		}
@@ -157,7 +157,7 @@ func (v *Vault) Scans() [][]string {
 func (v *Vault) Scan(ctx context.Context, paths []string) error {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return err
 	}
 	v.scanned = append(v.scanned, append([]string(nil), paths...))
@@ -168,7 +168,7 @@ func (v *Vault) Scan(ctx context.Context, paths []string) error {
 func (v *Vault) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return nil, err
 	}
 	notes := v.parsed()
@@ -184,7 +184,7 @@ func (v *Vault) GetNotes(ctx context.Context, paths []string) (map[string]domain
 func (v *Vault) GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return nil, err
 	}
 	notes := v.parsed()
@@ -197,31 +197,31 @@ func (v *Vault) GetTypes(ctx context.Context, paths []string) (map[string]domain
 	return out, nil
 }
 
-func (v *Vault) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
+func (v *Vault) ListNamedPaths(ctx context.Context, name string) ([]string, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return nil, err
 	}
-	folded := notesdomain.FoldName(name)
+	folded := notesdomain.NormalizeName(name)
 	var out []string
-	for _, p := range sortedPaths(v.parsed()) {
-		if notesdomain.FoldName(domain.Basename(p)) == folded {
+	for _, p := range listSortedPaths(v.parsed()) {
+		if notesdomain.NormalizeName(domain.GetBasename(p)) == folded {
 			out = append(out, p)
 		}
 	}
 	return out, nil
 }
 
-func (v *Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+func (v *Vault) ListPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return nil, err
 	}
 	notes := v.parsed()
 	var out []string
-	for _, p := range sortedPaths(notes) {
+	for _, p := range listSortedPaths(notes) {
 		if notes[p].Type == noteType {
 			out = append(out, p)
 		}
@@ -232,7 +232,7 @@ func (v *Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([
 func (v *Vault) EnsureIndexed(ctx context.Context) (host.IndexState, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
+	if err := v.checkContext(ctx); err != nil {
 		return host.IndexState{}, err
 	}
 	return v.state, nil

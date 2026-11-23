@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import type { Connection } from '@numen/plugin-sdk'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { createVault, viewOn } from '../fixtures'
-import { addReverseSide, cycleDirection, setSideLabel } from './connectionDraft'
+import { addReverseSide, rotateDirection, setSideLabel } from './connectionDraft'
 import { useLinkInspector } from './useLinkInspector'
 
 /** The connection the core reports between Root.md and Child.md. */
@@ -133,7 +133,7 @@ describe('saving the link inspector', () => {
   it('saves the connection in one call and shows the picture again', async () => {
     const one = inspecting()
     const request = await one.open()
-    const edited = cycleDirection(setSideLabel(request!.connection, 'first', 'holds'), 'first')
+    const edited = rotateDirection(setSideLabel(request!.connection, 'first', 'holds'), 'first')
 
     await one.saveLinkInspector(edited)
 
@@ -150,8 +150,8 @@ describe('saving the link inspector', () => {
   it('saves a record that carries an arrow and an empty label', async () => {
     const one = inspecting(null)
     const request = await one.open()
-    const edited = cycleDirection(
-      cycleDirection(addReverseSide(request!.connection), 'first'),
+    const edited = rotateDirection(
+      rotateDirection(addReverseSide(request!.connection), 'first'),
       'first',
     )
 

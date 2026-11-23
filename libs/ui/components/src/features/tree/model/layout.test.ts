@@ -126,7 +126,7 @@ describe('how tall the rows are drawn', () => {
           selected: [],
           threshold: 4,
           clock: { now: () => 0, schedule: () => 0, cancel: () => undefined },
-          counted: (n) => `${n} rows`,
+          getCountText: (n) => `${n} rows`,
         },
         box,
         list,

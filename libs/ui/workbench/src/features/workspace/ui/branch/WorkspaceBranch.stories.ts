@@ -5,7 +5,7 @@ import { computed, provide, ref } from 'vue'
 import WorkspaceBranch from './WorkspaceBranch.vue'
 import { NO_STRIP_EDGE, WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import TabStub from '../../fixtures/TabStub.vue'
-import { split, stack } from '../../fixtures/build'
+import { split, createStack } from '../../fixtures/build'
 import { type Branch, type NodeId, type Tab, type TabId } from '../../lib/node'
 import { fit } from '../../lib/shares'
 
@@ -18,18 +18,22 @@ const TITLES: Readonly<Record<string, string>> = {
 
 const ARRANGEMENTS = {
   'two panes': () =>
-    split('root', [stack('left', 'one'), stack('right', 'two')], [0.7, 0.3]) as Branch,
+    split('root', [createStack('left', 'one'), createStack('right', 'two')], [0.7, 0.3]) as Branch,
   nested: () =>
     split('root', [
-      stack('left', 'one'),
-      split('down', [stack('upper', 'two'), stack('lower', 'three')]),
+      createStack('left', 'one'),
+      split('down', [createStack('upper', 'two'), createStack('lower', 'three')]),
     ]) as Branch,
   'three across': () =>
-    split('root', [stack('a', 'one'), stack('b', 'two'), stack('c', 'three')]) as Branch,
+    split('root', [
+      createStack('a', 'one'),
+      createStack('b', 'two'),
+      createStack('c', 'three'),
+    ]) as Branch,
   'three across, unevenly': () =>
     split(
       'root',
-      [stack('a', 'one'), stack('b', 'two'), stack('c', 'three')],
+      [createStack('a', 'one'), createStack('b', 'two'), createStack('c', 'three')],
       [0.7, 0.2, 0.1],
     ) as Branch,
 } satisfies Record<string, () => Branch>
@@ -82,7 +86,7 @@ const meta: Meta<Knobs> = {
           choose: fn(),
           close: fn(),
           startTabPress: fn(),
-          menu: fn(),
+          openMenu: fn(),
           claim: fn(),
           resize,
           show: fn(),

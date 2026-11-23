@@ -9,7 +9,7 @@
  */
 import type { Decorator } from '@storybook/vue3-vite'
 
-export const frameStory: Decorator = (story) => ({
+export const decorateFrame: Decorator = (story) => ({
   components: { story },
   template: `
     <div class="numen h-screen bg-surface p-6 font-sans text-base text-ink">

@@ -104,7 +104,7 @@ export interface PresetStateContext {
   core: Presets
   bounds: Ref<SettingsBounds>
   writeMessage: MessageWriter
-  today: () => string
+  getToday: () => string
   titles: Map<string, string>
 }
 
@@ -118,7 +118,7 @@ export const createFailureReporter =
 const createGoalChooser = (one: OpenPreset, context: PresetStateContext) => (goal: Goal) => {
   const was = one.settings.value
   if (goal === was.goal) return
-  one.settings.value = applyGoal(was, goal, context.today())
+  one.settings.value = applyGoal(was, goal, context.getToday())
   one.writeQueue.unsaved.dirtyFields.add('goal')
   if (one.settings.value.byDate !== was.byDate) one.writeQueue.unsaved.dirtyFields.add('byDate')
   requestWrite(one.writeQueue, {
@@ -132,7 +132,7 @@ const createGoalChooser = (one: OpenPreset, context: PresetStateContext) => (goa
     getSettings: () => one.settings.value,
     core: context.core,
     bounds: context.bounds.value,
-    today: context.today(),
+    today: context.getToday(),
     setErrorMessage: (msg) => {
       one.writeQueue.status.errorMessage.value = msg
     },
@@ -146,7 +146,7 @@ const createSettingUpdater =
     if (one.settings.value !== was) one.writeQueue.unsaved.dirtyFields.add(field)
 
     if (field === getGoalField(one.settings.value.goal)) {
-      const place = findGridIndex(one.curves.current.curve.value.grid, value, context.today())
+      const place = findGridIndex(one.curves.current.curve.value.grid, value, context.getToday())
       if (place >= 0) one.curves.current.place.value = place
     }
     if (getShapeKey(one.settings.value) !== one.curves.drawing.shape) {
@@ -155,7 +155,7 @@ const createSettingUpdater =
         getSettings: () => one.settings.value,
         core: context.core,
         bounds: context.bounds.value,
-        today: context.today(),
+        today: context.getToday(),
         setErrorMessage: (msg) => {
           one.writeQueue.status.errorMessage.value = msg
         },
@@ -167,7 +167,7 @@ const createSliderMover = (one: OpenPreset, context: PresetStateContext) => (pla
   const was = one.settings.value
   one.settings.value = produceSchedule(was, place, {
     curve: one.curves.current.curve.value,
-    today: context.today(),
+    today: context.getToday(),
     within: context.bounds.value,
   })
   one.curves.current.place.value = place
@@ -216,7 +216,7 @@ export const createPresetState = (
         core: context.core,
         bounds: context.bounds,
         titles: context.titles,
-        today: context.today(),
+        today: context.getToday(),
       }).catch(createFailureReporter(context))
     },
     chooseGoal: createGoalChooser(one, context),

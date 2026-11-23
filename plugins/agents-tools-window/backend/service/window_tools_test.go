@@ -35,13 +35,13 @@ type windowTools struct {
 func newWindowTools(t *testing.T) windowTools {
 	t.Helper()
 	vault := hosttest.New(testVault)
-	vault.File(notePath, "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Gray Heron\n---\nHerons fish at dusk.")
-	vault.File(guidePath, pdfBytes)
-	vault.File(bookPath, "PK\x03\x04epub body")
-	vault.File(talkPath, "ID3\x00\x03audio")
+	vault.WriteFile(notePath, "---\nid: 01H7X1234567890ABCDEFGHJKM\ntitle: Gray Heron\n---\nHerons fish at dusk.")
+	vault.WriteFile(guidePath, pdfBytes)
+	vault.WriteFile(bookPath, "PK\x03\x04epub body")
+	vault.WriteFile(talkPath, "ID3\x00\x03audio")
 
 	window := hosttest.NewWindow(vault)
-	return windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: window})}
+	return windowTools{window: window, registry: newRegistry(t, service.Host{GetFiles: filesOf(vault), Window: window})}
 }
 
 func newRegistry(t *testing.T, on service.Host) *tools.Registry {
@@ -396,7 +396,7 @@ func (failingListWindow) ReadOpenTabs(context.Context) ([]host.OpenTab, string, 
 func TestWindowTabListReportsAHostErrorAsAToolError(t *testing.T) {
 	vault := hosttest.New(testVault)
 	window := hosttest.NewWindow(vault)
-	w := windowTools{window: window, registry: newRegistry(t, service.Host{Files: filesOf(vault), Window: failingListWindow{Window: window}})}
+	w := windowTools{window: window, registry: newRegistry(t, service.Host{GetFiles: filesOf(vault), Window: failingListWindow{Window: window}})}
 	if failure := w.call(t, "window_tab_list", `{}`, nil, nil); !strings.Contains(failure, "window bus failed") {
 		t.Errorf("failure = %q, want window bus failed", failure)
 	}

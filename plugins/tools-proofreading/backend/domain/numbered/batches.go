@@ -1,6 +1,6 @@
 package numbered
 
-func SpeechBatches(all []Line, size, overlap int) []Batch {
+func BuildSpeechBatches(all []Line, size, overlap int) []Batch {
 	if size <= 0 {
 		return nil
 	}
@@ -18,7 +18,7 @@ func SpeechBatches(all []Line, size, overlap int) []Batch {
 }
 
 func CutBatches(all []Line, size, overlap int, cuts []int) []Batch {
-	batches := SpeechBatches(all, size, overlap)
+	batches := BuildSpeechBatches(all, size, overlap)
 	if size < 2 || len(batches) < 2 {
 		return nil
 	}

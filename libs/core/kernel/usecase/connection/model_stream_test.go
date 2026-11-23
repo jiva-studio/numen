@@ -22,14 +22,14 @@ func (s *setup) stream(t *testing.T) (answer, error) {
 
 func TestTheFramesOfACallAreStreamedFromTheFirstRowThatAnswers(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, nil, "Let me ", "look.", `{"tool":"list_notes"}`)
+	s.world.Provider.SetScript(addressOne, nil, "Let me ", "look.", `{"tool":"list_notes"}`)
 
 	got, err := s.stream(t)
 
 	if err != nil || !slices.Equal(got.Frames, []string{"Let me ", "look.", `{"tool":"list_notes"}`}) || got.Text != "answer from "+addressOne {
 		t.Fatalf("answer = %+v, %v", got, err)
 	}
-	if len(s.world.Provider.CallsTo(addressTwo)) != 0 {
+	if len(s.world.Provider.ListCallsTo(addressTwo)) != 0 {
 		t.Error("the second row was called though the first answered")
 	}
 }
@@ -43,14 +43,14 @@ func TestAFailureBeforeTheFirstFrameGoesToTheNextRow(t *testing.T) {
 	if err != nil || got.Text != "answer from "+addressTwo {
 		t.Fatalf("answer = %+v, %v", got, err)
 	}
-	if n := len(s.world.Provider.CallsTo(addressOne)); n != 1 {
+	if n := len(s.world.Provider.ListCallsTo(addressOne)); n != 1 {
 		t.Errorf("a rate limit was tried %d times, want once", n)
 	}
 }
 
 func TestAFailureAfterTheFirstFrameIsPassedOnAndNothingIsRepeated(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, tryNext(connectiondomain.FailureReasonUnavailable, 0), "partial", "more")
+	s.world.Provider.SetScript(addressOne, tryNext(connectiondomain.FailureReasonUnavailable, 0), "partial", "more")
 
 	got, err := s.stream(t)
 
@@ -61,14 +61,14 @@ func TestAFailureAfterTheFirstFrameIsPassedOnAndNothingIsRepeated(t *testing.T) 
 	if !slices.Equal(got.Frames, []string{"partial", "more"}) {
 		t.Errorf("frames = %v, want the frames before the failure kept", got.Frames)
 	}
-	if len(s.world.Provider.CallsTo(addressOne)) != 1 || len(s.world.Provider.CallsTo(addressTwo)) != 0 {
-		t.Errorf("calls to One = %d, to Two = %d, want one and none", len(s.world.Provider.CallsTo(addressOne)), len(s.world.Provider.CallsTo(addressTwo)))
+	if len(s.world.Provider.ListCallsTo(addressOne)) != 1 || len(s.world.Provider.ListCallsTo(addressTwo)) != 0 {
+		t.Errorf("calls to One = %d, to Two = %d, want one and none", len(s.world.Provider.ListCallsTo(addressOne)), len(s.world.Provider.ListCallsTo(addressTwo)))
 	}
 }
 
 func TestAPlainErrorAfterTheFirstFrameCountsAsUnavailable(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, errors.New("rpc error: connection reset by Bearer "+keyOne), "partial")
+	s.world.Provider.SetScript(addressOne, errors.New("rpc error: connection reset by Bearer "+keyOne), "partial")
 
 	_, err := s.stream(t)
 
@@ -79,7 +79,7 @@ func TestAPlainErrorAfterTheFirstFrameCountsAsUnavailable(t *testing.T) {
 
 func TestAStopAfterTheFirstFrameNamesTheConnection(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, stop(connectiondomain.FailureReasonInvalidRequest), "partial")
+	s.world.Provider.SetScript(addressOne, stop(connectiondomain.FailureReasonInvalidRequest), "partial")
 
 	_, err := s.stream(t)
 
@@ -91,7 +91,7 @@ func TestAStopAfterTheFirstFrameNamesTheConnection(t *testing.T) {
 
 func TestAFailureAfterTheFirstFrameSetsTheConnectionAside(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, tryNext(connectiondomain.FailureReasonRateLimited, 0), "partial")
+	s.world.Provider.SetScript(addressOne, tryNext(connectiondomain.FailureReasonRateLimited, 0), "partial")
 	if _, err := s.stream(t); err == nil {
 		t.Fatal("the first call did not fail")
 	}
@@ -105,7 +105,7 @@ func TestAFailureAfterTheFirstFrameSetsTheConnectionAside(t *testing.T) {
 
 func TestAnErrorOfTheConsumerEndsTheCallAndIsReturnedAsItIs(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, nil, "partial")
+	s.world.Provider.SetScript(addressOne, nil, "partial")
 	consumerFailure := errors.New("the consumer went away")
 
 	_, err := s.calls.Call(t.Context(), consumerID, modelcalldomain.Request{Operation: modelcalltest.ChatOperation},
@@ -114,7 +114,7 @@ func TestAnErrorOfTheConsumerEndsTheCallAndIsReturnedAsItIs(t *testing.T) {
 	if !errors.Is(err, consumerFailure) {
 		t.Errorf("err = %v, want the error of the consumer", err)
 	}
-	if len(s.world.Provider.CallsTo(addressTwo)) != 0 {
+	if len(s.world.Provider.ListCallsTo(addressTwo)) != 0 {
 		t.Error("the next row was called after the consumer went away")
 	}
 }
@@ -128,7 +128,7 @@ func TestACanceledStreamReturnsTheErrorOfTheContextAndFreesTheLease(t *testing.T
 		_, err := s.callAs(ctx, consumerID, modelcalltest.ChatOperation)
 		finish <- err
 	}()
-	<-s.world.Provider.Entered()
+	<-s.world.Provider.GetEntered()
 
 	cancel()
 
@@ -147,7 +147,7 @@ func TestACanceledStreamReturnsTheErrorOfTheContextAndFreesTheLease(t *testing.T
 
 func TestNothingAStreamingConsumerReceivesContainsAKey(t *testing.T) {
 	s := newSetup(t, modelcalltest.ChatOperation)
-	s.world.Provider.Script(addressOne, errors.New("HTTP 401: Authorization: Bearer "+keyOne), "partial")
+	s.world.Provider.SetScript(addressOne, errors.New("HTTP 401: Authorization: Bearer "+keyOne), "partial")
 
 	got, err := s.stream(t)
 
@@ -162,7 +162,7 @@ func TestNothingAStreamingConsumerReceivesContainsAKey(t *testing.T) {
 
 func TestTheSlotOfAConnectionIsHeldForTheLengthOfTheStream(t *testing.T) {
 	s := newQueueSetupFor(t, modelcalltest.ChatOperation, 1)
-	s.world.Provider.Script(addressLimited, nil, "partial")
+	s.world.Provider.SetScript(addressLimited, nil, "partial")
 	release := make(chan struct{})
 	first := make(chan error, 1)
 	go func() {
@@ -182,7 +182,7 @@ func TestTheSlotOfAConnectionIsHeldForTheLengthOfTheStream(t *testing.T) {
 	}()
 
 	select {
-	case <-s.world.Provider.Entered():
+	case <-s.world.Provider.GetEntered():
 		t.Fatal("a second call reached the provider while the first stream was open on a connection of one slot")
 	case <-time.After(200 * time.Millisecond):
 	}
@@ -201,7 +201,7 @@ func newQueueSetupFor(t *testing.T, operation string, parallelRequests int) *que
 	w := modelcalltest.New()
 	entry := w.AddLimited(t, "Limited", addressLimited, parallelRequests)
 	for _, plugin := range []string{consumerID, otherConsumerID} {
-		w.Rows.Set(plugin, operation, modelcalltest.Row(entry, "m"))
+		w.Rows.Set(plugin, operation, modelcalltest.CreateRow(entry, "m"))
 	}
 	return &queueSetup{
 		world: w, entry: entry,

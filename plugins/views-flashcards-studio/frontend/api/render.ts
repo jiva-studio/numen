@@ -10,7 +10,7 @@
  * two tags is markup whitespace and is removed.
  */
 import type { Directive } from 'vue'
-import { safe } from './safe'
+import { sanitizeHtml } from './safe'
 
 /** The tags whose own whitespace is the markup's, and no line of a card. */
 const BLOCKS = new Set([
@@ -71,7 +71,7 @@ const tightenHtml = (html: string): string => {
 }
 
 /** Text as the HTML a card draws, with nothing in it that a card may not. */
-export const renderCardHtml = (html: string): string => tightenHtml(safe(html))
+export const renderCardHtml = (html: string): string => tightenHtml(sanitizeHtml(html))
 
 /** Writes markup that was checked before it reached a card component. */
 export const vMarkup: Directive<HTMLElement, string> = {

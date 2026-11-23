@@ -33,7 +33,7 @@ describe('closeWindowWhenEmpty', () => {
     const onError = vi.fn()
     closeWindowWhenEmpty({
       isLayoutReady,
-      tabCount: () => tabCount.value,
+      countTabs: () => tabCount.value,
       closeWindow: close,
       onError,
     })

@@ -79,10 +79,10 @@ type wire struct {
 func newWire(t *testing.T) *wire {
 	t.Helper()
 	vault := hosttest.New("Lectures")
-	vault.File(lecture, lectureSound)
+	vault.WriteFile(lecture, lectureSound)
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, transcribe.PluginID)
-	texts.File(lecture, []byte(lectureSound))
+	texts.WriteFile(lecture, []byte(lectureSound))
 	texts.SetStore(transcribe.PluginID, store)
 	w := &wire{
 		vault: vault, queue: hosttest.NewQueue(), texts: texts,
@@ -96,7 +96,7 @@ func newWire(t *testing.T) *wire {
 		func(context.Context) (ports.Recognizer, error) { return w.recognizer, nil }, func(string, error) {})
 	t.Cleanup(w.transcriber.Close)
 	requests := transcribe.NewRequests(w.transcriber, func(id domain.VaultID) transcribe.Vault { return vault.With(id) })
-	registry, err := newTools(requests).registry()
+	registry, err := newTools(requests).buildRegistry()
 	if err != nil {
 		t.Fatal(err)
 	}

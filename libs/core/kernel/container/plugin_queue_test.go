@@ -10,12 +10,12 @@ func TestTwoSessionsSharingAHostCannotRunTwoLocalEngines(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		installation := pluginInstall{Endpoints: newAbsentEndpoints()}
 		exec := getPluginExecution(nil)
-		first := pluginsOpenPluginWork(installation, exec, run.NewTasks())
+		first := openPluginWork(installation, exec, run.NewTasks())
 		lease, err := first.EnqueueWork(t.Context(), "ocr", false, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
-		second := pluginsOpenPluginWork(installation, exec, run.NewTasks())
+		second := openPluginWork(installation, exec, run.NewTasks())
 		waiting := make(chan struct{})
 		finished := make(chan error, 1)
 		go func() {

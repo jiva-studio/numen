@@ -11,7 +11,8 @@ import {
   Priority,
   type CallFailure,
 } from '@numen/protocol'
-import { asFailure, asValue, type Result } from '@numen/result'
+import type { RowOption } from '../connections'
+import { asFailure, asValue, type Failure, type Result } from '@numen/result'
 
 /** The calls of ConnectionCallService. */
 export type ConnectionCallRpc = Pick<
@@ -52,7 +53,7 @@ export interface ConnectionCallRequest {
  * has `unavailable`.
  */
 export type ConnectionCallFailureCode =
-  'unavailable' | 'rejected_key' | 'payment_required' | 'rate_limited' | 'invalid_request'
+  'unavailable' | 'rejectedKey' | 'paymentRequired' | 'rateLimited' | 'invalidRequest'
 
 /** One row of a plugin that did not answer: `reason` is the words the person reads, `code` the reason. */
 export interface ConnectionCallRowFailure {
@@ -62,12 +63,10 @@ export interface ConnectionCallRowFailure {
 }
 
 /** Why no row answered a call. */
-export type ConnectionCallErrorCode = 'no_connection' | 'all_failed' | 'stopped'
+export type ConnectionCallErrorCode = 'noConnection' | 'allFailed' | 'stopped'
 
 /** A served refusal of a call, with the reason the core gives and the rows that failed. */
-export interface ConnectionCallFailure {
-  readonly errorCode: ConnectionCallErrorCode
-  readonly detail: string
+export interface ConnectionCallFailure extends Failure<ConnectionCallErrorCode> {
   readonly failures: readonly ConnectionCallRowFailure[]
 }
 
@@ -88,13 +87,6 @@ export interface ConnectionCallRow {
   readonly connectionName: string
   readonly options: Readonly<Record<string, string>>
   readonly fields: readonly ConnectionCallRowField[]
-}
-
-/** One value a row field can take. An empty title shows the value, and an empty group no heading. */
-export interface ConnectionCallRowOption {
-  readonly value: string
-  readonly title: string
-  readonly group: string
 }
 
 /** A row field of a connection among the rows of a plugin, with the values of the row fields so far. */
@@ -128,15 +120,15 @@ export interface ConnectionCallClient {
    */
   listRowOptions(
     request: ConnectionCallRowOptionsRequest,
-  ): Promise<readonly ConnectionCallRowOption[]>
+  ): Promise<readonly RowOption[]>
 }
 
 const readErrorCode = (code: CallErrorCode): ConnectionCallErrorCode => {
   switch (code) {
     case CallErrorCode.NO_CONNECTION:
-      return 'no_connection'
+      return 'noConnection'
     case CallErrorCode.ALL_FAILED:
-      return 'all_failed'
+      return 'allFailed'
     case CallErrorCode.STOPPED:
       return 'stopped'
     case CallErrorCode.UNSPECIFIED:
@@ -147,13 +139,13 @@ const readErrorCode = (code: CallErrorCode): ConnectionCallErrorCode => {
 const readFailureCode = (code: FailureReason): ConnectionCallFailureCode => {
   switch (code) {
     case FailureReason.REJECTED_KEY:
-      return 'rejected_key'
+      return 'rejectedKey'
     case FailureReason.PAYMENT_REQUIRED:
-      return 'payment_required'
+      return 'paymentRequired'
     case FailureReason.RATE_LIMITED:
-      return 'rate_limited'
+      return 'rateLimited'
     case FailureReason.INVALID_REQUEST:
-      return 'invalid_request'
+      return 'invalidRequest'
     case FailureReason.UNAVAILABLE:
     case FailureReason.UNSPECIFIED:
       return 'unavailable'
@@ -161,8 +153,8 @@ const readFailureCode = (code: FailureReason): ConnectionCallFailureCode => {
 }
 
 const readFailure = (failure: CallFailure): ConnectionCallFailure => ({
-  errorCode: readErrorCode(failure.error),
-  detail: failure.detail,
+  error: readErrorCode(failure.error),
+  message: failure.detail,
   failures: failure.failures.map((one) => ({
     connectionName: one.connectionName,
     reason: one.reason,
@@ -177,7 +169,7 @@ const writePreferredRow = (preferred: ConnectionCallPreferredRow | undefined) =>
   preferred === undefined
     ? {}
     : {
-        preferred: {
+        preferredRow: {
           connectionId: preferred.connectionId,
           options: { ...preferred.options },
           isExclusive: preferred.isExclusive === true,

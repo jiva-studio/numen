@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"strings"
-	"time"
+
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"connectrpc.com/connect"
 
@@ -30,7 +30,7 @@ func (h *Prose) ReadNote(
 	}
 	found, err := h.read.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	out := &v1.ReadNoteResponse{Body: found.Body}
 	if reason, ok := wire.ConvertOutcomeToErrorCode(found.Outcome); ok {
@@ -38,7 +38,7 @@ func (h *Prose) ReadNote(
 	} else {
 		// What the file was when this prose came out of it, for the client to
 		// present when it puts prose back.
-		out.At = convertFileStatToWire(found.FileStat)
+		out.FileStat = convertFileStatToWire(found.FileStat)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -65,12 +65,12 @@ func (h *Prose) WriteNote(
 	// but search does not include it.
 	if err == nil || indexOutdated {
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: convertFileStatToWire(pos), IsIndexOutdated: indexOutdated,
+			FileStat: convertFileStatToWire(pos), IsIndexOutdated: indexOutdated,
 		}), nil
 	}
 	reason, ok := wire.GetErrorCode(err)
 	if !ok {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.WriteNoteResponse{Error: reason}), nil
 }
@@ -115,7 +115,7 @@ func (h *Prose) CreateNote(
 	}
 	reason, ok := wire.GetErrorCode(err)
 	if !ok {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(&v1.CreateNoteResponse{Error: reason}), nil
 }
@@ -131,7 +131,7 @@ func (h *Outline) GetOpeningNote(
 
 	ref, found, err := h.getOpeningNote.Execute(ctx, showing)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	out := &v1.GetOpeningNoteResponse{}
 	if found {
@@ -151,14 +151,12 @@ func (h *Outline) ListRelatedNotes(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	paths := r.Msg.GetPaths()
-	if len(paths) > domain.MaxRelatedNotePaths {
-		return nil, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("at most %d notes at once, not %d", domain.MaxRelatedNotePaths, len(paths)))
+	views, err := h.getRelatedNotes.Execute(ctx, showing, r.Msg.GetPaths(), depth)
+	if errors.Is(err, domain.ErrTooManyRelatedPaths) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	views, err := h.getRelatedNotes.Execute(ctx, showing, paths, depth)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	out := &v1.ListRelatedNotesResponse{Graphs: make([]*v1.NoteGraph, 0, len(views))}
 	for _, found := range views {
@@ -178,7 +176,7 @@ func convertRelatedNotesToWire(found query.RelatedNotesView) *v1.NoteGraph {
 		FocusTabKind: tabKinds[found.Focus.Path],
 	}
 	for _, related := range found.Related {
-		out.Related = append(out.Related, &v1.RelatedNote{
+		out.RelatedNotes = append(out.RelatedNotes, &v1.RelatedNote{
 			Note:      convertNoteToWire(related.NoteRef),
 			Relation:  convertRelationToWire(related.Relation),
 			Direction: convertDirectionToWire(related.Direction),
@@ -202,12 +200,12 @@ func (h *Links) ResolveAddresses(
 	if err != nil {
 		return nil, err
 	}
-	if named := r.Msg.GetVault(); named != "" && named != string(showing.ID) {
+	if named := r.Msg.GetVaultId(); named != "" && named != string(showing.ID) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("vault %q is not the one this window shows", named))
 	}
 	out, err := wire.ResolveAddresses(ctx, h.resolveLinks, showing.ID, r.Msg)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -284,7 +282,7 @@ func newBaseline(baseline *v1.ReadBaseline) *edit.Baseline {
 	if baseline == nil {
 		return nil
 	}
-	return &edit.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt())}
+	return &edit.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetFileStat())}
 }
 
 func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
@@ -292,7 +290,7 @@ func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
 		return domain.FileStat{}
 	}
 	return domain.FileStat{
-		Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime()),
+		Path: pos.GetPath(), Size: pos.GetSize(), ModTime: parseInstant(pos.GetMtime()),
 		Hash: pos.GetHash(), Version: pos.GetVersion(),
 	}
 }
@@ -307,13 +305,13 @@ func (h *Outline) ListHeadings(
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListHeadingsResponse{}), nil
 	}
-	paths, err := eachOnce(r.Msg.GetPaths())
+	paths, err := wire.GetDistinctPaths(r.Msg.GetPaths())
 	if err != nil {
 		return nil, err
 	}
 	found, err := h.listHeadings.Execute(ctx, showing, paths)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, wire.NewInternalError(err)
 	}
 
 	out := &v1.ListHeadingsResponse{Headings: make([]*v1.NoteHeadings, 0, len(found))}
@@ -341,38 +339,32 @@ func (h *Handler) WatchEdits(
 	line, isDone := h.edits.SubscribeEdits()
 	defer isDone()
 
-	// The empty first message confirms the stream is open; without it a stream
-	// with no changes cannot be distinguished from one that failed to open.
-	if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
-		return err
-	}
-
-	repeat := time.NewTicker(wire.ResendInterval)
-	defer repeat.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-repeat.C:
-			if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
-				return err
-			}
-		case response, open := <-line:
-			if !open {
+	return wire.RunWatch(ctx, out, wire.ResendInterval, nil, func(ctx context.Context, send func(*v1.WatchEditsResponse) error) error {
+		// The empty first message confirms the stream is open; without it a stream
+		// with no changes cannot be distinguished from one that failed to open.
+		if err := send(&v1.WatchEditsResponse{}); err != nil {
+			return err
+		}
+		for {
+			select {
+			case <-ctx.Done():
 				return nil
-			}
-			if err := out.Send(&v1.WatchEditsResponse{
-				Change:  response.Change,
-				Path:    response.Path,
-				Range:   &v1.Range{Start: int32(response.From), End: int32(response.To)},
-				Text:    response.Text,
-				IsFinal: response.IsDone,
-			}); err != nil {
-				return err
+			case response, open := <-line:
+				if !open {
+					return nil
+				}
+				if err := send(&v1.WatchEditsResponse{
+					Change:  response.Change,
+					Path:    response.Path,
+					Range:   &v1.Range{Start: int32(response.From), End: int32(response.To)},
+					Text:    response.Text,
+					IsFinal: response.IsDone,
+				}); err != nil {
+					return err
+				}
 			}
 		}
-	}
+	})
 }
 
 // RenameNote gives a note a different name.
@@ -395,7 +387,7 @@ func (h *Prose) RenameNote(
 		IsIndexOutdated: isIndexOutdated,
 	}
 	if renamed.Moved != nil {
-		out.Moved = newMoveResult(*renamed.Moved)
+		out.MoveResult = newMoveResult(*renamed.Moved)
 	}
 	if err != nil && !isIndexOutdated {
 		reason, ok := wire.GetErrorCode(err)
@@ -403,7 +395,7 @@ func (h *Prose) RenameNote(
 		case ok:
 			out.Error = reason
 		case out.GetPath() == "":
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, wire.NewInternalError(err)
 		}
 		// The note was opened and its name was written, so the response is
 		// returned as is. A later failure of the rename does not undo it.
@@ -425,7 +417,7 @@ func newWireNameSource(delta naming.Source) v1.NameSource {
 func newMoveResult(moved domain.MoveResult) *v1.MoveResult {
 	return &v1.MoveResult{
 		From: moved.From, To: moved.To,
-		Repaired: moved.Repaired, Dangling: moved.Dangling,
+		RepairedNotes: moved.Repaired, DanglingNotes: moved.Dangling,
 	}
 }
 

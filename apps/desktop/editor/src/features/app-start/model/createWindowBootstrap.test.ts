@@ -1,12 +1,10 @@
 /** How a window starts: the layout it opens with, and the plugins it loads before that. */
 import { describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h } from 'vue'
-import { pane } from '@numen/workbench'
+import { createPane } from '@numen/workbench'
 import { flushPromises, mount } from '@vue/test-utils'
 import type { PluginLoader } from '@numen/plugin-loader'
 import { createWindowLayout, useOpenTabs, type AnyTabKind, type MovedTab } from '@/entities/tab'
-import { closeWindow } from '@/entities/window'
-import type * as WindowEntity from '@/entities/window'
 import { ReportedError } from '@numen/result'
 import { createAnsweredApi } from '@/testing/coreAnswers'
 import { createTestTabs } from '@/testing/tabs'
@@ -14,13 +12,7 @@ import { createLayoutStart } from './createLayoutStart'
 import { createPluginStart } from './createPluginStart'
 import { createWindowBootstrap, type WindowBootstrapDeps } from './createWindowBootstrap'
 
-vi.mock('@/entities/window', async (importOriginal) => {
-  const actual = await importOriginal<typeof WindowEntity>()
-  return {
-    ...actual,
-    closeWindow: vi.fn(() => Promise.resolve()),
-  }
-})
+const closeWindow = vi.fn<() => Promise<void>>(() => Promise.resolve())
 
 const withPlacement = (kind: string): AnyTabKind => ({
   kind,
@@ -106,7 +98,7 @@ const setup = ({
     writeMessage,
     plugins: createPluginStart({
       pluginLoader,
-      getPlugins: () => [
+      listPlugins: () => [
         { id: 'md.example.notes', hasFrontend: true },
         { id: 'md.example.server', hasFrontend: false },
       ],
@@ -119,10 +111,11 @@ const setup = ({
       pluginLoader,
       writeMessage,
       layout,
-      isSecondary: false,
-      windowId: 'window-a',
-      readDetachedTab: vi.fn(() => Promise.resolve(detached)),
-      readOpenTabs: api.tabs.savedTabs.readOpenTabs,
+      closeWhenEmpty: undefined,
+      saved: {
+        readDetachedTab: vi.fn(() => Promise.resolve(detached)),
+        readOpenTabs: api.tabs.savedTabs.readOpenTabs,
+      },
       openDetachedTab,
     }),
   }
@@ -180,7 +173,7 @@ describe('a window starting', () => {
   it.each([true, false])('restores the saved pane when it contains a tab: %s', async (saved) => {
     const workspace = {
       axis: 'vertical',
-      root: pane('restored', saved ? [SAVED.id] : []),
+      root: createPane('restored', saved ? [SAVED.id] : []),
       focus: 'restored',
     }
     const { layout, windowTabs } = setup({ saved, savedLayout: JSON.stringify(workspace) })
@@ -254,8 +247,8 @@ describe('a window starting', () => {
   })
 
   it('closes a secondary window when its last tab closes and reports close failures', async () => {
-    vi.mocked(closeWindow).mockClear()
-    vi.mocked(closeWindow)
+    closeWindow.mockClear()
+    closeWindow
       .mockRejectedValueOnce(new ReportedError('cannot close'))
       .mockResolvedValue(undefined)
     const windowTabs = createTestTabs()
@@ -272,10 +265,11 @@ describe('a window starting', () => {
       pluginLoader,
       writeMessage,
       layout,
-      isSecondary: true,
-      windowId: 'window-b',
-      readDetachedTab: () => Promise.resolve(null),
-      readOpenTabs: () => Promise.resolve({ tabs: [], activeId: '' }),
+      closeWhenEmpty: closeWindow,
+      saved: {
+        readDetachedTab: () => Promise.resolve(null),
+        readOpenTabs: () => Promise.resolve({ tabs: [], activeId: '' }),
+      },
       openDetachedTab: vi.fn(),
     })
 
@@ -292,7 +286,7 @@ describe('a window starting', () => {
   })
 
   it('does not close a primary window when its last tab closes', async () => {
-    vi.mocked(closeWindow).mockClear()
+    closeWindow.mockClear()
     const windowTabs = createTestTabs()
     windowTabs.kinds.registerKinds([withPlacement('welcome')])
     const layout = createWindowLayout(false)
@@ -304,10 +298,11 @@ describe('a window starting', () => {
       } as unknown as PluginLoader,
       writeMessage: vi.fn(),
       layout,
-      isSecondary: false,
-      windowId: 'window-a',
-      readDetachedTab: () => Promise.resolve(null),
-      readOpenTabs: () => Promise.resolve({ tabs: [], activeId: '' }),
+      closeWhenEmpty: undefined,
+      saved: {
+        readDetachedTab: () => Promise.resolve(null),
+        readOpenTabs: () => Promise.resolve({ tabs: [], activeId: '' }),
+      },
       openDetachedTab: vi.fn(),
     })
 

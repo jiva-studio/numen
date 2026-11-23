@@ -80,7 +80,7 @@ func TestRangedReadTextReturnsSegmentsOffsetsAndTextSize(t *testing.T) {
 		t.Errorf("a ranged read read %d pages, want none", texts.pages)
 	}
 	segments := res.Msg.GetSegments()
-	if res.Msg.GetError() != 0 || len(segments) != 2 || res.Msg.GetStart() != 120 || res.Msg.GetSize() != 4800 || res.Msg.GetNextCursor() != "" {
+	if res.Msg.GetError() != 0 || len(segments) != 2 || res.Msg.GetStart() != 120 || res.Msg.GetSize() != 4800 || res.Msg.GetNextPageToken() != "" {
 		t.Fatalf("the ranged read returned %v, want two segments from 120 of a text of 4800 bytes", res.Msg)
 	}
 	if segments[0].GetText() != "gray heron waits" || segments[0].GetHeading() != "Herons" || segments[0].GetSelector() != `{"page":2}` ||

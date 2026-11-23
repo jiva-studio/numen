@@ -119,7 +119,7 @@ func newFixture(t *testing.T, refreshMinutes int) *fixture {
 	searches.SetAnswer(wordsQuery, host.SearchState{Results: []host.SearchResult{passage("Harbor/Gale.md", "Gale", galeText, 1)}, ScoreKind: "words"})
 	searches.SetAnswer(brokenQuery, getBrokenAnswer())
 	vault := hosttest.New(testVault)
-	vault.File("Notes/Tides.md", "---\ntitle: Tide Tables\n---\nThe tide at the quay.")
+	vault.WriteFile("Notes/Tides.md", "---\ntitle: Tide Tables\n---\nThe tide at the quay.")
 	fake := new(clocktest.Fake)
 	fake.Set(getStartTime())
 	current := settings.NewStore()
@@ -149,7 +149,7 @@ func newFixture(t *testing.T, refreshMinutes int) *fixture {
 }
 
 func (f *fixture) addStormsNote() {
-	f.vault.File(stormsPath, formatSearchNote(stormsID, stormsQuery))
+	f.vault.WriteFile(stormsPath, formatSearchNote(stormsID, stormsQuery))
 }
 
 func (f *fixture) getStartCount() int {

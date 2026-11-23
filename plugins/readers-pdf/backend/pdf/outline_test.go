@@ -12,12 +12,12 @@ func TestOutlineWithInvalidStarts(t *testing.T) {
 	}
 	defer closeAndCheck(t, doc)
 
-	parts := doc.outline([]int{0})
+	parts := doc.buildOutline([]int{0})
 	if len(parts) >= 3 {
 		t.Errorf("got %d parts, want fewer when starts is truncated", len(parts))
 	}
 
-	emptyParts := doc.outline(nil)
+	emptyParts := doc.buildOutline(nil)
 	if len(emptyParts) != 0 {
 		t.Errorf("got %d parts for nil starts, want 0", len(emptyParts))
 	}

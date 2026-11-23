@@ -7,7 +7,7 @@
  * computed times.
  */
 import { describe, expect, it } from 'vitest'
-import { applyCues, findCueAt, isSame, spanCues, getText } from './cues'
+import { applyCues, findCueAt, isSame, rebuildCues, getText } from './cues'
 import type { Cue } from '../types'
 
 const CUES: readonly Cue[] = [
@@ -303,12 +303,12 @@ describe('every line on screen', () => {
   it('is answered for, an emptied one included', () => {
     const text = 'A bell over the door.\n\nSomeone counting change.'
 
-    expect(spanCues(CUES, text).length).toBe(text.split('\n').length)
-    expect(spanCues(CUES, text)[1]).toStrictEqual({ text: '', from: 3_000, to: 6_000 })
+    expect(rebuildCues(CUES, text).length).toBe(text.split('\n').length)
+    expect(rebuildCues(CUES, text)[1]).toStrictEqual({ text: '', from: 3_000, to: 6_000 })
   })
 
   it('is answered for where the transcript was emptied', () => {
-    expect(spanCues(CUES, '').length).toBe(1)
+    expect(rebuildCues(CUES, '').length).toBe(1)
   })
 })
 
@@ -348,7 +348,7 @@ describe('lines typed past the cue that stood there', () => {
   it('are all given an empty span after the cue they repeat', () => {
     const was: readonly Cue[] = [{ text: 'A bell.', from: 1_000, to: 3_000 }]
 
-    expect(spanCues(was, 'A bell.\nA bell.\nA bell.')).toStrictEqual([
+    expect(rebuildCues(was, 'A bell.\nA bell.\nA bell.')).toStrictEqual([
       { text: 'A bell.', from: 1_000, to: 3_000 },
       { text: 'A bell.', from: 3_000, to: 3_000 },
       { text: 'A bell.', from: 3_000, to: 3_000 },
@@ -360,7 +360,7 @@ describe('empty lines laid over one span', () => {
   it('share its start, and the last of them takes its end', () => {
     const was: readonly Cue[] = [{ text: 'A bell.', from: 1_000, to: 3_000 }]
 
-    expect(spanCues(was, '\n')).toStrictEqual([
+    expect(rebuildCues(was, '\n')).toStrictEqual([
       { text: '', from: 1_000, to: 1_000 },
       { text: '', from: 1_000, to: 3_000 },
     ])

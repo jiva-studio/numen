@@ -17,9 +17,9 @@ const pluginID = "md.numen.readers.epub"
 func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Vault, *hosttest.Texts, *texts.Writer) {
 	t.Helper()
 	files := hosttest.New("vault")
-	files.File(name, string(raw))
+	files.WriteFile(name, string(raw))
 	versions := hosttest.NewTexts("vault", pluginID)
-	versions.File(name, raw)
+	versions.WriteFile(name, raw)
 	versions.SetStore(pluginID, files.Store())
 	writer := texts.NewWriter(
 		func(id domain.VaultID) texts.Vault { return files.With(id) },

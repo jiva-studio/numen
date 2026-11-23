@@ -17,7 +17,7 @@ func StartQuery(ctx context.Context, u *query.UseCase, in api.QueryInput) (api.Q
 }
 
 func ReadResults(ctx context.Context, u *query.UseCase, in api.QueryResultsInput) (api.QueryOutput, error) {
-	out, err := u.Results(ctx, query.ResultsRequest{ID: in.ID, Wait: in.Wait, PageToken: in.PageToken})
+	out, err := u.GetResults(ctx, query.ResultsRequest{ID: in.ID, Wait: in.Wait, PageToken: in.PageToken})
 	if err != nil {
 		return api.QueryOutput{}, err
 	}

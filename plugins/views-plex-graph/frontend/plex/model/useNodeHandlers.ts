@@ -10,8 +10,8 @@ export interface NodeReports {
   readonly show: (id: string, showing: PlexDestination) => void
   readonly reach: (id: string, pointer: PointerEvent) => void
   readonly ask: (id: string) => void
-  readonly menu: (id: string, at: Position, trigger: MenuTrigger) => void
-  readonly attend: (id: string, isAttended: boolean) => void
+  readonly openMenu: (id: string, at: Position, trigger: MenuTrigger) => void
+  readonly setAttention: (id: string, isAttended: boolean) => void
 }
 
 export interface NodeListeners {
@@ -45,8 +45,8 @@ export function useNodeHandlers(
         show: (showing) => reports.show(id, showing),
         reach: (pointer) => reports.reach(id, pointer),
         ask: () => reports.ask(id),
-        menu: (at, trigger) => reports.menu(id, at, trigger),
-        attend: (isAttended) => reports.attend(id, isAttended),
+        menu: (at, trigger) => reports.openMenu(id, at, trigger),
+        attend: (isAttended) => reports.setAttention(id, isAttended),
       }
       listenersById.set(id, listeners)
     }

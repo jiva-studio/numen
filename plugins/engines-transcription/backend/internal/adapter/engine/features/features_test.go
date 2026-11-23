@@ -74,7 +74,7 @@ func TestFFTAgainstDefinition(t *testing.T) {
 
 	got := make([]complex128, n)
 	copy(got, a)
-	fft(got, getTwiddles())
+	computeFFT(got, getTwiddles())
 	for k := range want {
 		if math.Abs(real(got[k])-real(want[k])) > 1e-9 || math.Abs(imag(got[k])-imag(want[k])) > 1e-9 {
 			t.Fatalf("bin %d is %v, and the definition says %v", k, got[k], want[k])
@@ -179,10 +179,10 @@ func TestFeaturesEdgeCases(t *testing.T) {
 	if got, frames := GetLogMel([]float32{1}, 1); len(got) != MelBands || frames != 1 {
 		t.Errorf("GetLogMel(1 sample) = (len %d, %d), want (%d, 1)", len(got), frames, MelBands)
 	}
-	if power, frames := spectrogram(nil, 1); power != nil || frames != 0 {
+	if power, frames := computeSpectrogram(nil, 1); power != nil || frames != 0 {
 		t.Errorf("spectrogram(nil) = (%v, %d), want (nil, 0)", power, frames)
 	}
-	power, frames := spectrogram([]float64{1}, 1)
+	power, frames := computeSpectrogram([]float64{1}, 1)
 	if frames != 1 || math.Abs(power[0]-40000) > 1e-6 {
 		t.Errorf("spectrogram([1]) = (frames %d, power[0] %g), want (1, 40000)", frames, power[0])
 	}
@@ -208,7 +208,7 @@ func TestFeaturesEdgeCases(t *testing.T) {
 	if bank[0].firstBin != 1 {
 		t.Errorf("bank[0].firstBin = %d, want 1", bank[0].firstBin)
 	}
-	if got := hzToMel(500); math.Abs(got-7.5) > 1e-9 {
+	if got := convertHzToMel(500); math.Abs(got-7.5) > 1e-9 {
 		t.Errorf("hzToMel(500) = %g, want 7.5", got)
 	}
 	if got := len(getTwiddles()); got != fftSize/2 {

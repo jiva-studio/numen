@@ -17,10 +17,10 @@ export function isCommandAvailable(
   if (!condition) return false
   return condition.evaluate(
     getWhenValues({
-      window: deps.getWindowValues?.(),
+      window: deps.getWindowValues(),
       target: note.path === '' && !note.isFolder ? undefined : note,
       note: { type: note.type, properties: note.properties },
-      contentTypes: deps.getContentTypes?.() ?? {},
+      contentTypes: deps.getContentTypes(),
     }),
   )
 }

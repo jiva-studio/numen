@@ -9,15 +9,15 @@ import { createNoteWriter } from '@/entities/note'
 import { WORDS } from '@/shared/ui/words'
 import { createAnsweredApi } from './coreAnswers'
 
-const noop = (): void => undefined
+const discard = (): void => undefined
 
 const NO_NOTES: Notes = {
   getTabAt: () => null,
   getPath: (id) => id,
-  asking: () => false,
+  isAsking: () => false,
   flushPending: () => Promise.resolve(),
-  close: noop,
-  openFile: noop,
+  close: discard,
+  openFile: discard,
 }
 
 /** A window whose tabs hold nothing and whose core answers no call. */
@@ -29,44 +29,44 @@ export const createEmptyWindow = (
     renameNote: api.vault.note.renameNote,
     making: createNoteWriter(
       { createNote: api.vault.note.createNote, relations: api.vault.relations },
-      noop,
+      discard,
     ),
     notes: NO_NOTES,
     navigator: {
       travel: () => Promise.resolve(),
       leave: () => Promise.resolve(),
       getOpeningNote: () => '',
-      showTab: noop,
+      showTab: discard,
     },
-    writeMessage: noop,
+    writeMessage: discard,
   },
-  files: { files: api.vault.file, notes: NO_NOTES, writeMessage: noop },
+  files: { files: api.vault.file, notes: NO_NOTES, writeMessage: discard },
   vaults: {
     vaults: api.vault.vaults,
-    emptyTrash: api.vault.file.emptyTrash,
-    setVaultName: noop,
-    reload: noop,
-    writeMessage: noop,
+    clearTrash: api.vault.file.emptyTrash,
+    setVaultName: discard,
+    reload: discard,
+    writeMessage: discard,
   },
   tabs: {
     tabLinks: {
       tabs: [],
       windows: [],
-      linkTabs: noop,
-      unlinkTab: noop,
+      linkTabs: discard,
+      unlinkTab: discard,
       getGroupOf: () => null,
     },
     getTabs: () => [],
     getKind: () => undefined,
     isLinkable: () => false,
     isAsking: () => false,
-    detach: noop,
-    move: noop,
+    detach: discard,
+    move: discard,
   },
   versions: {
     runDeclaredHandler: api.plugins.declaredCommands.runDeclaredHandler,
     listItems: () => Promise.resolve([]),
-    writeMessage: noop,
+    writeMessage: discard,
   },
 })
 

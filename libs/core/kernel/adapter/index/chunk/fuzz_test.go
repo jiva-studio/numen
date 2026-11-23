@@ -69,7 +69,7 @@ func FuzzExpression(f *testing.F) {
 		// words take a third of a second. The database round trip is therefore limited
 		// to what a search box could hold; the checks on the expression below run for
 		// every length.
-		expression := Expression(typed, growing)
+		expression := BuildExpression(typed, growing)
 		if len(typed) <= maxQueryLength && !strings.ContainsRune(expression, 0) {
 			var count int
 			row := db.QueryRowContext(t.Context(), `SELECT count(*) FROM said WHERE text MATCH ?`, expression)

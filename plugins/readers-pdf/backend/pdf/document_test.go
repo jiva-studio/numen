@@ -158,23 +158,23 @@ func TestDocumentTextInvalidPageIndex(t *testing.T) {
 	}
 	defer closeAndCheck(t, doc)
 
-	if got := doc.text(-1); got != "" {
+	if got := doc.readText(-1); got != "" {
 		t.Errorf("doc.text(-1) = %q, want empty string", got)
 	}
-	if got := doc.text(9999); got != "" {
+	if got := doc.readText(9999); got != "" {
 		t.Errorf("doc.text(9999) = %q, want empty string", got)
 	}
 }
 
 func TestGetRuntimeConfigAndTimerLifecycle(t *testing.T) {
-	if cfg := NewWorkers(Options{Report: failOnReport(t), CompilationCache: nil, AfterFunc: nil, Workers: 0, IdleWorkers: 0}).getRuntimeConfig(); cfg != nil {
+	if cfg := NewWorkers(Options{Report: failOnReport(t), CompilationCache: nil, StartTimer: nil, Workers: 0, IdleWorkers: 0}).getRuntimeConfig(); cfg != nil {
 		t.Fatalf("expected nil RuntimeConfig when compilation cache is nil, got %v", cfg)
 	}
 
 	var timers []*recordingTimer
 	w := NewWorkers(Options{
 		Report: failOnReport(t), CompilationCache: newCompilation(t), Workers: 0, IdleWorkers: 2,
-		AfterFunc: func(_ time.Duration, _ func()) Timer {
+		StartTimer: func(_ time.Duration, _ func()) Timer {
 			tr := &recordingTimer{}
 			timers = append(timers, tr)
 			return tr

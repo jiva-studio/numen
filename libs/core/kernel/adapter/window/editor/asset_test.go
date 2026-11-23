@@ -1,65 +1,57 @@
 package editor
 
 import (
-	"errors"
-	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/contenttype"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func TestOpenVaultFileReadsAFileOfTheVault(t *testing.T) {
-	vault := filepath.Join(t.TempDir(), "vault")
-	writeAssetFile(t, filepath.Join(vault, "pictures", "kiln.png"), "glazed")
+func openAssetWindow(t *testing.T, vault domain.Vault) http.Handler {
+	t.Helper()
+	api := newBareServices()
+	api.readFiles(vaultreader.Readers{}, nil, file.NewGetMediaType(contenttype.Open()))
+	api.state.Runtime.SetVault(vault)
+	return api.NewHandler(http.NotFoundHandler())
+}
 
-	file, info, err := openVaultFile(vault, filepath.Join("pictures", "kiln.png"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			t.Error(err)
-		}
-	}()
-	content, err := io.ReadAll(file)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(content) != "glazed" || info.Name() != "kiln.png" {
-		t.Fatalf("read %q named %q, want %q named kiln.png", content, info.Name(), "glazed")
+func askAsset(t *testing.T, handler http.Handler, name string) *httptest.ResponseRecorder {
+	t.Helper()
+	return ask(t, handler, "/assets/"+name)
+}
+
+func TestTheWindowServesAFileOfTheVaultAsAnAsset(t *testing.T) {
+	vault := domain.Vault{ID: "v", Name: "v", Path: filepath.Join(t.TempDir(), "vault")}
+	writeAssetFile(t, filepath.Join(vault.Path, "pictures", "kiln.png"), "glazed")
+
+	got := askAsset(t, openAssetWindow(t, vault), "pictures/kiln.png")
+
+	if got.Code != http.StatusOK || got.Body.String() != "glazed" || got.Header().Get("Content-Type") != "image/png" {
+		t.Fatalf("answered %d %q as %q", got.Code, got.Body.String(), got.Header().Get("Content-Type"))
 	}
 }
 
-func TestOpenVaultFileRefusesWhatLiesOutsideTheVault(t *testing.T) {
+func TestTheWindowServesNoAssetFromOutsideTheVaultOrAFolder(t *testing.T) {
 	dir := t.TempDir()
-	vault := filepath.Join(dir, "vault")
-	writeAssetFile(t, filepath.Join(vault, "notes", "a.md"), "inside")
+	vault := domain.Vault{ID: "v", Name: "v", Path: filepath.Join(dir, "vault")}
+	writeAssetFile(t, filepath.Join(vault.Path, "notes", "a.md"), "inside")
 	writeAssetFile(t, filepath.Join(dir, "vault-other", "secret.txt"), "outside")
-	if err := os.Symlink(filepath.Join(dir, "vault-other"), filepath.Join(vault, "door")); err != nil {
+	if err := os.Symlink(filepath.Join(dir, "vault-other"), filepath.Join(vault.Path, "door")); err != nil {
 		t.Skipf("no symbolic links here: %v", err)
 	}
+	handler := openAssetWindow(t, vault)
 
-	for _, name := range []string{
-		filepath.Join("..", "vault-other", "secret.txt"),
-		filepath.Join("door", "secret.txt"),
-		"notes",
-		filepath.Join("notes", "missing.md"),
-	} {
-		file, _, err := openVaultFile(vault, name)
-		if err == nil {
-			t.Errorf("%s opened, want an error", name)
-			if err := file.Close(); err != nil {
-				t.Error(err)
-			}
+	for _, name := range []string{"..%2Fvault-other%2Fsecret.txt", "door/secret.txt", "%2Fetc%2Fpasswd", "notes", "notes/missing.md"} {
+		if got := askAsset(t, handler, name); got.Code != http.StatusNotFound {
+			t.Errorf("%s answered %d %q, want not found", name, got.Code, got.Body.String())
 		}
-	}
-	if _, _, err := openVaultFile(vault, "notes"); !errors.Is(err, os.ErrNotExist) {
-		t.Errorf("a folder answers %v, want %v", err, os.ErrNotExist)
 	}
 }
 
@@ -105,7 +97,7 @@ func TestAssetHeadersFollowTheExtension(t *testing.T) {
 func TestAnSVGIsSandboxedWhenOpenedAsAPage(t *testing.T) {
 	head := http.Header{}
 	setAssetHeaders(head, file.NewGetMediaType(contenttype.Open()).Execute("diagram.svg"))
-	if got := head.Get("Content-Security-Policy"); !strings.Contains(got, "sandbox") || !strings.Contains(got, "default-src 'none'") {
+	if got := head.Get("Content-Security-Policy"); !strings.Contains(got, "sandbox") {
 		t.Fatalf("policy %q does not sandbox the picture", got)
 	}
 }

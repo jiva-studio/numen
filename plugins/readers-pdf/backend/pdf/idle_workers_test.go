@@ -16,7 +16,7 @@ func startIdlePool(t *testing.T, idle int, period time.Duration) *Workers {
 	t.Helper()
 	workers := NewWorkers(Options{
 		Report: failOnReport(t), CompilationCache: newCompilation(t), Workers: 0, IdleWorkers: idle,
-		AfterFunc: func(d time.Duration, f func()) Timer { return time.AfterFunc(d, f) },
+		StartTimer: func(d time.Duration, f func()) Timer { return time.AfterFunc(d, f) },
 	})
 	t.Cleanup(workers.releasePool)
 	workers.idleRelease = period
@@ -163,7 +163,7 @@ func openPath(workers *Workers, path string) (*document, error) {
 }
 
 func TestNegativeIdleWorkersKeepNone(t *testing.T) {
-	workers := NewWorkers(Options{Report: failOnReport(t), CompilationCache: nil, AfterFunc: nil, Workers: 0, IdleWorkers: -1})
+	workers := NewWorkers(Options{Report: failOnReport(t), CompilationCache: nil, StartTimer: nil, Workers: 0, IdleWorkers: -1})
 	workers.mu.Lock()
 	idle := workers.idle
 	workers.mu.Unlock()

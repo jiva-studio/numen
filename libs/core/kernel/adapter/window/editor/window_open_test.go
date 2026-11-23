@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -111,7 +112,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	})
 
 	cfg := vaultConfig(t)
-	cfg.Execution, cfg.Preferences, cfg.Endpoints = container.AdaptPluginHost(host.Management, host.Supervision)
+	cfg.Execution, cfg.Preferences, cfg.Endpoints = container.CreatePluginHost(host.Management, host.Supervision)
 
 	installation, err := openRegisteredWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {

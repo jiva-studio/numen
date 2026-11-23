@@ -24,15 +24,15 @@ var ErrClose = errors.New("close pdf")
 // Reader reads files from the vault a call names, on the workers, and text versions from the same
 // vault.
 type Reader struct {
-	files   func(domain.VaultID) host.FileReader
-	texts   func(domain.VaultID) LiveTexts
-	workers *pdf.Workers
+	getFiles func(domain.VaultID) host.FileReader
+	getTexts func(domain.VaultID) LiveTexts
+	workers  *pdf.Workers
 }
 
 // NewReader returns a Reader that reads files from vaults on the workers, and text versions from
 // texts.
 func NewReader(files func(domain.VaultID) host.FileReader, texts func(domain.VaultID) LiveTexts, workers *pdf.Workers) *Reader {
-	return &Reader{files: files, texts: texts, workers: workers}
+	return &Reader{getFiles: files, getTexts: texts, workers: workers}
 }
 
 // Page is the size of one page.
@@ -43,7 +43,7 @@ type Page struct {
 
 // GetPages returns the size of each page of the PDF file in the vault, in order.
 func (r *Reader) GetPages(ctx context.Context, vault domain.VaultID, path string) (pages []Page, err error) {
-	raw, _, err := r.files(vault).Read(ctx, path)
+	raw, _, err := r.getFiles(vault).Read(ctx, path)
 	if err != nil {
 		return nil, err
 	}

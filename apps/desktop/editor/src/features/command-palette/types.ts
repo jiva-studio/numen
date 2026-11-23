@@ -15,9 +15,9 @@ export type { StepRow } from '@/shared/model/command'
 /** What the commands ask of the application before anything is chosen. */
 export interface CommandsDeps {
   /** The names in the vault that match. */
-  names(query: string, limit: number, signal?: AbortSignal): Promise<readonly NameMatch[]>
+  searchNames(query: string, limit: number, signal?: AbortSignal): Promise<readonly NameMatch[]>
   /** Every vault the installation holds, and which of them this window shows. */
-  vaults(): Promise<VaultList>
+  listVaults(): Promise<VaultList>
 }
 
 /**
@@ -32,7 +32,7 @@ export interface PaletteLists {
    */
   getStepGroups(command: string, typed: string): readonly StepGroup[]
   /** The one the keyboard is standing on, and nothing where it relies on none. */
-  previewItem(command: string, item: string): void
+  applyItemPreview(command: string, item: string): void
 }
 
 /**
@@ -57,7 +57,7 @@ export interface Store {
   getPath(id: string): string
   /** What it is called, under the identity it opened under. */
   getTitle(id: string): string
-  asking(id: string): boolean
+  isAsking(id: string): boolean
   /** Answers once nothing of it is on its way to the file. */
   flushPending(id: string): Promise<void>
   /** The tab holding it releases it. */

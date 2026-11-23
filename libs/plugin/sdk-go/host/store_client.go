@@ -27,7 +27,7 @@ var (
 // NewStoreClientFromEnv connects to the host the process was started for. It returns hostcall.ErrNoHost
 // where the host named none.
 func NewStoreClientFromEnv() (*StoreClient, error) {
-	addr, err := hostcall.FromEnv()
+	addr, err := hostcall.ReadEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -35,11 +35,11 @@ func NewStoreClientFromEnv() (*StoreClient, error) {
 }
 
 func NewStoreClient(endpoint hostcall.Endpoint) *StoreClient {
-	return newStoreClientOver(transport.HTTPClient(), endpoint)
+	return newStoreClientOver(transport.GetHTTPClient(), endpoint)
 }
 
 func newStoreClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *StoreClient {
-	return &StoreClient{rpc: numenv1connect.NewHostStoreServiceClient(httpClient, endpoint.BaseURL, transport.Options(endpoint)...)}
+	return &StoreClient{rpc: numenv1connect.NewHostStoreServiceClient(httpClient, endpoint.BaseURL, transport.BuildOptions(endpoint)...)}
 }
 
 // With returns the folder in the vault with the given identity, used as the shown vault is. A call on

@@ -130,7 +130,7 @@ export interface TimeGutter {
   /** What the editor shows now. */
   show(state: TimeGutterState): void
   /** Centres the current line in the view once. */
-  centerCurrent(): void
+  scrollToCurrent(): void
 }
 
 const isSame = (one: TimeGutterState, two: TimeGutterState): boolean =>
@@ -229,7 +229,7 @@ export function createTimeGutter(
 
   const show = (state: TimeGutterState) => applyState(state, true)
 
-  const centerCurrent = () => {
+  const scrollToCurrent = () => {
     if (!view) return
     const { current } = view.state.field(timeGutterField)
     if (current < 0 || current >= view.state.doc.lines) return
@@ -246,6 +246,6 @@ export function createTimeGutter(
       attachPlugin,
     ],
     show,
-    centerCurrent,
+    scrollToCurrent: scrollToCurrent,
   }
 }

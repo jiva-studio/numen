@@ -19,7 +19,7 @@ const (
 // ParseNote returns the tasks of a note in the order of its lines. A note whose frontmatter cannot
 // be read or is never closed has no tasks and gives ErrUnreadable.
 func ParseNote(raw []byte) ([]Task, error) {
-	start, err := bodyStart(raw)
+	start, err := findBodyStart(raw)
 	if err != nil {
 		return nil, err
 	}
@@ -41,17 +41,17 @@ func ParseNote(raw []byte) ([]Task, error) {
 	return tasks, nil
 }
 
-// FrontmatterLines returns the number of lines the frontmatter of a note takes in the file, which
+// CountFrontmatterLines returns the number of lines the frontmatter of a note takes in the file, which
 // is what a line counted from the prose is short of the line of the file.
-func FrontmatterLines(raw []byte) (int, error) {
-	start, err := bodyStart(raw)
+func CountFrontmatterLines(raw []byte) (int, error) {
+	start, err := findBodyStart(raw)
 	if err != nil {
 		return 0, err
 	}
 	return strings.Count(string(raw[:start]), "\n"), nil
 }
 
-func bodyStart(raw []byte) (int, error) {
+func findBodyStart(raw []byte) (int, error) {
 	doc, err := markdown.Open(raw)
 	if err != nil {
 		return 0, fmt.Errorf("%w: %w", ErrUnreadable, err)
@@ -81,7 +81,7 @@ type scanner struct {
 func newScanner() *scanner { return &scanner{} }
 
 func (s *scanner) scan(content string, number int, raw string) (Task, bool) {
-	if s.skips(content) {
+	if s.shouldSkip(content) {
 		return Task{}, false
 	}
 	rest := stripQuote(content)
@@ -103,7 +103,7 @@ func (s *scanner) scan(content string, number int, raw string) (Task, bool) {
 	return readTask(rest[marker:], raw, number, indent)
 }
 
-func (s *scanner) skips(line string) bool {
+func (s *scanner) shouldSkip(line string) bool {
 	if s.isComment {
 		if strings.Contains(line, "-->") {
 			s.isComment = false

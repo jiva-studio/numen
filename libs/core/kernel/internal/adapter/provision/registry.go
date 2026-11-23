@@ -20,13 +20,13 @@ type Registry struct {
 	mu           sync.Mutex
 	provisioners []DependencyProvisioner
 	flights      flightGroup
-	observer     func(manifest.DependencyRequirement, plugin.DependencyStatus)
+	observe      func(manifest.DependencyRequirement, plugin.DependencyStatus)
 }
 
 // NewObservedRegistry returns a Registry that sends every status reached by any provisioning to observer.
 // The observer is called from the goroutine that runs the provisioning.
-func NewObservedRegistry(observer func(manifest.DependencyRequirement, plugin.DependencyStatus), provisioners ...DependencyProvisioner) *Registry {
-	return &Registry{provisioners: provisioners, observer: observer}
+func NewObservedRegistry(observe func(manifest.DependencyRequirement, plugin.DependencyStatus), provisioners ...DependencyProvisioner) *Registry {
+	return &Registry{provisioners: provisioners, observe: observe}
 }
 
 // Add appends a provisioner after those already routed to.
@@ -37,8 +37,8 @@ func (r *Registry) Add(provisioner DependencyProvisioner) {
 }
 
 func (r *Registry) Observe(req manifest.DependencyRequirement, status plugin.DependencyStatus) {
-	if r.observer != nil {
-		r.observer(req, status)
+	if r.observe != nil {
+		r.observe(req, status)
 	}
 }
 
@@ -82,8 +82,8 @@ func (r *Registry) run(
 ) (plugin.ResolvedDependency, error) {
 	note := func(status plugin.DependencyStatus) {
 		status.ID = req.ID
-		if r.observer != nil {
-			r.observer(req, status)
+		if r.observe != nil {
+			r.observe(req, status)
 		}
 		report(status)
 	}

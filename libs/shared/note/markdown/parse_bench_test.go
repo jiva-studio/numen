@@ -71,7 +71,7 @@ func BenchmarkHeadings(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		_ = headings(body)
+		_ = findHeadings(body)
 	}
 }
 
@@ -79,7 +79,7 @@ func BenchmarkWikilinksIn(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		_ = WikilinksIn(benchSampleLine)
+		_ = FindWikilinks(benchSampleLine)
 	}
 }
 
@@ -96,6 +96,6 @@ func BenchmarkBodyLinks(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {
-		_ = bodyLinks(body)
+		_ = getBodyLinks(body)
 	}
 }

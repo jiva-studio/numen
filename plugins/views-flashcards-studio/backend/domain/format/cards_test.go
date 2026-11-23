@@ -31,7 +31,7 @@ func TestACardContainsNoValueBelowAFieldItDoesNotHave(t *testing.T) {
 func TestADeckContainingNoCardOfAMarkReturnsSo(t *testing.T) {
 	deck := format.Deck{Cards: []format.Card{{CardID: "aaaaaaaaaa", Heading: "ant"}}}
 
-	got, err := deck.Card("bbbbbbbbbb")
+	got, err := deck.FindCard("bbbbbbbbbb")
 
 	if !errors.Is(err, format.ErrNoSuchCard) {
 		t.Fatalf("Card(bbbbbbbbbb) error = %v, want ErrNoSuchCard", err)
@@ -47,7 +47,7 @@ func TestADeckContainingTwoCardsOfAMarkReturnsSo(t *testing.T) {
 		{CardID: format.ID("aaaaaaaaaa"), Heading: "bee"},
 	}}
 
-	if _, err := deck.Card("aaaaaaaaaa"); !errors.Is(err, format.ErrTwoCards) {
+	if _, err := deck.FindCard("aaaaaaaaaa"); !errors.Is(err, format.ErrTwoCards) {
 		t.Fatalf("Card(aaaaaaaaaa) error = %v, want ErrTwoCards", err)
 	}
 }
@@ -59,7 +59,7 @@ func TestAProjectedHeadingIsOneLineOfCharactersTheFieldOpensWith(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		value := rapid.String().Draw(t, "value")
-		got := format.Project(value)
+		got := format.GetHeadingText(value)
 
 		if strings.ContainsAny(got, "\n\r") {
 			t.Fatalf("%q projects to %q, which is more than one line", value, got)
@@ -152,7 +152,7 @@ func TestTheSplitNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
 			line.WriteString(one.text)
 		}
 		value := line.String()
-		got := format.Project(value)
+		got := format.GetHeadingText(value)
 
 		// The spaces at either end are dropped, so the heading is counted from
 		// the first character the line has, and so are the runs.

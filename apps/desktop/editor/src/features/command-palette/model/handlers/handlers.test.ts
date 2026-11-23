@@ -39,7 +39,7 @@ const window = (override: Partial<CommandDeps> = {}) => {
     notes: {
       getTabAt: () => null,
       getPath: (id) => (id === 'member' ? 'physics/Being.md' : id),
-      asking: () => false,
+      isAsking: () => false,
       flushPending: async () => undefined,
       close: () => undefined,
       openFile: () => undefined,

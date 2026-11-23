@@ -149,13 +149,13 @@ func readPDF(t *testing.T, name string) []byte {
 func TestCloseWaitsForRunningWorkAndRerunsFinishedFiles(t *testing.T) {
 	firstRaw := readPDF(t, "Alpha")
 	secondRaw := readPDF(t, "Beta")
-	vault := hosttest.OnDisk(t, "vault", map[string]string{
+	vault := hosttest.CreateOnDisk(t, "vault", map[string]string{
 		"a.pdf": string(firstRaw),
 		"b.pdf": string(secondRaw),
 	})
 	texts := hosttest.NewTexts("vault", testPluginID)
-	texts.File("a.pdf", firstRaw)
-	texts.File("b.pdf", secondRaw)
+	texts.WriteFile("a.pdf", firstRaw)
+	texts.WriteFile("b.pdf", secondRaw)
 	texts.SetStore(testPluginID, vault.Store())
 	workers := newTestWorkers(t)
 	writer := NewWriter(
@@ -188,8 +188,8 @@ func TestCloseWaitsForRunningWorkAndRerunsFinishedFiles(t *testing.T) {
 	}
 
 	// Running again on a.pdf after it finished updates its version.
-	vault.File("a.pdf", string(secondRaw))
-	texts.File("a.pdf", secondRaw)
+	vault.WriteFile("a.pdf", string(secondRaw))
+	texts.WriteFile("a.pdf", secondRaw)
 	if err := writer.CreateText(t.Context(), Request{Path: "a.pdf"}); err != nil {
 		t.Fatal(err)
 	}
@@ -252,9 +252,9 @@ func TestCloseWaitsForRunningWorkAndRerunsFinishedFiles(t *testing.T) {
 
 func TestLayerWriteReportsAndWrapsEveryFailure(t *testing.T) {
 	raw := readPDF(t, "Alpha")
-	vault := hosttest.OnDisk(t, "vault", map[string]string{"a.pdf": string(raw)})
+	vault := hosttest.CreateOnDisk(t, "vault", map[string]string{"a.pdf": string(raw)})
 	texts := hosttest.NewTexts("vault", testPluginID)
-	texts.File("a.pdf", raw)
+	texts.WriteFile("a.pdf", raw)
 	texts.SetStore(testPluginID, vault.Store())
 	workers := newTestWorkers(t)
 	task := host.Task{ID: "text:a.pdf", Title: "Reading a.pdf", Detail: "a.pdf"}

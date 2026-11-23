@@ -12,7 +12,7 @@ import {
   type WindowTabs,
 } from '@/entities/tab'
 import type { useVaults } from '@/entities/vault'
-import { closeWindow, closeWindowWhenEmpty, getDetachedTabId } from '@/entities/window'
+import { closeWindowWhenEmpty, getDetachedTabId } from '@/entities/window'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 
@@ -22,11 +22,12 @@ export interface LayoutStartDeps {
   readonly pluginLoader: PluginLoader
   readonly writeMessage: MessageWriter
   readonly layout: ReturnType<typeof createWindowLayout>
-  readonly isSecondary: boolean
-  readonly windowId: string
-  readonly readDetachedTab: (windowId: string, tabId: string) => Promise<MovedTab | null>
-  readonly readOpenTabs: SavedTabsApi['readOpenTabs']
+  readonly saved: {
+    readonly readDetachedTab: (tabId: string) => Promise<MovedTab | null>
+    readonly readOpenTabs: SavedTabsApi['readOpenTabs']
+  }
   readonly openDetachedTab: (moved: MovedTab) => void
+  readonly closeWhenEmpty: (() => Promise<void>) | undefined
 }
 
 /** Lays out the tabs of the window once the vault is open and the plugins of their kinds started. */
@@ -35,7 +36,7 @@ export function createLayoutStart(deps: LayoutStartDeps) {
 
   const readDetachedTab = async (tabId: string) => {
     try {
-      return await deps.readDetachedTab(deps.windowId, tabId)
+      return await deps.saved.readDetachedTab(tabId)
     } catch {
       return null
     }
@@ -43,7 +44,7 @@ export function createLayoutStart(deps: LayoutStartDeps) {
 
   const readSavedTabs = async () => {
     try {
-      return await deps.readOpenTabs()
+      return await deps.saved.readOpenTabs()
     } catch (error) {
       writeMessage(`The saved tabs were not read: ${formatError(error)}`, 'error')
       return null
@@ -74,11 +75,11 @@ export function createLayoutStart(deps: LayoutStartDeps) {
     deps.layout.markStarted(read !== null)
   }
 
-  if (deps.isSecondary) {
+  if (deps.closeWhenEmpty) {
     closeWindowWhenEmpty({
       isLayoutReady: deps.layout.isReady,
-      tabCount: () => windowTabs.tabs.tabs.value.length,
-      closeWindow: () => closeWindow(),
+      countTabs: () => windowTabs.tabs.tabs.value.length,
+      closeWindow: deps.closeWhenEmpty,
       onError: (error) => writeMessage(`The window did not close: ${formatError(error)}`, 'error'),
     })
   }

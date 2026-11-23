@@ -183,8 +183,8 @@ func TestStemAndSameWord(t *testing.T) {
 		{"status", "status"},
 	}
 	for _, c := range stems {
-		if got := stem(c.in); got != c.want {
-			t.Fatalf("stem(%q) = %q, want %q", c.in, got, c.want)
+		if got := getStem(c.in); got != c.want {
+			t.Fatalf("getStem(%q) = %q, want %q", c.in, got, c.want)
 		}
 	}
 	if isSameWord("win", "window") || isSameWord("window", "win") {
@@ -196,7 +196,7 @@ func TestStemAndSameWord(t *testing.T) {
 	if matched, total, ok := isRestating("", []string{"open"}); matched != 0 || total != 0 || ok {
 		t.Fatalf("isRestating empty = (%d, %d, %v), want (0, 0, false)", matched, total, ok)
 	}
-	if matched, total := restatement("window", []string{"window", "windowsession"}); matched != 1 || total != 1 {
+	if matched, total := countRestatement("window", []string{"window", "windowsession"}); matched != 1 || total != 1 {
 		t.Fatalf("restatement = (%d, %d), want (1, 1)", matched, total)
 	}
 }

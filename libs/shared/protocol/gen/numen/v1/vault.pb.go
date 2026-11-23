@@ -7,7 +7,7 @@
 //
 // What the vault is and what has changed in it: the questions that are about
 // the vault itself and not about anything filed in it. Its files are
-// file.proto, its notes note.proto and its text search.proto, and where the
+// file.proto, its notes note.proto and its text search.proto.
 
 package numenv1
 
@@ -244,10 +244,10 @@ type WatchVaultChangesResponse struct {
 	Paths []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	// Set when the vault has to be read again and not followed — more
 	// changed at once than could be reported.
-	Reload bool `protobuf:"varint,2,opt,name=reload,proto3" json:"reload,omitempty"`
+	IsReloadRequired bool `protobuf:"varint,2,opt,name=is_reload_required,json=isReloadRequired,proto3" json:"is_reload_required,omitempty"`
 	// The notes that were renamed by this application, each by where it was and
 	// where it now is. A client showing one of them follows it there.
-	Renamed []*MoveResult `protobuf:"bytes,3,rep,name=renamed,proto3" json:"renamed,omitempty"`
+	Moves []*MoveResult `protobuf:"bytes,3,rep,name=moves,proto3" json:"moves,omitempty"`
 	// Paths of the files whose text versions changed: a version was made or
 	// deleted, or became live or no longer live.
 	VersionPaths  []string `protobuf:"bytes,4,rep,name=version_paths,json=versionPaths,proto3" json:"version_paths,omitempty"`
@@ -292,16 +292,16 @@ func (x *WatchVaultChangesResponse) GetPaths() []string {
 	return nil
 }
 
-func (x *WatchVaultChangesResponse) GetReload() bool {
+func (x *WatchVaultChangesResponse) GetIsReloadRequired() bool {
 	if x != nil {
-		return x.Reload
+		return x.IsReloadRequired
 	}
 	return false
 }
 
-func (x *WatchVaultChangesResponse) GetRenamed() []*MoveResult {
+func (x *WatchVaultChangesResponse) GetMoves() []*MoveResult {
 	if x != nil {
-		return x.Renamed
+		return x.Moves
 	}
 	return nil
 }
@@ -329,11 +329,11 @@ const file_numen_v1_vault_proto_rawDesc = "" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12\x1f\n" +
 	"\vwatch_error\x18\x03 \x01(\tR\n" +
 	"watchError\"\x1a\n" +
-	"\x18WatchVaultChangesRequest\"\x9e\x01\n" +
+	"\x18WatchVaultChangesRequest\"\xb0\x01\n" +
 	"\x19WatchVaultChangesResponse\x12\x14\n" +
-	"\x05paths\x18\x01 \x03(\tR\x05paths\x12\x16\n" +
-	"\x06reload\x18\x02 \x01(\bR\x06reload\x12.\n" +
-	"\arenamed\x18\x03 \x03(\v2\x14.numen.v1.MoveResultR\arenamed\x12#\n" +
+	"\x05paths\x18\x01 \x03(\tR\x05paths\x12,\n" +
+	"\x12is_reload_required\x18\x02 \x01(\bR\x10isReloadRequired\x12*\n" +
+	"\x05moves\x18\x03 \x03(\v2\x14.numen.v1.MoveResultR\x05moves\x12#\n" +
 	"\rversion_paths\x18\x04 \x03(\tR\fversionPaths2\xc0\x01\n" +
 	"\fVaultService\x12P\n" +
 	"\rGetVaultState\x12\x1e.numen.v1.GetVaultStateRequest\x1a\x1f.numen.v1.GetVaultStateResponse\x12^\n" +
@@ -362,7 +362,7 @@ var file_numen_v1_vault_proto_goTypes = []any{
 }
 var file_numen_v1_vault_proto_depIdxs = []int32{
 	2, // 0: numen.v1.GetVaultStateResponse.scan:type_name -> numen.v1.Scan
-	5, // 1: numen.v1.WatchVaultChangesResponse.renamed:type_name -> numen.v1.MoveResult
+	5, // 1: numen.v1.WatchVaultChangesResponse.moves:type_name -> numen.v1.MoveResult
 	0, // 2: numen.v1.VaultService.GetVaultState:input_type -> numen.v1.GetVaultStateRequest
 	3, // 3: numen.v1.VaultService.WatchVaultChanges:input_type -> numen.v1.WatchVaultChangesRequest
 	1, // 4: numen.v1.VaultService.GetVaultState:output_type -> numen.v1.GetVaultStateResponse

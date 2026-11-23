@@ -93,7 +93,7 @@ func mount(s *server.Server, vault newnote.Vault, source newnote.Clock, ids newn
 
 // Mount registers the service on s. The vault is the one the host the process was launched for shows.
 func Mount(s *server.Server) error {
-	endpoint, err := hostcall.FromEnv()
+	endpoint, err := hostcall.ReadEnv()
 	if err != nil {
 		return err
 	}

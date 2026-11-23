@@ -38,7 +38,7 @@ const {
   getSettings: () => props.settings,
   getCatalog: () => props.catalog,
   getQuery: () => props.query,
-  getPlugins: () => props.plugins,
+  listPlugins: () => props.plugins,
   updateQuery: (query) => emit('update:query', query),
 })
 

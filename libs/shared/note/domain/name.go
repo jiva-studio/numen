@@ -8,22 +8,22 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// FoldName is the key under which two names are one name: composed, case
+// NormalizeName returns the key under which two names are one name: composed, case
 // folded, and composed again, since folding `İ` yields `i` and a combining dot.
 // The fold is locale-independent, so `İstanbul` and `istanbul` are two names.
 // The form is NFC, but `Ｎｏｔｅ` and `Note` stay two names, as on disk.
-func FoldName(name string) string {
-	if folded, ok := foldASCII(name); ok {
+func NormalizeName(name string) string {
+	if folded, ok := getASCIIFold(name); ok {
 		return folded
 	}
-	return foldGeneral(name)
+	return getGeneralFold(name)
 }
 
-func foldGeneral(name string) string {
+func getGeneralFold(name string) string {
 	return norm.NFC.String(cases.Fold().String(norm.NFC.String(name)))
 }
 
-func foldASCII(name string) (folded string, ok bool) {
+func getASCIIFold(name string) (folded string, ok bool) {
 	hasUpper := false
 	for i := range len(name) {
 		c := name[i]
@@ -51,11 +51,11 @@ func foldASCII(name string) (folded string, ok bool) {
 	return lower.String(), true
 }
 
-// Basename is the name a note is filed under: the last segment of its path,
+// GetBasename returns the name a note is filed under: the last segment of its path,
 // without its extension.
 //
 // The scan stores what this returns, and it is what a name is matched against.
-func Basename(path string) string {
+func GetBasename(path string) string {
 	name := path
 	if i := strings.LastIndexByte(name, '/'); i >= 0 {
 		name = name[i+1:]
@@ -80,7 +80,7 @@ func LinkName(target string) string {
 		name = name[i+1:]
 	}
 	if baseLen := len(name) - len(NoteExtension); baseLen > 0 &&
-		FoldName(name[baseLen:]) == NoteExtension {
+		NormalizeName(name[baseLen:]) == NoteExtension {
 		return name[:baseLen]
 	}
 	return name

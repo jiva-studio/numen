@@ -60,4 +60,4 @@ const pass = (html: string): string => {
  * Text a card may be drawn with. It is read twice, because what one reading
  * writes out is what the next parser is handed.
  */
-export const safe = (html: string): string => pass(pass(html))
+export const sanitizeHtml = (html: string): string => pass(pass(html))

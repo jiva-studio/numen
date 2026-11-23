@@ -255,12 +255,12 @@ export function createFileTree(
   const state = initTreeState()
   let isAlive = true
 
-  const queries = createTreeQueries(state.entriesByFolder, state.open, options?.sortBy)
+  const treeQueries = createTreeQueries(state.entriesByFolder, state.open, options?.sortBy)
 
   const refreshControl = createTreeRefresh({
     core,
     ...state,
-    lookup: queries,
+    lookup: treeQueries,
     isAlive: () => isAlive,
   })
 
@@ -286,7 +286,7 @@ export function createFileTree(
       errorMessage: state.errorMessage,
       isLoaded: state.isLoaded,
     },
-    queries,
+    queries: treeQueries,
     folders: folderOps,
     sync: refreshControl,
     selectPaths: (paths: readonly string[]) => {

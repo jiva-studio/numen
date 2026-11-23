@@ -5,7 +5,7 @@ import { EditorView } from '@codemirror/view'
 import type { Tree } from '@lezer/common'
 import { LANGUAGES } from '../lib/config/languages'
 import { live } from './live/live'
-import { preview, prose, setup, type Settings } from './setup'
+import { createPreviewExtension, createProseExtension, setup, type Settings } from './setup'
 import { escapeKeyBinding, tabKeyBinding } from './tabCapture'
 
 // Nothing here has a size, and the editor measures anyway.
@@ -76,8 +76,8 @@ describe('live preview', () => {
       views.push(view)
       return view.plugin(live) !== null
     }
-    expect(hasPlugin(preview(true))).toBe(true)
-    expect(hasPlugin(preview(false))).toBe(false)
+    expect(hasPlugin(createPreviewExtension(true))).toBe(true)
+    expect(hasPlugin(createPreviewExtension(false))).toBe(false)
   })
 })
 
@@ -85,7 +85,7 @@ describe('the markdown the editor is written in', () => {
   // The tree a state is made with is what its first parse reached in its time,
   // so the whole tree is the one the parse finished.
   const parseProse = (doc: string): Tree => {
-    const state = EditorState.create({ doc, extensions: [prose()] })
+    const state = EditorState.create({ doc, extensions: [createProseExtension()] })
     const tree = ensureSyntaxTree(state, doc.length, 5000)
     if (!tree) throw new Error('the parse did not finish in time')
     return tree
