@@ -14,17 +14,17 @@ export class NoteEditor {
     this.panels = new TabPanels(host)
   }
 
-  panel(): Locator {
-    return this.panels.ofNote(this.title)
+  getPanel(): Locator {
+    return this.panels.getByNote(this.title)
   }
 
-  text(): Locator {
-    return this.panel().locator('.note__text .cm-content')
+  getText(): Locator {
+    return this.getPanel().locator('.note__text .cm-content')
   }
 
   /** The text of the line that holds the cursor, or null while the editor draws no cursor: the cursor is read where the editor draws it. */
   async readCursorLine(): Promise<string | null> {
-    return this.text().evaluate((content) => {
+    return this.getText().evaluate((content) => {
       const cursor = content.closest('.cm-editor')?.querySelector('.cm-cursor-primary, .cm-cursor')
       if (!cursor) return null
       const box = cursor.getBoundingClientRect()
@@ -38,27 +38,27 @@ export class NoteEditor {
   }
 
   /** The alert the note shows above its text. */
-  banner(): Locator {
-    return this.panel().getByRole('alert')
+  getBanner(): Locator {
+    return this.getPanel().getByRole('alert')
   }
 
   /** The first place in the text that has the words of a link. */
   link(name: string): Locator {
-    return this.text().getByText(name, { exact: false }).first()
+    return this.getText().getByText(name, { exact: false }).first()
   }
 
   /** The person clicks the text, goes to its end and types. */
-  async typeAtEnd(typed: string): Promise<void> {
-    await this.text().click()
+  async enterTextAtEnd(typed: string): Promise<void> {
+    await this.getText().click()
     await this.host.page.keyboard.press('ControlOrMeta+End')
     await this.host.page.keyboard.type(typed)
   }
 
   /** The person selects the whole text of the note and types it again with the words replaced. */
   async replace(from: string, to: string): Promise<void> {
-    const text = this.text()
-    await text.click()
-    const current = (await text.innerText()).replace(/\n$/, '')
+    const getText = this.getText()
+    await getText.click()
+    const current = (await getText.innerText()).replace(/\n$/, '')
     if (!current.includes(from)) throw new Error(`the note has no "${from}" to replace: it reads "${current}"`)
     await this.host.page.keyboard.press('ControlOrMeta+a')
     await this.host.page.keyboard.type(current.replace(from, to))

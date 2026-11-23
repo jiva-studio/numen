@@ -307,7 +307,7 @@ export const openNote = async (page: Page, notePath: string): Promise<Locator> =
 }
 
 /** Types at the end of the note in front. */
-export const typeAtEnd = async (page: Page, text: Locator, typed: string): Promise<void> => {
+export const enterTextAtEnd = async (page: Page, text: Locator, typed: string): Promise<void> => {
   await text.click()
   await page.keyboard.press('ControlOrMeta+End')
   await page.keyboard.type(typed)

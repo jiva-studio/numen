@@ -118,7 +118,7 @@ func runApplication(handler http.Handler, target *shutdown.Sequence) error {
 		// Runs on the thread the window is drawn on, once the application has stopped dispatching.
 		PostShutdown: target.Run,
 	})
-	app.Window.NewWithOptions(frame.Window(application.WebviewWindowOptions{
+	app.Window.NewWithOptions(frame.ApplyPlatformFrame(application.WebviewWindowOptions{
 		Title:  "numen — flashcards",
 		Width:  760,
 		Height: 720,
