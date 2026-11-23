@@ -22,8 +22,10 @@ func NewStartRestore(d Deps) *StartRestore { return &StartRestore{completion: d.
 
 // Execute parses the words (ErrInvalidWords), refuses when an identity exists (ErrIdentityExists), derives the
 // recovery key, makes a device key and keeps both in memory, replacing an earlier pending restore. Nothing is
-// written. When no plugin completes the restore within 30 seconds, it completes as a restore with no chain. A pending restore that is not completed within 10 minutes is dropped with its keys.
-func (u *StartRestore) Execute(ctx context.Context, words []string) error {
+// written. The mark is the chain mark printed on the recovery kit, or empty: the restore is refused when the chain of the server does not
+// contain it (ErrInvalidChainMark for a text that is no mark). When no plugin completes the restore within 30 seconds, it completes as a
+// restore with no chain, unless a mark was given. A pending restore that is not completed within 10 minutes is dropped with its keys.
+func (u *StartRestore) Execute(ctx context.Context, words []string, mark string) error {
 	parsed, err := identitylib.ParseRecoveryWords(words)
 	if err != nil {
 		return fmt.Errorf("%w: %w", identitydomain.ErrInvalidWords, err)
@@ -35,16 +37,31 @@ func (u *StartRestore) Execute(ctx context.Context, words []string) error {
 	if err != nil {
 		return err
 	}
-	return u.completion.start(ctx, recovery)
+	return u.completion.start(ctx, recovery, mark)
 }
 
-func (c restoreCompletion) start(ctx context.Context, recovery identitylib.RecoveryKey) error {
+func readMark(text string) (identitylib.Mark, error) {
+	if text == "" {
+		return identitylib.Mark{}, nil
+	}
+	mark, err := identitylib.ParseMark(text)
+	if err != nil {
+		return identitylib.Mark{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidChainMark, err)
+	}
+	return mark, nil
+}
+
+func (c restoreCompletion) start(ctx context.Context, recovery identitylib.RecoveryKey, markText string) error {
+	mark, err := readMark(markText)
+	if err != nil {
+		return err
+	}
 	clock := c.builder.clock
 	device, err := identitylib.NewDeviceKey(c.builder.random)
 	if err != nil {
 		return err
 	}
-	restore := &pendingRestore{recovery: recovery, device: device, startedAt: clock.Now(), replaced: make(chan struct{})}
+	restore := &pendingRestore{recovery: recovery, device: device, mark: mark, startedAt: clock.Now(), replaced: make(chan struct{})}
 	c.restores.replace(restore)
 	go c.completeAfterFallback(context.WithoutCancel(ctx), restore, clock.After(restoreFallback))
 	go c.expireAfterLifetime(restore, clock.After(restoreLifetime))

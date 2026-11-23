@@ -166,7 +166,7 @@ func TestOpenIdentityUseCases_RestoresTheAccountFromTwoSheetsOfTheInstallation(t
 	if err := use.Identity.Delete.Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
-	if err := use.Kit.Restore.Execute(t.Context(), sheets); err != nil {
+	if err := use.Kit.Restore.Execute(t.Context(), sheets, ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := openAccount(res).CompleteRestore(t.Context(), syncPluginID, nil); err != nil {
