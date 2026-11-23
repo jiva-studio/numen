@@ -45,6 +45,15 @@ const (
 	// SubscriptionServiceChangePlanProcedure is the fully-qualified name of the SubscriptionService's
 	// ChangePlan RPC.
 	SubscriptionServiceChangePlanProcedure = "/numen.sync.v1.SubscriptionService/ChangePlan"
+	// SubscriptionServiceListProductsProcedure is the fully-qualified name of the SubscriptionService's
+	// ListProducts RPC.
+	SubscriptionServiceListProductsProcedure = "/numen.sync.v1.SubscriptionService/ListProducts"
+	// SubscriptionServiceGetEntitlementsProcedure is the fully-qualified name of the
+	// SubscriptionService's GetEntitlements RPC.
+	SubscriptionServiceGetEntitlementsProcedure = "/numen.sync.v1.SubscriptionService/GetEntitlements"
+	// SubscriptionServiceCreatePortalSessionProcedure is the fully-qualified name of the
+	// SubscriptionService's CreatePortalSession RPC.
+	SubscriptionServiceCreatePortalSessionProcedure = "/numen.sync.v1.SubscriptionService/CreatePortalSession"
 )
 
 // SubscriptionServiceClient is a client for the numen.sync.v1.SubscriptionService service.
@@ -60,6 +69,13 @@ type SubscriptionServiceClient interface {
 	// change. It is FAILED_PRECONDITION without an active subscription bought by payment, ALREADY_EXISTS for the plan
 	// the account has, INVALID_ARGUMENT for an unknown plan and UNAVAILABLE when the payment provider fails.
 	ChangePlan(context.Context, *connect.Request[v1.ChangePlanRequest]) (*connect.Response[v1.ChangePlanResponse], error)
+	// ListProducts returns the products the server sells that are no plans: those without a quota, such as a one-time purchase.
+	ListProducts(context.Context, *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error)
+	// GetEntitlements returns every product the account of the session owns right now: the phase is ACTIVE or GRACE.
+	GetEntitlements(context.Context, *connect.Request[v1.GetEntitlementsRequest]) (*connect.Response[v1.GetEntitlementsResponse], error)
+	// CreatePortalSession returns the address of the customer portal of the payment provider, where the person manages the subscription.
+	// It is FAILED_PRECONDITION for an account that never paid by payment and UNAVAILABLE when the payment provider fails.
+	CreatePortalSession(context.Context, *connect.Request[v1.CreatePortalSessionRequest]) (*connect.Response[v1.CreatePortalSessionResponse], error)
 }
 
 // NewSubscriptionServiceClient constructs a client for the numen.sync.v1.SubscriptionService
@@ -97,15 +113,36 @@ func NewSubscriptionServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(subscriptionServiceMethods.ByName("ChangePlan")),
 			connect.WithClientOptions(opts...),
 		),
+		listProducts: connect.NewClient[v1.ListProductsRequest, v1.ListProductsResponse](
+			httpClient,
+			baseURL+SubscriptionServiceListProductsProcedure,
+			connect.WithSchema(subscriptionServiceMethods.ByName("ListProducts")),
+			connect.WithClientOptions(opts...),
+		),
+		getEntitlements: connect.NewClient[v1.GetEntitlementsRequest, v1.GetEntitlementsResponse](
+			httpClient,
+			baseURL+SubscriptionServiceGetEntitlementsProcedure,
+			connect.WithSchema(subscriptionServiceMethods.ByName("GetEntitlements")),
+			connect.WithClientOptions(opts...),
+		),
+		createPortalSession: connect.NewClient[v1.CreatePortalSessionRequest, v1.CreatePortalSessionResponse](
+			httpClient,
+			baseURL+SubscriptionServiceCreatePortalSessionProcedure,
+			connect.WithSchema(subscriptionServiceMethods.ByName("CreatePortalSession")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // subscriptionServiceClient implements SubscriptionServiceClient.
 type subscriptionServiceClient struct {
-	getSubscription *connect.Client[v1.GetSubscriptionRequest, v1.GetSubscriptionResponse]
-	listPlans       *connect.Client[v1.ListPlansRequest, v1.ListPlansResponse]
-	createCheckout  *connect.Client[v1.CreateCheckoutRequest, v1.CreateCheckoutResponse]
-	changePlan      *connect.Client[v1.ChangePlanRequest, v1.ChangePlanResponse]
+	getSubscription     *connect.Client[v1.GetSubscriptionRequest, v1.GetSubscriptionResponse]
+	listPlans           *connect.Client[v1.ListPlansRequest, v1.ListPlansResponse]
+	createCheckout      *connect.Client[v1.CreateCheckoutRequest, v1.CreateCheckoutResponse]
+	changePlan          *connect.Client[v1.ChangePlanRequest, v1.ChangePlanResponse]
+	listProducts        *connect.Client[v1.ListProductsRequest, v1.ListProductsResponse]
+	getEntitlements     *connect.Client[v1.GetEntitlementsRequest, v1.GetEntitlementsResponse]
+	createPortalSession *connect.Client[v1.CreatePortalSessionRequest, v1.CreatePortalSessionResponse]
 }
 
 // GetSubscription calls numen.sync.v1.SubscriptionService.GetSubscription.
@@ -128,6 +165,21 @@ func (c *subscriptionServiceClient) ChangePlan(ctx context.Context, req *connect
 	return c.changePlan.CallUnary(ctx, req)
 }
 
+// ListProducts calls numen.sync.v1.SubscriptionService.ListProducts.
+func (c *subscriptionServiceClient) ListProducts(ctx context.Context, req *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error) {
+	return c.listProducts.CallUnary(ctx, req)
+}
+
+// GetEntitlements calls numen.sync.v1.SubscriptionService.GetEntitlements.
+func (c *subscriptionServiceClient) GetEntitlements(ctx context.Context, req *connect.Request[v1.GetEntitlementsRequest]) (*connect.Response[v1.GetEntitlementsResponse], error) {
+	return c.getEntitlements.CallUnary(ctx, req)
+}
+
+// CreatePortalSession calls numen.sync.v1.SubscriptionService.CreatePortalSession.
+func (c *subscriptionServiceClient) CreatePortalSession(ctx context.Context, req *connect.Request[v1.CreatePortalSessionRequest]) (*connect.Response[v1.CreatePortalSessionResponse], error) {
+	return c.createPortalSession.CallUnary(ctx, req)
+}
+
 // SubscriptionServiceHandler is an implementation of the numen.sync.v1.SubscriptionService service.
 type SubscriptionServiceHandler interface {
 	// GetSubscription returns the phase of the subscription of the account of the session, its plan and its times.
@@ -141,6 +193,13 @@ type SubscriptionServiceHandler interface {
 	// change. It is FAILED_PRECONDITION without an active subscription bought by payment, ALREADY_EXISTS for the plan
 	// the account has, INVALID_ARGUMENT for an unknown plan and UNAVAILABLE when the payment provider fails.
 	ChangePlan(context.Context, *connect.Request[v1.ChangePlanRequest]) (*connect.Response[v1.ChangePlanResponse], error)
+	// ListProducts returns the products the server sells that are no plans: those without a quota, such as a one-time purchase.
+	ListProducts(context.Context, *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error)
+	// GetEntitlements returns every product the account of the session owns right now: the phase is ACTIVE or GRACE.
+	GetEntitlements(context.Context, *connect.Request[v1.GetEntitlementsRequest]) (*connect.Response[v1.GetEntitlementsResponse], error)
+	// CreatePortalSession returns the address of the customer portal of the payment provider, where the person manages the subscription.
+	// It is FAILED_PRECONDITION for an account that never paid by payment and UNAVAILABLE when the payment provider fails.
+	CreatePortalSession(context.Context, *connect.Request[v1.CreatePortalSessionRequest]) (*connect.Response[v1.CreatePortalSessionResponse], error)
 }
 
 // NewSubscriptionServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -174,6 +233,24 @@ func NewSubscriptionServiceHandler(svc SubscriptionServiceHandler, opts ...conne
 		connect.WithSchema(subscriptionServiceMethods.ByName("ChangePlan")),
 		connect.WithHandlerOptions(opts...),
 	)
+	subscriptionServiceListProductsHandler := connect.NewUnaryHandler(
+		SubscriptionServiceListProductsProcedure,
+		svc.ListProducts,
+		connect.WithSchema(subscriptionServiceMethods.ByName("ListProducts")),
+		connect.WithHandlerOptions(opts...),
+	)
+	subscriptionServiceGetEntitlementsHandler := connect.NewUnaryHandler(
+		SubscriptionServiceGetEntitlementsProcedure,
+		svc.GetEntitlements,
+		connect.WithSchema(subscriptionServiceMethods.ByName("GetEntitlements")),
+		connect.WithHandlerOptions(opts...),
+	)
+	subscriptionServiceCreatePortalSessionHandler := connect.NewUnaryHandler(
+		SubscriptionServiceCreatePortalSessionProcedure,
+		svc.CreatePortalSession,
+		connect.WithSchema(subscriptionServiceMethods.ByName("CreatePortalSession")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.sync.v1.SubscriptionService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SubscriptionServiceGetSubscriptionProcedure:
@@ -184,6 +261,12 @@ func NewSubscriptionServiceHandler(svc SubscriptionServiceHandler, opts ...conne
 			subscriptionServiceCreateCheckoutHandler.ServeHTTP(w, r)
 		case SubscriptionServiceChangePlanProcedure:
 			subscriptionServiceChangePlanHandler.ServeHTTP(w, r)
+		case SubscriptionServiceListProductsProcedure:
+			subscriptionServiceListProductsHandler.ServeHTTP(w, r)
+		case SubscriptionServiceGetEntitlementsProcedure:
+			subscriptionServiceGetEntitlementsHandler.ServeHTTP(w, r)
+		case SubscriptionServiceCreatePortalSessionProcedure:
+			subscriptionServiceCreatePortalSessionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -207,4 +290,16 @@ func (UnimplementedSubscriptionServiceHandler) CreateCheckout(context.Context, *
 
 func (UnimplementedSubscriptionServiceHandler) ChangePlan(context.Context, *connect.Request[v1.ChangePlanRequest]) (*connect.Response[v1.ChangePlanResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.SubscriptionService.ChangePlan is not implemented"))
+}
+
+func (UnimplementedSubscriptionServiceHandler) ListProducts(context.Context, *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.SubscriptionService.ListProducts is not implemented"))
+}
+
+func (UnimplementedSubscriptionServiceHandler) GetEntitlements(context.Context, *connect.Request[v1.GetEntitlementsRequest]) (*connect.Response[v1.GetEntitlementsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.SubscriptionService.GetEntitlements is not implemented"))
+}
+
+func (UnimplementedSubscriptionServiceHandler) CreatePortalSession(context.Context, *connect.Request[v1.CreatePortalSessionRequest]) (*connect.Response[v1.CreatePortalSessionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.sync.v1.SubscriptionService.CreatePortalSession is not implemented"))
 }

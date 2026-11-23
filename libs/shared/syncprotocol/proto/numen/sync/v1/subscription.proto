@@ -20,6 +20,16 @@ service SubscriptionService {
   // change. It is FAILED_PRECONDITION without an active subscription bought by payment, ALREADY_EXISTS for the plan
   // the account has, INVALID_ARGUMENT for an unknown plan and UNAVAILABLE when the payment provider fails.
   rpc ChangePlan(ChangePlanRequest) returns (ChangePlanResponse);
+
+  // ListProducts returns the products the server sells that are no plans: those without a quota, such as a one-time purchase.
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+
+  // GetEntitlements returns every product the account of the session owns right now: the phase is ACTIVE or GRACE.
+  rpc GetEntitlements(GetEntitlementsRequest) returns (GetEntitlementsResponse);
+
+  // CreatePortalSession returns the address of the customer portal of the payment provider, where the person manages the subscription.
+  // It is FAILED_PRECONDITION for an account that never paid by payment and UNAVAILABLE when the payment provider fails.
+  rpc CreatePortalSession(CreatePortalSessionRequest) returns (CreatePortalSessionResponse);
 }
 
 enum SubscriptionPhase {
@@ -51,6 +61,8 @@ message GetSubscriptionResponse {
   // used_bytes is the space the account uses against the quota, 0 while the phase is NONE or DELETED. It may be
   // above quota_bytes after a change to a smaller plan.
   uint64 used_bytes = 7;
+  // is_trial is true while the subscription runs a trial that no payment has followed; period_end_at is then the end of the trial.
+  bool is_trial = 8;
 }
 
 message Plan {
@@ -79,6 +91,50 @@ message CreateCheckoutRequest {
 message CreateCheckoutResponse {
   // checkout_url is an https address, or http for a server on a loopback host.
   string checkout_url = 1;
+}
+
+message Product {
+  // id is the id of the product at the payment provider; CreateCheckout takes it.
+  string id = 1;
+  // slug is the short name of the product, such as link.
+  string slug = 2;
+  string name = 3;
+  uint64 price_cents = 4;
+  string currency = 5;
+  // one_time is true for a single payment and false for a subscription.
+  bool one_time = 6;
+}
+
+message ListProductsRequest {}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+}
+
+message Entitlement {
+  // product is the slug of the product.
+  string product = 1;
+  // valid_until is unix seconds: the end of the paid period or of the trial, and 100 years after the purchase for a one-time product.
+  int64 valid_until = 2;
+  // phase is ACTIVE or GRACE.
+  SubscriptionPhase phase = 3;
+  // quota_bytes is 0 for a product without a quota.
+  uint64 quota_bytes = 4;
+  bool is_trial = 5;
+}
+
+message GetEntitlementsRequest {}
+
+message GetEntitlementsResponse {
+  // entitlements are ordered by product.
+  repeated Entitlement entitlements = 1;
+}
+
+message CreatePortalSessionRequest {}
+
+message CreatePortalSessionResponse {
+  // portal_url is an https address.
+  string portal_url = 1;
 }
 
 message ChangePlanRequest {

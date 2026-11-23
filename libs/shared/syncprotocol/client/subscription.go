@@ -100,3 +100,19 @@ func (c *SubscriptionClient) ListPlans(_ context.Context) ([]syncprotocol.Plan, 
 func (c *SubscriptionClient) ChangePlan(_ context.Context, _ string) (syncprotocol.Subscription, error) {
 	return syncprotocol.Subscription{}, errors.New("not implemented")
 }
+
+// ListProducts returns the products the server sells that are no plans, in the order of the server. A server that sells none is ErrBillingUnavailable.
+func (c *SubscriptionClient) ListProducts(_ context.Context) ([]syncprotocol.Product, error) {
+	return nil, errors.New("not implemented")
+}
+
+// GetEntitlements returns every product the account of the session owns right now, ordered by product slug. A server without billing is ErrBillingUnavailable.
+func (c *SubscriptionClient) GetEntitlements(_ context.Context) ([]syncprotocol.Entitlement, error) {
+	return nil, errors.New("not implemented")
+}
+
+// CreatePortalSession returns the address of the customer portal of the payment provider. The refusals are ErrNoActiveSubscription for an account that
+// never paid by payment, ErrBillingUnavailable and ErrUnreachable when the payment provider fails.
+func (c *SubscriptionClient) CreatePortalSession(_ context.Context) (string, error) {
+	return "", errors.New("not implemented")
+}
