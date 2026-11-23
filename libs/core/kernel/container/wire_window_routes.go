@@ -160,9 +160,9 @@ func mountWorkspace(w *windowRoutes, db *vaultIndex) {
 func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds windowport.TabKinds, wake indexing.WriteWake) {
 	state := w.session
 	queries := vaultQueries(db)
-	follow := note.NewFollowIndex(w.page.Writes)
+	classify := note.NewClassifyWriteError(w.page.Writes)
 	prose := notewindow.NewProse(
-		&state.Runtime, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename, &notewindow.Writes{Follow: follow, WriteWake: wake},
+		&state.Runtime, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename, &notewindow.Writes{Classify: classify, WriteWake: wake},
 	)
 	outlining := notewindow.NewOutline(
 		&state.Runtime,
@@ -171,7 +171,7 @@ func mountNote(w *windowRoutes, notes *noteUseCases, db *vaultIndex, kinds windo
 		query.NewListHeadings(db.NoteQueries()),
 	)
 	links := notewindow.NewLinks(
-		&state.Runtime, query.NewResolveLinks(db.NoteQueries()), &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, follow,
+		&state.Runtime, query.NewResolveLinks(db.NoteQueries()), &notes.Connect.CreateInRelation, &queries.Refer.Backlinks, classify,
 	)
 	connections := notewindow.NewConnections(
 		&state.Runtime, &queries.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.DeleteConnectionSide, &notes.Connect.DeleteConnection, &notes.Connect.Join,

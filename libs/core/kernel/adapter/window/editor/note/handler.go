@@ -90,17 +90,17 @@ type Links struct {
 	resolveLinks  *query.ResolveLinks
 	createRelated *note.CreateInRelation
 	getBacklinks  *query.ListBacklinks
-	follow        *note.FollowIndex
+	classify      *note.ClassifyWriteError
 }
 
 // NewLinks is the part of NoteService that works the links of notes.
 func NewLinks(
 	window Vault,
 	resolve *query.ResolveLinks, create *note.CreateInRelation, backlinks *query.ListBacklinks,
-	follow *note.FollowIndex,
+	classify *note.ClassifyWriteError,
 ) *Links {
 	return &Links{
-		vault: window, resolveLinks: resolve, createRelated: create, getBacklinks: backlinks, follow: follow,
+		vault: window, resolveLinks: resolve, createRelated: create, getBacklinks: backlinks, classify: classify,
 	}
 }
 

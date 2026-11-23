@@ -44,5 +44,5 @@ type testWindow struct {
 func newTestWindow(tasks *run.Tasks, frame Frame, emit func(string)) *testWindow {
 	session := NewSession(frame)
 	pages := NewPageAccess(tasks, session)
-	return &testWindow{Session: session, PageAccess: pages, Events: &Events{Emit: emit}, writeReport: note.Writes{Follow: usenote.NewFollowIndex(pages.Writes)}}
+	return &testWindow{Session: session, PageAccess: pages, Events: &Events{Emit: emit}, writeReport: note.Writes{Classify: usenote.NewClassifyWriteError(pages.Writes)}}
 }

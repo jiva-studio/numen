@@ -82,7 +82,7 @@ func (s *Services) UseNotes() {
 		s.state.Notices,
 		notewindow.NewProse(s.state, use.Read, use.Write, use.Create, use.Rename, &s.state.writeReport),
 		notewindow.NewOutline(s.state, use.OpeningNote, use.RelatedNotes, use.Headings),
-		notewindow.NewLinks(s.state, use.ResolveLinks, nil, nil, note.NewFollowIndex(writes)),
+		notewindow.NewLinks(s.state, use.ResolveLinks, nil, nil, note.NewClassifyWriteError(writes)),
 		notewindow.NewConnections(s.state, nil, nil, nil, nil, nil),
 	)
 }

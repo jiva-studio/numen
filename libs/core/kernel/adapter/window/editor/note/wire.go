@@ -53,9 +53,9 @@ func instant(nanos int64) time.Time {
 	return time.Unix(0, nanos)
 }
 
-// Writes tells what a write of the window did: whether the index followed it, and the embedder that a note
+// Writes classifies the error of a write by whether the index followed it, and wakes the embedder when a note
 // holds new prose.
 type Writes struct {
-	Follow *note.FollowIndex
+	Classify *note.ClassifyWriteError
 	indexing.WriteWake
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 )
 
-func TestFollowIndex_DropsOnlyTheOutdatedIndexError(t *testing.T) {
+func TestClassifyWriteError_DropsOnlyTheOutdatedIndexError(t *testing.T) {
 	t.Parallel()
 	refused := errors.New("refused")
 	for name, c := range map[string]struct {
@@ -23,7 +23,7 @@ func TestFollowIndex_DropsOnlyTheOutdatedIndexError(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			outdated, err := note.NewFollowIndex(&followReport{}).Settle(c.err)
+			outdated, err := note.NewClassifyWriteError(&followReport{}).Execute(c.err)
 			if outdated != c.outdated || !errors.Is(err, c.want) || (c.want == nil && err != nil) {
 				t.Errorf("got outdated %v, err %v; want %v, %v", outdated, err, c.outdated, c.want)
 			}

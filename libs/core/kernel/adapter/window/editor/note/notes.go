@@ -55,7 +55,7 @@ func (h *Prose) WriteNote(
 	}
 	pos, err := h.save.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
 	h.writes.ReportWrites(showing.ID, err)
-	indexOutdated, err := h.writes.Follow.Settle(err)
+	indexOutdated, err := h.writes.Classify.Execute(err)
 	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
@@ -93,7 +93,7 @@ func (h *Prose) CreateNote(
 	}
 	creating := note.NewNote{Title: r.Msg.GetTitle(), Path: r.Msg.GetPath(), Named: links}
 	made, err := h.createNote(ctx, showing, creating)
-	indexOutdated, err := h.writes.Follow.Settle(err)
+	indexOutdated, err := h.writes.Classify.Execute(err)
 	switch {
 	case errors.Is(err, note.ErrInvalidLink):
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -382,7 +382,7 @@ func (h *Prose) RenameNote(
 		return nil, err
 	}
 	renamed, err := h.rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
-	isIndexOutdated, err := h.writes.Follow.Settle(err)
+	isIndexOutdated, err := h.writes.Classify.Execute(err)
 	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
