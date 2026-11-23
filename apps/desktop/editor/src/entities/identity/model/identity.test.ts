@@ -140,8 +140,8 @@ describe('the identity store', () => {
   })
 
   it('describes each failure with its own words', () => {
-    const texts = (['invalidWords', 'identityExists', 'keyStoreFailed'] as const).map(
-      (error) => IDENTITY_WORDS.describeFailure({ error, message: '' }),
+    const texts = (['invalidWords', 'identityExists', 'keyStoreFailed'] as const).map((error) =>
+      IDENTITY_WORDS.describeFailure({ error, message: '' }),
     )
     expect(new Set(texts).size).toBe(3)
     expect(texts.every((text) => text !== '')).toBe(true)
