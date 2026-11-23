@@ -1,8 +1,9 @@
 import { onScopeDispose, ref } from 'vue'
-import type { PluginSettings, Result } from '@numen/plugin-sdk'
+import type { PluginContext, PluginSettings } from '@numen/plugin-sdk'
 import { runInBackground } from '@numen/ui'
 import { getFailureCode, type SubscriptionClient } from '../api/subscription'
 import { subscriptionClient } from '../api/wire'
+import { WORDS as words } from '../words'
 import { applyAnswer, createAccount, getMessage } from './subscriptionAccount'
 
 const REFRESH_MS = { noIdentity: 3000, ready: 10_000, unreachable: 30_000 } as const
@@ -11,7 +12,7 @@ const SERVER_SETTING = 'server'
 /** refreshMs is the wait before the next read by the last status; settings hold the server address the card reads and follows. */
 export interface SubscriptionSessionOptions {
   readonly client?: SubscriptionClient | undefined
-  readonly openExternal: (url: string) => Promise<Result<null>>
+  readonly openExternal: PluginContext['identity']['openExternal']
   readonly refreshMs?: Readonly<Record<'noIdentity' | 'ready' | 'unreachable', number>> | undefined
   readonly settings?: Pick<PluginSettings, 'get' | 'onChange'> | undefined
 }
@@ -113,7 +114,7 @@ export function useSubscriptionSession(options: SubscriptionSessionOptions) {
     problem.value = ''
     try {
       const opened = await openExternal(await client.createPortalSession())
-      if (!opened.ok) problem.value = opened.error
+      if (!opened.ok) problem.value = words.pageNotOpened[opened.error.error]
     } catch (failure) {
       problem.value = getMessage(failure)
     }

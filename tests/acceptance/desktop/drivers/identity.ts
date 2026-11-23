@@ -393,7 +393,7 @@ export class IdentityDriver {
   }
 
   /** Pays on the page of the stand-in and waits until the card shows the subscription as active. */
-  async buy(): Promise<void> {
+  async startPurchase(): Promise<void> {
     const payment = await this.openPayment()
     await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
     await payment.close()
@@ -412,7 +412,7 @@ export class IdentityDriver {
   }
 
   /** Buys the plan of a name on the page of the stand-in and waits until the card shows the subscription as active. */
-  async buyPlan(name: string): Promise<void> {
+  async choosePlan(name: string): Promise<void> {
     const card = this.getCard(await this.showPage())
     const opened = this.scenario.page.waitForEvent('popup')
     await card.getByRole('button', { name: getChoosePattern(name) }).click()

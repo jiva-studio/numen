@@ -147,14 +147,14 @@ export class SyncDriver {
   /** Starts a trial of the plan on the account, as the stand-in of the payment does for an account that asked for one. */
   async startTrial(plan: string): Promise<void> {
     await this.expectSessionForAccount()
-    await this.postAdmin(`trial?plan=${plan.toLowerCase()}`, 'the start of the trial')
+    await this.sendAdminRequest(`trial?plan=${plan.toLowerCase()}`, 'the start of the trial')
     this.trial = { plan, endsAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000) }
   }
 
   /** Cancels the trial the account runs: the subscription stays until the trial ends. */
   async cancelTrial(): Promise<void> {
     if (this.trial === undefined) throw new Error('no trial started: begin with the person starts a trial of a plan')
-    await this.postAdmin(`cancel-trial?plan=${this.trial.plan.toLowerCase()}`, 'the cancel of the trial')
+    await this.sendAdminRequest(`cancel-trial?plan=${this.trial.plan.toLowerCase()}`, 'the cancel of the trial')
   }
 
   /** The day the trial that started last ends. */
@@ -163,7 +163,7 @@ export class SyncDriver {
     return this.trial.endsAt
   }
 
-  private async postAdmin(request: string, what: string): Promise<void> {
+  private async sendAdminRequest(request: string, what: string): Promise<void> {
     const answer = await fetch(`${this.requireRunning().address}/admin/${request}`, { method: 'POST' })
     if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to ${what}`)
   }

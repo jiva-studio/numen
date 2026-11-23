@@ -133,7 +133,7 @@ Then('the subscription is active{on}', async ({ person }, computer: ComputerName
 })
 
 When('the person buys the subscription', async ({ person }) => {
-  await person.identity.buy()
+  await person.identity.startPurchase()
 })
 
 When('the person opens the payment page without paying', async ({ person }) => {
@@ -157,7 +157,7 @@ Given('a sync server that sells the plans {plans} runs', async ({ person }, plan
 })
 
 When('the person buys the plan {string}', async ({ person }, name: string) => {
-  await person.identity.buyPlan(name)
+  await person.identity.choosePlan(name)
 })
 
 Then('the page offers to buy the plan {string} with {int} GB', async ({ person }, name: string, gigabytes: number) => {
