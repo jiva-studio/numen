@@ -53,7 +53,6 @@ func call[T any](ctx context.Context, c *Cloud, do func() (T, error)) (T, error)
 	return do()
 }
 
-// AppendCatalogEntry adds an entry to the catalog.
 func (c *Cloud) AppendCatalogEntry(ctx context.Context, entry *syncv1.CatalogEntry) (*syncv1.AppendCatalogEntryResponse, error) {
 	return call(ctx, c, func() (*syncv1.AppendCatalogEntryResponse, error) { return c.catalog.AppendCatalogEntry(ctx, entry) })
 }
@@ -63,7 +62,6 @@ func (c *Cloud) GetCatalog(ctx context.Context, sinceVersion uint64) ([]*syncv1.
 	return call(ctx, c, func() ([]*syncv1.CatalogEntry, error) { return c.catalog.GetCatalog(ctx, sinceVersion) })
 }
 
-// CommitRevisions commits a batch of revisions of a vault.
 func (c *Cloud) CommitRevisions(ctx context.Context, vaultID []byte, revisions []*syncv1.Revision) (*syncv1.CommitRevisionsResponse, error) {
 	return call(ctx, c, func() (*syncv1.CommitRevisionsResponse, error) {
 		return c.revisions.CommitRevisions(ctx, vaultID, revisions)
@@ -82,7 +80,6 @@ func (c *Cloud) ReserveBlobs(ctx context.Context, vaultID []byte, sizes []uint64
 	return call(ctx, c, func() ([]*syncv1.BlobUpload, error) { return c.blobs.ReserveBlobs(ctx, vaultID, sizes) })
 }
 
-// GetBlobUrls returns the download of each blob.
 func (c *Cloud) GetBlobUrls(ctx context.Context, vaultID []byte, blobIDs [][]byte) ([]*syncv1.BlobDownload, error) {
 	return call(ctx, c, func() ([]*syncv1.BlobDownload, error) { return c.blobs.GetBlobUrls(ctx, vaultID, blobIDs) })
 }
@@ -97,7 +94,6 @@ func (c *Cloud) PutBlob(ctx context.Context, url string, body []byte) error {
 	return syncprotocol.PutBlob(ctx, c.http, url, body)
 }
 
-// GetBlob downloads a blob from its URL.
 func (c *Cloud) GetBlob(ctx context.Context, url string) ([]byte, error) {
 	return syncprotocol.GetBlob(ctx, c.http, url)
 }

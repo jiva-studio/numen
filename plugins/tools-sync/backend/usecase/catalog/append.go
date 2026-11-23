@@ -15,8 +15,6 @@ type entryInput struct {
 	body       vaultlink.CatalogBody
 }
 
-// appendEntry adds an entry after the head of the catalog, and reads the catalog again when another device was
-// first, up to three times.
 func (r reader) appendEntry(ctx context.Context, in entryInput) error {
 	for range maxTries {
 		entries, err := r.read(ctx)

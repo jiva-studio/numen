@@ -7,10 +7,9 @@ import (
 	"errors"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/account"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
@@ -79,7 +78,7 @@ func (r *tamperedCatalog) GetCatalog(ctx context.Context, since uint64) ([]*sync
 	}
 	cloned := make([]*syncv1.CatalogEntry, len(entries))
 	for i, entry := range entries {
-		cloned[i] = proto.Clone(entry).(*syncv1.CatalogEntry)
+		cloned[i] = fakeserver.CloneCatalogEntry(entry)
 	}
 	return r.change(cloned), nil
 }
@@ -250,7 +249,7 @@ func TestConnectVault_FailsAfterThreeLostRaces(t *testing.T) {
 		rival++
 		name := "Other " + string(rune('0'+rival))
 		second.AddVault(t, name)
-		second.Connect(t, name)
+		second.Connect(t, domain.VaultID(name))
 	}
 	deps := w.first.CatalogDeps()
 	deps.Catalog = racing

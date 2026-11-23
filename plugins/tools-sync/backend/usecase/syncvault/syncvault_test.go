@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
@@ -171,14 +169,14 @@ func TestSyncVault_ShowsTheServerNoPlainTextOfTheVault(t *testing.T) {
 
 	wire := bytes.Clone(p.server.GetStoredBlobs(t))
 	for _, entry := range p.a.ReadCatalog(t) {
-		raw, err := proto.Marshal(entry)
+		raw, err := fakeserver.EncodeMessage(entry)
 		if err != nil {
 			t.Fatal(err)
 		}
 		wire = append(wire, raw...)
 	}
 	for _, change := range p.a.ReadChanges(t, p.a.GetRemoteID(t, source)) {
-		raw, err := proto.Marshal(change)
+		raw, err := fakeserver.EncodeMessage(change)
 		if err != nil {
 			t.Fatal(err)
 		}

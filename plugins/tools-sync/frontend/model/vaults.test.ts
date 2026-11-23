@@ -45,15 +45,19 @@ describe('useVaults', () => {
     ])
     const model = createModel(client)
 
-    await model.load()
+    await model.actions.load()
 
-    expect(model.status.value).toBe('ready')
-    expect(model.rows.value.map((row) => row.stateLabel)).toStrictEqual([
+    expect(model.state.status.value).toBe('ready')
+    expect(model.state.rows.value.map((row) => row.stateLabel)).toStrictEqual([
       'Not connected',
       'Connected',
       'a copy of a connected vault',
     ])
-    expect(model.rows.value.map((row) => row.name)).toStrictEqual(['Plain', 'Synced', 'Synced copy'])
+    expect(model.state.rows.value.map((row) => row.name)).toStrictEqual([
+      'Plain',
+      'Synced',
+      'Synced copy',
+    ])
   })
 
   it('says how long ago a connected vault synced', async () => {
@@ -62,9 +66,9 @@ describe('useVaults', () => {
     ])
     const model = createModel(client)
 
-    await model.load()
+    await model.actions.load()
 
-    expect(model.rows.value.at(0)?.syncedLabel).toBe('Synced 5 minutes ago')
+    expect(model.state.rows.value.at(0)?.syncedLabel).toBe('Synced 5 minutes ago')
   })
 
   it('says one minute in the singular', async () => {
@@ -73,18 +77,18 @@ describe('useVaults', () => {
     ])
     const model = createModel(client)
 
-    await model.load()
+    await model.actions.load()
 
-    expect(model.rows.value.at(0)?.syncedLabel).toBe('Synced 1 minute ago')
+    expect(model.state.rows.value.at(0)?.syncedLabel).toBe('Synced 1 minute ago')
   })
 
   it('shows no sync time for a vault that has not synced', async () => {
     const client = createClient([createVault({ state: 'connected', lastSyncedAt: '' })])
     const model = createModel(client)
 
-    await model.load()
+    await model.actions.load()
 
-    expect(model.rows.value.at(0)?.syncedLabel).toBe('')
+    expect(model.state.rows.value.at(0)?.syncedLabel).toBe('')
   })
 
   it('counts the notes changed on two computers', async () => {
@@ -95,9 +99,9 @@ describe('useVaults', () => {
     ])
     const model = createModel(client)
 
-    await model.load()
+    await model.actions.load()
 
-    expect(model.rows.value.map((row) => row.conflictLabel)).toStrictEqual([
+    expect(model.state.rows.value.map((row) => row.conflictLabel)).toStrictEqual([
       '1 note changed on two computers',
       '2 notes changed on two computers',
       '',
@@ -112,9 +116,9 @@ describe('useVaults', () => {
     ])
     const model = createModel(client)
 
-    await model.load()
+    await model.actions.load()
 
-    expect(model.rows.value.map((row) => row.canConnect)).toStrictEqual([true, false, false])
+    expect(model.state.rows.value.map((row) => row.canConnect)).toStrictEqual([true, false, false])
   })
 
   it('shows no vault and the missing identity when the device has no identity', async () => {
@@ -126,11 +130,11 @@ describe('useVaults', () => {
     })
     const model = createModel(client)
 
-    await model.load()
+    await model.actions.load()
 
-    expect(model.hasIdentity.value).toBe(false)
-    expect(model.warning.value).toBe('No identity on this device')
-    expect(model.rows.value).toStrictEqual([])
+    expect(model.state.hasIdentity.value).toBe(false)
+    expect(model.state.warning.value).toBe('No identity on this device')
+    expect(model.state.rows.value).toStrictEqual([])
   })
 
   it('keeps the error of a list that cannot be read', async () => {
@@ -138,99 +142,99 @@ describe('useVaults', () => {
     client.listVaults.mockRejectedValue(new Error('the sync backend is not running'))
     const model = createModel(client)
 
-    await model.load()
+    await model.actions.load()
 
-    expect(model.status.value).toBe('error')
-    expect(model.error.value).toBe('the sync backend is not running')
+    expect(model.state.status.value).toBe('error')
+    expect(model.state.error.value).toBe('the sync backend is not running')
   })
 
   it('opens the list of synced vaults of the account for one vault', async () => {
     const client = createClient()
     const model = createModel(client)
-    await model.load()
+    await model.actions.load()
 
-    await model.openRemote('Test')
+    await model.actions.openRemote('Test')
 
-    expect(model.openFor.value).toBe('Test')
-    expect(model.remote.value.map((one) => one.name)).toStrictEqual(['Work', 'Home'])
+    expect(model.state.openFor.value).toBe('Test')
+    expect(model.state.remote.value.map((one) => one.name)).toStrictEqual(['Work', 'Home'])
   })
 
   it('shows an empty list of synced vaults', async () => {
     const client = createClient()
     client.listRemoteVaults.mockResolvedValue({ vaults: [] })
     const model = createModel(client)
-    await model.load()
+    await model.actions.load()
 
-    await model.openRemote('Test')
+    await model.actions.openRemote('Test')
 
-    expect(model.openFor.value).toBe('Test')
-    expect(model.remote.value).toStrictEqual([])
+    expect(model.state.openFor.value).toBe('Test')
+    expect(model.state.remote.value).toStrictEqual([])
   })
 
   it('closes the list of synced vaults', async () => {
     const client = createClient()
     const model = createModel(client)
-    await model.load()
-    await model.openRemote('Test')
+    await model.actions.load()
+    await model.actions.openRemote('Test')
 
-    model.closeRemote()
+    model.actions.closeRemote()
 
-    expect(model.openFor.value).toBe('')
+    expect(model.state.openFor.value).toBe('')
   })
 
   it('connects a vault as a new synced vault and reads the vaults again', async () => {
     const client = createClient()
     const model = createModel(client)
-    await model.load()
+    await model.actions.load()
     client.listVaults.mockResolvedValue({
       vaults: [createVault({ state: 'connected' })],
     } satisfies ListVaultsResponse)
 
-    await model.connectNew('Test')
+    await model.actions.connectNew('Test')
 
     expect(client.connectVault).toHaveBeenCalledWith({ vaultId: 'Test', mode: 'new' })
-    expect(model.rows.value.at(0)?.stateLabel).toBe('Connected')
+    expect(model.state.rows.value.at(0)?.stateLabel).toBe('Connected')
   })
 
   it('connects a vault to a synced vault, closes the list and reads the vaults again', async () => {
     const client = createClient()
     const model = createModel(client)
-    await model.load()
-    await model.openRemote('Test')
+    await model.actions.load()
+    await model.actions.openRemote('Test')
     client.listVaults.mockResolvedValue({ vaults: [createVault({ state: 'connected' })] })
 
-    await model.connectExisting('Test', 'aa11')
+    await model.actions.connectExisting('Test', 'aa11')
 
     expect(client.connectVault).toHaveBeenCalledWith({
       vaultId: 'Test',
       mode: 'existing',
       remoteId: 'aa11',
     })
-    expect(model.openFor.value).toBe('')
-    expect(model.rows.value.at(0)?.stateLabel).toBe('Connected')
+    expect(model.state.openFor.value).toBe('')
+    expect(model.state.rows.value.at(0)?.stateLabel).toBe('Connected')
   })
 
   it('keeps the message of a connection the backend refuses', async () => {
     const client = createClient()
     client.connectVault.mockRejectedValue(new Error('a copy of a connected vault'))
     const model = createModel(client)
-    await model.load()
+    await model.actions.load()
 
-    await model.connectNew('Test')
+    await model.actions.connectNew('Test')
 
-    expect(model.error.value).toBe('a copy of a connected vault')
-    expect(model.status.value).toBe('ready')
+    expect(model.state.error.value).toBe('a copy of a connected vault')
+    expect(model.state.status.value).toBe('ready')
   })
 
   it('clears the message of a refusal when the next connection works', async () => {
     const client = createClient()
     client.connectVault.mockRejectedValueOnce(new Error('a copy of a connected vault'))
     const model = createModel(client)
-    await model.load()
-    await model.connectNew('Test')
+    await model.actions.load()
+    await model.actions.connectNew('Test')
 
-    await model.connectNew('Test')
+    await model.actions.connectNew('Test')
 
-    expect(model.error.value).toBe('')
+    expect(model.state.error.value).toBe('')
   })
 })

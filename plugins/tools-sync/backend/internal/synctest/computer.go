@@ -37,7 +37,6 @@ type Host struct {
 	Root *hosttest.Vault
 }
 
-// GetVaults returns the vaults of the installation.
 func (h Host) GetVaults(ctx context.Context) ([]domain.Vault, error) { return h.Root.GetVaults(ctx) }
 
 // Files returns the files of the vault.
@@ -163,7 +162,6 @@ func (c *Computer) SignIn(ctx context.Context) error {
 	return nil
 }
 
-// AddVault adds a vault of the name to this computer.
 func (c *Computer) AddVault(t *testing.T, name string) {
 	t.Helper()
 	if _, err := c.Vaults.AddVault(t.Context(), "/vaults/"+name, name); err != nil {

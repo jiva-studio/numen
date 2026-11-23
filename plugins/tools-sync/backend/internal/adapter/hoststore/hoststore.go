@@ -82,7 +82,6 @@ func (s *State) ReadLink(ctx context.Context, id domain.VaultID) (vaultlink.Link
 	return link, nil
 }
 
-// WriteLink replaces the link of the vault.
 func (s *State) WriteLink(ctx context.Context, id domain.VaultID, link vaultlink.Link) error {
 	return s.write(ctx, id, linkFile, link)
 }

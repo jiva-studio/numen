@@ -11,9 +11,8 @@ import (
 )
 
 const (
-	metaVersion = 0x01
-	metaContext = "numen-sync/meta/v1"
-	// KindMarkdown is the kind of every note.
+	metaVersion  = 0x01
+	metaContext  = "numen-sync/meta/v1"
 	KindMarkdown = "markdown"
 )
 
@@ -53,7 +52,6 @@ func SealMeta(random io.Reader, vaultKey [32]byte, vaultID, fileID []byte, meta 
 	return aead.Seal(sealed, nonce, plain, getMetaData(vaultID, fileID)), nil
 }
 
-// OpenMeta opens what SealMeta sealed.
 func OpenMeta(vaultKey [32]byte, vaultID, fileID, sealed []byte) (Meta, error) {
 	if len(sealed) < 1+chacha20poly1305.NonceSizeX || sealed[0] != metaVersion {
 		return Meta{}, errCannotOpenMeta
@@ -74,7 +72,6 @@ func OpenMeta(vaultKey [32]byte, vaultID, fileID, sealed []byte) (Meta, error) {
 	return meta, nil
 }
 
-// NewID returns n random bytes.
 func NewID(random io.Reader, n int) ([]byte, error) {
 	id := make([]byte, n)
 	if _, err := io.ReadFull(random, id); err != nil {

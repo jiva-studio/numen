@@ -58,8 +58,6 @@ func (p *pass) pull(ctx context.Context) error {
 	return nil
 }
 
-// push commits the notes that changed on this device and reports whether a revision of another computer came
-// first for some of them, which a new pull settles.
 func (p *pass) push(ctx context.Context) (bool, error) {
 	records, err := p.use.deps.State.ReadRecords(ctx, p.id)
 	if err != nil {

@@ -47,7 +47,6 @@ type Vault struct {
 // ListVaultsRequest asks for every vault of the installation.
 type ListVaultsRequest struct{}
 
-// ListVaultsResponse is the vaults of the installation.
 type ListVaultsResponse struct {
 	Vaults []Vault `json:"vaults"`
 }
@@ -86,7 +85,7 @@ type StatusItem struct {
 	Text string `json:"text"`
 }
 
-// GetStatusResponse says whether this device has an identity, whether the server answers and what warns.
+// GetStatusResponse holds whether this device has an identity, whether the server answers and what warns.
 type GetStatusResponse struct {
 	HasIdentity bool         `json:"hasIdentity"`
 	IsReachable bool         `json:"isReachable"`

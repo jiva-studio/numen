@@ -5,8 +5,8 @@
  */
 import { onMounted } from 'vue'
 import { Button, getCurrentDate } from '@numen/ui'
-import { createApi } from '@numen/plugin-sdk'
-import { createVaultsClient, SERVICE, type VaultsClient } from '../api/vaults'
+import type { VaultsClient } from '../api/vaults'
+import { vaultsClient } from '../api/wire'
 import { getErrorMessage, useVaults } from '../model/vaults'
 import { WORDS as words } from '../words'
 
@@ -17,22 +17,12 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const {
-  status,
-  error,
-  warning,
-  rows,
-  openFor,
-  remote,
-  load,
-  openRemote,
-  closeRemote,
-  connectNew,
-  connectExisting,
-} = useVaults({
-  client: props.client ?? createVaultsClient(createApi(SERVICE)),
+const model = useVaults({
+  client: props.client ?? vaultsClient,
   now: props.now ?? getCurrentDate,
 })
+const { status, error, warning, rows, openFor, remote } = model.state
+const { load, openRemote, closeRemote, connectNew, connectExisting } = model.actions
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {

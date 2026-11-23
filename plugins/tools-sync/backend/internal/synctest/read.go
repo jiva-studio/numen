@@ -41,7 +41,6 @@ func (c *Computer) Connect(t *testing.T, id domain.VaultID) {
 	}
 }
 
-// ConnectExisting connects the vault to the synced vault of the remote id.
 func (c *Computer) ConnectExisting(t *testing.T, id domain.VaultID, remoteID string) {
 	t.Helper()
 	in := catalog.ConnectInput{VaultID: id, Mode: catalog.ModeExisting, RemoteID: remoteID}
@@ -94,7 +93,6 @@ func (c *Computer) GetVaultKey(t *testing.T, id domain.VaultID) [32]byte {
 	return [32]byte(opened)
 }
 
-// ReadFileRows returns the rows of files.json of the vault.
 func (c *Computer) ReadFileRows(t *testing.T, id domain.VaultID) []FileRow {
 	t.Helper()
 	var parsed struct {
@@ -106,7 +104,6 @@ func (c *Computer) ReadFileRows(t *testing.T, id domain.VaultID) []FileRow {
 	return parsed.Files
 }
 
-// GetFileRow returns the row of files.json of the path, and whether there is one.
 func (c *Computer) GetFileRow(t *testing.T, id domain.VaultID, path string) (FileRow, bool) {
 	t.Helper()
 	rows := c.ReadFileRows(t, id)
@@ -145,7 +142,6 @@ func (c *Computer) ReadChanges(t *testing.T, remoteID []byte) []*syncv1.StoredRe
 	}
 }
 
-// OpenCatalogBody opens the body of the catalog entry with the keys of this computer.
 func (c *Computer) OpenCatalogBody(t *testing.T, entry *syncv1.CatalogEntry) CatalogBody {
 	t.Helper()
 	opened, err := c.Client.OpenData(t.Context(), GetCatalogContext(entry), entry.GetEncBody())

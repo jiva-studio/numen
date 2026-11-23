@@ -54,7 +54,6 @@ type remote struct {
 
 type reader struct{ deps Deps }
 
-// read returns the entries of the catalog once every one of them is checked.
 func (r reader) read(ctx context.Context) ([]*syncv1.CatalogEntry, error) {
 	own, err := r.deps.Identity.GetPublicIdentity(ctx)
 	if err != nil {
@@ -113,7 +112,6 @@ func checkEntry(entry *syncv1.CatalogEntry, version uint64, previous [32]byte, a
 	return nil
 }
 
-// fold returns the vaults of the entries in the order they were made, each with its last entry opened.
 func (r reader) fold(ctx context.Context, entries []*syncv1.CatalogEntry) ([]remote, error) {
 	var vaults []remote
 	positions := map[string]int{}
@@ -145,7 +143,6 @@ func (r reader) openBody(ctx context.Context, entry *syncv1.CatalogEntry) (vault
 	return vaultlink.ParseCatalogBody(plain)
 }
 
-// readLinks returns the link of each connected local vault.
 func (r reader) readLinks(ctx context.Context) (map[domain.VaultID]vaultlink.Link, error) {
 	vaults, err := r.deps.Host.GetVaults(ctx)
 	if err != nil {

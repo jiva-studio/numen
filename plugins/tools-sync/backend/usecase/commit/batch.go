@@ -110,8 +110,6 @@ func (r *batchRun) upload(ctx context.Context, items []*prepared) error {
 	return nil
 }
 
-// commit commits the items. A batch the server does not commit is committed again without the files that
-// conflicted.
 func (r *batchRun) commit(ctx context.Context, items []*prepared, files []File, outcomes []Outcome) error {
 	for len(items) > 0 {
 		revisions := make([]*syncv1.Revision, len(items))

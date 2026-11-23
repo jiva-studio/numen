@@ -21,7 +21,6 @@ export class SyncVaultsDriver {
     private readonly settings: SettingsDriver,
   ) {}
 
-  /** The panel of the section "Vaults", opened again so the list is read anew. */
   private async show(): Promise<Locator> {
     const panel = await this.settings.showPage(PLUGIN_NAME)
     const section = panel.getByRole('tab', { name: SECTION, exact: true })
@@ -30,7 +29,6 @@ export class SyncVaultsDriver {
     return panel
   }
 
-  /** The row of a vault in the list: it names the vault. */
   private getRow(panel: Locator, vault: string): Locator {
     return panel.getByRole('listitem').filter({ hasText: vault })
   }

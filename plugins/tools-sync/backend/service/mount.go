@@ -40,8 +40,7 @@ func (a *App) Mount(s *server.Server) error {
 		return err
 	}
 	vaults := hostvault.New(host.NewClient(endpoint), host.NewStoreClient(endpoint))
-	root, cancelRoot := context.WithCancel(context.Background())
-	a.runtime = newRuntime(root, parts{
+	a.runtime = newRuntime(parts{
 		identity: accountadapter.New(account.NewClient(endpoint)),
 		health:   health.NewClient(endpoint),
 		clock:    clock.System{},
@@ -51,12 +50,10 @@ func (a *App) Mount(s *server.Server) error {
 	service := s.NewAPI(api.Service)
 	mountMethods(service, a.runtime)
 	if err := service.Err(); err != nil {
-		cancelRoot()
 		return err
 	}
 	s.SetUpdateConfig(a.runtime.configure)
 	s.OnClose(func() error {
-		cancelRoot()
 		a.runtime.stop()
 		return nil
 	})

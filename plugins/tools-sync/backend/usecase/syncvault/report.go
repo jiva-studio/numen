@@ -23,8 +23,6 @@ func (r reporter) raise(ctx context.Context, key, text string) error {
 	return r.health.Report(ctx, health.Item{Key: key, Severity: health.Warning, Text: text, Detail: "", Action: nil})
 }
 
-// settle turns a refusal the server will not take back now into a warning, to be tried again in the next pass, and
-// returns every other error.
 func (r reporter) settle(ctx context.Context, err error) error {
 	var quota syncprotocol.QuotaExceededError
 	var notReady syncprotocol.BlobNotReadyError

@@ -101,7 +101,6 @@ func (b *Backend) ListRemoteVaults(ctx context.Context, _ api.ListRemoteVaultsRe
 	return api.ListRemoteVaultsResponse{Vaults: listed}, nil
 }
 
-// ConnectVault connects a vault of this device.
 func (b *Backend) ConnectVault(ctx context.Context, request api.ConnectVaultRequest) (api.ConnectVaultResponse, error) {
 	input := catalog.ConnectInput{VaultID: domain.VaultID(request.VaultID), Mode: 0, RemoteID: request.RemoteID}
 	switch request.Mode {
@@ -116,7 +115,7 @@ func (b *Backend) ConnectVault(ctx context.Context, request api.ConnectVaultRequ
 	return api.ConnectVaultResponse{}, catalog.NewConnectVault(b.catalog).Execute(ctx, input)
 }
 
-// GetStatus says whether this device has an identity, whether the server answers and what warns.
+// GetStatus returns whether this device has an identity, whether the server answers and what warns.
 func (b *Backend) GetStatus(ctx context.Context, _ api.GetStatusRequest) (api.GetStatusResponse, error) {
 	status := api.GetStatusResponse{HasIdentity: true, IsReachable: false, Items: nil}
 	_, err := b.deps.Identity.GetPublicIdentity(ctx)

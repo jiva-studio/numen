@@ -104,17 +104,7 @@ export function useVaults(options: UseVaultsOptions) {
     connect({ vaultId, mode: 'existing', remoteId })
 
   return {
-    status,
-    error,
-    hasIdentity,
-    warning,
-    rows,
-    openFor,
-    remote,
-    load,
-    openRemote,
-    closeRemote,
-    connectNew,
-    connectExisting,
+    state: { status, error, hasIdentity, warning, rows, openFor, remote },
+    actions: { load, openRemote, closeRemote, connectNew, connectExisting },
   }
 }

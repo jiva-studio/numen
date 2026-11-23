@@ -64,8 +64,6 @@ func (r *run) addConflict(path string, seq uint64) {
 	r.hold(seq)
 }
 
-// verify returns the metadata of a revision that is to be applied. A revision of a deleted note is skipped, and a
-// revision that does not verify is skipped and counted.
 func (r *run) verify(stored *syncv1.StoredRevision) (note.Meta, bool) {
 	rev := stored.GetRevision()
 	if rev.GetDeleted() {
@@ -170,8 +168,6 @@ func (r *run) write(ctx context.Context, path string, plain []byte, stat domain.
 	return err
 }
 
-// fetch downloads the blob of the revision and opens it, and fails with ErrCorruptBlob when what arrives is not
-// what the revision names.
 func (r *run) fetch(ctx context.Context, rev *syncv1.Revision, meta note.Meta) ([]byte, error) {
 	downloads, err := r.deps.Blobs.GetBlobUrls(ctx, r.remote, [][]byte{rev.GetBlobId()})
 	if err != nil {

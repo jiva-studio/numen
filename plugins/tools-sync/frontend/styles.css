@@ -52,14 +52,14 @@
 .vaults {
   display: flex;
   flex-direction: column;
-  gap: var(--numen-panel-gap);
+  gap: var(--numen-chrome-inset);
   color: var(--numen-ink);
-  font-size: var(--numen-font-size);
+  font-size: var(--numen-chrome-text-2);
 }
 
 .vaults__title {
   margin: 0;
-  font-size: var(--numen-title-size);
+  font-size: calc(1.25 * var(--numen-chrome-unit));
 }
 
 .vaults__note {
@@ -75,7 +75,7 @@
 .vaults__list {
   display: flex;
   flex-direction: column;
-  gap: var(--numen-panel-gap);
+  gap: var(--numen-chrome-inset);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -86,10 +86,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: calc(var(--numen-chrome-unit) / 2) var(--numen-chrome-unit);
-  padding: var(--numen-card-pad);
+  padding: var(--numen-chrome-inset);
   background: var(--numen-surface);
   border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-radius-panel);
+  border-radius: var(--numen-chrome-radius);
 }
 
 .vaults__row--remote {

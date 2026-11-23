@@ -9,8 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/jiva-studio/numen/libs/shared/identity"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/fakeserver"
@@ -119,7 +117,7 @@ func TestCommitRevisions_UploadsNoPlainText(t *testing.T) {
 	s.run(t, commit.File{Path: "Shopping list.md", Content: []byte("milk and bread and eggs")})
 
 	revision := s.read(t)[0].GetRevision()
-	wire, err := proto.Marshal(revision)
+	wire, err := fakeserver.EncodeMessage(revision)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -42,7 +42,6 @@ type parts struct {
 // runtime keeps the sign-in, the restore of an identity and the sync loop running against the server of the
 // setting server, and runs them again when that address changes.
 type runtime struct {
-	root  context.Context
 	parts parts
 	woken chan domain.VaultID
 	secs  atomic.Int64
@@ -54,9 +53,9 @@ type runtime struct {
 	current *Backend
 }
 
-func newRuntime(root context.Context, p parts) *runtime {
+func newRuntime(p parts) *runtime {
 	r := &runtime{
-		root: root, parts: p, woken: make(chan domain.VaultID, wakeBuffer), secs: atomic.Int64{},
+		parts: p, woken: make(chan domain.VaultID, wakeBuffer), secs: atomic.Int64{},
 		mu: sync.Mutex{}, address: "", cancel: nil, done: nil, current: nil,
 	}
 	r.secs.Store(defaultInterval)
@@ -99,7 +98,7 @@ func (r *runtime) configure(values map[string]string) {
 }
 
 func (r *runtime) startWithLock(address string) {
-	ctx, cancel := context.WithCancel(r.root)
+	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	r.address, r.cancel, r.done = address, cancel, done
 	p := r.parts

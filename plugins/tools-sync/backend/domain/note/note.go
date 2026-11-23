@@ -67,10 +67,11 @@ func PathHash(vaultKey [32]byte, notePath string) []byte {
 }
 
 // Decide applies the rule of three hashes: local is the hash of the local note, empty when it is absent, base is the
-// hash both computers last agreed on and head is the hash on the server.
+// hash both computers last agreed on and head is the hash on the server. A head equal to the base is a revision this
+// device pushed itself, so a local change after it is no conflict.
 func Decide(local, base, head string) Decision {
 	switch {
-	case local == head:
+	case local == head, local != "" && head == base:
 		return Adopt
 	case local == "" || local == base:
 		return Download

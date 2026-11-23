@@ -73,12 +73,12 @@ func follow(ctx context.Context, files ports.Files, store ports.Store, seen map[
 	}
 	review := func(ctx context.Context) error {
 		clear(seen)
-		return readAdded(ctx, files, seen)
+		return readAddedFiles(ctx, files, seen)
 	}
 	return seen, changes.Follow(ctx, from, events, apply, review)
 }
 
-func readAdded(ctx context.Context, files ports.Files, seen map[string]note.Seen) error {
+func readAddedFiles(ctx context.Context, files ports.Files, seen map[string]note.Seen) error {
 	added := []string{host.EventFileAdded}
 	head, err := files.ListFileChanges(ctx, host.FileChangeQuery{Since: host.FileChangeCursor{FeedID: "", Seq: 0}, Events: added, Limit: 0})
 	if err != nil {
