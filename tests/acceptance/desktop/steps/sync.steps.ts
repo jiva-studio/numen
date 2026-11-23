@@ -1,5 +1,6 @@
 import type { ComputerName, Holder } from '../drivers/computer.js'
 import { formatDay, getPlanLine } from '../drivers/identity.js'
+import type { PlanSpec } from '../drivers/sync.js'
 import { Given, Then, When } from '../support/bdd.js'
 
 Given('a sync server runs', async ({ person }) => {
@@ -148,16 +149,9 @@ Then('the page says {string}', async ({ person }, text: string) => {
   await person.identity.expectPageSays(text)
 })
 
-Given(
-  'a sync server that sells the plans {string} with {int} GB, {string} with {int} GB and {string} with {int} GB runs',
-  async ({ person }, first: string, firstGigabytes: number, second: string, secondGigabytes: number, third: string, thirdGigabytes: number) => {
-    await person.sync.startSellingPlans([
-      { name: first, gigabytes: firstGigabytes },
-      { name: second, gigabytes: secondGigabytes },
-      { name: third, gigabytes: thirdGigabytes },
-    ])
-  },
-)
+Given('a sync server that sells the plans {plans} runs', async ({ person }, plans: PlanSpec[]) => {
+  await person.sync.startSellingPlans(plans)
+})
 
 When('the person buys the plan {string}', async ({ person }, name: string) => {
   await person.identity.buyPlan(name)
@@ -194,16 +188,6 @@ Given('the cloud holds {int} GB of the notes of the person', async ({ person }, 
 When('the person deletes {int} GB of the notes of the person from the cloud', async ({ person }, gigabytes: number) => {
   await person.sync.deleteFromCloud(gigabytes)
 })
-
-Given(
-  'a sync server that sells the plans {string} with {int} GB and {string} with {int} GB runs',
-  async ({ person }, first: string, firstGigabytes: number, second: string, secondGigabytes: number) => {
-    await person.sync.startSellingPlans([
-      { name: first, gigabytes: firstGigabytes },
-      { name: second, gigabytes: secondGigabytes },
-    ])
-  },
-)
 
 When('the person starts a trial of the plan {string}', async ({ person }, name: string) => {
   await person.sync.startTrial(name)

@@ -1,4 +1,5 @@
 import { defineParameterType } from 'playwright-bdd'
+import { parsePlans } from '../drivers/sync.js'
 import {
   type ComputerName,
   parseComputer,
@@ -15,6 +16,12 @@ import {
   parseTarget,
   parseVaultName,
 } from '../drivers/rules.js'
+
+defineParameterType({
+  name: 'plans',
+  regexp: /"[^"]+" with \d+ GB(?:(?:, | and )"[^"]+" with \d+ GB)*/,
+  transformer: (plans: string) => parsePlans(plans),
+})
 
 defineParameterType({
   name: 'actor',

@@ -96,6 +96,12 @@ export interface PlanSpec {
 
 const BYTES_IN_GB = 2 ** 30
 
+const PLAN_PATTERN = /"([^"]+)" with (\d+) GB/g
+
+/** The plans a step names, such as `"Basic" with 10 GB, "Plus" with 100 GB and "Pro" with 250 GB`, in the order of the step. */
+export const parsePlans = (text: string): PlanSpec[] =>
+  [...text.matchAll(PLAN_PATTERN)].map((one) => ({ name: one[1] ?? '', gigabytes: Number(one[2]) }))
+
 /** The value of the `-plans` flag of the fake sync server: the id of each plan (its name in lower case) and its size in GB. */
 export const getPlansFlag = (plans: readonly PlanSpec[]): string =>
   plans.map((one) => `${one.name.toLowerCase()}:${one.gigabytes}`).join(',')

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findBackendPids, getCloudBytes, getPlansFlag, getSubscriptionPhase } from './sync.js'
+import { findBackendPids, getCloudBytes, getPlansFlag, getSubscriptionPhase, parsePlans } from './sync.js'
 
 const LISTING = [
   '    1 /sbin/init',
@@ -35,6 +35,20 @@ describe('getSubscriptionPhase', () => {
   it('is deleted from 60 days after the end', () => {
     expect(getSubscriptionPhase(60)).toBe('deleted')
     expect(getSubscriptionPhase(70)).toBe('deleted')
+  })
+})
+
+describe('parsePlans', () => {
+  it('reads the plans of a list joined by commas and and', () => {
+    expect(parsePlans('"Basic" with 10 GB, "Plus" with 100 GB and "Pro" with 250 GB')).toStrictEqual([
+      { name: 'Basic', gigabytes: 10 },
+      { name: 'Plus', gigabytes: 100 },
+      { name: 'Pro', gigabytes: 250 },
+    ])
+  })
+
+  it('reads one plan', () => {
+    expect(parsePlans('"Basic" with 10 GB')).toStrictEqual([{ name: 'Basic', gigabytes: 10 }])
   })
 })
 
