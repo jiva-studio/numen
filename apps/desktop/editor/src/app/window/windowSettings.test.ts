@@ -194,7 +194,7 @@ describe('the settings as they are put together', () => {
     try {
       const listThemes = vi.fn(() => ({
         themes: [],
-        applied: 'preset:numen',
+        appliedTheme: 'preset:numen',
         mode: 0,
         interfaceScale: 1,
         textScale: 1,

@@ -198,7 +198,7 @@ const answerSettings = (core: Partial<SettingsCore>): Answers => {
           watchSettings: async function* (_request: object, context: { signal: AbortSignal }) {
             for await (const batch of watchSettings(context.signal))
               yield {
-                changed: batch.map((one) => ({ keyPath: [...one.at], value: one.value })),
+                settings: batch.map((one) => ({ keyPath: [...one.at], value: one.value })),
               }
           },
         }
