@@ -4,6 +4,7 @@
  * declared by the installed plugins with the controls to activate or deactivate this machine.
  */
 import { SettingsPage } from '@numen/plugin-manager'
+import type { Printer } from '@/shared/api/print'
 import type { InstallationIdentity, InstallationLicenses } from '../../types'
 import { useLicensesPage } from '../../model/useLicensesPage'
 import { WORDS as words } from '../../words'
@@ -11,7 +12,11 @@ import LicenseCard from '../licenses/LicenseCard.vue'
 import IdentitySection from './IdentitySection.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{ identity: InstallationIdentity; licenses: InstallationLicenses }>()
+const props = defineProps<{
+  identity: InstallationIdentity
+  licenses: InstallationLicenses
+  printer: Printer
+}>()
 
 const emit = defineEmits<{
   (e: 'back'): void
@@ -29,7 +34,7 @@ function onBack(): void {
 <template>
   <SettingsPage :path="[words.settings, words.identityAndLicenses]" @back="onBack" @open="onBack">
     <div class="identity-page">
-      <IdentitySection :identity="props.identity" />
+      <IdentitySection :identity="props.identity" :printer="props.printer" />
 
       <div v-if="page.licenses.value.length === 0" class="identity-page__empty">
         <p class="identity-page__empty-title">{{ words.licensesEmpty }}</p>

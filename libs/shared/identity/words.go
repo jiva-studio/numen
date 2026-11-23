@@ -84,9 +84,12 @@ func (w RecoveryWords) String() string { return "[recovery words]" }
 
 func (w RecoveryWords) GoString() string { return w.String() }
 
+func (w RecoveryWords) DeriveRecoverySecret() RecoverySecret {
+	return RecoverySecret{bytes: deriveKey(w.entropy[:], labelRecovery)}
+}
+
 func (w RecoveryWords) DeriveRecoveryKey() (RecoveryKey, error) {
-	secret := deriveKey(w.entropy[:], labelRecovery)
-	return newRecoveryKey(deriveKey(secret[:], labelRecoverySign), deriveKey(secret[:], labelRecoveryBox))
+	return w.DeriveRecoverySecret().DeriveRecoveryKey()
 }
 
 func readBits(b []byte, offset, count int) int {

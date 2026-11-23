@@ -88,7 +88,7 @@ func TestNewKit_FailsWhenTheRandomSourceFails(t *testing.T) {
 	}
 }
 
-func TestRestoreSecret_GivesTheKeyOfTheWordsFromAnyTwoSheets(t *testing.T) {
+func TestRestoreSecret_RestoresTheKeyOfTheWordsFromAnyTwoSheets(t *testing.T) {
 	t.Parallel()
 	words := abandonWords(t)
 	want := deriveRecovery(t, words).Public()
@@ -218,7 +218,7 @@ func TestDeriveRecoverySecret_ReachesTheKeyOfTheWords(t *testing.T) {
 	}
 }
 
-func TestRestoreSecret_GivesTheSecretOfAnyWords(t *testing.T) {
+func TestRestoreSecret_RestoresTheSecretOfAnyWords(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		entropy := rapid.SliceOfN(rapid.Byte(), 16, 16).Draw(t, "entropy")

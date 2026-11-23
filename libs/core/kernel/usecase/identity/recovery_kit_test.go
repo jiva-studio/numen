@@ -99,7 +99,7 @@ func TestCreateRecoveryKit_MakesThreeSheetsForTheAccountOfTheWords(t *testing.T)
 	}
 }
 
-func TestCreateRecoveryKit_GivesSheetsThatRestoreTheAccountFromAnyTwo(t *testing.T) {
+func TestCreateRecoveryKit_MakesSheetsThatRestoreTheAccountFromAnyTwo(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	created := createdWith(t, k, getLegalWords())
@@ -339,7 +339,7 @@ func TestCheckRecoveryKit_RefusesWithoutAnIdentityAndReportsAKeyStoreFailure(t *
 	}
 }
 
-func TestRestoreIdentityFromKit_GivesTheSameAccountOnAnotherDeviceKey(t *testing.T) {
+func TestRestoreIdentityFromKit_RestoresTheSameAccountOnAnotherDeviceKey(t *testing.T) {
 	t.Parallel()
 	k := newKit("Laptop")
 	created := createdWith(t, k, getLegalWords())

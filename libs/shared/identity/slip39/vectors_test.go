@@ -57,7 +57,7 @@ func combineMnemonics(mnemonics []string, passphrase string) ([]byte, error) {
 	return slip39.Combine(shares, []byte(passphrase))
 }
 
-func TestVectors_FileHolds45Cases(t *testing.T) {
+func TestVectors_FileHas45Cases(t *testing.T) {
 	t.Parallel()
 	if got := len(readVectors(t)); got != 45 {
 		t.Fatalf("testdata/vectors.json has %d cases, want 45", got)
@@ -86,7 +86,7 @@ func TestCombine_PassesTheOfficialVectors(t *testing.T) {
 	}
 }
 
-func TestCombine_NamesTheCauseOfOfficialVectorRefusals(t *testing.T) {
+func TestCombine_ReportsTheCauseOfOfficialVectorFailures(t *testing.T) {
 	t.Parallel()
 	vectors := readVectors(t)
 	tests := []struct {

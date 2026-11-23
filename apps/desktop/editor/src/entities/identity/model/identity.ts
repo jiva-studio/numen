@@ -8,7 +8,7 @@ import type { Result } from '@numen/result'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { IdentityApi } from '../api/identity'
-import type { IdentityInfo } from '../lib/types'
+import type { IdentityFailure, IdentityInfo, KitProof, RecoveryKit } from '../lib/types'
 import { IDENTITY_WORDS } from '../words'
 
 export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
@@ -63,7 +63,44 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     }
   }
 
-  return { identity, load, generateWords, create, delete: remove }
+  const settle = async <T>(
+    call: () => Promise<Result<T, IdentityFailure>>,
+    proves: 'words' | 'sheets',
+  ): Promise<Result<T, string>> => {
+    try {
+      const answer = await call()
+      return answer.ok
+        ? answer
+        : { ok: false, error: IDENTITY_WORDS.describeFailure(answer.error, proves) }
+    } catch (caughtError) {
+      return { ok: false, error: formatError(caughtError) }
+    }
+  }
+
+  const createKit = (proof: KitProof): Promise<Result<RecoveryKit, string>> =>
+    settle(() => api.createKit(proof), 'words' in proof ? 'words' : 'sheets')
+
+  const checkKit = (sheets: readonly (readonly string[])[]): Promise<Result<string, string>> =>
+    settle(() => api.checkKit(sheets), 'sheets')
+
+  const restoreFromKit = async (
+    sheets: readonly (readonly string[])[],
+  ): Promise<Result<IdentityInfo, string>> => {
+    const answer = await settle(() => api.restoreFromKit(sheets), 'sheets')
+    if (answer.ok) identity.value = answer.value
+    return answer
+  }
+
+  return {
+    identity,
+    load,
+    generateWords,
+    create,
+    delete: remove,
+    createKit,
+    checkKit,
+    restoreFromKit,
+  }
 }
 
 export type IdentityStore = ReturnType<typeof createIdentityStore>

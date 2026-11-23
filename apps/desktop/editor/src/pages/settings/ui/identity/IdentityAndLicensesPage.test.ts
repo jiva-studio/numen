@@ -474,7 +474,7 @@ describe('the recovery kit on the page "Identity and licenses"', () => {
     expect(getTypedWords(tab)).toBe('')
   })
 
-  it('shows two fields for the sheets and tells that the sheets fit the account', async () => {
+  it('shows two fields for the sheets and confirms that the sheets fit the account', async () => {
     const { tab, checkKit } = await createPage(IDENTITY)
     await press(tab, 'Check two sheets')
     expect(checkKit).not.toHaveBeenCalled()

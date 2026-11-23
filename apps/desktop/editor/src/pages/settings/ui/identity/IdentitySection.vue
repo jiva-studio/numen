@@ -1,28 +1,37 @@
 <script setup lang="ts">
 /**
- * The identity of this device: its fingerprints when it has one, and otherwise the way to make one
- * (write down twelve words, confirm three of them) or to restore one from its words.
+ * The identity of this device: its fingerprints and the recovery kit when it has one, and otherwise
+ * the way to make one (write down twelve words, confirm three of them) or to restore one from its
+ * words or from two sheets of a kit.
  */
 import { Button } from '@numen/ui'
+import type { Printer } from '@/shared/api/print'
 import type { InstallationIdentity } from '../../types'
+import { useIdentityCall } from '../../model/useIdentityCall'
 import { useIdentitySection } from '../../model/useIdentitySection'
+import { useRecoveryKit } from '../../model/useRecoveryKit'
+import { useSheetFields } from '../../model/useSheetFields'
 import { WORDS as words } from '../../words'
 import IdentityDetails from './IdentityDetails.vue'
 import IdentityRestore from './IdentityRestore.vue'
+import IdentityRestoreSheets from './IdentityRestoreSheets.vue'
 import IdentitySetup from './IdentitySetup.vue'
+import RecoveryKitSection from './RecoveryKitSection.vue'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ identity: InstallationIdentity }>()
+const props = defineProps<{ identity: InstallationIdentity; printer: Printer }>()
 
 /* --------------------------------- State ---------------------------------- */
-const section = useIdentitySection(() => props.identity)
+const call = useIdentityCall()
+const fields = useSheetFields()
+const kit = useRecoveryKit(() => props.identity, () => props.printer, call, fields)
+const section = useIdentitySection(() => props.identity, call, fields, kit.actions.showAfterSetup)
 const {
   identity: current,
   step,
   recoveryWords,
-  call,
   confirmation,
-  typing,
+  restoring,
   deletion,
   actions,
 } = section
@@ -61,9 +70,17 @@ const {
           type="button"
           variant="outline"
           :disabled="call.isBusy.value"
-          @click="actions.startRestore"
+          @click="actions.startRestore('restore')"
         >
           {{ words.identityRestore }}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          :disabled="call.isBusy.value"
+          @click="actions.startRestore('restoreSheets')"
+        >
+          {{ words.identityRestoreSheets }}
         </Button>
       </div>
 
@@ -79,14 +96,30 @@ const {
       />
 
       <IdentityRestore
-        v-else
-        :text="typing.restoreText.value"
+        v-else-if="step === 'restore'"
+        :text="restoring.typing.restoreText.value"
         :is-busy="call.isBusy.value"
-        @change="typing.setRestoreText"
-        @restore="actions.restore"
+        @change="restoring.typing.setRestoreText"
+        @restore="restoring.restoreWords"
+        @cancel="actions.cancel"
+      />
+
+      <IdentityRestoreSheets
+        v-else
+        :texts="fields.texts.value"
+        :is-busy="call.isBusy.value"
+        @change="restoring.setSheetText"
+        @restore="restoring.restoreSheets"
         @cancel="actions.cancel"
       />
     </template>
+
+    <RecoveryKitSection
+      v-if="current"
+      :model="kit"
+      :texts="fields.texts.value"
+      :is-busy="call.isBusy.value"
+    />
 
     <p v-if="call.problem.value !== ''" role="alert" class="identity-section__problem">
       {{ call.problem.value }}

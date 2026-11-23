@@ -63,6 +63,7 @@ const {
           v-else-if="selectedPluginId === 'identity'"
           :identity="installation.identity"
           :licenses="installation.licenses"
+          :printer="installation.printer"
           @back="goBack"
         />
         <PluginDetail

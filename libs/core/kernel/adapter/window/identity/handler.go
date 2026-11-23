@@ -1,10 +1,12 @@
 // Package identity serves a window's IdentityService: reading the identity of this device, making
-// recovery words, creating the identity from them and deleting it. No key reaches the window.
+// recovery words and recovery kits, creating the identity from words or sheets and deleting it. No key
+// reaches the window.
 package identity
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -12,15 +14,25 @@ import (
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/identity"
+	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
+	"github.com/jiva-studio/numen/libs/shared/identity/slip39"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
+)
+
+var (
+	errNoProof  = errors.New("give the recovery words or the sheets as the proof")
+	errNoSheets = errors.New("give the sheets")
 )
 
 // UseCases are the use cases IdentityService is answered through.
 type UseCases struct {
-	Get           *identity.GetIdentity
-	GenerateWords *identity.GenerateRecoveryWords
-	Create        *identity.CreateIdentity
-	Delete        *identity.DeleteIdentity
+	Get            *identity.GetIdentity
+	GenerateWords  *identity.GenerateRecoveryWords
+	Create         *identity.CreateIdentity
+	Delete         *identity.DeleteIdentity
+	CreateKit      *identity.CreateRecoveryKit
+	CheckKit       *identity.CheckRecoveryKit
+	RestoreFromKit *identity.RestoreIdentityFromKit
 }
 
 // Handler serves IdentityService over the identity use cases.
@@ -98,28 +110,129 @@ func writeIdentity(found identitydomain.Identity) *v1.IdentityInfo {
 	}
 }
 
-func getDetail(err error) string {
-	sentinels := []error{
-		identitydomain.ErrInvalidWords,
-		identitydomain.ErrIdentityExists,
-		identitydomain.ErrKeyStore,
+// CreateRecoveryKit makes a kit of three sheets for the account of this device once the caller has
+// proved the account. It keeps nothing.
+func (h *Handler) CreateRecoveryKit(
+	ctx context.Context,
+	r *connect.Request[v1.CreateRecoveryKitRequest],
+) (*connect.Response[v1.CreateRecoveryKitResponse], error) {
+	words := r.Msg.GetWords().GetWords()
+	sheets := readSheets(r.Msg.GetSheets().GetSheets())
+	if len(words) == 0 && len(sheets) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoProof)
 	}
-	for _, sentinel := range sentinels {
-		if errors.Is(err, sentinel) {
-			return strings.TrimPrefix(err.Error(), sentinel.Error()+": ")
+	made, err := h.identity.CreateKit.Execute(ctx, words, sheets)
+	if err != nil {
+		code, served := getErrorCode(err)
+		if !served {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		return connect.NewResponse(&v1.CreateRecoveryKitResponse{Error: code, Detail: getDetail(err)}), nil
+	}
+	return connect.NewResponse(&v1.CreateRecoveryKitResponse{Kit: writeKit(made)}), nil
+}
+
+// CheckRecoveryKit reports whether the sheets restore the account of this device.
+func (h *Handler) CheckRecoveryKit(
+	ctx context.Context,
+	r *connect.Request[v1.CheckRecoveryKitRequest],
+) (*connect.Response[v1.CheckRecoveryKitResponse], error) {
+	sheets := readSheets(r.Msg.GetSheets())
+	if len(sheets) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoSheets)
+	}
+	fingerprint, err := h.identity.CheckKit.Execute(ctx, sheets)
+	if err != nil {
+		code, served := getErrorCode(err)
+		if !served {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		return connect.NewResponse(&v1.CheckRecoveryKitResponse{Error: code, Detail: getDetail(err)}), nil
+	}
+	return connect.NewResponse(&v1.CheckRecoveryKitResponse{AccountFingerprint: fingerprint}), nil
+}
+
+// RestoreIdentityFromKit keeps an identity on this device from the sheets.
+func (h *Handler) RestoreIdentityFromKit(
+	ctx context.Context,
+	r *connect.Request[v1.RestoreIdentityFromKitRequest],
+) (*connect.Response[v1.RestoreIdentityFromKitResponse], error) {
+	sheets := readSheets(r.Msg.GetSheets())
+	if len(sheets) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errNoSheets)
+	}
+	restored, err := h.identity.RestoreFromKit.Execute(ctx, sheets)
+	if err != nil {
+		code, served := getErrorCode(err)
+		if !served {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		return connect.NewResponse(&v1.RestoreIdentityFromKitResponse{Error: code, Detail: getDetail(err)}), nil
+	}
+	return connect.NewResponse(&v1.RestoreIdentityFromKitResponse{Identity: writeIdentity(restored)}), nil
+}
+
+func readSheets(sheets []*v1.RecoverySheet) [][]string {
+	out := make([][]string, len(sheets))
+	for i, sheet := range sheets {
+		out[i] = sheet.GetWords()
+	}
+	return out
+}
+
+func writeKit(made identitydomain.Kit) *v1.RecoveryKit {
+	sheets := make([]*v1.RecoverySheet, len(made.Sheets))
+	for i, sheet := range made.Sheets {
+		sheets[i] = &v1.RecoverySheet{Words: sheet.Words}
+	}
+	return &v1.RecoveryKit{KitId: made.ID, AccountFingerprint: made.AccountFingerprint, Sheets: sheets}
+}
+
+func getDetail(err error) string {
+	if errors.Is(err, identitydomain.ErrInvalidSheets) {
+		return getSheetDetail(err)
+	}
+	for _, refusal := range getRefusals() {
+		if errors.Is(err, refusal.sentinel) {
+			return strings.TrimPrefix(err.Error(), refusal.sentinel.Error()+": ")
 		}
 	}
 	return err.Error()
 }
 
+func getSheetDetail(err error) string {
+	var sheetErr *identitylib.SheetError
+	if !errors.As(err, &sheetErr) {
+		return identitydomain.ErrInvalidSheets.Error()
+	}
+	if errors.Is(err, slip39.ErrDuplicateMember) {
+		return fmt.Sprintf("sheets 1 and %d are the same sheet", sheetErr.Position)
+	}
+	return fmt.Sprintf("sheet %d is not valid", sheetErr.Position)
+}
+
+type refusal struct {
+	sentinel error
+	code     v1.IdentityErrorCode
+}
+
+func getRefusals() []refusal {
+	return []refusal{
+		{identitydomain.ErrInvalidWords, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS},
+		{identitydomain.ErrIdentityExists, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS},
+		{identitydomain.ErrKeyStore, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_KEY_STORE_FAILED},
+		{identitydomain.ErrInvalidSheets, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_SHEETS},
+		{identitydomain.ErrNotEnoughSheets, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NOT_ENOUGH_SHEETS},
+		{identitydomain.ErrOtherAccount, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_OTHER_ACCOUNT},
+		{identitydomain.ErrNoIdentity, v1.IdentityErrorCode_IDENTITY_ERROR_CODE_NO_IDENTITY},
+	}
+}
+
 func getErrorCode(err error) (v1.IdentityErrorCode, bool) {
-	switch {
-	case errors.Is(err, identitydomain.ErrInvalidWords):
-		return v1.IdentityErrorCode_IDENTITY_ERROR_CODE_INVALID_WORDS, true
-	case errors.Is(err, identitydomain.ErrIdentityExists):
-		return v1.IdentityErrorCode_IDENTITY_ERROR_CODE_IDENTITY_EXISTS, true
-	case errors.Is(err, identitydomain.ErrKeyStore):
-		return v1.IdentityErrorCode_IDENTITY_ERROR_CODE_KEY_STORE_FAILED, true
+	for _, refusal := range getRefusals() {
+		if errors.Is(err, refusal.sentinel) {
+			return refusal.code, true
+		}
 	}
 	return v1.IdentityErrorCode_IDENTITY_ERROR_CODE_UNSPECIFIED, false
 }

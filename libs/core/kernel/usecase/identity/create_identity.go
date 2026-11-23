@@ -2,7 +2,6 @@ package identity
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
@@ -25,56 +24,9 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	if err != nil {
 		return identitydomain.Identity{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidWords, err)
 	}
-	if err := u.checkAbsent(ctx); err != nil {
-		return identitydomain.Identity{}, err
-	}
-	record, err := u.buildRecord(recovery)
-	if err != nil {
-		return identitydomain.Identity{}, err
-	}
-	value := base64.RawURLEncoding.EncodeToString(record.Bytes())
-	if err := u.deps.keys.SetKey(ctx, keyName, value); err != nil {
-		return identitydomain.Identity{}, fmt.Errorf("%w: keep the identity: %w", identitydomain.ErrKeyStore, err)
-	}
-	return identityOf(record)
-}
-
-func (u *CreateIdentity) checkAbsent(ctx context.Context) error {
-	_, err := u.deps.keys.GetKey(ctx, keyName)
-	switch {
-	case err == nil:
-		return identitydomain.ErrIdentityExists
-	case isNoKey(err):
-		return nil
-	}
-	return fmt.Errorf("%w: read the identity: %w", identitydomain.ErrKeyStore, err)
-}
-
-func (u *CreateIdentity) buildRecord(recovery identitylib.RecoveryWords) (identitylib.Record, error) {
 	root, err := recovery.DeriveRecoveryKey()
 	if err != nil {
-		return identitylib.Record{}, err
+		return identitydomain.Identity{}, err
 	}
-	account, err := identitylib.NewAccountKeys(u.deps.random)
-	if err != nil {
-		return identitylib.Record{}, err
-	}
-	device, err := identitylib.NewDeviceKey(u.deps.random)
-	if err != nil {
-		return identitylib.Record{}, err
-	}
-	now := u.deps.clock.Now()
-	chain, err := identitylib.NewChain(root, account, now)
-	if err != nil {
-		return identitylib.Record{}, err
-	}
-	chain, err = chain.AppendDevice(root, device.Public(), entryName(u.deps.names.GetInstanceName()), now)
-	if err != nil {
-		return identitylib.Record{}, err
-	}
-	wrapped, err := account.WrapForDevice(device.Public())
-	if err != nil {
-		return identitylib.Record{}, err
-	}
-	return identitylib.Record{Device: device, Wrapped: wrapped, Chain: chain}, nil
+	return u.deps.createFromRecoveryKey(ctx, root)
 }

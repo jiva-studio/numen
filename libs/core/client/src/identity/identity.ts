@@ -1,13 +1,14 @@
 /**
  * The account identity of this device: its two fingerprints and the name of the device. No secret
- * key reaches the window; the recovery words cross only in generating words and in creating the
- * identity.
+ * key reaches the window; the recovery words and the sheets of a kit cross only in the calls
+ * that make or take them.
  */
 import type { Client } from '@connectrpc/connect'
 import {
   IdentityErrorCode as ProtoIdentityErrorCode,
   type IdentityInfo as ProtoIdentityInfo,
   type IdentityService,
+  type RecoveryKit as ProtoRecoveryKit,
 } from '@numen/protocol'
 import { asFailure, asValue, type Result } from '@numen/result'
 
@@ -19,8 +20,15 @@ export interface IdentityInfo {
   readonly deviceAddedAt: string
 }
 
-/** Why creating the identity was refused. */
-export type IdentityErrorCode = 'invalid_words' | 'identity_exists' | 'key_store_failed'
+/** Why an identity call was refused. */
+export type IdentityErrorCode =
+  | 'invalid_words'
+  | 'identity_exists'
+  | 'key_store_failed'
+  | 'invalid_sheets'
+  | 'not_enough_sheets'
+  | 'other_account'
+  | 'no_identity'
 
 /** A served refusal with the reason the core gives. */
 export interface IdentityFailure {
@@ -31,8 +39,26 @@ export interface IdentityFailure {
 /** The calls of IdentityService the identity is managed through. */
 export type IdentityRpc = Pick<
   Client<typeof IdentityService>,
-  'getIdentity' | 'generateRecoveryWords' | 'createIdentity' | 'deleteIdentity'
+  | 'getIdentity'
+  | 'generateRecoveryWords'
+  | 'createIdentity'
+  | 'deleteIdentity'
+  | 'createRecoveryKit'
+  | 'checkRecoveryKit'
+  | 'restoreIdentityFromKit'
 >
+
+/** Three sheets of one recovery kit, each the words of a sheet in order. */
+export interface RecoveryKit {
+  readonly id: string
+  readonly accountFingerprint: string
+  readonly sheets: readonly (readonly string[])[]
+}
+
+/** What proves the account when a kit is made: the 12 words or two sheets of an earlier kit. */
+export type KitProof =
+  | { readonly words: readonly string[] }
+  | { readonly sheets: readonly (readonly string[])[] }
 
 /** The identity of this device. */
 export interface IdentityClient {
@@ -41,6 +67,14 @@ export interface IdentityClient {
   generateWords(): Promise<readonly string[]>
   create(words: readonly string[]): Promise<Result<IdentityInfo, IdentityFailure>>
   delete(): Promise<void>
+  /** Makes a new kit of three sheets once the proof fits the account of this device. */
+  createKit(proof: KitProof): Promise<Result<RecoveryKit, IdentityFailure>>
+  /** The account fingerprint when two sheets fit the account of this device. */
+  checkKit(sheets: readonly (readonly string[])[]): Promise<Result<string, IdentityFailure>>
+  /** Keeps an identity on this device from two sheets of a kit. */
+  restoreFromKit(
+    sheets: readonly (readonly string[])[],
+  ): Promise<Result<IdentityInfo, IdentityFailure>>
 }
 
 const readInfo = (info: ProtoIdentityInfo): IdentityInfo => ({
@@ -60,23 +94,48 @@ const readErrorCode = (code: ProtoIdentityErrorCode): IdentityErrorCode | undefi
       return 'identity_exists'
     case ProtoIdentityErrorCode.KEY_STORE_FAILED:
       return 'key_store_failed'
+    case ProtoIdentityErrorCode.INVALID_SHEETS:
+      return 'invalid_sheets'
+    case ProtoIdentityErrorCode.NOT_ENOUGH_SHEETS:
+      return 'not_enough_sheets'
+    case ProtoIdentityErrorCode.OTHER_ACCOUNT:
+      return 'other_account'
+    case ProtoIdentityErrorCode.NO_IDENTITY:
+      return 'no_identity'
   }
 }
 
-const readAnswer = (answer: {
-  error: ProtoIdentityErrorCode
-  detail: string
-  identity?: ProtoIdentityInfo | undefined
-}): Result<IdentityInfo, IdentityFailure> => {
+const readAnswer = <T, U>(
+  answer: { error: ProtoIdentityErrorCode; detail: string },
+  value: U | undefined,
+  read: (value: U) => T,
+  missing: string,
+): Result<T, IdentityFailure> => {
   const errorCode = readErrorCode(answer.error)
   if (errorCode !== undefined) {
     return asFailure({ errorCode, detail: answer.detail })
   }
-  if (answer.identity === undefined) {
-    return asFailure({ errorCode: 'key_store_failed', detail: 'The core returned no identity.' })
+  if (value === undefined) {
+    return asFailure({ errorCode: 'key_store_failed', detail: missing })
   }
-  return asValue(readInfo(answer.identity))
+  return asValue(read(value))
 }
+
+const readAccount = (fingerprint: string): string => fingerprint
+
+const readKit = (kit: ProtoRecoveryKit): RecoveryKit => ({
+  id: kit.kitId,
+  accountFingerprint: kit.accountFingerprint,
+  sheets: kit.sheets.map((sheet) => [...sheet.words]),
+})
+
+const writeSheets = (sheets: readonly (readonly string[])[]) =>
+  sheets.map((words) => ({ words: [...words] }))
+
+const writeProof = (proof: KitProof) =>
+  'words' in proof
+    ? { case: 'words' as const, value: { words: [...proof.words] } }
+    : { case: 'sheets' as const, value: { sheets: writeSheets(proof.sheets) } }
 
 /** The identity managed through an IdentityService client. */
 export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
@@ -85,8 +144,24 @@ export const createIdentityClient = (rpc: IdentityRpc): IdentityClient => ({
     return identity === undefined ? undefined : readInfo(identity)
   },
   generateWords: async () => [...(await rpc.generateRecoveryWords({})).words],
-  create: async (words) => readAnswer(await rpc.createIdentity({ words: [...words] })),
+  create: async (words) => {
+    const answer = await rpc.createIdentity({ words: [...words] })
+    return readAnswer(answer, answer.identity, readInfo, 'The core returned no identity.')
+  },
   delete: async () => {
     await rpc.deleteIdentity({})
+  },
+  createKit: async (proof) => {
+    const answer = await rpc.createRecoveryKit({ proof: writeProof(proof) })
+    return readAnswer(answer, answer.kit, readKit, 'The core returned no kit.')
+  },
+  checkKit: async (sheets) => {
+    const answer = await rpc.checkRecoveryKit({ sheets: writeSheets(sheets) })
+    const account = answer.accountFingerprint === '' ? undefined : answer.accountFingerprint
+    return readAnswer(answer, account, readAccount, 'The core returned no account.')
+  },
+  restoreFromKit: async (sheets) => {
+    const answer = await rpc.restoreIdentityFromKit({ sheets: writeSheets(sheets) })
+    return readAnswer(answer, answer.identity, readInfo, 'The core returned no identity.')
   },
 })
