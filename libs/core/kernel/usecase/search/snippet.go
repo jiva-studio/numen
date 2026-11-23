@@ -10,8 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/markdown"
 )
 
-// CutSnippet returns the window around the hit of a search result and the matched query spans inside it.
-func CutSnippet(text string, matchOffset int, query string) (string, []domain.UnitRange) {
+func cutSnippet(text string, matchOffset int, query string) (string, []domain.UnitRange) {
 	read, matched := nearby(text, matchOffset)
 	return getTextAround(read, spans(read, query), markdown.CountUTF16(read, matched))
 }
@@ -199,4 +198,18 @@ func nearby(text string, index int) (string, int) {
 		to++
 	}
 	return text[from:to], index - from
+}
+
+// Snippet is the window around the hit of the search result at the same index, and the spans of the query inside it.
+type Snippet struct {
+	Text   string
+	Ranges []domain.UnitRange
+}
+
+func cutSnippets(found []domain.SearchResult, query string) []Snippet {
+	out := make([]Snippet, len(found))
+	for i, p := range found {
+		out[i].Text, out[i].Ranges = cutSnippet(p.Text, p.MatchOffset, query)
+	}
+	return out
 }
