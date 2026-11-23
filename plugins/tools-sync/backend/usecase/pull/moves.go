@@ -97,8 +97,8 @@ func (r *run) moveFolder(ctx context.Context, group folderMove, moved []transfer
 	}
 	r.records = slices.Clone(r.records)
 	for i, record := range r.records {
-		if strings.HasPrefix(record.Path, group.from+"/") {
-			r.records[i].Path = path.Join(group.to, strings.TrimPrefix(record.Path, group.from+"/"))
+		if rest, isUnder := strings.CutPrefix(record.Path, group.from+"/"); isUnder {
+			r.records[i].Path = path.Join(group.to, rest)
 		}
 	}
 	return nil
