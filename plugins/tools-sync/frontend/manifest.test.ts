@@ -54,6 +54,17 @@ describe('the manifest of the sync plugin', () => {
     })
   })
 
+  it('has a setting of how long a removed file is watched before the removal is sent', () => {
+    const delay = manifest.settings.find((one) => one.key === 'removalDelaySeconds')
+
+    expect(delay).toMatchObject({
+      type: 'number',
+      default: 60,
+      min: 1,
+      description: 'How long a removed file is watched before the removal is sent',
+    })
+  })
+
   it('keeps the setting of the server', () => {
     expect(manifest.settings.map((one) => one.key)).toContain('server')
   })

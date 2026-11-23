@@ -39,6 +39,7 @@ interface Setup {
 const createClient = (setup: Setup): VaultsClient => ({
   listVaults: () => Promise.resolve({ vaults: setup.vaults }),
   listRemoteVaults: () => Promise.resolve({ vaults: setup.remote ?? [] }),
+  resolveDeletions: () => Promise.resolve(),
   connectVault: () =>
     setup.refusal === undefined ? Promise.resolve() : Promise.reject(new Error(setup.refusal)),
   getStatus: () =>
@@ -111,5 +112,22 @@ export const CopyRefused: Story = {
       await canvas.findByRole('button', { name: 'Connect as a new synced vault' }),
     )
     await expect(await canvas.findByRole('alert')).toHaveTextContent('a copy of a connected vault')
+  },
+}
+
+export const DeletionsPaused: Story = {
+  args: {
+    client: createClient({
+      vaults: [
+        { ...connectedVault, pausedDeletions: { count: 5, tracked: 10, direction: 'send' } },
+      ],
+    }),
+    now: () => NOW,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(await canvas.findByText('Sync is paused: 5 of 10 files are removed')).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Remove the files' })).toBeVisible()
+    await expect(canvas.getByRole('button', { name: 'Keep the files' })).toBeVisible()
   },
 }

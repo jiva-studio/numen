@@ -30,6 +30,7 @@ const createClient = (setup: Setup = {}) => ({
       vaults: setup.remote ?? [{ remoteId: 'aa11', name: 'Work', isConnected: false }],
     }),
   ),
+  resolveDeletions: vi.fn<VaultsClient['resolveDeletions']>(() => Promise.resolve()),
   connectVault: vi.fn<VaultsClient['connectVault']>(() => Promise.resolve()),
   getStatus: vi.fn<VaultsClient['getStatus']>(() =>
     Promise.resolve({ hasIdentity: setup.hasIdentity ?? true, isReachable: true, items: [] }),
@@ -168,5 +169,28 @@ describe('VaultsView', () => {
     expect(wrapper.text()).toContain('No identity on this device')
     expect(findButton(wrapper, 'Connect as a new synced vault')).toBeUndefined()
     expect(findButton(wrapper, 'Connect to an existing synced vault')).toBeUndefined()
+  })
+
+  it('shows the paused removals of a vault and sends the answer chosen', async () => {
+    const { wrapper, client } = await render({
+      vaults: [
+        createVault({
+          state: 'connected',
+          pausedDeletions: { count: 5, tracked: 10, direction: 'send' },
+        }),
+      ],
+    })
+
+    expect(wrapper.text()).toContain('Sync is paused: 5 of 10 files are removed')
+    await findButton(wrapper, 'Keep the files')?.trigger('click')
+    await flushPromises()
+
+    expect(client.resolveDeletions).toHaveBeenCalledWith({ vaultId: 'Test', choice: 'keep' })
+  })
+
+  it('shows no answer for a vault whose removals are not paused', async () => {
+    const { wrapper } = await render({ vaults: [createVault({ state: 'connected' })] })
+
+    expect(findButton(wrapper, 'Remove the files')).toBeUndefined()
   })
 })

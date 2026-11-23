@@ -67,6 +67,16 @@ This file lists the things that exist in Numen, the word a person reads for each
 - Actions: "New" with "New note" and "New folder"; "Rename"; "Move to trash".
 - Texts: "N files" (drag label); "Not moved, names already exist:" (plugins/views-file-tree/frontend/words.ts).
 
+### staged file
+
+- Is: A file a plugin writes in parts to its own store folder (`.numen/<plugin id>/<name>`) before it is placed in the vault in one step, so that no reader sees a half file. Numen Sync stages a file it downloads.
+- Not: not a file of the vault, not a trash entry.
+
+### removal record
+
+- Is: What Numen Sync sends to the sync server instead of a removed file: a signed revision that says the file is removed and holds no content and no name.
+- Not: not the trash; the other computers move their copy to the trash when they apply it.
+
 ## Notes and tabs
 
 ### note

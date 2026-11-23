@@ -31,6 +31,14 @@
       "description": "How often this device asks the server for changes",
       "default": 30,
       "min": 1
+    },
+    {
+      "key": "removalDelaySeconds",
+      "type": "number",
+      "title": "Removal delay",
+      "description": "How long a removed file is watched before the removal is sent",
+      "default": 60,
+      "min": 1
     }
   ],
   "settingsViews": [
