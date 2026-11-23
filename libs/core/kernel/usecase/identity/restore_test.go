@@ -22,6 +22,7 @@ func getOtherWords() []string {
 }
 
 type restoreKit struct {
+	deps     identity.Deps
 	keys     *fakeKeyStore
 	clock    *testsupport.ManualClock
 	get      *identity.GetIdentity
@@ -41,7 +42,7 @@ func newRestoreKit(tb testing.TB, name string) restoreKit {
 	clock := testsupport.NewClockAt(getNow())
 	deps := identity.NewDeps(keys, fakeNames{name: name}, clock)
 	return restoreKit{
-		keys: keys, clock: clock,
+		deps: deps, keys: keys, clock: clock,
 		get:      identity.NewGetIdentity(deps),
 		create:   identity.NewCreateIdentity(deps),
 		public:   identity.NewGetPublicIdentity(deps),
@@ -536,18 +537,23 @@ func TestStartRestore_ANewStartMovesTheDeadlineOfTheFallback(t *testing.T) {
 	})
 }
 
-func TestCompleteRestore_ACreateAtTheSameTimeLeavesOneIdentity(t *testing.T) {
+func TestCompleteRestore_ConcurrentCreateLeavesOneIdentity(t *testing.T) {
 	t.Parallel()
 	k := newRestoreKit(t, "Phone")
-	other := identity.NewCreateIdentity(identity.NewDeps(k.keys, fakeNames{name: "Phone"}, testsupport.NewClockAt(getNow())))
+	other := identity.NewCreateIdentity(k.deps)
 	if err := k.start.Execute(t.Context(), getLegalWords()); err != nil {
 		t.Fatal(err)
 	}
 	var arrived atomic.Int32
+	both := make(chan struct{})
+	var once sync.Once
 	k.keys.onGet = func() {
-		arrived.Add(1)
-		for deadline := time.Now().Add(300 * time.Millisecond); arrived.Load() < 2 && time.Now().Before(deadline); {
-			time.Sleep(time.Millisecond)
+		if arrived.Add(1) >= 2 {
+			once.Do(func() { close(both) })
+		}
+		select {
+		case <-both:
+		case <-time.After(300 * time.Millisecond):
 		}
 	}
 	errs := make([]error, 2)

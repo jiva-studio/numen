@@ -35,7 +35,7 @@ type Fake struct {
 	signed  int
 	pending *pendingRestore
 
-	beforeCompletion func()
+	completeHook func()
 }
 
 // NewFake starts a host with an identity, serving a plugin of the id, and stops it when the test ends.

@@ -49,7 +49,7 @@ func TestCompleteRestore_RefusesWhenItsRestoreWasReplacedAndKeepsTheNewOne(t *te
 	fake := NewFake(t, "md.numen.a")
 	fake.StartRestore(getWords(t))
 	second := getWords(t)
-	fake.beforeCompletion = func() { fake.StartRestore(second) }
+	fake.completeHook = func() { fake.StartRestore(second) }
 	s := &service{fake: fake}
 
 	_, err := s.CompleteRestore(t.Context(), connect.NewRequest(&v1.CompleteRestoreRequest{}))

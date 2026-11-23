@@ -130,8 +130,8 @@ func (s *service) CompleteRestore(_ context.Context, req *connect.Request[v1.Com
 	if err != nil {
 		return nil, err
 	}
-	if s.fake.beforeCompletion != nil {
-		s.fake.beforeCompletion()
+	if s.fake.completeHook != nil {
+		s.fake.completeHook()
 	}
 	record, err := joinRestore(restore, req.Msg.GetChain())
 	if err != nil {

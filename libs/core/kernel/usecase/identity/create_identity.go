@@ -4,15 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"sync"
 
 	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	identitylib "github.com/jiva-studio/numen/libs/shared/identity"
 )
-
-// createMu serializes the check for an absent identity and the write of one for the whole installation: every
-// window builds its own use case over the one key store.
-var createMu sync.Mutex
 
 // CreateIdentity keeps a new identity on this device.
 type CreateIdentity struct{ deps Deps }
@@ -30,8 +25,8 @@ func (u *CreateIdentity) Execute(ctx context.Context, words []string) (identityd
 	if err != nil {
 		return identitydomain.Identity{}, fmt.Errorf("%w: %w", identitydomain.ErrInvalidWords, err)
 	}
-	createMu.Lock()
-	defer createMu.Unlock()
+	u.deps.pending.write.Lock()
+	defer u.deps.pending.write.Unlock()
 	if err := checkAbsent(ctx, u.deps); err != nil {
 		return identitydomain.Identity{}, err
 	}

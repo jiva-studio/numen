@@ -16,7 +16,9 @@ type pendingRestore struct {
 
 // PendingStore keeps the one restore that waits for the account chain of a sync plugin. Its keys stay in memory.
 type PendingStore struct {
-	mu      sync.Mutex
+	mu sync.Mutex
+	// write serializes the check for an absent identity and the write of one across every window, which share this store.
+	write   sync.Mutex
 	current *pendingRestore
 }
 

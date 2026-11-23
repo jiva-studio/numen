@@ -37,8 +37,8 @@ func completeRestore(ctx context.Context, deps Deps, restore *pendingRestore, ch
 	if deps.pending.current != restore {
 		return identitydomain.ErrNoPendingRestore
 	}
-	createMu.Lock()
-	defer createMu.Unlock()
+	deps.pending.write.Lock()
+	defer deps.pending.write.Unlock()
 	if err := checkAbsent(ctx, deps); err != nil {
 		return err
 	}
