@@ -10,7 +10,6 @@ type typedPaths interface {
 	ListPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
-// ListPathsOfType lists the notes of one type.
 type ListPathsOfType struct {
 	queries typedPaths
 }
