@@ -237,7 +237,6 @@ func isUnauthenticated(err error) bool {
 	return errors.Is(err, syncprotocol.ErrUnauthenticated) || connect.CodeOf(err) == connect.CodeUnauthenticated
 }
 
-// newID returns a random id of size bytes, at most 26.
 func newID(size int) []byte {
 	return []byte(rand.Text())[:size]
 }
