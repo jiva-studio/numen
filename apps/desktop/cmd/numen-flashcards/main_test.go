@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/ensureindexed"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1"
 )
@@ -146,7 +147,7 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	api.ReportVaultRead(target[0])
+	ensureindexed.NewReportRead(api.Runs, &api.Changes).Execute(target[0])
 	select {
 	case <-moved:
 	case <-time.After(time.Second):
