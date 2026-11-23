@@ -46,11 +46,10 @@ func NewHandler(
 	return &Handler{vaults: vaults, listing: listing, runCommand: runCommand, listItems: listItems}
 }
 
-// NewRoute is where CommandService is mounted, what the schema generated to answer it, and the
-// handler it answers through; the window turns the three into a route.
-func NewRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler, service any) {
+// NewRoute is where CommandService is mounted, and what the schema generated to answer it.
+func NewRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler) {
 	path, served = numenv1connect.NewCommandServiceHandler(handler, options)
-	return path, served, handler
+	return path, served
 }
 
 // ListCommands lists the commands of every enabled plugin, whichever part of the plugin runs them; one with
@@ -205,18 +204,16 @@ func clampToInt32(value int) int32 {
 	return int32(value)
 }
 
-// NewContributionRoute is where ContributionService is mounted, what the schema generated to answer it, and
-// the handler it answers through.
-func NewContributionRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler, service any) {
+// NewContributionRoute is where ContributionService is mounted, and what the schema generated to answer it.
+func NewContributionRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler) {
 	path, served = numenv1connect.NewContributionServiceHandler(handler, options)
-	return path, served, handler
+	return path, served
 }
 
-// NewVersionRoute is where TextVersionService is mounted, what the schema generated to answer it, and the
-// handler it answers through.
-func NewVersionRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler, service any) {
+// NewVersionRoute is where TextVersionService is mounted, and what the schema generated to answer it.
+func NewVersionRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler) {
 	path, served = numenv1connect.NewTextVersionServiceHandler(handler, options)
-	return path, served, handler
+	return path, served
 }
 
 // ListContributions lists the slot entries, the slot points, the handlers of shared commands and the

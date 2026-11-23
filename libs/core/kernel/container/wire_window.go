@@ -72,9 +72,7 @@ func (c Config) openWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	mountSearch(opened, session, search, install.Endpoints.Lender, vaultDeps.Clock, runs)
 	mountServices(opened, install, exec, settingsDeps, vaultDeps, editor.GetFrameDialog(startup.opening.Frame))
 	mountLogs(opened, getLogEntries(res), install, settingsDeps, vaultDeps)
-	if err := opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out); err != nil {
-		return nil, errors.Join(err, launch.closeSource(), db.Close())
-	}
+	opened.Start(ctx, first, launch.server, launch.start, startup.opening.Out)
 	return connectWindow(install, exec, vaultDeps, opened, startup, launch.plugins)
 }
 

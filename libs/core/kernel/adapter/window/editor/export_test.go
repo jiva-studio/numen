@@ -117,20 +117,20 @@ func (s *Services) pages() pageSet {
 	counted := s.state.Gate.CountQuestions()
 	var routes []Route
 	path, served := numenv1connect.NewFileServiceHandler(s.File, counted)
-	routes = append(routes, NewRoute(path, served, s.File))
+	routes = append(routes, NewRoute(path, served))
 	path, served = numenv1connect.NewNoteServiceHandler(s.Note, counted)
-	routes = append(routes, NewRoute(path, served, s.Note))
+	routes = append(routes, NewRoute(path, served))
 	path, served = numenv1connect.NewWindowServiceHandler(s.state.Window, counted)
-	routes = append(routes, NewRoute(path, served, s.state.Window))
+	routes = append(routes, NewRoute(path, served))
 	path, served = numenv1connect.NewMediaServiceHandler(s.Media, counted)
-	routes = append(routes, NewRoute(path, served, s.Media))
+	routes = append(routes, NewRoute(path, served))
 	path, served = numenv1connect.NewCommandServiceHandler(s.Command, counted)
-	routes = append(routes, NewRoute(path, served, s.Command))
+	routes = append(routes, NewRoute(path, served))
 	path, served = numenv1connect.NewPluginProcessServiceHandler(s.Plugin, counted)
-	routes = append(routes, NewRoute(path, served, s.Plugin))
+	routes = append(routes, NewRoute(path, served))
 	if s.Themes != nil {
 		path, served = numenv1connect.NewThemeServiceHandler(s.Themes, counted)
-		routes = append(routes, NewRoute(path, served, s.Themes))
+		routes = append(routes, NewRoute(path, served))
 	}
 	routes = append(routes, s.Extra...)
 	return pageSet{window: s.state.PageAccess, routes: routes, themes: s.Themes, plugins: s.PluginServices, getPluginDir: s.getPluginDir, assets: s.server.open}
@@ -140,7 +140,7 @@ func (s *Services) pages() pageSet {
 // that serves it come from build, counted the way the container counts them.
 func RouteOf[H any](state *testWindow, handler H, build func(H, ...connect.HandlerOption) (string, http.Handler)) Route {
 	path, served := build(handler, state.Gate.CountQuestions())
-	return NewRoute(path, served, handler)
+	return NewRoute(path, served)
 }
 
 // Mount puts the route in the place of the one served at its path, or beside them.
@@ -154,17 +154,6 @@ func (s *Services) Mount(route Route) {
 	s.Extra = append(s.Extra, route)
 }
 
-// HandlerOf is the handler of the type the installation mounted.
-func HandlerOf[T any](o *Installation) T {
-	for _, one := range o.pages.routes {
-		if handler, ok := one.service.(T); ok {
-			return handler
-		}
-	}
-	var none T
-	return none
-}
-
 func (s *Services) storePlayingLoopback(playing *Loopback) { s.state.Media.playing.Store(playing) }
 
 func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *file.OpenPluginFile, mediaTypes *file.GetMediaType) {
@@ -176,22 +165,6 @@ func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *fil
 
 func (s *Services) findVaults(find vaultport.VaultLookup) {
 	s.server.open = file.NewOpenVaultFile(find, file.NewOpenFile(s.readers), s.pluginFiles, s.mediaTypes)
-}
-
-// ServicesOf is the handlers a window answers through.
-func ServicesOf(o *Installation) *Services {
-	services := &Services{}
-	for _, one := range o.pages.routes {
-		switch handler := one.service.(type) {
-		case *filewindow.Handler:
-			services.File = handler
-		case *notewindow.Handler:
-			services.Note = handler
-		case *mediawindow.Handler:
-			services.Media = handler
-		}
-	}
-	return services
 }
 
 // ViewOf is the view of the window as the core asks it to show something.
