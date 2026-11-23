@@ -75,4 +75,4 @@ Feature: Sync a file changed on two computers
       Given the person writes the file "Papers/Report.pdf" in the vault "Test"
       And the second computer has the same file "Papers/Report.pdf" in its vault "Copy"
       When the second computer writes the file "Papers/report.pdf" in its vault "Copy"
-      Then the plugin "Numen Sync" warns about "1 file is not synced: its name differs only in letter case from another file"
+      Then the plugin "Numen Sync" warns about "1 file is not synced: its name matches another name"
