@@ -393,9 +393,9 @@ describe('useSubscription plans', () => {
     await subscription.session.load()
 
     expect(subscription.offers.buyOffers.value).toStrictEqual([
-      { id: 'basic', name: 'Basic', size: '10 GB', price: '$5 / month' },
-      { id: 'plus', name: 'Plus', size: '100 GB', price: '$15 / month' },
-      { id: 'pro', name: 'Pro', size: '250 GB', price: '$30 / month' },
+      { id: 'basic', name: 'Basic', size: '10 GB', price: '$5' },
+      { id: 'plus', name: 'Plus', size: '100 GB', price: '$15' },
+      { id: 'pro', name: 'Pro', size: '250 GB', price: '$30' },
     ])
     expect(subscription.offers.changeOffers.value).toStrictEqual([])
   })
@@ -423,8 +423,8 @@ describe('useSubscription plans', () => {
 
     expect(subscription.offers.buyOffers.value).toStrictEqual([])
     expect(subscription.offers.changeOffers.value).toStrictEqual([
-      { id: 'basic', name: 'Basic', size: '10 GB', price: '$5 / month' },
-      { id: 'pro', name: 'Pro', size: '250 GB', price: '$30 / month' },
+      { id: 'basic', name: 'Basic', size: '10 GB', price: '$5' },
+      { id: 'pro', name: 'Pro', size: '250 GB', price: '$30' },
     ])
   })
 
@@ -439,13 +439,13 @@ describe('useSubscription plans', () => {
     expect(subscription.offers.changeOffers.value).toStrictEqual([])
   })
 
-  it('names the plan with its size, also after the subscription ended', async () => {
+  it('names the plan with its size and price after the subscription ended', async () => {
     const ended = createResponse({ phase: 'readOnly', plan: 'plus', quotaBytes: 100 * GIB })
     const { subscription } = mountSubscription(createClient([ended]))
 
     await subscription.session.load()
 
-    expect(subscription.summary.planLine.value).toBe('Plus, 100 GB')
+    expect(subscription.summary.planLine.value).toBe('Plus, 100 GB, $15 / month')
   })
 
   it('names only the size of a plan the client does not know', async () => {
@@ -471,7 +471,7 @@ describe('useSubscription plans', () => {
 
     await subscription.session.load()
 
-    expect(subscription.summary.usage.value).toBe('2 GB of 100 GB used')
+    expect(subscription.summary.usage.value).toBe('2 GB of 100 GB')
     expect(subscription.summary.isFull.value).toBe(false)
   })
 
@@ -486,7 +486,7 @@ describe('useSubscription plans', () => {
 
     await subscription.session.load()
 
-    expect(subscription.summary.usage.value).toBe('20 GB of 10 GB used')
+    expect(subscription.summary.usage.value).toBe('20 GB of 10 GB')
     expect(subscription.summary.isFull.value).toBe(true)
   })
 
@@ -541,7 +541,7 @@ describe('useSubscription change of the plan', () => {
     await subscription.session.change('pro')
 
     expect(client.changePlan).toHaveBeenCalledExactlyOnceWith('pro')
-    expect(subscription.summary.planLine.value).toBe('Pro, 250 GB')
+    expect(subscription.summary.planLine.value).toBe('250 GB, $30 / month')
     expect(subscription.offers.changeOffers.value.map((one) => one.id)).toStrictEqual([
       'basic',
       'plus',
@@ -561,7 +561,7 @@ describe('useSubscription change of the plan', () => {
     await subscription.session.change('pro')
 
     expect(subscription.session.problem.value).toContain('Could not reach the sync server')
-    expect(subscription.summary.planLine.value).toBe('Plus, 100 GB')
+    expect(subscription.summary.planLine.value).toBe('100 GB, $15 / month')
   })
 
   it('reads the subscription again when the server says the plan is the plan of the account', async () => {
@@ -577,7 +577,7 @@ describe('useSubscription change of the plan', () => {
 
     await subscription.session.change('pro')
 
-    expect(subscription.summary.planLine.value).toBe('Pro, 250 GB')
+    expect(subscription.summary.planLine.value).toBe('250 GB, $30 / month')
   })
 
   it('reads the subscription again when the server says there is no active subscription', async () => {
@@ -608,10 +608,11 @@ describe('useSubscription plan names from the server', () => {
 
     await subscription.session.load()
 
-    expect(subscription.summary.planLine.value).toBe('Standard, 100 GB')
+    expect(subscription.summary.view.value.badge).toBe('Standard')
+    expect(subscription.summary.planLine.value).toBe('100 GB, $15 / month')
   })
 
-  it('prices an offer for a month in the currency of the plan', async () => {
+  it('prices an offer in the currency of the plan', async () => {
     const client = createClient([createResponse()])
     client.listPlans.mockResolvedValue([
       { id: 'basic', name: 'Basic', quotaBytes: 10 * GIB, priceCents: 999, currency: 'EUR' },
@@ -620,9 +621,7 @@ describe('useSubscription plan names from the server', () => {
 
     await subscription.session.load()
 
-    expect(subscription.offers.buyOffers.value.map((one) => one.price)).toStrictEqual([
-      '€9.99 / month',
-    ])
+    expect(subscription.offers.buyOffers.value.map((one) => one.price)).toStrictEqual(['€9.99'])
   })
 })
 
@@ -664,7 +663,7 @@ describe('useSubscription summary', () => {
     await none.subscription.session.load()
 
     expect(active.subscription.summary.validity.value).toStrictEqual({
-      label: 'Active until',
+      label: 'Renews',
       date: 'December 23, 2026',
     })
     expect(trial.subscription.summary.validity.value?.label).toBe('Trial until')

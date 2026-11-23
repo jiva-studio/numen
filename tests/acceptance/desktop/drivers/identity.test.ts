@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDay, getChooseName, getPlanLine, planAnswers, readPosition } from './identity.js'
+import { formatDay, getChooseName, getPlanLinePattern, planAnswers, readPosition } from './identity.js'
 
 const WORDS = ['zoo', 'zoo', 'cat', 'dog', 'zoo', 'fox', 'owl', 'hen', 'ant', 'bee', 'elk', 'yak']
 
@@ -41,8 +41,17 @@ describe('the names of the buttons of the card', () => {
   it('writes a day with the month in full', () => {
     expect(formatDay(new Date(2026, 11, 7))).toBe('December 7, 2026')
   })
+})
 
-  it('writes the plan line with the name and the size', () => {
-    expect(getPlanLine('Plus', 100)).toBe('Plus, 100 GB')
+describe('getPlanLinePattern', () => {
+  it('matches the plan row of an active and of an ended subscription', () => {
+    expect(getPlanLinePattern('Plus', 100).test('100 GB, $15 / month')).toBe(true)
+    expect(getPlanLinePattern('Plus', 100).test('Plus, 100 GB, $15 / month')).toBe(true)
+    expect(getPlanLinePattern('Plus', 100).test('100 GB')).toBe(true)
+  })
+
+  it('does not match another size or the detail of a plan to choose', () => {
+    expect(getPlanLinePattern('Plus', 100).test('10 GB, $5 / month')).toBe(false)
+    expect(getPlanLinePattern('Plus', 100).test('100 GB of synced files')).toBe(false)
   })
 })

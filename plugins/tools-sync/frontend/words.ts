@@ -5,11 +5,15 @@ export const WORDS = {
   syncedDetail: 'Vault is synchronized.',
   subscriptionTitle: 'Numen Sync',
   subscriptionLoading: 'Loading the subscription…',
-  noSubscriptionText: 'Buy a subscription to sync your vaults between your devices.',
-  activeUntil: 'Active until',
+  noSubscriptionText:
+    'Sync your vaults between your devices. Pick the storage you need, change it any time.',
+  renews: 'Renews',
   trialUntil: 'Trial until',
   planRow: 'Plan',
   storageRow: 'Storage',
+  storageDetail: 'Space used by your synced vaults',
+  syncedFiles: (size: string): string => `${size} of synced files`,
+  perMonth: '/ month',
   pricePerMonth: (price: string): string => `${price} / month`,
   ended: 'Ended',
   graceText: (periodEnd: string, writesEnd: string): string =>
@@ -20,18 +24,15 @@ export const WORDS = {
   deleted: 'Deleted',
   deletedText: 'The cloud deleted your vaults. Buy a subscription to sync again.',
   noIdentityText: 'Create an identity to buy a subscription.',
-  syncServerUnreachable: 'Could not reach the sync server',
-  choose: 'Choose',
+  offline: 'Offline',
   chooseNamed: (name: string): string => `Choose ${name}`,
   changePlan: 'Change plan',
   changePlanChoices: 'Plans to change to',
   usagePercentName: 'Space used',
   manageSubscription: 'Manage subscription',
-  cloudFull: 'Cloud storage is full: changes stay on this device',
-  choosePlan: 'Choose a plan',
-  waitingForPayment: 'Waiting for the payment…',
-  waitingForPaymentText:
-    'Finish the payment in your browser. This card updates by itself when the payment goes through.',
+  cloudFull:
+    'Cloud storage is full: changes stay on this device. Move to a larger plan to keep syncing.',
+  waitingForPayment: 'Finish the payment in your browser. This card updates by itself.',
   unreachableText: (server: string): string =>
     server === ''
       ? 'Start the sync server, or correct its address in the settings.'

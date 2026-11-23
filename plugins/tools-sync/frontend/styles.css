@@ -113,40 +113,19 @@
 }
 
 .subscription {
-  display: flex;
-  flex-direction: column;
-  gap: var(--numen-chrome-inset);
-  padding: var(--settings-card-pad);
+  --row-pad: calc(0.75 * var(--numen-chrome-unit));
   color: var(--numen-ink);
   font-size: var(--numen-chrome-text-2);
 }
 
-.subscription__header {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: calc(var(--numen-chrome-unit) / 2);
-}
-
-.subscription__title {
-  margin: 0;
-  font-size: calc(1.25 * var(--numen-chrome-unit));
-  font-weight: 600;
-}
-
 .subscription__badge {
-  margin-inline-start: auto;
   padding: calc(var(--numen-chrome-unit) / 8) calc(var(--numen-chrome-unit) / 2);
-  border-radius: var(--numen-chrome-radius);
-  background-color: var(--numen-bubble-bg);
-  color: var(--numen-hushed);
+  border-radius: var(--numen-chrome-radius-tight);
+  background-color: color-mix(in oklab, var(--numen-accent), transparent 82%);
+  color: var(--numen-ink);
+  font-size: var(--numen-chrome-text-1);
   font-weight: 500;
   white-space: nowrap;
-}
-
-.subscription__badge--positive {
-  background-color: color-mix(in oklab, var(--numen-positive), transparent 82%);
-  color: var(--numen-ink);
 }
 
 .subscription__badge--warning {
@@ -155,52 +134,109 @@
 }
 
 .subscription__text,
-.subscription__choose,
 .subscription__waiting,
 .subscription__full,
 .subscription__problem {
   margin: 0;
 }
 
-.subscription__text,
-.subscription__waiting {
+.subscription__text {
+  padding-block: calc(var(--numen-chrome-unit) / 2) calc(var(--numen-chrome-unit) / 4);
   color: var(--numen-hushed);
 }
 
-.subscription__choose {
-  font-weight: 500;
-}
-
-.subscription__full,
-.subscription__problem {
+.subscription__full {
+  margin-inline: calc(-1 * var(--settings-card-pad));
+  padding: var(--row-pad) var(--settings-card-pad);
+  background-color: var(--numen-alarm-bg);
   color: var(--numen-alarm);
 }
 
-.subscription__facts {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: calc(var(--numen-chrome-unit) * 0.75) calc(var(--numen-chrome-unit) * 2);
-  margin: 0;
-}
-
-.subscription__facts dt {
+.subscription__waiting {
+  display: flex;
+  align-items: center;
+  gap: calc(0.625 * var(--numen-chrome-unit));
+  padding-block: calc(var(--numen-chrome-unit) / 2) var(--row-pad);
   color: var(--numen-hushed);
 }
 
-.subscription__facts dd {
-  margin: 0;
+.subscription__spinner {
+  --spinner-size: calc(0.75 * var(--numen-chrome-unit));
+  --spinner-thickness: var(--numen-stroke);
+}
+
+.subscription__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: calc(var(--numen-chrome-unit) / 2) var(--numen-chrome-unit);
+  box-sizing: border-box;
+  min-block-size: calc(3.25 * var(--numen-chrome-unit));
+  padding-block: var(--row-pad);
+}
+
+.subscription__row + .subscription__row {
+  border-block-start: var(--numen-stroke) solid var(--numen-rule);
+}
+
+.subscription__label {
+  display: flex;
+  flex-direction: column;
   min-inline-size: 0;
 }
 
-.subscription__storage {
+.subscription__name {
+  font-weight: 500;
+}
+
+.subscription__detail {
+  color: var(--numen-hushed);
+}
+
+.subscription__value {
   display: flex;
-  flex-direction: column;
-  gap: calc(var(--numen-chrome-unit) / 4);
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--row-pad);
+  min-inline-size: 0;
+}
+
+.subscription__price {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.subscription__price small {
+  color: var(--numen-hushed);
+  font-size: calc(0.75 * var(--numen-chrome-unit));
+}
+
+.subscription .subscription__change {
+  inline-size: auto;
+}
+
+.subscription .subscription__change--solid {
+  border-color: transparent;
+  background-color: var(--numen-accent);
+  color: var(--numen-accent-ink);
+}
+
+.subscription .subscription__change--solid:hover {
+  background-color: color-mix(in oklab, var(--numen-accent), var(--numen-ink) 8%);
+}
+
+.subscription .subscription__change--solid .select__reading,
+.subscription .subscription__change--solid .select__mark {
+  color: inherit;
 }
 
 .subscription__meter {
+  inline-size: min(calc(15 * var(--numen-chrome-unit)), 100%);
+}
+
+.subscription__meter-bar {
   overflow: hidden;
-  block-size: calc(var(--numen-chrome-unit) / 2);
+  block-size: calc(0.375 * var(--numen-chrome-unit));
   border-radius: var(--numen-radius-pill);
   background-color: var(--numen-bubble-bg);
 }
@@ -211,45 +247,16 @@
   background-color: var(--numen-accent);
 }
 
-.subscription__meter-fill--full {
+.subscription__meter--full .subscription__meter-fill {
   background-color: var(--numen-alarm);
 }
 
 .subscription__usage {
+  display: block;
+  margin-block-start: calc(0.375 * var(--numen-chrome-unit));
   color: var(--numen-hushed);
-}
-
-.subscription__plans {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(calc(9 * var(--numen-chrome-unit)), 1fr));
-  gap: var(--numen-chrome-inset);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.subscription__tile {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: calc(var(--numen-chrome-unit) / 4);
-  padding: var(--numen-chrome-inset);
-  background: var(--numen-surface);
-  border: var(--numen-stroke) solid var(--numen-rule);
-  border-radius: var(--numen-chrome-radius);
-}
-
-.subscription__tile-name {
-  font-weight: 600;
-}
-
-.subscription__tile-price {
-  margin-block-end: calc(var(--numen-chrome-unit) / 2);
-  color: var(--numen-hushed);
-}
-
-.subscription__tile > button {
-  margin-block-start: auto;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
 }
 
 .subscription__actions {
@@ -257,8 +264,24 @@
   flex-wrap: wrap;
   align-items: center;
   gap: calc(var(--numen-chrome-unit) / 2);
+  padding-block: calc(var(--numen-chrome-unit) / 2) var(--row-pad);
 }
 
-.subscription__change {
-  inline-size: calc(12 * var(--numen-chrome-unit));
+.subscription__problem {
+  padding-block-end: var(--row-pad);
+  color: var(--numen-alarm);
+}
+
+@container settings (max-width: 34rem) {
+  .subscription__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .subscription__value {
+    justify-content: space-between;
+  }
+
+  .subscription__usage {
+    text-align: start;
+  }
 }

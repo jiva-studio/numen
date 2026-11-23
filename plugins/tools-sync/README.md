@@ -12,7 +12,7 @@ Synchronizes your vaults across devices when you have a subscription. The plugin
 
 ## The subscription
 
-The sync server tells where the subscription of your account stands, and the card shows it: no badge and the plans to choose, the plan as the badge with the date it is paid until, **Ended** (changes are still sent until a date), **Read only** (the vaults in the cloud can only be read, changes stay on this device, and the cloud deletes them on a date) or **Deleted**. The plans to choose are shown in every phase but active, where **Change plan** and **Manage subscription** are shown instead. After **Choose** the card asks the server every 3 seconds for up to 10 minutes whether you paid.
+The sync server tells where the subscription of your account stands, and the card shows it: no badge and a row per plan to choose, the plan as the badge with the day it renews, **Ended** (changes are still sent until a date), **Read only** (the vaults in the cloud can only be read, changes stay on this device, and the cloud deletes them on a date) or **Deleted**. The plans to choose are shown in every phase but active, where **Change plan** and **Manage subscription** are shown instead. After **Choose** the card asks the server every 3 seconds for up to 10 minutes whether you paid.
 
 To cancel, in the app or without it, see [Cancel Numen Sync](https://docs.numen.md/cancel-sync/).
 

@@ -18,7 +18,7 @@ export interface SubscriptionDates {
   readonly deleteAt: string
 }
 
-/** A plan the person can buy or move to: its name, its size such as "100 GB" and its price such as "$15 / month", empty for a plan with no price. */
+/** A plan the person can buy or move to: its name, its size such as "100 GB" and its price for a month such as "$15", empty for a plan with no price. */
 export interface PlanOffer {
   readonly id: string
   readonly name: string
@@ -84,7 +84,7 @@ export function getSubscriptionView(snapshot: SubscriptionSnapshot): Subscriptio
       return { badge: '', text: words.subscriptionLoading, tone: 'neutral' }
     case 'unreachable':
       return {
-        badge: words.syncServerUnreachable,
+        badge: words.offline,
         text: words.unreachableText(snapshot.server ?? ''),
         tone: 'warning',
       }
@@ -97,7 +97,7 @@ export function getSubscriptionView(snapshot: SubscriptionSnapshot): Subscriptio
   }
 }
 
-/** The line of an active subscription that says how long it is paid for, such as "Active until" and "November 23, 2026". */
+/** The row of an active subscription with the end of the paid period, such as "Renews" and "November 23, 2026". */
 export interface Validity {
   readonly label: string
   readonly date: string
@@ -109,7 +109,7 @@ export interface Validity {
  */
 export function getValidity(dates: SubscriptionDates, isTrial: boolean): Validity {
   return {
-    label: isTrial ? words.trialUntil : words.activeUntil,
+    label: isTrial ? words.trialUntil : words.renews,
     date: formatDate(dates.periodEnd),
   }
 }
@@ -132,7 +132,8 @@ export function formatSize(bytes: number): string {
   return `${Number((bytes / BYTES_IN_GB).toFixed(1))} GB`
 }
 
-function formatPrice(cents: number, currency: string): string {
+/** The price in its currency, such as "$15", "€10" or "7 CHF"; empty for no price. */
+export function formatPrice(cents: number, currency: string): string {
   if (cents === 0) return ''
   const units = cents / CENTS_IN_UNIT
   const amount = Number.isInteger(units) ? String(units) : units.toFixed(2)
@@ -140,21 +141,24 @@ function formatPrice(cents: number, currency: string): string {
   return symbol === undefined ? `${amount} ${currency}` : `${symbol}${amount}`
 }
 
-/** The name and the size of a plan, such as "Plus, 100 GB"; only the size when the plan has no name. */
-export function getPlanLabel(plan: PlanSize): string {
-  const size = formatSize(plan.quotaBytes)
-  return plan.name === '' ? size : `${plan.name}, ${size}`
-}
-
-/** The price of a plan for a month, such as "$15 / month"; empty for a plan with no price. */
-export function getPlanPrice(plan: PlanSize): string {
+/**
+ * The plan row of the card: the size and the price for a month, such as "100 GB, $15 / month", with the name in
+ * front, "Plus, 100 GB, $15 / month", where the badge does not name the plan. An empty name or price is left out.
+ */
+export function getPlanLine(plan: PlanSize, hasName: boolean): string {
   const price = formatPrice(plan.priceCents, plan.currency)
-  return price === '' ? '' : words.pricePerMonth(price)
+  return [
+    hasName ? plan.name : '',
+    formatSize(plan.quotaBytes),
+    price === '' ? '' : words.pricePerMonth(price),
+  ]
+    .filter((part) => part !== '')
+    .join(', ')
 }
 
-/** The space in use against the quota, such as "2 GB of 100 GB used". It may be above the quota. */
+/** The space in use against the quota, such as "2 GB of 100 GB". It may be above the quota. */
 export function getUsageText(usedBytes: number, quotaBytes: number): string {
-  return `${formatSize(usedBytes)} of ${formatSize(quotaBytes)} used`
+  return `${formatSize(usedBytes)} of ${formatSize(quotaBytes)}`
 }
 
 /** The share of the quota in use as a whole percent from 0 to 100; 100 where the space in use is above the quota. */

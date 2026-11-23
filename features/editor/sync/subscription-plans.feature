@@ -52,7 +52,7 @@ Feature: Numen Sync plans
       And the person buys the plan "Plus"
       When the cloud holds 2 GB of the notes of the person
       And the person opens the page "Identity and licenses"
-      Then the subscription shows "2 GB of 100 GB used"
+      Then the subscription shows "2 GB of 100 GB"
 
   Rule: A full plan stops new changes
 

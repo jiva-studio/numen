@@ -167,7 +167,7 @@ describe('the sync plugin frontend', () => {
     await vi.advanceTimersByTimeAsync(30_000)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Choose a plan')
+    expect(wrapper.text()).toContain('Choose Plus')
     wrapper.unmount()
   })
 
@@ -180,7 +180,7 @@ describe('the sync plugin frontend', () => {
 
     await wrapper
       .findAll('button')
-      .find((one) => one.attributes('aria-label') === 'Choose Plus')
+      .find((one) => one.text() === 'Choose Plus')
       ?.trigger('click')
     await flushPromises()
 
