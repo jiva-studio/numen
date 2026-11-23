@@ -27,7 +27,7 @@ func (p *pair) heads(t *testing.T) []*syncv1.StoredRevision {
 	return p.a.ReadChanges(t, p.a.GetRemoteID(t, source))
 }
 
-func (p *pair) getLive(t *testing.T) []*syncv1.StoredRevision {
+func (p *pair) getLiveHeads(t *testing.T) []*syncv1.StoredRevision {
 	t.Helper()
 	return slices.DeleteFunc(p.heads(t), func(one *syncv1.StoredRevision) bool { return one.GetRevision().GetDeleted() })
 }
@@ -190,14 +190,14 @@ func TestSyncVault_ARemovedFileIsRemovedOnTheSecondComputerOnceItStayedMissingFo
 
 	sync(t, p.a, source)
 
-	if live := p.getLive(t); len(live) != 1 {
+	if live := p.getLiveHeads(t); len(live) != 1 {
 		t.Fatalf("live files on the server after the first look = %d, want the removal to wait", len(live))
 	}
 	p.afterDelay()
 	sync(t, p.a, source)
 	sync(t, p.b, target)
 
-	if live := p.getLive(t); len(live) != 0 {
+	if live := p.getLiveHeads(t); len(live) != 0 {
 		t.Errorf("live files on the server = %d, want the file removed", len(live))
 	}
 	wantNoFile(t, p.b, target, pdf)
@@ -247,7 +247,7 @@ func TestSyncVault_AFileRemovedAndCreatedAgainAtItsPathIsANewFile(t *testing.T) 
 	sync(t, p.b, target)
 
 	wantNote(t, p.b, target, pdf, pdfText+" again")
-	live := p.getLive(t)
+	live := p.getLiveHeads(t)
 	if len(live) != 1 || bytes.Equal(live[0].GetRevision().GetFileId(), first.GetRevision().GetFileId()) || len(live[0].GetRevision().GetParentRev()) != 0 {
 		t.Errorf("live files = %d, want one new file with no parent", len(live))
 	}
@@ -288,7 +288,7 @@ func TestSyncVault_AChangeOnTheSecondComputerBeatsTheRemovalOnTheFirstWhenThePul
 	sync(t, p.b, target)
 	sync(t, p.a, source)
 
-	live := p.getLive(t)
+	live := p.getLiveHeads(t)
 	if len(live) != 1 || !bytes.Equal(live[0].GetRevision().GetParentRev(), tombstone) {
 		t.Fatalf("live files = %d, want the edit committed as a child of the removal", len(live))
 	}
@@ -320,7 +320,7 @@ func TestSyncVault_AChangeBeatsARemovalThatArrivesBetweenThePullAndThePush(t *te
 
 	sync(t, p.b, target)
 
-	live := p.getLive(t)
+	live := p.getLiveHeads(t)
 	if len(live) != 1 || !bytes.Equal(live[0].GetRevision().GetParentRev(), tombstone) || len(tombstone) == 0 {
 		t.Fatalf("live files = %d, want the edit committed again as a child of the removal", len(live))
 	}
@@ -351,7 +351,7 @@ func TestSyncVault_AChangeBeatsARemovalTheServerPrunedAsANewRevisionOfTheSameFil
 
 	sync(t, p.b, target)
 
-	live := p.getLive(t)
+	live := p.getLiveHeads(t)
 	if len(live) != 1 || !bytes.Equal(live[0].GetRevision().GetFileId(), fileID) || len(live[0].GetRevision().GetParentRev()) != 0 {
 		t.Fatalf("live files = %d, want one revision of the same file with no parent", len(live))
 	}
@@ -398,7 +398,7 @@ func TestSyncVault_ManyRemovedFilesPauseTheSyncAndSendNothingUntilTheAnswer(t *t
 	if !p.a.HasItem("Sync is paused: 10 of 10 files are removed") {
 		t.Errorf("health items = %+v, want the pause", p.a.Health.List())
 	}
-	if live := p.getLive(t); len(live) != 10 {
+	if live := p.getLiveHeads(t); len(live) != 10 {
 		t.Errorf("live files on the server = %d, want the 10 untouched and the new file not sent", len(live))
 	}
 	for i := range 10 {
@@ -422,7 +422,7 @@ func TestSyncVault_TheRemovalOfManyFilesIsSentOnceThePersonConfirmsItOnEachCompu
 	sync(t, p.a, source)
 	sync(t, p.b, target)
 
-	if live := p.getLive(t); len(live) != 0 {
+	if live := p.getLiveHeads(t); len(live) != 0 {
 		t.Errorf("live files on the server = %d, want none", len(live))
 	}
 	wantNote(t, p.b, target, "Papers/File 1.pdf", "file 1")
@@ -458,7 +458,7 @@ func TestSyncVault_TheFilesAreRestoredWhenThePersonKeepsThemAfterTheyWereRemoved
 	for i := range 10 {
 		wantNote(t, p.a, source, fmt.Sprintf("Papers/File %d.pdf", i+1), fmt.Sprintf("file %d", i+1))
 	}
-	if live := p.getLive(t); len(live) != 10 {
+	if live := p.getLiveHeads(t); len(live) != 10 {
 		t.Errorf("live files on the server = %d, want all 10", len(live))
 	}
 	if pending, err := p.a.State.ReadPending(t.Context(), source); err != nil || pending != nil {
@@ -516,7 +516,7 @@ func TestSyncVault_ManyFilesRemovedOnTheOtherComputerPauseThisOneAndAreRestoredW
 	sync(t, p.b, target)
 	sync(t, p.a, source)
 
-	if live := p.getLive(t); len(live) != 10 {
+	if live := p.getLiveHeads(t); len(live) != 10 {
 		t.Errorf("live files on the server = %d, want the 10 kept files sent again as edits", len(live))
 	}
 	for i := range 10 {

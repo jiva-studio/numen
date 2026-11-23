@@ -151,7 +151,7 @@ func TestDetectMoves_ListsAFileAsRemovedOnlyOnceItStayedMissingForTheDelay(t *te
 	}
 }
 
-func TestDetectMoves_CountsTheDelayAgainForAFileThatCameBackAndWentAgain(t *testing.T) {
+func TestDetectMoves_CountsTheDelayAgainForAFileThatWasRestoredAndRemovedAgain(t *testing.T) {
 	c := newComputer(t)
 	records := []transfer.FileRecord{newRecord(1, "Papers/Report.pdf", "pdf bytes")}
 	detect(t, c, records)

@@ -58,14 +58,14 @@ func fileOpsClient(t *testing.T, h *fileOpsHost) *host.Client {
 	return host.NewClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
 }
 
-func getSeen() *domain.FileStat {
+func getBaselineStat() *domain.FileStat {
 	return &domain.FileStat{Path: "Scans/Delta.pdf", Kind: domain.KindFile, Size: 5, ModTime: time.Unix(0, 4000), Hash: "h1"}
 }
 
 func TestTheClientMovesAFileWithTheBaselineOfTheFileAndTheVaultItNames(t *testing.T) {
 	h := &fileOpsHost{}
 
-	got, err := fileOpsClient(t, h).With("v2").MoveFile(t.Context(), "Scans/Delta.pdf", "Atlas/Delta.pdf", getSeen())
+	got, err := fileOpsClient(t, h).With("v2").MoveFile(t.Context(), "Scans/Delta.pdf", "Atlas/Delta.pdf", getBaselineStat())
 
 	if err != nil || got.Count != 7 {
 		t.Fatalf("the move returned %+v (%v), want a count of 7", got, err)
@@ -98,7 +98,7 @@ func TestTheClientRemovesAFileAndReturnsTheCount(t *testing.T) {
 	if err != nil || got.Count != 3 || h.gone.GetPath() != "Scans" || h.gone.Baseline != nil {
 		t.Errorf("the removal returned %+v (%v) after %v, want 3 and no baseline", got, err, h.gone)
 	}
-	if _, err := fileOpsClient(t, h).RemoveFile(t.Context(), "Delta.pdf", getSeen()); err != nil || h.gone.GetBaseline().GetHash() != "h1" {
+	if _, err := fileOpsClient(t, h).RemoveFile(t.Context(), "Delta.pdf", getBaselineStat()); err != nil || h.gone.GetBaseline().GetHash() != "h1" {
 		t.Errorf("the removal of a file sent %v (%v), want its baseline", h.gone, err)
 	}
 }
@@ -122,7 +122,7 @@ func TestTheClientReadsBytesAsTheyAreWithTheStatOfTheFile(t *testing.T) {
 func TestTheClientPlacesAStagedFileAndReturnsTheStatOfTheFile(t *testing.T) {
 	h := &fileOpsHost{}
 
-	got, err := fileOpsClient(t, h).PlaceFile(t.Context(), "ab.part", "Scans/Delta.pdf", "feed", getSeen())
+	got, err := fileOpsClient(t, h).PlaceFile(t.Context(), "ab.part", "Scans/Delta.pdf", "feed", getBaselineStat())
 
 	if err != nil || got.Path != "Scans/Delta.pdf" || got.Hash != "feed" {
 		t.Fatalf("the placement returned %+v (%v)", got, err)
