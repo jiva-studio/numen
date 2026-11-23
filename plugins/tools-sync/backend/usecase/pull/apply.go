@@ -65,11 +65,15 @@ func (r *run) apply(ctx context.Context, stored *syncv1.StoredRevision) error {
 	if rev.GetDeleted() {
 		return r.applyDeletion(ctx, stored, record, isKnown)
 	}
+	return r.applyContent(ctx, stored, meta, record, isKnown)
+}
+
+func (r *run) applyContent(ctx context.Context, stored *syncv1.StoredRevision, meta note.Meta, record transfer.FileRecord, isKnown bool) error {
 	local, stat, err := r.readLocal(ctx, meta.Path)
 	if err != nil {
 		return err
 	}
-	if isKnown && record.Path != meta.Path && isMetadataOnly(rev, record, meta) {
+	if isKnown && record.Path != meta.Path && isMetadataOnly(stored.GetRevision(), record, meta) {
 		isHandled, err := r.applyMove(ctx, stored, meta, record, local, stat)
 		if isHandled || err != nil {
 			return err

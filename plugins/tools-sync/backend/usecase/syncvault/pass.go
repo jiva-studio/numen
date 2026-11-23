@@ -274,30 +274,17 @@ func getBases(records []transfer.FileRecord) map[string]string {
 
 func (p *pass) readFiles(ctx context.Context, records []transfer.FileRecord, changes []transfer.Change) ([]transfer.File, error) {
 	var files []transfer.File
-	reader := p.use.deps.Host.Transfers(p.id)
 	for _, change := range changes {
 		if slices.Contains(p.conflicts, change.Path) {
 			continue
 		}
 		file := transfer.File{FileID: nil, ParentRev: nil, Path: change.Path, Content: nil, ModifiedAt: change.ModifiedAt, Stat: nil}
-		if change.Size > note.SmallFileLimit {
-			stat, err := p.use.deps.Host.Files(p.id).StatFile(ctx, change.Path)
-			if errors.Is(err, host.ErrNotExist) {
-				continue
-			}
-			if err != nil {
-				return nil, err
-			}
-			file.Stat = &stat
-		} else {
-			part, err := reader.ReadBytes(ctx, change.Path, 0, note.SmallFileLimit)
-			if errors.Is(err, host.ErrNotExist) {
-				continue
-			}
-			if err != nil {
-				return nil, err
-			}
-			file.Content = part.Content
+		isFound, err := p.readBody(ctx, &file, change.Size)
+		if err != nil {
+			return nil, err
+		}
+		if !isFound {
+			continue
 		}
 		if at := slices.IndexFunc(records, func(one transfer.FileRecord) bool { return one.Path == change.Path }); at >= 0 {
 			file.FileID, file.ParentRev = records[at].FileID, records[at].HeadRev
@@ -330,4 +317,28 @@ func setRecord(records []transfer.FileRecord, record transfer.FileRecord) []tran
 	}
 	records[at] = record
 	return records
+}
+
+func (p *pass) readBody(ctx context.Context, file *transfer.File, size int64) (bool, error) {
+	if size > note.SmallFileLimit {
+		stat, err := p.use.deps.Host.Files(p.id).StatFile(ctx, file.Path)
+		if err != nil {
+			return false, ignoreMissing(err)
+		}
+		file.Stat = &stat
+		return true, nil
+	}
+	part, err := p.use.deps.Host.Transfers(p.id).ReadBytes(ctx, file.Path, 0, note.SmallFileLimit)
+	if err != nil {
+		return false, ignoreMissing(err)
+	}
+	file.Content = part.Content
+	return true, nil
+}
+
+func ignoreMissing(err error) error {
+	if errors.Is(err, host.ErrNotExist) {
+		return nil
+	}
+	return err
 }

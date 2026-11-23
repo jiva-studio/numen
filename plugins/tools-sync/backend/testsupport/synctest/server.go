@@ -159,17 +159,7 @@ func (s *Server) AfterNext(suffix string, hook func()) {
 }
 
 func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
-	s.mu.Lock()
-	isDown, isCorrupted := s.isDown, s.isCorrupted
-	isLost := s.lostPath != "" && strings.HasSuffix(r.URL.Path, s.lostPath)
-	if isLost {
-		s.lostPath = ""
-	}
-	var hook func()
-	if s.afterPath != "" && strings.HasSuffix(r.URL.Path, s.afterPath) {
-		hook, s.afterPath, s.after = s.after, "", nil
-	}
-	s.mu.Unlock()
+	isDown, isCorrupted, isLost, hook := s.takeFaults(r.URL.Path)
 	switch {
 	case isDown:
 		http.Error(w, "the server is down", http.StatusServiceUnavailable)
@@ -177,25 +167,9 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		s.Fake.ServeHTTP(httptest.NewRecorder(), r)
 		http.Error(w, "the response was lost", http.StatusServiceUnavailable)
 	case isCorrupted && r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/blobs/"):
-		recorded := httptest.NewRecorder()
-		s.Fake.ServeHTTP(recorded, r)
-		body := recorded.Body.Bytes()
-		if len(body) > 0 {
-			body[0] ^= 0xff
-		}
-		w.WriteHeader(recorded.Code)
-		if _, err := w.Write(body); err != nil {
-			return
-		}
+		s.serveCorrupted(w, r)
 	case hook != nil:
-		recorded := httptest.NewRecorder()
-		s.Fake.ServeHTTP(recorded, r)
-		hook()
-		maps.Copy(w.Header(), recorded.Header())
-		w.WriteHeader(recorded.Code)
-		if _, err := w.Write(recorded.Body.Bytes()); err != nil {
-			return
-		}
+		s.serveHooked(w, r, hook)
 	default:
 		s.Fake.ServeHTTP(w, r)
 	}
@@ -204,3 +178,40 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 // ForgetRemovals makes the server drop every removal it keeps, as it does when they are older than its
 // retention.
 func (s *Server) ForgetRemovals() { s.Fake.PruneTombstones() }
+
+func (s *Server) takeFaults(path string) (isDown, isCorrupted, isLost bool, hook func()) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	isLost = s.lostPath != "" && strings.HasSuffix(path, s.lostPath)
+	if isLost {
+		s.lostPath = ""
+	}
+	if s.afterPath != "" && strings.HasSuffix(path, s.afterPath) {
+		hook, s.afterPath, s.after = s.after, "", nil
+	}
+	return s.isDown, s.isCorrupted, isLost, hook
+}
+
+func (s *Server) serveCorrupted(w http.ResponseWriter, r *http.Request) {
+	recorded := httptest.NewRecorder()
+	s.Fake.ServeHTTP(recorded, r)
+	body := recorded.Body.Bytes()
+	if len(body) > 0 {
+		body[0] ^= 0xff
+	}
+	w.WriteHeader(recorded.Code)
+	if _, err := w.Write(body); err != nil {
+		return
+	}
+}
+
+func (s *Server) serveHooked(w http.ResponseWriter, r *http.Request, hook func()) {
+	recorded := httptest.NewRecorder()
+	s.Fake.ServeHTTP(recorded, r)
+	hook()
+	maps.Copy(w.Header(), recorded.Header())
+	w.WriteHeader(recorded.Code)
+	if _, err := w.Write(recorded.Body.Bytes()); err != nil {
+		return
+	}
+}

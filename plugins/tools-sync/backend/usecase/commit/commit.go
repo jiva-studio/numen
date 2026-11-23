@@ -41,36 +41,51 @@ func (u *CommitRevisions) Execute(ctx context.Context, in transfer.CommitInput) 
 	if err != nil {
 		return nil, err
 	}
-	run := &batchRun{deps: u.deps, vault: in.Vault, author: author.DeviceSignKey}
-	outcomes := make([]transfer.Outcome, 0, len(in.Files))
-	var small []transfer.File
-	flush := func() error {
-		if len(small) == 0 {
-			return nil
-		}
-		batch, err := run.execute(ctx, small)
-		outcomes, small = append(outcomes, batch...), nil
-		return err
+	queue := &commitQueue{
+		run: &batchRun{deps: u.deps, vault: in.Vault, author: author.DeviceSignKey}, vaultID: in.VaultID,
+		outcomes: make([]transfer.Outcome, 0, len(in.Files)), small: nil,
 	}
 	for _, file := range in.Files {
-		if file.Stat == nil {
-			if small = append(small, file); len(small) == note.BatchFiles {
-				if err := flush(); err != nil {
-					return nil, err
-				}
-			}
-			continue
-		}
-		if err := flush(); err != nil {
+		if err := queue.add(ctx, file); err != nil {
 			return nil, err
 		}
-		outcome, err := run.executeBig(ctx, in.VaultID, file)
-		if err != nil {
-			return nil, err
-		}
-		outcomes = append(outcomes, outcome)
 	}
-	return outcomes, flush()
+	return queue.outcomes, queue.flush(ctx)
+}
+
+type commitQueue struct {
+	run      *batchRun
+	vaultID  domain.VaultID
+	outcomes []transfer.Outcome
+	small    []transfer.File
+}
+
+func (q *commitQueue) add(ctx context.Context, file transfer.File) error {
+	if file.Stat == nil {
+		q.small = append(q.small, file)
+		if len(q.small) == note.BatchFiles {
+			return q.flush(ctx)
+		}
+		return nil
+	}
+	if err := q.flush(ctx); err != nil {
+		return err
+	}
+	outcome, err := q.run.executeBig(ctx, q.vaultID, file)
+	if err != nil {
+		return err
+	}
+	q.outcomes = append(q.outcomes, outcome)
+	return nil
+}
+
+func (q *commitQueue) flush(ctx context.Context) error {
+	if len(q.small) == 0 {
+		return nil
+	}
+	batch, err := q.run.execute(ctx, q.small)
+	q.outcomes, q.small = append(q.outcomes, batch...), nil
+	return err
 }
 
 var errUnexpectedAnswer = errors.New("the server answered a batch it did not commit with no conflict")

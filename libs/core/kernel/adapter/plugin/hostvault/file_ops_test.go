@@ -26,6 +26,15 @@ import (
 
 const syncer = "md.numen.syncer"
 
+func readDelta(t *testing.T, v domain.Vault) []byte {
+	t.Helper()
+	got, err := os.ReadFile(filepath.Join(v.Path, "Delta.pdf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return got
+}
+
 func fileOpsVault(t *testing.T, files map[string]string) (*vault.Access, domain.Vault, *atomic.Int32) {
 	t.Helper()
 	v := vaulttest.NewVault(t, files)
@@ -192,7 +201,7 @@ func TestPlaceFileWithoutABaselineRefusesAPathThatIsTaken(t *testing.T) {
 
 	_, err := access.Ops.PlaceFile(t.Context(), syncer, "ab.part", "Delta.pdf", domain.HashContent([]byte("theirs")), nil)
 
-	got, _ := os.ReadFile(filepath.Join(v.Path, "Delta.pdf"))
+	got := readDelta(t, v)
 	if !errors.Is(err, vaultdomain.ErrAlreadyExists) || string(got) != "mine" {
 		t.Errorf("the placement over a taken path was %v and the file holds %q, want ErrAlreadyExists and mine", err, got)
 	}
@@ -214,7 +223,7 @@ func TestPlaceFileWithABaselineReplacesTheFileItNamesAndRefusesOneThatChanged(t 
 	if !errors.Is(err, edit.ErrStale) {
 		t.Fatalf("the placement over a changed file was %v, want ErrStale", err)
 	}
-	if got, _ := os.ReadFile(filepath.Join(v.Path, "Delta.pdf")); string(got) != "edited here" {
+	if got := readDelta(t, v); string(got) != "edited here" {
 		t.Errorf("a refused placement left %q", got)
 	}
 
@@ -225,7 +234,7 @@ func TestPlaceFileWithABaselineReplacesTheFileItNamesAndRefusesOneThatChanged(t 
 	if _, err := access.Ops.PlaceFile(t.Context(), syncer, "ab.part", "Delta.pdf", hash, &now); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := os.ReadFile(filepath.Join(v.Path, "Delta.pdf")); string(got) != "new content" {
+	if got := readDelta(t, v); string(got) != "new content" {
 		t.Errorf("the replaced file holds %q", got)
 	}
 }

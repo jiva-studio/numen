@@ -82,20 +82,11 @@ func getFolderMove(from, to string) folderMove {
 }
 
 func (r *run) moveFolder(ctx context.Context, group folderMove, moved []transfer.FileRecord) error {
-	under := 0
-	for _, record := range r.records {
-		if strings.HasPrefix(record.Path, group.from+"/") {
-			under++
-		}
-	}
-	if len(moved) < 2 || len(moved) != under {
+	if len(moved) < 2 || len(moved) != r.countInFolder(group.from) {
 		return nil
 	}
-	for _, record := range moved {
-		hash, _, err := r.readLocal(ctx, record.Path)
-		if err != nil || hash == "" {
-			return err
-		}
+	if isPresent, err := r.hasAllLocal(ctx, moved); !isPresent || err != nil {
+		return err
 	}
 	if _, err := r.moves.MoveFile(ctx, group.from, group.to, nil); err != nil {
 		if errors.Is(err, host.ErrAlreadyExists) || errors.Is(err, host.ErrNotExist) {
@@ -113,4 +104,24 @@ func (r *run) moveFolder(ctx context.Context, group folderMove, moved []transfer
 		}
 	}
 	return nil
+}
+
+func (r *run) countInFolder(folder string) int {
+	count := 0
+	for _, record := range r.records {
+		if strings.HasPrefix(record.Path, folder+"/") {
+			count++
+		}
+	}
+	return count
+}
+
+func (r *run) hasAllLocal(ctx context.Context, moved []transfer.FileRecord) (bool, error) {
+	for _, record := range moved {
+		hash, _, err := r.readLocal(ctx, record.Path)
+		if err != nil || hash == "" {
+			return false, err
+		}
+	}
+	return true, nil
 }

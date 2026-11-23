@@ -183,11 +183,11 @@ When('{computer} changes the file {string} in {owned}', ({ person }, computer: C
 })
 
 When('{computer} moves the file {string} to {string} in {owned}', async ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {
-  await person.files.moveEntry(computer, 'file', from, to, vault)
+  await person.files.moveEntry(computer, 'file', { from, to }, vault)
 })
 
 When('{computer} moves the folder {string} to {string} in {owned}', async ({ person }, computer: ComputerName, from: string, to: string, vault: string) => {
-  await person.files.moveEntry(computer, 'folder', from, to, vault)
+  await person.files.moveEntry(computer, 'folder', { from, to }, vault)
 })
 
 When('{computer} removes the file {string} in {owned}', async ({ person }, computer: ComputerName, filePath: string, vault: string) => {
