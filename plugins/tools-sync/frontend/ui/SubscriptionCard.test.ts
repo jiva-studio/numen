@@ -171,11 +171,68 @@ describe('SubscriptionCard', () => {
 
     expect(client.createCheckout).toHaveBeenCalledExactlyOnceWith('plus')
     expect(openExternal).toHaveBeenCalledExactlyOnceWith(CHECKOUT_URL)
-    const waiting = wrapper
-      .findAll('button')
-      .find((one) => one.text() === 'Waiting for the payment…')
-    expect(waiting?.attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[role="status"]').text()).toContain('Waiting for the payment…')
+    expect(wrapper.text()).not.toContain('Choose a plan')
     expect(findBuy(wrapper)).toBeUndefined()
+  })
+
+  it('asks to choose a plan above the plans when there is no subscription', async () => {
+    const { wrapper } = await render(createResponse({ phase: 'none' }))
+
+    expect(wrapper.text()).toContain('Choose a plan')
+  })
+
+  it('shows the plans by itself when the identity is created while the card is open', async () => {
+    let answer = createResponse({ hasIdentity: false, phase: '' })
+    const client = createClient(() => Promise.resolve(answer))
+    const wrapper = mount(SubscriptionCard, {
+      props: {
+        client,
+        openExternal: vi.fn(() => Promise.resolve(asValue(null))),
+        now: () => NOW,
+        refreshMs: { noIdentity: 50, ready: 60_000, unreachable: 60_000 },
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('Create an identity to buy a subscription.')
+
+    answer = createResponse({ phase: 'none' })
+    await vi.waitFor(() => expect(findBuy(wrapper, 'Plus, 100 GB, $15')).toBeDefined())
+
+    expect(wrapper.text()).not.toContain('No identity')
+    wrapper.unmount()
+  })
+
+  it('says which server it could not reach and opens the settings from the card', async () => {
+    const client = createClient(() =>
+      Promise.reject(
+        Object.assign(new Error('Could not reach the sync server'), { code: 'unavailable' }),
+      ),
+    )
+    const openSettings = vi.fn<() => void>()
+    const wrapper = mount(SubscriptionCard, {
+      props: {
+        client,
+        openExternal: vi.fn(() => Promise.resolve(asValue(null))),
+        now: () => NOW,
+        settings: {
+          get: <T>() => 'https://sync.numen.md' as T,
+          onChange: () => ({ dispose: () => undefined }),
+        },
+        openSettings,
+        refreshMs: { noIdentity: 60_000, ready: 60_000, unreachable: 60_000 },
+      },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('https://sync.numen.md')
+    expect(wrapper.text()).toContain('every 30 seconds')
+    await wrapper
+      .findAll('button')
+      .find((one) => one.text() === 'Open the settings')
+      ?.trigger('click')
+    expect(openSettings).toHaveBeenCalledOnce()
+    wrapper.unmount()
   })
 
   it('offers to buy every plan with its name and size when there is no subscription', async () => {

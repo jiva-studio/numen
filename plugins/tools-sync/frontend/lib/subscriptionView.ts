@@ -31,6 +31,8 @@ export interface SubscriptionSnapshot {
   readonly phase: SubscriptionPhase | ''
   readonly dates: SubscriptionDates
   readonly isTrial?: boolean | undefined
+  /** The address of the sync server in use; empty when it is not known. */
+  readonly server?: string | undefined
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -86,7 +88,11 @@ export function getSubscriptionView(snapshot: SubscriptionSnapshot): Subscriptio
     case 'loading':
       return { badge: '', text: words.subscriptionLoading, tone: 'neutral' }
     case 'unreachable':
-      return { badge: words.syncServerUnreachable, text: '', tone: 'warning' }
+      return {
+        badge: words.syncServerUnreachable,
+        text: `${words.unreachableText(snapshot.server ?? '')} ${words.unreachableRetry}`,
+        tone: 'warning',
+      }
     case 'noIdentity':
       return { badge: words.noIdentityBadge, text: words.noIdentityText, tone: 'neutral' }
     case 'ready':

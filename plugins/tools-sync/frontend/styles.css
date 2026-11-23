@@ -155,6 +155,8 @@
 }
 
 .subscription__text,
+.subscription__choose,
+.subscription__waiting,
 .subscription__plan,
 .subscription__usage,
 .subscription__full,
@@ -164,6 +166,14 @@
 
 .subscription__text,
 .subscription__usage {
+  color: var(--numen-hushed);
+}
+
+.subscription__choose {
+  font-weight: 500;
+}
+
+.subscription__waiting {
   color: var(--numen-hushed);
 }
 

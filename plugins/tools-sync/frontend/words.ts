@@ -25,7 +25,16 @@ export const WORDS = {
   changePlanTo: (name: string): string => `Change plan to ${name}`,
   manageSubscription: 'Manage subscription',
   cloudFull: 'Cloud storage is full: changes stay on this device',
+  choosePlan: 'Choose a plan',
   waitingForPayment: 'Waiting for the payment…',
+  waitingForPaymentText:
+    'Finish the payment in your browser. This card updates by itself when the payment goes through.',
+  unreachableText: (server: string): string =>
+    server === ''
+      ? 'Check that the sync server is running and that its address in the settings is right.'
+      : `Could not connect to ${server}. Check that the server is running, or change its address in the settings.`,
+  unreachableRetry: 'The card tries again every 30 seconds.',
+  openSettings: 'Open the settings',
   paymentNotSeen: 'The payment is not seen yet. Open this page again after you pay.',
   vaultsTitle: 'Vaults',
   connectNew: 'Connect as a new synced vault',

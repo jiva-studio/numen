@@ -53,6 +53,7 @@ export const None: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('No subscription')).toBeVisible()
+    await expect(await canvas.findByText('Choose a plan')).toBeVisible()
     await expect(await canvas.findByRole('button', { name: 'Buy Plus, 100 GB, $15' })).toBeVisible()
   },
 }
@@ -130,14 +131,23 @@ export const NoIdentity: Story = {
 }
 
 export const Unreachable: Story = {
-  args: createArgs(() =>
-    Promise.reject(
-      Object.assign(new Error('Could not reach the sync server'), { code: 'unavailable' }),
+  args: {
+    ...createArgs(() =>
+      Promise.reject(
+        Object.assign(new Error('Could not reach the sync server'), { code: 'unavailable' }),
+      ),
     ),
-  ),
+    settings: {
+      get: <T>() => 'https://sync.numen.md' as T,
+      onChange: () => ({ dispose: () => undefined }),
+    },
+    openSettings: () => undefined,
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(await canvas.findByText('Could not reach the sync server')).toBeVisible()
+    await expect(await canvas.findByText(/https:\/\/sync\.numen\.md/)).toBeVisible()
+    await expect(await canvas.findByRole('button', { name: 'Open the settings' })).toBeVisible()
     await expect(canvas.queryByRole('button', { name: /^Buy / })).toBeNull()
   },
 }

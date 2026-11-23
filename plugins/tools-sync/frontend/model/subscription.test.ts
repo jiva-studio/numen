@@ -71,15 +71,25 @@ type OpenExternal = (url: string) => Promise<Result<null>>
 
 const createOpen = () => vi.fn<OpenExternal>(() => Promise.resolve(asValue(null)))
 
+const NEVER_MS = 2 ** 30
+const NEVER = { noIdentity: NEVER_MS, ready: NEVER_MS, unreachable: NEVER_MS }
+
 const mountSubscription = (
   client: ReturnType<typeof createClient>,
   openExternal: ReturnType<typeof createOpen> = createOpen(),
+  extra: Partial<Parameters<typeof useSubscription>[0]> = {},
 ) => {
   const state: { current?: ReturnType<typeof useSubscription> } = {}
   const wrapper = mount(
     defineComponent({
       setup() {
-        state.current = useSubscription({ client, openExternal, now: () => NOW })
+        state.current = useSubscription({
+          client,
+          openExternal,
+          now: () => NOW,
+          refreshMs: NEVER,
+          ...extra,
+        })
         return () => h('div')
       },
     }),
@@ -156,6 +166,106 @@ describe('useSubscription on load', () => {
 
     expect(subscription.status.value).toBe('unreachable')
     expect(subscription.canBuy.value).toBe(false)
+  })
+})
+
+describe('useSubscription following the account and the server', () => {
+  const NO_IDENTITY = createResponse({ hasIdentity: false, phase: '' })
+  const unreachable = () => createFailure('unavailable', 'Could not reach the sync server')
+
+  it('shows the plans by itself when the identity appears after the card is open', async () => {
+    const client = createClient([NO_IDENTITY, NO_IDENTITY, createResponse()])
+    const { subscription } = mountSubscription(client, createOpen(), {
+      refreshMs: { ...NEVER, noIdentity: 3000 },
+    })
+    await subscription.load()
+    expect(subscription.status.value).toBe('noIdentity')
+
+    await vi.advanceTimersByTimeAsync(6000)
+
+    expect(subscription.status.value).toBe('ready')
+    expect(subscription.buyOffers.value.map((one) => one.id)).toStrictEqual([
+      'basic',
+      'plus',
+      'pro',
+    ])
+  })
+
+  it('shows no identity by itself when the identity is removed', async () => {
+    const client = createClient([createResponse(), NO_IDENTITY])
+    const { subscription } = mountSubscription(client, createOpen(), {
+      refreshMs: { ...NEVER, ready: 10_000 },
+    })
+    await subscription.load()
+
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    expect(subscription.status.value).toBe('noIdentity')
+    expect(subscription.buyOffers.value).toStrictEqual([])
+  })
+
+  it('tries the unreachable server again every 30 seconds and recovers when it answers', async () => {
+    const client = createClient([createResponse()])
+    client.getSubscription
+      .mockRejectedValueOnce(unreachable())
+      .mockRejectedValueOnce(unreachable())
+      .mockResolvedValue(createResponse())
+    const { subscription } = mountSubscription(client, createOpen(), {
+      refreshMs: { ...NEVER, unreachable: 30_000 },
+    })
+    await subscription.load()
+    expect(subscription.status.value).toBe('unreachable')
+
+    await vi.advanceTimersByTimeAsync(29_999)
+    expect(client.getSubscription).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(subscription.status.value).toBe('unreachable')
+    await vi.advanceTimersByTimeAsync(30_000)
+
+    expect(subscription.status.value).toBe('ready')
+    expect(subscription.buyOffers.value).toHaveLength(3)
+  })
+
+  it('says which server it could not reach and follows the setting', async () => {
+    const client = createClient([createResponse()])
+    client.getSubscription.mockRejectedValue(unreachable())
+    let notify: (value: string) => void = () => undefined
+    const settings = {
+      get: <T>() => 'https://sync.numen.md' as T,
+      onChange: <T>(_key: string, handler: (value: T) => void) => {
+        notify = handler as (value: string) => void
+        return { dispose: () => undefined }
+      },
+    }
+    const { subscription } = mountSubscription(client, createOpen(), { settings })
+    await subscription.load()
+    expect(subscription.view.value.text).toContain('https://sync.numen.md')
+
+    notify('http://127.0.0.1:8787')
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(subscription.server.value).toBe('http://127.0.0.1:8787')
+    expect(subscription.view.value.text).toContain('http://127.0.0.1:8787')
+  })
+
+  it('reads again at once when the server setting changes', async () => {
+    const client = createClient([createResponse()])
+    client.getSubscription.mockRejectedValueOnce(unreachable())
+    let notify: (value: string) => void = () => undefined
+    const settings = {
+      get: <T>() => 'https://sync.numen.md' as T,
+      onChange: <T>(_key: string, handler: (value: T) => void) => {
+        notify = handler as (value: string) => void
+        return { dispose: () => undefined }
+      },
+    }
+    const { subscription } = mountSubscription(client, createOpen(), { settings })
+    await subscription.load()
+
+    notify('http://127.0.0.1:8787')
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(subscription.status.value).toBe('ready')
   })
 })
 

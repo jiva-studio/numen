@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  formatSize,
-  getOfferLabel,
-  getPlanLabel,
-  getUsageText,
-} from './subscriptionView'
+import { formatSize, getOfferLabel, getPlanLabel, getUsageText } from './subscriptionView'
 
 const GIB = 2 ** 30
 const PLUS = { id: 'plus', name: 'Plus', quotaBytes: 100 * GIB, priceCents: 1500, currency: 'USD' }

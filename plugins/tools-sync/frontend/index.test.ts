@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { createMockPluginContext } from '@numen/plugin-sdk/testing'
+import { SETTINGS_OPEN_COMMAND } from '@numen/plugin-sdk'
+import { createMockHostServices, createMockPluginContext } from '@numen/plugin-sdk/testing'
 import { activate, SYNC_VIEW } from './index'
 import { WORDS } from './words'
 
@@ -126,6 +127,48 @@ describe('the sync plugin frontend', () => {
     await vi.advanceTimersByTimeAsync(60_000)
 
     expect(wrapper.find('.sync-badge__label').text()).toBe(WORDS.syncedLabel)
+  })
+
+  it('says which sync server it could not reach, opens the settings of the plugin, and recovers when the server answers', async () => {
+    const stub = stubServer({ hasIdentity: true })
+    let isUp = false
+    const answer = stub.getMockImplementation()
+    stub.mockImplementation((url) =>
+      isUp || !String(url).endsWith('GetSubscription')
+        ? (answer?.(url) as Promise<Response>)
+        : Promise.resolve(Response.json({ code: 'unavailable', message: 'down' }, { status: 503 })),
+    )
+    const context = createMockPluginContext({
+      pluginId: 'md.numen.tools.sync',
+      initialSettings: { server: 'https://sync.numen.md' },
+    })
+    const host = createMockHostServices()
+    activate(context, host)
+    const card = context.getRegisteredSettingsViews().find((one) => one.id === 'subscription')
+    const wrapper = mount(card?.component as never)
+    await vi.advanceTimersByTimeAsync(0)
+    await flushPromises()
+    expect(wrapper.text()).toContain('https://sync.numen.md')
+
+    await wrapper
+      .findAll('button')
+      .find((one) => one.text() === 'Open the settings')
+      ?.trigger('click')
+    expect(host.ui.commands.getRuns()).toStrictEqual([
+      {
+        command: SETTINGS_OPEN_COMMAND,
+        target: undefined,
+        itemId: undefined,
+        values: { plugin: 'md.numen.tools.sync' },
+      },
+    ])
+
+    isUp = true
+    await vi.advanceTimersByTimeAsync(30_000)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Choose a plan')
+    wrapper.unmount()
   })
 
   it('opens the payment page of the chosen plan through the identity of the plugin when the person buys', async () => {

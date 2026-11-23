@@ -4,10 +4,10 @@
  * server says of the subscription, the plan with the space used, and the actions: to buy a plan, to change it and to manage the subscription.
  */
 import { onMounted } from 'vue'
-import type { Result } from '@numen/plugin-sdk'
+import type { PluginSettings, Result } from '@numen/plugin-sdk'
 import { Button } from '@numen/ui'
 import type { SubscriptionClient } from '../api/subscription'
-import { useSubscription } from '../model/subscription'
+import { useSubscription, type UseSubscriptionOptions } from '../model/subscription'
 import { WORDS as words } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -15,6 +15,9 @@ const props = defineProps<{
   client?: SubscriptionClient | undefined
   openExternal: (url: string) => Promise<Result<null>>
   now?: (() => Date) | undefined
+  settings?: Pick<PluginSettings, 'get' | 'onChange'> | undefined
+  openSettings?: (() => void) | undefined
+  refreshMs?: UseSubscriptionOptions['refreshMs']
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -27,6 +30,7 @@ const {
   isFull,
   waiting,
   problem,
+  status,
   view,
   load,
   buy,
@@ -36,6 +40,8 @@ const {
   openExternal: props.openExternal,
   client: props.client,
   now: props.now,
+  settings: props.settings,
+  refreshMs: props.refreshMs,
 })
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -77,16 +83,31 @@ function onFailure(failure: unknown): void {
     <p v-if="planLine !== ''" class="subscription__plan">{{ planLine }}</p>
     <p v-if="usage !== ''" class="subscription__usage">{{ usage }}</p>
     <p v-if="isFull" class="subscription__full">{{ words.cloudFull }}</p>
-    <div v-if="buyOffers.length > 0 || changeOffers.length > 0 || canManage" class="subscription__controls">
+    <div
+      v-if="status === 'unreachable' && openSettings !== undefined"
+      class="subscription__controls"
+    >
+      <Button type="button" variant="outline" @click="props.openSettings?.()">
+        {{ words.openSettings }}
+      </Button>
+    </div>
+    <p v-if="waiting" role="status" class="subscription__waiting">
+      <strong>{{ words.waitingForPayment }}</strong>
+      {{ words.waitingForPaymentText }}
+    </p>
+    <p v-else-if="buyOffers.length > 0" class="subscription__choose">{{ words.choosePlan }}</p>
+    <div
+      v-if="(!waiting && buyOffers.length > 0) || changeOffers.length > 0 || canManage"
+      class="subscription__controls"
+    >
       <Button
-        v-for="offer in buyOffers"
+        v-for="offer in waiting ? [] : buyOffers"
         :key="`buy-${offer.id}`"
         type="button"
         variant="solid"
-        :disabled="waiting"
         @click="onBuy(offer.id)"
       >
-        {{ waiting ? words.waitingForPayment : `${words.buy} ${offer.label}` }}
+        {{ `${words.buy} ${offer.label}` }}
       </Button>
       <Button
         v-for="offer in changeOffers"

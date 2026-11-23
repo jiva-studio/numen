@@ -1,5 +1,5 @@
 import { computed, onScopeDispose, ref } from 'vue'
-import type { Result } from '@numen/plugin-sdk'
+import type { PluginSettings, Result } from '@numen/plugin-sdk'
 import { runInBackground } from '@numen/ui'
 import {
   getFailureCode,
@@ -23,6 +23,8 @@ import { WORDS as words } from '../words'
 
 const DEFAULT_POLL_EVERY_MS = 3000
 const DEFAULT_POLL_LIMIT_MS = 600_000
+const REFRESH_MS = { noIdentity: 3000, ready: 10_000, unreachable: 30_000 } as const
+const SERVER_SETTING = 'server'
 const NO_DATES: SubscriptionDates = { periodEnd: '', writesEnd: '', deleteAt: '' }
 
 export interface UseSubscriptionOptions {
@@ -31,7 +33,14 @@ export interface UseSubscriptionOptions {
   readonly now?: (() => Date) | undefined
   readonly pollEveryMs?: number | undefined
   readonly pollLimitMs?: number | undefined
+  /** How long the card waits before it asks again, by what it saw last. */
+  readonly refreshMs?: Readonly<Record<'noIdentity' | 'ready' | 'unreachable', number>> | undefined
+  /** Where the address of the sync server is read and followed. */
+  readonly settings?: Pick<PluginSettings, 'get' | 'onChange'> | undefined
 }
+
+const readServer = (settings: UseSubscriptionOptions['settings']): string =>
+  settings?.get<string>(SERVER_SETTING) ?? ''
 
 const getMessage = (failure: unknown): string =>
   failure instanceof Error ? failure.message : String(failure)
@@ -42,7 +51,10 @@ export function useSubscription(options: UseSubscriptionOptions) {
     openExternal,
     pollEveryMs = DEFAULT_POLL_EVERY_MS,
     pollLimitMs = DEFAULT_POLL_LIMIT_MS,
+    refreshMs = REFRESH_MS,
+    settings,
   } = options
+  const server = ref(readServer(settings))
   const status = ref<SubscriptionStatus>('loading')
   const phase = ref<SubscriptionPhase | ''>('')
   const dates = ref<SubscriptionDates>(NO_DATES)
@@ -56,6 +68,8 @@ export function useSubscription(options: UseSubscriptionOptions) {
   let isAwaited: () => boolean = () => false
   let pollTimer: ReturnType<typeof setTimeout> | undefined
   let limitTimer: ReturnType<typeof setTimeout> | undefined
+  let refreshTimer: ReturnType<typeof setTimeout> | undefined
+  let isDisposed = false
 
   const canBuy = computed(() => status.value === 'ready' && phase.value !== 'active')
   const view = computed(() =>
@@ -64,6 +78,7 @@ export function useSubscription(options: UseSubscriptionOptions) {
       phase: phase.value,
       dates: dates.value,
       isTrial: isTrial.value,
+      server: server.value,
     }),
   )
 
@@ -92,7 +107,8 @@ export function useSubscription(options: UseSubscriptionOptions) {
     }
   }
 
-  async function load(): Promise<void> {
+  async function refresh(): Promise<void> {
+    const before = status.value
     try {
       await read()
     } catch (failure) {
@@ -100,7 +116,35 @@ export function useSubscription(options: UseSubscriptionOptions) {
       if (getFailureCode(failure) !== 'unavailable') problem.value = getMessage(failure)
       return
     }
-    if (status.value === 'ready') await loadPlans()
+    if (before === 'unreachable') problem.value = ''
+    if (status.value === 'ready' && (before !== 'ready' || plans.value.length === 0)) {
+      await loadPlans()
+    }
+  }
+
+  function scheduleRefresh(): void {
+    clearTimeout(refreshTimer)
+    refreshTimer = undefined
+    if (isDisposed) return
+    const wait =
+      status.value === 'ready'
+        ? refreshMs.ready
+        : refreshMs[status.value === 'noIdentity' ? 'noIdentity' : 'unreachable']
+    refreshTimer = setTimeout(() => runInBackground(tick(), reportProblem), wait)
+  }
+
+  async function tick(): Promise<void> {
+    if (!waiting.value) await refresh()
+    scheduleRefresh()
+  }
+
+  /** Reads the subscription and keeps reading it, so the card follows the identity, the server and the payment. */
+  async function load(): Promise<void> {
+    try {
+      await refresh()
+    } finally {
+      scheduleRefresh()
+    }
   }
 
   function reportProblem(failure: unknown): void {
@@ -182,7 +226,17 @@ export function useSubscription(options: UseSubscriptionOptions) {
     }
   }
 
-  onScopeDispose(endPaymentPoll)
+  const followServer = settings?.onChange<string>(SERVER_SETTING, (address) => {
+    server.value = address
+    runInBackground(load(), reportProblem)
+  })
+
+  onScopeDispose(() => {
+    isDisposed = true
+    clearTimeout(refreshTimer)
+    followServer?.dispose()
+    endPaymentPoll()
+  })
 
   const toOffer = (one: PlanResponse): PlanOffer => ({
     id: one.id,
@@ -219,6 +273,7 @@ export function useSubscription(options: UseSubscriptionOptions) {
   )
 
   return {
+    server,
     status,
     phase,
     canBuy,
