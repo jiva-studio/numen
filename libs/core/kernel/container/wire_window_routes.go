@@ -332,15 +332,15 @@ func getTriggerSource(install pluginInstall, exec *PluginExecution, settingsDeps
 	}
 }
 
-func startVault(vaultDeps vaultWiring, db *vaultIndex, current *vault.CurrentRefresh) windowsession.VaultPassesFunc {
+func startVault(vaultDeps vaultWiring, db *vaultIndex, current *indexing.CurrentRefresh) windowsession.VaultPassesFunc {
 	return func(
 		ctx context.Context, v domain.Vault, rebuild bool, report windowsession.Reporters,
 	) windowsession.Started {
 		opening := vaultOpener(vaultDeps, db)
 		opening.ShouldRebuild = rebuild
-		var changed func(vault.VaultChanges)
+		var changed func(indexing.VaultChanges)
 		if report.Changed != nil {
-			changed = func(m vault.VaultChanges) { report.Changed(m.Paths, m.Assets, m.ShouldReload) }
+			changed = func(m indexing.VaultChanges) { report.Changed(m.Paths, m.Assets, m.ShouldReload) }
 		}
 
 		open := opening.Begin(ctx, v, changed, report.Failed)

@@ -6,6 +6,7 @@
 package container
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
@@ -30,7 +31,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 )
 
@@ -194,7 +194,7 @@ func buildVaultSearch(c Config, exec *PluginExecution, prefs *PluginPreferences,
 
 func setVaultSearch(v vaultWiring, chunks noteChunkPolicy) vaultWiring {
 	v.CutNotes = cutNotes(chunks)
-	v.SetNoteCut = func(scan *vault.Scan) { setNoteCut(chunks, scan) }
+	v.SetNoteCut = func(scan *indexing.Scan) { setNoteCut(chunks, scan) }
 	return v
 }
 

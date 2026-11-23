@@ -11,6 +11,7 @@ import {
   Priority,
   type CallFailure,
 } from '@numen/protocol'
+import type { RowOption } from '../connections'
 import { asFailure, asValue, type Result } from '@numen/result'
 
 /** The calls of ConnectionCallService. */
@@ -90,13 +91,6 @@ export interface ConnectionCallRow {
   readonly fields: readonly ConnectionCallRowField[]
 }
 
-/** One value a row field can take. An empty title shows the value, and an empty group no heading. */
-export interface ConnectionCallRowOption {
-  readonly value: string
-  readonly title: string
-  readonly group: string
-}
-
 /** A row field of a connection among the rows of a plugin, with the values of the row fields so far. */
 export interface ConnectionCallRowOptionsRequest {
   readonly pluginId: string
@@ -128,7 +122,7 @@ export interface ConnectionCallClient {
    */
   listRowOptions(
     request: ConnectionCallRowOptionsRequest,
-  ): Promise<readonly ConnectionCallRowOption[]>
+  ): Promise<readonly RowOption[]>
 }
 
 const readErrorCode = (code: CallErrorCode): ConnectionCallErrorCode => {
