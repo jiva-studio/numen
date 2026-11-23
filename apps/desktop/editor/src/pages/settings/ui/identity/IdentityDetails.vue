@@ -5,11 +5,10 @@
  */
 import { computed } from 'vue'
 import { Trash2 } from '@lucide/vue'
-import { IslandCard } from '@numen/ui'
+import { ConfirmDialog, IslandCard } from '@numen/ui'
 import { NavigationRow } from '@numen/plugin-manager'
 import type { IdentityInfo } from '@/entities/identity'
 import { WORDS as words } from '../../words'
-import { ConfirmDialog } from '../confirm-dialog'
 import SettingRow from '../setting-row/SettingRow.vue'
 import CardAction from './CardAction.vue'
 

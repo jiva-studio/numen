@@ -459,7 +459,7 @@ describe('useSubscription plans', () => {
     }
   })
 
-  it('offers to change to every other plan and to buy none while the subscription is active', async () => {
+  it('lists every plan to change to with the current one and offers to buy none while the subscription is active', async () => {
     const { subscription } = mountSubscription(createClient([ACTIVE_ON_PLUS]))
 
     await subscription.session.load()
@@ -467,8 +467,29 @@ describe('useSubscription plans', () => {
     expect(subscription.offers.buyOffers.value).toStrictEqual([])
     expect(subscription.offers.changeOffers.value).toStrictEqual([
       { id: 'basic', name: 'Basic', size: '10 GB', price: '$5' },
+      { id: 'plus', name: 'Plus', size: '100 GB', price: '$15' },
       { id: 'pro', name: 'Pro', size: '250 GB', price: '$30' },
     ])
+    expect(subscription.offers.currentOffer.value).toStrictEqual({
+      id: 'plus',
+      name: 'Plus',
+      size: '100 GB',
+      price: '$15',
+    })
+  })
+
+  it('knows no current plan when the account has a plan the client does not know', async () => {
+    const unknown = createResponse({ ...ACTIVE_ON_PLUS, plan: 'gold', quotaBytes: 50 * GIB })
+    const { subscription } = mountSubscription(createClient([unknown]))
+
+    await subscription.session.load()
+
+    expect(subscription.offers.changeOffers.value.map((one) => one.id)).toStrictEqual([
+      'basic',
+      'plus',
+      'pro',
+    ])
+    expect(subscription.offers.currentOffer.value).toBeUndefined()
   })
 
   it('offers nothing when the device has no identity', async () => {
@@ -607,10 +628,7 @@ describe('useSubscription change of the plan', () => {
 
     expect(client.changePlan).toHaveBeenCalledExactlyOnceWith('pro')
     expect(subscription.summary.planLine.value).toBe('250 GB, $30 / month')
-    expect(subscription.offers.changeOffers.value.map((one) => one.id)).toStrictEqual([
-      'basic',
-      'plus',
-    ])
+    expect(subscription.offers.currentOffer.value?.id).toBe('pro')
     expect(openExternal).not.toHaveBeenCalled()
     expect(subscription.payment.waiting.value).toBe(false)
   })

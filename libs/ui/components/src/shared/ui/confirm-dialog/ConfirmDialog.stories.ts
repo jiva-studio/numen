@@ -12,7 +12,7 @@ interface Knobs {
 }
 
 const meta: Meta<Knobs> = {
-  title: 'Window/Confirm dialog',
+  title: 'Controls/Confirm dialog',
   component: ConfirmDialog,
   parameters: { layout: 'fullscreen' },
   argTypes: {

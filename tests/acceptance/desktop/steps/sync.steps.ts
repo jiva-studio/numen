@@ -176,6 +176,22 @@ When('the person changes the plan to {string}', async ({ person }, name: string)
   await person.identity.changePlan(name)
 })
 
+When('the person chooses the plan {string} in Change plan', async ({ person }, name: string) => {
+  await person.identity.chooseChange(name)
+})
+
+When('the person confirms the switch to {string}', async ({ person }, name: string) => {
+  await person.identity.confirmChange(name)
+})
+
+When('the person cancels the switch', async ({ person }) => {
+  await person.identity.cancelChange()
+})
+
+Then('the page shows the plan {string} as the current plan', async ({ person }, name: string) => {
+  await person.identity.expectCurrentPlan(name)
+})
+
 Then('the page offers to change the plan to {string}', async ({ person }, name: string) => {
   await person.identity.expectChangeOffer(name, true)
 })
