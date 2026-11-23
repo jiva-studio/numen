@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// PluginDataService answers PluginDataService.
 type PluginDataService interface {
 	GetPluginData(context.Context, *connect.Request[v1.GetPluginDataRequest]) (*connect.Response[v1.GetPluginDataResponse], error)
 	DeletePluginData(context.Context, *connect.Request[v1.DeletePluginDataRequest]) (*connect.Response[v1.DeletePluginDataResponse], error)
