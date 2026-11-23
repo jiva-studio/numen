@@ -1,6 +1,7 @@
 package file_test
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -12,9 +13,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/vaultabsent"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaulttest"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -117,7 +120,7 @@ func TestPutAbsentFilesAcceptsAPathThatHoldsTheSameContent(t *testing.T) {
 func TestFillFilePlacesTheBytesAndRemovesTheEntry(t *testing.T) {
 	p := newPhone(t, nil)
 	p.putEntry(t, getGuideEntry(guideContent))
-	if err := file.NewFillFile(p.readers, p.absent).Execute(t.Context(), p.vault, guidePath, writeStoreFile(t, guideContent)); err != nil {
+	if err := p.newFill().Execute(t.Context(), p.vault, guidePath, writeStoreFile(t, guideContent)); err != nil {
 		t.Fatal(err)
 	}
 	got, err := os.ReadFile(filepath.Join(p.vault.Path, "Books", "Guide.pdf"))
@@ -132,7 +135,7 @@ func TestFillFilePlacesTheBytesAndRemovesTheEntry(t *testing.T) {
 func TestFillFileWithOtherBytesPlacesNothing(t *testing.T) {
 	p := newPhone(t, nil)
 	p.putEntry(t, getGuideEntry(guideContent))
-	err := file.NewFillFile(p.readers, p.absent).Execute(t.Context(), p.vault, guidePath, writeStoreFile(t, "damaged bytes"))
+	err := p.newFill().Execute(t.Context(), p.vault, guidePath, writeStoreFile(t, "damaged bytes"))
 	if !errors.Is(err, vault.ErrHashMismatch) {
 		t.Fatalf("got %v, want ErrHashMismatch", err)
 	}
@@ -146,7 +149,7 @@ func TestFillFileWithOtherBytesPlacesNothing(t *testing.T) {
 
 func TestFillFileOfAPathWithoutAnEntryPlacesNothing(t *testing.T) {
 	p := newPhone(t, nil)
-	if err := file.NewFillFile(p.readers, p.absent).Execute(t.Context(), p.vault, guidePath, writeStoreFile(t, guideContent)); err == nil {
+	if err := p.newFill().Execute(t.Context(), p.vault, guidePath, writeStoreFile(t, guideContent)); err == nil {
 		t.Fatal("got nil, want an error for a path that is not listed as absent")
 	}
 	if p.hasBytes(guidePath) {
@@ -156,7 +159,7 @@ func TestFillFileOfAPathWithoutAnEntryPlacesNothing(t *testing.T) {
 
 func TestEvictFileDeletesTheBytesAndListsTheFile(t *testing.T) {
 	p := newPhone(t, map[string]string{guidePath: guideContent})
-	if err := file.NewEvictFile(p.readers, p.absent).Execute(t.Context(), p.vault, guidePath, getHash(guideContent), "tools-sync"); err != nil {
+	if err := p.newEvict().Execute(t.Context(), p.vault, guidePath, getHash(guideContent), "tools-sync"); err != nil {
 		t.Fatal(err)
 	}
 	if p.hasBytes(guidePath) {
@@ -173,7 +176,7 @@ func TestEvictFileDeletesTheBytesAndListsTheFile(t *testing.T) {
 
 func TestEvictFileRefusesAFileWithChanges(t *testing.T) {
 	p := newPhone(t, map[string]string{guidePath: guideContent + ", then my notes"})
-	err := file.NewEvictFile(p.readers, p.absent).Execute(t.Context(), p.vault, guidePath, getHash(guideContent), "tools-sync")
+	err := p.newEvict().Execute(t.Context(), p.vault, guidePath, getHash(guideContent), "tools-sync")
 	if !errors.Is(err, vault.ErrChanged) {
 		t.Fatalf("got %v, want ErrChanged", err)
 	}
@@ -187,14 +190,23 @@ func TestEvictFileRefusesAFileWithChanges(t *testing.T) {
 
 func TestEvictThenFillRestoresTheFile(t *testing.T) {
 	p := newPhone(t, map[string]string{guidePath: guideContent})
-	if err := file.NewEvictFile(p.readers, p.absent).Execute(t.Context(), p.vault, guidePath, getHash(guideContent), "tools-sync"); err != nil {
+	if err := p.newEvict().Execute(t.Context(), p.vault, guidePath, getHash(guideContent), "tools-sync"); err != nil {
 		t.Fatal(err)
 	}
-	if err := file.NewFillFile(p.readers, p.absent).Execute(t.Context(), p.vault, guidePath, writeStoreFile(t, guideContent)); err != nil {
+	if err := p.newFill().Execute(t.Context(), p.vault, guidePath, writeStoreFile(t, guideContent)); err != nil {
 		t.Fatal(err)
 	}
 	got, err := os.ReadFile(filepath.Join(p.vault.Path, "Books", "Guide.pdf"))
 	if err != nil || string(got) != guideContent {
 		t.Fatalf("got %q, %v, want the file as it was", got, err)
 	}
+}
+
+func (p phone) newFill() *file.FillFile {
+	noIndex := func(context.Context, domain.Vault, []string) error { return nil }
+	return file.NewFillFile(p.absent, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, filesystem.ImportedFiles{}, noIndex)
+}
+
+func (p phone) newEvict() *file.EvictFile {
+	return file.NewEvictFile(p.readers, p.absent, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()})
 }

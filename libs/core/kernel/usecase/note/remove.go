@@ -32,6 +32,7 @@ type Remove struct {
 	filer     VersionMover
 	index     edit.IndexUpdater
 	admission vaultport.WriteAdmission
+	absent    vaultport.AbsentFiles
 }
 
 // NewRemove builds the use case that moves a note into the trash.
@@ -72,14 +73,24 @@ func (u Remove) trash(ctx context.Context, v domain.Vault, path string) (RemoveR
 		return res, err
 	}
 	target, err := moveToTrash(ctx, writer, path)
-	if err != nil {
+	if err != nil && !errors.Is(err, edit.ErrNoNote) {
+		return res, err
+	}
+	listed, absentErr := u.removeAbsent(ctx, v, path)
+	if absentErr != nil {
+		return res, absentErr
+	}
+	if err != nil && listed == 0 {
 		return res, err
 	}
 	res.Trashed = target
 
 	// The text versions of a recording, a scan or a proofread text travel with
 	// the file, so moving it out of the trash brings them back.
-	filingErr := u.filer.MoveVersions(ctx, v.ID, path, target)
+	var filingErr error
+	if target != "" {
+		filingErr = u.filer.MoveVersions(ctx, v.ID, path, target)
+	}
 
 	// The index is updated for what the vault held at each path, and with
 	// the path itself where it held nothing.
