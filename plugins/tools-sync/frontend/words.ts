@@ -22,6 +22,8 @@ export const WORDS = {
   noIdentityText: 'Create an identity to buy a subscription.',
   syncServerUnreachable: 'Could not reach the sync server',
   buy: 'Buy',
+  owned: 'Owned',
+  productsTitle: 'Products',
   changePlanTo: (name: string): string => `Change plan to ${name}`,
   manageSubscription: 'Manage subscription',
   cloudFull: 'Cloud storage is full: changes stay on this device',

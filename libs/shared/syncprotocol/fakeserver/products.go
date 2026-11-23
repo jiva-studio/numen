@@ -159,6 +159,26 @@ func (s *Server) serveTrial(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// serveCancelTrial cancels the trial of a plan (POST, plan=id and an optional account): the subscription keeps running to the end of the trial.
+func (s *Server) serveCancelTrial(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if _, found := s.findPlan(r.URL.Query().Get("plan")); !found {
+		http.Error(w, "unknown plan", http.StatusBadRequest)
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, account := range s.listAccounts(r.URL.Query().Get("account")) {
+		if s.planOf[account] == r.URL.Query().Get("plan") {
+			delete(s.shop.trials, account)
+		}
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // serveUsage sets the bytes the cloud holds (POST, bytes=N and an optional account).
 func (s *Server) serveUsage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

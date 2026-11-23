@@ -160,6 +160,11 @@ export class ComputerDriver {
     await identity.expectSubscription(text)
   }
 
+  async expectProductOwned(computer: ComputerName, name: string): Promise<void> {
+    const identity = computer === 'first' ? this.identity : this.requireSecond().identity
+    await identity.expectProductOwned(name)
+  }
+
   /** Ends the second computer: its window, its application and its folders. */
   async remove(): Promise<void> {
     const second = this.second

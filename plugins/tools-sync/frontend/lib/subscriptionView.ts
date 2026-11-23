@@ -25,6 +25,14 @@ export interface PlanOffer {
   readonly label: string
 }
 
+/** A product the person can buy: its id, its slug and the label of the button, such as "Link, $20". */
+export interface ProductOffer {
+  readonly id: string
+  readonly slug: string
+  readonly name: string
+  readonly label: string
+}
+
 export interface SubscriptionSnapshot {
   readonly status: SubscriptionStatus
   readonly phase: SubscriptionPhase | ''

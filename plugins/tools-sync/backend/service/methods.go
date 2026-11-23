@@ -38,6 +38,9 @@ func mountMethods(service *server.API, r *runtime) {
 	server.Handle(service, api.MethodListProducts, func(ctx context.Context, request api.ListProductsRequest) (api.ListProductsResponse, error) {
 		return handle(r, func(b *Backend) (api.ListProductsResponse, error) { return b.ListProducts(ctx, request) })
 	})
+	server.Handle(service, api.MethodGetEntitlements, func(ctx context.Context, request api.GetEntitlementsRequest) (api.GetEntitlementsResponse, error) {
+		return handle(r, func(b *Backend) (api.GetEntitlementsResponse, error) { return b.GetEntitlements(ctx, request) })
+	})
 	server.Handle(service, api.MethodCreatePortalSession, func(ctx context.Context, request api.CreatePortalSessionRequest) (api.CreatePortalSessionResponse, error) {
 		return handle(r, func(b *Backend) (api.CreatePortalSessionResponse, error) { return b.CreatePortalSession(ctx, request) })
 	})

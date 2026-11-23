@@ -1,6 +1,8 @@
 import type { ComputerName, Holder } from '../drivers/computer.js'
-import { getPlanLine } from '../drivers/identity.js'
+import { formatDay, getPlanLine } from '../drivers/identity.js'
 import { Given, Then, When } from '../support/bdd.js'
+
+const PRODUCT_PRICE_CENTS = 2000
 
 Given('a sync server runs', async ({ person }) => {
   await person.sync.start()
@@ -193,4 +195,54 @@ Given('the cloud holds {int} GB of the notes of the person', async ({ person }, 
 
 When('the person deletes {int} GB of the notes of the person from the cloud', async ({ person }, gigabytes: number) => {
   await person.sync.deleteFromCloud(gigabytes)
+})
+
+Given(
+  'a sync server that sells the plans {string} with {int} GB and {string} with {int} GB runs',
+  async ({ person }, first: string, firstGigabytes: number, second: string, secondGigabytes: number) => {
+    await person.sync.startSellingPlans([
+      { name: first, gigabytes: firstGigabytes },
+      { name: second, gigabytes: secondGigabytes },
+    ])
+  },
+)
+
+Given('the server sells the product {string} for a single payment', async ({ person }, name: string) => {
+  await person.sync.sellProduct({ name, priceCents: PRODUCT_PRICE_CENTS })
+})
+
+When('the person buys the product {string}', async ({ person }, name: string) => {
+  await person.identity.buyProduct(name)
+})
+
+Then('the page offers to buy the product {string}', async ({ person }, name: string) => {
+  await person.identity.expectProductOffer(name)
+})
+
+Then('the page does not offer to buy the product {string}', async ({ person }, name: string) => {
+  await person.identity.expectNoProductOffer(name)
+})
+
+Then('the page shows that the product {string} is owned', async ({ person }, name: string) => {
+  await person.identity.expectProductOwned(name)
+})
+
+Then('the second computer shows that the product {string} is owned', async ({ person }, name: string) => {
+  await person.computers.expectProductOwned('second', name)
+})
+
+When('the payment of the product {string} is refunded', async ({ person }, name: string) => {
+  await person.sync.refundProduct(name)
+})
+
+When('the person starts a trial of the plan {string}', async ({ person }, name: string) => {
+  await person.sync.startTrial(name)
+})
+
+When('the person cancels the trial', async ({ person }) => {
+  await person.sync.cancelTrial()
+})
+
+Then('the subscription shows {string} the day the trial ends', async ({ person }, text: string) => {
+  await person.identity.expectSubscription(`${text} ${formatDay(person.sync.getTrialEnd())}.`)
 })

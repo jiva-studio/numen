@@ -15,6 +15,7 @@ const (
 	MethodListPlans           = "ListPlans"
 	MethodChangePlan          = "ChangePlan"
 	MethodListProducts        = "ListProducts"
+	MethodGetEntitlements     = "GetEntitlements"
 	MethodCreatePortalSession = "CreatePortalSession"
 )
 
@@ -186,6 +187,19 @@ type Product struct {
 // ListProductsResponse holds the products in the order of the server.
 type ListProductsResponse struct {
 	Products []Product `json:"products"`
+}
+
+// GetEntitlementsRequest asks for the products the account owns.
+type GetEntitlementsRequest struct{}
+
+// Entitlement is a product the account owns right now: the slug of the product.
+type Entitlement struct {
+	Product string `json:"product"`
+}
+
+// GetEntitlementsResponse holds the products the account owns ordered by slug, the subscription of Numen Sync among them.
+type GetEntitlementsResponse struct {
+	Entitlements []Entitlement `json:"entitlements"`
 }
 
 // CreatePortalSessionRequest asks for the address of the page where the person manages the subscription.

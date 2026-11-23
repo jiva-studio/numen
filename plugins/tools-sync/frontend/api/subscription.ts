@@ -38,6 +38,25 @@ interface ListPlansResponse {
   readonly plans: readonly PlanResponse[]
 }
 
+/** A product the server sells that is no plan. */
+export interface ProductResponse {
+  readonly id: string
+  readonly slug: string
+  readonly name: string
+  /** The price in cents of the currency, tax included. It is information only. */
+  readonly priceCents: number
+  readonly currency: string
+  readonly oneTime: boolean
+}
+
+interface ListProductsResponse {
+  readonly products: readonly ProductResponse[]
+}
+
+interface GetEntitlementsResponse {
+  readonly entitlements: readonly { readonly product: string }[]
+}
+
 interface CreateCheckoutResponse {
   readonly checkoutUrl: string
 }
@@ -58,6 +77,10 @@ export interface SubscriptionClient {
   createCheckout(plan: string): Promise<string>
   /** The subscription after the active subscription moved to the plan with this id. */
   changePlan(plan: string): Promise<SubscriptionResponse>
+  /** The products the server sells that are no plans, in its order. */
+  listProducts?(): Promise<readonly ProductResponse[]>
+  /** The slugs of the products the account owns. */
+  getOwnedProducts?(): Promise<readonly string[]>
   /** The address of the page of the payment provider where the person manages the subscription. */
   createPortalSession?(): Promise<string>
 }
@@ -86,6 +109,12 @@ export function createSubscriptionClient(api: Api): SubscriptionClient {
         .checkoutUrl,
     changePlan: async (plan) =>
       (await call<{ plan: string }, ChangePlanResponse>('ChangePlan', { plan })).subscription,
+    listProducts: async () =>
+      (await call<Record<string, never>, ListProductsResponse>('ListProducts', {})).products,
+    getOwnedProducts: async () =>
+      (
+        await call<Record<string, never>, GetEntitlementsResponse>('GetEntitlements', {})
+      ).entitlements.map((one) => one.product),
     createPortalSession: async () =>
       (await call<Record<string, never>, CreatePortalSessionResponse>('CreatePortalSession', {}))
         .portalUrl,

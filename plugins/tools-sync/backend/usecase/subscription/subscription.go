@@ -133,6 +133,25 @@ func (u *ListProducts) Execute(ctx context.Context) ([]domain.Product, error) {
 	return products, nil
 }
 
+// GetEntitlements asks the server for the products the account owns.
+type GetEntitlements struct{ deps ShopDeps }
+
+// NewGetEntitlements returns the use case over the dependencies.
+func NewGetEntitlements(deps ShopDeps) *GetEntitlements { return &GetEntitlements{deps: deps} }
+
+// Execute returns the slugs of the products the account owns, in the order of the server.
+func (u *GetEntitlements) Execute(ctx context.Context) ([]string, error) {
+	read, err := u.deps.Shop.GetEntitlements(ctx)
+	if err != nil {
+		return nil, err
+	}
+	products := make([]string, 0, len(read))
+	for _, entitlement := range read {
+		products = append(products, entitlement.Product)
+	}
+	return products, nil
+}
+
 // CreatePortalSession asks the server for the page where the person manages the subscription.
 type CreatePortalSession struct{ deps ShopDeps }
 

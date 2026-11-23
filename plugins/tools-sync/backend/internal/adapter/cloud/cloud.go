@@ -125,6 +125,11 @@ func (c *Cloud) ListProducts(ctx context.Context) ([]syncprotocol.Product, error
 	return call(ctx, c, func() ([]syncprotocol.Product, error) { return c.subscription.ListProducts(ctx) })
 }
 
+// GetEntitlements returns every product the account owns right now.
+func (c *Cloud) GetEntitlements(ctx context.Context) ([]syncprotocol.Entitlement, error) {
+	return call(ctx, c, func() ([]syncprotocol.Entitlement, error) { return c.subscription.GetEntitlements(ctx) })
+}
+
 // CreatePortalSession returns the address of the page where the person manages the subscription.
 func (c *Cloud) CreatePortalSession(ctx context.Context) (string, error) {
 	return call(ctx, c, func() (string, error) { return c.subscription.CreatePortalSession(ctx) })

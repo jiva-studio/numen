@@ -182,3 +182,18 @@
   align-items: center;
   gap: calc(var(--numen-chrome-unit) / 2);
 }
+
+.subscription__products {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--numen-chrome-unit) / 2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.subscription__product {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--numen-chrome-unit) / 2);
+}

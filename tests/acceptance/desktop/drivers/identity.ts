@@ -27,6 +27,14 @@ export const getChangeName = (name: string): string => `Change plan to ${name}`
 export const getPlanLine = (name: string, gigabytes: number): string => `${name}, ${gigabytes} GB`
 
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/** The day as the card of the subscription writes it, such as "7 Dec 2026". */
+export const formatDay = (day: Date): string => `${day.getDate()} ${MONTHS[day.getMonth()] ?? ''} ${day.getFullYear()}`
+
+/** Matches the button that buys the product of a name; the card may add the price after the name. */
+export const getBuyProductName = (name: string): RegExp => new RegExp(`^Buy ${name}(?:,|$)`)
+
 /** The place a field of the confirmation asks for: "Confirm word 4" asks for the 4th word. */
 export const readPosition = (label: string): number => {
   const found = /^Confirm word (\d+)$/.exec(label)
@@ -220,6 +228,40 @@ export class IdentityDriver {
   async expectBuyOffer(name: string, gigabytes: number): Promise<void> {
     const card = this.getCard(await this.showPage())
     await expect(card.getByRole('button', { name: getBuyName(name, gigabytes) })).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+  }
+
+  private getProductOwnedMark(card: Locator, name: string): Locator {
+    return card.getByRole('list', { name: 'Products' }).getByRole('listitem').filter({ hasText: name }).getByText('Owned', { exact: true })
+  }
+
+  /** Buys the product of a name on the page of the stand-in and waits until the card shows it as owned. */
+  async buyProduct(name: string): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    const opened = this.scenario.page.waitForEvent('popup')
+    await card.getByRole('button', { name: getBuyProductName(name) }).click()
+    const payment = await opened
+    await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
+    await payment.close()
+    await this.expectProductOwned(name)
+  }
+
+  /** Expects the card to offer to buy the product of a name. */
+  async expectProductOffer(name: string): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    await expect(card.getByRole('button', { name: getBuyProductName(name) })).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+  }
+
+  /** Expects the card to show the product of a name as owned and to offer no purchase of it. */
+  async expectNoProductOffer(name: string): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    await expect(this.getProductOwnedMark(card, name)).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    await expect(card.getByRole('button', { name: getBuyProductName(name) })).toHaveCount(0)
+  }
+
+  /** Expects the card to show the product of a name as owned. */
+  async expectProductOwned(name: string): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    await expect(this.getProductOwnedMark(card, name)).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
   }
 
   /** Expects the card to offer to buy no plan, after it showed the subscription. */

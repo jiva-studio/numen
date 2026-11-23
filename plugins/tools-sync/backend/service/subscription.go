@@ -118,6 +118,23 @@ func (b *Backend) ListProducts(ctx context.Context, _ api.ListProductsRequest) (
 	return response, nil
 }
 
+// GetEntitlements returns the products the account owns. A device with no identity gets ErrNoIdentity and the server is
+// not asked.
+func (b *Backend) GetEntitlements(ctx context.Context, _ api.GetEntitlementsRequest) (api.GetEntitlementsResponse, error) {
+	if _, err := b.deps.Identity.GetPublicIdentity(ctx); err != nil {
+		return api.GetEntitlementsResponse{Entitlements: nil}, err
+	}
+	products, err := usecase.NewGetEntitlements(usecase.ShopDeps{Shop: b.deps.Shop}).Execute(ctx)
+	if err != nil {
+		return api.GetEntitlementsResponse{Entitlements: nil}, err
+	}
+	response := api.GetEntitlementsResponse{Entitlements: make([]api.Entitlement, 0, len(products))}
+	for _, product := range products {
+		response.Entitlements = append(response.Entitlements, api.Entitlement{Product: product})
+	}
+	return response, nil
+}
+
 // CreatePortalSession returns the address of the page where the person manages the subscription. A device with no
 // identity gets ErrNoIdentity and the server is not asked.
 func (b *Backend) CreatePortalSession(ctx context.Context, _ api.CreatePortalSessionRequest) (api.CreatePortalSessionResponse, error) {

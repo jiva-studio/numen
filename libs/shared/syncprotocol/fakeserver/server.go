@@ -145,6 +145,7 @@ func (s *Server) newMux() http.Handler {
 	mux.HandleFunc(portalFolder, s.servePortal)
 	mux.HandleFunc("/admin/refund", s.serveRefund)
 	mux.HandleFunc("/admin/trial", s.serveTrial)
+	mux.HandleFunc("/admin/cancel-trial", s.serveCancelTrial)
 	mux.HandleFunc("/blobs/", s.serveBlob)
 	mux.HandleFunc("/admin/sessions", s.serveSessions)
 	mux.HandleFunc("/admin/sessions/end", s.serveEnd)
