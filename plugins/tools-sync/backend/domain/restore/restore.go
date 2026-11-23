@@ -3,7 +3,10 @@
 package restore
 
 import (
+	"bytes"
 	"errors"
+	"maps"
+	"slices"
 
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/note"
 )
@@ -41,7 +44,15 @@ type Look struct {
 // GetVerdict tells what the look means. A key that differs from the pinned one wins over everything, then a
 // different epoch id, then a head below the cursor.
 func GetVerdict(memory Memory, look Look) Verdict {
-	return 0
+	switch {
+	case len(memory.PinnedKey) > 0 && len(look.SignKey) > 0 && !bytes.Equal(memory.PinnedKey, look.SignKey):
+		return KeyChanged
+	case len(look.EpochID) > 0 && !bytes.Equal(memory.EpochID, look.EpochID):
+		return Changed
+	case look.HeadSeq < memory.Cursor:
+		return WentBack
+	}
+	return Same
 }
 
 // Kind names a log the device keeps a copy of.
@@ -79,13 +90,32 @@ var ErrDiverged = errors.New("the log on the sync server differs from the copy o
 
 // CompareJournals tells how the log on the server stands to the copy.
 func CompareJournals(cache, server Journal) Relation {
-	return 0
+	common := min(len(cache.Entries), len(server.Entries))
+	for i := range common {
+		if !bytes.Equal(cache.Entries[i], server.Entries[i]) {
+			return Diverged
+		}
+	}
+	switch {
+	case len(server.Entries) < len(cache.Entries):
+		return ServerBehind
+	case len(server.Entries) > len(cache.Entries):
+		return ServerAhead
+	}
+	return Equal
 }
 
 // GetReplay returns the entries of the copy the server lacks, in order. It is empty when the server holds the
 // whole copy or more, and ErrDiverged when the logs differ at an entry both hold.
 func GetReplay(cache, server Journal) ([][]byte, error) {
-	return nil, errors.New("not implemented")
+	switch CompareJournals(cache, server) {
+	case Diverged:
+		return nil, ErrDiverged
+	case ServerBehind:
+		return cache.Entries[len(server.Entries):], nil
+	case Equal, ServerAhead:
+	}
+	return nil, nil
 }
 
 // ActionKind is what a recovery does with one note.
@@ -126,5 +156,41 @@ type Action struct {
 // device is the truth: a note on the device is never replaced by the server's, and only a note this device never
 // knew is read from the server.
 func PlanRecovery(records []note.FileRecord, heads map[string]Head, local map[string]string) []Action {
-	return nil
+	actions := make([]Action, 0, len(records)+len(heads))
+	known := make(map[string]bool, len(records))
+	for _, record := range records {
+		known[string(record.FileID)] = true
+		head, found := heads[string(record.FileID)]
+		_, isLocal := local[record.Path]
+		actions = append(actions, planRecord(record, head, found, isLocal))
+	}
+	for _, id := range slices.Sorted(maps.Keys(heads)) {
+		if !known[id] {
+			actions = append(actions, planUnknown(heads[id], local))
+		}
+	}
+	return actions
+}
+
+func planRecord(record note.FileRecord, head Head, found, isLocal bool) Action {
+	action := Action{Kind: Keep, FileID: record.FileID, Path: record.Path}
+	isSame := found && bytes.Equal(head.Rev, record.HeadRev) && !head.IsBlobMissing
+	switch {
+	case isSame:
+	case isLocal && !found:
+		action.Kind = Recreate
+	case isLocal:
+		action.Kind, action.ParentRev = Send, head.Rev
+	case found && !head.IsDeleted:
+		action.Kind, action.ParentRev = Tombstone, head.Rev
+	}
+	return action
+}
+
+func planUnknown(head Head, local map[string]string) Action {
+	action := Action{Kind: Keep, FileID: head.FileID, Path: head.Path}
+	if _, isTaken := local[head.Path]; !isTaken && !head.IsDeleted && !head.IsBlobMissing {
+		action.Kind = Pull
+	}
+	return action
 }
