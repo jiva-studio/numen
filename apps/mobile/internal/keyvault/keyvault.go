@@ -3,7 +3,9 @@ package keyvault
 
 import (
 	"context"
-	"errors"
+	"fmt"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // MaxValueBytes is the longest key the store takes, as the keychain of the desktop.
@@ -24,12 +26,25 @@ type Store struct{ vault Vault }
 func New(vault Vault) *Store { return &Store{vault: vault} }
 
 // GetKey returns the key under the name, or plugin.ErrNoKey.
-func (s *Store) GetKey(context.Context, string) (string, error) {
-	return "", errors.New("not implemented")
+func (s *Store) GetKey(_ context.Context, name string) (string, error) {
+	if !s.vault.Has(name) {
+		return "", plugin.ErrNoKey
+	}
+	return s.vault.Get(name)
 }
 
 // SetKey stores the key under the name and replaces the one there.
-func (s *Store) SetKey(context.Context, string, string) error { return errors.New("not implemented") }
+func (s *Store) SetKey(_ context.Context, name, key string) error {
+	if len(key) > MaxValueBytes {
+		return fmt.Errorf("the key %q has %d bytes, the most the key store takes is %d", name, len(key), MaxValueBytes)
+	}
+	return s.vault.Set(name, key)
+}
 
 // DeleteKey removes the key under the name, or returns plugin.ErrNoKey.
-func (s *Store) DeleteKey(context.Context, string) error { return errors.New("not implemented") }
+func (s *Store) DeleteKey(_ context.Context, name string) error {
+	if !s.vault.Has(name) {
+		return plugin.ErrNoKey
+	}
+	return s.vault.Delete(name)
+}

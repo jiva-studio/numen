@@ -30,18 +30,20 @@ import (
 type Core struct {
 	mu      sync.Mutex
 	running *runningCore
+	keys    KeyVault
 }
 
 // NewCore returns a core with no server running.
 func NewCore() *Core { return &Core{} }
 
 type runningCore struct {
-	port   int
-	token  string
-	isDown atomic.Bool
-	stop   context.CancelFunc
-	opened *editor.Installation
-	server *http.Server
+	lifecycles []lifecycleCall
+	port       int
+	token      string
+	isDown     atomic.Bool
+	stop       context.CancelFunc
+	opened     *editor.Installation
+	server     *http.Server
 }
 
 // Start opens the vault under dir and serves it. It returns the port, which the
@@ -67,6 +69,9 @@ func (c *Core) Start(dir string) (int, error) {
 
 	cfg := makeConfig(dir)
 	res := makeResources(os.Stderr)
+	if keys := c.getKeyStore(); keys != nil {
+		res.KeyStore = keys
+	}
 	execution, preferences, endpoints := container.PreparePluginHost(nil, nil, nil, cfg.SafeMode)
 
 	// The list holds a folder under the name it resolves to, and that is the
@@ -205,7 +210,10 @@ func (c *Core) Port() int {
 }
 
 func makeConfig(dir string) container.Config {
-	return container.Config{Paths: container.Paths{IndexPath: filepath.Join(dir, "index.db"), RegistryPath: filepath.Join(dir, "vaults.json"), ThemesPath: filepath.Join(dir, "themes")}}
+	return container.Config{
+		Paths:  container.Paths{IndexPath: filepath.Join(dir, "index.db"), RegistryPath: filepath.Join(dir, "vaults.json"), ThemesPath: filepath.Join(dir, "themes")},
+		Absent: true,
+	}
 }
 
 func makeResources(out io.Writer) *container.Resources {
