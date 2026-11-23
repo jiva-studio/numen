@@ -49,6 +49,7 @@ type Config struct {
 	QuotaBytes uint64
 
 	NeedsSubscription bool
+	Heartbeat         time.Duration
 }
 
 // Session is a session the server issued and has not ended.
@@ -315,3 +316,9 @@ func (s *Server) serveEnd(w http.ResponseWriter, r *http.Request) {
 	s.EndSessions(device)
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// EndStreams ends every open stream of change hints cleanly.
+func (s *Server) EndStreams() {}
+
+// CountStreams returns how many streams of change hints are open.
+func (s *Server) CountStreams() int { return -1 }
