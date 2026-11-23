@@ -118,7 +118,16 @@
   font-size: var(--numen-chrome-text-2);
 }
 
+.subscription .island-card__aside {
+  align-self: stretch;
+  margin-inline-end: calc(-0.625 * var(--numen-chrome-unit));
+}
+
 .subscription__badge {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  box-sizing: border-box;
   padding: calc(var(--numen-chrome-unit) / 8) calc(var(--numen-chrome-unit) / 2);
   border-radius: var(--numen-chrome-radius-tight);
   background-color: color-mix(in oklab, var(--numen-accent), transparent 82%);
