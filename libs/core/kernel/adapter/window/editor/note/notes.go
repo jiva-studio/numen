@@ -6,7 +6,6 @@ import (
 	"fmt"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"strings"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -341,38 +340,32 @@ func (h *Handler) WatchEdits(
 	line, isDone := h.edits.SubscribeEdits()
 	defer isDone()
 
-	// The empty first message confirms the stream is open; without it a stream
-	// with no changes cannot be distinguished from one that failed to open.
-	if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
-		return err
-	}
-
-	repeat := time.NewTicker(wire.ResendInterval)
-	defer repeat.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-repeat.C:
-			if err := out.Send(&v1.WatchEditsResponse{}); err != nil {
-				return err
-			}
-		case response, open := <-line:
-			if !open {
+	return wire.RunWatch(ctx, out, wire.ResendInterval, nil, func(ctx context.Context, send func(*v1.WatchEditsResponse) error) error {
+		// The empty first message confirms the stream is open; without it a stream
+		// with no changes cannot be distinguished from one that failed to open.
+		if err := send(&v1.WatchEditsResponse{}); err != nil {
+			return err
+		}
+		for {
+			select {
+			case <-ctx.Done():
 				return nil
-			}
-			if err := out.Send(&v1.WatchEditsResponse{
-				Change:  response.Change,
-				Path:    response.Path,
-				Range:   &v1.Range{Start: int32(response.From), End: int32(response.To)},
-				Text:    response.Text,
-				IsFinal: response.IsDone,
-			}); err != nil {
-				return err
+			case response, open := <-line:
+				if !open {
+					return nil
+				}
+				if err := send(&v1.WatchEditsResponse{
+					Change:  response.Change,
+					Path:    response.Path,
+					Range:   &v1.Range{Start: int32(response.From), End: int32(response.To)},
+					Text:    response.Text,
+					IsFinal: response.IsDone,
+				}); err != nil {
+					return err
+				}
 			}
 		}
-	}
+	})
 }
 
 // RenameNote gives a note a different name.

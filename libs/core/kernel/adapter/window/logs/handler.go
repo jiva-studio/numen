@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"time"
 
 	"connectrpc.com/connect"
 
@@ -91,28 +90,20 @@ func (h *Handler) WriteLog(
 func (h *Handler) WatchLogs(
 	ctx context.Context, _ *connect.Request[v1.WatchLogsRequest], out *connect.ServerStream[v1.WatchLogsResponse],
 ) error {
-	watching, stop := context.WithCancel(ctx)
-	defer stop()
-	watch := h.watcher.Execute(watching)
-	repeat := time.NewTicker(wire.ResendInterval)
-	defer repeat.Stop()
-
-	for {
-		select {
-		case batch, isOpen := <-watch:
-			if !isOpen {
+	return wire.RunWatch(ctx, out, wire.ResendInterval, nil, func(ctx context.Context, send func(*v1.WatchLogsResponse) error) error {
+		watch := h.watcher.Execute(ctx)
+		for {
+			select {
+			case <-ctx.Done():
 				return nil
+			case batch, isOpen := <-watch:
+				if !isOpen {
+					return nil
+				}
+				if err := send(&v1.WatchLogsResponse{Entries: wire.DescribeLogEntries(batch)}); err != nil {
+					return err
+				}
 			}
-			if err := out.Send(&v1.WatchLogsResponse{Entries: wire.DescribeLogEntries(batch)}); err != nil {
-				return err
-			}
-			repeat.Reset(wire.ResendInterval)
-		case <-repeat.C:
-			if err := out.Send(&v1.WatchLogsResponse{}); err != nil {
-				return err
-			}
-		case <-ctx.Done():
-			return nil
 		}
-	}
+	})
 }
