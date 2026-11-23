@@ -21,7 +21,6 @@ export {
 export { createSheet, getPluginSheet, getPluginStyle } from './styles'
 export { SlotViewHost, usePluginStyles } from './slot-views'
 export { createAppInfo } from './appInfo'
-export { resolveTextLinks } from './textLinks'
 export { createPluginConnections } from './pluginConnections'
 export { createPluginTexts } from './pluginTexts'
 export { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from './commandId'
