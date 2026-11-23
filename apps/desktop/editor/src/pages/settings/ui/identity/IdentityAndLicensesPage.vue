@@ -4,7 +4,7 @@
  * declared by the installed plugins with the controls to activate or deactivate this machine.
  */
 import { SettingsPage } from '@numen/plugin-manager'
-import type { Printer } from '@/pages/settings/lib/print'
+import type { Printer } from '@/pages/settings/api/print'
 import type { InstallationIdentity, InstallationLicenses } from '../../types'
 import { useLicensesPage } from '../../model/useLicensesPage'
 import { WORDS as words } from '../../words'

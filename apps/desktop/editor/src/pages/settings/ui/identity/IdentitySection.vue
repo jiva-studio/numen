@@ -5,7 +5,7 @@
  * words or from two sheets of a kit.
  */
 import { Button } from '@numen/ui'
-import type { Printer } from '@/pages/settings/lib/print'
+import type { Printer } from '@/pages/settings/api/print'
 import type { InstallationIdentity } from '../../types'
 import { useIdentityCall } from '../../model/useIdentityCall'
 import { useIdentitySection } from '../../model/useIdentitySection'
@@ -24,7 +24,12 @@ const props = defineProps<{ identity: InstallationIdentity; printer: Printer }>(
 /* --------------------------------- State ---------------------------------- */
 const call = useIdentityCall()
 const fields = useSheetFields()
-const kit = useRecoveryKit(() => props.identity, () => props.printer, call, fields)
+const kit = useRecoveryKit(
+  () => props.identity,
+  () => props.printer,
+  call,
+  fields,
+)
 const section = useIdentitySection(() => props.identity, call, fields, kit.actions.showAfterSetup)
 const {
   identity: current,

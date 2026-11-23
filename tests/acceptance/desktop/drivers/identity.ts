@@ -12,7 +12,6 @@ const ACCOUNT_FINGERPRINT = 'Account fingerprint'
 const NO_IDENTITY = 'No identity on this device'
 const SHEETS_IN_KIT = 3
 const WORDS_ON_SHEET = 33
-const PRINT_COUNTER = '__numenPrintCalls'
 const KIT_BUTTON = /^(Skip for now|Done)$/
 const MISTAKE_AT = 5
 const OTHER_ACCOUNTS: readonly (readonly string[])[] = [
@@ -42,7 +41,7 @@ export const planSheetTexts = (
     throw new Error(`the sheet ${mistakeSheet} is not among the sheets ${numbers.join(' and ')}`)
   }
   return numbers.map((number) => {
-    const words = sheets[number - 1]
+    const words = sheets.at(number - 1)
     if (words === undefined) throw new Error(`the kit has no sheet ${number}`)
     if (number !== mistakeSheet) return words.join(' ')
     return words.map((word, at) => (at === MISTAKE_AT ? changeWord(word) : word)).join(' ')
@@ -56,22 +55,27 @@ export const pickOtherWords = (own: readonly string[]): readonly string[] => {
   return other
 }
 
-const readPrintCount = (counter: string): number =>
-  Number((window as unknown as Record<string, unknown>)[counter] ?? 0)
+declare global {
+  interface Window {
+    __numenPrintCalls?: number
+  }
+}
 
-const spyOnPrint = (counter: string): void => {
-  const holder = window as unknown as Record<string, unknown>
-  if (typeof holder[counter] === 'number') return
-  holder[counter] = 0
+const readPrintCount = (): number => window.__numenPrintCalls ?? 0
+
+const spyOnPrint = (): void => {
+  if (typeof window.__numenPrintCalls === 'number') return
+  window.__numenPrintCalls = 0
   window.print = () => {
-    holder[counter] = Number(holder[counter]) + 1
+    window.__numenPrintCalls = (window.__numenPrintCalls ?? 0) + 1
   }
 }
 
 /** The place a field of the confirmation asks for: "Confirm word 4" asks for the 4th word. */
 export const readPosition = (label: string): number => {
   const found = /^Confirm word (\d+)$/.exec(label)
-  if (found?.[1] === undefined) throw new Error(`"${label}" is not the label of a confirmation of a word`)
+  if (found?.[1] === undefined)
+    throw new Error(`"${label}" is not the label of a confirmation of a word`)
   return Number(found[1])
 }
 
@@ -79,10 +83,15 @@ export const readPosition = (label: string): number => {
  * The words to type for the places the page asks about. A mistake replaces the first word that is not the mistake already,
  * so the answer is wrong whatever the words are.
  */
-export const planAnswers = (positions: readonly number[], words: readonly string[], mistake?: string): string[] => {
+export const planAnswers = (
+  positions: readonly number[],
+  words: readonly string[],
+  mistake?: string,
+): string[] => {
   const answers = positions.map((position) => {
     const word = words.at(position - 1)
-    if (word === undefined) throw new Error(`the page asks for the word ${position} of ${words.length}`)
+    if (word === undefined)
+      throw new Error(`the page asks for the word ${position} of ${words.length}`)
     return word
   })
   if (mistake === undefined) return answers
@@ -111,7 +120,9 @@ export class IdentityDriver {
   }
 
   private async readAccount(panel: Locator): Promise<string> {
-    const value = panel.locator('dt', { hasText: ACCOUNT_FINGERPRINT }).locator('xpath=following-sibling::dd[1]')
+    const value = panel
+      .locator('dt', { hasText: ACCOUNT_FINGERPRINT })
+      .locator('xpath=following-sibling::dd[1]')
     await expect(value).toBeVisible()
     return (await value.innerText()).trim()
   }
@@ -131,21 +142,25 @@ export class IdentityDriver {
   async expectNoWords(): Promise<void> {
     const panel = await this.showPage()
     await expect(panel.getByRole('list', { name: 'Recovery words' })).toHaveCount(0)
-    for (const word of this.words) await expect(panel.getByText(word, { exact: true })).toHaveCount(0)
+    for (const word of this.words)
+      await expect(panel.getByText(word, { exact: true })).toHaveCount(0)
   }
 
   private async confirm(mistake?: string): Promise<void> {
     const panel = await this.showPage()
     const fields = panel.getByRole('textbox', { name: /^Confirm word \d+$/ })
     await expect(fields).toHaveCount(CONFIRMATIONS)
-    const labels = await fields.evaluateAll((all) => all.map((one) => one.getAttribute('aria-label') ?? ''))
+    const labels = await fields.evaluateAll((all) =>
+      all.map((one) => one.getAttribute('aria-label') ?? ''),
+    )
     const answers = planAnswers(labels.map(readPosition), this.words, mistake)
     for (const [index, answer] of answers.entries()) await fields.nth(index).fill(answer)
     await panel.getByRole('button', { name: 'Keep identity', exact: true }).click()
   }
 
   async confirmWords(count: number): Promise<void> {
-    if (count !== CONFIRMATIONS) throw new Error(`the page asks for ${CONFIRMATIONS} words, not ${count}`)
+    if (count !== CONFIRMATIONS)
+      throw new Error(`the page asks for ${CONFIRMATIONS} words, not ${count}`)
     await this.confirm()
   }
 
@@ -169,8 +184,8 @@ export class IdentityDriver {
   }
 
   private async installPrintSpy(): Promise<void> {
-    await this.scenario.page.addInitScript(spyOnPrint, PRINT_COUNTER)
-    await this.scenario.page.evaluate(spyOnPrint, PRINT_COUNTER)
+    await this.scenario.page.addInitScript(spyOnPrint)
+    await this.scenario.page.evaluate(spyOnPrint)
   }
 
   private async makeKit(words: readonly string[]): Promise<Locator> {
@@ -214,12 +229,14 @@ export class IdentityDriver {
 
   async expectPrinted(): Promise<void> {
     expect(this.printed, 'no kit was sent to the printer by the person').toBeGreaterThan(0)
-    await expect
-      .poll(() => this.scenario.page.evaluate(readPrintCount, PRINT_COUNTER))
-      .toBe(this.printed)
+    await expect.poll(() => this.scenario.page.evaluate(readPrintCount)).toBe(this.printed)
   }
 
-  private async typeSheets(panel: Locator, numbers: readonly number[], mistakeSheet?: number): Promise<void> {
+  private async typeSheets(
+    panel: Locator,
+    numbers: readonly number[],
+    mistakeSheet?: number,
+  ): Promise<void> {
     const texts = planSheetTexts(this.sheets, numbers, mistakeSheet)
     for (const [index, text] of texts.entries()) {
       await panel.getByRole('textbox', { name: `Sheet ${index + 1}`, exact: true }).fill(text)
@@ -241,7 +258,9 @@ export class IdentityDriver {
   }
 
   async expectSays(text: string): Promise<void> {
-    await expect((await this.showPage()).getByRole('status')).toContainText(text, { ignoreCase: true })
+    await expect((await this.showPage()).getByRole('status')).toContainText(text, {
+      ignoreCase: true,
+    })
   }
 
   async expectIdentity(has: boolean): Promise<void> {
@@ -254,7 +273,10 @@ export class IdentityDriver {
     const panel = await this.showPage()
     await this.closeKit(panel)
     await panel.getByRole('button', { name: 'Delete from this device', exact: true }).click()
-    await this.scenario.page.getByRole('alertdialog').getByRole('button', { name: 'Delete', exact: true }).click()
+    await this.scenario.page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Delete', exact: true })
+      .click()
     await expect(panel.getByText(NO_IDENTITY)).toBeVisible()
   }
 
@@ -274,7 +296,9 @@ export class IdentityDriver {
   }
 
   async expectWarning(text: string): Promise<void> {
-    await expect((await this.showPage()).getByRole('alert')).toContainText(text, { ignoreCase: true })
+    await expect((await this.showPage()).getByRole('alert')).toContainText(text, {
+      ignoreCase: true,
+    })
   }
 
   async expectSameAccount(): Promise<void> {
