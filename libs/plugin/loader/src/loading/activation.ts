@@ -5,7 +5,6 @@
 import type { LoaderHost } from '../host'
 import {
   parseLifecycleHooks,
-  removePluginStyles,
   resolveModule,
   type PluginModule,
   type ResolveModuleContext,
@@ -39,7 +38,7 @@ function setFailure(ctx: ActivateContext, pluginId: string, error: string | unde
 }
 
 function discardEntry(ctx: ActivateContext, pluginId: string): void {
-  removePluginStyles(pluginId)
+  ctx.styles.unregister(pluginId)
   ctx.host.disposePlugin(pluginId)
 }
 

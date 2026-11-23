@@ -17,7 +17,7 @@ export function createMovedTabStarter(deps: MovedTabStarterDeps): (moved: MovedT
     windowTabs: deps.windowTabs,
     closeTab: deps.closeTab,
     acceptMove: deps.acceptMove,
-    ...(deps.focusWindow ? { focusWindow: deps.focusWindow } : {}),
+    focusWindow: deps.focusWindow,
     ...(deps.wait ? { wait: deps.wait } : {}),
     onError: report,
   })

@@ -70,25 +70,27 @@ func (h *Handler) Call(
 	if err := ctx.Err(); err != nil {
 		return connect.NewError(connect.CodeCanceled, err)
 	}
-	var done []byte
-	err = connection.ErrNoConnection
-	if calls := h.calls(); calls != nil {
-		done, err = calls.Call(ctx, pluginID, modelcall.Request{
-			Operation: request.Msg.GetOperation(), Payload: request.Msg.GetPayload(),
-			Priority:  wire.ConvertPriorityFromWire(request.Msg.GetPriority()),
-			Preferred: wire.ConvertPreferredRowFromWire(request.Msg.GetPreferredRow()),
-		}, func(data []byte) error {
-			return stream.Send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Data{Data: data}})
-		})
-	}
-	if err == nil {
-		return stream.Send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Done{Done: done}})
-	}
-	failure, isServed := wire.ConvertCallFailureToWire(ctx, err)
-	if !isServed {
-		return wire.NewCallStatusError(ctx, err)
-	}
-	return stream.Send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Failure{Failure: failure}})
+	return wire.RunWatch(ctx, stream, wire.ResendInterval, nil, func(ctx context.Context, send func(*v1.ConnectionCallServiceCallResponse) error) error {
+		var done []byte
+		err := connection.ErrNoConnection
+		if calls := h.calls(); calls != nil {
+			done, err = calls.Call(ctx, pluginID, modelcall.Request{
+				Operation: request.Msg.GetOperation(), Payload: request.Msg.GetPayload(),
+				Priority:  wire.ConvertPriorityFromWire(request.Msg.GetPriority()),
+				Preferred: wire.ConvertPreferredRowFromWire(request.Msg.GetPreferredRow()),
+			}, func(data []byte) error {
+				return send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Data{Data: data}})
+			})
+		}
+		if err == nil {
+			return send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Done{Done: done}})
+		}
+		failure, isServed := wire.ConvertCallFailureToWire(ctx, err)
+		if !isServed {
+			return wire.NewCallStatusError(ctx, err)
+		}
+		return send(&v1.ConnectionCallServiceCallResponse{Frame: &v1.ConnectionCallServiceCallResponse_Failure{Failure: failure}})
+	})
 }
 
 // CancelCall cancels the context of the call of the plugin that carries the call id. The caller sends it when

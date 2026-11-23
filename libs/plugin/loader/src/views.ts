@@ -10,7 +10,7 @@
 import { createApp, type App, type Component } from 'vue'
 import type { Disposable, MountedView } from '@numen/plugin-sdk'
 import type { ContributionMatch } from './loading'
-import { adoptPluginStyle, getPluginStyle, type StyleRoot } from './styles'
+import type { PluginStyles, StyleRoot } from './styles'
 
 /** A view as the registry keeps it. The registry matches capabilities by name and knows no list of them. */
 export interface DeclaredViewRegistration {
@@ -64,8 +64,8 @@ function createRoot(): HTMLElement {
   return root
 }
 
-function createStyle(pluginId: string): HTMLElement[] {
-  const href = getPluginStyle(pluginId)
+function createStyle(styles: PluginStyles, pluginId: string): HTMLElement[] {
+  const href = styles.getUrl(pluginId)
   if (!href) return []
   const link = document.createElement('link')
   link.rel = 'stylesheet'
@@ -79,10 +79,10 @@ function isAllowed(mount: Mount, view: DeclaredView): boolean {
   return !inherits || view.vaultPermissions.every((one) => permissions.includes(one))
 }
 
-function drawView(mount: Mount, view: DeclaredView): ViewInstance {
+function drawView(styles: PluginStyles, mount: Mount, view: DeclaredView): ViewInstance {
   const root = createRoot()
-  const release = adoptPluginStyle(view.pluginId, mount.element.getRootNode() as StyleRoot)
-  const nodes = release ? [root] : [...createStyle(view.pluginId), root]
+  const release = styles.adopt(view.pluginId, mount.element.getRootNode() as StyleRoot)
+  const nodes = release ? [root] : [...createStyle(styles, view.pluginId), root]
   mount.element.append(...nodes)
   const app = createApp(view.registration.component, { context: mount.context })
   const exposed = app.mount(root) as { focus?: () => void }
@@ -102,6 +102,7 @@ function eraseView(mount: Mount): void {
  * its own failure, and the mount goes on waiting.
  */
 export interface ViewRegistryDeps {
+  readonly styles: PluginStyles
   readonly startPluginsOf?: (match: ContributionMatch) => Promise<void>
 }
 
@@ -113,13 +114,13 @@ function startDeclaringPlugins(deps: ViewRegistryDeps, capability: string): void
     .catch(() => undefined)
 }
 
-export function createViewRegistry(deps: ViewRegistryDeps = {}) {
+export function createViewRegistry(deps: ViewRegistryDeps) {
   const declared: DeclaredView[] = []
   const mounts = new Set<Mount>()
 
   const draw = (mount: Mount) => {
     const view = declared.find((one) => one.registration.capability === mount.capability)
-    if (view && isAllowed(mount, view)) mount.instance = drawView(mount, view)
+    if (view && isAllowed(mount, view)) mount.instance = drawView(deps.styles, mount, view)
   }
 
   const registerView = (

@@ -8,6 +8,7 @@ import { createDropRegistry } from '../drops'
 import { createEditorExtensionRegistry } from '../editorExtensions'
 import { createSlotRegistry } from '../slots'
 import { createSlotViewRegistry } from '../slot-views'
+import { createPluginStyles, type PluginStyles } from '../styles'
 import { createViewRegistry } from '../views'
 import type { PluginParts } from '../host'
 import { createPluginParts } from './context'
@@ -56,18 +57,20 @@ function createEventBridge(
 }
 
 function createRegistrationBridge(
-  deps: Pick<PluginHostDeps, 'window' | 'kinds' | 'tabs' | 'vault'>,
+  deps: Pick<HostDeps, 'window' | 'kinds' | 'tabs' | 'vault'>,
   registry: HostRegistry,
+  styles: PluginStyles,
 ): ContextRegistrationHost {
+  const entryDeps = { ...deps, styles }
   return {
     registerReader: (pluginId, registration) =>
-      registerReaderEntry(deps, registry.kinds, {
+      registerReaderEntry(entryDeps, registry.kinds, {
         pluginId,
         registration,
         getContext: () => registry.plugins.contexts.get(pluginId)?.plugin,
       }),
     registerTabKind: (pluginId, registration) =>
-      registerTabKindEntry(deps, registry.kinds, {
+      registerTabKindEntry(entryDeps, registry.kinds, {
         pluginId,
         registration,
         getContext: () => registry.plugins.contexts.get(pluginId)?.plugin,
@@ -98,7 +101,7 @@ function createHostContextBridge(
   shared: SharedRegistries,
 ): PluginContextHost {
   return {
-    registration: createRegistrationBridge(deps, registry),
+    registration: createRegistrationBridge(deps, registry, shared.styles),
     views: createViewBridge(shared),
     settings: createSettingBridge(deps),
     events: createEventBridge(deps, registry),
@@ -238,10 +241,11 @@ function createLifecycleApi({ registry, contextHost, keybindings, entries }: Lif
 
 export function createPluginHost(windowDeps: PluginHostDeps) {
   const whenReader = windowDeps.commands.whenReader ?? createWhenReader()
+  const styles = createPluginStyles()
   const deps: HostDeps = { ...windowDeps, commands: { ...windowDeps.commands, whenReader } }
   const { slots: slotDeps } = deps
   const registry = createHostRegistry()
-  const slotViews = createSlotViewRegistry({ reportIssue: slotDeps.reportViewIssue })
+  const slotViews = createSlotViewRegistry({ reportIssue: slotDeps.reportViewIssue, styles })
   const keybindings = createKeybindingApi(deps)
   const commands = createCommandApi(deps, registry, keybindings.registry)
   const findSlotCommand = slotDeps.createSlotCommandFinder({
@@ -268,13 +272,14 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     requestPlugin: (pluginId) => requestPluginStart(deps, pluginId),
   })
   const contextHost = createHostContextBridge(deps, registry, {
-    views: createViewRegistry(deps.plugins),
+    views: createViewRegistry({ ...deps.plugins, styles }),
     drops: createDropRegistry(deps.plugins),
     editorExtensions: createEditorExtensionRegistry({
       reportError: (pluginId, error) => reportError(deps, pluginId, error),
     }),
     slotViews,
     slots,
+    styles,
     readSlotEntries,
   })
   const entries = { registry, slotViews, deps }

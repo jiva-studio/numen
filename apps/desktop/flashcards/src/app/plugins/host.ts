@@ -7,7 +7,6 @@
 import {
   SLOT,
   createAppInfo,
-  openExternalUrl,
   createPluginHost,
   NO_COMMANDS,
   NO_KINDS,
@@ -51,6 +50,7 @@ interface ShellServices {
  */
 interface ShellHostDeps {
   readonly relations: VaultRelations
+  readonly openExternal: (href: string) => Promise<void>
   readonly getConnections: (pluginId: string) => ReturnType<typeof createPluginConnections>
   readonly tabs: Pick<WindowTabs, 'registerKind' | 'closeTab' | 'closePluginTab'>
   readonly notices: NoticeQueue
@@ -80,7 +80,7 @@ export function createShellHost(deps: ShellHostDeps) {
         build: import.meta.env.VITE_NUMEN_BUILD,
         getPlatform,
       }),
-      openExternal: openExternalUrl,
+      openExternal: deps.openExternal,
       getNotices: (pluginId) => createPluginNotices(notices, pluginId),
       clearNotices: (pluginId) => notices.clear(pluginId),
       getCommands: () => services.commands,
@@ -112,6 +112,7 @@ export function createShellHost(deps: ShellHostDeps) {
 
   return {
     host: pluginHost.lifecycle,
+    styles: pluginHost.slotViews.styles,
     /** The view a plugin draws in the title bar, or null while none does. */
     titleBarView: pluginHost.slotViews.getSlotView(SLOT.titleBar),
     /** A view a plugin declares, drawn into an element of the window itself. */

@@ -13,7 +13,7 @@ import {
   RestoreFailedPane,
   UnavailablePane,
 } from '@/entities/tab'
-import { isSecondaryWindow } from '@/entities/window'
+import { focusWindow, isSecondaryWindow } from '@/entities/window'
 import { createTabLinking, createWindowTabLinkSession } from '@/features/tab-linking'
 import { createMoveAcceptor, createMovedTabStarter } from '@/features/tab-move'
 import { formatError } from '@/shared/api/errors'
@@ -74,6 +74,7 @@ export function createTabsPart(deps: TabsPartDeps) {
     windowTabs,
     closeTab: windowTabs.panes.closeTab,
     acceptMove: createMoveAcceptor(tabMove.acceptTabMove, windowId, reports.waitForReports),
+    focusWindow: () => focusWindow(api.window.frameRuntime),
     writeMessage,
   })
   const linkSession = createWindowTabLinkSession({

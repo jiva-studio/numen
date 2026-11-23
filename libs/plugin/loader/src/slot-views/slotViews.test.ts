@@ -1,18 +1,21 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createSlotViewRegistry, getDeclaredSlots } from './slotViews'
+import { createPluginStyles } from '../styles'
+
+const styles = createPluginStyles()
 
 const BAR = { id: 'bar', component: { name: 'OrchardBar' } }
 const OTHER_BAR = { id: 'strip', component: { name: 'HarborBar' } }
 
 describe('createSlotViewRegistry', () => {
   it('draws no view in a slot no plugin registered', () => {
-    const registry = createSlotViewRegistry()
+    const registry = createSlotViewRegistry({ styles })
 
     expect(registry.getSlotView('titleBar').value).toBeNull()
   })
 
   it('draws the view a plugin registered for the slot', () => {
-    const registry = createSlotViewRegistry()
+    const registry = createSlotViewRegistry({ styles })
     const view = registry.getSlotView('titleBar')
 
     registry.registerSlotView('org.example.orchard', 'titleBar', BAR)
@@ -21,7 +24,7 @@ describe('createSlotViewRegistry', () => {
   })
 
   it('draws the view of the plugin first by id when two plugins register the slot', () => {
-    const registry = createSlotViewRegistry()
+    const registry = createSlotViewRegistry({ styles })
 
     registry.registerSlotView('org.example.orchard', 'titleBar', BAR)
     registry.registerSlotView('org.example.harbor', 'titleBar', OTHER_BAR)
@@ -31,7 +34,7 @@ describe('createSlotViewRegistry', () => {
 
   it('reports the plugin registered second whose id sorts after the first', () => {
     const reportIssue = vi.fn()
-    const registry = createSlotViewRegistry({ reportIssue })
+    const registry = createSlotViewRegistry({ styles, reportIssue })
 
     registry.registerSlotView('org.example.harbor', 'titleBar', OTHER_BAR)
     registry.registerSlotView('org.example.orchard', 'titleBar', BAR)
@@ -45,7 +48,7 @@ describe('createSlotViewRegistry', () => {
 
   it('reports the plugin that drew the slot when a plugin first by id registers it', () => {
     const reportIssue = vi.fn()
-    const registry = createSlotViewRegistry({ reportIssue })
+    const registry = createSlotViewRegistry({ styles, reportIssue })
 
     registry.registerSlotView('org.example.orchard', 'titleBar', BAR)
     registry.registerSlotView('org.example.harbor', 'titleBar', OTHER_BAR)
@@ -56,7 +59,7 @@ describe('createSlotViewRegistry', () => {
 
   it('reports nothing for one plugin that registers its view again', () => {
     const reportIssue = vi.fn()
-    const registry = createSlotViewRegistry({ reportIssue })
+    const registry = createSlotViewRegistry({ styles, reportIssue })
 
     registry.registerSlotView('org.example.orchard', 'titleBar', BAR)
     registry.registerSlotView('org.example.orchard', 'titleBar', BAR)
@@ -66,7 +69,7 @@ describe('createSlotViewRegistry', () => {
   })
 
   it('draws the other plugin once the plugin that drew the slot is disposed', () => {
-    const registry = createSlotViewRegistry()
+    const registry = createSlotViewRegistry({ styles })
     registry.registerSlotView('org.example.harbor', 'titleBar', OTHER_BAR)
     registry.registerSlotView('org.example.orchard', 'titleBar', BAR)
 
@@ -76,7 +79,7 @@ describe('createSlotViewRegistry', () => {
   })
 
   it('draws nothing once the registration is disposed', () => {
-    const registry = createSlotViewRegistry()
+    const registry = createSlotViewRegistry({ styles })
     const registration = registry.registerSlotView('org.example.orchard', 'titleBar', BAR)
 
     registration.dispose()

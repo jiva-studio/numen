@@ -283,6 +283,11 @@ function createHostServices(scope: PartsScope, host: PluginContextHost): HostSer
   }
 }
 
+/** The parts a plugin is given, with the list of its subscriptions that only the host reaches. */
+export interface HostedParts extends PluginParts {
+  readonly subscriptions: SubscriptionList
+}
+
 /**
  * The arguments of `activate`: the context the plugin owns (identity, registrations, settings,
  * health) and the services the host lends it (vault, tabs, window, background work, events). Every
@@ -295,7 +300,7 @@ export function createPluginParts(
   pluginId: string,
   host: PluginContextHost,
   manifest?: Manifest | { permissions?: readonly string[] },
-): PluginParts {
+): HostedParts {
   const subscriptions = createSubscriptionList()
   const target: PermissionTarget = { pluginId, manifest }
   const scope: PartsScope = {
@@ -304,5 +309,9 @@ export function createPluginParts(
     add: (d: Disposable) => trackSubscription(subscriptions, d),
     check: (p, op) => checkPermission(target, p, op),
   }
-  return { plugin: createPluginContext(scope, host), host: createHostServices(scope, host) }
+  return {
+    plugin: createPluginContext(scope, host),
+    host: createHostServices(scope, host),
+    subscriptions,
+  }
 }

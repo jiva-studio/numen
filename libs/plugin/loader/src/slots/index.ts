@@ -13,5 +13,5 @@ export {
   type SlotLayout,
 } from './slotLayout'
 export { getEntryKey, orderSlotEntries, separateGroups } from './slotKeys'
-export { createStyledView } from './styledView'
+export { createStyledViews } from './styledView'
 export { WINDOW_SLOTS } from './windowSlots'
