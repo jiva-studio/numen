@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findBackendPids, getSubscriptionPhase } from './sync.js'
+import { findBackendPids, getCloudBytes, getPlansFlag, getSubscriptionPhase } from './sync.js'
 
 const LISTING = [
   '    1 /sbin/init',
@@ -35,5 +35,24 @@ describe('getSubscriptionPhase', () => {
   it('is deleted from 60 days after the end', () => {
     expect(getSubscriptionPhase(60)).toBe('deleted')
     expect(getSubscriptionPhase(70)).toBe('deleted')
+  })
+})
+
+describe('getPlansFlag', () => {
+  it('names each plan by its name in lower case and its size in GB', () => {
+    const plans = [
+      { name: 'Basic', gigabytes: 10 },
+      { name: 'Plus', gigabytes: 100 },
+      { name: 'Pro', gigabytes: 250 },
+    ]
+
+    expect(getPlansFlag(plans)).toBe('basic:10,plus:100,pro:250')
+  })
+})
+
+describe('getCloudBytes', () => {
+  it('counts a GB as 2 to the power of 30 bytes', () => {
+    expect(getCloudBytes(2)).toBe(2 * 1024 * 1024 * 1024)
+    expect(getCloudBytes(0)).toBe(0)
   })
 })

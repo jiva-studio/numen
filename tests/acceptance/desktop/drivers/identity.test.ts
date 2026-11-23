@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { planAnswers, readPosition } from './identity.js'
+import { getBuyName, getBuyPattern, getChangeName, getPlanLine, planAnswers, readPosition } from './identity.js'
 
 const WORDS = ['zoo', 'zoo', 'cat', 'dog', 'zoo', 'fox', 'owl', 'hen', 'ant', 'bee', 'elk', 'yak']
 
@@ -30,5 +30,21 @@ describe('planAnswers', () => {
 
   it('rejects a wrong word at every requested position', () => {
     expect(() => planAnswers([1, 2, 5], WORDS, 'zoo')).toThrow('nothing can take its place')
+  })
+})
+
+describe('the names of the buttons of the card', () => {
+  it('names the button that buys a plan with its name and size', () => {
+    expect(getBuyName('Plus', 100)).toBe('Buy Plus, 100 GB')
+    expect(getBuyPattern('Plus').test('Buy Plus, 100 GB')).toBe(true)
+    expect(getBuyPattern('Plus').test('Buy Pro, 250 GB')).toBe(false)
+  })
+
+  it('names the button that changes the plan with the name of the plan', () => {
+    expect(getChangeName('Pro')).toBe('Change plan to Pro')
+  })
+
+  it('writes the plan line with the name and the size', () => {
+    expect(getPlanLine('Plus', 100)).toBe('Plus, 100 GB')
   })
 })

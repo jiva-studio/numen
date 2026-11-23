@@ -14,6 +14,19 @@ const PAYMENT_ROUTE = /\/pay\//
 /** The plugin reads the subscription when the card opens and every 3 seconds while a payment is awaited. */
 const SUBSCRIPTION_LIMIT_MS = 20_000
 
+/** The name of the button that buys the plan of a name with its size in GB, as the card writes it. */
+export const getBuyName = (name: string, gigabytes: number): string => `Buy ${name}, ${gigabytes} GB`
+
+/** Matches the button that buys the plan of a name, whatever its size. */
+export const getBuyPattern = (name: string): RegExp => new RegExp(`^Buy ${name}, `)
+
+/** The name of the button that changes the plan to the plan of a name. */
+export const getChangeName = (name: string): string => `Change plan to ${name}`
+
+/** The text of the plan line of the card: the name and the size in GB. */
+export const getPlanLine = (name: string, gigabytes: number): string => `${name}, ${gigabytes} GB`
+
+
 /** The place a field of the confirmation asks for: "Confirm word 4" asks for the 4th word. */
 export const readPosition = (label: string): number => {
   const found = /^Confirm word (\d+)$/.exec(label)
@@ -191,6 +204,49 @@ export class IdentityDriver {
     await payment.close()
     await this.expectSubscription('Active')
   }
+
+  /** Buys the plan of a name on the page of the stand-in and waits until the card shows the subscription as active. */
+  async buyPlan(name: string): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    const opened = this.scenario.page.waitForEvent('popup')
+    await card.getByRole('button', { name: getBuyPattern(name) }).click()
+    const payment = await opened
+    await expect(payment.getByText(PAYMENT_RECEIVED)).toBeVisible()
+    await payment.close()
+    await this.expectSubscription('Active')
+  }
+
+  /** Expects the card to offer to buy the plan of a name with its size in GB. */
+  async expectBuyOffer(name: string, gigabytes: number): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    await expect(card.getByRole('button', { name: getBuyName(name, gigabytes), exact: true })).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+  }
+
+  /** Expects the card to offer to buy no plan, after it showed the subscription. */
+  async expectNoBuyOffer(): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    await expect(card.getByText(SUBSCRIPTION_TITLE).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    await expect(card.getByRole('button', { name: /^Buy / })).toHaveCount(0)
+  }
+
+  /** Expects the card to offer, or not to offer, to change the plan to the plan of a name. */
+  async expectChangeOffer(name: string, isOffered: boolean): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    const change = card.getByRole('button', { name: getChangeName(name), exact: true })
+    if (isOffered) await expect(change).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+    else {
+      await expect(card.getByText(SUBSCRIPTION_TITLE).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+      await expect(change).toHaveCount(0)
+    }
+  }
+
+  /** Changes the plan on the card and waits until the card shows the plan of the name. */
+  async changePlan(name: string): Promise<void> {
+    const card = this.getCard(await this.showPage())
+    await card.getByRole('button', { name: getChangeName(name), exact: true }).click()
+    await expect(card.getByText(new RegExp(`^${name}, `)).first()).toBeVisible({ timeout: SUBSCRIPTION_LIMIT_MS })
+  }
+
 
   /** Opens the page of the payment and stops its load before the stand-in is asked, so nothing is paid. */
   async openPaymentWithoutPaying(): Promise<void> {

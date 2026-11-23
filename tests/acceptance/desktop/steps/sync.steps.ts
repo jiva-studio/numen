@@ -1,4 +1,5 @@
 import type { ComputerName, Holder } from '../drivers/computer.js'
+import { getPlanLine } from '../drivers/identity.js'
 import { Given, Then, When } from '../support/bdd.js'
 
 Given('a sync server runs', async ({ person }) => {
@@ -145,4 +146,51 @@ Then('the page does not offer to buy the subscription', async ({ person }) => {
 
 Then('the page says {string}', async ({ person }, text: string) => {
   await person.identity.expectPageSays(text)
+})
+
+Given(
+  'a sync server that sells the plans {string} with {int} GB, {string} with {int} GB and {string} with {int} GB runs',
+  async ({ person }, first: string, firstGigabytes: number, second: string, secondGigabytes: number, third: string, thirdGigabytes: number) => {
+    await person.sync.startSellingPlans([
+      { name: first, gigabytes: firstGigabytes },
+      { name: second, gigabytes: secondGigabytes },
+      { name: third, gigabytes: thirdGigabytes },
+    ])
+  },
+)
+
+When('the person buys the plan {string}', async ({ person }, name: string) => {
+  await person.identity.buyPlan(name)
+})
+
+Then('the page offers to buy the plan {string} with {int} GB', async ({ person }, name: string, gigabytes: number) => {
+  await person.identity.expectBuyOffer(name, gigabytes)
+})
+
+Then('the page does not offer to buy a plan', async ({ person }) => {
+  await person.identity.expectNoBuyOffer()
+})
+
+Then('the subscription shows the plan {string} with {int} GB{on}', async ({ person }, name: string, gigabytes: number, computer: ComputerName) => {
+  await person.computers.expectSubscription(computer, getPlanLine(name, gigabytes))
+})
+
+When('the person changes the plan to {string}', async ({ person }, name: string) => {
+  await person.identity.changePlan(name)
+})
+
+Then('the page offers to change the plan to {string}', async ({ person }, name: string) => {
+  await person.identity.expectChangeOffer(name, true)
+})
+
+Then('the page does not offer to change the plan to {string}', async ({ person }, name: string) => {
+  await person.identity.expectChangeOffer(name, false)
+})
+
+Given('the cloud holds {int} GB of the notes of the person', async ({ person }, gigabytes: number) => {
+  await person.sync.holdInCloud(gigabytes)
+})
+
+When('the person deletes {int} GB of the notes of the person from the cloud', async ({ person }, gigabytes: number) => {
+  await person.sync.deleteFromCloud(gigabytes)
 })

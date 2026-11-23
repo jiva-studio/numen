@@ -88,6 +88,21 @@ export const getSubscriptionPhase = (daysAgo: number): string => {
   return daysAgo < RETENTION_DAYS ? 'read_only' : 'deleted'
 }
 
+/** A plan a scenario names: the name a person reads and its size in GB. */
+export interface PlanSpec {
+  readonly name: string
+  readonly gigabytes: number
+}
+
+const BYTES_IN_GB = 2 ** 30
+
+/** The value of the `-plans` flag of the fake sync server: the id of each plan (its name in lower case) and its size in GB. */
+export const getPlansFlag = (plans: readonly PlanSpec[]): string =>
+  plans.map((one) => `${one.name.toLowerCase()}:${one.gigabytes}`).join(',')
+
+/** The bytes the cloud holds when it holds some GB of the notes. */
+export const getCloudBytes = (gigabytes: number): number => gigabytes * BYTES_IN_GB
+
 /** The ids of the processes whose program is the file of the backend of a plugin, as the system lists them. */
 export const findBackendPids = (processes: string, backend: string): number[] =>
   processes
@@ -100,6 +115,7 @@ export class SyncDriver {
   private extraFlags: readonly string[] = []
   private stateDir: string | undefined
   private listen: string | undefined
+  private heldGigabytes = 0
 
   constructor(
     private readonly scenario: Scenario,
@@ -111,6 +127,31 @@ export class SyncDriver {
     this.extraFlags = ['-subscriptions']
     await this.start()
   }
+
+  /** Starts the sync server that sells the plans: an account has none until it pays for one on the page the server serves. */
+  async startSellingPlans(plans: readonly PlanSpec[]): Promise<void> {
+    this.extraFlags = ['-subscriptions', '-plans', getPlansFlag(plans)]
+    await this.start()
+  }
+
+  /** Makes the cloud hold some GB of the notes of the person. */
+  async holdInCloud(gigabytes: number): Promise<void> {
+    this.heldGigabytes = gigabytes
+    await this.setCloudBytes()
+  }
+
+  /** Deletes some GB of the notes of the person from the cloud. */
+  async deleteFromCloud(gigabytes: number): Promise<void> {
+    if (gigabytes > this.heldGigabytes) throw new Error(`the cloud holds ${this.heldGigabytes} GB: ${gigabytes} GB cannot be deleted`)
+    this.heldGigabytes -= gigabytes
+    await this.setCloudBytes()
+  }
+
+  private async setCloudBytes(): Promise<void> {
+    const answer = await fetch(`${this.requireRunning().address}/admin/usage?bytes=${getCloudBytes(this.heldGigabytes)}`, { method: 'POST' })
+    if (!answer.ok) throw new Error(`the sync server answered ${answer.status} to the bytes the cloud holds`)
+  }
+
 
   /** Sets the subscription of every account to one that ended some days ago. */
   async endSubscription(daysAgo: number): Promise<void> {
