@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
+	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/commandrun"
@@ -22,7 +23,11 @@ import (
 type Runner struct{ commandrun.Runner }
 
 func NewRunner(commands commandrun.Commands, runs commandrun.Runs, types commandrun.ContentTypes, readers vaultport.VaultReaders, config pluginport.WhenConfig, conditions *when.Conditions) Runner {
-	return Runner{commandrun.New(commands, runs, types, readers, config, conditions)}
+	var open commandrun.OpenReader
+	if readers != nil {
+		open = func(v domain.Vault) (edit.Reader, error) { return readers.Open(v) }
+	}
+	return Runner{commandrun.New(commands, runs, types, open, config, conditions)}
 }
 
 // RunnerOpener opens the command runner over a vault.

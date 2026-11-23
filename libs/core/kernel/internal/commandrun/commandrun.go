@@ -15,8 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // Commands is what the manifests of the enabled plugins declare.
@@ -42,14 +40,22 @@ type ContentTypes interface {
 	GetContentType(name string) domain.ContentType
 }
 
+// Config gives the config a condition reads.
+type Config interface {
+	GetWhenConfig() map[string]any
+}
+
+// OpenReader opens a reader of the files of a vault.
+type OpenReader = func(v domain.Vault) (edit.Reader, error)
+
 // New makes the runner over the manifests commands, the backends runs, which may run nothing, the table
-// types that gives a file its type, the readers that give for the type and properties of a note, and
-// the settings a condition reads as config. conditions parses the condition of a command. Without readers, or
+// types that gives a file its type, the reader that open gives for the type and properties of a note, and
+// the settings a condition reads as config. conditions parses the condition of a command. Without open, or
 // without config, a condition over the note or over config is undecided and holds.
-func New(commands Commands, runs Runs, types ContentTypes, readers vaultport.VaultReaders, config pluginport.WhenConfig, conditions *when.Conditions) Runner {
+func New(commands Commands, runs Runs, types ContentTypes, open OpenReader, config Config, conditions *when.Conditions) Runner {
 	run := Runner{commands: commands, runs: runs, types: types, notes: noNotes{}, config: noConfig{}, conditions: conditions}
-	if readers != nil {
-		run.notes = readingNotes{readers}
+	if open != nil {
+		run.notes = readingNotes{open}
 	}
 	if config != nil {
 		run.config = givenConfig{config}
@@ -165,10 +171,10 @@ type targetNotes interface {
 	addNote(ctx context.Context, v domain.Vault, target plugin.TargetValues, path string) (plugin.TargetValues, error)
 }
 
-type readingNotes struct{ readers vaultport.VaultReaders }
+type readingNotes struct{ open OpenReader }
 
 func (n readingNotes) addNote(ctx context.Context, v domain.Vault, target plugin.TargetValues, path string) (plugin.TargetValues, error) {
-	reader, err := n.readers.Open(v)
+	reader, err := n.open(v)
 	if err != nil {
 		return target, err
 	}
@@ -191,7 +197,7 @@ type targetConfig interface {
 	addConfig(values plugin.TargetValues) plugin.TargetValues
 }
 
-type givenConfig struct{ config pluginport.WhenConfig }
+type givenConfig struct{ config Config }
 
 func (c givenConfig) addConfig(values plugin.TargetValues) plugin.TargetValues {
 	return values.WithConfig(c.config.GetWhenConfig())
