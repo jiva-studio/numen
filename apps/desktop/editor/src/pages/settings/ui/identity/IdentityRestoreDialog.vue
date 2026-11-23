@@ -5,7 +5,7 @@
 import { Button } from '@numen/ui'
 import { WORDS as words } from '../../words'
 import IdentityDialog from './IdentityDialog.vue'
-import RestoreWordInputs from './RestoreWordInputs.vue'
+import RecoveryWords from './RecoveryWords.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{ entered: readonly string[]; problem: string; isBusy: boolean }>()
@@ -25,8 +25,9 @@ const emit = defineEmits<{
   >
     <p class="identity-restore__text">{{ words.identityRestoreHint }}</p>
     <div class="identity-restore__words">
-      <RestoreWordInputs
-        :entered="entered"
+      <RecoveryWords
+        :recovery-words="entered"
+        is-editable
         :is-disabled="isBusy"
         @change="(index, value) => emit('change', index, value)"
       />

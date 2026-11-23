@@ -318,6 +318,8 @@ describe('the page "Identity and licenses"', () => {
     expect(getRestoreInputs(tab).map((input) => input.attributes('aria-label'))).toStrictEqual(
       Array.from({ length: 12 }, (_, index) => `Recovery word ${index + 1}`),
     )
+    expect(getDialog(tab).findAll('ol[aria-label="Recovery words"] li input')).toHaveLength(12)
+    expect(getDialog(tab).text()).toContain('Type the 12 words in order.')
   })
 
   it('sends the words typed one to a field to create when the person restores', async () => {
