@@ -13,6 +13,9 @@ import (
 
 func advanceEpoch(t *testing.T, c *synctest.Computer) {
 	t.Helper()
+	if _, err := chaincourier.NewAdopt(c.ChainDeps()).Execute(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 	if err := c.Fake.AdvanceEpoch(); err != nil {
 		t.Fatal(err)
 	}

@@ -27,7 +27,7 @@ var errNoKeys = errors.New("the vault has no key")
 type Link struct {
 	RemoteVaultID string                `json:"remoteVaultId"`
 	SealedKey     []byte                `json:"sealedKey"`
-	LaterKeys     []SealedKey           `json:"laterKeys"`
+	LaterKeys     []SealedKey           `json:"laterKeys,omitempty"`
 	CatalogName   string                `json:"catalogName"`
 	ServerSeq     uint64                `json:"serverSeq"`
 	FeedCursor    host.FileChangeCursor `json:"feedCursor"`
