@@ -50,8 +50,13 @@ describe('parseWait', () => {
     expect(parseWait(' within "15" seconds in its vault "Copy"')).toStrictEqual({ seconds: 15, vault: 'Copy' })
   })
 
-  it('fails on a text that names no wait', () => {
-    expect(() => parseWait(' soon')).toThrow('does not name a wait in seconds')
+  it('reads no seconds where the text names none', () => {
+    expect(parseWait('')).toStrictEqual({ seconds: undefined, vault: undefined })
+    expect(parseWait(' in the vault "Test"')).toStrictEqual({ seconds: undefined, vault: 'Test' })
+  })
+
+  it('fails on a text that names no vault', () => {
+    expect(() => parseWait(' soon')).toThrow('does not name a vault')
   })
 })
 

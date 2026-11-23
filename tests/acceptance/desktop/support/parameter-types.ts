@@ -171,6 +171,6 @@ defineParameterType({
 
 defineParameterType({
   name: 'wait',
-  regexp: / within "\d+" seconds(?: in (?:the|its) vault "[^"]+")?/,
+  regexp: /(?: within "\d+" seconds)?(?: in (?:the|its) vault "[^"]+")?/,
   transformer: (wait: string) => parseWait(wait),
 })
