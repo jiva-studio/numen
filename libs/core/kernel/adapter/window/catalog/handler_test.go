@@ -79,16 +79,6 @@ func TestAnInstallationWithNoPluginFoldersHasNoReadme(t *testing.T) {
 	}
 }
 
-func TestAHandlerWithNoInstalledPluginsListIsRefusedAtConstruction(t *testing.T) {
-	defer func() {
-		if recover() == nil {
-			t.Error("NewHandler accepted a nil installed plugins list")
-		}
-	}()
-
-	windowcatalog.NewHandler(nil, nil)
-}
-
 func TestTheListCarriesEveryEntryWithItsStateAndContributions(t *testing.T) {
 	handler := newHandler(t, catalogtest.NewFakeSource("local",
 		entry("org.example.on", catalog.StateInstalled, "on"),

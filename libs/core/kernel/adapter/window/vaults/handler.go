@@ -52,7 +52,6 @@ type Handler struct {
 	remove Remover
 }
 
-// NewHandler is the handler of the vaults service of one window.
 func NewHandler(
 	current Window, list *vaults.ListVaults, add *vaults.AddVault, rename *vaults.RenameVault,
 	open *windowsession.OpenVault, remove Remover,
