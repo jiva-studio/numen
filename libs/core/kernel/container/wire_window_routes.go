@@ -93,10 +93,6 @@ func mountText(w *windowRoutes, vaultDeps vaultWiring) {
 
 func mountVaults(w *windowRoutes, ports registry.Ports, readers vaultport.VaultReaders, change vaultChanging, open *windowsession.OpenVault, dialog editor.PathDialog) {
 	state := w.session
-	var chooseFolder vaults.FolderChooser
-	if dialog != nil {
-		chooseFolder = picker.NewChooseFolder(dialog)
-	}
 	handler := vaults.NewHandler(
 		&state.Runtime,
 		vault.NewListVaults(ports.Vaults, readers),
@@ -104,8 +100,10 @@ func mountVaults(w *windowRoutes, ports registry.Ports, readers vaultport.VaultR
 		vault.NewRenameVault(ports.Lookup, change.Rename, readers),
 		open,
 		change.Remove,
-		chooseFolder,
 	)
+	if dialog != nil {
+		handler = handler.WithFolderChooser(picker.NewChooseFolder(dialog))
+	}
 	path, served := vaults.NewRoute(handler, w.page.Gate.CountQuestions())
 	w.Installation.Mount(editor.NewRoute(path, served, handler))
 	path, served = vaults.NewDialogRoute(handler.Dialog, w.page.Gate.CountQuestions())

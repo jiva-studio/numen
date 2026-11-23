@@ -87,7 +87,7 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		frames = plugins.GetFrameOrigins(pluginID)
 	}
 	w.Header().Set("Cache-Control", immutable)
-	w.Header().Set("Content-Security-Policy", csp.PluginPagePolicy(frames))
+	w.Header().Set("Content-Security-Policy", csp.GetPluginPagePolicy(frames))
 	w.Header().Set("Referrer-Policy", pluginPageReferrer)
 	if opened.MediaType != "" {
 		w.Header().Set("Content-Type", opened.MediaType)

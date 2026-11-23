@@ -26,6 +26,6 @@ func setAssetHeaders(head http.Header, mediaType string) {
 	head.Set("Content-Type", mediaType)
 	if mediaType == "image/svg+xml" {
 		// An SVG opened as a page runs its scripts; as a picture it does not.
-		head.Set("Content-Security-Policy", csp.PictureOnlyPolicy())
+		head.Set("Content-Security-Policy", csp.GetPictureOnlyPolicy())
 	}
 }

@@ -52,12 +52,19 @@ type Handler struct {
 	remove Remover
 }
 
-// NewHandler is the handler of the vaults service of one window. chooseFolder is nil when the application has no folder dialog.
+// NewHandler is the handler of the vaults service of one window. It has no folder dialog until WithFolderChooser.
 func NewHandler(
 	current Window, list *vaults.ListVaults, add *vaults.AddVault, rename *vaults.RenameVault,
-	open *windowsession.OpenVault, remove Remover, chooseFolder FolderChooser,
+	open *windowsession.OpenVault, remove Remover,
 ) *Handler {
-	return &Handler{Dialog: &Dialog{chooseFolder: chooseFolder}, window: current, list: list, add: add, rename: rename, open: open, remove: remove}
+	return &Handler{Dialog: &Dialog{}, window: current, list: list, add: add, rename: rename, open: open, remove: remove}
+}
+
+// WithFolderChooser returns the handler answering the folder dialog request with the native folder dialog.
+func (s *Handler) WithFolderChooser(choose FolderChooser) *Handler {
+	chosen := *s
+	chosen.Dialog = &Dialog{chooseFolder: choose}
+	return &chosen
 }
 
 // NewRoute is where the vaults service answers: its path and the handler of its calls. Each call

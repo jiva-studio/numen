@@ -364,7 +364,7 @@ func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	until := make(chan struct{})
 	b := blockingVaults{begun: begun, until: until}
 	api := newBareServices()
-	vaultsHandler := windowvaults.NewHandler(api.state, vault.NewListVaults(b, vaultreader.Readers{}), nil, nil, nil, nil, nil)
+	vaultsHandler := windowvaults.NewHandler(api.state, vault.NewListVaults(b, vaultreader.Readers{}), nil, nil, nil, nil)
 	vaultsPath, vaultsServed := windowvaults.NewRoute(vaultsHandler, api.state.Gate.CountQuestions())
 	api.Extra = append(api.Extra, NewRoute(vaultsPath, vaultsServed, vaultsHandler))
 	handler := api.NewHandler(http.NotFoundHandler())
