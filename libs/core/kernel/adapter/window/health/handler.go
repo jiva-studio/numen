@@ -50,10 +50,11 @@ func NewHandler(items Items, report Report, clearing Clear) *Handler {
 	return &Handler{items: items, report: report, clearing: clearing}
 }
 
-// NewRoute is where the service answers: its path and the handler of its calls. Each call goes
+// NewRoute is where the service answers: its path, the handler of its calls and the handler it answers through. Each call goes
 // through counted.
-func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewPluginHealthServiceHandler(handler, counted)
+func NewRoute(handler *Handler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
+	path, served = numenv1connect.NewPluginHealthServiceHandler(handler, counted)
+	return path, served, handler
 }
 
 // ReportHealth puts the item of the plugin the request names in the list.

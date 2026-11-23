@@ -8,9 +8,10 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
-// NewRoute returns the path IdentityService is served at and the handler that serves it.
-func NewRoute(handler numenv1connect.IdentityServiceHandler, counted connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewIdentityServiceHandler(handler, counted)
+// NewRoute returns the path IdentityService is served at and the handler that serves it, and the handler it answers through.
+func NewRoute(handler numenv1connect.IdentityServiceHandler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
+	path, served = numenv1connect.NewIdentityServiceHandler(handler, counted)
+	return path, served, handler
 }
 
 // NewService returns the handler over the use cases, or the handler that answers every call as

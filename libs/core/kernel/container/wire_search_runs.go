@@ -2,12 +2,10 @@ package container
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	searchquerydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchquery"
 	searchrundomain "github.com/jiva-studio/numen/libs/core/kernel/domain/searchrun"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexgeneration"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
@@ -19,10 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
-
-func newIndexGenerations(clock machineport.Clock) *indexgeneration.Generations {
-	return indexgeneration.New(strconv.FormatInt(clock.Now().UnixNano(), 36))
-}
 
 func emitIndexChanged(generations *indexgeneration.Generations, events *editor.Events) func(context.Context, domain.Vault) {
 	return func(ctx context.Context, v domain.Vault) {
@@ -51,11 +45,9 @@ func newSearchRuns(
 		Slots:       searchslot.New(searchrundomain.DefaultPolicy().MaxRunning),
 		Generations: generations,
 		Run:         find.Execute,
-		Names: func(pluginID string) string {
-			return pluginsGetPluginName(resolver, pluginID)
-		},
-		Catalog:    getSearchCatalog(manifests),
-		MaxResults: find.Limits.MaxLimit,
+		Names:       getPluginNames(resolver),
+		Catalog:     getSearchCatalog(manifests),
+		MaxResults:  find.Limits.MaxLimit,
 	})
 	return &runs
 }

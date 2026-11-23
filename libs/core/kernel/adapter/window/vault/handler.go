@@ -39,10 +39,11 @@ func NewHandler(current Window, changes Changes) *Handler {
 	return &Handler{window: current, changes: changes}
 }
 
-// NewRoute is where the vault service answers: its path and the handler of its calls. Each call
+// NewRoute is where the vault service answers: its path, the handler of its calls and the handler it answers through. Each call
 // goes through counted.
-func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewVaultServiceHandler(handler, counted)
+func NewRoute(handler *Handler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
+	path, served = numenv1connect.NewVaultServiceHandler(handler, counted)
+	return path, served, handler
 }
 
 // GetVaultState answers the vault the window shows and how far it has been read.

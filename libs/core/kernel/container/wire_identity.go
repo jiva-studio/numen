@@ -19,11 +19,16 @@ func openIdentityUseCases(install pluginInstall, vaultDeps vaultWiring, res *Res
 		Delete:        identity.NewDeleteIdentity(deps),
 		StartRestore:  identity.NewStartRestore(deps),
 		Link: windowidentity.LinkUseCases{
-			Start: identity.NewStartLink(deps), Get: identity.NewGetLink(deps), Decide: identity.NewDecideLink(deps), Cancel: identity.NewCancelLink(deps),
+			Start:  identity.NewStartLink(deps),
+			Get:    identity.NewGetLink(deps),
+			Decide: identity.NewDecideLink(deps),
+			Cancel: identity.NewCancelLink(deps),
 		},
 		Account: windowidentity.AccountUseCases{
-			EnterCode: identity.NewEnterLinkCode(deps), ConfirmJoin: identity.NewConfirmJoin(deps),
-			List: identity.NewListDevices(deps), Revoke: identity.NewRevokeDevice(deps),
+			EnterCode:   identity.NewEnterLinkCode(deps),
+			ConfirmJoin: identity.NewConfirmJoin(deps),
+			List:        identity.NewListDevices(deps),
+			Revoke:      identity.NewRevokeDevice(deps),
 		},
 	}
 }

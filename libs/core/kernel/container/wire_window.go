@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strconv"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
@@ -38,7 +39,7 @@ func (c Config) OpenWindow(exec *PluginExecution, prefs *PluginPreferences, endp
 	if err != nil {
 		return nil, err
 	}
-	ports, err := c.registry()
+	ports, err := vaultRegistry(c.RegistryPath)
 	if err != nil {
 		return nil, errors.Join(err, db.Close())
 	}
@@ -155,7 +156,7 @@ func buildWindow(
 	page := editor.NewPageAccess(tasks, state)
 	events := &editor.Events{Emit: plugins.events.EmitEvent}
 	state.Runtime.RecordModel(embedding.Describe())
-	generations := newIndexGenerations(vaultDeps.Clock)
+	generations := indexgeneration.New(strconv.FormatInt(vaultDeps.Clock.Now().UnixNano(), 36))
 	indexer := s.newIndexWorker(searchDeps, vaultDeps, &state.Runtime, page.Window, embedding, emitIndexChanged(generations, events))
 	writeWake := indexing.WriteWake(indexer.WakeWrittenVault)
 
@@ -234,7 +235,7 @@ func mountServices(w *windowRoutes, install pluginInstall, res *Resources, exec 
 	mountMedia(w, vaultDeps)
 	mountCommand(w, install, exec, settingsDeps, vaultDeps)
 	mountConnection(w, install, exec, settingsDeps, vaultDeps)
-	mountConnectionCall(w, install, exec, settingsDeps, vaultDeps, vaultDeps.Clock)
+	mountConnectionCall(w, install, exec, settingsDeps, vaultDeps)
 	mountLicense(w, install, settingsDeps, vaultDeps)
 	mountIdentity(w, install, vaultDeps, res)
 	mountText(w, vaultDeps)

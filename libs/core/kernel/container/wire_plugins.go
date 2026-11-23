@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/providerbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/sourcebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/toolbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/connectionport"
@@ -174,9 +173,7 @@ func AdaptPluginHost(management *PluginManagement, roles *PluginSupervision) (*P
 			Follow: func(subscribe settingsusecase.ChangeSubscriber) settingsusecase.ChangeSubscriber { return subscribe },
 		},
 		SetStorage: func(cacheRoot, dataRoot string) {
-			setPluginStorage(roles, cacheRoot, dataRoot, func(modelsDir string) supervision.Dependencies {
-				return newDependencyRegistry(roles.Clock, roles.Services.Observe, modelsDir)
-			})
+			setPluginStorage(roles, cacheRoot, dataRoot)
 			detection.SetFiles(roles.Storage)
 		},
 		RefreshDependencies: func() {
@@ -218,7 +215,12 @@ func lendHostEndpoint(management *PluginManagement, processes *PluginSupervision
 	var accounts hostendpoint.AccountCalls
 	if processes.Account != nil {
 		link := identity.NewAccountLink(processes.Account)
-		accounts = hostendpoint.AccountCalls{Account: processes.Account, Restore: processes.Account, Link: link, Chain: link}
+		accounts = hostendpoint.AccountCalls{
+			Account: processes.Account,
+			Restore: processes.Account,
+			Link:    link,
+			Chain:   link,
+		}
 	}
 	processes.Endpoint.Replace(hostendpoint.NewServer(hostendpoint.Address, callers, accounts))
 	return services

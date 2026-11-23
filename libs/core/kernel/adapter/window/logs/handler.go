@@ -64,9 +64,10 @@ func (h *Handler) SetLogLevel(_ context.Context, req *connect.Request[v1.SetLogL
 	return connect.NewResponse(&v1.SetLogLevelResponse{}), nil
 }
 
-// NewRoute returns the path and the HTTP handler of LogService.
-func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewLogServiceHandler(handler, counted)
+// NewRoute returns the path and the HTTP handler of LogService, and the handler it answers through.
+func NewRoute(handler *Handler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
+	path, served = numenv1connect.NewLogServiceHandler(handler, counted)
+	return path, served, handler
 }
 
 // WriteLog appends an entry reported by a window or a plugin frontend.

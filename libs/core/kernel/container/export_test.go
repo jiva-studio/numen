@@ -168,7 +168,7 @@ func VaultOpener(c TestInstallation, db *Index) *vault.VaultOpener {
 }
 
 func InstallPluginVault(c TestInstallation, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks) error {
-	vaults, err := c.registry()
+	vaults, err := vaultRegistry(c.RegistryPath)
 	if err != nil {
 		return err
 	}

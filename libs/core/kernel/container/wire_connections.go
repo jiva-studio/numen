@@ -16,8 +16,8 @@ func openConnectionRepository(c settingsWiring) *settingsadapter.ConnectionRepos
 	return settingsadapter.NewConnectionRepository(
 		c.SettingsFiles,
 		func() (string, error) { return settingsSettingsFile(c) },
-		func() (settingsadapter.File, error) { return readCheckedSettings(c) },
-		func() { refreshSettingEvents(c) },
+		func() (settingsadapter.File, error) { return settingsStore(c).ReadCheckedFile() },
+		func() { feed(c).Refresh() },
 	)
 }
 
@@ -53,7 +53,7 @@ func openDetection(install pluginInstall, exec *PluginExecution, settingsDeps se
 		source := providerbridge.NewQuestionSource(exec.Runtime.Activator)
 		return providerbridge.NewDetection(settingsDeps.ConnectionTypes, source, vaultDeps.Clock)
 	}
-	detection.Follow(func() { refreshSettingEvents(settingsDeps) }, settingsDeps.ErrorHandler)
+	detection.Follow(func() { feed(settingsDeps).Refresh() }, settingsDeps.ErrorHandler)
 	return detection
 }
 
@@ -72,10 +72,6 @@ func openConnectionUseCases(install pluginInstall, exec *PluginExecution, settin
 			RowOptions: openRowOptions(install, exec, deps),
 		},
 	}
-}
-
-func openModelCalls(install pluginInstall, settingsDeps settingsWiring) connectionport.ModelCalls {
-	return getForwardedCalls(settingsDeps.ConnectionTypes, install.Endpoints.Endpoint)
 }
 
 func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps settingsWiring, vaultDeps vaultWiring, notices connection.ReportSetAside) {
@@ -98,13 +94,6 @@ func setModelCalls(install pluginInstall, exec *PluginExecution, settingsDeps se
 			l.RowLists = lists
 		}
 	})
-}
-
-func getConnectionCalls(prefs *PluginPreferences, endpoints *PluginEndpoints) connectionport.ModelCalls {
-	if prefs == nil || endpoints == nil {
-		return nil
-	}
-	return getForwardedCalls(prefs.Views.Types, endpoints.Endpoint)
 }
 
 func getForwardedCalls(types connectionport.Types, endpoint *hostendpoint.Services) connectionport.ModelCalls {

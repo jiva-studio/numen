@@ -78,10 +78,6 @@ func settingsSettings(c settingsWiring) (settingsadapter.File, error) {
 	return settingsStore(c).ReadCheckedAt(path)
 }
 
-func readCheckedSettings(c settingsWiring) (settingsadapter.File, error) {
-	return settingsStore(c).ReadCheckedFile()
-}
-
 func configurePluginHost(c settingsWiring, prefs *PluginPreferences, hosts *settingsusecase.HostSubscriptions, s settingsadapter.File, compute machinedomain.ResolvedCompute) {
 	var subscribe settingsusecase.ChangeSubscriber
 	if c.SettingEvents != nil {
@@ -140,10 +136,6 @@ func listAppSettings(c settingsWiring) []plugindomain.Setting {
 	).Execute()
 }
 
-func refreshSettingEvents(c settingsWiring) {
-	feed(c).Refresh()
-}
-
 func syncSetting(c settingsWiring) naming.SyncSetting {
 	return func() naming.SyncTitleAndFilename {
 		target, err := settingsSettings(c)
@@ -162,10 +154,6 @@ func writeLogLevel(c settingsWiring) func(domainlogs.Level) error {
 			JSON: strconv.Quote(level.String()),
 		}})
 	}
-}
-
-func readSettings(c settingsWiring) func() (settingsdomain.Snapshot, error) {
-	return settingsStore(c).ReadJSON
 }
 
 func getSettingsWriter(c settingsWiring) func(entries []settingsdomain.Setting) error {
@@ -245,11 +233,10 @@ func settingsThemes(c settingsWiring, scales Scales, say func(string)) (*theme.S
 		say,
 	)
 	sizes := themeusecase.NewScales(scales.InterfaceScale, scales.TextScale)
-	interfaceScale, textScale := settingsadapter.GetInterfaceScaleBounds(), settingsadapter.GetTextScaleBounds()
 	return theme.NewService(
 		themeusecase.NewGetThemes(sources, store, store, sizes,
-			themeusecase.Bounds{Min: interfaceScale.Min, Max: interfaceScale.Max},
-			themeusecase.Bounds{Min: textScale.Min, Max: textScale.Max}),
+			themeusecase.Bounds(settingsadapter.GetInterfaceScaleBounds()),
+			themeusecase.Bounds(settingsadapter.GetTextScaleBounds())),
 		themeusecase.NewReadTheme(sources),
 		themeusecase.NewWriteAppearance(sources, store, store, sizes),
 		themeusecase.NewWatchThemes(sources, files, 0),

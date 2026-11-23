@@ -71,10 +71,11 @@ func NewLinks() *tablinks.Tabs {
 	return tablinks.New(LinkGrace, scheduleAfter, newLinkEvents())
 }
 
-// NewRoute is where the workspace service answers: its path and the handler of its calls. Each call
+// NewRoute is where the workspace service answers: its path, the handler of its calls and the handler it answers through. Each call
 // goes through counted.
-func NewRoute(handler *Handler, counted connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewWorkspaceServiceHandler(handler, counted)
+func NewRoute(handler *Handler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
+	path, served = numenv1connect.NewWorkspaceServiceHandler(handler, counted)
+	return path, served, handler
 }
 
 // WriteOpenTabs stores the currently open tabs, as last reported by the window,

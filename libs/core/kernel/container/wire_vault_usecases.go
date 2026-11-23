@@ -132,9 +132,7 @@ func vaultOpenerWith(c vaultWiring,
 	db *vaultIndex, walking vaultport.VaultReaders, watcher vault.VaultWatcher,
 ) *vault.VaultOpener {
 	scan := newScan(walking, db)
-	if c.SetNoteCut != nil {
-		c.SetNoteCut(&scan)
-	}
+	c.SetNoteCut(&scan)
 
 	buffered := &indexnote.Buffered{NoteRepository: db.Notes()}
 	return vault.ConfigureVaultOpener(watcher, scan, buffered, vaultMakeRefresh(c, db, buffered))

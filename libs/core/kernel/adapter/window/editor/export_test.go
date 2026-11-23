@@ -134,9 +134,8 @@ func (s *Services) pages() pageSet {
 
 // RouteOf is the route of a handler built by its own package: the path it serves and the handler
 // that serves it come from build, counted the way the container counts them.
-func RouteOf[H any](state *testWindow, handler H, build func(H, ...connect.HandlerOption) (string, http.Handler)) Route {
-	path, served := build(handler, state.Gate.CountQuestions())
-	return NewRoute(path, served, handler)
+func RouteOf[H any](state *testWindow, handler H, build func(H, ...connect.HandlerOption) (string, http.Handler, any)) Route {
+	return NewRoute(build(handler, state.Gate.CountQuestions()))
 }
 
 // Mount puts the route in the place of the one served at its path, or beside them.

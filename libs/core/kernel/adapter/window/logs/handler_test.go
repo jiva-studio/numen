@@ -28,7 +28,8 @@ func TestWriteLogAndWatchLogsStreamEntriesOverConnect(t *testing.T) {
 	handler := windowlogs.NewHandler(watch, record, func() domainlogs.Level { return domainlogs.LevelDebug }, func(domainlogs.Level) error { return nil })
 
 	mux := http.NewServeMux()
-	mux.Handle(windowlogs.NewRoute(handler, connect.WithInterceptors()))
+	path, served, _ := windowlogs.NewRoute(handler, connect.WithInterceptors())
+	mux.Handle(path, served)
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 
@@ -71,7 +72,8 @@ func TestLogLevelReadsAndWritesApplicationSettingOverConnect(t *testing.T) {
 	})
 
 	mux := http.NewServeMux()
-	mux.Handle(windowlogs.NewRoute(handler, connect.WithInterceptors()))
+	path, served, _ := windowlogs.NewRoute(handler, connect.WithInterceptors())
+	mux.Handle(path, served)
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 

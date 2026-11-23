@@ -12,10 +12,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/searchcancel"
 )
 
-// NewRoute is the path ConnectionCallService is served at and the handler that serves it. Each call goes
+// NewRoute is the path ConnectionCallService is served at and the handler that serves it, and the handler it answers through. Each call goes
 // through counted.
-func NewRoute(handler numenv1connect.ConnectionCallServiceHandler, counted connect.HandlerOption) (string, http.Handler) {
-	return numenv1connect.NewConnectionCallServiceHandler(handler, counted)
+func NewRoute(handler numenv1connect.ConnectionCallServiceHandler, counted connect.HandlerOption) (path string, served http.Handler, service any) {
+	path, served = numenv1connect.NewConnectionCallServiceHandler(handler, counted)
+	return path, served, handler
 }
 
 // NewService returns the handler over the calls and the rows, or the handler that answers every call as

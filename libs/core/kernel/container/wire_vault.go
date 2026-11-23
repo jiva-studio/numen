@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	windowlogs "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/logs"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/naming"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
@@ -22,15 +21,11 @@ import (
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
 )
 
-func (c Config) registry() (vaultregistry.Ports, error) {
-	return vaultRegistry(c.RegistryPath)
-}
-
 // EnsureVault has the folder at root on the list of vaults and returns its vault. A folder that is on the list is
 // returned as it is; otherwise it is added under name, and it is recorded as the vault opened last when
 // isRecordedOpened is set.
 func (c Config) EnsureVault(res *Resources, root, name string, isRecordedOpened bool) (domain.Vault, error) {
-	ports, err := c.registry()
+	ports, err := vaultRegistry(c.RegistryPath)
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -41,9 +36,7 @@ func (c Config) EnsureVault(res *Resources, root, name string, isRecordedOpened 
 }
 
 func (c Config) openIndex(res *Resources, ctx context.Context) (*vaultIndex, error) {
-	timer := GetClock(res)
-	record := openRecordLog(c.IndexPath, getLogEntries(res), res.settingsFiles.GetLogLevel, timer)
-	return openIndexAt(ctx, c.IndexPath, index.WithQueryLog(timer, windowlogs.NewRecordFunc(record, res.ErrorHandler)))
+	return openIndexAt(ctx, c.IndexPath, index.WithQueryLog(GetClock(res), openOptionalRecordLog(c.IndexPath, res)))
 }
 
 // vaultWiring holds the filesystem ports and indexing callbacks of an installation.
