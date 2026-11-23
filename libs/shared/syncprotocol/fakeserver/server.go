@@ -49,6 +49,11 @@ type Config struct {
 	QuotaBytes uint64
 
 	NeedsSubscription bool
+
+	// BodyDir keeps the parts and the objects of multipart uploads in files of this folder; empty keeps them in memory.
+	BodyDir string
+	// Stop is called when an admin stop-after budget ends, so the host program can exit once it saved the data.
+	Stop func()
 }
 
 // Session is a session the server issued and has not ended.
@@ -93,6 +98,11 @@ type Server struct {
 	calls         map[string]int
 	subscriptions map[string]time.Time
 	checkouts     map[string]string
+	store         *bodyStore
+	partLog       []partLogEntry
+	stopUpload    stopAfter
+	stopDownload  stopAfter
+	stop          func()
 }
 
 // New returns the server for the config.
@@ -101,7 +111,7 @@ func New(cfg Config) *Server {
 		protocol: cfg.Protocol, now: cfg.Now, ttl: cfg.SessionTTL, quota: cfg.QuotaBytes, audience: cfg.Audience, needsSubscription: cfg.NeedsSubscription,
 		challenges: map[string]challenge{}, chains: map[string]identity.Chain{}, catalogs: map[string][]*syncv1.CatalogEntry{},
 		vaults: map[string]*vaultState{}, blobs: map[string]*blobRow{}, used: map[string]uint64{}, calls: map[string]int{},
-		subscriptions: map[string]time.Time{}, checkouts: map[string]string{},
+		subscriptions: map[string]time.Time{}, checkouts: map[string]string{}, store: newBodyStore(cfg.BodyDir), stop: cfg.Stop,
 	}
 	if s.protocol == 0 {
 		s.protocol = syncprotocol.Version
@@ -135,6 +145,10 @@ func (s *Server) newMux() http.Handler {
 	mux.HandleFunc("/admin/sessions", s.serveSessions)
 	mux.HandleFunc("/admin/sessions/end", s.serveEnd)
 	mux.HandleFunc("/admin/blobs", s.serveStoredBlobs)
+	mux.HandleFunc("/admin/part-log", s.servePartLog)
+	mux.HandleFunc("/admin/stop-after-bytes", s.serveStopAfter(&s.stopUpload))
+	mux.HandleFunc("/admin/stop-after-download-bytes", s.serveStopAfter(&s.stopDownload))
+	mux.HandleFunc("/admin/prune-tombstones", s.servePrune)
 	return mux
 }
 

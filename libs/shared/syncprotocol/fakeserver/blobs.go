@@ -131,7 +131,16 @@ func (s *Server) getDownload(account, vault string, id []byte) *syncv1.BlobDownl
 }
 
 func (s *Server) serveBlob(w http.ResponseWriter, r *http.Request) {
-	id, err := hex.DecodeString(strings.TrimPrefix(r.URL.Path, blobURLFolder))
+	rest := strings.TrimPrefix(r.URL.Path, blobURLFolder)
+	if partID, number, isPart := getPartNumber(rest); isPart {
+		if r.Method != http.MethodPut {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		s.storePart(w, r, partID, number)
+		return
+	}
+	id, err := hex.DecodeString(rest)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -173,16 +182,27 @@ func (s *Server) sendBlobBody(w http.ResponseWriter, r *http.Request, id string)
 	row, found := s.blobs[id]
 	var body []byte
 	if found && row.state == blobCommitted {
-		body = slices.Clone(row.body)
+		body = s.getBody(id, row)
 	}
 	s.mu.Unlock()
 	if body == nil {
 		http.NotFound(w, r)
 		return
 	}
-	w.Header().Set("Content-Type", "application/octet-stream")
-	if _, err := w.Write(body); err != nil {
-		return
+	s.sendBody(w, r, id, body)
+}
+
+func (s *Server) getBody(id string, row *blobRow) []byte {
+	if row.multipart == nil {
+		return slices.Clone(row.body)
+	}
+	body, _ := s.store.read(getObjectName(id))
+	return body
+}
+
+func (s *Server) logDownload(id string, from, sent int64) {
+	if row, found := s.blobs[id]; found && row.multipart != nil {
+		s.partLog = append(s.partLog, partLogEntry{Blob: hex.EncodeToString([]byte(id)), Direction: "get-range", From: from, Bytes: sent})
 	}
 }
 
@@ -202,7 +222,7 @@ func (s *Server) listStoredBlobs() []byte {
 	defer s.mu.Unlock()
 	ids := make([]string, 0, len(s.blobs))
 	for id, row := range s.blobs {
-		if row.isUploaded && row.body != nil {
+		if row.isUploaded && (row.body != nil || row.multipart != nil) {
 			ids = append(ids, id)
 		}
 	}
@@ -210,7 +230,7 @@ func (s *Server) listStoredBlobs() []byte {
 	var all bytes.Buffer
 	for _, id := range ids {
 		all.WriteString(id)
-		all.Write(s.blobs[id].body)
+		all.Write(s.getBody(id, s.blobs[id]))
 	}
 	return all.Bytes()
 }
