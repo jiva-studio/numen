@@ -286,4 +286,60 @@ describe('the identity store restoring from words', () => {
     expect(answer.ok).toBe(false)
     expect(store.identity.value).toBeUndefined()
   })
+
+  it('answers with the failure when the core keeps failing to read the identity', async () => {
+    vi.useFakeTimers()
+    const get = vi.fn(() => Promise.reject(new Error('core is gone')))
+    const { store } = createStore(createClient({ get }))
+
+    const answer = await settle(store.restore(WORDS))
+
+    expect(answer.ok).toBe(false)
+    expect(get).toHaveBeenCalledTimes(5)
+    expect(store.identity.value).toBeUndefined()
+  })
+
+  it('keeps waiting after a read failed once and the next reads answer', async () => {
+    vi.useFakeTimers()
+    let reads = 0
+    const { store } = createStore(
+      createClient({
+        get: () => {
+          reads += 1
+          if (reads === 1) return Promise.reject(new Error('busy'))
+          return Promise.resolve(reads < 4 ? undefined : createSampleIdentity())
+        },
+      }),
+    )
+
+    const answer = await settle(store.restore(WORDS))
+
+    expect(answer).toStrictEqual({ ok: true, value: createSampleIdentity() })
+  })
+
+  it('keeps the restored identity when a load that started before it answers that there is none', async () => {
+    vi.useFakeTimers()
+    let answerLoad: (found: IdentityInfo | undefined) => void = () => undefined
+    let reads = 0
+    const { store } = createStore(
+      createClient({
+        get: () => {
+          reads += 1
+          if (reads === 1) {
+            return new Promise<IdentityInfo | undefined>((resolve) => {
+              answerLoad = resolve
+            })
+          }
+          return Promise.resolve(createSampleIdentity())
+        },
+      }),
+    )
+    const loading = store.load()
+
+    await settle(store.restore(WORDS))
+    answerLoad(undefined)
+    await loading
+
+    expect(store.identity.value).toStrictEqual(createSampleIdentity())
+  })
 })

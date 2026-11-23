@@ -12,6 +12,7 @@ import type { IdentityInfo } from '../lib/types'
 import { IDENTITY_WORDS } from '../words'
 
 const RESTORE_POLL_MS = 1000
+const RESTORE_READ_FAILURES = 5
 
 export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   const identity = shallowRef<IdentityInfo | undefined>(undefined)
@@ -56,10 +57,17 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   }
 
   const waitForIdentity = async (): Promise<IdentityInfo> => {
+    let failures = 0
     for (;;) {
       await new Promise<void>((resolve) => setTimeout(resolve, RESTORE_POLL_MS))
-      const found = await api.getIdentity().catch(() => undefined)
-      if (found !== undefined) return found
+      try {
+        const found = await api.getIdentity()
+        failures = 0
+        if (found !== undefined) return found
+      } catch (caughtError) {
+        failures += 1
+        if (failures >= RESTORE_READ_FAILURES) throw caughtError
+      }
     }
   }
 
@@ -70,6 +78,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
         return { ok: false, error: IDENTITY_WORDS.describeFailure(started.error) }
       }
       const found = await waitForIdentity()
+      guard.acquireRequest()
       identity.value = found
       return { ok: true, value: found }
     } catch (caughtError) {
