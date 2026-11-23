@@ -204,11 +204,11 @@ func (p *pass) sendFiles(ctx context.Context, vault transfer.Vault, records []tr
 			outcomes[one.index] = second[i]
 		}
 	}
-	p.noteClashes(outcomes)
+	p.recordClashes(outcomes)
 	return p.apply(records, outcomes), hasMismatch(outcomes), nil
 }
 
-func (p *pass) noteClashes(outcomes []transfer.Outcome) {
+func (p *pass) recordClashes(outcomes []transfer.Outcome) {
 	for _, outcome := range outcomes {
 		if outcome.Status == transfer.CaseClash && !slices.Contains(p.clashes, outcome.Path) {
 			p.clashes = append(p.clashes, outcome.Path)
