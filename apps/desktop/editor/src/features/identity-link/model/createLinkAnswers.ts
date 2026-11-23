@@ -4,7 +4,7 @@ import type { LinkCalls } from '../lib/types'
 
 type Ask = (call: () => Promise<Result<unknown, string>>) => Promise<void>
 
-export function useLinkAnswers(getCalls: () => LinkCalls, ask: Ask) {
+export function createLinkAnswers(getCalls: () => LinkCalls, ask: Ask) {
   return {
     decide: (isApproved: boolean) => ask(() => getCalls().decide(isApproved)),
     sendCode: (code: string) => ask(() => getCalls().enterCode(code)),

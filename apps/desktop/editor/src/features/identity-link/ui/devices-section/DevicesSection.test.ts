@@ -2,9 +2,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { DeviceInfo, IdentityClient } from '@numen/core-client'
-import { createIdentityApi, createIdentityStore } from '@/entities/identity'
+import { createIdentityStore } from '@/entities/identity'
 import { click, dispose, findButton, findButtons, findText } from '@/testing/dom'
-import { createDeviceInfo, createIdentityClient } from '@/testing/identityClient'
+import { createDeviceInfo, createIdentityClient, wrapIdentityClient } from '@/testing/identityClient'
 import DevicesSection from './DevicesSection.vue'
 
 const THIS = createDeviceInfo()
@@ -18,8 +18,8 @@ afterEach(() => {
 
 const mountSection = async (hasIdentity: boolean, devices: readonly DeviceInfo[], overrides: Partial<IdentityClient> = {}) => {
   const client = createIdentityClient({ listDevices: () => Promise.resolve({ ok: true, value: devices }), ...overrides })
-  const store = createIdentityStore(createIdentityApi(client), vi.fn())
-  wrapper = mount(DevicesSection, { props: { calls: store, hasIdentity }, attachTo: document.body })
+  const store = createIdentityStore(wrapIdentityClient(client), vi.fn())
+  wrapper = mount(DevicesSection, { props: { calls: store.devices, hasIdentity }, attachTo: document.body })
   await flushPromises()
   return wrapper
 }

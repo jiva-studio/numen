@@ -166,8 +166,9 @@ export interface ConnectionEdits {
  * The identity of this device. The recovery words pass through `generateWords` and `create` and
  * are not held here.
  */
-export interface InstallationIdentity extends DeviceCalls {
+export interface InstallationIdentity {
   readonly identity: Readonly<Ref<IdentityInfo | undefined>>
+  readonly devices: DeviceCalls
   load(): Promise<void>
   generateWords(): Promise<Result<readonly string[], string>>
   create(words: readonly string[]): Promise<Result<IdentityInfo, string>>

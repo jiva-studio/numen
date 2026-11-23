@@ -8,15 +8,9 @@ import type { Result } from '@numen/result'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { IdentityApi } from '../api/identity'
-import type {
-  DeviceInfo,
-  IdentityFailure,
-  IdentityInfo,
-  LinkInfo,
-  LinkMode,
-  LinkRole,
-} from '../lib/types'
+import type { IdentityInfo } from '../lib/types'
 import { IDENTITY_WORDS } from '../words'
+import { createDeviceStore } from './devices'
 
 const RESTORE_POLL_MS = 1000
 
@@ -31,7 +25,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   const load = async (): Promise<void> => {
     const mine = guard.acquireRequest()
     try {
-      const found = await api.getIdentity()
+      const found = await api.account.getIdentity()
       if (!mine.isCurrent) return
       identity.value = found
       notify('')
@@ -43,7 +37,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
 
   const generateWords = async (): Promise<Result<readonly string[], string>> => {
     try {
-      return { ok: true, value: await api.generateWords() }
+      return { ok: true, value: await api.account.generateWords() }
     } catch (caughtError) {
       return { ok: false, error: formatError(caughtError) }
     }
@@ -51,7 +45,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
 
   const create = async (words: readonly string[]): Promise<Result<IdentityInfo, string>> => {
     try {
-      const answer = await api.createIdentity(words)
+      const answer = await api.account.createIdentity(words)
       if (!answer.ok) {
         return { ok: false, error: IDENTITY_WORDS.describeFailure(answer.error) }
       }
@@ -65,14 +59,14 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
   const waitForIdentity = async (): Promise<IdentityInfo> => {
     for (;;) {
       await new Promise<void>((resolve) => setTimeout(resolve, RESTORE_POLL_MS))
-      const found = await api.getIdentity().catch(() => undefined)
+      const found = await api.account.getIdentity().catch(() => undefined)
       if (found !== undefined) return found
     }
   }
 
   const restore = async (words: readonly string[]): Promise<Result<IdentityInfo, string>> => {
     try {
-      const started = await api.startRestore(words)
+      const started = await api.account.startRestore(words)
       if (!started.ok) {
         return { ok: false, error: IDENTITY_WORDS.describeFailure(started.error) }
       }
@@ -86,7 +80,7 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
 
   const remove = async (): Promise<Result<void, string>> => {
     try {
-      await api.deleteIdentity()
+      await api.account.deleteIdentity()
       identity.value = undefined
       return { ok: true, value: undefined }
     } catch (caughtError) {
@@ -94,44 +88,9 @@ export function createIdentityStore(api: IdentityApi, notify: MessageWriter) {
     }
   }
 
-  const devices = shallowRef<readonly DeviceInfo[]>([])
+  const devices = createDeviceStore(api, notify)
 
-  const loadDevices = async (): Promise<void> => {
-    try {
-      const answer = await api.listDevices()
-      if (answer.ok) devices.value = answer.value
-    } catch (caughtError) {
-      notify(`${IDENTITY_WORDS.loadFailed} ${formatError(caughtError)}`, 'error')
-    }
-  }
-
-  /** Runs a call that answers with a refusal or a value and returns the refusal as text. */
-  const ask = async <T>(call: () => Promise<Result<T, IdentityFailure>>): Promise<Result<T, string>> => {
-    try {
-      const answer = await call()
-      return answer.ok ? answer : { ok: false, error: IDENTITY_WORDS.describeFailure(answer.error) }
-    } catch (caughtError) {
-      return { ok: false, error: formatError(caughtError) }
-    }
-  }
-
-  const link = {
-    start: (role: LinkRole, mode: LinkMode, text: string): Promise<Result<LinkInfo, string>> =>
-      ask(() => api.startLink(role, mode, text)),
-    get: (): Promise<Result<LinkInfo, string>> => ask(() => api.getLink()),
-    decide: (approve: boolean) => ask(() => api.decideLink(approve)),
-    enterCode: (code: string) => ask(() => api.enterLinkCode(code)),
-    confirmJoin: (approve: boolean) => ask(() => api.confirmJoin(approve)),
-    cancel: () => ask(() => api.cancelLink()),
-  }
-
-  const revoke = async (fingerprint: string): Promise<Result<undefined, string>> => {
-    const answer = await ask(() => api.revokeDevice(fingerprint))
-    await loadDevices()
-    return answer
-  }
-
-  return { identity, devices, load, loadDevices, generateWords, create, restore, delete: remove, link, revoke }
+  return { identity, devices, load, generateWords, create, restore, delete: remove }
 }
 
 export type IdentityStore = ReturnType<typeof createIdentityStore>

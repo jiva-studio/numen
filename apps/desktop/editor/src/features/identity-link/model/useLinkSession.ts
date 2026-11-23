@@ -4,6 +4,7 @@
  * code and the text of the QR code come from the core and are dropped with the dialog.
  */
 import { computed, onBeforeUnmount, ref } from 'vue'
+import { runInBackground } from '@numen/ui'
 import type { Result } from '@numen/result'
 import type { LinkInfo, LinkMode, LinkRole } from '@/entities/identity'
 import { isEnded } from '../lib/phases'
@@ -40,7 +41,7 @@ export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole) {
     }
     link.value = answer.value
     stopPoll()
-    timer = setInterval(() => void poll(), POLL_MS)
+    timer = setInterval(() => runInBackground(poll(), () => undefined), POLL_MS)
   }
 
   const ask = async (call: () => Promise<Result<unknown, string>>): Promise<void> => {
@@ -57,7 +58,7 @@ export function useLinkSession(getCalls: () => LinkCalls, role: LinkRole) {
   }
 
   onBeforeUnmount(() => {
-    void cancel()
+    runInBackground(cancel(), () => undefined)
   })
 
   return { link, problem, isBusy, isChoosing: computed(() => link.value === undefined), start, ask, cancel }

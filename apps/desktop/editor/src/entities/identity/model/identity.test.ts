@@ -2,9 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { IdentityClient } from '@numen/core-client'
 import type { Result } from '@numen/result'
 import type { IdentityFailure, IdentityInfo } from '../lib/types'
-import { createIdentityApi } from '../api/identity'
 import { IDENTITY_WORDS } from '../words'
 import { createIdentityStore } from './identity'
+import { wrapIdentityClient } from '@/testing/identityClient'
 
 const asValue = <T>(value: T): Result<T, IdentityFailure> => ({ ok: true, value })
 const asFailure = (error: IdentityFailure): Result<never, IdentityFailure> => ({ ok: false, error })
@@ -56,7 +56,7 @@ const createClient = (overrides: Partial<IdentityClient> = {}): IdentityClient =
 
 const createStore = (client: IdentityClient) => {
   const notify = vi.fn()
-  return { notify, store: createIdentityStore(createIdentityApi(client), notify) }
+  return { notify, store: createIdentityStore(wrapIdentityClient(client), notify) }
 }
 
 describe('the identity store', () => {
@@ -311,8 +311,8 @@ describe('the devices and the link of the identity store', () => {
     const { store } = createStore(
       createClient({ listDevices: () => Promise.resolve(asValue(DEVICES)) }),
     )
-    await store.loadDevices()
-    expect(store.devices.value).toStrictEqual(DEVICES)
+    await store.devices.load()
+    expect(store.devices.list.value).toStrictEqual(DEVICES)
   })
 
   it('reads the list again after a revoke, also when the revoke was refused', async () => {
@@ -326,7 +326,7 @@ describe('the devices and the link of the identity store', () => {
         revokeDevice: () => Promise.resolve(asRefusal('revoke_raced')),
       }),
     )
-    const answer = await store.revoke('B')
+    const answer = await store.devices.revoke('B')
     expect(answer).toStrictEqual({
       ok: false,
       error: 'A device was added while you revoked. Check the list.',
@@ -338,7 +338,7 @@ describe('the devices and the link of the identity store', () => {
     const { store } = createStore(
       createClient({ revokeDevice: () => Promise.resolve(asRefusal('not_allowed_this_device')) }),
     )
-    expect(await store.revoke('A')).toStrictEqual({
+    expect(await store.devices.revoke('A')).toStrictEqual({
       ok: false,
       error: 'This device cannot revoke itself.',
     })
@@ -358,8 +358,8 @@ describe('the devices and the link of the identity store', () => {
         },
       }),
     )
-    await store.link.decide(true)
-    await store.link.enterCode('123456')
+    await store.devices.link.decide(true)
+    await store.devices.link.enterCode('123456')
     expect(sent).toStrictEqual(['decide true', 'code 123456'])
   })
 
@@ -367,7 +367,7 @@ describe('the devices and the link of the identity store', () => {
     const { store } = createStore(
       createClient({ startLink: () => Promise.resolve(asRefusal('link_text_invalid')) }),
     )
-    expect(await store.link.start('host', 'scan', 'x')).toStrictEqual({
+    expect(await store.devices.link.start('host', 'scan', 'x')).toStrictEqual({
       ok: false,
       error: 'This text is not the link of a QR code.',
     })

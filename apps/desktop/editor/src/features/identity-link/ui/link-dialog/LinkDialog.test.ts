@@ -2,9 +2,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import type { IdentityClient, LinkRole } from '@numen/core-client'
-import { createIdentityApi, createIdentityStore, type LinkInfo } from '@/entities/identity'
+import { createIdentityStore, type LinkInfo } from '@/entities/identity'
 import { click, dispose, enterText, findButton, textInputs } from '@/testing/dom'
-import { createIdentityClient, createLinkInfo } from '@/testing/identityClient'
+import { createIdentityClient, createLinkInfo, wrapIdentityClient } from '@/testing/identityClient'
 import LinkDialog from './LinkDialog.vue'
 
 let wrapper: VueWrapper | undefined
@@ -17,8 +17,8 @@ const ok = <T>(value: T) => Promise.resolve({ ok: true as const, value })
 
 const mountDialog = async (role: LinkRole, link: LinkInfo, overrides: Partial<IdentityClient> = {}) => {
   const client = createIdentityClient({ startLink: () => ok(link), getLink: () => ok(link), ...overrides })
-  const store = createIdentityStore(createIdentityApi(client), vi.fn())
-  wrapper = mount(LinkDialog, { props: { role, calls: store.link }, attachTo: document.body })
+  const store = createIdentityStore(wrapIdentityClient(client), vi.fn())
+  wrapper = mount(LinkDialog, { props: { role, calls: store.devices.link }, attachTo: document.body })
   await flushPromises()
   return wrapper
 }

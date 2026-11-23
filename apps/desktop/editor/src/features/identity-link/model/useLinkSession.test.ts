@@ -3,20 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { IdentityClient } from '@numen/core-client'
-import { createIdentityApi, createIdentityStore } from '@/entities/identity'
-import { createIdentityClient, createLinkInfo } from '@/testing/identityClient'
-import { useLinkAnswers } from './useLinkAnswers'
+import { createIdentityStore } from '@/entities/identity'
+import { createIdentityClient, createLinkInfo, wrapIdentityClient } from '@/testing/identityClient'
+import { createLinkAnswers } from './createLinkAnswers'
 import { useLinkSession } from './useLinkSession'
 
 const mountSession = (overrides: Partial<IdentityClient>) => {
-  const store = createIdentityStore(createIdentityApi(createIdentityClient(overrides)), vi.fn())
+  const store = createIdentityStore(wrapIdentityClient(createIdentityClient(overrides)), vi.fn())
   let session!: ReturnType<typeof useLinkSession>
-  let answers!: ReturnType<typeof useLinkAnswers>
+  let answers!: ReturnType<typeof createLinkAnswers>
   const wrapper = mount(
     defineComponent({
       setup() {
-        session = useLinkSession(() => store.link, 'host')
-        answers = useLinkAnswers(() => store.link, session.ask)
+        session = useLinkSession(() => store.devices.link, 'host')
+        answers = createLinkAnswers(() => store.devices.link, session.ask)
         return () => h('div')
       },
     }),

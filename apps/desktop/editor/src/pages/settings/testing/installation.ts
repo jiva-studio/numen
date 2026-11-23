@@ -112,7 +112,7 @@ export const createInstallation = (overrides: InstallationOverrides = {}): Insta
     create: fn(() => Promise.resolve(asFailure('Not kept.'))),
     restore: fn(() => Promise.resolve(asFailure('Not restored.'))),
     delete: fn(() => Promise.resolve(asFailure('Not deleted.'))),
-    ...createInertDevices(),
+    devices: createInertDevices(),
   },
   licenses: overrides.licenses ?? {
     list: ref([]),
@@ -158,8 +158,8 @@ export const createSettingsState = (
 export function createInertDevices() {
   const refused = () => Promise.resolve(asFailure('Not done.'))
   return {
-    devices: ref([]),
-    loadDevices: fn(() => Promise.resolve()),
+    list: ref([]),
+    load: fn(() => Promise.resolve()),
     revoke: fn(refused),
     link: {
       start: fn(refused),

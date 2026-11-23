@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { DeviceInfo } from '@/entities/identity'
-import type { DeviceCalls } from '../lib/types'
+import type { DeviceCalls } from './types'
 
 const REFRESH_MS = 2000
 
@@ -13,7 +13,7 @@ export function useDevices(getCalls: () => DeviceCalls, hasIdentity: () => boole
 
   const refresh = (): void => {
     if (!hasIdentity()) return
-    runInBackground(getCalls().loadDevices(), () => undefined)
+    runInBackground(getCalls().load(), () => undefined)
   }
 
   const confirmRevoke = async (): Promise<void> => {

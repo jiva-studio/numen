@@ -8,10 +8,11 @@ import { ref } from 'vue'
 import { Button } from '@numen/ui'
 import type { LinkRole } from '@/entities/identity'
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog'
-import type { DeviceCalls } from '../../lib/types'
+import type { DeviceCalls } from '../../model/types'
 import { useDevices } from '../../model/useDevices'
 import { WORDS as words } from '../../words'
 import { LinkDialog } from '../link-dialog'
+import DeviceRow from './DeviceRow.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ calls: DeviceCalls; hasIdentity: boolean }>()
@@ -34,15 +35,7 @@ function onClose(): void {
   <section class="devices" :aria-label="words.devices">
     <template v-if="hasIdentity">
       <ul class="devices__list" :aria-label="words.devices">
-        <li v-for="device in calls.devices.value" :key="device.fingerprint" class="devices__row">
-          <span>{{ device.name }}</span>
-          <span class="devices__fingerprint">{{ device.fingerprint }}</span>
-          <span v-if="device.isThis" class="devices__mark">{{ words.deviceThis }}</span>
-          <span v-if="device.isRevoked" class="devices__mark">{{ words.deviceRevoked }}</span>
-          <Button v-if="!device.isThis && !device.isRevoked" type="button" variant="outline" @click="asked = device">
-            {{ words.deviceRevoke }}
-          </Button>
-        </li>
+        <DeviceRow v-for="device in calls.list.value" :key="device.fingerprint" :device="device" @revoke="asked = $event" />
       </ul>
       <p v-if="problem !== ''" role="alert">{{ problem }}</p>
     </template>
@@ -84,21 +77,6 @@ function onClose(): void {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.devices__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.75rem;
-  align-items: center;
-}
-
-.devices__fingerprint {
-  font-family: var(--numen-font-mono);
-}
-
-.devices__mark {
-  color: var(--numen-hushed);
 }
 
 .devices__actions {

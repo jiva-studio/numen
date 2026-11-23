@@ -40,7 +40,7 @@ const {
         @confirm="deletion.confirmDelete"
         @cancel="deletion.cancelDelete"
       />
-      <DevicesSection v-if="!current.isRevoked" :calls="identity" :has-identity="true" />
+      <DevicesSection v-if="!current.isRevoked" :calls="identity.devices" has-identity />
     </template>
 
     <template v-else>
@@ -51,7 +51,7 @@ const {
         </p>
       </div>
 
-      <DevicesSection v-if="step === 'idle'" :calls="identity" :has-identity="false" />
+      <DevicesSection v-if="step === 'idle'" :calls="identity.devices" :has-identity="false" />
 
       <div v-if="step === 'idle'" class="identity-section__actions">
         <Button
