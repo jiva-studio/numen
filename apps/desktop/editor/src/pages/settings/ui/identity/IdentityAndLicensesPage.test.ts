@@ -611,8 +611,8 @@ describe('the restore from sheets on the page "Identity and licenses"', () => {
     expect(findButton(tab, 'Restore from sheets')).toBeUndefined()
     await press(tab, 'Restore')
     await chooseSheets(tab)
-    expect(getSheetField(tab, 1).exists()).toBe(true)
-    expect(getSheetField(tab, 2).exists()).toBe(true)
+    expect(getSheetField(tab, 1).element).toBeInstanceOf(HTMLTextAreaElement)
+    expect(getSheetField(tab, 2).element).toBeInstanceOf(HTMLTextAreaElement)
     expect(getRestoreInputs(tab)).toHaveLength(0)
   })
 
