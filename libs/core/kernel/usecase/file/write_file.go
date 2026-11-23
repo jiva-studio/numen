@@ -25,6 +25,9 @@ func NewWriteFile(writers vaultport.NoteWriters, index edit.IndexUpdater) WriteF
 func (u WriteFile) Execute(
 	ctx context.Context, v domain.Vault, path string, content []byte, baseline domain.FileStat,
 ) (domain.FileStat, error) {
+	if err := vaultport.CheckWrite(ctx, v); err != nil {
+		return domain.FileStat{}, err
+	}
 	writer, err := u.writers.OpenNoteWriter(v)
 	if err != nil {
 		return domain.FileStat{}, err

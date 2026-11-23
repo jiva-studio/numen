@@ -41,7 +41,7 @@ func NewWrite(
 func (u Write) Execute(
 	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
 ) (domain.FileStat, error) {
-	return writeUnder(u.admission, func() (domain.FileStat, error) { return u.replace(ctx, v, path, body, stat) })
+	return writeUnder(ctx, v, u.admission, func() (domain.FileStat, error) { return u.replace(ctx, v, path, body, stat) })
 }
 
 func (u Write) replace(
@@ -93,7 +93,7 @@ func (u Write) replace(
 func (u Write) Save(
 	ctx context.Context, v domain.Vault, path, body string, baseline *edit.Baseline,
 ) (domain.FileStat, error) {
-	return writeUnder(u.admission, func() (domain.FileStat, error) { return u.overwrite(ctx, v, path, body, baseline) })
+	return writeUnder(ctx, v, u.admission, func() (domain.FileStat, error) { return u.overwrite(ctx, v, path, body, baseline) })
 }
 
 func (u Write) overwrite(

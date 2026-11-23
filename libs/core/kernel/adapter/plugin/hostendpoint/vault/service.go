@@ -3,6 +3,7 @@ package vault
 import (
 	"context"
 	"net/http"
+	"slices"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -67,6 +68,7 @@ func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // Mount serves the vault services for the plugins that call the host, over the vault the source lends: one
 // router for each service, each answering its procedures from the group that holds them.
 func Mount(mux *http.ServeMux, auth Authority, source Source, options ...connect.HandlerOption) {
+	options = append(slices.Clone(options), getCallerOption(auth))
 	base := &calls{auth: auth, source: source}
 	files := &filesCalls{base}
 	watch, cache := &watchCalls{base}, &cacheCalls{base}

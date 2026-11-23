@@ -58,6 +58,9 @@ func NewMove(d MoveDeps) Move {
 }
 
 func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {
+	if err := vaultport.CheckWrite(ctx, v); err != nil {
+		return domain.MoveResult{From: from, To: to}, err
+	}
 	res := domain.MoveResult{From: from, To: to}
 	if from == to {
 		return res, nil

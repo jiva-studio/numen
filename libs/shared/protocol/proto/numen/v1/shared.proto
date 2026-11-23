@@ -68,6 +68,9 @@ enum ErrorCode {
 
   // The call was cancelled before this note was changed: the note is as it was.
   ERROR_CODE_NOT_ATTEMPTED = 14;
+
+  // The vault is read only for this caller: another plugin manages it. Nothing is written.
+  ERROR_CODE_READ_ONLY = 15;
 }
 
 // FileStat is which file this is: where it is filed, how big it is, and when

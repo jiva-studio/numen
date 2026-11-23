@@ -39,6 +39,9 @@ func NewMoveFile(notes Move, queries SourcesUnder, admission vaultport.WriteAdmi
 // A link repair that fails afterwards leaves that link broken and visible as a
 // problem.
 func (u MoveFile) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, bool, error) {
+	if err := vaultport.CheckWrite(ctx, v); err != nil {
+		return domain.MoveResult{From: from, To: to}, false, err
+	}
 	release, err := u.admission.Begin()
 	if err != nil {
 		return domain.MoveResult{}, false, err

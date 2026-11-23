@@ -41,6 +41,9 @@ func NewEdit(
 
 // Apply makes one change to the note at path and puts it back.
 func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.FileStat, error) {
+	if err := vaultport.CheckWrite(ctx, v); err != nil {
+		return domain.FileStat{}, err
+	}
 	return e.shared().Apply(ctx, v, path, change)
 }
 

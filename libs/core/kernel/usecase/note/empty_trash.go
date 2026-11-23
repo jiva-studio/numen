@@ -30,6 +30,9 @@ func NewEmptyTrash(writers TrashEmptiers, versions TrashedVersions, admission va
 // not delete. The trash is not indexed, so the index is left as it is. The
 // versions of the paths it could not delete stay with them.
 func (u EmptyTrash) Execute(ctx context.Context, v domain.Vault) ([]string, error) {
+	if err := vaultport.CheckWrite(ctx, v); err != nil {
+		return nil, err
+	}
 	release, err := u.admission.Begin()
 	if err != nil {
 		return nil, err

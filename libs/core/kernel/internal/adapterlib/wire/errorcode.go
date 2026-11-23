@@ -54,6 +54,8 @@ func GetErrorCode(err error) (v1.ErrorCode, bool) {
 		errors.Is(err, edit.ErrUnterminated),
 		errors.Is(err, edit.ErrAnchored):
 		return v1.ErrorCode_ERROR_CODE_UNREADABLE, true
+	case errors.Is(err, vaultdomain.ErrReadOnly):
+		return v1.ErrorCode_ERROR_CODE_READ_ONLY, true
 	case errors.Is(err, edit.ErrBodyUnwritable):
 		return v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE, true
 	case errors.Is(err, edit.ErrNotANote):

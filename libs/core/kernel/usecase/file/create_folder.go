@@ -20,6 +20,9 @@ func NewCreateFolder(writers vaultport.FolderWriters, admission vaultport.WriteA
 }
 
 func (u *CreateFolder) Execute(ctx context.Context, v domain.Vault, path string) error {
+	if err := vaultport.CheckWrite(ctx, v); err != nil {
+		return err
+	}
 	release, err := u.admission.Begin()
 	if err != nil {
 		return err

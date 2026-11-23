@@ -29,6 +29,8 @@ var (
 	ErrAlreadyExists = errors.New("the file already exists")
 	// ErrLockedByAnother is returned when another program has locked the file.
 	ErrLockedByAnother = errors.New("the file is locked by another program")
+	// ErrReadOnly is what a write gets when another plugin manages the vault.
+	ErrReadOnly = errors.New("this vault is read only")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
 	ErrNotANote = notesedit.ErrNotANote
 	// ErrUnknownVault is what a call gets when it names a vault the installation does not know.

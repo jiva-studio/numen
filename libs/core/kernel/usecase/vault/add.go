@@ -1,7 +1,6 @@
 package vault
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
@@ -37,6 +36,16 @@ func NewAdd(
 // directory is the caller's responsibility; a use case must not depend on where it
 // was invoked from.
 func (u Add) Execute(root, name string) (domain.Vault, error) {
+	return u.add(root, name, "")
+}
+
+// ExecuteManaged is Execute for a vault that only the plugin with the id managedBy writes. The attribute is stored
+// with the vault on the list.
+func (u Add) ExecuteManaged(root, name, managedBy string) (domain.Vault, error) {
+	return u.add(root, name, managedBy)
+}
+
+func (u Add) add(root, name, managedBy string) (domain.Vault, error) {
 	if !domain.IsAbsPath(root) {
 		return domain.Vault{}, fmt.Errorf("%s is not an absolute path", root)
 	}
@@ -78,7 +87,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		}
 	}
 
-	v := domain.Vault{ID: id, Name: name, Path: root}
+	v := domain.Vault{ID: id, Name: name, Path: root, ManagedBy: getManager(existing, found, managedBy)}
 	if v.Name == "" {
 		// The folder name is what the user already calls this collection.
 		v.Name = domain.BasePath(root)
@@ -103,8 +112,10 @@ func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {
 	return nil
 }
 
-// ExecuteManaged is Execute for a vault that only the plugin with the id managedBy writes. The attribute is stored
-// with the vault on the list.
-func (u Add) ExecuteManaged(_, _, _ string) (domain.Vault, error) {
-	return domain.Vault{}, errors.New("not implemented")
+// getManager keeps the manager of a vault that is on the list already: adding the folder again does not free it.
+func getManager(existing domain.Vault, found bool, managedBy string) string {
+	if managedBy == "" && found {
+		return existing.ManagedBy
+	}
+	return managedBy
 }
