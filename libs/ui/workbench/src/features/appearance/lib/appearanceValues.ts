@@ -16,7 +16,7 @@ export type ScaleKind = typeof INTERFACE_SCALE | typeof TEXT_SCALE
 export const HELD = 150
 
 /** Returns the pair with the value of one of the two sizes replaced. */
-export const onto = (both: Sizes, which: ScaleKind, one: number): Sizes => ({
+export const replaceSize = (both: Sizes, which: ScaleKind, one: number): Sizes => ({
   ...both,
   [which]: one,
 })
