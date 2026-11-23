@@ -23,8 +23,9 @@ export const WORDS = {
     `The subscription ended on ${periodEnd}. The vaults in the cloud can only be read and changes stay on this device. The cloud deletes them on ${deleteAt}.`,
   deleted: 'Deleted',
   deletedText: 'The cloud deleted your vaults. Buy a subscription to sync again.',
+  needsIdentity: 'Needs an identity',
   noIdentityText:
-    'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+    'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
   offline: 'Offline',
   chooseNamed: (name: string, detail: string): string =>
     detail === '' ? `Choose ${name}` : `Choose ${name}, ${detail}`,

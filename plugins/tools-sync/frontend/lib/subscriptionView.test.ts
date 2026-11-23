@@ -78,12 +78,12 @@ describe('getSubscriptionView', () => {
     expect(ready('deleted').badge).toBe('Deleted')
   })
 
-  it('has no badge for an account without identity, because the text says it', () => {
+  it('badges an account without identity with the identity it needs', () => {
     const view = getSubscriptionView({ status: 'noIdentity', phase: '', dates: DATES })
 
-    expect(view.badge).toBe('')
+    expect(view.badge).toBe('Needs an identity')
     expect(view.text).toBe(
-      'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+      'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
     )
   })
 

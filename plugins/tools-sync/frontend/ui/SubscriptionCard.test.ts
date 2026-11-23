@@ -198,9 +198,9 @@ describe('SubscriptionCard', () => {
     const { wrapper } = await render(createResponse({ hasIdentity: false, phase: '' }))
 
     expect(wrapper.text()).toContain(
-      'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+      'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
     )
-    expect(wrapper.find('.subscription__badge').exists()).toBe(false)
+    expect(wrapper.get('.subscription__badge').text()).toBe('Needs an identity')
     expect(findChoose(wrapper)).toBeUndefined()
   })
 
@@ -304,7 +304,7 @@ describe('SubscriptionCard', () => {
     })
     await flushPromises()
     expect(wrapper.text()).toContain(
-      'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+      'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
     )
 
     answer = createResponse({ phase: 'none' })

@@ -131,9 +131,10 @@ export const NoIdentity: Story = {
     const canvas = within(canvasElement)
     await expect(
       await canvas.findByText(
-        'Numen Sync needs an identity to tell your devices apart. Create one in the Identity card above.',
+        'Sync your vaults between your devices. Notes and files are encrypted on your devices before they leave them. Create an identity in the card above to start.',
       ),
     ).toBeVisible()
+    await expect(canvas.getByText('Needs an identity')).toBeVisible()
     await expect(canvas.queryByRole('button', { name: /^Choose / })).toBeNull()
   },
 }
