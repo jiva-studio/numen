@@ -264,7 +264,7 @@ func TestFatalReport_DistinguishesIndexFaults(t *testing.T) {
 
 	otherOnFolder := getIndexFatalReport(container.Config{
 		Paths: container.Paths{IndexPath: t.TempDir()},
-	}, 1, errors.New("other sqlite error"))
+	}, index.OtherOpenFailure, errors.New("other sqlite error"))
 	if otherOnFolder.Sentence != "The index can't be opened." || otherOnFolder.Remedy == "" || otherOnFolder.Error != "other sqlite error" {
 		t.Errorf("otherOnFolder = %+v", otherOnFolder)
 	}

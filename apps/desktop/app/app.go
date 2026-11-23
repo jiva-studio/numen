@@ -4,7 +4,6 @@ package app
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -47,19 +46,8 @@ func NewOptions() *Options {
 	return &Options{}
 }
 
-// Run executes the application. If opts is not supplied or nil, command-line flags are parsed.
-func Run(opts ...*Options) error {
-	var opt *Options
-	if len(opts) > 0 && opts[0] != nil {
-		opt = opts[0]
-	} else {
-		parsed, err := parseFlags()
-		if err != nil {
-			return err
-		}
-		opt = parsed
-	}
-
+// Run executes the application with the options the command line gave.
+func Run(opt *Options) error {
 	if opt.ShowVersion {
 		_, err := fmt.Fprintln(os.Stdout, version.GetVersionLine(appName))
 		return err
@@ -98,30 +86,6 @@ func Run(opts ...*Options) error {
 	return err
 }
 
-func parseFlags() (*Options, error) {
-	opts := NewOptions()
-	fs := flag.CommandLine
-	if !fs.Parsed() {
-		fs.StringVar(&opts.IndexPath, "index", "", "path to the index database")
-		fs.StringVar(&opts.RegistryPath, "registry", "", "path to the vault list")
-		fs.StringVar(&opts.Vault, "vault", "",
-			"the vault to open: a name, a path or an identity; the one opened last by default")
-		fs.Float64Var(&opts.InterfaceScale, "interface-scale", 0,
-			"scale of the interface (controls and spacing); 1 is the default; this launch only")
-		fs.Float64Var(&opts.TextScale, "text-scale", 0,
-			"scale of note and book text; 1 is the default; this launch only")
-		fs.BoolVar(&opts.RebuildIndex, "rebuild-index", false,
-			"read every file again and rewrite its index entries, whatever the index already holds")
-		fs.BoolVar(&opts.SafeMode, "safe-mode", false, "disable plugins for emergency recovery")
-		fs.BoolVar(&opts.ShowVersion, "version", false, "print the version and exit")
-		RegisterDebugFlags(fs, opts)
-		if err := fs.Parse(os.Args[1:]); err != nil {
-			return nil, err
-		}
-	}
-	return opts, nil
-}
-
 func makeServices(out io.Writer) platform.Installation {
 	services := platform.NewPluginServices(platform.TargetEditor)
 	services.Resources.ErrorHandler = func(err error) {
@@ -154,9 +118,10 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 	if err := debugOpts.ensureVault(cfg, services.Resources, vault); err != nil {
 		return err
 	}
-	defer shutdown.Report(appName, os.Stderr, "plugins", func() error {
+	pluginsStop := shutdown.NewSequence(shutdown.Report(appName, os.Stderr, "plugins", func() error {
 		return container.StopPlugins(services.Execution.Watch, context.Background())
-	})()
+	}))
+	defer pluginsStop.Run()
 	if err := scaleFlags.validate(); err != nil {
 		return err
 	}
@@ -188,9 +153,7 @@ func run(cfg container.Config, services platform.Installation, vault string, sca
 	going := &vaultFlush{flush: installation.FlushPending}
 	shutdownSeq := shutdown.NewSequence(
 		shutdown.Report(appName, os.Stderr, "", installation.Close),
-		shutdown.Report(appName, os.Stderr, "plugins", func() error {
-			return container.StopPlugins(services.Execution.Watch, context.Background())
-		}),
+		pluginsStop.Run,
 		stop,
 	)
 

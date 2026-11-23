@@ -15,7 +15,6 @@ import (
 
 	"github.com/jiva-studio/numen/apps/desktop/app"
 	"github.com/jiva-studio/numen/apps/desktop/internal/plugincli"
-	"github.com/jiva-studio/numen/apps/desktop/internal/version"
 )
 
 func main() {
@@ -38,14 +37,6 @@ func main() {
 	flag.BoolVar(&opts.ShowVersion, "version", false, "print the version and exit")
 	app.RegisterDebugFlags(flag.CommandLine, opts)
 	flag.Parse()
-
-	if opts.ShowVersion {
-		if _, err := fmt.Fprintln(os.Stdout, version.GetVersionLine("numen")); err != nil {
-			fmt.Fprintln(os.Stderr, "numen:", err)
-			os.Exit(1)
-		}
-		return
-	}
 
 	if err := app.Run(opts); err != nil {
 		fmt.Fprintln(os.Stderr, "numen:", err)
