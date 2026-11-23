@@ -21,7 +21,7 @@ func (u *GetPublicIdentity) Execute(ctx context.Context) (identitydomain.Public,
 	if err != nil {
 		return identitydomain.Public{}, err
 	}
-	shown, err := identityOf(record)
+	shown, err := toIdentity(record)
 	if err != nil {
 		return identitydomain.Public{}, err
 	}
