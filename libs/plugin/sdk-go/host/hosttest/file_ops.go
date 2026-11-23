@@ -13,10 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
-var (
-	_ host.FileMover = (*Vault)(nil)
-)
-
 type fileMove struct{ from, target string }
 
 // MoveFile files a file, or a folder with everything under it, somewhere else. It repairs no link.
