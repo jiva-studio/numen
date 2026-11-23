@@ -81,10 +81,10 @@ const readStartAnswer = (answer: {
   error: ProtoIdentityErrorCode
   detail: string
 }): Result<undefined, IdentityFailure> => {
-  const errorCode = readErrorCode(answer.error)
-  return errorCode === undefined
+  const error = readErrorCode(answer.error)
+  return error === undefined
     ? asValue(undefined)
-    : asFailure({ errorCode, detail: answer.detail })
+    : asFailure({ error, message: answer.detail })
 }
 
 /** The identity managed through an IdentityService client. */

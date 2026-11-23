@@ -250,7 +250,7 @@ describe('the identity store restoring from words', () => {
       createClient({
         get,
         startRestore: () =>
-          Promise.resolve(asFailure({ errorCode: 'invalid_words', detail: 'word 4 is wrong' })),
+          Promise.resolve(asFailure({ error: 'invalidWords', message: 'word 4 is wrong' })),
       }),
     )
 
@@ -266,7 +266,7 @@ describe('the identity store restoring from words', () => {
       createClient({
         get: () => Promise.resolve(createSampleIdentity()),
         startRestore: () =>
-          Promise.resolve(asFailure({ errorCode: 'identity_exists', detail: '' })),
+          Promise.resolve(asFailure({ error: 'identityExists', message: '' })),
       }),
     )
     await store.load()
