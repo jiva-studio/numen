@@ -25,7 +25,7 @@ When('the second computer enters the confirmation code of the person', async ({ 
   await person.computers.enterCode()
 })
 
-When('the second computer enters the confirmation code {string}', async ({ person }, code: string) => {
+When('the second computer types {string} as the confirmation code', async ({ person }, code: string) => {
   await person.computers.enterCode(code)
 })
 
@@ -57,7 +57,7 @@ Then('the account has {int} device(s)', async ({ person }, count: number) => {
   await person.computers.expectActiveDevices(count)
 })
 
-Then('the person sees the name and the fingerprint of the second computer', async ({ person }) => {
+Then('the person sees the second computer in the request', async ({ person }) => {
   await person.computers.expectPeerIsSecond()
 })
 

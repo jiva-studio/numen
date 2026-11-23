@@ -69,46 +69,62 @@ func (u *RotateVaultKeys) Execute(ctx context.Context) (int, error) {
 }
 
 func (u *RotateVaultKeys) rotate(ctx context.Context, id domain.VaultID, own session.Identity) (bool, error) {
-	link, err := u.deps.State.ReadLink(ctx, id)
+	target, err := u.readConnected(ctx, id)
 	if errors.Is(err, vaultlink.ErrNotConnected) {
 		return false, nil
 	}
 	if err != nil {
 		return false, err
 	}
-	remote, err := hex.DecodeString(link.RemoteVaultID)
-	if err != nil {
-		return false, fmt.Errorf("read the remote id of the link: %w", err)
-	}
-	target := connected{id: id, remote: remote, link: link}
 	for range maxTries {
-		entries, err := u.deps.Catalog.GetCatalog(ctx, 0)
-		if err != nil {
-			return false, err
-		}
-		last := getLastEntry(entries, remote)
-		if last == nil {
-			return false, nil
-		}
-		body, err := u.openBody(ctx, last)
-		if err != nil {
-			return false, err
-		}
-		if err := u.store(ctx, &target, body.GetKeys()); err != nil {
-			return false, err
-		}
-		if vaultlink.GetNewestEpoch(body.GetKeys()) >= own.KeyEpoch {
-			return false, nil
-		}
-		keys, err := u.append(ctx, entries, last, body, own)
-		if err != nil {
-			return false, err
-		}
-		if keys != nil {
-			return true, u.store(ctx, &target, keys)
+		isRotated, isDone, err := u.tryRotate(ctx, &target, own)
+		if err != nil || isDone {
+			return isRotated, err
 		}
 	}
 	return false, ErrCatalogBusy
+}
+
+func (u *RotateVaultKeys) readConnected(ctx context.Context, id domain.VaultID) (connected, error) {
+	link, err := u.deps.State.ReadLink(ctx, id)
+	if err != nil {
+		return connected{}, err
+	}
+	remote, err := hex.DecodeString(link.RemoteVaultID)
+	if err != nil {
+		return connected{}, fmt.Errorf("read the remote id of the link: %w", err)
+	}
+	return connected{id: id, remote: remote, link: link}, nil
+}
+
+// tryRotate makes one pass over the catalog. isDone is false only when another device won the race of the catalog and the pass has to start again.
+func (u *RotateVaultKeys) tryRotate(ctx context.Context, target *connected, own session.Identity) (isRotated, isDone bool, err error) {
+	entries, err := u.deps.Catalog.GetCatalog(ctx, 0)
+	if err != nil {
+		return false, true, err
+	}
+	last := getLastEntry(entries, target.remote)
+	if last == nil {
+		return false, true, nil
+	}
+	body, err := u.openBody(ctx, last)
+	if err != nil {
+		return false, true, err
+	}
+	if err := u.store(ctx, target, body.GetKeys()); err != nil {
+		return false, true, err
+	}
+	if vaultlink.GetNewestEpoch(body.GetKeys()) >= own.KeyEpoch {
+		return false, true, nil
+	}
+	keys, err := u.append(ctx, entries, last, body, own)
+	if err != nil {
+		return false, true, err
+	}
+	if keys == nil {
+		return false, false, nil
+	}
+	return true, true, u.store(ctx, target, keys)
 }
 
 // connected is a connected vault with the link it keeps.

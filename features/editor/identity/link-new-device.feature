@@ -21,13 +21,13 @@ Feature: Link a new device by scanning its QR code
     Scenario: The device that has the account shows the new device
       When the second computer shows the QR code to join an account
       And the person scans the QR code
-      Then the person sees the name and the fingerprint of the second computer
+      Then the person sees the second computer in the request
 
     Scenario: A wrong confirmation code refuses the new device
       When the second computer shows the QR code to join an account
       And the person scans the QR code
       And the person approves the new device
-      And the second computer enters the confirmation code "000000"
+      And the second computer types "000000" as the confirmation code
       Then the second computer has no identity
       And the account has 1 device
 
