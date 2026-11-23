@@ -33,7 +33,7 @@ type kit struct {
 	chains   *fakeChainStore
 	get      *identity.GetIdentity
 	generate *identity.GenerateRecoveryWords
-	create   *identity.CreateIdentity
+	create   *identity.SeededCreate
 	delete   *identity.DeleteIdentity
 
 	saveKit *identity.SaveRecoveryKit
@@ -49,7 +49,7 @@ func newKit(name string) kit {
 		chains:   chains,
 		get:      identity.NewGetIdentity(deps),
 		generate: identity.NewGenerateRecoveryWords(deps),
-		create:   identity.NewCreateIdentity(deps),
+		create:   identity.NewSeededCreate(deps),
 		delete:   identity.NewDeleteIdentity(deps),
 		saveKit:  identity.NewSaveRecoveryKit(deps, saver),
 		saver:    saver,
@@ -319,5 +319,42 @@ func TestDeleteIdentity_RemovesTheRecordAndAMissingRecordIsNotAnError(t *testing
 	}
 	if _, err := k.get.Execute(t.Context()); !errors.Is(err, identitydomain.ErrNoIdentity) {
 		t.Errorf("GetIdentity() error = %v, want ErrNoIdentity", err)
+	}
+}
+
+func TestCreateIdentity_RefusesValidWordsThatGenerateRecoveryWordsDidNotMake(t *testing.T) {
+	t.Parallel()
+	keys, chains := newFakeKeyStore(), &fakeChainStore{}
+	deps := identity.NewDeps(keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithChains(chains)
+
+	_, err := identity.NewCreateIdentity(deps).Execute(t.Context(), getLegalWords())
+
+	if !errors.Is(err, identitydomain.ErrInvalidWords) || len(keys.keys) != 0 {
+		t.Errorf("error = %v with %d entries kept, want ErrInvalidWords and nothing kept", err, len(keys.keys))
+	}
+}
+
+func TestCreateIdentity_TakesTheWordsOfTheLastGenerateOnceInAnyLetterCase(t *testing.T) {
+	t.Parallel()
+	deps := identity.NewDeps(newFakeKeyStore(), fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithChains(&fakeChainStore{})
+	generate, create := identity.NewGenerateRecoveryWords(deps), identity.NewCreateIdentity(deps)
+	first, err := generate.Execute(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := generate.Execute(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := create.Execute(t.Context(), first); !errors.Is(err, identitydomain.ErrInvalidWords) {
+		t.Fatalf("create of replaced words: error = %v, want ErrInvalidWords", err)
+	}
+	upper := make([]string, len(second))
+	for i, word := range second {
+		upper[i] = " " + strings.ToUpper(word)
+	}
+	if _, err := create.Execute(t.Context(), upper); err != nil {
+		t.Fatalf("create of the held words: %v", err)
 	}
 }

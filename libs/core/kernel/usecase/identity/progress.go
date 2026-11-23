@@ -6,6 +6,7 @@ package identity
 type Progress struct {
 	restores *pendingStore
 	links    linkHold
+	created  generatedWords
 }
 
 // NewProgress returns a progress with no restore, no link and no revoke.
