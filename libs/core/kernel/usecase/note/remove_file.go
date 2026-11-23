@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/shared/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 )
 
 // RemoveFile moves a file or a folder of the vault to the trash.
 type RemoveFile struct {
 	remove *Remove
-	follow indexport.IndexFollow
+	follow IndexFollow
 }
 
 // NewRemoveFile returns the use case over the removal of a file or a folder.
-func NewRemoveFile(remove *Remove, follow indexport.IndexFollow) RemoveFile {
+func NewRemoveFile(remove *Remove, follow IndexFollow) RemoveFile {
 	return RemoveFile{remove: remove, follow: follow}
 }
 

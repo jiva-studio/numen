@@ -20,6 +20,7 @@ type feedHost struct {
 	asked   *v1.ListFileChangesRequest
 	vault   string
 	refused bool
+	change  *v1.FileChange
 }
 
 func (h *feedHost) ListFileChanges(
@@ -29,8 +30,12 @@ func (h *feedHost) ListFileChanges(
 	if h.refused {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no events"))
 	}
+	changes := []*v1.FileChange{{SourceId: 7, Path: "notes/river.md", Event: host.EventFileMoved, Seq: 12}}
+	if h.change != nil {
+		changes = []*v1.FileChange{h.change}
+	}
 	return connect.NewResponse(&v1.ListFileChangesResponse{
-		Changes: []*v1.FileChange{{SourceId: 7, Path: "notes/river.md", Event: host.EventFileMoved, Seq: 12}},
+		Changes: changes,
 		Next:    &v1.FileChangeCursor{FeedId: "feed-1", Seq: 12},
 		HasMore: true,
 	}), nil
@@ -68,5 +73,24 @@ func TestListFileChangesOfAnInvalidQueryIsItsOwnError(t *testing.T) {
 
 	if !errors.Is(err, host.ErrInvalidFileChangeQuery) {
 		t.Errorf("got %v, want ErrInvalidFileChangeQuery", err)
+	}
+}
+
+func TestListFileChangesReadsTheHashSizeAndModificationTime(t *testing.T) {
+	h := &feedHost{change: &v1.FileChange{
+		SourceId: 7, Path: "notes/river.md", Event: host.EventFileChanged, Seq: 12,
+		Hash: "ab12", Size: 321, Mtime: 1_700_000_000_000_000_123,
+	}}
+
+	page, err := feedClientTo(t, h).With("v2").ListFileChanges(t.Context(), host.FileChangeQuery{Events: []string{host.EventFileChanged}})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Changes) != 1 {
+		t.Fatalf("read %+v, want one change", page)
+	}
+	if got := page.Changes[0]; got.Hash != "ab12" || got.Size != 321 || got.ModifiedAt != 1_700_000_000_000_000_123 {
+		t.Errorf("the change has hash %q, size %d, modified at %d", got.Hash, got.Size, got.ModifiedAt)
 	}
 }

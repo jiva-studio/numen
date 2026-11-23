@@ -45,11 +45,6 @@ type FolderWriters interface {
 	OpenFolderWriter(v domain.Vault) (FolderWriter, error)
 }
 
-// FileMovers opens a vault for moving and removing its files.
-type FileMovers interface {
-	OpenFileMover(v domain.Vault) (FileMover, error)
-}
-
 // VaultLocks holds a vault's write lock, so two writers do not change a vault at once.
 type VaultLocks interface {
 	// Lock waits while another holder has the lock and returns what releases it.

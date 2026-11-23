@@ -40,7 +40,9 @@ func (e *lookupsCalls) ListFileChanges(
 		if !e.auth.IsTakingFile(pluginID, one.Path, one.NoteTypes) {
 			continue
 		}
-		changes = append(changes, &v1.FileChange{SourceId: int64(one.SourceID), Path: one.Path, Event: one.Event, Seq: one.Seq})
+		changes = append(changes, &v1.FileChange{SourceId: int64(one.SourceID), Path: one.Path, Event: one.Event, Seq: one.Seq,
+			Hash: one.Hash, Size: one.Size, Mtime: one.ModifiedAt,
+		})
 	}
 	return connect.NewResponse(&v1.ListFileChangesResponse{
 		Changes: changes, Next: newCursorMessage(page.Next), IsReset: page.IsReset, HasMore: page.HasMore,

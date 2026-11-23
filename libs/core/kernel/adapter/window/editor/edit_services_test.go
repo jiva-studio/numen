@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/shared/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -28,11 +27,6 @@ func openWindowIndex(t *testing.T, cfg testInstallation) *index.DB {
 	}
 	testsupport.CloseAfter(t, db)
 	return db
-}
-
-func newNoteMover(db *index.DB) note.Move {
-	return note.NewMove(note.MoveDeps{Readers: vaultreader.Readers{}, Writers: newVaultWriters(),
-		Links: db.NoteQueries(), Names: db.NoteQueries(), Sources: db.Sources(), Now: testsupport.NewClock()})
 }
 
 func newNoteMoverFailingToIndex(db *index.DB) note.Move {
@@ -49,7 +43,7 @@ func mountNoteEdit(t *testing.T, mux *http.ServeMux, installation *editor.Instal
 	mux.Handle(procedure, handler)
 }
 
-func mountFileEdit(t *testing.T, mux *http.ServeMux, installation *editor.Installation, procedure string, move *vault.MoveFile, remove *note.RemoveFile) {
+func mountFileEdit(t *testing.T, mux *http.ServeMux, installation *editor.Installation, procedure string, move *note.MoveFile, remove *note.RemoveFile) {
 	t.Helper()
 	state := editor.SessionOf(t, installation)
 	changes := filewindow.NewChanges(state, state.Notices, move, remove, nil)
