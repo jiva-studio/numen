@@ -25,7 +25,7 @@ const createSettings = (
   const writerFns: Record<string, ReturnType<typeof vi.fn<MessageWriter>>> = {}
   const core = {
     getSettings: vi.fn(async () => ({
-      settingsJson: '{}',
+      written: '{}',
       path: '/vault/.numen/settings.json',
     })),
     updateSettings: vi.fn(async () => undefined),
