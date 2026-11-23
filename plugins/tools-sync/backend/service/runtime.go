@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/health"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -14,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/loops"
 	serveradapter "github.com/jiva-studio/numen/plugins/tools-sync/backend/internal/adapter/server"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/join"
+	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/lifecycle"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/session"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/subscription"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/usecase/syncvault"
@@ -39,10 +41,11 @@ type parts struct {
 // runtime keeps the sign-in, the restore of an identity and the sync loop running against the server of the
 // setting server, and runs them again when that address changes.
 type runtime struct {
-	parts    parts
-	wakes    *loops.Wakes
-	interval *loops.Interval
-	session  *loops.Supervisor[*Backend]
+	parts        parts
+	wakes        *loops.Wakes
+	interval     *loops.Interval
+	session      *loops.Supervisor[*Backend]
+	isForeground atomic.Bool
 }
 
 func newRuntime(p parts) *runtime {
@@ -66,6 +69,7 @@ func (r *runtime) getBackend() (*Backend, error) {
 }
 
 func (r *runtime) configure(values map[string]string) {
+	r.isForeground.Store(values[settingForeground] == "true")
 	r.interval.Set(values[settingInterval])
 	r.session.Configure(values[settingServer])
 }
@@ -80,11 +84,20 @@ func (r *runtime) start(_ context.Context, address string) (*Backend, map[string
 		Host: p.vaults, State: p.state, Progress: p.state, Health: p.health, Clock: p.clock, Random: loops.Random(),
 		Subscriptions: cloudSide,
 	}
+	pass := syncwire.NewSyncVault(deps)
 	loop := syncvault.NewRunSync(syncvault.RunDeps{
-		Pass: syncwire.NewSyncVault(deps), Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,
+		Pass: pass, Host: p.vaults, State: p.state, Health: p.health, Clock: p.clock,
 		Warn:     subscription.NewWarn(subscription.WarnDeps{Subscriptions: cloudSide, Health: p.health}),
 		Interval: r.interval.Get, Changed: r.wakes.Vaults(),
 	})
 	watch := join.NewWatch(join.NewJoin(join.Deps{Identity: p.identity, Server: serverSide}), p.clock)
-	return NewBackend(deps), map[string]func(context.Context) error{"sign-in": keep.Execute, "restore": watch.Execute, "sync": loop.Execute}
+	backend := NewBackend(deps)
+	backend.SetLifecycle(lifecycle.NewLifecycle(lifecycle.Deps{
+		Pass: pass, Loop: loop, Stream: idleStream{}, Host: p.vaults, State: p.state, Clock: p.clock,
+	}))
+	loopsOf := map[string]func(context.Context) error{"sign-in": keep.Execute, "restore": watch.Execute}
+	if !r.isForeground.Load() {
+		loopsOf["sync"] = loop.Execute
+	}
+	return backend, loopsOf
 }

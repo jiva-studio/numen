@@ -4,7 +4,7 @@
   "version": "2026.11.1",
   "protocol": 1,
   "description": "Synchronizes your vaults across devices",
-  "targets": ["desktop.editor"],
+  "targets": ["desktop.editor", "mobile.app"],
   "activationEvents": ["onFilesChanged:text/markdown"],
   "contributes": {
     "category": "tools",
@@ -31,6 +31,13 @@
       "description": "How often this device asks the server for changes",
       "default": 30,
       "min": 1
+    },
+    {
+      "key": "syncOnlyWhileOpen",
+      "type": "boolean",
+      "title": "Sync only while the app is open",
+      "description": "Stops the sync when the app leaves the screen and starts it when it returns",
+      "default": false
     }
   ],
   "settingsViews": [
