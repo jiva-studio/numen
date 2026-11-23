@@ -204,7 +204,6 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState, lifetime: 
         return manifest !== undefined && isWindowSlotManifest(manifest)
       },
       activatePlugin,
-      /** Starts the plugin once for every caller that asks while its start goes on. */
       startPlugin: (id: string): Promise<boolean> => runs.startOnce(id, () => activatePlugin(id)),
       deactivatePlugin: (id: string) => (signal.aborted ? Promise.resolve(false) : deactivate(id)),
     },
@@ -216,14 +215,16 @@ type LoaderState = Pick<
   'activePlugins' | 'failures' | 'moduleLoaders' | 'manifests' | 'starting'
 >
 
-function createLoaderStatus(status: PluginStatus, waitForInterface: () => Promise<void>) {
+function createLoaderStatus(
+  status: PluginStatus,
+  waitForInterface: () => Promise<void>,
+): LoaderStatus {
   const { failures } = status.state
   return {
     getFailedPlugins: (): { id: string; error: string }[] =>
       [...failures.value].map(([id, error]) => ({ id, error })),
     startPlugin: status.startPlugin,
     startTabPlugins: status.startTabPlugins,
-    /** Settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
     waitForInterface,
   }
 }
@@ -321,7 +322,39 @@ function createLoaderRun(deps: PluginLoaderDeps, status: PluginStatus, previous?
   }
 }
 
-export function createPluginLoader(deps: PluginLoaderDeps) {
+/** `startPlugin` starts the plugin once for every caller that asks while its start goes on. */
+export interface PluginActivation {
+  readonly loadModule: (id: string) => Promise<PluginModule | undefined>
+  readonly readManifest: (id: string) => Promise<Manifest | undefined>
+  readonly isInterface: (id: string) => Promise<boolean>
+  readonly activatePlugin: (
+    id: string,
+    module?: PluginModule,
+    limit?: StartLimit,
+  ) => Promise<boolean>
+  readonly startPlugin: (id: string) => Promise<boolean>
+  readonly deactivatePlugin: (id: string) => Promise<boolean>
+}
+
+/** `waitForInterface` settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
+export interface LoaderStatus {
+  readonly getFailedPlugins: () => { id: string; error: string }[]
+  readonly startPlugin: PluginStatus['startPlugin']
+  readonly startTabPlugins: PluginStatus['startTabPlugins']
+  readonly waitForInterface: () => Promise<void>
+}
+
+export interface PluginLoader {
+  readonly registerPluginModule: (id: string, loader: () => Promise<PluginModule>) => void
+  readonly registerPluginManifest: (id: string, manifest: Manifest) => void
+  readonly trackPlugins: (ids: readonly string[]) => Promise<void>
+  readonly start: () => Promise<void>
+  readonly close: () => Promise<void>
+  readonly activation: PluginActivation
+  readonly status: LoaderStatus
+}
+
+export function createPluginLoader(deps: PluginLoaderDeps): PluginLoader {
   const { host } = deps
   const status =
     deps.status ??
@@ -352,4 +385,3 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
     status: createLoaderStatus(status, () => run.runtime.waitForInterface()),
   }
 }
-export type PluginLoader = ReturnType<typeof createPluginLoader>
