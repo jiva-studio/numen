@@ -11,6 +11,7 @@ import (
 	"io"
 	"slices"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/shared/syncprotocol/blobcipher"
 	"github.com/jiva-studio/numen/plugins/tools-sync/backend/domain/transfer"
 )
@@ -24,7 +25,14 @@ type run struct {
 }
 
 func (r *run) execute(ctx context.Context) (transfer.UploadResult, error) {
-	r.plain = &plainReader{ctx: ctx, source: r.deps.Host.Transfers(r.in.Vault), path: r.in.Path, stat: r.in.Stat, size: r.in.Stat.Size}
+	source := r.deps.Host.Transfers(r.in.Vault)
+	r.plain = &plainReader{
+		read: func(start, length int64) (host.ByteRange, error) {
+			return source.ReadBytes(ctx, r.in.Path, start, length)
+		},
+		stat: r.in.Stat,
+		size: r.in.Stat.Size,
+	}
 	key, salt, err := r.newSecrets()
 	if err != nil {
 		return transfer.UploadResult{}, err
