@@ -14,7 +14,7 @@ import (
 )
 
 func newRestoreHandler(keys *keyStore) *windowidentity.Handler {
-	deps := identity.NewDeps(keys, names{}, testsupport.NewClockAt(time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC)))
+	deps := identity.NewDeps(keys, names{}, testsupport.NewClockAt(time.Date(2026, time.November, 22, 12, 0, 0, 0, time.UTC))).WithChains(&chainFile{})
 	return windowidentity.NewHandler(windowidentity.UseCases{
 		Get:           identity.NewGetIdentity(deps),
 		GenerateWords: identity.NewGenerateRecoveryWords(deps),

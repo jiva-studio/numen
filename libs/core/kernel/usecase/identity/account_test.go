@@ -22,7 +22,7 @@ type accountKit struct {
 func newAccountKit(t *testing.T, withIdentity bool) accountKit {
 	t.Helper()
 	k := newKit("Laptop")
-	deps := identity.NewDeps(k.keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow()))
+	deps := identity.NewDeps(k.keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithChains(k.chains)
 	if withIdentity {
 		if _, err := k.create.Execute(t.Context(), getLegalWords()); err != nil {
 			t.Fatal(err)

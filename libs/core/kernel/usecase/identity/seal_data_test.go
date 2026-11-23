@@ -23,7 +23,7 @@ type sealKit struct {
 func newSealKit(tb testing.TB, withIdentity bool) sealKit {
 	tb.Helper()
 	k := newKit("Laptop")
-	deps := identity.NewDeps(k.keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow()))
+	deps := identity.NewDeps(k.keys, fakeNames{name: "Laptop"}, testsupport.NewClockAt(getNow())).WithChains(k.chains)
 	if withIdentity {
 		if _, err := k.create.Execute(tb.Context(), getLegalWords()); err != nil {
 			tb.Fatal(err)

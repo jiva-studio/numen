@@ -2,9 +2,11 @@ package container
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
+	identitydomain "github.com/jiva-studio/numen/libs/core/kernel/domain/identity"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
@@ -38,7 +40,7 @@ func TestOpenIdentityUseCases_ServesNothingWhereTheInstallationHasNoKeyStore(t *
 func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *testing.T) {
 	t.Parallel()
 	keys := memoryKeys{}
-	use := openIdentityUseCases(pluginInstall{KeyStore: keys}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, nil)
+	use := openIdentityUseCases(pluginInstall{KeyStore: keys, ChainStore: &memoryChain{}}, vaultWiring{Clock: testsupport.NewClockAt(time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC))}, nil)
 	if use == nil || use.Get == nil || use.GenerateWords == nil || use.Create == nil || use.Delete == nil {
 		t.Fatalf("openIdentityUseCases() = %+v, want all four use cases", use)
 	}
@@ -56,4 +58,33 @@ func TestOpenIdentityUseCases_KeepsAnIdentityInTheKeyStoreOfTheInstallation(t *t
 	if created.DeviceName == "" {
 		t.Error("the device has no name: the licensing adapter is not wired as the name of the device")
 	}
+}
+
+// memoryChain is the chain file of a device kept in memory.
+type memoryChain struct {
+	mu    sync.Mutex
+	chain []byte
+}
+
+func (m *memoryChain) Read(context.Context) ([]byte, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.chain == nil {
+		return nil, identitydomain.ErrNoChain
+	}
+	return append([]byte(nil), m.chain...), nil
+}
+
+func (m *memoryChain) Write(_ context.Context, chain []byte) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.chain = append([]byte(nil), chain...)
+	return nil
+}
+
+func (m *memoryChain) Delete(context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.chain = nil
+	return nil
 }
