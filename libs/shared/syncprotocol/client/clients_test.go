@@ -292,9 +292,8 @@ func TestErrQuotaExceededCarriesTheUsedAndTheLimitOfTheServer(t *testing.T) {
 	if !errors.As(got, &quota) || quota.Used != 700 || quota.Limit != 500 {
 		t.Errorf("error = %v, quota = %+v, want used 700 and limit 500", got, quota)
 	}
-	var notReady syncprotocol.BlobNotReadyError
-	if errors.As(got, &notReady) {
-		t.Error("a quota refusal reads as a blob that is not ready")
+	if notReady, ok := errors.AsType[syncprotocol.BlobNotReadyError](got); ok {
+		t.Errorf("a quota refusal reads as a blob that is not ready: %v", notReady)
 	}
 }
 

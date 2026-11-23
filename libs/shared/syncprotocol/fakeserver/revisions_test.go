@@ -302,9 +302,9 @@ func TestCommitRevisions_RefusesABlobThatAnotherRevisionAlreadyCommitted(t *test
 
 	_, err := e.revision.CommitRevisions(t.Context(), vault, []*syncv1.Revision{reuse})
 
-	var notReady syncprotocol.BlobNotReadyError
-	if !errors.As(err, &notReady) {
-		t.Errorf("error = %v, want BlobNotReadyError", err)
+	notReady, ok := errors.AsType[syncprotocol.BlobNotReadyError](err)
+	if !ok || notReady.Index != 0 {
+		t.Errorf("error = %v, want BlobNotReadyError of revision 0", err)
 	}
 }
 

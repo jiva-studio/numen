@@ -308,8 +308,6 @@ type slowWatch struct {
 	delay time.Duration
 }
 
-// newSlowWatchHandler returns a handler of the watch service whose stream sends Started at once and one hint
-// at seq 4 of vault "vault-of-16-byte" after delay.
 func newSlowWatchHandler(delay time.Duration) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle(syncv1connect.NewWatchServiceHandler(slowWatch{delay: delay}))
