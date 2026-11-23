@@ -95,7 +95,10 @@ describe('createPluginCatalog', () => {
 
     const answer = await createPluginCatalog(client).findByTabKind('missing')
 
-    expect(answer).toStrictEqual({ ok: false, error: { kind: 'not-found', sourceErrors: [] } })
+    expect(answer).toStrictEqual({
+      ok: false,
+      error: { error: 'notFound', message: 'not found', sourceErrors: [] },
+    })
   })
 
   it('reports not-found for an id no source lists', async () => {
@@ -125,7 +128,7 @@ describe('createPluginCatalog', () => {
       await catalog.findByTabKind('note'),
     ]) {
       expect(answer.ok).toBe(false)
-      if (!answer.ok) expect(answer.error.kind).toBe('unavailable')
+      if (!answer.ok) expect(answer.error.error).toBe('unavailable')
     }
   })
 })
